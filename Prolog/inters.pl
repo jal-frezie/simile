@@ -417,7 +417,8 @@ make_intermediates(
 
 	add_extra_dependencies(Exited, Source, OldArgs, Depends),
 	append(SourceLoops, DestPath, InterContext),
-	append([SourceLoops, NowBuilding, DestPath], ClearContext),
+	append(NowBuilding, DestPath, ReadyContext),
+	append(SourceLoops, ReadyContext, ClearContext),
 
 	(UsingDim == true, !,
 	    Setups = [],
@@ -429,11 +430,11 @@ make_intermediates(
             Clearing = [make(initializing(TotalName), [on_reset], ClearContext,
                              0, [assign(ClearRef, InitVal)]),
                         make(cleared(TotalName), [initializing(TotalName)],
-                             DestPath, 0, [])];
+                             ReadyContext, 0, [])];
         Clearing = [make(clearing(TotalName), [this_step(TotalName)],
 			 ClearContext, Step, [assign(ClearRef, InitVal)]),
                   make(cleared(TotalName), [clearing(TotalName)],
-                       DestPath, Step, [])]), /* probably dont need separate
+                       ReadyContext, Step, [])]), /* probably dont need separate
 	clearing/cleared steps, made_for would work */
 	(Functor = last, !,
 	    /* we can update the saved value as soon as it has been used,
@@ -450,7 +451,7 @@ make_intermediates(
         Setting = [make(increment(TotalName), [cleared(TotalName) | Depends],
                        WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
                   make(TotalName, [increment(TotalName)],
-                       ClearContext, SetTime, [])]),
+                       ReadyContext, SetTime, [])]),
 	append([Clearing, Preps, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
