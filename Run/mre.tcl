@@ -558,7 +558,7 @@ proc ::RunEnv::FindParentNotebookPage {containerId} {
 }
 
 proc RunEnv::Destroy {} {
-    global helperTable modelWin window_info
+    global helperTable modelWin window_info model_id
     variable runControlWindId
     
     #ShowMessage debug info "RunEnv::Destroy RunContol $runControlWindId" ok
@@ -566,7 +566,9 @@ proc RunEnv::Destroy {} {
     #
     # stop the model running by invoking the Run Control Stop button
     # helperId of runcontrol $helperTable(RunControl).
-    $helperTable(RunControl)::SetMode $runControlWindId reset
+    if {[info exists model_id]} {
+	$helperTable(RunControl)::SetMode $runControlWindId reset
+    }
     #update
     #after 100
     #set $helperTable(RunControl)::sendvars(currentMode) stop

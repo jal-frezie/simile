@@ -3,7 +3,7 @@ set keyValue gen3d
 namespace eval ::$keyValue {
     variable useNodes
     variable colours {\#00ff00 \#f1da7e \#36b694 \#ec9844 \#94a646 \#d9d095}
-    variable baseline -25
+    variable base -25
 
 proc identify {} {
 	return "New lollipop diagram"
@@ -12,7 +12,7 @@ proc identify {} {
 proc initialize {winId} {
     variable useNodes
     variable trunks
-    variable baseline
+    variable base
     set toolbarItems [list \
 			  [list new.gif "Clear" \
 			       [namespace code "clear $winId"]] \
@@ -51,21 +51,21 @@ proc initialize {winId} {
 #Grid is always displayed so only define it once
     set grid {}
     for {set x -50} {$x <= 50} {incr x 10} {
-	lappend grid [list line "$x -50 $baseline" "$x 50 $baseline" 1 red] \
-	    [list text "$x -60 $baseline" [expr $x+50] red] \
-	    [list text "$x 60 $baseline" [expr $x+50] red]
+	lappend grid [list line {} "$x -50 $base" "$x 50 $base" 1 red]\
+	    [list text "X posn" "$x -60 $base" [expr $x+50] red] \
+	    [list text "X posn" "$x 60 $base" [expr $x+50] red]
     }
     for {set y -50} {$y <= 50} {incr y 10} {
-	lappend grid [list line "-50 $y $baseline" "50 $y $baseline" 1 red] \
-	    [list text "-60 $y $baseline" [expr $y+50] blue] \
-	    [list text "60 $y $baseline" [expr $y+50] blue]
+	lappend grid [list line {} "-50 $y $base" "50 $y $base" 1 red]\
+	    [list text "Y posn" "-60 $y $base" [expr $y+50] blue] \
+	    [list text "Y posn" "60 $y $base" [expr $y+50] blue]
     }
     for {set z 10} {$z <= 50} {incr z 10} {
-	set zposn [expr $baseline+2*$z]
-	lappend grid [list text "-50 -50 $zposn" $z black] \
-	    [list text "-50 50 $zposn" $z black] \
-	    [list text "50 50 $zposn" $z black] \
-	    [list text "50 -50 $zposn" $z black]
+	set zposn [expr $base+2*$z]
+	lappend grid [list text "Z posn" "-50 -50 $zposn" $z black] \
+	    [list text "Z posn" "-50 50 $zposn" $z black] \
+	    [list text "Z posn" "50 50 $zposn" $z black] \
+	    [list text "Z posn" "50 -50 $zposn" $z black]
     }
 
     SetState $winId initial
@@ -167,7 +167,7 @@ proc LoadPosns {winId} {
     variable useNodes
     variable trunks
     variable colours
-    variable baseline
+    variable base
     set col 0
     set trunks {}
     foreach {px py h} $useNodes($winId,selected) {
@@ -180,9 +180,14 @@ proc LoadPosns {winId} {
 		set x [expr [lindex $data 0]-50]
 		set y [expr [lindex $data 1]-50]
 		set z [lindex $data 2]
-		lappend trunks [list line "$x $y $baseline" \
-				    "$x $y [expr $baseline+$z]" 4 brown]
-		lappend trunks [list sphere "$x $y [expr $baseline+3*$z/2]" \
+		if {[llength $id]} {
+		    set pop "index: $id"
+		} else {
+		    set pop {}
+		}
+		lappend trunks [list line $pop "$x $y $base" \
+				    "$x $y [expr $base+$z]" 4 brown]
+		lappend trunks [list sphere $pop "$x $y [expr $base+3*$z/2]" \
 				    [expr $z/2] 1 [lindex $colours $col]]
 	    }
 	}
@@ -199,8 +204,8 @@ proc DrawShapes {winId solids tag} {
 #ShowMessage debug info $object3d ok
 	switch [lindex $object3d 0] {
 	    line {
-		set startMap [project [lindex $object3d 1]]
-		set endMap [project [lindex $object3d 2]]
+		set startMap [project [lindex $object3d 2]]
+		set endMap [project [lindex $object3d 3]]
 		set startx [lindex $startMap 0]
 		set starty [lindex $startMap 1]
 		set endx [lindex $endMap 0]
@@ -208,33 +213,39 @@ proc DrawShapes {winId solids tag} {
 #ShowMessage debug info "$startMap $endMap" ok
 		lappend insts [list [list \
 		$winId.c create line $startx $starty $endx $endy -tag $tag \
-		    -width [lindex $object3d 3] -fill [lindex $object3d 4]] \
-			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2]]
+		    -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
+			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
+				   [lindex $object3d 1]]
 	    } sphere {
-		set middle [project [lindex $object3d 1]]
+		set middle [project [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
-		set rad [expr $viewVector(winY)*[lindex $object3d 2]/150.0]
+		set rad [expr $viewVector(winY)*[lindex $object3d 3]/150.0]
 		lappend insts [list [list \
 		$winId.c create oval [expr $midx-$rad] [expr $midy-$rad] \
 		     [expr $midx+$rad] [expr $midy+$rad] -tag $tag \
-		     -width [lindex $object3d 3] -fill [lindex $object3d 4]] \
-				   [lindex $middle 2]]
+		     -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
+				   [lindex $middle 2] \
+				   [lindex $object3d 1]]
 			       
 	    } text {
-		set middle [project [lindex $object3d 1]]
+		set middle [project [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
 		lappend insts [list [list \
 		$winId.c create text $midx $midy -tag $tag \
-		     -text [lindex $object3d 2] -fill [lindex $object3d 3]] \
-				   [lindex $middle 2]]
+		     -text [lindex $object3d 3] -fill [lindex $object3d 4]] \
+				   [lindex $middle 2] \
+				   [lindex $object3d 1]]
 	    }
 	}
     }
     set ordered [lsort -decreasing -real -index 1 $insts]
     foreach combo $ordered {
-	eval [lindex $combo 0]
+	set canvObj [eval [lindex $combo 0]]
+	if {[llength [lindex $combo 2]]} {
+	    CanvasBindPopup $winId.c $canvObj [lindex $combo 2]
+	}
     }
 }
 
