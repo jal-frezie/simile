@@ -1207,5 +1207,26 @@ proc VisitUrl {x} {
     if [string match windows $tcl_platform(platform)] {
       set x [regsub -all -nocase {htm} $x {ht%6D}]
       exec rundll32 url.dll,FileProtocolHandler $x &
+    } else {
+        set url $x
+        expr {
+            [info exists env(BROWSER)] ||
+            [findExecutable mozilla        env(BROWSER)] ||
+            [findExecutable netscape       env(BROWSER)] ||
+            [findExecutable iexplorer      env(BROWSER)] ||
+            [findExecutable $env(NETSCAPE) env(BROWSER)] ||
+            [findExecutable lynx           env(BROWSER)]
+        }
+        # lynx can also output formatted text to a variable
+        # with the -dump option, as a last resort:
+        # set formatted_text [ exec lynx -dump $url ] - PSE
+        if {[catch {exec $env(BROWSER) -remote $url}]} {
+            # perhaps browser doesn't understand -remote flag
+            if {[catch {exec $env(BROWSER) $url &} emsg]} {
+                error "Error displaying $url in browser\n$emsg"
+                # Another possibility is to just pop a window up
+                # with the URL to visit in it. - DKF
+            }
+        }
     }
 }
