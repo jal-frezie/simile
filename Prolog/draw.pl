@@ -451,7 +451,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 		get_display_depth(Wid, sections, WhichSections),
 		right_section(Link, WhichSections);
 	    draws_at(Wid, ghost_link, Depth))), !,
-	use_style_for(LType, Type),
+	draw_style_for(Link, Type),
 	draws_at(Wid, Type, Depth),
 	get_shape(Link, course, Coord_list),
 	untranslate(Coord_list, Trans, Screen_coords),

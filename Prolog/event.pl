@@ -50,8 +50,10 @@ get_info(Wid, Comp, desc) :-
 
 	(LType = submodel,
 	    image:quick_file(Comp, Middle);
-	eqn_for(Comp, Middle), !;
-	name(LType, Middle)),
+	eqn_for(Comp, Middle);
+	ghost_link(Comp, _,_),
+	    Middle = "ghost link";
+	name(LType, Middle)), !,
 
 	(Wid shows_model Context,
 	    setof(DestLoc, Dest^(m_update:connects(Comp, Source, Dest),
