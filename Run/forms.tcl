@@ -941,8 +941,9 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
     pack [checkbutton $f.exclusive \
             -text "Exclusive role" -variable relation(isexclusive) -offvalue 0 -onvalue 1] -anchor w
     #    BindPopup $f.exclusive exclusive
-    pack [checkbutton $f.oldmemb \
-            -text "Last membership" -variable relation(useoldmemb) -offvalue 0 -onvalue 1] -anchor w
+    # GUI access to Last membership checkbox denied, although it is used for the Rantan Pandau model
+    #    pack [checkbutton $f.oldmemb \
+    #           -text "Last membership" -variable relation(useoldmemb) -offvalue 0 -onvalue 1] -anchor w
     #    BindPopup $f.oldmemb oldmemb
     pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
     frame .relcheck.top.right
