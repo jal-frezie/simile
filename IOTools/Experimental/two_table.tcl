@@ -15,6 +15,8 @@ namespace eval tabular11510 {
 	set orientList($winId) {rows cols cols cols}
 	variable displayList
 	set displayList($winId) {}
+	variable lastDisplay
+	set lastDisplay($winId) 0.0
 
 	set toolbarItems [list \
             [list new.gif "Clear" [namespace code "clear $winId"] ] \
@@ -65,6 +67,7 @@ namespace eval tabular11510 {
     proc click {winId node caption} {
 	variable dataStore
 	variable displayList
+	variable lastDisplay
 
 	destroy $winId.f.mess
 	set newHeader [GetCaptionPathFromId $node]
@@ -73,16 +76,21 @@ namespace eval tabular11510 {
 	} else {
 	    set varIndex [llength $displayList($winId)]
 	    lappend displayList($winId) $newHeader
-	    set dataStore($winId,$varIndex,[GetModelTime]) \
-		[lindex [GetModelValue $node] 0]
-	    Reconbobulate $winId
+	    if {[GetModelTime]==$lastDisplay($winId)} {
+		set dataStore($winId,$varIndex,$lastDisplay($winId)) \
+		    [lindex [GetModelValue $node] 0]
+		Reconbobulate $winId
+	    }
 	}
+	ReleaseClicks $winId
     }
 
     proc display {winId tCur tStep tRem} {
 	variable dataStore
 	variable displayList
+	variable lastDisplay
 
+	set lastDisplay($winId) $tCur
 	set varIndex 0
 	foreach varCapt $displayList($winId) {
 	    set varId [GetIdFromCaptionPath $varCapt]
@@ -97,6 +105,7 @@ namespace eval tabular11510 {
 	variable dataStore
 	variable orientList
 	variable displayList
+	variable lastDisplay
 
 	variable values
 	variable rowNames
@@ -110,7 +119,7 @@ namespace eval tabular11510 {
 	    set valDims [split $valId ,]
 	    if {[string match $winId [lindex $valDims 0]]} {
 		if {[string match none [lindex $orientList($winId) 0]]} {
-		    if {[lindex $valDims 2]==[GetModelTime]} {
+		    if {[lindex $valDims 2]==$lastDisplay($winId)} {
 			GrabIndices $winId 1 {} {} [lindex $valDims 1] \
 			    $dataStore($valId)
 		    }
@@ -166,7 +175,7 @@ namespace eval tabular11510 {
 		set tgtSq [expr $curHeaderRows-1],$rowsTop
 		set oldCapt [$winId.t get $tgtSq]
 		if {[llength $oldCapt]} {
-		    $winId.t set $tgtSq "$oldCapt \\ $topCapt"
+		    $winId.t set $tgtSq "$topCapt \\ $oldCapt"
 		} else {
 		    $winId.t set $tgtSq $topCapt
 		}
@@ -175,19 +184,29 @@ namespace eval tabular11510 {
 		set tgtSq $colsTop,[expr $curHeaderCols-1]
 		set oldCapt [$winId.t get $tgtSq]
 		if {[llength $oldCapt]} {
-		    $winId.t set $tgtSq "$topCapt \\ $oldCapt"
+		    $winId.t set $tgtSq "$oldCapt \\ $topCapt"
 		} else {
 		    $winId.t set $tgtSq $topCapt
 		}
 		incr colsTop
 	    }
+	    $winId.t tag cell base $tgtSq
 	    incr level
+	}
+	set rcolWidth [string length [$winId.t get $tgtSq]]
+	if {$rcolWidth>10} {
+	    $winId.t width [expr $curHeaderCols-1] $rcolWidth
+	}
+	$winId.t tag raise base
+	$winId.t tag config base -fg black
+	if {$curHeaderRows>1 && $curHeaderCols>1} {
+	    $winId.t spans 0,0 [expr $curHeaderRows-2],[expr $curHeaderCols-2]
 	}
 
 	set translateSide [lindex $orientList($winId) 1]
 	set translateLevel [string match $translateSide \
 				[lindex $orientList($winId) 0]]
-
+    
 	set lastEntry(0) none
 	set count 0
 	foreach item $rowList {
@@ -209,7 +228,7 @@ namespace eval tabular11510 {
 			set headerElt [lindex $displayList($winId) $headerElt]
 		    }
 		    $winId.t set [expr $curHeaderRows+$count],$headerCol \
-			$headerElt
+			[lindex [split $headerElt /] end]
 		}
 		incr headerCol
 	    }
@@ -237,7 +256,7 @@ namespace eval tabular11510 {
 			set headerElt [lindex $displayList($winId) $headerElt]
 		    }
 		    $winId.t set $headerRow,[expr $curHeaderCols+$count] \
-			$headerElt
+			[lindex [split $headerElt /] end]
 		}
 		incr headerRow
 	    }
@@ -277,15 +296,13 @@ namespace eval tabular11510 {
 
     proc GrabIndices {winId depth rowsList colsList index struct} {
 	variable orientList
-#puts "GrabIndices $winId $depth $rowsList $colsList $index $struct"
 	variable values
 	variable rowNames
 	variable colNames
 
 	set nextAxis [lindex $orientList($winId) $depth]
 	lappend ${nextAxis}List $index
-#puts "Appended $index to ${nextAxis}List giving [set ${nextAxis}List]"
-	
+    	
 	if {[llength $struct] == 1} {
 	    set values($rowsList,$colsList) $struct
 	    set rowNames($rowsList) {}

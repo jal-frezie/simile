@@ -105,7 +105,7 @@ proc initialize {t} {
 	set sendvars(expected_end) 0
 
 	SendData $t
-	set sendvars(prevDisplay) 0
+	set sendvars(prevDisplay) 0.0
 	set sendvars(currentMode) stop
 #	SetMode $t reset
 
@@ -232,17 +232,17 @@ proc RollSimulation { winId } {
 	    unset sendvars(newMode)
 	    switch $sendvars(currentMode) {
 		reset {
-		    set current 0
+		    set current 0.0
 		    set exec $sendvars(run_length)
 		    UpdateTimes $current $exec
-		    set scaled_current 0
+		    set scaled_current 0.0
 		    if {[info exists runState(reloadParams)]} {
 			set redoPhase -1
 			unset runState(reloadParams)
 		    } else {
 			set redoPhase 0
 		    }
-		    set sendvars(prevDisplay) 0
+		    set sendvars(prevDisplay) 0.0
 		    set sendvars(currentMode) stop
 		}
 	    }
@@ -262,7 +262,7 @@ proc RollSimulation { winId } {
 	}
 
 # Now run the model
-	if {[string compare $sendvars(currentMode) start] == 0} {
+	if {[string match start $sendvars(currentMode)]} {
 	    if {$exec < 1.001*$update} {
 		set step $exec
 		set sendvars(currentMode) stop
@@ -279,12 +279,18 @@ proc RollSimulation { winId } {
 
 	    set bigPhase [PhaseFor $current $step [expr [GetPhaseCount]+1]]
 	    if {$bigPhase <= [GetPhaseCount]} {
-		set scaled_current [expr $current*$unitLength]
 		$winId.top.flag configure -bg green
 		update
 		if ![update_model $scaled_current $bigPhase] {
 		    set sendvars(currentMode) exit
 		}
+
+		# If time is used at all in update phase it is in a
+		# state variable, where the model refers to it inside
+		# a last(...) function. So it is the time of the last
+		# step we need -- so dont change it till now
+
+		set scaled_current [expr $current*$unitLength]
 		if ![eval_model $scaled_current $bigPhase] {
 		    set sendvars(currentMode) exit
 		}

@@ -987,7 +987,7 @@ proc start_run {lang winId} {
 	    SetStep 0.1 $phase
 	}
     }
-    set runState(currentTime) 0
+    set runState(currentTime) 0.0
     set runState(currentWin) $winId ;# enables rebuild from run control
     FileParamDialogue 0 $winId
     if {[PrefValue custom(helperManager) helperManager]} {

@@ -214,7 +214,13 @@ bits and pieces */
 	set_free_phases(ReevaluateForm, Phases),
 	pick_state_vars(ReevaluateForm, EvaluateForm, StateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
-	check_functions(EvaluateForm, UpdateForm, Phases, SortedForm),
+	check_functions(EvaluateForm, UpdateForm, Phases, VMSPs, SortedForm),
+	/* first off, unify all matching vm level specs in the two lists so
+	that those that are completed when ordering their condition nodes
+	can be used later */
+	all(compile, insert_enum_phases, [build(VMSPs), unify(UpdateForm)]),
+	all(compile, insert_enum_phases, [build(VMSPs), unify(StateForm)]),
+	all(compile, insert_enum_phases, [build(VMSPs), unify(SortedForm)]),
 
 	user:version_is(VStr),
 	name(V, VStr),
@@ -356,7 +362,7 @@ pick_state_vars(All, Rate, State) :-
 % check_functions tests for circularity, then puts each function
 % evaluation into the slowest time step in which it needs to be updated
 
-check_functions(Functions, Comps, Phases, Sorted) :-
+check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	reassure_user("Checking for circularity in model assignment order"),
 	(dummy_order(Functions, [Start | Core]),
 	get_circle_from(Core, [Start], Loop),
@@ -368,12 +374,7 @@ check_functions(Functions, Comps, Phases, Sorted) :-
 	UseCompartments = [make(on_reset, [], [], 0, []) | Comps],
 	    
 	reassure_user("Sorting assignments into correct time steps"),
-	sort_assignments(Functions, UseCompartments, Phases, Sorted, VMSPs),
-	/* first off, unify all matching vm level specs in the two lists so
-	that those that are completed when ordering their condition nodes
-	can be used later */
-	all(compile, insert_level_enum_phases, [build(VMSPs), unify(Comps)]),
-	all(compile, insert_level_enum_phases, [build(VMSPs), unify(Sorted)]).
+	sort_assignments(Functions, UseCompartments, Phases, Sorted, VMSPs).
 
 is_instance_list(Instance) :-
 	Instance = instance(_, Model, xrefs(_, Parent, _,_), _,_),
@@ -570,6 +571,8 @@ build_submodel_functions( Language, Phases, Inters,
 	    name(Gone, GoneStr),
 	    raise_exception(Gone);
 	true),
+	/* note state variables implemented by 'last' might refer to
+	compartment values, hence must go before them */
 	order_all_assignments(Phases, StateForm, OrdStates, _),
 	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
 
@@ -1324,17 +1327,17 @@ order_phase(Phase, Path, RawAssign, ThisPass, Later, Taboo) :-
 delayable(make(_, Conds, _,_,_)) :-
 	member(later(_), Conds), !.
 
-/* insert_level_enum_phases: when we find an enumerate instruction, we want to
+/* insert_enum_phases: when we find an enumerate instruction, we want to
 make sure that any time later we go into its submodel, the path will tell us
 which phase the submodel was enumerated (had its membership decided) in. So
 here we instantiate the 4th arg of vm_loop to the phase in all the paths... */
 
-insert_level_enum_phases(_, []).
+insert_enum_phases(_, []).
 
-insert_level_enum_phases(vm_spec_pair(Name, Phase),
+insert_enum_phases(vm_spec_pair(Name, Phase),
 			 [make(_,_, Path, _,_) | Insts]) :-
 	(member(sm(Name, _,_, vm_loop(_,_,_, Phase)), Path), !; true),
-	insert_level_enum_phases(vm_spec_pair(Name, Phase), Insts).	
+	insert_enum_phases(vm_spec_pair(Name, Phase), Insts).	
 
 /* This one just inserts the shortest time step into any undecided phases */
 set_free_phases([], _).
