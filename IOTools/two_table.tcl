@@ -41,6 +41,7 @@ namespace eval tabular11510 {
 	pack $winId.xscroll -side bottom -fill x
 	pack $winId.yscroll -side right -fill y
 	CreateTable $winId
+	clear $winId ;# cos MRE can re-use same frame
 	SaveState $winId
     }
 
@@ -93,13 +94,16 @@ namespace eval tabular11510 {
 	variable dataStore
 	variable displayList
 	variable lastDisplay
+	variable orientList
+	variable varNamePosns
 
 	ReleaseClicks $winId
 	$winId.f.mess config -text {}
 	set newHeader [GetCaptionPathFromId $node]
-	if {[lsearch $displayList($winId) $newHeader]>=0} {
-	    # Var already displayed, see it
-	} else {
+	set varIndex [lsearch $displayList($winId) $newHeader]
+	set xScrollPosn [$winId.t xview]
+	set yScrollPosn [$winId.t yview]
+	if {$varIndex<0} {
 	    set varIndex [llength $displayList($winId)]
 	    lappend displayList($winId) $newHeader
 	    if {[GetModelTime]==$lastDisplay($winId)} {
@@ -108,6 +112,20 @@ namespace eval tabular11510 {
 		Reconbobulate $winId
 	    }
 	    SaveState $winId
+	}
+#puts "vi $varIndex"
+	set lineToSee [lindex $varNamePosns($winId) $varIndex]
+	if {[llength $lineToSee]} {
+#puts $lineToSee
+	    switch [lindex $orientList($winId) 1] {
+		rows {
+		    $winId.t see $lineToSee,0
+		    $winId.t xview moveto [lindex $xScrollPosn 0]
+		} cols {
+		    $winId.t see 0,$lineToSee
+		    $winId.t yview moveto [lindex $yScrollPosn 0]
+		}
+	    }
 	}
     }
 
@@ -135,14 +153,11 @@ namespace eval tabular11510 {
 	}
 	set xScrollPosn [$winId.t xview]
 	set yScrollPosn [$winId.t yview]
-	set timeLine [Reconbobulate $winId]
-	puts $timeLine
+	Reconbobulate $winId
 	switch [lindex $orientList($winId) 0] {
 	    rows {
-		$winId.t see $timeLine,0
 		$winId.t xview moveto [lindex $xScrollPosn 0]
 	    } cols {
-		$winId.t see 0,$timeLine
 		$winId.t yview moveto [lindex $yScrollPosn 0]
 	    } none {
 		$winId.t xview moveto [lindex $xScrollPosn 0]
@@ -156,6 +171,7 @@ namespace eval tabular11510 {
 	variable orientList
 	variable displayList
 	variable lastDisplay
+	variable varNamePosns
 
 	variable values
 	variable rowNames
@@ -263,9 +279,10 @@ namespace eval tabular11510 {
 	set translateLevel [string match $translateSide \
 				[lindex $orientList($winId) 0]]
 	set timeToShow [GetModelTime]
+	set varNamePosns($winId) {}
     
 	set lastEntry(0) none
-	set count 0
+	set count $curHeaderRows
 	foreach item $rowList {
 	    set rowIds($item) $count
 	    $winId.t insert rows end
@@ -275,20 +292,23 @@ namespace eval tabular11510 {
 		if {[string match $headerElt $lastEntry($headerCol)]} {
 		    # header same as prev line so span it over
 		    $winId.t spans $lastLine($headerCol),$headerCol \
-			[expr $curHeaderRows+$count-$lastLine($headerCol)],0
+			[expr $count-$lastLine($headerCol)],0
 		} else {
 		    set lastEntry($headerCol) $headerElt
 		    set lastEntry([expr $headerCol+1]) none
-		    set lastLine($headerCol) [expr $curHeaderRows+$count]
+		    set lastLine($headerCol) $count
 		    if {[string match rows $translateSide] && \
 			    $headerCol==$translateLevel} {
 			set headerElt [lindex $displayList($winId) $headerElt]
+			if {!$headerCol} {
+			    lappend varNamePosns($winId) $count
+			}
 		    }
 		    if {!$headerCol && [string match rows $timeSide] && \
 			    $headerElt==$timeToShow} {
 			set lineToShow $count
 		    }
-		    $winId.t set [expr $curHeaderRows+$count],$headerCol \
+		    $winId.t set $count,$headerCol \
 			[lindex [split $headerElt /] end]
 		}
 		incr headerCol
@@ -297,7 +317,7 @@ namespace eval tabular11510 {
 	}
 #puts "Column headers inserted"
 	set lastEntry(0) none
-	set count 0
+	set count $curHeaderCols
 	foreach item $colList {
 	    set colIds($item) $count
 	    $winId.t insert cols end
@@ -307,36 +327,46 @@ namespace eval tabular11510 {
 		if {[string match $headerElt $lastEntry($headerRow)]} {
 		    # header same as prev line so span it over
 		    $winId.t spans $headerRow,$lastLine($headerRow) \
-			0,[expr $curHeaderCols+$count-$lastLine($headerRow)]
+			0,[expr $count-$lastLine($headerRow)]
 		} else {
 		    set lastEntry($headerRow) $headerElt
 		    set lastEntry([expr $headerRow+1]) none
-		    set lastLine($headerRow) [expr $curHeaderCols+$count]
+		    set lastLine($headerRow) $count
 		    if {[string match cols $translateSide] && \
 			    $headerRow==$translateLevel} {
 			set headerElt [lindex $displayList($winId) $headerElt]
+			if {!$headerRow} {
+			    lappend varNamePosns($winId) $count
+			}
 		    }
 		    if {!$headerRow && [string match cols $timeSide] && \
 			    $headerElt==$timeToShow} {
 			set lineToShow $count
 		    }
-		    $winId.t set $headerRow,[expr $curHeaderCols+$count] \
+		    $winId.t set $headerRow,$count \
 			[lindex [split $headerElt /] end]
 		}
 		incr headerRow
 	    }
 	    incr count
 	}
+#puts "vnps $varNamePosns($winId)"
 #puts "row headers inserted"
 	foreach value [array names values] {
 	    set headers [split $value ,]
-	    set rowHead [expr $rowIds([lindex $headers 0])+$curHeaderRows]
-	    set colHead [expr $colIds([lindex $headers 1])+$curHeaderCols]
+	    set rowHead $rowIds([lindex $headers 0])
+	    set colHead $colIds([lindex $headers 1])
 	    $winId.t set $rowHead,$colHead \
 		[VarPrecRender $winId $values($value)]
 	}
 #puts "Table values inserted"
-	return $lineToShow
+	switch $timeSide {
+	    rows {
+		$winId.t see $lineToShow,0
+	    } cols {
+		$winId.t see 0,$lineToShow
+	    }
+	}
     }
 
     proc ReComp {l1 l2} {
