@@ -395,7 +395,8 @@ public:
 	  break;
 	}
       }
-      if (!test && path[level] &&!path[level+1]) {
+      if (!test && path[level] && (!path[level+1] || 
+				  (path[level+1]<0 && !path[level+2]))) {
 	return(count);
       }
     }
