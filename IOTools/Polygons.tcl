@@ -576,18 +576,13 @@ $useNodes($winId,scaley)"
         
         if {[string length $index]>0} {
             set vals [lindex [GetModelValue $useNodes($winId,color)] 0]
-            set i [expr 2*$index-1]
-            set pilot [lindex $vals $i]
-            if {[llength $pilot]==1} {
-                set newvals [lreplace $vals $i $i $newVal]
-            } elseif {[llength $pilot]==2} {
-                set newvals [lreplace $vals $i $i [list {} $newVal]]
-            }
-            
-            if [info exists newvals] {
-                SetModelValue $useNodes($winId,color) $newvals
-            }
-        }
+	    set oddList {}
+	    foreach idx [split $index ,] {
+		lappend oddList [expr 2*$idx-1]
+	    }
+	    lset vals $oddList $newVal
+	    SetModelValue $useNodes($winId,color) $vals
+	}
         Repaint $winId $useNodes($winId,color)
     }
     
