@@ -46,7 +46,7 @@ if $onUnix {
         exec g++ -dynamiclib -o $TARGET ame_cmx.o -ldl -framework Tcl
     } else {
         eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
-        exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl
+        exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN
     }
 } else {
     set TCL [file attributes $TCL -shortname]
