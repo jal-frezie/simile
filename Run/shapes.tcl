@@ -486,15 +486,14 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
     }
     
     set fontData [ExtractFontData $looks($type,font)]
-    #set realFont [Scale $w [lindex $fontData 3]*$fatness/100] messing with scaling
     set realFont [Scale $w [lindex $fontData 3]*$fatness/100]
-    if {$realFont<10} {
-        set closeFont 10
-    } else {
-        set closeFont [expr round($realFont)]
-    }
+#    if {$realFont<10} {
+#        set closeFont 10
+#    } else {
+#        set closeFont [expr round($realFont)]
+#    }
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-            [lindex $fontData 2] $closeFont]
+            [lindex $fontData 2] $realFont]
     set textX [Scale $w [expr [lindex $ptz 0] \
             + $looks($type,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] \
@@ -777,7 +776,7 @@ proc Customize {winId mode} {
         frame $t.textsize
         label $t.textsize.what -text "Text size: "
         pack $t.textsize.what -side left
-        scale $t.textsize.scale -from 5 -to 25 -length $looks(width) \
+        scale $t.textsize.scale -from 10 -to 250 -length $looks(width) \
                 -orient horizontal -showvalue false -resolution 1 \
                 -command "ZotFont $t"
         pack $t.textsize.scale -side left
@@ -1046,11 +1045,6 @@ proc SampleMark { x y w } {
 }
 
 proc ResetFont { t } {
-    #ShowMessage debug info "[$t.font.family cget -text] \
-            [$t.font.weight cget -text] \
-            [string index [$t.font.style cget -text] 0] \
-            [$t.font.style cget -text] \
-            [$t.textsize.scale get]" ok
     return [AssembleFont [$t.font.family cget -text] \
             [$t.font.weight cget -text] \
             [$t.font.style cget -text] \
@@ -1100,8 +1094,7 @@ proc GetTextAnchor {t} {
 proc ResetLooks {type} {
     global looks
     
-    #	set looks($type,font) [AssembleFont Helvetica Bold R 120] messing with scaling
-    set looks($type,font) [AssembleFont Helvetica bold roman 10]
+    set looks($type,font) [AssembleFont Helvetica bold roman 120]
     set looks($type,outline) black
     set looks($type,fill) $looks(buttonColor)
     set looks($type,text) black

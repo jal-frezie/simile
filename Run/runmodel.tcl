@@ -314,24 +314,15 @@ proc ZoomImage {winId which factor fontor} {
 ################################################################################
 
 proc AssembleFont {family weight style textsize} {
-    #ShowMessage debug info "AssembleFontNew $family $weight $style $textsize\n\
-    [list family $family weight $weight slant $style size $textsize]" ok
-    return [list -family $family -weight $weight -slant $style -size $textsize]
+    return [list -family $family -weight $weight -slant $style \
+		-size [expr round($textsize/12.0)]]
 }
 
 proc ExtractFontData {font} {
-    #ShowMessage debug info "ExtractFontDataNew\n\
-    font actual [font actual $font]\n\
-            family [font actual $font -family]\n\
-            weight [font actual $font -weight]\n\
-            style [font actual $font -slant]\n\
-            textsize [font actual $font -size] " ok
-    #ShowMessage debug info "ExtractFontData $font n ele[llength $font]\n\
-    #    family weight style textsize: $family $weight $style $textsize" ok
     set family [font actual $font -family]
     set weight [font actual $font -weight]
     set style [font actual $font -slant]
-    set textsize [font actual $font -size]
+    set textsize [expr [font actual $font -size]*12.0]
     #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
     return [list $family $weight $style $textsize]
 }
@@ -339,35 +330,20 @@ proc ExtractFontData {font} {
 # is rounded internally to an integer, so we store the full value in a tag called
 # realwidth(...) which is also updated by this procedure.
 
-# This is ABSOLUTELY NOT the place to do any hacks concerning actual
-# font sizes etc. The whole point of this tag is to keep a separate
-# record of what the parameter ought to be. Fiddling the actual
-# numbers used can go elsewhere.
+# If there is no realWidth tag we try to make one up from the actual line
+# width or font size as appropriate.
 
 proc AdjustWidth {winId object factor} {
-    global fiddledXfontPixelsToPoints
     if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
                 tag oldWidth]<1} {
-        set oldWidth [$winId itemcget $object -width]
-        #ShowMessage debug info "AdjustWidth $object oldWidth $oldWidth" ok
+	if {[string match text [$winId type $object]]} {
+	    set currentFont [$winId itemcget $object -font]
+	    set oldWidth [expr [font actual $currentFont -size]*12.0]
+	} else {
+	    set oldWidth [$winId itemcget $object -width]
+	}
     } else {
         $winId dtag $object $tag
-        #ShowMessage debug info "AdjustWidth $object oldWidth $oldWidth" ok
-
-    }
-        
-    if {[string match text [$winId type $object]]} {
-        #ShowMessage debug info "AdjustWidth text 1 oldWidth $oldWidth\n\
-            #[$winId itemcget $object -font]" ok
-        # set oldWidth to the text size in points if textsize is zero (from [$winId itemcget $object -width])
-        #    or the font description is in X Windows format and oldWidth originally in points
-        if {$oldWidth==0} {
-            set oldWidth [font actual [$winId itemcget $object -font] -size]
-        }        
-        if {![string match -family [$winId itemcget $object -font]] } {
-            set oldWidth [font actual [$winId itemcget $object -font] -size]
-        }
-        #ShowMessage debug info "AdjustWidth text 2 oldWidth $oldWidth" ok
     }
     set width [expr $oldWidth*$factor]
     $winId addtag realwidth($width) withtag $object
