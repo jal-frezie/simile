@@ -49,7 +49,6 @@ substitute(E, [G | T1], F, [H | T2]) :-
 /* files to run the GUI */
 
 :- include('backup.pl').
-:- include('files.pl').
 :- include('submodel.pl').
 :- include('dialogue.pl').
 :- include('output.pl').
