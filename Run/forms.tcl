@@ -827,12 +827,12 @@ proc Disaggregate {parent title colour type fatness icount step \
     label $t.commentlabel -text Comments:
     pack $t.commentlabel -padx 2 -pady 4 -anchor w
 # ScrolledWindow causes crash under Linux so replaced with ordinary frame
-    frame $t.commentsSW
-#    ScrolledWindow $t.commentsSW
+#    frame $t.commentsSW
+    ScrolledWindow $t.commentsSW
     text $t.commentsSW.comment -height 4 -width 40 -wrap word
-#    $t.commentsSW setwidget $t.commentsSW.comment
+    $t.commentsSW setwidget $t.commentsSW.comment
     $t.commentsSW.comment insert 1.0 $comment
-    pack $t.commentsSW.comment $t.commentsSW -anchor nw -fill both -expand true
+    pack $t.commentsSW -anchor nw -fill both -expand true
     
     frame $t.complex
     
