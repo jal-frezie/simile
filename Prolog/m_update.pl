@@ -301,8 +301,10 @@ parameter or destination. */
 get_unit_conversion(Remote, Local, 
 		Subs, Relation, Index, SourceLocation) :-
 	(instance:counts_as_outside(Remote), !,
+	        DefRel = outside,
 		RemoteEnv has_part Remote;
-	RemoteEnv = Remote),
+	DefRel = none,
+	    RemoteEnv = Remote),
 	(instance:counts_as_outside(Local), !,
 		LocalEnv has_part Local;
 	LocalEnv = Local),
@@ -317,7 +319,7 @@ get_unit_conversion(Remote, Local,
 	       Relation has_type relation),
 	all(ame_gen, get_all_dims, [build(BiggestFirst), append(Subs, [])]),
 	    SourceLocation = in_hierarchy,
-	    Relation = none,
+	    Relation = DefRel,
 	    Index = none;
 	suffix([Base | ReallyExited], BiggestFirst),
 	    connects(Relation, Base, Assoc),

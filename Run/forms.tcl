@@ -1393,6 +1393,13 @@ proc ShowAbout {winId} {
     destroy .about
 }
 
+# images must be global because if building a c++ program we may be in a different directory
+set bwVers [package require BWidget]
+image create photo warningIcon
+warningIcon read "../System/lib/bwidget${bwVers}/images/warning.gif"
+image create photo errorIcon
+warningIcon read "../System/lib/bwidget${bwVers}/images/error.gif"
+
 proc ShowExpiryImminent {expTime} {
     toplevel .expiry
     #    wm transient .expiry $winId
@@ -1404,9 +1411,7 @@ proc ShowExpiryImminent {expTime} {
     }
     
     set labf1 [frame .expiry.labf1]
-    image create photo warn
-    warn read "../Images/warning.gif"
-    pack [label $labf1.img -image warn] -side left
+    pack [label $labf1.img -image warningIcon] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "This product will shortly expire." \
@@ -1627,9 +1632,7 @@ proc BuildProblem {name autoName msg fault} {
     }
     
     set labf1 [frame .buildprob.labf1]
-    image create photo warn
-    warn read "../Images/warning.gif"
-    pack [label $labf1.img -image warn] -side left
+    pack [label $labf1.img -image ${errLevel}Icon] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \
@@ -1718,9 +1721,7 @@ proc NotifyOverLimit {limit} {
     }
     
     set labf1 [frame .notify.labf1]
-    image create photo warn
-    warn read "../Images/warning.gif"
-    pack [label $labf1.img -image warn] -side left
+    pack [label $labf1.img -image warningIcon] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "The Evaluation Edition is limited to $limit functions. \n\

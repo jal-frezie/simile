@@ -93,6 +93,17 @@ insert_paths(sub(DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    member(instance(internal, inter(_,_, Dims), NewVar,_, _-Dims),
 		   InterInputs),
 	    Recurse = 0;
+	Var = channel_is(input(Location, elt(RealPathForm, Ref, Unit-Dims),
+			       Link, _)),
+	/* Outrageous hack -- for channel nodes of an ancestor
+submodel, the link parameter is set to 'outside' if they count as
+outside, so in this case we add the submodel level for their submodel,
+enabling the channel ID to be got from it */
+	    (Link = outside, !,
+		UsePath = [_ | RealPathForm];
+	    UsePath = RealPathForm),
+	    NewVar = channel_is(elt(UsePath, Ref, _)),
+	    Recurse = 0;	  
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
 
@@ -475,11 +486,11 @@ make_intermediates(
 	    SourceRef = arr(ChannelPtr, parentId, []),
 	    Units = int;
 	Source = channel_is(ChannelName), !,
-	    (ChannelName = param(arr(_, ChannelVar, _), _,_,_,_);
+	    (ChannelName = elt(ChanPath, ChannelVar, _);
 	    raise_exception(needs_channel_parameter(ChannelName))),
 	    nth(ChannelNum, Used, ChannelVar), !,
-	    pointer_from(DestPath, ChannelPtr),
-	    /* cannot use pointer from param cos that is parent for cr,im */
+	    suffix(ChanPath, DestPath),
+	    pointer_from(ChanPath, ChannelPtr),
 	    SourceRef = (arr(ChannelPtr, channelId, [])==ChannelNum),
 	    Units = boolean;
 	Source = dt(N),

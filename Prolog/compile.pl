@@ -989,6 +989,7 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    SourceEqn = Source;
 	member(AssignType, [compartment, fp_compartment,
 				immigration, reproduction]),
+	    UseStep = Step,
 	    Actions = Updates,
 	    Assignments = [],
 	    Source = incr(dt(Step), SourceEqn)), !,

@@ -253,12 +253,11 @@ rebuild_code(Lang, Node) :-
 	    fail).
 
 show_error(Model, Lossage) :-
+	Lossage = compilation_failed, !;
+	/* if this happens the user will have seen the error already */
 	(Lossage = open_model_failed(MimeFail, PrologFail), !,
 	    format_to_chars("Simile could not open this file as a model. It could not be read as a MIME because: ~w. It could not be read as a model description because: ~s.", [MimeFail, PrologFail], Text),
 	    Fault = user;
-	Lossage = compilation_failed, !,
-	    Text = "Something went wrong while trying to convert your model into a program.",
-	    Fault = system;
 	Lossage = instantiation_failure(Node), !,
 	    caption_for(Node, Capt),
 	    sicstus_format_to_chars("There was a problem converting the model variable ~w (caption: ~w) into a program variable.", [Node, Capt], Text),
