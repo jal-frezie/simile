@@ -68,10 +68,10 @@ printed incompletely to avoid infinite loops... */
 portray(xrefs(Model, _, _, _)) :-
 	print(xrefs(Model,'Links')).
 
-portray(sm(Model, _,_,_)) :-
+/* portray(sm(Model, _,_,_)) :-
 	print(sm(Model)).
 
-/* Improved system for outputting floating-point numbers -- max of 
+Improved system for outputting floating-point numbers -- max of 
 decimal places (thanks to Dan Diaz for making it work with print_to_chars)
 -- previously unusable due to weird bug in gprolog */
 

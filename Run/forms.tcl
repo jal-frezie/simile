@@ -1446,7 +1446,7 @@ proc GetFindText {parent} {
     pack [message $ft.m -text "Find text:" -width 300] -padx 4 -pady 6 -anchor nw -side left
     pack [ComboBox $ft.e -width 40 -values $find(prevs) -editable 1] \
 	-padx 4 -pady 6 -anchor nw -side left
-    bind $ft.e <Return> "set find(done) 1"
+    $ft.e bind <Return> "set find(done) 1"
     pack .findentry.ft -anchor nw -fill both
     TitleFrame .findentry.rbs -text "Search for text in"
     set rbs [.findentry.rbs getframe]

@@ -276,8 +276,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	          (\+ (ComboBase = any, Is_P = 2),
 			  member(TypeBase, [any, a(_), int, boolean]);
 		      TypeBase = real)),
-		(promote_arg(ComboBase, TypeBase, ComboUnits);
-		    ComboBase = boolean, TypeBase = cond_spec), !,
+		promote_arg(ComboBase, TypeBase, ComboUnits), !,
+		/* fix this if boolean to cond_spec promotion removed */
 		(nonvar(ComboUnits); ComboUnits = TypeBase);
            sicstus_format_to_chars("The equation for a component of this type must have units which can be used as ~w. The values entered have units of ~w, which cannot be converted.", [TypeBase,ComboBase], UnitError));
 	    true),

@@ -604,7 +604,9 @@ make_intermediates(
 		    type_ind(SourceRef, Units);
 		Units = int), !;
 		raise_exception(index_number_out_of_range(IndN, AvailInds))),
-	    (nonvar(SourceRef), !; SourceRef = glob(_, _))),
+	    (nonvar(SourceRef), !;
+		/* generate_name(c, loop, LoopName, Used), */
+		SourceRef = glob(_LoopName, _))),
 	SourceContext = DestPath,
 	Setups = [],
 	Args = [],
@@ -905,7 +907,10 @@ promote_unit(Lo, Hi) :-
 
 uses_as(any, Type) :-
 	member(Type, [boolean, cond_spec, a(_ET), n(_ET)]).
-% uses_as(boolean, cond_spec).
+uses_as(boolean, cond_spec).
+/* above was commented out, but seems to belong
+-- probably so as not to allow cond_specs to use outside conditions
+if taking out again fix spread_dims as well as eqn checking */
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
 uses_as(numeric, int).

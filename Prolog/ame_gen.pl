@@ -433,7 +433,10 @@ get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 	    Nums = [Num],
 	    Sizes = [Sub];
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
-	    (setof(SizeSource, name_matches(SizeSource, ModName), Sources), !,
+	    contains(Top, Node),
+	    backup:is_toplevel(Top),
+	    (setof(SizeSource, name_matches(SizeSource, Top, ModName),
+		   Sources), !,
 		(Sources = [Source], !,
 		    get_node_size(Source, RealN, RealSize, Units),
 		    (var(Ind), !,
@@ -452,12 +455,13 @@ get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 	name(ErrName, Err),
 	   raise_exception(ErrName)).
 
-get_actual_sizes(Node, Subs, Nums, Sizes, _U) :-
+get_actual_sizes(Node, Subs, Nums, Sizes, Units) :-
 	all(ame_gen, get_actual_size,
 	    [unify(Node), build(Subs), append(Nums, []), append(Sizes, []),
-	     build(_AU)]).
+	     build(Units)]).
 
-name_matches(Node, Name) :-
+name_matches(Node, Top, Name) :-
+	contains(Top, Node),
 	Node has_class submodel,
 	caption_for(Node, Name).
 
@@ -497,10 +501,11 @@ resolve_enum_type(Ref, Model, ExecForms, Value, Units, ETSpec) :-
 get_node_size(Source, Size) :-
 	get_node_size(Source, _, Size, _).
 
-get_node_size(Source, SizeN, Size, SizeUnits) :-
+get_node_size(Source, SizeN, Size, Units) :-
 	Source has_class_refinement multiplication_spec of Multi,
 	member(count=Dim, Multi),
 	get_actual_sizes(Source, Dim, SizeN, Size, SizeUnits), !,
+	list_of(Units, _N, SizeUnits),
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
 	    sicstus_format_to_chars("~a has a reference to a variable membership model in its dimensions.", [Capt], Wibble),

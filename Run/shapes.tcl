@@ -1221,7 +1221,7 @@ proc FindCaption {canvas} {
         set find(List,$canvas) {}
         foreach caption [$canvas find withtag is_caption] {
             if {[string match -nocase *$findable* \
-		     [ForSearchType $canvas $caption]]} {
+		     [BlankCrs [ForSearchType $canvas $caption]]]} {
                 lappend find(List,$canvas) $caption
             }
         }
