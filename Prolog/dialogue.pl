@@ -61,6 +61,8 @@ into the dialog box, and interact_equation will be called again and
 return new 
 values. */
 
+:- dynamic(table_data_is/1).
+
 do_equation_dialog(Win, Part) :-
 	caption_for(Part, Caption),
 	get_host(Part, ClickedObj),

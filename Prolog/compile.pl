@@ -1119,7 +1119,9 @@ for values from the execution environment. */
 
 input_params_in(Vars, SmPath, SmStep,
 		make(Val, Wait, Path, Step, [CollectFn])) :-
-	member(instance(Type, Param, _, elt(_, Val, _), _-Dims), Vars),
+	member(instance(Type, Param, _, elt(_, Val, _), _-DimTypes), Vars),
+	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param),
+				     build(Dims), build(_)]),
 	member(Type, [function, init_function]),
 	is_parameter(Param, ParamType),
 	ParamType > 0,
