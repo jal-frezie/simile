@@ -232,6 +232,8 @@ menu_handle(Win, file, new) :-
 	remove_model(Win, Parent),
 	finish_move(Parent, 0),
 	set_save_status(Win, safe),
+	caption_for(Parent, Name),
+	new_autosave(Parent, Name),
 	update_captions(Parent).
 
 menu_handle(_Win, file, new_toplevel) :-
@@ -252,7 +254,8 @@ menu_handle(Win, reopen, Name) :-
 	(is_toplevel(Parent),
 	    find_all_comps(Parent, _), !,
 	    menu_handle(Win, open_toplevel, Name);
-	(is_toplevel(Parent), !;
+	(is_toplevel(Parent), !,
+	    scrub_autosave(Parent);   
 	 check_deletable(Win, Parent),
 	    remove_model(Win, Parent)),
 	    stick_model_in(Win, Parent, Name, reopen)).

@@ -7,13 +7,12 @@
 
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
-    set oldProc Simile
     set runHow(sendOp) {dde eval}
     set argv [lindex $argv 0]
 } else {
-    set oldProc simile.tcl
     set runHow(sendOp) send
 }
+set oldProc Simile
 set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
 
 if {$argc && ![string match Darwin $tcl_platform(os)] } {
@@ -28,7 +27,7 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
 # on Macs the system takes care of this and we don't even get this far
 
 if {[info exists env(OPEN_MODEL)]} {
-    set remStartArgs [list OpenTopLevel $env(OPEN_MODEL)]
+    set remStartArgs [list after idle OpenTopLevel $env(OPEN_MODEL)]
 } else {
     set remStartArgs NewTopLevel
 }

@@ -48,10 +48,16 @@ kickoff(Vnum) :-
 	m_update:make_desktop(Desktop, Canvas),
 	initialize_phase,
 
+	(OpenStr = [];
+	append(Base, ".smx", OpenStr),
+	    append(Base, ".sml", OpenFiloidStr),
+	    name(OpenModel, OpenFiloidStr),
+	    backup:check_autosave(Desktop, OpenModel, copy, Done),
+	    (Done = 0;
+		draw:redraw_window(Canvas));
 	name(OpenModel, OpenStr),
-	(OpenModel = '';
 	    menu:stick_model_in(Canvas, Desktop, OpenModel, reopen);
-	    true), !,
+	true), !,
 	output:safe_tcl_eval(['FixSize', Canvas], _).
 
 :- dynamic(model_in/2).

@@ -7,7 +7,8 @@
 sicstus_module(backup, [initialize_ring/1, finish_move/2, restart_move/0,
 			get_save_status/2, set_save_status/2, save_allowed/2,
 			go_back/2, go_forward/2, make_auto_name/3,
-			clear_autosave/2, check_autosave/4, scrub_autosave/1,
+			new_autosave/2, clear_autosave/2, check_autosave/4,
+			scrub_autosave/1,
 			is_toplevel/1, use_temp_dir/1, use_pref_dir/1,
 			into_save_file/2]).
 
@@ -203,7 +204,7 @@ repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 			database:retract(P),
 			fail;
 		assert(saved_state(Model, current, Next)));
-	ActSpec = [_|_],
+	(ActSpec = []; ActSpec = [_|_]),
 	        retract(saved_state(Model, first, First)),
 		retract(saved_state(Model, last, _)),
 		retract(saved_state(Model, current, Current)),
@@ -302,6 +303,13 @@ clear_autosave(Model, Name) :-
 	    scrub_autosave(Model), /* remove anything where new file to go */
 	    assert(autosave_file_is(Model, AutoName));
 	true).
+
+new_autosave(Desktop, ModelName) :-
+	initialize_ring(Desktop),
+	use_pref_dir(Dir),
+	append_atoms([Dir, '/', ModelName, '.smx'], NewAutoName),
+	assert(autosave_file_is(Desktop, NewAutoName)),
+        assert(translation_info(Desktop, [top_level_is(Desktop)])).
 	
 check_autosave(Model, Name, IdSwaps, Tweaked) :-
 	state:shows_model(Win, Model),
