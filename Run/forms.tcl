@@ -463,7 +463,7 @@ proc destroy_equation {} {
     }
     ### End formula bar section
     
-    focus [wm transient $equation(top)].canvas
+    focus [wm transient $equation(top)]
     destroy $equation(top)
 }
 
