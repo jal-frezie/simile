@@ -598,7 +598,7 @@ proc AddHelperSublist {fm title ct} {
                 if {[string match {Slider control} $action]} {
                     set helperTable(SliderControl) $keyValue
                 }
-                if {[string match {Data table} $action]} {
+                if {[string match {Data table} $action]} {
 
 
 
@@ -1633,7 +1633,7 @@ proc do_setstepmodel {value level} {
     global ts dts
     if {$level<0} { ;# lazy
 	set ts([expr -$level]) $value
-    } else {
+    } else {
 	set dts($level) $value
     }
 }

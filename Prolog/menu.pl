@@ -207,18 +207,28 @@ menu_handle(Win, file, save_interface) :-
 	close(Stream),
 	finish_progress_dialogue).
 	
-menu_handle(Win, file, compile_c) :-
+menu_handle(Win, file, CompOrBuild) :-
+	(CompOrBuild = compile_c,
+	    output:safe_tcl_eval([info, sharedlibextension], IdentStr),
+	    Vers = Serial;
+	 CompOrBuild = build_c,
+	    IdentStr = ".cpp",
+	    Vers = ''),
 	Win shows_model Model,
-	get_default_export_name(Model, [], DefN),
+	(is_toplevel(Model);
+	    get_av_pair(Model, 1, separate, 1)), !,
+	name(Ident, IdentStr),
+	get_default_export_name(Model, IdentStr, DefN),
 	get_program_file(DefN, Tgt),
 	start_progress_dialogue,
 	use_temp_dir(Temp),
-	is_toplevel(TopModel),
-	(\+ rebuild_code(c, TopModel), !;
+	(\+ rebuild_code(c, Model), !;
+	get_av_pair(Model, 1, c_new, Serial),
 	abs_path_name(Model, root, Path),
-	    append_atoms([Temp, '/', Path], Top),
+	    append_atoms([Temp, '/', Path, '/model', Vers, Ident], Top),
 	    output:safe_tcl_eval([file, copy, br(Top), br(Tgt)], _)),
-	finish_progress_dialogue.
+	finish_progress_dialogue;
+	do_dialogue("Error exporting code", error, "This submodel does not have its own code.", ok, _).
 
 menu_handle(Win, file, RunCmd) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),

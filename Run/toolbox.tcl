@@ -1228,7 +1228,9 @@ proc AddMainMenu { winid initWidth initDepths} {
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label "Model declarations" \
             -command "MenuSelect $winid.canvas file export_prolog"
-    $fm2 add command -label "C++ code & executables" \
+    $fm2 add command -label "C++ code" \
+            -command "MenuSelect $winid.canvas file build_c"
+    $fm2 add command -label "executable binary" \
             -command "MenuSelect $winid.canvas file compile_c"
     $fm2 add command -label "PostScript graphics" \
             -command "DoWithErrors ExportPostscript $winid.canvas"
