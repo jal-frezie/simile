@@ -59,7 +59,7 @@ namespace eval slide139 {
 	} else {
 	    set f $winId
 	}
-	set trans [GetFromProlog tk_get_info({},$node,types)]
+	set trans [GetTransTable $node]
 	switch [GetModelType $node] {
 	    FLAG {
 	    } ENUMERATED {

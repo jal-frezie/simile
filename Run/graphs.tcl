@@ -835,9 +835,7 @@ proc DoneParams {winId} {
     global widgetNames paramData
 
     foreach compName [array names widgetNames] {
-	if {[string match normal [$widgetNames($compName).e cget -state]]} {
-	    AcceptData $winId $compName 1
-	}
+	AcceptData $winId $compName 1
     }
     if {![llength $paramData(needed)]} {
 	set paramData(done) 1
@@ -848,7 +846,9 @@ proc AcceptData {winId compName complain} {
     global paramDims paramData widgetNames runState inputHelper running_c
 
     set node [GetIdFromCaptionPath $compName]
-    set paramData($compName) [$widgetNames($compName).e get]
+    if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
+	set paramData($compName) [$widgetNames($compName).e get]
+    }
     
     set dataChanged 0
 # for each constant value, check whether it has been changed, and if so,
@@ -1219,14 +1219,14 @@ proc InitTimeSeries {} {
     array unset setFromSeries
     foreach node [GetObjectList] {
 	if {[string match INPUT [GetModelEval $node]]} {
-#puts "timePts [array names paramData $node,*]"
+puts "timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1
 	    }
 	    if {[array size $node]} {
 		set setFromSeries($node,times) [lsort [array names $node]]
 		set setFromSeries($node,next) 0
-#puts "initted $setFromSeries($node,times)"
+puts "initted $setFromSeries($node,times)"
 	    }
 	}
     }
