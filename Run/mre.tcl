@@ -111,7 +111,7 @@ proc Create { node } {
                 {command "&Clear all"    {} "Clear all displays" {} -command {ClearView} }
             }
             "&Help" all help 0 {
-                {command "&Contents..." {} "View the help file contents" {} -command {ContextSensitiveHelp $mreId run/single.htm} }
+                {command "&Contents..." {} "View the help file contents" {} -command ::RunEnv::ShowMreHelp}
             }
         }
         
@@ -630,6 +630,13 @@ proc FindParentNotebookPage {containerId} {
         "" { return ""}
         default {FindParentpanedwindowOrNotebook $parentPath}
     }
+}
+
+proc ShowMreHelp {} {
+    variable currentNode
+    global helperTable
+
+    ContextSensitiveHelp $helperTable($currentNode,whichRunEnv) run/single.htm
 }
 
 proc Destroy {args} {

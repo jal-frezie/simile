@@ -27,7 +27,8 @@ else
     TOP=`dirname "$LOC"`/$LINK;
 fi
 
-SIMDIR=`dirname \`dirname "$TOP"\``;
+RUNDIR=`dirname "$TOP"`;
+SIMDIR=`dirname "$RUNDIR"`;
 LD_LIBRARY_PATH="$SIMDIR/System/lib"
 export LD_LIBRARY_PATH
 "$SIMDIR/System/bin/wish8.4" "$SIMDIR/Run/simile.tcl" $1
