@@ -1,75 +1,92 @@
-# Tree01
-# Tcl vertical-line display for spatially-referenced individuals
-# Oct 97 -- version works with Tcl 8.0 and uses namespaces
-
-########################
-# 
-# 270298 - modified to allow plan view of the scene. Also coloured the 'stems'
-# brown and changed bg to white.
-# a: Changed the ordering for the 2 views.
-# RTE version nasty loop in Classic environment
-
-set keyValue lollipopRTE05657
+set keyValue gen3d1
 
 namespace eval ::$keyValue {
-variable useNodes
-variable width; # of canvas 
-variable height; # of canvas
-variable sx; # x scale factor
-variable sy
-
+    variable useNodes
+    variable colours {\#00ff00 \#f1da7e \#36b694 \#ec9844 \#94a646 \#d9d095}
+    variable base -25
 
 proc identify {} {
 	return "Lollipop diagram"
 }
 
 proc initialize {winId} {
-variable viewpoint "ELEVATION"
-variable zOrder "UP"
-variable redrawLines 1
-#    if ![winfo exists .mre] {
-#        ShowMessage Warning info "Lollipop diagram (RTE) only works in the\
-#                Run Time Environment (RTE)" ok
-#        destroy $winId
-#    }
-    set ms [message $winId.intro -text "Click on the array value \
-			representing the X coordinates of the treelike objects to be \
-			displayed."]
-	GrabClicks $winId
-	pack $ms
-	SetState $winId xcoord
-}
-
-proc Restore {winId} {
     variable useNodes
-    variable viewpoint
-    variable zOrder
+    variable trunks
+    variable base
+    set toolbarItems [list \
+			  [list new.gif "Clear" \
+			       [namespace code "clear $winId"]] \
+			  [list add.gif "Add a variable" \
+			       [namespace code "AddVariable $winId"]]]
+    
+    ::graphtools::MakeToolBar $winId $toolbarItems
+    pack [message $winId.intro -aspect 800] -fill x
+    variable grid
+    variable viewVector
+    set pi 3.14
+    array set viewVector {angle -0.3 elevation 0.5}
+    scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
+	-resolution 0.01 \
+	-command [namespace code "TweakScale $winId elevation"]
+    $winId.elv set 0.5
+   canvas $winId.c -width 1 -height 1 -bg white
+   frame $winId.buttons -relief raised -bd 1
+   button $winId.buttons.but_print -text "Print..." \
+      -command "PrintNow $winId.c"
+    pack [label $winId.buttons.anglab -text "View angle:"] -side left
+    scale $winId.buttons.ang -orient h -from -$pi -to $pi \
+	-resolution 0.01 \
+	-command [namespace code "TweakScale $winId angle"]
+    $winId.buttons.ang set -0.3
+    pack $winId.buttons.ang -side left -fill x -expand true
+    pack [label $winId.buttons.elvlab -text "View\nelev."] -side right
+    pack $winId.buttons.but_print -side right
+    pack $winId.buttons -side bottom -fill x
+    pack $winId.elv -side right -fill y
+    pack $winId.c -fill both -expand true
+            
+    bind $winId.c <Configure> \
+                [namespace code " WindowSizeChanged $winId"]
 
-    variable width; # of canvas
-    variable height; # of canvas
-    variable redrawLines
-
-    set width($winId) 650; # of canvas
-    set height($winId) 500; # of canvas
-    set redrawLines 1
-
-    set nodeList [GetState $winId]
-    if {[string match displaying [lindex $nodeList 0]]} {
-	set useNodes($winId,xcoord) [GetIdFromCaptionPath [lindex $nodeList 1]]
-	set useNodes($winId,ycoord) [GetIdFromCaptionPath [lindex $nodeList 2]]
-	set useNodes($winId,size) [GetIdFromCaptionPath [lindex $nodeList 3]]
-	set viewpoint [lindex $nodeList 4]
-	set zOrder [lindex $nodeList 5]
-	InitializeForest $winId $useNodes($winId,xcoord) \
-	    $useNodes($winId,ycoord) $useNodes($winId,size)
-    } else {
-	GrabClicks $winId
+#Grid is always displayed so only define it once
+    set grid {}
+    for {set x -50} {$x <= 50} {incr x 10} {
+	lappend grid [list line {} "$x -50 $base" "$x 50 $base" 1 red]\
+	    [list text "X posn" "$x -60 $base" [expr $x+50] red] \
+	    [list text "X posn" "$x 60 $base" [expr $x+50] red]
     }
-    SaveState $winId
+    for {set y -50} {$y <= 50} {incr y 10} {
+	lappend grid [list line {} "-50 $y $base" "50 $y $base" 1 red]\
+	    [list text "Y posn" "-60 $y $base" [expr $y+50] blue] \
+	    [list text "Y posn" "60 $y $base" [expr $y+50] blue]
+    }
+    for {set z 10} {$z <= 50} {incr z 10} {
+	set zposn [expr $base+2*$z]
+	lappend grid [list text "Z posn" "-50 -50 $zposn" $z black] \
+	    [list text "Z posn" "-50 50 $zposn" $z black] \
+	    [list text "Z posn" "50 50 $zposn" $z black] \
+	    [list text "Z posn" "50 -50 $zposn" $z black]
+    }
+
+    SetState $winId initial
+    set useNodes($winId,selected) {}
+    set useNodes($winId,captions) {}
+    set trunks {}
+    catch {wm geometry $winId 650x500}
 }
 
-proc GetCanvas {winId} {
-    return $winId.c
+proc clear {winId} {
+    variable useNodes
+    set useNodes($winId,selected) {}
+    set useNodes($winId,captions) {}
+    display $winId 0 0 0
+    ShowKey $winId
+}
+
+proc AddVariable {winId} {
+    $winId.intro configure -text "Click on the array value representing the X coordinates of the treelike objects to be displayed."
+    GrabClicks $winId
+    SetState $winId xcoord
 }
 
 proc click {winId node caption} {
@@ -77,27 +94,24 @@ proc click {winId node caption} {
     set ms $winId.intro
     set testResult [GetModelValue $node]
     if {[string compare $testResult novalue]} {
+	lappend useNodes($winId,selected) $node
+	lappend useNodes($winId,captions) $caption
 	set state [GetState $winId]
 	switch $state {
 	    xcoord {
 		$ms configure -text "Now click on the value representing the Y coordinates."
-		set useNodes($winId,xcoord) $node
 		SetState $winId ycoord
 	    }
 	    ycoord {
 		$ms configure -text "Now select a value to display as the size of the objects."
-		set useNodes($winId,ycoord) $node
 		SetState $winId sizeval
 	    }
 	    sizeval {
-		pack forget $ms
 		ReleaseClicks $winId
-		set useNodes($winId,size) $node
-		set xnode $useNodes($winId,xcoord)
-		set ynode $useNodes($winId,ycoord)
-		InitializeForest $winId $xnode $ynode $node
-		catch {wm geometry $winId 650x500}
+		$ms configure -text {}
 		SaveState $winId
+		display $winId 0 0 0
+		ShowKey $winId
 	    }
 	}
     } else {
@@ -108,241 +122,195 @@ proc click {winId node caption} {
 
 proc SaveState {winId} {
     variable useNodes
-    variable viewpoint
-    variable zOrder
-
+    variable viewVector
     set state displaying
-    foreach node {xcoord ycoord size} {
-	lappend state [GetCaptionPathFromId $useNodes($winId,$node)]
+    lappend state $viewVector(angle) $viewVector(elevation)
+    foreach node $useNodes($winId,selected) {
+	lappend state [GetCaptionPathFromId $node]
     }
-    lappend state $viewpoint $zOrder
     SetState $winId $state
 }
 
+proc Restore {winId} {
+    variable useNodes
+    variable viewVector
+    set state [GetState $winId]
+    initialize $winId
+    if {[string match displaying [lindex $state 0]]} {
+	$winId.buttons.ang set [lindex $state 1]
+	$winId.elv set [lindex $state 2]
+	foreach node [lrange $state 3 end] {
+	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
+	    lappend useNodes($winId,captions) [lindex [split $node /] end]
+	}
+    } else {
+	GrabClicks $winId
+    }
+    SaveState $winId
+    LoadPosns $winId
+}
+
+proc TweakScale {winId which where} {
+    variable viewVector
+    set viewVector($which) $where
+    SaveState $winId
+    WindowSizeChanged $winId
+}
+
 proc display {winId time step remainder} {
-	variable useNodes
-	if {[string compare [lindex [GetState $winId] 0] \
-			displaying] == 0} {
-		DropTrees $winId $useNodes($winId,xcoord) $useNodes($winId,ycoord) \
-			$useNodes($winId,size)  
-	}
+    variable trunks
+    LoadPosns $winId
+    $winId.c delete -withtag trunks
+    DrawShapes $winId $trunks trunks
 }
 
-proc toggleViewpoint { winId } {
-variable redrawLines 1
-variable viewpoint
-variable old_xs
-variable old_ys
-variable old_hs
-    set viewpoint [expr ("$viewpoint"=="PLAN")?"ELEVATION":"PLAN"]
-    DropTrees $winId $old_xs $old_ys $old_hs
-    SaveState $winId
-}
-
-proc toggleZOrder { winId } {
-variable viewpoint
-variable old_xs
-variable old_ys
-variable old_hs
-variable zOrder
-    if { "$viewpoint"=="PLAN" } {
-	set zOrder [expr ("$zOrder"=="UP")?"DOWN":"UP"]
-	DropTrees $winId $old_xs $old_ys $old_hs
-    }
-    SaveState $winId
-}
-
-proc InitializeForest {winId xs ys hs} {
-variable viewpoint
-variable width; # of canvas
-variable height; # of canvas
-   
-   canvas $winId.c -width 1 -height 1 -bg white
-   frame $winId.buttons -relief raised -bd 1
-   button $winId.buttons.but_print -text "Print..." \
-      -command "PrintNow $winId.c"
-   button $winId.buttons.but_view -text "aboveBelow" \
-      -command " [namespace current]::toggleViewpoint $winId"
-   button $winId.buttons.but_order -text "Swap Z Order" \
-      -command " [namespace current]::toggleZOrder $winId"
-   label $winId.buttons.label_draw -text "Ready  " -relief sunken
-      
-	pack $winId.c -fill both -expand true
-    pack $winId.buttons.but_view -side right
-    pack $winId.buttons.but_order -side right
-    pack $winId.buttons.but_print -side right
-    pack $winId.buttons.label_draw -side left -padx 2
-    pack $winId.buttons -fill x
-
-    set width($winId) [winfo width $winId.c]; #650 of canvas buttons should show buttons
-    set height($winId) [winfo height $winId.c]; #500 of canvas
-            
-    DropTrees $winId $xs $ys $hs
-    bind $winId.c <Configure> \
-                [namespace code " WindowSizeChanged $winId $xs $ys $hs"]
-}
-
-proc WindowSizeChanged {winId xs ys hs} {
-    variable redrawLines
-    set redrawLines 1
-    DropTrees $winId $xs $ys $hs    
-}
-
-# resizes canvas
-proc resize { winId tag newWidth newHeight } {
-	error Resizing
-    variable width; # of canvas
-    variable height; # of canvas
-    set xscale [expr {(1.0*$newWidth)/(1.0*$width($winId))}]
-    set yscale [expr {(1.0*$newHeight)/(1.0*$height($winId))}]
-################################################################################
-#     ShowMessage debug info "width $width\n\
-#             height $height\n\
-#             newWidth $newWidth\n\
-#             newHeight $newHeight\n\
-#             xscale $xscale\n\
-#             yscale $yscale" ok
-################################################################################
-    $winId.c scale $tag 0 0 $xscale $yscale
-    set width($winId) $newWidth
-    set height($winId) $newHeight
-
-}
-
-proc drawLines { winId } {
-    variable redrawLines 0
-    variable sx
-    variable sy
-    set y 0
-    while {$y<=100} {
-        $winId.c create line [expr $sx($winId)*[canvasx 0 $y]]\
-                [expr $sy($winId)*[canvasy 0 $y]] [expr $sx($winId)*[canvasx 100 $y]]\
-                [expr $sy($winId)*[canvasy 100 $y]] -fill red -tag line
-#        update idletasks
-        set y [expr $y+10]
-    }
-    
-    set x 0
-    while {$x<=100} {
-        $winId.c create line [expr $sx($winId)*[canvasx $x 0]] [expr $sy($winId)*[canvasy $x 0]] \
-                [expr $sx($winId)*[canvasx $x 100]] [expr $sy($winId)*[canvasy $x 100]] -fill red -tag line
-#        update idletasks
-        set x [expr $x+10]
-    }
-}
-
-proc DropTrees {winId xs ys hs} {
-variable redrawLines
-variable viewpoint
-variable old_xs
-variable old_ys
-variable old_hs
-variable sx
-variable sy
-   $winId.buttons.label_draw configure -text "DRAWING" -bg red
-#   update idletasks
-
-   set old_xs $xs
-   set old_ys $ys
-   set old_hs $hs
-    
-    set sx($winId) [expr (1.0*[winfo width $winId.c])/(650.0)]
-    set sy($winId) [expr (1.0*[winfo height $winId.c])/(500.0)]
-    
-	eval $winId.c delete [$winId.c find withtag tree]
-
-   if { $redrawLines } {
-      eval $winId.c delete [$winId.c find withtag line]
-      drawLines $winId
-
-
-   }
+proc LoadPosns {winId} {
+    variable useNodes
+    variable trunks
+    variable colours
+    variable base
+    set col 0
+    set trunks {}
+    foreach {px py h} $useNodes($winId,selected) {
 	set quadlist {}
-	GetQuadList [lindex [GetModelValue $xs] 0] \
-			[lindex [GetModelValue $ys] 0] \
-			[lindex [GetModelValue $hs] 0]
-# previous line appended variable quadlist at this level, now to use it
-   if { "$viewpoint"=="ELEVATION" } {
-      set quadlist [lsort -command OrderYs $quadlist]
-   } else {
-      set quadlist [lsort -command OrderHs $quadlist]
-   }
-   foreach quad $quadlist {
-    set height [lindex $quad 2]
-    set x [lindex $quad 0]
-    set y [lindex $quad 1]
-    set cx [expr [canvasx $x $y]*$sx($winId)]
-    set cy [expr [canvasy $x $y]*$sy($winId)]
-    set rx [expr [expr $height/2]*$sx($winId)]
-    set ry [expr [expr $height/2]*$sy($winId)]
-    set top [expr $cy-5*$height*$sy($winId)]
-
-       if { "$viewpoint"=="ELEVATION" } {
-          $winId.c create line $cx $cy $cx $top -fill brown -width 4 \
-         -tag tree
-          $winId.c create oval [expr $cx-5*$rx] [expr $top-5*$ry] \
-         [expr $cx+5*$rx] [expr $top+5*$ry]  -fill green \
-         -tag tree
-       } else {
-          $winId.c create oval [expr $cx-5*$rx] [expr $cy-5*$ry] \
-         [expr $cx+5*$rx] [expr $cy+5*$ry]  -fill green \
-         -tag tree
-       }
-       # END if { "$variable"=="ELEVATION" }
-  }
-  $winId.buttons.label_draw configure -text "Ready  " -bg grey
-}
-
-proc GetQuadList {xcoords ycoords heights} {
-
-	upvar 1 quadlist quadlist
-	if {[llength $heights] == 1} {
-		lappend quadlist [list $xcoords $ycoords $heights]
-	} else {
-		array set newxs $xcoords
-		array set newys $ycoords
-		array set newhs $heights
-
-		foreach elt [array names newhs] {
-			GetQuadList $newxs($elt) $newys($elt) $newhs($elt)
+	polygon375::GetQuadList {} [lindex [GetModelValue $px] 0] \
+	    [lindex [GetModelValue $py] 0] [lindex [GetModelValue $h] 0]
+#ShowMessage debug info "List is $quadlist" ok
+	foreach {id data} $quadlist {
+	    if {![string match nil [lindex $data 0]]} {
+		set x [expr [lindex $data 0]-50]
+		set y [expr [lindex $data 1]-50]
+		set z [lindex $data 2]
+		if {[llength $id]} {
+		    set pop "index: $id"
+		} else {
+		    set pop {}
 		}
+		lappend trunks [list line $pop "$x $y $base" \
+				    "$x $y [expr $base+$z]" 4 brown]
+		lappend trunks [list sphere $pop "$x $y [expr $base+3*$z/2]" \
+				    [expr $z/2] 1 [lindex $colours $col]]
+	    }
 	}
+	incr col
+	if {$col==6} {set col 0}
+    }
 }
 
-proc OrderYs {quad1 quad2} {
-	set p [lindex $quad1 1]
-	set q [lindex $quad2 1]
-	return [expr ($p<$q) - ($q<$p)]
+proc DrawShapes {winId solids tag} {
+    variable viewVector
+
+    set insts {}
+    foreach object3d $solids {
+#ShowMessage debug info $object3d ok
+	switch [lindex $object3d 0] {
+	    line {
+		set startMap [project [lindex $object3d 2]]
+		set endMap [project [lindex $object3d 3]]
+		set startx [lindex $startMap 0]
+		set starty [lindex $startMap 1]
+		set endx [lindex $endMap 0]
+		set endy [lindex $endMap 1]
+#ShowMessage debug info "$startMap $endMap" ok
+		lappend insts [list [list \
+		$winId.c create line $startx $starty $endx $endy -tag $tag \
+		    -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
+			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
+				   [lindex $object3d 1]]
+	    } sphere {
+		set middle [project [lindex $object3d 2]]
+		set midx [lindex $middle 0]
+		set midy [lindex $middle 1]
+		set rad [expr $viewVector(winY)*[lindex $object3d 3]/150.0]
+		lappend insts [list [list \
+		$winId.c create oval [expr $midx-$rad] [expr $midy-$rad] \
+		     [expr $midx+$rad] [expr $midy+$rad] -tag $tag \
+		     -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
+				   [lindex $middle 2] \
+				   [lindex $object3d 1]]
+			       
+	    } text {
+		set middle [project [lindex $object3d 2]]
+		set midx [lindex $middle 0]
+		set midy [lindex $middle 1]
+		lappend insts [list [list \
+		$winId.c create text $midx $midy -tag $tag \
+		     -text [lindex $object3d 3] -fill [lindex $object3d 4]] \
+				   [lindex $middle 2] \
+				   [lindex $object3d 1]]
+	    }
+	}
+    }
+    set ordered [lsort -decreasing -real -index 1 $insts]
+    foreach combo $ordered {
+	set canvObj [eval [lindex $combo 0]]
+	if {[llength [lindex $combo 2]]} {
+	    CanvasBindPopup $winId.c $canvObj [lindex $combo 2]
+	}
+    }
 }
 
-proc OrderHs {quad1 quad2} {
-variable zOrder
-	set p [lindex $quad1 2]
-	set q [lindex $quad2 2]
-   if { "$zOrder"=="UP" } {
-      return [expr ($p>$q) - ($q>$p)]
-   } else {
-      return [expr ($p<$q) - ($q<$p)]
-   }
+proc project {pt3d} {
+    variable viewVector
+    set ptx [lindex $pt3d 0]
+    set pty [lindex $pt3d 1]
+    set ptz [lindex $pt3d 2]
+
+    set multx [expr cos($viewVector(angle))]
+    set multy [expr sin($viewVector(angle))]
+
+    set rotx [expr $multx*$ptx - $multy*$pty]
+    set roty [expr -$multx*$pty - $multy*$ptx]
+
+    set multx [expr cos($viewVector(elevation))]
+    set multy [expr sin($viewVector(elevation))]
+
+    set scx [expr $viewVector(winX)*($rotx/150.0 + .5)]
+    set scy [expr $viewVector(winY)*(($multx*$ptz - $multy*$roty)/-150.0 + .5)]
+    set depth [expr -$multx*$roty - $multy*$ptz]
+
+#ShowMessage debug info "pt3d $pt3d rots $rotx $roty cams $scx $scy $depth" ok
+    return [list $scx $scy $depth]
 }
 
-proc canvasx {x y} {
-variable viewpoint
-  if { "$viewpoint" == "PLAN" } {
-      return [expr int(120+(4*$x))]
-  } else {
-     return [expr int(20+4*$x+2*$y)]
-  }
+proc ShowKey {winId} {
+    variable useNodes
+    variable colours
+    variable viewVector
+
+    set col 0
+    set atx 20
+    set aty $viewVector(winY)
+    
+    $winId.c delete -withtag key
+    foreach {x y sz} $useNodes($winId,captions) {
+	$winId.c create line $atx $aty $atx [expr $aty-16] -width 4 \
+	    -fill brown -tag key
+	$winId.c create oval [expr $atx-8] [expr $aty-32] [expr $atx+8] \
+	    [expr $aty-16] -fill [lindex $colours $col] -tag key
+	$winId.c create text [expr $atx+16] $aty -anchor sw -tag key \
+	    -text "z: $sz\nx: $x\ny: $y"
+	incr col
+	incr atx 100
+    }
 }
 
-proc canvasy {x y} {
-variable viewpoint
-  if { "$viewpoint" == "PLAN" } {
-      return [expr int(440-(4*$y))]
-  } else {
-     return [expr int(400-2*$y)]
-  }
-} 
-
-} ;
-# end of namespace
+proc WindowSizeChanged {winId} {
+    variable grid
+    variable viewVector
+    variable trunks
+    if {[winfo viewable $winId.c]} {
+	$winId.c delete all
+	set viewVector(winX) [winfo width $winId.c]
+	set viewVector(winY) [winfo height $winId.c]
+	if {$viewVector(elevation)>=0} {
+	    DrawShapes $winId $grid grid
+	}
+	DrawShapes $winId $trunks trunks
+	if {$viewVector(elevation)<0} {
+	    DrawShapes $winId $grid grid
+	}
+	ShowKey $winId
+    }
+}
+}
