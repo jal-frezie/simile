@@ -41,6 +41,7 @@ if {[string match windows $tcl_platform(platform)]} {
     
     #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
+    source ../System/lib/Extras/prntproc.tcl
     
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
