@@ -107,14 +107,6 @@ menu_handle(Win, reopen, Name) :-
 	stick_model_in(Parent, Name),
 	warn_runtime.
 
-/*
-stick_model_in(Parent, Name) :-
-	use_temp_dir(Dir),
-	abs_path_name(Parent, root, InsertDir),
-	output:transfer_save_file(LocalDir, Name, in, Oops),
-	append_atoms(LocalDir, '/model.pl', PlName),
-*/
-
 stick_model_in(Parent, Name) :-
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, InsertDir),
@@ -129,9 +121,6 @@ stick_model_in(Parent, Name) :-
 		TryDll = 1;
 	    TryDll = 0),
 	    add_parameter(Parent, 1, c_new, TryDll),
-	    add_parameter(Parent, 0, file_name, Name),
-	    check_autosave(Parent, Name),
-
 
 	    /* Now if the saved model has any images these will be in the top
 	    dir (fttb) so get them loaded */
@@ -154,6 +143,8 @@ stick_model_in(Parent, Name) :-
 	ame_merge(Parent, Name, _Date),
 	    resize_canvas_for(Parent),
 	    redraw_window(Win)),
+	add_parameter(Parent, 0, file_name, Name),
+	check_autosave(Parent, Name),
 	update_captions(Parent).
 
 resize_canvas_for(Parent) :-
@@ -725,7 +716,7 @@ reroute_for(Style) :-
 		\+ Style = sd,
 			(get_shape(Function, bounding_box, _);
 			\+ get_shape(Function, bounding_box, _),
-				(Zone = bounding_box; Zone = bowtie),
+				(Zone = bounding_box; Zone = bowtie),
 				get_shape(Recipient, Zone, [L, T, _, _]),
 				get_box_size(function, Size),
 				make_bounding_box(function, L, T, Size, Box),

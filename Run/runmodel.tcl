@@ -424,7 +424,7 @@ proc NextCaption {canvas} {
 	unset find
     } else {
 	set this [lindex $find(List,$canvas) 0]
-	set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
+	set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
 #	$canvas itemconfigure $this -fill blue
 # left in in case the thing fails to highlight, or is exec_only
 
@@ -1161,7 +1161,7 @@ proc DoneParams {oldMissing} {
 	    }
 	}
     }
-    if {[info exists empties]} {
+    if {[info exists empties]} {
 	.fpdialogue.buttons.banner configure -text "Some values still missing!"
     } else {
 	set paramData(/done/) 1
@@ -1627,7 +1627,7 @@ proc compile_c {workingDir modelPath} {
 	    if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
 		set dll ame_dll${MAJ}${MIN}
 	        exec g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-		exec dllwrap --output-lib=libmodel.a --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+		exec dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
 		file delete exptemp.exp
 		
 # Method using command line calls to MSVC 4.0 or later -- works well

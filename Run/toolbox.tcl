@@ -199,11 +199,11 @@ proc GetParts {top tree} {
                     set Description "Image"
                 }
                 .pl {
-                    set PartType "text/plain"
+                    set PartType "application/x-simile"
                     set Description "Simile model"
                 }
                 .cnv {
-                    set PartType "text/plain"
+                    set PartType "application/x-simile"
                     set Description "Simile canvas description"
                 }
                 default {
@@ -212,11 +212,19 @@ proc GetParts {top tree} {
                 }
             }
 	    set relPath [string range $subtree [string length $top] end]
-            set Disposition [concat "inline;" $relPath]
-	    lappend mimes [mime::initialize -canonical $PartType \
+            set Disposition [concat "inline;" $relPath]
+	    set newMime [mime::initialize -canonical $PartType \
                     -header [list "Content-Disposition" $Disposition] \
                     -header [list "Content-Description" $Description] \
                     -file $subtree]
+	    lappend mimes $newMime
+# Debug: write the body to see if it's baaad...yes it was
+# Workaround: don't save anything as text/plain, stick to application/x-simile
+#	    set debugname ${subtree}.mim
+#	    set stream [open $debugname w]
+#	    fconfigure $stream -translation binary
+#	    mime::copymessage $newMime $stream
+#	    close $stream
 	}
     }
     return $mimes
@@ -781,7 +789,7 @@ proc CanvasPaste {c {x {}} {y {}}} {
         return		;# No selection
     }
     $c insert [$c focus] insert $_s
-
+
 
 }
 
@@ -1518,6 +1526,8 @@ proc AddInputs {bar} {
         $bar.inputs.menu add command -label $paramName \
                 -command [list InsertParam $bar $paramName]
     }
+
+
 }
 
 proc InsertParam {bar paramName} {
