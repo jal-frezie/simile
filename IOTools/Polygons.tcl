@@ -101,8 +101,8 @@ $useNodes($winId,scaley)"
 	    eval $ZoomCmd
 	} else {
 	    DoFrame $winId
-	    foreach {coords tags} $useNodes($winId,shapes) {
-		eval {$winId.viewport.c create poly} $coords {-outline black \
+	    foreach {type coords tags} $useNodes($winId,shapes) {
+		eval {$winId.viewport.c create $type} $coords {-outline black \
 								  -tag $tags}
 	    }
 	    Repaint $winId $useNodes($winId,color)
@@ -353,11 +353,13 @@ $useNodes($winId,scaley)"
 
 	    ::dxf::AddMap $useNodes($winId,sourcefile) $winId.viewport.c
 # Now copy the poly info into the state so it can be saved
-	set useNodes($winId,shapes) {}
-	foreach poly [$winId.viewport.c find all] {
-	    lappend useNodes($winId,shapes) [$winId.viewport.c coords $poly] \
-		[$winId.viewport.c gettags $poly]
-	}
+	    set useNodes($winId,shapes) {}
+	    foreach poly [$winId.viewport.c find all] {
+		lappend useNodes($winId,shapes) \
+		    [$winId.viewport.c type $poly] \
+		    [$winId.viewport.c coords $poly] \
+		    [$winId.viewport.c gettags $poly]
+	    }
         }
         ########## end polyfile changes
 	set NToolButtons [$winId.bbframe.buttonBox index last]
