@@ -366,3 +366,4 @@ proc PrefDismiss {} {
 	destroy .pref
 	catch {destroy .prefitemhelp}
 }
+

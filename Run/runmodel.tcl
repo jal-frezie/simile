@@ -1192,3 +1192,4 @@ if {[catch {eval KickOff $argv} err]} {
     ShowMessage {Simile obliterfried!} error $err ok
 }
 do_in_editor set runState($myNode,modelReady) 1
+

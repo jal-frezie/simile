@@ -218,3 +218,4 @@ EXTDEC char* getNodeId(long int, char*);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, ame_rand_type*,
 			     showMess_type*, char*, connectRecord***, int**);
+

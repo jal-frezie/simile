@@ -2184,3 +2184,4 @@ proc NotifyOverLimit {limit} {
     tkwait variable ack
     destroy .notify
 }
+
