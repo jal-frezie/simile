@@ -232,10 +232,10 @@ menu_handle(Win, file, CompOrBuild) :-
 	start_progress_dialogue,
 	use_temp_dir(Temp),
 	(\+ rebuild_code(c, Model), !;
-	get_av_pair(Model, 1, c_new, Serial),
+	(get_av_pair(Model, 1, c_new, Serial), !; Serial = ''),
 	abs_path_name(Model, root, Path),
 	    append_atoms([Temp, '/', Path, '/model', Vers, Ident], Top),
-	    output:safe_tcl_eval([file, copy, br(Top), br(Tgt)], _)),
+	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)),
 	finish_progress_dialogue;
 	do_dialogue("Error exporting code", error, "This submodel does not have its own code.", ok, _)).
 

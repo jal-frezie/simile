@@ -1404,12 +1404,13 @@ proc load_dll {lang progDir id node} {
 
 proc set_connections {connects} {
     global model_id model_ids instance_id
+# Run is always scrubbed, this should not need to
     # ShowMessage debug info "Trimming..." ok
-    if {[info exists instance_id]} {
-        c_exitmodel $model_id $instance_id
-        unset instance_id
-        unset model_ids
-    }
+#    if {[info exists instance_id]} {
+#        c_exitmodel $model_id $instance_id
+#        unset instance_id
+#        unset model_ids
+#    }
     #ShowMessage debug info "About to load: $connects" ok
     set_connection_database $connects
     #ShowMessage debug info "...loaded." ok
