@@ -18,13 +18,13 @@ sicstus_use_module([backup, event, menu]).
 tk_undo(Wids) :-
 	show_wait_cursor,
 	finish_window_resize,
-	undo(Wids),
+	undo_edit(Wids),
 	show_normal_cursor.
 
 tk_redo(Wids) :-
 	show_wait_cursor,
 	finish_window_resize,
-	redo(Wids),
+	redo_edit(Wids),
 	show_normal_cursor.
 
 tk_get_info(Wid, Comp, What) :-

@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
-	undo/1, redo/1, menu_select/1, mode_select/1,
+	undo_edit/1, redo_edit/1, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
 	off_window/1, set_style/1]).
 	
@@ -35,7 +35,7 @@ show_normal_cursor :-
 	fail;
 	true.
 
-undo(Wids) :-
+undo_edit(Wids) :-
 	go_back(Further),
 	all(menu, check_exist, [build(Wids)]),
 	redraw_window(_),
@@ -44,7 +44,7 @@ undo(Wids) :-
 	save_allowed(CanSave),
 	update_ability(save, file, 'Save', CanSave).
 
-redo(Wids) :-
+redo_edit(Wids) :-
 	go_forward(Further),
 	all(menu, check_exist, [build(Wids)]),
 	redraw_window(_),
