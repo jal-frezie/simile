@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Simile.c,v 1.3 2002/12/17 13:06:14 jmm Exp $
+ * RCS: @(#) $Id: Simile.c,v 1.4 2002/12/17 15:41:00 jmm Exp $
  */
 
 #include <tk.h>
@@ -130,11 +130,18 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
 #endif
 
 	tempstr = buffer;
-    if (argc>2) {
+    if (argc==3) {
     tempstr = argv[1];
 	argv[1] = argv[2];
 	argv[2] = tempstr;
 	}
+    if (argc>3) {
+    MessageBeep(MB_ICONEXCLAMATION);
+    MessageBox(NULL, "More than one arguement passed to Simile.exe", "Error",
+	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+    ExitProcess(1);
+	}
+
 
     Tk_Main(argc, argv, TK_LOCAL_APPINIT);
     return 1;
@@ -196,9 +203,6 @@ Tcl_AppInit(interp)
 
 
     Tcl_Eval(interp, "set tcl_rcFileName [file dirname [info nameofexecutable]]/../../Run/Simile.tcl");
-    //Tcl_Eval(interp, "set argc 1");
-    //Tcl_Eval(interp, "set argv [lindex argv 1]");
-	//dross!! Tcl_Eval(interp, "if {$argc>0} { set argv [list $tcl_rcFileName [lindex ]]; set argc 1} ");
 
     return TCL_OK;
 
@@ -238,7 +242,7 @@ WishPanic TCL_VARARGS_DEF(CONST char *,arg1)
     vsprintf(buf, format, argList);
 
     MessageBeep(MB_ICONEXCLAMATION);
-    MessageBox(NULL, buf, "Fatal Error in Wish",
+    MessageBox(NULL, buf, "Fatal Error in Simile.exe",
 	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
 #ifdef _MSC_VER
     DebugBreak();
@@ -317,7 +321,13 @@ setargv(argcPtr, argvPtr)
 
     cmdLine = GetCommandLine(); /* INTL: BUG */
 	memset( buffer2, 0, MAX_PATH+1 );
-	strncat( buffer2, " ", strlen(" ") ); // space between args
+    if ( (strlen(cmdLine)+strlen(" ")+strlen(buffer)) > (MAX_PATH+1) ) {
+    MessageBeep(MB_ICONEXCLAMATION);
+    MessageBox(NULL, "Simile.exe: command line too long", "Error",
+	    MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
+    ExitProcess(1);
+	}
+	strncat( buffer2, cmdLine, strlen(cmdLine) ); 
 	strncat( buffer2, " ", strlen(" ") ); // space between args
 	strncat( buffer2, buffer, strlen(buffer) );
 	cmdLine = buffer2;
