@@ -136,7 +136,7 @@ namespace eval ::ModelInspector63654 {
 	    [namespace code "OnElementClick $winId"]
         $tableframe.table bindText <Button-1> \
 	    [namespace code "OnElementClick $winId"]
-        if ![string match Darwin $tcl_platform(os)] {
+        if [PrefValue custom(compValPop) compValPop] {
 	    $tableframe.table bindImage <Enter> \
 	        [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
 	    $tableframe.table bindText <Enter> \
