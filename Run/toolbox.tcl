@@ -1272,7 +1272,9 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
             -variable MIpushedbutton -value copy
     $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost"\
-         -variable MIpushedbutton -value ghost
+            -variable MIpushedbutton -value ghost
+    $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
+            -variable MIpushedbutton -value snap
     
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
