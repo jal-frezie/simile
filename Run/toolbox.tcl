@@ -565,12 +565,14 @@ proc compile_c {workingDir} {
 
         }
     }} chuckup]} {
-    set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
-    BuildProblem "Problem during compilation" warning $badCompile execution
-    set serial -1
+      set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
+      cd $oldDir; #Change back to Run directory in order to access Help file for subsequent dialogue
+      BuildProblem "Problem during compilation" warning $badCompile execution
+      cd $workingDir
+      set serial -1
     } else {
     #    file delete $c_prog
-    file delete objtemp.o
+      file delete objtemp.o
     }
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
