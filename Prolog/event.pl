@@ -255,6 +255,9 @@ bar_edit_menu(Wid) :-
 	    menu_submodel_will_be(Wid, Comp, Point)),
 	retractall(menu_submodel_is(_, _)),
 	assert(menu_submodel_is(Comp, Point)),
+	(Comp = Point, !,
+	    CanCreate = 0;
+	CanCreate = 1),
 	(Point = [_,_], !,
 	    CanAddNode = 1;
 	 CanAddNode = 0),
@@ -268,6 +271,7 @@ bar_edit_menu(Wid) :-
 	    Pastable = 1;
 	Pastable = 0),
 	Wid shows_model Model,
+	update_ability(Model, none, edit, '{Create new}', CanCreate),
 	update_ability(Model, none, 'edit.add', 'Compartment', CanAddNode),
 	update_ability(Model, none, 'edit.add', 'Variable', CanAddNode),
 	update_ability(Model, none, 'edit.add', '{Role arrow}', CanAddNode),
@@ -284,8 +288,7 @@ selection, i.e., top submodel and corner position */
 restore_edit_menu(Wid) :-
 	retractall(menu_submodel_will_be(Wid, _,_)),
 	Wid shows_model Model,
-	get_shape(Model, internal_extent, [L,T,_,_]),
-	assert(menu_submodel_will_be(Wid, Model, [L,T])).
+	assert(menu_submodel_will_be(Wid, Model, Model)).
 
 click_on([Xpt, Ypt], Poss_start, CD) :-
 	get_mode(add),
