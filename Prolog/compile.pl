@@ -270,7 +270,8 @@ bits and pieces */
 	
 	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
 */
-	render_all(Language, global_declaration, Constants, 0, GlobalDeclText),
+	render_all(Language, global_declaration, [[void, this, []]
+		  | Constants], 0, GlobalDeclText),
 	build_submodel_functions(Language, Phases, GlobalDeclText, Inters,
 				 StateForm, UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, GraphClearText, Fns),
@@ -622,7 +623,7 @@ build_submodel_functions( Language, Phases, Globals, Inters,
 	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
 
 	reassure_user("Generating code for model execution"),
-	build_eval_proc(Language, updatemodel, OrdUpdates, [], [], Used,
+	build_eval_proc(Language, updatemodel, OrdUpdates, Globals, [], Used,
 			_, _, UpDecls),
 	build_eval_proc(Language, advancemodel, OrdStates, [], [], Used,
 			_, _, AdvDecls),

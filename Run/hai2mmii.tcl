@@ -74,7 +74,7 @@ proc step_incr {step v} {
 }
 
 proc stage_incr {ns_extras step v} {
-    upvar \#0 ::AME_model<>::$ns_extras extras
+    upvar \#0 $ns_extras extras
     if {![info exists extras]} {
 	set extras [list 0 0]
     }
@@ -205,7 +205,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
     upvar 1 $nextRefPtr nextRef
 #puts "FLV $nextRef $listDims $dimPlace"
     set result {}
-    set smHandle ::AME_model<>::$nextRef
+    set smHandle $nextRef
     set nextElt [set [burrow_to $smHandle {2 0} {}]]
     set newDimPlace [expr $dimPlace+1]
     while {[string match $listDims [lrange $nextElt 0 $dimPlace]]} {
@@ -221,7 +221,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 	    }
 	}
 	if {[string compare $nextRef 0]} {
-	    set smHandle ::AME_model<>::$nextRef
+	    set smHandle $nextRef
 	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
 	} else {
 	    break
@@ -273,6 +273,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	}
     } else {
 	array set arrayVals $newVals
+	set result {}
 	for {set nextDim 1} {$nextUseDim>=$nextDim} \
 		{incr nextDim} {
 	    if {[info exists arrayVals($nextDim)]} {
@@ -557,6 +558,6 @@ proc collect {tgt node count args} {
 	set sub [join [concat $node $args] ,]
 # Check that input source exists, it will not if model is being initialized
 	if {[info exists inputSrc($sub)]} {
-	    set ::AME_model<>::$tgt $inputSrc($sub)
+	    set $tgt $inputSrc($sub)
 	}
 }

@@ -659,6 +659,8 @@ proc NewHelperWindow {helperId helperTitle} {
 # program: 0 = none, 1 = out of date, 2 = up to date.
 
 set runState(modelRunning) 0
+set this ::AME_model<>
+# var containing namespace id called 'this' for compatibility with c++
 
 # RunDialog is called when the user builds a new model program. It marks the
 # current model as up to date, initializes the model and makes sure there is
@@ -1693,13 +1695,12 @@ proc glob_element {arrptr phase} {
 
 proc prune {target metaTxt idCount} {
     upvar 1 $metaTxt meta
-    set context ::AME_model<>
     set status 1
-    while {[string compare [set ${context}::$meta] 0] && \
+    while {[string compare [set $meta] 0] && \
                 [set status [compare_instance_status \
-                [set submodelptr ${context}::[set ${context}::$meta]]::instanceid \
+                [set submodelptr [set $meta]]::instanceid \
                 $target $idCount]]==-1} {
-        set ${context}::$meta [set ${submodelptr}::next]
+        set $meta [set ${submodelptr}::next]
         namespace delete $submodelptr
     }
     return [expr !$status]
@@ -1755,8 +1756,7 @@ proc compare_tcl_lists {count list1 list2} {
     return 1
 }
 proc init_pop_member {new_one index parent channel} {
-    upvar 1 $new_one tail
-    set tgt AME_model<>::$tail
+    upvar 1 $new_one tgt
 
     set ${tgt}::instanceid $index
     set ${tgt}::parentId $parent

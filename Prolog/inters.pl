@@ -1120,7 +1120,7 @@ wait_for_submodels([Level | AlsoExited], Waits) :-
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).
 
-pointer_from([], '').
+pointer_from([], this).
 pointer_from([sm(_,_, Ptr, _) | _], Ptr).
 
 pointer_to([], '').

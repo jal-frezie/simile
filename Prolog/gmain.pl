@@ -71,7 +71,7 @@ sicstus_read_from_chars(Term, Result) :-
         read_from_codes(Term, Result).
 
 sicstus_write_to_chars(Term, Result) :-
-        write_to_codes(Result, Term).
+        print_to_codes(Result, Term).
 
 sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
         !, format_to_codes(Result, Template, [V1 | Vars]).
@@ -88,7 +88,7 @@ sicstus_write_chars(Stream, [Char | Rest]) :-
 	sicstus_write_chars(Stream, Rest).
 
 sicstus_writeq(Stream, Term) :-
-	print(Stream, Term).
+	write_term(Stream, Term, [quoted(true), portrayed(true)]).
 
 sicstus_put(Stream, Char) :-
 	put_byte(Stream, Char).
@@ -134,8 +134,7 @@ load properly if they have already been declared */
 /* Things to ignore temporarily */
 
 portray(F) :-
-	(trim_float(F, NewF), !;
-	 needs_quoting(F, NewF)),
+	trim_float(F, NewF), !,
 	get_print_stream(Stream),
 	format(Stream,"~s",[NewF]).
 
@@ -167,7 +166,10 @@ backslashes, which other Prologs cannot read. So we do it by hand
 instead.
 
 Note use of name rather than write_to_codes because latter causes
-confusion with the print stream. */
+confusion with the print stream.
+
+This system has been removed cos I have hacked the GNU Prolog source to
+stop it doing the unwanted conversion.
 
 needs_quoting(Foo, Noo) :-
 	atom(Foo),
@@ -184,6 +186,7 @@ double_single_quotes(NoneDone, AllDone) :-
             double_single_quotes(StillUndone, NowDone),
             append(NoQuotes, [Good1, Good2 | NowDone], AllDone);
         AllDone = NoneDone.
+*/
 
 runtime_entry(start) :-
 	main.
