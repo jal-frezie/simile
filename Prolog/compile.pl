@@ -253,7 +253,9 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      init_time, parentId, channelId, version,
 		      on_reset, externs_done, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
-		      id, dims /* arguments to extractor proc */ | _],
+		      id, dims, /* arguments to extractor proc */
+		      build0, build1, build2, build3 | _], /* makearray indices
+	*/
 	append(Keywords, LocalNames, Used),
 
 /* This gives names in the target programming language to all the variables, 

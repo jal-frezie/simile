@@ -627,8 +627,10 @@ make_intermediates(
 	        (promote_unit(Dun, const_int);
 		  raise_exception(bad_index_number(Dim, makearray))), !,
 	        NowBuilding = [LocalLoop | BuildingArrays],
-	        generate_name(c, build, BuildName, Used),
-	        LocalInd = glob(BuildName,_);
+	        length(BuildingArrays, BDept),
+	        append_atoms(build, BDept, BuildName),
+% added to stop bad rankings behaviour
+	        LocalInd = glob(BuildName, _);
 	    make_choose_form(Source, keep(LocalInd), 1, Element),
 	        length(Source, DimVal),
 	        DimSetups = [],

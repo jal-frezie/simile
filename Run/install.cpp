@@ -1,21 +1,70 @@
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-
+#include <openssl/md5.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 #include <dllcalls.h>
 
+int right_license(char* name, char* code) {
+	char buffer[256];
+	unsigned char md[MD5_DIGEST_LENGTH];
+	/* String to use as secret */
+	char secret[] = "R^6tf*Y}@?>H(U(ddJ(::{><Lu8H*G";
+	#ifdef SIM_EVALUATION
+	char edition[]="evaluation";
+	#endif
+	#ifdef SIM_TEACHING
+	char edition[]="teaching";
+	#endif
+	#ifdef SIM_STANDARD
+	char edition[]="standard";
+	#endif
+	#ifdef SIM_ENTERPRISE
+	char edition[]="enterprise";
+	#endif
+
+	sprintf(buffer, "%s%%standard^%s", name, secret);
+	MD5((const unsigned char *)buffer, strlen(buffer), md);
+
+	int i;
+	static char buf[80];
+
+	for (i=0; i<MD5_DIGEST_LENGTH; i++)
+		sprintf(&(buf[i*2]),"%02x",md[i]);
+	return(!strcmp(buf, code));
+}
+
 // prototype, __stdcall seems to need one 
-FINDABLE int __stdcall info_copy(
+FINDABLE EXPORT int __stdcall license_check(
+		HWND, HWND, const char*, char*,
+		char*, char*, char*, char*);
+
+// Test for abort behaviour
+FINDABLE EXPORT int __stdcall license_check(
+		HWND MainHandle, HWND DialogHandle,
+		const char* pInstallDir, char* pSupportDir,
+		char* pUser, char* pCompany, char* pSerial,
+		char* pAdditionsl) {
+#ifdef SIM_LICENSED
+	if (!right_license(pUser, pSerial)) {
+        	MessageBox (NULL, "You have entered the wrong license code for your name, organization and Simile version. This installation will now terminate. Please try again, ensuring you have the correct license code.", "Feedback", MB_OK);
+		return(0);
+	}
+#endif
+	return(1);
+}
+
+// prototype, __stdcall seems to need one 
+FINDABLE EXPORT int __stdcall info_copy(
 		HWND, HWND, const char*, char*,
 		char*, char*, char*, char*);
 
 // This writes a wee file with the supplied user name and company, and our own version
 // number. It is called from the installation procedure.
 
-FINDABLE int __stdcall info_copy(
+FINDABLE EXPORT int __stdcall info_copy(
 		HWND MainHandle, HWND DialogHandle,
 		const char* pInstallDir, char* pSupportDir,
 		char* pUser, char* pCompany, char* pSerial,
@@ -54,4 +103,3 @@ FINDABLE int __stdcall info_copy(
 	fclose(recept);
 	return(1);
 }
-

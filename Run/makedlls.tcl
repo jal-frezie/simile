@@ -11,7 +11,7 @@ set compiler_for_windows gnu
 # edition: evaluation, teaching, standard or enterprise
 set edition standard
 # date of final expiry: {hh:mm D M Y} or {} for permanent
-set final_expiry {}
+set final_expiry {00:00 01 Jan 2005}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
@@ -88,8 +88,8 @@ if $onUnix {
 	puts $batSt "g++ -c $defns -I. -I$TCL/include ame_cmx.cpp"
 	puts $batSt "dllwrap --output-lib=${TGTLIB}/lib$mydll.a --dllname=$TARGET --def=stub.def --driver-name=g++ ame_cmx.o -L${TGTLIB} -l5ddll -l$dll"
 	# Do the install dll as well
-	puts $batSt "g++ -c -o obj.o $defns -I. ./install.c"
-	puts $batSt "dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o"
+	puts $batSt "g++ -c -o obj.o $defns -I. -I$TCL/include ./install.cpp"
+	puts $batSt "dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o -L${TGTLIB} -lcrypto -lssl"
 	
 	close $batSt
 	exec runmingw.bat
