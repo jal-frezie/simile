@@ -54,12 +54,6 @@ SWEDEN                     http://www.math.uu.se/~andand           SWEDEN
         
 decode_command(chars(Codes), L0, L) :- !,
         append(Codes, L, L0).
-decode_command(Float, L0, L) :-
-	float(Float), !,
-	sicstus_format_to_chars("~6f", [Float], Fs),
-	append(Chars, Os, Fs),
-	\+ (member(Ch, Os), \+ member(Ch, "0")), !,
-        append(Chars, L, L0).
 decode_command(format(Fmt,Args0), L0, L) :- !,
         (  atomic(Args0)
         -> Args = [Args0]

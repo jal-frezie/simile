@@ -32,7 +32,7 @@ sicstus_module(image,
 	   update_link_route/1, shape_route/4, route_link/4,
 	   route_interior_part_link/5, route_part_link/5,
 	   route_parent_child_link/5, get_middle_segment/3,
-	   translate_between/4, translate/3,
+	   translate_between/4, translate/3, rel_translate/3,
 	   untranslate/3, add_to_translation/3, subtract_from_translation/3]).
 
 sicstus_use_module([library(lists), library(charsio),
@@ -1027,6 +1027,10 @@ translate([Pair | Rest], Trans, [NewPair | NewRest]) :-
 	translate(Pair, Trans, NewPair),
 	translate(Rest, Trans, NewRest).
 
+/* special version for offsets */
+rel_translate([OffX, OffY], [_,_, Xscale, Yscale], [NewX, NewY]) :-
+	NewX is OffX*Xscale,
+	NewY is OffY*Yscale.
 
 untranslate([], _, []).
 

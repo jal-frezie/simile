@@ -270,7 +270,7 @@ proc GetModelEval { node } {
 	WarnNoProgram
     }	
     if {$model_id} {
-	return [lindex {EXOGENOUS DERIVED FILE INPUT SPLIT} \
+	return [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
 		[getvalue $model_id $node 2]]
     } else {
 	lindex [getinfo $node] 1

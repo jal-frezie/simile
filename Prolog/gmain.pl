@@ -124,14 +124,16 @@ load properly if they have already been declared */
 /* Things to ignore temporarily */
 
 /* Improved system for outputting floating-point numbers -- max of 6
-decimal places (does wrong thing with print_to_chars)
+decimal places (thanks to Dan Diaz for making it work with print_to_chars)
+-- currently unusable due to weird bug in gprolog
 
 portray(F) :-
 	float(F),
 	format_to_codes(Fs, "~6f", [F]),
 	append(Ns, Os, Fs),
 	\+ (member(Ch, Os), \+ member(Ch, "0.")), !,
-	format("~s",[Ns]).
+	get_print_stream(Stream),
+	format(Stream,"~s",[Ns]).
 
 regular stuff : xrefs occurs inside a model structure and contains other
 model structures, making them circular. It must therefore be

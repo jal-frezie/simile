@@ -77,16 +77,16 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 	time_step_for(Parent, Step, MyStep),
 	build_sub_instances(Language, DestDir, Parent, MyStep,
 			    LongName, CompsChanged),
-	(Parent has_model_refinement c_new of 0,
-	    \+ check_level_for_reds(Parent),
-	    Parent has_changed_model_refinement c_new of 1,
+	(\+ Parent has_model_refinement c_new of 1,
+	     \+ check_level_for_reds(Parent),
 	    ChangeTop = 1;
 	ChangeTop = CompsChanged),
 	((Parent has_class_refinement separate of 1; NamePath = ''), !,
 	 ((ChangeTop = 1,
 	        all(compile, delete_prog,
 		    [unify(CheckDir), build(['.tcl', '.cpp', '.dll', '.so'])]);
-	   \+ check_executable(Language, CheckDir);
+	   \+ check_executable(Language, CheckDir),
+	     \+ check_level_for_reds(Parent);
 	   \+ load_executable(Language, DestDir, LongName, Parent)), !,
 	     retractall(entry_arcs_are(_)),
 	     assert(entry_arcs_are([])),
@@ -103,6 +103,8 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 		Model, EntryArcs),
 		(reclose(Stream), raise_exception(Puke))),
 	     close(Stream),
+	     (Parent has_changed_model_refinement c_new of 1;
+		Parent has_new_model_refinement c_new of 1),
 	     (Language = tcl, !;
 	     compile_c_program(DestDir, LongName),
 		 assert(new_exec_for(Parent))),
@@ -147,6 +149,19 @@ check_level_for_reds(Submodel) :-
 	caption_for(VisEntity, RedText),
 	sicstus_format_to_chars("Model ~w cannot be executed because it contains component ~w, which has not been fully specified.",
 		       [OuterText, RedText], MessageStr),
+	name(Message, MessageStr),
+	raise_exception(Message);
+	reassure_user("Checking all model links are consistent"),
+	Parent has_part Submodel,
+	Submodel has_model_refinement link_equivalences of Equivs,
+	member(Before-After, Equivs),
+	Before is_connector from S1 to F1,
+	After is_connector from S2 to F2,
+	\+ (Parent has_part S1, F1 = Submodel,
+	       Submodel has_part S2, Submodel has_part F2;
+	    Parent has_part F2, S2 = Submodel,
+	       Submodel has_part F1, Submodel has_part S1),
+	sicstus_format_to_chars("This model cannot be executed because it contains an inconsistent link equivalence ~w -- please report this to your Simulistics service centre.", [Before-After], MessageStr),
 	name(Message, MessageStr),
 	raise_exception(Message);
 	fail.

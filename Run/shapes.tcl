@@ -219,15 +219,26 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
     scan [GetPoints $mr -$cornerRad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
     scan [GetPoints $mb -$cornerRad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 	
-    if {[string match clear $fillColour]} {
-	set fillColour {}
+    if {![catch {image type $fillColour}]} {
+	set poly [$w create image $ml $mt -anchor nw \
+		      -tag "$tagSet /background/"]
+	set mw [expr int($mr-$ml)]
+	set mh [expr int($mb-$mt)]
+	image create photo sm$poly$w -width $mw -height $mh
+	$w itemconfig $poly -image sm$poly$w 
+	sm$poly$w copy $fillColour -to 0 0 $mw $mh
+    } else {
+	if {[string match clear $fillColour]} {
+	    set fillColour {}
+	}
+	set poly [$w create polygon \
+		      $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 \
+		      $h6 $mt $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 \
+		      $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
+		      $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
+		      $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
+		      -fill $fillColour -tag "$tagSet /background/"]
     }
-    set poly [$w create polygon \
-		$ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-	        $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
-		$mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \
-		$h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
-		  -outline {} -fill $fillColour -tag "$tagSet /background/"]
     # Now to stick it behind anything that might be drawn inside
     set contents [$w find enclosed $ml $mt $mr $mb]
     if {[llength $contents]} {
@@ -508,11 +519,10 @@ proc WriteDesc {canvas canvasFile date args} {
 	    $window_info($canvas,scale) \
 	    [$canvas cget -scrollregion] clear $args]
 # background colour parameter now ignored because the background is
-# a rectangle and as such is listed in the .cnv file
+# a rectangle and as such is listed in the .cnv file...not...
     foreach object [$canvas find all] {
 # Do not write base objs they get re-created
-	if {[string match rectangle [$canvas type $object]] && \
-		[string match */background/* [$canvas gettags $object]]} {
+	if {[string match */base/* [$canvas gettags $object]]} {
 	} else {
 	    set config ""
 	    foreach conf [$canvas itemconfigure $object] {

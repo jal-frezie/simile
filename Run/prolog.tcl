@@ -61,7 +61,7 @@ proc do_tail {header args} {
 proc send_pl_cmd {withCrs} {
     global plPipe
     regsub -all \n $withCrs \\n plCmd
-#    puts [concat > $plCmd]
+#   puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
 #    Reader

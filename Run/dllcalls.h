@@ -24,9 +24,10 @@
 
 #define EXOGENOUS       0
 #define DERIVED         1
-#define FILE            2
+#define TABLE           2
 #define INPUT           3
 #define SPLIT           4
+#define GHOST           5
 
 /* type declaration for structure representing a graph */
 

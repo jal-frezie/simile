@@ -701,6 +701,9 @@ proc Disaggregate {parent title colour type fatness icount step \
             -padx 2 -pady 4 -side left
     if {[catch {image type $disaggregate(colour)}]} {
         $colourf.fixcolour configure -bg $disaggregate(colour)
+	set disaggregate(defColour) $disaggregate(colour)
+    } else {
+	set disaggregate(defColour) [$colourf.fixcolour cget -bg]
     }
     pack [button $colourf.setimage -text "Image..." \
             -width 10 -command ChooseImage] \
@@ -799,9 +802,10 @@ proc UpdateColour {f} {
     global disaggregate
     
     set new [tk_chooseColor \
-            -initialcolor $disaggregate(colour)]
+            -initialcolor $disaggregate(defColour)]
     if {[llength $new]} {
         set disaggregate(colour) $new
+        set disaggregate(defColour) $new
         $f.fixcolour configure -bg $new
     }
 }

@@ -395,7 +395,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 		DefEval = 'DERIVED')),
 	is_parameter(BaseName, PType),
 	(PType = -1, Eval = DefEval;
-	nth0(PType, [DefEval, 'INPUT', 'FILE'], Eval)),
+	nth0(PType, [DefEval, 'INPUT', 'TABLE'], Eval)),
 	
 	append(Path, [0], NewPath),
 	append([Dims, [0]], CappedDims), 
@@ -431,12 +431,14 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 		number(Max), !;
 		Max = Muckle),
 		/* make a value lookup entry for each node with this value */
-		setof([NodeName, Type, Eval, CappedDims, 
+		setof([NodeName, Type, PutEval, CappedDims, 
 				NewPath, GraphPointer,
 				Caption, Min, Max, Class, Name],
 			
-		     (NodeName = VisName;
-			 find_ghosts(VisName, NodeName)),
+		     (NodeName = VisName,
+			 PutEval = Eval;
+		     find_ghosts(VisName, NodeName),
+			 PutEval = 'GHOST'),
 		      NodeData);
 	/* No need to handle ghosts and link terminators */
 		NodeData = []).

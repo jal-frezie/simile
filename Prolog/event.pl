@@ -1417,8 +1417,11 @@ relate_graphics(Node_name, Node_trans) :-
 move_boxes(Node_name, Node_trans) :-
 	find_all_comps(Node_name, Thing),
 	get_shape(Thing, Whatever, Wherever),
-	\+ (Whatever = internal_extent; Whatever = caption_offset),
-	translate(Wherever, Node_trans, New_wherever),
+	\+ Whatever = internal_extent,
+	(Whatever = caption_offset,
+	    rel_translate(Wherever, Node_trans, New_wherever);
+	\+ Whatever = caption_offset,
+	    translate(Wherever, Node_trans, New_wherever)),
 	change_shape(Thing, Whatever, New_wherever),
 	fail.
 

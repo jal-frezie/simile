@@ -182,11 +182,11 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(init_function, F, Default, Home, Base-Units),
 	(setof( Arc, flows(in, Node, Arc), InArcs),
-	bind_and_build_term(Node, InArcs, '+', Base, In, In_refs);
+	bind_and_build_term(Node, InArcs, Base, Units, In, In_refs);
 	In_refs = [],
 	In = 0),
 	(setof( Arc, flows(out, Node, Arc), OutArcs),
-	bind_and_build_term(Node, OutArcs, '+', Base, Out, Out_refs);
+	bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs);
 	Out_refs = [],
 	Out = 0),
 	merge_lists(In_refs, Out_refs, Refs),
@@ -425,40 +425,44 @@ get_units(Node, Type, Dims) :-
 intrinsically have same units as compartment, so we go back to their control nodes
 to get unit conversion factor */
 
-bind_and_build_term(Node, [Arc], _Op, Node_units, Term, [Ref]) :-
+bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	find_base(Arc, General_arc),
 	get_chain(General_arc, Node, _, Exits, Entries),
+	caption_for(Node, BadComp),
+	caption_for(Arc, BadArc),
 	(member(Multi, Entries),
 	    get_all_dims(Multi, BadDims),
 	    \+ BadDims = [], !,
-	    caption_for(Node, BadComp),
-	    caption_for(Arc, BadArc),
 	    caption_for(Multi, BadModel),
 	    sicstus_format_to_chars("Flow ~a cannot be connected to compartment ~a because its value would be split where it crosses the border of submodel ~a",
 			   [BadArc, BadComp, BadModel], BadStr),
 	    name(Bad, BadStr),
 	    raise_exception(Bad);
-	all(ame_gen, get_all_dims, [build(Exits), append(ExDims, [])]),
-	    sum_dims(ExDims, BaseVar, Var)),
 	implicit_function(General_arc, Controller),
-	get_units(Controller, ArcUnits, _),
+	get_units(Controller, ArcUnits, ArcDims),
+	all(ame_gen, get_all_dims, [build(Exits), append(AllDims, ArcDims)]),
+	    (append(NodeDims, MergeDims, AllDims), !,
+		sum_dims(MergeDims, BaseVar, Var);
+		sicstus_format_to_chars("Flow ~a cannot be connected to compartment ~a because the flow has dimensions ~w which cannot be matched with those of the compartment, which are ~w", [BadArc, BadComp, AllDims, NodeDims], BadStr),
+	    name(Bad, BadStr),
+	    raise_exception(Bad))),
 	default_tick_is(Tick),
 	is_instance(_, Controller, _, BaseVar, _, Ref),
-	((get_conversion(Var, ArcUnits, Node_units/Tick, Term);
+	((get_conversion(Var, ArcUnits, NodeBase/Tick, Term);
 		(get_conversion(_, ArcUnits, 1, _);
-			get_conversion(_, Node_units, 1, _)),
+			get_conversion(_, NodeBase, 1, _)),
 		Term = Var), !;
 	Term = Var,
 		caption_for(Controller, Capt),
 		sicstus_format_to_chars("Warning -- compartment with units ~w connects to flow defined from node ~w with incompatible units ~w -- conversion ommitted", 
-			[Node_units, Capt, ArcUnits], Hassle),
+			[NodeBase, Capt, ArcUnits], Hassle),
 		do_dialogue("Compilation warning", warning, Hassle, ok, _)).
 
-bind_and_build_term(Node, [Arc|Arcs], Op, Node_units, NewTerm, Refs) :-
-	bind_and_build_term(Node, [Arc], Op, Node_units, Term1, [Ref]),
-	bind_and_build_term(Node, Arcs, Op, Node_units, MidTerm, MidRefs),
+bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
+	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),
+	bind_and_build_term(Node, Arcs, Base, Dims, MidTerm, MidRefs),
 	merge_lists([Ref], MidRefs, Refs),
-	NewTerm =.. [Op,Term1,MidTerm].
+	NewTerm =.. ['+',Term1,MidTerm].
 	
 sum_dims([], Var, Var).
 sum_dims([_ | Rest], Middle, sum(Full)) :-

@@ -69,7 +69,6 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     global window_info rads
 #    put back if Windows users want respite from their gash placement system
 #    wm geometry $winName +0+84
-    ChangeParentTitle $c $winTitle $bg
     
 # set the display depths to those we recorded
     set cats {ghost_link influence variable flow \
@@ -83,19 +82,20 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     $c configure -scrollregion "$wl $wt $wr $wb" \
 	-width [expr $wr-$wl] -height [expr $wb-$wt]
 
-    if {[string match image [$c type /base/]]} {
-	$c coords /base/ $wl $wt
-	base$wc configure -width [expr $wr-$wl]
-	base$wc configure -height [expr $wb-$wt]
-    } else {
-	$c coords /base/ $wl $wt $wr $wb
-    }
-
 # set initial scaling factors
     set window_info($c,width) [expr $wr - $wl]
     set window_info($c,height) [expr $wb - $wt]
     set window_info($c,scale) $scale
 # last will be overwritten if drawing from Prolog
+
+    if {[string match image [$c type /base/]]} {
+	$c coords /base/ $wl $wt
+	base$c configure -width [expr int($wr-$wl)]
+	base$c configure -height [expr int($wb-$wt)]
+    } else {
+	$c coords /base/ $wl $wt $wr $wb
+    }
+    ChangeParentTitle $c $winTitle $bg
 
     set topWin [winfo parent $c]
     scan [wm maxsize $topWin] "%d %d" mw mh
@@ -1451,13 +1451,11 @@ proc ShiftDll {Point Top FullName Loc Rep} {
     
     set base $Top/$Point$AddLoc/model[info sharedlibextension]
     # ShowMessage debug info "About to copy $base to ${Name}$Loc" ok
-    if {[file exists $base]} {
+    if {$Rep && [file exists $base]} {
 	file mkdir ${Name}$AddLoc
-	if {$Rep} {
-	    file copy -force $base ${Name}$AddLoc
-	} else {
-	    file delete -force ${Name}$AddLoc/model[info sharedlibextension]
-	}
+	file copy -force $base ${Name}$AddLoc
+    } else {
+	file delete -force ${Name}$AddLoc/model[info sharedlibextension]
     }
 }
 
