@@ -619,13 +619,13 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
         set min $dataMin
         set max $dataMax
     }
-    #puts "min $min; max $max"
+    puts "min $min; max $max"
     
     # scale max and min
     if {$max-$min < 1e-10} {
         set lograngem -10.0
     } else {
-        set lograngem [expr {ceil(log10(($max - $min)/2))-1}]
+        set lograngem [expr {ceil(log10(($max - $min)/2.0))-1}]
     }
             
     set ScaleCoeff [expr {1/pow(10,$lograngem)}]
