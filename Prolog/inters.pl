@@ -158,7 +158,7 @@ read_funcs(File, Stream, Done) :-
 	    Macro =.. [Fn | Args],
 	    replace_subexps(Line, inters, free_params, switch(Args, _),
 				    top_down, Pairs, NewLine),
-	    (member(var_pair(Param, Free), Pairs), Free == free, !,
+	    (member(var_pair(Param, NewParam), Pairs), NewParam == Param, !,
 		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
 		do_dialogue(ProbAct, warning, Bug, ok, _);
 	    assert(macro_expansion(NewLine))),
@@ -184,7 +184,7 @@ free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	    \+ var(ArgConst), /* in case some b**** used an underscore */
 	    Arg = ArgConst,
 	    nth(N, Var, ArgVar);
-	ArgVar = free).
+	ArgVar = Arg).
 
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	append(Outer, [var | Inner], Dims), !,
