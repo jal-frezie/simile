@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
-	undo/0, redo/0, menu_select/1, mode_select/1,
+	undo/1, redo/1, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
 	off_window/1, set_style/1]).
 	
@@ -35,22 +35,31 @@ show_normal_cursor :-
 	fail;
 	true.
 
-undo :-
+undo(Wids) :-
 	go_back(Further),
+	all(menu, check_exist, [build(Wids)]),
 	redraw_window(_),
 	update_ability(undo, edit, 'Undo', Further),
 	update_ability(redo, edit, 'Redo', 1),
 	save_allowed(CanSave),
 	update_ability(save, file, 'Save', CanSave).
 
-redo :-
+redo(Wids) :-
 	go_forward(Further),
+	all(menu, check_exist, [build(Wids)]),
 	redraw_window(_),
 	update_ability(undo, edit, 'Undo', 1),
 	update_ability(redo, edit, 'Redo', Further),
 	save_allowed(CanSave),
 	update_ability(save, file, 'Save', CanSave).
 
+check_exist(Wid) :-
+	Wid shows_model Mod,
+	(get_shape(Mod, internal_extent, Rect), !,
+	    output:tk_grow_canvas(Wid, Rect);
+	destroy_window(Wid),
+	    kill_window(Wid)).
+	
 menu_select(Seln) :-
 	update_mode(add),
 	display_mode(add),

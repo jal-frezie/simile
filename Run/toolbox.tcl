@@ -1036,10 +1036,10 @@ proc MenuSelect { window button item } {
 proc DoLocalCmd {win item} {
     global pushedbutton
     switch $item {
+	undo {UnOrReDo 0}
+	redo {UnOrReDo 1}
         print {PrintNow $win}
         rerun {Rerun $win 1}
-        undo {prolog tk_undo}
-        redo {prolog tk_redo}
         zoomin {DoZoom $win 1.414214 1}
         tofit {DisplayAll $win}
         zoomout {DoZoom $win .707107 1}
@@ -1047,6 +1047,19 @@ proc DoLocalCmd {win item} {
         find {FindCaption $win}
         findnext {NextCaption $win}
         raiseMRE { wm deiconify .mre; raise .mre}
+    }
+}
+
+proc UnOrReDo {fwd} {
+    global window_info
+    foreach win [array names window_info *,parent] {
+	lappend canList '[lindex [split $win ,] 0]'
+    }
+    set canArgs [join $canList ,]
+    if {$fwd} {
+	prolog tk_redo(\[$canArgs\])
+    } else {
+	prolog tk_undo(\[$canArgs\])
     }
 }
 
@@ -1162,7 +1175,6 @@ proc PrintNow {winId} {
 }
 
 proc SpitPS {winId psfile} {
-    global window_info
     scan [PrepForExport $winId there] "%g %g %g" xbase ybase detail
     set useWidth [winfo width $winId]
     set useHeight [winfo height $winId]

@@ -6,7 +6,7 @@ identical to that in which they are used. Where this is the case, the calls from
 use goals that start with "tk_" to make the diffreence clear.
 */
 
-sicstus_module(input, [tk_undo/0, tk_redo/0, tk_get_info/3, tk_get_params/2,
+sicstus_module(input, [tk_undo/1, tk_redo/1, tk_get_info/3, tk_get_params/2,
 	tk_click_obj/5, tk_click/3, tk_doubleclick/3, tk_unclick/2, 
 	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5,
 	tk_embrace/2, tk_abandon/0, tk_abandon_eqn/0,
@@ -15,14 +15,14 @@ sicstus_module(input, [tk_undo/0, tk_redo/0, tk_get_info/3, tk_get_params/2,
 
 sicstus_use_module([backup, event, menu]).
 
-tk_undo :-
+tk_undo(Wids) :-
 	show_wait_cursor,
-	undo,
+	undo(Wids),
 	show_normal_cursor.
 
-tk_redo :-
+tk_redo(Wids) :-
 	show_wait_cursor,
-	redo,
+	redo(Wids),
 	show_normal_cursor.
 
 tk_get_info(Wid, Comp, What) :-
