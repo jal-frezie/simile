@@ -1372,7 +1372,7 @@ proc AddEqnPopup {topNode x y winId X Y} {
             AddPopupMessage $fromProlog #ffe0c0 0
         }
         if {$doVal} {
-	    if {[catch {GetModelValue $topNode $plName} value]} {
+	    if {[catch {GetTransValues $topNode $plName} value]} {
 		set missing [lindex [split $value \"] 1]
 		set value "Missing value: $missing"
 	    }
@@ -2660,15 +2660,14 @@ proc restore_equation {winId bar} {
 ##############################    Formula bar    #############################
 
 
-
-
-proc GetModelValue {topNode node} {
+proc GetTransValues {topNode node} {
     global runStatus
 
     if {![info exists runStatus($topNode,interp)]} {
 	return novalue
     } else {
-	set value [$runStatus($topNode,interp) eval GetModelValue $node]
+	set value [$runStatus($topNode,interp) eval \
+		       GetCompProperty $topNode Value $node]
 	if {![string match novalue $value]} {
 	    set trans [GetTransTable $node]
 	    return [$runStatus($topNode,interp) eval \

@@ -143,11 +143,11 @@ proc click {w node caption} {
     global ::graphtools::YYnew
     
     set newbox nodebox[incr plot($w,nodeCount)]
-    set name [GetCaptionPathFromId $node]
+    set name [GetCaptionPathFromId $w $node]
     
-    set testResult [GetModelValue $node]
+    set testResult [GetModelValue $w $node]
     if {[string compare $testResult novalue]} {
-        set values [lindex [GetModelValue $node] 0]
+        set values [lindex [GetModelValue $w $node] 0]
         #ShowMessage debug info "[llength $values] $values" ok
         #lappend plot($w,Ylabels) $caption
         if {[llength $values]==1} then {
@@ -551,7 +551,7 @@ proc get_Yvalues {w} {
     set YYnew($w) [list 1 2]
     set YYnew($w) [lreplace $YYnew($w) 0 end]
 	foreach node $plot($w,Yvars) {
-		set values [GetModelValue $node]
+		set values [GetModelValue $w $node]
 		set values [lindex $values 0]
 ##        set YYnew($w) [lindex $values 0]
         

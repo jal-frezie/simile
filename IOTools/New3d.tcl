@@ -286,7 +286,7 @@ proc reset {winId} {
 # proc click {winId node caption}
 proc click {winId node caption} {
    set ms $winId.intro
-   set testResult [GetModelValue $node]
+   set testResult [GetModelValue $winId $node]
    if {[string compare $testResult novalue]} {
       set state [GetState $winId]
       switch [lindex $state 0] {
@@ -568,10 +568,10 @@ namespace eval data {
       # Also, it keeps a record of low,high X,Y
       # Ver 0.0.98 : each $quad has a unique identifier tagged on the end. Can
       # be used to identify the data for AME feedback.
-      GetQuadList $winId [lindex [GetModelValue $xs] 0] \
-                        [lindex [GetModelValue $ys] 0] \
-                        [lindex [GetModelValue $cs] 0] \
-                        [lindex [GetModelValue $hs] 0]
+      GetQuadList $winId [lindex [GetModelValue $winId $xs] 0] \
+                        [lindex [GetModelValue $winId $ys] 0] \
+                        [lindex [GetModelValue $winId $cs] 0] \
+                        [lindex [GetModelValue $winId $hs] 0]
       if [info exists myDebug ] {
          $myDebug insert 1.0 "proc ReadData: f_highX=$f_highX f_lowX=$f_lowX f_highY=$f_highY f_lowY=$f_lowY\n"
       }   
@@ -1674,13 +1674,13 @@ namespace eval graphics {
       if [info exists myDebug ] {
          $myDebug insert 1.0 "proc setNewValues: cs = $cs\n"
          $myDebug insert 1.0 "proc setNewValues: hs = $hs\n"
-         $myDebug insert 1.0 "proc setNewValues: GetModelValue cs = [GetModelValue $cs]\n"
-         $myDebug insert 1.0 "proc setNewValues: GetModelValue hs = [GetModelValue $hs]\n"
+         $myDebug insert 1.0 "proc setNewValues: GetModelValue winId cs = [GetModelValue $winId $cs]\n"
+         $myDebug insert 1.0 "proc setNewValues: GetModelValue winId hs = [GetModelValue $winId $hs]\n"
       }   
       
       # Fetch the data as lists
-      set colours [lindex [GetModelValue $cs] 0]
-      set heights [lindex [GetModelValue $hs] 0]
+      set colours [lindex [GetModelValue $winId $cs] 0]
+      set heights [lindex [GetModelValue $winId $hs] 0]
 
       if [info exists myDebug ] {
          $myDebug insert 1.0 "proc setNewValues: colours = $colours\n"
@@ -1712,8 +1712,8 @@ namespace eval graphics {
       }   
 
       # Now pass the values to AME
-      SetModelValue $cs $colours
-      SetModelValue $hs $heights
+      SetModelValue $winId $cs $colours
+      SetModelValue $winId $hs $heights
 
       destroy $colD
       calcViewParams

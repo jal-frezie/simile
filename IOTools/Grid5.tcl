@@ -80,8 +80,8 @@ namespace eval grid005 {
         namespace import -force ::maptools2::*
 	set state [GetState $winId]
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g"
-	set useNodes($winId,display1) [GetIdFromCaptionPath [lindex $state 1]]
-	set useNodes($winId,colvals) [GetIdFromCaptionPath [lindex $state 2]]
+	set useNodes($winId,display1) [GetIdFromCaptionPath $winId [lindex $state 1]]
+	set useNodes($winId,colvals) [GetIdFromCaptionPath $winId [lindex $state 2]]
 	set colourBase [lsearch $state colourmap]
 	foreach colourPt {cbot cmid ctop} {
 	    set useNodes($winId,$colourPt) [lindex $state [incr colourBase]]
@@ -95,7 +95,7 @@ namespace eval grid005 {
         SetColours useNodes $winId
         AddToolbar $winId
         $winId.bbframe.buttonBox itemconfigure 0 -state disable
-	NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
+	NumDistinct $winId [GetModelValue $winId $useNodes($winId,colvals)]
         InitialiseGrid $winId $useNodes($winId,display1)
         set useNodes($winId,freeze) false
     }
@@ -108,7 +108,7 @@ namespace eval grid005 {
         variable useNodes
         
         set ms $winId.intro
-        set testResult [GetModelValue $node]
+        set testResult [GetModelValue $winId $node]
         if {[string compare $testResult novalue]} {
             set state [GetState $winId]
             switch $state {
@@ -122,11 +122,11 @@ namespace eval grid005 {
                     ReleaseClicks $winId
                     set useNodes($winId,display1) $node
 
-		    set min [GetMinValue $node]
+		    set min [GetMinValue $winId $node]
 		    if {$min!=-1e100} {
 			set useNodes($winId,min) $min
 		    }
-		    set max [GetMaxValue $node]
+		    set max [GetMaxValue $winId $node]
 		    if {$max!=1e100} {
 			set useNodes($winId,max) $max
 		    }
@@ -165,8 +165,8 @@ namespace eval grid005 {
     proc UpdateState {winId} {
         variable useNodes
         SetState $winId [list displaying \
-                [GetCaptionPathFromId $useNodes($winId,display1)] \
-		[GetCaptionPathFromId $useNodes($winId,colvals)] colourmap \
+                [GetCaptionPathFromId $winId $useNodes($winId,display1)] \
+		[GetCaptionPathFromId $winId $useNodes($winId,colvals)] colourmap \
                 $useNodes($winId,cbot) $useNodes($winId,cmid) $useNodes($winId,ctop) \
                 aspect $useNodes($winId,nswatches)\
                 $useNodes($winId,min) $useNodes($winId,max)]
@@ -178,7 +178,7 @@ namespace eval grid005 {
         if {[string match [lindex [GetState $winId] 0] displaying] && \
                     !$useNodes($winId,freeze)} then {
 	    if {!$time} {
-		NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
+		NumDistinct $winId [GetModelValue $winId $useNodes($winId,colvals)]
 	    }
             DrawGrid5 $winId $useNodes($winId,display1)
             FillCanvas $winId
@@ -281,7 +281,7 @@ namespace eval grid005 {
     
     proc UpdateCaption {winId} {
         variable useNodes
-        $winId.c itemconfig caption -text "[file tail [GetCaptionPathFromId $useNodes($winId,display1)]] ($useNodes($winId,ncol)x$useNodes($winId,nrow), time = [GetModelTime])"
+        $winId.c itemconfig caption -text "[file tail [GetCaptionPathFromId $winId $useNodes($winId,display1)]] ($useNodes($winId,ncol)x$useNodes($winId,nrow), time = [GetModelTime $winId])"
     }
     
     proc ToggleFreeze {winId} {
@@ -446,7 +446,7 @@ namespace eval grid005 {
         $c create text 250 210 -text $cella
         
         set dis1 $useNodes($winId,display1)
-        set display1 [lindex [GetModelValue $dis1] 0]
+        set display1 [lindex [GetModelValue $winId $dis1] 0]
         set this_colour [expr {int([lindex $display1 [expr $cell*2-1]])}]
         $c create text 250 230 -text "xx $this_colour xx"
     }
@@ -457,7 +457,7 @@ namespace eval grid005 {
     proc DrawGrid5 {winId node} {
         variable useNodes
         
-        set values [Flatten [lindex [GetModelValue $node] 0] {}]
+        set values [Flatten [lindex [GetModelValue $winId $node] 0] {}]
         set useNodes($winId,values) $values
         
         set ncell [llength $values]

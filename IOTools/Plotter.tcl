@@ -104,8 +104,8 @@ namespace eval ::$keyValue {
         #initialize $winId; #allows default values for vars missing from GetState
         # loses vars to plot
         
-        set plot($winId,Xmin_data) [GetModelTime]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
-        set plot($winId,Xmax_data) [expr {[GetModelTime]+$runState(execTime)}]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
+        set plot($winId,Xmin_data) [GetModelTime $winId]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
+        set plot($winId,Xmax_data) [expr {[GetModelTime $winId]+$runState(execTime)}]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
         ################################################################################
         set YYold($winId) {}
         set YYnew($winId) {}
@@ -117,13 +117,13 @@ namespace eval ::$keyValue {
         array set plot $restoreString
 
 	foreach node $plot($winId,Yvars) {
-	    set plot(caption,$node) [file tail [GetCaptionPathFromId $node]]
+	    set plot(caption,$node) [file tail [GetCaptionPathFromId $winId $node]]
 	}
 	set runCount($winId) 1
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
-        display $winId [GetModelTime] 0 0
-        display $winId [GetModelTime] 0 0
+        display $winId [GetModelTime $winId] 0 0
+        display $winId [GetModelTime $winId] 0 0
     }
     
     proc GetCanvas {winId} {
@@ -134,16 +134,16 @@ namespace eval ::$keyValue {
         #tk_messageBox -message "Click node $node" -type ok
         global ::graphtools::plot
         
-        set name [GetCaptionPathFromId $node]
+        set name [GetCaptionPathFromId $w $node]
         
-        set testResult [GetModelValue $node]
+        set testResult [GetModelValue $w $node]
         if {[string compare $testResult novalue]} {
 	    set plot(caption,$node) $caption
             lappend plot($w,Yvars)   $node
             
             UpdateState $w
-            display $w [GetModelTime] 0 0
-            display $w [GetModelTime] 0 0
+            display $w [GetModelTime $w] 0 0
+            display $w [GetModelTime $w] 0 0
         } else {
             #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
         }
@@ -666,8 +666,8 @@ namespace eval ::$keyValue {
 
         $w.canvas delete prompt
         drawGraphpad $w
-        display $w [GetModelTime] 0 0
-        display $w [GetModelTime] 0 0
+        display $w [GetModelTime $w] 0 0
+        display $w [GetModelTime $w] 0 0
     }
     
     proc adjustLimits {w Tnew Ynew} {
@@ -676,7 +676,7 @@ namespace eval ::$keyValue {
         
         if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
             if {$Tnew>$plot($w,Xmax_axis)} {
-                set plot($w,Xmax_data) [expr {[GetModelTime]+$runState(execTime)}]
+                set plot($w,Xmax_data) [expr {[GetModelTime $w]+$runState(execTime)}]
             }
             if {$Tnew<$plot($w,Xmin_axis)} {
                 set plot($w,Xmin_data) $Tnew
@@ -786,7 +786,7 @@ namespace eval ::$keyValue {
         set YYnew($w) [list 1 2]
         set YYnew($w) [lreplace $YYnew($w) 0 end]
         foreach node $plot($w,Yvars) {
-            set values [GetModelValue $node]
+            set values [GetModelValue $w $node]
             set values [lindex $values 0]
 	    if {[llength $values]} {
 		lappend YYnew($w) [list $node $values]

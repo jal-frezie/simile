@@ -198,7 +198,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
                 regsub -all " " $graph($t,points) , graph($t,pts)
                 # Target is set to variable id if editing sketch at run time
                 if {[llength $target]} {
-                    eval {SetModelGraph $target $graph($t,lowx) \
+                    eval {SetModelGraph $t $target $graph($t,lowx) \
 			      $graph($t,highx) $graph($t,width) \
 			      $graph($t,lowy) $graph($t,highy) \
 			      $graph($t,height) $graph($t,range) \
@@ -212,7 +212,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             }
         } else {
             if {[llength $target]} {
-                set lastSaved [GetModelGraph $target]
+                set lastSaved [GetModelGraph $t $target]
                 scan $lastSaved "%g %g %d %g %g %d %d" graph($t,lowx) \
                         graph($t,highx) graph($t,width) \
                         graph($t,lowy) graph($t,highy) \
@@ -694,7 +694,7 @@ proc ChooseDataHeader {eb pth where op dtype data} {
 
 proc FileParamDialogue {mustShow} {
     global paramData widgetNames loadingProject
-    set allNodes [GetObjectList]
+    set allNodes [GetCompProperty topNode Objects]
     # do it now to shake out errors before opening window
         
     set t [toplevel .fpdialogue]
@@ -707,7 +707,8 @@ proc FileParamDialogue {mustShow} {
     MakeFrames $t
     array unset widgetNames
     foreach node $allNodes {
-        set isInput [lsearch {TABLE INPUT} [GetModelEval $node]]
+        set isInput [lsearch {TABLE INPUT} \
+			 [GetCompProperty topNode Eval $node]]
 	if {$isInput != -1} {
 	    AddEntry $t $node $mustShow $isInput
         }
@@ -761,13 +762,13 @@ proc MakeFrames {windowId} {
 
 proc AddEntry {winId node mustShow isInput} {
     global paramData paramDims widgetNames iconImages
-    set compName [GetCaptionPathFromId $node]
-    if {[string match SUBMODEL [GetModelClass $node]]} {
+    set compName [GetCompProperty topNode Caption $node]
+    if {[string match SUBMODEL [GetCompProperty topNode Class $node]]} {
 	set paramData($compName) {}
 	return
     }
     set levels [split $compName /]
-    set nodeDims [GetModelDims $node]
+    set nodeDims [GetCompProperty topNode Dims $node]
 
 # bit of voodoo...get table relating numerical indices of node to enymerated
 # types (from prolog) and use to translate array bounds. Do this first because
@@ -790,7 +791,7 @@ proc AddEntry {winId node mustShow isInput} {
 	    set last boolean
 	}
     } else {
-	set last [GetModelType $node]
+	set last [GetCompProperty topNode Type $node]
     }
     if {[llength $dimList]} {
 	append dimList " of $last"
@@ -803,7 +804,7 @@ proc AddEntry {winId node mustShow isInput} {
     } else {
 	set slotCaption [lindex $levels end]
     }
-    pack [set slot [frame [MakeSubFrames $winId.sliderframe $levels \
+    pack [set slot [frame [MakeSubFrames spare $winId.sliderframe $levels \
 			       fileparams 0]]] -fill x -expand on
     pack [label $slot.l -text $slotCaption -fg red] -side left
     if {$nodeDims>1} {
@@ -841,7 +842,7 @@ proc AddEntry {winId node mustShow isInput} {
 # gives them the Load and Save commands in a given namespace. So we must put
 # the commands in a matching one...
 
-proc MakeSubFrames {parent hierarchy ns pt} {
+proc MakeSubFrames {clientId parent hierarchy ns pt} {
     global iconImages
     set level [lindex $hierarchy $pt]
     set nextPt [expr $pt+1]
@@ -855,15 +856,15 @@ proc MakeSubFrames {parent hierarchy ns pt} {
         set path [join [lrange $hierarchy 0 $pt] /]
         # added setting of SimileProject element to store spf path
 	    pack [button $nextLevel.head.save -image $iconImages(save) \
-		      -command [list ${ns}::Save $path]] -side right
+		      -command [list ${ns}::Save $clientId $path]] -side right
 	    pack [button $nextLevel.head.open -image $iconImages(open) \
-		      -command [list ${ns}::Open $path]] -side right
+		      -command [list ${ns}::Open $clientId $path]] -side right
 	    if {![string length $level]} {
 		set level "TOP LEVEL"
 	    }
             pack [label $nextLevel.head.label -text $level:]
         }
-        return [MakeSubFrames $nextLevel $hierarchy $ns $nextPt]
+        return [MakeSubFrames $clientId $nextLevel $hierarchy $ns $nextPt]
     }
 }
 
@@ -891,7 +892,7 @@ proc DoneParams {winId} {
 proc AcceptData {winId compName complain} {
     global paramDims paramData widgetNames runState inputHelper running_c
 
-    set node [GetIdFromCaptionPath $compName]
+    set node [GetCompProperty topNode IdFromCapt $compName]
     if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
 	set paramData($compName) [$widgetNames($compName).e get]
     }
@@ -902,7 +903,7 @@ proc AcceptData {winId compName complain} {
 # or model not yet started
     if {![info exists running_c]} {
 	set dataChanged 1
-    } elseif {[catch {GetModelValue $node} oldVal]} {
+    } elseif {[catch {GetCompProperty topNode Value $node} oldVal]} {
 	set dataChanged 1
     } elseif {[string compare [lindex $oldVal 0] $paramData($compName)]} {
 	set dataChanged 1
@@ -923,8 +924,10 @@ proc AcceptData {winId compName complain} {
 #puts "recordId is $recordId"
 		if {[string first $recordId $compName]==0 && \
 		    ![string equal $recordId $compName]} {
-		    set recordNode [GetIdFromCaptionPath $recordId]
-		    set outerDims [lrange [GetModelDims $recordNode] 0 end-1]
+		    set recordNode [GetCompProperty topNode \
+					IdFromCapt $recordId]
+		    set outerDims [lrange [GetCompProperty topNode Dims \
+					       $recordNode] 0 end-1]
 #puts "node $recordNode outer dims $outerDims"
 		    if {[string match $outerDims \
 			     [lrange $recordDims $afterTIME $recordDepth]]} {
@@ -1090,7 +1093,7 @@ proc CancelParams {} {
 
 namespace eval fileparams {
 
-proc Save {smPath} {
+proc Save {spare smPath} {
     global paramState paramData widgetNames SimileProject
 #ShowMessage debug info "Save $smPath" ok
     
@@ -1124,7 +1127,7 @@ proc Save {smPath} {
 # new relative pathnames and I can only generate these starting from the absolute
 # pathname. And the only way to get that without a hack is to cd to it...
 
-proc Open {smPath} {
+proc Open {spare smPath} {
     global SimileProject
     set metaFile [ChooseFile params.spf "Load parameters from:" 0]
     set SimileProject(fileparam,$smPath) $metaFile
@@ -1144,7 +1147,7 @@ proc MergeParams {smPath metaFile interactive} {
 	#ShowMessage debug info "Restoring $savedValue" ok
 	set IdAndValue [split $savedValue =]
 	set restoredComp [RestoreCrs $smPath[lindex $IdAndValue 0]]
-	set node [GetIdFromCaptionPath $restoredComp]
+	set node [GetCompProperty topNode IdFromCapt $restoredComp]
 	set trans [GetTransTable $node]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
 	if {[info exists paramData($restoredComp)]} {
@@ -1263,8 +1266,8 @@ proc GetFromTable {parent compName} {
 proc InitTimeSeries {} {
     global setFromSeries paramData
     array unset setFromSeries
-    foreach node [GetObjectList] {
-	if {[string match INPUT [GetModelEval $node]]} {
+    foreach node [GetCompProperty topNode Objects] {
+	if {[string match INPUT [GetCompProperty topNode Eval $node]]} {
 #puts "timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1

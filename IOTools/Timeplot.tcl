@@ -37,7 +37,7 @@ namespace eval ::origplot72514 {
 
     proc Restore {winId} {
         set name [lindex [GetState $winId] 2]
-        set node [GetIdFromCaptionPath $name]
+        set node [GetIdFromCaptionPath $winId $name]
         set units [lindex [GetState $winId] 3]
         SetState $winId [list displaying $node $name $units]
         MakeTimePlot $winId $node $units
@@ -49,7 +49,7 @@ namespace eval ::origplot72514 {
     
     proc click {winId node caption} {
         if {[string compare [lindex [GetState $winId] 0] displaying]} {
-            set testResult [GetModelValue $node]
+            set testResult [GetModelValue $winId $node]
             if {[string compare $testResult novalue]} {
                 ReleaseClicks $winId
                 pack forget $winId.intro
@@ -64,9 +64,10 @@ namespace eval ::origplot72514 {
                     wm title $winId "$caption (plot against time)"
                 }
                 MakeTimePlot $winId $node real
-                UpdateDisplay $winId [lindex $testResult 0] [GetModelTime]
+                UpdateDisplay $winId [lindex $testResult 0] \
+		    [GetModelTime $winId]
                 SetState $winId [list displaying $node \
-                        [GetCaptionPathFromId $node] real]
+				     [GetCaptionPathFromId $winId $node] real]
             } else {
                 $winId.intro configure -text \
                         "This component, $caption, does not have a value; please choose a compartment, variable or flow."
@@ -78,7 +79,7 @@ namespace eval ::origplot72514 {
         set status [GetState $winId]
         if {[string compare [lindex $status 0] displaying] == 0} {
             UpdateDisplay $winId [lindex [GetModelValue \
-                    [lindex $status 1]] 0] $time
+                    $winId [lindex $status 1]] 0] $time
         }
     }
     
@@ -96,7 +97,7 @@ namespace eval ::origplot72514 {
         set timeplotvars($t,tree) $tree
         set timeplotvars($t,unit) $unit
         set isReal [string compare $unit flag]
-        set timeplotvars($t) [lindex [GetModelValue $tree] 0]
+        set timeplotvars($t) [lindex [GetModelValue $t $tree] 0]
         
         frame $t.left
         frame $t.left.top

@@ -117,7 +117,7 @@ proc DoAtStart {win elements} {
             if {[string match $attribute node_label]==1} then {
                set node_label [lindex $element $i]
                set node_label /Desktop/$node_label
-               set node_ID [GetIdFromCaptionPath $node_label]
+               set node_ID [GetIdFromCaptionPath $win $node_label]
 		if {[string match nomatch $node_ID]} {
 		    ShowMessage "Missing component" warning "Could not find component $node_label in the model" ok
 		    set oops 1
@@ -307,7 +307,7 @@ proc set_attributes_ok {win w ielement type n} {
       if {[string match $attribute node_label]==1} then {
          set node_label $info($ielement,node_label)
          set node_label /Desktop/$node_label
-         set node_ID [GetIdFromCaptionPath $node_label]
+         set node_ID [GetIdFromCaptionPath $win $node_label]
          set info($ielement,node_ID) $node_ID
       }
    }
@@ -404,6 +404,7 @@ proc assign_variable {canvas x y} {
    global info
 
    set current_node_ID [find_tag $canvas $x $y node*]
+    set winId [winfo parent $canvas]
    set i [lsearch $info(graphed_nodes) $current_node_ID]
    set info(graphed_nodes) [lreplace $info(graphed_nodes) $i $i]
    $canvas delete graphlabel$current_node_ID
@@ -420,14 +421,14 @@ debug "$current_node_ID  :::  $info(graphed_nodes)"
    pack $w.frame.list $w.frame.scroll -side left -fill y -expand 1
 
    bind $w.frame.list <Double-1> \
-      [namespace code "listboxselect fred"]
+      [namespace code "listboxselect $winId fred"]
 
    set allowed_types {CONSTANT LEVEL DERIVED}
-   set objectlist [GetObjectList]
+   set objectlist [GetObjectList $winId]
    foreach object $objectlist {
-      set object_type [GetModelType $object]
+       set object_type [GetModelType $winId $object]
       if {[lsearch -exact $allowed_types $object_type]>=0} {
-         set label [GetCaptionPathFromId $object]
+         set label [GetCaptionPathFromId $winId $object]
          set label [string range $label 9 end]
          $w.frame.list insert end $label
       }
@@ -436,17 +437,16 @@ debug "$current_node_ID  :::  $info(graphed_nodes)"
 }
 
 
-proc listboxselect {x} {
+proc listboxselect {winId x} {
    global info
 
    set sel [.dialogue.frame.list curselection]
    set node_label [.dialogue.frame.list get $sel]
-   set node_label /Desktop/$node_label
-   set node_ID [GetIdFromCaptionPath $node_label]
+   set node_ID [GetIdFromCaptionPath $winId $node_label]
 #debug "$sel ; $node_label ; $node_ID"
    lappend info(graphed_nodes) $node_ID
    #$canvas create text $x0 [expr $y1-2] \
-   $canvas create text 100 100 \
+   $winId.canvas create text 100 100 \
       -text $node_label -anchor sw -tag graphlabel$node_ID
 }
 
@@ -492,7 +492,7 @@ proc DoEachTimeStep {win time} {
             set max $info($i,max)
 	     set colPt [expr $col%[llength $info($i,line_colours)]]
             set line_colour [lindex $info($i,line_colours) $colPt]
-            set val [lindex [GetModelValue $node_ID] 0]
+            set val [lindex [GetModelValue $win $node_ID] 0]
 	     if {[string match novalue $val]} {
 		 ShowMessage "Missing value" warning "Could not get a value for $i (Label $info($i,node_label), node $node_ID)" ok
 	     } else {
@@ -543,7 +543,7 @@ proc DoEachTimeStep {win time} {
             set x0 $info($i,x0)
             set y0 [expr $canvas_height-$info($i,y0)]
             set node_ID $info($i,node_ID)
-            set val [lindex [GetModelValue $node_ID] 0]
+            set val [lindex [GetModelValue $win $node_ID] 0]
             set thresholds $info($i,thresholds)
             set j 0
             set ok 0
@@ -575,7 +575,7 @@ proc DoEachTimeStep {win time} {
             set font $info($i,font)
             set predicted_value $info($i,predicted_value)
             set property $info($i,property)
-            set current_value [lindex [GetModelValue $node_ID] 0]
+            set current_value [lindex [GetModelValue $win $node_ID] 0]
 
 	     if {$time==0 || [regexp final $property]} {
 		 set value $current_value
@@ -596,7 +596,7 @@ proc DoEachTimeStep {win time} {
 
          slider {
             set node_ID $info($i,node_ID)
-	     set oldValue [lindex [GetModelValue $node_ID] 0]
+	     set oldValue [lindex [GetModelValue $win $node_ID] 0]
 	     if {$info($i,current_value)!=$oldValue} {
 		 puts $info(logfile) "Slider $info($i,node_label) set to \
 $info($i,current_value) at time $time"
@@ -610,7 +610,7 @@ $info($i,current_value) at time $time"
 
          speak {
             set node_ID $info($i,node_ID)
-            set val [lindex [GetModelValue $node_ID] 0]
+            set val [lindex [GetModelValue $win $node_ID] 0]
             if {$time>0} then {
                set oldval $info($i,oldval)
                set thresholds $info($i,thresholds)
@@ -633,7 +633,7 @@ $info($i,current_value) at time $time"
             set x0 $info($i,x0)
             set y0 [expr $canvas_height-$info($i,y0)]
             set node_ID $info($i,node_ID)
-            set val [lindex [GetModelValue $node_ID] 0]
+            set val [lindex [GetModelValue $win $node_ID] 0]
             $win.canvas create text [expr $x0+3] [expr $y0-1] \
                -text $val -anchor sw -tag text
          }
@@ -645,7 +645,7 @@ $info($i,current_value) at time $time"
             set issue_warning 1  
             foreach condition $conditions {
                set node_ID [lindex $condition 0]
-               set actual_value [lindex [GetModelValue $node_ID] 0]
+               set actual_value [lindex [GetModelValue $win $node_ID] 0]
                set op [lindex $condition 1]
                set test_value [lindex $condition 2]
                switch $op {
@@ -1273,7 +1273,7 @@ proc pg_warning {canvas i} {
    foreach condition $conditions {
       set node_label [lindex $condition 0]
       set node_label /Desktop/$node_label
-      set node_ID [GetIdFromCaptionPath $node_label]
+       set node_ID [GetIdFromCaptionPath [winfo parent $canvas] $node_label]
       set op [lindex $condition 1]
       set value [lindex $condition 2]
       set condition1 [list $node_ID $op $value]

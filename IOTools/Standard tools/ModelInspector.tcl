@@ -53,14 +53,14 @@ namespace eval ::ModelInspector63654 {
         
 #        tk_messageBox -message [GetObjectList] -type ok
         #get submodel nodeIds for parents
-        foreach component [GetObjectList] {
+        foreach component [GetObjectList $winId] {
             if {[llength [info commands GetModelClass]] >0} {
-                set type [GetModelClass $component]; # Simile 2.7+
+                set type [GetModelClass $winId $component]; # Simile 2.7+
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
             if {[string match SUBMODEL $type ]} then {
-                set SubbedComp [GetCaptionPathFromId $component]
+                set SubbedComp [GetCaptionPathFromId $winId $component]
                 set SubbedCompList [split $SubbedComp /]
                 set path [lrange $SubbedCompList 1 end]
                 set pathLength [llength $path]
@@ -76,14 +76,14 @@ namespace eval ::ModelInspector63654 {
 		    -image $im(submodel)
             }
         }
-        foreach component [GetObjectList] {
+        foreach component [GetObjectList $winId] {
             # substitute " " for <cr>s so entry goes on one line # no - need the crs
-            set SubbedComp [GetCaptionPathFromId $component]
+            set SubbedComp [GetCaptionPathFromId $winId $component]
             set SubbedCompList [split $SubbedComp /]
             set path [lrange $SubbedCompList 1 end]
             #        ShowMessage debug info "GetModelValue $component = [GetModelValue $component]" ok
             if {[llength [info commands GetModelClass]] >0} {
-                set type [GetModelClass $component]; # Simile 2.7+
+                set type [GetModelClass $winId $component]; # Simile 2.7+
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
@@ -129,10 +129,12 @@ namespace eval ::ModelInspector63654 {
         
 #	OpenLevel 0; # open up level 0 only (so can see level 1)
         
-        $tableframe.table bindImage <Button-1> [namespace code OnElementClick]
-        $tableframe.table bindText <Button-1> [namespace code OnElementClick]
-	    $tableframe.table bindImage <Enter> [list QueuePopup [namespace code DoInspPopup] %X %Y]
-	    $tableframe.table bindText <Enter> [list QueuePopup [namespace code DoInspPopup] %X %Y]
+	$tableframe.table bindImage <Button-1> \
+		[namespace code "OnElementClick $SubbedComp $component"]
+        $tableframe.table bindText <Button-1> \
+		[namespace code "OnElementClick $SubbedComp $component"]
+	    $tableframe.table bindImage <Enter> [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
+	    $tableframe.table bindText <Enter> [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
 	$tableframe.table bindImage <Leave> RemovePopup
 	$tableframe.table bindText <Leave> RemovePopup
     }
@@ -141,28 +143,28 @@ namespace eval ::ModelInspector63654 {
         return ""
     }
 
-    proc OnElementClick { node } {
+    proc OnElementClick { capt node } {
     global helperTable
     variable tableframe
     if {![string match none $helperTable(current)]} {
-        set PathList [split [GetCaptionPathFromId $node] /]
-            set caption [lindex $PathList end]; # just the var name
-            ProdObj $node $caption
+        set PathList [split $capt /]
+	set caption [lindex $PathList end]; # just the var name
+	ProdObj $node $caption
         }
     }
     
-	proc DoInspPopup {X Y plName} {
+	proc DoInspPopup {winId X Y plName} {
 	    global running_c
 #	    ShowMessage debug info $args ok
 	    if {[info exists running_c]} {
 		PostPopup $X $Y
 		set trans [GetTransTable $plName]
-		if {[catch {GetModelValue $plName} mVal]} {
+		if {[catch {GetModelValue $winId $plName} mVal]} {
 		    set missing [lindex [split $mVal \"] 1]
 		    set value \
 		    "Missing value: [lindex [DescribeComponent $missing] 0]"
 		} else {
-		    set value [lindex [GetModelValue $plName] 0]
+		    set value [lindex [GetModelValue $winId $plName] 0]
 #puts "trans $trans value $value"
 		    if {![string match novalue $value]} {
 			set value [TransEnums $trans $value]

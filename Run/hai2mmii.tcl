@@ -179,8 +179,6 @@ proc MakeContext {levels} {
 	return "[MakeContext [lrange $levels 2 end]] in $submodel"
     }
 }
-	    
-	    
 
 proc SetStep {time phase} {
     global model_id
@@ -275,43 +273,237 @@ proc TransBounds {transList vals} {
     }
 }
 	    
+proc GetModelTime { winId } {
+    return [GetModelProperty $winId Time]
+}
+
+# Something like this which just gets model structure we want to be
+# able to do as soon as the model program is loaded. So check
+# existence of model_id; don't wait for instance_id or running_c
+ 
+proc GetObjectList { winId } {
+    return [GetModelProperty $winId Objects]
+}
+
 # GetModelValue returns the current value of a node. This is numerical if the
 # node is scalar, a (possibly empty) list of alternating indices and values if
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
 # cloud or submodel.
 
-proc GetModelValue { node } {
-    SetModelValue $node {}
+proc GetModelValue { winId node } {
+    SetModelValue $winId $node {}
 }
 
-proc SetModelValue { node newVals } {
-# puts "get $node"
-    global running_c model_id instance_id
-    if {![info exists running_c]} {
-	WarnNoData
-    }	
+proc SetModelValue { winId node newVals } {
+    return [GetModelProperty $winId Value $node $newVals]
+}
+
+proc GetModelGraph {winId node} {
+    SetModelGraph $winId $node
+}
+
+proc SetModelGraph {winId node $args} {
+    return [eval GetModelProperty $winId Graph $node $args]
+}
+
+proc GetModelType { winId node } {
+    return [GetModelProperty $winId Type $node]
+}
+
+proc GetModelEval { winId node } {
+    return [GetModelProperty $winId Eval $node]
+}
+
+proc GetModelDims { winId node } {
+    return [GetModelProperty $winId Dims $node]
+}
+
+proc GetModelClass { winId node } {
+    return [GetModelProperty $winId Class $node]
+}
+
+proc GetCaptionPathFromId { winId node } {
+    return [GetModelProperty $winId Caption $node]
+}
+
+proc GetIdFromCaptionPath { winId caption } {
+    return [GetModelProperty $winId IdFromCapt $caption]
+}
+
+proc GetMinValue {winId node } {
+    return [GetModelProperty $winId MinVal $node]
+}
+
+proc GetMaxValue {winId node } {
+    return [GetModelProperty $winId MaxVal $node]
+}
+
+proc GetModelProperty {winId args} {
+# translate from helper window to top node here
+    return [eval GetCompProperty topNode $args]
+}
+    
+proc GetCompProperty {topNode prop args} {
+    global model_id
+#puts "Getting top $topNode prop $prop arg0 [lindex $args 0] rest [lrange $args 1 end]"	
+    if {![info exists model_id]} {
+	WarnNoProgram
+    }
     if {$model_id} {
-	#	    return [getvalue $model_id $instance_id $node 0]
-	# new version -- remove list wrapping sometime
-	if {[string length $newVals]} {
-	    return [list [insert $model_id $instance_id $node $newVals]]
-	} else {
-	    return [list [extract $model_id $instance_id $node]]
-	}
+	return [eval GetCCompProperty $topNode $prop $args]
     } else {
-	set nodeData [getinfo $node]
-	if {[string compare [lindex $nodeData 0] NULL]} {
-	    set type [lindex $nodeData 0]
-	    set dims [lindex $nodeData 2]
-	    set tree [lindex $nodeData 3]
-	    return [list [FillValue ::AME_model<> $tree $type $dims \
-			      {} 0 $newVals]]
-	} else {
-	    return novalue
-	}
+	return [eval GetTclCompProperty $topNode $prop $args]
     }
 }
 
+proc GetCCompProperty {topNode prop args} {
+    global runState running_c model_id instance_id
+    global nodedata nodecount
+    set node [lindex $args 0]
+    set set [lrange $args 1 end]
+    # first do cases that don't need any other data
+    switch -regexp $prop {
+	Time {
+	    return $runState(currentTime)
+	} Objects {
+	    return [lrange [listobjects $model_id] 1 end]
+	} Class|Type|Eval {
+	    array set propData [list Class,cIdx 11 Class,names \
+			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
+			       CREATION REPRODUCTION IMMIGRATION LOSS ALARM} \
+			    Type,cIdx 1 Type,names \
+			    {VALUELESS REAL INTEGER FLAG EXTERNAL ENUMERATED} \
+			    Eval,cIdx 2 Eval,names \
+			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
+	    return [lindex $propData($prop,names) \
+			    [getvalue $model_id $node $propData($prop,cIdx)]]
+	} Dims {
+	    set specials {RECORDS MEMBERS SEPARATE}
+	    set fullList [getvalue $model_id $node 0]
+	    
+	    set idx 0
+	    foreach elt $fullList {
+		if {$elt<0} {
+		    lset fullList $idx [lindex $specials [expr -$elt-1]]
+		}
+	    }
+	    # helper apps don't need to know about separate submodels so...
+	    while {[set sep [lsearch $fullList SEPARATE]]>-1} {
+		set fullList [lreplace $fullList $sep $sep]
+	    }
+	    return $fullList
+	} Graph {
+	    set index [getvalue $model_id $node 3]
+	    if {[llength $set]} {
+		eval {setup_graph_data $index} $set
+	    } else {
+		return [graph_table 21 $index]
+	    }
+	} Caption {
+	    return [getvalue $model_id $node 5]
+	} IdFromCapt {
+	    if {[catch {getnodeid $model_id $node} match]} {
+		return nomatch
+	    }
+	    return $match
+	} MinVal {
+	    return [getvalue $model_id $node 6]
+	} MaxVal {
+	    return [getvalue $model_id $node 8]
+	} Value {
+	    if {![info exists running_c]} {
+		WarnNoData
+	    }	
+	    set newVs [lindex $set 0]
+	    # new version -- remove list wrapping sometime
+	    if {[string length $newVs]} {
+		return [list [insert $model_id $instance_id $node $newVs]]
+	    } else {
+		return [list [extract $model_id $instance_id $node]]
+	    }
+	}
+    }
+}
+	    
+proc GetTclCompProperty {topNode prop args} {
+    global runState running_c
+    global nodedata nodecount
+    set node [lindex $args 0]
+    set set [lrange $args 1 end]
+    # first do cases that don't need any other data
+    switch -regexp $prop {
+	Time {
+	    return $runState(currentTime)
+	} Objects {
+	    set result {}
+	    for {set record 1} {$nodecount>$record} {incr record} {
+		lappend result [lindex $nodedata($record) 0]
+	    }
+	    return $result
+	} Class|Type|Eval {
+	    array set propData [list Class 7 Type 0 Eval 1]
+	    return [lindex [getinfo $node] $propData($prop)]
+	} Dims {
+	    return [lindex [getinfo $node] 2]
+	} Graph {
+	    set index [lindex [getinfo $node] 4]
+	    if {[llength $set]} {
+		eval {setup_graph_data $index} $set
+	    } else {
+		return [graph_table 21 $index]
+	    }
+	} Caption {
+	    set numericPath [lindex [getinfo $node] 3]
+#ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
+	    for {set level 1} {$level < [llength $numericPath] - 1} \
+		{incr level} {
+		    set subpath [lrange $numericPath 0 $level]
+		    lappend subpath 0
+		    for {set record 1} {$nodecount>$record} {incr record} {
+			if {[ListSameNumbers \
+				 [lindex $nodedata($record) 4] $subpath]} {
+			    append fullPath / [lindex $nodedata($record) 9]
+			    break
+			}
+		    }
+		}
+	    if {[info exists fullPath]} {
+		return $fullPath
+	    } else {
+		error "Could not find caption for node $node"
+	    }
+	} IdFromCapt {
+	    for {set line 1} {$nodecount>$line} {incr line} {
+		set id [lindex $nodedata($line) 0]
+		if {[string compare $node \
+			 [GetTclCompProperty $topNode Caption $id]] == 0} {
+		    return $id
+		}
+	    }
+	    return nomatch
+	} MinVal {
+	    lindex [getinfo $node] 5
+	} MaxVal {
+	    lindex [getinfo $node] 6
+	} Value {
+	    if {![info exists running_c]} {
+		WarnNoData
+	    }	
+	    set newVs [lindex $set 0]
+	    set nodeData [getinfo $node]
+	    if {[string compare [lindex $nodeData 0] NULL]} {
+		set type [lindex $nodeData 0]
+		set dims [lindex $nodeData 2]
+		set tree [lindex $nodeData 3]
+		return [list [FillValue ::AME_model<> $tree $type $dims \
+				  {} 0 $newVs]]
+	    } else {
+		return novalue
+	    }
+	}
+    }
+}
+	    
 proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
     upvar 1 $nextRefPtr nextRef
 #puts "FLV $nextRef $listDims $dimPlace"
@@ -427,178 +619,12 @@ proc step_list {dimList climb} {
     return $head
 }
 
-# Something like this which just gets model structure we want to be
-# able to do as soon as the model program is loaded. So check
-# existence of model_id; don't wait for instance_id or running_c
- 
-proc GetObjectList { } {
-    global model_id nodedata nodecount
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }
-    if {$model_id} {
-	return [lrange [listobjects $model_id] 1 end]
-    } else {
-	set result {}
-	for {set record 1} {$nodecount>$record} {incr record} {
-	    lappend result [lindex $nodedata($record) 0]
-	}
-	return $result
-    }
-}
-
-proc GetModelType { node } {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	set nodeType [getvalue $model_id $node 1]
-	if {[string match noitem $nodeType]} {
-	    return noitem
-	} else {
-	    return [lindex {VALUELESS REAL INTEGER FLAG EXTERNAL ENUMERATED} \
-			$nodeType]
-	}
-    } else {
-	lindex [getinfo $node] 0
-    }
-}
-
-proc GetModelEval { node } {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	return [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
-		[getvalue $model_id $node 2]]
-    } else {
-	lindex [getinfo $node] 1
-    }
-}
-
-proc GetModelDims { node } {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	set specials {RECORDS MEMBERS SEPARATE}
-	set fullList [getvalue $model_id $node 0]
-
-	set idx 0
-	foreach elt $fullList {
-	    if {$elt<0} {
-		lset fullList $idx [lindex $specials [expr -$elt-1]]
-	    }
-	}
-# helper apps don't need to know about separate submodels so...
-	while {[set sep [lsearch $fullList SEPARATE]]>-1} {
-	    set fullList [lreplace $fullList $sep $sep]
-	}
-	return $fullList
-    } else {
-	lindex [getinfo $node] 2
-    }
-}
-
-proc GetMinValue { node } {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	return [getvalue $model_id $node 6]
-    } else {
-	lindex [getinfo $node] 5
-    }
-}
-
-proc GetMaxValue { node } {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	return [getvalue $model_id $node 8]
-    } else {
-	lindex [getinfo $node] 6
-    }
-}
-
-proc GetModelClass { node } {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	return [lindex {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
-		CREATION REPRODUCTION IMMIGRATION LOSS ALARM} \
-		[getvalue $model_id $node 11]]
-    } else {
-	lindex [getinfo $node] 7
-    }
-}
-
-proc GetModelGraph {node} {
-    SetModelGraph $node
-}
-
-proc SetModelGraph {node args} {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	set index [getvalue $model_id $node 3]
-    } else {
-	set index [lindex [getinfo $node] 4]
-    }
-    if {[llength $args]} {
-	eval {setup_graph_data $index} $args
-    } else {
-	return [graph_table 21 $index]
-    }
-}
-
 # because the data is all in order, this would be nicer if I only went through
 # the table once, adding the names as I found them, but...
 
 # Also note that we start with the numerical path of the top level model so
 # its caption is _not_ included
 	
-proc GetCaptionPathFromId {node} {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoData
-	return nomatch
-    }	
-    if {$model_id} {
-	return [getvalue $model_id $node 5]
-    } else {
-	global nodedata nodecount
-	
-	set numericPath [lindex [getinfo $node] 3]
-#ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
-	for {set level 1} {$level < [llength $numericPath] - 1} {incr level} {
-	    set subpath [lrange $numericPath 0 $level]
-	    lappend subpath 0
-	    for {set record 1} {$nodecount>$record} {incr record} {
-		if {[ListSameNumbers [lindex $nodedata($record) 4] $subpath]} {
-		    append fullPath / [lindex $nodedata($record) 9]
-		    break
-		}
-	    }
-	}
-	if {[info exists fullPath]} {
-	    return $fullPath
-	} else {
-	    error "Could not find caption for node $node"
-	}
-    }
-}
-
 # getinfo: this used to be generated, indeed what follows comes from the generator
 # but the value of nodecount was the only thing that ever changed, so now this is
 # just written as a global, as is the data table.
@@ -618,27 +644,6 @@ proc getinfo  {nodeName} {
 # have a nice name because it's part of the helper app interface.
 
 # this could be more efficient
-
-proc GetIdFromCaptionPath {caption} {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	return [getnodeid $model_id $caption]
-    } else {
-	global nodedata nodecount
-	
-	for {set line 1} {$nodecount>$line} {incr line} {
-	    set id [lindex $nodedata($line) 0]
-	    if {[string compare $caption \
-		    [GetCaptionPathFromId $id]] == 0} {
-		return $id
-	    }
-	}
-	return nomatch
-    }
-}
 
 proc GetPhaseCount {} {
     global model_id phasecount
@@ -667,10 +672,10 @@ proc WarnNoData {} {
 
 proc collect {tgt node count args} {
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
-    if {[string match TABLE [GetModelEval $node]]} {
+    if {[string match TABLE [GetCompProperty topNode Eval $node]]} {
 	upvar \#0 paramData inputSrc
     } else {
-	upvar \#0 [InputVarFor $node] inputSrc
+	upvar \#0 [InputVarFor topNode $node] inputSrc
     }
     set sub [join [concat $node $args] ,]
 # Check that input source exists, it will not if model is being initialized
@@ -679,8 +684,8 @@ proc collect {tgt node count args} {
     }
 }
 
-proc InputVarFor {node} {	
-    switch [GetModelType $node] {
+proc InputVarFor {topNode node} {	
+    switch [GetCompProperty $topNode Type $node] {
 	FLAG {
 	    return checkStates
 	} ENUMERATED {

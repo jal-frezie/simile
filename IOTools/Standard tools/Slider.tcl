@@ -16,12 +16,12 @@ namespace eval slide139 {
 	    unset compList
 	}
         MakeFrames $winId
-        foreach node [GetObjectList] {
-            if {[string match INPUT [GetModelEval $node]]} {
-                set title [GetCaptionPathFromId $node]
+        foreach node [GetObjectList $winId] {
+            if {[string match INPUT [GetModelEval $winId $node]]} {
+                set title [GetCaptionPathFromId $winId $node]
                 set initVal [InsertSlider $winId $node $title 1]
 		set done 1
-		if {[string match COMPARTMENT [GetModelClass $node]]} {
+		if {[string match COMPARTMENT [GetModelClass $winId $node]]} {
 		    set compList($node) $initVal
 		}
 	    }
@@ -49,39 +49,39 @@ namespace eval slide139 {
     
     proc InsertSlider {winId node title nest} {
 	global checkStates
-        set initVal [lindex [GetModelValue $node] 0]
+        set initVal [lindex [GetModelValue $winId $node] 0]
         #ShowMessage debug info $def ok
 	set levels [split $title /]
 	if {$nest} {
-	    pack [set f [frame [MakeSubFrames $winId.sliderframe $levels \
-				    [namespace current] 0]]] \
+	    pack [set f [frame [MakeSubFrames $winId $winId.sliderframe \
+				    $levels [namespace current] 0]]] \
 		-fill x -expand true
 	} else {
 	    set f $winId
 	}
 	set trans [GetTransTable $node]
-	switch [GetModelType $node] {
+	switch [GetModelType $winId $node] {
 	    FLAG {
 	    } ENUMERATED {
 		set possVals [lrange [lindex $trans end] 1 end]
 	    } default {
-		set min [GetMinValue $node]
-		set max [GetMaxValue $node]
+		set min [GetMinValue $winId $node]
+		set max [GetMaxValue $winId $node]
 		set magnitude [expr $max - $min]
-		if {[string match INTEGER [GetModelType $node]]} {
+		if {[string match INTEGER [GetModelType $winId $node]]} {
 		    set spacing 1
 		} else {
 		    set spacing [expr $magnitude/100.0]
 		}
 	    }
 	}
-	set nodeDims [GetModelDims $node]
+	set nodeDims [GetModelDims $winId $node]
 	for {set outerDims [expr [llength $nodeDims]-1]} \
 	    {$outerDims >= 0 && [lindex $nodeDims $outerDims] <= 0} \
 	    {incr outerDims -1} {}
         if {$outerDims == -1} {
 	    set defVal [GetDefVal $initVal $outerDims 0]
-	    switch [GetModelType $node] {
+	    switch [GetModelType $winId $node] {
 		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
@@ -120,7 +120,7 @@ namespace eval slide139 {
 		} else {
 		    set slTitle $index
 		}
-		switch [GetModelType $node] {
+		switch [GetModelType $winId $node] {
 		    FLAG {
 		    set line [expr ($index+9)/10]
 		    set row $f.row$line
@@ -184,7 +184,7 @@ namespace eval slide139 {
 					  [$cbox cget -text]]+1]
     }
 
-    proc Open {smPath} {
+    proc Open {winId smPath} {
         global checkStates sliderVals
         set metaFile [ChooseFile inputs.spi "Load input values from:" 0]
         if {[llength $metaFile]} {
@@ -195,7 +195,8 @@ namespace eval slide139 {
                     #ShowMessage debug info "Doing type $type" ok
                 } else {
                     set pair [split $savedValue =]
-                    set elmt [GetIdFromCaptionPath $smPath[lindex $pair 0]]
+                    set elmt [GetIdFromCaptionPath $winId \
+				  $smPath[lindex $pair 0]]
                     #ShowMessage debug info "Setting elmt $elmt" ok
                     set arr [lindex $pair 1]
                     if {[llength $arr]==1} {
@@ -210,7 +211,7 @@ namespace eval slide139 {
         }
     }
     
-    proc Save {smPath} {
+    proc Save {winId smPath} {
         global checkStates sliderVals
         set metaFile [ChooseFile inputs.spi "Save input values as:" 1]
         if {[llength $metaFile]} {
@@ -228,11 +229,11 @@ namespace eval slide139 {
                         }
                         set ${var}([lindex $id 1]) $val
                     } else {
-                         PutRelSliderContents $iStr $smPath $elmt $val
+                         PutRelSliderContents $winId $iStr $smPath $elmt $val
                     }
                 }
                 foreach arr $arrs {
-		    PutRelSliderContents $iStr $smPath $arr [array get $arr]
+		    PutRelSliderContents $winId $iStr $smPath $arr [array get $arr]
                     unset $arr
                 }
             }
@@ -240,8 +241,8 @@ namespace eval slide139 {
         }
     }
 
-proc PutRelSliderContents {iStr smPath elt val} {
-    set fullCapt [GetCaptionPathFromId $elt]
+proc PutRelSliderContents {winId iStr smPath elt val} {
+    set fullCapt [GetCaptionPathFromId $winId $elt]
     if {[string match $smPath* $fullCapt]} {
 	puts $iStr [string range $fullCapt [string length $smPath] end]=$val
     }
@@ -274,7 +275,7 @@ proc PutRelSliderContents {iStr smPath elt val} {
 	global sliderVals
 	variable compList
 	foreach node [array names compList] {
-	    set compList($node) [lindex [GetModelValue $node] 0]
+	    set compList($node) [lindex [GetModelValue $winId $node] 0]
 	}
     }
 

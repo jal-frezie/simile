@@ -13,7 +13,7 @@ namespace eval $keyValue {
 
     proc Restore {winId} {
 	set capt [GetState $winId]
-	slide139::InsertSlider $winId [GetIdFromCaptionPath $capt] $capt 0
+	slide139::InsertSlider $winId [GetIdFromCaptionPath $winId $capt] $capt 0
     }
 
     proc reset {winId} {
@@ -23,7 +23,7 @@ namespace eval $keyValue {
 	ReleaseClicks $winId
 	pack forget $winId.m
 	slide139::InsertSlider $winId $node /$caption 0
-	SetState $winId [GetCaptionPathFromId $node]
+	SetState $winId [GetCaptionPathFromId $winId $node]
     }    
 
     proc display {winId time display remainder} {

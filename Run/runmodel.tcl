@@ -203,7 +203,7 @@ proc ProdObj {nodeId caption} {
     if {[string equal none $helperTable(current)]} {
 	return 0
     } else {
-	switch -regexp [GetModelType $nodeId] {
+	switch -regexp [GetCompProperty topNode Type $nodeId] {
 	    REAL|INTEGER|FLAG|ENUMERATED {
 		set target $helperTable(current)
 		
@@ -399,7 +399,7 @@ proc ScrubRun {times} {
 proc snap {node} {
     global runState
     
-    if {[catch {set full_label [GetCaptionPathFromId $node]}]} {
+    if {[catch {GetCompProperty topNode Caption $node} full_label]} {
         return; ## no good
     }
     
@@ -429,7 +429,7 @@ proc snap {node} {
     pack $w.text -expand yes -fill both
     
     set values(1) [TransEnums [GetTransTable $node] \
-		       [lindex [GetModelValue $node] 0]]
+		       [lindex [GetCompProperty topNode Value $node] 0]]
     set length(1) [llength $values(1)]
     
     # Find number of levels of nesting
@@ -547,11 +547,6 @@ proc snap_down3 {w values} {
             set i 0
         }
     }
-}
-
-proc GetModelTime {} {
-    global runState
-    return $runState(currentTime)
 }
 
 proc GetRunParams {} {
@@ -882,7 +877,8 @@ proc FindPhase {node submodel} {
 
     set model_id $model_ids($submodel)
     foreach subnode [listobjects $model_id] {
-        set subtype [GetModelEval $subnode]
+        set subtype [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
+			 [get_value $model_id $subnode 2]]
         if {[string match $node $subnode]} {
             if {[string match EXOGENOUS $subtype]} {
                 return 1
@@ -890,7 +886,7 @@ proc FindPhase {node submodel} {
                 return 0
             }
         }
-        if {[string match EXTERNAL [GetModelType $subnode]]} {
+        if {[get_value $model_id $subnode 1]==4} { ;# EXTERNAL
             lappend subs [list $subnode $subtype]
         }
     }

@@ -30,6 +30,7 @@ proc BuildProblem {name autoName msg fault} {
     global iconImages
 
     toplevel .buildprob
+    wm transient .buildprob [focus]
     switch $fault {
         user {
             set Title "Problem with model"
