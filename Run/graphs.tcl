@@ -219,8 +219,8 @@ proc YEntry {c} {
 	global graph xvalue yvalue
 	set zone [expr round(([llength $graph(points)]-1.0)*\
 		($xvalue-$graph(lowx))/($graph(highx)-$graph(lowx)))]
-	set y [expr $graph(height)*\
-		($yvalue-$graph(lowy))/($graph(highy)-$graph(lowy))]
+	set y [expr round($graph(height)*\
+		($yvalue-$graph(lowy))/($graph(highy)-$graph(lowy)))]
 	GStick $c $zone $y
 }
 
