@@ -1376,13 +1376,13 @@ proc ShowAbout {winId} {
 proc ShowExpiryImminent {expTime} {
     toplevel .expiry
     #    wm transient .expiry $winId
-    wm title .expiry "Expiry Imminent"
+   wm title .expiry "Expiry Imminent"
     wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
-	wm attributes .expiry -toolwindow true
+        wm attributes .expiry -toolwindow true
     }
-
+    
     set labf1 [frame .expiry.labf1]
     image create photo warn
     warn read "../Images/warning.gif"
@@ -1442,100 +1442,115 @@ proc equationlisting_start {} {
     pack $w.mainframe -fill both -expand true
     
     image create photo equationlist(subimg)
-    image create photo equationlist(compimg)
+    image create photo equationlist(compartmentimg)
     image create photo equationlist(flowimg)
-    image create photo equationlist(varimg)
-    image create photo equationlist(crtimg)
-    image create photo equationlist(immimg)
+    image create photo equationlist(variableimg)
+    image create photo equationlist(creationimg)
+    image create photo equationlist(immigrationimg)
     image create photo equationlist(lossimg)
-    image create photo equationlist(repimg)
-    image create photo equationlist(conimg)
+    image create photo equationlist(reproductionimg)
+    image create photo equationlist(conditionimg)
     equationlist(subimg) read "../Images/Toolbar/submodel.gif"
-    equationlist(compimg) read "../Images/Toolbar/compartment.gif"
+    equationlist(compartmentimg) read "../Images/Toolbar/compartment.gif"
     equationlist(flowimg) read "../Images/Toolbar/flow.gif"
-    equationlist(varimg) read "../Images/Toolbar/variable.gif"
-    equationlist(crtimg) read "../Images/Toolbar/creation.gif"
-    equationlist(immimg) read "../Images/Toolbar/immigration.gif"
+    equationlist(variableimg) read "../Images/Toolbar/variable.gif"
+    equationlist(creationimg) read "../Images/Toolbar/creation.gif"
+    equationlist(immigrationimg) read "../Images/Toolbar/immigration.gif"
     equationlist(lossimg) read "../Images/Toolbar/loss.gif"
-    equationlist(repimg) read "../Images/Toolbar/reproduction.gif"
-    equationlist(conimg) read "../Images/Toolbar/condition.gif"
+    equationlist(reproductionimg) read "../Images/Toolbar/reproduction.gif"
+    equationlist(conditionimg) read "../Images/Toolbar/condition.gif"
     
-    $equationlist(textbox) tag configure big \
+    $equationlist(textbox) tag configure bigtag \
             -font {Helvetica 12 bold} -wrap word -lmargin1 10 -lmargin2 10 -spacing3 5
-    $equationlist(textbox) tag configure cmt \
-            -font {Helvetica 10} -lmargin1 55 -lmargin2 55 -wrap word
-    $equationlist(textbox) tag configure whr \
-            -font {Helvetica 10 italic} -lmargin1 55 -lmargin2 55 -wrap word
-    $equationlist(textbox) tag configure eqn \
+    $equationlist(textbox) tag configure descrtag \
             -font {Helvetica 10 bold} -lmargin1 10 -lmargin2 45 -wrap char
-    $equationlist(textbox) tag configure ini \
+    $equationlist(textbox) tag configure cmttag \
+            -font {Helvetica 10} -lmargin1 55 -lmargin2 55 -wrap word
+    $equationlist(textbox) tag configure whrtag \
+            -font {Helvetica 10 italic} -lmargin1 55 -lmargin2 55 -wrap word
+    $equationlist(textbox) tag configure eqntag \
+            -font {Helvetica 10 bold} -lmargin1 35 -lmargin2 45 -wrap char
+    $equationlist(textbox) tag configure initag \
             -font {Helvetica 10} -lmargin1 10 -lmargin2 10 -wrap char
-    $equationlist(textbox) tag configure dummy \
+    $equationlist(textbox) tag configure dummytag \
             -font {Helvetica 5}
 }
 
 
 proc equationlisting_addsubmodel {isub submodel_label} {
     global equationlist
+    $equationlist(textbox) configure  -state normal
     set widget $equationlist(textbox)
     $widget insert end "\n"
-    $widget insert end [regsub -all "\n" $submodel_label " "] big
+    $widget insert end [regsub -all "\n" $submodel_label " "] bigtag
     $widget insert end "\n"
+    $equationlist(textbox) configure  -state disabled
 }
 
-
-
-proc equationlisting_addvariable {isub ivar vartype varlabel expression where comments} {
+proc equationlisting_addvariable {isub ivar vartype varlabel expression where description comments \
+            inflows outflows} {
     global equationlist
     set widget $equationlist(textbox)
+    $equationlist(textbox) configure  -state normal
     $widget insert end " \n" dummy
-    if [string match flow $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(flowimg)
-        $widget insert end "  " eqn
-    } elseif [string match compartment $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(compimg)
-        $widget insert end "  Initial value of " ini
-    } elseif [string match variable $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(varimg)
-        $widget insert end "  " eqn
-    } elseif [string match creation $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(crtimg)
-        $widget insert end "  Initial value of " ini
-    } elseif [string match immigration $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(immimg)
-        $widget insert end "  " eqn
-    } elseif [string match loss $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(lossimg)
-        $widget insert end "  " eqn
-    } elseif [string match reproduction $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(repimg)
-        $widget insert end "  " eqn
-    } elseif [string match condition $vartype] {
-        $widget insert end "  " eqn
-        $widget image create end -image equationlist(conimg)
-        $widget insert end "  " eqn
+    #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows"
+    $widget insert end "  " descr
+    $widget image create end -image equationlist(${vartype}img)
+    $widget insert end " ${vartype}: " descrtag
+    
+    if ![string match null $description] {
+        $widget insert end "[regsub -all {\n} $description { }], " descrtag
     }
-    $widget insert end [regsub -all "\n" $varlabel " "] eqn
-    $widget insert end " = " eqn
-    $widget insert end $expression eqn
-    $widget insert end "\n" eqn
-    if ![string match {\[null\]} $where] {
-        $widget insert end "where : " whr
-        $widget insert end [regsub -all "\n" $where " "] whr
-        $widget insert end "\n" whr
+    $widget insert end [regsub -all "\n" $varlabel " "], descrtag
+    $widget insert end "\n" descrtag
+    
+    if {[string match compartment $vartype]} {
+        set inflows [string trim $inflows {[]}]
+        regsub -all , $inflows { } inflows
+        set outflows [string trim $outflows {[]}]
+        regsub -all , $outflows { } outflows
+        # intial value
+        $widget insert end "Initial value" eqntag
+        $widget insert end " = " eqntag
+        $widget insert end $expression eqntag
+        $widget insert end "\n" eqntag
+        if ![string match {\[null\]} $where] {
+            $widget insert end "where : " whrtag
+            $widget insert end [regsub -all "\n" $where " "] whrtag
+            $widget insert end "\n" whrtag
+        }
+        # rate equation
+        if {[llength $outflows]>0 | [llength $inflows]>0} {
+            $widget insert end [regsub -all "\n" d(${varlabel})/dt " "] eqntag
+            $widget insert end " =" eqntag
+            foreach inflow $inflows {
+                $widget insert end " + $inflow" eqntag
+            }
+            foreach outflow $outflows {
+                $widget insert end " - $outflow" eqntag
+            }
+            $widget insert end "\n" eqntag
+        }
+        
+    } else  {
+        $widget insert end [regsub -all "\n" $varlabel " "] eqntag
+        $widget insert end " = " eqntag
+        $widget insert end $expression eqntag
+        $widget insert end "\n" eqntag
+        if ![string match {\[null\]} $where] {
+            $widget insert end "where : " whrtag
+            $widget insert end [regsub -all "\n" $where " "] whrtag
+            $widget insert end "\n" whrtag
+        }
     }
     if ![string match null $comments] {
-        $widget insert end [regsub -all "\n" $comments " "] cmt
-        $widget insert end "\n" cmt
+        $widget insert end [regsub -all "\n" $comments " "] cmttag
+        $widget insert end "\n" cmttag
     }
+    
+    $equationlist(textbox) configure  -state disabled
 }
+
 
 
 proc equationlisting_scrollit {widget} {
@@ -1543,89 +1558,89 @@ proc equationlisting_scrollit {widget} {
 }
 
 proc BuildProblem {msg} {
-        toplevel .buildprob
-        wm title .buildprob "Problem making runnable model"
-        wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
+    toplevel .buildprob
+    wm title .buildprob "Problem making runnable model"
+    wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
         wm attributes .buildprob -toolwindow true
     }
-        
-        set labf1 [frame .buildprob.labf1]
-        image create photo warn
-        warn read "../Images/warning.gif"
-        pack [label $labf1.img -image warn] -side left
-        pack [label $labf1.lab1 -text "Warning:" \
-                -font {-weight bold -family helvetica -size 10}] -side left
-        pack [label $labf1.lab2 -text $msg \
-                -font {-family helvetica -size 10} -justify left] -side left 
-        pack $labf1 -padx 8 -pady 2
-        
-        set buttons [frame .buildprob.buttons]
-        pack [button $buttons.ok -text OK -width 10 \
-                -command {set ack 1}] \
-                -side left -padx 4 -pady 4
-        pack [button $buttons.help -text Help -width 10 \
-                -command {ContextSensitiveHelp .buildprob run/index.htm}] \
-                -side left -padx 4 -pady 8
-        pack $buttons
-        
-        set height [winfo reqheight .buildprob]
-        set width [winfo reqwidth .buildprob]
-        set sheight [winfo screenheight .buildprob]
-        set swidth [winfo screenwidth .buildprob]
-        wm geometry .buildprob +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-        update
-        
-        tkwait variable ack
-        destroy .buildprob
-    }
+    
+    set labf1 [frame .buildprob.labf1]
+    image create photo warn
+    warn read "../Images/warning.gif"
+    pack [label $labf1.img -image warn] -side left
+    pack [label $labf1.lab1 -text "Warning:" \
+            -font {-weight bold -family helvetica -size 10}] -side left
+    pack [label $labf1.lab2 -text $msg \
+            -font {-family helvetica -size 10} -justify left] -side left
+    pack $labf1 -padx 8 -pady 2
+    
+    set buttons [frame .buildprob.buttons]
+    pack [button $buttons.ok -text OK -width 10 \
+            -command {set ack 1}] \
+            -side left -padx 4 -pady 4
+    pack [button $buttons.help -text Help -width 10 \
+            -command {ContextSensitiveHelp .buildprob run/index.htm}] \
+            -side left -padx 4 -pady 8
+    pack $buttons
+    
+    set height [winfo reqheight .buildprob]
+    set width [winfo reqwidth .buildprob]
+    set sheight [winfo screenheight .buildprob]
+    set swidth [winfo screenwidth .buildprob]
+    wm geometry .buildprob +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    update
+    
+    tkwait variable ack
+    destroy .buildprob
+}
 
 proc NotifyOverLimit {limit} {
-        toplevel .notify
-        wm title .notify "Evaluation Edition"
-        wm protocol .notify WM_DELETE_WINDOW {set ack 1}
+    toplevel .notify
+    wm title .notify "Evaluation Edition"
+    wm protocol .notify WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
         wm attributes .notify -toolwindow true
     }
-        
-        set labf1 [frame .notify.labf1]
-        image create photo warn
-        warn read "../Images/warning.gif"
-        pack [label $labf1.img -image warn] -side left
-        pack [label $labf1.lab1 -text "Warning:" \
-                -font {-weight bold -family helvetica -size 10}] -side left
-        pack [label $labf1.lab2 -text "The Evaluation Edition is limited to $limit functions. \n\
-                You can continue to build and run this model, but\n\
-                you will not be able to save it. " \
-                -font {-family helvetica -size 10} -justify left] -side left 
-        pack $labf1 -padx 8 -pady 2
-        
-        set labf2 [frame .notify.labf2]
-        pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
-        pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
-                -fg blue -cursor hand2 -font {-underline true -family helvetica -size 10}]] -side left
-        bind $www <Button-1> {VisitUrl "http://www.simulistics.com/"}
-        pack [label $labf2.lab5 -text "to upgrade." -font {-family helvetica -size 10}] -side left
-        pack $labf2 -padx 8 -pady 2
-        
-        set buttons [frame .notify.buttons]
-        pack [button $buttons.ok -text OK -width 10 \
-                -command {set ack 1}] \
-                -side left -padx 4 -pady 4
-        pack [button $buttons.help -text Help -width 10 \
-                -command {ContextSensitiveHelp .notify coviewexpiry.htm}] \
-                -side left -padx 4 -pady 8
-        pack $buttons
-        
-        set height [winfo reqheight .notify]
-        set width [winfo reqwidth .notify]
-        set sheight [winfo screenheight .notify]
-        set swidth [winfo screenwidth .notify]
-        wm geometry .notify +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-        update
-        
-        tkwait variable ack
-        destroy .notify
-    }
+    
+    set labf1 [frame .notify.labf1]
+    image create photo warn
+    warn read "../Images/warning.gif"
+    pack [label $labf1.img -image warn] -side left
+    pack [label $labf1.lab1 -text "Warning:" \
+            -font {-weight bold -family helvetica -size 10}] -side left
+    pack [label $labf1.lab2 -text "The Evaluation Edition is limited to $limit functions. \n\
+            You can continue to build and run this model, but\n\
+            you will not be able to save it. " \
+            -font {-family helvetica -size 10} -justify left] -side left
+    pack $labf1 -padx 8 -pady 2
+    
+    set labf2 [frame .notify.labf2]
+    pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
+    pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
+            -fg blue -cursor hand2 -font {-underline true -family helvetica -size 10}]] -side left
+    bind $www <Button-1> {VisitUrl "http://www.simulistics.com/"}
+    pack [label $labf2.lab5 -text "to upgrade." -font {-family helvetica -size 10}] -side left
+    pack $labf2 -padx 8 -pady 2
+    
+    set buttons [frame .notify.buttons]
+    pack [button $buttons.ok -text OK -width 10 \
+            -command {set ack 1}] \
+            -side left -padx 4 -pady 4
+    pack [button $buttons.help -text Help -width 10 \
+            -command {ContextSensitiveHelp .notify coviewexpiry.htm}] \
+            -side left -padx 4 -pady 8
+    pack $buttons
+    
+    set height [winfo reqheight .notify]
+    set width [winfo reqwidth .notify]
+    set sheight [winfo screenheight .notify]
+    set swidth [winfo screenwidth .notify]
+    wm geometry .notify +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    update
+    
+    tkwait variable ack
+    destroy .notify
+}
