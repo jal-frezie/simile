@@ -7,8 +7,8 @@ package require Itcl
 namespace import ::itcl::*
 
 if {[string match windows $tcl_platform(platform)]} {
-#  package require tcom
-#  ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+    #  package require tcom
+    #  ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
 }
 
 package require Tk
@@ -23,51 +23,55 @@ puts "sourced"
 
 class ModelWindowImpl {
     
+    #variable winId ?init
+    
     private method GetModelWindow {} {
         global window_info
         return $window_info([lindex [lsort [array name window_info *,parent]] 0])
     }
     
+    public method CreateHelperWindow {helperId helperTitle} {
+        set winId [NewHelperWindow node00000 $helperId $helperTitle]
+        ${helperId}::initialize $winId
+        if {[PrefValue custom(helperManager) helperManager]} {
+            ::RunEnv::ChildrenFocusParent $winId
+        }
+        return $winId
+    }
+    
     constructor {} {
-################################################################################
-#          puts "constructor"
-#          
-#          global argc
-#  set argc 0; # simile.tcl expects to be called from the command line - tell it no args
-#  source "[pwd]/../../Run/simile.tcl"
-#  puts "sourced"
-################################################################################
-}
+        
+    }
     
     public method HideModelWindow {} {
         # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
         wm withdraw [GetModelWindow]
     }
-
+    
     public method UseMRE {bool} {
         # IS THIS GOING TO HAVE A TYPE PROBLEM???
         global custom
         set custom(helperManager) $bool
     }
-
+    
     public method ShowModelWindow {} {
         # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
         wm deiconify [GetModelWindow]
     }
-
+    
     # File Menu
     public method FileNew {} {
         MenuSelect [GetModelWindow].canvas file new
     }
     
     public method FileOpenDlg {} {
-        MenuSelect [GetModelWindow].canvas file 
+        MenuSelect [GetModelWindow].canvas file
     }
-
+    
     public method FileOpen {modelFile} {
-	Reopen [GetModelWindow].canvas $modelFile reopen
+        Reopen [GetModelWindow].canvas $modelFile reopen
     }
-   
+    
     public method FileSave {} {
         MenuSelect [GetModelWindow].canvas file save
     }
@@ -116,34 +120,99 @@ class ModelWindowImpl {
         MenuSelect [GetModelWindow].canvas file list_eqns
     }
     
-    # IOTools
-    public method LoadModelExplorer {} {
-        #Load ModelExplorer helper
-        CreateHelperWindow ModelInspector63654 {Model Explorer}
+    
+    public method GetModelValue {Path} {
+        return GetModelValue $winId [GetIdFromCaptionPath $winId $caption]
+    }
+    
+    public method SetModelValue {Path Value} {
+        SetModelValue $winId [GetIdFromCaptionPath $winId $caption] $Value
     }
     
 }
 
 class RunControlImpl {
-    constructor {} {
-        //return [CreateHelperWindow runcontrol33857 {Run control}]
+    variable winId
+    constructor {modelWindow} {
+        global helperTable
+        #return  runcontrol33857 {Run control}]
+        # hide it
         # get a pointer to the run control
+        #puts [array name helperTable *,runcontrol33857]
+        #puts [array name helperTable ]
+        set winId $helperTable(RunControl)
+        puts $winId
     }
+    
+    public method Show {} {
+    }
+    
+    public method Hide {} {
+    }
+    
+    public method Run {} {
+        ${winId}::SetMode $t start
+    }
+    
+    public method Stop {} {
+    }
+    
+    public method Pause {} {
+    }
+    
+    public method SetTimeUnits {} {
+    }
+    
+    public method SetIntegrationMethod {} {
+    }
+    
+    public method SetExecuteFor {} {
+    }
+    
+    public method SetCurrentTime {} {
+    }
+    
+    public method SetDisplayInterval {} {
+    }
+    
+    public method SetTimeStep {Number} {
+    }
+    
 }
 
-class RunModelExplorerImpl {
-    constructor {} {
-        return [CreateHelperWindow ModelInspector63654 {Model Explorer}]
+class ModelExplorerImpl  {
+    constructor {modelWindow} {
+        return [$modelWindow CreateHelperWindow ModelInspector63654 {Model Explorer}]
     }
 }
 
 class TableHelperImpl {
-    constructor {} {
-        return [CreateHelperWindow tabular11510 {Table}]
+    constructor {modelWindow} {
+        return [$modelWindow CreateHelperWindow tabular11510 {Table}]
+        # UpdateAtDisplayInterval false
     }
+    
+    public method AddVariable {Number} {
+    }
+    
+    public method RemoveVariable {Number} {
+    }
+    
+    public method Clear {Number} {
+    }
+    
+    public method UpdateAtDisplayInterval {Value} {
+    }
+    
+    public method Update {Number} {
+    }
+    
+    public method SaveToFile {FileName} {
+    }
+    
 }
 
 if {[string match windows $tcl_platform(platform)]} {
-#  ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+    #  ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
 }
 
