@@ -3,7 +3,7 @@ set keyValue gen3d
 namespace eval ::$keyValue {
     variable useNodes
     variable colours {\#00ff00 \#f1da7e \#36b694 \#ec9844 \#94a646 \#d9d095}
-
+    variable baseline -25
 
 proc identify {} {
 	return "New lollipop diagram"
@@ -12,6 +12,7 @@ proc identify {} {
 proc initialize {winId} {
     variable useNodes
     variable trunks
+    variable baseline
     set toolbarItems [list \
 			  [list new.gif "Clear" \
 			       [namespace code "clear $winId"]] \
@@ -19,7 +20,7 @@ proc initialize {winId} {
 			       [namespace code "AddVariable $winId"]]]
     
     ::graphtools::MakeToolBar $winId $toolbarItems
-    pack [message $winId.intro]
+    pack [message $winId.intro -aspect 800] -fill x
     variable grid
     variable viewVector
     set pi 3.1416
@@ -50,17 +51,17 @@ proc initialize {winId} {
 #Grid is always displayed so only define it once
     set grid {}
     for {set x -50} {$x <= 50} {incr x 10} {
-	lappend grid [list line "$x -50 0" "$x 50 0" 1 red] \
-	    [list text "$x -60 0" [expr $x+50] red] \
-	    [list text "$x 60 0" [expr $x+50] red]
+	lappend grid [list line "$x -50 $baseline" "$x 50 $baseline" 1 red] \
+	    [list text "$x -60 $baseline" [expr $x+50] red] \
+	    [list text "$x 60 $baseline" [expr $x+50] red]
     }
     for {set y -50} {$y <= 50} {incr y 10} {
-	lappend grid [list line "-50 $y 0" "50 $y 0" 1 red] \
-	    [list text "-60 $y 0" [expr $y+50] blue] \
-	    [list text "60 $y 0" [expr $y+50] blue]
+	lappend grid [list line "-50 $y $baseline" "50 $y $baseline" 1 red] \
+	    [list text "-60 $y $baseline" [expr $y+50] blue] \
+	    [list text "60 $y $baseline" [expr $y+50] blue]
     }
     for {set z 10} {$z <= 50} {incr z 10} {
-	set zposn [expr 2*$z]
+	set zposn [expr $baseline+2*$z]
 	lappend grid [list text "-50 -50 $zposn" $z black] \
 	    [list text "-50 50 $zposn" $z black] \
 	    [list text "50 50 $zposn" $z black] \
@@ -69,6 +70,7 @@ proc initialize {winId} {
 
     SetState $winId initial
     set useNodes($winId,selected) {}
+    set useNodes($winId,captions) {}
     set trunks {}
     catch {wm geometry $winId 650x500}
 }
@@ -77,6 +79,7 @@ proc clear {winId} {
     variable useNodes
     set useNodes($winId,selected) {}
     display $winId 0 0 0
+    ShowKey $winId
 }
 
 proc AddVariable {winId} {
@@ -90,23 +93,23 @@ proc click {winId node caption} {
     set ms $winId.intro
     set testResult [GetModelValue $node]
     if {[string compare $testResult novalue]} {
+	lappend useNodes($winId,selected) $node
+	lappend useNodes($winId,captions) $caption
 	set state [GetState $winId]
 	switch $state {
 	    xcoord {
 		$ms configure -text "Now click on the value representing the Y coordinates."
-		lappend useNodes($winId,selected) $node
 		SetState $winId ycoord
 	    }
 	    ycoord {
 		$ms configure -text "Now select a value to display as the size of the objects."
-		lappend useNodes($winId,selected) $node
 		SetState $winId sizeval
 	    }
 	    sizeval {
 		$ms configure -text {}
-		lappend useNodes($winId,selected) $node
 		SaveState $winId
 		display $winId 0 0 0
+		ShowKey $winId
 	    }
 	}
     } else {
@@ -136,6 +139,7 @@ proc Restore {winId} {
 	$winId.elv set [lindex $state 2]
 	foreach node [lrange $state 3 end] {
 	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
+	    lappend useNodes($winId,captions) [lindex [split $node /] end]
 	}
     } else {
 	GrabClicks $winId
@@ -162,6 +166,7 @@ proc LoadPosns {winId} {
     variable useNodes
     variable trunks
     variable colours
+    variable baseline
     set col 0
     set trunks {}
     foreach {px py h} $useNodes($winId,selected) {
@@ -170,13 +175,14 @@ proc LoadPosns {winId} {
 	    [lindex [GetModelValue $py] 0] [lindex [GetModelValue $h] 0]
 #ShowMessage debug info "List is $quadlist" ok
 	foreach {id data} $quadlist {
-	    if {[llength $id]} {
+	    if {![string match nil [lindex $data 0]]} {
 		set x [expr [lindex $data 0]-50]
 		set y [expr [lindex $data 1]-50]
 		set z [lindex $data 2]
-		lappend trunks [list line "$x $y 0" "$x $y $z" 4 brown]
-		lappend trunks [list sphere "$x $y [expr 1.5*$z]" [expr $z/2] \
-				    1 [lindex $colours $col]]
+		lappend trunks [list line "$x $y $baseline" \
+				    "$x $y [expr $baseline+$z]" 4 brown]
+		lappend trunks [list sphere "$x $y [expr $baseline+3*$z/2]" \
+				    [expr $z/2] 1 [lindex $colours $col]]
 	    }
 	}
 	incr col
@@ -253,7 +259,29 @@ proc project {pt3d} {
 #ShowMessage debug info "pt3d $pt3d rots $rotx $roty cams $scx $scy $depth" ok
     return [list $scx $scy $depth]
 }
+
+proc ShowKey {winId} {
+    variable useNodes
+    variable colours
+    variable viewVector
+
+    set col 0
+    set atx 20
+    set aty $viewVector(winY)
     
+    $winId.c delete -withtag key
+    foreach {x y sz} $useNodes($winId,captions) {
+	$winId.c create line $atx $aty $atx [expr $aty-16] -width 4 \
+	    -fill brown -tag key
+	$winId.c create oval [expr $atx-8] [expr $aty-32] [expr $atx+8] \
+	    [expr $aty-16] -fill [lindex $colours $col] -tag key
+	$winId.c create text [expr $atx+16] $aty -anchor sw -tag key \
+	    -text "z: $sz\nx: $x\ny: $y"
+	incr col
+	incr atx 100
+    }
+}
+
 proc WindowSizeChanged {winId} {
     variable grid
     variable viewVector
@@ -269,6 +297,7 @@ proc WindowSizeChanged {winId} {
 	if {$viewVector(elevation)<0} {
 	    DrawShapes $winId $grid grid
 	}
+	ShowKey $winId
     }
 }
 }
