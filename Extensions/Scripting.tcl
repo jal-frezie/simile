@@ -237,23 +237,23 @@ itcl::class similescript::RunControl {
         return [do_for_node $modelNode GetPhaseCount $modelNode]
     }
     
-    public method SetTimeStep {number timestep} {
-        if {0<$number && $number<=[GetNumberOfTimeSteps]} {
-            do_for_node $modelNode set ::runState($modelNode,update${number}) $timestep
-        } elseif {$number==0 || $number==-1}  {
+    public method SetTimeStep {index timestep} {
+        if {0<$index && $index<=[GetNumberOfTimeSteps]} {
+            do_for_node $modelNode set ::runState($modelNode,update${index}) $timestep
+        } elseif {$index==0 || $index==-1}  {
             puts "Timestep 0 and -1 cannot be specified."
         } else  {
-            puts "Timestep $number is not in use."
+            puts "Timestep $index is not in use."
         }
     }
     
-    public method GetTimeStep {number} {
-        if {0<$number && $number<=[do_for_node $modelNode GetPhaseCount $modelNode]} {
-            return [do_for_node $modelNode set ::runState($modelNode,update${number})]
-        } elseif {$number==0 || $number==-1}  {
+    public method GetTimeStep {index} {
+        if {0<$index && $index<=[do_for_node $modelNode GetPhaseCount $modelNode]} {
+            return [do_for_node $modelNode set ::runState($modelNode,update${index})]
+        } elseif {$index==0 || $index==-1}  {
             puts "Timestep 0 and -1 cannot be specified."
         } else  {
-            puts "Timestep $number is not in use."
+            puts "Timestep $index is not in use."
         }
     }
     
