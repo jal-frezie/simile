@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>English</string>
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeExtensions</key>
+            <array>
+                <string>sml</string>
+            </array>
+            <key>CFBundleTypeIconFile</key>
+            <string>simdoc.icns</string>
+            <key>CFBundleTypeName</key>
+            <string>com.Simulistics.sml</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+        </dict>
+        <dict>
+            <key>CFBundleTypeExtensions</key>
+            <array>
+                <string>pl</string>
+            </array>
+            <key>CFBundleTypeIconFile</key>
+            <string>simdoc.icns</string>
+            <key>CFBundleTypeName</key>
+            <string>com.Simulistics.pl</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+        </dict>
+    </array>
+    <key>CFBundleExecutable</key>
+    <string>Simile</string>
+    <key>CFBundleSignature</key>
+    <string>Ssme</string>
+    <key>CFBundleGetInfoString</key>
+    <string>Simile v4.3</string>
+    <key>CFBundleHelpBookFolder</key>
+    <string>Help</string>
+    <key>CFBundleIconFile</key>
+    <string>simile.icns</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.Simulistics.Simile</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>Simile</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>4.3</string>
+    <key>CFBundleSignature</key>
+    <string>SMTC</string>
+    <key>CFBundleVersion</key>
+    <string>4.3</string>
+    <key>LSRequiresCarbon</key>
+    <true/>
+    <key>NSHumanReadableCopyright</key>
+    <string>Simulistics Ltd. 2001-2005</string>
+</dict>
+</plist>
