@@ -873,10 +873,11 @@ proc StartRun {node} {
 	return 0
     }
     if {[info exists runState($node,currentTime)]} {
-        if {$runState($node,execTime) != $runState($node,currentTime)} {
-            set runState($node,execTime) [expr $runState($node,execTime) + \
+#        if {$runState($node,execTime) != $runState($node,currentTime)} {
+#            set runState($node,execTime) [expr $runState($node,execTime) + \
 					      $runState($node,currentTime)]
-        }
+#        }
+# above is done by reset phase
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             if {![info exists runState($node,prev_update$phase)]} {
                 set runState($node,update$phase) 0.1
@@ -885,6 +886,7 @@ proc StartRun {node} {
             SetStep $node $runState($node,prev_update$phase) $phase
         }
     } else {
+	set runState($node,currentTime) 0.0
         set runState($node,execTime) 100
         set runState($node,displayInt) 1
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
@@ -896,7 +898,6 @@ proc StartRun {node} {
         }
     }
 
-    set runState($node,currentTime) 0.0
     set runState($node,timeAtEval) 0.0
 
     if {[PrefValue custom(helperManager) helperManager]} {

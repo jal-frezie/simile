@@ -321,7 +321,7 @@ namespace eval runcontrol33857 {
         while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
             # Collect any changes that have been made by the user
             if {[info exists sendvars($node,newData)]} {
-#puts data:$sendvars($node,newData):data
+#do_in_editor puts data:$sendvars($node,newData):data
 		foreach {idx param} \
 		    {0 display 1 update 2 current 3 exec} {
 			set $param [lindex $sendvars($node,newData) $idx]
