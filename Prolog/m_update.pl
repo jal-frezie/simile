@@ -1255,6 +1255,12 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	    make_node(Model, NodeType, NewEnd);
 	find_type(OldEnd, NodeType),
 	    NewEnd = OldEnd),
+	/* make sure its name is unique to the submodel -- currently not done,
+	if I put it in make sure I don't rename things just because of their
+	own ghosts 
+	setof(OldName, Member^(find_all_comps(Submodel, Member),
+			       caption_for(Member, OldName)), OldNames),
+	ensure_unused(NewInputName, UniqueInputName, OldNames), */
 	add_parameter(NewEnd, 0, name, NewInputName),
 	(var(NewUnit), !;
 	    add_parameter(NewEnd, 0, units, NewUnit)),
