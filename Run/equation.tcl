@@ -5,94 +5,6 @@
 #
 # This file contains procedures for the equation dialogue.
 #
-proc equationResources {} {
-    
-    #    foreach equation(ebox) {name description comment units} {
-    #	option add *Equation*$equation(ebox).relief		sunken	startup
-    #	option add *Equation*$equation(ebox).background	white	startup
-    #	option add *Equation*$equation(ebox).foreground	black	startup
-    #    }
-    
-    # Text for the labels on variable/parameter/unit entries
-    #    option add *Equation*n.text		Equation:	startup
-    #    option add *Equation*u.text		Units:		startup
-    #    option add *Equation*v.text		Label:	startup
-    #    option add *Equation*p.text		"Local name:"	startup
-    #    option add *Equation*i.text		Units:		startup
-    
-    # Text for the OK and Cancel buttons
-    #    option add *Equation*ok*text		OK	startup
-    option add *Equation*ok*underline		0	startup
-    #    option add *Equation*cancel.text		Cancel	startup
-    option add *Equation*cancel.underline 	0	startup
-    #    option add *Equation*graph.text		"Graph..."	startup
-    #     option add *Equation*graph.underline 	1	startup
-    #    option add *Equation*table.text		"Table..."	startup
-    #     option add *Equation*table.underline 	1	startup
-    
-    # Size of the listboxes
-    foreach listBox {plist ilist} {
-        option add *Equation*$listBox.width	15	startup
-        option add *Equation*$listBox.height	4	startup
-    }
-}
-
-proc fill_equation {current_equation units mult isParam desc comment min max} {
-    
-    global equation
-    global equationbar
-    
-    set equationbar(units) $units
-    #      set equationbar(mult) $mult
-    set equationbar(isParam) $isParam
-    set equationbar(desc) $desc
-    set equationbar(comment) $comment
-    set equationbar(min) $min
-    set equationbar(max) $max
-    
-    
-    ### Formula bar section
-    if {[string compare $equationbar(current_action) click]==0} then {
-        return
-    }
-    if {[string compare $equationbar(current_action) tick]==0} then {
-        return
-    }
-    ### End formula bar section
-    
-    set widget [$equation(doc).descf.description getframe]
-    $widget.text delete 1.0 end
-    $widget.text insert 1.0 $desc
-    $equation(doc).cmtFrame.text delete 1.0 end
-    $equation(doc).cmtFrame.text insert 1.0 $comment
-    set widget [$equation(main).main.main getframe]
-    $widget.equation.textbox.text delete 1.0 end
-    $widget.equation.textbox.text insert 1.0 $current_equation
-    set equation(units) [RealForUnity $units]
-    if {[llength $mult]} {
-        set emult [join $mult ,]
-    } else {
-        set emult none
-    }
-    $widget.slider.cur_dims configure -text $emult
-    # do not show a radiobutton if incomplete
-    #    if {!$isParam && ![llength $current_equation]} {
-    #	set equation(isparam) -2
-    #    } else {
-    set equation(isparam) $isParam
-    #    }
-    if {$equation(isparam)==-1} {
-        set paramMenuState disabled
-    } else {
-        set paramMenuState normal
-    }
-    $widget.equation.textbox.radio0 configure -state $paramMenuState
-    $widget.slider.radio1 configure -state $paramMenuState
-    $widget.file.radio2 configure -state $paramMenuState
-    set equation(min) $min
-    set equation(max) $max
-}
-
 proc create_equation {parent boxtitle indices} {
     global equation equationbar tcl_platform iconImages
     
@@ -111,15 +23,9 @@ proc create_equation {parent boxtitle indices} {
       set t [toplevel .equation -bd 4 -class Equation]
       wm transient $t $parent
     }
-    #    if {[string equal Linux $tcl_platform(os)]} {
-    #	update ;# let window draw so it can be moved off screen
-    #	wm geometry .equation +0+[winfo vrootheight .equation]
-    #	update ;# let it move off screen so text updates do not distract user
-    #    }
     wm title $t [BlankCrs $boxtitle]
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
-    equationResources
     
     set notebook [::ttk::notebook $t.notebook]
     $notebook add [frame $notebook.main] -text Main
@@ -142,7 +48,6 @@ proc create_equation {parent boxtitle indices} {
     pack $help -side right -padx 8 -pady 4 -anchor e
     pack $can -side right -padx 8 -pady 4 -anchor e
     pack $ok -side right -padx 8 -pady 4 -anchor e
-    #    pack $buttonF.buttons -anchor e -side left
     pack $buttonF -anchor nw -fill x -side bottom
     
     # Middle frame has the functions, indices and keypad
@@ -172,18 +77,6 @@ proc create_equation {parent boxtitle indices} {
                     -image $iconImages(function) -text [lrange $funk 1 end]
         }
     }
-    
-    #    frame $functionsf.list
-    #    set lbf [listbox $functionsf.list.flist \
-    #	-height 8 -width 16 \
-    #	-yscrollcommand [list $functionsf.list.scrollf set]]
-    #    foreach funk $equation(fnDefs) {
-    #        $lbf insert end $funk
-    #    }
-    #    scrollbar $functionsf.list.scrollf -command [list $lbf yview]
-    #    pack $functionsf.list.flist -side left -fill both -expand true
-    #    pack $functionsf.list.scrollf -side left -fill y
-    #    pack $functionsf.list -anchor nw  -expand true -fill both
     
     pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
     TitleFrame $middleF.indices -text "Indices: "
@@ -340,16 +233,12 @@ proc create_equation {parent boxtitle indices} {
             $influencesf.captions.d -side left -fill x -expand true
     pack $influencesf.captions -fill x
     
-    #    ScrolledWindow $influencesf.lists
     frame $influencesf.lists
     scrollbar $influencesf.lists.yscroll -orient v \
             -command [list $influencesf.lists.f yview]
     pack $influencesf.lists.yscroll -side right -fill y
     ScrollableFrame $influencesf.lists.f -constrainedwidth true \
             -yscrollcommand [list AdjustCanvas $influencesf.lists f y]
-    # [list $influencesf.lists.yscroll set]
-    # [list AdjustCanvas $influencesf.lists f y]
-    #    $influencesf.lists setwidget $influencesf.lists.f
     
     pack $influencesf.lists.f -fill x -expand true
     pack $influencesf.lists -side top -fill x -expand true
@@ -390,7 +279,56 @@ proc create_equation {parent boxtitle indices} {
     set equation(newGraphs) ""
     set equation(done) 0
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
-    #    LetItShow $influencesf.lists.plist
+}
+
+proc fill_equation {current_equation units mult isParam desc comment min max} {
+    
+    global equation
+    global equationbar
+    
+    set equationbar(units) $units
+    set equationbar(isParam) $isParam
+    set equationbar(desc) $desc
+    set equationbar(comment) $comment
+    set equationbar(min) $min
+    set equationbar(max) $max
+    
+    
+    ### Formula bar section
+    if {[string compare $equationbar(current_action) click]==0} then {
+        return
+    }
+    if {[string compare $equationbar(current_action) tick]==0} then {
+        return
+    }
+    ### End formula bar section
+    
+    set widget [$equation(doc).descf.description getframe]
+    $widget.text delete 1.0 end
+    $widget.text insert 1.0 $desc
+    $equation(doc).cmtFrame.text delete 1.0 end
+    $equation(doc).cmtFrame.text insert 1.0 $comment
+    set widget [$equation(main).main.main getframe]
+    $widget.equation.textbox.text delete 1.0 end
+    $widget.equation.textbox.text insert 1.0 $current_equation
+    set equation(units) [RealForUnity $units]
+    if {[llength $mult]} {
+        set emult [join $mult ,]
+    } else {
+        set emult none
+    }
+    $widget.slider.cur_dims configure -text $emult
+    set equation(isparam) $isParam
+    if {$equation(isparam)==-1} {
+        set paramMenuState disabled
+    } else {
+        set paramMenuState normal
+    }
+    $widget.equation.textbox.radio0 configure -state $paramMenuState
+    $widget.slider.radio1 configure -state $paramMenuState
+    $widget.file.radio2 configure -state $paramMenuState
+    set equation(min) $min
+    set equation(max) $max
 }
 
 proc interact_equation {} {
@@ -411,20 +349,12 @@ proc interact_equation {} {
                 $equationbar(max)]
     }
     ### End formula bar section
+
     set t $equation(top)
     set descFrame [$equation(doc).descf.description getframe]
     set eqnFrame [$equation(main).main.main getframe]
     set listFrame [$equation(main).bottom.influences getframe]
     
-    # OK the equation dialogue has finally reached its final size, but in order to
-    # get the window manager to put it in an appropriate place we have to put it
-    # up, let it draw (so it knows how big it wants to be), then remove and replace
-    # it, because some of its BWidgets are buggy
-    #    if {!$equation(done) && [string equal Linux $tcl_platform(os)]} {
-    #	update ;# let all those BWidgets decide how big they want to be
-    #	wm withdraw .equation
-    #	wm deiconify .equation
-    #    }
     
     LetItShow $t
     grab $t
@@ -499,7 +429,7 @@ proc RollAll {s l1 l2 l3 top bot} {
     $l3 yview moveto $top
 }
 
-# botch to allow table viewer to be used in this interp
+# Allow table viewer to be used in this interp
 source ../IOTools/DisplayFormats.tcl 
 source ../IOTools/graphtools.tcl
 source ../IOTools/two_table.tcl
@@ -517,16 +447,8 @@ proc GetTable {parent comp box} {
                     $table_entry(indices)]
         }
         set equation(table_values) $table_entry(values)
-        #puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
 	    InsertFunction $box table
-#            $box insert insert table\(\[
-#            for {set count [llength $table_entry(indices)]
-#                if {!$count} {set count 1}} {$count>0} {incr count -1} {
-#                       $box insert insert index\($count\),
-#                   }
-#           $box delete [$box index {insert -1 chars}]
-#           $box insert insert \]\)
         }
         set equation(done) 3
     }
@@ -535,7 +457,6 @@ proc GetTable {parent comp box} {
 proc fill_inputs { triples } {
     global equation
     global equationbar
-    
     
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -600,17 +521,10 @@ proc fill_inputs { triples } {
         $widget.lists.f configure -height \
                 [expr $showLines*[winfo reqheight $scroller.plist.p0]+4]
     }
-    #    else {
-    #	$widget configure -height 100
-    #    }
-    #    pack $t.bottom -fill x -expand true
-    #    $equation(notebook) compute_size
-    #    pack $equation(notebook)
 }
 
 proc fill_table {table_data table_values} {
     global equation
-    #puts $table_data
     set equation(table_data) [lrange $table_data 0 end]
     # you would think that the above line would not change the list, as it
     # takes the range from start to finish. But it does -- Prolog has wrapped
@@ -620,13 +534,11 @@ proc fill_table {table_data table_values} {
     # matter if some other function has quietly got rid of their surplus curly
     # brackets. Trust me, it works.
 
-    #    set equation(table_values) [TransEnums $trans $table_values]
     # Translation should be done in Prolog by reverse_engineer
     set equation(table_values) $table_values
 }
 
-proc equationBindings { t en eu lbp lbi lbd \
-            lbf lbx gr ta ok can } {
+proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
     # t - toplevel
     # en - equation entry
     # eu - units entry
@@ -640,43 +552,11 @@ proc equationBindings { t en eu lbp lbi lbd \
     # ok - OK button
     # can - Cancel button
     
-    # Elimate the all binding tag because we
-    # do our own focus management
-    #    foreach w [list $en $eu $lbp $lbi $lbd $lbf $ok $can] {
-    #        bind $w <Button-1> ListEditDone
-    #        bindtags $w [list $t [winfo class $w] $w]
-    #    }
-    # Dialog-global cancel binding
-    # Disabled because people type Ctrl-C to copy buffer into eqn box
-    # bind $t <Control-c> equationCancel
-    
-    # Entry bindings
-    #    foreach $w [list $en $eu] {
-    #        bind $w <Return> equationOK
-    #    }
-    # Bindings for listboxes that used to hold input info -- these are gone
-    # (Bindings should now be on individual entries instead)
-    #    set PopCmd [list QueuePopup AddParamPopup %W %y %X %Y]
-    #    bind $lbp <Enter> $PopCmd
-    #    bind $lbp <Motion> "RemovePopup;$PopCmd"
-    #    bind $lbp <Leave> RemovePopup
-    
-    #    bind $lbp <Button-1> "equationClick %W %y"
-    #    bind $lbp <Button-3> "equationRight %W %y"
-    #    bind $lbp <Double-1> "equationDouble %W %y $en; focus $en"
-    
-    #    bind $lbi <Button-1> "equationClick %W %y"
-    #    bind $lbi <Button-3> "equationRight %W %y"
     
     $lbf bindText <Enter> [list QueuePopup AddFnPopup %X %Y]
     $lbf bindText <Leave> RemovePopup
     $lbf bindText <Double-1> [list functionClick $en]
-    #    bind $lbf <Double-1> \
-    #            "functionClick %W %y $en"
-    # popup boxes for functions
-    #    bind $lbf <Enter> $PopCmd
-    #    bind $lbf <Motion> "RemovePopup;$PopCmd"
-    #    bind $lbf <Leave> RemovePopup
+
     set PopCmd [list QueuePopup AddIndexPopup %W %y %X %Y]
     bind $lbx <Enter> $PopCmd
     bind $lbx <Motion> "RemovePopup;$PopCmd"
@@ -685,13 +565,6 @@ proc equationBindings { t en eu lbp lbi lbd \
     bind $lbx <Double-1> \
             "indexClick %W %y $en; focus $en"
     
-    # Button focus.  Extract the underlined letter
-    # from the button label to use as the focus key.
-    foreach but [list $ok $can] {
-        set char [string tolower [string index [$but cget -text] \
-                [$but cget -underline]]]
-        bind $t <Alt-$char> "focus $but ; break"
-    }
     bind $gr <Tab> "focus $ta"
     bind $ta <Tab> "focus $ok"
     bind $ok <Tab> "focus $can"
@@ -720,7 +593,6 @@ proc equationGraph {parent} {
       wm transient .graph $parent
     }
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
-    #    wm geometry .graph 640x480
     focus .graph
     grab .graph
     # set default values for new graph
@@ -743,10 +615,6 @@ proc equationGraph {parent} {
 
 proc equationOK {} {
     global equation
-    #    eval [bind [focus] <FocusOut>]
-    #    set t [$equation(main).main.main getframe]
-    #    event generate [focus] <FocusOut>
-    #    focus $t.equation.textbox.text
     set equation(done) 1
 }
 
@@ -769,9 +637,6 @@ proc equationClick { lb y } {
 
 proc equationRight { lb y } {
     global equation
-    #    if {![llength [$lb curselection]]} {
-    #	return
-    #    }
     ListEditDone
     if {$equation(done) == 2} {
         # If an entry has already been edited, dont try to start editing another one
@@ -782,7 +647,6 @@ proc equationRight { lb y } {
     set ebox $widget.lists.e
     set equation(lbid) $lb
     set equation(ckLine) [$lb nearest $y]
-    #    if {$ckLine == [$lb curselection]} {
     entry $ebox -textvariable equation(listedit)
     set equation(listedit) [$lb get $equation(ckLine)]
     place $ebox -in $lb \
@@ -793,10 +657,6 @@ proc equationRight { lb y } {
     $ebox select to end
     focus $ebox
     bind $ebox <Return> ListEditDone
-    #    }
-    # Take the item the user clicked on
-    #	global equation
-    #	set $bname [$lb get [$lb nearest $y]]
 }
 
 proc ListEditDone {line} {
