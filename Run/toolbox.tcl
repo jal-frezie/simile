@@ -1537,11 +1537,14 @@ proc SetEqnButtonState {bar newState} {
 }
 
 proc RaiseModelWindow {node} {
+    global tcl_platform
     set win [FindNodeTopWin $node]
     wm deiconify $win
     raise $win
-    package require tclAE
-    tclAE::send -s misc actv
+    if {[string equal Darwin $tcl_platform(os)]} {
+	package require tclAE
+	tclAE::send -s misc actv
+    }
    # carbon::processHICommand bfrt $win
 }
 
