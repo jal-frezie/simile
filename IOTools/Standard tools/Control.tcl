@@ -77,7 +77,6 @@ namespace eval runcontrol33857 {
         
         ::ttk::notebook $t.nb
         
-        
         $t.nb add [frame $t.nb.rcf] -text "Run control"
         set rcf $t.nb.rcf
         frame $rcf.upper
@@ -101,7 +100,7 @@ namespace eval runcontrol33857 {
         $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
-        pack [ProgressBar $rcf.upper.bf.bar -variable runState($node,fractDone) -maximum 1] \
+        pack [set runState($node,progressBar) [::ttk::progress $rcf.upper.bf.bar -from 0 -to 100]] \
                 -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
         pack $rcf.upper -side top -expand true -fill x
@@ -122,9 +121,6 @@ namespace eval runcontrol33857 {
         }
         pack $rcf.editBoxes -side bottom -pady 2
         
-#        pack $rcf -fill x 
-#        pack $t.nb.rcf -fill x -padx 1 -pady 1
-        
         $t.nb add [frame $t.nb.rsf] -text "Run settings"
         set rsf $t.nb.rsf
         pack [frame $rsf.unitselection] -pady 2
@@ -136,12 +132,6 @@ namespace eval runcontrol33857 {
         }
         $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
               -textvariable runState($node,timeUnit)
-        #tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars($node,timeUnit) \
-        #                unit second minute hour day week month year Ma
-        #set widget [ComboBox $rsf.unitselection.pulldown \
-        #        -textvariable runState($node,timeUnit) \
-        #        -value {unit second minute hour day week month year Ma}]
-        #        $widget setvalue first
         pack $rsf.unitselection.pulldown -side left
         
         pack [frame $rsf.integration] -pady 2
@@ -153,10 +143,6 @@ namespace eval runcontrol33857 {
         }
         $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
               -textvariable runState($node,intMethod)
-        #set widget [ComboBox $rsf.integration.pulldown \
-        #        -textvariable runState($node,intMethod) \
-        #        -values {Euler {4th-order Runge-Kutta}}]
-        #        $widget setvalue first
         pack $rsf.integration.pulldown -side left
         
         set sendvars($node,captList) {}
@@ -171,13 +157,9 @@ namespace eval runcontrol33857 {
           $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $t $index]
         }
         $rsf.edit.capt configure -menu $timeStepMenu -width 16
-        #pack [ComboBox $rsf.edit.capt -values $sendvars($node,captList) \
-	#	  -modifycmd [list [namespace current]::SwapDistVar $t] \
-	#	  -editable 0 -width $captWidth] -side left
         pack $rsf.edit.capt -side left
         pack [label $rsf.edit.colon -text " "] -side left
         pack [::ttk::entry $rsf.edit.num -width 8] -side left
-        #$rsf.edit.capt setvalue first
         SwapDistVar $t 1
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
@@ -307,8 +289,8 @@ namespace eval runcontrol33857 {
         }
         set runState($node,timeAtEval) $current
         set runState($node,currentTime) $current
-	set runState($node,oldTimeCopy) [after idle set runState($node,fractDone) \
-				       [expr 1-(double($left)/$length)]]
+	set runState($node,oldTimeCopy) [set runState($node,fractDone) [expr 1-(double($left)/$length)]]
+        after idle $runState($node,progressBar) set [expr 100*$runState($node,fractDone)]
         set runState($node,execTime) $left
     }
     
