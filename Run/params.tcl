@@ -133,6 +133,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
     if {$nodeDims>1} {
 	pack [button $slot.b -image $iconImages(edit) -command [namespace code [list GetFromTable $winId $compName $notInput]]] -side right
     }
+    BindPopup $slot.b "Get values from file"
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
     pack [entry $slot.e -width 30] -side left -fill x -expand on
@@ -147,10 +148,12 @@ proc AddEntry {winId topNode node mustShow notInput} {
     pack [button $slot.cross -image $iconImages(cross) -borderwidth 1 \
 	      -command [namespace code [list RevertData $winId $compName]]] \
 	-side right
+    BindPopup $slot.cross "Revert to old values"
     pack [button $slot.tick -image $iconImages(tick) -borderwidth 1 \
 	      -command [namespace code [list AcceptData $winId $topNode \
 					    $compName 1]]] \
 	-side right
+    BindPopup $slot.tick "Accept these values"
     }
     set widgetNames($compName) $slot
             # note whether we need to enter a parameter here...
@@ -178,15 +181,18 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
         if {![winfo exists $nextLevel]} {
             pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2 -side bottom
 	    pack [frame $nextLevel.head] -fill x -expand true
-        set path [join [lrange $hierarchy 0 $pt] /]
-        # added setting of SimileProject element to store spf path
+	    set path [join [lrange $hierarchy 0 $pt] /]
+	    # added setting of SimileProject element to store spf path
 	    pack [button $nextLevel.head.save -image $iconImages(save) \
 		      -command [list ${ns}::Save $clientId $path]] -side right
+	    BindPopup $nextLevel.head.save "Save values for this submodel"
 	    pack [button $nextLevel.head.open -image $iconImages(open) \
 		      -command [list ${ns}::Open $clientId $path]] -side right
+	    BindPopup $nextLevel.head.open "Load values for this submodel"
 	    if {[string equal fileparams $ns]} {
 		pack [button $nextLevel.head.clear -image $iconImages(new) \
 		      -command [list ${ns}::Clear $clientId $path]] -side right
+		BindPopup $nextLevel.head.clear "Clear values in this submodel"
 	    }
 	    if {![string length $level]} {
 		set level "TOP LEVEL"
