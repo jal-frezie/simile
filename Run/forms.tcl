@@ -1792,7 +1792,7 @@ proc VisitUrl {x} {
 }
 
 proc ShowAbout {winId} {
-    global sendvars userinfo interface
+    global sendvars userinfo interface tcl_platform
     toplevel .about
     wm transient .about $winId
     wm title .about About\ SIMILE
@@ -1810,6 +1810,10 @@ proc ShowAbout {winId} {
             -font {-family helvetica -size 8}] -side left
     pack [label $platform.tcl -text "TclTk: [info patchlevel]" \
             -font {-family helvetica -size 8}] -side left
+    if {[string equal windows $tcl_platform(platform)]} {
+	pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
+            -font {-family helvetica -size 8}] -side left
+    }
     pack $platform
     if [info exists userinfo(exp_time)] {
         set edate [clock format $userinfo(exp_time) -format {%d %h %Y}]
