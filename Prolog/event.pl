@@ -1270,21 +1270,16 @@ adjust_link_forwards(Target, Way, Also, Where) :-
 change_delete_status(Target, Way, FromWhere) :-
 	(\+ at_def_con(Target, FromWhere), !,
 	    Way = off,
-	    (FromWhere = base,
-		find_base(Target, Base),
-		\+ Base = Target,
-		\+ at_def_con(Base, FromWhere), !,
-		/* if clearing a ghost of a selected node, set it to 2 */
-		highlight(Target, 2);
-	    to_def_con(Target, FromWhere));
+	    to_def_con(Target, FromWhere);
 	Way = on,
 	    highlight(Target, 1)),
 	/* Now change cloud etc to same colour as link */
 	(m_class:Target is_connector from End1 to End2,
-	    ((Damage = End1; Damage = End2),
+	    (Damage = End1; Damage = End2),
+	    appears(Damage),	
 	    depends_on_links(Damage),
 	    keep_only_if_links_stay(Damage, FromWhere),
-	    fail);
+	    fail;
 	true).
 
 at_def_con(Tgt, FromWhere) :-
@@ -1806,7 +1801,7 @@ when its time comes. */
 
 delete_net(Top) :-
 	tk_get_pref(deleteEndToEnd, FollowArcs),
-	setof(Tgt, N^(get_highlit_obj(N, Tgt), N<3,
+	setof(Tgt, N^(get_highlit_obj(N, Tgt), N<2,
 		      \+ Tgt = Top,
 		      deletable(Top, FollowArcs, Tgt)), Range),
 	(member(Target, Range),
@@ -1833,7 +1828,7 @@ delete_net(Top) :-
 	kill_primitive(Target); 
 	/* now un-highlight and redisplay the ghosts of the dead node
 	*/
-	get_highlit_obj(3, ExGhost),
+	get_highlit_obj(2, ExGhost),
 	    contains(Top, ExGhost),
 	    normalize(ExGhost),
 	    change_ghosthood(ExGhost),
