@@ -312,8 +312,7 @@ get_ppairs([],[]).
 /* Only include a "...where P=V" entry where P is not the default parameter name for V. */
 get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 	get_ppairs(R1, R2),
-	(generate_name(prolog, Source, DefParam, []),
-	DefParam = Param, !,
+	(m_update:add_brackets(Source, _, Param), !,
 	    Terms = R2;
 	Terms = [Param = Source | R2]).
 
