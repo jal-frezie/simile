@@ -774,7 +774,7 @@ proc DoRegDialog {} {
     global userinfo
     set t [toplevel .register -bd 4]
     wm title .register Registration
-    wm transient $t .
+    wm transient $t
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
 
     pack [message .register.m -text "Registration enables us to keep you up-to-date with \
@@ -795,7 +795,7 @@ proc DoRegDialog {} {
     pack [button $bs.enter -text "Register now" \
 	    -command {set userinfo(done) 2}] -side left
     pack [button $bs.later -text "Register later" \
--command {set userinfo(done) 0}] -side left
+        -command {set userinfo(done) 0}] -side left
     pack [button $bs.cancel -text "Don't register" \
 	    -command {set userinfo(done) 1}]
 
