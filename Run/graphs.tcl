@@ -859,7 +859,7 @@ proc AcceptData {winId compName complain} {
 	set dataChanged 1
     } elseif {[catch {GetModelValue $node} oldVal]} {
 	set dataChanged 1
-    } elseif {[string compare [lindex $dataChanged 0] $paramData($compName)]} {
+    } elseif {[string compare [lindex $oldVal 0] $paramData($compName)]} {
 	set dataChanged 1
     }
     # Make array form if data has changed
@@ -973,6 +973,10 @@ proc ListToArray {tgt subs trans dims list} {
 # the number of elements, because if there is an element larger than the
 # number of elements, one the same or smaller will be missing!
 	set last [array size sub]
+	if {!$last} {
+	    return [list "Per-record submodel must have values for at least one member."]
+	}
+
 #puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
 	EnumTypeToNumber [lindex [lindex $dims 0] 1]$subs $last {}
     } else {
