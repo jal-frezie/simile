@@ -630,7 +630,7 @@ proc ControlDraw {prologVersion} {
     
     # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
-        set env(SIMILE_VERSION) 4.2
+        set env(SIMILE_VERSION) 4.3
         set env(licensee_name) "Support team"
         set env(licensee_corp) "Simulistics Ltd"
         set env(license_code) default_license=fa4c55b7105171de89d44c78a33cdc28

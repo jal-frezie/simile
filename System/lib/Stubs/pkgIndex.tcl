@@ -11,9 +11,5 @@
 # JAT: this is very old, Windows vs Linux are decided by separate version
 # numbers rather than checking [info sharedlibextension]
 
-scan [info tclversion] {%d.%d} MAJ MIN
-package ifneeded Ame_dll $MAJ.$MIN.4.2.0 \
-    [list load [file join $dir ame_dll$MAJ$MIN.dll]]
-package ifneeded Ame_dll $MAJ.$MIN.4.2.1 \
-    [list load [file join $dir \
-	libame_dll$MAJ.$MIN[info sharedlibextension]]]
+package ifneeded Ame_dll 8.4.4.3.0 [list load [file join $dir ame_dll84.dll]]
+package ifneeded Ame_dll 8.4.4.3.1 [list load [file join $dir libame_dll8.4.dylib]]
