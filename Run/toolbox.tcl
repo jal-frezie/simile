@@ -184,6 +184,8 @@ proc ControlDraw {prologVersion} {
         Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
                         "Use which C++ compiler?"}}
         file attributes $custom(prefDir) -hidden true
+    } else {
+	set custom(compChoice) GNU
     }
     
     foreach nodeType {normal generic compartment channel \

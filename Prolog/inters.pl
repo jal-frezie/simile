@@ -27,7 +27,8 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	raise_exception(cannot_make_context(Target, BaseContext, BackSwap))),
 
 	/* now check for assignment from an idler. This will be eleminated. */
-	(Formula = arr(_, Idle, _),
+	get_dims_from_loops(SourceLoops, _, SourceInds),
+	(Formula = arr(_, Idle, SourceInds),
 	Args = [made_at(Idle, _)],
 	select(instance(internal, _,_, Idle, _-Dims),
 	       AllInters, NewInters), !,
@@ -381,8 +382,7 @@ make_intermediates(
 		    UsingDim = true;
 		Units = int,
 		    append(NowBuilding, DestPath, ReadyContext))), !,
-	    InitVal = 0,
-	    Preps = [];
+	    InitVal = 0;
 	(member(Functor, [make_inter, last, delay]), !,
 		InitVal = 0,
 		IncrExpr = IncrementRef,
@@ -393,8 +393,7 @@ make_intermediates(
 		    [RUnits | ArgTemplate] = [boolean, boolean];	
 		    [RUnits | ArgTemplate] = [int, int]),
 	        append(NowBuilding, DestPath, ReadyContext)),
-	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units),
-	    Preps = OldSetups),
+	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
 
 	/* get limit values for least and greatest -- should use limits.h
@@ -423,7 +422,8 @@ make_intermediates(
 	append([SourceLoops, NowBuilding, DestPath], ClearContext),
 
 	(UsingDim == true, !,
-	    Setups = [],
+	    Setups = OldSetups, /* So, we are just using a number, but we might
+	have made inters that we will use elsewhere */
 	    Args = [],
 	    NewInters = OldInters;
 	((Functor = delay; Functor = make_inter), !,
@@ -449,7 +449,7 @@ make_intermediates(
                        WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
                   make(TotalName, [increment(TotalName)],
                        ReadyContext, SetTime, [])]),
-	append([Clearing, Preps, Setting], Setups),
+	append([OldSetups, Clearing, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
 	Inter = instance(internal, inter(InterContext, _, TotalDims),
@@ -527,18 +527,20 @@ make_intermediates(
 	    (Dim =.. [size | _], !,
 		DimVal = Dim;
 	    make_intermediates(Dim, dum, [], _, PrevInters, [], 0, _, Dun,
-				MidInters, part_result(_,_,_, DimVal)),
+			       MidInters, part_result(_, DimSetups,_, DimVal)),
 		Dun = const_int, !;
 	    raise_exception(bad_index_number(Dim, makearray))),
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	make_choose_form(Source, keep(LocalInd), 1, Element),
 	    length(Source, DimVal),
+	    DimSetups = [],
 	    MidInters = PrevInters,
 	    NowBuilding = BuildingArrays), !,
 	    LocalLoop = set(LocalInd, loop(DimVal)),
 	    make_intermediates(Element, Target, DestPath, BackSwap, MidInters,
 			NowBuilding, Step, Used, Units, NewInters,
-			part_result(EltContext, Setups, Args, SourceRef)),
+			part_result(EltContext, EltSetups, Args, SourceRef)),
+	    append(DimSetups, EltSetups, Setups),
 	    get_model_and_loops(EltContext, DestPath, _, EltLoops, EltBase),
 	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
 
