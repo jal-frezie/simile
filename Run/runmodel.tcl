@@ -453,8 +453,9 @@ proc MakeHelperMenu {} {
 	$fm add command -label "Save" -command SaveView
 	$fm add command -label "Clear" -command ClearView
 	$fm add command -label "Close" -command KillHelpers
-    $fm add command -label "Parameters..." \
-    		    -command {FileParamDialogue 1 [focus]}
+    $fm add command -label "Parameters..." \
+    		    -command {FileParamDialogue 1 [focus]}
+
     set oldDir [pwd]
 	cd ../IOTools
 	AddHelperSublist $fm "Add tool" 2
