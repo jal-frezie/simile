@@ -1836,7 +1836,7 @@ proc MenuClose {winId} {
 proc byebye {winId} {
     global window_info tcl_platform
     prolog [list tk_off_window( '$winId' )]
-    if {![string equal Darwin $tcl_platform(os)] && \
+    if { \
 	    ![llength [array names window_info *,is_top_level]]} {
 	prolog tk_kill_everything(_)
     }
