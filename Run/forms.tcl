@@ -183,7 +183,7 @@ proc create_equation {parent boxtitle indices} {
     pack $keypadf.keys.row5.col0 -expand false
     pack $keypadf.keys.row5.col2 -expand false
     pack $keypadf.keys -side left -anchor nw
-    pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left
+    pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $middleF -expand off -fill x
     
     
@@ -341,7 +341,7 @@ proc interact_equation {} {
 		    $equation(units) $equation(isparam) \
 		    \['[join $equation(table_data) ',']'\] \
 		    [string trimright [$descFrame.description.text get 1.0 end]] \
-		    [string trimright "No comment"] \
+		    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
 		    $equation(min) $equation(max)]
     } elseif {$equation(done)==2} {
 	set rlist [list [lindex $equation(pathlist) $equation(ckLine)]]
