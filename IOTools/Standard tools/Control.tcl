@@ -170,6 +170,14 @@ namespace eval runcontrol33857 {
 		    $runState($node,modelRunning) || \
                 [string match reset $action]} {
             set widget [$winId.rcf getframe]
+
+	    if {[string match stop $action]} { ;# model still waiting to stop
+		if {[string equal yes [ShowMessage "Abort request" question "The model has not finished the last time step. You can abort it but the current values will be lost. Abort it now?" yesno]]} {
+		    TryToKill $node
+		} else {
+		    return
+		}
+	    }
 	    switch -regexp [CheckUpToDate $node $action] {
 		yes|cancel {
 		    return

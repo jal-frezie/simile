@@ -199,32 +199,57 @@ proc do_for_node {node args} {
 	    set sep .
 	}
 	set makeExec ../System/bin/tclsh$MAJ$sep$MIN
+#puts "starting $makeExec"
 	set runState($node,interp) [open |$makeExec r+]
 #        $runState($node,interp) alias BringParameter BringParameter
 #        $runState($node,interp) eval source ../Run/support.tcl
+	fileevent $runState($node,interp) readable [list FeedModel $node]
 	puts $runState($node,interp) {source ../Run/support.tcl}
 	flush $runState($node,interp)
+#puts "initialized"
+	set runState($node,modelReady) 1
+	set runState($node,queueSize) 0
     }
 #    return [$runState($node,interp) eval $args]
+    if {!$runState($node,modelReady)} {
+	tkwait variable runState($node,modelReady)
+    }
     puts $runState($node,interp) [list do $args]
     flush $runState($node,interp)
-#puts "sent $args"
-    set running 1
-    while {1} {
-	gets $runState($node,interp) result
-#puts "got $result"
-	set info [lindex $result 1]
-	switch [lindex $result 0] {
-	    err {
-		error $info
-	    } res {
-		return $info
-	    } get {
-		puts $runState($node,interp) [eval BringParameter $info]
-		flush $runState($node,interp)
-#puts "sent [eval BringParameter $info]"
-	    }
+#puts "command: $args"
+    incr runState($node,queueSize)
+    set runState($node,modelReady) 0
+    upvar \#0 runState($node,response$runState($node,queueSize)) result
+#puts "tkwait variable runState($node,response$runState($node,queueSize))"
+    tkwait variable runState($node,response$runState($node,queueSize))
+
+    set info [lindex $result 1]
+    switch [lindex $result 0] {
+	err {
+	    error $info
+	} res {
+	    return $info
 	}
+    }
+}
+
+proc FeedModel {node} {
+    global runState
+    if {![info exists runState($node,interp)]} {
+	error "Lost model"
+	set result [list error {lost model}] ;# killing it is an event too
+    } else {
+	gets $runState($node,interp) result
+    }
+#puts "response: $result"
+    if {[string equal get [lindex $result 0]]} {
+	puts $runState($node,interp) [eval BringParameter [lindex $result 1]]
+	flush $runState($node,interp)
+    } else {
+	set runState($node,modelReady) 1
+	set runState($node,response$runState($node,queueSize)) $result
+#puts "set runState($node,response$runState($node,queueSize)) $result"
+	incr runState($node,queueSize) -1
     }
 }
 
@@ -233,6 +258,7 @@ proc KillInterpFor {node} {
     if {[info exists runState($node,interp)]} {
         puts $runState($node,interp) exit
 	flush $runState($node,interp)
+	close $runState($node,interp)
         unset runState($node,interp)
     }
 }
