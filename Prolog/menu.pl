@@ -144,12 +144,12 @@ stick_model_in(Parent, Name) :-
         finish_progress_dialogue,
 	set_model_file(Parent, Name),
 	check_autosave(Parent, Name, Translated, NeedsRedraw),
-	(NeedsRedraw = 0, !;
-	resize_canvas_for(Parent),
-	    redraw_window(Win)),
+	(NeedsRedraw = 0,
 	/* Graphics update will have made a tk_visible call which we do not
 	want to save as a separate move so forget it */
-	input:retract(resizing_windows(Win)),
+	input:retract(resizing_windows(Win)), !;
+	resize_canvas_for(Parent),
+	    redraw_window(Win)),
 	update_captions(Parent).
 
 check_if_already_open(Name) :-
