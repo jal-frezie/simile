@@ -146,8 +146,7 @@ stick_model_in(Parent, Name) :-
 		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName);
 	    /* this should call Prolog back with the display detail vals */
-	    resize_canvas_for(Parent),
-		redraw_window(Win)),
+	    NeedsRedraw = 1),
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
@@ -155,10 +154,12 @@ stick_model_in(Parent, Name) :-
 		     (finish_progress_dialogue,
 		     make_nice_error_message(ProLoss, ProLite),
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
-	    resize_canvas_for(Parent),
-	    redraw_window(Win)),
+	    NeedsRedraw = 1),
 	add_parameter(Parent, 0, file_name, Name),
-	check_autosave(Parent, Name, Tweaked),
+	check_autosave(Parent, Name, NeedsRedraw),
+	(NeedsRedraw = 0, !;
+	resize_canvas_for(Parent),
+	    redraw_window(Win)),
 	update_captions(Parent).
 
 resize_canvas_for(Parent) :-
