@@ -15,4 +15,5 @@ scan [info tclversion] {%d.%d} MAJ MIN
 package ifneeded Ame_dll $MAJ.$MIN.4.2.0 \
     [list load [file join $dir ame_dll$MAJ$MIN.dll]]
 package ifneeded Ame_dll $MAJ.$MIN.4.2.1 \
-    [list load [file join $dir libame_dll$MAJ.$MIN.so]]
+    [list load [file join $dir \
+	libame_dll$MAJ.$MIN[info sharedlibextension]]]
