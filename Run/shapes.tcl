@@ -373,13 +373,13 @@ proc PutFatArrow { w ptz fatness colourScheme tagSet} {
 # the size of the submodel rectangle, so it can be tiled/stretched as
 # necessary...
 
-proc FillSmImage {fillColour layout smbg mw mh intRad} {
-    set srcWidth [$fillColour cget -width]
-    set srcHeight [$fillColour cget -height]
+proc FillSmImage {fCol layout smbg mw mh intRad} {
+    set srcWidth [$fCol cget -width]
+    set srcHeight [$fCol cget -height]
     
     # Now copy the middle bit over
     $smbg blank
-    MyTile $smbg 0 $intRad $mw [expr $mh-$intRad] $fillColour \
+    MyTile $smbg $layout $mw $mh 0 $intRad $mw [expr $mh-$intRad] $fCol \
             $srcWidth $srcHeight
     
     # And now the shorter end bits, line by line
@@ -389,45 +389,62 @@ proc FillSmImage {fillColour layout smbg mw mh intRad} {
         set fr [expr $mw-$fl]
         set ft [expr $intRad-$line]
         set fb [expr $ft+1]
-        MyTile $smbg $fl $ft $fr $fb $fillColour $srcWidth $srcHeight
+        MyTile $smbg $layout $mw $mh $fl $ft $fr $fb $fCol $srcWidth $srcHeight
         set ft [expr $mh-$ft]
         set fb [expr $ft+1]
-        MyTile $smbg $fl $ft $fr $fb $fillColour $srcWidth $srcHeight
+        MyTile $smbg $layout $mw $mh $fl $ft $fr $fb $fCol $srcWidth $srcHeight
     }
 }
 
-proc MyTile {dest l t r b src w h} {
-    for {set qt [expr ($t/$h)*$h]} {$qt < $b} {incr qt $h} {
-        if {$qt<$t} {
-            set dt $t
-            set st [expr $t-$qt]
-        } else {
-            set dt $qt
-            set st 0
-        }
-        if {$qt+$h>$b} {
-            set sb [expr $b-$qt]
-        } else {
-            set sb $h
-        }
-        for {set ql [expr ($l/$w)*$w]} {$ql < $r} {incr ql $w} {
-            if {$ql<$l} {
-                set dl $l
-                set sl [expr $l-$ql]
-            } else {
-                set dl $ql
-                set sl 0
-            }
-            if {$ql+$w>$r} {
-                set sr [expr $r-$ql]
-            } else {
-                set sr $w
-            }
-            $dest copy $src -from $sl $st $sr $sb -to $dl $dt
-        }
+proc MyTile {dest pos dw dh l t r b src w h} {
+    switch $pos {
+	Tiled {
+	    for {set qt [expr ($t/$h)*$h]} {$qt < $b} {incr qt $h} {
+		if {$qt<$t} {
+		    set dt $t
+		    set st [expr $t-$qt]
+		} else {
+		    set dt $qt
+		    set st 0
+		}
+		if {$qt+$h>$b} {
+		    set sb [expr $b-$qt]
+		} else {
+		    set sb $h
+		}
+		for {set ql [expr ($l/$w)*$w]} {$ql < $r} {incr ql $w} {
+		    if {$ql<$l} {
+			set dl $l
+			set sl [expr $l-$ql]
+		    } else {
+			set dl $ql
+			set sl 0
+		    }
+		    if {$ql+$w>$r} {
+			set sr [expr $r-$ql]
+		    } else {
+			set sr $w
+		    }
+		    $dest copy $src -from $sl $st $sr $sb -to $dl $dt
+		}
+	    }
+	} Centred {
+	    set osl [expr ($dw-$w)/2] ;# left of source on dest
+	    set ost [expr ($dh-$h)/2] ;# top of source on dest
+	    
+	    set sl [max 0 $l-$osl] ;# left of source area to copy
+	    set st [max 0 $t-$ost]
+	    set sr [min $w $r-$osl]
+	    set sb [min $h $b-$ost]
+
+	    if {$sl<=$sr && $st<=$sb} {
+		set dl [max $l $osl]
+		set dt [max $t $ost]
+		$dest copy $src -from $sl $st $sr $sb -to $dl $dt
+	    }
+	}
     }
 }
-
 
 proc MoveText {w id ptz} {
     set mptz [ScaleList $w $ptz]
@@ -628,12 +645,14 @@ proc WriteDesc {canvas canvasFile date args} {
     foreach object [$canvas find all] {
         # Insert special command to re-create any photos used
         if {[string match image [$canvas type $object]]} {
-            regexp {source\(([^\)]+)\)} [$canvas gettags $object] all \
-                    sourceImage
+	    set tags [$canvas gettags $object]
+            regexp {source\(([^\)]+)\)} $tags all sourceImage
+            if {![regexp {posn\(([^\)]+)\)} $tags all posn]} {
+		set posn Tiled
+	    }
             set localImage [$canvas itemcget $object -image]
             puts $stream [list MakeImage $sourceImage $localImage \
-                    [$localImage cget -width] \
-                    [$localImage cget -height]]
+                    [$localImage cget -width] [$localImage cget -height] $posn]
         }
         # Do not write base objs they get re-created
         if {[string match */base/* [$canvas gettags $object]]} {

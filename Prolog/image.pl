@@ -53,8 +53,8 @@ as they may have transparent bits. So to save drawing time it might be useful
 to give background colours to submodels with non-transparent images. */
 
 get_window_colour(Submodel, Colour, Images) :-
-	get_colour(Submodel, TopColour, TopImage, _),
-	(TopImage = none, !, AddImages = [];
+	get_colour(Submodel, TopColour, TopImage, TopPos),
+	((TopImage = none; TopPos = 'Centred'), !, AddImages = [];
 	    AddImages = [TopImage]),
 	(TopColour = clear, !,
 	    (Parent has_part Submodel,
