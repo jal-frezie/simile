@@ -10,6 +10,11 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.6  2002/11/06 13:34:03  jaspert
+#Value popups added to model inspector
+#Fixed bug generating interface spec files which came from new save format
+#Prevented badly set up pipe interface leaving dead window
+#
 #Revision 1.5  2002/10/21 17:05:20  jaspert
 #Going over to DOS file format as I find problems
 #Fixed hang in PlotterXY/graphtools
@@ -162,10 +167,14 @@ namespace eval ::ModelInspector63654 {
             }
         }
         
-        OpenLevel 0; # open up level 0 only (so can see level 1)
+	OpenLevel 0; # open up level 0 only (so can see level 1)
         
         $tableframe.table bindImage <Button-1> [namespace code OnElementClick]
         $tableframe.table bindText <Button-1> [namespace code OnElementClick]
+	$tableframe.table bindImage <Enter> "[namespace code DoInspPopup] %X %Y"
+	$tableframe.table bindText <Enter> "[namespace code DoInspPopup] %X %Y"
+	$tableframe.table bindImage <Leave> RemovePopup
+	$tableframe.table bindText <Leave> RemovePopup
     }
     
     proc GetCanvas {winId} {
@@ -182,6 +191,12 @@ namespace eval ::ModelInspector63654 {
         }
     }
     
+	proc DoInspPopup {X Y plName} {
+#	    ShowMessage debug info $args ok
+	    PostPopup $X $Y
+	    AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
+	}
+
     proc Restore {winId} {initialize $winId}
     
     proc OpenLevel {level} {

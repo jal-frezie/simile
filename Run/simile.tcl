@@ -42,7 +42,7 @@ switch $tcl_platform(platform) {
 	    set env(MSVCDIR) $env(MSDEVDIR)
 	}
 # Now, win95 etc needs the tcltk binaries in the path
-	set env(PATH) "[file dirname [file dirname [info library]]]/bin;c:/progra~1/mingw-2.95.3/bin;$env(PATH)"
+	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
     } unix {
 	set env(LD_LIBRARY_PATH) \

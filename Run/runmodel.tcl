@@ -767,6 +767,7 @@ proc AddEqnPopup {x y winId X Y} {
 		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
 	    }
 # after going Prolog, check popup window still there
+# note colour etc are not comments though they look like them in emacs
 	    if {![winfo exists .popup]} return
 	    AddPopupMessage $fromProlog #c0ffc0 0
 	}
@@ -856,7 +857,10 @@ proc PostPopup {X Y} {
     raise .popup
 }
 
-proc RemovePopup {} {
+# args are not used -- when binding to a table wigdet we cannot avoid getting
+# the item name on the end of the call
+
+proc RemovePopup {args} {
     global popper
     if {[winfo exists .popup]} {
 	destroy .popup

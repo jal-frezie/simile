@@ -90,6 +90,8 @@ fconfigure $plPipe -translation {auto lf}
 # send_pl_cmd main.
 set spraf {}
 while {![string match ready $spraf]} {
-    gets $plPipe spraf
+    if {[gets $plPipe spraf]<0} {
+	exit
+    }
 }
 KeepLooking

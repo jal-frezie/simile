@@ -924,6 +924,14 @@ make_links_follow(Obj) :-
 	adjust_link(Link),
 	fail; true.
 
+/* move_link: adjusts the route of a link, making a new connection point
+to any components it attaches to the outside of. If it continues inside one
+of those components this is recursively moved as well.
+
+Not used very much now: only when routing a ghost link, dragging one
+end of a flow or connecting a link due to reading an interface spec
+file (surely some mistake?) */
+
 move_link(Link) :-
 	adjust_link(Link),
 	update_equivs(Link).
@@ -1139,6 +1147,8 @@ unclick_obj :-
 			normalize(WrongFinish);
 		    make_terminator(New_obj, Finish_thing, Terminator),
 			(var(Terminator), !;
+			    (\+ find_type(Terminator, submodel), !;
+			    draw_line_to(Start_thing, New_obj, Terminator)),
 			    tie_ends(New_obj, Start_thing, Terminator)),
 			normalize(OrigStart),
 			normalize(Finish_thing)),

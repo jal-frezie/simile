@@ -169,9 +169,6 @@ write_with_breaks(Stream, Term) :-
 	insert_breaks(Stream, Term, [], FullTermStr),
 	sicstus_put(Stream, 10).
 
-write_with_breaks(Stream, Term) :-
-	write(Stream, Term).
-
 /* Clever part disabled to try to help mime stuff */
 
 insert_breaks(Stream, Term, Done, Rest) :-
