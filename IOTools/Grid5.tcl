@@ -30,6 +30,8 @@ namespace eval grid005 {
         set useNodes($winId,freeze) false
         set useNodes($winId,min) 0
         set useNodes($winId,max) 100
+        set useNodes($winId,dataMin) 1e100
+        set useNodes($winId,dataMax) -1e100
         SetState $winId {}
         AddToolbar $winId
         set NToolButtons [$winId.bbframe.buttonBox index last]
@@ -307,8 +309,6 @@ namespace eval grid005 {
     
     proc IncreaseRange {winId} {
         variable useNodes
-        
-        DataMinMax $winId datamin datamax
         set useNodes($winId,min) [expr {$useNodes($winId,min)*10}]
         set useNodes($winId,max) [expr {$useNodes($winId,max)*10}]
         SetColours useNodes $winId
@@ -362,9 +362,8 @@ namespace eval grid005 {
         pack $coloursF -padx 10 -pady 10 -fill x
         
         set rangeF [labelframe [$dlg getframe].range -text "Scale range"]
-        DataMinMax $winId datamin datamax
-        pack [label $rangeF.dataminL -text "Data min. so far: $datamin"] -fill x  -padx 10
-        pack [label $rangeF.datamaxL -text "Data max. so far: $datamax"] -fill x  -padx 10
+        pack [label $rangeF.dataminL -text "Data min. so far: $useNodes($winId,dataMin)"] -fill x  -padx 10
+        pack [label $rangeF.datamaxL -text "Data max. so far: $useNodes($winId,dataMax)"] -fill x  -padx 10
         pack [LabelFrame $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
         pack [entry $rangeF.minF.entry -textvar [namespace current]::min($winId) -width 20] -side right -padx 10
         pack [LabelFrame $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
@@ -409,39 +408,6 @@ namespace eval grid005 {
         recolour_scale $winId
         UpdateState $winId
         display $winId 0 0 0
-    }
-    
-    
-    proc DataMinMax {winId dmin dmax} {
-        upvar $dmin datamin
-        upvar $dmax datamax
-        
-        variable useNodes
-        
-        set datamin 1e100
-        set datamax 1e-100
-        set ncol $useNodes($winId,ncol)
-        set nrow $useNodes($winId,nrow)
-        set values $useNodes($winId,values)
-        
-        for {set row 1} {$row<=$nrow} {incr row} {
-            set rowData($row) {}
-            for {set col 1} {$col<=$ncol} {incr col} {
-                set cell [expr ($row-1)*$ncol+$col-1]
-                set celval [lindex $values $cell]
-                set length [llength $celval]
-                
-                if {$length} {
-                    if {$length>1} {set celval [lindex $celval 1]}
-                    if {$celval>$datamax} {
-                        set datamax $celval
-                    } elseif {$celval<$datamin} {
-                        set datamin $celval
-                    }
-                }
-            }
-        }
-        
     }
     
     proc click_cell {winId c} {
@@ -494,6 +460,12 @@ namespace eval grid005 {
                 
                 if {$length} {
                     if {$length>1} {set celval [lindex $celval 1]}
+		    if {$celval<$useNodes($winId,dataMin)} {
+			set useNodes($winId,dataMin) $celval
+		    }
+		    if {$celval>$useNodes($winId,dataMax)} {
+			set useNodes($winId,dataMax) $celval
+		    }
                     if [catch {set icolour [expr {int($nswatches*($celval-$min)/$range)}]}] {
                         return
                     }
