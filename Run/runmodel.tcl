@@ -267,6 +267,7 @@ proc Prettify {value} {
 }
 
 proc DestroyHelpers {node} {
+    global helperTable
     if {[info exists helperTable($node,whichRunEnv)]} {
         ::RunEnv::Destroy $node
     } else {
@@ -432,10 +433,7 @@ proc ScrubRun {node times} {
 proc snap {topNode node} {
     global runState
     
-    if {[catch {GetCompProperty topNode Caption $node} full_label]} {
-        return; ## no good
-    }
-    
+    set full_label [GetCompProperty $topNode Caption $node]
     set w .snap[clock seconds]
     toplevel $w
     set last_slash [string last / $full_label]

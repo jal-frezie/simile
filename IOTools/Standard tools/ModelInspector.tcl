@@ -164,11 +164,8 @@ namespace eval ::ModelInspector63654 {
 	    } else {
 		set value [lindex [GetModelValue $winId $plName] 0]
 		#puts "trans $trans value $value"
-		if {![string match novalue $value]} {
-		    set value [TransEnums $trans $value]
-		}
 	    }
-	    AddPopupMessage $value \#ffffc0 1
+	    AddPopupMessage $value \#ffffc0 $trans
 	}
     }
     

@@ -540,7 +540,7 @@ namespace eval $keyValue {
 		    set lineToShow $count
 		}
 		$winId.t set $count,$headerCol \
-		    [lindex [lindex [split $headerElt /] end] 0]
+		    [lindex [split $headerElt /] end]
                 incr headerCol
             }
             incr count
@@ -579,7 +579,7 @@ namespace eval $keyValue {
                         set lineToShow $count
                     }
                     $winId.t set $headerRow,$count \
-			[lindex [lindex [split $headerElt /] end] 0]
+			[lindex [split $headerElt /] end]
                 }
                 incr headerRow
             }
@@ -635,13 +635,13 @@ namespace eval $keyValue {
 			"\[lrange \$${level}Headers [set ${level}Pt] end\]"
 		} else {
 		    append subscriptTemplate \
-			"\[lindex \$${level}Headers [set ${level}Pt]\] "
+			"\[list \[lindex \$${level}Headers [set ${level}Pt]\]\] "
 		}
 	    }
 	    incr ${level}Pt
 	}
 #puts "subscript template: $subscriptTemplate"
-
+#puts "rowIds [array get rowIds] colIds [array get colIds]"
 	# next copy the 2-d table to an n-d array using these
         foreach rowEntry [array names rowIds $winId,*] {
 	    set rowsHeaders [lindex [split $rowEntry ,] 1]
@@ -663,7 +663,7 @@ namespace eval $keyValue {
 	    foreach {indcol val} $vlist {
 		set shortcol [lrange $indcol 0 end-1]
 		lappend values($shortcol) \
-		    [EnquoteIfNonNumeric [lindex $indcol end]] $val
+		    [lindex $indcol end] $val
 	    }
 	}
 	return [lindex $values() 1]

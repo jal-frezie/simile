@@ -345,33 +345,83 @@ proc RemovePopup {args} {
     }
 }
 
-proc AddPopupMessage {text colour isValue} {
-    set verbosity [string length $text]
-    if {$verbosity<20} {
+proc AddPopupMessage {text colour args} {
+    set limit 500
+    if {[llength $args]} {
+	set count [ShrinkValueList text $limit] 
+# this shrinks $text if big
+#puts "Shrunken list is $text"
+	set text [PrettifyValList [TransEnums [lindex $args 0] $text]]
+    } else {
+	set count 0
+    }
+    EndsOnly text $count $limit
+    if {[string length $text]<20} {
         pack [label .popup.message$colour \
                 -text $text -bg $colour] -fill x -expand true
     } else {
-        if {$verbosity>500} {
-	    set text [EndsOnly $text $isValue $verbosity 500]
-        }
         pack [message .popup.message$colour -aspect 400 \
-                -text $text -bg $colour] -fill x -expand true
+		  -text $text -bg $colour] -fill x -expand true
     }
 }
 
-proc EndsOnly {text isValue verbosity leave} {
-    set size [expr ($leave-20)/2]
-    if {$isValue} {
-	set nvals " ([CountValues $text] values)"
-    } else {
-	set nvals " ($verbosity characters)"
-    }
-    set text [string range $text 0 $size].....[string range $text \
+proc EndsOnly {outerText count leave} {
+    upvar 1 $outerText text
+
+    set verbosity [string length $text] 
+    if {$verbosity>$leave} {
+	set size [expr ($leave-20)/2]
+	
+	if {$count} {
+	    set nvals " ($count values)"
+	} else {
+	    set nvals " ($verbosity characters)"
+	}
+	set text [string range $text 0 $size].....[string range $text \
 						 [expr $verbosity-$size] end]
-    append text $nvals
-    return $text
+	append text $nvals
+	return 1
+    } else {
+	return 0
+    }
 }
 
+proc ShrinkValueList {outerList limit} {
+    set manage [expr $limit/4]
+    upvar 1 $outerList list
+    set allVals [CountValues $list]
+    if {$allVals>$manage} {
+	set range [expr $manage/2]
+	set startRange [GetNVals $list first $range]
+	set endRange [GetNVals $list last $range]
+	set list [concat $startRange $endRange]
+    }
+    return $allVals
+}
+
+proc GetNVals {list side need} {
+    set subLength -1 ;# first value to try will be 1
+    set got 0
+    while {$got<$need} {
+	incr subLength 2
+	if {[string equal first $side]} {
+	    set startList 0
+	    set endList $subLength
+	} else {
+	    set startList end-$subLength
+	    set endList end
+	}
+	set subList [lrange $list $startList $endList]
+	set got [CountValues $subList]
+    }
+    if {$subLength==1} {
+	return [list [lindex $list $startList] \
+			[GetNVals [lindex $list $endList] $side $need]]
+    } else {
+	return $subList
+    }
+}
+	
 proc CountValues {text} {
     set len [llength $text]
     if {$len==1} {

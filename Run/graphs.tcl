@@ -895,7 +895,8 @@ proc AcceptData {winId topNode compName complain} {
 
     set node [GetCompProperty $topNode IdFromCapt $compName]
     if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
-	set paramData($compName) [$widgetNames($compName).e get]
+	set paramData($compName) \
+	    [UglifyValList [$widgetNames($compName).e get]]
     }
     
     set dataChanged 0
@@ -998,7 +999,7 @@ proc ListToArray {tgt subs trans dims list} {
     }
 	
     foreach {indx sublist} $list {
-	set sub([lindex $indx 0]) $sublist
+	set sub($indx) $sublist
     }
 # was array set sub $list
 #puts "dims remaining $dims"
@@ -1082,12 +1083,14 @@ proc RevertData {winId compName} {
 
 proc FillIfSmall {entry text} {
     $entry delete 0 end
-    set verbosity [string length $text]
-    if {$verbosity>500} {
-	$entry insert 0 [EndsOnly $text 1 $verbosity 500]
+    set limit 500
+    set count [ShrinkValueList text $limit]
+    set text [PrettifyValList $text]
+
+    set shrunken [EndsOnly text $count $limit]
+    $entry insert 0 $text
+    if {$shrunken} {
 	$entry configure -state disabled
-    } else {
-	$entry insert 0 $text
     }
 }
 
@@ -1173,9 +1176,9 @@ proc MergeParams {topNode smPath metaFile interactive} {
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
 		set paramData($restoredComp) \
 		    [LoadTableData $paramState($restoredComp)]
-	    } elseif {![SensibleValue $trans $FileOrVal]} {
+	    } elseif {![SensibleValue $trans $paramData($restoredComp)]} {
+		ShowMessage "Error merging parameters" error "Parameterization file contained the entry $paramData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
 		set paramData($restoredComp) {}
-		ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
 	    }
 	    if {$interactive} {
 		FillIfSmall $widgetNames($restoredComp).e \
@@ -1197,7 +1200,7 @@ proc MergeParams {topNode smPath metaFile interactive} {
 proc SensibleValue {trans list} {
     set curLevel [lindex $trans 0]
     if {[llength $list]==1} {
-        return [VarType $list $curLevel]
+        return [VarType [lindex $list 0] $curLevel]
     } else {
         for {set idx 0} {$idx < [llength $list]} {incr idx 2} {
             if {[VarType [lindex $list $idx] $curLevel] != 1 || \
@@ -1218,9 +1221,10 @@ proc VarType {testVar types} {
         return 1
     } elseif {[string is double $testVar]} {
         return 2
-    } elseif {[lsearch $types [lindex $testVar 0]]!=-1} {
+    } elseif {[lsearch $types $testVar]!=-1} {
 	return 1
     } else {
+	puts "No $testVar in $types"
         return 0
     }
 }
@@ -1252,7 +1256,7 @@ proc GetFromTable {parent compName} {
 	set table_entry(data) {}
     }
     if {[string match normal [$widgetNames($compName).e cget -state]]} {
-	set table_entry(values) [$widgetNames($compName).e get]
+	set table_entry(values) [UglifyValList [$widgetNames($compName).e get]]
     } else {
 	set table_entry(values) $paramData($compName)
     }
@@ -1362,7 +1366,8 @@ proc LoadTableData {tableSpec} {
             set arrayIndex {}
             set indexCount 0
             foreach column $indexColumns {
-                set newIndex [EnquoteIfNonNumeric [lindex $entryList $column]]
+                set newIndex [lindex $entryList $column]
+		# enquote the above if indices of llength 1 are needed
                 lappend arrayIndex $newIndex
                 if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
                     lappend maxIndices($indexCount) $newIndex

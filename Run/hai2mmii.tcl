@@ -190,32 +190,77 @@ proc SetStep {node time phase} {
 
 proc TransEnums {transList vals} {
 #puts "Translating $vals with $transList"
+    set curLevel [lindex $transList 0]
     if {[llength $vals]==1} {
-	set curLevel [lindex $transList 0]
-	if {[llength $curLevel]} {
-	    return [list [lindex $curLevel $vals]]
-	} else {
-	    return $vals
-	}
+	return [EnquoteIfNonNumeric [TransValue $curLevel $vals]]
     } else {
 	set indxCount [llength [lindex $vals 0]]
 	set argTrans [lrange $transList $indxCount end]
 	set result {}
 	foreach {index subVals} $vals {
-	    lappend result [TransIndices $transList $index] \
+	    lappend result [TransValue $curLevel $index] \
 		[TransEnums $argTrans $subVals]
 	}
 	return $result
     }
 }
 
-# below probly unnnecesssary cos indices always single values now
-proc TransIndices {transList vals} {
-    if {[llength $vals]} {
-	return [concat [TransEnums $transList [lindex $vals 0]] \
-	    [TransIndices [lrange $transList 1 end] [lrange $vals 1 end]]]
+proc TransValue {curLevel val} {
+    if {[llength $curLevel]} {
+	return [lindex $curLevel $val]
     } else {
-	return {}
+	return $val
+    }
+}
+
+proc PrettifyValList {ugly args} {
+#puts "Trying to tidy up $ugly"
+    if {[llength $ugly]==1} {
+	set result [lindex $ugly 0]
+    } else {
+	set result {}
+	foreach {indx val} $ugly {
+	    if {[string length $result]} {
+		append result { }
+	    } elseif {[llength $args]} {
+		set result \{
+	    }
+	    append result \#$indx:\ [PrettifyValList $val 1]
+	}
+	if {[llength $args]} {
+	    append result \}
+	}
+    }
+    return $result
+}
+
+proc UglifyValList {pretty} {
+#puts "pretty $pretty"
+    set midlin [regsub -all {: ([^\#\{\}]+)( \#|\})} $pretty \
+		    {: {"\1"}\2}]
+#puts "midlin $midlin"
+    set ugly [regsub -all {\#([^:]+):} $midlin {{\1}}]
+#puts "ugly $ugly"
+    return [NormalizeQuotes $ugly]
+}
+
+proc NormalizeQuotes {table} {
+    if {[llength $table]==1} {
+	return [DequoteNumeric $table]
+    } else {
+	set result {}
+	foreach {indx val} $table {
+	    lappend result [DequoteNumeric $indx] [NormalizeQuotes $val]
+	}
+	return $result
+    }
+}
+
+proc DequoteNumeric {val} {
+    if {[llength $val]==1 && [string is double [lindex $val 0]]} {
+	return [lindex $val 0]
+    } else {
+	return $val
     }
 }
 

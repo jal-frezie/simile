@@ -1319,10 +1319,10 @@ proc AddCanvasBindings { c topNode } {
     $c bind has_info <Leave> RemovePopup
 }
 
-proc AddEqnPopup {topNode x y winId X Y} {
+proc AddEqnPopup {node x y winId X Y} {
     global pushedbutton equationbar errorInfo runState
     set doDesc [PrefValue custom(compDescPop) compDescPop]
-    set doVal [expr $runState($topNode,modelRunning)>1 && \
+    set doVal [expr $runState($node,modelRunning)>1 && \
 		   [PrefValue custom(compValPop) compValPop]]
     set doCmt [PrefValue custom(compCmtPop) compCmtPop]
     if {[string compare select $pushedbutton] || \
@@ -1345,19 +1345,20 @@ proc AddEqnPopup {topNode x y winId X Y} {
             # note colour etc are not comments though they look like them in emacs
 	    # actually new technology should make this unnecessary
             #if {![winfo exists .popup]} return
-            AddPopupMessage $desc #c0ffc0 0
+            AddPopupMessage $desc \#c0ffc0
         }
         if {$doCmt} {
             set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]
             #if {![winfo exists .popup]} return
-            AddPopupMessage $fromProlog #ffe0c0 0
+            AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-	    if {[catch {GetTransValues $topNode $plName} value]} {
+	    if {[catch {GetTransValues $node $plName} value]} {
 		set missing [lindex [split $value \"] 1]
 		set value "Missing value: $missing"
 	    }
-            AddPopupMessage $value \#ffffc0 1
+            AddPopupMessage [lindex [GetCompProperty $node Value $plName] 0] \
+		\#ffffc0 [GetTransTable $plName]
             # we might want to prettify this a bit first
         }
     }
