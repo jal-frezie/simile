@@ -1369,6 +1369,14 @@ proc AddEqnPopup {node x y winId X Y} {
 
 # Bindings for canvas Text items
 
+# when we paste we do not know whether the selection has been encoded as utf-8
+# or not, but Tcl knows and will do the right thing if pasting into an entry
+# box. So why struggle -- make an entry box where no-one can see it, and when
+# pasting into canvas text, paste into that then read the text from it.
+
+entry .hidden_e
+pack .hidden_e
+
 proc CanvasEditBind { c } {
     
     $c bind currently_editable <B1-Motion> {
@@ -1413,13 +1421,12 @@ proc CanvasEditBind { c } {
             %W insert [%W focus] insert %A
         }
     }
-    bind $c <Button-2> {
-        if {[catch {selection get} _s] == 0} {
-            if {[%W focus] != {}} {
-                %W insert [%W focus] insert $_s
-            }
-            unset _s
-        }
+    bind $c <<PasteSelection>> {
+	.hidden_e delete 0 end
+	event generate .hidden_e <<PasteSelection>>
+	if {[%W focus] != {}} {
+	    %W insert [%W focus] insert [.hidden_e get]
+	}
     }
     $c bind currently_editable <Key-Right> {
         %W select clear
@@ -1475,7 +1482,14 @@ proc CanvasEditBind { c } {
     
     $c bind currently_editable <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
     $c bind currently_editable <<Copy>> {CanvasTextCopy %W}
-    $c bind currently_editable <<Paste>> {CanvasPaste %W}
+    $c bind currently_editable <<Paste>> {
+	.hidden_e delete 0 end
+	event generate .hidden_e <<Paste>>
+	CanvasDelSeln %W
+	if {[%W focus] != {}} {
+	    %W insert [%W focus] insert [.hidden_e get]
+	}
+    }
 }
 
 # Next three procs are from Welch examples
@@ -1512,19 +1526,6 @@ proc CanvasTextCopy {c} {
         clipboard append $text
     }
 }
-
-# [catch {selection get} _s] &&
-
-proc CanvasPaste {c {x {}} {y {}}} {
-    if {[catch {selection get -selection CLIPBOARD} _s]} {
-        return		;# No selection
-    }
-    CanvasDelSeln $c
-    $c insert [$c focus] insert $_s
-    
-    
-}
-
 
 # update display detail. This process sets the display depth of component
 # types more important than the one that has been adjusted to be at
