@@ -115,7 +115,7 @@ proc create_equation {parent boxtitle indices} {
     set notebook [NoteBook $t.notebook]
     $notebook insert end Main -text Main
     set mainF [$notebook getframe Main]
-    $notebook insert end Documentation -text Documentation
+    $notebook insert end Documentation -text Documentation 
     set docF [$notebook getframe Documentation]
     set equation(notebook) $notebook
     set equation(main) $mainF
@@ -317,6 +317,7 @@ proc create_equation {parent boxtitle indices} {
     pack $descf -side top  -fill x -expand off
     pack $descF.description  -fill x -expand off -padx 4 -pady 4
     pack $docF.descf -fill x -expand off
+    $notebook itemconfigure Documentation -raisecmd "focus $descf.text"
     
     label $docF.cmtlabel -text Comments:
     pack $docF.cmtlabel -side top
