@@ -98,8 +98,9 @@ namespace eval runcontrol33857 {
         $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
-        pack [set runState($node,progressBar) [::ttk::progress $rcf.upper.bf.bar -from 0 -to 100]] \
-                -fill x -expand true -side top -padx 4 -pady 4
+        pack [set runState($node,progressBar) \
+		  [::ttk::progress $rcf.upper.bf.bar -from 0 -to 100]] \
+	    -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
         pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
         set captWidth 17
@@ -162,7 +163,7 @@ namespace eval runcontrol33857 {
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit
-        set sendvars($node,expected_end) 0
+        set runState($node,expected_end) 0
         SendData $t
         set sendvars($node,prevDisplay) 0.0
         set sendvars($node,currentMode) stop
@@ -248,7 +249,8 @@ namespace eval runcontrol33857 {
 	}
 
         # This loop sets the array of dts in the model
-        set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
+        set sendvars(unitLength) \
+	    [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set tweaked 0
         set newBalls [expr ![string equal $runState($node,timeUnit) \
                       $runState($node,oldUnit)]]
@@ -258,15 +260,9 @@ namespace eval runcontrol33857 {
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
             if {$newBalls || ($runState($node,prev_update$setPhase)!=$tick)} {
                 set runState($node,prev_update$setPhase) $tick
-                SetStep $node [expr $tick*$unitLength] $setPhase
+                SetStep $node [expr $tick*$sendvars(unitLength)] $setPhase
                 set redoPhase($node) $setPhase
                 set tweaked 1
-                #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
-            }
-            if {$runState($node,timeAtEval) != $runState($node,currentTime)} {
-                set runState($node,time$setPhase) $runState($node,currentTime)
-                SetStep $node $runState($node,currentTime) -$setPhase
-                set redoPhase($node) $setPhase
                 #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
             }
         }
@@ -278,42 +274,142 @@ namespace eval runcontrol33857 {
         SetState $winId $sendvars($node,newData)
     }
     
-    # Current time display is updated as an idle callback because altering it causes the
-    # progress bar to update, which would do all idle callbacks anyway
-    proc UpdateTimes { node current left length } {
-        global runState
-        if {[info exists runState($node,oldTimeCopy)]} {
-            after cancel $runState($node,oldTimeCopy)
-        }
-        set runState($node,timeAtEval) $current
-        set runState($node,currentTime) $current
-	set runState($node,oldTimeCopy) [set runState($node,fractDone) [expr 1-(double($left)/$length)]]
-        after idle $runState($node,progressBar) set [expr 100*$runState($node,fractDone)]
-        set runState($node,execTime) $left
+    proc SetupBar {node start finish} {
+	global runState
+	$runState($node,progressBar) config -from $start -to $finish
+	set runState($node,expected_end) $finish
+	UpdateBar $node $start
     }
-    
-    proc PhaseFor {node current step soFar} {
-        global runState
-        set last [expr $current-($step/2.0)]
-        set next [expr $last+$step]
-        if {$soFar == 1} {
-            return 1
-        }
-        set try [expr $soFar-1]
-        set nextStep $runState($node,update$try)
-        
-        set tryCurrent [expr $nextStep*floor($last/$nextStep)]
-        set tryNext [expr $nextStep*floor($next/$nextStep)]
-        if {$tryCurrent == $tryNext} {
-            return $soFar
-        } else {
-            return [PhaseFor $node $tryNext $nextStep $try]
-        }
+
+    proc UpdateBar {node now} {
+	global runState
+        set runState($node,currentTime) $now
+	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
+	$runState($node,progressBar) set $now
     }
-    
-    # Execution is isolated from this box
-    
+
+# This is called back from the model execution process whenever
+# sufficient time has elapsed for the user to start noticing that the
+# display has gone out of date, or whenever it is about to embark on a
+# task that it suspects will take a long time and allow the user to
+# notice that it is out of date. Returns nonzero if user has stopped
+# or reset execution
+
+    proc RCInteractGUI {current} {
+	global myNode
+	variable sendvars
+	UpdateBar $myNode [expr $sendvars(unitLength)*$current]
+	update
+	return [string compare start $sendvars($myNode,currentMode)]
+    }
+
     proc RollSimulation { winId } {
+        variable sendvars
+        global errorInfo redoPhase runState
+	global pauseImg playImg
+	variable myModel
+        
+	set node $myModel($winId)        
+        set phases [GetPhaseCount $node]
+        set widget $winId.nb.rcf
+	$widget.upper.topbuttons.start configure -image $pauseImg
+	$widget.upper.topbuttons.start configure -command \
+	    "[namespace current]::SetMode $winId stop"
+
+	foreach {idx param} \
+	    {0 display 1 update 2 current 3 exec} {
+		set $param [lindex $sendvars($node,newData) $idx]
+	    }
+	if {abs($current + $exec - $runState($node,expected_end)) > abs($update/2.0) || ![info exists sendvars($node,run_length)]} {
+	    set sendvars($node,run_length) $exec
+	    set runState($node,expected_end) [expr $current + $exec]
+	}
+	if {[string equal reset $sendvars($node,currentMode)]} {
+	    set current 0.0
+	    set exec $sendvars($node,run_length)
+	    SetupBar $node 0 $exec
+	    if {[info exists runState($node,reloadParams)]} {
+		set redoPhase($node) -1
+		unset runState($node,reloadParams)
+	    } else {
+		set redoPhase($node) 0
+	    }
+	    set sendvars($node,currentMode) stop
+	}
+	set scaled_current [expr {$current*$sendvars(unitLength)}]
+	set finish [expr {$current+$exec}]
+	if {[info exists redoPhase($node)]} {
+	    $widget.upper.bf.flag itemconfigure 1 -fill yellow
+	    update
+	    if {$redoPhase($node) == -1} {
+		InitTimeSeries $node
+	    } elseif {$redoPhase($node) == 0} {
+		ResetTimeSeries $node
+	    }
+	    UpdateTimeSeries $node 0 0
+	    if {[ResetModel $redoPhase($node)]} {
+		if {$runState($node,modelRunning)<3} {
+		    set runState($node,modelRunning) 3
+		}
+                if {$redoPhase($node) < 1} {
+                    TellAllHelpers $node reset
+                }
+                TellAllHelpers $node display $current $display $update
+	    } else {
+		set sendvars($node,currentMode) exit
+	    }
+	    unset redoPhase($node)
+	}
+	set lastDisp [expr int($current/$display)]
+	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
+	    set nextDisp [expr $display*[incr lastDisp]]
+	    set timeCheck [UpdateTimeSeries $node $current $nextDisp]
+	    if {$nextDisp>$timeCheck} {
+		set current $timeCheck
+	    } else {
+		set current $nextDisp
+	    }
+	    if {$current>$finish} {
+		set current $finish
+		set sendvars($node,currentMode) stop
+		set exec $sendvars($node,run_length)
+		SetupBar $node $finish [expr $finish+$exec]
+	    } else {
+		set exec [expr $finish-$current]
+	    }
+	    set scaled_next [expr {$current*$sendvars(unitLength)}]
+	    $widget.upper.bf.flag itemconfigure 1 -fill green
+	    switch -- [ExecuteModel $runState($node,intMethod) \
+			 $scaled_current $scaled_next] {
+			     -1 {
+				 set sendvars($node,currentMode) exit
+			     } 0 {
+				 set sendvars($node,currentMode) stop
+			     }
+			 } ;# default: keep going
+            if {$current==$nextDisp && \
+		    [string match start $sendvars($node,currentMode)]} {
+		$widget.upper.bf.flag itemconfigure 1 -fill blue
+		TellAllHelpers $node display $current $display 1
+	    }
+	    set scaled_current $scaled_next
+	}
+	if {[string equal exit $sendvars($node,currentMode)]} {
+	    if {$runState($node,modelRunning)==2} {
+		set runState($node,modelRunning) 0
+	    } else {
+		set runState($node,modelRunning) 2
+	    }
+	}
+	$widget.upper.topbuttons.start configure -image $playImg
+	$widget.upper.topbuttons.start configure -command \
+	    "[namespace current]::SetMode $winId start"
+	$widget.upper.bf.flag itemconfigure 1 -fill [RestingColour $node]
+	set sendvars($node,currentMode) stop
+    }
+	    
+	    
+    proc OldRollSimulation { winId } {
         variable sendvars
         global errorInfo redoPhase runState
 	global pauseImg playImg
@@ -397,6 +493,9 @@ namespace eval runcontrol33857 {
             
             # Now run the model
             if {[string match start $sendvars($node,currentMode)]} {
+		set nextDisp [expr (floor($current/$display)+1)*$display]
+		
+
                 if {$exec < abs(1.001*$update)} {
                     set step $timeToEnd
                     set sendvars($node,currentMode) stop
@@ -409,8 +508,8 @@ namespace eval runcontrol33857 {
                 
                 # Advance time to the end of the tick
                 
-                set current [expr $current + $step]
-                UpdateTimeSeries $node $current
+                set current [expr floor($last/$display)+1]
+                UpdateTimeSeries $node $current ;# temp botch
                 set scaled_current [expr $current*$unitLength]
                 UpdateTimes $node $current $exec $sendvars($node,run_length)
                 
@@ -489,48 +588,7 @@ namespace eval runcontrol33857 {
 #        }
 	set sendvars($node,currentMode) stop
     }
-    
-    proc RKUpdate {node current phase phases} {
-        global runState
-        SetStep $node 1 0
-        if ![do_model $node update $current $phase] {
-            return 0
-        }
-        for {set tweakPhase $phase} {$tweakPhase <= $phases} \
-                {incr tweakPhase} {
-                    set interTime [expr ($runState($node,time$tweakPhase)+$current)/2]
-                    SetStep $node $interTime -$tweakPhase
-                }
-        SetStep $node 2 0
-        if ![do_model $node eval $current $phase] {
-            return 0
-        }
-        if ![do_model $node update $current $phase] {
-            return 0
-        }
-        SetStep $node 3 0
-        if ![do_model $node eval $current $phase] {
-            return 0
-        }
-        if ![do_model $node update $current $phase] {
-            return 0
-        }
-        for {set tweakPhase $phase} {$tweakPhase <= $phases} \
-                {incr tweakPhase} {
-                    SetStep $node $current -$tweakPhase
-                }
-        SetStep $node 4 0
-        if ![do_model $node eval $current $phase] {
-            return 0
-        }
-        if ![do_model $node update $current $phase] {
-            return 0
-        }
-        SetStep $node 1 0
-        return 1
-    }
-    
-    
+   
     proc CondUpdate {node thisOp} {
         global runState
         
