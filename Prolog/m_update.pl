@@ -1114,7 +1114,16 @@ status_affects(Item, Affected) :-
 	(Affected = Base;
 	initiates(Affected, Base),
 	    find_type(Affected, influence)),
-	\+ Affected = Item.
+	\+ Affected = Item;
+	find_type(Item, relation), /* for parameter name updates */
+	    connects(Item, Base, Assoc),
+	    (Start=Base, Finish=Assoc; Start=Assoc, Finish=Base),
+	    Link1 is_connector from Start to _,
+	    (Link1 = Link2; sequence(Link1, Link2)),
+	    Link2 is_connector from _ to Finish,
+	    connects(Link2, _, Target),
+	    sequence(Link2, Affected),
+	    Affected is_connector from _ to Target.
 
 /* OK, now here's the easy, teenage, New York version...
 

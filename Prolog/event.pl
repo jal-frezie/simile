@@ -489,7 +489,7 @@ spread_colour(Node, NewDims) :-
 	    update_color(Hit);
 	NewDims = yes,
 	    check_complete(Hit),
-	    redisplay(Hit),
+	    redisplay_border(Hit),
 	    presence_affects(Hit, MayChange),
 	    spread_dims(MayChange)),
 	fail; true.
