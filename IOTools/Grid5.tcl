@@ -46,8 +46,8 @@ namespace eval grid005 {
     proc AddToolbar {winId} {
         set toolbarItems [list \
                 [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
-                [list zoomin.gif "Zoom in" [namespace code "zoomin $winId"] ]\
-                [list zoomout.gif "Zoom out" [namespace code "zoomout $winId"] ]\
+                [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
+                [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
                 [list property.gif " Properties " [namespace code "Settings $winId"]]\
                 [list colourrcontr.gif "Decrease range" [namespace code "DecreaseRange $winId"] ]\
                 [list colourrexp.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
@@ -84,6 +84,7 @@ namespace eval grid005 {
         AddToolbar $winId
         $winId.bbframe.buttonBox itemconfigure 0 -state disable
         InitialiseGrid $winId $useNodes($winId,display1)
+        set useNodes($winId,freeze) false
     }
     
     proc GetCanvas {winId} {
@@ -150,6 +151,7 @@ namespace eval grid005 {
         if {[string match [lindex [GetState $winId] 0] displaying] && \
                     !$useNodes($winId,freeze)} then {
             DrawGrid5 $winId $useNodes($winId,display1)
+	    FillCanvas $winId
         }
     }
     
@@ -171,10 +173,10 @@ namespace eval grid005 {
         scrollbar $winId.hscroll -orient horiz -command "$winId.c xview"
         scrollbar $winId.vscroll -command "$winId.c yview"
         canvas $winId.c \
-                -relief sunken \
-                -borderwidth 2 \
-                -xscrollcommand "$winId.hscroll set"\
-                -yscrollcommand "$winId.vscroll set"
+	    -relief sunken \
+	    -borderwidth 2 \
+	    -xscrollcommand [namespace code "ScrollPhoto $winId h"] \
+	    -yscrollcommand [namespace code "ScrollPhoto $winId v"]
         pack $winId.f -expand yes -fill both -padx 1 -pady 1
         grid rowconfig    $winId.f 0 -weight 1 -minsize 0
         grid columnconfig $winId.f 0 -weight 1 -minsize 0
@@ -185,6 +187,7 @@ namespace eval grid005 {
                 -row 0 -column 1 -rowspan 1 -columnspan 1 -sticky news
         grid $winId.hscroll -in $winId.f -padx 1 -pady 1 \
                 -row 1 -column 0 -rowspan 1 -columnspan 1 -sticky news
+	pack [canvas $winId.sc -height 20] -fill x
         
         # This is an experimental section to set up the grid display just once,
         # when the helper is initialised, so that subsequently all that happens
@@ -204,11 +207,11 @@ namespace eval grid005 {
         $winId.c configure -width $xwidth -height $yheight
         
         
-        recolour_scale $winId
+#        recolour_scale $winId
         
         $winId.c bind all <Button-3> [namespace code "Settings $winId"]
-        $winId.c bind all <B1-Motion> [namespace code "value_popup $winId $mult %x %y"]
-        $winId.c bind all <ButtonPress-1> [namespace code "value_popup $winId $mult %x %y"]
+        $winId.c bind all <B1-Motion> [namespace code "value_popup $winId %X %Y %x %y"]
+        $winId.c bind all <ButtonPress-1> [namespace code "value_popup $winId %X %Y %x %y"]
         $winId.c bind all <B1-ButtonRelease> [namespace code "RemovePopup"]
         
         set useNodes($winId,hiddenMap) [image create photo]
@@ -219,6 +222,7 @@ namespace eval grid005 {
         $winId.c configure -scrollregion [$winId.c bbox all]
         # bind $winId <Configure> [namespace code "resize $winId %W %x %y %w %h"]
         # bind $winId.c <Configure> [namespace code "resize $winId %W %x %y %w %h"]
+	bind $winId.sc <Configure> [namespace code "recolour_scale $winId"]
     }
     
     proc recolour_scale {winId} {
@@ -226,7 +230,7 @@ namespace eval grid005 {
         
         #ShowMessage debug info "recolour_scale " ok
         
-        $winId.c delete colour_scale
+        $winId.sc delete colour_scale
         
         if {$useNodes($winId,nrow)>$useNodes($winId,ncol)} then {
             set n $useNodes($winId,nrow)
@@ -234,12 +238,12 @@ namespace eval grid005 {
             set n $useNodes($winId,ncol)
         }
         set mult $useNodes($winId,mult)
-        set xwidth [expr {$mult*$useNodes($winId,ncol)}]
-        set yheight [expr {$mult*$useNodes($winId,nrow)+20}]
-        
-        $winId.c create text 47 $yheight -text $useNodes($winId,min) -anchor se -tag colour_scale
-        $winId.c create text [expr {$xwidth-48}] $yheight -text $useNodes($winId,max) \
-                -anchor sw -tag colour_scale
+        set xwidth [winfo width $winId.sc]
+        set yheight [winfo height $winId.sc]
+        $winId.sc create text 47 [expr $yheight/2] \
+	    -text $useNodes($winId,min) -anchor e -tag colour_scale
+        $winId.sc create text [expr {$xwidth-48}] [expr $yheight/2] \
+	    -text $useNodes($winId,max) -anchor w -tag colour_scale
         
         set xmin 50
         set xmax [expr {$xwidth-50}]
@@ -248,7 +252,7 @@ namespace eval grid005 {
             set x0 [expr {$xmin+$icolour*$xincr}]
             set x1 [expr {$x0+$xincr}]
             set colour $useNodes($winId,c$icolour)
-            $winId.c create rectangle $x0 $yheight $x1 [expr {$yheight-16}] -outline {} \
+            $winId.sc create rectangle $x0 0 $x1 $yheight -outline {} \
                     -fill $colour -tag colour_scale
         }
         
@@ -458,81 +462,88 @@ namespace eval grid005 {
         }
         
         $useNodes($winId,hiddenMap) put $allData
-        set mult [expr {int($useNodes($winId,mult))}]
-        $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
-                -zoom $mult $mult
     }
-    proc zoomin {winId} {
+
+    proc zoomio {winId factor} {
         variable useNodes
-        set useNodes($winId,mult) [expr {1.2*$useNodes($winId,mult)}]
-        set mult [expr {int($useNodes($winId,mult))}]
-        #ShowMessage debug info "zoomin mult $useNodes($winId,mult)" ok
-        if {$useNodes($winId,mult)> 64} {
-            return
-            set useNodes($winId,mult) 64
-        } elseif {$useNodes($winId,mult) < 2} {
-            set useNodes($winId,mult) 2
-        }
-        
-        $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
-                -zoom $mult $mult
-        $winId.c scale all 0 0 1.2 1.2
-        $winId.c configure -scrollregion [$winId.c bbox all]
+	set view [$winId.c xview]
+	set xmiddle [expr ([lindex $view 0]+[lindex $view 1])/2]
+	set view [$winId.c yview]
+	set ymiddle [expr ([lindex $view 0]+[lindex $view 1])/2]
+        set next [expr round($factor*$useNodes($winId,mult))]
+	if {$next==$useNodes($winId,mult)} {
+	    if $factor>1 {
+		incr useNodes($winId,mult)
+	    } else {
+		incr useNodes($winId,mult) -1
+	    }
+	} else {
+	    set useNodes($winId,mult) $next
+	}
+	if {$useNodes($winId,mult)==1} {
+	    $winId.bbframe.buttonBox itemconfigure 2 -state disable
+	    # disable zoom out button
+	} else {
+	    $winId.bbframe.buttonBox itemconfigure 2 -state normal
+	}
+	    
+        $winId.c configure -scroll "0 0 \
+            [expr $useNodes($winId,ncol)*$useNodes($winId,mult)] \
+            [expr $useNodes($winId,nrow)*$useNodes($winId,mult)]"
+	set view [$winId.c xview]
+	$winId.c xview moveto [expr $xmiddle-([lindex $view 1]-[lindex $view 0])/2]
+	set view [$winId.c yview]
+	$winId.c yview moveto [expr $ymiddle-([lindex $view 1]-[lindex $view 0])/2]
     }
-    
-    proc zoomout {winId} {
-        variable useNodes
-        set useNodes($winId,mult) [expr {$useNodes($winId,mult)/1.2}]
-        set mult [expr {int($useNodes($winId,mult))}]
-        if {$useNodes($winId,mult)<1} {
-            return
-            set useNodes($winId,mult) 1
-        }
-        #ShowMessage debug info "zoomout mult $useNodes($winId,mult)" ok
-        $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
-                -zoom $mult $mult -shrink
-        $winId.c scale all 0 0 0.8333333333333333 0.83333333333333333333333333
-        $winId.c configure -scrollregion [$winId.c bbox all]
+
+    proc ScrollPhoto {winId axis args} {
+#	puts $visible
+	if {[string match h $axis]} {
+	    FillCanvas $winId
+	}
+	eval {$winId.${axis}scroll set} $args
     }
-    
+		  
+    proc FillCanvas {winId} {   
+	variable useNodes
+
+	set visible [concat [$winId.c xview] [$winId.c yview]]
+	set dataL [expr round([lindex $visible 0]*$useNodes($winId,ncol))]
+	set dataR [expr round([lindex $visible 1]*$useNodes($winId,ncol))]
+	set dataT [expr round([lindex $visible 2]*$useNodes($winId,nrow))]
+	set dataB [expr round([lindex $visible 3]*$useNodes($winId,nrow))]
+	$winId.c coords 1 [$winId.c canvasx 0] [$winId.c canvasy 0]
+	$useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
+	    -from $dataL $dataT $dataR $dataB -to 0 0 \
+	    -zoom $useNodes($winId,mult) -shrink
+    }
+
     #### Handle value popup
-    proc value_popup {winId mult X Y} {
+    proc value_popup {winId X Y x y} {
         variable useNodes
         
-        PostValuePopup $winId $X $Y
-        set height1 [expr $useNodes($winId,yheight)-19]
-        if {$X>1&&$X<$useNodes($winId,xwidth)&&$Y>1&&$Y<$height1} {
-            set ncol $useNodes($winId,ncol)
-            set nrow $useNodes($winId,nrow)
-            set col [expr int(($X-2)/$mult+1)]
-            set row [expr $nrow-int(($Y-2)/$mult)]
-            set cell [expr ($row-1)*$ncol+$col-1]
-            set value [lindex $useNodes($winId,values) $cell]
-            set index [expr $cell+1]
-            
-            pack [message .popup.message -aspect 400 \
-                    -text "Index=$index\nCol,row=($col,$row)\nValue=$value" -bg #ffffc0] -fill x -expand true
-            set x0 [winfo x $winId]
-            set y0 [winfo y $winId]
-            set xpoint [expr $X+$x0+15]
-            set ypoint [expr $Y+$y0+43]
-            wm geometry .popup +$xpoint+$ypoint
-            update
-        }
-    }
-    
-    proc PostValuePopup {winId X Y} {
-        variable useNodes
-        
-        if {[winfo exists .popup]} {
-            destroy .popup
-        }
-        set height1 [expr $useNodes($winId,yheight)-19]
-        if {$X>1&&$X<$useNodes($winId,xwidth)&&$Y>1&&$Y<$height1} {
-            toplevel .popup -width 1 -height 1 -bd 2 -relief raised
-            wm overrideredirect .popup 1
-            raise .popup
-        }
+	set ncol $useNodes($winId,ncol)
+	set nrow $useNodes($winId,nrow)
+	set col [expr int(([$winId.c canvasx $x])/$useNodes($winId,mult))]
+	set row [expr $nrow-int(([$winId.c canvasy $y])/$useNodes($winId,mult))]
+	if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
+	    if {![winfo exists .popup]} {
+		toplevel .popup -width 1 -height 1 -bd 2 -relief raised
+		wm overrideredirect .popup 1
+		pack [message .popup.message -aspect 400 -bg \#ffffc0] \
+		    -fill x -expand true
+		raise .popup
+	    }
+	    set cell [expr ($row-1)*$ncol+$col-1]
+	    set value [lindex $useNodes($winId,values) $cell]
+	    set index [expr $cell+1]
+	
+	    .popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
+	    set xpoint [expr $X+15]
+	    set ypoint [expr $Y+43]
+	    wm geometry .popup +$xpoint+$ypoint
+	    update
+	}
     }
     
     proc RemovePopup {} {
@@ -549,7 +560,6 @@ namespace eval grid005 {
             $winId.legend.pop$swatch configure -bg $useNodes($winId,c$swatch)
         }
     }
-    
     
 } ;
 # end of namespace
