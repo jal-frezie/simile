@@ -1,7 +1,8 @@
 /* units.pl --- yet another shiny, efficient new module written by Jasper to 
 replace a huge steaming pile of convoluted entrails spewed up by Geraint. */
 
-sicstus_module(units, [get_conversion/4, default_tick_is/1]).
+sicstus_module(units, [get_conversion/4, default_tick_is/1,
+		       add_unit_definition/2]).
 
 default_tick_is(day).
 
@@ -68,6 +69,11 @@ baseline(metre).
 baseline(kilogramme).
 baseline(second).
 baseline(radian).
+
+:- dynamic(unit_definition/2).
+
+add_unit_definition(New, Old) :-
+	assert(unit_definition(New, Old)).
 
 /* shorthands */
 unit_definition(mm, millimetre).

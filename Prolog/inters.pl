@@ -150,6 +150,9 @@ read_funcs(File, Stream, Done) :-
 	    append_atoms(Functor, ' (user-defined procedure)', FnEntry)),
 	    read_funcs(File, Stream, More),
 	    Done = [FnEntry | More];
+	Line = unit_definition(New, Old), !,
+	    add_unit_definition(New, Old),
+	    read_funcs(File, Stream, Done);
 	sicstus_format_to_chars("The file ~as.pl contained the line ~w which is in the wrong format for a ~a -- please refer to the documentation.", 
 	               [Type, Line, Type], Bug),
 	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
