@@ -17,11 +17,13 @@ sicstus_use_module([backup, event, menu]).
 
 tk_undo(Wids) :-
 	show_wait_cursor,
+	finish_window_resize,
 	undo(Wids),
 	show_normal_cursor.
 
 tk_redo(Wids) :-
 	show_wait_cursor,
+	finish_window_resize,
 	redo(Wids),
 	show_normal_cursor.
 
@@ -36,6 +38,7 @@ tk_get_params(Wid, Comp) :-
 tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
 	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)),
 	prioritize_window(Wid),
+	finish_window_resize,
 	(Action = click,
 		click_obj(Virt_X, Virt_Y, Name);
 	Action = clicktext,
@@ -48,11 +51,13 @@ tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
 tk_click(Wid, Virt_X, Virt_Y) :-
 	into_save_file(tk_click(Wid, Virt_X, Virt_Y)),
 	prioritize_window(Wid),
+	finish_window_resize,
 	click(Virt_X, Virt_Y).
 
 tk_doubleclick(Wid, Virt_X, Virt_Y) :-
 	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)),
 	show_wait_cursor,
+	finish_window_resize,
 	asserta(log_interaction),
 	doubleclick(Virt_X, Virt_Y),
 	retract(log_interaction),
@@ -68,6 +73,7 @@ tk_drag(Virt_X, Virt_Y) :-
 tk_menu(Window, Header, Item) :-
 	into_save_file(tk_menu(Window, Header, Item)),
 	show_wait_cursor,
+	finish_window_resize,
 	finish_old_edit(none),
 	menu_handle(Window, Header, Item),
 	show_normal_cursor.
@@ -84,10 +90,16 @@ tk_mode_select(Mode) :-
 	mode_select(Mode),
 	show_normal_cursor.
 
+:- dynamic(resizing_windows/0).
+
 tk_visible(Wid, L, T, R, B) :-
-	show_wait_cursor,
-	adjust_display_area(Wid, [L, T, R, B]),
-	show_normal_cursor.
+	(resizing_windows, !;
+	    asserta(resizing_windows)),
+	adjust_display_area(Wid, [L, T, R, B]).
+
+finish_window_resize :-
+	\+ retract(resizing_windows), !;
+	finish_move(none).
 
 tk_embrace(Wid, Comp) :-
 	prioritize_window(Wid),
