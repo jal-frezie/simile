@@ -85,7 +85,7 @@ namespace eval tabular11510 {
     }
 
     proc AddVariable { winId } {
-	$winId.f.mess config -text "Click on a variable in the Explorer window or a Model Diagram. ($winId)"
+	$winId.f.mess config -text "Click on a variable in the Explorer window or a Model Diagram."
 	GrabClicks $winId
     }
 
