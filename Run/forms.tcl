@@ -504,7 +504,7 @@ proc RollAll {s l1 l2 l3 top bot} {
 }
 
 # botch to allow table viewer to be used in this interp
-source ../IOTools/DisplayFormats.tcl 
+source ../IOTools/DisplayFormats.tcl
 source ../IOTools/graphtools.tcl
 source ../IOTools/two_table.tcl
 set table_viewer(id) $keyValue
@@ -523,14 +523,14 @@ proc GetTable {parent comp box} {
         set equation(table_values) $table_entry(values)
         #puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
-	    InsertFunction $box table
-#            $box insert insert table\(\[
-#            for {set count [llength $table_entry(indices)]
-#                if {!$count} {set count 1}} {$count>0} {incr count -1} {
-#                       $box insert insert index\($count\),
-#                   }
-#           $box delete [$box index {insert -1 chars}]
-#           $box insert insert \]\)
+            InsertFunction $box table
+            #            $box insert insert table\(\[
+            #            for {set count [llength $table_entry(indices)]
+            #                if {!$count} {set count 1}} {$count>0} {incr count -1} {
+            #                       $box insert insert index\($count\),
+            #                   }
+            #           $box delete [$box index {insert -1 chars}]
+            #           $box insert insert \]\)
         }
         set equation(done) 3
     }
@@ -623,7 +623,7 @@ proc fill_table {table_data table_values} {
     # we check if the elements have changed from the original list it does not
     # matter if some other function has quietly got rid of their surplus curly
     # brackets. Trust me, it works.
-
+    
     #    set equation(table_values) [TransEnums $trans $table_values]
     # Translation should be done in Prolog by reverse_engineer
     set equation(table_values) $table_values
@@ -730,13 +730,13 @@ proc equationGraph {parent} {
     # set default values for new graph
     set graphArgs {0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200}
     if {[info exists equation(table_data)]} {
-	if {[string equal /graph/ [lindex $equation(table_data) 0]]} {
-	    set graphArgs [concat [lrange $equation(table_data) 5 7] \
-			       [lrange $equation(table_data) 1 3] \
-			       [lindex $equation(table_data) 8] \
-			       [lindex $equation(table_data) 4] \
-			       [join $equation(table_values) ,]]
-	}
+        if {[string equal /graph/ [lindex $equation(table_data) 0]]} {
+            set graphArgs [concat [lrange $equation(table_data) 5 7] \
+                    [lrange $equation(table_data) 1 3] \
+                    [lindex $equation(table_data) 8] \
+                    [lindex $equation(table_data) 4] \
+                    [join $equation(table_values) ,]]
+        }
     }
     set done [eval {GraphEntry .graph} $graphArgs]
     grab release .graph
@@ -887,6 +887,7 @@ proc InsertFunction {boxname functor} {
     focus $boxname
 }
 
+# submodel properties
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
             comment enumLists eqnunit hide separate} {
     global disaggregate tcl_platform
@@ -917,7 +918,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }
     wm resizable $t 0 1
     wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
-    wm title $t "Properties of [BlankCrs $title]"    
+    wm title $t "Properties of [BlankCrs $title]"
     
     frame $t.simple
     frame $t.simple.left
@@ -996,24 +997,50 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
             -expand true
     #    pack [frame $windowId.buttonframe] -side bottom
-    listbox $canId.scrf -yscrollcommand [list AdjustCanvas $canId scrf y]
+    # types (list box to keep selection highlighted when lost focus, -exportselection 0)
+    set typef [frame $canId.typef]
+    label $typef.lbl -text "Types" -anchor w
+    listbox $typef.scrf -yscrollcommand [list AdjustCanvas $typef scrf y] \
+            -exportselection 0
+                
     foreach enumList $enumLists {
         set newType [lindex $enumList 0]
         set disaggregate(enumtype,$newType) [lrange $enumList 1 end]
-        $canId.scrf insert end $newType
+        $typef.scrf insert end $newType
+    }                
+    # members (list box to keep selection highlighted when lost focus)
+    set memf [frame $canId.memf]
+    label $memf.lbl -text "Members" -anchor w
+    listbox $memf.mem -exportselection 0 \
+            -yscrollcommand [list AdjustCanvas $memf mem y]
+    scrollbar $memf.yscroll -orient v -command [list $memf.mem yview]
+    
+    # select first type in the list
+    $typef.scrf selection set 0
+    set togo [$typef.scrf get 0]
+    if {$togo ne {} } {
+        $memf.mem configure -listvariable disaggregate(enumtype,$togo)
     }
-    bind $canId.scrf <ButtonRelease-1> "EnableTypeOps $enumtypef"
+    
+    bind $typef.scrf <ButtonRelease-1> "EnableTypeOps $enumtypef"
     set PopCmd [list QueuePopup AddEnumTypePopup %W %y %X %Y]
-    bind $canId.scrf <Enter> $PopCmd
-    bind $canId.scrf <Motion> "RemovePopup;$PopCmd"
-    bind $canId.scrf <Leave> RemovePopup
-    scrollbar $canId.yscroll -orient v -command [list $canId.scrf yview]
+    bind $typef.scrf <Enter> $PopCmd
+    bind $typef.scrf <Motion> "RemovePopup;$PopCmd"
+    bind $typef.scrf <Leave> RemovePopup
+    scrollbar $typef.yscroll -orient v -command [list $typef.scrf yview]
     menu $enumtypef.curmembers -tearoff 0 \
             -postcommand [list AddEnumTypeMems $enumtypef]
     
-    
-    pack $canId.yscroll -side right -fill y
-    pack $canId.scrf -side left -fill both -expand true
+    pack $typef -side left -fill both -expand true   
+    pack $typef.yscroll -side right -fill y
+    pack $typef.lbl 
+    pack $typef.scrf -side left -fill both -expand true
+    # members
+    pack $memf -side right -fill both -expand true
+    pack $memf.lbl -side top
+    pack $memf.mem -fill both -expand true
+    #pack $canId.memyscroll -side right -fill y
+    #pack $canId.mem -side left -fill both -expand true
     
     pack [set btnId [frame $enumtypef.btns]] -side left
     pack [::ttk::entry $btnId.e -textvariable enumTypeMPEntry] -padx 2
@@ -1114,7 +1141,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     if [string compare $disaggregate(icount) 1] {
         foreach newIndex [split $disaggregate(icount) ,] {
             if {[string is double $newIndex] || \
-		    [string match size(*) $newIndex]} {
+                        [string match size(*) $newIndex]} {
                 lappend icount $newIndex
             } else {
                 lappend icount \"$newIndex\"
@@ -1198,8 +1225,8 @@ proc OldAddEnumType {fr} {
 
 proc AddEnumTypeMems {fr} {
     global disaggregate
-    set togo [$fr.listpair.scrf curselection]
-    set enumEntry [list [$fr.listpair.scrf get $togo $togo]]
+    set togo [$fr.listpair.typef.scrf curselection]
+    set enumEntry [list [$fr.listpair.typef.scrf get $togo $togo]]
     $fr.curmembers delete 0 end
     foreach mem $disaggregate(enumtype,$enumEntry) {
         $fr.curmembers add command -label $mem \
@@ -1210,25 +1237,45 @@ proc AddEnumTypeMems {fr} {
 proc AddEnumType {fr} {
     global disaggregate enumTypeMPEntry
     if {[CheckForETDuplicates {enumerated type}]} {
-        $fr.scrf insert end $enumTypeMPEntry
+        $fr.typef.scrf insert end $enumTypeMPEntry
+        $fr.typef.scrf selection clear 0 end
+        $fr.typef.scrf selection set end
+        EnableTypeOps [[winfo parent [winfo parent $fr]]  getframe]
         set disaggregate(enumtype,$enumTypeMPEntry) {}
+        [winfo parent $fr].btns.e delete 0 end
     }
 }
 
 proc RemoveEnumType {fr} {
     global disaggregate
-    set togo [$fr.listpair.scrf curselection]
-    set type [$fr.listpair.scrf get $togo]
-    unset disaggregate(enumtype,$type)
-    $fr.listpair.scrf delete $togo
-    EnableTypeOps $fr
+    if {[$fr.listpair.typef.scrf curselection] ne {} } {
+        set togo [$fr.listpair.typef.scrf curselection]
+        set type [$fr.listpair.typef.scrf get $togo]
+        # empty $fr.listpair.memf.mem by emptying its -listvariable
+        set disaggregate(enumtype,$type) {}
+        # must move -listvariable from disaggregate(enumtype,$type)
+        # or it cannot be unset
+        $fr.listpair.memf.mem configure -listvariable {}
+        unset disaggregate(enumtype,$type)
+        $fr.listpair.typef.scrf delete $togo
+        EnableTypeOps $fr
+        # select first type in the list
+        $fr.listpair.typef.scrf selection set 0
+        set togo [$fr.listpair.typef.scrf get 0]
+        if {$togo ne {} } {
+            $fr.listpair.memf.mem configure -listvariable disaggregate(enumtype,$togo)
+        }
+    }
 }
 
 proc AddEnumMem {fr} {
     global disaggregate enumTypeMPEntry
     if {[CheckForETDuplicates member]} {
-        set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+        set togo [$fr.listpair.typef.scrf get [$fr.listpair.typef.scrf curselection]]
         lappend disaggregate(enumtype,$togo) $enumTypeMPEntry
+        $fr.listpair.memf.mem configure -listvariable disaggregate(enumtype,$togo)
+        $fr.listpair.memf.mem selection clear 0 end
+        $fr.btns.e delete 0 end
     }
 }
 
@@ -1267,8 +1314,18 @@ proc CheckForETDuplicates {new} {
 }
 
 proc RemoveEnumMem {fr} {
-    tk_popup $fr.curmembers [winfo pointerx $fr] [winfo pointery $fr]
-    set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+    #    tk_popup $fr.curmembers [winfo pointerx $fr] [winfo pointery $fr]
+    global disaggregate
+    
+    if {[$fr.listpair.memf.mem curselection] ne {} } {
+        set togo [$fr.listpair.typef.scrf get [$fr.listpair.typef.scrf curselection]]
+        #ShowMessage debug info "togo $togo $disaggregate(enumtype,$togo)" ok
+        set index [lsearch $disaggregate(enumtype,$togo) \
+                [$fr.listpair.memf.mem get [$fr.listpair.memf.mem curselection] ] ]
+        set disaggregate(enumtype,$togo) \
+                [lreplace $disaggregate(enumtype,$togo) $index $index]
+        $fr.listpair.memf.mem configure -listvariable disaggregate(enumtype,$togo)
+    }
 }
 
 proc GetEnumMems {fr} {
@@ -1302,13 +1359,18 @@ proc snipET {enumEntry mem} {
 }
 
 proc EnableTypeOps {fr} {
-    if {[llength [$fr.listpair.scrf curselection]]} {
+    if {[llength [$fr.listpair.typef.scrf curselection]]} {
         set haveSeln normal
     } else {
         set haveSeln disabled
     }
     foreach btn {remtype addmems remmem getmem} {
         $fr.btns.$btn config -state $haveSeln
+    }
+    if {[$fr.listpair.typef.scrf curselection] ne ""} {
+        set togo [$fr.listpair.typef.scrf get [$fr.listpair.typef.scrf curselection]]
+        $fr.listpair.memf.mem configure -listvariable disaggregate(enumtype,$togo)
+        $fr.listpair.memf.mem selection clear 0 end        
     }
 }
 
@@ -1405,7 +1467,7 @@ proc OpenProgressBox {winId} {
     message .progress.message -aspect 400 -text "Please wait"
     pack .progress.message -fill both -expand true
     if {[LetItShow .progress]} {
-	grab .progress
+        grab .progress
     }
     update
 }
@@ -1433,11 +1495,11 @@ proc RelationCheck {parent title type state init_comment} {
     switch $type {
         influence {
             set entries {"Use values made\nin same time step" use_sofar}
-	    set helpPage elements/influence.htm
+            set helpPage elements/influence.htm
         } relation {
             set entries {"Exclusive role" exclusive \
                         "Allow base\ninstance lookup" can_lookup}
-	    set helpPage submodels/association/dialogue.htm
+            set helpPage submodels/association/dialogue.htm
         }
     }
     foreach {text attr} $entries {
@@ -1495,7 +1557,7 @@ proc GetFindText {parent} {
     set ft [frame .findentry.ft]
     pack [message $ft.m -text "Find text:" -width 300] -padx 4 -pady 6 -anchor nw -side left
     pack [ComboBox $ft.e -width 40 -values $find(prevs) -editable 1] \
-	-padx 4 -pady 6 -anchor nw -side left
+            -padx 4 -pady 6 -anchor nw -side left
     $ft.e bind <Return> "set find(done) 1"
     pack .findentry.ft -anchor nw -fill both
     TitleFrame .findentry.rbs -text "Search for text in"
@@ -1524,7 +1586,7 @@ proc GetFindText {parent} {
     set result [$ft.e get]
     destroy .findentry
     if {$find(done)} {
-	set find(prevs) [AddIfAbsent $result $find(prevs)]
+        set find(prevs) [AddIfAbsent $result $find(prevs)]
         return $result
     }
 }
@@ -1693,7 +1755,7 @@ proc DoRegDialog {dtId} {
     puts $UserStream $userinfo(done)
     close $UserStream
     if {[string equal windows $tcl_platform(platform)]} {
-	file attributes $custom(prefDir)/.version -hidden true
+        file attributes $custom(prefDir)/.version -hidden true
     }
     
     # this never happens with welcome version
@@ -1726,14 +1788,14 @@ proc ContextSensitiveHelp {context page} {
         exec open -a "Help Viewer" ../Help/$page
     } else {
         set url [pwd]/../Help/$page
-	if {![info exists env(BROWSER)]} {
-	    foreach possBrowser {mozilla netscape iexplorer lynx} {
-		set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-		if {[llength $env(BROWSER)]} {
-		    break
-		}
-	    }
-	}
+        if {![info exists env(BROWSER)]} {
+            foreach possBrowser {mozilla netscape iexplorer lynx} {
+                set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+                if {[llength $env(BROWSER)]} {
+                    break
+                }
+            }
+        }
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
@@ -1813,9 +1875,9 @@ proc ErrorHelp {diagnostic} {
 
 proc LetItShow {t} {
     update idletasks
-#    puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
+    #    puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
-	tkwait visibility $t
+        tkwait visibility $t
     }
     return [winfo viewable $t]
 }
@@ -1834,14 +1896,14 @@ proc VisitUrl {x} {
         exec rundll32 url.dll,FileProtocolHandler $x &
     } else {
         set url $x
-	if {![info exists env(BROWSER)]} {
-	    foreach possBrowser {mozilla netscape iexplorer lynx} {
-		set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-		if {[llength $env(BROWSER)]} {
-		    break
-		}
-	    }
-	}
+        if {![info exists env(BROWSER)]} {
+            foreach possBrowser {mozilla netscape iexplorer lynx} {
+                set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+                if {[llength $env(BROWSER)]} {
+                    break
+                }
+            }
+        }
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
@@ -1876,8 +1938,8 @@ proc ShowAbout {winId} {
     pack [label $platform.tcl -text "TclTk: [info patchlevel]" \
             -font {-family helvetica -size 8}] -side left
     if {[string equal windows $tcl_platform(platform)]} {
-	pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
-            -font {-family helvetica -size 8}] -side left
+        pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
+                -font {-family helvetica -size 8}] -side left
     }
     pack $platform
     if [info exists userinfo(exp_time)] {
@@ -2083,7 +2145,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     set where [regsub -all "\n" $where " "]
     set where [string range $where 1 end-1]
     set tidy_where [regsub -all "," $where "\n\t\t"]
-
+    
     # Label and Description, if any
     if [string match null $description] {
         $widget insert end "${tidy_varlabel}\n" eqntag
@@ -2113,7 +2175,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         }
         if {![string match {null} $minmax]} {
             $widget insert end "\t$minmax\n"
-	}
+        }
         # ...rate equation
         if {[llength $outflows]>0 | [llength $inflows]>0} {
             set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
@@ -2138,7 +2200,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         }
         if {![string match {null} $minmax]} {
             $widget insert end "\t$minmax\n"
-	}
+        }
     }
     
     # Comments
@@ -2182,28 +2244,28 @@ proc BuildProblem {Title errLevel msg key args} {
 	wm transient $ProbWin
       }
     }
-#    switch $fault {
-#        user {
-#            set Title "Problem with model"
-#            set errLevel warning
-#            set buttonCmd {ContextSensitiveHelp $ProbWin run/index.htm}
-#        } system {
-#            set Title "Build failure"
-#            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
-#        } tcl {
-#            set Title "User interface problem"
-#            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
-#        }
-#    }
+    #    switch $fault {
+    #        user {
+    #            set Title "Problem with model"
+    #            set errLevel warning
+    #            set buttonCmd {ContextSensitiveHelp $ProbWin run/index.htm}
+    #        } system {
+    #            set Title "Build failure"
+    #            set errLevel error
+    #            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
+    #        } tcl {
+    #            set Title "User interface problem"
+    #            set errLevel error
+    #            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
+    #        }
+    #    }
     wm title $ProbWin $Title
     wm protocol $ProbWin WM_DELETE_WINDOW {set ack 1}
     if {[string match windows $tcl_platform(platform)]} {
         wm attributes $ProbWin -toolwindow true
     }
     set labf1 [frame $ProbWin.labf1]
-    pack [label $labf1.img -image $iconImages($errLevel)] -side left 
+    pack [label $labf1.img -image $iconImages($errLevel)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \
@@ -2222,12 +2284,12 @@ proc BuildProblem {Title errLevel msg key args} {
             -side left -padx 4 -pady 4
     if {[llength $args]==2} {
         pack [button $buttons.report -text {Send bug report} -width 20 \
-		  -command [concat ReportProblem $args [list $msg]]] \
+                -command [concat ReportProblem $args [list $msg]]] \
                 -side left -padx 4 -pady 4
     }
     pack [button $buttons.help -text Help -width 10 \
-           -command "set ack 1; ContextSensitiveHelp $ProbWin $help($key)"] \
-           -side left -padx 4 -pady 8
+            -command "set ack 1; ContextSensitiveHelp $ProbWin $help($key)"] \
+            -side left -padx 4 -pady 8
     pack $buttons
     
     set height [winfo reqheight $ProbWin]
