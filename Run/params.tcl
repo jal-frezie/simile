@@ -407,7 +407,8 @@ proc ListToArray {topNode tgt subs trans dims list} {
 	}
 
 #puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
-	EnumTypeToNumber [lindex [lindex $dims 0] 1]$subs $last {}
+	EnumTypeToNumber paramData [lindex [lindex $dims 0] 1]$subs $last {}
+# probably won't work anyway for time series
 	set requireStep 0
     } else {
 	set last [lindex $dims 0]
