@@ -10,7 +10,8 @@ sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
 		       tk_get_params/2, tk_bar_edit_menu/1, tk_click_obj/6,
 		       tk_click/4, tk_doubleclick/4, tk_unclick/2, tk_drag/2,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
-		       tk_visible/5, tk_embrace/2, tk_abandon/0,
+		       tk_resize_top_win/3, tk_visible/5,
+		       tk_embrace/2, tk_abandon/0,
 		       tk_abandon_eqn/0, compile_to_file/1,
 		       tk_run_settings_tweaked/1, tk_off_window/1,
 		       tk_kill_everything/0, tk_set_new_size/4,
@@ -100,6 +101,9 @@ tk_mode_select(Mode) :-
 	finish_old_edit(none),
 	mode_select(Mode),
 	show_normal_cursor.
+
+tk_resize_top_win(Wid, W, H) :-
+	resize_top_win(Wid, W, H).
 
 :- dynamic(resizing_windows/1).
 

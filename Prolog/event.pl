@@ -12,7 +12,8 @@ sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
 		       insert_variable/5,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
-	adjust_display_area/2, prioritize_window/1, run_settings_tweaked/1]).
+		       resize_top_win/3, adjust_display_area/2,
+		       prioritize_window/1, run_settings_tweaked/1]).
 
 sicstus_use_module([sp_only, dialogue, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
@@ -1095,6 +1096,10 @@ drag_to(Xpt, Ypt, Target) :-
 	add_incomplete([L,T,R,B]),
 	remove_old_rubberband,
 	draw_rubberband(round).
+
+resize_top_win(Wid, W, H) :-
+	Wid shows_model Mod,
+	change_shape(Mod, bounding_box, [0,0,W,H]).
 
 /* drag_to(_, _, Doomed_thing) :-
 	get_mode(delete),
