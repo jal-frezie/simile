@@ -391,28 +391,23 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
         */
 	((var(ParseUnit), !,
 	(DimExprs = TargetExprs, !,
-	    ((member(Unit_base, [any, boolean, const_int, a(_ET), int]),
-	          Unit_type = Unit_base;	 
-	      get_conversion(_, Unit_base, Unit_base, _),
-	          Unit_type = real), !,
-		(member(Target_base, [any, n(_ET), a(_ET),
-				      boolean, int, const_int]),
+	    ((member(Target_base, [any, n(_ET), a(_ET),
+				      boolean, int, const_int]), !,
 		    Target_type = Target_base;	 
 	        Target_type = real),
 		(Severity = 0, !;
 		Unit_base = Target_base, !;
-		inters:promote_unit(Target_type, Unit_type), !,
+		inters:promote_arg(Unit_base, Target_type, Unit_type), !,
 		    (Severity = 1, !;
-		    ((Target_base = 1; \+ Target_type = real),
-			Scale = 0;
-		    get_conversion(1, Unit_base, Target_base, Scale)),
+		    \+ Target_type = real, !;
+		    get_conversion(1, Unit_type, Target_base, Scale),
 			(Severity = 2, !;
 			1 is Scale, !;
 			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
 
 		    sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
 
-		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_type, Target_type], Complaint));
+		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_base, Target_type], Complaint));
 		
 	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", [Unit_term], Complaint));
 	    

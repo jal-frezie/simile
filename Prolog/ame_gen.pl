@@ -11,7 +11,7 @@ sicstus_module(ame_gen,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
-		get_actual_sizes/5, enum_type_ref/4,
+		get_actual_size/5, get_actual_sizes/5, enum_type_ref/4,
 		get_node_size/2, get_node_size/4,
 		is_population/1, is_conditional/1, get_all_dims/2,
 		variable_size/1, list_links/2,
@@ -117,7 +117,7 @@ make_legible_for_prolog(String, NewString) :-
 	/* separate a unary operator from other symbols */
 	ToTweak = [M, N | Suffix],
 	member(M, "+-*/\\^<>=`~:.?@#$&"),	
-	member(N, "-+"),
+	member(N, "-"), /* 	    (not + cos we use ++) */
 	    Tweaked = [M, Sp, N];
 	/* Make sure scientific notation numbers contain point */
 	ToTweak = [N, E | Suffix],
@@ -290,6 +290,8 @@ recognized by Prolog unless we tell it about them...
 Works but buggers up GNU prolog (do after loading?) */
 :- op(500, fx, [not]).
 
+:- op(500, yfx, [++]).
+
 :- op(700, yfx, ['<=']).
 
 :- op(700, yfx, ['=\\=', '!=', =:=]).
@@ -376,34 +378,32 @@ numbers of submodel instances, and translates those that can be translated,
 stripping out those which cannot, or which correspond to non-disaggregated
 submodels. */
 
-get_actual_sizes(_, [], [], [], any).
-
-get_actual_sizes(Node, [Sub | Rest], AllNs, AllSizes, Units) :-
-	get_actual_sizes(Node, Rest, MoreNs, Sizes, MoreUnits),
-	(Sub = none, AllNs = MoreNs, AllSizes = Sizes, Units = MoreUnits;
-	enum_type_ref(Sub, Node, Num, Units0),
-	    AllNs = [Num | MoreNs],
-	    AllSizes = [Sub | Sizes],
-	    inters:promote_unit(Units0, Units),
-	    inters:promote_unit(MoreUnits, Units);
+get_actual_size(Node, Sub, Nums, Sizes, Units) :-
+	Sub = none, !, Nums = [], Sizes = [], Units = any;
+	enum_type_ref(Sub, Node, Num, Units),
+	    Nums = [Num],
+	    Sizes = [Sub];
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
-	    (setof(Size_source, name_matches(Size_source, ModName), Sources), !,
+	    (setof(SizeSource, name_matches(SizeSource, ModName), Sources), !,
 		(Sources = [Source], !,
-		    get_node_size(Source, RealN, RealSize, Units0),
+		    get_node_size(Source, RealN, RealSize, Units),
 		    (var(Ind), !,
-			append(RealN, MoreNs, AllNs),
-			append(RealSize, Sizes, AllSizes);
+			Nums = RealN,
+			Sizes = RealSize;
 		    nth(Ind, RealN, UseN),
 		    nth(Ind, RealSize, UseSize),
-			AllNs = [UseN | MoreNs],
-			AllSizes = [UseSize | Sizes]),
-		    inters:promote_unit(Units0, Units),
-		    inters:promote_unit(MoreUnits, Units);
+			Nums = [UseN],
+			Sizes = [UseSize]);
 		    raise_exception(['Cannot resolve reference to size of ',
-			Size_source,
+			ModName,
 			'. There are multiple submodels of this name.']));
 		raise_exception(['Cannot resolve reference to size of ',
-			ModName, '. There is no submodel of this name']))), !.
+			ModName, '. There is no submodel of this name'])).
+
+get_actual_sizes(Node, Subs, Nums, Sizes, _U) :-
+	all(ame_gen, get_actual_size,
+	    [unify(Node), build(Subs), append(Nums, []), append(Sizes, []),
+	     build(_AU)]).
 
 name_matches(Node, Name) :-
 	Node has_class submodel,
@@ -415,11 +415,16 @@ enum_type_ref(Ref, Model, Value, Units) :-
 	Ref = var, 
 	    Units = int;
 	number(Ref),
-	    Units = real), !,
+	    Units = 1), !,
 	    Value = Ref;
 	nth0(Value, ['"false"', '"true"'], Ref), !,
 	    Units = boolean;
+	resolve_unit_type(Ref, Units), !, Value = 1;
 	resolve_enum_type(Ref, Model, Value, Units).
+
+resolve_unit_type(Ref, Units) :-
+	(units:baseline(Units); units:unit_definition(Units, _)),
+	append_atoms(['"', Units, '"'], Ref).
 
 resolve_enum_type(Ref, Model, Value, Units) :-
 	m_class:Model has_class_refinement enum_types of TypeList,

@@ -367,10 +367,9 @@ proc create_equation {parent boxtitle indices} {
     
     $notebook raise Main
     pack $notebook -fill both -expand true
-    $notebook compute_size
     set equation(newGraphs) ""
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
-    tkwait visibility $influencesf.lists.plist
+#    tkwait visibility $influencesf.lists.plist
 }
 
 proc interact_equation {} {
@@ -398,6 +397,9 @@ proc interact_equation {} {
     set listFrame [$equation(main).bottom.influences getframe]
     
     set equation(done) 0
+    if {![winfo viewable $t]} {
+	tkwait visibility $t
+    }
     grab $t
     tkwait variable equation(done)
     grab release $t
@@ -529,8 +531,8 @@ proc fill_inputs { triples } {
     set equation(selected,$widget.lists.ilist) -1
     
     #    pack $t.bottom -fill x -expand true
-    $equation(notebook) compute_size
-    pack $equation(notebook)
+#    $equation(notebook) compute_size
+#    pack $equation(notebook)
 }
 
 proc fill_table {node table_data table_values} {
@@ -581,8 +583,6 @@ proc equationBindings { t en eu lbp lbi lbd \
     
     bind $lbi <Button-1> "equationClick %W %y"
     bind $lbi <Button-3> "equationRight %W %y"
-    bind $lbi <Double-1> \
-            "equationDouble %W %y $eu; focus $eu; $eu icursor end"
     
     bind $lbf <Double-1> \
             "functionClick %W %y $en"

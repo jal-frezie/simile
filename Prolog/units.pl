@@ -2,7 +2,7 @@
 replace a huge steaming pile of convoluted entrails spewed up by Geraint. */
 
 sicstus_module(units, [get_conversion/4, default_tick_is/1,
-		       add_unit_definition/2]).
+		       add_unit_definition/2, sort_units/3]).
 
 default_tick_is(day).
 
@@ -60,6 +60,21 @@ select_factor_from(Expr, Factor, Sign, Rest) :-
 				Rest = Ex1;
 			Rest =..[Op, Ex1, Rest_of_Ex2])).
 
+/* 2003 effort : after combining units, standardize the form, then add
+conversion factors for any pairs whose dimensions cancel or combine. */
+
+sort_units(Before, After, Conv) :-
+	select_factor_from(Before, F1, Op1, Step1),
+	select_factor_from(Step1, F2, Op2, Mid),
+	get_conversion(1, F1, F2, SomeConv),
+	(Op1 = (*), Op2 = (/), !,
+	    Simpler = Mid;
+	 Op1 = Op2, SomeConv > 1, !,
+	    Simpler =.. [Op2, Step1, F2]),
+	sort_units(Simpler, After, MoreConv),
+	Conv =.. [Op1, MoreConv, SomeConv];
+	After = Before, Conv = 1.
+	
 combine_signs(*, *, *).
 combine_signs(*, /, /).
 combine_signs(/, *, /).
@@ -117,6 +132,7 @@ unit_definition(cwt,	stone*8).
 unit_definition(ton,	cwt*20).
 
 unit_definition(newton,	kilogramme*metre/second/second).
+unit_definition(dyne,	gramme*centimetre/second/second).
 unit_definition(gravity,	(metre/second/second)*(98/10)). 
 	/* Acceleration due to gravity */
 unit_definition(kgf,	kilogramme*gravity).

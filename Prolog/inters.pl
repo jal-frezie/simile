@@ -1,6 +1,6 @@
 sicstus_module(inters, [final_assignment/11, make_intermediates/12,
 			expand_library/3, function/3,
-			promote_unit/2, propagate_units/5,
+			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			make_inds_for/3, pointer_from/2]).
 
@@ -8,7 +8,7 @@ sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
 final_assignment(Expr, Sm, DestRef, Swaps, Step, Used, 
                  NewFormula, Setups, Context, Prerequisites, NewInters) :-
-	DestRef = elt(DestPathForm, Target, _-Dims),
+	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
 	replace_subexps(Expr, inters, insert_paths,
@@ -16,7 +16,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	length(ExpInters, _L), /* close end of list */
 
 	on_exception(Problem, make_intermediates(FullExp, Sm, Target, DestPath,
-		BackSwap, ExpInters, [], Step, Used, _, AllInters,
+		BackSwap, ExpInters, [], Step, Used, Units, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula)),
 		      raise_exception(conversion_failure(Target, Problem))),
 
@@ -27,35 +27,35 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 
 	/* now check for assignment from an idler. This will be eleminated. */
 	get_dims_from_loops(SourceLoops, _, SourceInds),
-	(Formula = arr(_, Idle, SourceInds),
-	Args = [made_at(Idle, _)],
-	select(instance(internal, _,_, Idle, _-Dims),
-	       AllInters, NewInters), !,
+	(get_conversion(Formula, Units, XUnits, ScaledF), !; ScaledF=Formula),
+	(ScaledF = Formula,
+	    Formula = arr(_, Idle, SourceInds),
+	    Args = [made_at(Idle, _)],
+	    select(instance(internal, _,_, Idle, _-Dims),
+		   AllInters, NewInters), !,
 	    replace_subexps(AllSetups, inters, swap_vars,
 			    switch(Idle, Target), top_down, _, SubbedSetups),
-	    select(make(Target, NewArgs, Context, _, NewFormula), SubbedSetups,
-		   Setups);
+	    select(make(Target, NewArgs, Context, _, NewFormula),
+		   SubbedSetups, Setups);
 	[Setups, NewInters, NewArgs,  Context] =
 	[AllSetups, AllInters, Args, FContext],
-	 pointer_from(DestPath, DestPtr),
-	 get_dims_from_loops(SourceLoops, _, Inds),
-	 NewFormula = [assign(arr(DestPtr, Target, Inds), Formula)]),
+	    pointer_from(DestPath, DestPtr),
+	    get_dims_from_loops(SourceLoops, _, Inds),
+	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)]),
 	    
 	(setof(Model, has_extras(Context, DestPath, Model), Exited), !;
 	    Exited = []),
 	add_extra_dependencies(Exited, FullExp, NewArgs, Prerequisites).
 
 insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
-	(Var = input(Location, PathExp, Link, _);
+	(Var = input(Location, PathExp, Link, Units),
+	    m_update:analyze_array(Units, Type, _);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
-	    [Location, Link]=[in_hierarchy, none]),
-	PathExp = elt(RealPathForm, Ref, Unit-DimTypes), !,
+	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
+	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(_)]),
-	    (get_conversion(_, Unit, Unit, _), !,
-		Type = real;
-	    Type = Unit),
 	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
 		import_path_for(Dims, RealPathForm, ArcI, 0, Ptr0, LvlN, PtrN,
 				LocalLoops, Inds),
@@ -96,8 +96,7 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
 		   InterInputs),
 	    Recurse = 0;
-	Var = channel_is(input(Location, elt(RealPathForm, Ref, Unit-Dims),
-			       Link, _)),
+	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link, _)),
 	/* Outrageous hack -- for channel nodes of an ancestor
 submodel, the link parameter is set to 'outside' if they count as
 outside, so in this case we add the submodel level for their submodel,
@@ -497,12 +496,12 @@ make_intermediates(
 	    ((N=0; N = ''), SourceRef = time(Step);
 	    integer(N), SourceRef = Source;
 	    raise_exception(bad_index_number(N, time))),
-	    Units = real, !;
+	    default_tick_is(Units), !;
 	Source = dt(N),
 	    ((N=0; N = ''), SourceRef = dt(Step);
 	    integer(N), SourceRef = Source;
 	    raise_exception(bad_index_number(N, dt))),
-	    Units = real, !;
+	    default_tick_is(Units), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
 	    get_dims_from_loops(BuildingArrays, DestDims, DestVals),
@@ -624,19 +623,19 @@ make_intermediates(
 		list_of(RUnits, Enums, Arg_template),
 		    /* need type for bool/int */
 		SourceList = Source,
-		SourceRef = ResultList;
+		ValRef = ResultList;
 	    Source = (Test?True:False), !,
 		SourceList = [Test, True, False],
 		RUnits = any,
 	        Arg_template = [boolean, RUnits, RUnits],
 		ResultList = [RTest, RTrue, RFalse],
-		SourceRef = (RTest?RTrue:RFalse);
+		ValRef = (RTest?RTrue:RFalse);
 	    Source = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, Param),
 		SourceList = [Param],
 		RUnits = real,
 		Arg_template = [real],
 		ResultList = [RVal],
-		SourceRef = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, RVal);
+		ValRef = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, RVal);
 	    Source = table(SourceList),
 		(Step = dummy,
 		    dialogue:table_data_is(TableData),
@@ -646,10 +645,10 @@ make_intermediates(
 		(length(SourceList, TableDims);
 		    raise_exception(only_works_on_array(Source))),
 		list_of(int, TableDims, Arg_template)),
-		SourceRef = table(ResultList);
+		ValRef = table(ResultList);
 	    Source = sofar(Param),
 		SourceList = [Param],
-		ResultList = [SourceRef],
+		ResultList = [ValRef],
 		Arg_template = [RUnits];
 	    Source =.. [Op | PlSourceList],
 		(PlSourceList = [''], !,
@@ -658,15 +657,45 @@ make_intermediates(
 		length(SourceList, Arity),
 		length(Arg_template, Arity),
 		length(ResultList, Arity),
-		SourceRef =.. [Op | ResultList]),
+		ValRef =.. [Op | ResultList]),
 		make_all_intermediates(SourceList, SubId, Target, DestPath,
 				BackSwap, PrevInters, BuildingArrays, Step,
 				Used, UnitList, NewInters, PartResultList),
-		/* If this was an operator we need to pick one such that the
-		args match up */
-		(fn_or_op(Op, RUnits, Arg_template),
+	/* Now...if there are contexts in which all these things can be
+	evaluated, return results based on them. */
+	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
+				SourceContext, Setups, SubArgs, ResultList), !;
+	    raise_exception(cannot_combine_argument_dimensions(Source))),
+		(member(Op, [*, /]),
+		    select(One, UnitList, [Other]),
+		    \+ promote_arg(One, 1, _),
+		    (promote_arg(Other, 1, _),
+			(UnitList == [Other, One], Op = (/),
+			    Units = 1/One;
+			 Units = One),
+			SourceRef = ValRef;
+		    TattyUnits =.. [Op | UnitList],
+			sort_units(TattyUnits, Units, ConvFactor),
+			SourceRef = ConvFactor*ValRef), !;
+		Op = (++),
+		    UnitList = [Units, IncUnits],
+		    (get_conversion(1, IncUnits, Units, ConvFactor), !;
+		    raise_exception(mismatched_units(Source, UnitList,
+						     convertible))),
+		    ValRef = Arg1++Arg2,
+		    SourceRef = Arg1+(ConvFactor*Arg2);
+		    /* If this was an operator we need to pick one such that
+		    theargs match up */
+		Op = (^),
+		    UnitList = [Base, const_int],
+		    get_conversion(1, Base, Base, _),
+		    ValRef = _^Exp,
+		    raise_units(Base, Exp, Units),
+		    SourceRef = ValRef;
+		 fn_or_op(Op, RUnits, Arg_template),
 		    /* first, check my units are right... */
-		    try_units(RUnits, Arg_template, UnitList, Units);
+		    try_units(RUnits, Arg_template, UnitList, Units),
+		    SourceRef = ValRef;
 		 fn_or_op(Op, RUnits, Arg_template),
 		    raise_exception(mismatched_units(Source,
 						     UnitList, Arg_template));
@@ -675,18 +704,13 @@ make_intermediates(
 		    raise_exception(wrong_no_of_args(Source, Op,
 						     Arity, FnArity));
 		 raise_exception(no_such_function(Source, Op))),
-	/* Now...if there are contexts in which all these things can be
-	evaluated, return results based on them. */
-	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
-				SourceContext, Setups, SubArgs, ResultList), !;
-	    raise_exception(cannot_combine_argument_dimensions(Source))),
 	    (Source = sofar(_), !,
 		dissociate(SubArgs, UseArgs);
 	    UseArgs = SubArgs);
 	raise_exception(undecipherable_operand(Source, SubId)).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
-	get_actual_sizes(SubId, [Source], [SrcNum], [SrcType], SrcUnits),
+	get_actual_size(SubId, Source, [SrcNum], [SrcType], SrcUnits),
 	(Step = dummy, !,
 	    SourceRef = SrcType,
 	    Units = SrcUnits;
@@ -699,6 +723,13 @@ unmake_enum_units(SrcUnits, Units) :-
 	SrcUnits = a(_),
 	    Units = int;
 	Units = SrcUnits.
+
+raise_units(Base, Num, Units) :-
+	Num = 0, Units = 1;
+	(Num < 0, Next is Num+1, Do = (/);
+	    Num > 0, Next is Num-1, Do = (*)),
+	raise_units(Base, Next, Mid),
+	Units =.. [Do, Mid, Base].
 
 fn_or_op(Op, RUnits, AUnits) :-
 	var(Op), !;
@@ -746,10 +777,11 @@ propagate_units(Source, Lowest, Want, Get, Result) :-
 	raise_exception(mismatched_units(Source, Get, Want)).
 	
 
-try_units(Lowest, Want, Get, Result) :-	
+try_units(Lowest, Want, Get, Out) :-	
 	promote_unit(Lowest, Result),
 	substitute(Lowest, Want, Result, SettleFor),
-	all(inters, promote_unit, [build(Get), build(SettleFor)]). 
+	all(inters, promote_arg, [build(Get), build(SettleFor), unify(In)]),
+	(Result = real, !, Out = In; Out = Result). 
 	
 promote_unit(Lo, Hi) :-
 	Lo = Hi;
@@ -759,6 +791,17 @@ promote_unit(Lo, Hi) :-
 				     const_int, int, real]],
 			      [int, [real]]]),
 	member(Hi, Higher).
+
+promote_arg(Lo, Hi, Phys) :-
+	promote_unit(Lo, Tpt),
+	(   Tpt = real, Med = 1;
+	    Med = Tpt),
+	(Hi = real,
+	    (nonvar(Phys); var(Phys), Phys = Med),
+	    get_conversion(1, Med, Phys, N),
+	    1 is N;
+	\+ Hi = real,
+	    Hi = Med).
 
 /* Operators and functions. These should be applied in a way that allows
 an integer to be treated as a real -- if an arg is real, so is result
@@ -807,42 +850,42 @@ function(greatest, int, [array_or_list_of_ints]).
 to be recognizable. Note that if something is down as returning an int for an
 int, it will be expected to return a real for a real, etc */
 
-function(sqrt, real, [real]).
-function(log, real, [real]).
-function(log10, real, [real]).
-function(exp, real, [real]).
+function(sqrt, 1, [1]).
+function(log, 1, [1]).
+function(log10, 1, [1]).
+function(exp, 1, [1]).
 function(abs, int, [int]).
 function(int, int, [real]).
 function(ceil, int, [real]).
 function(floor, int, [real]).
 
-function(sin, real, [real]).
-function(cos, real, [real]).
-function(tan, real, [real]).
-function(cot, real, [real]).
-function(sinh, real, [real]).
-function(cosh, real, [real]).
-function(tanh, real, [real]).
-function(coth, real, [real]).
+function(sin, 1, [1]).
+function(cos, 1, [1]).
+function(tan, 1, [1]).
+function(cot, 1, [1]).
+function(sinh, 1, [1]).
+function(cosh, 1, [1]).
+function(tanh, 1, [1]).
+function(coth, 1, [1]).
 
-function(asin, real, [real]).
-function(acos, real, [real]).
-function(atan, real, [real]).
-function(arctan, real, [real]).
-function(acot, real, [real]).
-function(asinh, real, [real]).
-function(acosh, real, [real]).
-function(atanh, real, [real]).
-function(acoth, real, [real]).
+function(asin, 1, [1]).
+function(acos, 1, [1]).
+function(atan, 1, [1]).
+function(arctan, 1, [1]).
+function(acot, 1, [1]).
+function(asinh, 1, [1]).
+function(acosh, 1, [1]).
+function(atanh, 1, [1]).
+function(acoth, 1, [1]).
 
-function(rand, real, [real, real]).
-function(rand_var, real, [real, real]).
-function(pow, real, [real, real]). /* my c++ does not have int powers */
-function(fmod, real, [real, real]).
+function(rand, 1, [1, 1]).
+function(rand_var, 1, [1, 1]).
+function(pow, 1, [1, 1]). /* my c++ does not have int powers */
+function(fmod, 1, [1, 1]).
 
 function(hypot, real, [real, real]).
-function(atan2, real, [real, real]).
-function(acot2, real, [real, real]).
+function(atan2, 1, [real, real]).
+function(acot2, 1, [real, real]).
 
 function(max, int, [int, int]).
 function(min, int, [int, int]).
@@ -855,13 +898,14 @@ operator(stage_incr, real, [diffs, int, real]).
 
 operator(!, boolean, [boolean]).
 operator(+, int, [int]).
+operator(++, int, [int]).
 operator(-, int, [int]).
 
 operator(+, int, [int, int]).
 operator(-, int, [int, int]).
 operator(*, int, [int, int]).
 operator(//, int, [int, int]).
-operator(/, real, [real, real]).
+operator(/, 1, [1, 1]).
 
 operator(^, int, [int, int]).
 operator(==, boolean, [real, real]).

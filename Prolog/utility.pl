@@ -300,7 +300,7 @@ home_on_prec(_, Prec, Prec1, Prec1) :-
 	Prec1 is Prec + 1, !.
 
 home_on_prec(Op, Prec1, Prec2, Prec) :-
-	Mid is truncate(Prec1+Prec2)//2,
+	Mid is (Prec1+Prec2)//2,
 	(precedence_lower_than(Op, Mid), !,
 		home_on_prec(Op, Prec1, Mid, Prec);
 	home_on_prec(Op, Mid, Prec2, Prec)).

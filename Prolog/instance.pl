@@ -165,9 +165,9 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    ArcFromF is_connector from _ to Node,
 	    ArcFromF has_type influence,
 	    initiates(ArcFromF, F),
-	    Instances = [Instance, DiffStruct];
+	    Instances = Local;
 	F = Node,
-	    Instances = [FuncRef, Instance, DiffStruct]),
+	    Instances = [FuncRef | Local]),
 
 	get_units(F, Base, Units),
 	Home = elt(Path, _, Base-Units),
@@ -175,14 +175,13 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	(\+ PType = 1, !;
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(init_function, F, Default, Home, Base-Units),
-	(setof( Arc, flows(in, Node, Arc), InArcs),
-	bind_and_build_term(Node, InArcs, Base, Units, In, In_refs);
-	In_refs = [],
-	In = 0),
+	((setof( Arc, flows(in, Node, Arc), InArcs),
+	  bind_and_build_term(Node, InArcs, Base, Units, In, In_refs);
+	  In_refs = []),
 	(setof( Arc, flows(out, Node, Arc), OutArcs),
-	bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs);
-	Out_refs = [],
-	Out = 0),
+	    bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs),
+	    (In_refs = [], Change = -Out; Change = In++(-Out));
+	\+ In_refs = [], Change = In),
 	merge_lists(In_refs, Out_refs, Refs),
 	/* apply_minmax(F, Home+Step*(In-Out), UpdateExpr),
 	compartments will be updated in a separate procedure from flows
@@ -190,9 +189,13 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	Home+Step*last(In-Out) */
 	
 	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffStruct),
-	is_instance(compartment, Node,
-		    incr(Step, Home+stage_incr(Diffs, Step, (In-Out))),
-		    Home, Base-Units, Instance).
+	    default_tick_is(Tick),
+	    append_atoms(['"', Tick, '"'], TickQ),
+	    is_instance(compartment, Node,
+			incr(Step,Home++stage_incr(Diffs, Step, TickQ*Change)),
+			Home, Base-Units, Instance),
+	    Local = [DiffStruct, Instance];
+	[Refs, Local] = [[], []]).
 
 /* Immigration and reproduction nodes behave like compartments with an inflow equal
 to their functional value and an initial value of 0.5. They are reset to 0 when
@@ -422,7 +425,7 @@ get_units(Node, Type, Dims) :-
 intrinsically have same units as compartment, so we go back to their control nodes
 to get unit conversion factor */
 
-bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
+bind_and_build_term(Node, [Arc], _NodeBase, NodeDims, Var, [Ref]) :-
 	find_base(Arc, General_arc),
 	get_chain(General_arc, Node, _, Exits, Entries),
 	caption_for(Node, BadComp),
@@ -433,14 +436,15 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	    caption_for(Multi, BadModel),
 	    raise_exception(flow_splits_at_border(BadArc, BadComp, BadModel));
 	implicit_function(General_arc, Controller),
-	get_units(Controller, ArcUnits, ArcDims),
+	get_units(Controller, _ArcUnits, ArcDims),
 	all(ame_gen, get_all_dims, [build(Exits), append(AllDims, ArcDims)]),
 	    (append(NodeDims, MergeDims, AllDims), !,
 		sum_dims(MergeDims, BaseVar, Var);
 	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
 						  AllDims, NodeDims)))),
+	is_instance(_, Controller, _, BaseVar, _, Ref).
+/*
 	default_tick_is(Tick),
-	is_instance(_, Controller, _, BaseVar, _, Ref),
 	((get_conversion(Var, ArcUnits, NodeBase/Tick, Term);
 		(get_conversion(_, ArcUnits, 1, _);
 			get_conversion(_, NodeBase, 1, _)),
@@ -450,12 +454,12 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 		sicstus_format_to_chars("Warning -- compartment with units ~w connects to flow defined from node ~w with incompatible units ~w -- conversion ommitted", 
 			[NodeBase, Capt, ArcUnits], Hassle),
 		do_dialogue("Compilation warning", warning, Hassle, ok, _)).
-
+*/
 bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
 	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),
 	bind_and_build_term(Node, Arcs, Base, Dims, MidTerm, MidRefs),
 	merge_lists([Ref], MidRefs, Refs),
-	NewTerm =.. ['+',Term1,MidTerm].
+	NewTerm =.. ['++',Term1,MidTerm].
 	
 sum_dims([], Var, Var).
 sum_dims([_ | Rest], Middle, sum(Full)) :-

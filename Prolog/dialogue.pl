@@ -182,7 +182,7 @@ LateInputs],
 			    NewInputUnit = Current_unit;
 			analyze_array(Current_unit, CurrentBase, CurrentDims),
 			    build_array(NewUnits, CurrentDims, NewInputUnit),
-			    check_unit(NewUnits, CurrentBase, 2, Complaint)));
+			    check_unit(CurrentBase, NewUnits, 2, Complaint)));
 		Complaint = Complaint2);
 	    Complaint = "Select an input before supplying its new parameter name and/or local units"),
 			
@@ -231,23 +231,28 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    /* If units but no eqn or limits supplied, accept any */
 	    NewUnits = Units,
 	    UnitError = UnitFormError;
-	on_exception(PropError, propagate_units([eqn=Result, min=Min, max=Max,
+/*	on_exception(PropError, propagate_units([eqn=Result, min=Min, max=Max,
 						 type=TypeBase], any,
 						[any, any, any, any],
 			[EqnBase, MinBase, MaxBase, TypeBase], ComboType),
-		     decode_error(PropError, UnitError)),
+		     decode_error(PropError, UnitError)), 
 	    (ComboType = real, !, ComboUnits = 1;
 		member(ComboType, [n(_), const_int]), ComboUnits = int;
-		ComboType = ComboUnits),
+		ComboType = ComboUnits), */
+
+            ((var(TypeBase); promote_arg(EqnBase, TypeBase, _)), !,
+		ComboUnits = EqnBase;
+	    UnitError = "Could not match units."),
+           
 	    (nonvar(UnitError),
 		NewUnits = Units;
-	     (Units = ''; Units = ComboUnits;
-	      /* next line allows an int to be quietly made into a real if the
-	      expression is now real */
-	      check_unit(ComboUnits, Units, 2, [])), !,
+	     (Units = ''; Units = ComboUnits /* ;
+	      next line allows an int to be quietly made into a real if the
+	      expression is now real...do some other way
+	      check_unit(ComboUnits, Units, 2, []) */ ), !,
 		NewUnits = ComboUnits,
 		UnitError = [];
-	    check_unit(Units, ComboUnits, 2, UnitMatchError),
+	    check_unit(ComboUnits, Units, 2, UnitMatchError),
 		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
 
@@ -289,7 +294,8 @@ for it,
 
 	name(Desc, Desc_st),
 	name(Comment, Cmt_st),
-	sicstus_atom_chars(OldEqn, Eqn_st),
+	purge(Eqn_st, "\\", OrigSt),
+	sicstus_atom_chars(OldEqn, OrigSt),
 
 	(FinalComplaint = [], !,
 	    update_parameterhood(Function, Is_P, AffectedNode),
@@ -510,10 +516,10 @@ expand_params(dim_data(DimL, PsUsed, AllInputs), Param, DoneExpr, Recurse) :-
 	member(input_link(Link, LRefs, Param, Loops, Units), AllInputs), !,
 	    (nonvar(Link), !,
 		member(Param, PsUsed),
-		analyze_array(Units, Base, Dims),
-		(units:get_conversion(_, Base, Base, _), !,
+		analyze_array(Units, Type, Dims),
+/*		(units:get_conversion(_, Base, Base, _), !,
 		    Type = real;
-		Type = Base),
+		Type = Base), */
 		make_inds_for(Dims, PLoops, Inds);
 	    (Param = '/dest/', !,
 		    get_ground_part(LRefs, GRefs),
