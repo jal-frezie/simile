@@ -26,6 +26,13 @@ proc initialize {winId} {
 	GrabClicks $winId
 }
 
+proc Restore {windowId} {
+    initialize $windowId
+    set fullCapt [RestoreCrs [GetState $windowId]]
+    click $windowId [GetIdFromCaptionPath $fullCapt] \
+	[lindex [split $fullCapt /] end]
+}
+
 proc click {windowId nodename caption} {
 
     set graphData [GetModelGraph $nodename]
@@ -35,6 +42,7 @@ proc click {windowId nodename caption} {
     }
     ReleaseClicks $windowId
     pack forget $windowId.intro
+    SetState $windowId [StripCrs [GetCaptionPathFromId $nodename]]
     set length [lindex $graphData 7]
     set graphPoints [join [lrange $graphData 8 end] ,]
     eval {after idle GraphEntry $windowId} [lrange $graphData 0 6] \

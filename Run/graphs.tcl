@@ -14,7 +14,6 @@
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
     global tcl_platform graph looks
-    bind $t <Destroy> "set graph($t,done) -1"
     
     set graph(bd) 3
     
@@ -77,11 +76,9 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     frame $t.right
     
     set buttons [frame $t.right.buttons]
-    button $buttons.enter -text OK -width 10 \
-	-command [list set graph($t,done) 1]
+    button $buttons.enter -text OK -width 10
     pack $buttons.enter -padx 4 -pady 4 -anchor e
-    button $buttons.cancel -text Cancel -width 10 \
-	-command [list set graph($t,done) 0]
+    button $buttons.cancel -text Cancel -width 10
     pack $buttons.cancel -padx 4 -pady 4 -anchor e
     button $buttons.edit -text "Edit as table" -width 10 \
 	-command [list EditAsTable $t $grid]
@@ -91,7 +88,17 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $buttons -fill x -padx 8 -pady 8
     set looks(darkerColor) [$buttons.enter cget -disabledforeground]
 
-    
+    if {[llength $target]} {
+	$buttons.enter configure -command \
+	    [namespace code [list UpdateGraph $t $target]]
+	$buttons.cancel configure -command \
+	    [namespace code [list RestoreSketch $t $target]]
+    } else {
+	$buttons.enter configure -command [list set graph($t,done) 1]
+	$buttons.cancel configure -command [list set graph($t,done) 0]
+	bind $t <Destroy> "set graph($t,done) -1"
+    }
+
     TitleFrame $t.right.current -text "Current Position: "
     set current [$t.right.current getframe]
     
@@ -158,52 +165,61 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     RedrawGrid $grid $graph($t,width) $graph($t,height) $graph($t,increment)
     
-    set niceFormat 0
-    while {!$niceFormat} {
-        tkwait variable graph($t,done)
-        
-        if {$graph($t,done)==-1} {
-	    return 0
-	}
-        if {$graph($t,done)} {
-            if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
-                        $graph($t,lowx) $graph($t,highx)]} {
-                # tk_messageBox -message "$rangeChoices $graph($t,rangeact)"
-                set graph($t,range) [SetCombos $t]
-                set graph($t,size) [llength $graph($t,points)]
-                # regsub -all " " $graph($t,points) , graph($t,pts)
-                # Target is set to variable id if editing sketch at run time
-                if {[llength $target]} {
-                    eval {SetModelGraph $target $graph($t,lowx) \
-			      $graph($t,highx) $graph($t,width) \
-			      $graph($t,lowy) $graph($t,highy) \
-			      $graph($t,height) $graph($t,range) \
-			      $graph($t,size)} $graph($t,points)
-                } else {
+    if {![llength $target]} {
+	while {1} {
+	    tkwait variable graph($t,done)
+	    if {$graph($t,done)==1} {
+		if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
+			 $graph($t,lowx) $graph($t,highx)]} {
+		    set graph($t,range) [SetCombos $t]
+		    set graph($t,size) [llength $graph($t,points)]
+		    # regsub -all " " $graph($t,points) , graph($t,pts)
+
                     SetDefaultGraph $graph($t,lowx) $graph($t,highx) $graph($t,width) \
 			$graph($t,lowy) $graph($t,highy) $graph($t,height) \
 			$graph($t,range) $graph($t,size) $graph($t,points)
-                    set niceFormat 1
+                    return 1
                 }
-            }
-        } else {
-            if {[llength $target]} {
-                set lastSaved [GetModelGraph $target]
-                scan $lastSaved "%g %g %d %g %g %d %d" graph($t,lowx) \
-                        graph($t,highx) graph($t,width) \
-                        graph($t,lowy) graph($t,highy) \
-                        graph($t,height) range
-		SetCombos $t $range
-                set graph($t,points) [lrange $lastSaved 8 end]
-		set graph($t,increment) [expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
-# above must be set so AttackShape gets current one right
-                AttackShape $grid [winfo width $grid] [winfo height $grid]
             } else {
-                set niceFormat 1
-            }
+		return 0
+	    }
         }
     }
-    return $graph($t,done)
+}
+
+proc UpdateGraph {t node} {
+    global graph
+
+    if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
+	     $graph($t,lowx) $graph($t,highx)]} {
+	# tk_messageBox -message "$rangeChoices $graph($t,rangeact)"
+	set graph($t,range) [SetCombos $t]
+	set graph($t,size) [llength $graph($t,points)]
+	# regsub -all " " $graph($t,points) , graph($t,pts)
+	# Target is set to variable id if editing sketch at run time
+	eval {SetModelGraph $node $graph($t,lowx) \
+		  $graph($t,highx) $graph($t,width) \
+		  $graph($t,lowy) $graph($t,highy) \
+		  $graph($t,height) $graph($t,range) \
+		  $graph($t,size)} $graph($t,points)
+    }
+}
+
+proc RestoreSketch {t node} {
+    global graph
+
+    set lastSaved [GetModelGraph $node]
+    scan $lastSaved "%g %g %d %g %g %d %d" graph($t,lowx) \
+	graph($t,highx) graph($t,width) \
+	graph($t,lowy) graph($t,highy) \
+	graph($t,height) range
+    SetCombos $t $range
+    set graph($t,points) [lrange $lastSaved 8 end]
+    set graph($t,increment) \
+	[expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
+# above must be set so AttackShape gets current one right
+    set grid [$t.gph getframe].gridf.canvas
+    AttackShape $grid [winfo width $grid] [winfo height $grid]
 }
 
 proc SetCombos {t args} {
