@@ -286,6 +286,7 @@ proc do_for_node {node args} {
         set runState($node,queueSize) 0
     }
     tickle $node
+    RaiseModelWindow $node
     }
     return [eval do_in_node $node $args]
 }
