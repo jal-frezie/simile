@@ -5,7 +5,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-#include <newdllcs.h>
+#include <dllcalls.h>
 
 // prototype, __stdcall seems to need one 
 FINDABLE int __stdcall info_copy(
