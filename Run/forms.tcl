@@ -602,123 +602,159 @@ proc InsertFunction {boxname functor} {
 }
 
 proc Disaggregate {parent title colour type fatness icount step \
-	comment matherror hide separate} {
+            comment matherror hide separate} {
     global disaggregate
-
-	foreach varName {colour type fatness icount step matherror hide \
-		separate} {
-	    set disaggregate($varName) [set $varName]
-	}
-	set disaggregate(icount) [join $icount ,]
-	set t [toplevel .disaggregation -bd 4 -class Disaggregation]
-	wm transient $t $parent
-	wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
-	wm title $t "Instances of $title"
-
-	frame $t.radio
-	foreach rbutton {{generated "Generated set"} {population "Population"}} {
-		radiobutton $t.radio.$rbutton -text [lindex $rbutton 1] \
-			-value [lindex $rbutton 0] \
-			-variable disaggregate(type) -relief raised \
-			-command "SetHighlights $t"
-		pack $t.radio.$rbutton -side left
-		}
-	pack $t.radio
-
-	frame $t.count
-	label $t.count.caption -text "Dimensions:"
-	pack $t.count.caption -side left
-	entry $t.count.value -textvariable disaggregate(icount)
-	pack $t.count.value -side left
-	pack $t.count
-
-	frame $t.fatness
-	label $t.fatness.caption -text "Graphical\nfatness:"
-	pack $t.fatness.caption -side left
-	scale $t.fatness.value -from .01 -to 1 -length 200 -orient horizontal \
-		-resolution 0.01 -variable disaggregate(fatness)
-	pack $t.fatness.value -side left
-	pack $t.fatness
-
-	frame $t.steps
-	label $t.steps.caption -text "Time step:"
-	pack $t.steps.caption -side left
-	tk_optionMenu $t.steps.pulldown disaggregate(step) \
-		Default -1 0 1 2 3 4 5 6 7
-	pack $t.steps.pulldown -side left
-	checkbutton $t.steps.hide -text "Hide contents" \
-		-variable disaggregate(hide) -relief raised
-	pack $t.steps.hide -side left
-	checkbutton $t.steps.separate -text "Build separately" \
-		-variable disaggregate(separate) -relief raised
-	pack $t.steps.separate -side left
-#	menubutton $t.steps.depthb -relief raised -text "Show detail..."
-#	menu $t.steps.depthb.m
-#	AddDetailMenu $t.steps.depthb.m SetDepthArg $args
-#	$t.steps.depthb configure -menu $t.steps.depthb.m
-#	pack $t.steps.depthb -side left
-	pack $t.steps
-	frame $t.colour
-	pack [button $t.colour.fixcolour -text "Background shade" \
-		-bg $disaggregate(colour) -command UpdateColour] -side right
-	pack [button $t.colour.clear -text "Clear background" \
-		-command "set disaggregate(colour) {}"] -side right
-	pack $t.colour
-
-	label $t.commentlabel -text Comments:
-	pack $t.commentlabel
-	text $t.comment -height 4 -width 40
-	$t.comment insert 1.0 $comment
-	pack $t.comment -fill both -expand true
-
-	frame $t.exit
-	checkbutton $t.exit.matherror -text "Ignore math errors" \
-		-variable disaggregate(matherror) -relief raised
-	pack $t.exit.matherror -side left
-	button $t.exit.done -text "Done" -command {set disaggregate(done) 1}
-	pack $t.exit.done -side left
-	button $t.exit.cancel -text "Cancel" -command {set disaggregate(done) 0}
-	pack $t.exit.cancel -side left
-	pack $t.exit
-
-	SetHighlights $t
-
-	tkwait visibility $t
-	grab $t
-	tkwait variable disaggregate(done)
-	grab release $t
-	set disaggregate(comment) [string trimright [$t.comment get 1.0 end]] 
-	destroy $t
-	if {$disaggregate(done)} {
-	    return [list $disaggregate(colour) $disaggregate(type) \
-		    $disaggregate(fatness) $disaggregate(icount) \
-		    $disaggregate(step) $disaggregate(comment) \
-		    $disaggregate(matherror) $disaggregate(hide) \
-		    $disaggregate(separate)]
-	}
+    
+    foreach varName {colour type fatness icount step matherror hide \
+                separate} {
+        set disaggregate($varName) [set $varName]
+    }
+    set disaggregate(icount) [join $icount ,]
+    
+    set t [toplevel .disaggregation -bd 4 -class Disaggregation]
+    #	wm transient $t $parent
+    wm resizable $t 0 0
+    wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
+    wm title $t "Properties of $title"
+    
+    
+    frame $t.simple
+    frame $t.simple.left
+    
+    TitleFrame $t.simple.left.count -text "Control of number of instances:"
+    set countf [$t.simple.left.count getframe]
+    
+    frame $countf.radio
+    foreach rbutton {{population "Using population symbols"} {generated "Using specified dimensions:"}} {
+        radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
+                -value [lindex $rbutton 0] \
+                -variable disaggregate(type) \
+                -command "SetHighlights $countf"
+        pack $countf.radio.$rbutton -anchor w
+    }
+    pack $countf.radio -anchor w -side left
+    
+    Entry $countf.value -textvariable disaggregate(icount) -width 10
+    pack $countf.value -side left -anchor s -pady 4
+    pack $t.simple.left.count -expand 1 -fill both
+    
+    TitleFrame $t.simple.left.colour -text "Background shade"
+    set colourf [$t.simple.left.colour getframe]
+    pack [button $colourf.clear -text "Clear" \
+            -width 10 -command "set disaggregate(colour) {}"]  \
+            -padx 2 -pady 4 -side left
+    pack [button $colourf.fixcolour -text "Colour" \
+            -width 10 -bg $disaggregate(colour) -command "UpdateColour $colourf"]  \
+            -padx 2 -pady 4 -side left
+    pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
+    pack $t.simple.left -side left -expand 1 -fill both
+    
+    
+    frame $t.simple.right
+    button $t.simple.right.ok -text "OK" -width 10 -default active -command {set disaggregate(done) 1}
+    pack $t.simple.right.ok  -padx 2 -pady 4
+    button $t.simple.right.cancel -text "Cancel" -width 10 -command {set disaggregate(done) 0}
+    pack $t.simple.right.cancel -padx 2 -pady 4
+    button $t.simple.right.help -text "Help" -width 10
+    pack $t.simple.right.help -padx 2 -pady 4
+    button $t.simple.right.more -text "More" -width 10 -command "ShowComplexity $t"
+    pack $t.simple.right.more -padx 2 -pady 4
+    pack $t.simple.right -anchor ne -padx 4 -pady 4
+    
+    pack $t.simple -anchor nw -expand 1 -fill both
+    
+    
+    label $t.commentlabel -text Comments:
+    pack $t.commentlabel -padx 2 -pady 4
+    text $t.comment -height 4 -width 40 -wrap word
+    $t.comment insert 1.0 $comment
+    pack $t.comment -anchor nw -fill both -expand true
+    
+    frame $t.complex
+    
+    TitleFrame $t.complex.appearance -text Appearance
+    set appearancef [$t.complex.appearance getframe]
+    checkbutton $appearancef.hide -text "Hide contents" \
+            -variable disaggregate(hide)
+    pack $appearancef.hide -anchor w
+    frame $appearancef.scale
+    scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
+            -resolution 0.01 -variable disaggregate(fatness)
+    pack $appearancef.scale.value
+    label $appearancef.scale.caption -text "Relative scale"
+    pack $appearancef.scale.caption
+    pack $appearancef.scale -anchor w
+    pack $t.complex.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
+    
+    TitleFrame $t.complex.math -text Calculation
+    set mathf [$t.complex.math getframe]
+    checkbutton $mathf.separate -text "Build submodel in separate dll" \
+            -variable disaggregate(separate)
+    pack $mathf.separate -anchor w
+    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
+            -variable disaggregate(matherror)
+    pack $mathf.matherror -anchor w
+    frame $mathf.step
+    label $mathf.step.caption -text "Time step:"
+    pack $mathf.step.caption -side left
+    #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
+    ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
+            -values "Default -1 0 1 2 3 4 5 6 7" -width 10 -editable false
+    pack $mathf.step.pulldown
+    pack $mathf.step -anchor w -padx 4 -pady 4
+    pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
+    
+    # The above "complex" frame has been constructed, but is not packed until the "More" button is pressed
+    #    pack $t.complex -anchor w
+    
+    SetHighlights $countf
+    
+    tkwait visibility $t
+    grab $t
+    tkwait variable disaggregate(done)
+    grab release $t
+    set disaggregate(comment) [string trimright [$t.comment get 1.0 end]]
+    destroy $t
+    if {$disaggregate(done)} {
+        return [list $disaggregate(colour) $disaggregate(type) \
+                $disaggregate(fatness) $disaggregate(icount) \
+                $disaggregate(step) $disaggregate(comment) \
+                $disaggregate(matherror) $disaggregate(hide) \
+                $disaggregate(separate)]
+    }
 }
 
-proc UpdateColour {} {
-	global disaggregate
+proc ShowComplexity {t} {
+    if {[string match [$t.simple.right.more cget -text] More]} {
+        pack $t.complex -anchor w
+        $t.simple.right.more configure -text Less
+    } else  {
+        pack forget $t.complex
+        $t.simple.right.more configure -text More
+    }
+}
 
-	set new [tk_chooseColor \
-			-initialcolor $disaggregate(colour)]
-	if {[llength $new]} {
-	    set disaggregate(colour) $new
-	    .disaggregation.colour.fixcolour configure -bg $new
-	}
+proc UpdateColour {f} {
+    global disaggregate
+    
+    set new [tk_chooseColor \
+            -initialcolor $disaggregate(colour)]
+    if {[llength $new]} {
+        set disaggregate(colour) $new
+        $f.fixcolour configure -bg $new
+    }
 }
 
 proc SetHighlights {t} {
-	global disaggregate
-
+    global disaggregate
+    
     switch -regexp $disaggregate(type) {
-	none|population {
-		$t.count.value configure -state disabled
-	} 
-	simple|generated {
-	    $t.count.value configure -state normal
-	}
+        none|population {
+            $t.value configure -state disabled
+        }
+        simple|generated {
+            $t.value configure -state normal
+        }
     }
 }
 
@@ -778,16 +814,17 @@ proc GetFindText {parent} {
     set t [toplevel .findentry -bd 4]
     wm transient $t $parent
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
-
-    pack [message .findentry.m -text "Find caption containing:"]
-    pack [entry .findentry.e]
+    wm title $t "Find"
+    wm resizable $t 0 0
+    
+    pack [message .findentry.m -text "Find caption containing text:" -width 300] -padx 0 -pady 2 -anchor nw
+    pack [entry .findentry.e -width 30] -padx 5 -pady 4 -anchor nw
     bind .findentry.e <Return> "set find(done) 1"
     pack [set bs [frame .findentry.buttframe]]
-    pack [button $bs.enter -text Enter -command "set find(done) 1"] -side left
-    pack [button $bs.clear -text Clear -command ".findentry.e delete 0 end"] \
-	    -side left
-    pack [button $bs.cancel -text Cancel -command "set find(done) 0"]
-
+    #pack [button $bs.clear -text Clear -width 10 -command ".findentry.e delete 0 end"] -padx 2 -pady 2 -side left
+    pack [button $bs.ok -text OK -default active -width 10 -command "set find(done) 1"] -padx 2 -pady 4 -side left
+    pack [button $bs.cancel -text Cancel -width 10 -command "set find(done) 0"] -padx 2 -pady 4
+    
     tkwait visibility .findentry
     grab .findentry
     focus .findentry.e
@@ -796,7 +833,7 @@ proc GetFindText {parent} {
     set result [.findentry.e get]
     destroy .findentry
     if {$find(done)} {
-	return $result
+        return $result
     }
 }
 
