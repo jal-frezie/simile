@@ -13,8 +13,8 @@ sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	off_window/1, set_style/1]).
 	
 sicstus_use_module([compile, dialogue, m_update, image, maintain, 
-		    state, backup, library, ame_gen, utility,
-		    library(lists), library(charsio), library(ordsets)]).
+	state, backup, library, ame_gen, utility, 
+	library(lists), library(charsio), library(ordsets)]).
 
 :- dynamic(running/1).
 :- dynamic(cursor_is/1).
@@ -242,7 +242,126 @@ write_chars_to_file(Stream, [Char | Chars]) :-
 
 :- op(950, yfx, [where]).
 
+
+
+
+%################################### Bob's changes (tcl/tk version): start (
 menu_handle(Win, file, list_eqns) :-
+	Win shows_model Model,
+	tk_equationlisting_start,
+	mysetof(Component,(contains(Model,Component),find_type(Component,submodel)),Submodels),
+	display_submodels(1,Submodels).
+
+display_submodels(_,[]).
+display_submodels(Isub,[Submodel|Submodels]):-
+	rel_path_name(Submodel, Model, _,_, SmCapt),
+	sicstus_format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
+	name(Header, HeaderStr),
+	tk_equationlisting_addsubmodel(Isub,Header),
+	mysetof((Entry,Comment),write_eqn_term(Submodel,Entry,Comment),Entries),
+	display_entries(Isub,1,Entries),
+	Isub1 is Isub+1,
+	display_submodels(Isub1,Submodels).
+
+display_entries(_,_,[]).
+display_entries(Isub,Ivar,[(VarType:VarLabel=Expression where WhereList,Comment)|Entries]):-
+	tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,WhereList,Comment),
+	Ivar1 is Ivar+1,
+	display_entries(Isub,Ivar1,Entries).
+
+
+
+
+% HTML stuff
+/*
+menu_handle(Win, file, list_eqnsxxxxxx) :-
+	Win shows_model Model,
+	open('c:/equations.html', write, Stream),
+	write(Stream,'<html><head><title>Simile model equation listing</title></head><body>'),nl(Stream),
+	mysetof(Component,(contains(Model,Component),find_type(Component,submodel)),Submodels),
+	display_submodels(Stream,Submodels),
+	write(Stream,'</body></html>'),nl(Stream),
+	close(Stream).
+
+display_submodels(_,[]).
+display_submodels(Stream,[Submodel|Submodels]):-
+	rel_path_name(Submodel, Model, _,_, SmCapt),
+	sicstus_format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
+	name(Header, HeaderStr),
+	write(Stream,'<br><br><b>'),
+	write(Stream, Header),
+	write(Stream,'</b><br>'),nl(Stream),
+	write(Stream,'<table border cellspacing=0 cellpadding=3 width="700">'),nl(Stream),
+	mysetof((Entry,Comment),write_eqn_term(Submodel,Entry,Comment),Entries),
+	display_entries(Stream,Entries),
+	write(Stream,'</table>'),nl(Stream),
+	display_submodels(Stream,Submodels).
+
+display_entries(_,[]).
+display_entries(Stream,[(VarType:VarLabel=Expression where WhereList,Comment)|Entries]):-
+	write(Stream,'<tr align=left valign=top><td><table width=340><tr align=left valign=top>'),
+	display_vartype(Stream,VarType),
+	display_varlabel(Stream,VarLabel),
+	write(Stream,'<td width=10>=</td>'),nl(Stream),
+	display_expression(Stream,Expression),
+	write(Stream,'</tr></table></td>'),nl(Stream),
+	display_wherelist(Stream,WhereList),
+	display_comment(Stream,Comment),
+	write(Stream,'</tr>'),nl(Stream),nl(Stream),
+	display_entries(Stream,Entries).
+
+display_vartype(Stream,VarType):-
+	write(Stream,'<td width=20><img SRC="'),
+	vartype_gif(VarType,Gif),
+	write(Stream,Gif),
+	write(Stream,'"></td>'),nl(Stream).
+
+vartype_gif(compartment,'images/toolbar/compartment.gif').
+vartype_gif(flow,'images/toolbar/flow.gif').
+vartype_gif(condition,'images/toolbar/condition.gif').
+vartype_gif(creation,'images/toolbar/creation.gif').
+vartype_gif(immigration,'images/toolbar/immigration.gif').
+vartype_gif(loss,'images/toolbar/loss.gif').
+vartype_gif(reproduction,'images/toolbar/reproduction.gif').
+vartype_gif(variable,'images/toolbar/variable.gif').
+vartype_gif(X,'Unknown variable type').
+
+display_varlabel(Stream,VarLabel):-
+	write(Stream,'<td width=80><b>'),
+	write(Stream,VarLabel),
+	write(Stream,'</b></td>'),nl(Stream).
+
+display_expression(Stream,Expression):-
+	write(Stream,'<td width=230>'),
+	write(Stream,Expression),
+	write(Stream,'</td>'),nl(Stream).
+
+display_wherelist(Stream,[null]):-!,
+	write(Stream,'<td width=160>.</td>'),nl(Stream).
+display_wherelist(Stream,WhereList):-
+	write(Stream,'<td width=160>Where:<br>'),
+	display_wherelist1(Stream,WhereList),
+	write(Stream,'</td>'),nl(Stream).
+
+display_wherelist1(_,[]).
+display_wherelist1(Stream,[Where|WhereList]):-
+	write(Stream,Where),write(Stream,'<br>'),
+	display_wherelist1(Stream,WhereList).
+
+display_comment(Stream,'null'):-
+	write(Stream,'<td width=140>.</td>'),nl(Stream).
+display_comment(Stream,Comment):-
+	write(Stream,'<td width=140><i>'),
+	write(Stream,Comment),
+	write(Stream,'</i></td>'),nl(Stream).
+*/
+
+mysetof(A,B,C):-
+	setof(A,B,C),!.
+mysetof(_,_,[]).
+
+%####### Note: original 'list_eqns' disabled
+menu_handle(Win, file, list_eqnsxxx) :-
 	Win shows_model Model,
 	get_default_export_name(Model, ".eqn", DefName),
 	get_program_file(DefName, FileName),
@@ -259,6 +378,7 @@ menu_handle(Win, file, list_eqns) :-
 	\+ Comment = '', write(Stream, Comment), nl(Stream)),
 	fail;
 	close(Stream)).
+%################################### Bob's changes: end
 
 menu_handle(Win, file, prolog_eqns) :-
 	Win shows_model Model,
@@ -296,23 +416,31 @@ write_eqn_term(Submodel, Entry, Comment) :-
 	find_type(Component, function),
 	get_av_pair(Component, 0, value, Eqn),
 	(get_av_pair(Component, 0, comment, Comment);
-	    \+ get_av_pair(Component, 0, comment, Comment), Comment = ''),
+	    \+ get_av_pair(Component, 0, comment, Comment), Comment = null),
 	implicit_function(VisNode, Component),
 	find_type(VisNode, CompType),
 	caption_for(VisNode, Dest),
 	get_input_info(Component, Links),
 	get_ppairs(Links, PPairs),
 	(PPairs = [],
+		Entry = ((CompType:Dest=Eqn) where [null]);     % Bob's change
+	PPairs = [_ | _],
+		Entry = ((CompType:Dest=Eqn) where PPairs)).
+
+
+/* ####### Original code
+	(PPairs = [],
 		Entry = (CompType:Dest=Eqn);
 	PPairs = [_ | _],
 		Entry = ((CompType:Dest=Eqn) where PPairs)).
+*/
 
 get_ppairs([],[]).
 
 /* Only include a "...where P=V" entry where P is not the default parameter name for V. */
 get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 	get_ppairs(R1, R2),
-	(m_update:add_brackets(Source, _, Param), !,
+	(m_update:add_brackets(Source,_, Param), !,
 	    Terms = R2;
 	Terms = [Param = Source | R2]).
 
@@ -767,4 +895,5 @@ set_style(New_style) :-
 		\+ New_style = sd, Old_style = sd), !,
 		reroute_for(New_style);
 	true).
+
 

@@ -28,7 +28,9 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		highlight/2, normalize/1, current_edit/2, exterminate/1,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
-		tk_get_pref/2, kill_window/1, exit_AME/0]).
+		tk_get_pref/2, kill_window/1, exit_AME/0,
+	tk_equationlisting_start/0,tk_equationlisting_addsubmodel/2,
+	tk_equationlisting_addvariable/7]).
 
 sicstus_use_module([library(lists), state, image, ame_gen, output]).
 
@@ -516,3 +518,32 @@ show_invisible_links(Links) :-
 		add_incomplete([Daddy | ScreenRoute]),
 		fail;
 	draw_incomplete.
+
+
+
+% ############################################ Start Bob's changes
+
+tk_equationlisting_start :-
+	safe_tcl_eval(['equationlisting_start'], _).
+
+tk_equationlisting_addsubmodel(Isub,Submodel):-
+	safe_tcl_eval(['equationlisting_addsubmodel', 
+		br(write(Isub)),
+		br(write(Submodel))], _).
+
+tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,Where,Comments) :-
+	safe_tcl_eval(['equationlisting_addvariable', 
+		br(write(Isub)),
+		br(write(Ivar)),
+		br(write(VarType)),
+		br(write(VarLabel)),
+		br(write(Expression)),
+		br(write(Where)),
+		br(write(Comments))], _),
+	safe_tcl_eval(['update idletasks'], _).
+
+
+% ############################################ End Bob's changes
+
+
+

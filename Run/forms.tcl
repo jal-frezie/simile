@@ -1423,3 +1423,61 @@ proc ShowExpiryImminent {expTime} {
     tkwait variable ack
     destroy .expiry
 }
+
+
+############################################## Start Bob's changes
+proc equationlisting_start {} {
+	set w .equations
+	catch {destroy $w}
+	toplevel $w
+	wm title $w "Equation listing"
+
+	frame $w.mainframe  -height 30
+	pack $w.mainframe
+
+}
+
+
+proc equationlisting_addsubmodel {isub submodel_label} {
+	set w .equations.mainframe
+
+	set submodelframe [frame $w.$isub -width 120 -height 1 -bg white -relief sunken]
+	pack $submodelframe -side top -anchor nw
+
+	text $submodelframe.text1 -width 140 -height 2 -relief flat
+	pack $submodelframe.text1 -side top -anchor nw
+	$submodelframe.text1 tag configure big -font {Helvetica 12 bold}
+	$submodelframe.text1 insert end $submodel_label big
+}
+
+
+
+proc equationlisting_addvariable {isub ivar vartype varlabel expression where comments} {
+	set w .equations.mainframe
+	set varframe [frame $w.$isub.$ivar -width 120 -height 3]
+	pack $varframe -side top -anchor nw -expand true -fill y
+
+	text $varframe.varlabel -width 25 -height 3 -wrap word -relief flat
+	pack $varframe.varlabel -side left 
+	$varframe.varlabel tag configure big -font {Helvetica 10 bold}
+	$varframe.varlabel insert end $varlabel big
+
+	text $varframe.equals -width 2 -height 3 -wrap word -relief flat
+	pack $varframe.equals -side left
+	$varframe.equals insert end "="
+
+	text $varframe.expression -width 34 -height 3 -wrap word -relief flat
+	pack $varframe.expression -side left
+	$varframe.expression insert end $expression
+
+	text $varframe.where -width 34 -height 3 -wrap word -relief flat
+	pack $varframe.where -side left
+	$varframe.where insert end $where
+
+	text $varframe.comments -width 34 -height 3 -wrap word -relief flat
+	pack $varframe.comments -side left
+	$varframe.comments insert end $comments
+
+}
+
+
