@@ -609,9 +609,10 @@ menu_handle(Win, edit, CutOrCopy) :-
 
 menu_handle(Win, edit, paste) :-
 	get_edit_model(Win, Model, Pt),
+	event:snap_to_grid(Pt, GPt),
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	stick_model_in(Win, Model, CopyFile, insert(Pt)).
+	stick_model_in(Win, Model, CopyFile, insert(GPt)).
 	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue(Win),
