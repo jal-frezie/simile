@@ -46,29 +46,47 @@ proc do_model {what args} {
 	    eval {set operation "calculate the value of"}
 	    update {set operation "update the state"}
 	}
-	set modelLine [lindex [split $errorInfo \n] end-5]
-	regexp { (\d+)\)$} $modelLine spare lineNo
-	set mStream [open $model_prog r]
-	set mLine {}
-	while {![string match "proc $mproc *" $mLine]} {
-	    gets $mStream mLine
+
+	if {$model_id} {
+	    set target "a value"
+	    set node foo
+	} else {
+	    set modelLine [lindex [split $errorInfo \n] end-5]
+	    regexp { (\d+)\)$} $modelLine spare lineNo
+	    set mStream [open $model_prog r]
+	    set mLine {}
+	    while {![string match "proc $mproc *" $mLine]} {
+		gets $mStream mLine
+	    }
+	    for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
+		gets $mStream mLine
+	    }
+	    close $mStream
+	    regexp {set ([^ ]*) .*} $mLine spare targetName
+	    set dest [namespace eval AME_model<> "set spare $targetName"]
+	    set targetList [DescribeComponent $dest]
+	    set target [lindex $targetList 0]
+
+# right now to get the node id
+	    global nodedata nodecount
+	    for {set record 0} {$nodecount>$record} {incr record} {
+		if {[string equal $dest [burrow_to ::AME_model<> \
+					     [lindex $nodedata($record) 4] \
+					     [lindex $targetList 1]]]} {
+		    set node [lindex $nodedata($record) 0]
+		}
+	    }
 	}
-	for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
-	    gets $mStream mLine
-	}
-	close $mStream
-	regexp {set ([^ ]*) .*} $mLine spare targetName
-#	regexp {\$\{(\w+)\}::(\w+)(?:\(\$(\w+)\))?$} $targetName \
-	    spare ptr var idx
-	set dest [namespace eval AME_model<> "set spare $targetName"]
-	set target [DescribeComponent $dest]
-	puts [namespace eval AME_model<> {info vars}]
+
 	switch -glob -- $whoopsie {
 	    "can't read \"*\": no such element in array" - 
 	    "can't read \"*\": no such variable" {
 		set ref [lindex [split $whoopsie \"] 1]
-		set vdesc [DescribeComponent $ref]
+		set vdesc [lindex [DescribeComponent $ref] 0]
 		set problem "it found that there was no value for $vdesc"
+	    } "User-defined interruption code *" {
+		set code [lindex $whoopsie end]
+		set problem "there was a user-defined interruption: $code"
 	    } "domain error: argument not in valid range" -
 	    "floating-point value too large to represent" -
 	    "divide by zero" {
@@ -94,7 +112,7 @@ $errorInfo" system
 	    }
 	}
 	set mess "Simile ran into a problem trying to run this model. 
-While it was trying to $operation $target during $action of the model$timing, $problem."
+While it was trying to $operation $target (node $node) during $action of the model$timing, $problem."
 	BuildProblem none none $mess user
 	return 0
     } else {
@@ -104,18 +122,23 @@ While it was trying to $operation $target during $action of the model$timing, $p
 
 proc DescribeComponent {ref} {
     set hierarchy [split $ref :]
+    set inds {}
+    set context [MakeContext [lrange $hierarchy 6 end-1]]
     set variable [lindex $hierarchy end]
     set br [string first \( $variable]
     if {$br == -1} {
 	set vdesc "variable $variable"
     } else {
 	set vdesc "variable [string range $variable 0 [incr br -1]]"
-	set vdesc "element [join [string range $variable [incr br 2] end-1] ,] of $vdesc"
+	set locals [string range $variable [incr br 2] end-1]
+	set vdesc "element [join $locals ,] of $vdesc"
+	eval {lappend inds} $locals
     }
-    return $vdesc[MakeContext [lrange $hierarchy 6 end-1]]
+    return [list $vdesc$context $inds]
 }
 
 proc MakeContext {levels} {
+    upvar 1 inds inds
     if {![llength $levels]} {
 	return {}
     } else {
@@ -124,7 +147,9 @@ proc MakeContext {levels} {
 	set cbr [string first > $this]
 	set submodel "submodel [string range $this 0 [incr obr -1]]"
 	if {$cbr-$obr > 2} {
-	    set submodel "instance [join [string range $this [incr obr 2] [incr cbr -1]] ,] of $submodel"
+	    set locals [string range $this [incr obr 2] [incr cbr -1]]
+	    set submodel "instance [join $locals ,] of $submodel"
+	    eval {lappend inds} $locals
 	}
 	return "[MakeContext [lrange $levels 2 end]] in $submodel"
     }
@@ -231,27 +256,7 @@ proc TransBounds {transList vals} {
 # cloud or submodel.
 
 proc GetModelValue { node } {
-# puts "get $node"
-    global running_c model_id instance_id
-    if {![info exists running_c]} {
-	WarnNoData
-    }	
-    if {$model_id} {
-	#	    return [getvalue $model_id $instance_id $node 0]
-	# new version -- remove list wrapping sometime
-	return [list [extract $model_id $instance_id $node]]
-    } else {
-	set nodeData [getinfo $node]
-	if {[string compare [lindex $nodeData 0] NULL]} {
-	    set type [lindex $nodeData 0]
-	    set dims [lindex $nodeData 2]
-	    set tree [lindex $nodeData 3]
-	    set retval [list [FillValue ::AME_model<> $tree $type $dims \
-		    {} 0 {}]]
-	} else {
-	    return novalue
-	}
-    }
+    SetModelValue $node {}
 }
 
 proc SetModelValue { node newVals } {
@@ -263,15 +268,19 @@ proc SetModelValue { node newVals } {
     if {$model_id} {
 	#	    return [getvalue $model_id $instance_id $node 0]
 	# new version -- remove list wrapping sometime
-	return [list [insert $model_id $instance_id $node $newVals]]
+	if {[string length $newVals]} {
+	    return [list [insert $model_id $instance_id $node $newVals]]
+	} else {
+	    return [list [extract $model_id $instance_id $node]]
+	}
     } else {
 	set nodeData [getinfo $node]
 	if {[string compare [lindex $nodeData 0] NULL]} {
 	    set type [lindex $nodeData 0]
 	    set dims [lindex $nodeData 2]
 	    set tree [lindex $nodeData 3]
-	    set retval [list [FillValue ::AME_model<> $tree $type $dims \
-	    {} 0 $newVals]]
+	    return [list [FillValue ::AME_model<> $tree $type $dims \
+			      {} 0 $newVals]]
 	} else {
 	    return novalue
 	}
@@ -311,8 +320,10 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 #    puts "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
     if {[lsearch {RECORDS MEMBERS} $nextUseDim]!=-1} {
-	set newTree [lrange $tree [expr [lsearch $tree -1]+1] end]
-	set nextRef [set [burrow_to $smHandle $tree $dims]]
+	set breakPt [lsearch $tree -1]
+	set oldTree [lrange $tree 0 [expr $breakPt-1]]
+	set newTree [lrange $tree [expr $breakPt+1] end]
+	set nextRef [set [burrow_to $smHandle $oldTree $dims]]
 	set result {}
 	array set arrayVals $newVals
 
@@ -373,6 +384,13 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 proc burrow_to {level id_meta dim_list} {
     while {[lindex $id_meta 0]>0} {
 	append level ::[${level}::get_pointer [step_list id_meta 1] dim_list]
+	if {[lindex $id_meta 0]==-1} {
+	    set inst1 [set ::$level]
+	    set nInds [llength [set ${inst1}::instanceid]]
+	    append level <[lrange $dim_list 0 [expr $nInds-1]]>
+	    set dim_list [lrange $dim_list $nInds end]
+	    set id_meta [lrange $id_meta 1 end]
+	}
     }
     return $level
 }
