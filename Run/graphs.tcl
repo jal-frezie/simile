@@ -912,7 +912,6 @@ proc AcceptData {winId topNode compName complain} {
     }
     # Make array form if data has changed
     if {$dataChanged} {
-	set runState($topNode,reloadParams) 1
 	set trans [GetTransTable $node]
 
 	# Now replace each -1 in the dims with the id of the by-record
@@ -941,18 +940,21 @@ proc AcceptData {winId topNode compName complain} {
 	    }
 	}
 #puts "About to ListToArray $node {} $trans $recordDims $paramData($compName)"
-	set misses [ListToArray $node {} $trans $recordDims \
-			$paramData($compName)]
+	if {[catch {ListToArray $topNode $node {} $trans $recordDims \
+			$paramData($compName)} result]} {
 # new bit for using it as an input tool: notify that we have values
-	if {[llength $misses]} {
 	    lappend paramData(needed) $compName
 	    $widgetNames($compName).l configure -fg red
 	    if {$complain} {
-		ShowMessage "Setting $compName" warning "Problem with value at indices [lrange $misses 0 end-1]: [lindex $misses end]" ok
+		ShowMessage "Setting $compName" warning "While attempting to load the parameter value at indices [lrange $result 0 end-1] the following problem occurred: [lindex $result end]" ok
 	    }
 	} else {
 	    $widgetNames($compName).l configure -fg black
 	    set paramData(needed) [purge $paramData(needed) $compName]
+	    if {$result<1} {
+		set runState($topNode,reloadParams) $result
+	    }
+# currently this always causes an init, which may be unnecessary
 	}
     }
 #puts "paramData now [array get paramData]"
@@ -969,7 +971,7 @@ proc rsearch {list tgt} {
 }
 
 # need new version that 
-proc ListToArray {tgt subs trans dims list} {
+proc ListToArray {topNode tgt subs trans dims list} {
 #puts "Go! tgt $tgt trans $trans list $list"
 # skip over any vm arrays, their indices will not appear
 # in calls for values, but keep the translation list in sync
@@ -982,21 +984,28 @@ proc ListToArray {tgt subs trans dims list} {
     if {![llength $dims]} {
 	switch [llength $list] {
 	    0 {
-		return [list "Missing value"]
+		error [list "Missing value"]
 	    } 1 {
-		return [EnumTypeToNumber $tgt$subs $list $thisTrans]
+		if {![string last ,NOW $subs 3]} {
+		    EnumTypeToNumber [InputVarFor $topNode $tgt] \
+			$tgt[string range $subs 4 end] $list $thisTrans
+		    return 1
+		} else {
+		    EnumTypeToNumber paramData $tgt$subs $list $thisTrans
+		    return 0
+		}
 	    } default {
-		return [list "Array $list supplied instead of scalar"]
+		error [list "Array $list supplied instead of scalar"]
 	    }
 	}
     }
     if {[llength $list]==1} {
 #puts "setting paramData($tgt) to $headNum"
 	set userDims [join $dims { x }]
-	return [list "scalar $list supplied instead of array of $userDims"]
+	error [list "scalar $list supplied instead of array of $userDims"]
     }
     if {[llength $list]%2} {
-	return [list [lindex $list end] "Missing value"]
+	error [list [lindex $list end] "Missing value"]
     }
 	
     foreach {indx sublist} $list {
@@ -1006,64 +1015,75 @@ proc ListToArray {tgt subs trans dims list} {
 #puts "dims remaining $dims"
     if {[string match TIME [lindex $dims 0]]} {
 # If time, we can have as many or as few vals as we want, and they can be
-# any positive number
+# any positive number. If there are values other than NOW, do an init step
+	set redoStep 1
 	foreach arrayPt [array names sub] {
-	    if {![string is double $arrayPt]} {
-		return [list $timePoint "Time point must be a number."]
+	    if {[string equal NOW $arrayPt]} {
+		if {[llength $subs]} {
+		    error [list "NOW must be outermost index."]
+		}
+	    } elseif {![string is double $arrayPt]} {
+		error [list $arrayPt "Time point must be NOW or a number."]
 	    }
-	    set mis [ListToArray $tgt $subs,$arrayPt $trans \
-			 [lrange $dims 1 end] $sub($arrayPt)]
-	    if {[llength $mis]} {
-		return [concat $arrayPt $mis]
+	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
+			    [lrange $dims 1 end] $sub($arrayPt)} step]} {
+		error [concat $arrayPt $step]
+	    } elseif {$step<1} {
+		set redoStep -1
 	    }
 	}
-	return {}
+	return $redoStep
     } 
     if {[llength [lindex $dims 0]]==2 && \
 	    [string match RECORDS [lindex [lindex $dims 0] 0]]} {
-# by-record submodel; check up to biggest
+# by-record submodel; check up to biggest. If new data here, only a reset
+# needed to set it
 
 # OK hows this for branez...use
 # the number of elements, because if there is an element larger than the
 # number of elements, one the same or smaller will be missing!
 	set last [array size sub]
 	if {!$last} {
-	    return [list "Per-record submodel must have values for at least one member."]
+	    error [list "Per-record submodel must have values for at least one member."]
 	}
 
 #puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
 	EnumTypeToNumber [lindex [lindex $dims 0] 1]$subs $last {}
+	set requireStep 0
     } else {
 	set last [lindex $dims 0]
+	set requireStep -1
     }
+    set redoStep 1
     for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
 	set indx [NumberToEnumType $arrayPt $thisTrans]
 	if {![info exists sub($indx)]} {
 #puts "No $indx in [array names sub]"
-	    return [list $indx "Missing value"]
+	    error [list $indx "Missing value"]
 	}
-	set mis [ListToArray $tgt $subs,$arrayPt [lrange $trans 1 end] \
-		     [lrange $dims 1 end] $sub($indx)]
-	if {[llength $mis]} {
-	    return [concat $indx $mis]
+	if {[catch {ListToArray $topNode $tgt $subs,$arrayPt \
+			[lrange $trans 1 end] [lrange $dims 1 end] \
+			$sub($indx)} mis]} {
+	    error [concat $indx $mis]
+	} elseif {$mis<1} {
+	    set redoStep $requireStep
 	}
     }
-    return {}
+    return $redoStep
 }
 	    
-proc EnumTypeToNumber {tgt head trans} {
-    global paramData
+proc EnumTypeToNumber {varData tgt head trans} {
+    global $varData
     if {[string compare {} $trans]} {
 	set poss [lsearch $trans [lindex $head 0]]
 	if {$poss == -1} {
-	    return [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
+	    error [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
 	}
-	set paramData($tgt) $poss
+	set ${varData}($tgt) $poss
     } else {
-	set paramData($tgt) $head
+	set ${varData}($tgt) $head
     }
 #puts "just went set paramData($tgt) $paramData($tgt)"
-    return {}
 }
 
 proc NumberToEnumType {idx trans} {
@@ -1222,7 +1242,11 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	    } else {
 		set node [GetCompProperty $topNode IdFromCapt $restoredComp]
 		set trans [GetTransTable $node]
-		if {![SensibleValue $trans $paramData($restoredComp)]} {
+		if {[string equal INPUT \
+			 [GetCompProperty $topNode Eval $node]]} {
+		    set trans [linsert $trans 0 {}] ;# dont translate times
+		}
+		if {[SensibleValue $trans $paramData($restoredComp)]<2} {
 		    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $paramData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
 		    set paramData($restoredComp) {}
 		}
@@ -1242,10 +1266,10 @@ proc MergeParams {topNode smPath oldPath interactive} {
 
 # This tests for sensible model values.
 # 0: not sensible
-
-# 1: an integer
-# 2: a float
-# 3: a list
+# 1: the timepoint NOW (not acceptable as datum)
+# 2: an integer
+# 3: a float
+# 4: a list
 
 proc SensibleValue {trans list} {
     set curLevel [lindex $trans 0]
@@ -1253,13 +1277,13 @@ proc SensibleValue {trans list} {
         return [VarType [lindex $list 0] $curLevel]
     } else {
         for {set idx 0} {$idx < [llength $list]} {incr idx 2} {
-            if {[VarType [lindex $list $idx] $curLevel] != 1 || \
-		    ![SensibleValue [lrange $trans 1 end] \
+            if {[lsearch {1 2} [VarType [lindex $list $idx] $curLevel]] == -1 \
+		    || ![SensibleValue [lrange $trans 1 end] \
 			  [lindex $list [expr $idx+1]]]} {
                 return 0
             }
         }
-        return 3
+        return 4
     }
 }
 
@@ -1268,10 +1292,12 @@ proc SensibleValue {trans list} {
 
 proc VarType {testVar types} {
     if {[string is integer $testVar]} {
-        return 1
-    } elseif {[string is double $testVar]} {
         return 2
+    } elseif {[string is double $testVar]} {
+        return 3
     } elseif {[lsearch $types $testVar]!=-1} {
+	return 2
+    } elseif {[string equal NOW $testVar]} {
 	return 1
     } else {
 	puts "No $testVar in $types"
@@ -1373,7 +1399,7 @@ proc UpdateTimeSeries {topNode newTime} {
 	}
 
 	if {[info exists useTime]} {
-	    upvar \#0 [do_for_node $topNode InputVarFor $node] inputSrc
+	    upvar \#0 [InputVarFor $topNode $node] inputSrc
 #puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
 	    # do it the easy way if a scalar
 #puts "looking for paramData($node,$useTime)"

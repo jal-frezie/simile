@@ -557,6 +557,18 @@ proc WarnNoData {node} {
     error "This operation cannot be done as there is no model program running for node $node."
 }
 
+proc InputVarFor {topNode node} {
+    switch [GetCompProperty $topNode Type $node] {
+	FLAG {
+	    return checkStates
+	} ENUMERATED {
+	    return comboChoices
+	} default {
+	    return sliderVals
+	}
+    }
+}
+
 proc BringParameter {array sub} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
