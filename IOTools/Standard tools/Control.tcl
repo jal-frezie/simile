@@ -186,7 +186,7 @@ namespace eval runcontrol33857 {
 				      "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
 		switch $updateChoice {
 		    yes {
-			do_in_editor UpdateExecution $node $action
+			start_in_editor UpdateExecution $node $action
 			return
 		    } no {
 			if {$runState($node,modelRunning)==3} {

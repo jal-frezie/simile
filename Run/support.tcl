@@ -447,6 +447,11 @@ proc first {lo} {
 # for a command to set the return value
 set readPipe get_data
 
+# 'after idle' doesn't quite work in MacOS X
+proc start_in_editor {args} {
+    eval do_in_editor after 1 $args
+}
+
 proc do_in_editor {args} {
     global runHow sender fromEditor readPipe
 #    tk_messageBox -message "callback $args"
@@ -515,7 +520,7 @@ proc remote {result} {
 	} send_sync {
 	    eval $sender {FeedModel $myNode [list $result]}
 	} pipe {
-	    puts $result
+	    puts [split $result \n]
 	}
     }
     return done

@@ -125,7 +125,7 @@ proc do_model {node what args} {
 	set mess "Simile ran into a problem trying to run this model. 
 While it was trying to $operation $target during $action of the model$timing, $problem."
 # do it after idle so this process is not hung till user responds
-	do_in_editor after idle [list BuildProblem "Problem with model" \
+	start_in_editor [list BuildProblem "Problem with model" \
 				     warning $mess execution]
 	return 0
     } else {

@@ -132,8 +132,7 @@ proc AddHelperSublist {fm title ct} {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
 # do it after idle so this process is not hung till user responds
-            do_in_editor after idle \
-                    BuildProblem "Error loading I/O tool" warning \
+            start_in_editor BuildProblem "Error loading I/O tool" warning \
                     "I/O tool [pwd]/$helperApp had a $::errorInfo" \
 		    helpers none none
         } else {

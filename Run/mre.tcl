@@ -237,7 +237,7 @@ namespace eval RunEnv {
             pack $newContainer.panedwindow -expand yes -fill both
             frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1; # -relief ridge;# jmm
             $containerId.notebook add $newContainer -text "Page $i"
-            bind all <<NotebookTabChanged>> "::RunEnv::PageRaiseCmd $containerId.notebook"
+            bind all <<NotebookTabChanged>> [list ::RunEnv::PageRaiseCmd $containerId.notebook]
             bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
             bind $newContainer.panedwindow.pane0 <Button-3> \
                     "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
@@ -1149,8 +1149,8 @@ namespace eval RunEnv {
                     
                     #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
                     $notebook insert end $pageId -text $pagecaption \
-                            -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
-                    # page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
+			-raisecmd [list ::RunEnv::PageRaiseCmd $containerId.notebook $pageId]
+                    # page raised below before any panes so that must be moved todo                 -raisecmd [list ::RunEnv::PageRaiseCmd $notebook $pageId]
                     bind [$notebook getframe $pageId] <Button-1> "+::RunEnv::SetCurrentContainer %W"
                     bind [$notebook getframe $pageId] <Button-3> \
                             "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
