@@ -414,9 +414,9 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
     set pages [$notebook pages]
     set n [llength $pages]
     set index [lsearch $pages $page]
-    #ShowMessage debug info "DeleteNotebookPage  $notebook; $page\n \
+    #puts "DeleteNotebookPage  $notebook; $page\n \
     #            page $page; n pages: $n; \n \
-    #            parent [winfo parent $notebook]" ok; ########
+    #            parent [winfo parent $notebook]" 
     if {$n==1} {
         #ShowMessage debug info "DeleteNotebookPage n==1" ok
         if {[string match mainDisplayPane [winfo name [winfo parent $notebook]]]} {
@@ -461,11 +461,22 @@ proc RunEnv::DeletePane {parentPath containerId} {
     #ShowMessage debug info "DeletePane\n parentPath $parentPath\n \
     #        containerId $containerId\n \
     #        panes [$parentPath panes]" ok;
+    set greatgrandparent [winfo parent [winfo parent $parentPath]]
+    puts "DeletePane greatgrandparent $greatgrandparent; class [winfo class $greatgrandparent]"
+    if {[string match NoteBook [winfo class $greatgrandparent]]} {
+        if {([llength [$greatgrandparent pages]] ==1) && ([llength [$parentPath panes]] == 1)} {
+            if {[string match mainDisplayPane [winfo name [winfo parent $greatgrandparent]]]} {
+                ShowMessage Information info "Cannot delete this page. The main notebook must have at least one page." ok
+                return
+            }
+        }
+    }
     $parentPath forget $containerId
     destroy $containerId
-    SetCurrentContainer [lindex [$parentPath panes] 0]
-    # all panedwindows are in a notebook parent
-    if {[llength [$parentPath panes]]==0} {
+    if {[llength [$parentPath panes]] > 0} {
+        SetCurrentContainer [lindex [$parentPath panes] 0]
+    } elseif {[llength [$parentPath panes]]==0} {
+        # all panedwindows are in a notebook parent
         set parentPage [winfo parent $parentPath]
         set parentNoteBook [winfo parent $parentPage]
     #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
