@@ -96,8 +96,9 @@ namespace eval runcontrol33857 {
         TitleFrame $t.rsf -text "Run settings"
         set rsf [$t.rsf getframe]
 
+	set captWidth 20
         pack [frame $rsf.unitselection] -pady 2
-        pack [label $rsf.unitselection.caption -text "Select time units" -width 24 -anchor w] -side left
+        pack [label $rsf.unitselection.caption -text "Select time units" -width $captWidth -anchor w] -side left
         #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
         #                unit second minute hour day week month year Ma
         set widget [ComboBox $rsf.unitselection.pulldown  -textvariable [namespace current]::sendvars(timeUnit) \
@@ -106,7 +107,7 @@ namespace eval runcontrol33857 {
         pack $rsf.unitselection.pulldown -side left
 
         pack [frame $rsf.integration] -pady 2
-        pack [label $rsf.integration.caption -text "Integration method:" -width 24 -anchor w] -side left
+        pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left
         #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
         #                unit second minute hour day week month year Ma
         set widget [ComboBox $rsf.integration.pulldown \
@@ -119,7 +120,7 @@ namespace eval runcontrol33857 {
                     current {Current time } currentTime \
                     disp {Display interval } displayInt} {
             frame $rsf.$name
-            label $rsf.$name.capt -text $capt -width 24 -anchor w
+            label $rsf.$name.capt -text $capt -width $captWidth -anchor w
             pack $rsf.$name.capt -side left
             entry $rsf.$name.num -relief sunken \
                     -textvar runState($var) -width 8
@@ -135,7 +136,7 @@ namespace eval runcontrol33857 {
         }
         pack [frame $rsf.edit] -anchor w -pady 2
         set timeSteps [ComboBox $rsf.edit.capt -values $sendvars(captList) -editable 0 \
-                -width 20 -modifycmd [list [namespace current]::SwapDistVar $t]]
+                -width $captWidth -modifycmd [list [namespace current]::SwapDistVar $t]]
         pack $timeSteps -side left
         pack $rsf.edit.capt -side left
         pack [label $rsf.edit.colon -text " "] -side left

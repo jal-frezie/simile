@@ -123,10 +123,11 @@ BoxHeaderStr),
 	/* last cut necessary because otherwise a retry will cause 
 errors */
 
-index_names_and_sizes(ind_spec(Name, Posn, Dim), Meaning, Dim) :-
+index_names_and_sizes(ind_spec(Name, Posn, Dim), Meaning, DimN) :-
 	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [Posn, Name, Dim],
 				MeaningStr),
-	name(Meaning, MeaningStr).
+	name(Meaning, MeaningStr),
+	(Dim = pop, !, DimN = 0; DimN = Dim).
 
 /* might change these one day so, e.g., compartments have
 automatic lower limit of 0, but not yet. */

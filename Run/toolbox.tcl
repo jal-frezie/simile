@@ -582,7 +582,6 @@ proc ClickObj { x y winId action} {
             
             if {![string compare $target $obj]} {
                 set action clicktext
-                focus $winId
             }
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node)]
