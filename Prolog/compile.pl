@@ -932,7 +932,9 @@ instruction because they will not require individual initialization routines. */
 	    /* reverse(RevBaseSides, BaseSides),
 	    this was necessary so index meanings are compatible with earlier
 	    versions (not that they were...) */
-	    Level = [sm(_,_,_, vm_loop(_IndCount, Dims, BaseSides, _))],
+	    all(ame_gen, enum_type_ref, [build(Dims), unify(SmName),
+					 build(Sizes), build(_), build(_)]),
+	    Level = [sm(_,_,_, vm_loop(_IndCount, Sizes, BaseSides, _))],
 	    (setof(CondBox, member(instance(condition,_, function,
 			elt(_, CondBox, _),_), Functions), Conds), !,
 		TestExpr = Conds;

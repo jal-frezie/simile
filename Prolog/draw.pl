@@ -188,6 +188,7 @@ redisplay_border(Comp) :-
 
 display(Window_id, Comp, Depth, Trans, Recurse) :-
 	(find_type(Comp, text), !,
+	    draws_at(Window_id, text, Depth),
 	    get_shape(Comp, centre, [X,Y]),
 	    find_fatness(Trans, Fatness),
 	    get_flash(Comp, Lit),

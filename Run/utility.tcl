@@ -32,31 +32,32 @@ proc ShowMessage { title icon string resps {parent {}}} {
 proc BuildProblem {Title errLevel msg key args} {
     global iconImages help
 
-    toplevel .buildprob
-    wm transient .buildprob [focus]
+    set ProbWin .bprob[clock clicks]
+    toplevel $ProbWin
+    wm transient $ProbWin [focus]
 #    switch $fault {
 #        user {
 #            set Title "Problem with model"
 #            set errLevel warning
-#            set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
+#            set buttonCmd {ContextSensitiveHelp $ProbWin run/index.htm}
 #        } system {
 #            set Title "Build failure"
 #            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
 #        } tcl {
 #            set Title "User interface problem"
 #            set errLevel error
-#            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+#            set buttonCmd {ContextSensitiveHelp $ProbWin files/problem.htm}
 #        }
 #    }
-    wm title .buildprob $Title
-    wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
+    wm title $ProbWin $Title
+    wm protocol $ProbWin WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
-        wm attributes .buildprob -toolwindow true
+        wm attributes $ProbWin -toolwindow true
     }
     
-    set labf1 [frame .buildprob.labf1]
+    set labf1 [frame $ProbWin.labf1]
     pack [label $labf1.img -image $iconImages($errLevel)] -side left 
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
@@ -70,7 +71,7 @@ proc BuildProblem {Title errLevel msg key args} {
     #            -font {-family helvetica -size 10} -justify left] -side left
     pack $labf1 -padx 8 -pady 2 -fill both -expand on
     
-    set buttons [frame .buildprob.buttons]
+    set buttons [frame $ProbWin.buttons]
     pack [button $buttons.ok -text OK -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
@@ -80,20 +81,20 @@ proc BuildProblem {Title errLevel msg key args} {
                 -side left -padx 4 -pady 4
     }
     pack [button $buttons.help -text Help -width 10 \
-           -command "set ack 1; ContextSensitiveHelp .buildprob $help($key)"] \
+           -command "set ack 1; ContextSensitiveHelp $ProbWin $help($key)"] \
            -side left -padx 4 -pady 8
     pack $buttons
     
-    set height [winfo reqheight .buildprob]
-    set width [winfo reqwidth .buildprob]
-    set sheight [winfo screenheight .buildprob]
-    set swidth [winfo screenwidth .buildprob]
-    wm geometry .buildprob +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    set height [winfo reqheight $ProbWin]
+    set width [winfo reqwidth $ProbWin]
+    set sheight [winfo screenheight $ProbWin]
+    set swidth [winfo screenwidth $ProbWin]
+    wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
     update
-    grab .buildprob
+    grab $ProbWin
     tkwait variable ack
-    grab release .buildprob
-    destroy .buildprob
+    grab release $ProbWin
+    destroy $ProbWin
 }
 
 # ChooseFile -- this is a wrapper for the Tcl file dialog, which sets
