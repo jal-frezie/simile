@@ -258,6 +258,7 @@ proc create_equation {parent boxtitle indices} {
     pack $mainf.equation.textbox.radio0 -anchor nw
     pack $mainf.equation.textbox -expand true -fill both -side left
     frame $mainf.equation.textbox.buttons
+    $notebook itemconfigure Main -raisecmd "focus $mainf.equation.textbox.text"
     
     set grfimg [image create photo -file "../Images/Toolbar/graph.gif"]
     set tblimg [image create photo -file "../Images/Toolbar/table.gif"]
