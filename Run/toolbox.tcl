@@ -491,7 +491,6 @@ proc compile_c {workingDir} {
                 exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
                         -align:0x1000 /MACHINE:IX86 \
                         -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
-                        $TOOLDIR/../System/lib/Stubs/ame_dll${MAJ}${MIN}.lib \
                         $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
                         $TOOLS32/lib/oldnames.lib objtemp.o
 
