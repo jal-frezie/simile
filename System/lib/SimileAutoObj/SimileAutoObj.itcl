@@ -118,7 +118,7 @@ itcl::class similescript::ModelWindow {
     public method BuildCPP {} {
         # builds the model with CPP and returns a run control command/object
         MenuSelect [GetModelWindow].canvas file run_c
-        set rc [RunControl ::runControl $this]
+        set rc [similescript::RunControl ::runControl $this]
         return $rc
     }
     
