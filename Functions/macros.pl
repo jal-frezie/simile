@@ -4,9 +4,9 @@ count(Arr)),[st].
 rankings(L) -->
     sum(makearray(
         makearray(
-	    if element(L,place_in(2))>element(L,place_in(1)) then 1 else 0,
+	    if element(L,place_in(2))<element(L,place_in(1)) then 0 else 1,
 	count(L)),
-    count(L)))+1.
+    count(L))).
 colin(List) --> legg=rand_var(0,sum(List)),
 1+sum(if subtotals(List)<legg then 1 else 0).
 newton_raphson(Lo_start, Hi_start, Poly) --> (if time(1)==0 then Lo_start elseif time(1)==dt(0) then Hi_start else prev(2)+(prev(1)-prev(2))*last(last(Poly))/(last(last(Poly))-last(Poly))).

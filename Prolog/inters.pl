@@ -437,8 +437,10 @@ make_intermediates(
 	Functor = last, !,
             Clearing = [make(cleared(TotalName), [on_reset], ClearContext,
                              0, [assign(ClearRef, InitVal)])];
-        Clearing = [make(cleared(TotalName), [this_step(TotalName)],
-			 ClearContext, Step, [assign(ClearRef, InitVal)])]),
+        Clearing = [make(clearing(TotalName), [this_step(TotalName)],
+			 ClearContext, Step, [assign(ClearRef, InitVal)]),
+		    make(cleared(TotalName), [clearing(TotalName)],
+			 ReadyContext, Step, [])]),
 	(Functor = last, !,
 	    /* we can update the saved value as soon as it has been used,
 	    but we need to wait for all the goals that might use it...started
