@@ -110,7 +110,7 @@ click_obj(Xpt, Ypt, Name) :-
 	    drag_to(NewXpt, NewYpt, Name);
 	click_on([NewXpt, NewYpt], Name),
 	(get_phase(moving),
-	    highlight(Name, 2),
+	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
 	    get_closest_edge(Name, [NewXpt, NewYpt], Edge),
 	    advance_phase_to(moving_border(Edge)),
@@ -124,9 +124,10 @@ click_obj(Xpt, Ypt, Name) :-
 	true)).
 
 click_text(Xpt, Ypt, Name) :-
+/* text grabbing disabled fttb
 	(get_mode(select), !,
 	    advance_phase_to(text_grabbing);
-	true),
+	true), */
 	click_obj(Xpt, Ypt, Name),
 	(get_phase(moving); get_phase(moving_border(_))),
 	advance_phase_to(moving_text).
@@ -197,11 +198,11 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 		do_linear(New_obj, DropNode))).
 
 click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
-	(get_mode(select), !,
+	( /* get_mode(select), !,
 	    set_start_coords(Xpt, Ypt),
 	    save_params(Trans, Depth, Parent),
 	    finish_old_edit(none),
-	    give_focus('{}');   
+	    give_focus('{}');   */
 	get_translation(Old_trans),
 	    get_original_click(Orig_X, Orig_Y),
 	    translate([Orig_X, Orig_Y], Old_trans, Old_point),
@@ -227,9 +228,14 @@ click_on([Xpt, Ypt], Poss_start) :-
 /* Move: drags object to new location; will decide later what it does with links and bowties. */
 
 click_on([Xpt, Ypt], Moving_obj) :-
-	get_mode(move),
+	get_mode(select),
 	set_moving_obj(Moving_obj),
 	set_start_coords(Xpt, Ypt),
+/* from select mode -- rest is from move */
+	give_focus(Moving_obj),
+	finish_old_edit(Moving_obj),
+	highlight(Moving_obj, 0),
+
 	(Moving_obj is_of_sort line,
 	    get_shape(Moving_obj, course, [End | Rest]),
 	    (MovingEnd = moving_finish,
@@ -237,7 +243,7 @@ click_on([Xpt, Ypt], Moving_obj) :-
 	    MovingEnd = moving_start,
 		last(Rest, EndPoint)),
 	    near(EndPoint, [Xpt, Ypt, Xpt, Ypt]), !,
-		advance_phase_to(MovingEnd),
+		advance_phase_to(MovingEnd) /* ,
 	        ((MovingEnd = moving_start,
 		        moving_endpoint(Moving_obj, moving_start, Root);
 		    MovingEnd = moving_finish,
@@ -246,7 +252,7 @@ click_on([Xpt, Ypt], Moving_obj) :-
 		        highlight(ExtraObj, 2),
 		        fail;
 		    highlight(Root, 2));
-		highlight(Moving_obj, 2));
+		highlight(Moving_obj, 2)) */ ;
 	advance_phase_to(moving)).
 
 click_on([Xpt, Ypt], Moving_obj) :-
@@ -271,12 +277,13 @@ click_on([Xpt, Ypt], Moving_obj) :-
 	Boff is B-Ypt,
 	set_border_offsets(Loff, Toff, Roff, Boff).
 
-click_on([Xpt, Ypt], Edit_thing) :-
+/* click_on([Xpt, Ypt], Edit_thing) :-
 	get_mode(select),
-	set_start_coords(Xpt, Ypt), /* in case dragging an area to zoom to */
+	set_start_coords(Xpt, Ypt), in case dragging an area to zoom to
 	give_focus(Edit_thing),
 	finish_old_edit(Edit_thing),
 	highlight(Edit_thing, 0).
+*/
 
 click_on(_,_) :-
 	get_mode(delete),
@@ -684,6 +691,7 @@ check_entries(InterParent, Trans, Pair, NewPair, Comp) :-
 		NewPair = InterPair,
 		Comp = InterParent).
 
+/*
 drag_to(Xpt, Ypt, _Comp) :-
 	get_mode(select),
 	(get_phase(text_grabbing), !;
@@ -691,7 +699,7 @@ drag_to(Xpt, Ypt, _Comp) :-
 	clear_incomplete,
 	add_incomplete([OldX, OldY, Xpt, Ypt]),
 	remove_old_rubberband,
-	draw_rubberband(square)).
+	draw_rubberband(square)). */
 
 drag_to(Xpt, Ypt, Comp) :-
 	get_mode(add),
@@ -708,7 +716,7 @@ drag_to(Xpt, Ypt, Comp) :-
 	true).
 
 drag_to(Xpt, Ypt, Moving_obj) :-
-	get_mode(move),
+	get_mode(select), /* was move */
 	get_start_coords(OldX, OldY),
 	Xoffset is Xpt - OldX,
 	Yoffset is Ypt - OldY,
@@ -717,8 +725,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		 (Wid shows_model Moving_obj, !;
 		 adjust_bowtie(Moving_obj, [Xpt, Ypt]), !,
 		     wiggle_bowtie(Moving_obj),
-		     make_links_follow(Moving_obj),
-		     highlight(Moving_obj, 2);
+		     make_links_follow(Moving_obj) /* ,
+		     highlight(Moving_obj, 2) */;
 		 adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
 		     reroute_display(Moving_obj),
 		     move_text(Moving_obj, [Xoffset, Yoffset]);
@@ -742,15 +750,15 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     move_display(Moving_obj, [Xoffset, Yoffset]));  
 	  get_phase(moving_border(Edge)), !,
 	  update_object_boundary(Moving_obj, Edge, Xoffset, Yoffset),
-	  redisplay_border(Moving_obj),
-	  highlight(Moving_obj, 2));
+	  redisplay_border(Moving_obj) /* ,
+	  highlight(Moving_obj, 2) */);
 	get_phase(moving_text),
 		update_text_position(Moving_obj, Xoffset, Yoffset),
 		move_text(Moving_obj, [Xoffset, Yoffset])),
 	set_start_coords(Xpt, Ypt).
 
 drag_to(Xpt, Ypt, Moving_obj) :-
-	get_mode(move),
+	get_mode(select), /* was move */
 	get_phase(Phase),
 	(Phase = moving_start, Inner_move = start,
 	    (continues_from(Moving_obj, Box), !;
@@ -1201,15 +1209,14 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
-	(get_mode(select),
+	/* (get_mode(select),
 		(get_phase(text_grabbing), !;
-		    zoom_to_area);
+		    zoom_to_area); 
 	get_phase(info_extract)), !,
-		initialize_phase;	
+		initialize_phase; */
 	get_phase(action_choice), !,
 		advance_phase_to(targetting);
-	unclick_obj,
-		true.
+	unclick_obj.
 
 zoom_to_area :-
 	get_incomplete([OldX, OldY, NewX, NewY]),
@@ -1270,7 +1277,7 @@ unclick_obj :-
 	update_runnable(Parent).
 
 unclick_obj :- 
-	get_mode(move),
+	get_mode(select), /* was move */
 	(get_highlit_obj(2, WasMoved),
 	    normalize(WasMoved),
 	    fail;

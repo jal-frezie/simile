@@ -382,6 +382,7 @@ proc create_equation {parent boxtitle indices} {
     $notebook raise Main
     pack $notebook -fill both -expand true
     set equation(newGraphs) ""
+    set equation(done) 0
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
 #    tkwait visibility $influencesf.lists.plist
 }
@@ -410,7 +411,16 @@ proc interact_equation {} {
     set eqnFrame [$equation(main).main.main getframe]
     set listFrame [$equation(main).bottom.influences getframe]
     
-    set equation(done) 0
+# OK the equation dialogue has finally reached its final size, but in order to
+# get the window manager to put it in an appropriate place we have to put it
+# up, let it draw (so it knows how big it wants to be), then remove and replace
+# it, because some of its BWidgets are buggy
+    if {!$equation(done)} {
+	update
+	wm withdraw .equation
+	wm deiconify .equation
+    }
+
     if {![winfo viewable $t]} {
 	tkwait visibility $t
     }
@@ -548,13 +558,6 @@ proc fill_inputs { triples } {
 #    $equation(notebook) compute_size
 #    pack $equation(notebook)
 
-# OK the equation dialogue has finally reached its final size, but in order to
-# get the window manager to put it in an appropriate place we have to put it
-# up, let it draw (so it knows how big it wants to be), then remove and replace
-# it, because some of its BWidgets are buggy
-    update
-    wm withdraw .equation
-    wm deiconify .equation
 }
 
 proc fill_table {node table_data table_values} {

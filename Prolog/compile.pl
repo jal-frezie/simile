@@ -414,7 +414,7 @@ pick_state_vars([], [], [], []).
 
 pick_state_vars([One | All], Rate, State, Update) :-
 	pick_state_vars(All, MoreRate, MoreState, MoreUpdate),
-	(One = make(_,_,_,_, [assign(SV, SV+_)]), !,
+	(One = make(_,_,_,_, [assign(SV, SV+stage_incr(_,_,_))]), !,
 	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
 	One = make(Tgt, _,_,_,_),
 	    member(Tgt, [lastvalue(_)]), !,

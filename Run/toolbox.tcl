@@ -877,11 +877,11 @@ proc AddCanvasBindings { c } {
 
 proc CanvasEditBind { c } {
     
-    $c bind currently_editable <B1-Motion> {
-        %W select to current \
+#    $c bind currently_editable <B1-Motion> {
+#        %W select to current \
                 @[join [canvasTLDistance %W [%W canvasx %x] \
                 [%W canvasy %y]] ,]
-    }
+#    }
     $c bind currently_editable <Delete> {
         if {![CanvasDelSeln %W]} {
             %W dchars [%W focus] insert
@@ -1483,9 +1483,9 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     set fm [menu ${winid}top.tools -tearoff 0]
     ${winid}top add cascade -label Tools -underline 0 \
             -menu ${winid}top.tools
-    $fm add radiobutton -label "Label elements" -command "ModeSelect select"\
-            -variable pushedbutton -value select
-    $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
+    $fm add radiobutton -label "Label/move elements" \
+	-command "ModeSelect select" -variable pushedbutton -value select
+#    $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
             -variable pushedbutton -value move
     $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
             -variable pushedbutton -value delete
@@ -1580,7 +1580,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
     
-    foreach mode {select move delete copy ghost separator3 snap} {
+    foreach mode {select delete copy ghost separator3 snap} {
         if {[string match separator* $mode]} {
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
