@@ -43,9 +43,10 @@ if [string match Darwin $tcl_platform(os)] {
     lappend auto_path $SIMILE_PATH/System/lib
     proc ::tk::mac::OpenDocument {args} {
         global env
-        #set remStartArgs [list after idle [list OpenTopLevel $args]]
-        set env(OPEN_MODEL) $args
-        OpenTopLevel $args
+# only opens the first of a group of files dropped or double-clicked,
+# but at least it handles files with spaces in the name.      
+        set env(OPEN_MODEL) [lindex $args 0]
+        OpenTopLevel [lindex $args 0]
     }
 }
 
