@@ -192,6 +192,8 @@ proc NetOpen {name way} {
 # itself loads dlls for the actual models as they are built.
 
 proc load_c_stub {} {
+    package require md5 1.0
+
     global tcl_platform env userinfo ;# last needed in stub
     # On startup, check run count and offer registration if 0
     if [catch {set userinfo(name) $env(licensee_name)}] {
@@ -338,6 +340,20 @@ proc RemovePopup {args} {
     }
     if {[info exists popper]} {
         after cancel $popper
+    }
+}
+
+proc AddPopupMessage {text colour isValue} {
+    set verbosity [string length $text]
+    if {$verbosity<20} {
+        pack [label .popup.message$colour \
+                -text $text -bg $colour] -fill x -expand true
+    } else {
+        if {$verbosity>500} {
+	    set text [EndsOnly $text $isValue $verbosity 500]
+        }
+        pack [message .popup.message$colour -aspect 400 \
+                -text $text -bg $colour] -fill x -expand true
     }
 }
 

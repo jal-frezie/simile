@@ -149,10 +149,11 @@ proc do_for_node {node args} {
 
 proc ScrubRun {node times} {
     global runStatus
-    if {[info exists runStatus($node,interp)]} {
-	$runStatus($node,interp) eval ScrubRun $times
+    do_for_node $node ScrubRun $times
+    if {[info exists runStatus($node,running)]} {
+	unset runStatus($node,running)
+	ToggleIOToolMenu $node
     }
-    ToggleIOToolMenu 0
 }
 
 proc KillInterpFor {node} {
@@ -171,7 +172,7 @@ proc LoadProgram {node lang} {
     set runStatus($node,lang) $lang
     if {[do_for_node $node update_executable $lang]} {
 	set runStatus($node,running) 2
-	ToggleIOToolMenu 1
+	ToggleIOToolMenu $node
     }
 }
 
@@ -183,7 +184,6 @@ proc CheckUpToDate {node action} {
 			      "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
 	switch $updateChoice {
 	    yes {
-		set runStatus($node,running) 0
 		# grits teeth
 		foreach win [array names window_info *,top_node] {
 		    if {[string equal $node $window_info($win)]} {
@@ -491,7 +491,7 @@ proc LoadFile {topNode tree tgt} {
             }
             foreach bit [mime::getproperty $multiT parts] {
                 set Desc [mime::getheader $bit Content-Description]
-                #ShowMessage debug info $Description ok
+                #ShowMessage debug info $Desc ok
                 switch [lindex $Desc 0] {
                     "Run Status" {
                         set runParams [mime::getbody $bit]
@@ -765,7 +765,6 @@ proc ClickObj { x y winId X Y action} {
     global clicktime
     global equationbar
     global pushedbutton
-    global runStatus
     global window_info
     
 #puts "$action it!"
@@ -815,14 +814,12 @@ proc ClickObj { x y winId X Y action} {
     set node [ExtractPrologName $winId $target]
     set caption [ExtractCaption $winId $node]
     set topNode $window_info($winId,top_node)
-    if {[info exists runStatus($topNode,interp)]} {
-	if {[$runStatus($topNode,interp) eval ProdObj $node $caption]} {
-	   return
-	    # IO tool took the click, so do no more
-	}
+    if {[do_for_node $topNode ProdObj $node $caption]} {
+	return
+	# IO tool took the click, so do no more
     }
     if {[string compare $pushedbutton snap]==0} then {
-        snap $topNode $node
+        do_for_node $topNode snap $node
     } else {
         if {[string equal click $action]} {
             set obj [GetCaptionItem $winId $node]
@@ -1043,12 +1040,12 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     wm protocol $winName WM_DELETE_WINDOW \
             [list byebye $winName]
     
-    AddMainMenu $winName [expr $wr-$wl] $isTopLevel $args
-    AddCanvasBindings $c $topNode
-    
     set window_info($c,top_node) $topNode
     set window_info($c,scale) $initialScale
     set window_info($c,is_top_level) $isTopLevel
+    
+    AddMainMenu $winName $topNode [expr $wr-$wl] $isTopLevel $args
+    AddCanvasBindings $c $topNode
     
     #    tkwait visibility $winName
     set window_info($c,parent) $winName
@@ -1266,9 +1263,9 @@ proc AddCanvasBindings { c topNode } {
 }
 
 proc AddEqnPopup {topNode x y winId X Y} {
-    global pushedbutton equationbar errorInfo
+    global pushedbutton equationbar errorInfo runStatus
     set doDesc [PrefValue custom(compDescPop) compDescPop]
-    set doVal [expr [HasValues $topNode] && \
+    set doVal [expr [info exists runStatus($topNode,running)] && \
 		   [PrefValue custom(compValPop) compValPop]]
     set doCmt [PrefValue custom(compCmtPop) compCmtPop]
     if {[string compare select $pushedbutton] || \
@@ -1320,29 +1317,6 @@ proc AddEqnPopup {topNode x y winId X Y} {
         }
     }
 
-}
-
-proc AddPopupMessage {text colour isValue} {
-    set verbosity [string length $text]
-    if {$verbosity<20} {
-        pack [label .popup.message$colour \
-                -text $text -bg $colour] -fill x -expand true
-    } else {
-        if {$verbosity>500} {
-	    set text [EndsOnly $text $isValue $verbosity 500]
-        }
-        pack [message .popup.message$colour -aspect 400 \
-                -text $text -bg $colour] -fill x -expand true
-    }
-}
-
-proc HasValues {node} {
-    global runStatus
-    if {![info exists runStatus($node,interp)]} {
-	return 0
-    } else {
-	return [$runStatus($node,interp) eval info exists running_c]
-    }
 }
 
 # Canvas chapter (of Welch)
@@ -1826,8 +1800,8 @@ proc FillReopen {winId} {
     }
 }
 
-proc AddMainMenu { winid initWidth isTopLevel initDepths} {
-    global custom pushedbutton tcl_platform window_info iconImages
+proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
+    global custom pushedbutton tcl_platform runStatus iconImages
     
     set c $winid.canvas
     set fm [menu ${winid}top.file -tearoff 0 \
@@ -2050,9 +2024,11 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
             -variable MIpushedbutton -value snap -state disabled
     
-    if {[info exists window_info(showIO)]} {
+    
+    if {[info exists runStatus($topNode,running)]} {
         ${winid}top add  cascade -label "I/O tools" -underline 0 \
 	    -menu $winId.helpers
+	$rm entryconfigure "Inspect elements" -state normal
     }
     menu $winid.helpers -tearoff 0 \
 	-postcommand [list after idle PostRealHelperMenu $winid]
@@ -2145,7 +2121,9 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 	    -side left -padx 2 -pady 2
 	BindPopup $tb.$mode $mode
     }
-    $tb.snap configure -state disabled
+    if {![info exists runStatus($topNode,running)]} {
+	$tb.snap configure -state disabled
+    }
     
     $tb.$pushedbutton configure -relief sunken
     $tb.$pushedbutton configure -state active
@@ -2455,7 +2433,8 @@ proc Rerun {winId go} {
     global runStatus window_info
     
     set node $window_info($winId,top_node)
-    if {$runStatus($node,running)!=2 || $runStatus($node,updated) == 1} {
+    if {![info exists runStatus($node,running)] || \
+	    $runStatus($node,updated) == 1} {
         if {[info exists runStatus($node,lang)]} {
             set runType run_$runStatus($node,lang)
         } else {
@@ -2467,7 +2446,7 @@ proc Rerun {winId go} {
 	# assume if model was running before it will run again
     }
     # Only proceed if it worked
-    if {$runStatus($node,running) != 2} {
+    if {![info exists runStatus($node,running)]} {
 	return fail
     }
     if {$go} {
@@ -2488,31 +2467,31 @@ proc UpdateAbility {c what where which whether} {
     }
 }
 
-proc ToggleIOToolMenu {on} {
-    global window_info
-    if {[info exists window_info(showIO)]} {
-        if {$on} {
-            return
-        } else {
-            unset window_info(showIO)
-        }
-    } elseif {$on} {
-        set window_info(showIO) 1
-    } else {
-        return
-    }
+proc ToggleIOToolMenu {node} {
+    global window_info runStatus custom
     
-    foreach winData [array name window_info *,parent] {
-        set topMenu $window_info($winData)top
-        
-        if {$on} {
-            $topMenu insert "Help" cascade -label "I/O tools" -underline 0 \
-                    -menu $window_info($winData).helpers
-            # note Welch says put 'insert' and index other way round and give index to
-            # left of new one rather than right. He's wrong.
-        } else {
-            $topMenu delete "I/O tools"
-        }
+    foreach win [array names window_info *,top_node] {
+	if {[string equal $node $window_info($win)]} {
+	    set c [string range $win 0 end-9]
+	    set winData $window_info($c,parent)
+
+	    set topMenu ${winData}top
+	    catch {$topMenu delete "I/O tools"}
+	    $winData.toolSlot.navbar.runenv configure -state disabled
+	    if {[info exists runStatus($node,running)]} {
+		set newState normal
+		if {[PrefValue custom(helperManager) helperManager]} {
+		    $winData.toolSlot.navbar.runenv configure -state normal
+		} else {
+		    $topMenu insert "Help" cascade -label "I/O tools" \
+			-underline 0 -menu $window_info($winData).helpers
+		}
+	    } else {
+		set newState disabled
+	    }
+	    $winData.toolSlot.toolbar.snap configure -state $newState
+	    $topMenu.tools entryconfigure {Inspect elements} -state $newState
+	}
     }
 }
 
@@ -2623,160 +2602,6 @@ proc restore_equation {winId bar} {
 
 
 
-
-############################## snap: start ###################################
-proc snap {topNode node} {
-    global runState
-    
-    if {[catch {set full_label [GetCaptionPathFromId $node]}]} {
-        return; ## no good
-    }
-    
-    set w .snap[clock seconds]
-    toplevel $w
-    set full_label1 [string range $full_label 9 end]
-    set last_slash [string last / $full_label1]
-    set start_label [expr $last_slash+1]
-    set end_submodels [expr $last_slash-1]
-    set submodels [string range $full_label1 0 $end_submodels]
-    set label [string range $full_label1 $start_label end]
-    wm title $w "$label at time $runState(currentTime)"
-    
-    text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
-            -xscrollcommand "$w.xscroll set" \
-            -width 30 -height 20 -wrap none\
-            -tabs {5c right 6.8c right 8.6c right 10.4c right}
-    $w.text tag configure colour1 -background #ff9090 -foreground black
-    $w.text tag configure colour2 -background #ffffff -foreground blue \
-            -font {arial 10 bold}
-    $w.text tag configure colour3 -font {arial 9 bold}
-    $w.text tag configure colour4 -background #ffffff -foreground red \
-            -font {arial 10 bold}
-    scrollbar $w.yscroll -command "$w.text yview"
-    pack $w.yscroll -side right -fill y
-    scrollbar $w.xscroll -orient horiz -command "$w.text xview"
-    pack $w.xscroll -side bottom -fill x
-    pack $w.text -expand yes -fill both
-    
-    set values(1) [GetModelValue $topNode $node]
-    set length(1) [llength $values(1)]
-    
-    # Find number of levels of nesting
-    for {set level 1} {$level<10} {incr level} {
-        set nextlevel [expr $level+1]
-        set values($nextlevel) [lindex $values($level) 1]
-        set length($nextlevel) [llength $values($nextlevel)]
-        if {$length($nextlevel)<=1} then {break}
-    }
-    set maxlevel $level
-    
-    $w.text insert end "Variable "
-    $w.text insert end "$label\n" colour3
-    if {[string length $submodels]>0} then {
-        $w.text insert end "in submodel "
-        $w.text insert end "$submodels\n" colour3
-    }
-    $w.text insert end "at time "
-    $w.text insert end "$runState(currentTime)\n" colour3
-    $w.text insert end "[clock format [clock seconds]]\n"
-    $w.text insert end "Maxlevel=$maxlevel\n"
-    if {$maxlevel==1} then {
-        snap_down1 $w $values(1)
-    } elseif {$maxlevel==2} then {
-        snap_down2 $w $values(1)
-    } else {
-        snap_down3 $w $values(1)
-    }
-}
-
-
-proc snap_down1 {w values} {
-    set i 0
-    foreach value $values {
-        if {$i==0} then {
-            $w.text insert end $value colour2
-        } else {
-            $w.text insert end {   }
-            $w.text insert end $value
-            $w.text insert end \n
-        }
-        incr i
-        if {$i==2} then {set i 0}
-    }
-}
-
-
-proc snap_down2 {w values} {
-    set i 0
-    foreach value $values {
-        if {$i==0} then {
-            $w.text insert end $value colour2
-        } else {
-            if {[llength $value]>1} then {
-                $w.text insert end {    }
-                set j 0
-                foreach val $value {
-                    if {$j==0} then {
-                        $w.text insert end $val colour3
-                    } else {
-                        $w.text insert end { }
-                        $w.text insert end $val
-                        $w.text insert end {   }
-                    }
-                    incr j
-                    if {$j==2} then {set j 0}
-                }
-                $w.text insert end \n
-            } else {
-                $w.text insert end {   }
-                $w.text insert end $value
-                $w.text insert end \n
-            }
-        }
-        incr i
-        if {$i==2} then {set i 0}
-    }
-}
-
-proc snap_down3 {w values} {
-    set i 0
-    foreach value $values {
-        if {$i==0} then {
-            set first_value $value
-        } else {
-            set j 0
-            foreach val $value {
-                if {$j==0} then {
-                    $w.text insert end $first_value colour2
-                    $w.text insert end {  }
-                    $w.text insert end $val colour4
-                    $w.text insert end {    }
-                } else {
-                    set k 0
-                    foreach v $val {
-                        if {$k==0} then {
-                            $w.text insert end $v colour3
-                        } else {
-                            $w.text insert end { }
-                            $w.text insert end $v
-                            $w.text insert end {   }
-                        }
-                        incr k
-                        if {$k==2} then {set k 0}
-                    }
-                    $w.text insert end \n
-                }
-                incr j
-                if {$j==2} then {set j 0}
-            }
-        }
-        incr i
-        if {$i==2} then {
-            $w.text insert end \n
-            set i 0
-        }
-    }
-}
 
 proc GetModelValue {topNode node} {
     global runStatus

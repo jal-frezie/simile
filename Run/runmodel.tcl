@@ -157,24 +157,15 @@ proc NewHelperWindow {helperId helperTitle} {
 # themselves up, or to the editor once they are done.
 
 proc GrabClicks {winId} {
-    global helperTable window_info
+    global helperTable
 
     set helperTable(current) $winId
-    foreach whosyadaddy [array names window_info *,parent] {
-	set c [string range $whosyadaddy 0 end-7]
-	set window_info(cursor_was) [$c cget -cursor]
-	$c config -cursor hand1
-    }
 }
 
 proc ReleaseClicks {winId} {
-    global helperTable window_info
+    global helperTable
 
     set helperTable(current) none
-    foreach whosyadaddy [array names window_info *,parent] {
-	set c [string range $whosyadaddy 0 end-7]
-	$c config -cursor $window_info(cursor_was)
-    }
 }
 
 proc kill_helper_window { winId } {
@@ -367,7 +358,7 @@ proc TellAllHelpers {fun args} {
 }
 
 proc ScrubRun {times} {
-    global runState model_id instance_id window_info
+    global runState model_id instance_id
     #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
     #	error Bombed
     #    }
@@ -393,14 +384,160 @@ proc ScrubRun {times} {
 	    }
         }
         unset model_id
-        foreach winData [array name window_info *,parent] {
-            set toolBar $window_info($winData).toolSlot.toolbar
-            $toolBar.snap configure -state disable
-            set navBar $window_info($winData).toolSlot.navbar
-            $navBar.runenv configure -state disable
-            $window_info($winData)top.tools entryconfigure {Inspect elements} -state disable
+    }
+}
+
+############################## snap: start ###################################
+proc snap {node} {
+    global runState
+    
+    if {[catch {set full_label [GetCaptionPathFromId $node]}]} {
+        return; ## no good
+    }
+    
+    set w .snap[clock seconds]
+    toplevel $w
+    set last_slash [string last / $full_label]
+    set start_label [expr $last_slash+1]
+    set end_submodels [expr $last_slash-1]
+    set submodels [string range $full_label 0 $end_submodels]
+    set label [string range $full_label $start_label end]
+    wm title $w "$label at time $runState(currentTime)"
+    
+    text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
+            -xscrollcommand "$w.xscroll set" \
+            -width 30 -height 20 -wrap none\
+            -tabs {5c right 6.8c right 8.6c right 10.4c right}
+    $w.text tag configure colour1 -background #ff9090 -foreground black
+    $w.text tag configure colour2 -background #ffffff -foreground blue \
+            -font {arial 10 bold}
+    $w.text tag configure colour3 -font {arial 9 bold}
+    $w.text tag configure colour4 -background #ffffff -foreground red \
+            -font {arial 10 bold}
+    scrollbar $w.yscroll -command "$w.text yview"
+    pack $w.yscroll -side right -fill y
+    scrollbar $w.xscroll -orient horiz -command "$w.text xview"
+    pack $w.xscroll -side bottom -fill x
+    pack $w.text -expand yes -fill both
+    
+    set values(1) [TransEnums [GetTransTable $node] \
+		       [lindex [GetModelValue $node] 0]]
+    set length(1) [llength $values(1)]
+    
+    # Find number of levels of nesting
+    for {set level 1} {$level<10} {incr level} {
+        set nextlevel [expr $level+1]
+        set values($nextlevel) [lindex $values($level) 1]
+        set length($nextlevel) [llength $values($nextlevel)]
+        if {$length($nextlevel)<=1} then {break}
+    }
+    set maxlevel $level
+    
+    $w.text insert end "Variable "
+    $w.text insert end "$label\n" colour3
+    if {[string length $submodels]>0} then {
+        $w.text insert end "in submodel "
+        $w.text insert end "$submodels\n" colour3
+    }
+    $w.text insert end "at time "
+    $w.text insert end "$runState(currentTime)\n" colour3
+    $w.text insert end "[clock format [clock seconds]]\n"
+    $w.text insert end "Maxlevel=$maxlevel\n"
+    if {$maxlevel==1} then {
+        snap_down1 $w $values(1)
+    } elseif {$maxlevel==2} then {
+        snap_down2 $w $values(1)
+    } else {
+        snap_down3 $w $values(1)
+    }
+}
+
+
+proc snap_down1 {w values} {
+    set i 0
+    foreach value $values {
+        if {$i==0} then {
+            $w.text insert end $value colour2
+        } else {
+            $w.text insert end {   }
+            $w.text insert end $value
+            $w.text insert end \n
         }
-#        ToggleIOToolMenu 0
+        incr i
+        if {$i==2} then {set i 0}
+    }
+}
+
+
+proc snap_down2 {w values} {
+    set i 0
+    foreach value $values {
+        if {$i==0} then {
+            $w.text insert end $value colour2
+        } else {
+            if {[llength $value]>1} then {
+                $w.text insert end {    }
+                set j 0
+                foreach val $value {
+                    if {$j==0} then {
+                        $w.text insert end $val colour3
+                    } else {
+                        $w.text insert end { }
+                        $w.text insert end $val
+                        $w.text insert end {   }
+                    }
+                    incr j
+                    if {$j==2} then {set j 0}
+                }
+                $w.text insert end \n
+            } else {
+                $w.text insert end {   }
+                $w.text insert end $value
+                $w.text insert end \n
+            }
+        }
+        incr i
+        if {$i==2} then {set i 0}
+    }
+}
+
+proc snap_down3 {w values} {
+    set i 0
+    foreach value $values {
+        if {$i==0} then {
+            set first_value $value
+        } else {
+            set j 0
+            foreach val $value {
+                if {$j==0} then {
+                    $w.text insert end $first_value colour2
+                    $w.text insert end {  }
+                    $w.text insert end $val colour4
+                    $w.text insert end {    }
+                } else {
+                    set k 0
+                    foreach v $val {
+                        if {$k==0} then {
+                            $w.text insert end $v colour3
+                        } else {
+                            $w.text insert end { }
+                            $w.text insert end $v
+                            $w.text insert end {   }
+                        }
+                        incr k
+                        if {$k==2} then {set k 0}
+                    }
+                    $w.text insert end \n
+                }
+                incr j
+                if {$j==2} then {set j 0}
+            }
+        }
+        incr i
+        if {$i==2} then {
+            $w.text insert end \n
+            set i 0
+        }
     }
 }
 
@@ -472,7 +609,7 @@ set this ::AME_model<>
 # var containing namespace id called 'this' for compatibility with c++
 
 proc StartRun {} {
-    global runState helperTable running_c window_info
+    global runState helperTable running_c
     # ShowMessage debug info enter(start_run) ok
     if {[info exists runState(currentTime)]} {
         if {$runState(execTime) != $runState(currentTime)} {
@@ -1042,7 +1179,6 @@ proc IsArray {a} {
     string compare $a [lindex $a 0]
 }
 
-package require Trf
 load_c_stub
 LoadIconImages
 set intCount 0
