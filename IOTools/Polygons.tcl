@@ -266,6 +266,7 @@ $useNodes($winId,scaley)"
 		}
             }
         }
+	$winId.viewport.c itemconfig caption -text "[file tail [GetCaptionPathFromId $hs]], time = [GetModelTime]" 
     }
     
     proc DoFrame {winId} {
