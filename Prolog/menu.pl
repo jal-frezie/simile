@@ -136,7 +136,6 @@ stick_model_in(Parent, Name) :-
 	    dir (fttb) so get them loaded */
 	    transfer_images(Parent, TargetDir, in),
 		  
-	    check_autosave(Parent, Name, Tweaked),
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	    (is_toplevel(Parent),
 	/* only try graphics file for toplevel windows because if loading into
@@ -156,10 +155,10 @@ stick_model_in(Parent, Name) :-
 		     (finish_progress_dialogue,
 		     make_nice_error_message(ProLoss, ProLite),
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
-	    check_autosave(Parent, Name, Tweaked),
 	    resize_canvas_for(Parent),
 	    redraw_window(Win)),
 	add_parameter(Parent, 0, file_name, Name),
+	check_autosave(Parent, Name, Tweaked),
 	update_captions(Parent).
 
 resize_canvas_for(Parent) :-
