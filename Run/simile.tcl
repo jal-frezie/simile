@@ -1,22 +1,10 @@
-#!/home/jaspert/Simile/System/bin/wish
+#!/usr/local/lib/Simile/System/bin/wish
 # SIMILE batch file
 
 # If there is an arg, it is the model to start with. Because this is sourced
 # from a script or special .exe there is never more than 1 arg. Windows has
 # a buggy implementation of file pathtype so hope that simile.exe always
 # gets us an absolute path...
-
-# KDE launch feedback will fail unless toplevel window is displayed briefly,
-# causing annoying eye candy to persist while program is running
-# it may be necessary to have the launch icon execute this file rather than the
-# launcher script to avoid this effect -- make sure the first line points to a
-# working wish, or <Simile>/System/bin/wish
-# This is also the reason why this file must have Unix style line ends
-
-if {[string equal Linux $tcl_platform(os)]} {
-    update
-}
-wm withdraw .
 
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
@@ -101,12 +89,32 @@ if {[string match Darwin $tcl_platform(os)]} {
     splash read $SIMILE_PATH/Images/splash.gif
 }
 
+# KDE launch feedback will fail unless root window is displayed briefly,
+# causing annoying eye candy to persist while program is running.
+# It may be necessary to have the launch icon execute this file rather than the
+# launcher script to avoid this effect -- make sure the first line points to
+# <Simile>/System/bin/wish
+# This is also the reason why this file must have Unix style line ends
+
+# Sadly we cannot use the root window for the splash screen because that
+# needs overrideredirect, which also stops launch feedback working. And do
+# not think we can turn off redirect after displaying it, that does not work.
+# So we do our best to hide the brief appearance of the root window by giving
+# it the same geometry as the splash screen...
+
+set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
+if {[string equal Linux $tcl_platform(os)]} {
+    wm geometry . $startGeom
+    update
+}
+wm withdraw .
+
 toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash
 .splash.c create text 270.0 275.0 -font {-family helvetica -size 10} -fill #660066 -text "Version $env(SIMILE_VERSION)"
     
-wm geometry .splash +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
+wm geometry .splash $startGeom
 wm overrideredirect .splash 1
 update
 
