@@ -222,7 +222,7 @@ proc create_equation {parent boxtitle indices} {
     pack $keypadf.keys.row3.col4 -padx [list 4 0]
     pack $keypadf.keys.row4.col4 -padx [list 4 0]
     pack $keypadf.keys.row5.col4 -padx [list 4 0]
-     
+    
     pack $keypadf.keys -side left -anchor nw
     pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $middleF -expand off -fill x
@@ -821,9 +821,9 @@ proc Disaggregate {parent title colour type fatness icount step \
     checkbutton $mathf.separate -text "Build submodel in separate dll" \
             -variable disaggregate(separate)
     pack $mathf.separate -anchor w
-#    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
-#            -variable disaggregate(matherror)
-#    pack $mathf.matherror -anchor w
+    #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
+    #            -variable disaggregate(matherror)
+    #    pack $mathf.matherror -anchor w
     frame $mathf.step
     label $mathf.step.caption -text "Time step index:"
     pack $mathf.step.caption -side left
@@ -1063,9 +1063,9 @@ proc GetFindText {parent} {
 
 proc DoRegDialog {dtId} {
     global userinfo custom welcomeDone
-
+    
     if {$userinfo(done) && $userinfo(Version)==$userinfo(oldVersion)} {
-	return
+        return
     }
     set t [toplevel .register -bd 4]
     wm title $t "Welcome to Simile version $userinfo(Version)"
@@ -1088,10 +1088,10 @@ proc DoRegDialog {dtId} {
             and values. Run your model using the Build command of the Model menu."\
             -width 400 -font {-family helvetica -size 8}]
     pack $create -expand on -fill x
-#	pack [frame $create.buttons]
-#	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
-#	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
-
+    #	pack [frame $create.buttons]
+    #	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
+    #	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
+    
     pack .register.create -expand on -fill x -padx 4 -pady 2
     
     TitleFrame .register.tasks -text "Choose a model: "
@@ -1136,23 +1136,23 @@ proc DoRegDialog {dtId} {
     pack .register.links -expand on -fill x -padx 4 -pady 2
     
     pack [frame .register.checkframe] -padx 4 -pady 4
-    pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left 
+    pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left
     pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
             -side left
-#    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
+    #    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
     tkwait visibility .register
-
+    
     grab .register
     bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
     bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
     #    focus .register.email
-
+    
     # now put it in the middle of the desktop
     scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f
     scan [ wm geometry .register] {%dx%d} g h
     wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
     tkwait variable userinfo(done)
-
+    
     set UserStream [open $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)
@@ -1160,66 +1160,66 @@ proc DoRegDialog {dtId} {
     puts $UserStream $userinfo(done)
     close $UserStream
     
-# this never happens with welcome version
+    # this never happens with welcome version
     if {$userinfo(done) == 2} {
-	if {[catch {package require http
-	    set regData [::http::formatQuery Name $userinfo(name) \
-			     Organisation $userinfo(corp) Email $userinfo(email) \
-			     Version $userinfo(Version) OS $tcl_platform(os)]
-	    ::http::geturl http://www.simulistics.com/products/SendMail.asp \
-			-query $regData}]} {
-	    set userinfo(done) 1
-	}
+        if {[catch {package require http
+                set regData [::http::formatQuery Name $userinfo(name) \
+                        Organisation $userinfo(corp) Email $userinfo(email) \
+                        Version $userinfo(Version) OS $tcl_platform(os)]
+                ::http::geturl http://www.simulistics.com/products/SendMail.asp \
+                        -query $regData}]} {
+            set userinfo(done) 1
+        }
     }
-
+    
     grab release .register
     destroy .register
 }
 
 proc PopReopen {win} {
-	FillReopen $win
-	tk_popup .openrecent [winfo pointerx .register] [winfo pointery .register]
+    FillReopen $win
+    tk_popup .openrecent [winfo pointerx .register] [winfo pointery .register]
 }
 
 proc ContextSensitiveHelp {context page} {
     global tcl_platform helphtml
     if { [string match windows $tcl_platform(platform)]} {
-            package require winhelp
-            toplevel .dummy; # a window for winhelp to be on top of that we can get rid of
-                             # prevents winhelp from obscuring things
-            winhelp $context ../Help/simile.chm $page
-            destroy .dummy; # jmm
+        package require winhelp
+        toplevel .dummy; # a window for winhelp to be on top of that we can get rid of
+        # prevents winhelp from obscuring things
+        winhelp $context ../Help/simile.chm $page
+        destroy .dummy; # jmm
     } else {
-            set url [pwd]/../Help/$page
-            expr {
-                [info exists env(BROWSER)] ||
-                [findExecutable mozilla        env(BROWSER)] ||
-                [findExecutable netscape       env(BROWSER)] ||
-                [findExecutable iexplorer      env(BROWSER)] ||
-                [findExecutable lynx           env(BROWSER)]
+        set url [pwd]/../Help/$page
+        expr {
+            [info exists env(BROWSER)] ||
+            [findExecutable mozilla        env(BROWSER)] ||
+            [findExecutable netscape       env(BROWSER)] ||
+            [findExecutable iexplorer      env(BROWSER)] ||
+            [findExecutable lynx           env(BROWSER)]
+        }
+        # lynx can also output formatted text to a variable
+        # with the -dump option, as a last resort:
+        # set formatted_text [ exec lynx -dump $url ] - PSE
+        if {[catch {exec $env(BROWSER) -remote $url}]} {
+            # perhaps browser doesn't understand -remote flag
+            if {[catch {exec $env(BROWSER) $url &} emsg]} {
+                error "Error displaying $url in browser\n$emsg"
+                # Another possibility is to just pop a window up
+                # with the URL to visit in it. - DKF
             }
-            # lynx can also output formatted text to a variable
-            # with the -dump option, as a last resort:
-            # set formatted_text [ exec lynx -dump $url ] - PSE
-            if {[catch {exec $env(BROWSER) -remote $url}]} {
-                # perhaps browser doesn't understand -remote flag
-                if {[catch {exec $env(BROWSER) $url &} emsg]} {
-                    error "Error displaying $url in browser\n$emsg"
-                    # Another possibility is to just pop a window up
-                    # with the URL to visit in it. - DKF
-                }
-           }        
+        }
     }
 }
 
 proc findExecutable {progname varname} {
-     upvar 1 $varname result
-     set progs [auto_execok $progname]
-     if {[llength $progs]} {
-         set result [lindex $progs 0]
-     }
-     return [llength $progs]
- }
+    upvar 1 $varname result
+    set progs [auto_execok $progname]
+    if {[llength $progs]} {
+        set result [lindex $progs 0]
+    }
+    return [llength $progs]
+}
 
 proc CheckHyper {ywhat} {
     return 0
@@ -1240,7 +1240,7 @@ proc ErrorHelp {diagnostic} {
     wm title .diag {Error diagnostics}
     set parent [focus]
     if {[string length $parent]>1} {
-	wm transient .diag $parent
+        wm transient .diag $parent
     }
     wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
     labelframe .diag.errorf -text "Diagnostics:"
@@ -1262,9 +1262,9 @@ proc ErrorHelp {diagnostic} {
     set diagno(keys) {}
     foreach key [array names help] {
         if {[regexp $key $diagnostic]} {
-	    lappend diagno(keys) $key
+            lappend diagno(keys) $key
             .diag.topicsf.l insert end $url($help($key))
-	    pack .diag.topicsf -fill both -expand on  -padx 4 -pady 4
+            pack .diag.topicsf -fill both -expand on  -padx 4 -pady 4
         }
     }
     tkwait visibility .diag
@@ -1279,14 +1279,14 @@ proc GetHelp {} {
     global SIMILE_PATH diagno help
     cd $SIMILE_PATH/Help
     ContextSensitiveHelp .diag \
-	$help([lindex $diagno(keys) [.diag.topicsf.l curselection]])
+            $help([lindex $diagno(keys) [.diag.topicsf.l curselection]])
 }
 
 proc VisitUrl {x} {
     global tcl_platform
     if [string match windows $tcl_platform(platform)] {
-      set x [regsub -all -nocase {htm} $x {ht%6D}]
-      exec rundll32 url.dll,FileProtocolHandler $x &
+        set x [regsub -all -nocase {htm} $x {ht%6D}]
+        exec rundll32 url.dll,FileProtocolHandler $x &
     } else {
         set url $x
         expr {
@@ -1378,11 +1378,11 @@ proc ShowAbout {winId} {
 
 proc ShowExpiryImminent {expTime} {
     toplevel .expiry
-#    wm transient .expiry $winId
+    #    wm transient .expiry $winId
     wm title .expiry "Expiry Imminent"
     wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
     wm attributes .expiry -toolwindow true
-
+    
     set labf1 [frame .expiry.labf1]
     image create photo warn
     warn read "../Images/warning.gif"
@@ -1392,7 +1392,7 @@ proc ShowExpiryImminent {expTime} {
     pack [label $labf1.lab2 -text "This product will shortly expire." \
             -font {-family helvetica -size 10}] -side left
     pack $labf1 -padx 8 -pady 2
-
+    
     set labf2 [frame .expiry.labf2]
     pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
     pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
@@ -1419,7 +1419,7 @@ proc ShowExpiryImminent {expTime} {
     set swidth [winfo screenwidth .expiry]
     wm geometry .expiry +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
     update
-
+    
     tkwait variable ack
     destroy .expiry
 }
@@ -1427,57 +1427,117 @@ proc ShowExpiryImminent {expTime} {
 
 ############################################## Start Bob's changes
 proc equationlisting_start {} {
-	set w .equations
-	catch {destroy $w}
-	toplevel $w
-	wm title $w "Equation listing"
-
-	frame $w.mainframe  -height 30
-	pack $w.mainframe
-
+    global equationlist
+    set w .equations
+    catch {destroy $w}
+    toplevel $w
+    wm title $w "Equation listing"
+    
+    frame $w.mainframe
+    set equationlist(textbox) [text $w.mainframe.textbox \
+            -tabs {1c} -yscrollcommand [list $w.mainframe.scrl set]]
+    scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
+    pack $equationlist(textbox) -side left -fill both -expand true
+    pack $w.mainframe.scrl -side left -fill y
+    pack $w.mainframe -fill both -expand true
+    
+    image create photo equationlist(subimg)
+    image create photo equationlist(compimg)
+    image create photo equationlist(flowimg)
+    image create photo equationlist(varimg)
+    image create photo equationlist(crtimg)
+    image create photo equationlist(immimg)
+    image create photo equationlist(lossimg)
+    image create photo equationlist(repimg)
+    image create photo equationlist(conimg)
+    equationlist(subimg) read "../Images/Toolbar/submodel.gif"
+    equationlist(compimg) read "../Images/Toolbar/compartment.gif"
+    equationlist(flowimg) read "../Images/Toolbar/flow.gif"
+    equationlist(varimg) read "../Images/Toolbar/variable.gif"
+    equationlist(crtimg) read "../Images/Toolbar/creation.gif"
+    equationlist(immimg) read "../Images/Toolbar/immigration.gif"
+    equationlist(lossimg) read "../Images/Toolbar/loss.gif"
+    equationlist(repimg) read "../Images/Toolbar/reproduction.gif"
+    equationlist(conimg) read "../Images/Toolbar/condition.gif"
+    
+    $equationlist(textbox) tag configure big \
+            -font {Helvetica 12 bold} -wrap word -lmargin1 10 -lmargin2 10 -spacing3 5
+    $equationlist(textbox) tag configure cmt \
+            -font {Helvetica 10} -lmargin1 55 -lmargin2 55 -wrap word
+    $equationlist(textbox) tag configure whr \
+            -font {Helvetica 10 italic} -lmargin1 55 -lmargin2 55 -wrap word
+    $equationlist(textbox) tag configure eqn \
+            -font {Helvetica 10 bold} -lmargin1 10 -lmargin2 45 -wrap char
+    $equationlist(textbox) tag configure ini \
+            -font {Helvetica 10} -lmargin1 10 -lmargin2 10 -wrap char
+    $equationlist(textbox) tag configure dummy \
+            -font {Helvetica 5}
 }
 
 
 proc equationlisting_addsubmodel {isub submodel_label} {
-	set w .equations.mainframe
-
-	set submodelframe [frame $w.$isub -width 120 -height 1 -bg white -relief sunken]
-	pack $submodelframe -side top -anchor nw
-
-	text $submodelframe.text1 -width 140 -height 2 -relief flat
-	pack $submodelframe.text1 -side top -anchor nw
-	$submodelframe.text1 tag configure big -font {Helvetica 12 bold}
-	$submodelframe.text1 insert end $submodel_label big
+    global equationlist
+    set widget $equationlist(textbox)
+    $widget insert end "\n"
+    $widget insert end [regsub -all "\n" $submodel_label " "] big
+    $widget insert end "\n"
 }
 
 
 
 proc equationlisting_addvariable {isub ivar vartype varlabel expression where comments} {
-	set w .equations.mainframe
-	set varframe [frame $w.$isub.$ivar -width 120 -height 3]
-	pack $varframe -side top -anchor nw -expand true -fill y
-
-	text $varframe.varlabel -width 25 -height 3 -wrap word -relief flat
-	pack $varframe.varlabel -side left 
-	$varframe.varlabel tag configure big -font {Helvetica 10 bold}
-	$varframe.varlabel insert end $varlabel big
-
-	text $varframe.equals -width 2 -height 3 -wrap word -relief flat
-	pack $varframe.equals -side left
-	$varframe.equals insert end "="
-
-	text $varframe.expression -width 34 -height 3 -wrap word -relief flat
-	pack $varframe.expression -side left
-	$varframe.expression insert end $expression
-
-	text $varframe.where -width 34 -height 3 -wrap word -relief flat
-	pack $varframe.where -side left
-	$varframe.where insert end $where
-
-	text $varframe.comments -width 34 -height 3 -wrap word -relief flat
-	pack $varframe.comments -side left
-	$varframe.comments insert end $comments
-
+    global equationlist
+    set widget $equationlist(textbox)
+    $widget insert end " \n" dummy
+    if [string match flow $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(flowimg)
+        $widget insert end "  " eqn
+    } elseif [string match compartment $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(compimg)
+        $widget insert end "  Initial value of " ini
+    } elseif [string match variable $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(varimg)
+        $widget insert end "  " eqn
+    } elseif [string match creation $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(crtimg)
+        $widget insert end "  Initial value of " ini
+    } elseif [string match immigration $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(immimg)
+        $widget insert end "  " eqn
+    } elseif [string match loss $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(lossimg)
+        $widget insert end "  " eqn
+    } elseif [string match reproduction $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(repimg)
+        $widget insert end "  " eqn
+    } elseif [string match condition $vartype] {
+        $widget insert end "  " eqn
+        $widget image create end -image equationlist(conimg)
+        $widget insert end "  " eqn
+    }
+    $widget insert end [regsub -all "\n" $varlabel " "] eqn
+    $widget insert end " = " eqn
+    $widget insert end $expression eqn
+    $widget insert end "\n" eqn
+    if ![string match {\[null\]} $where] {
+        $widget insert end "where : " whr
+        $widget insert end [regsub -all "\n" $where " "] whr
+        $widget insert end "\n" whr
+    }
+    if ![string match null $comments] {
+        $widget insert end [regsub -all "\n" $comments " "] cmt
+        $widget insert end "\n" cmt
+    }
 }
 
 
+proc equationlisting_scrollit {widget} {
+    $widget set
+}
