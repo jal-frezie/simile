@@ -67,13 +67,14 @@ proc ChooseFile { preferred title canbenew } {
     }
     set typeList [list [list $desc $typeList]]
     set switches [list -title $title -defaultextension $fileType \
-		      -filetypes $typeList -initialfile $preferred]
+		      -filetypes $typeList]
     set active [focus]
     if {[llength $active]} {
 	lappend switches -parent $active
     }
     if {$canbenew} {
         set cmd tk_getSaveFile
+	lappend switches  -initialfile $preferred
     } else {
         set cmd tk_getOpenFile
     }
