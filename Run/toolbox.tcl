@@ -413,8 +413,11 @@ proc FindObj { winId x y } {
 # text item, these are the values you need (this is a bug in TclTk)
 
 proc canvasTLDistance {winId x y} {
-    scan [$winId cget -scrollregion] "%g %g" cl ct
-    return [list [expr $x-$cl] [expr $y-$ct]]
+    if {[scan [$winId cget -scrollregion] "%g %g" cl ct]==2} {
+	return [list [expr $x-$cl] [expr $y-$ct]]
+    } else {
+	return [list $x $y]
+    }
 }
 
 # This is used when Tcl wants to get a result from Prolog, e.g., for the
