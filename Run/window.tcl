@@ -1766,6 +1766,7 @@ proc exit_simile {} {
         puts $cacheStream $oldFile
     }
     close $cacheStream
+    file attributes $custom(prefDir)/.recent -hidden true
 }
 
 proc ZapWindow { fullName } {
@@ -1780,6 +1781,7 @@ proc ZapWindow { fullName } {
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
         close $cacheStream
+	file attributes $custom(prefDir)/.layout -hidden true
     }
     destroy ${target}top
     

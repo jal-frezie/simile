@@ -693,6 +693,7 @@ proc ControlDraw {prologVersion} {
         set simtmpdir $custom(prefDir)/sim$guess_free
     }
     file mkdir $simtmpdir
+    file attributes $simtmpdir -hidden true
 
     set UserStream [NetOpen $custom(prefDir)/.version w]
     puts $UserStream $userinfo(name)
@@ -700,6 +701,7 @@ proc ControlDraw {prologVersion} {
     puts $UserStream $userinfo(Version)
     puts $UserStream $userinfo(done)
     close $UserStream
+    file attributes $custom(prefDir)/.version -hidden true
     
     set sendvars(running) 0
     

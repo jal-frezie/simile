@@ -337,7 +337,8 @@ proc PrefSave {} {
 		Status "Cannot install $new: $err"
 		return
 	}
-	PrefDismiss
+    file attributes $old -hidden true
+    PrefDismiss
 }
 
 
