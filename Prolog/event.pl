@@ -133,6 +133,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
+	    set_selection_abilities(Parent),
 	    get_closest_edge(Name, [NewXpt, NewYpt], Edge),
 	    advance_phase_to(moving_border(Edge)) /* ,
 	    retractall(min_size_is(_)),
