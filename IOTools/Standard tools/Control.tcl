@@ -14,6 +14,8 @@ set keyValue runcontrol33857
 
 namespace eval runcontrol33857 {
     variable sendvars
+
+    package require -exact tile 0.5
     
     proc identify {} {
         return "Run control"
@@ -27,20 +29,23 @@ namespace eval runcontrol33857 {
         # does nothing
     }
     
-    proc SwapDistVar {win} {
+    proc SwapDistVar {win pt} {
         variable sendvars
 	variable myModel
-        set widget [$win.rsf getframe]
+        set widget $win.nb.rsf
 	set node $myModel($win)
 
-        set pt [$widget.edit.capt getvalue]
-        $widget.edit.num configure -textvar runState($node,update[expr $pt+1])
+        #set pt [$widget.edit.capt cget -text]
+        $widget.edit.num configure -textvar runState($node,update[expr $pt])
+        $widget.edit.capt.menu delete 0 end
         set sendvars($node,captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             lappend sendvars($node,captList) \
 		[list Time step \#$phase {(} $::runState($node,update$phase) {)}]
+                $widget.edit.capt.menu add command -label [list Time step \#$phase {(} $::runState($node,update$phase) {)}] \
+                      -command [list [namespace current]::SwapDistVar $win $phase]                
         }
-        $widget.edit.capt configure -values $sendvars($node,captList)
+        $widget.edit.capt configure -text [list Time step $pt {(} $::runState($node,update$pt) {)}]
         focus $widget.edit.num
     }
     
@@ -60,7 +65,7 @@ namespace eval runcontrol33857 {
 	}
 	set runState($node,oldIntMethod) $runState($node,intMethod)
 	set runState($node,timeUnit) unit
-	set runState($node,oldUnit) $runState($node,timeUnit)
+        set runState($node,oldUnit) $runState($node,timeUnit)
 
         if {[string match $t [winfo toplevel $t]]} {
             wm title $t "Run control"; # $t isn't a toplevel under MRE
@@ -70,91 +75,111 @@ namespace eval runcontrol33857 {
             }
         }
         
-        TitleFrame $t.rcf -text "Run status and control"
-        set rcf [$t.rcf getframe]
+        ::ttk::notebook $t.nb
         
+        
+        $t.nb add [frame $t.nb.rcf] -text "Run control"
+        set rcf $t.nb.rcf
+        frame $rcf.upper
         foreach mode {play pause stop} {
             set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
         }
-        frame $rcf.topbuttons
-        Button $rcf.topbuttons.reset -image $stopImg -width 32 \
+        frame $rcf.upper.topbuttons
+        Button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
                 -command "[namespace current]::SetMode $t reset"
-        pack $rcf.topbuttons.reset -side left  -padx 1 -expand true -fill x
-        BindPopup $rcf.topbuttons.reset "Reset simulation"
-        Button $rcf.topbuttons.start -image $playImg -width 32  \
+        pack $rcf.upper.topbuttons.reset -side left  -padx 1 -expand true -fill x
+        BindPopup $rcf.upper.topbuttons.reset "Reset simulation"
+        Button $rcf.upper.topbuttons.start -image $playImg -width 32  \
                 -command "[namespace current]::SetMode $t start"
-        pack $rcf.topbuttons.start -side left  -padx 1 -expand true -fill x
-        BindPopup $rcf.topbuttons.start "Run or pause simulation"
-        pack $rcf.topbuttons -side left
+        pack $rcf.upper.topbuttons.start -side left  -padx 1 -expand true -fill x
+        BindPopup $rcf.upper.topbuttons.start "Run or pause simulation"
+        pack $rcf.upper.topbuttons -side left
         
-        frame $rcf.bf
-        set runState($node,cnvs) [canvas $rcf.bf.flag -width 12 -height 12]
-        $runState($node,cnvs) create oval 2 2 10 10 -fill [RestingColour $node]
-        $runState($node,cnvs) create oval 0 0 12 12 -outline grey
+        frame $rcf.upper.bf
+        set runState($node,cnvs) [canvas $rcf.upper.bf.flag -width 18 -height 18]
+        $runState($node,cnvs) create oval 6 6 12 12 -fill [RestingColour $node]
+        $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
-        pack [ProgressBar $rcf.bf.bar -variable runState($node,fractDone) \
+        pack [ProgressBar $rcf.upper.bf.bar -variable runState($node,fractDone) \
                 -maximum 1] -fill x -expand true -side top -padx 4 -pady 4
-        pack $rcf.bf -side left -fill x -expand true
-        
-        pack $rcf -fill x 
-        pack $t.rcf -fill x -padx 1 -pady 1
-        
-        
-        TitleFrame $t.rsf -text "Run settings"
-        set rsf [$t.rsf getframe]
-        
+        pack $rcf.upper.bf -side left -fill x -expand true
+        pack $rcf.upper -side top -expand true -fill x
         set captWidth 20
+        frame $rcf.editBoxes
+        foreach {name capt var} {exec {Execute for } execTime \
+                    current {Current time } currentTime \
+                    disp {Display interval } displayInt} {
+            frame $rcf.editBoxes.$name
+            label $rcf.editBoxes.$name.capt -text $capt -width $captWidth -anchor w
+            pack $rcf.editBoxes.$name.capt -side left
+            ::ttk::entry $rcf.editBoxes.$name.num -relief sunken \
+                    -textvar runState($node,$var) -width 8
+            pack $rcf.editBoxes.$name.num -side left
+            label $rcf.editBoxes.$name.unit -textvar runState($node,timeUnit)
+            pack $rcf.editBoxes.$name.unit -side left
+            pack $rcf.editBoxes.$name  -anchor w -pady 2
+        }
+        pack $rcf.editBoxes -side bottom
+        
+#        pack $rcf -fill x 
+#        pack $t.nb.rcf -fill x -padx 1 -pady 1
+        
+        $t.nb add [frame $t.nb.rsf] -text "Run settings"
+        set rsf $t.nb.rsf
         pack [frame $rsf.unitselection] -pady 2
-        pack [label $rsf.unitselection.caption -text "Select time units" -width $captWidth -anchor w] -side left
-        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars($node,timeUnit) \
+        pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left
+        ::ttk::menubutton $rsf.unitselection.pulldown
+        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu]
+        foreach unit {unit second minute hour day week month year Ma} {
+          $timeUnitMenu add command -label $unit -command "set runState($node,timeUnit) $unit"
+        }
+        $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
+              -textvariable runState($node,timeUnit)
+        #tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars($node,timeUnit) \
         #                unit second minute hour day week month year Ma
-        set widget [ComboBox $rsf.unitselection.pulldown \
-                -textvariable runState($node,timeUnit) \
-                -values {unit second minute hour day week month year Ma}]
+        #set widget [ComboBox $rsf.unitselection.pulldown \
+        #        -textvariable runState($node,timeUnit) \
+        #        -value {unit second minute hour day week month year Ma}]
         #        $widget setvalue first
         pack $rsf.unitselection.pulldown -side left
         
         pack [frame $rsf.integration] -pady 2
         pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left
-        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars($node,timeUnit) \
-        #                unit second minute hour day week month year Ma
-        set widget [ComboBox $rsf.integration.pulldown \
-                -textvariable runState($node,intMethod) \
-                -values {Euler {4th-order Runge-Kutta}}]
+        ::ttk::menubutton $rsf.integration.pulldown
+        set intMethodMenu [menu $rsf.integration.pulldown.menu]
+        foreach method {Euler {Runge-Kutta}} {
+          $intMethodMenu add command -label $method -command "set runState($node,intMethod) {$method}"
+        }
+        $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
+              -textvariable runState($node,intMethod)
+        #set widget [ComboBox $rsf.integration.pulldown \
+        #        -textvariable runState($node,intMethod) \
+        #        -values {Euler {4th-order Runge-Kutta}}]
         #        $widget setvalue first
         pack $rsf.integration.pulldown -side left
         
-        foreach {name capt var} {exec {Execute for } execTime \
-                    current {Current time } currentTime \
-                    disp {Display interval } displayInt} {
-            frame $rsf.$name
-            label $rsf.$name.capt -text $capt -width $captWidth -anchor w
-            pack $rsf.$name.capt -side left
-            entry $rsf.$name.num -relief sunken \
-                    -textvar runState($node,$var) -width 8
-            pack $rsf.$name.num -side left
-            label $rsf.$name.unit -textvar runState($node,timeUnit)
-            pack $rsf.$name.unit -side left
-            pack $rsf.$name  -anchor w -pady 2
-        }
         set sendvars($node,captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             lappend sendvars($node,captList) \
                     [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
         }
         pack [frame $rsf.edit] -anchor w -pady 2
-        pack [ComboBox $rsf.edit.capt -values $sendvars($node,captList) \
-		  -modifycmd [list [namespace current]::SwapDistVar $t] \
-		  -editable 0 -width $captWidth] -side left
+        ::ttk::menubutton $rsf.edit.capt
+        set timeStepMenu [menu $rsf.edit.capt.menu]
+        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
+          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $t $index]
+        }
+        $rsf.edit.capt configure -menu $timeStepMenu -width 16
+        #pack [ComboBox $rsf.edit.capt -values $sendvars($node,captList) \
+	#	  -modifycmd [list [namespace current]::SwapDistVar $t] \
+	#	  -editable 0 -width $captWidth] -side left
         pack $rsf.edit.capt -side left
         pack [label $rsf.edit.colon -text " "] -side left
-        pack [entry $rsf.edit.num -relief sunken -width 8] -side left
-        $rsf.edit.capt setvalue first
-        SwapDistVar $t
-        pack $rsf -fill x
-        pack $t.rsf -padx 1 -pady 1 -fill x
-        
+        pack [::ttk::entry $rsf.edit.num -relief sunken -width 8] -side left
+        #$rsf.edit.capt setvalue first
+        SwapDistVar $t 1
+        pack $t.nb -padx 1 -pady 1 -fill x -fill y -expand true
         
         #        set sendvars($node,timeUnit) unit
         set sendvars($node,expected_end) 0
@@ -172,7 +197,7 @@ namespace eval runcontrol33857 {
         if {[string match stop $sendvars($node,currentMode)] && \
 		    $runState($node,modelRunning) || \
                 [string match reset $action]} {
-            set widget [$winId.rcf getframe]
+            set widget $winId.nb.rcf
 
 	    if {[do_in_editor set runState($node,updated)]} {
 		set updateChoice [ShowMessage "Model out of date" warning \
@@ -245,9 +270,9 @@ namespace eval runcontrol33857 {
         # This loop sets the array of dts in the model
         set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set tweaked 0
-	set newBalls [expr ![string equal $runState($node,timeUnit) \
-				$runState($node,oldUnit)]]
-	set runState($node,oldUnit) $runState($node,timeUnit)
+        set newBalls [expr ![string equal $runState($node,timeUnit) \
+                      $runState($node,oldUnit)]]
+        set runState($node,oldUnit) $runState($node,timeUnit)
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
             set tick $runState($node,update$setPhase)
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
@@ -317,9 +342,9 @@ namespace eval runcontrol33857 {
 	set node $myModel($winId)        
         set phases [GetPhaseCount $node]
         set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
-        set widget [$winId.rcf getframe]
-	$widget.topbuttons.start configure -image $pauseImg
-	$widget.topbuttons.start configure -command \
+        set widget $winId.nb.rcf
+	$widget.upper.topbuttons.start configure -image $pauseImg
+	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $winId stop"
 
         while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
@@ -368,7 +393,7 @@ namespace eval runcontrol33857 {
             # to make sure all the values are set, and initialize displays
             
             if {[info exists redoPhase($node)]} {
-                $widget.bf.flag itemconfigure 1 -fill yellow
+                $widget.upper.bf.flag itemconfigure 1 -fill yellow
                 update
                 if {$redoPhase($node) == -1} {
                     InitTimeSeries $node
@@ -380,10 +405,10 @@ namespace eval runcontrol33857 {
 		    if {$runState($node,modelRunning)<3} {
 			set runState($node,modelRunning) 3
 		    }
-		    if {$redoPhase($node) < 1} {
-			TellAllHelpers $node reset
-		    }
-		    TellAllHelpers $node display $current $display $update
+                if {$redoPhase($node) < 1} {
+                    TellAllHelpers $node reset
+                }
+                TellAllHelpers $node display $current $display $update
 		} else {
                     set sendvars($node,currentMode) exit
                 }
@@ -411,7 +436,7 @@ namespace eval runcontrol33857 {
                 
                 set bigPhase [PhaseFor $node $current $step [expr $phases+1]]
                 if {$bigPhase <= $phases} {
-                    $widget.bf.flag itemconfigure 1 -fill green
+                    $widget.upper.bf.flag itemconfigure 1 -fill green
                     CondUpdate $node $bigPhase
                     if {![do_model $node advance $scaled_current $bigPhase]} {
                         set sendvars($node,currentMode) exit
@@ -422,7 +447,7 @@ namespace eval runcontrol33857 {
                             if {![do_model $node update $scaled_current $bigPhase]} {
                                 set sendvars($node,currentMode) exit
                             }
-                        } {4th-order Runge-Kutta} {
+                        } {Runge-Kutta} {
                             if {![RKUpdate $node $scaled_current \
 				      $bigPhase $phases]} {
                                 set sendvars($node,currentMode) exit
@@ -453,7 +478,7 @@ namespace eval runcontrol33857 {
                     # display the results if at a new time, or every time if in static mode
                     set numDisplays [expr floor(($current + $step/2)/$display)]
                     if {$numDisplays != $sendvars($node,prevDisplay) || $step == 0} {
-                        $widget.bf.flag itemconfigure 1 -fill blue
+                        $widget.upper.bf.flag itemconfigure 1 -fill blue
                         CondUpdate $node disp
                         set sendvars($node,prevDisplay) $numDisplays
                         TellAllHelpers $node display $current $display $step
@@ -476,10 +501,10 @@ namespace eval runcontrol33857 {
 #            kill {
 #		destroy $winId
 #            } default {
-	$widget.topbuttons.start configure -image $playImg
-	$widget.topbuttons.start configure -command \
+	$widget.upper.topbuttons.start configure -image $playImg
+	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $winId start"
-	$widget.bf.flag itemconfigure 1 -fill [RestingColour $node]
+	$widget.upper.bf.flag itemconfigure 1 -fill [RestingColour $node]
 #            }
 #        }
 	set sendvars($node,currentMode) stop
