@@ -95,9 +95,9 @@ namespace eval slide139 {
 	set levels [split $title /]
 	set trans [GetTransTable $node]
 	set type [GetModelType $node] 
-	switch $type {
+	switch -glob $type {
 	    FLAG {
-	    } ENUMERATED {
+	    } ENUM(*) {
 		set possVals [lrange [lindex $trans end] 1 end]
 	    } default {
 #		set min [GetMinValue $node]
@@ -143,13 +143,13 @@ namespace eval slide139 {
 	}
         if {![info exists useDim]} {
 	    set defVal [GetDefVal $initVal -1 0]
-	    switch $type {
+	    switch -glob $type {
 		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
 			  -offvalue 0 -onvalue 1 -relief ridge]
 		set checkStates($node) $defVal
-		} ENUMERATED {
+		} ENUM(*) {
 		ComboBox $f.combo -values $possVals -editable 0 \
 		    -text [lindex $possVals [expr $defVal-1]] \
 		    -textvariable comboTypes($node) \
@@ -187,7 +187,7 @@ namespace eval slide139 {
 		} else {
 		    set slTitle $index
 		}
-		switch $type {
+		switch -glob $type {
 		    FLAG {
 		    set line [expr ($index+9)/10]
 		    set row $f.row$line
@@ -210,7 +210,7 @@ namespace eval slide139 {
 			set newbg \#c0c0ff
 		    }
 		    $row.elt$index configure -bg $newbg
-		    } ENUMERATED {
+		    } ENUM(*) {
 		    pack [frame $f.elt$index] -fill x -expand true
 		    ComboBox $f.elt$index.c -values $possVals -editable 0 \
 			-text [lindex $possVals [expr $defVal-1]] \

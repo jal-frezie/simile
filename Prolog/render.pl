@@ -501,12 +501,12 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 		    DefEval = 'SPLIT');
 	    (member(Unit, [boolean, cond_spec]), Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
-	    Unit = a(Enum), !, Type = 'ENUMERATED',
-		/* In future, 'ENUMERATED' will be replaced by Posn, which is
+	    Unit = a(Enum), !, Type = Posn,
+		/* In the past, 'ENUMERATED' was replaced by Posn, which is
 		a number from -10 down indicating the data structure in the
 	        executable corresponding to the actual enumerated type. */
 		Wee = 1,
-		enum_type_ref(Enum, BaseName, ExecForms, Muckle, _, _Posn);
+		enum_type_ref(Enum, BaseName, ExecForms, Muckle, _, Posn);
 	    member(Unit, [const_int, int]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-268435455, 268435455];
 		/* limits for GNU integers; Sicstus can go further */

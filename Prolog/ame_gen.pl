@@ -487,18 +487,20 @@ enum_type_ref(Ref, Model, ExecTypes, Value, Units, ETSpec) :-
 	resolve_enum_type(BareRef, Model, ExecTypes, Value, Units, ETSpec)).
 
 resolve_enum_type(Ref, Model, ExecForms, Value, Units, ETSpec) :-
-	m_class:Model has_class_refinement enum_types of TypeList,
-	    member(TypeName-TypeMems, TypeList),
+	(m_class:Model has_class_refinement enum_types of TypeList, !;
+	    TypeList = []),
+	(nth0(Posn, TypeList, TypeName-TypeMems),
 	    (Ref = TypeName; nth(Value, TypeMems, Ref)),
 	    append_atoms(['"', TypeName, '"'], TypeRef),
 	    (number(Value),
 		Units=a(TypeRef);
 	    length(TypeMems, Value),
 		Units=n(TypeRef)),
-	    nth0(Posn, ExecForms, enum_type(Model, TypeName, _)),
 	    ETSpec is -10-Posn, !;
 	m_class:Parent has_part Model,
-	    resolve_enum_type(Ref, Parent, ExecForms, Value, Units, ETSpec).
+	    resolve_enum_type(Ref, Parent, _ExecForms, Value, Units, InnerSpec),
+	    length(TypeList, Skipped),
+	    ETSpec is InnerSpec - Skipped).
 	
 get_node_size(Source, Size) :-
 	get_node_size(Source, _, Size, _).

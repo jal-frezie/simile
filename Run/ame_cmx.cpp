@@ -321,7 +321,7 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
   } else if (data_line->eval == INPUT) {
     if (data_line->datatype == FLAG) {
       varName = "checkStates ";
-    } else if (data_line->datatype == ENUMERATED) {
+    } else if (data_line->datatype <= ENUM_BASE) {
       varName = "comboChoices ";
     } else {
       varName = "sliderVals ";
@@ -334,18 +334,17 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
     case FLAG:
       serviceError = Tcl_GetBooleanFromObj(globInterp, valPtr, (int*)tgt);
       return;
-    case VALUELESS: /* getting number of instances for record submodel */
-    case INTEGER:
-    case ENUMERATED:
+    case REAL:
+      serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, (double*)tgt);
+      return;
+    default: /* could be VALUELESS if getting number of instances for record 
+		submodel, INTEGER or ENUM(*) */
       /* if someone enters a float in a slider entry box or time series for
 	 an integer input, we want the nearest int value... */
       serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, &makeInt);
       if (serviceError == TCL_OK) {
 	*(int*)tgt = int(makeInt);
       }
-      return;
-    case REAL:
-      serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, (double*)tgt);
       return;
     }
   }
@@ -813,13 +812,6 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
 	Tcl_GetDoubleFromObj(NULL, nVs, (double *)model_val_ptr);
       }
       break;
-    case INTEGER:
-    case ENUMERATED:
-      localObj = Tcl_NewIntObj(*(int *)model_val_ptr);
-      if (nVs) {
-	Tcl_GetIntFromObj(NULL, nVs, (int *)model_val_ptr);
-      }
-      break;
     case FLAG:
       localObj = Tcl_NewBooleanObj(*(int *)model_val_ptr);
       if (nVs) {
@@ -828,6 +820,12 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
       break;
     case EXTERNAL:
       localObj = Tcl_NewStringObj("ex", -1);
+      break;
+    default: /* INTEGER or ENUM(*) */
+      localObj = Tcl_NewIntObj(*(int *)model_val_ptr);
+      if (nVs) {
+	Tcl_GetIntFromObj(NULL, nVs, (int *)model_val_ptr);
+      }
       break;
     }
     break;

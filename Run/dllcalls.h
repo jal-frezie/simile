@@ -29,7 +29,8 @@
 #define INTEGER         2
 #define FLAG            3
 #define EXTERNAL        4
-#define ENUMERATED      5
+
+#define ENUM_BASE       -10
 
 /* source of value */
 #define EXOGENOUS       0

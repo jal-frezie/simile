@@ -74,19 +74,21 @@ proc GetNodeIdFromRef {dest indices} {
 }
 
 proc collect {tgt node count args} {
+    global myNode
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
     if {[string match TABLE [getinfo $node 3]]} {
 	set inputSrc paramData
     } else {
-	switch [getinfo $node 0] {
-	    FLAG {
-		set inputSrc checkStates
-	    } ENUMERATED {
-		set inputSrc comboChoices
-	    } default {
-		set inputSrc sliderVals
-	    }
-	}
+	set inputSrc [InputVarFor $myNode $node]
+#	switch [getinfo $node 0] {
+#	    FLAG {
+#		set inputSrc checkStates
+#	    } ENUMERATED {
+#		set inputSrc comboChoices
+#	    } default {
+#		set inputSrc sliderVals
+#	    }
+#	}
     }
     set sub [join [concat $node $args] ,]
     set val [BringParameter $inputSrc $sub]

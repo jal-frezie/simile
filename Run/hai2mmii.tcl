@@ -399,11 +399,15 @@ proc GetCCompProperty {topNode prop args} {
 			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
 			       CREATION REPRODUCTION IMMIGRATION LOSS ALARM} \
 			    Type,cIdx 1 Type,names \
-			    {VALUELESS REAL INTEGER FLAG EXTERNAL ENUMERATED} \
+			    {VALUELESS REAL INTEGER FLAG EXTERNAL} \
 			    Eval,cIdx 2 Eval,names \
 			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
-	    return [lindex $propData($prop,names) \
-			    [c_getvalue $topNode $node $propData($prop,cIdx)]]
+	    set numericVal [c_getvalue $topNode $node $propData($prop,cIdx)]
+	    if {$numericVal<=-10} {
+		return ENUM([expr -10-$numericVal])
+	    } else {
+		return [lindex $propData($prop,names) $numericVal]
+	    }
 	} Dims {
 	    set specials {RECORDS MEMBERS SEPARATE}
 	    set fullList [c_getvalue $topNode $node 0]
@@ -445,9 +449,10 @@ proc GetCCompProperty {topNode prop args} {
 		return [list [do_for_node $topNode insert $model_id($topNode) \
 				  $instance_id($topNode) $node $newVs]]
 	    } else {
-		return [list [do_for_node $topNode extract \
+		set res [list [do_for_node $topNode extract \
 				  $model_id($topNode) $instance_id($topNode) \
 				  $node]]
+		return $res
 	    }
 	}
     }
@@ -475,7 +480,12 @@ proc GetTclCompProperty {topNode prop args} {
 	    return $result
 	} Class|Type|Eval {
 	    array set propData [list Class 9 Type 0 Eval 3]
-	    return [getinfo $node $propData($prop)]
+	    set extracted [getinfo $node $propData($prop)]
+	    if {[string is integer $extracted]} {
+		return ENUM([expr -10-$extracted])
+	    } else {
+		return $extracted
+	    }
 	} Dims {
 	    set numericPath [getinfo $node 5]
 	    return [GetFullDims $numericPath]
@@ -578,10 +588,10 @@ proc WarnNoData {node} {
 }
 
 proc InputVarFor {topNode node} {
-    switch [GetCompProperty $topNode Type $node] {
+    switch -glob [GetCompProperty $topNode Type $node] {
 	FLAG {
 	    return checkStates
-	} ENUMERATED {
+	} ENUM(*) {
 	    return comboChoices
 	} default {
 	    return sliderVals
