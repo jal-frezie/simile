@@ -839,7 +839,14 @@ proc InjectGraphics {c canvasFile} {
     global window_info
     set w [expr $window_info($c,width)+4]
     set h [expr $window_info($c,height)+4]
-    source $canvasFile
+#    source $canvasFile
+# following does same thing but allows encoding to happen
+    set stream [NetOpen $canvasFile r]
+    while {[gets $stream line]>=0} {
+	eval $line
+    }
+    close $stream
+
     # At this point we may have loaded something with a scrollregion smaller than
     # the current window. In this case TweakWindow (from the .cnv file) will have
     # loaded this region as the new window size, so we 'grow' the window back to
