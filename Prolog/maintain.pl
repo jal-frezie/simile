@@ -410,7 +410,12 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	untranslate(Coord_list, Trans, Screen_coords),
 	find_fatness(Trans, RelFatness),
 	get_flash(Link, Colour_scheme),
-	Draw_command =.. [Type, Wid, Screen_coords, 
+	(Type = influence,
+	    find_name_host(Link, ControlThing),
+	    m_class:ControlThing has_attribute use_sofar of 1, !,
+	    UseType = broken_influence;
+	UseType = Type),
+	Draw_command =.. [UseType, Wid, Screen_coords, 
 			RelFatness, Colour_scheme, [Link]],
 	call(Draw_command),
 	((get_drawing_form(Link, flow, Bowtie),

@@ -10,7 +10,7 @@ alongside
 the rest of the program are handled through gui_input. */
 
 sicstus_module(dialogue, [do_equation_dialog/2, 
-	do_disag_dialog/4, do_relation_dialog/9, test_eqn/8,
+	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
         start_progress_dialogue/0,
@@ -703,13 +703,13 @@ do_disag_dialog(Win, Model, P_list, New_P_List) :-
 
 do_relation_dialog(Win, Relation, OldExcStat, OldLastStat, 
 OldComment,
-		   OKd, ExcStat, LastStat, NewComment) :-
+		   OKd, ExcStat, NewComment) :-
 	caption_for(Relation, Capt),
 	tk_do_relation_dialog(Win, Capt, OldExcStat, OldLastStat, 
 OldComment,
-			      OKdStr, ExcStr, LastStr, NewCommentStr),
-	strings_to_atoms([OKdStr, ExcStr, LastStr, NewCommentStr],
-			 [OKd, ExcStat, LastStat, NewComment]).
+			      OKdStr, ExcStr, NewCommentStr),
+	strings_to_atoms([OKdStr, ExcStr, NewCommentStr],
+			 [OKd, ExcStat, NewComment]).
 
 strings_to_atoms([],[]).
 

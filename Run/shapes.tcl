@@ -308,13 +308,18 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
 
-proc PutThinArrow { w ptz fatness density colourScheme \
-            tagSet} {
+proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
-    eval {$w create line} $mptz {-arrow last \
+    if {[string equal dashed $density]} {
+	set density {}
+	set dashClause "-dash -"
+    } else {
+	set dashClause {}
+    }
+    eval {$w create line} $mptz $dashClause {-arrow last \
                 -arrowshape [list [expr $features/6] [expr $features/5] \
                 [expr $features/16]] -smooth true -width $width \
                 -tag "$tagSet realwidth($width) has_info"}

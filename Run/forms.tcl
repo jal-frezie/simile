@@ -478,7 +478,7 @@ proc destroy_equation {} {
 # Scrolls all listboxes in response to scrollbar
 
 proc ScrollAll {widgetList args} {
-    
+    
     foreach item $widgetList {
         eval {$item yview} $args
     }
@@ -1237,7 +1237,7 @@ proc CloseProgressBox {} {
     destroy .progress
 }
 
-proc RelationCheck {parent title init_exc init_delay init_comment} {
+proc RelationCheck {parent title attr init_exc init_comment} {
     global relation
     
     set t [toplevel .relcheck -bd 4]
@@ -1245,17 +1245,16 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
     wm title $t "Properties of $title"
     set relation(isexclusive) $init_exc
-    set relation(useoldmemb) $init_delay
     frame .relcheck.top
     TitleFrame .relcheck.top.left -text "Association options:"
     set f [.relcheck.top.left getframe]
-    pack [checkbutton $f.exclusive \
-            -text "Exclusive role" -variable relation(isexclusive) -offvalue 0 -onvalue 1] -anchor w
-    #    BindPopup $f.exclusive exclusive
-    # GUI access to Last membership checkbox denied, although it is used for the Rantan Pandau model
-    #    pack [checkbutton $f.oldmemb \
-    #           -text "Last membership" -variable relation(useoldmemb) -offvalue 0 -onvalue 1] -anchor w
-    #    BindPopup $f.oldmemb oldmemb
+    if {[string equal exclusive $attr]} {
+	set text "Exclusive role"
+    } else {
+	set text "Use values in\nsame time step"
+    }
+    pack [checkbutton $f.exclusive -text $text \
+	      -variable relation(isexclusive) -offvalue 0 -onvalue 1] -anchor w
     pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
     frame .relcheck.top.right
     pack [button .relcheck.top.right.bdone \
@@ -1280,8 +1279,7 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
     set newComment [$f.comment get 1.0 end]
     destroy .relcheck
     
-    return [list $relation(done) $relation(isexclusive) $relation(useoldmemb) \
-            $newComment]
+    return [list $relation(done) $relation(isexclusive) $newComment]
 }
 
 proc GetFindText {parent} {
@@ -2081,6 +2079,3 @@ proc NotifyOverLimit {limit} {
     tkwait variable ack
     destroy .notify
 }
-
-
-

@@ -13,8 +13,8 @@ changed only by deleting and redrawing them.  */
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_file_name/4, enable_text_editing_in/1, disable_text_editing_in/1, 
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
-	submodel/7, bowtie/6, 
-	flow/5, influence/5, ghost_link/5, relation/5, text/7,
+	submodel/7, bowtie/6, flow/5, influence/5, broken_influence/5,
+			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
 	tk_add_window/8, change_title_to/3, current_edit/2, force_edit/2,
 	get_component_from_gui/4, 
@@ -33,7 +33,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	set_interp_menu_state/1,
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
-	tk_do_disag_dialog/4, tk_do_relation_dialog/9, get_tcl_shpiel/1,
+	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/1,
 	check_directory/1, windowize/2,
 	compile_c_program/2, load_executable/4, find_phase/3,
@@ -188,6 +188,11 @@ influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
 		       Fatness, {}, Colour_scheme, br(Features)], _).
+
+broken_influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
+	unscramble_coords(Coords, [], Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
+		       Fatness, dashed, Colour_scheme, br(Features)], _).
 
 ghost_link(Wid, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
@@ -423,11 +428,11 @@ tk_do_disag_dialog(Win, Caption, [Colour, Type, Fatness, CountList, Step,
 	ResultList = []).
 
 tk_do_relation_dialog(Win, Caption, IsExcl, IsDelay, OldComment,
-		      OKd, IsNowExcl, IsNowDelay, NewComment) :-
+		      OKd, IsNowExcl, NewComment) :-
 	safe_tcl_eval(['RelationCheck', Win, br(write(Caption)),
 			  IsExcl, IsDelay, br(write(OldComment))],
 		 New_P_string),
-	chop_list(New_P_string, [OKd, IsNowExcl, IsNowDelay, NewComment]).
+	chop_list(New_P_string, [OKd, IsNowExcl, NewComment]).
 
 tk_get_pref(ResourceName, ResourceValue) :-
 	safe_tcl_eval(['PrefValue', write(custom(ResourceName)),

@@ -548,22 +548,23 @@ doubleclick_on(Edit_thing) :-
 				       compartment, submodel, caption, sections]), 
 		 build(Depths)]),
 	    redraw_window(NewWin);
-	Edit_type = relation, !,
+	(Edit_type = relation, Attr = exclusive;
+	    Edit_type = influence, Attr = use_sofar), !,
 	    find_name_host(Edit_thing, ControlThing),
-	    (get_av_pair(ControlThing, 2, exclusive, OldExc), !;
+	    (get_av_pair(ControlThing, 2, Attr, OldExc), !;
 		OldExc = 0),
-	    (get_av_pair(ControlThing, 2, last_membership, OldMemb), !;
-		OldMemb = 0),
 	    (get_av_pair(ControlThing, 2, comment, OldComment), !;
 		OldComment = ''),
-	    do_relation_dialog(Wid, ControlThing, OldExc, OldMemb, OldComment,
-			       OKd, NewExc, NewMemb, NewComment),
+	    do_relation_dialog(Wid, ControlThing, Attr, OldExc, OldComment,
+			       OKd, NewExc, NewComment),
 	    (OKd == 1, !,
-		add_parameter(ControlThing, 2, exclusive, NewExc),
-		add_parameter(ControlThing, 2, last_membership, NewMemb),
+		add_parameter(ControlThing, 2, Attr, NewExc),
 		add_parameter(ControlThing, 2, comment, NewComment),
 		find_all_comps(Parent, ControlThing),
-		finish_move(Parent);
+		(find_name_host(Messed, ControlThing),
+		    redisplay(Messed),
+		    fail;
+		finish_move(Parent));
 	    OKd == 0);
 	\+ member(Edit_type, [cloud, influence]), !,
 	    find_node_with_data(Edit_thing, Base, Control_thing),
