@@ -83,22 +83,28 @@ proc ControlDraw {prologVersion} {
     set day [expr 24*60*60]
     if {$userinfo(final_expiry)} {
 	set expTime $userinfo(final_expiry)
-    } else {
-	set expTime [expr [clock seconds]+365*$day]
     }
     if {$userinfo(days_after_install)} {
 	set installTime [lindex [lindex [split $env(install_time) =] 1] 0]
 	set relExpTime [expr $installTime+$userinfo(days_after_install)*$day]
-	set expTime [min $expTime $relExpTime]
+	if {$userinfo(final_expiry)} {
+	    set expTime [min $expTime $relExpTime]
+	} else {
+	    set expTime $relExpTime
+	}
     }
-    set toGo [expr $expTime-[clock seconds]]
+    if {[info exists expTime]} {
+	set userinfo(exp_time) $expTime
+	set toGo [expr $expTime-[clock seconds]]
 
-    if {$toGo<0} {
-	set crumble "This version of Simile has passed its expiry date."
-        error $crumble
-    } elseif {$toGo<7*$day} {
-	ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
+	if {$toGo<0} {
+	    set crumble "This version of Simile has passed its expiry date."
+	    error $crumble
+	} elseif {$toGo<7*$day} {
+	    ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
+	}
     }
+
 	
     if {[file exists ~]} {
         set custom(prefDir) ~/.simile

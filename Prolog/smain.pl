@@ -38,9 +38,12 @@ main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
-	prolog_flag(version, PlogV),
+	prolog_flag(version, FullVnum),
+	name(FullVnum, FullVnumStr),
+	append(VnumStr, [32, 40 | _], FullVnumStr),
+	name(Vnum, VnumStr), !, /* remove first ' (' onwards */
         nl, write(ready), nl,
-	tcl_eval(['FilterErrors', 'ControlDraw', br(PlogV)], EnvVars),
+	tcl_eval(['FilterErrors', 'ControlDraw', br(Vnum)], EnvVars),
 	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),

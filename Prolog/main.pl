@@ -53,7 +53,10 @@ main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
-	prolog_flag(version, Vnum),
+	prolog_flag(version, FullVnum),
+	name(FullVnum, FullVnumStr),
+	append(VnumStr, [32, 40 | _], FullVnumStr),
+	name(Vnum, VnumStr), !, /* remove first ' (' onwards */
         tk_new([], Interp),
 	on_exception(ErrorFunction, 
 		     tcl_eval(Interp, [source, '../Run/toolbox.tcl'], _),
