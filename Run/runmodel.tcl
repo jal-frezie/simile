@@ -947,6 +947,8 @@ proc ScrubRun {} {
 #ShowMessage debug info "Exiting $model_id 0" ok
 		c_exitmodel $model_id 0
 	    }
+	} else {
+	    namespace delete ::AME_model<>
 	}
 	unset model_id
 	ToggleIOToolMenu 0
@@ -1491,10 +1493,6 @@ proc load_dll {lang progFileDir modelPath node} {
     global phasecount nodedata nodecount model_id model_ids
     set nameBase $progFileDir$modelPath/model
     if {[string match tcl $lang]} {
-	if {[info exists exports(target)]} { 
-	    namespace delete ::AME_model<>
-	}
-	set exports(target) $nameBase.$lang
 	source ../Functions/procs.tcl
 	source $nameBase.$lang
 	if {[info exists simile_version]} {
@@ -1653,7 +1651,6 @@ proc compile_c {workingDir modelPath} {
     file delete objtemp.o
 
 # do not allow an old dcf to be saved with a new model
-    if {[info exists exports(dcfId)]} {unset exports(dcfId)}
     cd $oldDir
 }
 
