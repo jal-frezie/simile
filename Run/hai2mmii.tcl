@@ -9,20 +9,14 @@ proc do_model {node what args} {
     global running_c errorInfo model_id instance_id varName model_prog
     
     if {![info exists model_id($node)]} {
-	ShowMessage "Model not loaded" error \
-	"This operation cannot be done as there is no model program loaded." \
-	ok
-	return 0
+	WarnNoProgram $node
     }
     set mtime [lindex $args 0]
     set mstep [lindex $args 1]
     if {$mstep == -1} {
 	set running_c($node) $model_id($node)
     } elseif {![info exists running_c($node)]} {
-	ShowMessage "Model not running" error \
-	"This operation cannot be done as there is no model program running." \
-	ok
-	return 0
+	WarnNoData $node
     }
 
     if {$model_id($node)} {
@@ -119,7 +113,7 @@ proc do_model {node what args} {
 	    -1 {
 		set action initialization
 		set timing {}
-		ScrubRun $node 0
+#		ScrubRun $node 0
 	    } 0 {
 		set action reset
 		set timing {}

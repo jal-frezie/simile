@@ -161,9 +161,6 @@ namespace eval runcontrol33857 {
     }
     
     proc SetMode { winId action } {
-        global playImg
-        global stopImg
-        global pauseImg
 	global runState
         variable sendvars
 	variable myModel
@@ -171,28 +168,38 @@ namespace eval runcontrol33857 {
 	set node $myModel($winId)
         if {[string match stop $sendvars($node,currentMode)] && \
 		    $runState($node,modelRunning) || \
-                [string match exit $sendvars($node,currentMode)] && \
-                    [string match reset $action]} {
+                [string match reset $action]} {
             set widget [$winId.rcf getframe]
 	    switch -regexp [CheckUpToDate $node $action] {
 		yes|cancel {
 		    return
 		} no {
-		    if {$runState($node,modelRunning)==2} {
-			set runState($node,modelRunning) 3
+		    if {$runState($node,modelRunning)==3} {
+			set runState($node,modelRunning) 4
 		    }
 		} fail {
-		    set sendvars($node,currentMode) exit
 		    set runState($node,modelRunning) 0
-		    $widget.bf.flag itemconfigure 1 -fill red
+		    $widget.bf.flag itemconfigure 1 -fill white
 		    return
 		}
 	    }
-            if {$runState($node,modelRunning) == 1} {
-                ShowMessage "Fixed parameters not loaded" warning \
+            switch $runState($node,modelRunning) {
+		0 {
+		    ShowMessage "Failed to build model" warning \
+                        "The current model could not be built, or it failed to initialize." ok
+		    return
+		} 1 {
+		    ShowMessage "Fixed parameters not loaded" warning \
                         "The model cannot be run because it contains fixed input parameters for which no source is defined." ok
-                return
-            }
+		    return
+		} 2 {
+		    if {[string match start $action]} {
+			ShowMessage "Model has exited" warning \
+			    "The model has run into a problem during execution and needs to be reset before it can run again." ok
+			return
+		    }
+		}
+	    }
             if {[string match start $action] && \
                         [info exists runState($node,reloadParams)]} {
                 if {[string compare [ShowMessage "Parameters out of date" warning \
@@ -203,18 +210,7 @@ namespace eval runcontrol33857 {
             
             SendData $winId
             set sendvars($node,currentMode) $action
-            $widget.topbuttons.start configure -image $pauseImg
-	    $widget.topbuttons.start configure -command \
-		"[namespace current]::SetMode $winId stop"
-
             RollSimulation $winId
-            if {[string match kill $sendvars($node,currentMode)]} {
-                set sendvars($node,currentMode) stop
-            } else {
-                $widget.topbuttons.start configure -image $playImg
-		$widget.topbuttons.start configure -command \
-		    "[namespace current]::SetMode $winId start"
-            }
         } elseif {[string equal start $sendvars($node,currentMode)]} {
 	    set sendvars($node,currentMode) $action
         }
@@ -297,12 +293,17 @@ namespace eval runcontrol33857 {
     proc RollSimulation { winId } {
         variable sendvars
         global errorInfo redoPhase runState
+	global pauseImg playImg
 	variable myModel
         
 	set node $myModel($winId)        
         set phases [GetPhaseCount $node]
         set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set widget [$winId.rcf getframe]
+	$widget.topbuttons.start configure -image $pauseImg
+	$widget.topbuttons.start configure -command \
+	    "[namespace current]::SetMode $winId stop"
+
         while {[lsearch {exit stop kill} $sendvars($node,currentMode)]==-1} {
             # Collect any changes that have been made by the user
             if {[info exists sendvars($node,newData)]} {
@@ -434,16 +435,27 @@ namespace eval runcontrol33857 {
                 # Finally, see if the allotted time has elapsed and swap modes if it has
                 # set step [expr $exec>$update?$update:$exec]
             }
+	    if {[lsearch {start stop} $sendvars($node,currentMode)] > -1} {
+		if {$runState($node,modelRunning)==2} {
+		    set runState($node,modelRunning) 3
+		}
+	    } elseif {$runState($node,modelRunning)==2} {
+		set runState($node,modelRunning) 0
+	    } else {
+		set runState($node,modelRunning) 2
+	    }
         }
         switch $sendvars($node,currentMode) {
             kill {
 		destroy $winId
-            } exit {
-                $widget.bf.flag itemconfigure 1 -fill red
             } default {
+                $widget.topbuttons.start configure -image $playImg
+		$widget.topbuttons.start configure -command \
+		    "[namespace current]::SetMode $winId start"
                 $widget.bf.flag itemconfigure 1 -fill [RestingColour $node]
             }
         }
+	set sendvars($node,currentMode) stop
     }
     
     proc RKUpdate {node current phase phases} {

@@ -211,7 +211,6 @@ proc LoadProgram {node lang} {
     set runState($node,updated) 0
     set runState($node,lang) $lang
     if {[update_executable $node $lang]} {
-        set runState($node,modelRunning) 2
         ToggleIOToolMenu $node
     }
 }
@@ -1323,7 +1322,7 @@ proc AddCanvasBindings { c topNode } {
 proc AddEqnPopup {node x y winId X Y} {
     global pushedbutton equationbar errorInfo runState
     set doDesc [PrefValue custom(compDescPop) compDescPop]
-    set doVal [expr $runState($node,modelRunning)>1 && \
+    set doVal [expr $runState($node,modelRunning)>2 && \
             [PrefValue custom(compValPop) compValPop]]
     set doCmt [PrefValue custom(compCmtPop) compCmtPop]
     if {[string compare select $pushedbutton] || \
@@ -1652,7 +1651,7 @@ proc SaveProjectFile {topNode path} {
     set ProjectFile $path/model.spj
     
     # is it builtC|builtTcl|notbuilt
-    if {$runState($topNode,modelRunning)>1} {
+    if {$runState($topNode,modelRunning)>2} {
         set SimileProject(modelRunning) 1
         if {$model_id($topNode)} {
             set SimileProject(running_c) 1
@@ -2082,7 +2081,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if {![info exists runState($topNode,modelRunning)]} {
         set runState($topNode,modelRunning) 0
     }
-    if {$runState($topNode,modelRunning)>1} {
+    if {$runState($topNode,modelRunning)>2} {
         ${winid}top add  cascade -label "I/O tools" -underline 0 \
                 -menu .helpers
         $fm entryconfigure "Inspect elements" -state normal
@@ -2178,7 +2177,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 -side left -padx 2 -pady 2
         BindPopup $tb.$mode $mode
     }
-    if {!$runState($topNode,modelRunning)>1} {
+    if {!$runState($topNode,modelRunning)>2} {
         $tb.snap configure -state disabled
     }
     
@@ -2489,7 +2488,7 @@ proc Rerun {winId go} {
     global runState window_info
     
     set node $window_info($winId,top_node)
-    if {!$runState($node,modelRunning)>1 || \
+    if {!$runState($node,modelRunning)>2 || \
                 $runState($node,updated) == 1} {
         if {[info exists runState($node,lang)]} {
             set runType run_$runState($node,lang)
@@ -2502,7 +2501,7 @@ proc Rerun {winId go} {
         # assume if model was running before it will run again
     }
     # Only proceed if it worked
-    if {!$runState($node,modelRunning)>1} {
+    if {!$runState($node,modelRunning)>2} {
         return fail
     }
     if {$go} {

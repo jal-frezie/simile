@@ -46,9 +46,9 @@ proc MessFileParams {topNode parent} {
 #	    StartNow $topNode stop
 	    set runState($topNode,modelRunning) 1
 	} 1 {
-	    set needsAReset [expr $runState($topNode,modelRunning)<2]
-	    set runState($topNode,modelRunning) 2
+	    set needsAReset [expr $runState($topNode,modelRunning)<3]
 	    if {$needsAReset} {
+		set runState($topNode,modelRunning) 2
 		StartNow $topNode reset
 	    }
 	}
@@ -59,7 +59,7 @@ proc MessFileParams {topNode parent} {
 
 proc RestingColour {node} {
     global runState
-    return [lindex "red grey black purple" $runState($node,modelRunning)]
+    return [lindex "white grey red black purple" $runState($node,modelRunning)]
 }
     
 proc GetNodeFromFocus {} {
@@ -736,7 +736,8 @@ proc SetRunParams {node runParams} {
 }
 
 # modelRunning is a global variable that indicates the status of the model
-# program: 0 = none, 1 = awaiting fixed params, 2 = up to date, 3 = out of date
+# program: 0 = none, 1 = awaiting fixed params, 2 awaiting initialization,
+# 3 = up to date, 4 = out of date
 
 proc StartRun {node} {
     global runState window_info helperTable running_c
