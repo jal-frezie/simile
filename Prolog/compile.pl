@@ -766,8 +766,10 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 		    EnumTypeSpecs, Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
-	(member(instance(alarm,_,_,elt([sm(_,_,_, fm_loop(_, Al))|_], Al,_),_),
-		Functions), !; true),
+	(member(instance(alarm,_,_,elt(_, Al,_),_),
+		Functions), !,
+	    Path = [sm(_,_,_, fm_loop(_, Al))|_];
+	    true),
 	(setof(ParamUpdate,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
 	       ParamUpdates), !;
