@@ -278,8 +278,6 @@ namespace eval RunEnv {
     }
     
     proc PageRaiseCmd {notebook} {
-        set pageId [expr [$notebook index current]+1]
-        set pageF $notebook.page$pageId
 	set pageF [lindex [$notebook tabs] [$notebook index current]]
         if {[winfo exists $pageF.panedwindow]} {
 	    set firstPane [lindex [$pageF.panedwindow panes] 0]
@@ -301,9 +299,9 @@ namespace eval RunEnv {
         }
         #ShowMessage debug info "containerId $containerId\nParentContainer $ParentContainer" ok
         if {[string match notebook [winfo name $ParentContainer]]} {
-            set pageId [UniqueId page [$ParentContainer tabs]]
+            set pageId [UniqueId $ParentContainer.page [$ParentContainer tabs]]
             set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
-            set newContainer [frame $ParentContainer.page$pageId]
+            set newContainer [frame $pageId]
             $ParentContainer add $newContainer -text "Page $pageIndex"
             panedwindow $newContainer.panedwindow -orient vertical
             pack $newContainer.panedwindow -expand yes -fill both
@@ -502,6 +500,7 @@ namespace eval RunEnv {
 		set newSeln $page
 	    }
 	    $notebook select $newSeln
+	    PageRaiseCmd $notebook
         }
     }
     
@@ -511,8 +510,8 @@ namespace eval RunEnv {
         #        panes [$parentPath panes]" ok;
         set greatgrandparent [winfo parent [winfo parent $parentPath]]
         #puts "DeletePane greatgrandparent $greatgrandparent; class [winfo class $greatgrandparent]"
-        if {[string match NoteBook [winfo class $greatgrandparent]]} {
-            if {([llength [$greatgrandparent pages]] ==1) && ([llength [$parentPath panes]] == 1)} {
+        if {[string match TNotebook [winfo class $greatgrandparent]]} {
+            if {([llength [$greatgrandparent tabs]] ==1) && ([llength [$parentPath panes]] == 1)} {
                 if {[string match mainDisplayPane [winfo name [winfo parent $greatgrandparent]]]} {
                     ShowMessage Information info "Cannot delete this page. The main notebook must have at least one page." ok
                     return
@@ -529,11 +528,11 @@ namespace eval RunEnv {
             set parentNoteBook [winfo parent $parentPage]
             #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
             #                parentPage $parentPage; parentNoteBook $parentNoteBook\n \
-            #                pages [$parentNoteBook pages]\n \
-            #                current page [$parentNoteBook raise]" ok;
+            #                pages [$parentNoteBook tabs]\n \
+            #                current page [$parentNoteBook tab current]" ok;
             destroy $parentPath
-            if {[string match NoteBook [winfo class $parentNoteBook]]} {
-                DeleteNotebookPage $parentNoteBook [$parentNoteBook raise]; #current page
+            if {[string match TNotebook [winfo class $parentNoteBook]]} {
+                DeleteNotebookPage $parentNoteBook [$parentNoteBook tab current]; #current page
             }
         }
     }
@@ -717,7 +716,7 @@ namespace eval RunEnv {
         variable CurrentContainer
         variable CurrentContainers
         if {![string match pane* [winfo name $win]]} {
-#	    ShowMessage debug info "failed SetCurrentContainer $win" ok
+	    ShowMessage debug info "failed SetCurrentContainer $win" ok
             return
         }
         set mainframe $helperTable($currentNode,whichRunEnv).mainframe
@@ -795,28 +794,28 @@ namespace eval RunEnv {
     }
     
     # Return a list of all widgets in an input list of a certain widget class
-    proc GetWidgetClass {widgetList widgetClass} {
-        set classList []
-        foreach widget $widgetList {
-            if {[string match [winfo class $widget] $widgetClass]} {
-                lappend classList $widget
-            }
-        }
-        return $classList
-    }
-    
+#    proc GetWidgetClass {widgetList widgetClass} {
+#        set classList []
+#        foreach widget $widgetList {
+#            if {[string match [winfo class $widget] $widgetClass]} {
+#                lappend classList $widget
+#            }
+#        }
+#        return $classList
+#    }
+#    
     # Return a list of all widgets in an input list with a certain name
     # at the end of its path
-    proc GetWidgetsWithName {widgetList name} {
-        set nameList []
-        foreach widget $widgetList {
-            #ShowMessage debug info "$widget\n[lindex [split $widget .] end]" ok
-            if {[string match $name [lindex [split $widget .] end]]} {
-                lappend nameList $widget
-            }
-        }
-        return $nameList
-    }
+#    proc GetWidgetsWithName {widgetList name} {
+#        set nameList []
+#        foreach widget $widgetList {
+#            #ShowMessage debug info "$widget\n[lindex [split $widget .] end]" ok
+#            if {[string match $name [lindex [split $widget .] end]]} {
+#                lappend nameList $widget
+#            }
+#        }
+#        return $nameList
+#    }
     
     proc CreateDisplayPageContextMenu {} {
         if  {![winfo exists .pageContextMenu]} {
@@ -1225,7 +1224,7 @@ namespace eval RunEnv {
         while {[lsearch -regexp $pagenames $basename$i] > -1} {
             incr i
         }
-        return $i
+        return $basename$i
     }
 } ;# end of namespace RunEnv
 
