@@ -106,7 +106,7 @@ proc RunEnv::Create { ModelWin } {
                 {command "Cl&ose all"    {} "Close all displays" {} -command {::RunEnv::KillDisplays} }
             }
             "&Help" all help 0 {
-                {command "&Contents..." {} "View the help file contents" {} -command {LaunchHelp} }
+                {command "&Contents..." {} "View the help file contents" {} -command {ContextSensitiveHelp .mre run/single.htm} }
             }
         }
         
@@ -1055,7 +1055,6 @@ proc RunEnv::LoadViewFile {stream line} {
                 $notebook insert end $pageId -text $pagecaption \
                         -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
                 # page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
-                [$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
                 bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
                 bind [$notebook getframe $pageId] <Button-3> \
                         "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
