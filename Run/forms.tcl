@@ -1083,8 +1083,10 @@ proc AddEnumTypeMems {fr} {
 	
 proc AddEnumType {fr} {
     global disaggregate enumTypeMPEntry
-    $fr.scrf insert end $enumTypeMPEntry
-    set disaggregate(enumtype,$enumTypeMPEntry) {}
+    if {[CheckForETDuplicates {enumerated type}]} {
+	$fr.scrf insert end $enumTypeMPEntry
+	set disaggregate(enumtype,$enumTypeMPEntry) {}
+    }
 }
 
 proc RemoveEnumType {fr} {
@@ -1098,10 +1100,35 @@ proc RemoveEnumType {fr} {
 
 proc AddEnumMem {fr} {
     global disaggregate enumTypeMPEntry
-    set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
-    lappend disaggregate(enumtype,$togo) $enumTypeMPEntry
+    if {[CheckForETDuplicates member]} {
+	set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+	lappend disaggregate(enumtype,$togo) $enumTypeMPEntry
+    }
 }
 
+proc CheckForETDuplicates {new} {
+    global disaggregate enumTypeMPEntry
+    if {![llength $enumTypeMPEntry]} {
+	ShowMessage "No $new name" error \
+	    "You must enter a name for the new $new in the box." ok
+	return 0
+    }   
+    foreach {type members} [array get disaggregate enumtype,*] {
+	set oldType [string range $type 9 end]
+	if {[string equal $enumTypeMPEntry $oldType]} {
+	    ShowMessage "Bad $new name" error \
+		"This submodel already has an enumerated type of this name." ok
+	    return 0
+	}
+	if {[lsearch $members $enumTypeMPEntry] != -1} {
+	    ShowMessage "Bad $new name" error \
+		"The enumerated type $oldType in this submodel already contains a member of this name." ok
+	    return 0
+	}
+    }
+    return 1
+}
+  
 proc RemoveEnumMem {fr} {
     tk_popup $fr.curmembers [winfo pointerx $fr] [winfo pointery $fr]
     set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
