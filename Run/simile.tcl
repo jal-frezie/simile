@@ -88,9 +88,6 @@ wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2
 wm overrideredirect . 1
 update
 
-# Directory to start in
-set env(START_DIR) $SIMILE_PATH/Examples ; # was $SIMILE_PATH/Tutorial or [pwd]
-
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder
 cd $SIMILE_PATH/Run

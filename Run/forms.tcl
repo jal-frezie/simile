@@ -1412,8 +1412,15 @@ proc GetFindText {parent} {
 proc DoRegDialog {dtId} {
     global userinfo custom welcomeDone tcl_platform
     
-    if {$userinfo(done) && $userinfo(Version)==$userinfo(oldVersion)} {
-        return
+    if {$userinfo(Version)==$userinfo(oldVersion)} {
+	if {$userinfo(done)} {
+	    return
+	}
+    } else {
+	file mkdir $custom(prefDir)/Examples
+	foreach egFile [glob [pwd]/../Examples/*] {
+	    file copy $egFile $custom(prefDir)/Examples
+	}
     }
     set t [toplevel .register -bd 4]
     wm title $t "Welcome to Simile version $userinfo(Version)"
