@@ -171,7 +171,7 @@ proc create_equation {parent boxtitle indices} {
     TitleFrame $middleF.keypad -text "Keypad: "
     set keypadf [$middleF.keypad getframe]
     frame $keypadf.keys
-    set keys {< > ( ) \{ \} \[ \] = _ , / and dummy if dummy 7 8 9 * or dummy then dummy \
+    set keys {< > ( ) \{ \} \[ \] = ^ , / and dummy if dummy 7 8 9 * or dummy then dummy \
                 4 5 6 - not dummy elseif dummy 1 2 3 + xor dummy else dummy 0 .  <- -> DEL \
                 dummy SPACE dummy}
     for {set row 0} {$row < 6} {incr row} {
