@@ -413,8 +413,6 @@ proc load_c_stub {} {
     randseed [clock clicks]
 }
 
-load_c_stub
-
 #if {[string equal process $runHow]} {
 #    proc BringParameter {args} {
 #	puts [list get $args]

@@ -517,14 +517,15 @@ proc do_for_node {dummyNode args} {
 }
 
 # Other stuff related to reorganization
-proc KickOff {nMyNode nRunHow nSimtmpdir} {
+proc KickOff {nMyNode nSimtmpdir} {
     global myNode ;# a stopgap, we shouldn't need it
-    global runHow custom runState simtmpdir tcl_platform
+    global custom runState simtmpdir tcl_platform
 
     set myNode $nMyNode
-    set runHow $nRunHow
     set simtmpdir $nSimtmpdir
     set custom(prefDir) [file dirname $nSimtmpdir]
+    load_c_stub
+
     set runState($nMyNode,modelRunning) 0
     LoadIconImages
     MakeHelperMenu

@@ -218,14 +218,17 @@ proc do_for_node {node args} {
 	    fileevent $runState($node,interp) readable \
 		[list FeedModel $node]
 	    
+	    puts $runState($node,interp) "set runHow $runHow(type)"
+	    flush $runState($node,interp)
 	    puts $runState($node,interp) "source ../Run/runmodel.tcl"
 	    flush $runState($node,interp)
-	    puts $runState($node,interp) \
-		[list KickOff $node $runHow(type) $simtmpdir]
-	    flush $runState($node,interp)
+#	    puts $runState($node,interp) \
+#		[list KickOff $node $runHow(type) $simtmpdir]
+#	    flush $runState($node,interp)
 #puts "initialized"
 	    set runState($node,modelReady) 1
 	    set runState($node,queueSize) 0
+	    do_in_node $node KickOff $node $simtmpdir
 	}
     }
     return [eval do_in_node $node $args]
