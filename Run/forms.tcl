@@ -95,6 +95,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 proc create_equation {parent boxtitle indices} {
     global equation
     global equationbar
+    global tcl_platform
     
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -263,14 +264,25 @@ proc create_equation {parent boxtitle indices} {
     
     set grfimg [image create photo -file "../Images/Toolbar/graph.gif"]
     set tblimg [image create photo -file "../Images/Toolbar/table.gif"]
-    set graph [button $mainf.equation.textbox.buttons.graph \
-            -compound left -image $grfimg -text " Graph... "\
-            -command "equationDoGraph $t $mainf.equation.textbox.text"]
-    pack $graph -padx 8 -pady 4
-    set table [button $mainf.equation.textbox.buttons.table \
-            -compound left -image $tblimg -text " Table... "\
-            -command "GetTable $t $mainf.equation.textbox.text"]
-    pack $table -padx 8 -pady 4
+    if {[string match Darwin $tcl_platform(os)]} {
+        set graph [button $mainf.equation.textbox.buttons.graph \
+                -text " Graph... "\
+                -command "equationDoGraph $t $mainf.equation.textbox.text"]
+        pack $graph -padx 8 -pady 4
+        set table [button $mainf.equation.textbox.buttons.table \
+                -text " Table... "\
+                -command "GetTable $t $mainf.equation.textbox.text"]
+        pack $table -padx 8 -pady 4
+    } else  {
+        set graph [button $mainf.equation.textbox.buttons.graph \
+                -compound left -image $grfimg -text " Graph... "\
+                -command "equationDoGraph $t $mainf.equation.textbox.text"]
+        pack $graph -padx 8 -pady 4
+        set table [button $mainf.equation.textbox.buttons.table \
+                -compound left -image $tblimg -text " Table... "\
+                -command "GetTable $t $mainf.equation.textbox.text"]
+        pack $table -padx 8 -pady 4
+    }
     pack $mainf.equation.textbox.buttons -anchor e -side left
     pack $mainf.equation -expand true -fill both -anchor nw
     pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2 -side left
