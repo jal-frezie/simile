@@ -39,6 +39,29 @@ proc MakeHelperMenu {} {
     cd $oldDir
 }
 
+proc MessFileParams {topNode parent} {
+    global runState
+    switch -exact -- [FileParamDialogue $topNode $parent 1] {
+	-1 {
+#	    StartNow $topNode stop
+	    set runState($topNode,modelRunning) 1
+	} 1 {
+	    set needsAReset [expr $runState($topNode,modelRunning)<2]
+	    set runState($topNode,modelRunning) 2
+	    if {$needsAReset} {
+		StartNow $topNode reset
+	    }
+	}
+	
+    }
+    $runState($topNode,cnvs) itemconfigure 1 -fill [RestingColour $topNode]
+}
+
+proc RestingColour {node} {
+    global runState
+    return [lindex "red grey black purple" $runState($node,modelRunning)]
+}
+    
 proc GetNodeFromFocus {} {
     global window_info helperTable
     set mHost [winfo toplevel [focus]]
@@ -724,7 +747,11 @@ proc StartRun {node} {
     } else {
 	set fpParent [FindNodeTopWin $node]
     }
-    if {![FileParamDialogue $node $fpParent 0]} {
+    set runState($node,modelRunning) 1
+    if {[FileParamDialogue $node $fpParent 0]<1} {
+	if {[info exists runState($node,helperId)]} {
+	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
+	}
 	return 0
     }
 
@@ -842,16 +869,15 @@ proc StartRun {node} {
 #	TellHelperItsGone $oldInputHelper($removedInput) $removedInput
 #    }
 #    CheckFixedParamState
-    set widget [$runState($node,helperId).rcf getframe]
-    $widget.topbuttons.reset invoke
+    StartNow $node reset
     return 1
 }
 
-proc StartNow {node} {
+proc StartNow {node action} {
     global runState
 
     set widget [$runState($node,helperId).rcf getframe]
-    $widget.topbuttons.start invoke
+    $widget.topbuttons.$action invoke
 }
 
 proc TellHelperItsGone {helperWin captionPath} {

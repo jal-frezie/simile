@@ -222,9 +222,9 @@ namespace eval RunEnv {
     }
     
     proc InvokeFPDialogue {} {
-        global helperTable
+        global helperTable runState
         variable currentNode
-        FileParamDialogue $currentNode $helperTable($currentNode,whichRunEnv) 1
+        MessFileParams $currentNode $helperTable($currentNode,whichRunEnv)
     }
     
     proc AddNotebook {containerId} {

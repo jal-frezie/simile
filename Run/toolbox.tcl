@@ -2506,7 +2506,7 @@ proc Rerun {winId go} {
         return fail
     }
     if {$go} {
-        StartNow $node
+        StartNow $node start
     }
     return yes
 }

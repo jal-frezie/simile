@@ -85,10 +85,10 @@ namespace eval runcontrol33857 {
         pack $rcf.topbuttons -side left
         
         frame $rcf.bf
-        set cnvs [canvas $rcf.bf.flag -width 12 -height 12]
-        $cnvs create oval 2 2 10 10 -fill [RestingColour $node]
-        $cnvs create oval 0 0 12 12 -outline grey
-        pack $rcf.bf.flag -side right -anchor e
+        set runState($node,cnvs) [canvas $rcf.bf.flag -width 12 -height 12]
+        $runState($node,cnvs) create oval 2 2 10 10 -fill [RestingColour $node]
+        $runState($node,cnvs) create oval 0 0 12 12 -outline grey
+        pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
         pack [ProgressBar $rcf.bf.bar -variable runState($node,fractDone) \
                 -maximum 1] -fill x -expand true -side top -padx 4 -pady 4
@@ -169,8 +169,9 @@ namespace eval runcontrol33857 {
 	variable myModel
         
 	set node $myModel($winId)
-        if {[string match stop $sendvars($node,currentMode)] || \
-                    [string match exit $sendvars($node,currentMode)] && \
+        if {[string match stop $sendvars($node,currentMode)] && \
+		    $runState($node,modelRunning) || \
+                [string match exit $sendvars($node,currentMode)] && \
                     [string match reset $action]} {
             set widget [$winId.rcf getframe]
 	    switch -regexp [CheckUpToDate $node $action] {
@@ -189,8 +190,7 @@ namespace eval runcontrol33857 {
 	    }
             if {$runState($node,modelRunning) == 1} {
                 ShowMessage "Fixed parameters not loaded" warning \
-                        "The model cannot be run because it contains fixed input parameter
-s for which no source has yet been defined" ok
+                        "The model cannot be run because it contains fixed input parameters for which no source is defined." ok
                 return
             }
             if {[string match start $action] && \
@@ -527,11 +527,6 @@ s for which no source has yet been defined" ok
             year {return 31536000.0}
             Ma {return 31536000000000.0}
         }
-    }
-    
-    proc RestingColour {node} {
-        global runState
-        return [lindex "grey red black purple" $runState($node,modelRunning)]
     }
     
     # No need to do anything for update, because it updates itself

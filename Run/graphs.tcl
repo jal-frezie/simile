@@ -766,6 +766,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
                 -side left -padx 2 -pady 2
         pack [frame $bfrm.rpad] -side left -fill x -expand true
         raise .fpdialogue
+	set paramData(complete) 0
         grab $t
         tkwait variable paramData(done)
         grab release $t
@@ -894,6 +895,10 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
 		      -command [list ${ns}::Save $clientId $path]] -side right
 	    pack [button $nextLevel.head.open -image $iconImages(open) \
 		      -command [list ${ns}::Open $clientId $path]] -side right
+	    if {[string equal fileparams $ns]} {
+		pack [button $nextLevel.head.clear -image $iconImages(new) \
+		      -command [list ${ns}::Clear $clientId $path]] -side right
+	    }
 	    if {![string length $level]} {
 		set level "TOP LEVEL"
 	    }
@@ -921,6 +926,8 @@ proc DoneParams {topNode winId} {
     }
     if {![llength $paramData(needed)]} {
 	set paramData(done) 1
+    } else {
+	set paramData(complete) -1
     }
 }
 
@@ -1160,10 +1167,21 @@ proc FillIfSmall {entry text} {
 
 proc CancelParams {} {
     global paramData
-    set paramData(done) 0
+    set paramData(done) $paramData(complete)
 }
 
 namespace eval fileparams {
+
+proc Clear {spare smPath} {
+    global paramState paramData widgetNames
+
+    foreach compName [array names widgetNames $smPath*] {
+#	array unset paramState $compName
+#	array unset paramData $compName
+	$widgetNames($compName).e configure -state normal
+	$widgetNames($compName).e delete 0 end
+    }
+}
 
 proc Save {spare smPath} {
     global paramState paramData widgetNames SimileProject simtmpdir env

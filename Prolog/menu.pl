@@ -187,7 +187,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    do_dialogue("Insertion error", error, "Unable to insert components here -- not enough free space", ok, _),
 		restart_move)).
 
-:- dynamic([combined_box_is/1]).
+:- dynamic(combined_box_is/1).
 
 merge_box([L1, T1, R1, B1]) :-
 	(retract(combined_box_is([L2, T2, R2, B2])),
