@@ -108,15 +108,18 @@ proc create_equation {parent boxtitle indices} {
     }
     ResetEqnBar [winfo parent $parent]
     ### End formula bar section
-    
-    set t [toplevel .equation -bd 4 -class Equation]
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .equation -bd 4 -class Equation]; ::tk::unsupported::MacWindowStyle style .equation floatZoomProc
+    } else {
+      set t [toplevel .equation -bd 4 -class Equation]
+      wm transient $t $parent
+    }
     #    if {[string equal Linux $tcl_platform(os)]} {
     #	update ;# let window draw so it can be moved off screen
     #	wm geometry .equation +0+[winfo vrootheight .equation]
     #	update ;# let it move off screen so text updates do not distract user
     #    }
     wm title $t [BlankCrs $boxtitle]
-    wm transient $t $parent
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     equationResources
@@ -712,9 +715,13 @@ proc equationDoGraph {parent box} {
 }
 
 proc equationGraph {parent} {
-    global equation
-    toplevel .graph -class graphEntry -bd 4
-    wm transient .graph $parent
+    global equation tcl_platform
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .graph -bd 4 -class graphEntry]; ::tk::unsupported::MacWindowStyle style .graph floatZoomProc
+    } else {
+      toplevel .graph -class graphEntry -bd 4
+      wm transient .graph $parent
+    }
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
     #    wm geometry .graph 640x480
     focus .graph
@@ -881,7 +888,7 @@ proc InsertFunction {boxname functor} {
 
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
             comment enumLists eqnunit hide separate} {
-    global disaggregate
+    global disaggregate tcl_platform
     foreach varName {colour image imgpos type fatness \
                 icount eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
@@ -901,8 +908,12 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             set disaggregate(step) $step
         }
     }
-    set t [toplevel .disaggregation -bd 4 -class Disaggregation]
-    wm transient $t $parent
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .disaggregation -bd 4 -class Disaggregation]; ::tk::unsupported::MacWindowStyle style .disaggregation floatZoomProc
+    } else {
+      set t [toplevel .disaggregation -bd 4 -class Disaggregation]
+      wm transient $t $parent
+    }
     wm resizable $t 0 1
     wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $t "Properties of [BlankCrs $title]"    
@@ -1146,9 +1157,13 @@ proc ClearBG {posRBs} {
 }
 
 proc OldAddEnumType {fr} {
-    global addenumtype
-    toplevel .typeadder
-    wm transient .typeadder $fr
+    global addenumtype tcl_platform
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .typeadder -bd 4]; ::tk::unsupported::MacWindowStyle style .typeadder floatZoomProc
+    } else {
+      toplevel .typeadder
+      wm transient .typeadder $fr
+    }
     pack [frame .typeadder.what]
     pack [label .typeadder.what.l -text Name:] -side left
     pack [entry .typeadder.what.e -textvariable addenumtype(name)] -side left
@@ -1210,7 +1225,7 @@ proc CheckForETDuplicates {new} {
         return 0
     }
     if {[string equal NULL $enumTypeMPEntry]} {
-	ShowMessage "Bad $new name" error \
+        ShowMessage "Bad $new name" error \
                 "NULL is reserved for the value of a variable when it is not equal to any member of its type." ok
         return 0
     }
@@ -1363,9 +1378,14 @@ proc SetHighlights {t} {
 }
 
 proc OpenProgressBox {winId} {
-    toplevel .progress
-    wm transient .progress $winId
-    wm geometry .progress 400x100+0+0
+    global tcl_platform
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .progress -bd 4]; ::tk::unsupported::MacWindowStyle style .progress floatZoomProc
+    } else {
+      toplevel .progress
+      wm transient .progress $winId
+    }
+    if 0 {wm geometry .progress 400x100+0+0}
     wm title .progress "Progress with current operation"
     message .progress.message -aspect 400 -text "Please wait"
     pack .progress.message -fill both -expand true
@@ -1381,7 +1401,7 @@ proc CloseProgressBox {} {
 }
 
 proc RelationCheck {parent title type state init_comment} {
-    global relation
+    global relation tcl_platform
     
     set t [toplevel .relcheck -bd 4]
     wm resizable $t 0 0
@@ -1443,9 +1463,13 @@ proc RelationCheck {parent title type state init_comment} {
 set find(prevs) {}
 
 proc GetFindText {parent} {
-    global find
-    set t [toplevel .findentry -bd 4]
-    wm transient $t $parent
+    global find tcl_platform
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .findentry -bd 4 -class Equation]; ::tk::unsupported::MacWindowStyle style .findentry floatZoomProc
+    } else {
+      set t [toplevel .findentry -bd 4]
+      wm transient $t $parent
+    }
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
     wm title $t "Find"
     wm resizable $t 0 0
@@ -1509,9 +1533,13 @@ proc DoRegDialog {dtId} {
             set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
         }
     }
-    set t [toplevel .register -bd 4]
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .register]; ::tk::unsupported::MacWindowStyle style .register floatZoomProc
+    } else {
+      set t [toplevel .register -bd 4]
+      wm transient $t $dtId
+    }
     wm title $t "Welcome to Simile version $userinfo(Version)"
-    wm transient $t $dtId
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
     set welcomeDone 0
     image create photo welcome
@@ -1715,13 +1743,13 @@ proc ResolveHyper {args} {
 }
 
 proc ErrorHelp {diagnostic} {
-    global diagno url help
+    global diagno url help tcl_platform
     toplevel .diag
-    wm title .diag {Error diagnostics}
     set parent [focus]
     if {[string length $parent]>1} {
         wm transient .diag $parent
     }
+    wm title .diag {Error diagnostics}
     wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
     labelframe .diag.errorf -text "Diagnostics:"
     message .diag.errorf.errorm -text "Full text of the error report, as generated by the TclTk interpreter:" -aspect 5000
