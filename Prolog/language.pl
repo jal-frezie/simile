@@ -294,21 +294,16 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
 	      [Current | Postambles], Used, Graphs, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is 4*Nesting,
-	make_procedure_call_chars(L, [at_time_step], TimeStepCondStr),
-	name(TimeStepCond, TimeStepCondStr),
-	render(L, if_start, TimeStepCond, Indent, StartStepCheck),
-	render(L, end(cond), TimeStepCond, Indent, EndStepCheck),
 	make_struct_reference(L, Top, Name, SubPointer),
 	append_atoms(Name, meta, Meta),
-	render(L, make_reference, Meta=SubPointer, Indent, RefStart),
-	append(StartStepCheck, RefStart, Starters),
+	render(L, make_reference, Meta=SubPointer, Indent, Starters),
 
 	/* And here's the stuff that goes at the end of the loop... */
 	resolve_pointer(L, Meta, MPTarget),
 	refer_value(L, MPTarget, MPTargetRef),
 	render(L, procedure_call, delete_list(MPTargetRef), Indent, ChopTail),
 	render(L, assignment, MPTarget=0, Indent, EndLoop),
-	append([ChopTail, EndLoop, EndStepCheck], Finishers),
+	append(ChopTail, EndLoop, Finishers),
 
 	do_assign_list(L, Clauses,
 			Graph_count, [Current | Preambles],

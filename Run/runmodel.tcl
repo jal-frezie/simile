@@ -1641,12 +1641,12 @@ proc at_time_step {} {
 }
 
 proc loses {prob phase} {
-    if {![at_time_step] || $prob <= 0} {
-	return 0
-    } elseif {$prob >= 1} {
+    if {$prob >= 1} {
 	return 1
     } else {
-	return [expr [ame_rand 0 1]>pow(1-$prob, [glob_element dts 1])]
+	set kills_per_step [expr [glob_element dts 0]?4:1]
+	return [expr [ame_rand 0 1] > \
+		    pow(1-$prob, [glob_element dts $phase]/$kills_per_step)]
     }
 }
 

@@ -12,9 +12,11 @@
 
 set keyValue runcontrol33857
 
+global runState
+set runState(intMethod) Euler
+
 namespace eval runcontrol33857 {
     variable sendvars
-    set sendvars(intMethod) {4th-order Runge-Kutta}
     
     proc identify {} {
         return "Run control"
@@ -46,6 +48,7 @@ namespace eval runcontrol33857 {
     proc initialize {t} {
         variable sendvars
         variable timeSteps
+	global runState
         catch {wm title $t "Run control"}; # $t isn't a toplevel under MRE
         set geom [PrefValue custom(runControlPosition) runControlPosition]
         catch {wm geometry $t $geom}
@@ -97,7 +100,8 @@ namespace eval runcontrol33857 {
         pack [label $rsf.integration.caption -text "Integration method:" -width 24 -anchor w] -side left
         #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
         #                unit second minute hour day week month year Ma
-        set widget [ComboBox $rsf.integration.pulldown  -textvariable [namespace current]::sendvars(intMethod) \
+        set widget [ComboBox $rsf.integration.pulldown \
+			-textvariable runState(intMethod) \
 			-values {Euler {4th-order Runge-Kutta}}]
 #        $widget setvalue first
         pack $rsf.integration.pulldown -side left
@@ -343,7 +347,7 @@ namespace eval runcontrol33857 {
 		    if {![do_model advance $scaled_current $bigPhase]} {
 			set sendvars(currentMode) exit
 		    }
-		    switch -exact -- $sendvars(intMethod) {
+		    switch -exact -- $runState(intMethod) {
 		    Euler {
 			SetStep 0 0
 			if {![do_model update $scaled_current $bigPhase]} {

@@ -223,12 +223,15 @@ proc SaveFile {tree tgt} {
 	    } else {
 		set runState(execDur) $runState(execTime)
 	    }
-	    set runParams [list $runState(execDur) $runState(displayInt)]
+	    set runParams [list execTime $runState(execDur) \
+			       displayInt $runState(displayInt) \
+			      intMethod $runState(intMethod)]
 	    if {[info exists model_id]} {
 		set runState(phases) [GetPhaseCount]
-	    }
-	    for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
-		lappend runParams $runState(update$phase)
+		for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
+		    lappend params $runState(update$phase)
+		}
+		lappend runParams phaseList $params
 	    }
 	    lappend parts [mime::initialize -canonical text/plain \
 			   -header [list "Content-Description" "Run Status"] \
@@ -263,16 +266,27 @@ proc LoadFile {tree tgt} {
 		    set runParams [mime::getbody $bit]
 		    set runState(currentTime) 0.0
 		    #ShowMessage debug info set ok
-		    set runState(execTime) [lindex $runParams 0]
-		    set runState(displayInt) [lindex $runParams 1]
-		    for {set others 2} {$others < [llength $runParams]} \
-			{incr others} {
-			    set runState(update[expr $others-1]) \
-				[lindex $runParams $others]
-			    set runState(prev_update[expr $others-1]) \
-				[lindex $runParams $others]
+		    if {[string match execTime [lindex $runParams 0]]} {
+			array set runState $runParams
+			set runState(phases) 0
+			foreach phase $runState(phaseList) {
+			    incr runState(phases)
+			    set runState(update$runState(phases)) $phase
+			    set runState(prev_update$runState(phases)) $phase
 			}
-		    set runState(phases) [expr $others-2]
+		    } else {
+			set runState(execTime) [lindex $runParams 0]
+			set runState(displayInt) [lindex $runParams 1]
+			for {set others 2} {$others < [llength $runParams]} \
+			    {incr others} {
+				set runState(update[expr $others-1]) \
+				    [lindex $runParams $others]
+				set runState(prev_update[expr $others-1]) \
+				    [lindex $runParams $others]
+			    }
+			set runState(phases) [expr $others-2]
+		    }
+#puts [array get runState]
 		} "Authentication Code" {
 		    set AuthCode [mime::getbody $bit]
 		} default {

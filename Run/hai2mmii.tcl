@@ -73,6 +73,9 @@ proc step_incr {step v} {
 
 proc stage_incr {ns_extras step v} {
     upvar \#0 ::AME_model<>::$ns_extras extras
+    if {![info exists extras]} {
+	set extras [list 0 0]
+    }
 
     set dv [step_incr $step $v]
     switch [expr int([glob_element dts 0])] {

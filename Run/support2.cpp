@@ -68,13 +68,17 @@ void do_setstep(double time, int phase) {
   }
 }
 
+int at_time_step () {
+  return glob_element(dts,0)<=1;
+}
+
 int loses (double prob, int phase) {
-  if (glob_element(dts,0)>1 || prob<=0) {
-    return 0;
-  } else if (prob>1) {
+  int kills_per_step;
+  if (prob>1) {
     return 1;
   } else {
-    return ame_rand(0,1)>pow(1-prob,glob_element(dts,1));
+    kills_per_step=glob_element(dts,0)?4:1;
+    return ame_rand(0,1)>pow(1-prob,glob_element(dts,1)/kills_per_step);
   }
 }
 
