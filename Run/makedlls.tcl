@@ -15,7 +15,7 @@ set final_expiry {}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
-set needs_license 1
+set needs_license 0
 
 if {[llength $final_expiry]} {
     set expiry_ticks [clock scan $final_expiry]
@@ -31,6 +31,7 @@ if {$needs_license} {
 }
 if {[string match Darwin $tcl_platform(os)]} {
      lappend defns -DSIM_OPSYS_Darwin
+     lappend defns -DUSE_TCL_STUBS
 }
 
 scan [info tclversion] {%d.%d} MAJ MIN
@@ -39,7 +40,8 @@ set onUnix [string match unix $tcl_platform(platform)]
 set TCL [file dirname [file dirname [info library]]]
 set TGTLIB ../System/lib
 set STUBS $TGTLIB/Stubs
-#ShowMessage debug info "TCL $TCL" ok
+set MACOSX_HEADERS ../../Frameworks/Tcl.framework/Headers
+set MACOSX_FRAMEWORK ../../Frameworks
 
 if $onUnix {
     # You may be asking yourself why I need to explicitly specify a location for
@@ -49,10 +51,10 @@ if $onUnix {
     set SHANK ${TGTLIB}/lib5d[info sharedlibextension]
     set TARGET ${STUBS}/libame_dll$MAJ.$MIN[info sharedlibextension]
     if {[string match Darwin $tcl_platform(os)]} {
-        exec g++ -c -O -fPIC -I. ./shank.cpp
-        exec g++ -dynamiclib -o $TARGET shank.o -ldl
-        eval {exec gcc -c -O -fPIC} $defns {-I. -I$TCL/Headers ./ame_cmx.cpp}
-        exec gcc -dynamiclib -o $TARGET ame_cmx.o -L$TGTLIB -l5d -ldl -framework Tcl
+        exec g++ -c -O -fPIC $defns -I. ./shank.cpp
+        exec g++ -dynamiclib -o $SHANK shank.o -ldl
+        eval {exec g++ -c -O -fPIC} $defns {-I. -I$MACOSX_HEADERS ./ame_cmx.cpp}
+        exec g++ -dynamiclib -o $TARGET ame_cmx.o -F$MACOSX_FRAMEWORK -framework Tcl -L$TGTLIB -l5d -ldl 
     } else {
 # first two lines also done in distribution to cope with different c++ libs
         exec g++ -c -O -fPIC -I. ./shank.cpp
