@@ -26,7 +26,7 @@ compile( Language, Parent, DestDir) :-
 	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),
-	build_instances(Language, DestDir, Parent, Parent, 1, _,_),
+	build_instances(Language, DestDir, Parent, Parent, 1, _,_,_),
 	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
@@ -67,29 +67,45 @@ is_entry(Entry) :-
 	DLLSpec has_class_refinement separate of 1.
 	
 build_instances(Language, DestDir, Parent, TopNode,
-		Step, ChangeNext, KeepParents) :-
+		Step, ChangeNext, LocalFnsUsed, KeepParents) :-
 	caption_for(Parent, Name),
 	append_atoms([DestDir, '/', Name], CheckDir),
 	check_directory(CheckDir),
 	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
 	build_sub_instances(Language, CheckDir, Parent, TopNode, MyStep,
-			    CompsChanged, KeepDir),
+			    ChangeTop, SubFnsUsed, KeepDir),
+	(setof(Fn, list_user_fns(Parent, Fn), LevelFnsUsed),
+	    merge_lists(LevelFnsUsed, SubFnsUsed, FnsUsed);
+	FnsUsed = SubFnsUsed),
 	(Parent has_model_refinement c_new of 0,
 	     \+ check_level_for_reds(Parent),
 	    Parent has_changed_model_refinement c_new of 1,
-	    ChangeTop = [1];
-	setof(Fn, list_user_fns(Parent, Fn), ChangeLocal),
-	    merge_lists(ChangeLocal, CompsChanged, ChangeTop);
-	ChangeTop = CompsChanged),
-
+	    ChangeTop = 1,
+	    LocalFnsUsed = [];
+	LocalFnsUsed = FnsUsed),
+	
 	((Parent has_class_refinement separate of 1;
 	  backup:is_toplevel(Parent)), !,
-	 ((member(1, ChangeTop),
+	    /* we need an executable for this level */
+	    (Language = c,
+	        (Parent has_model_refinement c_new of OldTgt;
+		    OldTgt = '{}'), !;
+	    /* if no c_new look for dll with default name from save file */
+	    OldTgt = 0),
+	    check_exec_fns_fresh(Language, CheckDir, OldTgt, FnsUsed, RStrs),
+	    all(user, name, [build([Stat | Includes]), build(RStrs)]),
+	    (Stat < 3, !;
+		format_to_chars("This model cannot be built because it contains the user-defined function ~a, which should have a definition in the file ~a, but this file is missing.", Includes, ErrStr),
+		name(Err, ErrStr),
+		raise_exception(Err)),
+	    ((ChangeTop == 1,
 	        all(compile, delete_prog,
 		    [unify(CheckDir),
 		     build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]);
-	   \+ reuse_old_exec(Language, Parent, CheckDir, TopNode, ChangeTop)),
+	      \+ (Stat = 0,
+		     load_executable(Language, CheckDir, OldTgt, Parent,
+				     TopNode, Includes))),
 	     \+ (Language = c,
 		    tk_get_pref(compChoice, 'None'),
 		    raise_exception(no_compiler)),
@@ -104,7 +120,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	     open(WProgName, write, Stream),
 	     on_exception(Puke,
 		protected_build(Language, Stream, MyStep, 
-		Model, EntryArcs),
+		Model, EntryArcs, Includes),
 		(reclose(Stream), raise_exception(Puke))),
 	     close(Stream),
 	     (Language = tcl, !,
@@ -115,10 +131,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt)),
 		 assert(new_exec_for(Parent))),
-	     load_executable(Language, CheckDir, Tgt, Parent, TopNode);
+		load_executable(Language, CheckDir, Tgt, Parent, TopNode,
+			       Includes);
 	 true),
-	KeepDir = 1,
-	ChangeNext = [];
+	KeepDir = 1;
 	ChangeNext = ChangeTop),
 	/* delete dir if empty...*/
 	(KeepDir == 1, !,
@@ -137,7 +153,8 @@ reuse_old_exec(Language, Parent, CheckDir, Node, UserFns) :-
 		OldTgt = '{}'), !;
 	    /* if no c_new look for dll with default name from save file */
 	OldTgt = 0),
-	(check_exec_fns_fresh(Language, CheckDir, OldTgt, UserFns),
+	(check_exec_fns_fresh(Language, CheckDir, OldTgt, UserFns, RStr),
+	    RStr = "0",
 	    load_executable(Language, CheckDir, OldTgt, Parent, Node);
 	 check_level_for_reds(Parent)).
 
@@ -156,15 +173,15 @@ delete_prog(Base, Extn) :-
 	my_delete_file(FullName).
 	
 build_sub_instances(Language, DestDir, Parent, Node,
-		    Step, ChangeTop, KeepDir) :-
+		    Step, ChangeTop, LocalFnsUsed, KeepDir) :-
 	(setof( Submodel, (Parent has_part Submodel,
 			      Submodel has_class submodel,
 			      appears(Submodel)), Submodels), !; 
 	    Submodels = []),
 	all(compile, build_instances, 
 	    [unify(Language), unify(DestDir), build(Submodels),
-	     unify(Node), unify(Step),
-	     unify(ChangeTop), unify(KeepDir)]).
+	     unify(Node), unify(Step), unify(ChangeTop),
+	     merge_lists(LocalFnsUsed, []), unify(KeepDir)]).
 
 check_level_for_reds(Submodel) :-
 	reassure_user("Checking all model values are defined"),
@@ -202,7 +219,7 @@ defines_membership(SmByRec, Fp) :-
 % model, and then working out bit by bit what the program has to be.
 
 :- dynamic(entry_arcs_are/1).
-protected_build(Language, Stream, TopStep, FullModel, EntryArcs) :-
+protected_build(Language, Stream, TopStep, FullModel, EntryArcs, LocalIncs) :-
 	FullModel = model(_Channels, [instance(submodel, _, xrefs(_,
 	    instance(submodel, _, xrefs(FullModel, top, [], []),
 		     'AME_model', top-[]), _,_), _,_)]), 
@@ -333,8 +350,9 @@ wot need them */
 
 	output:list_matching_files('../Functions/*.cpp', FnIncs),
 	/* the /* in the above line does not start a comment */
+	append(FnIncs, LocalIncs, Incs),
 	all(utility, append_atoms,
-	    [unify('#include "'), build(FnIncs), build(PartIncs)]),
+	    [unify('#include "'), build(Incs), build(PartIncs)]),
 	/* the " in the above line does not start a quoted string */
 	all(utility, append_atoms,
 	    [build(PartIncs), unify('"'), build(FullIncs)]),

@@ -137,35 +137,54 @@ proc TrimTree {Top Point} {
 
 proc CheckFnsFresh {L progDir id userFnList} {
     global equation custom
-    if {![file exists $progFile]} {
-	return 0
-    } 
-    set date [file mtime $progFile]
-    foreach func userFnList {
-	set functor [lindex [split $func /] 0] \;# remove arity
+
+    if {[string equal tcl $L]} {
+	set procXtn .tcl
+	set progFile $progDir/model.tcl
+    } else {
+	set procXtn .cpp
+	set progFile $progDir/model${id}[info sharedlibextension]
+    }
+    set stat 0
+    set files {}
+    if {[file exists $progFile]} {
+	set date [file mtime $progFile]
+    } else {
+	set date 0
+    }
+    foreach func $userFnList {
+	set functor [lindex [split $func /] 0] ;# remove arity
 	set posn [lsearch $equation(fnDefs) "{Macros *} $functor"]
 	if {$posn == -1} {
-	    set posn [lsearch $equation(fnDefs) "{Procedures *} $functor"]
+	    set posn [lsearch $equation(fnDefs) \
+			  "{Procedures *} $functor * returns *"]
 	}
 	if {$posn == -1} {
-	    return 4 ;# missing function
-	}
-	set fnSpec [lindex [lindex $equation(fnDefs) $posn] 0]
-	set fnBase $custom(prefDir)/[lindex $fnSpec 1]
-	if {[file mtime ${fnBase}.pl]>$date} {
-	    return 1 ;# Declaration out of date
-	}
-	if {[string equal Procedures [lindex $fnSpec 0]] && \
-		![string equal tcl $L]} {
-	    # no problem with tcl definitions, they are included at run time
-	    if {![file exists ${fnBase}.cpp]} {
-		return 3 ;# Missing or misplaced definition
+	    return "4 $func" ;# missing function declaration
+	    # should never happen because we read them when starting up
+	} else {
+	    set fnSpec [lindex [lindex $equation(fnDefs) $posn] 0]
+	    set fnBase $custom(prefDir)/Functions/[lindex $fnSpec 1]
+	    if {[file mtime ${fnBase}.pl]>$date} {
+		set stat [max $stat 2] ;# Declaration out of date
 	    }
-	    if {[file mtime ${fnBase}.cpp]>$date} {
-		return 2 ;# Definition out of date
+	    if {[string equal Procedures [lindex $fnSpec 0]]} {
+		set file ${fnBase}$procXtn
+		if {![file exists $file]} {
+		    return "3 $func $file";# Missing or misplaced definition
+		} else {
+		    if {[lsearch $files $file]==-1} {
+			lappend files $file
+		    }
+		    if {[file mtime $file]>$date && ![string equal tcl $L]} {
+			set stat [max $stat 2] ;# Definition out of date
+		    # no problem with tcl definitions, included at run time
+		    }
+		}
 	    }
 	}
     }
+    return [concat $stat $files]
 }
 
 # this exists in case I don't want to exploit the concat in eval
@@ -553,6 +572,10 @@ proc LoadFile {topNode tree tgt} {
                         set mimeSquirter [NetOpen $newPath w]
                         fconfigure $mimeSquirter -translation binary
                         mime::getbody $bit -command SquirtMime -blocksize 256
+			if {![catch {mime::getheader $bit Date-Modified} \
+				  Date]} {
+			    file mtime $newPath [clock scan [lindex $Date 0]]
+			}
                     }
                 }
             }
@@ -631,11 +654,13 @@ proc GetParts {top tree} {
 		    ![string match junk $Description]} {
 		set relPath [string range $subtree [string length $top] end]
 		set Disposition "${style}; filename=\"$relPath\""
+		set Date [clock format [file mtime $subtree]]
 		set newMime [mime::initialize -canonical $PartType \
 				 -header [list "Content-Disposition" \
 					      $Disposition] \
 				 -header [list "Content-Description" \
 					      $Description] \
+				 -header [list "Date-Modified" $Date] \
 				 -file $subtree]
 		if {[string match "Simile model" $Description]} {
 		    set HmacCode [get_auth_code $newMime]

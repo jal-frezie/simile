@@ -812,15 +812,18 @@ proc update_executable {lang} {
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
 # is always that most recently added (even if not recompiled)
 
-proc load_dll {lang progDir id node} {
+proc load_dll {lang progDir id node incs} {
     #   phasecount and nodedata are set in generated code
     global phasecount nodedata nodecount model_id model_ids model_prog env
     if {[string match tcl $lang]} {
 	if {![file exists $progDir/model.tcl]} {
 	    return 0
 	}
-	# This won't catch defns in subdirectories or under .simile
+	# This won't catch defns in subdirectories
         foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
+            source $fnFile
+        }
+        foreach fnFile $incs {
             source $fnFile
         }
         source [set model_prog $progDir/model.tcl]
