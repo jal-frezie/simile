@@ -1,0 +1,10 @@
+EXPORTS
+get_version
+do_createmodel
+do_updatemodel
+do_evalmodel
+do_setstep
+do_exitmodel
+burrow_to
+get_count
+get_version
