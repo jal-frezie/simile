@@ -28,7 +28,7 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
 # on Macs the system takes care of this and we don't even get this far
 
 if {[info exists env(OPEN_MODEL)]} {
-    set remStartArgs [list after idle OpenTopLevel $env(OPEN_MODEL)]
+    set remStartArgs [list after idle [list OpenTopLevel $env(OPEN_MODEL)]]
 } else {
     set remStartArgs NewTopLevel
 }
