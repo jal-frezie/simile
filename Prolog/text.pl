@@ -56,19 +56,25 @@ prints(Char) :-
 	Char > 32.
 	
 starter_only(H, L, C) :-
-	("a" =< H, H =< "z"; \+ L = c, H>127), !,
-		C = H;
-	"A" =< H, H =< "Z", !,
-		C = H; /* used to add 32 to make all start with lowercase */
+	(uppercase(L, H);
+	    lowercase(L, H)), !,
+	    C = H; /* used to add 32 to make all start with lowercase */
 	C is "_".
 
 continuer_only( [], _L, [] ).
 continuer_only( [H|T1], L, [H|T2] ) :-
-	("a" =< H, H =< "z";
-	    \+ L = c, H>127;
-	    "A" =< H, H =< "Z";
+	(uppercase(L, H);
+	    lowercase(L, H);
 	    "0" =< H, H =< "9"),
 	!,
 	continuer_only( T1, L, T2 ).
 continuer_only( [_|T1], L, [95 | T2] ) :- /* replace with underscore */
 	continuer_only( T1, L, T2 ).
+
+uppercase(L, H) :-
+	"A" =< H, H =< "Z";
+	\+ L = c, (192=< H,H =< 214;216=<H, H=<222).
+
+lowercase(L, H) :-
+	"a" =< H, H =< "z";
+	\+ L = c, (223 =< H, H =< 246; 248=<H, H=<255).
