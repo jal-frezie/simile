@@ -460,7 +460,15 @@ proc do_in_editor {args} {
     }
     remote [list get $args]
     if {[string match get_data $readPipe]} {
-	set fromEditor [gets stdin]
+	set gotResp 0
+	while {!$gotResp} {
+	    set fromEditor [gets stdin]
+	    if {[string equal do [lindex $fromEditor 0]]} {
+		eval $fromEditor
+	    } else {
+		set gotResp 1
+	    }
+	}
     } else {
 	tkwait variable fromEditor
     }
