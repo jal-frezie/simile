@@ -1959,13 +1959,12 @@ resnap(Node, SelOnly) :-
 	find_all_comps(Node, Bit),
 	(SelOnly = 0; SelOnly = 1, doomed(Bit)),
 	get_shape(Bit, bounding_box, BB),
-	(add_to_translation([0,0,1,1], Bit, [TX, TY | Trans]),
+	(add_to_translation([0,0,1,1], Bit, Trans), % bit is submodel
 	    snap_to_grid(BB, NBB),
-	    snap_to_grid([TX, TY], [NTX, NTY]),
-	    RTX is NTX - TX, RTY is NTY - TY,
-	    move_boxes(Bit, [RTX, RTY | Trans]),
-	    translate(NBB, [NTX, NTY, 1,1], NIE),
-	    change_shape(Bit, internal_extent, NIE),
+	    translate(NBB, Trans, [L, T, R, B]),
+	    IW is R-L, IH is B-T,
+	    change_shape(Bit, internal_extent, [0, 0, IW, IH]),
+	    move_boxes(Bit, [L, T, 1,1]),
 	    change_shape(Bit, bounding_box, NBB),
 	    (SelOnly = 0; SelOnly = 1, resnap(Bit, 1)),
 	    redisplay_border(Bit);
