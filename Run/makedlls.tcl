@@ -33,6 +33,7 @@ scan [info tclversion] {%d.%d} MAJ MIN
 set onUnix [string match unix $tcl_platform(platform)]
 #	To build for Tcl dll included under distribution directory...
 set TCL [file dirname [file dirname [info library]]]
+set STUBS ../System/lib/Stubs
 #ShowMessage debug info "TCL $TCL" ok
 
 if $onUnix {
@@ -40,7 +41,7 @@ if $onUnix {
     # the Tcl library files, since they should be in LD_LIBRARY_PATH. It is because
     # some people find it easier to build the stub from exec_only.tcl, which gives
     # them error messages to the console but does not set LD_LIBRARY_PATH.
-    set TARGET libame_dll$MAJ.$MIN[info sharedlibextension]
+    set TARGET ${STUBS}/libame_dll$MAJ.$MIN[info sharedlibextension]
     if {[string match Darwin $tcl_platform(os)]} {
         eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/Headers ./ame_cmx.cpp}
         exec g++ -dynamiclib -o $TARGET ame_cmx.o -ldl -framework Tcl
@@ -50,7 +51,7 @@ if $onUnix {
     }
 } else {
     set TCL [file attributes $TCL -shortname]
-    set TARGET ame_dll$MAJ$MIN.dll
+    set TARGET ${STUBS}/ame_dll$MAJ$MIN.dll
     set dll tcl${MAJ}${MIN}
     
     # Older TclTks may have a special library for Visual C, which is also used by mingw
@@ -92,5 +93,5 @@ if $onUnix {
         #		--output-lib libame_dll.a
 }
 
-pkg_mkIndex . *[info sharedlibextension]
+pkg_mkIndex $STUBS *[info sharedlibextension]
 exit

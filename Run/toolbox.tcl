@@ -3,9 +3,6 @@
 # Just to give you an idea of (a) the sort of thing you can do in tcl,
 # and (b) my preferred programming style, check this out....
 
-# Simile distributed libraries should have precedence over any others
-set auto_path [linsert $auto_path 0 [pwd]/../Run [pwd]/../System/lib]
-
 package require BWidget
 
 #tk_messageBox -message "library [info library] path $auto_path"
@@ -1190,6 +1187,7 @@ proc AddMainMenu { winid initWidth initDepths} {
             -label "Component bar" -variable custom(showtoolbar,$winid)
     $fm add check -command "toggleBar $winid" \
             -label "Equation bar" -variable custom(showeqnbar,$winid)
+
     $fm add separator
     AddZoomMenu $winid.canvas $fm 1
     $fm add cascade -label "Show detail" -menu $fm.sub3
@@ -1351,6 +1349,7 @@ proc AddMainMenu { winid initWidth initDepths} {
             pack [button $tb.$mode -image $testImg -command "ItemSelect $mode" \
                     -borderwidth 1 -relief flat -overrelief raised] -side left -padx 2 -pady 2
             BindPopup $tb.$mode $mode
+
         }
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
@@ -1647,7 +1646,8 @@ proc SetEqnButtonState {bar newState} {
 proc RaiseModelWindow {} {
     global window_info
     set modelWin $window_info([lindex [lsort [array name window_info *,parent]] 0])
-    wm deiconify $modelWin
+    wm deiconify $modelWin
+
     raise $modelWin
 }
 
