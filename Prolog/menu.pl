@@ -116,7 +116,8 @@ stick_model_in(Parent, Name) :-
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
-	output:transfer_save_file(TargetDir, Name, in, Oops),
+	edition_is(ReadingWith),
+	output:load_file(TargetDir, Name, ReadingWith, Oops),
 	(Oops = [], !,
 	    append_atoms(TargetDir, '/model.pl', PrologData),
 	    ame_merge(Parent, PrologData, _Date), /* date not needed */
@@ -147,9 +148,11 @@ stick_model_in(Parent, Name) :-
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images, autosave check or runnables */
-	ame_merge(Parent, Name, _Date),
+	\+ ReadingWith = evaluation,
+	    ame_merge(Parent, Name, _Date),
 	    resize_canvas_for(Parent),
-	    redraw_window(Win)),
+	    redraw_window(Win);
+	do_dialogue("Error loading model", error, Oops, ok, _)),
 	add_parameter(Parent, 0, file_name, Name),
 	update_captions(Parent).
 
@@ -590,6 +593,18 @@ ok_to_delete(Target) :-
 	Reply = no).
 
 do_save(Model, New_name) :-
+	setof(Node, (contains(Model, Node), appears(Node)), Nodes),
+	length(Nodes, N),
+	(N > 15,
+	    (edition_is(evaluation),
+	    	do_dialogue("Error saving model", error, "This model has more than 15 components and thus cannot be saved in the evaluation edition.", ok, _),
+		!, fail;
+	    edition_is(standard),
+		ReadableBy = standard;
+	    edition_is(enterprise),
+		ReadableBy = evaluation);
+	15 >= N,
+	    ReadableBy = evaluation),
 	(New_name = false,
 	    get_name_for(Model, Name);
 	try_save_files(Name)),
@@ -621,7 +636,7 @@ do_save(Model, New_name) :-
 	output:my_delete_file(CanvasName)),
 
 	/* Now build the multi-part MIME format save file */
-	output:transfer_save_file(SaveDir, Name, out, Oops),
+	output:save_file(SaveDir, Name, ReadableBy, Oops),
         (Oops = [], !;
             do_dialogue("Problem building output file", error, Oops, ok, _),
 	    fail),
