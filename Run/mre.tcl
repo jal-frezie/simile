@@ -480,21 +480,21 @@ namespace eval RunEnv {
         } else  {
             #ShowMessage debug info "DeleteNotebookPage default" ok
             # adjust any labels that should be = to index + 1
-            set pages [$notebook pages]
+            set pages [$notebook tabs]
             set i 0
             foreach item $pages {
-                set label [$notebook itemcget $item -text]
+                set label [$notebook tab $item -text]
                 if {$label==$i+2} {
-                    $notebook itemconfigure $item -text [expr {$i+1}]
+                    $notebook tab $item -text [expr {$i+1}]
                 }
                 incr i
             }
-            set pages [$notebook pages]
+            set pages [$notebook tabs]
             set n [llength $pages]
             if {$index >= $n} {
-                $notebook raise [lindex $pages [expr {$n-1}]]
+                $notebook select [lindex $pages [expr {$n-1}]]
             } else  {
-                $notebook raise [lindex $pages $index]
+                $notebook select [lindex $pages $index]
             }
         }
     }
@@ -586,8 +586,8 @@ namespace eval RunEnv {
     }
     
     proc FindParentpanedwindowOrNotebook {containerId} {
-        #puts "Finding parent for $containerId"
-        set parentPath [winfo parent $containerId]
+        # Added two more [winfo parent]s to accommodate Tile notebook layout
+        set parentPath [winfo parent [winfo parent [winfo parent $containerId]]]
         set parentName [winfo name $parentPath]
         switch $parentName {
             notebook { return $parentPath }
