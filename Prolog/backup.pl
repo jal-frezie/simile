@@ -358,5 +358,5 @@ make_auto_name(Name, NewExtn, AutoName) :-
 
 use_pref_dir(Dir) :-
 	use_temp_dir(PDir),
-	output:safe_tcl_eval([file, dirname, PDir], DirStr),
+	output:safe_tcl_eval([file, dirname, br(PDir)], DirStr),
 	name(Dir, DirStr).
