@@ -3,16 +3,15 @@ package provide SimileAutoObj 1.0
 # Notes
 # must be pipe interface
 # must be in the Simile distribution tree
-# Welcome dialog (register) must be made not to appear 
 
 # todo
 # ModelWindowImpl expose more hai2mmii.tcl
-# Update SetValue code
+# update SetValue code to use global arrays
 #
 # RunControlImpl  need to set submodel timesteps
-# TableHelperImpl to be implemented
+#    SetExecuteFor DOESN'T EFFECT RUN!!!!!!!!!!!!!!!
 
-
+# Should abstract common helper behaviour, e.g. clear, hide and show
 
 
 package require Itcl
@@ -264,27 +263,57 @@ class ModelExplorerImpl  {
 }
 
 class TableHelperImpl {
+    variable winId;    #Tk path to Table helper window
+    variable keyvalue; # Table helper namespace
+    variable modelNode node00000
+    
     constructor {modelWindow} {
-        return [$modelWindow CreateHelperWindow tabular11510 {Table}]
-        # UpdateAtDisplayInterval false
+        global runState
+        global helperTable
+        set keyvalue tabular11510
+        set winId [$modelWindow CreateHelperWindow $keyvalue {Table}]
+        Hide
+        SetUpdateAtDisplayInterval false
     }
     
-    public method AddVariable {Number} {
+    public method Show {} {
+        wm deiconify $winId
     }
     
-    public method RemoveVariable {Number} {
+    public method Hide {} {
+        wm withdraw $winId
     }
     
-    public method Clear {Number} {
+    public method AddVariable {path} {
+        global helperTable
+        set helperTable(node00000,current) $winId
+        ${keyvalue}::click $winId [GetIdFromCaptionPath $winId $path] $path
     }
     
-    public method UpdateAtDisplayInterval {Value} {
+    public method RemoveVariable {path} {
+        set var $path; # prop needs nodeId TODO
+        ${keyvalue}::Remove $winId $var
     }
     
-    public method Update {Number} {
+    public method Clear {} {
+        $keyvalue::clear
     }
     
-    public method SaveToFile {FileName} {
+    public method SetUpdateAtDisplayInterval {value} {
+        set ${keyvalue}::displayUpdate($winId) $value
+    }
+    
+    public method GetUpdateAtDisplayInterval {} {
+        return  ${keyvalue}::displayUpdate($winId)
+    }
+    
+    public method Update {} {
+        ${keyvalue}::Update $winId
+    }
+    
+    public method SaveToFile {filename} {
+        Update
+        ${keyvalue}::SaveToNamedFile $winId $filename
     }
     
 }
