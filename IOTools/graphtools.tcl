@@ -495,6 +495,13 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     #puts "dataMin $dataMin; dataMax $dataMax"
     if {$dataMin==0} {set dataMin 0.0000000001}; # prevent div by zero errors
     
+    # seperate min and max if they are equal
+    if {$dataMin == $dataMax } {
+        set dataMax [expr {$dataMax*1.0001}]
+        set dataMin [expr {0.9999*$dataMin}]
+    }
+    #puts "dataMin $dataMin; dataMax $dataMax"
+    
     if { $dataMin > $dataMax } {
         set min $dataMax
         set max $dataMin
@@ -504,18 +511,13 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     }
     #puts "min $min; max $max"
     
-    # seperate min and max if they are equal
-    if {$min == $max } {
-        set max [expr {$max*1.0001}]
-        set min [expr {0.9999*$min}]
-    }
-    
     # scale max and min
     if {$max-$min < 1e-10} {
         set lograngem -10.0
     } else {
         set lograngem [expr {ceil(log10(($max - $min)/2))-1}]
     }
+            
     set ScaleCoeff [expr {1/pow(10,$lograngem)}]
     set ScaledMax [expr {ceil($max*$ScaleCoeff)}]
     set ScaledMin [expr {floor($min*$ScaleCoeff)}]
@@ -523,6 +525,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
         set ScaledMin 0; # if min < 10% of max start axis from 0
     }
     set ScaledRange [expr {abs($ScaledMax-$ScaledMin)}]
+    #puts "lograngem $lograngem; ScaleCoeff $ScaleCoeff; ScaledMin $ScaledMin; ScaledMax $ScaledMax; ScaledRange $ScaledRange"
     set nint $karray($axis,[expr {int($ScaledRange)}])
     
     set rounddiff [expr {$ScaledRange/$ScaleCoeff}]
@@ -530,7 +533,6 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     #puts "axis $axis; intdiff [expr {int(abs($ScaledRange))}]; nint $nint"
     set rmin [expr {$ScaledMin/$ScaleCoeff}]
     set rmax [expr {$rmin+$nint*$inter}]
-    #puts "lograngem $lograngem; ScaleCoeff $ScaleCoeff; ScaledMin $ScaledMin; ScaledMax $ScaledMax; ScaledRange $ScaledRange"
     
     if {$lograngem>0} {
         set decmlPos 0
