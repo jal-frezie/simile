@@ -1868,14 +1868,18 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 
 proc DragComponentIn {winId button x y} {
     set whatToAdd [winfo name $button]
-    set top [winfo parent $winId]
-    foreach level [list $top $winId] {
-	scan [winfo geometry $level] %dx%d+%d+%d w h ox oy
-	incr x [expr -$ox]
-	incr y [expr -$oy]
-    }
+#    set top [winfo parent $winId]
+#puts $x,$y
+#    foreach level [list $top $winId] {
+#	scan [winfo geometry $level] %dx%d+%d+%d w h ox oy
+#puts $level,$ox,$oy
+#	incr x [expr -$ox]
+#	incr y [expr -$oy]
+#    }
+    set x [expr $x-[winfo rootx $winId]]
+    set y [expr $y-[winfo rooty $winId]]
 
-    if {$x<0 || $x>$w || $y<0 || $y>$h} {
+    if {$x<0 || $x>[winfo width $winId] || $y<0 || $y>[winfo height $winId]} {
 	# not in canvas, ignore
 	return
     }
