@@ -65,9 +65,9 @@ altitudeFromPressure(Pressure) -->
 % From Maestra utils.for
 % beta function, 0 < R < 1
 beta(A,B,C,R) -->
-      if R = 0.0 then R=0.0000001,
-      if R = 1.0 then R=0.9999999,
-      A * (R^B) * ((1.0-R)^C).
+Ri = (if R <= 0.0 then 0.0000001
+elseif R >= 1.0 then 0.9999999 else R),
+A * (Ri^B) * ((1.0-Ri)^C).
 
 % find the smaller root of a quadratic
 quadraticSmaller(A,B,C) -->
@@ -105,13 +105,13 @@ windDirectionFromMetUandV(U,V) -->
 % given the horizontal windspeed, M (m/s), and 
 % wind direction, A (degrees clockwise from north)
 uFromWindSpeedAndDirection(M,A) -->
-  -(M*sin(a*180/pi(0))).
+  -(M*sin(A*180/pi(0))).
 
 % Return V (m/s): the east to west horizontal wind velocity component
 % given the horizontal windspeed, M (m/s), and 
 % wind direction, A (degrees clockwise from north)
 vFromWindSpeedAndDirection(M,A) -->
-  -(M*cos(a*180/pi(0))).
+  -(M*cos(A*180/pi(0))).
 
 % Ideal Gas Law
 % P is pressure (Pa), T is Temperature (K), V is volume (m^3), N is moles
