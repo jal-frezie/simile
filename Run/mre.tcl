@@ -227,30 +227,17 @@ namespace eval RunEnv {
         destroy $containerId.belowbox
         
         ::ttk::notebook $containerId.notebook
+	bind $containerId.notebook <<NotebookTabChanged>> \
+	    [list ::RunEnv::PageRaiseCmd $containerId.notebook]
         
         for  {set i 1} {$i<=4} {incr i} {
-       #     set pageId [UniqueId page [$containerId.notebook tabs]]
-       #     bind [$containerId.notebook getframe $pageId] <Button-3> \
-       #             "+tk_popup .pageContextMenu %X %Y"
-            set newContainer [frame $containerId.notebook.page$i]
-            panedwindow $newContainer.panedwindow -orient vertical
-            pack $newContainer.panedwindow -expand yes -fill both
-            frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1; # -relief ridge;# jmm
-            $containerId.notebook add $newContainer -text "Page $i"
-            bind all <<NotebookTabChanged>> [list ::RunEnv::PageRaiseCmd $containerId.notebook]
-            bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
-            bind $newContainer.panedwindow.pane0 <Button-3> \
-                    "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-            $newContainer.panedwindow add $newContainer.panedwindow.pane0 -sticky nesw
+	    AddNotebookPage $containerId.notebook
         }
-        
         
         bind $containerId.notebook <Double-1> "::RunEnv::EditTabLabel %W"
         bind $containerId.notebook <Button-3> "::RunEnv::EditTabLabel %W"
         
         $containerId.notebook select [lindex [$containerId.notebook tabs] 0]
-        SetCurrentContainer $newContainer.panedwindow.pane0
-        
         pack $containerId.notebook -fill both -expand yes
     }
     
@@ -299,7 +286,7 @@ namespace eval RunEnv {
         }
         #ShowMessage debug info "containerId $containerId\nParentContainer $ParentContainer" ok
         if {[string match notebook [winfo name $ParentContainer]]} {
-            set pageId [UniqueId $ParentContainer.page [$ParentContainer tabs]]
+            set pageId [UniqueId $ParentContainer.fpage [$ParentContainer tabs]]
             set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
             set newContainer [frame $pageId]
             $ParentContainer add $newContainer -text "Page $pageIndex"
@@ -309,7 +296,8 @@ namespace eval RunEnv {
             bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
             bind $newContainer.panedwindow.pane0 <Button-3> \
                     "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-            $newContainer.panedwindow add $newContainer.panedwindow.pane0
+            $newContainer.panedwindow add $newContainer.panedwindow.pane0 -sticky nesw
+	    $ParentContainer select $newContainer
             return $newContainer.panedwindow.pane0
         } else  {
             return [AddNotebookPage $ParentContainer]
