@@ -348,7 +348,6 @@ proc ::RunEnv::CopyHelper {containerId} {
             focus owner [focus]\n\
             container children [winfo children $CurrentContainer]\n\
             CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)" ok
-    #ShowMessage debug info "CopyHelper $CurrentContainer.container exists [winfo exists $CurrentContainer.container]" ok
     if {[winfo exists $CurrentContainer.container]} {
         set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
         
@@ -356,20 +355,17 @@ proc ::RunEnv::CopyHelper {containerId} {
         if {[string match windows $tcl_platform(platform)]} {
             if {![string match "" [info commands ::${CurrentHelperId}::CopyToClipboard]]} {
                 ${CurrentHelperId}::CopyToClipboard $CurrentContainer.container
-            } elseif {![string match "" [info commands ${CurrentHelperId}::GetCanvas]]} {
-                set canvasId [::$CurrentHelperId::GetCanvas $CurrentContainer.container]
-                #ShowMessage debug info "CopyHelper canvasId $canvasId \n\
-                namespace [namespace current]" ok
+            } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
+                set canvasId [::${CurrentHelperId}::GetCanvas $CurrentContainer.container]
                 namespace eval :: {
                     CopyCanvasToWindowsClipboard $::RunEnv::canvasId
                 }
             } else {
-                #ShowMessage Warning warning \
-                        "[$CurrentHelperId::identify] does not support copying" ok
+                ShowMessage Warning warning \
+                        "[${CurrentHelperId}::identify] does not support copying" ok
             }
             set copyfile $env(SIMTMPDIR)/mrecopy.txts
             set stream [open $copyfile w]
-            #ShowMessage debug info "$copyfile" ok
             catch {puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]}
             close $stream
         }
