@@ -1497,7 +1497,8 @@ proc DragComponentIn {winId button x y} {
 #	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
 #	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
 #    }
-    
+
+    focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
     
     # Now simulate what Prolog would get from an add component menu selection
