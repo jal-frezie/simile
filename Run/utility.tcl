@@ -206,10 +206,11 @@ proc QueuePopup {args} {
     #puts "queueing $cmd"
     # Only allow one cmd in pipeline at a time -- two added if dragging an
     # incomplete obj which Prolog then deletes (Tk bug workaround - 10 points)
-    if {[info exists popper]} {
-        after cancel $popper
+    if {[info exists popper(cmd)]} {
+        after cancel $popper(cmd)
     }
-    set popper [after 500 $args]
+    set popper(cmd) [after 500 $args]
+    set popper(foc) [focus]
 }
 
 proc AddWidgetPopup {key X Y} {
@@ -262,22 +263,18 @@ proc PostPopup {X Y} {
         destroy .popup
     }
     if [string match Darwin $tcl_platform(os)] {
-        toplevel .popup
+        toplevel .popup -width 1 -height 1
         ::tk::unsupported::MacWindowStyle style .popup help none
     } else {
         toplevel .popup -width 1 -height 1 -bd 1 -bg black
 # leaves one pixel of black showing round edge of messages
         wm overrideredirect .popup 1
     }
-    # This moves the popup window to whichever quadrant of the moused-over
-    # component is all on the screen. It sticks it to the bottom left to start with
-    # so it doesn't grab the focus, then updates so the requested size can be found
-    # then uses this size to move it to the right place
 
+    update idletasks
     if {$X>[winfo screenwidth .popup]/2} {
         set xpoint -[expr [winfo screenwidth .popup]+10-$X]
     } else {
-
         set xpoint +[expr $X+10]
     }
     if {$Y>[winfo screenheight .popup]/2} {
@@ -294,9 +291,10 @@ proc RemovePopup {args} {
     #puts "Removing popup"
     if {[winfo exists .popup]} {
         destroy .popup
+	focus -force $popper(foc)
     }
-    if {[info exists popper]} {
-        after cancel $popper
+    if {[info exists popper(cmd)]} {
+        after cancel $popper(cmd)
     }
 }
 
@@ -461,7 +459,7 @@ proc PutItThere {t parent} {
     } else {
 	wm transient $t
     }
-    wm geometry $t +[winfo screenwidth $t]+[winfo screenheight $t]
+    wm geometry $t +0+[winfo screenheight $t]
     return $t
 }
 

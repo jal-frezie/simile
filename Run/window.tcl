@@ -427,7 +427,7 @@ proc ModelWindow {winName} {
     global tcl_platform
     menu ${winName}top
     toplevel $winName -menu ${winName}top
-    
+
     switch $tcl_platform(platform) {
         windows { wm iconbitmap $winName -default ../Run/simile16.ico }
         unix { wm iconbitmap $winName @../Images/dribble.xbm}
