@@ -66,7 +66,7 @@ proc PutShape {c l t r b file fatness colourScheme title} {
     set fileName [lindex $nameList $point]
 
     source "../Images/$fileName.cnv"
-    set growth [expr $fatness*($r-$l)/3000.0]
+    set growth [expr ($r-$l)/30.0]
     ZoomImage $c unscaled $growth $growth 
     $c move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
     ZoomImage $c unscaled $window_info($c,scale) $window_info($c,scale)
@@ -641,7 +641,7 @@ proc MakeImage {base inst w h} {
     FillSmImage $base $inst $w $h $intRad
 }
 
-# this is called from Prolog to load/save images with a model. Prolog does not
+# this is called from Prolog to load/save images with a model. Prolog does not
 # know difference between an image and a colour so this has to sort them out
 
 proc ShiftImages {topDir way args} {

@@ -17,6 +17,9 @@ source ../Run/runmodel.tcl
 
 source ../Run/mre.tcl
 
+# Test new Windows printing technology -- see file for credits/licence
+source ../System/library/Extras/printer/prntcanv.tcl
+
 # Make Simile a DDE server under Windows. Jonathan
 # Must be after the sourcing or Simile fails
 #tk_messageBox -message [tk appname] -type ok
@@ -52,6 +55,8 @@ proc ControlDraw {prologVersion} {
     # On startup, check run count and offer registration if 0
     set UserStream [open ../Run/userinfo.txt r]
     # First two lines not used here
+
+
     gets $UserStream userinfo(prologId)
     gets $UserStream userinfo(interface)
     gets $UserStream userinfo(Name)
@@ -347,6 +352,8 @@ proc ClickObj { x y winId action} {
     global helperTable
     global pushedbutton
     
+
+
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set target [GetClickedObj $winId $canx $cany 10]
@@ -536,8 +543,10 @@ proc DragObj {winId xco yco} {
         $winId yview scroll \
                 [expr int($yco-$window_info($winId,height))/$sloth] units
     }
+
     prolog [list tk_drag( $virtx , $virty )]
 }
+
 
 proc ReleaseObj {winId xco yco} {
     set canx [Unscale $winId [$winId canvasx $xco]]
@@ -583,8 +592,6 @@ proc ChangeRegion {w l t r b} {
     }
 }
 
-set modelWin 0; #initialise modelWin -- no desktop Model window yet
-
 #######################################################################
 #                                                                     #
 # MainWindowDraw: puts a new model window on the screeen              #
@@ -594,12 +601,11 @@ set modelWin 0; #initialise modelWin -- no desktop Model window yet
 proc MainWindowDraw {winName winTitle wl wt wr wb \
             colour initialScale args} {
     global window_info looks env custom
+    
     set c [ModelWindow $winName]
     global modelWin
-    if {$modelWin==0} {
-        set modelWin $winName; # only first window (== desktop Model window )
-    }
-       
+    set modelWin $winName
+    
     TweakWindow $c $winTitle 1 $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
     #	[winfo screenheight $winName]
@@ -628,7 +634,7 @@ proc AddAccelerators { winName } {
     bind $winName <Control-n> "MenuSelect $winName.canvas file new"
     bind $winName <Control-o> "MenuSelect $winName.canvas file open"
     bind $winName <Control-s> "MenuSelect $winName.canvas file save"
-    bind $winName <Control-p> "PrintNow $winName.canvas PRINTCMD"
+    bind $winName <Control-p> "PrintNow $winName.canvas"
     bind $winName <Alt-x> "prolog tk_finish"
     
     #edit
@@ -845,7 +851,7 @@ proc MenuSelect { window button item } {
 proc DoLocalCmd {win item} {
     global pushedbutton
     switch $item {
-        print {PrintNow $win PRINTCMD}
+        print {PrintNow $win}
         rerun {Rerun $win 1}
         undo {prolog tk_undo}
         redo {prolog tk_redo}
@@ -866,7 +872,7 @@ proc DoWithErrors {args} {
         bgerror $err
     }
 }
-
+	
 # Export a postscript file from a window. Only the bit of the diagram showing in
 # the viewport is included, and the output is in landscape mode, sized so 100
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
@@ -884,22 +890,29 @@ proc ExportPostscript { winId } {
     }
 }
 
-proc PrintNow {winId toDo} {
+proc PrintNow {winId} {
     global env tcl_platform
     
-    #    if {[string match windows $tcl_platform(platform)]} {
-    #	set detail 4
-    #	scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb
-    #	$winId move all [expr -$bl] [expr -$bt]
-    #	ZoomImage $winId all $detail $detail
-    #	ide_print_canvas $winId
-    #	ZoomImage $winId all [expr 1.0/$detail] [expr 1.0/$detail]
-    
-    #	$winId move all $bl $bt
-    #   } else {
+    if {[string match windows $tcl_platform(platform)]} {
+	package require gdi
+	package require printer
+#	package require Tkprint
+
+	set textBoost 1.6
+	scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb
+	$winId move all [expr -$bl] [expr -$bt]
+#	printer dialog select
+#	set resList [lindex [lindex [printer attr -get resolution] 0] 1]
+#	set screenRes 72.0
+#	set scale [expr [lindex $resList 0]/$screenRes]
+	ZoomImage $winId all 1 $textBoost
+	printer::print_widget $winId 0
+	ZoomImage $winId all 1 [expr 1/$textBoost]
+	$winId move all $bl $bt
+   } else {
     set tempPSFile $env(SIMTMPDIR)/temp.ps
     SpitPS $winId $tempPSFile
-    if {[catch "exec $env($toDo) {[file nativename $tempPSFile]}" result]} {
+    if {[catch "exec $env(PRINTCMD) {[file nativename $tempPSFile]}" result]} {
         ShowMessage "Print command result" warning \
                 "Printing seems to have failed. \
                 The result returned by the print command was:
@@ -909,7 +922,7 @@ proc PrintNow {winId toDo} {
         Please see the online help to find out more about setting up printing from Simile. Alternatively you can export the model diagram as a PostScript file (use the File...Export menu command) and then print that using another package." ok
     }
     file delete $tempPSFile
-    #   } for some reason comment braces have to match
+   }
 }
 
 proc SpitPS {winId psfile} {
@@ -983,7 +996,7 @@ proc AddMainMenu { winid initWidth initDepths} {
             -command "MenuSelect $winid.canvas file save_as"
     $fm add separator
     $fm add command -label "Print..." \
-            -command "PrintNow $winid.canvas PRINTCMD"\
+            -command "PrintNow $winid.canvas"\
             -accelerator "Ctrl+P"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
@@ -1083,6 +1096,7 @@ proc AddMainMenu { winid initWidth initDepths} {
             -command "MenuSelect $winid.canvas edit flip_h"
     $fm2 add command -label Vertical \
             -command "MenuSelect $winid.canvas edit flip_v"
+
     $fm add separator
     $fm add command -label "Save interface" \
             -command "MenuSelect $winid.canvas file save_interface"
@@ -1329,10 +1343,12 @@ proc ShowAbout {winId} {
     pack [label .about.l16]
     wm geometry .about +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-250]
     grab .about
+
     tkwait variable sendvars(doneAbout)
     grab release .about
     destroy .about
 }
+
 
 # toggler unpacks and repacks all bars to keep order right
 proc toggleBar {winId} {
@@ -1491,7 +1507,6 @@ proc SetEqnButtonState {bar newState} {
 }
 
 proc RaiseModelWindow {} {
-    # raises the main model window
     global modelWin
     raise $modelWin
 }
@@ -1528,6 +1543,7 @@ proc AddInputs {bar} {
 }
 
 proc InsertParam {bar paramName} {
+
     $bar.equation insert insert $paramName
     focus $bar.equation
 }
@@ -1694,4 +1710,3 @@ proc snap_down3 {w values} {
         }
     }
 }
-
