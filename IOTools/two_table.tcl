@@ -267,8 +267,9 @@ namespace eval $keyValue {
     }
     
     proc GetTransVals {varId} {
+	global userinfo
 	set value [lindex [GetModelValue $varId] 0]
-	if {[info exists TransEnums]} {
+	if {$userinfo(Version) >= 4.0} {
 	    set trans [GetFromProlog tk_get_info(dummy,$varId,types)]
 	    return [TransEnums $trans $value]
 	} else {
