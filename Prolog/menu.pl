@@ -215,7 +215,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	    IdentStr = ".cpp",
 	    Vers = ''),
 	Win shows_model Model,
-	(is_toplevel(Model);
+	((is_toplevel(Model);
 	    get_av_pair(Model, 1, separate, 1)), !,
 	name(Ident, IdentStr),
 	get_default_export_name(Model, IdentStr, DefN),
@@ -228,7 +228,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	    append_atoms([Temp, '/', Path, '/model', Vers, Ident], Top),
 	    output:safe_tcl_eval([file, copy, br(Top), br(Tgt)], _)),
 	finish_progress_dialogue;
-	do_dialogue("Error exporting code", error, "This submodel does not have its own code.", ok, _).
+	do_dialogue("Error exporting code", error, "This submodel does not have its own code.", ok, _)).
 
 menu_handle(Win, file, RunCmd) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
