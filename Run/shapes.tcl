@@ -511,9 +511,16 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
 	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"
 }
 
+# This is called when a new node with a caption is added. The caption should be
+# initially selected and editable, but if the mode is not select, nothing else
+# should be editable
+
 proc SelectText {w node} {
+    global pushedbutton
     set new [GetCaptionItem $w $node]
-    $w dtag currently_editable
+    if {![string equal select $pushedbutton]} {
+	$w dtag currently_editable
+    }
     $w itemconfigure $new -tag [concat currently_editable [$w gettags $new]]
     $w focus $new
     $w select from $new 0
@@ -565,8 +572,8 @@ proc StippleSymbol {w name density selected} {
                 $w itemconfigure $object -stipple $density
             }
         }
-	switch $selected {
-	    highlight {
+	switch -regexp $selected {
+	    highlight|target {
 		$w dtag $object tocopy
 		$w itemconfigure $object -tag \
 		    [concat selected [$w gettags $object]]

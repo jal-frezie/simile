@@ -715,7 +715,7 @@ proc ClickObj { x y winId X Y action} {
                 set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
                 $winId icursor $obj $realPlace
                 $winId select clear
-		if {[lsearch [$winId gettags $obj] selected] == -1} {
+		if {[lsearch [$winId gettags $obj] selected] != -1} {
 		    $winId select from $obj $realPlace
 		}
             }
@@ -998,7 +998,7 @@ proc AddCanvasBindings { c } {
 proc CanvasEditBind { c } {
     
     $c bind currently_editable <B1-Motion> {
-	if {[lsearch [%W gettags [%W focus]] selected] == -1} {
+	if {[lsearch [%W gettags [%W focus]] selected] != -1} {
 	    %W select to current \
                 @[join [canvasTLDistance %W [%W canvasx %x] \
 			    [%W canvasy %y]] ,]

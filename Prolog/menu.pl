@@ -80,6 +80,7 @@ update_mode(NewMode) :-
 	get_mode(OldMode),
 	(normalize(_),
 	    fail;
+	give_focus('{}'),
 	OldMode = NewMode), !;
 	set_mode(NewMode),
 	retract(cursor_is(_)),

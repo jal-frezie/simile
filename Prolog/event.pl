@@ -135,7 +135,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 
 click_text(Xpt, Ypt, Name, CD) :-
 	get_mode(select),
-	    \+ (get_highlit_obj(N, Name), N<2), !,
+	    doomed(Name), !,
 	    finish_old_edit(Name),
 	    give_focus(Name);
 	click_obj(Xpt, Ypt, Name, CD),
@@ -238,6 +238,7 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
 	give_focus(NewNode),
+	do_colours(NewNode, on),
 	select_text(Wid, NewNode),
 	(setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
 	    NewLooks = []),
@@ -1660,6 +1661,7 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
 	    New_obj = flow,
 		NewArc = BowtieArc),
 	    give_focus(NewArc),
+	    do_colours(NewArc, on),
 	    select_text(Wid, NewArc),
 	    fail;
 	 true).
@@ -1846,6 +1848,7 @@ attempt_new_component(Parent, Box, Extent) :-
 	redisplay_border(Node_name),
 	find_current(Wid),
 	give_focus(Node_name),
+	do_colours(Node_name, on),
 	select_text(Wid, Node_name).
 
 relate_graphics(Node_name, Node_trans) :-
