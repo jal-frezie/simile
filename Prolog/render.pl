@@ -620,9 +620,8 @@ get_empty_list(L, NewList) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* assign_initial_values does for tcl what the facility to initialize a variable
 when it is declared does for c. This takes the var name (1), a list of initial 
-values (2), a set of array bounds (5) and a progress count through the first (4)
-and returns a set of assignments to initialize the variables (7) and any values
-which are not used (3).
+values (2), a set of array bounds (4) and a progress count through the first (3)
+and returns a set of assignments to initialize the variables (6).
 
 The list of init vals is in list-of-lists format to match the way initialization
 works in c, though this is untested for multidimensionals. */

@@ -396,7 +396,7 @@ as follows:
 check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	analyze_array(Unit_term, Unit_base, DimExprs),
 	analyze_array(Target_unit, Target_base, TargetExprs),
-	on_exception(ParseUnit, (get_actual_sizes(DimExprs,Dims0),
+	(on_exception(ParseUnit, (get_actual_sizes(DimExprs,Dims0),
 				 get_actual_sizes(TargetExprs,Dims1)), true),
 	(var(ParseUnit), !,
 	(Dims0 = Dims1, !,
@@ -426,7 +426,9 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	    
 	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, Dims0, Dims1], Complaint));
 	sicstus_format_to_chars("Unit expression ~w or ~w is out of date: ~w",
-			[Unit_term, Target_unit, ParseUnit], Complaint)),
+			[Unit_term, Target_unit, ParseUnit], Complaint));
+	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which cannot be evaluated to a positive integer constant.",
+				[Unit_term, DimExprs], Complaint)),
 	(nonvar(Complaint); Complaint = []).
 
 /* decide_param_names fills in the 'local name' slot in these data structures; first
@@ -1095,8 +1097,11 @@ presence_affects(Arc, Affected) :-
 	(sequence(Head, Arc), sequence(Arc, Affected);
 	sequence(Arc, Head), sequence(Affected, Arc));
 	
-	terminates(Arc, B),
-	Affected = B.
+	terminates(Arc, Target),
+	(implicit_function(TargetVar, Target), !,
+	    find_base(TargetVar, AffectedVar),
+	    implicit_function(AffectedVar, Affected);
+	Affected = Target).
 
 delete_obsolete_modes([], _, []).
 
@@ -1465,12 +1470,12 @@ get_possible_start(Base, Start) :-
 
 supplies_value(Source, Dest) :-
 	Dest is_connector from Source to _,
-		Dest has_type influence,
-		\+ Source has_class submodel;
+	Dest has_type influence,
+	\+ Source has_class submodel;
 	next_section_of(Source, Dest);
 	Source has_type influence,
-      Source is_connector from _ to Dest,
-		Dest is_of_sort has_function.
+	Source is_connector from _ to Dest,
+	Dest is_of_sort has_function.
 
 next_section_of(Source, Dest) :-
 /* works efficiently when source is defined */

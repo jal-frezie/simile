@@ -233,15 +233,15 @@ proc step_list {dimList climb} {
 # existence of model_id; don't wait for instance_id or running_c
  
 proc GetObjectList { } {
-    global model_id nodedata
+    global model_id nodedata nodecount
     if {![info exists model_id]} {
 	WarnNoProgram
     }
     if {$model_id} {
 	return [listobjects $model_id]
     } else {
-	foreach record $nodedata {
-	    lappend result [lindex $record 0]
+	for {set record 0} {$nodecount>$record} {incr record} {
+	    lappend result [lindex $nodedata($record) 0]
 	}
 	return $result
     }
@@ -382,17 +382,16 @@ proc GetCaptionPathFromId {node} {
     if {$model_id} {
 	return [getvalue $model_id $node 5]
     } else {
-	global nodedata
+	global nodedata nodecount
 	
 	set numericPath [lindex [getinfo $node] 3]
-	for {set level 0} {$level < [llength $numericPath] - 1} \
-		{incr level} {
+#ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
+	for {set level 0} {$level < [llength $numericPath] - 1} {incr level} {
 	    set subpath [lrange $numericPath 0 $level]
 	    lappend subpath 0
-	    foreach record $nodedata {
-		if {[ListSameNumbers [lindex $record 4] \
-			$subpath]} {
-		    append fullPath / [lindex $record 10]
+	    for {set record 0} {$nodecount>$record} {incr record} {
+		if {[ListSameNumbers [lindex $nodedata($record) 4] $subpath]} {
+		    append fullPath / [lindex $nodedata($record) 10]
 		    break
 		}
 	    }
@@ -406,10 +405,10 @@ proc GetCaptionPathFromId {node} {
 # just written as a global, as is the data table.
 
 proc getinfo  {nodeName} {
-    global nodedata
-    foreach record $nodedata {
-        if {![string compare $nodeName [lindex $record 0]]} {
-            return [lrange $record 1 end]
+    global nodedata nodecount
+    for {set record 0} {$nodecount>$record} {incr record} {
+        if {![string compare $nodeName [lindex $nodedata($record) 0]]} {
+            return [lrange $nodedata($record) 1 end]
         } ;# end(if,![string compare $nodeName [lindex $nodedata($count) 0]])
     } ;# end(for,count)
     return [list NULL NULL NULL NULL NULL]
@@ -429,10 +428,10 @@ proc GetIdFromCaptionPath {caption} {
     if {$model_id} {
 	return [getnodeid $model_id $caption]
     } else {
-	global nodedata
+	global nodedata nodecount
 	
-	foreach line $nodedata {
-	    set id [lindex $line 0]
+	for {set line 0} {$nodecount>$line} {incr $line} {
+	    set id [lindex $nodedata($line) 0]
 	    if {[string compare $caption \
 		    [GetCaptionPathFromId $id]] == 0} {
 		return $id

@@ -512,6 +512,7 @@ drag(Xpt, Ypt) :-
 	find_current(Wid),
 	(multi_object_mode,
 	    remove_old_incomplete,
+	    remove_old_rubberband,
 	    get_component_from_gui(Wid, Xpt, Ypt, Comp), !,
 		(multi_level_mode, !,
 			find_relevant_windows(Comp, Wid, New_depth, BorderTrans),
@@ -970,22 +971,29 @@ sort_for_finish(Target, Ltype, Xpt, Ypt) :-
 	set_line_finish_obj(none),
 	    highlight(Target, 0)).
 
-/* get_nearest_equivalent_link: Original version tried to minimize all link lengths. This one is much simplified, so a link will always be one coming from the node or link the user actually clicked on, without another visible variable in between. This stops unexpected things happening when re-ghosting nodes. The original is in the commentary file ghosting.txt */
+/* get_nearest_equivalent_link: Original version tried to minimize all
+link lengths. This one is much simplified, so a link will always be
+one coming from the node or link the user actually clicked on, without
+another visible variable in between. This stops unexpected things
+happening when re-ghosting nodes. The original is in the commentary
+file ghosting.txt */
 
 get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 	/* For influences, draw link from a nearby influence from
 		the same source if there is one handy */
-	Ltype = influence,
+	member(Ltype, [influence, ghost_link]),
                 \+ find_type(OrigStart, submodel),
 		get_chain(OrigStart, Target, Top, Exits, Entries),
 		reverse(Exits, BiggestFirst),
 		append(Entries, [Top | BiggestFirst], NearestFirst),
 		member(StartPoint, NearestFirst),
+		find_all_comps(StartPoint, Start),
 		get_possible_start(OrigStart, Start),
+		(ghost_link(Start, _,_) -> Ltype = ghost_link;
+		    Ltype = influence),
 		appears(Start),
-		can_start(Ltype, Start),
-		can_finish(Ltype, Start, Target),
-		find_all_comps(StartPoint, Start), !;
+		can_start(influence, Start),
+		can_finish(influence, Start, Target), !;
 	Start = OrigStart.
 
 extend_line_to(Start, Type, Target, Point) :-
@@ -1183,7 +1191,7 @@ unclick_obj :-
 	((get_highlit_obj(2, Component_name);
 	attempt_addition(GhostType, Parent, Box, Component_name, no), !,
 	        redisplay(Component_name)),
-	    get_nearest_equivalent_link(influence, Base,
+	    get_nearest_equivalent_link(ghost_link, Base,
 					Component_name, OutLink),
 	    reghost(Component_name, OutLink);
 	do_dialogue("Ghosting error", error, "Unable to make ghost here",

@@ -6,6 +6,10 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.14  2002/07/26 15:41:23  jaspert
+#Fixed some ghost-related bugs and some unwieldy generated Tcl code
+#(NB: You need the latest Prolog saved state or executable to go with this!)
+#
 #Revision 1.13  2002/07/22 21:23:09  jaspert
 #Made popups easier
 #
@@ -74,6 +78,10 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.14  2002/07/26 15:41:23  jaspert
+#Correct RCS directive #Fixed some ghost-related bugs and some unwieldy generated Tcl code
+#Correct RCS directive #(NB: You need the latest Prolog saved state or executable to go with this!)
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.13  2002/07/22 21:23:09  jaspert
 #Correct RCS directive #Made popups easier
 #Correct RCS directive #
@@ -1587,7 +1595,7 @@ proc update_c_executable {winId} {
 
 proc load_dll {lang progFileDir modelPath node} {
 #   phasecount and nodedata are set in generated code
-    global phasecount nodedata model_id model_ids
+    global phasecount nodedata nodecount model_id model_ids
     set nameBase $progFileDir$modelPath/model
     if {[string match tcl $lang]} {
 	if {[info exists exports(target)]} { 

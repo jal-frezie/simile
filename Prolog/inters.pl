@@ -194,7 +194,7 @@ make_intermediates(
                   used so far */
 
     Units, /* Base units required for result. Needed for
-		  intermediate variables and when I get round to using this
+		  intermediate variables and when I use this
 		  function to parse equations as they are entered */
     NewInters, /* A list for variables which must now be added to the
 		  model to hold intermediate results */
@@ -479,14 +479,17 @@ make_intermediates(
 	context. */
 
 	(Source = makearray(Element, Dim),
-	    (make_intermediates(Dim, dum, [], _, [], [], 0, _, const_int, _,_),
-		!;
+	    (Dim =.. [size | _], !,
+		DimVal = Dim;
+	    make_intermediates(Dim, dum, [], _, [], [], 0, _, Dun, _,
+				part_result(_,_,_, DimVal)),
+		Dun = const_int, !;
 	    raise_exception(bad_index_number(Dim, makearray))),
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	make_choose_form(Source, keep(LocalInd), 1, Element),
-	    length(Source, Dim),
+	    length(Source, DimVal),
 	    NowBuilding = BuildingArrays), !,
-	    LocalLoop = set(LocalInd, loop(Dim)),
+	    LocalLoop = set(LocalInd, loop(DimVal)),
 	    make_intermediates(Element, Target, DestPath, BackSwap, PrevInters,
 			NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),

@@ -281,16 +281,19 @@ wot need them */
 	make_exit_proc(Language, [RootInstance], Stream, GraphClearText),
 
 	make_constant_list(Language, NodeData, StructText),
-	(Language = c,
+/*	(Language = c, */
 	    StructText = StructList,
+	    length(NodeData, NodeCount), /* only used in tcl */
 	    render(Language, variable_declaration,
-		   [node_data_line, nodedata, void, StructList], 0, Decls);
+		   [int, nodecount, [], NodeCount], 0, CDecls),
+	    render(Language, variable_declaration,
+		   [node_data_line, nodedata, void, StructList], 0, DDecls) /*;
 	Language = tcl,
 	    make_procedure_call_chars(Language, [list | StructText],
 				      StructListStr),
 	    name(StructList, StructListStr),
-	    render(Language, assignment, nodedata=StructList, 0, Decls)),
-	
+	    render(Language, assignment, nodedata=StructList, 0, Decls)) */,
+	append(CDecls, DDecls, Decls),
 	send_to_dest(Stream, [EndTopType | Decls]),
 	send_to_dest(Stream, ['#include <support2.cpp>']).
 
