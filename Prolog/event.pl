@@ -38,15 +38,13 @@ get_info(_Wid, Comp, eqn) :-
 	callback(br(chars(Eqn))).
 
 get_info(Wid, Comp, desc) :-
-	Wid shows_model Context,
 	caption_for(Comp, Capt),
 	find_type(Comp, LType),
-	((LType = influence, !,
+	(Wid shows_model Context,
 	    setof(DestLoc, Dest^(m_update:connects(Comp, Source, Dest),
 				 abs_path_name(Dest, Context, DestLoc)),
-		  Dests);
-	  m_update:connects(Comp, Source, Dest),
-	      abs_path_name(Dest, Context, Dests)),
+		  DestList),
+	    (DestList = [Dests]; Dests = DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
 	    abs_path_name(Source, Context, SourceLoc),
