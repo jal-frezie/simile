@@ -521,7 +521,6 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
   int count;
   char current[255];
   int dims[32], path[32];
-  graph_data_type *graphptr;
   Tcl_Obj *resultPtr;
   int error, action;
   node_data_line *data_line;
@@ -614,11 +613,10 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 
 void get_value_pointer(void* tgt, char* id, int count, int* inds) {
   node_data_line* data_line;
-  char caption[255], spare[255];
+  char caption[255];
   int dims[32], path[32];
   Tcl_Obj* valPtr;
-  Tcl_Obj** listPtr;
-  int stepIndex, eltCount, eltIndex, testIndex;
+  int stepIndex;
   Model* mSpare;
 
   data_line = searchinfo(id, &mSpare, caption, dims, path);
@@ -736,8 +734,6 @@ extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
 			    int argc, Tcl_Obj *CONST argv[]) {
   char* fileName;
   char* nodeName;
-  HINSTANCE handle;
-  Model* oldModel;
  
   switch (argc) {
   case 3:
@@ -1032,7 +1028,6 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
 extern "C" int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
     int error, tgtIndex;
-    char* found_node;
     Model* tgtModel;
 
     if (argc != 3) {
@@ -1265,7 +1260,7 @@ Tcl_Obj* fill_value(Model*, void*, int[], int, int*, int[], int*, Tcl_Obj*);
 Tcl_Obj* fill_list_value(Model* localType, void** smHandle, int tree[], 
 			 int type, int* use_dims, int dims[], int* dim_place) {
   Tcl_Obj *localObj, *localSubObj;
-  int next_handle[] = {1,0}, match, arrayOut, *new_dim_place, *short_tree;
+  int next_handle[] = {1,0}, match, arrayOut, *short_tree;
   localObj = Tcl_NewListObj(0, NULL);
   while (*smHandle && 
 	 (match = match_type(localType, *smHandle, dims, dim_place)) != -1) {
@@ -1300,7 +1295,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
 		    int* use_dims, int dims[], int* dim_place, Tcl_Obj* nVs) {
   Tcl_Obj *localObj, *indObj, *localSubObj, **arrayVals, *eltVals;
   void* model_val_ptr;
-  int *short_tree, *new_tree;
+  int *new_tree;
   int arrayLength, arrayPosn, arrayOut;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
   switch (*use_dims) {
@@ -1320,39 +1315,6 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
     smHandle = *(void**)(localType->get_ptr(smHandle, &tree, &dims));
     localObj = fill_list_value(localType, &smHandle, new_tree, type, 
 			       use_dims+1, dim_place+1, dim_place+1);
-    
-    /*    Version with multiple indices per value
-    localObj = Tcl_NewListObj(0, NULL);
-    if (nVs) {
-      Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
-      arrayPosn = 0;
-    } else {
-      eltVals = NULL;
-    }
-    while (smHandle) {
-      localSubObj = Tcl_NewListObj(0, NULL);
-      short_tree = id_handle;
-      id_count = 0;
-      id_ptr = &id_count;
-      while (id_val = *(int *)localType->get_ptr(smHandle, &short_tree, 
-						 &id_ptr)) {
-	Tcl_ListObjAppendElement(NULL, localSubObj, Tcl_NewIntObj(id_val));
-	++id_count;
-	id_ptr = &id_count;
-	short_tree = id_handle;
-      }
-      Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
-      if (nVs) {
-	eltVals = pick_elt_vals(arrayVals, arrayLength, localSubObj, 
-				&arrayPosn);
-      }
-      Tcl_ListObjAppendElement(NULL, localObj, fill_value(localType, smHandle, 
-	new_tree, type, use_dims+1, dim_place+1, dim_place+1, eltVals));
-      short_tree = next_handle;
-      smHandle = *(void**)(localType->get_ptr(smHandle, &short_tree, 
-						  NULL));
-    }
-    */
     break;
   case 0:
     model_val_ptr = localType->get_ptr(smHandle, &tree, &dims);
@@ -1498,7 +1460,6 @@ extern "C" int randseedCmd(ClientData clientData, Tcl_Interp *interp,
 extern "C" int random01Cmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
     Tcl_Obj *resultPtr;
-    int error;
 
    if (argc != 1) {
      interp->result = "No arguments for random01 please!";
@@ -1697,7 +1658,6 @@ from our little secret -- after checking that the edition specified is right */
 
 extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
-  int trouble;
   if (argc != 2) {
     interp->result = "One argument for check_auth_code please!";
     return TCL_ERROR;
@@ -1758,7 +1718,6 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
     interp->result = "No arguments for loadcommands please!";
     return TCL_ERROR;
   }
-  char licenseStr[256];
 
   /* Data about version etc held in dll for safety and convenience:
      these will become globals because we are not in the scope of a
@@ -1902,7 +1861,6 @@ extern "C"
 __declspec( dllexport )
 #endif
 int Ame_dll_Init(Tcl_Interp *interp) {
- int maj, min;
  char pkgName[16];
 
    globInterp = interp;

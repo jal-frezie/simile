@@ -164,7 +164,7 @@ proc create_equation {parent boxtitle indices} {
 
     foreach funk $equation(fnDefs) {
 	set box root
-	foreach level [lindex $funk 0] {
+	foreach level [split [join [lindex $funk 0] /] /] {
 	    set lname $box.[join $level _]
 	    if {![$lbf exists $lname]} {
 		$lbf insert end $box $lname -image $iconImages(open) \

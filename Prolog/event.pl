@@ -206,7 +206,7 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	CD = 2,
 	adjust_edit_menu(Wid, Parent, Point).
 
-click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
+click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, _CD) :-
 	finish_old_edit(none),
 	get_mode(add),
 	set_start_coords(Xpt, Ypt),
@@ -221,7 +221,7 @@ click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	    (var(DropNode), !;
 		do_linear(New_obj, DropNode))).
 
-click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
+click_in(_,_,_,_, Parent, CD) :-
 	/* get_mode(select), !,
 	    set_start_coords(Xpt, Ypt),
 	    save_params(Trans, Depth, Parent),
@@ -310,7 +310,7 @@ restore_edit_menu(Wid) :-
 	Y is (T+B)/2,
 	assert(menu_submodel_will_be(Wid, Model, [X,Y])).
 
-click_on([Xpt, Ypt], Poss_start, CD) :-
+click_on([Xpt, Ypt], Poss_start, _CD) :-
 	get_mode(add),
 	finish_old_edit(none),
 	get_adding_object(New_obj),
@@ -370,7 +370,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 		highlight(Moving_obj, 2)) */ ;
 	advance_phase_to(moving)).
 
-click_on([Xpt, Ypt], Moving_obj, CD) :-
+click_on([Xpt, Ypt], Moving_obj, _CD) :-
 	find_type(Moving_obj,TargetSort),
 	get_mode(ghost),
 	\+ is_ghost(Moving_obj),

@@ -2234,7 +2234,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 		      $equation(fnDefs)] {
 	set box $m
 #puts "Adding $funk to $box"
-	foreach level [lindex $funk 0] {
+	foreach level [split [join [lindex $funk 0] /] /] {
 	    set lname $box.[string tolower [join $level _]]
 	    if {[catch {$box index $level}]} {
 		menu $lname -tearoff 0

@@ -844,8 +844,8 @@ set_properties(Wid, Model) :-
 	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
 		      NewCount, NewStep, NewComment, NewFix,
 		      NewHide, NewSeparate, NewEnumSpecs],
-	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, Step,
-		      _Comment, _EnumSpecs, Fix, Hide, Separate],
+	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _Step,
+		      _Comment, _EnumSpecs, _Fix, Hide, _Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -922,14 +922,7 @@ set_properties(Wid, Model) :-
 		fail;
 	    NewNature = Nature, UseCount = Count, !;
 		event:spread_colour(Model, yes)),
-	    
-	    (\+ (NewNature = Nature, UseCount = Count, NewStep = Step,
-		   NewFix = Fix, NewSeparate = Separate),
-		fail;
-	    \+ NewSeparate = Separate,
-		find_all_comps(Parent, Model),
-		fail;
-	    finish_move(Model, 1))).
+	    finish_move(Model, 1)).
 
 separate_type_from_mems([H | T], H-T).
 

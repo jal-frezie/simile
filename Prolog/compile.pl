@@ -147,17 +147,6 @@ list_user_fns(Parent, Fn) :-
 	Comp has_class_refinement uses_local_fns of FnList,
 	member(Fn, FnList).
 
-reuse_old_exec(Language, Parent, CheckDir, Node, UserFns) :-
-	(Language = c,
-	    (Parent has_model_refinement c_new of OldTgt;
-		OldTgt = '{}'), !;
-	    /* if no c_new look for dll with default name from save file */
-	OldTgt = 0),
-	(check_exec_fns_fresh(Language, CheckDir, OldTgt, UserFns, RStr),
-	    RStr = "0",
-	    load_executable(Language, CheckDir, OldTgt, Parent, Node);
-	 check_level_for_reds(Parent)).
-
 /* reclose: compiled version has a tendency to close streams when exiting their
 functions on an exception, so this only closes if it has to...*/
 
@@ -312,15 +301,8 @@ bits and pieces */
 		   [[void, this, []] | Constants], 0, GlobalDeclText),
 	build_submodel_functions(Language, Phases, Inters,
 				 StateForm, UpdateForm, SortedForm, Used,
-				 ExtSets, AllGraphs, GraphClearText, FnList),
+				 ExtSets, AllGraphs, FnList),
 
-	length(AllGraphs, GraphTotal),
-/*	render( Language, comment, 'GRAPH DATA SPACE DECLARATION', 0,
-				[GraphDeclComment]),
-	render(Language, variable_declaration,
-	       [graph_data_type, graphdata, [GraphTotal]],
-	       0, [GraphDeclText]),
-*/
 	append(EntryArcs, [end], EntryList), /* because msvc++ barfs
 	                                        at empty lists */
 	all(render, make_constant_string,
@@ -379,7 +361,7 @@ wot need them */
 
 /*	send_to_dest(Stream, Comps), */
 	send_to_dest(Stream, Fns),
-	make_exit_proc(Language, [RootInstance], Stream, GraphClearText),
+	make_exit_proc(Language, [RootInstance], Stream),
 
 	make_constant_list(Language, NodeData, StructText),
 /*	(Language = c, */
@@ -600,7 +582,7 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 */
 
 build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
-		AllGraphs, GraphClearText, Decls) :-
+		AllGraphs, Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
 	do_assign_list( Language, ActionForm, 1, [], [[]], 
@@ -615,9 +597,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 
 	(\+ AllGraphs = [], !,
 /* following section used to be c only */
-	    generate_graph_handlers(AllGraphs, AllSetups, AllReleases),
-	    render_all(Language, procedure_call, AllReleases,
-		       4, GraphClearText),
+	    generate_graph_handlers(AllGraphs, AllSetups),
 	    render_all(Language, procedure_call, AllSetups,
 		       8, GraphSetupPass),
 	    refer_value(Language, phase, PhRef),
@@ -627,8 +607,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 	    append([GraphSetupCond | GraphSetupPass], GraphSetupEnd,
 		   GraphSetupText);
 	        
-	GraphClearText = [],
-		GraphSetupText = []),
+	GraphSetupText = []),
 	render_all(Language, variable_declaration, Temp1, 4, TempDeclText1),
 	render( Language, comment, 'EVALUATION PROCEDURE DECLARATION', 0,
 				EvalProcDeclComment),
@@ -649,7 +628,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 
 build_submodel_functions( Language, Phases, Inters,
 			  StateForm, UpdateForm, SortedForm,
-			  Used, ExtUsers, AllGraphs, GraphClearText, Decls) :-
+			  Used, ExtUsers, AllGraphs, Decls) :-
 	reassure_user("Ordering model execution assignments"),
 
 	ExtBlocker = make(externs_done, [externs_done], [], 0, []),
@@ -674,8 +653,7 @@ build_submodel_functions( Language, Phases, Inters,
 	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
 	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
 	     build([[], [], Inters, Inters]), unify(Used), 
-	     build([_, _, IntGraphs, ExtGraphs]),
-	     build([_, _, IntClearText, ExtClearText]), build(Decls)]),
+	     build([_, _, IntGraphs, ExtGraphs]), build(Decls)]),
 /*	build_eval_proc(Language, updatemodel, OrdUpdates, Globals, [], Used,
 			_, _, UpDecls),
 	build_eval_proc(Language, advancemodel, OrdStates, Globals, [], Used,
@@ -684,9 +662,7 @@ build_submodel_functions( Language, Phases, Inters,
 			Used, IntGraphs, IntClearText, IntDecls),
 	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Globals, Inters,
 			Used, ExtGraphs, ExtClearText, ExtDecls),
-*/	all(user, append, [build([IntGraphs, IntClearText]),
-			   build([ExtGraphs, ExtClearText]),
-			   build([AllGraphs, GraphClearText])]).
+*/	append(IntGraphs, ExtGraphs, AllGraphs).
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
@@ -716,7 +692,7 @@ get_circle_from(Steps, [First | Linked], Circle) :-
 
 /* Procedure to clear memory at end of run */
 
-make_exit_proc(Language, Instances, Dest, GraphClearText) :-
+make_exit_proc(Language, Instances, Dest) :-
 	render(Language, procedure_start,
 	       call(void, do_exitmodel), 0, FinalProcDeclText),
 
@@ -1653,13 +1629,12 @@ open_separately(Level) :-
 	\+ I = glob(_,_);
 	    nonvar(Alarm)).
 
-generate_graph_handlers([], [], []).
+generate_graph_handlers([], []).
 
 generate_graph_handlers([[_, _, PointerData | NumericalData] | AllGraphs],
-		[Setup | AllSetups], 
-		[release_graph_data(PointerData) | AllReleases]) :-
+		[Setup | AllSetups]) :-
 	Setup =.. [setup_graph_data, PointerData | NumericalData],
-	generate_graph_handlers(AllGraphs, AllSetups, AllReleases).
+	generate_graph_handlers(AllGraphs, AllSetups).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % name_components instantiates the unground parts of InstanceList which correspond

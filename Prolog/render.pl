@@ -324,13 +324,10 @@ render(c, class_declaration, Instance, Indent, ClassDecl) :-
 	       [proc_decls, End], ClassDecl).
 	
 /* pointer declaration for a given type */
-render(L, pointer_declaration, instance(submodel, SmName, 
-		xrefs(_,_, Bases, _), Name, Type-_), Indent, Rest) :-
+render(L, pointer_declaration, instance(submodel, SmName, _, Name, Type-_),
+       Indent, Rest) :-
 	do_loop_pointers(L, SmName, Type, Name, Temps),
-/*	all(render, do_base_pointers,
-	    [unify(L), build(Bases), append(Temps2, [])]),
-	append(Temps1, Temps2, Temps),
-*/	render_all(L, variable_declaration, Temps, Indent, Rest).
+	render_all(L, variable_declaration, Temps, Indent, Rest).
 
 render(L, data_declaration,
 		instance(NodeType, SymbolicName, _, NameIn,

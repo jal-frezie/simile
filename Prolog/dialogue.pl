@@ -177,7 +177,7 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    Units = 1,
 	    Bounds = 1;
 	get_table_data(Function, Data_st, DataTable,
-		       TableVals, Units, Bounds, Dims, Complaint),
+		       Units, Bounds, Dims, Complaint),
 	    (\+ Complaint = [], !,
 		do_dialogue("Problem with input data", warning, Complaint, ok,
 			    _),
@@ -401,30 +401,26 @@ table_ref(Datta, Ref, DumFn, Recurse) :-
 	    member(Functor/UseArity, Datta), !,
 	    Recurse = 1.
 
-get_table_data(Function, Data, Table, Orig, Units, Dims, Sizes, Complaint) :-
+get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 	on_exception(Complaint,
 		     (get_table_part(Function, Data, Table,
-				     Orig, Units, Dims, Sizes),
+				     Units, Dims, Sizes),
 		     zero_empties(Table, Sizes)), true).
 
-get_table_part(Function, Data, Table, Orig, Units, Dims, Sizes) :-
+get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	name(Num, Data),
-	enum_type_ref(Num, Function, Orig, Units, 0),
-	    Table = Orig,
+	enum_type_ref(Num, Function, Table, Units, 0),
 	    Dims = [],
 	    Sizes = [];
 	output:chop_list(Data, Alternator),
-	    feed_items(Function, Alternator, Table,
-		       SubOrig, Units, Dims, Sizes), !,
-	    Orig = br(SubOrig);
+	    feed_items(Function, Alternator, Table, Units, Dims, Sizes), !;
 	append(["Table contained the data item ", Data,
 		", which is not a recognizable constant."], Loss),
 	    raise_exception(Loss).
 
-feed_items(_, [], _, [], _, _, []).
-feed_items(Fn, [IndStr, ValStr | More], Table, [Ind, VOrig | TOrig],
-	   Units, Dims, Sizes) :-
-	feed_items(Fn, More, Table, TOrig, DUnit, Dims, LoSizes),
+feed_items(_, [], _, _, _, []).
+feed_items(Fn, [IndStr, ValStr | More], Table, Units, Dims, Sizes) :-
+	feed_items(Fn, More, Table, DUnit, Dims, LoSizes),
 	(name(Ind, IndStr),
 	    enum_type_ref(Ind, Fn, Posn, TUnit, 0),
 	    (TUnit = a(_), IUnit = TUnit;
@@ -433,7 +429,7 @@ feed_items(Fn, [IndStr, ValStr | More], Table, [Ind, VOrig | TOrig],
 		", which is not a recognizable constant."], Loss),
 	    raise_exception(Loss)),
 	nth0(Posn, Table, Line),
-	get_table_part(Fn, ValStr, Line, VOrig, Units, HiDims, HiSizes),
+	get_table_part(Fn, ValStr, Line, Units, HiDims, HiSizes),
 	(Units = DUnit, !;
 	    raise_exception("Data units mismatch.")),
 	 (Dims = [IUnit | HiDims], !;
