@@ -747,24 +747,51 @@ proc DoneParams {oldMissing} {
             set compName [GetCaptionPathFromId $node]
             set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
             #ShowMessage debug info "-paramData($compName)- is -$paramData($compName)-" ok
+	    set dataChanged 0
             if {![llength $paramData($compName)]} {
                 set empties 1
                 # for each constant value, check whether it has been changed, and if so,
                 # flag a complete model rebuild. Do same if running_c lost due to crash
             } elseif {[lsearch $oldMissing $compName] > -1} {
-                set runState(reloadParams) 1
+		set dataChanged 1
             } elseif {![info exists running_c]} {
-                set runState(reloadParams) 1
+		set dataChanged 1
             } elseif {[string compare [lindex [GetModelValue $node] 0] \
                         $paramData($compName)]} {
-                set runState(reloadParams) 1
+		set dataChanged 1
             }
+	    # Make array form if data has changed
+	    if {$dataChanged} {
+                set runState(reloadParams) 1
+		set trans [GetFromProlog tk_get_info({},$node,types)]
+		ListToArray $node $trans $paramData($compName)
+	    }
         }
     }
     if {[info exists empties]} {
         .fpdialogue.buttons.banner configure -text "Some values still missing!"
     } else {
         set paramData(/done/) 1
+    }
+}
+
+proc ListToArray {tgt trans list} {
+puts "Go! tgt $tgt trans $trans list $list"
+    global paramData
+    if {![string match {} $list]} {
+	set head [lindex $list 0]
+	if {[string compare {} [lindex $trans 0]]} {
+	    set headNum [lsearch [lindex $trans 0] $head]
+	} else {
+	    set headNum $head
+	}
+	if {[string match $head $list]} {
+puts "setting paramData($tgt) to $headNum"
+	    set paramData($tgt) $headNum
+	} else {
+	    ListToArray $tgt,$headNum [lrange $trans 1 end] [lindex $list 1]
+	    ListToArray $tgt $trans [lrange $list 2 end]
+	}
     }
 }
 

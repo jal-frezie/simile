@@ -524,9 +524,9 @@ proc WarnNoData {} {
 proc collect {tgt node count args} {
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
     if {[string match TABLE [GetModelEval $node]]} {
-	FileCollect ::AME_model<>::$tgt $node $args
+#	FileCollect ::AME_model<>::$tgt $node $args
+	upvar \#0 paramData inputSrc
     } else {
-	set sub [join [concat $node $args] ,]
 	switch [GetModelType $node] {
 	    FLAG {
 	    upvar \#0 checkStates inputSrc
@@ -536,11 +536,12 @@ proc collect {tgt node count args} {
 	    upvar \#0 comboChoices inputSrc
 	    }
 	}
+    }
+	set sub [join [concat $node $args] ,]
 # Check that input source exists, it will not if model is being initialized
 	if {[info exists inputSrc($sub)]} {
 	    set ::AME_model<>::$tgt $inputSrc($sub)
 	}
-    }
 }
 
 proc FileCollect {tgt node argList} {

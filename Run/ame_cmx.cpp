@@ -642,33 +642,15 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
   Model* mSpare;
 
   data_line = searchinfo(id, &mSpare, caption, dims, path);
+  strcpy(caption, data_line->name);
+  for (stepIndex = 0; count>stepIndex; ++stepIndex) {
+    sprintf(caption + strlen(caption), ",%d", inds[stepIndex]); 
+  }
+  
   if (data_line->eval == TABLE) {
-    valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("paramData", -1),
-	Tcl_NewStringObj(caption, -1), TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
-    
-    for (stepIndex = 0; count>stepIndex; ++stepIndex) {
-      Tcl_ListObjGetElements(globInterp, valPtr, &eltCount, &listPtr);
-      for (eltIndex = 0; eltCount > eltIndex; eltIndex += 2) {
-	Tcl_GetIntFromObj(globInterp, listPtr[eltIndex], &testIndex);
-	if (testIndex == inds[stepIndex]) {
-	  valPtr = listPtr[++eltIndex];
-	  break;
-	}
-      }
-      if (eltIndex >= eltCount) {
-	sprintf(spare, "Could not find element %d at level %d of %s",
-		inds[stepIndex], stepIndex, caption),
-	Tcl_SetStringObj(Tcl_GetObjResult(globInterp), spare, -1);
-	serviceError = TCL_ERROR;
-      }
-    }
+      valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("paramData", -1),
+	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
   } else if (data_line->eval == INPUT) {
-    if (count) {
-      sprintf(caption, "%s,%d", data_line->name, *inds); 
-      /* only one subscript allowed for inputs */
-    } else {
-      strcpy(caption, data_line->name);
-    } /* not sure about those -- don't I need the whole path? */
     if (data_line->datatype == FLAG) {
       valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("checkStates", -1),
 	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
