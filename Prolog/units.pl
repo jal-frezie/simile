@@ -1,8 +1,9 @@
 /* units.pl --- yet another shiny, efficient new module written by Jasper to 
 replace a huge steaming pile of convoluted entrails spewed up by Geraint. */
 
-sicstus_module(units, [get_conversion/4, default_tick_is/1,
-		       add_unit_definition/2, sort_units/3]).
+sicstus_module(units, [get_conversion/4, extract_units_root/4,
+		       default_tick_is/1, add_unit_definition/2,
+		       sort_units/3]).
 
 default_tick_is(day).
 
@@ -25,21 +26,33 @@ March 2001: Initial values changed from 1 to 1.0 because converting rainfall
 in mm/month to mks was producing integers too large for Tcl execution. */
 
 add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
-	number(Unit), BaseOut = BaseIn,
-		(Sign = (*), Mnum = Unit, Qnum = 1.0;
-		Sign = (/), Mnum = 1.0, Qnum = Unit);
+	(number(Unit), Factor = Unit;
+	        Unit = _^0, Factor = 1.0),
+	    BaseOut = BaseIn,
+	    (Sign = (*), Mnum = Factor, Qnum = 1.0;
+		Sign = (/), Mnum = 1.0, Qnum = Factor);
 	unit_definition(Unit, Defn),
 		add_conversion(Defn, Sign, BaseIn, BaseOut, Mnum, Qnum);
-	Unit =.. [Op, Top, Bottom],
-		add_conversion(Top, Sign, BaseIn, BaseMid, M1, Q1),
-		combine_signs(Sign, Op, Sign2),
-		add_conversion(Bottom, Sign2, BaseMid, BaseOut, M2, Q2),
-		Mnum is M1*M2, Qnum is Q1*Q2;
+	break_product(Unit, Op, Top, Bottom),
+	    add_conversion(Top, Sign, BaseIn, BaseMid, M1, Q1),
+	    combine_signs(Sign, Op, Sign2),
+	    add_conversion(Bottom, Sign2, BaseMid, BaseOut, M2, Q2),
+	    Mnum is M1*M2, Qnum is Q1*Q2;
 	baseline(Unit),
-		Mnum = 1.0, Qnum = 1.0,
-		(combine_signs(Sign, '/', Sign2),
-			select_factor_from(BaseIn, Unit, Sign2, BaseOut), !;
-		BaseOut =.. [Sign, BaseIn, Unit]).
+	    Mnum = 1.0, Qnum = 1.0,
+	    (combine_signs(Sign, '/', Sign2),
+		select_factor_from(BaseIn, Unit, Sign2, BaseOut), !;
+	    join_without_ones(Sign, BaseIn, Unit, BaseOut)).
+
+
+break_product(Unit, Op, Top, Bottom) :-
+	Unit =.. [Op, Top, Bottom],
+	    (Op = (*); Op = (/));	  
+	Unit = Bottom^Exp,
+	    (Exp > 0, NextExp is Exp-1, Op = (*);
+		Exp < 0, NextExp is Exp+1, Op = (/)),
+	    (NextExp = 0, !, Top = 1;
+	    Top = Bottom^NextExp).
 
 /* select_factor_from: extracts a factor from an expression. Args are:
 +Expr	The source expression
@@ -51,7 +64,7 @@ add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
 select_factor_from(Expr, Factor, Sign, Rest) :-
 	Expr = 1, !, fail;
 	atomic(Expr), Factor = Expr, Sign = (*), Rest = 1, !;
-	Expr =.. [Op, Ex1, Ex2],
+	break_product(Expr, Op, Ex1, Ex2),
 		(select_factor_from(Ex1, Factor, Sign, Rest_of_Ex1),
 			Rest =..[Op, Rest_of_Ex1, Ex2];
 		combine_signs(Op, Sign, Sign2),
@@ -70,15 +83,47 @@ sort_units(Before, After, Conv) :-
 	(Op1 = (*), Op2 = (/), !,
 	    Simpler = Mid;
 	 Op1 = Op2, SomeConv > 1, !,
-	    Simpler =.. [Op2, Step1, F2]),
+	    join_without_ones(Op1, F2, Mid, Step2),
+	    Simpler =.. [Op2, F2, Step2]),
 	sort_units(Simpler, After, MoreConv),
 	Conv =.. [Op1, MoreConv, SomeConv];
 	After = Before, Conv = 1.
+
+extract_units_root(Units, Depth, Root, Conv) :-
+	(Depth < 0,
+	    Sign = (/),
+	    UseDepth is -Depth;
+	Sign = (*),
+	    UseDepth = Depth),
+	implode_units(Units, Depth, NonConvRoot, Left),
+	add_conversion(Left, Sign, 1, Bases, M, Q),
+	implode_units(Bases, Depth, ConvRoot, WontGo),
+	(WontGo = 1, !,
+	    join_without_ones(Sign, ConvRoot, NonConvRoot, Root),
+	    Conv is M/Q;
+	raise_exception(no_nth_root_for_units(Units, UseDepth))).
+
+implode_units(Bases, Depth, Root, Remains) :-
+	get_n_times(Bases, Depth, Factor, Sign, Left), !,
+	implode_units(Left, Depth, MoreRoot, Remains),
+	join_without_ones(Sign, MoreRoot, Factor, Root);
+	Root = 1, Remains = Bases.
+	
+get_n_times(Units, Depth, Factor, Sign, Left) :-
+	select_factor_from(Units, Factor, Sign, More),
+	(Depth = 1, !,
+	    More = Left;
+	 Deeper is Depth-1,
+	    get_n_times(More, Deeper, Factor, Sign, Left)).
 	
 combine_signs(*, *, *).
 combine_signs(*, /, /).
 combine_signs(/, *, /).
 combine_signs(/, /, *).
+
+join_without_ones(Sign, P, Q, All) :-
+	Sign = (*), (P=1,All=Q; Q=1,All=P), !;
+	All =.. [Sign, P, Q].
 
 baseline(metre).
 baseline(kilogramme).

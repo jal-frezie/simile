@@ -686,22 +686,28 @@ make_intermediates(
 		    TattyUnits =.. [Op | UnitList],
 			sort_units(TattyUnits, Units, ConvFactor),
 			SourceRef = ConvFactor*ValRef), !;
-		 Op = (++),
+		ValRef = Arg1++Arg2,
 		    /* Used for compartment increments -- no need to parse
 		    these, and conversion is done during instantiation (since
 		    it happens whether or not unit checking is on) so result
 		    units are simply those of 1st arg */
 		    UnitList = [Units, _IncUnits],
-		    ValRef = Arg1++Arg2,
 		    SourceRef = Arg1+Arg2;
-		Op = (^),
-		    UnitList = [Base, const_int],
+		(ValRef = Log^Exp,
+		        UnitList = [Base, ExpU],
+		        promote_unit(ExpU, const_ratio);
+		 ValRef = sqrt(Log),
+		        UnitList = [Base],
+		        Exp = 1/2),
 		    get_conversion(1, Base, Base, _),
-		    ValRef = _^Exp,
+		    (Exp = N/D, !,
+			raise_units(Base, N, Mid),
+			extract_units_root(Mid, D, Units, Conv),
+			RConv is Conv**Exp,
+			SourceRef = RConv*ValRef;
 		    raise_units(Base, Exp, Units),
-		    SourceRef = ValRef;
-		 Op = sofar,
-		    ValRef = sofar(SourceRef),
+			SourceRef = ValRef);
+		 ValRef = sofar(SourceRef),
 		    UnitList = [Units];
 		 fn_or_op(Op, RUnits, Arg_template),
 		    /* first, check my units are right... */
@@ -813,6 +819,8 @@ uses_as(any, Type) :-
 uses_as(boolean, cond_spec).
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
+uses_as(const_int, const_ratio).
+uses_as(const_ratio, real).
 uses_as(int, real).
 
 promote_arg(Lo, Hi, Phys) :-
@@ -928,7 +936,8 @@ operator(+, int, [int, int]).
 operator(-, int, [int, int]).
 operator(*, int, [int, int]).
 operator(//, int, [int, int]).
-operator(/, 1, [1, 1]).
+operator(/, const_ratio, [const_int, const_int]).
+operator(/, 1, [1,1]).
 
 /* Comparison ops need int arg version to avoid unnecessarily constraining
 parameters to real */

@@ -417,14 +417,16 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 		(Severity = 0, !;
 		/* Unit_base = Target_base, !; */
 		inters:promote_arg(Unit_base, Target_type, Unit_type), !,
+		    (Target_unit = 1, Target_name = real;
+			Target_name = Target_unit),
 		    (Severity = 1, !;
 		    \+ Target_type = real, !;
 		    get_conversion(1, Unit_type, Target_base, Scale),
 			(Severity = 2, !;
 			1 is Scale, !;
-			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Target_unit, Target_base, Unit_base], Complaint));
+			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Target_name, Target_base, Unit_base], Complaint));
 
-		    sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Target_unit, Target_base, Unit_base], Complaint));
+		    sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Target_name, Target_base, Unit_base], Complaint));
 
 		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_base, Target_type], Complaint));
 		
