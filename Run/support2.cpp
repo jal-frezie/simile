@@ -1,18 +1,18 @@
 /* version needs its own special procedure because any other might change
    and cause a crash before version mismatch is detected */
-EXTDEC double get_version() {
+FINDABLE double get_version() {
   return(simile_version);
 }
 
-EXTDEC void* do_createmodel(void) {
+FINDABLE void* do_createmodel(void) {
   return (void*)new AME_model;
 }
 
-EXTDEC void do_updatemodel(void* handle, double time, int phase) {
+FINDABLE void do_updatemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->updatemodel(time, phase);
 }
 
-EXTDEC void do_advancemodel(void* handle, double time, int phase) {
+FINDABLE void do_advancemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->advancemodel(time, phase);
 }
 
@@ -22,7 +22,7 @@ static void exit_sighandler(int x){
   longjmp(env, x);
 }
 
-EXTDEC int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
+FINDABLE int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
   int error;
 
   /* Dont want a crash while running model to terminate Simile, so add 
@@ -57,11 +57,11 @@ the integration step being done: 0 for Euler, 1-4 for the four stages of RK
 
 Also uses to get phase count */
 
-EXTDEC void do_exitmodel(void* handle) {
+FINDABLE void do_exitmodel(void* handle) {
   ((AME_model *)handle)->do_exitmodel();
 }
 
-EXTDEC int do_setstep(double time, int phase) {
+FINDABLE int do_setstep(double time, int phase) {
   if (phase<0) { /* lazy */
     ts[-phase] = time;
   } else {
@@ -112,7 +112,7 @@ double stage_incr (diffs *extras, int step, double v) {
   };
 };
 
-EXTDEC void* burrow_to(void* level, int** id_meta, int** dim_list) {
+FINDABLE void* burrow_to(void* level, int** id_meta, int** dim_list) {
   while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
 -2 means nested separate-dll submodel */
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
@@ -121,7 +121,7 @@ EXTDEC void* burrow_to(void* level, int** id_meta, int** dim_list) {
 };
 
 /* This is called only when we create the type, to return model constants */
-EXTDEC int get_count(void* useClassPtr, void* ame_rand_ptr, 
+FINDABLE int get_count(void* useClassPtr, void* ame_rand_ptr, 
 		void* graphpoint_ptr, 
 		void* release_graph_data_ptr, 
 		void* compare_instance_status_ptr, 

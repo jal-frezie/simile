@@ -719,7 +719,7 @@ related to the variable being calculated, including intermediate variables, but 
 editing the graphs at run time we want to refer to them by the final result, so
 here we swap them round... */
 
-correct_graph_header([Inter | G1], Inters, Dest) :-
+correct_graph_header([Inter | G1], Inters, Dest) :-
 	member(instance(internal, inter(_,_, Next), _, Inter, _), Inters), !,
 	    correct_graph_header([Next | G1], Inters, Dest);
 	Dest = [Inter | G1].

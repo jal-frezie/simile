@@ -456,7 +456,8 @@ proc GetCCompProperty {topNode prop args} {
 # wraps c++ defined version in different interp
 proc c_getvalue {topNode node action} {
     global model_id
-    return [do_for_node $topNode getvalue $model_id($topNode) $node $action]
+    set res [getvalue $model_id($topNode) $node $action]
+    return $res
 }
 	    
 proc GetTclCompProperty {topNode prop args} {

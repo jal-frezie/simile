@@ -1,12 +1,8 @@
-#include	<stdio.h>
-#include	<string.h>
-#include	<stdlib.h>
 #include	<stdarg.h>
 #include        <signal.h>
 #include        <setjmp.h>
-#include	<math.h>
 
-#include <dllcalls.h>
+#include <newdllcs.h>
 
 /* Every dll has a variable to hold the id of the model type instance it
    represents */

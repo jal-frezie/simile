@@ -2,7 +2,6 @@ proc FileParamDialogue {topNode topWin mustShow} {
     global paramData widgetNames
     set allNodes [GetCompProperty $topNode Objects]
     # do it now to shake out errors before opening window
-        
     set t [toplevel .fpdialogue]
     wm transient $t $topWin
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams

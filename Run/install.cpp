@@ -5,17 +5,17 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
-#include <dllcalls.h>
+#include <newdllcs.h>
 
 // prototype, __stdcall seems to need one 
-extern "C" __declspec( dllexport ) int __stdcall info_copy(
+FINDABLE int __stdcall info_copy(
 		HWND, HWND, const char*, char*,
 		char*, char*, char*, char*);
 
 // This writes a wee file with the supplied user name and company, and our own version
 // number. It is called from the installation procedure.
 
-extern "C" __declspec( dllexport ) int __stdcall info_copy(
+FINDABLE int __stdcall info_copy(
 		HWND MainHandle, HWND DialogHandle,
 		const char* pInstallDir, char* pSupportDir,
 		char* pUser, char* pCompany, char* pSerial,

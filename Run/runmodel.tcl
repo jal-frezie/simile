@@ -34,7 +34,7 @@ proc MakeHelperMenu {} {
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
     set ioDir [file join $custom(prefDir) IOTools]
-do_in_editor puts "locals in $ioDir"
+#do_in_editor puts "locals in $ioDir"
     if {[file exists $ioDir]} {
 	cd $ioDir
 	AddHelperSublist $fm.sub2 "Local" l
@@ -539,6 +539,8 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow} {
 	tk appname exec_for_$myNode
     }
     set custom(prefDir) [file dirname $nSimtmpdir]
+#    set env(LD_LIBRARY_PATH) [file dirname [info library]]
+#    ShowMessage debug info $env(LD_LIBRARY_PATH) ok
     load_c_stub
 
     set runState($nMyNode,modelRunning) 0
@@ -562,7 +564,7 @@ proc ScrubRun {node times} {
     if {[info exists model_id($node)]} {
         if {$model_id($node)} {
             if {[info exists instance_id($node)]} {
-                #ShowMessage debug info "Exiting $model_id $instance_id" ok
+                #ShowMessage debug info "Exiting $model_id($node) $instance_id($node)" ok
                 do_for_node $node c_exitmodel $model_id($node) \
 		    $instance_id($node)
                 unset instance_id($node)
@@ -580,6 +582,7 @@ proc ScrubRun {node times} {
         }
         unset model_id($node)
     }
+
 }
 
 proc GetShortVals {node plName transList limit} {
@@ -829,7 +832,6 @@ proc StartRun {node} {
 	}
 	return 0
     }
-
     if {[info exists runState($node,currentTime)]} {
         if {$runState($node,execTime) != $runState($node,currentTime)} {
             set runState($node,execTime) [expr $runState($node,execTime) + \
@@ -1183,5 +1185,7 @@ proc ModelDirectory {} {
     return [file dirname [lindex $custom(hotlist) 0]]
 }
 
-eval KickOff $argv
+if {[catch {eval KickOff $argv} err]} {
+    ShowMessage {Simile obliterfried!} error $err ok
+}
 do_in_editor set runState($myNode,modelReady) 1

@@ -14,12 +14,12 @@
 proc ShowMessage { title icon string resps {parent {}}} {
     set mBoxCmd [list tk_messageBox -title $title -icon $icon \
 		     -message $string -type $resps]
+    if {[winfo exists .splash]} {
+	destroy .splash ;# ensure mess is not obscured by splash screen
+    }
     set active [focus]
     if {[llength $active]} {
 	lappend mBoxCmd -parent $active
-    }
-    if {[winfo exists .splash]} {
-	destroy .splash ;# ensure mess is not obscured by splash screen
     }
     set act [eval $mBoxCmd]
     update
@@ -460,7 +460,8 @@ proc CountValues {text} {
 }
 
 proc SquirtMime {args} {
-    global mimeSquirter
+    global mimeSquirter
+
     if {[string match end [lindex $args 0]]} {
         close $mimeSquirter
     } else {

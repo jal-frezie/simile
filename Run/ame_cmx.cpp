@@ -5,10 +5,6 @@ libraries corresponding to compiled model programs, and allow
 them to be executed etc by Tcl commands. */
 
 #include <tcl.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-#include <stdlib.h> /* for rand procedure used by tcl models */
 #include <signal.h> /* for killing stuck model execution */
 
 #define	GETDIMS		0
@@ -34,36 +30,17 @@ them to be executed etc by Tcl commands. */
     #include <windows.h>
     #undef WIN32_LEAN_AND_MEAN
 
-    #define LOAD_DLL LoadLibrary
-    #define UNLOAD_DLL FreeLibrary
-    #define WHAT_WENT_WRONG GetErrorText
-    #define FIND_FUNCTION GetProcAddress
     #define FORUNIX 0
+/*
 BOOL APIENTRY
 DllEntryPoint(
-    HINSTANCE hInst,		/* Library instance handle. */
-    DWORD reason,		/* Reason this function is being called. */
-    LPVOID reserved)		/* Not used. */
+    HINSTANCE hInst,		// Library instance handle.
+    DWORD reason,		// Reason this function is being called.    LPVOID reserved)		// Not used.
+    LPVOID reserved)		// Not used.
 {
     return TRUE;
 }
-
-char* GetErrorText() {
-LPVOID lpMsgBuf;
-FormatMessage( 
-    FORMAT_MESSAGE_ALLOCATE_BUFFER | 
-    FORMAT_MESSAGE_FROM_SYSTEM | 
-    FORMAT_MESSAGE_IGNORE_INSERTS,
-    NULL,
-    GetLastError(),
-    MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-    (LPTSTR) &lpMsgBuf,
-    0,
-    NULL 
-);
-return (char*)lpMsgBuf;
-}
-
+*/
 int kill (int pid, int sig) {
   HANDLE procHandle;
   BOOL outcome;
@@ -76,516 +53,48 @@ int kill (int pid, int sig) {
 
 #else
 
-    #include <dlfcn.h>
-
-    #define HINSTANCE void*
-    #define LOAD_DLL flopen
-#ifdef SIM_OPSYS_Darwin
-#define UNLOAD_DLL dummyunload
-int dummyunload(HINSTANCE unused) {
-  return(1);
-}
-#else
-    #define UNLOAD_DLL !dlclose
-/* dlclose inverted cos it seems to return NULL when it works */
-#endif
-    #define WHAT_WENT_WRONG (char*)dlerror
-    #define FIND_FUNCTION dlsym
-    #define FORUNIX 1
-HINSTANCE flopen(char* fileName) {
-  return dlopen(fileName, RTLD_NOW);
-}
-
-/*
- * Unix version: does not have min & max defined
- */
-int min(int a, int b) {
-  return a<b?a:b;
-}
-int max(int a, int b) {
-  return a>b?a:b;
-}
+#define FORUNIX 1
 
 #endif
 #include <locale.h>
 
-/* Definitions used in this code and the model code */
+// Definitions used in this code and the model code
 #include <dllcalls.h>
 
 char simileVersion[] = SIMILE_VERSION;
 
-/* utility procedures making no direct reference to model classes/instances */
-graph_data_type* tcl_graphdata;
-
-double graphpoint(double xval, graph_data_type* graphdata, int index) {
-	double interval, intersection;
-	int spaces, lower;
-	int *right, *left;
-	graph_data_type *use_graph_pointer;
-	
-	use_graph_pointer = find_graph(index, graphdata);
-
-	spaces = use_graph_pointer->xsize-1;
-	/* Interval is distance from left of graph in point units */
-	interval = spaces*(xval - use_graph_pointer->xlow)/
-		(use_graph_pointer->xhigh - use_graph_pointer->xlow);
-	switch(use_graph_pointer->range) {
-	case 0: case 4: case 5: /* truncate to fit on graph */
-	  interval = interval<0?0:(interval>spaces?spaces:interval);
-	  break;
-	case 2: case 6: /* wrap around graph range */
-	  interval = spaces*(interval/spaces - floor(interval/spaces));
-	  break;
-	/* case 1: extrapolate end sections of graph */
-	}
-	/* right = use_graph_pointer->points;
-	interval++;
-
-	for (length=spaces;length;length--) {
-		left = right;
-		right++;
-		if (--interval <= 1) break;
-	}
-	*/
-	if (use_graph_pointer->range > 3) {
-	  intersection = *(use_graph_pointer->points + 
-			   max(0,min(spaces,(int)(interval+0.5))));
-	} else {
-	  lower = max(0,min(spaces-1,(int)(interval)));
-	  interval -= lower;
-	  left = use_graph_pointer->points + lower;
-	  right = use_graph_pointer->points + min(spaces,lower+1);
-	  intersection = interval*(*right) + (1-interval)*(*left);
-	}
-	return use_graph_pointer->ylow + 
-		(use_graph_pointer->yhigh - use_graph_pointer->ylow)*
-		intersection/use_graph_pointer->yspan;
-
-}
-
-void release_graph_data(graph_data_type *graph_data_pointer) {
-   free(graph_data_pointer->points);
-}
-
-void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
-  while (*dest) { dest++; }
-  if (sep) { *(dest++)=sep; }
-  if (sep2) { *(dest++)=sep2; }
-  do { *(dest++)= *src; } while (*src++);
-}
-  
-int compare_instance_status (const int pointers[], const int ref_pointers[], 
-			     int num) {
-   int count;
-   for (count=0; count<num; count++) {
-     if (pointers[count]<ref_pointers[count]) return -1;
-     if (pointers[count]>ref_pointers[count]) return 1;
-   }
-   return 0;
-}
-
-class DllLossage {
-  char* action;
-  char* fileName;
-  char* wibble;
-  
-public:
-  DllLossage(char* Action, char* FileName, char* Wibble) {
-    action=Action;
-    fileName=FileName;
-    wibble=Wibble;
-  }
-
-  void tellTcl(Tcl_Interp* interp) {
-    Tcl_AppendResult(interp, "couldn't ", action, " file \"", fileName,
-		     "\": ", wibble, (char *) NULL);
-  }
-};
-
-class connectRecord {
-public:
-  char* TopArc;
-  char* TopNode;
-  void* TopModel; // should be Model* but one has to be declared first
-  char* SourceNode;
-  int DestCount;
-  char** Dests;
-  void* SearchBase;
-  int* UpTree;
-};
-
-int connCount;
-connectRecord* connectData;
-Tcl_Obj* connectInfoObject;
-
-ame_rand_type ame_rand;
-graphpoint_type graphpoint;
-release_graph_data_type release_graph_data;
-compare_instance_status_type compare_instance_status;
-get_value_pointer_type get_value_pointer;
-fetch_instance_type fetch_instance;
-update_submodel_type update_submodel;
-advance_submodel_type advance_submodel;
-eval_submodel_type eval_submodel;
-search_from_type search_from;
-advance_ptr_type advance_ptr;
-get_remote_value_type get_remote_value;
-
-/* prototypical declarations for functions to be supplied by the model dll
- */
-
-typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
-			  void*, void*, void*, void*, void*, void*, void*,
-			  void*, int*, node_data_line**, int*, char***);
-typedef double getversion_type(void);
-typedef void* createmodel_type(void);
-typedef int setstep_type(double, int);
-typedef void updatemodel_type(void*, double, int);
-typedef void advancemodel_type(void*, double, int);
-typedef int evalmodel_type(void*, double, int, BOOLEAN);
-typedef void* getpointer_type(void*, int**, int**);
-typedef void exitmodel_type(void*);
-
-/* Matching set of declarations for the pointers by which we will access
-   these functions locally */
-
-class Model {
-  HINSTANCE handle;
-  int count, count2, count3;
-  int inArcCount;
-  char** inArcList;
-  enum_data_type *enumtypedata;
-
-  getcount_type *getcount;
-  getversion_type *getversion;
-  createmodel_type *createmodel;
-  setstep_type *setstepmodel;
-  updatemodel_type *updatemodel;
-  advancemodel_type *advancemodel;
-  evalmodel_type *evalmodel;
-  getpointer_type *getpointer;
-  exitmodel_type *exitmodel;
-
-public:
-  int phases;
-  graph_data_type* c_graphdata;
-  int nodecount;
-  node_data_line* nodedata;
-  int *connLines;
-  char erreur[256];
-
-  Model(char* fileName) {
-    handle = LOAD_DLL(fileName);
-    if (handle == NULL) {
-      throw DllLossage("load", fileName, WHAT_WENT_WRONG());
-    }
-
-    getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
-    if (getversion == NULL) {
-      UNLOAD_DLL(handle);
-      throw DllLossage("get version number of", fileName, WHAT_WENT_WRONG());
-    }
-    if ((*getversion)() < atof(simileVersion)-0.00001) {
-      UNLOAD_DLL(handle);
-      throw DllLossage("find current version of", fileName, WHAT_WENT_WRONG());
-
-    }
-
-
-
-    getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
-    createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
-    updatemodel = (updatemodel_type *)FIND_FUNCTION(handle, "do_updatemodel");
-    advancemodel = (advancemodel_type *)FIND_FUNCTION(handle, 
-						      "do_advancemodel");
-    evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
-    setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
-    getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
-    exitmodel = (exitmodel_type *)FIND_FUNCTION(handle, "do_exitmodel");
-      
-    nodecount = (*getcount)(this, 
-			    (void*)ame_rand, 
-			    (void*)graphpoint,
-			    (void*)release_graph_data, 
-			    (void*)compare_instance_status, 
-			    (void*)get_value_pointer, 
-			    (void*)fetch_instance,
-			    (void*)update_submodel,
-			    (void*)advance_submodel,
-			    (void*)eval_submodel,
-			    (void*)search_from,
-			    (void*)advance_ptr,
-			    (void*)get_remote_value,
-			    (void*)&c_graphdata,
-			    (void*)&enumtypedata,
-			    &phases, &nodedata, 
-			    &inArcCount, &inArcList);
-    /*	sprintf(erreur, "finding %d (%s) of %d connections, first has top %s and %d dests.", 
-	inArcCount, inArcList[0], connCount, connectData[0].TopArc, connectData[0].DestCount);
-  	throw DllLossage("initialize", fileName, strdup(erreur)); */
-
-    connLines = new int[inArcCount];
-    /* Create a local reference for each component to the global table */
-    for (count=0; inArcCount>count; count++) {
-      connLines[count] = -1;
-      for (count2=0; connCount>count2; count2++) {
-	if (!strcmp(inArcList[count], connectData[count2].TopArc)) {
-	  connLines[count] = count2;
-	} else {
-	  for (count3=0; connectData[count2].DestCount>count3; count3++) {
-	    if (!strcmp(inArcList[count], connectData[count2].Dests[count3])) {
-	      connLines[count] = count2;
-	    }
-	  }
-	}
-      }
-      if (connLines[count] == -1) {
-	sprintf(erreur, "Found no connection data for %s", inArcList[count]);
-	throw DllLossage("initialize", fileName, strdup(erreur));
-      }
-    }
-  }
-
-  ~Model() {
-    if (!UNLOAD_DLL(handle)) {
-      throw DllLossage("unload", "", WHAT_WENT_WRONG());
-    }
-  }
-
-  /* Next bit is really boring...and possibly needles...but I feel I have to
-     make class procedures for the things loaded from the model dll rather than
-     trying to refer to procedure variables in the model class directly */
-
-  void* create() {
-    return (*createmodel)();
-  }
-
-  void update(void* id, double start, int phase) {
-    (*updatemodel)(id, start, phase);
-  }
-
-  void advance(void* id, double start, int phase) {
-    (*advancemodel)(id, start, phase);
-  }
-
-  int eval(void* id, double start, int phase, BOOLEAN exo) {
-    return (*evalmodel)(id, start, phase, exo);
-  }
-
-  int setstep(double start, int phase) {
-    return (*setstepmodel)(start, phase);
-  }
-
-  void* get_ptr(void* level, int** id_meta, int** dim_list) {
-    return (*getpointer)(level, id_meta, dim_list);
-  }
-
-  void exit(void* id) {
-    (*exitmodel)(id);
-  }
-
-  /* Now for the locally defined model class procedures */
-  int parent_line (int line) {
-    int count, level, test, *path;
-    path = nodedata[line].path;
-    for (count=0;nodecount>count;count++) {
-      level = 0;
-      while (test = nodedata[count].path[level]) {
-	if (test != path[level++]) {
-	  break;
-	}
-      }
-      if (!test && path[level] && (!path[level+1] || 
-				  (path[level+1]<0 && !path[level+2]))) {
-	return(count);
-      }
-    }
-    return(-1);
-  }
-      
-  void make_full_caption(int line, char *result) {
-    /* New version which does not depend on the nodedata array being in
-       any particular order -- and returns the whole caption */
-    int parent, *dest, *src;
-    
-
-    if ((parent = parent_line(line)) > 0) {
-      make_full_caption(parent, result);
-    } else {
-      *result = (char)NULL;
-    }
-    strcat(result, "/");
-    strcat(result, nodedata[line].caption);
-    /*
-    dest = dims;
-    src = nodedata[line].dims;
-
-    while (*dest) { dest++; }
-    do {
-      if (*src<=-10) {
-	*(dest++)=find_et_struct(*src); // not yet used
-      } else {
-	*(dest++)=*src;
-      }
-    } while (*src++);
-    */
-  }
-  
-  int find_et_struct(int fake_dim) {
-    enum_data_type* seeker = enumtypedata;
-    while (fake_dim++ < -10) {
-      seeker = seeker->next;
-    }
-    return 3;
-  }
-
-  int getinfo(char* node_id) {
-    int count;
-
-    for (count=0;nodecount>count;++count) {
-      if (!strcmp(node_id, nodedata[count].name)) { 
-	return count;
-      }
-    }
-    return -1;
-  }
-} /* end of class Model */ ;
-
-/* listable class for submodel data -- allows us to find model id from node id
- */
-class listNodeModel {
-public:
-  char* node;
-  Model* model;
-  listNodeModel* next;
-
-  listNodeModel(char* newNode, Model* newModel, listNodeModel* prev) {
-    node = strdup(newNode);
-    model = newModel;
-    next = prev;
-  }
-
-  ~listNodeModel() {
-    delete(node);
-    delete(model);
-    if (next) {
-      delete(next);
-    }
-  }
-
-  Model* nodeModel(char* seekNode) {
-    if (!strcmp(node, seekNode)) {
-      return(model);
-    } else if (next) {
-      return(next->nodeModel(seekNode));
-    } else {
-      return NULL;
-    }
-  }
-};
-
-
-
-listNodeModel* nodeModelList = NULL;
-
-Model *modelType;
-void* modelHandle;
 Tcl_Interp* globInterp;
 int serviceError;
+graph_data_type* tcl_graphdata;
+char globMess[255];
+
+void showMess (char* mess) {
+  Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
+	      NULL);
+}
 
 /* this simply makes up a tcl list of all the objects that
 appear in the object table. */
 
-int list(Model* listType, Tcl_Interp *interp) {
+int list(long int listType, Tcl_Interp *interp) {
 
   Tcl_Obj *resultPtr;
   char* find;
-  int line;
+  int line, nodecount;
+  node_data_line* node_data;
 
   resultPtr = Tcl_GetObjResult(interp);
-  for (line=0; line<listType->nodecount; line++) {
-    find = listType->nodedata[line].name;
-    if (listType->nodedata[line].datatype == EXTERNAL) {
-      list(nodeModelList->nodeModel(find), interp);
+  nodecount = get_node_count(listType);
+  for (line=0; line<nodecount; line++) {
+    node_data = get_data_line(listType, line);
+    if (node_data->datatype == EXTERNAL) {
+      list(get_node_model_id(node_data->name), interp);
     } else {
-      Tcl_ListObjAppendElement(interp, resultPtr, Tcl_NewStringObj(find, -1));
+      Tcl_ListObjAppendElement(interp, resultPtr, 
+			       Tcl_NewStringObj(node_data->name, -1));
     }
   }
   return TCL_OK;
-}
-
-/* This finds node ids from captions globally. It runs through a model
-comparing each caption with what we are after, and as well as returning if
-it finds it, it continues inside any separate submodel it comes across whose
-caption fits the start of what we are after (after trimming the portion found
-from the search string, less the submodel itself -- note it may be an issue
-that the submodel name is searched for in both models ) */
-
-int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
-  int count;
-  char test[255];
-  for (count = 1; seekType->nodecount>count; ++count) {
-    seekType->make_full_caption(count, test);
-	  
-    if (!strcmp(seeknode, test)) {
-      *tgtModel = seekType;
-      return(count);
-    }
-    if (seekType->nodedata[count].datatype == EXTERNAL) {
-      if (!strncmp(seeknode, test, strlen(test))) {
-	return(nodeModelAndId(nodeModelList->nodeModel(seekType->
-						       nodedata[count].name),
-			      seeknode + strlen(test), /* was (strrchr(test, '/') - test), */
-			      tgtModel));
-      }
-      
-    }
-  }
-  /* Node with given caption not found... */
-  return -1;
-}
-
-  
-/* global version of getinfo, uses the list defined above to search through all
-   current models to find given node, and combine their extraction data
-
-   Needs a new node_data_line, to which it is passed a ptr. Returns 0 if
-   fails to find path. */
-
-node_data_line* searchinfo(char* node, Model** tgtModel, 
-			   char* caption, int* dims, int* path) {
-  listNodeModel* searchPoint = nodeModelList;
-  Model* tryModel;
-  node_data_line *bottomLine;
-  char localCapt[256];
-  int line;
-
-  while (searchPoint) {
-    tryModel = searchPoint->model;
-    if ((line=tryModel->getinfo(node))>-1) {
-      bottomLine = tryModel->nodedata + line;
-      *tgtModel = tryModel;
-      tryModel->make_full_caption(line, localCapt);
-      if (tryModel == modelType) {
-	strcpy(caption, localCapt);
-	*dims = *path = 0;
-	append_ints_to_null(dims, bottomLine->dims, 0, 0);
-	append_ints_to_null(path, bottomLine->path, 0, 0);
-      } else if (searchinfo(searchPoint->node, &tryModel,
-			    caption, dims, path)) { /* ref to tryModel spare */
-	append_ints_to_null(dims, bottomLine->dims, SEPARATE, 0);
-	append_ints_to_null(path, bottomLine->path, SEPARATE, 
-			    (int)searchPoint->model);
-	strcpy(caption + strlen(caption), /* was strrchr(caption, '/'), */
-	       localCapt);
-      } else {
-	bottomLine = NULL;
-      }
-      return(bottomLine);
-    }
-    searchPoint = searchPoint->next;
-  }
-  return(NULL);
 }
 
 int do_graph(graph_data_type** graphdata, Tcl_Interp *interp, 
@@ -700,7 +209,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
   Tcl_Obj *resultPtr;
   int error, action;
   node_data_line *data_line;
-  Model* tgtModel;
+  long int tgtModel;
 
   if (argc < 3) {
     interp->result = "At least three arguments for interface please!";
@@ -711,93 +220,94 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     return error;
   } /* if(error) */
 
-  resultPtr = Tcl_GetObjResult(interp);
-
   if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[1], NULL), &tgtModel,
-			     current, dims, path)))
-    {
+			     current, dims, path))) {
     sprintf(current, "noitem");
-    Tcl_SetStringObj(resultPtr, current, -1);
+    resultPtr = Tcl_NewStringObj(current, -1);
+    Tcl_SetObjResult(interp, resultPtr);
     return(TCL_OK);
   }
-
   switch (action) {
   case GETDIMS:
     count=0;
+    resultPtr = Tcl_NewListObj(0, NULL);
     do {
       if (Tcl_ListObjAppendElement(interp, resultPtr, 
 			       Tcl_NewIntObj(dims[count])) != TCL_OK) {
 	return TCL_ERROR;
 	}
     } while (dims[count++]);
-    return TCL_OK;
-  Tcl_SetIntObj(resultPtr, dims[0]);
+    break;
+
   case GETPATH:
     count=0;
+    resultPtr = Tcl_NewListObj(0, NULL);
     do {
       if (Tcl_ListObjAppendElement(interp, resultPtr, 
 			       Tcl_NewIntObj(path[count])) != TCL_OK) {
 	return TCL_ERROR;
 	}
     } while (path[count++]);
-    return TCL_OK;
+    break;
+
   case GETCLASS:
-    Tcl_SetIntObj(resultPtr, data_line->compclass);
-    return TCL_OK;
+    resultPtr = Tcl_NewIntObj(data_line->compclass);
+    break;
 
   case GETTYPE:
-    Tcl_SetIntObj(resultPtr, data_line->datatype);
-    return TCL_OK;
+    resultPtr = Tcl_NewIntObj(data_line->datatype);
+    break;
 
   case GETEVAL:
-    Tcl_SetIntObj(resultPtr, data_line->eval);
-    return TCL_OK;
+    resultPtr = Tcl_NewIntObj(data_line->eval);
+    break;
 
   case GETMIN:
-    Tcl_SetDoubleObj(resultPtr, data_line->min);
-    return TCL_OK;
+    resultPtr = Tcl_NewDoubleObj(data_line->min);
+    break;
 
   case GETMAX:
-    Tcl_SetDoubleObj(resultPtr, data_line->max);
-    return TCL_OK;
+    resultPtr = Tcl_NewDoubleObj(data_line->max);
+    break;
 
   case GETGRAPH:
   case SETGRAPH:
-    action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
-
     if (!data_line->graph) {
       sprintf(current, "No graph associated with node %s.", data_line->name);
-      Tcl_SetStringObj(resultPtr, current, -1);
-
+      resultPtr = Tcl_NewStringObj(current, -1);
+      Tcl_SetObjResult(interp, resultPtr);
       return TCL_ERROR;
     }
-    return do_graph(&(tgtModel->c_graphdata), interp, action, data_line->graph,
+    action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
+    return do_graph(get_graph_base(tgtModel), interp, action, data_line->graph,
 		    argc, argv);
 
   case GETCAPTION:
-    Tcl_SetStringObj(resultPtr, current, -1);
-    return TCL_OK;
+    resultPtr = Tcl_NewStringObj(current, -1);
+    break;
 
   default:
     sprintf(current, "getvalue does not support action %d",
 	    action);
-    Tcl_SetStringObj(resultPtr, current, -1);
+    resultPtr = Tcl_NewStringObj(current, -1);
+    Tcl_SetObjResult(interp, resultPtr);
     return TCL_ERROR;
-
- } /* end(switch,action) */
+  } /* end(switch,action) */
+  Tcl_SetObjResult(interp, resultPtr);
+  return TCL_OK;
 } /* end(procedure,!(finished)) */
 
 /* Now for procedures that are called from the dll and therefore have to be
    global even though they may refer to stuff by model type and instance */
 
-void get_value_pointer(void* tgt, char* id, int count, int* inds) {
+void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
   node_data_line* data_line;
   char caption[255];
   char* varName;
   int dims[32], path[32];
   Tcl_Obj* valPtr;
   int stepIndex, rv;
-  Model* mSpare;
+  long int mSpare;
 
   data_line = searchinfo(id, &mSpare, caption, dims, path);
   strcpy(caption, data_line->name);
@@ -835,70 +345,6 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
   }
 }
       
-void* fetch_instance(char* nodeId) {
-  return(nodeModelList->nodeModel(nodeId)->create());
-}
-
-void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
-  level = type->get_ptr(level, id_meta, dims);
-  if (*(*id_meta)++ == SEPARATE) {
-    type = (Model*)*(*id_meta)++;
-    return search_ptr(type, *(void**)level, id_meta, dims);
-  } else {
-    return level;
-  }
-}
-
-int g_r_v_bug;
-
-void* get_remote_value(void* typeRef, void* topInstRef, int level,
-			    int arcIndx, int* subList) {
-  connectRecord* currentData;
-
-
-
-  int* tree;
-
-  currentData = &connectData[((Model*)typeRef)->connLines[arcIndx]];
-  tree = currentData->UpTree;
-  while (level-->0) {
-    while (*tree++ != -1) {}
-  }
-  if (topInstRef) {
-    currentData->SearchBase = topInstRef;
-  }
-  g_r_v_bug = (int)(100*(*tree) + 10*(*(tree+1)) + *(tree+2));
-  //  return(&g_r_v_bug);
-  return(search_ptr((Model*)typeRef, currentData->SearchBase, 
-		    &tree, &subList));
-}
-
-void* advance_ptr(void* typeRef, void* topInstRef) {
-  int next_handle[] = {1,0}, *tree = next_handle;
-  return *(void**)((Model*)(typeRef))->get_ptr(topInstRef, &tree, NULL);
-}
-
-void search_from(void* typeRef, int nodeIndx, void* instPtr) {
-
-  connectData[((Model*)typeRef)->connLines[nodeIndx]].SearchBase = instPtr;
-}
-
-void update_submodel(char* nodeId, void* instanceId,
-		       double start_time, int phase) {
-  nodeModelList->nodeModel(nodeId)->update(instanceId, start_time, phase);
-}
-
-void advance_submodel(char* nodeId, void* instanceId,
-		       double start_time, int phase) {
-  nodeModelList->nodeModel(nodeId)->advance(instanceId, start_time, phase);
-}
-
-int eval_submodel(char* nodeId, void* instanceId,
-		       double start_time, int phase, BOOLEAN exo) {
-  return nodeModelList->nodeModel(nodeId)->eval(instanceId, start_time, 
-						phase, exo);
-}
-
 /* Here is code that has been added by hand to make these procedures available
 as Tcl commands so the dialog box can call them as if it were a Tcl simulation.
  This one is called after a new dll has been built, to set the function
@@ -907,31 +353,31 @@ as Tcl commands so the dialog box can call them as if it were a Tcl simulation.
 unloads the model. Since the model dll now merely defines the model class, this
 also causes an instance of it to be created. */
 
+long int modelType;
+long int modelHandle;
+
+connectRecord** connectDataPtr;
+int* connCountPtr;
+
 extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
 			    int argc, Tcl_Obj *CONST argv[]) {
   char* fileName;
   char* nodeName;
- 
+  char* dllProblem;
+
   switch (argc) {
   case 3:
     fileName = Tcl_GetStringFromObj(argv[1], NULL);
     nodeName = Tcl_GetStringFromObj(argv[2], NULL);
-
-    try {
-      modelType = new Model(fileName);
-    }
-    catch(DllLossage prang) {
-      prang.tellTcl(interp);
+    dllProblem = load_model(fileName, nodeName, &modelType);
+    if (dllProblem) {
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
+      delete dllProblem;
       return TCL_ERROR;
     }
-
-    nodeModelList = new listNodeModel(nodeName,
-				      modelType,
-				      nodeModelList);
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long int)modelType));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(modelType));
     break;
-
-
+    
   default:
     interp->result = "Two arguments for loadmodel please!";
     return TCL_ERROR;
@@ -944,70 +390,25 @@ extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
 
 extern "C" int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-   int count, count2, error;
-   char spare[256];
-   int dims[32], path[32];
-   int* tree;
-   connectRecord* currConnect;
-   Model* mSpare;
-
+   int error;
+   char errorTxt[256];
    if (argc != 2) {
 	interp->result = "One argument for create please!";
 	return TCL_ERROR;
    }
 
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
    if (error != TCL_OK) {
 	return error;
    }
-   for (count=0; connCount>count; count++) {
-     currConnect = &connectData[count];
-     currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
-     if (searchinfo(currConnect->TopNode, &mSpare, spare, dims, path)) {
-       tree = new int[32];
-       if (searchinfo(currConnect->SourceNode, &mSpare, spare, dims, tree)) {
-	 count2=0;
-	 while (path[count2]) {
-	   ++count2;
-	 }
-	 // Botch to cope with the fact that we start from the
-	 // submodel instance not its structure in the parent when
-	 // importing a value from a separate submodel
-	 if (tree[count2] == SEPARATE) {
-	   count2 += 3;
-	 }
-	 if (tree[count2] == -1) {
-	   count2++;
-	 }
-
-	 currConnect->UpTree = &(tree[count2]);
-       } else {
-	 sprintf(spare, "Found no path for source node %s",
-		 currConnect->SourceNode);
-	 Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-	 return TCL_ERROR;
-       }
-
-     } else {
-       sprintf(spare, "Found no path for top node %s",
-		 currConnect->TopNode);
-       Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-       return TCL_ERROR;
-     }
-   }     
-   /* debug
-   sprintf(spare, "Top node path %d %d %d %d %d %d, Source node path %d %d %d %d %d %d, count2 %d",
-	   *path, *(path+1), *(path+2), *(path+3), *(path+4), *(path+5),
-	   *tree, *(tree+1), *(tree+2), *(tree+3), *(tree+4), *(tree+5),
-	   count2);
-   interp->result = spare;
-   Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-   return TCL_ERROR;
-   */
-   // now hopefully we won't be using the reference strings anymore, so...
-
-   Tcl_SetLongObj(Tcl_GetObjResult(interp), (long int)(modelType->create()));
-   return TCL_OK;
+   modelHandle = fetch_top_instance(modelType, errorTxt);
+   if (modelHandle) {
+     Tcl_SetLongObj(Tcl_GetObjResult(interp), modelHandle);
+     return TCL_OK;
+   } else {
+     Tcl_SetStringObj(Tcl_GetObjResult(interp), errorTxt, -1);
+     return TCL_ERROR;
+   }
 }
 
 extern "C" int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1021,12 +422,12 @@ extern "C" int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	return TCL_ERROR;
    }
 
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
    if (error != TCL_OK) {
 	return error;
    }
 
-   error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+   error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
    if (error != TCL_OK) {
 	return error;
    }
@@ -1042,7 +443,7 @@ extern "C" int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
    }
 
    serviceError = TCL_OK;
-   modelType->update(modelHandle, starttime, phase);
+   update(modelType, modelHandle, starttime, phase);
    return serviceError;
 }
 
@@ -1078,7 +479,7 @@ extern "C" int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
    }
 
    serviceError = TCL_OK;
-   modelType->advance(modelHandle, starttime, phase);
+   advance(modelType, modelHandle, starttime, phase);
    return serviceError;
 }
 
@@ -1117,7 +518,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	return error;
    }
 
-   error = modelType->eval(modelHandle, starttime, phase, FALSE);
+   error = eval(modelType, modelHandle, starttime, phase, FALSE);
    if (error < 0) {
      sprintf(spare, "Illegal operation signal %d", -error);
      Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
@@ -1136,8 +537,6 @@ extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
    double starttime;
    int phase;
    int error;
-   listNodeModel* nodeModelPoint = nodeModelList;
-   
 
    if (argc != 3) {
 	interp->result = "Two arguments for setstep please!";
@@ -1154,14 +553,7 @@ extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
 	return error;
    }
 
-   while (nodeModelPoint) {
-     modelType = nodeModelPoint->model;
-     if (modelType->phases>=abs(phase)) {
-       modelType->setstep(starttime, phase);
-     }
-     nodeModelPoint = nodeModelPoint->next;
-   }
-   Tcl_SetIntObj(Tcl_GetObjResult(interp), (nodeModelList->model)->phases);
+   Tcl_SetIntObj(Tcl_GetObjResult(interp), setstep(starttime, phase));
    return TCL_OK;
 }
 
@@ -1172,65 +564,57 @@ extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
 extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
+  char* dllProblem;
+
   if (argc != 3) {
     interp->result = "Two arguments for exit please!";
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
   if (error != TCL_OK) {
     return error;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
   if (error != TCL_OK) {
     return error;
   }
   
-  if (modelHandle) { 
-    modelType->exit(modelHandle);
-  }
-
-  if (nodeModelList) {
-    try {
-      delete nodeModelList;
-    }
-    catch(DllLossage prang) {
-      prang.tellTcl(interp);
+    dllProblem = myexit(modelType, modelHandle);
+    if (dllProblem) {
+      Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
+      delete dllProblem;
       return TCL_ERROR;
     }
-  }
-  
-  nodeModelList = NULL;
   return TCL_OK;
 }
 
 extern "C" int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-    int error, tgtIndex;
-    Model* tgtModel;
-
-    if (argc != 3) {
-	interp->result = "Two arguments for get_node_id please!";
-	return TCL_ERROR;
-    }
-
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   tgtIndex = nodeModelAndId(modelType, Tcl_GetStringFromObj(argv[2], NULL),
-			     &tgtModel);
-    if (tgtIndex != -1) {
-	interp->result = tgtModel->nodedata[tgtIndex].name;
-	return TCL_OK;
-    } else {
-	Tcl_AppendResult(interp, "No node with caption string ",
-			 Tcl_GetStringFromObj(argv[2], NULL), " found.",
-		(char*)NULL);
-	return TCL_ERROR;
-    }
+  int error;
+  char* nodeId;
+  
+  if (argc != 3) {
+    interp->result = "Two arguments for get_node_id please!";
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  nodeId = getNodeId(modelType, Tcl_GetStringFromObj(argv[2], NULL));
+  if (nodeId) {
+    interp->result = nodeId;
+    return TCL_OK;
+  } else {
+    Tcl_AppendResult(interp, "No node with caption string ",
+		     Tcl_GetStringFromObj(argv[2], NULL), " found.",
+		     (char*)NULL);
+    return TCL_ERROR;
+  }
 }
 
 extern "C" int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1275,8 +659,11 @@ int obj_compare_instance_status(Tcl_Obj* Obj, Tcl_Obj* RefObj) {
   Tcl_Obj **objVals, **refVals;
 
   Tcl_ListObjGetElements(NULL, Obj, &num1, &objVals);
+
   Tcl_ListObjGetElements(NULL, RefObj, &num2, &refVals);
   for (count=0; count<num1 && count<num2; count++) {
+
+
     Tcl_GetIntFromObj(NULL, Obj, &val1);
     Tcl_GetIntFromObj(NULL, RefObj, &val2);
     if (val1<val2) return -1;
@@ -1286,6 +673,8 @@ int obj_compare_instance_status(Tcl_Obj* Obj, Tcl_Obj* RefObj) {
   if (count<num2) return -1;
   return 0;
 }
+
+
 
 /* This picks a Tcl_Obj from a list by matching its index (preceeding
 element) with another obj. Returns empty obj if not found. ArrayVals
@@ -1320,14 +709,15 @@ that list, and returns, let us say, the first unused model index if the integers
 indices as far as the pointer, 0 if that is all the indices, and -1 if there
 is a mismatch before the pointer */
 
-int match_type(Model* localType, void* smHandle, int dims[], int* dim_place) {
+int match_type(long int localType, long int smHandle, int dims[], 
+	       int* dim_place) {
   int id_handle[] = {2,0}, *cur_place, *short_tree, *id_ptr, id_val, id_count;
   short_tree = id_handle;
   id_count = 0;
   id_ptr = &id_count;
   cur_place = dims;
   while (cur_place < dim_place) {
-    id_val = *(int *)(localType->get_ptr(smHandle, &short_tree, 
+    id_val = *(int *)(get_ptr(localType, smHandle, &short_tree, 
 					&id_ptr));
     if (id_val != *(cur_place++)) {
       return -1;
@@ -1336,12 +726,13 @@ int match_type(Model* localType, void* smHandle, int dims[], int* dim_place) {
     id_ptr = &id_count;
     short_tree = id_handle;
   }
-  return *(int *)(localType->get_ptr(smHandle, &short_tree, &id_ptr));
+  return *(int *)(get_ptr(localType, smHandle, &short_tree, &id_ptr));
 }
 /* next two call one another so one needs to be declared in advance */
-Tcl_Obj* fill_value(Model*, void*, int[], int, int*, int[], int*, Tcl_Obj*);
+Tcl_Obj* fill_value(long int, long int, int[], int, int*, int[], int*, 
+		    Tcl_Obj*);
 
-Tcl_Obj* fill_list_value(Model* localType, void** smHandle, int tree[], 
+Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[], 
 			 int type, int* use_dims, int dims[], int* dim_place) {
   Tcl_Obj *localObj, *localSubObj;
   int next_handle[] = {1,0}, match, arrayOut, *short_tree;
@@ -1352,7 +743,7 @@ Tcl_Obj* fill_list_value(Model* localType, void** smHandle, int tree[],
       localObj = fill_value(localType, *smHandle, tree, type, use_dims, 
 			    dim_place+1, dim_place+1, NULL);
       short_tree = next_handle;
-      *smHandle = *(void**)(localType->get_ptr(*smHandle, &short_tree, 
+      *smHandle = *(long int*)(get_ptr(localType, *smHandle, &short_tree, 
 						  NULL));
     } else {
       *dim_place=match;
@@ -1375,21 +766,24 @@ for the indices in the arrays we are getting values from, and dim_place is the
 pointer into this array where we can add more values as we go through the loops
 up to the sizes specified in use_dims. */
 
-Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type, 
-		    int* use_dims, int dims[], int* dim_place, Tcl_Obj* nVs) {
+Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[], 
+		    int type, int* use_dims, int dims[], int* dim_place, 
+		    Tcl_Obj* nVs) {
   Tcl_Obj *localObj, *indObj, *localSubObj, **arrayVals, *eltVals;
   void* model_val_ptr;
   int *new_tree;
   int arrayLength, arrayPosn, arrayOut;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
+
+
   switch (*use_dims) {
   case SEPARATE:
 
     new_tree = tree;
     while (*new_tree++ != SEPARATE) {}
 
-    smHandle = *(void**)(localType->get_ptr(smHandle, &tree, &dims));
-    localType = (Model*)*(new_tree++);
+    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
+    localType = *(new_tree++);
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
   case MEMBERS:
@@ -1397,12 +791,12 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
     new_tree = tree;
     while (*new_tree++ != -1) {}
 
-    smHandle = *(void**)(localType->get_ptr(smHandle, &tree, &dims));
+    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
     localObj = fill_list_value(localType, &smHandle, new_tree, type, 
 			       use_dims+1, dim_place+1, dim_place+1);
     break;
   case 0:
-    model_val_ptr = localType->get_ptr(smHandle, &tree, &dims);
+    model_val_ptr = get_ptr(localType, smHandle, &tree, &dims);
     switch (type) {
     case VALUELESS:
       localObj = Tcl_NewStringObj("sm", -1);
@@ -1464,14 +858,14 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
 
   char spare[256];
   int dims[32], path[32];
-  Model* mSpare;
+  long int mSpare;
 
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
   if (error != TCL_OK) {
     return error;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
   if (error != TCL_OK) {
     return error;
   }
@@ -1497,7 +891,6 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
     resultPtr = Tcl_NewStringObj("novalue", -1);
   } else {
     resultPtr = fill_value(modelType, modelHandle, path, data_line->datatype, 
-
 			   dims+count, current_dims, current_dims+count,
 			   newData);
     /*
@@ -1513,12 +906,13 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
 extern "C" int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
    int error;
+   long int modelType;
 
    if (argc != 2) {
      interp->result = "One argument for listobjects please!";
      return TCL_ERROR;
    }
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
    if (error != TCL_OK) {
 	return error;
    }
@@ -1588,13 +982,13 @@ extern "C" int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
    }
    // Move strings from the arg to a more easily searchable data structure
 
-   error = Tcl_ListObjGetElements(interp, argv[1], &connCount, &EltPtr);
+   error = Tcl_ListObjGetElements(interp, argv[1], connCountPtr, &EltPtr);
    if (error != TCL_OK) {
      return error;
    }
-   connectData = new connectRecord[connCount];
+   *connectDataPtr = new connectRecord[*connCountPtr];
 
-   for (count=0; connCount>count; count++) {
+   for (count=0; *connCountPtr>count; count++) {
      error = Tcl_ListObjGetElements(interp, EltPtr[count], &spare, &PairPtr);
      if (error != TCL_OK) {
        return error;
@@ -1603,7 +997,7 @@ extern "C" int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
        interp->result="set_connection_database items need four elements each!";
        return TCL_ERROR;
      }
-     currConnect = &connectData[count];
+     currConnect = &(*connectDataPtr)[count];
      currConnect->TopArc = strdup(Tcl_GetStringFromObj(PairPtr[0], NULL));
      currConnect->TopNode = strdup(Tcl_GetStringFromObj(PairPtr[1], NULL));
      currConnect->SourceNode = strdup(Tcl_GetStringFromObj(PairPtr[2], NULL));
@@ -1666,6 +1060,9 @@ int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
   Tcl_IncrRefCount(argv[0]);  
   argv[1] = Tcl_NewStringObj("--", -1);
   Tcl_IncrRefCount(argv[1]);  
+
+
+
   argv[2] = text;
   Tcl_IncrRefCount(argv[2]);  
 
@@ -1725,9 +1122,13 @@ extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
    if (argc != 2) {
      interp->result = "One argument for get_auth_code please!";
      return TCL_ERROR;
+
+
+
    }
    /* set ModelText [mime::getbody $Part($Model)] */
    if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
+
 	       Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
      return TCL_ERROR;
    }
@@ -1884,67 +1285,66 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 #endif
   Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_updatemodel", updatemodelCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_advancemodel", advancemodelCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_evalmodel", evalmodelCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_setstepmodel", setstepCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_exitmodel", exitmodelCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "getvalue", interfaceCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "graph_table", graphCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "extract", extractCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "insert", extractCmd, (ClientData)1,
-        (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "listobjects", listobjCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "randseed", randseedCmd, 
-
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-    Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-     Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-     Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-     Tcl_CreateObjCommand(interp, "get_simile_verson", GetVersionCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-     Tcl_CreateObjCommand(interp, "c_killmodel", killmodelCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    return TCL_OK;
-  }
-
+  Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_updatemodel", updatemodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_advancemodel", advancemodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_evalmodel", evalmodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_setstepmodel", setstepCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_exitmodel", exitmodelCmd, (ClientData)NULL,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "getvalue", interfaceCmd, (ClientData)NULL,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "graph_table", graphCmd, (ClientData)NULL,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "extract", extractCmd, (ClientData)NULL,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "insert", extractCmd, (ClientData)1,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
+		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "listobjects", listobjCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "randseed", randseedCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "get_simile_verson", GetVersionCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_killmodel", killmodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  return TCL_OK;
+}
+ 
 /*
  * The following declarations refer to internal Tk routines.  These
  * interfaces are available for use, but are not supported.
@@ -1958,6 +1358,7 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
  *
  * Tcl_AppInit --
  *
+
  *	This procedure performs application-specific initialization.
  *	Most applications, especially those that incorporate additional
  *	packages, will have their own version of this procedure.
@@ -1977,15 +1378,16 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 
-EXTDEC int Ame_dll_Init(Tcl_Interp *interp) {
- char pkgName[16];
+FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
+  char pkgName[16];
 
-   globInterp = interp;
-    Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
-
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    
-    sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
-	    simileVersion, FORUNIX);
-    return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
+  globInterp = interp;
+  proc_pointers_for_shank(get_tcl_value_pointer, ame_rand, showMess,
+			  simileVersion, &connectDataPtr, &connCountPtr);
+  Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
+	  simileVersion, FORUNIX);
+  return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }
