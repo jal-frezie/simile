@@ -26,6 +26,11 @@ set argc 0; # simile.tcl expects to be called from the command line - tell it no
 set argv {}
 source "[file dirname [info script]]/../../../Run/simile.tcl"
 
+rename exit ::renamed::exit
+proc exit {} {
+    prolog tk_kill_everything
+}
+
 itcl::class similescript::ModelWindow {
     
     variable modelNode node00000
@@ -333,8 +338,17 @@ itcl::class similescript::RunControl {
     ################################################################################
     
     # any use??
-    public method GetPhaseCount {path} {
-        return [do_for_node $modelNode GetPhaseCount [do_for_node $modelNode GetIdFromCaptionPath $path]]
+    public method GetPhaseCount {} {
+        return [do_for_node $modelNode GetPhaseCount $modelNode]
+    }
+    
+    public method GetAllPaths {} {
+        set nodes [do_for_node $modelNode GetObjectList]
+        set paths {}
+        foreach node $nodes {
+            lappend paths [do_for_node $modelNode GetCaptionPathFromId $node]
+        }
+        return $paths
     }
     
 }
@@ -360,22 +374,22 @@ itcl::class similescript::TableHelper {
     }
     
     public method AddVariable {path} {
-        global helperTable
-        set helperTable(modelNode,current) $winId
-        [KeyValue]::click $winId [do_for_node $modelNode GetIdFromCaptionPath $path] $path
+        do_for_node $modelNode set ::helperTable($modelNode,current) $winId
+        do_for_node $modelNode [KeyValue]::click $winId [do_for_node $modelNode GetIdFromCaptionPath $path] $path
     }
     
     public method RemoveVariable {path} {
         set var $path; # prop needs nodeId TODO
-        [KeyValue]::Remove $winId $var
+        do_for_node $modelNode [KeyValue]::Remove $winId $var
     }
     
     public method SetUpdateAtDisplayInterval {value} {
-        set [KeyValue]::displayUpdate($winId) $value
+        # value 0 or 1
+        do_for_node $modelNode set [KeyValue]::displayUpdate($winId) $value
     }
     
     public method GetUpdateAtDisplayInterval {} {
-        return  [KeyValue]::displayUpdate($winId)
+        return  [do_for_node $modelNode set [KeyValue]::displayUpdate($winId)]
     }
     
     public method Update {} {
@@ -402,12 +416,12 @@ itcl::class similescript::Plotter {
     }
 }
 
-itcl::class similescript::FileWrite {
+itcl::class similescript::FileWriter {
     inherit Helper
     constructor {modelWindow winTitle} {
         Helper::constructor $modelWindow $winTitle
     } {
-        puts "FileWriteImpl constr: $modelWindow [KeyValue]"
+        puts "FileWriter constr: $modelWindow [KeyValue]"
     }
     
     public method KeyValue {} {
