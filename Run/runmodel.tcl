@@ -790,7 +790,7 @@ proc CanvasBindPopup {canvas widget keywd} {
 
 proc QueuePopup {cmd} {
     global popper
-    #puts "queueing $cmd"
+#puts "queueing $cmd"
     set popper [after 500 $cmd]
 }
 
@@ -933,9 +933,11 @@ proc PostPopup {X Y} {
 
 proc RemovePopup {args} {
     global popper
+#puts "Removing popup"
     if {[winfo exists .popup]} {
         destroy .popup
-    } elseif {[info exists popper]} {
+    }
+    if {[info exists popper]} {
         after cancel $popper
     }
 }

@@ -1074,7 +1074,7 @@ proc SpitPS {winId psfile} {
 proc Reopen {canvas oldFile} {
     global custom
     
-    RecordPathChoice .sml $oldFile
+    RecordPathChoice .sml $oldFile 1
     set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]
     MenuSelect $canvas reopen $oldFile
 }
