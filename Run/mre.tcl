@@ -396,9 +396,8 @@ namespace eval RunEnv {
                     ${CurrentHelperId}::CopyToClipboard $CurrentContainer.container
                 } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
                     set canvasId [::${CurrentHelperId}::GetCanvas $CurrentContainer.container]
-                    namespace eval :: {
-                        CopyCanvasToWindowsClipboard $canvasId
-                    }
+                    namespace eval :: \
+			[list CopyCanvasToWindowsClipboard $canvasId]
                 } else {
                     ShowMessage Warning warning \
                             "[${CurrentHelperId}::identify] does not support copying" ok
