@@ -272,6 +272,7 @@ menu_handle(Win, file, RunCmd) :-
 		     (do_dialogue("Compilation or startup error", error,
 				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
 			 scrub_run(0)))),
+	set_running_model(Node),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
 	    finish_move(Node);
@@ -738,7 +739,7 @@ show_error(Model, Lossage) :-
 	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
 	    Fault = system),
 	(get_model_file(Model, Name), !; Name = unsaved),
-	(backup:autosave_file_is(AutoName), !; AutoName = none),
+	(backup:autosave_file_is(Model, AutoName), !; AutoName = none),
 	output:safe_tcl_eval(['BuildProblem', br(Name), br(AutoName),
 			      br(chars(Text)), Fault], _).
 

@@ -6,7 +6,7 @@
 # definitions that rae required for this purpose.
 
 proc do_model {what args} {
-    global running_c errorInfo model_id instance_id
+    global running_c errorInfo model_id instance_id varName
     
     if {![info exists model_id]} {
 	ShowMessage "Model not loaded" error \
@@ -37,23 +37,81 @@ proc do_model {what args} {
 	switch -- $mstep {
 	    -1 {
 		set action initialization
+		set timing {}
 		ScrubRun 0
 	    } 0 {
 		set action reset
+		set timing {}
 	    } default {
 		set action execution
+		set timing " at time $mtime"
 	    }
 	}
 #	ShowMessage "$whoopsie doing model $what" error \
 #	    "$what during $action of the model at time $mtime caused this: \
 #	    $errorInfo" ok
-	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
+#	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
+
+	switch $what {
+	    eval {set operation "calculate the value of"}
+	    update {set operation "update the state variable"}
+	}
+	set target [DescribeComponent $varName]
+	switch -glob -- $whoopsie {
+	    "can't read \"*\": no such element in array" - 
+	    "can't read \"*\": no such variable" {
+		set ref [lindex [split $whoopsie \"] 1]
+		set vdesc [DescribeComponent $ref]
+		set problem "it found that there was no value for $vdesc"
+	    } "domain error: argument not in valid range" -
+	    "floating-point value too large to represent" -
+	    "divide by zero" {
+		set problem "there was a math error: $whoopsie"
+	    } default {
+		BuildProblem none none "This happened while setting $varName:
+$errorInfo" system
+		return 0
+	    }
+	}
+
+	set mess "Simile ran into a problem trying to run this model. 
+While it was trying to $operation $target during $action of the model$timing, $problem."
 	BuildProblem none none $mess user
 	return 0
     } else {
 	return 1
     }
 }
+
+proc DescribeComponent {ref} {
+    set hierarchy [split $ref :]
+    set variable [lindex $hierarchy end]
+    set br [string first \( $variable]
+    if {$br == -1} {
+	set vdesc "variable $variable"
+    } else {
+	set vdesc "variable [string range $variable 0 [incr br -1]]"
+	set vdesc "element [join [string range $variable [incr br 2] end-1] ,] of $vdesc"
+    }
+    return $vdesc[MakeContext [lrange $hierarchy 6 end-1]]
+}
+
+proc MakeContext {levels} {
+    if {![llength $levels]} {
+	return {}
+    } else {
+	set this [lindex $levels 0]
+	set obr [string first < $this]
+	set cbr [string first > $this]
+	set submodel "submodel [string range $this 0 [incr obr -1]]"
+	if {$cbr-$obr > 2} {
+	    set submodel "instance [join [string range $this [incr obr 2] [incr cbr -1]] ,] of $submodel"
+	}
+	return "[MakeContext [lrange $levels 2 end]] in $submodel"
+    }
+}
+	    
+	    
 
 proc SetStep {time phase} {
     global model_id

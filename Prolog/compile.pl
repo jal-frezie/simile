@@ -277,8 +277,9 @@ bits and pieces */
 	
 	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
 */
-	render_all(Language, global_declaration, [[void, this, []]
-		  | Constants], 0, GlobalDeclText),
+	render_all(Language, global_declaration,
+		   [[void, this, []], [void, varName, []] | Constants], 0,
+		   GlobalDeclText),
 	build_submodel_functions(Language, Phases, GlobalDeclText, Inters,
 				 StateForm, UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, GraphClearText, Fns),
@@ -311,8 +312,11 @@ wot need them */
 	append([[GraphDeclComment, GraphDeclText | ArcDeclText],
 		StructTypeComment, InitTypes], TypeSection),
 
-	send_to_dest(Stream, ['#include <support1.cpp>', VersionDec,
-			      PhaseDec, Times, DTs]),
+	render( Language, comment, 'GLOBAL DECLARATIONS', 0,
+		[GlobalDeclComment]),
+	send_to_dest(Stream, ['#include <support1.cpp>', GlobalDeclComment |
+			      GlobalDeclText]),
+	send_to_dest(Stream, [VersionDec, PhaseDec, Times, DTs]),
 
 	output:list_matching_files('../Functions/*.cpp', FnIncs),
 	/* the /* in the above line does not start a comment */
@@ -329,7 +333,7 @@ wot need them */
 			Constants, 0, ConstDeclText),
 	render( Language, comment, 'CONSTANT DECLARATIONS', 0,
 							ConstDeclComment),
-	append([ConstDeclComment, GlobalDeclText, ConstDeclText], ConstDecls),
+	append(ConstDeclComment, ConstDeclText, ConstDecls),
 	send_to_dest(Stream, ConstDecls),
 
 	send_to_dest(Stream, TypeSection),

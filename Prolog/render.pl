@@ -19,7 +19,7 @@ sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
 		library(lists)] ).
 
 make_assignment(L, Dest, Source, AssignStr) :-
-	(L = tcl, Template = "set ~a ";
+	(L = tcl, Template = "set [set varName ~a] ";
 	L = c, Template = "~a = "),
 	sicstus_write_to_chars(Source, SourceStr),
 	sicstus_format_to_chars(Template, [Dest], DestStr),

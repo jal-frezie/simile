@@ -18,7 +18,8 @@ sicstus_module(state, [kickoff/1, get_initial_window_size/2, create_window/2,
 	get_current_coords/2, set_current_coords/2, 
 	get_border_offsets/4, set_border_offsets/4,
 	get_mode/1, set_mode/1,  get_current_node/1, 
-	set_current_node/1,
+	set_current_node/1, get_running_model/1, 
+	set_running_model/1,
 	get_box_size/2, get_text_offset/3, set_box_size/4, 
 	get_adding_object/1, set_adding_object/1, set_highlit_obj/2, 
 	get_highlit_obj/2, forget_highlit_obj/2, initialize_phase/0, 
@@ -210,6 +211,15 @@ set_current_node(New_mode) :-
 	retractall(current_node_is(_)),
 	assertz(current_node_is(New_mode)).
 
+:- dynamic(running_model_is/1).
+
+get_running_model(Cur_mode) :-
+	running_model_is(Cur_mode).
+
+set_running_model(New_mode) :-
+	retractall(running_model_is(_)),
+	assertz(running_model_is(New_mode)).
+
 :- dynamic(mode_is/1).
 
 get_mode(Cur_mode) :-
@@ -262,7 +272,7 @@ advance_phase_to(New_phase) :-
 			moving_start, moving_finish, equiv_hunt,
 			text_grabbing, barge]],
 		 [action_choice, [dragging, targetting]],
-		 [targetting, [dragging]],
+		 [targetting, [dragging, peruse]],
 		 [set_line_direction, [extend_line]],
 		 [equiv_hunt, [find_equivalent]],
 		 [moving, [moving_border(D), moving_text]],

@@ -255,8 +255,9 @@ namespace eval runcontrol33857 {
                 #	    ShowMessage debug info "Twiddling $redoPhase" ok
             }
         }
+	# allow model to be saved if run settings are changed
         if {$tweaked || ![string match $runState(oldIntMethod) $runState(intMethod)]} {
-            UpdateAbility save file Save 1
+            prolog tk_run_settings_tweaked
         }
         SetStep 0 0
         SetState $winId $sendvars(newData)

@@ -11,7 +11,7 @@ sicstus_module(event, [get_info/3, get_params/2,
 		  click_obj/3, click_text/3, click/2,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
-	adjust_display_area/2, prioritize_window/1]).
+	adjust_display_area/2, prioritize_window/1, run_settings_tweaked/0]).
 
 sicstus_use_module([sp_only, dialogue, m_update, image, maintain,
 		    state, backup, submodel, ame_gen, utility,
@@ -104,9 +104,10 @@ click_obj(Xpt, Ypt, Name) :-
 	set_original_click(Xpt, Ypt),
 	find_all_comps(Parent, Name),
 	save_params(Trans, Depth, Parent),
-	(get_phase(targetting), !,
-		advance_phase_to(dragging),
-		drag_to(NewXpt, NewYpt, Name);
+	(get_phase(targetting),
+	    check_same_desktop(Parent), !,
+	    advance_phase_to(dragging),
+	    drag_to(NewXpt, NewYpt, Name);
 	click_on([NewXpt, NewYpt], Name),
 	(get_phase(moving),
 	    highlight(Name, 2),
@@ -136,12 +137,23 @@ click(Xpt, Ypt) :-
 	find_current(Wid),
 	Wid shows_model Parent,
 	(get_phase(targetting),
+	    check_same_desktop(Parent), !,
 	    save_params([0,0,1,1], 0, Parent),
 	    advance_phase_to(dragging),
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
 	    set_original_click(Xpt, Ypt),
 	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent)).
+
+/* check we are in same model we started in */
+check_same_desktop(Parent) :-
+	get_line_start_obj(StartNode),
+	    contains(Top, StartNode),
+	    is_toplevel(Top),
+	    contains(Top, Parent);
+	normalize(StartNode),
+	    advance_phase_to(peruse),
+	    fail.
 
 save_params(Trans, Depth, Parent) :-
 	set_translation(Trans),
@@ -1633,3 +1645,6 @@ remove_highlights.
 prioritize_window(New_top) :-
 	make_current(New_top).
 
+run_settings_tweaked :-
+	get_running_model(Node),
+	update_ability(Node, save, file, 'Save', 1).
