@@ -525,16 +525,17 @@ make_intermediates(
 	(Source = makearray(Element, Dim),
 	    (Dim =.. [size | _], !,
 		DimVal = Dim;
-	    make_intermediates(Dim, dum, [], _, [], [], 0, _, Dun, _,
-				part_result(_,_,_, DimVal)),
+	    make_intermediates(Dim, dum, [], _, PrevInters, [], 0, _, Dun,
+				MidInters, part_result(_,_,_, DimVal)),
 		Dun = const_int, !;
 	    raise_exception(bad_index_number(Dim, makearray))),
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	make_choose_form(Source, keep(LocalInd), 1, Element),
 	    length(Source, DimVal),
+	    MidInters = PrevInters,
 	    NowBuilding = BuildingArrays), !,
 	    LocalLoop = set(LocalInd, loop(DimVal)),
-	    make_intermediates(Element, Target, DestPath, BackSwap, PrevInters,
+	    make_intermediates(Element, Target, DestPath, BackSwap, MidInters,
 			NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
 	    get_model_and_loops(EltContext, DestPath, _, EltLoops, EltBase),
@@ -554,7 +555,7 @@ make_intermediates(
 			   part_result(AContext, ASetups, AArgs, SourceRef)),
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
-	    (append(TailLoops, [set(IntIndxRef, loop(Limit)) | ItemLoops],
+	    (append(TailLoops, [set(IntIndxRef, loop(_Limit)) | ItemLoops],
 		    ALoops),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
 		raise_exception(only_works_on_array(Source))),
