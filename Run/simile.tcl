@@ -42,6 +42,8 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
 if [string match Darwin $tcl_platform(os)] {
     lappend auto_path $SIMILE_PATH/System/lib
     proc ::tk::mac::OpenDocument {args} {
+        global env
+        #set remStartArgs [list after idle [list OpenTopLevel $args]]
         set env(OPEN_MODEL) $args
         OpenTopLevel $args
     }
@@ -52,6 +54,7 @@ if [string match Darwin $tcl_platform(os)] {
 
 if {[info exists env(OPEN_MODEL)]} {
     set remStartArgs [list after idle [list OpenTopLevel $env(OPEN_MODEL)]]
+
 } else {
     set remStartArgs NewTopLevel
 }
