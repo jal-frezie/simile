@@ -35,17 +35,17 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 		   AllInters, NewInters), !,
 	    replace_subexps(AllSetups, inters, swap_vars,
 			    switch(Idle, Target), top_down, _, SubbedSetups),
-	    select(make(Target, NewArgs, Context, _, NewFormula),
+	    select(make(Target, Prerequisites, Context, _, NewFormula),
 		   SubbedSetups, Setups);
-	[Setups, NewInters, NewArgs,  Context] =
-	[AllSetups, AllInters, Args, FContext],
+	[Setups, NewInters, Context] =
+	[AllSetups, AllInters, FContext],
 	    pointer_from(DestPath, DestPtr),
 	    get_dims_from_loops(SourceLoops, _, Inds),
-	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)]),
+	 NewFormula = [assign(arr(DestPtr, Target, Inds), ScaledF)],
 	    
 	(setof(Model, has_extras(Context, DestPath, Model), Exited), !;
 	    Exited = []),
-	add_extra_dependencies(Exited, FullExp, NewArgs, Prerequisites).
+	add_extra_dependencies(Exited, Formula, Args, Prerequisites)).
 
 insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),
@@ -279,7 +279,8 @@ make_intermediates(
 		Units = OrigUnits;
 	    unmake_enum_units(OrigUnits, Units)), !,
 
-	    (member(OrigUnits, [n(Type), a(Type)]),
+	    (\+ var(OrigUnits),
+	    member(OrigUnits, [n(Type), a(Type)]),
 	    \+ ame_gen:resolve_enum_type(_, SubId, _, OrigUnits), !,
 		raise_exception(no_local_defn_for_type(Type, SubId));
 		
@@ -431,7 +432,7 @@ make_intermediates(
 	append(BuildInds, NewInds, SrcInds),
 	ClearRef = arr(SourcePtr, TotalName, SrcInds),
 
-	add_extra_dependencies(Exited, Source, OldArgs, Depends),
+	add_extra_dependencies(Exited, IncrExpr, OldArgs, Depends),
 	append(SourceLoops, DestPath, InterContext),
 	append([SourceLoops, NowBuilding, DestPath], ClearContext),
 
@@ -460,8 +461,11 @@ make_intermediates(
 			    WriteContext, Step, [assign(FillRef, IncrExpr)]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
-	(Functor = delay, !, SetTime=0; SetTime = Step),
-        Setting = [make(increment(TotalName), [cleared(TotalName) | Depends],
+	    /* If delaying, we can remove time from the increment expression's
+	    conditions since we need only do it once even though it changes */
+	(Functor = delay, !, SetTime=0, purge(Depends, [time], KeepDeps);
+	    SetTime = Step, KeepDeps = Depends),
+        Setting = [make(increment(TotalName), [cleared(TotalName) | KeepDeps],
                        WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
                   make(TotalName, [increment(TotalName)],
                        ReadyContext, SetTime, [])]),

@@ -1292,7 +1292,8 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 	\+ (member(make(_, Conds, _,_,_), OrderedAssign),
 	       member(later(Cond), Conds),
 	       member(make(Cond, _, CPath,_,_), Left),
-	       suffix(Path, CPath)).
+	       remove_non_loopers(CPath, UCPath),
+	       suffix(Path, UCPath)).
 	
 order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 	(unfinished_submodels(Later, Phase, Path, Subs),

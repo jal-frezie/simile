@@ -1570,12 +1570,12 @@ proc FindPhase {node submodel} {
 proc compile_c {workingDir} {
     global tcl_platform env
 
-    set oldDir [pwd]
-    cd $workingDir
     if {[PrefValue custom(hackBreak) hackBreak]} {
         ShowMessage {Code editing opportunity} info \
-                "About to compile model.cpp in [pwd]" ok
+                "About to compile model.cpp in $workingDir" ok
     }
+    set oldDir [pwd]
+    cd $workingDir
 # get a so far unused file name
     set serial [newInt]
     set TARGET model${serial}[info sharedlibextension]
