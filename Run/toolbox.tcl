@@ -76,6 +76,7 @@ proc FilterErrors {args} {
     global errorInfo
     set oldDir [pwd]
     if {[catch $args retVal]} {
+	wm withdraw . ;# ensure error mess is not obscured by splash screen
         set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
         if {[string match yes $ans]} {
             BuildProblem unsaved none $errorInfo tcl
