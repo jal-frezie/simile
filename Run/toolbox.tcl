@@ -1243,11 +1243,11 @@ proc Rerun {winId go} {
         # assume if model was running before it will run again
     }
     # Only proceed if it worked
-    if {[HaveValues $node]} {
+    if {![HaveValues $node]} {
         return fail
     }
     if {$go} {
-        StartNow $node start
+        do_in_node $node StartNow $node start
     }
     return yes
 }

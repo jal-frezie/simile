@@ -19,7 +19,7 @@ sicstus_module(ame_gen,
 		purge/3, generates/2, upper/2, lower/2, mybagof/3,
 		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
 		find_type/2, find_all_comps/2, draws_inside/2,
-		is_primitive/1, is_of_sort/2, is_class_of_sort/2]).
+		is_primitive/1, is_of_sort/2, is_class_of_sort/2, urzzz/2]).
 
 sicstus_use_module([library(lists), sp_only, m_class, utility, text]).
 
@@ -751,3 +751,10 @@ Obj is_class_of_sort Class :-
 Obj is_of_sort Sort :-
 	find_type(Obj, Type),
 	Type is_class_of_sort Sort.
+
+:- op(700, yfx, urzzz).
+
+A urzzz B :-
+	A is B,
+	(\+ member(A, [+inf, -inf, +nan]), !;
+	    wake).

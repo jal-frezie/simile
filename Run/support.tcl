@@ -425,17 +425,21 @@ load_c_stub
 
 proc do_in_editor {args} {
     puts [list get $args]
-    set result [gets stdin]
-    set info [lindex $result 1]
-    switch [lindex $result 0] {
-	err {
-	    error [lindex $info 0] [join $info \n]
-	} res {
-	    return $info
+    while {1} {
+	set result [gets stdin]
+	set info [lindex $result 1]
+	switch [lindex $result 0] {
+	    do {
+		do $info
+	    } err {
+		error [lindex $info 0] [join $info \n]
+	    } res {
+		return $info
+	    }
 	}
     }
 }
-    
+
 proc PrefValue {arrVal val} {
     return [do_in_editor PrefValue $arrVal $val]
 }
