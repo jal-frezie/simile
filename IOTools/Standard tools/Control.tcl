@@ -155,7 +155,7 @@ namespace eval runcontrol33857 {
             }
             
             SendData $winId
-            set sendvars(newMode) $action
+            set sendvars(currentMode) $action
             set widget [$winId.rcf getframe]
             $widget.topbuttons.start configure -state disabled
             $widget.topbuttons.stop configure -state normal
@@ -163,7 +163,7 @@ namespace eval runcontrol33857 {
             $widget.topbuttons.start configure -state normal
             $widget.topbuttons.stop configure -state disabled
         } else {
-            set sendvars(newMode) $action
+            set sendvars(currentMode) $action
         }
     }
     
@@ -222,7 +222,6 @@ namespace eval runcontrol33857 {
         variable sendvars
         global errorInfo redoPhase runState
         
-        set sendvars(currentMode) reset ;# a botch
         set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
         set widget [$winId.rcf getframe]
         while {[string compare $sendvars(currentMode) exit] && \
@@ -242,26 +241,22 @@ namespace eval runcontrol33857 {
                             -maximum [expr int(ceil($sendvars(expected_end)))]
                 }
             }
-            if {[info exists sendvars(newMode)]} {
-                set sendvars(currentMode) $sendvars(newMode)
-                unset sendvars(newMode)
-                switch $sendvars(currentMode) {
-                    reset {
-                        set current 0.0
-                        set exec $sendvars(run_length)
-                        UpdateTimes $current $exec
-                        set scaled_current 0.0
-                        if {[info exists runState(reloadParams)]} {
-                            set redoPhase -1
-                            unset runState(reloadParams)
-                        } else {
-                            set redoPhase 0
-                        }
-                        set sendvars(prevDisplay) 0.0
-                        set sendvars(currentMode) stop
-                    }
-                }
-            }
+            switch $sendvars(currentMode) {
+		reset {
+		    set current 0.0
+		    set exec $sendvars(run_length)
+		    UpdateTimes $current $exec
+		    set scaled_current 0.0
+		    if {[info exists runState(reloadParams)]} {
+			set redoPhase -1
+			unset runState(reloadParams)
+		    } else {
+			set redoPhase 0
+		    }
+		    set sendvars(prevDisplay) 0.0
+		    set sendvars(currentMode) stop
+		}
+	    }
             
             # On reset and at start, initialize the model
             # to make sure all the values are set, and initialize displays
