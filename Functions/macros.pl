@@ -17,3 +17,7 @@ howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
 
 % returns the sign of a number, -1 if negative or 1 if positive
 sgn(real) --> choose(real==0,1,int(real/abs(real))).
+first(BoolArr) --> [clear]=makearray(if place_in(1)==1 then 1
+				    elseif element(BoolArr,place_in(1)) then 0
+				    else element(sofar([clear]),place_in(1)-1),
+				     count(BoolArr)),sum([clear])+1.
