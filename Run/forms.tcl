@@ -1003,7 +1003,7 @@ proc VisitUrl {x} {
 proc ShowAbout {winId} {
     global sendvars userinfo interface tcl_platform
     PutItThere .about $winId
-    wm title .about About\ SIMILE
+    wm title .about About\ Simile
     image create photo dripu
     image create photo dripl
     dripu read "../Images/HelpAboutUpper.gif"
@@ -1014,10 +1014,10 @@ proc ShowAbout {winId} {
     if [string match Darwin $tcl_platform(os)] {
         set fSize 12; set fsSize 12
     } else {
-        set fSize 12; set fsSize 8
+        set fSize 8; set fsSize 8
     }
-    pack [label .about.fr.lab1 -text Version\ $sendvars(simV)\ $userinfo(edn) \
-            -font "-weight bold -family helvetica -size $fSize"]
+    pack [label .about.fr.lab1 -text "Simile v$sendvars(simV) $userinfo(edn)" \
+            -font "-family helvetica -size $fSize"]
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica -size $fsSize"] -side left
