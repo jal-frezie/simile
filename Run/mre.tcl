@@ -43,7 +43,7 @@ namespace eval RunEnv {
             [list copyc.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
             [list cut.gif "Cut display" [list ::RunEnv::CutHelper $::RunEnv::CurrentContainer"]] \
             [list paste.gif "Paste display" [list ::RunEnv::PasteHelper $::RunEnv::CurrentContainer"]] \
-            [list delete.gif "Remove display" "::RunEnv::DeleteHelperCurrentContainer" ]] \
+            [list delete.gif "Remove display or container" "::RunEnv::DeleteHelperCurrentContainer" ]] \
             [list \
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
@@ -100,7 +100,7 @@ proc RunEnv::Create { ModelWin } {
                 {command "Cu&t"    {} "Cut display" {} -command "RunEnv::CutHelper $::RunEnv::CurrentContainer" }
                 {command "&Paste"    {} "Paste display" {} -command "::RunEnv::PasteHelper $::RunEnv::CurrentContainer" }
                 {separator}
-                {command "&Remove..."    {} "Remove a sheet" {} -command {::RunEnv::RemoveHelperPageDlg} }
+                {command "&Remove..."    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
                 {separator}
                 {command "&Clear all"    {} "Clear all displays" {} -command {ClearView} }
                 {command "Cl&ose all"    {} "Close all displays" {} -command {::RunEnv::KillDisplays} }
