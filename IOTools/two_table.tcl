@@ -381,42 +381,54 @@ namespace eval tabular11510 {
     proc Layout {winId} {
 	variable orientList
 
-	set t [toplevel $winId.layout]
-	set ::${t}l1 [lindex $orientList($winId) 0]
+    set t [toplevel $winId.layout]
+    wm transient $t $winId
+    wm title $t "Table properties"
+    wm resizable $t 0 0
+    set ::${t}l1 [lindex $orientList($winId) 0]
 	set ::${t}l2 [lindex $orientList($winId) 1]
 	set ::${t}l3 [lindex $orientList($winId) 2]
 	set ::${t}l4 [lindex $orientList($winId) 3]
+    
+    pack [label $t.toplbl -text "For each possible dimension listed,\
+            select between including it on the rows or on the columns of the table." \
+            -wraplength 300] -pady 4
+    
+    pack [frame $t.l1]  -anchor w -padx 2 -pady 4
+    pack [label $t.l1.lbl -text "Times:" -width 20] -side left  -anchor w
+    pack [label $t.l1.lbl2 -text "On Rows"] -side left -anchor w
+    pack [radiobutton $t.l1.rowb -variable ${t}l1 -value rows] -side left  -anchor w
+    pack [label $t.l1.coll -text "On Columns"] -side left -anchor w
+    pack [radiobutton $t.l1.colb -variable ${t}l1 -value cols] -side left -anchor w
+    pack [label $t.l1.nonel1 -text "Current values only"] -side left -anchor w
+    pack [radiobutton $t.l1.noneb -variable ${t}l1 -value none] -side left -anchor w
 
-	pack [frame $t.l1]
-	pack [label $t.l1.lbl -text "Times: On rows"] -side left
-	pack [radiobutton $t.l1.rowb -variable ${t}l1 -value rows] -side left
-	pack [label $t.l1.coll -text "On columns"] -side left
-	pack [radiobutton $t.l1.colb -variable ${t}l1 -value cols] -side left
-	pack [label $t.l1.nonel1 -text "Current values only"] -side left
-	pack [radiobutton $t.l1.noneb -variable ${t}l1 -value none] -side left
+    pack [frame $t.l2]  -anchor w -padx 2 -pady 4
+    pack [label $t.l2.lbl -text "Element names:" -width 20] -side left  -anchor w
+    pack [label $t.l2.lbl2 -text "On Rows"] -side left -anchor w
+    pack [radiobutton $t.l2.rowb -variable ${t}l2 -value rows] -side left  -anchor w
+    pack [label $t.l2.coll -text "On Columns"] -side left  -anchor w
+    pack [radiobutton $t.l2.colb -variable ${t}l2 -value cols] -side left  -anchor w
 
-	pack [frame $t.l2]
-	pack [label $t.l2.lbl -text "Component names: On rows"] -side left
-	pack [radiobutton $t.l2.rowb -variable ${t}l2 -value rows] -side left
-	pack [label $t.l2.coll -text "On columns"] -side left
-	pack [radiobutton $t.l2.colb -variable ${t}l2 -value cols] -side left
+    pack [frame $t.l3]  -anchor w -padx 2 -pady 4
+    pack [label $t.l3.lbl -text "First index:" -width 20] -side left  -anchor w
+    pack [label $t.l3.lbl2 -text "On Rows"] -side left -anchor w
+    pack [radiobutton $t.l3.rowb -variable ${t}l3 -value rows] -side left  -anchor w
+    pack [label $t.l3.coll -text "On Columns"] -side left  -anchor w
+    pack [radiobutton $t.l3.colb -variable ${t}l3 -value cols] -side left  -anchor w
 
-	pack [frame $t.l3]
-	pack [label $t.l3.lbl -text "First index: On rows"] -side left
-	pack [radiobutton $t.l3.rowb -variable ${t}l3 -value rows] -side left
-	pack [label $t.l3.coll -text "On columns"] -side left
-	pack [radiobutton $t.l3.colb -variable ${t}l3 -value cols] -side left
-
-	pack [frame $t.l4]
-	pack [label $t.l4.lbl -text "Other indices: On Rows"] -side left
-	pack [radiobutton $t.l4.rowb -variable ${t}l4 -value rows] -side left
-	pack [label $t.l4.coll -text "On columns"] -side left
-	pack [radiobutton $t.l4.colb -variable ${t}l4 -value cols] -side left
-
-	pack [frame $t.b]
-	pack [button $t.b.ok -text OK -command "set ${t}done 1"] -side left
-	pack [button $t.b.cancel -text Cancel -command "set ${t}done 0"] \
-	    -side left
+    pack [frame $t.l4]  -anchor w -padx 2 -pady 4
+    pack [label $t.l4.lbl -text "Other indices:" -width 20] -side left  -anchor w
+    pack [label $t.l4.lbl2 -text "On Rows"] -side left -anchor w
+    pack [radiobutton $t.l4.rowb -variable ${t}l4 -value rows] -side left  -anchor w
+    pack [label $t.l4.coll -text "On Columns"] -side left -anchor w
+	pack [radiobutton $t.l4.colb -variable ${t}l4 -value cols] -side left -anchor w
+    
+    pack [frame $t.b]  
+    pack [button $t.b.ok -text OK -width 10 -command "set ${t}done 1"] \
+        -side left -padx 2 -pady 4
+	pack [button $t.b.cancel -text Cancel -width 10 -command "set ${t}done 0"] \
+        -side left -padx 2 -pady 4
 
 	grab $t
 	tkwait variable ${t}done
