@@ -566,5 +566,7 @@ proc InputVarFor {topNode node} {
 proc BringParameter {array sub} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
-    return $inputSrc($sub)
+    if {[info exists inputSrc($sub)]} {
+	return $inputSrc($sub)
+    }
 }

@@ -191,17 +191,42 @@ proc CheckFnsFresh {L progDir id userFnList} {
 proc do_for_node {node args} {
     global runState
     if {![info exists runState($node,interp)]} {
-        set runState($node,interp) [interp create]
-        $runState($node,interp) alias BringParameter BringParameter
-        $runState($node,interp) eval source ../Run/support.tcl
+#        set runState($node,interp) [interp create]
+	set makeExec ../System/bin/wish8.4
+	set runState($node,interp) [open |$makeExec r+]
+#        $runState($node,interp) alias BringParameter BringParameter
+#        $runState($node,interp) eval source ../Run/support.tcl
+	puts $runState($node,interp) {source ../Run/support.tcl}
+	flush $runState($node,interp)
     }
-    return [$runState($node,interp) eval $args]
+#    return [$runState($node,interp) eval $args]
+    puts $runState($node,interp) [list do $args]
+    flush $runState($node,interp)
+#puts "sent $args"
+    set running 1
+    while {1} {
+	gets $runState($node,interp) result
+#puts "got $result"
+	set info [lindex $result 1]
+	switch [lindex $result 0] {
+	    err {
+		error $info
+	    } res {
+		return $info
+	    } get {
+		puts $runState($node,interp) [eval BringParameter $info]
+		flush $runState($node,interp)
+#puts "sent [eval BringParameter $info]"
+	    }
+	}
+    }
 }
 
 proc KillInterpFor {node} {
     global runState
     if {[info exists runState($node,interp)]} {
-        interp delete $runState($node,interp)
+        puts $runState($node,interp) exit
+	flush $runState($node,interp)
         unset runState($node,interp)
     }
 }
@@ -2313,27 +2338,27 @@ proc AddZoomMenu {canvas menu tellProlog} {
     
 }
 
-proc PostRealHelperMenu {winId} {
-    global window_info runState
-    
-    set dotlessWinName [string range $winId 1 end]
-    set bloodyClone $winId.\#${dotlessWinName}top.\#$dotlessWinName\#helpers
-    set tgtx [winfo rootx $bloodyClone]
-    set tgty [winfo rooty $bloodyClone]
-    event generate $bloodyClone <ButtonRelease-1>
-    
-    set node $window_info($winId.canvas,top_node)
-    $runState($node,interp) eval .helpers post $tgtx $tgty
-    $runState($node,interp) eval focus .helpers
-}
+#proc PostRealHelperMenu {winId} {
+#    global window_info runState
+#    
+#    set dotlessWinName [string range $winId 1 end]
+#    set bloodyClone $winId.\#${dotlessWinName}top.\#$dotlessWinName\#helpers
+#    set tgtx [winfo rootx $bloodyClone]
+#    set tgty [winfo rooty $bloodyClone]
+#    event generate $bloodyClone <ButtonRelease-1>
+#    
+#    set node $window_info($winId.canvas,top_node)
+#    $runState($node,interp) eval .helpers post $tgtx $tgty
+#    $runState($node,interp) eval focus .helpers
+#}
 # below used to find out what the bloody clone is called when writing above
-proc allwins {win} {
-    puts $win
-    puts [winfo geometry $win]
-    foreach n [winfo children $win] {
-        allwins $n
-    }
-}
+#proc allwins {win} {
+#    puts $win
+#    puts [winfo geometry $win]
+#    foreach n [winfo children $win] {
+#        allwins $n
+#    }
+#}
 
 # # character in colour spec is escaped purely for the benefit of the Emacs
 # tcl mode parser

@@ -3,6 +3,8 @@
 # Actually none of them have to but it makes things more consistent with the
 # c++ implementation.
 
+wm withdraw .
+
 # var containing namespace id called 'this' for compatibility with c++
 set this ::AME_model<>
 
@@ -74,7 +76,8 @@ proc collect {tgt node count args} {
 	set inputSrc [InputVarFor $node]
     }
     set sub [join [concat $node $args] ,]
-    if {![catch {BringParameter $inputSrc $sub} val]} {
+    set val [BringParameter $inputSrc $sub]
+    if {[llength $val]} {
 # Check that input source exists, it will not if model is being initialized
 	set $tgt $val
     }
@@ -406,3 +409,18 @@ proc load_c_stub {} {
 }
 
 load_c_stub
+
+proc BringParameter {args} {
+    puts [list get $args]
+    return [gets stdin]
+}
+
+proc do {argList} {
+    global this simile_version ts dts phasecount nodecount nodedata
+    if {[catch $argList response]} {
+	set how err
+    } else { 
+	set how res
+    }
+    puts [list $how $response]
+}
