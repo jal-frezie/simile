@@ -1237,7 +1237,7 @@ proc UpdateTimeSeries {newTime} {
     global setFromSeries paramData
     foreach list [array names setFromSeries *,times] {
 	set node [lindex [split $list ,] 0]
-#puts "node $node times $setFromSeries($list) next $setFromSeries($node,next)"
+#puts "node $node times $setFromSeries($list) next $setFromSeries($node,next) newTime $newTime"
 	set jumping 1
 	while {$jumping} {
 	    if {[llength $setFromSeries($list)] > $setFromSeries($node,next)} {
@@ -1257,10 +1257,10 @@ proc UpdateTimeSeries {newTime} {
 	if {[info exists useTime]} {
 	    upvar \#0 [InputVarFor $node] inputSrc
 	    # do it the easy way if a scalar
-#puts "looking for paramData($node,$useTime)"
+puts "looking for paramData($node,$useTime)"
 	    if {[info exists paramData($node,$useTime)]} {
 		set inputSrc($node) $paramData($node,$useTime)
-#puts "set inputSrc($useTime) $paramData($node,$useTime)"
+puts "set inputSrc($useTime) $paramData($node,$useTime)"
 		return
 	    }
 	    foreach tsValue [array names paramData $node,$useTime,*] {

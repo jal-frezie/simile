@@ -1,5 +1,39 @@
 # SIMILE batch file
 
+# If there is an arg, it is the model to start with. Because this is sourced
+# from a script or special .exe there is never more than 1 arg. Windows has
+# a buggy implementation of file pathtype so hope that simile.exe always
+# gets us an absolute path...
+
+if {[string match windows $tcl_platform(platform)]} {
+    package require dde 1.2
+    set oldProc Simile
+    dde servername $oldProc
+    set argv [lindex $argv 0]
+} else {
+    set oldProc simile.tcl
+}
+
+if {$argc && ![string match Darwin $tcl_platform(os)] } {
+    if {[string match relative [file pathtype $argv]]} {
+	set env(OPEN_MODEL) [pwd]/$argv
+    } else {
+	set env(OPEN_MODEL) $argv
+    }
+}
+
+# If simile is already running, make a new window there and exit. Note that
+# on Macs the system takes care of this and we don't even get this far
+
+if {[info exists env(OPEN_MODEL)]} {
+    set remStartCmd [list send $oldProc OpenTopLevel $env(OPEN_MODEL)]
+} else {
+    set remStartCmd [list send $oldProc NewTopLevel]
+}
+if {![catch {eval $remStartCmd}]} {
+    exit
+}
+
 # replace /./ in path with / to avoid confusing file dirname
 regsub -all /\\./ [info script] / scriptCmd
 
@@ -85,22 +119,6 @@ while {[file exists $tester]} {
 
 set env(SIMTMPDIR) $tester
 file mkdir $env(SIMTMPDIR)/.lock
-
-# If there is an arg, it is the model to start with. Because this is sourced
-# from a script or special .exe there is never more than 1 arg. Windows has
-# a buggy implementation of file pathtype so hope that simile.exe always
-# gets us an absolute path...
-
-if {$argc && ![string match Darwin $tcl_platform(os)] } {
-    if {[string match windows $tcl_platform(platform)]} {
-	set argv [lindex $argv 0]
-    }
-    if {[string match relative [file pathtype $argv]]} {
-	set env(OPEN_MODEL) [pwd]/$argv
-    } else {
-	set env(OPEN_MODEL) $argv
-    }
-}
 
 # Directory to start in
 set env(START_DIR) $SIMILE_PATH/Examples ; # was $SIMILE_PATH/Tutorial or [pwd]

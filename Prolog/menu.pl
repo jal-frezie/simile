@@ -187,6 +187,11 @@ menu_handle(Win, reopen, Name) :-
 	stick_model_in(Parent, Name),
 	warn_runtime.
 
+menu_handle(_Win, open_toplevel, Name) :-
+	m_update:make_desktop(Parent, _),
+	stick_model_in(Parent, Name),
+	warn_runtime.
+
 menu_handle(Win, file, save) :-
 	Win shows_model Model,
 	do_save(Model, false).

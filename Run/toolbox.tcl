@@ -31,6 +31,14 @@ if {[string match windows $tcl_platform(platform)]} {
     # package ifneeded Trf 2.1 {}
 }
 
+proc NewTopLevel {} {
+    MenuSelect dummy file new_toplevel
+}
+
+proc OpenTopLevel {model} {
+    MenuSelect dummy open_toplevel $model
+}
+
 proc AttackGlobalVariable {array elt val} {
     global $array
     #ShowMessage debug info "Setting $array$elt" ok
