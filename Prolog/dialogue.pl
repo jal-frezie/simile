@@ -94,15 +94,20 @@ BoxHeaderStr),
 	retractall(table_data_is(_)),
 	(get_av_pair(Part, 0, table_data, TableSpec),
 	    TableSpec = [file=FilePath, data=DataField,
-			 indices=Indices, current=Values | Rest], !,
+			 indices=Indices, current=Values,
+			 units=TUnits, bounds=Bounds | _Rest], !,
 	    assert(table_data_is(TableSpec)),
 	    (FilePath = '/graph/', !,
-		Rest = [units=_, bounds=Bounds | _],
 		append([FilePath | DataField], [Bounds | Indices], TableList),
+		TableTrans = [[], []],
 		TableVals = Values;
 	    TableList = [FilePath, DataField | Indices],
-		reverse_engineer(Values, 0, TableVals));
-	TableList = '', TableVals = '{}'),
+		reverse_engineer(Values, 0, TableVals, _),
+		get_host(Part, Visible),
+		append(Bounds, [TUnits], TableTypes), 
+		all(event, insert_mem_list,
+		    [build(TableTypes), unify(Visible), build(TableTrans)]));
+	TableList = '', TableTrans = '', TableVals = '{}'),
 	(get_av_pair(Part, 0, description, Desc), !;
 		Desc = ''),
 	(get_av_pair(Part, 0, comment, Comment), !;
@@ -119,8 +124,7 @@ BoxHeaderStr),
 	create_equation(Win, BoxHeader, IndexList),
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
-	get_host(Part, Visible),
-	fill_table(Visible, TableList, TableVals),
+	fill_table(TableList, TableTrans, TableVals),
 	retractall(input_list_is(_)),
 	assert(input_list_is(Input_list)),
 	repeat,
@@ -381,7 +385,6 @@ get_table_data(Function, Data, Table, Orig, Units, Dims, Sizes, Complaint) :-
 
 get_table_part(Function, Data, Table, Orig, Units, Dims, Sizes) :-
 	name(Num, Data),
-	number(Num),
 	enum_type_ref(Num, Function, Orig, Units, 0),
 	    Table = Orig,
 	    Dims = [],
@@ -433,16 +436,22 @@ zero_empties(Table, Dims) :-
 	ground(Table), !;
 	Table = 0.
 
-reverse_engineer(Table, Here, TclRep) :-
+/* clever stuff in here is to undo what zero_empties did, because the zeros
+mess up translation if using enumerated types */
+
+reverse_engineer(Table, Here, TclRep, NonZ) :-
 	Table = [Val | Rest], !,
-	    reverse_engineer(Val, 0, TclHead),
+	    reverse_engineer(Val, 0, TclHead, SubZ),
 	    There is Here+1,
-	    reverse_engineer(Rest, There, TclTail),
-	    TclInner = [There, TclHead | TclTail],
-	    (Here = 0, !,
-		TclRep = br(TclInner);
+	    reverse_engineer(Rest, There, TclTail, NonZ),
+	    TclInner = [Here, TclHead | TclTail],
+	    (Here = 0,
+		(SubZ = no,
+		    TclRep = br(TclTail);
+		TclRep = br(TclInner)), !;
 	    TclRep = TclInner);
-	TclRep = Table.
+	TclRep = Table,
+	    (member(Table, [0, []]), !; NonZ = yes).
 
 check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-
 	Eqn_st = [], !,

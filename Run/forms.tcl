@@ -603,11 +603,10 @@ proc fill_inputs { triples } {
 #    pack $equation(notebook)
 }
 
-proc fill_table {node table_data table_values} {
+proc fill_table {table_data trans table_values} {
     global equation
 #puts $table_data
     set equation(table_data) $table_data
-    set trans [GetFromProlog tk_get_info({},$node,types)]
     set equation(table_values) [TransEnums $trans $table_values]
 }
 

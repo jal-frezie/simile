@@ -67,10 +67,7 @@ get_info(_Wid, Comp, types) :-
 	find_node_with_data(Comp, _, Func),
 	get_av_pair(Func, 0, units, Units),
 	    analyze_array(Units, Base, LDims),
-	    (Base = a(Type);
-	    Base = boolean, Type = boolean;
-	    Type = 0), !,
-	    append([IndxCount, LDims, [Type]], AllBounds);
+	    append([IndxCount, LDims, [Base]], AllBounds);
 	AllBounds = IndxCount),
 	all(event, insert_mem_list,
 	    [build(AllBounds), unify(Comp), build(AllTypes)]),
@@ -90,7 +87,8 @@ insert_mem_list(Bound, Model, Trans) :-
 	    Trans = [false, true];
 	get_av_pair(Model, 0, enum_types, Pairs),
 	    member(Type-Mems, Pairs),
-	    append_atoms(['"', Type, '"'], Bound),
+	    append_atoms(['"', Type, '"'], QType),
+	    member(Bound, [QType, a(QType)]), /* allow units to make trans */
 	    Trans = [Type | Mems];
 	find_all_comps(Parent, Model),
 	    insert_mem_list(Bound, Parent, Trans);

@@ -352,9 +352,10 @@ fill_inputs(List) :-
 	bracketize(Table, Tk_table),
 	safe_tcl_eval(['fill_inputs', Tk_table], _).
 
-fill_table(Node, TableData, TableVals) :-
+fill_table(TableData, Trans, TableVals) :-
 	bracketize(TableData, Tk_tableData),
-	safe_tcl_eval(['fill_table', Node, Tk_tableData, TableVals], _).
+	bracketize(Trans, Tk_trans),
+	safe_tcl_eval(['fill_table', Tk_tableData, Tk_trans, TableVals], _).
 
 /* Do a bit of processing to the parameter name column so the square/curly
 brackets appear as text. */
