@@ -8,7 +8,7 @@
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
     set oldProc Simile
-    set runHow(sender) list dde eval $oldProc]
+    set runHow(sender) [list dde eval $oldProc]
     set argv [lindex $argv 0]
 } else {
     set oldProc simile.tcl
