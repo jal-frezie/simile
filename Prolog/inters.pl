@@ -588,13 +588,14 @@ make_intermediates(
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
-	    get_dims_from_loops(BuildingArrays, DestDims, DestVals),
-	    (Step = dummy, !,
-		DestInds = DestDims;
-	    DestInds = DestVals);
-	Source = index(IndN), !,
-	    reverse(DestPath, BackDP),
-	    all(inters, indices_for, [build(BackDP), append(DestInds, [])])),
+	        get_dims_from_loops(BuildingArrays, DestDims, DestVals),
+	        (Step = dummy, !,
+		    DestInds = DestDims;
+		DestInds = DestVals);
+	    Source = index(IndN), !,
+	        reverse(DestPath, BackDP),
+	        all(inters, indices_for,
+		    [build(BackDP), append(DestInds, [])])),
 	    (integer(IndN), !;
 	    raise_exception(bad_index_number(N, index))),
 	    length(DestInds, AvailInds),
@@ -619,17 +620,19 @@ make_intermediates(
 	context. */
 
 	(Source = makearray(Element, Dim),
-	    make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
-				BuildingArrays, Step, Used, Dun, MidInters,
-				part_result([], DimSetups,_, DimVal)),
-		(promote_unit(Dun, const_int);
-		 raise_exception(bad_index_number(Dim, makearray))), !,
-	    NowBuilding = [LocalLoop | BuildingArrays];
-	make_choose_form(Source, keep(LocalInd), 1, Element),
-	    length(Source, DimVal),
-	    DimSetups = [],
-	    MidInters = PrevInters,
-	    NowBuilding = BuildingArrays), !,
+	        make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
+				   BuildingArrays, Step, Used, Dun, MidInters,
+				   part_result([], DimSetups,_, DimVal)),
+	        (promote_unit(Dun, const_int);
+		  raise_exception(bad_index_number(Dim, makearray))), !,
+	        NowBuilding = [LocalLoop | BuildingArrays],
+	        generate_name(c, build, BuildName, Used),
+	        LocalInd = glob(BuildName,_);
+	    make_choose_form(Source, keep(LocalInd), 1, Element),
+	        length(Source, DimVal),
+	        DimSetups = [],
+	        MidInters = PrevInters,
+	        NowBuilding = BuildingArrays), !,
 	    LocalLoop = set(LocalInd, loop(DimVal)),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			MidInters, NowBuilding, Step, Used, Units, NewInters,

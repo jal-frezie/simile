@@ -949,12 +949,17 @@ instruction because they will not require individual initialization routines. */
 			     [assign(arr(Ptr, Name, []), 0)]),
 			make(startable(Name), [init_list(Name) | BasesCleared],
 			     Path, Step, [reset_list(Ptr, Name)])];
-	[BaseSides, SmInters, Specials] = [[], [], []]),
+	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
+	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
+	    [BaseSides, SmInters, Specials] = [[], [], []]),
 
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps,
 			    Used, EnumTypeSpecs, FnInters, AssignList0),
 	append(FnInters, SmInters, Inters),
 	append(Specials, AssignList0, AssignList).
+
+name_loop_vars(glob(LVar, _), Used) :-
+	generate_name(c, fill, LVar, Used).
 
 get_base_side(Locale, path_substitution(Exited, Entered, _), Exited) :-
 	prefix(Entered, Locale), !;
@@ -1070,8 +1075,8 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	member(AssignType, [compartment, immigration, reproduction]),
 	    UseStep = Step,
 	    Source = incr(Step, SourceEqn)), !,
-	DestRef = elt(_, Dest, _),    
-	final_assignment(SourceEqn, Node, DestRef, Swaps, Step,
+	DestRef = elt(_, Dest, X),    
+	final_assignment(SourceEqn, Node, elt(DestPath, Dest, X), Swaps, Step,
 			 Used, Expr, Setups, Path, RefList,
 			 AllInters),
 
