@@ -712,7 +712,7 @@ proc AddCanvasBindings { c topNode } {
 # has accidentally adopted, that the mouse-wheel is Button-3    
     if [string match Darwin $tcl_platform(os)] {
         bind $c <Button-2> {ClickObj %x %y %W %X %Y right}
-        bind $c <Control-Button-2> {ClickObj %x %y %W %X %Y ctrl-right}
+        bind $c <Command-Button-2> {ClickObj %x %y %W %X %Y ctrl-right}
         bind $c <ButtonRelease-2> {ReleaseObj %W %x %y}     
     } else {
         bind $c <Button-3> {ClickObj %x %y %W %X %Y right}
