@@ -725,7 +725,7 @@ proc WriteDesc {canvas canvasFile date args} {
     global window_info
     
     set stream [NetOpen $canvasFile w]
-    fconfigure $stream -translation binary
+    fconfigure $stream -translation lf
     set title [wm title [winfo parent $canvas]]
     puts $stream "# written on $date"
     puts $stream [concat TweakWindow \$c \{$title\} \
@@ -766,9 +766,9 @@ proc WriteDesc {canvas canvasFile date args} {
                     append config [list [lindex $conf 0] $value] " "
                 }
             }
-            puts $stream [concat \$c create [$canvas type $object] \
-                    [$canvas coords $object] $config]
-        }
+	    puts $stream [concat \$c create [$canvas type $object] \
+			      [$canvas coords $object] $config]
+	}
     }
     close $stream
 }
