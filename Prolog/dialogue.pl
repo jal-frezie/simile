@@ -242,8 +242,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	     (Units = ''; Units = ComboUnits;
 	      /* next line allows an int to be quietly made into a real if the
 	      expression is now real */
-	      check_unit(ComboUnits, Units, 2, UnitError)), !,
-		NewUnits = ComboUnits;
+	      check_unit(ComboUnits, Units, 2, [])), !,
+		NewUnits = ComboUnits,
+		UnitError = [];
 	    check_unit(Units, ComboUnits, 2, UnitMatchError),
 		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
