@@ -41,6 +41,12 @@
 
 #define SIMILE_VERSION	"4.0"
 
+#ifdef WIN32
+    #define EXTDEC extern "C" __declspec( dllexport )
+#else
+    #define EXTDEC extern "C"
+#endif
+
 class submodeltype {
 public:
   virtual void* get_pointer(int id, int** dims) = 0;

@@ -4,7 +4,9 @@ do_createmodel
 do_updatemodel
 do_advancemodel
 do_evalmodel
+do_exitmodel
 do_setstep
+burrow_to
 get_count
 GetNodeCount
 GetNodeData

@@ -853,7 +853,8 @@ int g_r_v_bug;
 
 void* get_remote_value(void* typeRef, void* topInstRef, int level,
 			    int arcIndx, int* subList) {
-  connectRecord* currentData;
+  connectRecord* currentData;
+
 
 
   int* tree;
@@ -986,6 +987,7 @@ extern "C" int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	 Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
 	 return TCL_ERROR;
        }
+
      } else {
        sprintf(spare, "Found no path for top node %s",
 		 currConnect->TopNode);
@@ -1975,11 +1977,7 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
  *----------------------------------------------------------------------
  */
 
-extern "C" 
-#ifdef WIN32
-__declspec( dllexport )
-#endif
-int Ame_dll_Init(Tcl_Interp *interp) {
+EXTDEC int Ame_dll_Init(Tcl_Interp *interp) {
  char pkgName[16];
 
    globInterp = interp;

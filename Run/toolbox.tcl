@@ -617,8 +617,8 @@ proc ControlDraw {prologVersion} {
     if {![info exists env(SIMILE_VERSION)]} {
         set env(SIMILE_VERSION) 4.0
         set env(licensee_name) "Support team"
-        set env(licensee_corp) "Simulistics, inc."
-        set env(license_code) default_license=072ccc96dced2bef53403afd67fe7782
+        set env(licensee_corp) "Simulistics Ltd"
+        set env(license_code) default_license=28d4d4e4fd34b1407995899c5e655ad5
     }
     
     set sendvars(simV) $env(SIMILE_VERSION)

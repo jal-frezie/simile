@@ -1,38 +1,18 @@
-/* Procedures for accessing the model now also require the handle of the 
-instance to use. Previously these came straight out of model.c; now they
-are put inside a class wrapper, so we must here turn the handle back into
-a class pointer before calling them. */
-
-extern "C" 
-#ifdef WIN32
-__declspec( dllexport )
-#endif
-{
-  double get_version(void);
-  void* do_createmodel(void);
-  void do_updatemodel(void*, double, int);
-  void do_advancemodel(void*, double, int);
-  int do_evalmodel(void*, double, int,  BOOLEAN);
-  int do_setstep(double, int);
-  void do_exitmodel(void*);
-  void* burrow_to(void* level, int** id_meta, int** dim_list);
-}
-
 /* version needs its own special procedure because any other might change
    and cause a crash before version mismatch is detected */
-double get_version() {
+EXTDEC double get_version() {
   return(simile_version);
 }
 
-void* do_createmodel(void) {
+EXTDEC void* do_createmodel(void) {
   return (void*)new AME_model;
 }
 
-void do_updatemodel(void* handle, double time, int phase) {
+EXTDEC void do_updatemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->updatemodel(time, phase);
 }
 
-void do_advancemodel(void* handle, double time, int phase) {
+EXTDEC void do_advancemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->advancemodel(time, phase);
 }
 
@@ -42,7 +22,7 @@ static void exit_sighandler(int x){
   longjmp(env, x);
 }
 
-int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
+EXTDEC int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
   int error;
 
   /* Dont want a crash while running model to terminate Simile, so add 
@@ -77,11 +57,11 @@ the integration step being done: 0 for Euler, 1-4 for the four stages of RK
 
 Also uses to get phase count */
 
-void do_exitmodel(void* handle) {
+EXTDEC void do_exitmodel(void* handle) {
   ((AME_model *)handle)->do_exitmodel();
 }
 
-int do_setstep(double time, int phase) {
+EXTDEC int do_setstep(double time, int phase) {
   if (phase<0) { /* lazy */
     ts[-phase] = time;
   } else {
@@ -132,7 +112,7 @@ double stage_incr (diffs *extras, int step, double v) {
   };
 };
 
-void* burrow_to(void* level, int** id_meta, int** dim_list) {
+EXTDEC void* burrow_to(void* level, int** id_meta, int** dim_list) {
   while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
 -2 means nested separate-dll submodel */
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
@@ -141,11 +121,7 @@ void* burrow_to(void* level, int** id_meta, int** dim_list) {
 };
 
 /* This is called only when we create the type, to return model constants */
-extern "C" 
-#ifdef WIN32
-__declspec( dllexport )
-#endif
-int get_count(void* useClassPtr, void* ame_rand_ptr, 
+EXTDEC int get_count(void* useClassPtr, void* ame_rand_ptr, 
 		void* graphpoint_ptr, 
 		void* release_graph_data_ptr, 
 		void* compare_instance_status_ptr, 
