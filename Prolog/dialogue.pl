@@ -74,6 +74,12 @@ do_equation_dialog(Win, Part) :-
 	ClickedObj is_of_sort boolean_value, !,
 	    TypeBase = boolean,
 	    TitleForm = 'Condition';
+	ClickedObj is_of_sort boolean_value, !,
+	    TypeBase = boolean,
+	    TitleForm = 'Condition';
+	ClickedObj is_of_sort level, !, /* other than the above */
+	    TypeBase = real,
+	    TitleForm = 'Value';
 	TitleForm = 'Equation'),
 	sicstus_format_to_chars("~a for ~a", [TitleForm, Caption], 
 BoxHeaderStr),

@@ -703,7 +703,7 @@ Obj is_class_of_sort Class :-
 		condition-[regular_box, box, rectangle, channel, has_function,
 			   cond_value],
 		creation-[regular_box, box, rectangle, channel, has_function,
-			  value_outside],
+			  level, value_outside],
 		immigration-[regular_box, box, rectangle, channel, 
 				has_function, level, value_outside],
 		reproduction-[regular_box, box, rectangle, channel, 
