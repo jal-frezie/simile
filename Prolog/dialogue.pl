@@ -338,7 +338,7 @@ test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
 _, [],
 					[], 1, _, Type, _,
 					part_result(XContext, _,_,_)),
-		     decode_error(ParseException, ParseError))),
+		     decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
 	    /* check result dims match those needed for prev if used */
 	    get_dims_from_loops(XContext, XDims, _),
@@ -357,7 +357,7 @@ _, [],
 	    /* Hack alert. The term representing the dest context has indices
 	    (so index(n) will work) but no loops, so we don't need to add it
 	    to the relative source contexts */
-	TestError = ParseError).
+	TestError = ParseError)).
 
 check_dim_match(P, Q) :- P=Q; Q=0.
 
