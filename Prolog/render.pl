@@ -349,8 +349,8 @@ render(L, data_declaration,
 	    (NameIn = elt(_, Name, _), !;
 		Name = NameIn),
 	    UseDims = Dims),
-	all(ame_gen, enum_type_ref,
-	    [build(UseDims), unify(SymbolicName), build(Nums), build(_)]),
+	all(ame_gen, enum_type_ref, [build(UseDims), unify(SymbolicName),
+				     build(Nums), build(_), unify(1)]),
 	render(L, variable_declaration, [Type, Name, Nums],
 			Indent, Decl).
 
@@ -508,7 +508,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	        [Wee, Muckle] = [0, 1];
 	    Unit = a(Enum), !, Type = 'ENUMERATED',
 		Wee = 1,
-		enum_type_ref(Enum, BaseName, Muckle, _);
+		enum_type_ref(Enum, BaseName, Muckle, _, 1);
 	    member(Unit, [const_int, int]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-1073741823, 1073741823];
 	    Type = 'REAL',

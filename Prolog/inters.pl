@@ -55,7 +55,7 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
 	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
-					 build(Dims), build(_)]),
+					 build(Dims), build(_), unify(1)]),
 	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
 		import_path_for(Dims, RealPathForm, ArcI, 0, Ptr0, LvlN, PtrN,
 				LocalLoops, Inds),

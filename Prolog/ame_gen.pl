@@ -11,7 +11,7 @@ sicstus_module(ame_gen,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
-		get_actual_size/5, get_actual_sizes/5, enum_type_ref/4,
+		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
 		get_node_size/2, get_node_size/4,
 		is_population/1, by_record/1, is_conditional/1, get_all_dims/2,
 		variable_size/1, list_links/2,
@@ -380,7 +380,7 @@ submodels. */
 
 get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 	(Sub = none, !, Nums = [], Sizes = [], Units = any;
-	enum_type_ref(Sub, Node, Num, Units),
+	enum_type_ref(Sub, Node, Num, Units, 1),
 	    Nums = [Num],
 	    Sizes = [Sub];
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
@@ -398,7 +398,7 @@ get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 		sicstus_format_to_chars("Cannot resolve reference to size of ~w. There is no submodel of this name.", [ModName], Err));
 	atom(Sub),
 	    caption_for(Node, Capt),
-	    sicstus_format_to_chars("Cannot resolve reference to size of ~a at node ~a. There us no local enumerated type of this name.", [Sub, Capt], Err)),
+	    sicstus_format_to_chars("Cannot resolve reference to size of ~a at node ~a. There is no local enumerated type of this name.", [Sub, Capt], Err)),
 	(var(Err), !;
 	name(ErrName, Err),
 	   raise_exception(ErrName)).
@@ -412,7 +412,7 @@ name_matches(Node, Name) :-
 	Node has_class submodel,
 	caption_for(Node, Name).
 
-enum_type_ref(Ref, Model, Value, Units) :-
+enum_type_ref(Ref, Model, Value, Units, ConstsQuoted) :-
 	(integer(Ref),
 	    Units = const_int;
 	Ref = var, 
@@ -420,20 +420,20 @@ enum_type_ref(Ref, Model, Value, Units) :-
 	number(Ref),
 	    Units = 1), !,
 	    Value = Ref;
-	nth0(Value, ['"false"', '"true"'], Ref), !,
+	(atom(Ref), ConstsQuoted = 1, !, name(Ref, RefStr),
+	    append([34 | BareRefStr], [34], RefStr),
+	    name(BareRef, BareRefStr);
+	 BareRef = Ref),
+	(nth0(Value, [false, true], BareRef), !,
 	    Units = boolean;
-	resolve_unit_type(Ref, Units), !, Value = 1;
-	resolve_enum_type(Ref, Model, Value, Units).
-
-resolve_unit_type(Ref, Units) :-
-	(units:baseline(Units); units:unit_definition(Units, _)),
-	append_atoms(['"', Units, '"'], Ref).
+	(units:baseline(BareRef); units:unit_definition(BareRef, _)), !,
+	    Units = BareRef, Value = 1;
+	resolve_enum_type(BareRef, Model, Value, Units)).
 
 resolve_enum_type(Ref, Model, Value, Units) :-
 	m_class:Model has_class_refinement enum_types of TypeList,
 	    member(TypeName-TypeMems, TypeList),
-	    (Match = TypeName; nth(Value, TypeMems, Match)),
-	    append_atoms(['"', Match, '"'], Ref),
+	    (Ref = TypeName; nth(Value, TypeMems, Ref)),
 	    append_atoms(['"', TypeName, '"'], TypeRef),
 	    (number(Value),
 		Units=a(TypeRef);

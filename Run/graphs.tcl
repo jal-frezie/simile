@@ -450,8 +450,8 @@ proc FineX { c } {
 # TABLE LOADING
 #####################################################################
 
-proc equationDoTable {parent doQuoting} {
-    global table_entry
+proc equationDoTable {parent} {
+    global table_entry iconImages
     
     toplevel .table -bd 4
     wm transient .table $parent
@@ -482,7 +482,7 @@ proc equationDoTable {parent doQuoting} {
     # OK, Cancel and Help buttons
     frame .table.top.fbuttons
     button .table.top.fbuttons.load -text Load -width 10 \
-	-command [list AcquireTableData $lidx $doQuoting]
+	-command [list AcquireTableData $lidx]
     button .table.top.fbuttons.edit -text View/Edit -width 10 \
 	-command {EditListAsTable .table}
     button .table.top.fbuttons.ok -text OK -width 10 \
@@ -518,12 +518,11 @@ proc equationDoTable {parent doQuoting} {
     label $fdata.dfile.dfilelabel -text "Data file                    "
     set dfile [Entry $fdata.dfile.dfile \
             -textvariable table_entry(fileName)]
+    bind $dfile <Return> LoadDataFile
     pack $fdata.dfile.dfilelabel -side left -anchor w
     pack $dfile -side left -anchor w -expand true -fill x
-    set tbl [image create photo -file "../Images/Toolbar/table.gif" ]
-    set opn [image create photo -file "../Images/Toolbar/open.gif" ]
-    button $fdata.dfile.new -compound left -image $opn -text Browse \
-            -command {GetDataFile "Select new data file"; LoadDataFile}
+    button $fdata.dfile.new -compound left -image $iconImages(open) \
+	-text Browse -command {GetDataFile "Select new data file";LoadDataFile}
     pack $fdata.dfile.new -side left -padx 4 -pady 4
     pack $fdata.dfile -side top -anchor w -expand true -fill x
     pack .table.bottom -side top -fill x
@@ -560,7 +559,7 @@ proc equationDoTable {parent doQuoting} {
     return $table_entry(done)
 }
 
-proc AcquireTableData {lidx doQuoting} {
+proc AcquireTableData {lidx} {
     global table_entry
 
     set idcs {}
@@ -571,7 +570,7 @@ proc AcquireTableData {lidx doQuoting} {
     set tableSpec [concat [list $table_entry(fileName) \
 			       $table_entry(dataField)] $table_entry(indices)]
 #puts "Loading with $tableSpec"
-    set table_entry(values) [LoadTableData $tableSpec $doQuoting]
+    set table_entry(values) [LoadTableData $tableSpec]
 }
 
 proc EditListAsTable {parent} {
@@ -1059,7 +1058,7 @@ proc Save {smPath} {
 	    set SubbedComp [StripCrs $compTail]
 	    if {[info exists paramState($compName)]} {
 		if {[string equal $paramData($compName) \
-			 [LoadTableData $paramState($compName) 0]]} {
+			 [LoadTableData $paramState($compName)]]} {
 		    set relName [Relativize $metaFile \
 				     [lindex $paramState($compName) 0]]
 		    puts $pStr "$SubbedComp=[lreplace $paramState($compName) \
@@ -1119,7 +1118,7 @@ proc	MergeParams {smPath metaFile interactive} {
                     # now just load up the data
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
 		set paramData($restoredComp) \
-		    [LoadTableData $paramState($restoredComp) 0]
+		    [LoadTableData $paramState($restoredComp)]
 	    } elseif {![SensibleValue $trans $FileOrVal]} {
 		set paramData($restoredComp) {}
 		ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
@@ -1203,7 +1202,7 @@ proc GetFromTable {parent compName} {
     } else {
 	set table_entry(values) $paramData($compName)
     }
-    if {[equationDoTable $parent 0]} {
+    if {[equationDoTable $parent]} {
         if {[llength $table_entry(dataField)]} {
 	    set paramState($compName) [concat [list $table_entry(fileName) \
 						   $table_entry(dataField)] \
@@ -1267,10 +1266,10 @@ proc UpdateTimeSeries {newTime} {
 	if {[info exists useTime]} {
 	    upvar \#0 [InputVarFor $node] inputSrc
 	    # do it the easy way if a scalar
-puts "looking for paramData($node,$useTime)"
+#puts "looking for paramData($node,$useTime)"
 	    if {[info exists paramData($node,$useTime)]} {
 		set inputSrc($node) $paramData($node,$useTime)
-puts "set inputSrc($useTime) $paramData($node,$useTime)"
+#puts "set inputSrc($useTime) $paramData($node,$useTime)"
 		return
 	    }
 	    foreach tsValue [array names paramData $node,$useTime,*] {
@@ -1281,7 +1280,7 @@ puts "set inputSrc($useTime) $paramData($node,$useTime)"
     }
 }
 
-proc LoadTableData {tableSpec doQuoting} {
+proc LoadTableData {tableSpec} {
     
 #ShowMessage debug info "Loading table with data $tableSpec" ok
     set tStr [open [lindex $tableSpec 0] r]
@@ -1332,32 +1331,23 @@ proc LoadTableData {tableSpec doQuoting} {
     
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
-    return [ArrayToList paramArray top $indexList $doQuoting]
+    return [ArrayToList paramArray top $indexList]
 }
 
-proc ArrayToList {topArray indexSoFar otherMaxes doQuoting} {
+proc ArrayToList {topArray indexSoFar otherMaxes} {
 #ShowMessage debug info "$indexSoFar $otherMaxes" ok
     upvar 1 $topArray array
     if {[llength $otherMaxes]} {
         foreach pt [lindex $otherMaxes 0] {
-            lappend result [QuoteNonNumeric $pt $doQuoting] \
-		[ArrayToList array $indexSoFar,$pt \
-		     [lrange $otherMaxes 1 end] $doQuoting]
+            lappend result $pt [ArrayToList array $indexSoFar,$pt \
+				    [lrange $otherMaxes 1 end]]
         }
     } else {
         if {[info exists array($indexSoFar)]} {
-	    set result [QuoteNonNumeric $array($indexSoFar) $doQuoting]
+	    set result $array($indexSoFar)
         } else {
             set result 0
         }
     }
     return $result
-}
-
-proc QuoteNonNumeric {val doIt} {
-    if {$doIt && [catch {expr 1*$val}]} {
-	return \"$val\"
-    } else {
-	return $val
-    }
 }

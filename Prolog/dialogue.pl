@@ -164,8 +164,8 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    retractall(table_data_is(_)),
 	    assert(table_data_is([file = FileName, data = DataField,
 				  indices = Indices, current = DataTable,
-				  units=Units, bounds=Dims])),
-	    fill_table(Function, TableData, TableVals);
+				  units=Units, bounds=Dims]));
+%	    fill_table(Function, TableData, TableVals);
 	do_dialogue("Problem with input data", warning, Complaint,
 		    ok, _)),
 	fail.
@@ -368,7 +368,7 @@ get_table_data(Function, Data, Table, Orig, Units, Dims, Complaint) :-
 
 get_table_part(Function, Data, Table, Orig, Units, Dims, Sizes) :-
 	name(Num, Data),
-	enum_type_ref(Num, Function, Orig, Units),
+	enum_type_ref(Num, Function, Orig, Units, 0),
 	    Table = Orig,
 	    Dims = [],
 	    Sizes = [];
@@ -385,7 +385,7 @@ feed_items(Fn, [IndStr, ValStr | More], Table, [Ind, VOrig | TOrig],
 	   Units, Dims, Sizes) :-
 	feed_items(Fn, More, Table, TOrig, DUnit, Dims, LoSizes),
 	(name(Ind, IndStr),
-	    enum_type_ref(Ind, Fn, Posn, TUnit),
+	    enum_type_ref(Ind, Fn, Posn, TUnit, 0),
 	    (TUnit = a(_), IUnit = TUnit;
 		IUnit = int);
 	append(["Table contained the index item ", IndStr,

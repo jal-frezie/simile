@@ -502,7 +502,7 @@ proc GetTable {parent box} {
 
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
-    if {[equationDoTable $parent 1]} {
+    if {[equationDoTable $parent]} {
         if {[llength $table_entry(dataField)]} {
 	    set equation(table_data) [concat [list $table_entry(fileName) \
 						  $table_entry(dataField)] \
@@ -1156,7 +1156,7 @@ proc GetEnumMems {fr} {
 	lappend table_entry(values) [expr $pos+1] \
 	    [list [lindex $memList $pos]]
     }
-    if {[equationDoTable .disaggregation 0]} {
+    if {[equationDoTable .disaggregation]} {
 	set fileState [list $table_entry(fileName) $table_entry(dataField)]
 	set fileData $table_entry(values)
 	foreach {pos mem} $fileData {
