@@ -17,6 +17,8 @@ int stop(int code) {
   throw code;
 }
 
+graph_data_type** graph_data_pointer;
+
 /* Pointers to functions in the stub: */
 ame_rand_type* ame_rand_ref;
 graphpoint_type* graphpoint_ref;
@@ -38,7 +40,7 @@ double ame_rand(double lo, double hi) {
 }
 
 double graphpoint(double xval, int indx) {
-  return (*graphpoint_ref)(xval, indx);
+  return (*graphpoint_ref)(xval, *graph_data_pointer, indx);
 }
 
 void release_graph_data(graph_data_type* graph) {
@@ -276,7 +278,6 @@ void insert_graph_data(
    graph_data_pointer->points = array_data;
 }
 */
-graph_data_type** graph_data_pointer;
 
 void setup_graph_data(
    int index,

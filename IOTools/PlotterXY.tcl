@@ -134,7 +134,7 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         
         set newbox nodebox[incr plot($w,nodeCount)]
-        set name [GetCaptionPathFromId $w $node]
+        set name [GetCaptionPathFromId $node]
         
         set testResult [GetModelValue $node]
         if {[string compare $testResult novalue]} {

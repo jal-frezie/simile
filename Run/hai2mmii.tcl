@@ -421,11 +421,10 @@ proc GetCCompProperty {topNode prop args} {
 	    }
 	    return $fullList
 	} Graph {
-	    set index [c_getvalue $topNode $node 3]
 	    if {[llength $set]} {
-		eval {do_for_node $topNode setup_graph_data $index} $set
+		eval {getvalue $model_id($topNode) $node 4} $set
 	    } else {
-		return [do_for_node $topNode graph_table 21 $index]
+		return [c_getvalue $topNode $node 3]
 	    }
 	} Caption {
 	    return [c_getvalue $topNode $node 5]
