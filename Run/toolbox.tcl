@@ -733,7 +733,7 @@ proc AddAccelerators { winName } {
     bind $winName <Control-b> "MenuSelect $winName.canvas file run_c"
     
     #help
-    bind $winName <F1> LaunchHelp; # todo
+    bind $winName <F1> "ContextSensitiveHelp $winName index.htm";
 }
 
 proc AddCanvasBindings { c } {
@@ -1262,7 +1262,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
-    $fm add command -label Contents -command LaunchHelp \
+    $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
             -accelerator "F1"
     $fm add command -label About... -command [list ShowAbout $winid]
     
@@ -1459,15 +1459,6 @@ proc AbandonEqn {} {
     prolog tk_abandon_eqn
 }
 
-# should check env to get system directory
-proc LaunchHelp {} {
-    global tcl_platform
-    if {[string match windows $tcl_platform(platform)]} {
-        exec hh.exe ../Help/simile.chm &
-    } else {
-        exec netscape ../Help/HTML/index.htm &
-    }
-}
 
 if {![info exists interface]} {
     set interface dll
