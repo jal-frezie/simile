@@ -234,59 +234,62 @@ proc do_for_node {node args} {
     global runState tcl_platform runHow simtmpdir
 
     if {![info exists runState($node,interp)]} {
-    if {[string equal interp $runHow(call)]} {
-        set runState($node,interp) [interp create]
-        $runState($node,interp) eval set runHow $runHow(return)
-        $runState($node,interp) eval source ../Run/support.tcl
-    } else {
-        scan [info tclversion] {%d.%d} MAJ MIN
-        if {[string equal windows $tcl_platform(platform)]} {
-        set sep {}
-        } else {
-        set sep .
-        }
+	if {[string equal interp $runHow(call)]} {
+	    set runState($node,interp) [interp create]
+	    $runState($node,interp) eval set runHow $runHow(return)
+	    $runState($node,interp) eval source ../Run/support.tcl
+	} else {
+	    scan [info tclversion] {%d.%d} MAJ MIN
+	    if {[string equal windows $tcl_platform(platform)]} {
+		set sep {}
+	    } else {
+		set sep .
+	    }
             if [string match Darwin $tcl_platform(os)] {
-              set makeExec ../../MacOS/Simile
-#              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
+		set makeExec ../../MacOS/Simile
+		#              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
             } else {
-              set makeExec ../System/bin/wish$MAJ$sep$MIN
+		set makeExec ../System/bin/wish$MAJ$sep$MIN
             }
             set srcLoc ../Run/runmodel.tcl          
-        if {![info exists runHow(sendCmd)]} { ;# fix debug env
-        set runHow(sendCmd) [list send [tk appname]]
-        }
-        set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return) \
-		       $runHow(readpipe)]
-        if {[string equal script $runHow(init)]} {
-        set launchArgs [concat $srcLoc $scArgs]
-        } else {
-        set launchArgs {}
-        }
-        if {[string equal open $runHow(launch)]} {
-        set runState($node,interp) \
-            [open [concat |$makeExec $launchArgs] r+]
-        } else {
-        set runState($node,interp) \
-            [eval exec $makeExec $launchArgs &]
-        }
-        if {[string equal pipe $runHow(return)]} {
-        fileevent $runState($node,interp) readable \
-            [list FeedModel $node pipe]
-        }
-        if {[string equal interactive $runHow(init)]} {
-        tell_runner $node [list set argv $scArgs]
-        tell_runner $node [list source $srcLoc]
-        }
-        tkwait variable runState($node,modelReady)
-#tk_messageBox -message "Go! mr is '$runState($node,modelReady)'"
+	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
+		set runHow(sendCmd) [list send [tk appname]]
+	    }
+	    set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return) \
+			    $runHow(readpipe)]
+	    if {[string equal script $runHow(init)]} {
+		set launchArgs [concat $srcLoc $scArgs]
+	    } else {
+		set launchArgs {}
+	    }
+	    if {[string equal open $runHow(launch)]} {
+		set runState($node,interp) \
+		    [open [concat |$makeExec $launchArgs] r+]
+	    } else {
+		set runState($node,interp) \
+		    [eval exec $makeExec $launchArgs &]
+	    }
+	    if {[string equal pipe $runHow(return)]} {
+		fileevent $runState($node,interp) readable \
+		    [list FeedModel $node pipe]
+	    }
+	    if {[string equal interactive $runHow(init)]} {
+		tell_runner $node [list set argv $scArgs]
+		tell_runner $node [list source $srcLoc]
+	    }
+	    tkwait variable runState($node,modelReady)
+	    #tk_messageBox -message "Go! mr is '$runState($node,modelReady)'"
             if [string match Darwin $tcl_platform(os)] {
-#              catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
-        #      carbon::processHICommand hide {}
+		#              catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
+		#      carbon::processHICommand hide {}
             }
-        set runState($node,queueSize) 0
-    }
-    tickle $node
-    RaiseModelWindow $node
+	    set runState($node,queueSize) 0
+	}
+	tickle $node
+	if {[info exists runState($node,runParams)]} {
+	    do_in_node $node SetRunParams $node $runState($node,runParams)
+	}
+	RaiseModelWindow $node
     }
     return [eval do_in_node $node $args]
 }
@@ -463,16 +466,6 @@ proc ScrubRun {node times} {
 proc DestroyHelpers {node} {
     do_if_running $node DestroyHelpers $node
 }
-
-proc GetRunParams {node} {
-    global runState
-    if {[info exists runState($node,interp)]} {
-    if {$runState($node,modelReady)} {
-        return [do_in_node $node GetRunParams $node]
-    }
-    }
-}
-
 
 proc load_dll {topNode lang progDir id node incs} {
     ScrubRun $topNode 0
@@ -922,7 +915,7 @@ package require mime
 
 proc SaveFile {topNode tree tgt} {
     #ShowMessage debug info "SaveFile $tree $tgt" ok
-    global errorInfo
+    global errorInfo runState
     global SimileProjectDo
     
     if {[info exists SimileProjectDo]} {
@@ -932,34 +925,30 @@ proc SaveFile {topNode tree tgt} {
         unset SimileProjectDo
     }
     if {[catch {
-            set parts [GetParts $tree $tree]
-            #ShowMessage debug info "SaveFile GetParts $tree" ok
-    set runParams [GetRunParams $topNode]
-            if {[llength $runParams]} {
-                lappend parts [mime::initialize -canonical text/plain \
-                        -header [list "Content-Description" "Run Status"] \
-                        -string $runParams]
-            }
-            set multiT [mime::initialize -canonical multipart/mixed \
-                    -parts $parts]
-            set stream [NetOpen $tgt w]
-            fconfigure $stream -translation binary
-            mime::copymessage $multiT $stream
-            # clean everything up
-            close $stream
-            mime::finalize $multiT -subordinates all
-        } Lossage]} {
+	set parts [GetParts $tree $tree]
+	#ShowMessage debug info "SaveFile GetParts $tree" ok
+	if {[info exists runState($topNode,runParams)]} {
+	    lappend parts [mime::initialize -canonical text/plain \
+			   -header [list "Content-Description" "Run Status"] \
+			   -string $runState($topNode,runParams)]
+	}
+	set multiT [mime::initialize -canonical multipart/mixed \
+			-parts $parts]
+	set stream [NetOpen $tgt w]
+	fconfigure $stream -translation binary
+	mime::copymessage $multiT $stream
+	# clean everything up
+	close $stream
+	mime::finalize $multiT -subordinates all
+    } Lossage]} {
         return $errorInfo
     } else {
         return $Lossage
     }
-
-
-
 }
 
 proc LoadFile {topNode tree tgt} {
-    global mimeSquirter errorInfo
+    global mimeSquirter errorInfo runState
     global loadingProject mimedir
     #ShowMessage debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
@@ -973,8 +962,9 @@ proc LoadFile {topNode tree tgt} {
                 #ShowMessage debug info $Desc ok
                 switch [lindex $Desc 0] {
                     "Run Status" {
-                        set runParams [mime::getbody $bit]
-                        do_for_node $topNode SetRunParams $topNode $runParams
+                        set runState($topNode,runParams) [mime::getbody $bit]
+# do next bit when starting exec proc
+#                        do_for_node $topNode SetRunParams $topNode $runParams
                     } "Authentication Code" {
                         set AuthCode [string trimright [mime::getbody $bit]]
                     } default {
@@ -1112,6 +1102,12 @@ proc GetParts {top tree} {
 
     }
     return $mimes
+}
+
+proc RecordRunParams {node paramList} {
+    global runState
+    set runState($node,runParams) $paramList
+    prolog tk_run_settings_tweaked($node)
 }
 
 proc ConvertSSxml {} {

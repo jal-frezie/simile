@@ -64,6 +64,7 @@ namespace eval runcontrol33857 {
 	set runState($node,oldIntMethod) $runState($node,intMethod)
 	set runState($node,timeUnit) unit
         set runState($node,oldUnit) $runState($node,timeUnit)
+        set runState($node,oldDispInt) $runState($node,displayInt)
 
         if {[string match $t [winfo toplevel $t]]} {
             wm title $t "Run control"; # $t isn't a toplevel under MRE
@@ -251,10 +252,12 @@ namespace eval runcontrol33857 {
         # This loop sets the array of dts in the model
         set sendvars(unitLength) \
 	    [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
-        set tweaked 0
+        set tweaked [expr ![string equal $runState($node,displayInt) \
+				$runState($node,oldDispInt)]]
         set newBalls [expr ![string equal $runState($node,timeUnit) \
                       $runState($node,oldUnit)]]
         set runState($node,oldUnit) $runState($node,timeUnit)
+        set runState($node,oldDispInt) $runState($node,displayInt)
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
             set tick $runState($node,update$setPhase)
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
@@ -268,7 +271,7 @@ namespace eval runcontrol33857 {
         }
 	# allow model to be saved if run settings are changed
         if {$tweaked || ![string match $runState($node,oldIntMethod) $runState($node,intMethod)]} {
-            do_in_editor prolog tk_run_settings_tweaked($node)
+	    do_in_editor RecordRunParams $node [GetRunParams $node]
         }
         SetStep $node 0 0
         SetState $winId $sendvars($node,newData)
