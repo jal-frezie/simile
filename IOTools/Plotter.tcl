@@ -143,7 +143,6 @@ namespace eval ::$keyValue {
         }
         ReleaseClicks $w
         $w.canvas delete prompt
-        raise $w; # bring the plotter back on top when it is a toplevel
     }
     
     # Called at start up only
@@ -624,6 +623,7 @@ namespace eval ::$keyValue {
         set YYold($w) {}
         set YYnew($w) {}
         
+        $w.canvas delete prompt
         drawGraphpad $w
         display $w [GetModelTime] 0 0
         display $w [GetModelTime] 0 0
