@@ -214,7 +214,7 @@ proc do_for_node {node args} {
 	    }
 	    set makeExec ../System/bin/wish$MAJ$sep$MIN
 #puts "starting $makeExec"
-	    if {[string equal pipe $runHow(type)]} {
+#	    if {[string equal pipe $runHow(type)]} {
 		set runState($node,interp) [open |$makeExec r+]
 		fileevent $runState($node,interp) readable \
 		    [list FeedModel $node pipe]
@@ -228,11 +228,14 @@ proc do_for_node {node args} {
 #		[list KickOff $node $runHow(type) $simtmpdir]
 #	    flush $runState($node,interp)
 #puts "initialized"
-	    } else {
-		set runState($node,interp) [exec $makeExec ../Run/initexec.tcl $node $simtmpdir $runHow(sendCmd) &]
-		tkwait variable runState($node,modelReady)
-		set runState($node,queueSize) 0
-	    }
+#	    } else {
+#		set runState($node,interp) [exec $makeExec ../Run/initexec.tcl $node $simtmpdir $runHow(sendCmd) &]
+#		set runState($node,interp) [open [list |$makeExec ../Run/initexec.tcl $node $simtmpdir $runHow(sendCmd)] r+]
+#		tkwait variable runState($node,modelReady)
+#		set runState($node,queueSize) 0
+
+
+#	    }
 	}
     }
     return [eval do_in_node $node $args]
@@ -255,6 +258,7 @@ proc do_in_node {node args} {
 		tkwait variable runState($node,modelReady)
 	    }
 	}
+	if {$runState($node,modelReady)==1} {
 	tell_runner $node $command
 	incr runState($node,queueSize)
 #puts "put: $command"
@@ -273,6 +277,10 @@ proc do_in_node {node args} {
 	}
 #puts "Got $result"
 	incr runState($node,queueSize) -1
+	} else {
+	    set result {res 0}
+#puts "$command: model dead"
+	}
     }
     set info [lindex $result 1]
     switch [lindex $result 0] {
@@ -297,7 +305,7 @@ proc FeedModel {node incoming} {
 	} else {
 	    set result [list res $response]
 	}
-#puts "put: $result"
+#puts "returned: $result"
 	tell_runner $node $result
 #	eval $runHow(sendOp) exec_for_$node {$result}
     } else {
@@ -323,12 +331,12 @@ proc KillInterpFor {node} {
 
 proc tell_runner {node action} {
     global runState runHow
-    if {[string equal pipe $runHow(type)]} {
+#    if {[string equal pipe $runHow(type)]} {
 	puts $runState($node,interp) $action
 	flush $runState($node,interp)
-    } else {
-	eval $runHow(sendOp) exec_for_$node {after idle [list $action]}
-    }
+#    } else {
+#	eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
+#    }
 }
 
 proc do_if_running {node args} {
@@ -358,11 +366,9 @@ proc HaveValues {node} {
 proc TryToKill {node} {
     global runState runHow
 #puts "Trying to kill $node"
+    c_killmodel [pid $runState($node,interp)]
     if {[string equal pipe $runHow(type)]} {
-	c_killmodel [pid $runState($node,interp)]
 	catch {close $runState($node,interp)}
-    } else {
-	c_killmodel $runState($node,interp)
     }
     unset runState($node,interp)
 # now supply bogus result to interrupted model call
@@ -669,6 +675,7 @@ proc ControlDraw {prologVersion} {
     }
     if {[llength $custom(hotlist)]} {
         RecordPathChoice .sml [lindex $custom(hotlist) 0] 0
+
     }
     
     Pref_Init $custom(prefDir)/prefs ../Run/sysprefs
@@ -754,6 +761,8 @@ proc ControlDraw {prologVersion} {
     if {[info exists env(OPEN_MODEL)]} {
         set openModel [brainwash $env(OPEN_MODEL)]
         # Add to path and recently opened files data
+
+
         RecordPathChoice .sml $openModel 1
     } else {
         set openModel {}
@@ -1201,6 +1210,7 @@ proc PrepForExport {winId way} {
                 [expr $detail*($sr-$sl)] [expr $detail*($sb-$st)]]
         ZoomImage $winId all $detail $textscale
         return [list $xbase $ybase $detail]
+
     } else {
         ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
         $winId configure -scrollregion [list $jiggles(bl) $jiggles(bt) \
@@ -1322,6 +1332,7 @@ proc Rerun {winId go} {
         } else {
             set runType run_tcl
         }
+
         MenuSelect $winId file $runType
     } else {
         do_in_node $node StartRun $node
@@ -1358,7 +1369,9 @@ proc ToggleIOToolMenu {node} {
             set winData $window_info($c,parent)
             
             set topMenu ${winData}top
-            catch {$topMenu delete "I/O tools"}
+	    if {[$topMenu index last]==7} {
+		$topMenu delete "I/O tools"
+	    }
             $winData.toolSlot.navbar.runenv configure -state disabled
             if {[HaveValues $node]} {
                 set newState normal
@@ -1372,6 +1385,7 @@ proc ToggleIOToolMenu {node} {
                     $topMenu insert "Help" cascade -label "I/O tools" \
                             -underline 0 -menu $topMenu.helpers
                 }
+
             } else {
                 set newState disabled
             }
@@ -1380,6 +1394,7 @@ proc ToggleIOToolMenu {node} {
         }
     }
 }
+
 
 proc InterpMenu {winId state} {
     global sendvars

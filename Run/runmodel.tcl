@@ -244,6 +244,7 @@ proc kill_helper_window { winId } {
 #		    set kill_on_finish 1
 #		}
 #		set mode kill
+		unset runState($topNode,cnvs)
 		unset runState($topNode,helperId)
 	    }
 	}
@@ -549,7 +550,7 @@ proc ScrubRun {node times} {
     if {$times && [info exists runState($node,currentTime)]} {
         unset runState($node,currentTime)
     }
-    if {[winfo exists $runState($node,cnvs)]} {
+    if {[info exists runState($node,cnvs)]} {
 	$runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
     }
     if {[info exists model_id($node)]} {
@@ -810,7 +811,7 @@ proc StartRun {node} {
     }
     set runState($node,modelRunning) 1
     if {[FileParamDialogue $node $fpParent 0]<1} {
-	if {[info exists runState($node,helperId)]} {
+	if {[info exists runState($node,cnvs)]} {
 	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
 	}
 	return 0

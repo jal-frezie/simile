@@ -453,8 +453,16 @@ proc do_in_editor {args} {
     if {[string equal process $runHow]} {
 	return [eval $sender {$args}]
     } else {
-	puts $args
-	return [gets stdin]
+	puts [list get $args]
+	set result [gets stdin]
+        set info [lindex $result 1]
+        switch [lindex $result 0] {
+            err {
+                error [lindex $info 0] [join $info \n]
+            } res {
+                return $info
+            }
+        }
     }
 }
 
@@ -491,4 +499,5 @@ proc remote {result} {
     } else {
 	puts $result
     }
+    return done
 }
