@@ -312,12 +312,7 @@ namespace eval grid005 {
         UpdateState $winId
         display $winId 0 0 0
     }
-    
-    proc IsNumber {str} {
 
-        return [expr {[string is integer $str] || [string is double $str]}]
-    }
-    
     proc Settings {winId} {
         variable useNodes
         variable min
@@ -554,11 +549,12 @@ namespace eval grid005 {
         variable useNodes
         
         set visible [concat [$winId.c xview] [$winId.c yview]]
-        set dataL [expr round([lindex $visible 0]*$useNodes($winId,ncol))]
-        set dataR [expr round([lindex $visible 1]*$useNodes($winId,ncol))]
-        set dataT [expr round([lindex $visible 2]*$useNodes($winId,nrow))]
-        set dataB [expr round([lindex $visible 3]*$useNodes($winId,nrow))]
+        set dataL [expr int([lindex $visible 0]*$useNodes($winId,ncol))]
+        set dataR [expr int(0.9999*[lindex $visible 1]*$useNodes($winId,ncol))]
+        set dataT [expr int([lindex $visible 2]*$useNodes($winId,nrow))]
+        set dataB [expr int(0.9999*[lindex $visible 3]*$useNodes($winId,nrow))]
         $winId.c coords 1 [$winId.c canvasx 0] [$winId.c canvasy 0]
+puts "Displaying $dataL $dataT $dataR $dataB"
         $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
                 -from $dataL $dataT $dataR $dataB -to 0 0 \
                 -zoom $useNodes($winId,mult) -shrink

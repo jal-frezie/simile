@@ -71,6 +71,10 @@ proc InsertLegend {winData winId} {
 proc ColourScale {winData winId} {
 #    ShowMessage debug info "proc ColourScale" ok
     upvar 1 $winData useNodes
+    set max [expr int($useNodes($winId,max))]
+    set min [expr int($useNodes($winId,min))]
+    $winId.legend.scale config -from $max \
+            -to $min 
     for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
 	    $winId.legend.pop$swatch configure -bg $useNodes($winId,c$swatch)
     }
@@ -121,6 +125,11 @@ proc Flatten {nested flat} {
     return $flat
 }
 
-namespace export SetColours InsertLegend ColourScale GetQuadList Flatten
+proc IsNumber {str} {
+    return [expr {[string is integer $str] || [string is double $str]}]
+}
+    
+namespace export SetColours InsertLegend ColourScale GetQuadList Flatten \
+    IsNumber
 }
 

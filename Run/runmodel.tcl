@@ -1472,14 +1472,6 @@ proc compile_c {workingDir} {
             }
         }
         windows {
-                switch $tcl_platform(os) {
-                    {Windows NT} {
-			set mincmdline {cmd /c start /min}
-                    }
-                    {Windows 95} {
-			set mincmdline {start /m}
-		    }
-		}
             set TOOLDIR [file attributes $TOOLDIR -shortname]
             if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
                 set dll ame_dll${MAJ}${MIN}
@@ -1497,14 +1489,12 @@ proc compile_c {workingDir} {
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } else {
-#                set TOOLS32 [file dirname [lindex [split $env(MSVCDIR) \;] 0]/any]
-#		next line for debugging : works on mine!
-		set TOOLS32 {m:/program files/microsoft visual studio/vc98}
-                exec cl.exe -Ox -c -W3 -nologo \
+                set TOOLS32 [file dirname $env(MSVCDIR)/any]
+                exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
                         -Foobjtemp.o model.cpp
-                exec link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
+                exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
                         -align:0x1000 /MACHINE:IX86 \
                         -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
                         $TOOLDIR/../System/lib/Stubs/ame_dll${MAJ}${MIN}.lib \
