@@ -414,11 +414,10 @@ proc BringParameter {args} {
 }
 
 proc do {argList} {
-    global this simile_version ts dts phasecount nodecount nodedata
+    global this simile_version ts dts phasecount nodecount nodedata errorInfo
     if {[catch $argList response]} {
-	set how err
+	puts [list err [split $errorInfo \n]]
     } else { 
-	set how res
+	puts [list res $response]
     }
-    puts [list $how $response]
 }

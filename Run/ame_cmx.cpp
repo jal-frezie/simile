@@ -9,6 +9,8 @@ them to be executed etc by Tcl commands. */
 #include <string.h>
 #include <math.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
+#include <sys/types.h>
+#include <signal.h> /* for killing stuck model execution */
 
 #define	GETDIMS		0
 #define	GETTYPE		1
@@ -1740,6 +1742,24 @@ extern "C" int GetVersionCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+extern "C" int killmodelCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+  int error, pid;
+  Tcl_Obj* resultPtr;
+
+  if (argc != 2) {
+    interp->result = "One argument for c_killmodel please!";
+    return TCL_ERROR;
+  }
+  error = Tcl_GetIntFromObj(interp, argv[1], &pid);
+  if (error != TCL_OK) {
+    return error;
+  }
+  resultPtr = Tcl_GetObjResult(interp);
+  Tcl_SetIntObj(resultPtr, kill(pid, SIGTERM));
+  return TCL_OK;
+}
+
 extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
@@ -1849,6 +1869,9 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
      Tcl_CreateObjCommand(interp, "get_simile_verson", GetVersionCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+     Tcl_CreateObjCommand(interp, "c_killmodel", killmodelCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     return TCL_OK;
   }

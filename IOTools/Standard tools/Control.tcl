@@ -174,9 +174,10 @@ namespace eval runcontrol33857 {
 	    if {[string match stop $action]} { ;# model still waiting to stop
 		if {[string equal yes [ShowMessage "Abort request" question "The model has not finished the last time step. You can abort it but the current values will be lost. Abort it now?" yesno]]} {
 		    TryToKill $node
-		} else {
-		    return
+		    set runState($node,modelRunning) 0
+		    $widget.bf.flag itemconfigure 1 -fill white
 		}
+		return
 	    }
 	    switch -regexp [CheckUpToDate $node $action] {
 		yes|cancel {
@@ -193,8 +194,8 @@ namespace eval runcontrol33857 {
 	    }
             switch $runState($node,modelRunning) {
 		0 {
-		    ShowMessage "Failed to build model" warning \
-                        "The current model could not be built, or it failed to initialize." ok
+		    ShowMessage "Cannot run model" warning \
+                        "The current model could not be built, or it failed to initialize, or it has been aborted." ok
 		    return
 		} 1 {
 		    ShowMessage "Fixed parameters not loaded" warning \

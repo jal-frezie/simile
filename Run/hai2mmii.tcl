@@ -6,7 +6,7 @@
 # definitions that rae required for this purpose.
 
 proc do_model {node what args} {
-    global running_c errorInfo model_id instance_id varName model_prog
+    global running_c modelError model_id instance_id model_prog
     
     if {![info exists model_id($node)]} {
 	WarnNoProgram $node
@@ -30,12 +30,13 @@ proc do_model {node what args} {
 	set head ::AME_model<>::$mproc
     }
 
-    if [catch {eval do_for_node $node $head $args} whoopsie] {
+    if {[catch {eval do_for_node $node $head $args}]} {
+	set whoopsie [lindex $modelError 0]
 #	ShowMessage "$whoopsie doing model $what" error \
 #	    "$what during $action of the model at time $mtime caused this: \
 #	    $errorInfo" ok
 #	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
-#puts "Urrr!! Urrr!! Urrr!! $errorInfo"
+#puts "Urrr!! Urrr!! Urrr!! $modelError"
 	switch $what {
 	    eval {set operation "calculate the value of"}
 	    update {set operation "update the state"}
@@ -45,7 +46,8 @@ proc do_model {node what args} {
 	if {$model_id($node)} {
 	    set target "a value"
 	} else {
-	    set modelLine [lindex [split $errorInfo \n] end-10] ;# was 5
+	    set modelLine [lindex $modelError end-4] ;# was 5 then 10
+#puts $modelLine
 	    regexp { (\d+)\)$} $modelLine spare lineNo
 	    set mStream [open $model_prog($node) r]
 	    set mLine {}
@@ -105,7 +107,7 @@ proc do_model {node what args} {
 		set problem "there was a math error: $whoopsie"
 	    } default {
 		# could not get cause of error, raise again as general problem
-		error $errorInfo
+		error [join $modelError \n]
 	    }
 	}
 

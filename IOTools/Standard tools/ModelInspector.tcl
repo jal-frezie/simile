@@ -153,7 +153,8 @@ namespace eval ::ModelInspector63654 {
     
     proc DoInspPopup {winId X Y plName} {
 	#	    ShowMessage debug info $args ok
-#	if {[info exists running_c]} {
+	global helperTable runState
+	if {$runState($helperTable($winId,whichModel),modelRunning)>2} {
 	    PostPopup $X $Y
 	    set trans [GetTransTable $plName]
 	    if {[catch {GetModelValue $winId $plName} mVal]} {
@@ -166,7 +167,7 @@ namespace eval ::ModelInspector63654 {
 		#puts "trans $trans value $value"
 	    }
 	    AddPopupMessage $value \#ffffc0 $trans
-#	}
+	}
     }
     
     proc Restore {winId} {initialize $winId}

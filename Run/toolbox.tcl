@@ -189,7 +189,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
 
 # this exists in case I don't want to exploit the concat in eval
 proc do_for_node {node args} {
-    global runState tcl_platform
+    global runState tcl_platform modelError
     if {![info exists runState($node,interp)]} {
 #        set runState($node,interp) [interp create]
 	scan [info tclversion] {%d.%d} MAJ MIN
@@ -214,33 +214,34 @@ proc do_for_node {node args} {
     if {!$runState($node,modelReady)} {
 	tkwait variable runState($node,modelReady)
     }
-    puts $runState($node,interp) [list do $args]
-    flush $runState($node,interp)
+    if {$runState($node,modelReady)==1} {
+	puts $runState($node,interp) [list do $args]
+	flush $runState($node,interp)
 #puts "command: $args"
-    incr runState($node,queueSize)
-    set runState($node,modelReady) 0
-    upvar \#0 runState($node,response$runState($node,queueSize)) result
+	incr runState($node,queueSize)
+	set runState($node,modelReady) 0
+	upvar \#0 runState($node,response$runState($node,queueSize)) result
 #puts "tkwait variable runState($node,response$runState($node,queueSize))"
-    tkwait variable runState($node,response$runState($node,queueSize))
+	tkwait variable runState($node,response$runState($node,queueSize))
 
-    set info [lindex $result 1]
-    switch [lindex $result 0] {
-	err {
-	    error $info
-	} res {
-	    return $info
+#puts "response: $result"
+	incr runState($node,queueSize) -1
+	set info [lindex $result 1]
+	switch [lindex $result 0] {
+	    err {
+		set modelError $info
+		error "Error in model code"
+	    } res {
+		return $info
+	    }
 	}
     }
 }
 
 proc FeedModel {node} {
     global runState
-    if {![info exists runState($node,interp)]} {
-	error "Lost model"
-	set result [list error {lost model}] ;# killing it is an event too
-    } else {
-	gets $runState($node,interp) result
-    }
+
+    gets $runState($node,interp) result
 #puts "response: $result"
     if {[string equal get [lindex $result 0]]} {
 	puts $runState($node,interp) [eval BringParameter [lindex $result 1]]
@@ -249,7 +250,6 @@ proc FeedModel {node} {
 	set runState($node,modelReady) 1
 	set runState($node,response$runState($node,queueSize)) $result
 #puts "set runState($node,response$runState($node,queueSize)) $result"
-	incr runState($node,queueSize) -1
     }
 }
 
@@ -263,6 +263,22 @@ proc KillInterpFor {node} {
     }
 }
 
+proc TryToKill {node} {
+    global runState model_id instance_id
+
+    c_killmodel [pid $runState($node,interp)]
+    catch {close $runState($node,interp)}
+    unset runState($node,interp)
+# now supply bogus result to interrupted model call
+    set runState($node,response$runState($node,queueSize)) {res {}}
+# and unstick anything still waiting for it
+    set runState($node,modelReady) -1
+
+    unset instance_id($node)
+    unset model_id($node)
+    ToggleIOToolMenu $node
+}
+	
 proc LoadProgram {node lang} {
     global runState
     set runState($node,updated) 0
