@@ -260,9 +260,6 @@ write_chars_to_file(Stream, [Char | Chars]) :-
 
 :- op(950, yfx, [where]).
 
-
-
-
 %################################### Bob's changes (tcl/tk version): start (
 menu_handle(Win, file, list_eqns) :-
 	Win shows_model Model,
@@ -276,19 +273,16 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	sicstus_format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
 	name(Header, HeaderStr),
 	tk_equationlisting_addsubmodel(Isub,Header),
-	mysetof((Entry,Comment),write_eqn_term(Submodel,Entry,Comment),Entries),
+	mysetof((Entry,Description,Comment,InFlows,OutFlows),write_eqn_term(Submodel,Entry,Description,Comment,InFlows,OutFlows),Entries),
 	display_entries(Isub,1,Entries),
 	Isub1 is Isub+1,
 	display_submodels(Isub1,Submodels).
 
 display_entries(_,_,[]).
-display_entries(Isub,Ivar,[(VarType:VarLabel=Expression where WhereList,Comment)|Entries]):-
-	tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,WhereList,Comment),
+display_entries(Isub,Ivar,[(VarType:VarLabel=Expression where WhereList,Description,Comment,InFlows,OutFlow)|Entries]):-
+	tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,WhereList, Description, Comment,InFlows,OutFlow),
 	Ivar1 is Ivar+1,
 	display_entries(Isub,Ivar1,Entries).
-
-
-
 
 % HTML stuff
 /*
@@ -310,7 +304,7 @@ display_submodels(Stream,[Submodel|Submodels]):-
 	write(Stream, Header),
 	write(Stream,'</b><br>'),nl(Stream),
 	write(Stream,'<table border cellspacing=0 cellpadding=3 width="700">'),nl(Stream),
-	mysetof((Entry,Comment),write_eqn_term(Submodel,Entry,Comment),Entries),
+	mysetof((Entry,Description,Comment,InFlows,OutFlow),write_eqn_term(Submodel,Entry,Description,Comment,InFlows,OutFlow),Entries),
 	display_entries(Stream,Entries),
 	write(Stream,'</table>'),nl(Stream),
 	display_submodels(Stream,Submodels).
@@ -390,7 +384,7 @@ menu_handle(Win, file, list_eqnsxxx) :-
 	sicstus_format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
 	name(Header, HeaderStr),
 	write(Stream, Header), nl(Stream),
-	write_eqn_term(Submodel, Entry, Comment),
+	write_eqn_term(Submodel, Entry, Description, Comment,InFlows,OutFlow),
 	write(Stream, Entry), nl(Stream),
 	(Comment = '';
 	\+ Comment = '', write(Stream, Comment), nl(Stream)),
@@ -407,7 +401,7 @@ menu_handle(Win, file, prolog_eqns) :-
 	(contains(Model, Submodel),
 	find_type(Submodel, submodel),
 	rel_path_name(Submodel, Model, _,_, SmCapt),
-	setof(EqnTerm, Cmt^write_eqn_term(Submodel, EqnTerm, Cmt),
+	setof(EqnTerm, Cmt^write_eqn_term(Submodel, EqnTerm, Description, Cmt,InFlows,OutFlow),
 		EqnTerms),
 	write_with_breaks(Stream, submodel_equation_list(SmCapt, EqnTerms)),
 	nl(Stream),
@@ -431,10 +425,12 @@ menu_handle(Win, file, export_prolog) :-
 	output:date_is(Date),
 	save_if_poss(FileName, Model, Date).
 
-write_eqn_term(Submodel, Entry, Comment) :-
+write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
 	find_all_comps(Submodel, Component),	
 	find_type(Component, function),
 	get_av_pair(Component, 0, value, Eqn),
+	(get_av_pair(Component, 0, description, Description); 
+		\+ get_av_pair(Component, 0, description, Description), Description = null),
 	(get_av_pair(Component, 0, comment, Comment);
 	    \+ get_av_pair(Component, 0, comment, Comment), Comment = null),
 	implicit_function(VisNode, Component),
@@ -442,21 +438,24 @@ write_eqn_term(Submodel, Entry, Comment) :-
 	caption_for(VisNode, Dest),
 	get_input_info(Component, Links),
 	get_ppairs(Links, PPairs),
-	(PPairs = [],
-		Entry = ((CompType:Dest=Eqn) where [null]);     % Bob's change
-	PPairs = [_ | _],
-		Entry = ((CompType:Dest=Eqn) where PPairs)).
+	((CompType = compartment, 
+	 get_flows(VisNode, out, OutFlows), 
+	 get_flows(VisNode, in, InFlows) 
+	);
+	(CompType \= compartment, 
+	 InFlows = null, 
+	 OutFlows = null
+	)),
+	((PPairs = [],
+		Entry = ((CompType:Dest=Eqn) where [null]));     % Bob's change
+	(PPairs = [_ | _],
+		Entry = ((CompType:Dest=Eqn) where PPairs))).
 
-
-/* ####### Original code
-	(PPairs = [],
-		Entry = (CompType:Dest=Eqn);
-	PPairs = [_ | _],
-		Entry = ((CompType:Dest=Eqn) where PPairs)).
-*/
+get_flows(CompartmentNode, Direction, Names) :-
+	mysetof(Name,(flows(Direction, CompartmentNode, Arc),caption_for(Arc,Caption),generate_name( prolog, Caption, Name, _ )), Names).
+%generate_name(prolog,Caption,_,Name %node caption are not used in equations if there are spaces etc.
 
 get_ppairs([],[]).
-
 /* Only include a "...where P=V" entry where P is not the default parameter name for V. */
 get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 	get_ppairs(R1, R2),
@@ -904,5 +903,4 @@ set_style(New_style) :-
 		\+ New_style = sd, Old_style = sd), !,
 		reroute_for(New_style);
 	true).
-
 
