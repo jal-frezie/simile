@@ -485,7 +485,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	    InstType = submodel, !, Type = 'VALUELESS',
 	        [Wee, Muckle] = [0, 0],
 	        DefEval = 'SPLIT';
-	    (Unit = a('"boolean"'), !, Type = 'FLAG',
+	    (Unit = boolean, Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
 	    Unit = a(Enum), !, Type = 'ENUMERATED',
 		Wee = 1,
@@ -872,7 +872,7 @@ cannot_be_dollared(Str) :-
 type_for_unit(Unit, Type) :-
 	(Unit = real; get_conversion(_, Unit, Unit, _)), !,
 	    Type = double;
-	member(Unit, [const_int, a(_ET), n(_ET)]),
+	member(Unit, [boolean, const_int, a(_ET), n(_ET)]),
 	    Type = int;
 	Type = Unit.
 

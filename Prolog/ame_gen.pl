@@ -416,7 +416,7 @@ enum_type_ref(Ref, Model, Value, Units) :-
 	    Units = real), !,
 	    Value = Ref;
 	nth0(Value, ['"false"', '"true"'], Ref), !,
-	    Units = a('"boolean"');
+	    Units = boolean;
 	resolve_enum_type(Ref, Model, Value, Units).
 
 resolve_enum_type(Ref, Model, Value, Units) :-

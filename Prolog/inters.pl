@@ -393,7 +393,7 @@ make_intermediates(
 	        ReadyContext = ClearContext;
 	    IncrExpr =.. [IncrOp, IncrementRef, FillRef],
 	        (member(Functor, [any, all]), !,
-		    [RUnits | ArgTemplate] = [a('"boolean"'), a('"boolean"')];	
+		    [RUnits | ArgTemplate] = [boolean, boolean];	
 		    [RUnits | ArgTemplate] = [int, int]),
 	        append(NowBuilding, DestPath, ReadyContext)),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
@@ -500,7 +500,7 @@ make_intermediates(
 	    suffix(ChanPath, DestPath),
 	    pointer_from(ChanPath, ChannelPtr),
 	    SourceRef = (arr(ChannelPtr, channelId, [])==ChannelNum),
-	    Units = a('"boolean"');
+	    Units = boolean;
 	Source = dt(N),
 	    (N=0, SourceRef = dt(Step);
 	    integer(N), SourceRef = Source;
@@ -622,7 +622,7 @@ make_intermediates(
 	    Source = (Test?True:False), !,
 		SourceList = [Test, True, False],
 		RUnits = any,
-	        Arg_template = [a('"boolean"'), RUnits, RUnits],
+	        Arg_template = [boolean, RUnits, RUnits],
 		ResultList = [RTest, RTrue, RFalse],
 		SourceRef = (RTest?RTrue:RFalse);
 	    Source = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, Param),
@@ -682,7 +682,7 @@ make_intermediates(
 unmake_enum_units(SrcUnits, Units) :-
 	SrcUnits = n(_),
 	    Units = const_int;
-	SrcUnits = a(Type), \+ Type = '"boolean"',
+	SrcUnits = a(_),
 	    Units = int;
 	Units = SrcUnits.
 
@@ -740,7 +740,8 @@ promote_unit(Lo, Hi) :-
 	Lo = Hi;
 	member([Lo, Higher], [[n(_ET), [const_int, int, real]],
 			      [const_int, [int, real]],
-			      [any, [a(_ET), n(_ET), const_int, int, real]],
+			      [any, [boolean, a(_ET), n(_ET),
+				     const_int, int, real]],
 			      [int, [real]]]),
 	member(Hi, Higher).
 
@@ -764,9 +765,9 @@ they should never actually be used to parse anything. */
 function(sum, int, [array_or_list_of_ints]).
 function(product, int, [array_or_list_of_ints]).
 function(count, int, [array_or_list_of_any]).
-function(any, a('"boolean"'), [array_or_list_of_boolean]).
-function(all, a('"boolean"'), [array_or_list_of_boolean]).
-function(channel_is, a('"boolean"'), [channel]).
+function(any, boolean, [array_or_list_of_boolean]).
+function(all, boolean, [array_or_list_of_boolean]).
+function(channel_is, boolean, [channel]).
 function(dt, real, [const_int]).
 function(time, real, []).
 function(init_time, real, []).
@@ -835,7 +836,7 @@ language -- it and the operators are hidden */
 
 operator(ind_time, real, [const_int]).
 
-operator(!, a('"boolean"'), [a('"boolean"')]).
+operator(!, boolean, [boolean]).
 operator(+, int, [int]).
 operator(-, int, [int]).
 
@@ -846,31 +847,36 @@ operator(//, int, [int, int]).
 operator(/, real, [real, real]).
 
 operator(^, int, [int, int]).
-operator(==, a('"boolean"'), [real, real]).
-operator(==, a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator(==, a('"boolean"'), [a(T), a(T)]).
-operator('!=', a('"boolean"'), [real, real]).
-operator('!=', a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator('!=', a('"boolean"'), [a(T), a(T)]).
-operator(<, a('"boolean"'), [real, real]).
-operator(<, a('"boolean"'), [a(T), a(T)]).
-operator(<=, a('"boolean"'), [real, real]).
-operator(<=, a('"boolean"'), [a(T), a(T)]).
-operator(>, a('"boolean"'), [real, real]).
-operator(>, a('"boolean"'), [a(T), a(T)]).
-operator(>=, a('"boolean"'), [real, real]).
-operator(>=, a('"boolean"'), [a(T), a(T)]).
-operator(<>, a('"boolean"'), [real, real]).
-operator(<>, a('"boolean"'), [a(T), a(T)]).
+operator(==, boolean, [real, real]).
+operator(==, boolean, [boolean, boolean]).
+operator(==, boolean, [a(T), a(T)]).
+operator('!=', boolean, [real, real]).
+operator('!=', boolean, [boolean, boolean]).
+operator('!=', boolean, [a(T), a(T)]).
+operator(<, boolean, [real, real]).
+operator(<, boolean, [boolean, boolean]).
+operator(<, boolean, [a(T), a(T)]).
+operator(<=, boolean, [real, real]).
+operator(<=, boolean, [boolean, boolean]).
+operator(<=, boolean, [a(T), a(T)]).
+operator(>, boolean, [real, real]).
+operator(>, boolean, [boolean, boolean]).
+operator(>, boolean, [a(T), a(T)]).
+operator(>=, boolean, [real, real]).
+operator(>=, boolean, [boolean, boolean]).
+operator(>=, boolean, [a(T), a(T)]).
+operator(<>, boolean, [real, real]).
+operator(<>, boolean, [boolean, boolean]).
+operator(<>, boolean, [a(T), a(T)]).
 
-operator('&&', a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator('||', a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator(',', a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator(';', a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator(and, a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator(or, a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator(xor, a('"boolean"'), [a('"boolean"'), a('"boolean"')]).
-operator(not, a('"boolean"'), [a('"boolean"')]).
+operator('&&', boolean, [boolean, boolean]).
+operator('||', boolean, [boolean, boolean]).
+operator(',', boolean, [boolean, boolean]).
+operator(';', boolean, [boolean, boolean]).
+operator(and, boolean, [boolean, boolean]).
+operator(or, boolean, [boolean, boolean]).
+operator(xor, boolean, [boolean, boolean]).
+operator(not, boolean, [boolean]).
 
 use_tcl_proc_for(min).
 use_tcl_proc_for(max).
@@ -908,7 +914,7 @@ add_zeros_all([H | T], [NH | NT], Zeros, [N | R], U) :-
 	N is M+1.
 
 Retursn expressions for a model's indices, those for outer loops first */
-indices_for(set(_, loop(Bound)), []).
+indices_for(set(_, loop(_)), []).
 
 indices_for(sm(_,_, Ptr, Spec), Inds) :-
 	Spec = fm_loop(Inds);

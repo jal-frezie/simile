@@ -61,8 +61,9 @@ get_info(_Wid, Comp, types) :-
 	find_node_with_data(Comp, _, Func),
 	get_av_pair(Func, 0, units, Units),
 	    analyze_array(Units, Base, LDims),
-	    (Base = a(Type), !;
-	    Type = 0),
+	    (Base = a(Type);
+	    Base = boolean, Type = boolean;
+	    Type = 0), !,
 	    append([IndxCount, LDims, [Type]], AllBounds);
 	AllBounds = IndxCount),
 	all(event, insert_mem_list,
@@ -72,7 +73,7 @@ get_info(_Wid, Comp, types) :-
 	callback(none).
 
 insert_mem_list(Bound, Model, Trans) :-
-	(Bound = '"boolean"',
+	(Bound = boolean,
 	    Trans = [false, true];
 	get_av_pair(Model, 0, enum_types, Pairs),
 	    member(Type-Mems, Pairs),

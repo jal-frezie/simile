@@ -538,7 +538,7 @@ add_implicit_function(Exp_node, Node_name) :-
 		make_node(Parent, function, Node_name),
 		new_line(influence, [], Node_name, Exp_node, _),
 		(Exp_node is_of_sort boolean_value, !,
-		    Node_name has_new_class_refinement units of a('"boolean"');
+		    Node_name has_new_class_refinement units of boolean;
 		 true);
 	Exp_node has_class submodel,
 	Parent has_part Exp_node,
