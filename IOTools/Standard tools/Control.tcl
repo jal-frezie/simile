@@ -215,7 +215,7 @@ s for which no source has yet been defined" ok
 		$widget.topbuttons.start configure -command \
 		    "[namespace current]::SetMode $winId start"
             }
-        } else {
+        } elseif {[string equal start $sendvars($node,currentMode)]} {
 	    set sendvars($node,currentMode) $action
         }
     }
