@@ -271,7 +271,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	(var(UnitError),
             ((nonvar(TypeBase);
 	      var(TypeBase),
-	          (\+ (ComboBase = any, Is_P = 2),
+	          (\+ (Units = '', ComboBase = any, Is_P = 2),
 			  member(TypeBase, [any, a(_), int, boolean]);
 		      TypeBase = real)),
 		promote_arg(ComboBase, TypeBase, ComboUnits), !,

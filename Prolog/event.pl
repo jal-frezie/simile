@@ -19,20 +19,23 @@ sicstus_use_module([sp_only, dialogue, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(ordsets)]).
 
-eqn_for(Comp, EqnStr, UnitStr) :-
+eqn_for(Comp, EqnStr) :-
 	find_node_with_data(Comp, _, Func),
-	get_av_pair(Func, 0, units, Units),
-	analyze_array(Units, Base, _D),
-	(Base = 1, !, UnitStr = "real";
-	sicstus_write_to_chars(Base, UnitStr)),
 	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), \+ Eqn = [], !,
 	    name(Eqn, EqnStr);
 	 get_av_pair(Func, 0, value, Eqn),
 	    sicstus_write_to_chars(Eqn, EqnStr)).
 
+units_for(Comp, UnitStr) :-
+	find_node_with_data(Comp, _, Func),
+	get_av_pair(Func, 0, units, Units),
+	analyze_array(Units, Base, _D),
+	(Base = 1, !, UnitStr = "real";
+	sicstus_write_to_chars(Base, UnitStr)).
+
 get_info(_Wid, Comp, eqn) :-
 	(Comp is_of_sort has_function,
-	    (eqn_for(Comp, Eqn, _U), !;
+	    (eqn_for(Comp, Eqn), !;
 		Eqn = "");
 	 Eqn = "<none>"),
 	callback(br(chars(Eqn))).
@@ -47,7 +50,7 @@ get_info(Wid, Comp, desc) :-
 
 	(LType = submodel,
 	    image:quick_file(Comp, Middle);
-	eqn_for(Comp, Middle, Units), !;
+	eqn_for(Comp, Middle), !;
 	name(LType, Middle)),
 
 	(Wid shows_model Context,
@@ -60,7 +63,7 @@ get_info(Wid, Comp, desc) :-
 	    abs_path_name(Source, Context, SourceLoc),
 	    sicstus_format_to_chars(" (from ~a to ~w)", [SourceLoc, Dests], 
 	        Suffix);
-	nonvar(Units), !,
+	units_for(Comp, Units), !,
 	    append([" (", Units, ")"], Suffix);
 	Suffix = ""),
 
