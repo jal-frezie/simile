@@ -77,7 +77,7 @@ set env(GLOBALSZ) 131072
 set env(LOCALSZ) 65536
 set env(TRAILSZ) 49152
 
-# Pop a backslash before chars that would break tcl lists
+# Pop a backslash before chars that would break tcl lists
 regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
 set plPipe [open |$PROLOG_CMD r+]

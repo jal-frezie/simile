@@ -10,6 +10,9 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.3  2003/10/31 17:13:40  jaspert
+#Reorganization of file parameters as an input tool
+#
 #Revision 1.2  2003/10/08 11:42:23  jaspert
 #Made a few tweaks to prevent the system from attempting to access model values after
 #the model has failed to initialize
@@ -142,13 +145,6 @@ namespace eval ::ModelInspector63654 {
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
-            set value "None"
-            if {![string match SUBMODEL $type]} {
-                set value [GetModelValue $component];
-                if {[string length $value] == 0 } then {
-                    set value {None}
-                }
-            }
             switch $type {
                 INTERNAL { continue; # don't show internal variables }
                 SUBMODEL { set image $im(submodel) }
@@ -172,8 +168,6 @@ namespace eval ::ModelInspector63654 {
                 set parent $submodel($parentLabel)
             }
             #        ShowMessage debug info "$component; $parent; path $path" ok
-            #        ShowMessage debug info "$path Type $type Value $value Node $component" ok
-            
             if {![$tableframe.table exists $component]} {
                 # search parent for node with same text
                 set text [BlankCrs [lindex $path end]]

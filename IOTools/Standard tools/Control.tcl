@@ -168,8 +168,7 @@ namespace eval runcontrol33857 {
         if {[string match stop $sendvars(currentMode)] || \
                     [string match exit $sendvars(currentMode)] && \
                     [string match reset $action]} {
-            
-            if {$runState(modelRunning) == 1} {
+            if {$runState(modelUpdated) == 1} {
                 set updateChoice [ShowMessage "Model out of date" warning \
                         "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
                 switch $updateChoice {
@@ -179,10 +178,18 @@ namespace eval runcontrol33857 {
                         Rerun $runState(currentWin) [string match start $action]
                         return
                     } no {
-                        set runState(modelRunning) 2
+			if {$runState(modelRunning)==2} {
+			    set runState(modelRunning) 3
+			}
+                        set runState(modelUpdated) 0
                     }
                 } ;# switch
             }
+            if {$runState(modelRunning) == 1} {
+		ShowMessage "Fixed parameters not loaded" warning \
+		    "The model cannot be run because it contains fixed input parameters for which no source has yet been defined" ok
+		return
+	    }
             if {[string match start $action] && \
                         [info exists runState(reloadParams)]} {
                 if {[string compare [ShowMessage "Parameters out of date" warning \
@@ -503,7 +510,7 @@ namespace eval runcontrol33857 {
     
     proc RestingColour {} {
         global runState
-        return [lindex "grey purple red" $runState(modelRunning)]
+        return [lindex "grey red black purple" $runState(modelRunning)]
     }
     
     # No need to do anything for update, because it updates itself

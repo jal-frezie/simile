@@ -562,8 +562,8 @@ proc MakeHelperMenu {} {
     $fm add command -label "Save" -command SaveView
     $fm add command -label "Clear" -command ClearView
     $fm add command -label "Close" -command KillHelpers
-    $fm add command -label "Parameters..." \
-            -command {FileParamDialogue 1 [focus]}
+#    $fm add command -label "Parameters..." \
+#            -command {FileParamDialogue 1 [focus]}
 
     set oldDir [pwd]
     cd ../IOTools
@@ -595,9 +595,9 @@ proc AddHelperSublist {fm title ct} {
                 if {[string match {Run control} $action]} {
                     set helperTable(RunControl) $keyValue
                 }
-                if {[string match {Slider control} $action]} {
-                    set helperTable(SliderControl) $keyValue
-                }
+#                if {[string match {Slider control} $action]} {
+#                    set helperTable(SliderControl) $keyValue
+#                }
                 if {[string match {Data table} $action]} {
 
 
@@ -655,68 +655,6 @@ proc NewHelperWindow {helperId helperTitle} {
     return $winId
 }
 
-# modelRunning is a global variable that indicates the status of the model
-# program: 0 = none, 1 = out of date, 2 = up to date.
-
-set runState(modelRunning) 0
-set this ::AME_model<>
-# var containing namespace id called 'this' for compatibility with c++
-
-# RunDialog is called when the user builds a new model program. It marks the
-# current model as up to date, initializes the model and makes sure there is
-# an instance of the run control on the screen
-
-proc RunDialog {canvas} {
-    global runState helperTable running_c
-
-    #    ShowMessage debug info enter(RunDialog) ok
-
-    set defHelper $helperTable(RunControl)
-    set runState(modelRunning) 2
-    set runState(activeWindow) $canvas
-    
-    if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
-                [array get helperTable] spare helperId]} {
-        kill_helper_window $helperId
-    }
-    set helperId [NewHelperWindow $defHelper "Default run control"]
-    ${defHelper}::initialize $helperId
-
-    ${defHelper}::SetMode $helperId reset
-    set runState(helperId) $helperId
-
-# Do not put up mre, sliders, etc if model has failed to start
-    if {![info exists running_c]} {
-	return
-    }
-
-# remake notebook page for sliders if earlier deleted
-    if {[PrefValue custom(helperManager) helperManager]} {
-	set sliderBook ${::RunEnv::explorerPane}.notebook
-	if {![info exists ::RunEnv::sliderControlFrame]} {
-	    $sliderBook insert end "InputSliders" -text "Input sliders"
-	    pack [set ::RunEnv::sliderControlFrame [frame [$sliderBook getframe "InputSliders"].sliders]] -fill both -expand yes
-	    $sliderBook raise InputSliders
-	}
-    }
-
-    MakeSlidersForInputs
-    
-    if {[PrefValue custom(helperManager) helperManager]} {
-        CreateHelperWindow $helperTable(VariableList) "Variables"; # JMM
-	if {![winfo exists $helperTable(autosliders)]} {
-# No sliders in model, so delete notebook page
-	    $sliderBook delete InputSliders
-	    $sliderBook raise Explorer
-	    unset ::RunEnv::sliderControlFrame
-	}
-	set ctrlPane [winfo parent [winfo parent [winfo parent [winfo parent \
-					$::RunEnv::runControlFrame]]]]
-	$ctrlPane sash place 0 \
-	10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
-    }
-}
-
 # If running a model which includes input parameters, we must
 # make sure that these are somehow provided with inputs before
 # trying to evaluate expressions in which they occur. This is
@@ -725,28 +663,28 @@ proc RunDialog {canvas} {
 # switch and switchd are binary inputs so should be set by
 # toggles rather than sliders. Later...
 
-proc UnMakeSlidersForInputs { } {
-    global helperTable checkStates sliderVals
+#proc UnMakeSlidersForInputs { } {
+#    global helperTable checkStates sliderVals
     # puts $inlist
-    if {[info exists helperTable(autosliders)]} {
-        kill_helper_window $helperTable(autosliders)
-        unset helperTable(autosliders)
-    }
+#    if {[info exists helperTable(autosliders)]} {
+#        kill_helper_window $helperTable(autosliders)
+#        unset helperTable(autosliders)
+#    }
 
-    if {[info exists checkStates]} {
-        unset checkStates
-    }
-    if {[info exists sliderVals]} {
-        unset sliderVals
-    }
-}
+#    if {[info exists checkStates]} {
+#        unset checkStates
+#    }
+#    if {[info exists sliderVals]} {
+#        unset sliderVals
+#    }
+#}
 
-proc MakeSlidersForInputs { } {
-    global helperTable
-    set helperTable(autosliders) [NewHelperWindow $helperTable(SliderControl) \
-            "Sliders for inputs"]
-    $helperTable(SliderControl)::initialize $helperTable(autosliders)
-}
+#proc MakeSlidersForInputs { } {
+#    global helperTable
+#    set helperTable(autosliders) [NewHelperWindow $helperTable(SliderControl) \
+#            "Sliders for inputs"]
+#   $helperTable(SliderControl)::initialize $helperTable(autosliders)
+#}
 
 # grab_clicks and release_clicks enable helper apps to ask
 # the model to send mouse clicks to them while they are setting
@@ -1108,16 +1046,19 @@ proc RestoreCrs {noCrs} {
     return $withCrs
 }
 
+#  nameOfHelperStateFile is global because helpers might want to save names of
+# other files they need relative to it, e.g., file param helper
+
 proc SaveView {} {
-    global helperTable
-    set savedView [ChooseFile iotools.shf "Save view specification file" 1]
-    if {[llength $savedView]} {
-        set stream [open $savedView w]
+    global helperTable nameOfHelperStateFile
+    set nameOfHelperStateFile \
+	[ChooseFile iotools.shf "Save view specification file" 1]
+    if {[llength $nameOfHelperStateFile]} {
+        set stream [open $nameOfHelperStateFile w]
         foreach displayBox [array name helperTable *,whichHelper] {
             scan $displayBox {%[^,]} winId
             set helperId $helperTable($displayBox)
-            if {!([string match $helperId $helperTable(RunControl)] || \
-                        [string match $helperId $helperTable(SliderControl)])} {
+            if {!([string match $helperId $helperTable(RunControl)]} {
                 puts $stream $helperId
                 # substitute <cr>s so entry goes on one line
                 puts $stream [StripCrs [wm title $winId]]
@@ -1135,10 +1076,11 @@ proc SaveView {} {
 }
 
 proc LoadView {} {
-    global helperTable
-    set savedView [ChooseFile iotools.shf "Open view specification file" 0]
-    if {[llength $savedView]} {
-        set stream [open $savedView r]
+    global helperTable nameOfHelperStateFile
+    set nameOfHelperStateFile \
+	[ChooseFile iotools.shf "Open view specification file" 0]
+    if {[llength $nameOfHelperStateFile]} {
+        set stream [open $nameOfHelperStateFile r]
         while {[gets $stream helperId] >= 0} {
             if {[llength $helperId]==4} {
                 set response [ShowMessage {Inappropriate view specification} \
@@ -1195,7 +1137,7 @@ proc TellAllHelpers {fun args} {
 
 proc AlterModel {} {
     global runState
-    set runState(modelRunning) 1
+    set runState(modelUpdated) 1
 }
 
 proc ScrubRun {times} {
@@ -1218,9 +1160,13 @@ proc ScrubRun {times} {
                 c_exitmodel $model_id 0
             }
         } else {
-            namespace delete ::AME_model<>
+            if {[info exists instance_id]} {
+                #ShowMessage debug info "Exiting $model_id $instance_id" ok
+		namespace delete ::AME_model<>
+                unset instance_id
+	    }
         }
-        unset model_id
+#        unset model_id
         foreach winData [array name window_info *,parent] {
             set toolBar $window_info($winData).toolSlot.toolbar
             $toolBar.snap configure -state disable
@@ -1238,9 +1184,15 @@ proc GetModelTime {} {
     return $runState(currentTime)
 }
 
-proc start_run {winId} {
-    global runState
-    global window_info
+# modelRunning is a global variable that indicates the status of the model
+# program: 0 = none, 1 = awaiting fixed params, 2 = up to date, 3 = out of date
+
+set runState(modelRunning) 0
+set this ::AME_model<>
+# var containing namespace id called 'this' for compatibility with c++
+
+proc StartRun {winId} {
+    global runState helperTable running_c window_info inputHelper
     # ShowMessage debug info enter(start_run) ok
     if {[info exists runState(currentTime)]} {
         if {$runState(execTime) != $runState(currentTime)} {
@@ -1269,9 +1221,9 @@ proc start_run {winId} {
     set runState(currentTime) 0.0
     set runState(timeAtEval) 0.0
     set runState(currentWin) $winId ;# enables rebuild from run control
-    if {![FileParamDialogue 0 $winId]} {
-	return 0
-    }
+#    if {![FileParamDialogue 0 $winId]} {
+#	return 0
+#    }
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
         raise [Makemre $winId]
@@ -1286,12 +1238,92 @@ proc start_run {winId} {
         $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
     }
     set runState(reloadParams) 1
+    set runState(modelRunning) 1
+    set runState(modelUpdated) 0
 
     # MakeSlidersForInputs is currently done after initializing the
     # model, so default values calculated from eqns can be loaded to the
     # sliders. Here we must clear any old input tool values so they are not used.
-    UnMakeSlidersForInputs
-    return 1
+#    UnMakeSlidersForInputs
+
+    set defHelper $helperTable(RunControl)
+    
+    if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
+                [array get helperTable] spare helperId]} {
+        kill_helper_window $helperId
+    }
+    set helperId [NewHelperWindow $defHelper "Default run control"]
+    ${defHelper}::initialize $helperId
+    set runState(helperId) $helperId
+
+# Do not put up mre, sliders, etc if model has failed to start
+#    if {![info exists running_c]} {
+#	return
+#    }
+
+# remake notebook page for sliders if earlier deleted
+#    if {[PrefValue custom(helperManager) helperManager]} {
+#	set sliderBook ${::RunEnv::explorerPane}.notebook
+#	if {![info exists ::RunEnv::sliderControlFrame]} {
+#	    $sliderBook insert end "InputSliders" -text "Input sliders"
+#	    pack [set ::RunEnv::sliderControlFrame [frame [$sliderBook getframe "InputSliders"].sliders]] -fill both -expand yes
+#	    $sliderBook raise InputSliders
+#	}
+#    }
+
+#    MakeSlidersForInputs
+    
+    if {[PrefValue custom(helperManager) helperManager]} {
+        CreateHelperWindow $helperTable(VariableList) "Variables"; # JMM
+#	if {![winfo exists $helperTable(autosliders)]} {
+# No sliders in model, so delete notebook page
+#	    $sliderBook delete InputSliders
+#	    $sliderBook raise Explorer
+#	    unset ::RunEnv::sliderControlFrame
+#	}
+	set ctrlPane [winfo parent [winfo parent [winfo parent [winfo parent \
+					$::RunEnv::runControlFrame]]]]
+	update ;# so reqheight works next
+	$ctrlPane sash place 0 \
+	    10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
+    }
+# Now list all the inputs in the model, so we can avoid running it until
+# all have tools attached to provide their values
+    if {[info exists inputHelper]} {
+	array set oldInputHelper [array get inputHelper]
+	unset inputHelper
+    }
+    foreach node [GetObjectList] {
+	if {[string match TABLE [GetModelEval $node]]} {
+	    set name [GetCaptionPathFromId $node]
+	    if {[info exists oldInputHelper($name)]} {
+		set inputHelper($name) $oldInputHelper($name)
+		unset oldInputHelper($name)
+	    } else {
+		set inputHelper($name) {}
+	    }
+	}
+    }
+    foreach removedInput [array names oldInputHelper] {
+	TellHelperItsGone $oldInputHelper($removedInput) $removedInput
+    }
+    CheckFixedParamState
+}
+
+proc TellHelperItsGone {helperWin captionPath} {
+# for compatibility, call a helper proc and if the helper doesn't have it
+# delete it
+}
+
+proc CheckFixedParamState {} {
+    global inputHelper helperTable runState
+    if {$runState(modelRunning)==1 && \
+	    [lsearch [array get inputHelper] {}] == -1} { 
+	# fixed param with no src
+	set runState(modelRunning) 2
+	# this initializes the model
+	$helperTable(RunControl)::SetMode $runState(helperId) reset
+    }
 }
 
 # this gets rid of a c program that has been loaded into
@@ -1353,13 +1385,12 @@ proc ShiftDll {Point Top Loc Rep} {
 }
 
 proc build_tcl_program {winId} {
-    global model_id
+    global model_id instance_id
     #   model_id set to 0 cos its existence is tested when getting model structure
 
     set model_id 0
-    if {[start_run $winId]} {
-        RunDialog "Current model"
-    }
+    set instance_id 0
+    StartRun $winId
 }
 
 proc update_c_executable {winId} {
@@ -1373,9 +1404,7 @@ proc update_c_executable {winId} {
     set instance_id [c_createmodel $model_id]
     #    ShowMessage debug info "model instance $instance_id created" ok
 
-    if {[start_run $winId]} {
-        RunDialog "Current model"
-    }
+    StartRun $winId
 }
 
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id

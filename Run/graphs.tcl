@@ -731,7 +731,7 @@ proc FileParamDialogue {mustShow parent} {
         pack [message $bfrm.banner \
                 -text "All values must be set to run the model." -width 400]
         pack [frame $bfrm.lpad] -side left -fill x -expand true
-        pack [button $bfrm.ok -text "OK" -command [list DoneParams $needed] -width 10] \
+        pack [button $bfrm.ok -text "OK" -command [list DoneParams $t $needed] -width 10] \
                 -side left -padx 2 -pady 2
         pack [button $bfrm.cancel -text "Cancel" -command CancelParams -width 10] \
                 -side left -padx 2 -pady 2
@@ -786,12 +786,11 @@ proc MakeSubFrames {parent hierarchy} {
     }
 }
 
-proc DoneParams {oldMissing} {
-    global paramData widgetNames runState running_c
+proc DoneParams {winId oldMissing} {
+    global paramData widgetNames runState running_c inputHelper
     
-    foreach node [GetObjectList] {
-        if {[string match TABLE [GetModelEval $node]]} {
-            set compName [GetCaptionPathFromId $node]
+    foreach compName [array names widgetNames] {
+	set node [GetIdFromCaptionPath $compName]
 	    if {[string match normal [$widgetNames($compName) cget -state]]} {
 	       set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
 	    }
@@ -814,13 +813,16 @@ proc DoneParams {oldMissing} {
 		set runState(reloadParams) 1
 		set trans [GetFromProlog tk_get_info({},$node,types)]
 		ListToArray $node $trans $paramData($compName)
+# new bit for using it as an input tool: notify that we have values
+		set inputHelper($compName) winId
 	    }
-	}
     }
     if {[info exists empties]} {
-	.fpdialogue.buttons.banner configure -text "Some values still missing!"
+	$winId.buttons.banner configure -text "Some values still missing!"
     } else {
 	set paramData(/done/) 1
+# new bit for using it as an input tool: notify that we have values
+	CheckFixedParamState
     }
 }
 
@@ -858,33 +860,28 @@ proc SaveParams {} {
     if {[llength $metaFile]} {
         set pStr [open $metaFile w]
         
-        
-        
-        
-        foreach node [GetObjectList] {
-            if {[string match TABLE [GetModelEval $node]]} {
-                set compName [GetCaptionPathFromId $node]
-		if {[string match normal [$widgetNames($compName) cget -state]]} {
-		    set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
-                
-		    if {[info exists paramState($compName)]} {
-			if {[string compare $paramData($compName) \
-				 [LoadTableData $paramState($compName) 0]]} {
-			    unset paramState($compName)
-			}
-		    }
+        foreach compName [array names widgetNames] {
+	set node [GetIdFromCaptionPath $compName]
+	if {[string match normal [$widgetNames($compName) cget -state]]} {
+	    set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
+	    
+	    if {[info exists paramState($compName)]} {
+		if {[string compare $paramData($compName) \
+			 [LoadTableData $paramState($compName) 0]]} {
+		    unset paramState($compName)
 		}
-                set SubbedComp [StripCrs $compName]
-                if {[info exists paramState($compName)]} {
-                    set relName [Relativize $metaFile \
-                            [lindex $paramState($compName) 0]]
-                    puts $pStr "$SubbedComp=[lreplace $paramState($compName) \
+	    }
+	}
+	set SubbedComp [StripCrs $compName]
+	if {[info exists paramState($compName)]} {
+	    set relName [Relativize $metaFile \
+			     [lindex $paramState($compName) 0]]
+	    puts $pStr "$SubbedComp=[lreplace $paramState($compName) \
                             0 0 $relName]"
-                } else {
-                    puts $pStr "$SubbedComp=$paramData($compName)"
-                }
-            }
-        }
+	} else {
+	    puts $pStr "$SubbedComp=$paramData($compName)"
+	}
+    }
         close $pStr
     }
 }

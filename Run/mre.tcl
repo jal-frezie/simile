@@ -79,8 +79,11 @@ proc RunEnv::Create { ModelWin } {
         #tk_messageBox -message MakeMRE -type ok
         toplevel .mre -width 200m -height 150m
         wm title .mre "Run-Time Environment - Simile"
-        
-        set descmenu {
+# Following was removed from next command        
+#                {command "Pa&rameters..." {} "Modify file parameters"  \
+#                            {} -command { FileParamDialogue 1 .mre } }
+#                {separator}
+       set descmenu {
             "&File" all file 0 {
                 {command "&New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::KillDisplays} }
                 {command "&Load configuration..." {} "Load a configuration of displays" \
@@ -91,9 +94,6 @@ proc RunEnv::Create { ModelWin } {
                 {separator}
                 {command "&Print..." {} "Print display"  \
                             {} -command { ::RunEnv::PrintCurrentContainer } }
-                {separator}
-                {command "Pa&rameters..." {} "Modify file parameters"  \
-                            {} -command { FileParamDialogue 1 .mre } }
                 {separator}
                 {command "&Close"    {} "Close the Run Environment window" \
                             {} -command {RunEnv::Destroy} }
@@ -162,15 +162,15 @@ proc RunEnv::Create { ModelWin } {
         set variableListFrame [frame [$explorerPane.notebook getframe Explorer].variables]
         pack $explorerPane.notebook $variableListFrame -fill both -expand yes
         
-        $explorerPane.notebook insert end "InputSliders" -text "Input sliders"
-        set sliderControlFrame \
-                [frame [$explorerPane.notebook getframe "InputSliders"].sliders]
+#        $explorerPane.notebook insert end "InputSliders" -text "Input sliders"
+#        set sliderControlFrame \
+#                [frame [$explorerPane.notebook getframe "InputSliders"].sliders]
         
         #$explorerPane.notebook insert end "Output" -text "Output"
         #set outputFrame \
         #        [frame [$explorerPane.notebook getframe "Output"].sliders -container true]
-        pack $variableListFrame $sliderControlFrame -fill both -expand yes
-        $explorerPane.notebook raise InputSliders
+        pack $variableListFrame -fill both -expand yes
+        $explorerPane.notebook raise Explorer
         
         NoteBook $runcontrolpane.notebook
         $runcontrolpane.notebook insert end "RunControl" -text "Run Control"
@@ -670,7 +670,7 @@ proc RunEnv::SetCurrentContainer {win} {
     #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
     set tb1 [$mainframe gettoolbar 0]
     if {[winfo exists $win.container]} {
-        $mreMenu entryconfigure Add -state disable
+#        $mreMenu entryconfigure Add -state disable
         [$mainframe getmenu edit] entryconfigure Copy -state normal
         [$mainframe getmenu edit] entryconfigure Cut -state normal
         [$mainframe getmenu edit] entryconfigure Paste -state disable
@@ -858,14 +858,18 @@ proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
     return $winId
 }
 
+#  nameOfHelperStateFile is global because helpers might want to save names of
+# other files they need relative to it, e.g., file param helper
+
 proc RunEnv::SaveView {} {
-    global helperTable
+    global helperTable nameOfHelperStateFile
     variable dp0
     variable mainframe
     
-    set savedView [ChooseFile Displays.shf "Save display configuration" 1]
-    if {[llength $savedView]} {
-        set stream [open $savedView w]
+    set nameOfHelperStateFile \
+	[ChooseFile Displays.shf "Save display configuration" 1]
+    if {[llength $nameOfHelperStateFile]} {
+        set stream [open $nameOfHelperStateFile w]
         
         # save skeleton mre config
         puts $stream "[winfo x .mre] [winfo y .mre] [winfo width .mre] [winfo height .mre]"
@@ -946,13 +950,14 @@ proc RunEnv::SaveContainer {winId stream} {
 }
 
 proc RunEnv::LoadView {} {
-    global helperTable
+    global helperTable nameOfHelperStateFile
     variable mainframe
     variable dp0
     
-    set savedView [ChooseFile Displays.shf "Open view specification file" 0]
-    if {[llength $savedView]} {
-        set stream [open $savedView r]
+    set nameOfHelperStateFile \
+	[ChooseFile Displays.shf "Open view specification file" 0]
+    if {[llength $nameOfHelperStateFile]} {
+        set stream [open $nameOfHelperStateFile r]
         
         # check for run env that made the shf
         gets $stream line
@@ -1120,38 +1125,30 @@ proc NewMreHelperWindow {helperId helperTitle} {
     ## Mods my Jasper: Because of quirky behaviour under linux, the standard tools
     ## must each get a new frame (bag) whenever they are rebuilt
     switch $helperId \
-            $helperTable(RunControl) {
-                set bag $RunEnv::runControlFrame.bag
-                if {[winfo exists $bag]} {
-                    destroy $bag
-                }
-        pack [frame $bag] -fill both -expand on
-        set winId $bag
-        set ::RunEnv::runControlWindId $bag
-    } \
-            $helperTable(SliderControl) {
-                set bag $RunEnv::sliderControlFrame.bag
-                if {[winfo exists $bag]} {
-                    destroy $bag
-                }
-        pack [frame $bag] -fill both -expand true
-        set winId $bag
-    } \
-            $helperTable(ErrorDisplay) {
-                toplevel $winId ; #put in own window
-            } \
-                    $helperTable(VariableList) {
-                        set bag $RunEnv::variableListFrame.bag
-                        if {[winfo exists $bag]} {
-                            destroy $bag
-                        }
-        pack [frame $bag] -fill both -expand true
-        set winId $bag
-    } \
-            default {
-                set def 1
-                set winId [::RunEnv::NewHelperInWindow $::RunEnv::CurrentContainer $helperId $helperTitle]
-            }
+	$helperTable(RunControl) {
+	    set bag $RunEnv::runControlFrame.bag
+	    if {[winfo exists $bag]} {
+		destroy $bag
+	    }
+	    pack [frame $bag] -fill both -expand on
+	    set winId $bag
+	    set ::RunEnv::runControlWindId $bag
+	} \
+	$helperTable(ErrorDisplay) {
+	    toplevel $winId ; #put in own window
+	} \
+	$helperTable(VariableList) {
+	    set bag $RunEnv::variableListFrame.bag
+	    if {[winfo exists $bag]} {
+		destroy $bag
+	    }
+	    pack [frame $bag] -fill both -expand true
+	    set winId $bag
+	} \
+	default {
+	    set def 1
+	    set winId [::RunEnv::NewHelperInWindow $::RunEnv::CurrentContainer $helperId $helperTitle]
+	}
     if {$def==0} {
         bind $winId <Destroy>  "kill_helper_window $winId"
         bind $winId <Button-1> "+::RunEnv::SetCurrentContainer $winId"
