@@ -816,14 +816,14 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	sicstus_format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
 	name(Header, HeaderStr),
 	tk_equationlisting_addsubmodel(Isub,Header),
-	mysetof((Entry,Description,Comment,InFlows,OutFlows),write_eqn_term(Submodel,Entry,Description,Comment,InFlows,OutFlows),Entries),
+	mysetof((Entry,MinMax,Description,Comment,InFlows,OutFlows),write_eqn_term(Submodel,Entry,MinMax,Description,Comment,InFlows,OutFlows),Entries),
 	display_entries(Isub,1,Entries),
 	Isub1 is Isub+1,
 	display_submodels(Isub1,Submodels).
 
 display_entries(_,_,[]).
-display_entries(Isub,Ivar,[(where(VarType:VarLabel=Expression, WhereList),Description,Comment,InFlows,OutFlow)|Entries]):-
-	tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,WhereList, Description, Comment,InFlows,OutFlow),
+display_entries(Isub,Ivar,[(where(VarType:VarLabel=Expression, WhereList),MinMax,Description,Comment,InFlows,OutFlow)|Entries]):-
+	tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,WhereList, MinMax, Description, Comment,InFlows,OutFlow),
 	Ivar1 is Ivar+1,
 	display_entries(Isub,Ivar1,Entries).
 
@@ -831,7 +831,7 @@ mysetof(A,B,C):-
 	setof(A,B,C),!.
 mysetof(_,_,[]).
 
-write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
+write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows) :-
 	find_all_comps(Submodel, Component),	
 	(find_type(Component, function),
 	    implicit_function(VisNode, Component),
@@ -859,8 +859,21 @@ write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
 	((PPairs = [],
 		Entry = (where((CompType:Dest=Eqn), [null]))); % Bob's change
 	(PPairs = [_ | _],
-		Entry = (where((CompType:Dest=Eqn), PPairs)))).
+		Entry = (where((CompType:Dest=Eqn), PPairs)))),
+	make_min_max_line(Component, MinMax).
 
+make_min_max_line(Component, MinMax) :-
+	(get_av_pair(Component, 0, min_val, MinVal), !,
+	    append_atoms('Minimum = ', MinVal, Min);
+	Min = none),
+	(get_av_pair(Component, 0, max_val, MaxVal), !,
+	    append_atoms('Maximum = ', MaxVal, Max);
+	Max = none),
+	([Min, Max] = [none, none], !,
+	    MinMax = '';
+	 select(none, [Min, Max], [MinMax]), !;
+	 append_atoms([Min, ', ', Max], MinMax)).
+	
 get_flows(CompartmentNode, Direction, Names) :-
 	findall(Caption,(instance:flows(Direction, CompartmentNode, Arc),caption_for(Arc,Caption)), Names).
 

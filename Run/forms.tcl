@@ -2000,7 +2000,7 @@ proc equationlisting_addsubmodel {isub submodel_label} {
 }
 
 
-proc equationlisting_addvariable {isub ivar vartype varlabel expression where description comments \
+proc equationlisting_addvariable {isub ivar vartype varlabel expression where minmax description comments \
             inflows outflows} {
     #puts "inflows $inflows outflows $outflows"
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
@@ -2024,7 +2024,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     set where [regsub -all "\n" $where " "]
     set where [string range $where 1 end-1]
     set tidy_where [regsub -all "," $where "\n\t\t"]
-    
+
     # Label and Description, if any
     if [string match null $description] {
         $widget insert end "${tidy_varlabel}\n" eqntag
@@ -2048,11 +2048,13 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
         $widget insert end $expression eqntag
         $widget insert end "\n" eqntag
         
-        if ![string match null $where] {
-            $widget insert end "\t$tidy_where" whrtag
-            
+        if ![string match {null} $where] {
+            $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
+            #add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
         }
-        
+        if {![string match {null} $minmax]} {
+            $widget insert end "\t$minmax\n"
+	}
         # ...rate equation
         if {[llength $outflows]>0 | [llength $inflows]>0} {
             set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
@@ -2075,6 +2077,9 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
             $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
             #add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
         }
+        if {![string match {null} $minmax]} {
+            $widget insert end "\t$minmax\n"
+	}
     }
     
     # Comments
