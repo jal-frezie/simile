@@ -32,6 +32,9 @@ tcl_eval(Cmd, Result) :-
 	is_interpreter(Interp),
 	tcl_eval(Interp, Cmd, Result).
 
+deEncode(_, A, A, 0) :- atom(A).
+reEncode(_, A, A, 0) :- atom(A).
+
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */

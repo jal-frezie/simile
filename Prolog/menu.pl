@@ -788,8 +788,6 @@ continuation(Rerouters, Start, Rest, TopArc, Remains) :-
 	TopArc = Start,
 	Remains = Rerouters.
 	
-:- op(950, yfx, [where]).
-
 display_submodels(_,[]).
 display_submodels(Isub,[Submodel|Submodels]):-
 	rel_path_name(Submodel, _, _,_, SmCapt),
@@ -802,7 +800,7 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	display_submodels(Isub1,Submodels).
 
 display_entries(_,_,[]).
-display_entries(Isub,Ivar,[(VarType:VarLabel=Expression where WhereList,Description,Comment,InFlows,OutFlow)|Entries]):-
+display_entries(Isub,Ivar,[(where(VarType:VarLabel=Expression, WhereList),Description,Comment,InFlows,OutFlow)|Entries]):-
 	tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,WhereList, Description, Comment,InFlows,OutFlow),
 	Ivar1 is Ivar+1,
 	display_entries(Isub,Ivar1,Entries).
@@ -833,9 +831,9 @@ write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
 	 OutFlows = null
 	)),
 	((PPairs = [],
-		Entry = ((CompType:Dest=Eqn) where [null]));     % Bob's change
+		Entry = (where((CompType:Dest=Eqn), [null]))); % Bob's change
 	(PPairs = [_ | _],
-		Entry = ((CompType:Dest=Eqn) where PPairs))).
+		Entry = (where((CompType:Dest=Eqn), PPairs)))).
 
 get_flows(CompartmentNode, Direction, Names) :-
 	findall(Caption,(instance:flows(Direction, CompartmentNode, Arc),caption_for(Arc,Caption)), Names).
