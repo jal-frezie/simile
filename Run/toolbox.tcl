@@ -1580,7 +1580,7 @@ proc GetPathChoice {fileType} {
 	return $chosenPaths($fileType)
     } elseif {[info exists chosenPaths(latest)]} {
 	return $chosenPaths(latest)
-    } elseif {[info exists $egDir]} {
+    } elseif {[file exists $egDir]} {
 	return $egDir
     } else {
 	return [pwd]
