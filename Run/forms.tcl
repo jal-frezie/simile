@@ -453,7 +453,7 @@ proc GetTable {parent box} {
     if {[equationDoTable $parent]} {
         set equation(table_data) [concat [list $table_entry(fileName) \
                 $table_entry(dataField)] $table_entry(indices)]
-        set equation(table_values) [LoadTableData $equation(table_data)]
+        set equation(table_values) [LoadTableData $equation(table_data) 1]
 #puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
             $box insert insert table\(\[

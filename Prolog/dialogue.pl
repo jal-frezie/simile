@@ -207,7 +207,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	get_term(Unit_st, Units, UnitFormError),
 	check_exp(Eqn_st, "Equation", Function, UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
-	(Is_P = 1, \+ Unit_st = a(_), \+ EqnBase = a(_), !,
+	(Is_P = 1, \+ Units = a(_), \+ EqnBase = a(_), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
 	check_exp(Min_st, "Min. value", Function, UsableInputs, MinBase, _Dims,

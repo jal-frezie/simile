@@ -155,6 +155,21 @@ proc TransBounds {transList vals} {
     }
 }
 	    
+proc TransBounds {transList vals} {
+    if {[llength $vals]} {
+	set level [lindex $transList 0]
+	if {[llength $level]} {
+	    set header [lindex $level 0]
+	} else {
+	    set header [lindex $vals 0]
+	}
+	return [concat $header \
+	    [TransBounds [lrange $transList 1 end] [lrange $vals 1 end]]]
+    } else {
+	return {}
+    }
+}
+	    
 # GetModelValue returns the current value of a node. This is numerical if the
 # node is scalar, a (possibly empty) list of alternating indices and values if
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
@@ -302,7 +317,8 @@ proc GetModelType { node } {
 	if {[string match noitem $nodeType]} {
 	    return noitem
 	} else {
-	    return [lindex {VALUELESS REAL INTEGER FLAG EXTERNAL} $nodeType]
+	    return [lindex {VALUELESS REAL INTEGER FLAG EXTERNAL ENUMERATED} \
+			$nodeType]
 	}
     } else {
 	lindex [getinfo $node] 0
@@ -511,28 +527,48 @@ proc collect {tgt node count args} {
 	FileCollect ::AME_model<>::$tgt $node $args
     } else {
 	set sub [join [concat $node $args] ,]
-	if {[string match FLAG [GetModelType $node]]} {
-	    upvar #0 checkStates inputSrc
-	} else {
-	    upvar #0 sliderVals inputSrc
+	switch [GetModelType $node] {
+	    FLAG {
+	    upvar \#0 checkStates inputSrc
+	    } INTEGER {
+	    upvar \#0 sliderVals inputSrc
+	    } ENUMERATED {
+	    upvar \#0 comboChoices inputSrc
+	    }
 	}
 # Check that input source exists, it will not if model is being initialized
 	if {[info exists inputSrc($sub)]} {
-	    set ::AME_model<>::$tgt $inputSrc($sub)
+	    if {[string match ENUMERATED [GetModelType $node]]} {
+		set ::AME_model<>::$tgt \
+		    [expr [lsearch $inputSrc(list,$node) $inputSrc($sub)]+1]
+	    } else {
+		set ::AME_model<>::$tgt $inputSrc($sub)
+	    }
 	}
     }
 }
 
 proc FileCollect {tgt node argList} {
     global paramData
+    set trans [GetFromProlog tk_get_info({},$node,types)]
     set compName [GetCaptionPathFromId $node]
     
     set field $paramData($compName)
     while {[string compare $argList {}]} {
-        #ShowMessage debug info "Array setting $field" ok
+#ShowMessage debug info "Array setting $field" ok
         array set items $field
-        set field $items([lindex $argList 0])
+	set thisIndx [lindex $argList 0]
+	set thisTrans [lindex $trans 0]
+	if {[llength $thisTrans]} {
+	    set thisIndx [lindex $thisTrans $thisIndx]
+	}
+        set field $items($thisIndx)
         set argList [lrange $argList 1 end]
+	set trans [lrange $trans 1 end]
+    }
+    set thisTrans [lindex $trans 0]
+    if {[llength $thisTrans]} {
+	set field [lsearch $thisTrans $field]
     }
     set $tgt $field ;# tgt is passed by reference
 }

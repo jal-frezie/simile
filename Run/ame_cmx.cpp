@@ -687,6 +687,7 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
       serviceError = Tcl_GetBooleanFromObj(globInterp, valPtr, (int*)tgt);
       return;
     case INTEGER:
+    case ENUMERATED:
       serviceError = Tcl_GetIntFromObj(globInterp, valPtr, (int*)tgt);
       return;
     case REAL:
@@ -1186,6 +1187,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
       }
       break;
     case INTEGER:
+    case ENUMERATED:
       localObj = Tcl_NewIntObj(*(int *)model_val_ptr);
       if (nVs) {
 	Tcl_GetIntFromObj(NULL, nVs, (int *)model_val_ptr);
@@ -1404,7 +1406,7 @@ extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
    if (argc != 2) {
      interp->result = "One argument for get_auth_code please!";
      return TCL_ERROR;
-   }
+   }
    /* set ModelText [mime::getbody $Part($Model)] */
    if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
 	       Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
@@ -1597,3 +1599,7 @@ int Ame_dll_Init(Tcl_Interp *interp) {
 	    simileVersion, FORUNIX);
     return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }
+
+
+
+

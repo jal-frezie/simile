@@ -41,8 +41,7 @@ namespace eval slide139 {
     }
     
     proc InsertSlider {winId node title nest} {
-	global checkStates
-	set isFlag [string match FLAG [GetModelType $node]]
+	global checkStates comboChoices
         set initVal [lindex [GetModelValue $node] 0]
         #ShowMessage debug info $def ok
 	set levels [lrange [split $title /] 1 end]
@@ -52,15 +51,20 @@ namespace eval slide139 {
 	} else {
 	    set f $winId
 	}
-	if {$isFlag} {
-	} else {
-	    set min [GetMinValue $node]
-	    set max [GetMaxValue $node]
-	    set magnitude [expr $max - $min]
-	    if {[string match INTEGER [GetModelType $node]]} {
-		set spacing 1
-	    } else {
-		set spacing [expr $magnitude/100.0]
+	set trans [GetFromProlog tk_get_info({},$node,types)]
+	switch [GetModelType $node] {
+	    FLAG {
+	    } ENUMERATED {
+		set comboChoices(list,$node) [lrange [lindex $trans end] 1 end]
+	    } default {
+		set min [GetMinValue $node]
+		set max [GetMaxValue $node]
+		set magnitude [expr $max - $min]
+		if {[string match INTEGER [GetModelType $node]]} {
+		    set spacing 1
+		} else {
+		    set spacing [expr $magnitude/100.0]
+		}
 	    }
 	}
 	set nodeDims [GetModelDims $node]
@@ -68,28 +72,44 @@ namespace eval slide139 {
 	    {$outerDims >= 0 && [lindex $nodeDims $outerDims] <= 0} \
 	    {incr outerDims -1} {}
         if {$outerDims == -1} {
-	    if {$isFlag} {
+	    set defVal [GetDefVal $initVal $outerDims 0]
+	    switch [GetModelType $node] {
+		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
 			  -offvalue 0 -onvalue 1 -relief ridge]
-		set checkStates($node) [GetDefVal $initVal $outerDims 0]
-	    } else {
+		set checkStates($node) $defVal
+		} ENUMERATED {
+		ComboBox $f.combo -values $comboChoices(list,$node) \
+		    -editable 0 -textvariable comboChoices($node)
+		    set comboChoices($node) [lindex [lindex $trans 0] $defVal]
+		pack $f.combo -side right -fill x -expand true
+		pack [label $f.caption -text [lindex $levels end]]
+		} default {
 		scale $f.scale -length 120 -orient h -showvalue false \
                     -sliderlength 10 -from $min -to $max \
                     -tickinterval [expr $magnitude/5.0] \
                     -resolution $spacing \
                     -variable sliderVals($node)
-		$f.scale set [GetDefVal $initVal $outerDims 0]
+		$f.scale set $defVal
 		pack $f.scale -side right -fill x -expand true
 		pack [label $f.caption -text [lindex $levels end]]
 		pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
 		    -padx 1 -pady 1
+		}
 	    }
-        } else {
+	} else {
 	    pack [label $f.caption -text [lindex $levels end]]
 	    set count [lindex $nodeDims $outerDims]
 	    for {set index 1} {$count >= $index} {incr index} {
-		if {$isFlag} {
+		set defVal [GetDefVal $initVal $outerDims $index]
+		if {[llength [lindex $trans $outerDims]]} {
+		    set slTitle [lindex [lindex $trans $outerDims] $index]
+		} else {
+		    set slTitle $index
+		}
+		switch [GetModelType $node] {
+		    FLAG {
 		    set line [expr ($index+9)/10]
 		    set row $f.row$line
 		    if {![winfo exists $row]} {
@@ -101,8 +121,8 @@ namespace eval slide139 {
 		    pack [checkbutton $row.elt$index -borderwidth 1 \
 			      -variable checkStates($node,$index) \
 			      -padx 0 -offvalue 0 -onvalue 1] -side left
-		    set checkStates($node,$index) \
-			[GetDefVal $initVal $outerDims $index]
+		    set checkStates($node,$index) $defVal
+		    BindPopup $row.elt$index "For $slTitle"
 		    set newbg white
 		    if {fmod($line,2)==0} {
 			set newbg \#e0e0ff
@@ -111,9 +131,19 @@ namespace eval slide139 {
 			set newbg \#c0c0ff
 		    }
 		    $row.elt$index configure -bg $newbg
-		} else {
+		    } ENUMERATED {
 		    pack [frame $f.elt$index] -fill x -expand true
-		    pack [message $f.elt$index.id -text $index] -side left
+		    ComboBox $f.elt$index.c -values $comboChoices(list,$node) \
+			-editable 0 -textvariable comboChoices($node,$index)
+		    set comboChoices($node,$index) \
+			[lindex [lindex $trans end] $defVal]
+		    pack $f.elt$index.c -side right -fill x -expand true
+		    pack [label $f.elt$index.id -text $slTitle -width 10] \
+			-side left
+		    } default {
+		    pack [frame $f.elt$index] -fill x -expand true
+		    pack [label $f.elt$index.id -text $slTitle -width 10] \
+			-side left
 		    pack [entry $f.elt$index.val \
 			      -textvariable sliderVals($node,$index) \
 			      -width 8] -side left -padx 1 -pady 1
@@ -123,11 +153,12 @@ namespace eval slide139 {
                         -sliderlength 10 -from $min -to $max \
                         -resolution $spacing \
                         -variable sliderVals($node,$index)
-		    $newScale set [GetDefVal $initVal $outerDims $index]
+		    $newScale set $defVal
 		    pack $newScale -fill x -expand true
 		    # only put legend on bottom one
 		    if {$count==$index} {
 			$newScale configure -tickinterval [expr $magnitude/5.0]
+		    }
 		    }
 		}
 	    }

@@ -637,8 +637,16 @@ proc FileParamDialogue {mustShow parent} {
 # types (from prolog) and use to translate array bounds
 	    set trans [GetFromProlog tk_get_info('$t',$node,types)]
 #ShowMessage debug info "$node $trans $nodeDims" ok
-	    set nodeDims [TransBounds $trans [lrange $nodeDims 0 end-1]]
-            set dimList [join $nodeDims { x }]
+	    set nodeDims [TransBounds $trans $nodeDims]
+            set dimList [join [lrange $nodeDims 0 end-1] { x }]
+	    set last [lindex $nodeDims end]
+	    if {[string compare $last 0]} {
+		if {[llength $dimList]} {
+		    append dimList " of $last"
+		} else {
+		    set dimList "a $last"
+		}
+	    }
             if {[string length $dimList]} {
                 set slotCaption "[lindex $levels end] ($dimList):"
             } else {
@@ -782,7 +790,7 @@ proc SaveParams {} {
                 
                 if {[info exists paramState($compName)]} {
                     if {[string compare $paramData($compName) \
-                                [LoadTableData $paramState($compName)]]} {
+                                [LoadTableData $paramState($compName) 0]]} {
                         unset paramState($compName)
                     }
                 }
@@ -837,7 +845,7 @@ proc MergeParams {} {
                     # now just load up the data
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
                     set paramData($restoredComp) \
-                            [LoadTableData $paramState($restoredComp)]
+                            [LoadTableData $paramState($restoredComp) 0]
                 } elseif {![SensibleValue $FileOrVal]} {
                     set paramData($restoredComp) {}
                     ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
@@ -913,13 +921,13 @@ proc GetFromTable {parent compName} {
         set paramState($compName) \
                 [concat [list $table_entry(fileName) $table_entry(dataField)] \
                 $table_entry(indices)]
-        set paramData($compName) [LoadTableData $paramState($compName)]
+        set paramData($compName) [LoadTableData $paramState($compName) 0]
         $widgetNames($compName) delete 1.0 end
         $widgetNames($compName) insert 1.0 $paramData($compName)
     }
 }
 
-proc LoadTableData {tableSpec} {
+proc LoadTableData {tableSpec doQuoting} {
     
 #ShowMessage debug info "Loading table with data $tableSpec" ok
     set tStr [open [lindex $tableSpec 0] r]
@@ -970,20 +978,21 @@ proc LoadTableData {tableSpec} {
     
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
-    return [ArrayToList paramArray top $indexList]
+    return [ArrayToList paramArray top $indexList $doQuoting]
 }
 
-proc ArrayToList {topArray indexSoFar otherMaxes} {
+proc ArrayToList {topArray indexSoFar otherMaxes doQuoting} {
 #ShowMessage debug info "$indexSoFar $otherMaxes" ok
     upvar 1 $topArray array
     if {[llength $otherMaxes]} {
         foreach pt [lindex $otherMaxes 0] {
-            lappend result [QuoteNonNumeric $pt] \
-		[ArrayToList array $indexSoFar,$pt [lrange $otherMaxes 1 end]]
+            lappend result [QuoteNonNumeric $pt $doQuoting] \
+		[ArrayToList array $indexSoFar,$pt \
+		     [lrange $otherMaxes 1 end] $doQuoting]
         }
     } else {
         if {[info exists array($indexSoFar)]} {
-	    set result [QuoteNonNumeric $array($indexSoFar)]
+	    set result [QuoteNonNumeric $array($indexSoFar) $doQuoting]
         } else {
             set result 0
         }
@@ -991,8 +1000,8 @@ proc ArrayToList {topArray indexSoFar otherMaxes} {
     return $result
 }
 
-proc QuoteNonNumeric {val} {
-    if {[catch {expr 1*$val}]} {
+proc QuoteNonNumeric {val doIt} {
+    if {$doIt && [catch {expr 1*$val}]} {
 	return \"$val\"
     } else {
 	return $val

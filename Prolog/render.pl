@@ -487,7 +487,10 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	        DefEval = 'SPLIT';
 	    (Unit = a('"boolean"'), !, Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
-	    member(Unit, [const_int, int, a(_)]), !, Type = 'INTEGER',
+	    Unit = a(Enum), !, Type = 'ENUMERATED',
+		Wee = 1,
+		enum_type_ref(Enum, BaseName, Muckle, _);
+	    member(Unit, [const_int, int]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-1073741823, 1073741823];
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),

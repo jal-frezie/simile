@@ -21,6 +21,7 @@
 #define INTEGER         2
 #define FLAG            3
 #define EXTERNAL        4
+#define ENUMERATED      5
 
 #define EXOGENOUS       0
 #define DERIVED         1
