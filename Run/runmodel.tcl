@@ -1145,7 +1145,7 @@ proc FileParamDialogue {mustShow parent} {
 	    
 #	    pack [entry $slot.e -textvariable paramData($compName)]
 # Using entries played merry hell with very long arrays -- texts work better
-	    pack [text $slot.e -width 20 -height 1]
+	    pack [text $slot.e -width 30 -height 1]
 	    if {[info exists paramData($compName)]} {
 		$slot.e insert 1.0 $paramData($compName)
 	    } else {
@@ -1160,17 +1160,19 @@ proc FileParamDialogue {mustShow parent} {
 	}
     }
     if {$mustShow || [llength $needed]} {
-	pack [set bfrm [frame .fpdialogue.buttons -bd 2 -relief sunken]] \
+	pack [set bfrm [frame .fpdialogue.buttons ]] \
 		-fill x
 	pack [message $bfrm.banner \
-		-text "All values must be set to run the model." -aspect 800]
-	pack [frame $bfrm.lpad] -side left -fill x -expand true
-	pack [button $bfrm.merge -text "Load file" -command MergeParams] \
-		-side left
-	pack [button $bfrm.save -text "Save file" -command SaveParams] \
-		-side left
-	pack [button $bfrm.ok -text "OK" -command [list DoneParams $needed]] \
-		-side left
+		-text "All values must be set to run the model." -width 400]
+    pack [frame $bfrm.lpad] -side left -fill x -expand true
+    pack [button $bfrm.ok -text "OK" -command [list DoneParams $needed] -width 10] \
+        -side left -padx 2 -pady 2
+    pack [button $bfrm.merge -text "Load file" -command MergeParams -width 10] \
+        -side left -padx 2 -pady 2
+	pack [button $bfrm.save -text "Save file" -command SaveParams -width 10] \
+        -side left -padx 2 -pady 2
+    pack [button $bfrm.help -text "Help" -command {ContextSensitiveHelp .fpdialogue data/index.htm} -width 10] \
+        -side left -padx 2 -pady 2            
 	pack [frame $bfrm.rpad] -side left -fill x -expand true
 	set_size $t
 	raise .fpdialogue
