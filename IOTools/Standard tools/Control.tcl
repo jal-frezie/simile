@@ -36,7 +36,7 @@ namespace eval runcontrol33857 {
         set sendvars(captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
             lappend sendvars(captList) \
-                    [list Time step #$phase {(} $::runState(update$phase) {)}]
+                    [list Time step \#$phase {(} $::runState(update$phase) {)}]
         }
         $timeSteps configure -values $sendvars(captList)
         focus $widget.edit.num
@@ -100,7 +100,7 @@ namespace eval runcontrol33857 {
         set sendvars(captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
             lappend sendvars(captList) \
-                    [list Time step #$phase {(} $::runState(update$phase) {)}]
+                    [list Time step \#$phase {(} $::runState(update$phase) {)}]
         }
         pack [frame $rsf.edit] -anchor w -pady 2
         set timeSteps [ComboBox $rsf.edit.capt -values $sendvars(captList) -editable 0 \
@@ -121,9 +121,15 @@ namespace eval runcontrol33857 {
         SendData $t
         set sendvars(prevDisplay) 0.0
         set sendvars(currentMode) stop
-        
+	catch {wm protocol $t WM_DELETE_WINDOW \
+		   "[namespace code Terminate]; destroy $t"}
     }
-    
+
+    proc Terminate {} {
+	variable sendvars
+	set sendvars(currentMode) kill
+    }
+	    
     proc SetMode { winId action } {
         global runState
         variable sendvars
@@ -160,8 +166,12 @@ namespace eval runcontrol33857 {
             $widget.topbuttons.start configure -state disabled
             $widget.topbuttons.stop configure -state normal
             RollSimulation $winId
-            $widget.topbuttons.start configure -state normal
-            $widget.topbuttons.stop configure -state disabled
+	    if {[string match kill $sendvars(currentMode)]} {
+		set sendvars(currentMode) stop
+	    } else {
+		$widget.topbuttons.start configure -state normal
+		$widget.topbuttons.stop configure -state disabled
+	    }
         } else {
             set sendvars(currentMode) $action
         }
@@ -224,8 +234,7 @@ namespace eval runcontrol33857 {
         
         set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
         set widget [$winId.rcf getframe]
-        while {[string compare $sendvars(currentMode) exit] && \
-                    [string compare $sendvars(currentMode) stop]} {
+        while {[lsearch {exit stop kill} $sendvars(currentMode)]==-1} {
             # Collect any changes that have been made by the user
             if {[info exists sendvars(newData)]} {
                 scan $sendvars(newData) "%s %s %s %s %s" \
@@ -318,9 +327,14 @@ namespace eval runcontrol33857 {
                 set step [expr $exec>$update?$update:$exec]
             }
         }
-        
-        $widget.bf.flag itemconfigure 1 -fill [lindex "[RestingColour] black" \
-                [string match exit $sendvars(currentMode)]]
+        switch $sendvars(currentMode) {
+	    kill {
+	    } exit {
+		$widget.bf.flag itemconfigure 1 -fill black
+	    } default {
+		$widget.bf.flag itemconfigure 1 -fill [RestingColour]
+	    }
+	}
     }
     
     proc SecondsInA {time} {
