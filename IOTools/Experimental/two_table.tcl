@@ -34,7 +34,8 @@ namespace eval tabular11510 {
 	scrollbar $winId.sx -command [list $winId.t xview] \
 	    -orient horizontal
 
-	pack [frame $winId.f] ;# for instructions
+	pack [frame $winId.f]
+	pack [label $winId.f.mess] ;# for instructions
 	pack $winId.sx -side bottom -fill x -expand true
 	pack $winId.sy -side right -fill y -expand true
 	CreateTable $winId
@@ -60,7 +61,7 @@ namespace eval tabular11510 {
     }
 
     proc AddVariable { winId } {
-	pack [label $winId.f.mess -text "Click on a variable in the Explorer window or a Model Diagram."]
+	$winId.f.mess config -text "Click on a variable in the Explorer window or a Model Diagram. ($winId)"
 	GrabClicks $winId
     }
 
@@ -69,7 +70,8 @@ namespace eval tabular11510 {
 	variable displayList
 	variable lastDisplay
 
-	destroy $winId.f.mess
+	ReleaseClicks $winId
+	$winId.f.mess config -text {}
 	set newHeader [GetCaptionPathFromId $node]
 	if {[lsearch $displayList($winId) $newHeader]>=0} {
 	    # Var already displayed, see it
@@ -82,7 +84,6 @@ namespace eval tabular11510 {
 		Reconbobulate $winId
 	    }
 	}
-	ReleaseClicks $winId
     }
 
     proc display {winId tCur tStep tRem} {
@@ -115,7 +116,6 @@ namespace eval tabular11510 {
 	if {[info exists values]} {unset values}
 
 	foreach valId [array names dataStore] {
-#puts "found $valId"
 	    set valDims [split $valId ,]
 	    if {[string match $winId [lindex $valDims 0]]} {
 		if {[string match none [lindex $orientList($winId) 0]]} {
@@ -129,6 +129,7 @@ namespace eval tabular11510 {
 		}
 	    }
 	}
+#puts "Data transferred to 2-d table mirror array"
 
         set curHeaderRows 0
 	set colList [lsort -command [namespace code ReComp] \
@@ -152,6 +153,8 @@ namespace eval tabular11510 {
 	set levels [expr $curHeaderRows+$curHeaderCols]
 	if {!$curHeaderRows} {set curHeaderRows 1}
 	if {!$curHeaderCols} {set curHeaderCols 1}
+
+#puts "Header rows and columns counted"
 
 	unset ::data$winId
 	foreach {span old} [$winId.t spans] {
@@ -193,16 +196,18 @@ namespace eval tabular11510 {
 	    $winId.t tag cell base $tgtSq
 	    incr level
 	}
-	set rcolWidth [string length [$winId.t get $tgtSq]]
-	if {$rcolWidth>10} {
-	    $winId.t width [expr $curHeaderCols-1] $rcolWidth
+	if {[info exists tgtSq]} {
+	    set rcolWidth [string length [$winId.t get $tgtSq]]
+	    if {$rcolWidth>10} {
+		$winId.t width [expr $curHeaderCols-1] $rcolWidth
+	    }
+	    $winId.t tag raise base
+	    $winId.t tag config base -fg black
 	}
-	$winId.t tag raise base
-	$winId.t tag config base -fg black
 	if {$curHeaderRows>1 && $curHeaderCols>1} {
 	    $winId.t spans 0,0 [expr $curHeaderRows-2],[expr $curHeaderCols-2]
 	}
-
+#puts "Meta-headers inserted"
 	set translateSide [lindex $orientList($winId) 1]
 	set translateLevel [string match $translateSide \
 				[lindex $orientList($winId) 0]]
@@ -234,7 +239,7 @@ namespace eval tabular11510 {
 	    }
 	    incr count
 	}
-
+#puts "Column headers inserted"
 	set lastEntry(0) none
 	set count 0
 	foreach item $colList {
@@ -262,7 +267,7 @@ namespace eval tabular11510 {
 	    }
 	    incr count
 	}
-
+#puts "row headers inserted"
 	foreach value [array names values] {
 	    set headers [split $value ,]
 	    set rowHead [expr $rowIds([lindex $headers 0])+$curHeaderRows]
@@ -270,6 +275,7 @@ namespace eval tabular11510 {
 	    $winId.t set $rowHead,$colHead \
 		[VarPrecRender $winId $values($value)]
 	}
+#puts "Table values inserted"
     }
 
     proc ReComp {l1 l2} {
@@ -324,6 +330,8 @@ namespace eval tabular11510 {
 	incr precision($winId) $diff
 	if {$precision($winId)<3} {
 	    set precision($winId) 3
+	} else {
+	    Reconbobulate $winId
 	}
     }
     

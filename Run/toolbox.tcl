@@ -476,7 +476,7 @@ proc ChangeRegion {w l t r b} {
     $w configure -scrollregion $newReg
     eval {ResizeBackgnd $w} $newReg
 #ShowMessage debug info "Just done [$w coords 1]" ok
-    puts $comp
+#    puts $comp
     if {$comp>1.01} {
 	DoZoom $w $comp 0
     }
