@@ -142,10 +142,10 @@ proc Pref_Dialog {} {
             set flowTF [TitleFrame [$notebook getframe Edit].flowTF -text "Flows:"]
             set flowF [$flowTF getframe]
         $notebook insert end Build -text Build
-            set oneWinTF [TitleFrame [$notebook getframe Build].oneWinTF -text "Run time environment:"]
-            set oneWinF [$oneWinTF getframe]
             set manyWinTF [TitleFrame [$notebook getframe Build].manyWinTF -text "Window positions:"]
+
             set manyWinF [$manyWinTF getframe]
+
             set compTF [TitleFrame [$notebook getframe Build].compTF -text "C++ compiler:"]
             set compF [$compTF getframe]
         $notebook insert end Save -text Save
@@ -153,6 +153,11 @@ proc Pref_Dialog {} {
             set canvasF [$canvasTF getframe]
             set recentTF [TitleFrame [$notebook getframe Save].recentTF -text "Recently used files:"]
             set recentF [$recentTF getframe]
+        $notebook insert end Run -text Run
+            set oneWinTF [TitleFrame [$notebook getframe Run].oneWinTF -text "Run time environment:"]
+
+            set oneWinF [$oneWinTF getframe]
+
         $notebook raise View
         pack $displayTF $popupTF $barTF $linkTF $flowTF $oneWinTF $manyWinTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
