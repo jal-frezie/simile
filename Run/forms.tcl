@@ -1546,7 +1546,7 @@ proc DoRegDialog {dtId} {
                 -command {set userinfo(done) $welcomeDone}] \
                 -padx 8 -pady 8 -side left
         pack [button $tasks.b.open -text "Open..." -width 10 \
-                -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
+                -command "MenuSelect $dtId.canvas local open_all; set userinfo(done) \$welcomeDone" ] \
                 -padx 8 -pady 8 -side left
         pack [button $tasks.b.reopen -text "Recent..." -width 10 \
                 -command "PopReopen $dtId"] \
@@ -1556,7 +1556,7 @@ proc DoRegDialog {dtId} {
                 -command {set userinfo(done) $welcomeDone}] \
                 -padx 8 -pady 8 -side left
         pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
-                -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
+                -command "MenuSelect $dtId.canvas local open_all; set userinfo(done) \$welcomeDone" ] \
                 -padx 8 -pady 8 -side left
         pack [button $tasks.b.reopen -text "Recent..." -width 10 \
                 -command "PopReopen $dtId"] \
