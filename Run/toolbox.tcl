@@ -519,7 +519,7 @@ proc compile_c {workingDir} {
 
         }
     }} chuckup]} {
-	set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try running the model in Tcl."
+	set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
 	BuildProblem none none $badCompile user
 	set serial -1
     } else {
@@ -992,7 +992,7 @@ proc GetParts {top tree} {
                     set Description "Simile helper configuration file"
                     set style attachment
                 }
-                *.spf {
+                *.spf {
 
                     set PartType "application/x-simile"
                     set Description "Simile parameter file"
