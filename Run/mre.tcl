@@ -943,7 +943,8 @@ proc RunEnv::SavePanedwindowConfig {panedwindow stream} {
             }
         }
     }
-    for {set index 0} {$index < [llength [$panedwindow panes]]} {incr index} {
+    for {set index 0} {$index < [expr [llength [$panedwindow panes]]-1]} \
+	{incr index} {
         puts $stream "sash [winfo parent $pane] $index [$panedwindow sash coord $index]"
     }
 }
