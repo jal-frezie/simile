@@ -85,7 +85,7 @@ if $onUnix {
 # crash can occur 
 	puts $batSt "move 5d.dll ../System/bin/5d.dll"
 	puts $batSt "g++ -c $defns -I. -I$TCL/include ame_cmx.cpp"
-	puts $batSt "dllwrap --output-lib=${TGTLIB}/lib$mydll.a --dllname=$TARGET --def=stub.def --driver-name=g++ shim.o -L${TGTLIB} -l5ddll -l$dll"
+	puts $batSt "dllwrap --output-lib=${TGTLIB}/lib$mydll.a --dllname=$TARGET --def=stub.def --driver-name=g++ ame_cmx.o -L${TGTLIB} -l5ddll -l$dll"
 	# Do the install dll as well
 	puts $batSt "g++ -c -o obj.o $defns -I. ./install.cpp"
 	puts $batSt "dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o"
@@ -103,8 +103,8 @@ if $onUnix {
 	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:../System/bin/5d.dll $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./shank.obj
 	eval {exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
 		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
-	    {-I. -I$TOOLS32/include -I$TCL/include ./shim.cpp}
-	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET ${TGTLIB}/5d.lib $tclLib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./shim.obj
+	    {-I. -I$TOOLS32/include -I$TCL/include ./ame_cmx.cpp}
+	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET ${TGTLIB}/5d.lib $tclLib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
 	eval {exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
 		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
 	    {-I. -I$TOOLS32/include ./install.cpp}
