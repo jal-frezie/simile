@@ -1009,10 +1009,27 @@ proc DoLocalCmd {win item} {
     }
 }
 
+proc ::tk::mac::Quit {} {
+  prolog tk_kill_everything('.mswindow00001.canvas')
+}
+
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     global custom pushedbutton tcl_platform runState iconImages
     
     set c $winid.canvas
+    
+    if [string match "Darwin" $tcl_platform(os)] {
+      set accKey Cmd
+      set accSym Command
+      set fm [menu ${winid}top.apple -tearoff 0 -postcommand "FillReopen $winid"]
+      $fm delete 0 7
+      $fm add command -label "About Simile..." -command "ShowAbout $winid"
+      ${winid}top add cascade -label "Apple" -menu $fm
+    } else {
+      set accKey Ctrl
+      set accSym Control
+    }
+    
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
@@ -1021,8 +1038,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     } else {
 	set newCmd "MenuSelect $c file new"
     }
-    $fm add command -label New -command $newCmd -accelerator "Ctrl+N"
-    AddAccelerator $winid file New "<Control-n>"
+    $fm add command -label New -command $newCmd -accelerator "$accKey+N"
+    AddAccelerator $winid file New "<$accSym-n>"
 #    $fm add command -label "New top-level" -command "NewTopLevel"
     $fm add command -label Open... -command "MenuSelect $c local open_all"\
             -accelerator "Ctrl+O"
@@ -1063,8 +1080,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add command -label Close -command "MenuClose $c" \
             -accelerator "Alt+x"
     AddAccelerator $winid file Close "<Alt-x>"
-    $fm add command -label Exit -command "prolog tk_kill_everything('$c')"
-    
+    if ![string match "Darwin" $tcl_platform(os)] {
+      $fm add command -label Exit -command "prolog tk_kill_everything('$c')"
+    }
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
     # for what is available, overridden later if it is popup
@@ -1138,7 +1156,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add separator
     $fm add command -label "Properties..." \
             -command "MenuSelect $c edit properties"
-    $fm add command -label Preferences... -command Pref_Dialog
+    if ![string match "Darwin" $tcl_platform(os)] {
+      $fm add command -label Preferences... -command Pref_Dialog
+    }
     
     
     set fm [menu ${winid}top.view -tearoff 0]
