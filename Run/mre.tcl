@@ -9,7 +9,7 @@
 
 namespace eval RunEnv {
     
-    package require -exact BWidget 1.2.1
+#    package require -exact BWidget 1.2.1
     #namespace import ::BWidget::*
     
     #    variable notebook
@@ -77,9 +77,9 @@ proc RunEnv::Create { ModelWin } {
         set descmenu {
             "&File" all file 0 {
                 {command "&Load configuration..." {} "Load a configuation of displays" \
-                            {Ctrl-O} -command {::RunEnv::LoadView} }
+                            {} -command {::RunEnv::LoadView} }
                 {command "&Save configuration..." {} "Save a configuation of displays" \
-                            {Crtl-S} -command {::RunEnv::SaveView} }
+                            {} -command {::RunEnv::SaveView} }
                 {separator}
                 {command "&Parameters..." {} "Modify file parameters"  \
                             {} -command { FileParamDialogue 1 .mre } }

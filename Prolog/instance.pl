@@ -406,7 +406,9 @@ choose_default_value(Node, Base, PType, Default) :-
 	    Default = (1<0);    
 	Node has_class_refinement min_val of MinExpr,
 	Node has_class_refinement max_val of MaxExpr, !,
-	    Default is (MinExpr+MaxExpr)/2.
+	    (Base = int, !,
+		Default is (MinExpr+MaxExpr)//2;
+	    Default is (MinExpr+MaxExpr)/2).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* get_units: returns data type for a node in the form type-dimensions where

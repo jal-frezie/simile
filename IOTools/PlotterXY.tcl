@@ -214,7 +214,7 @@ namespace eval ::$keyValue {
         #redraw axis and graph if necessary; otherwise just extend plots
         if {$plot($w,redraw)} {
             bell
-            
+            error {How did we get here?}
             drawGraphpad $w
             #		drawGraph $w
         } else {
@@ -481,7 +481,7 @@ namespace eval ::$keyValue {
     
     proc resize {w win x y width height} {
         global ::graphtools::plot
-        
+
         if {[regexp (\.\[^.\]*)\.canvas $win full id]} {
             set x0 $plot($w,xborder_left)
             set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]

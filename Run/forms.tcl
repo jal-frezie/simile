@@ -5,7 +5,7 @@
 # <name> (<units>)' and we need to keep the box up to display errors while entering
 # the equation. Put up warning messages if the units change etc etc etc. 
 
-package require -exact BWidget 1.2.1
+package require BWidget
 catch {namespace import BWidget::*}
 
 proc equationResources {} {

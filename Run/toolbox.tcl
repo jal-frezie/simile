@@ -969,6 +969,7 @@ proc SpitPS {winId psfile} {
     global window_info
 
 
+
     PrepForExport $winId there
     $winId postscript -file $psfile -rotate true -pageanchor nw \
             -pagex 0 -pagey 0 \

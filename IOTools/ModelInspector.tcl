@@ -10,6 +10,12 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.5  2002/10/21 17:05:20  jaspert
+#Going over to DOS file format as I find problems
+#Fixed hang in PlotterXY/graphtools
+#Fixed problem with integer sliders in c++ models (prolog)
+#Removed requirement for out-of-date BWidget version
+#
 #Revision 1.4  2002/10/18 14:24:47  jmm
 #proc GetCanvas added returns canvas for printing etc.
 #absolute namespaces used, i.e. start with ::
@@ -35,7 +41,7 @@ set keyValue ModelInspector63654
 
 namespace eval ::ModelInspector63654 {
     
-    package require -exact BWidget 1.2.1
+    package require BWidget
     namespace import ::BWidget::*
     
     variable tableframe

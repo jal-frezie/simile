@@ -4,7 +4,7 @@
 #
 # proc PrefSave {} modified to use Windows short filenames 
 
-package require -exact BWidget 1.2.1
+package require BWidget
 catch {namespace import BWidget::*}
 
 proc Status {burble} {

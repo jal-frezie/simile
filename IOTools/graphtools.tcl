@@ -193,6 +193,7 @@ proc ::graphtools::draw_Xaxis { w } {
                 / ($Xmax_axis-$Xmin_axis)}]
     set value $Xmin_axis
     set y [expr {$y0+2}]
+#    ShowMessage debug info "Maj $Xmajorstep min $Xminorstep -- Going from $x0 up to $x1 in steps of $step" ok
     for {set x $x0} {$x<=$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-6] \
                 -tags {scalable axis_line xaxis_item xtick markable \
@@ -204,8 +205,10 @@ proc ::graphtools::draw_Xaxis { w } {
                     toplevel markable} -anchor n
         set value [expr $value+$Xmajorstep]
     }
-    set step [expr 1.0*$plot($w,xlength)*$Xminorstep \
-            / ($Xmax_axis-$Xmin_axis)]
+    set step [expr $step/2]
+#    set step [expr 1.0*$plot($w,xlength)*$Xminorstep \
+#            / ($Xmax_axis-$Xmin_axis)]
+#ShowMessage debug info "Going from $x0 up to $x1 in steps of $step" ok
     for {set x $x0} {$x<$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-4] \
                 -tags {scalable axis_line xaxis_item xtick markable \
@@ -239,6 +242,7 @@ proc ::graphtools::draw_Yaxis { w} {
             / ($Ymax_axis-$Ymin_axis)]
     set value $Ymin_axis
     set x [expr $x0-2]
+#ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
     for {set y $y0} {$y>=[expr $y1-2]} {set y [expr $y-$step]} {
         $w.canvas create line $x0 $y [expr $x0+6] $y \
                 -tags {scalable axis_line yaxis_item ytick markable \
@@ -250,8 +254,10 @@ proc ::graphtools::draw_Yaxis { w} {
                     toplevel markable} -anchor e
         set value [expr $value+$Ymajorstep]
     }
-    set step [expr 1.0*$plot($w,ylength)*$Yminorstep \
-            / ($Ymax_axis-$Ymin_axis)]
+    set step [expr $step/2]
+#    set step [expr 1.0*$plot($w,ylength)*$Yminorstep \
+#            / ($Ymax_axis-$Ymin_axis)]
+#ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
     for {set y $y0} {$y>=$y1} {set y [expr $y-$step]} {
         $w.canvas create line $x0 $y [expr $x0+4] $y \
                 -tags {scalable axis_line yaxis_item ytick markable \
@@ -478,7 +484,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     upvar 1 $axisMin rmin $axisMax rmax $interval inter $numInt nint \
             $decimalPlaces decmlPos
     global graphtools::karray
-    
+#ShowMessage debug info "$dataMin $dataMax $rmin $rmax $inter $nint $decmlPos" ok
     if $xaxis {
         set axis 2; # dealing with x axis for use with karray($axis,$?)
     } else  {
