@@ -27,6 +27,9 @@ namespace eval ::polygon375 {
         variable editMode 0
         namespace import -force ::maptools2::*
         
+        set useNodes($winId,min) 0
+        set useNodes($winId,max) 100
+
         set useNodes($winId,cbot) black
         set useNodes($winId,cmid) green
         set useNodes($winId,ctop) white
@@ -65,8 +68,8 @@ namespace eval ::polygon375 {
             pack $ms
             set useNodes($winId,state) xcoord
         } else {
-            set chxy [open $useNodes($winId,sourcefile) r]
-            set useNodes($winId,xys) [read $chxy]
+#            set chxy [open $useNodes($winId,sourcefile) r]
+#            set useNodes($winId,xys) [read $chxy]
             set ms [message $winId.intro -text "Click on the array value \
                     representing the data to be mapped."]
             GrabClicks $winId
@@ -87,13 +90,23 @@ namespace eval ::polygon375 {
 	regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set useNodes $restoreString
         
-        DrawPolys $winId $useNodes($winId,xcoord) \
-                $useNodes($winId,ycoord) \
-                $useNodes($winId,color)
-	set ZoomCmd "Zoom $winId $useNodes($winId,scalex) $useNodes($winId,scaley)"
-	set useNodes($winId,scalex) 1.0
-	set useNodes($winId,scaley) 1.0
-	eval $ZoomCmd
+        if {[string compare $useNodes($winId,sourcefile) model]==0} then {
+	    DrawPolys $winId $useNodes($winId,xcoord) \
+		$useNodes($winId,ycoord) \
+		$useNodes($winId,color)
+	    set ZoomCmd "Zoom $winId $useNodes($winId,scalex) \
+$useNodes($winId,scaley)"
+	    set useNodes($winId,scalex) 1.0
+	    set useNodes($winId,scaley) 1.0
+	    eval $ZoomCmd
+	} else {
+	    DoFrame $winId
+	    foreach {coords tags} $useNodes($winId,shapes) {
+		eval {$winId.viewport.c create poly} $coords {-outline black \
+								  -tag $tags}
+	    }
+	    Repaint $winId $useNodes($winId,color)
+	}
     }
     
     proc GetCanvas {winId} {
@@ -164,8 +177,14 @@ namespace eval ::polygon375 {
     proc SetColours2 {winId node} {
         variable useNodes
         set useNodes($winId,integer) [string match INTEGER [GetModelType $node]]
-        set useNodes($winId,min) [GetMinValue $node]
-        set useNodes($winId,max) [GetMaxValue $node]
+        set min [GetMinValue $node]
+        if {$min!=-1e100} {
+            set useNodes($winId,min) $min
+        }
+        set max [GetMaxValue $node]
+        if {$max!=1e100} {
+            set useNodes($winId,max) $max
+        }
         set useNodes($winId,range) \
                 [expr $useNodes($winId,max)-$useNodes($winId,min)]
         if [expr !$useNodes($winId,integer) || [expr $useNodes($winId,range) > 32]] {
@@ -224,17 +243,31 @@ namespace eval ::polygon375 {
 	    if {$value > $useNodes($winId,datamax)} {
 		set useNodes($winId,datamax) $value
 	    }
-            set polyId [$winId.viewport.c find withtag n$indxs]
-            CanvasBindPopup $winId.viewport.c $polyId \
+            foreach polyId [$winId.viewport.c find withtag \
+				[format BLK%06d $indxs]] {
+		CanvasBindPopup $winId.viewport.c $polyId \
                     [list Index $id Value $value]
-            set newColour [ColourFor $winId $value]
-            if {![string match $newColour \
-                        [$winId.viewport.c itemcget $polyId -fill]]} {
-                $winId.viewport.c itemconfigure $polyId -fill $newColour
+		set newColour [ColourFor $winId $value]
+		if {![string match $newColour \
+			  [$winId.viewport.c itemcget $polyId -fill]]} {
+		    $winId.viewport.c itemconfigure $polyId -fill $newColour
+		}
             }
         }
     }
     
+    proc DoFrame {winId} {
+        pack [set vp [frame $winId.viewport]] -fill both -expand true
+        scrollbar $vp.xsc -orient horizontal -command [list $vp.c xview]
+        pack $vp.xsc -side bottom -fill x
+        scrollbar $vp.ysc -orient vertical -command [list $vp.c yview]
+        pack $vp.ysc -side right -fill y
+        canvas $vp.c -width 10 -height 10 -xscrollcommand [list $vp.xsc set] \
+                -yscrollcommand [list $vp.ysc set] -bg beige \
+                -scrollregion {0 0 10 10}
+        pack $vp.c -fill both -expand true
+    }
+
     proc DrawPolys {winId xs ys hs} {
         variable viewpoint
         variable useNodes
@@ -249,16 +282,8 @@ namespace eval ::polygon375 {
         #            [namespace code "OptionsDialog $winId"]
         
         catch {wm geometry $winId 650x500}; # if not a toplevel, ie MRE
-        pack [set vp [frame $winId.viewport]] -fill both -expand true
-        scrollbar $vp.xsc -orient horizontal -command [list $vp.c xview]
-        pack $vp.xsc -side bottom -fill x
-        scrollbar $vp.ysc -orient vertical -command [list $vp.c yview]
-        pack $vp.ysc -side right -fill y
-        canvas $vp.c -width 10 -height 10 -xscrollcommand [list $vp.xsc set] \
-                -yscrollcommand [list $vp.ysc set] -bg beige \
-                -scrollregion {0 0 10 10}
-        pack $vp.c -fill both -expand true
-        
+        DoFrame $winId
+
         ################################################################################
         #         frame $winId.buttons
         #         pack $winId.buttons -side bottom -fill x -pady 2m
@@ -281,20 +306,15 @@ namespace eval ::polygon375 {
         #                 $winId.buttons.edit -side left
         ################################################################################
         
-        ########## start polyfile changes
-        if {[string compare $useNodes($winId,sourcefile) model]==0} then {
-            set xcoords [lindex [GetModelValue $xs] 0]
-            set ycoords [lindex [GetModelValue $ys] 0]
-        } else {
-            set xcoords [lindex $useNodes($winId,xys) 0]
-            set ycoords [lindex $useNodes($winId,xys) 1]
-        }
-        ########## end polyfile changes
-        
         for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
             bind $winId.legend.pop$swatch <Double-Button-1> \
                     [namespace code "SetSwatchColour $winId %W"]
         }
+        
+        ########## start polyfile changes
+        if {[string compare $useNodes($winId,sourcefile) model]==0} then {
+            set xcoords [lindex [GetModelValue $xs] 0]
+            set ycoords [lindex [GetModelValue $ys] 0]
         
         set quadlist {}
         GetQuadList {} [lindex [GetModelValue $hs] 0] $xcoords $ycoords
@@ -324,8 +344,22 @@ namespace eval ::polygon375 {
             set indxs [join $id ,]
             #        ShowMessage debug info $corners ok
             set polyId [eval {$winId.viewport.c create polygon} $corners \
-                    {-outline black -tag n$indxs }] ;
+                    {-outline black -tag [format BLK%06d $indxs] }] ;
         }
+
+        } else {
+#            set xcoords [lindex $useNodes($winId,xys) 0]
+#            set ycoords [lindex $useNodes($winId,xys) 1]
+
+	    ::dxf::AddMap $useNodes($winId,sourcefile) $winId.viewport.c
+# Now copy the poly info into the state so it can be saved
+	set useNodes($winId,shapes) {}
+	foreach poly [$winId.viewport.c find all] {
+	    lappend useNodes($winId,shapes) [$winId.viewport.c coords $poly] \
+		[$winId.viewport.c gettags $poly]
+	}
+        }
+        ########## end polyfile changes
 	set NToolButtons [$winId.bbframe.buttonBox index last]
         $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
 	for {set i 1} {$i<=$NToolButtons} {incr i} {
@@ -353,18 +387,21 @@ namespace eval ::polygon375 {
         if $editMode==1 {
             set editMode 0
             $winId.buttons.msg configure -text ""
-	    $winId.bbframe.buttonBox itemconfigure 5 -text "Enter edit mode"
+	    $winId.bbframe.buttonBox itemconfigure 5 -state normal -relief raised
             for  {set j 0} {$j <= $useNodes($winId,nswatches)} {incr j} {
                 $winId.legend.pop$j configure -borderwidth 0
+                bind $winId.legend.pop$j <ButtonPress> {}
             }
+            bind $winId.viewport.c <Button-1> {}
             bind $winId.viewport.c <B1-Motion> {}
+	    $winId.viewport.c configure -cursor {}
         } else  {
             set editMode 1
             $winId.buttons.msg configure -text \
                     "Click on the colour bar to select the value to \
                     'paint' polygons."
 
-	    $winId.bbframe.buttonBox itemconfigure 5 -text "Leave edit mode"
+	    $winId.bbframe.buttonBox itemconfigure 5 -state active -relief sunken
             #  bind mouse click to get the value to assign from the colour clicked upon
             for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
                 bind $winId.legend.pop$swatch <ButtonPress> \
@@ -465,19 +502,11 @@ namespace eval ::polygon375 {
         set overlapping [$winId.viewport.c find closest $X $Y 1]
         set tags [$winId.viewport.c gettags $overlapping]
         # should check to see if the tags are different before processing them to speed things up
-        set end [expr {[string first "current" $tags ]-1}] ; # index of space delimeter after first tag
-        
-        # chop the leading n off the tag e.g. n12
-        # and trailing "current"
-        # chop the leading n off the tag e.g. n12
-        
-        if {$end > 0} then {
-            set index [string range $tags 1 $end]
-        } else  {
-            set index [string range $tags 1 end]
-        }
-        set tags [string trim $tags]
-        
+	set index {}
+        set end [string first BLK $tags]
+	set idTag [lindex [string range $tags $end end] 0]
+        scan $idTag BLK%06d index
+
         #$winId.buttons.msg configure -text \
         #    "X $X; Y $Y; tags $tags; overlapping $overlapping; index $index"
         
@@ -517,9 +546,9 @@ namespace eval ::polygon375 {
     }
     
     proc Fit {winId} {
-        scan [winfo geometry $winId] {%dx%d+} boxw boxh
+        scan [winfo geometry $winId.viewport.c] {%dx%d+} boxw boxh
         scan [$winId.viewport.c bbox all] {%d %d %d %d} cl ct cr cb
-        Zoom $winId [expr ($boxw-30.0)/($cr-$cl)] [expr ($boxh-30.0)/($cb-$ct)]
+        Zoom $winId [expr ($boxw-2.0)/($cr-$cl)] [expr ($boxh-2.0)/($cb-$ct)]
     }
     
     proc Zoom {winId fx fy} {
