@@ -200,7 +200,7 @@ proc ClickObj { x y winId X Y action} {
                 set label [file tail [BlankCrs $context]]\ =
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
-                set equationbar($winid,initText) $oldEqn
+                set equationbar($winid,initText) [BlankCrs $oldEqn]
                 set equationbar(current_action) null
                 SetEqnButtonState $bar normal
                 restore_equation $winid $bar

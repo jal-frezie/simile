@@ -819,7 +819,7 @@ display_submodels(_,[]).
 display_submodels(Isub,[Submodel|Submodels]):-
 	abs_path_name(Submodel, root, Abspath), 
 	% remove the model file name prefix from submodel paths
-	( sub_atom(Abspath,Before, 1, AfterSlash, /), 
+	( sub_atom(Abspath,Before, 1, _AfterSlash, /), 
 	  atom_length(Abspath,Len),
 	  Tail is Len-Before,
 	  sub_atom(Abspath,Before, Tail, _, Path)
