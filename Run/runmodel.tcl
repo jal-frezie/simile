@@ -571,8 +571,10 @@ proc MakeHelperMenu {} {
     set oldDir [pwd]
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
-    cd $custom(prefDir)/IOTools
-    AddHelperSublist $fm.sub2 "Local" l
+    if {[file exists $custom(prefDir)/IOTools]} {
+	cd $custom(prefDir)/IOTools
+	AddHelperSublist $fm.sub2 "Local" l
+    }
     cd $oldDir
 }
 

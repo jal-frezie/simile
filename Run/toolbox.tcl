@@ -164,7 +164,7 @@ proc ControlDraw {prologVersion} {
     
     
     if {[file exists $env(HOME)]} {
-        set custom(prefDir) $env(HOME)/.simile
+        set custom(prefDir) [file join $env(HOME) .simile]
     } else {
         set custom(prefDir) [pwd]/../Prefs
     }
