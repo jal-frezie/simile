@@ -22,7 +22,7 @@ proc AdjustScroll {canvas dir args} {
 proc AdjustCanvas {winId pt dir args} {
     set tgt $winId.${dir}scroll
     # hide scrollbar if full size
-    if {[string match {0 1} $args]} {
+    if {[lindex $args 0]<0.01 && [lindex $args 1]>0.99} {
         pack forget $tgt
     } else {
         if {[string match x $dir]} {
@@ -922,7 +922,8 @@ proc PostPopup {X Y} {
     # then uses this size to move it to the right place
     
     if {$X>[winfo screenwidth .popup]/2} {
-        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
+#        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
+        set xpoint -[expr $X+10]
     } else {
         
         set xpoint +[expr $X+10]

@@ -74,7 +74,7 @@ new_chop_list(Left, Done, Depth, Args) :-
 		append(Done, [Here], NewDone),
 		new_chop_list(More, NewDone, NewDepth, Args));
 	\+ Done = [], !,
-	    format_to_chars("Incomplete argument ~s at end of line", [Done],
+	    sicstus_format_to_chars("Incomplete argument ~s at end of line", [Done],
 			    ErrorStr),
 	    name(Error, ErrorStr),
 	    raise_exception(Error);   

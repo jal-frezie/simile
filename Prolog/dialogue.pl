@@ -451,9 +451,9 @@ match_param_dims([input_link(_,_, Name, LType-LDims, _) | MoreLinks],
 					 Name, Array, Err), !;
 		    match_param_dims(MoreLinks, MoreInters, Err));
 		      
-		format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err));
+		sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err));
 	real_dims_only(LDims, FixedLDims),
-	format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err)).
+	sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err)).
 /* also check name of exp inter for right brackets */
 
 real_dims_only(IDims, Dims) :-

@@ -66,9 +66,10 @@ return (char*)lpMsgBuf;
 #ifdef SIM_OPSYS_Darwin
 #define UNLOAD_DLL dummyunload
 
-BOOL dummyunload(HINSTANCE handle) {
-  return(1);
+int dummyunload(HINSTANCE handle) {
+  return 1;
 }
+
 #else
     #define UNLOAD_DLL !dlclose
 /* dlclose inverted cos it seems to return NULL when it works */

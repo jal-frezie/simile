@@ -620,7 +620,7 @@ show_error(Model, Lossage) :-
 	Lossage = compilation_failed, !;
 	/* if this happens the user will have seen the error already */
 	(Lossage = open_model_failed(MimeFail, PrologFail), !,
-	    format_to_chars("Simile could not open this file as a model. It could not be read as a MIME because: ~w. It could not be read as a model description because: ~s.", [MimeFail, PrologFail], Text),
+	    sicstus_format_to_chars("Simile could not open this file as a model. It could not be read as a MIME because: ~w. It could not be read as a model description because: ~s.", [MimeFail, PrologFail], Text),
 	    Fault = user;
 	Lossage = instantiation_failure(Node), !,
 	    caption_for(Node, Capt),
