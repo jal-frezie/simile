@@ -1,6 +1,3 @@
-//#include <iostream>
-//using namespace std;
-
 double spare;
 BOOLEAN have_spare = 0;
 double gaussian(double random, double mean, double sd) {
@@ -21,21 +18,3 @@ double gaussian(double random, double mean, double sd) {
   return(mean+sd*norm);
 }
     
-double grate(double x)
-{
-  if (x < 5){
-    //cout << 0.01 << endl;
-    return 0.01;
-  }
-  else{
-    //cout << 0.1 << endl;;
-    return 0.1;
-  }  
-}
-
-double gratea(double x)
-{
-  //cout << 0.11 << endl;;
-  return 0.11;
-}
-
