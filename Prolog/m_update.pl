@@ -768,8 +768,9 @@ can_finish(Ltype, Box1, Box2) :-
 	/* last and very final problematic case -- a duplicate influence */
 	\+ (Ltype = influence,
 	       implicit_function(Box2, Terminus),
-	       connects(Dup, Box1, Terminus),
-	       find_type(Dup, influence)).
+	       (terminates(Box1, Terminus);
+		   connects(Dup, Box1, Terminus),
+		   find_type(Dup, influence))).
 
 membership_depends(Ind, Dep) :-
 	(find_all_comps(Con, Dep);
