@@ -464,7 +464,10 @@ Geraint stylie! But no-one will make 46 assocs to a node...*/
 
 list_links(Node, Links) :-
 	setof(Link-Index,
-	      find_reference(Node, Index, Link),
+	      (find_reference(Node, Index, Link),
+		  /* Bring references to ancestor model links up-to-date
+		  but do not use them */
+		  terminates(Link, Node)),
 	      RefPairs),
 	permutation(RefPairs, InIndexOrder),
 	\+ (append(_, [_-WeeI | Rest], InIndexOrder),
