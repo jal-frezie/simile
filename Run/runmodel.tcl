@@ -41,7 +41,7 @@ proc TraceObj {winId x y} {
     set cany [$winId canvasy $y]
     set target [$winId find closest $canx $cany]
     set node [ExtractPrologName $winId $target]
-    
+
     if {[string compare $helperTable(current) none]} {
         ProdObj $node [ExtractCaption $winId $node]
     }
@@ -51,7 +51,7 @@ proc ModelWindow {winName} {
     global tcl_platform
     menu ${winName}top
     toplevel $winName -menu ${winName}top
-    
+
     switch $tcl_platform(platform) {
         windows { wm iconbitmap $winName -default ../Run/similev2.ico }
         unix { wm iconbitmap $winName @../Images/dribble.xbm}
@@ -62,22 +62,22 @@ proc ModelWindow {winName} {
             -yscrollcommand "AdjustCanvas $winName canvas y" \
             -xscrollincrement 1 -yscrollincrement 1]
     # scrollincrements set the only way we can get precise scrolling...
-    
+
     # this rectangle will be resized to fill the scrollable area and coloured to
     # show the background
     $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
-    
+
     # space for toolbar
     frame $winName.toolSlot
     pack $winName.toolSlot -fill x
-    
+
     scrollbar $winName.xscroll -orient horizontal \
             -command [list AdjustScroll $c xview]
     scrollbar $winName.yscroll -orient vertical \
             -command [list AdjustScroll $c yview]
-    
+
     pack $c -fill both -expand true
-    
+
     bind $c <Configure> {SetSpace %W %w %h}
     return $c
 }
@@ -86,7 +86,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     global window_info rads
     #    put back if Windows users want respite from their gash placement system
     #    wm geometry $winName +0+84
-    
+
     # set the display depths to those we recorded
     #ShowMessage debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
     set cats {ghost_link influence variable flow \
@@ -96,7 +96,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
         WindowDetail $c [lindex $cats $depthParam] \
                 [lindex $args $depthParam] 0
     }
-    
+
     $c configure -width 1 -height 1
     $c configure -scrollregion "$wl $wt $wr $wb" \
             -width [expr $wr-$wl] -height [expr $wb-$wt]
@@ -105,7 +105,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     set window_info($c,height) [expr $wb - $wt]
     set window_info($c,scale) $scale
     # last will be overwritten if drawing from Prolog
-    
+
     if {[string match image [$c type /base/]]} {
         $c coords /base/ $wl $wt
         base$c configure -width [expr int($wr-$wl)]
@@ -114,7 +114,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
         $c coords /base/ $wl $wt $wr $wb
     }
     ChangeParentTitle $c $winTitle $bg
-    
+
     set topWin [winfo parent $c]
     scan [wm maxsize $topWin] "%d %d" mw mh
     #ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
@@ -191,44 +191,44 @@ proc SetSpace {c w h} {
 
 proc DoZoom { winId factor toProlog} {
     global window_info
-    
+
     # First, find canvas point at centre of display
     set centre_x [expr $window_info($winId,width)/2]
     set centre_y [expr $window_info($winId,height)/2]
-    
+
     # Now work out where this should be in the image, so I can put it back in the
     # centre afterwards
-    
+
     set target_x [expr [$winId canvasx $centre_x]*$factor]
     set target_y [expr [$winId canvasy $centre_y]*$factor]
-    
+
     # next make sure that enough canvas exists for the outcome of the operation
     RollBack $winId $toProlog [expr (1 - 1/$factor)*$centre_x] \
             [expr (1 - 1/$factor)*$centre_y] \
             [expr (1 + 1/$factor)*$centre_x] \
             [expr (1 + 1/$factor)*$centre_y]
-    
+
     # Next, scale all the window objects (centre must be 0 because all canvas/desktop
     # translation is done relative to 0)
-    
+
     ZoomImage $winId all $factor
-    
+
     # Change the canvas area in accordance with the change in scale
-    
+
     set oldSize [$winId cget -scrollregion]
     set newReg [list [expr [lindex $oldSize 0]*$factor] \
             [expr [lindex $oldSize 1]*$factor] \
             [expr [lindex $oldSize 2]*$factor] \
             [expr [lindex $oldSize 3]*$factor]]
     $winId configure -scrollregion $newReg
-    
+
     # Find what is in the middle now
-    
+
     set currentX [$winId canvasx $centre_x]
     set currentY [$winId canvasy $centre_y]
-    
+
     # Now scroll it so what was previously in the middle of the display is still there
-    
+
     $winId xview scroll [expr round($target_x - $currentX)] units
     $winId yview scroll [expr round($target_y - $currentY)] units
 }
@@ -242,7 +242,7 @@ proc DoZoom { winId factor toProlog} {
 proc ZoomImage {winId which factor {optFontor none}} {
     #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
     global window_info looks
-    
+
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
         set objList [$winId find withtag $which]
@@ -251,7 +251,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
         # and update the info...(if it's there)
         catch {set window_info($winId,scale) \
                     [expr $window_info($winId,scale) * $factor]}
-        
+
     }
     if {[string match none $optFontor]} {
 	set fontor $factor
@@ -279,7 +279,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
 	    set newWidth [expr round($factor*[$tgtImage cget -width])]
 	    set newHt [expr round($factor*[$tgtImage cget -height])]
 	    scan [$winId coords $object] {%f %f} newX newY
-	    
+
 	    if {[string compare none optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
 # so scale image rather tha re-tiling it
@@ -378,13 +378,13 @@ proc AdjustArrow {winId object factor} {
 # Move a window's display area to include all its contents
 proc DisplayAll { winId } {
     global window_info
-    
+
     # get desired display area
     if {[scan [$winId bbox size_on_this] "%d %d %d %d" \
                 bl bt br bb] == 4} {
         # ShowMessage debug info "Bounds are $bl $bt $br $bb" ok
         set clearBorder [expr 15*$window_info($winId,scale)]
-        
+
         set bl [expr $bl - $clearBorder]
         set bt [expr $bt - $clearBorder]
         set br [expr $br + $clearBorder]
@@ -394,16 +394,16 @@ proc DisplayAll { winId } {
         set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
         set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
         set scale [expr $xscale>$yscale?$yscale:$xscale]
-        
+
         # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
-        
+
         ZoomImage $winId all $scale
-        
+
         set bl [expr $bl*$scale]
         set bt [expr $bt*$scale]
         set br [expr $br*$scale]
         set bb [expr $bb*$scale]
-        
+
         ResizeDesktop $winId $bl $bt $br $bb
     }
 }
@@ -418,27 +418,27 @@ proc DisplayArea {winId} {
     set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
     set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
     set factor [expr $xscale>$yscale?$yscale:$xscale]
-    
+
     ZoomImage $winId all $factor
     # Change the canvas area in accordance with the change in scale
-    
+
     set oldSize [$winId cget -scrollregion]
     set newReg [list [expr [lindex $oldSize 0]*$factor] \
             [expr [lindex $oldSize 1]*$factor] \
             [expr [lindex $oldSize 2]*$factor] \
             [expr [lindex $oldSize 3]*$factor]]
     $winId configure -scrollregion $newReg
-    
+
     # First, find canvas point at centre of display
     set CurrentX [$winId canvasx [expr $window_info($winId,width)/2]]
     set CurrentY [$winId canvasy [expr $window_info($winId,height)/2]]
-    
+
     # Now find canvas point at centre of selected rectangle after zoom
     set centre_x [expr $factor*($bl+$br)/2]
     set centre_y [expr $factor*($bt+$bb)/2]
-    
+
     # Now scroll it so what should be in the middle of the display is there
-    
+
     $winId xview scroll [expr round($centre_x - $CurrentX)] units
     $winId yview scroll [expr round($centre_y - $CurrentY)] units
 }
@@ -473,7 +473,7 @@ proc AddZoomMenu {canvas menu tellProlog} {
             $canvas 0.8 $tellProlog"
     $fm2 add command -label "Out lots" -command "DoZoom \
             $canvas 0.512 $tellProlog"
-    
+
 }
 
 proc AddFindMenu {canvas menu} {
@@ -533,18 +533,18 @@ proc NextCaption {canvas} {
         set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
         #	$canvas itemconfigure $this -fill blue
         # left in in case the thing fails to highlight, or is exec_only
-        
+
         # Now to pervert the 'scan' command to make an ad-hoc 'see'...
         # note this could also be done using canvas x/yview moveto, but only
         # if the values they return are updated by resizing the window (which
         # the reported width and height aren't).
-        
+
         set middleX [$canvas canvasx [expr $window_info($canvas,width)/2]]
         set middleY [$canvas canvasy [expr $window_info($canvas,height)/2]]
         scan [$canvas coords $this] {%f %f} tgtX tgtY
         $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
         $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
-        
+
         set find(now,$canvas) [ExtractPrologName $canvas $this]
         FlashSymbol $canvas $find(now,$canvas) orange orange
         #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
@@ -554,14 +554,14 @@ proc NextCaption {canvas} {
 
 proc MakeHelperMenu {} {
     set fm [menu .helpers -tearoff 0]
-    
+
     $fm add command -label "Load" -command LoadView
     $fm add command -label "Save" -command SaveView
     $fm add command -label "Clear" -command ClearView
     $fm add command -label "Close" -command KillHelpers
     $fm add command -label "Parameters..." \
             -command {FileParamDialogue 1 [focus]}
-    
+
     set oldDir [pwd]
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
@@ -631,7 +631,7 @@ proc CreateHelperWindow {helperId helperTitle} {
 
 proc NewHelperWindow {helperId helperTitle} {
     global helperTable tcl_platform
-    
+
     # ShowMessage debug info "Making $helperId $helperTitle" ok
     if {[PrefValue custom(helperManager) helperManager]} {
         set winId [NewMreHelperWindow $helperId $helperTitle]
@@ -659,25 +659,25 @@ set runState(modelRunning) 0
 
 proc RunDialog {canvas} {
     global runState helperTable
-    
+
     #    ShowMessage debug info enter(RunDialog) ok
-    
+
     set defHelper $helperTable(RunControl)
     set runState(modelRunning) 2
     set runState(activeWindow) $canvas
-    
+
     if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
                 [array get helperTable] spare helperId]} {
         kill_helper_window $helperId
     }
     set helperId [NewHelperWindow $defHelper "Default run control"]
     ${defHelper}::initialize $helperId
-    
+
     ${defHelper}::SetMode $helperId reset
     set runState(helperId) $helperId
-    
+
     MakeSlidersForInputs
-    
+
     if {[PrefValue custom(helperManager) helperManager]} {
         CreateHelperWindow $helperTable(VariableList) "Variables"; # JMM
     }
@@ -698,7 +698,7 @@ proc UnMakeSlidersForInputs { } {
         kill_helper_window $helperTable(autosliders)
         unset helperTable(autosliders)
     }
-    
+
     if {[info exists checkStates]} {
         unset checkStates
     }
@@ -720,13 +720,13 @@ proc MakeSlidersForInputs { } {
 
 proc GrabClicks {winId} {
     global helperTable
-    
+
     set helperTable(current) $winId
 }
 
 proc ReleaseClicks {winId} {
     global helperTable
-    
+
     set helperTable(current) none
 }
 
@@ -758,11 +758,11 @@ proc SetState {winId newState} {
 
 proc ProdObj {nodeId caption} {
     global helperTable
-    
+
     switch -regexp [GetModelType $nodeId] {
         REAL|INTEGER|FLAG {
             set target $helperTable(current)
-            
+
             set helperId $helperTable($target,whichHelper)
             ${helperId}::click $target $nodeId $caption
         } default {
@@ -864,7 +864,7 @@ proc AddEqnPopup {x y winId X Y} {
             # we might want to prettify this a bit first
         }
     }
-    
+
 }
 
 proc AddPopupMessage {text colour isValue} {
@@ -941,16 +941,16 @@ proc PostPopup {X Y} {
     }
     toplevel .popup -width 1 -height 1 -bd 2 -relief raised
     wm overrideredirect .popup 1
-    
+
     # This moves the popup window to whichever quadrant of the moused-over
     # component is all on the screen. It sticks it to the bottom left to start with
     # so it doesn't grab the focus, then updates so the requested size can be found
     # then uses this size to move it to the right place
-    
+
     if {$X>[winfo screenwidth .popup]/2} {
         set xpoint -[expr [winfo screenwidth .popup]+10-$X]
     } else {
-        
+
         set xpoint +[expr $X+10]
     }
     if {$Y>[winfo screenheight .popup]/2} {
@@ -1025,7 +1025,7 @@ proc FixSize {c} {
     if {[string match $openModel {}]} {
         DoRegDialog $win
     }
-    
+
 }
 
 proc DestroyHelpers {} {
@@ -1047,7 +1047,7 @@ proc KillHelpers {} {
 
 proc ClearView {} {
     global helperTable
-    
+
     foreach displayBox [array name helperTable *,whichHelper] {
         scan $displayBox {%[^,]} winId
         set helperId $helperTable($displayBox)
@@ -1067,7 +1067,7 @@ proc StripCrs {withCrs} {
 
 proc RestoreCrs {noCrs} {
     regsub -all \\\\n $noCrs \n withCrs
-    
+
     return $withCrs
 }
 
@@ -1148,7 +1148,7 @@ proc LoadMREFormatView {stream} {
 
 proc DoDisplay {current display exec} {
     global helperTable
-    
+
     foreach displayBox [array name helperTable *,whichHelper] {
         scan $displayBox {%[^,]} winId
         set helperId $helperTable($displayBox)
@@ -1204,7 +1204,7 @@ proc GetModelTime {} {
 proc start_run {winId} {
     global runState
     global window_info
-    
+
     # ShowMessage debug info enter(start_run) ok
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
@@ -1240,7 +1240,7 @@ proc start_run {winId} {
         wm deiconify .mre   ; # hack to stop .mre obscuring FileParamDialogue
         raise $mre
     } else {
-        
+
         ToggleIOToolMenu 1
     }
     foreach winData [array name window_info *,parent] {
@@ -1251,7 +1251,7 @@ proc start_run {winId} {
         $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
     }
     set runState(reloadParams) 1
-    
+
     # MakeSlidersForInputs is currently done after initializing the
     # model, so default values calculated from eqns can be loaded to the
     # sliders. Here we must clear any old input tool values so they are not used.
@@ -1298,7 +1298,7 @@ proc ShiftDll {Point Top Loc Rep} {
     } else {
         set AddLoc $Loc
     }
-    
+
     set base $Top/$Point$AddLoc
     file mkdir $base
     if {[llength $Rep]} {
@@ -1320,7 +1320,7 @@ proc ShiftDll {Point Top Loc Rep} {
 proc build_tcl_program {winId} {
     global model_id
     #   model_id set to 0 cos its existence is tested when getting model structure
-    
+
     set model_id 0
     if {[start_run $winId]} {
         RunDialog "Current model"
@@ -1330,14 +1330,14 @@ proc build_tcl_program {winId} {
 proc update_c_executable {winId} {
     #    ShowMessage debug info "References are $finderList" ok
     global model_id instance_id
-    
+
     # For the toplevel model, make an instance. This will also make
     # instances of any fixed-membership submodels immediately, so they had
     # better already be loaded
-    
+
     set instance_id [c_createmodel $model_id]
     #    ShowMessage debug info "model instance $instance_id created" ok
-    
+
     if {[start_run $winId]} {
         RunDialog "Current model"
     }
@@ -1406,7 +1406,7 @@ proc set_connections {connects} {
 
 proc FindPhase {node submodel} {
     global model_id model_ids
-    
+
     set model_id $model_ids($submodel)
     foreach subnode [listobjects $model_id] {
         set subtype [GetModelEval $subnode]
@@ -1423,7 +1423,7 @@ proc FindPhase {node submodel} {
     }
     foreach nodeTypePair $subs {
         set subFind [FindPhase $node [lindex $subs 0]]
-        
+
         if {$subFind != -1} {
             switch [lindex $subs 1] {
                 EXOGENOUS {
@@ -1441,7 +1441,7 @@ proc FindPhase {node submodel} {
 
 proc compile_c {workingDir} {
     global tcl_platform env
-    
+
     set oldDir [pwd]
     cd $workingDir
     if {[PrefValue custom(hackBreak) hackBreak]} {
@@ -1455,9 +1455,9 @@ proc compile_c {workingDir} {
 	set serial [newInt]
 	set TARGET model${serial}[info sharedlibextension]
     }
-    
-    
-    
+
+
+
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
@@ -1479,7 +1479,7 @@ proc compile_c {workingDir} {
                 exec g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
                 exec dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
                 file delete exptemp.exp
-                
+
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } else {
                 set TOOLS32 [file dirname $env(MSVCDIR)/any]
@@ -1490,31 +1490,31 @@ proc compile_c {workingDir} {
                 exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
                         -align:0x1000 /MACHINE:IX86 \
                         -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
-                        ame_dll${MAJ}${MIN}.lib \
+                        $TOOLDIR/../System/lib/Stubs/ame_dll${MAJ}${MIN}.lib \
                         $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
                         $TOOLS32/lib/oldnames.lib objtemp.o
             }
             # Method using command line calls to Borland C++ 4.0 or later -- not finished
-            
+
             #	set TOOLS32 "c:/program files/borland/cbuilder4"
             #	exec $TOOLS32/bin/bcc32.exe -Ox -c -nologo -o$object \
             #		-DWIN32 -D_WIN32 -D_DLL -D_X86_=1 -DMODELCODE="$c_prog" \
             #		-I. -I$TOOLS32/include -I$TCL/include $TOOLDIR/support.cpp
-            
-            
-            
+
+
+
             #	exec $TOOLS32/bin/ilink32.exe -Tpd $object $TARGET $TCL/lib/tcl${MAJ}${MIN}.lib
             # Method using MSVC's auto-generated Make file -- hangs for some
             # reason
-            
+
             #	exec $TOOLS32/bin/nmake $TOOLDIR/amemodel/amemodel.mak
             #	file rename $TOOLDIR/amemodel/debug/amemodel.dll $TARGET
-            
+
         }
     }
     #    file delete $c_prog
     file delete objtemp.o
-    
+
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
     return $serial
@@ -1577,13 +1577,13 @@ proc release_graph_data {graph_data_pointer} {
 
 proc graphpoint {xval graph_data_pointer} {
     variable graphdata
-    
+
     scan [set $graph_data_pointer] {%f %f %d %f %f %d %d %d %[^.]} \
             xlow xhigh xspan ylow yhigh yspan range xsize array_data
     set length [expr $xsize - 1]
-    
+
     set interval [expr $length*double($xval-$xlow)/($xhigh-$xlow)]
-    
+
     switch $range {
         0 {
             if {$interval < 0} {set interval 0}
@@ -1605,10 +1605,10 @@ proc getinstance {varName dest newvalue} {
     # If newvalue exists, it should be copied to target and returned
     upvar 1 $varName target
     upvar 1 $dest returnList
-    
+
     if {[string compare $newvalue NULL]} {
         set target $newvalue
-        
+
     } ;# end(if,$set)
     lappend returnList $target
     return $returnList
@@ -1676,9 +1676,9 @@ proc compare_values {v1 indexTxt v2 length step} {
 
 proc compare_lists {count nestlist1 indexTxt list2 length step} {
     upvar 1 $indexTxt index
-    
+
     set hunting 2
-    
+
     while {$hunting==2} {
         if {$index >= $length} {
             set hunting 0
@@ -1694,7 +1694,7 @@ proc compare_lists {count nestlist1 indexTxt list2 length step} {
 }
 
 proc compare_tcl_lists {count list1 list2} {
-    
+
     for {set ptr 0} {$ptr < $count} {incr ptr} {
         set diff [expr [lindex $list1 $ptr]-[lindex $list2 $ptr]]
         if {$diff < 0} {
@@ -1709,7 +1709,7 @@ proc compare_tcl_lists {count list1 list2} {
 proc init_pop_member {new_one index parent channel} {
     upvar 1 $new_one tail
     set tgt AME_model<>::$tail
-    
+
     set ${tgt}::instanceid $index
     set ${tgt}::parentId $parent
     set ${tgt}::channelId $channel
