@@ -410,7 +410,7 @@ namespace eval printer {
         set cmmd "$cmmd -fill $fill"
     }
     
-    debug_puts "$cmmd"
+    debug_puts "$cmmd"
     eval $cmmd
   }
   

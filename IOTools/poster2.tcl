@@ -128,13 +128,13 @@ set line [open "c:/dump.txt" w]
 	#$w.canvas bind all <Button-1> \
 	#	[namespace code "CanvasMark $w %x %y %W"]
 	#$w.canvas bind movable <B1-Motion> \
-	#	[namespace code "CanvasDrag %x %y %W"]
+	#	[namespace code "CanvasDrag %x %y %W"]
 	$w.canvas bind isbox <Button-1> \
 		[namespace code "CanvasMark $w %x %y %W"]
 	$w.canvas bind isbox <B1-Motion> \
-		[namespace code "CanvasDrag %x %y %W"]
+		[namespace code "CanvasDrag %x %y %W"]
 	$w.canvas bind isbox <B1-ButtonRelease> \
-		[namespace code "DeleteGuideLines $w.canvas"]
+		[namespace code "DeleteGuideLines $w.canvas"]
 
 	Canvas_EditBind $w.canvas
 
@@ -160,7 +160,7 @@ proc Save {w} {
 
 		puts $channel "$w.canvas create $itemtype $coords $opts" 
 	}
-	close $channel
+	close $channel
 }
 
 
@@ -348,7 +348,7 @@ proc start_box {w x y} {
 	set box($w,y0) $y
 	set box($w,$x0,$y0) 0;   # Cool! The array subscripts are the
 					 # initial co-ordinates!
-
+
 }
 
 
@@ -360,7 +360,7 @@ proc grow_box {w x y} {
 		set bgcolour [lindex [list #ffffdd #ffffff #ddffff #ffeeee #eeeeff] \
 			[expr $boxtype-1]]
 		set x0 $box($w,x0)
-		set y0 $box($w,y0)
+		set y0 $box($w,y0)
 		set x1 $x
 		set y1 $y
 		if {$box($w,$x0,$y0)==0} {
@@ -447,7 +447,7 @@ proc show_canvas_list {w} {
 set windows [winfo children .]
 set nwindows [llength $windows]
 
-set canvasses {}
+set canvasses {}
 foreach window $windows {
 	set children1 [winfo children $window]
 	foreach child1 $children1 {
@@ -493,7 +493,7 @@ proc add_one_canvas {w canvas box_item} {
 	set y0 $ymin
 	set x1 $xmax
 	set y1 $ymax
-	foreach item $items {
+	foreach item $items {
 		set coords [$canvas coords $item]
 		if {[llength $coords]==4} then { 
 			set x0 [lindex $coords 0]
@@ -594,7 +594,7 @@ proc add_one_canvas {w canvas box_item} {
 				set x1 [expr $xleft+$scale*([lindex $coords 2]-$xmin)]
 				set y1 [expr $ytop+$scale*([lindex $coords 3]-$ymin)]
 				$w.canvas create oval $x0 $y0 $x1 $y1 \
-					-fill #d0d0d0 -tags "zz $boxtag $oxtag movable"
+					-fill #d0d0d0 -tags "zz $boxtag $oxtag movable"
 			}
 			polygon {
 				set start [list $w.canvas create polygon]

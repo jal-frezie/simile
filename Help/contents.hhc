@@ -767,15 +767,15 @@
 			<UL>
 				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="Model window">
-					<param name="Local" value="scripting\modelwin.html">
+					<param name="Local" value="scripting\modelwin.htm">
 					</OBJECT>
 				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="Run control">
-					<param name="Local" value="scripting\runcontrol.html">
+					<param name="Local" value="scripting\runcontrol.htm">
 					</OBJECT>
 				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="Table helper">
-					<param name="Local" value="scripting\tablehelper.html">
+					<param name="Local" value="scripting\tablehelper.htm">
 					</OBJECT>
 			</UL>
 			<LI> <OBJECT type="text/sitemap">

@@ -9,7 +9,6 @@ set keyValue "plotter1.25"
 
 namespace eval ::$keyValue {
     
-    
     proc identify {} {
         return "Plotter"
     }

@@ -38,7 +38,7 @@ th GetUpdateAtDisplayInterval
 
 # set the table not to update its display at the run control display interval
 # it is faster not to 
-th SetUpdateAtDisplayInterval 0
+th SetUpdateAtDisplayInterval false
 
 # add the variable Number of Trees to the table
 th AddVariable "/Number of Trees"

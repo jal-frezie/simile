@@ -232,10 +232,11 @@ if {[string equal windows $::tcl_platform(platform)]} {
             set attr($winId) {}
             set pObjFactory [::esriFramework::IObjectFactory $Arc_ArcMap($winId)]
             #set modelWin [do_for_node set window_info([lindex [lsort [array name window_info *,parent]] 0])]
-            # -parent $modelWin
+            # -parent $modelWin # if no parent need  -transient no
             set dlg [Dialog .arcMapVectorConfig -modal local \
                     -separator 0 \
                     -title   "ArcMap Vector Map Config" \
+                    -transient no\
                     -default 0 -cancel 1]
             $dlg add -name ok
             $dlg add -name cancel

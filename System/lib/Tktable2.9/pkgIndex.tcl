@@ -3,4 +3,6 @@ switch [info sharedlibextension] {
     .dll {set imgLib Tktable29.dll}
     .so {set imgLib libTktable2.9.so}
 }
+
 package ifneeded Tktable 2.9  [list load [file join $dir $imgLib] Tktable]
+
