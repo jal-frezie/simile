@@ -108,7 +108,6 @@ stick_model_in(Parent, Name, Mode) :-
 	Mode = reopen,
 	check_if_already_open(Name), !;
 	use_temp_dir(LocalDir),
-	Win shows_model Parent,
 	(event:list_captions(Parent, Used), !; true),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
@@ -131,6 +130,7 @@ stick_model_in(Parent, Name, Mode) :-
 		TryDll = '',
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 		output:my_file_exists(GraphFileName), !,
+		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName);
 	    /* this should call Prolog back with the display detail vals */
 	    TryDll = 0,
@@ -152,7 +152,10 @@ stick_model_in(Parent, Name, Mode) :-
 		not want to save as a separate move so forget it */
  	        input:retract(resizing_windows(Win)), !;
 	    resize_canvas_for(Parent),
-		redraw_window(Win)),
+		(Win2 shows_model Parent,
+		    redraw_window(Win2),
+		    fail;
+		 true)),
 	    update_captions(Parent);
 	Mode = insert(Pt),
 	    (Translated = copy, !, /* paste into empty sole toplevel */
