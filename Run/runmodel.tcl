@@ -989,9 +989,10 @@ proc FixSize {c} {
 
 proc DestroyHelpers {} {
     global modelWin
-    KillHelpers
     if {[winfo exists .mre]} {
         ::RunEnv::Destroy
+    } else {
+	KillHelpers
     }
 }
 

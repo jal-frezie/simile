@@ -429,9 +429,13 @@ proc canvasTLDistance {winId x y} {
 
 proc GetFromProlog {prologCmd} {
     global fromProlog
-    set fromProlog {}
     prolog $prologCmd
-    return $fromProlog
+    if {![info exists fromProlog]} {
+	tkwait variable fromProlog
+    }
+    set res $fromProlog
+    unset fromProlog
+    return $res
 }
 
 # Procedure for when Tcl recognizes what object is clicked but being a
