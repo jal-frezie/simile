@@ -350,12 +350,13 @@ set_properties(Wid, Model) :-
 			\+ (integer(Dodgy), Dodgy > 1),
 			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
 		    Spec = [count=UseCount]);
-		Wibble = "Could not convert dimensions to numbers"),
-		    
-		(nonvar(Spec); name(Wobble, Wibble), raise_exception(Wobble));
+		Wibble = "Could not convert dimensions to numbers");
 	    NewNature = population,
 		Spec = [type=NewNature]),
-	    add_parameter(Model, 0, multiplication_spec, Spec),
+	    (nonvar(Spec),
+		add_parameter(Model, 0, multiplication_spec, Spec);
+	    do_dialogue("Problem with dimensions", error, Wibble, ok, _)),
+	    
 	    ((abs(NewFatness - Fatness) =< 0.005;
 	      Fatness > 1, NewFatness > 0.995), !;
 	    FatFactor is Fatness/NewFatness,

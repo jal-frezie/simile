@@ -65,6 +65,12 @@ proc initialize {winId} {
     catch {wm geometry $winId 650x500}
 }
 
+proc clear {winId} {
+    variable useNodes
+    set useNodes($winId,selected) {}
+    display $winId 0 0 0
+}
+
 proc AddVariable {winId} {
     $winId.intro configure -text "Click on the array value representing the X coordinates of the treelike objects to be displayed."
     GrabClicks $winId

@@ -14,15 +14,25 @@ proc Reader {} {
     if {[gets $plPipe noCrs] >= 0} {
 	regsub -all \\\\n $noCrs \n line
 #	puts [concat < $line]
-	if {[string match get_tcl_cmd $line]} {
+	if {[catch {set cmd [lindex $line 0]} mess]} {
+	    DebugMess "Could not parse $line : $mess"
+	} elseif {[string match get_tcl_cmd $cmd]} {
 	    send_tcl_cmd
-	} elseif {[string match send_tcl_cmd [lindex $line 0]]} {
+	} elseif {[string match send_tcl_cmd $cmd]} {
 	    eval do_tail $line
-	} elseif {[string match debug [lindex $line 0]]} {
 	} else {
-#	    tk_messageBox -title {Unexpected Prolog output} -icon warning \
-#		-message $line -type ok
+	    DebugMess $line
 	}
+    }
+}
+
+set debugBoxes 1
+proc DebugMess {Mess} {
+    global debugBoxes
+    if {$debugBoxes} {
+	tk_messageBox -title debug -icon info -message $Mess -type ok
+    } else {
+	puts [concat ! $Mess]
     }
 }
 
