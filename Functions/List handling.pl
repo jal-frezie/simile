@@ -11,8 +11,8 @@ colin(List) --> legg=rand_var(0,sum(List)),
 1+sum(if subtotals(List)<legg then 1 else 0).
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
 
-first(BoolArr) --> [clear]=makearray(if place_in(1)==1 then 1
-				    elseif element(BoolArr,place_in(1)) then 0
+first(BoolArr) --> [clear]=makearray(if element(BoolArr,place_in(1)) then 0
+				    elseif place_in(1)==1 then 1
 				    else element(sofar([clear]),place_in(1)-1),
 				     count(BoolArr)),sum([clear])+1.
 posgreatest(Incoming) --> [local]=Incoming,[records]=makearray(
