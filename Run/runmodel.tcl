@@ -252,9 +252,9 @@ proc ZoomImage {winId which factor fontor} {
 	set objList [$winId find withtag $which]
     } else {
 	set objList [$winId find all]
-	# and update the info...
-	set window_info($winId,scale) \
-		[expr $window_info($winId,scale) * $factor]
+	# and update the info...(if it's there)
+	catch {set window_info($winId,scale) \
+		   [expr $window_info($winId,scale) * $factor]}
 
     }
 	foreach object $objList {
@@ -317,14 +317,14 @@ proc AssembleFont {family weight style textsize} {
 
 proc AdjustWidth {winId object factor} {
     if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
-	    tag oldWidth]} {
-	$winId dtag $object $tag
-	set width [expr $oldWidth*$factor]
-	$winId addtag realwidth($width) withtag $object
-	return $width
+	    tag oldWidth]<1} {
+	set oldWidth [$winId itemcget $object -width]
     } else {
-	return 1
+	$winId dtag $object $tag
     }
+    set width [expr $oldWidth*$factor]
+    $winId addtag realwidth($width) withtag $object
+    return $width
 }			
 
 proc AdjustArrow {winId object factor} {

@@ -952,11 +952,22 @@ proc PrepForExport {winId way} {
     } else {
         set textBoost 1
     }
+    set tlBorder 20
     set textscale [expr $detail*$textBoost]
     if {[string match there $way]} {
 	set jiggles(sr) [$winId cget -scrollregion]
-	scan $jiggles(sr) "%g %g %g %g" sl st sr sb
-	scan [$winId bbox size_on_this] "%d %d" jiggles(bl) jiggles(bt)
+	if {[scan $jiggles(sr) "%g %g %g %g" sl st sr sb]<4} {
+	    set sl 0; set st 0 
+	    set sr [winfo width $winId]; set sb [winfo height $winId]
+	}
+#ShowMessage debug info "Use scrollregion: $sl $st $sr $sb" ok
+	if {[scan [$winId bbox size_on_this] "%d %d" \
+	      jiggles(bl) jiggles(bt)]<2} {
+	    scan [$winId bbox all] "%d %d" jiggles(bl) jiggles(bt)
+	}
+	set jiggles(bl) [expr $jiggles(bl)-$ltBorder]
+	set jiggles(bt) [expr $jiggles(bt)-$ltBorder]
+#ShowMessage debug info "Use corner: $jiggles(bl) $jiggles(bt)" ok
 	$winId move all [expr -$jiggles(bl)] [expr -$jiggles(bt)]
 	$winId configure -scrollregion [list \
 	    [expr $detail*($sl-$jiggles(bl))] [expr $detail*($st-$jiggles(bt))] \
@@ -1019,16 +1030,23 @@ proc PrintNow {winId} {
 proc SpitPS {winId psfile} {
     global window_info
     set detail [PrepForExport $winId there]
+    if {[info exists window_info($winId,width)]} {
+	set useWidth window_info($winId,width)
+	set useHeight window_info($winId,height)
+    } else {
+	set useWidth [winfo width $winId]
+	set useHeight [winfo height $winId]
+    }
     $winId postscript -file $psfile -rotate true -pageanchor nw \
             -pagex 0 -pagey 0 \
             -x [expr $detail*[$winId canvasx 0]] \
             -y [expr $detail*[$winId canvasy 0]] \
-            -width [expr $detail*([$winId canvasx $window_info($winId,width)] \
-            - [$winId canvasx 0])] \
-            -height [expr $detail*([$winId canvasy $window_info($winId,height)] \
-            - [$winId canvasy 0])] \
-            -pagewidth [expr $window_info($winId,width)/100.0]i \
-            -pageheight [expr $window_info($winId,height)/100.0]i
+            -width [expr $detail*([$winId canvasx $useWidth] \
+				      - [$winId canvasx 0])] \
+            -height [expr $detail*([$winId canvasy $useHeight] \
+				       - [$winId canvasy 0])] \
+            -pagewidth [expr $useWidth/100.0]i \
+            -pageheight [expr $useHeight/100.0]i
     PrepForExport $winId back
 }
 

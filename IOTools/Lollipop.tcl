@@ -159,6 +159,8 @@ variable height; # of canvas
    
    canvas $winId.c -width 1 -height 1 -bg white
    frame $winId.buttons -relief raised -bd 1
+   button $winId.buttons.but_print -text "Print..." \
+      -command "PrintNow $winId.c"
    button $winId.buttons.but_view -text "aboveBelow" \
       -command " [namespace current]::toggleViewpoint $winId"
    button $winId.buttons.but_order -text "Swap Z Order" \
@@ -168,6 +170,7 @@ variable height; # of canvas
 	pack $winId.c -fill both -expand true
     pack $winId.buttons.but_view -side right
     pack $winId.buttons.but_order -side right
+    pack $winId.buttons.but_print -side right
     pack $winId.buttons.label_draw -side left -padx 2
     pack $winId.buttons -fill x
 
