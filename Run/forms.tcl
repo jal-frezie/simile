@@ -112,7 +112,7 @@ proc create_equation {parent boxtitle indices} {
 	update ;# let it move off screen so text updates do not distract user
     }
     wm title $t $boxtitle
-    # wm transient $t $parent
+    wm transient $t $parent
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     equationResources
@@ -478,6 +478,7 @@ proc destroy_equation {} {
     }
     ### End formula bar section
     
+    focus [wm transient $equation(top)].canvas
     destroy $equation(top)
 }
 
