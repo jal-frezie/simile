@@ -358,9 +358,9 @@ change_name(RenamedNode, Name) :-
 			    [Roles, NewRoles], top_down, _, NewEqn),
 	    add_parameter(DownFunc, 0, value, NewEqn),
 	    add_parameter(DownFunc, 0, spec, ''), /* till I can update it */
-	    add_parameter(OtherGhost, 2, role, NewRoles)),
+	    add_parameter(OtherGhost, 2, role, NewRoles),
 	    fail;
-	 update_captions(RenamedNode).
+	 update_captions(RenamedNode)).
 
 update_role(use(P1, P2, Ref, P3), InputSpecs, AllUsed,
 	    use(P1, P2, NewRef, P3)) :-
