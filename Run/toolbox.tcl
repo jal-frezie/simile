@@ -1192,8 +1192,6 @@ proc SaveProjectFile {topNode path tgt} {
     }
     set projectF [NetOpen $ProjectFile w]
     set statLine [array get SimileProject]
-    puts $statLine
-    ShowMessage debug info "putting $statLine" ok
     puts $projectF $statLine
     close $projectF
 }

@@ -1135,22 +1135,23 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
 
     set fm [menu ${winid}top.model -tearoff 0 -postcommand "AbleComp $winid"]
+    if {$isTopLevel} {
+        set execEntryState normal
+    } else {
+        set execEntryState disabled
+    }
     ${winid}top add cascade -label Model -underline 0 \
             -menu ${winid}top.model
-    $fm add command -label "Run" \
+    $fm add command -label "Run" -state $execEntryState \
                     -command "MenuSelect $c file run_c" \
                     -accelerator "Ctrl+R"
     AddAccelerator $winid model "Run" "<Control-r>"
-    $fm add command -label "Debug" \
+    $fm add command -label "Debug" -state $execEntryState \
                     -command "MenuSelect $c file run_tcl" \
                     -accelerator "Ctrl+D"
     AddAccelerator $winid model "Debug" "<Control-d>"
-    $fm add command -label "Abort execution" \
+    $fm add command -label "Abort execution" -state $execEntryState \
                     -command "FinishExec $c"
-    if {!$isTopLevel} {
-        $fm entryconfigure "Build In Tcl" -state disabled
-        $fm entryconfigure "Build In C++" -state disabled
-    }
     $fm add separator
     $fm add command -label "List equations" \
             -command "MenuSelect $c file list_eqns" \
