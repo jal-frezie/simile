@@ -27,6 +27,7 @@ namespace eval slide139 {
 	pack [message $winId.intro -aspect 800] -fill x
 
         MakeFrames $winId
+	SetState $winId {}
 	set geom [PrefValue custom(slidersPosition) slidersPosition]
 #        catch {wm geometry $winId $geom}
     }
@@ -35,10 +36,16 @@ namespace eval slide139 {
 	foreach current [winfo children $winId.sliderframe] {
 	    destroy $current
 	}
+	SetState $winId {}
     }
 
     proc Restore {winId} {
+	set oldCapts [GetState $winId]
         initialize $winId
+	foreach flatCapt $oldCapts {
+	    set oldCapt [RestoreCrs $flatCapt]
+	    InsertSlider $winId [GetIdFromCaptionPath $oldCapt] $oldCapt 1
+	}
     }
 
     proc AddVariable {winId} {
@@ -126,6 +133,8 @@ namespace eval slide139 {
 		return
 	    } else {
 		pack [frame $f] -fill x -expand true
+		SetState $winId [concat [GetState $winId] \
+				     [list [StripCrs $title]]]
 	    }
 	} else {
 	    set f $winId

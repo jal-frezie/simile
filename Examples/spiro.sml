@@ -1,14 +1,14 @@
 MIME-Version: 1.0
-Content-ID: <25710.1092667916.7@spirograph.ttc.ed.ac.uk>
+Content-ID: <26271.1092675030.7@spirograph.ttc.ed.ac.uk>
 Content-Type: multipart/mixed;
-              boundary="----- =_H0YHUSpMaMqjyBNcW1jIRQ=="
+              boundary="----- =_PjpTfSIqLftKqnximjr7ow=="
 
-------- =_H0YHUSpMaMqjyBNcW1jIRQ==
+------- =_PjpTfSIqLftKqnximjr7ow==
 MIME-Version: 1.0
 Content-Disposition: attachment; filename="/model.cpp"
 Content-Description: Data
 Date-Modified: Mon Aug 16 14:51:16 GMT 2004
-Content-ID: <25710.1092667916.1@spirograph.ttc.ed.ac.uk>
+Content-ID: <26271.1092675030.1@spirograph.ttc.ed.ac.uk>
 Content-Type: application/x-simile
 Content-Transfer-Encoding: base64
 
@@ -124,12 +124,12 @@ TEUsICJ4In0sCiAgICAgeyJub2RlMDAwNDIiLCBSRUFMLCBERVJJVkVELCB7MH0sCiAgICAgezEs
 IDEyLCAwfSwKICAgICAwLCAgLTEuMGUrMTAwLCAgMS4wZSsxMDAsIFZBUklBQkxFLCAieSJ9fTsK
 I2luY2x1ZGUgPHN1cHBvcnQyLmNwcD4K
 
-------- =_H0YHUSpMaMqjyBNcW1jIRQ==
+------- =_PjpTfSIqLftKqnximjr7ow==
 MIME-Version: 1.0
 Content-Disposition: attachment; filename="/model.so"
 Content-Description: Data
 Date-Modified: Mon Aug 16 14:51:17 GMT 2004
-Content-ID: <25710.1092667916.2@spirograph.ttc.ed.ac.uk>
+Content-ID: <26271.1092675030.2@spirograph.ttc.ed.ac.uk>
 Content-Type: application/x-simile
 Content-Transfer-Encoding: base64
 
@@ -646,25 +646,25 @@ X1JlZ2lzdGVyQ2xhc3NlcwB1cGRhdGVfc3VibW9kZWxfcmVmAGxvZ0BAR0xJQkNfMi4wAF9aMTBm
 aW5kX2dyYXBoaVAxNWdyYXBoX2RhdGFfdHlwZQBfWm53akBAR0xJQkNQUF8zLjIAX1pOOUFNRV9t
 b2RlbDExZ2V0X3BvaW50ZXJFaVBQaQBfX2dtb25fc3RhcnRfXwA=
 
-------- =_H0YHUSpMaMqjyBNcW1jIRQ==
+------- =_PjpTfSIqLftKqnximjr7ow==
 MIME-Version: 1.0
 Content-Description: Authentication Code
-Content-ID: <25710.1092667916.4@spirograph.ttc.ed.ac.uk>
+Content-ID: <26271.1092675030.4@spirograph.ttc.ed.ac.uk>
 Content-Type: text/plain
 
-71a0abbe69fc81069858fcc2dd28a7f4
+d1a44f49c762047b1ccd3d185e0a1d14
 
-------- =_H0YHUSpMaMqjyBNcW1jIRQ==
+------- =_PjpTfSIqLftKqnximjr7ow==
 MIME-Version: 1.0
 Content-Disposition: inline; filename="/model.pl"
 Content-Description: Simile model
-Date-Modified: Mon Aug 16 14:51:56 GMT 2004
-Content-ID: <25710.1092667916.3@spirograph.ttc.ed.ac.uk>
+Date-Modified: Mon Aug 16 16:50:27 GMT 2004
+Content-ID: <26271.1092675030.3@spirograph.ttc.ed.ac.uk>
 Content-Type: application/x-simile
 Content-Transfer-Encoding: base64
 
 c291cmNlKHByb2dyYW09J0FNRScsdmVyc2lvbj0gOC4wLGVkaXRpb249dGVhY2hpbmcsZGF0ZT0n
-TW9uIEF1ZyAxNiAxNDo1MTo1NiBHTVQgMjAwNCcpLgoKcm9vdHMoW25vZGUwMDAyMyxub2RlMDAw
+TW9uIEF1ZyAxNiAxNjo1MDoyNyBHTVQgMjAwNCcpLgoKcm9vdHMoW25vZGUwMDAyMyxub2RlMDAw
 MjQsbm9kZTAwMDI1LG5vZGUwMDAyNixub2RlMDAwMjcsbm9kZTAwMDI4LG5vZGUwMDAyOSxub2Rl
 MDAwMzAsbm9kZTAwMDMxLG5vZGUwMDAzMixub2RlMDAwMzMsbm9kZTAwMDM0LG5vZGUwMDAzNSxu
 b2RlMDAwMzYsbm9kZTAwMDM3LG5vZGUwMDAzOCxub2RlMDAwMzksbm9kZTAwMDQwLG5vZGUwMDA0
@@ -782,16 +782,16 @@ MjAscm9sZT1bdXNlKG5vbmUsaW5faGllcmFyY2h5LFt0b3RhbF92ZWN0b3JdLGFycmF5KDEsMikp
 XV0sW2NvdXJzZT1bWyA1MjAuNjU4MTMsIDI1Ny43MzU1NV0sWyA1MDUuODY3NzcsIDIxNC40MjA5
 M10sWyA0NjIuMzQxODcsIDIwMC4yNjQ0NV1dXSkuCg==
 
-------- =_H0YHUSpMaMqjyBNcW1jIRQ==
+------- =_PjpTfSIqLftKqnximjr7ow==
 MIME-Version: 1.0
 Content-Disposition: attachment; filename="/model.cnv"
 Content-Description: Simile canvas description
-Date-Modified: Mon Aug 16 14:51:56 GMT 2004
-Content-ID: <25710.1092667916.5@spirograph.ttc.ed.ac.uk>
+Date-Modified: Mon Aug 16 16:50:27 GMT 2004
+Content-ID: <26271.1092675030.5@spirograph.ttc.ed.ac.uk>
 Content-Type: application/x-simile
 Content-Transfer-Encoding: base64
 
-IyB3cml0dGVuIG9uIE1vbiBBdWcgMTYgMTQ6NTE6NTYgR01UIDIwMDQKVHdlYWtXaW5kb3cgJGMg
+IyB3cml0dGVuIG9uIE1vbiBBdWcgMTYgMTY6NTA6MjcgR01UIDIwMDQKVHdlYWtXaW5kb3cgJGMg
 e3NwaXJvIChTSU1JTEUgbW9kZWw6IHNwaXJvLnNtbCl9IDEgMC4wIC0xMC4wIDY0MC4wIDQwNy4w
 IGNsZWFyIDAgMzIgMzIgMzIgMzIgMzIgMzIgc2hvd0FsbApSZXNpemVEZXNrdG9wICRjIDAuMCAt
 MTAuMCA2NDAuMCA0MDcuMAokYyBjcmVhdGUgbGluZSAxMDcuMCAxMjEuMCAxMDcuMCAxMjEuMCAt
@@ -1273,12 +1273,12 @@ c19pbmZvfQokYyBjcmVhdGUgbGluZSA0NjIuMzQxODcgMjAwLjI2NDQ1IDQ2Mi4zNDE4NyAyMDAu
 MjY0NDUgLWNhcHN0eWxlIHJvdW5kIC10YWdzIHthcmMwMDAzOCBzdGFydGJsb2IgcmVhbHdpZHRo
 KDUuMCl9IC13aWR0aCA1LjAK
 
-------- =_H0YHUSpMaMqjyBNcW1jIRQ==
+------- =_PjpTfSIqLftKqnximjr7ow==
 MIME-Version: 1.0
 Content-Description: Run Status
-Content-ID: <25710.1092667916.6@spirograph.ttc.ed.ac.uk>
+Content-ID: <26271.1092675030.6@spirograph.ttc.ed.ac.uk>
 Content-Type: text/plain
 
-execTime 1900.0 timeUnit unit displayInt 1 intMethod Euler phaseList 1
+execTime 950.0 timeUnit unit displayInt 1 intMethod Euler phaseList 1
 
-------- =_H0YHUSpMaMqjyBNcW1jIRQ==--
+------- =_PjpTfSIqLftKqnximjr7ow==--
