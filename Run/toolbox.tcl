@@ -48,25 +48,25 @@ if {[string match windows $tcl_platform(platform)]} {
     # package ifneeded Trf 2.1 {}
 }
 
-#set tester $tempDir/sim
-#set go [clock clicks]
-#while {[file exists $tester]} {
-#    set guess_free [expr [clock clicks]-$go]
-#    set tester $tempDir/sim$guess_free
-#}
-#tk_messageBox -title debug -icon info \
-#	-message "Temp dir is $tester" -type ok
-
-#set env(SIMTMPDIR) $tester
-#file mkdir $env(SIMTMPDIR)
 set equationbar(current_action) null
 
 proc NewTopLevel {} {
-    MenuSelect dummy file new_toplevel
+    set newInstance [interp create]
+    $newInstance eval package require Tk 
+    $newInstance eval set IAmASlave 1
+    $newInstance eval set argc 0
+    $newInstance eval source ../Run/simile.tcl
+#    MenuSelect dummy file new_toplevel
 }
 
 proc OpenTopLevel {model} {
-    MenuSelect dummy open_toplevel $model
+#    MenuSelect dummy open_toplevel $model
+    set newInstance [interp create]
+    $newInstance eval package require Tk 
+    $newInstance eval set IAmASlave 1
+    $newInstance eval set argc 1
+    $newInstance eval set argv $model
+    $newInstance eval source ../Run/simile.tcl
 }
 
 proc AttackGlobalVariable {array elt val} {
@@ -103,7 +103,6 @@ proc ControlDraw {prologVersion} {
     # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
         set env(SIMILE_VERSION) 4.0
-#        set env(SIMTMPDIR) /tmp/simdevel
         set env(licensee_name) "Support team"
         set env(licensee_corp) "Simulistics, inc."
         set env(license_code) default_license=072ccc96dced2bef53403afd67fe7782
@@ -173,6 +172,14 @@ proc ControlDraw {prologVersion} {
         file mkdir $custom(prefDir)
     }
 
+    set simtmpdir $custom(prefDir)/sim
+    set go [clock clicks]
+    while {[file exists $simtmpdir]} {
+	set guess_free [expr [clock clicks]-$go]
+	set simtmpdir $custom(prefDir)/sim$guess_free
+    }
+    file mkdir $simtmpdir
+
 # new technology -- just one copy of the helper menu is made on startup
 # and it is put in all menubars
 
@@ -190,12 +197,6 @@ proc ControlDraw {prologVersion} {
         set userinfo(done) 0
     }
     
-    set simtmpdir $custom(prefDir)/Current
-    if {[file exists $simtmpdir]} {
-	file delete -force $simtmpdir
-    }
-    file mkdir $simtmpdir
-
     set UserStream [NetOpen $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)
@@ -302,7 +303,7 @@ proc ControlDraw {prologVersion} {
         set openModel {}
     }
     # Take the opportunity to pass the temp directory name etc to Prolog
-    return [list $sendvars(simV) [brainwash $custom(prefDir)] \
+    return [list $sendvars(simV) [brainwash $simtmpdir] \
             $openModel $userinfo(edn)]
 }
 
@@ -1484,7 +1485,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm add command -label New -command "MenuSelect $c file new"\
             -accelerator "Ctrl+N"
     AddAccelerator $winid file New "<Control-n>"
-    $fm add command -label "New top-level" -command "MenuSelect $c file new_toplevel"
+    $fm add command -label "New top-level" -command "NewTopLevel"
     $fm add command -label Open... -command "MenuSelect $c local open_all"\
             -accelerator "Ctrl+O"
     AddAccelerator $winid file Open... "<Control-o>"

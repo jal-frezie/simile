@@ -33,15 +33,15 @@ sicstus_use_module(library(lists)).
 
 kickoff(Vnum) :-
 	output:safe_tcl_eval(['ControlDraw', br(Vnum)], EnvVars),
-	output:chop_list(EnvVars, [VStr, PrefStr, OpenStr, EStr]),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
 	name(E, EStr),
 	set_edition(E),
 
-	name(PrefDir, PrefStr),
-	backup:retractall(use_pref_dir(_)),
-	backup:assert(use_pref_dir(PrefDir)),
+	name(TempDir, TempStr),
+	backup:retractall(use_temp_dir(_)),
+	backup:assert(use_temp_dir(TempDir)),
 
 	set_mode(none),
 	inters:read_library_funx(LibFuns),
@@ -51,10 +51,10 @@ kickoff(Vnum) :-
 	initialize_phase,
 
 	name(OpenModel, OpenStr),
-	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel); true), !,
-	output:safe_tcl_eval(['FixSize', Canvas], _),
-	utility:append_atoms(PrefDir, '/Current/.lock/', SplashLock),
-	output:trim_tree(SplashLock, '').
+	(OpenModel = '';
+	    menu:stick_model_in(Desktop, OpenModel, reopen);
+	    true), !,
+	output:safe_tcl_eval(['FixSize', Canvas], _).
 
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).

@@ -25,13 +25,15 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
 # If simile is already running, make a new window there and exit. Note that
 # on Macs the system takes care of this and we don't even get this far
 
-if {[info exists env(OPEN_MODEL)]} {
-    set remStartCmd [list send $oldProc OpenTopLevel $env(OPEN_MODEL)]
-} else {
-    set remStartCmd [list send $oldProc NewTopLevel]
-}
-if {![catch {eval $remStartCmd}]} {
-    exit
+if {![info exists IAmASlave]} {
+    if {[info exists env(OPEN_MODEL)]} {
+	set remStartCmd [list send $oldProc OpenTopLevel $env(OPEN_MODEL)]
+    } else {
+	set remStartCmd [list send $oldProc NewTopLevel]
+    }
+    if {![catch {eval $remStartCmd}]} {
+	exit
+    }
 }
 
 # replace /./ in path with / to avoid confusing file dirname
@@ -80,13 +82,15 @@ if {[string match Darwin $tcl_platform(os)]} {
     splash read $SIMILE_PATH/Images/splash.jpg
 }
 pack [canvas .c -width 510 -height 340]
-.c create image 255 170 -image splash
-.c create text 392.0 285.0 -font {-weight bold -family helvetica -size 12} -text "Version $env(SIMILE_VERSION)"
-.c create text 392.0 320.0 -font {-family helvetica -size 10} -text "© 2003 Simulistics Ltd."
-
-wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2-170]
-wm overrideredirect . 1
-update
+if {![info exists IAmASlave]} {
+    .c create image 255 170 -image splash
+    .c create text 392.0 285.0 -font {-weight bold -family helvetica -size 12} -text "Version $env(SIMILE_VERSION)"
+    .c create text 392.0 320.0 -font {-family helvetica -size 10} -text "© 2003 Simulistics Ltd."
+    
+    wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2-170]
+    wm overrideredirect . 1
+    update
+}
 
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder

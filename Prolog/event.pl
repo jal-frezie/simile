@@ -272,7 +272,9 @@ bar_edit_menu(Wid) :-
 	    Dellable = 1;
 	Cuttable = 0,
 	    Dellable = 0),
-	(selected_box_is(_Any), Point = [_,_], !,
+	use_pref_dir(Dir),
+	append_atoms(Dir, '/clipboard.pl', CopyFile),
+	(output:my_file_exists(CopyFile), Point = [_,_], !,
 	    Pastable = 1;
 	Pastable = 0),
 	Wid shows_model Model,

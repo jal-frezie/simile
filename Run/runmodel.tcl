@@ -1014,14 +1014,18 @@ proc Prettify {value} {
 # to change size when something different is loaded
 # This is also a convenient time at which to hide the console
 # if it is showing
+
+# If this is a slave interp, keep the OS choice of window posn, as moving it
+# may well sit it exactly on top of the previous one
+
 proc FixSize {c} {
-    global custom openModel
+    global custom openModel IAmASlave
     update idletasks
     set win [winfo parent $c]
     wm state $win normal
     # seems necessary for console to hide
     #    catch {console hide}
-    if {[file exists $custom(prefDir)/layout]} {
+    if {![info exists IAmASlave] && [file exists $custom(prefDir)/layout]} {
         set stream [NetOpen $custom(prefDir)/layout r]
         gets $stream whetherMaxed
         #ShowMessage debug info $whetherMaxed ok

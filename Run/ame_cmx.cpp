@@ -1645,7 +1645,7 @@ int my_hmac(Tcl_Interp *interp, const char* key, const char* text) {
 
   md5Target = Tcl_NewStringObj(k_opad, 64);
   Tcl_AppendObjToObj(md5Target, Tcl_GetObjResult(interp));
-  my_hash(interp, md5Target);
+  return my_hash(interp, md5Target);
 }
     
 /* This gets the authorisation code that is needed for a particular combination

@@ -154,21 +154,21 @@ stick_model_in(Parent, Name, Mode) :-
 	    resize_canvas_for(Parent),
 		redraw_window(Win)),
 	    update_captions(Parent);
-	Mode = insert,
+	Mode = insert(Pt),
 	    (Translated = copy, !, /* paste into empty sole toplevel */
-	        setof(Mover, (contains(Model, Mover),
-				 appears(Mover), \+ Mover = Model), Lighters);
+	        setof(Mover, (contains(Parent, Mover),
+				 appears(Mover), \+ Mover = Parent), Lighters);
 	    setof(Mover, O^(member(O-Mover, Translated),
 			 appears(Mover)), Lighters)),
 	    setof(Mover, (member(Mover, Lighters),
-			     find_all_comps(Model, Mover)), Movers),
+			     find_all_comps(Parent, Mover)), Movers),
 	    (member(Mover, Lighters),
 	        Mover is_of_sort box,
 		event:do_colours(Mover, on),
 		fail;
-	    record_bbox(Model, Box)),
+	    record_bbox(Parent, Box)),
 	    
-	    (find_space_for(Box, Model, Lighters, [0,0], [Xoffset, Yoffset]),
+	    (find_space_for(Box, Parent, Lighters, Pt, [Xoffset, Yoffset]),
 		all(event, adjust_posn,
 		    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]);
 	    true),
@@ -176,7 +176,7 @@ stick_model_in(Parent, Name, Mode) :-
 	    (member(Mover, Movers),
 		redisplay(Mover),
 		fail;
-	    finish_move(Model))).
+	    finish_move(Parent))).
 
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
@@ -208,9 +208,6 @@ menu_handle(Win, file, new) :-
 	set_save_status(Win, safe),
 	update_captions(Parent).
 
-menu_handle(_Win, file, new_toplevel) :-
-	m_update:make_desktop(_,_).
-
 menu_handle(Win, file, open) :-
 	Win shows_model Parent,
 	check_deletable(Win, Parent),
@@ -223,17 +220,13 @@ menu_handle(Win, file, open) :-
 menu_handle(Win, GetMode, Name) :-
 	Win shows_model Parent,
 	(GetMode = reopen,
+	    UseMode = reopen,
 	    check_deletable(Win, Parent),
 	    remove_model(Win, Parent);
 	GetMode = insert,
+	    UseMode = insert([0,0]),
 	    select_all_in(Parent, off)),
-	stick_model_in(Parent, Name, GetMode),
-	warn_runtime.
-
-menu_handle(_Win, open_toplevel, Name) :-
-	check_if_already_open(Name), !;
-	m_update:make_desktop(Parent, _),
-	stick_model_in(Parent, Name, reopen),
+	stick_model_in(Parent, Name, UseMode),
 	warn_runtime.
 
 menu_handle(Win, file, save) :-
@@ -547,12 +540,8 @@ menu_handle(Win, edit, CutOrCopy) :-
 	and unselected links across
 	selected submodels */
 	
-	/* OK, now I just have the originally selected bit left -- work out
-	how big it is, save it and enable pasting */
-	record_bbox(Model, Box),
-	retractall(selected_box_is(_)),
-	assert(selected_box_is(Box)),
-	use_temp_dir(Dir),
+	/* OK, now I just have the originally selected bit left -- save it */
+	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output:date_is(Date),
 	save_isolated(CopyFile, Model, Date, yes),
@@ -576,43 +565,10 @@ menu_handle(Win, edit, CutOrCopy) :-
 	finish_progress_dialogue.
 
 menu_handle(Win, edit, paste) :-
-        start_progress_dialogue,
-	reassure_user("Checking for space to paste into"),
 	get_edit_model(Win, Model, Pt),
-	selected_box_is(SBox),
-	(find_space_for(SBox, Model, [], Pt, [Xoffset, Yoffset]), !,
-	reassure_user("Paste in progress"),
-	select_all_in(Model, off),
-	(event:list_captions(Model, Used), !; true),
-	use_temp_dir(Dir),
+	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	ame_merge(Model, CopyFile, _Date, _HasCode, Renumber),
-%	redraw_window(Win),
-	
-	(Renumber = copy, !, /* paste into empty sole toplevel */
-	    setof(Mover, (contains(Model, Mover),
-			 appears(Mover), \+ Mover = Model), Lighters);
-	setof(Mover, O^(member(O-Mover, Renumber),
-			 appears(Mover)), Lighters)),
-	setof(Mover, (member(Mover, Lighters), find_all_comps(Model, Mover)),
-	      Movers),
-	all(event, adjust_posn,
-	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
-	all(event, retitle_duplicate, [build(Movers), unify(Used)]),
-	(member(Mover, Movers),
-	    redisplay(Mover),
-	    fail;
-	member(Mover, Lighters),
-	    Mover is_of_sort box,
-	    event:do_colours(Mover, on),
-	    fail;
-	finish_move(Model));
-	    
-	caption_for(Model, Capt),
-	    sicstus_format_to_chars("There is not enough free space in model ~a for the selection.", [Capt], RoomMesg),
-	    do_dialogue("Problem with paste", error, RoomMesg, ok, _)),
-	
-	finish_progress_dialogue.	
+	stick_model_in(Model, CopyFile, insert(Pt)).
 	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue,

@@ -353,9 +353,10 @@ make_auto_name(Name, NewExtn, AutoName) :-
 	append(BaseStr, NewExtn, AutoNameStr),
 	name(AutoName, AutoNameStr).
 
-:- dynamic(use_pref_dir/1).
-/* this is set in main.pl */
+:- dynamic(use_temp_dir/1).
+/* this is set in state.pl */
 
-use_temp_dir(Dir) :-
-	use_pref_dir(PDir),
-	append_atoms(PDir, '/Current', Dir).
+use_pref_dir(Dir) :-
+	use_temp_dir(PDir),
+	output:safe_tcl_eval([file, dirname, PDir], DirStr),
+	name(Dir, DirStr).
