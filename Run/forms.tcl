@@ -1378,8 +1378,11 @@ proc ShowExpiryImminent {expTime} {
     #    wm transient .expiry $winId
     wm title .expiry "Expiry Imminent"
     wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
-    wm attributes .expiry -toolwindow true
-    
+    global tcl_platform
+    if {[string match windows $tcl_platform(platform)]} {
+	wm attributes .expiry -toolwindow true
+    }
+
     set labf1 [frame .expiry.labf1]
     image create photo warn
     warn read "../Images/warning.gif"
@@ -1539,11 +1542,53 @@ proc equationlisting_scrollit {widget} {
     $widget set
 }
 
+proc BuildProblem {msg} {
+        toplevel .buildprob
+        wm title .buildprob "Problem making runnable model"
+        wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
+    global tcl_platform
+    if {[string match windows $tcl_platform(platform)]} {
+        wm attributes .buildprob -toolwindow true
+    }
+        
+        set labf1 [frame .buildprob.labf1]
+        image create photo warn
+        warn read "../Images/warning.gif"
+        pack [label $labf1.img -image warn] -side left
+        pack [label $labf1.lab1 -text "Warning:" \
+                -font {-weight bold -family helvetica -size 10}] -side left
+        pack [label $labf1.lab2 -text $msg \
+                -font {-family helvetica -size 10} -justify left] -side left 
+        pack $labf1 -padx 8 -pady 2
+        
+        set buttons [frame .buildprob.buttons]
+        pack [button $buttons.ok -text OK -width 10 \
+                -command {set ack 1}] \
+                -side left -padx 4 -pady 4
+        pack [button $buttons.help -text Help -width 10 \
+                -command {ContextSensitiveHelp .buildprob run/index.htm}] \
+                -side left -padx 4 -pady 8
+        pack $buttons
+        
+        set height [winfo reqheight .buildprob]
+        set width [winfo reqwidth .buildprob]
+        set sheight [winfo screenheight .buildprob]
+        set swidth [winfo screenwidth .buildprob]
+        wm geometry .buildprob +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+        update
+        
+        tkwait variable ack
+        destroy .buildprob
+    }
+
 proc NotifyOverLimit {limit} {
         toplevel .notify
         wm title .notify "Evaluation Edition"
         wm protocol .notify WM_DELETE_WINDOW {set ack 1}
+    global tcl_platform
+    if {[string match windows $tcl_platform(platform)]} {
         wm attributes .notify -toolwindow true
+    }
         
         set labf1 [frame .notify.labf1]
         image create photo warn

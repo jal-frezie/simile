@@ -247,10 +247,10 @@ rebuild_code(Lang, Node, CompileSuccess) :-
 	use_temp_dir(ProgFileDir),
 	on_exception(Whoops, (compile(Lang, Node, ProgFileDir),
 				 CompileSuccess = yes),
-		(sicstus_write_to_chars(Whoops, WhoopStr),
-		    do_dialogue("Error building program", error,
-				WhoopStr, ok, _),
-		    scrub_run(0))).
+		     ((Whoops = compilation_failed;
+		       output:safe_tcl_eval(['BuildProblem',
+					     br(write(Whoops))], _)),
+			 scrub_run(0))).
 
 write_chars_to_file(_, []).
 

@@ -113,7 +113,7 @@ build_instances(Language, DestDir, Parent, Step, NamePath,
 	     (Language = tcl, !;
 	     compile_c_program(DestDir, LongName, Err),
 		 (Err = [], !;
-		 raise_exception('Failed to make an executable model.')),
+		 raise_exception(compilation_failed)),
 		 assert(new_exec_for(Parent))),
 	     load_executable(Language, DestDir, LongName, Parent);
 	 true),
@@ -401,10 +401,11 @@ check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	reassure_user("Checking for circularity in model assignment order"),
 	(dummy_order(Functions, [Start | Core]),
 	get_circle_from(Core, [Start], Loop),
-	    all(compile, unfinished_in, [build(Loop), build(CircSet)]), 
-	    raise_exception(['This model cannot be executed because it',
-			     'contains the following circular set(s)',
-			     'of function evaluations:' | CircSet]);
+	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
+	    sicstus_format_to_chars("This model cannot be executed because it contains the following circular set(s) of function evaluations: ~w",
+				   [CircSet], EStr),
+	    name(Err, EStr),
+	    raise_exception(Err);
 	true),
 	UseCompartments = [make(on_reset, [], [], 0, []) | Comps],
 	    
