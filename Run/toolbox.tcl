@@ -951,8 +951,23 @@ proc brainwash {ethnic} {
     return [file join [file dirname $ethnic] [file tail $ethnic]]
 }
 
+proc MenuClose {winId} {
+    global window_info
+    foreach tlItem [array names window_info *,is_top_level] {
+	if {$window_info($tlItem) && [string last $winId $tlItem]} {
+	    set notLastTl 1
+	}
+    }
+    if {[info exists notLastTl]} {
+	byebye $winId
+    } else {
+	MenuSelect $winId file new
+    }
+# if it is tl we should kill its submodel windows too
+}
+
 proc byebye {winId} {
-    prolog [list tk_off_window( '$winId.canvas' )]
+    prolog [list tk_off_window( '$winId' )]
 }
 
 proc exit_simile {} {
@@ -1348,7 +1363,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     #	[winfo screenheight $winName]
     
     wm protocol $winName WM_DELETE_WINDOW \
-            [list byebye $winName]
+            [list byebye $c]
     
     set window_info($c,top_node) $topNode
     set window_info($c,scale) $initialScale
@@ -2132,10 +2147,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
-    $fm add command -label New -command "MenuSelect $c file new"\
-            -accelerator "Ctrl+N"
+    if {$isTopLevel} {
+	set newCmd NewTopLevel
+    } else {
+	set newCmd "MenuSelect $c file new"
+    }
+    $fm add command -label New -command $newCmd -accelerator "Ctrl+N"
     AddAccelerator $winid file New "<Control-n>"
-    $fm add command -label "New top-level" -command "NewTopLevel"
+#    $fm add command -label "New top-level" -command "NewTopLevel"
     $fm add command -label Open... -command "MenuSelect $c local open_all"\
             -accelerator "Ctrl+O"
     AddAccelerator $winid file Open... "<Control-o>"
@@ -2168,7 +2187,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "DoWithErrors ExportPostscript $c"
     $fm add separator
     
-    $fm add command -label Close -command "byebye $winid" \
+    $fm add command -label Close -command "MenuClose $c" \
             -accelerator "Alt+x"
     AddAccelerator $winid file Close "<Alt-x>"
     $fm add command -label Exit -command "prolog tk_kill_everything"
