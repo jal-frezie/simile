@@ -429,7 +429,7 @@ namespace eval RunEnv {
         }
     }
     
-    proc DeleteHelperContainer {containerId page} {
+    proc DeleteHelperContainer {containerId page} {
         global helperTable
         # container is the frame a helper would be displayed in
         # a parent is the notebook or panedwindow the container belongs to
@@ -556,7 +556,7 @@ namespace eval RunEnv {
             # it's a pane to be split in the same orientation
             # add a new pane
             set paneId [UniqueId $parentPath.pane [$parentPath panes]]
-            frame $paneId -highlightcolor black -highlightthickness 1
+            frame $paneId -highlightcolor black -highlightthickness 1
             bind $paneId <Button-1> "+::RunEnv::SetCurrentContainer %W"
             bind $paneId <Button-3> \
                     "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
@@ -742,7 +742,7 @@ namespace eval RunEnv {
             .pageContextMenu entryconfigure 1 -state disabled
             .pageContextMenu entryconfigure 3 -state disabled
             .pageContextMenu entryconfigure 7 -state disabled
-            .pageContextMenu entryconfigure 12 -state disabled; # add notebook
+            .pageContextMenu entryconfigure 12 -state disabled; # add notebook
             #.pageContextMenu entryconfigure 13 -state disabled; # add notebook p0age
             
             if {[string match vertical [$pw cget -orient]]} {

@@ -255,8 +255,8 @@ proc do_for_node {node args} {
 #puts "Go! mr is '$runState($node,modelReady)'"
 	    set runState($node,queueSize) 0
 	}
+	tickle $node
     }
-    tickle $node
     return [eval do_in_node $node $args]
 }
 

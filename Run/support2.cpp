@@ -1,36 +1,31 @@
-extern "C" 
-#ifdef WIN32
-__declspec( dllexport )
-#endif
-     void* do_createmodel(void) {
-  return (void*)new AME_model;
-}
-
-
 /* Procedures for accessing the model now also require the handle of the 
 instance to use. Previously these came straight out of model.c; now they
 are put inside a class wrapper, so we must here turn the handle back into
 a class pointer before calling them. */
 
+extern "C" 
 #ifdef WIN32
-extern "C" __declspec( dllexport ) double get_version(void);
-extern "C" __declspec( dllexport ) void do_updatemodel(void*, double, int);
-extern "C" __declspec( dllexport ) void do_advancemodel(void*, double, int);
-extern "C" __declspec( dllexport ) int do_evalmodel(void*, double, int, 
-     BOOLEAN);
-extern "C" __declspec( dllexport ) int do_setstep(double, int);
-#else
-extern "C" double get_version(void);
-extern "C" void do_updatemodel(void*, double, int);
-extern "C" void do_advancemodel(void*, double, int);
-extern "C" int do_evalmodel(void*, double, int, BOOLEAN);
-extern "C" int do_setstep(double, int);
+__declspec( dllexport )
 #endif
+{
+  double get_version(void);
+  void* do_createmodel(void);
+  void do_updatemodel(void*, double, int);
+  void do_advancemodel(void*, double, int);
+  int do_evalmodel(void*, double, int,  BOOLEAN);
+  int do_setstep(double, int);
+  void do_exitmodel(void*);
+  void* burrow_to(void* level, int** id_meta, int** dim_list);
+}
 
 /* version needs its own special procedure because any other might change
    and cause a crash before version mismatch is detected */
 double get_version() {
   return(simile_version);
+}
+
+void* do_createmodel(void) {
+  return (void*)new AME_model;
 }
 
 void do_updatemodel(void* handle, double time, int phase) {
@@ -81,6 +76,10 @@ in and sets one of them. Returns phase count. Node that dts[0] is set to
 the integration step being done: 0 for Euler, 1-4 for the four stages of RK
 
 Also uses to get phase count */
+
+void do_exitmodel(void* handle) {
+  ((AME_model *)handle)->do_exitmodel();
+}
 
 int do_setstep(double time, int phase) {
   if (phase<0) { /* lazy */
@@ -133,12 +132,20 @@ double stage_incr (diffs *extras, int step, double v) {
   };
 };
 
+void* burrow_to(void* level, int** id_meta, int** dim_list) {
+  while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
+-2 means nested separate-dll submodel */
+    level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
+  }
+  return(level);
+};
+
 /* This is called only when we create the type, to return model constants */
 extern "C" 
 #ifdef WIN32
 __declspec( dllexport )
 #endif
-  int get_count(void* useClassPtr, void* ame_rand_ptr, 
+int get_count(void* useClassPtr, void* ame_rand_ptr, 
 		void* graphpoint_ptr, 
 		void* release_graph_data_ptr, 
 		void* compare_instance_status_ptr, 

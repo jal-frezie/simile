@@ -243,6 +243,8 @@ typedef int setstep_type(double, int);
 typedef void updatemodel_type(void*, double, int);
 typedef void advancemodel_type(void*, double, int);
 typedef int evalmodel_type(void*, double, int, BOOLEAN);
+typedef void* getpointer_type(void*, int**, int**);
+typedef void exitmodel_type(void*);
 
 /* Matching set of declarations for the pointers by which we will access
    these functions locally */
@@ -261,6 +263,8 @@ class Model {
   updatemodel_type *updatemodel;
   advancemodel_type *advancemodel;
   evalmodel_type *evalmodel;
+  getpointer_type *getpointer;
+  exitmodel_type *exitmodel;
 
 public:
   int phases;
@@ -296,6 +300,8 @@ public:
 						      "do_advancemodel");
     evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
     setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
+    getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
+    exitmodel = (exitmodel_type *)FIND_FUNCTION(handle, "do_exitmodel");
       
     nodecount = (*getcount)(this, 
 			    (void*)ame_rand, 
@@ -368,6 +374,14 @@ public:
 
   int setstep(double start, int phase) {
     return (*setstepmodel)(start, phase);
+  }
+
+  void* get_ptr(void* level, int** id_meta, int** dim_list) {
+    return (*getpointer)(level, id_meta, dim_list);
+  }
+
+  void exit(void* id) {
+    (*exitmodel)(id);
   }
 
   /* Now for the locally defined model class procedures */
@@ -478,21 +492,6 @@ Model *modelType;
 void* modelHandle;
 Tcl_Interp* globInterp;
 int serviceError;
-
-void exit(void* id) {
-    ((submodeltype*)id)->do_exitmodel();
-}
-
-int step_list(int **dim_list, int unused) {
-  return *(*dim_list)++;
-}
-
-void* get_ptr(void* level, int** id_meta, int** dim_list) {
-  while (**id_meta>0) { 
-    level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
-  }
-  return(level); 
-}
 
 /* this simply makes up a tcl list of all the objects that
 appear in the object table. */
@@ -841,7 +840,7 @@ void* fetch_instance(char* nodeId) {
 }
 
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
-  level = get_ptr(level, id_meta, dims);
+  level = type->get_ptr(level, id_meta, dims);
   if (*(*id_meta)++ == SEPARATE) {
     type = (Model*)*(*id_meta)++;
     return search_ptr(type, *(void**)level, id_meta, dims);
@@ -875,7 +874,7 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
 
 void* advance_ptr(void* typeRef, void* topInstRef) {
   int next_handle[] = {1,0}, *tree = next_handle;
-  return *(void**)get_ptr(topInstRef, &tree, NULL);
+  return *(void**)((Model*)(typeRef))->get_ptr(topInstRef, &tree, NULL);
 }
 
 void search_from(void* typeRef, int nodeIndx, void* instPtr) {
@@ -1187,7 +1186,7 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   if (modelHandle) { 
-    exit(modelHandle);
+    modelType->exit(modelHandle);
   }
 
   if (nodeModelList) {
@@ -1326,8 +1325,8 @@ int match_type(Model* localType, void* smHandle, int dims[], int* dim_place) {
   id_ptr = &id_count;
   cur_place = dims;
   while (cur_place < dim_place) {
-    id_val = *(int *)get_ptr(smHandle, &short_tree, 
-					&id_ptr);
+    id_val = *(int *)(localType->get_ptr(smHandle, &short_tree, 
+					&id_ptr));
     if (id_val != *(cur_place++)) {
       return -1;
     }
@@ -1335,7 +1334,7 @@ int match_type(Model* localType, void* smHandle, int dims[], int* dim_place) {
     id_ptr = &id_count;
     short_tree = id_handle;
   }
-  return *(int *)get_ptr(smHandle, &short_tree, &id_ptr);
+  return *(int *)(localType->get_ptr(smHandle, &short_tree, &id_ptr));
 }
 /* next two call one another so one needs to be declared in advance */
 Tcl_Obj* fill_value(Model*, void*, int[], int, int*, int[], int*, Tcl_Obj*);
@@ -1351,7 +1350,7 @@ Tcl_Obj* fill_list_value(Model* localType, void** smHandle, int tree[],
       localObj = fill_value(localType, *smHandle, tree, type, use_dims, 
 			    dim_place+1, dim_place+1, NULL);
       short_tree = next_handle;
-      *smHandle = *(void**)(get_ptr(*smHandle, &short_tree, 
+      *smHandle = *(void**)(localType->get_ptr(*smHandle, &short_tree, 
 						  NULL));
     } else {
       *dim_place=match;
@@ -1387,7 +1386,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
     new_tree = tree;
     while (*new_tree++ != SEPARATE) {}
 
-    smHandle = *(void**)(get_ptr(smHandle, &tree, &dims));
+    smHandle = *(void**)(localType->get_ptr(smHandle, &tree, &dims));
     localType = (Model*)*(new_tree++);
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
@@ -1396,12 +1395,12 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
     new_tree = tree;
     while (*new_tree++ != -1) {}
 
-    smHandle = *(void**)(get_ptr(smHandle, &tree, &dims));
+    smHandle = *(void**)(localType->get_ptr(smHandle, &tree, &dims));
     localObj = fill_list_value(localType, &smHandle, new_tree, type, 
 			       use_dims+1, dim_place+1, dim_place+1);
     break;
   case 0:
-    model_val_ptr = get_ptr(smHandle, &tree, &dims);
+    model_val_ptr = localType->get_ptr(smHandle, &tree, &dims);
     switch (type) {
     case VALUELESS:
       localObj = Tcl_NewStringObj("sm", -1);

@@ -43,7 +43,6 @@
 
 class submodeltype {
 public:
-  virtual void do_exitmodel() { }
   virtual void* get_pointer(int id, int** dims) = 0;
 };
 
