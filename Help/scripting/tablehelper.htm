@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<html xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel=File-List href="scripting_files/filelist.xml">
+<title>What's new? : Scripting model execution</title>
+</head>
+
+<body>
+
+
+<h2>Table helper object</h2>
+<h3>Create table helper object</h3>
+      <h4>similescript::TableHelper <em>objectName</em> <em>model_window_object</em> <em>window_title</em></h4><BR>
+   e.g.<BR /><BR />
+   <code>similescript::TableHelper tableHelper modelWin "table1"</code>
+   
+<h3>Table helper object commands</h3>
+<!--<p>Most of these commands correspond to Simile model window menu commands.</p>-->
+
+<h4><em>objectName</em> AddVariable <i>path</i></h4>
+<p>Adds the variable given by <i>path</i> to the list of variables to be written
+to the table.</p>
+
+<h4><em>objectName</em> RemoveVariable <i>path</i></h4>
+<p>Removes the variable given by <i>path</i> from the list of variables to be written
+to the table.</p>
+
+<h4><em>objectName</em> Update</h4>
+<p>Causes the table to be update. Use in conjunction with 
+<B><em>objectName</em> SetUpdateAtDisplayInterval <i>value</i></b>.</p>
+
+<h4><em>objectName</em> SetUpdateAtDisplayInterval <i>value</i></h4>
+<p>If <i>value</i> is <code>true</code> the table updates its display every display interval 
+(even if the table is hidden and so not visible on the screen). This takes a significant time 
+and so the simulation will run faster if <i>value</i> is <code>false</code>. Use 
+<b><em>objectName</em> Update</b> to update the table at the end of the simulation.</p>
+
+<h4><em>objectName</em> GetUpdateAtDisplayInterval</h4>
+<p>Return <code>true</code> or 1 if the table is set to update its display every time 
+interval or <code>false</code> or 0 if the table does not update its display. If 
+<code>false</code> use <b><em>objectName</em> Update</b> before saving the contents to file
+or viewing the table.</p>
+
+<h4><em>objectName</em> Clear</h4>
+<p>Clear the table.</p>
+
+<h4><em>objectName</em> SaveToFile <i>filename</i></h4>
+<p>Save the table contents to a comma seperated values (CVS) file named <i>filename</i>. 
+Remember to call <b><em>objectName</em> Update</b> if 
+<b><em>objectName</em> SetUpdateAtDisplayInterval</b> was set to <code>false</code>.</p>
+
+<h4><em>objectName</em> Show</h4>
+<p>Make the table display visible.</p>
+
+<h4><em>objectName</em> Hide</h4>
+<p>Hide the table display.</p>
+
+
+</body>
+
+</html>

@@ -10,8 +10,9 @@
 <body>
 <h2>Run control</h2>
 <h3> Create run control object </h3>
-   <strong>similescript::RunControl</strong> <em>objectName</em> <BR>
-   e.g. similescript::RunControl runControl
+   <h4>similescript::RunControl <em>objectName</em> </h4>
+   e.g.<BR /><BR />
+   <code>similescript::RunControl runControl</code>
 <p> </p>
 
 
@@ -20,23 +21,32 @@
 <p>Most of these commands correspond to edit fields and buttons 
 on the regular Simile run control dialog box.</p>
 
+<p><B>Path</B> - Some of the methods (commands) below take a parameter <I>path</I>. 
+Model component paths end with the name of the component (e.g. compartment, variable or 
+submodel preceeded by a string of all the submodels the component is contained by. The submodels 
+are seperated by "/". The toplevel model (or sometimes called the "desktop") is refered to by / 
+as all components are contained by the toplevel model all paths start with a leading /, e.g. 
+"/Number of Trees" is the variable "Number of Trees" in the top level model. "/Tree/Saplings" 
+is the variable "Saplings" in the submodel "Tree" which is contained directly by the toplevel 
+model.</p>
+
 <h4><em>objectName</em> Start</h4>
 <p>Start running the simulation. The simulation will run for the time set by, 
 <em>objectName</em> SetExecuteFor, or the default execution time stored in the model file. 
 Generally, your script will be clearer if you always use <em>objectName</em> SetExecuteFor. 
 Returns a string conataining the elapsed real-time to run the simulation (not CPU time), e.g.<BR />
 <BR />
-<B>1.27 sec</B><BR />
+<pre>1.27 sec</pre><BR />
 <BR />
 </p>
 
 <h4><em>objectName</em>  Reset</h4>
 <p>Resets the simulation to time zero.</p>
   
-<h4><em>objectName</em> SetExecuteFor time</h4>
+<h4><em>objectName</em> SetExecuteFor <i>time</i></h4>
 <p>Set the simulation time for which the simulation will run when <em>objectName</em> Start is called.</p>
 
-<h4><em>objectName</em> SetIntegrationMethod method</h4>
+<h4><em>objectName</em> SetIntegrationMethod <i>method</i></h4>
 <p>Set the integration method. method may be either, "4th-order Runge-Kutta" or "Euler"</p>
 
 <h4><em>objectName</em>  SetIntegrationMethodEuler</h4>
@@ -45,13 +55,13 @@ Returns a string conataining the elapsed real-time to run the simulation (not CP
 <h4><em>objectName</em>  SetIntegrationMethodRungeKutta</h4>
 <p>Sets the integration method to 4th-order Runge-Kutta.</p>
 
-<h4><em>objectName</em>  SetTimeStep index timestep</h4>
+<h4><em>objectName</em>  SetTimeStep <i>index</i> <i>timestep</i></h4>
 <p>Different submodels in a model can be specified as 
 operating on different <a href="../submodels/timestep.htm">time steps</a> (in the 
 <a href="../submodels/dialogue.htm">submodel properties dialoguetime steps</a>).
 Use this command to set timesteps.   </p>
 
-<h4><em>objectName</em>  SetTimeUnits units</h4>
+<h4><em>objectName</em>  SetTimeUnits <i>units</i></h4>
 <p>This setting is for use with <a href="../equations/units.htm">physical
      units</a>, to specify the particular time unit, rather than using abstract
      time units. If you have not specified
@@ -61,7 +71,7 @@ Use this command to set timesteps.   </p>
      you wish to use to specify how long to execute the model for. Valid values 
 	 are; unit, second, minute, hour, day, week, month, year and Ma.</p>
 
-<h4><em>objectName</em> SetDisplayInterval timeStep</h4>
+<h4><em>objectName</em> SetDisplayInterval <i>timeStep</i></h4>
 <p>Set the simulation time interval at which displays (helpers) are updated.</p
   
 <h4><em>objectName</em>  GetCurrentTime</h4>
@@ -83,54 +93,71 @@ Use this command to set timesteps.   </p>
 <h4><em>objectName</em>  GetPhaseCount</h4>
 <p>A synonym for GetNumberOfTimeSteps.</p>
 
-<h4><em>objectName</em>  GetTimeStep index</h4>
+<h4><em>objectName</em>  GetTimeStep <i>index</i></h4>
 <p>Return the time interval for the given timestep index.</p>
 
 <h4><em>objectName</em>  GetTimeUnits</h4>
 <p>Returns the current time units.</p>
 
-<h4><em>objectName</em>  GetValue path</h4>
+<h4><em>objectName</em>  GetValue <i>path</i></h4>
 <p>Return the value of a model variable given by the variable path <EM>path</em>.</p>
 
+<h4><em>objectName</em>  MergeParams <i>filepath</i> <i>?smPath?</i></h4>
+<p>File parameters may be read in from  
+Once a model is made runable (<em>simileScript::ModelWindow Run</em>) 
+In order to run a model with file parameters use the command above before building 
+the model. <em>smPath</em> (submodel path) can be omitted if the parameter variables 
+in the file are relative to the top level of the model. </p>
   
-<h4><em>objectName</em>  MergeParams filepath ?smPath?</h4>
-<p></p>
-
-  
-<h4><em>objectName</em>  SetValue path value</h4>
+<h4><em>objectName</em>  SetValue <i>path</i> <i>value</i></h4>
 <p>Set the value of a model variable given by the variable path <EM>path</em>. 
 This only makes sense for variable parameters. Constant parameters are set by
  scenario file and other variables are calculated each time step.</p>
 
-<h4><em>objectName</em>  GetMaxValue path</h4>
-<p></p>
+<h4><em>objectName</em>  GetMaxValue <i>path</i></h4>
+<p>Returns the maximum value acceptable for the variable parameter given by <i>path</i>. 
+(Values are returned for variables other than variable parameters 
+but the values are not used.)</p>
 
-<h4><em>objectName</em>  GetMinValue path</h4>
-<p></p>
+<h4><em>objectName</em>  GetMinValue <i>path</i></h4>
+<p>Returns the minimum value acceptable for the variable parameter given by
+<i>path</i>. (Values are returned for variables other than variable parameters 
+but the values are not used.)</p>
 
-<h4><em>objectName</em>  GetModelClass path</h4>
-<p></p>
+<h4><em>objectName</em>  GetModelClass <i>path</i></h4>
+<p>Returns the class of the model component given by  
+<i>path</i>. The class will be one of: SUBMODEL, VARIABLE, COMPARTMENT, FLOW, CONDITION, 
+CREATION, REPRODUCTION, IMMIGRATION, LOSS or ALARM</p>
 
-<h4><em>objectName</em>  GetModelDims path</h4>
-<p></p>
+<h4><em>objectName</em>  GetModelDims <i>path</i></h4>
+<p>Returns the dimensions of a model component given by  
+<i>path</i>. Components of a variable instance submodel (population submodel) 
+</p>
 
-<h4><em>objectName</em>  GetModelEval path</h4>
-<p></p>
+<h4><em>objectName</em>  GetModelEval <i>path</i></h4>
+<p>Returns evaluation method of a model component given by  
+<i>path</i>. The evaluation method will be one of EXOGENOUS,
+ DERIVED, TABLE, INPUT, SPLIT or GHOST.</p>
 
-<h4><em>objectName</em>  GetModelType path</h4>
-<p></p>
+<h4><em>objectName</em>  GetModelType <i>path</i></h4>
+<p>Returns the type of a model component given by  
+<i>path</i>. The type will be one of: VALUELESS, REAL, INTEGER, FLAG or EXTERNAL. FLAGs 
+are Boolean types.</p>
 
 <h4><em>objectName</em>  GetAllPaths</h4>
-<p></p>
-
+<p>Returns a Tcl list of all model components (e.g. submodels as well as variables). E.g.
+{/Number of Trees} /r /Tree/Saplings /Tree {/Tree/Tree Size} {/Tree/Growth Rate} 
+{/Tree/Maximum Growth Rate} {/Tree/Chance of Death} {/Tree/X Position} 
+{/Tree/Y Position} /Tree/ID<BR />
+NB paths with spaces will be returned wrapped by { }.
+</p>
 
 <h4><em>objectName</em>  Show</h4>
-<p>Make the run control dialogue visible.</p>
+<p>Make the run control dialogue box visible.</p>
 
 <h4><em>objectName</em>  Hide</h4>
-<p>Hide the run control dialogue.</p>
+<p>Hide the run control dialogue box.</p>
 
-  
 </body>
 
 </html>
