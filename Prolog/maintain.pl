@@ -236,6 +236,7 @@ update_color(Obj) :-
 here; quicker just to send instruction to all windows. Must be cut free. */
 
 change_color(Obj, Color) :-
+	\+ suspend_display,
 	/* find_relevant_windows(Obj, Wid, _, _), */
 	draw_style_for(Obj, Type),
 	(Type = flow, Density = {};

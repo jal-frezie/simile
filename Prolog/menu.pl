@@ -433,25 +433,35 @@ menu_handle(Win, file, export_prolog) :-
 menu_handle(Win, edit, cut) :-
         start_progress_dialogue,
 	reassure_user("Delete in progress"),
-	(get_highlit_obj(L, Target),
-	    L < 2,
-	    highlight(Target, 2),
-	    fail;
 	Win shows_model Model,
-	    event:delete_net(Model),
-	    event:update_runnable(Model),
-	    finish_progress_dialogue).
+	event:delete_net(Model),
+	finish_progress_dialogue.
 	   
+menu_handle(Win, edit, copy) :-
+        start_progress_dialogue,
+	reassure_user("Copy in progress"),
+	Win shows_model Model,
+	assert(suspend_display),
+	invert_seln_in(Model),
+	event:delete_net(Model),
+	/* OK, now I just have the originally selected bit left -- save it */
+	use_temp_dir(Dir),
+	append_atoms(Dir, '/clipboard.pl', CopyFile),
+	output:date_is(Date),
+	ame_save(CopyFile, Model, Date),
+	/* restart_move will put the rest of the model back but it will
+	not be selected, so select the original bit first */
+	select_all_in(Model),
+	restart_move,
+	retract(suspend_display),
+	finish_progress_dialogue.
+
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue,
 	reassure_user("Selecting whole model"),
-	(Win shows_model Model,
-	    contains(Model, Sub),
-	    find_type(Sub, submodel),
-	    find_all_comps(Sub, Bit),
-	    highlight(Bit, 0),
-	    fail;
-	finish_progress_dialogue).
+	Win shows_model Model,
+	select_all_in(Model),
+	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, unselall) :-
         start_progress_dialogue,
@@ -469,18 +479,8 @@ menu_handle(Win, edit, invsel) :-
         start_progress_dialogue,
 	reassure_user("Inverting selection"),
 	Win shows_model Model,
-	setof(Bit, 
-	      (contains(Model, Bit),
-		 \+ Bit = Model,
-		 \+ (get_highlit_obj(N, Bit),
-			normalize(Bit),
-			N = 0;
-		    \+ (appears(Bit), Bit is_of_sort box))),
-	      NewSel),
-	(member(Node, NewSel),
-	    event:do_colours(Node, on),
-	    fail;
-	finish_progress_dialogue).
+	invert_seln_in(Model),
+	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, properties) :-
 	Win shows_model Model,
@@ -535,6 +535,26 @@ menu_handle(Win, window, NastyAtom) :-
 
 menu_handle(_, _, _).
 
+select_all_in(Model) :-
+	contains(Model, Bit),
+	    \+ Bit = Model,
+	    highlight(Bit, 0),
+	    fail;
+	true.
+	
+invert_seln_in(Model) :-
+	(setof(Bit, 
+	      (contains(Model, Bit),
+		 \+ Bit = Model,
+		 \+ (get_highlit_obj(N, Bit),
+			normalize(Bit),
+			N = 0;
+		    \+ (appears(Bit), Bit is_of_sort box))),
+	      NewSel),
+	member(Node, NewSel),
+	    event:do_colours(Node, on),
+	    fail;
+	true).
 :- op(950, yfx, [where]).
 
 display_submodels(_,[]).

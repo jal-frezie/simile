@@ -1470,9 +1470,6 @@ unclick_obj :-
 	get_mode(delete),
 	get_phase(delete_hunt),
 	initialize_phase,
-	get_highlit_obj(1, Target),
-	highlight(Target, 2),
-	find_all_comps(Parent, Target),
 
 	contains(Top, Parent),
 	is_toplevel(Top),
@@ -1592,7 +1589,8 @@ influences-flows-nodes so nothing has been consequentially deleted
 when its time comes. */
 
 delete_net(Top) :-
-	setof(Tgt, (get_highlit_obj(2, Tgt), contains(Top, Tgt)), Range),
+	setof(Tgt, N^(get_highlit_obj(N, Tgt), N<3, contains(Top, Tgt)),
+	      Range),
 	(member(Target, Range),
 	    find_type(Target, influence),
 	    (\+ is_top_arc(Target);
@@ -1600,8 +1598,10 @@ delete_net(Top) :-
 		find_all_comps(Sm, Target),
 		add_parameter(Sm, 1, c_new, 0));
 	member(Target, Range),
-	    find_type(Target, flow);
+	    find_type(Target, Line),
+	    member(Line, [flow, relation]);
 	member(Target, Range),
+	    Target is_of_sort box,
 	    \+ find_type(Target, submodel);
 	member(Target, Range),
 	    find_type(Target, submodel),
