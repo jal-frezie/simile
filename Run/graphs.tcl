@@ -433,8 +433,8 @@ set dfile [Entry $fdata.dfile.dfile \
         -textvariable table_entry(fileName)]
 pack $fdata.dfile.dfilelabel -side left -anchor w
 pack $dfile -side left -anchor w -expand true -fill x
-set tbl [image create photo -file "C:/My Documents/table.gif" ]
-set opn [image create photo -file "C:/My Documents/open.gif" ]
+set tbl [image create photo -file "../Images/Toolbar/table.gif" ]
+set opn [image create photo -file "../Images/Toolbar/open.gif" ]
 button $fdata.dfile.new -compound left -image $opn -text Browse \
         -command {GetDataFile "Select new data file"; LoadDataFile}
 button $fdata.dfile.view -compound left -image $tbl -text View \
