@@ -336,8 +336,7 @@ get_unit_conversion(Remote, Local,
 		    [build(ReallyExited), append(Subs, [])]);
 	    \+ is_exclusive_role(Relation),
 		all(ame_gen, get_all_dims,
-		    [build(BiggestFirst), unify([Relation]),
-		     append(Subs, [])])),
+		    [build(BiggestFirst), append(Subs, [])])),
 	    SourceLocation = in_assoc).
 
 is_exclusive_role(Role) :-
