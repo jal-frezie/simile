@@ -1031,7 +1031,10 @@ the next few lines in place, and math_protect asserted, AME will do the same. */
 			TargetOp = int;
 		L = c,
 			TargetOp = '(int)');
-	Op = '<>', !,
+	Op = (=:=), !,
+		((L = basic; L = tcl; L = c),
+			TargetOp = (==));
+	member(Op, ['<>', '=\\=']), !,
 		((L = basic; L = tcl; L = c),
 			TargetOp = ('!='));
 	Op = arctan, !,

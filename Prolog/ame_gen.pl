@@ -24,7 +24,9 @@ sicstus_module(ame_gen, [get_term/3, get_host/2, appears/1,
 sicstus_use_module([library(lists), library(charsio), m_class, utility, text]).
 
 /* Full syntax error text currently not displayed because it is too
-distressing to users */
+distressing to users. Not sure why I use open_chars_stream and read_term
+rather than read_from_chars...oh yes it's because there is no command
+that allows us to get the variable names directly from a string */
 
 get_term(String, Term, Error) :-
 	String = [], !,
@@ -32,6 +34,7 @@ get_term(String, Term, Error) :-
 		Error = [];
 	make_legible_for_prolog(String, ProcessedString),
 	append(ProcessedString, ".", Proper_string),
+/*	name(LooksLike, Proper_string), for debug */
 	open_chars_stream(Proper_string, Stream),
 	on_exception(Bug, read_term(Stream, Term, [variable_names(Vs)]),
 		     make_nice_error_message(Bug, Error)),
@@ -48,12 +51,13 @@ with_output_to_chars. It's not perfect anyway, so I have consulted perror/1
 
 make_nice_error_message(ThrowUp, Error) :-
 	ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
-	space_elts(Problem, Desc),
+	(space_elts(Problem, Desc),
 	append(BitsBefore, BitsAfter, Bits),
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
-	connect_bits(BitsAfter, WindDown, _),
+	connect_bits(BitsAfter, WindDown, _), !,
 	sicstus_format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what you typed, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
+	sicstus_format_to_chars("Unexpected Sicstus error message: ~w", [ThrowUp], Error));
 	ThrowUp = error(Info, _FailedOp), /* gnu */
 	    sicstus_write_to_chars(Info, Error).
 
@@ -84,39 +88,42 @@ but that implied a certainty about what it had to do which was
 unjustified. I don't want to process anything in single quotes for
 instance... */
 
-make_legible_for_prolog(String, ProcessedString) :-
-	append(BeforeQuotes, [39 | AfterQuote], String),
-	append(InQuotes, [39 | AfterQuotes], AfterQuote), !,
-	make_legible_for_prolog(BeforeQuotes, Fixed1),
-	make_legible_for_prolog(AfterQuotes, Fixed2),
-	append(InQuotes, [39 | Fixed2], Fixed3),
-	append(Fixed1, [39 | Fixed3], ProcessedString).
-
-make_legible_for_prolog(String, ProcessedString) :-
-	[Sp, Pt, N0, Eu, El, Po, Pc] = " .0Ee()",
+make_legible_for_prolog(String, NewString) :-
+	[Sq, Sp, Pt, N0, Eu, El, Po, Pc, Xm, Eq] = "\' .0Ee()!=",
 	Nums = "0123456789",
+	append(Prefix, ToTweak, [start | String]),
+	/* Do not process anything in single quotes */
+	(ToTweak = [Sq | AfterQuote],
+	append(InQuotes, [Sq | Suffix], AfterQuote),
+	    append([Sq | InQuotes], [Sq], Tweaked);
 	/* do not start a number with a point */
-	(append(Prefix, [N, Pt | Suffix], [start | String]),
-	\+ member(N, Nums), !,
-		append(Prefix, [N, N0, Pt | Suffix], [start | NewString]);
+	ToTweak = [N, Pt | Suffix],
+	\+ member(N, Nums),
+		Tweaked = [N, N0, Pt];
 	/* separate a unary operator from other symbols */
-	append(Prefix, [M, N | Suffix], [start | String]),
+	ToTweak = [M, N | Suffix],
 	member(M, "+-*/\\^<>=`~:.?@#$&"),	
-	member(N, "-+"), !,
-		append(Prefix, [M, Sp, N | Suffix], [start | NewString]);
+	member(N, "-+"),
+	    Tweaked = [M, Sp, N];
 	/* Make sure scientific notation numbers contain point */
-	append(Prefix, [N, E | Rest], [start | String]),
+	ToTweak = [N, E | Suffix],
 	member(N, Nums), member(E, [Eu, El]), /* must be an exponent */
-	append(Before, [NotN | Ns], Prefix),
+	suffix([NotN | Ns], Prefix),
 	\+ member(NotN, [Pt | Nums]),
-	\+ (member(Num, Ns), \+ member(Num, Nums)), !,
-	    append([Before, [NotN | Ns], [N, Pt, N0, E | Rest]],
-		   [start | NewString]);
+	\+ (member(Num, Ns), \+ member(Num, Nums)),
+	    Tweaked = [N, Pt, N0, E];
 	/* If a function has no args, pop in an empty atom */
-	append(Prefix, [Po, Pc | Suffix], [start | String]), !,
-	    append(Prefix, [Po, 39, 39, Pc | Suffix], [start | NewString])),
-	make_legible_for_prolog(NewString, ProcessedString);
-	ProcessedString = String.
+	ToTweak = [Po, Pc | Suffix],
+	    Tweaked = [Po, Sq, Sq, Pc];
+	/* Enclose the operator != in single quotes: leading space in result is
+	to work around a great steaming googly-moogly of a bug in Sicstus which
+	causes an integer other than 1 or -1 followed by '! in a string to be
+	interpreted as end-of-file. Gnu doesn't like it either... */
+	ToTweak = [Xm, Eq | Suffix],
+	    Tweaked = [Sp, Sq, Xm, Eq, Sq]), !,
+	make_legible_for_prolog(Suffix, NewSuffix),
+	append([Prefix, Tweaked, NewSuffix], [start | NewString]);	
+	NewString = String.
 
 get_host(Object, Visible) :-
 	Object = Visible, \+ implicit_function(_, Visible);
@@ -269,7 +276,7 @@ Works but buggers up GNU prolog (do after loading?) */
 
 :- op(700, yfx, ['<=']).
 
-:- op(700, yfx, ['=\\=', '!=']).
+:- op(700, yfx, ['=\\=', '!=', =:=]).
 
 :- op(750, yfx, ['&&', and]).
 

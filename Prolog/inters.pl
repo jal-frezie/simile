@@ -769,7 +769,10 @@ operator(/, real, [real, real]).
 
 operator(^, int, [int, int]).
 operator(==, boolean, [real, real]).
-operator(=\=, boolean, [real, real]).
+operator(=:=, boolean, [boolean, boolean]).
+operator('!=', boolean, [real, real]).
+operator(<>, boolean, [real, real]).
+operator('=\\=', boolean, [boolean, boolean]).
 operator(<, boolean, [real, real]).
 operator(<=, boolean, [real, real]).
 operator(>, boolean, [real, real]).
@@ -784,7 +787,6 @@ operator(and, boolean, [boolean, boolean]).
 operator(or, boolean, [boolean, boolean]).
 operator(xor, boolean, [boolean, boolean]).
 operator(not, boolean, [boolean]).
-operator((=\=), boolean, [boolean, boolean]).
 
 use_tcl_proc_for(min).
 use_tcl_proc_for(max).
