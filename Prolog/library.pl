@@ -107,7 +107,10 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
 	any_setof( CRAttr=CRValue,
-		   Node has_class_refinement CRAttr of CRValue,
+		   (Node has_class_refinement CRAttr of CRValue,
+		       \+ (SelOnly = yes,
+		       CRAttr=complete)),
+		   /* if only saving seln it may be incomplete */
 		   ClassRefinements ),
 /*	any_setof( MRAttr=MRValue,
                    ( Node has_model_refinement MRAttr of MRValue,
@@ -131,8 +134,8 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 
 go_with(Comp, SelOnly) :-
 	SelOnly = no, !;
-	draw:get_highlit_obj(N, Comp),
-	N<2, \+ connects_leaver(Comp), !;
+	draw:get_highlit_obj(0, Comp),
+	\+ connects_leaver(Comp), !;
 	\+ appears(Comp),
 	(Comp is_connector from Start to Finish,
 	    member(Use, [Start, Finish]),
