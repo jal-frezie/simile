@@ -135,8 +135,7 @@ update_autosave(Slot) :-
 into_save_file(ActList) :-
 	autosave_file_is(File), !,
 	on_exception(Lossage, (open(File, append, Save),
-				  writeq(Save, ActList),
-				  write(Save, '.\n'),
+				  write_with_breaks(Save, ActList),
 				  close(Save)),
 		(sicstus_format_to_chars("Could not create an autosave file for this model. ~w. This may mean that the model was loaded from a read-only file system. No autosave data will be stored until the model is saved somewhere else.", [Lossage], Wibble),
 	do_dialogue("Autosave warning!", warning, Wibble, ok, _),

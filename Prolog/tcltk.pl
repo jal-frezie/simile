@@ -106,8 +106,11 @@ decode_command([C|Cs], Res) :- !,
         decode_command(C, R1),
         decode_command(Cs, Rx),
 	append(R1, [32 | Rx], Res).
+decode_command(Float, Chars) :-
+	trim_float(Float, Chars), !.
 decode_command(WTorA, Chars) :-
-	(WTorA = write(Term); atomic(WTorA), Term = WTorA), !, 
+	(WTorA = write(Term);
+	    atomic(WTorA), Term = WTorA), !, 
         sicstus_write_to_chars(Term, Chars).
 decode_command(_X, []).
 

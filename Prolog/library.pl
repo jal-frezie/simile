@@ -4,8 +4,7 @@
 **** is defined in terms of the model class ADT 			    ****
 *******************************************************************************/
 
-sicstus_module( library, [ame_save/3, ame_merge/4,
-			  count_functions/2, write_with_breaks/2] ).
+sicstus_module( library, [ame_save/3, ame_merge/4, count_functions/2] ).
 
 sicstus_use_module( [library(lists),
 	sp_only, ame_gen,m_class,utility,text,build] ).
@@ -159,14 +158,6 @@ save_arcs( [Arc-Start-End|Arcs], Stream ) :-
 	write_with_breaks( Stream, arc( Arc, Start, End, Type, AttributeValuePairs,
 			GraphicalAttributeValuePairs)),
 	save_arcs( Arcs, Stream ).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% write a line with breaks to prevent it getting too long
-
-write_with_breaks(Stream, Term) :-
-	writeq(Stream, Term),
-	write(Stream, '.'),
-	nl(Stream).
 
 /* Line is written character by character in the hope that this will prevent
 DOS-type CRLFs being used for the line breaks, which will then bugger up

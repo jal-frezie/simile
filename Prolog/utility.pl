@@ -6,7 +6,8 @@ sicstus_module( utility, [unique_name/2, unique_name/3, indent/1,
 			  delete_member/2,
 			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
 			  all/3, unify_all/2, get_precedence/2,
-			  replace_in_list/4,writelist/1,writelisttofile/2,
+			  replace_in_list/4, write_with_breaks/2,
+			  writelist/1,writelisttofile/2,
 			  do_writing/2,
 			  delall/3, append/2, append_atoms/2, append_atoms/3,
 			  try/1,equate/2,
@@ -157,6 +158,14 @@ replace_in_list( C1, [C1|L1s], C2, [C2|L2s] ) :-
 	replace_in_list( C1, L1s, C2, L2s ).
 replace_in_list( C1, [X|L1s], C2, [X|L2s] ) :-
 	replace_in_list( C1, L1s, C2, L2s ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% write ordinary
+
+write_with_breaks(Stream, Term) :-
+	print(Stream, Term),
+	write(Stream, '.'),
+	nl(Stream).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % write a list of atoms one per line

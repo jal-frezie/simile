@@ -71,7 +71,7 @@ sicstus_read_from_chars(Term, Result) :-
         read_from_codes(Term, Result).
 
 sicstus_write_to_chars(Term, Result) :-
-        print_to_codes(Result, Term).
+        write_to_codes(Result, Term).
 
 sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
         !, format_to_codes(Result, Template, [V1 | Vars]).
@@ -127,19 +127,11 @@ load properly if they have already been declared */
 
 /* Things to ignore temporarily */
 
-/* Improved system for outputting floating-point numbers -- max of 
-decimal places (thanks to Dan Diaz for making it work with print_to_chars)
--- previously unusable due to weird bug in gprolog */
-
 portray(F) :-
-	float(F),
-	format_to_codes(Fs, "~8g", [F]),
-	/* number must look like float so add .0 if it doesnt */
-	(member(Ch, Fs), member(Ch, "e."), !,
-	    Ns = Fs;
-	append(Fs, ".0", Ns)),
+	(trim_float(F, NewF), !;
+	 needs_quoting(F, NewF)),
 	get_print_stream(Stream),
-	format(Stream,"~s",[Ns]).
+	format(Stream,"~s",[NewF]).
 
 /* regular stuff : xrefs occurs inside a model structure and contains other
 model structures, making them circular. It must therefore be
@@ -150,6 +142,30 @@ portray(xrefs(Model, _, _, _)) :-
 
 portray(sm(Model, _,_,_)) :-
 	print(sm(Model)).
+
+/* Improved system for outputting floating-point numbers -- max of 
+decimal places (thanks to Dan Diaz for making it work with print_to_chars)
+-- previously unusable due to weird bug in gprolog */
+
+trim_float(F, Ns) :-
+	float(F),
+	format_to_codes(Fs, "~8g", [F]),
+	/* number must look like float so add .0 if it doesnt */
+	(member(Ch, Fs), member(Ch, "e."), !,
+	    Ns = Fs;
+	append(Fs, ".0", Ns)).
+	
+/* If we rely on writeq to put non-readable atoms in quotes it will
+also convert wide characters into sets of hex codes enclosed in
+backslashes, which other Prologs cannot read. So we do it by hand
+instead. */
+
+needs_quoting(Foo, Bar) :-
+	atom(Foo),
+	write_to_codes(Bar, Foo),
+	append(Bar, ".", Barb),
+	catch(read_from_codes(Barb, Foob), _Err, true),
+	\+ Foob == Foo.
 
 runtime_entry(start) :-
 	main.

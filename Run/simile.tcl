@@ -6,6 +6,7 @@ regsub -all /\\./ [info script] / scriptCmd
 #tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
+# Above seems unnecessary for sicstus 3.10
 
 switch $tcl_platform(platform) {
     windows {

@@ -1,6 +1,6 @@
 /* :- module(sp_only, [sicstus_read_from_chars/2, sicstus_write_to_chars/2,
 		    sicstus_format_to_chars/3, sicstus_write_chars/2,
-		    sicstus_put/2]).
+		    sicstus_put/2, trim_float/2]).
 
 ...and here is the first component of this port! GNU has no modules, so use
 term_expansion to make something which it can treat as a predicate and ignore,
@@ -27,3 +27,7 @@ sicstus_write_chars(Stream, Chars) :-
 
 sicstus_put(Stream, Char) :-
 	put(Stream, Char).
+
+trim_float(F, FStr) :-
+	float(F),
+	name(F, FStr).

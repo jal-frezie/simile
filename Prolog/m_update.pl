@@ -999,9 +999,8 @@ load_references(Submodel, ReferenceCapts) :-
 save_references(Stream, Model) :-
 	(Model has_model_refinement references of RefList, !,
 	    pair_with_captions(Model, RefList, PairList),
-	    writeq(Stream, references(PairList));
-	writeq(Stream, no_references)),
-	write(Stream, '.\n').
+	    write_with_breaks(Stream, references(PairList));
+	write_with_breaks(Stream, no_references)).
 
 pair_with_captions(_, [], []).
 
