@@ -1578,7 +1578,6 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 
   /* If this version requires a license then check we have the right
      one. */
-#ifdef SIM_LICENSED
   /*  if (Tcl_VarEval(interp, "::md5::hmac ", secret, 
       " $userinfo(name)@$userinfo(corp)%$userinfo(edn)", NULL) != TCL_OK) {
       Above used hmac but now we just append the secret and hash because
@@ -1590,6 +1589,7 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 		NULL);
     return TCL_ERROR;
   }
+#ifdef SIM_LICENSED
   /* check it matches what we got before */
   if (strcmp(Tcl_GetVar2(interp, "userinfo", "license_code", 0), 
 	     Tcl_GetStringResult(interp))) {

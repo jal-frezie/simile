@@ -57,7 +57,7 @@ proc ControlDraw {prologVersion} {
 	set env(SIMTMPDIR) /tmp/simdevel
 	set env(licensee_name) "Support team"
 	set env(licensee_corp) "Simulistics, inc."
-	set env(license_code) default_license=7d1cce6183f8ee8f96e6233cea1575f1
+	set env(license_code) default_license=072ccc96dced2bef53403afd67fe7782
     }
 
     set sendvars(simV) $env(SIMILE_VERSION)
