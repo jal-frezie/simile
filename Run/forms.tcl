@@ -1089,7 +1089,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set icount {}
     if [string compare $disaggregate(icount) 1] {
         foreach newIndex [split $disaggregate(icount) ,] {
-            if {[string is integer $newIndex]} {
+            if {[string is double $newIndex] || \
+		    [string match size(*) $newIndex]} {
                 lappend icount $newIndex
             } else {
                 lappend icount \"$newIndex\"
