@@ -71,7 +71,11 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     set widget [$equation(main).main.main getframe]
     $widget.equation.textbox.text delete 1.0 end
     $widget.equation.textbox.text insert 1.0 $current_equation
-    set equation(units) $units
+    if {[string equal 1 $units]} {
+	set equation(units) real
+    } else {
+	set equation(units) $units
+    }
     set equation(mult) [join $mult ,]
 
 # do not show a radiobutton if incomplete
@@ -439,9 +443,14 @@ proc interact_equation {} {
     grab release $t
     switch $equation(done) {
 	1 {
+	    if {[string equal real $equation(units)]} {
+		set units 1
+	    } else {
+		set units $equation(units)
+	    }
 	    return [list [string trimright \
                 [$eqnFrame.equation.textbox.text get 1.0 end]] \
-                $equation(units) $equation(isparam) \
+                $units $equation(isparam) \
                 [string trimright [$descFrame.text get 1.0 end]] \
                 [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
                 $equation(min) $equation(max)]
