@@ -13,7 +13,7 @@ namespace eval DisplayFormat {
     proc General {val prec lz} {
         # was VarPrecRender
         if {[catch {
-                set regular [format %$.${prec}f $val]
+	    set regular [format %${lz}.${prec}f $val]
                 set scientific [format %.${prec}e $val]
                 set shortSci [format %.[expr $prec-3]e $val]
             }]} { return $val }
