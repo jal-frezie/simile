@@ -643,10 +643,12 @@ proc ControlDraw {prologVersion} {
         set userinfo(done) 0
     }
 
-    if {$sendvars(simV)>$userinfo(oldVersion) && \
-	    [string match Linux $tcl_platform(os)]} {
-        exec g++ -c -O -fPIC -I. ./shank.cpp
-        exec g++ -shared -o ../System/lib/lib5d.so shank.o
+    if {[string match Linux $tcl_platform(os)]} {
+	set shank ../System/lib/lib5d.so
+	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
+	    exec g++ -c -O -fPIC -I. ./shank.cpp
+	    exec g++ -shared -o $shank shank.o
+	}
     }
     # loading stub sets license entries
     load_c_stub
