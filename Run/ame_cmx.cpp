@@ -400,21 +400,20 @@ public:
     return(-1);
   }
       
-  void make_full_caption(int line, char *result, int *dims) {
+  void make_full_caption(int line, char *result) {
     /* New version which does not depend on the nodedata array being in
        any particular order -- and returns the whole caption */
     int parent, *dest, *src;
     
 
     if ((parent = parent_line(line)) > 0) {
-      make_full_caption(parent, result, dims);
+      make_full_caption(parent, result);
     } else {
       *result = (char)NULL;
-      *dims = 0;
     }
     strcat(result, "/");
     strcat(result, nodedata[line].caption);
-
+    /*
     dest = dims;
     src = nodedata[line].dims;
 
@@ -426,6 +425,7 @@ public:
 	*(dest++)=*src;
       }
     } while (*src++);
+    */
   }
   
   int find_et_struct(int fake_dim) {
@@ -520,10 +520,10 @@ from the search string, less the submodel itself -- note it may be an issue
 that the submodel name is searched for in both models ) */
 
 int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
-  int count, spare_dims[32];
+  int count;
   char test[255];
   for (count = 1; seekType->nodecount>count; ++count) {
-    seekType->make_full_caption(count, test, spare_dims);
+    seekType->make_full_caption(count, test);
 	  
     if (!strcmp(seeknode, test)) {
       *tgtModel = seekType;
@@ -556,7 +556,6 @@ node_data_line* searchinfo(char* node, Model** tgtModel,
   Model* tryModel;
   node_data_line *bottomLine;
   char localCapt[256];
-  int local_dims[32];
   int line;
 
   while (searchPoint) {
@@ -564,15 +563,15 @@ node_data_line* searchinfo(char* node, Model** tgtModel,
     if ((line=tryModel->getinfo(node))>-1) {
       bottomLine = tryModel->nodedata + line;
       *tgtModel = tryModel;
-      tryModel->make_full_caption(line, localCapt, local_dims);
+      tryModel->make_full_caption(line, localCapt);
       if (tryModel == modelType) {
 	strcpy(caption, localCapt);
 	*dims = *path = 0;
-	append_ints_to_null(dims, local_dims, 0, 0);
+	append_ints_to_null(dims, bottomLine->dims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
       } else if (searchinfo(searchPoint->node, &tryModel,
 			    caption, dims, path)) { /* ref to tryModel spare */
-	append_ints_to_null(dims, local_dims, SEPARATE, 0);
+	append_ints_to_null(dims, bottomLine->dims, SEPARATE, 0);
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
 	strcpy(caption + strlen(caption), /* was strrchr(caption, '/'), */

@@ -54,7 +54,7 @@ proc tcl_insert {node newVs} {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
 	    set tree [lindex $nodedata($record) 4]
 	    set type [lindex $nodedata($record) 1]
-	    set dims [GetFullDims $tree]
+	    set dims [lindex $nodedata($record) 3]
 	    return [list [FillValue ::AME_model<> $tree $type $dims \
 			      {} 0 $newVs]]
 	}

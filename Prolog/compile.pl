@@ -317,7 +317,7 @@ wot need them */
 	reassure_user("Generating structure declarations"),
 	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
 				'AME_model', 'AME_model'-[]),
-	generate_main_decls(Language, RootInstance, [], 1, EnumTypeSpecs,
+	generate_main_decls(Language, RootInstance, [], 1, [], EnumTypeSpecs,
 		ExtSets, AllGraphs, TypeDecls, PointerDecls, NodeData),
 	append(InitTypes, [EndTopType], TypeDecls),
 	render( Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0,
@@ -457,8 +457,8 @@ temporary variables used when expanding expressions.
 * New version, for 2.34: Does all the recursing itself, and also generates
 the model node data table and the extractor case statements */
 
-generate_main_decls(L, Instance, Tree, Level, EnumTypeSpecs, ExtSets, Graphs,
-		    TypeDecls, PointerDecls, NodeData) :-
+generate_main_decls(L, Instance, Tree, Level, Dims, EnumTypeSpecs, ExtSets,
+		    Graphs, TypeDecls, PointerDecls, NodeData) :-
 	Instance = instance(submodel, SymbolicName, 
 			xrefs(Model, _, Bases, _), _, ModelType-_),
 	length(Tree, Depth),
@@ -500,7 +500,7 @@ generate_main_decls(L, Instance, Tree, Level, EnumTypeSpecs, ExtSets, Graphs,
 	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
 	render(L, end(procedure), get_pointer, 0, ExtN),
 
-	generate_local_decls(L, SubInstances, Tree, Level, EnumTypeSpecs,
+	generate_local_decls(L, SubInstances, Tree, Level, Dims, EnumTypeSpecs,
 			     ExtSets, Graphs, Publics, SubTypeDecls,
 			     SubPointerDecls, Exts, NodeData),
 
@@ -511,8 +511,8 @@ generate_main_decls(L, Instance, Tree, Level, EnumTypeSpecs, ExtSets, Graphs,
 	append(LocalPtrs, SubPointerDecls, PointerDecls).
 	
 
-generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], []).
-generate_local_decls(L, [Instance | Instances], Tree, Level,
+generate_local_decls(_, [], _,_,_,_,_,_, [], [], [], [], []).
+generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
 		     EnumTypeSpecs, ExtSets, Graphs,
 		     PublicDecls, TypeDecls, PointerDecls, Exts, NodeData) :-
 	Instance = instance(_, Node, Loc, _, _-SmSizes),
@@ -527,20 +527,20 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 	    Loc = xrefs(_, instance(_,_,_, 'AME_model', _), _,_)), !,
 	    append(Tree, [Level, -1], DeepTree),
 	    (by_record(Node), !,
-		append([], ['RECORDS'], NewDims);
-		append([], ['MEMBERS'], NewDims));
+		append(Dims, ['RECORDS'], NewDims);
+		append(Dims, ['MEMBERS'], NewDims));
 	append(Tree, [Level], DeepTree),
-	    append([], SmDims, NewDims)),
+	    append(Dims, SmDims, NewDims)),
 	generate_data_decls(L, Level, NewDims, DeepTree, Instance,
 			    ExtSets, Graphs, EnumTypeSpecs, LocalPublicDecls,
 			    LocalExts, LocalNodeData),
-	(generate_main_decls(L, Instance, DeepTree, 1,
+	(generate_main_decls(L, Instance, DeepTree, 1, NewDims,
 			     EnumTypeSpecs, ExtSets, Graphs,
 		    DeepTypeDecls, DeepPointerDecls, DeepNodeData), !;
 	 /* Not a submodel */
 	    [DeepTypeDecls, DeepPointerDecls, DeepNodeData] = [[], [], []]),
 	NewLevel is Level + 1,
-	generate_local_decls(L, Instances, Tree, NewLevel, EnumTypeSpecs,
+	generate_local_decls(L, Instances, Tree, NewLevel, Dims, EnumTypeSpecs,
 			     ExtSets, Graphs,
 			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
 			     MoreExts, MoreNodeData),

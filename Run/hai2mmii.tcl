@@ -474,8 +474,7 @@ proc GetTclCompProperty {topNode prop args} {
 	    array set propData [list Class 7 Type 0 Eval 1]
 	    return [getinfo $node $propData($prop)]
 	} Dims {
-	    set numericPath [getinfo $node 3]
-	    return [GetFullDims $numericPath]
+	    getinfo $node 2
 	} Graph {
 	    set index [getinfo $node 4]
 	    if {[llength $set]} {
