@@ -613,7 +613,7 @@ get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
 		Rest = [];
 	    Pt = Top,
 		Top has_model_refinement link_equivalences of Links,
-		member(Equiv, Links), !,
+		member(Equiv, Links),
 		(select(End, [start, finish], [Other]),
 		    end_coords(FarLink, Other, FarPt),
 		    [FarPt] = Rest;

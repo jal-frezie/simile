@@ -488,9 +488,54 @@ menu_handle(Win, edit, Component) :-
 	    event:assert(instant_link(Component))).
 
 /* Delete the selection */
+menu_handle(Win, edit, reroute) :-
+        start_progress_dialogue,
+	reassure_user("Reroute in progress"),
+	get_edit_model(Win, Model, _),
+	/* Get selected links top-down, flows first */
+	setof(Rerouter, (contains(Model, Rerouter),
+			    Rerouter is_of_sort line,
+			    event:doomed(Rerouter),
+			    clear_shape(Rerouter, course)), Rerouters),
+	reroute_sections(Rerouters),
+	finish_move(Model),
+	remove_old_incomplete,
+	finish_progress_dialogue.
+
+reroute_sections(Rerouters) :-
+	Rerouters = [];
+	member(Type, [relation, flow, influence]),
+	full_section(Rerouters, Type, [Go | Rest], TopArc, Remains),
+	suffix([Stop], [Go | Rest]),
+	(m_class:follows(Start, Go); m_class:Go is_connector from Start to _),
+	(m_class:follows(Stop, End); m_class:Stop is_connector from _ to Fn),
+	get_host(Fn, End),
+	event:draw_line_to(Start, Type, End),
+	event:reuse_route(Type, TopArc),
+	reroute_sections(Remains).
+
+full_section(Rerouters, Type, [Start | Rest], Top, Remains) :-
+	select(Start, Rerouters, Left),
+	find_type(Start, Type),
+	\+ (m_class:follows(Before, Start), member(Before, Left)),
+	continuation(Left, Start, Rest, Top, Remains).
+
+continuation(Rerouters, Start, Rest, TopArc, Remains) :-
+	m_class:follows(Start, Next),
+	select(Next, Rerouters, Left), !,
+	continuation(Left, Next, More, FarArc, Remains),
+	Rest = [Next | More],
+	(find_all_links(M1, Start),
+	    find_all_comps(M1, Next), !,
+	    TopArc = Start;
+	TopArc = FarArc);
+	Rest = [],
+	TopArc = Start,
+	Remains = Rerouters.
+	
 menu_handle(Win, edit, delete) :-
         start_progress_dialogue,
-	reassure_user("Delete in progress"),
+	reassure_user("Delte in progress"),
 	get_edit_model(Win, Model, _),
 	event:delete_net(Model),
 	finish_move(Model),

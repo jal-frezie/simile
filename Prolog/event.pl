@@ -285,8 +285,9 @@ bar_edit_menu(Wid) :-
 
 	update_ability(Model, none, edit, 'Cut', Cuttable),
 	update_ability(Model, none, edit, 'Copy', Cuttable),
+	update_ability(Model, none, edit, 'Paste', Pastable),
 	update_ability(Model, none, edit, 'Delete', Dellable),
-	update_ability(Model, none, edit, 'Paste', Pastable).
+	update_ability(Model, none, edit, '{Reroute links}', Dellable).
 
 /* restore_edit_menu makes sure it will be appropriate for a menubar
 selection, i.e., top submodel and corner position */
@@ -1289,7 +1290,7 @@ move_link(Link) :-
 	update_equivs(Link).
 
 adjust_link(Link, Recurse) :-
-	(get_shape(Link, course, OldCourse); true),
+	(get_shape(Link, course, OldCourse), !; true),
 	update_link_route(Link, Recurse),
 	get_shape(Link, course, NewCourse),
 	reroute_display(Link),
@@ -1637,6 +1638,8 @@ unclick_obj :-
 
 tie_ends(New_obj, Start_thing, Terminator) :-
 	link_ends(New_obj, Start_thing, Terminator, Top_arc),
+	reuse_route(New_obj, Top_arc).
+
 	/* 
 	(find_all_comps(TopBox, Top_arc),
 	    image:has_outer_equiv(Top_arc, TopBox, Join), !,
@@ -1644,6 +1647,7 @@ tie_ends(New_obj, Start_thing, Terminator) :-
 	event:thread_link(Top_arc)).
 
 Clever bit: reuse the route of the rubberband link for the newly added one */
+reuse_route(New_obj, Top_arc) :-
         find_current(Wid),
 	Wid shows_model Parent,
 	find_base(Top_arc, BowtieArc),

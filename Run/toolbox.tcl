@@ -1564,6 +1564,8 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm add command -label Paste -command "MenuSelect $c edit paste" \
 	-accelerator "Ctrl+V"
     AddAccelerator $winid edit Paste "<Control-v>"
+    $fm add command -label {Reroute links} \
+	-command "MenuSelect $c edit reroute"
     $fm add command -label Delete -command "MenuSelect $c edit delete" \
 	-accelerator "Del"
     AddAccelerator $winid edit Delete "<Delete>"

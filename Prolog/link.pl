@@ -224,16 +224,13 @@ sequence(Link2, Link1) :-
 	    (sequence(Link3, Link1); Link3 = Link1).
 
 follows(Link2, Link1) :-
-	nonvar(Link1),
-	    Link1 is_connector from Start to _,
-	    (Node = Start; Node has_part Start),
-	    Node has_model_refinement link_equivalences of Links,
-	    member(Link2-Link1, Links);
+	(nonvar(Link1),
+	    Link1 is_connector from Edge to _;
 	var(Link1),
-	    Link2 is_connector from _ to Finish,
-	    (Node = Finish; Node has_part Finish),
-	    Node has_model_refinement link_equivalences of Links,
-	    member(Link2-Link1, Links).
+	    Link2 is_connector from _ to Edge),
+	(Node = Edge; Node has_part Edge),
+	Node has_model_refinement link_equivalences of Links,
+	member(Link2-Link1, Links).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Node is_no_longer_has_connections succeeds if Node's connecting arcs have
