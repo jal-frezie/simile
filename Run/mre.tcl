@@ -75,7 +75,8 @@ proc Create { node } {
     } else {
 	set mreId .mre[newInt]
 	set helperTable($node,whichRunEnv) $mreId
-
+        CreateDisplayPageContextMenu
+        
         #tk_messageBox -message MakeMRE -type ok
         toplevel $mreId -width 200m -height 150m
         wm title $mreId "Run-Time Environment - Simile"
@@ -193,8 +194,6 @@ proc Create { node } {
         pack $mainpw -fill both -expand yes
         
         pack $hiercontrolpw -fill both -expand yes
-        
-        CreateDisplayPageContextMenu
         
         # Model variable explorer is created automatically elsewhere
         # run control is automatically created when model is run
@@ -329,7 +328,9 @@ proc AllDisplaysPopup {containerId} {
 
 proc AllDisplaysPopupCurrentContainer {} {
     # .helpers.sub2 made by runmodel.tcl AddHelperSublist
-    tk_popup .helpers.sub2 [winfo pointerx .mre] [winfo pointery .mre]
+    variable CurrentContainer
+    set mre [winfo toplevel $CurrentContainer]
+    tk_popup .helpers.sub2 [winfo pointerx $mre] [winfo pointery $mre]
 }
 
 # Not used - possibly never will be but is skeleton to use the selection for transfer
@@ -657,7 +658,6 @@ proc Destroy {args} {
 #    }
     
     destroy .helpPopup
-    destroy .pageContextMenu
     KillHelpers $node
     foreach winData [array name window_info *,parent] {
 	upvar 0 window_info([string range $winData 0 end-7],whichModel) model
@@ -733,14 +733,14 @@ proc SetCurrentContainer {win} {
         $tb1.bbox4 itemconfigure 0 -state disabled; # add helper buttons
         $tb1.bbox4 itemconfigure 1 -state disabled
         $tb1.bbox4 itemconfigure 2 -state disabled
-        if {[winfo exists .pageContextMenu]} {
+
             .pageContextMenu entryconfigure 0 -state disabled
             .pageContextMenu entryconfigure 1 -state disabled
             .pageContextMenu entryconfigure 2 -state disabled
             .pageContextMenu entryconfigure 6 -state disabled
             .pageContextMenu entryconfigure 11 -state disabled; # add notebook
             #.pageContextMenu entryconfigure 12 -state disabled; # add notebook p0age
-        }
+
         if {[string match vertical [$pw cget -orient]]} {
             #ShowMessage debug info "vert $tb1.bbox2" ok
             $tb1.bbox2 itemconfigure 1 -state disabled
@@ -766,7 +766,7 @@ proc SetCurrentContainer {win} {
         $tb1.bbox4 itemconfigure 0 -state normal; # add helper buttons
         $tb1.bbox4 itemconfigure 1 -state normal
         $tb1.bbox4 itemconfigure 2 -state normal
-        if {[winfo exists .pageContextMenu]} {
+
             .pageContextMenu entryconfigure 0 -state normal
             .pageContextMenu entryconfigure 1 -state normal
             .pageContextMenu entryconfigure 2 -state normal
@@ -775,7 +775,7 @@ proc SetCurrentContainer {win} {
             .pageContextMenu entryconfigure 8 -state normal
             .pageContextMenu entryconfigure 11 -state normal
             #.pageContextMenu entryconfigure 12 -state normal
-        }
+
     }
     focus $win
     set CurrentContainers($currentNode) $win
@@ -856,9 +856,10 @@ proc RemoveHelperPageDlgOK {dlg} {
 proc CreateDisplayPageContextMenu {} {
     if  {![winfo exists .pageContextMenu]} {
         set m [menu .pageContextMenu -tearoff 0]
+	.helpers.sub2 clone .pageContextMenu.sub2
         $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
         $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {Table}"
-        $m add cascade -label "Choose display to create ..." -menu .helpers.sub2
+        $m add cascade -label "Choose display to create ..." -menu .pageContextMenu.sub2
         $m add separator
         $m add command -label "Copy display" -command ::RunEnv::CopyHelper
         $m add command -label "Cut display" -command ::RunEnv::CutHelper
