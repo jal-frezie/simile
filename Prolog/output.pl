@@ -471,6 +471,7 @@ stuff_blank_levels(String, Name) :-
 	append(Head, [Break | Body], String),
 	append(Level, Tail, Body),
 	(Tail = []; Tail = [Break | _]),
+	\+ Level = [], /* double forward slash precedes a network drive spec */
 	\+ (member(Prints, Level), \+ Prints = Spc), !,
 	append(Head, [Break, Exc | Tail], NewString),
 	stuff_blank_levels(NewString, Name);
