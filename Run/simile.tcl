@@ -8,10 +8,11 @@
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
     set oldProc Simile
-    dde servername $oldProc
+    set sendCmd {dde eval}
     set argv [lindex $argv 0]
 } else {
     set oldProc simile.tcl
+    set sendCmd send
 }
 
 if {$argc && ![string match Darwin $tcl_platform(os)] } {
@@ -26,11 +27,14 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
 # on Macs the system takes care of this and we don't even get this far
 
 if {[info exists env(OPEN_MODEL)]} {
-    set remStartCmd [list send $oldProc OpenTopLevel $env(OPEN_MODEL)]
+    set remStartArgs [list OpenTopLevel $env(OPEN_MODEL)]
 } else {
-    set remStartCmd [list send $oldProc NewTopLevel]
+    set remStartArgs NewTopLevel
 }
-if {![catch {eval $remStartCmd}]} {
+
+if {[catch [concat $sendCmd $oldProc {$remStartArgs}]]} {
+#    tk_messageBox -message $errorInfo
+} else {
     exit
 }
 
@@ -48,6 +52,7 @@ set env(SP_PATH) $SIMILE_PATH/System
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
+	dde servername $oldProc
 	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
 	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"

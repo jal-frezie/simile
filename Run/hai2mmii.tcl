@@ -482,6 +482,9 @@ proc GetTclCompProperty {topNode prop args} {
 	    getinfo $node 2
 	} Graph {
 	    set index [getinfo $node 4]
+	    if {!$index} {
+		error "No graph associated with node [getinfo $node 8]."
+	    }
 	    if {[llength $set]} {
 		eval {setup_graph_data $index} $set
 	    } else {

@@ -59,7 +59,7 @@ proc NewTopLevel {} {
 }
 
 proc OpenTopLevel {model} {
-    MenuSelect dummy open_toplevel $model
+    MenuSelect dummy open_toplevel [brainwash $model]
     #    set newInstance [interp create]
     #    $newInstance eval package require Tk
     #    $newInstance eval set argc 1
@@ -819,6 +819,8 @@ proc SaveFile {topNode tree tgt} {
     } else {
         return $Lossage
     }
+
+
 }
 
 proc LoadFile {topNode tree tgt} {
@@ -1124,15 +1126,6 @@ proc UnOrReDo {curWin fwd} {
     }
 }
 
-# I think the only reason for having this is to work around a Windows bug
-# where the Prolog errors didn't come up properly...
-proc DoWithErrors {args} {
-    eval $args
-    #    if [catch $args err] {
-    #        bgerror $err
-    #    }
-}
-
 # Export a postscript file from a window. Only the bit of the diagram showing in
 # the viewport is included, and the output is in landscape mode, sized so 100
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
@@ -1256,6 +1249,8 @@ proc InsertModel {winId} {
         Reopen $winId $insertion insert
     }
 }
+
+
 
 proc Reopen {canvas oldFile op} {
     global custom userinfo welcomeDone

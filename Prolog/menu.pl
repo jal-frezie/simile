@@ -231,8 +231,8 @@ menu_handle(Win, file, new) :-
 menu_handle(_Win, file, new_toplevel) :-
 	m_update:make_desktop(_,_).
 
-menu_handle(Win, open_toplevel, Name) :-
-	m_update:make_desktop(Parent, _),
+menu_handle(_Win, open_toplevel, Name) :-
+	m_update:make_desktop(Parent, Win),
 	stick_model_in(Win, Parent, Name, reopen).
 
 menu_handle(Win, file, open) :-

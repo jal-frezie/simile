@@ -935,8 +935,7 @@ proc MenuSelect { window button item } {
     if [string match local $button] {
         DoLocalCmd $window $item
     } else {
-        set command tk_menu('$window',$button,'$item')
-        DoWithErrors prolog $command
+        prolog tk_menu('$window',$button,'$item')
     }
 }
 
@@ -999,8 +998,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     AddAccelerator $winid file "Print..." "<Control-p>"
     $fm add cascade -label "Import" -menu $fm.sub0
     set fm1 [menu $fm.sub0 -tearoff 0]
-    $fm1 add command -label "Spreadsheet..." \
-            -command "MenuSelect $c file import_ss"
+#    $fm1 add command -label "Spreadsheet..." \
+#            -command "MenuSelect $c file import_ss"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label "Model declarations" \
@@ -1010,7 +1009,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm2 add command -label "executable binary" \
             -command "MenuSelect $c file compile_c"
     $fm2 add command -label "PostScript graphics" \
-            -command "DoWithErrors ExportPostscript $c"
+            -command "ExportPostscript $c"
     $fm add separator
     
     $fm add command -label Close -command "MenuClose $c" \
