@@ -2,7 +2,7 @@
 #include        <signal.h>
 #include        <setjmp.h>
 
-#include <newdllcs.h>
+#include <dllcalls.h>
 
 /* Every dll has a variable to hold the id of the model type instance it
    represents */
