@@ -851,10 +851,12 @@ proc FixSize {c} {
 }
     
 proc DestroyHelpers {} {
+    global modelWin
     KillHelpers
     if {[winfo exists .mre]} {
-	destroy .mre
+    ::RunEnv::Destroy
     }
+    $modelWin.toolSlot.toolbar.snap configure -state disable    
 }
 
 proc KillHelpers {} {
@@ -979,10 +981,14 @@ proc GetModelTime {} {
 
 proc start_run {lang winId} {
     global runState
+    global modelWin
+
 # ShowMessage debug info enter(start_run) ok
     if {[PrefValue custom(helperManager) helperManager]} {
 # ShowMessage debug info "About to make MRE" ok
-	set mre [Makemre $winId]
+    set mre [Makemre $winId]
+    $modelWin.toolSlot.navbar.runenv configure -state active
+    $modelWin.toolSlot.toolbar.snap configure -state active
     }
     if {[info exists runState(currentTime)]} {
 	if {$runState(execTime) != $runState(currentTime)} {

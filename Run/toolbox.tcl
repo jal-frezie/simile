@@ -17,6 +17,14 @@ source ../Run/runmodel.tcl
 
 source ../Run/mre.tcl
 
+# Make Simile a DDE server under Windows. Jonathan
+# Must be after the sourcing or Simile fails
+#tk_messageBox -message [tk appname] -type ok
+catch {
+    package require dde 2.0
+    dde register Simile
+}
+
 proc AttackGlobalVariable {array elt val} {
     global $array
     #ShowMessage debug info "Setting $array$elt" ok
@@ -754,6 +762,7 @@ proc DoLocalCmd {win item} {
         customize {Customize $win $pushedbutton}
         find {FindCaption $win}
         findnext {NextCaption $win}
+        raiseMRE {raise .mre}
     }
 }
 
@@ -1034,6 +1043,19 @@ proc AddMainMenu { winid initWidth initDepths} {
                 -side left
         BindPopup $nb.$handle $handle
     }
+    
+    # button to raise single-window run env (ready for more tools in this section)
+    pack [frame $nb.spacer2 -width 12 -height 24] -side left
+    foreach navCmd {{runenv {local raiseMRE}}} {
+        set handle [lindex $navCmd 0]
+        set testImg [image create photo -file $buttonImages/${handle}.gif]
+        pack [button $nb.$handle -image $testImg -borderwidth 3 \
+                -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                -side left
+        BindPopup $nb.$handle $handle
+    }
+    $nb.runenv configure -state disabled
+    
     set tb [frame $winid.toolSlot.toolbar -border 2]
     foreach mode {compartment variable flow influence submodel \
                 relation creation immigration reproduction loss condition} {
@@ -1049,6 +1071,8 @@ proc AddMainMenu { winid initWidth initDepths} {
                 -borderwidth 3] -side left
         BindPopup $tb.$mode $mode
     }
+    $tb.snap configure -state disabled
+        
     $tb.select configure -relief sunken
     # heheheh...must be in select mode to make new window, except first
     
