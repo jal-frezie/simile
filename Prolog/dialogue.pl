@@ -482,7 +482,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		are not making code we can use the time step field to tell it
 		this by setting it to 'dummy'. */
 	
-	DummyDest = [sm(_,_,_, fm_loop(IndxSzs))],
+	DummyDest = [sm(_,_,_, fm_loop(IndxSzs, _))],
 	    on_exception(ParseException,
 			 (make_intermediates(FullExpr, Fn, '/dest/',
 					     DummyDest, _, [],

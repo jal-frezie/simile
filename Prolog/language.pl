@@ -102,7 +102,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
 explicitly (using element(...)), so it can contain any expression, even a
 graph. */
 
-do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs))
+do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 		 | Clauses], Graph_count, Preambles, 
 	      [Current | Postambles],
 	      Used, Graphs, Temps, Results) :-
@@ -120,8 +120,20 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs))
 	all(render, make_expr,
 	    [unify(L), build(RefIndices), build(RefExprs)]),
 	render(L, enter_context, Pointer=[Top, Name, RefExprs], 
-	       Indent, Starters),
-	Finishers = [],
+	       Indent, Entry),
+	(nonvar(Alarm), !,
+	    make_struct_reference(L, Pointer, Alarm, AlarmVar),
+	    render(L, assignment, AlarmVar=1, Indent, Init),
+	    render(L, while_start, 1, Indent, OpenInf),
+	    render(L, end(while), alarm, Indent, CloseInf),
+	    refer_value(L, AlarmVar, AlarmRef),
+	    render(L, if_start, AlarmRef, Indent, OpenBrk),
+	    render(L, end(cond), AlarmRef, Indent, CloseBrk),
+	    render(L, break, _, Indent, Break),
+	    append([Entry, Init, OpenInf], Starters),
+	    append([OpenBrk, Break, CloseBrk, CloseInf], Finishers);
+	Starters = Entry,
+	    Finishers = []),
 
 	(nonvar(Graph_data), !,
 	    NewGraphCount is Graph_count + 1,

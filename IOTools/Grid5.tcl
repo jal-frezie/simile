@@ -552,14 +552,16 @@ namespace eval grid005 {
         variable useNodes
         
         set visible [concat [$winId.c xview] [$winId.c yview]]
-        set dataL [expr int([lindex $visible 0]*$useNodes($winId,ncol))]
-        set dataR [expr int(0.9999*[lindex $visible 1]*$useNodes($winId,ncol))]
-        set dataT [expr int([lindex $visible 2]*$useNodes($winId,nrow))]
-        set dataB [expr int(0.9999*[lindex $visible 3]*$useNodes($winId,nrow))]
-        $winId.c coords 1 [$winId.c canvasx 0] [$winId.c canvasy 0]
+        set dataL [expr [lindex $visible 0]*$useNodes($winId,ncol)]
+        set dataR [expr int(ceil([lindex $visible 1]*$useNodes($winId,ncol)))]
+        set dataT [expr [lindex $visible 2]*$useNodes($winId,nrow)]
+        set dataB [expr int(ceil([lindex $visible 3]*$useNodes($winId,nrow)))]
+        $winId.c coords 1 \
+	    [$winId.c canvasx [expr -fmod($dataL,1)*$useNodes($winId,mult)]] \
+	    [$winId.c canvasy [expr -fmod($dataT,1)*$useNodes($winId,mult)]]
 #puts "Displaying $dataL $dataT $dataR $dataB"
         $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
-                -from $dataL $dataT $dataR $dataB -to 0 0 \
+	    -from [expr int($dataL)] [expr int($dataT)] $dataR $dataB -to 0 0 \
                 -zoom $useNodes($winId,mult) -shrink
     }
     
@@ -569,8 +571,8 @@ namespace eval grid005 {
         
         set ncol $useNodes($winId,ncol)
         set nrow $useNodes($winId,nrow)
-        set col [expr int(([$winId.c canvasx $x])/$useNodes($winId,mult))]
-        set row [expr $nrow-int(([$winId.c canvasy $y])/$useNodes($winId,mult))]
+        set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
+        set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
             if {![winfo exists .popup]} {
                 toplevel .popup -width 1 -height 1 -bd 2 -relief raised

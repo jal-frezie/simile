@@ -14,6 +14,7 @@ true('') --> 1==1.
 false('') --> 1==0.
 pi('') --> 3.1415926535897932384626433832795.
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
+iterations(Alarm) --> st=sofar(if Alarm then 0 else st+1),st.
 
 % returns the sign of a number, -1 if negative or 1 if positive
 sgn(real) --> choose(real==0,1,int(real/abs(real))).

@@ -731,7 +731,9 @@ many individuals in each population submodel within it are created each round. *
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 		    Inters, AssignList) :-
 	Instance = instance(submodel, _, xrefs(model(Functions, Submodels),
-					       _,_,_), _,_),
+                                              _,_,_), _,_),
+	(member(instance(alarm,_,_,elt([sm(_,_,_, fm_loop(_, Al))|_], Al,_),_),
+		Functions), !; true),
 	(setof(ParamUpdate,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
 	       ParamUpdates), !;
@@ -1281,6 +1283,9 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 	    /* For the time being, do not do anything that would use the
 	    check-member feature */
 	    \+ (number(TestPhase), TestPhase < Phase),
+	    /* Do not go into an alarmed submodel unless I can get the whole
+	    thing done in this pass */
+			    
 	    /* OK, have I just done an existence test for it? */
 	    (number(TestPhase),
 		
@@ -1468,10 +1473,11 @@ order_submodel_assignments(Phase, Path, RawAssign,
 		OrderedPasses = HighPasses,
 		Left = Later,
 		FoundTest = DoneTest;
-		order_assignments(Phase, Path, Later, LastPass, Left),
-		(Path = [TestModel | _],
-		made_in(existence_tested, TestModel, LastPass), !,
-		    FoundTest = Phase;
+	    order_assignments(Phase, Path, Later, LastPass, Left),
+		(Path = [TestModel | _], !,
+		    (made_in(existence_tested, TestModel, LastPass), !,
+			FoundTest = Phase;
+		    true);
 		true),
 		/* might not need a start/finish pair for these non-loopers */
 		get_non_looping_levels(Path, LastPass, Levels),
@@ -1577,9 +1583,10 @@ variables used are made before we open it) */
 
 open_separately(Level) :-
 	loops(Level);
-	Level = sm(_,_,_, fm_loop(Inds)),
-	member(I, Inds),
-	\+ I = glob(_,_).
+	Level = sm(_,_,_, fm_loop(Inds, Alarm)),
+	(member(I, Inds),
+	\+ I = glob(_,_);
+	    nonvar(Alarm)).
 
 generate_graph_handlers([], [], []).
 

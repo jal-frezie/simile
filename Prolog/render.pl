@@ -424,6 +424,12 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 			assign_initial_values(Name, InitialValues, 0, InitDims,
 					Indent, Result))).
 
+render(L, break, _, I, [Result]) :-
+	list_of(32, I, Spacing),
+	member([L, Inst], [[c, "break;"], [tcl, "break"]]),
+	append(Spacing, Inst, ResultStr),
+	name(Result, ResultStr).
+
 render(c, release_memory, Var, Indent, [Result]) :-
 	sicstus_format_to_chars("~*sdelete ~a;", [Indent, " ", Var], ResultStr),
 	name(Result, ResultStr).

@@ -3,7 +3,8 @@
 **** of a model class that is actually converted into runnable code.        ****
 *******************************************************************************/
 
-sicstus_module(instance, [instantiate_all/2, apply_minmax/3] ).
+sicstus_module(instance, [instantiate_all/2, apply_minmax/3,
+			  path_section_for/6] ).
 
 sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility,
 	       library(lists),library(ordsets)]).
@@ -496,3 +497,14 @@ valid_tap(Flow, Controller) :-
 		 \+ Control has_class_refinement units of boolean),
 	      [Controller]).
 */
+
+path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
+	variable_size(SmName), !,
+	    (is_population(SmName), !,
+		SmSpec = vm_loop(pop, _,_,_);
+	    m_update:list_local_index_meanings(SmName, Bounds),
+		length(Bounds, NumInds),
+		SmSpec = vm_loop(NumInds, _Bounds, _Loops, _)),
+	    Level = [sm(Context, HiPtr, LoPtr, SmSpec)];
+	make_inds_for(SmDims, SmPath, SmInds),
+	    Level = [sm(Context, HiPtr, LoPtr, fm_loop(SmInds, _)) | SmPath].

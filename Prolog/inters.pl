@@ -2,7 +2,7 @@ sicstus_module(inters, [final_assignment/11, make_intermediates/12,
 			expand_library/3, function/3,
 			promote_unit/2, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
-			make_inds_for/3, pointer_from/2, path_section_for/6]).
+			make_inds_for/3, pointer_from/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
@@ -932,7 +932,7 @@ add_zeros_all([H | T], SubId, Step, [NH | NT], Zeros, [N | R], U) :-
 indices_for(set(_, loop(_)), []).
 
 indices_for(sm(_,_, Ptr, Spec), Inds) :-
-	Spec = fm_loop(Inds);
+	Spec = fm_loop(Inds, _);
 	Spec = vm_loop(pop, _,_,_), !,
 	    Inds = [ind(Ptr, pop)];	  
 	Spec = vm_loop(Count, _,_,_),
@@ -1142,7 +1142,7 @@ get_dims_from_loops([], [], []).
 get_dims_from_loops(Loops, Dims, Inds) :-
 	append(InnerLoops, [Loop], Loops),
 	(Loop = sm(_,_,_, VLoop),
-	\+ VLoop = fm_loop(_), !,
+	\+ VLoop = fm_loop(_,_), !,
 	    Dims = [var | RDims],
 	    Inds = [none | RInds];
 	Loop = set(Ind, loop(Dim)), !,
@@ -1170,14 +1170,3 @@ has_extras(Path1, Path2, Submodel) :-
 	Submodel = sm(_,_,_,_),
 	member(Submodel, Path1),
 	\+ member(Submodel, Path2).
-
-path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
-	variable_size(SmName), !,
-	    (is_population(SmName), !,
-		SmSpec = vm_loop(pop, _,_,_);
-	    m_update:list_local_index_meanings(SmName, Bounds),
-		length(Bounds, NumInds),
-		SmSpec = vm_loop(NumInds, _Bounds, _Loops, _)),
-	    Level = [sm(Context, HiPtr, LoPtr, SmSpec)];
-	make_inds_for(SmDims, SmPath, SmInds),
-	    Level = [sm(Context, HiPtr, LoPtr, fm_loop(SmInds)) | SmPath].
