@@ -3,6 +3,9 @@
 # Jonathan Massheder
 
 # $Log: mre.tcl,v $
+# Revision 1.4  2002/07/24 11:21:45  jaspert
+# *** empty log message ***
+#
 # Revision 1.3  2002/06/20 17:12:47  jaspert
 # Prolog changes relating to GNU prolog port
 # Tcl changes for usability in tcltk 8.3
@@ -557,7 +560,3 @@ proc NewMreHelperWindow {helperId helperTitle} {
 proc Makemre { ModelWin } {
     return [RunEnv::Create $ModelWin]
 }
-
-
-
-
