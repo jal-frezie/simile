@@ -1,6 +1,6 @@
 # SIMILE batch file
 
-puts [set scriptCmd [info script]]
+set scriptCmd [info script]
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
 

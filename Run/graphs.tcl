@@ -184,15 +184,28 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     
     focus $t
     grab $t
-    tkwait variable graph(done)
+
+    set niceFormat 0
+    while {!$niceFormat} {
+	tkwait variable graph(done)
+	
+	if {$graph(done)} {
+	    if {[string compare [FilterErrors format %g%g%g%g \
+		$graph(lowy) $graph(highy) $graph(lowx) $graph(highx)] -1]} {
+		# tk_messageBox -message "$rangeChoices $graph(rangeact)"
+		set graph(range) [lsearch $rangeChoices $graph(rangeact)]
+		set graph(size) [llength $graph(points)]
+		regsub -all " " $graph(points) , graph(pts)
+		set niceFormat 1
+	    }
+	} else {
+	    set niceFormat 1
+	}
+    }
+
+	
     grab release $t
     
-    if {$graph(done)} {
-	# tk_messageBox -message "$rangeChoices $graph(rangeact)"
-	set graph(range) [lsearch $rangeChoices $graph(rangeact)]
-	set graph(size) [llength $graph(points)]
-	regsub -all " " $graph(points) , graph(pts)
-    }
     return $graph(done)
 }
 
