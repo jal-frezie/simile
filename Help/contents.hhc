@@ -706,8 +706,8 @@
 			<param name="Local" value="examples\control.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Supply and demand">
-			<param name="Local" value="examples\supply.htm">
+			<param name="Name" value="Spirograph">
+			<param name="Local" value="examples\spiro.htm">
 			</OBJECT>
 	</UL>
 </UL>
