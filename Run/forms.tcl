@@ -721,7 +721,7 @@ proc Disaggregate {parent title colour type fatness icount step \
             comment matherror hide separate} {
     global disaggregate
     
-    foreach varName {colour type fatness icount step matherror hide \
+    foreach varName {colour type fatness icount matherror hide \
                 separate} {
         set disaggregate($varName) [set $varName]
     }
@@ -730,6 +730,16 @@ proc Disaggregate {parent title colour type fatness icount step \
     } else  {
         set disaggregate(icount) 1
     }
+    switch -- $step {
+	-1 {
+	    set disaggregate(step) "Initialize only"
+	} 0 {
+	    set disaggregate(step) "Reset only"
+	} default {
+	    set disaggregate(step) $step
+	}
+    }
+
     set t [toplevel .disaggregation -bd 4 -class Disaggregation]
     #	wm transient $t $parent
     wm resizable $t 0 0
@@ -829,7 +839,8 @@ proc Disaggregate {parent title colour type fatness icount step \
     pack $mathf.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
-            -values "Default -1 0 1 2 3 4 5 6 7" -width 10 -editable false
+	-values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
+	-width 10 -editable false
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
@@ -862,9 +873,18 @@ proc Disaggregate {parent title colour type fatness icount step \
         set disaggregate(icount) [list]
     }
     if {$disaggregate(done)} {
+    switch $disaggregate(step) {
+	"Initialize only" {
+	    set step -1
+	} "Reset only" {
+	    set step 0
+	} default {
+	    set step $disaggregate(step)
+	}
+    }
         return [list $disaggregate(colour) $disaggregate(type) \
                 $disaggregate(fatness) $disaggregate(icount) \
-                $disaggregate(step) $disaggregate(comment) \
+                $step $disaggregate(comment) \
                 $disaggregate(matherror) $disaggregate(hide) \
                 $disaggregate(separate)]
     }
@@ -1629,7 +1649,7 @@ proc ReportProblem {name autoName dir fault} {
 #        append outputData "$bound\nContent-Disposition: form-data;\
 #            name=\"imagefile\"; filename=\"[file tail $name]\"\nContent-Type: text/plain\n\n$data\n"
     }
-    if {![string match unsaved $autoName]} {
+    if {![string match none $autoName]} {
 	set Disposition "inline; filename=\"[file tail $autoName]\""
 	    lappend mimes [mime::initialize -canonical application/x-simile \
 			   -header [list Content-Disposition $Disposition] \

@@ -262,6 +262,9 @@ show_error(Model, Lossage) :-
 	    caption_for(Node, Capt),
 	    sicstus_format_to_chars("The model variable ~w (caption: ~w) has an equation containing parameter ~w. This could not be matched with any inputs to the variable.", [Node, Capt, Sub], Text),
 	    Fault = system;
+	Lossage = no_phases, !,
+	    Text = "This model cannot be executed because it does not have any time steps.",
+	    Fault = user;
 	Lossage = role_between_execs(NodeCap, SrcCap, RelCap), !,
 	    sicstus_format_to_chars("This model cannot be built because it contains ~a, which has an influence from ~a (in a different executable module) which it refers to by the role ~a. References to roles currently do not work between separate executables.", [NodeCap, SrcCap, RelCap], Text),
 	    Fault = user;

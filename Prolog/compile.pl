@@ -229,6 +229,8 @@ bits and pieces */
 	extract_assignments(instance(submodel, _,xrefs(FullModel, _,_,_), _,_),
 			    [], TopStep, Phases, [], Used,
 			    Inters, UpdateForm, ReevaluateForm),
+	(Phases > 0, !;
+	    raise_exception(no_phases)),
 	set_free_phases(UpdateForm, Phases),
 	set_free_phases(ReevaluateForm, Phases),
 	pick_state_vars(ReevaluateForm, EvaluateForm, StateForm),
