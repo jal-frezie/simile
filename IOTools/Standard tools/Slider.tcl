@@ -16,13 +16,13 @@ namespace eval slide139 {
 	    unset compList
 	}
         MakeFrames $winId
-        foreach node [GetObjectList $winId] {
-	    set title [GetCaptionPathFromId $winId $node]
+        foreach node [GetObjectList] {
+	    set title [GetCaptionPathFromId $node]
 	    set initVal [InsertSlider $winId $node $title 1]
 	    if {[llength $initVal]} {
 		set done 1
 		if {[string match COMPARTMENT \
-			 [GetModelClass $winId $node]]} {
+			 [GetModelClass $node]]} {
 		    set compList($node) $initVal
 		}
 	    }
@@ -40,32 +40,32 @@ namespace eval slide139 {
 
     proc InsertSlider {winId node title nest} {
 	global checkStates comboChoices
-	if {![string match INPUT [GetModelEval $winId $node]]} {
+	if {![string match INPUT [GetModelEval $node]]} {
 	    return {}
 	}
-        set initVal [lindex [GetModelValue $winId $node] 0]
+        set initVal [lindex [GetModelValue $node] 0]
         #ShowMessage debug info $def ok
 	set levels [split $title /]
 	set trans [GetTransTable $node]
-	set type [GetModelType $winId $node] 
+	set type [GetModelType $node] 
 	switch $type {
 	    FLAG {
 	    } ENUMERATED {
 		set possVals [lrange [lindex $trans end] 1 end]
 	    } default {
-#		set min [GetMinValue $winId $node]
-#		set max [GetMaxValue $winId $node]
+#		set min [GetMinValue $node]
+#		set max [GetMaxValue $node]
 #		set magnitude [expr $max - $min]
-		::graphtools::AxisRound [GetMinValue $winId $node] \
-		    [GetMaxValue $winId $node] 0 min max gap s1 s2 s3 s4
-		if {[string match INTEGER [GetModelType $winId $node]]} {
+		::graphtools::AxisRound [GetMinValue $node] \
+		    [GetMaxValue $node] 0 min max gap s1 s2 s3 s4
+		if {[string match INTEGER [GetModelType $node]]} {
 		    set spacing 1
 		} else {
 		    set spacing [expr $gap/100.0]
 		}
 	    }
 	}
-	set nodeDims [GetModelDims $winId $node]
+	set nodeDims [GetModelDims $node]
 	set outerDims 0
 	while {$outerDims<[llength $nodeDims]} {
 	    if {[lindex $nodeDims $outerDims]>0} {
@@ -223,8 +223,8 @@ namespace eval slide139 {
 
 	    set topNode $helperTable($winId,whichModel)
 	    set snip [string length $smPath]
-	    foreach node [GetObjectList $winId] {
-		set title [GetCaptionPathFromId $winId $node]
+	    foreach node [GetObjectList] {
+		set title [GetCaptionPathFromId $node]
 #puts "trimming $smPath from $title"
 		if {!($snip && [string last $smPath $title [expr $snip-1]])} {
 		    set titleTail [string range $title $snip end]

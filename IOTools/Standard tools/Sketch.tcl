@@ -28,7 +28,7 @@ proc initialize {winId} {
 
 proc click {windowId nodename caption} {
 
-    set graphData [GetModelGraph $windowId $nodename]
+    set graphData [GetModelGraph $nodename]
     if {![string compare $graphData nograph]} {
 	$windowId.intro configure -text "There is no sketch graph associated with component $caption -- try another."
 	return

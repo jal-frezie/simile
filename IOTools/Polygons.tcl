@@ -119,7 +119,7 @@ $useNodes($winId,scaley)"
         variable useNodes
         
         set ms $winId.intro
-        set testResult [GetModelValue $winId $node]
+        set testResult [GetModelValue $node]
         
         # This tests for the user having clicked on a suitable element
         # of the model diagram
@@ -180,12 +180,12 @@ $useNodes($winId,scaley)"
     proc SetColours2 {winId node} {
         variable useNodes
         set useNodes($winId,integer) \
-	    [string match INTEGER [GetModelType $winId $node]]
-        set min [GetMinValue $winId $node]
+	    [string match INTEGER [GetModelType $node]]
+        set min [GetMinValue $node]
         if {$min!=-1e100} {
             set useNodes($winId,min) $min
         }
-        set max [GetMaxValue $winId $node]
+        set max [GetMaxValue $node]
         if {$max!=1e100} {
             set useNodes($winId,max) $max
         }
@@ -218,7 +218,7 @@ $useNodes($winId,scaley)"
 	variable useNodes
 	foreach nodeRole [UsedNodes $winId] {
 	    set useNodes($winId,$nodeRole) \
-		[GetCaptionPathFromId $winId $useNodes($winId,$nodeRole)]
+		[GetCaptionPathFromId $useNodes($winId,$nodeRole)]
 	}
     }
 
@@ -226,7 +226,7 @@ $useNodes($winId,scaley)"
 	variable useNodes
 	foreach nodeRole [UsedNodes $winId] {
 	    set useNodes($winId,$nodeRole) \
-		[GetIdFromCaptionPath $winId $useNodes($winId,$nodeRole)]
+		[GetIdFromCaptionPath $useNodes($winId,$nodeRole)]
 	}
     }
 
@@ -270,7 +270,7 @@ $useNodes($winId,scaley)"
         variable useNodes
 	set useNodes($winId,datamin) 1e100
 	set useNodes($winId,datamax) -1e100
-        set values [lindex [GetModelValue $winId $hs] 0]
+        set values [lindex [GetModelValue $hs] 0]
         set quadlist {}
         GetQuadList {} $values
         array set quadarray $quadlist
@@ -371,13 +371,13 @@ $useNodes($winId,scaley)"
 	    }
         } else {
 	    set coordSource 0
-            set xcoords [lindex [GetModelValue $winId $xs] 0]
-            set ycoords [lindex [GetModelValue $winId $ys] 0]
+            set xcoords [lindex [GetModelValue $xs] 0]
+            set ycoords [lindex [GetModelValue $ys] 0]
 	}		
 
 	if {$coordSource != 2} {
 	    set quadlist {}
-	    GetQuadList {} [lindex [GetModelValue $winId $hs] 0] $xcoords $ycoords
+	    GetQuadList {} [lindex [GetModelValue $hs] 0] $xcoords $ycoords
         
         # previous line appended variable quadlist at this level, now to use it
         # ShowMessage debug info "Got quadlist $quadlist" ok
@@ -575,7 +575,7 @@ $useNodes($winId,scaley)"
         #    "X $X; Y $Y; tags $tags; overlapping $overlapping; index $index"
         
         if {[string length $index]>0} {
-            set vals [lindex [GetModelValue $winId $useNodes($winId,color)] 0]
+            set vals [lindex [GetModelValue $useNodes($winId,color)] 0]
             set i [expr {2*$index - 1}]
             set pilot [lindex $vals $i]
             if {[llength $pilot]==1} {
@@ -585,7 +585,7 @@ $useNodes($winId,scaley)"
             }
             
             if [info exists newvals] {
-                SetModelValue $winId $useNodes($winId,color) $newvals
+                SetModelValue $useNodes($winId,color) $newvals
             }
         }
         Repaint $winId $useNodes($winId,color)

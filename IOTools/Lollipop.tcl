@@ -104,7 +104,7 @@ proc AddVariable {winId} {
 proc click {winId node caption} {
     variable useNodes
     set ms $winId.intro
-    set testResult [GetModelValue $winId $node]
+    set testResult [GetModelValue $node]
     if {[string compare $testResult novalue]} {
 	lappend useNodes($winId,selected) $node
 	lappend useNodes($winId,captions) $caption
@@ -138,7 +138,7 @@ proc SaveState {winId} {
     set state displaying
     lappend state $viewVector($winId,angle) $viewVector($winId,elevation)
     foreach node $useNodes($winId,selected) {
-	lappend state [GetCaptionPathFromId $winId $node]
+	lappend state [GetCaptionPathFromId $node]
     }
     SetState $winId $state
 }
@@ -150,7 +150,7 @@ proc Restore {winId} {
     if {[string match displaying [lindex $state 0]]} {
 	$winId.buttons.ang set [lindex $state 1]
 	foreach node [lrange $state 3 end] {
-	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $winId $node]
+	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
 	    lappend useNodes($winId,captions) [lindex [split $node /] end]
 	}
 	LoadPosns $winId
@@ -191,9 +191,9 @@ proc LoadPosns {winId} {
     set trunks {}
     foreach {px py h} $useNodes($winId,selected) {
 	set quadlist {}
-	GetQuadList {} [lindex [GetModelValue $winId $px] 0] \
-	    [lindex [GetModelValue $winId $py] 0] \
-	    [lindex [GetModelValue $winId $h] 0]
+	GetQuadList {} [lindex [GetModelValue $px] 0] \
+	    [lindex [GetModelValue $py] 0] \
+	    [lindex [GetModelValue $h] 0]
 #ShowMessage debug info "List is $quadlist" ok
 	foreach {id data} $quadlist {
 	    if {![string match nil [lindex $data 0]]} {

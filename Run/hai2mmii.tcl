@@ -275,20 +275,23 @@ proc TransBounds {transList vals} {
     }
 }
 	    
-proc GetModelTime { winId } {
-    return [GetModelProperty $winId CurrentTime]
+proc GetModelTime {} {
+    global myNode
+    return [GetCompProperty $myNode CurrentTime]
 }
 
-proc GetModelEndTime { winId } {
-    return [GetModelProperty $winId EndTime]
+proc GetModelEndTime {} {
+    global myNode
+    return [GetCompProperty $myNode EndTime]
 }
 
 # Something like this which just gets model structure we want to be
 # able to do as soon as the model program is loaded. So check
 # existence of model_id; don't wait for instance_id or running_c
  
-proc GetObjectList { winId } {
-    return [GetModelProperty $winId Objects]
+proc GetObjectList {} {
+    global myNode
+    return [GetCompProperty $myNode Objects]
 }
 
 # GetModelValue returns the current value of a node. This is numerical if the
@@ -296,52 +299,61 @@ proc GetObjectList { winId } {
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a
 # cloud or submodel.
 
-proc GetModelValue { winId node } {
-    SetModelValue $winId $node {}
+proc GetModelValue { node } {
+    SetModelValue $node {}
 }
 
-proc SetModelValue { winId node newVals } {
-    return [GetModelProperty $winId Value $node $newVals]
+proc SetModelValue { node newVals } {
+    global myNode
+    return [GetCompProperty $myNode Value $node $newVals]
 }
 
-proc GetModelGraph {winId node} {
-    SetModelGraph $winId $node
+proc GetModelGraph {node} {
+    SetModelGraph $node
 }
 
-proc SetModelGraph {winId node args} {
+proc SetModelGraph {node args} {
     return [eval GetModelProperty $winId Graph $node $args]
 }
 
-proc GetModelType { winId node } {
-    return [GetModelProperty $winId Type $node]
+proc GetModelType { node } {
+    global myNode
+    return [GetCompProperty $myNode Type $node]
 }
 
-proc GetModelEval { winId node } {
-    return [GetModelProperty $winId Eval $node]
+proc GetModelEval { node } {
+    global myNode
+    return [GetCompProperty $myNode Eval $node]
 }
 
-proc GetModelDims { winId node } {
-    return [GetModelProperty $winId Dims $node]
+proc GetModelDims { node } {
+    global myNode
+    return [GetCompProperty $myNode Dims $node]
 }
 
-proc GetModelClass { winId node } {
-    return [GetModelProperty $winId Class $node]
+proc GetModelClass { node } {
+    global myNode
+    return [GetCompProperty $myNode Class $node]
 }
 
-proc GetCaptionPathFromId { winId node } {
-    return [GetModelProperty $winId Caption $node]
+proc GetCaptionPathFromId { node } {
+    global myNode
+    return [GetCompProperty $myNode Caption $node]
 }
 
-proc GetIdFromCaptionPath { winId caption } {
-    return [GetModelProperty $winId IdFromCapt $caption]
+proc GetIdFromCaptionPath { caption } {
+    global myNode
+    return [GetCompProperty $myNode IdFromCapt $caption]
 }
 
-proc GetMinValue {winId node } {
-    return [GetModelProperty $winId MinVal $node]
+proc GetMinValue { node } {
+    global myNode
+    return [GetCompProperty $myNode MinVal $node]
 }
 
-proc GetMaxValue {winId node } {
-    return [GetModelProperty $winId MaxVal $node]
+proc GetMaxValue { node } {
+    global myNode
+    return [GetCompProperty $myNode MaxVal $node]
 }
 
 proc ProdFromHelper {winId node caption} {
@@ -349,13 +361,6 @@ proc ProdFromHelper {winId node caption} {
     ProdObj $helperTable($winId,whichModel) $node $caption
 }
 
-proc GetModelProperty {winId args} {
-    global helperTable
-    set topNode $helperTable($winId,whichModel)
-# translate from helper window to top node here
-    return [eval GetCompProperty $topNode $args]
-}
-    
 proc GetCompProperty {topNode prop args} {
     global runState model_id
 #    puts "Getting top $topNode prop $prop arg0 [lindex $args 0] rest [lrange $args 1 end] interps [interp slaves]"	

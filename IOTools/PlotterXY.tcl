@@ -121,8 +121,8 @@ namespace eval ::$keyValue {
         array set plot $restoreString
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
-        display $winId [GetModelTime $winId] 0 0
-        display $winId [GetModelTime $winId] 0 0
+        display $winId [GetModelTime] 0 0
+        display $winId [GetModelTime] 0 0
     }
     
     proc GetCanvas {winId} {
@@ -136,7 +136,7 @@ namespace eval ::$keyValue {
         set newbox nodebox[incr plot($w,nodeCount)]
         set name [GetCaptionPathFromId $w $node]
         
-        set testResult [GetModelValue $w $node]
+        set testResult [GetModelValue $node]
         if {[string compare $testResult novalue]} {
             switch $plot($w,state) {
                 xcoord {
@@ -156,8 +156,8 @@ namespace eval ::$keyValue {
                     UpdateState $w
                     ReleaseClicks $w
                     $w.mess config -text {}; # clear prompt       
-                    display $w [GetModelTime $w] 0 0
-                    display $w [GetModelTime $w] 0 0
+                    display $w [GetModelTime] 0 0
+                    display $w [GetModelTime] 0 0
                     $w.bbframe.buttonBox itemconfigure 1 -state disable; #disable the add var button
                 }
             }
@@ -689,8 +689,8 @@ namespace eval ::$keyValue {
         set Tnew($w) {}
         
         drawGraphpad $w
-        display $w [GetModelTime $w] 0 0
-        display $w [GetModelTime $w] 0 0
+        display $w [GetModelTime] 0 0
+        display $w [GetModelTime] 0 0
     }
     
     proc adjustLimits {w Tnew Ynew} {
@@ -801,7 +801,7 @@ namespace eval ::$keyValue {
         set YYnew($w) [list 1 2]
         set YYnew($w) [lreplace $YYnew($w) 0 end]
         foreach node $plot($w,Yvars) {
-            set values [GetModelValue $w $node]
+            set values [GetModelValue $node]
             set values [lindex $values 0]
             lappend YYnew($w) [list $node $values]
             #        ShowMessage debug info "$YYnew($w)" ok
@@ -817,7 +817,7 @@ namespace eval ::$keyValue {
         set Tnew($w) [list 1 2]
         set Tnew($w) [lreplace $Tnew($w) 0 end]
         foreach node $plot($w,Xvars) {
-            set values [GetModelValue $w $node]
+            set values [GetModelValue $node]
             set values [lindex $values 0]
             lappend Tnew($w) [list $node $values]
             #        ShowMessage debug info "$YYnew($w)" ok

@@ -13,7 +13,7 @@ namespace eval $keyValue {
 
     proc Restore {winId} {
 	set capt [GetState $winId]
-	slide139::InsertSlider $winId [GetIdFromCaptionPath $winId $capt] $capt 0
+	slide139::InsertSlider $winId [GetIdFromCaptionPath $capt] $capt 0
     }
 
     proc reset {winId} {
@@ -23,7 +23,7 @@ namespace eval $keyValue {
 	if {[llength [slide139::InsertSlider $winId $node /$caption 0]]} {
 	    ReleaseClicks $winId
 	    pack forget $winId.m
-	    SetState $winId [GetCaptionPathFromId $winId $node]
+	    SetState $winId [GetCaptionPathFromId $node]
 	} else {
 	    $winId.m configure -text "This component is not a variable parameter, or if it is, it has too many dimensions to show a set of graphical input tools for it."
 	}

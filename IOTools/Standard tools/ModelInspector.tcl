@@ -53,14 +53,14 @@ namespace eval ::ModelInspector63654 {
         
 #        tk_messageBox -message [GetObjectList] -type ok
         #get submodel nodeIds for parents
-        foreach component [GetObjectList $winId] {
+        foreach component [GetObjectList] {
             if {[llength [info commands GetModelClass]] >0} {
-                set type [GetModelClass $winId $component]; # Simile 2.7+
+                set type [GetModelClass $component]; # Simile 2.7+
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
             if {[string match SUBMODEL $type ]} then {
-                set SubbedComp [GetCaptionPathFromId $winId $component]
+                set SubbedComp [GetCaptionPathFromId $component]
                 set SubbedCompList [split $SubbedComp /]
                 set path [lrange $SubbedCompList 1 end]
                 set pathLength [llength $path]
@@ -76,14 +76,14 @@ namespace eval ::ModelInspector63654 {
 		    -image $im(submodel)
             }
         }
-        foreach component [GetObjectList $winId] {
+        foreach component [GetObjectList] {
             # substitute " " for <cr>s so entry goes on one line # no - need the crs
-            set SubbedComp [GetCaptionPathFromId $winId $component]
+            set SubbedComp [GetCaptionPathFromId $component]
             set SubbedCompList [split $SubbedComp /]
             set path [lrange $SubbedCompList 1 end]
             #        ShowMessage debug info "GetModelValue $component = [GetModelValue $component]" ok
             if {[llength [info commands GetModelClass]] >0} {
-                set type [GetModelClass $winId $component]; # Simile 2.7+
+                set type [GetModelClass $component]; # Simile 2.7+
             } else  {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
@@ -158,7 +158,7 @@ namespace eval ::ModelInspector63654 {
 	if {$runState($node,modelRunning)>2} {
 	    PostPopup $X $Y
 	    set trans [GetTransTable $plName]
-	    if {[catch {GetModelValue $winId $plName} mVal]} {
+	    if {[catch {GetModelValue $plName} mVal]} {
 #		set missing [lindex [split $mVal \"] 1]
 #		set value \
 #		    "Missing value: [lindex [DescribeComponent $missing] 0]"

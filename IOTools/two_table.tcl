@@ -130,7 +130,7 @@ namespace eval $keyValue {
 	    }
 	    set displayFormat($winId,$id) $val
 	}
-        display $winId [GetModelTime $winId] 0 0
+        display $winId [GetModelTime] 0 0
         SaveState $winId
     }
     
@@ -208,7 +208,7 @@ namespace eval $keyValue {
         
         ReleaseClicks $winId
         $winId.f.mess config -text {}
-        set newHeader [GetCaptionPathFromId $winId $node]
+        set newHeader [GetCaptionPathFromId $node]
         set varIndex [lsearch $displayList($winId) $newHeader]
         set xScrollPosn [$winId.t xview]
         set yScrollPosn [$winId.t yview]
@@ -225,7 +225,7 @@ namespace eval $keyValue {
 #             }; # format dp Neg_in_red
 ################################################################################
             set displayFormat($winId,$varIndex) {General 4 0}; # format dp Neg_in_red
-            if {[GetModelTime $winId]==$lastDisplay($winId)} {
+            if {[GetModelTime]==$lastDisplay($winId)} {
                 set dataStore($winId,$varIndex,$lastDisplay($winId)) \
 		    [GetTransVals $winId $node]
             }
@@ -255,7 +255,7 @@ namespace eval $keyValue {
             unset dataStore($entry)
         }
 	if {![info exists editMode($winId)]} {
-	    display $winId [GetModelTime $winId] 0 0
+	    display $winId [GetModelTime] 0 0
 	}
     }
 
@@ -273,7 +273,7 @@ namespace eval $keyValue {
         set varIndex 0
         foreach varCapt $displayList($winId) {
             if {[llength $varCapt]} { ;# check not deleted
-                set varId [GetIdFromCaptionPath $winId $varCapt]
+                set varId [GetIdFromCaptionPath $varCapt]
                 set dataStore($winId,$varIndex,$tCur) \
 					  [GetTransVals $winId $varId]
               
@@ -300,7 +300,7 @@ namespace eval $keyValue {
     proc GetTransVals {winId varId} {
 	# this is not right, it should only get the trans table once
 	global userinfo
-	set value [lindex [GetModelValue $winId $varId] 0]
+	set value [lindex [GetModelValue $varId] 0]
 	if {$userinfo(Version) >= 4.0} {
 	    set trans [GetTransTable $varId]
 	    return [TransEnums $trans $value]
@@ -513,7 +513,7 @@ namespace eval $keyValue {
         set translateLevel [string match $translateSide \
                 [lindex $orientList($winId) 0]]
 	if {[string compare none $timeSide]} {
-	    set timeToShow [GetModelTime $winId]
+	    set timeToShow [GetModelTime]
 	}
         set varNamePosns($winId) {}
         
@@ -810,7 +810,7 @@ namespace eval $keyValue {
         pack [checkbutton $layoutP.l5.update -variable ${t}l5 \
 		  -text "Update at display intervals"]
         
-        #set newHeader [GetCaptionPathFromId $winId $node]
+        #set newHeader [GetCaptionPathFromId $node]
         #set varIndex [lsearch $displayList($winId) $newHeader]
         
         # format page

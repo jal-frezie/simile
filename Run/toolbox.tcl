@@ -203,7 +203,6 @@ proc do_for_node {node args} {
     if {![info exists runState($node,interp)]} {
 	if {[string equal interp $runHow(type)]} {
 	    set runState($node,interp) [interp create]
-	    $runState($node,interp) alias BringParameter BringParameter
 	    $runState($node,interp) eval set runHow $runHow(type)
 	    $runState($node,interp) eval source ../Run/support.tcl
 	} else {
@@ -1413,19 +1412,6 @@ proc restore_equation {winId bar} {
 }
 
 ##############################    Formula bar    #############################
-
-
-proc GetTransValues {topNode node} {
-    global runState
-    
-    set value [GetCompProperty $topNode Value $node]
-    if {![string match novalue $value]} {
-        set trans [GetTransTable $node]
-        return [TransEnums $trans [lindex $value 0]]
-    } else {
-        return novalue
-    }
-}
 
 proc RecordPathChoice {fileType chosenFile recordEntry} {
     global chosenPaths custom
