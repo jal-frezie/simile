@@ -214,11 +214,7 @@ proc load_c_stub {} {
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-        # maybe we built the package index for a different os, try again
-        catch {pkg_mkIndex ../System/lib/Stubs *[info sharedlibextension]}
-        if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-            error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
-        }
+	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
     }
     loadcommands
     randseed [clock clicks]

@@ -378,37 +378,6 @@ proc max {first last} {
     return [expr $first>$last?$first:$last]
 }
 
-# This is in both interps cos they both need stub functions
-
-proc load_c_stub {} {
-    package require Trf
-
-    global tcl_platform env userinfo ;# last needed in stub
-    # On startup, check run count and offer registration if 0
-    if [catch {set userinfo(name) $env(licensee_name)}] {
-        set userinfo(name) " "
-    }
-    if [catch {set userinfo(corp) $env(licensee_corp)}] {
-        set userinfo(corp) " "
-    }
-    set userinfo(Version) $env(SIMILE_VERSION)
-    
-    set userinfo(license_code) \
-            [join [lrange [split $env(license_code) =] 1 end] =]
-    scan [info tclversion] {%d.%d} MAJ MIN
-    set onUnix [string match unix $tcl_platform(platform)]
-    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
-    if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-        # maybe we built the package index for a different os, try again
-        catch {pkg_mkIndex ../System/lib/Stubs *[info sharedlibextension]}
-        if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-            error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
-        }
-    }
-    loadcommands
-    randseed [clock clicks]
-}
-
 # this version allowed supposedly unlimited nested callbacks, but the 
 # rest of the system could not cope...
 #

@@ -77,11 +77,11 @@ proc send_pl_cmd {withCrs} {
 
 proc ClosePipe {} {
     global plPipe simtmpdir
-    file delete -force $simtmpdir
     if {[catch {close $plPipe(stream)} spew]} {
 	wm withdraw . ;# banner will hide error mesg if not yet withdrawn
-	bgerror $spew
+	error $spew
     }
+    file delete -force $simtmpdir
     if {$plPipe(debug)} {
 	close $plPipe(debug_stream)
     }
