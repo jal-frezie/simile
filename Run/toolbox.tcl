@@ -18,14 +18,12 @@ source ../Run/mre.tcl
 
 # Test new Windows printing technology -- see file for credits/licence
 if {[string match windows $tcl_platform(platform)]} {
-#   pkg_mkIndex ../System/lib/Extras
+    #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
-    catch {
-        package require dde 1.2
-        dde servername Simile
-    }
+    package require dde 1.2
+    dde servername Simile
 } elseif {[string match Linux $tcl_platform(os)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
     # package ifneeded Trf 2.1 {}
@@ -58,8 +56,8 @@ proc LoadIconImages {} {
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
     foreach fn {open save edit} {
-	set iconImages($fn) \
-	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+        set iconImages($fn) \
+                [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
 }
 
@@ -67,18 +65,18 @@ proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel
     
     wm withdraw .
-
+    
     LoadIconImages
-
-# Defaults to use if debugging
+    
+    # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
-	set env(SIMILE_VERSION) 4.0
-	set env(SIMTMPDIR) /tmp/simdevel
-	set env(licensee_name) "Support team"
-	set env(licensee_corp) "Simulistics, inc."
-	set env(license_code) default_license=072ccc96dced2bef53403afd67fe7782
+        set env(SIMILE_VERSION) 4.0
+        set env(SIMTMPDIR) /tmp/simdevel
+        set env(licensee_name) "Support team"
+        set env(licensee_corp) "Simulistics, inc."
+        set env(license_code) default_license=072ccc96dced2bef53403afd67fe7782
     }
-
+    
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
     
@@ -94,45 +92,45 @@ proc ControlDraw {prologVersion} {
     set userinfo(Version) $env(SIMILE_VERSION)
     
     set userinfo(license_code) \
-	[join [lrange [split $env(license_code) =] 1 end] =]
+            [join [lrange [split $env(license_code) =] 1 end] =]
     # loading stub sets license entries
     load_c_stub
-
-# substitutes for license entries if we want to avoid loading stub
-#set userinfo(final_expiry) 0
-#set userinfo(days_after_install) 0
-#set userinfo(edn) standard
-
+    
+    # substitutes for license entries if we want to avoid loading stub
+    #set userinfo(final_expiry) 0
+    #set userinfo(days_after_install) 0
+    #set userinfo(edn) standard
+    
     # eezi-hack implementation of time limit: to do this anything like
     # properly, have stub dll check unix time against clock time
-
+    
     set day [expr 24*60*60]
     if {$userinfo(final_expiry)} {
-	set expTime $userinfo(final_expiry)
+        set expTime $userinfo(final_expiry)
     }
     if {$userinfo(days_after_install)} {
-	set installTime [lindex [lindex [split $env(install_time) =] 1] 0]
-	set relExpTime [expr $installTime+$userinfo(days_after_install)*$day]
-	if {$userinfo(final_expiry)} {
-	    set expTime [min $expTime $relExpTime]
-	} else {
-	    set expTime $relExpTime
-	}
+        set installTime [lindex [lindex [split $env(install_time) =] 1] 0]
+        set relExpTime [expr $installTime+$userinfo(days_after_install)*$day]
+        if {$userinfo(final_expiry)} {
+            set expTime [min $expTime $relExpTime]
+        } else {
+            set expTime $relExpTime
+        }
     }
     if {[info exists expTime]} {
-	set userinfo(exp_time) $expTime
-	set toGo [expr $expTime-[clock seconds]]
-
-	if {$toGo<0} {
-	    set crumble "This version of Simile has passed its expiry date."
-	    error $crumble
-	} elseif {$toGo<7*$day} {
-#	    ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
-        ShowExpiryImminent $expTime
-	}
+        set userinfo(exp_time) $expTime
+        set toGo [expr $expTime-[clock seconds]]
+        
+        if {$toGo<0} {
+            set crumble "This version of Simile has passed its expiry date."
+            error $crumble
+        } elseif {$toGo<7*$day} {
+            #	    ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
+            ShowExpiryImminent $expTime
+        }
     }
-
-	
+    
+    
     if {[file exists ~]} {
         set custom(prefDir) ~/.simile
     } else {
@@ -149,12 +147,12 @@ proc ControlDraw {prologVersion} {
         gets $UserStream userinfo(corp)
         gets $UserStream userinfo(oldVersion)
         gets $UserStream userinfo(done)
-	close $UserStream
+        close $UserStream
     } else {
         set userinfo(oldVersion) 0
         set userinfo(done) 0
     }
-
+    
     set UserStream [open $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)
@@ -169,14 +167,14 @@ proc ControlDraw {prologVersion} {
         set cacheStream [open $custom(prefDir)/recent r]
         while {[gets $cacheStream oldFile]>0} {
             if {[file exists $oldFile] && \
-		    [lsearch $custom(hotlist) $oldFile]==-1} {
+                        [lsearch $custom(hotlist) $oldFile]==-1} {
                 lappend custom(hotlist) $oldFile
             }
         }
-	close $cacheStream
+        close $cacheStream
     }
     if {[llength $custom(hotlist)]} {
-	RecordPathChoice .sml [lindex $custom(hotlist) 0] 0
+        RecordPathChoice .sml [lindex $custom(hotlist) 0] 0
     }
     
     Pref_Init $custom(prefDir)/prefs ../Run/sysprefs
@@ -199,49 +197,49 @@ proc ControlDraw {prologVersion} {
     Pref_Add {{custom(runControlPosition) runControlPosition "+0-20" "Position of run control"} \
                 {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"}}
     Pref_Add {{custom(hackBreak) hackBreak OFF \
-		   "Pause to edit C++ code?"}}
+                    "Pause to edit C++ code?"}}
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
                         "Use which C++ compiler?"}}
         file attributes $custom(prefDir) -hidden true
-	if {[string mat Microsoft [PrefValue custom(compChoice) compChoice]]} {
-	    set compiler cl.exe
-	    set possDirs {}
-	    if {[info exists env(MSVCDIR)]} {
-		set possDirs [concat $possDirs [split $env(MSVCDIR) \;]]
-	    }
-	    if {[info exists env(MSDEVDIR)]} {
-		set possDirs [concat $possDirs [split $env(MSDEVDIR) \;]]
-	    }
-	    lappend possDirs {c:/progra~1/micros~1/vc98} {}
-	}
+        if {[string mat Microsoft [PrefValue custom(compChoice) compChoice]]} {
+            set compiler cl.exe
+            set possDirs {}
+            if {[info exists env(MSVCDIR)]} {
+                set possDirs [concat $possDirs [split $env(MSVCDIR) \;]]
+            }
+            if {[info exists env(MSDEVDIR)]} {
+                set possDirs [concat $possDirs [split $env(MSDEVDIR) \;]]
+            }
+            lappend possDirs {c:/progra~1/micros~1/vc98} {}
+        }
     } else {
-	set custom(compChoice) GNU
+        set custom(compChoice) GNU
     }
     if {[string mat GNU [PrefValue custom(compChoice) compChoice]]} {
-	set compiler g++
-	set possDirs {{}}
+        set compiler g++
+        set possDirs {{}}
     }
     if {[info exists compiler]} {
-	if {[llength [set execLoc [auto_execok $compiler]]]} {
-	    # compiler tools are in path, hope libs and includes are nearby
-	    set env(MSVCDIR) [file dirname [file dirname [lindex $execLoc 0]]]
-	} else {
-	    foreach possDir $possDirs {
-		if {[llength [auto_execok $possDir/bin/$compiler]]} {
-		    break
-		}
-	    }
-	    if {[llength $possDir]} {
-		set env(MSVCDIR) [lindex $possdir 0]
-	    } else {
-		ShowMessage "C++ compiler setup problem" warning \
-		    "c++ compiler preference set to [PrefValue \
-custom(compChoice) compChoice] but no executable $compiler found in command \
-path or any of $possDirs" ok
-		set custom(compChoice) none
-	    }
-	}
+        if {[llength [set execLoc [auto_execok $compiler]]]} {
+            # compiler tools are in path, hope libs and includes are nearby
+            set env(MSVCDIR) [file dirname [file dirname [lindex $execLoc 0]]]
+        } else {
+            foreach possDir $possDirs {
+                if {[llength [auto_execok $possDir/bin/$compiler]]} {
+                    break
+                }
+            }
+            if {[llength $possDir]} {
+                set env(MSVCDIR) [lindex $possdir 0]
+            } else {
+                ShowMessage "C++ compiler setup problem" warning \
+                        "c++ compiler preference set to [PrefValue \
+                        custom(compChoice) compChoice] but no executable $compiler found in command \
+                        path or any of $possDirs" ok
+                set custom(compChoice) none
+            }
+        }
     }
     foreach nodeType {normal generic compartment channel \
                 variable function submodel flow influence \
@@ -255,14 +253,14 @@ path or any of $possDirs" ok
     # would do here...
     if {[info exists env(OPEN_MODEL)]} {
         set openModel [brainwash $env(OPEN_MODEL)]
-    # Add to path and recently opened files data
-	RecordPathChoice .sml $openModel 1
+        # Add to path and recently opened files data
+        RecordPathChoice .sml $openModel 1
     } else {
         set openModel {}
     }
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] \
-		$openModel $userinfo(edn)]
+            $openModel $userinfo(edn)]
 }
 
 package require mime
@@ -271,147 +269,181 @@ package require md5
 proc SaveFile {tree tgt} {
     #ShowMessage debug info "SaveFile $tree $tgt" ok
     global mimeSquirter runState errorInfo model_id
+    global SimileProjectDo
+    
+    if {[info exists SimileProjectDo] && $SimileProjectDo} {
+        SaveProjectFile $tree
+        # shfs to $tree
+        # spfs to $tree
+        set SimileProjectDo 0
+    }
     catch {
-	set parts [GetParts $tree $tree]
-    #ShowMessage debug info "SaveFile GetParts $tree" ok
-    if {[info exists runState(currentTime)]} {
-	    if {$runState(execTime) != $runState(currentTime)} {
-		set runState(execDur) \
-		    [expr $runState(execTime)+$runState(currentTime)]
-	    } else {
-		set runState(execDur) $runState(execTime)
-	    }
-	    set runParams [list execTime $runState(execDur) \
-			       timeUnit $runState(timeUnit) \
-			       displayInt $runState(displayInt) intMethod \
-			     [set runState(oldIntMethod) $runState(intMethod)]]
-	    if {[info exists model_id]} {
-		set runState(phases) [GetPhaseCount]
-		for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
-		    lappend params $runState(update$phase)
-		}
-		lappend runParams phaseList $params
-	    }
-	    lappend parts [mime::initialize -canonical text/plain \
-			   -header [list "Content-Description" "Run Status"] \
-			   -string $runParams]
-	}
-	set multiT [mime::initialize -canonical multipart/mixed \
-			-parts $parts]
-	set stream [open $tgt w]
-	fconfigure $stream -translation binary
-	mime::copymessage $multiT $stream
-	# clean everything up
-	close $stream
-	mime::finalize $multiT -subordinates all
+        set parts [GetParts $tree $tree]
+        #ShowMessage debug info "SaveFile GetParts $tree" ok
+        if {[info exists runState(currentTime)]} {
+            if {$runState(execTime) != $runState(currentTime)} {
+                set runState(execDur) \
+                        [expr $runState(execTime)+$runState(currentTime)]
+            } else {
+                set runState(execDur) $runState(execTime)
+            }
+            set runParams [list execTime $runState(execDur) \
+                    timeUnit $runState(timeUnit) \
+                    displayInt $runState(displayInt) intMethod \
+                    [set runState(oldIntMethod) $runState(intMethod)]]
+            if {[info exists model_id]} {
+                set runState(phases) [GetPhaseCount]
+                for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
+                    lappend params $runState(update$phase)
+                }
+                lappend runParams phaseList $params
+            }
+            lappend parts [mime::initialize -canonical text/plain \
+                    -header [list "Content-Description" "Run Status"] \
+                    -string $runParams]
+        }
+        set multiT [mime::initialize -canonical multipart/mixed \
+                -parts $parts]
+        set stream [open $tgt w]
+        fconfigure $stream -translation binary
+        mime::copymessage $multiT $stream
+        # clean everything up
+        close $stream
+        mime::finalize $multiT -subordinates all
     } Lossage
     return $Lossage
 }
 
-
 proc LoadFile {tree tgt} {
     global mimeSquirter runState errorInfo model_id
+    global loadingProject mimedir
+    #ShowMessage debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
     if {[catch {
-	set multiT [mime::initialize -file $tgt]
-	if {[catch {set intent [mime::getheader $multiT Readability]}]} {
-	    set intent standard
-	}
-	foreach bit [mime::getproperty $multiT parts] {
-	    set Desc [mime::getheader $bit Content-Description]
-	    #ShowMessage debug info $Description ok
-	    switch [lindex $Desc 0] {
-		"Run Status" {
-		    set runParams [mime::getbody $bit]
-		    set runState(currentTime) 0.0
-		    #ShowMessage debug info set ok
-		    if {[string match execTime [lindex $runParams 0]]} {
-			array set runState $runParams
-			set runState(phases) 0
-			if {[info exists runState(phaseList)]} {
-			    foreach phase $runState(phaseList) {
-				incr runState(phases)
-				set runState(update$runState(phases)) $phase
-				set runState(prev_update$runState(phases)) \
-				    $phase
-			    }
-			}
-			set runState(oldIntMethod) $runState(intMethod)
-		    } else {
-			set runState(execTime) [lindex $runParams 0]
-			set runState(displayInt) [lindex $runParams 1]
-			for {set others 2} {$others < [llength $runParams]} \
-			    {incr others} {
-				set runState(update[expr $others-1]) \
-				    [lindex $runParams $others]
-				set runState(prev_update[expr $others-1]) \
-				    [lindex $runParams $others]
-			    }
-			set runState(phases) [expr $others-2]
-		    }
-#puts [array get runState]
-		} "Authentication Code" {
-		    set AuthCode [string trimright [mime::getbody $bit]]
-		} default {
-		    if {[string match "Simile model" [lindex $Desc 0]] && \
-			    [info exists AuthCode]} {
-			check_auth_code $bit
-			set CodeChecked yes
-		    }
-		    set Disposition [mime::getheader $bit Content-Disposition]
-		    if {![regexp \"(.*)\" $Disposition all oldPath]} {
-			set oldPath [lindex [lindex $Disposition 0] 1]
-		    }
-		    set newPath $tree$oldPath
-		    file mkdir [file dirname $newPath]
-		    set mimeSquirter [open $newPath w]
-		    fconfigure $mimeSquirter -translation binary
-		    mime::getbody $bit -command SquirtMime -blocksize 256
-		}
-	    }
-	}
-    } Lossage]} {
-	return $Lossage
+            set multiT [mime::initialize -file $tgt]
+            if {[catch {set intent [mime::getheader $multiT Readability]}]} {
+                set intent standard
+            }
+            foreach bit [mime::getproperty $multiT parts] {
+                set Desc [mime::getheader $bit Content-Description]
+                #ShowMessage debug info $Description ok
+                switch [lindex $Desc 0] {
+                    "Run Status" {
+                        set runParams [mime::getbody $bit]
+                        set runState(currentTime) 0.0
+                        #ShowMessage debug info set ok
+                        if {[string match execTime [lindex $runParams 0]]} {
+                            array set runState $runParams
+                            set runState(phases) 0
+                            if {[info exists runState(phaseList)]} {
+                                foreach phase $runState(phaseList) {
+                                    incr runState(phases)
+                                    set runState(update$runState(phases)) $phase
+                                    set runState(prev_update$runState(phases)) \
+                                            $phase
+                                }
+                            }
+                            set runState(oldIntMethod) $runState(intMethod)
+                        } else {
+                            set runState(execTime) [lindex $runParams 0]
+                            set runState(displayInt) [lindex $runParams 1]
+                            for {set others 2} {$others < [llength $runParams]} \
+                                    {incr others} {
+                                        set runState(update[expr $others-1]) \
+                                                [lindex $runParams $others]
+                                set runState(prev_update[expr $others-1]) \
+                                        [lindex $runParams $others]
+                            }
+                            set runState(phases) [expr $others-2]
+                        }
+                        #puts [array get runState]
+                    } "Authentication Code" {
+                        set AuthCode [string trimright [mime::getbody $bit]]
+                    } default {
+                        if {[string match "Simile model" [lindex $Desc 0]] && \
+                                    [info exists AuthCode]} {
+                            check_auth_code $bit
+                            set CodeChecked yes
+                        }
+                        set Disposition [mime::getheader $bit Content-Disposition]
+                        if {![regexp \"(.*)\" $Disposition all oldPath]} {
+                            set oldPath [lindex [lindex $Disposition 0] 1]
+                        }
+                        set newPath $tree$oldPath
+                        file mkdir [file dirname $newPath]
+                        set mimeSquirter [open $newPath w]
+                        fconfigure $mimeSquirter -translation binary
+                        mime::getbody $bit -command SquirtMime -blocksize 256
+                    }
+                }
+            }
+            #ShowMessage debug info "LoadFile after unpack\n[glob $tree/*]" ok
+            # if there is a project file
+            if {[file exists $tree/model.spj]} {
+                #ShowMessage debug info "LoadFile file is package" ok
+                set loadingProject 1
+                set mimedir $tree
+                #OpenProjectFile $tree
+            }
+        } Lossage]} {
+        return $Lossage
     } else {
-	return $CodeChecked
+        return $CodeChecked
     }
 }
+
+#                model.spj {
+#                    set PartType "application/x-simile"
+#                    set Description "Simile project file"
+#                    set style attachment
+#               }
 
 proc GetParts {top tree} {
     set mimes {}
     foreach subtree [glob -nocomplain ${tree}/*] {
-	if {[file isdirectory $subtree]} {
-	    set mimes [concat $mimes [GetParts $top $subtree]]
-	} else {
+        #ShowMessage debug info "GetParts subtree $subtree" ok
+        if {[file isdirectory $subtree]} {
+            set mimes [concat $mimes [GetParts $top $subtree]]
+        } else {
             set ext [file tail $subtree]
             switch -glob $ext {
                 *.gif {
                     set PartType "image/gif"
                     set Description "Image"
-		    set style inline
+                    set style inline
                 }
                 *.jpeg {
                     set PartType "image/jpeg"
                     set Description "Image"
-		    set style inline
+                    set style inline
                 }
                 model.pl {
                     set PartType "application/x-simile"
                     set Description "Simile model"
-		    set style inline
+                    set style inline
                 }
                 model.cnv {
                     set PartType "application/x-simile"
                     set Description "Simile canvas description"
-		    set style attachment
+                    set style attachment
+                }
+                *.shf {
+                    set PartType "application/x-simile"
+                    set Description "Simile helper configuration file"
+                    set style attachment
+                }
+                *.spf {
+                    set PartType "application/x-simile"
+                    set Description "Simile parameter file"
+                    set style attachment
                 }
                 model.* {
                     set PartType "application/x-simile"
                     set Description "Data"
-		    set style attachment
+                    set style attachment
                 } default {
-		    set Description junk
-		}
+                    set Description junk
+                }
             }
 # when saving, save all relevant files from current level but only
 # program files for submodels -- everything else is included in top level
@@ -453,16 +485,16 @@ proc GetParts {top tree} {
     }
     return $mimes
 }
-	    
+
 proc SquirtMime {args} {
     global mimeSquirter
     if {[string match end [lindex $args 0]]} {
-	close $mimeSquirter
+        close $mimeSquirter
     } else {
-	puts -nonewline $mimeSquirter [lindex $args 1]
+        puts -nonewline $mimeSquirter [lindex $args 1]
     }
 }
-    
+
 proc byebye {winId} {
     prolog [list tk_off_window( '$winId.canvas' )]
 }
@@ -490,7 +522,7 @@ proc ZapWindow { fullName } {
         update
         set cacheStream [open $custom(prefDir)/layout w]
         puts $cacheStream [string match zoomed [wm state $target]]
-	puts $cacheStream [wm geometry $target]
+        puts $cacheStream [wm geometry $target]
         close $cacheStream
     }
     destroy ${target}top
@@ -549,17 +581,17 @@ proc FindObj { winId x y } {
 
 proc canvasTLDistance {winId x y} {
     if {[scan [$winId cget -scrollregion] "%g %g" cl ct]==2} {
-	return [list [expr $x-$cl] [expr $y-$ct]]
+        return [list [expr $x-$cl] [expr $y-$ct]]
     } else {
-	return [list $x $y]
+        return [list $x $y]
     }
 }
 
 # This is used when Tcl wants to get a result from Prolog, e.g., for the
 # equation bar. The prolog procedure has to set fromProlog. It should stop
-# the thread until it returns, but something is wrong -- occasionally 
+# the thread until it returns, but something is wrong -- occasionally
 # fromProlog doesn't get set. Answer: set it first. Or fix the actual
-# bug -- it seems 'update idletasks' somehow interferes with this, 
+# bug -- it seems 'update idletasks' somehow interferes with this,
 # resulting in the variable not getting set, or something. Bug seems fixed now
 # by new pipe interface technology -- might still do funnies if the Prolog
 # command calls Tcl back though...
@@ -576,23 +608,23 @@ proc GetFromProlog {prologCmd} {
 
 proc ClickObj { x y winId action} {
     global clicktime
-#    puts "$action it!"
-
+    #    puts "$action it!"
+    
     global helperTable
     global equationbar
     global pushedbutton
-
+    
     set clicktime [clock clicks -milliseconds]
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
-        
+    
     set target [GetClickedObj $winId $canx $cany 10]
     
     if {!$target} {
-# a background click
-	prolog [list tk_${action}('$winId', $xco , $yco )]
+        # a background click
+        prolog [list tk_${action}('$winId', $xco , $yco )]
         return
     }
     
@@ -604,7 +636,7 @@ proc ClickObj { x y winId action} {
     } elseif {[string compare $pushedbutton snap]==0} then {
         snap $node
     } else {
-	if {[string compare $action click] == 0} {
+        if {[string compare $action click] == 0} {
             set obj [GetCaptionItem $winId $node]
             
             if {[string compare $obj {}] && ![string compare [focus] $winId]} {
@@ -616,9 +648,9 @@ proc ClickObj { x y winId action} {
             
             if {![string compare $target $obj]} {
                 set action clicktext
-		if {[string match select $pushedbutton]} {
-		    focus $winId
-		}
+                if {[string match select $pushedbutton]} {
+                    focus $winId
+                }
             }
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node)]
@@ -645,7 +677,7 @@ proc ClickObj { x y winId action} {
                 set label [BlankCrs [ExtractCaption $winId $node]]
                 $bar.label configure -text "$label = "
                 
-		set winid [winfo parent $winId]
+                set winid [winfo parent $winId]
                 set equationbar($winid,node) $node
                 set equationbar($winid,initText) $fromProlog
                 set equationbar(current_action) null
@@ -664,7 +696,7 @@ proc ClickObj { x y winId action} {
 proc RollBack { winId toProlog l t r b } {
     set newSpace 0
     scan [$winId cget -scrollregion] "%g %g %g %g" cl ct cr cb
-#    puts "debug info Rolling from $cl $ct $cr $cb to $l $t $r $b ok"
+    #    puts "debug info Rolling from $cl $ct $cr $cb to $l $t $r $b ok"
     set pt [$winId canvasx $l]
     if {$pt < $cl-2} {
         set cl $pt
@@ -712,7 +744,7 @@ proc DragObj {winId xco yco} {
     
     set dragtime [clock clicks -milliseconds]
     if {$dragtime>$clicktime && $dragtime-$clicktime<100} {
-	return
+        return
     }
     
     set canx [$winId canvasx $xco]
@@ -737,7 +769,7 @@ proc DragObj {winId xco yco} {
         $winId yview scroll \
                 [expr int($yco-$window_info($winId,height))/$sloth] units
     }
-
+    
     prolog [list tk_drag( $virtx , $virty )]
 }
 
@@ -773,7 +805,7 @@ proc AbandonObj {} {
 
 proc ChangeRegion {w l t r b} {
     global window_info
-
+    
     set allowScrollBar [winfo reqwidth [winfo parent $w].yscroll]
     set hcomp [expr [Unscale $w [expr $window_info($w,width)-$allowScrollBar]]/($r - $l)]
     set vcomp [expr [Unscale $w [expr $window_info($w,height)-$allowScrollBar]]/($b - $t)]
@@ -805,7 +837,7 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
     
     wm protocol $winName WM_DELETE_WINDOW \
             [list byebye $winName]
-
+    
     AddMainMenu $winName [expr $wr-$wl] $isTopLevel $args
     AddCanvasBindings $c
     
@@ -846,7 +878,7 @@ proc AddCanvasBindings { c } {
     bind $c <Button-1> {ClickObj %x %y %W click}
     # Doubleclicks now bound to objects not canvas
     bind $c <Double-1> {ClickObj %x %y %W doubleclick}
-
+    
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
     bind $c <Button-3> {PostMenu %W %X %Y}
@@ -895,10 +927,10 @@ proc CanvasEditBind { c } {
     $c bind currently_editable <Control-h> {
         if {![CanvasDelSeln %W]} {
             set _t [%W focus]
-	    if {[%W index $_t insert]} {
-		%W icursor $_t [expr [%W index $_t insert]-1]
-		%W dchars $_t insert
-	    }
+            if {[%W index $_t insert]} {
+                %W icursor $_t [expr [%W index $_t insert]-1]
+                %W dchars $_t insert
+            }
         }
     }
     $c bind currently_editable <BackSpace> \
@@ -926,41 +958,41 @@ proc CanvasEditBind { c } {
         }
     }
     $c bind currently_editable <Key-Right> {
-	%W select clear
+        %W select clear
         %W icursor [%W focus] [expr [%W index [%W focus] insert]+1]
     }
     $c bind currently_editable <Shift-Right> {
-	set farEnd [%W index [%W focus] insert]
-	if {[llength [%W select item]]} {
-	    set newEnd [%W index [%W focus] sel.first]
-	    if {$newEnd==$farEnd} {
-		set newEnd [%W index [%W focus] sel.last]
-	    }
-	} else {
-	    set newEnd $farEnd
-	    %W select from [%W focus] $newEnd
-	}
-	%W select to [%W focus] [expr $newEnd+1]
+        set farEnd [%W index [%W focus] insert]
+        if {[llength [%W select item]]} {
+            set newEnd [%W index [%W focus] sel.first]
+            if {$newEnd==$farEnd} {
+                set newEnd [%W index [%W focus] sel.last]
+            }
+        } else {
+            set newEnd $farEnd
+            %W select from [%W focus] $newEnd
+        }
+        %W select to [%W focus] [expr $newEnd+1]
     }
     $c bind currently_editable <Control-f> \
             [$c bind currently_editable <Key-Right>]
     
     $c bind currently_editable <Key-Left> {
-	%W select clear
+        %W select clear
         %W icursor [%W focus] [expr [%W index [%W focus] insert]-1]
     }
     $c bind currently_editable <Shift-Left> {
-	set farEnd [%W index [%W focus] insert]
-	if {[llength [%W select item]]} {
-	    set newEnd [%W index [%W focus] sel.first]
-	    if {$newEnd==$farEnd} {
-		set newEnd [%W index [%W focus] sel.last]
-	    }
-	} else {
-	    set newEnd $farEnd
-	    %W select from [%W focus] $newEnd
-	}
-	%W select to [%W focus] [expr $newEnd-1]
+        set farEnd [%W index [%W focus] insert]
+        if {[llength [%W select item]]} {
+            set newEnd [%W index [%W focus] sel.first]
+            if {$newEnd==$farEnd} {
+                set newEnd [%W index [%W focus] sel.last]
+            }
+        } else {
+            set newEnd $farEnd
+            %W select from [%W focus] $newEnd
+        }
+        %W select to [%W focus] [expr $newEnd-1]
     }
     $c bind currently_editable <Control-b> \
             [$c bind currently_editable <Key-Left>]
@@ -989,15 +1021,15 @@ proc CanvasDelete {c} {
 
 proc CanvasDelSeln {c} {
     if {[llength [$c select item]]} {
-	$c dchars [$c select item] sel.first sel.last
-	return 1
+        $c dchars [$c select item] sel.first sel.last
+        return 1
     } else {
-	return 0
+        return 0
     }
 }
 
 proc CanvasTextCopy {c} {
-
+    
     if {[$c select item] != {}} {
         clipboard clear
         set t [$c select item]
@@ -1021,8 +1053,8 @@ proc CanvasPaste {c {x {}} {y {}}} {
     }
     CanvasDelSeln $c
     $c insert [$c focus] insert $_s
-
-
+    
+    
 }
 
 
@@ -1073,8 +1105,8 @@ proc MenuSelect { window button item } {
 proc DoLocalCmd {win item} {
     global pushedbutton
     switch $item {
-	undo {UnOrReDo $win 0}
-	redo {UnOrReDo $win 1}
+        undo {UnOrReDo $win 0}
+        redo {UnOrReDo $win 1}
         print {PrintNow $win}
         rerun {Rerun $win 1}
         zoomin {DoZoom $win 1.414214 1}
@@ -1085,26 +1117,32 @@ proc DoLocalCmd {win item} {
         findnext {NextCaption $win}
         raiseMRE { wm deiconify .mre; raise .mre}
         open_all {OpenAll $win}
-        save_all {SaveAll}
+        save_all {SaveAll $win}
     }
 }
 
 set loadingProject 0
 
 proc OpenAll {win} {
+    global loadingProject mimedir
+    MenuSelect $win file open
+    if {$loadingProject} {
+            OpenProjectFile $win $mimedir
+    }
+}
+
+proc OpenProjectFile {win path} {
     global SimileProject loadingProject
     set loadingProject 1
-    set ProjectFile \
-            [ChooseFile *.spj "Open package" 0]
-    set projectF [open $ProjectFile r]
+    set projectF [open $path/model.spj r]
     gets $projectF SimileProjectData
     close $projectF
     #ShowMessage debug info "open_all win $win; $SimileProjectData" ok
     array set SimileProject $SimileProjectData
     #ShowMessage debug info "open_all SimileProject(ModelFile) $SimileProject(ModelFile)" ok
     
-    Reopen $win $SimileProject(ModelFile)
     # if params it should load the spfs
+    # MergeParams {smPath metaFile interactive}
     if {$SimileProject(modelRunning)} {
         if {$SimileProject(running_c)} {
             MenuSelect $win file run_c
@@ -1112,26 +1150,26 @@ proc OpenAll {win} {
             MenuSelect $win file run_tcl
         }
         if {![string match {} $SimileProject(nameOfHelperStateFile)]} {
-            ::RunEnv::LoadSHF $SimileProject(nameOfHelperStateFile)
+            ::RunEnv::LoadSHF ${path}/$SimileProject(nameOfHelperStateFile)
         }
     }
 }
 
-proc SaveAll {} {
+proc SaveAll {win} {
+    global SimileProjectDo
+    #ShowMessage debug info "SaveAll win $win" ok
+    set SimileProjectDo 1
+    MenuSelect $win file save_as
+}
+
+proc SaveProjectFile {path} {
     global custom runState running_c nameOfHelperStateFile
     global SimileProject
-    # get desktop model name use .spj extension for now
-    # write sml file name to it
-    # save sml file
+    #ShowMessage debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
     
-    # get model file name
-    set SimileProject(ModelFile) [lindex $custom(hotlist) 0]
-    set ProjectFile [file rootname $SimileProject(ModelFile)].spj
-    
-    set ProjectFile \
-            [ChooseFile $ProjectFile "Create/Edit package" 1]
+    set ProjectFile $path/model.spj
     
     # is it builtC|builtTcl|notbuilt
     if [info exists runState(modelRunning)] {
@@ -1145,30 +1183,33 @@ proc SaveAll {} {
         set SimileProject(running_c) {}
     }
     if [info exists nameOfHelperStateFile] {
-        set SimileProject(nameOfHelperStateFile) $nameOfHelperStateFile
+        file copy -force $nameOfHelperStateFile $path
+        set SimileProject(nameOfHelperStateFile) [file tail $nameOfHelperStateFile]
     } else  {
         set SimileProject(nameOfHelperStateFile) {}
     }
     # shf file name loaded
     
-    #ShowMessage debug info "save_all [array get SimileProject]" ok
+    #ShowMessage debug info "SaveProjectFile [array get SimileProject]\n\
+            $path/[file tail $nameOfHelperStateFile]" ok
     set projectF [open $ProjectFile w]
     puts $projectF [array get SimileProject]
     close $projectF
 }
 
 
+
 proc UnOrReDo {curWin fwd} {
     global window_info
     foreach win [array names window_info *,parent] {
-	lappend canList '[lindex [split $win ,] 0]'
+        lappend canList '[lindex [split $win ,] 0]'
     }
     set curPos [lsearch $canList '$curWin']
     set canArgs [join $canList ,]
     if {$fwd} {
-	prolog tk_redo($curPos,\[$canArgs\])
+        prolog tk_redo($curPos,\[$canArgs\])
     } else {
-	prolog tk_undo($curPos,\[$canArgs\])
+        prolog tk_undo($curPos,\[$canArgs\])
     }
 }
 
@@ -1179,7 +1220,7 @@ proc DoWithErrors {args} {
         bgerror $err
     }
 }
-	
+
 # Export a postscript file from a window. Only the bit of the diagram showing in
 # the viewport is included, and the output is in landscape mode, sized so 100
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
@@ -1199,7 +1240,7 @@ proc ExportPostscript { winId } {
 
 proc PrepForExport {winId way} {
     global jiggles tcl_platform
-
+    
     # now, zoom in by detail factor to get the line thickness resolution decent
     set detail 1.0
     # For font scale 1 seems right for Unix -- Windows takes about 1.6
@@ -1210,36 +1251,36 @@ proc PrepForExport {winId way} {
     }
     set textscale [expr $detail*$textBoost]
     if {[string match there $way]} {
-	if {[scan [$winId cget -scrollregion] "%g %g %g %g" sl st sr sb]<4} {
-	    set sl 0; set st 0 
-	    set sr [winfo width $winId]; set sb [winfo height $winId]
-	}
-	set jiggles(bl) $sl
-	set jiggles(bt) $st
-	set jiggles(br) $sr
-	set jiggles(bb) $sb
-
-	set jiggles(sl) [lindex [$winId xview] 0]
-	set jiggles(st) [lindex [$winId yview] 0]
-	set xbase [expr [$winId canvasx 0]-$sl]
-	set ybase [expr [$winId canvasy 0]-$st]
-	$winId move all [expr -$sl] [expr -$st]
-# Don't bother moving the scrollregion, it will not be staying like this
-# -- actually we need to move it because print_widget scales to it
-	$winId configure -scrollregion [list 0 0 \
-	    [expr $detail*($sr-$sl)] [expr $detail*($sb-$st)]]
-	ZoomImage $winId all $detail $textscale
-	return [list $xbase $ybase $detail]
+        if {[scan [$winId cget -scrollregion] "%g %g %g %g" sl st sr sb]<4} {
+            set sl 0; set st 0
+            set sr [winfo width $winId]; set sb [winfo height $winId]
+        }
+        set jiggles(bl) $sl
+        set jiggles(bt) $st
+        set jiggles(br) $sr
+        set jiggles(bb) $sb
+        
+        set jiggles(sl) [lindex [$winId xview] 0]
+        set jiggles(st) [lindex [$winId yview] 0]
+        set xbase [expr [$winId canvasx 0]-$sl]
+        set ybase [expr [$winId canvasy 0]-$st]
+        $winId move all [expr -$sl] [expr -$st]
+        # Don't bother moving the scrollregion, it will not be staying like this
+        # -- actually we need to move it because print_widget scales to it
+        $winId configure -scrollregion [list 0 0 \
+                [expr $detail*($sr-$sl)] [expr $detail*($sb-$st)]]
+        ZoomImage $winId all $detail $textscale
+        return [list $xbase $ybase $detail]
     } else {
-	ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
-	$winId configure -scrollregion [list $jiggles(bl) $jiggles(bt) \
-		$jiggles(br) $jiggles(bb)]
-	$winId xview moveto $jiggles(sl)
-	$winId yview moveto $jiggles(st)
-	$winId move all $jiggles(bl) $jiggles(bt)
+        ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
+        $winId configure -scrollregion [list $jiggles(bl) $jiggles(bt) \
+                $jiggles(br) $jiggles(bb)]
+        $winId xview moveto $jiggles(sl)
+        $winId yview moveto $jiggles(st)
+        $winId move all $jiggles(bl) $jiggles(bt)
     }
 }
-	
+
 proc CopyCanvasToWindowsClipboard {canvas} {
     global tcl_platform
     
@@ -1250,8 +1291,8 @@ proc CopyCanvasToWindowsClipboard {canvas} {
         
         set hdc [wmf open]; #Opens a memory metafile
         printer::print_canvas $hdc $canvas
-        set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle        
-        wmf copy $wmfdc; # Copy to the clipboard        
+        set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
+        wmf copy $wmfdc; # Copy to the clipboard
     }
 }
 
@@ -1259,41 +1300,41 @@ proc PrintNow {winId} {
     global env tcl_platform
     
     if {[string match windows $tcl_platform(platform)]} {
-	set oldDir [pwd] ;# apparently printing can change directory
-	package require gdi
-	package require printer
-
-# print routines still seem unable to handle negative coordinates so
-# put image through prep mech
-	PrepForExport $winId there
-	printer::print_widget $winId 0
-	PrepForExport $winId back
-	cd $oldDir
-   } else {
-    set tempPSFile $env(SIMTMPDIR)/temp.ps
-    SpitPS $winId $tempPSFile
-    if {[catch "exec $env(PRINTCMD) {[file nativename $tempPSFile]}" result]} {
-        ShowMessage "Print command result" warning \
-                "Printing seems to have failed. \
-                The result returned by the print command was:
+        set oldDir [pwd] ;# apparently printing can change directory
+        package require gdi
+        package require printer
         
-        $result
-        
-        Please see the online help to find out more about setting up printing from Simile. Alternatively you can export the model diagram as a PostScript file (use the File...Export menu command) and then print that using another package." ok
+        # print routines still seem unable to handle negative coordinates so
+        # put image through prep mech
+        PrepForExport $winId there
+        printer::print_widget $winId 0
+        PrepForExport $winId back
+        cd $oldDir
+    } else {
+        set tempPSFile $env(SIMTMPDIR)/temp.ps
+        SpitPS $winId $tempPSFile
+        if {[catch "exec $env(PRINTCMD) {[file nativename $tempPSFile]}" result]} {
+            ShowMessage "Print command result" warning \
+                    "Printing seems to have failed. \
+                    The result returned by the print command was:
+            
+            $result
+            
+            Please see the online help to find out more about setting up printing from Simile. Alternatively you can export the model diagram as a PostScript file (use the File...Export menu command) and then print that using another package." ok
+        }
+        file delete $tempPSFile
     }
-    file delete $tempPSFile
-   }
 }
 
 proc SpitPS {winId psfile} {
     scan [PrepForExport $winId there] "%g %g %g" xbase ybase detail
     set useWidth [winfo width $winId]
     set useHeight [winfo height $winId]
-
+    
     $winId postscript -file $psfile -rotate true -pageanchor nw \
-	-pagex 0 -pagey 0 -x [expr $detail*$xbase] -y [expr $detail*$ybase] \
-	-width [expr $detail*$useWidth] -height [expr $detail*$useHeight] \
-	-pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
+            -pagex 0 -pagey 0 -x [expr $detail*$xbase] -y [expr $detail*$ybase] \
+            -width [expr $detail*$useWidth] -height [expr $detail*$useHeight] \
+            -pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
     PrepForExport $winId back
 }
 
@@ -1307,6 +1348,10 @@ proc Reopen {canvas oldFile} {
     RecordPathChoice .sml $oldFile 1
     set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]
     MenuSelect $canvas reopen $oldFile
+    global loadingProject mimedir
+    if {$loadingProject} {
+        OpenProjectFile $canvas $mimedir
+    }
 }
 
 menu .openrecent -tearoff 0
@@ -1330,7 +1375,7 @@ proc FillReopen {winId} {
 
 proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     global custom pushedbutton tcl_platform window_info iconImages
-
+    
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
@@ -1338,7 +1383,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -accelerator "Ctrl+N"
     AddAccelerator $winid file New "<Control-n>"
     $fm add command -label "New top-level" -command "MenuSelect $winid.canvas file new_toplevel"
-    $fm add command -label Open... -command "MenuSelect $winid.canvas file open"\
+    $fm add command -label Open... -command "MenuSelect $winid.canvas local open_all"\
             -accelerator "Ctrl+O"
     AddAccelerator $winid file Open... "<Control-o>"
     $fm add cascade -label "Reopen" -menu .openrecent
@@ -1348,16 +1393,9 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     
     $fm add command -label "Save as..." \
             -command "MenuSelect $winid.canvas file save_as"
-
-    # project files for now - will merge with mime file so only save all - file manager
-    # file manager also to allow choice to auto run
-    $fm add separator
-    $fm add command -label "Open package..." \
-            -command "MenuSelect $winid.canvas local open_all"
     $fm add command -label "Save/Edit package" \
             -command "MenuSelect $winid.canvas local save_all"
-    # project files
-            
+    
     $fm add separator
     $fm add command -label "Print..." \
             -command "PrintNow $winid.canvas"\
@@ -1374,13 +1412,13 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm2 add command -label "PostScript graphics" \
             -command "DoWithErrors ExportPostscript $winid.canvas"
     $fm add separator
-
+    
     $fm add command -label Close -command "byebye $winid" \
-	-accelerator "Alt+x"
+            -accelerator "Alt+x"
     AddAccelerator $winid file Close "<Alt-x>"
     $fm add command -label Exit -command "prolog tk_kill_everything"
-
-
+    
+    
     set fm [menu ${winid}top.edit -tearoff 0]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
     $fm add command -label Undo -command "UnOrReDo 0" \
@@ -1406,7 +1444,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -label "Component bar" -variable custom(showtoolbar,$winid)
     $fm add check -command "toggleBar $winid" \
             -label "Equation bar" -variable custom(showeqnbar,$winid)
-
+    
     $fm add separator
     AddZoomMenu $winid.canvas $fm 1
     $fm add cascade -label "Show detail" -menu $fm.sub3
@@ -1450,8 +1488,8 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -variable pushedbutton -value submodel
     $fm1 add radiobutton -label Relation -command "ItemSelect relation"\
             -variable pushedbutton -value relation
-
-
+    
+    
     $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
             -variable pushedbutton -value creation
     $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
@@ -1472,7 +1510,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -command "MenuSelect $winid.canvas edit flip_h"
     $fm2 add command -label Vertical \
             -command "MenuSelect $winid.canvas edit flip_v"
-
+    
     $fm add separator
     $fm add command -label "Save interface" \
             -command "MenuSelect $winid.canvas file save_interface"
@@ -1495,16 +1533,16 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -variable pushedbutton -value ghost
     $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
             -variable pushedbutton -value snap -state disabled
-
+    
     if {[info exists window_info(showIO)]} {
-	${winid}top add  cascade -label "I/O tools" -underline 0 -menu .helpers
+        ${winid}top add  cascade -label "I/O tools" -underline 0 -menu .helpers
     }
-
+    
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
     $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
             -accelerator "F1"
-            AddAccelerator $winid help Contents "<F1>"
+    AddAccelerator $winid help Contents "<F1>"
     $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
     $fm add command -label About... -command [list ShowAbout $winid]
     
@@ -1542,12 +1580,12 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
             pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised \
-                -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
-                -side left -padx 2 -pady 2
+                    -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                    -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
         }
     }
-        
+    
     # button to raise single-window run env (ready for more tools in this section)
     foreach navCmd {{runenv {local raiseMRE}}} {
         set handle [lindex $navCmd 0]
@@ -1568,14 +1606,14 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     foreach mode {compartment variable flow influence separator1 submodel \
                 relation separator2 creation immigration reproduction loss condition alarm} {
         if {[string match separator* $mode]} {
-
+            
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${mode}.gif]
             pack [button $tb.$mode -image $testImg -command "ItemSelect $mode" \
                     -borderwidth 1 -relief flat -overrelief raised] -side left -padx 2 -pady 2
             BindPopup $tb.$mode $mode
-
+            
         }
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
@@ -1591,10 +1629,10 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
         }
     }
     $tb.snap configure -state disabled
-        
+    
     $tb.$pushedbutton configure -relief sunken
     $tb.$pushedbutton configure -state active
-
+    
     
     ### Formula bar section
     ### Robert Muetzelfeldt
@@ -1611,23 +1649,23 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
     bind $eb.equation <FocusOut> AbandonEqn
     pack [button $eb.tick -state disabled -image $iconImages(tick) \
-	      -borderwidth 1 \
-	      -command [list accept_equation $winid $eb.equation]] -side left
+            -borderwidth 1 \
+            -command [list accept_equation $winid $eb.equation]] -side left
     
     pack [button $eb.cross -state disabled -image $iconImages(cross) \
-	      -borderwidth 1 \
-	      -command [list restore_equation $winid $eb]] -side left
+            -borderwidth 1 \
+            -command [list restore_equation $winid $eb]] -side left
     
     frame $eb.padding -width 10
     pack $eb.padding -side left
     pack [Separator $eb.afterSeparator -orient horizontal] -fill x -side bottom
-        
+    
     set image [image create photo -file "../Images/Eqnbar/inputs.gif"]
     menubutton $eb.inputs -state disabled -menu $eb.inputs.menu \
             -borderwidth 2 -relief raised -image $image
     pack $eb.inputs -side left
     set m [menu $eb.inputs.menu -tearoff 0 \
-	       -postcommand [list AddInputs $winid $eb]]
+            -postcommand [list AddInputs $winid $eb]]
     #    $m add command -label biomass -command bell
     #    $m add command -label k -command bell
     #BindPopup $m foobar
@@ -1660,9 +1698,9 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             [PrefValue custom(initNavbar) initNavbar]]
     set custom(showeqnbar,$winid) [expr $initWidth>=$navWidth && \
             [PrefValue custom(initEqnbar) initEqnbar]]
-
     
-    pack [Separator $winid.toolSlot.topseparator -orient horizontal] -fill x -side top 
+    
+    pack [Separator $winid.toolSlot.topseparator -orient horizontal] -fill x -side top
     if {$custom(shownavbar,$winid)} {
         pack $nb -fill x
     }
@@ -1725,7 +1763,7 @@ proc toggleBar {winId} {
 }
 
 proc AddDetailMenu {winId fm3 initVals} {
-
+    
     global rads
     set posn 0
     foreach category { \
@@ -1766,7 +1804,7 @@ proc AddDetailMenu {winId fm3 initVals} {
 
 proc Rerun {winId go} {
     global runState running_c
- 
+    
     if {$runState(modelRunning)!=2 || $runState(modelUpdated) == 1} {
         if {![info exists running_c]} {
             set runType run_tcl
@@ -1779,7 +1817,7 @@ proc Rerun {winId go} {
         }
         MenuSelect $winId file $runType
     } else {
-	StartRun $winId
+        StartRun $winId
     }
     # Only proceed if it worked
     if {$go && $runState(modelRunning) == 2} {
@@ -1801,15 +1839,15 @@ proc UpdateAbility {c what where which whether} {
 proc ToggleIOToolMenu {on} {
     global window_info
     if {[info exists window_info(showIO)]} {
-	if {$on} {
-	    return
-	} else {
-	    unset window_info(showIO)
-	}
+        if {$on} {
+            return
+        } else {
+            unset window_info(showIO)
+        }
     } elseif {$on} {
-	set window_info(showIO) 1
+        set window_info(showIO) 1
     } else {
-	return
+        return
     }
     
     foreach winData [array name window_info *,parent] {
@@ -1858,10 +1896,10 @@ proc UpdateToolbars {newAction} {
     global pushedbutton window_info tcl_platform
     foreach winData [array name window_info *,parent] {
         set toolBar $window_info($winData).toolSlot.toolbar
-	$toolBar.$pushedbutton configure -state normal
-	$toolBar.$newAction configure -state active
-	$toolBar.$pushedbutton configure -relief flat
-	$toolBar.$newAction configure -relief sunken
+        $toolBar.$pushedbutton configure -state normal
+        $toolBar.$newAction configure -state active
+        $toolBar.$pushedbutton configure -relief flat
+        $toolBar.$newAction configure -relief sunken
         ResetEqnBar $window_info($winData).toolSlot.eqnbar
     }
 }
@@ -1882,7 +1920,7 @@ proc RaiseModelWindow {} {
     global window_info
     set modelWin $window_info([lindex [lsort [array name window_info *,parent]] 0])
     wm deiconify $modelWin
-
+    
     raise $modelWin
 }
 
@@ -1914,7 +1952,7 @@ proc AddInputs {winId bar} {
 }
 
 proc InsertParam {bar paramName} {
-
+    
     $bar.equation insert insert $paramName
     focus $bar.equation
 }
