@@ -106,10 +106,10 @@ namespace eval grid005 {
                     if {[info exists colvals()]} {
                         unset colvals()
                     }
-                    set useNodes($winId,nrow) [array size colvals]
-                    set useNodes($winId,ncol) \
-                            [expr {[llength $columns]/$useNodes($winId,nrow)}]
-                    $ms configure -text "Grid has $useNodes($winId,nrow) columns and $useNodes($winId,ncol) rows. Now click on the variable to be displayed."
+                    set useNodes($winId,ncol) [array size colvals]
+                    set useNodes($winId,nrow) \
+                            [expr {[llength $columns]/$useNodes($winId,ncol)}]
+                    $ms configure -text "Grid has $useNodes($winId,ncol) columns and $useNodes($winId,nrow) rows. Now click on the variable to be displayed."
                     SetState $winId display1
                 } display1 {
                     pack forget $ms

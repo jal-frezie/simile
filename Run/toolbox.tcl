@@ -224,8 +224,8 @@ proc SaveFile {tree tgt} {
 		set runState(execDur) $runState(execTime)
 	    }
 	    set runParams [list execTime $runState(execDur) \
-			       displayInt $runState(displayInt) \
-			      intMethod $runState(intMethod)]
+			     displayInt $runState(displayInt) intMethod \
+			     [set runState(oldIntMethod) $runState(intMethod)]]
 	    if {[info exists model_id]} {
 		set runState(phases) [GetPhaseCount]
 		for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
@@ -274,6 +274,7 @@ proc LoadFile {tree tgt} {
 			    set runState(update$runState(phases)) $phase
 			    set runState(prev_update$runState(phases)) $phase
 			}
+			set runState(oldIntMethod) $runState(intMethod)
 		    } else {
 			set runState(execTime) [lindex $runParams 0]
 			set runState(displayInt) [lindex $runParams 1]

@@ -13,6 +13,7 @@
 set keyValue runcontrol33857
 
 global runState
+set runState(oldIntMethod) Euler
 set runState(intMethod) Euler
 
 namespace eval runcontrol33857 {
@@ -48,7 +49,7 @@ namespace eval runcontrol33857 {
     proc initialize {t} {
         variable sendvars
         variable timeSteps
-	global runState
+#	global runState
 
 
 	if {[string match $t [winfo toplevel $t]]} {
@@ -215,6 +216,7 @@ namespace eval runcontrol33857 {
                 $runState(execTime)"
         # This loop sets the array of dts in the model
         set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
+	set tweaked 0
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
             set tick [expr $runState(update$setPhase)*$unitLength]
 #puts "Checking $tick is $runState(prev_update$setPhase) and $runState(currentTime) is $runState(timeAtEval)"
@@ -222,6 +224,7 @@ namespace eval runcontrol33857 {
                 set runState(prev_update$setPhase) $tick
                 SetStep $tick $setPhase
                 set redoPhase $setPhase
+		set tweaked 1
                 #	    ShowMessage debug info "Twiddling $redoPhase" ok
             }
             if {$runState(timeAtEval) != $runState(currentTime)} {
@@ -231,6 +234,9 @@ namespace eval runcontrol33857 {
                 #	    ShowMessage debug info "Twiddling $redoPhase" ok
             }
         }
+	if {$tweaked || ![string match $runState(oldIntMethod) $runState(intMethod)]} {
+	    UpdateAbility save file Save 1
+	}
 	SetStep 0 0
         SetState $winId $sendvars(newData)
     }
