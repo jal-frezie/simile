@@ -20,7 +20,8 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        
+        variable runCount
+
         namespace import -force ::graphtools::*; # todo make graphtools common
         
         set plot($w,nodeCount) 0
@@ -82,6 +83,7 @@ namespace eval ::$keyValue {
         set Told($w) 0
         set Tnew($w) 0
         
+	set runCount($w) 1
         SetState $w {}
         UpdateState $w
         
@@ -114,8 +116,8 @@ namespace eval ::$keyValue {
         array set plot $restoreString
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
-        display $winId [GetModelTime] 0 0
-        display $winId [GetModelTime] 0 0
+        doDisplay $winId [GetModelTime] 0 0
+        doDisplay $winId [GetModelTime] 0 0
     }
     
     proc GetCanvas {winId} {
@@ -130,13 +132,12 @@ namespace eval ::$keyValue {
         
         set testResult [GetModelValue $node]
         if {[string compare $testResult novalue]} {
-            lappend plot($w,Ylabels) $caption
+	    set plot(caption,$node) $caption
             lappend plot($w,Yvars)   $node
             
-            drawGraphpad $w
             UpdateState $w
-            display $w [GetModelTime] 0 0
-            display $w [GetModelTime] 0 0
+            doDisplay $w [GetModelTime] 0 0
+            doDisplay $w [GetModelTime] 0 0
         } else {
             #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
         }
@@ -164,6 +165,17 @@ namespace eval ::$keyValue {
     
     # Invoked at every time interval.
     proc display {w time step remainder} {
+	variable runCount
+	if {!$time} {
+	    incr runCount($w)
+	}
+	doDisplay $w $time $step $remainder
+    }
+
+# display mec put in doDisplay so internal calls to it dont increment
+# run count
+
+    proc doDisplay {w time step remainder} {
         # remainder isn't time remaining to run (seems to be usually 1) use $runState(execTime)
         global ::graphtools::plot
         global ::graphtools::YYold
@@ -333,33 +345,8 @@ namespace eval ::$keyValue {
                 [expr $y0+$plot($w,yborder_bottom)-5] \
                 -text "Time" -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
-        
-        # legend vars only, not elements of arrays
-        set nYlabel [llength $plot($w,Ylabels)]
-        set j 0
-        set k 0
-        for {set i 0} {$i<$nYlabel} {incr i} {
-            set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
-            set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
-            set xa [expr $x-15]
-            set xb [expr $x-2]
-            set ya [expr $y+8]
-            set vartag {}
-            append vartag var $i
-            $w.canvas create line $xa $ya $xb $ya \
-                    -fill [lindex $plot($w,YColours) $i] \
-                    -width 2 \
-                    -tags [list $vartag axis_label markable toplevel]
-            $w.canvas create text $x $y \
-                    -text [lindex $plot($w,Ylabels) $i] \
-                    -anchor nw \
-                    -tags [list $vartag axis_label markable toplevel]
-            incr j
-            if {$j==2} {
-                incr k
-                set j 0
-            }
-        }
+
+        drawLegend $w
         
         ### Apply graticule and values to axis.
         # drawGraticule $w $Xintercept $Yintercept
@@ -389,6 +376,37 @@ namespace eval ::$keyValue {
         bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
         bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
         
+    }
+	
+    proc drawLegend {w} {
+	global ::graphtools::plot
+
+        # legend vars only, not elements of arrays
+        set nYlabel [llength $plot($w,Ylabels)]
+        set j 0
+        set k 0
+        for {set i 0} {$i<$nYlabel} {incr i} {
+            set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
+            set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
+            set xa [expr $x-15]
+            set xb [expr $x-2]
+            set ya [expr $y+8]
+            set vartag {}
+            append vartag var $i
+            $w.canvas create line $xa $ya $xb $ya \
+                    -fill [lindex $plot($w,YColours) $i] \
+                    -width 2 \
+                    -tags [list $vartag axis_label markable toplevel]
+            $w.canvas create text $x $y \
+                    -text [lindex $plot($w,Ylabels) $i] \
+                    -anchor nw \
+                    -tags [list $vartag axis_label markable toplevel]
+            incr j
+            if {$j==2} {
+                incr k
+                set j 0
+            }
+        }
     }
     
     proc Reset_Xaxis {w} {
@@ -522,23 +540,35 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        
+
         set Trange [expr {1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)}]
         set Yrange [expr {1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)}]
         set plot($w,Tscale) [expr {$Trange/$plot($w,xlength)}]
         set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
         
-        set iplot 0
         foreach Ynew $YYnew($w) {
             #puts "plot_YY Ynew $Ynew"
             set node [lindex $Ynew 0]
             foreach Yold $YYold($w) {
                 if {$node==[lindex $Yold 0]} {
-                    plot_Y $w $iplot $Told($w) $Yold $Tnew($w) $Ynew
-                    incr iplot; #each var gets an id NOT each element here
+                    plot_Y $w [captionNo $w $node] $Told($w) $Yold \
+			$Tnew($w) $Ynew
                 }
             }
         }
+    }
+
+    proc captionNo {w node} {
+	global ::graphtools::plot
+	variable runCount
+	set capt "$plot(caption,$node), run $runCount($w)"
+	set posn [lsearch $plot($w,Ylabels) $capt]
+	if {$posn==-1} {
+	    set posn [llength $plot($w,Ylabels)]
+	    lappend plot($w,Ylabels) $capt
+            drawLegend $w
+	}
+	return $posn
     }
     
     proc plot_Y {w iplot Told Yold Tnew Ynew} {
@@ -609,6 +639,7 @@ namespace eval ::$keyValue {
         global ::graphtools::YYold
         global ::graphtools::YYnew
         global ::graphtools::plot
+	variable runCount
         
         set plot($w,Xmax_axis) -1e100
         set plot($w,Xmin_axis) 1e100
@@ -627,10 +658,13 @@ namespace eval ::$keyValue {
         set YYold($w) {}
         set YYnew($w) {}
         
+	set runCount($w) 1
+	set plot($w,Ylabels) {}
+
         $w.canvas delete prompt
         drawGraphpad $w
-        display $w [GetModelTime] 0 0
-        display $w [GetModelTime] 0 0
+        doDisplay $w [GetModelTime] 0 0
+        doDisplay $w [GetModelTime] 0 0
     }
     
     proc adjustLimits {w Tnew Ynew} {
