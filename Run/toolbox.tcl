@@ -1700,9 +1700,12 @@ proc restore_equation {winId bar} {
 proc snap {node} {
     global runState
     
+    if {[catch {set full_label [GetCaptionPathFromId $node]}]} {
+        return; ## no good
+    }
+    
     set w .snap[clock seconds]
     toplevel $w
-    set full_label [GetCaptionPathFromId $node]
     set full_label1 [string range $full_label 9 end]
     set last_slash [string last / $full_label1]
     set start_label [expr $last_slash+1]
