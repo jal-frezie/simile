@@ -11,13 +11,14 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
-	replace_subexps(Expr, inters, insert_paths,
+	on_exception(Problem,
+		     (replace_subexps(Expr, inters, insert_paths,
 		sub(Sm, DestRef, Swaps, ExpInters), top_down, _, FullExp),
-	length(ExpInters, _L), /* close end of list */
+		     length(ExpInters, _L), /* close end of list */
 
-	on_exception(Problem, make_intermediates(FullExp, Sm, Target, DestPath,
+		     make_intermediates(FullExp, Sm, Target, DestPath,
 		BackSwap, ExpInters, [], Step, Used, Units, AllInters,
-		part_result(SourceContext, AllSetups, Args, Formula)),
+		part_result(SourceContext, AllSetups, Args, Formula))),
 		      raise_exception(conversion_failure(Target, Problem))),
 
 	get_model_and_loops(SourceContext, DestPath, _, SourceLoops, _),
@@ -112,8 +113,20 @@ enabling the channel ID to be got from it */
 :- dynamic(macro_expansion/2).
 
 expand_library(DestRef, Var, NewVar) :-
-	/* macro_expansion(_Cat, Macro),
-	    Macro = (Var --> NewVar); */
+	shed_dummy_args(Var, Fn),
+	Fn =.. [Op | Args],
+	length(Args, Arity),
+	member(MacroMatch, [right, bad_format, bad_arity]),
+	macro_expansion(_Orig, (UseVar --> NewVar)),
+	(MacroMatch = right,
+	    UseVar = Fn, !;
+	 UseVar =.. [Op | BadArgs],
+	    (MacroMatch = bad_format,
+		length(BadArgs, Arity),
+		raise_exception(wrong_format_of_args(Var, Op, Args, BadArgs));
+	    MacroMatch = bad_arity,
+		length(BadArgs, FnArity),
+		raise_exception(wrong_no_of_args(Var, Op, Arity, FnArity))));
 	Var = prev(N),
 	    ((\+ integer(N); N < 0),
 		raise_exception(bad_index_number(N, prev));
@@ -185,18 +198,24 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    Category = 'Built-in';
 	IsBuiltIn = no,
 	    Category = WhereFound),
-	(Line = (Macro --> _Defn),
+	(Line = (Macro --> Defn),
 	    WhereFound = 'Macros',
 	    /* Only allow free vars in function template -- fix them all then
 	    replace those in template with free ones */ 
-	    Macro =.. [Fn | Args],
-	    replace_subexps(Line, inters, free_params, switch(Args, _),
-				    top_down, Pairs, NewLine),
+	    /* get rid of dummy argument */
+	    shed_dummy_args(Macro, Fn),
+	    (atom(Fn), !,
+		Op = Fn,
+		NewLine = (Fn --> Defn),
+		Pairs = [];
+	    Fn =.. [Op | Args],
+		replace_subexps(Line, inters, free_params,
+				switch(Args, _), top_down, Pairs, NewLine)),
 	    (member(var_pair(Param, NewParam), Pairs), NewParam == Param, !,
 		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
 		do_dialogue(ProbAct, warning, Bug, ok, _);
 	    assert(macro_expansion(Category, NewLine))),
-	    append_atoms(['{', Category, ' {', File, '}} ', Fn], FnEntry);
+	    append_atoms(['{', Category, ' {', File, '}} ', Op], FnEntry);
 	Line = function(Functor, ReturnType, ArgTypes),
 	    WhereFound = 'Procedures',
 	    assert(function(Category, Functor, ReturnType, ArgTypes)),
@@ -215,6 +234,12 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	               [File, Line], Bug),
 	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
 	    read_funcs(File, Stream, IsBuiltIn, Done)).
+
+shed_dummy_args(Op, NewOp) :-
+	Op =.. [Fn | Args],
+	    member(Args, [[], ['']]), !,
+	    NewOp = Fn;
+	NewOp = Op.
 
 free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	var(Arg), !; /* in case someone used an underscore */
@@ -705,33 +730,15 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		[ValRef] = ResultList;
-	    Source =.. [Op | PlArgList],
-		(PlArgList = [''], !,
-		    ArgList = [];
-		 ArgList = PlArgList),
+	    Source =.. [Op | ArgList],
 		length(ArgList, Arity),
-		(macro_expansion(MacroFrom, (PossSource --> ExpSource)),
-		    PossSource =.. [Op | ArgList], !,
-		    SourceList = [ExpSource],
-		    Arg_template = [RUnits],
-		    [ValRef] = ResultList;
-		 macro_expansion(MacroFrom, (PossSource --> _)),
-		    PossSource =.. [Op | WrongForm],
-		    length(WrongForm, Arity),
-		    raise_exception(wrong_format_of_args(Source, Op,
-						     ArgList, WrongForm));
-		 macro_expansion(MacroFrom, (PossSource --> _)),
-		    PossSource =.. [Op | WrongLen],
-		    length(WrongLen, FnArity),
-		    raise_exception(wrong_no_of_args(Source, Op,
-						     Arity, FnArity));
 		SourceList = ArgList,
-		    length(Arg_template, Arity),
-		    length(ResultList, Arity),
-		    ValRef =.. [Op | ResultList])),
-		make_all_intermediates(SourceList, SubId, Target, DestPath,
-				BackSwap, PrevInters, BuildingArrays, Step,
-				Used, UnitList, NewInters, PartResultList),
+		length(Arg_template, Arity),
+		length(ResultList, Arity),
+		ValRef =.. [Op | ResultList]),
+	    make_all_intermediates(SourceList, SubId, Target, DestPath,
+				   BackSwap, PrevInters, BuildingArrays, Step,
+				   Used, UnitList, NewInters, PartResultList),
 	/* Now...if there are contexts in which all these things can be
 	evaluated, return results based on them. */
 	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
@@ -771,9 +778,6 @@ make_intermediates(
 			SourceRef = ValRef);
 		 ValRef = sofar(SourceRef),
 		    UnitList = [Units];
-		 nonvar(MacroFrom), /* Done macro: args already matched */
-		    [Units] = UnitList,
-		    SourceRef = ValRef;
 		 fn_or_op(Op, RUnits, Arg_template),
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units),

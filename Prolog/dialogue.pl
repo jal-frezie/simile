@@ -553,16 +553,19 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	append(InterInputs, [input_link(_, DimL, '/dest/', _-DLoops,_)
 			    | ExpInters], AllInputs),
 	
-	replace_subexps(Equation, dialogue, expand_params,
-			dim_data(DimL, ParamList, AllInputs), top_down,
-			_ParamSubs, FullExpr),
+	on_exception(ParseException,
+		     replace_subexps(Equation, dialogue, expand_params,
+				     dim_data(DimL, ParamList, AllInputs),
+				     top_down, _ParamSubs, FullExpr),
+		     decode_error(ParseException, ParseError)),
 	length(ParamList, _LenP),
 	get_ground_part(DimL, DimDG),
 	length(DimDG, LenD),
 	length(DimDV, LenD),
 	make_inds_for(DimDV, DLoops, _),
 	length(ExpInters, _), !, /* close list end */
-	(member(input_link(_, DimP, Param, _, PDims), ExpInters),
+	(nonvar(ParseError), !;
+	 member(input_link(_, DimP, Param, _, PDims), ExpInters),
 	    (var(PDims), !,
 		decode_error(undefined_parameter(Param), ParseError);
 	    get_ground_part(DimP, DimG),
