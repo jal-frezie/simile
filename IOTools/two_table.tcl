@@ -5,6 +5,11 @@ set keyValue tabular11510
 # column widths
 # format by column (or row)
 
+global tcl_platform
+if {[string match windows $tcl_platform(platform)]} {
+    source ../System/lib/Extras/prntproc.tcl
+}
+    
 namespace eval $keyValue {
     package require BWidget
     namespace import ::DisplayFormat::*
@@ -285,10 +290,6 @@ namespace eval $keyValue {
         $winId.t configure -titlecols $titlecols
         $winId.t configure -titlerows $titlerows
         $winId.t configure -rowseparator $rsep -colseparator $csep
-    }
-    
-    if {[string match windows $tcl_platform(platform)]} {
-        source ../System/lib/Extras/prntproc.tcl
     }
     
     proc Print {winId} {

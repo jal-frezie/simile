@@ -80,7 +80,9 @@ BoxHeaderStr),
 		Equation = ''),
 	(get_av_pair(Part, 0, units, Units), !,
 	    analyze_array(Units, Base, Dims);
-	Base = '',
+	(var(TypeBase), !,
+	    Base = '';
+	Base = 1),
 	    Dims = []),
 	(get_av_pair(Part, 0, table_data,
 			      [file=FilePath, data=DataField,
@@ -203,9 +205,10 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    /* If units but no eqn or limits supplied, accept any */
 	    NewUnits = Units,
 	    UnitError = UnitFormError;
-	on_exception(PropError, propagate_units(min(max(Min,Result),Max), any,
+	on_exception(PropError, propagate_units([eqn=Result, min=Min, max=Max,
+						 type=TypeBase], any,
 						[any, any, any, any],
-			[MinBase, EqnBase, MaxBase, TypeBase], ComboType),
+			[EqnBase, MinBase, MaxBase, TypeBase], ComboType),
 		     decode_error(PropError, UnitError)),
 	    (ComboType = real, !, ComboUnits = 1; 
 		ComboType = ComboUnits),
