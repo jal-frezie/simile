@@ -453,10 +453,8 @@ proc compile_c {workingDir} {
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
-    scan [info tclversion] {%d.%d} MAJ MIN
     if {[catch {switch $tcl_platform(platform) {
         unix {
-
             if {[string match Darwin $tcl_platform(os)]} {
                 exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
                 exec g++ -dynamiclib -o $TARGET objtemp.o
@@ -467,34 +465,42 @@ proc compile_c {workingDir} {
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
-            if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
-                set dll ame_dll${MAJ}${MIN}
+	    switch [PrefValue custom(compChoice) compChoice] {
+            GNU {
                 switch $tcl_platform(os) {
                     {Windows NT} {
                         exec cmd /c start /min g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
                         exec cmd /c start /min dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
                     }
                     {Windows 95} {
-                        exec start /m g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-                        exec start /m dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
-                    }
-                }
+                       exec start /m g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
+                       exec start /m dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+                   }
+		}
+            } Default {
+		set batSt [open runmingw.bat w]
+		puts $batSt "set PATH=[file join [file join [file dirname $TOOLDIR] System] bin]"
+		puts $batSt "g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp"
+		puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
+		close $batSt
+		exec runmingw.bat
+		file delete runmingw.bat
                 file delete exptemp.exp
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
-            } else {
+            } Microsoft {
                 set TOOLS32 [file dirname $env(MSVCDIR)/bin]
                 exec $TOOLS32/bin/cl.exe -Ox -c -W1 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
                         -Foobjtemp.o model.cpp
+
                 exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
                         -align:0x1000 /MACHINE:IX86 \
                         -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
                         $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
                         $TOOLS32/lib/oldnames.lib objtemp.o
-
-            }
+	    }}
             # Method using command line calls to Borland C++ 4.0 or later -- not finished
 
             #	set TOOLS32 "c:/program files/borland/cbuilder4"
@@ -666,6 +672,7 @@ proc ControlDraw {prologVersion} {
         set simtmpdir $custom(prefDir)/sim$guess_free
     }
     file mkdir $simtmpdir
+
     
     if {[file exists $custom(prefDir)/version]} {
         set UserStream [NetOpen $custom(prefDir)/version r]
@@ -730,7 +737,7 @@ proc ControlDraw {prologVersion} {
     Pref_Add {{custom(hackBreak) hackBreak OFF \
                     "Pause to edit C++ code?"}}
     if {[string match windows $tcl_platform(platform)]} {
-        Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
+        Pref_Add {{custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
                         "Use which C++ compiler?"}}
         file attributes $custom(prefDir) -hidden true
     }
@@ -769,7 +776,7 @@ proc CheckCompilerLocation {} {
             set compiler cl.exe
             set possDirs {}
             if {[info exists env(MSVCDIR)]} {
-                set possDirs [concat $possDirs [split $env(MSVCDIR) \;]]
+                set possDirs [split $env(MSVCDIR) \;]
             }
             if {[info exists env(MSDEVDIR)]} {
                 set possDirs [concat $possDirs [split $env(MSDEVDIR) \;]]
@@ -794,7 +801,7 @@ proc CheckCompilerLocation {} {
                 }
             }
             if {[llength $possDir]} {
-                set env(MSVCDIR) [lindex $possdir 0]
+                set env(MSVCDIR) $possDir
             } else {
                 ShowMessage "C++ compiler setup problem" warning \
                         "c++ compiler preference set to [PrefValue \
@@ -883,6 +890,7 @@ proc SaveFile {topNode tree tgt} {
     } else {
         return $Lossage
     }
+
 
 
 }
@@ -984,7 +992,8 @@ proc GetParts {top tree} {
                     set Description "Simile helper configuration file"
                     set style attachment
                 }
-                *.spf {
+                *.spf {
+
                     set PartType "application/x-simile"
                     set Description "Simile parameter file"
                     set style attachment
@@ -1317,6 +1326,7 @@ proc SpitPS {winId psfile} {
 proc InsertModel {winId} {
     set insertion [ChooseFile model.sml "Model file to insert" 0]
     if {![string match */ $insertion]} {
+
         Reopen $winId $insertion insert
     }
 }
@@ -1366,7 +1376,7 @@ proc Rerun {winId go} {
         if {[info exists runState($node,lang)]} {
             set runType run_$runState($node,lang)
         } else {
-            set runType run_tcl
+            set runType run_c
         }
 
         MenuSelect $winId file $runType
@@ -1445,6 +1455,7 @@ set pushedbutton select
 proc ModeSelect {modes} {
     global pushedbutton MIpushedbutton
     UpdateToolbars $modes
+
     set pushedbutton $modes
     set MIpushedbutton $modes
     prolog [list tk_mode_select( $modes )]

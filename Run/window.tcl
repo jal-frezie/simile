@@ -1114,14 +1114,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set fm [menu ${winid}top.model -tearoff 0 -postcommand "AbleComp $winid"]
     ${winid}top add cascade -label Model -underline 0 \
             -menu ${winid}top.model
-    $fm add command -label "Build In Tcl" \
-            -command "MenuSelect $c file run_tcl" \
-            -accelerator "Ctrl+T"
-    AddAccelerator $winid model "Build In Tcl" "<Control-t>"
-    $fm add command -label "Build In C++" \
+    $fm add command -label "Run" \
             -command "MenuSelect $c file run_c" \
             -accelerator "Ctrl+B"
-    AddAccelerator $winid model "Build In C++" "<Control-b>"
+    AddAccelerator $winid model "Run" "<Control-b>"
+    $fm add command -label "Debug" \
+            -command "MenuSelect $c file run_tcl" \
+            -accelerator "Ctrl+T"
+    AddAccelerator $winid model "Debug" "<Control-t>"
     $fm add command -label "Abort execution" \
             -command "FinishExec $c"
     if {!$isTopLevel} {

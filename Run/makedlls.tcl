@@ -11,11 +11,11 @@ set compiler_for_windows gnu
 # edition: evaluation, teaching, standard or enterprise
 set edition standard
 # date of final expiry: {hh:mm D M Y} or {} for permanent
-set final_expiry {4 Nov 2004}
+set final_expiry {5 Nov 2004}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
-set needs_license 0
+set needs_license 1
 
 if {[llength $final_expiry]} {
     set expiry_ticks [clock scan $final_expiry]
@@ -67,15 +67,18 @@ if $onUnix {
     # Method using MingW32 gcc: Dlls refuse to load into tcl when
     # it is running under Prolog. However it seems to work OK in WinNT.
     if {[string match gnu $compiler_for_windows]} {
-	eval {exec g++ -c -o obj.o} $defns \
-	    {-I. -I$TCL/include ./ame_cmx.cpp}	
-	exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=g++ obj.o $tclLib
-	
+	set batSt [open runmingw.bat w]
+	puts $batSt "set PATH=[file join [file join [file dirname [pwd]] System] bin]"
+	puts $batSt "g++ -c -o obj.o $defns -I. -I$TCL/include ./ame_cmx.cpp"
+	puts $batSt "dllwrap --dllname=$TARGET --def=stub.def --driver-name=g++ obj.o $tclLib"
 	# Do the install dll as well
-	eval {exec g++ -c -o obj.o} $defns \
-	    {-I. -I$TCL/include ./install.cpp}	
-	exec dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o
+	puts $batSt "g++ -c -o obj.o $defns -I. ./install.cpp"
+	puts $batSt "dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o"
 	
+	close $batSt
+	exec runmingw.bat
+	file delete runmingw.bat
+
 	# Method using command line calls to MSVC 4.0 or later -- works well
     } else {
 	set TOOLS32 [file dir [file dir [lindex [auto_execok cl.exe] 0]]]
@@ -101,5 +104,4 @@ if $onUnix {
         #		--output-lib libame_dll.a
 }
 
-pkg_mkIndex $STUBS *[info sharedlibextension]
 exit

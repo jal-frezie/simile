@@ -854,6 +854,8 @@ int g_r_v_bug;
 void* get_remote_value(void* typeRef, void* topInstRef, int level,
 			    int arcIndx, int* subList) {
   connectRecord* currentData;
+
+
   int* tree;
 
   currentData = &connectData[((Model*)typeRef)->connLines[arcIndx]];
@@ -1873,6 +1875,8 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   /* check it matches what we got before */
   if (strcmp(Tcl_GetVar2(interp, "userinfo", "license_code", 0), 
 	     Tcl_GetStringResult(interp))) {
+//    Tcl_AppendResult(interp, " is license code", (char *)NULL);
+//    return TCL_ERROR;
     crash(interp, "program");
   }
 #endif
@@ -1916,6 +1920,7 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     
     Tcl_CreateObjCommand(interp, "randseed", randseedCmd, 
+
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
     Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
@@ -1979,6 +1984,7 @@ int Ame_dll_Init(Tcl_Interp *interp) {
 
    globInterp = interp;
     Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
+
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     
     sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
