@@ -177,7 +177,7 @@ proc TransferSaveFile {tree tgt way} {
 		set newPath $tree/$oldPath
 		file mkdir [file dirname $newPath]
 		set mimeSquirter [open $newPath w]
-#		fconfigure $mimeSquirter -translation binary
+		fconfigure $mimeSquirter -translation binary
 		mime::getbody $bit -command SquirtMime -blocksize 256
 	    }
 	}
@@ -781,7 +781,7 @@ proc CanvasPaste {c {x {}} {y {}}} {
         return		;# No selection
     }
     $c insert [$c focus] insert $_s
-
+
 
 }
 
