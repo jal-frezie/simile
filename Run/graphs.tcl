@@ -418,7 +418,7 @@ proc FineX { c } {
 # TABLE LOADING
 #####################################################################
 
-proc equationDoTable {parent} {
+proc equationDoTable {parent doQuoting} {
     global equation table_entry
     
     toplevel .table -bd 4
@@ -449,12 +449,18 @@ proc equationDoTable {parent} {
     #
     # OK, Cancel and Help buttons
     frame .table.top.fbuttons
+    button .table.top.fbuttons.load -text Load -width 10 \
+	-command [list AcquireTableData $lidx $doQuoting]
+    button .table.top.fbuttons.edit -text View/Edit -width 10 \
+	-command {EditListAsTable .table}
     button .table.top.fbuttons.ok -text OK -width 10 \
-            -command FinishTableSelection
+	-command FinishTableSelection
     button .table.top.fbuttons.cancel -text Cancel -width 10 \
-            -command "set table_entry(done) 0"
+	-command "set table_entry(done) 0"
     button .table.top.fbuttons.help -text Help -width 10 \
-            -command {ContextSensitiveHelp .table equations/table.htm}
+	-command {ContextSensitiveHelp .table equations/table.htm}
+    pack .table.top.fbuttons.load -side top -padx 4 -pady 4
+    pack .table.top.fbuttons.edit -side top -padx 4 -pady 4
     pack .table.top.fbuttons.ok -side top -padx 4 -pady 4
     pack .table.top.fbuttons.cancel -side top -padx 4 -pady 4
     pack .table.top.fbuttons.help -side top -padx 4 -pady 4
@@ -486,10 +492,7 @@ proc equationDoTable {parent} {
     set opn [image create photo -file "../Images/Toolbar/open.gif" ]
     button $fdata.dfile.new -compound left -image $opn -text Browse \
             -command {GetDataFile "Select new data file"; LoadDataFile}
-    button $fdata.dfile.view -compound left -image $tbl -text View \
-	-command {EditListAsTable .table}
     pack $fdata.dfile.new -side left -padx 4 -pady 4
-    pack $fdata.dfile.view -side left -padx 4 -pady 4
     pack $fdata.dfile -side top -anchor w -expand true -fill x
     pack .table.bottom -side top -fill x
     
@@ -521,32 +524,41 @@ proc equationDoTable {parent} {
     grab $t
     tkwait variable table_entry(done)
     grab release $t
+    destroy $t
+    return $table_entry(done)
+}
+
+proc AcquireTableData {lidx doQuoting} {
+    global table_entry
+
     set idcs {}
     foreach itm [$lidx items] {
         lappend idcs [$lidx itemcget $itm -text]
     }
     set table_entry(indices) $idcs
-    destroy $t
-    return $table_entry(done)
+    set tableSpec [concat [list $table_entry(fileName) \
+			       $table_entry(dataField)] $table_entry(indices)]
+#puts "Loading with $tableSpec"
+    set table_entry(values) [LoadTableData $tableSpec $doQuoting]
 }
 
 proc EditListAsTable {parent} {
-    global helperTable equation table_viewer
+    global helperTable table_entry table_viewer
 
     set t .table_edit
     toplevel $t -bd 4
     wm transient $t $parent
     wm protocol $t WM_DELETE_WINDOW {set table_viewer(done) 0}
     
-    $helperTable(TableViewer)::initialize $t
+    set viewerId $helperTable(TableViewer)
+    set ::${viewerId}::editMode($t) 1
+    ${viewerId}::initialize $t
 
-    set $helperTable(TableViewer)::dataStore($t,0,0.0) \
-	$equation(table_values)
-    set $helperTable(TableViewer)::displayList($t) eqn_table
-    set $helperTable(TableViewer)::orientList($t) \
-	{none cols rows cols}
-    set $helperTable(TableViewer)::displayFormat($t,0) {General 4 0}
-    $helperTable(TableViewer)::Reconbobulate $t
+    set ${viewerId}::dataStore($t,0,0.0) $table_entry(values)
+    set ${viewerId}::displayList($t) eqn_table
+    set ${viewerId}::orientList($t) {none cols rows cols}
+    set ${viewerId}::displayFormat($t,0) {General 4 0}
+    ${viewerId}::Reconbobulate $t
 
     focus $t
     grab $t
@@ -944,20 +956,20 @@ proc Relativize {current remote} {
 
 
 proc GetFromTable {parent compName} {
-    global paramState paramData widgetNames equation table_entry
+    global paramState paramData widgetNames table_entry
     if {[info exists paramState($compName)]} {
 	set equation(table_data) $paramState($compName)
     } else {
 	set equation(table_data) {}
     }
-    set equation(table_values) [$widgetNames($compName) get 1.0 1.end]
+    set table_entry(values) [$widgetNames($compName) get 1.0 1.end]
     
-    if {[equationDoTable $parent]} {
+    if {[equationDoTable $parent 0]} {
         
         set paramState($compName) \
                 [concat [list $table_entry(fileName) $table_entry(dataField)] \
                 $table_entry(indices)]
-        set paramData($compName) [LoadTableData $paramState($compName) 0]
+        set paramData($compName) $table_entry(values)
         $widgetNames($compName) delete 1.0 end
         $widgetNames($compName) insert 1.0 $paramData($compName)
     }

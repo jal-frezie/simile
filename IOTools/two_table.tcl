@@ -236,10 +236,13 @@ namespace eval $keyValue {
     
     proc clear {winId} {
         variable dataStore
+        variable editMode
         foreach entry [array names dataStore $winId,*,*] {
             unset dataStore($entry)
         }
-        display $winId [GetModelTime] 0 0
+	if {![info exists editMode($winId)]} {
+	    display $winId [GetModelTime] 0 0
+	}
     }
 
     proc reset {winId} {

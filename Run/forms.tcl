@@ -462,10 +462,11 @@ proc RollAll {s l1 l2 l3 top bot} {
 proc GetTable {parent box} {
     global equation table_entry table_viewer
 
-    if {[equationDoTable $parent]} {
+    set table_entry(values) $equation(table_values)
+    if {[equationDoTable $parent 1]} {
         set equation(table_data) [concat [list $table_entry(fileName) \
                 $table_entry(dataField)] $table_entry(indices)]
-        set equation(table_values) [LoadTableData $equation(table_data) 1]
+        set equation(table_values) $table_entry(values)
 #puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
             $box insert insert table\(\[
@@ -1048,14 +1049,14 @@ proc GetEnumMems {fr} {
     set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
     upvar \#0 disaggregate(enumtype,$togo) memList
     set equation(table_data) {} ;# dont try to keep file origins
-    set equation(table_values) {}
+    set table_entry(values) {}
     for {set pos 0} {$pos < [llength $memList]} {incr pos} {
 	lappend equation(table_values) [expr $pos+1] \
 	    [list [lindex $memList $pos]]
     }
-    if {[equationDoTable .disaggregation]} {
+    if {[equationDoTable .disaggregation 0]} {
 	set fileState [list $table_entry(fileName) $table_entry(dataField)]
-	set fileData [LoadTableData $fileState 0]
+	set fileData $table_entry(values)
 	foreach {pos mem} $fileData {
 	    if {[lsearch $memList $mem]==-1} {
 		lappend memList $mem
