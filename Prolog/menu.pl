@@ -92,6 +92,8 @@ stick_model_in(Parent, Name) :-
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
+        start_progress_dialogue,
+        reassure_user("Decoding MIME-format saved file"),
 	output:load_file(TargetDir, Name, CheckedStr),
 	name(Checked, CheckedStr),
 	(member(Checked, [no, yes]), !, 
@@ -122,10 +124,10 @@ stick_model_in(Parent, Name) :-
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
 	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no),
-		     (finish_progress_dialogue,
-		     make_nice_error_message(ProLoss, ProLite),
+		     (make_nice_error_message(ProLoss, ProLite),
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
 	    NeedsRedraw = 1),
+        finish_progress_dialogue,
 	add_parameter(Parent, 0, file_name, Name),
 	check_autosave(Parent, Name, NeedsRedraw),
 	(NeedsRedraw = 0, !;
@@ -382,7 +384,9 @@ menu_handle(Win, file, export_prolog) :-
 	get_default_export_name(Model, ".pl", DefName),
 	get_program_file(DefName, FileName),
 	output:date_is(Date),
-	save_if_poss(FileName, Model, Date).
+        start_progress_dialogue,
+	save_if_poss(FileName, Model, Date),
+        finish_progress_dialogue.
 
 menu_handle(Win, edit, properties) :-
 	Win shows_model Model,
@@ -833,6 +837,7 @@ do_save(Model, New_name) :-
 	abs_path_name(Model, root, Point),
 	append_atoms([Dir, '/', Point], SaveDir),
 	
+        start_progress_dialogue,
 	/* Remove any old executables (and make sure dirs exist) */
 	save_dlls(Point, Dir, Model, Model, _),
 
@@ -848,6 +853,7 @@ do_save(Model, New_name) :-
 	append_atoms(SaveDir, '/model.cnv', CanvasName),
 	(tk_get_pref(saveExtras, 'Canvas file'),
 	is_toplevel(Model),
+	 reassure_user("Saving canvas description"),
 	    Win shows_model Model,
 	    all(state, get_display_depth, [unify(Win),
 		 build([ghost_link, influence, variable, flow, compartment,
@@ -857,6 +863,7 @@ do_save(Model, New_name) :-
 	output:my_delete_file(CanvasName)),
 
 	/* Now build the multi-part MIME format save file */
+        reassure_user("Creating MIME-format saved file"),
 	output:save_file(SaveDir, Name, Oops),
         (Oops = [], !;
             do_dialogue("Problem building output file", error, Oops, ok, _),
@@ -867,7 +874,9 @@ do_save(Model, New_name) :-
 	update_captions(Model),
 	clear_autosave(Model, Name),
 	update_ability(save, file, 'Save', 0),
-	mark_model_danger(Model, safe), !.
+	mark_model_danger(Model, safe),
+        finish_progress_dialogue, !;
+        finish_progress_dialogue, fail.
 
 transfer_images(Model, TopDir, Way) :-
 	setof(ImageSpec,

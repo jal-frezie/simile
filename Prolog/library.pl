@@ -26,7 +26,6 @@ ame_save( File, Model, Date ) :-
 	output:windowize(File, WFile),
 	on_exception(_, open(WFile, write, Stream), 
 	fail), !,
-	dialogue:start_progress_dialogue,
 	(dialogue:reassure_user("Writing root information"),
 	user:version_is(VStr),
 	name(SimV, VStr),
@@ -47,10 +46,8 @@ ame_save( File, Model, Date ) :-
 	nl(Stream),
 	dialogue:reassure_user("Writing arc information"),
 	save_arcs( ArcsUsed, Stream ),
-	close( Stream ),
-	dialogue:finish_progress_dialogue, !;
-	dialogue:finish_progress_dialogue,
-	    fail).
+	close( Stream ), !;
+	fail).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
@@ -211,7 +208,6 @@ choose_breakpoint(Break) :-
 % if not toplevel, to avoid clashes. Date from file is returned.
 
 ame_merge( Parent, File, Date, HasCode ) :-
-	dialogue:start_progress_dialogue,
 	open( File, read, Stream),
 	dialogue:reassure_user("Reading information from file"),
 	read( Stream, Header ),
@@ -238,7 +234,6 @@ ame_merge( Parent, File, Date, HasCode ) :-
 	count_functions(Parent, Fns),
 	Fns > StopAt, !,
 	    m_update:superfast_delete(Parent),
-	    dialogue:finish_progress_dialogue,
 	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the evaluation edition.", [Fns, StopAt], Annoy),
 	    do_dialogue("Error loading model", error, Annoy, ok, _),
 	    !, fail;
@@ -253,9 +248,7 @@ ame_merge( Parent, File, Date, HasCode ) :-
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
 	sicstus_format_to_chars("This file was created with a later version of Simile than the one you are currently running. To avoid potential problems, please update your copy to version ~f or later.", [SimileV], FutureShock),
-	    do_dialogue("Future shock!", warning, FutureShock, ok, _))),
-
-	dialogue:finish_progress_dialogue.
+	    do_dialogue("Future shock!", warning, FutureShock, ok, _))).
 
 count_functions(Model, N) :-
 	setof(Node, (contains(Model, Node), find_type(Node, function)), Nodes),

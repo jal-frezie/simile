@@ -794,7 +794,7 @@ drag_to(Xpt, Ypt, Target) :-
 		ghost_type(Start, _, _),
 			\+ Target = Start,
 			\+ find_ghosts(Target, _),
-			/* find_type(Target, Type), Allow target's type to differ */ 
+			/* find_type(Target, Type), Allow target''s type to differ */ 
 			highlight(Target, 2))),
 	get_border_offsets(Loff,Toff,Roff,Boff),
 	L is Xpt-Loff,
@@ -1277,11 +1277,13 @@ unclick_obj :-
 	get_current_node(Parent),
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/copytemp.sml', CopyFile),
+        start_progress_dialogue,
 	menu:save_isolated(CopyFile, Start, none),
 	attempt_addition(submodel, Parent, Box, Component_name, no),
 	library:ame_merge(Component_name, CopyFile, _, 'fuck it'),
 	set_shape(Component_name, internal_extent, Inside),
 	redisplay(Component_name),
+        finish_progress_dialogue,
 	update_runnable(Parent).
 
 /* Unclick in ghost mode. If unclicking in space, a new ghost node is created. If

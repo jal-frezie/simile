@@ -172,7 +172,17 @@ needs_quoting(Foo, Noo) :-
 	append(Bar, ".", Barb),
 	catch(read_from_codes(Barb, Foob), _Err, true),
 	\+ Foob == Foo,
-	append([39 | Bar], [39], Noo).
+        double_single_quotes(Bar, Barq),
+	append([39 | Barq], [39], Noo).
+
+double_single_quotes(NoneDone, AllDone) :-
+        append(NoQuotes, [39 | StillUndone], NoneDone), !,
+            double_single_quotes(StillUndone, NowDone),
+            append(NoQuotes, [39, 39 | NowDone], AllDone);
+        append(NoQuotes, [10 | StillUndone], NoneDone), !,
+            double_single_quotes(StillUndone, NowDone),
+            append(NoQuotes, [92, 110 | NowDone], AllDone);
+        AllDone = NoneDone.
 
 runtime_entry(start) :-
 	main.
