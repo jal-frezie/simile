@@ -932,6 +932,7 @@ proc InjectGraphics {c canvasFile} {
     $c xview moveto 0
     $c yview moveto 0
     SetSpace $c $w $h
+    return DoneInjectGraphics
 }
 
 proc GetCaptionItem {w name} {

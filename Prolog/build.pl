@@ -35,8 +35,8 @@ roots( [Node|Nodes], Root, Bindings, NewBindings ) :-
 	roots( Nodes, Root, Bindings, NewBindings ).
 roots( [Node|Nodes], Root, Bindings, NewBindings ) :-
 	\+ get_match( Node, Bindings, _AnyNode), % if we haven't made a node,
-	RealNode is_new_part_of Root,      % make it so, in the right place
-	roots( Nodes, Root, [Node-RealNode|Bindings], NewBindings ).
+	gen_equiv_nodes(Node, Root, Trn),  % make it so, in the right place
+	roots( Nodes, Root, [Trn | Bindings], NewBindings ).
 
 properties([],_,B,B).
 
@@ -73,18 +73,25 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 	(member(OldClass, [source, sink]), !, Class = cloud;
 	    Class = OldClass),                  % Remove obsolete types
 	RealNode has_new_class Class,		% add the info
-	( setof( Child-RealChild, 
+	all(build, gen_equiv_nodes,
+	    [build(Children), unify(RealNode), build(MidBindings)]),
+/*	( setof( Child-RealChild, 
 			( member( Child, Children ),
 		 	  RealChild is_new_part_of RealNode ),
 			MidBindings );
 	  MidBindings = [] ),
-	foreach( CAttribute=CValue, ClassRefinements,
+*/	foreach( CAttribute=CValue, ClassRefinements,
 		RealNode has_new_class_refinement CAttribute of CValue ),
 /* no model refinements restored */
 	foreach( GAttribute=GValue, GraphicalInfo,    
 		RealNode has_new_graphical_attribute GAttribute of GValue ),
 	append( MidBindings, Bindings, NewBindings ).
 	
+gen_equiv_nodes(Node, Parent, Node-NewN) :-
+	Node is_part_of _, !,
+	    NewN is_new_part_of Parent;
+	NewN = Node,
+	    NewN is_also_part_of Parent.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arc inserts a new arc and any info known about it. 
@@ -97,7 +104,10 @@ arc( Arc, Start, End, Type, AttributeValuePairs,
 	    member( Start-RealStart, Bindings ),
 	    member( End-RealEnd, Bindings ),
 	    NewBindings = [Arc-RealArc|Bindings],
-	    RealArc is_new_connector from RealStart to RealEnd),
+	    (is_connector(Arc, _), !,
+		RealArc is_new_connector from RealStart to RealEnd;
+	    RealArc = Arc,
+	        RealArc is_also_connector from RealStart to RealEnd)),
 	foreach( Attribute=Value, AttributeValuePairs,
 			RealArc has_new_attribute Attribute of Value ),
 	foreach( GAttribute=GValue, GraphicalInfo,

@@ -276,9 +276,14 @@ tk_display_area(Wid) :-
 inject_graphics(Wid, File) :-
 	safe_tcl_eval(['InjectGraphics', Wid, br(write(File))], _).
 
-translate_canvas_pl_names(Wid, TList) :-
-	bracketize(TList, BList),
-	safe_tcl_eval(['TransCnvNames', Wid, BList], _).
+translate_canvas_pl_names(_Wid, []).
+
+translate_canvas_pl_names(Wid, [Before-After | TList]) :-
+	select(After-Later, TList, ToDo), !,
+	    translate_canvas_pl_names(Wid, [After-Later, Before-After | ToDo]);
+	(Before = After, !;
+	        safe_tcl_eval(['TransCnvNames', Wid, Before, After], _)),
+	    translate_canvas_pl_names(Wid, TList).
 		       
 date_is(Date) :-
 	/* gmt is specified because some systems have bug-inducing 8-bit

@@ -464,17 +464,10 @@ proc SetSpace {c w h} {
             [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
 }
 
-proc TransCnvNames {c swaps} {
-    foreach pair $swaps {
-	set oldie [lindex [split $pair -] 0]
-	$c addtag $pair withtag $oldie
-	$c dtag all $oldie
-    }
-    foreach pair $swaps {
-	set newbie [lindex [split $pair -] 1]
-	$c addtag $newbie withtag $pair
-	$c dtag all $pair
-    }
+proc TransCnvNames {c oldie newbie} {
+    $c addtag $newbie withtag $oldie
+    $c dtag all $oldie
+    return DonePair
 }
 
 proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
