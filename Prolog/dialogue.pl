@@ -270,7 +270,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		 
 		NewUnits = ComboUnits,
 		UnitError = [];
-	    ((InterInputs = [], member(EqnBase, [const_int, int, real]);
+	    ((InterInputs = [], member(EqnBase, [const_int, const_ratio,
+						 int, 1]);
 	      use_units_in(Function, 'No')),
 		CheckLevel = 1;
 	    CheckLevel = 2),
