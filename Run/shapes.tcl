@@ -1112,7 +1112,7 @@ proc ResetLooks {type} {
     set looks($type,lines) 1
     set looks($type,xoffset) 0
     set looks($type,yoffset) 0
-    set looks($type,textanchor) c
+    set looks($type,textanchor) n
 }
 
 proc CustomizeLooks {} {
@@ -1123,11 +1123,13 @@ proc CustomizeLooks {} {
     #    prolog tk_set_new_size(function,15,0,0)
     #    prolog tk_set_new_size(cloud,25,0,0)
     #    prolog tk_set_new_size(channel,30,0,0)
-    set looks(flow,xoffset) 20
-    set looks(flow,yoffset) 20
-    set looks(compartment,yoffset) 24
-    set looks(channel,yoffset) 24
-    set looks(variable,yoffset) 16
+    set looks(flow,xoffset) 12
+    set looks(flow,yoffset) 12
+    set looks(flow,textanchor) nw
+    set looks(compartment,yoffset) 16
+    set looks(channel,yoffset) 16
+    set looks(variable,yoffset) 8
+    set looks(submodel,textanchor) sw
 }
 
 proc Desystematize {colorSpec} {
