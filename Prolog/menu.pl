@@ -1059,7 +1059,9 @@ do_save(Model, New_name) :-
 	/* Save image backgrounds */
 	transfer_images(Model, SaveDir, out),
 
-	/* Save canvas file */
+	/* Save canvas file -- remove selection cos graphics but not state
+	are saved */
+	select_all_in(Model, off),
 	check_save_canvas(SaveDir, Model, Date),
 
 	/* here is where we get the user to enter the name to save it

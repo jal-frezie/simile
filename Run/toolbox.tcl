@@ -465,7 +465,7 @@ proc GetParts {top tree} {
                 }
                 *.spf {
                     set PartType "application/x-simile"
-                    set Description "Simile parameter file"
+                    set Description "Simile parameter file"
                     set style attachment
                 }
                 model.* {
@@ -658,8 +658,15 @@ proc ClickObj { x y winId action} {
     global pushedbutton
     
     set clicktime [clock clicks -milliseconds]
-    set canx [$winId canvasx $x]
-    set cany [$winId canvasy $y]
+    if {[string equal inf $x]} {
+	if {[scan [$winId cget -scrollregion] "%g %g" canx cany]<2} {
+	    set canx 0
+	    set cany 0
+	}
+    } else {
+	set canx [$winId canvasx $x]
+	set cany [$winId canvasy $y]
+    }
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
     
@@ -1581,7 +1588,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
             -variable pushedbutton -value condition
     $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
-            -variable pushedbutton -value alarm
+            -variable pushedbutton -value alarm
     $fm add command -label "Properties..." \
             -command "MenuSelect $c edit properties"
     $fm add cascade -label Flip -menu $fm.sub2

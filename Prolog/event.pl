@@ -587,7 +587,7 @@ need of a rebuild as even if it doesn't change it will need to get the
 input values using the new units. */
 
 spread_dims(Node) :-
-	implicit_function(Node, Obj),
+	(implicit_function(Node, Obj),
 	find_all_comps(Sm, Obj),
 	add_parameter(Sm, 1, c_new, 0),
 	get_av_pair(Obj, 0, value, Equation),
@@ -595,12 +595,12 @@ spread_dims(Node) :-
 	get_input_info(Obj, IList),
 	
 	(length(Inds, 32),
-	    test_eqn(Equation, Node, Inds, IList, Type, FoundArray, _Ps, []),
+	    test_eqn(Equation, Node, Inds, IList, Type, FoundArray, _, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(Node, FoundArray, _, Array, _),
 		get_actual_sizes(Node, GivenArray, _, Array, _), !,
 		UseArray = GivenArray;
-	    UseArray = FoundArray,
+		UseArray = FoundArray,
 		UnitsChanged = yes),
 	    (Type = real, !, Base = 1; Base = Type),
 	    (check_unit(Base, GivenBase, 2, []), !,
@@ -609,9 +609,10 @@ spread_dims(Node) :-
 		UnitsChanged = yes),
 	    update_links_and_vars(IList);
 	true),
-	(UnitsChanged = no, !;
+	(UnitsChanged = no;
 	build_array(UseBase, UseArray, NewUnits),
-	    add_parameter(Obj, 0, units, NewUnits)),
+	    add_parameter(Obj, 0, units, NewUnits)), !;
+	find_type(Node, submodel)),
 	spread_colour(Node, UnitsChanged).
 
 /* this will update colours of all nodes connected with the given node */
@@ -1464,7 +1465,10 @@ unclick_obj :-
 	    H > Standard//2,
 	    attempt_new_component(Parent, [L, T, R, B], [0, 0, W, H]);
 	New_obj is_primitive,
-	    \+ New_obj is_class_of_sort line),
+	    \+ New_obj is_class_of_sort line,
+	    (setof(NewLook, presence_affects(Target, NewLook), NewLooks), !;
+		NewLooks = []),
+	    all(event, spread_colour, [build(NewLooks), unify(yes)])),
 	update_runnable(Parent).
 
 unclick_obj :- 

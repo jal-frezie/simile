@@ -89,11 +89,11 @@ namespace eval runcontrol33857 {
         $cnvs create oval 0 0 12 12 -outline grey
         pack $rcf.bf.flag -side right -anchor e
         after idle set runState(fractDone) 0
-        pack [ProgressBar $rcf.bf.bar -variable runState(fractDone) -width 400 \
+        pack [ProgressBar $rcf.bf.bar -variable runState(fractDone) \
                 -maximum 1] -fill x -expand true -side top -padx 4 -pady 4
-        pack $rcf.bf -side left -fill x
+        pack $rcf.bf -side left -fill x -expand true
         
-        pack $rcf -fill x
+        pack $rcf -fill x 
         pack $t.rcf -fill x -padx 1 -pady 1
         
         

@@ -998,7 +998,7 @@ link_ends(New_obj, Start_thing, Terminator, Top_arc) :-
 	remove_border_nodes(New_obj, Terminator, Start_thing);
 	add_new_line_between(New_obj, Start_thing, Terminator, Top_arc),
 	get_action_point(Top_arc, Terminator, Last_new_arc),
-	event:spread_colour(Last_new_arc, yes).
+        event:spread_colour(Last_new_arc, yes).
 
 load_references(Submodel, ReferenceCapts) :-
 	pair_with_captions(Submodel, References, ReferenceCapts),
@@ -1103,7 +1103,9 @@ presence_affects(Item, Affected) :-
 	    implicit_function(Affected, Fn);
 	find_type(Item, relation),
 	    Item is_connector from _ to Affected,
-	    terminates(Item, Affected).
+	    terminates(Item, Affected);
+	find_type(Item, condition),
+	    Affected has_part Item.
 
 delete_obsolete_modes([], _, []).
 
