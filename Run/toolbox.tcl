@@ -1300,7 +1300,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
     
-    foreach mode {select move delete copy ghost separator3 snap} {
+    foreach mode {select move delete copysm ghost separator3 snap} {
         if {[string match separator* $mode]} {
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
