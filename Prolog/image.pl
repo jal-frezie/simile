@@ -31,7 +31,7 @@ sicstus_module(image,
 	   update_text_position/3, make_header/2, set_completion/2,
 	   update_link_route/2, shape_route/4, route_link/4,
 	   route_interior_part_link/5, route_part_link/5,
-	   route_parent_child_link/5, get_middle_segment/3,
+	   route_parent_child_link/5, get_middle_segment/3, check_translation/1,
 	   translate_between/4, translate/3, rel_translate/3,
 	   untranslate/3, add_to_translation/3, subtract_from_translation/3]).
 

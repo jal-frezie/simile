@@ -11,8 +11,8 @@ sicstus_module(m_update,
 	       [get_av_pair/4, add_parameter/4, list_index_meanings/2,
 		list_local_index_meanings/2, get_input_info/2,
 		get_link_source_data/9, find_node_with_data/3,
-		valid_input/2, insert_variable/5,
-		check_unit/4, need_same_dims/2, check_flow_ends/3,
+		valid_input/2, check_unit/4,
+		need_same_dims/2, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
@@ -862,18 +862,6 @@ is selected which calls for things to be displayed which previously were not. It
 takes X and Y coords and sticks the new doodad as close to them as there is room,
 failing with a message if there is no space in the submodel. */
 
-insert_variable(Submodel, BestX, BestY, Type, Node) :-
-	image:check_translation(Submodel),
-	Submodel has_graphical_attribute internal_extent of [L, T, R, B],
-	MaxDist is max(max(BestX - L, R - BestX), max(BestY - T, B - BestY)),
-	count_to(0, MaxDist, 10, Distance),
-	count_to(0, Distance, 10, Range),
-	((TargetX is BestX-Distance; TargetX is BestX+Distance),
-	(TargetY is BestY-Range; TargetY is BestY+Range);
-	(TargetY is BestY-Distance; TargetY is BestY+Distance),
-	(TargetX is BestX-Range; TargetX is BestX+Range)),
-	event:add_at_point(TargetX, TargetY, Type, Submodel, Node), !.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                                                                         %%%
 %%%   SAVING AND RESTORING THE INTERFACE BETWEEN A SUBMODEL AND ITS PARENT  %%%
@@ -1369,7 +1357,7 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	    add_parameter(NewEnd, 0, max_val, NewMaxVal)),
 	TestBit has_graphical_attribute course of Course,
 	append([EndPair | _], [StartPair], Course),
-	insert_variable(Model, X, Y, NodeType, NewEnd),
+	event:insert_variable(Model, X, Y, NodeType, NewEnd),
 
 	/* Next bit is continually retried to delete all spare nodes */
 	member(MoveBit, Others),

@@ -8,7 +8,8 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
-		  click_obj/4, click_text/4, click/3, do_colours/2,
+		       click_obj/4, click_text/4, click/3, do_colours/2,
+		       insert_variable/5,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 	adjust_display_area/2, prioritize_window/1, run_settings_tweaked/1]).
@@ -265,7 +266,7 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 
 check_drawing_at_depth(Wid, New_obj, Depth) :-
 	(use_style_for(New_obj, NewStyle),
-	    draws_at(Wid, NewStyle, Depth);
+	    draws_at(Wid, NewStyle, Depth), !;
 	    do_dialogue("Failed to add component", warning,
 			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).
 	    
@@ -342,8 +343,6 @@ click_on([Xpt, Ypt], Poss_start, _CD) :-
 	    /* use insert_variable to make sure it goes in */
 	    insert_variable(Parent, Xpt, Ypt, New_obj, Poss_start)).
 	    
-	    
-
 /* Move: drags object to new location; will decide later what it does with links and bowties. */
 
 click_on([Xpt, Ypt], Moving_obj, CD) :-
@@ -426,8 +425,26 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 	use_style_for(New_obj, NewObjStyle),
 	get_box_size(NewObjStyle, Cur_size),
 	make_bounding_box(New_obj, Xpt, Ypt, Cur_size, Box),
-	attempt_addition(New_obj, Parent, Box, Comp_name, no),
+	attempt_addition(New_obj, Parent, Box, Comp_name, no, yes),
 	redisplay(Comp_name).
+
+/* as above, but if there is no room it tries to add it nearby rather than failing and complaining */
+
+insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
+	check_translation(Submodel),
+	use_style_for(New_obj, NewObjStyle),
+	get_box_size(NewObjStyle, Cur_size),
+	get_shape(Submodel, internal_extent, [L, T, R, B]),
+	MaxDist is max(max(BestX - L, R - BestX), max(BestY - T, B - BestY)),
+	count_to(0, MaxDist, 10, Distance),
+	count_to(0, Distance, 10, Range),
+	((TargetX is BestX-Distance; TargetX is BestX+Distance),
+	(TargetY is BestY-Range; TargetY is BestY+Range);
+	(TargetY is BestY-Distance; TargetY is BestY+Distance),
+	(TargetX is BestX-Range; TargetX is BestX+Range)),
+	make_bounding_box(New_obj, TargetX, TargetY, Cur_size, Box),
+	attempt_addition(New_obj, Submodel, Box, Comp_name, no, no),
+	redisplay(Comp_name), !.	    
 
 /* do_colours/1: When an object is selected this should set it and its
 neighbours to the appropriate colours, i.e.,
@@ -1639,7 +1656,7 @@ unclick_obj :-
 	ghost_type(Start, GhostType, Base),
 	normalize(Start),
 	((get_highlit_obj(2, Component_name);
-	attempt_addition(GhostType, Parent, Box, Component_name, no), !,
+	attempt_addition(GhostType, Parent, Box, Component_name, no, yes), !,
 	        redisplay(Component_name)),
 	    get_nearest_equivalent_link(ghost_link, Base,
 					Component_name, OutLink),
@@ -1837,7 +1854,7 @@ arg is var, or move the given node there if it is not. Fails if it
 interferes with another component -- the test previously used picks,
 but now uses get_component_from_gui because it is quicker. */
 
-attempt_addition(Type, Parent, Box, Node_name, CanBag) :-
+attempt_addition(Type, Parent, Box, Node_name, CanBag, Verbal) :-
 	/* check it is inside its parent */
 	get_shape(Parent, internal_extent, Parent_size),
 	fits_inside(Box, Parent_size),
@@ -1861,11 +1878,12 @@ attempt_addition(Type, Parent, Box, Node_name, CanBag) :-
 	make_links_follow(Node_name);
 	sicstus_format_to_chars("Cannot add a ~a here due to overlaps.",
 				[Type], Wibble),
+	Verbal = yes,
 	do_dialogue("Failed to add component", warning, Wibble, ok, _),
 	fail.
 
 attempt_new_component(Parent, Box, Extent) :-
-	attempt_addition(submodel, Parent, Box, Node_name, yes),
+	attempt_addition(submodel, Parent, Box, Node_name, yes, yes),
 	
 /* List components inside the box */
 	get_inclusions(Parent, Box, Contents),
