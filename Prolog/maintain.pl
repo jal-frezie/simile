@@ -184,7 +184,7 @@ redisplay_border(Comp) :-
 	true.
 
 display(Window_id, Comp, Depth, Trans, Recurse) :-
-	Comp is_of_sort box,
+	(Comp is_of_sort box,
 	display_in(Window_id, Comp, Depth, Trans),
 	(Recurse = 1,
 	find_type(Comp, submodel),
@@ -199,7 +199,10 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	    update_tk);
 	true);
 	Comp is_of_sort line,
-	display_link_in(Window_id, Comp, Depth, Trans).
+	    display_link_in(Window_id, Comp, Depth, Trans)),
+	(get_highlit_obj(N, Comp), !,
+	    highlight(Comp, N);
+	true).
 
 /* highlight not only redraws the component in any of a number of styles, it also
 records its id in the GUI state database so it can be manipulated independently of
