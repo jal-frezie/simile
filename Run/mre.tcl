@@ -86,7 +86,8 @@ proc RunEnv::Create { ModelWin } {
                 {command "&Load configuration..." {} "Load a configuration of displays" \
                             {} -command {::RunEnv::LoadView} }
                 {command "&Save configuration..." {} "Save a configuration of displays" \
-                            {} -command {::RunEnv::SaveView} }
+                            {} -command {::RunEnv::SaveView} }
+
                 {separator}
                 {command "&Print..." {} "Print display"  \
                             {} -command { ::RunEnv::PrintCurrentContainer } }
@@ -329,7 +330,7 @@ proc ::RunEnv::PrintCurrentContainer {} {
             }
         } else {
             ShowMessage Warning warning \
-                    "[$CurrentHelperId::identify] does not support printing" ok
+                    "[${CurrentHelperId}::identify] does not support printing." ok
         }
         
     }
@@ -1181,7 +1182,8 @@ proc NewMreHelperWindow {helperId helperTitle} {
     
     return $winId
 }
-
+
+
 proc RunEnv::MainNotebookEmptyPage {} {
     variable dp0
     foreach page [$dp0.notebook pages] {
