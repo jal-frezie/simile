@@ -166,8 +166,7 @@ proc click {winId node caption} {
 		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
-			  -command [list SetArrayIfUsed 0 0 $node {} \
-					$checkStates($node)] \
+			  -command [namespace code [list SetArrayIfUsed 0 0 $node {} $checkStates($node)]] \
 			  -offvalue 0 -onvalue 1 -relief ridge]
 		set checkStates($node) $defVal
 		} ENUM(*) {
@@ -183,7 +182,7 @@ proc click {winId node caption} {
                     -sliderlength 10 -from $min -to $max \
                     -tickinterval $gap -resolution $spacing \
                     -variable sliderVals($node) \
-		    -command [list SetArrayIfUsed 0 0 $node {}]
+		    -command [namespace code [list SetArrayIfUsed 0 0 $node {}]]
 		    if {[llength $defVal]} {
 			$f.scale set $defVal
 		    }
@@ -221,8 +220,7 @@ proc click {winId node caption} {
 		    }
 		    pack [checkbutton $row.elt$index -borderwidth 1 \
 			      -variable checkStates($node,$index) \
-			      -command [list SetArrayIfUsed 0 0 $node $index \
-					    $checkStates($node,$index)] \
+			      -command [namespace code [list SetArrayIfUsed 0 0 $node $index $checkStates($node,$index)]] \
 			      -padx 0 -offvalue 0 -onvalue 1] -side left
 		    set checkStates($node,$index) $defVal
 		    BindPopup $row.elt$index "For $slTitle"
@@ -258,7 +256,7 @@ proc click {winId node caption} {
                         -sliderlength 10 -from $min -to $max \
                         -resolution $spacing \
                         -variable sliderVals($node,$index) \
-			-command [list SetArrayIfUsed 0 0 $node $index]
+			-command [namespace code [list SetArrayIfUsed 0 0 $node $index]]
 		    if {[llength $defVal]} {
 			$newScale set $defVal
 		    }

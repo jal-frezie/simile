@@ -176,7 +176,6 @@ namespace eval ::$keyValue {
         set runCount($winId) 1
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
-        display $winId [GetModelTime] 0 0
     }
     
     proc GetCanvas {winId} {
@@ -199,7 +198,6 @@ namespace eval ::$keyValue {
                 lappend ynodes($w) $node
                 
                 UpdateState $w
-                display $w [GetModelTime] 0 0
                 display $w [GetModelTime] 0 0
             }
         } else {
@@ -415,7 +413,7 @@ namespace eval ::$keyValue {
         ### Make the graph area
         $w.canvas create rectangle $x0 $y0 $x1 $y1 \
                 -fill $plot($w,grapharea_colour) \
-                -outline {} -tags {scalable grapharea}
+                -outline {} -tags {scalable /background/}
         
         ### Draw the X axis
         $w.canvas create line $x0 $y0 $x1 $y0 \
@@ -502,17 +500,31 @@ namespace eval ::$keyValue {
     proc TracePopup {winId node id X Y x y} {
         global ::graphtools::plot
         
-        set caption [file tail [GetCaptionPathFromId $node]]
-        set lastval [GetModelValue $node]
-        if {[llength [lindex $lastval 0]]>1} {
-            set lastval [lindex $lastval 0]
-            set lastval [lindex $lastval [expr {2*$id-1}]]
-            set caption "${caption}\[$id\]"
-        }
+        set caption $plot(caption,$node)
+	if {[llength $id]} {
+	    append caption \[[join $id ,]\]
+	}
+        if {[catch {lindex [GetModelValue $node] 0} lastval]} {
+	    set lastval unavaliable
+	} else {
+	    while {[llength $lastval]>1} {
+		array set valArray $lastval
+		set lastval $valArray([lindex $id 0])
+		set id [lrange $id 1 end]
+	    }
+	}
         #::graphtools::get_datax {w Xc Xscale}
         #plot($w,Tscale)
-        set nearestval [::graphtools::get_datay $winId $y $plot($winId,Yscale)]
-        set nearesttime [::graphtools::get_datax $winId $x $plot($winId,Tscale)]
+
+# Make sure values are nice -- retreive graph segment and use its coords
+	set canvas [GetCanvas $winId]
+	set segment [$canvas find closest \
+			 [$canvas canvasx $x] [$canvas canvasy $y] 1]
+	set origin [$canvas coords $segment]
+        set nearestval [::graphtools::get_datay $winId [lindex $origin 1] \
+			    $plot($winId,Yscale)]
+        set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
+			     $plot($winId,Tscale)]
         if {![winfo exists .popup]} {
             toplevel .popup -width 1 -height 1 -bd 2 -relief raised
             wm overrideredirect .popup 1
@@ -703,15 +715,18 @@ namespace eval ::$keyValue {
         set plot($w,Tscale) [expr {$Trange/$plot($w,xlength)}]
         set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
         
-        foreach Ynew $YYnew($w) {
+	array set Yold_array $YYold($w)
+        foreach {node Ynew} $YYnew($w) {
             #puts "plot_YY Ynew $Ynew"
-            set node [lindex $Ynew 0]
-            foreach Yold $YYold($w) {
-                if {$node==[lindex $Yold 0]} {
-                    plot_Y $w [captionNo $w $node] $Told($w) $Yold \
-                            $Tnew($w) $Ynew $node 1
-                }
-            }
+#            foreach Yold $YYold($w) {
+#                if {$node==[lindex $Yold 0]} {
+	    if {![info exists Yold_array($node)]} {
+		set Yold_array($node) {}
+	    }
+	    plot_Y $w [captionNo $w $node] $Told($w) $Yold_array($node) \
+		$Tnew($w) $Ynew $node {}
+#                }
+#            }
         }
     }
     
@@ -742,58 +757,58 @@ namespace eval ::$keyValue {
         variable NColours
         
         if {[llength $Ynew]==1} then {
-            #ShowMessage debug info "id $id" ok
             set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,$NColours))}]]
             #puts "plot_Y iplot $iplot; lindex $plot($w,YColours) $iplot [lindex $plot($w,YColours) $iplot]"
-            if {[catch {
+	    set ident [join $id ,]
+	    if $plot($w,AutoAxisScaling) {
+		adjustLimits $w $Tnew $Ynew
+	    }
+	    if {[llength $Yold]} {
+		if {[catch {
                     # Jasper does a quick'n'dirty -- if this is the first section of a new line
                     # then the limits may not include the start point, so do an extra adjustLimits
                     # to make sure it is on screen...also put drawPoint 1st to catch errors
-                    drawPoint $w $Told $Yold $Tnew $Ynew $colour $node $id
-                    $w.canvas bind $node.$id <Button-1> \
-                            [namespace code "TraceHighlight $w $node $id"]
-                    $w.canvas bind $node.$id <Enter> \
-                            [namespace code "TracePopup $w $node $id %X %Y %x %y"]
-                    $w.canvas bind $node.$id <Leave> {destroy .popup}
-                    if $plot($w,AutoAxisScaling) {
-                        adjustLimits $w $Told $Yold
-                        adjustLimits $w $Tnew $Ynew
-                    }
-                } errMessage]} {
-                if {![dodgyValue $Yold] && ![dodgyValue $Ynew]} {
-                    ErrorHelp $errorInfo
-                } else  {
-                    set xm [expr $plot($w,xborder_left)+60]
-                    set ym [expr $plot($w,yborder_top)+60]
-                    $w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
+		    drawPoint $w $Told $Yold $Tnew $Ynew $colour $node $ident
+		} errMessage]} {
+		    if {![dodgyValue $Yold] && ![dodgyValue $Ynew]} {
+			error $errMessage $errorInfo
+		    } else  {
+			set xm [expr $plot($w,xborder_left)+60]
+			set ym [expr $plot($w,yborder_top)+60]
+			$w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
                             -text "Some values resulting from maths errors have not been plotted"
-                }
-            }
+		    }
+		}
+	    } else { ;# will plot next time so add binding for it
+		$w.canvas bind $node.$ident <Button-1> \
+			 [namespace code "TraceHighlight $w $node $ident"]
+		$w.canvas bind $node.$ident <Enter> \
+			 [namespace code [list TracePopup $w $node $id %X %Y \
+					      %x %y]]
+		$w.canvas bind $node.$ident <Leave> {destroy .popup}
+	    }
         } else {
             array set Ynew_array $Ynew
             array set Yold_array $Yold
             foreach element [array names Ynew_array] {
-                if {[info exists Yold_array($element)]} {
-                    plot_Y $w $iplot $Told $Yold_array($element) $Tnew \
-                            $Ynew_array($element) $node $element
-                    $w.canvas bind $node.$element <Button-1> \
-                            [namespace code "TraceHighlight $w $node $element"]
-                    $w.canvas bind $node.$element <Enter> \
-                            [namespace code "TracePopup $w $node $element %X %Y %x %y"]
-                    $w.canvas bind $node.$element <Leave> {destroy .popup}
-                    # WRONG COLOURS  -VAR1 -(4) -(2) ETC!!!
-                    if {$plot($w,IdArrayElements)} {
-                        incr iplot; #give element of an array a unique id, eg for colour
-                        set posn [lsearch $plot($w,Ylabels) ($iplot)]
-                        if {$posn==-1} {
-                            #set posn [llength $plot($w,Ylabels)]
-                            lappend plot($w,Ylabels) ($iplot)
-                            if {$plot($w,DrawLegend)} {
-                                drawLegend $w
-                            }
-                        }
-                    }
-                }
+		set identList [concat $id [list $element]]
+                if {![info exists Yold_array($element)]} {
+		    set Yold_array($element) {}
+		}
+		plot_Y $w $iplot $Told $Yold_array($element) $Tnew \
+		    $Ynew_array($element) $node $identList
+		# WRONG COLOURS  -VAR1 -(4) -(2) ETC!!!
+		if {$plot($w,IdArrayElements)} {
+		    incr iplot; #give element of an array a unique id, eg for colour
+		    set posn [lsearch $plot($w,Ylabels) ($iplot)]
+		    if {$posn==-1} {
+			#set posn [llength $plot($w,Ylabels)]
+			lappend plot($w,Ylabels) ($iplot)
+			if {$plot($w,DrawLegend)} {
+			    drawLegend $w
+			}
+		    }
+		}
             }
         }
         
@@ -821,7 +836,6 @@ namespace eval ::$keyValue {
         } else  {
             set width 1
         }
-                
         $w.canvas create line $x0 $y0 $x1 $y1 \
                 -fill $Colour -width $width\
                 -tags "graph scalable xaxis_item yaxis_item $node.$id"
@@ -859,7 +873,6 @@ namespace eval ::$keyValue {
         
         $w.canvas delete prompt
         drawGraphpad $w
-        display $w [GetModelTime] 0 0
         display $w [GetModelTime] 0 0
     }
     
@@ -975,7 +988,6 @@ namespace eval ::$keyValue {
         global ::graphtools::YYold
         global ::graphtools::YYnew
         variable ynodes
-        
         set YYold($w) $YYnew($w)
         
         set YYnew($w) [list 1 2]
@@ -984,7 +996,7 @@ namespace eval ::$keyValue {
             set values [GetModelValue $node]
             set values [lindex $values 0]
             if {[llength $values]} {
-                lappend YYnew($w) [list $node $values]
+                lappend YYnew($w) $node $values
             }
             #        ShowMessage debug info "$YYnew($w)" ok
         }
