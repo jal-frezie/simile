@@ -708,6 +708,11 @@ function(acot2, real, [real, real]).
 function(max, int, [int, int]).
 function(min, int, [int, int]).
 
+/* This one is recognized by the parser but is not part of the equation
+language -- it and the operators are hidden */
+
+operator(ind_time, real, [const_int]).
+
 operator(!, boolean, [boolean]).
 operator(+, int, [int]).
 operator(-, int, [int]).
