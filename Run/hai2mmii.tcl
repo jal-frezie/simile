@@ -309,7 +309,7 @@ proc GetMaxValue { node } {
     if {$model_id} {
 	return [getvalue $model_id $node 8]
     } else {
-	lindex [getinfo $node] 7
+	lindex [getinfo $node] 6
     }
 }
 
@@ -323,7 +323,7 @@ proc GetModelClass { node } {
 		CREATION REPRODUCTION IMMIGRATION LOSS} \
 		[getvalue $model_id $node 11]]
     } else {
-	lindex [getinfo $node] 8
+	lindex [getinfo $node] 7
     }
 }
 
@@ -379,7 +379,7 @@ proc GetCaptionPathFromId {node} {
 	    lappend subpath 0
 	    for {set record 0} {$nodecount>$record} {incr record} {
 		if {[ListSameNumbers [lindex $nodedata($record) 4] $subpath]} {
-		    append fullPath / [lindex $nodedata($record) 10]
+		    append fullPath / [lindex $nodedata($record) 9]
 		    break
 		}
 	    }

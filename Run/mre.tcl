@@ -3,6 +3,9 @@
 # Jonathan Massheder
 
 # $Log: mre.tcl,v $
+# Revision 1.5  2002/08/23 17:28:40  jaspert
+# Fixed recent bug with file parameters and older one with MRE under Linux
+#
 # Revision 1.4  2002/07/24 11:21:45  jaspert
 # *** empty log message ***
 #
@@ -155,7 +158,7 @@ proc RunEnv::Create { ModelWin } {
             set gif [lindex $item 0]
             set helptext [lindex $item 1]
             set command [lindex $item 2]
-            $bbox add -image [image create photo  -file "../images/Toolbar/$gif"] \
+            $bbox add -image [image create photo  -file "../Images/Toolbar/$gif"] \
                     -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
                     -helptext $helptext -command $command
         }
