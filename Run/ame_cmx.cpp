@@ -646,7 +646,8 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 			return error;
    } /* if(error) */
         error = Tcl_GetIntFromObj(interp, argv[8], &(graphptr->yspan));
-		 if (error != TCL_OK) {
+		 if (error != TCL_OK) {
+
 			return error;
    } /* if(error) */
         error = Tcl_GetIntFromObj(interp, argv[9], &(graphptr->range));
@@ -972,6 +973,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
    error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
    if (error != TCL_OK) {
 	return error;
+
    }
 
    error = Tcl_GetDoubleFromObj(interp, argv[3], &starttime);
@@ -1243,7 +1245,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
   default: /* value is a dimension of the array we are accessing */
     localObj = Tcl_NewListObj(0, NULL);
     if (nVs) {
-      Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
+      Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
       arrayPosn = 0;
     } else {
       eltVals = NULL;

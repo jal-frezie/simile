@@ -1473,7 +1473,7 @@ proc load_dll {lang progFileDir modelPath node} {
     } else {
 	if {[catch {loadmodel $nameBase[info sharedlibextension] $node} \
 		model_id]} {
-ShowMessage debug warning "Failure to load model: $model_id" ok
+	    ShowMessage {Loading model dll} info "Loading model dll failed because $model_id -- the program will attempt to build another one." ok
 	    unset model_id
 	    return 0
 	}
@@ -1565,6 +1565,7 @@ proc compile_c {workingDir modelPath} {
 	    file delete objtemp.o
 	}
 	windows {
+	    set TOOLDIR [file attributes $TOOLDIR -shortname]
 # Something seems to be broken with freeing and deleting dlls
 # under Windows, so just give each one a new name
 
@@ -1572,14 +1573,18 @@ proc compile_c {workingDir modelPath} {
 
 # it is running under Prolog. However it seems to work OK in WinNT.
 	    if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
+#catch {exec gcc -v} vInfo
+#ShowMessage debug info "using $vInfo" ok
 		set dll ame_dll${MAJ}${MIN}
 	        exec gcc -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp objtemp.o
-		file delete junk.tmp
-		exec dlltool --dllname $TARGET --base-file base.tmp \
-			--output-exp exptemp.exp --def $TOOLDIR/model.def
-		exec gcc -mdll -o $TARGET objtemp.o -Wl,exptemp.exp
-		file delete exptemp.exp
+#		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp objtemp.o
+#		file delete junk.tmp
+#		exec dlltool --dllname $TARGET --base-file base.tmp \
+#			--output-exp exptemp.exp --def $TOOLDIR/model.def
+		exec dllwrap --output-lib=libmodel.a --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=gcc objtemp.o
+#		exec gcc -mdll -o $TARGET objtemp.o -Wl,exptemp.exp
+#		file delete exptemp.exp
+
 		
 # Method using command line calls to MSVC 4.0 or later -- works well
 	    } else {
@@ -1634,7 +1639,7 @@ proc build_c_stub {targetDir make_new_stub} {
 	if {![catch {package require $stubPkg $env(SIMILE_VERSION)} dummy]} {
 	    return
 	} else {
-ShowMessage debug info $dummy ok
+	    ShowMessage {Loading dll} info "Loading stub dll caused a $dummy -- program will now attempt to build a new one" ok
 	}
     }
 
@@ -1658,22 +1663,26 @@ ShowMessage debug info $dummy ok
 	    exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN
 	}
 	windows {
-	    set TARGET $targetDir/ame_dll$MAJ$MIN.dll
+	    set TCL [file attributes $TCL -shortname]
+	    set TARGET [file attributes $targetDir -shortname]/ame_dll$MAJ$MIN.dll
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
 # it is running under Prolog. However it seems to work OK in WinNT.
 
 	    if {$make_new_stub != 1} {
+#catch {exec gcc -v} vInfo
+#ShowMessage debug info "using $vInfo" ok
 		set dll tcl${MAJ}${MIN}
 #ShowMessage debug info "TCL is $TCL" ok
-		exec dlltool --dllname $TCL/bin/$dll.dll --output-lib lib$dll.a --def tcltk.def
-		exec gcc -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
-		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
-		    obj.o -L. -l$dll
+#		exec dlltool --dllname $TCL/bin/$dll.dll --output-lib lib$dll.a --def tcltk.def
+		exec g++ -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
+#		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
+#		    obj.o -L. -l$dll
 #		    file delete junk.tmp
-		exec dlltool --dllname $TARGET --base-file base.tmp \
-		    --output-exp exp.exp --def stub.def
-		exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
-		file delete exp.exp
+#		exec dlltool --dllname $TARGET --base-file base.tmp \
+#		    --output-exp exp.exp --def stub.def
+		exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=gcc obj.o $TCL/lib/$dll.lib
+#		exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
+#		file delete exp.exp
 
 # Method using command line calls to MSVC 4.0 or later -- works well
 	    } else {

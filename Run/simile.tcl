@@ -47,15 +47,8 @@ switch $tcl_platform(platform) {
 	    set env(MSDEVDIR) d:/progra~1/micros~1/vc98
 	    set env(MSVCDIR) $env(MSDEVDIR)
 	}
-
-# You need this line if you are using msvc++ and it generates an
-# (expletives deleted) error message about dlls. This is caused by
-# msvc++ not being able to set up its own environment properly using
-# vcvars32 if it is installed in a directory with spaces in its name,
-# such as "Program files". Or something...I dunno, how that Gates ever 
-# got to be a multi-billionaire, I just don't know...
-#
-	set env(PATH) "c:/cygwin/bin;$env(MSDEVDIR)/bin;c:/progra~1/tcl/bin;$env(PATH)"
+# Now, win95 etc needs the tcltk binaries in the path
+	set env(PATH) "[file dirname [file dirname [info library]]]/bin;c:/progra~1/mingw-2.95.3/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
     } unix {
 	set env(LD_LIBRARY_PATH) \
