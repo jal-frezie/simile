@@ -52,12 +52,12 @@ namespace eval RunEnv {
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
             [list \
-            [list NoteBookPage.GIF "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
-            [list NoteBook.GIF "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
+            [list NoteBookPage.gif "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
+            [list NoteBook.gif "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
             [list \
             [list graph.gif "Create plotter" "::RunEnv::CreateHelperInCurrentContainer plotter1.25 {Plotter}"] \
             [list table.gif "Create table" "::RunEnv::CreateHelperInCurrentContainer tabular11510 {Table}"] \
-            [list display.GIF "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
+            [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
             [list \
             [list mainwin.gif "Go to Model Window" "RaiseModelWindow"]]]
         }
@@ -264,8 +264,8 @@ proc RunEnv::AddNewPageToolBar {containerId page} {
     set PageToolbarItems [list \
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitPage $containerId vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitPage $containerId horizontal"] \
-            [list NoteBookPage.GIF "Add notebook page" "RunEnv::AddNotebookPage $containerId"] \
-            [list NoteBook.GIF "Add notebook" "RunEnv::AddNotebookPageToCurrentContainer"] \
+            [list NoteBookPage.gif "Add notebook page" "RunEnv::AddNotebookPage $containerId"] \
+            [list NoteBook.gif "Add notebook" "RunEnv::AddNotebookPageToCurrentContainer"] \
             [list graph.gif "Create plotter here" "::RunEnv::CreateHelperInWindow $containerId plotter1.25 {Plotter}"] \
             [list table.gif "Create plotter here" "::RunEnv::CreateHelperInWindow $containerId tabular11510 {Table}"] \
             [list display.gif "Choose display to create here" "::RunEnv::AllDisplaysPopup $containerId \
