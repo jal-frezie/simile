@@ -10,6 +10,13 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.7  2002/11/07 18:04:33  jaspert
+#Model explorer can distinguish between submodels with same caption
+#All sliders now have value entry to left of slider
+#Bug preventing c++ build of models with component called 'bool' fixed
+#Parameters menu for eqn bar now pops up source name when moving between entries
+#Raised relief on File menu restored
+#
 #Revision 1.6  2002/11/06 13:34:03  jaspert
 #Value popups added to model inspector
 #Fixed bug generating interface spec files which came from new save format
@@ -92,16 +99,15 @@ namespace eval ::ModelInspector63654 {
             if {[string match SUBMODEL $type ]} then {
                 set SubbedComp [GetCaptionPathFromId $component]
                 set SubbedCompList [split $SubbedComp /]
-                set path [lrange $SubbedCompList 1 [llength $SubbedCompList] ]
+                set path [lrange $SubbedCompList 1 end]
                 set pathLength [llength $path]
                 if {$pathLength == 1} {
                     set parent root
                 } else  {
-                    set parentLabel [lindex $path [expr {$pathLength-2}]]; # indexed from 0
+                    set parentLabel [lrange $path 0 [expr {$pathLength-2}]]; # indexed from 0
                     set parent $submodel($parentLabel)
                 }
-                set label [lindex $path end]
-                set submodel($label) $component
+                set submodel($path) $component
                 $tableframe.table insert end $parent $component \
                         -text [lindex $path end]  -open 1 -image $im(submodel)
             }
@@ -110,7 +116,7 @@ namespace eval ::ModelInspector63654 {
             # substitute " " for <cr>s so entry goes on one line # no - need the crs
             set SubbedComp [GetCaptionPathFromId $component]
             set SubbedCompList [split $SubbedComp /]
-            set path [lrange $SubbedCompList 1 [llength $SubbedCompList] ]
+            set path [lrange $SubbedCompList 1 end]
             #        ShowMessage debug info "GetModelValue $component = [GetModelValue $component]" ok
             if {[llength [info commands GetModelClass]] >0} {
                 set type [GetModelClass $component]; # Simile 2.7+
@@ -124,7 +130,6 @@ namespace eval ::ModelInspector63654 {
                     set value {None}
                 }
             }
-            set label [lindex $path end]
             switch $type {
                 INTERNAL { continue; # don't show internal variables }
                 SUBMODEL { set image $im(submodel) }
@@ -144,7 +149,7 @@ namespace eval ::ModelInspector63654 {
             if {$pathLength == 1} {
                 set parent root
             } else  {
-                set parentLabel [lindex $path [expr {$pathLength-2}]]; # indexed from 0
+                set parentLabel [lrange $path 0 [expr {$pathLength-2}]]; # indexed from 0
                 set parent $submodel($parentLabel)
             }
             #        ShowMessage debug info "$component; $parent; path $path" ok
@@ -213,3 +218,4 @@ namespace eval ::ModelInspector63654 {
     }
     
 }; # end namespace
+

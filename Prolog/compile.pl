@@ -193,7 +193,7 @@ generate structure type declarations for them, starting with the most deeply
 nested. Data about submodel multiplicity is left in the main model. Start with c++ 
 keywords in list of things that cannot be used as variable names...*/
 
-	Keywords = [asm, auto, bad_cast, bad_typeid, break, case, catch,
+	Keywords = [asm, auto, bad_cast, bad_typeid, bool, break, case, catch,
 	char, class, const, const_cast, continue, default, delete, do, double,
 	dynamic_cast, else, enum, except, extern, false, far, finally, float, for, friend, 
 	goto, if, inline, int, long, namespace, near, new, operator, private, protected, 

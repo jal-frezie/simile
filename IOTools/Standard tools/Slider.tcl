@@ -86,7 +86,7 @@ proc InsertSlider {winId boxname node title} {
     }
     set count [SliderArray $node]
     if {$count == 0} {
-	scale $f.scale -length 140 \
+	scale $f.scale -length 200 \
 		-orient horizontal -showvalue false \
 		-sliderlength 10 -from $min -to $max \
 		-tickinterval [expr $magnitude/5.0] \
@@ -95,17 +95,17 @@ proc InsertSlider {winId boxname node title} {
 	$f.scale set $def
 	pack $f.scale -side right
 	pack [label $f.caption -text [lindex $levels end]]
-	pack [entry $f.entry -textvariable sliderVals($node) -width 5]
+	pack [entry $f.entry -textvariable sliderVals($node) -width 8]
     } else {
 	array set defArr $def
 	pack [label $f.caption -text [lindex $levels end]]
 	for {set elt 1} {$count >= $elt} {incr elt} {
 	    pack [frame $f.elt$elt]
 	    pack [message $f.elt$elt.id -text $elt] -side left
-	    pack [entry $f.elt$elt.val -textvariable sliderVals($node,$elt)] \
-		    -side right
+	    pack [entry $f.elt$elt.val -textvariable sliderVals($node,$elt) \
+		      -width 8] -side left
 	    set newScale $f.elt$elt.scale
-	    scale $newScale -length 200 \
+	    scale $newScale -length 180 \
 		-orient horizontal -showvalue false \
 		-sliderlength 10 -from $min -to $max \
 		-resolution $spacing \

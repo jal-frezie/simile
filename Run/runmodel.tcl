@@ -731,7 +731,8 @@ proc BindPopup {widget keywd} {
 
 proc MenuBindPopup {widget keyList} {
     bind $widget <Enter> [list QueuePopup \
-			      [list AddMenuPopup $widget $keyList %y %X %Y]]
+			      [list AddMenuPopup $widget $keyList %y %X %Y 1]]
+    bind $widget <Motion> [list AddMenuPopup $widget $keyList %y %X %Y 0]
     bind $widget <Leave> RemovePopup
 }
 
@@ -839,16 +840,19 @@ proc AddWidgetPopup {key X Y} {
 	    -text $message -bg \#ffffc0] -fill x -expand true
 }
 
-proc AddMenuPopup {widget list y X Y} {
-    PostPopup $X $Y
+proc AddMenuPopup {widget list y X Y new} {
+    if {$new} {
+	PostPopup $X $Y
+	pack [message .popup.message -aspect 400 -bg \#ffffc0] \
+	    -fill x -expand true
+    }
     set entry [$widget index @$y]
-    if {[string match none $entry]} {
+    if {[string match none $entry] || ![winfo exists .popup.message]} {
 	return
     }
     set line [lindex $list $entry]
     set message "[lindex $line 1]: [lindex $line 0]"
-    pack [message .popup.message -aspect 400 \
-	    -text $message -bg \#ffffc0] -fill x -expand true
+    .popup.message configure -text $message
 }
     
 
@@ -1183,9 +1187,7 @@ proc MakeFrames {windowId} {
     set canId $windowId.c.canvas
     canvas $canId -width 10 -height 10 \
 	    -yscrollcommand [list $windowId.c.yscroll set]
-    scrollbar $windowId.c.yscroll -orient vertical -command [list $canId yview]
-
-
+    scrollbar $windowId.c.yscroll -orient v -command [list $canId yview]
 
     pack $windowId.c.yscroll -side right -fill y
     pack $canId -side left -fill both -expand true

@@ -1056,7 +1056,7 @@ proc FillReopen {winId} {
 proc AddMainMenu { winid initWidth initDepths} {
     global custom MIpushedbutton tcl_platform
     
-    set fm [menu ${winid}top.file -tearoff 0 -relief flat\
+    set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
     $fm add command -label New -command "MenuSelect $winid.canvas file new"\
