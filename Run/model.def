@@ -7,4 +7,5 @@ do_setstep
 do_exitmodel
 burrow_to
 get_count
-get_version
+GetNodeCount
+GetNodeData

@@ -6,6 +6,7 @@ __declspec( dllexport )
   return (void*)new AME_model;
 }
 
+
 /* Procedures for accessing the model now also require the handle of the 
 instance to use. Previously these came straight out of model.c; now they
 are put inside a class wrapper, so we must here turn the handle back into
@@ -15,7 +16,7 @@ a class pointer before calling them. */
 extern "C" __declspec( dllexport ) double get_version(void);
 extern "C" __declspec( dllexport ) void do_updatemodel(void*, double, int);
 extern "C" __declspec( dllexport ) void do_evalmodel(void*, double, int, 
-						     BOOLEAN);
+     BOOLEAN);
 extern "C" __declspec( dllexport ) void do_setstep(double, int);
 extern "C" __declspec( dllexport ) void do_exitmodel(void*);
 #else
@@ -63,7 +64,7 @@ __declspec( dllexport )
 #endif
 void* burrow_to(void* level, int** id_meta, int** dim_list) {
   while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
-			 -2 means nested separate-dll submodel */
+-2 means nested separate-dll submodel */
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
   }
   return(level);
@@ -75,17 +76,17 @@ extern "C"
 __declspec( dllexport )
 #endif
   int get_count(void* useClassPtr, void* ame_rand_ptr, 
-		void* release_graph_data_ptr, 
-		void* compare_instance_status_ptr, 
-		void* get_value_pointer_ptr, 
-		void* fetch_instance_ptr,
-		void* update_submodel_ptr,
-		void* eval_submodel_ptr,
-		void* search_from_ptr,
-		void* advance_ptr_ptr,
-		void* get_remote_value_ptr, int* phases, 
-		node_data_line** data_ptr, graph_data_type** graph_ptr,
-		int* arc_count, char*** arc_id_list) {
+void* release_graph_data_ptr, 
+void* compare_instance_status_ptr, 
+void* get_value_pointer_ptr, 
+void* fetch_instance_ptr,
+void* update_submodel_ptr,
+void* eval_submodel_ptr,
+void* search_from_ptr,
+void* advance_ptr_ptr,
+void* get_remote_value_ptr, int* phases, 
+node_data_line** data_ptr, graph_data_type** graph_ptr,
+int* arc_count, char*** arc_id_list) {
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
 
@@ -110,3 +111,65 @@ __declspec( dllexport )
   return((sizeof nodedata)/sizeof(node_data_line));
 }
 
+/**********************************************************************/
+
+/*
+con la LoadLibrary e la pstub sono inutili, facciamo rifermento direttamente alle orinali!
+extern "C" double __stdcall GetVersion()
+{
+  return(get_version());
+}
+extern "C" void* __stdcall DoCreateModel(void)
+{
+return (void*)new AME_model;
+}
+*/
+
+/* GetNodeCount.... in realta' torna la stessa cosa di get_count...
+  ... ma per il momento e' troppo pesante e quindi questa 
+e' piu' comoda per ora!!
+
+--- dichiaramole __declspacc come piace a lui cosi' il simile+MinchW non rompe ----
+*/
+extern "C" __declspec( dllexport ) 
+/*extern "C"  __stdcall */
+
+int GetNodeCount(void* useClassPtr)
+{
+return((sizeof nodedata)/sizeof(node_data_line));
+}
+
+struct pass_data_line {
+  char   name[16];
+  int    datatype;
+  int    eval;
+  int    dims[32];
+  int    path[32];
+  int    graph;
+  double min;
+  double def;
+  double max;
+  int    compclass;
+  char   caption[256];
+};
+
+extern "C" __declspec( dllexport ) 
+/*extern "C" __stdcall */ int GetNodeData(int n,struct pass_data_line *PassStruct)
+{ 
+int i;
+strcpy(PassStruct->name ,nodedata[n].name);
+PassStruct->datatype =nodedata[n].datatype;
+PassStruct->eval =nodedata[n].eval;
+for(i=0;i<32;i++)
+{
+PassStruct->dims[i] =nodedata[n].dims[i];
+PassStruct->path[i] =nodedata[n].path[i];
+}
+PassStruct->graph =nodedata[n].graph;
+PassStruct->min =nodedata[n].min;
+/* PassStruct->def =nodedata[n].def; */
+PassStruct->max =nodedata[n].max;
+PassStruct->compclass =nodedata[n].compclass;
+strcpy(PassStruct->caption ,nodedata[n].caption);
+return n;
+}
