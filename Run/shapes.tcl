@@ -616,29 +616,6 @@ proc MoveLine {w id ptz} {
     }
 }
 
-proc MoveBowtie {w id ptz} {
-    scan [ScaleList $w $ptz] {%f %f %f %f} ml mt mr mb
-    
-    foreach item [$w find withtag $id] {
-        set type [$w type $item]
-        if {[string match *bowtie* [$w gettags $item]] || \
-                    [string match polygon $type]} {
-            scan [$w coords $item] {%f %f} oldl oldt
-            if {($mb - $mt) > ($mr - $ml)} {
-                $w coords $item $ml $mt $mr $mt $ml $mb $mr $mb $ml $mt
-            } else {
-                $w coords $item $ml $mt $ml $mb $mr $mt $mr $mb $ml $mt
-            }
-        } elseif {[string match text $type]} {
-            set captionId $item
-        }
-    }
-    if {[info exists captionId]} {
-        $w move $captionId [expr $ml - $oldl] [expr $mt - $oldt]
-	FixBackBox $w $captionId
-    }
-}
-
 proc DrawBlob {w startX startY size tags} {
      $w create line $startX $startY $startX $startY -width $size \
             -capstyle round -tag "$tags realwidth($size)"
@@ -646,9 +623,14 @@ proc DrawBlob {w startX startY size tags} {
 
 # This puts random bits of normally non-editable text on the screen...
 
-proc PutText { w ptz type tagSet fatness colourScheme capt } {
+proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     global looks
     
+    if {[string equal vflow $ptype]} {
+	set type flow
+    } else {
+	set type $ptype
+    }
     if {[string compare $colourScheme normal]} {
         set textColor $looks($type,$colourScheme)
     } else {
@@ -665,9 +647,9 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
             [lindex $fontData 2] $realFont]
     set textX [Scale $w [expr [lindex $ptz 0] \
-            + $looks($type,xoffset)*$fatness/100]]
+            + $looks($ptype,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] \
-            + $looks($type,yoffset)*$fatness/100]]
+            + $looks($ptype,yoffset)*$fatness/100]]
 # experimental background box for text
     if {$looks($type,txtbd)} {
 	set txtbd black
@@ -684,7 +666,7 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
     $w dtag $backBox editable
     $w dtag $backBox currently_editable
     set textItem [$w create text $textX $textY -text $capt -fill $textColor \
-	-font $useFont -anchor $looks($type,textanchor) \
+	-font $useFont -anchor $looks($ptype,textanchor) \
 	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info \
 backbox_is($backBox)"]
     eval {$w coords $backBox} [$w bbox $textItem]
@@ -1736,12 +1718,9 @@ proc CustomizeLooks {} {
     #    prolog tk_set_new_size(function,15,0,0)
     #    prolog tk_set_new_size(cloud,25,0,0)
     #    prolog tk_set_new_size(channel,30,0,0)
-    set looks(flow,xoffset) 12
-    set looks(flow,yoffset) 12
-    set looks(flow,textanchor) nw
-    set looks(compartment,yoffset) 16
-    set looks(channel,yoffset) 16
-    set looks(variable,yoffset) 8
+    set looks(vflow,xoffset) 2
+    set looks(vflow,yoffset) 0
+    set looks(vflow,textanchor) w
     set looks(submodel,textanchor) sw
 }
 

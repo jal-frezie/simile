@@ -23,7 +23,7 @@ sicstus_module(draw,
 		update_ability/5, scrub_run/2, kill_helpers/1,
 		display_mode/1, display_menu/1, off/1, off_all/1, 
 		move_text/2, move_display/2, reroute_display/1,
-		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
+		redisplay/1, redisplay_border/1,
 		add_window/9, redraw_window/1, delete_window/1,
 		inject_graphics/2, display_area/1,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
@@ -153,14 +153,6 @@ reroute_display(Obj) :-
 	find_relevant_windows(Obj, Wid, _, Trans),
 		untranslate(Course, Trans, ScreenCourse),
 		zap_route(Wid, Obj, ScreenCourse),
-		fail;
-	true.
-
-wiggle_bowtie(Obj) :-
-	get_shape(Obj, bowtie, Course),
-	find_relevant_windows(Obj, Wid, _, Trans),
-		untranslate(Course, Trans, ScreenCourse),
-		zap_bowtie(Wid, Obj, ScreenCourse),
 		fail;
 	true.
 
@@ -295,7 +287,16 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 
 	(Style = submodel, !,
 	    DefAnchor = nw;
+	Style = flow,
+	Box = [L, T, R, B],
+	R-L>B-T, !,
+	    DefAnchor = e,
+	    PosStyle = vflow;
+	member(Style, [compartment, channel, variable, flow]), !,
+	    DefAnchor = s;
 	DefAnchor = c),
+	(nonvar(PosStyle), !;
+	 PosStyle = Style),
 
 	(get_shape(Id, caption_offset, [XOff, YOff]);
 	 get_shape(Id, caption_offset, [XOff, YOff, _Anchor]);
@@ -311,7 +312,7 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 		EditState = [editable, currently_editable];
 	EditState = [editable]),
 /* currently added to last choice to test alternative edit prevention */
-	text(Wid, ScreenPoint, Style, [Id, fillable | EditState],
+	text(Wid, ScreenPoint, PosStyle, [Id, fillable | EditState],
 			Fatness, Colour_scheme, Caption).
 
 /* redraw_window/1: Well it is simple to describe what this does; it redraws the contents of the window. But I won't know how it works till I've written it.

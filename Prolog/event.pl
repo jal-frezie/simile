@@ -973,7 +973,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	\+ Wid shows_model Moving_obj,
 	(get_phase(moving),
 		 (adjust_bowtie(Moving_obj, [Xpt, Ypt]), !,
-		     wiggle_bowtie(Moving_obj),
+		     redisplay(Moving_obj),
 		     make_links_follow(Moving_obj) /* ,
 		     highlight(Moving_obj, 2) */;
 		 adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
@@ -1177,7 +1177,7 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 	    BowSize is FlowBox/2,
 	    get_middle_segment(Route, BowSize, BowShape),
 	    change_shape(Moving_obj, bowtie, BowShape),
-	    wiggle_bowtie(Moving_obj),
+	    redisplay(Moving_obj),
             (has_outer_equiv(SubLink, Comp, Moving_obj),
 		move_link(SubLink),
 		fail;
@@ -1381,7 +1381,7 @@ adjust_link(Link, Recurse) :-
 	get_shape(Link, course, NewCourse),
 	reroute_display(Link),
 	(find_type(Link, flow), !,
-	    wiggle_bowtie(Link);
+	    redisplay(Link);
 	find_type(Link, relation),
 	nonvar(OldCourse), !,
 	    get_caption_anchor(OldCourse, [OldTX, OldTY | _]),

@@ -16,7 +16,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
 	submodel/13, bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
-	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
+	shift_text/3, shift_obj/3, zap_route/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
 	get_component_from_gui/4, 
 	get_text/3, change_text_to/3, 
@@ -223,9 +223,6 @@ shift_obj(Wid, Obj, Vector) :-
 zap_route(Wid, Obj, Coords) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['MoveLine', Wid, Obj, br(Singleton_list)], _).
-		
-zap_bowtie(Wid, Obj, Coords) :-
-	safe_tcl_eval(['MoveBowtie', Wid, Obj, br(Coords)], _).
 		
 tk_add_window(Wid, TopNode, Title, [L, T, R, B], Cname, BG, Scale, InitDepths,
 	      IsTL) :-
