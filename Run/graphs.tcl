@@ -1403,7 +1403,7 @@ proc LoadTableData {tableSpec} {
     set lineCount 0
     set maxIndices(0) {}
     foreach headerIndex [lrange $tableSpec 2 end] {
-        lappend indexColumns [lsearch $headerList $headerIndex]
+        lappend indexColumns [lsearch -exact $headerList $headerIndex]
         set maxIndices($indexCount) {}
         incr indexCount
     }
