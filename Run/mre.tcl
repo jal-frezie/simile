@@ -37,8 +37,8 @@ namespace eval RunEnv {
     set toolbars [list \
             [list \
             [list new.gif "New display configuration" RunEnv::KillDisplays] \
-            [list open.gif "Load a configuation of displays" RunEnv::LoadView] \
-            [list save.gif "Save the display configuation" RunEnv::SaveView] ]\
+            [list open.gif "Load a configuration of displays" RunEnv::LoadView] \
+            [list save.gif "Save the display configuration" RunEnv::SaveView] ]\
             [list \
             [list copyc.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
             [list cut.gif "Cut display" [list ::RunEnv::CutHelper $::RunEnv::CurrentContainer"]] \
@@ -81,9 +81,9 @@ proc RunEnv::Create { ModelWin } {
         
         set descmenu {
             "&File" all file 0 {
-                {command "&Load configuration..." {} "Load a configuation of displays" \
+                {command "&Load configuration..." {} "Load a configuration of displays" \
                             {} -command {::RunEnv::LoadView} }
-                {command "&Save configuration..." {} "Save a configuation of displays" \
+                {command "&Save configuration..." {} "Save a configuration of displays" \
                             {} -command {::RunEnv::SaveView} }
                 {separator}
                 {command "&Print..." {} "Print display"  \
