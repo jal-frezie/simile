@@ -345,7 +345,8 @@ do_loop_pointers(SmName, Type, Name, Late) :-
 	    append_atoms(Name, meta, Meta),
 	    resolve_pointer(c, Meta, MetaPtd),
 	    resolve_pointer(c, MetaPtd, MetaPtdPtd),
-	    Late = [[Type, Ptd, []], [Type, MetaPtdPtd, []]];
+	    append_atoms(Name, cond, Cond),
+	    Late = [[int, Cond, []], [Type, Ptd, []], [Type, MetaPtdPtd, []]];
 	Late = [].
 
 generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,

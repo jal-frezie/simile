@@ -845,12 +845,14 @@ instruction because they will not require individual initialization routines. */
 	    this was necessary so index meanings are compatible with earlier
 	    versions (not that they were...) */
 	    Level = [sm(_,_,_, vm_loop(_IndCount, Dims, BaseSides, _))],
-	    (setof(CondBox,
-		   member(instance(condition, _,_, elt(_, CondBox, _), _),
-			  Functions), Conds), !,
+	    (setof(CondBox, member(instance(condition,_, function,
+			elt(_, CondBox, _),_), Functions), Conds), !,
 		TestExpr = Conds;
 	    /* dummy generator node for other variable membership submodels */
-	    Conds = [], TestExpr = 1),
+	    (member(instance(condition,_, id_function,
+			elt(_, CondBox, _),_), Functions), !,
+		Conds = [CondBox];
+	    Conds = []), TestExpr = 1),
 	    all(compile, convert_base_specs,
 		[build(BasesEnumerated), build(BasesCleared)]),
 
@@ -979,9 +981,9 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside*/
 	(is_parameter(Node, Is_P),
-	(member(AssignType, [function, init_function]),
+	(member(AssignType, [function, id_function, init_function]),
 	    (Is_P < 1,
-		(AssignType = function, !, UseStep = Step; UseStep = 0);
+		(AssignType = init_function, !, UseStep = 0; UseStep = Step);
 	     Is_P = 1,
 		UseStep = -1),
 	    Actions = Assignments,
@@ -1002,6 +1004,9 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    initializations are done in step 0 rather than -1 */
 	(AssignType = init_function, !,
 	    UseList = [on_reset | RefList];
+	/* can_find_id is a marker, not used as a condition */
+	AssignType = id_function, !,
+	    UseList = [can_find_id | RefList];
 	UseList = RefList),
 	/* input parameters are set to their default values on model
 	    initialization only */
@@ -1286,6 +1291,30 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		all(compile, get_pass_ends,
 		    [build([D1, D1 | AllLoops]), build([D2, D2 | OpenLoops]),
 		     build(LastStep)]),
+
+		/* At this point we need to replace the innermost loop with an
+		assignment if using an id-based condition, and move the
+		condition evaluation outside that loop...*/
+		(SubList is TestPhase+1,
+		    length(Slower, SubList),
+		    append(Slower,
+			   [[IdOpen,
+			     make(_, IdConds, [_IdLevel, SmLevel | _More], _,
+				  [assign(_, IdExpr)]),
+			     _IdClose | NoIdConds] | Faster], SubPasses),
+		    member(can_find_id, IdConds),
+		    /* find last looping construct */
+		    append(OuterLoops, [make(_,_,_,_, [open_index(IdRef, _)]),
+				       SmLoop], OpenLoops), !,
+		    append_atoms(Submodel, cond, IdVar),
+		    IdRef = arr('', IdVar, []),
+		    append(OuterLoops,
+			   [IdOpen, make(_,_,_,_, [assign(IdRef, IdExpr)]),
+					SmLoop], UseLoops),
+		    append(Slower, [NoIdConds | Faster], UseSubPasses), !;
+		UseLoops = OpenLoops,
+		    UseSubPasses = SubPasses),
+				    
 		all(inters, indices_for,
 		    [build(AllLoops), append(LoopInds, [])]),
 		append(LoopInds, LocalInds, Inds),
@@ -1294,7 +1323,7 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		extract_action(GenStep, [generate(Submodel, ParentPtr,
 				Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
 		SmNew = [new_context(Ptr, TestPhase)],
-		append([Outer | OpenLoops], [GenStep], FirstStep);
+		append([Outer | UseLoops], [GenStep], FirstStep);
 		
 	    /* no: just use start_submodel -- or give up on this
 	    submodel if it was enumerated in a shorter time step than we
@@ -1305,9 +1334,10 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		   EnumPhase > Phase), !,
 		ptr_to_last_vm([SmLevel | Path], SmNew),
 		FirstStep = [StartPass],
-		LastStep = [FinishPass]),
+		LastStep = [FinishPass],
+		UseSubPasses = SubPasses),
 	    /* Now put new/timing conditions round higher-level passes */
-	    add_phase_conditions(SubPasses, -1, SmNew, CondPass),
+	    add_phase_conditions(UseSubPasses, -1, SmNew, CondPass),
 
 	    /* Now if I have done some submodel assignments, recurse at
 		the same level */
@@ -1544,7 +1574,8 @@ name_components( _, [], _).
 
 name_components(Language, [instance(Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used) :-
-	(\+ member(Type, [function, init_function, fp_compartment, external]),
+	(\+ member(Type, [function, init_function, id_function,
+			  fp_compartment, external]),
 	    !;
 	caption_for(Node, Name),
 	    generate_name( Language, Name, Var, Used)),

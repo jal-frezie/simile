@@ -230,26 +230,33 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	(Node has_class_refinement table_data of TableData,
 	    member(current=TableList, TableData), !;
 	TableList = none),
-	 (Node has_class_refinement value of GroundExpr, !,
-	     /* Normal user-supplied function */
-	     (setof(InputPair,
-			generate_input_pair(Node, InputPair),
-	        	InputPairs ), !;
+	Node has_class_refinement value of GroundExpr,
+	(member(RType, [compartment, creation]), !,
+	    UseExpr = GroundExpr,
+	    FType = init_function;
+	RType = condition,
+	    (GroundExpr = (index(1)==UseId),
+		UseExpr = [UseId];
+	    GroundExpr = any(index(1)==UseExpr)), !,
+	    /* Try alternative way of enumerating instances */
+	    FType = id_function;
+	FType = function,
+	    UseExpr = GroundExpr),
+	(setof(InputPair,
+	       generate_input_pair(Node, InputPair),
+	       InputPairs ), !;
 	    InputPairs = []),
-	     apply_minmax(Node, GroundExpr, FullExpr),
-	     replace_subexps(FullExpr, instance, process_expr,
-			     sub(TableList, InputPairs, Refs), top_down,
-			     Switched, FinalExpr),
-	     (member(var_pair(_, Sub), Switched),
-		 m_update:get_solo_list_depth(Sub, _),
-		 raise_exception(bad_parameter(Node, Sub));
-		 length(Refs, _Fix)),
-	     get_units(Node, Base, Units)),
-	 (member(RType, [compartment, creation]), !,
-	     FType = init_function;
-	 FType = function),
-	 is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),
-		      Base-Units, Instance).
+	apply_minmax(Node, UseExpr, FullExpr),
+	replace_subexps(FullExpr, instance, process_expr,
+			sub(TableList, InputPairs, Refs), top_down,
+			Switched, FinalExpr),
+	(member(var_pair(_, Sub), Switched),
+	    m_update:get_solo_list_depth(Sub, _),
+	    raise_exception(bad_parameter(Node, Sub));
+	length(Refs, _Fix)),
+	get_units(Node, Base, Units),
+	is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),
+		    Base-Units, Instance).
 	     
 /* Note if the function lacks a value it may not be the user's fault; it might be
 an unnecessary virtual function generated in the SD view. 
@@ -291,8 +298,8 @@ instance_of(flow, Arc, _, [instance(flow, Arc, _, Value, Units)],
 are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
-instance_of(Type, Node, _, [instance(Type, Node, _, Value, Dims)],
-		[instance(_, F, _, Value, Dims)]) :-
+instance_of(Type, Node, _, [instance(Type, Node, FnType, Value, Dims)],
+		[instance(FnType, F, _, Value, Dims)]) :-
 	member(Type, [variable, condition, creation, loss]),
 	member(Node, [B, A]),
 	Arc is_connector from A to B, !,
