@@ -1017,7 +1017,7 @@ translate([], _, []).
 translate([X, Y | Rest], [Xoffset, Yoffset, Xscale, Yscale], 
 		[NewX, NewY | NewRest]) :-
 	/* removed integer(...) round result -- end of universe? */
-	atomic(X), atomic(Y),
+	gnumber(X), gnumber(Y),
 	NewX is (X - Xoffset)*Xscale,
 	NewY is (Y - Yoffset)*Yscale, !,
 	translate(Rest, [Xoffset, Yoffset, Xscale, Yscale], NewRest).
@@ -1033,7 +1033,7 @@ untranslate([], _, []).
 /* Here's how we do unnested lists... */
 untranslate([X, Y | Rest], [Xoffset, Yoffset, Xscale, Yscale], 
 		[NewX, NewY | NewRest]) :-
-	atomic(X), atomic(Y),
+	gnumber(X), gnumber(Y),
 	/* removed integer(...) round result -- end of universe? */
 	NewX is X/Xscale + Xoffset,
 	NewY is Y/Yscale + Yoffset, !,
@@ -1044,6 +1044,11 @@ untranslate([Pair | Rest], Trans, [NewPair | NewRest]) :-
 	untranslate(Pair, Trans, NewPair),
 	untranslate(Rest, Trans, NewRest).
 
+
+/* work around legacy nasties */
+gnumber(N) :-
+	number(N);
+	N = -(M), number(M).
 
 add_to_translation([Xoffset, Yoffset, Xscale, Yscale], Comp,
 		[NewXoffset, NewYoffset, NewXscale, NewYscale]) :-

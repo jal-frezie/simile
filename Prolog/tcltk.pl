@@ -42,7 +42,8 @@ restore_crs([Cr | R1], New) :-
 
 
 
-/* Many thanks to this guy for supplying me with what follows -- Jasper
+/* Many thanks to this guy for supplying me with an earlier version of
+what follows -- Jasper
 
 Anders Andersson           Phone: +46 18 471 32 39        Address: Box 480
 Department of Mathematics  Room:  MIC 2:141                        S-751 06
@@ -53,8 +54,11 @@ SWEDEN                     http://www.math.uu.se/~andand           SWEDEN
         
 decode_command(chars(Codes), L0, L) :- !,
         append(Codes, L, L0).
-decode_command(write(Term), L0, L) :- !,
-        sicstus_write_to_chars(Term, Chars),
+decode_command(Float, L0, L) :-
+	float(Float), !,
+	sicstus_format_to_chars("~6f", [Float], Fs),
+	append(Chars, Os, Fs),
+	\+ (member(Ch, Os), \+ member(Ch, "0")), !,
         append(Chars, L, L0).
 decode_command(format(Fmt,Args0), L0, L) :- !,
         (  atomic(Args0)
@@ -79,10 +83,9 @@ decode_command([C], L0, L) :- !,
 decode_command([C|Cs], L0, L) :- !,
         decode_command(C, L0, [32|L1]),
         decode_command(Cs, L1, L).
-decode_command(A, L0, L) :- 
-        atomic(A), 
-        !, 
-        name(A, Chars),
+decode_command(WTorA, L0, L) :-
+	(WTorA = write(Term); atomic(WTorA), Term = WTorA), !, 
+        sicstus_write_to_chars(Term, Chars),
         append(Chars, L, L0).
 decode_command(_X, L0, L) :-
         L = L0.

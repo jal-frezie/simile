@@ -1095,7 +1095,7 @@ presence_affects(Arc, Affected) :-
 	(sequence(Head, Arc), sequence(Arc, Affected);
 	sequence(Arc, Head), sequence(Affected, Arc));
 	
-	Arc is_connector from _A to B,
+	terminates(Arc, B),
 	Affected = B.
 
 delete_obsolete_modes([], _, []).

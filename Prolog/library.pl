@@ -179,6 +179,8 @@ insert_breaks(Stream, Term, Done, Rest) :-
 	    \+ suffix("\\", Line), /* do not put cr where it will be escaped */
 	    \+ prefix("'", NewRest), /* do not put cr before a single quote as
 		     this sometimes gets escaped along with the cr */
+	    \+ suffix("-", Line), /* do not put cr between a - sign and its
+		     number, as the result will be read as -(n) by gnu */
 	    (append([Done, Line, [10]], NewDone);
 	    append([Done, Line, [92, 10]], NewDone),
 		Escaped = true),

@@ -6,6 +6,9 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.13  2002/07/22 21:23:09  jaspert
+#Made popups easier
+#
 #Revision 1.12  2002/07/20 22:12:21  jaspert
 #pipe fiddling
 #
@@ -71,6 +74,9 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.13  2002/07/22 21:23:09  jaspert
+#Correct RCS directive #Made popups easier
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.12  2002/07/20 22:12:21  jaspert
 #Correct RCS directive #pipe fiddling
 #Correct RCS directive #
@@ -723,7 +729,7 @@ proc ProdObj {nodeId caption} {
 # we reach the edge of our search radius.
 
 proc GetClickedObj { winId canx cany range} {
-    for {set halo 0} {$halo < $range} {incr halo 2} {
+    for {set halo 1} {$halo < $range} {incr halo 2} {
 	set target [$winId find closest $canx $cany $halo]
 	if {![string match */background/* [$winId gettags $target]]} {
 	    return $target
@@ -746,6 +752,7 @@ proc CanvasBindPopup {canvas widget keywd} {
 
 proc QueuePopup {cmd} {
     global popper
+#puts "queueing $cmd"
     set popper [after 500 $cmd]
 }
 
@@ -760,7 +767,9 @@ proc AddEqnPopup {x y winId X Y} {
     }
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
-    set target [GetClickedObj $winId $canx $cany 1]
+    set target [GetClickedObj $winId $canx $cany 2]
+#    set target [$winId find closest $canx $cany 1]
+#puts "targeting $target"
     if {$target} {
 	PostPopup $X $Y
 	set plName [ExtractPrologName $winId $target]

@@ -72,7 +72,7 @@ sicstus_read_from_chars(Term, Result) :-
         read_from_codes(Term, Result).
 
 sicstus_write_to_chars(Term, Result) :-
-        write_to_codes(Result, Term).
+        print_to_codes(Result, Term).
 
 sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
         !, format_to_codes(Result, Template, [V1 | Vars]).
@@ -122,9 +122,18 @@ all_ground([H | T]) :-
 load properly if they have already been declared */
 
 /* Things to ignore temporarily */
-% binary type of output file
 
-/* regular stuff : xrefs occurs inside a model structure and contains other
+/* Improved system for outputting floating-point numbers -- max of 6
+decimal places (does wrong thing with print_to_chars)
+
+portray(F) :-
+	float(F),
+	format_to_codes(Fs, "~6f", [F]),
+	append(Ns, Os, Fs),
+	\+ (member(Ch, Os), \+ member(Ch, "0.")), !,
+	format("~s",[Ns]).
+
+regular stuff : xrefs occurs inside a model structure and contains other
 model structures, making them circular. It must therefore be
 printed incompletely to avoid infinite loops... */
 

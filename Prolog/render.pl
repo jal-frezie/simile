@@ -829,7 +829,8 @@ comma_separate([Solo], Str) :-
 
 comma_separate([F | R], Str) :-
 	comma_separate(R, Str2),
-	sicstus_format_to_chars("~w,~s", [F, Str2], Str).
+	sicstus_write_to_chars(F, Str1), !,
+	append([Str1, ",", Str2], Str).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
