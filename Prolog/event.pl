@@ -1270,9 +1270,11 @@ adjust_link_forwards(Target, Way, Also, Where) :-
 change_delete_status(Target, Way, FromWhere) :-
 	(\+ at_def_con(Target, FromWhere), !,
 	    Way = off,
-	    (find_base(Target, Base),
+	    (FromWhere = base,
+		find_base(Target, Base),
 		\+ Base = Target,
 		\+ at_def_con(Base, FromWhere), !,
+		/* if clearing a ghost of a selected node, set it to 2 */
 		highlight(Target, 2);
 	    to_def_con(Target, FromWhere));
 	Way = on,
