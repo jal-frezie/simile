@@ -267,6 +267,7 @@ make_intermediates(
 	    (so they get instantiated and declared in each procedure) */
 	    Source = param(_, SrcUnits, OrigLoops, _,_),
 	    (m_update:use_units_in(SubId, 'No'),
+		nonvar(SrcUnits),
 		get_conversion(_, SrcUnits, SrcUnits, _),
 		Units = 1;
 	    Step = dummy, !,
