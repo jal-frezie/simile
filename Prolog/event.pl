@@ -1523,6 +1523,10 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	(member(Edge, [ne, e, se, c]), !, NewR is OldR+XOff; NewR = OldR),
 	(member(Edge, [sw, s, se, c]), !, NewB is OldB+YOff; NewB = OldB),
 	NewBox = [NewL, NewT, NewR, NewB],
+	/* Check it is not too small */
+	get_box_size(submodel, Standard),
+	NewR-NewL > Standard//2,
+	NewB-NewT > Standard//2,
 	find_all_comps(Parent, Submodel),
 	get_shape(Parent, internal_extent, ParentShape),
 	fits_inside(NewBox, ParentShape),
