@@ -141,6 +141,39 @@ make_legible_for_prolog(String, NewString) :-
 	append([Prefix, Tweaked, NewSuffix], [start | NewString]);	
 	NewString = String.
 
+number_follows(All, Number, Rest, Type) :-
+	member(Type, [scientific, any_float, any_int]),
+	append(Number, Rest, All),
+	(Rest = [];
+	Rest = [NotNum | _],
+	nonum(NotNum)),
+	Test =.. [Type, Number],
+	call(Test).
+
+scientific(XNum) :-
+	append(Fnum, [E | Unum], XNum),
+	member(E, "Ee"),
+	(any_float(Fnum); any_int(Fnum)),
+	any_int(Unum).
+
+any_float(Fnum) :-
+	(Fnum = Unum; Fnum = [S | Unum], member(S, "-+")),
+	select(Pt, Unum, Num), member(Pt, "."),
+	unsigned_int(Num).
+
+
+any_int(Unum) :-
+	(Unum = Num; Unum = [S | Num], member(S, "-+")),
+	unsigned_int(Num).
+
+unsigned_int(Num) :-
+	\+ Num = "",
+	\+ (member(N, Num), nonum(N)).
+	  
+nonum(N) :- \+ member(N, "0123456789").
+
+	
+
 get_host(Object, Visible) :-
 	Object = Visible, \+ implicit_function(_, Visible);
 	implicit_function(Visible, Object).
