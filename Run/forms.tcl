@@ -1201,3 +1201,11 @@ proc GetHelp {} {
     cd $SIMILE_PATH/help
     ContextSensitiveHelp .diag [.diag.topicsf.l get [.diag.topicsf.l curselection]]
 }
+
+proc VisitUrl {x} {
+    global tcl_platform
+    if [string match windows $tcl_platform(platform)] {
+      set x [regsub -all -nocase {htm} $x {ht%6D}]
+      exec rundll32 url.dll,FileProtocolHandler $x &
+    }
+}
