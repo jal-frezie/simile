@@ -401,7 +401,7 @@ pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 
 # OK, Cancel and Help buttons
 frame .table.top.fbuttons
 button .table.top.fbuttons.ok -text OK -width 10 \
-            -command "set table_entry(done) 1"
+            -command FinishTableSelection
 button .table.top.fbuttons.cancel -text Cancel -width 10 \
             -command "set table_entry(done) 0"
 button .table.top.fbuttons.help -text Help -width 10 \
@@ -483,9 +483,9 @@ proc LoadDataFile {} {
 	}
     }
     gets $stream firstLine
-    set hds [split $firstLine ,]
+    set table_entry(allHeads) [split $firstLine ,]
     set i 1
-    foreach hd $hds {
+    foreach hd $table_entry(allHeads) {
         $fheads.lheads insert end hd$i -text $hd
         incr i
     }
@@ -493,7 +493,17 @@ proc LoadDataFile {} {
 	return 1
 }
 
+proc FinishTableSelection {} {
+    global table_entry
 
+    if {[lsearch $table_entry(allHeads) $table_entry(dataField)]<0} {
+	ShowMessage {Data column not found} warning \
+	    "Your selection for data column is not in the headers of this table." ok
+    } else {
+	set table_entry(done) 1
+    }
+}
+	
 proc AddIndex {lb pth where op dtype data} {
     # work around an apparent bug where .c is appended to path name
     set path [string range $pth 0 [expr [string length $pth]-3]]
@@ -533,7 +543,7 @@ proc ViewTable {} {
 	incr row
     }
     close $stream
-    .viewer.t configure -rows $row -cols $col -titlerows 1
+    .viewer.t configure -rows $row -cols $col -titlerows 1 -state disabled
     focus .viewer
     grab .viewer
 }
