@@ -109,7 +109,7 @@ proc PrefValueSet { varName value } {
 # A user interface to the preference items.
 #
 proc Pref_HelpCommand { noteb } {
-    set Page [string tolower [$noteb raise]]
+    set Page [string tolower [$noteb tab current -text]]
     ContextSensitiveHelp .pref  "diagrams/preferences/$Page.htm"
 }
 
