@@ -423,10 +423,13 @@ proc canvasTLDistance {winId x y} {
 # This is used when Tcl wants to get a result from Prolog, e.g., for the
 # equation bar. The prolog procedure has to set fromProlog. It should stop
 # the thread until it returns, but something is wrong -- occasionally 
-# fromProlog doesn't get set. Answer: don't clear it...
+# fromProlog doesn't get set. Answer: set it first. Or fix the actual
+# bug -- it seems 'update idletasks' somehow interferes with this, 
+# resulting in the variable not getting set, or something.
 
 proc GetFromProlog {prologCmd} {
     global fromProlog
+    set fromProlog {}
     prolog $prologCmd
     return $fromProlog
 }
@@ -708,6 +711,7 @@ proc AddCanvasBindings { c } {
     bind $c <Button-1> {ClickObj %x %y %W click}
     # Doubleclicks now bound to objects not canvas
     bind $c <Double-1> {ClickObj %x %y %W doubleclick}
+
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
     bind $c <Button-3> {PostMenu %W %X %Y}
