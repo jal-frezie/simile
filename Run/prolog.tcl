@@ -100,7 +100,7 @@ set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
 fconfigure $plPipe(stream) -translation {auto lf}
 if {[string match windows $tcl_platform(platform)]} {
-    fconfigure $plPipe(stream) -encoding euc-jp
+    fconfigure $plPipe(stream) -encoding utf-8
 }
 #fileevent $plPipe readable Reader
 
