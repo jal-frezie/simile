@@ -992,6 +992,8 @@ proc FixSize {c} {
         close $stream
     }
     pack propagate $win 0
+    DoRegDialog $win
+
 }
 
 proc DestroyHelpers {} {

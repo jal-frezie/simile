@@ -53,7 +53,7 @@ main :-
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),
 	dialogue:pass_functions(LibFuns),
-	make_desktop(Desktop, Canvas),
+	m_update:make_desktop(Desktop, Canvas),
 	name(TempDir, TempStr),
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
@@ -62,22 +62,3 @@ main :-
 /*	append_atoms(TempDir, '/.lock/', SplashLock),
 	output:trim_tree(SplashLock, ''),
 */        tk_main_loop.
-
-make_desktop(Desktop, Canvas_name) :-
-	m_class:Root is_root,
-	(m_class:Root has_part Desktop, !;
-	m_class:Desktop is_new_part_of Root,
-	m_class:Desktop has_new_class submodel,
-	m_class:Desktop has_new_class_refinement name of 'Desktop',
-	state:get_initial_window_size(X, Y),
-	image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
-	image:set_shape(Desktop, bounding_box, [0, 0, X, Y])),
-	InitDepths=[0,32,32,32,32,32,32,showAll],
-	event:new_window_for(Desktop, Canvas_name, InitDepths),
-	all(state, set_display_depth, [unify(Canvas_name),
-	    build([ghost_link, influence, variable, flow, compartment,
-		   submodel, caption, sections]), build(InitDepths)]),
-	maintain:redraw_window(Canvas_name),
-	menu:update_mode(select),
-	backup:initialize_ring,
-	state:initialize_phase.

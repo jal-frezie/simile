@@ -130,19 +130,7 @@ proc ControlDraw {prologVersion} {
         set userinfo(oldVersion) 0
         set userinfo(done) 0
     }
-    if {!$userinfo(done) || $userinfo(Version)>$userinfo(oldVersion)} {
-        DoRegDialog
-        if {$userinfo(done) == 2} {
-            if {[catch {package require http
-                    set regData [::http::formatQuery Name $userinfo(name) \
-                            Organisation $userinfo(corp) Email $userinfo(email) \
-                            Version $userinfo(Version) OS $tcl_platform(os)]
-                            ::http::geturl http://www.simulistics.com/products/SendMail.asp \
-                            -query $regData}]} {
-                set userinfo(done) 0
-            }
-        }
-    }
+
     set UserStream [open $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)

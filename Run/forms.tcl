@@ -1061,16 +1061,18 @@ proc GetFindText {parent} {
     }
 }
 
-proc DoRegDialog {} {
-    global userinfo
+proc DoRegDialog {dtId} {
+    global userinfo custom
+
+    if {$userinfo(done) && $userinfo(Version)==$userinfo(oldVersion)} {
+	return
+    }
     set t [toplevel .register -bd 4]
-    wm title $t Registration
-    wm transient $t
+    wm title $t "Welcome to Simile version $userinfo(Version)"
+    wm transient $t $dtId
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
     
-    pack [message .register.m -text "Registration enables us to keep you up-to-date with \
-            your Simile installation.  We will contact you whenever we release a new \
-            version of Simile.  Your personal information is not used for any other purpose."\
+    pack [message .register.m -text "Select compartments or flows from the toolbar to add to the diagram. Use the select (pointer) tool to edit its caption or value. Run your model using the Build command of the Model menu." \
             -width 400] -pady 5
     
     # Lord I dont know what is this fascination with hi-tech multi-function
@@ -1084,28 +1086,57 @@ proc DoRegDialog {} {
     #    pack [LabelEntry  .register.email -label "Email address" -labelanchor w -padx 5 \
     #                 -textvariable userinfo(email)]  -fill x -pady 5
     
-    foreach {field label} {name "Name:" corp "Company:" \
-                email "Email address:"} {
-        pack [frame .register.$field] -fill x -expand true
-        pack [label .register.$field.l -width 15 -text $label] -side left
-        pack [entry .register.$field.e -textvariable userinfo($field)] \
-                -fill x -expand true
-    }
+#    foreach {field label} {name "Name:" corp "Company:" \
+#                email "Email address:"} {
+#       pack [frame .register.$field] -fill x -expand true
+#        pack [label .register.$field.l -width 15 -text $label] -side left
+#        pack [entry .register.$field.e -textvariable userinfo($field)] \
+#                -fill x -expand true
+#    }
     
     
-    bind .register.email.e <Return> "set userinfo(done) 2"
-    pack [set bs [frame .register.buttframe]] -pady 5
-    pack [button $bs.enter -text "Register now" \
-            -command {set userinfo(done) 2}] -side left
-    pack [button $bs.later -text "Register later" \
-            -command {set userinfo(done) 0}] -side left
-    pack [button $bs.cancel -text "Don't register" \
-            -command {set userinfo(done) 1}]
+#    bind .register.email.e <Return> "set userinfo(done) 2"
+#    pack [set bs [frame .register.buttframe]] -pady 5
+#    pack [button $bs.enter -text "Register now" \
+#            -command {set userinfo(done) 2}] -side left
+#    pack [button $bs.later -text "Register later" \
+#            -command {set userinfo(done) 0}] -side left
+#    pack [button $bs.cancel -text "Don't register" \
+#            -command {set userinfo(done) 1}]
     
+    pack [frame .register.checkframe]
+    pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left
+    pack [label .register.checkframe.l -text "Do not show this welcome screen again"] -side left
+    pack [button .register.ok -text OK -command {set userinfo(done) $welcomeDone}]
     tkwait visibility .register
     grab .register
-    focus .register.email
+#    focus .register.email
+
+    # now put it in the middle of the desktop
+    scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f
+    scan [ wm geometry .register] {%dx%d} g h
+    wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
     tkwait variable userinfo(done)
+
+    set UserStream [open $custom(prefDir)/version w]
+    puts $UserStream $userinfo(name)
+    puts $UserStream $userinfo(corp)
+    puts $UserStream $userinfo(Version)
+    puts $UserStream $userinfo(done)
+    close $UserStream
+    
+# this never happens with welcome version
+    if {$userinfo(done) == 2} {
+	if {[catch {package require http
+	    set regData [::http::formatQuery Name $userinfo(name) \
+			     Organisation $userinfo(corp) Email $userinfo(email) \
+			     Version $userinfo(Version) OS $tcl_platform(os)]
+	    ::http::geturl http://www.simulistics.com/products/SendMail.asp \
+			-query $regData}]} {
+	    set userinfo(done) 1
+	}
+    }
+
     grab release .register
     destroy .register
 }
