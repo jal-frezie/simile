@@ -82,10 +82,11 @@ namespace eval runcontrol33857 {
         pack $rcf.topbuttons -side left
         
         frame $rcf.bf
-        set cnvs [canvas $rcf.bf.flag -width 10 -height 10]
-        $cnvs create oval 2 2 8 8 -fill [RestingColour]
-        $cnvs create oval 0 0 10 10 -outline grey
+        set cnvs [canvas $rcf.bf.flag -width 12 -height 12]
+        $cnvs create oval 2 2 10 10 -fill [RestingColour]
+        $cnvs create oval 0 0 12 12 -outline grey
         pack $rcf.bf.flag -side right -anchor e
+	after idle set runState(fractDone) 0
         pack [ProgressBar $rcf.bf.bar -variable runState(fractDone) \
 		  -maximum 1] -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.bf -side left -fill x

@@ -779,7 +779,7 @@ proc MakeSubFrames {parent hierarchy} {
         set level [lindex $hierarchy 0]
         set nextLevel $parent.frame$level
         if {![winfo exists $nextLevel]} {
-            pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2
+            pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2 -side bottom
             pack [label $nextLevel.label -text $level:]
         }
         return [MakeSubFrames $nextLevel [lrange $hierarchy 1 end]]

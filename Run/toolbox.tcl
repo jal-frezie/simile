@@ -46,10 +46,24 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
+proc LoadIconImages {} {
+    global iconImages
+    foreach fn {tick cross} {
+	set iconImages($fn) \
+	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
+    }
+    foreach fn {open} {
+	set iconImages($fn) \
+	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+    }
+}
+
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel
     
     wm withdraw .
+
+    LoadIconImages
 
 # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
@@ -1221,7 +1235,7 @@ proc FillReopen {winId} {
 }
 
 proc AddMainMenu { winid initWidth initDepths} {
-    global custom MIpushedbutton tcl_platform window_info
+    global custom MIpushedbutton tcl_platform window_info iconImages
 
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
@@ -1496,13 +1510,13 @@ proc AddMainMenu { winid initWidth initDepths} {
     bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
     bind $eb.equation <FocusOut> AbandonEqn
-    set image [image create photo -file "../Images/Eqnbar/tick.gif"]
-    pack [button $eb.tick -state disabled -image $image -borderwidth 1 \
-            -command [list accept_equation $winid $eb.equation]] -side left
+    pack [button $eb.tick -state disabled -image $iconImages(tick) \
+	      -borderwidth 1 \
+	      -command [list accept_equation $winid $eb.equation]] -side left
     
-    set image [image create photo -file "../Images/Eqnbar/cross.gif"]
-    pack [button $eb.cross -state disabled -image $image -borderwidth 1 \
-            -command [list restore_equation $winid $eb]] -side left
+    pack [button $eb.cross -state disabled -image $iconImages(cross) \
+	      -borderwidth 1 \
+	      -command [list restore_equation $winid $eb]] -side left
     
     frame $eb.padding -width 10
     pack $eb.padding -side left

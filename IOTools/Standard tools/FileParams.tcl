@@ -42,7 +42,7 @@ proc SaveState {winId} {
     foreach compName [array names widgetNames] {
 	set node [GetIdFromCaptionPath $compName]
 	if {[string match normal [$widgetNames($compName) cget -state]]} {
-	    set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
+	    set paramData($compName) [$widgetNames($compName) get]
 	    
 	    if {[info exists paramState($compName)]} {
 		if {[string compare $paramData($compName) \
@@ -123,13 +123,14 @@ proc SaveState {winId} {
     }    
 
 proc 	    AddEntry {winId node} {
-    global paramData widgetNames
+    global paramData paramDims widgetNames iconImages
     set compName [GetCaptionPathFromId $node]
     set levels [lrange [split $compName /] 1 end]
     set nodeDims [GetModelDims $node]
     while {[set sep [lsearch $nodeDims -1]]>-1} {
 	set nodeDims [lreplace $nodeDims $sep $sep]
     }
+    set paramDims($compName) [lrange $nodeDims 0 end-1]
 # bit of voodoo...get table relating numerical indices of node to enymerated
 # types (from prolog) and use to translate array bounds
     set trans [GetFromProlog tk_get_info('$winId',$node,types)]
@@ -152,70 +153,179 @@ proc 	    AddEntry {winId node} {
     pack [set slot [frame [MakeSubFrames $winId.sliderframe $levels]]] -fill x -expand on
     pack [label $slot.l -text $slotCaption] -side left
     if {$nodeDims>1} {
-	pack [button $slot.b -text "Read table" \
-		  -command [list GetFromTable $winId $compName]] -side right
+	pack [button $slot.b -image $iconImages(open) -command [namespace code [list GetFromTable $winId $compName]]] -side right
     }
-    
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
-    pack [text $slot.e -width 30 -height 1] -side right \
-	-fill x -expand on
+    pack [entry $slot.e -width 30] -side left -fill x -expand on
+    bind $slot.e <Return> "$slot.tick invoke"
     if {[info exists paramData($compName)]} {
 	FillIfSmall $slot.e $paramData($compName)
     } else {
 	set paramData($compName) {}
     }
+    if {[string match normal [$slot.e cget -state]]} {
+    pack [button $slot.cross -image $iconImages(cross) -borderwidth 1 \
+	      -command [namespace code [list RevertData $winId $compName]]] \
+	-side right
+    pack [button $slot.tick -image $iconImages(tick) -borderwidth 1 \
+	      -command [namespace code [list AcceptData $winId $compName]]] \
+	-side right
+    }
     set widgetNames($compName) $slot.e
-    
             # note whether we need to enter a parameter here...
     if {![llength $paramData($compName)]} {
 	lappend needed $compName
     }
 }
 
-proc OK {winId oldMissing} {
-    global paramData widgetNames runState running_c inputHelper
-    
-    foreach compName [array names widgetNames] {
-	set node [GetIdFromCaptionPath $compName]
-	    if {[string match normal [$widgetNames($compName) cget -state]]} {
-	       set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
-	    }
-            #ShowMessage debug info "-paramData($compName)- is -$paramData($compName)-" ok
-	    set dataChanged 0
-	    if {![llength $paramData($compName)]} {
-		set empties 1
-		# for each constant value, check whether it has been changed, and if so,
-		# flag a complete model rebuild. Do same if running_c lost due to crash
-	    } elseif {[lsearch $oldMissing $compName] > -1} {
-		set dataChanged 1
-	    } elseif {![info exists running_c]} {
-		set dataChanged 1
-	    } elseif {[string compare [lindex [GetModelValue $node] 0] \
-			   $paramData($compName)]} {
-		set dataChanged 1
-	    }
-	    # Make array form if data has changed
-	    if {$dataChanged} {
-		set runState(reloadParams) 1
-		set trans [GetFromProlog tk_get_info({},$node,types)]
-		ListToArray $node $trans $paramData($compName)
-# new bit for using it as an input tool: notify that we have values
-		set inputHelper($compName) winId
-	    }
-    }
-    if {[info exists empties]} {
-	$winId.buttons.banner configure -text "Some values still missing!"
+proc GetFromTable {parent compName} {
+    global paramState paramData widgetNames table_entry
+    if {[info exists paramState($compName)]} {
+	set table_entry(data) $paramState($compName)
     } else {
-	set paramData(/done/) 1
-# new bit for using it as an input tool: notify that we have values
-	CheckFixedParamState
+	set table_entry(data) {}
     }
-    SaveState $winId
+    if {[string match normal [$widgetNames($compName) cget -state]]} {
+	set table_entry(values) [$widgetNames($compName) get]
+    } else {
+	set table_entry(values) $paramData($compName)
+    }
+    if {[equationDoTable $parent 0]} {
+        if {[llength $table_entry(dataField)]} {
+	    set paramState($compName) [concat [list $table_entry(fileName) \
+						   $table_entry(dataField)] \
+					   $table_entry(indices)]
+	}
+        set paramData($compName) $table_entry(values)
+        FillIfSmall $widgetNames($compName) $paramData($compName)
+    }
 }
 
-    proc display {winId time display remainder} {
+proc OK {winId oldMissing} {
+    global widgetNames
+
+    foreach compName [array names widgetNames] {
+	if {[string match normal [$widgetNames($compName) cget -state]]} {
+	    AcceptData $winId $compName
+	}
     }
+}
+
+proc AcceptData {winId compName} {
+    global paramDims paramData widgetNames runState inputHelper running_c
+
+    set node [GetIdFromCaptionPath $compName]
+    set paramData($compName) [$widgetNames($compName) get]
+    
+    set dataChanged 0
+# for each constant value, check whether it has been changed, and if so,
+# flag a complete model rebuild. Do same if running_c lost due to crash
+# or model not yet started
+    if {![info exists running_c]} {
+	set dataChanged 1
+    } elseif {[string compare [lindex [GetModelValue $node] 0] \
+		   $paramData($compName)]} {
+	set dataChanged 1
+    }
+    # Make array form if data has changed
+    if {$dataChanged} {
+	set runState(reloadParams) 1
+	set trans [GetFromProlog tk_get_info({},$node,types)]
+	set misses [ListToArray $node $trans $paramDims($compName) \
+			$paramData($compName)]
+# new bit for using it as an input tool: notify that we have values
+	if {[llength $misses]} {
+	    ShowMessage "Setting $compName" warning "Problem with value at indices [lrange $misses 0 end-1]: [lindex $misses end]" ok
+	} else {
+	    set inputHelper($compName) winId
+	    SaveState $winId
+	    CheckFixedParamState
+	}
+    }
+}
+
+# need new version that 
+proc ListToArray {tgt trans dims list} {
+#puts "Go! tgt $tgt trans $trans list $list"
+    set thisTrans [lindex $trans 0]
+    switch [llength $list] { 0 {
+	return [list all "Missing value"]
+    } 1 {
+#puts "setting paramData($tgt) to $headNum"
+	if {[llength $dims]} {
+	    set userDims [join $dims { x }]
+	    return [list "scalar $list supplied instead of array of $userDims"]
+	} else {
+	    return [EnumTypeToNumber $tgt $list $thisTrans]
+	}
+    } default {
+	if {![llength $dims]} {
+	    return [list "Array $list supplied instead of scalar"]
+	}
+	if {[llength $list]%2} {
+	    return [list [lindex $list end] "Missing value"]
+	}
+	array set sub $list
+	for {set arrayPt 1} {$arrayPt <= [lindex $dims 0]} {incr arrayPt} {
+	    set indx [NumberToEnumType $arrayPt $thisTrans]
+	    if {![info exists sub($indx)]} {
+		return [list $indx "Missing value"]
+	    }
+	    set mis [ListToArray $tgt,$arrayPt [lrange $trans 1 end] \
+			 [lrange $dims 1 end] $sub($indx)]
+	    if {[llength $mis]} {
+		return [concat $indx $mis]
+	    }
+	}
+    }
+    }
+    return {}
+}
+	    
+proc EnumTypeToNumber {tgt head trans} {
+    global paramData
+    if {[string compare {} $trans]} {
+	set poss [lsearch $trans $head]
+	if {$poss == -1} {
+	    return [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
+	}
+	set paramData($tgt) $poss
+    } else {
+	set paramData($tgt) $head
+    }
+    return {}
+}
+
+proc NumberToEnumType {idx trans} {
+    if {[llength $trans]} {
+	return [lindex $trans $idx]
+    } else {
+	return $idx
+    }
+}
+
+proc RevertData {winId compName} {
+    global paramData widgetNames
+    $widgetNames($compName) delete 0 end
+    if {[info exists paramData($compName)]} {
+	$widgetNames($compName) insert 0 $paramData($compName)
+    }
+}
+
+proc FillIfSmall {entry text} {
+    $entry delete 0 end
+    set verbosity [string length $text]
+    if {$verbosity>500} {
+	$entry insert 0 [EndsOnly $text 1 $verbosity 500]
+	$entry configure -state disabled
+    } else {
+	$entry insert 0 $text
+    }
+}
+
+proc display {winId time display remainder} {
+}
     
 } ;# end of namespace
 
