@@ -41,22 +41,30 @@ variable redrawLines 1
 }
 
 proc Restore {winId} {
-	variable useNodes
+    variable useNodes
+    variable viewpoint
+    variable zOrder
+
     variable width; # of canvas
     variable height; # of canvas
+    variable redrawLines
 
     set width($winId) 650; # of canvas
     set height($winId) 500; # of canvas
+    set redrawLines 1
 
     set nodeList [GetState $winId]
-	set useNodes($winId,xcoord) \
-			[GetIdFromCaptionPath [lindex $nodeList 1]]
-	set useNodes($winId,ycoord) \
-			[GetIdFromCaptionPath [lindex $nodeList 2]]
-	set useNodes($winId,size) \
-			[GetIdFromCaptionPath [lindex $nodeList 3]]
-	InitializeForest $winId useNodes($winId,xcoord) \
-			useNodes($winId,ycoord) useNodes($winId,size)
+    if {[string match displaying [lindex $nodeList 0]]} {
+	set useNodes($winId,xcoord) [GetIdFromCaptionPath [lindex $nodeList 1]]
+	set useNodes($winId,ycoord) [GetIdFromCaptionPath [lindex $nodeList 2]]
+	set useNodes($winId,size) [GetIdFromCaptionPath [lindex $nodeList 3]]
+	set viewpoint [lindex $nodeList 4]
+	set zOrder [lindex $nodeList 5]
+	InitializeForest $winId $useNodes($winId,xcoord) \
+	    $useNodes($winId,ycoord) $useNodes($winId,size)
+    } else {
+	GrabClicks $winId
+    }
 }
 
 proc GetCanvas {winId} {
@@ -64,21 +72,21 @@ proc GetCanvas {winId} {
 }
 
 proc click {winId node caption} {
-	variable useNodes
-	set ms $winId.intro
-	set testResult [GetModelValue $node]
-	if {[string compare $testResult novalue]} {
+    variable useNodes
+    set ms $winId.intro
+    set testResult [GetModelValue $node]
+    if {[string compare $testResult novalue]} {
 	set state [GetState $winId]
 	switch $state {
 	    xcoord {
 		$ms configure -text "Now click on the value representing the Y coordinates."
 		set useNodes($winId,xcoord) $node
-		set newState ycoord
+		SetState $winId ycoord
 	    }
 	    ycoord {
 		$ms configure -text "Now select a value to display as the size of the objects."
 		set useNodes($winId,ycoord) $node
-		set newState sizeval
+		SetState $winId sizeval
 	    }
 	    sizeval {
 		pack forget $ms
@@ -87,18 +95,27 @@ proc click {winId node caption} {
 		set xnode $useNodes($winId,xcoord)
 		set ynode $useNodes($winId,ycoord)
 		InitializeForest $winId $xnode $ynode $node
-		set newState "displaying \
-					[GetCaptionPathFromId $xnode] \
-					[GetCaptionPathFromId $ynode] \
-					[GetCaptionPathFromId $node]"
 		catch {wm geometry $winId 650x500}
+		SaveState $winId
 	    }
 	}
-	SetState $winId $newState
-	} else {
-		$ms configure -text \
-			"This component does not have a value; please choose a compartment, variable or flow."
-	}
+    } else {
+	$ms configure -text \
+	    "This component does not have a value; please choose a compartment, variable or flow."
+    }
+}
+
+proc SaveState {winId} {
+    variable useNodes
+    variable viewpoint
+    variable zOrder
+
+    set state displaying
+    foreach node {xcoord ycoord size} {
+	lappend state [GetCaptionPathFromId $useNodes($winId,$node)]
+    }
+    lappend state $viewpoint $zOrder
+    SetState $winId $state
 }
 
 proc display {winId time step remainder} {
@@ -110,28 +127,28 @@ proc display {winId time step remainder} {
 	}
 }
 
-proc toggleViewpoint { } {
+proc toggleViewpoint { winId } {
 variable redrawLines 1
 variable viewpoint
-variable thisWinId
 variable old_xs
 variable old_ys
 variable old_hs
-   set viewpoint [expr ("$viewpoint"=="PLAN")?"ELEVATION":"PLAN"]
-   DropTrees $thisWinId $old_xs $old_ys $old_hs
+    set viewpoint [expr ("$viewpoint"=="PLAN")?"ELEVATION":"PLAN"]
+    DropTrees $winId $old_xs $old_ys $old_hs
+    SaveState $winId
 }
 
-proc toggleZOrder { } {
+proc toggleZOrder { winId } {
 variable viewpoint
-variable thisWinId
 variable old_xs
 variable old_ys
 variable old_hs
 variable zOrder
-   if { "$viewpoint"=="PLAN" } {
-      set zOrder [expr ("$zOrder"=="UP")?"DOWN":"UP"]
-      DropTrees $thisWinId $old_xs $old_ys $old_hs
-   }
+    if { "$viewpoint"=="PLAN" } {
+	set zOrder [expr ("$zOrder"=="UP")?"DOWN":"UP"]
+	DropTrees $winId $old_xs $old_ys $old_hs
+    }
+    SaveState $winId
 }
 
 proc InitializeForest {winId xs ys hs} {
@@ -142,9 +159,9 @@ variable height; # of canvas
    canvas $winId.c -width 1 -height 1 -bg white
    frame $winId.buttons -relief raised -bd 1
    button $winId.buttons.but_view -text "aboveBelow" \
-      -command " [namespace current]::toggleViewpoint "
+      -command " [namespace current]::toggleViewpoint $winId"
    button $winId.buttons.but_order -text "Swap Z Order" \
-      -command " [namespace current]::toggleZOrder "
+      -command " [namespace current]::toggleZOrder $winId"
    label $winId.buttons.label_draw -text "Ready  " -relief sunken
       
 	pack $winId.c -fill both -expand true
@@ -213,7 +230,6 @@ proc drawLines { winId } {
 proc DropTrees {winId xs ys hs} {
 variable redrawLines
 variable viewpoint
-variable thisWinId
 variable old_xs
 variable old_ys
 variable old_hs
@@ -222,7 +238,6 @@ variable sy
    $winId.buttons.label_draw configure -text "DRAWING" -bg red
 #   update idletasks
 
-   set thisWinId $winId
    set old_xs $xs
    set old_ys $ys
    set old_hs $hs
