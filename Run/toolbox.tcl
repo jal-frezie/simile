@@ -130,7 +130,7 @@ proc ControlDraw {prologVersion} {
                     set regData [::http::formatQuery Name $userinfo(name) \
                             Organisation $userinfo(corp) Email $userinfo(email) \
                             Version $userinfo(Version) OS $tcl_platform(os)]
-                    ::http::geturl http://www.simulistics.com/products/SendMail.asp \
+                            ::http::geturl http://www.simulistics.com/products/SendMail.asp \
                             -query $regData}]} {
                 set userinfo(done) 0
             }
@@ -1494,17 +1494,37 @@ proc ShowAbout {winId} {
     toplevel .about
     wm transient .about $winId
     wm title .about About\ SIMILE
-    image create photo drip
-    drip read ../Images/HelpAbout.gif
+    image create photo dripu
+    image create photo dripl
+    dripu read "../Images/HelpAboutUpper.gif"
+    dripl read "../Images/HelpAboutLower.gif"
+    label .about.upper -image dripu
+    pack .about.upper
+    frame .about.fr -relief sunken -borderwidth 2
+    label .about.fr.lab1 -text Version\ $sendvars(simV)\ $userinfo(edn) \
+            -font {-weight bold -family helvetica -size 10}
+            label .about.fr.lab2 -text "Prolog: $sendvars(proV)" \
+                -font {-family helvetica -size 8}
+                label .about.fr.lab3 -text "TclTk: [info patchlevel]" \
+                        -font {-family helvetica -size 8}
+                        label .about.fr.lab4 -text "This product is registered to\
+                                $userinfo(name), $userinfo(corp)" \
+                                -font {-family helvetica -size 8}
+    pack .about.fr.lab1
+    pack .about.fr.lab2
+    pack .about.fr.lab3
+    pack .about.fr.lab4
+    pack .about.fr
     
-    pack [canvas .about.c -width 510 -height 340]
-    .about.c create image 255 170 -image drip
-    .about.c create text 255.0 60.0 -font {-weight bold -family helvetica -size 10} -text Version\ $sendvars(simV)\ $userinfo(edn)
-    .about.c create text 255.0 80.0 -font {-family helvetica -size 8} -text "Prolog: $sendvars(proV)"
-    .about.c create text 255.0 95.0 -font {-family helvetica -size 8} -text "TclTk: [info patchlevel]"
-    .about.c create text 255.0 110.0 -font {-family helvetica -size 8} -text "This product is registered to\
-            $userinfo(name), $userinfo(corp)"
-  
+    label .about.lower -image dripl
+    pack .about.lower
+ #   pack [canvas .about.c -width 510 -height 340]
+ #   .about.c create image 255 170 -image drip
+ #   .about.c create text 255.0 60.0 -font {-weight bold -family helvetica -size 10} -text Version\ $sendvars(simV)\ $userinfo(edn)
+ #   .about.c create text 255.0 80.0 -font {-family helvetica -size 8} -text "Prolog: $sendvars(proV)"
+ #   .about.c create text 255.0 95.0 -font {-family helvetica -size 8} -text "TclTk: [info patchlevel]"
+ #   .about.c create text 255.0 110.0 -font {-family helvetica -size 8} -text "This product is registered to\
+ #           $userinfo(name), $userinfo(corp)"
     pack [button .about.b -text OK -width 10 -default active \
             -command "set sendvars(doneAbout) 1"]
     pack [label .about.l16]
