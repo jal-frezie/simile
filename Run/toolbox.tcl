@@ -71,8 +71,12 @@ proc ControlDraw {prologVersion} {
     # no longer have a separate floating toolbar
     
     # On startup, check run count and offer registration if 0
-    set userinfo(name) $env(licensee_name)
-    set userinfo(corp) $env(licensee_corp)
+    if [catch {set userinfo(name) $env(licensee_name)}] {
+        set userinfo(name) " "
+    }
+    if [catch {set userinfo(corp) $env(licensee_corp)}] {
+        set userinfo(corp) " "
+    }
     set userinfo(Version) $env(SIMILE_VERSION)
     
     set userinfo(license_code) \
