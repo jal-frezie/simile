@@ -905,6 +905,7 @@ set_properties(Wid, Model) :-
 		change_shape(Model, internal_extent, NewExtent),
 		adjust_toplevel_windows(Model, NewExtent),
 		event:move_boxes(Model, FatTrans),
+		event:resnap(Model),
 		(member(RerouteType, [flow, influence]),
 		find_all_comps(Model, Linkage),
 		appears(Linkage),

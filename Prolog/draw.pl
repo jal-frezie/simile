@@ -102,13 +102,6 @@ translate_between(Small, Big, Trans) :-
 	contains(Big, Small, Chain), !,
 	all(image, =, [build(Chain), subtract_from_translation(Trans, [0,0,1,1])]).
 */					      
-kill_tree(Wid, Comp) :-
-	kill_featured(Wid, Comp),
-	find_all_comps(Comp, Subcomp),
-	kill_tree(Wid, Subcomp),
-	fail.
-
-kill_tree(_, _) :- !.
 
 off_all([]).
 
@@ -183,26 +176,25 @@ windows) we only need to draw the new shape in windows illustrating its parent..
 
 redisplay(Comp) :-
 	find_relevant_windows(Comp, Window_id, Depth, Trans),
-	kill_tree(Window_id, Comp),
 	display(Window_id, Comp, Depth, Trans, 1),
 	fail;
 	true.
 
 redisplay_border(Comp) :-
 	find_relevant_windows(Comp, Window_id, Depth, Trans),
-	kill_featured(Window_id, Comp),
 	display(Window_id, Comp, Depth, Trans, 0),
 	fail;
 	true.
 
 display(Window_id, Comp, Depth, Trans, Recurse) :-
+	kill_featured(Window_id, Comp),
 	(Comp is_of_sort box,
 	display_in(Window_id, Comp, Depth, Trans),
 	(Recurse = 1,
 	find_type(Comp, submodel),
 	\+ get_shape(Comp, hide_contents, 1),
 	New_depth is Depth + 1,
-	draws_at(Window_id, submodel, New_depth),
+	draws_at(Window_id, submodel, New_depth), !,
 	    add_to_translation(Trans, Comp, Subtrans),
 	    (find_all_comps(Comp, Subcomp),
 		display(Window_id, Subcomp, New_depth, Subtrans,
@@ -333,6 +325,7 @@ add_window(Wid, TopNode, Model, Area, Cname, Colour, Scale, InitDs, IsTL) :-
 redraw_window(Wid) :-
 	Wid shows_model Model,
 	clear_display(Wid),
+	update_tk,
 	find_all_comps(Model, Component),
 	display(Wid, Component, 0, [0, 0, 1, 1], 1),
 	fail.

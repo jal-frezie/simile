@@ -17,7 +17,7 @@ sicstus_module(image,
 	  [get_colour/4, get_window_colour/3,
 	   get_closest_edge/3, map/6, get_inner_bound/3, get_outer_bound/4,
 	   change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
-	   targets/5, inside_shape/3, near/2,
+	   targets/5, inside_shape/3, near/2, middle/2,
 	   crossing_point/5, make_bounding_box/5,
 	   density_for/2, draw_style_for/2, use_style_for/2,
 	   get_drawing_form/3, get_boundary_end/2,
@@ -352,9 +352,9 @@ iterate_to_crossing([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
 */
 
 get_box_crossing([X1, Y1], [X2, Y2], [L, T, R, B], [Xx, Yx]) :-
-	(X1 = X2, !, Xfract = 1;
+	(0.0 is float(X2-X1), !, Xfract = 1;
 		Xfract is max((R - X1)/(X2 - X1), (X1 - L)/(X1 - X2))),
-	(Y1 = Y2, !, Yfract = 1;
+	(0.0 is float(Y2-Y1), !, Yfract = 1;
 		Yfract is max((B - Y1)/(Y2 - Y1), (Y1 - T)/(Y1 - Y2))),
 	Fract is min(Xfract, Yfract),
 	Xx is X1 + Fract*(X2 - X1),

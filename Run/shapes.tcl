@@ -325,8 +325,12 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		    set inStep 0
 		}
 		set linePts [ScaleRect $w $x ($t+$inStep) $x ($b-$inStep)]
-		eval {$w create line} $linePts {-width 0 -fill $gCol} \
-		    {-tag $gTagSet}
+		set line [eval {$w create line} $linePts \
+			      {-width 0 -fill $gCol -tag $gTagSet}]
+		# Now to stick it behind anything that might be drawn inside
+		if {[llength $contents]} {
+		    $w lower $line [lindex $contents 0]
+		}
 	    }			    
 	for {set y [expr $origY+$interval*ceil(($t+1-$origY)/$interval)]} \
 	    {$y<$b} {set y [expr $y+$interval]} {
@@ -337,8 +341,12 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		    set inStep 0
 		}
 		set linePts [ScaleRect $w ($l+$inStep) $y ($r-$inStep) $y]
-		eval {$w create line} $linePts {-width 0 -fill $gCol} \
-		    {-tag $gTagSet}
+		set line [eval {$w create line} $linePts \
+			      {-width 0 -fill $gCol -tag $gTagSet}]
+		# Now to stick it behind anything that might be drawn inside
+		if {[llength $contents]} {
+		    $w lower $line [lindex $contents 0]
+		}
 	    }			    
     }
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]

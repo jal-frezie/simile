@@ -1029,7 +1029,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	    (\+ EType = submodel;
 		add_to_translation([0,0,1,1], Box, Trans))),
 	    
-	image:middle(ParentBox, [Xc, Yc]),
+	middle(ParentBox, [Xc, Yc]),
 	/* allow leeway of 10% for dragging round border */
 	Leeway = 0.1,
 	Xin is Xpt + Leeway*(Xc - Xpt),
@@ -1649,12 +1649,7 @@ unclick_obj :-
 	    T is min(OldY, NewY),
 	    R is max(OldX, NewX),
 	    B is max(OldY, NewY),
-	    W is R - L,
-	    H is B - T,
-	    get_box_size(submodel, Standard),
-	    W > Standard//2,
-	    H > Standard//2,
-	    attempt_new_component(Parent, [L, T, R, B], [0, 0, W, H]);
+	    attempt_new_component(Parent, [L, T, R, B]);
 	New_obj is_primitive,
 	    \+ New_obj is_class_of_sort line),
 	update_runnable(Parent).
@@ -1911,7 +1906,13 @@ attempt_addition(Type, Parent, Box, Node_name, CanBag, Verbal) :-
 	do_dialogue("Failed to add component", warning, Wibble, ok, _),
 	fail.
 
-attempt_new_component(Parent, Box, Extent) :-
+attempt_new_component(Parent, Box) :-
+	Box = [L,T,R,B],
+	W is R - L,
+	H is B - T,
+	get_box_size(submodel, Standard),
+	W > Standard//2,
+	H > Standard//2,
 	attempt_addition(submodel, Parent, Box, Node_name, yes, yes),
 	
 /* List components inside the box */
@@ -1924,7 +1925,7 @@ attempt_new_component(Parent, Box, Extent) :-
 		fail;
 	true),
 	encapsulate(Contents, Node_name),
-	set_shape(Node_name, internal_extent, Extent),
+	set_shape(Node_name, internal_extent, [0,0,W,H]),
 	add_to_translation([0, 0, 1, 1], Node_name, Node_trans),
 	relate_graphics(Node_name, Node_trans),
 	redisplay_border(Node_name),
@@ -1935,7 +1936,8 @@ attempt_new_component(Parent, Box, Extent) :-
 
 relate_graphics(Node_name, Node_trans) :-
 	move_boxes(Node_name, Node_trans),
-/* re-route flows first so influences to re-routed bowties come out right */
+ /* re-route flows first so influences to re-routed bowties come out right.
+ Note only cross border flows need rerouting. */
 	((find_all_links(Node_name, Link), find_type(Link, flow);
 	find_all_links(Node_name, Link), \+ find_type(Link, flow)),
 	    (DoLink = Link; has_outer_equiv(DoLink, Node_name, Link)),
@@ -1948,6 +1950,23 @@ relate_graphics(Node_name, Node_trans) :-
 move_boxes(Node_name, Node_trans) :-
 	find_all_comps(Node_name, Thing),
 	adjust_posn(Thing, Node_trans),
+	fail; true.
+
+resnap(Node) :-
+	find_all_comps(Node, Bit),
+	get_shape(Bit, bounding_box, BB),
+	(add_to_translation([0,0,1,1], Bit, Trans),
+	    snap_to_grid(BB, NBB),
+	    translate(NBB, Trans, NIE),
+	    change_shape(Bit, internal_extent, NIE);
+	 find_type(Bit, New_obj),
+	 \+ New_obj = submodel,
+	    middle(BB, Mid),
+	    snap_to_grid(Mid, [Xpt, Ypt]),
+	    use_style_for(New_obj, NewObjStyle),
+	    get_box_size(NewObjStyle, Cur_size),
+	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, NBB)),
+	change_shape(Bit, bounding_box, NBB),
 	fail; true.
 
 adjust_posn(Thing, Trans) :-
@@ -1982,6 +2001,12 @@ dissolve_component(Node) :-
 	(image:dim_spec_for(Node, "Simple"), !;
 	add_parameter(Node, 0, multiplication_spec, [count=[]]),
 	    spread_colour(Node, yes)),
+	/* next, set its internal extent to its bounding box so I can snap its
+	    already-moved components to the parent's grid */
+	get_shape(Node, bounding_box, BB),
+	change_shape(Node, internal_extent, BB),
+	resnap(Node),
+	    
 	(has_outer_equiv(Inner, Node, Outer),
 		/* demolition process will delete section nearest source so off this */
 		off(Inner), off(Outer), fail;
