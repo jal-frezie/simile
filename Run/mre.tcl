@@ -3,8 +3,11 @@
 # Jonathan Massheder
 
 # $Log: mre.tcl,v $
-# Revision 1.1  2002/05/23 15:33:18  jmm
-# *** empty log message ***
+# Revision 1.2  2002/05/30 17:20:29  jmm
+# Added Parameters ( "Modify file parameters" ) to File menu as this was missing
+#
+# Revision 1.35  2002-05-16 15:12:21+01  jmm
+# Mods my Jasper: Because of quirky behaviour under linux
 #
 # Revision 1.33  2002-05-09 15:00:51+01  jmm
 # Fixed problem opening more than one Model Explorer (Variable Lister) previous one(s) is(are) destroyed.
@@ -109,6 +112,9 @@ proc RunEnv::Create { ModelWin } {
                             {Ctrl-O} -command {LoadView} }
                 {command "&Save configuration..." {} "Save a configuation of displays" \
                             {Crtl-S} -command {SaveView} }
+                {separator}
+                {command "&Parameters..." {} "Modify file parameters"  \
+                            {} -command { FileParamDialogue 1 .mre } }
                 {separator}
                 {command "&Close"    {} "Close the Run Environment window" \
                             {} -command {RunEnv::Destroy} }
