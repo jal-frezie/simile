@@ -47,9 +47,8 @@ get_term(String, Term, Error) :-
 	
 	on_exception(Bug, sicstus_read_from_chars(Proper_string, Term),
 		     make_nice_error_message(Bug, Error)),
-	(nonvar(Error), !,
-	    name(Term, String);
-	 Error = []).
+	(Error = [], !;
+	    name(Term, String)).
 
 /* make_nice_error_message: converts Prolog's syntax_error exception into
 something readable. Prolog itself can do this with the print_message function,

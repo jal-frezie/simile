@@ -363,15 +363,15 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set c [ModelWindow $winName]
     set custom(showgrids,$c) [PrefValue custom(initGrid) initGrid]
     
-    TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
-    #    wm maxsize $winName [winfo screenwidth $winName] \
-    #	[winfo screenheight $winName]
-    
     wm protocol $winName WM_DELETE_WINDOW \
             [list byebye $c]
     
     set window_info($c,top_node) $topNode
     set window_info($c,is_top_level) $isTopLevel
+    
+    TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
+    #    wm maxsize $winName [winfo screenwidth $winName] \
+    #	[winfo screenheight $winName]
     
     AddMainMenu $winName $topNode [expr $wr-$wl] $isTopLevel $args
     AddCanvasBindings $c $topNode
@@ -590,7 +590,7 @@ proc AddGrid {c onCol wl wt wr wb} {
     }
 
 proc ResizeBackgnd {wc l t r b} {
-    global looks
+    global window_info looks
     set baseColor $looks(windowColor)
     foreach baseItem [$wc find withtag /base/] {
 	switch [$wc type $baseItem] {
@@ -625,6 +625,10 @@ proc ResizeBackgnd {wc l t r b} {
     }
     AddGrid $wc [Gradient $baseColor -0.1 $wc] $l $t $r $b
     $wc lower /base/ ;# should keep them in order
+    global window_info
+    if {$window_info($wc,is_top_level)} {
+	prolog tk_resize_top_win('$wc',[expr $r-$l],[expr $b-$t])
+    }
 }
 
 proc AcceleratorState {winName menu item state} {
@@ -1207,7 +1211,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
             -accelerator "F1"
     AddAccelerator $winid help Contents "<F1>"
-    $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
+#    $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
     $fm add command -label About... -command [list ShowAbout $winid]
     
     set nb [frame $winid.toolSlot.navbar -border 2]

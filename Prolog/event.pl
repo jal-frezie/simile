@@ -381,7 +381,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
         set_start_coords(Xpt, Ypt),
 /* from select mode -- rest is from move */
 	finish_old_edit(Moving_obj),
-	give_focus(Moving_obj),
+	give_focus('{}'),
 
 	( /* Control is down */
 	CD = 1, !,
@@ -389,7 +389,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    \+ (doomed(Moving_obj),
 		   do_colours(Moving_obj, off)),
 	    do_colours(Moving_obj, on);
-	/* Object already selected */
+	/* Control not down: Object already selected */
 	doomed(Moving_obj), !;
 	/* Object not selected; clear current, then select */    
 	(normalize(_), fail;
