@@ -997,7 +997,8 @@ proc GetParts {top tree} {
                         ![string match junk $Description]} {
                 set relPath [string range $subtree [string length $top] end]
                 set Disposition "${style}; filename=\"$relPath\""
-                set Date [clock format [file mtime $subtree] -gmt true]
+                set Date [clock format [file mtime $subtree] \
+			      -format "%Y-%m-%d %T %Z" -gmt true]
                 set newMime [mime::initialize -canonical $PartType \
                         -header [list "Content-Disposition" \
                         $Disposition] \
