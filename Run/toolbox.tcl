@@ -256,7 +256,17 @@ proc do_for_node {node args} {
 	    set runState($node,queueSize) 0
 	}
     }
+    tickle $node
     return [eval do_in_node $node $args]
+}
+
+# experimental way to stop hangs -- this does something in the execution process and
+# does it again as long as it works
+
+proc tickle {node} {
+	if {![catch {do_in_node $node expr 1}]} {
+		after 1000 tickle $node
+	}
 }
 
 # the 'queue' is necessary because threads stopped by tkwait variable must
