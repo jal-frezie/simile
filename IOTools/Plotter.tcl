@@ -18,8 +18,12 @@
 # x,y signify canvas co-ordinates, in pixels.
 
 #$Log: Plotter.tcl,v $
-#Revision 1.1  2002/05/23 15:33:18  jmm
-#*** empty log message ***
+#Revision 1.2  2002/05/30 17:33:41  jmm
+#Made Xvalues an array to have the helper window id as the index to protect
+#the values from other helpers.
+#
+#Revision 1.26  2002-05-16 15:05:29+01  jmm
+#keyvalue changed so diff from obsolete versions in other directories
 #
 #Revision 1.25  2002-05-15 08:43:05+01  jmm
 #Fixed extension of the x axis when the plot goes off the time axis (proc adjustLimits)
@@ -116,7 +120,7 @@ proc initialize {w} {
     set plot($w,Xprecision) 0
     set plot($w,Yprecision) 0
     
-    set Xvalues {}
+    set Xvalues($w) {}
     set YYold($w) {}
     set YYnew($w) {}
     set Told($w) 0
@@ -137,7 +141,7 @@ proc Restore {winId} {
     global ::graphtools::Told
     global ::graphtools::Tnew
     
-    set Xvalues {}
+    set Xvalues($winId) {}
     set YYold($winId) {}
     set YYnew($winId) {}
     set Told($winId) 0
@@ -191,7 +195,7 @@ proc ShowHelper {w} {
     # Initialise values list.
     set Told($w) 0
     set Tnew($w) 0
-    set Xvalues 0
+    set Xvalues($w) 0
     
     drawGraphpad $w;
     
@@ -211,7 +215,7 @@ proc display {w time step remainder} {
     
     get_Yvalues $w 
 
-	lappend Xvalues $time
+    lappend Xvalues($w) $time
 
 	set Told($w) $Tnew($w)
 	set Tnew($w) $time
@@ -703,7 +707,7 @@ proc clear { w } {
     set plot($w,Xminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
     set plot($w,Xprecision) 0
     set plot($w,Yprecision) 0
-    set Xvalues {}
+    set Xvalues($w) {}
 	set YYold($w) {}
 	set YYnew($w) {}
 
