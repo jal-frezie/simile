@@ -120,10 +120,14 @@ stick_model_in(Parent, Name) :-
 	abs_path_name(Parent, root, InsertDir),
 	output:attach_tree(Name, LocalDir, InsertDir),
 
+	get_top_dir(Name, TopDir),
+	/* Now if the saved model has any images these will be in the top dir
+	(fttb) so get them loaded */
+	transfer_images(Parent, TopDir, in),
+		  
 	(is_toplevel(Parent),
 	/* only try graphics file for toplevel windows because if loading into
 	    submodel the Prolog node ids will no longer match it */
-	get_top_dir(Name, TopDir),
 	append_atoms(TopDir, '/model.cnv', GraphFileName),
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 	on_exception(_, open(GraphFileName, read, Test), fail),
@@ -604,6 +608,9 @@ do_save(Model, New_name) :-
 	    mark_model_danger(Model, safe)),
 	
 	get_top_dir(Name, TopDir),
+	/* Save image backgrounds */
+	transfer_images(Model, TopDir, out),
+
 	append_atoms(TopDir, '/model.cnv', CanvasName),
 	(tk_get_pref(saveExtras, 'Canvas file'),
 	is_toplevel(Model),
@@ -618,6 +625,13 @@ do_save(Model, New_name) :-
 	use_temp_dir(LocalDir),
 	save_dlls(Point, LocalDir, Model, Model, Name, _),
 	clear_autosave(Model, Name), !.
+
+transfer_images(Model, TopDir, Way) :-
+	setof(ImageSpec,
+	      Submodel^(contains(Model, Submodel),
+			get_av_pair(Submodel, 0, fill_colour, ImageSpec)),
+	      Fillers),
+	shift_images(TopDir, Fillers, Way).
 
 save_dlls(Point, LocalDir, Top, Model, Name, SaveParent) :-
 	((setof(Sub, Part^(find_all_comps(Model, Part),

@@ -576,7 +576,6 @@ proc ResetColours { w type density colourScheme name } {
 # adapted from Welch p265
 proc WriteDesc {canvas canvasFile date args} {
     global window_info
-    global imageSources
 
     set stream [open $canvasFile w]
     set title [wm title [winfo parent $canvas]]
@@ -592,8 +591,7 @@ proc WriteDesc {canvas canvasFile date args} {
 	    regexp {source\(([^\)]+)\)} [$canvas gettags $object] all \
 		sourceImage
 	    set localImage [$canvas itemcget $object -image]
-	    puts $stream [list MakeImage $sourceImage \
-			      $imageSources($sourceImage) $localImage \
+	    puts $stream [list MakeImage $sourceImage $localImage \
 			      [$localImage cget -width] \
 			      [$localImage cget -height]]
 	}
@@ -623,18 +621,38 @@ proc WriteDesc {canvas canvasFile date args} {
     close $stream
 }
 
-proc MakeImage {base file inst w h} {
-    global imageSources looks
-    if {![info exists imageSources($base)]} {
-	image create photo $base
-	$base read $file -shrink
-	PutSize $base
-	set imageSources($base) $file
-    }
+proc MakeImage {base inst w h} {
+    global looks
+#    if {![info exists imageSources($base)]} {
+#	image create photo $base
+#	$base read $file -shrink
+#	PutSize $base
+#	set imageSources($base) $file
+#    }
     image create photo $inst -width $w -height $h
     set shortSide [expr $w<$h?$w:$h]
     set intRad [expr int($looks(submodel,objectsize)*$shortSide/400)]
     FillSmImage $base $inst $w $h $intRad
+}
+
+# this is called from Prolog to load/save images with a model. Prolog does not
+# know difference between an image and a colour so this has to sort them out
+
+proc ShiftImages {topDir way args} {
+    foreach image $args {
+	if {[catch {winfo rgb . $image}] && [string compare image clear]} {
+	    set imgFile $topDir/${image}.gif
+	    switch $way {
+		in {
+		    image create photo $image
+		    $image read $imgFile -shrink
+		    PutSize $image
+		} out {
+		    $image write $imgFile -format gif
+		}
+	    }
+	}
+    }
 }
 
 # this needs because the canvas is called $c in the file

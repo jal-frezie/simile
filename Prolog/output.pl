@@ -24,7 +24,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_grow_canvas/2, tk_update_do_buttons/2,
 	tk_update_do_menu/3, update_tk/0,
 	tk_display_mode/1, tk_display_menu/1,
-	tk_change_color/5, kill_featured/2, 
+	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
 	prepare_equation/1, create_equation/3, fill_equation/9, fill_inputs/1,
 	interact_equation/1, destroy_equation/0,
@@ -255,6 +255,9 @@ tk_display_menu(New_shape) :-
 
 tk_change_color(Wid, Obj, Type, Density, Value) :-
 	safe_tcl_eval(['ColorSymbol', Wid, Obj, Type, Density, Value], _).
+
+shift_images(TopDir, Fillers, Way) :-
+	safe_tcl_eval(['ShiftImages', TopDir, Way | Fillers], _).
 
 kill_featured(Wid, Victim_id) :-
 	safe_tcl_eval([Wid, delete, Victim_id], _).

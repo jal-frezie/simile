@@ -831,7 +831,6 @@ proc ChooseImage {} {
 		ShowMessage {Problem loading file} error $readFlop ok
 	    } else {
 		set disaggregate(colour) $newImage
-		set imageSources($newImage) $new
 		PutSize $newImage
 		set choosing 0
 	    }

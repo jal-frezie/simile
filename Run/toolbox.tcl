@@ -243,15 +243,15 @@ proc canvasTLDistance {winId x y} {
     return [list [expr $x-$cl] [expr $y-$ct]]
 }
 
+# This is used when Tcl wants to get a result from Prolog, e.g., for the
+# equation bar. The prolog procedure has to set fromProlog. It should stop
+# the thread until it returns, but something is wrong -- occasionally 
+# fromProlog doesn't get set. Answer: don't clear it...
+
 proc GetFromProlog {prologCmd} {
     global fromProlog
     prolog $prologCmd
-    #    while {![info exists fromProlog]} {
-    #	tkwait variable fromProlog
-    #    }
-    set result $fromProlog
-    unset fromProlog
-    return $result
+    return $fromProlog
 }
 
 # Procedure for when Tcl recognizes what object is clicked but being a
