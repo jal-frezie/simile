@@ -29,9 +29,9 @@ proc equationResources {} {
 #    option add *Equation*cancel.text		Cancel	startup
      option add *Equation*cancel.underline 	0	startup
 #    option add *Equation*graph.text		"Graph..."	startup
-     option add *Equation*graph.underline 	0	startup
+#     option add *Equation*graph.underline 	1	startup
 #    option add *Equation*table.text		"Table..."	startup
-     option add *Equation*table.underline 	0	startup
+#     option add *Equation*table.underline 	1	startup
 
     # Size of the listboxes
     foreach listBox {plist ilist} {
@@ -66,9 +66,9 @@ proc fill_equation {current_equation units mult isParam \
     }
                                 ### End formula bar section
 
-    set widget [$equation(main).properties.properties getframe]
-    $widget.description.text delete 1.0 end
-    $widget.description.text insert 1.0 $desc
+    set widget [$equation(main).descf.description getframe]
+    $widget.text delete 1.0 end
+    $widget.text insert 1.0 $desc
     $equation(doc).cmtFrame.text delete 1.0 end
 	$equation(doc).cmtFrame.text insert 1.0 $comment
     set widget [$equation(main).main.main getframe]
@@ -132,6 +132,17 @@ proc create_equation {parent boxtitle indices} {
     pack $ok -side right -padx 8 -pady 4 -anchor e
     #    pack $buttonF.buttons -anchor e -side left
     pack $buttonF -anchor nw -fill x -side bottom
+
+    set descF [frame $mainF.descf]
+    TitleFrame $descF.description -text "Description"
+    set descf [$descF.description getframe]
+    label $descf.desclabel -text "Description:"
+    text $descf.text -height 1 -width 20
+    pack $descf.desclabel -side left -padx 2 -pady 2
+    pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
+    pack $descf -side top  -fill x -expand off 
+    pack $descF.description  -fill x -expand off -padx 4 -pady 4
+    pack $mainF.descf -fill x -expand off
 
     # Middle frame has the functions, indices and keypad
     # created variable middleF to point to the Middle frame makes moving the frame in
@@ -211,19 +222,22 @@ proc create_equation {parent boxtitle indices} {
     regsub { for } $boxtitle {: } eqnRBtext
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
-    set en [text $mainf.equation.textbox.text -height 4 -width 30 -yscrollcommand "$mainf.equation.textbox.scroll set"]
+    set en [text $mainf.equation.textbox.text -height 4 -width 80 -yscrollcommand "$mainf.equation.textbox.scroll set"]
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$mainf.equation.textbox.text yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
     pack $mainf.equation.textbox.text -side right -expand true -fill both
     pack $mainf.equation.textbox.radio0 -anchor nw
     pack $mainf.equation.textbox -expand true -fill both -side left
     frame $mainf.equation.textbox.buttons
+    
+    set grfimg [image create photo -file "../Images/Toolbar/graph.gif"]
+    set tblimg [image create photo -file "../Images/Toolbar/table.gif"]
     set graph [button $mainf.equation.textbox.buttons.graph \
-            -width 10 -text "Graph..."\
+            -compound left -image $grfimg -text " Graph... "\
             -command "equationDoGraph $t $mainf.equation.textbox.text"]
     pack $graph -padx 8 -pady 4
     set table [button $mainf.equation.textbox.buttons.table \
-            -width 10 -text "Table..."\
+            -compound left -image $tblimg -text " Table... "\
             -command "GetTable $t $mainf.equation.textbox.text"]
     pack $table -padx 8 -pady 4
     pack $mainf.equation.textbox.buttons -anchor e -side left
@@ -235,12 +249,6 @@ proc create_equation {parent boxtitle indices} {
     set propertiesF [frame $mainF.properties]
     TitleFrame $propertiesF.properties -text "Properties: "
     set propertiesf [$propertiesF.properties getframe]
-    frame $propertiesf.description
-    label $propertiesf.description.desclabel -text "Description:"
-    text $propertiesf.description.text -height 1 -width 20
-    pack $propertiesf.description.desclabel -side left -padx 2 -pady 2
-    pack $propertiesf.description.text -side left  -fill x -expand true -padx 2 -pady 2
-    pack $propertiesf.description -side left  -fill x -expand true  -padx 4 -pady 4
     frame $propertiesf.units
     label $propertiesf.units.unitslabel -text "Units:"
     set eu [entry $propertiesf.units.entry -textvariable equation(units)]
@@ -329,7 +337,7 @@ proc interact_equation {} {
     }
                                  ### End formula bar section
     set t $equation(top)
-    set descFrame [$equation(main).properties.properties getframe]
+    set descFrame [$equation(main).descf.description getframe]
     set eqnFrame [$equation(main).main.main getframe]
     set listFrame [$equation(main).bottom.influences getframe]
 
@@ -343,7 +351,7 @@ proc interact_equation {} {
 		$equation(units) $equation(isparam) \
 		\['[join $equation(table_data) ',']'\] \
 		$equation(table_values) \
-		[string trimright [$descFrame.description.text get 1.0 end]] \
+		[string trimright [$descFrame.text get 1.0 end]] \
 		[string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
 		$equation(min) $equation(max)]
     } elseif {$equation(done)==2} {
