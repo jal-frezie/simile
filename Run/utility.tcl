@@ -12,6 +12,10 @@
 # thanks to a bug in tcltk, gets the wrong results for the lower ones...
 
 proc ShowMessage { title icon string resps {parent .}} {
+    set active [focus]
+    if {[llength $active]} {
+	set parent $active
+    }
     return [tk_messageBox -title $title -icon $icon \
 	-message $string -type $resps -parent $parent]
 }
@@ -54,9 +58,14 @@ proc ChooseFile { preferred title canbenew } {
 	}
     }
     set typeList [list [list "$fileType files" $typeList]]
-    set chosenFile [[expr $canbenew?{tk_getSaveFile}:{tk_getOpenFile}] \
-	    -title $title -defaultextension $fileType -filetypes $typeList \
-	    -initialfile $preferred]
+    set switches [list -title $title -defaultextension $fileType \
+		      -filetypes $typeList -initialfile $preferred]
+    set active [focus]
+    if {[llength $active]} {
+	lappend switches -parent $active
+    }
+    set chosenFile [eval [expr $canbenew?{tk_getSaveFile}:{tk_getOpenFile}] \
+	    $switches]
     cd $prevDir
     if {[string compare $chosenFile {}]} {
 	RecordPathChoice $fileType $chosenFile $recordEntry

@@ -173,8 +173,8 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	    CType = compartment;
 	PType = 2,
 	    F = Node,
-	    Instances = [Instance],
-	    CType = fp_compartment),
+	    Instances = [FuncRef, Instance],
+	    CType = compartment),
 
 	get_units(F, Base, Units),
 	Home = elt(Path, _, Base-Units),
