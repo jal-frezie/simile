@@ -1129,7 +1129,9 @@ proc AddMainMenu { winid initWidth initDepths} {
 
 proc EmbraceEqn {winid} {
     global equationbar
-    prolog tk_embrace('$winid.canvas',$equationbar(node))
+    if {[info exists equationbar(node)]} {
+	prolog tk_embrace('$winid.canvas',$equationbar(node))
+    }
 }
 
 proc AbandonEqn {} {

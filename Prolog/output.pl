@@ -27,7 +27,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, 
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
-	prepare_equation/1, create_equation/3, fill_equation/8, fill_inputs/1,
+	prepare_equation/1, create_equation/3, fill_equation/9, fill_inputs/1,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/1, tk_update_infobox/1, 
 	tk_finish_progress_dialogue/0, tk_alter_model/0,
@@ -294,23 +294,24 @@ create_equation(Win, Function, Indices) :-
 	bracketize(Indices, BrIndices),
 	safe_tcl_eval(['create_equation', Win, br(write(Function)),
 			BrIndices], _).
-
-fill_equation(Cur_eqn, Cur_units, IsParam, List, TableData, Desc, Comment, 
-			Min, Max) :-
+/*
+fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
+	      Desc, Comment, Min, Max) :-
 	get_from_list(List, Table),
 	bracketize(Table, Tk_table),
 	bracketize(TableData, Tk_tableData),
 	safe_tcl_eval(['fill_equation',
-			  br(write(Cur_eqn)), br(write(Cur_units)), 
+			  br(write(Cur_eqn)), br(write(Cur_units)), br(Mult), 
 			  br(write(IsParam)), Tk_table, Tk_tableData,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
-
-fill_equation(Cur_eqn, Cur_units, IsParam, TableData, Desc, Comment, 
+*/
+fill_equation(Cur_eqn, Cur_units, MultList, IsParam, TableData, Desc, Comment, 
 			Min, Max) :-
+	all(utility, wrap, [build(MultList), unify(write), build(Mult)]),
 	bracketize(TableData, Tk_tableData),
 	safe_tcl_eval(['fill_equation',
-			  br(write(Cur_eqn)), br(write(Cur_units)), 
+			  br(write(Cur_eqn)), br(write(Cur_units)), br(Mult),
 			  br(write(IsParam)), Tk_tableData,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
@@ -323,9 +324,13 @@ fill_inputs(List) :-
 /* Do a bit of processing to the parameter name column so the square/curly
 brackets appear as text. */
 
-get_from_list([input_link(_, V, P, _, I) | R1], [[V, FP, I] | R2]) :-
+get_from_list([input_link(_, V, P, _, I) | R1], [[V, FP, U, FD] | R2]) :-
 	sicstus_write_to_chars(P, SP),
 	name(FP, SP),
+	m_update:analyze_array(I, U, D),
+	(D = [], !, FD = [];
+	    render:comma_separate(D, SD),
+	    name(FD, SD)),
 	get_from_list(R1, R2).
 
 get_from_list([], []).

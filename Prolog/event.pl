@@ -427,8 +427,7 @@ spread_dims(Obj) :-
 	    get_av_pair(Hidden, 0, units, GivenUnits),
 	    get_input_info(Hidden, Input_list),
 
-	    test_eqn(Equation, GivenUnits, 32, Input_list,
-		     Type, Array, _ParamList, []),
+	    test_eqn(Equation, 32, Input_list, Type, Array, _ParamList, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(GivenArray, Array), !,
 		UseArray = GivenArray;

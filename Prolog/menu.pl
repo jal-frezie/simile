@@ -347,19 +347,23 @@ set_properties(Wid, Model) :-
 		redisplay(Linkage),
 		fail; true)),
 
-	    /* Changes in colour or fatness require redrawing submodel's
-	    toplevel windows; these plus nature, count and visibility require
+	    /* Changes in fatness require redrawing submodel's
+	    toplevel windows; this plus nature, count and visibility require
 	    redrawing it in other windows */
 	    ((NewColour = Colour, NewNature = Nature, FatFactor = 1,
 		UseCount = Count, NewHide = Hide), !;
-	    (\+ (NewColour = Colour, FatFactor = 1),
+	    (\+ FatFactor = 1,
 		Win shows_model Model,
 		redraw_window(Win),
 		fail;
 	    redisplay(Model))),
 
 	    /* this is quick so do it anyway */
-	    update_captions(Model),
+	    (contains(Model, Submodel),
+		_Window shows_model Submodel,
+		update_captions(Submodel),
+		fail;
+	    true),
 	    
 	    (\+ (NewNature = Nature, UseCount = Count), 
 	    dims_affect(Model, Affected),

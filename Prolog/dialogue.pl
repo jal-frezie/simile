@@ -10,7 +10,7 @@ alongside
 the rest of the program are handled through gui_input. */
 
 sicstus_module(dialogue, [do_equation_dialog/2, 
-	do_disag_dialog/4, do_relation_dialog/9, test_eqn/8,
+	do_disag_dialog/4, do_relation_dialog/9, test_eqn/7,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
 start_progress_dialogue/1,
@@ -76,8 +76,10 @@ BoxHeaderStr),
 	create_equation(Win, BoxHeader, IndexList),
 	(get_av_pair(Part, 0, value, Equation), !;
 		Equation = ''),
-	(get_av_pair(Part, 0, units, Units), !;
-	    Units = ''),
+	(get_av_pair(Part, 0, units, Units), !,
+	    analyze_array(Units, Base, Dims);
+	Base = '',
+	    Dims = []),
 	(get_av_pair(Part, 0, table_data,
 			      [file=FilePath, data=DataField,
 			       indices=Indices | _Values]), !,
@@ -95,7 +97,7 @@ BoxHeaderStr),
 		associated function */
 	is_parameter(ClickedObj, Is_P),
 	get_input_info(Part, Input_list),
-	fill_equation(Equation, Units, Is_P, TableList,
+	fill_equation(Equation, Base, Dims, Is_P, TableList,
 		      Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
 	retractall(input_list_is(_)),
@@ -134,31 +136,26 @@ update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
 		   [input_link(Link, New_var, _, Current_unit, _) | 
 LateInputs],
 		   Input_list), !,
-		append(EarlyInputs, LateInputs, Other_inputs),
 		get_term(Parm_st, New_param, Complaint0),
 		get_term(New_unit_st, Units_for_new, Complaint1),
 		append(Complaint0, Complaint1, Complaint2),
 		(Complaint2 = [], !,
-			(get_solo_list_depth(New_param, Depth), !,
-				get_array_nesting(Current_unit, 
-RealDepth),
-				(\+ RealDepth = Depth, !,
-					sicstus_format_to_chars("Your local name for ~w,~w, has ~d sets of brackets round it while it indicates an array nested to depth~d -- this could be confusing. ", 
-			[New_var, New_param, Depth, RealDepth], Complaint);
-				(Units_for_new = '', !,
-					NewInputUnit = Current_unit;
-				NewInputUnit = Units_for_new,
-					check_unit(Units_for_new, 
-Current_unit, 2, Complaint)));
-			sicstus_format_to_chars("Your local name for ~w, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ",
-			[New_var, New_param], Complaint));
+		    (get_solo_list_depth(New_param, Depth), !,
+			analyze_array(Current_unit, CurrentBase, CurrentDims),
+			length(CurrentDims, RealDepth),
+			(\+ RealDepth = Depth, !,
+			    sicstus_format_to_chars("Your local name for ~w,~w, has ~d sets of brackets round it but indicates an array nested to depth~d -- this could be confusing. ", [New_var, New_param, Depth, RealDepth], Complaint);
+			(Units_for_new = '', !,
+			    NewInputUnit = Current_unit;
+			build_array(Units_for_new, CurrentDims, NewInputUnit),
+			    check_unit(Units_for_new, CurrentBase, 2, Complaint)));
+			sicstus_format_to_chars("Your local name for ~w, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ", [New_var, New_param], Complaint));
 		Complaint = Complaint2);
 	    Complaint = "Select an input before supplying its new parameter name and/or local units"),
 			
 	(Complaint = [], !,
-	    NewInputs = [input_link(Link, New_var, New_param, 
-				      Current_unit, NewInputUnit)
-			  | Other_inputs],
+	    append(EarlyInputs, [input_link(Link, New_var, New_param,
+		    Current_unit, NewInputUnit) | LateInputs], NewInputs),
 	    fill_inputs(NewInputs),
 	    assert(input_list_is(NewInputs));
 	do_dialogue("Problem with input data", warning, Complaint,
@@ -182,12 +179,12 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    UnitError = [];
 	get_term(Unit_st, Units, UnitFormError),
 	    analyze_array(Units, Base, Dims)),
-	check_exp(Eqn_st, Units, "Equation", UsableInputs, EqnBase, EqnDims,
+	check_exp(Eqn_st, "Equation", UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
 	
-	check_exp(Min_st, Base, "Min. value", UsableInputs, MinBase, _MinDims,
+	check_exp(Min_st, "Min. value", UsableInputs, MinBase, _MinDims,
 		  MinmaxNeeded, IndxCount, MinParamList, Min, Min_term_error),
-	check_exp(Max_st, Base, "Max. value", UsableInputs, MaxBase, _MaxDims,
+	check_exp(Max_st, "Max. value", UsableInputs, MaxBase, _MaxDims,
 		  MinmaxNeeded, IndxCount, MaxParamList, Max,
 		  Max_term_error),
 
@@ -206,30 +203,27 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    UnitError = UnitFormError;
 	propagate_units(min(max(Min,Result),Max), any, [any, any, any, any],
 			[MinBase, EqnBase, MaxBase, TypeBase], ComboType),
-	    (ComboType = real, !, ComboBase = 1; 
-		ComboType = ComboBase),
-	    (EqnDims = Dims, !; true), /* if no eqn, use dims from unit --
-	    if this match fails, so will check_unit! */
-	    build_array(ComboBase, EqnDims, Combo_units),
-	    ((Units = Combo_units;
+	    (ComboType = real, !, ComboUnits = 1; 
+		ComboType = ComboUnits),
+	    ((Units = ComboUnits;
 	      /* next line allows an int to be quietly made into a real if the
 	      expression is now real */
-	      check_unit(Combo_units, Units, 2, [])), !,
-		NewUnits = Combo_units,
+	      check_unit(ComboUnits, Units, 2, [])), !,
+		NewUnits = ComboUnits,
 		UnitError = [];
-	    check_unit(Units, Combo_units, 2, UnitMatchError),
+	    check_unit(Units, ComboUnits, 2, UnitMatchError),
 		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
 
 	    (UnitError = [], !,
-		(analyze_array(NewUnits, _Base, Multiples),
+		(analyze_array(EqnDims, _Base, Multiples),
 		    get_actual_sizes(Multiples, MultInts),
 		    member(Dim, MultInts),
 		    (Dim = var, !,
-		    sicstus_format_to_chars("The unit expression ~w represents a list or an array of lists. Model components are not allowed to have list values.", [NewUnits], Complaint6);
+			Complaint6 = "This equation evaluates to a list or an array of lists. Model components are not allowed to have list values.";
 		    \+ (integer(Dim), Dim > 1), !,
-		    sicstus_format_to_chars("The unit expression ~w includes an array of size ~w, which is not a valid dimension for a model component -- they must be integers greater than 1.",
-				   [Units, Dim], Complaint6));
+		    sicstus_format_to_chars("This equation evaluates to a data structure which includes an array of size ~w, which is not a valid dimension for a model component -- they must be integers greater than 1.",
+				   [Dim], Complaint6));
 		Complaint6 = []);   
 	    Complaint6 = UnitError);
 	get_term(Unit_st, NewUnits, _),
@@ -266,9 +260,10 @@ for it,
 	name(Comment, Comment_st),
 
 	(FinalComplaint = [], !,
-		update_parameterhood(Function, Is_P, AffectedNode),
+	    update_parameterhood(Function, Is_P, AffectedNode),
+	    build_array(NewUnits, EqnDims, NewArraySpec),
 		add_parameter(AffectedNode, 0, value, Result),
-		add_parameter(AffectedNode, 0, units, NewUnits),
+		add_parameter(AffectedNode, 0, units, NewArraySpec),
 		add_parameter(AffectedNode, 0, description, Desc),
 		add_parameter(AffectedNode, 0, comment, Comment),
 		add_parameter(AffectedNode, 0, table_data, 
@@ -276,7 +271,7 @@ TableAttr),
 		add_parameter(AffectedNode, 0, min_val, Min),
 		add_parameter(AffectedNode, 0, max_val, Max),
 		update_links_and_vars(New_inputs);
-	fill_equation(Result, NewUnits, Is_P, TableData, Desc, Comment, 
+	fill_equation(Result, NewUnits, EqnDims, Is_P, TableData, Desc, Comment, 
 Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
@@ -288,29 +283,26 @@ FinalComplaint,
 
 table_ref(_, table(_), _, 0).
 
-check_exp(Eqn_st, GivenUnits, FieldName, InterInputs, Base, Dims, Needed,
+check_exp(Eqn_st, FieldName, InterInputs, Base, Dims, Needed,
 	  IndxCount, ParamList, Equation, Error) :-
 	Eqn_st = [], !,
-		ParamList = [],
-		Equation = '',
-		(Needed = 1, !,
-			append("You must supply a value for field ", 
-FieldName,
-					Error);
-		Error = []);
-	get_term(Eqn_st, Equation, ParseError),
-		(ParseError = [], !,
-			test_eqn(Equation, GivenUnits, IndxCount, 
-InterInputs, 
-					Base, Dims, ParamList, 
-TestError),
-			(TestError = [],
-			    ((member(var, Dims), !,
-				    append(["The expression for field ", FieldName, " evaluates to a list, or array of lists. A model variable cannot represent a list."], Error);
-				\+ FieldName = "Equation",
-				(Base = boolean; \+ Dims = []), !,
-				    append(["The expression for field ",
-					    FieldName, " must evaluate to a scalar quantity."], Error));
+	    ParamList = [],
+	    Equation = '',
+	    (Needed = 1, !,
+		append("You must supply a value for field ", FieldName, Error);
+	    Error = []);
+	    get_term(Eqn_st, Equation, ParseError),
+	    (ParseError = [], !,
+		test_eqn(Equation, IndxCount, InterInputs, 
+			 Base, Dims, ParamList, TestError),
+		(TestError = [],
+		    ((member(var, Dims), !,
+		            append(["The expression for field ", FieldName, " evaluates to a list, or array of lists. A model variable cannot represent a list."], Error);
+			\+ FieldName = "Equation",
+			    (Base = boolean; \+ Dims = []), !,
+		            append(["The expression for field ", FieldName,
+				    " must evaluate to a scalar quantity."],
+				   Error));
 			    Error = []);
 			append(["Testing ", FieldName, 
 				" field produced the following error: ",
@@ -329,49 +321,58 @@ We just have to make the eqn look like we are in the middle of the
 generation
 process. */
 
-test_eqn(Equation, GivenUnits, IndxCount, InterInputs,
-	Type, Dims, ParamList, TestError) :-
+test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
 	list_of(_, IndxCount, DestInds),
-	(var(GivenUnits), !, TgtUnits = undefined; TgtUnits = 
-GivenUnits),
+	RArray = array(array(array(array(any,_),_),_),_),
+	analyze_array(RArray, _, RDims),
+	/* 4 is probably the most we will need */
 	replace_subexps(Equation, dialogue, expand_params,
-			[input_link(_,_, '/dest/', _, TgtUnits) | 
-InterInputs],
+			[input_link(_,_, '/dest/', _, RArray) | InterInputs],
 			top_down, ParamSubs, FullExpr),
 	(member(var_pair(_, Param), ParamSubs),
-	 get_solo_list_depth(Param, _),
-	    \+ Param = '/dest/', !,
+	 get_solo_list_depth(Param, _), !,
 	    sicstus_format_to_chars("Reference to undefined parameter ~w", 
-[Param],
-			    TestError);
-	on_exception(ParseError,
+				    [Param], TestError);
+	on_exception(ParseException,
 		     make_intermediates(FullExpr, '/dest/',
 					[sm(_,_,_, fm_loop(DestInds))], 
 _, [],
 					[], 1, _, Type, _,
 					part_result(XContext, _,_,_)),
-		     decode_error(ParseError, TestError))),
-	(TestError = [], !,
-	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]),
+		     decode_error(ParseException, ParseError))),
+	(ParseError = [], !,
+	    /* check result dims match those needed for prev if used */
+	    get_dims_from_loops(XContext, XDims, _),
+	    (member(var_pair('/dest/', _), ParamSubs),
+		append(Dims, XSpares, XDims),
+		\+ (member(Var, XSpares), nonvar(Var)),
+		append(FixedRDims, RSpares, RDims),
+		\+ (member(Var, RSpares), nonvar(Var)), !,
+		(all(dialogue, check_dim_match,
+		     [build(Dims), build(FixedRDims)]), !,
+			TestError = [];
+		    format_to_chars("This equation is badly formed because it contains something that refers to its own value (for instance a prev(n) function) and that reference is used in a context where it needs to have dimensions ~w. However the equation as a whole produces a result with dimensions ~w, which do not match.", [RDims, XDims], TestError));
+	    Dims = XDims,
+		TestError = []),
+	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]);
 	    /* Hack alert. The term representing the dest context has indices
 	    (so index(n) will work) but no loops, so we don't need to add it
 	    to the relative source contexts */
-	    get_dims_from_loops(XContext, Dims, _);
-	true).
+	TestError = ParseError).
+
+check_dim_match(P, Q) :- P=Q; Q=0.
 
 get1st(var_pair(A, _), A).
 
 expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 	get_solo_list_depth(Param, _),
-	    (member(input_link(_,_, Param, _, Units), InterInputs), 
-!,
+	    (member(input_link(_,_, Param, _, Units), InterInputs), !,
 		analyze_array(Units, Base, Dims),
-		make_inds_for(Dims, Loops, Inds),
 		(units:get_conversion(_, Base, Base, _), !,
 		    Type = real;
 		Type = Base),
-		DoneExpr = param(arr(_,Param, Inds), Type, Loops, _, 
-true);
+		make_inds_for(Dims, Loops, Inds),
+		DoneExpr = param(arr(_,Param, Inds), Type, Loops, _, true);
 	    DoneExpr = Param), /* just puts it in list so we can 
 check later */
 	    Recurse = 0;
@@ -402,6 +403,12 @@ decode_error(ParseError, TestError) :-
 	    SimpleError =.. [Functor, _, Ind],
 	    sicstus_format_to_chars("The function \"~a\" needs a numerical value for it's second argument. \"~w\" does not fit -- it evaluates to a boolean or something.",
 			   [Functor, Ind], TestError);
+	Type = got_list_for_array, !,
+	    SimpleError =.. [Functor, Arr | _],
+	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a variable membership list.", [Functor, Arr], TestError);
+	Type = got_scalar_for_array, !,
+	    SimpleError =.. [Functor, Arr | _],
+	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a single value.", [Functor, Arr], TestError);
 	Type = only_works_on_array, !,
 	    SimpleError =.. [Functor, Arr | _],
 	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents either a single value or a variable membership list.", [Functor, Arr], TestError);

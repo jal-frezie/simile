@@ -220,9 +220,10 @@ make_intermediates(
 	/* first case: a reference to another variable. If we are referring to
 	a variable via a 'back swap' i.e., it comes from an associated model
 	via an exclusive role, then we cannot use any variables from other
-	associated or base models. BackSwap keeps track of this constraint. */
-	copy_term(Source, param(SourceRef, Units, SourceLoops,
-				TermSwap, Wait)), !,
+	associated or base models. BackSwap keeps track of this constraint.
+
+	Some elements of the param may need to be copied rather than unified */
+	Source = param(SourceRef, Units, SourceLoops, TermSwap, Wait), !,
 	    (SourceRef = arr(_, import(_, Away, _, Ptr, _, Ph, Var, _), _), !, 
 		(var(Away), !, /* external toplink, stub will find from arc */
 		    CommonContext = [],
@@ -230,11 +231,11 @@ make_intermediates(
 		    /* Model to start source search is in this dll --
 		    get its pointer */
 		suffix(CommonContext, DestPath),
-		    CommonContext = [sm(Away, _, Ptr, _) | _]);
+		    CommonContext = [sm(Away, _, Ptr, _) | _]),
+		append(SourceLoops, CommonContext, SourceContext);
 	    SourceRef = arr(_, Var, _),
 		Ph = 1,
-		CommonContext = []),
-	    append(SourceLoops, CommonContext, SourceContext),
+		SourceLoops = SourceContext),
 	    (var(Wait), !,
 		/* we are in the argument of last(...) so no need to wait for
 		this before using it, just dont do it at init time */
@@ -352,7 +353,7 @@ make_intermediates(
 	    [Wee, Muckle] = [-1073741823, 1073741823];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
-	(\+ member(var, TotalDims);
+	(\+ (member(VarDim, TotalDims), VarDim == var);
 	    raise_exception(avoid_var_size_inter(Epsilon, TotalDims))),
 	get_dims_from_loops(NowBuilding, BuildDims, BuildInds),
 	append(BuildDims, TotalDims, InterDims),
@@ -508,16 +509,22 @@ make_intermediates(
 	    make_intermediates(Array, Target, DestPath, BackSwap, MidInters,
 			   BuildingArrays, Step, Used, Units, NewInters,
 			   part_result(AContext, ASetups, AArgs, SourceRef)),
-	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
-	    longest_path([ABase, IBase], EltBase),
-	    (append(TailLoops, [set(IntIndxRef, loop(_Limit)) | ItemLoops],
+	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
+	    (append(TailLoops, [set(IntIndxRef, loop(Limit)) | ItemLoops],
 		    ALoops),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
 		raise_exception(only_works_on_array(Source))),
+	    (nonvar(Limit), !; Limit = 0), /* for prev(0) dimensions */
+	    
+/*	    (append(TailLoops, [set(IntIndxRef, loop(_Limit)) | ItemLoops],
+		    ALoops),
+	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
+		raise_exception(only_works_on_array(Source))), */
 
 	    append(ASetups, ISetups, Setups),
 	    merge_lists(AArgs, IArgs, Args),
+	    longest_path([ABase, IBase], EltBase),
 	    append([TailLoops, ItemLoops, ILoops, EltBase], SourceContext);
 	    /* 'catch' is in case we use an element that doesn't exist in the
 	    counterfactual arm of a conditional */
@@ -619,7 +626,7 @@ swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 
 propagate_units(Source, Lowest, Want, Get, Result) :-
 	promote_unit(Lowest, Result),
-	member(Result, [boolean, int, real]),
+/*	member(Result, [boolean, int, real]), */
 	substitute(Lowest, Want, Result, SettleFor),
 	all(inters, promote_unit, [build(Get), build(SettleFor)]);
 	raise_exception(mismatched_units(Source, Get, Want)). 
@@ -977,7 +984,7 @@ pointer_to(Path, Ptr) :-
 make_inds_for([], [], []).
 
 make_inds_for([Bound | RB], Sets, [Ind | RI]) :-
-	(Bound = var, !,
+	(Bound == var, !,
 	    Level = sm(_,_,_, rm_loop(_,_,_));
 	Level = set(Ind, loop(Bound))),
 	make_inds_for(RB, RX, RI),
@@ -987,20 +994,20 @@ get_dims_from_loops([], [], []).
 
 get_dims_from_loops(Loops, Dims, Inds) :-
 	append(InnerLoops, [Loop], Loops),
-	(Loop = set(Ind, loop(Dim)), !,
-	    Dims = [Dim | RDims],
-	    Inds = [Ind | RInds];
-	Loop = sm(_,_,_, VLoop),
-	member(VLoop, [vm_loop(_,_,_,_), rm_loop(_,_,_)]), !,
+	(Loop = sm(_,_,_, VLoop),
+	\+ VLoop = fm_loop(_), !,
 	    Dims = [var | RDims],
 	    Inds = [none | RInds];
+	Loop = set(Ind, loop(Dim)), !,
+	    Dims = [Dim | RDims],
+	    Inds = [Ind | RInds];
 	Dims = RDims,
 	    Inds = RInds),
 	get_dims_from_loops(InnerLoops, RDims, RInds).
 
+loops(set(_, loop(_))).
 loops(sm(_,_,_, vm_loop(_,_,_,_))).
 loops(sm(_,_,_, rm_loop(_,_,_))).
-loops(set(_, loop(_))).
 
 get_model_and_loops(Context, Dest, Path, Loops, Base) :-
 	get_model(Context, Path),

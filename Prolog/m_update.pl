@@ -422,7 +422,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 
 		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Target_type, Unit_type], Complaint));
 		
-	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", Unit_term, Complaint));
+	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", [Unit_term], Complaint));
 	    
 	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, Dims0, Dims1], Complaint));
 	sicstus_format_to_chars("Unit expression ~w or ~w is out of date: ~w",
