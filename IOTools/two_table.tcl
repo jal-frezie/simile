@@ -85,11 +85,12 @@ namespace eval $keyValue {
     }
     
     proc Update {winId} {
-        set origCursor [.mre cget -cursor]
-        .mre configure -cursor watch
+	set topWin [winfo toplevel $winId]
+        set origCursor [$topWin cget -cursor]
+        $topWin configure -cursor watch
         update
         Reconbobulate $winId
-        .mre configure -cursor $origCursor
+        $topWin configure -cursor $origCursor
     }
     
     proc CreateTable {winId} {

@@ -28,7 +28,7 @@ namespace eval slide139 {
 	    }
 	}
         if {![info exists done]} {
-            kill_helper_window $winId
+            pack [message $winId.message -text "There are no variable parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."]
         }
 	set geom [PrefValue custom(slidersPosition) slidersPosition]
 #        catch {wm geometry $winId $geom}
@@ -39,7 +39,7 @@ namespace eval slide139 {
     }
 
     proc InsertSlider {winId node title nest} {
-	global checkStates
+	global checkStates comboChoices
 	if {![string match INPUT [GetModelEval $winId $node]]} {
 	    return {}
 	}
@@ -47,7 +47,8 @@ namespace eval slide139 {
         #ShowMessage debug info $def ok
 	set levels [split $title /]
 	set trans [GetTransTable $node]
-	switch [GetModelType $winId $node] {
+	set type [GetModelType $winId $node] 
+	switch $type {
 	    FLAG {
 	    } ENUMERATED {
 		set possVals [lrange [lindex $trans end] 1 end]
@@ -86,7 +87,7 @@ namespace eval slide139 {
 	}
         if {![info exists useDim]} {
 	    set defVal [GetDefVal $initVal -1 0]
-	    switch [GetModelType $winId $node] {
+	    switch $type {
 		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
@@ -94,10 +95,11 @@ namespace eval slide139 {
 		set checkStates($node) $defVal
 		} ENUMERATED {
 		ComboBox $f.combo -values $possVals -editable 0 \
-		   -text [lindex $possVals [expr $defVal-1]] \
+		    -text [lindex $possVals [expr $defVal-1]] \
 		    -modifycmd [namespace code [list SetChoiceNumber $f.combo $node]]
 		pack $f.combo -side right -fill x -expand true
 		pack [label $f.caption -text [lindex $levels end]]
+		set comboChoices($node) $defVal
 		} default {
 		scale $f.scale -length 120 -orient h -showvalue false \
                     -sliderlength 10 -from $min -to $max \
@@ -126,7 +128,7 @@ namespace eval slide139 {
 		} else {
 		    set slTitle $index
 		}
-		switch [GetModelType $winId $node] {
+		switch $type {
 		    FLAG {
 		    set line [expr ($index+9)/10]
 		    set row $f.row$line
@@ -158,6 +160,7 @@ namespace eval slide139 {
 		    pack $f.elt$index.c -side right -fill x -expand true
 		    pack [label $f.elt$index.id -text $slTitle -width 10] \
 			-side left
+		    set comboChoices($node,$index) $defVal
 		    } default {
 		    pack [frame $f.elt$index] -fill x -expand true
 		    pack [label $f.elt$index.id -text $slTitle -width 10] \
@@ -249,44 +252,40 @@ namespace eval slide139 {
     }
 
     proc Save {winId smPath} {
-puts "Saving submodel $smPath inputs"
+	global helperTable
+#puts "Saving submodel $smPath inputs"
         set metaFile [ChooseFile inputs.spf "Save input values as:" 1]
         if {[llength $metaFile]} {
             set iStr [open $metaFile w]
 
+	    set topNode $helperTable($winId,whichModel)
 	    set snip [string length $smPath]
 	    foreach node [GetObjectList $winId] {
 		set title [GetCaptionPathFromId $winId $node]
-puts "trimming $title"
+#puts "trimming $smPath from $title"
 		if {!($snip && [string last $smPath $title [expr $snip-1]])} {
-		    set titleTail [lrange $title $snip end]
+		    set titleTail [string range $title $snip end]
 		    set trans [GetTransTable $node]
 # Below should be reimplemented in this interpreter somehow
-		    upvar \#0 [InputVarFor $node] collectPt
+		    upvar \#0 [InputVarFor $topNode $node] collectPt
+#puts "Available values: [array get collectPt]"
 		    
 		    foreach {elmt val} [array get collectPt $node*] {
-puts "got pair $elmt $val"
+#puts "got pair $elmt $val"
 			set id [split $elmt ,]
 			if {[llength $id]==2} {
 			    lappend arr($node) [lindex $id 1] $val
 			} else {
-			    puts $istr $titleTail=literal=\{NOW [TransEnums $trans $val]\}
+			    puts $iStr $titleTail=literal=[list NOW [TransEnums $trans $val]]
 			}
 		    }
-		    foreach {arrNode vList} [array get $arr] {
-			puts $istr $titleTail=literal=\{NOW [TransEnums $trans $vList]\}
+		    foreach {arrNode vList} [array get arr] {
+			puts $iStr $titleTail=literal=[list NOW [TransEnums $trans $vList]]
 		    }
+		    if {[info exists arr]} {unset arr}
 		}
 	    }
 	    close $iStr
-	}
-    }
-
-
-    proc PutRelSliderContents {winId iStr smPath elt val} {
-	set fullCapt [GetCaptionPathFromId $winId $elt]
-	if {[string match $smPath* $fullCapt]} {
-	    puts $iStr [string range $fullCapt [string length $smPath] end]=$val
 	}
     }
 
