@@ -1305,12 +1305,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     label $eb.label -anchor e
     pack $eb.label -side left
     
-    
-    entry $eb.equation -state disabled -width 40
+    global equation msgs
+    ComboBox $eb.equation -editable 1 -state disabled -width 40
     pack $eb.equation -side left -expand 1 -fill x
-    bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
-    bind $eb.equation <FocusIn> "EmbraceEqn $winid"
-    bind $eb.equation <FocusOut> AbandonEqn
+    $eb.equation bind <Return> [list accept_equation $winid $eb.equation]
+    $eb.equation bind <FocusIn> "EmbraceEqn $winid"
+    $eb.equation bind <FocusOut> AbandonEqn
     pack [button $eb.tick -state disabled -image $iconImages(tick) \
             -borderwidth 1 \
             -command [list accept_equation $winid $eb.equation]] -side left
@@ -1337,7 +1337,6 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -borderwidth 2 -relief raised -image $iconImages(function)
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
-    global equation msgs
     foreach funk [concat {{{{Built-in} {Model properties}} index}} \
             $equation(fnDefs)] {
                 set box $m

@@ -1263,7 +1263,7 @@ proc NextCaption {canvas} {
     if {![llength $find(List,$canvas)]} {
         ShowMessage "Caption finder" info \
                 "No more matching $find(where)s in this window" ok
-        unset find
+        array unset find *,$canvas
     } else {
         set this [lindex $find(List,$canvas) 0]
         set find(List,$canvas) [lrange $find(List,$canvas) 1 end]

@@ -1473,7 +1473,7 @@ proc UpdateToolbars {newAction} {
 }
 
 proc ResetEqnBar {bar} {
-    $bar.equation delete 0 end
+    $bar.equation configure -text {}
     $bar.label configure -text {}
     SetEqnButtonState $bar disabled
 }
@@ -1502,14 +1502,22 @@ proc FindNodeTopWin {node} {
 }
 
 ##############################    Formula bar    #############################
+proc AddIfAbsent {entry list} {
+    set oldPlace [lsearch $list $entry]
+    if {$oldPlace==-1} {
+	return [lrange [concat [list $entry] $list] 0 9]
+    } else {
+	return [concat [list $entry] [lreplace $list $oldPlace $oldPlace]]
+    }
+}
 
 proc accept_equation {winId text} {
-    
     global equation
     global equationbar
-    
     set equationbar(current_action) tick
     set equationbar(equation) [string trimright [$text get]]
+    $text configure -values [AddIfAbsent $equationbar(equation) \
+				 [$text cget -values]]
     set node $equationbar($winId,node)
     prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node, 0)]
     focus $winId.canvas
@@ -1536,8 +1544,7 @@ proc InsertParam {bar paramName} {
 
 proc restore_equation {winId bar} {
     global equationbar
-    $bar.equation delete 0 end
-    $bar.equation insert end $equationbar($winId,initText)
+    $bar.equation configure -text $equationbar($winId,initText)
     focus $bar.equation
 }
 

@@ -1433,6 +1433,8 @@ proc RelationCheck {parent title type state init_comment} {
     return $results
 }
 
+set find(prevs) {}
+
 proc GetFindText {parent} {
     global find
     set t [toplevel .findentry -bd 4]
@@ -1442,7 +1444,8 @@ proc GetFindText {parent} {
     wm resizable $t 0 0
     set ft [frame .findentry.ft]
     pack [message $ft.m -text "Find text:" -width 300] -padx 4 -pady 6 -anchor nw -side left
-    pack [entry $ft.e -width 40] -padx 4 -pady 6 -anchor nw -side left
+    pack [ComboBox $ft.e -width 40 -values $find(prevs) -editable 1] \
+	-padx 4 -pady 6 -anchor nw -side left
     bind $ft.e <Return> "set find(done) 1"
     pack .findentry.ft -anchor nw -fill both
     TitleFrame .findentry.rbs -text "Search for text in"
@@ -1471,6 +1474,7 @@ proc GetFindText {parent} {
     set result [$ft.e get]
     destroy .findentry
     if {$find(done)} {
+	set find(prevs) [AddIfAbsent $result $find(prevs)]
         return $result
     }
 }
