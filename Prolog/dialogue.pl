@@ -254,8 +254,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		NewUnits = ComboUnits,
 		UnitError = [];
 	    ((InterInputs = [];
-	      use_units_in(Function, 'No'),
-	      ComboUnits = 1), !,
+	      use_units_in(Function, 'No')),
+	      member(ComboUnits, [int, 1]), !,
 		UCheck = Units;
 	    UCheck = ComboUnits),
 		/* Allow numerical entries to have any physical units */
