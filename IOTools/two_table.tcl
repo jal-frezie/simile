@@ -105,7 +105,6 @@ namespace eval $keyValue {
         initialize $winId
         set displayList($winId) [lindex $oldState 0]
         set orientList($winId) [lindex $oldState 1]
-        set
         if {[llength &oldState]==3} {
             # helper instance scope precision nolonger used
             array set precision [lindex $oldState 3]; # backwards compatible
@@ -519,7 +518,7 @@ namespace eval $keyValue {
             $winId.t set $rowHead,$colHead \
                     [FormatValue $winId $values($value) [lindex $cellFormat($value) 0] \
                     [lindex $cellFormat($value) 1]]
-            if {[lindex $cellFormat($value) 3]==1 & $values($value)<0} {
+            if {[lindex $cellFormat($value) 2]==1 & $values($value)<0} {
                 $winId.t tag cell red $rowHead,$colHead
             }
         }
@@ -700,7 +699,7 @@ namespace eval $keyValue {
         $varCB configure -modifycmd [namespace code \
                 "SetFormatWidgets $winId $varCB $catF.listbox $formF.listbox $optionsF"]
         bind $catF.listbox <ButtonRelease-1> +[namespace code \
-                [list OnCatListBoxClick $catF.listbox $formF.listbox]]
+                [list OnCatListBoxClick $winId $varCB $catF.listbox $formF.listbox]]
         bind $formF.listbox <ButtonRelease-1> +[namespace code \
                 [list OnFormatListBoxClick $winId $varCB $formF.listbox]]
         
@@ -748,9 +747,10 @@ namespace eval $keyValue {
         $listbox selection set [lsearch [$listbox get 0 end] $formatSpec]
     }
     
-    proc OnCatListBoxClick {catListbox formListbox} {
+    proc OnCatListBoxClick {winId varCB catListbox formListbox} {
         FillFormatListBox $catListbox $formListbox
-        
+        #$formListbox selection set 0; # can't get back from cancel - dlg should save state so can restore on cance
+        #OnFormatListBoxClick $winId $varCB $formListbox
     }
     
     proc FillFormatListBox {catListbox formListbox } {
