@@ -429,6 +429,19 @@ menu_handle(Win, file, export_prolog) :-
 	save_isolated(FileName, Model, Date),
         finish_progress_dialogue.
 
+/* Delete the selection */
+menu_handle(Win, edit, cut) :-
+        start_progress_dialogue,
+	reassure_user("Delete in progress"),
+	(get_highlit_obj(L, Target),
+	    L < 2,
+	    highlight(Target, 2),
+	    fail;
+	Win shows_model Model,
+	    event:delete_net(Model),
+	    event:update_runnable(Model),
+	    finish_progress_dialogue).
+	   
 menu_handle(Win, edit, properties) :-
 	Win shows_model Model,
 	set_properties(Win, Model).

@@ -895,9 +895,10 @@ proc AddCanvasBindings { c } {
     bind $c <FocusOut> {AbandonObj}
     
     # text/clipboard action from Welch example
-    bind $c <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
-    bind $c <<Copy>> {CanvasTextCopy %W}
-    bind $c <<Paste>> {CanvasPaste %W}
+    # commented because we can now cut/copy parts of a model
+#    bind $c <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
+#    bind $c <<Copy>> {CanvasTextCopy %W}
+#    bind $c <<Paste>> {CanvasPaste %W}
     
     # let's be sure never to show the highlight border...
     # (except for debugging)
@@ -1386,41 +1387,42 @@ proc FillReopen {winId} {
 proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     global custom pushedbutton tcl_platform window_info iconImages
     
+    set c $winid.canvas
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
-    $fm add command -label New -command "MenuSelect $winid.canvas file new"\
+    $fm add command -label New -command "MenuSelect $c file new"\
             -accelerator "Ctrl+N"
     AddAccelerator $winid file New "<Control-n>"
-    $fm add command -label "New top-level" -command "MenuSelect $winid.canvas file new_toplevel"
-    $fm add command -label Open... -command "MenuSelect $winid.canvas local open_all"\
+    $fm add command -label "New top-level" -command "MenuSelect $c file new_toplevel"
+    $fm add command -label Open... -command "MenuSelect $c local open_all"\
             -accelerator "Ctrl+O"
     AddAccelerator $winid file Open... "<Control-o>"
     $fm add cascade -label "Reopen" -menu .openrecent
-    $fm add command -label Save -command "MenuSelect $winid.canvas file save" \
+    $fm add command -label Save -command "MenuSelect $c file save" \
             -accelerator "Ctrl+S"
     AddAccelerator $winid file Save "<Control-s>"
     
     $fm add command -label "Save as..." \
-            -command "MenuSelect $winid.canvas file save_as"
+            -command "MenuSelect $c file save_as"
     $fm add command -label "Save/Edit package" \
-            -command "MenuSelect $winid.canvas local save_all"
+            -command "MenuSelect $c local save_all"
     
     $fm add separator
     $fm add command -label "Print..." \
-            -command "PrintNow $winid.canvas"\
+            -command "PrintNow $c"\
             -accelerator "Ctrl+P"
     AddAccelerator $winid file "Print..." "<Control-p>"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label "Model declarations" \
-            -command "MenuSelect $winid.canvas file export_prolog"
+            -command "MenuSelect $c file export_prolog"
     $fm2 add command -label "C++ code" \
-            -command "MenuSelect $winid.canvas file build_c"
+            -command "MenuSelect $c file build_c"
     $fm2 add command -label "executable binary" \
-            -command "MenuSelect $winid.canvas file compile_c"
+            -command "MenuSelect $c file compile_c"
     $fm2 add command -label "PostScript graphics" \
-            -command "DoWithErrors ExportPostscript $winid.canvas"
+            -command "DoWithErrors ExportPostscript $c"
     $fm add separator
     
     $fm add command -label Close -command "byebye $winid" \
@@ -1431,16 +1433,33 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     
     set fm [menu ${winid}top.edit -tearoff 0]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
-    $fm add command -label Undo -command "UnOrReDo 0" \
+    $fm add command -label Undo -command "UnOrReDo $c 0" \
             -state disabled -accelerator "Ctrl+Z"
     AddAccelerator $winid edit Undo "<Control-z>"
-    $fm add command -label Redo -command "UnOrReDo 1" \
+    $fm add command -label Redo -command "UnOrReDo $c 1" \
             -state disabled
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
-        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $winid.canvas"
+        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $c"
     }
-    AddFindMenu $winid.canvas $fm
+    $fm add separator
+
+    $fm add command -label Cut -command "MenuSelect $c edit cut" \
+	-accelerator "Ctrl+X"
+    $fm add command -label Copy -command "MenuSelect $c edit copy" \
+	-accelerator "Ctrl+C"
+    $fm add command -label Paste -command "MenuSelect $c edit paste" \
+	-accelerator "Ctrl+V"
+    $fm add separator
+
+    $fm add command -label "Select all" -command "MenuSelect $c edit selall" \
+	-accelerator "Ctrl+A"
+    $fm add command -label "Unselect all" \
+	-command "MenuSelect $c edit unselall" -accelerator "Ctrl+U"
+    $fm add command -label "Invert selection" \
+	-command "MenuSelect $c edit invsel" -accelerator "Ctrl+*"
+
+    AddFindMenu $c $fm
     $fm add separator
     $fm add command -label Preferences... -command Pref_Dialog
     
@@ -1456,10 +1475,10 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -label "Equation bar" -variable custom(showeqnbar,$winid)
     
     $fm add separator
-    AddZoomMenu $winid.canvas $fm 1
+    AddZoomMenu $c $fm 1
     $fm add cascade -label "Show detail" -menu $fm.sub3
     set fm3 [menu $fm.sub3 -tearoff 0]
-    AddDetailMenu $winid.canvas $fm3 $initDepths
+    AddDetailMenu $c $fm3 $initDepths
     $fm add command -label "Customize..." \
             -command "DoLocalCmd $winid customize"
     
@@ -1467,11 +1486,11 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     ${winid}top add cascade -label Model -underline 0 \
             -menu ${winid}top.model
     $fm add command -label "Build In Tcl" \
-            -command "MenuSelect $winid.canvas file run_tcl" \
+            -command "MenuSelect $c file run_tcl" \
             -accelerator "Ctrl+T"
     AddAccelerator $winid model "Build In Tcl" "<Control-t>"
     $fm add command -label "Build In C++" \
-            -command "MenuSelect $winid.canvas file run_c" \
+            -command "MenuSelect $c file run_c" \
             -accelerator "Ctrl+B"
     AddAccelerator $winid model "Build In C++" "<Control-b>"
     if {!$isTopLevel} {
@@ -1480,7 +1499,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     }
     $fm add separator
     $fm add command -label "List equations" \
-            -command "MenuSelect $winid.canvas file list_eqns" \
+            -command "MenuSelect $c file list_eqns" \
             -accelerator "Ctrl+L"
     AddAccelerator $winid model "List equations" "<Control-l>"
     $fm add separator
@@ -1513,19 +1532,19 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
             -variable pushedbutton -value alarm
     $fm add command -label "Properties..." \
-            -command "MenuSelect $winid.canvas edit properties"
+            -command "MenuSelect $c edit properties"
     $fm add cascade -label Flip -menu $fm.sub2
     set fm2 [menu $fm.sub2 -tearoff 0]
     $fm2 add command -label Horizontal \
-            -command "MenuSelect $winid.canvas edit flip_h"
+            -command "MenuSelect $c edit flip_h"
     $fm2 add command -label Vertical \
-            -command "MenuSelect $winid.canvas edit flip_v"
+            -command "MenuSelect $c edit flip_v"
     
     $fm add separator
     $fm add command -label "Save interface" \
-            -command "MenuSelect $winid.canvas file save_interface"
+            -command "MenuSelect $c file save_interface"
     $fm add command -label "Load interface" \
-            -command "MenuSelect $winid.canvas edit set_interface"
+            -command "MenuSelect $c edit set_interface"
     
     
     set fm [menu ${winid}top.tools -tearoff 0]
@@ -1577,7 +1596,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
             pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised\
-                    -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                    -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
         }
@@ -1591,7 +1610,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
             pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised \
-                    -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                    -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
         }
@@ -1605,7 +1624,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
             pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised \
-                    -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                    -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
         }
@@ -1741,10 +1760,10 @@ proc AbleComp {winid} {
     #    }
 }
 
-proc EmbraceEqn {winid} {
+proc EmbraceEqn {winId} {
     global equationbar
-    if {[info exists equationbar($winid,node)]} {
-        prolog tk_embrace('$winid.canvas',$equationbar($winid,node))
+    if {[info exists equationbar($winId,node)]} {
+        prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
     }
 }
 
@@ -1756,7 +1775,6 @@ proc AbandonEqn {} {
 if {![info exists interface]} {
     set interface dll
 }
-
 
 # toggler unpacks and repacks all bars to keep order right
 proc toggleBar {winId} {

@@ -347,9 +347,10 @@ do_colours(Obj, Way) :-
 	    Way = off).
 
 trail(Node, Arc, Way) :-
+	\+ find_type(Node, submodel),
 	(m_class:Arc is_connector from Node to HiddenFn,
 	    get_host(HiddenFn, Far);
-	    get_host(HiddenFn, Node),
+	get_host(HiddenFn, Node),
 	    m_class:Arc is_connector from Far to HiddenFn),
 	match_with_ends(Node, Far, Arc, Way),
 	trail(Arc, _, Way).
@@ -1307,7 +1308,9 @@ unclick :-
 	retractall(clicked_obj_is(_Obj)),
 	get_mode(select),
 	    get_phase(rubberband), !, /* used to call proc below */
-	    get_incomplete([OldX, OldY, NewX, NewY]),
+	    get_incomplete(Box),
+	    get_translation(Trans),
+	    untranslate(Box, Trans, [OldX, OldY, NewX, NewY]),
 	    clear_incomplete,
 	    L is min(OldX, NewX),
 	    T is min(OldY, NewY),
@@ -1462,15 +1465,10 @@ unclick_obj :-
 	get_highlit_obj(1, Target),
 	highlight(Target, 2),
 	find_all_comps(Parent, Target),
-	(find_type(Target, submodel),
-		(find_all_links(Target, OldLink),
-			has_outer_equiv(InLink, Target, OldLink),
-			off(InLink),
-			fail;
-		true),
-		dissolve_component(Target),
-		fail;
-	delete_net),
+
+	contains(Top, Parent),
+	is_toplevel(Top),
+	delete_net(Top),
 	update_runnable(Parent).
 
 unclick_obj :-
@@ -1531,7 +1529,9 @@ change_ghosthood(Node) :-
 delete_by_dlg(Target) :-
 	remove_highlights,
 	recursive_highlight(Target, 2);
-	delete_net.
+	contains(Top, Target),
+	is_toplevel(Top),
+	delete_net(Top).
 	
 /* update_runnable: When a change is made to the display that would
 cause the model to behave differently if rebuilt, this sets a value in
@@ -1583,24 +1583,35 @@ make_terminator(LineType, FinishZone, Terminator) :-
 influences-flows-nodes so nothing has been consequentially deleted
 when its time comes. */
 
-delete_net :-
-	(get_highlit_obj(2, Target),
+delete_net(Top) :-
+	setof(Tgt, (get_highlit_obj(2, Tgt), contains(Top, Tgt)), Range),
+	(member(Target, Range),
 	    find_type(Target, influence),
 	    (\+ is_top_arc(Target);
 	    is_top_arc(Target),
 		find_all_comps(Sm, Target),
 		add_parameter(Sm, 1, c_new, 0));
-	get_highlit_obj(2, Target),
+	member(Target, Range),
 	    find_type(Target, flow);
-	get_highlit_obj(2, Target)),
-	
+	member(Target, Range),
+	    \+ find_type(Target, submodel);
+	member(Target, Range),
+	    find_type(Target, submodel),
+	    (find_all_links(Target, OldLink),
+		has_outer_equiv(InLink, Target, OldLink),
+		off(InLink),
+		fail;
+	    true),
+	    dissolve_component(Target)),
+	    
 	kill_primitive(Target); 
 	/* now un-highlight and redisplay the ghosts of the dead node
 	*/
 	get_highlit_obj(3, ExGhost),
-		normalize(ExGhost),
-		change_ghosthood(ExGhost),
-		fail;
+	    contains(Top, ExGhost),
+	    normalize(ExGhost),
+	    change_ghosthood(ExGhost),
+	    fail;
 	true.
 
 kill_primitive(Target) :-
