@@ -199,12 +199,6 @@ namespace eval ::$keyValue {
             destroy $child
         }
         
-        if {![PrefValue custom(helperManager) helperManager] } {
-            menu $w.menubar -tearoff 0
-            $w.menubar add cascade -label Menu -menu $w.menu
-            $w configure -menu $w.menubar
-        }
-        
         set toolbarItems [list \
                 [list clear.gif "Clear" [namespace code "clear $w"] ] \
                 [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]\
