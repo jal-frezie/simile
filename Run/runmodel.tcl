@@ -36,7 +36,7 @@ if [string match "Darwin" $tcl_platform(os)] {
 #
     rename exit wishExit
     proc exit {} {
-	do_in_editor tclAE::send -s misc actv
+#	do_in_editor tclAE::send -s misc actv
 	start_in_editor prolog tk_kill_everything([GetNodeFromFocus])
     }
     bind all <Command-q> exit

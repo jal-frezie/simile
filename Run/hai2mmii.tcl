@@ -127,6 +127,7 @@ While it was trying to $operation $target during $action of the model$timing, $p
 # do it after idle so this process is not hung till user responds
 	start_in_editor [list BuildProblem "Problem with model" \
 				     warning $mess execution]
+	do_in_editor RaiseModelWindow $node
 	return 0
     } else {
 	return 1

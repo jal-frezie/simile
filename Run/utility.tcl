@@ -128,7 +128,6 @@ proc NetOpen {name way} {
 
 proc load_c_stub {} {
     package require Trf
-    package require md5 1
 
     global tcl_platform env userinfo ;# last needed in stub
     # On startup, check run count and offer registration if 0
