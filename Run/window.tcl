@@ -375,6 +375,18 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     
     AddMainMenu $winName $topNode [expr $wr-$wl] $isTopLevel $args
     AddCanvasBindings $c $topNode
+
+    ####### Model window extensions
+    set modelWindowExtensions [itcl::find classes ::ModelWindowExtn::*]
+    #ShowMessage debug info "ModelWindow $winName\n\
+    #        $modelWindowExtensions" ok
+    foreach extClass $modelWindowExtensions {
+        #ShowMessage debug info "$extClass " ok
+        set extn [$extClass $winName.#auto $winName]; # create an extension object for the new model window
+        $extn MergeMenu
+    }
+    ################
+    
     
     #    tkwait visibility $winName
     set window_info($c,parent) $winName
