@@ -369,15 +369,16 @@ adjust_to_8 :-
 
 adjust_to_8 :-
 	(Fixing = node,
-	    Comp no_longer_has_class_refinement TclBound of TermInUtf8;
+	    Comp has_class_refinement TclBound of TermInUtf8;
 	 Fixing = arc,
-	    Comp no_longer_has_attribute TclBound of TermInUtf8),
+	    Comp has_attribute TclBound of TermInUtf8),
 	replace_subexps(TermInUtf8, user, reEncode, _, top_down,
 			_VPs, TermInTtfn),
+	\+ TermInTtfn = TermInUtf8 ,
 	(Fixing = node,
-	    Comp has_new_class_refinement TclBound of TermInTtfn;
+	    Comp has_changed_class_refinement TclBound of TermInTtfn;
 	 Fixing = arc,
-	    Comp has_new_attribute TclBound to TermInTtfn),
+	    Comp has_changed_attribute TclBound to TermInTtfn),
 	fail;
 	true.
 
