@@ -24,7 +24,7 @@ regsub -all /\./ [GetRealFile $scriptCmd] / scriptCmd
 
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
-set env(SIMILE_VERSION) 2.93
+set env(SIMILE_VERSION) 3.0
 
 switch $tcl_platform(platform) {
     windows {
