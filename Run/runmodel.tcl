@@ -422,7 +422,7 @@ proc ExtractCaption {win variable} {
 set adds none
 
 proc AddZoomMenu {canvas menu tellProlog} {
-	$menu add cascade -label Zoom... -menu $menu.sub2
+	$menu add cascade -label Zoom -menu $menu.sub2
 	set fm2 [menu $menu.sub2 -tearoff 0]
 	$fm2 add command -label "In lots" -command "DoZoom \
 			$canvas 1.953125 $tellProlog"
