@@ -31,7 +31,7 @@ if {![info exists IAmASlave]} {
     } else {
 	set remStartCmd [list send $oldProc NewTopLevel]
     }
-    if {![catch {eval $remStartCmd}]} {
+    if {![catch {eval remStartCmd}]} {
 	exit
     }
 }

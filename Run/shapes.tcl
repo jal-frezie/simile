@@ -523,8 +523,8 @@ proc SelectText {w node} {
     set new [GetCaptionItem $w $node]
     if {![string equal select $pushedbutton]} {
 	$w dtag currently_editable
+	$w itemconfig $new -tag [concat currently_editable [$w gettags $new]]
     }
-    $w itemconfigure $new -tag [concat currently_editable [$w gettags $new]]
     $w focus $new
     $w select from $new 0
     $w select to $new end
