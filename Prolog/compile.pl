@@ -321,7 +321,8 @@ wot need them */
 	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
 				'AME_model', 'AME_model'-[]),
 	generate_main_decls(Language, RootInstance, [], 1, [], EnumTypeSpecs,
-		ExtSets, AllGraphs, TypeDecls, PointerDecls, NodeData),
+			    ExtSets, Used, AllGraphs, TypeDecls, PointerDecls,
+			    EnumBits, NodeData),
 	append(InitTypes, [EndTopType], TypeDecls),
 	render( Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0,
 							StructTypeComment),
@@ -379,7 +380,7 @@ wot need them */
 				      StructListStr),
 	    name(StructList, StructListStr),
 	    render(Language, assignment, nodedata=StructList, 0, Decls)) */,
-	append(CDecls, DDecls, Decls),
+	append([EnumBits, CDecls, DDecls], Decls),
 	send_to_dest(Stream, [EndTopType | Decls]),
 	send_to_dest(Stream, ['#include <support2.cpp>']).
 
@@ -461,7 +462,8 @@ temporary variables used when expanding expressions.
 the model node data table and the extractor case statements */
 
 generate_main_decls(L, Instance, Tree, Level, Dims, EnumTypeSpecs, ExtSets,
-		    Graphs, TypeDecls, PointerDecls, NodeData) :-
+		    Used, Graphs, TypeDecls, PointerDecls,
+		    EnumBits, NodeData) :-
 	Instance = instance(submodel, SymbolicName, 
 			xrefs(Model, _, Bases, _), _, ModelType-_),
 	length(Tree, Depth),
@@ -502,10 +504,10 @@ generate_main_decls(L, Instance, Tree, Level, Dims, EnumTypeSpecs, ExtSets,
 	render(L, end(switch), IdRef, 4, ExtM),
 	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
 	render(L, end(procedure), get_pointer, 0, ExtN),
-
-	generate_local_decls(L, SubInstances, Tree, Level, Dims, EnumTypeSpecs,
-			     ExtSets, Graphs, Publics, SubTypeDecls,
-			     SubPointerDecls, Exts, NodeData),
+% Dims in next line replaced by [] for local dims only
+	generate_local_decls(L, SubInstances, Tree, Level, [], EnumTypeSpecs,
+			     ExtSets, Used, Graphs, Publics, SubTypeDecls,
+			     SubPointerDecls, Exts, EnumBits, NodeData),
 
 	append(MainClass, [proc_decls | EndClass], ThisDecl),
 	append(ClassStart, [submodel_decls | ClassEnd], MainClass),
@@ -514,10 +516,11 @@ generate_main_decls(L, Instance, Tree, Level, Dims, EnumTypeSpecs, ExtSets,
 	append(LocalPtrs, SubPointerDecls, PointerDecls).
 	
 
-generate_local_decls(_, [], _,_,_,_,_,_, [], [], [], [], []).
+generate_local_decls(_, [], _,_,_,_,_,_,_, [], [], [], [], [], []).
 generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
-		     EnumTypeSpecs, ExtSets, Graphs,
-		     PublicDecls, TypeDecls, PointerDecls, Exts, NodeData) :-
+		     EnumTypeSpecs, ExtSets, Used, Graphs,
+		     PublicDecls, TypeDecls, PointerDecls, Exts,
+		     EnumBits, NodeData) :-
 	Instance = instance(_, Node, Loc, _, _-SmSizes),
 	all(ame_gen, enum_type_ref,
 	    [build(SmSizes), unify(Node), unify(EnumTypeSpecs),
@@ -534,23 +537,26 @@ generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
 		append(Dims, ['MEMBERS'], NewDims));
 	append(Tree, [Level], DeepTree),
 	    append(Dims, SmDims, NewDims)),
-	generate_data_decls(L, Level, NewDims, DeepTree, Instance,
-			    ExtSets, Graphs, EnumTypeSpecs, LocalPublicDecls,
-			    LocalExts, LocalNodeData),
+	generate_data_decls(L, Level, NewDims, DeepTree, Instance, ExtSets,
+			    Used, Graphs, EnumTypeSpecs, LocalPublicDecls,
+			    LocalExts, LocalEnumBits, LocalNodeData),
 	(generate_main_decls(L, Instance, DeepTree, 1, NewDims,
-			     EnumTypeSpecs, ExtSets, Graphs,
-		    DeepTypeDecls, DeepPointerDecls, DeepNodeData), !;
+			     EnumTypeSpecs, ExtSets, Used, Graphs,
+			     DeepTypeDecls, DeepPointerDecls,
+			     DeepEnumBits, DeepNodeData), !;
 	 /* Not a submodel */
-	    [DeepTypeDecls, DeepPointerDecls, DeepNodeData] = [[], [], []]),
+	    [DeepTypeDecls, DeepPointerDecls, DeepEnumBits, DeepNodeData] =
+	    [[],            [],               [],           []]),
 	NewLevel is Level + 1,
 	generate_local_decls(L, Instances, Tree, NewLevel, Dims, EnumTypeSpecs,
-			     ExtSets, Graphs,
+			     ExtSets, Used, Graphs,
 			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
-			     MoreExts, MoreNodeData),
+			     MoreExts, MoreEnumBits, MoreNodeData),
 	append(LocalPublicDecls, MorePublicDecls, PublicDecls), 
 	append(DeepTypeDecls, MoreTypeDecls, TypeDecls),
 	append(DeepPointerDecls, MorePointerDecls, PointerDecls),
 	append(LocalExts, MoreExts, Exts), 
+	append([LocalEnumBits, DeepEnumBits, MoreEnumBits], EnumBits), 
 	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
 	    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -719,7 +725,7 @@ related to the variable being calculated, including intermediate variables, but 
 editing the graphs at run time we want to refer to them by the final result, so
 here we swap them round... */
 
-correct_graph_header([Inter | G1], Inters, Dest) :-
+correct_graph_header([Inter | G1], Inters, Dest) :-
 	member(instance(internal, inter(_,_, Next), _, Inter, _), Inters), !,
 	    correct_graph_header([Next | G1], Inters, Dest);
 	Dest = [Inter | G1].

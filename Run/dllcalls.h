@@ -129,6 +129,14 @@ public:
    }
 }; /* end of enum data type decl */
 
+/* above to be phased out -- we now have... */
+class enum_type_data {
+ public:
+  int count;
+  char* name;
+  char** members;
+}; /* end of enum type data type decl */
+
 /* This declares the structure used by the generated code to hold metadata
 about model components. It is repeated in the stub ame_cmx.cpp to access fields
 outside the dll. */
@@ -137,6 +145,8 @@ class node_data_line {
 public:
   char name[16];
   int datatype;
+  int enum_type_count;
+  enum_type_data* enum_type_ptrs;
   int eval;
   int dims[32];
   int path[32];

@@ -474,14 +474,15 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	    return $result
 	} Class|Type|Eval {
-	    array set propData [list Class 7 Type 0 Eval 1]
+	    array set propData [list Class 9 Type 0 Eval 3]
 	    return [getinfo $node $propData($prop)]
 	} Dims {
-	    getinfo $node 2
+	    set numericPath [getinfo $node 5]
+	    return [GetFullDims $numericPath]
 	} Graph {
-	    set index [getinfo $node 4]
+	    set index [getinfo $node 6]
 	    if {!$index} {
-		error "No graph associated with node [getinfo $node 8]."
+		error "No graph associated with node [getinfo $node 10]."
 	    }
 	    if {[llength $set]} {
 		eval {setup_graph_data $index} $set
@@ -489,7 +490,7 @@ proc GetTclCompProperty {topNode prop args} {
 		return [graph_table 21 $index]
 	    }
 	} Caption {
-	    set numericPath [getinfo $node 3]
+	    set numericPath [getinfo $node 5]
 	    return [GetFullCaption $numericPath]
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
 	} IdFromCapt {
@@ -502,9 +503,9 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	    return nomatch
 	} MinVal {
-	    getinfo $node 5
+	    getinfo $node 7
 	} MaxVal {
-	    getinfo $node 6
+	    getinfo $node 8
 	} Value {
 	    return [tcl_insert $node [lindex $set 0]]
 	}
@@ -519,8 +520,8 @@ proc GetFullCaption {handle} {
 	set parentCapt [GetFullCaption [lreplace $handle end-1 end 0]]
 	foreach record [array names nodedata] {
 	    set line $nodedata($record)
-	    if {[ListSameNumbers [lindex $line 4] $handle]} {
-		append parentCapt / [lindex $line 9]
+	    if {[ListSameNumbers [lindex $line 6] $handle]} {
+		append parentCapt / [lindex $line 11]
 		break
 	    }
 	}
@@ -537,9 +538,9 @@ proc GetFullDims {handle} {
 	set parentDims [GetFullDims [lreplace $handle end-1 end 0]]
 	foreach record [array names nodedata] {
 	    set line $nodedata($record)
-	    if {[ListSameNumbers [lindex $line 4] $handle]} {
+	    if {[ListSameNumbers [lindex $line 6] $handle]} {
 		set parentDims [concat [lrange $parentDims 0 end-1] \
-				    [lindex $line 3]]
+				    [lindex $line 5]]
 		break
 	    }
 	}

@@ -140,6 +140,13 @@ int compare_instance_status (const int pointers[], const int ref_pointers[],
    return 0;
 }
 
+void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
+  while (*dest) { dest++; }
+  if (sep) { *(dest++)=sep; }
+  if (sep2) { *(dest++)=sep2; }
+  do { *(dest++)= *src; } while (*src++);
+}
+  
 ame_rand_type* ame_rand;
 get_value_pointer_type* get_value_pointer;
 fetch_instance_type fetch_instance;
@@ -349,7 +356,7 @@ public:
     return(-1);
   }
       
-  void make_full_caption(int line, char *result) {
+  void make_full_caption(int line, char *result, int* dims) {
     /* New version which does not depend on the nodedata array being in
        any particular order -- and returns the whole caption */
     int parent, *dest, *src;
@@ -358,12 +365,13 @@ public:
 
 
     if ((parent = parent_line(line)) > 0) {
-      make_full_caption(parent, result);
+      make_full_caption(parent, result, dims);
     } else {
       *result = (char)NULL;
     }
     strcat(result, "/");
     strcat(result, nodedata[line].caption);
+    append_ints_to_null(dims, nodedata[line].dims, 0, 0);
     /*
     dest = dims;
     src = nodedata[line].dims;
@@ -475,8 +483,10 @@ that the submodel name is searched for in both models ) */
 int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   int count;
   char test[255];
+  int dims[32];
   for (count = 1; seekType->nodecount>count; ++count) {
-    seekType->make_full_caption(count, test);
+    *dims = 0;
+    seekType->make_full_caption(count, test, dims);
 	  
     if (!strcmp(seeknode, test)) {
       *tgtModel = seekType;
@@ -496,13 +506,6 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   return -1;
 }
 
-void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
-  while (*dest) { dest++; }
-  if (sep) { *(dest++)=sep; }
-  if (sep2) { *(dest++)=sep2; }
-  do { *(dest++)= *src; } while (*src++);
-}
-  
 /* global version of getinfo, uses the list defined above to search through all
    current models to find given node, and combine their extraction data
 
@@ -515,20 +518,22 @@ node_data_line* searchinfo(char* node, long int* tgtModel,
   Model* tryModel;
   node_data_line *bottomLine;
   char localCapt[256];
+  int localDims[32];
   int line;
 
   while (searchPoint) {
     tryModel = searchPoint->model;
     if ((line=tryModel->getinfo(node))>-1) {
       bottomLine = tryModel->nodedata + line;
-      tryModel->make_full_caption(line, localCapt);
+      *localDims = 0;
+      tryModel->make_full_caption(line, localCapt, localDims);
       if (searchPoint == nodeModelList) {
 	strcpy(caption, localCapt);
 	*dims = *path = 0;
-	append_ints_to_null(dims, bottomLine->dims, 0, 0);
+	append_ints_to_null(dims, localDims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
       } else if (searchinfo(searchPoint->node, tgtModel, caption,dims,path)) {
-	append_ints_to_null(dims, bottomLine->dims, SEPARATE, 0);
+	append_ints_to_null(dims, localDims, SEPARATE, 0);
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
 	strcpy(caption + strlen(caption), /* was strrchr(caption, '/'), */

@@ -13,7 +13,7 @@ sicstus_module( render, [render/5, make_assignment/4, render_all/5,
 		make_pointer/3, resolve_pointer/3, 
 		make_constant_list/3, get_element_ref/4,
 		make_integer/3, command_substitute/3,
-		generate_data_decls/11, make_procedure_call_chars/3] ).
+		generate_data_decls/13, make_procedure_call_chars/3] ).
 
 sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
 		library(lists)] ).
@@ -460,8 +460,8 @@ do_loop_pointers(L, SmName, Type, Name, Late) :-
 	    Late = [[int, Cond, []], [Type, MetaPtdPtd, []]];
 	Late = []).
 
-generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
-		    ExecForms, Decl, Exts, NodeData) :-
+generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
+		    ExecForms, Decl, Exts, EnumBits, NodeData) :-
 	render(L, data_declaration, Inst, 4, Decl),
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-LocalDims),
 	render(L, case_start, Match, 8, [Ext1]),
@@ -550,18 +550,33 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS']),
 	    (member([Name, GraphPointer | _], GraphOwners), !;
-	        GraphPointer = 0),
+	    GraphPointer = 0),
 
-		(BaseName has_class_refinement min_val of Min, 
+	    (BaseName has_class_refinement min_val of Min, 
 		number(Min), !;
-		Min = Wee),
-		(BaseName has_class_refinement max_val of Max, 
+	    Min = Wee),
+	    (BaseName has_class_refinement max_val of Max, 
 		number(Max), !;
-		Max = Muckle),
+	    Max = Muckle),
+
+	    /* Now do what needs with the enumerated types */
+	    (BaseName has_class_refinement enum_types of TypeList, !;
+		TypeList = []),
+	    length(TypeList, ETCount),
+	    (ETCount = 0, !,
+		EnumBits = [],
+		MetaPtr = 'NULL';
+	    all(render, make_runtime_enum_data,
+		[unify(L), build(TypeList), unify(Used),
+		 append(EnumBits, MetaDecl), build(ETPtrs)]),
+		append_atoms(Name, '_ets', ETPtrName),
+		generate_name(L, ETPtrName, MetaPtr, Used),
+		render(L, variable_declaration, ['enum_type_data', MetaPtr,
+					     [ETCount], ETPtrs], 0, MetaDecl)),
 		/* make a value lookup entry for each node with this value */
-		setof([NodeName, Type, PutEval, CappedDims, 
-				NewPath, GraphPointer,
-				UseCaption, Min, Max, Class, Name],
+	    setof([NodeName, Type, ETCount, MetaPtr, PutEval,
+		   CappedDims, NewPath, GraphPointer,
+		   UseCaption, Min, Max, Class, Name],
 			
 		     (NodeName = VisName,
 			 PutEval = Eval;
@@ -569,8 +584,25 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 			 PutEval = 'GHOST'),
 		      NodeData);
 	/* No need to handle ghosts and link terminators */
-		NodeData = []).
+	    EnumBits = [],
+	        NodeData = []).
 
+make_runtime_enum_data(L, Name-Mems, Used, ItemDecls,
+		       [ETCount, NamePtr, ETPtr]) :-
+	EltPtrs = [NamePtr | MemPtrs],
+	append_atoms(Name, '_mems', ETTag),
+	generate_name(L, ETTag, ETPtr, Used),
+	all(utility, generate_name,
+	    [unify(L), build([Name | Mems]), build(EltPtrs), unify(Used)]),
+	all(render, templatify,
+	    [build([Name | Mems]), build(EltPtrs), build(VTemplates)]),
+	length(Mems, ETCount),
+	append(VTemplates, [['char*', ETPtr, [ETCount], MemPtrs]], Templates),
+	render_all(L, variable_declaration, Templates, 0, ItemDecls).
+
+templatify(Elt, Ptr, [char, Ptr, void, QElt]) :-
+	append_atoms(['"', Elt, '"'], QElt).
+				     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* make_array_assignment/9: all subscripts other than those for submodel loops and
 those used for referring to individual array elements are generated and put in
@@ -689,6 +721,7 @@ split_lines(NestStr, [String | Strings]) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % render_all applies render to a list of items of a given type
+/* should replace with all(render) */
 
 render_all( _, _, [], _, []).
 
@@ -730,16 +763,18 @@ make_arg_string(L, [Arg | Rest], Arg_string) :-
 	L = tcl,
 		append(String, [32 | Tail], Arg_string)), !. /* green */
 
-build_constant(Language, [String, Type, Eval, Dims, Array, GraphPtr, Caption,
-			  Min, Max, Class, _Comment], Chars) :-
+build_constant(Language, [String, Type, ETCount, ETArrPtr, Eval, Dims, Array,
+			  GraphPtr, Caption, Min, Max, Class, _Comment],
+	       Chars) :-
 	make_list_chars(Language, Dims, DimsString),
 	make_list_chars(Language, Array, ArrayString),
 	make_constant_string(Language, String, Arg1),
 	make_constant_string(Language, Caption, Arg5),
 	name(Arg2, DimsString),
 	name(Arg3, ArrayString),
-	make_list_chars(Language, [Arg1, Type, Eval, Arg2, Arg3, GraphPtr,
-				   Min, Max, Class, Arg5], Chars).
+	make_list_chars(Language, [Arg1, Type, ETCount, ETArrPtr, Eval,
+				   Arg2,Arg3, GraphPtr, Min, Max, Class, Arg5],
+			Chars).
 /* 	render(Language, comment, Comment, 0, [CommentWd]),
 	name(CommentWd, CommentStr),
 Comment string removed because it interferes with list mode

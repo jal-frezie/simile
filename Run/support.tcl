@@ -52,9 +52,9 @@ proc tcl_insert {node newVs} {
 
     foreach record [array names nodedata] {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
-	    set tree [lindex $nodedata($record) 4]
+	    set tree [lindex $nodedata($record) 6]
 	    set type [lindex $nodedata($record) 1]
-	    set dims [lindex $nodedata($record) 3]
+	    set dims [GetFullDims $tree]
 	    return [list [FillValue ::AME_model<> $tree $type $dims \
 			      {} 0 $newVs]]
 	}
@@ -67,7 +67,7 @@ proc GetNodeIdFromRef {dest indices} {
     global nodedata nodecount
     for {set record 0} {$nodecount>$record} {incr record} {
 	if {[string equal $dest [burrow_to ::AME_model<> \
-				    [lindex $nodedata($record) 4] $indices]]} {
+				    [lindex $nodedata($record) 6] $indices]]} {
 	    return [lindex $nodedata($record) 0]
 	}
     }
@@ -75,7 +75,7 @@ proc GetNodeIdFromRef {dest indices} {
 
 proc collect {tgt node count args} {
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
-    if {[string match TABLE [getinfo $node 1]]} {
+    if {[string match TABLE [getinfo $node 3]]} {
 	set inputSrc paramData
     } else {
 	switch [getinfo $node 0] {
@@ -278,7 +278,8 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 }
 
 proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
-#    puts "filling tree $tree bounds $useDims inds $dims place $dimPlace"
+    #do_in_editor puts \
+	   "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
     if {[lsearch {RECORDS MEMBERS} $nextUseDim]!=-1} {
 	set breakPt [lsearch $tree -1]
