@@ -238,9 +238,14 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	        	InputPairs ), !;
 	    InputPairs = []),
 	     apply_minmax(Node, GroundExpr, FullExpr),
-	     replace_subexps(FullExpr, instance, process_expr, TableList,
-			     top_down, Switched, FinalExpr),
-	     process_pairs(Switched, InputPairs, Refs),
+	     replace_subexps(FullExpr, instance, process_expr,
+			     sub(TableList, InputPairs, Refs), top_down,
+			     Switched, FinalExpr),
+	     (member(var_pair(_, Sub), Switched),
+		 m_update:get_solo_list_depth(Sub, _),
+		 raise_exception(['Tried and failed to process constituent',
+				  Sub]);
+		 length(Refs, _Fix)),
 	     get_units(Node, Base, Units)),
 	 (member(RType, [compartment, creation]), !,
 	     FType = init_function;
@@ -458,33 +463,23 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % list of name-node pairs, and reconstructs the resulting expression. Only they
 % are little lists not atoms now.
 
-process_expr(TableValues, Var, NewVar, Recurse) :-
-	m_update:get_solo_list_depth(Var, DimExp),
-	    NewVar = input(_, Var, _, DimExp),
-	    Recurse = 0;
-	Var = size(_), Recurse = 0;
-	build_table_ref(TableValues, Var, NewVar), Recurse = 1.
-
-process_pairs([], _, []).
-
-process_pairs([var_pair(Var, NewVar) | VarPairs], InputPairs, Refs) :-
-	(((Var = size(_); Var = size(_,_)),
-	        get_actual_sizes([Var], [NewVar]);
-	  Var = table(_)),
-	    Refs = MoreRefs;
-	    member(input_pair(Var, Node, Away, Home, OutVar, NewVar),
+process_expr(sub(TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
+	(Var = size(_); Var = size(_,_)),
+	    get_actual_sizes([Var], [NewVar]),
+	    Recurse = 0;	  
+	m_update:get_solo_list_depth(Var, _),
+	(member(input_pair(Var, Node, Away, Home, OutVar, NewVar),
 		   InputPairs),
 	    is_instance(_, Node, _, OutVar, _, Ref),
-	    (nonvar(Home),
+	    member(Ref, Refs),
+	    (var(Home), !;
 		find_all_comps(HomeSm, Home),
 		is_instance(_, HomeSm, _, Away, _, TopRef),
-		Refs = [TopRef, Ref | MoreRefs];
-	    var(Home),
-		Refs = [Ref | MoreRefs]);
-	    raise_exception(['Tried and failed to process constituent', Var])),
-	process_pairs(VarPairs, InputPairs, MoreRefs).
+		member(TopRef, Refs)), !;
+	NewVar = Var),
+	    Recurse = 0;
+	build_table_ref(TableValues, Var, NewVar), Recurse = 1.
 
-	
 build_table_ref(Table, table([]), Table).
 
 build_table_ref(Table, table([Ind1 | IndN]), RefTable) :-

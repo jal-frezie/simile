@@ -90,11 +90,9 @@ insert_paths(sub(DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    append(LocalLoops, Path, Loops),
 	    NewVar = param(arr(SmPtr, Ref, Inds), Type, Loops, BackSwap, Wait),
 	    Recurse = 0;
-	(m_update:get_solo_list_depth(Var, DimExp),
-	    Ref = Var; /* inter in macro */
-	Var = input(_, Ref, _, DimExp)),
+	m_update:get_solo_list_depth(Var, DimExp),
 	    m_update:build_array(any, Dims, DimExp),
-	    NewVar = use_inter(Ref),
+	    NewVar = use_inter(Var),
 	    /* just to make sure same var is used for name each occurrence */
 	    member(instance(internal,_, NewVar,_, _-Dims), InterInputs),
 	    Recurse = 0;	  
@@ -236,11 +234,12 @@ make_intermediates(
 	    OrigSource = make_inter(_, Param);
 	\+ contains_something(random, Source),
 	    OrigSource = Source),
-	member(instance(internal,_, OrigSource, Name, Units-InterDims),
+	member(instance(internal, inter(InterContext, _, _),
+			OrigSource, Name, Units-InterDims),
 	       PrevInters), !,
 	    NewInters = PrevInters,
 	    Setups = [],
-	    Args = [Name],
+	    Args = [made_at(Name, InterContext)],
 	    pointer_from(DestPath, SourcePtr),
 	    make_inds_for(InterDims, SourceLoops, IntInds),
 	    append(SourceLoops, DestPath, SourceContext),
@@ -652,7 +651,7 @@ make_intermediates(
 		dissociate(SubArgs, UseArgs);
 	    UseArgs = SubArgs).
 
-dissociate(SubArgs, [later(Arg) | UseArgs]) :-
+dissociate(SubArgs, [later(Arg) | UseArgs]) :- 
 	select(made_at(Arg, _), SubArgs, Rest), !,
 	dissociate(Rest, UseArgs).
 dissociate(Args, Args).
