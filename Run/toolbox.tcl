@@ -62,9 +62,6 @@ proc ControlDraw {prologVersion} {
 	set env(licensee_corp) "Simulistics, inc."
     }
 
-    # loading stub sets license entries
-    load_c_stub
-
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
     
@@ -77,6 +74,7 @@ proc ControlDraw {prologVersion} {
     
     set userinfo(license_code) \
 	[join [lrange [split $env(license_code) =] 1 end] =]
+    # loading stub sets license entries
     load_c_stub
 
     # eezi-hack implementation of time limit: to do this anything like
