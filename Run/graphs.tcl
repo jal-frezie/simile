@@ -894,9 +894,11 @@ proc AcceptData {winId topNode compName complain} {
     global paramDims paramData widgetNames runState inputHelper running_c
 
     set node [GetCompProperty $topNode IdFromCapt $compName]
-    if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
-	set paramData($compName) \
-	    [UglifyValList [$widgetNames($compName).e get]]
+    if {$complain > -1} {
+	if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
+	    set paramData($compName) \
+		[UglifyValList [$widgetNames($compName).e get]]
+	}
     }
     
     set dataChanged 0
@@ -944,12 +946,16 @@ proc AcceptData {winId topNode compName complain} {
 			$paramData($compName)} result]} {
 # new bit for using it as an input tool: notify that we have values
 	    lappend paramData(needed) $compName
-	    $widgetNames($compName).l configure -fg red
-	    if {$complain} {
-		ShowMessage "Setting $compName" warning "While attempting to load the parameter value at indices [lrange $result 0 end-1] the following problem occurred: [lindex $result end]" ok
+	    if {$complain>-1} {
+		$widgetNames($compName).l configure -fg red
+		if {$complain>0} {
+		    ShowMessage "Setting $compName" warning "While attempting to load the parameter value at indices [lrange $result 0 end-1] the following problem occurred: [lindex $result end]" ok
+		}
 	    }
 	} else {
-	    $widgetNames($compName).l configure -fg black
+	    if {$complain>-1} {
+		$widgetNames($compName).l configure -fg black
+	    }
 	    set paramData(needed) [purge $paramData(needed) $compName]
 	    if {$result<1} {
 		set runState($topNode,reloadParams) $result
@@ -1185,7 +1191,8 @@ proc Open {topNode smPath} {
 }
 
 proc MergeParams {topNode smPath oldPath interactive} {
-    global paramState paramData widgetNames mimeSquirter simtmpdir
+    global paramState paramData widgetNames mimeSquirter simtmpdir \
+	whichParamsAffected
     
     set oldDir [pwd]
     if {[catch { 
@@ -1239,6 +1246,7 @@ proc MergeParams {topNode smPath oldPath interactive} {
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
 		set paramData($restoredComp) \
 		    [LoadTableData $paramState($restoredComp)]
+		set whichParamsAffected($restoredComp) 1
 	    } else {
 		set node [GetCompProperty $topNode IdFromCapt $restoredComp]
 		set trans [GetTransTable $node]
@@ -1246,7 +1254,9 @@ proc MergeParams {topNode smPath oldPath interactive} {
 			 [GetCompProperty $topNode Eval $node]]} {
 		    set trans [linsert $trans 0 {}] ;# dont translate times
 		}
-		if {[SensibleValue $trans $paramData($restoredComp)]<2} {
+		if {[SensibleValue $trans $paramData($restoredComp)]>1} {
+		    set whichParamsAffected($restoredComp) 1
+		} else {
 		    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $paramData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
 		    set paramData($restoredComp) {}
 		}
