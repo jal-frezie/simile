@@ -1139,9 +1139,16 @@ proc EnumTypeToNumber {varData tgt head trans} {
     if {[string compare {} $trans]} {
 	set poss [lsearch $trans [lindex $head 0]]
 	if {$poss == -1} {
-	    error [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
+	    if {[string equal false [lindex $trans 0]]} {
+		error [list "$head is not a member of type boolean, pick one of $trans."]
+	    } else {
+		error [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
+	    }
+	} else {
+	    set ${varData}($tgt) $poss
 	}
-	set ${varData}($tgt) $poss
+    } elseif {![string is double $head]} {
+	error [list "$head is not a number."]
     } else {
 	set ${varData}($tgt) $head
     }
