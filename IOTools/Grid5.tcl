@@ -317,8 +317,8 @@ namespace eval grid005 {
         
         # copy display parameters to temp values
         # colours are stored by frames used as example colour swatch (eg $coloursF.lowcolourF.colF)
-        set min $useNodes($winId,min)
-        set max $useNodes($winId,max)
+        set min($winId) $useNodes($winId,min)
+        set max($winId) $useNodes($winId,max)
         
         #create widgets
         set coloursF [labelframe [$dlg getframe].colours -text "Colour scale"]
@@ -347,9 +347,9 @@ namespace eval grid005 {
         pack [label $rangeF.dataminL -text "Data min. so far: $datamin"] -fill x  -padx 10
         pack [label $rangeF.datamaxL -text "Data max. so far: $datamax"] -fill x  -padx 10
         pack [LabelFrame $rangeF.minF -text "Min"] -fill x  -padx 10 -pady 5
-        pack [entry $rangeF.minF.entry -textvar [namespace current]::min -width 20] -side right -padx 10
+        pack [entry $rangeF.minF.entry -textvar [namespace current]::min($winId) -width 20] -side right -padx 10
         pack [LabelFrame $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
-        pack [entry $rangeF.maxF.entry -textvar [namespace current]::max -width 20] -side right -padx 10
+        pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
         
         $dlg add -name ok \
@@ -369,23 +369,23 @@ namespace eval grid005 {
         set useNodes($winId,ctop) [$coloursF.topcolourF.colF cget -bg]
         set useNodes($winId,cmid) [$coloursF.midcolourF.colF cget -bg]
         set useNodes($winId,cbot) [$coloursF.lowcolourF.colF cget -bg]
-        if {[IsNumber $min]} {
-            set useNodes($winId,min) $min
+        if {[IsNumber $min($winId)]} {
+            set useNodes($winId,min) $min($winId)
         } else  {
             ShowMessage Error error "Value must be a number." ok
             $rangeF.minF.entry selection range 0 end
             focus $rangeF.minF.entry
             return
         }
-        if {[IsNumber $max]} {
-            set useNodes($winId,max) $max
+        if {[IsNumber $max($winId)]} {
+            set useNodes($winId,max) $max($winId)
         } else  {
             ShowMessage Error error "Value must be a number." ok
             $rangeF.maxF.entry selection range 0 end
             focus $rangeF.maxF.entry
             return
         }
-        set useNodes($winId,range) [expr {$max-$min}]
+        set useNodes($winId,range) [expr {$max($winId)-$min($winId)}]
         $dlg enddialog 0
         SetColours useNodes $winId
         recolour_scale $winId
