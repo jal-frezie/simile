@@ -886,7 +886,7 @@ proc ContextSensitiveHelp {context page} {
         package require winhelp
         winhelp $context ../Help/simile.chm $page
     } elseif { [string match Darwin $tcl_platform(os)] } {
-        exec open -a "Help Viewer" ../Help/$page
+        exec open -a "Help Viewer.app" ../Help/$page
     } else {
         set url [pwd]/../Help/$page
     if {![info exists env(BROWSER)]} {
