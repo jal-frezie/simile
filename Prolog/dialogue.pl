@@ -404,7 +404,7 @@ feed_items(Fn, [IndStr, ValStr | More], Table, [Ind, VOrig | TOrig],
 	append(["Table contained the index item ", IndStr,
 		", which is not a recognizable constant."], Loss),
 	    raise_exception(Loss)),
-	nth(Posn, Table, Line),
+	nth0(Posn, Table, Line),
 	get_table_part(Fn, ValStr, Line, VOrig, Units, HiDims, HiSizes),
 	(Units = DUnit, !;
 	    raise_exception("Data units mismatch.")),
@@ -426,7 +426,8 @@ max_all(A, B, X) :-
 
 zero_empties(Table, Dims) :-
 	Dims = [Top | Lower], !,
-	    length(Table, Top),
+	    NCount is Top+1,
+	    length(Table, NCount),
 	    all(dialogue, zero_empties, [build(Table), unify(Lower)]);
 	ground(Table), !;
 	Table = 0.

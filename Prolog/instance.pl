@@ -227,9 +227,6 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	_ is_connector from Node to Result,
 	\+ is_ghost(Result),
 	find_type(Result, RType),
-	(Node has_class_refinement table_data of TableData,
-	    member(current=TableList, TableData), !;
-	TableList = none),
 	Node has_class_refinement value of GroundExpr,
 	(member(RType, [compartment, creation]), !,
 	    UseExpr = GroundExpr,
@@ -247,7 +244,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	       InputPairs ), !;
 	    InputPairs = []),
 	replace_subexps(UseExpr, instance, process_expr,
-			sub(TableList, InputPairs, Refs), top_down,
+			sub(InputPairs, Refs), top_down,
 			Switched, FinalExpr),
 	(member(var_pair(_, Sub), Switched),
 	    m_update:get_solo_list_depth(Sub, _),
@@ -463,7 +460,7 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % list of name-node pairs, and reconstructs the resulting expression. Only they
 % are little lists not atoms now.
 
-process_expr(sub(TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
+process_expr(sub(InputPairs, Refs), Var, NewVar, Recurse) :-
 	m_update:get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, Away, Home, OutVar, NewVar),
 		   InputPairs),
@@ -475,7 +472,7 @@ process_expr(sub(TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
 		member(TopRef, Refs)), !;
 	NewVar = Var),
 	    Recurse = 0;
-	build_table_ref(TableValues, Var, NewVar), Recurse = 1.
+	build_table_ref(table(1), Var, NewVar), Recurse = 1.
 
 build_table_ref(Table, table([]), Table).
 

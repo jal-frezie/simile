@@ -481,8 +481,15 @@ make_intermediates(
 	    Args = [],
 	    NewInters = PrevInters;
 
-	/* fail, suspended due to scope problems */
-	add_zeros(Source, SubId, Step, BoundArray, ConstBounds, Units), !,
+	(Source = table(1),
+	    m_class:SubId has_class_refinement table_data of TableData,
+	    member(bounds=ConstBounds, TableData),
+	    member(current=BoundArray, TableData),
+	    member(units=OrigUnits, TableData),
+	    (member(OrigUnits, [boolean, 1]), !,
+		Units = OrigUnits;
+	    Units = int);
+	add_zeros(Source, SubId, Step, BoundArray, ConstBounds, Units)), !,
 	    make_inds_for(ConstBounds, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
 	    SourceRef = arr('', ArrayName, Inds),
@@ -650,14 +657,10 @@ make_intermediates(
 		ResultList = [RVal],
 		ValRef = graph(SubId, RVal);
 	    Source = table(SourceList),
-		(Step = dummy,
-		    dialogue:table_data_is(TableData),
-		    member(units=RUnits, TableData),
-		    member(bounds=Arg_template, TableData), !;
-		RUnits = int,
-		(length(SourceList, TableDims);
-		    raise_exception(only_works_on_array(Source))),
-		list_of(int, TableDims, Arg_template)),
+	    Step = dummy,
+		dialogue:table_data_is(TableData),
+		member(units=RUnits, TableData),
+		member(bounds=Arg_template, TableData),
 		ValRef = table(ResultList);
 	    Source =.. [Op | PlSourceList],
 		(PlSourceList = [''], !,
