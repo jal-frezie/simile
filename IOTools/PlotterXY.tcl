@@ -479,9 +479,8 @@ namespace eval ::$keyValue {
     
     proc resize {w win x y width height} {
         global ::graphtools::plot
-        #ShowMessage debug info "plotterxy resize"
         
-        if {[regexp (\.\[^.\]*)\.canvas$ $win full id]} {
+        if {[string match Canvas [winfo class $win]]} {
             set x0 $plot($w,xborder_left)
             set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
             set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
