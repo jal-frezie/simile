@@ -1728,7 +1728,7 @@ proc FilterErrors {args} {
     if {[catch $args retVal]} {
         set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
         if {[string match yes $ans]} {
-            ErrorHelp $errorInfo
+            BuildProblem unsaved none $errorInfo tcl
         }
         cd $oldDir
         return -1

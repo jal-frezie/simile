@@ -321,9 +321,8 @@ show_error(Model, Lossage) :-
 	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
 	    Fault = system),
 	(get_name_for(Model, Name), !; Name = unsaved),
-	use_temp_dir(Dir),
 	(backup:autosave_file_is(AutoName), !; AutoName = none),
-	output:safe_tcl_eval(['BuildProblem', br(Name), br(AutoName), br(Dir),
+	output:safe_tcl_eval(['BuildProblem', br(Name), br(AutoName),
 			      br(chars(Text)), Fault], _).
 
 write_chars_to_file(_, []).
