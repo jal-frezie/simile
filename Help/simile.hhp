@@ -51,6 +51,7 @@ diagrams\rescale.htm
 diagrams\delete.htm
 diagrams\detail.htm
 diagrams\ghosts.htm
+diagrams\snapshot.htm
 diagrams\label.htm
 diagrams\arrow.htm
 diagrams\envelope.htm
@@ -161,6 +162,8 @@ run\tools\configurations.htm
 run\tools\explorer.htm
 run\tools\grid.htm
 run\tools\lollipop.htm
+run\tools\random.htm
+run\tools\table.htm
 run\tools\others.htm
 run\tools\plotter.htm
 run\tools\profiles.htm
@@ -176,15 +179,11 @@ data\case2.htm
 data\case3.htm
 data\case4.htm
 data\case5.htm
-data\case6.htm
 examples\index.htm
 examples\control.htm
 examples\forest.htm
 examples\spiro.htm
 coviewexpiry.htm
-run\tools\random.htm
-run\tools\table.htm
-diagrams\snapshot.htm
 
 [INFOTYPES]
 
