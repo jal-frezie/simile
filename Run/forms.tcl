@@ -775,9 +775,9 @@ proc Disaggregate {parent title colour type fatness icount step \
     checkbutton $mathf.separate -text "Build submodel in separate dll" \
             -variable disaggregate(separate)
     pack $mathf.separate -anchor w
-    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
-            -variable disaggregate(matherror)
-    pack $mathf.matherror -anchor w
+#    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
+#            -variable disaggregate(matherror)
+#    pack $mathf.matherror -anchor w
     frame $mathf.step
     label $mathf.step.caption -text "Time step index:"
     pack $mathf.step.caption -side left
@@ -785,7 +785,7 @@ proc Disaggregate {parent title colour type fatness icount step \
     ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
             -values "Default -1 0 1 2 3 4 5 6 7" -width 10 -editable false
     pack $mathf.step.pulldown
-    pack $mathf.step -anchor w -padx 4 -pady 4
+    pack $mathf.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
     
     # The above "complex" frame has been constructed, but is not packed until the "More" button is pressed
