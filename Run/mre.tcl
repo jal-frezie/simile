@@ -325,15 +325,15 @@ proc ::RunEnv::PrintCurrentContainer {} {
             set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
             namespace eval :: {
                 PrintNow $::RunEnv::canvasId
-            } else {
-                ShowMessage Warning warning \
-                        "[$CurrentHelperId::identify] does not support printing" ok
             }
-            
+        } else {
+            ShowMessage Warning warning \
+                    "[$CurrentHelperId::identify] does not support printing" ok
         }
+        
     }
 }
-    
+
 proc ::RunEnv::CopyHelper {containerId} {
     global helperTable env tcl_platform
     variable CurrentContainer
