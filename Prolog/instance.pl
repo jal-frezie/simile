@@ -245,8 +245,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	       generate_input_pair(Node, InputPair),
 	       InputPairs ), !;
 	    InputPairs = []),
-	apply_minmax(Node, UseExpr, FullExpr),
-	replace_subexps(FullExpr, instance, process_expr,
+	replace_subexps(UseExpr, instance, process_expr,
 			sub(TableList, InputPairs, Refs), top_down,
 			Switched, FinalExpr),
 	(member(var_pair(_, Sub), Switched),
@@ -376,6 +375,9 @@ try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef, ImpType) :-
 	    (Units = any, !, ImpType = real;
 		/* (only legacy nodes have no units!) */
 	    ImpType = Units).
+/*
+This adds code that limits a model value to the range specified by its
+min/max attributes. This currently is not done.
 
 apply_minmax(Node, BaseExpr, UpdateExpr) :-
 	(Node has_class_refinement min_val of Min,
@@ -386,6 +388,7 @@ apply_minmax(Node, BaseExpr, UpdateExpr) :-
 	\+ Max = '', !,
 		UpdateExpr = min(Max, MinnedExpr);
 	UpdateExpr = MinnedExpr).
+*/
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 choose_default_value(Node, Base, PType, Default) :-

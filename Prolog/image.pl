@@ -703,9 +703,9 @@ Fails if either there is a link without a corresponding variable, or vice versa.
 checks_out_locally(Func) :- 
 	Func has_class_refinement value of Expr,
 	\+ Expr = '', /* sometimes given to flow to get bowtie on right
-		      section */
-	instance:apply_minmax(Func, Expr, FullExpr),
-	replace_subexps(FullExpr, image, pick_var, Func, top_down, Pairs, _),
+		      section 
+	instance:apply_minmax(Func, Expr, FullExpr), */
+	replace_subexps(Expr, image, pick_var, Func, top_down, Pairs, _),
 	(setof(Source, valid_input(Func, Source), Sources), !; Sources = []),
 	pair_off(Func, Sources, Pairs).
 
