@@ -415,7 +415,7 @@ proc GetCCompProperty {topNode prop args} {
 		return [lindex $propData($prop,names) $numericVal]
 	    }
 	} Dims {
-	    set specials {RECORDS MEMBERS SEPARATE}
+	    set specials {RECORDS MEMBERS SEPARATE START_VM END_VM}
 	    set fullList [c_getvalue $topNode $node 0]
 	    
 	    set idx 0
@@ -500,7 +500,8 @@ proc GetTclCompProperty {topNode prop args} {
 	    set transList {}
 	    while {$count<[llength $dimRefs]-1} {
 		set aDim [lindex $dimRefs $count]
-		if {$aDim<=-10} {
+		if {[lsearch {START_VM END_VM} $aDim]>-1} {
+		} elseif {$aDim<=-10} {
 		    set usedET [lindex $typeList \
 				    [expr [llength $typeList]+$aDim+9]]
 		    lset dimRefs $count [lindex $usedET 0]

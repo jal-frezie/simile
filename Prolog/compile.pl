@@ -507,7 +507,7 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
 	render(L, end(procedure), get_pointer, 0, ExtN),
 % Dims in next line replaced by [] for local dims only
-	generate_local_decls(L, SubInstances, Tree, Level, [], 
+	generate_local_decls(L, SubInstances, Tree, Level,
 			     ExtSets, Used, Graphs, Publics, SubTypeDecls,
 			     SubPointerDecls, Exts, EnumBits, NodeData),
 
@@ -518,12 +518,16 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 	append(LocalPtrs, SubPointerDecls, PointerDecls).
 	
 
-generate_local_decls(_, [], _,_,_,_,_,_, [], [], [], [], [], []).
-generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
+generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], [], []).
+generate_local_decls(L, [Instance | Instances], Tree, Level,
 		     ExtSets, Used, Graphs,
 		     PublicDecls, TypeDecls, PointerDecls, Exts,
 		     EnumBits, NodeData) :-
-	Instance = instance(_, Node, Loc, _, _-SmSizes),
+	Instance = instance(_, Node, Loc, _, _-_SmSizes),
+	list_local_index_meanings(Node, SmIndSpecs),
+	all(dialogue, index_names_and_sizes,
+	    [build(SmIndSpecs), build(_Text), build(RSizes)]),
+	reverse(RSizes, SmSizes),
 	all(ame_gen, enum_type_ref,
 	    [build(SmSizes), unify(Node), build(_), build(_), build(Posn)]),
 		/* In the past, SmDims was replaced by Posn, which is
@@ -534,10 +538,12 @@ generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
 	    Loc = xrefs(_, instance(_,_,_, 'AME_model', _), _,_)), !,
 	    append(Tree, [Level, -1], DeepTree),
 	    (by_record(Node), !,
-		append(Dims, ['RECORDS'], NewDims);
-		append(Dims, ['MEMBERS'], NewDims));
+		['RECORDS'] =  NewDims;
+	    is_population(Node), !,
+		['MEMBERS'] = NewDims;
+	    append(['START_VM' | Posn], ['END_VM'], NewDims));
 	append(Tree, [Level], DeepTree),
-	    append(Dims, Posn, NewDims)),
+	    Posn = NewDims),
 	generate_data_decls(L, Level, NewDims, DeepTree, Instance, ExtSets,
 			    Used, Graphs, LocalPublicDecls,
 			    LocalExts, LocalEnumBits, LocalNodeData),
@@ -549,7 +555,7 @@ generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
 	    [DeepTypeDecls, DeepPointerDecls, DeepEnumBits, DeepNodeData] =
 	    [[],            [],               [],           []]),
 	NewLevel is Level + 1,
-	generate_local_decls(L, Instances, Tree, NewLevel, Dims,
+	generate_local_decls(L, Instances, Tree, NewLevel,
 			     ExtSets, Used, Graphs,
 			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
 			     MoreExts, MoreEnumBits, MoreNodeData),

@@ -44,6 +44,8 @@
 #define RECORDS        -1
 #define MEMBERS        -2
 #define SEPARATE       -3
+#define START_VM       -4
+#define END_VM         -5
 
 #define SIMILE_VERSION	"4.1"
 

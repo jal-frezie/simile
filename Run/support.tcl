@@ -283,7 +283,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 #do_in_editor puts \
 	   "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
-    if {[lsearch {RECORDS MEMBERS} $nextUseDim]!=-1} {
+    if {[lsearch {RECORDS MEMBERS START_VM} $nextUseDim]!=-1} {
 	set breakPt [lsearch $tree -1]
 	set oldTree [lrange $tree 0 [expr $breakPt-1]]
 	set newTree [lrange $tree [expr $breakPt+1] end]
@@ -292,8 +292,13 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	array set arrayVals $newVals
 
 	if {[string compare $nextRef 0]} {
+	    if {[string equal START_VM $nextUseDim]} {
+		set cutDim [expr [lsearch $useDims END_VM]+1]
+	    } else {
+		set cutDim 1
+	    }
 	    return [FillListValues nextRef $newTree $type \
-			[lrange $useDims 1 end] {} -1]
+			[lrange $useDims $cutDim end] {} -1]
 	} else {
 	    return
 	}

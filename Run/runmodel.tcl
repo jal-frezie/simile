@@ -852,7 +852,7 @@ proc SetRunParams {node runParams} {
 # 3 = up to date, 4 = out of date
 
 proc StartRun {node} {
-    global runState window_info helperTable projectParams
+    global runState window_info helperTable projectParams sendvars
     # ShowMessage debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
     if {[info exists helperTable($node,whichRunEnv)]} {

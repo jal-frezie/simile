@@ -554,7 +554,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
   Model* tryModel;
   node_data_line *bottomLine;
   char localCapt[256];
-  int localDims[32], dimCount;
+  int localDims[32], dimCount, usedCount;
   enum_type_data *thisType, *localTypes[32], *localUsed[32];
   int line, typeCount, typeIdx;
 
@@ -565,25 +565,28 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
       typeCount = tryModel->make_full_caption(line, localCapt, 
 					      localDims, localTypes);
       dimCount = 0;
+      usedCount = 0;
       while (localDims[dimCount]) {
 	if (localDims[dimCount] <= ENUM_BASE) {
 	  thisType = localTypes[typeCount+localDims[dimCount]-ENUM_BASE-1];
-	  localUsed[dimCount] = thisType;
+	  localUsed[usedCount++] = thisType;
 	  localDims[dimCount] = thisType->count;
+	} else if (localDims[dimCount]==START_VM || 
+		  localDims[dimCount]==END_VM) {
 	} else {
-	  localUsed[dimCount] = &noType;
+	  localUsed[usedCount++] = &noType;
 	}
 	++dimCount;
       }
       if (bottomLine->datatype <= ENUM_BASE) {
-	localUsed[dimCount++] = localTypes[typeCount+bottomLine->datatype
+	localUsed[usedCount++] = localTypes[typeCount+bottomLine->datatype
 					 -ENUM_BASE-1];
       } else if (bottomLine->datatype == FLAG) {
-	localUsed[dimCount++] = &boolType;
+	localUsed[usedCount++] = &boolType;
       } else if (bottomLine->datatype != SUBMODEL) {
-	localUsed[dimCount++] = &noType;
+	localUsed[usedCount++] = &noType;
       }
-      localUsed[dimCount] = NULL;
+      localUsed[usedCount] = NULL;
 
       if (searchPoint == nodeModelList) {
 	strcpy(caption, localCapt);

@@ -116,6 +116,9 @@ namespace eval slide139 {
 	set outerDims 0
 	while {$outerDims<[llength $nodeDims]} {
 	    set latestDim [lindex $nodeDims $outerDims]
+	    if {[string equal START_VM $latestDim]} {
+		set outerDims [lsearch -start $outerDims $nodeDims END_VM]
+	    }
 	    if {[string is integer $latestDim] && $latestDim>0} {
 #		if {[info exists useDim]} {
 		    # Cannot display sliders, too many dimensions

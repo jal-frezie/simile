@@ -816,6 +816,8 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
     localType = *(new_tree++);
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
+  case START_VM:
+    while (*++use_dims != END_VM) {}
   case MEMBERS:
   case RECORDS:
     new_tree = tree;
