@@ -636,9 +636,9 @@ proc FileParamDialogue {mustShow parent} {
 # bit of voodoo...get table relating numerical indices of node to enymerated
 # types (from prolog) and use to translate array bounds
 	    set trans [GetFromProlog tk_get_info('$t',$node,types)]
-ShowMessage debug info "$node $trans $nodeDims" ok
+#ShowMessage debug info "$node $trans $nodeDims" ok
 	    set nodeDims [TransBounds $trans [lrange $nodeDims 0 end-1]]
-            set dimList [join $nodeDims x]
+            set dimList [join $nodeDims { x }]
             if {[string length $dimList]} {
                 set slotCaption "[lindex $levels end] ($dimList):"
             } else {
@@ -921,25 +921,26 @@ proc GetFromTable {parent compName} {
 
 proc LoadTableData {tableSpec} {
     
-    # ShowMessage debug info "Loading table with data $tableSpec" ok
+    ShowMessage debug info "Loading table with data $tableSpec" ok
     set tStr [open [lindex $tableSpec 0] r]
     gets $tStr headerLine
     set headerList [split $headerLine ,]
-    # ShowMessage debug info "Headers are $headerList" ok
+    ShowMessage debug info "Headers are $headerList" ok
     
     set indexCount 0
+    set lineCount 0
     set maxIndices(0) 0
     foreach headerIndex [lrange $tableSpec 2 end] {
         lappend indexColumns [lsearch $headerList $headerIndex]
-        set maxIndices($indexCount) 0
+        set maxIndices($indexCount) {}
         incr indexCount
     }
     set headerColumn [lsearch $headerList [lindex $tableSpec 1]]
-    # ShowMessage debug info "Columns: header $headerColumn" ok
+    ShowMessage debug info "Columns: header $headerColumn" ok
     
     while {[gets $tStr entryLine] != -1} {
         set entryList [split $entryLine ,]
-        # ShowMessage debug info "Data line is $entryList" ok
+        ShowMessage debug info "Data line is $entryList" ok
         
         if {[info exists indexColumns]} {
             set arrayIndex {}
@@ -947,14 +948,15 @@ proc LoadTableData {tableSpec} {
             foreach column $indexColumns {
                 set newIndex [lindex $entryList $column]
                 lappend arrayIndex $newIndex
-                if {$newIndex > $maxIndices($indexCount)} {
-                    set maxIndices($indexCount) $newIndex
+                if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
+                    lappend maxIndices($indexCount) $newIndex
                 }
                 incr indexCount
             }
         } else {
-            incr maxIndices(0)
-            set arrayIndex $maxIndices(0)
+            incr lineCount
+	    lappend maxIndices(0) $lineCount
+            set arrayIndex $lineCount
             set indexCount 1
         }
         
@@ -966,16 +968,16 @@ proc LoadTableData {tableSpec} {
         lappend indexList $maxIndices($idxIdx)
     }
     
-    # ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
+    ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     return [ArrayToList paramArray top $indexList]
 }
 
 proc ArrayToList {topArray indexSoFar otherMaxes} {
-    # ShowMessage debug info "$indexSoFar $otherMaxes" ok
+    ShowMessage debug info "$indexSoFar $otherMaxes" ok
     upvar 1 $topArray array
     if {[llength $otherMaxes]} {
-        for {set pt 1} {$pt <= [lindex $otherMaxes 0]} {incr pt} {
+        foreach pt [lindex $otherMaxes 0] {
             lappend result $pt [ArrayToList array $indexSoFar,$pt \
                     [lrange $otherMaxes 1 end]]
         }
@@ -988,4 +990,3 @@ proc ArrayToList {topArray indexSoFar otherMaxes} {
         }
     }
 }
-

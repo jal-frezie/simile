@@ -71,7 +71,9 @@ get_info(_Wid, Comp, types) :-
 	callback(none).
 
 insert_mem_list(Bound, Model, Trans) :-
-	(get_av_pair(Model, 0, enum_types, Pairs),
+	(Bound = '"boolean"',
+	    Trans = [false, true];
+	get_av_pair(Model, 0, enum_types, Pairs),
 	    member(Type-Mems, Pairs),
 	    append_atoms(['"', Type, '"'], Bound),
 	    Trans = [Type | Mems];

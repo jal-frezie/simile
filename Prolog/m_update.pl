@@ -395,11 +395,11 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
         */
 	((var(ParseUnit), !,
 	(DimExprs = TargetExprs, !,
-	    ((member(Unit_base, [any, boolean, const_int, a(_ET), int]),
+	    ((member(Unit_base, [any, const_int, a(_ET), int]),
 	          Unit_type = Unit_base;	 
 	      get_conversion(_, Unit_base, Unit_base, _),
 	          Unit_type = real), !,
-		(member(Target_base, [any, boolean, n(_ET), a(_ET), int, const_int]),
+		(member(Target_base, [any, n(_ET), a(_ET), int, const_int]),
 		    Target_type = Target_base;	 
 	        Target_type = real),
 		(Severity = 0, !;
@@ -538,7 +538,7 @@ add_implicit_function(Exp_node, Node_name) :-
 		make_node(Parent, function, Node_name),
 		new_line(influence, [], Node_name, Exp_node, _),
 		(Exp_node is_of_sort boolean_value, !,
-		    Node_name has_new_class_refinement units of boolean;
+		    Node_name has_new_class_refinement units of a('"boolean"');
 		 true);
 	Exp_node has_class submodel,
 	Parent has_part Exp_node,

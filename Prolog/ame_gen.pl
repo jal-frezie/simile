@@ -413,8 +413,13 @@ enum_type_ref(Ref, Model, Value, Units) :-
 	Ref = var, 
 	    Units = int;
 	number(Ref),
-	    Units = real),
-	    Value = Ref, !;
+	    Units = real), !,
+	    Value = Ref;
+	nth0(Value, ['"false"', '"true"'], Ref), !,
+	    Units = a('"boolean"');
+	resolve_enum_type(Ref, Model, Value, Units).
+
+resolve_enum_type(Ref, Model, Value, Units) :-
 	m_class:Model has_class_refinement enum_types of TypeList,
 	    member(TypeName-TypeMems, TypeList),
 	    (Match = TypeName; nth(Value, TypeMems, Match)),
@@ -425,8 +430,8 @@ enum_type_ref(Ref, Model, Value, Units) :-
 	    length(TypeMems, Value),
 		Units=n(TypeRef)), !;
 	m_class:Parent has_part Model,
-	    enum_type_ref(Ref, Parent, Value, Units).
-
+	    resolve_enum_type(Ref, Parent, Value, Units).
+	
 get_node_size(Source, Size) :-
 	get_node_size(Source, _, Size, _).
 

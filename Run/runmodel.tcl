@@ -838,6 +838,7 @@ proc AddEqnPopup {x y winId X Y} {
         if {$doVal} {
 	    set trans [GetFromProlog tk_get_info('$winId',$plName,types)]
 	    set value [lindex [GetModelValue $plName] 0]
+#puts "trans $trans value $value"
 	    if {![string match novalue $value]} {
 		set value [TransEnums $trans $value]
 	    }

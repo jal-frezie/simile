@@ -205,7 +205,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	get_term(Unit_st, Units, UnitFormError),
 	check_exp(Eqn_st, "Equation", Function, UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
-	(Is_P = 1, \+ Unit_st = "boolean", \+ EqnBase = boolean, !,
+	(Is_P = 1, \+ Unit_st = a(_), \+ EqnBase = a(_), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
 	check_exp(Min_st, "Min. value", Function, UsableInputs, MinBase, _Dims,
@@ -405,7 +405,7 @@ check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
 		    ((member(var, Dims), !,
 		            append(["The expression for field ", FieldName, " evaluates to a list, or array of lists. A model variable cannot represent a list."], Error);
 			\+ FieldName = "Equation",
-			    (Base = boolean; \+ Dims = []), !,
+			    (Base = a(_); \+ Dims = []), !,
 		            append(["The expression for field ", FieldName,
 				    " must evaluate to a scalar quantity."],
 				   Error));
