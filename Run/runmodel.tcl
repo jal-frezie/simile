@@ -189,7 +189,7 @@ proc ReleaseClicks {winId} {
 
 proc kill_helper_window { winId } {
     # ShowMessage debug info "Killing $winId" ok
-    global helperTable runState sendvars
+    global helperTable runState
     if {[info exists helperTable($winId,whichHelper)]} {
 	set topNode $helperTable($winId,whichModel)
 	if {[info exists helperTable($topNode,current)]} {
@@ -199,12 +199,18 @@ proc kill_helper_window { winId } {
         }
 	if {[info exists runState($topNode,helperId)]} {
 	    if {[string equal $winId $runState($topNode,helperId)]} {
-		set sendvars($topNode,currentMode) kill
+		upvar 0 $helperTable(RunControl)::sendvars($topNode,currentMode) mode
+		if {[string equal start $mode]} {
+		    set kill_on_finish 1
+		}
+		set mode kill
 		unset runState($topNode,helperId)
 	    }
 	}
         unset helperTable($winId,whichHelper)
-        destroy $winId
+        if {![info exists kill_on_finish]} {
+	    destroy $winId
+	}
         #	if {[PrefValue custom(helperManager) helperManager]} {
         #	    RunEnv::OnDestroyHelper $winId
         #	}

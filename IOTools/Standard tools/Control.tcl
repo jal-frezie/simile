@@ -437,6 +437,7 @@ s for which no source has yet been defined" ok
         }
         switch $sendvars($node,currentMode) {
             kill {
+		destroy $winId
             } exit {
                 $widget.bf.flag itemconfigure 1 -fill red
             } default {
