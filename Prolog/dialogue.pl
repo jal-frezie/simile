@@ -224,23 +224,21 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	(ParamsAllowed = 0, \+ InterInputs = [], !,
 	    EqnError = "You cannot have influences going to a component representing a file or input parameter.";
 	check_exp(Eqn_st, "Equation", Function, InterInputs, EqnBase, EqnDims,
-		  EqnNeeded, IndxCount, EqParamList, Result, EqnError)),
+		  EqnNeeded, IndxCount, ParamList, Result, EqnError)),
 	(Is_P = 1, \+ Units = a(_), \+ EqnBase = a(_), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
-	check_exp(Min_st, "Min. value", Function, [], MinBase, _Dims,
-		  MinMaxNeeded, IndxCount, MinParamList, Min, Min_term_error),
-	check_exp(Max_st, "Max. value", Function, [], MaxBase, _Dims,
-		  MinMaxNeeded, IndxCount, MaxParamList, Max,
-		  Max_term_error),
 
-	merge_lists(MinParamList, MaxParamList, LimitParamList),
-	merge_lists(EqParamList, LimitParamList, ParamList),
-	append(Min_term_error, Max_term_error, MinMaxError),
+	check_limit(Min_st, "Min. value", Function,
+		    MinMaxNeeded, Min, MinVal, MinBase, MinErr),
+	check_limit(Max_st, "Max. value", Function,
+		    MinMaxNeeded, Max, MaxVal, MaxBase, MaxErr),
+
+	append(MinErr, MaxErr, MinMaxError),
 	append(EqnError, MinMaxError, Complaint5),
 	
 	(Complaint5 = [], !,
-	(Unit_st = "", Eqn_st = "",
+	(fail, Unit_st = "", Eqn_st = "",
 	    /* If no eqn or units supplied, assume real */
 	    (Is_P > 0, NewUnits = 1; NewUnits = ''), UnitError = [], !;
 	/* If units but no eqn or limits supplied, accept any */
@@ -256,12 +254,18 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		member(ComboType, [n(_), const_int]), ComboUnits = int;
 		ComboType = ComboUnits), */
 
+	on_exception(_PropError, propagate_units(min(Max, max(Min, Result)),
+						any, [any, any, any],
+			[EqnBase, MinBase, MaxBase], ComboBase),
+		     sicstus_format_to_chars("Equation has non-numeric units ~w, so minimum or maximum values cannot be used.", [EqnBase], UnitError)), 
+	(var(UnitError),
             ((nonvar(TypeBase);
-		var(TypeBase), member(TypeBase, [a(_), int, real, boolean])),
-		promote_arg(EqnBase, TypeBase, ComboUnits), !,
+	      var(TypeBase),
+	          member(TypeBase, [any, a(_), int, real, boolean])),
+		promote_arg(ComboBase, TypeBase, ComboUnits), !,
 		(nonvar(ComboUnits); ComboUnits = TypeBase);
-	    UnitError = "Could not match units."),
-           
+           sicstus_format_to_chars("The equation for a component of this type must have units which can be used as ~w. The values entered have units of ~w, which cannot be converted.", [TypeBase,ComboBase], UnitError));
+	    true),
 	    (nonvar(UnitError),
 		NewUnits = Units;
 	     (Units = ''; /* Units field left empty */
@@ -332,8 +336,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		add_parameter(AffectedNode, 0, description, Desc),
 		add_parameter(AffectedNode, 0, comment, Comment),
 	        add_parameter(AffectedNode, 0, table_data, TableAttr),
-		add_parameter(AffectedNode, 0, min_val, Min),
-		add_parameter(AffectedNode, 0, max_val, Max),
+		add_parameter(AffectedNode, 0, min_val, MinVal),
+		add_parameter(AffectedNode, 0, max_val, MaxVal),
 		update_links_and_vars(New_inputs);
 	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),
@@ -443,6 +447,30 @@ reverse_engineer(Table, Here, TclRep) :-
 	    TclRep = TclInner);
 	TclRep = Table.
 
+check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-
+	Eqn_st = [], !,
+	    Base = any,
+	    Eqn = '',
+	    Value = '',
+	    (Needed = 1, !,
+		append("You must supply a value for field ", FieldName, Error);
+	    Error = []);
+	get_term(Eqn_st, Eqn, ParseError),
+	(ParseError = [], !,
+	    (on_exception(Error,
+			 get_actual_size(Function, Eqn, Values, S, Base),
+			 true), !;
+	    sicstus_format_to_chars("Entry for ~s must be a numeric constant.",
+			[FieldName], Error)),	    
+	    (var(Error), !,
+		(\+ S = Values, !,
+		    sicstus_format_to_chars("Entry for ~s must have a numerical value", [FieldName], Error);
+		Values = [Value], !,
+		    Error = [];
+		 sicstus_format_to_chars("Entry for ~s must have a single value.", [FieldName], Error));
+		true);
+	    Error = ParseError).
+	
 check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
 	  IndxCount, ParamList, Equation, Error) :-
 	Eqn_st = [], !,
