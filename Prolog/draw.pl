@@ -388,7 +388,8 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour, FillImage, ImgPos),
 		Draw_command =.. [submodel, Wid, Screen_list, Num, Fatness,
-				  FillColour, FillImage, Colour_scheme, Comp];
+				  FillColour, FillImage, ImgPos,
+				  Colour_scheme, Comp];
 	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]]),
 	    call(Draw_command),
@@ -460,7 +461,7 @@ draw_rubberband(Style) :-
 	(Style = square, !,
 	    Fatness = 0;
 	find_fatness(Trans, Fatness)),
-	submodel(Window_id, Draw_box, 1, Fatness, clear, none,
+	submodel(Window_id, Draw_box, 1, Fatness, clear, none, none,
 		 incomplete, [unfinished_component, '/background/']).
 
 remove_old_rubberband :-

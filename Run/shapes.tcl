@@ -190,7 +190,7 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutRoundedRect {w l t r b stack fatness fillColour fillImage \
+proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 			  colourScheme tagSet} {
     global looks
     #puts "drawing submodel with fill $fillColour"
@@ -242,7 +242,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage \
     }
     if {![string equal none $fillImage]} {
         set poly [$w create image $ml $mt -anchor nw \
-                -tag "$tagSet /background/ source($fillImage)"]
+                -tag "$tagSet /background/ source($fillImage) posn($layout)"]
         set mw [expr int($mr-$ml)]
         set mh [expr int($mb-$mt)]
         set smbg sm$poly$w
@@ -250,7 +250,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage \
         $w itemconfig $poly -image $smbg
         set intRad [expr int($cornerRad)]
         
-        FillSmImage $fillImage $smbg $mw $mh $intRad
+        FillSmImage $fillImage $layout $smbg $mw $mh $intRad
 	# Now to stick it behind anything that might be drawn inside
 	if {[llength $contents]} {
 	    $w lower $poly [lindex $contents 0]
@@ -373,7 +373,7 @@ proc PutFatArrow { w ptz fatness colourScheme tagSet} {
 # the size of the submodel rectangle, so it can be tiled/stretched as
 # necessary...
 
-proc FillSmImage {fillColour smbg mw mh intRad} {
+proc FillSmImage {fillColour layout smbg mw mh intRad} {
     set srcWidth [$fillColour cget -width]
     set srcHeight [$fillColour cget -height]
     
@@ -661,7 +661,7 @@ proc WriteDesc {canvas canvasFile date args} {
     close $stream
 }
 
-proc MakeImage {base inst w h} {
+proc MakeImage {base inst w h args} {
     global looks
     #    if {![info exists imageSources($base)]} {
     #	image create photo $base
@@ -672,7 +672,10 @@ proc MakeImage {base inst w h} {
     image create photo $inst -width $w -height $h
     set shortSide [expr $w<$h?$w:$h]
     set intRad [expr int($looks(submodel,objectsize)*$shortSide/400)]
-    FillSmImage $base $inst $w $h $intRad
+    if {![llength $args]} {
+	set args Tiled
+    }
+    FillSmImage $base $args $inst $w $h $intRad
 }
 
 # this is called from Prolog to load/save images with a model. Prolog does not
@@ -911,7 +914,11 @@ proc ZoomImage {winId which factor {optFontor none}} {
 		$tgtImage config -width $newWidth -height $newHt
 		regexp {source\(([^\)]+)\)} [$winId gettags $object] \
 		    all sourceImage
-		FillSmImage $sourceImage $tgtImage $newWidth $newHt \
+		if {![regexp {posn\(([^\)]+)\)} [$winId gettags $object] \
+			  all layout]} {
+		    set layout Tiled
+		}
+		FillSmImage $sourceImage $layout $tgtImage $newWidth $newHt \
 		    $intRad
 	    }
 	} default {
@@ -1354,7 +1361,7 @@ proc DoGraphics {box type middle size} {
         variable {PutCrossedCirc $box.canvas $l $t $r $b 100 1 {} \
                     normal "sample"}
         submodel {PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
-                    normal "sample"}
+                    none none normal "sample"}
         flow {
             PutBowTie $box.canvas $l $t $r $b 100 {} normal "sample"
             PutFatArrow $box.canvas "25 [expr $middle-25] $middle \

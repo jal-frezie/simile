@@ -1103,9 +1103,10 @@ proc ShowComplexity {t} {
 }
 
 proc ClearBG {posRBs} {
-    global disaggregate
+    global disaggregate 
     set disaggregate(colour) {}
     set disaggregate(image) {}
+    set disaggregate(imgpos) none
     foreach button [winfo children $posRBs] {
 	$button configure -state disabled
     }
@@ -1253,17 +1254,16 @@ proc UpdateColour {f} {
     }
 }
 
-set imageSources(uid) 0
 package require Img
 
 proc ChooseImage {posRBs} {
     global disaggregate
-    global imageSources
     
-    set newImage backgnd$imageSources(uid)
+    set uid 0
+    set newImage backgnd$uid
     while {![catch {image type $newImage}]} {
-        incr imageSources(uid)
-        set newImage backgnd$imageSources(uid)
+        incr uid
+        set newImage backgnd$uid
     }
     image create photo $newImage
     set choosing 1
@@ -1280,6 +1280,9 @@ proc ChooseImage {posRBs} {
                 set choosing 0
 		foreach button [winfo children $posRBs] {
 		    $button configure -state normal
+		}
+		if {[string equal none $disaggregate(imgpos)]} {
+		    set disaggregate(imgpos) Tiled
 		}
  	    } else {
                 ShowMessage {Problem loading file} error $errorInfo ok
