@@ -23,7 +23,7 @@ eqn_for(Comp, EqnStr, UnitStr) :-
 	analyze_array(Units, Base, _D),
 	(Base = 1, !, UnitStr = "real";
 	sicstus_write_to_chars(Base, UnitStr)),
-	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), !,
+	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), \+ Eqn = [], !,
 	    name(Eqn, EqnStr);
 	 get_av_pair(Func, 0, value, Eqn),
 	    sicstus_write_to_chars(Eqn, EqnStr)).

@@ -87,7 +87,8 @@ BoxHeaderStr),
 	all(dialogue, index_names_and_sizes,
 	    [build(ISpecs), build(IndexList), build(IndxCount)]),
 	(get_av_pair(Part, 0, spec, Equation),
-	    atom(Equation), /* do not use old string version */ !;
+	    atom(Equation), \+ Equation = [],
+	    /* do not use old string version */ !;
 	get_av_pair(Part, 0, value, Equation), !;
 		Equation = ''),
 	(get_av_pair(Part, 0, units, Units), !,
