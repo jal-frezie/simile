@@ -163,7 +163,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
                     "{Procedures *} $functor * returns *"]
         }
         if {$posn == -1} {
-            return "4 $func" ;# missing function declaration
+            return "4 $func <unknown>" ;# missing function declaration
             # should never happen because we read them when starting up
         } else {
             set fnSpec [lindex [lindex $equation(fnDefs) $posn] 0]
