@@ -1242,7 +1242,7 @@ proc Rerun {winId go} {
         }
         MenuSelect $winId file $runType
     } else {
-        StartRun $node
+        do_in_node $node StartRun $node
         # assume if model was running before it will run again
     }
     # Only proceed if it worked
