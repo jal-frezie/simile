@@ -947,12 +947,17 @@ proc RunEnv::SaveContainer {winId stream} {
 }
 
 proc RunEnv::LoadView {} {
+    set HelperStateFileName \
+            [ChooseFile Displays.shf "Open view specification file" 0]
+    LoadSHF $HelperStateFileName
+}
+
+proc RunEnv::LoadSHF {HelperStateFileName} {
     global helperTable nameOfHelperStateFile
     variable mainframe
     variable dp0
     
-    set nameOfHelperStateFile \
-	[ChooseFile Displays.shf "Open view specification file" 0]
+    set nameOfHelperStateFile $HelperStateFileName
     if {[llength $nameOfHelperStateFile]} {
         set stream [open $nameOfHelperStateFile r]
         
