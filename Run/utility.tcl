@@ -148,7 +148,7 @@ proc load_c_stub {} {
 	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
     }
     loadcommands
-    randseed 12
+    randseed [clock scan now]
 }
 
 proc AdjustCanvas {winId pt dir args} {
