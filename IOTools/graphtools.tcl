@@ -42,7 +42,7 @@ namespace export UpdateState draw_Xaxis draw_Yaxis Xstretch Ystretch \
 }; # end namespace
 
 proc ::graphtools::MakeToolBar {w toolbarItems} {
-    pack [Separator $w.abovebbox -orient horizontal] -side top
+    pack [Separator $w.abovebbox -orient horizontal] -fill x -side top
     set f [frame $w.bbframe  -relief raised]
     set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
     # build the toolbar  from the toolbarItems list
@@ -56,7 +56,7 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
     }
     pack $f -side top -fill x
     pack $bbox -side left -anchor w
-    pack [Separator $w.belowbbox -orient horizontal] -side top
+    pack [Separator $w.belowbbox -orient horizontal] -fill x -side top
     
 }
 
