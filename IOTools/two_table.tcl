@@ -783,11 +783,12 @@ namespace eval $keyValue {
         set ::${t}l4 [lindex $orientList($winId) 3]
         set ::${t}l5 $displayUpdate($winId)
         
-        set nb [NoteBook $t.nb]
+        set nb [::ttk::notebook $t.nb]
         pack $nb -expand on -fill both -padx 10 -pady 10
         
         # layout page
-        set layoutP [$nb insert end layout -text Layout]
+        set layoutP [frame $nb.layout]
+	$nb add $layoutP -text Layout
         
         pack [label $layoutP.toplbl -text "For each possible dimension listed,\
                 select between including it on the rows or on the columns of the table." \
@@ -831,7 +832,8 @@ namespace eval $keyValue {
         #set varIndex [lsearch $displayList($winId) $newHeader]
         
         # format page
-        set formatP [$nb insert end format -text "Variable Formats"]
+        set formatP [frame $nb.format]
+	$nb add $formatP -text "Variable Formats"
         set varF [frame $formatP.varF]
         pack $varF -side top -fill x
         
@@ -891,7 +893,6 @@ namespace eval $keyValue {
         #                 -side left -padx 2 -pady 4
         ################################################################################
         
-        $nb raise layout
         grab $t
         tkwait variable ${t}done
         

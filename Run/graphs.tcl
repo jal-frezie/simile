@@ -136,14 +136,34 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
 #    }
 #    set mb [::ttk::menubutton $between.rangeopts -menu $m -text Interpolate] 
 #    pack $mb
-    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
-	      -modifycmd "Reshape $t" -width 12]
+
+#    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
+#	      -modifycmd "Reshape $t" -width 12]
+    ::ttk::menubutton $between.rangeopts
+    set betweenMenu [menu $between.rangeopts.menu -tearoff 0]
+    foreach unit {Interpolate Round} {
+	$betweenMenu add command -label $unit \
+	    -command "set graph($t,betweenOpt) $unit;Reshape $t"
+    }
+    $between.rangeopts configure -menu $betweenMenu -width 11 \
+	-textvariable graph($t,betweenOpt)
+    pack $between.rangeopts -side left -anchor nw
+
     pack $between -pady 8 -padx 4
     set out [frame $right.out]
     label $out.outrange -text "Out of range:"
     pack $out.outrange
-    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
-	      -editable 0 -width 12]
+#    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
+#	      -editable 0 -width 12]
+    ::ttk::menubutton $out.rangeopts
+    set outMenu [menu $out.rangeopts.menu -tearoff 0]
+    foreach unit {Truncate Extrapolate Wraparound} {
+	$outMenu add command -label $unit -command "set graph($t,outOpt) $unit"
+    }
+    $out.rangeopts configure -menu $outMenu -width 11 \
+	-textvariable graph($t,outOpt)
+    pack $out.rangeopts -side left -anchor nw
+
     pack $out -pady 8 -padx 4
     SetCombos $t $range
 
@@ -241,15 +261,20 @@ proc SetCombos {t args} {
     set rCombo $right.out.rangeopts
     if {[llength $args]} {
 	set between [expr $args/4]
-	$bCombo configure -text [lindex [$bCombo cget -values] $between]
-	$rCombo configure -text [lindex [$rCombo cget -values] \
-				  [expr $args-4*$between]]
+#	$bCombo configure -text [lindex [$bCombo cget -values] $between]
+	set graph($t,betweenOpt) [${bCombo}.menu entrycget $between -label]
+#	$rCombo configure -text [lindex [$rCombo cget -values] \
+#				  [expr $args-4*$between]]
+	set graph($t,outOpt) [${rCombo}.menu entrycget \
+				  [expr $args-4*$between] -label]
     } else {
-	set between [lsearch [$bCombo cget -values] [$bCombo cget -text]]
+#	set between [lsearch [$bCombo cget -values] [$bCombo cget -text]]
+	set between [${bCombo}.menu index $graph($t,betweenOpt)]
     }
     set graph($t,between) $between
-    return [expr 4*$between+[lsearch [$rCombo cget -values] \
-				[$rCombo cget -text]]]
+#    return [expr 4*$between+[lsearch [$rCombo cget -values] \
+#				[$rCombo cget -text]]]
+    return [expr 4*$between+[${rCombo}.menu index $graph($t,outOpt)]]
 }
 				  
 proc EditAsTable {t canvas} {
