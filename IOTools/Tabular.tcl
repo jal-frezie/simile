@@ -10,6 +10,10 @@
 # Helpers should have a similar user inferface where possible.
 
 #$Log: Tabular.tcl,v $
+#Revision 1.3  2002/10/18 14:24:47  jmm
+#proc GetCanvas added returns canvas for printing etc.
+#absolute namespaces used, i.e. start with ::
+#
 #Revision 1.2  2002/09/03 12:06:39  jaspert
 #* fixed exotic bug in stub source
 #* Included first attempt at Tktable based tabular helper (try cut and paste)
@@ -26,7 +30,7 @@
 
 set keyValue tabular11508
 
-namespace eval tabular11508 {
+namespace eval ::tabular11508 {
 
 proc identify {} {
 	return "Data table"

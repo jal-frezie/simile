@@ -10,6 +10,10 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.4  2002/10/18 14:24:47  jmm
+#proc GetCanvas added returns canvas for printing etc.
+#absolute namespaces used, i.e. start with ::
+#
 #Revision 1.3  2002/07/24 17:33:35  jmm
 #Prevented ghosted variables showing up more than once.
 #
@@ -29,7 +33,7 @@
 
 set keyValue ModelInspector63654
 
-namespace eval ModelInspector63654 {
+namespace eval ::ModelInspector63654 {
     
     package require -exact BWidget 1.2.1
     namespace import ::BWidget::*
@@ -60,15 +64,8 @@ namespace eval ModelInspector63654 {
         
         set tableframe $winId.tableframe
         ScrolledWindow $tableframe
-        ##        ::blt::hiertable $tableframe.table -hideroot true -linespacing 0
         Tree $tableframe.table -showlines yes
         $tableframe setwidget $tableframe.table
-        ##        $tableframe.table column insert end "Type"
-        ##        $tableframe.table column insert end "Value"
-        #        $tableframe.table column insert end "Node"; # dubugging
-        
-        # Force the creation of ancestors. and allow duplicates for now!
-        ##        $tableframe.table configure -autocreate yes; # -allowduplicates yes
         pack $tableframe -expand yes -fill both
         
         
@@ -147,26 +144,33 @@ namespace eval ModelInspector63654 {
                 set text [lindex $path end]
                 set sameText 0
                 foreach node [$tableframe.table nodes $parent] {
+                    #ShowMessage debug info "$node" ok ; # Simile node IDs
                     if {[string match [$tableframe.table itemcget $node -text] $text]} {
                         set sameText 1
                     }
                 }
                 if {!$sameText} {
                     $tableframe.table insert end $parent $component \
-                            -text $text  -open 1 -image $image
+                            -text $text -image $image
                 }
             }
         }
+        
+        OpenLevel 0; # open up level 0 only (so can see level 1)
         
         $tableframe.table bindImage <Button-1> [namespace code OnElementClick]
         $tableframe.table bindText <Button-1> [namespace code OnElementClick]
     }
     
+    proc GetCanvas {winId} {
+        return ""
+    }
+
     proc OnElementClick { node } {
-        global helperTable
-        variable tableframe
-        if {![string match none $helperTable(current)]} {
-            set PathList [split [GetCaptionPathFromId $node] /]
+    global helperTable
+    variable tableframe
+    if {![string match none $helperTable(current)]} {
+        set PathList [split [GetCaptionPathFromId $node] /]
             set caption [lindex $PathList end]; # just the var name
             ProdObj $node $caption
         }
@@ -174,6 +178,17 @@ namespace eval ModelInspector63654 {
     
     proc Restore {winId} {initialize $winId}
     
-    
+    proc OpenLevel {level} {
+        # only works for level = 0
+        variable tableframe
+        $tableframe.table closetree node00001; # recursively close all nodes
+        set nodes node00001; # root or Desktop
+        for {set i 0} {$i <= $level} {incr i} {
+            foreach node $nodes {
+                $tableframe.table itemconfigure $node -open 1
+                set nodes [$tableframe.table nodes $node]
+            }
+        }
+    }
     
 }; # end namespace

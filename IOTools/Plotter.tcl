@@ -4,57 +4,10 @@
 #
 ################################################################################
 
-################################################################################
-#Plotter bugs
-#
-#Not correct size initially
-#scaling - use the auto-scale routines
-################################################################################
-
-# Conventions used:
-# X,Y signify coordinates in user terms (year, kg or whatever),
-#     or the actual X (time) and Y variables themselves, depending
-#     on context.
-# x,y signify canvas co-ordinates, in pixels.
-
-#$Log: Plotter.tcl,v $
-#Revision 1.3  2002/07/24 17:42:35  jmm
-#Some messing about with axis scaling
-#
-#Revision 1.2  2002/05/30 17:33:41  jmm
-#Made Xvalues an array to have the helper window id as the index to protect
-#the values from other helpers.
-#
-#Revision 1.26  2002-05-16 15:05:29+01  jmm
-#keyvalue changed so diff from obsolete versions in other directories
-#
-#Revision 1.25  2002-05-15 08:43:05+01  jmm
-#Fixed extension of the x axis when the plot goes off the time axis (proc adjustLimits)
-#It should work now if the x axis is: a) left alone; b) stretched only; c) slid only or d) stretched and slid.
-#
-#Revision 1.24  2002-05-15 00:03:37+01  jmm
-#AxisRound improved but moved to graphtools.tcl
-#Works if x axis only slide or only stretched but NOT both
-#
-#Revision 1.23  2002-05-13 23:46:59+01  jmm
-#Start work on precision of axis tick labels
-#YSlide and YStretch modify axis setting and scaling
-#
-#Revision 1.21  2002-05-13 12:22:58+01  jmm
-#Debugging scaling
-#
-#Revision 1.20  2002-05-10 20:14:49+01  jmm
-#Handles negative numbers
-#
-#Revision 1.19  2002-05-03 17:51:35+01  jmm
-#Added a menu but disabled the RTE (MRE) version as the RTE doesn't handle them properly yet
-#Button replaced with the new style toolbar.
-#Depends on graphtools.tcl
-#
 
 set keyValue "plotter1.25"
     
-namespace eval $keyValue {
+namespace eval ::$keyValue {
         
         
 proc identify {} {
@@ -154,6 +107,10 @@ proc Restore {winId} {
     array set plot $restoreString
 #    ShowMessage debug info $restoreString ok
     ShowHelper $winId
+}
+
+proc GetCanvas {winId} {
+    return $winId.canvas
 }
 
 proc click {w node caption} {
@@ -380,6 +337,7 @@ proc drawGraphpad {w} {
     ### Draw the X axis
     $w.canvas create line $x0 $y0 $x1 $y0 \
             -tags {axis_line scalable markable xslidable}
+    #ShowMessage debug info "[namespace current]" ok
     draw_Xaxis $w
     
     ### Draw the Y axis
@@ -757,7 +715,7 @@ proc adjustLimits {w Tnew Ynew} {
         AxisRound $plot($w,Ymin_data) $plot($w,Ymax_data) 0 \
             plot($w,Ymin_axis) plot($w,Ymax_axis) \
             plot($w,Ymajorstep) numInt plot($w,Yprecision)
-#ShowMessage debug info "adj_lim dp $plot($w,Yprecision)" ok
+# ShowMessage debug info "adj_lim dp $plot($w,Yprecision)" ok
             set plot($w,Yminorstep) [expr {$plot($w,Ymajorstep)/2}]
         set Yrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
         set scaleChange [expr {$OldYrange/$Yrange}]

@@ -9,20 +9,10 @@
 # for the y coords.
 # Adapted from original polygon mapper, written by Jasper Taylor
 
-# $Log: Polygons.tcl,v $
-# Revision 1.1  2002/05/23 15:33:18  jmm
-# *** empty log message ***
-#
-# Revision 1.11  2002-05-13 12:31:25+01  jmm
-# Use ::maptools2 insrtead of ::maptools (using version numbers for maptools (maps.tcl, maps2.tcl)
-#
-# Revision 1.10  2002-04-29 15:59:36+01  jmm
-# Added #Log$ rcs directive
-#
 
 set keyValue polygon375
 
-namespace eval polygon375 {
+namespace eval ::polygon375 {
 	variable useNodes
     variable newVal
     variable editMode
@@ -117,6 +107,10 @@ proc Restore {winId} {
     DrawPolys $winId $useNodes($winId,xcoord) \
         $useNodes($winId,ycoord) \
         $useNodes($winId,color)
+}
+
+proc GetCanvas {winId} {
+    return $winId.viewport.c
 }
 
 proc click {winId node caption} {

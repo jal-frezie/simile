@@ -10,6 +10,10 @@
 # by Jasper Taylor, March 2001
 
 #$Log: maps2.tcl,v $
+#Revision 1.2  2002/10/18 14:24:47  jmm
+#proc GetCanvas added returns canvas for printing etc.
+#absolute namespaces used, i.e. start with ::
+#
 #Revision 1.1  2002/07/18 14:12:14  jmm
 #Required for polygon.tcl. All helpers using maps.tcl should eb updated to use maps2.tcl
 #
@@ -20,7 +24,7 @@
 #Added RCS Log directive
 #
 
-namespace eval maptools2 {
+namespace eval ::maptools2 {
 
 proc SetColours {winData winId} {
 #    ShowMessage debug info "proc SetColours" ok

@@ -1,4 +1,4 @@
-################################################################################
+###############################################################################
 #
 # plotterxy.tcl
 #
@@ -19,7 +19,7 @@
 
 set keyValue "plotterXY1.0"
 
-namespace eval $keyValue {
+namespace eval ::$keyValue {
     
     proc identify {} {
         return "XY Plotter"
@@ -126,44 +126,48 @@ namespace eval $keyValue {
         ShowHelper $winId
     }
     
+    proc GetCanvas {winId} {
+        return $winId.canvas
+    }
+
     proc click {w node caption} {
-        #       tk_messageBox -message "Click node $caption $node" -type ok
-        global ::graphtools::plot
-        
-        set xm [expr $plot($w,xborder_left)+60]
-        set ym [expr $plot($w,yborder_top)+20]
-        
-        set newbox nodebox[incr plot($w,nodeCount)]
-        set name [GetCaptionPathFromId $node]
-        
-        set testResult [GetModelValue $node]
-        if {[string compare $testResult novalue]} {
-            switch $plot($w,state) {
-                xcoord {
-                    #               $ms configure -text "Now click on the value representing the Y coordinates."
-                    set plot($w,Xvars) $node
-                    set plot($w,XaxisLabel) $caption
-                    set plot($w,state) ycoord
-                    $w.canvas delete prompt
-                    $w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-                            -text "Select the y axis variable by clicking on a variable in the Explorer window\
-                            or a Model Diagram."
-                    GrabClicks $w
-                }
-                ycoord {
-                    #               $ms configure -text "Now select a value to determine the colour of the objects."
-                    set plot($w,Yvars) $node
-                    set plot($w,Ylabels) $caption
-                    set useNodes($w,state) display
-                    drawGraphpad $w
-                    UpdateState $w
-                    ReleaseClicks $w
-                    $w.canvas delete prompt
-                    raise $w; # bring the plotter back on top when it is a toplevel
-                }
+    #       tk_messageBox -message "Click node $caption $node" -type ok
+    global ::graphtools::plot
+    
+    set xm [expr $plot($w,xborder_left)+60]
+    set ym [expr $plot($w,yborder_top)+20]
+    
+    set newbox nodebox[incr plot($w,nodeCount)]
+    set name [GetCaptionPathFromId $node]
+    
+    set testResult [GetModelValue $node]
+    if {[string compare $testResult novalue]} {
+        switch $plot($w,state) {
+            xcoord {
+                #               $ms configure -text "Now click on the value representing the Y coordinates."
+                set plot($w,Xvars) $node
+                set plot($w,XaxisLabel) $caption
+                set plot($w,state) ycoord
+                $w.canvas delete prompt
+                $w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
+                        -text "Select the y axis variable by clicking on a variable in the Explorer window\
+                        or a Model Diagram."
+                GrabClicks $w
             }
-            
-            
+            ycoord {
+                #               $ms configure -text "Now select a value to determine the colour of the objects."
+                set plot($w,Yvars) $node
+                set plot($w,Ylabels) $caption
+                set useNodes($w,state) display
+                drawGraphpad $w
+                UpdateState $w
+                ReleaseClicks $w
+                $w.canvas delete prompt
+                raise $w; # bring the plotter back on top when it is a toplevel
+            }
+        }
+        
+        
         } else {
             #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
         }

@@ -13,41 +13,10 @@
 
 # Draws ONE piechart any array or multi-instance submodel values get added to the ONE pie
 
-# Todo
-# not square,
-# resize
-# draw at time zero
-
-#$Log: Piechart.tcl,v $
-#Revision 1.5  2002/06/13 11:30:30  jmm
-#Final fix to plot labels next to corresponding values (slice size)
-#Will need more work when enummerated types are included in Simile.
-#
-#Revision 1.4  2002/06/11 13:37:59  jmm
-#Bug where an array of compartment values got out of order because Tcl does not preserve order in arrays the code assumed that it did was fixed.
-#
-#Negative vaules are ignored (set to zero).
-#If all vaules are negative a message to that effect is written to the display instead of the pie.
-#
-#Revision 1.3  2002/05/31 15:04:43  jmm
-#Labels for the slices are placed around the pie adjacent to the corresponding slice.
-#There are now 19 colours (I got tired). If there are more slices than colours the
-#colours are recycled
-#
-#Revision 1.2  2002-05-30 09:50:53+01  jmm
-#array > 1 dim labels ok, labels drawn off window, not resizing on window resize
-#
-#Revision 1.1  2002-05-28 14:17:28+01  jmm
-#Draws ONE piechart any array or multi-instance submodel values get added to the ONE pie.
-#Requires array element labelling
-#
-#Revision 1.0  2002-05-20 12:04:57+01  jmm
-#Initial revision
-#
 
 set keyValue "piechart1.0"
     
-namespace eval $keyValue {
+namespace eval ::$keyValue {
     variable piesum
     variable pievalues
     
@@ -161,6 +130,10 @@ proc Restore {winId} {
     plot_YY $winId
 }
 
+proc GetCanvas {winId} {
+    return $winId.canvas
+}
+
 proc click {w node caption} {
     #tk_messageBox -message "Click node $node" -type ok
     global ::graphtools::plot
@@ -172,17 +145,17 @@ proc click {w node caption} {
     set testResult [GetModelValue $node]
     if {[string compare $testResult novalue]} {
         set values [lindex [GetModelValue $node] 0]
-#ShowMessage debug info "[llength $values] $values" ok
+        #ShowMessage debug info "[llength $values] $values" ok
         #lappend plot($w,Ylabels) $caption
-            if {[llength $values]==1} then {
-                lappend plot($w,Ylabels) $caption
-            } else {
-                ArrayLabeling $w $caption $values {}
-            }
-            
-            lappend plot($w,Yvars)   $node
-            drawGraphpad $w
-            UpdateState $w
+        if {[llength $values]==1} then {
+            lappend plot($w,Ylabels) $caption
+        } else {
+            ArrayLabeling $w $caption $values {}
+        }
+        
+        lappend plot($w,Yvars)   $node
+        drawGraphpad $w
+        UpdateState $w
     } else {
         #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
     }

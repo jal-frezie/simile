@@ -9,7 +9,7 @@
 
 # by Jasper Taylor, March 2001
 
-namespace eval maptools {
+namespace eval ::maptools {
 
 proc SetColours {winData winId} {
     upvar 1 $winData useNodes

@@ -11,7 +11,7 @@
 
 set keyValue lollipopRTE05657
 
-namespace eval $keyValue {
+namespace eval ::$keyValue {
 variable useNodes
 variable width; # of canvas 
 variable height; # of canvas
@@ -57,6 +57,10 @@ proc Restore {winId} {
 			[GetIdFromCaptionPath [lindex $nodeList 3]]
 	InitializeForest $winId useNodes($winId,xcoord) \
 			useNodes($winId,ycoord) useNodes($winId,size)
+}
+
+proc GetCanvas {winId} {
+    return $winId.c
 }
 
 proc click {winId node caption} {

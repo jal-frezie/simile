@@ -24,7 +24,7 @@
 
 set keyValue "timeprofiles1.0"
 
-namespace eval $keyValue {
+namespace eval ::$keyValue {
 
 proc identify {} {
 	return "Time profiles"
@@ -136,30 +136,34 @@ proc Restore {winId} {
     ShowHelper $winId
 }
 
+proc GetCanvas {winId} {
+    return $winId.canvas
+}
+
 proc click {w node caption} {
     global ::graphtools::plot
     set ithlist [list 1st 2nd 3rd 4th 5th 6th 7th 8th 9th 10th]
-	set ms $w.intro
-	set testResult [GetModelValue $node]
-	if {[string compare $testResult novalue]} {
-		incr plot($w,i)
-		set ith [lindex $ithlist $plot($w,i)]
+    set ms $w.intro
+    set testResult [GetModelValue $node]
+    if {[string compare $testResult novalue]} {
+        incr plot($w,i)
+        set ith [lindex $ithlist $plot($w,i)]
         switch $plot($w,State)   {
-		firstYvariable {
-		   $ms configure -text "Click on the 1st profile variable."
-		   pack $ms $w.ok
-		   lappend plot($w,Ylabels) $caption
-		   lappend plot($w,Yvars)   $node
-           set plot($w,State) Yvariable
-        }
-		Yvariable {
-		   lappend plot($w,Ylabels) $caption
-		   lappend plot($w,Yvars)   $node
-		   $ms configure -text "Click on the $ith profile variable, or \
-			click on the OK button to finish."}
+            firstYvariable {
+                $ms configure -text "Click on the 1st profile variable."
+                pack $ms $w.ok
+                lappend plot($w,Ylabels) $caption
+                lappend plot($w,Yvars)   $node
+                set plot($w,State) Yvariable
+            }
+            Yvariable {
+                lappend plot($w,Ylabels) $caption
+                lappend plot($w,Yvars)   $node
+                $ms configure -text "Click on the $ith profile variable, or \
+                        click on the OK button to finish."}
         }
         UpdateState $w
-#ShowMessage debug info "Click after UpdateState" ok
+        #ShowMessage debug info "Click after UpdateState" ok
     } else { $ms configure -text "This component does not have a value; please choose a variable to be plotted." }
 }
 

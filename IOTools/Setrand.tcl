@@ -7,7 +7,7 @@
 
 set keyValue setrand92383
 
-namespace eval setrand92383 {
+namespace eval ::setrand92383 {
 
 proc identify {} {
 	return "Initialize pseudo-random"

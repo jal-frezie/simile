@@ -4,7 +4,7 @@
 
 
 set keyValue "threeDoodle98"
-namespace eval $keyValue {
+namespace eval ::$keyValue {
 
  variable helperNamespace [ namespace current ]
  variable thdVersion "v1.0 1600 27th August 1998"

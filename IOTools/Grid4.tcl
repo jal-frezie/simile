@@ -5,7 +5,7 @@
 # app interface standard
 
 set keyValue grid004a
-namespace eval $keyValue {
+namespace eval ::$keyValue {
 
     variable useNodes
     variable cell_ids
@@ -51,6 +51,10 @@ proc Restore {winId} {
     set useNodes($winId,display1) [GetIdFromCaptionPath $nodePath] 
     SetColours useNodes $winId
     InitialiseGrid $winId $useNodes($winId,display1) 
+}
+
+proc GetCanvas {winId} {
+    return $winId.c
 }
 
 proc click {winId node caption} {
