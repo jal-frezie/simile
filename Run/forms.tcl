@@ -721,7 +721,7 @@ proc Disaggregate {parent title colour type fatness icount step \
             comment matherror hide separate} {
     global disaggregate
     
-    foreach varName {colour type fatness icount step matherror hide \
+    foreach varName {colour type fatness icount matherror hide \
                 separate} {
         set disaggregate($varName) [set $varName]
     }
@@ -730,6 +730,16 @@ proc Disaggregate {parent title colour type fatness icount step \
     } else  {
         set disaggregate(icount) 1
     }
+    switch -- $step {
+	-1 {
+	    set disaggregate(step) "Initialize only"
+	} 0 {
+	    set disaggregate(step) "Reset only"
+	} default {
+	    set disaggregate(step) $step
+	}
+    }
+
     set t [toplevel .disaggregation -bd 4 -class Disaggregation]
     #	wm transient $t $parent
     wm resizable $t 0 0
@@ -829,7 +839,8 @@ proc Disaggregate {parent title colour type fatness icount step \
     pack $mathf.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
-            -values "Default -1 0 1 2 3 4 5 6 7" -width 10 -editable false
+	-values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
+	-width 10 -editable false
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
@@ -862,9 +873,18 @@ proc Disaggregate {parent title colour type fatness icount step \
         set disaggregate(icount) [list]
     }
     if {$disaggregate(done)} {
+    switch $disaggregate(step) {
+	"Initialize only" {
+	    set step -1
+	} "Reset only" {
+	    set step 0
+	} default {
+	    set step $disaggregate(step)
+	}
+    }
         return [list $disaggregate(colour) $disaggregate(type) \
                 $disaggregate(fatness) $disaggregate(icount) \
-                $disaggregate(step) $disaggregate(comment) \
+                $step $disaggregate(comment) \
                 $disaggregate(matherror) $disaggregate(hide) \
                 $disaggregate(separate)]
     }
@@ -1582,7 +1602,7 @@ proc add_text {text font across down colour} {
 
 
 
-proc BuildProblem {msg fault} {
+proc BuildProblem {name autoName dir msg fault} {
     toplevel .buildprob
     switch $fault {
 	user {
@@ -1593,8 +1613,8 @@ proc BuildProblem {msg fault} {
 	} system {
 	    set Title "Build failure"
 	    set errLevel error
-	    set buttonTxt {Send bug report}
-	    set buttonCmd {ShowMessage {Bug report} info {Doesn't work yet} ok}
+	    set buttonTxt Help
+        set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
 	}
     }
     wm title .buildprob $Title
@@ -1606,11 +1626,11 @@ proc BuildProblem {msg fault} {
     
     set labf1 [frame .buildprob.labf1]
     image create photo warn
-    warn read "../System/lib/bwidget1.5/Images/${errLevel}.gif"
+    warn read "../Images/warning.gif"
     pack [label $labf1.img -image warn] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
-    pack [label $labf1.lab2 -text $msg \
+    pack [label $labf1.lab2 -text $msg -wraplength 320 \
             -font {-family helvetica -size 10} -justify left] -side left
     pack $labf1 -padx 8 -pady 2
     
@@ -1618,8 +1638,13 @@ proc BuildProblem {msg fault} {
     pack [button $buttons.ok -text OK -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
+    if [string match $fault system] {        
+            pack [button $buttons.report -text {Send bug report} -width 20 \
+                    -command [list ReportProblem $name $autoName $dir $msg]] \
+                    -side left -padx 4 -pady 4
+    }
     pack [button $buttons.help -text $buttonTxt -width 10 \
-            -command $buttonCmd] \
+	      -command "set ack 1; $buttonCmd"] \
             -side left -padx 4 -pady 8
     pack $buttons
     
@@ -1632,6 +1657,46 @@ proc BuildProblem {msg fault} {
     
     tkwait variable ack
     destroy .buildprob
+}
+
+proc ReportProblem {name autoName dir fault} {
+
+    set mimes {}
+#    set unique [clock seconds].[pid]
+#    set bound "-----NEXT_PART_$unique"
+    if {![string match unsaved $name]} {
+	set Disposition "inline; filename=\"[file tail $name]\""
+	    lappend mimes [mime::initialize -canonical application/x-simile \
+			   -header [list Content-Disposition $Disposition] \
+			   -header [list Content-Description "Simile model"] \
+			   -file $name]
+#        set fid [open $name r]
+#        fconfigure $fid -translation binary
+#        if {[catch {read $fid [file size $name]} data]} {
+#            return -code error $data
+#        }
+#        close $fid
+#        append outputData "$bound\nContent-Disposition: form-data;\
+#            name=\"imagefile\"; filename=\"[file tail $name]\"\nContent-Type: text/plain\n\n$data\n"
+    }
+    if {![string match none $autoName]} {
+	set Disposition "inline; filename=\"[file tail $autoName]\""
+	    lappend mimes [mime::initialize -canonical application/x-simile \
+			   -header [list Content-Disposition $Disposition] \
+			   -header [list Content-Description "Change log"] \
+			   -file $autoName]
+    }
+    lappend mimes [mime::initialize -canonical text/plain \
+		       -header [list Content-Disposition inline] \
+		       -header [list Content-Description "Error message"] \
+		       -string $fault]
+    set multiT [mime::initialize -canonical multipart/mixed -parts $mimes]
+    set data [mime::buildmessage $multiT]
+
+    package require http
+    upvar 0 [::http::geturl http://www.simulistics.com/cgi-bin/saveit.cgi \
+		 -type application/x-zip -query [zip -mode compress $data]] reply
+    ShowMessage {Simile phone home!} info $reply(body) ok
 }
 
 proc NotifyOverLimit {limit} {

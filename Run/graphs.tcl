@@ -209,8 +209,8 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
 	tkwait variable graph(done)
 	
 	if {$graph(done)} {
-	    if {[string compare [FilterErrors format %g%g%g%g \
-		$graph(lowy) $graph(highy) $graph(lowx) $graph(highx)] -1]} {
+	    if {[CheckFloaty $graph(lowy) $graph(highy) \
+			    $graph(lowx) $graph(highx)]} {
 		# tk_messageBox -message "$rangeChoices $graph(rangeact)"
 		set graph(range) [lsearch $rangeChoices $graph(rangeact)]
 		set graph(size) [llength $graph(points)]
@@ -229,7 +229,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
 	} else {
 	    if {[llength $target]} {
 		set lastSaved [GetModelGraph $target]
-		scan $lastSaved "%d %d %d %d %d %d %d" graph(lowx) \
+		scan $lastSaved "%g %g %d %g %g %d %d" graph(lowx) \
 		    graph(highx) graph(width) \
 		    graph(lowy) graph(highy) \
 		    graph(height) range
@@ -242,6 +242,17 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
 	}
     }
     return $graph(done)
+}
+
+proc CheckFloaty {args} {
+    if {![llength $args]} {
+	return 1
+    } elseif {[catch {format %g [lindex $args 0]}]} {
+	ShowMessage "Numeric value required" warning "This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: [lindex $args 0]" ok
+	return 0
+    } else {
+	return [eval CheckFloaty [lrange $args 1 end]]
+    }
 }
 
 proc AddLine {c section} {
@@ -267,12 +278,16 @@ proc GClick {c x y} {
 }
 
 proc YEntry {c} {
-	global graph xvalue yvalue
-	set zone [expr round(([llength $graph(points)]-1.0)*\
-		($xvalue-$graph(lowx))/($graph(highx)-$graph(lowx)))]
-	set y [expr round($graph(height)*\
-		($yvalue-$graph(lowy))/($graph(highy)-$graph(lowy)))]
-	GStick $c $zone $y
+    global graph xvalue yvalue
+    if {![CheckFloaty $graph(lowy) $graph(highy) $graph(lowx) $graph(highx) \
+	      $xvalue $yvalue]} {
+	return
+    }
+    set zone [expr round(([llength $graph(points)]-1.0)*\
+			  ($xvalue-$graph(lowx))/($graph(highx)-$graph(lowx)))]
+    set y [expr round($graph(height)*\
+			  ($yvalue-$graph(lowy))/($graph(highy)-$graph(lowy)))]
+    GStick $c $zone $y
 }
 
 proc GDrag {c ox oy} {
@@ -296,22 +311,25 @@ proc GDrag {c ox oy} {
 }
 
 proc GStick {c zone y} {
-	global graph xvalue yvalue
+    global graph xvalue yvalue
 
+    if {![CheckFloaty $graph(lowy) $graph(highy) $graph(lowx) $graph(highx)]} {
+	return
+    }
     set y [max 0 [min $graph(height) $y]]
-	if {$zone >= 0 && $zone < [llength $graph(points)]} {
-		set graph(points) [lreplace $graph(points) $zone $zone $y]
-		if {$zone != 0} { 
-			AddLine $c $zone
-		}
-		if {$zone != [expr [llength $graph(points)] - 1]} {
-			AddLine $c [expr $zone + 1]
-		}
+    if {$zone >= 0 && $zone < [llength $graph(points)]} {
+	set graph(points) [lreplace $graph(points) $zone $zone $y]
+	if {$zone != 0} { 
+	    AddLine $c $zone
 	}
-	set xvalue [expr $graph(lowx) + \
-			($graph(highx)-$graph(lowx))*$zone/([llength $graph(points)]-1.0)]
-	set yvalue [expr $graph(lowy) + \
-			($graph(highy)-$graph(lowy))*($y*1.0)/$graph(height)]
+	if {$zone != [expr [llength $graph(points)] - 1]} {
+	    AddLine $c [expr $zone + 1]
+	}
+    }
+    set xvalue [expr $graph(lowx) + \
+		    ($graph(highx)-$graph(lowx))*$zone/([llength $graph(points)]-1.0)]
+    set yvalue [expr $graph(lowy) + \
+		    ($graph(highy)-$graph(lowy))*($y*1.0)/$graph(height)]
 }
 
 proc RedrawGrid {c w h inc} {
