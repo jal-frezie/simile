@@ -151,7 +151,6 @@ proc KickoffRunInterp {} {
     global runStatus userinfo
 
     set newInterp [interp create]
-    $newInterp eval package require Tk
     $newInterp alias PrefValue PrefValue
     $newInterp alias GetTransTable GetTransTable
     $newInterp eval source ../Run/runmodel.tcl

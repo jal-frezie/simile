@@ -469,7 +469,7 @@ reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep, NonZ) :-
 	Table = [Val | Rest], !,
 	    reverse_engineer(Val, MoreTrans, 0, TclHead, SubZ),
 	    There is Here+1,
-	    reverse_engineer(Rest, Trans, There, TclTail, NonZ),
+	    reverse_engineer(Rest, [Trans | MoreTrans], There, TclTail, NonZ),
 	    make_e_t(Here, Trans, HereTxt),
 	    TclInner = [HereTxt, TclHead | TclTail],
 	    (Here = 0,
@@ -477,8 +477,15 @@ reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep, NonZ) :-
 		    TclRep = br(TclTail);
 		TclRep = br(TclInner)), !;
 	    TclRep = TclInner);
+	member(Table, [0, []]), !,
+	    TclRep = Table;
 	make_e_t(Table, Trans, TclRep),
-	    (member(Table, [0, []]), !; NonZ = yes).
+	     NonZ = yes.
+
+make_e_t(Table, Trans, TclRep) :-
+	Trans = [],
+	   TclRep = Table;
+	nth0(Table, Trans, TclRep).
 
 check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-
 	Eqn_st = [], !,

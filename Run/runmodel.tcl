@@ -16,6 +16,9 @@ source ../Run/hai2mmii.tcl
 
 source ../Run/mre.tcl
 
+package require Tk
+wm withdraw .
+
 proc MakeHelperMenu {} {
     set fm [menu .helpers -tearoff 0]
 
