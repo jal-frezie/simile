@@ -1632,8 +1632,14 @@ proc BuildProblem {name autoName msg fault} {
     pack [label $labf1.img -image warn] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
-    pack [label $labf1.lab2 -text $msg -wraplength 320 \
-            -font {-family helvetica -size 10} -justify left] -side left
+    pack [scrollbar $labf1.yscroll -orient v \
+	      -command [list AdjustScroll $labf1.lab2 yview]] -fill y
+    pack [text $labf1.lab2 -width 48 -height 10 -wrap word \
+	      -yscrollcommand [list AdjustCanvas $labf1 lab1 y]]
+    $labf1.lab2 insert 1.0 $msg
+    $labf1.lab2 config -state disabled
+#    pack [label $labf1.lab2 -text $msg -wraplength 320 \
+#            -font {-family helvetica -size 10} -justify left] -side left
     pack $labf1 -padx 8 -pady 2
     
     set buttons [frame .buildprob.buttons]
@@ -1656,8 +1662,9 @@ proc BuildProblem {name autoName msg fault} {
     set swidth [winfo screenwidth .buildprob]
     wm geometry .buildprob +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
     update
-    
+    grab .buildprob
     tkwait variable ack
+    grab release .buildprob
     destroy .buildprob
 }
 
