@@ -610,14 +610,14 @@ proc ControlDraw {prologVersion} {
 	    if {[file exists $oldPrefs]} {
 		if {![file exists $custom(prefDir)]} {
 		    file mkdir $custom(prefDir)
+		    foreach sysB {layout prefs recent version} {
+			file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB
+		    }
+		    foreach subD [glob $oldPrefs/*] {
+			file rename $subD $custom(prefDir)/[file tail $subD]
+		    }
+		    file delete $oldPrefs
 		}
-		foreach sysBit {layout prefs recent version} {
-		    file rename $oldPrefs/$sysBit $custom(prefDir)/.$sysBit 
-		}
-		foreach subDir [glob $oldPrefs/*] {
-		    file rename $subDir $custom(prefDir)/[file tail $subDir]
-		}
-		file delete $oldPrefs
 	    }
 	} else {
 	    set custom(prefDir) $oldPrefs
