@@ -362,15 +362,12 @@ public:
        any particular order -- and returns the whole caption */
     int parent, typesSoFar, count;
 
-    if ((parent = parent_line(line)) > 0) {
+    if ((parent = parent_line(line)) >= 0) {
       typesSoFar = make_full_caption(parent, result, dims, types);
     } else {
       *result = (char)NULL;
       *dims = 0;
       typesSoFar = 0;
-      for (count=nodedata[parent].enum_type_count-1;count>=0;--count) {
-	types[typesSoFar++]=&(nodedata[parent].enum_type_ptrs[count]);
-      }
     }
     // correct earlier enum type references to take account of this level
     count = 0;
@@ -380,9 +377,11 @@ public:
       }
       count++;
     }
-    // add this levels caption
-    strcat(result, "/");
-    strcat(result, nodedata[line].caption);
+    // add this levels caption unless it is top
+    if (parent>=0) {
+      strcat(result, "/");
+      strcat(result, nodedata[line].caption);
+    }
     append_ints_to_null(dims, nodedata[line].dims, 0, 0);
     // add this levels type data -- reverse order cos outer models start list
     for (count=nodedata[line].enum_type_count-1;count>=0;--count) {

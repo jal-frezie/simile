@@ -592,6 +592,7 @@ $useNodes($winId,scaley)"
     }
     
     proc IdToTag {ids} {
+	set result {}
 	foreach id [split $ids ,] {
 	    lappend result [format %06d $id]
 	}

@@ -590,7 +590,7 @@ proc GetFullDims {handle ETptrs} {
     global nodedata
 #do_in_editor puts $handle
     upvar 1 $ETptrs localETs
-    if {[llength $handle] < 2} {
+    if {[llength $handle] < 3} {
 	set line $nodedata(0)
 	set parentDims 0
 	set localETs {}
