@@ -135,7 +135,7 @@ expand_library(DestRef, Var, NewVar) :-
 	    M is N-1,
 		NewVar = last(prev(M))), !;	  
 	do_once(_, Var, ToDo, _),
-	    NewVar = delay(ToDo).
+	    NewVar = keep_from_reset(ToDo).
 	/* These have just been moved to macro_expansions so if statements can
 	    be used in other macros
 	Var = (if Bool then IfCl), !,
@@ -395,7 +395,7 @@ make_intermediates(
 	Source = all(Epsilon),
 	    InitVal = 1,
 	    IncrOp = ('&&');
-	member(Source, [make_inter(Epsilon, Ref), delay(Epsilon),
+	member(Source, [make_inter(Epsilon, Ref), keep_from_reset(Epsilon),
 			last(Epsilon), exists(Epsilon)]),
 	    MadeDim = new_dim), !,
 
@@ -452,7 +452,7 @@ make_intermediates(
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
 	    InitVal = 0;
-	member(Functor, [make_inter, last, delay]), !,
+	member(Functor, [make_inter, last, keep_from_reset]), !,
 	    InitVal = 0,
 	    IncrExpr = IncrementRef,
 	    Units = ArgUnits,
@@ -495,7 +495,7 @@ make_intermediates(
 	have made inters that we will use elsewhere */
 	    Args = [],
 	    NewInters = OldInters;
-	((Functor = delay; Functor = make_inter), !,
+	((Functor = keep_from_reset; Functor = make_inter), !,
 	    Clearing = [];
 	Functor = last, !,
             Clearing = [make(cleared(TotalName), [on_reset], ClearContext,
@@ -515,10 +515,11 @@ make_intermediates(
 			    WriteContext, Step, [assign(FillRef, IncrExpr)]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
-	    /* If delaying, we can remove time from the increment expression's
+	    /* If keep_from_reseting, we can remove time from the increment expression's
 	    conditions since we need only do it once even though it changes */
-	(Functor = delay, !, SetTime=0, purge(Depends, [time], KeepDeps);
-	    SetTime = Step, KeepDeps = Depends),
+	(Functor = keep_from_reset, !,
+	    SetTime=0, purge(Depends, [time], KeepDeps);
+	SetTime = Step, KeepDeps = Depends),
         Setting = [make(increment(TotalName), [cleared(TotalName) | KeepDeps],
                        WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
                   make(TotalName, [increment(TotalName)],

@@ -17,8 +17,12 @@ sicstus_use_module([sp_only, dialogue, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(ordsets)]).
 
-eqn_for(Comp, EqnStr) :-
+eqn_for(Comp, EqnStr, UnitStr) :-
 	find_node_with_data(Comp, _, Func),
+	get_av_pair(Func, 0, units, Units),
+	analyze_array(Units, Base, _D),
+	(Base = 1, !, UnitStr = "real";
+	sicstus_write_to_chars(Base, UnitStr)),
 	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), !,
 	    name(Eqn, EqnStr);
 	 get_av_pair(Func, 0, value, Eqn),
@@ -26,7 +30,7 @@ eqn_for(Comp, EqnStr) :-
 
 get_info(_Wid, Comp, eqn) :-
 	(Comp is_of_sort has_function,
-	    (eqn_for(Comp, Eqn), !;
+	    (eqn_for(Comp, Eqn, _U), !;
 		Eqn = "");
 	 Eqn = "<none>"),
 	callback(br(chars(Eqn))).
@@ -48,7 +52,8 @@ get_info(Wid, Comp, desc) :-
 				    [LType, SourceLoc, Dests], Desc);
 	LType = submodel,
 	    image:quick_file(Comp, Desc);
-	eqn_for(Comp, Desc), !;
+	eqn_for(Comp, EqnSt, Units), !,
+	    append([EqnSt, " (", Units, ")"], Desc);
 	name(LType, Desc)),
 	(LType is_class_of_sort captionless, !,
 	    Eqn = Desc;
