@@ -7,7 +7,7 @@
 
 # These are the settings for the particular version we want to make
 # Compiler that will be used to make the stub for Windows
-set compiler_for_windows gnu
+set compiler_for_windows microsoft
 # edition: evaluation, standard or enterprise
 set edition standard
 # date of final expiry: {hh:mm D M Y} or {} for permanent
@@ -75,6 +75,17 @@ if $onUnix {
 	
 	# Method using command line calls to MSVC 4.0 or later -- works well
     } else {
+        # Try to find the location of the compiler
+	if {[info exists env(MSVCDIR)]} {
+	    # No problem, all is well
+	} elseif {[info exists env(MSDEVDIR)]} {
+	    # later msvc -- move the variable
+	    set env(MSVCDIR) $env(MSDEVDIR)
+	} else {
+	    # guess the location
+	    set env(MSDEVDIR) d:/progra~1/micros~1/vc98
+	    set env(MSVCDIR) $env(MSDEVDIR)
+	}
 	set TOOLS32 [file dirname $env(MSVCDIR)/any] ;# brainwash
 	eval {exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
 		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
