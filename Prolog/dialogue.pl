@@ -74,7 +74,9 @@ BoxHeaderStr),
 	list_index_meanings(Part, IndexList),
 	length(IndexList, IndxCount),
 	create_equation(Win, BoxHeader, IndexList),
-	(get_av_pair(Part, 0, value, Equation), !;
+	(get_av_pair(Part, 0, spec, EquationStr), !,
+	    name(Equation, EquationStr);
+	get_av_pair(Part, 0, value, Equation), !;
 		Equation = ''),
 	(get_av_pair(Part, 0, units, Units), !,
 	    analyze_array(Units, Base, Dims);
@@ -263,6 +265,7 @@ for it,
 	    update_parameterhood(Function, Is_P, AffectedNode),
 	    build_array(NewUnits, EqnDims, NewArraySpec),
 		add_parameter(AffectedNode, 0, value, Result),
+		add_parameter(AffectedNode, 0, spec, Eqn_st),
 		add_parameter(AffectedNode, 0, units, NewArraySpec),
 		add_parameter(AffectedNode, 0, description, Desc),
 		add_parameter(AffectedNode, 0, comment, Comment),
