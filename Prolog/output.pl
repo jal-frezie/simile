@@ -13,7 +13,7 @@ changed only by deleting and redrawing them.  */
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_file_name/4, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
-	compartment/7, channel/7, function/7, variable/7, cloud/7, 
+	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
 	submodel/13, bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3,
@@ -43,7 +43,10 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
-	user:tcl_eval(['FilterErrors' | Cmd], Result).
+	user:tcl_eval(['FilterErrors' | Cmd], Result),
+	(Result = "-1",
+	    raise_exception("Tcl callback produced an exception");
+	true).
 /*	(\+ input:log_interaction, !;
 	    backup:into_save_file(safe_tcl_eval(Cmd, Result))). */
 
@@ -169,6 +172,11 @@ function(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 
 variable(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutCrossedCirc', Wid, L, T, R, B, Num,
+		       Fatness, Density, Colour_scheme, br(Features)], _).
+
+event(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	FullNum is Num+100,
+	safe_tcl_eval(['PutCrossedCirc', Wid, L, T, R, B, FullNum,
 		       Fatness, Density, Colour_scheme, br(Features)], _).
 
 cloud(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-

@@ -670,10 +670,6 @@ proc ControlDraw {prologVersion} {
         set custom(prefDir) [pwd]/../Prefs
     }
     
-    if {![file exists $custom(prefDir)]} {
-        file mkdir $custom(prefDir)
-    }
-    
     if {[file exists $custom(prefDir)/.version]} {
         set UserStream [NetOpen $custom(prefDir)/.version r]
         gets $UserStream userinfo(oldname)
@@ -736,6 +732,10 @@ proc ControlDraw {prologVersion} {
     while {[file exists $simtmpdir]} {
         set guess_free [expr [clock clicks]-$go]
         set simtmpdir $custom(prefDir)/sim$guess_free
+    }
+
+    if {![file exists $custom(prefDir)]} {
+        file mkdir $custom(prefDir)
     }
     file mkdir $simtmpdir
 

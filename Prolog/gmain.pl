@@ -169,8 +169,11 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)), */
-	state:kickoff(PlogV),
-        tk_main_loop.
+	on_exception(ErrorFunction, state:kickoff(PlogV), true),
+        (nonvar(ErrorFunction),
+	    do_dialogue("Failed startup", error, "Simile has been unable to start up due to problems with this system.", ok, _);
+	tk_main_loop).
+	 
 
 :- op(500, fx, ['!']).
 /* Works but buggers up GNU prolog (do after loading?) */

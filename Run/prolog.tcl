@@ -77,8 +77,10 @@ proc send_pl_cmd {withCrs} {
     if {$plPipe(debug)} {
 	puts $plPipe(debug_stream) [concat > $plCmd]
     }
-    puts $plPipe(stream) $plCmd
-    flush $plPipe(stream)
+    if {![eof $plPipe(stream)]} {
+	puts $plPipe(stream) $plCmd
+	flush $plPipe(stream)
+    }
 }
 
 proc ClosePipe {} {
