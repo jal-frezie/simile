@@ -64,8 +64,13 @@ proc do_model {what args} {
 	    if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
 		set dest [namespace eval AME_model<> "set spare $targetName"]
 		set targetList [DescribeComponent $dest]
-		set target "[lindex $targetList 0] (node [GetNodeIdFromRef \
-$dest [lindex $targetList 1]])"
+		if {[catch {GetNodeIdFromRef $dest [lindex $targetList 1]} \
+			 TargetId]} {
+		    set target [lindex $targetList 0]
+		    set whoopsie dest_missing
+		} else {
+		    set target "[lindex $targetList 0] (node $TargetId)"
+		}
             } else {
                 set whoopsie unknown
             }
@@ -76,9 +81,15 @@ $dest [lindex $targetList 1]])"
 	    "can't read \"*\": no such variable" {
 		set ref [lindex [split $whoopsie \"] 1]
                 set sourceList [DescribeComponent $ref] 
-		set vdesc "[lindex $sourceList 0] (node [GetNodeIdFromRef \
-    $ref [lindex $sourceList 1]])"
-		set problem "it found that there was no value for $vdesc"
+		if {[catch {GetNodeIdFromRef $ref [lindex $sourceList 1]} \
+			 TargetId]} {
+		    set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
+		} else {
+		    set vdesc "[lindex $sourceList 0] (node $TargetId)"
+		    set problem "it found that there was no value for $vdesc"
+		}
+	    } dest_missing {
+		set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
 	    } "User-defined interruption code *" {
 		set code [lindex $whoopsie end]
 		set problem "there was a user-defined interruption: $code"

@@ -181,10 +181,12 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	    name(OnPointerRef, AdvanceStr);
 
 	LoopSpec = vm_loop(_,_, BaseLoops, _), !,
-	    (nonvar(Pointer), !;
-	    append_atoms(Name, pointer, Pointer)),
+	    (nonvar(Pointer), !,
+		Temps0 = [];
+	    append_atoms(Name, 'type*', Type),
+		append_atoms(Name, pointer, PointerForm),
+		check_local_var(L, Pointer, PointerForm, Type, Used, Temps0)),
 	    refer_value(L, Pointer, PointerRef),
-	    Temps0 = [],
 	    all(compile, get_base_ptrs,
 		[build(BaseLoops), append(Names, []), append(BasePtrs, [])]),
 	    make_struct_reference(L, Top, Name, StartPointer),
