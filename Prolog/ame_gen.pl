@@ -149,7 +149,7 @@ make_legible_for_prolog(String, NewString) :-
 	NewString = String.
 
 bite_off_number(String, Num, Left) :-
-	output:safe_tcl_eval(['EatNumber', chars(String)], RList),
+	output:safe_tcl_eval(['EatNumber', br(chars(String))], RList),
 	append(Num, [32 | SzStr], RList),
 	name(Size, SzStr),
 	append(Eaten, Left, String),
