@@ -46,7 +46,7 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
-proc ControlDraw {prologVersion} {
+proc ControlDraw {prologVersion edition} {
     global sendvars custom tcl_platform env userinfo
     # geometry XY help message JMM
     #            "Position of Run Control when not using the Run Time \
@@ -55,6 +55,7 @@ proc ControlDraw {prologVersion} {
     wm withdraw .
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
+    set sendvars(edn) $edition
     
     # no longer have a separate floating toolbar
     
@@ -1457,7 +1458,7 @@ proc ShowAbout {winId} {
     pack [label .about.f.l1 -text SIMILE]
     pack [label .about.f.l2 -text Simulistics\ Ltd.]
     pack [label .about.f.l3]
-    pack [label .about.f.l4 -text Version\ $sendvars(simV)]
+    pack [label .about.f.l4 -text Version\ $sendvars(simV)\ $sendvars(edn)]
     #    pack [label .about.f.l5 -text [clock format [file mtime ../Run/main.sav]]]
     pack [label .about.f.l6 -text "Prolog: $sendvars(proV)"]
     pack [label .about.f.l7 -text "TclTk: [info patchlevel] (by $interface)"]

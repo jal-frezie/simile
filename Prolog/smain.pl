@@ -39,8 +39,9 @@ main :-
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
 	prolog_flag(version, PlogV),
+	state:edition_is(E),
         nl, write(ready), nl,
-	tcl_eval(['FilterErrors', 'ControlDraw', br(PlogV)], EnvVars),
+	tcl_eval(['FilterErrors', 'ControlDraw', br(PlogV), E], EnvVars),
 	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),

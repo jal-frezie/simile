@@ -31,14 +31,16 @@ ame_save( File, Model, Date ) :-
 	user:version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
-	write_with_breaks(Stream, source(program='AME', version=V, date=Date)),
+	state:edition_is(Edition),
+	write_with_breaks(Stream, source(program='AME', version=V,
+					 edition=Edition, date=Date)),
 	sicstus_put(Stream, 10),
 	write_with_breaks( Stream, roots( Models )),
 	sicstus_put(Stream, 10),
 	write_with_breaks( Stream, properties(Props)),
 	sicstus_put(Stream, 10),
 	dialogue:reassure_user("Writing node information"),
-	save_nodes( Models, Stream, ArcsUsed ),
+	save_nodes( Models, Stream, ArcsUsed, 0 ),
 	sicstus_put(Stream, 10),
 	dialogue:reassure_user("Writing class information"),
 	save_classes( Classes, Stream ),
@@ -54,9 +56,12 @@ ame_save( File, Model, Date ) :-
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
 % Nodes and Arcs respectively - don't do the same node twice.
 
-save_nodes( [], _, [] ).
+save_nodes( [], _, [], _).
 
-save_nodes( [Node|Nodes], Stream, AllArcsUsed ) :-
+save_nodes( [Node|Nodes], Stream, AllArcsUsed, Count ) :-
+	Count > 15, state:edition_is(evaluation), !,
+	raise_exception('This model has more than 15 components and thus cannot be saved from the evaluation edition.');
+	(appears(Node), !, NewCount is Count+1; NewCount = Count),
 	save_node( Node, Stream, NewArcsUsed ),
 	save_links( Node, Stream ),
 	save_refs( Node, Stream ),
@@ -64,7 +69,7 @@ save_nodes( [Node|Nodes], Stream, AllArcsUsed ) :-
 		   Node has_part Child,
 		   Children ),
 	append( Children, Nodes, NewNodes ),
-	save_nodes( NewNodes, Stream, ArcsUsed ),
+	save_nodes( NewNodes, Stream, ArcsUsed, NewCount ),
 	merge_lists( NewArcsUsed, ArcsUsed, AllArcsUsed ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -217,8 +222,9 @@ ame_merge( Parent, File, Date ) :-
 	dialogue:reassure_user("Reading information from file"),
 	open( File, read, Stream),
 	read( Stream, Header ),
-	((Header = source(_,version=V,date=Date);
-	        Header = source(_,version=V), Date=old), !,
+	((Header = source(_,version=V,edition=E,date=Date);
+	        Header = source(_,version=V,date=Date), E=standard;
+	        Header = source(_,version=V), E=standard, Date=old), !,
 	    SimileV is V-4,
 	    read(Stream, Term);
 	Term = Header,
@@ -230,6 +236,14 @@ ame_merge( Parent, File, Date ) :-
 	store_term( Term, Stream, Parent, InitBindings, [] ),
 	close( Stream ),
 
+	(state:edition_is(evaluation),
+	    \+ E = enterprise,
+	    setof(Nodes, (Node is_model_class, appears(Node)), Nodes),
+	    length(Nodes, N),
+	    N>15,
+	    superfast_delete(Parent),
+	    raise_exception('You cannot load this model with the evaluation edition because it takes your component count over 15, and it was not created with the enterprise edition.');
+	true),
 	(SimileV >= 0.0, !;
 	dialogue:reassure_user("Updating pre-AME 4.0 model representation"),
 	    adjust_to_4),

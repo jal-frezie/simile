@@ -286,13 +286,14 @@ finish_old_edit(NextEdit) :-
 	/* If no previous edit, do nothing */
 	\+ suspend_display,
 /*	get_highlit_obj(0, Prev_highlight), !,
-	normalize(Prev_highlight),
 	Abandon update if selected comp was influence, cloud or same as new
 	find_base(Prev_highlight, RenamedNode), */
 	find_current(Window_id),
 	current_edit(Window_id, Prev_highlight),
 	find_base(Prev_highlight, RenamedNode),
 	\+ Prev_highlight = 0, !,
+	get_highlit_obj(0, WasLit),
+	normalize(WasLit),
 	get_text(Window_id, RenamedNode, Text),
 		((Prev_highlight = NextEdit;
 			Text = '/no_caption/'), !;
