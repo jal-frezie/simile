@@ -271,7 +271,7 @@ menu_handle(Win, file, RunCmd) :-
 menu_handle(Win, file, list_eqns) :-
 	Win shows_model Model,
 	tk_equationlisting_start,
-	mysetof(Component,(contains(Model,Component),find_type(Component,submodel)),Submodels),
+	mysetof(Component,(contains(Model,Component),find_type(Component,submodel),appears(Component)),Submodels),
 	display_submodels(1,Submodels).
 
 % HTML stuff
@@ -356,7 +356,7 @@ display_comment(Stream,Comment):-
 	write(Stream,'<td width=140><i>'),
 	write(Stream,Comment),
 	write(Stream,'</i></td>'),nl(Stream).
-*/
+
 
 %####### Note: original 'list_eqns' disabled
 menu_handle(Win, file, list_eqnsxxx) :-
@@ -394,6 +394,7 @@ menu_handle(Win, file, prolog_eqns) :-
 	fail;
 	close(Stream),
 	finish_progress_dialogue).
+*/
 
 menu_handle(Win, file, export_prolog) :-
 	Win shows_model Model,
