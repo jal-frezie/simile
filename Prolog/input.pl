@@ -58,7 +58,7 @@ tk_doubleclick(Wid, Virt_X, Virt_Y) :-
 	retract(log_interaction),
 	show_normal_cursor.
 
-tk_unclick(X, Y) :-
+tk_unclick(X, Y) :- 
 	into_save_file(tk_unclick(X, Y)),
 	unclick.
 

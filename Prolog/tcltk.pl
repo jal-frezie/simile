@@ -10,9 +10,8 @@ tcl_eval(Cmd, Result) :-
 	name(TkCmd, PlString),
 	write(TkCmd), nl,
 	flush_output,
-	read_codes(JoinedResult),
-/*	write('debug '), write(JoinedResult), nl, */
-	restore_crs(Result, JoinedResult).
+	wait_for_tcl(Response),
+	Result = Response.
 
 read_codes(Result) :-
 	get0(C),
@@ -113,21 +112,28 @@ decode_command(WTorA, Chars) :-
 decode_command(_X, []).
 
 tk_main_loop :-
+	do_cmd("true."),
 /* main loop: execute commands from Tcl to the default stream */
-        repeat,
-	write(get_tcl_cmd), nl,
-	flush_output,
-	read_codes(JoinedCmdStr),
-	restore_crs(CmdStr, JoinedCmdStr),
-	append(CmdStr, ".", TermStr),
-	do_cmd(TermStr),
-	fail.
+	wait_for_tcl(_).
 
+wait_for_tcl(Result) :-
+        repeat,
+	read_codes(JoinedTclStr),
+	restore_crs(TclStr, JoinedTclStr),
+	(append("command:", CmdStr, TclStr),
+	    append(CmdStr, ".", TermStr),
+	    do_cmd(TermStr),
+	    fail;
+	append("result:", Result, TclStr)), !.
+	
+	
 do_cmd(TermStr) :-
 	on_exception(PlError,
 	(sicstus_read_from_chars(TermStr, Cmd),
-	call(Cmd), !),
-	(write(PlError), nl)).
+	(call(Cmd); true), /* dont care if it fails */
+	write(get_tcl_cmd)),
+	format("~w calling ~s", [PlError, TermStr])), !,
+	nl, flush_output.
 
 wind_up :-
 	halt(0).

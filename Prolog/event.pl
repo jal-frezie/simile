@@ -70,13 +70,14 @@ get_info(_Wid, Comp, types) :-
 	callback(TypeListList);
 	callback(none).
 
-insert_mem_list(Bound, Model, Mems) :-
+insert_mem_list(Bound, Model, Trans) :-
 	(get_av_pair(Model, 0, enum_types, Pairs),
 	    member(Type-Mems, Pairs),
-	    append_atoms(['"', Type, '"'], Bound);
+	    append_atoms(['"', Type, '"'], Bound),
+	    Trans = [Type | Mems];
 	find_all_comps(Parent, Model),
-	    insert_mem_list(Bound, Parent, Mems);
-	Mems = []), !.
+	    insert_mem_list(Bound, Parent, Trans);
+	Trans = []), !.
 
 get_params(_, Comp) :-
 	find_node_with_data(Comp, _, Func),
