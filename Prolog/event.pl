@@ -121,6 +121,7 @@ get_params(_, Comp) :-
 :- dynamic(clicked_obj_is/1).
 
 click_obj(Xpt, Ypt, Name, CD) :-
+	check_snap,
 	assert(clicked_obj_is(Name)),
 	find_current(Wid),
 	find_relevant_windows(Name, Wid, Depth, Trans),
@@ -161,6 +162,7 @@ click_text(Xpt, Ypt, Name, CD) :-
 click: Handles mouse clicks in a model window.
 */
 click(Xpt, Ypt, CD) :-
+	check_snap,
 	find_current(Wid),
 	Wid shows_model Parent,
 	save_params([0,0,1,1], 0, Parent),
@@ -206,14 +208,21 @@ This starts addition. Last clause creates a new cloud when starting a flow in th
 middle of nowhere; i could also do variables for influences. */
 :- dynamic(menu_submodel_is/2).
 :- dynamic(menu_submodel_will_be/3).
+:- dynamic(grid_pitch_is/1).
 
+check_snap :-
+	retractall(grid_pitch_is(_)),
+	(tk_get_pref(gridSnap, 0), !;
+	    assert(grid_pitch_is(15))).
+	
 snap_to_grid([], []).
 
 snap_to_grid([X, Y | Rest], [GX, GY | GRest]) :-
-	Pitch = 15,
-	GX is Pitch*round(X/Pitch),
-	GY is Pitch*round(Y/Pitch),
-	snap_to_grid(Rest, GRest).
+	grid_pitch_is(Pitch), !,
+	    GX is Pitch*round(X/Pitch),
+	    GY is Pitch*round(Y/Pitch),
+	    snap_to_grid(Rest, GRest);
+	 [GX, GY | GRest] = [X, Y | Rest].
 
 snap_to_grid([Pair | Rest], [NewPair | NewRest]) :-
 	snap_to_grid(Pair, NewPair),
@@ -332,7 +341,8 @@ bar_edit_menu(Wid) :-
 	update_ability(Model, none, edit, 'Copy', Cuttable),
 	update_ability(Model, none, edit, 'Paste', Pastable),
 	update_ability(Model, none, edit, 'Delete', Dellable),
-	update_ability(Model, none, edit, '{Reroute links}', Dellable).
+	update_ability(Model, none, edit, '{Reroute links}', Dellable),
+	update_ability(Model, none, edit, '{Align to grid}', Dellable).
 
 /* restore_edit_menu makes sure it will be appropriate for a menubar
 selection, i.e., top submodel and corner position */
@@ -453,8 +463,9 @@ insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
 	get_box_size(NewObjStyle, Cur_size),
 	get_shape(Submodel, internal_extent, [L, T, R, B]),
 	MaxDist is max(max(BestX - L, R - BestX), max(BestY - T, B - BestY)),
-	count_to(0, MaxDist, 15, Distance),
-	count_to(0, Distance, 15, Range),
+	snap_to_grid([10,10], [Step, _]),
+	count_to(0, MaxDist, Step, Distance),
+	count_to(0, Distance, Step, Range),
 	((TargetX is BestX-Distance; TargetX is BestX+Distance),
 	(TargetY is BestY-Range; TargetY is BestY+Range);
 	(TargetY is BestY-Distance; TargetY is BestY+Distance),
@@ -1914,7 +1925,9 @@ attempt_new_component(Parent, Box) :-
 	W > Standard//2,
 	H > Standard//2,
 	attempt_addition(submodel, Parent, Box, Node_name, yes, yes),
-	
+	tk_get_pref(defBackground, DefBG),
+	member([DefFill, DefBG], [[clear, 'Clear'], [white, 'White']]),
+	add_parameter(Node_name, 0, fill_colour, DefFill),
 /* List components inside the box */
 	get_inclusions(Parent, Box, Contents),
 
@@ -1952,21 +1965,26 @@ move_boxes(Node_name, Node_trans) :-
 	adjust_posn(Thing, Node_trans),
 	fail; true.
 
-resnap(Node) :-
+resnap(Node, SelOnly) :-
 	find_all_comps(Node, Bit),
+	(SelOnly = 0; SelOnly = 1, doomed(Bit)),
 	get_shape(Bit, bounding_box, BB),
 	(add_to_translation([0,0,1,1], Bit, Trans),
 	    snap_to_grid(BB, NBB),
 	    translate(NBB, Trans, NIE),
-	    change_shape(Bit, internal_extent, NIE);
+	    change_shape(Bit, internal_extent, NIE),
+	    change_shape(Bit, bounding_box, NBB),
+	    redisplay_border(Bit);
 	 find_type(Bit, New_obj),
 	 \+ New_obj = submodel,
-	    middle(BB, Mid),
-	    snap_to_grid(Mid, [Xpt, Ypt]),
+	    middle(BB, [XMid, YMid]),
+	    snap_to_grid([XMid, YMid], [Xpt, Ypt]),
 	    use_style_for(New_obj, NewObjStyle),
 	    get_box_size(NewObjStyle, Cur_size),
-	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, NBB)),
-	change_shape(Bit, bounding_box, NBB),
+	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, NBB),
+	    XOff is Xpt-XMid, YOff is Ypt-YMid,
+	    change_shape(Bit, bounding_box, NBB),
+	    move_display(Bit, [XOff,YOff])),
 	fail; true.
 
 adjust_posn(Thing, Trans) :-
@@ -2005,7 +2023,7 @@ dissolve_component(Node) :-
 	    already-moved components to the parent's grid */
 	get_shape(Node, bounding_box, BB),
 	change_shape(Node, internal_extent, BB),
-	resnap(Node),
+	resnap(Node, 0),
 	    
 	(has_outer_equiv(Inner, Node, Outer),
 		/* demolition process will delete section nearest source so off this */

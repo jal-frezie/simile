@@ -628,6 +628,7 @@ proc ControlDraw {prologVersion} {
     Pref_Add {{custom(initNavbar) initNavbar ON "Tool bar"} \
                 {custom(initToolbar) initToolbar ON "Component bar"} \
                 {custom(initEqnbar) initEqnbar ON "Equation bar"} \
+                {custom(initGrid) initGrid ON "Grid"} \
                 {custom(bigButtons) bigButtons OFF "Use large buttons"} \
                 {custom(popupHelp) popupHelp ON "Popup help text"} \
                 {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
@@ -635,6 +636,9 @@ proc ControlDraw {prologVersion} {
                 {custom(compValPop) compValPop ON  "Value"}
         {custom(compCmtPop) compCmtPop ON  "Comment"} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
+                {custom(gridSnap) gridSnap ON "Snap to grid"} \
+		{custom(defBackground) defBackground {CHOICE White Clear} \
+		       "Default background"} \
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
                 {custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"}}
     # JMM change wording and change default to ON

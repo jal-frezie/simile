@@ -513,14 +513,22 @@ menu_handle(Win, edit, reroute) :-
 	reassure_user("Reroute in progress"),
 	get_edit_model(Win, Model, _),
 	/* Get selected links top-down, flows first */
-	setof(Rerouter, (contains(Model, Rerouter),
+	(setof(Rerouter, (contains(Model, Rerouter),
 			    Rerouter is_of_sort line,
 			    event:doomed(Rerouter),
-			    clear_shape(Rerouter, course)), Rerouters),
-	reroute_sections(Rerouters),
+			    clear_shape(Rerouter, course)), Rerouters), !,
+	    reroute_sections(Rerouters);
+	true),
 	finish_move(Model, 0),
 	remove_old_incomplete,
 	finish_progress_dialogue.
+
+menu_handle(Win, edit, snap) :-
+	get_edit_model(Win, Model, _),
+	event:assert(grid_pitch_is(15)),
+	event:resnap(Model, 1),
+	event:retractall(grid_pitch_is(_)),
+	menu_handle(Win, edit, reroute).
 
 menu_handle(Win, edit, delete) :-
         start_progress_dialogue(Win),
@@ -905,7 +913,7 @@ set_properties(Wid, Model) :-
 		change_shape(Model, internal_extent, NewExtent),
 		adjust_toplevel_windows(Model, NewExtent),
 		event:move_boxes(Model, FatTrans),
-		event:resnap(Model),
+		event:resnap(Model, 0),
 		(member(RerouteType, [flow, influence]),
 		find_all_comps(Model, Linkage),
 		appears(Linkage),

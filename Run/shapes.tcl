@@ -310,7 +310,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     }
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
-    if {$looks(gridPitch) && ![string equal incomplete $colourScheme]} {
+    if {[PrefValue custom(initGrid) initGrid] && 
+	    ![string equal incomplete $colourScheme]} {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
 	set interval [expr $looks(gridPitch)*$inFat/100.0]
 	set gCol [Gradient $bgColour -0.1 $w]

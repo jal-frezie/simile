@@ -137,10 +137,14 @@ proc Pref_Dialog {} {
             set popupTF [TitleFrame [$notebook getframe View].popuptTF -text "Popups over model components:"]
             set popupF [$popupTF getframe]
         $notebook insert end Edit -text Edit
-            set linkTF [TitleFrame [$notebook getframe Edit].linkTF -text "Links:"]
+            set genericTF [TitleFrame [$notebook getframe Edit].genericTF -text "All components:"]
+            set genericF [$genericTF getframe]
+            set linkTF [TitleFrame [$notebook getframe Edit].linkTF -text "All links:"]
             set linkF [$linkTF getframe]
             set flowTF [TitleFrame [$notebook getframe Edit].flowTF -text "Flows:"]
             set flowF [$flowTF getframe]
+            set submodelTF [TitleFrame [$notebook getframe Edit].submodelTF -text "Submodels:"]
+            set submodelF [$submodelTF getframe]
         $notebook insert end Build -text Build
             set manyWinTF [TitleFrame [$notebook getframe Build].manyWinTF -text "Window positions:"]
 
@@ -159,7 +163,7 @@ proc Pref_Dialog {} {
             set oneWinF [$oneWinTF getframe]
 
         $notebook raise View
-        pack $displayTF $popupTF $barTF $linkTF $flowTF $oneWinTF $manyWinTF $compTF \
+        pack $displayTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
         ButtonBox $dlg.bbox -default 0
         $dlg.bbox add -name ok -text OK -underline 0 -width 8  \
@@ -194,8 +198,10 @@ proc Pref_Dialog {} {
                 comp* {set frame $popupF}
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
+                gridSnap {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}
                 flowRouting {set frame $flowF}
+                defBackground {set frame $submodelF}
                 saveExtras {set frame $canvasF}
                 recentCount {set frame $recentF}
                 helperManager {set frame $oneWinF}

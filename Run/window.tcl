@@ -513,7 +513,7 @@ set looks(gridPitch) 15.0
 
 proc AddGrid {c col wl wt wr wb} {
     global looks window_info
-    if {!$looks(gridPitch)} {
+    if {![PrefValue custom(initGrid) initGrid]} {
 	return
     }
     set interval [expr $looks(gridPitch)*$window_info($c,scale)]
@@ -1044,6 +1044,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     AddAccelerator $winid edit Paste "<Control-v>"
     $fm add command -label {Reroute links} \
             -command "MenuSelect $c edit reroute"
+    $fm add command -label {Align to grid} \
+            -command "MenuSelect $c edit snap"
     $fm add command -label Delete -command "MenuSelect $c edit delete" \
             -accelerator "Del"
     AddAccelerator $winid edit Delete "<Delete>"
