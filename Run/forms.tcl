@@ -141,7 +141,7 @@ proc create_equation {parent boxtitle indices} {
     set functionsf [$middleF.functions getframe]
     frame $functionsf.list
     set lbf [listbox $functionsf.list.flist \
-            -height 8 \
+            -height 8 -width 16 \
             -yscrollcommand [list $functionsf.list.scrollf set]]
     foreach funk $equation(fnDefs) {
         $lbf insert end $funk
@@ -155,7 +155,7 @@ proc create_equation {parent boxtitle indices} {
     set indicesf [$middleF.indices getframe]
     frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
-            -height 8 \
+            -height 8 -width 12 \
             -yscrollcommand [list $indicesf.list.scrolli set]]
     foreach indx $indices {
         $lbx insert end $indx
@@ -170,21 +170,51 @@ proc create_equation {parent boxtitle indices} {
     TitleFrame $middleF.keypad -text "Keypad: "
     set keypadf [$middleF.keypad getframe]
     frame $keypadf.keys
-    set keys {< > -> = ( ) , / 7 8 9 * 4 5 6 - 1 2 3 + 0 dummy . DEL}
+    set keys {< > ( ) \{ \} \[ \] = _ , / and dummy if dummy 7 8 9 * or dummy then dummy \
+                4 5 6 - not dummy elseif dummy 1 2 3 + xor dummy else dummy 0 .  <- -> DEL \
+                dummy SPACE dummy}
     for {set row 0} {$row < 6} {incr row} {
         pack [frame $keypadf.keys.row$row] -fill x
-        for {set col 0} {$col < 4} {incr col} {
-            set act [lindex $keys [expr 4*$row+$col]]
-            pack [button $keypadf.keys.row$row.col$col \
-                    -width 2 \
-                    -text $act -command "HitKey $t \{$act\}"] \
-                    -side left -fill x -expand true
+        for {set col 0} {$col < 8} {incr col} {
+            set act [lindex $keys [expr 8*$row+$col]]
+            if {[string match {\[} $act]} {
+                pack [button $keypadf.keys.row$row.col$col \
+                        -width 2 \
+                        -text $act -command "HitKey $t \\$act"] \
+                        -side left -fill x -expand false
+            } else  {
+                pack [button $keypadf.keys.row$row.col$col \
+                        -width 2 \
+                        -text $act -command "HitKey $t \"$act\""] \
+                        -side left -fill x -expand false
+                
+            }
         }
     }
-    # Make DEL button double width
-    destroy $keypadf.keys.row5.col1
-    pack $keypadf.keys.row5.col0 -expand false
-    pack $keypadf.keys.row5.col2 -expand false
+    # Make text buttons double width
+    # 1. destroy dummy keys
+    destroy $keypadf.keys.row1.col5
+    destroy $keypadf.keys.row2.col5
+    destroy $keypadf.keys.row3.col5
+    destroy $keypadf.keys.row4.col5
+    destroy $keypadf.keys.row1.col7
+    destroy $keypadf.keys.row2.col7
+    destroy $keypadf.keys.row3.col7
+    destroy $keypadf.keys.row4.col7
+    destroy $keypadf.keys.row5.col5
+    destroy $keypadf.keys.row5.col7
+    # 2. repack text keys with expand true
+    pack $keypadf.keys.row1.col4 -expand true
+    pack $keypadf.keys.row2.col4 -expand true
+    pack $keypadf.keys.row3.col4 -expand true
+    pack $keypadf.keys.row4.col4 -expand true
+    pack $keypadf.keys.row1.col6 -expand true
+    pack $keypadf.keys.row2.col6 -expand true
+    pack $keypadf.keys.row3.col6 -expand true
+    pack $keypadf.keys.row4.col6 -expand true
+    pack $keypadf.keys.row5.col4 -expand true
+    pack $keypadf.keys.row5.col6 -expand true
+    
     pack $keypadf.keys -side left -anchor nw
     pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $middleF -expand off -fill x
@@ -626,6 +656,14 @@ proc HitKey { winId char } {
         event generate $winId <Key-BackSpace>
     } elseif {[string match -> $char]} {
         event generate $winId <Key-Right>
+    } elseif {[string match <- $char]} {
+        event generate $winId <Key-Left>
+    } elseif {[string match SPACE $char]} {
+        event generate $winId <Key-space>
+    } elseif {[string match \{ $char]} {
+        event generate $winId <Key-braceleft>
+    } elseif {[string match \} $char]} {
+        event generate $winId <Key-braceright>
     } else {
         [focus] insert insert $char
     }
