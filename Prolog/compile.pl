@@ -79,6 +79,7 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 			    LongName, CompsChanged),
 	(Parent has_model_refinement c_new of 0,
 	     \+ check_level_for_reds(Parent),
+	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1;
 	ChangeTop = CompsChanged),
 	((Parent has_class_refinement separate of 1; NamePath = ''), !,

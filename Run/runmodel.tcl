@@ -1233,13 +1233,13 @@ proc MergeParams {} {
     if {[llength $metaFile]} {
 	set pStr [open $metaFile r]
 	while {[gets $pStr savedValue] != -1} {
-# ShowMessage debug info "Restoring $savedValue" ok
+#ShowMessage debug info "Restoring $savedValue" ok
 	    set IdAndValue [split $savedValue =]
 	    set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
-# ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
+#ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
 	    if {[info exists paramData($restoredComp)]} {
 		set paramData($restoredComp) [lindex $IdAndValue 1]
-# ShowMessage debug info "Param data is $paramData($restoredComp)" ok
+#ShowMessage debug info "Param data is $paramData($restoredComp)" ok
 		set FileOrVal [lindex $paramData($restoredComp) 0]
 
 # OK here we go...try and follow this...first go to the starting point..
@@ -1248,10 +1248,11 @@ proc MergeParams {} {
 # Now use the saved relative path to move to the .csv file's directory
 		    cd [file dirname $FileOrVal]
 # ...and stick the new absolute pathname into the spec! Easy!!
-		    set paramState($restoredComp) [list [pwd]/[file tail \
-			    $FileOrVal] [lindex $paramData($restoredComp) 1]]
+		    set paramState($restoredComp) \
+			[concat [pwd]/[file tail $FileOrVal] \
+			     [lrange $paramData($restoredComp) 1 end]]
 # now just load up the data
-# ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
+#ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
 		    set paramData($restoredComp) \
 			    [LoadTableData $paramState($restoredComp)]
 		} elseif {![SensibleValue $FileOrVal]} {
@@ -1445,6 +1446,8 @@ proc brainwash {ethnic} {
 # looked confusing when opening models, so now this directory is a
 # subdirectory of 'sim_bits' in the model directory.
 
+# will be obsolete when mime saves are finished
+
 proc TopDirFor {model} {
     set nDir [file dirname $model]/sim_bits/[file rootname [file tail $model]]
     file mkdir $nDir
@@ -1471,21 +1474,18 @@ proc TrimTree {Top Point} {
     }
 }
 
-proc ShiftDll {Point Top FullName Loc Rep} {
-    set Name [TopDirFor $FullName]
+proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Loc]} {
 	set AddLoc /$Loc
     } else {
 	set AddLoc $Loc
     }
     
-    set base $Top/$Point$AddLoc/model[info sharedlibextension]
-    # ShowMessage debug info "About to copy $base to ${Name}$Loc" ok
-    if {$Rep && [file exists $base]} {
-	file mkdir ${Name}$AddLoc
-	file copy -force $base ${Name}$AddLoc
-    } else {
-	file delete -force ${Name}$AddLoc/model[info sharedlibextension]
+    set base $Top/$Point$AddLoc
+    file mkdir $base
+    if {!$Rep} {
+	file delete -force ${base}/model.dll
+	file delete -force ${base}/model.so
     }
 }
 
@@ -1619,7 +1619,7 @@ proc compile_c {workingDir modelPath} {
 	unix {
 	    exec g++ -fPIC -c -O -I$TOOLDIR -I$TCL/include -o objtemp.o model.cpp
 	    exec g++ -shared -o $TARGET objtemp.o
-#	    file delete model.cpp
+	    file delete model.cpp
 	    file delete objtemp.o
 	}
 	windows {

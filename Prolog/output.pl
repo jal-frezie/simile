@@ -417,10 +417,10 @@ my_delete_file(DelFile) :-
 	windowize(DelFile, WDelFile),
 	safe_tcl_eval([file, delete, br(WDelFile)], _).
 
-move_file(From, To, Oops) :-
+transfer_save_file(From, To, Way, Oops) :-
 	windowize(From, WFrom),
 	windowize(To, WTo),
-	safe_tcl_eval([file, rename, '-force', br(WFrom), br(WTo)], Oops).
+	safe_tcl_eval(['TransferSaveFile', br(WFrom), br(WTo), Way], Oops).
 
 check_directory(Dir) :-
 	windowize(Dir, WDir),
@@ -443,11 +443,10 @@ trim_tree(Top, Point) :-
 	windowize(Point, WPoint),
 	safe_tcl_eval(['TrimTree', br(Top), br(WPoint)], _).
 
-shift_dll(Point, Top, Name, Loc, Repl) :-
+shift_dll(Point, Top, Loc, Repl) :-
 	windowize(Point, WPoint),
 	windowize(Loc, WLoc),
-	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(Name), br(WLoc),
-			  Repl], _).
+	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), Repl], _).
 
 /* Only works for an all-in-one model for now...*/
 prepare_tcl_execution(Wid) :-

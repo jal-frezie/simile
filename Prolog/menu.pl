@@ -107,48 +107,52 @@ menu_handle(Win, reopen, Name) :-
 	stick_model_in(Parent, Name),
 	warn_runtime.
 
+/*
 stick_model_in(Parent, Name) :-
-	ame_merge(Parent, Name, Date),
-	((get_av_pair(Parent, 0, separate, 1); is_toplevel(Parent)), !,
-	    TryDll = 1;
-	TryDll = 0),
-	add_parameter(Parent, 1, c_new, TryDll),
-	add_parameter(Parent, 0, file_name, Name),
-	check_autosave(Parent, Name),
+	use_temp_dir(Dir),
+	abs_path_name(Parent, root, InsertDir),
+	output:transfer_save_file(LocalDir, Name, in, Oops),
+	append_atoms(LocalDir, '/model.pl', PlName),
+*/
 
+stick_model_in(Parent, Name) :-
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, InsertDir),
-	output:attach_tree(Name, LocalDir, InsertDir),
+	append_atoms([LocalDir, '/', InsertDir], TargetDir),
+	output:transfer_save_file(TargetDir, Name, in, Oops),
+	(Oops = [], !,
+	    append_atoms(TargetDir, '/model.pl', PrologData),
+	    ame_merge(Parent, PrologData, _Date), /* date not needed */
 
-	get_top_dir(Name, TopDir),
-	/* Now if the saved model has any images these will be in the top dir
-	(fttb) so get them loaded */
-	transfer_images(Parent, TopDir, in),
+	    ((get_av_pair(Parent, 0, separate, 1); is_toplevel(Parent)), !,
+		TryDll = 1;
+	    TryDll = 0),
+	    add_parameter(Parent, 1, c_new, TryDll),
+	    add_parameter(Parent, 0, file_name, Name),
+	    check_autosave(Parent, Name),
+
+
+	    /* Now if the saved model has any images these will be in the top
+	    dir (fttb) so get them loaded */
+	    transfer_images(Parent, TargetDir, in),
 		  
-	(is_toplevel(Parent),
+	    (is_toplevel(Parent),
 	/* only try graphics file for toplevel windows because if loading into
 	    submodel the Prolog node ids will no longer match it */
-	append_atoms(TopDir, '/model.cnv', GraphFileName),
+	        append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
-	on_exception(_, open(GraphFileName, read, Test), fail),
-	    files:read_line_to_string(Test, Line1),
-	    (Date = old;
-	    name(Date, DateStr),
-	    suffix(EndStr, Line1),
-	    prefix(DateStr, EndStr),
-	    GraphicsFile = yes;
-	    GraphicsFile = no), !,
-	    close(Test);
-	GraphicsFile = no),
-	(Win shows_model Parent,
-	    (GraphicsFile = yes,
+		output:my_file_exists(GraphFileName), !,
+		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName);
 	    /* this should call Prolog back with the display detail vals */
-	    GraphicsFile = no,	
-		resize_canvas_for(Parent),
-		redraw_window(Win)),
-	    fail;
-	update_captions(Parent)).
+	    resize_canvas_for(Parent),
+		redraw_window(Win));
+	/* legacy case, file opened is Prolog:
+	    no canvas, images or runnables */
+	ame_merge(Parent, Name, _Date),
+	    resize_canvas_for(Parent),
+	    redraw_window(Win)),
+	update_captions(Parent).
 
 resize_canvas_for(Parent) :-
 	find_all_comps(Parent, Lump),
@@ -590,53 +594,60 @@ ok_to_delete(Target) :-
 	Reply = no).
 
 do_save(Model, New_name) :-
-	output:date_is(Date),
 	(New_name = false,
-	    get_name_for(Model, Name),
-	    use_temp_dir(Dir),
-	    append_atoms(Dir, '/savetemp.sml', TempFile),
-	    save_if_poss(TempFile, Model, Date),
-	    output:move_file(TempFile, Name, Oops),
-	    (Oops = [], !;
-	    do_dialogue("Problem renaming output file", error, Oops, ok, _),
-		fail),
-	    mark_model_danger(Model, safe);
-	try_save_files(Name),
-	    save_if_poss(Name, Model, Date),
-	    add_parameter(Model, 0, file_name, Name),
-	    update_captions(Model),
-	    mark_model_danger(Model, safe)),
+	    get_name_for(Model, Name);
+	try_save_files(Name)),
+	use_temp_dir(Dir),
+	abs_path_name(Model, root, Point),
+	append_atoms([Dir, '/', Point], SaveDir),
 	
-	get_top_dir(Name, TopDir),
-	/* Save image backgrounds */
-	transfer_images(Model, TopDir, out),
+	/* Remove any old executables (and make sure dirs exist) */
+	save_dlls(Point, Dir, Model, Model, _),
 
-	append_atoms(TopDir, '/model.cnv', CanvasName),
+	/* save prolog data */
+	append_atoms(SaveDir, '/model.pl', TempFile),
+	save_if_poss(TempFile, Model, Date),
+	
+	/* Save image backgrounds */
+	transfer_images(Model, SaveDir, out),
+
+	/* Save canvas file */
+	append_atoms(SaveDir, '/model.cnv', CanvasName),
 	(tk_get_pref(saveExtras, 'Canvas file'),
 	is_toplevel(Model),
 	    Win shows_model Model,
 	    all(state, get_display_depth, [unify(Win),
 		 build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(CurrentDepths)]),
+	    output:date_is(Date),
 	    save_canvas(Win, CanvasName, CurrentDepths, Date);
 	\+ output:my_file_exists(CanvasName);
 	output:my_delete_file(CanvasName)),
-	abs_path_name(Model, root, Point),
-	use_temp_dir(LocalDir),
-	save_dlls(Point, LocalDir, Model, Model, Name, _),
-	clear_autosave(Model, Name), !.
+
+	/* Now build the multi-part MIME format save file */
+	output:transfer_save_file(SaveDir, Name, out, Oops),
+        (Oops = [], !;
+            do_dialogue("Problem building output file", error, Oops, ok, _),
+	    fail),
+
+	/* If that succeeded, mark model as saved */
+	add_parameter(Model, 0, file_name, Name),
+	update_captions(Model),
+	clear_autosave(Model, Name),
+	mark_model_danger(Model, safe), !.
 
 transfer_images(Model, TopDir, Way) :-
 	setof(ImageSpec,
 	      Submodel^(contains(Model, Submodel),
 			get_av_pair(Submodel, 0, fill_colour, ImageSpec)),
-	      Fillers),
-	shift_images(TopDir, Fillers, Way).
+	      Fillers), !,
+	shift_images(TopDir, Fillers, Way);
+	true.
 
-save_dlls(Point, LocalDir, Top, Model, Name, SaveParent) :-
+save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
 	((setof(Sub, Part^(find_all_comps(Model, Part),
 			 find_type(Part, submodel),
-			 save_dlls(Point, LocalDir, Top, Part, Name, Sub)),
+			 save_dlls(Point, LocalDir, Top, Part, Sub)),
 		Subs),
 	    member(0, Subs);
 	get_av_pair(Model, 1, c_new, 0)), !,
@@ -647,7 +658,7 @@ save_dlls(Point, LocalDir, Top, Model, Name, SaveParent) :-
 	    (Top = Model, !,
 		Loc = '';
 	    abs_path_name(Model, Top, Loc)),
-	    output:shift_dll(Point, LocalDir, Name, Loc, LocalNew),
+	    output:shift_dll(Point, LocalDir, Loc, LocalNew),
 	    SaveParent = 1;
 	SaveParent = LocalNew).
 	

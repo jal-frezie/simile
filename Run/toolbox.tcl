@@ -154,6 +154,80 @@ proc ControlDraw {prologVersion} {
     return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] $openModel]
 }
 
+package require mime 1.3.1
+
+proc TransferSaveFile {tree tgt way} {
+    global mimeSquirter
+    switch $way {
+	out {
+	    set multiT [mime::initialize -canonical multipart/mixed \
+			    -parts [GetParts $tree $tree]]
+	    set stream [open $tgt w]
+	    mime::copymessage $multiT $stream
+	    # clean everything up
+	    close $stream
+	    mime::finalize $multiT -subordinates all
+	} in {
+	    set multiT [mime::initialize -file $tgt]
+	    foreach bit [mime::getproperty $multiT parts] {
+#		set Description [mime::getheader $bit Content-Description]
+		set Disposition [mime::getheader $bit Content-Disposition]
+		set oldPath [lindex [lindex $Disposition 0] 1]
+		set newPath $tree/$oldPath
+		file mkdir [file dirname $newPath]
+		set mimeSquirter [open $newPath w]
+		fconfigure $mimeSquirter -translation binary
+		mime::getbody $bit -command SquirtMime -blocksize 256
+	    }
+	}
+    }
+}
+
+proc SquirtMime {args} {
+    global mimeSquirter
+    if {[string match end [lindex $args 0]]} {
+	close $mimeSquirter
+    } else {
+	puts -nonewline $mimeSquirter [lindex $args 1]
+    }
+}
+    
+proc GetParts {top tree} {
+    set mimes {}
+    foreach subtree [glob -nocomplain ${tree}/*] {
+	if {[file isdirectory $subtree]} {
+	    set mimes [concat $mimes [GetParts $top $subtree]]
+	} else {
+            set ext [file extension $subtree]
+            switch $ext {
+                .gif {
+                    set PartType "image/gif"
+                    set Description "Image"
+                }
+                .pl {
+                    set PartType "text/plain"
+                    set Description "Simile model"
+                }
+                .cnv {
+                    set PartType "text/plain"
+                    set Description "Simile canvas description"
+                }
+                default {
+                    set PartType "application/x-simile"
+                    set Description "Data"
+                }
+            }
+	    set relPath [string range $subtree [string length $top] end]
+            set Disposition [concat "inline;" [file tail $relPath]]
+	    lappend mimes [mime::initialize -canonical $PartType \
+                    -header [list "Content-Disposition" $Disposition] \
+                    -header [list "Content-Description" $Description] \
+                    -file $subtree]
+	}
+    }
+    return $mimes
+}
+	    
 proc byebye {winId} {
     prolog [list tk_off_window( '$winId.canvas' )]
 }
