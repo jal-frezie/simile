@@ -41,7 +41,12 @@ namespace eval runcontrol33857 {
         $timeSteps configure -values $sendvars(captList)
         focus $widget.edit.num
     }
-    
+
+    proc SetTimeUnits {widget} {
+        variable sendvars
+        set sendvars(timeUnit) [$widget getvalue]
+    }
+
     proc initialize {t} {
         variable sendvars
         variable timeSteps
@@ -72,9 +77,6 @@ namespace eval runcontrol33857 {
         $cnvs create oval 2 2 8 8 -fill [RestingColour]
         $cnvs create oval 0 0 10 10 -outline grey
         pack $rcf.bf.flag -side right -anchor e
-        tk_optionMenu $rcf.bf.pulldown [namespace current]::sendvars(timeUnit) \
-                unit second minute hour day week month year Ma
-        pack $rcf.bf.pulldown -side right
         pack [ProgressBar $rcf.bf.bar -variable runState(currentTime)] \
                 -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.bf -side left -fill x
@@ -85,6 +87,14 @@ namespace eval runcontrol33857 {
         
         TitleFrame $t.rsf -text "Run settings"
         set rsf [$t.rsf getframe]
+        pack [frame $rsf.unitselection] -pady 2
+        pack [label $rsf.unitselection.caption -text "Select time units" -width 24 -anchor w] -side left
+        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
+        #                unit second minute hour day week month year Ma
+        set widget [ComboBox $rsf.unitselection.pulldown  -textvariable [namespace current]::sendvars(timeUnit) \
+                -values {unit second minute hour day week month year Ma}]
+#        $widget setvalue first
+        pack $rsf.unitselection.pulldown -side left
         foreach {name capt var} {exec {Execute for } execTime \
                     current {Current time } currentTime \
                     disp {Display interval } displayInt} {
