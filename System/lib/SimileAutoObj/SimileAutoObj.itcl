@@ -13,30 +13,20 @@ package provide SimileAutoObj 1.0
 
 # Should abstract common helper behaviour, e.g. clear, hide and show
 
-#namespace eval similescript {
 package require Itcl
-
-namespace current
 
 package require Tk
 
 if {[string match windows $tcl_platform(platform)]} {
     package require tcom
-    #tk_messageBox -message "[file join [file dirname [info script]] SimileAutoObj.tlb]"
-    #    ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
 }
-
-#tk_messageBox -message "[info script]\n\
-#        [file dirname [info script]]/../../../Run/simile.tcl"
-#C:/Documents and Settings/jmm/My Documents/Program Files/Simile/System/lib/SimileAutoObj/SimileAutoObj.itcl
-set SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
+set ::SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
 
 set argc 0; # simile.tcl expects to be called from the command line - tell it no args
 set argv {}
 source "[file dirname [info script]]/../../../Run/simile.tcl"
 
-
-class similescript::ModelWindow {
+itcl::class similescript::ModelWindow {
     
     variable modelNode node00000
     variable desktop /Desktop1
@@ -150,7 +140,7 @@ class similescript::ModelWindow {
     
 }
 
-class similescript::HelperController {
+itcl::class similescript::HelperController {
     # Class providing basic control of existing helpers
     # The constructor DOES NOT create a helper use class Helper
     variable winId;    #Tk path to RunControl window
@@ -174,7 +164,7 @@ class similescript::HelperController {
     }
 }
 
-class similescript::Helper {
+itcl::class similescript::Helper {
     
     inherit HelperController
     
@@ -191,7 +181,7 @@ class similescript::Helper {
     }
 }
 
-class similescript::RunControl {
+itcl::class similescript::RunControl {
     
     inherit HelperController
     
@@ -348,7 +338,7 @@ class similescript::RunControl {
 #chain
 #SetUpdateAtDisplayInterval false
 
-class similescript::TableHelper {
+itcl::class similescript::TableHelper {
     
     inherit Helper
     
@@ -392,7 +382,7 @@ class similescript::TableHelper {
     
 }
 
-class similescript::Plotter {
+itcl::class similescript::Plotter {
     inherit Helper
     constructor {modelWindow winTitle} {
         Helper::constructor $modelWindow $winTitle
@@ -405,7 +395,7 @@ class similescript::Plotter {
     }
 }
 
-class similescript::FileWrite {
+itcl::class similescript::FileWrite {
     inherit Helper
     constructor {modelWindow winTitle} {
         Helper::constructor $modelWindow $winTitle
