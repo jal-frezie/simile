@@ -93,18 +93,19 @@ HINSTANCE flopen(char* fileName) {
 char simileVersion[] = SIMILE_VERSION;
 
 /* utility procedures making no direct reference to model classes/instances */
+graph_data_type* graphdata;
+
 int min(int a, int b) {
   return a<b?a:b;
 }
 int max(int a, int b) {
   return a>b?a:b;
 }
-graph_data_type* graphdata;
 
 double graphpoint(double xval, int index) {
-	double interval;
-	int length, spaces;
-	int *right,*left;
+	double interval, intersection;
+	int spaces, lower;
+	int *right, *left;
 	graph_data_type *use_graph_pointer;
 	
 	use_graph_pointer = find_graph(index, graphdata);
@@ -131,8 +132,6 @@ double graphpoint(double xval, int index) {
 		if (--interval <= 1) break;
 	}
 	*/
-	int lower;
-	double intersection;
 	if (use_graph_pointer->range > 3) {
 	  intersection = *(use_graph_pointer->points + 
 			   max(0,min(spaces,int(interval+0.5))));
