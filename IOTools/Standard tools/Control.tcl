@@ -173,21 +173,20 @@ namespace eval runcontrol33857 {
                 [string match reset $action]} {
             set widget [$winId.rcf getframe]
 
-# following should never happen as run control is now in same interpreter
-# as the model
-#	    if {[string match stop $action]} { ;# model still waiting to stop
-#		if {[string equal yes [ShowMessage "Abort request" question "The model has not finished the last time step. You can abort it but the current values will be lost. Abort it now?" yesno]]} {
-#		    TryToKill $node
-#		    $widget.bf.flag itemconfigure 1 -fill white
-#		}
-#		return
-#	    }
-	    switch -regexp [do_in_editor CheckUpToDate $node $action] {
-		yes|cancel {
-		    return
-		} no {
-		    if {$runState($node,modelRunning)==3} {
-			set runState($node,modelRunning) 4
+	    if {[do_in_editor set runState($node,updated)]} {
+		set updateChoice [ShowMessage "Model out of date" warning \
+				      "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
+		switch $updateChoice {
+		    yes {
+			do_in_editor UpdateExecution $node $action
+			return
+		    } no {
+			if {$runState($node,modelRunning)==3} {
+			    set runState($node,modelRunning) 4
+			}
+			do_in_editor set runState($node,updated) 0
+		    } cancel {
+			return
 		    }
 		}
 	    }
@@ -374,7 +373,9 @@ namespace eval runcontrol33857 {
                 }
                 UpdateTimeSeries $node 0
                 if {[do_model $node eval $scaled_current $redoPhase($node)]} {
-		    set runState($node,modelRunning) 3
+		    if {$runState($node,modelRunning)<3} {
+			set runState($node,modelRunning) 3
+		    }
 		} else {
                     set sendvars($node,currentMode) exit
                 }

@@ -157,7 +157,7 @@ namespace eval ::ModelInspector63654 {
 	set node $helperTable($winId,whichModel)
 	if {$runState($node,modelRunning)>2} {
 	    PostPopup $X $Y
-	    set trans [GetTransTable $plName]
+#	    set trans [GetTransTable $plName]
 	    if {[catch {GetModelValue $plName} mVal]} {
 #		set missing [lindex [split $mVal \"] 1]
 #		set value \

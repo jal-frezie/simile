@@ -556,32 +556,8 @@ proc newInt {} {
     return [incr intCount]
 }
 
-proc CheckUpToDate {node action} {
-    global runState window_info
-    
-    if {$runState($node,updated) == 1} {
-        set updateChoice [ShowMessage "Model out of date" warning \
-                "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
-        switch $updateChoice {
-            yes {
-                # grits teeth
-                foreach win [array names window_info *,top_node] {
-                    if {[string equal $node $window_info($win)]} {
-                        set winId [string range $win 0 end-9]
-                        if {$window_info($winId,is_top_level)} {
-                            after idle Rerun $winId \
-				[string match start $action]
-                        }
-                    }
-                }
-            } no {
-                set runState($node,updated) 0 ;# do not ask again
-            }
-        }
-        return $updateChoice
-    } else {
-        return true
-    }
+proc UpdateExecution {node action} {
+    after idle Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
 
 package require Itcl
@@ -590,7 +566,6 @@ itcl::class ModelWindowExtn {
     constructor {awinId} {
         set winId $awinId
     }
-    
 }
 
 proc LoadModelWindowExtensions {} {
