@@ -1074,6 +1074,10 @@ proc DoRegDialog {dtId} {
     set welcomeDone 0
     image create photo welcome
     welcome read "../Images/Welcome.gif"
+    image create photo wopen
+    wopen read "../Images/Toolbar/open.gif"
+    image create photo wnew
+    wnew read "../Images/Toolbar/new.gif"
     pack [label .register.welcome -image welcome] -anchor w
     
     TitleFrame .register.create -text "Creating a model: "
@@ -1094,9 +1098,10 @@ proc DoRegDialog {dtId} {
     set tasks [.register.tasks getframe]
     
     frame $tasks.b
-    pack [button $tasks.b.new -text "New" -width 10 -command {set userinfo(done) $welcomeDone}] \
+    pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
+            -command {set userinfo(done) $welcomeDone}] \
             -padx 8 -pady 8 -side left
-    pack [button $tasks.b.open -text "Open..." -width 10 \
+    pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
             -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
             -padx 8 -pady 8 -side left
     pack [button $tasks.b.reopen -text "Recent..." -width 10 \
