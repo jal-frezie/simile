@@ -418,20 +418,23 @@ proc load_c_stub {} {
 #
 
 proc do_in_editor {args} {
-    puts [list get $args]
-    while {1} {
-	set result [gets stdin]
-	set info [lindex $result 1]
-	switch [lindex $result 0] {
-	    do {
-		do $info
-	    } err {
-		error [lindex $info 0] [join $info \n]
-	    } res {
-		return $info
-	    }
-	}
-    }
+#    puts [list get $args]
+#    while {1} {
+#	set result [gets stdin]
+#	set info [lindex $result 1]
+#	switch [lindex $result 0] {
+#	    do {
+#	do $info
+#    } err {
+#		error [lindex $info 0] [join $info \n]
+#	    } res {
+#		return $info
+#	    }
+#	}
+#    }
+# bugger that....
+    global sender
+    return [eval $sender $args]
 }
 
 proc PrefValue {arrVal val} {

@@ -517,13 +517,14 @@ proc do_for_node {dummyNode args} {
 }
 
 # Other stuff related to reorganization
-proc KickOff {nMyNode nSimtmpdir} {
+proc KickOff {nMyNode nSimtmpdir nSender} {
     global myNode ;# a stopgap, we shouldn't need it
-    global custom runState simtmpdir tcl_platform
+    global custom runState simtmpdir tcl_platform sender
 
     set myNode $nMyNode
     set simtmpdir $nSimtmpdir
     set custom(prefDir) [file dirname $nSimtmpdir]
+    set sender $nSender
     load_c_stub
 
     set runState($nMyNode,modelRunning) 0

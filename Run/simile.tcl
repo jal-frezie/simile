@@ -8,11 +8,11 @@
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
     set oldProc Simile
-    set sendCmd {dde eval}
+    set runHow(sender) list dde eval $oldProc]
     set argv [lindex $argv 0]
 } else {
     set oldProc simile.tcl
-    set sendCmd send
+set runHow(sender) [list send $oldProc]
 }
 
 if {$argc && ![string match Darwin $tcl_platform(os)] } {
@@ -32,7 +32,7 @@ if {[info exists env(OPEN_MODEL)]} {
     set remStartArgs NewTopLevel
 }
 
-if {[catch [concat $sendCmd $oldProc {$remStartArgs}]]} {
+if {[catch [concat $runHow(sender) {$remStartArgs}]]} {
 #    tk_messageBox -message $errorInfo
 } else {
     exit

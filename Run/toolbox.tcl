@@ -228,7 +228,7 @@ proc do_for_node {node args} {
 #puts "initialized"
 	    set runState($node,modelReady) 1
 	    set runState($node,queueSize) 0
-	    do_in_node $node KickOff $node $simtmpdir
+	    do_in_node $node KickOff $node $simtmpdir $runHow(sender)
 	}
     }
     return [eval do_in_node $node $args]
