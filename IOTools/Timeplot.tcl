@@ -224,7 +224,7 @@ namespace eval ::origplot72514 {
         variable timeplotvars
         variable canvasMargin
         
-        if {[regexp (\.\[^.\]*)\.right\.canvas $item full id]} {
+        if {[regexp ^(.*)\.right\.canvas$ $item full id]} {
             #		puts "$x $y $w $h $timeplotvars($id,width) $timeplotvars($id,height)"
             set newWidth [expr $w-4.0-2*$canvasMargin]
             $item scale all [expr $canvasMargin+2.0] 0 \

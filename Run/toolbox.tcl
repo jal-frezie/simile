@@ -65,8 +65,8 @@ proc ControlDraw {prologVersion} {
 
     gets $UserStream userinfo(prologId)
     gets $UserStream userinfo(interface)
-    gets $UserStream userinfo(Name)
-    gets $UserStream userinfo(Corp)
+    gets $UserStream userinfo(name)
+    gets $UserStream userinfo(corp)
     gets $UserStream userinfo(Version)
     close $UserStream
     
@@ -82,8 +82,8 @@ proc ControlDraw {prologVersion} {
     
     if {[file exists $custom(prefDir)/version]} {
         set UserStream [open $custom(prefDir)/version r]
-        gets $UserStream userinfo(Name)
-        gets $UserStream userinfo(Corp)
+        gets $UserStream userinfo(name)
+        gets $UserStream userinfo(corp)
         gets $UserStream userinfo(oldVersion)
         gets $UserStream userinfo(done)
     } else {
@@ -94,8 +94,8 @@ proc ControlDraw {prologVersion} {
         DoRegDialog
         if {$userinfo(done) == 2} {
             if {[catch {package require http
-                    set regData [::http::formatQuery Name $userinfo(Name) \
-                            Organisation $userinfo(Corp) Email $userinfo(email) \
+                    set regData [::http::formatQuery Name $userinfo(name) \
+                            Organisation $userinfo(corp) Email $userinfo(email) \
                             Version $userinfo(Version) OS $tcl_platform(os)]
                     ::http::geturl http://www.simulistics.com/products/SendMail.asp \
                             -query $regData}]} {
@@ -104,8 +104,8 @@ proc ControlDraw {prologVersion} {
         }
     }
     set UserStream [open $custom(prefDir)/version w]
-    puts $UserStream $userinfo(Name)
-    puts $UserStream $userinfo(Corp)
+    puts $UserStream $userinfo(name)
+    puts $UserStream $userinfo(corp)
     puts $UserStream $userinfo(Version)
     puts $UserStream $userinfo(done)
     close $UserStream
@@ -967,6 +967,7 @@ proc PrepForExport {winId way} {
 	$winId configure -scrollregion $jiggles(sr)
 	$winId move all $jiggles(bl) $jiggles(bt)
     }
+    return $detail
 }
 	
 proc CopyCanvasToWindowsClipboard {canvas} {
@@ -1017,10 +1018,7 @@ proc PrintNow {winId} {
 
 proc SpitPS {winId psfile} {
     global window_info
-
-
-
-    PrepForExport $winId there
+    set detail [PrepForExport $winId there]
     $winId postscript -file $psfile -rotate true -pageanchor nw \
             -pagex 0 -pagey 0 \
             -x [expr $detail*[$winId canvasx 0]] \
@@ -1165,7 +1163,9 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm1 add radiobutton -label Submodel -command "ItemSelect submodel"\
             -variable MIpushedbutton -value submodel
     $fm1 add radiobutton -label Relation -command "ItemSelect relation"\
-            -variable MIpushedbutton -value relation
+            -variable MIpushedbutton -value relation
+
+
     $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
             -variable MIpushedbutton -value creation
     $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
@@ -1438,7 +1438,7 @@ proc ShowAbout {winId} {
     pack [label .about.f.l7 -text "TclTk: [info patchlevel] (by $interface)"]
     pack [label .about.l6]
     pack [label .about.l7 -text "This product is registered to \
-            $userinfo(Name), $userinfo(Corp)"]
+            $userinfo(name), $userinfo(corp)"]
     #    pack [label .about.l8 -text "for NON-COMMERCIAL use only."]
     pack [label .about.l9]
     pack [label .about.l10 -text "(C) Copyright 2002, Simulistics Ltd."]

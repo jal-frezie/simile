@@ -70,29 +70,29 @@ proc click {winId node caption} {
 	if {[string compare $testResult novalue]} {
 	set state [GetState $winId]
 	switch $state {
-		xcoord {
-			$ms configure -text "Now click on the value representing the Y coordinates."
-			set useNodes($winId,xcoord) $node
-			set newState ycoord
-			}
-		ycoord {
-			$ms configure -text "Now select a value to display as the size of the objects."
-			set useNodes($winId,ycoord) $node
-			set newState sizeval
-			}
-		sizeval {
-			pack forget $ms
-			ReleaseClicks $winId
-			set useNodes($winId,size) $node
-			set xnode $useNodes($winId,xcoord)
-			set ynode $useNodes($winId,ycoord)
-			InitializeForest $winId $xnode $ynode $node
-			set newState "displaying \
+	    xcoord {
+		$ms configure -text "Now click on the value representing the Y coordinates."
+		set useNodes($winId,xcoord) $node
+		set newState ycoord
+	    }
+	    ycoord {
+		$ms configure -text "Now select a value to display as the size of the objects."
+		set useNodes($winId,ycoord) $node
+		set newState sizeval
+	    }
+	    sizeval {
+		pack forget $ms
+		ReleaseClicks $winId
+		set useNodes($winId,size) $node
+		set xnode $useNodes($winId,xcoord)
+		set ynode $useNodes($winId,ycoord)
+		InitializeForest $winId $xnode $ynode $node
+		set newState "displaying \
 					[GetCaptionPathFromId $xnode] \
 					[GetCaptionPathFromId $ynode] \
 					[GetCaptionPathFromId $node]"
-			wm geometry $winId 650x500
-		}
+		catch {wm geometry $winId 650x500}
+	    }
 	}
 	SetState $winId $newState
 	} else {

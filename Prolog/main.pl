@@ -16,10 +16,10 @@ printed incompletely to avoid infinite loops... */
 portray(xrefs(Model, _, _, _)) :-
 	print(xrefs(Model,'Links')).
 
-portray(sm(Model, _,_,_)) :-
+/*portray(sm(Model, _,_,_)) :-
 	print(sm(Model)).
 
-/* Just in case we use the outline runtime system from Sicstus 3.9... */
+ Just in case we use the outline runtime system from Sicstus 3.9... */
 runtime_entry(start) :-
 	main.
 

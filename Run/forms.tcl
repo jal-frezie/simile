@@ -449,7 +449,8 @@ proc fill_inputs { triples } {
         pack forget $widget.lists.scroll
     }
     set equation(selected,$widget.lists.plist) -1
-    set equation(selected,$widget.lists.ilist) -1
+    set equation(selected,$widget.lists.ilist) -1
+
 #    pack $t.bottom -fill x -expand true
     $equation(notebook) compute_size
     pack $equation(notebook)
@@ -975,16 +976,28 @@ proc DoRegDialog {} {
         your Simile installation.  We will contact you whenever we release a new \
         version of Simile.  Your personal information is not used for any other purpose."\
         -width 400] -pady 5
-        
-    pack [LabelEntry  .register.name  \
-                -label "Name            " -labelanchor w -padx 5 \
-                -textvariable userinfo(Name)] -fill x -pady 5
-    pack [LabelEntry  .register.corp  -label "Company       " \
-                        -labelanchor w -padx 5 -textvariable userinfo(Corp)] -fill x -pady 5
-    pack [LabelEntry  .register.email -label "Email address" -labelanchor w -padx 5 \
-                 -textvariable userinfo(email)]  -fill x -pady 5
-    
-    bind .register.email <Return> "set userinfo(done) 2"
+
+# Lord I dont know what is this fascination with hi-tech multi-function
+# bug-ridden widgets, I'll just put the old version back, at least that
+# works...
+#    pack [LabelEntry  .register.name  \
+#                -label "Name            " -labelanchor w -padx 5 \
+#                -textvariable userinfo(Name)] -fill x -pady 5
+#    pack [LabelEntry  .register.corp  -label "Company       " \
+#                        -labelanchor w -padx 5 -textvariable userinfo(Corp)] -fill x -pady 5
+#    pack [LabelEntry  .register.email -label "Email address" -labelanchor w -padx 5 \
+#                 -textvariable userinfo(email)]  -fill x -pady 5
+
+    foreach {field label} {name "Name:" corp "Company:" \
+			    email "Email address:"} {
+	pack [frame .register.$field] -fill x -expand true
+	pack [label .register.$field.l -width 15 -text $label] -side left
+	pack [entry .register.$field.e -textvariable userinfo($field)] \
+		-fill x -expand true
+    }
+
+
+    bind .register.email.e <Return> "set userinfo(done) 2"
     pack [set bs [frame .register.buttframe]] -pady 5
     pack [button $bs.enter -text "Register now" \
 	    -command {set userinfo(done) 2}] -side left

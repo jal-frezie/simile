@@ -224,7 +224,17 @@ make_intermediates(
 	a variable via a 'back swap' i.e., it comes from an associated model
 	via an exclusive role, then we cannot use any variables from other
 	associated or base models. BackSwap keeps track of this constraint.*/
-	Source = param(SourceRef, Units, SourceLoops, TermSwap, Wait),  !,
+
+	copy_term(Source,
+		  param(SourceRef, Units, SourceLoops, TermSwap, Wait)), !,
+	    /* very selective unification needed to feed back right dims to
+	    parameter info (in case it is a ref to final result) but not
+	    indices (because they may differ between references) or var names
+	    (so they get instantiated and declared in each procedure) */
+	    Source = param(_,_, OrigLoops, _,_),
+	    get_dims_from_loops(OrigLoops, Dims, _),
+	    get_dims_from_loops(SourceLoops, Dims, _),
+	    
 	    (SourceRef = arr(_, import(_, Away, _, Ptr, _, Ph, Var, _), _), !, 
 		(var(Away), !, /* external toplink, stub will find from arc */
 		    CommonContext = [],
@@ -509,15 +519,7 @@ make_intermediates(
 	    raise_exception(needs_number_index(Source))),
 	    make_intermediates(Array, Target, DestPath, BackSwap, MidInters,
 			   BuildingArrays, Step, Used, Units, NewInters,
-			   part_result(AContextCpy, ASetups, AArgs, ARef)),
-	    /* very selective unification needed to feed back right dims to
-	    parameter info (in case it is a ref to final result) but not
-	    indices (because they may differ between references) or var names
-	    (so they get instantiated and declared in each procedure) */
-	    copy_term([AContextCpy, ARef], [AContext, SourceRef]),
-	    get_dims_from_loops(AContextCpy, ADims, _),
-	    get_dims_from_loops(AContext, ADims, _),
-
+			   part_result(AContext, ASetups, AArgs, SourceRef)),
 	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
 	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
 	    (append(TailLoops, [set(IntIndxRef, loop(Limit)) | ItemLoops],
