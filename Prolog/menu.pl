@@ -433,7 +433,7 @@ menu_handle(Win, file, export_prolog) :-
 menu_handle(Win, edit, delete) :-
         start_progress_dialogue,
 	reassure_user("Delete in progress"),
-	Win shows_model Model,
+	get_edit_model(Win, Model, _),
 	event:delete_net(Model),
 	finish_move(Model),
 	finish_progress_dialogue.
@@ -445,11 +445,13 @@ menu_handle(Win, edit, CutOrCopy) :-
 	    Msg = "Copy in progress"),
         start_progress_dialogue,
 	reassure_user(Msg),
-	Win shows_model Model,
+	get_edit_model(Win, Model, _),
 	assert(suspend_display),
 	invert_seln_in(Model),
 	event:delete_net(Model),
-	/* OK, now I just have the originally selected bit left -- save it */
+	/* OK, now I just have the originally selected bit left -- work out
+	how big it is, save it and enable pasting */
+	record_bbox(Model),
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output:date_is(Date),
@@ -471,43 +473,51 @@ menu_handle(Win, edit, CutOrCopy) :-
 
 menu_handle(Win, edit, paste) :-
         start_progress_dialogue,
+	reassure_user("Checking for space to paste into"),
+	get_edit_model(Win, Model, Pt),
+	selected_box_is(SBox),
+	(find_space_for(SBox, Model, Pt, [Xoffset, Yoffset]), !,
 	reassure_user("Paste in progress"),
-	Win shows_model Model,
 	select_all_in(Model, on),
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	ame_merge(Model, CopyFile, _Date, _HasCode, _Renumber),
-	redraw_window(Win),
+%	redraw_window(Win),
 	invert_seln_in(Model),
 	
-	[Xoffset, Yoffset] =[20,10],
 	setof(Mover, (find_all_comps(Model, Mover),
 			 get_highlit_obj(0, Mover)), Movers),
 	all(event, adjust_posn,
 	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
-	all(maintain, move_display,
-	    [build(Movers), unify([Xoffset, Yoffset])]),
-	finish_move(Model),
+	all(maintain, redisplay, [build(Movers)]),
+	    /* New part is highlit already, this just corrects display */
+	all(maintain, highlight, [build(Movers), unify(0)]),
+	finish_move(Model);
+	    
+	    caption_for(Model, Capt),
+	    sicstus_format_to_chars("There is not enough free space in model ~a for the selection.", [Capt], RoomMesg),
+	    do_dialogue("Problem with paste", error, RoomMesg, ok, _)),
+	
 	finish_progress_dialogue.	
 	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue,
 	reassure_user("Selecting whole model"),
-	Win shows_model Model,
+	get_edit_model(Win, Model, _),
 	select_all_in(Model, on),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, unselall) :-
         start_progress_dialogue,
 	reassure_user("Unselecting whole model"),
-	Win shows_model Model,
+	get_edit_model(Win, Model, _),
 	select_all_in(Model, off),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, invsel) :-
         start_progress_dialogue,
 	reassure_user("Inverting selection"),
-	Win shows_model Model,
+	get_edit_model(Win, Model, _),
 	invert_seln_in(Model),
 	finish_progress_dialogue.
 	   
@@ -564,6 +574,10 @@ menu_handle(Win, window, NastyAtom) :-
 
 menu_handle(_, _, _).
 
+get_edit_model(Win, Model, Pt) :-
+	event:menu_submodel_is(Model, Pt), !;
+	Win shows_model Model.
+
 select_all_in(Model, Way) :-
 	contains(Model, Bit),
 	    Bit is_of_sort box,
@@ -590,6 +604,41 @@ invert_seln_in(Model) :-
 	    event:do_colours(Node, on),
 	    fail;
 	true).
+
+find_space_for([L, T, R, B], Model, DefPt, [TargetX, TargetY]) :-
+	get_shape(Model, internal_extent, [ML, MT, MR, MB]),
+	(nonvar(DefPt), !; DX is (L+R)/2, DY is (T+B)/2),
+	DefPt = [DX, DY],
+
+	MinOffX is ML - L,
+	MinOffY is MT - T,
+	MaxOffX is MR - R,
+	MaxOffY is MB - B,
+
+	/* These two are the offset to get it to nearest feasible posn */
+	BestX is max(MinOffX, min(MaxOffX, DX-(L+R)/2)),
+	BestY is max(MinOffY, min(MaxOffY, DY-(T+B)/2)),
+
+	HDispMax is (MR-ML)-(R-L),
+	VDispMax is (MB-MT)-(B-T),
+	MaxDist is max(HDispMax, VDispMax),
+	count_to(0, MaxDist, 10, Distance),
+	count_to(0, Distance, 10, Range),
+	((TargetX is BestX-Distance, TargetX > MinOffX;
+	  TargetX is BestX+Distance, TargetX < MaxOffX),
+	(TargetY is BestY-Range, TargetY > MinOffY;
+	    TargetY is BestY+Range, TargetY < MaxOffY);
+	(TargetY is BestY-Distance, TargetY > MinOffY;
+	    TargetY is BestY+Distance, TargetY < MaxOffY),
+	(TargetX is BestX-Range, TargetX > MinOffX;
+	    TargetX is BestX+Range, TargetX < MaxOffX)),
+
+	/* These make sure the rectangle fits in the model so now we only need
+	to check for interference */
+	NewL is L+TargetX, NewT is T+TargetY,
+	NewR is R+TargetX, NewB is B+TargetY,
+	\+ get_overlaps(Model, [NewL, NewT, NewR, NewB], _).
+	
 :- op(950, yfx, [where]).
 
 display_submodels(_,[]).

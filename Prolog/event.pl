@@ -178,10 +178,14 @@ click_on_sub(_, Point, _, _, _, Comp) :-
 
 This starts addition. Last clause creates a new cloud when starting a flow in the
 middle of nowhere; i could also do variables for influences. */
+:- dynamic(menu_submodel_is/2).
 
 click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	targets(Wid, Parent, Point, Depth, Child), !, 
-	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD).
+	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD);
+	CD = 2,
+	retractall(menu_submodel_is(_, _)),
+	assert(menu_submodel_is(Parent, Point)).
 
 click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	get_mode(add),
@@ -247,8 +251,8 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	finish_old_edit(Moving_obj),
 	give_focus(Moving_obj),
 
-	/* Control is down */
-	(CD = 1, !,
+	( /* Control is down */
+	CD = 1, !,
 	    /* object is not selected, if it is, clear it and stop */
 	    \+ (get_highlit_obj(N, Moving_obj), N<2,
 		   do_colours(Moving_obj, off)),
@@ -345,11 +349,14 @@ do_colours(Obj, Way) :-
 	    trail(Obj, _, Way);
 	(Way = on;
 	Way = off,
-	    normalize_ghosts_etc(Obj);
+	    normalize_deletes(Obj);
 	    Way = off).
 
-/* This gets the arcs connnected to a node, finds the object at the other end
-of them and recolours them according to whether they fall into the selection */
+/* This gets the arcs connnected to a node, finds the object at the
+other end of them and recolours them according to whether they fall
+into the selection. Links to/from submodels are excluded -- they
+cannot be selected with their endpoints cos they might not need to be
+deleted */
 
 trail(Node, Arc, Way) :-
 	find_all_links(Node, Arc),
@@ -1058,59 +1065,25 @@ multi_level_mode :-
 	get_mode(ghost);
 	get_mode(delete).
 
-clear_deletes(Target) :-
-	get_highlit_obj(N, Target),
-	member(N, [2,3]),
-	normalize(Target),
-	collateral(Target, Comp),
-	clear_deletes(Comp).
-
 /* highlight_deletes: this highlights all the objects which will be zapped if a particular delete selection is made. The target itself highlights at defcon 0 and any colateral damage at defcon 1. */
 
 highlight_deletes(Target) :-
-	highlight_ghosts_etc(Target); 
-	recursive_highlight(Target, on);
-	highlight(Target, 1).
-
-highlight_ghosts_etc(Target) :-
 	(Base = Target; ghost_link(Target, Base, Ghost)),
 	m_class:initiates(Link, Base),
 	ghost_link(Link, Base, Ghost),
 	\+ get_highlit_obj(_, Ghost),
 	highlight(Ghost, 3),
-	fail.
+	fail; 
+	recursive_highlight(Target, on);
+	highlight(Target, 1).
 
-normalize_ghosts_etc(Target) :-
+normalize_deletes(Target) :-
 	(Base = Target; ghost_link(Target, Base, Ghost)),
 	m_class:initiates(Link, Base),
 	ghost_link(Link, Base, Ghost),
 	normalize(Ghost),
 	fail;
 	recursive_highlight(Target, off).
-
-/* collateral works out what else changes with something's delete status. An
-earlier section of a link only changes if a later section is clear -- this is
-always the case if removing a delete highlight. */
-
-collateral(Target, Damage) :-
-	find_all_links(Target, Damage),
-	    \+ has_outer_equiv(_, Target, Damage);
-	tk_get_pref(deleteEndToEnd, 1),
-	    (m_class:follows(Target, Damage);
-		m_class:follows(Damage, Target),
-		\+ (m_class:follows(Damage, RedCross),
-		       \+ RedCross = Target,
-		       \+ get_highlit_obj(_, RedCross)));
-
-	/* also anything that has no further need to exist */
-	m_class:Target is_connector from End1 to End2,
-	    (Damage = End1; Damage = End2),
-	    (find_type(Damage, cloud); is_parameter(Damage, 1)),
-	    \+ (find_all_links(Damage, NeedsIt),
-		   \+ NeedsIt = Target,
-		   \+ get_highlit_obj(_, NeedsIt)).
-
-/* connected: deletion affects. */
 
 recursive_highlight(Target, Way) :-
 	(Target is_of_sort box, !,
@@ -1643,30 +1616,17 @@ It also directs a connection to a node's 'implicit function', creating this if t
 
 make_terminator(LineType, FinishZone, Terminator) :-
 	find_type(FinishZone, submodel),
-	LineType = flow, TermType = cloud,
-	/* set influence/variable as alternative if required */
-	get_current_coords(FinalX, FinalY),
-	(add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator);
-	 do_dialogue("Addition error", error, "Unable to make terminator here",
-		ok, _)), !;
-	LineType = influence,
-		FinishZone is_of_sort has_function,
-      (implicit_function(FinishZone, Terminator);
-		add_implicit_function(FinishZone, Terminator)), !;
-	Terminator = FinishZone.
-
-make_terminator(LineType, FinishZone, Terminator) :-
-	find_type(FinishZone, submodel), !,
-	(LineType = flow, TermType = cloud,
-	/* set influence/variable as alternative if required */
+	    LineType = flow, TermType = cloud,
+	    /* set influence/variable as alternative if required */
 	    get_current_coords(FinalX, FinalY),
-	    add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator), !;
-	do_dialogue("Addition error", error, "Unable to make terminator here",
-		ok, _), fail);
-	LineType = influence,
+	    (add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator);
+	    do_dialogue("Addition error", error,
+			"Unable to make terminator here", ok, _)), !;
+	 LineType = influence,
 	    FinishZone is_of_sort has_function,
-	    (implicit_function(FinishZone, Terminator), !;
-		add_implicit_function(FinishZone, Terminator)).
+            (implicit_function(FinishZone, Terminator);
+		add_implicit_function(FinishZone, Terminator)), !;
+	    Terminator = FinishZone.
 
 /* delete_net deletes everything highlit. It orders them
 influences-flows-nodes so nothing has been consequentially deleted
@@ -1748,11 +1708,11 @@ attempt_addition(Type, Parent, Box, Node_name, CanBag) :-
 		   get_shape(Other, bounding_box, WeeBox),
 		   \+ fits_inside(WeeBox, Box))),
 	
-/* check it is not inside a submodel (GUI only checks border interference) */
+/* check it is not inside a submodel (GUI only checks border interference)
 	\+ (find_all_comps(Parent, OtherSubmodel),
 	       find_type(OtherSubmodel, submodel),
 	       get_shape(OtherSubmodel, bounding_box, OtherSubSize),
-	       fits_inside(Box, OtherSubSize)),
+	       fits_inside(Box, OtherSubSize)), */
 	
 	(nonvar(Node_name), !;
 	make_node(Parent, Type, Node_name),

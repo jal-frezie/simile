@@ -609,13 +609,19 @@ proc GetFromProlog {prologCmd} {
 proc ClickObj { x y winId action} {
     global clicktime
 #    puts "$action it!"
-    if {[string equal ctrl $action]} {
-	set action click
-	set CD 1
-    } else {
-	set CD 0
+
+    switch $action {
+	ctrl {
+	    set action click
+	    set CD 1
+	} right {
+	    set action click
+	    set CD 2
+	} default {
+	    set CD 0
+	}
     }
-    
+	
     global helperTable
     global equationbar
     global pushedbutton
@@ -890,7 +896,8 @@ proc AddCanvasBindings { c } {
     
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
-    bind $c <Button-3> {PostMenu %W %X %Y}
+    bind $c <Button-3> {DoB3 %x %y %W %X %Y}
+    bind $c <ButtonRelease-3> {ReleaseObj %W %x %y}
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <FocusOut> {AbandonObj}
     
@@ -911,6 +918,12 @@ proc AddCanvasBindings { c } {
     # (could use tag 'has_info' for this)
     $c bind has_info <Enter> [list QueuePopup AddEqnPopup %x %y %W %X %Y]
     $c bind has_info <Leave> RemovePopup
+}
+
+# B3 has two actions; this does them both
+proc DoB3 {x y W X Y} {
+    ClickObj $x $y $W right
+    PostMenu $W $X $Y
 }
 
 # Canvas chapter (of Welch)

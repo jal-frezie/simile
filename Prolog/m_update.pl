@@ -29,7 +29,7 @@ sicstus_module(m_update,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
 		add_new_line_between/4, change_class/3, get_disag_params/2,
 		time_step_for/3, use_units_in/2,
-		make_ghost/3, get_possible_start/2, connector_and_far_end/3]).
+		make_ghost/3, get_possible_start/2]).
 
 sicstus_use_module([library(lists),
 		sp_only, units, utility, ame_gen, m_class, text]).
@@ -1503,56 +1503,35 @@ next_section_of(Source, Dest) :-
 	Box has_model_refinement link_equivalences of Pairs,
 	member(Source-Dest, Pairs).
 
-/* This gets the arcs connnected to a node, finds the object at the other end
-of them and recolours them according to whether they fall into the selection */
-
-connector_and_far_end(Node, Arc, Far) :-
-	( /* Node has_part End,
-	    \+ find_type(End, function),
-	    \+ appears(End); */
-	get_host(End, Node)), 
-	(Arc is_connector from End to HiddenFn,
-	    appears(Arc),
-	    thing_or_bound(HiddenFn, Far);
-	 Arc is_connector from Src to End,
-	    appears(Arc),
-	    thing_or_bound(Src, Far)).
-
-thing_or_bound(Obj, Seen) :-
-	get_host(Obj, Seen),
-	    appears(Seen), ! /* ;
-	Seen has_part Obj */ .
-
-/* Following rules trace value-dependence in opposite 
-directions, returning a list of intermediate primitives in 
+/* Following rules trace value-dependence in opposite
+directions, returning a list of intermediate primitives in
 source-dest order. Note the latter does not include invisible
 objects. */
 
 get_action_point(Top, End, Point) :-
-	(Top is_connector from _ to End; 
-	        continues_in(Top, End);
-	        next_section_of(Top, End);
-	        Top = End), !,
-	    Point = Top;
-	next_section_of(Top, Next),
-	    get_action_point(Next, End, Point).
+        (Top is_connector from _ to End;
+                continues_in(Top, End);
+                next_section_of(Top, End);
+                Top = End), !,
+            Point = Top;
+        next_section_of(Top, Next),
+            get_action_point(Next, End, Point).
 
 /* Procedure to draw first model window */
 
-
 make_desktop(Desktop, Canvas_name) :-
-	m_class:Root is_root,
-	m_class:Desktop is_new_part_of Root,
-	m_class:Desktop has_new_class submodel,
-	unique_name_for_new(Root, 'Desktop', ModelName),
-	m_class:Desktop has_new_class_refinement name of ModelName,
-	state:get_initial_window_size(X, Y),
-	image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
-	image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
-	backup:initialize_ring(Desktop),
-	InitDepths=[0,32,32,32,32,32,32,showAll],
-	event:new_window_for(Desktop, Canvas_name, InitDepths, 1),
-	all(state, set_display_depth, [unify(Canvas_name),
-	    build([ghost_link, influence, variable, flow, compartment,
-		   submodel, caption, sections]), build(InitDepths)]),
-	maintain:redraw_window(Canvas_name).
+        m_class:Root is_root,
+        m_class:Desktop is_new_part_of Root,
+        m_class:Desktop has_new_class submodel,
+        unique_name_for_new(Root, 'Desktop', ModelName),
+        m_class:Desktop has_new_class_refinement name of ModelName,
+        state:get_initial_window_size(X, Y),
+        image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
+        image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
+        backup:initialize_ring(Desktop),
+        InitDepths=[0,32,32,32,32,32,32,showAll],
+        event:new_window_for(Desktop, Canvas_name, InitDepths, 1),
+        all(state, set_display_depth, [unify(Canvas_name),
+            build([ghost_link, influence, variable, flow, compartment,
+                   submodel, caption, sections]), build(InitDepths)]),
+        maintain:redraw_window(Canvas_name).
