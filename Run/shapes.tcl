@@ -120,9 +120,9 @@ proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
-    $w create arc $ml $mt $mr $mb -width $width -start 135 -extent 90 \
+    $w create arc $ml $mt $mr $mb -width $width -start 45 -extent 90 \
             -tag "$tagSet realwidth($width) has_info"
-    $w create arc $ml $mt $mr $mb -width $width -start 315 -extent 90 \
+    $w create arc $ml $mt $mr $mb -width $width -start 225 -extent 90 \
             -tag "$tagSet realwidth($width) has_info"
 
 # to draw the old style variable leave out the arcs but

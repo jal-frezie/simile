@@ -1974,6 +1974,7 @@ resnap(Node, SelOnly) :-
 	    translate(NBB, Trans, NIE),
 	    change_shape(Bit, internal_extent, NIE),
 	    change_shape(Bit, bounding_box, NBB),
+	    (SelOnly = 0; SelOnly = 1, resnap(Bit, 1)),
 	    redisplay_border(Bit);
 	 find_type(Bit, New_obj),
 	 \+ New_obj = submodel,

@@ -338,12 +338,16 @@ proc AddPopupMessage {text colour args} {
 	set count 0
     }
     EndsOnly text $count $limit
-    if {[string length $text]<20} {
-        pack [label .popup.message$colour \
-                -text $text -bg $colour] -fill x -expand true
-    } else {
-        pack [message .popup.message$colour -aspect 400 \
-		  -text $text -bg $colour] -fill x -expand true
+# note the model editor still processes events while waiting for the executable
+# so check window is still there
+    if {[winfo exists .popup]} {
+	if {[string length $text]<20} {
+	    pack [label .popup.message$colour \
+		      -text $text -bg $colour] -fill x -expand true
+	} else {
+	    pack [message .popup.message$colour -aspect 400 \
+		      -text $text -bg $colour] -fill x -expand true
+	}
     }
 }
 
