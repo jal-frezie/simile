@@ -6,9 +6,12 @@ set keyValue tabular11510
 # format by column (or row)
 
 global tcl_platform
-if {[string match windows $tcl_platform(platform)]} {
-    source ../System/lib/Extras/prntproc.tcl
-}
+################################################################################
+# causes some Windows 98 machines to crash on slecting variables for plotter
+# if {[string match windows $tcl_platform(platform)]} {
+#     source ../System/lib/Extras/prntproc.tcl
+# }
+################################################################################
     
 namespace eval $keyValue {
     package require BWidget
@@ -291,13 +294,7 @@ namespace eval $keyValue {
     }
         
 ################################################################################
-# causes some Windows 98 machines to crash on slecting variables for plotter
-#         if {[string match windows $tcl_platform(platform)]} {
-
-#             source ../System/lib/Extras/prntproc.tcl
-
-#         }
-
+# requires prntproc.tcl
 #         proc Print {winId} {
 #             global printargs
 #             set hdc [printer dialog select]
