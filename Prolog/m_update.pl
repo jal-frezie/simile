@@ -65,10 +65,6 @@ get_av_pair(Object, Class, Attribute, Value) :-
 	Class = 1, Object has_model_refinement Attribute of Value;
 	Class = 2, Object has_attribute Attribute of Value.
 
-/* moving_endpoint/2: succeeds if the obj is
-a line and one of the endpoints of that line correspond to an hierarchical
-interface (i.e., is not drawn); returns the identifier for which end it is */
-
 /* get_exogenous_node: finds a node in a model that cannot be calculated without
 access to the outside of the model */
 
@@ -78,7 +74,9 @@ get_exogenous_node(Model, Node) :-
 	Out is_connector from _ to Model,
 	In is_connector from _ to Node.
 
-/* moving_endpoint: gives continuations of links by endpoint. */
+/* moving_endpoint/2: succeeds if the obj is
+a line and one of the endpoints of that line correspond to an hierarchical
+interface (i.e., is not drawn); returns the identifier for which end it is */
 
 moving_endpoint(Obj, Termination, OtherLink) :-
 	(continues_from(Obj, Submodel),
@@ -514,7 +512,55 @@ sort_for_link([Link | OtherLinks], Target, Right, Wrong) :-
 	Right = OtherRight,
 		Wrong = [Link | OtherWrong]).
 
-/* This predicate is failioric. */
+/* make_role_first: In order to use one-sided relation enumeration, modellers
+need to be able to specify which of an association's base models' indices to
+use as index(1). What this does is change the order of an association
+submodel's references to make the given role first, then change references
+in incoming links and submodels to reflect that change. */
+
+make_role_first(Role) :-
+	terminates(Role, Model),
+	(terminates(OtherRole, Model), /* un-flag any other relations */
+	    find_type(OtherRole, relation),
+	    \+ OtherRole = Role,
+	    find_name_host(OtherRole, OtherRole),
+	    add_parameter(OtherRole, 2, can_lookup, 0),
+	    fail;
+	Model has_model_refinement references of Refs),
+	append(Before, [local(Role) | After], Refs),
+	append([After, Before, [local(Role)]], NewRefs),
+	length(After, Shift),
+	length(Refs, Size),
+	Model has_changed_model_refinement references of NewRefs,
+	Model has_part Component,
+	(find_type(Component, submodel),
+	    Component has_model_refinement references of SubRefs,
+	    all(m_update, roll_match, [build(SubRefs), unify(Shift),
+				       unify(Size), build(NewSubRefs)]),
+	    Component has_changed_model_refinement references of NewSubRefs;
+	 find_type(Component, function),
+	    Link is_connector from _ to Component,
+	    find_type(Link, influence),
+	    Link has_attribute role of LRoles,
+	    all(m_update, roll_match, [build(LRoles), unify(Shift),
+				       unify(Size), build(NewLRoles)]),
+	    Link has_changed_attribute role to NewLRoles),
+	fail; true.
+
+roll_ref(N, Shift, Size, NewN) :-
+	MidN is N+Shift,
+	(MidN >= Size, !,
+	    NewN is MidN - Size;
+	NewN is MidN).
+
+roll_match(Old, Shift, Size, New) :-
+	Old =.. [Fn, N | Rest],
+	    integer(N), !,
+	    roll_ref(N, Shift, Size, M),
+	    New =.. [Fn, M | Rest];
+	New = Old.
+	
+/* This predicate is also failioric. */
 
 update_destination(Start, Units) :-
 	Start has_new_class_refinement units of Units,

@@ -509,19 +509,22 @@ menu_handle(Win, edit, paste) :-
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	ame_merge(Model, CopyFile, _Date, _HasCode, _Renumber),
 %	redraw_window(Win),
-	invert_seln_in(Model),
 	
 	setof(Mover, (find_all_comps(Model, Mover),
-			 get_highlit_obj(0, Mover)), Movers),
+			\+ get_highlit_obj(_, Mover)), Movers),
 	all(event, adjust_posn,
 	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
+	invert_seln_in(Model),
 	all(event, retitle_duplicate, [build(Movers), unify(Used)]),
-	all(draw, redisplay, [build(Movers)]),
+	(member(Mover, Movers),
+	    redisplay(Mover),
 	    /* New part is highlit already, this just corrects display */
-	all(draw, highlight, [build(Movers), unify(0)]),
-	finish_move(Model);
+	    get_highlit_obj(N, Mover),
+	    highlight(Mover, N),
+	    fail;
+	finish_move(Model));
 	    
-	    caption_for(Model, Capt),
+	caption_for(Model, Capt),
 	    sicstus_format_to_chars("There is not enough free space in model ~a for the selection.", [Capt], RoomMesg),
 	    do_dialogue("Problem with paste", error, RoomMesg, ok, _)),
 	
@@ -550,7 +553,7 @@ menu_handle(Win, edit, invsel) :-
 	   
 menu_handle(Win, edit, properties) :-
 	get_edit_model(Win, Model, Tgt),
-	((Tgt = Model; Tgt = [_,_]), !,
+	(Tgt = [_,_], !,
 	    /* background or edit menu selection */
 	    (setof(PossTgt,
 		   (contains(Model, PossTgt),

@@ -288,7 +288,10 @@ selection, i.e., top submodel and corner position */
 restore_edit_menu(Wid) :-
 	retractall(menu_submodel_will_be(Wid, _,_)),
 	Wid shows_model Model,
-	assert(menu_submodel_will_be(Wid, Model, Model)).
+	get_shape(Model, internal_extent, [L,T,R,B]),
+	X is (L+R)/2,
+	Y is (T+B)/2,
+	assert(menu_submodel_will_be(Wid, Model, [X,Y])).
 
 click_on([Xpt, Ypt], Poss_start, CD) :-
 	get_mode(add),
@@ -597,22 +600,28 @@ doubleclick_on(Edit_thing) :-
 	     build(Depths)]),
 	    new_window_for(Edit_thing, NewWin, Depths, 0),
 	    all(event, set_display_depth,
-		[unify(NewWin), build([ghost_link, influence, variable, flow, 
-				       compartment, submodel, caption, sections]), 
-		 build(Depths)]),
+		[unify(NewWin),
+		build([ghost_link, influence, variable, flow, compartment,
+		       submodel, caption, sections]), build(Depths)]),
 	    redraw_window(NewWin);
-	(Edit_type = relation, Attr = exclusive;
-	    Edit_type = influence, Attr = use_sofar), !,
+	(Edit_type = relation, Attrs = [exclusive, can_lookup];
+	    Edit_type = influence, Attrs = [use_sofar]), !,
 	    find_name_host(Edit_thing, ControlThing),
-	    (get_av_pair(ControlThing, 2, Attr, OldExc), !;
-		OldExc = 0),
+	    all(event, get_refinement_or_0,
+		[unify(ControlThing), build(Attrs), build(OldVals)]),
 	    (get_av_pair(ControlThing, 2, comment, OldComment), !;
 		OldComment = ''),
-	    do_relation_dialog(Wid, ControlThing, Attr, OldExc, OldComment,
-			       OKd, NewExc, NewComment),
+	    do_relation_dialog(Wid, ControlThing, Edit_type, OldVals,
+			       OldComment, OKd, NewVals, NewComment),
 	    (OKd == 1, !,
-		add_parameter(ControlThing, 2, Attr, NewExc),
-		add_parameter(ControlThing, 2, comment, NewComment),
+		all(m_update, add_parameter,
+		    [unify(ControlThing), unify(2), build(Attrs),
+		     build(NewVals)]),
+		/* change role order if necessary */
+		(nth(N, Attrs, can_lookup),
+		    nth(N, NewVals, 1),
+		    m_update:make_role_first(ControlThing); /* fails */
+		add_parameter(ControlThing, 2, comment, NewComment)),
 		find_all_comps(Parent, ControlThing),
 		(find_name_host(Messed, ControlThing),
 		    redisplay(Messed),
@@ -632,6 +641,10 @@ doubleclick_on(Edit_thing) :-
 	    find_all_comps(Parent, Base),
 	    update_runnable(Parent)).
 	
+get_refinement_or_0(ControlThing, Attr, OldExc) :-
+	get_av_pair(ControlThing, 2, Attr, OldExc), !;
+	OldExc = 0.
+
 /* If something's dimensions have changed, check all the equations
 where it is used. If they do not check out unit-wise, try to re-do
 them with the new units and if this succeeds, recurse if their
@@ -1174,17 +1187,17 @@ recursive_highlight(Target, Way) :-
 	    recursive_highlight(Linked, Way).
 
 adjust_link_backwards(Target, Way, Also) :-
-	m_class:sequence(Prev, Target),
+	m_class:follows(Prev, Target),
 	(Way = off,
 	    change_delete_status(Prev, off);
 	 Way = on,
-	    \+ (m_class:sequence(Prev, Other),
+	    \+ (m_class:follows(Prev, Other),
 		   \+ doomed(Other)),
 	    change_delete_status(Prev, on)),
 	 (Also = Prev; adjust_link_backwards(Prev, Way, Also)).
 	
 adjust_link_forwards(Target, Way, Also) :-
-	m_class:sequence(Target, Next),
+	m_class:follows(Target, Next),
 	(Way = on,
 	    change_delete_status(Next, on);
 	 Way = off,
@@ -1465,9 +1478,9 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
+	restore_edit_menu(Wid),
 	get_mode(select),
 	    find_current(Wid),
-	    restore_edit_menu(Wid),
 	    get_phase(rubberband), !, /* used to call proc below */
 	    get_incomplete(Box),
 	    get_translation(Trans),

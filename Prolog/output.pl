@@ -431,12 +431,13 @@ tk_do_disag_dialog(Win, Caption, [Colour, Type, Fatness, CountList, Step,
 	    append(ResultList0, [EnumTypes], ResultList);
 	ResultList = []).
 
-tk_do_relation_dialog(Win, Caption, IsExcl, IsDelay, OldComment,
-		      OKd, IsNowExcl, NewComment) :-
+tk_do_relation_dialog(Win, Caption, Type, State, OldComment,
+		      OKd, NewState, NewComment) :-
+	bracketize(State, StateList),
 	safe_tcl_eval(['RelationCheck', Win, br(write(Caption)),
-			  IsExcl, IsDelay, br(write(OldComment))],
+			  Type, StateList, br(write(OldComment))],
 		 New_P_string),
-	chop_list(New_P_string, [OKd, IsNowExcl, NewComment]).
+	chop_list(New_P_string, [OKd, NewComment | NewState]).
 
 tk_get_pref(ResourceName, ResourceValue) :-
 	safe_tcl_eval(['PrefValue', write(custom(ResourceName)),

@@ -1287,24 +1287,34 @@ proc CloseProgressBox {} {
     destroy .progress
 }
 
-proc RelationCheck {parent title attr init_exc init_comment} {
+proc RelationCheck {parent title type state init_comment} {
     global relation
     
     set t [toplevel .relcheck -bd 4]
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
     wm title $t "Properties of $title"
-    set relation(isexclusive) $init_exc
     frame .relcheck.top
-    TitleFrame .relcheck.top.left -text "Association options:"
+    TitleFrame .relcheck.top.left -text "[string toupper $type 0 0] options:"
     set f [.relcheck.top.left getframe]
-    if {[string equal exclusive $attr]} {
-	set text "Exclusive role"
-    } else {
-	set text "Use values in\nsame time step"
+
+    switch $type {
+	influence {
+	    set entries {"Use values made\nin same time step" use_sofar}
+	} relation {
+	    set entries {"Exclusive role" exclusive \
+			     "Allow base\ninstance lookup" can_lookup}
+	}
     }
-    pack [checkbutton $f.exclusive -text $text \
-	      -variable relation(isexclusive) -offvalue 0 -onvalue 1] -anchor w
+    foreach {text attr} $entries {
+	pack [checkbutton $f.$attr -text $text \
+	      -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
+	set relation($attr) [lindex $state 0]
+	set state [lrange $state 1 end]
+	if {$relation($attr)==-1} {
+	    $f.$attr configure -state disabled
+	}
+    }
     pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
     frame .relcheck.top.right
     pack [button .relcheck.top.right.bdone \
@@ -1326,10 +1336,13 @@ proc RelationCheck {parent title attr init_exc init_comment} {
     grab .relcheck
     tkwait variable relation(done)
     grab release .relcheck
-    set newComment [$f.comment get 1.0 end]
+    set newComment [string trimright [$f.comment get 1.0 end]]
     destroy .relcheck
-    
-    return [list $relation(done) $relation(isexclusive) $newComment]
+    set results [list $relation(done) $newComment]
+    foreach {text attr} $entries {
+	lappend results $relation($attr)
+    }
+    return $results
 }
 
 proc GetFindText {parent} {
