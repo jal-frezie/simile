@@ -1178,16 +1178,13 @@ input_params_in(Vars, SmPath, SmStep,
 	vars_only(Inds, VarInds),
 	(ParamType = 2,
 	    (Type = function, Step = -1, Wait = [];
-	    Type = init_function, Step = 0, Wait = [on_reset]),
-	    UseInds = VarInds;
+	    Type = init_function, Step = 0, Wait = [on_reset]);
 	ParamType = 1,
 	    (Type = function, Step = SmStep, Wait = [time];
-	    Type = init_function, Step = 0, Wait = [on_reset]),
-	    member(UseInds, [[_], []]), /* at most one index for a slider */
-	    suffix(UseInds, VarInds)),
-	length(UseInds, Count),
+	    Type = init_function, Step = 0, Wait = [on_reset])),
+	length(VarInds, Count),
 	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
-		      | UseInds].
+		      | VarInds].
 
 vars_only(List, AllVar) :-
 	select(NonVar, List, Rest),
