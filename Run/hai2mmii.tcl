@@ -6,7 +6,7 @@
 # definitions that rae required for this purpose.
 
 proc do_model {node what args} {
-    global running_c modelError model_id instance_id model_prog
+    global running_c errorInfo model_id instance_id model_prog
     
     if {![info exists model_id($node)]} {
 	WarnNoProgram $node
@@ -30,13 +30,14 @@ proc do_model {node what args} {
 	set head ::AME_model<>::$mproc
     }
 
-    if {[catch {eval do_for_node $node $head $args}]} {
-	set whoopsie [lindex $modelError 0]
+    if {[catch {eval $head $args}]} {
+	set errorList [split $errorInfo \n]
+	set whoopsie [lindex $errorList 0]
 #	ShowMessage "$whoopsie doing model $what" error \
 #	    "$what during $action of the model at time $mtime caused this: \
 #	    $errorInfo" ok
 #	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
-#puts "Urrr!! Urrr!! Urrr!! $modelError"
+#tk_messageBox -message "Urrr!! Urrr!! Urrr!! $errorInfo"
 	switch $what {
 	    eval {set operation "calculate the value of"}
 	    update {set operation "update the state"}
@@ -46,8 +47,7 @@ proc do_model {node what args} {
 	if {$model_id($node)} {
 	    set target "a value"
 	} else {
-	    set modelLine [lindex $modelError end-4] ;# was 5 then 10
-#puts $modelLine
+	    set modelLine [lindex $errorList end-5]
 	    regexp { (\d+)\)$} $modelLine spare lineNo
 	    set mStream [open $model_prog($node) r]
 	    set mLine {}
@@ -169,18 +169,18 @@ proc MakeContext {levels} {
 }
 
 proc SetStep {node time phase} {
-    global model_id
+    global model_id ts dts
     if {![info exists model_id($node)]} {
 	WarnNoProgram $node
     }
     
     if {$model_id($node)} {
 #puts "setstep $time $phase"
-	do_for_node $node c_setstepmodel $time $phase
+	c_setstepmodel $time $phase
     } elseif {$phase<0} { ;# lazy
-	do_for_node $node set ts([expr -$phase]) $time
+	set ts([expr -$phase]) $time
     } else {
-	do_for_node $node set dts($phase) $time
+	set dts($phase) $time
     }
 }
 
@@ -458,40 +458,39 @@ proc c_getvalue {topNode node action} {
 }
 	    
 proc GetTclCompProperty {topNode prop args} {
-    global running_c
+    global running_c nodecount nodedata
     set node [lindex $args 0]
     set set [lrange $args 1 end]
-    set nodecount [do_for_node $topNode set nodecount]
+#    set nodecount [do_for_node $topNode set nodecount]
     # first do cases that don't need any other data
     switch -regexp $prop {
 	Objects {
 	    set result {}
 	    for {set record 1} {$nodecount>$record} {incr record} {
-		lappend result [lindex [do_for_node $topNode \
-					    set nodedata($record)] 0]
+		lappend result [lindex $nodedata($record) 0]
 	    }
 	    return $result
 	} Class|Type|Eval {
 	    array set propData [list Class 7 Type 0 Eval 1]
-	    return [getinfo $topNode $node $propData($prop)]
+	    return [getinfo $node $propData($prop)]
 	} Dims {
-	    return [getinfo $topNode $node 2]
+	    return [getinfo $node 2]
 	} Graph {
-	    set index [getinfo $topNode $node 4]
+	    set index [getinfo $node 4]
 	    if {[llength $set]} {
-		eval {do_for_node $topNode setup_graph_data $index} $set
+		eval {setup_graph_data $index} $set
 	    } else {
-		return [do_for_node $topNode graph_table 21 $index]
+		return [graph_table 21 $index]
 	    }
 	} Caption {
-	    set numericPath [getinfo $topNode $node 3]
+	    set numericPath [getinfo $node 3]
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
 	    for {set level 1} {$level < [llength $numericPath] - 1} \
 		{incr level} {
 		    set subpath [lrange $numericPath 0 $level]
 		    lappend subpath 0
 		    for {set record 1} {$nodecount>$record} {incr record} {
-			set line [do_for_node $topNode set nodedata($record)]
+			set line $nodedata($record)
 			if {[ListSameNumbers [lindex $line 4] $subpath]} {
 			    append fullPath / [lindex $line 9]
 			    break
@@ -505,7 +504,7 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	} IdFromCapt {
 	    for {set record 1} {$nodecount>$record} {incr record} {
-		set id [lindex [do_for_node $topNode set nodedata($record)] 0]
+		set id [lindex $nodedata($record) 0]
 		if {[string compare $node \
 			 [GetTclCompProperty $topNode Caption $id]] == 0} {
 		    return $id
@@ -513,21 +512,21 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	    return nomatch
 	} MinVal {
-	    getinfo $topNode $node 5
+	    getinfo $node 5
 	} MaxVal {
-	    getinfo $topNode $node 6
+	    getinfo $node 6
 	} Value {
 	    if {![info exists running_c]} {
 		WarnNoData $topNode
 	    }	
-	    return [do_for_node $topNode tcl_insert $node [lindex $set 0]]
+	    return [tcl_insert $node [lindex $set 0]]
 	}
     }
 }
 	    
-proc getinfo {topNode node field} {
-    do_for_node $topNode getinfo $node $field
-}
+#proc getinfo {topNode node field} {
+#    do_for_node $topNode getinfo $node $field
+#}
 
 # this could be more efficient
 
@@ -538,9 +537,9 @@ proc GetPhaseCount {topNode} {
 	return nomatch
     }	
     if {$model_id($topNode)} {
-	return [do_for_node $topNode c_setstepmodel 0 0]
+	return [c_setstepmodel 0 0]
     } else {
-	return [do_for_node $topNode set phasecount]
+	return $phasecount
     }
 }
 

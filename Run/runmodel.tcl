@@ -11,6 +11,8 @@ source ../Run/graphs.tcl
 source ../Run/utility.tcl
 source ../Run/hai2mmii.tcl
 
+source ../Run/support.tcl
+
 # botch -- mre.tcl has to be loaded after the other tcls or it doesn't
 # work properly
 
@@ -63,19 +65,8 @@ proc RestingColour {node} {
 }
     
 proc GetNodeFromFocus {} {
-    global window_info helperTable
-    set mHost [winfo toplevel [focus]]
-    if {[info exists window_info($mHost.canvas,top_node)]} {
-	return $window_info($mHost.canvas,top_node)
-    } else {
-#	do same thing for mre
-#puts "mHost $mHost pairs [array get helperTable *,whichRunEnv]"
-	foreach {inds val} [array get helperTable *,whichRunEnv] {
-	    if {[string equal $val $mHost]} {
-		return [string range $inds 0 end-12]
-	    }
-	}
-    }
+    global myNode
+    return $myNode
 }
 
 # OK I have been having problems with people duplicating IO tool programs
@@ -231,10 +222,9 @@ proc kill_helper_window { winId } {
         }
 	if {[info exists runState($topNode,helperId)]} {
 	    if {[string equal $winId $runState($topNode,helperId)]} {
-		if {[string equal start $helperTable(RunControl)::sendvars($topNode,currentMode)]} {
+#		if {[string equal start $helperTable(RunControl)::sendvars($topNode,currentMode)]} {
 #		    set kill_on_finish 1
-		    TryToKill $topNode
-		}
+#		}
 #		set mode kill
 		unset runState($topNode,helperId)
 	    }
@@ -367,6 +357,8 @@ proc SaveView {} {
     }
 }
 
+package require mime
+
 proc MimifySHF {inFile outFile origin} {
     global env
     set PartType "application/x-simile"
@@ -399,7 +391,7 @@ proc LoadView {} {
 
 proc CreateView {node oldPath} {
     global mimeSquirter simtmpdir errorInfo helperTable
-    if {[catch { 
+    if {[catch {
 	set multiT [mime::initialize -file $oldPath]
 	set origVersion [mime::getheader $multiT Simile-Version]
 	set origin [mime::getheader $multiT Simile-Origin]
@@ -500,6 +492,27 @@ proc TellAllHelpers {node fun args} {
     }
 }
 
+# this saves us deleting all the do_for_nodes in the part of the program 
+# that has been moved to the same executable as the model code
+proc do_for_node {dummyNode args} {
+    eval $args
+}
+
+# Other stuff related to reorganization
+proc KickOff {nMyNode nRunHow nSimtmpdir} {
+    global myNode ;# a stopgap, we shouldn't need it
+    global runHow custom runState simtmpdir
+
+    set myNode $nMyNode
+    set runHow $nRunHow
+    set simtmpdir $nSimtmpdir
+    set custom(prefDir) [file dirname $nSimtmpdir]
+    set runState($nMyNode,modelRunning) 0
+    LoadIconImages
+    MakeHelperMenu
+    wm withdraw .
+}
+
 proc ScrubRun {node times} {
     global runState model_id instance_id
     #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
@@ -508,10 +521,6 @@ proc ScrubRun {node times} {
     set runState($node,modelRunning) 0
     if {$times && [info exists runState($node,currentTime)]} {
         unset runState($node,currentTime)
-    }
-    if {[NowExecuting $node]} {
-	TryToKill $node
-	return
     }
     if {[info exists model_id($node)]} {
         if {$model_id($node)} {
@@ -533,10 +542,16 @@ proc ScrubRun {node times} {
 	    }
         }
         unset model_id($node)
-	ToggleIOToolMenu $node
     }
 }
 
+proc GetShortVals {node plName transList limit} {
+    set text [lindex [GetCompProperty $node Value $plName] 0]
+    set count [ShrinkValueList text $limit]
+    set text [PrettifyValList [TransEnums $transList $text]]
+    return [list $count $text]
+}
+    
 ############################## snap: start ###################################
 proc snap {topNode node} {
     global runState
@@ -759,7 +774,8 @@ proc StartRun {node} {
     if {[info exists helperTable($node,whichRunEnv)]} {
 	set fpParent $helperTable($node,whichRunEnv)
     } else {
-	set fpParent [FindNodeTopWin $node]
+#	set fpParent [FindNodeTopWin $node]
+	set fpParent {}
     }
     set runState($node,modelRunning) 1
     if {[FileParamDialogue $node $fpParent 0]<1} {
@@ -970,14 +986,14 @@ proc load_dll {topNode lang progDir id node incs} {
 	}
 	# This won't catch defns in subdirectories
         foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
-            do_for_node $topNode source $fnFile
+            source $fnFile
         }
         foreach fnFile $incs {
-            do_for_node $topNode source $fnFile
+            source $fnFile
         }
         set model_prog($topNode) $progDir/model.tcl
-	do_for_node $topNode source $model_prog($topNode)
-	if {![catch {do_for_node $topNode set simile_version} buildV]} {
+	source $model_prog($topNode)
+	if {![catch {set simile_version} buildV]} {
 	    return [expr $buildV==$env(SIMILE_VERSION)]
         } else {
             return 0
@@ -987,8 +1003,7 @@ proc load_dll {topNode lang progDir id node incs} {
 	if {![file exists $progFile]} {
 	    return 0
 	}
-        if {[catch {do_for_node $topNode loadmodel $progFile $node} \
-		 new_model_id]} {
+        if {[catch {loadmodel $progFile $node} new_model_id]} {
 	    if {[PrefValue custom(hackBreak) hackBreak]} {
 		ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $new_model_id -- the program will attempt to build another one." ok
 	    }
@@ -1062,96 +1077,6 @@ proc FindPhase {node submodel} {
         }
     }
     return -1
-}
-
-proc compile_c {workingDir} {
-    global tcl_platform env
-
-    if {[PrefValue custom(hackBreak) hackBreak]} {
-        ShowMessage {Code editing opportunity} info \
-                "About to compile model.cpp in $workingDir" ok
-    }
-    set oldDir [pwd]
-    cd $workingDir
-# get a so far unused file name
-    set serial [newInt]
-    set TARGET model${serial}[info sharedlibextension]
-    while {[file exists $TARGET]} {
-	set serial [newInt]
-	set TARGET model${serial}[info sharedlibextension]
-    }
-    set TOOLDIR $oldDir/../Run
-    set TCL [file dirname [file dirname [info library]]]
-    #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
-    scan [info tclversion] {%d.%d} MAJ MIN
-    if {[catch {switch $tcl_platform(platform) {
-        unix {
-            if {[string match Darwin $tcl_platform(os)]} {
-                exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
-                exec g++ -dynamiclib -o $TARGET objtemp.o
-            } else {
-                exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
-                exec g++ -shared -o $TARGET objtemp.o
-            }
-        }
-        windows {
-            set TOOLDIR [file attributes $TOOLDIR -shortname]
-            if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
-                set dll ame_dll${MAJ}${MIN}
-                switch $tcl_platform(os) {
-                    {Windows NT} {
-                        exec cmd /c start /min g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-                        exec cmd /c start /min dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
-                    }
-                    {Windows 95} {
-                        exec start /m g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-                        exec start /m dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
-                    }
-                }
-                file delete exptemp.exp
-
-                # Method using command line calls to MSVC 4.0 or later -- works well
-            } else {
-                set TOOLS32 [file dirname $env(MSVCDIR)/any]
-                exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
-                        -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
-                        -I. -I$TOOLS32/include -I$TOOLDIR \
-                        -Foobjtemp.o model.cpp
-                exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
-                        -align:0x1000 /MACHINE:IX86 \
-                        -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
-                        $TOOLDIR/../System/lib/Stubs/ame_dll${MAJ}${MIN}.lib \
-                        $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
-                        $TOOLS32/lib/oldnames.lib objtemp.o
-            }
-            # Method using command line calls to Borland C++ 4.0 or later -- not finished
-
-            #	set TOOLS32 "c:/program files/borland/cbuilder4"
-            #	exec $TOOLS32/bin/bcc32.exe -Ox -c -nologo -o$object \
-            #		-DWIN32 -D_WIN32 -D_DLL -D_X86_=1 -DMODELCODE="$c_prog" \
-            #		-I. -I$TOOLS32/include -I$TCL/include $TOOLDIR/support.cpp
-
-
-
-            #	exec $TOOLS32/bin/ilink32.exe -Tpd $object $TARGET $TCL/lib/tcl${MAJ}${MIN}.lib
-            # Method using MSVC's auto-generated Make file -- hangs for some
-            # reason
-
-            #	exec $TOOLS32/bin/nmake $TOOLDIR/amemodel/amemodel.mak
-            #	file rename $TOOLDIR/amemodel/debug/amemodel.dll $TARGET
-
-        }
-    }} chuckup]} {
-	set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try running the model in Tcl."
-	BuildProblem none none $badCompile user
-	set serial -1
-    } else {
-    #    file delete $c_prog
-	file delete objtemp.o
-    }
-    # do not allow an old dcf to be saved with a new model
-    cd $oldDir
-    return $serial
 }
 
 proc ListSameNumbers {list1 list2} {

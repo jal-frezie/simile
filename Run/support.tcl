@@ -408,16 +408,37 @@ proc load_c_stub {} {
 
 load_c_stub
 
-if {[string equal process $runHow]} {
-    proc BringParameter {args} {
-	puts [list get $args]
-	return [gets stdin]
+#if {[string equal process $runHow]} {
+#    proc BringParameter {args} {
+#	puts [list get $args]
+#	return [gets stdin]
+#    }
+#}
+#
+
+proc do_in_editor {args} {
+    puts [list get $args]
+    set result [gets stdin]
+    set info [lindex $result 1]
+    switch [lindex $result 0] {
+	err {
+	    error [lindex $info 0] [join [lrange $info 1 end] \n]
+	} res {
+	    return $info
+	}
     }
+}
+    
+proc PrefValue {arrVal val} {
+    return [do_in_editor PrefValue $arrVal $val]
+}
+
+proc GetTransTable {val} {
+    return [do_in_editor GetTransTable $val]
 }
 
 proc do {argList} {
-    global this simile_version ts dts phasecount nodecount nodedata errorInfo
-    global runHow
+    global runHow errorInfo
 
     if {[catch $argList response]} {
 	set result [list err [split $errorInfo \n]]

@@ -178,7 +178,7 @@ namespace eval runcontrol33857 {
 		}
 		return
 	    }
-	    switch -regexp [CheckUpToDate $node $action] {
+	    switch -regexp [do_in_editor CheckUpToDate $node $action] {
 		yes|cancel {
 		    return
 		} no {

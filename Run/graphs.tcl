@@ -812,7 +812,7 @@ proc AddEntry {winId topNode node mustShow isInput} {
 # bit of voodoo...get table relating numerical indices of node to enymerated
 # types (from prolog) and use to translate array bounds. Do this first because
 # there will be null entries in the table for vm model levels.
-    set trans [GetTransTable $node]
+    set trans [do_in_editor GetTransTable $node]
     if {$isInput} {
 	set nodeDims [linsert $nodeDims 0 TIME]
 	set trans [linsert $trans 0 {}]
@@ -968,7 +968,7 @@ proc AcceptData {winId topNode compName complain} {
     if {$dataChanged} {
 #	set msgs(param_source_$compName) Unsaved
 # only if the actual entry field has been edited
-	set trans [GetTransTable $node]
+	set trans [do_in_editor GetTransTable $node]
 
 	# Now replace each -1 in the dims with the id of the by-record
 	# submodel it represents
@@ -1352,7 +1352,7 @@ proc MergeParams {topNode smPath oldPath interactive} {
 			  (reference to $VFile)]
 	    } else {
 		set node [GetCompProperty $topNode IdFromCapt $restoredComp]
-		set trans [GetTransTable $node]
+		set trans [do_in_editor GetTransTable $node]
 		if {[string equal INPUT \
 			 [GetCompProperty $topNode Eval $node]]} {
 		    set trans [linsert $trans 0 {}] ;# dont translate times
@@ -1559,7 +1559,7 @@ proc UpdateTimeSeries {topNode newTime} {
 #puts "set inputSrc($useTime) $paramData($node,$useTime)"
 #		return
 #	    }
-	    set trans [lindex [GetTransTable $node] end]
+	    set trans [lindex [do_in_editor GetTransTable $node] end]
 	    foreach tsValue [concat [array names paramData $node,$useTime] \
 				 [array names paramData $node,$useTime,*]] {
 #puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"

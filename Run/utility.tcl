@@ -102,16 +102,8 @@ proc ChooseFile { preferred title canbenew } {
     global __tk_filedialog chosenPaths
 
     set fileType [file extension $preferred]
-    set egDir [PrefValue custom(prefDir) prefDir]/Examples
-    if {[info exists chosenPaths($fileType)]} {
-	set __tk_filedialog(selectPath) $chosenPaths($fileType)
-    } elseif {[info exists chosenPaths(latest)]} {
-	set __tk_filedialog(selectPath) $chosenPaths(latest)
-    } elseif {[info exists $egDir]} {
-	set __tk_filedialog(selectPath) $egDir
-    } else {
-	set __tk_filedialog(selectPath) [pwd]
-    }
+    set __tk_filedialog(selectPath) [do_in_editor GetPathChoice $fileType]
+
 # __tk_etc should set starting directory, but just in case...
     set prevDir [pwd]
     cd $__tk_filedialog(selectPath)
@@ -150,18 +142,9 @@ proc ChooseFile { preferred title canbenew } {
     set chosenFile [eval $cmd $switches]
     cd $prevDir
     if {[string compare $chosenFile {}]} {
-	RecordPathChoice $fileType $chosenFile $recordEntry
+	do_in_editor RecordPathChoice $fileType $chosenFile $recordEntry
     }
     return $chosenFile
-}
-
-proc RecordPathChoice {fileType chosenFile recordEntry} {
-    global chosenPaths custom
-    set chosenPaths($fileType) \
-	    [set chosenPaths(latest) [file dirname $chosenFile]]
-    if {$recordEntry} {
-	set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
-    }
 }
 
 # utility procedure to fill in some holes in Tcl8.0
@@ -348,10 +331,9 @@ proc RemovePopup {args} {
 proc AddPopupMessage {text colour args} {
     set limit 500
     if {[llength $args]} {
-	set count [ShrinkValueList text $limit] 
-# this shrinks $text if big
-#puts "Shrunken list is $text"
-	set text [PrettifyValList [TransEnums [lindex $args 0] $text]]
+	set combo [eval do_for_node $args $limit]
+	set count [lindex $combo 0]
+	set text [lindex $combo 1]
     } else {
 	set count 0
     }
@@ -432,6 +414,15 @@ proc CountValues {text} {
             incr tot [CountValues [lindex $text $n]]
         }
         return $tot
+    }
+}
+
+proc SquirtMime {args} {
+    global mimeSquirter
+    if {[string match end [lindex $args 0]]} {
+        close $mimeSquirter
+    } else {
+        puts -nonewline $mimeSquirter [lindex $args 1]
     }
 }
 

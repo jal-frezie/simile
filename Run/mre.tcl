@@ -55,7 +55,7 @@ namespace eval RunEnv {
             [list \
             [list clear.gif "Clear all displays" "ClearView"]]\
             [list \
-            [list mainwin.gif "Go to Model Window" "RaiseModelWindow"]]]
+            [list mainwin.gif "Go to Model Window" "::RunEnv::RaiseModelWindow"]]]
     
     # A top level window to contain the helpers
     proc Create { node } {
@@ -220,7 +220,13 @@ namespace eval RunEnv {
         set CurrentContainer $CurrentContainers($node)
         set dp0 $dp0s($node)
     }
-    
+
+    proc RaiseModelWindow {} {
+	variable currentNode
+
+	do_in_editor RaiseModelWindow $currentNode
+    }
+
     proc InvokeFPDialogue {} {
         global helperTable runState
         variable currentNode
@@ -1311,6 +1317,14 @@ proc NewMreHelperWindow {node helperId helperTitle} {
     }
     
     return $winId
+}
+
+proc RaiseMREFor {node} {
+    global helperTable
+
+    set myMre $helperTable($node,whichRunEnv)
+    wm deiconify $myMre
+    raise $myMre
 }
 
 # A top level window to contain the helpers
