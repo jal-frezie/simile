@@ -413,10 +413,12 @@ tk_do_disag_dialog(Win, Caption, [Colour, Type, Fatness, CountList, Step,
 			  Type, Fatness, br(Count), Step, br(write(Comment)),
 			 EnumLists | Choices], New_P_string),
 	chop_list(New_P_string, ResultListN),
-	append(ResultList0, [EnumTypeList], ResultListN),
-	chop_list(EnumTypeList, EnumTypeSpecLists),
-	all(output, chop_list, [build(EnumTypeSpecLists), build(EnumTypes)]),
-	append(ResultList0, [EnumTypes], ResultList).
+	(append(ResultList0, [EnumTypeList], ResultListN), !,
+	    chop_list(EnumTypeList, EnumTypeSpecLists),
+	    all(output, chop_list,
+		[build(EnumTypeSpecLists), build(EnumTypes)]),
+	    append(ResultList0, [EnumTypes], ResultList);
+	ResultList = []).
 
 tk_do_relation_dialog(Win, Caption, IsExcl, IsDelay, OldComment,
 		      OKd, IsNowExcl, IsNowDelay, NewComment) :-
