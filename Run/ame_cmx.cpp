@@ -1376,6 +1376,15 @@ extern "C" int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
 
 /* String to use as secret */
 char secret[] = "R^6tf*Y}@?>H(U(ddJ(::{><Lu8H*G";
+#ifdef SIM_EVALUATION
+char edition[]="evaluation";
+#endif
+#ifdef SIM_STANDARD
+char edition[]="standard";
+#endif
+#ifdef SIM_ENTERPRISE
+char edition[]="enterprise";
+#endif
 
 void crash () {
  /* oh dear. */
@@ -1400,7 +1409,7 @@ extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
 		   NULL) != TCL_OK) {
      return TCL_ERROR;
    }
-   if (strcmp(SIM_EDITION, Tcl_GetVar(interp, "h76rt4g7", 0))) {
+   if (strcmp(edition, Tcl_GetVar(interp, "h76rt4g7", 0))) {
      crash();
    }
    /* ::sha1::hmac "Expensive" $ModelText */
@@ -1461,7 +1470,7 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
        /* Data about version etc held in dll for safety and convenience:
 	these will become globals because we are not in the scope of a
        procedure */
-       Tcl_SetVar2(interp, "userinfo", "edn", SIM_EDITION, 0);
+       Tcl_SetVar2(interp, "userinfo", "edn", edition, 0);
        Tcl_SetVar2Ex(interp, "userinfo", "final_expiry", 
 		     Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
        Tcl_SetVar2Ex(interp, "userinfo", "days_after_install", 
