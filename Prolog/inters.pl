@@ -808,14 +808,14 @@ make_intermediates(
 			SourceRef = ValRef);
 		 ValRef = sofar(SourceRef),
 		    UnitList = [Units];
-		 fn_or_op(Lop, RUnits, Arg_template),
+		 fn_or_op(Lop, MxOp, RUnits, Arg_template),
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units),
-		    SourceRef = ValRef;
-		 fn_or_op(Lop, RUnits, Arg_template),
+		    SourceRef =.. [MxOp | ResultList];
+		 fn_or_op(Lop, _, RUnits, Arg_template),
 		    raise_exception(mismatched_units(Source,
 						     UnitList, Arg_template));
-		 fn_or_op(Lop, RUnits, WrongLen),
+		 fn_or_op(Lop, _, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
 		    raise_exception(wrong_no_of_args(Source, Op,
 						     Arity, FnArity));
@@ -858,11 +858,14 @@ raise_units(Base, Num, Units) :-
 	raise_units(Base, Next, Mid),
 	Units =.. [Do, Mid, Base].
 
-fn_or_op(Op, RUnits, AUnits) :-
+fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	var(Op), !;
-	function(_Cat, Op, RUnits, AUnits);
-	builtin(_Cat, Op, RUnits, AUnits);
-	operator(Op, RUnits, AUnits).
+	name(Op, OpStr),
+	(function(_Cat, MxOp, RUnits, AUnits);
+	builtin(_Cat, MxOp, RUnits, AUnits);
+	operator(MxOp, RUnits, AUnits)),
+	name(MxOp, MxOpStr),
+	lower(MxOpStr, OpStr).
 
 dissociate(SubArgs, [later(Arg) | UseArgs]) :- 
 	select(made_at(Arg, _), SubArgs, Rest), !,
