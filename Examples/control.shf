@@ -1,37 +1,115 @@
-108 90 780 580
-277 2
-2 237
-notebook .mre.mainframe.frame.mainpw.mainDisplayPane.notebook
-page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/1 Page_1
-.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/1 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow
-panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow vertical
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow.pane0
-container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow.pane0
-plotter1.25
-/WIN/,X_scalestep 0 /WIN/,x_Ylabels 25 /WIN/,yborder_bottom 30 /WIN/,xborder_right 15 /WIN/,ylength 385 /WIN/,Ymax_axis -1e100 /WIN/,y_Ylabels 0 /WIN/,Ylabels Temperature /WIN/,FewXAxisTicks false /WIN/,Yprecision 0 /WIN/,AxisDivisions 10 /WIN/,Xmin_data 1e20 /WIN/,grapharea_colour white /WIN/,grid on /WIN/,Ymajorstep 2 /WIN/,Ymin_data 1e100 /WIN/,Y_min_scalestep 0 /WIN/,canvas_colour #e0e0e0 /WIN/,Xmax_data -1e20 /WIN/,y_Xlabel 10 /WIN/,xborder_left 50 /WIN/,Ymax_data -1e100 /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Y_max_scalestep 0 /WIN/,pointer 1 /WIN/,yborder_top 30 /WIN/,topright 1 /WIN/,Xminorstep 0.5 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,ywindow_size 0 /WIN/,Xprecision 0 /WIN/,redraw 0 /WIN/,Yvars node00002 /WIN/,Xmajorstep 1 /WIN/,fontValues {Helvetica 8 normal} /WIN/,x_Xlabel 100 /WIN/,xstep_Ylabels 120 /WIN/,nodeCount 1 /WIN/,ystep_Ylabels 12 /WIN/,Xmin_axis 1e100 /WIN/,IdArrayElements false /WIN/,fontTitle {Helvetica 8 normal} /WIN/,Ymin_axis 1e100 /WIN/,xlength 395 /WIN/,Yminorstep 0.5 /WIN/,xwindow_size 0 /WIN/,Xmax_axis -1e100
-page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/2 Page_2
-.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/2 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow
-panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow vertical
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0
-panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0.panedwindow horizontal
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0.panedwindow.pane0
-container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0.panedwindow.pane0
-plotter1.25
-/WIN/,fontLabels {Helvetica 8 normal} /WIN/,X_scalestep 0 /WIN/,ywindow_size 0 /WIN/,Xprecision 0 /WIN/,Y_min_scalestep 0 /WIN/,Yprecision 0 /WIN/,Yvars node00018 /WIN/,xstep_Ylabels 120 /WIN/,y_Xlabel 10 /WIN/,Xmin_axis 1e100 /WIN/,Ymin_axis 1e100 /WIN/,ylength 114 /WIN/,redraw 0 /WIN/,AxisDivisions 10 /WIN/,x_Xlabel 100 /WIN/,yborder_bottom 30 /WIN/,grapharea_colour white /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,fontTitle {Helvetica 8 normal} /WIN/,topright 1 /WIN/,xlength 141 /WIN/,Xmax_axis -1e100 /WIN/,x_Ylabels 25 /WIN/,xborder_right 15 /WIN/,Ymax_axis -1e100 /WIN/,y_Ylabels 0 /WIN/,Ylabels {{Gas flow}} /WIN/,FewXAxisTicks false /WIN/,Xmin_data 1e20 /WIN/,Xmajorstep 1 /WIN/,Ymin_data 1e100 /WIN/,canvas_colour #e0e0e0 /WIN/,fontValues {Helvetica 8 normal} /WIN/,Y_max_scalestep 0 /WIN/,yborder_top 30 /WIN/,xwindow_size 0 /WIN/,Tscale 0.709219858156 /WIN/,grid on /WIN/,Ymajorstep 2 /WIN/,nodeCount 1 /WIN/,ystep_Ylabels 12 /WIN/,xborder_left 50 /WIN/,IdArrayElements false /WIN/,Xminorstep 0.5 /WIN/,Xmax_data -1e20 /WIN/,Ymax_data -1e100 /WIN/,Yscale 8.77192982456e-06 /WIN/,pointer 1 /WIN/,Yminorstep 0.5
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0.panedwindow.pane1
-container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0.panedwindow.pane1
-plotter1.25
-/WIN/,IdArrayElements false /WIN/,fontTitle {Helvetica 8 normal} /WIN/,Xmax_axis -1e100 /WIN/,x_Ylabels 25 /WIN/,Ymax_axis -1e100 /WIN/,y_Ylabels 0 /WIN/,Xmin_data 1e20 /WIN/,Ymin_data 1e100 /WIN/,pointer 1 /WIN/,Yvars node00031 /WIN/,Xmajorstep 1 /WIN/,fontValues {Helvetica 8 normal} /WIN/,xstep_Ylabels 120 /WIN/,nodeCount 1 /WIN/,AxisDivisions 10 /WIN/,Ymajorstep 2 /WIN/,Y_min_scalestep 0 /WIN/,Xmax_data -1e20 /WIN/,Ymax_data -1e100 /WIN/,yborder_top 30 /WIN/,Xminorstep 0.5 /WIN/,redraw 0 /WIN/,Yminorstep 0.5 /WIN/,xwindow_size 0 /WIN/,yborder_bottom 30 /WIN/,xborder_right 15 /WIN/,ylength 114 /WIN/,FewXAxisTicks false /WIN/,grid on /WIN/,canvas_colour #e0e0e0 /WIN/,y_Xlabel 10 /WIN/,xborder_left 50 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,Xprecision 0 /WIN/,x_Xlabel 100 /WIN/,ystep_Ylabels 12 /WIN/,Xmin_axis 1e100 /WIN/,Ymin_axis 1e100 /WIN/,xlength 167 /WIN/,X_scalestep 0 /WIN/,Ylabels {{Valve position}} /WIN/,Yprecision 0 /WIN/,grapharea_colour white /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Y_max_scalestep 0 /WIN/,topright 1 /WIN/,ywindow_size 0
-sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0.panedwindow 0 215 2
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane/1
-container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane/1
-plotter1.25
-/WIN/,ylength 166 /WIN/,x_Xlabel 100 /WIN/,grapharea_colour white /WIN/,fontTitle {Helvetica 8 normal} /WIN/,xlength 395 /WIN/,Xmajorstep 1 /WIN/,Ymin_data 1e100 /WIN/,xborder_left 50 /WIN/,IdArrayElements false /WIN/,Ymax_data -1e100 /WIN/,Yvars arc00002 /WIN/,Xmin_axis 1e100 /WIN/,redraw 0 /WIN/,yborder_bottom 30 /WIN/,topright 1 /WIN/,Xmax_axis -1e100 /WIN/,Ylabels Heating /WIN/,fontValues {Helvetica 8 normal} /WIN/,yborder_top 30 /WIN/,Ymajorstep 2 /WIN/,grid on /WIN/,ystep_Ylabels 12 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,Xprecision 0 /WIN/,xstep_Ylabels 120 /WIN/,y_Xlabel 10 /WIN/,Ymin_axis 1e100 /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Ymax_axis -1e100 /WIN/,xborder_right 15 /WIN/,x_Ylabels 25 /WIN/,Y_max_scalestep 0 /WIN/,nodeCount 1 /WIN/,Xminorstep 0.5 /WIN/,pointer 1 /WIN/,Y_min_scalestep 0 /WIN/,Yprecision 0 /WIN/,AxisDivisions 10 /WIN/,y_Ylabels 0 /WIN/,FewXAxisTicks false /WIN/,Xmin_data 1e20 /WIN/,canvas_colour #e0e0e0 /WIN/,xwindow_size 0 /WIN/,Xmax_data -1e20 /WIN/,Yminorstep 0.5 /WIN/,ywindow_size 0 /WIN/,X_scalestep 0
-sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow 0 2 214
-page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/3 Page_3
-.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/3 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow
-panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow vertical
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0
-container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0
-tabular11510
-{{/Desktop/PID controller/Output} {/Desktop/PID controller/Integral Error} {/Desktop/PID controller/e} {/Desktop/PID controller/dPV}} {rows cols cols cols} {.mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0.container,1 {General 4 0} .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0.container,2 {General 4 0} .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0.container,3 {General 4 0} .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0.container,0 {General 4 0}}
+MIME-Version: 1.0
+Content-Disposition: attachment
+Content-Description: Simile I/O tool configuration file
+Simile-Version: 4.0
+Simile-Origin: mre
+Content-ID: <4781.1084374652.1@spirograph.ttc.ed.ac.uk>
+Content-Type: application/x-simile
+Content-Transfer-Encoding: base64
+
+OTIgMjkxICA3ODAgNTgwCjI3NyAyCjIgMjM3Cm5vdGVib29rIG5vdGVib29rCnBhZ2Ugbm90ZWJv
+b2sgcGFnZS8xIFRlbXBlcmF0dXJlCnBhbmVkd2luZG93IG5vdGVib29rLmZwYWdlLzEucGFuZWR3
+aW5kb3cgdmVydGljYWwKcGFuZSBub3RlYm9vay5mcGFnZS8xLnBhbmVkd2luZG93LnBhbmUwCmNv
+bnRhaW5lciBub3RlYm9vay5mcGFnZS8xLnBhbmVkd2luZG93LnBhbmUwCnBsb3R0ZXIxLjI1Ci9X
+SU4vLFhfc2NhbGVzdGVwIDAgL1dJTi8seF9ZbGFiZWxzIDI1IC9XSU4vLHlib3JkZXJfYm90dG9t
+IDMwIC9XSU4vLHhib3JkZXJfcmlnaHQgMTUgL1dJTi8seWxlbmd0aCAzODUgL1dJTi8sWW1heF9h
+eGlzIC0xZTEwMCAvV0lOLyx5X1lsYWJlbHMgMCAvV0lOLyxZbGFiZWxzIFRlbXBlcmF0dXJlIC9X
+SU4vLEZld1hBeGlzVGlja3MgZmFsc2UgL1dJTi8sWXByZWNpc2lvbiAwIC9XSU4vLEF4aXNEaXZp
+c2lvbnMgMTAgL1dJTi8sWG1pbl9kYXRhIDFlMjAgL1dJTi8sZ3JhcGhhcmVhX2NvbG91ciB3aGl0
+ZSAvV0lOLyxncmlkIG9uIC9XSU4vLFltYWpvcnN0ZXAgMiAvV0lOLyxZbWluX2RhdGEgMWUxMDAg
+L1dJTi8sWV9taW5fc2NhbGVzdGVwIDAgL1dJTi8sY2FudmFzX2NvbG91ciAjZTBlMGUwIC9XSU4v
+LFhtYXhfZGF0YSAtMWUyMCAvV0lOLyx5X1hsYWJlbCAxMCAvV0lOLyx4Ym9yZGVyX2xlZnQgNTAg
+L1dJTi8sWW1heF9kYXRhIC0xZTEwMCAvV0lOLyxZQ29sb3VycyB7IzAwMDBmZiAjZmYwMDAwICMw
+MGZmMDAgIzAwNzc3NyAjNzc3NzAwICM3NzAwNzcgIzIyMjI0NCAjNDQyMjIyICMyMjQ0MjJ9IC9X
+SU4vLFlfbWF4X3NjYWxlc3RlcCAwIC9XSU4vLHBvaW50ZXIgMSAvV0lOLyx5Ym9yZGVyX3RvcCAz
+MCAvV0lOLyx0b3ByaWdodCAxIC9XSU4vLFhtaW5vcnN0ZXAgMC41IC9XSU4vLGZvbnRMYWJlbHMg
+e0hlbHZldGljYSA4IG5vcm1hbH0gL1dJTi8seXdpbmRvd19zaXplIDAgL1dJTi8sWHByZWNpc2lv
+biAwIC9XSU4vLHJlZHJhdyAwIC9XSU4vLFl2YXJzIG5vZGUwMDAwMiAvV0lOLyxYbWFqb3JzdGVw
+IDEgL1dJTi8sZm9udFZhbHVlcyB7SGVsdmV0aWNhIDggbm9ybWFsfSAvV0lOLyx4X1hsYWJlbCAx
+MDAgL1dJTi8seHN0ZXBfWWxhYmVscyAxMjAgL1dJTi8sbm9kZUNvdW50IDEgL1dJTi8seXN0ZXBf
+WWxhYmVscyAxMiAvV0lOLyxYbWluX2F4aXMgMWUxMDAgL1dJTi8sSWRBcnJheUVsZW1lbnRzIGZh
+bHNlIC9XSU4vLGZvbnRUaXRsZSB7SGVsdmV0aWNhIDggbm9ybWFsfSAvV0lOLyxZbWluX2F4aXMg
+MWUxMDAgL1dJTi8seGxlbmd0aCAzOTUgL1dJTi8sWW1pbm9yc3RlcCAwLjUgL1dJTi8seHdpbmRv
+d19zaXplIDAgL1dJTi8sWG1heF9heGlzIC0xZTEwMApwYWdlIG5vdGVib29rIHBhZ2UvMiBCb2ls
+ZXIKcGFuZWR3aW5kb3cgbm90ZWJvb2suZnBhZ2UvMi5wYW5lZHdpbmRvdyB2ZXJ0aWNhbApwYW5l
+IG5vdGVib29rLmZwYWdlLzIucGFuZWR3aW5kb3cucGFuZTAKcGFuZWR3aW5kb3cgbm90ZWJvb2su
+ZnBhZ2UvMi5wYW5lZHdpbmRvdy5wYW5lMC5wYW5lZHdpbmRvdyBob3Jpem9udGFsCnBhbmUgbm90
+ZWJvb2suZnBhZ2UvMi5wYW5lZHdpbmRvdy5wYW5lMC5wYW5lZHdpbmRvdy5wYW5lMApjb250YWlu
+ZXIgbm90ZWJvb2suZnBhZ2UvMi5wYW5lZHdpbmRvdy5wYW5lMC5wYW5lZHdpbmRvdy5wYW5lMApw
+bG90dGVyMS4yNQovV0lOLyxmb250TGFiZWxzIHtIZWx2ZXRpY2EgOCBub3JtYWx9IC9XSU4vLFhf
+c2NhbGVzdGVwIDAgL1dJTi8seXdpbmRvd19zaXplIDAgL1dJTi8sWHByZWNpc2lvbiAwIC9XSU4v
+LFlfbWluX3NjYWxlc3RlcCAwIC9XSU4vLFlwcmVjaXNpb24gMCAvV0lOLyxZdmFycyBub2RlMDAw
+MTggL1dJTi8seHN0ZXBfWWxhYmVscyAxMjAgL1dJTi8seV9YbGFiZWwgMTAgL1dJTi8sWG1pbl9h
+eGlzIDFlMTAwIC9XSU4vLFltaW5fYXhpcyAxZTEwMCAvV0lOLyx5bGVuZ3RoIDExNCAvV0lOLyxy
+ZWRyYXcgMCAvV0lOLyxBeGlzRGl2aXNpb25zIDEwIC9XSU4vLHhfWGxhYmVsIDEwMCAvV0lOLyx5
+Ym9yZGVyX2JvdHRvbSAzMCAvV0lOLyxncmFwaGFyZWFfY29sb3VyIHdoaXRlIC9XSU4vLFlDb2xv
+dXJzIHsjMDAwMGZmICNmZjAwMDAgIzAwZmYwMCAjMDA3Nzc3ICM3Nzc3MDAgIzc3MDA3NyAjMjIy
+MjQ0ICM0NDIyMjIgIzIyNDQyMn0gL1dJTi8sZm9udFRpdGxlIHtIZWx2ZXRpY2EgOCBub3JtYWx9
+IC9XSU4vLHRvcHJpZ2h0IDEgL1dJTi8seGxlbmd0aCAxNDEgL1dJTi8sWG1heF9heGlzIC0xZTEw
+MCAvV0lOLyx4X1lsYWJlbHMgMjUgL1dJTi8seGJvcmRlcl9yaWdodCAxNSAvV0lOLyxZbWF4X2F4
+aXMgLTFlMTAwIC9XSU4vLHlfWWxhYmVscyAwIC9XSU4vLFlsYWJlbHMge3tHYXMgZmxvd319IC9X
+SU4vLEZld1hBeGlzVGlja3MgZmFsc2UgL1dJTi8sWG1pbl9kYXRhIDFlMjAgL1dJTi8sWG1ham9y
+c3RlcCAxIC9XSU4vLFltaW5fZGF0YSAxZTEwMCAvV0lOLyxjYW52YXNfY29sb3VyICNlMGUwZTAg
+L1dJTi8sZm9udFZhbHVlcyB7SGVsdmV0aWNhIDggbm9ybWFsfSAvV0lOLyxZX21heF9zY2FsZXN0
+ZXAgMCAvV0lOLyx5Ym9yZGVyX3RvcCAzMCAvV0lOLyx4d2luZG93X3NpemUgMCAvV0lOLyxUc2Nh
+bGUgMC43MDkyMTk4NTgxNTYgL1dJTi8sZ3JpZCBvbiAvV0lOLyxZbWFqb3JzdGVwIDIgL1dJTi8s
+bm9kZUNvdW50IDEgL1dJTi8seXN0ZXBfWWxhYmVscyAxMiAvV0lOLyx4Ym9yZGVyX2xlZnQgNTAg
+L1dJTi8sSWRBcnJheUVsZW1lbnRzIGZhbHNlIC9XSU4vLFhtaW5vcnN0ZXAgMC41IC9XSU4vLFht
+YXhfZGF0YSAtMWUyMCAvV0lOLyxZbWF4X2RhdGEgLTFlMTAwIC9XSU4vLFlzY2FsZSA4Ljc3MTky
+OTgyNDU2ZS0wNiAvV0lOLyxwb2ludGVyIDEgL1dJTi8sWW1pbm9yc3RlcCAwLjUKcGFuZSBub3Rl
+Ym9vay5mcGFnZS8yLnBhbmVkd2luZG93LnBhbmUwLnBhbmVkd2luZG93LnBhbmUxCmNvbnRhaW5l
+ciBub3RlYm9vay5mcGFnZS8yLnBhbmVkd2luZG93LnBhbmUwLnBhbmVkd2luZG93LnBhbmUxCnBs
+b3R0ZXIxLjI1Ci9XSU4vLElkQXJyYXlFbGVtZW50cyBmYWxzZSAvV0lOLyxmb250VGl0bGUge0hl
+bHZldGljYSA4IG5vcm1hbH0gL1dJTi8sWG1heF9heGlzIC0xZTEwMCAvV0lOLyx4X1lsYWJlbHMg
+MjUgL1dJTi8sWW1heF9heGlzIC0xZTEwMCAvV0lOLyx5X1lsYWJlbHMgMCAvV0lOLyxYbWluX2Rh
+dGEgMWUyMCAvV0lOLyxZbWluX2RhdGEgMWUxMDAgL1dJTi8scG9pbnRlciAxIC9XSU4vLFl2YXJz
+IG5vZGUwMDAzMSAvV0lOLyxYbWFqb3JzdGVwIDEgL1dJTi8sZm9udFZhbHVlcyB7SGVsdmV0aWNh
+IDggbm9ybWFsfSAvV0lOLyx4c3RlcF9ZbGFiZWxzIDEyMCAvV0lOLyxub2RlQ291bnQgMSAvV0lO
+LyxBeGlzRGl2aXNpb25zIDEwIC9XSU4vLFltYWpvcnN0ZXAgMiAvV0lOLyxZX21pbl9zY2FsZXN0
+ZXAgMCAvV0lOLyxYbWF4X2RhdGEgLTFlMjAgL1dJTi8sWW1heF9kYXRhIC0xZTEwMCAvV0lOLyx5
+Ym9yZGVyX3RvcCAzMCAvV0lOLyxYbWlub3JzdGVwIDAuNSAvV0lOLyxyZWRyYXcgMCAvV0lOLyxZ
+bWlub3JzdGVwIDAuNSAvV0lOLyx4d2luZG93X3NpemUgMCAvV0lOLyx5Ym9yZGVyX2JvdHRvbSAz
+MCAvV0lOLyx4Ym9yZGVyX3JpZ2h0IDE1IC9XSU4vLHlsZW5ndGggMTE0IC9XSU4vLEZld1hBeGlz
+VGlja3MgZmFsc2UgL1dJTi8sZ3JpZCBvbiAvV0lOLyxjYW52YXNfY29sb3VyICNlMGUwZTAgL1dJ
+Ti8seV9YbGFiZWwgMTAgL1dJTi8seGJvcmRlcl9sZWZ0IDUwIC9XSU4vLGZvbnRMYWJlbHMge0hl
+bHZldGljYSA4IG5vcm1hbH0gL1dJTi8sWHByZWNpc2lvbiAwIC9XSU4vLHhfWGxhYmVsIDEwMCAv
+V0lOLyx5c3RlcF9ZbGFiZWxzIDEyIC9XSU4vLFhtaW5fYXhpcyAxZTEwMCAvV0lOLyxZbWluX2F4
+aXMgMWUxMDAgL1dJTi8seGxlbmd0aCAxNjcgL1dJTi8sWF9zY2FsZXN0ZXAgMCAvV0lOLyxZbGFi
+ZWxzIHt7VmFsdmUgcG9zaXRpb259fSAvV0lOLyxZcHJlY2lzaW9uIDAgL1dJTi8sZ3JhcGhhcmVh
+X2NvbG91ciB3aGl0ZSAvV0lOLyxZQ29sb3VycyB7IzAwMDBmZiAjZmYwMDAwICMwMGZmMDAgIzAw
+Nzc3NyAjNzc3NzAwICM3NzAwNzcgIzIyMjI0NCAjNDQyMjIyICMyMjQ0MjJ9IC9XSU4vLFlfbWF4
+X3NjYWxlc3RlcCAwIC9XSU4vLHRvcHJpZ2h0IDEgL1dJTi8seXdpbmRvd19zaXplIDAKc2FzaCBu
+b3RlYm9vay5mcGFnZS8yLnBhbmVkd2luZG93LnBhbmUwLnBhbmVkd2luZG93IDAgMjE1IDIKcGFu
+ZSBub3RlYm9vay5mcGFnZS8yLnBhbmVkd2luZG93LnBhbmUvMQpjb250YWluZXIgbm90ZWJvb2su
+ZnBhZ2UvMi5wYW5lZHdpbmRvdy5wYW5lLzEKcGxvdHRlcjEuMjUKL1dJTi8seWxlbmd0aCAxNjYg
+L1dJTi8seF9YbGFiZWwgMTAwIC9XSU4vLGdyYXBoYXJlYV9jb2xvdXIgd2hpdGUgL1dJTi8sZm9u
+dFRpdGxlIHtIZWx2ZXRpY2EgOCBub3JtYWx9IC9XSU4vLHhsZW5ndGggMzk1IC9XSU4vLFhtYWpv
+cnN0ZXAgMSAvV0lOLyxZbWluX2RhdGEgMWUxMDAgL1dJTi8seGJvcmRlcl9sZWZ0IDUwIC9XSU4v
+LElkQXJyYXlFbGVtZW50cyBmYWxzZSAvV0lOLyxZbWF4X2RhdGEgLTFlMTAwIC9XSU4vLFl2YXJz
+IGFyYzAwMDAyIC9XSU4vLFhtaW5fYXhpcyAxZTEwMCAvV0lOLyxyZWRyYXcgMCAvV0lOLyx5Ym9y
+ZGVyX2JvdHRvbSAzMCAvV0lOLyx0b3ByaWdodCAxIC9XSU4vLFhtYXhfYXhpcyAtMWUxMDAgL1dJ
+Ti8sWWxhYmVscyBIZWF0aW5nIC9XSU4vLGZvbnRWYWx1ZXMge0hlbHZldGljYSA4IG5vcm1hbH0g
+L1dJTi8seWJvcmRlcl90b3AgMzAgL1dJTi8sWW1ham9yc3RlcCAyIC9XSU4vLGdyaWQgb24gL1dJ
+Ti8seXN0ZXBfWWxhYmVscyAxMiAvV0lOLyxmb250TGFiZWxzIHtIZWx2ZXRpY2EgOCBub3JtYWx9
+IC9XSU4vLFhwcmVjaXNpb24gMCAvV0lOLyx4c3RlcF9ZbGFiZWxzIDEyMCAvV0lOLyx5X1hsYWJl
+bCAxMCAvV0lOLyxZbWluX2F4aXMgMWUxMDAgL1dJTi8sWUNvbG91cnMgeyMwMDAwZmYgI2ZmMDAw
+MCAjMDBmZjAwICMwMDc3NzcgIzc3NzcwMCAjNzcwMDc3ICMyMjIyNDQgIzQ0MjIyMiAjMjI0NDIy
+fSAvV0lOLyxZbWF4X2F4aXMgLTFlMTAwIC9XSU4vLHhib3JkZXJfcmlnaHQgMTUgL1dJTi8seF9Z
+bGFiZWxzIDI1IC9XSU4vLFlfbWF4X3NjYWxlc3RlcCAwIC9XSU4vLG5vZGVDb3VudCAxIC9XSU4v
+LFhtaW5vcnN0ZXAgMC41IC9XSU4vLHBvaW50ZXIgMSAvV0lOLyxZX21pbl9zY2FsZXN0ZXAgMCAv
+V0lOLyxZcHJlY2lzaW9uIDAgL1dJTi8sQXhpc0RpdmlzaW9ucyAxMCAvV0lOLyx5X1lsYWJlbHMg
+MCAvV0lOLyxGZXdYQXhpc1RpY2tzIGZhbHNlIC9XSU4vLFhtaW5fZGF0YSAxZTIwIC9XSU4vLGNh
+bnZhc19jb2xvdXIgI2UwZTBlMCAvV0lOLyx4d2luZG93X3NpemUgMCAvV0lOLyxYbWF4X2RhdGEg
+LTFlMjAgL1dJTi8sWW1pbm9yc3RlcCAwLjUgL1dJTi8seXdpbmRvd19zaXplIDAgL1dJTi8sWF9z
+Y2FsZXN0ZXAgMApzYXNoIG5vdGVib29rLmZwYWdlLzIucGFuZWR3aW5kb3cgMCAyIDIxNApwYWdl
+IG5vdGVib29rIHBhZ2UvMyBUYWJsZV9vZl92YWx1ZXMKcGFuZWR3aW5kb3cgbm90ZWJvb2suZnBh
+Z2UvMy5wYW5lZHdpbmRvdyB2ZXJ0aWNhbApwYW5lIG5vdGVib29rLmZwYWdlLzMucGFuZWR3aW5k
+b3cucGFuZTAKY29udGFpbmVyIG5vdGVib29rLmZwYWdlLzMucGFuZWR3aW5kb3cucGFuZTAKdGFi
+dWxhcjExNTEwCnt7L1BJRCBjb250cm9sbGVyL091dHB1dH0gey9QSUQgY29udHJvbGxlci9JbnRl
+Z3JhbCBFcnJvcn0gey9QSUQgY29udHJvbGxlci9lfSB7L1BJRCBjb250cm9sbGVyL2RQVn19IHty
+b3dzIGNvbHMgY29scyBjb2xzfSB7MyB7R2VuZXJhbCA0IDB9IDAge0dlbmVyYWwgNCAwfSAxIHtH
+ZW5lcmFsIDQgMH0gMiB7R2VuZXJhbCA0IDB9fQpwYWdlIG5vdGVib29rIHBhZ2UvNCBJbnB1dHMK
+cGFuZWR3aW5kb3cgbm90ZWJvb2suZnBhZ2UvNC5wYW5lZHdpbmRvdyB2ZXJ0aWNhbApwYW5lIG5v
+dGVib29rLmZwYWdlLzQucGFuZWR3aW5kb3cucGFuZTAKY29udGFpbmVyIG5vdGVib29rLmZwYWdl
+LzQucGFuZWR3aW5kb3cucGFuZTAKc2xpZGUxMzkKCg==
+
