@@ -99,6 +99,10 @@ proc RunEnv::Create { ModelWin } {
                             {} -command {RunEnv::Destroy} }
             }
             "&Edit" all edit 0 {
+                {command "Co&py"    {} "Copy display" {} -command "RunEnv::CopyHelper $::RunEnv::CurrentContainer" }
+                {command "Cu&t"    {} "Cut display" {} -command "RunEnv::CutHelper $::RunEnv::CurrentContainer" }
+                {command "&Paste"    {} "Paste display" {} -command "::RunEnv::PasteHelper $::RunEnv::CurrentContainer" }
+                {separator}
                 {command "&Remove..."    {} "Remove a sheet" {} -command {::RunEnv::RemoveHelperPageDlg} }
                 {separator}
                 {command "&Clear all"    {} "Clear all sheets" {} -command {ClearView} }
@@ -635,6 +639,9 @@ proc RunEnv::SetCurrentContainer {win} {
     set tb1 [$mainframe gettoolbar 0]
     if {[winfo exists $win.container]} {
         $mreMenu entryconfigure Add -state disable
+        [$mainframe getmenu edit] entryconfigure Copy -state normal
+        [$mainframe getmenu edit] entryconfigure Cut -state normal
+        [$mainframe getmenu edit] entryconfigure Paste -state disable
         $tb1.bbox1 itemconfigure 2 -state disabled; # paste button
         $tb1.bbox3 itemconfigure 1 -state disabled; # Add Notebook button
         $tb1.bbox4 itemconfigure 0 -state disabled; # add helper buttons
@@ -663,6 +670,9 @@ proc RunEnv::SetCurrentContainer {win} {
         }
     } else  {
         $mreMenu entryconfigure Add -state normal
+        [$mainframe getmenu edit] entryconfigure Copy -state disable
+        [$mainframe getmenu edit] entryconfigure Cut -state disable
+        [$mainframe getmenu edit] entryconfigure Paste -state normal
         $tb1.bbox1 itemconfigure 2 -state normal; # paste button
         $tb1.bbox2 itemconfigure 1 -state normal
         $tb1.bbox2 itemconfigure 0 -state normal
