@@ -46,9 +46,9 @@ namespace eval RunEnv {
             [list new.gif "New display configuration" RunEnv::KillDisplays] \
             [list open.gif "Load a configuation of displays" RunEnv::LoadView] \
             [list save.gif "Save the display configuation" RunEnv::SaveView] \
-            [list copy.gif "Copy display" "::RunEnv::CopyHelper $CurrentContainer"] \
-            [list cut.gif "Cut display" "::RunEnv::CutHelper $CurrentContainer"] \
-            [list paste.gif "Paste display" "::RunEnv::PasteHelper $CurrentContainer"] \
+            [list copy.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
+            [list cut.gif "Cut display" [list ::RunEnv::CutHelper $::RunEnv::CurrentContainer"]] \
+            [list paste.gif "Paste display" [list ::RunEnv::PasteHelper $::RunEnv::CurrentContainer"]] \
             [list delete.gif "Delete pane or page" "::RunEnv::DeleteHelperCurrentContainer" ] \
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"] \
@@ -96,7 +96,7 @@ proc RunEnv::Create { ModelWin } {
             "&Edit" all edit 0 {
                 {command "&Remove..."    {} "Remove a sheet" {} -command {::RunEnv::RemoveHelperPageDlg} }
                 {separator}
-                {command "&Clear all"    {} "Clear all sheets" {} -command {::RunEnv::ClearDisplays} }
+                {command "&Clear all"    {} "Clear all sheets" {} -command {ClearView} }
                 {command "Cl&ose all"    {} "Close all sheets" {} -command {::RunEnv::KillDisplays} }
             }
             "&Add" all add 0 {
@@ -225,6 +225,7 @@ proc RunEnv::AddNotebook {containerId} {
 proc RunEnv::PageRaiseCmd {notebook pageId} {
     set pageF [$notebook getframe $pageId]
     set firstPane [lindex [$pageF.panedwindow panes] 0]
+    #ShowMessage debug info "PageRaiseCmd firstPane $firstPane" ok
     SetCurrentContainer $firstPane {}
 }
 
@@ -292,28 +293,56 @@ proc RunEnv::AllDisplaysPopupCurrentContainer {} {
     tk_popup .helpPopup [winfo pointerx .mre] [winfo pointery .mre]
 }
 
-proc ::RunEnv::CopyHelper {containerId} {
+proc ::RunEnv::SelectionHandler {offset maxChars} {
     global helperTable
-    if [winfo exists $containerId.container] {
+    variable CurrentContainer
+    set SelStr [StripCrs $helperTable($CurrentContainer.container,status)]
+    set last [expr {$offset + $maxChars}]
+    return [string range $SelStr $offset $last]
+}
+
+proc ::RunEnv::CopyHelper {containerId} {
+    global helperTable env
+    variable CurrentContainer
+    variable CurrentHelperId
+    #ShowMessage debug info "CopyHelper container: $containerId; \n\
+    #        CurrentContainer $CurrentContainer\n \
+    #        selection owner: [selection own]\n\
+    #        focus owner [focus]" ok
+    if [winfo exists $CurrentContainer.container] {
+        #ShowMessage debug info "CopyHelper $containerId.container exists " ok
         #UpdateState $helperTable($containerId.container)
-        # set helperTable($frameid) $winId
-        # set helperTable($winId,frameid) $frameid
-        set winId $helperTable($containerId.container)
-        set canvasId [$helperTable($winId,whichHelper)::GetCanvas $helperTable($containerId.container)]
-        CopyCanvasToWindowsClipboard $canvasId
+        set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
+        ##### CopyCanvasToWindowsClipboard $canvasId
+        set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
+        set copyfile $env(SIMTMPDIR)/mrecopy.txts
+        set stream [open $copyfile w]
+        #ShowMessage debug info "$copyfile" ok
+        puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]
+        close $stream
     }
 }
 
 proc ::RunEnv::CutHelper {containerId} {
-    global helperTable
-    if [winfo exists $containerId.container] {
-        ::UpdateState $helperTable($containerId.container)
-    }
+    CopyHelper $containerId
+    DeleteHelperCurrentContainer
 }
 
 proc ::RunEnv::PasteHelper {containerId} {
-    global helperTable
+    global helperTable env
+    variable CurrentContainer
+    variable CurrentHelperId
     
+    set copyfile $env(SIMTMPDIR)/mrecopy.txts
+    if {[file exists $copyfile]} {
+        set stream [open $copyfile r]
+        set winId [NewHelperInWindow $CurrentContainer $CurrentHelperId ""]
+        gets $stream oldStatus
+        set helperTable($winId,status) [RestoreCrs $oldStatus]
+        ${CurrentHelperId}::Restore $winId
+        bind $winId <Destroy>  "RunEnv::OnDestroyHelper $winId"
+        close $stream
+    }    
 }
 
 proc ::RunEnv::DeleteHelperContainer {containerId page} {
@@ -325,12 +354,11 @@ proc ::RunEnv::DeleteHelperContainer {containerId page} {
     set parentPath [::RunEnv::FindParentpanedwindowOrNotebook $containerId]
     set parentType [winfo name $parentPath]
     set children [winfo children $containerId]
-    ShowMessage debug info "DeleteHelperContainer: $containerId\n \
-            children $children\n \
-            parentType $parentType" ok; ##################
+    #ShowMessage debug info "DeleteHelperContainer: $containerId\n \
+    #        children $children\n \
+    #        parentType $parentType" ok; ##################
     if {[lsearch $children *.container]>-1} {
-        #kill_helper_window $helperTable($containerId.container)
-        destroy $containerId.container
+        kill_helper_window $containerId.container
     } else {
         switch $parentType {
             notebook {DeleteNotebookPage $parentPath $page}
@@ -486,17 +514,6 @@ proc ::RunEnv::FindParentpanedwindowOrNotebook {containerId} {
     }
 }
 
-proc ::RunEnv::FindParentWidth {widget} {
-    set parent [winfo parent $widget]
-    set width [$parent cget -width]
-    if {($width == 0) || ([string match "" $width])} {
-        ::RunEnv::FindParentWidth $parent
-    } else  {
-        #ShowMessage debug info "FindParentWidth parent $parent" ok
-        return $width
-    }
-}
-
 proc RunEnv::Destroy {} {
     global helperTable modelWin
     foreach helper [array name helperTable *,whichHelper] {
@@ -616,22 +633,10 @@ proc RunEnv::RemoveHelperPageDlg {} {
 proc RunEnv::OnDestroyHelper {winId} {
     #    ShowMessage debug info "RunEnv::DestroyHelper [FindHelperPage $winId]" ok
     #    ShowMessage debug info "RunEnv::DestroyHelper [wm title $winId]" ok
-    #    unset helperTable($winId,frameid))
-    #    if {[exists helperTable($winId,frameid)]} {
-    #        unset helperTable($winId,frameid)
-    #    }
-    ################################################################################
-    #     set notebookPage [FindHelperPage $winId]
-    #     set notebook [lindex $notebookPage 0]
-    #     if {![string match "" $notebook]} {
-    #         set page [lindex $notebookPage 1]
-    #         while {[winfo exists $winId]} { after 10 }; # don't delete until the helper has gone
-    #         $notebook delete $page 1; # delete the page and associated frame
-    #         if {[llength [$notebook pages]] > 0} {
-    #             $notebook raise [lindex [$notebook pages] 0]
-    #         }
-    #     }
-    ################################################################################
+    #unset helperTable($winId,frameid))
+    if {[info exists helperTable($winId,frameid)]} {
+        unset helperTable($winId,frameid)
+    }
 }
 
 proc RunEnv::RemoveHelperPageDlgOK {dlg} {
@@ -667,6 +672,7 @@ proc RunEnv::AddHelperSublist {fm pm title ct root} {
         set pm [menu $pm.sub$ct -tearoff 0]
     }
     set i 0
+#    set helperList [glob -nocomplain *.tcl]
     set helperList [glob -nocomplain *.tcl]
     variable helperApp; # so that helperApp can be found whilst sourcing in the roor namespace
     foreach helperApp [lsort $helperList] {
@@ -674,19 +680,70 @@ proc RunEnv::AddHelperSublist {fm pm title ct root} {
             ShowMessage "Error loading I/O tool" warning \
                     "Helper [pwd]/$helperApp had a $wibble" ok
         } else {
-            if {[info exists keyValue]} {
-                set action [${keyValue}::identify]
+            if {[info exists ::keyValue]} {
+                #ShowMessage debug info "AddHelperSublist $::keyValue" ok
+                set action [${::keyValue}::identify]
                 if {[string match {Run control} $action]} {
-                    set helperTable(RunControl) $keyValue
+                    set helperTable(RunControl) $::keyValue
                 }
                 if {[string match {Slider control} $action]} {
-                    set helperTable(SliderControl) $keyValue
+                    set helperTable(SliderControl) $::keyValue
                 }
                 $m insert $i command -label $action \
-                        -command [list CreateHelperWindow $keyValue $action]
+                        -command [list CreateHelperWindow $::keyValue $action]
                 $pm insert $i command -label $action \
-                        -command [list ::RunEnv::CreateHelperInCurrentContainer $keyValue $action]
-                unset keyValue
+                        -command [list ::RunEnv::CreateHelperInCurrentContainer $::keyValue $action]
+                unset ::keyValue
+                incr i
+            }
+        }
+    }
+    foreach subDir [glob -nocomplain *] {
+        if {[file isdirectory $subDir]} {
+            cd $subDir
+            AddHelperSublist $m $pm $subDir $nct false
+            cd ..
+            incr nct
+        }
+    }
+}
+
+proc RunEnv::AddHelperSublistOld {fm pm title ct root} {
+    global custom helperTable
+    # Create a menu for the menu bar (original)
+    # Craete a popup menu for Create in window
+    set nct 0
+    # do not make a cascade menu for the helper root directory
+    if {$root} {
+        set m $fm
+        set pm [menu .helpPopup -tearoff 0]
+    } else  {
+        $fm insert $ct cascade -label $title... -menu $fm.sub$ct
+        set m [menu $fm.sub$ct -tearoff 0]
+        set pm [menu $pm.sub$ct -tearoff 0]
+    }
+    set i 0
+    set helperList [glob -nocomplain *.tcl]
+    variable helperApp; # so that helperApp can be found whilst sourcing in the roor namespace
+    foreach helperApp [lsort $helperList] {
+        if {[catch [namespace eval :: {source $::RunEnv::helperApp}] wibble]} {
+            ShowMessage "Error loading I/O tool" warning \
+                    "Helper [pwd]/$helperApp had a $wibble" ok
+        } else {
+            if {[info exists ::keyValue]} {
+                #ShowMessage debug info "AddHelperSublist $::keyValue" ok
+                set action [${::keyValue}::identify]
+                if {[string match {Run control} $action]} {
+                    set helperTable(RunControl) $::keyValue
+                }
+                if {[string match {Slider control} $action]} {
+                    set helperTable(SliderControl) $::keyValue
+                }
+                $m insert $i command -label $action \
+                        -command [list CreateHelperWindow $::keyValue $action]
+                $pm insert $i command -label $action \
+                        -command [list ::RunEnv::CreateHelperInCurrentContainer $::keyValue $action]
+                unset ::keyValue
                 incr i
             }
         }
@@ -736,44 +793,19 @@ proc RunEnv::CreateDisplayPageContextMenu {} {
     }
 }
 
-proc RunEnv::ClearDisplays {} {
-    global helperTable
-    global ::RunEnv::dp0
-    
-    set allChildren [::RunEnv::GetChildren $dp0]; # shd b $dp0
-    set allDisplaynotebooks [::RunEnv::GetWidgetsWithName $allChildren notebook]
-    foreach notebook $allDisplaynotebooks {
-        if {[llength [$notebook pages]] > 0 } {
-            set pages [$notebook pages]
-            foreach page $pages {
-                ::$helperTable(.$page,whichHelper)::clear .$page
-            }
-        }
-    }
-}
-
 proc RunEnv::KillDisplays {} {
     global helperTable
     global ::RunEnv::dp0
     
-    set allChildren [::RunEnv::GetChildren $dp0]; # shd b $dp0
-    set allDisplaynotebooks [::RunEnv::GetWidgetsWithName $allChildren notebook]
-    foreach notebook $allDisplaynotebooks {
-        if {[llength [$notebook pages]] > 0 } {
-            set pages [$notebook pages]
-            foreach page $pages {
-                kill_helper_window .$page
-            }
-        }
-    }
+    destroy $RunEnv::dp0.notebook
+    RunEnv::AddNotebook $dp0
 }
 
 proc RunEnv::CreateHelperInWindow {containerId helperId helperTitle} {
     #ShowMessage debug info "CreateHelperInWindow: \
-            containerId $containerId helperId $helperId helperTitle $helperTitle" ok
+    containerId $containerId helperId $helperId helperTitle $helperTitle" ok
     set winId [NewHelperInWindow $containerId $helperId $helperTitle]
     ${helperId}::initialize $winId
-    bind $winId <Destroy>  "RunEnv::OnDestroyHelper $winId"
 }
 
 proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
@@ -789,6 +821,8 @@ proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
     set winId $frameid
     set helperTable($helperTitle) $winId
     set helperTable($winId,whichHelper) $helperId
+    bind $winId <Destroy>  "RunEnv::OnDestroyHelper $winId"
+    bind $winId <Button-1> "::RunEnv::SetCurrentContainer $winId {}"
     return $winId
 }
 
@@ -947,7 +981,8 @@ proc RunEnv::LoadView {} {
                     #puts $stream "page $notebook $page $pagecaption"
                     scan $line "%s %s %s %s" widget notebook pageId pagecaption
                     #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
-                    $notebook insert end $pageId -text $pagecaption
+                    $notebook insert end $pageId -text $pagecaption; # \
+                       # page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
                     [$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
                     bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W $pageId"
                     bind [$notebook getframe $pageId] <Button-3> \
@@ -1029,59 +1064,10 @@ proc NewMreHelperWindow {helperId helperTitle} {
             } \
             default {
                 
-                set allChildren [::RunEnv::GetChildren $dp0]; # shd b $dp0
-                set allDisplaynotebooks [::RunEnv::GetWidgetsWithName $allChildren notebook]
-                
-                set sizeSmallestnotebook 1e32
-                foreach notebook $allDisplaynotebooks {
-                    set sizenotebook [llength [$notebook pages]]
-                    if { $sizenotebook < $sizeSmallestnotebook} then {
-                        set sizeSmallestnotebook $sizenotebook
-                        set smallestnotebook $notebook
-                    }
-                }
-                # build a list of current page names in all notebooks
-                set pagenames {}
-                foreach notebook $allDisplaynotebooks {
-                    if {[llength [$notebook pages]] > 0 } {
-                        set pages [$notebook pages]
-                        foreach page $pages {
-                            lappend pagenames [$notebook itemcget $page -text]
-                        }
-                    }
-                }
-                
-                if {[lsearch -exact $pagenames $helperTitle] > -1} then {
-                    set i 2
-                    while {[lsearch -exact $pagenames $helperTitle/$i] > -1} {
-                        incr i
-                    }
-                    set title $helperTitle/$i
-                } else {
-                    set title $helperTitle
-                }
-                
-                #ShowMessage debug info [::RunEnv::MainNotebookEmptyPage] ok
-                # todo deal with toolbar
-                set EmptyPage [::RunEnv::MainNotebookEmptyPage]
-                if {$EmptyPage==-1} {
-                    $dp0.notebook insert end  helper$index -text $title; # todo
-                    set frameid [$dp0.notebook getframe helper$index].container
-                    set page helper$index
-                } else  {
-                    set frameid [$dp0.notebook getframe $EmptyPage].container
-                    $dp0.notebook itemconfigure $EmptyPage -text $title
-                    set page $EmptyPage
-                }
-                pack [frame $frameid] -fill both -expand true
-                #ShowMessage debug info "winId $frameid" ok
-                set winId $frameid
-                $dp0.notebook raise $page
-                set helperTable($frameid) $winId
-                set helperTable($winId,frameid) $frameid
+                set winId $::RunEnv::CurrentContainer
             }
-    bind $winId <Destroy>  "RunEnv::OnDestroyHelper $winId"
-    bind $winId <Button-1> "::RunEnv::SetCurrentContainer [winfo parent $winId] {}"
+    bind $winId <Destroy>  "kill_helper_window $winId"
+    bind $winId <Button-1> "::RunEnv::SetCurrentContainer $winId {}"
     set helperTable($helperTitle) $winId
     set helperTable($winId,whichHelper) $helperId
     
