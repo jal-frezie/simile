@@ -87,7 +87,7 @@ namespace eval ::$keyValue {
         set plot($w,grid) off
         set plot($w,DrawLines) 1
         set plot($w,DrawPoints) 0
-	InitPlatformDependentPlotVars $winId
+	InitPlatformDependentPlotVars $w
         
         set YYold($w) {}
         set YYnew($w) {}

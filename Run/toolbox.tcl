@@ -821,10 +821,8 @@ proc ControlDraw {prologVersion} {
     }
     
     # Base window has menu to display on Mac when no model windows open
-    set ::equation(fnDefs) {}
     menu .hitop
     frame .hi
-    frame .hi.toolSlot
     . config -menu .hitop	
     AddMainMenu .hi _ 0 1 {}
 

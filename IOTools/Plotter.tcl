@@ -24,7 +24,7 @@ namespace eval ::$keyValue {
         namespace import -force ::graphtools::*; # todo make graphtools common
         
         InitPlotVars $w
-        InitPlatformDependentPlotVars $winId
+        InitPlatformDependentPlotVars $w
         set YYold($w) {}
         set YYnew($w) {}
         set Told($w) 0
