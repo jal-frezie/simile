@@ -43,19 +43,6 @@ proc initialize {t} {
 
     TitleFrame $t.rcf -text "Run status and control"
     set rcf [$t.rcf getframe]
-    frame $rcf.bf
-    set cnvs [canvas $rcf.bf.flag -width 10 -height 10]
-    $cnvs create oval 2 2 8 8 -fill [RestingColour]
-    $cnvs create oval 0 0 10 10 -outline grey
-    pack $rcf.bf.flag -side right -anchor e
-    #jmm	label $t.top.caption -text "Time units: "
-    #jmm	pack $t.top.caption -side left
-    tk_optionMenu $rcf.bf.pulldown [namespace current]::sendvars(timeUnit) \
-            unit second minute hour day week month year
-    #	pack $t.top.pulldown -side right
-    pack [ProgressBar $rcf.bf.bar -variable runState(currentTime)] \
-            -fill x -expand true -side top -padx 4 -pady 4
-    pack $rcf.bf -side top -fill x
     
     foreach mode {play pause stop} {
         set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
@@ -70,11 +57,25 @@ proc initialize {t} {
     Button $rcf.topbuttons.stop -image $pauseImg -state disabled -width 32  \
             -command "[namespace current]::SetMode $t stop"
     pack $rcf.topbuttons.stop -side left -padx 1 -expand true -fill x
-    pack $rcf.topbuttons -side top
+    pack $rcf.topbuttons -side left
     
-    pack $rcf -fill x
-    pack $t.rcf -fill x -padx 2 -pady 2
+    frame $rcf.bf
+    set cnvs [canvas $rcf.bf.flag -width 10 -height 10]
+    $cnvs create oval 2 2 8 8 -fill [RestingColour]
+    $cnvs create oval 0 0 10 10 -outline grey
+    pack $rcf.bf.flag -side right -anchor e
+    #jmm	label $t.top.caption -text "Time units: "
+    #jmm	pack $t.top.caption -side left
+    tk_optionMenu $rcf.bf.pulldown [namespace current]::sendvars(timeUnit) \
+            unit second minute hour day week month year
+    #	pack $t.top.pulldown -side right
+    pack [ProgressBar $rcf.bf.bar -variable runState(currentTime)] \
+            -fill x -expand true -side top -padx 4 -pady 4
+    pack $rcf.bf -side left -fill x
 
+    pack $rcf -fill x
+    pack $t.rcf -fill x -padx 1 -pady 1
+    
 
     TitleFrame $t.rsf -text "Run settings"
     set rsf [$t.rsf getframe]
@@ -107,7 +108,7 @@ proc initialize {t} {
     $rsf.edit.capt setvalue first
     SwapDistVar $t
     pack $rsf -fill x
-    pack $t.rsf -padx 2 -pady 2 -fill x
+    pack $t.rsf -padx 1 -pady 1 -fill x
 
 
 	set sendvars(timeUnit) unit
