@@ -2,8 +2,11 @@
 # e.g. plotter and timeprofiles
 
 #$Log: graphtools.tcl,v $
-#Revision 1.1  2002/05/23 15:33:18  jmm
-#*** empty log message ***
+#Revision 1.2  2002/07/24 17:40:54  jmm
+#Some messing about with axis scaling
+#
+#Revision 1.1.1.1  2002/05/23 15:33:18  jmm
+#First Commercial Release (2.91) 
 #
 #Revision 1.7  2002-05-15 00:02:10+01  jmm
 #Moved AxisRound into this file and improved it
@@ -43,7 +46,23 @@ namespace export UpdateState draw_Xaxis draw_Yaxis Xstretch Ystretch \
     variable Told
     variable Tnew
     
-proc MakeToolBar {w toolbarItems} {
+    global graphtools::karray
+    
+    set klist [list 1 1  2 1  3 1  4 1  5 1  6 1  7 1  8 1  9 1  5 2 \
+            6 2  6 2  7 2  7 2  8 2  8 2  9 2  9 2 	4 5  4 5 \
+            5 5  5 5  5 5  5 5  5 5  6 5  6 5  6 5  6 5  6 5 \
+            7 5  7 5  7 5  7 5  7 5  8 5  8 5  8 5  8 5  8 5 \
+            9 5  9 5  9 5  9 5  9 5 ]
+    for {set i 1} {$i <= 2} {incr i} {
+        for {set j 1} {$j <= 45} {incr j} {
+            set karray($i,$j) [lindex $klist [expr {2*($j-1)+$i-1}]]
+            #puts "i $i; j $j; k($i,$j) $k($i,$j)"
+        }
+    }
+    
+}; # end namespace
+
+proc graphtools::MakeToolBar {w toolbarItems} {
     pack [Separator $w.abovebbox -orient horizontal] -side top
     set f [frame $w.bbframe  -relief raised]
     set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
@@ -59,23 +78,23 @@ proc MakeToolBar {w toolbarItems} {
     pack $f -side top -fill x
     pack $bbox -side top -anchor w
     pack [Separator $w.belowbbox -orient horizontal] -side top
-        
+    
 }
 
-proc UpdateState {winId} {
+proc graphtools::UpdateState {winId} {
     global ::graphtools::plot
     
     regsub -all $winId [array get plot $winId,*] /WIN/ saveString
-#    ShowMessage debug info "graphs.tcl UpdateState $saveString" ok
+    #    ShowMessage debug info "graphs.tcl UpdateState $saveString" ok
     SetState $winId $saveString
 }
 
 
-proc marker {} {tk_messageBox -message "hello"}
+proc graphtools::marker {} {tk_messageBox -message "hello"}
 
 
 # redraw graph after adjusting limits to Coordinates range
-proc resetGraph { w } {
+proc graphtools::resetGraph { w } {
     global ::graphtools::plot
     
     drawGraphpad $w
@@ -100,33 +119,33 @@ proc resetGraph { w } {
 ######################################################################
 # Scales data X and Y values to canvas coordinates (pixels)
 
-proc get_x { w X Xscale} {
+proc graphtools::get_x { w X Xscale} {
     global ::graphtools::plot
     expr $plot($w,xborder_left)+($X-$plot($w,Xmin_axis))/$Xscale
 }
 
-proc get_y { w Y Yscale} {
+proc graphtools::get_y { w Y Yscale} {
     global ::graphtools::plot
     expr $plot($w,yborder_top)+$plot($w,ylength) \
             -($Y-$plot($w,Ymin_axis))/$Yscale
 }
 
 ### Calculate the position of X where Y-axis intersects X-axis
-proc calculateXintercept {Min Max Width Border} {
+proc graphtools::calculateXintercept {Min Max Width Border} {
     if {$Min >= 0 } {return $Border}
     if {$Max <= 0 } {return [expr $Width - $Border]}
     expr abs($Min)/double($Max-$Min)*($Width-2*$Border)+$Border
 }
 
 ### Calculate the position of Y where X-axis intersects Y-axis
-proc calculateYintercept {Min Max Height Border} {
+proc graphtools::calculateYintercept {Min Max Height Border} {
     if {$Min >= 0 } {return [expr $Height - $Border]}
     if {$Max <= 0 } {return $Border}
     expr abs($Max)/double($Max-$Min)*($Height-2*$Border)+$Border
 }
 
 # return format specifier for optimum display of a graph value.
-proc decimalPlaces {N} {
+proc graphtools::decimalPlaces {N} {
     if {($N == 0) || (abs($N) >= 10)} {return %.0f}
     if {(abs($N) >= 1)} {return %.1f}
     #cater for any absolute numbers < 1
@@ -137,7 +156,7 @@ proc decimalPlaces {N} {
 
 # Convert list of elements that may be numbers or arrays to a sorted list of values.
 # eg: {1 {4 5 6 7} 2  {8 9 10} 3} to {1 2 3 4 5 6 7 8 9 10}
-proc flattenList {List} {
+proc graphtools::flattenList {List} {
     foreach element $List {
         set item [delist $element]
         if {[IsArray $item]} {
@@ -149,13 +168,13 @@ proc flattenList {List} {
 
 # remove extra list nesting eg: list of form {{{...}}} to list {...}
 # or {{{...}} {{...}}} to {{...} {...}}
-proc delist {List} {
+proc graphtools::delist {List} {
     if {([IsArray $List]) && ([llength $List]==1)} {delist [lindex $List 0]
     } else {return $List}
 }
 
 # switch grid lines on/off
-proc gridOnOff {  w } {
+proc graphtools::gridOnOff {  w } {
     global ::graphtools::plot
     if {$plot($w,grid)=="on"} {set plot($w,grid) off} else {set plot($w,grid) on}
     drawGraphpad $w
@@ -163,25 +182,37 @@ proc gridOnOff {  w } {
 }
 
 
-proc myAssembleFont {family weight style textsize} {
+proc graphtools::myAssembleFont {family weight style textsize} {
     set font [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
             $family $weight $style $textsize]
     #tk_messageBox -message "font $font"
     return $font
 }
 
-proc draw_Xaxis { w } {
+proc graphtools::draw_Xaxis { w } {
     global ::graphtools::plot
     
+    if {$plot($w,Xmax_axis)<$plot($w,Xmin_axis)} {
+        set Xmax_axis 10
+        set Xmin_axis 0
+        set Xmajorstep 2
+        set Xminorstep 1
+    } else  {
+        set Xmax_axis $plot($w,Xmax_axis)
+        set Xmin_axis $plot($w,Xmin_axis)
+        set Xmajorstep $plot($w,Xmajorstep)
+        set Xminorstep $plot($w,Xminorstep)
+    }
+
     $w.canvas delete xtick
     
     set x0 $plot($w,xborder_left)
     set y0 [expr {$plot($w,yborder_top)+$plot($w,ylength)}]
     set x1 [expr {$plot($w,xborder_left)+$plot($w,xlength)}]
     
-    set step [expr {1.0*$plot($w,xlength)*$plot($w,Xmajorstep) \
-                / ($plot($w,Xmax_axis)-$plot($w,Xmin_axis))}]
-    set value $plot($w,Xmin_axis)
+    set step [expr {1.0*$plot($w,xlength)*$Xmajorstep \
+                / ($Xmax_axis-$Xmin_axis)}]
+    set value $Xmin_axis
     set y [expr {$y0+2}]
     for {set x $x0} {$x<=$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-6] \
@@ -191,11 +222,11 @@ proc draw_Xaxis { w } {
                 -text [VarPrecRender $w $value $plot($w,Xprecision)] \
                 -font $plot($w,fontValues) \
                 -tags {scalable axis_value xaxis_item xaxis_movable xtick \
-                 toplevel markable} -anchor n
-        set value [expr $value+$plot($w,Xmajorstep)]
+                    toplevel markable} -anchor n
+        set value [expr $value+$Xmajorstep]
     }
-    set step [expr 1.0*$plot($w,xlength)*$plot($w,Xminorstep) \
-            / ($plot($w,Xmax_axis)-$plot($w,Xmin_axis))]
+    set step [expr 1.0*$plot($w,xlength)*$Xminorstep \
+            / ($Xmax_axis-$Xmin_axis)]
     for {set x $x0} {$x<$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-4] \
                 -tags {scalable axis_line xaxis_item xtick markable \
@@ -203,10 +234,10 @@ proc draw_Xaxis { w } {
     }
 }
 
-proc draw_Yaxis { w} {
+proc graphtools::draw_Yaxis { w} {
     global ::graphtools::plot
     global ::graphtools::Tnew
-#ShowMessage debug info "draw_Yaxis $plot($w,Ymin_axis) $plot($w,Ymax_axis); dp $plot($w,Yprecision)" ok
+    #ShowMessage debug info "draw_Yaxis $plot($w,Ymin_axis) $plot($w,Ymax_axis); dp $plot($w,Yprecision)" ok
     if {$plot($w,Ymax_axis)<$plot($w,Ymin_axis)} {
         set Ymax_axis 10
         set Ymin_axis 0
@@ -214,9 +245,8 @@ proc draw_Yaxis { w} {
         set Yminorstep 1
     } else  {
         set Ymax_axis $plot($w,Ymax_axis)
-        set Ymin_axis $plot($w,Ymin_axis) 
-        set Ymajorstep $plot($w,Ymajorstep) 
-        expr {$plot($w,Ymajorstep)/2.0}
+        set Ymin_axis $plot($w,Ymin_axis)
+        set Ymajorstep $plot($w,Ymajorstep)
         set Yminorstep $plot($w,Yminorstep)
     }
     
@@ -238,10 +268,10 @@ proc draw_Yaxis { w} {
                 -text [VarPrecRender $w $value $plot($w,Yprecision)] \
                 -font $plot($w,fontValues) \
                 -tags {scalable  axis_value yaxis_item yaxis_movable ytick \
-                  toplevel markable} -anchor e
+                    toplevel markable} -anchor e
         set value [expr $value+$Ymajorstep]
     }
-    set step [expr 1.0*$plot($w,ylength)*$plot($w,Yminorstep) \
+    set step [expr 1.0*$plot($w,ylength)*$Yminorstep \
             / ($Ymax_axis-$Ymin_axis)]
     for {set y $y0} {$y>=$y1} {set y [expr $y-$step]} {
         $w.canvas create line $x0 $y [expr $x0+4] $y \
@@ -250,7 +280,7 @@ proc draw_Yaxis { w} {
     }
 }
 
-proc Xstretch { w can x y width height} {
+proc graphtools::Xstretch { w can x y width height} {
     global ::graphtools::canvas
     global ::graphtools::plot
     
@@ -278,7 +308,7 @@ proc Xstretch { w can x y width height} {
 }
 
 
-proc Ystretch { w can x y width height} {
+proc graphtools::Ystretch { w can x y width height} {
     global ::graphtools::canvas
     global ::graphtools::plot
     
@@ -302,12 +332,12 @@ proc Ystretch { w can x y width height} {
     set plot($w,Ymax_axis) [expr {$plot($w,Ymin_axis)+$Yrange}]
     set plot($w,Ymajorstep) [expr {$plot($w,Ymajorstep)/$Ymult}]
     set plot($w,Yminorstep) [expr {$plot($w,Yminorstep)/$Ymult}]
-
+    
     set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
 }
 
 
-proc Xslide { w can x y} {
+proc graphtools::Xslide { w can x y} {
     global ::graphtools::canvas
     global ::graphtools::plot
     
@@ -323,12 +353,12 @@ proc Xslide { w can x y} {
     $can move xaxis_item $canvasShift 0
     
     set canvas($can,x) $x
-
+    
     set plot($w,Xmax_axis) [expr $plot($w,Xmax_axis) + $axisShift]
     set plot($w,Xmin_axis) [expr $plot($w,Xmin_axis) + $axisShift]
 }
 
-proc Yslide { w can x y} {
+proc graphtools::Yslide { w can x y} {
     global ::graphtools::canvas
     global ::graphtools::plot
     
@@ -351,13 +381,13 @@ proc Yslide { w can x y} {
 }
 
 
-proc CanvasMark { w x y can} {
+proc graphtools::CanvasMark { w x y can} {
     global ::graphtools::canvas
     global ::graphtools::plot
     
     set canvas($can,x) $x; # set in CanvasMark bound to B1
     set canvas($can,y) $y
-#    ShowMessage debug info "$x $y" ok
+    #    ShowMessage debug info "$x $y" ok
     
     set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
     if {[expr {abs($y-$y0)}]<4} then {
@@ -373,7 +403,7 @@ proc CanvasMark { w x y can} {
     #puts$line "Mark: $canvas($can,tag)"
 }
 
-proc CanvasDrag {x y can} {
+proc graphtools::CanvasDrag {x y can} {
     global ::graphtools::canvas
     #set x [$can canvasx $x]
     #set y [$can canvasy $y]
@@ -385,7 +415,7 @@ proc CanvasDrag {x y can} {
 }
 
 
-proc Ylabel_move {can x y} {
+proc graphtools::Ylabel_move {can x y} {
     global ::graphtools::canvas
     #set x [$can canvasx $x]
     #set y [$can canvasy $y]
@@ -402,7 +432,7 @@ proc Ylabel_move {can x y} {
 }
 
 
-proc settings_axis { w} {
+proc graphtools::settings_axis { w} {
     global ::graphtools::plot
     
     set wset .settings
@@ -463,21 +493,19 @@ proc settings_axis { w} {
 # scale and number of intervals, respectively
 # Adapted from code from Robert Muetzelfeldt, IERM, University of Edinburgh
 # Jonathan Massheder, IERM, University of Edinburgh
-proc AxisRound { dataMin dataMax axisMin axisMax interval numInt decimalPlaces} {
+proc graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval numInt \
+            decimalPlaces } {
     upvar 1 $axisMin rmin $axisMax rmax $interval inter $numInt nint \
             $decimalPlaces decmlPos
-    if {$dataMin==0} {set dataMin 0.0000000001}
-    set klist [list 1 1  2 1  3 1  4 1  5 1  6 1  7 1  8 1  9 1  5 2 \
-            6 2  6 2  7 2  7 2  8 2  8 2  9 2  9 2 	4 5  4 5 \
-            5 5  5 5  5 5  5 5  5 5  6 5  6 5  6 5  6 5  6 5 \
-            7 5  7 5  7 5  7 5  7 5  8 5  8 5  8 5  8 5  8 5 \
-            9 5  9 5  9 5  9 5  9 5 ]
-    for {set i 1} {$i <= 2} {incr i} {
-        for {set j 1} {$j <= 45} {incr j} {
-            set k($i,$j) [lindex $klist [expr {2*($j-1)+$i-1}]]
-            #puts "i $i; j $j; k($i,$j) $k($i,$j)"
-        }
+    global graphtools::karray
+    
+    if $xaxis {
+        set axis 2
+    } else  {
+        set axis 1
     }
+    
+    if {$dataMin==0} {set dataMin 0.0000000001}
     
     if { $dataMin > $dataMax } {
         set min $dataMax
@@ -486,6 +514,13 @@ proc AxisRound { dataMin dataMax axisMin axisMax interval numInt decimalPlaces} 
         set min $dataMin
         set max $dataMax
     }
+#    ShowMessage debug info "$min $max" ok
+    set neg 0
+    if {$max < 0.0} {
+        set neg 1
+        set min [expr {-$dataMax}]
+        set max [expr {-$dataMin}]
+    }
     
     if {$min == $max } {
         set max ${max}1
@@ -493,17 +528,17 @@ proc AxisRound { dataMin dataMax axisMin axisMax interval numInt decimalPlaces} 
     }
     set intFactor [expr {log10($max - $min)}]
     set decmlPos [expr {int($intFactor)}]
-#    puts "1 intFactor $intFactor; decmlPos $decmlPos"
+    #    puts "1 intFactor $intFactor; decmlPos $decmlPos"
     
     if {[expr {$intFactor - int($intFactor)}] < 0} {
         incr decmlPos -1
     }
-#    puts "2 intFactor $intFactor; decmlPos $decmlPos"
-#ShowMessage debug info "AxisRound $min $max; intfactor $intFactor; dp $decmlPos" ok
-    if  { $decmlPos > 7 } {
-        set decmlPos 7
-    } elseif  { $decmlPos < -7 } {
-        set decmlPos -7
+    #    puts "2 intFactor $intFactor; decmlPos $decmlPos"
+    #ShowMessage debug info "AxisRound $min $max; intfactor $intFactor; dp $decmlPos" ok
+    if  { $decmlPos > 6 } {
+        set decmlPos 6
+    } elseif  { $decmlPos < -6 } {
+        set decmlPos -6
     }
     if { $decmlPos == 0 } {
         set intFactor [expr {int(pow(10,$decmlPos))}]
@@ -512,34 +547,36 @@ proc AxisRound { dataMin dataMax axisMin axisMax interval numInt decimalPlaces} 
     } else {
         set intFactor [expr {int(pow(10, -($decmlPos)))}]
     }
-#    puts "3 intFactor $intFactor; decmlPos $decmlPos"
-#    puts "min $min; max $max"
+    #    puts "3 intFactor $intFactor; decmlPos $decmlPos"
+    #    puts "min $min; max $max"
     set imin [expr {$min * $intFactor}]
-#ShowMessage debug info "AxisRound imin $imin" ok
-    set frac [expr {$imin - int($imin)}]
-#    puts "frac $frac; imin $imin "
+    #ShowMessage debug info "AxisRound imin $imin" ok
+#jmm   set frac [expr {$imin - int($imin)}]
+    set frac [expr {$imin - floor($imin)}]
+    #    puts "frac $frac; imin $imin "
     if {$frac < 0 } {
-        set imin [expr {int($imin) - 1 }]
+        set imin [expr {floor($imin) - 1 }]
     }  else {
-        set imin [expr {int($imin)}]
+        set imin [expr {floor($imin)}]
     }
     
     set imax [expr {$max * $intFactor}]
-    set frac [expr {$imax - int($imax)}]
-#    puts "frac $frac; imax $imax"
+#jmm    set frac [expr {$imax - int($imax)}]
+    set frac [expr {$imax - floor($imax)}]
+    #    puts "frac $frac; imax $imax"
     if { $frac <= 0 } {
-        set imax [expr {int($imax)}]
+        set imax [expr {floor($imax)}]
     } else {
-        set imax [expr {int($imax) + 1}]
+        set imax [expr {floor($imax) + 1}]
     }
-#    puts "imin $imin; imax $imax; intFactor $intFactor; decmlPos $decmlPos"
-    set intdiff [expr {$imax - $imin}]
-#    puts "intdiff $intdiff"
+    #    puts "imin $imin; imax $imax; intFactor $intFactor; decmlPos $decmlPos"
+    set intdiff [expr {int($imax - $imin)}]
+    #    puts "intdiff $intdiff"
     
     set rmin [expr {$imin * 1.0 / $intFactor}]; # floating point
     set rmax [expr {$imax * 1.0 / $intFactor}]
     set rounddiff [expr {$rmax - $rmin}]
-    set nint $k(1,$intdiff)
+    set nint $karray($axis,$intdiff)
     set inter [expr {$rounddiff/$nint}]
     if {$decmlPos > 0} {
         set decmlPos 0
@@ -547,11 +584,17 @@ proc AxisRound { dataMin dataMax axisMin axisMax interval numInt decimalPlaces} 
         set decmlPos [expr {abs($decmlPos)}]
     }
     
-#ShowMessage debug info  "rmin $rmin; rmax $rmax; inter $inter; nint $nint;\
-#    decmlPos $decmlPos" ok
+    #ShowMessage debug info  "rmin $rmin; rmax $rmax; inter $inter; nint $nint;\
+    #    decmlPos $decmlPos" ok
+    if {$neg==1} {
+        set temp $rmin
+        set rmin [expr {-1.0*$rmax}]
+        set rmax [expr {-1.0*$temp}]
+    }
+    
 }
 
-proc do_axis_settings { w wset action} {
+proc graphtools::do_axis_settings { w wset action} {
     global ::graphtools::plot
     
     bell
@@ -575,20 +618,20 @@ proc do_axis_settings { w wset action} {
     
 }
 
-proc horizlines {w} {
+proc graphtools::horizlines {w} {
     bell
 }
 
-proc vertlines {w} {
+proc graphtools::vertlines {w} {
     bell
 }
 
-proc boxed {w} {
+proc graphtools::boxed {w} {
     bell
 }
 
 # from tabular.tcl Jasper May 2002
-proc VarPrecRender {winId val precision} {
+proc graphtools::VarPrecRender {winId val precision} {
     global ::graphtools::plot
     
     set regular [format %.${precision}f $val]
@@ -602,16 +645,14 @@ proc VarPrecRender {winId val precision} {
 
 # Scales data x and y pixel co-ord to x and y data values
 
-proc get_datax {w Xc Xscale} {
+proc graphtools::get_datax {w Xc Xscale} {
     global ::graphtools::plot
     expr {($Xc-$plot($w,xborder_left))*$Xscale+$plot($w,Xmin_axis)}
 }
 
-proc get_datay {w Yc Yscale} {
+proc graphtools::get_datay {w Yc Yscale} {
     global ::graphtools::plot
     expr {($Yc-$plot($w,yborder_top)-$plot($w,ylength))*$Yscale \
                 +$plot($w,Ymin_axis)}
 }
 
-
-}; # end namespace

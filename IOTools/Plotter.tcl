@@ -18,6 +18,9 @@
 # x,y signify canvas co-ordinates, in pixels.
 
 #$Log: Plotter.tcl,v $
+#Revision 1.3  2002/07/24 17:42:35  jmm
+#Some messing about with axis scaling
+#
 #Revision 1.2  2002/05/30 17:33:41  jmm
 #Made Xvalues an array to have the helper window id as the index to protect
 #the values from other helpers.
@@ -85,10 +88,10 @@ proc initialize {w} {
     set plot($w,Xmin_axis) 0
     set plot($w,Xmajorstep) 0.5
     set plot($w,Xminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
-    set plot($w,Ymax_axis) -1e200; #max is 1e300
-    set plot($w,Ymin_axis) 1e200
-    set plot($w,Ymax_data) -1e200
-    set plot($w,Ymin_data) 1e200
+    set plot($w,Ymax_axis) -1e100; #max is 1e300
+    set plot($w,Ymin_axis) 1e100
+    set plot($w,Ymax_data) -1e100
+    set plot($w,Ymin_data) 1e100
     set plot($w,Ymajorstep) 2
     set plot($w,Yminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
     set plot($w,Ylabels) {}
@@ -751,7 +754,7 @@ proc adjustLimits {w Tnew Ynew} {
         set numInt 0
         set OldYrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
         set OldYmax_axis $plot($w,Ymax_axis)
-        AxisRound $plot($w,Ymin_data) $plot($w,Ymax_data) \
+        AxisRound $plot($w,Ymin_data) $plot($w,Ymax_data) 0 \
             plot($w,Ymin_axis) plot($w,Ymax_axis) \
             plot($w,Ymajorstep) numInt plot($w,Yprecision)
 #ShowMessage debug info "adj_lim dp $plot($w,Yprecision)" ok

@@ -18,30 +18,27 @@
 # x,y signify canvas co-ordinates, in pixels.
 
 #$Log: PlotterXY.tcl,v $
-#Revision 1.1  2002/05/31 08:52:52  jmm
-#Scaling bugs (graphtools.tcl)
+#Revision 1.2  2002/07/24 17:42:35  jmm
+#Some messing about with axis scaling
+#
+#Revision 1.1  2002-05-17 16:55:02+01  jmm
+#Plotting multiple instance
 #
 #Revision 1.0  2002-05-17 14:57:11+01  jmm
 #Initial revision
 #
 
-# Todo
-# negative values, initally
-# Sort points by value?
-# Plot only points, only lines, both
-
 set keyValue "plotterXY1.0"
     
 namespace eval $keyValue {
         
-        
 proc identify {} {
-	return "XY Plotter"
+    return "XY Plotter"
 }
 
 proc initialize {w} {
     global ::graphtools::plot
-    global ::graphtools::Xvalues
+#    global ::graphtools::Xvalues
     global ::graphtools::YYold
     global ::graphtools::YYnew
     global ::graphtools::Told
@@ -62,8 +59,10 @@ proc initialize {w} {
     # choose colours for variables
     set plot($w,YColours) [list #0000ff #ff0000 #00ff00 #007777 #777700 \
             #770077 #222244 #442222 #224422]
-    set plot($w,Xmax_axis) 1
-    set plot($w,Xmin_axis) 0
+    set plot($w,Xmax_axis) -1e200; #max is 1e300
+    set plot($w,Xmin_axis) 1e200
+    set plot($w,Xmax_data) -1e200
+    set plot($w,Xmin_data) 1e200
     set plot($w,Xmajorstep) 0.5
     set plot($w,Xminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
     set plot($w,XaxisLabel) {}
@@ -101,10 +100,8 @@ proc initialize {w} {
     set plot($w,Y_max_scalestep) 0
     set plot($w,Xprecision) 0
     set plot($w,Yprecision) 0
-    set plot($w,linestyle) full
-    set plot($w,pointstyle) circle
     
-    set Xvalues($w) {}
+#    set Xvalues($w) {}
     set YYold($w) {}
     set YYnew($w) {}
     set Told($w) {}
@@ -119,13 +116,13 @@ proc Restore {winId} {
 #    ShowMessage debug info "plotter.tcl Restore $winId" ok
     namespace import -force ::graphtools::*; # todo make graphtools common
     global ::graphtools::plot
-    global ::graphtools::Xvalues
+#    global ::graphtools::Xvalues
     global ::graphtools::YYold
     global ::graphtools::YYnew
     global ::graphtools::Told
     global ::graphtools::Tnew
     
-    set Xvalues($w) {}
+#    set Xvalues($winId) {}
     set YYold($winId) {}
     set YYnew($winId) {}
     set Told($winId) {}
@@ -198,9 +195,9 @@ proc ShowHelper {w} {
     constructControlPanel $w
     
     # Initialise values list.
-    set Told($w) {}
-    set Tnew($w) {}
-    set Xvalues($w) {}
+#    set Told($w) {}
+#    set Tnew($w) {}
+#    set Xvalues($w) {}
     
     drawGraphpad $w;
     
@@ -209,7 +206,7 @@ proc ShowHelper {w} {
 # Invoked at every time interval.
 proc display {w time step remainder} {
     global ::graphtools::plot
-    global ::graphtools::Xvalues
+#    global ::graphtools::Xvalues
     global ::graphtools::YYold
     global ::graphtools::YYnew
     global ::graphtools::Told
@@ -653,26 +650,17 @@ proc plot_Y {w iplot Told Yold Tnew Ynew} {
 #        ShowMessage debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
         drawPoint $w $Told $Yold $Tnew $Ynew $colour
 	} else {
-#		array set Ynew_array $Ynew
-#		array set Yold_array $Yold
-#        array set Tnew_array $Tnew
-#        array set Told_array $Told
-#        foreach element [array names Ynew_array] {
-#            if {[info exists Yold_array($element)]} {
-#                plot_Y $w $iplot $Told_array($element) $Yold_array($element)\
-#                    $Tnew_array($element) $Ynew_array($element)
-#			}
-#		}
-    for  {set i 1} {$i < [llength $Ynew]} {incr i 2} {
-        set YnewV [lindex $Ynew $i]
-        set YoldV [lindex $Yold $i]
-        set TnewV [lindex $Tnew $i]
-        set ToldV [lindex $Told $i]
-#        ShowMessage debug info "plot_Yplot_Y ToldV $ToldV YoldV $YoldV TnewV $TnewV YnewV $YnewV" ok
-        plot_Y $w $iplot $ToldV $YoldV $TnewV $YnewV
-        incr iplot
+        for  {set i 1} {$i < [llength $Ynew] } {incr i 2} {
+           set YnewV [lindex $Ynew $i]
+           set YoldV [lindex $Yold $i]
+           set TnewV [lindex $Tnew $i]
+           set ToldV [lindex $Told $i]
+           if {![string match "" $ToldV]} {
+               plot_Y $w $iplot $ToldV $YoldV $TnewV $YnewV
+            }
+            incr iplot
+        }
     }
-}
 }
 
 
@@ -680,21 +668,14 @@ proc plot_Y {w iplot Told Yold Tnew Ynew} {
 # Connect two points on the graph
 proc drawPoint { w X0 Y0 X1 Y1 Colour } {
     global ::graphtools::plot
-    #set plot($w,linestyle) full
-    #set plot($w,pointstyle) circle
     
-    set x0 [get_x $w $X0 $plot($w,Tscale)]
-    set x1 [get_x $w $X1 $plot($w,Tscale)]
-    set y0 [get_y $w $Y0 $plot($w,Yscale)]
-    set y1 [get_y $w $Y1 $plot($w,Yscale)]
-    
-##    if {$x0<$x1} {
-#        $w.canvas create line $x0 $y0 $x1 $y1 \
-#                -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
-#    }
+	set x0 [get_x $w $X0 $plot($w,Tscale)]
+	set x1 [get_x $w $X1 $plot($w,Tscale)]
+	set y0 [get_y $w $Y0 $plot($w,Yscale)]
+	set y1 [get_y $w $Y1 $plot($w,Yscale)]
 
     $w.canvas create line $x0 $y0 $x1 $y1 \
-            -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
+        -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
 }
 
 
@@ -702,9 +683,11 @@ proc drawPoint { w X0 Y0 X1 Y1 Colour } {
 # clear graph
 proc clear { w } {
 	bell
-    global ::graphtools::Xvalues
+#    global ::graphtools::Xvalues
     global ::graphtools::YYold
     global ::graphtools::YYnew
+    global ::graphtools::Told
+    global ::graphtools::Tnew
     global ::graphtools::plot
     
     set plot($w,Ymax_axis) -1e200
@@ -713,19 +696,21 @@ proc clear { w } {
     set plot($w,Ymin_data) 1e200
     set plot($w,Ymajorstep) 2
     set plot($w,Yminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
-    set plot($w,Xmax_axis) 1
-    set plot($w,Xmin_axis) 0
+    set plot($w,Xmax_axis) -1e200
+    set plot($w,Xmin_axis) 1e200
     set plot($w,Xmajorstep) 0.5
-    set plot($w,Xmax_data) 0
-    set plot($w,Xmin_data) 0
-    set plot($w,Xmajorstep) 0.5
+    set plot($w,Xmax_data) -1e200
+    set plot($w,Xmin_data) 1e200
+    set plot($w,Xmajorstep) 2
     set plot($w,Xminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
     set plot($w,Xprecision) 0
     set plot($w,Yprecision) 0
-    set Xvalues($w) {}
-	set YYold($w) {}
+ #   set Xvalues($w) {}
+    set YYold($w) {}
 	set YYnew($w) {}
-
+    set Told($w) {}
+    set Tnew($w) {}
+    
 	drawGraphpad $w
 }
 
@@ -734,32 +719,40 @@ proc adjustLimits {w Tnew Ynew} {
     variable scale_factor [list 2.0 2.5 2.0]
     
 #    ShowMessage debug info "adjustLimits $Tnew $Ynew" ok
-    if {$Tnew>$plot($w,Xmax_axis)} {
-#               ShowMessage debug info "$Ynew $plot($w,Xmin_data) $plot($w,Xmax_data)\
-#                        $plot($w,Xmin_axis) $plot($w,Xmax_axis)" ok
-        set plot($w,Xmax_data) $Tnew
-        set sf [lindex $scale_factor $plot($w,X_scalestep)]
-        set OldRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]               
-        set Trange [expr {$sf*$OldRange}]
+    if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
+        if {$Tnew>$plot($w,Xmax_axis)} {
+            set plot($w,Xmax_data) $Tnew
+        }
+        if {$Tnew<$plot($w,Xmin_axis)} {
+            set plot($w,Xmin_data) $Tnew
+        }
+        set OldRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
+        set OldXmin_axis $plot($w,Xmin_axis)
         
-        set plot($w,Xmax_axis) [expr $plot($w,Xmin_axis) + $Trange]
-        set plot($w,Xmajorstep) [expr $sf*$plot($w,Xmajorstep)]
-        set plot($w,Xminorstep) [expr $sf*$plot($w,Xminorstep)]
-        
-#        set Trange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
+        set numInt 0
+        AxisRound $plot($w,Xmin_data) $plot($w,Xmax_data) 1 \
+            plot($w,Xmin_axis) plot($w,Xmax_axis) \
+            plot($w,Xmajorstep) numInt plot($w,Xprecision)
+            
+        set plot($w,Xmajorstep) [expr {$plot($w,Xmajorstep)/2}]
+        set plot($w,Xminorstep) [expr {$plot($w,Ymajorstep)/2}]       
+        set Trange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
+
+        set scaleChange [expr {$OldRange/$Trange}]
         set plot($w,Tscale) [expr $Trange/$plot($w,xlength)]
-        set canvasShift [expr {$OldRange/$Trange}]
         set x0 $plot($w,xborder_left)
         set y0 $plot($w,yborder_top)
-        $w.canvas scale xaxis_item $x0 $y0 $canvasShift 1
+        $w.canvas scale xaxis_item $x0 $y0 $scaleChange 1
+        
+        set xmove [expr {\
+           [get_x $w $OldXmin_axis $plot($w,Tscale)] \
+           -[get_x $w $plot($w,Xmin_axis) $plot($w,Tscale)] }]
+        $w.canvas move xaxis_item $xmove 0
+              
         draw_Xaxis $w
-        incr plot($w,X_scalestep)
-        if {$plot($w,X_scalestep)>2} {set plot($w,X_scalestep) 0}
     }
     
     if { ( ($Ynew>$plot($w,Ymax_axis)) || ($Ynew<$plot($w,Ymin_axis)) )} {
-#       ShowMessage debug info "$Ynew $plot($w,Ymin_data) $plot($w,Ymax_data)\
-#                $plot($w,Ymin_axis) $plot($w,Ymax_axis)" ok
         if {$Ynew>$plot($w,Ymax_axis)} {
             set plot($w,Ymax_data) $Ynew
         }
@@ -769,22 +762,15 @@ proc adjustLimits {w Tnew Ynew} {
         set numInt 0
         set OldYrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
         set OldYmax_axis $plot($w,Ymax_axis)
-        AxisRound $plot($w,Ymin_data) $plot($w,Ymax_data) \
+        AxisRound $plot($w,Ymin_data) $plot($w,Ymax_data) 0 \
             plot($w,Ymin_axis) plot($w,Ymax_axis) \
             plot($w,Ymajorstep) numInt plot($w,Yprecision)
-#ShowMessage debug info "adj_lim dp $plot($w,Yprecision)" ok
-            set plot($w,Yminorstep) [expr {$plot($w,Ymajorstep)/2}]
+        set plot($w,Yminorstep) [expr {$plot($w,Ymajorstep)/2}]
         set Yrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
         set scaleChange [expr {$OldYrange/$Yrange}]
-#        ShowMessage debug info "$plot($w,Ymin_data) $plot($w,Ymax_data) \
-#                $plot($w,Ymin_axis) $plot($w,Ymax_axis) \
-#                $plot($w,Ymajorstep) $numInt $scaleChange" ok
         
         set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
         set x0 $plot($w,xborder_left)
-#        ShowMessage debug info "$plot($w,Ymax_axis) $OldYmax_axis \
-#                $plot($w,Yscale)\
-#                [expr {($plot($w,Ymax_axis)-$OldYmax_axis)*$plot($w,Yscale)}]" ok
 
         set y0 $plot($w,yborder_top)
         $w.canvas scale yaxis_item $x0 $y0 1 $scaleChange
@@ -794,7 +780,6 @@ proc adjustLimits {w Tnew Ynew} {
             +[get_y $w $OldYmax_axis $plot($w,Yscale)] }]
         $w.canvas move yaxis_item 0 $ymove
         
-
         draw_Yaxis $w
     }
 }
@@ -848,9 +833,6 @@ proc get_Xvalues {w} {
     global ::graphtools::Tnew
     
     set Told($w) $Tnew($w)
-    
-#    set Tnew($w) [GetModelValue $plot($w,Xvars)]
-#                ShowMessage debug info "$YYnew($w)" ok
     set Tnew($w) [list 1 2]
     set Tnew($w) [lreplace $Tnew($w) 0 end]
     foreach node $plot($w,Xvars) {
