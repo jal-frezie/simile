@@ -28,7 +28,9 @@ namespace eval tabular11510 {
 		 [namespace code [list ChangePrecision $winId -1]]] \
             [list property.gif "Layout" [namespace code "Layout $winId"] ]]
 
-	::graphtools::MakeToolBar $winId $toolbarItems
+	if {![string match .viewer $winId]} {
+	    ::graphtools::MakeToolBar $winId $toolbarItems
+	}
 
 	scrollbar $winId.sy -command [list $winId.t yview]
 	scrollbar $winId.sx -command [list $winId.t xview] \

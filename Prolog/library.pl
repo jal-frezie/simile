@@ -25,7 +25,7 @@ ame_save( File, Model, Date ) :-
 		   Classes ),
 	on_exception(_, open( File, write, Stream, [type(binary)]), 
 	fail), !,
-	state:shows_model(Win, Model),
+	state:find_current(Win),
 	dialogue:start_progress_dialogue(Win),
 	(dialogue:reassure_user("Writing root information"),
 	user:version_is(VStr),
@@ -212,7 +212,7 @@ choose_breakpoint(Break) :-
 % if not toplevel, to avoid clashes. Date from file is returned.
 
 ame_merge( Parent, File, Date ) :-
-	state:shows_model(Win, Parent),
+	state:find_current(Win),
 	dialogue:start_progress_dialogue(Win),
 	dialogue:reassure_user("Reading information from file"),
 	open( File, read, Stream),
