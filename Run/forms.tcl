@@ -30,6 +30,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }
     if [string match Darwin $tcl_platform(os)] {
       set t [toplevel .disaggregation -bd 4 -class Disaggregation]; ::tk::unsupported::MacWindowStyle style .disaggregation floatGrowProc
+      set disaggregate(parent) $parent
     } else {
       set t [toplevel .disaggregation -bd 4 -class Disaggregation]
       wm transient $t $parent
@@ -255,6 +256,10 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     grab release $t
     set disaggregate(comment) [string trimright [$t.commentsSW.comment get 1.0 end]]
     destroy $t
+    if [string match Darwin $tcl_platform(os)] {
+      focus -force $disaggregate(parent)
+    }
+
     set icount {}
     if [string compare $disaggregate(icount) 1] {
         foreach newIndex [split $disaggregate(icount) ,] {
@@ -661,6 +666,9 @@ proc RelationCheck {parent title type state init_comment} {
     grab release .relcheck
     set newComment [string trimright [$f.comment get 1.0 end]]
     destroy .relcheck
+    if [string match Darwin $tcl_platform(os)] {
+      focus -force $parent
+    }
     set results [list $relation(done) $newComment]
     foreach {text attr} $entries {
         lappend results $relation($attr)
@@ -712,6 +720,9 @@ proc GetFindText {parent} {
     grab release .findentry
     set result [$ft.e get]
     destroy .findentry
+    if [string match Darwin $tcl_platform(os)] {
+      focus -force $parent
+    }
     if {$find(done)} {
 	set find(prevs) [AddIfAbsent $result $find(prevs)]
         return $result
@@ -899,6 +910,9 @@ proc DoRegDialog {dtId} {
     
     grab release .register
     destroy .register
+    if [string match Darwin $tcl_platform(os)] {
+      focus -force $dtId
+    }
 }
 
 proc PopReopen {win} {

@@ -19,6 +19,7 @@ proc create_equation {parent boxtitle indices} {
     ### End formula bar section
     if [string match Darwin $tcl_platform(os)] {
       set t [toplevel .equation -bd 4 -class Equation]; ::tk::unsupported::MacWindowStyle style .equation floatZoomProc
+      set equation(parent) $parent
     } else {
       set t [toplevel .equation -bd 4 -class Equation]
       wm transient $t $parent
@@ -383,6 +384,7 @@ proc interact_equation {} {
 proc destroy_equation {} {
     global equation
     global equationbar
+    global tcl_platform
     
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -395,6 +397,9 @@ proc destroy_equation {} {
     
     focus [wm transient $equation(top)]
     destroy $equation(top)
+    if [string match Darwin $tcl_platform(os)] {
+      focus -force $equation(parent)
+    }
 }
 
 proc UnityForReal {show} {
