@@ -34,7 +34,7 @@ namespace eval ::$keyValue {
         # choose colours for variables
         set plot($w,YColours) [list #0000ff #ff0000 #00ff00 #007777 #777700 \
                 #770077 #222244 #442222 #224422]
-        set plot($w,Xmax_axis) -1e100
+                set plot($w,Xmax_axis) -1e100
         set plot($w,Xmin_axis) 1e100
         set plot($w,Xmajorstep) 1
         set plot($w,Xminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
@@ -75,6 +75,7 @@ namespace eval ::$keyValue {
         set plot($w,Xprecision) 0
         set plot($w,Yprecision) 0
         set plot($w,IdArrayElements) false; # option should plot but need legend
+        set plot($w,FewXAxisTicks) false
         
         set YYold($w) {}
         set YYnew($w) {}
@@ -206,9 +207,9 @@ namespace eval ::$keyValue {
         
         set toolbarItems [list \
                 [list clear.gif "Clear" [namespace code "clear $w"] ] \
-                [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]]
-                #[list property.gif " Properties " [namespace code "Settings $w"]]]
-                #[list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
+                [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]\
+                [list remove.gif "Remove variable" [namespace code "RemoveVariableDlg $w" ]]\
+                [list property.gif " Properties " [namespace code "Settings $w"]]]
         #    [list " redraw " [namespace code "resetGraph $w"]]
         ::graphtools::MakeToolBar $w $toolbarItems
         
@@ -237,19 +238,6 @@ namespace eval ::$keyValue {
         GrabClicks $winId
     }
     
-    proc RemoveVariable { winId } {
-        global ::graphtools::plot
-        
-        set xm [expr $plot($winId,xborder_left)+60]
-        set ym [expr $plot($winId,yborder_top)+20]
-        $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-                -text "Click  in legend area on the variable you want to remove."
-        #    set plot($winId,Ylabels) [lreplace $plot($winId,Ylabels) $index $index]
-        #tk_messageBox -message "plot($w,Ylabels) $plot($w,Ylabels)" -type ok
-        #    set plot($winId,Yvars) [lreplace $plot($winId,Yvars) $index $index]
-        #    drawGraphpad $winId
-    }
-    
     proc NoMoreVar {w} {
         ReleaseClicks $w
         $w.canvas delete prompt
@@ -257,60 +245,54 @@ namespace eval ::$keyValue {
     
     
     proc Settings {w} {
-        set wset .settings
-        catch {destroy $wset}
-        toplevel $wset
-        wm title $wset "Plotter properties"
+        # copy the values of the variables to be edited to temp, but namespace accessible, variables
+        variable FewXAxisTicks $::graphtools::plot($w,FewXAxisTicks)
+        
+        
+        set dlg [Dialog .plotxyprop -parent $w -title "Plotter properties" \
+                -modal local -default 0 -cancel 1]
+        $dlg add -name ok; # buttons 0
+        $dlg add -name cancel
         
         # Create entry boxes
-        frame $wset.entries
-        foreach item [list \
-                [list xlow "X low" 0] \
-                [list xhigh "X high" 10] \
-                [list xinterval "X interval" 1] \
-                [list ylow "Y low" 0] \
-                [list yhigh "Y high" 10] \
-                [list yinterval "Y interval" 1]] {
-                    set name [lindex $item 0]
-                    set caption [lindex $item 1]
-                    frame "$wset.entries.$name"
-                    label "$wset.entries.$name.label" -text $caption
-                    entry "$wset.entries.$name.entry"
-                    "$wset.entries.$name.entry" insert 0 [lindex $item 2]
-                    pack "$wset.entries.$name" -fill x
-                    pack "$wset.entries.$name.label" -side left
-                    pack "$wset.entries.$name.entry" -side right
-                }
-        pack $wset.entries -side top
+################################################################################
+#         set entryF [frame [$dlg getframe].entries]
+#         foreach item [list \
+#                 [list xlow "X low" 0] \
+#                 [list xhigh "X high" 10] \
+#                 [list xinterval "X interval" 1] \
+#                 [list ylow "Y low" 0] \
+#                 [list yhigh "Y high" 10] \
+#                 [list yinterval "Y interval" 1]] {
+#                     set name [lindex $item 0]
+#                     set caption [lindex $item 1]
+#                     frame "$entryF.$name"
+#                     label "$entryF.$name.label" -text $caption
+#                     entry "$entryF.$name.entry"
+#                     "$entryF.$name.entry" insert 0 [lindex $item 2]
+#                     pack "$entryF.$name" -fill x
+#                     pack "$entryF.$name.label" -side left
+#                     pack "$entryF.$name.entry" -side right
+#                 }
+#         pack $entryF -side top
+################################################################################
+
+        set chkF [frame [$dlg getframe].checkbuttons -relief groove -width 300]
+        pack [LabelFrame $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
+        pack [checkbutton $chkF.fewXAxisTicksF.cbutton -variable [namespace current]::FewXAxisTicks] -side right
+        pack $chkF -padx 10
         
-        # create checkbutton options
-        frame $wset.checkbuttons
-        foreach item [list \
-                [list horizlines "Horizontal lines" \
-                -command [namespace code "horizlines $w"]] \
-                [list vertlines "Vertical lines" \
-                -command [namespace code "vertlines $w"]] \
-                [list box "Boxed" \
-                -command [namespace code "boxed $w"]]] {
-                    set name [lindex $item 0]
-                    set caption [lindex $item 1]
-                    frame "$wset.checkbuttons.$name"
-                    label "$wset.checkbuttons.$name.label" -text $caption
-                    checkbutton "$wset.checkbuttons.$name.cbutton"
-                    pack $wset.checkbuttons.$name -fill x
-                    pack "$wset.checkbuttons.$name.label" -side left
-                    pack "$wset.checkbuttons.$name.cbutton" -side right
-                }
-        pack $wset.checkbuttons -side top
+        # copy the values from the temp values to those to be edited if OK clicked
+        if {[$dlg draw] == 0} {
+            # OK button was clicked
+            set ::graphtools::plot($w,FewXAxisTicks) $FewXAxisTicks
+            UpdateState $w
+        }
+        #ShowMessage debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
         
-        frame $wset.buttons
-        button $wset.buttons.ok -text OK -command [namespace code ""]
-        button $wset.buttons.cancel -text Cancel -command [namespace code "destroy .settings"]
-        pack $wset.buttons
-        pack $wset.buttons.ok $wset.buttons.cancel -side left -pady 2 -padx 4
+        destroy $dlg
     }
-    
-    
+        
     ### Draw on the graph canvas everything except the actual data points.
     proc drawGraphpad {w} {
         global ::graphtools::plot
@@ -352,7 +334,7 @@ namespace eval ::$keyValue {
                 [expr $y0+$plot($w,yborder_bottom)-5] \
                 -text "Time" -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
-                
+        
         # legend vars only not elements of arrays
         set nYlabel [llength $plot($w,Ylabels)]
         set j 0
@@ -583,11 +565,11 @@ namespace eval ::$keyValue {
                 if {[info exists Yold_array($element)]} {
                     plot_Y $w $iplot $Told $Yold_array($element) $Tnew \
                             $Ynew_array($element)
-################################################################################
-#                     if {$plot($w,IdArrayElements)} {
-#                         incr iplot; # would give element of an array a unique id, eg for colour
-#                     }
-################################################################################
+                    ################################################################################
+                    #                     if {$plot($w,IdArrayElements)} {
+                    #                         incr iplot; # would give element of an array a unique id, eg for colour
+                    #                     }
+                    ################################################################################
                 }
             }
         }
@@ -646,8 +628,7 @@ namespace eval ::$keyValue {
         
         if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
             if {$Tnew>$plot($w,Xmax_axis)} {
-                set plot($w,Xmax_data) [expr {[GetModelTime]+$runState(execTime)}]; #$time
-                #set plot($w,Xmax_data) $Tnew
+                set plot($w,Xmax_data) [expr {[GetModelTime]+$runState(execTime)}]
             }
             if {$Tnew<$plot($w,Xmin_axis)} {
                 set plot($w,Xmin_data) $Tnew
@@ -655,18 +636,15 @@ namespace eval ::$keyValue {
             set OldRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
             set OldXmin_axis $plot($w,Xmin_axis)
             
-            #set plot($w,Xmax_data) 10; # jan 03
             set numInt 0
             set numMinorInt 0
             #puts "adjustX lim Tnew $Tnew; plot(w,Xmin_data) $plot($w,Xmin_data); \
-                    plot(w,Xmax_data) $plot($w,Xmax_data)\n\
-                    plot(w,Xmin_axis) $plot($w,Xmin_axis); plot(w,Xmax_axis) $plot($w,Xmax_axis)"
-            AxisRound $plot($w,Xmin_data) $plot($w,Xmax_data) 0 \
+            #        plot(w,Xmax_data) $plot($w,Xmax_data)\n\
+            #        plot(w,Xmin_axis) $plot($w,Xmin_axis); plot(w,Xmax_axis) $plot($w,Xmax_axis)"
+            AxisRound $plot($w,Xmin_data) $plot($w,Xmax_data) $plot($w,FewXAxisTicks) \
                     plot($w,Xmin_axis) plot($w,Xmax_axis) \
                     plot($w,Xmajorstep) numInt plot($w,Xminorstep) numMinorInt plot($w,Xprecision)
             
-            #set plot($w,Xmajorstep) [expr {$plot($w,Xmajorstep)/2}]
-            #set plot($w,Xminorstep) [expr {$plot($w,Ymajorstep)/2}]
             set Trange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
             
             set scaleChange [expr {$OldRange/$Trange}]
@@ -767,7 +745,7 @@ namespace eval ::$keyValue {
         }
     }
     
-    # Scales data X and Y values to canvas coordinates (pixels)    
+    # Scales data X and Y values to canvas coordinates (pixels)
     proc get_x {w X Xscale} {
         global ::graphtools::plot
         expr {$plot($w,xborder_left)+($X-$plot($w,Xmin_axis))/$Xscale}
@@ -778,6 +756,40 @@ namespace eval ::$keyValue {
         expr {$plot($w,yborder_top)+$plot($w,ylength) \
                     -($Y-$plot($w,Ymin_axis))/$Yscale}
     }
+    
+    proc RemoveVariableDlg {w} {
+        global ::graphtools::plot
+        
+        set dlg [Dialog .plotterRemoveDlg -parent $w -title "Remove variable" \
+                -modal local -default 0 -cancel 1]
+        $dlg add -name ok; # buttons 0
+        $dlg add -name cancel
+        
+        set mainF [$dlg getframe]
+        
+        listbox $mainF.listbox
+        pack $mainF.listbox -padx 10 -pady 10 -expand on -fill both
+        
+        foreach item $plot($w,Ylabels) {
+            $mainF.listbox insert end $item
+        }
+        
+        # copy the values from the temp values to those to be edited if OK clicked
+        if {[$dlg draw] == 0} {
+            # OK button was clicked
+            set index [$mainF.listbox curselection]
+            if {![string match "" $index]} {
+                set plot($w,Ylabels) [lreplace $plot($w,Ylabels) $index $index]
+                set plot($w,Yvars) [lreplace $plot($w,Yvars) $index $index]
+                drawGraphpad $w
+            }
+        }
+        #ShowMessage debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
+        
+        destroy $dlg
+        
+    }
+    
     
     # end of namespace
 } ;
