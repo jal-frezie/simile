@@ -464,7 +464,7 @@ proc FineX { c } {
 # TABLE LOADING
 #####################################################################
 
-proc equationDoTable {parent tgt} {
+proc equationDoTable {parent tgt startLine} {
     global table_entry iconImages
     
     toplevel .table -bd 4
@@ -498,9 +498,9 @@ proc equationDoTable {parent tgt} {
     # OK, Cancel and Help buttons
     frame .table.top.fbuttons
     button .table.top.fbuttons.edit -text View/Edit -width 10 \
-	-command [list EditTableData $lidx]
+	-command [list EditTableData $lidx $startLine]
     button .table.top.fbuttons.ok -text OK -width 10 \
-	-command [list DoneTableData $lidx]
+	-command [list DoneTableData $lidx $startLine]
     button .table.top.fbuttons.cancel -text Cancel -width 10 \
 	-command "set table_entry(done) 0"
     button .table.top.fbuttons.help -text Help -width 10 \
@@ -531,7 +531,7 @@ proc equationDoTable {parent tgt} {
     pack $fdata.captions.dheadlabel -side top -anchor w -fill y -expand true
     pack $dhead -side top -expand true -fill x
     button $fdata.buttons.load -text Load -width 10 \
-	-command [list AcquireTableData $lidx 1]
+	-command [list AcquireTableData $lidx 1 $startLine]
     pack $fdata.buttons.load -side top -padx 4 -pady 4
     label $fdata.captions.dfilelabel -text "Data file:"
     set dfile [Entry $fdata.entries.dfile \
@@ -582,21 +582,21 @@ proc equationDoTable {parent tgt} {
     return $table_entry(done)
 }
 
-proc EditTableData {lidx} {
+proc EditTableData {lidx startLine} {
     global table_entry
-    AcquireTableData $lidx 0
+    AcquireTableData $lidx 0 $startLine
     if {[EditListAsTable .table table_entry(values)]} {
 	set table_entry(source) 1
     }
 }
 
-proc DoneTableData {lidx} {
+proc DoneTableData {lidx startLine} {
     global table_entry
-    AcquireTableData $lidx 0
+    AcquireTableData $lidx 0 $startLine
     set table_entry(done) $table_entry(source)
 }
 
-proc AcquireTableData {lidx redo} {
+proc AcquireTableData {lidx redo startLine} {
     global table_entry
 
     if {![llength $table_entry(dataField)]} {
@@ -611,7 +611,7 @@ proc AcquireTableData {lidx redo} {
 			       $table_entry(dataField)] $table_entry(indices)]
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
 #do_in_editor puts "Loading with $tableSpec not $table_entry(data)"
-	set table_entry(values) [LoadTableData $tableSpec]
+	set table_entry(values) [LoadTableData $tableSpec $startLine]
 	set table_entry(source) 2
 	set table_entry(data) $tableSpec
     }
@@ -710,7 +710,7 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
-proc LoadTableData {tableSpec} {
+proc LoadTableData {tableSpec lineCount} {
     
 #ShowMessage debug info "Loading table with data $tableSpec" ok
     set tStr [NetOpen [lindex $tableSpec 0] r]
@@ -719,7 +719,6 @@ proc LoadTableData {tableSpec} {
 #ShowMessage debug info "Headers are $headerList" ok
     
     set indexCount 0
-    set lineCount 0
     set maxIndices(0) {}
     foreach headerIndex [lrange $tableSpec 2 end] {
         lappend indexColumns [lsearch -exact $headerList $headerIndex]
@@ -754,10 +753,10 @@ proc LoadTableData {tableSpec} {
 		}
             }
         } else {
-            incr lineCount
 	    lappend maxIndices(0) $lineCount
             set arrayIndex $lineCount
             set indexCount 1
+            incr lineCount
         }
         
         # ignore empty entries

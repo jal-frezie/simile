@@ -12,10 +12,10 @@ proc FileParamDialogue {topNode topWin mustShow} {
     MakeFrames $t
     array unset widgetNames
     foreach node $allNodes {
-        set isInput [lsearch {TABLE INPUT} \
+        set notInput [lsearch {INPUT TABLE} \
 			 [GetCompProperty $topNode Eval $node]]
-	if {$isInput != -1} {
-	    AddEntry $t $topNode $node $mustShow $isInput
+	if {$notInput != -1} {
+	    AddEntry $t $topNode $node $mustShow $notInput
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
@@ -66,7 +66,7 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
-proc AddEntry {winId topNode node mustShow isInput} {
+proc AddEntry {winId topNode node mustShow notInput} {
     global paramData paramDims widgetNames iconImages msgs
     set compName [GetCompProperty $topNode Caption $node]
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
@@ -80,7 +80,7 @@ proc AddEntry {winId topNode node mustShow isInput} {
 # types (from prolog) and use to translate array bounds. Do this first because
 # there will be null entries in the table for vm model levels.
     set trans [do_in_editor GetTransTable $node]
-    if {$isInput} {
+    if {!$notInput} {
 	set nodeDims [linsert $nodeDims 0 TIME]
 	set trans [linsert $trans 0 {}]
     }
@@ -117,7 +117,7 @@ proc AddEntry {winId topNode node mustShow isInput} {
 			       fileparams 0]]] -fill x -expand on
     pack [label $slot.l -text $slotCaption -fg red] -side left
     if {$nodeDims>1} {
-	pack [button $slot.b -image $iconImages(edit) -command [namespace code [list GetFromTable $winId $compName]]] -side right
+	pack [button $slot.b -image $iconImages(edit) -command [namespace code [list GetFromTable $winId $compName $notInput]]] -side right
     }
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
@@ -614,7 +614,8 @@ proc MergeParams {topNode smPath oldPath interactive} {
         #ShowMessage debug info "Component is $restoredComp" ok
 	set node [GetCompProperty $topNode IdFromCapt $restoredComp]
 	set nType [GetCompProperty $topNode Eval $node]
-	if {[lsearch {TABLE INPUT} $nType]!=-1} {
+	set startLine [lsearch {INPUT TABLE} $nType]
+	if {$startLine!=-1} {
 	    if {$origVersion>=4.0} {
 		set paramData($restoredComp) [lindex $IdAndValue 2]
 		set reference [string equal reference [lindex $IdAndValue 1]]
@@ -642,7 +643,7 @@ proc MergeParams {topNode smPath oldPath interactive} {
                     # now just load up the data
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
 		set paramData($restoredComp) \
-		    [LoadTableData $paramState($restoredComp)]
+		    [LoadTableData $paramState($restoredComp) $startLine]
 		set whichParamsAffected($restoredComp) 1
 		set msgs(param_source_$restoredComp) [concat $newPopup \
 			  (reference to $VFile)]
@@ -735,7 +736,7 @@ proc VarType {testVar types} {
     }
 }
 
-proc GetFromTable {parent compName} {
+proc GetFromTable {parent compName startLine} {
     global paramState paramData widgetNames table_entry msgs
     if {[info exists paramState($compName)]} {
 	set table_entry(data) $paramState($compName)
@@ -747,7 +748,7 @@ proc GetFromTable {parent compName} {
     } else {
 	set table_entry(values) $paramData($compName)
     }
-    set newSource [equationDoTable $parent $compName]
+    set newSource [equationDoTable $parent $compName $startLine]
     if {$newSource} {
         if {[llength $table_entry(dataField)]} {
 	    set paramState($compName) [concat [list $table_entry(fileName) \
