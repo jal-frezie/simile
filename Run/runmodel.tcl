@@ -9,6 +9,7 @@ package require BWidget
 
 source ../Run/graphs.tcl
 source ../Run/utility.tcl
+source ../Run/params.tcl
 source ../Run/hai2mmii.tcl
 
 source ../Run/support.tcl

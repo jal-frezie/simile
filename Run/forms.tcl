@@ -501,8 +501,14 @@ proc RollAll {s l1 l2 l3 top bot} {
     $l3 yview moveto $top
 }
 
+# botch to allow table viewer to be used in this interp
+source ../IOTools/DisplayFormats.tcl 
+source ../IOTools/graphtools.tcl
+source ../IOTools/two_table.tcl
+set table_viewer(id) $keyValue
+
 proc GetTable {parent comp box} {
-    global equation table_entry table_viewer
+    global equation table_entry
     
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
@@ -697,6 +703,32 @@ proc equationDoGraph {parent box} {
         }
         set equation(done) 3
     }
+}
+
+proc equationGraph {parent} {
+    global equation
+    toplevel .graph -class graphEntry -bd 4
+    wm transient .graph $parent
+    # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
+    #    wm geometry .graph 640x480
+    focus .graph
+    grab .graph
+    # set default values for new graph
+    set graphArgs {0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200}
+    if {[info exists equation(table_data)]} {
+	if {[string equal /graph/ [lindex $equation(table_data) 0]]} {
+	    set graphArgs [concat [lrange $equation(table_data) 5 7] \
+			       [lrange $equation(table_data) 1 3] \
+			       [lindex $equation(table_data) 8] \
+			       [lindex $equation(table_data) 4] \
+			       [join $equation(table_values) ,]]
+	}
+    }
+    set done [eval {GraphEntry .graph} $graphArgs]
+    grab release .graph
+    destroy .graph
+    grab $parent
+    return $done
 }
 
 proc equationOK {} {
