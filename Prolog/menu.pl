@@ -48,24 +48,22 @@ redo :-
 	update_ability(redo, edit, 'Redo', Further).
 
 menu_select(Seln) :-
-	/* if changing type of add, clear highlights */
-	get_mode(add),
-	    normalize(_),
-	    fail;
 	update_mode(add),
 	display_mode(add),
 	set_adding_object(Seln),
 	initialize_phase.
 
 mode_select(Seln) :-
-	normalize(_),
-	    fail;
 	update_mode(Seln),
 	display_menu(none),
 	initialize_phase.
 
 update_mode(NewMode) :-
-	get_mode(NewMode), !;
+	get_mode(OldMode),
+	(\+ OldMode = select,
+	    normalize(_),
+	    fail;
+	OldMode = NewMode), !;
 	set_mode(NewMode),
 	retract(cursor_is(_)),
 	(Win shows_model _,
