@@ -67,7 +67,7 @@
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Scripting">
-			<param name="Local" value="new\scripting.htm">
+			<param name="Local" value="scripting\scripting.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Other new stuff">
@@ -757,8 +757,36 @@
 		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Scripting">
-			<param name="Local" value="new\scripting.htm">
+			<param name="Local" value="scripting\scripting.htm">
 			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Comand reference">
+				<param name="Local" value="scripting\scriptingref.htm">
+				</OBJECT>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Model window">
+					<param name="Local" value="scripting\modelwin.html">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Run control">
+					<param name="Local" value="scripting\runcontrol.html">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Table helper">
+					<param name="Local" value="scripting\tablehelper.html">
+					</OBJECT>
+			</UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Example scripts">
+				<param name="Local" value="scripting\ExampleScripts.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="From other TclTk installations">
+				<param name="Local" value="scripting\FromOtherInterp.htm">
+				</OBJECT>
+		</UL>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Working with External Data">
