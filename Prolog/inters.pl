@@ -102,9 +102,10 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 submodel, the link parameter is set to 'outside' if they count as
 outside, so in this case we add the submodel level for their submodel,
 enabling the channel ID to be got from it */
+            copy_term(RealPathForm, RealPath),
 	    (Link = outside, !,
-		UsePath = [_ | RealPathForm];
-	    UsePath = RealPathForm),
+		UsePath = [_ | RealPath];
+	    UsePath = RealPath),
 	    NewVar = channel_is(param(arr(_, Ref,_),_, UsePath,_,_)),
 	    Recurse = 0;	  
 	expand_library(DestRef, Var, NewVar),
