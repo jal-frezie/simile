@@ -111,5 +111,9 @@ SOURCE=.\Simile.rc
 SOURCE=.\similev2.ico
 # End Source File
 # End Group
+# Begin Source File
+
+SOURCE=.\wish.exe.manifest
+# End Source File
 # End Target
 # End Project

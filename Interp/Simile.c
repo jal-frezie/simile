@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Simile.c,v 1.2 2002/12/16 12:01:09 jmm Exp $
+ * RCS: @(#) $Id: Simile.c,v 1.3 2002/12/17 13:06:14 jmm Exp $
  */
 
 #include <tk.h>
@@ -129,6 +129,7 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
     TK_LOCAL_MAIN_HOOK(&argc, &argv);
 #endif
 
+	tempstr = buffer;
     if (argc>2) {
     tempstr = argv[1];
 	argv[1] = argv[2];
@@ -315,10 +316,11 @@ setargv(argcPtr, argvPtr)
 	strncat( buffer, "\"", 1 );
 
     cmdLine = GetCommandLine(); /* INTL: BUG */
-	strncat( cmdLine, " ", strlen(" ") ); // space between args
-	strncat( cmdLine, buffer, strlen(buffer) );
-//	strncat( cmdLine, " f:\\progra~1\\simile\\run\\simile.tcl", strlen(" f:\\progra~1\\simile\\run\\simile.tcl") );
-
+	memset( buffer2, 0, MAX_PATH+1 );
+	strncat( buffer2, " ", strlen(" ") ); // space between args
+	strncat( buffer2, " ", strlen(" ") ); // space between args
+	strncat( buffer2, buffer, strlen(buffer) );
+	cmdLine = buffer2;
 
     /*
      * Precompute an overly pessimistic guess at the number of arguments

@@ -47,13 +47,18 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "FileDescription", "Wish Application\0"
-            VALUE "OriginalFilename", "wish84.exe\0"
-            VALUE "CompanyName", "ActiveState Corporation\0"
-            VALUE "FileVersion", "8.4.1\0"
-            VALUE "LegalCopyright", "Copyright © 2000 by ActiveState Corporation, et al\0"
-            VALUE "ProductName", "Tk 8.4 for Windows\0"
-            VALUE "ProductVersion", "8.4.1\0"
+            VALUE "Comments", "\0"
+            VALUE "CompanyName", "Simulistics Ltd.\0"
+            VALUE "FileDescription", "Simile launch program\0"
+            VALUE "FileVersion", "\0"
+            VALUE "InternalName", "\0"
+            VALUE "LegalCopyright", "Copyright © 2002 by Simulistics Ltd, et al\0"
+            VALUE "LegalTrademarks", "\0"
+            VALUE "OriginalFilename", "simile.exe\0"
+            VALUE "PrivateBuild", "\0"
+            VALUE "ProductName", "\0"
+            VALUE "ProductVersion", "\0"
+            VALUE "SpecialBuild", "\0"
         END
     END
     BLOCK "VarFileInfo"
