@@ -1028,7 +1028,6 @@ proc PrepForExport {winId way} {
     } else {
         set textBoost 1.0
     }
-    set ltBorder 20
     set textscale [expr $detail*$textBoost]
     if {[string match there $way]} {
 	if {[scan [$winId cget -scrollregion] "%g %g %g %g" sl st sr sb]<4} {
@@ -1040,19 +1039,25 @@ proc PrepForExport {winId way} {
 	set jiggles(br) $sr
 	set jiggles(bb) $sb
 
+	set jiggles(sl) [lindex [$winId xview] 0]
+	set jiggles(st) [lindex [$winId yview] 0]
+	set xbase [expr [$winId canvasx 0]-$sl]
+	set ybase [expr [$winId canvasy 0]-$st]
 	$winId move all [expr -$sl] [expr -$st]
 # Don't bother moving the scrollregion, it will not be staying like this
 # -- actually we need to move it because print_widget scales to it
 	$winId configure -scrollregion [list 0 0 \
 	    [expr $detail*($sr-$sl)] [expr $detail*($sb-$st)]]
 	ZoomImage $winId all $detail $textscale
+	return [list $xbase $ybase $detail]
     } else {
 	ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
 	$winId configure -scrollregion [list $jiggles(bl) $jiggles(bt) \
 		$jiggles(br) $jiggles(bb)]
+	$winId xview moveto $jiggles(sl)
+	$winId yview moveto $jiggles(st)
 	$winId move all $jiggles(bl) $jiggles(bt)
     }
-    return [list $jiggles(bl) $jiggles(bt) $detail]
 }
 	
 proc CopyCanvasToWindowsClipboard {canvas} {
@@ -1105,13 +1110,9 @@ proc SpitPS {winId psfile} {
     set useHeight [winfo height $winId]
 
     $winId postscript -file $psfile -rotate true -pageanchor nw \
-            -pagex 0 -pagey 0 \
-	-x [expr $detail*[$winId canvasx [expr -$xbase]]] \
-	-y [expr $detail*[$winId canvasy [expr -$ybase]]] \
-            -width [expr $detail*$useWidth] \
-            -height [expr $detail*$useHeight] \
-            -pagewidth [expr $useWidth/100.0]i \
-            -pageheight [expr $useHeight/100.0]i
+	-pagex 0 -pagey 0 -x [expr $detail*$xbase] -y [expr $detail*$ybase] \
+	-width [expr $detail*$useWidth] -height [expr $detail*$useHeight] \
+	-pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
     PrepForExport $winId back
 }
 

@@ -1584,7 +1584,7 @@ proc ShowExpiryImminent {expTime} {
             -side left -padx 4 -pady 8
     pack $buttons
     
-    set height [winfo reqheight .expiry]
+    set height [winfo reqheight .expiry]
     set width [winfo reqwidth .expiry]
     set sheight [winfo screenheight .expiry]
     set swidth [winfo screenwidth .expiry]

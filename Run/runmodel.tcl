@@ -263,6 +263,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
             text {
                 set fontData [ExtractFontData [$winId itemcget $object -font]]
                 set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+puts "Caption [$winId itemcget $object -text] font $fontData newsize $newTextSize"
                 if {$newTextSize < 1} {
                     set newTextSize 1
                 }
