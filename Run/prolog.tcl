@@ -27,6 +27,7 @@ proc KeepLooking {} {
 	    }
 	    if {[catch {set cmd [lindex $line 0]} mess]} {
 		DebugMess "Could not parse $line : $mess"
+		send_pl_cmd result:-1
 	    } elseif {[string match get_tcl_cmd $cmd]} {
 		set prologExit 1
 	    } elseif {[string match send_tcl_cmd $cmd]} {

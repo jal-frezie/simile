@@ -309,8 +309,9 @@ proc ReleaseObj {winId xco yco} {
 
 proc EmbraceObj {winId} {
     set nodeId [GetEdit $winId]
-    
-    prolog [list tk_embrace( '$winId' , $nodeId )]
+    if {[llength $nodeId]} {
+	prolog [list tk_embrace( '$winId' , $nodeId )]
+    }
 }
 
 # This allows prolog to save the values of editing when the window is exited.
@@ -1625,7 +1626,9 @@ proc AbleComp {winid} {
 proc EmbraceEqn {winId} {
     global equationbar
     if {[info exists equationbar($winId,node)]} {
-        prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
+	if {[llength $equationbar($winId,node)]} {
+	    prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
+	}
     }
 }
 
