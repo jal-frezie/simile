@@ -13,7 +13,7 @@ sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	off_window/1, kill_everything/0]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
-	state, backup, library, ame_gen, utility, 
+	state, backup, library, ame_gen, utility, ss_import,
 	library(lists), library(ordsets)]).
 
 :- dynamic(running/1).
@@ -473,6 +473,14 @@ menu_handle(Win, file, prolog_eqns) :-
 	close(Stream),
 	finish_progress_dialogue).
 */
+
+menu_handle(_Win, file, import_ss) :-
+	output:safe_tcl_eval(['ConvertSSXML'], _),
+	m_update:make_desktop(Parent, _),
+	use_temp_dir(Dir),
+	append_atoms(Dir, '/ss_import.pl', SSFile),
+	convert_ss(SSFile, Parent),
+	redisplay(Parent).
 
 menu_handle(Win, file, export_prolog) :-
 	Win shows_model Model,

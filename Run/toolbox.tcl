@@ -946,6 +946,28 @@ proc GetParts {top tree} {
     return $mimes
 }
 
+proc ConvertSSXML {} {
+    global simtmpdir
+    package require xslt
+    package require mime
+
+    set importSrc [ChooseFile spreadsheet.xml "Import spreadsheet from:" 0]
+    set mm1 [mime::initialize -canonical application/x-xml -file $importSrc]
+    set XML [mime::getbody $mm1]
+    set source_doc [::dom::libxml2::parse $XML]
+    set mm2 [mime::initialize -canonical application/x-xml \
+		 -file ../Run/xml2pl01.xsl]
+    set XSLstylesheet [mime::getbody $mm2]
+    set ssheet_doc [::dom::libxml2::parse $XSLstylesheet]
+    set ssheet [::xslt::compile $ssheet_doc]
+    set result_doc [$ssheet transform $source_doc]
+    set result_xml [::dom::libxml2::serialize $result_doc \
+			-method [$ssheet cget -method]]
+    set importDest [NetOpen [file join $simtmpdir ss_import.pl] w]
+    puts $importDest $result_xml
+    close $importDest
+}
+
 # Path names derived from Windows environment variables must be
 # 'brainwashed' i.e., stripped of their native culture and turned
 # into blank-faced Unix-style forward-slash-separated automata.
