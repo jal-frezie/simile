@@ -455,12 +455,13 @@ process. */
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 ParamList, ParseError) :-
 	reverse(IndxCount, IndxSzs),
-	append(InterInputs, [input_link(_, DimL, '/dest/', DLoops,_)
+	append(InterInputs, [input_link(_, DimL, '/dest/', _-DLoops,_)
 			    | ExpInters], AllInputs),
 	
 	replace_subexps(Equation, dialogue, expand_params,
-			dim_data(DimL, AllInputs), top_down, _ParamSubs,
-			FullExpr),
+			dim_data(DimL, ParamList, AllInputs), top_down,
+			_ParamSubs, FullExpr),
+	length(ParamList, _LenP),
 	get_ground_part(DimL, DimDG),
 	length(DimDG, LenD),
 	length(DimDV, LenD),
@@ -490,9 +491,7 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 							Loops, _)),
 	    decode_error(ParseException, ParseError))),
 	get_dims_from_loops(Loops, XDims, _),
-	real_dims_only(XDims, Dims),
-	
-	all(dialogue, get3rd, [build(AllInputs), build(ParamList)]).
+	real_dims_only(XDims, Dims).
 	/* Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it
 	to the relative source contexts */
@@ -536,15 +535,14 @@ real_dims_only(IDims, Dims) :-
 
 check_dim_match(P, Q) :- P=Q; Q=0.
 
-get3rd(input_link(_,_,A,_,_), A).
-
-expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
+expand_params(dim_data(DimL, PsUsed, AllInputs), Param, DoneExpr, Recurse) :-
 	(get_solo_list_depth(Param, Depth),
 	/* when making dummy links for explicit intermediate results, check
 	the 1st field (influence id) is a free var, and if so, use the
 	4th field to hold the dims */
 	member(input_link(Link, LRefs, Param, Loops, Units), AllInputs), !,
 	    (nonvar(Link), !,
+		member(Param, PsUsed),
 		analyze_array(Units, Base, Dims),
 		(units:get_conversion(_, Base, Base, _), !,
 		    Type = real;
@@ -565,10 +563,10 @@ expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 	    member(input_link(_,SubL, ExpInt, Type-Loops, something),
 		   AllInputs), !,
 	    replace_subexps(Use, dialogue, expand_params,
-			     dim_data(DimL, AllInputs), top_down, _,
+			     dim_data(DimL, PsUsed, AllInputs), top_down, _,
 			     UseExpr),
 	    replace_subexps(Defn, dialogue, expand_params,
-			     dim_data(SubL, AllInputs), top_down, _,
+			     dim_data(SubL, PsUsed, AllInputs), top_down, _,
 			     DefnExpr),
 	    DoneExpr = (param(arr(_,ExpInt,_), Type, Loops,_,_)=DefnExpr,
 			   UseExpr);
@@ -576,7 +574,7 @@ expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 	    member(Cumulative, [sum, product, least, greatest,
 				any, all, count]), !,
 	    replace_subexps(Item, dialogue, expand_params,
-			     dim_data(SubL, AllInputs), top_down, _,
+			     dim_data(SubL, PsUsed, AllInputs), top_down, _,
 			     DDone),
 	    DoneExpr =.. [Cumulative, DDone],
 	    SubL = [x | DimL];
@@ -589,15 +587,15 @@ expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 	    DDone = do(EltExpr, CountExpr),
 	    DoneExpr = makearray(EltExpr, CountExpr)),
 	    replace_subexps(DParam, dialogue, expand_params,
-			    dim_data(SubL, AllInputs), top_down, _,
+			    dim_data(SubL, PsUsed, AllInputs), top_down, _,
 			    DDone),
 	    DimL = [x | SubL];
 	Param = element(List, Index),
 	    replace_subexps(List, dialogue, expand_params,
-			    dim_data(ListL, AllInputs), top_down, _,
+			    dim_data(ListL, PsUsed, AllInputs), top_down, _,
 			    ListExpr),
 	    replace_subexps(Index, dialogue, expand_params,
-			    dim_data(IndxL, AllInputs), top_down, _,
+			    dim_data(IndxL, PsUsed, AllInputs), top_down, _,
 			    IndXpr),
 	    DoneExpr = element(ListExpr, IndXpr),
 	    ListL = [x | DimL],

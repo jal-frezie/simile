@@ -339,8 +339,7 @@ make_intermediates(
 	don't use extra dims if values will all be the same...actually dont
 	do it anyway, is just too hard */
 	
-	( /* \+ Source = make_inter(_,_), */
-	contains_something(individuates, Source), !,
+	(contains_something(individuates, Source), !,
 	    NowBuilding = BuildingArrays;
 	NowBuilding = []),
 	
@@ -543,8 +542,8 @@ make_intermediates(
 	context. */
 
 	(Source = makearray(Element, Dim),
-	    make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters, [],
-				Step, Used, Dun, MidInters,
+	    make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
+				BuildingArrays, Step, Used, Dun, MidInters,
 				part_result([], DimSetups,_, DimVal)),
 		(promote_unit(Dun, const_int);
 		 raise_exception(bad_index_number(Dim, makearray))), !,
@@ -717,7 +716,8 @@ refer_inter(instance(internal, inter(Context, _, ParamLoops), Source, Name,
 	    pointer_from(DestPath, SourcePtr),
 	    make_inds_for(Dims, IntLoops, IntInds),
 	    copy_term(ParamLoops, SourceLoops),
-	    append(SpareLoops, SourceLoops, IntLoops),
+	    /* order of parts exchanged simply cos it made it work */
+	    append(SourceLoops, SpareLoops, IntLoops),
 	    suffix(SpareLoops, BuildLoops),
 	    append(SourceLoops, DestPath, SourceContext),
 	    SourceRef = arr(SourcePtr, Name, IntInds).
@@ -1096,7 +1096,7 @@ individuates(_, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
 	nonvar(Subexp),
 	member(Subexp, [channel_is(_), ind_time(_),
-			index(_), place_in(_)]).
+			index(_), place_in(_), use_inter(_)]).
 
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),
