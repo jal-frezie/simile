@@ -174,7 +174,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
                 # regsub -all " " $graph($t,points) , graph($t,pts)
                 # Target is set to variable id if editing sketch at run time
                 if {[llength $target]} {
-                    eval {SetModelGraph $t $target $graph($t,lowx) \
+                    eval {SetModelGraph $target $graph($t,lowx) \
 			      $graph($t,highx) $graph($t,width) \
 			      $graph($t,lowy) $graph($t,highy) \
 			      $graph($t,height) $graph($t,range) \
@@ -188,7 +188,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             }
         } else {
             if {[llength $target]} {
-                set lastSaved [GetModelGraph $t $target]
+                set lastSaved [GetModelGraph $target]
                 scan $lastSaved "%g %g %d %g %g %d %d" graph($t,lowx) \
                         graph($t,highx) graph($t,width) \
                         graph($t,lowy) graph($t,highy) \

@@ -313,7 +313,8 @@ proc GetModelGraph {node} {
 }
 
 proc SetModelGraph {node args} {
-    return [eval GetModelProperty $winId Graph $node $args]
+    global myNode
+    return [eval GetCompProperty $myNode Graph $node $args]
 }
 
 proc GetModelType { node } {
