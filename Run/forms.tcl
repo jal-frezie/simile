@@ -3,118 +3,118 @@
 ################################################################################
 # Yet another dialog box, this one for equation entry. Title is 'Equation for
 # <name> (<units>)' and we need to keep the box up to display errors while entering
-# the equation. Put up warning messages if the units change etc etc etc. 
+# the equation. Put up warning messages if the units change etc etc etc.
 
 package require BWidget
 catch {namespace import BWidget::*}
 
 proc equationResources {} {
-
-#    foreach equation(ebox) {name description comment units} {
-#	option add *Equation*$equation(ebox).relief		sunken	startup
-#	option add *Equation*$equation(ebox).background	white	startup
-#	option add *Equation*$equation(ebox).foreground	black	startup
-#    }
-
+    
+    #    foreach equation(ebox) {name description comment units} {
+    #	option add *Equation*$equation(ebox).relief		sunken	startup
+    #	option add *Equation*$equation(ebox).background	white	startup
+    #	option add *Equation*$equation(ebox).foreground	black	startup
+    #    }
+    
     # Text for the labels on variable/parameter/unit entries
-#    option add *Equation*n.text		Equation:	startup
-#    option add *Equation*u.text		Units:		startup
-#    option add *Equation*v.text		Label:	startup
-#    option add *Equation*p.text		"Local name:"	startup
-#    option add *Equation*i.text		Units:		startup
-
+    #    option add *Equation*n.text		Equation:	startup
+    #    option add *Equation*u.text		Units:		startup
+    #    option add *Equation*v.text		Label:	startup
+    #    option add *Equation*p.text		"Local name:"	startup
+    #    option add *Equation*i.text		Units:		startup
+    
     # Text for the OK and Cancel buttons
-#    option add *Equation*ok*text		OK	startup
-     option add *Equation*ok*underline		0	startup
-#    option add *Equation*cancel.text		Cancel	startup
-     option add *Equation*cancel.underline 	0	startup
-#    option add *Equation*graph.text		"Graph..."	startup
-#     option add *Equation*graph.underline 	1	startup
-#    option add *Equation*table.text		"Table..."	startup
-#     option add *Equation*table.underline 	1	startup
-
+    #    option add *Equation*ok*text		OK	startup
+    option add *Equation*ok*underline		0	startup
+    #    option add *Equation*cancel.text		Cancel	startup
+    option add *Equation*cancel.underline 	0	startup
+    #    option add *Equation*graph.text		"Graph..."	startup
+    #     option add *Equation*graph.underline 	1	startup
+    #    option add *Equation*table.text		"Table..."	startup
+    #     option add *Equation*table.underline 	1	startup
+    
     # Size of the listboxes
     foreach listBox {plist ilist} {
-	option add *Equation*$listBox.width	15	startup
-	option add *Equation*$listBox.height	4	startup
+	    option add *Equation*$listBox.width	15	startup
+	    option add *Equation*$listBox.height	4	startup
     }
 }
 
 proc fill_equation {current_equation units mult isParam \
-        table_data table_values desc comment min max} {
-        
-	global equation 
-	global equationbar
-
-      set equationbar(units) $units
-#      set equationbar(mult) $mult
-      set equationbar(isParam) $isParam
-      set equationbar(table_data) $table_data
-      set equationbar(table_values) $table_values
-      set equationbar(desc) $desc
-      set equationbar(comment) $comment
-      set equationbar(min) $min
-      set equationbar(max) $max
-
-
-                                 ### Formula bar section
+            table_data table_values desc comment min max} {
+    
+    global equation
+    global equationbar
+    
+    set equationbar(units) $units
+    #      set equationbar(mult) $mult
+    set equationbar(isParam) $isParam
+    set equationbar(table_data) $table_data
+    set equationbar(table_values) $table_values
+    set equationbar(desc) $desc
+    set equationbar(comment) $comment
+    set equationbar(min) $min
+    set equationbar(max) $max
+    
+    
+    ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
-       return
+        return
     }
     if {[string compare $equationbar(current_action) tick]==0} then {
         return
     }
-                                ### End formula bar section
-
+    ### End formula bar section
+    
     set widget [$equation(main).descf.description getframe]
     $widget.text delete 1.0 end
     $widget.text insert 1.0 $desc
     $equation(doc).cmtFrame.text delete 1.0 end
-	$equation(doc).cmtFrame.text insert 1.0 $comment
+    $equation(doc).cmtFrame.text insert 1.0 $comment
     set widget [$equation(main).main.main getframe]
     $widget.equation.textbox.text delete 1.0 end
     $widget.equation.textbox.text insert 1.0 [ExtractGraphData $current_equation]
-	set equation(units) $units
+    set equation(units) $units
     set equation(mult) [join $mult ,]
-	set equation(table_data) $table_data
-	set equation(table_values) $table_values
-	
-	if {[set equation(isparam) $isParam]==-1} {
-	    set paramMenuState disabled
-	} else {
-	    set paramMenuState normal
+    set equation(table_data) $table_data
+    set equation(table_values) $table_values
+    
+    if {[set equation(isparam) $isParam]==-1} {
+        set paramMenuState disabled
+    } else {
+        set paramMenuState normal
     }
     $widget.equation.textbox.radio0 configure -state $paramMenuState
     $widget.slider.radio1 configure -state $paramMenuState
     $widget.file.radio2 configure -state $paramMenuState
-	set equation(min) $min
-	set equation(max) $max
+    set equation(min) $min
+    set equation(max) $max
 }
-	
+
 proc create_equation {parent boxtitle indices} {
-    global equation 
+    global equation
     global equationbar
     
-                                 ### Formula bar section
+    ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
     }
     if {[string compare $equationbar(current_action) tick]==0} then {
         return
     }
-                                ### End formula bar section
-
+    ### End formula bar section
+    
     set t [toplevel .equation -bd 4 -class Equation]
-	wm title $t $boxtitle
+    wm title $t $boxtitle
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     equationResources
     
     set notebook [NoteBook $t.notebook]
     $notebook insert end Main -text Main
-        set mainF [$notebook getframe Main]
+    set mainF [$notebook getframe Main]
     $notebook insert end Documentation -text Documentation
-        set docF [$notebook getframe Documentation]
+    set docF [$notebook getframe Documentation]
     set equation(notebook) $notebook
     set equation(main) $mainF
     set equation(doc) $docF
@@ -132,7 +132,7 @@ proc create_equation {parent boxtitle indices} {
     pack $ok -side right -padx 8 -pady 4 -anchor e
     #    pack $buttonF.buttons -anchor e -side left
     pack $buttonF -anchor nw -fill x -side bottom
-
+    
     set descF [frame $mainF.descf]
     TitleFrame $descF.description -text "Title: "
     set descf [$descF.description getframe]
@@ -140,10 +140,10 @@ proc create_equation {parent boxtitle indices} {
     text $descf.text -height 1 -width 20
     pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
-    pack $descf -side top  -fill x -expand off 
+    pack $descf -side top  -fill x -expand off
     pack $descF.description  -fill x -expand off -padx 4 -pady 4
     pack $mainF.descf -fill x -expand off
-
+    
     # Middle frame has the functions, indices and keypad
     # created variable middleF to point to the Middle frame makes moving the frame in
     # the widget hierrachy easier Jonathan 22 Aug 2002
@@ -179,8 +179,8 @@ proc create_equation {parent boxtitle indices} {
     pack $middleF -expand off -fill x
     
     
-# Now for the main frame: the equation and its commentary
-	frame $mainF.main
+    # Now for the main frame: the equation and its commentary
+    frame $mainF.main
     TitleFrame $mainF.main.main -text "Data source: "
     set mainf [$mainF.main.main getframe]
     frame $mainf.slider
@@ -246,8 +246,8 @@ proc create_equation {parent boxtitle indices} {
     pack $mainF.main.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     
     pack $mainF.main -anchor nw -expand true -fill both -anchor nw
-
-# Miscellaneous other stuff below
+    
+    # Miscellaneous other stuff below
     set propertiesF [frame $mainF.properties]
     TitleFrame $propertiesF.properties -text "Properties: "
     set propertiesf [$propertiesF.properties getframe]
@@ -257,19 +257,19 @@ proc create_equation {parent boxtitle indices} {
     pack $propertiesf.units.unitslabel -side left  -padx 2 -pady 2
     pack $eu -side left -fill x -expand true -padx 2 -pady 2
     pack $propertiesf.units -side left -fill x -expand true  -padx 4 -pady 4
-
+    
     frame $propertiesf.mult
     label $propertiesf.mult.multlabel -text "Dimensions:"
     set em [entry $propertiesf.mult.entry -textvariable equation(mult)]
     pack $propertiesf.mult.multlabel -side left  -padx 2 -pady 2
     pack $em -side left -fill x -expand true -padx 2 -pady 2
     pack $propertiesf.mult -side left -fill x -expand true  -padx 4 -pady 4
-
+    
     pack $propertiesF.properties -fill x -expand true -anchor nw \
-	-padx 2 -pady 2
+            -padx 2 -pady 2
     pack $propertiesF  -fill x  -anchor nw
-
-# Bottom frame has the influences and parameters list boxes
+    
+    # Bottom frame has the influences and parameters list boxes
     set bottomF [frame $mainF.bottom]
     TitleFrame $bottomF.influences -text "Influences: "
     set influencesf [$bottomF.influences getframe]
@@ -278,18 +278,18 @@ proc create_equation {parent boxtitle indices} {
     label $influencesf.captions.i -text "In units:"
     label $influencesf.captions.d -text "Dimensions:"
     pack $influencesf.captions.p $influencesf.captions.i \
-	$influencesf.captions.d -side left -fill x -expand true
+            $influencesf.captions.d -side left -fill x -expand true
     pack $influencesf.captions -fill x
     frame $influencesf.lists
     set rollList [list $influencesf.lists.scroll $influencesf.lists.plist $influencesf.lists.ilist $influencesf.lists.dlist]
     set lbp [listbox $influencesf.lists.plist \
-		-yscrollcommand [concat RollAll $rollList]]
+            -yscrollcommand [concat RollAll $rollList]]
     set lbi [listbox $influencesf.lists.ilist \
-		-yscrollcommand [concat RollAll $rollList]]
+            -yscrollcommand [concat RollAll $rollList]]
     set lbd [listbox $influencesf.lists.dlist \
-		-yscrollcommand [concat RollAll $rollList]]
+            -yscrollcommand [concat RollAll $rollList]]
     scrollbar $influencesf.lists.scroll -command [list ScrollAll \
-						      [list $lbp $lbi $lbd]]
+            [list $lbp $lbi $lbd]]
     pack $influencesf.lists.plist -side left -fill both -expand true
     pack $influencesf.lists.ilist -side left -fill both -expand true
     pack $influencesf.lists.dlist -side left -fill both -expand true
@@ -308,90 +308,90 @@ proc create_equation {parent boxtitle indices} {
     pack $frm.text -side left -fill both -expand true
     pack $frm.scrly -side right -fill y
     
-
+    
     $notebook raise Main
     pack $notebook -fill both -expand true
     $notebook compute_size
     set equation(newGraphs) ""
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
-    tkwait visibility $influencesf.lists.plist   
+    tkwait visibility $influencesf.lists.plist
 }
 
 proc interact_equation {} {
-	global equation
-	global equationbar
-
-                                 ### Formula bar section
+    global equation
+    global equationbar
+    
+    ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
     }
     if {[string compare $equationbar(current_action) tick]==0} then {
-	set equationbar(current_action) click
+        set equationbar(current_action) click
         return [list $equationbar(equation) \
-         $equationbar(units) \
-         $equationbar(isParam) \
-	 \['[join $equationbar(table_data) ',']'\] \
-	 $equationbar(table_values) \
-         $equationbar(desc) \
-         $equationbar(comment) \
-         $equationbar(min) \
-         $equationbar(max)]
+                $equationbar(units) \
+                $equationbar(isParam) \
+                \['[join $equationbar(table_data) ',']'\] \
+                $equationbar(table_values) \
+                $equationbar(desc) \
+                $equationbar(comment) \
+                $equationbar(min) \
+                $equationbar(max)]
     }
-                                 ### End formula bar section
+    ### End formula bar section
     set t $equation(top)
     set descFrame [$equation(main).descf.description getframe]
     set eqnFrame [$equation(main).main.main getframe]
     set listFrame [$equation(main).bottom.influences getframe]
-
+    
     set equation(done) 0
     grab $t
     tkwait variable equation(done)
     grab release $t
     if {$equation(done)==1} {
-	return [list [string trimright [CombineGraphData \
-					[$eqnFrame.equation.textbox.text get 1.0 end]]] \
-		$equation(units) $equation(isparam) \
-		\['[join $equation(table_data) ',']'\] \
-		$equation(table_values) \
-		[string trimright [$descFrame.text get 1.0 end]] \
-		[string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
-		$equation(min) $equation(max)]
+        return [list [string trimright [CombineGraphData \
+                [$eqnFrame.equation.textbox.text get 1.0 end]]] \
+                $equation(units) $equation(isparam) \
+                \['[join $equation(table_data) ',']'\] \
+                $equation(table_values) \
+                [string trimright [$descFrame.text get 1.0 end]] \
+                [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
+                $equation(min) $equation(max)]
     } elseif {$equation(done)==2} {
-	set rlist [list [lindex $equation(pathlist) $equation(ckLine)]]
-	foreach list {plist ilist} {
-	    set uselist $listFrame.lists.$list
-	    if {[string match $uselist $equation(lbid)]} {
-		lappend rlist $equation(listedit)
-	    } else {
-		lappend rlist [$uselist get $equation(ckLine)]
-	    }
-	}
-	return $rlist
+        set rlist [list [lindex $equation(pathlist) $equation(ckLine)]]
+        foreach list {plist ilist} {
+            set uselist $listFrame.lists.$list
+            if {[string match $uselist $equation(lbid)]} {
+                lappend rlist $equation(listedit)
+            } else {
+                lappend rlist [$uselist get $equation(ckLine)]
+            }
+        }
+        return $rlist
     }
 }
 
 proc destroy_equation {} {
-	global equation
-	global equationbar
-
-                                 ### Formula bar section
+    global equation
+    global equationbar
+    
+    ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
     }
     if {[string compare $equationbar(current_action) tick]==0} then {
         return
     }
-                                ### End formula bar section
-
-	destroy $equation(top)
+    ### End formula bar section
+    
+    destroy $equation(top)
 }
 
 # Scrolls all listboxes in response to scrollbar
 
 proc ScrollAll {widgetList args} {
-
+    
     foreach item $widgetList {
-	eval {$item yview} $args
+        eval {$item yview} $args
     }
 }
 
@@ -404,22 +404,22 @@ proc RollAll {s l1 l2 l3 top bot} {
 
 proc GetTable {parent box} {
     global equation table_entry
-
+    
     if {[equationDoTable $parent]} {
-	set equation(table_data) [concat [list $table_entry(fileName) \
-		$table_entry(dataField)] $table_entry(indices)]
-	set equation(table_values) [LoadTableData $equation(table_data)]
-	if {![string match *table(*)* [$box get 1.0 end]]} {
-	    $box insert insert table\(\[
-	    for {set count [llength $table_entry(indices)]
-	    if {!$count} {set count 1}} {$count>0} \
-		    {incr count -1} {
-		$box insert insert index\($count\),
-	    }
-	    $box delete [$box index {insert -1 chars}]
-	    $box insert insert \]\)
-	}
-	    
+        set equation(table_data) [concat [list $table_entry(fileName) \
+                $table_entry(dataField)] $table_entry(indices)]
+        set equation(table_values) [LoadTableData $equation(table_data)]
+        if {![string match *table(*)* [$box get 1.0 end]]} {
+            $box insert insert table\(\[
+            for {set count [llength $table_entry(indices)]
+                if {!$count} {set count 1}} {$count>0} \
+                    {incr count -1} {
+                        $box insert insert index\($count\),
+                    }
+            $box delete [$box index {insert -1 chars}]
+            $box insert insert \]\)
+        }
+        
     }
 }
 
@@ -464,141 +464,141 @@ proc fill_inputs { triples } {
     }
     set equation(selected,$widget.lists.plist) -1
     set equation(selected,$widget.lists.ilist) -1
-
-#    pack $t.bottom -fill x -expand true
+    
+    #    pack $t.bottom -fill x -expand true
     $equation(notebook) compute_size
     pack $equation(notebook)
 }
 
 proc equationBindings { t en eu lbp lbi lbd \
-		lbf lbx gr ta ok can } {
-	# t - toplevel
-	# en - equation entry
-	# eu - units entry
-
-	# lbf - listbox for available functions
-	# lbx - listbox for available indices
-	# lbp - parameter listbox
-	# lbi - input units listbox
-	# gr - graph button
-	# ta - table button
-	# ok - OK button
-	# can - Cancel button
-
-	# Elimate the all binding tag because we
-	# do our own focus management
-	foreach w [list $en $eu $lbp $lbi $lbd $lbf $ok $can] {
-	    bind $w <Button-1> ListEditDone
-	    bindtags $w [list $t [winfo class $w] $w]
-	}
-	# Dialog-global cancel binding
-	# Disabled because people type Ctrl-C to copy buffer into eqn box
-	# bind $t <Control-c> equationCancel
-
-	# Entry bindings
-	foreach $w [list $en $eu] {
-	    bind $w <Return> equationOK
-	}
-	set PopCmd [list QueuePopup "AddParamPopup %W %y %X %Y"]
-	bind $lbp <Enter> $PopCmd
-	bind $lbp <Motion> "RemovePopup;$PopCmd"
-	bind $lbp <Leave> RemovePopup
-
-	bind $lbp <Button-1> "equationClick %W %y"
-	bind $lbp <Button-3> "equationRight %W %y"
-	bind $lbp <Double-1> "equationDouble %W %y $en; focus $en"
-
-	bind $lbi <Button-1> "equationClick %W %y"
-	bind $lbi <Button-3> "equationRight %W %y"
-	bind $lbi <Double-1> \
-	    "equationDouble %W %y $eu; focus $eu; $eu icursor end"
-
-	bind $lbf <Double-1> \
-		"functionClick %W %y $en"
-# popup boxes for functions
-	set PopCmd [list QueuePopup "AddFnPopup %W %y %X %Y"]
-	bind $lbf <Enter> $PopCmd
-	bind $lbf <Motion> "RemovePopup;$PopCmd"
-	bind $lbf <Leave> RemovePopup
-
-	bind $lbx <Double-1> \
-		"indexClick %W %y $en; focus $en"
-
-	# Button focus.  Extract the underlined letter
-	# from the button label to use as the focus key.
-	foreach but [list $ok $can] {
-	    set char [string tolower [string index [$but cget -text] \
-					  [$but cget -underline]]]
-	    bind $t <Alt-$char> "focus $but ; break"
-	}
-	bind $gr <Tab> "focus $ta"
-	bind $ta <Tab> "focus $ok"
-	bind $ok <Tab> "focus $can"
-	bind $can <Tab> "focus $gr"
-
-	# Set up for type in
-	focus $en
+            lbf lbx gr ta ok can } {
+    # t - toplevel
+    # en - equation entry
+    # eu - units entry
+    
+    # lbf - listbox for available functions
+    # lbx - listbox for available indices
+    # lbp - parameter listbox
+    # lbi - input units listbox
+    # gr - graph button
+    # ta - table button
+    # ok - OK button
+    # can - Cancel button
+    
+    # Elimate the all binding tag because we
+    # do our own focus management
+    foreach w [list $en $eu $lbp $lbi $lbd $lbf $ok $can] {
+        bind $w <Button-1> ListEditDone
+        bindtags $w [list $t [winfo class $w] $w]
+    }
+    # Dialog-global cancel binding
+    # Disabled because people type Ctrl-C to copy buffer into eqn box
+    # bind $t <Control-c> equationCancel
+    
+    # Entry bindings
+    foreach $w [list $en $eu] {
+        bind $w <Return> equationOK
+    }
+    set PopCmd [list QueuePopup "AddParamPopup %W %y %X %Y"]
+    bind $lbp <Enter> $PopCmd
+    bind $lbp <Motion> "RemovePopup;$PopCmd"
+    bind $lbp <Leave> RemovePopup
+    
+    bind $lbp <Button-1> "equationClick %W %y"
+    bind $lbp <Button-3> "equationRight %W %y"
+    bind $lbp <Double-1> "equationDouble %W %y $en; focus $en"
+    
+    bind $lbi <Button-1> "equationClick %W %y"
+    bind $lbi <Button-3> "equationRight %W %y"
+    bind $lbi <Double-1> \
+            "equationDouble %W %y $eu; focus $eu; $eu icursor end"
+    
+    bind $lbf <Double-1> \
+            "functionClick %W %y $en"
+    # popup boxes for functions
+    set PopCmd [list QueuePopup "AddFnPopup %W %y %X %Y"]
+    bind $lbf <Enter> $PopCmd
+    bind $lbf <Motion> "RemovePopup;$PopCmd"
+    bind $lbf <Leave> RemovePopup
+    
+    bind $lbx <Double-1> \
+            "indexClick %W %y $en; focus $en"
+    
+    # Button focus.  Extract the underlined letter
+    # from the button label to use as the focus key.
+    foreach but [list $ok $can] {
+        set char [string tolower [string index [$but cget -text] \
+                [$but cget -underline]]]
+        bind $t <Alt-$char> "focus $but ; break"
+    }
+    bind $gr <Tab> "focus $ta"
+    bind $ta <Tab> "focus $ok"
+    bind $ok <Tab> "focus $can"
+    bind $can <Tab> "focus $gr"
+    
+    # Set up for type in
+    focus $en
 }
 
 proc equationDoGraph {parent box} {
     if {[equationGraph $parent] && \
-	    ![string match *graph(*)* [$box get 1.0 end]]} {
-	InsertFunction $box graph
+                ![string match *graph(*)* [$box get 1.0 end]]} {
+        InsertFunction $box graph
     }
 }
 
 proc equationOK {} {
-	global equation
-	set equation(done) 1
+    global equation
+    set equation(done) 1
 }
 
 proc equationCancel {} {
-	global equation
-	set equation(done) 0
+    global equation
+    set equation(done) 0
 }
 
 proc equationClick { lb y } {
     global equation
-
+    
     if {$equation(selected,$lb)==$y} {
-	equationRight $lb $y
+        equationRight $lb $y
     } else {
-	ListEditDone
-	set equation(selected,$lb) -1
-	after 500 [list set equation(selected,$lb) $y]
+        ListEditDone
+        set equation(selected,$lb) -1
+        after 500 [list set equation(selected,$lb) $y]
     }
 }
 
 proc equationRight { lb y } {
     global equation
-#    if {![llength [$lb curselection]]} {
-#	return
-#    }
+    #    if {![llength [$lb curselection]]} {
+    #	return
+    #    }
     ListEditDone
     if {$equation(done) == 2} {
-# If an entry has already been edited, dont try to start editing another one
-# because Prolog has to use the value entered for the old one first
-	return
+        # If an entry has already been edited, dont try to start editing another one
+        # because Prolog has to use the value entered for the old one first
+        return
     }
     set widget [$equation(main).bottom.influences getframe]
     set ebox $widget.lists.e
     set equation(lbid) $lb
     set equation(ckLine) [$lb nearest $y]
-#    if {$ckLine == [$lb curselection]} {
-	entry $ebox -textvariable equation(listedit)
-	set equation(listedit) [$lb get $equation(ckLine)]
+    #    if {$ckLine == [$lb curselection]} {
+    entry $ebox -textvariable equation(listedit)
+    set equation(listedit) [$lb get $equation(ckLine)]
     place $ebox -in $lb \
-	-rely [expr 1.0*$equation(ckLine)/$equation(listlength)] \
-	-relwidth 1
+            -rely [expr 1.0*$equation(ckLine)/$equation(listlength)] \
+            -relwidth 1
     $ebox configure -font [$lb cget -font]
     $ebox select from 0
     $ebox select to end
     focus $ebox
     bind $ebox <Return> ListEditDone
-#    }
-	# Take the item the user clicked on
-#	global equation
-#	set $bname [$lb get [$lb nearest $y]]
+    #    }
+    # Take the item the user clicked on
+    #	global equation
+    #	set $bname [$lb get [$lb nearest $y]]
 }
 
 proc ListEditDone {} {
@@ -606,32 +606,32 @@ proc ListEditDone {} {
     set widget [$equation(main).bottom.influences getframe]
     set ebox $widget.lists.e
     if {[winfo exists $ebox]} {
-	if {[string compare $equation(listedit) \
-		 [$equation(lbid) get $equation(ckLine)]]} {
-	    set equation(done) 2
-	}
-	destroy $ebox
+        if {[string compare $equation(listedit) \
+                    [$equation(lbid) get $equation(ckLine)]]} {
+            set equation(done) 2
+        }
+        destroy $ebox
     }
 }
 
 proc equationDouble { lb y boxname} {
-	# Take the item the user clicked on
-	$boxname insert insert [$lb get [$lb nearest $y]]
+    # Take the item the user clicked on
+    $boxname insert insert [$lb get [$lb nearest $y]]
 }
 
 proc HitKey { winId char } {
     if {[string match DEL $char]} {
-	event generate $winId <Key-BackSpace>
+        event generate $winId <Key-BackSpace>
     } elseif {[string match -> $char]} {
-	event generate $winId <Key-Right>
+        event generate $winId <Key-Right>
     } else {
-	[focus] insert insert $char
+        [focus] insert insert $char
     }
 }
 
 proc functionClick { lb y boxname} {
-	# Take the item the user clicked on
-	InsertFunction $boxname [lindex [$lb get [$lb nearest $y]] 0]
+    # Take the item the user clicked on
+    InsertFunction $boxname [lindex [$lb get [$lb nearest $y]] 0]
 }
 
 proc AddFnPopup {lb y X Y} {
@@ -641,30 +641,30 @@ proc AddFnPopup {lb y X Y} {
 proc AddParamPopup {lb y X Y} {
     global equation
     AddWidgetPopup "Value(s) of [lindex $equation(pathlist) [$lb nearest $y]]" \
-	$X $Y
+            $X $Y
 }
 
 proc indexClick { lb y boxname} {
-	# insert an index call using the line number clicked on
-	$boxname insert insert index([expr [$lb nearest $y]+1])
+    # insert an index call using the line number clicked on
+    $boxname insert insert index([expr [$lb nearest $y]+1])
 }
 
 proc InsertFunction {boxname functor} {
     if {[string match Text [winfo class $boxname]]} {
-	set useRange [llength [$boxname tag ranges sel]]
-	set insertCmd {mark set insert}
+        set useRange [llength [$boxname tag ranges sel]]
+        set insertCmd {mark set insert}
     } else {
-	set useRange [$boxname select present]
-	set insertCmd icursor
+        set useRange [$boxname select present]
+        set insertCmd icursor
     }
     if {$useRange} {
-	$boxname insert sel.last \)
-	$boxname insert sel.first $functor\(
+        $boxname insert sel.last \)
+        $boxname insert sel.first $functor\(
     } else {
-	set insertPoint [$boxname index insert]
-	$boxname insert $insertPoint \)
+        set insertPoint [$boxname index insert]
+        $boxname insert $insertPoint \)
         eval $boxname $insertCmd $insertPoint
-	$boxname insert $insertPoint $functor\(
+        $boxname insert $insertPoint $functor\(
     }
     focus $boxname
 }
@@ -716,16 +716,16 @@ proc Disaggregate {parent title colour type fatness icount step \
             -padx 2 -pady 4 -side left
     if {[catch {image type $disaggregate(colour)}]} {
         $colourf.fixcolour configure -bg $disaggregate(colour)
-	set disaggregate(defColour) $disaggregate(colour)
+        set disaggregate(defColour) $disaggregate(colour)
     } else {
-	set disaggregate(defColour) [$colourf.fixcolour cget -bg]
+        set disaggregate(defColour) [$colourf.fixcolour cget -bg]
     }
     pack [button $colourf.setimage -text "Image..." \
             -width 10 -command ChooseImage] \
             -padx 2 -pady 4 -side left
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
     pack $t.simple.left -side left -expand 1 -fill both
-       
+    
     frame $t.simple.right
     button $t.simple.right.ok -text "OK" -width 10 -default active \
             -command {set disaggregate(done) 1}
@@ -831,49 +831,49 @@ package require Img
 proc ChooseImage {} {
     global disaggregate
     global imageSources
-
+    
     set newImage backgnd$imageSources(uid)
     while {![catch {image type $newImage}]} {
-	incr imageSources(uid)
-	set newImage backgnd$imageSources(uid)
+        incr imageSources(uid)
+        set newImage backgnd$imageSources(uid)
     }
     image create photo $newImage
     set choosing 1
     while {$choosing} {
-	set new [ChooseFile image.gif {Image for model background} 0]
-	if {[llength $new]} {
-	    if {[catch {$newImage read $new -shrink} readFlop]} {
-		ShowMessage {Problem loading file} error $readFlop ok
-		# prevent crasho if reading fails
-#		$newImage config -width 100 -height 100
-	    } else {
-		set xtn [string trimleft [file extension $new] .]
-		if {[string match jpg $xtn]} {
-		    set fmt jpeg
-		} else {
-		    set fmt $xtn
-		}
-		$newImage config -format $fmt
-		set disaggregate(colour) $newImage
-		PutSize $newImage
-		set choosing 0
-	    }
-	} else {
-	    set choosing 0
-	}
+        set new [ChooseFile image.gif {Image for model background} 0]
+        if {[llength $new]} {
+            if {[catch {$newImage read $new -shrink} readFlop]} {
+                ShowMessage {Problem loading file} error $readFlop ok
+                # prevent crasho if reading fails
+                #		$newImage config -width 100 -height 100
+            } else {
+                set xtn [string trimleft [file extension $new] .]
+                if {[string match jpg $xtn]} {
+                    set fmt jpeg
+                } else {
+                    set fmt $xtn
+                }
+                $newImage config -format $fmt
+                set disaggregate(colour) $newImage
+                PutSize $newImage
+                set choosing 0
+            }
+        } else {
+            set choosing 0
+        }
     }
 }
 
 proc PutSize {img} {
     set width 0
     while {![catch {$img get $width 0}]} {
-	incr width
+        incr width
     }
     set height 0
     while {![catch {$img get 0 $height}]} {
-	incr height
+        incr height
     }
-# set them so I can read later
+    # set them so I can read later
     $img config -width $width -height $height
 }
 
@@ -891,25 +891,25 @@ proc SetHighlights {t} {
 }
 
 proc OpenProgressBox {{parent .}} {
-    toplevel .progress 
+    toplevel .progress
     wm transient .progress $parent
     wm geometry .progress 400x100+0+0
     wm title .progress "Progress with current operation"
     message .progress.message -aspect 400 -text "Please wait"
     pack .progress.message -fill both -expand true
-#    tkwait visibility .progress
+    #    tkwait visibility .progress
     update
 }
 
 proc CloseProgressBox {} {
-	destroy .progress
+    destroy .progress
 }
 
 proc RelationCheck {parent title init_exc init_delay init_comment} {
     global relation
-	
+    
     set t [toplevel .relcheck -bd 4]
-    wm resizable $t 0 0 
+    wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
     wm title $t "Properties of $title"
     set relation(isexclusive) $init_exc
@@ -919,10 +919,10 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
     set f [.relcheck.top.left getframe]
     pack [checkbutton $f.exclusive \
             -text "Exclusive role" -variable relation(isexclusive) -offvalue 0 -onvalue 1] -anchor w
-#    BindPopup $f.exclusive exclusive
+    #    BindPopup $f.exclusive exclusive
     pack [checkbutton $f.oldmemb \
             -text "Last membership" -variable relation(useoldmemb) -offvalue 0 -onvalue 1] -anchor w
-#    BindPopup $f.oldmemb oldmemb
+    #    BindPopup $f.oldmemb oldmemb
     pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
     frame .relcheck.top.right
     pack [button .relcheck.top.right.bdone \
@@ -930,7 +930,7 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
     pack [button .relcheck.top.right.bc \
             -text Cancel -width 10 -command {set relation(done) 0}] -padx 4 -pady 4
     pack [button .relcheck.top.right.help \
-             -text Help -width 10 -command {ContextSensitiveHelp .relcheck submodels/association/dialogue.htm}] -padx 4 -pady 4
+            -text Help -width 10 -command {ContextSensitiveHelp .relcheck submodels/association/dialogue.htm}] -padx 4 -pady 4
     pack .relcheck.top.right -side left
     pack .relcheck.top -expand on -fill both
     TitleFrame .relcheck.bottom -text "Comments:"
@@ -946,9 +946,9 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
     grab release .relcheck
     set newComment [$f.comment get 1.0 end]
     destroy .relcheck
-
+    
     return [list $relation(done) $relation(isexclusive) $relation(useoldmemb) \
-	    $newComment]
+            $newComment]
 }
 
 proc GetFindText {parent} {
@@ -969,7 +969,7 @@ proc GetFindText {parent} {
     radiobutton $rbs.r1 -text "Captions" -variable find(where) -value caption
     radiobutton $rbs.r2 -text "Equations" -variable find(where) -value equation
     radiobutton $rbs.r3 -text "Descriptions and comments" \
-	-variable find(where) -value description
+            -variable find(where) -value description
     pack $rbs.r1 -anchor nw
     pack $rbs.r2 -anchor nw
     pack $rbs.r3 -anchor nw
@@ -999,41 +999,41 @@ proc DoRegDialog {} {
     wm title $t Registration
     wm transient $t
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
-
+    
     pack [message .register.m -text "Registration enables us to keep you up-to-date with \
-        your Simile installation.  We will contact you whenever we release a new \
-        version of Simile.  Your personal information is not used for any other purpose."\
-        -width 400] -pady 5
-
-# Lord I dont know what is this fascination with hi-tech multi-function
-# bug-ridden widgets, I'll just put the old version back, at least that
-# works...
-#    pack [LabelEntry  .register.name  \
-#                -label "Name            " -labelanchor w -padx 5 \
-#                -textvariable userinfo(Name)] -fill x -pady 5
-#    pack [LabelEntry  .register.corp  -label "Company       " \
-#                        -labelanchor w -padx 5 -textvariable userinfo(Corp)] -fill x -pady 5
-#    pack [LabelEntry  .register.email -label "Email address" -labelanchor w -padx 5 \
-#                 -textvariable userinfo(email)]  -fill x -pady 5
-
+            your Simile installation.  We will contact you whenever we release a new \
+            version of Simile.  Your personal information is not used for any other purpose."\
+            -width 400] -pady 5
+    
+    # Lord I dont know what is this fascination with hi-tech multi-function
+    # bug-ridden widgets, I'll just put the old version back, at least that
+    # works...
+    #    pack [LabelEntry  .register.name  \
+    #                -label "Name            " -labelanchor w -padx 5 \
+    #                -textvariable userinfo(Name)] -fill x -pady 5
+    #    pack [LabelEntry  .register.corp  -label "Company       " \
+    #                        -labelanchor w -padx 5 -textvariable userinfo(Corp)] -fill x -pady 5
+    #    pack [LabelEntry  .register.email -label "Email address" -labelanchor w -padx 5 \
+    #                 -textvariable userinfo(email)]  -fill x -pady 5
+    
     foreach {field label} {name "Name:" corp "Company:" \
-			    email "Email address:"} {
-	pack [frame .register.$field] -fill x -expand true
-	pack [label .register.$field.l -width 15 -text $label] -side left
-	pack [entry .register.$field.e -textvariable userinfo($field)] \
-		-fill x -expand true
+                email "Email address:"} {
+        pack [frame .register.$field] -fill x -expand true
+        pack [label .register.$field.l -width 15 -text $label] -side left
+        pack [entry .register.$field.e -textvariable userinfo($field)] \
+                -fill x -expand true
     }
-
-
+    
+    
     bind .register.email.e <Return> "set userinfo(done) 2"
     pack [set bs [frame .register.buttframe]] -pady 5
     pack [button $bs.enter -text "Register now" \
-	    -command {set userinfo(done) 2}] -side left
+            -command {set userinfo(done) 2}] -side left
     pack [button $bs.later -text "Register later" \
-        -command {set userinfo(done) 0}] -side left
+            -command {set userinfo(done) 0}] -side left
     pack [button $bs.cancel -text "Don't register" \
-	    -command {set userinfo(done) 1}]
-
+            -command {set userinfo(done) 1}]
+    
     tkwait visibility .register
     grab .register
     focus .register.email
@@ -1048,31 +1048,31 @@ proc ContextSensitiveHelp {context page} {
         package require winhelp
         winhelp $context ../Help/simile.chm $page
     } else {
-	package require Tkhtml
-	set oldDir [pwd]
-	cd ../Help
-	toplevel .hlpWindow 
-	wm title .hlpWindow {Simile help file}
-	wm protocol .hlpWindow WM_DELETE_WINDOW {set helphtml(done) 0}
-	html .hlpWindow.main -base file:[pwd]/$page \
-	    -hyperlinkcommand GoHyper -resolvercommand ResolveHyper \
-	    -isvisitedcommand CheckHyper -unvisitedcolor blue \
-	    -yscrollcommand [list .hlpWindow.yscroll set] 
-	scrollbar .hlpWindow.yscroll -command [list .hlpWindow.main yview]
-	pack .hlpWindow.yscroll -side right -fill y -expand true
-	pack .hlpWindow.main -fill both -expand true
-	set stream [open $page r]
-	while {![eof $stream]} {
-	    gets $stream line
-	    .hlpWindow.main parse $line
-	}
-	close $stream
-	tkwait visibility .hlpWindow
-	grab .hlpWindow
-	tkwait variable helphtml(done)
-	grab release .hlpWindow
-	destroy .hlpWindow
-	cd $oldDir
+        package require Tkhtml
+        set oldDir [pwd]
+        cd ../Help
+        toplevel .hlpWindow
+        wm title .hlpWindow {Simile help file}
+        wm protocol .hlpWindow WM_DELETE_WINDOW {set helphtml(done) 0}
+        html .hlpWindow.main -base file:[pwd]/$page \
+                -hyperlinkcommand GoHyper -resolvercommand ResolveHyper \
+                -isvisitedcommand CheckHyper -unvisitedcolor blue \
+                -yscrollcommand [list .hlpWindow.yscroll set]
+        scrollbar .hlpWindow.yscroll -command [list .hlpWindow.main yview]
+        pack .hlpWindow.yscroll -side right -fill y -expand true
+        pack .hlpWindow.main -fill both -expand true
+        set stream [open $page r]
+        while {![eof $stream]} {
+            gets $stream line
+            .hlpWindow.main parse $line
+        }
+        close $stream
+        tkwait visibility .hlpWindow
+        grab .hlpWindow
+        tkwait variable helphtml(done)
+        grab release .hlpWindow
+        destroy .hlpWindow
+        cd $oldDir
     }
 }
 
@@ -1094,32 +1094,33 @@ proc ErrorHelp {diagnostic} {
     toplevel .diag
     wm title .diag {Error diagnostics}
     wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
-    pack [message .diag.m -text "This is the full text of the error report."]
-    pack [frame .diag.f -height 4]
-    text .diag.f.e -height 4 -yscrollcommand [list .diag.f.y set]
-    .diag.f.e insert 1.0 $diagnostic
-    scrollbar .diag.f.y -command [list .diag.f.e yview]
-    pack .diag.f.y -side right -fill y -expand true
-    pack .diag.f.e -fill x -expand true
-
-    pack [message .diag.m2 -text "The following relevant help topics were found:"]
-    pack [listbox .diag.l]
-    bind .diag.l <ButtonRelease-1> {GetHelp}
-    pack [button .diag.b -text Done -command {set diagno(done) 0}]
-
+    labelframe .diag.errorf -text "Full text of the error report:"
+    text .diag.errorf.e -yscrollcommand [list .diag.errorf.y set]
+    .diag.errorf.e insert 1.0 $diagnostic
+    scrollbar .diag.errorf.y -command [list .diag.errorf.e yview]
+    pack .diag.errorf -fill both -expand true -padx 10 -pady 10
+    pack .diag.errorf.y -side right -fill y -expand true -anchor w
+    pack .diag.errorf.e -fill both -expand true -anchor e
+    
+    labelframe .diag.topicsf -text "The following relevant help topics were found:"
+    pack [listbox .diag.topicsf.l] -fill both -expand on
+    pack .diag.topicsf -fill both -expand on  -padx 10 -pady 10
+    bind .diag.topicsf.l <ButtonRelease-1> {GetHelp}
+    pack [button .diag.b -text Done -command {set diagno(done) 0}] -pady 10 -padx 10
+    
     foreach key [array names help] {
-	if {[regexp $key $diagnostic]} {
-	    .diag.l insert end $help($key)
-	}
+        if {[regexp $key $diagnostic]} {
+            .diag.topicsf.l insert end $help($key)
+        }
     }
-    tkwait visibility .diag 
+    tkwait visibility .diag
     grab .diag
     tkwait variable diagno(done)
     unset diagno(done)
     grab release .diag
     destroy .diag
 }
-	      
+
 proc GetHelp {} {
     global SIMILE_PATH
     cd $SIMILE_PATH/help
