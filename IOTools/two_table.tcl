@@ -521,20 +521,22 @@ namespace eval $keyValue {
                     set lastEntry($headerCol) $headerElt
                     set lastEntry([expr $headerCol+1]) none
                     set lastLine($headerCol) $count
-                    if {[string match rows $translateSide] && \
-                                $headerCol==$translateLevel} {
-                        set headerElt [lindex $displayList($winId) $headerElt]
-                        if {!$headerCol} {
-                            lappend varNamePosns($winId) $count
-                        }
-                    }
-                    if {!$headerCol && [string match rows $timeSide] && \
-                                $headerElt==$timeToShow} {
-                        set lineToShow $count
-                    }
-                    $winId.t set $count,$headerCol \
-                            [lindex [split $headerElt /] end]
+# For header columns, put in duplicate values that are spanned over
+# so saved files can be used for file parameters
                 }
+		if {[string match rows $translateSide] && \
+			$headerCol==$translateLevel} {
+		    set headerElt [lindex $displayList($winId) $headerElt]
+		    if {!$headerCol} {
+			lappend varNamePosns($winId) $count
+		    }
+		}
+		if {!$headerCol && [string match rows $timeSide] && \
+			$headerElt==$timeToShow} {
+		    set lineToShow $count
+		}
+		$winId.t set $count,$headerCol \
+		    [lindex [split $headerElt /] end]
                 incr headerCol
             }
             incr count

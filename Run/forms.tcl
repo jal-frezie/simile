@@ -769,7 +769,6 @@ proc InsertFunction {boxname functor} {
 proc Disaggregate {parent title colour type fatness icount step \
             comment enumLists eqnunit hide separate} {
     global disaggregate
-
     foreach varName {colour type fatness icount eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
@@ -778,6 +777,7 @@ proc Disaggregate {parent title colour type fatness icount step \
     } else  {
         set disaggregate(icount) 1
     }
+#puts $disaggregate(icount)
     switch -- $step {
         -1 {
             set disaggregate(step) "Initialize only"
@@ -968,8 +968,16 @@ proc Disaggregate {parent title colour type fatness icount step \
     grab release $t
     set disaggregate(comment) [string trimright [$t.commentsSW.comment get 1.0 end]]
     destroy $t
-    if [string match $disaggregate(icount) 1] {
-        set disaggregate(icount) [list]
+    set icount {}
+    if [string compare $disaggregate(icount) 1] {
+	foreach newIndex [split $disaggregate(icount) ,] {
+	    if {[string is integer $newIndex]} {
+		lappend icount $newIndex
+	    } else {
+		lappend icount \"$newIndex\"
+	    }
+	}
+	set icount [join $icount ,]
     }
     if {$disaggregate(done)} {
         switch $disaggregate(step) {
@@ -987,7 +995,7 @@ proc Disaggregate {parent title colour type fatness icount step \
 				   $members]
 	}
         set result [list $disaggregate(colour) $disaggregate(type) \
-                $disaggregate(fatness) $disaggregate(icount) \
+                $disaggregate(fatness) $icount \
                 $step $disaggregate(comment) \
                 $disaggregate(eqnunit) $disaggregate(hide) \
 		    $disaggregate(separate) $enumTypes]
@@ -1085,6 +1093,7 @@ proc GetEnumMems {fr} {
 	    }
 	}
     }
+    EnableTypeOps $fr
 }
 
 proc snipET {enumEntry mem} {
