@@ -126,7 +126,7 @@ proc ShiftDll {Point Top Loc Rep} {
 proc TrimTree {Top Point} {
     if {[llength $Point]} {
         foreach file [glob -nocomplain "$Top/$Point/*"] {
-            file delete -force $file
+            file delete -force $file
         }
     } else {
         file delete -force [file rootname $Top]

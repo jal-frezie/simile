@@ -35,8 +35,12 @@ proc FileParamDialogue {topNode topWin mustShow} {
     if {$mustShow || [llength $paramData(needed)]} {
         pack [set bfrm [frame .fpdialogue.buttons ]] \
                 -fill x
-        pack [message $bfrm.banner \
-                -text "All values must be set to run the model." -width 400]
+	pack [frame $bfrm.banner]
+        pack [label $bfrm.banner.1 -text "All values"] -side left
+        pack [label $bfrm.banner.2 -fg red -text "with red captions"] \
+	    -side left
+        pack [label $bfrm.banner.3 -text "must be set to run the model."] \
+	    -side left
         pack [frame $bfrm.lpad] -side left -fill x -expand true
         pack [button $bfrm.ok -text "OK" \
 		  -command [list DoneParams $topNode] -width 10] \
