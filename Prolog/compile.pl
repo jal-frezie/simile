@@ -1605,10 +1605,13 @@ unfinished_submodels([make(_,_, PathPlus, FoundPhase, _) | Waiting],
 get_next_evaluation(Assignments, Deferred, Path, Phase, Remainder,
 		    Next) :-
 	select(Next, Assignments, Remainder),
-	Next = make(_, Dependencies, IPath, Phase, _),
+	Next = make(Result, Dependencies, IPath, Phase, _),
 	remove_non_loopers(IPath, Path),
-	\+ (member(Prereq, Dependencies ),
-	    member_either(make(Prereq, _,_,_,_), Deferred, Remainder)).
+	\+ (member(Prereq, Dependencies),
+	    member_either(make(Prereq, _,_,_,_), Deferred, Remainder)),
+/* new condition -- do not do something that something else needs done later */
+	\+ (member_either(make(_, LocalConds, _,_,_), Deferred, Remainder),
+	    member(later(Result), LocalConds)).
 
 pick_useful_instruction(Assignments, Deferred, Path, Next) :-
 	suffix(TestPath, Path), /* get longest suffix first */
