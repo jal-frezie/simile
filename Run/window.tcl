@@ -183,10 +183,14 @@ proc ClickObj { x y winId X Y action} {
         
 	set winid [winfo parent $winId]
         set bar $winid.toolSlot.eqnbar
-        if {[catch {pack info $bar}] || [string compare $pushedbutton select]} {
+        if {[info exists equationbar(special)]} {
+	    unset equationbar(special)
+            set equationbar(current_action) null
+	} elseif {[catch {pack info $bar}] || \
+		      [string compare $pushedbutton select]} {
             set equationbar(current_action) null
         } else {
-            set equationbar(current_action) $action
+	    set equationbar(current_action) $action
             #	ModeSelect move
             #	ModeSelect select
         }
@@ -1619,7 +1623,7 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
 # tcl mode parser
 
 proc DragComponentIn {winId button x y} {
-    global looks
+    global looks equationbar
     set whatToAdd [winfo name $button]
     #    set top [winfo parent $winId]
     #puts $x,$y
@@ -1659,6 +1663,9 @@ proc DragComponentIn {winId button x y} {
     prolog tk_bar_edit_menu('$winId')
     prolog [list tk_unclick( $xco , $yco )]
     MenuSelect $winId edit $whatToAdd
+    if {[lsearch {flow influence relation} $whatToAdd]>-1} {
+	set equationbar(special) 1
+    }
 }
 
 proc ExtractPrologName { winId target } {
