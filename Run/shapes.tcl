@@ -1885,8 +1885,8 @@ proc ExportLooks {t topNode type} {
 
 proc MakeLooksSaver {n} {
     global looks
-
-    set objects {normal generic compartment state channel text \
+# add state to next line
+    set objects {normal generic compartment channel text \
 		     variable function submodel flow influence \
 		     ghost_link relation}
     set aspects {font txtbd txtbg outline fill text select highlight target \
