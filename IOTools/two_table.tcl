@@ -18,10 +18,15 @@ namespace eval tabular11510 {
 	variable lastDisplay
 	set lastDisplay($winId) 0.0
 
+	menu $winId.tablevars -tearoff 0 -postcommand \
+	    [namespace code [list AddVars $winId]]
+
 	set toolbarItems [list \
             [list new.gif "Clear" [namespace code "clear $winId"] ] \
             [list add.gif "Add a variable" \
 		 [namespace code "AddVariable $winId"]] \
+            [list remove.gif "Remove a variable" \
+		 [namespace code "RemoveVariable $winId"]] \
 	    [list mprec.gif "Increase precision" \
 		 [namespace code [list ChangePrecision $winId 1]]] \
 	    [list lprec.gif "Decrease precision" \
@@ -90,6 +95,44 @@ namespace eval tabular11510 {
 	GrabClicks $winId
     }
 
+    proc RemoveVariable { winId } {
+	tk_popup $winId.tablevars \
+	    [winfo pointerx $winId] [winfo pointery $winId]
+    }
+
+    proc AddVars {winId} {
+	variable displayList
+	$winId.tablevars delete 0 end
+	foreach var $displayList($winId) {
+	    if {[llength $var]} {
+		$winId.tablevars add command -label $var \
+		    -command [namespace code [list Remove $winId $var]]
+	    }
+	}
+    }
+
+    proc Remove {winId var} {
+	variable displayList
+	variable dataStore
+	variable orientList
+
+	set ind [lsearch $displayList($winId) $var]
+	set displayList($winId) [lreplace $displayList($winId) $ind $ind {}]
+	foreach entry [array names dataStore $winId,$ind,*] {
+	    unset dataStore($entry)
+	}
+	set xScrollPosn [$winId.t xview]
+	set yScrollPosn [$winId.t yview]
+	Reconbobulate $winId
+	switch [lindex $orientList($winId) 1] {
+	    rows {
+		$winId.t xview moveto [lindex $xScrollPosn 0]
+	    } cols {
+		$winId.t yview moveto [lindex $yScrollPosn 0]
+	    }
+	}
+    }
+
     proc click {winId node caption} {
 	variable dataStore
 	variable displayList
@@ -146,9 +189,11 @@ namespace eval tabular11510 {
 	set lastDisplay($winId) $tCur
 	set varIndex 0
 	foreach varCapt $displayList($winId) {
-	    set varId [GetIdFromCaptionPath $varCapt]
-	    set dataStore($winId,$varIndex,$tCur) \
-		[lindex [GetModelValue $varId] 0]
+	    if {[llength $varCapt]} { ;# check not deleted
+		set varId [GetIdFromCaptionPath $varCapt]
+		set dataStore($winId,$varIndex,$tCur) \
+					  [lindex [GetModelValue $varId] 0]
+	    }
 	    incr varIndex
 	}
 	set xScrollPosn [$winId.t xview]
