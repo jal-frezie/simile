@@ -575,7 +575,8 @@ off_window(Win) :-
 		destroy_window(Sub),
 		kill_window(Sub),
 		fail;
-	    exit_AME,
+	    scrub_autosave(Model),
+		exit_AME,
 		user:wind_up);
 	destroy_window(Win),
 	kill_window(Win)).
