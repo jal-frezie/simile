@@ -38,7 +38,7 @@ itcl::class similescript::ModelWindow {
     
     public method CreateHelperWindow {helperId helperTitle} {
         set winId [do_for_node $modelNode NewHelperWindow $modelNode $helperId $helperTitle]
-        ${helperId}::initialize $winId
+        do_for_node $modelNode ${helperId}::initialize $winId
         if {[PrefValue custom(helperManager) helperManager]} {
             ::RunEnv::ChildrenFocusParent $winId
         }
@@ -50,13 +50,17 @@ itcl::class similescript::ModelWindow {
         UseMRE false
     }
     
+    destructor {
+        if {![string match "" [itcl::find object similescript::RunControl]]} {
+            delete object similescript::RunControl
+        }
+    }
+    
     public method Hide {} {
-        # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
         wm withdraw [GetModelWindow]
     }
     
     public method Show {} {
-        # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
         wm deiconify [GetModelWindow]
     }
     
@@ -103,10 +107,11 @@ itcl::class similescript::ModelWindow {
         DoWithErrors ExportPostscript [GetModelWindow].canvas
     }
     
-    private method Exit {} {
+    public method Exit {} {
         # DOESN'T WORK
-        byebye [GetModelWindow]
+        #byebye [GetModelWindow]
         # prolog tk_finish; # generates existance error
+        prolog tk_kill_everything; # kill interp as well!!
     }
     
     # Edit Menu - not supporting editing the model
@@ -150,12 +155,13 @@ itcl::class similescript::HelperController {
     destructor {
         destroy $winId
     }
+    
     public method Show {} {
         do_for_node $modelNode wm deiconify $winId
     }
     
     public method Hide {} {
-        puts "HelperController Hide $winId; $modelNode"
+        #puts "HelperController Hide $winId; $modelNode"
         do_for_node $modelNode wm withdraw $winId
     }
     
@@ -169,9 +175,10 @@ itcl::class similescript::Helper {
     inherit HelperController
     
     constructor {modelWindow winTitle} {
-        puts "Helper constr $modelWindow [KeyValue] $winTitle"
+        #puts "Helper constr $modelWindow [KeyValue] $winTitle"
         #do_for_node $modelNode
         set winId [$modelWindow CreateHelperWindow [KeyValue] $winTitle]
+        #puts "Helper constr winId $winId"
         Hide
     }
     
@@ -343,9 +350,9 @@ itcl::class similescript::TableHelper {
     inherit Helper
     
     constructor {modelWindow winTitle} {
-        Helper::constructor $modelWindow $winTitle
+        similescript::Helper::constructor $modelWindow $winTitle
     } {
-        puts "TableHelperImpl constr: $modelWindow [KeyValue] $winTitle"
+        #puts "TableHelperImpl constr: $modelWindow [KeyValue] $winTitle"
     }
     
     public method KeyValue {} {
@@ -355,29 +362,29 @@ itcl::class similescript::TableHelper {
     public method AddVariable {path} {
         global helperTable
         set helperTable(modelNode,current) $winId
-        ${keyvalue}::click $winId [GetIdFromCaptionPath $path] $path
+        [KeyValue]::click $winId [do_for_node $modelNode GetIdFromCaptionPath $path] $path
     }
     
     public method RemoveVariable {path} {
         set var $path; # prop needs nodeId TODO
-        ${keyvalue}::Remove $winId $var
+        [KeyValue]::Remove $winId $var
     }
     
     public method SetUpdateAtDisplayInterval {value} {
-        set ${keyvalue}::displayUpdate($winId) $value
+        set [KeyValue]::displayUpdate($winId) $value
     }
     
     public method GetUpdateAtDisplayInterval {} {
-        return  ${keyvalue}::displayUpdate($winId)
+        return  [KeyValue]::displayUpdate($winId)
     }
     
     public method Update {} {
-        ${keyvalue}::Update $winId
+        do_for_node $modelNode [KeyValue]::Update $winId
     }
     
     public method SaveToFile {filename} {
         Update
-        ${keyvalue}::SaveToNamedFile $winId $filename
+        do_for_node $modelNode [KeyValue]::SaveToNamedFile $winId $filename
     }
     
 }
