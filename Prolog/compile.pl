@@ -86,7 +86,8 @@ build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
 	  backup:is_toplevel(Parent)), !,
 	 ((ChangeTop == 1,
 	        all(compile, delete_prog,
-		    [unify(CheckDir), build(['.tcl', '.cpp', '.dll', '.so'])]);
+		    [unify(CheckDir),
+		     build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]);
 	   \+ reuse_old_exec(Language, Parent, CheckDir)),
 	     \+ (Language = c,
 		    tk_get_pref(compChoice, 'None'),
@@ -113,8 +114,7 @@ build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt)),
 		 assert(new_exec_for(Parent))),
-	     append_atoms([CheckDir, '/', Tgt], CheckExec),
-	     load_executable(Language, CheckExec, Parent);
+	     load_executable(Language, CheckDir, Tgt, Parent);
 	 true),
 	KeepDir = 1;
 	ChangeNext = ChangeTop),
@@ -124,12 +124,12 @@ build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
 	safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _)).
 
 reuse_old_exec(Language, Parent, CheckDir) :-
-	(Language = c, !,
-	    Parent has_model_refinement c_new of OldTgt;
-	OldTgt = 'model.tcl'),
-	append_atoms([CheckDir, '/', OldTgt], CheckExec),
-	(my_file_exists(CheckExec),
-	    load_executable(Language, CheckExec, Parent);
+	(Language = c,
+	    (Parent has_model_refinement c_new of OldTgt;
+		OldTgt = '{}'), !;
+	    /* if no c_new look for dll with default name from save file */
+	OldTgt = 0),
+	(load_executable(Language, CheckDir, OldTgt, Parent);
 	 check_level_for_reds(Parent)).
 
 /* reclose: compiled version has a tendency to close streams when exiting their

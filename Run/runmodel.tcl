@@ -1273,10 +1273,19 @@ proc ShiftDll {Point Top Loc Rep} {
     
     set base $Top/$Point$AddLoc
     file mkdir $base
-    if {!$Rep} {
-        file delete -force ${base}/model.cpp
-        file delete -force ${base}/model.dll
-        file delete -force ${base}/model.so
+    if {[llength $Rep]} {
+	set prefx $base/model
+	if {$Rep} {
+	    file rename ${prefx}${Rep}[info sharedlibextension] \
+		${prefx}[info sharedlibextension]
+	} else {
+	    file delete -force ${prefx}[info sharedlibextension]
+	}
+	foreach file [glob -nocomplain ${prefx}*] {
+	    if {![string match ${prefx}.* $file]} {
+		file delete $file
+	    }
+	}
     }
 }
 
@@ -1309,20 +1318,27 @@ proc update_c_executable {winId} {
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
 # is always that most recently added (even if not recompiled)
 
-proc load_dll {lang progFile node} {
+proc load_dll {lang progDir id node} {
     #   phasecount and nodedata are set in generated code
     global phasecount nodedata nodecount model_id model_ids
     if {[string match tcl $lang]} {
+	if {![file exists $progDir/model.tcl]} {
+	    return 0
+	}
         foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
             source $fnFile
         }
-        source $progFile
+        source $progDir/model.tcl
         if {[info exists simile_version]} {
             return $simile_version
         } else {
             return 0
         }
     } else {
+	set progFile $progDir/model${id}[info sharedlibextension]
+	if {![file exists $progFile]} {
+	    return 0
+	}
         if {[catch {loadmodel $progFile $node} model_id]} {
             ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $model_id -- the program will attempt to build another one." ok
             unset model_id
@@ -1405,9 +1421,11 @@ proc compile_c {workingDir} {
                 "About to compile model.cpp in [pwd]" ok
     }
 # get a so far unused file name
-    set TARGET model[newInt][info sharedlibextension]
+    set serial [newInt]
+    set TARGET model${serial}[info sharedlibextension]
     while {[file exists $TARGET]} {
-	set TARGET model[newInt][info sharedlibextension]
+	set serial [newInt]
+	set TARGET model${serial}[info sharedlibextension]
     }
     
     
@@ -1471,7 +1489,7 @@ proc compile_c {workingDir} {
     
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
-    return $TARGET
+    return $serial
 }
 
 # This makes the extra bit that goes onto Tcl to run C programs. We don't

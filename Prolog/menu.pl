@@ -100,7 +100,7 @@ stick_model_in(Parent, Name) :-
 	    output:my_delete_file(PrologData),
 
 	    ((get_av_pair(Parent, 0, separate, 1); is_toplevel(Parent)), !,
-		TryDll = 1;
+		TryDll = '';
 	    TryDll = 0),
 	    add_parameter(Parent, 1, c_new, TryDll),
 
@@ -870,14 +870,14 @@ transfer_images(Model, TopDir, Way) :-
 	true.
 
 save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
-	((setof(Sub, Part^(find_all_comps(Model, Part),
+	(setof(Sub, Part^(find_all_comps(Model, Part),
 			 find_type(Part, submodel),
 			 save_dlls(Point, LocalDir, Top, Part, Sub)),
 		Subs),
-	    member(0, Subs);
-	get_av_pair(Model, 1, c_new, 0)), !,
+	    member(0, Subs),
 	LocalNew = 0;
-	LocalNew = 1),
+	get_av_pair(Model, 1, c_new, LocalNew);
+	LocalNew = ''), !,
 
 	((get_av_pair(Model, 0, separate, 1); Model = Top), !,
 	    (Top = Model, !,

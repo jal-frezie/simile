@@ -36,7 +36,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/9, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/1,
 	check_directory/1, windowize/2,
-	compile_c_program/2, load_executable/3, find_phase/3,
+	compile_c_program/2, load_executable/4, find_phase/3,
 	kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
@@ -496,9 +496,9 @@ compile_c_program(ModelPath, Err) :-
 	safe_tcl_eval([compile_c, br(WModelPath)], ErrStr),
 	name(Err, ErrStr).
 
-load_executable(L, ModelPath, Node) :-
+load_executable(L, ModelPath, Id, Node) :-
 	windowize(ModelPath, WModelPath),
-	safe_tcl_eval([load_dll, L, br(WModelPath), Node], MStr),
+	safe_tcl_eval([load_dll, L, br(WModelPath), Id, Node], MStr),
 	\+ MStr = "0".
 					
 load_tcl_program(List, Response) :-

@@ -1853,4 +1853,3 @@ proc snap_down3 {w values} {
         }
     }
 }
-
