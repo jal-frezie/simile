@@ -649,7 +649,7 @@ declare_namespace(Target, Indent, [Line2, submodel_decls,
 	render(tcl, end(namespace), Target, Indent, [LastButOne]).
 
 extract_instances(model(Funx, Subz), Instances) :-
-	pick_types(Funx, [function, init_function, fp_compartment,
+	pick_types(Funx, [function, init_function, id_function, fp_compartment,
 			  internal, external],
 		   ValFunx),
 	append(ValFunx, Subz, Instances).

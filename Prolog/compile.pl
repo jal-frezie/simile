@@ -947,10 +947,10 @@ instruction because they will not require individual initialization routines. */
 			elt(_, CondBox, _),_), Functions), Conds), !,
 		TestExpr = Conds;
 	    /* dummy generator node for other variable membership submodels */
-	    (member(instance(condition,_, id_function,
+	    member(instance(condition,_, id_function,
 			elt(_, CondBox, _),_), Functions), !,
-		Conds = [CondBox];
-	    Conds = []), TestExpr = 1),
+		Conds = [CondBox], TestExpr = Conds;
+	    Conds = [], TestExpr = 1),
 	    all(compile, convert_base_specs,
 		[build(BasesEnumerated), build(BasesCleared)]),
 
@@ -1400,13 +1400,16 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		assignment if using an id-based condition, and move the
 		condition evaluation outside that loop...*/
 		(append(Slower, [Now | Faster], SubPasses),
-		    append(IdOpens, [make(_, IdConds, _,_,
-				  [assign(_, IdExpr)]),_Cls | NoIdConds], Now),
+		    append(IdOpens, [TestCond,
+				     _Cls | NoIdConds], Now),
+		    TestCond = make(_, IdConds, _,_,
+					  [assign(arr(Zn, TcVar, _), IdExpr)]),
 		    member(can_find_id(IdCond), IdConds),
 		    /* check condition is for this level...oh sod it */
 		    /* find last looping construct */
-		    (append(OuterLoops, [make(_,_,_,_, [open_index(IdRef, _)])
-				       | SmLoop], OpenLoops),
+		    (append(OuterLoops, [make(_,_,_,_,
+					      [open_index(IdRef, loop(N))])
+					| SmLoop], OpenLoops),
 			member(SmLoop,
 			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !;
 		    raise_exception(bad_instance_lookup(IdCond))),
@@ -1418,10 +1421,10 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		    replace_subexps(IdExpr, compile, indices_direct,
 				    [Ptr | Inds], top_down, _, IxExpr),
 		    IdRef = arr('', IdVar, []),
-		    append(IdOpens, [make(none,[],_,_, [assign(IdRef, IxExpr)])
+		    append(IdOpens, [make(none,[],_,_,[assign(IdRef, IxExpr)])
 					| SmLoop], Next),
 		    append(OuterLoops, Next, UseLoops),
-		    append(Slower, [NoIdConds | Faster], UseSubPasses), !;
+		    append(Slower, [[make(_, IdConds, _,_, [assign(arr(Zn, TcVar, []), IxExpr>0&&IxExpr<=N)]) | NoIdConds] | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
 		    UseSubPasses = SubPasses),
 				    
