@@ -109,7 +109,7 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 }
 
 # Circles are drawn as many-hedrons until the bug that stops ovals stippling
-# is fixed
+# is fixed (still buggy as hell in TclTk 8.4.6)
 
 proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
     set width [GetLineSize $w variable $fatness]
@@ -118,22 +118,29 @@ proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
-    set bulge [expr 1.2*$rad]
+    set bulge [expr 1.15*$rad]
     set bounds [list $hm [expr $vm-$bulge] [expr $hm+.866*$bulge] [expr $vm-.5*$bulge] \
             [expr $hm+.866*$bulge] [expr $vm+.5*$bulge] $hm [expr $vm+$bulge] \
             [expr $hm-.866*$bulge] [expr $vm+.5*$bulge] [expr $hm-.866*$bulge] \
             [expr $vm-.5*$bulge] $hm [expr $vm-$bulge]]
-    set p1 [eval {$w create polygon} $bounds {-smooth true -outline {} \
-						  -tag "$tagSet has_info"}]
+#    set p1 [eval {$w create polygon} $bounds {-smooth true -outline {} \
+#						  -tag "$tagSet has_info"}]
+    set p1 [DrawBlob $w $hm $vm [expr 2*($rad+$width)] $tagSet]
     set bulge [expr 0.707*$rad]
     set xl [expr $hm-$bulge]
     set xt [expr $vm-$bulge]
     set xr [expr $hm+$bulge]
     set xb [expr $vm+$bulge]
-    $w create line $xl $xt $xr $xb -width $width \
-            -tag "$tagSet realwidth($width) has_info"
-    $w create line $xr $xt $xl $xb -width $width \
-            -tag "$tagSet realwidth($width) has_info"
+
+    $w create arc $ml $mt $mr $mb -outline {} -start 135 -extent 90 \
+            -tag "$tagSet has_info"
+    $w create arc $ml $mt $mr $mb -outline {} -start 315 -extent 90 \
+            -tag "$tagSet has_info"
+
+#    $w create line $xl $xt $xr $xb -width $width \
+#            -tag "$tagSet realwidth($width) has_info"
+#   $w create line $xr $xt $xl $xb -width $width \
+#           -tag "$tagSet realwidth($width) has_info"
     
     
     #    $w create oval $ml $mt $mr $mb -outline {} -tag $tagSet
@@ -155,7 +162,7 @@ proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
     #	    $hm $mt $h5 $v0 $h6 $v1 $h7 $v2 \
     #	-width $width -tag "$tagSet size_on_this realwidth($width)"
     
-    set stackDepth 0
+    set stackDepth 1
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
         set stackSide [eval {$w create line} $bounds \
@@ -740,7 +747,7 @@ proc StippleSymbol {w name density selected} {
 
 proc FillSymbol { w name color } {
     foreach object [$w find withtag $name] {
-        foreach outlinable_type "rectangle oval polygon" {
+        foreach outlinable_type "rectangle oval arc polygon" {
             if {[string compare [$w type $object] $outlinable_type] == 0 && \
 		    ![string match */background/* [$w gettags $object]]} {
                 $w itemconfigure $object -fill $color
