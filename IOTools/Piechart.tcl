@@ -19,6 +19,12 @@
 # draw at time zero
 
 #$Log: Piechart.tcl,v $
+#Revision 1.4  2002/06/11 13:37:59  jmm
+#Bug where an array of compartment values got out of order because Tcl does not preserve order in arrays the code assumed that it did was fixed.
+#
+#Negative vaules are ignored (set to zero).
+#If all vaules are negative a message to that effect is written to the display instead of the pie.
+#
 #Revision 1.3  2002/05/31 15:04:43  jmm
 #Labels for the slices are placed around the pie adjacent to the corresponding slice.
 #There are now 19 colours (I got tired). If there are more slices than colours the
@@ -458,6 +464,7 @@ proc plot_YY {w} {
     set piesum($w) 0
     set pievalues($w) {}
     foreach Ynew $YYnew($w) {
+#        ShowMessage debug info "$Ynew" ok
         plot_Y $w $iplot $Tnew($w) $Ynew
         incr iplot
     }
@@ -476,7 +483,8 @@ proc plot_Y {w iplot Tnew Ynew} {
         lappend pievalues($w) $Ynew
     } else {
         array set Ynew_array $Ynew
-        foreach element [array names Ynew_array] {
+        foreach element [lsort -integer [array names Ynew_array]] {
+#            ShowMessage debug info "Ynew_array($element) $Ynew_array($element)" ok
             plot_Y $w $iplot $Tnew $Ynew_array($element)
         }
     }
@@ -485,6 +493,10 @@ proc plot_Y {w iplot Tnew Ynew} {
 proc DrawPie { w x1 y1 x2 y2 pievalues piesum } {
     global ::graphtools::plot
     
+    if {($piesum==0) && ([llength $pievalues] > 0)} {
+#        return
+        $w.canvas create text $plot($w,cx) $plot($w,cy) -text "Sum of all values is negative" -tag label
+    } else  {
     set iplot 0
     set StartAngle 0
     foreach value $pievalues {
@@ -501,6 +513,7 @@ proc DrawPie { w x1 y1 x2 y2 pievalues piesum } {
         incr iplot
         set StartAngle [expr {$StartAngle+$Angle}]
     }
+}
 }
 
 # clear graph
