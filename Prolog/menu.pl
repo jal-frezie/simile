@@ -837,13 +837,17 @@ mysetof(_,_,[]).
 
 write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
 	find_all_comps(Submodel, Component),	
-	find_type(Component, function),
-	get_av_pair(Component, 0, value, Eqn),
+	(find_type(Component, function),
+	    implicit_function(VisNode, Component),
+	    get_av_pair(Component, 0, value, Eqn);
+	find_type(Component, variable),
+	    VisNode = Component,
+	    (is_parameter(Component, 1), Eqn = 'Fixed parameter';
+		is_parameter(Component, 2), Eqn = 'Variable parameter')),
 	(get_av_pair(Component, 0, description, Description); 
 		\+ get_av_pair(Component, 0, description, Description), Description = null),
 	(get_av_pair(Component, 0, comment, Comment);
 	    \+ get_av_pair(Component, 0, comment, Comment), Comment = null),
-	implicit_function(VisNode, Component),
 	find_type(VisNode, CompType),
 	caption_for(VisNode, Dest),
 	get_input_info(Component, Links),
