@@ -48,7 +48,7 @@ close $UserStream
 # first put up the splash screen
 image create photo splash
 if {[string match Darwin $tcl_platform(os)]} {
-    splash read $SIMILE_PATH/Images/splash.gif
+    splash read $SIMILE_PATH/Images/MacSplash.gif
     set auto_path [linsert $auto_path 0 $SIMILE_PATH/System/lib]
 } else {
     package require Img
