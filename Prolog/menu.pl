@@ -174,6 +174,9 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    (member(Mover, Lighters),
 	        Mover is_of_sort box,
 		event:do_colours(Mover, on),
+		fail;
+	    member(Mover, Movers),
+	        Mover is_of_sort box,
 		get_drawing_form(Mover, _, Box),
 		merge_box(Box),
 		fail;

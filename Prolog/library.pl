@@ -18,7 +18,8 @@ sicstus_use_module( [library(lists),
 ame_save( File, Model, Date, SelOnly ) :-
 	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
-	(setof(A-V, Model has_class_refinement A of V, Props); Props = []),
+	(SelOnly = no,
+	    setof(A-V, Model has_class_refinement A of V, Props); Props = []),
 	\+ ( member( Node, Models ),
 	     \+ Node is_model_class ),
 	output:windowize(File, WFile),
