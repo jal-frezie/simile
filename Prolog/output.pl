@@ -140,7 +140,7 @@ get_file_name(Preferred, Action, CanBeNew, FileName) :-
 	name(FileName, RetVal).
 
 list_matching_files(Template, Matches) :-
-	safe_tcl_eval([glob, '-nocomplain', Template], GotStr),
+	safe_tcl_eval([glob, '-nocomplain', br(write(Template))], GotStr),
 	chop_list(GotStr, MatchStrs),
 	all(user, name, [build(Matches), build(MatchStrs)]).
 

@@ -180,9 +180,10 @@ proc ChooseText {choice ifTrue ifFalse} {
 
 proc NetOpen {name way} {
     if {[catch {open $name $way} stream]} {
-	if {[catch {open $name r+} stream]} {
-	    error "Could not open $name $way or r/w"
+	if {[catch {open $name r+} stream2]} {
+	    error "Could not open $name $way or r/w -- $stream"
 	}
+	return $stream2
     }
     return $stream
 }

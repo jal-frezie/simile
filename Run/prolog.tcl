@@ -6,7 +6,7 @@
 
 wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
 
-set plPipe(debug) 1
+set plPipe(debug) 0
 if $plPipe(debug) {
     set plPipe(debug_log) [file join $env(HOME) .simile log]
     set plPipe(debug_stream) [NetOpen $plPipe(debug_log) w]
@@ -64,7 +64,7 @@ proc do_tail {header args} {
 }
 
 proc send_pl_cmd {withCrs} {
-    global plPipe debug
+    global plPipe
     regsub -all \n $withCrs \\n plCmd
 #    puts [concat > $plCmd]
     if {$plPipe(debug)} {
@@ -81,7 +81,9 @@ proc ClosePipe {} {
 	wm withdraw . ;# banner will hide error mesg if not yet withdrawn
 	bgerror $spew
     }
-    close $plPipe(debug_stream)
+    if {$plPipe(debug)} {
+	close $plPipe(debug_stream)
+    }
     destroy .
 }
 
