@@ -524,7 +524,6 @@ proc WarnNoData {} {
 proc collect {tgt node count args} {
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
     if {[string match TABLE [GetModelEval $node]]} {
-#	FileCollect ::AME_model<>::$tgt $node $args
 	upvar \#0 paramData inputSrc
     } else {
 	switch [GetModelType $node] {
@@ -543,29 +542,3 @@ proc collect {tgt node count args} {
 	    set ::AME_model<>::$tgt $inputSrc($sub)
 	}
 }
-
-proc FileCollect {tgt node argList} {
-    global paramData
-    set trans [GetFromProlog tk_get_info({},$node,types)]
-    set compName [GetCaptionPathFromId $node]
-    
-    set field $paramData($compName)
-    while {[string compare $argList {}]} {
-#ShowMessage debug info "Array setting $field" ok
-        array set items $field
-	set thisIndx [lindex $argList 0]
-	set thisTrans [lindex $trans 0]
-	if {[llength $thisTrans]} {
-	    set thisIndx [lindex $thisTrans $thisIndx]
-	}
-        set field $items($thisIndx)
-        set argList [lrange $argList 1 end]
-	set trans [lrange $trans 1 end]
-    }
-    set thisTrans [lindex $trans 0]
-    if {[llength $thisTrans]} {
-	set field [lsearch $thisTrans $field]
-    }
-    set $tgt $field ;# tgt is passed by reference
-}
-
