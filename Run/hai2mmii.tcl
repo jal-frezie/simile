@@ -213,6 +213,33 @@ proc SetModelValue { node newVals } {
     }
 }
 
+proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
+    upvar 1 $nextRefPtr nextRef
+#puts "FLV $nextRef $listDims $dimPlace"
+    set result {}
+    set smHandle ::AME_model<>::$nextRef
+    set nextElt [set [burrow_to $smHandle {2 0} {}]]
+    set newDimPlace [expr $dimPlace+1]
+    while {[string match $listDims [lrange $nextElt 0 $dimPlace]]} {
+	if {[llength $nextElt] == $newDimPlace} {
+	    set result [FillValue $smHandle $newTree $type $innerDims {} 0 {}]
+	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
+	} else {
+	    set newIndex [lindex $nextElt $newDimPlace]
+	    lappend result $newIndex
+	    lappend result [FillListValues nextRef $newTree $type $innerDims \
+				[concat $listDims $newIndex] $newDimPlace]
+	}
+	if {[string compare $nextRef 0]} {
+	    set smHandle ::AME_model<>::$nextRef
+	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
+	} else {
+	    break
+	}
+    }
+    return $result
+}
+
 proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 #    puts "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
@@ -221,20 +248,28 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	set nextRef [set [burrow_to $smHandle $tree $dims]]
 	set result {}
 	array set arrayVals $newVals
-	while {[string compare $nextRef 0]} {
-	    set smHandle ::AME_model<>::$nextRef
-	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
-	    lappend result $nextElt
-	    if {[info exists arrayVals($nextElt)]} {
-		set eltVals $arrayVals($nextElt)
-	    } else {
-		set eltVals {}
-	    }
-	    lappend result [FillValue $smHandle $newTree $type \
-		    [lrange $useDims 1 end] {} 0 $eltVals]
-	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
+
+	if {[string compare $nextRef 0]} {
+	    return [FillListValues nextRef $newTree $type \
+			[lrange $useDims 1 end] {} -1]
+	} else {
+	    return
 	}
-	return $result	    
+
+#	while {[string compare $nextRef 0]} {
+#	    set smHandle ::AME_model<>::$nextRef
+#	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
+#	    lappend result $nextElt
+#	    if {[info exists arrayVals($nextElt)]} {
+#		set eltVals $arrayVals($nextElt)
+#	    } else {
+#		set eltVals {}
+#	    }
+#	    lappend result [FillValue $smHandle $newTree $type \
+#		    [lrange $useDims 1 end] {} 0 $eltVals]
+#	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
+#	}
+#	return $result	    
     }  elseif {!$nextUseDim} {
 	if {[string match VALUELESS $type]} {
 	    return sm

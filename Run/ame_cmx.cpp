@@ -1135,6 +1135,56 @@ Tcl_Obj* pick_elt_vals(Tcl_Obj** arrayVals, int arrayLength,
   return Tcl_NewListObj(0, NULL);
 }
 
+/* This takes a model type and instance, list of integers and pointer into
+that list, and returns, let us say, the first unused model index if the integers match the model's 
+indices as far as the pointer, 0 if that is all the indices, and -1 if there
+is a mismatch before the pointer */
+
+int match_type(Model* localType, void* smHandle, int dims[], int* dim_place) {
+  int id_handle[] = {2,0}, *cur_place, *short_tree, *id_ptr, id_val, id_count;
+  short_tree = id_handle;
+  id_count = 0;
+  id_ptr = &id_count;
+  cur_place = dims;
+  while (cur_place < dim_place) {
+    id_val = *(int *)localType->get_ptr(smHandle, &short_tree, 
+					&id_ptr);
+    if (id_val != *(cur_place++)) {
+      return -1;
+    }
+    ++id_count;
+    id_ptr = &id_count;
+    short_tree = id_handle;
+  }
+  return *(int *)localType->get_ptr(smHandle, &short_tree, &id_ptr);
+}
+/* next two call one another so one needs to be declared in advance */
+Tcl_Obj* fill_value(Model*, void*, int[], int, int*, int[], int*, Tcl_Obj*);
+
+Tcl_Obj* fill_list_value(Model* localType, void** smHandle, int tree[], 
+			 int type, int* use_dims, int dims[], int* dim_place) {
+  Tcl_Obj *localObj;
+  int next_handle[] = {1,0}, match, *new_dim_place, *short_tree;
+  localObj = Tcl_NewListObj(0, NULL);
+  while (*smHandle && 
+	 (match = match_type(localType, *smHandle, dims, dim_place)) != -1) {
+    if (match == 0) {
+      localObj = fill_value(localType, *smHandle, tree, type, use_dims, 
+			    dim_place+1, dim_place+1, NULL);
+      short_tree = next_handle;
+      *smHandle = *(void**)(localType->get_ptr(*smHandle, &short_tree, 
+						  NULL));
+    } else {
+      Tcl_ListObjAppendElement(NULL, localObj, Tcl_NewIntObj(match));
+      *dim_place=match;
+      Tcl_ListObjAppendElement(NULL, localObj,
+		       fill_list_value(localType, smHandle, tree, type,
+					       use_dims, dims, dim_place+1));
+    }
+  }
+  return(localObj);
+}
+
 /* fill_value extracts a list of values from the model. Type is the full id
 path to the component whose values we are after. use_dims is array of array
 sizes which we are to get all the values from. Dims is an array of ints
@@ -1163,6 +1213,10 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
     while (*new_tree++ != -1) {}
 
     smHandle = *(void**)(localType->get_ptr(smHandle, &tree, &dims));
+    localObj = fill_list_value(localType, &smHandle, new_tree, type, 
+			       use_dims+1, dim_place+1, dim_place+1);
+    
+    /*    
     localObj = Tcl_NewListObj(0, NULL);
     if (nVs) {
       Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
@@ -1193,6 +1247,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
       smHandle = *(void**)(localType->get_ptr(smHandle, &short_tree, 
 						  NULL));
     }
+    */
     break;
   case 0:
     model_val_ptr = localType->get_ptr(smHandle, &tree, &dims);
