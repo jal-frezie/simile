@@ -187,53 +187,70 @@ proc CheckFnsFresh {L progDir id userFnList} {
     return [concat $stat $files]
 }
 
+# set this to interp or process to run models in a separate interpreter
+# or process
+set runHow process
+
 # this exists in case I don't want to exploit the concat in eval
 proc do_for_node {node args} {
-    global runState tcl_platform modelError
+    global runState tcl_platform modelError runHow
     if {![info exists runState($node,interp)]} {
-#        set runState($node,interp) [interp create]
-	scan [info tclversion] {%d.%d} MAJ MIN
-	if {[string equal windows $tcl_platform(platform)]} {
-	    set sep {}
+	if {[string equal interp $runHow]} {
+	    set runState($node,interp) [interp create]
+	    $runState($node,interp) alias BringParameter BringParameter
+	    $runState($node,interp) eval set runHow $runHow
+	    $runState($node,interp) eval source ../Run/support.tcl
 	} else {
-	    set sep .
-	}
-	set makeExec ../System/bin/tclsh$MAJ$sep$MIN
-#puts "starting $makeExec"
-	set runState($node,interp) [open |$makeExec r+]
-#        $runState($node,interp) alias BringParameter BringParameter
-#        $runState($node,interp) eval source ../Run/support.tcl
-	fileevent $runState($node,interp) readable [list FeedModel $node]
-	puts $runState($node,interp) {source ../Run/support.tcl}
-	flush $runState($node,interp)
-#puts "initialized"
-	set runState($node,modelReady) 1
-	set runState($node,queueSize) 0
-    }
-#    return [$runState($node,interp) eval $args]
-    if {!$runState($node,modelReady)} {
-	tkwait variable runState($node,modelReady)
-    }
-    if {$runState($node,modelReady)==1} {
-	puts $runState($node,interp) [list do $args]
-	flush $runState($node,interp)
-#puts "command: $args"
-	incr runState($node,queueSize)
-	set runState($node,modelReady) 0
-	upvar \#0 runState($node,response$runState($node,queueSize)) result
-#puts "tkwait variable runState($node,response$runState($node,queueSize))"
-	tkwait variable runState($node,response$runState($node,queueSize))
-
-#puts "response: $result"
-	incr runState($node,queueSize) -1
-	set info [lindex $result 1]
-	switch [lindex $result 0] {
-	    err {
-		set modelError $info
-		error "Error in model code"
-	    } res {
-		return $info
+	    scan [info tclversion] {%d.%d} MAJ MIN
+	    if {[string equal windows $tcl_platform(platform)]} {
+		set sep {}
+	    } else {
+		set sep .
 	    }
+	    set makeExec ../System/bin/tclsh$MAJ$sep$MIN
+#puts "starting $makeExec"
+	    set runState($node,interp) [open |$makeExec r+]
+	    fileevent $runState($node,interp) readable [list FeedModel $node]
+	    puts $runState($node,interp) "set runHow $runHow"
+	    flush $runState($node,interp)
+	    puts $runState($node,interp) "source ../Run/support.tcl"
+	    flush $runState($node,interp)
+#puts "initialized"
+	    set runState($node,modelReady) 1
+	    set runState($node,queueSize) 0
+	}
+    }
+    set command [list do $args]
+#puts "command: $command"
+    if {[string equal interp $runHow]} {
+	set result [$runState($node,interp) eval $command]
+    } else {
+	while {!$runState($node,modelReady)} {
+	    tkwait variable runState($node,modelReady)
+	}
+	if {$runState($node,modelReady)==1} {
+	    puts $runState($node,interp) $command
+	    flush $runState($node,interp)
+	    incr runState($node,queueSize)
+#puts "Sent $args for $runState($node,queueSize)"
+	    set runState($node,modelReady) 0
+	    upvar \#0 runState($node,response$runState($node,queueSize)) result
+	    tkwait variable runState($node,response$runState($node,queueSize))
+#	    while {!$runState($node,modelReady)} {
+#		FeedModel $node
+#	    }
+#puts "Got $result for $runState($node,queueSize)"
+	    incr runState($node,queueSize) -1
+	}
+    }
+#puts "response: $result"
+    set info [lindex $result 1]
+    switch [lindex $result 0] {
+	err {
+	    set modelError $info
+	    error "Error in model code"
+	} res {
+	    return $info
 	}
     }
 }
@@ -242,23 +259,25 @@ proc FeedModel {node} {
     global runState
 
     gets $runState($node,interp) result
-#puts "response: $result"
     if {[string equal get [lindex $result 0]]} {
 	puts $runState($node,interp) [eval BringParameter [lindex $result 1]]
 	flush $runState($node,interp)
     } else {
 	set runState($node,modelReady) 1
 	set runState($node,response$runState($node,queueSize)) $result
-#puts "set runState($node,response$runState($node,queueSize)) $result"
     }
 }
 
 proc KillInterpFor {node} {
-    global runState
+    global runState runHow
     if {[info exists runState($node,interp)]} {
-        puts $runState($node,interp) exit
-	flush $runState($node,interp)
-	close $runState($node,interp)
+	if {[string equal interp $runHow]} {
+	    interp delete $runState($node,interp)
+	} else {
+	    puts $runState($node,interp) exit
+	    flush $runState($node,interp)
+	    close $runState($node,interp)
+	}
         unset runState($node,interp)
     }
 }
@@ -1426,16 +1445,13 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-            if {[catch {GetTransValues $node $plName} value]} {
+            if {[catch {GetCompProperty $node Value $plName} value]} {
                 set missing [lindex [split $value \"] 1]
                 set value "Missing value: $missing"
             }
-            AddPopupMessage [lindex [GetCompProperty $node Value $plName] 0] \
-                    \#ffffc0 [GetTransTable $plName]
-            # we might want to prettify this a bit first
+            AddPopupMessage [lindex $value 0] \#ffffc0 [GetTransTable $plName]
         }
     }
-    
 }
 
 # Canvas chapter (of Welch)

@@ -194,6 +194,10 @@ namespace eval grid005 {
     proc InitialiseGrid {winId display1} {
         variable useNodes
         
+        set useNodes($winId,hiddenMap) [image create photo]
+        DrawGrid5 $winId $display1
+# This must now be done before we create the canvas because otherwise the
+# canvas might try to redraw while this is waiting for data from the model
         frame $winId.f
         scrollbar $winId.hscroll -orient horiz -command "$winId.c xview"
         scrollbar $winId.vscroll -command "$winId.c yview"
@@ -240,11 +244,8 @@ namespace eval grid005 {
         $winId.c bind all <ButtonPress-1> [namespace code "value_popup $winId %X %Y %x %y"]
         $winId.c bind all <B1-ButtonRelease> RemovePopup
         
-        set useNodes($winId,hiddenMap) [image create photo]
         set useNodes($winId,visibleMap) [image create photo]
         $winId.c create image 0 0 -anchor nw -image $useNodes($winId,visibleMap)
-        
-        DrawGrid5 $winId $display1
 #        $winId.c configure -scrollregion [$winId.c bbox all]
     }
     

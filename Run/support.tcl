@@ -408,16 +408,25 @@ proc load_c_stub {} {
 
 load_c_stub
 
-proc BringParameter {args} {
-    puts [list get $args]
-    return [gets stdin]
+if {[string equal process $runHow]} {
+    proc BringParameter {args} {
+	puts [list get $args]
+	return [gets stdin]
+    }
 }
 
 proc do {argList} {
     global this simile_version ts dts phasecount nodecount nodedata errorInfo
+    global runHow
+
     if {[catch $argList response]} {
-	puts [list err [split $errorInfo \n]]
+	set result [list err [split $errorInfo \n]]
     } else { 
-	puts [list res $response]
+	set result [list res $response]
+    }
+    if {[string equal interp $runHow]} {
+	return $result
+    } else {
+	puts $result
     }
 }
