@@ -551,7 +551,7 @@ make_intermediates(
 	    member(dims=ConstBounds, TableData),
 	    member(current=BoundArray, TableData),
 	    member(units=OrigUnits, TableData),
-	    (member(OrigUnits, [boolean, 1]), !,
+	    (member(OrigUnits, [boolean, real, 1]), !,/* is 1 still needed? */
 		Units = OrigUnits;
 	    Units = int);
 	add_zeros(Source, SubId, Step, BoundArray, ConstBounds, Units)), !,

@@ -474,10 +474,11 @@ enum_type_ref(Ref, Model, ExecTypes, Value, Units, ETSpec) :-
 	    Units = 1), !,
 	    Value = Ref,
 	    ETSpec = Ref;	
-	(atom(Ref), !, name(Ref, RefStr),
+	atom(Ref),
+	(name(Ref, RefStr),
 	    append([34 | BareRefStr], [34], RefStr),
 	    name(BareRef, BareRefStr);
-	 BareRef = Ref),
+	 BareRef = Ref), !,
 	(nth0(Value, [false, true], BareRef), !,
 	    Units = boolean;
 	(units:baseline(BareRef); units:unit_definition(BareRef, _)), !,
