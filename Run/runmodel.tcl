@@ -922,8 +922,7 @@ proc PostPopup {X Y} {
     # then uses this size to move it to the right place
     
     if {$X>[winfo screenwidth .popup]/2} {
-#        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
-        set xpoint -[expr $X+10]
+        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
     } else {
         
         set xpoint +[expr $X+10]

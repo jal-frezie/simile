@@ -50,15 +50,17 @@ with_output_to_chars. It's not perfect anyway, so I have consulted perror/1
 
 make_nice_error_message(ThrowUp, Error) :-
 	ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
-	(space_elts(Problem, Desc),
+	space_elts(Problem, Desc),
 	append(BitsBefore, BitsAfter, Bits),
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
 	connect_bits(BitsAfter, WindDown, _), !,
 	sicstus_format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what was read in, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
-	sicstus_format_to_chars("Unexpected Prolog error message: ~w", [ThrowUp], Error));
-	ThrowUp = error(Info, _FailedOp), /* gnu */
-	    sicstus_write_to_chars(Info, Error).
+	ThrowUp = existence_error(_,_, Type, WhereLooked, _), !,
+	sicstus_format_to_chars("This operation cannot proceed because the program failed to find a ~a called ~a", [Type, WhereLooked], Error);    
+	ThrowUp = error(Info, _FailedOp), !, /* gnu */
+	    sicstus_write_to_chars(Info, Error);
+	sicstus_format_to_chars("Unexpected Prolog error message: ~w", [ThrowUp], Error).
 
 space_elts([Elt], Elt).
 space_elts([Elt | Rest], Desc) :-

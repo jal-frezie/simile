@@ -4,9 +4,7 @@ launch.pl
 This starts off the application and goes into an event loop from which it is driven the rest of the time. The identity of the interpreter is saved as a global so it can be used at the other end of the system, i.e., when putting stuff on the screen. Uses all my modules to make reloading quicker.
 */
 
-:- [syntax].
-
-:- 	use_module([library(lists), library(charsio),
+:- 	use_module([library(lists),
 		    sp_only, tcltk, input, utility]).
 
 /* xrefs occurs inside a model structure and contains other
@@ -58,7 +56,7 @@ main :-
 	name(TempDir, TempStr),
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
-	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel)),
+	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel); true), !,
 	tcl_eval(['FilterErrors', 'FixSize', Canvas], _),
 /*	append_atoms(TempDir, '/.lock/', SplashLock),
 	output:trim_tree(SplashLock, ''),

@@ -81,7 +81,7 @@ main :-
 	backup:retractall(use_temp_dir(_)),
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
-	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel)),
+	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel); true), !,
 	tcl_eval(Interp, ['FilterErrors FixSize', Canvas], _),
 	append_atoms(TempDir, '/.lock/', SplashLock),
 	output:trim_tree(SplashLock, ''),

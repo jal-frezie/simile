@@ -172,7 +172,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		 Table_st, Data_st, Desc_st, Comment_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
 	member([Is_P, ParamsAllowed, EqnNeeded],
-	       [[-1,1,1], [0,1,1], [1,0,0], [2,0,0]]),
+	       [[-1,1,0], [0,1,0], [1,0,0], [2,0,0]]),
 	(ParamsAllowed = 0, !,
 	    ParamWibble = "but parameter default values are not allowed to have input variables themselves.",
 	    UsableInputs = [];

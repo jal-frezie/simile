@@ -148,8 +148,8 @@ switch $tcl_platform(platform) {
 switch $interface {
     pipe {
 	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
-	source toolbox.tcl
-	source prolog.tcl
+	source ../Run/toolbox.tcl
+	source ../Run/prolog.tcl
     } dll {
 	exec $SIMILE_PATH/$tgt$execExtn &
 	# wait till prog is going before removing splash
