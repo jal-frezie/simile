@@ -462,7 +462,7 @@ proc RunEnv::DeletePane {parentPath containerId} {
     #        containerId $containerId\n \
     #        panes [$parentPath panes]" ok;
     set greatgrandparent [winfo parent [winfo parent $parentPath]]
-    puts "DeletePane greatgrandparent $greatgrandparent; class [winfo class $greatgrandparent]"
+    #puts "DeletePane greatgrandparent $greatgrandparent; class [winfo class $greatgrandparent]"
     if {[string match NoteBook [winfo class $greatgrandparent]]} {
         if {([llength [$greatgrandparent pages]] ==1) && ([llength [$parentPath panes]] == 1)} {
             if {[string match mainDisplayPane [winfo name [winfo parent $greatgrandparent]]]} {
