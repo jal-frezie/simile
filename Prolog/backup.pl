@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 sicstus_module(backup, [initialize_ring/1, finish_move/1, restart_move/0,
-			get_save_status/2, set_save_status/2, save_allowed/1,
+			get_save_status/2, set_save_status/2, save_allowed/2,
 			go_back/2, go_forward/2, make_auto_name/3,
 			clear_autosave/2, check_autosave/3, scrub_autosave/1,
 			is_toplevel/1, use_temp_dir/1, into_save_file/2]).
@@ -70,7 +70,7 @@ finish_move(EditedModel) :-
 	is_toplevel(Model),
 	maintain:update_ability(Model, undo, edit, 'Undo', 1),
 	maintain:update_ability(Model, redo, edit, 'Redo', 0),
-	save_allowed(CanSave),
+	save_allowed(Model, CanSave),
 	maintain:update_ability(Model, save, file, 'Save', CanSave),
 	retract(saved_state(Model, first, First)),
 	retract(saved_state(Model, last, _)),
@@ -86,28 +86,9 @@ finish_move(EditedModel) :-
 	assert(saved_state(Model, current, Next)).
 
 /* This undoes anything that has happened since the last finish_move; needed
-after putting up restore dialog, to be sure we are restoring from the same state
-we saved from. */
+after putting up restore dialog, to be sure we are restoring from the same
+state we saved from. */
 
-:- dynamic(counted_fns/1).
-counted_fns(0).
-
-save_allowed(OK) :-
-	\+ state:get_edition(evaluation), !, OK = 1;
-	state:eval_fn_limit_is(Limit),
-	retract(counted_fns(OldTot)),
-	assert(counted_fns(0)),
-	(find_type(_Fun, function),
-	    retract(counted_fns(Were)),
-	    Are is Were+1,
-	    assert(counted_fns(Are)),
-	    Are > Limit,
-	    (OldTot > Limit;
-	    output:safe_tcl_eval(['NotifyOverLimit', Limit], _)), !,
-	    OK = 0;
-	OK = 1).
-
-	
 restart_move :-
 	fetch_update(DP),
 		(DP = remove(P),
@@ -117,6 +98,29 @@ restart_move :-
 		fail;
 	true.
 
+:- dynamic(counted_fns/1).
+counted_fns(0).
+
+save_allowed(Model, OK) :-
+	\+ state:get_edition(evaluation), !, OK = 1;
+	state:eval_fn_limit_is(Limit),
+	retract(counted_fns(OldTot)),
+	assert(counted_fns(0)),
+	(contains(Model, Fun),
+	    find_type(Fun, function),
+	    retract(counted_fns(Were)),
+	    Are is Were+1,
+	    assert(counted_fns(Are)),
+	    Are > Limit,
+	    (OldTot > Limit;
+		/* canny buggers can get round save limit by killing the app
+		and restoring from logfile, so stop keeping logfile */
+	    retractall(autosave_file_is(Model, _F)),
+		output:safe_tcl_eval(['NotifyOverLimit', Limit], _)), !,
+	    OK = 0;
+	OK = 1).
+
+	
 wrap(Old, New) :-
 	(backup_states(Old), New = 1;
 	integer(Old), New is Old + 1;
@@ -263,7 +267,7 @@ check_autosave(Model, Name, Tweaked) :-
 		    Tweaked = 1,
 		    maintain:update_ability(Model, undo, edit, 'Undo', UState),
 		    maintain:update_ability(Model, redo, edit, 'Redo', RState),
-		    save_allowed(CanSave),
+		    save_allowed(Model, CanSave),
 		    maintain:update_ability(Model, save, file, 'Save', CanSave),
 		    set_save_status(Win, risky);
 		output:my_delete_file(AutoName));

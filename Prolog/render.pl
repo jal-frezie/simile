@@ -453,17 +453,17 @@ do_base_pointers(L, base(instance(submodel,_, xrefs(_, Parent, _,_),_, Type-_),
 	declare_pointer(L, Ptr, BasePtd),
 	do_base_pointers(L, base(Parent, _, Ptrs), Rest).
 
-do_loop_pointers(L, SmName, Type, Name, Late) :-
+do_loop_pointers(L, SmName, Type, Name, [[Type, Ptd, []] | Late]) :-
 
-	variable_size(SmName), !,
-	    append_atoms(Name, pointer, Ptr),
-	    declare_pointer(L, Ptr, Ptd),
+	append_atoms(Name, pointer, Ptr),
+	declare_pointer(L, Ptr, Ptd),
+	(variable_size(SmName), !,
 	    append_atoms(Name, meta, Meta),
 	    declare_pointer(L, Meta, MetaPtd),
 	    declare_pointer(L, MetaPtd, MetaPtdPtd),
 	    append_atoms(Name, cond, Cond),
-	    Late = [[int, Cond, []], [Type, Ptd, []], [Type, MetaPtdPtd, []]];
-	Late = [].
+	    Late = [[int, Cond, []], [Type, MetaPtdPtd, []]];
+	Late = []).
 
 generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 		    Decl, Exts, NodeData) :-

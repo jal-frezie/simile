@@ -111,9 +111,11 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 	Indent is 4*Nesting,
 	/* some of this belongs in the next disjunction */
 
-	append_atoms(Name, 'type*', Type),
+	(nonvar(Pointer), !;
+	append_atoms(Name, pointer, Pointer)),
+/*	append_atoms(Name, 'type*', Type),
         append_atoms(Name, pointer, PointerForm),
-	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0),
+	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0), */
 
 	make_evaluation_routine_all(L, IndExprs, Graph_count,
 				    RefIndices, Graph_data),
@@ -143,8 +145,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 
 	do_assign_list(L, Clauses, NewGraphCount, [Current | Preambles],
 			[Starters, Finishers | Postambles],
-			Used, LaterGraphs, Temps1, Results),
-	merge_lists(Temps1, Temps0, Temps).
+			Used, LaterGraphs, Temps, Results).
 
 
 /* start non-generating vm  submodel loop;	still need to

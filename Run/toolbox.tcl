@@ -413,22 +413,35 @@ proc GetParts {top tree} {
 		    set Description junk
 		}
             }
-	if {![string match junk $Description]} {
-	    set relPath [string range $subtree [string length $top] end]
-            set Disposition "${style}; filename=\"$relPath\""
-	    set newMime [mime::initialize -canonical $PartType \
-                    -header [list "Content-Disposition" $Disposition] \
-                    -header [list "Content-Description" $Description] \
-                    -file $subtree]
-	    if {[string match "Simile model" $Description]} {
-		set HmacCode [get_auth_code $newMime]
-		set codeT [mime::initialize -canonical text/plain \
-		   -header [list "Content-Description" "Authentication Code"] \
-		   -string $HmacCode]
-		lappend mimes $codeT
+# when saving, save all relevant files from current level but only
+# program files for submodels -- everything else is included in top level
+	    if {[string equal Data $Description] || \
+		    [string equal $top $tree] && \
+		    ![string match junk $Description]} {
+		set relPath [string range $subtree [string length $top] end]
+		set Disposition "${style}; filename=\"$relPath\""
+		set newMime [mime::initialize -canonical $PartType \
+				 -header [list "Content-Disposition" \
+					      $Disposition] \
+				 -header [list "Content-Description" \
+					      $Description] \
+				 -file $subtree]
+		if {[string match "Simile model" $Description]} {
+		    set HmacCode [get_auth_code $newMime]
+		    set codeT [mime::initialize -canonical text/plain \
+				   -header [list "Content-Description" \
+						"Authentication Code"] \
+				   -string $HmacCode]
+		    lappend mimes $codeT
+		}
+		lappend mimes $newMime
 	    }
-	    lappend mimes $newMime
-	}
+# cannot delete the component files yet, they will be accessed when the
+# main file is written
+#	    if {[string compare "Data" $Description]} {
+#		file delete $subtree
+#	    }
+
 # Debug: write the body to see if it's baaad...yes it was
 # Workaround: don't save anything as text/plain, stick to application/x-simile
 #	    set debugname ${subtree}.mim

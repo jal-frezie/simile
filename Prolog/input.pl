@@ -94,15 +94,15 @@ tk_mode_select(Mode) :-
 	mode_select(Mode),
 	show_normal_cursor.
 
-:- dynamic(resizing_windows/0).
+:- dynamic(resizing_windows/1).
 
 tk_visible(Wid, L, T, R, B) :-
-	(resizing_windows, !;
-	    asserta(resizing_windows)),
+	(resizing_windows(Wid), !;
+	    asserta(resizing_windows(Wid))),
 	adjust_display_area(Wid, [L, T, R, B]).
 
 finish_window_resize(Wid) :-
-	\+ retract(resizing_windows), !;
+	\+ retract(resizing_windows(Wid)), !;
 	state:Wid shows_model Model,
 	finish_move(Model).
 

@@ -44,7 +44,7 @@ undo_edit(Wid, Wids) :-
 	redraw_window(_),
 	update_ability(Model, undo, edit, 'Undo', Further),
 	update_ability(Model, redo, edit, 'Redo', 1),
-	save_allowed(CanSave),
+	save_allowed(Model, CanSave),
 	update_ability(Model, save, file, 'Save', CanSave).
 
 redo_edit(Wid, Wids) :-
@@ -56,7 +56,7 @@ redo_edit(Wid, Wids) :-
 	redraw_window(_),
 	update_ability(Model, undo, edit, 'Undo', 1),
 	update_ability(Model, redo, edit, 'Redo', Further),
-	save_allowed(CanSave),
+	save_allowed(Model, CanSave),
 	update_ability(Model, save, file, 'Save', CanSave).
 
 check_exist(Wid) :-
@@ -146,6 +146,9 @@ stick_model_in(Parent, Name) :-
 	(NeedsRedraw = 0, !;
 	resize_canvas_for(Parent),
 	    redraw_window(Win)),
+	/* Graphics update will have made a tk_visible call which we do not
+	want to save as a separate move so forget it */
+	input:retract(resizing_windows(Win)),
 	update_captions(Parent).
 
 resize_canvas_for(Parent) :-

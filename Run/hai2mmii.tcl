@@ -61,11 +61,14 @@ proc do_model {what args} {
 		gets $mStream mLine
 	    }
 	    close $mStream
-	    regexp {set ([^ ]*) .*} $mLine spare targetName
-	    set dest [namespace eval AME_model<> "set spare $targetName"]
-	    set targetList [DescribeComponent $dest]
-	    set target "[lindex $targetList 0] (node [GetNodeIdFromRef $dest \
-[lindex $targetList 1]])"
+	    if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
+		set dest [namespace eval AME_model<> "set spare $targetName"]
+		set targetList [DescribeComponent $dest]
+		set target "[lindex $targetList 0] (node [GetNodeIdFromRef \
+$dest [lindex $targetList 1]])"
+            } else {
+                set whoopsie unknown
+            }
 	}
 
 	switch -glob -- $whoopsie {
