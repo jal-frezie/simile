@@ -1388,7 +1388,7 @@ proc ResetTimeSeries {topNode} {
     }
 }
 
-# for each node we have a lsit of times in the time series, and a pointer to 
+# for each node we have a list of times in the time series, and a pointer to 
 # where we are in the list. If the time has gone past that pointed to, signal 
 # the data to be written and look at the next one...
 proc UpdateTimeSeries {topNode newTime} {
@@ -1424,7 +1424,8 @@ proc UpdateTimeSeries {topNode newTime} {
 #		return
 #	    }
 	    set trans [lindex [GetTransTable $node] end]
-	    foreach tsValue [array names paramData $node,$useTime*] {
+	    foreach tsValue [concat [array names paramData $node,$useTime] \
+				 [array names paramData $node,$useTime,*]] {
 #puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
 		set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
 		set inputSrc($tgtIndex) $paramData($tsValue)
