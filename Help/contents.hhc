@@ -417,6 +417,10 @@
 						<param name="Local" value="equations\functions\dt.htm">
 						</OBJECT>
 					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="delay function">
+						<param name="Local" value="equations\functions\delay.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
 						<param name="Name" value="element function">
 						<param name="Local" value="equations\functions\element.htm">
 						</OBJECT>
