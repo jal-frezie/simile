@@ -3,6 +3,10 @@
 # Jonathan Massheder
 
 # $Log: mre.tcl,v $
+# Revision 1.7  2002/09/21 07:38:50  jmm
+# Snapshot button disabled if no running model
+# Model window has a new button to go to the MRE if it exists
+#
 # Revision 1.6  2002/09/17 11:05:22  jaspert
 # Run control restored to former glory -- only the different time step fields are on the pulldown menu any more
 #
@@ -259,13 +263,14 @@ proc RunEnv::Create { ModelWin } {
 }
 
 proc RunEnv::Destroy {} {
-    global helperTable
+    global helperTable modelWin
     foreach helper [array name helperTable *,whichHelper] {
         scan $helper {%[^,]} winId
         bind $winId <Destroy> {}; # so the helper notebook pages are not destroyed 2ce - bomb!
     }
     destroy .pageContextMenu
     KillHelpers
+    $modelWin.toolSlot.navbar.runenv configure -state disable
     destroy .mre
 }
 
@@ -352,7 +357,8 @@ proc RunEnv::OnDestroyHelper {winId} {
 proc RunEnv::RemoveHelperPageDlgOK {dlg} {
     variable listboxData
     set selection [$dlg.listbox curselection]
-    foreach item $selection {
+    foreach item $selection {
+
         kill_helper_window .[lindex [lindex $listboxData $item] 1]
     }
     unset listboxData

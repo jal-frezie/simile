@@ -21,6 +21,8 @@ set msgs(customize) "Customize appearance of components (first select type to cu
 set msgs(find) "Find a component"
 set msgs(findmore) "Find more components"
 set msgs(exit) "Exit Simile"
+set msgs(runenv) "Go to the Run Environment window"
+set msgs(snap) "Inspect model variable"
 
 set msgs(sum) "Returns the sum of all elements of the argument(s)"
 set msgs(product) "Returns the product of all elements of the argument(s)"
