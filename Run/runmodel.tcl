@@ -1173,10 +1173,11 @@ proc start_run {winId} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
         set mre [Makemre $winId]
         foreach winData [array name window_info *,parent] {
-            set toolBar $window_info($winData).toolSlot.toolbar
-            $toolBar.snap configure -state active
+#            set toolBar $window_info($winData).toolSlot.toolbar
+#            $toolBar.snap configure -state active
             set navBar $window_info($winData).toolSlot.navbar
             $navBar.runenv configure -state active
+#            $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
         }
     }
     if {[info exists runState(currentTime)]} {
@@ -1482,12 +1483,11 @@ proc compile_c {workingDir modelPath} {
 
 proc load_c_stub {} {
     global tcl_platform env userinfo
-    
     scan [info tclversion] {%d.%d} MAJ MIN
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-	# maybe we built the package index for a different os, try again
+    # maybe we built the package index for a different os, try again
 	catch {pkg_mkIndex ../System/lib/Stubs *[info sharedlibextension]}
 	if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
 	    error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
