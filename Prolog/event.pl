@@ -253,7 +253,7 @@ click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
 	    (var(DropNode), !;
 		do_linear(New_obj, DropNode))).
 
-click_in(_,_,_,_, Parent, CD) :-
+click_in(Wid, _,_,_, Parent, CD) :-
 	/* get_mode(select), !,
 	    set_start_coords(Xpt, Ypt),
 	    save_params(Trans, Depth, Parent),
@@ -266,7 +266,8 @@ click_in(_,_,_,_, Parent, CD) :-
 	
 	/* Background of unselected submodel: select a region */
 	(get_mode(select),
-	    \+ get_highlit_obj(0, Parent),
+	    (Wid shows_model Parent, !; /* no drag submodel in own window */
+		\+ get_highlit_obj(0, Parent)),
 	    set_start_coords(Xtr, Ytr),
 	    (CD = 0,
 		normalize(_),

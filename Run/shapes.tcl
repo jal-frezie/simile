@@ -112,9 +112,15 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
-# Circles are drawn as many-hedrons until the bug that stops ovals stippling
-# is fixed (still buggy as hell in TclTk 8.4.6...actually not, it just needs
-# outlinestipple as well as stipple -- so its rectangles that are buggy?)
+# Circles are drawn as many-hedrons until the bug that stops ovals
+# stippling is fixed -- still buggy as hell in TclTk 8.4.6...actually
+# not, it just needs outlinestipple as well as stipple -- so its
+# rectangles that are buggy? No, I'm drawing the outlines separately
+# for them.
+
+# The bugs are in Windows -- if part of an item has a circular border
+# it never gets stippled, e.g., if you stipple an arc only the radial
+# outline sections will be stippled. Let's hope 8.5 is better.
 
 proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w variable $fatness]
@@ -134,11 +140,6 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
-# to draw the old style variable remove the above line,
-# give arcs their outlines back and make sure they get flashed
-#    eval {$w create arc $ml $mt $mr $mb -start 45 -extent 90 -outline {}} $generic
-#    eval {$w create arc $ml $mt $mr $mb -start 225 -extent 90 -outline {}} $generic
-
     eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
     eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
     eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
@@ -712,12 +713,12 @@ proc FlashSymbol {w name outlineColor textColor} {
     foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
-            line|arc {
+            line {
 		if {![string match */background/* \
 			  [$w itemcget $object -tag]]} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
-            } oval {
+            } oval|arc {
                 $w itemconfigure $object -outline $outlineColor
             }
         }
@@ -727,10 +728,10 @@ proc FlashSymbol {w name outlineColor textColor} {
 proc StippleSymbol {w name density selected} {
     foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
-            line|arc {
+            line {
                 $w itemconfigure $object -stipple $density
             }
-            rectangle|oval|polygon {
+            rectangle|oval|arc|polygon {
                 $w itemconfigure $object -outlinestipple $density \
 		    -stipple $density
             }
