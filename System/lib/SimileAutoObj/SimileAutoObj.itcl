@@ -14,7 +14,7 @@ if {[string match windows $tcl_platform(platform)]} {
     ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
 }
 set ::SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
-
+set env(LD_LIBRARY_PATH) "[file dirname [info script]]/../../../System/lib"
 if {![info exists window_info]} {
     set argc 0; # simile.tcl expects to be called from the command line - tell it no args
     set argv {}

@@ -13,4 +13,7 @@
 
 package ifneeded Ame_dll 8.4.4.3.0 [list load [file join $dir ame_dll84.dll]]
 package ifneeded Ame_dll 8.4.4.3.1 \
-    [list load [file join $dir libame_dll8.4[info sharedlibextension]]]
+    [list load [file join $dir libame_dll8.5[info sharedlibextension]]]
+package ifneeded Ame_dll 8.5.4.3.0 [list load [file join $dir ame_dll84.dll]]
+package ifneeded Ame_dll 8.5.4.3.1 \
+    [list load [file join $dir libame_dll8.5[info sharedlibextension]]]

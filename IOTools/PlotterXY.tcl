@@ -26,7 +26,7 @@ namespace eval ::$keyValue {
     }
     
     proc initialize {w} {
-        global ::graphtools::plot tcl_platform
+        global ::graphtools::plot
         #    global ::graphtools::Xvalues
         global ::graphtools::YYold
         global ::graphtools::YYnew
@@ -71,24 +71,10 @@ namespace eval ::$keyValue {
         set plot($w,yborder_top) 30
         set plot($w,yborder_bottom) 30
         set plot($w,x_Ylabels) 25
-        if [string match Darwin $tcl_platform(os)] {
-            set plot($w,y_Ylabels) 5
-        } else {
-            set plot($w,y_Ylabels) 0
-        }
         set plot($w,xstep_Ylabels) 120
         set plot($w,ystep_Ylabels) 12
         set plot($w,x_Xlabel) 100
         set plot($w,y_Xlabel) 10
-        if [string match Darwin $tcl_platform(os)] {
-            set plot($w,fontValues) [list Helvetica 12 normal]
-            set plot($w,fontLabels) [list Helvetica 12 normal]
-            set plot($w,fontTitle) [list Helvetica 12 normal]
-        } else {
-            set plot($w,fontValues) [list Helvetica 8 normal]
-            set plot($w,fontLabels) [list Helvetica 8 normal]
-            set plot($w,fontTitle) [list Helvetica 8 normal]
-        }
         set plot($w,canvas_colour) #e0e0e0
         set plot($w,grapharea_colour) white
         set plot($w,pointer) 1
@@ -101,6 +87,7 @@ namespace eval ::$keyValue {
         set plot($w,grid) off
         set plot($w,DrawLines) 1
         set plot($w,DrawPoints) 0
+	InitPlatformDependentPlotVars $winId
         
         set YYold($w) {}
         set YYnew($w) {}
@@ -129,12 +116,32 @@ namespace eval ::$keyValue {
         
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
+	InitPlatformDependentPlotVars $winId
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
         display $winId [GetModelTime] 0 0
     }
     
+    proc InitPlatformDependentPlotVars {w} {
+	global ::graphtools::plot tcl_platform
+	    
+        if [string match Darwin $tcl_platform(os)] {
+            set plot($w,y_Ylabels) 5
+        } else {
+            set plot($w,y_Ylabels) 0
+        }
+        if [string match Darwin $tcl_platform(os)] {
+            set plot($w,fontValues) [list Helvetica 12 normal]
+            set plot($w,fontLabels) [list Helvetica 12 normal]
+            set plot($w,fontTitle) [list Helvetica 12 normal]
+        } else {
+            set plot($w,fontValues) [list Helvetica 8 normal]
+            set plot($w,fontLabels) [list Helvetica 8 normal]
+            set plot($w,fontTitle) [list Helvetica 8 normal]
+        }
+    }
+
     proc GetCanvas {winId} {
         return $winId.canvas
     }

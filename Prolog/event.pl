@@ -38,8 +38,18 @@ get_info(_Wid, Comp, eqn) :-
 	callback(br(chars(Eqn))).
 
 get_info(Wid, Comp, desc) :-
-	caption_for(Comp, Capt),
 	find_type(Comp, LType),
+	(LType is_class_of_sort captionless, !,
+	    Part1 = "";
+	caption_for(Comp, Capt),
+	    name(Capt, CaptStr),
+	    append(CaptStr, " : ", Part1)),
+
+	(LType = submodel,
+	    image:quick_file(Comp, Middle);
+	eqn_for(Comp, Middle, Units), !;
+	name(LType, Middle)),
+
 	(Wid shows_model Context,
 	    setof(DestLoc, Dest^(m_update:connects(Comp, Source, Dest),
 				 abs_path_name(Dest, Context, DestLoc)),
@@ -48,17 +58,14 @@ get_info(Wid, Comp, desc) :-
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
 	    abs_path_name(Source, Context, SourceLoc),
-	    sicstus_format_to_chars("~a from ~a to ~w",
-				    [LType, SourceLoc, Dests], Desc);
-	LType = submodel,
-	    image:quick_file(Comp, Desc);
-	eqn_for(Comp, EqnSt, Units), !,
-	    append([EqnSt, " (", Units, ")"], Desc);
-	name(LType, Desc)),
-	(LType is_class_of_sort captionless, !,
-	    Eqn = Desc;
-	sicstus_format_to_chars("~a : ~s", [Capt, Desc], Eqn)),
-	callback(br(chars(Eqn))).
+	    sicstus_format_to_chars(" (from ~a to ~w)", [SourceLoc, Dests], 
+	        Suffix);
+	nonvar(Units), !,
+	    append([" (", Units, ")"], Suffix);
+	Suffix = ""),
+
+	append([Part1, Middle, Suffix], Desc),
+	callback(br(chars(Desc))).
 
 get_info(_, Comp, comment) :-
 	(find_type(Comp, relation), !,
