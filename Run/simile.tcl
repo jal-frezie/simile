@@ -58,11 +58,13 @@ switch $tcl_platform(platform) {
 # Now, win95 etc needs the tcltk binaries in the path
 	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
+	set graph(origin) 2
     } unix {
 	set env(LD_LIBRARY_PATH) \
 		$env(SP_PATH)/library:[file dirname [info library]]
 	# the following can be edited for your configuration
 	set env(PRINTCMD) lpr
+	set graph(origin) 1
     }
 }
 
@@ -85,11 +87,11 @@ if {[string match Darwin $tcl_platform(os)]} {
     #package require Img
     splash read $SIMILE_PATH/Images/splash.gif
 }
-pack [canvas .c -width 400 -height 316 -bd -2] -padx 0 -pady 0
+pack [canvas .c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .c create image 200 158 -image splash
 .c create text 270.0 275.0 -font {-family helvetica -size 10} -fill #660066 -text "Version $env(SIMILE_VERSION)"
     
-wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2-170]
+wm geometry . +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
 wm overrideredirect . 1
 update
 
