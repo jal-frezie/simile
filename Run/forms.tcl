@@ -136,9 +136,9 @@ proc create_equation {parent boxtitle indices} {
     set descF [frame $mainF.descf]
     TitleFrame $descF.description -text "Description"
     set descf [$descF.description getframe]
-    label $descf.desclabel -text "Description:"
+    #label $descf.desclabel -text "Description:"
     text $descf.text -height 1 -width 20
-    pack $descf.desclabel -side left -padx 2 -pady 2
+    #pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
     pack $descf -side top  -fill x -expand off 
     pack $descF.description  -fill x -expand off -padx 4 -pady 4
