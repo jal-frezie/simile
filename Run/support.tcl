@@ -417,6 +417,8 @@ proc load_c_stub {} {
 #}
 #
 
+package require dde
+
 proc do_in_editor {args} {
 #    puts [list get $args]
 #    while {1} {
