@@ -366,11 +366,11 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	( /* Control is down */
 	CD = 1, !,
 	    /* object is not selected, if it is, clear it and stop */
-	    \+ (doomed(Moving_obj),
+	    \+ (deselectable(Moving_obj),
 		   do_colours(Moving_obj, off)),
 	    do_colours(Moving_obj, on);
 	/* Control not down: Object already selected */
-	doomed(Moving_obj), !;
+	deselectable(Moving_obj), !;
 	/* Object not selected; clear current, then select */    
 	(normalize(_), fail;
 	    \+ is_toplevel(Moving_obj),
@@ -458,6 +458,11 @@ insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
 	make_bounding_box(New_obj, TargetX, TargetY, Cur_size, Box),
 	attempt_addition(New_obj, Submodel, Box, Comp_name, no, no),
 	redisplay(Comp_name), !.	    
+
+deselectable(Obj) :-
+	get_highlit_obj(N, Obj),
+	(Obj is_of_sort line, !, N<2;
+	    N<1).
 
 /* do_linear/3: this is executed when a click marks the initial point
 of a line object. It moves the editor into a mode in which dragging
@@ -1215,18 +1220,19 @@ highlight_deletes(Target) :-
 
 normalize_deletes(Target) :-
 	(Base = Target; ghost_link(Target, Base, Ghost)),
-	m_class:initiates(Link, Base),
-	ghost_link(Link, Base, Ghost),
-	get_highlit_obj(2, Ghost),
-	normalize(Ghost),
-	fail;
+	    m_class:initiates(Link, Base),
+	    ghost_link(Link, Base, Ghost),
+	    get_highlit_obj(2, Ghost),
+	    normalize(Ghost),
+	    fail;
 	recursive_highlight(Target, on, seln);
 	recursive_highlight(Target, off, base);
-	true.
+	(\+ depends_on_links(Target), !;
+	    keep_only_if_links_stay(Target, base)).
 
 recursive_highlight(Target, Way, Where) :-
 	(Target is_of_sort box, !,
-	    (depends_on_links(Target), !;
+	    (fail, depends_on_links(Target), !;
 		change_delete_status(Target, Way, Where)),
 	    Also = Target;
 	tk_get_pref(deleteEndToEnd, 1),
@@ -1236,12 +1242,14 @@ recursive_highlight(Target, Way, Where) :-
 	    change_delete_status(Target, Way, Where),
 	    (Also = Target;
 	    adjust_link_backwards(Target, Way, Also, Where);
-	    adjust_link_forwards(Target, Way, Also, Where));
+	    adjust_link_forwards(Target, Way, Also, Where);
+	    bring_dependents_into_line([Start, Finish], Where), fail);
 	tk_get_pref(deleteEndToEnd, 0),
 	    m_class:Target is_connector from Start to Mid,
 	    get_host(Mid, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
+	    bring_dependents_into_line([Start, Finish], Where),
 	    Also = Target),
 	find_all_links(Also, Linked),
 	    \+ has_outer_equiv(_, Also, Linked),
@@ -1264,7 +1272,7 @@ adjust_link_forwards(Target, Way, Also, Where) :-
 	 Way = off,
 	    m_class:connects(Next, _, Mid),
 	    get_host(Mid, Finish),
-	    at_def_con(Finish, Where),
+	    match_delete_status([Finish], Way, Where),
 	    change_delete_status(Next, off, Where)),
 	(Also = Next; adjust_link_forwards(Next, Way, Also, Where)).
 	
@@ -1273,10 +1281,11 @@ change_delete_status(Target, Way, FromWhere) :-
 	    Way = off,
 	    to_def_con(Target, FromWhere);
 	Way = on,
-	    highlight(Target, 1)),
+	    highlight(Target, 1)).
+
+bring_dependents_into_line(Followers, FromWhere) :-
 	/* Now change cloud etc to same colour as link */
-	(m_class:Target is_connector from End1 to End2,
-	    (Damage = End1; Damage = End2),
+	(member(Damage, Followers),
 	    appears(Damage),	
 	    depends_on_links(Damage),
 	    keep_only_if_links_stay(Damage, FromWhere),
@@ -1309,7 +1318,7 @@ keep_only_if_links_stay(Damage, Where) :-
 match_delete_status(Ends, Way, Where) :-
 	Way = on;
 	member(End, Ends),
-	\+ depends_on_links(End),
+	(\+ depends_on_links(End); Where = seln),
 	\+ at_def_con(End, Where), !, Way = on;
 	Way = off.
 
