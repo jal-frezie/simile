@@ -1614,7 +1614,7 @@ proc BuildProblem {name autoName dir msg fault} {
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
     if [string match $fault system] {        
-            pack [button $buttons.report -text {Send bug report} -width 10 \
+            pack [button $buttons.report -text {Send bug report} -width 20 \
                     -command [list ReportProblem $name $autoName $dir $msg]] \
                     -side left -padx 4 -pady 4
     }
