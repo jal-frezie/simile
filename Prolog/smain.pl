@@ -25,8 +25,10 @@ main :-
 	append(VnumStr, [32, 40 | _], FullVnumStr),
 	name(Vnum, VnumStr), !, /* remove first ' (' onwards */
         nl, write(ready), nl,
-	state:kickoff(Vnum),
-        tk_main_loop.
+	on_exception(ErrorFunction, state:kickoff(Vnum), true),
+        (nonvar(ErrorFunction),
+	    ame_gen:do_dialogue("Failed startup", error, "Simile has been unable to start up due to problems with this system.", ok, _);
+	tk_main_loop).
 
 /* Uncomment following to make standalone executable
 :- initialization(main). */

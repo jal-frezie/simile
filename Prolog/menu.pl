@@ -791,7 +791,7 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	
 reroute_sections(Rerouters) :-
 	Rerouters = [];
-	member(Type, [relation, flow, influence]),
+	member(Type, [relation, flow, squirt, influence]),
 	full_section(Rerouters, Type, [Go | Rest], Remains),
 	suffix([Stop], [Go | Rest]),
 	(m_class:follows(Start, Go); m_class:Go is_connector from Start to _),

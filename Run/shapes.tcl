@@ -71,7 +71,7 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
 
 proc PutShape {c l t r b file fatness colourScheme title} {
     global window_info
-    set nameList {compartment comp condition cond creation creation \
+    set nameList {condition cond creation creation \
                 immigration immig reproduction repro loss loss alarm alarm}
     set point [expr [lsearch $nameList $file] + 1]
     set fileName [lindex $nameList $point]
@@ -136,21 +136,41 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
 
+    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
+
+    set style [expr $extras/100]
+    set extras [expr $extras-100*$style]
+    set generic [list -width $width \
+		     -tag "$tagSet realwidth($width) has_info"]
     # second approximation to fill
     scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
     scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
     scan [GetPoints $mr -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
     scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 
-    set generic [list -width $width -tag "$tagSet realwidth($width) has_info"]
+    if {$style} {
+	set outer [expr 3*($rad+$width/2)/5+$width/2]
+	set ol [expr $hm-$outer]
+	set ot [expr $vm-$outer]
+	set or [expr $hm+$outer]
+	set ob [expr $vm+$outer]
+	eval {$w create oval $ol $ot $or $ob} $generic
+#	scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+#	scan [GetPoints $ot $outer] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+#	scan [GetPoints $or (-$outer)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+#	scan [GetPoints $ob (-$outer)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
+	
+#	eval {$w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
+	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
+    } else {
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
-    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
-    eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
-    eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
-    eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
-            $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-            $h8 $v1 $h9 $v2 $h10 $v3} $generic
+	eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
+	eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
+	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
+		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
+		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
+    }
     set decor [expr $extras/10]
     set stack [expr $extras-10*$decor]
     
@@ -1564,6 +1584,12 @@ proc DoGraphics {box type middle size} {
             set t [expr $middle - 3*$size/10]
             set b [expr $middle + 3*$size/10]
 	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
+        } state {
+            set l [expr $middle - 3*$size/5]
+            set r [expr $middle + 3*$size/5]
+            set t [expr $middle - 2*$size/10]
+            set b [expr $middle + 2*$size/10]
+	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } submodel {
             set l [expr $middle - 80]
             set r [expr $middle + 80]
@@ -1793,8 +1819,8 @@ proc ApplyLooks {t topNode type} {
 	CopyLooks $t $topNode $type
         ExportLooks $t $topNode $type
     } else {
-        foreach object {generic compartment channel function variable text \
-                    submodel flow influence relation} {
+        foreach object {generic compartment state channel function variable \
+			    text submodel flow influence relation} {
             CopyLooks $t $topNode $object
             ExportLooks $t $topNode $object
         }
@@ -1860,7 +1886,7 @@ proc ExportLooks {t topNode type} {
 proc MakeLooksSaver {n} {
     global looks
 
-    set objects {normal generic compartment channel text \
+    set objects {normal generic compartment state channel text \
 		     variable function submodel flow influence \
 		     ghost_link relation}
     set aspects {font txtbd txtbg outline fill text select highlight target \

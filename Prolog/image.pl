@@ -31,7 +31,7 @@ sicstus_module(image,
        update_text_position/3, make_header/2, set_completion/2,
        update_link_route/2, shape_route/4, route_link/4,
        route_interior_part_link/5, route_part_link/5,
-       route_parent_child_link/5, get_middle_segment/3, check_translation/1,
+       route_parent_child_link/5, get_middle_segment/4, check_translation/1,
        translate_between/4, translate/3, rel_translate/3,
        untranslate/3, add_to_translation/3, subtract_from_translation/3]).
 
@@ -201,12 +201,16 @@ get_closest_edge(Node, [X,Y], Edge) :-
     member(MM-Edge, [LM-l, TM-t, RM-r, BM-b]). */
 
 make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
-    ((New_obj is_class_of_sort regular_box; New_obj = channel),
+    ((New_obj is_class_of_sort regular_box; New_obj = channel;
+      New_obj = squirt),
         L is Xpt - Cur_size/2,
         R is Xpt + Cur_size/2;
     New_obj is_class_of_sort elongated_box,
         L is Xpt - 2*Cur_size/3,
         R is Xpt + 2*Cur_size/3;
+    New_obj is_class_of_sort tall_box,
+        L is Xpt - 3*Cur_size/8,
+        R is Xpt + 3*Cur_size/8;
     New_obj = flow,
         L is Xpt - Cur_size/4,
         R is Xpt + Cur_size/4),
@@ -226,14 +230,12 @@ draw_style_for(Obj, Style) :-
     (Obj has_class Type; Obj has_type Type),
     use_style_for(Type, Style).
 
-use_style_for(Obj, cloud) :-
-    Obj is_class_of_sort cloud, !.
-
-use_style_for(Obj, submodel) :-
-    Obj is_class_of_sort rounded_rect, !.
-
 use_style_for(Obj, channel) :-
     Obj is_class_of_sort channel, !.
+
+use_style_for(Type, Shape) :-
+    member(Type-Shape, [event-variable, squirt-flow]),
+    !.
 
 use_style_for(Style, Style).
 
@@ -272,7 +274,7 @@ crossing_point([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
     get_box_crossing([X1, Y1], [X2, Y2], [L, T, R, B], [Xx, Yx]),
     Xoff is X2-X1,
     Yoff is Y2-Y1,
-    (member(Class, [flow, compartment, channel]), !,
+    (member(Class, [flow, compartment, channel, state]), !,
         Exit = [Xx, Yx];
     Class = variable, !,
         /* assume line starts at centre */
@@ -381,28 +383,27 @@ in turn determines the little piccy (Eye of God, gullwings, egg, crucifix) that 
 on it. */
 
 get_drawing_form(Comp, Style, BBox) :-
-    get_shape(Comp, bowtie, [BL, BT, BR, BB]), !,
-        Style = flow,
+    find_base(Comp, Base),
+    find_type(Base, Type),
+    use_style_for(Type, Style),
+    (get_shape(Comp, bowtie, [BL, BT, BR, BB]), !,
         Xpt is (BR+BL)/2,
         Ypt is (BB+BT)/2,
         get_bowtie_size(Comp, Cur_size),
         (BR-BL<BB-BT, !,
-        make_bounding_box(Style, Xpt, Ypt, Cur_size, [NL, NT, NR, NB]);
-        make_bounding_box(Style, Ypt, Xpt, Cur_size, [NT, NL, NB, NR])),
+        make_bounding_box(Type, Xpt, Ypt, Cur_size, [NL, NT, NR, NB]);
+        make_bounding_box(Type, Ypt, Xpt, Cur_size, [NT, NL, NB, NR])),
         BBox = [NL, NT, NR, NB];
-    draw_style_for(Comp, text), !,
-        Style = text,
+    Style = text, !,
         get_shape(Comp, centre, C),
         append(C, C, BBox);
     get_shape(Comp, bounding_box, [BL, BT, BR, BB]),
-        find_base(Comp, Base),
-        draw_style_for(Base, Style),
         (Style = submodel, !,
         BBox = [BL, BT, BR, BB];
         Xpt is (BR+BL)/2,
         Ypt is (BB+BT)/2,
         get_box_size(Comp, Style, Cur_size),
-        make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox)).
+        make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox))).
 
 /* draws_at/3: returns if a component or link can be drawn at a certain depth,
 i.e., if it has a deep enough display depth and so do others on which it
@@ -463,16 +464,14 @@ multiple_draw(VComp, Num) :-
         Num is min(RealVal, 4);
     Num = 1).
 
-has_bowtie(Comp) :-
-    Comp has_type flow.
-
 get_bowtie_size(Link, Bowtie) :-
     Link is_connector from Comp to _,
     get_box_size(Comp, flow, Box),
     Bowtie is Box/2.
 
 adjust_bowtie(Comp, Point) :-
-    find_type(Comp, flow),
+    find_type(Comp, Type),
+    Type is_class_of_sort has_bowtie,
     get_shape(Comp, course, Point_list),
     get_bowtie_size(Comp, Bowtie_size),
     closest_centre(Point, Point_list, Miss, [XMid, YMid], Orient),
@@ -590,11 +589,12 @@ update_link_route(Link, Recurse) :-
     update_bowtie(Link, Route).
 
 update_bowtie(Link, Route) :-
-    \+ has_bowtie(Link), !;
+    find_type(Link, LType),
+    (\+ LType is_class_of_sort has_bowtie, !;
     get_bowtie_size(Link, Bowtie_size),
-    get_middle_segment(Route, Bowtie_size, Bowtie),
+    get_middle_segment(LType, Route, Bowtie_size, Bowtie),
     (   Link has_changed_graphical_attribute bowtie to Bowtie, !;
-        Link has_new_graphical_attribute bowtie of Bowtie).
+        Link has_new_graphical_attribute bowtie of Bowtie)).
 
 get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
     Link is_connector from TopStart to TopEnd,
@@ -659,13 +659,13 @@ x_separate([N | Rest], Str) :-
     sicstus_format_to_chars("~dx~s", [N, SubStr], Str).
 
 /* complete/1: determines draw style of item.
-· Compartments and functions are complete if they have values set
-· As a special case a function can also be complete if it is linked only to a flow which also has a link from another function which has a value
-· Variables are complete if they have an incoming arc
-· Sources and sinks are always complete, clouds never are
-· Flows are complete if they have an incoming arc at some point along their length
-· Influences are complete if their ultimate sources are
-· Submodels are complete if they have an internal flow or influence corresponding to every external one.
+Â· Compartments and functions are complete if they have values set
+Â· As a special case a function can also be complete if it is linked only to a flow which also has a link from another function which has a value
+Â· Variables are complete if they have an incoming arc
+Â· Sources and sinks are always complete, clouds never are
+Â· Flows are complete if they have an incoming arc at some point along their length
+Â· Influences are complete if their ultimate sources are
+Â· Submodels are complete if they have an internal flow or influence corresponding to every external one.
 */
 test_complete(Item) :-
     Item has_class function,
@@ -815,7 +815,10 @@ get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
         Area = [X, Y, X, Y],
         CompType = point,
         Centre = [X, Y];
-    get_drawing_form(Obj, CompType, Area),
+    get_drawing_form(Obj, DrawType, Area),
+    (Obj has_type squirt, !,
+        CompType = variable;
+    CompType = DrawType),
     (CompType = submodel,
     \+ Rest = [], !,
         get_termination_zone(Rest, Dir, _, _, InnerCentre),
@@ -852,7 +855,8 @@ blobify([X, Y], [L, T, R, B]) :-
     B is Y+BlobRad.
 
 /* Easy one for straight part routes */
-route_part_link(flow, Dir, Start, [X, Y], Route) :-
+route_part_link(Type, Dir, Start, [X, Y], Route) :-
+    Type is_class_of_sort has_bowtie,
     get_termination_zone(Start, Dir, [L, T, R, B], NodeType, _),
     (L < X, X < R,
         Y1 is (T + B)/2,
@@ -919,7 +923,8 @@ route_parent_child_link(Type, Direction, Parent, Child, Route) :-
 /* Easy one for straight whole routes; this and its partial equivalent might need 
 to take some note of the centres...OK then */
 
-route_link(flow, Start, Finish, [End, Beginning]) :-
+route_link(Type, Start, Finish, [End, Beginning]) :-
+    Type is_class_of_sort has_bowtie,
     get_termination_zone(Start, in, [L1, T1, R1, B1], NodeType1, [CX1, CY1]),
     get_termination_zone(Finish, out, [L2, T2, R2, B2], NodeType2, [CX2, CY2]),
         ((CX1 >= L2, CX1 =< R2, X = CX1;
@@ -944,7 +949,7 @@ side of the compartment etc and thus differentiate routes in opposite
 directions */
 
 route_link(Type, Start, Finish, Route) :-
-    Type = flow,
+    member(Type, [flow, squirt]),
     get_termination_zone(Start, in, [SL, ST, SR, SB], _, [SX, SY]),
     get_termination_zone(Finish, out, FBox, NodeType2, [FX, FY]),
     (FX-SX>FY-SY, !, /* flow goes top right */
@@ -979,7 +984,7 @@ route_link(Type, Start, Finish, Route) :-
     route_parent_child_link(Type, Direction, Parent, Graph, Route).
 
 shape_route(Type, Beginning, End, Route) :-
-    Type = flow, !,
+    member(Type, [flow, squirt]), !,
         (draw:tk_get_pref(flowRouting, 1), !,
         kink_route(Beginning, End, Route);
         Route = [End, Beginning]);
@@ -1021,21 +1026,21 @@ curve_route([X1, Y1], [X3, Y3], [X2, Y2]) :-
 get_linear(Acw_pt, Cw_pt, Acw_gap, Front_gap, Cw_gap, Mid_pt) :-
     Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) / (2*Front_gap - Cw_gap - Acw_gap).
 
-get_middle_segment(List, Size, Bowtie) :-
+get_middle_segment(Type, List, Size, Bowtie) :-
     length(List, L),
     Half_length is (L - 1)//2,
     append(_, [St, Fi | Rest], List),
     length(Rest, Half_length), !,
-    tie_middle(St, Fi, Size, Bowtie).
+    tie_middle(Type, St, Fi, Size, Bowtie).
 
 /* tie_middle puts bowtie on a section of flow, oriented crosswise to the axis along which the flow has greatest extent */
 
-tie_middle([X1, Y1], [X2, Y2], Len, [NL, NT, NR, NB]) :-
+tie_middle(Type, [X1, Y1], [X2, Y2], Len, [NL, NT, NR, NB]) :-
     XMid is (X1+X2)/2,
     YMid is (Y1+Y2)/2,
     (abs(Y1-Y2) < abs(X1-X2), !,
-        make_bounding_box(flow, XMid, YMid, Len, [NL, NT, NR, NB]);
-    make_bounding_box(flow, YMid, XMid, Len, [NT, NL, NB, NR])).
+        make_bounding_box(Type, XMid, YMid, Len, [NL, NT, NR, NB]);
+    make_bounding_box(Type, YMid, XMid, Len, [NT, NL, NB, NR])).
 
 check_translation(Submodel) :-
     Wid shows_model TopModel,

@@ -793,28 +793,17 @@ can_connect(Arc, Node1, Node2) :-
 	(state:get_style(sd), !,
 	    ConnectTable =
 	[[flow,
-	  [[compartment, [compartment, cloud]],
-	   [cloud, [compartment, cloud]]]],
+	  [[[compartment, cloud], [compartment, cloud]]]],
+	 [squirt,
+	  [[[compartment, cloud], [compartment, cloud]],
+	   [[state, cloud], [state, cloud]]]],
 	 [influence,
-	  [[compartment,
-	    [variable, flow, compartment, alarm, condition, creation,
-	     immigration, reproduction, loss]], 
-	   [variable,
-	    [variable, flow, compartment,
+	  [[[compartment, state, variable, flow, alarm],
+	    [variable, flow, compartment, state, event, squirt,
 	     alarm, condition, creation, immigration, reproduction, loss]],
-	   [flow,
-	    [variable, flow, compartment,
-	     alarm, condition, creation, immigration, reproduction, loss]],
-	   [alarm,
-	    [variable, flow, compartment,
-	     alarm, condition, creation, immigration, reproduction, loss]],
-	   [creation, [variable, flow, compartment,
-	     condition, creation, immigration, reproduction, loss]],
-	   [immigration, [variable, flow, compartment,
-	     condition, creation, immigration, reproduction, loss]],
-	   [reproduction, [variable, flow, compartment,
-	     condition, creation, immigration, reproduction, loss]]]],
-	 [relation, [[submodel, [submodel]]]]];
+	   [[event, squirt],
+	    [event, squirt]]]],
+	 [relation, [[[submodel], [submodel]]]]];
 	    
 	ConnectTable =
 	[[flow,
@@ -831,7 +820,8 @@ can_connect(Arc, Node1, Node2) :-
 	 [relation, [[submodel, [submodel]]]]]),
 
 	member([Arc, Poss], ConnectTable),
-	member([Node1, Type2_options], Poss),
+	member([Type1_options, Type2_options], Poss),
+	member(Node1, Type1_options),
 	member(Node2, Type2_options).
 
 /* Decide if the new link makes no sense in terms of direction, if
@@ -1391,8 +1381,8 @@ remove_invisible_floater(Node) :-
 	Node is_no_longer_model_class.
 
 make_border_node(Line_type, Parent, Node_name) :-
-	member(Line_type-Node_type, [flow-cloud, influence-variable,
-			relation-submodel]),
+	member(Line_type-Node_type, [flow-cloud, squirt-cloud,
+				     influence-variable, relation-submodel]),
 	make_node(Parent, Node_type, Node_name).
 	
 remove_border_nodes(LineType, Finish, Start) :-

@@ -236,7 +236,7 @@ influence_makes_ghost(Component) :-
 	appears(Component).
 
 find_base(Ghost, Base) :-
-	Ghost has_type flow, !,
+	Ghost is_of_sort has_bowtie, !,
 	((sequence(Base, Ghost); Base = Ghost; sequence(Ghost, Base)),
 	    implicit_function(Base, FlowFn),
 	    (FlowFn has_class_refinement value of _Val;
@@ -749,8 +749,8 @@ find_all_comps(Parent, Comp) :-
 :- op(450, xf, is_primitive).
 
 Type is_primitive :-
-	member(Type, [compartment, function, variable, cloud,
-		      flow, influence, relation, alarm, text,
+	member(Type, [compartment, state, function, variable, event, cloud,
+		      flow, squirt, influence, relation, alarm, text,
 		      condition, creation, immigration, reproduction, loss]).
 
 :- op(500, xfy, is_class_of_sort).
@@ -760,11 +760,15 @@ Type is_primitive :-
 Obj is_class_of_sort Class :-
 	member(Obj-SortList,
 		[variable-[regular_box, box, has_function, can_be_input],
+		event-[regular_box, box, has_function, can_be_input, discrete],
 		function-[regular_box, box, can_be_input],
 		compartment-[rectangle, elongated_box, box, 
-				has_function, can_be_input, level],
+				has_function, can_be_input, init_eval, level],
+		state-[rectangle, tall_box, box, has_function, can_be_input,
+		       init_eval, discrete],
 		submodel-[rounded_rect, elongated_box, box],
-		flow-[line, has_function],
+		flow-[line, has_function, has_bowtie],
+		squirt-[line, has_function, has_bowtie, discrete],
 		influence-[line, curved, captionless],
 		relation-[line, curved],
 		cloud-[cloud, regular_box, box, captionless],
@@ -774,7 +778,7 @@ Obj is_class_of_sort Class :-
 		condition-[regular_box, box, rectangle, channel, has_function,
 			   cond_value],
 		creation-[regular_box, box, rectangle, channel, has_function,
-			  level, value_outside],
+			  init_eval, level, value_outside],
 		immigration-[regular_box, box, rectangle, channel, 
 				has_function, level, value_outside],
 		reproduction-[regular_box, box, rectangle, channel, 

@@ -31,7 +31,7 @@ sicstus_module(state,
 sicstus_use_module(library(lists)).
 
 kickoff(Vnum) :-
-	output:safe_tcl_eval(['ControlDraw', br(Vnum)], EnvVars),
+	user:tcl_eval(['ControlDraw', br(Vnum)], EnvVars),
 	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
@@ -64,7 +64,7 @@ kickoff(Vnum) :-
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).
 
-get_initial_window_size(640, 400).
+get_initial_window_size(800, 480).
 
 create_window(New_win, Model) :-
 	destroy_window(New_win),
@@ -99,7 +99,7 @@ displayed down to the same level, with the first one used to label the
 display depth variable */
 
 depth_list_is([[submodel, relation],
-	       [compartment], 
+	       [compartment, state], 
 	       [flow, cloud],
 	       [variable, function, channel],
 	       [influence],
@@ -201,7 +201,8 @@ get_box_size(Parent, Box_type, Cur_box_size) :-
 	ame_gen:contains(Top, Parent),
 	backup:is_toplevel(Top),
 	box_size_is(Top, Box_type, Abs_box_size,_,_),
-	(member(Box_type-Scale, [compartment-0.6, function-0.3, variable-0.3,
+	(member(Box_type-Scale, [compartment-0.6, state-0.8,
+				 function-0.3, variable-0.3,
 				cloud-0.5, channel-0.6]), !,
 	    Cur_box_size is Scale*Abs_box_size;
 	Cur_box_size = Abs_box_size).
@@ -362,6 +363,7 @@ get_style(Style) :-
 set_initial_box_sizes(TopNode) :-
 	retractall(box_size_is(TopNode, _,_,_,_)),
 	assert(box_size_is(TopNode, compartment, 50, 0, 0)),
+	assert(box_size_is(TopNode, state, 50, 0, 0)),
 	assert(box_size_is(TopNode, function, 50, 0, 0)),
 	assert(box_size_is(TopNode, variable, 50, 0, 0)),
 	assert(box_size_is(TopNode, cloud, 50, 0, 0)),

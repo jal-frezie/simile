@@ -50,7 +50,7 @@ move_components(Migrants, California) :-
 			(Arc has_type influence,
 			    \+ (Fix = sink, make_branch(Arc, California)),
 			    NewNodeType = variable;
-			Arc has_type flow,
+			Arc is_of_sort has_bowtie,
 			    NewNodeType = cloud;
 			Arc has_type relation,
 			    NewNodeType = submodel),
@@ -83,7 +83,7 @@ add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	values we need to add one to the section that currently has the bowtie
 	in case that bowtie is not on the new source section
 	(typical ghastly hack) */
-	(find_type(Flow, flow),
+	(Flow is_of_sort has_bowtie,
 	    find_base(Flow, Base),
 	    implicit_function(Base, BaseFn),
 	    \+ BaseFn has_class_refinement value of _Val, !,
@@ -184,7 +184,7 @@ and obliterates the others, transferring any incoming links to the chosen one.
 Harsh but fair. */
 
 scrap_spare_functions(Link) :-
-	Link has_type flow, state:get_style(sd),
+	Link is_of_sort has_bowtie, state:get_style(sd),
 		pick_best_function(Link, Grain),
 		(_ is_connector from Chaff to Link,
 			\+ Chaff = Grain,

@@ -296,7 +296,10 @@ Powersim does this. Still, we must simply call a textual output device, and when
 
 add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	caption_for(Id, Caption),
-	draw_style_for(Id, Style),
+	draw_style_for(Id, ExactStyle),
+	(ExactStyle=state, !,
+	    Style = compartment;
+	Style = ExactStyle),
 
 	(Style = submodel, !,
 	    DefAnchor = nw;
@@ -404,7 +407,10 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    multiple_draw(Comp, MNum),
 	    find_base(Comp, BComp),
 	    is_parameter(BComp, P),
-	    Num is MNum+10*max(0, P),
+	    DNum is MNum+10*max(0, P),
+	    (Comp is_of_sort discrete, !,
+		Num is DNum+100;
+	    Num=DNum),
 	    
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour, FillImage, ImgPos),
@@ -420,7 +426,10 @@ display_in(Wid, Comp, Depth, Trans) :-
 	        submodel(Wid, Screen_list, Num, Fatness,
 				  FillColour, FillImage, ImgPos, Ox, Oy,
 				  BgColour, InFat, Colour_scheme, Comp);
-	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,
+	    (Style=state, !,
+	       DCmd = compartment;
+	    DCmd = Style),
+	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
 		call(Draw_command)),
 	    (get_display_depth(Wid, caption, Caption_detail),
@@ -431,12 +440,13 @@ display_in(Wid, Comp, Depth, Trans) :-
 display_link_in(Wid, Link, Depth, Trans) :-
 	appears(Link),
 	/* speed hack: do not check influence type if not drawing it anyway */
-	(\+ find_type(Link, influence);
+	find_type(Link, LType),
+	(\+ LType = influence;
 	    (draws_at(Wid, influence, Depth),
 		get_display_depth(Wid, sections, WhichSections),
 		right_section(Link, WhichSections);
 	    draws_at(Wid, ghost_link, Depth))), !,
-	draw_style_for(Link, Type),
+	use_style_for(LType, Type),
 	draws_at(Wid, Type, Depth),
 	get_shape(Link, course, Coord_list),
 	untranslate(Coord_list, Trans, Screen_coords),
@@ -450,12 +460,15 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	Draw_command =.. [UseType, Wid, Screen_coords, 
 			RelFatness, Colour_scheme, [Link]],
 	call(Draw_command),
-	((get_drawing_form(Link, flow, Bowtie),
+	((get_drawing_form(Link, LType, Bowtie),
 	  density_for(Link, Density),
 	  Density = {},
 	        untranslate(Bowtie, Trans, Screen_bowtie),
-		bowtie(Wid, Screen_bowtie, RelFatness,
+		(LType = flow, !,
+		    bowtie(Wid, Screen_bowtie, RelFatness,
 		       Density, Colour_scheme, [Link]);
+		event(Wid, Screen_bowtie, 0, RelFatness,
+		       Density, Colour_scheme, [Link, bowtie]));
 	  Type = relation,
 	  	get_boundary_end(Link, true),
 	        get_caption_anchor(Coord_list, Bowtie)), !,
@@ -474,7 +487,8 @@ draw_incomplete(Line_type) :-
 	find_current(Window_id),
 	get_translation(Trans),
 	find_fatness(Trans, Fatness),
-	Draw_command =.. [Line_type, Window_id, Draw_coords, Fatness, incomplete, [unfinished_line]],
+	use_style_for(Line_type, Draw_type),
+	Draw_command =.. [Draw_type, Window_id, Draw_coords, Fatness, incomplete, [unfinished_line]],
 	call(Draw_command),
 	fail;
 	true.

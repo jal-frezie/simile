@@ -1102,7 +1102,7 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 	get_host(DestFn, Dest),
 	member([End, Way, Comp],
 	       [[start, out, Dest], [finish, in, Source]]),
-	(Type = flow,
+	(Type is_class_of_sort has_bowtie,
 	    route_part_link(Type, Way, [Comp], NewPt, FwRoute),
 	    reverse(FwRoute, Route),
 /*		(End = start,
@@ -1112,7 +1112,7 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 */	    get_box_size(Source, flow, FlowBox),
 
 	    BowSize is FlowBox/2,
-	    get_middle_segment(Route, BowSize, BowShape),
+	    get_middle_segment(Type, Route, BowSize, BowShape),
 	    change_shape(Moving_obj, bowtie, BowShape),
 	    redisplay(Moving_obj),
             (has_outer_equiv(SubLink, Comp, Moving_obj),
@@ -1386,7 +1386,7 @@ sort_for_finish(Target, Ltype, Xpt, Ypt) :-
 		(find_all_comps(Target, Baby),
 			can_finish(Ltype, Start, Baby),
 			\+ contains(Baby, Start), !;
-		Ltype = flow),
+		member(Ltype, [flow, squirt])),
 		set_current_coords(Xpt, Ypt), /* for new terminator if dropped here */
 		extend_line_to(Start, Ltype, Target, [Xpt, Ypt]);
 	Drawn = false),
@@ -1724,7 +1724,7 @@ reuse_route(New_obj, LastArc) :-
 
 	    (New_obj = relation,
 		get_boundary_end(NewArc, true);
-	    New_obj = flow,
+	    New_obj is_class_of_sort has_bowtie,
 		NewArc = BowtieArc),
 	    give_focus(NewArc),
 	    do_colours(NewArc, on),
@@ -1779,7 +1779,7 @@ It also directs a connection to a node's 'implicit function', creating this if t
 
 make_terminator(LineType, FinishZone, Terminator) :-
 	find_type(FinishZone, submodel),
-	    LineType = flow, TermType = cloud,
+	    member(LineType, [flow, squirt]), TermType = cloud,
 	    /* set influence/variable as alternative if required */
 	    get_current_coords(FinalX, FinalY), !,
 	    (add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator),
@@ -1808,7 +1808,7 @@ delete_net(Top) :-
 		add_parameter(Sm, 1, c_new, 0));
 	member(Target, Range),
 	    find_type(Target, Line),
-	    member(Line, [flow, relation]);
+	    member(Line, [flow, squirt, relation]);
 	member(Target, Range),
 	    Target is_of_sort box,
 	    \+ find_type(Target, submodel);
