@@ -104,6 +104,7 @@ set help(top) "index.htm"
 set help(execution) "run/index.htm"
 set help(fill_equation) "equations/dialogue.htm"
 set help(expiry) "coviewexpiry.htm"
+set help(helpers) "/run/tools/index.htm"
 
 set url(coviewexpiry.htm) {Permanent licence upgrade}
 set url(index.htm) {Contents}

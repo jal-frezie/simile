@@ -107,8 +107,9 @@ proc AddHelperSublist {fm title ct} {
         if [catch {source $helperApp} wibble] {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
-            ShowMessage "Error loading I/O tool" warning \
-                    "I/O tool [pwd]/$helperApp had a $::errorInfo" ok
+            do_in_editor BuildProblem "Error loading I/O tool" warning \
+                    "I/O tool [pwd]/$helperApp had a $::errorInfo" \
+		    helpers none none
         } else {
             if {[info exists keyValue]} {
                 set action [${keyValue}::identify]
@@ -121,7 +122,7 @@ proc AddHelperSublist {fm title ct} {
 #                if {[string match {Slider control} $action]} {
 #                    set helperTable(SliderControl) $keyValue
 #                }
-                if {[string match {Data table} $action]} {
+                if {[string match {Data table} $action]} {
                     set table_viewer(id) $keyValue
                 }
                 $m add command -label $action \
@@ -876,6 +877,8 @@ proc StartRun {node} {
 #        if {$runState($node,execTime) != $runState($node,currentTime)} {
 #            set runState($node,execTime) [expr $runState($node,execTime) + \
 					      $runState($node,currentTime)]
+
+
 #        }
 # above is done by reset phase
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
@@ -1102,6 +1105,7 @@ proc load_dll {topNode lang progDir id node incs} {
         #        set model_id [loadmodel $nameBase[info sharedlibextension] $node]
         set model_ids($node) $new_model_id
         return $new_model_id
+
     }
 }
 
