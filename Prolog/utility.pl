@@ -2,7 +2,8 @@
 **** Commonly used utility procedures for AME				    ****
 *******************************************************************************/
 
-sicstus_module( utility, [wake/0, genint/2, unique_name/2, unique_name/3,
+sicstus_module( utility, [wake/0, genint/2, portray/1, trim_float/2,
+			  unique_name/2, unique_name/3,
 			  indent/1, delete_member/2,
 			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
 			  all/3, unify_all/2, get_precedence/2,
@@ -51,6 +52,47 @@ unique_name( Atom, Name, Size ) :-
 	\+ state:shows_model(CanvasName, _), !,
 	assert(genint(Atom, Integer)).
 
+/* Things that are used in the eqn language but cause gnu prolog to not
+load properly if they have already been declared */
+
+/* Things to ignore temporarily */
+
+portray(F) :-
+	trim_float(F, NewF), !,
+	sicstus_write_chars(NewF).
+
+/* regular stuff : xrefs occurs inside a model structure and contains other
+model structures, making them circular. It must therefore be
+printed incompletely to avoid infinite loops... */
+
+portray(xrefs(Model, _, _, _)) :-
+	print(xrefs(Model,'Links')).
+
+portray(sm(Model, _,_,_)) :-
+	print(sm(Model)).
+
+/* Improved system for outputting floating-point numbers -- max of 
+decimal places (thanks to Dan Diaz for making it work with print_to_chars)
+-- previously unusable due to weird bug in gprolog */
+
+trim_float(F, Ns) :-
+	float(F),
+	sicstus_format_to_chars("~8g", [F], Fs),
+	/* mantissa must look like float so add .0 if it doesnt */
+	(member(46, Fs), !,
+	    Ms = Fs;
+	(append(Mant, Exp, Fs),
+	        Exp = [E | _],
+	        member(E, "Ee"), !;
+	    Mant = Fs, Exp = []),
+	    append(Mant, ".0", RMant),
+	    append(RMant, Exp, Ms)),
+
+        /* normal printing separates -ve floats from ops with a space, so */
+        (Ms = [45 | Rest], !,
+            Ns = [32, 45 | Rest];
+        Ns = Ms).
+	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % My own delete/3 which deletes one element from a list
 
@@ -169,7 +211,7 @@ replace_in_list( C1, [X|L1s], C2, [X|L2s] ) :-
 % write ordinary
 
 write_with_breaks(Stream, Term) :-
-	sicstus_writeq(Stream, Term),
+	write_term(Stream, Term, [quoted(true), portrayed(true)]),
 	write(Stream, '.'),
 	nl(Stream).
 

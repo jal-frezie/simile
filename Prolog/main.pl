@@ -9,17 +9,7 @@ This starts off the application and goes into an event loop from which it is dri
 :- 	use_module([library(tcltk), library(lists), library(charsio),
 		    input, utility]).
 
-/* xrefs occurs inside a model structure and contains other
-model structures, making them circular. It must therefore be
-printed incompletely to avoid infinite loops... */
-
-portray(xrefs(Model, _, _, _)) :-
-	print(xrefs(Model,'Links')).
-
-/*portray(sm(Model, _,_,_)) :-
-	print(sm(Model)).
-
- Just in case we use the outline runtime system from Sicstus 3.9... */
+/* Just in case we use the outline runtime system from Sicstus 3.9... */
 runtime_entry(start) :-
 	main.
 
@@ -27,13 +17,6 @@ runtime_entry(start) :-
 been loaded. Others are in ame_gen.pl */
 
 :- op(500, fx, ['!']).
-
-/* There are a few things where the GNU Prolog implementation is more concise
-than the Sicstus, like... */
-
-printq_to_codes(TermStr, Term) :-
-	with_output_to_chars(write_term(Term, [quoted(true), portrayed(true)]),
-			     TermStr).
 
 :- dynamic(is_interpreter/1).
 

@@ -63,9 +63,6 @@ substitute(E, [G | T1], F, [H | T2]) :-
 get0(Stream, Char) :-
 	get_code(Stream, Char).
 
-put(Stream, Char) :-
-	put_code(Stream, Char).
-
 sicstus_read_from_chars(Term, Result) :-
         read_from_codes(Term, Result).
 
@@ -81,16 +78,14 @@ sicstus_format_to_chars(Template, V1, Result) :-
 open_chars_stream(String, Stream) :-
 	open_input_codes_stream(String, Stream).
 
+sicstus_write_chars(Chars) :-
+	get_print_stream(Stream),
+	sicstus_write_chars(Stream, Chars).
+
 sicstus_write_chars(_Stream, []).
 sicstus_write_chars(Stream, [Char | Rest]) :-
-	put_byte(Stream, Char),
+	put_code(Stream, Char),
 	sicstus_write_chars(Stream, Rest).
-
-sicstus_writeq(Stream, Term) :-
-	write_term(Stream, Term, [quoted(true), portrayed(true)]).
-
-sicstus_put(Stream, Char) :-
-	put_byte(Stream, Char).
 
 sicstus_atom_chars(Atom, Chars) :-
 	atom_codes(Atom, Chars).
@@ -122,53 +117,6 @@ all_ground([H | T]) :-
 	ground(H),
 	all_ground(T).
 
-/* Not in GNU prolog but should be */
-
-printq_to_codes(TermStr, Term) :-
-	write_term_to_codes(TermStr, Term, [quoted(true), portrayed(true)]).
-
-/* Things that are used in the eqn language but cause gnu prolog to not
-load properly if they have already been declared */
-
-/* Things to ignore temporarily */
-
-portray(F) :-
-	trim_float(F, NewF), !,
-	get_print_stream(Stream),
-	format(Stream,"~s",[NewF]).
-
-/* regular stuff : xrefs occurs inside a model structure and contains other
-model structures, making them circular. It must therefore be
-printed incompletely to avoid infinite loops... */
-
-portray(xrefs(Model, _, _, _)) :-
-	print(xrefs(Model,'Links')).
-
-portray(sm(Model, _,_,_)) :-
-	print(sm(Model)).
-
-/* Improved system for outputting floating-point numbers -- max of 
-decimal places (thanks to Dan Diaz for making it work with print_to_chars)
--- previously unusable due to weird bug in gprolog */
-
-trim_float(F, Ns) :-
-	float(F),
-	format_to_codes(Fs, "~8g", [F]),
-	/* mantissa must look like float so add .0 if it doesnt */
-	(member(46, Fs), !,
-	    Ms = Fs;
-	(append(Mant, Exp, Fs),
-	        Exp = [E | _],
-	        member(E, "Ee"), !;
-	    Mant = Fs, Exp = []),
-	    append(Mant, ".0", RMant),
-	    append(RMant, Exp, Ms)),
-
-        /* normal printing separates -ve floats from ops with a space, so */
-        (Ms = [45 | Rest], !,
-            Ns = [32, 45 | Rest];
-        Ns = Ms).
-	
 /* If we rely on writeq to put non-readable atoms in quotes it will
 also convert wide characters into sets of hex codes enclosed in
 backslashes, which other Prologs cannot read. So we do it by hand

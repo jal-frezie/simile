@@ -827,7 +827,10 @@ make_evaluation_routine(
 	    make_struct_reference(Language, Ptr, instanceid, IndSet),
 	    get_element_ref(Language, IndSet, Count, Term);
 	number(Expr), !,
-	    Term=Expr;
+	    /* Term=Expr; I think not...
+	    this goes num -> chars -> atom -> chars -> atom */
+	    print_to_codes(TermStr, Expr),
+	    sicstus_atom_chars(Term, TermStr);
 	member(Expr, [time(P), ind_time(P)]), !,
 	    make_procedure_call_chars(Language, [glob_element, ts, P],
 				      TimeElmtStr),

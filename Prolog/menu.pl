@@ -1043,12 +1043,6 @@ show_error(Model, Lossage) :-
 	output:safe_tcl_eval(['BuildProblem', br(Name), br(AutoName),
 			      br(chars(Text)), Fault], _).
 
-write_chars_to_file(_, []).
-
-write_chars_to_file(Stream, [Char | Chars]) :-
-	put(Stream, Char),
-	write_chars_to_file(Stream, Chars).
-
 /*
 Unused because only desktop is runnable anyway
 not_runnable(Model) :-

@@ -1,6 +1,6 @@
 /* :- module(sp_only, [sicstus_read_from_chars/2, sicstus_write_to_chars/2,
-		    sicstus_format_to_chars/3, sicstus_write_chars/2,
-		    sicstus_writeq/2, sicstus_put/2, trim_float/2]).
+		    sicstus_format_to_chars/3, sicstus_write_chars/1,
+		    sicstus_writeq/2]).
 
 ...and here is the first component of this port! GNU has no modules, so use
 term_expansion to make something which it can treat as a predicate and ignore,
@@ -21,19 +21,16 @@ sicstus_write_to_chars(Term, Result) :-
 sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
 	format_to_chars(Template, [V1 | Vars], Result).
 
-sicstus_write_chars(Stream, Chars) :-
-	name(Atom, Chars),
-	write(Stream, Atom).
-
-sicstus_writeq(Stream, Term) :-
-	writeq(Stream, Term).
-
-sicstus_put(Stream, Char) :-
-	put(Stream, Char).
+sicstus_write_chars(Chars) :-
+	atom_chars(Atom, Chars),
+	write(Atom).
 
 sicstus_atom_chars(Atom, Chars) :-
 	atom_chars(Atom, Chars).
 
-trim_float(F, FStr) :-
-	float(F),
-	name(F, FStr).
+/* There are a few things where the GNU Prolog implementation is more concise
+than the Sicstus, like... */
+
+print_to_codes(TermStr, Term) :-
+	with_output_to_chars(write_term(Term, [portrayed(true)]),
+			     TermStr).
