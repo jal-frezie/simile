@@ -118,24 +118,27 @@ proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
-    set bulge [expr 1.15*$rad]
+    set bulge [expr 1.2*$rad]
     set bounds [list $hm [expr $vm-$bulge] [expr $hm+.866*$bulge] [expr $vm-.5*$bulge] \
             [expr $hm+.866*$bulge] [expr $vm+.5*$bulge] $hm [expr $vm+$bulge] \
             [expr $hm-.866*$bulge] [expr $vm+.5*$bulge] [expr $hm-.866*$bulge] \
             [expr $vm-.5*$bulge] $hm [expr $vm-$bulge]]
-#    set p1 [eval {$w create polygon} $bounds {-smooth true -outline {} \
-#						  -tag "$tagSet has_info"}]
-    set p1 [DrawBlob $w $hm $vm [expr 2*($rad+$width)] $tagSet]
+#    set p1 [eval {$w create poly} $bounds {-smooth true -outline {} \
+#	   -tag "$tagSet has_info"}]
+#    set lwidth [expr 2*$width]
+#    set p1 [eval {$w create line} $bounds {-smooth true \
+	   -width $lwidth -tag "$tagSet realwidth($lwidth) has_info"}]
+    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
     set bulge [expr 0.707*$rad]
     set xl [expr $hm-$bulge]
     set xt [expr $vm-$bulge]
     set xr [expr $hm+$bulge]
     set xb [expr $vm+$bulge]
 
-    $w create arc $ml $mt $mr $mb -outline {} -start 135 -extent 90 \
-            -tag "$tagSet has_info"
-    $w create arc $ml $mt $mr $mb -outline {} -start 315 -extent 90 \
-            -tag "$tagSet has_info"
+    $w create arc $ml $mt $mr $mb -width $width -start 135 -extent 90 \
+            -tag "$tagSet realwidth($width) has_info"
+    $w create arc $ml $mt $mr $mb -width $width -start 315 -extent 90 \
+            -tag "$tagSet realwidth($width) has_info"
 
 #    $w create line $xl $xt $xr $xb -width $width \
 #            -tag "$tagSet realwidth($width) has_info"
@@ -712,7 +715,7 @@ proc FlashSymbol {w name outlineColor textColor} {
 			  [$w itemcget $object -tag]]} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
-            } oval {
+            } oval|arc {
                 $w itemconfigure $object -outline $outlineColor
             }
         }
@@ -726,7 +729,8 @@ proc StippleSymbol {w name density selected} {
                 $w itemconfigure $object -stipple $density
             }
             rectangle|arc|polygon {
-                $w itemconfigure $object -stipple $density
+                $w itemconfigure $object -outlinestipple $density \
+		    -stipple $density
             }
         }
 	switch -regexp $selected {
