@@ -502,37 +502,6 @@ menu_handle(Win, edit, reroute) :-
 	remove_old_incomplete,
 	finish_progress_dialogue.
 
-reroute_sections(Rerouters) :-
-	Rerouters = [];
-	member(Type, [relation, flow, influence]),
-	full_section(Rerouters, Type, [Go | Rest], TopArc, Remains),
-	suffix([Stop], [Go | Rest]),
-	(m_class:follows(Start, Go); m_class:Go is_connector from Start to _),
-	(m_class:follows(Stop, End); m_class:Stop is_connector from _ to Fn),
-	get_host(Fn, End),
-	event:draw_line_to(Start, Type, End),
-	event:reuse_route(Type, TopArc),
-	reroute_sections(Remains).
-
-full_section(Rerouters, Type, [Start | Rest], Top, Remains) :-
-	select(Start, Rerouters, Left),
-	find_type(Start, Type),
-	\+ (m_class:follows(Before, Start), member(Before, Left)),
-	continuation(Left, Start, Rest, Top, Remains).
-
-continuation(Rerouters, Start, Rest, TopArc, Remains) :-
-	m_class:follows(Start, Next),
-	select(Next, Rerouters, Left), !,
-	continuation(Left, Next, More, FarArc, Remains),
-	Rest = [Next | More],
-	(find_all_links(M1, Start),
-	    find_all_comps(M1, Next), !,
-	    TopArc = Start;
-	TopArc = FarArc);
-	Rest = [],
-	TopArc = Start,
-	Remains = Rerouters.
-	
 menu_handle(Win, edit, delete) :-
         start_progress_dialogue,
 	reassure_user("Delte in progress"),
@@ -812,6 +781,37 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	NewR is R+TargetX, NewB is B+TargetY,
 	\+ (get_overlaps(Model, [NewL, NewT, NewR, NewB], Obstacle),
 	       \+ member(Obstacle, Including)).
+	
+reroute_sections(Rerouters) :-
+	Rerouters = [];
+	member(Type, [relation, flow, influence]),
+	full_section(Rerouters, Type, [Go | Rest], TopArc, Remains),
+	suffix([Stop], [Go | Rest]),
+	(m_class:follows(Start, Go); m_class:Go is_connector from Start to _),
+	(m_class:follows(Stop, End); m_class:Stop is_connector from _ to Fn),
+	get_host(Fn, End),
+	event:draw_line_to(Start, Type, End),
+	event:reuse_route(Type, TopArc),
+	reroute_sections(Remains).
+
+full_section(Rerouters, Type, [Start | Rest], Top, Remains) :-
+	select(Start, Rerouters, Left),
+	find_type(Start, Type),
+	\+ (m_class:follows(Before, Start), member(Before, Left)),
+	continuation(Left, Start, Rest, Top, Remains).
+
+continuation(Rerouters, Start, Rest, TopArc, Remains) :-
+	m_class:follows(Start, Next),
+	select(Next, Rerouters, Left), !,
+	continuation(Left, Next, More, FarArc, Remains),
+	Rest = [Next | More],
+	(find_all_links(M1, Start),
+	    find_all_comps(M1, Next), !,
+	    TopArc = Start;
+	TopArc = FarArc);
+	Rest = [],
+	TopArc = Start,
+	Remains = Rerouters.
 	
 :- op(950, yfx, [where]).
 
