@@ -90,9 +90,10 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    Recurse = 0;
 	m_update:get_solo_list_depth(Var, DimExp),
 	    m_update:build_array(any, Dims, DimExp),
+	    make_inds_for(Dims, Loops, _),
 	    NewVar = use_inter(Var),
 	    /* just to make sure same var is used for name each occurrence */
-	    member(instance(internal, inter(_,_, Dims), NewVar,_, _-Dims),
+	    member(instance(internal, inter(_,_, Loops), NewVar,_, _-Dims),
 		   InterInputs),
 	    Recurse = 0;
 	Var = channel_is(input(Location, elt(RealPathForm, Ref, Unit-Dims),
@@ -457,7 +458,7 @@ make_intermediates(
 	append([OldSetups, Clearing, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
-	Inter = instance(internal, inter(InterContext, _, TotalDims),
+	Inter = instance(internal, inter(InterContext, _, SourceLoops),
 			      UseSource, TotalName, Units-InterDims),
 	refer_inter(Inter, DestPath, BuildingArrays,
 		    Units, SourceContext, Args, SourceRef),
@@ -702,7 +703,7 @@ dissociate(SubArgs, [later(Arg) | UseArgs]) :-
 	dissociate(Rest, UseArgs).
 dissociate(Args, Args).
 	
-refer_inter(instance(internal, inter(Context, _, SubexpDims), Source, Name,
+refer_inter(instance(internal, inter(Context, _, SourceLoops), Source, Name,
 		     Units-Dims),
 	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
 	    (Source = last(_), !,
@@ -713,7 +714,6 @@ refer_inter(instance(internal, inter(Context, _, SubexpDims), Source, Name,
 	    Args = [made_at(Name, Context)]),
 	    pointer_from(DestPath, SourcePtr),
 	    make_inds_for(Dims, IntLoops, IntInds),
-	    make_inds_for(SubexpDims, SourceLoops, _),
 	    append(SpareLoops, SourceLoops, IntLoops),
 	    suffix(SpareLoops, BuildLoops),
 	    append(SourceLoops, DestPath, SourceContext),

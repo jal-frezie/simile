@@ -472,8 +472,8 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
 	    get_dims_from_loops(Context, XDims, _),
-	    Dest = instance(internal, inter(_,_,XDims), use_inter('/dest/'),_,
-			    Type-_),
+	    Dest = instance(internal, inter(_,_,Context), use_inter('/dest/'),
+			    _, Type-_),
 	    match_param_dims(ExpInters, [Dest | Inters], TestError),
 	    real_dims_only(XDims, Dims),
 	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]);
@@ -483,12 +483,17 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	TestError = ParseError).
 
 match_param_dims([], _, []).
-match_param_dims([input_link(_,_, Name, LType-LDims, _)
+match_param_dims([input_link(_, LLoops, Name, LType-_, _)
 		 | MoreLinks], Inters, Err) :-
 	select(I, Inters, MoreInters),
-	I = instance(internal, inter(_,_, IDims), use_inter(Name), _, IType-_),
+	I = instance(internal, inter(_,_, ILoops), use_inter(Name),_, IType-_),
+
+	/* what follows is more or less a placeholder */
+	
+	get_dims_from_loops(ILoops, IDims, _),
 	real_dims_only(IDims, Dims),
-	(prefix(IDims, LDims), !,
+	(/* prefix(IDims, LDims), */
+	suffix(ILoops, LLoops), !,
 	    (promote_unit(IType, LType), !,
 		(\+ Name = '/dest/',
 		    build_array(IType, Dims, Array),
@@ -497,6 +502,7 @@ match_param_dims([input_link(_,_, Name, LType-LDims, _)
 		    match_param_dims(MoreLinks, MoreInters, Err));
 		      
 		sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err));
+	get_dims_from_loops(LLoops, LDims, _),
 	real_dims_only(LDims, FixedLDims),
 	sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err)).
 /* also check name of exp inter for right brackets */
@@ -514,17 +520,17 @@ expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 	/* when making dummy links for explicit intermediate results, check
 	the 1sr field (influence id) uis a free var, and if so, use the
 	4th field to hold the dims */
-	    member(input_link(Link,_, Param, IDims, Units), InterInputs), !,
-	        (nonvar(Link), !,
-		    analyze_array(Units, Base, Dims),
-                    (units:get_conversion(_, Base, Base, _), !,
-		        Type = real;
-		    Type = Base);
+	member(input_link(Link, Loops, Param, IDims, Units), InterInputs), !,
+	    (nonvar(Link), !,
+		analyze_array(Units, Base, Dims),
+		(units:get_conversion(_, Base, Base, _), !,
+		    Type = real;
+		Type = Base);
 		IDims = Type-Dims,
-		    length(Dims, 4)),
-		make_inds_for(Dims, Loops, Inds),
-		DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true)),
-	    Recurse = 0;
+		length(Dims, 4)),
+	    make_inds_for(Dims, Loops, Inds),
+	    DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true)),
+	Recurse = 0;
 	(Param = (ExpInt=_,_),
 	    member(input_link(_,_, ExpInt,_, Dims), InterInputs), !,
 	    var(Dims), /* only checked so we dont stick on the recursion */
@@ -599,8 +605,7 @@ check_param_usage(Node, Current, WhyNoLinks, Used, Left, Challenge) :-
 	roles I don't know how to be sure of getting exactly one... */
 	sort_for_link(Current, LinkName, FromThat, FromOthers),
 	\+ (member(SpareParam, Used), 
-			member(input_link(_,_, SpareParam, _,_), 
-FromThat)), !,
+	       member(input_link(_,_, SpareParam, _,_), FromThat)), !,
 		sicstus_format_to_chars("This node has a link from ~w, ~s Remove this link?",
 				[SourceCaption, WhyNoLinks], Wibble),
 		do_dialogue("Too many inputs", question, Wibble,
