@@ -6,16 +6,20 @@ package provide SimileAutoObj 1.0
 package require Itcl
 namespace import ::itcl::*
 
-package require tcom
-::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+if {[string match windows $tcl_platform(platform)]} {
+  package require tcom
+  ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+}
 
 package require Tk
-tk_messageBox -message SimileAutoObj
-# this should probably be in a constructor
-#lappend auto_path f:/progra~1/Simile/System/lib
-cd f:/progra~1/Simile/System/bin
+
+#puts "SimileAutoObj; pwd [pwd]"
+
 set argc 0; # simile.tcl expects to be called from the command line - tell it no args
-source f:/progra~1/Simile/Run/simile.tcl; # ABSOLUTE PATH !!!!!!!!!!!! todo
+source "[pwd]/../../Run/simile.tcl"
+if {[winfo exists .register]} {
+    .register.tasks getframe].b.new invoke
+}
 
 class ModelWindowImpl {
     
@@ -51,10 +55,14 @@ class ModelWindowImpl {
         MenuSelect [GetModelWindow].canvas file new
     }
     
-    public method FileOpen {} {
-        MenuSelect [GetModelWindow].canvas file open
+    public method FileOpenDlg {} {
+        MenuSelect [GetModelWindow].canvas file 
     }
-       
+
+    public method FileOpen {modelFile} {
+	Reopen [GetModelWindow].canvas $modelFile reopen}
+    }
+   
     public method FileSave {} {
         MenuSelect [GetModelWindow].canvas file save
     }
@@ -112,4 +120,7 @@ class ModelWindowImpl {
 }
 
 
-::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+if {[string match windows $tcl_platform(platform)]} {
+  ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+}
+
