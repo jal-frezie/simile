@@ -127,57 +127,54 @@ proc Pref_Dialog {} {
         set dlg [toplevel .pref]
         wm title .pref "Preferences"
         wm resizable .pref 0 0 
-#        set notebook [NoteBook $dlg.notebook -height 220 -width 440]
-        set notebook [NoteBook $dlg.notebook ]
-        $notebook insert end View -text View
-            set displayTF [TitleFrame [$notebook getframe View].displayTF -text "In new windows, display:"]
-            set displayF [$displayTF getframe]
-            set barTF [TitleFrame [$notebook getframe View].barTF -text "Tool bars:"]
-            set barF [$barTF getframe]
-            set popupTF [TitleFrame [$notebook getframe View].popuptTF -text "Popups over model components:"]
-            set popupF [$popupTF getframe]
-        $notebook insert end Edit -text Edit
-            set genericTF [TitleFrame [$notebook getframe Edit].genericTF -text "All components:"]
-            set genericF [$genericTF getframe]
-            set linkTF [TitleFrame [$notebook getframe Edit].linkTF -text "All links:"]
-            set linkF [$linkTF getframe]
-            set flowTF [TitleFrame [$notebook getframe Edit].flowTF -text "Flows:"]
-            set flowF [$flowTF getframe]
-            set submodelTF [TitleFrame [$notebook getframe Edit].submodelTF -text "Submodels:"]
-            set submodelF [$submodelTF getframe]
-        $notebook insert end Build -text Build
-            set manyWinTF [TitleFrame [$notebook getframe Build].manyWinTF -text "Window positions:"]
-
-            set manyWinF [$manyWinTF getframe]
-
-            set compTF [TitleFrame [$notebook getframe Build].compTF -text "C++ compiler:"]
-            set compF [$compTF getframe]
-        $notebook insert end Save -text Save
-            set canvasTF [TitleFrame [$notebook getframe Save].canvasTF -text "Save optimised canvas data:"]
-            set canvasF [$canvasTF getframe]
-            set recentTF [TitleFrame [$notebook getframe Save].recentTF -text "Recently used files:"]
-            set recentF [$recentTF getframe]
-        $notebook insert end Run -text Run
-            set oneWinTF [TitleFrame [$notebook getframe Run].oneWinTF -text "Run time environment:"]
-
-            set oneWinF [$oneWinTF getframe]
-
-        $notebook raise View
+        set notebook [::ttk::notebook $dlg.notebook]
+        set vf [frame $notebook.view]
+        $notebook add $vf -text View
+            set displayTF [labelframe $vf.displayTF -text "In new windows, display:"]
+            set displayF $displayTF
+            set barTF [labelframe $vf.barTF -text "Tool bars:"]
+            set barF $barTF
+            set popupTF [labelframe $vf.popuptTF -text "Popups over model components:"]
+            set popupF $popupTF
+        set ef [frame $notebook.edit]
+        $notebook add $ef -text Edit
+            set genericTF [labelframe $ef.genericTF -text "All components:"]
+            set genericF $genericTF
+            set linkTF [labelframe $ef.linkTF -text "All links:"]
+            set linkF $linkTF
+            set flowTF [labelframe $ef.flowTF -text "Flows:"]
+            set flowF $flowTF
+            set submodelTF [labelframe $ef.submodelTF -text "Submodels:"]
+            set submodelF $submodelTF
+        set bf [frame $notebook.build]
+        $notebook add $bf -text Build
+            set manyWinTF [labelframe $bf.manyWinTF -text "Window positions:"]
+            set manyWinF $manyWinTF
+            set compTF [labelframe $bf.compTF -text "C++ compiler:"]
+            set compF $compTF
+        set sf [frame $notebook.save]
+        $notebook add $sf -text Save
+            set canvasTF [labelframe $sf.canvasTF -text "Save optimised canvas data:"]
+            set canvasF $canvasTF
+            set recentTF [labelframe $sf.recentTF -text "Recently used files:"]
+            set recentF $recentTF
+        set rf [frame $notebook.run]
+        $notebook add $rf -text Run
+            set oneWinTF [labelframe $rf.oneWinTF -text "Run time environment:"]
+            set oneWinF $oneWinTF
+       # $notebook select View
         pack $displayTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
-        ButtonBox $dlg.bbox -default 0
-        $dlg.bbox add -name ok -text OK -underline 0 -width 8  \
-                -command {PrefSave}
-        $dlg.bbox add -name cancel -text Cancel -underline 0 -width 8 \
-                -command {PrefDismiss}
-        $dlg.bbox add -name default -text Default -underline 0 -width 8 \
-                -command {PrefReset}
-        #        $dlg.bbox add -name default -text Default -underline 0 -width 8 \
-        #                -command {PrefReset ; PrefDismiss}
-        $dlg.bbox add -name help -text Help -underline 0 -width 8 \
-                -command "::Pref_HelpCommand $notebook"
-        #        pack $dlg.bbox -side bottom -anchor e -padx 4 -pady 4
-        pack $dlg.bbox -side bottom -padx 4 -pady 8
+        set bbox [frame $dlg.bbox] 
+        pack [::ttk::button $bbox.bok -text OK -underline 0 -width 8  \
+                -command {PrefSave}] -padx 2 -pady 2 -side left -anchor e
+        pack [::ttk::button $bbox.bccl -text Cancel -underline 0 -width 8 \
+                -command {PrefDismiss}] -padx 2 -pady 2 -side left -anchor e
+        pack [::ttk::button $bbox.bdef -text Default -underline 0 -width 8 \
+                -command {PrefReset}]  -padx 2 -pady 2 -side left -anchor e
+        pack [::ttk::button $bbox.bhlp -text Help -underline 0 -width 8 \
+                -command "::Pref_HelpCommand $notebook"]  -padx 2 -pady 2 -side left -anchor e
+        pack $dlg.bbox -side bottom -padx 4 -pady 8 -fill x
         
 #        ShowMessage debug info "$pref(items)" ok
         
@@ -211,7 +208,7 @@ proc Pref_Dialog {} {
             }
             PrefDialogItem $frame $item $maxWidth
        }
-       $notebook compute_size     
+      # $notebook compute_size     
     }
 }
 
@@ -252,7 +249,7 @@ proc PrefDialogItem { frame item width } {
             pack $f.label -side left -anchor w -fill x -expand on -padx 2 -pady 2
         } else {
             # This is a string or numeric
-            entry $f.entry -width 10 -relief sunken
+            ::ttk::entry $f.entry -width 10
             pack $f.label -side left -anchor w -padx 2 -pady 2
             pack $f.entry -side left -fill x -padx 2 -pady 2
 			set pref(entry,[PrefVar $item]) $f.entry
