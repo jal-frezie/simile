@@ -22,9 +22,7 @@ sicstus_module(database, [
 	/* for class */
 		declared_class/1, attribute/3,
 	/* for graphics */
-		graphical_info/3,
-	/* for utility */
-		genint/2]).
+		graphical_info/3]).
 
 :- dynamic(connection/3).
 :- dynamic(arc_type/2).
@@ -41,8 +39,6 @@ sicstus_module(database, [
 		
 :- dynamic(graphical_info/3).
 		
-:- dynamic(genint/2).
-
 :- op(500, xfy, [of, from, to]).
 
 clear_database :-
@@ -56,9 +52,7 @@ clear_database :-
 	/* for class */
 		declared_class/1, attribute/3,
 	/* for graphics */
-		graphical_info/3,
-	/* for utility */
-		genint/2]).
+		graphical_info/3]).
 
 clear_model([]).
 

@@ -2,8 +2,8 @@
 **** Commonly used utility procedures for AME				    ****
 *******************************************************************************/
 
-sicstus_module( utility, [wake/0, unique_name/2, unique_name/3, indent/1,
-			  delete_member/2,
+sicstus_module( utility, [wake/0, genint/2, unique_name/2, unique_name/3,
+			  indent/1, delete_member/2,
 			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
@@ -24,11 +24,13 @@ wake.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a unique symbol, prefixed by an Atom
 
+:- dynamic(genint/2).
+
 unique_name( Atom, Name ) :-
 	unique_name( Atom, Name, 5 ).
 
 unique_name( Atom, Name, Size ) :-
-	(retract_model( genint(Atom, LastAnswer )), !;
+	(retract(genint(Atom, LastAnswer )), !;
 	    LastAnswer = 0),
 	FirstAnswer is LastAnswer+1,
 	count_to(FirstAnswer, 100000, 1, Integer),
@@ -47,7 +49,7 @@ unique_name( Atom, Name, Size ) :-
 	append(NameChars, ".canvas", CanvasNameChars),
 	name(CanvasName, CanvasNameChars),
 	\+ state:shows_model(CanvasName, _), !,
-	assert_model(genint(Atom, Integer)).
+	assert(genint(Atom, Integer)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % My own delete/3 which deletes one element from a list

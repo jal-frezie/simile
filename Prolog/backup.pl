@@ -276,7 +276,7 @@ check_autosave(Model, Name, Tweaked) :-
 	    
 scrub_autosave(Model) :-
 	(is_toplevel(Model),
-	    database:clear_model([genint/2]),
+	    retractall(genint(_,_)),
 	    retract(autosave_file_is(Model, AutoName)),
 	    output:my_file_exists(AutoName),
 	    output:my_delete_file(AutoName),
