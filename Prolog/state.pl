@@ -279,8 +279,8 @@ advance_phase_to(New_phase) :-
 	(member(New_phase, Allowables), !,
 		retract(phase_is(Old_phase)),
 		assertz(phase_is(New_phase));
-	write(['Attempted illegal phase change from ', Old_phase, ' to ', New_phase]), nl).
-
+	output:safe_tcl_eval([puts, dq(['Attempted illegal phase change from',
+			      Old_phase, 'to', New_phase])], _)).
 get_phase(Phase) :-
 	phase_is(Phase).
 

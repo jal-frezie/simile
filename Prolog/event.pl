@@ -265,8 +265,14 @@ bar_edit_menu(Wid) :-
 	(contains(Comp, Lit), \+ Lit = Comp,
 	    get_highlit_obj(N, Lit),
 	    N<2, !,
-	    Cuttable = 1;
-	Cuttable = 0),
+	    Cuttable = 1,
+	    Dellable = 1;
+	contains(Comp, Lit), \+ Lit = Comp,
+	    get_highlit_obj(2, Lit), !,
+	    Cuttable = 0,
+	    Dellable = 1;
+	Cuttable = 0,
+	    Dellable = 0),
 	(selected_box_is(_Any), Point = [_,_], !,
 	    Pastable = 1;
 	Pastable = 0),
@@ -280,7 +286,7 @@ bar_edit_menu(Wid) :-
 
 	update_ability(Model, none, edit, 'Cut', Cuttable),
 	update_ability(Model, none, edit, 'Copy', Cuttable),
-	update_ability(Model, none, edit, 'Delete', Cuttable),
+	update_ability(Model, none, edit, 'Delete', Dellable),
 	update_ability(Model, none, edit, 'Paste', Pastable).
 
 /* restore_edit_menu makes sure it will be appropriate for a menubar
