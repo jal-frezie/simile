@@ -698,7 +698,7 @@ proc RunDialog {canvas} {
     if {[PrefValue custom(helperManager) helperManager]} {
         CreateHelperWindow $helperTable(VariableList) "Variables"; # JMM
 	if {![winfo exists $helperTable(autosliders)]} {
-# No sliders in model, so depete notebook page
+# No sliders in model, so delete notebook page
 	    $sliderBook delete InputSliders
 	    $sliderBook raise Explorer
 	    unset ::RunEnv::sliderControlFrame
@@ -707,8 +707,6 @@ proc RunDialog {canvas} {
 					$::RunEnv::runControlFrame]]]]
 	$ctrlPane sash place 0 \
 	10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
-    } elseif {[winfo exists $helperTable(autosliders)]} {
-	$helperTable(autosliders).c.canvas configure -height 200
     }
 }
 

@@ -714,7 +714,7 @@ proc MakeFrames {windowId} {
     set canId $windowId.c.canvas
     ScrollableFrame $canId -yscrollincrement 1 \
             -yscrollcommand [list AdjustCanvas $windowId.c canvas y] \
-            -height 1 -constrainedwidth true
+            -constrainedwidth true
     $windowId.c setwidget $canId
     pack $windowId.c -side top -fill both -expand true
 

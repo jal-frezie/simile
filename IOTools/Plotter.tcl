@@ -619,7 +619,8 @@ namespace eval ::$keyValue {
     }
     
     proc dodgyValue {val} {
-	return [expr ![string is double $val] || [lsearch {inf nan} $val]>-1]
+	return [expr ![string is double $val] || \
+		    [lsearch {inf nan +inf +nan -inf -nan} $val]>-1]
     }
     
     # Connect two points on the graph

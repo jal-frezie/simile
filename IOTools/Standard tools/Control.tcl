@@ -85,8 +85,8 @@ namespace eval runcontrol33857 {
         $cnvs create oval 2 2 8 8 -fill [RestingColour]
         $cnvs create oval 0 0 10 10 -outline grey
         pack $rcf.bf.flag -side right -anchor e
-        pack [ProgressBar $rcf.bf.bar -variable runState(currentTime)] \
-                -fill x -expand true -side top -padx 4 -pady 4
+        pack [ProgressBar $rcf.bf.bar -variable runState(fractDone) \
+		  -maximum 1] -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.bf -side left -fill x
         
         pack $rcf -fill x
@@ -243,13 +243,15 @@ namespace eval runcontrol33857 {
     
 # Current time display is updated as an idle callback because altering it causes the 
 # progress bar to update, which would do all idle callbacks anyway
-    proc UpdateTimes { current left } {
+    proc UpdateTimes { current left length } {
         global runState
 	if {[info exists runState(oldTimeCopy)]} {
 	    after cancel $runState(oldTimeCopy)
 	}
 	set runState(timeAtEval) $current
-        set runState(oldTimeCopy) [after idle set runState(currentTime) $current]
+        set runState(currentTime) $current
+	set runState(oldTimeCopy) [after idle set runState(fractDone) \
+				       [expr 1-(double($left)/$length)]]
         set runState(execTime) $left
     }
     
@@ -288,13 +290,12 @@ namespace eval runcontrol33857 {
                         unit display update current exec
                 unset sendvars(newData)
                 set scaled_current [expr $current*$unitLength]
-                
+                set timeToEnd [expr $update>=0?$exec:-$exec]
                 if {abs($current + $exec - $sendvars(expected_end)) \
-                            > $update/2} {
+                            > abs($update/2)} {
                     set sendvars(run_length) $exec
-                    set sendvars(expected_end) [expr $current + $exec]
-                    $widget.bf.bar configure \
-                            -maximum [expr int(ceil($sendvars(expected_end)))]
+                    set sendvars(expected_end) \
+			[expr $current + $timeToEnd]
                 }
             }
             switch $sendvars(currentMode) {
@@ -306,7 +307,7 @@ namespace eval runcontrol33857 {
 			}
 		    set current 0.0
 		    set exec $sendvars(run_length)
-		    UpdateTimes $current $exec
+		    UpdateTimes $current $exec $sendvars(run_length)
 		    set scaled_current 0.0
 		    if {[info exists runState(reloadParams)]} {
 			set redoPhase -1
@@ -337,20 +338,21 @@ namespace eval runcontrol33857 {
             
             # Now run the model
             if {[string match start $sendvars(currentMode)]} {
-                if {$exec < 1.001*$update} {
-                    set step $exec
+                if {$exec < abs(1.001*$update)} {
+                    set step $timeToEnd
                     set sendvars(currentMode) stop
                     set exec $sendvars(run_length)
                 } else {
                     set step $update
-                    set exec [expr $exec - $step]
+                    set exec [expr $exec - abs($step)]
                 }
+                set timeToEnd [expr $update>=0?$exec:-$exec]
                 
                 # Advance time to the end of the tick
                 
                 set current [expr $current + $step]
 		set scaled_current [expr $current*$unitLength]
-                UpdateTimes $current $exec
+                UpdateTimes $current $exec $sendvars(run_length)
                 
                 set bigPhase [PhaseFor $current $step [expr $phases+1]]
                 if {$bigPhase <= $phases} {
@@ -397,7 +399,7 @@ namespace eval runcontrol33857 {
                 }
                 
                 # Finally, see if the allotted time has elapsed and swap modes if it has
-                set step [expr $exec>$update?$update:$exec]
+                # set step [expr $exec>$update?$update:$exec]
             }
         }
         switch $sendvars(currentMode) {

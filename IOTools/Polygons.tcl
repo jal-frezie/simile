@@ -68,8 +68,6 @@ namespace eval ::polygon375 {
             pack $ms
             set useNodes($winId,state) xcoord
         } else {
-#            set chxy [open $useNodes($winId,sourcefile) r]
-#            set useNodes($winId,xys) [read $chxy]
             set ms [message $winId.intro -text "Click on the array value \
                     representing the data to be mapped."]
             GrabClicks $winId
@@ -243,8 +241,7 @@ $useNodes($winId,scaley)"
 	    if {$value > $useNodes($winId,datamax)} {
 		set useNodes($winId,datamax) $value
 	    }
-            foreach polyId [$winId.viewport.c find withtag \
-				[format BLK%06d $indxs]] {
+            foreach polyId [$winId.viewport.c find withtag [IdToTag $indxs]] {
 		CanvasBindPopup $winId.viewport.c $polyId \
                     [list Index $id Value $value]
 		set newColour [ColourFor $winId $value]
@@ -312,47 +309,65 @@ $useNodes($winId,scaley)"
         }
         
         ########## start polyfile changes
-        if {[string compare $useNodes($winId,sourcefile) model]==0} then {
+
+# If coords are from file, try to draw the polygons using the dxf tool. If this
+# fails, load the coords in the model output format and continue as per drawing
+# from model data
+
+        if {[string compare $useNodes($winId,sourcefile) model]} then {
+	    if {[lsearch {.dxf .DXF} \
+		     [file extension $useNodes($winId,sourcefile)]] != -1} {
+		set coordSource 2
+		::dxf::AddMap $useNodes($winId,sourcefile) $winId.viewport.c
+	    } else {
+		set coordSource 1		
+		set chxy [open $useNodes($winId,sourcefile) r]
+		set useNodes($winId,xys) [read $chxy]
+		set xcoords [lindex $useNodes($winId,xys) 0]
+		set ycoords [lindex $useNodes($winId,xys) 1]
+		close $chxy
+	    }
+        } else {
+	    set coordSource 0
             set xcoords [lindex [GetModelValue $xs] 0]
             set ycoords [lindex [GetModelValue $ys] 0]
-        
-        set quadlist {}
-        GetQuadList {} [lindex [GetModelValue $hs] 0] $xcoords $ycoords
+	}		
+
+	if {$coordSource != 2} {
+	    set quadlist {}
+	    GetQuadList {} [lindex [GetModelValue $hs] 0] $xcoords $ycoords
         
         # previous line appended variable quadlist at this level, now to use it
         # ShowMessage debug info "Got quadlist $quadlist" ok
-        array set quadarray $quadlist
-        foreach id [array names quadarray] {
-            set quad $quadarray($id)
-            set corners ""
-            #        ShowMessage debug info [lindex $quad 2] ok
-            set polyycorrds {}
-            set i 0
-            set j 1
-            set tmp [lindex $quad 2]
-            #        ShowMessage debug info $tmp ok
-            while {$i < [llength [lindex $quad 2]]} {
-                lappend polyycorrds [lindex $tmp $i]
-                incr i 2
-                set ttmp [lindex $tmp $j]
-                #        ShowMessage debug info "ttmp $ttmp" ok
-                lappend polyycorrds [expr $ttmp * -1]
-                incr j 2
-            }
-            #        ShowMessage debug info $polyycorrds ok
-            Interweave corners [lindex $quad 1] $polyycorrds
-            set indxs [join $id ,]
-            #        ShowMessage debug info $corners ok
-            set polyId [eval {$winId.viewport.c create polygon} $corners \
-                    {-outline black -tag [format BLK%06d $indxs] }] ;
-        }
+	    array set quadarray $quadlist
+	    foreach id [array names quadarray] {
+		set quad $quadarray($id)
+		set corners ""
+		#        ShowMessage debug info [lindex $quad 2] ok
+		set polyycorrds {}
+		set i 0
+		set j 1
+		set tmp [lindex $quad 2]
+		#        ShowMessage debug info $tmp ok
+		while {$i < [llength [lindex $quad 2]]} {
+		    lappend polyycorrds [lindex $tmp $i]
+		    incr i 2
+		    set ttmp [lindex $tmp $j]
+		    #        ShowMessage debug info "ttmp $ttmp" ok
+		    lappend polyycorrds [expr $ttmp * -1]
+		    incr j 2
+		}
+		#        ShowMessage debug info $polyycorrds ok
+		Interweave corners [lindex $quad 1] $polyycorrds
+		set indxs [join $id ,]
+		#        ShowMessage debug info $corners ok
+		set polyId [eval {$winId.viewport.c create polygon} $corners \
+				{-outline black -tag [IdToTag $indxs] }]
+	    }
+	}
 
-        } else {
-#            set xcoords [lindex $useNodes($winId,xys) 0]
-#            set ycoords [lindex $useNodes($winId,xys) 1]
-
-	    ::dxf::AddMap $useNodes($winId,sourcefile) $winId.viewport.c
-# Now copy the poly info into the state so it can be saved
+	if {$coordSource != 0} {
+	    # Now copy the poly info into the state so it can be saved
 	    set useNodes($winId,shapes) {}
 	    foreach poly [$winId.viewport.c find all] {
 		lappend useNodes($winId,shapes) \
@@ -362,6 +377,7 @@ $useNodes($winId,scaley)"
 	    }
         }
         ########## end polyfile changes
+
 	set NToolButtons [$winId.bbframe.buttonBox index last]
         $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
 	for {set i 1} {$i<=$NToolButtons} {incr i} {
@@ -504,10 +520,7 @@ $useNodes($winId,scaley)"
         set overlapping [$winId.viewport.c find closest $X $Y 1]
         set tags [$winId.viewport.c gettags $overlapping]
         # should check to see if the tags are different before processing them to speed things up
-	set index {}
-        set end [string first BLK $tags]
-	set idTag [lindex [string range $tags $end end] 0]
-        scan $idTag BLK%06d index
+	set index [TagToId $tags]
 
         #$winId.buttons.msg configure -text \
         #    "X $X; Y $Y; tags $tags; overlapping $overlapping; index $index"
@@ -529,6 +542,23 @@ $useNodes($winId,scaley)"
         Repaint $winId $useNodes($winId,color)
     }
     
+    proc IdToTag {ids} {
+	foreach id [split $ids ,] {
+	    lappend result [format %06d $id]
+	}
+	return BLK[join $result ,]
+    }
+
+    proc TagToId {tags} {
+	set end [expr [string first BLK $tags]+3]
+	set idTag [lindex [string range $tags $end end] 0]
+	foreach val [split $idTag ,] {
+	    scan $val %06d index
+	    lappend result $index
+	}
+	return [join $result ,]
+    }
+
     proc GetNewVal {winId i} {
         variable newVal
         variable useNodes
