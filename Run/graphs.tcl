@@ -1003,7 +1003,12 @@ proc AcceptData {winId topNode compName complain} {
 	    if {$complain>-1} {
 		$widgetNames($compName).l configure -fg red
 		if {$complain>0} {
-		    ShowMessage "Setting $compName" warning "While attempting to load the parameter value at indices [lrange $result 0 end-1] the following problem occurred: [lindex $result end]" ok
+		    if {[llength $result]>1} {
+			set where " at indices [lrange $result 0 end-1]"
+		    } else {
+			set where {}
+		    }
+		    ShowMessage "Setting $compName" warning "While attempting to load the parameter value$where the following problem occurred: [lindex $result end]" ok
 		}
 	    }
 	} else {
@@ -1071,9 +1076,28 @@ proc ListToArray {topNode tgt subs trans dims list} {
     }
 	
     foreach {indx sublist} $list {
+# was array set sub $list...above would allow us to check that all indices were
+# the right type if we could be bothered...OK then...
+	set role "Index value"
+	if {[string match TIME [lindex $dims 0]]} {
+	    set role "Time point"
+	    if {![string is double $indx]} {
+		error [list "$role $indx is not a number."]
+	    }
+	} elseif {[string compare {} $thisTrans]} {
+	    set poss [lsearch $thisTrans $indx]
+	    if {$poss == -1} {
+		error [list "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]."]
+	    }
+	} elseif {![string is integer $indx]} {
+	    error [list "$role $indx is not an integer."]
+	}
+	if {[info exists sub($indx)]} {
+	    error [list "$role $indx appears more than once."]
+	}
 	set sub($indx) $sublist
     }
-# was array set sub $list
+
 #puts "dims remaining $dims"
     if {[string match TIME [lindex $dims 0]]} {
 # If time, we can have as many or as few vals as we want, and they can be
@@ -1140,15 +1164,15 @@ proc EnumTypeToNumber {varData tgt head trans} {
 	set poss [lsearch $trans [lindex $head 0]]
 	if {$poss == -1} {
 	    if {[string equal false [lindex $trans 0]]} {
-		error [list "$head is not a member of type boolean, pick one of $trans."]
+		error [list "Data value $head is not a member of type boolean, pick one of $trans."]
 	    } else {
-		error [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
+		error [list "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
 	    }
 	} else {
 	    set ${varData}($tgt) $poss
 	}
     } elseif {![string is double $head]} {
-	error [list "$head is not a number."]
+	error [list "Data value $head is not a number."]
     } else {
 	set ${varData}($tgt) $head
     }
