@@ -482,7 +482,6 @@ proc EnumTypeToNumber {varData tgt head trans} {
     if {![llength $head]} {
 # empty head, signal to clear out old values
 	foreach oldEntry [array names $varData $tgt*] {
-ShowMessage debug info "Clearing ${varData}($oldEntry)" ok
 	    unset ${varData}($oldEntry)
 	}
     } elseif {[string compare {} $trans]} {
@@ -499,7 +498,6 @@ ShowMessage debug info "Clearing ${varData}($oldEntry)" ok
     } elseif {![string is double $head]} {
 	error [list "Data value $head is not a number."]
     } else {
-ShowMessage debug info "Setting ${varData}($tgt) to $head" ok
 	set ${varData}($tgt) $head
     }
 #puts "just went set paramData($tgt) $paramData($tgt)"
