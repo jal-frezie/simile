@@ -1572,11 +1572,13 @@ proc Rerun {winId go} {
     } else {
 	start_run $winId
         RunDialog $winId
-        $runState(helperId).topbuttons.reset invoke
+        set widget [$runState(helperId).rcf getframe]
+        $widget.topbuttons.reset invoke
     }
     # Only proceed if it worked
     if {$go && $runState(modelRunning) == 2} {
-        $runState(helperId).topbuttons.start invoke
+        set widget [$runState(helperId).rcf getframe]
+        $widget.topbuttons.start invoke
     }
 }
 
