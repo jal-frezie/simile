@@ -229,12 +229,13 @@ proc TclExecuteModel {howInt start end} {
 #	error cancelled
 #    }
     set freq $steps($phasecount)
-    for {set xtime [expr (floor($start/$freq+1.5))*$freq]} \
-	{$xtime<=$end+0.5*$freq} {set xtime [expr $xtime+$freq]} {
+    for {set xtime [expr (floor($start/$freq+0.5))*$freq]} \
+	{$xtime<=$end-0.5*$freq} {} {
 	    set bigPhase [PhaseFor $xtime $freq [expr $phasecount+1]]
 	    if {[CheckGUI $xtime ph$bigPhase]} {
 		return 0
 	    }
+	    set xtime [expr $xtime+$freq]
 	    SetDTs $bigPhase $xtime
 	    do_model advancemodel $xtime $bigPhase
 	    switch -exact -- $howInt {

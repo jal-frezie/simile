@@ -373,11 +373,12 @@ public:
     int big_phase, err;
 
     freq = steps[phases];
-    for (xtime=int(start/freq + 1.5)*freq; xtime<=*end+0.5*freq; xtime+=freq) {
+    for (xtime=int(start/freq + 0.5)*freq; xtime<=*end-0.5*freq;) {
       big_phase = phase_for(xtime, freq, phases+1);
       if (check_gui(xtime, big_phase)) {
 	return -100; // should not conflict with os signal numbers
       }
+      xtime+=freq;
       set_dts(big_phase, xtime);
       (*advancemodel)(id, xtime, big_phase);
       switch(how_int) {
@@ -414,8 +415,8 @@ public:
     last = current-step/2;
     next = last+step;
 
-    try_next = (int)(next/next_step);
-    if (try_next == (int)(last/next_step)) {
+    try_next = (int)floor(next/next_step);
+    if (try_next == (int)floor(last/next_step)) {
       return so_far;
     } else {
       return phase_for(next_step*try_next, next_step, try_now);

@@ -374,19 +374,17 @@ namespace eval runcontrol33857 {
 	    }
 	    if {$current>$finish} {
 		set current $finish
-		set sendvars($node,currentMode) stop
-		set exec $sendvars($node,run_length)
-		SetupBar $node $finish [expr $finish+$exec]
-	    } else {
-		set exec [expr $finish-$current]
 	    }
+	    set exec [expr $finish-$current]
 	    set scaled_next [expr {$current*$sendvars(unitLength)}]
 	    $widget.upper.bf.flag itemconfigure 1 -fill green
 	    switch -- [ExecuteModel $runState($node,intMethod) \
 			 $scaled_current $scaled_next] {
 			     -1 {
+				 set current $runState($node,currentTime)
 				 set sendvars($node,currentMode) exit
 			     } 0 {
+				 set current $runState($node,currentTime)
 				 set sendvars($node,currentMode) stop
 			     }
 			 } ;# default: keep going
@@ -396,6 +394,11 @@ namespace eval runcontrol33857 {
 		TellAllHelpers $node display $current $display 1
 	    }
 	    set scaled_current $scaled_next
+	    if {$current>=$finish} {
+		set exec $sendvars($node,run_length)
+		SetupBar $node $finish [expr $finish+$exec]
+		set sendvars($node,currentMode) stop
+	    }
 	}
 	if {[string equal exit $sendvars($node,currentMode)]} {
 	    if {$runState($node,modelRunning)==2} {
