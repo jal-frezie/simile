@@ -59,6 +59,7 @@ while {[file exists $tester]} {
 
 set env(SIMTMPDIR) $tester
 file mkdir $env(SIMTMPDIR)
+set equationbar(current_action) null
 
 proc NewTopLevel {} {
     MenuSelect dummy file new_toplevel

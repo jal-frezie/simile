@@ -523,10 +523,12 @@ proc NextCaption {canvas} {
         ShowMessage "Operation failed" error "No search in progress!" ok
         return
     }
-    if {[info exists find(now,$canvas)]} {
-        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
-                $looks(variable,text)
-    }
+#    if {[info exists find(now,$canvas)]} {
+#	prolog event:do_colours($find(now,$canvas),off)
+#        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
+#                $looks(variable,text)
+#    }
+    MenuSelect $canvas edit unselall
     if {![llength $find(List,$canvas)]} {
         ShowMessage "Caption finder" info \
                 "No more matching $find(where)s in this window" ok
@@ -549,7 +551,8 @@ proc NextCaption {canvas} {
         $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
 
         set find(now,$canvas) [ExtractPrologName $canvas $this]
-        FlashSymbol $canvas $find(now,$canvas) orange orange
+	prolog tk_do_colours($find(now,$canvas),on)
+#        FlashSymbol $canvas $find(now,$canvas) orange orange
         #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
         #	ReleaseObj $canvas $tgtX $tgtY
     }

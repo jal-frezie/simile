@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
-		  click_obj/4, click_text/4, click/3,
+		  click_obj/4, click_text/4, click/3, do_colours/2,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 	adjust_display_area/2, prioritize_window/1, run_settings_tweaked/0]).
@@ -1145,6 +1145,7 @@ normalize_deletes(Target) :-
 	(Base = Target; ghost_link(Target, Base, Ghost)),
 	m_class:initiates(Link, Base),
 	ghost_link(Link, Base, Ghost),
+	get_highlit_obj(3, Ghost),
 	normalize(Ghost),
 	fail;
 	recursive_highlight(Target, off).
@@ -1196,7 +1197,11 @@ adjust_link_forwards(Target, Way, Also) :-
 change_delete_status(Target, Way) :-
 	(doomed(Target), !,
 	    Way = off,
-	    normalize(Target);					
+	    (find_base(Target, Base),
+		\+ Base = Target,
+		doomed(Base), !,
+		highlight(Target, 3);
+	    normalize(Target));					
 	Way = on,
 	    highlight(Target, 2)),
 	/* Now change cloud etc to same colour as link */
