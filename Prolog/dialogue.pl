@@ -228,9 +228,10 @@ referred to by any of its parameter names in the equation.",
 	(Complaint5 = [], !,
 	(Unit_st = "", Eqn_st = "", !,
 	    /* If no eqn or units supplied, assume real */
-	    Units = 1, UnitError = [];
+	    NewUnits = 1, UnitError = [];
 	var(MinBase), var(EqnBase), var(MaxBase), var(TypeBase), !,
 	    /* If units but no eqn or limits supplied, accept any */
+	    NewUnits = Units,
 	    UnitError = UnitFormError;
 	propagate_units(min(max(Min,Result),Max), any, [any, any, any, any],
 			[MinBase, EqnBase, MaxBase, TypeBase], ComboType),
@@ -239,7 +240,11 @@ referred to by any of its parameter names in the equation.",
 	    (EqnDims = Dims, !; true), /* if no eqn, use dims from unit --
 	    if this match fails, so will check_unit! */
 	    build_array(ComboBase, EqnDims, Combo_units),
-	    (Units = Combo_units,
+	    ((Units = Combo_units;
+	      /* next line allows an int to be quietly made into a real if the
+	      expression is now real */
+	      check_unit(Combo_units, Units, 1, [])), !,
+		NewUnits = Combo_units,
 		UnitError = [];
 	    check_unit(Units, Combo_units, 2, UnitMatchError),
 		append(UnitMatchError, UnitFormError, UnitError))),
@@ -299,7 +304,7 @@ table specification has been entered.\n"),
 	(FinalComplaint = [], !,
 		update_parameterhood(Function, Is_P, AffectedNode),
 		add_parameter(AffectedNode, 0, value, Result),
-		add_parameter(AffectedNode, 0, units, Units),
+		add_parameter(AffectedNode, 0, units, NewUnits),
 		add_parameter(AffectedNode, 0, description, Desc),
 		add_parameter(AffectedNode, 0, comment, Comment),
 		add_parameter(AffectedNode, 0, table_data, 
