@@ -95,32 +95,32 @@ namespace eval ::origplot72514 {
         frame $t.left.top
         set buttons [frame $t.left.top.buttons]
         button $buttons.clear -text Clear -command [namespace code "ClearGraph $t"]
-        pack $buttons.clear
+        pack $buttons.clear -fill x
         if {$isReal} {
             button $buttons.valup -text >Var< \
                     -command [namespace code "Rescale y $t up"]
-            pack $buttons.valup
+            pack $buttons.valup -fill x
             button $buttons.valdown -text <Var> \
                     -command [namespace code "Rescale y $t down"]
-            pack $buttons.valdown
+            pack $buttons.valdown -fill x
         } else {
             button $buttons.maketrue -text True \
                     -command [namespace code "SetBoolean $t"] \
                     -background [ChooseText $timeplotvars($t) green red]
-            pack $buttons.maketrue
+            pack $buttons.maketrue -fill x
             button $buttons.makefalse -text False \
                     -command [namespace code  "ResetBoolean $t"] \
                     -background [ChooseText $timeplotvars($t) red green]
-            pack $buttons.makefalse
+            pack $buttons.makefalse -fill x
         }
         button $buttons.timeup -text >Time< -command [namespace code "Rescale x $t up"]
-        pack $buttons.timeup
+        pack $buttons.timeup -fill x
         button $buttons.timedown -text <Time> \
                 -command [namespace code "Rescale x $t down"]
-        pack $buttons.timedown
+        pack $buttons.timedown -fill x
         button $buttons.viewall -text "View all" \
                 -command [namespace code "ViewAll $t"]
-        pack $buttons.viewall
+        pack $buttons.viewall -fill x
         
         pack $buttons -side left
         pack $t.left.top -fill y -expand true
