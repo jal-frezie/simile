@@ -120,6 +120,7 @@ namespace eval ::$keyValue {
         set YYnew($winId) {}
         set Told($winId) {}
         set Tnew($winId) {}
+        set lastTime($winId) [GetModelTime]
         
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
@@ -127,7 +128,6 @@ namespace eval ::$keyValue {
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
         display $winId [GetModelTime] 0 0
-        set lastTime($winId) [GetModelTime]
     }
     
     proc GetCanvas {winId} {
