@@ -13,6 +13,7 @@ proc initialize {winId} {
     variable useNodes
     variable trunks
     variable base
+    namespace import -force ::maptools2::*
     set toolbarItems [list \
 			  [list new.gif "Clear" \
 			       [namespace code "clear $winId"]] \
@@ -185,7 +186,7 @@ proc LoadPosns {winId} {
     set trunks {}
     foreach {px py h} $useNodes($winId,selected) {
 	set quadlist {}
-	polygon375::GetQuadList {} [lindex [GetModelValue $px] 0] \
+	GetQuadList {} [lindex [GetModelValue $px] 0] \
 	    [lindex [GetModelValue $py] 0] [lindex [GetModelValue $h] 0]
 #ShowMessage debug info "List is $quadlist" ok
 	foreach {id data} $quadlist {

@@ -24,7 +24,6 @@ proc identify {} {
 proc initialize {winId} {
     variable useNodes
     variable editMode 0
-
     namespace import -force ::maptools2::*
 
     set useNodes($winId,cbot) black
@@ -98,9 +97,8 @@ proc OptionsDialog { winId } {
 proc Restore {winId} {
     variable useNodes
     variable editMode 0
+    namespace import -force ::maptools2::*
     
-    namespace import -force ::maptools::*
-
     regsub -all /WIN/ [GetState $winId] $winId restoreString
     array set useNodes $restoreString
 
@@ -439,6 +437,7 @@ proc Zoom {id fx fy} {
     $id configure -scrollregion [$id bbox all]
 }
 
+# new version in map tools
 proc OldGetQuadList {heights xcoords ycoords} {
 
 	upvar 1 quadlist quadlist
@@ -452,39 +451,6 @@ proc OldGetQuadList {heights xcoords ycoords} {
 		foreach elt [array names newhs] {
 			OldGetQuadList $newhs($elt) $newxs($elt) $newys($elt)
 		}
-	}
-}
-
-#proc GetQuadList {args}
-proc GetQuadList {inds args} {
-	upvar 1 quadlist quadlist
-    
-    set pilot [lindex $args 0]
-    if {![llength $pilot]} {
-        set args [lreplace $args 0 0 nil]
-    } elseif {[llength $pilot]==2 && ![llength [lindex $pilot 0]]} {
-        set args [lreplace $args 0 0 [lindex $pilot 1]]
-    }
-    if {[llength [lindex $args 0]] == 1} {
-		lappend quadlist $inds $args
-	} else {
-	    set arrcount 0
-	    foreach arg $args {
-		array set new$arrcount $arg
-		incr arrcount
-	    }
-
-	    foreach elt [array names new0] {
-		set arrcount 0
-		set newargs {}
-		foreach arg $args {
-		    upvar 0 new$arrcount newarr
-		    lappend newargs $newarr($elt)
-		    incr arrcount
-		}
-#		eval GetQuadList $newargs
-		eval GetQuadList [list [concat $inds $elt]] $newargs
-	    }
 	}
 }
 

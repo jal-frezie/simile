@@ -10,6 +10,10 @@
 # by Jasper Taylor, March 2001
 
 #$Log: maps2.tcl,v $
+#Revision 1.3  2003/02/12 17:31:58  jaspert
+#Moved a common IO tool procedure GetQuadList from Polygons.tcl to library
+#file maps2.tcl
+#
 #Revision 1.2  2002/10/18 14:24:47  jmm
 #proc GetCanvas added returns canvas for printing etc.
 #absolute namespaces used, i.e. start with ::
@@ -90,6 +94,37 @@ proc ColourScale {winData winId} {
     }
 }
 
-namespace export SetColours InsertLegend ColourScale
+proc GetQuadList {inds args} {
+    upvar 1 quadlist quadlist
+    
+    set pilot [lindex $args 0]
+    if {![llength $pilot]} {
+        set args [lreplace $args 0 0 nil]
+    } elseif {[llength $pilot]==2 && ![llength [lindex $pilot 0]]} {
+        set args [lreplace $args 0 0 [lindex $pilot 1]]
+    }
+    if {[llength [lindex $args 0]] == 1} {
+	lappend quadlist $inds $args
+    } else {
+	set arrcount 0
+	foreach arg $args {
+	    array set new$arrcount $arg
+	    incr arrcount
+	}
+	
+	foreach elt [array names new0] {
+	    set arrcount 0
+	    set newargs {}
+	    foreach arg $args {
+		upvar 0 new$arrcount newarr
+		lappend newargs $newarr($elt)
+		incr arrcount
+	    }
+	    eval GetQuadList [list [concat $inds $elt]] $newargs
+	}
+    }
+}
+
+namespace export SetColours InsertLegend ColourScale GetQuadList
 }
 
