@@ -1,0 +1,36 @@
+#!/bin/sh
+# script that finds its own arse, using both hands and a map if necessary,
+# and launches Simile from surrounding directories
+
+if expr $0 : '.*/'; then
+    # program invoked by filename
+    if expr "$0" : '[/~]'; then
+        # filename is absolute path: use as target
+	LOC="$0";
+    else
+	# filename is relative path : prepend dir for target
+	LOC="`pwd`/$0";
+    fi
+else
+    # program invoked by command: find target
+    LOC=`which $0`;
+fi
+
+LSLINE=`ls -l "$LOC"`
+LINK=`expr "$LSLINE" : '.* -> \(.*\)$'`
+
+if test -z "$LINK"; then
+    # target is not a symlink
+    TOP="$LOC";
+elif expr "$LINK" : '[/~]'; then
+    # symlink to absolute path
+    TOP="$LINK";
+else
+    # relative symlink
+    TOP=`dirname "$LOC"`/$LINK;
+fi
+
+SIMDIR=`dirname \`dirname "$TOP"\``;
+LD_LIBRARY_PATH="$TOP/System/lib"
+export LD_LIBRARY_PATH
+"$SIMDIR/System/bin/wish8.4" "$SIMDIR/Run/simile.tcl" $1
