@@ -104,6 +104,8 @@ the links by which they are connected, and the units they have at their source.
 Note that this will have to add instance parameters to the list in some cases when
 dealing with multiple instances. */
 
+:- dynamic(input_links_were/1).
+
 get_input_info(Function, Input_list) :-
 	(setof(Link_entry,
 	      IDs^get_all_links(Function, IDs, Link_entry),

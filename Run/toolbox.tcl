@@ -5,6 +5,7 @@
 
 # Simile distributed libraries should have precedence over any others
 set auto_path [linsert $auto_path 0 [pwd]/../Run [pwd]/../System/lib]
+
 package require BWidget
 
 #tk_messageBox -message "library [info library] path $auto_path"
@@ -24,7 +25,7 @@ source ../Run/mre.tcl
 if {[string match windows $tcl_platform(platform)]} {
 #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
-} else {
+} elseif {[string match linux $tcl_platform(platform)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
     package ifneeded Trf 2.1 {}
 }

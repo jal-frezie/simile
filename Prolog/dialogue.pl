@@ -165,31 +165,6 @@ LateInputs],
 	    assert(input_list_is(Input_list))),
 	fail.
 
-check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-
-	get_solo_list_depth(New_param, Depth), !,
-	explain_brackets(Current_unit, Desc2, no, SP, OKN),
-	(OKN = New_param, atom(SP), !, fail;
-	    explain_brackets(Depth, Desc1, no, SP, New_param),
-	    sicstus_format_to_chars("Your ~s, ~w, has brackets round it that would indicate ~s. However it actually stands for ~s so should appear as follows: ~w. ", [ShowParam, New_param, Desc1, Desc2, OKN], Complaint));
-	    sicstus_format_to_chars("Your ~s, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ",
-				    [ShowParam, New_param], Complaint).
-
-explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
-	((atom(Dims); var(Dims)), !,
-	    PL1 = "a ",
-	    Type = "single value",
-	    SubType = "",
-	    RightBrs = BaseName;
-	(Dims = list(Middle), PL1 = "a ", Type = "list",
-	    RightBrs = {InnerBrs};
-	 Dims = array(Middle, _), PL1 = "an ", Type = "array",
-	    RightBrs = [InnerBrs]),
-	    explain_brackets(Middle, SubType, yes, BaseName, InnerBrs)),
-	(Many = yes, Pref = " of ", Plural = "s";
-	    Many = no, PL1 = Pref, Plural = ""),
-	append([Pref, Type, Plural, SubType], Desc).
-	    
-	
 update_equation(Function, IndxCount, InterInputs, TypeBase,
 		[Eqn_st, Unit_st, Is_P_st,
 		 Table_st, Data_st, Desc_st, Comment_st, Min_st, Max_st]) :-
@@ -310,6 +285,31 @@ FinalComplaint,
 			    ok, _)),
 	    !, /* green */ fail).
 
+check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-
+	get_solo_list_depth(New_param, Depth), !,
+	explain_brackets(Current_unit, Desc2, no, SP, OKN),
+	(OKN = New_param, atom(SP), !, fail;
+	    explain_brackets(Depth, Desc1, no, SP, New_param),
+	    sicstus_format_to_chars("Your ~s, ~w, has brackets round it that would indicate ~s. However it actually stands for ~s so should appear as follows: ~w. ", [ShowParam, New_param, Desc1, Desc2, OKN], Complaint));
+	    sicstus_format_to_chars("Your ~s, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ",
+				    [ShowParam, New_param], Complaint).
+
+explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
+	((atom(Dims); var(Dims)), !,
+	    PL1 = "a ",
+	    Type = "single value",
+	    SubType = "",
+	    RightBrs = BaseName;
+	(Dims = list(Middle), PL1 = "a ", Type = "list",
+	    RightBrs = {InnerBrs};
+	 Dims = array(Middle, _), PL1 = "an ", Type = "array",
+	    RightBrs = [InnerBrs]),
+	    explain_brackets(Middle, SubType, yes, BaseName, InnerBrs)),
+	(Many = yes, Pref = " of ", Plural = "s";
+	    Many = no, PL1 = Pref, Plural = ""),
+	append([Pref, Type, Plural, SubType], Desc).
+	    
+	
 table_ref(_, table(_), _, 0).
 
 get_table_data(Data, Table, Orig) :-

@@ -65,7 +65,7 @@ return (char*)lpMsgBuf;
     #define LOAD_DLL flopen
     #define UNLOAD_DLL !dlclose
 /* dlclose inverted cos it seems to return NULL when it works */
-    #define WHAT_WENT_WRONG dlerror
+    #define WHAT_WENT_WRONG (char*)dlerror
     #define FIND_FUNCTION dlsym
     #define FORUNIX 1
 HINSTANCE flopen(char* fileName) {
@@ -73,7 +73,6 @@ HINSTANCE flopen(char* fileName) {
 }
 
 #endif
-#include <malloc.h>
 #include <locale.h>
 
 /* Definitions used in this code and the model code */
@@ -1105,7 +1104,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
   int *short_tree, *new_tree;
   int arrayLength, arrayPosn, id_count, id_val, *id_ptr;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
-  switch (*use_dims) {
+  switch (*use_dims) {
 
 
 
