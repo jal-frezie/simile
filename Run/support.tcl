@@ -448,6 +448,16 @@ proc GetTransTable {val} {
     return [do_in_editor GetTransTable $val]
 }
 
+proc ContextSensitiveHelp {context page} {
+    global tcl_platform
+    if { [string match windows $tcl_platform(platform)] } {
+        package require winhelp
+        winhelp $context ../Help/simile.chm $page
+    } else {
+	return [do_in_editor ContextSensitiveHelp $context $page]
+    }
+}
+
 proc do {argList} {
     global runHow errorInfo
 

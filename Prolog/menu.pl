@@ -1169,9 +1169,6 @@ change_size(_,_).
 off_window(Win) :-
 	Win shows_model Model,
 	(is_toplevel(Model), !,
-	    finish_move(Model, 0), /* botch to make sure that if user chooses
-	to save the model, the restart_move in save_isolated doesnt bring an
-	earlier-deleted one back */
 	    check_deletable(Win, Model),
 	    start_progress_dialogue(Win),
 	    remove_model(Win, Model),
@@ -1327,7 +1324,11 @@ save_isolated(Name, Model, Date, SelnOnly) :-
 	    Done = 1;
 	true),
 	all(event, do_colours, [build(TempSels), unify(off)]),
-	restart_move,
+	/* If not a toplevel model, restart_move will recreate any cross-border
+	links removed by cutout. Otherwise it is unnecessary and can mess
+	things up when exiting Simile. */
+	(is_toplevel(Model), !;
+	    restart_move),
 	retract(suspend_display),
 	nonvar(Done). /* fails if save failed */
 
