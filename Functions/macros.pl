@@ -22,13 +22,12 @@ first(BoolArr) --> [clear]=makearray(if place_in(1)==1 then 1
 				    elseif element(BoolArr,place_in(1)) then 0
 				    else element(sofar([clear]),place_in(1)-1),
 				     count(BoolArr)),sum([clear])+1.
-/*
+
 delay(val,steps) -->
 	pt = (if last(pt)==1000 then 1 else last(pt)+1),
 	[array] = makearray(if place_in(1)==pt then
 			   val
 		  else
 			   last(element([array],place_in(1))),
-		      1000),
-	element([array],(if pt-steps<1 then 1000+pt-steps else pt-steps)).
-*/
+			1000),
+	element([array],pt-steps-1000*floor((pt-steps-1)/1000)).

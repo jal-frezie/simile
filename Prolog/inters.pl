@@ -910,25 +910,34 @@ operator(*, int, [int, int]).
 operator(//, int, [int, int]).
 operator(/, 1, [1, 1]).
 
+/* Comparison ops need int arg version to avoid unnecessarily constraining
+parameters to real */
 operator(^, int, [int, int]).
+operator(==, boolean, [int, int]).
 operator(==, boolean, [real, real]).
 operator(==, boolean, [boolean, boolean]).
 operator(==, boolean, [a(T), a(T)]).
+operator('!=', boolean, [int, int]).
 operator('!=', boolean, [real, real]).
 operator('!=', boolean, [boolean, boolean]).
 operator('!=', boolean, [a(T), a(T)]).
+operator(<, boolean, [int, int]).
 operator(<, boolean, [real, real]).
 operator(<, boolean, [boolean, boolean]).
 operator(<, boolean, [a(T), a(T)]).
+operator(<=, boolean, [int, int]).
 operator(<=, boolean, [real, real]).
 operator(<=, boolean, [boolean, boolean]).
 operator(<=, boolean, [a(T), a(T)]).
+operator(>, boolean, [int, int]).
 operator(>, boolean, [real, real]).
 operator(>, boolean, [boolean, boolean]).
 operator(>, boolean, [a(T), a(T)]).
+operator(>=, boolean, [int, int]).
 operator(>=, boolean, [real, real]).
 operator(>=, boolean, [boolean, boolean]).
 operator(>=, boolean, [a(T), a(T)]).
+operator(<>, boolean, [int, int]).
 operator(<>, boolean, [real, real]).
 operator(<>, boolean, [boolean, boolean]).
 operator(<>, boolean, [a(T), a(T)]).

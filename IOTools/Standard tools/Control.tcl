@@ -15,6 +15,7 @@ set keyValue runcontrol33857
 global runState
 set runState(oldIntMethod) Euler
 set runState(intMethod) Euler
+set runState(timeUnit) unit
 
 namespace eval runcontrol33857 {
     variable sendvars
@@ -101,7 +102,8 @@ namespace eval runcontrol33857 {
         pack [label $rsf.unitselection.caption -text "Select time units" -width $captWidth -anchor w] -side left
         #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
         #                unit second minute hour day week month year Ma
-        set widget [ComboBox $rsf.unitselection.pulldown  -textvariable [namespace current]::sendvars(timeUnit) \
+        set widget [ComboBox $rsf.unitselection.pulldown \
+			-textvariable runState(timeUnit) \
                 -values {unit second minute hour day week month year Ma}]
 #        $widget setvalue first
         pack $rsf.unitselection.pulldown -side left
@@ -125,7 +127,7 @@ namespace eval runcontrol33857 {
             entry $rsf.$name.num -relief sunken \
                     -textvar runState($var) -width 8
             pack $rsf.$name.num -side left
-            label $rsf.$name.unit -textvar [namespace current]::sendvars(timeUnit)
+            label $rsf.$name.unit -textvar runState(timeUnit)
             pack $rsf.$name.unit -side left
             pack $rsf.$name  -anchor w -pady 2
         }
@@ -147,7 +149,7 @@ namespace eval runcontrol33857 {
         pack $t.rsf -padx 1 -pady 1 -fill x
         
         
-        set sendvars(timeUnit) unit
+#        set sendvars(timeUnit) unit
         set sendvars(expected_end) 0
         SendData $t
         set sendvars(prevDisplay) 0.0
@@ -212,11 +214,11 @@ namespace eval runcontrol33857 {
         
         set phases [GetPhaseCount]
         set sendvars(newData) \
-                "$sendvars(timeUnit) $runState(displayInt) \
+                "$runState(timeUnit) $runState(displayInt) \
                 $runState(update$phases) $runState(currentTime) \
                 $runState(execTime)"
         # This loop sets the array of dts in the model
-        set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
+        set unitLength [expr [SecondsInA $runState(timeUnit)]/[SecondsInA day]]
 	set tweaked 0
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
             set tick [expr $runState(update$setPhase)*$unitLength]
@@ -282,7 +284,7 @@ namespace eval runcontrol33857 {
         global errorInfo redoPhase runState
         
 	set phases [GetPhaseCount]
-        set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
+        set unitLength [expr [SecondsInA $runState(timeUnit)]/[SecondsInA day]]
         set widget [$winId.rcf getframe]
         while {[lsearch {exit stop kill} $sendvars(currentMode)]==-1} {
             # Collect any changes that have been made by the user

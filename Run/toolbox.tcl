@@ -261,7 +261,8 @@ proc SaveFile {tree tgt} {
 		set runState(execDur) $runState(execTime)
 	    }
 	    set runParams [list execTime $runState(execDur) \
-			     displayInt $runState(displayInt) intMethod \
+			       timeUnit $runState(timeUnit) \
+			       displayInt $runState(displayInt) intMethod \
 			     [set runState(oldIntMethod) $runState(intMethod)]]
 	    if {[info exists model_id]} {
 		set runState(phases) [GetPhaseCount]
