@@ -1,17 +1,3 @@
-proc LoadUserFunctionMessages {} {
-    set oldDir [pwd]
-    cd ../Functions/Help
-    
-    foreach file [glob -nocomplain *.tcl] {
-        if [catch {source $file} wibble] {
-            # done at startup -- make sure dialog is not concealed
-            tk_messageBox -title "Error loading user function help" -icon warning \
-                    -message "help messages file [pwd]/$file had a $wibble" -type ok
-        }
-    }
-    cd $oldDir
-}
-
 set msgs(compartment) "Add compartments"
 set msgs(flow) "Add flows"
 set msgs(variable) "Add variables"
@@ -77,7 +63,12 @@ set msgs(newton_raphson) "newton_raphson(Lo_start, Hi_start, Poly) takes two sta
         and a value that is derived from its result by other variables in the model. It returns \
         a new value on each time step, attempting by linear extrapolation from the last two \
         values to return a value for which Poly will be zero."
-set msgs(gaussian) "Returns values from a gaussian distribution"
+set msgs(gaussian) "gaussian(c mean sd): returns values from a gaussian distribution with \
+        the given mean (mean) and standard deviation (sd). If the value of c is constant \
+        the value returned is constant until the model is rebuilt, if c is the function \
+        rand_const(0,1) the value returned is constant during a run but varies  between \
+        runs and if c varies every time step (e.g. the function time() ) a different value is
+        returned each time step"
 set msgs(sgn) "sgn(r): returns the sign of a r, -1 if negative or 1 if positive"
 
 
@@ -287,4 +278,3 @@ foreach file [glob -nocomplain *.tcl] {
 }
 cd $oldDir
 
-#LoadUserFunctionMessages doesn't work if call a proc !!!
