@@ -566,16 +566,16 @@ proc StippleSymbol {w name density selected} {
             }
         }
 	switch $selected {
-	    not {
-		$w dtag $object selected
-		$w dtag $object tocopy
-	    } highlight {
+	    highlight {
 		$w dtag $object tocopy
 		$w itemconfigure $object -tag \
 		    [concat selected [$w gettags $object]]
 	    } select {
 		$w itemconfigure $object -tag \
 		    [concat tocopy selected [$w gettags $object]]
+	    } default {
+		$w dtag $object selected
+		$w dtag $object tocopy
 	    }
 	}
     }

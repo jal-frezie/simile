@@ -1367,7 +1367,7 @@ proc CopyCanvasToWindowsClipboard {canvas} {
         package require wmf
         
         set hdc [wmf open]; #Opens a memory metafile
-        printer::print_select $hdc $canvas withtag selected
+        printer::print_select $hdc $canvas withtag tocopy
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
         wmf copy $wmfdc; # Copy to the clipboard
     }

@@ -323,7 +323,7 @@ namespace eval printer {
     set vtgPrint(canvas.bg) [string tolower [$cw cget -background]]
 
     # re-write each widget from cw to printer
-      foreach id [exec [list $cw find] $args] {
+      foreach id [eval [list $cw find] $args] {
         set type [$cw type $id]
 	if { [ info commands print_canvas.$type ] == "print_canvas.$type" } {
 	  print_canvas.[$cw type $id] $hdc $cw $id
