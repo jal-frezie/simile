@@ -36,7 +36,7 @@ proc SwapDistVar {win} {
     
 proc initialize {t} {
     variable sendvars
-    wm title $t "Run control"
+    catch {wm title $t "Run control"}; # $t isn't a toplevel under MRE
     set geom [PrefValue custom(runControlPosition) runControlPosition]
     catch {wm geometry $t $geom}
 

@@ -85,8 +85,8 @@ proc click {winId node caption} {
    set full_label1 [string range $full_label 9 end]
    set last_slash [string last / $full_label1]
    set start_label [expr $last_slash+1]
-   set label [string range $full_label1 $start_label end]
-            wm title $winId $label
+    set label [string range $full_label1 $start_label end]
+    catch {wm title $winId $label}
 		InitialiseGrid $winId $node
 		UpdateState $winId
 	    }
@@ -378,8 +378,8 @@ proc value_popup {winId mult X Y} {
        set x0 [winfo x $winId]
        set y0 [winfo y $winId]
        set xpoint [expr $X+$x0+15]
-       set ypoint [expr $Y+$y0+43]
-       wm geometry .popup +$xpoint+$ypoint
+        set ypoint [expr $Y+$y0+43]
+        wm geometry .popup +$xpoint+$ypoint
        update
     }
 }
