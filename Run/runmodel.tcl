@@ -634,6 +634,7 @@ proc CreateHelperWindow {helperId helperTitle} {
     if {[PrefValue custom(helperManager) helperManager]} {
         ::RunEnv::ChildrenFocusParent $winId
     }
+    return $winId
 }
 
 proc NewHelperWindow {helperId helperTitle} {
