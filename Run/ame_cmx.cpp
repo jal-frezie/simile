@@ -456,7 +456,7 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
       if (!strncmp(seeknode, test, strlen(test))) {
 	return(nodeModelAndId(nodeModelList->nodeModel(seekType->
 						       nodedata[count].name),
-			      seeknode + (strrchr(test, '/') - test), 
+			      seeknode + strlen(test), /* was (strrchr(test, '/') - test), */
 			      tgtModel));
       }
       
@@ -502,7 +502,8 @@ node_data_line* searchinfo(char* node, Model** tgtModel,
 	append_ints_to_null(dims, bottomLine->dims, SEPARATE, 0);
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
-	strcpy(strrchr(caption, '/'), localCapt);
+	strcpy(caption + strlen(caption), /* was strrchr(caption, '/'), */
+	       localCapt);
       } else {
 	bottomLine = NULL;
       }
