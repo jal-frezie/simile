@@ -594,7 +594,8 @@ proc Save {spare smPath} {
 
 proc Open {topNode smPath} {
     global SimileProject
-    set metaFile [ChooseFile params.spf "Load parameters from:" 0]
+    set smName [file tail $smPath]
+    set metaFile [ChooseFile params.spf "Load $smName parameters from:" 0]
     set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
 	MergeParams $topNode $smPath $metaFile 1
@@ -685,7 +686,8 @@ proc MergeParams {topNode smPath oldPath interactive} {
 		    set paramData($restoredComp) {}
 		}
 	    }
-	    if {$interactive} {
+        if {$interactive} {
+        #$widgetNames($restoredComp).e 
 		FillIfSmall $widgetNames($restoredComp).e \
 		    $paramData($restoredComp)
 	    }
