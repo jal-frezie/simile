@@ -504,10 +504,8 @@ make_array_assignment(L, Indent, [Sub | Rest],
 	render(L, end(for), Index, Indent, Closes2),
 	make_array_assignment(L, NewIndent, Rest, Used,
 			FinalIndent, Temps0, Indices, Opens2, Closes1),
-	render(L, comment, 'start list here', 0, [StartMark]),
-	render(L, comment, 'end list here', 0, [EndMark]),
-	append(Opens1, [StartMark | Opens2], Opens),
-	append(Closes1, [EndMark | Closes2], Closes).
+	append(Opens1, Opens2, Opens),
+	append(Closes1, Closes2, Closes).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* add_temps/5: Takes a list of variable declaration templates, a list of new
