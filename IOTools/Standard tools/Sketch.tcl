@@ -37,15 +37,9 @@ proc click {windowId nodename caption} {
     ReleaseClicks $windowId
     pack forget $windowId.intro
     set length [lindex $graphData 7]
-    regsub -all " " [lrange $graphData 8 [expr 6+$length]] , graphPoints
-    if {[eval {GraphEntry $windowId} \
-	    [lrange $graphData 0 6] {$length $graphPoints}]} {
-	eval {SetModelGraph $nodename $graph(lowx) \
-		$graph(highx) $graph(width) \
-		$graph(lowy) $graph(highy) \
-		$graph(height) $graph(range) $graph(size)} \
-		[split $graph(pts) ,]
-    }
+    set graphPoints [join [lrange $graphData 8 [expr 6+$length]] ,]
+    eval {GraphEntry $windowId} [lrange $graphData 0 6] \
+	{$length $graphPoints} $nodename
     kill_helper_window $windowId
 }
     

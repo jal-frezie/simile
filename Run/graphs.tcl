@@ -16,7 +16,8 @@ proc equationGraph {parent} {
     toplevel .graph -class graphEntry -bd 4
     wm transient .graph $parent
     wm protocol .graph WM_DELETE_WINDOW {set graph(done) 0}
-
+    focus .graph
+    grab .graph
     if {![info exists graph(pts)]} {
 	# set default values for new graph
 	GraphEntry .graph 0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
@@ -27,6 +28,7 @@ proc equationGraph {parent} {
 		$graph(height) $graph(range) $graph(size) \
 		$graph(pts)
     }
+    grab release .graph
     destroy .graph
     grab $equation(top)
     return $graph(done)
@@ -66,7 +68,8 @@ proc CombineGraphData { formula } {
 	return $formula
 }
 
-proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
+proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
+		      {target {}}} {
     global graph tcl_platform
     
     set graph(bd) 3
@@ -80,14 +83,18 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
 	    set graph(origin) 2
 	}
     }
-    regsub -all , $points " " graph(points)
+    set rangeChoices "Truncate Extrapolate Wraparound"
 
+    set graph(rangeact) [lindex $rangeChoices $range]
+    set graph(points) [split $points ,]
     set graph(lowy) $ylow
     set graph(highy) $yhigh
+    set graph(height) $yspan
     set graph(lowx) $xlow
     set graph(highx) $xhigh
+    set graph(width) $xspan
     
-    wm title $t "Sketch graph"
+    catch {wm title $t "Sketch graph"}
     
     TitleFrame $t.gph -text "Graph pad"
     set gph [$t.gph getframe]
@@ -105,8 +112,6 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     grid $gph.yentry -column 0 -row 0 -sticky ns -padx 2 -pady 2
     
     frame $gph.gridf
-    set graph(width) $xspan
-    set graph(height) $yspan
     set grid [canvas $gph.gridf.canvas -width [expr $graph(width)+1] \
 		  -height [expr $graph(height)+1] -bd $graph(bd) -relief groove]
     set graph(increment) [expr $graph(width)/([llength $graph(points)] - 1.0)]
@@ -116,7 +121,6 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     bind $grid <Configure> "AttackShape %W %w %h"
     pack $grid -fill both -expand true
     grid $gph.gridf -column 1 -row 0 -sticky nesw  -padx 2 -pady 2
-
     frame $gph.dummy
     grid $gph.dummy -column 0 -row 1  -padx 2 -pady 2 -sticky nesw
 
@@ -172,9 +176,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     set out [frame $right.out]
     label $out.outrange -text "Out of range:"
     pack $out.outrange
-    set rangeChoices "Truncate Extrapolate Wraparound"
     pack [ComboBox $out.rangeopts -values $rangeChoices -editable 0 -textvariable graph(rangeact) -width 12]
-    set graph(rangeact) [lindex $rangeChoices $range]
     pack $out -pady 8 -padx 4
     set resolution [frame $right.resolution]
     label $resolution.detail -text "X axis resolution:"
@@ -193,13 +195,8 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     pack $right -fill both
     pack $t.right.options -fill both -padx 2 -pady 2 -expand true
     
-    
-    
     RedrawGrid $grid $graph(width) $graph(height) $graph(increment)
     
-    focus $t
-    grab $t
-
     set niceFormat 0
     while {!$niceFormat} {
 	tkwait variable graph(done)
@@ -211,16 +208,32 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
 		set graph(range) [lsearch $rangeChoices $graph(rangeact)]
 		set graph(size) [llength $graph(points)]
 		regsub -all " " $graph(points) , graph(pts)
-		set niceFormat 1
+		# Target is set to variable id if editing sketch at run time
+		if {[llength $target]} {
+		    eval {SetModelGraph $target $graph(lowx) \
+			      $graph(highx) $graph(width) \
+			      $graph(lowy) $graph(highy) \
+			      $graph(height) $graph(range) $graph(size)} \
+			[split $graph(pts) ,]
+		} else {
+		    set niceFormat 1
+		}
 	    }
 	} else {
-	    set niceFormat 1
+	    if {[llength $target]} {
+		set lastSaved [GetModelGraph $target]
+		scan $lastSaved "%d %d %d %d %d %d %d" graph(lowx) \
+		    graph(highx) graph(width) \
+		    graph(lowy) graph(highy) \
+		    graph(height) range
+		set graph(rangeact) [lindex $rangeChoices $range]
+		set graph(points) [lrange $lastSaved 8 end]
+		AttackShape $grid [winfo width $grid] [winfo height $grid]
+	    } else {
+		set niceFormat 1
+	    }
 	}
     }
-
-	
-    grab release $t
-    
     return $graph(done)
 }
 
@@ -315,45 +328,29 @@ proc RedrawGrid {c w h inc} {
     $c move grid $miss $miss
 }
 
-proc NewAttackShape {c w h} {
-	global graph
-    set exag [expr 2*$graph(bd)+3.0]
-puts "nas $c $w $h"
-
-	set x0 [expr $graph(width)*$graph(lowx)/($graph(lowx) - $graph(highx))]
-	set y0 [expr $graph(height)*$graph(lowy)/($graph(lowy) - $graph(highy))]
-
-	$c scale all $x0 $y0 [expr ($w - $exag)/$graph(width)] \
-			[expr ($h - $exag)/$graph(height)]
-
-	set $graph(width) [expr $w - $exag]
-	set graph(height) [expr $h - $exag]
-}
-
 proc AttackShape {c w h} {
 	global graph
 
-# This version which is no longer called used to change the axis labels when the
+# This version used to change the axis labels when the
 # graph window was resized. Now we keep them the same and stretch the graph
 
     set exag [expr 2*$graph(bd)+$graph(exag)]
-puts "nas $c $w $h"
-	set graph(increment) [expr $graph(increment)*($w-$exag)/$graph(width)]
-	set graph(width) [expr $w-$exag]
-
-	set vchange [expr double($h-$exag)/$graph(height)]
-	set graph(height) [expr $h-$exag]
-	RedrawGrid $c $graph(width) $graph(height) $graph(increment)
-
-	set graph(points) [lreplace $graph(points) 0 0 \
-			[expr round([lindex $graph(points) 0]*$vchange)]]
-	set section 1
-	while {$section < [llength $graph(points)]} {
-		set graph(points) [lreplace $graph(points) $section $section \
-			[expr round([lindex $graph(points) $section]*$vchange)]]
-		AddLine $c $section
-		set section [expr $section + 1]
-	}
+    set graph(increment) [expr $graph(increment)*($w-$exag)/$graph(width)]
+    set graph(width) [expr $w-$exag]
+    
+    set vchange [expr double($h-$exag)/$graph(height)]
+    set graph(height) [expr $h-$exag]
+    RedrawGrid $c $graph(width) $graph(height) $graph(increment)
+    
+    set graph(points) [lreplace $graph(points) 0 0 \
+			   [expr round([lindex $graph(points) 0]*$vchange)]]
+    set section 1
+    while {$section < [llength $graph(points)]} {
+	set graph(points) [lreplace $graph(points) $section $section \
+		       [expr round([lindex $graph(points) $section]*$vchange)]]
+	AddLine $c $section
+	set section [expr $section + 1]
+    }
 }
 
 proc CoarseX { c } {
