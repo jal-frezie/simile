@@ -178,7 +178,7 @@ variable height; # of canvas
     set height($winId) [winfo height $winId.c]; #500 of canvas
             
     DropTrees $winId $xs $ys $hs
-    bind $winId <Configure> \
+    bind $winId.c <Configure> \
                 [namespace code " WindowSizeChanged $winId $xs $ys $hs"]
 }
 
