@@ -1039,6 +1039,7 @@ check_translation(Submodel) :-
 translate_between(Model, Model, 0, [0,0,1,1]).
 
 translate_between(HiModel, LoModel, Depth, Trans) :-
+	\+ get_shape(LoModel, hide_contents, 1),
 	find_all_comps(Parent, LoModel),
 	translate_between(HiModel, Parent, HiDepth, HiTrans),
 	Depth is HiDepth + 1,

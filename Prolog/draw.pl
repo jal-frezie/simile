@@ -103,6 +103,12 @@ translate_between(Small, Big, Trans) :-
 	all(image, =, [build(Chain), subtract_from_translation(Trans, [0,0,1,1])]).
 */					      
 
+kill_recursive(Wid, Comp) :-
+	find_all_comps(Comp, SubComp),
+	    kill_recursive(Wid, SubComp),
+	    fail;
+	kill_featured(Wid, Comp).
+
 off_all([]).
 
 off_all([Comp | Comps]) :-
@@ -168,18 +174,19 @@ windows) we only need to draw the new shape in windows illustrating its parent..
 
 redisplay(Comp) :-
 	find_relevant_windows(Comp, Window_id, Depth, Trans),
+	kill_recursive(Window_id, Comp),
 	display(Window_id, Comp, Depth, Trans, 1),
 	fail;
 	true.
 
 redisplay_border(Comp) :-
 	find_relevant_windows(Comp, Window_id, Depth, Trans),
+	kill_featured(Window_id, Comp),
 	display(Window_id, Comp, Depth, Trans, 0),
 	fail;
 	true.
 
 display(Window_id, Comp, Depth, Trans, Recurse) :-
-	kill_featured(Window_id, Comp),
 	(Comp is_of_sort box,
 	display_in(Window_id, Comp, Depth, Trans),
 	(Recurse = 1,
@@ -396,10 +403,15 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour, FillImage, ImgPos),
 		get_window_colour(Comp, BgColour, _),
-		add_to_translation(Trans, Comp, InTrans),
-		find_fatness(InTrans, InFat),
-		untranslate([0,0], InTrans, [Ox, Oy]),
-		submodel(Wid, Screen_list, Num, Fatness,
+/* if no contents displayed, set scheme to incomplete to avoid drawing grid */
+	        (\+ get_shape(Comp, hide_contents, 1),
+		    New_depth is Depth + 1,
+		    draws_at(Wid, submodel, New_depth), !,
+		    add_to_translation(Trans, Comp, InTrans),
+		    find_fatness(InTrans, InFat),
+		    untranslate([0,0], InTrans, [Ox, Oy]);
+		[InFat, Ox, Oy] = [0,0,0]),
+	        submodel(Wid, Screen_list, Num, Fatness,
 				  FillColour, FillImage, ImgPos, Ox, Oy,
 				  BgColour, InFat, Colour_scheme, Comp);
 	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,
