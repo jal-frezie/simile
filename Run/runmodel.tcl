@@ -908,18 +908,24 @@ proc AddPopupMessage {text colour isValue} {
                 -text $text -bg $colour] -fill x -expand true
     } else {
         if {$verbosity>500} {
-            if {$isValue} {
-                set nvals " ([CountValues $text] values)"
-            } else {
-                set nvals " ($verbosity characters)"
-            }
-            set text [string range $text 0 240].....[string range $text \
-                    [expr $verbosity-240] end]
-            append text $nvals
+	    set text [EndsOnly $text $isValue $verbosity 500]
         }
         pack [message .popup.message$colour -aspect 400 \
                 -text $text -bg $colour] -fill x -expand true
     }
+}
+
+proc EndsOnly {text isValue verbosity leave} {
+    set size [expr ($leave-20)/2]
+    if {$isValue} {
+	set nvals " ([CountValues $text] values)"
+    } else {
+	set nvals " ($verbosity characters)"
+    }
+    set text [string range $text 0 $size].....[string range $text \
+						 [expr $verbosity-$size] end]
+    append text $nvals
+    return $text
 }
 
 proc CountValues {text} {

@@ -653,6 +653,17 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
+proc FillIfSmall {entry text} {
+    $entry delete 1.0 end
+    set verbosity [string length $text]
+#    if {$verbosity>500} {
+#	$entry insert 1.0 [EndsOnly $text 1 $verbosity 500]
+#	$entry configure -state disabled
+#    } else {
+	$entry insert 1.0 $text
+#    }
+}
+
 proc FileParamDialogue {mustShow parent} {
     global paramData widgetNames
     set allNodes [GetObjectList]
@@ -702,7 +713,7 @@ proc FileParamDialogue {mustShow parent} {
             # Using entries played merry hell with very long arrays -- texts work better
             pack [text $slot.e -width 30 -height 1] -side right -fill x -expand on
             if {[info exists paramData($compName)]} {
-                $slot.e insert 1.0 $paramData($compName)
+		FillIfSmall $slot.e $paramData($compName)
             } else {
                 set paramData($compName) {}
             }
@@ -781,33 +792,35 @@ proc DoneParams {oldMissing} {
     foreach node [GetObjectList] {
         if {[string match TABLE [GetModelEval $node]]} {
             set compName [GetCaptionPathFromId $node]
-            set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
+	    if {[string match normal [$widgetNames($compName) cget -state]]} {
+		set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
             #ShowMessage debug info "-paramData($compName)- is -$paramData($compName)-" ok
-	    set dataChanged 0
-            if {![llength $paramData($compName)]} {
-                set empties 1
-                # for each constant value, check whether it has been changed, and if so,
-                # flag a complete model rebuild. Do same if running_c lost due to crash
-            } elseif {[lsearch $oldMissing $compName] > -1} {
-		set dataChanged 1
-            } elseif {![info exists running_c]} {
-		set dataChanged 1
-            } elseif {[string compare [lindex [GetModelValue $node] 0] \
-                        $paramData($compName)]} {
-		set dataChanged 1
-            }
+		set dataChanged 0
+		if {![llength $paramData($compName)]} {
+		    set empties 1
+		    # for each constant value, check whether it has been changed, and if so,
+		    # flag a complete model rebuild. Do same if running_c lost due to crash
+		} elseif {[lsearch $oldMissing $compName] > -1} {
+		    set dataChanged 1
+		} elseif {![info exists running_c]} {
+		    set dataChanged 1
+		} elseif {[string compare [lindex [GetModelValue $node] 0] \
+			       $paramData($compName)]} {
+		    set dataChanged 1
+		}
 	    # Make array form if data has changed
-	    if {$dataChanged} {
-                set runState(reloadParams) 1
-		set trans [GetFromProlog tk_get_info({},$node,types)]
-		ListToArray $node $trans $paramData($compName)
+		if {$dataChanged} {
+		    set runState(reloadParams) 1
+		    set trans [GetFromProlog tk_get_info({},$node,types)]
+		    ListToArray $node $trans $paramData($compName)
+		}
 	    }
-        }
+	}
     }
     if {[info exists empties]} {
-        .fpdialogue.buttons.banner configure -text "Some values still missing!"
+	.fpdialogue.buttons.banner configure -text "Some values still missing!"
     } else {
-        set paramData(/done/) 1
+	set paramData(/done/) 1
     }
 }
 
@@ -851,14 +864,16 @@ proc SaveParams {} {
         foreach node [GetObjectList] {
             if {[string match TABLE [GetModelEval $node]]} {
                 set compName [GetCaptionPathFromId $node]
-                set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
+		if {[string match normal [$widgetNames($compName) cget -state]]} {
+		    set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
                 
-                if {[info exists paramState($compName)]} {
-                    if {[string compare $paramData($compName) \
-                                [LoadTableData $paramState($compName) 0]]} {
-                        unset paramState($compName)
-                    }
-                }
+		    if {[info exists paramState($compName)]} {
+			if {[string compare $paramData($compName) \
+				 [LoadTableData $paramState($compName) 0]]} {
+			    unset paramState($compName)
+			}
+		    }
+		}
                 set SubbedComp [StripCrs $compName]
                 if {[info exists paramState($compName)]} {
                     set relName [Relativize $metaFile \
@@ -915,8 +930,7 @@ proc MergeParams {} {
                     set paramData($restoredComp) {}
                     ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
                 }
-                $widgetNames($restoredComp) delete 1.0 end
-                $widgetNames($restoredComp) insert 1.0 $paramData($restoredComp)
+                FillIfSmall $widgetNames($restoredComp) $paramData($restoredComp)
             }
         }
         close $pStr
@@ -985,8 +999,11 @@ proc GetFromTable {parent compName} {
     } else {
 	set table_entry(data) {}
     }
-    set table_entry(values) [$widgetNames($compName) get 1.0 1.end]
-    
+    if {[string match normal [$widgetNames($compName) cget -state]]} {
+	set table_entry(values) [$widgetNames($compName) get 1.0 1.end]
+    } else {
+	set table_entry(values) $paramData($compName)
+    }
     if {[equationDoTable $parent 0]} {
         if {[llength $table_entry(dataField)]} {
 	    set paramState($compName) [concat [list $table_entry(fileName) \
@@ -994,8 +1011,7 @@ proc GetFromTable {parent compName} {
 					   $table_entry(indices)]
 	}
         set paramData($compName) $table_entry(values)
-        $widgetNames($compName) delete 1.0 end
-        $widgetNames($compName) insert 1.0 $paramData($compName)
+        FillIfSmall $widgetNames($compName) $paramData($compName)
     }
 }
 
