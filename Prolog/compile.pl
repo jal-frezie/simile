@@ -523,11 +523,13 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 		     ExtSets, Used, Graphs,
 		     PublicDecls, TypeDecls, PointerDecls, Exts,
 		     EnumBits, NodeData) :-
-	Instance = instance(_, Node, Loc, _, _-_SmSizes),
-	list_local_index_meanings(Node, SmIndSpecs),
-	all(dialogue, index_names_and_sizes,
-	    [build(SmIndSpecs), build(_Text), build(RSizes)]),
-	reverse(RSizes, SmSizes),
+	Instance = instance(Type, Node, Loc, _, _-CSizes),
+	(Type = submodel, !,
+	    list_local_index_meanings(Node, SmIndSpecs),
+	    all(dialogue, index_names_and_sizes,
+		[build(SmIndSpecs), build(_Text), build(RSizes)]),
+	    reverse(RSizes, SmSizes);
+	SmSizes = CSizes),
 	all(ame_gen, enum_type_ref,
 	    [build(SmSizes), unify(Node), build(_), build(_), build(Posn)]),
 		/* In the past, SmDims was replaced by Posn, which is
