@@ -1295,9 +1295,7 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		/* At this point we need to replace the innermost loop with an
 		assignment if using an id-based condition, and move the
 		condition evaluation outside that loop...*/
-		(SubList is TestPhase+1,
-		    length(Slower, SubList),
-		    append(Slower,
+		(append(Slower,
 			   [[IdOpen,
 			     make(_, IdConds, [_IdLevel, SmLevel | _More], _,
 				  [assign(_, IdExpr)]),
