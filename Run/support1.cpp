@@ -93,13 +93,29 @@ public:
 };
 
 /* Fn template for deleting a linked list of models -- if non-null, 
-calls itself for the on pointer before deleting instance */
+calls itself for the on pointer before deleting instance
 
 template <class SMClass>
 void delete_list (SMClass *ptr) {
   if (ptr) {
     delete_list(ptr->next);
     delete ptr;
+  }
+}
+
+Above version is very elegant and recursive, but sadly causes stack
+overflow for that very reason when deleting very long lists of
+submodels. So instead...
+*/
+
+template <class SMClass>
+void delete_list (SMClass *ptr) {
+  SMClass *next_ptr;
+
+  while (ptr) {
+    next_ptr = ptr->next;
+    delete ptr;
+    ptr = next_ptr;
   }
 }
 
