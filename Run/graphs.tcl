@@ -1390,7 +1390,7 @@ proc ResetTimeSeries {topNode} {
 # where we are in the list. If the time has gone past that pointed to, signal 
 # the data to be written and look at the next one...
 proc UpdateTimeSeries {topNode newTime} {
-    global setFromSeries paramData
+    global setFromSeries paramData comboTypes
     foreach list [array names setFromSeries $topNode,*,times] {
 	set node [lindex [split $list ,] 1]
 #puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
@@ -1411,19 +1411,25 @@ proc UpdateTimeSeries {topNode newTime} {
 	}
 
 	if {[info exists useTime]} {
-	    upvar \#0 [InputVarFor $topNode $node] inputSrc
+	    set tgtVar [InputVarFor $topNode $node]
+	    upvar \#0 $tgtVar inputSrc
 #puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
 	    # do it the easy way if a scalar
 #puts "looking for paramData($node,$useTime)"
-	    if {[info exists paramData($node,$useTime)]} {
-		set inputSrc($node) $paramData($node,$useTime)
+#	    if {[info exists paramData($node,$useTime)]} {
+#		set inputSrc($node) $paramData($node,$useTime)
 #puts "set inputSrc($useTime) $paramData($node,$useTime)"
-		return
-	    }
-	    foreach tsValue [array names paramData $node,$useTime,*] {
+#		return
+#	    }
+	    set trans [lindex [GetTransTable $node] end]
+	    foreach tsValue [array names paramData $node,$useTime*] {
 #puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
-		set inputSrc([join [lreplace [split $tsValue ,] 1 1] ,]) \
-		    $paramData($tsValue)
+		set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
+		set inputSrc($tgtIndex) $paramData($tsValue)
+		if {[string match comboChoices $tgtVar]} {
+		    set comboTypes($tgtIndex) \
+			[TransValue $trans $paramData($tsValue)]
+		}
 	    }
 	}
     }
