@@ -88,7 +88,7 @@ proc initialize {w} {
 }
 
 proc Restore {winId} {
-#    ShowMessage debug info "plotter.tcl Restore $winId" ok
+    #    ShowMessage debug info "plotter.tcl Restore $winId" ok
     namespace import -force ::graphtools::*; # todo make graphtools common
     global ::graphtools::plot
     global ::graphtools::Xvalues
@@ -105,8 +105,9 @@ proc Restore {winId} {
     
     regsub -all /WIN/ [GetState $winId] $winId restoreString
     array set plot $restoreString
-#    ShowMessage debug info $restoreString ok
+    #    ShowMessage debug info $restoreString ok
     ShowHelper $winId
+    display $winId [GetModelTime] 0 0
 }
 
 proc GetCanvas {winId} {
@@ -127,6 +128,7 @@ proc click {w node caption} {
         
         drawGraphpad $w
         UpdateState $w
+        display $w [GetModelTime] 0 0
     } else {
         #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
     }
@@ -174,7 +176,8 @@ proc display {w time step remainder} {
     global ::graphtools::YYold
     global ::graphtools::YYnew
     global ::graphtools::Told
-    global ::graphtools::Tnew
+    global ::graphtools::Tnew 
+    #ShowMessage debug info "display $w $time $step $remainder" ok
     
     get_Yvalues $w 
 
@@ -182,7 +185,7 @@ proc display {w time step remainder} {
 
 	set Told($w) $Tnew($w)
 	set Tnew($w) $time
-	set plot($w,Xmax_data) $time
+    set plot($w,Xmax_data) $time
 
 	#redraw axis and graph if necessary; otherwise just extend plots
 	if {$plot($w,redraw)} {
@@ -349,28 +352,7 @@ proc drawGraphpad {w} {
             -tags {axis_line scalable markable yslidable}
     draw_Yaxis $w
     
-    ### Blanking rectangles; # todo 2000 too big? jmm elsewhere too
-################################################################################
-#     set x2 [expr $x1+5]
-#     $w.canvas create rectangle $x2 0 500 500 \
-#             -tags {blanket blanket_right} -outline {}\
-#             -fill $plot($w,canvas_colour)
-#     $w.canvas create rectangle 0 0 $x0 500 \
-#             -tags {blanket blanket_left yslidable} -outline {}\
-#             -fill $plot($w,canvas_colour)
-#     set y2 [expr $y1]
-#     $w.canvas create rectangle 0 0 500 $y2 \
-#             -tags {blanket blanket_top} -outline {}\
-#             -fill $plot($w,canvas_colour)
-#     set y2 [expr $y0+5]
-#     $w.canvas create rectangle 0 $y2 500 500 \
-#             -tags {blanket blanket_bottom xslidable} -outline {}\
-#             -fill $plot($w,canvas_colour)
-################################################################################
-    
-    
-    ### Draw the top and right edges of the graph area
-    
+    ### Draw the top and right edges of the graph area    
     if {$plot($w,topright)} {
         $w.canvas create line $x0 $y1 $x1 $y1 \
                 -tags {scalable topright}
@@ -617,9 +599,10 @@ proc plot_YY {w} {
 proc plot_Y {w iplot Told Yold Tnew Ynew} {
     global ::graphtools::plot
     
+    #ShowMessage debug info "plot($w,Xmax_axis) $plot($w,Xmax_axis)" ok
     if {[llength $Ynew]==1} then {
 		set colour [lindex $plot($w,YColours) $iplot]
-		adjustLimits $w $Tnew $Ynew
+        adjustLimits $w $Tnew $Ynew
 		drawPoint $w $Told $Yold $Tnew $Ynew $colour
 	} else {
 		array set Ynew_array $Ynew
@@ -654,7 +637,7 @@ proc drawPoint { w X0 Y0 X1 Y1 Colour } {
 
 # clear graph
 proc clear { w } {
-	bell
+    bell
     global ::graphtools::Xvalues
     global ::graphtools::YYold
     global ::graphtools::YYnew
@@ -676,10 +659,10 @@ proc clear { w } {
     set plot($w,Xprecision) 0
     set plot($w,Yprecision) 0
     set Xvalues($w) {}
-	set YYold($w) {}
-	set YYnew($w) {}
-
-	drawGraphpad $w
+    set YYold($w) {}
+    set YYnew($w) {}
+    
+    drawGraphpad $w
 }
 
 proc adjustLimits {w Tnew Ynew} {
