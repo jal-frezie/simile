@@ -475,12 +475,12 @@ menu_handle(Win, file, prolog_eqns) :-
 */
 
 menu_handle(_Win, file, import_ss) :-
-	output:safe_tcl_eval(['ConvertSSXML'], _),
+	output:safe_tcl_eval(['ConvertSSxml'], _),
 	m_update:make_desktop(Parent, _),
 	use_temp_dir(Dir),
-	append_atoms(Dir, '/ss_import.pl', SSFile),
+	append_atoms(Dir, '/ss_decls.pl', SSFile),
 	convert_ss(SSFile, Parent),
-	redisplay(Parent).
+	finish_move(Parent, 0).
 
 menu_handle(Win, file, export_prolog) :-
 	Win shows_model Model,

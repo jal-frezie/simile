@@ -139,7 +139,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set generic [list -width $width -tag "$tagSet realwidth($width) has_info"]
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
-    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
+    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
     eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
     eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
     eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \

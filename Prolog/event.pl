@@ -284,6 +284,7 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	length(Ladder, Depth),
 	check_drawing_at_depth(Wid, New_obj, Depth),
 	add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
+	redisplay(NewNode),
 	give_focus(NewNode),
 	do_colours(NewNode, on),
 	select_text(Wid, NewNode),
@@ -453,8 +454,7 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 	use_style_for(New_obj, NewObjStyle),
 	get_box_size(NewObjStyle, Cur_size),
 	make_bounding_box(New_obj, Xpt, Ypt, Cur_size, Box),
-	attempt_addition(New_obj, Parent, Box, Comp_name, no, yes),
-	redisplay(Comp_name).
+	attempt_addition(New_obj, Parent, Box, Comp_name, no, yes).
 
 /* as above, but if there is no room it tries to add it nearby rather than failing and complaining */
 
@@ -1812,7 +1812,8 @@ make_terminator(LineType, FinishZone, Terminator) :-
 	    LineType = flow, TermType = cloud,
 	    /* set influence/variable as alternative if required */
 	    get_current_coords(FinalX, FinalY), !,
-	    (add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator);
+	    (add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator),
+		redisplay(Terminator);
 		true), !;
 	 LineType = influence,
 	    FinishZone is_of_sort has_function,

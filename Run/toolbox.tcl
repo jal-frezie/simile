@@ -946,7 +946,7 @@ proc GetParts {top tree} {
     return $mimes
 }
 
-proc ConvertSSXML {} {
+proc ConvertSSxml {} {
     global simtmpdir
     package require xslt
     package require mime
@@ -963,8 +963,8 @@ proc ConvertSSXML {} {
     set result_doc [$ssheet transform $source_doc]
     set result_xml [::dom::libxml2::serialize $result_doc \
 			-method [$ssheet cget -method]]
-    set importDest [NetOpen [file join $simtmpdir ss_import.pl] w]
-    puts $importDest $result_xml
+    set importDest [NetOpen [file join $simtmpdir ss_decls.pl] w]
+    puts $importDest [regsub -all {\[\.([^\]]+)\]} $result_xml {'\1'}]
     close $importDest
 }
 

@@ -34,6 +34,7 @@ substitute(E, [G | T1], F, [H | T2]) :-
 :- include('utility.pl').
 :- include('ame_gen.pl').
 :- include('library.pl').
+:- include('ss_import.pl').
 
 /* files needed to build programs */
 

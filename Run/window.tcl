@@ -983,7 +983,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     AddAccelerator $winid file "Print..." "<Control-p>"
     $fm add cascade -label "Import" -menu $fm.sub0
     set fm1 [menu $fm.sub0 -tearoff 0]
-    $fm1 add command -label "Spreadsheet" \
+    $fm1 add command -label "Spreadsheet..." \
             -command "MenuSelect $c file import_ss"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
