@@ -307,7 +307,15 @@ namespace eval printer {
   ##   cw                 The canvas widget.
   ################################################################
 
+# change by Jasper -- print_canvas is now implemented as the 'all' case
+# of print_select, which takes arguments after the 2nd to be qualifiers
+# of the find command used to list canvas items.
+
   proc print_canvas {hdc cw} {
+      print_select $hdc $cw all
+  }
+
+  proc print_select {hdc cw args} {
     variable  vtgPrint
 
     # get information about page being printed to
@@ -315,7 +323,7 @@ namespace eval printer {
     set vtgPrint(canvas.bg) [string tolower [$cw cget -background]]
 
     # re-write each widget from cw to printer
-    foreach id [$cw find all] {
+      foreach id [exec [list $cw find] $args] {
         set type [$cw type $id]
 	if { [ info commands print_canvas.$type ] == "print_canvas.$type" } {
 	  print_canvas.[$cw type $id] $hdc $cw $id
