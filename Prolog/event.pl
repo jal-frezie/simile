@@ -1218,7 +1218,8 @@ unclick_obj :-
 			normalize(WrongFinish);
 		    make_terminator(New_obj, Finish_thing, Terminator),
 			(var(Terminator), !;
-			    (\+ find_type(Terminator, submodel), !;
+			    (find_type(Terminator, TType),
+				\+ member(TType, [submodel, cloud]), !;
 			    draw_line_to(Start_thing, New_obj, Terminator)),
 			    tie_ends(New_obj, Start_thing, Terminator)),
 			normalize(OrigStart),
