@@ -232,28 +232,29 @@ menu_handle(_Win, file, new_toplevel) :-
 	m_update:make_desktop(_,_).
 
 menu_handle(Win, open_toplevel, Name) :-
-	check_if_already_open(Name), !;
 	m_update:make_desktop(Parent, _),
 	stick_model_in(Win, Parent, Name, reopen).
 
 menu_handle(Win, file, open) :-
-	Win shows_model Parent,
-	check_deletable(Win, Parent),
 	get_load_file(Name),
 	(Name = '', !;
-	remove_model(Win, Parent),
-	stick_model_in(Win, Parent, Name, reopen)).
+	menu_handle(Win, reopen, Name)).
 
-menu_handle(Win, GetMode, Name) :-
+menu_handle(Win, reopen, Name) :-
+	check_if_already_open(Name), !;
 	Win shows_model Parent,
-	(GetMode = reopen,
-	    UseMode = reopen,
-	    check_deletable(Win, Parent),
-	    remove_model(Win, Parent);
-	GetMode = insert,
-	    UseMode = insert([0,0]),
-	    select_all_in(Parent, off)),
-	stick_model_in(Win, Parent, Name, UseMode).
+	(is_toplevel(Parent),
+	    find_all_comps(Parent, _), !,
+	    menu_handle(Win, open_toplevel, Name);
+	(is_toplevel(Parent), !;
+	 check_deletable(Win, Parent),
+	    remove_model(Win, Parent)),
+	    stick_model_in(Win, Parent, Name, reopen)).
+
+menu_handle(Win, insert, Name) :-
+	Win shows_model Parent,
+	select_all_in(Parent, off),
+	stick_model_in(Win, Parent, Name, insert([0,0])).
 
 menu_handle(Win, file, save) :-
 	Win shows_model Model,
