@@ -435,9 +435,12 @@ feed_items(Fn, [IndStr, ValStr | More], Table, Units, Dims, Sizes) :-
 		", which is not a recognizable constant."], Loss),
 	    raise_exception(Loss)),
 	nth0(Posn, Table, Line),
-	get_table_part(Fn, ValStr, Line, Units, HiDims, HiSizes),
-	(Units = DUnit, !;
-	    raise_exception("Data units mismatch.")),
+	get_table_part(Fn, ValStr, Line, NUnit, HiDims, HiSizes),
+	(promote_arg(NUnit, DUnit, _), !,
+	    Units = DUnit;
+	 promote_arg(DUnit, NUnit, _), !,
+	    Units = NUnit;
+	 raise_exception("Data units mismatch.")),
 	 (Dims = [IUnit | HiDims], !;
 	    raise_exception("Index units mismatch.")),
 	max_all(LoSizes, [Posn | HiSizes], Sizes).
