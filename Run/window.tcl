@@ -1761,7 +1761,7 @@ proc byebye {winId} {
 proc exit_simile {} {
     global custom
     
-    set cacheStream [NetOpen $custom(prefDir)/recent w]
+    set cacheStream [NetOpen $custom(prefDir)/.recent w]
     foreach oldFile $custom(hotlist) {
         puts $cacheStream $oldFile
     }
@@ -1776,7 +1776,7 @@ proc ZapWindow { fullName } {
     if {$window_info($fullName,is_top_level)} {
         focus $target.canvas
         update
-        set cacheStream [NetOpen $custom(prefDir)/layout w]
+        set cacheStream [NetOpen $custom(prefDir)/.layout w]
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
         close $cacheStream

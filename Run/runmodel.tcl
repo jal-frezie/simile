@@ -35,7 +35,10 @@ proc MakeHelperMenu {} {
     AddHelperSublist $fm "Add tool" 2
     set ioDir [file join $custom(prefDir) IOTools]
 #do_in_editor puts "locals in $ioDir"
-    if {[file exists $ioDir]} {
+# test for version file tells us if user dir is same as installation dir --
+# cannot compare strings as different strings may mean same dir.
+# If it is, do not load IO tools again as redefinition errors will arise
+    if {[file exists $ioDir] && ![file exists ../version]} {
 	cd $ioDir
 	AddHelperSublist $fm.sub2 "Local" l
     }

@@ -499,7 +499,7 @@ proc compile_c {workingDir} {
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } Microsoft {
-                set TOOLS32 [file dirname $env(MSVCDIR)/bin]
+                set TOOLS32 [file dirname $env(MSVCDIR)/bin]
                 exec $TOOLS32/bin/cl.exe -Ox -c -W1 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
@@ -602,7 +602,26 @@ proc ControlDraw {prologVersion} {
     # no longer have a separate floating toolbar
     
     if {[file exists $env(HOME)]} {
-        set custom(prefDir) [file join $env(HOME) .simile]
+# 4.1 moved SimileUserDirectory for Windows -- check in old position and update
+        set oldPrefs [file join $env(HOME) .simile]
+	if {[string equal windows $tcl_platform(platform)]} {
+	    set custom(prefDir) [file join $env(HOME) "My Documents" \
+				     "My Simile files"]
+	    if {[file exists $oldPrefs]} {
+		if {![file exists $custom(prefDir)]} {
+		    file mkdir $custom(prefDir)
+		}
+		foreach sysBit {layout prefs recent version} {
+		    file rename $oldPrefs/$sysBit $custom(prefDir)/.$sysBit 
+		}
+		foreach subDir [glob $oldPrefs/*] {
+		    file rename $subDir $custom(prefDir)/[file tail $subDir]
+		}
+		file delete $oldPrefs
+	    }
+	} else {
+	    set custom(prefDir) $oldPrefs
+	}
     } else {
         set custom(prefDir) [pwd]/../Prefs
     }
@@ -611,8 +630,8 @@ proc ControlDraw {prologVersion} {
         file mkdir $custom(prefDir)
     }
     
-    if {[file exists $custom(prefDir)/version]} {
-        set UserStream [NetOpen $custom(prefDir)/version r]
+    if {[file exists $custom(prefDir)/.version]} {
+        set UserStream [NetOpen $custom(prefDir)/.version r]
         gets $UserStream userinfo(oldname)
         gets $UserStream userinfo(oldcorp)
         gets $UserStream userinfo(oldVersion)
@@ -674,7 +693,7 @@ proc ControlDraw {prologVersion} {
     }
     file mkdir $simtmpdir
 
-    set UserStream [NetOpen $custom(prefDir)/version w]
+    set UserStream [NetOpen $custom(prefDir)/.version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)
     puts $UserStream $userinfo(Version)
@@ -684,8 +703,8 @@ proc ControlDraw {prologVersion} {
     set sendvars(running) 0
     
     set custom(hotlist) {}
-    if {[file exists $custom(prefDir)/recent]} {
-        set cacheStream [NetOpen $custom(prefDir)/recent r]
+    if {[file exists $custom(prefDir)/.recent]} {
+        set cacheStream [NetOpen $custom(prefDir)/.recent r]
         while {[gets $cacheStream oldFile]>0} {
             if {[file exists $oldFile] && \
                         [lsearch $custom(hotlist) $oldFile]==-1} {
@@ -699,7 +718,7 @@ proc ControlDraw {prologVersion} {
 
     }
     
-    Pref_Init $custom(prefDir)/prefs ../Run/sysprefs
+    Pref_Init $custom(prefDir)/.prefs ../Run/sysprefs
     Pref_Add {{custom(initNavbar) initNavbar ON "Tool bar"} \
                 {custom(initToolbar) initToolbar ON "Component bar"} \
                 {custom(initEqnbar) initEqnbar ON "Equation bar"} \
@@ -811,8 +830,8 @@ proc FixSize {c} {
     wm state $win normal
     # seems necessary for console to hide
     #    catch {console hide}
-    if {[file exists $custom(prefDir)/layout]} {
-        set stream [NetOpen $custom(prefDir)/layout r]
+    if {[file exists $custom(prefDir)/.layout]} {
+        set stream [NetOpen $custom(prefDir)/.layout r]
         gets $stream whetherMaxed
         #ShowMessage debug info $whetherMaxed ok
         catch {

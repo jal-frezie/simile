@@ -73,7 +73,7 @@ portray(xrefs(Model, _, _, _)) :-
 
 Improved system for outputting floating-point numbers -- max of 
 decimal places (thanks to Dan Diaz for making it work with print_to_chars)
--- previously unusable due to weird bug in gprolog */
+-- previously unusable due to weird bug in gprolog. */
 
 trim_float(F, Ns) :-
 	float(F),
@@ -89,10 +89,10 @@ trim_float(F, Ns) :-
 	    Mant = Fs, Exp = []),
 	    append(Mant, ".0", RMant),
 	    append(RMant, Exp, Ms)),
+	(F>=0, !, Ns = Ms;
 
-        /* normal printing separates -ve floats from ops with a space, so...
-	actually all floats are trouble if straight after a unary */
-        Ns = [32 | Ms].
+        /* normal printing separates -ve floats from ops with a space, so... */
+        Ns = [32 | Ms]).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % My own delete/3 which deletes one element from a list

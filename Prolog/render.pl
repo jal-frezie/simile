@@ -18,10 +18,15 @@ sicstus_module( render, [render/5, make_assignment/4, render_all/5,
 sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
 		library(lists)] ).
 
+/* make_assignment uses print_to_codes so the expression gets 
+portrayed -- we need to do this here so numbers can be formatted
+*and* spaced to avoid operator/negation clashes like x--2 */
+
 make_assignment(L, Dest, Source, AssignStr) :-
-	(L = tcl, Template = "set ~a ~w";
-	L = c, Template = "~a = ~w"),
-	sicstus_format_to_chars(Template, [Dest, Source], AssignStr).
+	(L = tcl, Template = "set ~a ~s";
+	L = c, Template = "~a = ~s"),
+	print_to_codes(SourceStr, Source),
+	sicstus_format_to_chars(Template, [Dest, SourceStr], AssignStr).
 
 /* assignment of context */
 make_pointer(c, Var, Ptr) :-
