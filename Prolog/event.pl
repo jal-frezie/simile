@@ -93,6 +93,9 @@ click_obj(Xpt, Ypt, Name) :-
 	true)).
 
 click_text(Xpt, Ypt, Name) :-
+	(get_mode(select), !,
+	    advance_phase_to(text_grabbing);
+	true),
 	click_obj(Xpt, Ypt, Name),
 	(get_phase(moving); get_phase(moving_border(_))),
 	advance_phase_to(moving_text).
@@ -103,12 +106,12 @@ click(Xpt, Ypt) :-
 	find_current(Wid),
 	Wid shows_model Parent,
 	(get_phase(targetting),
-		save_params([0,0,1,1], 0, Parent),
-		advance_phase_to(dragging),
-		drag(Xpt, Ypt);
+	    save_params([0,0,1,1], 0, Parent),
+	    advance_phase_to(dragging),
+	    drag(Xpt, Ypt);
 	get_phase(peruse),
-		set_original_click(Xpt, Ypt),
-		click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent)).
+	    set_original_click(Xpt, Ypt),
+	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent)).
 
 save_params(Trans, Depth, Parent) :-
 	set_translation(Trans),
@@ -226,11 +229,11 @@ click_on([Xpt, Ypt], Moving_obj) :-
 	Boff is B-Ypt,
 	set_border_offsets(Loff, Toff, Roff, Boff).
 
-click_on(_, Edit_thing) :-
+click_on([Xpt, Ypt], Edit_thing) :-
 	get_mode(select),
+	set_start_coords(Xpt, Ypt), /* in case dragging an area to zoom to */
 	give_focus(Edit_thing),
 	finish_old_edit(Edit_thing),
-	advance_phase_to(text_grabbing),
 	highlight(Edit_thing, 0).
 
 click_on(_,_) :-
@@ -855,7 +858,6 @@ multi_object_mode :-
 components makes sense */
 
 multi_level_mode :-
-	get_mode(select),
 	get_mode(add),
 		get_adding_object(Type),
 		Type is_class_of_sort line;
@@ -1112,10 +1114,11 @@ unclick :-
 zoom_to_area :-
 	get_incomplete([OldX, OldY, NewX, NewY]),
 	get_box_size(submodel, Standard),
-	abs(NewX-OldX) > Standard//2,
-	abs(NewY-OldY) > Standard//2,
+	(abs(NewX-OldX) < Standard//2;
+	abs(NewY-OldY) < Standard//2;
 	find_current(Wid),
-	display_area(Wid),
+	    display_area(Wid)), !,
+	/* Rubberband is used by Tk to get size of new draw window */
 	remove_old_rubberband.
 	
 unclick_obj :-
