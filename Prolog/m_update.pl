@@ -415,7 +415,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 
 		    sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
 
-		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Target_type, Unit_type], Complaint));
+		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_type, Target_type], Complaint));
 		
 	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", [Unit_term], Complaint));
 	    

@@ -266,7 +266,7 @@ for it,
 	    Complaint7 = Complaint6),
 	/* table data is auto-generated so should be well formed */
 
-	(Complaint7 = [], !,
+	(Complaint7 = [], \+ Eqn_st = [], !,
 	    check_param_usage(Function, InterInputs, ParamWibble,
 				  ParamList, New_inputs, FinalComplaint);
 	New_inputs = InterInputs,

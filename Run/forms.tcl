@@ -78,8 +78,14 @@ proc fill_equation {current_equation units mult isParam \
     set equation(mult) [join $mult ,]
     set equation(table_data) $table_data
     set equation(table_values) $table_values
-    
-    if {[set equation(isparam) $isParam]==-1} {
+
+# do not show a radiobutton if incomplete
+#    if {!$isParam && ![llength $current_equation]} {
+#	set equation(isparam) -2
+#    } else {
+	set equation(isparam) $isParam
+#    }
+    if {$equation(isparam)==-1} {
         set paramMenuState disabled
     } else {
         set paramMenuState normal
