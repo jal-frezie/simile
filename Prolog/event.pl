@@ -1227,8 +1227,8 @@ normalize_deletes(Target) :-
 	    fail;
 	recursive_highlight(Target, on, seln);
 	recursive_highlight(Target, off, base);
-	(\+ depends_on_links(Target), !;
-	    keep_only_if_links_stay(Target, base)).
+	    keep_only_if_links_stay(Target, base), fail;
+	true.
 
 recursive_highlight(Target, Way, Where) :-
 	(Target is_of_sort box, !,
@@ -1285,9 +1285,9 @@ change_delete_status(Target, Way, FromWhere) :-
 
 bring_dependents_into_line(Followers, FromWhere) :-
 	/* Now change cloud etc to same colour as link */
-	(member(Damage, Followers),
+	(FromWhere = base,
+	    member(Damage, Followers),
 	    appears(Damage),	
-	    depends_on_links(Damage),
 	    keep_only_if_links_stay(Damage, FromWhere),
 	    fail;
 	true).
@@ -1309,16 +1309,17 @@ depends_on_links(Damage) :-
 	is_parameter(Damage, N), N>0 */ .
 
 keep_only_if_links_stay(Damage, Where) :-
-	setof(NeedsIt, find_all_links(Damage, NeedsIt), NeedIt),
+	depends_on_links(Damage),
+	(setof(NeedsIt, find_all_links(Damage, NeedsIt), NeedIt),
 	member(HasIt, NeedIt),
 	at_def_con(HasIt, Where), !,
 	to_def_con(Damage, Where);					
-	highlight(Damage, 1).
+	highlight(Damage, 1)).
 
 match_delete_status(Ends, Way, Where) :-
 	Way = on;
 	member(End, Ends),
-	(\+ depends_on_links(End); Where = seln),
+	/* (\+ depends_on_links(End); Where = seln), */
 	\+ at_def_con(End, Where), !, Way = on;
 	Way = off.
 
@@ -1600,7 +1601,7 @@ select_bagged(Rect, Model) :-
 	    select_bagged(NewRect, Caught);
 	 \+ (get_shape(Caught, bounding_box, Outer),
 		fits_inside(Rect, Outer)),
-	    \+ (get_highlit_obj(N, Caught), N<2),
+	    \+ deselectable(Caught),
 	    do_colours(Caught, on),
 	    fail).
 /*
