@@ -571,7 +571,8 @@ make_intermediates(
 		raise_exception(only_works_on_array(Source))),
 	    ((Step = dummy,
 		type_ind(Limit, NeedType);
-	     NeedType = int), !,
+	     \+ Step = dummy,
+	        NeedType = int),
 		promote_unit(Int, NeedType), !,
 		IntIndxRef = IndxRef;
 	    Int = real, !, /* for legacy cases */

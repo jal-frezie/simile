@@ -583,7 +583,7 @@ decode_error(ParseError, TestError) :-
 	    More = [Var],
 	    find_all_comps(Sm, Var),
 	    caption_for(Sm, SmCapt),
-	    sicstus_format_to_chars("There is no definition for ~a in submodel ~a", [SimpleError, SmCapt], TestError);
+	    sicstus_format_to_chars("There is no definition for ~w in submodel ~a", [SimpleError, SmCapt], TestError);
 	/* default case */
 	    sicstus_format_to_chars("~w : ~a", [SimpleError, Type], TestError)).
 

@@ -274,10 +274,12 @@ double max(double a, double b) {
 }
 
 /* ...or abs for floats... */
-
+#ifdef WIN32
+#else
 double abs(double a) {
   return fabs(a);
 }
+#endif
 
 /* Before including the exported file itself let us declare the 
 helper procedures it uses. First the evaluator for graph functions. 

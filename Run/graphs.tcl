@@ -776,22 +776,24 @@ proc DoneParams {oldMissing} {
 }
 
 proc ListToArray {tgt trans list} {
-puts "Go! tgt $tgt trans $trans list $list"
+#puts "Go! tgt $tgt trans $trans list $list"
     global paramData
-    if {![string match {} $list]} {
-	set head [lindex $list 0]
-	if {[string compare {} [lindex $trans 0]]} {
-	    set headNum [lsearch [lindex $trans 0] $head]
-	} else {
-	    set headNum $head
+    if {[llength $list]==1} {
+#puts "setting paramData($tgt) to $headNum"
+	set paramData($tgt) [EnumTypeToNumber $list [lindex $trans 0]]
+    } else {
+	foreach {indx val} $list {
+	    ListToArray $tgt,[EnumTypeToNumber $indx [lindex $trans 0]] \
+		[lrange $trans 1 end] $val
 	}
-	if {[string match $head $list]} {
-puts "setting paramData($tgt) to $headNum"
-	    set paramData($tgt) $headNum
-	} else {
-	    ListToArray $tgt,$headNum [lrange $trans 1 end] [lindex $list 1]
-	    ListToArray $tgt $trans [lrange $list 2 end]
-	}
+    }
+}
+	    
+proc EnumTypeToNumber {head trans} {
+    if {[string compare {} $trans]} {
+	return [lsearch $trans $head]
+    } else {
+	set headNum $head
     }
 }
 
