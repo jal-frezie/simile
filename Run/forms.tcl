@@ -1464,10 +1464,8 @@ proc equationlisting_start {} {
             -tabs {1c} -yscrollcommand [list $w.mainframe.scrl set]]
 
     scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
-
-    pack $equationlist(textbox) -side left -fill both -expand true
-
-    pack $w.mainframe.scrl -side left -fill y
+    pack $w.mainframe.scrl -side right -fill y
+    pack $equationlist(textbox) -side right -fill both -expand true
 
     pack $w.mainframe -fill both -expand true
     image create photo equationlist(subimg)
