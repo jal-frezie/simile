@@ -360,7 +360,11 @@ adjust_to_8 :-
 			    Table, top_down, VarPairs, NewExpr),
 	    VarPairs = [_],
 	    Node has_changed_class_refinement value of NewExpr,
-	    Node has_new_class_refinement table_data of Table),	    
+	    Node has_new_class_refinement table_data of Table;
+	Node has_class_refinement fill_colour of Image,
+	    output:safe_tcl_eval(['ColourExists', Image], "0"),
+	    Node no_longer_has_class_refinement fill_colour of Image,
+	    Node has_new_class_refinement fill_image of Image),	    
 	adjust_to_8.
 
 adjust_to_8.

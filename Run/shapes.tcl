@@ -712,6 +712,14 @@ proc ResetColours { w type density colourScheme name } {
     FillSymbol $w $name $fillColor
 }
 
+proc ColourExists {col} {
+    if {[catch {winfo rgb . $col}]} {
+	return 0
+    } else {
+	return 1
+    }
+}
+
 # adapted from Welch p265
 proc WriteDesc {canvas canvasFile date args} {
     global window_info
