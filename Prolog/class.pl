@@ -2,7 +2,7 @@
 **** Predicates for manipulating classes				    ****
 *******************************************************************************/
 
-:- module( class, [is_class/1, has_class_attribute/2, is_new_class/1,
+sicstus_module( class, [is_class/1, has_class_attribute/2, is_new_class/1,
 		   has_new_class_attribute/2, is_no_longer_class/1,
 		   is_no_longer_class/2, no_longer_has_class_attribute/2,
 		   has_class_attributes/2, has_changed_class_attribute/2,
@@ -10,7 +10,7 @@
 		   no_longer_has_class_attributes/2
 		  ] ).
 
-:- use_module( [database,utility] ).
+sicstus_use_module( [database,utility] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ABSTRACTION BOUNDARY STARTS HERE
@@ -18,7 +18,7 @@
 
 % is_class is true if its arg is a class.
 
-postfix is_class.
+:- op(450, xf, is_class).
 
 Class is_class :-
 	declared_class( Class ).
@@ -26,7 +26,7 @@ Class is_class :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % has_class_attribute is true if arg 2 is the information associated with arg 1
 
-infix [has_class_attribute,of]. 
+:- op(500, xfy, has_class_attribute).
 
 Class has_class_attribute Attribute of Value :-
 	Class is_class,
@@ -35,7 +35,7 @@ Class has_class_attribute Attribute of Value :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % declare_class declares a new class
 
-postfix is_new_class.
+:- op(450, xf, is_new_class).
 
 Class is_new_class :-
 	\+ Class is_class,
@@ -44,7 +44,7 @@ Class is_new_class :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % is_no_longer_class deletes a class
 
-postfix [is_no_longer_class,no_longer_has_class_attributes].
+:- op(450, xf, [is_no_longer_class,no_longer_has_class_attributes]).
 
 Class is_no_longer_class :-
 	Class no_longer_has_class_attributes,
@@ -53,7 +53,7 @@ Class is_no_longer_class :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % has_new_class_attribute
 
-infix has_new_class_attribute.
+:- op(500, xfy, has_new_class_attribute).
 
 Class has_new_class_attribute Attribute of Value :-
 	Class is_class,
@@ -63,7 +63,7 @@ Class has_new_class_attribute Attribute of Value :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % has_changed_class_attribute
 
-infix [has_changed_class_attribute,from,to].
+:- op(500, xfy, has_changed_class_attribute).
 
 Class has_changed_class_attribute Attribute from OldValue to NewValue :-
 	Class is_class,
@@ -73,7 +73,7 @@ Class has_changed_class_attribute Attribute from OldValue to NewValue :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % no_longer_has_class_attribute
 
-infix no_longer_has_class_attribute.
+:- op(500, xfy, no_longer_has_class_attribute).
 
 Class no_longer_has_class_attribute Attribute of Value :-
 	attribute( Class, Attribute, Value ),
@@ -86,7 +86,7 @@ Class no_longer_has_class_attribute Attribute of Value :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % has_class_attributes
 
-infix has_class_attributes.
+:- op(500, xfy, has_class_attributes).
 
 Class has_class_attributes ListOfAttValPairs :-
 	any_setof( Attribute=Value,
@@ -96,14 +96,7 @@ Class has_class_attributes ListOfAttValPairs :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % no_longer_has_class_attributes
 
-infix no_longer_has_class_attributes.
-
-Class no_longer_has_class_attributes AttributeValuePairs :-
+Class no_longer_has_class_attributes  :-
 	Class has_class_attributes AttributeValuePairs,
 	foreach( Attribute=Value, AttributeValuePairs,
 		      Class no_longer_has_class_attribute Attribute of Value ).
-
-postfix no_longer_has_class_attributes.
-
-Class no_longer_has_class_attributes :-
-	Class no_longer_has_class_attributes _ListOfAttValPairs.

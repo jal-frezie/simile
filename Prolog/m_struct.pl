@@ -6,13 +6,13 @@
 **** modules calling it will take care of consistency in the KR             ****
 *******************************************************************************/
 
-:- module( m_struct,
+sicstus_module( m_struct,
 		[is_new_part_of/2, is_part_of/2, has_part/2, has_parts/2,
 		 have_part/2, is_new_model_class/1, is_also_part_of/2,
 		 is_root/1, is_no_longer_part_of/2, is_model_class/1
 		] ).
 
-:- use_module( [database,utility,library(lists)] ).
+sicstus_use_module( [database,utility,library(lists)] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ABSTRACTION BOUNDARY STARTS HERE
@@ -24,12 +24,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % given a node, find a single child or a single parent
 
-infix is_part_of.
+:- op(500, xfy, is_part_of).
 
 Child is_part_of Parent :-
 	subsystem( Parent, Child ).
 
-infix has_part.
+:- op(500, xfy, has_part).
 
 Parent has_part Child :-
 	subsystem( Parent, Child ).
@@ -40,14 +40,14 @@ Parent has_part Child :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % define the syntax of the root node name.
 
-postfix is_root.
+:- op(450, xf, is_root).
 
 root is_root.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make a new node name
 
-postfix is_new_model_class.
+:- op(450, xf, is_new_model_class).
 
 Node is_new_model_class :-
 	unique_name( node, Node ).
@@ -55,7 +55,7 @@ Node is_new_model_class :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attach an existing node to a parent
 
-infix is_also_part_of.
+:- op(500, xfy, is_also_part_of).
 
 Node is_also_part_of Parent :-
 	assert_model( subsystem( Parent, Node )).
@@ -63,7 +63,7 @@ Node is_also_part_of Parent :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Delete an existing node
 
-infix is_no_longer_part_of.
+:- op(500, xfy, is_no_longer_part_of).
 
 Node is_no_longer_part_of Parent :-
 	retractall_model( subsystem( Parent, Node )).
@@ -75,7 +75,7 @@ Node is_no_longer_part_of Parent :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % test if a node is indeed in the lattice
 
-postfix is_model_class.
+:- op( 450, xf, is_model_class).
 
 Class is_model_class :-
 	Class is_root.
@@ -86,7 +86,7 @@ Class1 is_model_class :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make a new node, insert it into the tree as a leaf, and return its name
 
-infix is_new_part_of.
+:- op(500, xfy, is_new_part_of).
 
 Node is_new_part_of Parent :-
 	Node is_new_model_class,
@@ -95,13 +95,12 @@ Node is_new_part_of Parent :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % given a node, find all the children or all the parents
 
-infix has_parts.
+:- op(500, xfy, has_parts).
 
 Parent has_parts Children :-
 	bagof( Child, Parent has_part Child, Children ).
 
-infix have_part.
+:- op(500, xfy, have_part).
 
 Parents have_part Child :-
 	bagof( Parent, Parent has_part Child, Parents ).
-

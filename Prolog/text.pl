@@ -2,9 +2,9 @@
 **** Text Processing - utlities for building the compiled output
 *******************************************************************************/
 
-:- module( text, [split_path_chars/4, replace_char/4, alphanumeric_only/2] ).
+sicstus_module( text, [split_path_chars/4, replace_char/4, alphanumeric_only/2] ).
 
-:- use_module( [library( lists ), utility, library( charsio) ] ).
+sicstus_use_module( [library( lists ), utility, library( charsio) ] ).
 
 /* Split_path_chars may have to be customized for OS other than DOS, what it does it
 takes a string from the file selector box and turns into a path atom usable by

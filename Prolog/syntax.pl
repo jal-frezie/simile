@@ -12,3 +12,8 @@ but which Sicstus uses to do modules. */
 
 term_expansion(sicstus_use_module(ModuleList), ( :- use_module(ModuleList))).
 term_expansion(sicstus_module(Title, Exports), ( :- module(Title, Exports))).
+term_expansion(sicstus_meta_predicate(Pred), ( :- meta_predicate(Pred))).
+
+term_expansion(sicstus_dynamic(Dynams), ( :- dynamic Dynams)).
+
+term_expansion(sicstus_only(File), ( :- consult(File))).

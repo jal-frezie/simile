@@ -10,10 +10,10 @@
 % editing of ame files more user friendly.                                     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-:- module(build, [source/5,roots/4,properties/4,class/6,
+sicstus_module(build, [source/5,roots/4,properties/4,class/6,
 	node/8,node/9,arc/9,ghosts/5] ).
 
-:- use_module( [library( lists),m_class,utility] ).
+sicstus_use_module( [library( lists),m_class,utility] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % roots builds new nodes, attaches them to the desktop root and adds

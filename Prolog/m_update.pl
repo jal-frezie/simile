@@ -609,7 +609,8 @@ link_section(Boxes, Arc1) :-
 	
 change_class(Object, Old, New) :-
 	Object has_class Old, !,
-	Object has_changed_class from Old to New;
+	Object no_longer_has_class Old,
+	Object has_new_class New,
 	true.
 
 /* find_all_links: recursion has been removed as the routine that calls it now recurses */

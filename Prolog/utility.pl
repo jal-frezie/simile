@@ -2,7 +2,7 @@
 **** Commonly used utility procedures for AME				    ****
 *******************************************************************************/
 
-:- module( utility, [unique_name/2, unique_name/3, indent/1, delete_member/2,
+sicstus_module( utility, [unique_name/2, unique_name/3, indent/1, delete_member/2,
 		     y_or_n/1, any_setof/3,foreach/3, wrap/3,
 		     all/3, unify_all/2, get_precedence/2,
 		     replace_in_list/4,writelist/1,writelisttofile/2, do_writing/2,
@@ -12,7 +12,7 @@
 		get_ground_part/2, generate_name/4, generate_name/5,
 		     ensure_unused/3, close_end/3, count_to/4] ).
 
-:- use_module( [database, text, library(charsio), library(lists),
+sicstus_use_module( [database, text, library(charsio), library(lists),
 		library(ordsets)] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -37,7 +37,7 @@ unique_name( Atom, Name, Size ) :-
 	append( AtomChars, TruncatedIntegerChars, NameChars ),
 	name( Name, NameChars ),
 	\+ m_class:is_part_of(Name, _),
-	\+ m_class:is_connector(Name),
+	\+ m_class:is_connector(Name, _),
 	append(NameChars, ".canvas", CanvasNameChars),
 	name(CanvasName, CanvasNameChars),
 	\+ state:shows_model(CanvasName, _), !,
@@ -53,7 +53,7 @@ delete_member( X, [H|T1], [H|T2] ) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % My own setof, which can return an empty list
 
-:- meta_predicate any_setof( +, :, + ).
+sicstus_meta_predicate(any_setof( +, :, + )).
 
 any_setof( _, Y, [] ) :-
 	\+ Y.
@@ -76,7 +76,7 @@ y_or_n( X ) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % foreach picks elements of a list and applies a metaargument.
 
-:- meta_predicate foreach( +, +, : ).
+sicstus_meta_predicate(foreach( +, +, : )).
 
 foreach( _, [], _ ).
 foreach( Var, [Head|Tail], Command ) :-
@@ -97,6 +97,13 @@ wrap(Arg, Functor, Function) :-
 all(_, _, ArgList) :-
     all_done(ArgList).
 
+all(Module, Pred, ArgList) :-
+    split_args(Module, ArgList, FirstList, RestList),
+    Step =.. [Pred | FirstList],
+    call(Module:Step),
+    all(Module, Pred, RestList),
+    join_args(Module, FirstList, RestList, ArgList).
+	
 all_done([]).
 
 all_done([Term1 | Rest]) :-
@@ -106,13 +113,6 @@ all_done([Term1 | Rest]) :-
 	Term1 =.. [_UserFunc, Limit, Limit]),
 	all_done(Rest).
 
-all(Module, Pred, ArgList) :-
-    split_args(Module, ArgList, FirstList, RestList),
-    Step =.. [Pred | FirstList],
-    call(Module:Step),
-    all(Module, Pred, RestList),
-    join_args(Module, FirstList, RestList, ArgList).
-	
 split_args(_, [], [], []).
 
 split_args(Module, [Arg | Args], [First | Firsts], [Rest | Rests]) :-
@@ -235,9 +235,9 @@ append_atoms( [H|T], Y ) :-
 % if the subcall fails on the first call. Backtracking into the call is not
 % allowed.
 
-prefix try.
+:- op(450, fx, try).
 
-:- meta_predicate try( : ).
+sicstus_meta_predicate(try( : )).
 
 try Call :-
 	call( Call ),
@@ -288,7 +288,7 @@ split_lists([J | K], L, M) :-
 	split_lists(K, L, N),
 	delall(N, J, M).
 
-:- dynamic tight/2.
+:- dynamic(tight/2).
 :- op(600, yfx, tight).
 
 get_ground_part(OpenList, ShutList) :-

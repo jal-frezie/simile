@@ -2,49 +2,14 @@
 **** This module defines the predicates used for manipulating the model     ****
 **** class data structure 						                ****
 *******************************************************************************/
-
-:- module( m_class,
-		[is_new_part_of/2, is_part_of/2, has_part/2, has_parts/2,
-		 have_part/2, is_new_model_class/1, is_also_part_of/2,
-		 is_root/1, is_no_longer_part_of/2,
-		 is_model_class/1,
-		 has_class/2, has_class_refinement/2, has_model_refinement/2,
-		 has_new_class/2, has_new_class_refinement/2,
-		 has_new_model_refinement/2, is_no_longer_model_class/1,
-		 no_longer_has_model_refinement/2,
-		 no_longer_has_class_refinement/2,
-		 has_type/2, has_new_type/2, no_longer_has_type/2,
-		 has_changed_type/2, has_attribute/2, has_new_attribute/2,
-	         no_longer_has_attribute/2, has_changed_attribute/2,
-		 has_changed_termination/2, 
-		 has_graphical_attribute/2, has_new_graphical_attribute/2,
-		 no_longer_has_graphical_attribute/2, 
-		 has_changed_graphical_attribute/2,
-		 is_class/1, has_class_attribute/2, is_new_class/1,
-		 has_new_class_attribute/2, is_no_longer_class/1,
-		 is_no_longer_class/2, no_longer_has_class_attribute/2,
-		 has_class_attributes/2, has_changed_class_attribute/2,
-		 no_longer_has_class_attributes/1,
-		 no_longer_has_class_attributes/2,
-		 is_connector/1, is_connector/2, is_new_connector/2,
-		 is_also_connector/2,
-		 is_no_longer_connector/1, is_no_longer_connector/2,
-		 no_longer_has_class/1, no_longer_has_class/2,
-		 has_changed_class/2, has_changed_class_refinement/2,
-		 has_changed_model_refinement/2, 
-
-		 connects/3, initiates/2, terminates/2, equivalent_arcs/2,
-		 sequence/2] ).
-
-:- use_module( [library(lists),link,m_struct,node,class,graphics,
-		text,utility] ).
+sicstus_only(m_decls).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Node is_no_longer_has_connections succeeds if Node's connecting arcs have
 % been deleted from the tree
 % NB more work to do here once connectors are installed
 
-postfix no_longer_has_connections.
+:- op(450, xf, no_longer_has_connections).
 
 Node no_longer_has_connections:-
 	findall( Connector, Connector is_connector from Node to _, Outs ),
@@ -58,7 +23,7 @@ Node no_longer_has_connections:-
 % NB much more work to do here once connectors are installed; think about
 % connectors through the model class boundary, and about inherited values
 
-postfix is_no_longer_model_class.
+:- op(450, xf, is_no_longer_model_class).
 
 Node is_no_longer_model_class :-
 	Node is_part_of Parent,

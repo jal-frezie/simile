@@ -4,9 +4,9 @@
 **** is defined in terms of the model class ADT 			    ****
 *******************************************************************************/
 
-:- module( library, [ame_save/3, ame_merge/3, write_with_breaks/2] ).
+sicstus_module( library, [ame_save/3, ame_merge/3, write_with_breaks/2] ).
 
-:- use_module( [library(lists),library(ordsets),library(charsio),
+sicstus_use_module( [library(lists),library(ordsets),library(charsio),
 	ame_gen,m_class,utility,text,build] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -252,10 +252,6 @@ adjust_to_4 :-
 	Node has_changed_class_refinement value of NewExpr,
 	adjust_to_4.
 
-shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
-			graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-
-	Points =.. [points | _].
-
 adjust_to_4 :-
 	Compartment has_class compartment,
 	\+ (Link is_connector from Function to Compartment,
@@ -310,6 +306,10 @@ adjust_to_6(Done) :-
 	adjust_to_6(Done), !.
 
 adjust_to_6(_).
+
+shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
+	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-
+	Points =.. [points | _].
 
 inds_to_places(var_pair(Expr, NewExpr), Depth) :-
 	Expr = index(N),

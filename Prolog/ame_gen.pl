@@ -5,7 +5,7 @@ moment (though they must have counterparts in the information the database conta
 about mathematical properties). To put it another way, it contains all the
 functions that are needed both in model_update and image. */
 
-:- module(ame_gen, [get_term/3, get_host/2, appears/1, implicit_function/2,
+sicstus_module(ame_gen, [get_term/3, get_host/2, appears/1, implicit_function/2,
 	implicit_variable/2, implicit_node/2,
 	is_parameter/2,
 	is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
@@ -22,7 +22,7 @@ functions that are needed both in model_update and image. */
 	find_all_comps/2, draws_inside/2,
 	is_primitive/1, is_of_sort/2, is_class_of_sort/2]).
 
-:-	use_module([library(lists), library(tcltk), 
+sicstus_use_module([library(lists), library(tcltk), 
 		library(charsio), m_class, utility, text]).
 
 /* Full syntax error text currently not displayed because it is too
@@ -54,11 +54,7 @@ make_nice_error_message(syntax_error(_,_, Problem, Bits, Where), Error) :-
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
 	connect_bits(BitsAfter, WindDown, _),
-	format_to_chars("Attempting to decipher this entry failed, \c
-		       generating this diagnostic message: \"~a\". \c
-		       This is what you typed, \c
-		       with an indication of where the problem was found:\n\c
-		       ~w <HERE> ~w", [Desc, RunUp, WindDown], Error).
+	format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what you typed, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error).
 
 space_elts([Elt], Elt).
 space_elts([Elt | Rest], Desc) :-
@@ -148,7 +144,7 @@ implicit_variable(Exp_node, Imp_node) :-
 /* interface for ghost property to rest of program. To test for ghosthood, use 'is_ghost' -- this returns the start and finish of a ghost link. To find the 'real' node for a given node, use find_base -- if the given node is real, it will be returned. Ghost_link can be used to determine the display status of links, and find_ghosts will return all the ghosts
 of a given base node. (Ghost relationship only exists between an absolute base node and its ghosts -- ghost-to-ghost links should be done away with!) */
 
-infix is_of_sort.
+:- op(500, xfy, is_of_sort).
 
 is_ghost(Ghost) :-
 	find_base(Ghost, Base),
@@ -273,11 +269,13 @@ recognized by Prolog unless we tell it about them...
 */
 :- op(300, yfx, ['**', '^']).
 
-:- op(500, fx, ['!']).
+/* :- op(500, fx, ['!']).
+Works but buggers up GNU prolog (do after loading?) */
 
 :- op(700, yfx, ['<=']).
 
-:- op(700, yfx, ['!=']).
+/* :- op(700, yfx, ['!=']).
+Buggers up GNU prolog and doesnt work anyway */
 
 :- op(750, yfx, ['&&', and]).
 
@@ -564,7 +562,7 @@ after making sure we are referencing the node that appears on the screen.
 Links are never ghosts, but all sections are captioned after the last section in
 the highest-level model */
 
-infix draws_inside.
+:- op(500, xfy, draws_inside).
 
 caption_for(Comp, ID) :-
 	image:get_host(Comp, CompVisDest),
@@ -624,14 +622,14 @@ find_all_comps(Parent, Comp) :-
 	Parent has_part Comp;
 	Comp draws_inside Parent.
 
-postfix is_primitive.
+:- op(450, xf, is_primitive).
 
 Type is_primitive :-
 	member(Type, [compartment, function, variable, cloud,
 		      flow, influence, relation, alarm,
 		      condition, creation, immigration, reproduction, loss]).
 
-infix is_class_of_sort.
+:- op(500, xfy, is_class_of_sort).
 
 /* slightly rewritten because it turned out to be very speed-critical */
 

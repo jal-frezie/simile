@@ -26,12 +26,24 @@ sicstus_module(database, [
 	/* for utility */
 		genint/2]).
 
-:- dynamic connection/3, arc_type/2, arc_info/3,
-		subsystem/2, 
-		node_class/2, node_refinement/3, node_attribute/3,
-		declared_class/1, attribute/3,
-		graphical_info/3,
-		genint/2.
+:- dynamic(connection/3).
+:- dynamic(arc_type/2).
+:- dynamic(arc_info/3).
+		
+:- dynamic(subsystem/2). 
+		
+:- dynamic(node_class/2). 
+:- dynamic(node_refinement/3).
+:- dynamic(node_attribute/3).
+		
+:- dynamic(declared_class/1).
+:- dynamic(attribute/3).
+		
+:- dynamic(graphical_info/3).
+		
+:- dynamic(genint/2).
+
+:- op(500, xfy, [of, from, to]).
 
 clear_database :-
 	clear_model([
