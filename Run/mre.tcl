@@ -245,8 +245,8 @@ namespace eval RunEnv {
         }
         
         
-#        $containerId.notebook bindtabs <Double-1> "::RunEnv::EditTabLabel $containerId.notebook"
-#        $containerId.notebook bindtabs <Button-3> "::RunEnv::EditTabLabel $containerId.notebook"
+        bind $containerId.notebook <Double-1> "::RunEnv::EditTabLabel %W"
+        bind $containerId.notebook <Button-3> "::RunEnv::EditTabLabel %W"
         
         $containerId.notebook select [lindex [$containerId.notebook tabs] 0]
         SetCurrentContainer $newContainer.panedwindow.pane0
@@ -254,11 +254,11 @@ namespace eval RunEnv {
         pack $containerId.notebook -fill both -expand yes
     }
     
-    proc EditTabLabel { notebook tabId } {
+    proc EditTabLabel { notebook } {
 	global helperTable
         variable TabEditText
 	variable currentNode
-        set TabEditText [$notebook itemcget $tabId -text]
+        set TabEditText [$notebook tab current -text]
         #based on equationRight
         #ShowMessage debug info "TabRight tabId $tabId; label [$notebook itemcget $tabId -text]" ok
         catch {destroy .notebookTabTextEdit}
@@ -273,16 +273,19 @@ namespace eval RunEnv {
         focus $ebox
 	if {[.notebookTabTextEdit draw] == 0} then {
             # OK button selected
-            $notebook itemconfigure $tabId -text $TabEditText
+            $notebook tab current -text $TabEditText
         }
     }
     
     proc PageRaiseCmd {notebook} {
         set pageId [expr [$notebook index current]+1]
         set pageF $notebook.page$pageId
-        set firstPane [lindex [$pageF.panedwindow panes] 0]
-   #     ShowMessage debug info "PageRaiseCmd firstPane $firstPane" ok
-        SetCurrentContainer $firstPane
+	set pageF [lindex [$notebook tabs] [$notebook index current]]
+        if {[winfo exists $pageF.panedwindow]} {
+	    set firstPane [lindex [$pageF.panedwindow panes] 0]
+	    #     ShowMessage debug info "PageRaiseCmd firstPane $firstPane" ok
+	    SetCurrentContainer $firstPane
+	}
     }
     
     proc AddNotebookToCurrentContainer {} {
@@ -452,9 +455,7 @@ namespace eval RunEnv {
     proc DeleteNotebookPage {notebook page} {
         set pages [$notebook tabs]
         set page [$notebook index current]
-        #puts "$notebook has pages $pages"
         set n [llength $pages]
-        set index [lsearch -regexp $pages page$page]
         #puts "DeleteNotebookPage  $notebook; $page\n \
         #            page $page; n pages: $n; \n \
         #            parent [winfo parent $notebook]"
@@ -465,7 +466,9 @@ namespace eval RunEnv {
                 return
             }
         }
-        $notebook forget $page
+#        $notebook forget $page
+	destroy [lindex $pages $page]
+	update
         set pages [$notebook tabs]
         set n [llength $pages]
         #ShowMessage debug info "DeleteNotebookPage after delete page pages $n" ok; #########
@@ -480,22 +483,25 @@ namespace eval RunEnv {
         } else  {
             #ShowMessage debug info "DeleteNotebookPage default" ok
             # adjust any labels that should be = to index + 1
-            set pages [$notebook tabs]
-            set i 0
-            foreach item $pages {
-                set label [$notebook tab $item -text]
-                if {$label==$i+2} {
-                    $notebook tab $item -text [expr {$i+1}]
-                }
-                incr i
-            }
-            set pages [$notebook tabs]
-            set n [llength $pages]
-            if {$index >= $n} {
-                $notebook select [lindex $pages [expr {$n-1}]]
-            } else  {
-                $notebook select [lindex $pages $index]
-            }
+# why bother? Doesnt work anyway 
+#            set pages [$notebook tabs]
+#            set i 0
+#            foreach item $pages {
+#                set label [$notebook tab $item -text]
+#		ShowMessage debug info "set $label to [expr {$i+1}] ?" ok
+#                if {$label==$i+2} {
+#                    $notebook tab $item -text [expr {$i+1}]
+#                }
+#                incr i
+#            }
+	    set pages [$notebook tabs]
+	    set n [llength $pages]
+            if {$page >= $n} {
+		set newSeln [expr {$n-1}]
+	    } else {
+		set newSeln $page
+	    }
+	    $notebook select $newSeln
         }
     }
     
@@ -587,7 +593,8 @@ namespace eval RunEnv {
     
     proc FindParentpanedwindowOrNotebook {containerId} {
         # Added two more [winfo parent]s to accommodate Tile notebook layout
-        set parentPath [winfo parent [winfo parent [winfo parent $containerId]]]
+	# -- cant see why cos it recurses anyway
+        set parentPath [winfo parent $containerId]
         set parentName [winfo name $parentPath]
         switch $parentName {
             notebook { return $parentPath }
@@ -603,7 +610,7 @@ namespace eval RunEnv {
         switch $parentName {
             panedwindow { return $parentPath }
             "" { return ""}
-            default {FindParentpanedwindowOrNotebook $parentPath}
+            default {FindParentPanedwindow $parentPath}
         }
     }
     
@@ -613,7 +620,7 @@ namespace eval RunEnv {
         switch $parentName {
             notebook { return $parentPath }
             "" { return ""}
-            default {FindParentpanedwindowOrNotebook $parentPath}
+            default {FindParentNotebook $parentPath}
         }
     }
     
@@ -623,7 +630,7 @@ namespace eval RunEnv {
         switch -glob $parentName {
             fpage* { return $parentPath }
             "" { return ""}
-            default {FindParentpanedwindowOrNotebook $parentPath}
+            default {FindParentNotebookPage $parentPath}
         }
     }
     
@@ -705,12 +712,12 @@ namespace eval RunEnv {
     }
     
     proc SetCurrentContainer {win} {
-        #ShowMessage debug info "SetCurrentContainer $win" ok
         global helperTable
         variable currentNode
         variable CurrentContainer
         variable CurrentContainers
         if {![string match pane* [winfo name $win]]} {
+#	    ShowMessage debug info "failed SetCurrentContainer $win" ok
             return
         }
         set mainframe $helperTable($currentNode,whichRunEnv).mainframe
@@ -774,6 +781,7 @@ namespace eval RunEnv {
         focus $win
         set CurrentContainers($currentNode) $win
         set CurrentContainer $win
+#        ShowMessage debug info "done SetCurrentContainer $win" ok
     }
     
     # Return a list of all children, found recursively, of a widget
@@ -907,11 +915,12 @@ namespace eval RunEnv {
     proc SaveNotebookConfig {notebook loss stream} {
         set nb [string range $notebook $loss end]
         puts $stream "notebook $nb"
-        foreach page [$notebook pages] {
-            set pagecaption [$notebook itemcget $page -text]
+        foreach page [$notebook tabs] {
+            set pagecaption [$notebook tab $page -text]
             regsub -all " " $pagecaption _ noSpcpagecaption
-            puts $stream "page $nb $page $noSpcpagecaption"
-            foreach child [winfo children [$notebook getframe $page]]  {
+	    set pageId [string range [winfo name $page] 1 end]
+            puts $stream "page $nb $pageId $noSpcpagecaption"
+            foreach child [winfo children $page]  {
                 #            puts $stream \
                 #		"$nb $page [string range $child $loss end]"
                 switch [winfo name $child] {
@@ -1115,9 +1124,8 @@ namespace eval RunEnv {
                     set panedwindow $dp0.$windowtail
                     # the page this pane is in must be raised and update called!
                     # or $panedwindow sash place won't work
-                    set $notebook [FindParentNotebook $panedwindow]
-                    set $pageId [winfo name [FindParentNotebookPage $panedwindow]]
-                    $notebook raise $pageId;
+                    set pageId [FindParentNotebookPage $panedwindow]
+                    [winfo parent $pageId] select $pageId
                     update
                     #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy \n\
                     #        page [$notebook pages]\n\
@@ -1132,11 +1140,11 @@ namespace eval RunEnv {
                         set tail [LoseTLRef $tail]
                     }
                     set path $dp0.$tail
-                    NoteBook $path
+                    ::ttk::notebook $path
                     set containerId [winfo parent $path]
                     #ShowMessage debug info "containerId $containerId" ok
-                    $path bindtabs <Double-1> "::RunEnv::EditTabLabel $containerId.notebook"
-                    $path bindtabs <Button-3> "::RunEnv::EditTabLabel $containerId.notebook"
+                    bind $path <Double-1> "::RunEnv::EditTabLabel %W"
+                    bind $path <Button-3> "::RunEnv::EditTabLabel %W"
                     pack $path -fill both -expand yes
                 }
                 page {
@@ -1149,11 +1157,12 @@ namespace eval RunEnv {
                     regsub -all _ $noSpcpagecaption " " pagecaption
                     
                     #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
-                    $notebook insert end $pageId -text $pagecaption \
-			-raisecmd [list ::RunEnv::PageRaiseCmd $containerId.notebook $pageId]
+		    set newFr [frame $notebook.f$pageId]
+                    $notebook add $newFr -text $pagecaption \
+			;#-raisecmd [list ::RunEnv::PageRaiseCmd $containerId.notebook $pageId]
                     # page raised below before any panes so that must be moved todo                 -raisecmd [list ::RunEnv::PageRaiseCmd $notebook $pageId]
-                    bind [$notebook getframe $pageId] <Button-1> "+::RunEnv::SetCurrentContainer %W"
-                    bind [$notebook getframe $pageId] <Button-3> \
+                    bind $newFr <Button-1> "+::RunEnv::SetCurrentContainer %W"
+                    bind $newFr <Button-3> \
                             "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
                     #$notebook raise $pageId
                     #catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
@@ -1164,7 +1173,7 @@ namespace eval RunEnv {
                 }
             }
         }
-        $dp0.notebook raise [lindex [$dp0.notebook pages] 0]
+        $dp0.notebook select [lindex [$dp0.notebook tabs] 0]
     }
     
     proc LoseTLRef {path} {
