@@ -244,7 +244,7 @@ proc AcceptData {winId compName} {
 	# Now replace each -1 in the dims with the id of the by-record
 	# submodel it represents
 	set recordDims $paramDims($compName)
-	while {[set recordDepth [lsearch $recordDims RECORDS]] != -1} {
+	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
 #puts "recordDims $recordDims recordDepth $recordDepth" 
 	    foreach recordId [array names inputHelper] {
 #puts "recordId is $recordId"
@@ -275,6 +275,16 @@ proc AcceptData {winId compName} {
 	    SaveState $winId
 	    CheckFixedParamState
 	}
+    }
+}
+
+# rsearch gives index of last value
+proc rsearch {list tgt} {
+    set all [lsearch -all $list $tgt]
+    if {[llength $all]} {
+	return [lindex $all end]
+    } else {
+	return -1
     }
 }
 
