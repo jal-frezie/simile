@@ -157,10 +157,10 @@ check_level_for_reds(Submodel) :-
 	member(Before-After, Equivs),
 	Before is_connector from S1 to F1,
 	After is_connector from S2 to F2,
-	\+ (Parent has_part S1, F1 = Submodel,
-	       Submodel has_part S2, Submodel has_part F2;
-	    Parent has_part F2, S2 = Submodel,
-	       Submodel has_part F1, Submodel has_part S1),
+	\+ (find_all_comps(Parent, S1), F1 = Submodel,
+	       Submodel has_part S2, find_all_comps(Submodel, F2);
+	    find_all_comps(Parent, F2), S2 = Submodel,
+	       Submodel has_part F1, find_all_comps(Submodel, S1)),
 	sicstus_format_to_chars("This model cannot be executed because it contains an inconsistent link equivalence ~w -- please report this to your Simulistics service centre.", [Before-After], MessageStr),
 	name(Message, MessageStr),
 	raise_exception(Message);
