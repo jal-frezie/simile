@@ -8,6 +8,12 @@
 package require BWidget
 catch {namespace import BWidget::*}
 
+# great steaming botch
+source ../IOTools/graphtools.tcl
+source ../IOTools/DisplayFormats.tcl
+source ../IOTools/two_table.tcl
+set table_viewer(id) $keyValue
+
 proc equationResources {} {
     
     #    foreach equation(ebox) {name description comment units} {
@@ -603,11 +609,13 @@ proc fill_inputs { triples } {
 #    pack $equation(notebook)
 }
 
-proc fill_table {table_data trans table_values} {
+proc fill_table {table_data table_values} {
     global equation
 #puts $table_data
     set equation(table_data) $table_data
-    set equation(table_values) [TransEnums $trans $table_values]
+#    set equation(table_values) [TransEnums $trans $table_values]
+# Translation should be done in Prolog by reverse_engineer
+    set equation(table_values) $table_values
 }
 
 proc equationBindings { t en eu lbp lbi lbd \

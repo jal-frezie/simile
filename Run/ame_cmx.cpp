@@ -1781,7 +1781,12 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
 
   ...but now we don't use the unsafe MD5 tcl routines so the same thing is */
-  dataCombo = Tcl_DuplicateObj(Tcl_GetVar2Ex(interp, "userinfo", "name", 0));
+  dataCombo = Tcl_GetVar2Ex(interp, "userinfo", "name", TCL_LEAVE_ERR_MSG);
+  if (dataCombo) {
+    dataCombo = Tcl_DuplicateObj(dataCombo);
+  } else {
+    return TCL_ERROR;
+  }
   Tcl_AppendStringsToObj(dataCombo, "%", edition, "^", secret, NULL);
   if (my_hash(interp, dataCombo) == TCL_ERROR) {
     return TCL_ERROR;

@@ -7,14 +7,10 @@ package require BWidget
 
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
+source ../Run/graphs.tcl
 source ../Run/messages.tcl
 source ../Run/prefs.tcl
-source ../Run/runmodel.tcl
-
-# botch -- mre.tcl has to be loaded after the other tcls or it doesn't
-# work properly
-
-source ../Run/mre.tcl
+source ../Run/utility.tcl
 
 # Find a new temporary directory
 #if {[info exists env(TMP)]} {
@@ -76,6 +72,23 @@ proc AttackGlobalVariable {array elt val} {
     return ;# because letting it return an array causes a crash
 }
 
+# Prolog typically calls this to make error handling prettier
+
+proc FilterErrors {args} {
+    global errorInfo
+    set oldDir [pwd]
+    if {[catch $args retVal]} {
+        set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
+        if {[string match yes $ans]} {
+            BuildProblem unsaved none $errorInfo tcl
+        }
+        cd $oldDir
+        return -1
+    } else {
+        return $retVal
+    }
+}
+
 # Now to switch off all error reporting from Tcl (Unintended feature of
 # Version 8.0p2, any image file will do)
 # image create photo open -file "../Images/mailbox.gif"
@@ -91,6 +104,63 @@ proc LoadIconImages {} {
         set iconImages($fn) \
                 [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
+}
+
+proc ShiftDll {Point Top Loc Rep} {
+    if {[llength $Loc]} {
+        set AddLoc /$Loc
+    } else {
+        set AddLoc $Loc
+    }
+
+    set base $Top/$Point$AddLoc
+    file mkdir $base
+    if {[llength $Rep]} {
+	set prefx $base/model
+	if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
+	    file copy -force ${prefx}${Rep}[info sharedlibextension] \
+		${prefx}[info sharedlibextension]
+	} else {
+	    file delete -force ${prefx}[info sharedlibextension]
+	    file delete -force ${prefx}.tcl
+	}
+#	foreach file [glob -nocomplain ${prefx}*] {
+#	    if {![string match ${prefx}.* $file]} {
+#		file delete $file
+#	    }
+#	}
+    }
+}
+
+proc TrimTree {Top Point} {
+    if {[llength $Point]} {
+        foreach file [glob -nocomplain "$Top/$Point/*"] {
+            file delete -force $file
+        }
+    } else {
+        file delete -force [file rootname $Top]
+    }
+}
+
+# this exists in case I don't want to exploit the concat in eval
+proc do_in_interp {interp args} {
+    $interp eval $args
+}
+
+proc KickoffRunInterp {} {
+    global runStatus userinfo
+
+    set newInterp [interp create]
+    $newInterp eval package require Tk
+    $newInterp alias PrefValue PrefValue
+    $newInterp alias GetTransTable GetTransTable
+    $newInterp eval source ../Run/runmodel.tcl
+    set runStatus(interp) $newInterp
+    return $newInterp
+}
+
+proc ScrubRun {times} {
+# do inter-interp communication
 }
 
 proc ControlDraw {prologVersion} {
@@ -113,17 +183,6 @@ proc ControlDraw {prologVersion} {
     
     # no longer have a separate floating toolbar
     
-    # On startup, check run count and offer registration if 0
-    if [catch {set userinfo(name) $env(licensee_name)}] {
-        set userinfo(name) " "
-    }
-    if [catch {set userinfo(corp) $env(licensee_corp)}] {
-        set userinfo(corp) " "
-    }
-    set userinfo(Version) $env(SIMILE_VERSION)
-    
-    set userinfo(license_code) \
-            [join [lrange [split $env(license_code) =] 1 end] =]
     # loading stub sets license entries
     load_c_stub
     
@@ -179,11 +238,6 @@ proc ControlDraw {prologVersion} {
 	set simtmpdir $custom(prefDir)/sim$guess_free
     }
     file mkdir $simtmpdir
-
-# new technology -- just one copy of the helper menu is made on startup
-# and it is put in all menubars
-
-    MakeHelperMenu
 
     if {[file exists $custom(prefDir)/version]} {
         set UserStream [NetOpen $custom(prefDir)/version r]
@@ -305,6 +359,47 @@ proc ControlDraw {prologVersion} {
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] \
             $openModel $userinfo(edn)]
+}
+
+# After the initial model has been loaded we don't want to allow the window
+# to change size when something different is loaded
+# This is also a convenient time at which to hide the console
+# if it is showing
+
+# If this is a slave interp, keep the OS choice of window posn, as moving it
+# may well sit it exactly on top of the previous one
+
+proc FixSize {c} {
+    global custom openModel IAmASlave
+    update idletasks
+    set win [winfo parent $c]
+    wm state $win normal
+    # seems necessary for console to hide
+    #    catch {console hide}
+    if {![info exists IAmASlave] && [file exists $custom(prefDir)/layout]} {
+        set stream [NetOpen $custom(prefDir)/layout r]
+        gets $stream whetherMaxed
+        #ShowMessage debug info $whetherMaxed ok
+        catch {
+            if {$whetherMaxed} {
+                wm state $win zoomed
+            } else {
+                gets $stream oldGeom
+                wm geometry $win $oldGeom
+            }}
+        close $stream
+    }
+    pack propagate $win 0
+    update
+    if {[string match $openModel {}]} {
+        DoRegDialog $win
+    }
+
+}
+
+proc AlterModel {} {
+    global runState
+    set runState(modelUpdated) 1
 }
 
 package require mime
@@ -541,6 +636,15 @@ proc SquirtMime {args} {
     }
 }
 
+# Path names derived from Windows environment variables must be
+# 'brainwashed' i.e., stripped of their native culture and turned
+# into blank-faced Unix-style forward-slash-separated automata.
+# Otherwise mingw gcc variably gets culture shock.
+
+proc brainwash {ethnic} {
+    return [file join [file dirname $ethnic] [file tail $ethnic]]
+}
+
 proc byebye {winId} {
     prolog [list tk_off_window( '$winId.canvas' )]
 }
@@ -648,12 +752,26 @@ proc GetFromProlog {prologCmd} {
     return $fromProlog
 }
 
+# This does similar to the above but gets the translation table, specially
+# for aliasing into the execution interpreters. It's a stopgap, as the 
+# translation table should really be in the model code.
+
+proc GetTransTable {node} {
+    global fromProlog
+    prolog tk_get_info({},$node,types)
+    return $fromProlog
+}
+    
 # Procedure for when Tcl recognizes what object is clicked but being a
 # maleficent pile of junk refuses to pass on this information so we have
 # to interrogate it to find what is closest to the click point
 
 proc ClickObj { x y winId X Y action} {
     global clicktime
+    global equationbar
+    global pushedbutton
+    global runStatus
+    
 #puts "$action it!"
 
     switch $action {
@@ -675,10 +793,6 @@ proc ClickObj { x y winId X Y action} {
 	}
     }
 	
-    global helperTable
-    global equationbar
-    global pushedbutton
-    
     set clicktime [clock clicks -milliseconds]
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
@@ -703,11 +817,14 @@ proc ClickObj { x y winId X Y action} {
     }
     
     set node [ExtractPrologName $winId $target]
-    
-    if {[string compare $helperTable(current) none]} {
-        # go directly to helpers, do not pass Prolog, do not collect 200 error messages
-        ProdObj $node [ExtractCaption $winId $node]
-    } elseif {[string compare $pushedbutton snap]==0} then {
+    set caption [ExtractCaption $winId $node]
+    if {[info exists runStatus(interp)]} {
+	if {[$runStatus(interp) eval ProdObj $node $caption]} {
+	   return
+	    # IO tool took the click, so do no more
+	}
+    }
+    if {[string compare $pushedbutton snap]==0} then {
         snap $node
     } else {
         if {[string equal click $action]} {
@@ -769,6 +886,16 @@ proc ClickObj { x y winId X Y action} {
     }
 }
 
+
+proc ExtractCaption {win variable} {
+    set capt $variable
+    foreach obj [$win find withtag $variable] {
+        if {[string compare [$win type $obj] text] == 0} {
+            set capt [$win itemcget $obj -text]
+        }
+    }
+    return $capt
+}
 
 # This is called when an operatio may have brought into view an area of canvas
 # the existence of which was previously unknown to Prolog; it sends the virtual
@@ -935,6 +1062,151 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
     return $c
 }
 
+proc ModelWindow {winName} {
+    global tcl_platform
+    menu ${winName}top
+    toplevel $winName -menu ${winName}top
+
+    switch $tcl_platform(platform) {
+        windows { wm iconbitmap $winName -default ../Run/similev2.ico }
+        unix { wm iconbitmap $winName @../Images/dribble.xbm}
+    }
+    # Create a scrollable canvas
+    set c [canvas $winName.canvas -bg white -confine 1 \
+            -xscrollcommand "AdjustCanvas $winName toolSlot x" \
+            -yscrollcommand "AdjustCanvas $winName canvas y" \
+            -xscrollincrement 1 -yscrollincrement 1]
+    # scrollincrements set the only way we can get precise scrolling...
+
+    # this rectangle will be resized to fill the scrollable area and coloured to
+    # show the background
+    $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
+
+    # space for toolbar
+    frame $winName.toolSlot
+    pack $winName.toolSlot -fill x
+
+    scrollbar $winName.xscroll -orient horizontal \
+            -command [list AdjustScroll $c xview]
+    scrollbar $winName.yscroll -orient vertical \
+            -command [list AdjustScroll $c yview]
+
+    pack $c -fill both -expand true
+
+    bind $c <Configure> {SetSpace %W %w %h}
+    return $c
+}
+
+proc AdjustScroll {canvas dir args} {
+    if {[string compare [lindex $args 2] units] == 0} {
+        set jump [expr 10*[lindex $args 1]]
+        $canvas $dir [lindex $args 0] $jump units
+    } else {
+        eval {$canvas $dir} $args
+    }
+}
+
+# SetSpace: this command is called when the canvas is 'configured' by attacking
+# its window's borders and so forth. It saves the new width and height of the
+# canvas (This is Tk 4.0 which is too dumb to do it itself) and informs Prolog
+# of the visible area of the scrollregion. We don't get any information about
+# which way the window was grown so the diagram is kept in the middle.
+
+proc SetSpace {c w h} {
+    global window_info
+    set cx $window_info($c,width)
+    set cy $window_info($c,height)
+    set window_info($c,width) [expr $w - 4]
+    set window_info($c,height) [expr $h - 4]
+    #    ShowMessage debug info "New size is $w $h" ok
+    RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
+            [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
+}
+
+proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
+    global window_info rads
+    #    put back if Windows users want respite from their gash placement system
+    #    wm geometry $winName +0+84
+
+    # set the display depths to those we recorded
+    #ShowMessage debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
+    set cats {ghost_link influence variable flow \
+                compartment submodel caption sections}
+    for {set depthParam 0} {$depthParam < [llength $args]} {incr depthParam} {
+        set rads($c,[lindex $cats $depthParam]) [lindex $args $depthParam]
+        WindowDetail $c [lindex $cats $depthParam] \
+                [lindex $args $depthParam] 0
+    }
+
+    $c configure -width 1 -height 1
+    $c configure -scrollregion "$wl $wt $wr $wb" \
+            -width [expr $wr-$wl] -height [expr $wb-$wt]
+    set window_info($c,width) [expr $wr - $wl]
+    set window_info($c,height) [expr $wb - $wt]
+    set window_info($c,scale) $scale
+    # last will be overwritten if drawing from Prolog
+
+    if {[string match image [$c type /base/]]} {
+        $c coords /base/ $wl $wt
+        base$c configure -width [expr int($wr-$wl)]
+        base$c configure -height [expr int($wb-$wt)]
+    } else {
+        $c coords /base/ $wl $wt $wr $wb
+    }
+    ChangeParentTitle $c $winTitle $bg
+
+    set topWin [winfo parent $c]
+    scan [wm maxsize $topWin] "%d %d" mw mh
+    #ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
+    if {[pack propagate $topWin] &&
+        ($wr-$wl >= $mw-8 || $wb-$wt >= $mh-8)} {
+        catch {winfo state $topWin zoomed}
+    }
+    #ShowMessage debug info "Just done [$c coords 1]" ok
+}
+
+proc ChangeParentTitle { wc title colour } {
+    wm title [winfo parent $wc] $title
+    if {[string match clear $colour]} {
+        set colour {}
+    }
+    # ok now base item can be an image or a rect...
+    if {[string match image [$wc type /base/]]} {
+        scan [$wc coords /base/] {%f %f} bl bt
+        set br [expr $bl+[base$wc cget -width]]
+        set bb [expr $bt+[base$wc cget -height]]
+        image delete base$wc
+    } else {
+        scan [$wc coords /base/] {%f %f %f %f} bl bt br bb
+    }
+    $wc delete /base/
+    if {[catch {image type $colour}]} {
+        $wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
+                -tag "/base/ /background/"
+    } else {
+        image create photo base$wc
+        $wc create image $bl $bt -anchor nw -image base$wc \
+                -tag "/base/ /background/ source($colour)"
+    }
+    $wc lower /base/
+    ResizeBackgnd $wc $bl $bt $br $bb
+}
+
+proc ResizeBackgnd {wc l t r b} {
+    if {[string match image [$wc type /base/]]} {
+        set oldW [base$wc cget -width]
+        set oldH [base$wc cget -height]
+        $wc coords /base/ $l $t
+        set w [expr int($r-$l)]
+        set h [expr int($b-$t)]
+        base$wc configure -width $w -height $h
+        regexp {source\(([^\)]+)\)} [$wc gettags /base/] all sourceImage
+        base$wc copy $sourceImage -to 0 0 $w $h ;# clever stuff later
+    } else {
+        $wc coords /base/ $l $t $r $b
+    }
+}
+
 proc AcceleratorState {winName menu item state} {
     global accelerator
     #puts "AcceleratorState {winName menu item state} $winName $menu $item $state [info exists accelerator($menu,$item)]"
@@ -992,6 +1264,94 @@ proc AddCanvasBindings { c } {
     # (could use tag 'has_info' for this)
     $c bind has_info <Enter> [list QueuePopup AddEqnPopup %x %y %W %X %Y]
     $c bind has_info <Leave> RemovePopup
+}
+
+proc AddEqnPopup {x y winId X Y} {
+    global pushedbutton equationbar
+    set doDesc [PrefValue custom(compDescPop) compDescPop]
+    set doVal [expr [HasValues] && [PrefValue custom(compValPop) compValPop]]
+    set doCmt [PrefValue custom(compCmtPop) compCmtPop]
+    if {[string compare select $pushedbutton] || \
+                !$doDesc && !$doVal && !$doCmt} {
+        return
+    }
+    set canx [$winId canvasx $x]
+    set cany [$winId canvasy $y]
+    set target [GetClickedObj $winId $canx $cany 2]
+    #puts "Adding for $target"
+    #    set target [$winId find closest $canx $cany 1]
+    #puts "targeting $target"
+    if {$target} {
+        PostPopup $X $Y
+        set plName [ExtractPrologName $winId $target]
+        if {$doDesc} {
+            set fromProlog [GetFromProlog tk_get_info('$winId',$plName,eqn)]
+	    set link " = "
+            if {![string length $fromProlog] || \
+                        [string match $fromProlog <none>]} {
+		set fromProlog \
+		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
+		set link " : "
+	    }
+	    set caption [GetText $winId $plName]
+	    if {[string equal /no_caption/ $caption]} {
+		set desc $fromProlog
+	    } else {
+		set desc $caption$link$fromProlog
+	    }
+            # after going Prolog, check popup window still there
+            # note colour etc are not comments though they look like them in emacs
+	    
+            if {![winfo exists .popup]} return
+            AddPopupMessage $desc #c0ffc0 0
+        }
+        if {$doCmt} {
+            set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]
+            if {![winfo exists .popup]} return
+            AddPopupMessage $fromProlog #ffe0c0 0
+        }
+        if {$doVal} {
+#	    set trans [GetFromProlog tk_get_info('$winId',$plName,types)]
+	    if {[catch {GetModelValue $plName} mVal]} {
+		set missing [lindex [split $mVal \"] 1]
+		set value \
+		    "Missing value: $missing"
+	    } else {
+		set value [lindex $mVal 0]
+#puts "trans $trans value $value"
+#		if {![string match novalue $value]} {
+#		    set value [TransEnums $trans $value]
+#		}
+# hai2mmii (or prolog) should take care of translation...
+	    }
+            AddPopupMessage $value \#ffffc0 1
+            # we might want to prettify this a bit first
+        }
+    }
+
+}
+
+proc AddPopupMessage {text colour isValue} {
+    set verbosity [string length $text]
+    if {$verbosity<20} {
+        pack [label .popup.message$colour \
+                -text $text -bg $colour] -fill x -expand true
+    } else {
+        if {$verbosity>500} {
+	    set text [EndsOnly $text $isValue $verbosity 500]
+        }
+        pack [message .popup.message$colour -aspect 400 \
+                -text $text -bg $colour] -fill x -expand true
+    }
+}
+
+proc HasValues {} {
+    global runStatus
+    if {![info exists runStatus(interp)]} {
+	return 0
+    } else {
+	return [$runStatus(interp) eval info exists running_c]
+    }
 }
 
 # Canvas chapter (of Welch)
@@ -1900,6 +2260,35 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $nb.redo configure -state disabled
 }
 
+proc AddFindMenu {canvas menu} {
+    $menu add separator
+    $menu add command -label Find... -command "FindCaption $canvas" \
+            -accelerator "Ctrl+F"
+    AddAccelerator [winfo parent $canvas] edit "Find..." "<Control-f>"
+    $menu add command -label "Find next" -command "NextCaption $canvas" \
+            -accelerator "F3"
+    AddAccelerator [winfo parent $canvas] edit "Find next" "<F3>"
+}
+
+proc AddZoomMenu {canvas menu tellProlog} {
+    $menu add cascade -label Zoom -menu $menu.sub2
+    set fm2 [menu $menu.sub2 -tearoff 0]
+    $fm2 add command -label "In lots" -command "DoZoom \
+            $canvas 1.953125 $tellProlog"
+    $fm2 add command -label "In a bit" -command "DoZoom \
+            $canvas 1.25 $tellProlog"
+    $fm2 add command -label "To selection" -command "DisplayArea $canvas"
+    $fm2 add command -label "To fit" -command "DisplayAll $canvas"
+    $fm2 add command -label "Out a bit" -command "DoZoom \
+            $canvas 0.8 $tellProlog"
+    $fm2 add command -label "Out lots" -command "DoZoom \
+            $canvas 0.512 $tellProlog"
+
+}
+
+# # character in colour spec is escaped purely for the benefit of the Emacs
+# tcl mode parser
+
 proc DragComponentIn {winId button x y} {
     set whatToAdd [winfo name $button]
 #    set top [winfo parent $winId]
@@ -1936,6 +2325,28 @@ proc DragComponentIn {winId button x y} {
     prolog tk_bar_edit_menu('$winId')
     prolog [list tk_unclick( $xco , $yco )]
     MenuSelect $winId edit $whatToAdd
+}
+
+proc ExtractPrologName { winId target } {
+    set tagList [$winId gettags $target]
+    set objNamePosn [lsearch -regexp $tagList {(node)|(arc)[0-9]*}]
+    return [lindex $tagList $objNamePosn]
+}
+
+# GetClickedObj: returns the object at the target position. We want to return
+# the closest object within a certain number of pixels. Since there is always
+# something in the background we will get that if our search radius is too
+# small, so we gradually increase it until we find a non-background thing or
+# we reach the edge of our search radius.
+
+proc GetClickedObj { winId canx cany range} {
+    for {set halo 1} {$halo < $range} {incr halo 2} {
+        set target [$winId find closest $canx $cany $halo]
+        if {![string match "*/background/*" [$winId gettags $target]]} {
+            return $target
+        }
+    }
+    return 0
 }
 
 proc AbleComp {winid} {
@@ -2347,5 +2758,15 @@ proc snap_down3 {w values} {
             $w.text insert end \n
             set i 0
         }
+    }
+}
+
+proc GetModelValue {node} {
+    global runStatus
+
+    if {![info exists runStatus(interp)]} {
+	return novalue
+    } else {
+	return [$runStatus(interp) eval GetModelValue $node]
     }
 }

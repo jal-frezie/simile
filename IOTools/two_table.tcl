@@ -137,8 +137,11 @@ namespace eval $keyValue {
         variable displayList
         variable orientList
         variable displayFormat
-        SetState $winId [list $displayList($winId) $orientList($winId) \
+	variable editMode
+	if {![info exists editMode($winId)]} {
+	    SetState $winId [list $displayList($winId) $orientList($winId) \
                 [array get displayFormat]]
+	}
     }
     
     proc AddVariable { winId } {

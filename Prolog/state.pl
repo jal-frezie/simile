@@ -6,28 +6,26 @@ interaction with the application, and provides predicates to make this info
 available to the other modules that use it.
 */
 
-sicstus_module(state, [kickoff/1, get_initial_window_size/2, create_window/2, 
-	destroy_window/1,
-	clear_model_file/1, set_model_file/2, get_model_file/2, get_edition/1,
-	kill_windows/0, shows_model/2, monitors_variable/2,
-	depth_list_is/1, set_display_depth/3, get_display_depth/3, 
-	set_current_depth/1, get_current_depth/1,
-	suspend_display/0, make_current/1, find_current/1, 
-	get_original_click/2, set_original_click/2, 
-	get_start_coords/2, set_start_coords/2, 
-	get_current_coords/2, set_current_coords/2, 
-	get_border_offsets/4, set_border_offsets/4,
-	get_mode/1, set_mode/1,  get_current_node/1, 
-	set_current_node/1, get_running_model/1, 
-	set_running_model/1,
-	get_box_size/2, get_text_offset/3, set_box_size/4, 
-	get_adding_object/1, set_adding_object/1, set_highlit_obj/2, 
-	get_highlit_obj/2, forget_highlit_obj/2, initialize_phase/0, 
-	advance_phase_to/1, get_phase/1, get_line_start_obj/1, set_moving_obj/1, 
-	get_moving_obj/1, set_line_start_obj/1, get_line_finish_obj/1, 
-	set_line_finish_obj/1, get_translation/1, set_translation/1,
-	clear_incomplete/0, add_incomplete/1, get_incomplete/1,
-	change_style/1, get_style/1]).
+sicstus_module(state,
+	       [kickoff/1, interp_for/2, get_initial_window_size/2,
+		create_window/2, destroy_window/1, clear_model_file/1,
+		set_model_file/2, get_model_file/2, get_edition/1, kill_windows/0,
+		shows_model/2, monitors_variable/2, depth_list_is/1,
+		set_display_depth/3, get_display_depth/3, set_current_depth/1,
+		get_current_depth/1, suspend_display/0, make_current/1,
+		find_current/1, get_original_click/2, set_original_click/2,
+		get_start_coords/2, set_start_coords/2, get_current_coords/2,
+		set_current_coords/2, get_border_offsets/4, set_border_offsets/4,
+		get_mode/1, set_mode/1, get_current_node/1, set_current_node/1,
+		get_running_model/1, set_running_model/1, get_box_size/2,
+		get_text_offset/3, set_box_size/4, get_adding_object/1,
+		set_adding_object/1, set_highlit_obj/2, get_highlit_obj/2,
+		forget_highlit_obj/2, initialize_phase/0, advance_phase_to/1,
+		get_phase/1, get_line_start_obj/1, set_moving_obj/1, get_moving_obj/1,
+		set_line_start_obj/1, get_line_finish_obj/1, set_line_finish_obj/1,
+		get_translation/1, set_translation/1, clear_incomplete/0,
+		add_incomplete/1, get_incomplete/1,
+		change_style/1, get_style/1]).
 
 sicstus_use_module(library(lists)).
 
@@ -57,6 +55,7 @@ kickoff(Vnum) :-
 	output:safe_tcl_eval(['FixSize', Canvas], _).
 
 :- dynamic(model_in/2).
+:- dynamic(interp_for/2).
 :- dynamic(model_file/2).
 
 get_initial_window_size(640, 400).

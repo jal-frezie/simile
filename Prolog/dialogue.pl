@@ -108,11 +108,11 @@ BoxHeaderStr),
 		TableTrans = [[], []],
 		TableVals = Values;
 	    TableList = [FilePath, DataField | Indices],
-		reverse_engineer(Values, 0, TableVals, _),
 		get_host(Part, Visible),
 		append(Bounds, [TUnits], TableTypes), 
 		all(event, insert_mem_list,
-		    [build(TableTypes), unify(Visible), build(TableTrans)]));
+		    [build(TableTypes), unify(Visible), build(TableTrans)]),
+		reverse_engineer(Values, TableTrans, 0, TableVals, _));
 	TableList = '', TableTrans = '', TableVals = '{}'),
 	(get_av_pair(Part, 0, description, Desc), !;
 		Desc = ''),
@@ -130,7 +130,7 @@ BoxHeaderStr),
 	create_equation(Win, BoxHeader, IndexList),
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
-	fill_table(TableList, TableTrans, TableVals),
+	fill_table(TableList, TableVals),
 	retractall(input_list_is(_)),
 	assert(input_list_is(Input_list)),
 	repeat,
@@ -322,7 +322,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	(var(UserFnOpen), !,
 	    UserFnList = '';
 	get_ground_part(UserFnOpen, UserFnList)),
-	purge(AllMatch, [table(_), graph(_)], TGMatch),
+	purge(AllMatch, [var_pair(table(_),_), var_pair(graph(_),_)], TGMatch),
 	(\+ TGMatch = AllMatch, /* some tables/graphs removed */
 	    table_data_is(TableAttr), !;
 	 TableAttr = ''),
@@ -465,18 +465,19 @@ zero_empties(Table, Dims) :-
 /* clever stuff in here is to undo what zero_empties did, because the zeros
 mess up translation if using enumerated types */
 
-reverse_engineer(Table, Here, TclRep, NonZ) :-
+reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep, NonZ) :-
 	Table = [Val | Rest], !,
-	    reverse_engineer(Val, 0, TclHead, SubZ),
+	    reverse_engineer(Val, MoreTrans, 0, TclHead, SubZ),
 	    There is Here+1,
-	    reverse_engineer(Rest, There, TclTail, NonZ),
-	    TclInner = [Here, TclHead | TclTail],
+	    reverse_engineer(Rest, Trans, There, TclTail, NonZ),
+	    make_e_t(Here, Trans, HereTxt),
+	    TclInner = [HereTxt, TclHead | TclTail],
 	    (Here = 0,
 		(SubZ = no,
 		    TclRep = br(TclTail);
 		TclRep = br(TclInner)), !;
 	    TclRep = TclInner);
-	TclRep = Table,
+	make_e_t(Table, Trans, TclRep),
 	    (member(Table, [0, []]), !; NonZ = yes).
 
 check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-

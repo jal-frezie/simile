@@ -785,6 +785,310 @@ proc ChangeObjectTitle { w name title} {
     $w insert $capt end $title
 }
 
+# This zooms canvas in or out. Because it can be done in response to a
+# resize request from Prolog we need a special parameter (arg 3) to stop
+# Prolog being called back in this instance, because a loop would happen
+# sometimes due to rounding errors.
+
+proc DoZoom { winId factor toProlog} {
+    global window_info
+
+    # First, find canvas point at centre of display
+    set centre_x [expr $window_info($winId,width)/2]
+    set centre_y [expr $window_info($winId,height)/2]
+
+    # Now work out where this should be in the image, so I can put it back in the
+    # centre afterwards
+
+    set target_x [expr [$winId canvasx $centre_x]*$factor]
+    set target_y [expr [$winId canvasy $centre_y]*$factor]
+
+    # next make sure that enough canvas exists for the outcome of the operation
+    RollBack $winId $toProlog [expr (1 - 1/$factor)*$centre_x] \
+            [expr (1 - 1/$factor)*$centre_y] \
+            [expr (1 + 1/$factor)*$centre_x] \
+            [expr (1 + 1/$factor)*$centre_y]
+
+    # Next, scale all the window objects (centre must be 0 because all canvas/desktop
+    # translation is done relative to 0)
+
+    ZoomImage $winId all $factor
+
+    # Change the canvas area in accordance with the change in scale
+
+    set oldSize [$winId cget -scrollregion]
+    set newReg [list [expr [lindex $oldSize 0]*$factor] \
+            [expr [lindex $oldSize 1]*$factor] \
+            [expr [lindex $oldSize 2]*$factor] \
+            [expr [lindex $oldSize 3]*$factor]]
+    $winId configure -scrollregion $newReg
+
+    # Find what is in the middle now
+
+    set currentX [$winId canvasx $centre_x]
+    set currentY [$winId canvasy $centre_y]
+
+    # Now scroll it so what was previously in the middle of the display is still there
+
+    $winId xview scroll [expr round($target_x - $currentX)] units
+    $winId yview scroll [expr round($target_y - $currentY)] units
+}
+
+# ZoomImage: Scale the graphical stuff in the window, and explicitly
+# change line thicknesses, arrowhead sizes and font sizes
+# of all components for new display size (Tcl does not change these
+# when zooming). Font sizes have a separate parameter to enable them to come
+# out right when zooming prior to Postscript export.
+
+proc ZoomImage {winId which factor {optFontor none}} {
+    #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
+    global window_info looks
+
+    $winId scale $which 0 0 $factor $factor
+    if {[string compare $which all]} {
+        set objList [$winId find withtag $which]
+    } else {
+        set objList [$winId find all]
+        # and update the info...(if it's there)
+        catch {set window_info($winId,scale) \
+                    [expr $window_info($winId,scale) * $factor]}
+
+    }
+    if {[string match none $optFontor]} {
+	set fontor $factor
+    } else {
+	set fontor $optFontor
+    }
+    if {[string match none $optFontor]} {
+        set fontor $factor
+    } else {
+        set fontor $optFontor
+    }
+    foreach object $objList {
+        switch [$winId type $object] {
+        text {
+	    set fontData [ExtractFontData [$winId itemcget $object -font]]
+	    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+#puts "Caption [$winId itemcget $object -text] font $fontData newsize $newTextSize"
+	    if {$newTextSize < 1} {
+		set newTextSize 1
+	    }
+	    $winId itemconfigure $object -font \
+		[AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+		     [lindex $fontData 2] $newTextSize]
+	} line {
+	    $winId itemconfigure $object \
+		-width [AdjustWidth $winId $object $factor]
+	    AdjustArrow $winId $object $factor
+	} image {
+	    set tgtImage [$winId itemcget $object -image]
+	    set newWidth [expr round($factor*[$tgtImage cget -width])]
+	    set newHt [expr round($factor*[$tgtImage cget -height])]
+	    scan [$winId coords $object] {%f %f} newX newY
+
+	    if {[string compare none $optFontor]} {
+# Doing clever stuff with fonts, this zoom op is for a print
+# so scale image rather tha re-tiling it
+		if {$factor > 1} {
+		    image create photo temp
+		    temp copy $tgtImage
+		    $tgtImage config -width $newWidth -height $newHt
+		    $tgtImage copy temp -zoom [expr round($factor)]
+		} else {
+		    $tgtImage copy $tgtImage \
+			-subsample [expr round(1.0/$factor)]
+		}
+	    } elseif {[string match "*/base/*" [$winId gettags $object]]} {
+		ResizeBackgnd $winId $newX $newY \
+		    [expr $newX+$newWidth] [expr $newY+$newHt]
+	    } else {
+		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
+		set intRad [expr int($looks(submodel,objectsize)* \
+					 $shortSide/400)]
+		$tgtImage config -width $newWidth -height $newHt
+		regexp {source\(([^\)]+)\)} [$winId gettags $object] \
+		    all sourceImage
+		FillSmImage $sourceImage $tgtImage $newWidth $newHt \
+		    $intRad
+	    }
+	} default {
+	    $winId itemconfigure $object \
+		-width [AdjustWidth $winId $object $factor]
+	}
+	}
+    }
+}
+
+# This updates the width of a canvas object when it is zoomed. The actual width
+# is rounded internally to an integer, so we store the full value in a tag called
+# realwidth(...) which is also updated by this procedure.
+
+# If there is no realWidth tag we try to make one up from the actual line
+# width or font size as appropriate.
+
+proc AdjustWidth {winId object factor} {
+    if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
+                tag oldWidth]<1} {
+        if {[string match text [$winId type $object]]} {
+            set currentFont [$winId itemcget $object -font]
+            set oldWidth [expr [font actual $currentFont -size]*12.0]
+        } else {
+            set oldWidth [$winId itemcget $object -width]
+        }
+    } else {
+        $winId dtag $object $tag
+    }
+    set width [expr $oldWidth*$factor]
+    $winId addtag realwidth($width) withtag $object
+    return $width
+}
+
+proc AdjustArrow {winId object factor} {
+    set oldArrow [$winId itemcget $object -arrowshape]
+    foreach arrowVal $oldArrow {
+        lappend newArrow [expr $arrowVal*$factor]
+    }
+    $winId itemconfigure $object -arrowshape $newArrow
+}
+
+# Move a window's display area to include all its contents
+proc DisplayAll { winId } {
+    global window_info
+
+    # get desired display area
+    if {[scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb] == 4} {
+        # ShowMessage debug info "Bounds are $bl $bt $br $bb" ok
+        set clearBorder [expr 15*$window_info($winId,scale)]
+
+        set bl [expr $bl - $clearBorder]
+        set bt [expr $bt - $clearBorder]
+        set br [expr $br + $clearBorder]
+        set bb [expr $bb + $clearBorder]
+        set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
+        # zoom to correct size
+        set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
+        set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
+        set scale [expr $xscale>$yscale?$yscale:$xscale]
+
+        # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
+
+        ZoomImage $winId all $scale
+
+        set bl [expr $bl*$scale]
+        set bt [expr $bt*$scale]
+        set br [expr $br*$scale]
+        set bb [expr $bb*$scale]
+
+        ResizeDesktop $winId $bl $bt $br $bb
+    }
+}
+
+proc DisplayArea {winId} {
+    global window_info
+    if {[scan [$winId bbox selected] "%d %d %d %d" bl bt br bb] < 4} {
+        return
+    }
+    set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
+    # zoom to correct size
+    set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
+    set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
+    set factor [expr $xscale>$yscale?$yscale:$xscale]
+
+    ZoomImage $winId all $factor
+    # Change the canvas area in accordance with the change in scale
+
+    set oldSize [$winId cget -scrollregion]
+    set newReg [list [expr [lindex $oldSize 0]*$factor] \
+            [expr [lindex $oldSize 1]*$factor] \
+            [expr [lindex $oldSize 2]*$factor] \
+            [expr [lindex $oldSize 3]*$factor]]
+    $winId configure -scrollregion $newReg
+
+    # First, find canvas point at centre of display
+    set CurrentX [$winId canvasx [expr $window_info($winId,width)/2]]
+    set CurrentY [$winId canvasy [expr $window_info($winId,height)/2]]
+
+    # Now find canvas point at centre of selected rectangle after zoom
+    set centre_x [expr $factor*($bl+$br)/2]
+    set centre_y [expr $factor*($bt+$bb)/2]
+
+    # Now scroll it so what should be in the middle of the display is there
+
+    $winId xview scroll [expr round($centre_x - $CurrentX)] units
+    $winId yview scroll [expr round($centre_y - $CurrentY)] units
+}
+
+set adds none
+
+proc FindCaption {canvas} {
+    global find
+    set findable [GetFindText $canvas]
+    if {[string compare $findable {}]} {
+        set find(List,$canvas) {}
+        foreach caption [$canvas find withtag is_caption] {
+            if {[string match *$findable* [ForSearchType $canvas $caption]]} {
+                lappend find(List,$canvas) $caption
+            }
+        }
+        NextCaption $canvas
+    }
+}
+
+proc ForSearchType {winId item} {
+    global find
+    set plName [ExtractPrologName $winId $item]
+    switch $find(where) {
+        caption {
+            return [$winId itemcget $item -text]
+        } equation {
+            return [GetFromProlog tk_get_info('$winId',$plName,eqn)]
+        } description {
+            return [GetFromProlog tk_get_info('$winId',$plName,comment)]
+        }
+    }
+}
+
+proc NextCaption {canvas} {
+    global looks find window_info
+    if {![info exists find(List,$canvas)]} {
+        ShowMessage "Operation failed" error "No search in progress!" ok
+        return
+    }
+#    if {[info exists find(now,$canvas)]} {
+#	prolog event:do_colours($find(now,$canvas),off)
+#        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
+#                $looks(variable,text)
+#    }
+    MenuSelect $canvas edit unselall
+    if {![llength $find(List,$canvas)]} {
+        ShowMessage "Caption finder" info \
+                "No more matching $find(where)s in this window" ok
+        unset find
+    } else {
+        set this [lindex $find(List,$canvas) 0]
+        set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
+        #	$canvas itemconfigure $this -fill blue
+        # left in in case the thing fails to highlight, or is exec_only
+
+        # Now to pervert the 'scan' command to make an ad-hoc 'see'...
+        # note this could also be done using canvas x/yview moveto, but only
+        # if the values they return are updated by resizing the window (which
+        # the reported width and height aren't).
+
+        set middleX [$canvas canvasx [expr $window_info($canvas,width)/2]]
+        set middleY [$canvas canvasy [expr $window_info($canvas,height)/2]]
+        scan [$canvas coords $this] {%f %f} tgtX tgtY
+        $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
+        $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
+
+        set find(now,$canvas) [ExtractPrologName $canvas $this]
+	prolog tk_do_colours($find(now,$canvas),on)
+#        FlashSymbol $canvas $find(now,$canvas) orange orange
+        #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
+        #	ReleaseObj $canvas $tgtX $tgtY
+    }
+}
+
 # Create image at load time to avoid confusion caused by possible changed directory
 # (But then I can't change its colour...)
 # set looks(brushmap) [image create bitmap -file brush.xbm]
@@ -935,6 +1239,23 @@ proc LoadLooks {t target object} {
     #	TweakObject $t target
 }
 
+# textsize is not used, we now keep track of it separately to avoid rounding
+################################################################################
+# proc ExtractFontData {font} {
+#     scan $font {-Adobe-%[^-]-%[^-]-%[^-]-Normal--*-%d-*-*-*-*-*-*} \
+#         family weight style textsize
+#     return [list $family $weight $style $textsize]
+#
+# }
+#
+proc ExtractFontData {font} {
+    set family [font actual $font -family]
+    set weight [font actual $font -weight]
+    set style [font actual $font -slant]
+    set textsize [expr [font actual $font -size]*12.0]
+    #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
+    return [list $family $weight $style $textsize]
+}
 proc CopyLooks {t object} {
     global looks
     if {[string compare $object influence]} {
@@ -1088,6 +1409,17 @@ proc ResetFont { t } {
             [$t.font.style cget -text] \
             [$t.textsize.scale get]]
             #[string index [$t.font.style cget -text] 0]
+}
+
+# proc AssembleFont {family weight style textsize} {
+#     return [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
+#             $family $weight $style $textsize]
+# }
+################################################################################
+
+proc AssembleFont {family weight style textsize} {
+    return [list -family $family -weight $weight -slant $style \
+            -size [expr round($textsize/12.0)]]
 }
 
 proc ZotFont { t param } {

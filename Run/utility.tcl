@@ -97,6 +97,17 @@ proc RecordPathChoice {fileType chosenFile recordEntry} {
     }
 }
 
+# utility procedure to fill in some holes in Tcl8.0
+
+
+proc ChooseText {choice ifTrue ifFalse} {
+    if {$choice} {
+        return $ifTrue
+    } else {
+        return $ifFalse
+    }
+}
+
 # This deals with the quirk of Netware file systems that if the user has
 # read/write access to a file it cannot be opened readonly, or something...
 
@@ -107,4 +118,210 @@ proc NetOpen {name way} {
 	}
     }
     return $stream
+}
+
+# This makes the extra bit that goes onto Tcl to run C programs. We don't
+# really need to build it every time we run the program, that's just while
+# it's being debugged, once it's right we'll just load it. This component
+# itself loads dlls for the actual models as they are built.
+
+proc load_c_stub {} {
+    global tcl_platform env userinfo ;# last needed in stub
+    # On startup, check run count and offer registration if 0
+    if [catch {set userinfo(name) $env(licensee_name)}] {
+        set userinfo(name) " "
+    }
+    if [catch {set userinfo(corp) $env(licensee_corp)}] {
+        set userinfo(corp) " "
+    }
+    set userinfo(Version) $env(SIMILE_VERSION)
+    
+    set userinfo(license_code) \
+            [join [lrange [split $env(license_code) =] 1 end] =]
+    scan [info tclversion] {%d.%d} MAJ MIN
+    set onUnix [string match unix $tcl_platform(platform)]
+    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
+    if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
+        # maybe we built the package index for a different os, try again
+        catch {pkg_mkIndex ../System/lib/Stubs *[info sharedlibextension]}
+        if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
+            error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
+        }
+    }
+    loadcommands
+    randseed [clock clicks]
+}
+
+proc AdjustCanvas {winId pt dir args} {
+    set tgt $winId.${dir}scroll
+    # hide scrollbar if full size
+    if {[lindex $args 0]<0.01 && [lindex $args 1]>0.99} {
+        pack forget $tgt
+    } else {
+        if {[string match x $dir]} {
+            set placing {-side bottom -after $winId.$pt}
+        } else {
+            set placing {-side right -before $winId.$pt}
+        }
+        eval {pack $tgt} $placing {-fill $dir}
+        eval {$tgt set} $args
+    }
+}
+
+# popup stuff -- here because both model windows and helpers use them
+
+proc BindPopup {widget keywd} {
+    bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
+    bind $widget <Leave> RemovePopup
+}
+
+proc MenuBindPopup {widget keyList} {
+    bind $widget <Enter> [list QueuePopup \
+            AddMenuPopup $widget $keyList %y %X %Y 1]
+    bind $widget <Motion> [list AddMenuPopup $widget $keyList %y %X %Y 0]
+    bind $widget <Leave> RemovePopup
+}
+
+proc QueuePopup {args} {
+    global popper
+    #puts "queueing $cmd"
+    # Only allow one cmd in pipeline at a time -- two added if dragging an
+    # incomplete obj which Prolog then deletes (Tk bug workaround - 10 points)
+    if {[info exists popper]} {
+        after cancel $popper
+    }
+    set popper [after 500 $args]
+}
+
+proc AddWidgetPopup {key X Y} {
+    global msgs
+    if {![PrefValue custom(popupHelp) popupHelp]} {
+	return
+
+    }
+    PostPopup $X $Y
+    if {[info exists msgs($key)]} {
+        set message $msgs($key)
+    } else {
+        set message $key
+    }
+    pack [message .popup.message -aspect 400 \
+            -text $message -bg \#ffffc0] -fill x -expand true
+}
+
+proc AddMenuPopup {widget list y X Y new} {
+    global msgs
+    if {$new} {
+        PostPopup $X $Y
+        pack [message .popup.message -aspect 400 -bg \#ffffc0] \
+                -fill x -expand true
+    }
+    set entry [$widget index @$y]
+    if {[string match none $entry] || ![winfo exists .popup.message]} {
+        return
+    }
+    if {[llength $list]} {
+	set line [lindex $list $entry]
+	set message "[lindex $line 1]: [lindex $line 0]"
+    } else {
+	set key [$widget entrycget $entry -label]
+	if {[string equal command [$widget type $entry]]} {
+	    set key [string range $key 0 end-2]
+	}
+	if {[info exists msgs($key)]} {
+	    set message $msgs($key)
+	} else {
+	    set message $key
+	}
+    }
+    .popup.message configure -text $message
+}
+
+proc PostPopup {X Y} {
+    if {[winfo exists .popup]} {
+        destroy .popup
+    }
+    toplevel .popup -width 1 -height 1 -bd 2 -relief raised
+    wm overrideredirect .popup 1
+
+    # This moves the popup window to whichever quadrant of the moused-over
+    # component is all on the screen. It sticks it to the bottom left to start with
+    # so it doesn't grab the focus, then updates so the requested size can be found
+    # then uses this size to move it to the right place
+
+    if {$X>[winfo screenwidth .popup]/2} {
+        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
+    } else {
+
+        set xpoint +[expr $X+10]
+    }
+    if {$Y>[winfo screenheight .popup]/2} {
+        set ypoint -[expr [winfo screenheight .popup]+10-$Y]
+    } else {
+        set ypoint +[expr $Y+10]
+    }
+    wm geometry .popup ${xpoint}${ypoint}
+    raise .popup
+}
+
+proc RemovePopup {args} {
+    global popper
+    #puts "Removing popup"
+    if {[winfo exists .popup]} {
+        destroy .popup
+    }
+    if {[info exists popper]} {
+        after cancel $popper
+    }
+}
+
+proc EndsOnly {text isValue verbosity leave} {
+    set size [expr ($leave-20)/2]
+    if {$isValue} {
+	set nvals " ([CountValues $text] values)"
+    } else {
+	set nvals " ($verbosity characters)"
+    }
+    set text [string range $text 0 $size].....[string range $text \
+						 [expr $verbosity-$size] end]
+    append text $nvals
+    return $text
+}
+
+proc CountValues {text} {
+    set len [llength $text]
+    if {$len==1} {
+        return 1
+    } else {
+        set tot 0
+        for {set n 1} {$n<$len} {incr n 2} {
+            incr tot [CountValues [lindex $text $n]]
+        }
+        return $tot
+    }
+}
+
+proc BlankCrs {withCrs} {
+    regsub -all \n $withCrs { } noCrs
+    return $noCrs
+}
+
+proc StripCrs {withCrs} {
+    regsub -all \n $withCrs \\n noCrs
+    return $noCrs
+}
+
+
+proc RestoreCrs {noCrs} {
+    regsub -all \\\\n $noCrs \n withCrs
+
+    return $withCrs
+}
+
+proc min {first last} {
+    return [expr $first<$last?$first:$last]
+}
+
+proc max {first last} {
+    return [expr $first>$last?$first:$last]
 }

@@ -568,14 +568,14 @@ proc AcquireTableData {lidx} {
 }
 
 proc EditListAsTable {parent values} {
-    global helperTable table_viewer
+    global table_viewer
 
     set t .table_edit
     toplevel $t -bd 4
     wm transient $t $parent
     wm protocol $t WM_DELETE_WINDOW {set table_viewer(done) 0}
     
-    set viewerId $helperTable(TableViewer)
+    set viewerId $table_viewer(id)
     set ::${viewerId}::editMode($t) 1
     ${viewerId}::initialize $t
 
@@ -646,13 +646,13 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
-proc FileParamDialogue {mustShow parent} {
+proc FileParamDialogue {mustShow} {
     global paramData widgetNames loadingProject
     set allNodes [GetObjectList]
     # do it now to shake out errors before opening window
         
     set t [toplevel .fpdialogue]
-    wm transient $t $parent
+    wm transient $t
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t "Enter file parameters"
     if {!$mustShow} {
@@ -726,7 +726,7 @@ proc AddEntry {winId node mustShow isInput} {
 # bit of voodoo...get table relating numerical indices of node to enymerated
 # types (from prolog) and use to translate array bounds. Do this first because
 # there will be null entries in the table for vm model levels.
-    set trans [GetFromProlog tk_get_info('$winId',$node,types)]
+    set trans [GetTransTable $node]
     if {$isInput} {
 	set nodeDims [linsert $nodeDims 0 TIME]
 	set trans [linsert $trans 0 {}]
@@ -864,7 +864,7 @@ proc AcceptData {winId compName complain} {
     # Make array form if data has changed
     if {$dataChanged} {
 	set runState(reloadParams) 1
-	set trans [GetFromProlog tk_get_info({},$node,types)]
+	set trans [GetTransTable $node]
 
 	# Now replace each -1 in the dims with the id of the by-record
 	# submodel it represents
@@ -1089,7 +1089,7 @@ proc Open {smPath} {
 }
 }
 
-proc	MergeParams {smPath metaFile interactive} {
+proc MergeParams {smPath metaFile interactive} {
     global paramState paramData widgetNames
     
     set oldDir [pwd]
@@ -1099,7 +1099,7 @@ proc	MergeParams {smPath metaFile interactive} {
 	set IdAndValue [split $savedValue =]
 	set restoredComp [RestoreCrs $smPath[lindex $IdAndValue 0]]
 	set node [GetIdFromCaptionPath $restoredComp]
-	set trans [GetFromProlog tk_get_info(dummy,$node,types)]
+	set trans [GetTransTable $node]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
 	if {[info exists paramData($restoredComp)]} {
 	    set paramData($restoredComp) [lindex $IdAndValue 1]

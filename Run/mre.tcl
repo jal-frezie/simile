@@ -25,9 +25,6 @@ namespace eval RunEnv {
     variable width 780; # window width  # should be an option
     variable height 580; #window height  # should be an option
     
-    set helperTable(VariableList) ModelInspector63654; # should be an option
-    set helperTable(ErrorDisplay) fun03040 ; # should be an option
-    
     # list of toolbar items. The top level list contains separated lists of toolbuttons:
     # each toolbutton specification includes:
     # gif in $similepath/images/toolbar
@@ -62,7 +59,7 @@ namespace eval RunEnv {
 }
 
 # A top level window to contain the helpers
-proc RunEnv::Create { ModelWin } {
+proc RunEnv::Create { } {
     global helperTable tcl_platform
     variable mainframe
     variable runControlFrame
@@ -1143,9 +1140,6 @@ proc NewMreHelperWindow {helperId helperTitle} {
 	    set winId $bag
 	    set ::RunEnv::runControlWindId $bag
 	} \
-	$helperTable(ErrorDisplay) {
-	    toplevel $winId ; #put in own window
-	} \
 	$helperTable(VariableList) {
 	    set bag $RunEnv::variableListFrame.bag
 	    if {[winfo exists $bag]} {
@@ -1192,6 +1186,6 @@ proc RunEnv::UniqueId {basename pagenames} {
 
 # A top level window to contain the helpers
 # overrides mre.tcl Makemre
-proc Makemre { ModelWin } {
-    return [RunEnv::Create $ModelWin]
+proc Makemre { } {
+    return [RunEnv::Create]
 }

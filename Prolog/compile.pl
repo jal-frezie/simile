@@ -4,7 +4,7 @@
 *** being the starting point.                                              ****
 ******************************************************************************/
 
-sicstus_module( compile, [compile/3, new_exec_for/1] ).
+sicstus_module( compile, [compile/4, new_exec_for/1] ).
 
 sicstus_use_module( [library(ordsets),library(lists),
 		sp_only,instance,inters,language,render,m_class,utility,output,
@@ -22,11 +22,11 @@ sicstus_use_module( [library(ordsets),library(lists),
 
 :- dynamic(new_exec_for/1).
 
-compile( Language, Parent, DestDir) :-
+compile( Language, Parent, DestDir, RunInterp) :-
 	(Language = tcl, !,
 	    unseparate(SeparateNodes);
-	list_interconnects),
-	build_instances(Language, DestDir, Parent, 1, _,_),
+	list_interconnects(RunInterp)),
+	build_instances(Language, DestDir, Parent, RunInterp, 1, _,_),
 	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
@@ -36,11 +36,11 @@ unseparate(Nodes) :-
 	setof(N, N no_longer_has_class_refinement separate of 1, Nodes), !;
 	Nodes = [].
 
-list_interconnects :-
+list_interconnects(RunInterp) :-
 	setof(TopArc, top_arc_for_exit(TopArc), TopArcs), !,
 	all(compile, entries_for, [build(TopArcs), build(XS)]),
-	build_interconnects(XS);
-	build_interconnects([]).
+	build_interconnects(RunInterp, XS);
+	build_interconnects(RunInterp, []).
 	
 top_arc_for_exit(TopArc) :-
 	DLLSpec has_class_refinement separate of 1,
@@ -66,13 +66,14 @@ is_entry(Entry) :-
 	    DLLSpec has_part End),
 	DLLSpec has_class_refinement separate of 1.
 	
-build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
+build_instances(Language, DestDir, Parent, RunInterp,
+		Step, ChangeNext, KeepParents) :-
 	caption_for(Parent, Name),
 	append_atoms([DestDir, '/', Name], CheckDir),
 	check_directory(CheckDir),
 	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
-	build_sub_instances(Language, CheckDir, Parent, MyStep,
+	build_sub_instances(Language, CheckDir, Parent, RunInterp, MyStep,
 			    CompsChanged, KeepDir),
 	(Parent has_model_refinement c_new of 0,
 	     \+ check_level_for_reds(Parent),
@@ -85,7 +86,7 @@ build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
 	        all(compile, delete_prog,
 		    [unify(CheckDir),
 		     build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]);
-	   \+ reuse_old_exec(Language, Parent, CheckDir)),
+	   \+ reuse_old_exec(Language, Parent, CheckDir, RunInterp)),
 	     \+ (Language = c,
 		    tk_get_pref(compChoice, 'None'),
 		    raise_exception(no_compiler)),
@@ -105,13 +106,13 @@ build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
 	     close(Stream),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
-	     compile_c_program(CheckDir, Tgt),
+	     compile_c_program(RunInterp, CheckDir, Tgt),
 		 (Tgt = -1, !,
 		     raise_exception(compilation_failed);
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt)),
 		 assert(new_exec_for(Parent))),
-	     load_executable(Language, CheckDir, Tgt, Parent);
+	     load_executable(Language, CheckDir, Tgt, Parent, RunInterp);
 	 true),
 	KeepDir = 1;
 	ChangeNext = ChangeTop),
@@ -120,13 +121,13 @@ build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
 	    KeepParents = 1;
 	safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _)).
 
-reuse_old_exec(Language, Parent, CheckDir) :-
+reuse_old_exec(Language, Parent, CheckDir, RunInterp) :-
 	(Language = c,
 	    (Parent has_model_refinement c_new of OldTgt;
 		OldTgt = '{}'), !;
 	    /* if no c_new look for dll with default name from save file */
 	OldTgt = 0),
-	(load_executable(Language, CheckDir, OldTgt, Parent);
+	(load_executable(Language, CheckDir, OldTgt, Parent, RunInterp);
 	 check_level_for_reds(Parent)).
 
 /* reclose: compiled version has a tendency to close streams when exiting their
@@ -143,13 +144,15 @@ delete_prog(Base, Extn) :-
 	append_atoms([Base, '/', model, Extn], FullName),
 	my_delete_file(FullName).
 	
-build_sub_instances(Language, DestDir, Parent, Step, ChangeTop, KeepDir) :-
+build_sub_instances(Language, DestDir, Parent, RunInterp,
+		    Step, ChangeTop, KeepDir) :-
 	(setof( Submodel, (Parent has_part Submodel,
 			      Submodel has_class submodel,
 			      appears(Submodel)), Submodels), !; 
 	    Submodels = []),
 	all(compile, build_instances, 
-	    [unify(Language), unify(DestDir), build(Submodels), unify(Step),
+	    [unify(Language), unify(DestDir), build(Submodels),
+	     unify(RunInterp), unify(Step),
 	     unify(ChangeTop), unify(KeepDir)]).
 
 check_level_for_reds(Submodel) :-

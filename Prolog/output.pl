@@ -26,7 +26,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
 	prepare_equation/1, create_equation/3,
-	fill_equation/8, fill_inputs/1, fill_table/3,
+	fill_equation/8, fill_inputs/1, fill_table/2,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/0, tk_update_infobox/1, 
 	tk_finish_progress_dialogue/0, tk_alter_model/0,
@@ -35,9 +35,9 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	set_interp_menu_state/1,
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
-	tk_get_pref/2, load_tcl_program/2, build_interconnects/1,
+	tk_get_pref/2, load_tcl_program/2, build_interconnects/2,
 	check_directory/1, windowize/2,
-	compile_c_program/2, load_executable/4, find_phase/3,
+	compile_c_program/3, load_executable/5, find_phase/3,
 	tk_kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
@@ -352,10 +352,10 @@ fill_inputs(List) :-
 	bracketize(Table, Tk_table),
 	safe_tcl_eval(['fill_inputs', Tk_table], _).
 
-fill_table(TableData, Trans, TableVals) :-
+fill_table(TableData, TableVals) :-
 	bracketize(TableData, Tk_tableData),
-	bracketize(Trans, Tk_trans),
-	safe_tcl_eval(['fill_table', Tk_tableData, Tk_trans, TableVals], _).
+	bracketize(TableVals, Tk_TableVals),
+	safe_tcl_eval(['fill_table', Tk_tableData, Tk_TableVals], _).
 
 /* Do a bit of processing to the parameter name column so the square/curly
 brackets appear as text. */
@@ -501,24 +501,27 @@ shift_dll(Point, Top, Loc, Repl) :-
 	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), br(Repl)],_).
 
 /* Only works for an all-in-one model for now...*/
-prepare_tcl_execution(Wid) :-
-	safe_tcl_eval([build_tcl_program, Wid], _).
+prepare_tcl_execution(Interp) :-
+	safe_tcl_eval([Interp, eval, build_tcl_program], _).
 
-prepare_c_execution(Wid) :-
-	safe_tcl_eval([update_c_executable, Wid], _).
+prepare_c_execution(Interp) :-
+	safe_tcl_eval([Interp, eval, update_c_executable], _).
 
-build_interconnects(FinderList) :-
+build_interconnects(Interp, FinderList) :-
 	bracketize(FinderList, FinderTclList),
-	safe_tcl_eval([set_connections, FinderTclList], _).
+	safe_tcl_eval([do_in_interp, Interp, set_connections, FinderTclList],
+		      _).
 	
-compile_c_program(ModelPath, Err) :-
+compile_c_program(Interp, ModelPath, Err) :-
 	windowize(ModelPath, WModelPath),
-	safe_tcl_eval([compile_c, br(WModelPath)], ErrStr),
+	safe_tcl_eval([do_in_interp, Interp, compile_c, br(WModelPath)],
+		      ErrStr),
 	name(Err, ErrStr).
 
-load_executable(L, ModelPath, Id, Node) :-
+load_executable(L, ModelPath, Id, Node, RunInterp) :-
 	windowize(ModelPath, WModelPath),
-	safe_tcl_eval([load_dll, L, br(WModelPath), Id, Node], MStr),
+	safe_tcl_eval([do_in_interp, RunInterp,
+		       load_dll, L, br(WModelPath), Id, Node], MStr),
 	\+ MStr = "0".
 					
 load_tcl_program(List, Response) :-

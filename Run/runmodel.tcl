@@ -5,560 +5,18 @@
 # First few procedures in here are utilities used by both the
 # helper applications and the AME interface: put these in a new file.
 
+package require BWidget
 
 source ../Run/graphs.tcl
 source ../Run/utility.tcl
 source ../Run/hai2mmii.tcl
 
-proc AdjustScroll {canvas dir args} {
-    if {[string compare [lindex $args 2] units] == 0} {
-        set jump [expr 10*[lindex $args 1]]
-        $canvas $dir [lindex $args 0] $jump units
-    } else {
-        eval {$canvas $dir} $args
-    }
-}
+# botch -- mre.tcl has to be loaded after the other tcls or it doesn't
+# work properly
 
-proc AdjustCanvas {winId pt dir args} {
-    set tgt $winId.${dir}scroll
-    # hide scrollbar if full size
-    if {[lindex $args 0]<0.01 && [lindex $args 1]>0.99} {
-        pack forget $tgt
-    } else {
-        if {[string match x $dir]} {
-            set placing {-side bottom -after $winId.$pt}
-        } else {
-            set placing {-side right -before $winId.$pt}
-        }
-        eval {pack $tgt} $placing {-fill $dir}
-        eval {$tgt set} $args
-    }
-}
-
-proc TraceObj {winId x y} {
-    global helperTable
-    set canx [$winId canvasx $x]
-    set cany [$winId canvasy $y]
-    set target [$winId find closest $canx $cany]
-    set node [ExtractPrologName $winId $target]
-
-    if {[string compare $helperTable(current) none]} {
-        ProdObj $node [ExtractCaption $winId $node]
-    }
-}
-
-proc ModelWindow {winName} {
-    global tcl_platform
-    menu ${winName}top
-    toplevel $winName -menu ${winName}top
-
-    switch $tcl_platform(platform) {
-        windows { wm iconbitmap $winName -default ../Run/similev2.ico }
-        unix { wm iconbitmap $winName @../Images/dribble.xbm}
-    }
-    # Create a scrollable canvas
-    set c [canvas $winName.canvas -bg white -confine 1 \
-            -xscrollcommand "AdjustCanvas $winName toolSlot x" \
-            -yscrollcommand "AdjustCanvas $winName canvas y" \
-            -xscrollincrement 1 -yscrollincrement 1]
-    # scrollincrements set the only way we can get precise scrolling...
-
-    # this rectangle will be resized to fill the scrollable area and coloured to
-    # show the background
-    $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
-
-    # space for toolbar
-    frame $winName.toolSlot
-    pack $winName.toolSlot -fill x
-
-    scrollbar $winName.xscroll -orient horizontal \
-            -command [list AdjustScroll $c xview]
-    scrollbar $winName.yscroll -orient vertical \
-            -command [list AdjustScroll $c yview]
-
-    pack $c -fill both -expand true
-
-    bind $c <Configure> {SetSpace %W %w %h}
-    return $c
-}
-
-proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
-    global window_info rads
-    #    put back if Windows users want respite from their gash placement system
-    #    wm geometry $winName +0+84
-
-    # set the display depths to those we recorded
-    #ShowMessage debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
-    set cats {ghost_link influence variable flow \
-                compartment submodel caption sections}
-    for {set depthParam 0} {$depthParam < [llength $args]} {incr depthParam} {
-        set rads($c,[lindex $cats $depthParam]) [lindex $args $depthParam]
-        WindowDetail $c [lindex $cats $depthParam] \
-                [lindex $args $depthParam] 0
-    }
-
-    $c configure -width 1 -height 1
-    $c configure -scrollregion "$wl $wt $wr $wb" \
-            -width [expr $wr-$wl] -height [expr $wb-$wt]
-    set window_info($c,width) [expr $wr - $wl]
-    set window_info($c,height) [expr $wb - $wt]
-    set window_info($c,scale) $scale
-    # last will be overwritten if drawing from Prolog
-
-    if {[string match image [$c type /base/]]} {
-        $c coords /base/ $wl $wt
-        base$c configure -width [expr int($wr-$wl)]
-        base$c configure -height [expr int($wb-$wt)]
-    } else {
-        $c coords /base/ $wl $wt $wr $wb
-    }
-    ChangeParentTitle $c $winTitle $bg
-
-    set topWin [winfo parent $c]
-    scan [wm maxsize $topWin] "%d %d" mw mh
-    #ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
-    if {[pack propagate $topWin] &&
-        ($wr-$wl >= $mw-8 || $wb-$wt >= $mh-8)} {
-        catch {winfo state $topWin zoomed}
-    }
-    #ShowMessage debug info "Just done [$c coords 1]" ok
-}
-
-proc ChangeParentTitle { wc title colour } {
-    wm title [winfo parent $wc] $title
-    if {[string match clear $colour]} {
-        set colour {}
-    }
-    # ok now base item can be an image or a rect...
-    if {[string match image [$wc type /base/]]} {
-        scan [$wc coords /base/] {%f %f} bl bt
-        set br [expr $bl+[base$wc cget -width]]
-        set bb [expr $bt+[base$wc cget -height]]
-        image delete base$wc
-    } else {
-        scan [$wc coords /base/] {%f %f %f %f} bl bt br bb
-    }
-    $wc delete /base/
-    if {[catch {image type $colour}]} {
-        $wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
-                -tag "/base/ /background/"
-    } else {
-        image create photo base$wc
-        $wc create image $bl $bt -anchor nw -image base$wc \
-                -tag "/base/ /background/ source($colour)"
-    }
-    $wc lower /base/
-    ResizeBackgnd $wc $bl $bt $br $bb
-}
-
-proc ResizeBackgnd {wc l t r b} {
-    if {[string match image [$wc type /base/]]} {
-        set oldW [base$wc cget -width]
-        set oldH [base$wc cget -height]
-        $wc coords /base/ $l $t
-        set w [expr int($r-$l)]
-        set h [expr int($b-$t)]
-        base$wc configure -width $w -height $h
-        regexp {source\(([^\)]+)\)} [$wc gettags /base/] all sourceImage
-        base$wc copy $sourceImage -to 0 0 $w $h ;# clever stuff later
-    } else {
-        $wc coords /base/ $l $t $r $b
-    }
-}
-
-# SetSpace: this command is called when the canvas is 'configured' by attacking
-# its window's borders and so forth. It saves the new width and height of the
-# canvas (This is Tk 4.0 which is too dumb to do it itself) and informs Prolog
-# of the visible area of the scrollregion. We don't get any information about
-# which way the window was grown so the diagram is kept in the middle.
-
-proc SetSpace {c w h} {
-    global window_info
-    set cx $window_info($c,width)
-    set cy $window_info($c,height)
-    set window_info($c,width) [expr $w - 4]
-    set window_info($c,height) [expr $h - 4]
-    #    ShowMessage debug info "New size is $w $h" ok
-    RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
-            [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
-}
-
-# This zooms canvas in or out. Because it can be done in response to a
-# resize request from Prolog we need a special parameter (arg 3) to stop
-# Prolog being called back in this instance, because a loop would happen
-# sometimes due to rounding errors.
-
-proc DoZoom { winId factor toProlog} {
-    global window_info
-
-    # First, find canvas point at centre of display
-    set centre_x [expr $window_info($winId,width)/2]
-    set centre_y [expr $window_info($winId,height)/2]
-
-    # Now work out where this should be in the image, so I can put it back in the
-    # centre afterwards
-
-    set target_x [expr [$winId canvasx $centre_x]*$factor]
-    set target_y [expr [$winId canvasy $centre_y]*$factor]
-
-    # next make sure that enough canvas exists for the outcome of the operation
-    RollBack $winId $toProlog [expr (1 - 1/$factor)*$centre_x] \
-            [expr (1 - 1/$factor)*$centre_y] \
-            [expr (1 + 1/$factor)*$centre_x] \
-            [expr (1 + 1/$factor)*$centre_y]
-
-    # Next, scale all the window objects (centre must be 0 because all canvas/desktop
-    # translation is done relative to 0)
-
-    ZoomImage $winId all $factor
-
-    # Change the canvas area in accordance with the change in scale
-
-    set oldSize [$winId cget -scrollregion]
-    set newReg [list [expr [lindex $oldSize 0]*$factor] \
-            [expr [lindex $oldSize 1]*$factor] \
-            [expr [lindex $oldSize 2]*$factor] \
-            [expr [lindex $oldSize 3]*$factor]]
-    $winId configure -scrollregion $newReg
-
-    # Find what is in the middle now
-
-    set currentX [$winId canvasx $centre_x]
-    set currentY [$winId canvasy $centre_y]
-
-    # Now scroll it so what was previously in the middle of the display is still there
-
-    $winId xview scroll [expr round($target_x - $currentX)] units
-    $winId yview scroll [expr round($target_y - $currentY)] units
-}
-
-# ZoomImage: Scale the graphical stuff in the window, and explicitly
-# change line thicknesses, arrowhead sizes and font sizes
-# of all components for new display size (Tcl does not change these
-# when zooming). Font sizes have a separate parameter to enable them to come
-# out right when zooming prior to Postscript export.
-
-proc ZoomImage {winId which factor {optFontor none}} {
-    #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
-    global window_info looks
-
-    $winId scale $which 0 0 $factor $factor
-    if {[string compare $which all]} {
-        set objList [$winId find withtag $which]
-    } else {
-        set objList [$winId find all]
-        # and update the info...(if it's there)
-        catch {set window_info($winId,scale) \
-                    [expr $window_info($winId,scale) * $factor]}
-
-    }
-    if {[string match none $optFontor]} {
-	set fontor $factor
-    } else {
-	set fontor $optFontor
-    }
-    if {[string match none $optFontor]} {
-        set fontor $factor
-    } else {
-        set fontor $optFontor
-    }
-    foreach object $objList {
-        switch [$winId type $object] {
-        text {
-	    set fontData [ExtractFontData [$winId itemcget $object -font]]
-	    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
-#puts "Caption [$winId itemcget $object -text] font $fontData newsize $newTextSize"
-	    if {$newTextSize < 1} {
-		set newTextSize 1
-	    }
-	    $winId itemconfigure $object -font \
-		[AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-		     [lindex $fontData 2] $newTextSize]
-	} line {
-	    $winId itemconfigure $object \
-		-width [AdjustWidth $winId $object $factor]
-	    AdjustArrow $winId $object $factor
-	} image {
-	    set tgtImage [$winId itemcget $object -image]
-	    set newWidth [expr round($factor*[$tgtImage cget -width])]
-	    set newHt [expr round($factor*[$tgtImage cget -height])]
-	    scan [$winId coords $object] {%f %f} newX newY
-
-	    if {[string compare none $optFontor]} {
-# Doing clever stuff with fonts, this zoom op is for a print
-# so scale image rather tha re-tiling it
-		if {$factor > 1} {
-		    image create photo temp
-		    temp copy $tgtImage
-		    $tgtImage config -width $newWidth -height $newHt
-		    $tgtImage copy temp -zoom [expr round($factor)]
-		} else {
-		    $tgtImage copy $tgtImage \
-			-subsample [expr round(1.0/$factor)]
-		}
-	    } elseif {[string match "*/base/*" [$winId gettags $object]]} {
-		ResizeBackgnd $winId $newX $newY \
-		    [expr $newX+$newWidth] [expr $newY+$newHt]
-	    } else {
-		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
-		set intRad [expr int($looks(submodel,objectsize)* \
-					 $shortSide/400)]
-		$tgtImage config -width $newWidth -height $newHt
-		regexp {source\(([^\)]+)\)} [$winId gettags $object] \
-		    all sourceImage
-		FillSmImage $sourceImage $tgtImage $newWidth $newHt \
-		    $intRad
-	    }
-	} default {
-	    $winId itemconfigure $object \
-		-width [AdjustWidth $winId $object $factor]
-	}
-	}
-    }
-}
-
-# textsize is not used, we now keep track of it separately to avoid rounding
-################################################################################
-# proc ExtractFontData {font} {
-#     scan $font {-Adobe-%[^-]-%[^-]-%[^-]-Normal--*-%d-*-*-*-*-*-*} \
-#         family weight style textsize
-#     return [list $family $weight $style $textsize]
-#
-# }
-#
-# proc AssembleFont {family weight style textsize} {
-#     return [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
-#             $family $weight $style $textsize]
-# }
-################################################################################
-
-proc AssembleFont {family weight style textsize} {
-    return [list -family $family -weight $weight -slant $style \
-            -size [expr round($textsize/12.0)]]
-}
-
-proc ExtractFontData {font} {
-    set family [font actual $font -family]
-    set weight [font actual $font -weight]
-    set style [font actual $font -slant]
-    set textsize [expr [font actual $font -size]*12.0]
-    #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
-    return [list $family $weight $style $textsize]
-}
-# This updates the width of a canvas object when it is zoomed. The actual width
-# is rounded internally to an integer, so we store the full value in a tag called
-# realwidth(...) which is also updated by this procedure.
-
-# If there is no realWidth tag we try to make one up from the actual line
-# width or font size as appropriate.
-
-proc AdjustWidth {winId object factor} {
-    if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
-                tag oldWidth]<1} {
-        if {[string match text [$winId type $object]]} {
-            set currentFont [$winId itemcget $object -font]
-            set oldWidth [expr [font actual $currentFont -size]*12.0]
-        } else {
-            set oldWidth [$winId itemcget $object -width]
-        }
-    } else {
-        $winId dtag $object $tag
-    }
-    set width [expr $oldWidth*$factor]
-    $winId addtag realwidth($width) withtag $object
-    return $width
-}
-
-proc AdjustArrow {winId object factor} {
-    set oldArrow [$winId itemcget $object -arrowshape]
-    foreach arrowVal $oldArrow {
-        lappend newArrow [expr $arrowVal*$factor]
-    }
-    $winId itemconfigure $object -arrowshape $newArrow
-}
-
-# Move a window's display area to include all its contents
-proc DisplayAll { winId } {
-    global window_info
-
-    # get desired display area
-    if {[scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb] == 4} {
-        # ShowMessage debug info "Bounds are $bl $bt $br $bb" ok
-        set clearBorder [expr 15*$window_info($winId,scale)]
-
-        set bl [expr $bl - $clearBorder]
-        set bt [expr $bt - $clearBorder]
-        set br [expr $br + $clearBorder]
-        set bb [expr $bb + $clearBorder]
-        set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
-        # zoom to correct size
-        set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
-        set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
-        set scale [expr $xscale>$yscale?$yscale:$xscale]
-
-        # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
-
-        ZoomImage $winId all $scale
-
-        set bl [expr $bl*$scale]
-        set bt [expr $bt*$scale]
-        set br [expr $br*$scale]
-        set bb [expr $bb*$scale]
-
-        ResizeDesktop $winId $bl $bt $br $bb
-    }
-}
-
-proc DisplayArea {winId} {
-    global window_info
-    if {[scan [$winId bbox selected] "%d %d %d %d" bl bt br bb] < 4} {
-        return
-    }
-    set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
-    # zoom to correct size
-    set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
-    set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
-    set factor [expr $xscale>$yscale?$yscale:$xscale]
-
-    ZoomImage $winId all $factor
-    # Change the canvas area in accordance with the change in scale
-
-    set oldSize [$winId cget -scrollregion]
-    set newReg [list [expr [lindex $oldSize 0]*$factor] \
-            [expr [lindex $oldSize 1]*$factor] \
-            [expr [lindex $oldSize 2]*$factor] \
-            [expr [lindex $oldSize 3]*$factor]]
-    $winId configure -scrollregion $newReg
-
-    # First, find canvas point at centre of display
-    set CurrentX [$winId canvasx [expr $window_info($winId,width)/2]]
-    set CurrentY [$winId canvasy [expr $window_info($winId,height)/2]]
-
-    # Now find canvas point at centre of selected rectangle after zoom
-    set centre_x [expr $factor*($bl+$br)/2]
-    set centre_y [expr $factor*($bt+$bb)/2]
-
-    # Now scroll it so what should be in the middle of the display is there
-
-    $winId xview scroll [expr round($centre_x - $CurrentX)] units
-    $winId yview scroll [expr round($centre_y - $CurrentY)] units
-}
-
-proc ExtractPrologName { winId target } {
-    set tagList [$winId gettags $target]
-    set objNamePosn [lsearch -regexp $tagList {(node)|(arc)[0-9]*}]
-    return [lindex $tagList $objNamePosn]
-}
-
-proc ExtractCaption {win variable} {
-    set capt $variable
-    foreach obj [$win find withtag $variable] {
-        if {[string compare [$win type $obj] text] == 0} {
-            set capt [$win itemcget $obj -text]
-        }
-    }
-    return $capt
-}
-
-set adds none
-
-proc AddZoomMenu {canvas menu tellProlog} {
-    $menu add cascade -label Zoom -menu $menu.sub2
-    set fm2 [menu $menu.sub2 -tearoff 0]
-    $fm2 add command -label "In lots" -command "DoZoom \
-            $canvas 1.953125 $tellProlog"
-    $fm2 add command -label "In a bit" -command "DoZoom \
-            $canvas 1.25 $tellProlog"
-    $fm2 add command -label "To selection" -command "DisplayArea $canvas"
-    $fm2 add command -label "To fit" -command "DisplayAll $canvas"
-    $fm2 add command -label "Out a bit" -command "DoZoom \
-            $canvas 0.8 $tellProlog"
-    $fm2 add command -label "Out lots" -command "DoZoom \
-            $canvas 0.512 $tellProlog"
-
-}
-
-proc AddFindMenu {canvas menu} {
-    $menu add separator
-    $menu add command -label Find... -command "FindCaption $canvas" \
-            -accelerator "Ctrl+F"
-    AddAccelerator [winfo parent $canvas] edit "Find..." "<Control-f>"
-    $menu add command -label "Find next" -command "NextCaption $canvas" \
-            -accelerator "F3"
-    AddAccelerator [winfo parent $canvas] edit "Find next" "<F3>"
-}
-
-proc FindCaption {canvas} {
-    global find
-    set findable [GetFindText $canvas]
-    if {[string compare $findable {}]} {
-        set find(List,$canvas) {}
-        foreach caption [$canvas find withtag is_caption] {
-            if {[string match *$findable* [ForSearchType $canvas $caption]]} {
-                lappend find(List,$canvas) $caption
-            }
-        }
-        NextCaption $canvas
-    }
-}
-
-proc ForSearchType {winId item} {
-    global find
-    set plName [ExtractPrologName $winId $item]
-    switch $find(where) {
-        caption {
-            return [$winId itemcget $item -text]
-        } equation {
-            return [GetFromProlog tk_get_info('$winId',$plName,eqn)]
-        } description {
-            return [GetFromProlog tk_get_info('$winId',$plName,comment)]
-        }
-    }
-}
-
-proc NextCaption {canvas} {
-    global looks find window_info
-    if {![info exists find(List,$canvas)]} {
-        ShowMessage "Operation failed" error "No search in progress!" ok
-        return
-    }
-#    if {[info exists find(now,$canvas)]} {
-#	prolog event:do_colours($find(now,$canvas),off)
-#        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
-#                $looks(variable,text)
-#    }
-    MenuSelect $canvas edit unselall
-    if {![llength $find(List,$canvas)]} {
-        ShowMessage "Caption finder" info \
-                "No more matching $find(where)s in this window" ok
-        unset find
-    } else {
-        set this [lindex $find(List,$canvas) 0]
-        set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
-        #	$canvas itemconfigure $this -fill blue
-        # left in in case the thing fails to highlight, or is exec_only
-
-        # Now to pervert the 'scan' command to make an ad-hoc 'see'...
-        # note this could also be done using canvas x/yview moveto, but only
-        # if the values they return are updated by resizing the window (which
-        # the reported width and height aren't).
-
-        set middleX [$canvas canvasx [expr $window_info($canvas,width)/2]]
-        set middleY [$canvas canvasy [expr $window_info($canvas,height)/2]]
-        scan [$canvas coords $this] {%f %f} tgtX tgtY
-        $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
-        $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
-
-        set find(now,$canvas) [ExtractPrologName $canvas $this]
-	prolog tk_do_colours($find(now,$canvas),on)
-#        FlashSymbol $canvas $find(now,$canvas) orange orange
-        #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
-        #	ReleaseObj $canvas $tgtX $tgtY
-    }
-}
+source ../Run/mre.tcl
 
 proc MakeHelperMenu {} {
-    global custom
     set fm [menu .helpers -tearoff 0]
 
     $fm add command -label "Load" -command LoadView
@@ -571,8 +29,9 @@ proc MakeHelperMenu {} {
     set oldDir [pwd]
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
-    if {[file exists $custom(prefDir)/IOTools]} {
-	cd $custom(prefDir)/IOTools
+    set ioDir [PrefValue custom(prefDir) prefDir]
+    if {[file exists $ioDir]} {
+	cd $ioDir
 	AddHelperSublist $fm.sub2 "Local" l
     }
     cd $oldDir
@@ -585,7 +44,8 @@ proc MakeHelperMenu {} {
 # make callbacks.
 
 proc AddHelperSublist {fm title ct} {
-    global custom helperTable ;# custom used at toplevel in iotools
+    global helperTable table_viewer
+
     $fm add cascade -label $title -menu $fm.sub$ct
     set m [menu $fm.sub$ct -tearoff 0]
     set nct 0
@@ -602,15 +62,14 @@ proc AddHelperSublist {fm title ct} {
                 if {[string match {Run control} $action]} {
                     set helperTable(RunControl) $keyValue
                 }
+                if {[string match {Explorer} $action]} {
+                    set helperTable(VariableList) $keyValue ;# for MRE
+                }
 #                if {[string match {Slider control} $action]} {
 #                    set helperTable(SliderControl) $keyValue
 #                }
                 if {[string match {Data table} $action]} {
-
-
-
-
-                    set helperTable(TableViewer) $keyValue
+                    set table_viewer(id) $keyValue
                 }
                 $m add command -label $action \
                         -command [list CreateHelperWindow $keyValue $action]
@@ -628,6 +87,7 @@ proc AddHelperSublist {fm title ct} {
     }
 }
 
+MakeHelperMenu
 set helperTable(current) none
 
 proc CreateHelperWindow {helperId helperTitle} {
@@ -742,46 +202,22 @@ proc SetState {winId newState} {
 
 proc ProdObj {nodeId caption} {
     global helperTable
-
-    switch -regexp [GetModelType $nodeId] {
-        REAL|INTEGER|FLAG|ENUMERATED {
-            set target $helperTable(current)
-
-            set helperId $helperTable($target,whichHelper)
-            ${helperId}::click $target $nodeId $caption
-        } default {
-            ShowMessage "Clicked on $caption" error \
+    if {[string equal none $helperTable(current)]} {
+	return 0
+    } else {
+	switch -regexp [GetModelType $nodeId] {
+	    REAL|INTEGER|FLAG|ENUMERATED {
+		set target $helperTable(current)
+		
+		set helperId $helperTable($target,whichHelper)
+		${helperId}::click $target $nodeId $caption
+	    } default {
+		ShowMessage "Clicked on $caption" error \
                     "This component cannot be selected for an I/O tool because it has no associated value." ok
-        }
+	    }
+	}
+	return 1
     }
-}
-
-# GetClickedObj: returns the object at the target position. We want to return
-# the closest object within a certain number of pixels. Since there is always
-# something in the background we will get that if our search radius is too
-# small, so we gradually increase it until we find a non-background thing or
-# we reach the edge of our search radius.
-
-proc GetClickedObj { winId canx cany range} {
-    for {set halo 1} {$halo < $range} {incr halo 2} {
-        set target [$winId find closest $canx $cany $halo]
-        if {![string match "*/background/*" [$winId gettags $target]]} {
-            return $target
-        }
-    }
-    return 0
-}
-
-proc BindPopup {widget keywd} {
-    bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
-    bind $widget <Leave> RemovePopup
-}
-
-proc MenuBindPopup {widget keyList} {
-    bind $widget <Enter> [list QueuePopup \
-            AddMenuPopup $widget $keyList %y %X %Y 1]
-    bind $widget <Motion> [list AddMenuPopup $widget $keyList %y %X %Y 0]
-    bind $widget <Leave> RemovePopup
 }
 
 # This is used for items on IO tool canvases -- model components have eqnpopups
@@ -790,210 +226,8 @@ proc CanvasBindPopup {canvas widget keywd} {
     $canvas bind $widget <Leave> RemovePopup
 }
 
-proc QueuePopup {args} {
-    global popper
-    #puts "queueing $cmd"
-    # Only allow one cmd in pipeline at a time -- two added if dragging an
-    # incomplete obj which Prolog then deletes (Tk bug workaround - 10 points)
-    if {[info exists popper]} {
-        after cancel $popper
-    }
-    set popper [after 500 $args]
-}
-
-proc AddEqnPopup {x y winId X Y} {
-    global pushedbutton running_c equationbar
-    set doDesc [PrefValue custom(compDescPop) compDescPop]
-    set doVal [expr [info exists running_c] && \
-		   [PrefValue custom(compValPop) compValPop]]
-    set doCmt [PrefValue custom(compCmtPop) compCmtPop]
-    if {[string compare select $pushedbutton] || \
-                !$doDesc && !$doVal && !$doCmt} {
-        return
-    }
-    set canx [$winId canvasx $x]
-    set cany [$winId canvasy $y]
-    set target [GetClickedObj $winId $canx $cany 2]
-    #puts "Adding for $target"
-    #    set target [$winId find closest $canx $cany 1]
-    #puts "targeting $target"
-    if {$target} {
-        PostPopup $X $Y
-        set plName [ExtractPrologName $winId $target]
-        if {$doDesc} {
-            set fromProlog [GetFromProlog tk_get_info('$winId',$plName,eqn)]
-	    set link " = "
-            if {![string length $fromProlog] || \
-                        [string match $fromProlog <none>]} {
-		set fromProlog \
-		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
-		set link " : "
-	    }
-	    set caption [GetText $winId $plName]
-	    if {[string equal /no_caption/ $caption]} {
-		set desc $fromProlog
-	    } else {
-		set desc $caption$link$fromProlog
-	    }
-            # after going Prolog, check popup window still there
-            # note colour etc are not comments though they look like them in emacs
-	    
-            if {![winfo exists .popup]} return
-            AddPopupMessage $desc #c0ffc0 0
-        }
-        if {$doCmt} {
-            set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]
-            if {![winfo exists .popup]} return
-            AddPopupMessage $fromProlog #ffe0c0 0
-        }
-        if {$doVal} {
-	    set trans [GetFromProlog tk_get_info('$winId',$plName,types)]
-	    if {[catch {GetModelValue $plName} mVal]} {
-		set missing [lindex [split $mVal \"] 1]
-		set value \
-		    "Missing value: [lindex [DescribeComponent $missing] 0]"
-	    } else {
-		set value [lindex [GetModelValue $plName] 0]
-#puts "trans $trans value $value"
-		if {![string match novalue $value]} {
-		    set value [TransEnums $trans $value]
-		}
-	    }
-            AddPopupMessage $value \#ffffc0 1
-            # we might want to prettify this a bit first
-        }
-    }
-
-}
-
-proc AddPopupMessage {text colour isValue} {
-    set verbosity [string length $text]
-    if {$verbosity<20} {
-        pack [label .popup.message$colour \
-                -text $text -bg $colour] -fill x -expand true
-    } else {
-        if {$verbosity>500} {
-	    set text [EndsOnly $text $isValue $verbosity 500]
-        }
-        pack [message .popup.message$colour -aspect 400 \
-                -text $text -bg $colour] -fill x -expand true
-    }
-}
-
-proc EndsOnly {text isValue verbosity leave} {
-    set size [expr ($leave-20)/2]
-    if {$isValue} {
-	set nvals " ([CountValues $text] values)"
-    } else {
-	set nvals " ($verbosity characters)"
-    }
-    set text [string range $text 0 $size].....[string range $text \
-						 [expr $verbosity-$size] end]
-    append text $nvals
-    return $text
-}
-
-proc CountValues {text} {
-    set len [llength $text]
-    if {$len==1} {
-        return 1
-    } else {
-        set tot 0
-        for {set n 1} {$n<$len} {incr n 2} {
-            incr tot [CountValues [lindex $text $n]]
-        }
-        return $tot
-    }
-}
-
-# # character in colour spec is escaped purely for the benefit of the Emacs
-# tcl mode parser
-
-proc AddWidgetPopup {key X Y} {
-    global msgs
-    if {![PrefValue custom(popupHelp) popupHelp]} {
-	return
-
-    }
-    PostPopup $X $Y
-    if {[info exists msgs($key)]} {
-        set message $msgs($key)
-    } else {
-        set message $key
-    }
-    pack [message .popup.message -aspect 400 \
-            -text $message -bg \#ffffc0] -fill x -expand true
-}
-
-proc AddMenuPopup {widget list y X Y new} {
-    global msgs
-    if {$new} {
-        PostPopup $X $Y
-        pack [message .popup.message -aspect 400 -bg \#ffffc0] \
-                -fill x -expand true
-    }
-    set entry [$widget index @$y]
-    if {[string match none $entry] || ![winfo exists .popup.message]} {
-        return
-    }
-    if {[llength $list]} {
-	set line [lindex $list $entry]
-	set message "[lindex $line 1]: [lindex $line 0]"
-    } else {
-	set key [$widget entrycget $entry -label]
-	if {[string equal command [$widget type $entry]]} {
-	    set key [string range $key 0 end-2]
-	}
-	if {[info exists msgs($key)]} {
-	    set message $msgs($key)
-	} else {
-	    set message $key
-	}
-    }
-    .popup.message configure -text $message
-}
-
-
-proc PostPopup {X Y} {
-    if {[winfo exists .popup]} {
-        destroy .popup
-    }
-    toplevel .popup -width 1 -height 1 -bd 2 -relief raised
-    wm overrideredirect .popup 1
-
-    # This moves the popup window to whichever quadrant of the moused-over
-    # component is all on the screen. It sticks it to the bottom left to start with
-    # so it doesn't grab the focus, then updates so the requested size can be found
-    # then uses this size to move it to the right place
-
-    if {$X>[winfo screenwidth .popup]/2} {
-        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
-    } else {
-
-        set xpoint +[expr $X+10]
-    }
-    if {$Y>[winfo screenheight .popup]/2} {
-        set ypoint -[expr [winfo screenheight .popup]+10-$Y]
-    } else {
-        set ypoint +[expr $Y+10]
-    }
-    wm geometry .popup ${xpoint}${ypoint}
-    raise .popup
-}
-
 # args are not used -- when binding to a table wigdet we cannot avoid getting
 # the item name on the end of the call
-
-proc RemovePopup {args} {
-    global popper
-    #puts "Removing popup"
-    if {[winfo exists .popup]} {
-        destroy .popup
-    }
-    if {[info exists popper]} {
-        after cancel $popper
-    }
-}
 
 proc Prettify {value} {
     if {[llength $value]==1} {
@@ -1008,42 +242,6 @@ proc Prettify {value} {
         }
         return $newValue
     }
-}
-
-# After the initial model has been loaded we don't want to allow the window
-# to change size when something different is loaded
-# This is also a convenient time at which to hide the console
-# if it is showing
-
-# If this is a slave interp, keep the OS choice of window posn, as moving it
-# may well sit it exactly on top of the previous one
-
-proc FixSize {c} {
-    global custom openModel IAmASlave
-    update idletasks
-    set win [winfo parent $c]
-    wm state $win normal
-    # seems necessary for console to hide
-    #    catch {console hide}
-    if {![info exists IAmASlave] && [file exists $custom(prefDir)/layout]} {
-        set stream [NetOpen $custom(prefDir)/layout r]
-        gets $stream whetherMaxed
-        #ShowMessage debug info $whetherMaxed ok
-        catch {
-            if {$whetherMaxed} {
-                wm state $win zoomed
-            } else {
-                gets $stream oldGeom
-                wm geometry $win $oldGeom
-            }}
-        close $stream
-    }
-    pack propagate $win 0
-    update
-    if {[string match $openModel {}]} {
-        DoRegDialog $win
-    }
-
 }
 
 proc DestroyHelpers {} {
@@ -1071,23 +269,6 @@ proc ClearView {} {
         set helperId $helperTable($displayBox)
         catch {${helperId}::clear $winId}; # in case helper has no clear proc
     }
-}
-
-proc BlankCrs {withCrs} {
-    regsub -all \n $withCrs { } noCrs
-    return $noCrs
-}
-
-proc StripCrs {withCrs} {
-    regsub -all \n $withCrs \\n noCrs
-    return $noCrs
-}
-
-
-proc RestoreCrs {noCrs} {
-    regsub -all \\\\n $noCrs \n withCrs
-
-    return $withCrs
 }
 
 #  nameOfHelperStateFile is global because helpers might want to save names of
@@ -1182,11 +363,6 @@ proc TellAllHelpers {fun args} {
     }
 }
 
-proc AlterModel {} {
-    global runState
-    set runState(modelUpdated) 1
-}
-
 proc ScrubRun {times} {
     global runState running_c model_id instance_id window_info
     #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
@@ -1238,7 +414,7 @@ set runState(modelRunning) 0
 set this ::AME_model<>
 # var containing namespace id called 'this' for compatibility with c++
 
-proc StartRun {winId} {
+proc StartRun {} {
     global runState helperTable running_c window_info
     # ShowMessage debug info enter(start_run) ok
     if {[info exists runState(currentTime)]} {
@@ -1267,23 +443,24 @@ proc StartRun {winId} {
 
     set runState(currentTime) 0.0
     set runState(timeAtEval) 0.0
-    set runState(currentWin) $winId ;# enables rebuild from run control
-    if {![FileParamDialogue 0 $winId]} {
+#    set runState(currentWin) $winId ;# enables rebuild from run control
+    if {![FileParamDialogue 0]} {
 	return 0
     }
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
-        raise [Makemre $winId]
+        raise [Makemre]
     } else {
-	ToggleIOToolMenu 1
+#	ToggleIOToolMenu 1
     }
-    foreach winData [array name window_info *,parent] {
-        set toolBar $window_info($winData).toolSlot.toolbar
-        $toolBar.snap configure -state active
-        set navBar $window_info($winData).toolSlot.navbar
-        $navBar.runenv configure -state active
-        $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
-    }
+#    Now have to do this in Prolog so only running windows change
+#    foreach winData [array name window_info *,parent] {
+#        set toolBar $window_info($winData).toolSlot.toolbar
+#        $toolBar.snap configure -state active
+#        set navBar $window_info($winData).toolSlot.navbar
+#        $navBar.runenv configure -state active
+#        $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
+#    }
     set runState(reloadParams) 1
     set runState(modelRunning) 2
 #    EnableTools Fix
@@ -1404,61 +581,16 @@ proc remove_c_model {} {
     #    }
 }
 
-# Path names derived from Windows environment variables must be
-# 'brainwashed' i.e., stripped of their native culture and turned
-# into blank-faced Unix-style forward-slash-separated automata.
-# Otherwise mingw gcc variably gets culture shock.
-
-proc brainwash {ethnic} {
-    return [file join [file dirname $ethnic] [file tail $ethnic]]
-}
-
-proc TrimTree {Top Point} {
-    if {[llength $Point]} {
-        foreach file [glob -nocomplain "$Top/$Point/*"] {
-            file delete -force $file
-        }
-    } else {
-        file delete -force [file rootname $Top]
-    }
-}
-
-proc ShiftDll {Point Top Loc Rep} {
-    if {[llength $Loc]} {
-        set AddLoc /$Loc
-    } else {
-        set AddLoc $Loc
-    }
-
-    set base $Top/$Point$AddLoc
-    file mkdir $base
-    if {[llength $Rep]} {
-	set prefx $base/model
-	if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
-	    file copy -force ${prefx}${Rep}[info sharedlibextension] \
-		${prefx}[info sharedlibextension]
-	} else {
-	    file delete -force ${prefx}[info sharedlibextension]
-	    file delete -force ${prefx}.tcl
-	}
-#	foreach file [glob -nocomplain ${prefx}*] {
-#	    if {![string match ${prefx}.* $file]} {
-#		file delete $file
-#	    }
-#	}
-    }
-}
-
-proc build_tcl_program {winId} {
+proc build_tcl_program {} {
     global model_id instance_id
     #   model_id set to 0 cos its existence is tested when getting model structure
 
     set model_id 0
     set instance_id 0
-    StartRun $winId
+    StartRun
 }
 
-proc update_c_executable {winId} {
+proc update_c_executable {} {
     #    ShowMessage debug info "References are $finderList" ok
     global model_id instance_id
 
@@ -1469,7 +601,7 @@ proc update_c_executable {winId} {
     set instance_id [c_createmodel $model_id]
     #    ShowMessage debug info "model instance $instance_id created" ok
 
-    StartRun $winId
+    StartRun
 }
 
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
@@ -1657,27 +789,6 @@ proc compile_c {workingDir} {
     return $serial
 }
 
-# This makes the extra bit that goes onto Tcl to run C programs. We don't
-# really need to build it every time we run the program, that's just while
-# it's being debugged, once it's right we'll just load it. This component
-# itself loads dlls for the actual models as they are built.
-
-proc load_c_stub {} {
-    global tcl_platform env userinfo
-    scan [info tclversion] {%d.%d} MAJ MIN
-    set onUnix [string match unix $tcl_platform(platform)]
-    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
-    if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-        # maybe we built the package index for a different os, try again
-        catch {pkg_mkIndex ../System/lib/Stubs *[info sharedlibextension]}
-        if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-            error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
-        }
-    }
-    loadcommands
-    randseed [clock clicks]
-}
-
 proc ListSameNumbers {list1 list2} {
     set target [llength $list1]
     if {$target != [llength $list2]} {return 0}
@@ -1727,14 +838,6 @@ proc getinstance {varName dest newvalue} {
     lappend returnList $target
     return $returnList
 } ;# end(procedure,getinstance)
-
-proc min {first last} {
-    return [expr $first<$last?$first:$last]
-}
-
-proc max {first last} {
-    return [expr $first>$last?$first:$last]
-}
 
 proc do_setstepmodel {value level} {
     global ts dts
@@ -1875,17 +978,8 @@ proc IsArray {a} {
     string compare $a [lindex $a 0]
 }
 
-# utility procedure to fill in some holes in Tcl8.0
-
-
-proc ChooseText {choice ifTrue ifFalse} {
-    if {$choice} {
-        return $ifTrue
-    } else {
-        return $ifFalse
-    }
-}
-
+package require Trf
+load_c_stub
 set intCount 0
 
 proc newInt {} {
@@ -1900,26 +994,6 @@ proc newInt {} {
 #	global randfoob
 #	return [set randfoob [expr fmod(1/$randfoob,1)]]
 #}
-
-proc FilterErrors {args} {
-    global errorInfo
-    set oldDir [pwd]
-    if {[catch $args retVal]} {
-        set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
-        if {[string match yes $ans]} {
-            BuildProblem unsaved none $errorInfo tcl
-        }
-        cd $oldDir
-        return -1
-    } else {
-        return $retVal
-    }
-}
-
-proc ModelDirectory {} {
-    global custom
-    return [file dirname [lindex $custom(hotlist) 0]]
-}
 
 proc ModelDirectory {} {
     global custom

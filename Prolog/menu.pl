@@ -286,7 +286,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	    CompDir = Temp;
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
-	(\+ rebuild_code(c, Model, CompDir), !;
+	(\+ rebuild_code(c, Model, CompDir, _), !;
 	(get_av_pair(Model, 1, c_new, Serial), !; Serial = ''),
 	    caption_for(Model, Capt),
 	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
@@ -301,16 +301,18 @@ menu_handle(Win, file, RunCmd) :-
 	/* Compile the thing into whatever, load it */
 	scrub_run(0),
 	use_temp_dir(Dir),
-	(\+ rebuild_code(Lang, Node, Dir), !; /* no much point going for run */
-	on_exception(_Whoops,
+	(rebuild_code(Lang, Node, Dir, Interp), !,
+	    /* no much point going for run */
+	    on_exception(_Whoops,
 		    (Lang = c,
-			output:prepare_c_execution(Win);
+			output:prepare_c_execution(Interp);
 		    Lang = tcl,
-			output:prepare_tcl_execution(Win)),
+			output:prepare_tcl_execution(Interp)),
 		     (do_dialogue("Compilation or startup error", error,
 				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
-			 scrub_run(0)))),
-	set_running_model(Node),
+			 scrub_run(0))),
+	    set_running_model(Node);
+	true),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
 	    finish_move(Node);
@@ -949,8 +951,13 @@ flip_innards(Node_name, Action) :-
 		change_shape(Thing, Whatever, New_wherever),
 		fail).
 
-rebuild_code(Lang, Node, ProgFileDir) :-
-	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true), !;
+rebuild_code(Lang, Node, ProgFileDir, Interp) :-
+	(interp_for(Node, Interp), !;
+	    output:safe_tcl_eval(['KickoffRunInterp'], InterpStr),
+	    name(Interp, InterpStr),
+	    assert(interp_for(Node, Interp))),
+	(on_exception(Whoops, compile(Lang, Node, ProgFileDir, Interp), true),
+	    !;
 	    Whoops = compilation_failed),
 	(Whoops = yes;
 	    show_error(Node, Whoops),
@@ -1060,8 +1067,9 @@ check_deletable(Win, Parent) :-
 
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
-	    scrub_run(1),
-	    kill_helpers,
+	    (retract(interp_for(Parent, Interp)), !,
+		output:safe_tcl_eval([interp, delete, Interp], _);
+	    true),
 	    forget_highlit_obj(_,_),
 	    superfast_delete(Parent),
 	    add_parameter(Parent, 0, step, ''),
@@ -1138,9 +1146,7 @@ off_window(Win) :-
 	(is_toplevel(Model), !,
 	    check_deletable(Win, Model),
 	    start_progress_dialogue,
-	    scrub_autosave(Model),
-	    forget_highlit_obj(_,_),
-	    superfast_delete(Model),
+	    remove_model(Win, Model),
 	    delete_tree(Model),
 	    finish_progress_dialogue,
 	    (is_toplevel(_Remains), !;

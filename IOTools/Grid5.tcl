@@ -229,7 +229,7 @@ namespace eval grid005 {
         $winId.c bind all <Button-3> [namespace code "Settings $winId"]
         $winId.c bind all <B1-Motion> [namespace code "value_popup $winId %X %Y %x %y"]
         $winId.c bind all <ButtonPress-1> [namespace code "value_popup $winId %X %Y %x %y"]
-        $winId.c bind all <B1-ButtonRelease> [namespace code "RemovePopup"]
+        $winId.c bind all <B1-ButtonRelease> RemovePopup
         
         set useNodes($winId,hiddenMap) [image create photo]
         set useNodes($winId,visibleMap) [image create photo]
@@ -590,12 +590,6 @@ namespace eval grid005 {
             set ypoint [expr $Y+43]
             wm geometry .popup +$xpoint+$ypoint
             update
-        }
-    }
-    
-    proc RemovePopup {} {
-        if {[winfo exists .popup]} {
-            destroy .popup
         }
     }
     
