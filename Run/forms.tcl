@@ -1389,9 +1389,11 @@ proc RelationCheck {parent title type state init_comment} {
     switch $type {
         influence {
             set entries {"Use values made\nin same time step" use_sofar}
+	    set helpPage elements/influence.htm
         } relation {
             set entries {"Exclusive role" exclusive \
                         "Allow base\ninstance lookup" can_lookup}
+	    set helpPage submodels/association/dialogue.htm
         }
     }
     foreach {text attr} $entries {
@@ -1410,7 +1412,7 @@ proc RelationCheck {parent title type state init_comment} {
     pack [button .relcheck.top.right.bc \
             -text Cancel -width 10 -command {set relation(done) 0}] -padx 4 -pady 4
     pack [button .relcheck.top.right.help \
-            -text Help -width 10 -command {ContextSensitiveHelp .relcheck submodels/association/dialogue.htm}] -padx 4 -pady 4
+            -text Help -width 10 -command "ContextSensitiveHelp .relcheck $helpPage"] -padx 4 -pady 4
     pack .relcheck.top.right -side left
     pack .relcheck.top -expand on -fill both
     TitleFrame .relcheck.bottom -text "Comments:"
