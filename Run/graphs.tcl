@@ -195,6 +195,8 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
                         graph($t,height) range
 		SetCombos $t $range
                 set graph($t,points) [lrange $lastSaved 8 end]
+		set graph($t,increment) [expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
+# above must be set so AttackShape gets current one right
                 AttackShape $grid [winfo width $grid] [winfo height $grid]
             } else {
                 set niceFormat 1
@@ -370,6 +372,7 @@ proc PointToYValue {t y} {
 proc RedrawGrid {c w h inc} {
     global looks graph
     
+#do_in_editor puts [list RedrawGrid $c $w $h $inc]
     $c delete grid
     set ylevel 0
     while {$ylevel <= 10} {
@@ -399,6 +402,7 @@ proc Reshape {t} {
 proc AttackShape {c w h} {
     global graph
     
+#do_in_editor puts [list AttackShape $c $w $h]
     # This version used to change the axis labels when the
     # graph window was resized. Now we keep them the same and stretch the graph
     set t [GetWidFromCanvas $c]
