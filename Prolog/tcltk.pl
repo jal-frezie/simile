@@ -11,7 +11,7 @@ tcl_eval(Cmd, Result) :-
 	write(TkCmd), nl,
 	flush_output,
 	read_codes(JoinedResult),
-%	write('debug '), write(JoinedResult), nl,
+/*	write('debug '), write(JoinedResult), nl, */
 	restore_crs(Result, JoinedResult).
 
 read_codes(Result) :-

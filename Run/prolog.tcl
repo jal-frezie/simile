@@ -61,7 +61,7 @@ proc do_tail {header args} {
 proc send_pl_cmd {withCrs} {
     global plPipe
     regsub -all \n $withCrs \\n plCmd
-#   puts [concat > $plCmd]
+#    puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
 #    Reader
@@ -91,6 +91,7 @@ set plPipe [open "|$PROLOG_CMD 2> $PROLOG_ERR" r+]
 fconfigure $plPipe -translation {auto lf}
 #fileevent $plPipe readable Reader
 
+# send_pl_cmd main.
 set spraf {}
 while {![string match ready $spraf]} {
     gets $plPipe spraf

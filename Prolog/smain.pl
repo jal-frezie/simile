@@ -33,18 +33,16 @@ than the Sicstus, like... */
 writeq_to_codes(TermStr, Term) :-
 	with_output_to_chars(writeq(Term), TermStr).
 
-version_is(2.92).
-
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
-	state:get_style(New_style),
-	prolog_flag(version, Vnum),
-	version_is(V),
+	prolog_flag(version, PlogV),
         nl, write(ready), nl,
-	tcl_eval(['FilterErrors ControlDraw', V, br(Vnum)], TempStr),
-	tcl_eval(['FilterErrors InitStyle', New_style], OpenStr),
+	tcl_eval(['FilterErrors ControlDraw', br(PlogV)], EnvVars),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
+	retractall(version_is(_)),
+	assert(version_is(VStr)),
 
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),
