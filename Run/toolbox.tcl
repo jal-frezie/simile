@@ -22,11 +22,12 @@ source ../System/library/Extras/printer/prntcanv.tcl
 
 # Make Simile a DDE server under Windows. Jonathan
 # Must be after the sourcing or Simile fails
+#### Commented out for now. Pending outcome of bug fixing (winfo exists "")
 #tk_messageBox -message [tk appname] -type ok
-catch {
-    package require dde 2.0
-    dde register Simile
-}
+#catch {
+#    package require dde 2.0
+#    dde register Simile
+#}
 
 proc AttackGlobalVariable {array elt val} {
     global $array
