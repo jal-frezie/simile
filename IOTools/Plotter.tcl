@@ -136,6 +136,9 @@ proc click {w node caption} {
 }
 
 proc Menu { winId } {
+    if {[winfo exists $winId.menu]} {
+        return
+    }
     set m [menu $winId.menu -tearoff 0]
     $m add command -label "Add variable" -command [namespace code "AddVariable $winId"]
     $m add command -label "Clear" -command [namespace code "clear $winId"]
@@ -225,7 +228,10 @@ proc constructControlPanel {w} {
 		#-height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
 		#	$plot($w,yborder_top)] \
         #-bg $plot($w,canvas_colour) -relief solid
-    pack $w -fill both -expand true -side bottom
+    #ShowMessage debug info "[winfo toplevel $w]" ok
+    if {![string match [winfo toplevel $w] $w]} {
+        pack $w -fill both -expand true -side bottom
+    }
 	pack $w.canvas -fill both -expand true -side bottom
 }
 
@@ -236,7 +242,7 @@ proc AddVariable { winId } {
     set ym [expr $plot($winId,yborder_top)+20]
     $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
             -text "Click on a variable in the Explorer window\
-            or a Model Diagram ($winId)"
+            or a Model Diagram"
     GrabClicks $winId
 }
 
