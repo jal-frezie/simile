@@ -357,9 +357,10 @@ generate_name( L, Atom, UnusedName, Used ) :-
 		(LocalStr = AtomStr; append(_, [SlashNo | LocalStr], AtomStr)),
 		    \+ member(SlashNo, LocalStr),
 		    (append(NameStr, [Space, Paren1 | CmtStr], LocalStr),
-			suffix([Space, I, N, Space | RoleCBStr], CmtStr),
-			append(RoleStr, [Paren2], RoleCBStr),
-			append([NameStr, "_", RoleStr], SeedStr), !;
+			(suffix([Space, I, N, Space | RoleCBStr], CmtStr),
+			    append(RoleStr, [Paren2], RoleCBStr),
+			    append([NameStr, "_", RoleStr], SeedStr);
+			 SeedStr = NameStr), !;
 		     SeedStr = LocalStr),
 		     name(LocalName, SeedStr);
 		LocalName = Atom),
