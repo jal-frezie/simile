@@ -101,8 +101,8 @@ namespace eval runcontrol33857 {
         $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
-        pack [ProgressBar $rcf.upper.bf.bar -variable runState($node,fractDone) \
-                -maximum 1] -fill x -expand true -side top -padx 4 -pady 4
+        pack [ProgressBar $rcf.upper.bf.bar -variable runState($node,fractDone) -maximum 1] \
+                -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
         pack $rcf.upper -side top -expand true -fill x
         set captWidth 20
@@ -120,7 +120,7 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name.unit -side left
             pack $rcf.editBoxes.$name  -anchor w -pady 2
         }
-        pack $rcf.editBoxes -side bottom
+        pack $rcf.editBoxes -side bottom -pady 2
         
 #        pack $rcf -fill x 
 #        pack $t.nb.rcf -fill x -padx 1 -pady 1
@@ -130,7 +130,7 @@ namespace eval runcontrol33857 {
         pack [frame $rsf.unitselection] -pady 2
         pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left
         ::ttk::menubutton $rsf.unitselection.pulldown
-        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu]
+        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
         foreach unit {unit second minute hour day week month year Ma} {
           $timeUnitMenu add command -label $unit -command "set runState($node,timeUnit) $unit"
         }
@@ -147,7 +147,7 @@ namespace eval runcontrol33857 {
         pack [frame $rsf.integration] -pady 2
         pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left
         ::ttk::menubutton $rsf.integration.pulldown
-        set intMethodMenu [menu $rsf.integration.pulldown.menu]
+        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
         foreach method {Euler {Runge-Kutta}} {
           $intMethodMenu add command -label $method -command "set runState($node,intMethod) {$method}"
         }
@@ -166,7 +166,7 @@ namespace eval runcontrol33857 {
         }
         pack [frame $rsf.edit] -anchor w -pady 2
         ::ttk::menubutton $rsf.edit.capt
-        set timeStepMenu [menu $rsf.edit.capt.menu]
+        set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
         foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
           $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $t $index]
         }
@@ -176,10 +176,10 @@ namespace eval runcontrol33857 {
 	#	  -editable 0 -width $captWidth] -side left
         pack $rsf.edit.capt -side left
         pack [label $rsf.edit.colon -text " "] -side left
-        pack [::ttk::entry $rsf.edit.num -relief sunken -width 8] -side left
+        pack [::ttk::entry $rsf.edit.num -width 8] -side left
         #$rsf.edit.capt setvalue first
         SwapDistVar $t 1
-        pack $t.nb -padx 1 -pady 1 -fill x -fill y -expand true
+        pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit
         set sendvars($node,expected_end) 0
