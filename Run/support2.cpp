@@ -131,6 +131,7 @@ e' piu' comoda per ora!!
 
 --- dichiaramole __declspacc come piace a lui cosi' il simile+MinchW non rompe ----
 */
+#ifdef WIN32
 extern "C" __declspec( dllexport ) 
 /*extern "C"  __stdcall */
 
@@ -173,3 +174,4 @@ PassStruct->compclass =nodedata[n].compclass;
 strcpy(PassStruct->caption ,nodedata[n].caption);
 return n;
 }
+#endif
