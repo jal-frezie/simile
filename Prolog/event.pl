@@ -335,9 +335,9 @@ do_colours(Obj, Way) :-
 	(Way = on,
 	    highlight_deletes(Obj);
 	Way = off),
-	m_class:Obj is_connector from A to B,	    
+/*	m_class:Obj is_connector from A to B,	    
 	    trail(A, Obj, Way);
-	Obj is_of_sort box,
+*/	Obj is_of_sort box,
 	    (Way = on, highlight(Obj, 0); Way = off, highlight(Obj, 2)),
 	    trail(Obj, _, Way);
 	(Way = on;
@@ -346,12 +346,11 @@ do_colours(Obj, Way) :-
 	    clear_deletes(Obj);
 	    Way = off).
 
+/* This gets the arcs connnected to a node, finds the object at the other end
+of them and recolours them according to whether they fall into the selection */
+
 trail(Node, Arc, Way) :-
-	\+ find_type(Node, submodel),
-	(m_class:Arc is_connector from Node to HiddenFn,
-	    get_host(HiddenFn, Far);
-	get_host(HiddenFn, Node),
-	    m_class:Arc is_connector from Far to HiddenFn),
+	connector_and_far_end(Node, Arc, Far),
 	match_with_ends(Node, Far, Arc, Way),
 	trail(Arc, _, Way).
 
