@@ -1457,7 +1457,9 @@ proc LoadTableData {tableSpec} {
     while {[gets $tStr entryLine] != -1} {
 	set entryList [TrimFields [split $entryLine ,]]
 #ShowMessage debug info "Data line is $entryList" ok
-        
+        if {![llength $entryList]} {
+	    continue ;# ignore blank lines anywhere
+	}
         if {[info exists indexColumns]} {
             set arrayIndex {}
             set indexCount 0
@@ -1490,6 +1492,7 @@ proc LoadTableData {tableSpec} {
     return [ArrayToList paramArray top $indexList]
 }
 proc TrimFields {dataLine} {
+    set entryList {}
     foreach entry $dataLine {
 	lappend entryList [string trim $entry]
     }
