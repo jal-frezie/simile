@@ -1087,7 +1087,11 @@ proc SpitPS {winId psfile} {
 }
 
 proc Reopen {canvas oldFile} {
-    global custom
+    global custom userinfo welcomeDone
+    
+    if [winfo exists .register] {
+        set userinfo(done) $welcomeDone
+    }
     
     RecordPathChoice .sml $oldFile 1
     set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]

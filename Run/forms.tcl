@@ -1062,7 +1062,7 @@ proc GetFindText {parent} {
 }
 
 proc DoRegDialog {dtId} {
-    global userinfo custom
+    global userinfo custom welcomeDone
 
     if {$userinfo(done) && $userinfo(Version)==$userinfo(oldVersion)} {
 	return
@@ -1100,7 +1100,7 @@ proc DoRegDialog {dtId} {
             -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
             -padx 8 -pady 8 -side left
     pack [button $tasks.b.reopen -text "Reopen" -width 10 \
-            -command "PopReopen $dtId; set userinfo(done) \$welcomeDone"] \
+            -command "PopReopen $dtId"] \
             -padx 8 -pady 8 -side left
     pack $tasks.b
     pack $tasks -fill x -expand on
