@@ -1208,8 +1208,8 @@ off_window(Win) :-
 		user:wind_up);
 	delete_window(Win)).
 
-kill_everything(Win) :-
-	Win shows_model Model,
+kill_everything(Model) :-
+	 Win shows_model Model,
 	is_toplevel(Model), !,
 	off_window(Win),
 	kill_everything(_).

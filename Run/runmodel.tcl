@@ -24,29 +24,30 @@ source ../Run/support.tcl
 
 source ../Run/mre.tcl
 
-proc MakeHelperMenu {} {
-    global custom myNode tcl_platform
-    set fm [menu .helpers -tearoff 0]
-
 #
 # MacOS X specific procedures for the run-time window
 # Alastair 31 Jan 2005
 #
 
-    if [string match "Darwin" $tcl_platform(os)] {
+if [string match "Darwin" $tcl_platform(os)] {
 #
 # The Quit command in the application menu ALWAYS calls exit, so we must quit 
 # by that route however it is invoked (keyboard shortcut or mouse click)
 #
-       rename exit wishExit
-       proc exit {} {
-            do_in_editor tclAE::send -s misc actv
-            do_in_editor prolog tk_kill_everything('.mswindow00001.canvas')
-        }
-        bind all <Command-q> exit
-        package require tclAE
-        tclAE::send -s misc actv
+    rename exit wishExit
+    proc exit {} {
+	do_in_editor tclAE::send -s misc actv
+	start_in_editor prolog tk_kill_everything([GetNodeFromFocus])
     }
+    bind all <Command-q> exit
+    package require tclAE
+    tclAE::send -s misc actv
+}
+
+proc MakeHelperMenu {} {
+    global custom myNode tcl_platform
+    set fm [menu .helpers -tearoff 0]
+
     $fm add command -label "Load" -command LoadView
     $fm add command -label "Save" -command SaveView
     $fm add command -label "Clear" -command ClearView

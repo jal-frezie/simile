@@ -1029,7 +1029,9 @@ if [string match "Darwin" $tcl_platform(os)] {
 #
   rename exit wishExit
   proc exit {} {
-    prolog tk_kill_everything('.mswindow00001.canvas')
+      global window_info
+      set currentDesk $window_info([winfo toplevel [focus]].canvas,top_node)
+      prolog tk_kill_everything($currentDesk)
   }
   bind all <Command-q> exit
 #
@@ -1113,7 +1115,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -accelerator "Alt+x"
     AddAccelerator $winid file Close "<Alt-x>"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label Exit -command "prolog tk_kill_everything('$c')"
+      $fm add command -label Exit \
+	  -command "prolog tk_kill_everything($topNode)"
     }
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
