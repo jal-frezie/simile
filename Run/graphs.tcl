@@ -569,21 +569,21 @@ proc FileParamDialogue {mustShow parent} {
 	    } else {
 		set slotCaption [lindex $levels end]
 	    }
-            pack [set slot [frame [MakeSubFrames $t.sliderframe $levels]]]
-            pack [label $slot.l -text $slotCaption] -side left
+            pack [set slot [frame [MakeSubFrames $t.sliderframe $levels]]] -fill x -expand on
+            pack [label $slot.l -text $slotCaption] -side left 
             pack [button $slot.b -text "Read table" \
-                    -command [list GetFromTable $t $compName]] -side right
+                    -command [list GetFromTable $t $compName]] -side right 
             
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
-            pack [text $slot.e -width 30 -height 1]
+            pack [text $slot.e -width 30 -height 1] -side right -fill x -expand on
             if {[info exists paramData($compName)]} {
                 $slot.e insert 1.0 $paramData($compName)
             } else {
                 set paramData($compName) {}
             }
             set widgetNames($compName) $slot.e
-            
+
             # note whether we need to enter a parameter here...
             if {![llength $paramData($compName)]} {
                 lappend needed $compName
