@@ -308,7 +308,8 @@ proc KillInterpFor {node} {
 	if {[string equal interp $runHow(type)]} {
 	    interp delete $runState($node,interp)
 	} else {
-	    tell_runner $node exit
+#	    tell_runner $node {wm deiconify .}
+	    do_in_node $node exit_exec
 	    if {[string equal pipe $runHow(type)]} {
 		close $runState($node,interp)
 	    }

@@ -480,6 +480,12 @@ proc ContextSensitiveHelp {xcontext page} {
     return [do_in_editor ContextSensitiveHelp $context $page]
 }
 
+proc exit_exec {} {
+	wm deiconify .
+	remote done
+	exit
+}
+
 proc do {argList} {
     global errorInfo
     if {[catch $argList response]} {
