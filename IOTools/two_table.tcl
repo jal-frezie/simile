@@ -123,6 +123,7 @@ namespace eval tabular11510 {
 	variable dataStore
 	variable displayList
 	variable lastDisplay
+	variable orientList
 
 	set lastDisplay($winId) $tCur
 	set varIndex 0
@@ -132,7 +133,22 @@ namespace eval tabular11510 {
 		[lindex [GetModelValue $varId] 0]
 	    incr varIndex
 	}
-	Reconbobulate $winId
+	set xScrollPosn [$winId.t xview]
+	set yScrollPosn [$winId.t yview]
+	set timeLine [Reconbobulate $winId]
+	puts $timeLine
+	switch [lindex $orientList($winId) 0] {
+	    rows {
+		$winId.t see $timeLine,0
+		$winId.t xview moveto [lindex $xScrollPosn 0]
+	    } cols {
+		$winId.t see 0,$timeLine
+		$winId.t yview moveto [lindex $yScrollPosn 0]
+	    } none {
+		$winId.t xview moveto [lindex $xScrollPosn 0]
+		$winId.t yview moveto [lindex $yScrollPosn 0]
+	    }
+	}
     }
 	
     proc Reconbobulate {winId} {
@@ -241,9 +257,12 @@ namespace eval tabular11510 {
 	    $winId.t spans 0,0 [expr $curHeaderRows-2],[expr $curHeaderCols-2]
 	}
 #puts "Meta-headers inserted"
+	set timeSide [lindex $orientList($winId) 0]
+	set lineToShow 0
 	set translateSide [lindex $orientList($winId) 1]
 	set translateLevel [string match $translateSide \
 				[lindex $orientList($winId) 0]]
+	set timeToShow [GetModelTime]
     
 	set lastEntry(0) none
 	set count 0
@@ -264,6 +283,10 @@ namespace eval tabular11510 {
 		    if {[string match rows $translateSide] && \
 			    $headerCol==$translateLevel} {
 			set headerElt [lindex $displayList($winId) $headerElt]
+		    }
+		    if {!$headerCol && [string match rows $timeSide] && \
+			    $headerElt==$timeToShow} {
+			set lineToShow $count
 		    }
 		    $winId.t set [expr $curHeaderRows+$count],$headerCol \
 			[lindex [split $headerElt /] end]
@@ -293,6 +316,10 @@ namespace eval tabular11510 {
 			    $headerRow==$translateLevel} {
 			set headerElt [lindex $displayList($winId) $headerElt]
 		    }
+		    if {!$headerRow && [string match cols $timeSide] && \
+			    $headerElt==$timeToShow} {
+			set lineToShow $count
+		    }
 		    $winId.t set $headerRow,[expr $curHeaderCols+$count] \
 			[lindex [split $headerElt /] end]
 		}
@@ -309,6 +336,7 @@ namespace eval tabular11510 {
 		[VarPrecRender $winId $values($value)]
 	}
 #puts "Table values inserted"
+	return $lineToShow
     }
 
     proc ReComp {l1 l2} {
