@@ -842,8 +842,8 @@ write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
 	    get_av_pair(Component, 0, value, Eqn);
 	find_type(Component, variable),
 	    VisNode = Component,
-	    (is_parameter(Component, 1), Eqn = 'Fixed parameter';
-		is_parameter(Component, 2), Eqn = 'Variable parameter')),
+	    (is_parameter(Component, 2), Eqn = 'Fixed parameter';
+		is_parameter(Component, 1), Eqn = 'Variable parameter')),
 	(get_av_pair(Component, 0, description, Description); 
 		\+ get_av_pair(Component, 0, description, Description), Description = null),
 	(get_av_pair(Component, 0, comment, Comment);
