@@ -1793,7 +1793,8 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     set m [menu $eb.function.menu -tearoff 0]
     global equation msgs
 
-    foreach funk $equation(fnDefs) {
+    foreach funk [concat {{{{Built-in} {Model properties}} index}} \
+		      $equation(fnDefs)] {
 	set box $m
 #puts "Adding $funk to $box"
 	foreach level [lindex $funk 0] {
