@@ -662,11 +662,13 @@ proc FileParamDialogue {mustShow parent} {
     wm transient $t $parent
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t "Enter file parameters"
-    set paramData(needed) {}
+    if {!$mustShow} {
+	set paramData(needed) {}
+    }
     MakeFrames $t
     foreach node $allNodes {
         if {[string match TABLE [GetModelEval $node]]} {
-	    AddEntry $t $node
+	    AddEntry $t $node $mustShow
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
@@ -717,7 +719,7 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
-proc AddEntry {winId node} {
+proc AddEntry {winId node mustShow} {
     global paramData paramDims widgetNames iconImages
     set compName [GetCaptionPathFromId $node]
     if {[string match SUBMODEL [GetModelClass $node]]} {
@@ -772,13 +774,17 @@ proc AddEntry {winId node} {
 	      -command [namespace code [list RevertData $winId $compName]]] \
 	-side right
     pack [button $slot.tick -image $iconImages(tick) -borderwidth 1 \
-	      -command [namespace code [list AcceptData $winId $compName]]] \
+	      -command [namespace code [list AcceptData $winId $compName 1]]] \
 	-side right
     }
     set widgetNames($compName) $slot
             # note whether we need to enter a parameter here...
-    if {![llength $paramData($compName)]} {
-	lappend paramData(needed) $compName
+    if {$mustShow} {
+	if {[lsearch $paramData(needed) $compName]==-1} {
+	    $slot.l configure -fg black
+	}
+    } else {
+	AcceptData $winId $compName 0
     }
 }
 
@@ -811,7 +817,7 @@ proc DoneParams {winId} {
 
     foreach compName [array names widgetNames] {
 	if {[string match normal [$widgetNames($compName).e cget -state]]} {
-	    AcceptData $winId $compName
+	    AcceptData $winId $compName 1
 	}
     }
     if {![llength $paramData(needed)]} {
@@ -819,7 +825,7 @@ proc DoneParams {winId} {
     }
 }
 
-proc AcceptData {winId compName} {
+proc AcceptData {winId compName complain} {
     global paramDims paramData widgetNames runState inputHelper running_c
 
     set node [GetIdFromCaptionPath $compName]
@@ -868,7 +874,10 @@ proc AcceptData {winId compName} {
 # new bit for using it as an input tool: notify that we have values
 	if {[llength $misses]} {
 	    lappend paramData(needed) $compName
-	    ShowMessage "Setting $compName" warning "Problem with value at indices [lrange $misses 0 end-1]: [lindex $misses end]" ok
+	    $widgetNames($compName).l configure -fg red
+	    if {$complain} {
+		ShowMessage "Setting $compName" warning "Problem with value at indices [lrange $misses 0 end-1]: [lindex $misses end]" ok
+	    }
 	} else {
 	    $widgetNames($compName).l configure -fg black
 	    set paramData(needed) [purge $paramData(needed) $compName]
@@ -996,16 +1005,19 @@ proc SaveParams {} {
         set pStr [open $metaFile w]
         
         foreach compName [array names widgetNames] {
-	set SubbedComp [StripCrs $compName]
-	if {[info exists paramState($compName)]} {
-	    set relName [Relativize $metaFile \
-			     [lindex $paramState($compName) 0]]
-	    puts $pStr "$SubbedComp=[lreplace $paramState($compName) \
+	    set SubbedComp [StripCrs $compName]
+	    if {[info exists paramState($compName)]} {
+		if {[string equal $paramData($compName) \
+			 [LoadTableData $paramState($compName) 0]]} {
+		    set relName [Relativize $metaFile \
+				     [lindex $paramState($compName) 0]]
+		    puts $pStr "$SubbedComp=[lreplace $paramState($compName) \
                             0 0 $relName]"
-	} else {
+		    continue
+		}
+	    }
 	    puts $pStr "$SubbedComp=$paramData($compName)"
 	}
-    }
         close $pStr
     }
 }
