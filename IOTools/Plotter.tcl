@@ -339,7 +339,7 @@ namespace eval ::$keyValue {
                 -text "Time" -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
         
-        # legend vars only not elements of arrays
+        # legend vars only, not elements of arrays
         set nYlabel [llength $plot($w,Ylabels)]
         set j 0
         set k 0
@@ -381,13 +381,15 @@ namespace eval ::$keyValue {
 #                 [namespace code "CanvasDrag %x %y %W"]
 ################################################################################
                 
-        for {set i 0} {$i<$nYlabel} {incr i} {
-            set vartag {}
-            append vartag var $i
-            $w.canvas bind $vartag <B1-Motion> \
-                    [namespace code "Ylabel_move %W %x %y"]
-        }
-        $w.canvas bind Ylabel
+################################################################################
+#         for {set i 0} {$i<$nYlabel} {incr i} {
+#             set vartag {}
+#             append vartag var $i
+#             $w.canvas bind $vartag <B1-Motion> \
+#                     [namespace code "Ylabel_move %W %x %y"]
+#         }
+#         $w.canvas bind Ylabel
+################################################################################
         
         bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
         bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
