@@ -285,15 +285,12 @@ a ghost node is unselected. */
 finish_old_edit(NextEdit) :-
 	/* If no previous edit, do nothing */
 	\+ suspend_display,
-/*	get_highlit_obj(0, Prev_highlight), !,
-	Abandon update if selected comp was influence, cloud or same as new
-	find_base(Prev_highlight, RenamedNode), */
-	find_current(Window_id),
-	current_edit(Window_id, Prev_highlight),
-	find_base(Prev_highlight, RenamedNode),
+	get_highlit_obj(0, Prev_highlight),
 	\+ Prev_highlight = 0, !,
-	get_highlit_obj(0, WasLit),
-	normalize(WasLit),
+/*	Abandon update if selected comp was influence, cloud or same as new */
+	normalize(Prev_highlight),
+	find_base(Prev_highlight, RenamedNode),
+	find_current(Window_id),
 	get_text(Window_id, RenamedNode, Text),
 		((Prev_highlight = NextEdit;
 			Text = '/no_caption/'), !;

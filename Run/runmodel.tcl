@@ -1516,7 +1516,7 @@ proc LoadTableData {tableSpec} {
                     set maxIndices($indexCount) $newIndex
                 }
                 incr indexCount
-            }
+            }
         } else {
             incr maxIndices(0)
             set arrayIndex $maxIndices(0)
@@ -1811,7 +1811,7 @@ proc build_c_stub {targetDir make_new_stub} {
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     if {!$make_new_stub} {
         #	Next line allows start on new o/s without rebuild but slows
-        #	pkg_mkIndex $targetDir *.dll *.so
+	pkg_mkIndex $targetDir *.dll *.so
         if {![catch {package require -exact Ame_dll $stubPkg} dummy]} {
             return
         } else {
