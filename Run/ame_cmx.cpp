@@ -65,11 +65,9 @@ return (char*)lpMsgBuf;
     #define LOAD_DLL flopen
 #ifdef SIM_OPSYS_Darwin
 #define UNLOAD_DLL dummyunload
-
-int dummyunload(HINSTANCE handle) {
-  return 1;
+BOOL dummyunload() {
+  return(1);
 }
-
 #else
     #define UNLOAD_DLL !dlclose
 /* dlclose inverted cos it seems to return NULL when it works */
@@ -997,8 +995,6 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
     modelType->exit(modelHandle);
   }
 
-  /* Impossible to unload dlls on the Mac so do not unload any until I work out
-     how to tell what we are on...
   if (nodeModelList) {
     try {
       delete nodeModelList;
@@ -1008,7 +1004,7 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
       return TCL_ERROR;
     }
   }
-  */
+  
   nodeModelList = NULL;
   return TCL_OK;
 }
@@ -1408,7 +1404,7 @@ extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
    if (argc != 2) {
      interp->result = "One argument for get_auth_code please!";
      return TCL_ERROR;
-   }
+   }
    /* set ModelText [mime::getbody $Part($Model)] */
    if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
 	       Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
