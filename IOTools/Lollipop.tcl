@@ -77,6 +77,10 @@ proc initialize {winId} {
     catch {wm geometry $winId 650x500}
 }
 
+proc GetCanvas {winId} {
+    return $winId.c
+}
+
 proc clear {winId} {
     variable useNodes
     set useNodes($winId,selected) {}

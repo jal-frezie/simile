@@ -17,6 +17,10 @@ proc Restore {winId} {
     DoAtStart $winId [GetState $winId]
 }
 
+proc GetCanvas {winId} {
+    return $winId.canvas
+}
+
 proc display {winId time step remainder} {
    DoEachTimeStep $winId $time	
 }
