@@ -34,4 +34,8 @@ proc Done {winId} {
 proc display {args} {
 }
 
+proc Restore {winId} {
+    initialize $winId
+}
+
 } ;# end of namespace
