@@ -1402,6 +1402,7 @@ proc FillReopen {winId} {
             lappend posted $hottie
         }
     }
+    update idletasks
 }
 
 proc Rerun {winId go} {
