@@ -241,7 +241,7 @@ proc canvasTLDistance {winId x y} {
 proc GetFromProlog {prologCmd} {
     global fromProlog
     prolog $prologCmd
-    if {![info exists fromProlog]} {
+    while {![info exists fromProlog]} {
 	tkwait variable fromProlog
     }
     set result $fromProlog

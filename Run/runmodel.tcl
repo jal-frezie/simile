@@ -6,6 +6,9 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.10  2002/07/17 10:31:24  jaspert
+#Fixed some popup problems
+#
 #Revision 1.9  2002/07/15 16:24:08  jaspert
 #Important change here is GNU prolog compatibility
 #and the addition of the pipe interface.
@@ -62,6 +65,9 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.10  2002/07/17 10:31:24  jaspert
+#Correct RCS directive #Fixed some popup problems
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.9  2002/07/15 16:24:08  jaspert
 #Correct RCS directive #Important change here is GNU prolog compatibility
 #Correct RCS directive #and the addition of the pipe interface.
@@ -183,11 +189,13 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 	    compartment submodel caption sections}
     for {set depthParam 0} {$depthParam < [llength $args]} {incr depthParam} {
 	set rads($c,[lindex $cats $depthParam]) [lindex $args $depthParam]
-	WindowDetail $c [lindex $cats $depthParam] [lindex $args $depthParam] 0
+	WindowDetail $c [lindex $cats $depthParam] \
+	    [lindex $args $depthParam] 0
     }
 
     $c configure -scrollregion "$wl $wt $wr $wb" \
 	-width [expr $wr-$wl] -height [expr $wb-$wt]
+
     $c coords 1 $wl $wt $wr $wb
 
 # set initial scaling factors
@@ -739,17 +747,19 @@ proc AddEqnPopup {x y winId X Y} {
 		set fromProlog \
 		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
 	    }
+# after going Prolog, check popup window still there
+	    if {![winfo exists .popup]} return
 	    AddPopupMessage $fromProlog #c0ffc0 0
 	}
 	if {$doCmt} {
-	    AddPopupMessage \
-		[GetFromProlog tk_get_info('$winId',$plName,comment)] #ffe0c0 0
+	    set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]
+	    if {![winfo exists .popup]} return
+	    AddPopupMessage $fromProlog #ffe0c0 0
 	}
         if {[expr [info exists running_c] && $doVal]} {
 	    AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
 # we might want to prettify this a bit first
 	}
-	PositionPopup $X $Y
     }
 
 }
@@ -798,7 +808,6 @@ proc AddWidgetPopup {key X Y} {
     }
     pack [message .popup.message -aspect 400 \
 	    -text $message -bg #ffffc0] -fill x -expand true
-    PositionPopup $X $Y
 }
  
 proc PostPopup {X Y} {
@@ -807,15 +816,12 @@ proc PostPopup {X Y} {
     }
     toplevel .popup -width 1 -height 1 -bd 2 -relief raised
     wm overrideredirect .popup 1
-    raise .popup
-}
 
 # This moves the popup window to whichever quadrant of the moused-over
 # component is all on the screen. It sticks it to the bottom left to start with
 # so it doesn't grab the focus, then updates so the requested size can be found
 # then uses this size to move it to the right place
 
-proc PositionPopup {X Y} {
     if {$X>[winfo screenwidth .popup]/2} {
 	set xpoint -[expr [winfo screenwidth .popup]+10-$X]
     } else {
@@ -828,6 +834,7 @@ proc PositionPopup {X Y} {
 	set ypoint +[expr $Y+10]
     }
     wm geometry .popup ${xpoint}${ypoint}
+    raise .popup
 }
 
 proc RemovePopup {} {
@@ -921,6 +928,7 @@ proc StripCrs {withCrs} {
 
 proc RestoreCrs {noCrs} {
     regsub -all \\\\n $noCrs \n withCrs
+
     return $withCrs
 }
 
@@ -1240,6 +1248,7 @@ proc SaveParams {} {
 
 proc MergeParams {} {
     global paramState paramData widgetNames
+
 
     set oldDir [pwd]
     set metaFile [ChooseFile params.spf "Merge parameters from:" 0]

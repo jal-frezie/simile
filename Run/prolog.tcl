@@ -14,7 +14,7 @@ proc Reader {} {
     }
     if {[gets $plPipe noCrs] >= 0} {
 	regsub -all \\\\n $noCrs \n line
-#	puts [concat < $line]
+	puts [concat < $line]
 	if {$running} {
 	    if {[string match get_tcl_cmd $line]} {
 		send_tcl_cmd
@@ -33,6 +33,27 @@ proc Reader {} {
     }
 }
 
+# Non queueing version -- a process that calls a prolog command is suspended
+# until Prolog is available. If something else gets Prolog first it is
+# suspended again so Prolog only gets one thing at a time
+#
+#proc prolog {plCmd} {
+#    global prologWaiting callback
+#    if {$callback} {
+#	puts "> callback $plCmd"
+#    }
+#    while {!$prologWaiting} {
+#	tkwait variable prologWaiting
+#    }
+#    set prologWaiting 0
+#    send_pl_cmd $plCmd
+#}
+
+#proc send_tcl_cmd {} {
+#    global prologWaiting
+#    set prologWaiting 1
+#}
+
 proc prolog {plCmd} {
     global plQueue prologWaiting
     if {$prologWaiting} {
@@ -40,7 +61,7 @@ proc prolog {plCmd} {
 	send_pl_cmd $plCmd
     } else {
 	lappend plQueue $plCmd
-    }
+   }
 }
 
 proc send_tcl_cmd {} {
@@ -48,6 +69,7 @@ proc send_tcl_cmd {} {
     if {![llength $plQueue]} {
 	set prologWaiting 1
     } else {
+	puts {> unqueueing}
 	set plCmd [lindex $plQueue 0]
 	set plQueue [lrange $plQueue 1 end]
 	send_pl_cmd $plCmd
@@ -55,14 +77,17 @@ proc send_tcl_cmd {} {
 }
 
 proc do_tail {header args} {
+#    global callback
+    set callback 1
     regsub -all \\\\n $args \n withCrs
     send_pl_cmd [eval $withCrs]
+#    set callback 0
 }
 
 proc send_pl_cmd {withCrs} {
     global plPipe
     regsub -all \n $withCrs \\n plCmd
-#    puts [concat > $plCmd]
+    puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
 }
@@ -70,6 +95,7 @@ proc send_pl_cmd {withCrs} {
 set running 0
 set plQueue {}
 set prologWaiting 0
+set callback 0
 
 # These allow GNU prolog to use a decent amount of memory
 set env(GLOBALSZ) 131072

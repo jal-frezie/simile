@@ -308,12 +308,12 @@ set_math_protect(Val) :-
 	assert(math_protect)).
 
 /* Set editing state to initial default... */
-box_size_is(compartment, 50, 0, 0).
-box_size_is(function, 50, 0, 0).
-box_size_is(variable, 50, 0, 0).
-box_size_is(cloud, 50, 0, 0).
+box_size_is(compartment, 30, 0, 0).
+box_size_is(function, 15, 0, 0).
+box_size_is(variable, 15, 0, 0).
+box_size_is(cloud, 25, 0, 0).
 box_size_is(submodel, 50, 0, 0).
-box_size_is(channel, 50, 0, 0).
+box_size_is(channel, 30, 0, 0).
 box_size_is(flow, 50, 0, 0).
 box_size_is(influence, 50, 0, 0).
 box_size_is(ghost_link, 50, 0, 0).

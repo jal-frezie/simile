@@ -506,8 +506,9 @@ proc WriteDesc {canvas canvasFile date args} {
     puts $stream "# written on $date"
     puts $stream [concat TweakWindow \$c \{$title\} \
 	    $window_info($canvas,scale) \
-	    [$canvas cget -scrollregion] [$canvas cget -background] $args]
-
+	    [$canvas cget -scrollregion] clear $args]
+# background colour parameter now ignored because the background is
+# a rectangle and as such is listed in the .cnv file
     foreach object [$canvas find all] {
 	set config ""
 	foreach conf [$canvas itemconfigure $object] {
@@ -955,11 +956,11 @@ proc ResetLooks {type} {
 proc CustomizeLooks {} {
     global looks
 
-    prolog tk_set_new_size(compartment,30,0,0)
-    prolog tk_set_new_size(variable,15,0,0)
-    prolog tk_set_new_size(function,15,0,0)
-    prolog tk_set_new_size(cloud,25,0,0)
-    prolog tk_set_new_size(channel,30,0,0)
+#    prolog tk_set_new_size(compartment,30,0,0)
+#    prolog tk_set_new_size(variable,15,0,0)
+#    prolog tk_set_new_size(function,15,0,0)
+#    prolog tk_set_new_size(cloud,25,0,0)
+#    prolog tk_set_new_size(channel,30,0,0)
     set looks(flow,xoffset) 20
     set looks(flow,yoffset) 20
     set looks(compartment,yoffset) 24
@@ -992,6 +993,7 @@ proc RememberLooks {object} {
 
 proc ExportLooks {t type} {
 	global looks window_info
+
 	prolog [format "tk_change_size(%s,%d,%f,%f)" $type $looks($type,objectsize) \
 		$looks($type,xoffset) $looks($type,yoffset)]
 #	foreach windae [array name window_info *,parent] {
