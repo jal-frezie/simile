@@ -10,7 +10,7 @@ alongside
 the rest of the program are handled through gui_input. */
 
 sicstus_module(dialogue, [do_equation_dialog/2, 
-	do_disag_dialog/4, do_relation_dialog/9, test_eqn/7,
+	do_disag_dialog/4, do_relation_dialog/9, test_eqn/8,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
         start_progress_dialogue/0,
@@ -181,14 +181,14 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	(Unit_st = "", !,
 	    UnitFormError = [];
 	get_term(Unit_st, Units, UnitFormError)),
-	check_exp(Eqn_st, "Equation", UsableInputs, EqnBase, EqnDims,
+	check_exp(Eqn_st, "Equation", Function, UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
 	(Is_P = 1, \+ Unit_st = "boolean", \+ EqnBase = boolean, !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
-	check_exp(Min_st, "Min. value", UsableInputs, MinBase, _MinDims,
+	check_exp(Min_st, "Min. value", Function, UsableInputs, MinBase, _Dims,
 		  MinMaxNeeded, IndxCount, MinParamList, Min, Min_term_error),
-	check_exp(Max_st, "Max. value", UsableInputs, MaxBase, _MaxDims,
+	check_exp(Max_st, "Max. value", Function, UsableInputs, MaxBase, _Dims,
 		  MinMaxNeeded, IndxCount, MaxParamList, Max,
 		  Max_term_error),
 
@@ -369,7 +369,7 @@ reverse_engineer(Table, Here, TclRep) :-
 	    TclRep = TclInner);
 	TclRep = Table.
 
-check_exp(Eqn_st, FieldName, InterInputs, Base, Dims, Needed,
+check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
 	  IndxCount, ParamList, Equation, Error) :-
 	Eqn_st = [], !,
 	    Base = any,
@@ -381,7 +381,7 @@ check_exp(Eqn_st, FieldName, InterInputs, Base, Dims, Needed,
 	    Error = []);
 	get_term(Eqn_st, Equation, ParseError),
 	    (ParseError = [], !,
-		test_eqn(Equation, IndxCount, InterInputs, 
+		test_eqn(Equation, Function, IndxCount, InterInputs, 
 			 Base, Dims, ParamList, TestError),
 		(TestError = [],
 		    ((member(var, Dims), !,
@@ -409,13 +409,14 @@ We just have to make the eqn look like we are in the middle of the
 generation
 process. */
 
-test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
+test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
+	 ParamList, TestError) :-
 	list_of(_, IndxCount, DestInds),
 	append(InterInputs, ExpInters, AllInputs),
 	
 	on_exception(ParseException,
 	    (replace_subexps(Equation, dialogue, expand_params,
-			     AllInputs, top_down, ParamSubs, FullExpr),
+			     Fn-AllInputs, top_down, ParamSubs, FullExpr),
 		length(ExpInters, _), !, /* close list end */
 	        (member(input_link(_,_, Param, _, PDims), ExpInters),
 		    \+ Param = '/dest/',
@@ -464,7 +465,9 @@ check_dim_match(P, Q) :- P=Q; Q=0.
 
 get1st(var_pair(A, _), A).
 
-expand_params(InterInputs, Param, DoneExpr, Recurse) :-
+expand_params(Node-InterInputs, Param, DoneExpr, Recurse) :-
+	(enum_type_ref(Param, Node, _Value, Type), !,
+	    DoneExpr = param(arr(_, Param, []), Type, [], _, true);
 	get_solo_list_depth(Param, _),
 	/* when making dummy links for explicit intermediate results, check
 	the 1sr field (influence id) uis a free var, and if so, use the
@@ -478,7 +481,7 @@ expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 		IDims = Type-Dims,
 		    length(Dims, 4)),
 		make_inds_for(Dims, Loops, Inds),
-		DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true),
+		DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true)),
 	    Recurse = 0;
 	(Param = (ExpInt=_,_),
 	    member(input_link(_,_, ExpInt,_, Dims), InterInputs), !,

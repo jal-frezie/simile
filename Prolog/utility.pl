@@ -218,7 +218,7 @@ append( [H|T], Y ) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 append_atoms(A1, A2, A) :-
-	name(A1, S1), name(A2, S2), append(S1, S2, S), name(A, S).
+	name(A1, S1), name(A2, S2), append(S1, S2, S), name(MA, S), A=MA.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % append_atoms/2 appends a list of atoms

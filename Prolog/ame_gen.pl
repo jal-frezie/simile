@@ -92,13 +92,18 @@ unjustified. I don't want to process anything in single quotes for
 instance... */
 
 make_legible_for_prolog(String, NewString) :-
-	[Sq, Sp, Pt, N0, Eu, El, Po, Pc, Xm, Eq] = "\' .0Ee()!=",
+	[Sq, Dq, Sp, Pt, N0, Eu, El, Po, Pc, Xm, Eq] = "\'\" .0Ee()!=",
 	Nums = "0123456789",
 	append(Prefix, ToTweak, [start | String]),
 	/* Do not process anything in single quotes */
 	(ToTweak = [Sq | AfterQuote],
 	append(InQuotes, [Sq | Suffix], AfterQuote),
 	    append([Sq | InQuotes], [Sq], Tweaked);
+	/* Put single quotes round things in double quotes so they are read as
+	    atoms rather than lists of Ascii codes */
+	ToTweak = [Dq | AfterQuote],
+	append(InQuotes, [Dq | Suffix], AfterQuote),
+	    append([Sq, Dq | InQuotes], [Dq, Sq], Tweaked);
 	/* do not start a number with a point */
 	ToTweak = [N, Pt | Suffix],
 	\+ member(N, Nums),

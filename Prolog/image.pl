@@ -716,6 +716,10 @@ pick_var(_, V, _, 0) :-
 
 pair_off(_, [], []).
 
+pair_off(Function, [], [var_pair(EnumRef, _) | More]) :-
+	inters:enum_type_ref(EnumRef, Function, _Val, _Units),
+	pair_off(Function, [], More).
+
 pair_off(Function, [Source | Sources], Pairs) :-
 	setof(var_pair(Var, _),
 		represents(Function, Source, Pairs, Var),

@@ -869,6 +869,8 @@ type_for_unit(Unit, Type) :-
 	    Type = double;
 	Unit = boolean, !,
 	    Type = 'BOOLEAN';
+	member(Unit, [a(_ET), n(_ET)]),
+	    Type = int;
 	Type = Unit.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -248,7 +248,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	    InputPairs = []),
 	apply_minmax(Node, UseExpr, FullExpr),
 	replace_subexps(FullExpr, instance, process_expr,
-			sub(TableList, InputPairs, Refs), top_down,
+			sub(Node, TableList, InputPairs, Refs), top_down,
 			Switched, FinalExpr),
 	(member(var_pair(_, Sub), Switched),
 	    m_update:get_solo_list_depth(Sub, _),
@@ -462,7 +462,7 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % list of name-node pairs, and reconstructs the resulting expression. Only they
 % are little lists not atoms now.
 
-process_expr(sub(TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
+process_expr(sub(Fn, TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
 	(Var = size(_); Var = size(_,_)),
 	    get_actual_sizes([Var], [NewVar]),
 	    Recurse = 0;	  
@@ -475,6 +475,8 @@ process_expr(sub(TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
 		find_all_comps(HomeSm, Home),
 		is_instance(_, HomeSm, _, Away, _, TopRef),
 		member(TopRef, Refs)), !;
+	inters:enum_type_ref(Var, Fn, Value, _Units),
+	    NewVar=Value;
 	NewVar = Var),
 	    Recurse = 0;
 	build_table_ref(TableValues, Var, NewVar), Recurse = 1.

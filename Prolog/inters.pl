@@ -1,5 +1,5 @@
 sicstus_module(inters, [final_assignment/10, make_intermediates/11,
-			expand_library/3, function/3,
+			expand_library/3, enum_type_ref/4, function/3,
 			promote_unit/2, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			make_inds_for/3, pointer_from/2, path_section_for/6]).
@@ -200,7 +200,19 @@ import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	LvlN = Lvl0,
 	    PtrN = Ptr0,
 	    make_inds_for(Dims, LocalLoops, Inds).
-	
+
+enum_type_ref(Ref, Model, Value, Units) :-
+	m_class:Model has_class_refinement enum_types of TypeList,
+	    member(TypeName-TypeMems, TypeList),
+	    (Match = TypeName; nth(Value, TypeMems, Match)),
+	    append_atoms(['"', Match, '"'], Ref),
+	    (number(Value),
+		Units=a(TypeName);
+	    length(TypeMems, Value),
+		Units=n(TypeName)), !;
+	m_class:Parent has_part Model,
+	    enum_type_ref(Ref, Parent, Value, Units).
+	    
 /* make_intermediates: This introduces variables for any intermediate results
 required while evaluating a variable. The process is explained in great detail
 in exec_contexts.txt. Meantime, here is the list of arguments: */
@@ -700,8 +712,9 @@ propagate_units(Source, Lowest, Want, Get, Result) :-
 	
 promote_unit(Lo, Hi) :-
 	Lo = Hi;
-	member([Lo, Higher], [[const_int, [int, real]],
-			      [any, [boolean, int, real]],
+	member([Lo, Higher], [[n(_ET), [const_int, int, real]],
+			      [const_int, [int, real]],
+			      [any, [boolean, a(_ET), n(_ET), int, real]],
 			      [int, [real]]]),
 	member(Hi, Higher).
 

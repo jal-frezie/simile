@@ -459,7 +459,7 @@ spread_dims(Node) :-
 	get_av_pair(Obj, 0, units, GivenUnits),
 	get_input_info(Obj, Input_list),
 	
-	(test_eqn(Equation, 32, Input_list, Type, FoundArray, _ParamList, []),
+	(test_eqn(Equation, Node, 32, Input_list, Type, FoundArray, _Ps, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(FoundArray, Array),
 		get_actual_sizes(GivenArray, Array), !,
