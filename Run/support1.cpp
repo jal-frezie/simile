@@ -271,7 +271,7 @@ void insert_graph_data(
    graph_data_pointer->points = array_data;
 }
 */
-graph_data_type* graph_data_pointer = NULL;
+graph_data_type** graph_data_pointer;
 
 void setup_graph_data(
    int index,
@@ -300,16 +300,16 @@ void setup_graph_data(
    }
    va_end(argptr);
 
-   graph_data_pointer = new graph_data_type(index, graph_data_pointer);
-   graph_data_pointer->xlow = xlow;
-   graph_data_pointer->xhigh = xhigh;
-   graph_data_pointer->xspan = xspan;
-   graph_data_pointer->ylow = ylow;
-   graph_data_pointer->yhigh = yhigh;
-   graph_data_pointer->yspan = yspan;
-   graph_data_pointer->range = range;
-   graph_data_pointer->xsize = xsize;
-   graph_data_pointer->points = array_data;
+   *graph_data_pointer = new graph_data_type(index, *graph_data_pointer);
+   (*graph_data_pointer)->xlow = xlow;
+   (*graph_data_pointer)->xhigh = xhigh;
+   (*graph_data_pointer)->xspan = xspan;
+   (*graph_data_pointer)->ylow = ylow;
+   (*graph_data_pointer)->yhigh = yhigh;
+   (*graph_data_pointer)->yspan = yspan;
+   (*graph_data_pointer)->range = range;
+   (*graph_data_pointer)->xsize = xsize;
+   (*graph_data_pointer)->points = array_data;
 }
 
 /*
@@ -361,7 +361,7 @@ double graphpoint(double xval, int index) {
 	int *right,*left;
 	graph_data_type *use_graph_pointer;
 	
-	use_graph_pointer = find_graph(index, graph_data_pointer);
+	use_graph_pointer = find_graph(index, *graph_data_pointer);
 
 	spaces = use_graph_pointer->xsize-1;
 	/* Interval is distance from left of graph in point units */

@@ -166,8 +166,9 @@ __declspec( dllexport )
 		void* eval_submodel_ptr,
 		void* search_from_ptr,
 		void* advance_ptr_ptr,
-		void* get_remote_value_ptr, int* phases, 
-		node_data_line** data_ptr, graph_data_type*** graph_ptr,
+		void* get_remote_value_ptr, 
+		void* graph_ptr,
+		int* phases, node_data_line** data_ptr,
 		int* arc_count, char*** arc_id_list) {
 
   /* Stub is telling us... */
@@ -185,11 +186,11 @@ __declspec( dllexport )
   search_from_ref = (search_from_type*)search_from_ptr;
   advance_ptr_ref = (advance_ptr_type*)advance_ptr_ptr;
   get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
+  graph_data_pointer = (graph_data_type**)graph_ptr;
 
   /* ...and we are telling stub... */
   *phases = phasecount;
   *data_ptr = nodedata;
-  *graph_ptr = &graph_data_pointer;
   *arc_count = (sizeof inputArcs)/sizeof(char*)-1; /* don't include filler */
   *arc_id_list = inputArcs;
   return((sizeof nodedata)/sizeof(node_data_line));

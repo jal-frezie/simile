@@ -134,6 +134,7 @@ public:
 int connCount;
 connectRecord* connectData;
 Tcl_Obj* connectInfoObject;
+graph_data_type* graphdata;
 
 ame_rand_type ame_rand;
 release_graph_data_type release_graph_data;
@@ -150,10 +151,9 @@ get_remote_value_type get_remote_value;
 /* prototypical declarations for functions to be supplied by the model dll
  */
 
-typedef int getcount_type(void*, void*, void*, void*, void*, void*,
+typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*,
-			  int*, node_data_line**, graph_data_type***,
-			  int*, char***);
+			  int*, node_data_line**, int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
@@ -184,7 +184,6 @@ class Model {
 
 public:
   int phases;
-  graph_data_type** graphdata;
   int nodecount;
   node_data_line* nodedata;
   int *connLines;
@@ -231,7 +230,8 @@ public:
 			    (void*)search_from,
 			    (void*)advance_ptr,
 			    (void*)get_remote_value,
-			    &phases, &nodedata, &graphdata,
+			    (void*)&graphdata,
+			    &phases, &nodedata, 
 			    &inArcCount, &inArcList);
     /*	sprintf(erreur, "finding %d (%s) of %d connections, first has top %s and %d dests.", 
 	inArcCount, inArcList[0], connCount, connectData[0].TopArc, connectData[0].DestCount);
@@ -549,7 +549,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 
       return TCL_ERROR;
     }
-    graphptr = find_graph(data_line->graph, *tgtModel->graphdata);
+    graphptr = find_graph(data_line->graph, graphdata);
     sprintf(current, "%f %f %d %f %f %d %d %d",
             graphptr->xlow,
             graphptr->xhigh,
@@ -573,7 +573,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
       return TCL_ERROR;
     } /* if(error) */
 
-    graphptr = find_graph(data_line->graph, *tgtModel->graphdata);
+    graphptr = find_graph(data_line->graph, graphdata);
     error = Tcl_GetDoubleFromObj(interp, argv[3], &(graphptr->xlow));
     if (error != TCL_OK) {
       return error;
