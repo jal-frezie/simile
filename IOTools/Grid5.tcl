@@ -152,6 +152,7 @@ namespace eval grid005 {
                     !$useNodes($winId,freeze)} then {
             DrawGrid5 $winId $useNodes($winId,display1)
 	    FillCanvas $winId
+	    UpdateCaption $winId
         }
     }
     
@@ -187,7 +188,6 @@ namespace eval grid005 {
                 -row 0 -column 1 -rowspan 1 -columnspan 1 -sticky news
         grid $winId.hscroll -in $winId.f -padx 1 -pady 1 \
                 -row 1 -column 0 -rowspan 1 -columnspan 1 -sticky news
-	pack [canvas $winId.sc -height 20] -fill x
         
         # This is an experimental section to set up the grid display just once,
         # when the helper is initialised, so that subsequently all that happens
@@ -222,7 +222,6 @@ namespace eval grid005 {
         $winId.c configure -scrollregion [$winId.c bbox all]
         # bind $winId <Configure> [namespace code "resize $winId %W %x %y %w %h"]
         # bind $winId.c <Configure> [namespace code "resize $winId %W %x %y %w %h"]
-	bind $winId.sc <Configure> [namespace code "recolour_scale $winId"]
     }
     
     proc recolour_scale {winId} {
@@ -230,32 +229,46 @@ namespace eval grid005 {
         
         #ShowMessage debug info "recolour_scale " ok
         
-        $winId.sc delete colour_scale
+        $winId.c delete colour_scale
         
         if {$useNodes($winId,nrow)>$useNodes($winId,ncol)} then {
             set n $useNodes($winId,nrow)
         } else {
             set n $useNodes($winId,ncol)
         }
-        set mult $useNodes($winId,mult)
-        set xwidth [winfo width $winId.sc]
-        set yheight [winfo height $winId.sc]
-        $winId.sc create text 47 [expr $yheight/2] \
+	set leftSc [$winId.c canvasx 0]
+	set rightSc [$winId.c canvasx [winfo width $winId.c]]
+	set bottomSc [$winId.c canvasy [winfo height $winId.c]]
+	set topSc [expr $bottomSc-40]
+	set midSc [expr $bottomSc-20]
+
+	# blank over bottom of display
+	$winId.c create rect $leftSc $topSc $rightSc $bottomSc \
+	    -outline {} -fill [$winId.c cget -bg] -tag colour_scale
+	$winId.c create text [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30] \
+	    -anchor c -tag {colour_scale caption}
+	UpdateCaption $winId
+        $winId.c create text [expr $leftSc+47] [expr $bottomSc-10] \
 	    -text $useNodes($winId,min) -anchor e -tag colour_scale
-        $winId.sc create text [expr {$xwidth-48}] [expr $yheight/2] \
+        $winId.c create text [expr $rightSc-48] [expr $bottomSc-10] \
 	    -text $useNodes($winId,max) -anchor w -tag colour_scale
         
-        set xmin 50
-        set xmax [expr {$xwidth-50}]
+        set xmin [expr $leftSc+50]
+        set xmax [expr $rightSc-50]
         set xincr [expr {($xmax-$xmin)/33}]
         for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
             set x0 [expr {$xmin+$icolour*$xincr}]
             set x1 [expr {$x0+$xincr}]
             set colour $useNodes($winId,c$icolour)
-            $winId.sc create rectangle $x0 0 $x1 $yheight -outline {} \
-                    -fill $colour -tag colour_scale
+            $winId.c create rectangle $x0 $midSc $x1 $bottomSc \
+	    -outline {} -fill $colour -tag colour_scale
         }
         
+    }
+
+    proc UpdateCaption {winId} {
+	variable useNodes
+	$winId.c itemconfig caption -text "[file tail [GetCaptionPathFromId $useNodes($winId,display1)]] (time = [GetModelTime])"
     }
     
     proc ToggleFreeze {winId} {
@@ -502,6 +515,7 @@ namespace eval grid005 {
 	    FillCanvas $winId
 	}
 	eval {$winId.${axis}scroll set} $args
+	recolour_scale $winId
     }
 		  
     proc FillCanvas {winId} {   
