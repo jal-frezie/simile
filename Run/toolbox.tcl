@@ -1153,12 +1153,12 @@ proc AddMainMenu { winid initWidth initDepths} {
     AddAccelerator $winid file "Print..." "<Control-p>"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
-    $fm2 add command -label "c++ code & executables" \
-            -command "MenuSelect $winid.canvas file compile_c"
-    $fm2 add command -label "PostScript file" \
-            -command "DoWithErrors ExportPostscript $winid.canvas"
-    $fm2 add command -label "Model description" \
+    $fm2 add command -label "Model declarations" \
             -command "MenuSelect $winid.canvas file export_prolog"
+    $fm2 add command -label "C++ code & executables" \
+            -command "MenuSelect $winid.canvas file compile_c"
+    $fm2 add command -label "PostScript graphics" \
+            -command "DoWithErrors ExportPostscript $winid.canvas"
     $fm add separator
     if {[info exists custom(first_up)]} {
         $fm add command -label Close -command "byebye $winid" \
