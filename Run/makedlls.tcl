@@ -11,7 +11,7 @@ set compiler_for_windows gnu
 # edition: evaluation, teaching, standard or enterprise
 set edition standard
 # date of final expiry: {hh:mm D M Y} or {} for permanent
-set final_expiry {6 Nov 2004}
+set final_expiry {}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
@@ -104,4 +104,4 @@ if $onUnix {
         #		--output-lib libame_dll.a
 }
 
-exit
+#exit
