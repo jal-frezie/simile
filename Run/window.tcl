@@ -963,7 +963,6 @@ proc DoLocalCmd {win item} {
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
         zoomout {DoZoom $win .707107 1}
-        customize {Customize $win $pushedbutton}
         find {FindCaption $win}
         findnext {NextCaption $win}
         raiseMRE {RaiseMREFor $win}
@@ -1120,9 +1119,21 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add cascade -label "Show detail" -menu $fm.sub3
     set fm3 [menu $fm.sub3 -tearoff 0]
     AddDetailMenu $c $fm3 $initDepths
-    $fm add command -label "Customize..." \
-            -command "DoLocalCmd $winid customize"
-    
+    menu $fm.sub4 -tearoff 0
+    $fm add cascade -label "Customize" -menu $fm.sub4
+    foreach category { \
+                {compartment "Compartments..."} \
+                {variable "Variables..."} \
+                {flow "Flows, bowties and clouds..."} \
+		{influence "Influences..."} \
+                {submodel "Submodels..."} \
+                {relation "Relations..."} \
+                {condition "Channels..."}
+                {select "All components..."}} {
+	$fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
+	    -label [lindex $category 1]
+    }
+
     set fm [menu ${winid}top.model -tearoff 0 -postcommand "AbleComp $winid"]
     ${winid}top add cascade -label Model -underline 0 \
             -menu ${winid}top.model

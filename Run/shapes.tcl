@@ -756,11 +756,11 @@ proc StippleSymbol {w name density selected} {
 
 proc FillSymbol { w name color } {
     foreach object [$w find withtag $name] {
-        foreach outlinable_type "rectangle oval polygon" {
-            if {[string compare [$w type $object] $outlinable_type] == 0 && \
-		    ![string match */background/* [$w gettags $object]]} {
-                $w itemconfigure $object -fill $color
-            }
+	set tags [$w gettags $object]
+	if {[lsearch "rectangle oval polygon" [$w type $object]]!=-1 && \
+		![string match *_text/* $tags] && \
+		![string match */background/* $tags]} {
+	    $w itemconfigure $object -fill $color
         }
     }
 }
@@ -1307,7 +1307,7 @@ proc Customize {winId mode} {
         condition|creation|immigration|reproduction|loss {
             set object channel
             wm title $t "Customize conditions and channels"
-        } move|copy|ghost|select|delete {
+        } ghost|select|snap {
             set object generic
             wm title $t "Customize all components"
         } default {
@@ -1346,11 +1346,13 @@ proc Customize {winId mode} {
 	frame $t.backbox
 	label $t.backbox.bdwhat -text "Show border"
 	pack $t.backbox.bdwhat -side left
-	checkbutton $t.backbox.bd -variable looks($object,txtbd)
+	checkbutton $t.backbox.bd -variable looks(txtbd) \
+	    -command "ZotObjectSize $t $object 0"
 	pack $t.backbox.bd -side left
 	label $t.backbox.bgwhat -text "Show background"
 	pack $t.backbox.bgwhat -side left
-	checkbutton $t.backbox.bg -variable looks($object,txtbg)
+	checkbutton $t.backbox.bg -variable looks(txtbg) \
+	    -command "ZotObjectSize $t $object 0"
 	pack $t.backbox.bg -side left
 	pack $t.backbox
     }
@@ -1488,88 +1490,76 @@ proc CopyLooks {t object} {
     }
     set looks($object,objectsize) [$t.objectsize.scale get]
     set looks($object,lines) [$t.lines.scale get]
+    set looks($object,txtbd) $looks(txtbd)
+    set looks($object,txtbg) $looks(txtbg)
 }
 
 proc DoGraphics {box type middle size} {
     global looks
     $box.canvas delete sample
-    
+
     switch -regexp $type {
-        compartment {
+        compartment|generic {
             set l [expr $middle - 2*$size/5]
             set r [expr $middle + 2*$size/5]
             set t [expr $middle - 3*$size/10]
             set b [expr $middle + 3*$size/10]
-        }
-        submodel {
+	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
+        } submodel {
             set l [expr $middle - 80]
             set r [expr $middle + 80]
             set t [expr $middle - 60]
             set b [expr $middle + 60]
-        }
-        flow {
+	    PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
+		none none 0 0 white 100 normal "sample"
+	} flow {
             set l [expr $middle - $size/4]
             set r [expr $middle + $size/4]
             set t [expr $middle - $size/8]
             set b [expr $middle + $size/8]
-        }
-        function | variable {
-            set l [expr $middle - 3*$size/20]
-            set r [expr $middle + 3*$size/20]
-            set t [expr $middle - 3*$size/20]
-            set b [expr $middle + 3*$size/20]
-        }
-        channel {
-            set l [expr $middle - 3*$size/10]
-            set r [expr $middle + 3*$size/10]
-            set t [expr $middle - 3*$size/10]
-            set b [expr $middle + 3*$size/10]
-        }
-        default {
-            set l [expr $middle - $size/2]
-            set r [expr $middle + $size/2]
-            set t [expr $middle - $size/2]
-            set b [expr $middle + $size/2]
-        }
-    }
-    
-    if {[string compare $type submodel]} {
-        set xbase $middle
-        set ybase $middle
-    } else {
-        set xbase $l
-        set ybase $t
-    }
-    
-    switch -regexp $type {
-        compartment {PutRectangle $box.canvas $l $t $r $b 1 100 {} \
-                    normal "sample"}
-        channel {PutShape $box.canvas $l $t $r $b \
-                    condition 100 normal "sample"}
-        function {PutHexagon $box.canvas $l $t $r $b 100 1 {} \
-                    normal "sample"}
-        variable {PutCrossedCirc $box.canvas $l $t $r $b 1 100 {} \
-                    normal "sample"}
-        submodel {PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
-                    none none 0 0 white 100 normal "sample"}
-        flow {
             PutBowTie $box.canvas $l $t $r $b 100 {} normal "sample"
             PutFatArrow $box.canvas "25 [expr $middle-25] $middle \
                     [expr $middle - 25] $middle [expr $middle + 25] \
                     [expr 2*$middle - 25] [expr $middle + 25]" \
                     100 normal "sample"
-        }
-        influence {PutThinArrow $box.canvas "25 $middle $middle \
+        } variable {
+            set l [expr $middle - 3*$size/20]
+            set r [expr $middle + 3*$size/20]
+            set t [expr $middle - 3*$size/20]
+            set b [expr $middle + 3*$size/20]
+	    PutCrossedCirc $box.canvas $l $t $r $b 1 100 {} normal "sample"
+        } channel {
+            set l [expr $middle - 3*$size/10]
+            set r [expr $middle + 3*$size/10]
+            set t [expr $middle - 3*$size/10]
+            set b [expr $middle + 3*$size/10]
+	    PutShape $box.canvas $l $t $r $b condition 100 normal "sample"
+        } influence {PutThinArrow $box.canvas "25 $middle $middle \
                     [expr $middle-25] [expr 2*$middle - 25] $middle" \
                     100 {} normal "sample"
-        }
-        relation {PutRelation $box.canvas "25 $middle $middle \
+        } relation {
+	    set b $middle
+	    PutRelation $box.canvas "25 $middle $middle \
                     [expr $middle-25] [expr 2*$middle - 25] $middle" \
-                    100 normal "sample"
+		100 normal "sample"
         }
     }
 
     if {[string compare $type influence]} {
+# side to put caption on -- this is fixed for now
+	switch $type {
+	    submodel {
+		set xbase $l
+		set ybase $t
+	    } flow {
+		set xbase $r
+		set ybase $middle
+	    } default {
+		set xbase $middle
+		set ybase $b
+	    }
+	}
+
         PutText $box.canvas [list $xbase $ybase] \
                 $type "sample movable" 100 normal "Sample $type"
         set looks(cheat) [$box.canvas coords [GetCaptionItem $box.canvas sample]]
@@ -1664,11 +1654,11 @@ proc ZotObjectSize {t type size} {
     
 
     set middle [expr $looks(width)/2 + 25]
-    if {[string match generic $type]} {
-        set useLooks compartment
-    } else {
+#    if {[string match generic $type]} {
+#        set useLooks compartment
+#    } else {
         set useLooks $type
-    }
+#    }
     
     CopyLooks $t $useLooks
     DoGraphics $t $useLooks $middle [$t.objectsize.scale get]
@@ -1805,4 +1795,3 @@ button .b
 set looks(buttonColor) [Desystematize [.b cget -bg]]
 set looks(windowColor) white
 destroy .b
-
