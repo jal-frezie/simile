@@ -538,6 +538,8 @@ proc AddHelperSublist {fm title ct} {
     set helperList [glob -nocomplain *.tcl]
     foreach helperApp [lsort $helperList] {
         if [catch {source $helperApp} wibble] {
+	    # done at startup -- make sure dialog is not concealed
+	    wm withdraw .
             ShowMessage "Error loading I/O tool" warning \
                     "I/O tool [pwd]/$helperApp had a $wibble" ok
         } else {
