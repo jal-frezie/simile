@@ -1742,10 +1742,10 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${mode}.gif]
-            pack [button $tb.$mode -image $testImg -command "ItemSelect $mode" \
-                    -borderwidth 1 -relief flat -overrelief raised] -side left -padx 2 -pady 2
-            BindPopup $tb.$mode $mode
-            
+            set bt [button $tb.$mode -command "ItemSelect $mode" -image $testImg -borderwidth 1 -relief flat -overrelief raised]
+	    pack $bt -side left -padx 2 -pady 2
+            BindPopup $bt $mode
+            bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y"
         }
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
@@ -1867,6 +1867,40 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     
     $nb.undo configure -state disabled
     $nb.redo configure -state disabled
+}
+
+proc DragComponentIn {winId button x y} {
+    set whatToAdd [winfo name $button]
+    set top [winfo parent $winId]
+    foreach level [list $top $winId] {
+	scan [winfo geometry $level] %dx%d+%d+%d w h ox oy
+	incr x -$ox
+	incr y -$oy
+    }
+
+    if {$x<0 || $x>$w || $y<0 || $y>$h} {
+	# not in canvas, ignore
+	return
+    }
+
+    set canx [$winId canvasx $x]
+    set cany [$winId canvasy $y]
+    set xco [Unscale $winId $canx]
+    set yco [Unscale $winId $cany]
+    
+    set target [GetClickedObj $winId $canx $cany 6]
+    
+    # Now simulate what Prolog would get from an add component menu selection
+    if {$target} {
+	set node [ExtractPrologName $winId $target]
+	prolog [list tk_click_obj('$winId', click , $xco , $yco , $node , 2)]
+    } else {
+        # a background drop
+	prolog [list tk_click('$winId', $xco , $yco , 2)]
+    }
+    prolog tk_bar_edit_menu('$winId')
+    prolog [list tk_unclick( $xco , $yco )]
+    MenuSelect $winId edit $whatToAdd
 }
 
 proc AbleComp {winid} {
