@@ -545,7 +545,9 @@ set_properties(Wid, Model) :-
 		add_parameter(Model, 0, step, '');
 	    add_parameter(Model, 0, step, NewStep)),
 	    add_parameter(Model, 0, comment, NewComment),
-	    add_parameter(Model, 0, fix_math_args, NewFix),	
+	    (NewFix = 'Default', !,
+		add_parameter(Model, 0, eqn_units, '');
+	    add_parameter(Model, 0, eqn_units, NewFix)),	
 	    add_parameter(Model, 0, separate, NewSeparate),
 	    (NewEnumSpecs = '', !,
 	        NewEnumTypes = [];
@@ -761,7 +763,6 @@ remove_model(Win, Parent) :-
 	    add_parameter(Parent, 0, multiplication_spec, ''),
 	    add_parameter(Parent, 0, comment, ''),
 	    add_parameter(Parent, 0, fill_colour, ''),
-	    add_parameter(Parent, 0, fix_math_args, ''),
 	    redraw_window(Win);
 	start_progress_dialogue,
 	reassure_user("Creating new inputs for values from deleted submodel"),

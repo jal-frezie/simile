@@ -767,11 +767,10 @@ proc InsertFunction {boxname functor} {
 }
 
 proc Disaggregate {parent title colour type fatness icount step \
-            comment enumLists matherror hide separate} {
+            comment enumLists eqnunit hide separate} {
     global disaggregate
 
-    foreach varName {colour type fatness icount matherror hide \
-                separate} {
+    foreach varName {colour type fatness icount eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
     if [llength $icount]>0 {
@@ -925,6 +924,15 @@ proc Disaggregate {parent title colour type fatness icount step \
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
     #            -variable disaggregate(matherror)
     #    pack $mathf.matherror -anchor w
+    frame $mathf.eqnunit
+    label $mathf.eqnunit.caption -text "Use units in math:"
+    pack $mathf.eqnunit.caption -side left
+    #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
+    ComboBox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
+            -values [list Default Yes No] \
+            -width 10 -editable false
+    pack $mathf.eqnunit.pulldown
+    pack $mathf.eqnunit -anchor w -padx 4 -pady 6
     frame $mathf.step
     label $mathf.step.caption -text "Time step index:"
     pack $mathf.step.caption -side left
@@ -942,7 +950,7 @@ proc Disaggregate {parent title colour type fatness icount step \
     #    pack $t.complex -anchor w
     if (![string match $disaggregate(step) Default]) {
         ShowComplexity $t
-    } elseif ($disaggregate(matherror)) {
+    } elseif (![string match $disaggregate(eqnunit) Default]) {
         ShowComplexity $t
     } elseif ($disaggregate(separate)) {
         ShowComplexity $t
@@ -981,7 +989,7 @@ proc Disaggregate {parent title colour type fatness icount step \
         set result [list $disaggregate(colour) $disaggregate(type) \
                 $disaggregate(fatness) $disaggregate(icount) \
                 $step $disaggregate(comment) \
-                $disaggregate(matherror) $disaggregate(hide) \
+                $disaggregate(eqnunit) $disaggregate(hide) \
 		    $disaggregate(separate) $enumTypes]
     } else {
 	set result {}

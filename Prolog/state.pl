@@ -26,8 +26,7 @@ sicstus_module(state, [get_initial_window_size/2, create_window/2,
 	get_moving_obj/1, set_line_start_obj/1, get_line_finish_obj/1, 
 	set_line_finish_obj/1, get_translation/1, set_translation/1,
 	clear_incomplete/0, add_incomplete/1, get_incomplete/1,
-		       stays_positive_by_default/1,
-	do_math_protect/0, set_math_protect/1, change_style/1, get_style/1]).
+	change_style/1, get_style/1]).
 
 sicstus_use_module(library(lists)).
 
@@ -317,22 +316,6 @@ get_style(Style) :-
 	style_is(SavedStyle), !,
 		Style = SavedStyle;
 	Style = sd.
-
-:- dynamic(default_keep_positive/1).
-default_keep_positive(compartment).
-
-stays_positive_by_default(Comp) :-
-	default_keep_positive(Comp).
-
-:- dynamic(math_protect/0).
-
-do_math_protect :-
-	math_protect.
-
-set_math_protect(Val) :-
-	retractall(math_protect),
-	(Val = 0, !;
-	assert(math_protect)).
 
 /* Set editing state to initial default... */
 box_size_is(compartment, 50, 0, 0).

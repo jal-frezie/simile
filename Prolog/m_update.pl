@@ -12,7 +12,7 @@ sicstus_module(m_update,
 		list_local_index_meanings/2, get_input_info/2,
 		get_link_source_data/9, find_node_with_data/3,
 		valid_input/2, insert_variable/5,
-		check_unit/4, check_flow_ends/3,
+		check_unit/4, need_same_dims/2, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
@@ -28,7 +28,8 @@ sicstus_module(m_update,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
 		add_new_line_between/4, change_class/3, get_disag_params/2,
-		time_step_for/3, make_ghost/3, get_possible_start/2]).
+		time_step_for/3, use_units_in/2,
+		make_ghost/3, get_possible_start/2]).
 
 sicstus_use_module([library(lists),
 		sp_only, units, utility, ame_gen, m_class, text]).
@@ -390,14 +391,14 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	/* (on_exception(ParseUnit, (get_actual_sizes(DimExprs,Dims0),
 				 get_actual_sizes(TargetExprs,Dims1)), true),
         */
-	((var(ParseUnit), !,
 	(DimExprs = TargetExprs, !,
 	    ((member(Target_base, [any, n(_ET), a(_ET),
 				      boolean, int, const_int]), !,
-		    Target_type = Target_base;	 
-	        Target_type = real),
+	          Target_type = Target_base;	 
+	      get_conversion(_, Target_base, Target_base, _),
+	          Target_type = real),
 		(Severity = 0, !;
-		Unit_base = Target_base, !;
+		/* Unit_base = Target_base, !; */
 		inters:promote_arg(Unit_base, Target_type, Unit_type), !,
 		    (Severity = 1, !;
 		    \+ Target_type = real, !;
@@ -406,38 +407,35 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 			1 is Scale, !;
 			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
 
-		    sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
+		    sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Target_unit, Target_base, Unit_base], Complaint));
 
-		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_base, Target_type], Complaint));
+		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Target_type, Unit_base], Complaint));
 		
 	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", [Unit_term], Complaint));
 	    
-	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, DimExprs, TargetExprs], Complaint));
-	sicstus_format_to_chars("Unit expression ~w or ~w is out of date: ~w",
-			[Unit_term, Target_unit, ParseUnit], Complaint));
-	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which cannot be evaluated to a positive integer constant.",
-				[Unit_term, DimExprs], Complaint)),
+	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, DimExprs, TargetExprs], Complaint)),
 	(nonvar(Complaint); Complaint = []).
 
 /* decide_param_names fills in the 'local name' slot in these data structures; first
 it lists all those which already have names, then generates new ones which differ
 from these for those which havent. */
 
+need_same_dims(Item, Affected) :-
+	(initiates(Affected, Item); terminates(Affected, Item)),
+	    find_type(Affected, flow).
+
 check_flow_ends(Function, Units, Error) :-
-	get_host(Function, ScreenObj),
-	(find_type(ScreenObj, flow), !,
-	(initiates(ScreenObj, CStart),
+	use_units_in(Function, 'No'),
+	    member(Units, [int, 1]), !,
+	    Error = [];
+	units:default_tick_is(Tick),
+	    get_host(Function, ScreenObj),
+	    need_same_dims(CStart, ScreenObj),
 	    implicit_function(CStart, FStart),
-	    FStart has_class_refinement units of UStart, !,
-	    check_unit(day*Units, UStart, 2, StartError);
-	StartError = []),
-	(terminates(ScreenObj, CFinish),
-	    implicit_function(CFinish, FFinish),
-	    FFinish has_class_refinement units of UFinish, !,
-	    check_unit(day*Units, UFinish, 2, FinishError);
-	FinishError = []),
-	append(StartError, FinishError, Error);
-	    Error = []).
+	    FStart has_class_refinement units of UStart,
+	    check_unit(UStart/Tick, Units, 2, AnError),
+	    \+ AnError = [], !, Error = AnError;
+	Error = [].
 	
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
@@ -1095,8 +1093,6 @@ if they are flows. */
 
 presence_affects(Item, Affected) :-
 	status_affects(Item, Affected);
-	(initiates(Affected, Item); terminates(Affected, Item)),
-	    find_type(Affected, flow);
 	find_type(Item, influence),
 	    Item is_connector from _ to Fn,
 	    implicit_function(Affected, Fn);
@@ -1433,8 +1429,8 @@ get_disag_params(Submodel, [Colour, Nature, Fat, Count, Step, Comment,
 	    all(menu, separate_type_from_mems,
 		[build(EnumSpecs), build(EnumTypes)]), !;
 	EnumSpecs = []),
-	(Submodel has_class_refinement fix_math_args of Fix, !;
-	Fix = 0),
+	(Submodel has_class_refinement eqn_units of Fix, !;
+	Fix = 'Default'),
 	(Submodel has_graphical_attribute hide_contents of Hide, !;
 	Hide = 0),
 	(Submodel has_class_refinement separate of Separate, !;
@@ -1446,6 +1442,13 @@ get_disag_params(Submodel, [Colour, Nature, Fat, Count, Step, Comment,
 time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
 	Step = TopStep.
+
+use_units_in(root, 'No').
+use_units_in(Model, Do) :-
+	Model has_class_refinement eqn_units of Local, !,
+	    Do = Local;	  
+	Parent has_part Model,
+	    use_units_in(Parent, Do).
 
 /* make_ghost establishes a ghost relationship -- Ghost becomes a ghost of Base.
 Ghost ceases to be a ghost of anything it was previously a ghost of. */

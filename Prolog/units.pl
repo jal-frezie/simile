@@ -96,6 +96,7 @@ unit_definition(mm, millimetre).
 unit_definition(cm, centimetre).
 unit_definition(m, metre).
 unit_definition(km, kilometre).
+unit_definition(ft, foot).
 unit_definition(g, gramme).
 unit_definition(w, watt).
 unit_definition(kg, kilogramme).

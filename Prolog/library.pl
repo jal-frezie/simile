@@ -244,6 +244,9 @@ ame_merge( Parent, File, Date, HasCode ) :-
 	(SimileV >= 2.0, !;
 	dialogue:reassure_user("Updating pre-Simile 2.0 model representation"),
 	    adjust_to_6([])),
+	(SimileV >= 4.0, !;
+	dialogue:reassure_user("Updating pre-Simile 4.0 model representation"),
+	    adjust_to_8),
 	user:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -326,6 +329,13 @@ adjust_to_6(Done) :-
 	adjust_to_6(Done), !.
 
 adjust_to_6(_).
+
+adjust_to_8 :-
+	Node has_class_refinement fix_math_args of V,
+	Node no_longer_has_class_refinement fix_math_args of V,
+	adjust_to_8.
+
+adjust_to_8.
 
 shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
 	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-

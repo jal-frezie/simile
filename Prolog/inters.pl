@@ -266,7 +266,10 @@ make_intermediates(
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
 	    Source = param(_, SrcUnits, OrigLoops, _,_),
-	    (Step = dummy, !,
+	    (m_update:use_units_in(SubId, 'No'),
+		get_conversion(_, SrcUnits, SrcUnits, _),
+		Units = 1;
+	    Step = dummy, !,
 		Units = SrcUnits;
 	    unmake_enum_units(SrcUnits, Units)), !,
 	    get_dims_from_loops(OrigLoops, Dims, _),
@@ -492,16 +495,14 @@ make_intermediates(
 	    pointer_from(ChanPath, ChannelPtr),
 	    SourceRef = (arr(ChannelPtr, channelId, [])==ChannelNum),
 	    Units = boolean;
-	Source = time(N),
-	    ((N=0; N = ''), SourceRef = time(Step);
+	Source =.. [TRef, N],
+	    member(TRef, [time, dt]),
+	    ((N=0; N = ''), SourceRef =.. [TRef, Step];
 	    integer(N), SourceRef = Source;
-	    raise_exception(bad_index_number(N, time))),
-	    default_tick_is(Units), !;
-	Source = dt(N),
-	    ((N=0; N = ''), SourceRef = dt(Step);
-	    integer(N), SourceRef = Source;
-	    raise_exception(bad_index_number(N, dt))),
-	    default_tick_is(Units), !;
+	    raise_exception(bad_index_number(N, TRef))),
+	    (m_update:use_units_in(Sm, 'Yes'),
+		default_tick_is(Units);
+	    Units = 1), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
 	    get_dims_from_loops(BuildingArrays, DestDims, DestVals),

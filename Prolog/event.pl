@@ -515,6 +515,9 @@ spread_dims(Node) :-
 /* this will update colours of all nodes connected with the given node */
 
 spread_colour(Node, NewDims) :-
+	need_same_dims(Node, Flow),
+	    update_color(Flow),
+	    fail;
 	setof(More, (More = Node; status_affects(Node, More)), SpreadList),
 	(member(Hit, SpreadList), \+ find_type(Hit, influence);
 	member(Hit, SpreadList), find_type(Hit, influence)),

@@ -988,7 +988,7 @@ aid lazy evaluation as is done for Choose... */
 
 /* Heres a sticky botch...some models are written for modelling environments that
 quietly stick in a huge but finite value when you, say, divide by zero. With 
-the next few lines in place, and math_protect asserted, AME will do the same. */
+the next few lines in place, and math_protect asserted, AME will do the same.
 
 	state:math_protect,
 	(Op = (/),
@@ -1007,7 +1007,7 @@ the next few lines in place, and math_protect asserted, AME will do the same. */
 					NewDivName),
 			name(NewDiv, NewDivName);
 
-/* Enough of these; I might need to do pow(a,b) and perhaps others too.
+   Enough of these; I might need to do pow(a,b) and perhaps others too.
    Now to exorcise the demon of integer division... */
 	Op = (/), !,
 	    VArgs = [Nom, Div],

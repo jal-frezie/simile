@@ -26,9 +26,6 @@ compile( Language, Parent, DestDir) :-
 	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects),
-	(Parent has_class_refinement fix_math_args of Do, !;
-	Do = 0),
-	state:set_math_protect(Do),
 	build_instances(Language, DestDir, Parent, 1, _,_),
 	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,

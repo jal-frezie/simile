@@ -253,7 +253,11 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		 
 		NewUnits = ComboUnits,
 		UnitError = [];
-	    (number(Result), !, UCheck = Units; UCheck = ComboUnits),
+	    ((InterInputs = [];
+	      use_units_in(Function, 'No'),
+	      ComboUnits = 1), !,
+		UCheck = Units;
+	    UCheck = ComboUnits),
 		/* Allow numerical entries to have any physical units */
 	    check_unit(UCheck, Units, 2, UnitMatchError),
 		/* Result can be promoted/converted to given units -- ok */
