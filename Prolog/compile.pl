@@ -232,7 +232,7 @@ keywords in list of things that cannot be used as variable names...*/
 		    const, const_cast, continue, default, delete, do,
 		    double, dynamic_cast, else, enum, except, export,
 		    extern, false, far, finally, float, for, friend,
-		    goto, if, inline, int, long, namespace, near, new,
+		    goto, huge, if, inline, int, long, namespace, near, new,
 		    operator, private, protected, public, register,
 		    reinterpret_cast, return, short, signed, sizeof,
 		    static, static_cast, struct, switch, template,
