@@ -1190,6 +1190,7 @@ proc SaveProjectFile {topNode path tgt} {
     }
     set projectF [NetOpen $ProjectFile w]
     puts $projectF [array get SimileProject]
+    puts $projectF {}
     close $projectF
 }
 
