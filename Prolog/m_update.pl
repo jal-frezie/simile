@@ -1283,7 +1283,7 @@ superfast_delete(Dead) :-
 	Dead has_part AlsoDead,
 	    superfast_delete(AlsoDead),
 	    AlsoDead is_no_longer_model_class,
-	    state:shows_model(Win,AlsoDead),
+	    state:shows_model(Win, AlsoDead),
 	    draw:delete_window(Win),
 	    fail;
 	true.

@@ -476,11 +476,10 @@ menu_handle(Win, edit, CutOrCopy) :-
 	New version: first, find the innermost submodel with the whole
 	selection in it */
 %	assert(suspend_display),
-	setof(Seln, Mid^(find_all_comps(TopModel, Mid),
-			 contains(Mid, Seln),
+	setof(Seln, (contains(TopModel, Seln),
+			\+ Seln = TopModel,
 			Seln is_of_sort box,
-			event:doomed(Seln),
-			set_highlit_obj(0, Mid)), SelnList),
+			event:doomed(Seln)), SelnList),
 	find_innermost_selection_holder(SelnList, Model),
 
 	/* invert_seln_in(Model),
@@ -514,9 +513,13 @@ menu_handle(Win, edit, CutOrCopy) :-
 	(setof(Bit, (contains(Model, Bit), Bit is_of_sort box, \+ Bit = Model),
 	      SelBits), !;
 	SelBits = []), */
-	restart_move,
+%	restart_move,
 %	all(event, do_colours, [build(SelnList), unify(on)]),
 %	retract(suspend_display),
+
+	/* Restore original selection as we may have added submodels */
+	select_all_in(Model, off),
+	all(event, do_colours, [build(SelnList), unify(on)]),
 	(CutOrCopy = cut,
 	    event:delete_net(Model),
 	    finish_move(Model);
@@ -688,8 +691,10 @@ find_innermost_selection_holder([Comp | Rest], Innermost) :-
 	(Rest = [], !,
 	    Innermost = Model;
 	find_innermost_selection_holder(Rest, HoldsRest),
-	    contains(Innermost, HoldsRest),
-	    contains(Innermost, Model), !).
+	    contains(Innermost, HoldsRest, Adds),
+	    contains(Innermost, Model, MoreAdds), !,
+	    append(Adds, MoreAdds, AllAdds),
+	    all(draw, set_highlit_obj, [unify(0), build(AllAdds)])).
 
 find_space_for([L, T, R, B], Model, DefPt, [TargetX, TargetY]) :-
 	get_shape(Model, internal_extent, [ML, MT, MR, MB]),
@@ -1018,6 +1023,7 @@ remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
 	    scrub_run(1),
 	    kill_helpers,
+	    forget_highlit_obj(_,_),
 	    superfast_delete(Parent),
 	    add_parameter(Parent, 0, step, ''),
 	    add_parameter(Parent, 0, multiplication_spec, ''),
@@ -1094,6 +1100,7 @@ off_window(Win) :-
 	    check_deletable(Win, Model),
 	    start_progress_dialogue,
 	    scrub_autosave(Model),
+	    forget_highlit_obj(_,_),
 	    superfast_delete(Model),
 	    delete_tree(Model),
 	    finish_progress_dialogue,

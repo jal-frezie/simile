@@ -1245,12 +1245,12 @@ match_delete_status(Ends, Way) :-
 
 doomed(End) :-
 	get_highlit_obj(L, End),
-	(L<2; \+ depends_on_links(End), L<3).
+	(L<2, !; \+ depends_on_links(End), L<3).
 
 thread_link(Top_arc) :-
 	update_link_route(Top_arc, yes),
 	update_equivs(Top_arc),
-	(m_update:equivalent_arcs(Top_arc, NewArc),
+	(m_class:equivalent_arcs(Top_arc, NewArc),
 		redisplay(NewArc),
 		fail;
 	presence_affects(Top_arc, Other_arc),
@@ -1720,8 +1720,10 @@ influences-flows-nodes so nothing has been consequentially deleted
 when its time comes. */
 
 delete_net(Top) :-
-	setof(Tgt, N^(get_highlit_obj(N, Tgt), N<3, contains(Top, Tgt)),
-	      Range),
+	tk_get_pref(deleteEndToEnd, FollowArcs),
+	setof(Tgt, N^(get_highlit_obj(N, Tgt), N<3,
+		      \+ Tgt = Top,
+		      deletable(Top, FollowArcs, Tgt)), Range),
 	(member(Target, Range),
 	    find_type(Target, influence),
 	    (\+ is_top_arc(Target);
@@ -1752,6 +1754,13 @@ delete_net(Top) :-
 	    change_ghosthood(ExGhost),
 	    fail;
 	true.
+
+deletable(Top, FollowArcs, Tgt) :-
+	contains(Top, Tgt), !;
+	FollowArcs = 1,
+	    m_class:equivalent_arcs(Tgt, InTgt),
+	    get_highlit_obj(M, InTgt), M<3,
+	    contains(Top, InTgt).
 
 kill_primitive(Target) :-
 	off(Target),
