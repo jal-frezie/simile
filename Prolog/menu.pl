@@ -1185,10 +1185,9 @@ off_window(Win) :-
 
 kill_everything :-
 	Win shows_model Model,
-	is_toplevel(Model),
+	is_toplevel(Model), !,
 	off_window(Win),
-	fail;
-	true.
+	kill_everything.
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Win, Target) :-

@@ -37,12 +37,13 @@ unseparate(Nodes) :-
 	Nodes = [].
 
 list_interconnects(Node) :-
-	setof(TopArc, top_arc_for_exit(TopArc), TopArcs), !,
+	setof(TopArc, top_arc_for_exit(Node, TopArc), TopArcs), !,
 	all(compile, entries_for, [build(TopArcs), build(XS)]),
 	build_interconnects(Node, XS);
 	build_interconnects(Node, []).
 	
-top_arc_for_exit(TopArc) :-
+top_arc_for_exit(Node, TopArc) :-
+	contains(Node, DLLSpec),
 	DLLSpec has_class_refinement separate of 1,
 	(End = DLLSpec;
 	DLLSpec has_part End,
