@@ -142,7 +142,7 @@ proc do_for_node {node args} {
 	$newInterp alias RunSettingsAllowSave \
 	    prolog tk_run_settings_tweaked($node)
 	$newInterp eval source ../Run/runmodel.tcl
-	$newInterp eval set chosenPaths(latest) $chosenPaths(latest)
+	$newInterp eval [list set chosenPaths(latest) $chosenPaths(latest)]
 	set runStatus($node,interp) $newInterp
     }
     return [$runStatus($node,interp) eval $args]
