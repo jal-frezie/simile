@@ -29,16 +29,16 @@ namespace eval slide139 {
         if {![info exists done]} {
             kill_helper_window $winId
         } else {
-            pack [set bfrm [frame $winId.buttons]] \
+#            pack [set bfrm [frame $winId.buttons]] \
                     -fill x
-            pack [frame $bfrm.lpad] -side left -fill x -expand true
+#            pack [frame $bfrm.lpad] -side left -fill x -expand true
             
-            set opimg [image create photo -file "../Images/Toolbar/open.gif"]
-            set svimg [image create photo -file "../Images/Toolbar/save.gif"]
-            pack [button $bfrm.merge -compound left -image $opimg -text "Load values" \
+#            set opimg [image create photo -file "../Images/Toolbar/open.gif"]
+#            set svimg [image create photo -file "../Images/Toolbar/save.gif"]
+#            pack [button $bfrm.merge -compound left -image $opimg -text "Load values" \
                     -command [namespace code MergeInputVals]] \
                     -side left -padx 2 -pady 4
-            pack [button $bfrm.save -compound left -image $svimg -text "Save values" \
+#            pack [button $bfrm.save -compound left -image $svimg -text "Save values" \
                     -command [namespace code SaveInputVals]] \
                     -side left -padx 2 -pady 4
             #	pack [frame $bfrm.rpad] -side left -fill x
@@ -53,8 +53,9 @@ namespace eval slide139 {
         #ShowMessage debug info $def ok
 	set levels [lrange [split $title /] 1 end]
 	if {$nest} {
-	    pack [set f [frame [MakeSubFrames $winId.sliderframe $levels]]] \
-                -fill x -expand true
+	    pack [set f [frame [MakeSubFrames $winId.sliderframe $levels \
+				    [namespace current] 0]]] \
+		-fill x -expand true
 	} else {
 	    set f $winId
 	}
@@ -183,7 +184,7 @@ namespace eval slide139 {
 					  [$cbox cget -text]]+1]
     }
 
-    proc MergeInputVals {} {
+    proc Open {smPath} {
         global checkStates sliderVals
         set metaFile [ChooseFile inputs.spi "Load input values from:" 0]
         if {[llength $metaFile]} {
@@ -194,7 +195,7 @@ namespace eval slide139 {
                     #ShowMessage debug info "Doing type $type" ok
                 } else {
                     set pair [split $savedValue =]
-                    set elmt [GetIdFromCaptionPath [lindex $pair 0]]
+                    set elmt [GetIdFromCaptionPath $smPath/[lindex $pair 0]]
                     #ShowMessage debug info "Setting elmt $elmt" ok
                     set arr [lindex $pair 1]
                     if {[llength $arr]==1} {
@@ -209,7 +210,7 @@ namespace eval slide139 {
         }
     }
     
-    proc SaveInputVals {} {
+    proc Save {smPath} {
         global checkStates sliderVals
         set metaFile [ChooseFile inputs.spi "Save input values as:" 1]
         if {[llength $metaFile]} {
@@ -227,18 +228,25 @@ namespace eval slide139 {
                         }
                         set ${var}([lindex $id 1]) $val
                     } else {
-                        puts $iStr [GetCaptionPathFromId $elmt]=$val
+                         PutRelSliderContents $iStr $smPath $elmt $val
                     }
                 }
                 foreach arr $arrs {
-                    puts $iStr [GetCaptionPathFromId $arr]=[array get $arr]
+		    PutRelSliderContents $iStr $smPath $arr [array get $arr]
                     unset $arr
                 }
             }
             close $iStr
         }
     }
-    
+
+proc PutRelSliderContents {iStr smPath elt val} {
+    set fullCapt [GetCaptionPathFromId $elt]
+    if {[string match $smPath/* $fullCapt]} {
+	puts $iStr [string range $fullCapt [string length $smPath/] end]=$val
+    }
+}
+
     proc GetDefVal {vals levels index} {
 #ShowMessage debug info "GetDefVal $vals $levels $index" ok
 	if {$levels==0 && $index>0} {

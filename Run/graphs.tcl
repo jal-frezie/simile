@@ -654,7 +654,7 @@ proc ChooseDataHeader {eb pth where op dtype data} {
 }
 
 proc FileParamDialogue {mustShow parent} {
-    global paramData
+    global paramData widgetNames
     set allNodes [GetObjectList]
     # do it now to shake out errors before opening window
     
@@ -666,6 +666,7 @@ proc FileParamDialogue {mustShow parent} {
 	set paramData(needed) {}
     }
     MakeFrames $t
+    array unset widgetNames
     foreach node $allNodes {
         set isInput [lsearch {TABLE INPUT} [GetModelEval $node]]
 	if {$isInput != -1} {
@@ -683,9 +684,9 @@ proc FileParamDialogue {mustShow parent} {
                 -side left -padx 2 -pady 2
         pack [button $bfrm.cancel -text "Cancel" -command CancelParams -width 10] \
                 -side left -padx 2 -pady 2
-        pack [button $bfrm.merge -text "Load file" -command MergeParams -width 10] \
+#        pack [button $bfrm.merge -text "Load file" -command MergeParams -width 10] \
                 -side left -padx 2 -pady 2
-        pack [button $bfrm.save -text "Save file" -command SaveParams -width 10] \
+#        pack [button $bfrm.save -text "Save file" -command SaveParams -width 10] \
                 -side left -padx 2 -pady 2
         pack [button $bfrm.help -text "Help" -command {ContextSensitiveHelp .fpdialogue data/index.htm} -width 10] \
                 -side left -padx 2 -pady 2
@@ -750,21 +751,25 @@ proc AddEntry {winId node mustShow isInput} {
 	if {[string match false $last]} {
 	    set last boolean
 	}
-	if {[llength $dimList]} {
-	    append dimList " of $last"
-	} else {
-	    set dimList "a $last"
-	}
+    } else {
+	set last [GetModelType $node]
     }
+    if {[llength $dimList]} {
+	append dimList " of $last"
+    } else {
+	set dimList "a $last"
+    }
+
     if {[string length $dimList]} {
 	set slotCaption "[lindex $levels end] ($dimList):"
     } else {
 	set slotCaption [lindex $levels end]
     }
-    pack [set slot [frame [MakeSubFrames $winId.sliderframe $levels]]] -fill x -expand on
+    pack [set slot [frame [MakeSubFrames $winId.sliderframe $levels \
+			       fileparams 0]]] -fill x -expand on
     pack [label $slot.l -text $slotCaption -fg red] -side left
     if {$nodeDims>1} {
-	pack [button $slot.b -image $iconImages(open) -command [namespace code [list GetFromTable $winId $compName]]] -side right
+	pack [button $slot.b -image $iconImages(edit) -command [namespace code [list GetFromTable $winId $compName]]] -side right
     }
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
@@ -794,17 +799,25 @@ proc AddEntry {winId node mustShow isInput} {
     }
 }
 
-proc MakeSubFrames {parent hierarchy} {
-    if {[llength $hierarchy]<=1} {
-        return $parent.box$hierarchy
+proc MakeSubFrames {parent hierarchy ns pt} {
+    global iconImages
+    set level [lindex $hierarchy $pt]
+    set nextPt [expr $pt+1]
+    if {[llength $hierarchy]<=$nextPt} {
+        return $parent.box$level
     } else {
-        set level [lindex $hierarchy 0]
         set nextLevel $parent.frame$level
         if {![winfo exists $nextLevel]} {
             pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2 -side bottom
-            pack [label $nextLevel.label -text $level:]
+	    pack [frame $nextLevel.head] -fill x -expand true
+	    set path [join [lrange $hierarchy 0 $pt] /]
+	    pack [button $nextLevel.head.save -image $iconImages(save) \
+		      -command "${ns}::Save /$path"] -side right
+	    pack [button $nextLevel.head.open -image $iconImages(open) \
+		      -command "${ns}::Open /$path"] -side right
+            pack [label $nextLevel.head.label -text $level:]
         }
-        return [MakeSubFrames $nextLevel [lrange $hierarchy 1 end]]
+        return [MakeSubFrames $nextLevel $hierarchy $ns $nextPt]
     }
 }
 
@@ -914,61 +927,65 @@ proc ListToArray {tgt subs trans dims list} {
 	set dims [lrange $dims 1 end]
     }
     set thisTrans [lindex $trans 0]
+    if {![llength $dims]} {
+	switch [llength $list] {
+	    0 {
+		return [list "Missing value"]
+	    } 1 {
+		return [EnumTypeToNumber $tgt$subs $list $thisTrans]
+	    } default {
+		return [list "Array $list supplied instead of scalar"]
+	    }
+	}
+    }
     if {[llength $list]==1} {
 #puts "setting paramData($tgt) to $headNum"
-	if {[llength $dims]} {
-	    set userDims [join $dims { x }]
-	    return [list "scalar $list supplied instead of array of $userDims"]
-	} else {
-	    return [EnumTypeToNumber $tgt$subs $list $thisTrans]
-	}
-    } else {
-	if {![llength $dims]} {
-	    return [list "Array $list supplied instead of scalar"]
-	}
-	if {[llength $list]%2} {
-	    return [list [lindex $list end] "Missing value"]
-	}
-	array set sub $list
+	set userDims [join $dims { x }]
+	return [list "scalar $list supplied instead of array of $userDims"]
+    }
+    if {[llength $list]%2} {
+	return [list [lindex $list end] "Missing value"]
+    }
+	
+    array set sub $list
 #puts "dims remaining $dims"
-	if {[string match TIME [lindex $dims 0]]} {
+    if {[string match TIME [lindex $dims 0]]} {
 # If time, we can have as many or as few vals as we want, and they can be
 # any positive number
-	    foreach arrayPt [array names sub] {
-		if {![string is double $arrayPt]} {
-		    return [list $timePoint "Time point must be a number."]
-		}
-		set mis [ListToArray $tgt $subs,$arrayPt $trans \
-			 [lrange $dims 1 end] $sub($arrayPt)]
-		if {[llength $mis]} {
-		    return [concat $arrayPt $mis]
-		}
+	foreach arrayPt [array names sub] {
+	    if {![string is double $arrayPt]} {
+		return [list $timePoint "Time point must be a number."]
 	    }
-	    return {}
-	} 
-	if {[llength [lindex $dims 0]]==2 && \
-		[string match RECORDS [lindex [lindex $dims 0] 0]]} {
+	    set mis [ListToArray $tgt $subs,$arrayPt $trans \
+			 [lrange $dims 1 end] $sub($arrayPt)]
+	    if {[llength $mis]} {
+		return [concat $arrayPt $mis]
+	    }
+	}
+	return {}
+    } 
+    if {[llength [lindex $dims 0]]==2 && \
+	    [string match RECORDS [lindex [lindex $dims 0] 0]]} {
 # by-record submodel; check up to biggest
 
 # OK hows this for branez...use
 # the number of elements, because if there is an element larger than the
 # number of elements, one the same or smaller will be missing!
-	    set last [array size sub]
+	set last [array size sub]
 #puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
-	    EnumTypeToNumber [lindex [lindex $dims 0] 1]$subs $last {}
-	} else {
-	    set last [lindex $dims 0]
+	EnumTypeToNumber [lindex [lindex $dims 0] 1]$subs $last {}
+    } else {
+	set last [lindex $dims 0]
+    }
+    for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
+	set indx [NumberToEnumType $arrayPt $thisTrans]
+	if {![info exists sub($indx)]} {
+	    return [list $indx "Missing value"]
 	}
-	for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
-	    set indx [NumberToEnumType $arrayPt $thisTrans]
-	    if {![info exists sub($indx)]} {
-		return [list $indx "Missing value"]
-	    }
-	    set mis [ListToArray $tgt $subs,$arrayPt [lrange $trans 1 end] \
-			 [lrange $dims 1 end] $sub($indx)]
-	    if {[llength $mis]} {
-		return [concat $indx $mis]
-	    }
+	set mis [ListToArray $tgt $subs,$arrayPt [lrange $trans 1 end] \
+		     [lrange $dims 1 end] $sub($indx)]
+	if {[llength $mis]} {
+	    return [concat $indx $mis]
 	}
     }
     return {}
@@ -1021,15 +1038,22 @@ proc CancelParams {} {
     set paramData(done) 0
 }
 
-proc SaveParams {} {
+# MakeSubFrames puts up a load and a save button for each submodel frame, and
+# gives them the Load and Save commands in a given namespace. So we must put
+# the commands in a matching one...
+
+namespace eval fileparams {
+
+proc Save {smPath} {
     global paramState paramData widgetNames
     
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
     if {[llength $metaFile]} {
         set pStr [open $metaFile w]
         
-        foreach compName [array names widgetNames] {
-	    set SubbedComp [StripCrs $compName]
+        foreach compName [array names widgetNames $smPath/*] {
+	    set compTail [string range $compName [string length $smPath/] end]
+	    set SubbedComp [StripCrs $compTail]
 	    if {[info exists paramState($compName)]} {
 		if {[string equal $paramData($compName) \
 			 [LoadTableData $paramState($compName) 0]]} {
@@ -1052,18 +1076,18 @@ proc SaveParams {} {
 # new relative pathnames and I can only generate these starting from the absolute
 # pathname. And the only way to get that without a hack is to cd to it...
 
-proc MergeParams {} {
+proc Open {smPath} {
     global paramState paramData widgetNames
     
     
     set oldDir [pwd]
-    set metaFile [ChooseFile params.spf "Merge parameters from:" 0]
+    set metaFile [ChooseFile params.spf "Load parameters from:" 0]
     if {[llength $metaFile]} {
         set pStr [open $metaFile r]
         while {[gets $pStr savedValue] != -1} {
             #ShowMessage debug info "Restoring $savedValue" ok
             set IdAndValue [split $savedValue =]
-            set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
+            set restoredComp [RestoreCrs $smPath/[lindex $IdAndValue 0]]
 	    set node [GetIdFromCaptionPath $restoredComp]
 	    set trans [GetFromProlog tk_get_info(dummy,$node,types)]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
@@ -1097,6 +1121,7 @@ proc MergeParams {} {
         
     }
     cd $oldDir
+}
 }
 
 # This tests for sensible model values.

@@ -49,7 +49,7 @@ proc LoadIconImages {} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-    foreach fn {open} {
+    foreach fn {open save edit} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
