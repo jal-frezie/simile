@@ -191,11 +191,10 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffStruct),
 	    default_tick_is(Tick),
 	    append_atoms(['"', Tick, '"'], TickQ),
-	    is_instance(compartment, Node,
-			incr(Step,Home++stage_incr(Diffs, Step, TickQ*Change)),
-			Home, Base-Units, Instance),
+	    Expr = incr(Step,Home++stage_incr(Diffs, Step, TickQ*Change)),
 	    Local = [DiffStruct, Instance];
-	[Refs, Local] = [[], []]).
+	[Refs, Local, Expr] = [[], [Instance], none]),
+	    is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
 
 /* Immigration and reproduction nodes behave like compartments with an inflow equal
 to their functional value and an initial value of 0.5. They are reset to 0 when

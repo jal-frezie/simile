@@ -130,6 +130,7 @@ proc ControlDraw {prologVersion} {
         gets $UserStream userinfo(corp)
         gets $UserStream userinfo(oldVersion)
         gets $UserStream userinfo(done)
+	close $UserStream
     } else {
         set userinfo(oldVersion) 0
         set userinfo(done) 0
@@ -153,6 +154,7 @@ proc ControlDraw {prologVersion} {
                 lappend custom(hotlist) $oldFile
             }
         }
+	close $cacheStream
     }
     if {[llength $custom(hotlist)]} {
 	RecordPathChoice .sml [lindex $custom(hotlist) 0] 0

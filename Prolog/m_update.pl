@@ -11,7 +11,8 @@ sicstus_module(m_update,
 	       [get_av_pair/4, add_parameter/4, list_index_meanings/2,
 		list_local_index_meanings/2, get_input_info/2,
 		get_link_source_data/9, find_node_with_data/3,
-		valid_input/2, insert_variable/5, check_unit/4,
+		valid_input/2, insert_variable/5,
+		check_unit/4, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
@@ -422,6 +423,22 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 it lists all those which already have names, then generates new ones which differ
 from these for those which havent. */
 
+check_flow_ends(Function, Units, Error) :-
+	get_host(Function, ScreenObj),
+	(find_type(ScreenObj, flow), !,
+	(initiates(ScreenObj, CStart),
+	    implicit_function(CStart, FStart),
+	    FStart has_class_refinement units of UStart, !,
+	    check_unit(day*Units, UStart, 2, StartError);
+	StartError = []),
+	(terminates(ScreenObj, CFinish),
+	    implicit_function(CFinish, FFinish),
+	    FFinish has_class_refinement units of UFinish, !,
+	    check_unit(day*Units, UFinish, 2, FinishError);
+	FinishError = []),
+	append(StartError, FinishError, Error);
+	    Error = []).
+	
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
 	generate_new_names(InputList, Used).
@@ -1078,6 +1095,8 @@ if they are flows. */
 
 presence_affects(Item, Affected) :-
 	status_affects(Item, Affected);
+	(initiates(Affected, Item); terminates(Affected, Item)),
+	    find_type(Affected, flow);
 	find_type(Item, influence),
 	    Item is_connector from _ to Fn,
 	    implicit_function(Affected, Fn);

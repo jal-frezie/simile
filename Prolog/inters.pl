@@ -785,12 +785,14 @@ try_units(Lowest, Want, Get, Out) :-
 	
 promote_unit(Lo, Hi) :-
 	Lo = Hi;
-	member([Lo, Higher], [[n(_ET), [const_int, int, real]],
-			      [const_int, [int, real]],
-			      [any, [boolean, a(_ET), n(_ET),
-				     const_int, int, real]],
-			      [int, [real]]]),
-	member(Hi, Higher).
+	uses_as(Lo, Med),
+	promote_unit(Med, Hi).
+
+uses_as(any, Type) :-
+	member(Type, [boolean, a(_ET), n(_ET)]).
+uses_as(n(_ET), const_int).
+uses_as(const_int, int).
+uses_as(int, real).
 
 promote_arg(Lo, Hi, Phys) :-
 	promote_unit(Lo, Tpt),

@@ -246,13 +246,16 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
            
 	    (nonvar(UnitError),
 		NewUnits = Units;
-	     (Units = ''; Units = ComboUnits /* ;
-	      next line allows an int to be quietly made into a real if the
-	      expression is now real...do some other way
-	      check_unit(ComboUnits, Units, 2, []) */ ), !,
+	     (Units = ''; /* Units field left empty */
+	     Units = int, ComboUnits = 1), /* num constant changed from int
+	                                      to float -- allow */
+		 
 		NewUnits = ComboUnits,
 		UnitError = [];
-	    check_unit(ComboUnits, Units, 2, UnitMatchError),
+	    (number(Result), !, UCheck = Units; UCheck = ComboUnits),
+		/* Allow numerical entries to have any physical units */
+	    check_unit(UCheck, Units, 2, UnitMatchError),
+		/* Result can be promoted/converted to given units -- ok */
 		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
 
@@ -264,7 +267,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		    \+ (integer(Dim), Dim > 1), !,
 		    sicstus_format_to_chars("This equation evaluates to a data structure which includes an array of size ~w, which is not a valid dimension for a model component -- they must be integers greater than 1.",
 				   [Dim], Complaint6));
-		Complaint6 = []);   
+		check_flow_ends(Function, NewUnits, Complaint6));   
 	    Complaint6 = UnitError);
 	get_term(Unit_st, NewUnits, _),
 	    Complaint6 = Complaint5),

@@ -97,7 +97,9 @@ unit_definition(cm, centimetre).
 unit_definition(m, metre).
 unit_definition(km, kilometre).
 unit_definition(g, gramme).
+unit_definition(w, watt).
 unit_definition(kg, kilogramme).
+unit_definition(kw, kilowatt).
 unit_definition(s, second).
 unit_definition(sec, second).
 unit_definition(lb, pound).

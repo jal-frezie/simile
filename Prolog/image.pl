@@ -705,6 +705,9 @@ checks_out_locally(Func) :-
 	\+ Expr = '', /* sometimes given to flow to get bowtie on right
 		      section 
 	instance:apply_minmax(Func, Expr, FullExpr), */
+	Func has_class_refinement units of Units,
+	analyze_array(Units, Base, _),
+	check_flow_ends(Func, Base, []),
 	replace_subexps(Expr, image, pick_var, Func, top_down, Pairs, _),
 	(setof(Source, valid_input(Func, Source), Sources), !; Sources = []),
 	pair_off(Func, Sources, Pairs).
