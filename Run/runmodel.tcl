@@ -285,7 +285,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
 	    set newHt [expr round($factor*[$tgtImage cget -height])]
 	    scan [$winId coords $object] {%f %f} newX newY
 
-	    if {[string compare none optFontor]} {
+	    if {[string compare none $optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
 # so scale image rather tha re-tiling it
 		if {$factor > 1} {

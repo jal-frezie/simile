@@ -366,6 +366,11 @@ proc GetParts {top tree} {
                     set Description "Image"
 		    set style inline
                 }
+                *.jpeg {
+                    set PartType "image/jpeg"
+                    set Description "Image"
+		    set style inline
+                }
                 model.pl {
                     set PartType "application/x-simile"
                     set Description "Simile model"

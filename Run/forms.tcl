@@ -1111,18 +1111,16 @@ proc ChooseImage {} {
     while {$choosing} {
         set new [ChooseFile image.gif {Image for model background} 0]
         if {[llength $new]} {
-            if {[catch {$newImage read $new -shrink} readFlop]} {
+	    foreach fmt {gif jpeg} {
+		if {![catch {$newImage read $new -shrink} readFlop]} {
+		    $newImage config -format $fmt
+		}
+	    }
+	    if {[string match {} [$newImage cget -format]]} {
                 ShowMessage {Problem loading file} error $readFlop ok
                 # prevent crasho if reading fails
                 #		$newImage config -width 100 -height 100
             } else {
-                set xtn [string trimleft [file extension $new] .]
-                if {[string match jpg $xtn]} {
-                    set fmt jpeg
-                } else {
-                    set fmt $xtn
-                }
-                $newImage config -format $fmt
                 set disaggregate(colour) $newImage
                 PutSize $newImage
                 set choosing 0

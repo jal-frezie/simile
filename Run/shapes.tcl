@@ -665,13 +665,14 @@ proc ShiftImages {topDir way args} {
                             $image config -format $fmt
                             PutSize $image
                             file delete $imgFile
-                            return
                         }
                     }
                     # prevent crasho if reading fails
-                    $image read ../Images/drip.gif -shrink
-                    $image config -format gif
-                    PutSize $image
+		    if {[string match {} [$image cget -format]]} {
+			$image read ../Images/drip.gif -shrink
+			$image config -format gif
+			PutSize $image
+		    }
                 } out {
                     set fmt [$image cget -format]
                     #ShowMessage debug info "Writing $imgFile.$fmt" ok
