@@ -342,7 +342,8 @@ wot need them */
 	append([GlobalDeclComment | GlobalDeclText],
 	       [StructPtrComment | PointerDecls], PointerSection),
 	all(compile, put_in_proc,
-	    [unify(PointerSection), build(FnList), append(Fns, [])]),
+	    [unify(PointerSection), build(FnList),
+	     append(Fns, [])]),
 
 /*	send_to_dest(Stream, Comps), */
 	send_to_dest(Stream, Fns),

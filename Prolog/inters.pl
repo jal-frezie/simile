@@ -716,8 +716,7 @@ make_intermediates(
 		    (Exp = N/D, !,
 			raise_units(Base, N, Mid),
 			extract_units_root(Mid, D, Units, Conv),
-			RConv is Conv**Exp,
-			SourceRef = RConv*ValRef;
+			SourceRef = (Conv^Exp)*ValRef;
 		    raise_units(Base, Exp, Units),
 			SourceRef = ValRef);
 		 ValRef = sofar(SourceRef),

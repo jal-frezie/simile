@@ -111,11 +111,9 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 	Indent is 4*Nesting,
 	/* some of this belongs in the next disjunction */
 
-	(nonvar(Pointer), !,
-	    Temps0 = [];
 	append_atoms(Name, 'type*', Type),
         append_atoms(Name, pointer, PointerForm),
-	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0)),
+	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0),
 
 	make_evaluation_routine_all(L, IndExprs, Graph_count,
 				    RefIndices, Graph_data),
@@ -181,11 +179,9 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	    name(OnPointerRef, AdvanceStr);
 
 	LoopSpec = vm_loop(_,_, BaseLoops, _), !,
-	    (nonvar(Pointer), !,
-		Temps0 = [];
 	    append_atoms(Name, 'type*', Type),
-		append_atoms(Name, pointer, PointerForm),
-		check_local_var(L, Pointer, PointerForm, Type, Used, Temps0)),
+	    append_atoms(Name, pointer, PointerForm),
+	    check_local_var(L, Pointer, PointerForm, Type, Used, Temps0),
 	    refer_value(L, Pointer, PointerRef),
 	    all(compile, get_base_ptrs,
 		[build(BaseLoops), append(Names, []), append(BasePtrs, [])]),
@@ -227,11 +223,9 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	Indent3 is Indent2 + 4,
 	Indent4 is Indent3 + 4,
 
-	(nonvar(Pointer), !,
-	    Temps0 = [];
 	append_atoms(Name, 'type*', Type),
-	    append_atoms(Name, pointer, PointerForm),
-	    check_local_var(L, Pointer, PointerForm, Type, Used, Temps0)),
+	append_atoms(Name, pointer, PointerForm),
+	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0),
 	make_evaluation_routine_all(L, LocalIndices, 0, RefIndices, _),
 	make_struct_reference(L, Pointer, next, OnPointer),
 	refer_value(L, OnPointer, OnPointerRef),
@@ -453,6 +447,7 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	Indent1 is Indent + 4,
 
 	append_atoms(Name, count, Count),
+	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointer),
 	resolve_pointer(L, MetaPointer, MPTarget),
@@ -491,7 +486,8 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 
 	do_assign_list(L, Continuation, Graph_count, [Current | Preambles],
 			[Starters, Finishers | Postambles],
-			Used, Graphs, Temps, Results).
+			Used, Graphs, Temps0, Results),
+	merge_lists([[Type, Pointer, []]], Temps0, Temps).
 
 /* This is similar to the last one, but handles reproduction. Owing to the
 limitations of Tcl it switches context between current instance and new instances.
@@ -511,6 +507,7 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr),
 	refer_value(L, SubmodelStartPtr, SubmodelStartPtrRef),
 	append_atoms(Name, count, Count),
+	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointer),
 	resolve_pointer(L, MetaPointer, MPTarget),
@@ -571,7 +568,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 
 	do_assign_list(L, Continuation, Graph_count, [Current | Preambles],
 			[Starters, Finishers | Postambles],
-			Used, Graphs, Temps, Results).
+			Used, Graphs, Temps0, Results),
+	merge_lists([[Type, Pointer, []]], Temps0, Temps).
 
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
@@ -587,6 +585,7 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	/* Now stick in a loop */
 	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr), 
 
+	append_atoms(Name, 'type*', Type),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointer),
 	/* Set pointer to first model in list, and dive into loop */
@@ -639,7 +638,8 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 		EndLoop9, EndLoop12], NewCurrent)),    
 	do_assign_list(L, Clauses,
 			Graph_count, Preambles, [NewCurrent | Postambles],
-			Used, Graphs, Temps, Results).
+			Used, Graphs, Temps0, Results),
+	merge_lists([[Type, Pointer, []]], Temps0, Temps).
 
 /* This is a fairly horrrible clause that puts in what is done when a new submodel
 instance is generated; if the instance fails to exist, it terminates building it,

@@ -328,11 +328,11 @@ render(c, class_declaration, Instance, Indent, ClassDecl) :-
 /* pointer declaration for a given type */
 render(L, pointer_declaration, instance(submodel, SmName, 
 		xrefs(_,_, Bases, _), Name, Type-_), Indent, Rest) :-
-	do_loop_pointers(L, SmName, Type, Name, Temps1),
-	all(render, do_base_pointers,
+	do_loop_pointers(L, SmName, Type, Name, Temps),
+/*	all(render, do_base_pointers,
 	    [unify(L), build(Bases), append(Temps2, [])]),
 	append(Temps1, Temps2, Temps),
-	render_all(L, variable_declaration, Temps, Indent, Rest).
+*/	render_all(L, variable_declaration, Temps, Indent, Rest).
 
 render(L, data_declaration,
 		instance(NodeType, SymbolicName, _, NameIn,
@@ -446,13 +446,13 @@ render(tcl, release_memory, Pointer, Indent, [Result]) :-
 	sicstus_format_to_chars("~*snamespace delete ~a",
 			[Indent, " ", Zap], ResultStr),
 	name(Result, ResultStr).
-
+/*
 do_base_pointers(_, base(_,_, []), []).
 do_base_pointers(L, base(instance(submodel,_, xrefs(_, Parent, _,_),_, Type-_),
 		       _, [Ptr | Ptrs]), [[Type, BasePtd, []] | Rest]) :-
 	declare_pointer(L, Ptr, BasePtd),
 	do_base_pointers(L, base(Parent, _, Ptrs), Rest).
-
+*/
 do_loop_pointers(L, SmName, Type, Name, Late) :-
 
 /*	append_atoms(Name, pointer, Ptr),
