@@ -513,6 +513,29 @@ proc CheckUpToDate {node action} {
     }
 }
 
+package require Itcl
+itcl::class ModelWindowExtn {
+    variable winId
+    constructor {awinId} {
+        set winId $awinId
+    }
+    
+}
+
+proc LoadModelWindowExtensions {} {
+    set origDir [pwd]
+    cd ../extensions
+    #tk_messageBox -message "LoadModelWindowExtensions pwd [pwd]" -type ok
+    set extensionList [glob -nocomplain *.tcl]
+    foreach extension [lsort $extensionList] {
+        if [catch {source $extension} wibble] {
+            ShowMessage "Error loading Extension" warning \
+                    "Extension [pwd]/$extension had a $wibble" ok
+        }
+    }
+    cd $origDir
+}
+
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir
     
@@ -698,6 +721,7 @@ proc ControlDraw {prologVersion} {
     }
     CustomizeLooks
 #    MakeHelperMenu
+    LoadModelWindowExtensions
     
     # Bogosity alert -- setting an env var to {} causes it to stay
     # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
