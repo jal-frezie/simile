@@ -301,11 +301,6 @@ namespace eval ::$keyValue {
         #    drawGraphpad $winId
     }
     
-    proc NoMoreVar {w} {
-        ReleaseClicks $w
-        $w.canvas delete prompt
-    }
-    
     proc Settings {w} {
         # copy the values of the variables to be edited to temp, but namespace accessible, variables
         variable DrawLines $::graphtools::plot($w,DrawLines)
@@ -414,27 +409,27 @@ namespace eval ::$keyValue {
         $w.canvas raise toplevel
         
         ### Bindings
-        $w.canvas bind axis_line <Double-1> \
+        #$w.canvas bind axis_line <Double-1> \
                 [namespace code "settings_axis $w"]
         $w.canvas bind all <Button-1> \
                 [namespace code "CanvasMark $w %x %y %W"]
         $w.canvas bind movable <B1-Motion> \
                 [namespace code "CanvasDrag %x %y %W"]
-        $w.canvas bind xaxis_movable <B1-Motion> \
+        #$w.canvas bind xaxis_movable <B1-Motion> \
                 [namespace code "Xstretch $w %W %x %y %w %h"]
-        $w.canvas bind xslidable <B1-Motion> \
+        #$w.canvas bind xslidable <B1-Motion> \
                 [namespace code "Xslide $w %W %x %y; draw_Xaxis $w "]
         ##    $w.canvas bind all <B1-Motion> \
         ##            [namespace code "Ystretch $w %W %x %y %w %h"]
-        $w.canvas bind yaxis_movable <B1-Motion> \
+        #$w.canvas bind yaxis_movable <B1-Motion> \
                 [namespace code "Ystretch $w %W %x %y %w %h"]
-        $w.canvas bind yslidable <B1-Motion> \
+        #$w.canvas bind yslidable <B1-Motion> \
                 [namespace code "Yslide $w %W %x %y; draw_Yaxis $w "]
         #    $w.canvas bind xslidable <ButtonRelease-1> \
         #                    [namespace code "Reset_Xaxis $w"]; # event gets lost
-        $w.canvas bind yaxis_movable <ButtonRelease-1> \
+        #$w.canvas bind yaxis_movable <ButtonRelease-1> \
                 [namespace code "draw_Yaxis $w"]
-        $w.canvas bind xaxis_movable <ButtonRelease-1> \
+        #$w.canvas bind xaxis_movable <ButtonRelease-1> \
                 [namespace code "draw_Xaxis $w"]
         
         for {set i 0} {$i<$nYlabel} {incr i} {
@@ -451,16 +446,18 @@ namespace eval ::$keyValue {
         bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
         bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
         
-        $w.canvas bind xslidable <Enter> \
-                [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
-        $w.canvas bind yslidable <Enter> \
-                [namespace code "$w.canvas configure -cursor sb_v_double_arrow"]
-        $w.canvas bind yaxis_movable <Enter> \
-                [namespace code "$w.canvas configure -cursor fleur"]
-        $w.canvas bind xaxis_movable <Enter> \
-                [namespace code "$w.canvas configure -cursor fleur"]
-        $w.canvas bind all <Leave> \
-                [namespace code "$w.canvas configure -cursor arrow"]
+################################################################################
+#         $w.canvas bind xslidable <Enter> \
+#                 [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
+#         $w.canvas bind yslidable <Enter> \
+#                 [namespace code "$w.canvas configure -cursor sb_v_double_arrow"]
+#         $w.canvas bind yaxis_movable <Enter> \
+#                 [namespace code "$w.canvas configure -cursor fleur"]
+#         $w.canvas bind xaxis_movable <Enter> \
+#                 [namespace code "$w.canvas configure -cursor fleur"]
+#         $w.canvas bind all <Leave> \
+#                 [namespace code "$w.canvas configure -cursor arrow"]
+################################################################################
     }
     
     proc Reset_Xaxis {w} {
