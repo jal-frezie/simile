@@ -23,13 +23,13 @@ spHtAir(_) --> (1.012).
 spHtWaterVap(_) --> (1.88).
 spHtCO2(_) --> (0.85).
 
-% Function svp(Temp)
+% Function satVapPress(Temp)
 % Returns the saturated vapour pressure, svp, in kPa for the       
 % temperature, Temp, in degrees C by                                  
 % Tetens' formula from Montieth and Unsworth 1990 Principles of    
 % Environmental Physics p10 adapted for T in deg C                 
 % Values are within 1 Pa upto 35 deg C                             
-svp(Temp) --> 0.611 * exp(17.27 * (Temp) / (Temp + 237.15)).
+satVapPress(Temp) --> 0.611 * exp(17.27 * (Temp) / (Temp + 237.15)).
 
 % Function LatentHtH2O(Temp)
 % returns the Latent heat of vapourisation of water at             
@@ -76,19 +76,6 @@ quadraticSmaller(A,B,C) -->
 % find the larger root of a quadratic
 quadraticLarger(A,B,C) -->
   (- B + sqrt(B*B - 4.0*A*C)) / (2.0*A).
-
-% leapYear true if it is else false
-leapYear( Year ) -->
-  if (fmod(Year, 100) == 0) then
-     (fmod(Year, 400) == 0)
-   else
-     (fmod(Year, 4) == 0).
-
-% dayOfYear
-dayOfYear(Year,Month,Day) -->
-  EndOfPrevMonth  =  [0,31,59,90,120,151,181,212,243,273,304,334],
-  DOY=element(EndOfPrevMonth,Month)+Day, 
-  choose(leapYear(Year), choose(Month>1,DOY + 1,DOY),DOY).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Functions from:
