@@ -221,7 +221,7 @@ itcl::class similescript::RunControl {
         Hide
     }
     
-    public method Run {} {
+    public method Start {} {
         # returns the time to complete (to run the simulation)
         set timestr [time [list do_for_node $modelNode ${keyvalue}::SetMode $winId start]]
         set musec [lindex $timestr 0]
