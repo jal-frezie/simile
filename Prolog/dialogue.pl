@@ -77,6 +77,9 @@ do_equation_dialog(Win, Part) :-
 	    TypeBase = real,
 	    TitleForm = 'Value';
 	TitleForm = 'Equation'),
+	(ClickedObj is_of_sort channel, !,
+	    TypeDims = [];
+	true),
 	sicstus_format_to_chars("~a for ~a", [TitleForm, Caption], 
 BoxHeaderStr),
 	name(BoxHeader, BoxHeaderStr),
@@ -132,7 +135,8 @@ BoxHeaderStr),
 	interact_equation(Result_list),
 	retract(input_list_is(Updated_list)),
 	(Result_list = [], !, destroy_equation, fail; 
-	update_equation(Part, IndxCount, Updated_list, TypeBase, Result_list)),
+	update_equation(Part, IndxCount, Updated_list, TypeBase-TypeDims,
+			Result_list)),
 		/* fails if action does not complete edit */
 	!, destroy_equation.
 	/* last cut necessary because otherwise a retry will cause 
@@ -219,7 +223,7 @@ LateInputs],
 	    assert(input_list_is(Input_list))),
 	fail.
 
-update_equation(Function, IndxCount, InterInputs, TypeBase,
+update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
 	member([Is_P, ParamsAllowed, EqnNeeded],
@@ -303,7 +307,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 			Complaint6 = "This equation evaluates to a list or an array of lists. Model components are not allowed to have list values.";
 		    \+ (integer(Dim), Dim > 1), !,
 		    sicstus_format_to_chars("This equation evaluates to a data structure which includes an array of size ~w, which is not a valid dimension for a model component -- they must be integers greater than 1.",
-				   [Dim], Complaint6));
+				   [Dim], Complaint6);
+		    \+ TypeDims = MultInts, !,
+		    Complaint6 = "This type of component cannot be an array.");
 		check_flow_ends(Function, NewUnits, Complaint6));   
 	    Complaint6 = UnitError);
 	get_term(Unit_st, NewUnits, _),
