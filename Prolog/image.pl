@@ -55,7 +55,7 @@ to give background colours to submodels with non-transparent images. */
 get_window_colour(Submodel, Colour, Images) :-
 	get_colour(Submodel, TopColour, TopImage, TopPos),
 	((TopImage = none; TopPos = 'Centred'), !, AddImages = [];
-	    AddImages = [TopImage]),
+	    AddImages = [[TopImage, TopPos]]),
 	(TopColour = clear, !,
 	    (Parent has_part Submodel,
 		get_window_colour(Parent, Colour, BaseImages), !;

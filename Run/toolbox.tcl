@@ -1165,14 +1165,20 @@ proc ChangeParentTitle {wc title bg} {
     scan [$wc cget -scrollregion] "%g %g %g %g" bl bt br bb
 
     foreach colour $bg {
+	if {[llength $colour]>1} {
+	    set posn [lindex $colour 1]
+	    set colour [lindex $colour 0]
+	} else {
+	    set posn Tiled
+	}
+	set tag "/base/ /background/"
 	if {[string equal clear $colour]} {
 	} elseif {[catch {image type $colour}]} {
 	    $wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
-                -tag "/base/ /background/"
+                -tag $tag
 	} else {
-	    image create photo base$wc
-	    $wc create image $bl $bt -anchor nw -image base$wc \
-                -tag "/base/ /background/ source($colour)"
+	    $wc create image $bl $bt -anchor nw -image [image create photo] \
+		     -tag [concat $tag "source($colour) posn($posn)"]
 	}
     }
     $wc lower /base/ ;# should keep them in order
@@ -1182,14 +1188,26 @@ proc ChangeParentTitle {wc title bg} {
 proc ResizeBackgnd {wc l t r b} {
     foreach baseItem [$wc find withtag /base/] {
 	if {[string match image [$wc type $baseItem]]} {
+	    set baseImg [$wc itemcget $baseItem -image]
 #	    set oldW [base$wc cget -width]
 #	    set oldH [base$wc cget -height]
 	    $wc coords $baseItem $l $t
 	    set w [expr int($r-$l)]
 	    set h [expr int($b-$t)]
-	    base$wc configure -width $w -height $h
-	    regexp {source\(([^\)]+)\)} [$wc gettags $baseItem] all sourceImage
-	    base$wc copy $sourceImage -to 0 0 $w $h ;# clever stuff later
+	    $baseImg configure -width $w -height $h
+	    set tags [$wc gettags $baseItem]
+	    regexp {source\(([^\)]+)\)} $tags all sourceImage
+	    if {[regexp {posn\(([^\)]+)\)} $tags all sourcePosn]} {
+		if {[string equal Scaled $sourcePosn]} {
+		    set sourceImage [GrowImage $sourceImage $w $h]
+		    set usingTemp 1
+		}
+	    }
+	    $baseImg blank
+	    $baseImg copy $sourceImage -to 0 0 $w $h ;# clever stuff later
+	    if {[info exists usingSpare]} {
+		image delete $sourceImage
+	    }
 	} else {
 	    $wc coords $baseItem $l $t $r $b
 	}

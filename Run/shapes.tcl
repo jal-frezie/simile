@@ -374,11 +374,16 @@ proc PutFatArrow { w ptz fatness colourScheme tagSet} {
 # necessary...
 
 proc FillSmImage {fCol layout smbg mw mh intRad} {
+    if {[string equal Scaled $layout]} {
+	set fCol [GrowImage $fCol $mw $mh]
+	set layout Centred
+	set usingSpare 1
+    }
     set srcWidth [$fCol cget -width]
     set srcHeight [$fCol cget -height]
-    
-    # Now copy the middle bit over
+
     $smbg blank
+    # Now copy the middle bit over
     MyTile $smbg $layout $mw $mh 0 $intRad $mw [expr $mh-$intRad] $fCol \
             $srcWidth $srcHeight
     
@@ -393,6 +398,9 @@ proc FillSmImage {fCol layout smbg mw mh intRad} {
         set ft [expr $mh-$ft]
         set fb [expr $ft+1]
         MyTile $smbg $layout $mw $mh $fl $ft $fr $fb $fCol $srcWidth $srcHeight
+    }
+    if {[info exists usingSpare]} {
+	image delete $fCol
     }
 }
 
@@ -442,10 +450,87 @@ proc MyTile {dest pos dw dh l t r b src w h} {
 		set dt [max $t $ost]
 		$dest copy $src -from $sl $st $sr $sb -to $dl $dt
 	    }
+	} Scaled {
+	    # copy pixel by pixel -- not used, instead image is preprocessed
+	    # with zoom/subsample, then displayed centred
+	    for {set y $t} {$y<$b} {incr y} {
+		set sy [expr $y*$h/$dh]
+		for {set x $l} {$x<$r} {incr x} {
+		    set sx [expr $x*$w/$dw]
+		    $dest copy $src -from $sx $sy [incr sx] [expr $sy+1] \
+			-to $x $y
+		}
+	    }
 	}
     }
 }
 
+proc GrowImage {fCol mw mh} {
+    set srcWidth [$fCol cget -width]
+    set srcHeight [$fCol cget -height]
+#    switch $layout {
+#	Scaled {
+	    # Resize X and Y axes separately to avoid making too large an
+	    # intermediate image
+	    set xrat [ChooseIntegerRatio [expr 1.0*$mw/$srcWidth]]
+	    image create photo spare1
+	    spare1 copy $fCol -zoom [lindex $xrat 0] 1 -shrink
+	    image create photo spare2
+	    spare2 copy spare1 -subsample [lindex $xrat 1] 1 -shrink
+	    
+	    set yrat [ChooseIntegerRatio [expr 1.0*$mh/$srcHeight]]
+	    spare1 blank
+	    spare1 copy spare2 -zoom 1 [lindex $yrat 0] -shrink
+	    spare2 blank
+	    spare2 copy spare1 -subsample 1 [lindex $yrat 1] -shrink
+	    
+	    image delete spare1
+	    # copying does not update image's size parameter -- do it by hand
+	    set srcWidth [expr $srcWidth*[lindex $xrat 0]/[lindex $xrat 1]]
+	    set srcHeight [expr $srcHeight*[lindex $yrat 0]/[lindex $yrat 1]]
+#	} Tiled {
+	    # Using builtin tiling is slow when starting from a small image --
+	    # This version was inspired by the opening titles of Dilbert
+
+    # note that actually tiling is slow because it creates images with
+    # complicated transparent areas -- the Dilbert process just slows it
+    # down more by adding overheads so has been removed
+
+#	    image create photo spare2
+#	    spare2 copy $fCol
+#	    while {$srcWidth<$mw} {
+#		puts [list spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#			  -to $srcWidth 0]
+#		spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#		    -to $srcWidth 0 -compositingrule set
+#		set srcWidth [expr 2*$srcWidth]
+#	    }
+#	    while {$srcHeight<$mh} {
+#		puts [list spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#			  -to 0 $srcHeight]
+#		spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#		    -to 0 $srcHeight -compositingrule set
+#		set srcHeight [expr 2*$srcHeight]
+#	    }
+#	}
+#    }
+    spare2 config -width $srcWidth
+    spare2 config -height $srcHeight
+    return spare2
+}
+
+proc ChooseIntegerRatio {fraction} {
+    set m 1
+    while {1} {
+	set d [max round($m/$fraction) 1]
+	set close [expr $m/($fraction*$d)]
+	if {$close > 0.95 && $close < 1.05} {
+	    return [list $m $d]
+	}
+	incr m
+    }
+}
+	
 proc MoveText {w id ptz} {
     set mptz [ScaleList $w $ptz]
     eval {$w move [GetCaptionItem $w $id]} $mptz
