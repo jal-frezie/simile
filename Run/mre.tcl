@@ -81,6 +81,7 @@ proc RunEnv::Create { ModelWin } {
         
         set descmenu {
             "&File" all file 0 {
+                {command "&New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::KillDisplays} }
                 {command "&Load configuration..." {} "Load a configuration of displays" \
                             {} -command {::RunEnv::LoadView} }
                 {command "&Save configuration..." {} "Save a configuration of displays" \
@@ -100,10 +101,8 @@ proc RunEnv::Create { ModelWin } {
                 {command "Cu&t"    {} "Cut display" {} -command "RunEnv::CutHelper $::RunEnv::CurrentContainer" }
                 {command "&Paste"    {} "Paste display" {} -command "::RunEnv::PasteHelper $::RunEnv::CurrentContainer" }
                 {separator}
-                {command "&Remove..."    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
-                {separator}
+                {command "&Remove"    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
                 {command "&Clear all"    {} "Clear all displays" {} -command {ClearView} }
-                {command "Cl&ose all"    {} "Close all displays" {} -command {::RunEnv::KillDisplays} }
             }
             "&Help" all help 0 {
                 {command "&Contents..." {} "View the help file contents" {} -command {ContextSensitiveHelp .mre run/single.htm} }
@@ -215,7 +214,7 @@ proc RunEnv::AddNotebook {containerId} {
         set newContainer [$containerId.notebook getframe $pageId]
         panedwindow $newContainer.panedwindow -orient vertical
         pack $newContainer.panedwindow -expand yes -fill both
-        frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1
+        frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1; # -relief ridge;# jmm
         bind $newContainer.panedwindow.pane0 <Button-1> "::RunEnv::SetCurrentContainer %W"
         bind $newContainer.panedwindow.pane0 <Button-3> \
                 "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
