@@ -392,9 +392,12 @@ make_intermediates(
                        ClearPath, Step, [])]),
 	(Functor = last, !,
 	    /* we can update the saved value as soon as it has been used,
-	    but we need to wait for all the goals that might use it */
+	    but we need to wait for all the goals that might use it...started
 	    Setting = [make(increment(TotalName),
 			    [Target, increment(Target) | Depends],
+	    but now goes in update phase before compartments so only needs to
+	    check if another last(...) has been copied from it */
+	    Setting = [make(lastvalue(TotalName), [lastvalue(Target)],
 			    WriteContext, Step, [assign(FillRef, IncrExpr)]),
 		       make(TotalName, [cleared(TotalName), time],
 			    DestPath, Step, [])];

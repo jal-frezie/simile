@@ -210,10 +210,11 @@ bits and pieces */
 	extract_assignments(instance(submodel, _,xrefs(FullModel, _,_,_), _,_),
 			    [], TopStep, Phases, [], Used,
 			    Inters, UpdateForm, ReevaluateForm),
-	set_free_phases(UpdateForm, Phases),
-	set_free_phases(ReevaluateForm, Phases),
+/*	set_free_phases(UpdateForm, Phases),
+	set_free_phases(ReevaluateForm, Phases), */
+	pick_state_vars(ReevaluateForm, EvaluateForm, StateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
-	check_functions(ReevaluateForm, UpdateForm, Phases, SortedForm),
+	check_functions(EvaluateForm, UpdateForm, Phases, SortedForm),
 
 	user:version_is(V),
 	render(Language, variable_declaration,
@@ -228,7 +229,7 @@ bits and pieces */
 	
 	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
 */
-	build_submodel_functions(Language, Phases, Inters,
+	build_submodel_functions(Language, Phases, Inters, StateForm,
 				 UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, GraphClearText, Fns),
 
@@ -337,6 +338,16 @@ invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 	    generate_name(L, PtrBase, Ptr, Used),
 	    invent_ptr_names(L, LinkName, Parent, Instance, Used, MorePtrs),
 	    Ptrs = [Ptr | MorePtrs].
+
+pick_state_vars(All, Rate, State) :-
+	append(AllRate, [OneState | SomeState], All),
+	OneState = make(lastvalue(_), _,_,_,_), !,
+	    pick_state_vars(SomeState, MoreRate, MoreState),
+	    append(AllRate, MoreRate, Rate),
+	    State = [OneState | MoreState];
+	Rate = All,
+	    State = [].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % check_functions tests for circularity, then puts each function
 % evaluation into the slowest time step in which it needs to be updated
@@ -537,17 +548,17 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Inters, UpdateForm, SortedForm,
-			  Used, ExtPass, AllGraphs, GraphClearText, Decls) :-
+build_submodel_functions( Language, Phases, Inters,
+			  StateForm, UpdateForm, SortedForm,
+			  Used, ExtUsers, AllGraphs, GraphClearText, Decls) :-
 	reassure_user("Ordering model execution assignments"),
 
 	ExtBlocker = make(externs_done, [externs_done], [], 0, []),
 	/* rough and ready -- the two externs_done instructions will each
 	block the other plus anything else dependent on this condition */
 	order_all_assignments(Phases, [ExtBlocker, ExtBlocker | SortedForm],
-			IntOrdered, ExtUsers),
-	select(ExtBlocker, ExtUsers, ExtPass),
-	order_all_assignments(Phases, ExtPass, ExtOrdered, Lost),
+			IntOrdered, [ExtBlocker, ExtBlocker | ExtUsers]),
+	order_all_assignments(Phases, ExtUsers, ExtOrdered, Lost),
 	(\+ Lost = [],
 	    select(Awkward, Lost, Others),
 	    \+ (order(Holdup, Awkward), member(Holdup, Others)),
@@ -555,18 +566,14 @@ build_submodel_functions( Language, Phases, Inters, UpdateForm, SortedForm,
 	    name(Gone, GoneStr),
 	    raise_exception(Gone);
 	true),
+	order_all_assignments(Phases, StateForm, OrdStates, _),
 	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
 
 	reassure_user("Generating code for model execution"),
-	/* We want to declare temporary variables separately in each procedure,
-	so make sure building one does not set names for the other. Added some
-	way round this as GNU prolog does not like copying terms with lots
-	of variables. */
-	=(OrdUpdates, UpdateCopy),
-	=(IntOrdered, IntCopy),
-	build_eval_proc(Language, updatemodel, UpdateCopy, [], Used,
+	append(OrdStates, OrdUpdates, AllUpdates),
+	build_eval_proc(Language, updatemodel, AllUpdates, [], Used,
 			_, _, UpDecls),
-	build_eval_proc(Language, int_evalmodel, IntCopy, Inters, Used,
+	build_eval_proc(Language, int_evalmodel, IntOrdered, Inters, Used,
 		IntGraphs, IntClearText, IntDecls),
 	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Inters, Used,
 		ExtGraphs, ExtClearText, ExtDecls),
@@ -1320,12 +1327,12 @@ insert_level_enum_phases(vm_spec_pair(Name, Phase),
 	(member(sm(Name, _,_, vm_loop(_,_,_, Phase)), Path), !; true),
 	insert_level_enum_phases(vm_spec_pair(Name, Phase), Insts).	
 
-/* This one just inserts the shortest time step into any undecided phases */
+/* This one just inserts the shortest time step into any undecided phases
 set_free_phases([], _).
 set_free_phases([make(_,_,_, Ph, _) | Insts], Phases) :-
 	(nonvar(Ph); Ph = Phases),
 	set_free_phases(Insts, Phases).
-
+*/
 made_in(Feature, sm(Submodel, _,_,_), Pass) :-
 	Test =.. [Feature, Submodel],
 	member(make(Test, _,_,_,_), Pass).

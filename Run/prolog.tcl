@@ -14,7 +14,7 @@ proc Reader {} {
     }
     if {[gets $plPipe noCrs] >= 0} {
 	regsub -all \\\\n $noCrs \n line
-	puts [concat < $line]
+#	puts [concat < $line]
 	if {[string match get_tcl_cmd $line]} {
 	    send_tcl_cmd
 	} elseif {[string match send_tcl_cmd [lindex $line 0]]} {
@@ -61,7 +61,7 @@ proc do_tail {header args} {
 proc send_pl_cmd {withCrs} {
     global plPipe
     regsub -all \n $withCrs \\n plCmd
-    puts [concat > $plCmd]
+#    puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
 #    Reader
