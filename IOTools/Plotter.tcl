@@ -210,21 +210,22 @@ proc constructControlPanel {w} {
     
     set toolbarItems [list \
             [list new.gif "Clear" [namespace code "clear $w"] ] \
-            [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]]
-#            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
-            #    [list " settings " [namespace code "settings $w"]] \
+            [list add.gif "Add a variable"   [namespace code "AddVariable $w"]] \
+            [list property.gif " Properties " [namespace code "Settings $w"]]]
+            #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
             #    [list " redraw " [namespace code "resetGraph $w"]] \
             
     
     ::graphtools::MakeToolBar $w $toolbarItems
          
-	# create canvas for graph
-	canvas $w.canvas \
-		-width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
-			$plot($w,xborder_right)] \
-		-height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
-			$plot($w,yborder_top)] \
-		-bg $plot($w,canvas_colour) -relief solid
+    # create canvas for graph
+    canvas $w.canvas -bg $plot($w,canvas_colour) -relief solid ;#\
+		#-width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
+		#	$plot($w,xborder_right)] \
+		#-height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
+		#	$plot($w,yborder_top)] \
+        #-bg $plot($w,canvas_colour) -relief solid
+    pack $w -fill both -expand true -side bottom
 	pack $w.canvas -fill both -expand true -side bottom
 }
 
@@ -258,11 +259,11 @@ proc NoMoreVar {w} {
 }
 
 
-proc settings {w} {
+proc Settings {w} {
 	set wset .settings
 	catch {destroy $wset}
 	toplevel $wset
-	wm title $wset "Plotter tool settings"
+	wm title $wset "Plotter properties"
 
 	# Create entry boxes
 	frame $wset.entries 
@@ -305,14 +306,11 @@ proc settings {w} {
 	}
 	pack $wset.checkbuttons -side top
 
-  frame $wset.buttons 
-  button $wset.buttons.ok -text OK \
-    -command [namespace code [
-        ]]
-  button $wset.buttons.cancel -text Cancel -command [namespace code [destroy $wset]]
+    frame $wset.buttons 
+    button $wset.buttons.ok -text OK -command [namespace code ""]
+    button $wset.buttons.cancel -text Cancel -command [namespace code "destroy .settings"]
 	pack $wset.buttons 
-  pack $wset.buttons.ok -side left -pady 2 -padx4
-  pack $wset.buttons.ok -side right -pady 2 -padx4
+    pack $wset.buttons.ok $wset.buttons.cancel -side left -pady 2 -padx 4
 }
 
 
@@ -445,6 +443,7 @@ proc drawGraphpad {w} {
     #$w.canvas bind graph <Motion> [namespace code ring_bell]
     
     bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
+    bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
     
     $w.canvas bind xslidable <Enter> \
             [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
