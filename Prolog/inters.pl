@@ -136,29 +136,43 @@ read_library_funx(Done) :-
 	retractall(macro_expansion(_Line)), /* in case I ship it after a run */
 	output:list_matching_files('../Functions/*.pl', FnIncs),
 	/* the /* in the above line does not start a comment */
-	all(inters, read_func_file, [build(FnIncs), append(Done, [])]).
+	all(inters, read_func_file, [build(FnIncs), unify("../Functions/"),
+				     unify(yes), append(System, [])]),
+	backup:use_pref_dir(UserStuff),
+	name(UserStuff, UserStuffStr),
+	append(UserStuffStr, "/Functions/", UserFnsStr),
+	name(UserFns, UserFnsStr),
+	append_atoms(UserFns, '*.pl', UserFnPlate),
+	output:list_matching_files(UserFnPlate, UserIncs),
+	all(inters, read_func_file, [build(UserIncs), unify(UserFnsStr),
+				     unify(no), append(Done, System)]).
 
-read_func_file(File, Done) :-
+read_func_file(File, Context, IsBuiltIn, Done) :-
 	open(File, read, Stream),
 	name(File, FileStr),
-	append([46,46,47,70,117,110,99,116,105,111,110,115,47 | NameStr],
-	       ".pl", FileStr),
+	append(Base, ".pl", FileStr),
+	append(Context, NameStr, Base),
 	name(Name, NameStr),
-	read_funcs(Name, Stream, Done).
+	read_funcs(Name, Stream, IsBuiltIn, Done).
 
-read_funcs(File, Stream, Done) :-
+read_funcs(File, Stream, IsBuiltIn, Done) :-
 	sicstus_format_to_chars("Parsing definitions in ~a", [File], ProbAct),
 	on_exception(WrongUDF, read_term(Stream, Line, [variable_names(VPrs)]),
 		     (make_nice_error_message(WrongUDF, Bug),
 			 do_dialogue(ProbAct, warning, Bug, ok, _))),
 	(nonvar(Bug), !,
 	    do_dialogue(ProbAct, warning, Bug, ok, _),
-	    read_funcs(File, Stream, Done);
+	    read_funcs(File, Stream, IsBuiltIn, Done);
 	 Line == end_of_file, !,
 	    close(Stream),
 	    Done = [];
 	all(user, call, [build(VPrs)]),
+	(IsBuiltIn = yes,
+	    Category = 'Built-in';
+	IsBuiltIn = no,
+	    Category = WhereFound),
 	(Line = (Macro --> _Defn),
+	    WhereFound = 'Macros',
 	    /* Only allow free vars in function template -- fix them all then
 	    replace those in template with free ones */ 
 	    Macro =.. [Fn | Args],
@@ -168,24 +182,25 @@ read_funcs(File, Stream, Done) :-
 		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
 		do_dialogue(ProbAct, warning, Bug, ok, _);
 	    assert(macro_expansion(NewLine))),
-	    append_atoms(['{Macros {', File, '}} ', Fn], FnEntry);
+	    append_atoms(['{', Category, ' {', File, '}} ', Fn], FnEntry);
 	Line = function(Functor, ReturnType, ArgTypes),
+	    WhereFound = 'Procedures',
 	    assert(Line),
 	    assert(use_tcl_proc_for(Functor)), !,
 	    dialogue:spell_out([ReturnType | ArgTypes], 1),
 	    dialogue:make_arg_list(ArgTypes, String),
-	    sicstus_format_to_chars("{Procedures {~a}} ~a (~s) returns ~w",
-			[File, Functor, String, ReturnType], FnChars),
+	    sicstus_format_to_chars("{~a {~a}} ~a (~s) returns ~w",
+		[Category, File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
-	    read_funcs(File, Stream, More),
+	    read_funcs(File, Stream, IsBuiltIn, More),
 	    Done = [FnEntry | More];
 	Line = unit_definition(New, Old), !,
 	    add_unit_definition(New, Old),
-	    read_funcs(File, Stream, Done);
+	    read_funcs(File, Stream, IsBuiltIn, Done);
 	sicstus_format_to_chars("The file ~a contained the line ~w which is in the wrong format for a macro, function or unit definition -- please refer to the documentation.", 
 	               [File, Line], Bug),
 	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
-	    read_funcs(File, Stream, Done)).
+	    read_funcs(File, Stream, IsBuiltIn, Done)).
 
 free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	var(Arg), !; /* in case someone used an underscore */

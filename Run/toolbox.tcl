@@ -17,24 +17,24 @@ source ../Run/runmodel.tcl
 source ../Run/mre.tcl
 
 # Find a new temporary directory
-if {[info exists env(TMP)]} {
-    set tempDir $env(TMP)
-} else {
-    if {[info exists env(TEMP)]} {
-	set tempDir $env(TEMP)
-    } else {
-	if {[string match windows $tcl_platform(platform)]} {
-	    set tempDir /temp
-	} else {
-	    set tempDir /tmp
-	}
-    }
-}
+#if {[info exists env(TMP)]} {
+#    set tempDir $env(TMP)
+#} else {
+#    if {[info exists env(TEMP)]} {
+#	set tempDir $env(TEMP)
+#    } else {
+#	if {[string match windows $tcl_platform(platform)]} {
+#	    set tempDir /temp
+#	} else {
+#	    set tempDir /tmp
+#	}
+#    }
+#}
 
 # Test new Windows printing technology -- see file for credits/licence
 if {[string match windows $tcl_platform(platform)]} {
-    set tempDir [file attributes $tempDir -shortname]
-    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
+#    set tempDir [file attributes $tempDir -shortname]
+#    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
 
     #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
@@ -48,17 +48,17 @@ if {[string match windows $tcl_platform(platform)]} {
     # package ifneeded Trf 2.1 {}
 }
 
-set tester $tempDir/sim
-set go [clock clicks]
-while {[file exists $tester]} {
-    set guess_free [expr [clock clicks]-$go]
-    set tester $tempDir/sim$guess_free
-}
+#set tester $tempDir/sim
+#set go [clock clicks]
+#while {[file exists $tester]} {
+#    set guess_free [expr [clock clicks]-$go]
+#    set tester $tempDir/sim$guess_free
+#}
 #tk_messageBox -title debug -icon info \
 #	-message "Temp dir is $tester" -type ok
 
-set env(SIMTMPDIR) $tester
-file mkdir $env(SIMTMPDIR)
+#set env(SIMTMPDIR) $tester
+#file mkdir $env(SIMTMPDIR)
 set equationbar(current_action) null
 
 proc NewTopLevel {} {
@@ -94,7 +94,7 @@ proc LoadIconImages {} {
 }
 
 proc ControlDraw {prologVersion} {
-    global sendvars custom tcl_platform env userinfo openModel
+    global sendvars custom tcl_platform env userinfo openModel simtmpdir
     
     wm withdraw .
     
@@ -103,7 +103,7 @@ proc ControlDraw {prologVersion} {
     # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
         set env(SIMILE_VERSION) 4.0
-        set env(SIMTMPDIR) /tmp/simdevel
+#        set env(SIMTMPDIR) /tmp/simdevel
         set env(licensee_name) "Support team"
         set env(licensee_corp) "Simulistics, inc."
         set env(license_code) default_license=072ccc96dced2bef53403afd67fe7782
@@ -163,8 +163,8 @@ proc ControlDraw {prologVersion} {
     }
     
     
-    if {[file exists ~]} {
-        set custom(prefDir) ~/.simile
+    if {[file exists $env(HOME)]} {
+        set custom(prefDir) $env(HOME)/.simile
     } else {
         set custom(prefDir) [pwd]/../Prefs
     }
@@ -172,7 +172,7 @@ proc ControlDraw {prologVersion} {
     if {![file exists $custom(prefDir)]} {
         file mkdir $custom(prefDir)
     }
-    
+
     if {[file exists $custom(prefDir)/version]} {
         set UserStream [NetOpen $custom(prefDir)/version r]
         gets $UserStream userinfo(name)
@@ -185,6 +185,12 @@ proc ControlDraw {prologVersion} {
         set userinfo(done) 0
     }
     
+    set simtmpdir $custom(prefDir)/Current
+    if {[file exists $simtmpdir]} {
+	file delete -force $simtmpdir
+    }
+    file mkdir $simtmpdir
+
     set UserStream [NetOpen $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)
@@ -291,7 +297,7 @@ proc ControlDraw {prologVersion} {
         set openModel {}
     }
     # Take the opportunity to pass the temp directory name etc to Prolog
-    return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] \
+    return [list $sendvars(simV) [brainwash $custom(prefDir)] \
             $openModel $userinfo(edn)]
 }
 
@@ -299,7 +305,7 @@ package require mime
 package require md5
 
 proc SaveFile {tree tgt} {
-    #ShowMessage debug info "SaveFile $tree $tgt" ok
+#ShowMessage debug info "SaveFile $tree $tgt" ok
     global mimeSquirter runState errorInfo model_id
     global SimileProjectDo
     
@@ -311,7 +317,7 @@ proc SaveFile {tree tgt} {
     }
     catch {
         set parts [GetParts $tree $tree]
-        #ShowMessage debug info "SaveFile GetParts $tree" ok
+ #ShowMessage debug info "SaveFile GetParts $tree" ok
         if {[info exists runState(currentTime)]} {
             if {$runState(execTime) != $runState(currentTime)} {
                 set runState(execDur) \
@@ -433,7 +439,7 @@ proc LoadFile {tree tgt} {
 proc GetParts {top tree} {
     set mimes {}
     foreach subtree [glob -nocomplain ${tree}/*] {
-        #ShowMessage debug info "GetParts subtree $subtree" ok
+#ShowMessage debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
             set mimes [concat $mimes [GetParts $top $subtree]]
         } else {
@@ -1293,9 +1299,10 @@ proc UnOrReDo {curWin fwd} {
 # I think the only reason for having this is to work around a Windows bug
 # where the Prolog errors didn't come up properly...
 proc DoWithErrors {args} {
-    if [catch $args err] {
-        bgerror $err
-    }
+    eval $args
+#    if [catch $args err] {
+#        bgerror $err
+#    }
 }
 
 # Export a postscript file from a window. Only the bit of the diagram showing in
@@ -1374,7 +1381,7 @@ proc CopyCanvasToWindowsClipboard {canvas} {
 }
 
 proc PrintNow {winId} {
-    global env tcl_platform
+    global simtmpdir tcl_platform
     
     if {[string match windows $tcl_platform(platform)]} {
         set oldDir [pwd] ;# apparently printing can change directory
@@ -1388,7 +1395,7 @@ proc PrintNow {winId} {
         PrepForExport $winId back
         cd $oldDir
     } else {
-        set tempPSFile $env(SIMTMPDIR)/temp.ps
+        set tempPSFile $simtmpdir/temp.ps
         SpitPS $winId $tempPSFile
         if {[catch "exec $env(PRINTCMD) {[file nativename $tempPSFile]}" result]} {
             ShowMessage "Print command result" warning \

@@ -23,7 +23,7 @@ sicstus_use_module([library(lists),
 /* helpers for sending function list */
 pass_functions(LibFuns) :-
 	setof(FnAtom, atomize_function(FnAtom), FuncList),
-	append(LibFuns, FuncList, AllFns),
+	append(FuncList, LibFuns, AllFns),
 	prepare_equation(AllFns).
 	
 atomize_function(FnAtom) :-

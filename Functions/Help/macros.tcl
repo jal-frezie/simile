@@ -22,3 +22,8 @@ set msgs(pi) {pi(): returns Pi. }
     set msgs(howmanytrue) {howmanytrue(BoolList): returns the number of elements in a list of Boolean \
         values, BoolList, that have the value true.}
 set msgs(sgn) {sgn(real): returns the sign of a number, -1 if negative or 1 if positive (or zero).}
+
+set msgs(first) {first(array of booleans): Returns the position of the first element of the array that is true.}
+set msgs(best) {best(array of numbers): Returns the position of the element in the array with the greatest value.}
+set msgs(iterations) {iterations(boolean): Returns the number of times it has been executed since the argument was last true. Typically used with an alarm value as the argument.}
+set msgs(delay) {delay(val, steps): takes a value and an integer count and returns the value as it was that many time steps ago. Works for up to 1000 steps.}

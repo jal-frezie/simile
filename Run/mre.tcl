@@ -335,7 +335,7 @@ proc ::RunEnv::PrintCurrentContainer {} {
 }
 
 proc ::RunEnv::CopyHelper {containerId} {
-    global helperTable env tcl_platform
+    global helperTable simtmpdir tcl_platform
     variable CurrentContainer
     variable CurrentHelperId
     variable canvasId
@@ -363,7 +363,7 @@ proc ::RunEnv::CopyHelper {containerId} {
                 ShowMessage Warning warning \
                         "[${CurrentHelperId}::identify] does not support copying" ok
             }
-            set copyfile $env(SIMTMPDIR)/mrecopy.txts
+            set copyfile $simtmpdir/mrecopy.txts
             set stream [NetOpen $copyfile w]
             catch {puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]}
             close $stream
@@ -377,11 +377,11 @@ proc ::RunEnv::CutHelper {containerId} {
 }
 
 proc ::RunEnv::PasteHelper {containerId} {
-    global helperTable env
+    global helperTable simtmpdir
     variable CurrentContainer
     variable CurrentHelperId
     
-    set copyfile $env(SIMTMPDIR)/mrecopy.txts
+    set copyfile $simtmpdir/mrecopy.txts
     if {[file exists $copyfile]} {
         set stream [NetOpen $copyfile r]
         set winId [NewHelperInWindow $CurrentContainer $CurrentHelperId ""]
