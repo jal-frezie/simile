@@ -307,7 +307,6 @@ proc ControlDraw {prologVersion} {
 }
 
 package require mime
-package require md5 1.4
 
 proc SaveFile {tree tgt} {
 #ShowMessage debug info "SaveFile $tree $tgt" ok
@@ -320,7 +319,7 @@ proc SaveFile {tree tgt} {
         # spfs to $tree
         set SimileProjectDo 0
     }
-    catch {
+    if {[catch {
         set parts [GetParts $tree $tree]
  #ShowMessage debug info "SaveFile GetParts $tree" ok
         if {[info exists runState(currentTime)]} {
@@ -353,8 +352,11 @@ proc SaveFile {tree tgt} {
         # clean everything up
         close $stream
         mime::finalize $multiT -subordinates all
-    } Lossage
-    return $Lossage
+    } Lossage]} {
+	return $errorInfo
+    } else {
+	return $Lossage
+    }
 }
 
 proc LoadFile {tree tgt} {
