@@ -73,8 +73,6 @@ double stage_incr (diffs *extras, int step, double v) {
 
   dv = step_incr(step, v);
   switch (int(glob_element(dts, 0))) {
-  case 0:
-    return dv;
   case 1:
     extras->cumulative_value = dv/6;
     return (extras->current_offset = dv/2);
@@ -89,6 +87,8 @@ double stage_incr (diffs *extras, int step, double v) {
   case 4:
     extras->cumulative_value += dv/6;
     return extras->cumulative_value - extras->current_offset;
+  default:
+    return dv;
   };
 };
 
