@@ -14,6 +14,7 @@ proc initialize {winId} {
     variable trunks
     variable base
     namespace import -force ::maptools2::*
+    namespace import -force ::threedtools::*
     set toolbarItems [list \
 			  [list new.gif "Clear" \
 			       [namespace code "clear $winId"]] \
@@ -28,7 +29,7 @@ proc initialize {winId} {
     array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
 			      $winId,cos_angle 1 $winId,cos_elevation 1 \
 			      $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
-    scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
+    scale $winId.elv -orient v -from [expr -$pi/2] -to [expr $pi/2] \
 	-resolution 0.01 \
 	-command [namespace code "TweakScale $winId elevation"]
     $winId.elv set 0.5
@@ -163,12 +164,8 @@ proc TweakScale {winId which where} {
     set viewVector($winId,$which) $where
     SaveState $winId
 
-    set viewVector($winId,cos_angle) [expr cos($viewVector($winId,angle))]
-    set viewVector($winId,sin_angle) [expr sin($viewVector($winId,angle))]
-    set viewVector($winId,cos_elevation) \
-	[expr cos($viewVector($winId,elevation))]
-    set viewVector($winId,sin_elevation) \
-	[expr sin($viewVector($winId,elevation))]
+    SetBaseVectors $winId $viewVector($winId,angle) \
+	$viewVector($winId,elevation)
     WindowSizeChanged $winId
 }
 
@@ -210,82 +207,6 @@ proc LoadPosns {winId} {
 	incr col
 	if {$col==6} {set col 0}
     }
-}
-
-proc DrawShapes {winId solids tag} {
-    variable viewVector
-
-    set insts {}
-    foreach object3d $solids {
-#ShowMessage debug info $object3d ok
-	switch [lindex $object3d 0] {
-	    line {
-		set startMap [project $winId [lindex $object3d 2]]
-		set endMap [project $winId [lindex $object3d 3]]
-		set startx [lindex $startMap 0]
-		set starty [lindex $startMap 1]
-		set endx [lindex $endMap 0]
-		set endy [lindex $endMap 1]
-#ShowMessage debug info "$startMap $endMap" ok
-		lappend insts [list [list \
-		$winId.c create line $startx $starty $endx $endy -tag $tag \
-		    -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
-			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
-				   [lindex $object3d 1]]
-	    } sphere {
-		set middle [project $winId [lindex $object3d 2]]
-		set midx [lindex $middle 0]
-		set midy [lindex $middle 1]
-		set rad [expr $viewVector($winId,Y)*[lindex $object3d 3]/150.0]
-		lappend insts [list [list \
-		$winId.c create oval [expr $midx-$rad] [expr $midy-$rad] \
-		     [expr $midx+$rad] [expr $midy+$rad] -tag $tag \
-		     -width [lindex $object3d 4] -fill [lindex $object3d 5]] \
-				   [lindex $middle 2] \
-				   [lindex $object3d 1]]
-			       
-	    } text {
-		set middle [project $winId [lindex $object3d 2]]
-		set midx [lindex $middle 0]
-		set midy [lindex $middle 1]
-		lappend insts [list [list \
-		$winId.c create text $midx $midy -tag $tag \
-		     -text [lindex $object3d 3] -fill [lindex $object3d 4]] \
-				   [lindex $middle 2] \
-				   [lindex $object3d 1]]
-	    }
-	}
-    }
-    set ordered [lsort -decreasing -real -index 1 $insts]
-    foreach combo $ordered {
-	set canvObj [eval [lindex $combo 0]]
-	if {[llength [lindex $combo 2]]} {
-	    CanvasBindPopup $winId.c $canvObj [lindex $combo 2]
-	}
-    }
-}
-
-proc project {winId pt3d} {
-    variable viewVector
-    set ptx [lindex $pt3d 0]
-    set pty [lindex $pt3d 1]
-    set ptz [lindex $pt3d 2]
-
-    set multx $viewVector($winId,cos_angle)
-    set multy $viewVector($winId,sin_angle)
-
-    set rotx [expr $multx*$ptx - $multy*$pty]
-    set roty [expr -$multx*$pty - $multy*$ptx]
-
-    set multx $viewVector($winId,cos_elevation)
-    set multy $viewVector($winId,sin_elevation)
-
-    set scx [expr $viewVector($winId,X)*($rotx/150.0 + .5)]
-    set scy [expr $viewVector($winId,Y)*(($multx*$ptz - $multy*$roty)/-150.0 + .5)]
-    set depth [expr -$multx*$roty - $multy*$ptz]
-
-#ShowMessage debug info "pt3d $pt3d rots $rotx $roty cams $scx $scy $depth" ok
-    return [list $scx $scy $depth]
 }
 
 proc ShowKey {winId} {
