@@ -1102,13 +1102,14 @@ proc CancelParams {} {
 namespace eval fileparams {
 
 proc Save {spare smPath} {
-    global paramState paramData widgetNames SimileProject
+    global paramState paramData widgetNames SimileProject simtmpdir env
 #ShowMessage debug info "Save $smPath" ok
     
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
     set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
-        set pStr [NetOpen $metaFile w]
+	set part [file join $simtmpdir temp_out.spf]
+        set pStr [NetOpen $part w]
         
         foreach compName [array names widgetNames $smPath*] {
 	    set compTail [string range $compName [string length $smPath] end]
@@ -1118,14 +1119,30 @@ proc Save {spare smPath} {
 			 [LoadTableData $paramState($compName)]]} {
 		    set relName [Relativize $metaFile \
 				     [lindex $paramState($compName) 0]]
-		    puts $pStr "$SubbedComp=[lreplace $paramState($compName) \
-                            0 0 $relName]"
+		    puts $pStr "$SubbedComp=reference=[lreplace \
+                                $paramState($compName) 0 0 $relName]"
 		    continue
 		}
 	    }
-	    puts $pStr "$SubbedComp=$paramData($compName)"
+	    puts $pStr "$SubbedComp=literal=$paramData($compName)"
 	}
         close $pStr
+	set PartType "application/x-simile"
+	set Description "Simile parameter file"
+	set style attachment
+	set newMime [mime::initialize -canonical $PartType \
+			 -header [list "Content-Disposition" $style] \
+			 -header [list "Content-Description" $Description] \
+			 -header [list "Simile-Version" $env(SIMILE_VERSION)] \
+			 -header [list "Simile-Origin" file-param-dialogue] \
+			 -file $part]
+	set stream [NetOpen $metaFile w]
+        fconfigure $stream -translation binary
+        mime::copymessage $newMime $stream
+        # clean everything up
+        close $stream
+        mime::finalize $newMime
+	file delete $part
     }
 }
 
@@ -1146,10 +1163,21 @@ proc Open {topNode smPath} {
 }
 }
 
-proc MergeParams {topNode smPath metaFile interactive} {
-    global paramState paramData widgetNames
+proc MergeParams {topNode smPath oldPath interactive} {
+    global paramState paramData widgetNames mimeSquirter simtmpdir
     
     set oldDir [pwd]
+    if {[catch { 
+	set multiT [mime::initialize -file $oldPath]
+	set origVersion [mime::getheader $multiT Simile-Version]
+	set metaFile [file join $simtmpdir temp_in.spf]
+	set mimeSquirter [NetOpen $metaFile w]
+	fconfigure $mimeSquirter -translation binary
+	mime::getbody $multiT -command SquirtMime -blocksize 256}]
+    } {
+	set metaFile $oldPath
+	set origVersion 0.0
+    }
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
 	#ShowMessage debug info "Restoring $savedValue" ok
@@ -1159,18 +1187,27 @@ proc MergeParams {topNode smPath metaFile interactive} {
 	set trans [GetTransTable $node]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
 	if {[info exists paramData($restoredComp)]} {
-	    set paramData($restoredComp) [lindex $IdAndValue 1]
+	    if {$origVersion>3.3} {
+		set paramData($restoredComp) [lindex $IdAndValue 2]
+		set reference [string equal reference [lindex $IdAndValue 1]]
+		if {$reference} {
+		    set VFile [lindex $paramData($restoredComp) 0]
+		}
+	    } else {
+		set paramData($restoredComp) [lindex $IdAndValue 1]
+		set VFile [lindex $paramData($restoredComp) 0]
+		set reference [file exists [file join [file dirname $oldPath] \
+						$VFile]]
+	    }
                 #ShowMessage debug info "Param data is $paramData($restoredComp)" ok
-	    set FileOrVal [lindex $paramData($restoredComp) 0]
                 
                 # OK here we go...try and follow this...first go to the starting point..
-	    cd [file dirname $metaFile]
-	    if {[file exists $FileOrVal]} {
-                    # Now use the saved relative path to move to the .csv file's directory
-		cd [file dirname $FileOrVal]
-                    # ...and stick the new absolute pathname into the spec! Easy!!
+	    if {$reference} {
+		# Now use the saved relative path to move to the .csv file's directory
+		cd [file join [file dirname $oldPath] [file dirname $VFile]]
+		# ...and stick the new absolute pathname into the spec! Easy!!
 		set paramState($restoredComp) \
-		    [concat [list [pwd]/[file tail $FileOrVal]] \
+		    [concat [list [pwd]/[file tail $VFile]] \
 			 [lrange $paramData($restoredComp) 1 end]]
                     # now just load up the data
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok

@@ -486,7 +486,7 @@ package require mime
 
 proc SaveFile {topNode tree tgt} {
 #ShowMessage debug info "SaveFile $tree $tgt" ok
-    global mimeSquirter errorInfo
+    global errorInfo
     global SimileProjectDo
     
     if {[info exists SimileProjectDo]} {
