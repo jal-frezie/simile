@@ -10,8 +10,14 @@
 # Helpers should have a similar user inferface where possible.
 
 #$Log: Tabular.tcl,v $
-#Revision 1.1  2002/05/23 15:33:18  jmm
-#*** empty log message ***
+#Revision 1.2  2002/09/03 12:06:39  jaspert
+#* fixed exotic bug in stub source
+#* Included first attempt at Tktable based tabular helper (try cut and paste)
+#* Fixed nasty in helper app interface to tcl model progs
+#* Made a start on image submodel backgrounds
+#
+#Revision 1.1.1.1  2002/05/23 15:33:18  jmm
+#First Commercial Release (2.91) 
 #
 #Revision 1.8  2002-05-03 17:34:45+01  jmm
 #Removed menu - will replace later with a RTE (MRE) compatible system
@@ -982,3 +988,4 @@ proc Done {winId} {
 }
 
 } ;# end of namespace
+

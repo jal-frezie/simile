@@ -1504,12 +1504,7 @@ int Ame_dll_Init(Tcl_Interp *interp) {
     Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
- /* Tcl_GetVersion does not work in 8.0
-   Tcl_GetVersion(&maj, &min, NULL, NULL); 
-    sprintf(pkgName, "ame_dll_%d_%d", maj, min); */
-
-	strcpy(pkgName, "info tclversion");
-	Tcl_Eval(interp, pkgName);
-	sprintf(pkgName, "%s.%s", interp->result, simileVersion);
+    sprintf(pkgName, "%d.%d.%s", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
+	    simileVersion);
     return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }

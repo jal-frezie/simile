@@ -510,24 +510,29 @@ proc WriteDesc {canvas canvasFile date args} {
 # background colour parameter now ignored because the background is
 # a rectangle and as such is listed in the .cnv file
     foreach object [$canvas find all] {
-	set config ""
-	foreach conf [$canvas itemconfigure $object] {
-	    set default [lindex $conf 3]
-	    set value [lindex $conf 4]
+# Do not write base objs they get re-created
+	if {[string match rectangle [$canvas type $object]] && \
+		[string match */background/* [$canvas gettags $object]]} {
+	} else {
+	    set config ""
+	    foreach conf [$canvas itemconfigure $object] {
+		set default [lindex $conf 3]
+		set value [lindex $conf 4]
 # Evade grotesque bugs in tk8.3
-	    if {[string match bezier $value]} {
-		set value 1
-	    }
-	    if {[string match $default $value.0]} {
-		set value $default
-	    }
+		if {[string match bezier $value]} {
+		    set value 1
+		}
+		if {[string match $default $value.0]} {
+		    set value $default
+		}
 # Don't bother writing default values
-	    if {[string compare $default $value]} {
-		append config [list [lindex $conf 0] $value] " "
+		if {[string compare $default $value]} {
+		    append config [list [lindex $conf 0] $value] " "
+		}
 	    }
+	    puts $stream [concat \$c create [$canvas type $object] \
+			      [$canvas coords $object] $config]
 	}
-	puts $stream [concat \$c create [$canvas type $object] \
-		[$canvas coords $object] $config]
     }
     close $stream
 }

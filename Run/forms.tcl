@@ -665,6 +665,9 @@ proc Disaggregate {parent title colour type fatness icount step \
     pack [button $colourf.fixcolour -text "Colour" \
             -width 10 -bg $disaggregate(colour) -command "UpdateColour $colourf"]  \
             -padx 2 -pady 4 -side left
+    pack [button $colourf.setimage -text "Image..." \
+            -width 10 -command ChooseImage] \
+            -padx 2 -pady 4 -side left
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
     pack $t.simple.left -side left -expand 1 -fill both
     
@@ -764,6 +767,31 @@ proc UpdateColour {f} {
     if {[llength $new]} {
         set disaggregate(colour) $new
         $f.fixcolour configure -bg $new
+    }
+}
+
+proc ChooseImage {} {
+    global disaggregate
+
+    if {[catch {image type $disaggregate(colour)}]} {
+	set newImage [image create photo]
+    } else {
+	set newImage $disaggregate(colour)
+    }
+
+    set choosing 1
+    while {$choosing} {
+	set new [ChooseFile image.gif {Image for model background} 0]
+	if {[llength $new]} {
+	    if {[catch {$newImage read $new -shrink} readFlop]} {
+		ShowMessage {Problem loading file} error $readFlop ok
+	    } else {
+		set disaggregate(colour) $newImage
+		set choosing 0
+	    }
+	} else {
+	    set choosing 0
+	}
     }
 }
 

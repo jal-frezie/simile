@@ -151,7 +151,11 @@ switch $interface {
     } dll {
 	exec $SIMILE_PATH/$tgt$execExtn &
 	# wait till prog is going before removing splash
-	while {[file exists $env(SIMTMPDIR)/.lock]} {after 100}
+	set pause 0
+	while {[file exists $env(SIMTMPDIR)/.lock] && $pause<3000} {
+	    incr pause 100
+	    after 100
+	}
 	exit
     }
 }

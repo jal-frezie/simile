@@ -47,7 +47,7 @@ proc ModelWindow {winName} {
 
 # this rectangle will be resized to fill the scrollable area and coloured to
 # show the background
-    $c create rect 0 0 100 100 -outline {} -tag /background/
+    $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
     scrollbar $winName.xscroll -orient horizontal \
 	-command [list AdjustScroll $c xview]
     scrollbar $winName.yscroll -orient vertical \
@@ -83,7 +83,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     $c configure -scrollregion "$wl $wt $wr $wb" \
 	-width [expr $wr-$wl] -height [expr $wb-$wt]
 
-    $c coords 1 $wl $wt $wr $wb
+    $c coords /base/ $wl $wt $wr $wb
 
 # set initial scaling factors
     set window_info($c,width) [expr $wr - $wl]
@@ -108,7 +108,27 @@ proc ChangeParentTitle { wc title colour } {
     if {[string match clear $colour]} {
 	set colour {}
     }
-    $wc itemconfigure 1 -fill $colour
+# ok now base item can be an image or a rect...
+    if {[string match image [$wc type /base/]]} {
+	scan [$wc coords /base/] {%f %f} bl bt
+	set br [expr $bl+[base$wc cget -width]]
+	set bb [expr $bt+[base$wc cget -height]]
+	image delete base$wc
+    } else {
+	scan [$wc coords /base/] {%f %f %f %f} bl bt br bb
+    }
+    $wc delete /base/
+    if {[catch {image type $colour}]} {
+	$wc create rectangle $bl $bt $br $bb -fill $colour \
+	    -tag "/base/ /background/"
+    } else {
+	image create photo base$wc \
+	    -width [expr int($br-$bl)] -height [expr int($bb-$bt)]
+	base$wc copy $colour
+	$wc create image $bl $bt -anchor nw -image base$wc \
+	    -tag "/base/ /background/"
+    }
+    $wc lower /base/
 }
 
 # SetSpace: this command is called when the canvas is 'configured' by attacking
@@ -1640,7 +1660,7 @@ proc build_c_stub {targetDir make_new_stub} {
 	if {![catch {package require -exact Ame_dll $stubPkg} dummy]} {
 	    return
 	} else {
-	    ShowMessage {Loading dll} info "Loading stub dll caused a $dummy -- program will now attempt to build a new one" ok
+#	    ShowMessage {Loading dll} info "Loading stub dll caused a $dummy -- program will now attempt to build a new one" ok
 	}
     }
 

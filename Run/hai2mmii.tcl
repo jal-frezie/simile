@@ -418,7 +418,7 @@ proc GetIdFromCaptionPath {caption} {
     } else {
 	global nodedata nodecount
 	
-	for {set line 0} {$nodecount>$line} {incr $line} {
+	for {set line 0} {$nodecount>$line} {incr line} {
 	    set id [lindex $nodedata($line) 0]
 	    if {[string compare $caption \
 		    [GetCaptionPathFromId $id]] == 0} {

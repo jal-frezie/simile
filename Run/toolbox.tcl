@@ -181,9 +181,9 @@ proc ZapWindow { fullName } {
 }
 
 proc ClearWindow {winId} {
-# Bit of tricky manoovering to delete all but 1st obj (window background)
+# Bit of tricky manoovering to delete all but window background
     $winId addtag doomed all
-    $winId dtag 1 doomed
+    $winId dtag /base/ doomed
     $winId delete doomed
 }
 
