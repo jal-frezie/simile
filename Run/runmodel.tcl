@@ -791,6 +791,11 @@ proc CanvasBindPopup {canvas widget keywd} {
 proc QueuePopup {cmd} {
     global popper
 #puts "queueing $cmd"
+# Only allow one cmd in pipeline at a time -- two added if dragging an
+# incomplete obj which Prolog then deletes (Tk bug workaround - 10 points)
+    if {[info exists popper]} {
+	after cancel $popper
+    }
     set popper [after 500 $cmd]
 }
 
@@ -806,6 +811,7 @@ proc AddEqnPopup {x y winId X Y} {
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set target [GetClickedObj $winId $canx $cany 2]
+#puts "Adding for $target"
     #    set target [$winId find closest $canx $cany 1]
     #puts "targeting $target"
     if {$target} {

@@ -41,7 +41,7 @@ proc PutRectangle { w l t r b stack fatness density colourScheme tagSet} {
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set width [GetLineSize $w compartment $fatness]
-    $w create rect $ml $mt $mr $mb -outline {} -tag $tagSet
+    $w create rect $ml $mt $mr $mb -outline {} -tag "$tagSet has_info"
     set stackDepth 0
     $w create line $mr $mt $ml $mt $ml $mb -width $width \
             -tag "$tagSet size_on_this realwidth($width)"
@@ -71,6 +71,7 @@ proc PutShape {c l t r b file fatness colourScheme title} {
     $c move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
     ZoomImage $c unscaled $window_info($c,scale) $window_info($c,scale)
     $c addtag $title withtag unscaled
+    $c addtag has_info withtag unscaled
     $c dtag unscaled
     
     ResetColours $c channel {} $colourScheme [lindex $title 0]
@@ -101,7 +102,7 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     } else {
         set bounds "$ml $mt $ml $mb $mr $mt $mr $mb $ml $mt"
     }
-    eval {$w create poly} $bounds {-tag "$tagSet bowtie"}
+    eval {$w create poly} $bounds {-tag "$tagSet bowtie has_info"}
     eval {$w create line} $bounds {-width $width \
                 -tag "$tagSet bowtie realwidth($width)"}
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
@@ -122,16 +123,17 @@ proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
             [expr $hm+.866*$bulge] [expr $vm+.5*$bulge] $hm [expr $vm+$bulge] \
             [expr $hm-.866*$bulge] [expr $vm+.5*$bulge] [expr $hm-.866*$bulge] \
             [expr $vm-.5*$bulge] $hm [expr $vm-$bulge]]
-    set p1 [eval {$w create polygon} $bounds {-smooth true -outline {} -tag $tagSet}]
+    set p1 [eval {$w create polygon} $bounds {-smooth true -outline {} \
+						  -tag "$tagSet has_info"}]
     set bulge [expr 0.707*$rad]
     set xl [expr $hm-$bulge]
     set xt [expr $vm-$bulge]
     set xr [expr $hm+$bulge]
     set xb [expr $vm+$bulge]
     $w create line $xl $xt $xr $xb -width $width \
-            -tag "$tagSet realwidth($width)"
+            -tag "$tagSet realwidth($width) has_info"
     $w create line $xr $xt $xl $xb -width $width \
-            -tag "$tagSet realwidth($width)"
+            -tag "$tagSet realwidth($width) has_info"
     
     
     #    $w create oval $ml $mt $mr $mb -outline {} -tag $tagSet
@@ -254,8 +256,8 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
     set width [GetLineSize $w submodel $fatness]
     $w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
             $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-            $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 \
-            -width $width -tag "$tagSet size_on_this realwidth($width)"
+            $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 -width $width \
+	-tag "$tagSet size_on_this realwidth($width) has_info"
     
     set tabs 0
     set stackSpacing [expr 2*$width]
@@ -281,9 +283,9 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
         } else {
             set stackDistance [expr $tabs*$stackSpacing]
             set lower [$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
-                    $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \
-                    $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 \
-                    -width $width -tag "$tagSet size_on_this realwidth($width)"]
+                $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \
+                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
+		       -tag "$tagSet size_on_this realwidth($width) has_info"]
             $w move $lower $stackDistance $stackDistance
         }
         incr tabs
@@ -293,14 +295,14 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
         set stackDistance [expr -$stackSpacing]
         set upper [$w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
                 $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-                $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 \
-                -width $width -tag "$tagSet size_on_this realwidth($width)"]
+                $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 -width $width \
+		       -tag "$tagSet size_on_this realwidth($width) has_info"]
         $w move $upper $stackDistance $stackDistance
         set stackDistance [expr 3*$stackSpacing]
         set lower [$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
                 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \
-                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 \
-                -width $width -tag "$tagSet size_on_this realwidth($width)"]
+                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
+		       -tag "$tagSet size_on_this realwidth($width) has_info"]
         $w move $lower $stackDistance $stackDistance
     }
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
@@ -315,7 +317,7 @@ proc PutThinArrow { w ptz fatness density colourScheme \
     eval {$w create line} $mptz {-arrow last \
                 -arrowshape [list [expr $features/6] [expr $features/5] \
                 [expr $features/16]] -smooth true -width $width \
-                -tag "$tagSet realwidth($width)"}
+                -tag "$tagSet realwidth($width) has_info"}
     
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
@@ -333,7 +335,8 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
     set mptz [ScaleList $w $ptz]
     eval {$w create line} $mptz {-arrow last \
                 -arrowshape [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
-                -smooth true -width $width -tag "$tagSet realwidth($width)"}
+                -smooth true -width $width \
+				     -tag "$tagSet realwidth($width) has_info"}
     # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
@@ -350,8 +353,8 @@ proc PutFatArrow { w ptz fatness colourScheme tagSet} {
     set mptz [ScaleList $w $ptz]
     set arrowRad [expr $features/10]
     eval {$w create line} $mptz {-arrow last -arrowshape \
-                [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
-                -smooth false -width $width -tag "$tagSet realwidth($width)"}
+                [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -smooth false \
+		      -width $width -tag "$tagSet realwidth($width) has_info"}
     DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
             "$tagSet startblob"
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
@@ -499,8 +502,8 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
     set textY [Scale $w [expr [lindex $ptz 1] \
             + $looks($type,yoffset)*$fatness/100]]
     $w create text $textX $textY -text $capt -fill $textColor \
-            -font $useFont -anchor $looks($type,textanchor) \
-            -tag "$tagSet is_caption size_on_this realwidth($realFont)"
+	-font $useFont -anchor $looks($type,textanchor) \
+	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"
 }
 
 
