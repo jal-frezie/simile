@@ -994,21 +994,14 @@ builtin('Arithmetic', floor, int, [real]).
 builtin('Trigonometry', sin, 1, [1]).
 builtin('Trigonometry', cos, 1, [1]).
 builtin('Trigonometry', tan, 1, [1]).
-builtin('Trigonometry', cot, 1, [1]).
 builtin('Trigonometry', sinh, 1, [1]).
 builtin('Trigonometry', cosh, 1, [1]).
 builtin('Trigonometry', tanh, 1, [1]).
-builtin('Trigonometry', coth, 1, [1]).
 
 builtin('Trigonometry', asin, 1, [1]).
 builtin('Trigonometry', acos, 1, [1]).
 builtin('Trigonometry', atan, 1, [1]).
 builtin('Trigonometry', arctan, 1, [1]).
-builtin('Trigonometry', acot, 1, [1]).
-builtin('Trigonometry', asinh, 1, [1]).
-builtin('Trigonometry', acosh, 1, [1]).
-builtin('Trigonometry', atanh, 1, [1]).
-builtin('Trigonometry', acoth, 1, [1]).
 
 builtin('Arithmetic', rand_const, real, [real, real]).
 builtin('Arithmetic', rand_var, real, [real, real]).
@@ -1017,7 +1010,6 @@ builtin('Arithmetic', fmod, 1, [1, 1]).
 
 builtin('Trigonometry', hypot, real, [real, real]).
 builtin('Trigonometry', atan2, 1, [real, real]).
-builtin('Trigonometry', acot2, 1, [real, real]).
 
 builtin('Arithmetic', max, numeric, [numeric, numeric]).
 builtin('Arithmetic', min, numeric, [numeric, numeric]).
