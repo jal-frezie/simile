@@ -44,6 +44,9 @@ proc graphpoint {xval index} {
 
 # Stuff related to getting values
 
+proc setup_enum_type_data {args} {
+}
+
 proc tcl_insert {node newVs} {
     global nodedata
 

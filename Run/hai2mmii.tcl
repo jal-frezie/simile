@@ -107,7 +107,7 @@ proc do_model {node what args} {
 		set problem "there was a math error: $whoopsie"
 	    } default {
 		# could not get cause of error, raise again as general problem
-		error [join $modelError \n]
+		error $whoopsie $errorInfo
 	    }
 	}
 
