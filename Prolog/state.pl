@@ -265,8 +265,7 @@ initialize_phase :-
 
 advance_phase_to(New_phase) :-
 	State_machine = 
-		[[peruse, [rubberband, moving, moving_border(D),
-			delete_hunt, action_choice,
+		[[peruse, [rubberband, moving, moving_border(D), action_choice,
 			moving_start, moving_finish, equiv_hunt, barge]],
 		 [action_choice, [dragging, targetting]],
 		 [targetting, [dragging, peruse]],

@@ -1656,7 +1656,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 	-command "ModeSelect select" -variable MIpushedbutton -value select
 #    $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
             -variable MIpushedbutton -value move
-    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
+#    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
             -variable MIpushedbutton -value delete
 #    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
             -variable MIpushedbutton -value copy
@@ -1750,15 +1750,12 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
     
-    foreach mode {select delete ghost separator3 snap} {
-        if {[string match separator* $mode]} {
-            pack [Separator $tb.$mode -orient vertical] -fill y -side left
-        } else  {
-            set testImg [image create photo -file $buttonImages/${mode}.gif]
-            pack [button $tb.$mode -image $testImg -command "ModeSelect $mode" \
-                    -borderwidth 1 -relief flat -overrelief raised] -side left -padx 2 -pady 2
-            BindPopup $tb.$mode $mode
-        }
+    foreach mode {select ghost snap} {
+        set testImg [image create photo -file $buttonImages/${mode}.gif]
+	pack [button $tb.$mode -image $testImg -command "ModeSelect $mode" \
+		  -borderwidth 1 -relief flat -overrelief raised] \
+	    -side left -padx 2 -pady 2
+	BindPopup $tb.$mode $mode
     }
     $tb.snap configure -state disabled
     

@@ -157,7 +157,7 @@ proc create_equation {parent boxtitle indices} {
 	    set lname $box.[join $level _]
 	    if {![$lbf exists $lname]} {
 		$lbf insert end $box $lname -image $iconImages(open) \
-		    -text $level
+		    -text $level -open [string equal Built-in $level]
 	    }
 	    set box $lname
 	}

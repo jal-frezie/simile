@@ -375,7 +375,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	give_focus(Edit_thing),
 	finish_old_edit(Edit_thing),
 	highlight(Edit_thing, 0).
-*/
+
 
 click_on(_,_,_) :-
 	get_mode(delete),
@@ -385,7 +385,7 @@ click_on(_,_,_) :-
 	    highlight_deletes(Obj);
 	true).
 
-/* add_at_point: places a new 'box' type component in the model, fails if new_obj
+add_at_point: places a new 'box' type component in the model, fails if new_obj
 is not a box type, or if there is no room at the given position to put the object.
 */
 
@@ -779,10 +779,10 @@ drag(Xpt, Ypt) :-
 			find_all_comps(Parent, Comp),
 			get_translation(Trans)),
 		translate([Xpt, Ypt], Trans, [NewXpt, NewYpt]);
-	/* do not delete a submodel by unclicking inside it */
+	/* do not delete a submodel by unclicking inside it 
 	get_mode(delete), !,
 	    remove_highlights,
-	    fail;
+	    fail; */
 	update_context(Wid, [Xpt, Ypt], [NewXpt, NewYpt], Comp)),
 	drag_to(NewXpt, NewYpt, Comp).
 
@@ -1008,13 +1008,13 @@ drag_to(Xpt, Ypt, Target) :-
 	remove_old_rubberband,
 	draw_rubberband(round).
 
-drag_to(_, _, Doomed_thing) :-
+/* drag_to(_, _, Doomed_thing) :-
 	get_mode(delete),
 	get_phase(delete_hunt),
 	remove_highlights,
 	highlight_deletes(Doomed_thing).
 
-/* adjust_display_area handles requests from the GUI to change the display
+adjust_display_area handles requests from the GUI to change the display
 area in a submodel. expand_canvas actually changes it; here we also reroute
 the internal portions of crossborder links so they still connect. */
 
@@ -1141,8 +1141,7 @@ multi_level_mode :-
 	 get_mode(add),
 	    get_adding_object(Type)),
 	Type is_class_of_sort line;
-	get_mode(ghost);
-	get_mode(delete).
+	get_mode(ghost).
 
 /* highlight_deletes: this highlights all the objects which will be zapped if a particular delete selection is made. The target itself highlights at defcon 0 and any colateral damage at defcon 1. */
 
@@ -1614,7 +1613,7 @@ unclick_obj :-
 
 /* this clause handles deletion. If it is a submodel, the links that
 will become surplus are undisplayed, otherwise delete_net is
-called. */
+called.
 
 unclick_obj :-
 	get_mode(delete),
@@ -1625,7 +1624,7 @@ unclick_obj :-
 	is_toplevel(Top),
 	delete_net(Top),
 	update_runnable(Parent).
-
+*/
 unclick_obj :-
 	(get_phase(barge); get_phase(moving); get_phase(moving_text);
 			get_phase(moving_start); get_phase(moving_finish)),

@@ -9,7 +9,7 @@
 # Compiler that will be used to make the stub for Windows
 set compiler_for_windows gnu
 # edition: evaluation, teaching, standard or enterprise
-set edition teaching
+set edition standard
 # date of final expiry: {hh:mm D M Y} or {} for permanent
 set final_expiry {}
 # days after install: 0 for no installation expiry
@@ -83,6 +83,10 @@ if $onUnix {
 		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
 	    {-I. -I$TOOLS32/include -I$TCL/include ./ame_cmx.cpp}
 	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET $tclLib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
+	eval {exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
+		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
+	    {-I. -I$TOOLS32/include ./install.cpp}
+	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:install.dll $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./install.obj
     }
     
     # Also if in Windows we need to prepare a way for gcc to link the
