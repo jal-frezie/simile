@@ -1232,6 +1232,9 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	}
     }
     close $pStr
+    if {$origVersion>=4.0} {
+	file delete $metaFile
+    }
     cd $oldDir
 }
 
