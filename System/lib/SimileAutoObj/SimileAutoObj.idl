@@ -8,60 +8,149 @@ dual,
 helpstring("IModelWindow: Interface"),
 pointer_default(unique)
 ]
+
 interface IModelWindow: IDispatch
 {
-    [id(1), helpstring("method FileNew")]
-    HRESULT FileNew();
+    [id(1), helpstring("method New")]
+    HRESULT New();
     
-    [id(2), helpstring("method FileOpen")]
-    HRESULT FileOpen();
+    [id(2), helpstring("method Open <modelFile>")]
+    HRESULT Open([in, string] char * psmodelFile);
     
-    [id(3), helpstring("method FileSave")]
-    HRESULT FileSave();
-    
-    [id(4), helpstring("method FileSaveAs")]
-    HRESULT FileSaveAs();
-    
-    [id(5), helpstring("method FilePrint")]
-    HRESULT FilePrint();
-    
-    [id(6), helpstring("method FileExportModel")]
-    HRESULT FileExportModel();
-    
-    [id(7), helpstring("method FileExportCPPCodeExec")]
-    HRESULT FileExportCPPCodeExec();
-    
-    [id(8), helpstring("method FileExportPostscript")]
-    HRESULT FileExportPostscript();
-    
-    [id(9), helpstring("method Exit")]
+    [id(3), helpstring("method Print")]
+    HRESULT Print();
+
+    [id(4), helpstring("method Exit")]
     HRESULT Exit();
 
-    [id(10), helpstring("method Preferences")]
-    HRESULT Preferences();
-
-    [id(11), helpstring("method BuildCPP")]
-    HRESULT BuildCPP();
+    [id(5), helpstring("method Run")]
+    HRESULT Run();
     
-    [id(12), helpstring("method BuildTcl")]
-    HRESULT BuildTcl();
+    [id(6), helpstring("method Debug")]
+    HRESULT Debug();
     
-    [id(13), helpstring("method ListEquations")]
-    HRESULT ListEquations();
-    
-    [id(14), helpstring("method LoadModelExplorer")]
-    HRESULT LoadModelExplorer();
+    [id(7), helpstring("method Hide")]
+    HRESULT Hide();
 
-    [id(15), helpstring("method HideModelWindow")]
-    HRESULT HideModelWindow();
+    [id(8), helpstring("method Show")]
+    HRESULT Show();
 
-    [id(16), helpstring("method ShowModelWindow")]
-    HRESULT ShowModelWindow();
-
-    [id(17), helpstring("method UseMRE")]
+    [id(9), helpstring("method UseMRE")]
     HRESULT UseMRE([in] int flag);
 
+    [id(10), helpstring("method FileOpenDlg")]
+    HRESULT FileOpenDlg();
 };
+
+        [
+                object,
+                uuid(FB9AAB27-A8DE-4715-A021-6EC35D3F9B97),
+                dual,
+                helpstring("IRunControl Interface"),
+                pointer_default(unique)
+        ]
+        interface IRunControl: IDispatch
+        {
+                [id(1), helpstring("method GetAllPaths")]
+                HRESULT GetAllPaths([out, retval] char * paths);
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime([in, string] char * paths,
+				 [out, retval] double value);
+
+                [id(3), helpstring("method GetDisplayInterval")]
+                HRESULT GetDisplayInterval([in, string] char * paths,
+				 [out, retval] double value);
+
+                [id(4), helpstring("method GetExecuteFor")]
+                HRESULT GetExecuteFor();
+
+                [id(5), helpstring("method GetIntegrationMethod")]
+                HRESULT GetIntegrationMethod();
+
+                [id(6), helpstring("method GetMaxValue")]
+                HRESULT GetMaxValue();
+
+                [id(7), helpstring("method GetMinValue")]
+                HRESULT GetMinValue();
+
+                [id(8), helpstring("method GetModelClass")]
+                HRESULT GetModelClass();
+
+                [id(9), helpstring("method GetModelDims")]
+                HRESULT GetModelDims();
+
+                [id(10), helpstring("method GetModelEval")]
+                HRESULT GetModelEval();
+
+                [id(11), helpstring("method GetModelType")]
+                HRESULT GetModelType();
+
+                [id(12), helpstring("method GetNumberOfTimeSteps")]
+                HRESULT GetNumberOfTimeSteps();
+
+                [id(13), helpstring("method GetPhaseCount")]
+                HRESULT GetPhaseCount();
+
+                [id(14), helpstring("method GetTimeStep <number>")]
+                HRESULT GetTimeStep([in] int number);
+
+                [id(15), helpstring("method GetTimeUnits")]
+                HRESULT GetTimeUnits();
+
+                [id(16), helpstring("method GetValue path")]
+                HRESULT GetValue([in, string] char * paths,
+				 [out, retval] double value);
+/*
+
+                [id(2), helpstring("method MergeParams <filepath> <smPath>")]
+                HRESULT MergeParams (	[in, string] unsigned char filepath,
+					[in, string] unsigned char smPath);
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+
+                [id(2), helpstring("method GetCurrentTime")]
+                HRESULT GetCurrentTime();
+*/
+        };
+/*
+        [
+                object,
+                uuid(EC52B0ED-956F-42F0-9E80-146889ECCD5A),
+                dual,
+                helpstring("ITableHelper Interface"),
+                pointer_default(unique)
+        ]
+        interface ITableHelper: IDispatch
+        {
+                [id(1), helpstring("method create")]
+                HRESULT create([out, retval] IAccount **pAccount);
+        };
+*/
 
 [
 uuid(0C59DF3D-B939-4fc8-BAEC-77E79E4ECA64),
@@ -71,14 +160,24 @@ helpstring("SimileAutoObject 1.0 Type Library")
 library SimileAutoObj
 {
     importlib("stdole32.tlb");
-    
+    importlib("stdole2.tlb");
     
     [
-    uuid(12E9AFF9-1A4F-46c0-A128-F931A65E6839),
-    helpstring("Model Class")
+    	uuid(12E9AFF9-1A4F-46c0-A128-F931A65E6839),
+    	helpstring("Model Class")
     ]
     coclass ModelWindow
     {
         [default] interface IModelWindow;
     };
+
+    [
+        uuid(3336F5E4-A743-4FF3-ACFA-85630216EFB9),
+        helpstring("RunControl Class")
+    ]
+    coclass RunControl
+    {
+        [default] interface IRunControl;
+    };
+
 };
