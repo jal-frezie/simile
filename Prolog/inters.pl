@@ -385,11 +385,13 @@ make_intermediates(
 	(member(Functor, [make_inter, last, delay]), !,
 		InitVal = 0,
 		IncrExpr = IncrementRef,
-	        ArgTemplate = [RUnits];	
+	        ArgTemplate = [RUnits],
+	        ReadyContext = ClearContext;
 	    IncrExpr =.. [IncrOp, IncrementRef, FillRef],
 	        (member(Functor, [any, all]), !,
 		    [RUnits | ArgTemplate] = [boolean, boolean];	
-		    [RUnits | ArgTemplate] = [int, int])),
+		    [RUnits | ArgTemplate] = [int, int]),
+	        append(NowBuilding, DestPath, ReadyContext)),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units),
 	    Preps = OldSetups),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
@@ -417,8 +419,7 @@ make_intermediates(
 
 	add_extra_dependencies(Exited, Source, OldArgs, Depends),
 	append(SourceLoops, DestPath, InterContext),
-	append(NowBuilding, DestPath, ReadyContext),
-	append(SourceLoops, ReadyContext, ClearContext),
+	append([SourceLoops, NowBuilding, DestPath], ClearContext),
 
 	(UsingDim == true, !,
 	    Setups = [],
@@ -427,15 +428,10 @@ make_intermediates(
 	((Functor = delay; Functor = make_inter), !,
 	    Clearing = [];
 	Functor = last, !,
-            Clearing = [make(initializing(TotalName), [on_reset], ClearContext,
-                             0, [assign(ClearRef, InitVal)]),
-                        make(cleared(TotalName), [initializing(TotalName)],
-                             ReadyContext, 0, [])];
-        Clearing = [make(clearing(TotalName), [this_step(TotalName)],
-			 ClearContext, Step, [assign(ClearRef, InitVal)]),
-                  make(cleared(TotalName), [clearing(TotalName)],
-                       ReadyContext, Step, [])]), /* probably dont need separate
-	clearing/cleared steps, made_for would work */
+            Clearing = [make(cleared(TotalName), [on_reset], ClearContext,
+                             0, [assign(ClearRef, InitVal)])];
+        Clearing = [make(cleared(TotalName), [this_step(TotalName)],
+			 ClearContext, Step, [assign(ClearRef, InitVal)])]),
 	(Functor = last, !,
 	    /* we can update the saved value as soon as it has been used,
 	    but we need to wait for all the goals that might use it...started
