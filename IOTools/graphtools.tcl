@@ -2,24 +2,24 @@
 # e.g. plotter and timeprofiles
 
 namespace eval ::graphtools {
-
-namespace export UpdateState draw_Xaxis draw_Yaxis Xstretch Ystretch \
-        Xslide Yslide CanvasMark CanvasDrag Ylabel_move settings_axis \
-        do_axis_settings horizlines vertlines boxed \
-        delist decimalPlaces myAssembleFont get_x get_y get_Yvalues \
-        resetGraph AxisRound
-        
-# protected       gridOnOff myAssembleFont
-
-################################################################################
-# calculateXintercept calculateYintercept decimalPlaces \
-#         get_x get_y get_Yvalues gridOnOff marker \
-#         resetGraph
-# 
-################################################################################
-
+    
+    namespace export UpdateState draw_Xaxis draw_Yaxis Xstretch Ystretch \
+            Xslide Yslide CanvasMark CanvasDrag Ylabel_move settings_axis \
+            do_axis_settings horizlines vertlines boxed \
+            delist decimalPlaces myAssembleFont get_x get_y get_Yvalues \
+            resetGraph AxisRound
+    
+    # protected       gridOnOff myAssembleFont
+    
+    ################################################################################
+    # calculateXintercept calculateYintercept decimalPlaces \
+    #         get_x get_y get_Yvalues gridOnOff marker \
+    #         resetGraph
+    #
+    ################################################################################
+    
     variable plot
-    variable Xvalues
+    variable Xvalues; # used in xyplotter? not in plotter
     variable YYold
     variable YYnew
     variable Told
@@ -52,8 +52,8 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
         set command [lindex $item 2]
         set newButton [$bbox add -image [image create photo  -file "../Images/Toolbar/$gif"] \
                 -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
-			   -command $command]
-		BindPopup $newButton $helptext
+                -command $command]
+        BindPopup $newButton $helptext
     }
     pack $f -side top -fill x
     pack $bbox -side left -anchor w
@@ -194,7 +194,7 @@ proc ::graphtools::draw_Xaxis { w } {
                 / ($Xmax_axis-$Xmin_axis)}]
     set value $Xmin_axis
     set y [expr {$y0+2}]
-#    ShowMessage debug info "Maj $Xmajorstep min $Xminorstep -- Going from $x0 up to $x1 in steps of $step" ok
+    #    ShowMessage debug info "Maj $Xmajorstep min $Xminorstep -- Going from $x0 up to $x1 in steps of $step" ok
     for {set x $x0} {$x<=$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-6] \
                 -tags {scalable axis_line xaxis_item xtick markable \
@@ -207,9 +207,9 @@ proc ::graphtools::draw_Xaxis { w } {
         set value [expr $value+$Xmajorstep]
     }
     set step [expr $step/2]
-#    set step [expr 1.0*$plot($w,xlength)*$Xminorstep \
-#            / ($Xmax_axis-$Xmin_axis)]
-#ShowMessage debug info "Going from $x0 up to $x1 in steps of $step" ok
+    #    set step [expr 1.0*$plot($w,xlength)*$Xminorstep \
+    #            / ($Xmax_axis-$Xmin_axis)]
+    #ShowMessage debug info "Going from $x0 up to $x1 in steps of $step" ok
     for {set x $x0} {$x<$x1} {set x [expr $x+$step]} {
         $w.canvas create line $x $y0 $x [expr $y0-4] \
                 -tags {scalable axis_line xaxis_item xtick markable \
@@ -243,7 +243,7 @@ proc ::graphtools::draw_Yaxis { w} {
             / ($Ymax_axis-$Ymin_axis)]
     set value $Ymin_axis
     set x [expr $x0-2]
-#ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
+    #ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
     for {set y $y0} {$y>=[expr $y1-2]} {set y [expr $y-$step]} {
         $w.canvas create line $x0 $y [expr $x0+6] $y \
                 -tags {scalable axis_line yaxis_item ytick markable \
@@ -256,9 +256,9 @@ proc ::graphtools::draw_Yaxis { w} {
         set value [expr $value+$Ymajorstep]
     }
     set step [expr $step/2]
-#    set step [expr 1.0*$plot($w,ylength)*$Yminorstep \
-#            / ($Ymax_axis-$Ymin_axis)]
-#ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
+    #    set step [expr 1.0*$plot($w,ylength)*$Yminorstep \
+    #            / ($Ymax_axis-$Ymin_axis)]
+    #ShowMessage debug info "Going from $y0 down to [expr $y1-2] in steps of [expr -$step]" ok
     for {set y $y0} {$y>=$y1} {set y [expr $y-$step]} {
         $w.canvas create line $x0 $y [expr $x0+4] $y \
                 -tags {scalable axis_line yaxis_item ytick markable \
@@ -479,19 +479,20 @@ proc ::graphtools::settings_axis { w} {
 # scale and number of intervals, respectively
 # Adapted from code from Robert Muetzelfeldt, IERM, University of Edinburgh
 # Jonathan Massheder, IERM, University of Edinburgh
-# xaxis true if xazis false if y
-proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval numInt \
+# xaxis true if x-axis false if y. NB x-axis setting gives less ticks - usually too few - use y-axis
+proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval numInt minorInterval numMinorInt\
             decimalPlaces } {
     upvar 1 $axisMin rmin $axisMax rmax $interval inter $numInt nint \
-            $decimalPlaces decmlPos
+            $minorInterval minorInt $numMinorInt NminorInt $decimalPlaces decmlPos
     global graphtools::karray
-#ShowMessage debug info "$dataMin $dataMax $rmin $rmax $inter $nint $decmlPos" ok
+    
     if $xaxis {
         set axis 2; # dealing with x axis for use with karray($axis,$?)
     } else  {
         set axis 1; # dealing with y axis
     }
-    
+    #puts "==================================="
+    #puts "dataMin $dataMin; dataMax $dataMax"
     if {$dataMin==0} {set dataMin 0.0000000001}; # prevent div by zero errors
     
     if { $dataMin > $dataMax } {
@@ -501,98 +502,52 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
         set min $dataMin
         set max $dataMax
     }
-    #    ShowMessage debug info "$min $max" ok
-    # check if all data is negative, if so, use absolute values
-    if {$max < 0.0} {
-        set neg 1
-        set min [expr {-$dataMax}]
-        set max [expr {-$dataMin}]
-    } else  {
-        set neg 0
-    }
-    #ShowMessage debug info "= min $min; max $max" ok
-        
-    # the range is zero (=max-min) add a 1 to the end of the decimal representation to max
-    # to make max > min.
+    #puts "min $min; max $max"
+    
+    # seperate min and max if they are equal
     if {$min == $max } {
-        #ShowMessage debug info "= min $min; max $max" ok
-        set max [expr {$max*1.1}]
-        set min [expr {0.9*$min}]
-        #ShowMessage debug info "after doctor =; min $min; max $max" ok
+        set max [expr {$max*1.0001}]
+        set min [expr {0.9999*$min}]
     }
-#    set intFactor [expr {log10($max - $min)}]
-    #ShowMessage debug info "= min $min; max $max" ok
+    
+    # scale max and min
     if {$max-$min < 1e-10} {
-        set intFactor -10.0
+        set lograngem -10.0
     } else {
-        set intFactor [expr {log10($max - $min)}]
+        set lograngem [expr {ceil(log10(($max - $min)/2))-1}]
     }
-    set decmlPos [expr {int($intFactor)}]
-    #    puts "1 intFactor $intFactor; decmlPos $decmlPos"
+    set ScaleCoeff [expr {1/pow(10,$lograngem)}]
+    set ScaledMax [expr {ceil($max*$ScaleCoeff)}]
+    set ScaledMin [expr {floor($min*$ScaleCoeff)}]
+    if {abs($ScaledMin)<abs(0.1*$ScaledMax)} {
+        set ScaledMin 0; # if min < 10% of max start axis from 0
+    }
+    set ScaledRange [expr {abs($ScaledMax-$ScaledMin)}]
+    set nint $karray($axis,[expr {int($ScaledRange)}])
     
-    if {[expr {$intFactor - int($intFactor)}] < 0} {
-        incr decmlPos -1
-    }
-    #    puts "2 intFactor $intFactor; decmlPos $decmlPos"
-    #ShowMessage debug info "AxisRound $min $max; intfactor $intFactor; dp $decmlPos" ok
-    if  { $decmlPos > 6 } {
-        set decmlPos 6
-    } elseif  { $decmlPos < -6 } {
-        set decmlPos -6
-    }
-    if { $decmlPos == 0 } {
-        set intFactor [expr {int(pow(10,$decmlPos))}]
-    } elseif { $decmlPos > 0 } {
-        set intFactor [expr {1 / pow(10,$decmlPos)}]
-    } else {
-        set intFactor [expr {int(pow(10, -($decmlPos)))}]
-    }
-    #    puts "3 intFactor $intFactor; decmlPos $decmlPos"
-    #    puts "min $min; max $max"
-    set imin [expr {$min * $intFactor}]
-    #ShowMessage debug info "AxisRound imin $imin" ok
-    #jmm   set frac [expr {$imin - int($imin)}]
-    set frac [expr {$imin - floor($imin)}]
-    #    puts "frac $frac; imin $imin "
-    if {$frac < 0 } {
-        set imin [expr {floor($imin) - 1 }]
-    }  else {
-        set imin [expr {floor($imin)}]
-    }
+    set rounddiff [expr {$ScaledRange/$ScaleCoeff}]
+    set inter [expr {ceil($ScaledRange/$nint)/$ScaleCoeff}]
+    #puts "axis $axis; intdiff [expr {int(abs($ScaledRange))}]; nint $nint"
+    set rmin [expr {$ScaledMin/$ScaleCoeff}]
+    set rmax [expr {$rmin+$nint*$inter}]
+    #puts "lograngem $lograngem; ScaleCoeff $ScaleCoeff; ScaledMin $ScaledMin; ScaledMax $ScaledMax; ScaledRange $ScaledRange"
     
-    set imax [expr {$max * $intFactor}]
-    #jmm    set frac [expr {$imax - int($imax)}]
-    set frac [expr {$imax - floor($imax)}]
-    #    puts "frac $frac; imax $imax"
-    if { $frac < 0 } {
-        set imax [expr {floor($imax)}]
-    } else {
-        set imax [expr {floor($imax) + 1}]
-    }
-    #    puts "imin $imin; imax $imax; intFactor $intFactor; decmlPos $decmlPos"
-    #ShowMessage debug info "imin $imin; imax $imax; intFactor $intFactor; decmlPos $decmlPos" ok
-    set intdiff [expr {int($imax - $imin)}]
-    #    puts "intdiff $intdiff"
-    
-    set rmin [expr {$imin * 1.0 / $intFactor}]; # floating point
-    set rmax [expr {$imax * 1.0 / $intFactor}]
-    set rounddiff [expr {$rmax - $rmin}]
-    set nint $karray($axis,$intdiff)
-    set inter [expr {$rounddiff/$nint}]
-    if {$decmlPos > 0} {
+    if {$lograngem>0} {
         set decmlPos 0
     } else  {
-        set decmlPos [expr {abs($decmlPos)}]
+        set decmlPos [expr {int(abs($lograngem))}]
     }
     
-    #ShowMessage debug info  "rmin $rmin; rmax $rmax; inter $inter; nint $nint;\
-    #    decmlPos $decmlPos" ok
-    if {$neg==1} {
-        set temp $rmin
-        set rmin [expr {-1.0*$rmax}]
-        set rmax [expr {-1.0*$temp}]
-    }
+    set NminorInt [expr {floor(20/$nint)}]; # total minor intervals on axis
+    set NminorInt [expr {ceil($NminorInt/$nint)}]; # per major interval
+    set minorInt [expr {$inter/$NminorInt}]
+    #puts "nint $nint; NminorInt $NminorInt; inter $inter; minorInt $minorInt;\
+            N inters [expr {$nint*$NminorInt}] "
     
+    #puts "lograngem $lograngem; ScaleCoeff $ScaleCoeff; ScaledMin $ScaledMin; ScaledMax $ScaledMax\n\
+            ScaledRange $ScaledRange;"
+    #puts "AxisRound rmin $rmin; rmax $rmax; inter $inter; nint $nint; \
+            minorInt $minorInt; NminorInt $NminorInt; "
 }
 
 proc ::graphtools::do_axis_settings { w wset action} {
