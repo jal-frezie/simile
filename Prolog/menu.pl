@@ -1063,6 +1063,7 @@ check_deletable(Win, Parent) :-
 
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
+	    scrub_run(Parent, 1),
 	    output:safe_tcl_eval(['KillInterpFor', Parent], _),
 	    forget_highlit_obj(_,_),
 	    superfast_delete(Parent),
