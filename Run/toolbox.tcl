@@ -126,7 +126,7 @@ proc ShiftDll {Point Top Loc Rep} {
 proc TrimTree {Top Point} {
     if {[llength $Point]} {
         foreach file [glob -nocomplain "$Top/$Point/*"] {
-            file delete -force $file
+            file delete -force $file
         }
     } else {
         file delete -force [file rootname $Top]
@@ -164,7 +164,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
                     "{Procedures *} $functor * returns *"]
         }
         if {$posn == -1} {
-            return "4 $func <unknown>" ;# missing function declaration
+            return [list 4 $func <unknown>] ;# missing function declaration
             # should never happen because we read them when starting up
         } else {
             set fnSpec [lindex [lindex $equation(fnDefs) $posn] 0]
@@ -175,7 +175,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
             if {[string equal Procedures [lindex $fnSpec 0]]} {
                 set file ${fnBase}$procXtn
                 if {![file exists $file]} {
-                    return "3 $func $file";# Missing or misplaced definition
+                    return [list 3 $func $file] ;# Missing or misplaced definition
                 } else {
                     if {[lsearch $files $file]==-1} {
                         lappend files $file

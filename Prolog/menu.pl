@@ -1051,6 +1051,9 @@ show_error(Model, Lossage) :-
 	    sicstus_format_to_chars("Model ~w cannot be executed because it contains component ~w (shown in red), which has not been fully specified.",
 				    [OuterText, RedText], Text),
 	    Fault = user;
+	Lossage = missing_function(LostFn, WhereSought), !,
+	    sicstus_format_to_chars("This model cannot be built because it contains the user-defined function ~a, which should have a definition in the file ~a, but this file is missing.", [LostFn, WhereSought], Text),
+	    Fault = user;
 	Lossage = link_inconsistency(Pair), !,
 	    sicstus_format_to_chars("This model cannot be executed because it contains an inconsistent link equivalence ~w.", [Pair], Text),
 	    Fault = system;
@@ -1157,7 +1160,7 @@ cutoff(Parent) :-
 cutout(Parent) :-
 	find_all_links(Parent, Child),
 	sever_links(Child, Parent),
-	fail.
+	fail.
 		
 delete_tree(Target) :-
 	find_type(Target, submodel),
