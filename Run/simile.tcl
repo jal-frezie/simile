@@ -64,8 +64,7 @@ pack [canvas .c -width 640 -height 480]
 .c create text 450.0 340.0 -font {-family helvetica -size 12} -text "© 2002 Simulistics Ltd."
 
 # pack [label .l -image splash]
-wm geometry . \
-	+[expr [winfo screenwidth .]/2-320]+[expr [winfo screenheight .]/2-240]
+wm geometry . +[expr [winfo screenwidth .]/2-320]+[expr [winfo screenheight .]/2-240]
 wm overrideredirect . 1
 update
 
