@@ -15,22 +15,22 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>6</o:Revision>
-  <o:TotalTime>91</o:TotalTime>
+  <o:Revision>9</o:Revision>
+  <o:TotalTime>132</o:TotalTime>
   <o:Created>2004-07-28T12:33:00Z</o:Created>
-  <o:LastSaved>2004-07-28T14:43:00Z</o:LastSaved>
+  <o:LastSaved>2004-09-03T09:43:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>286</o:Words>
-  <o:Characters>1633</o:Characters>
+  <o:Words>307</o:Words>
+  <o:Characters>1753</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
-  <o:Lines>13</o:Lines>
-  <o:Paragraphs>3</o:Paragraphs>
-  <o:CharactersWithSpaces>1916</o:CharactersWithSpaces>
+  <o:Lines>14</o:Lines>
+  <o:Paragraphs>4</o:Paragraphs>
+  <o:CharactersWithSpaces>2056</o:CharactersWithSpaces>
   <o:Version>10.6626</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <w:WordDocument>
-  <w:SpellingState>Clean</w:SpellingState>
+  <w:Zoom>BestFit</w:Zoom>
   <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
   <w:Compatibility>
    <w:BreakWrappedTables/>
@@ -128,9 +128,6 @@ a:visited, span.MsoHyperlinkFollowed
 	text-underline:none;
 	text-decoration:none;
 	text-line-through:none;}
-span.SpellE
-	{mso-style-name:"";
-	mso-spl-e:yes;}
 @page Section1
 	{size:21.0cm 842.0pt;
 	margin:72.0pt 89.85pt 72.0pt 89.85pt;
@@ -158,7 +155,7 @@ div.Section1
 	font-family:"Times New Roman";}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="17410"/>
+ <o:shapedefaults v:ext="edit" spidmax="18434"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -169,57 +166,57 @@ div.Section1
 
 <div class=Section1>
 
-<h1><span lang=EN-GB>New <span class=SpellE>Runge-Kutta</span> integration</span></h1>
+<h1><span lang=EN-GB>New Runge-Kutta integration</span></h1>
 
-<p class=MsoNormal><span class=SpellE><span style='mso-ansi-language:EN-US'>Runge-Kutta</span></span><span
-style='mso-ansi-language:EN-US'> Integration provides more precise values for a
-given level of computational effort than Euler integration. Simile always uses
-Euler integration by default. <o:p></o:p></span></p>
+<p class=MsoNormal><span style='mso-ansi-language:EN-US'>Runge-Kutta integration
+provides more accurate values for a given level of computational effort than
+Euler integration, for those models involving only systems of differential
+equations. <span style='mso-spacerun:yes'> </span>Simile always uses Euler
+integration by default, because it is applicable to any model.<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'>For example, consider
-the equation <span class=SpellE>dy/dt</span> = t, and given y = 0 at t = 0. In
-this case, there is an analytical solution, y = ½t<sup>2</sup>, and therefore
-at t = 100, y = 5000. Using Simile's Euler integration algorithm, and using a
-step-size of 0.1 (the default) Simile calculates the answer to be 4995. Using <span
-class=SpellE>Runge-Kutta</span> integration, the correct answer of 5000 is found
-using the same step size (and therefore approximately the same computational
-effort). Even using a step size of 0.01 the answer is calculated to be 4999.5,
-using Euler integration. <o:p></o:p></span></p>
+the equation dy/dt = t, and given y = 0 at t = 0. In this case, there is an
+analytical solution, y = ½t<sup>2</sup>, and therefore at t = 100, y = 5000.
+Using the Euler integration algorithm, and using a step-size of 0.1 (the
+default) Simile calculates the answer to be 4995. Using Runge-Kutta integration,
+the correct answer of 5000 is found using the same step size (and therefore
+approximately the same computational effort). Even using a step size of 0.01
+the answer is calculated to be 4999.5, using Euler integration. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'>However, it must be
-noted that <span class=SpellE>Runge-Kutta</span> integration is not always
-applicable, unlike Euler integration, which can be used to solve any system of
-differential or difference equations. <o:p></o:p></span></p>
+noted that Runge-Kutta integration is not always applicable, unlike Euler
+integration, which can be used to solve any system of differential or
+difference equations. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'>In particular, Simile
-allows the construction of difference equations, where certain quantities
-accumulate in sudden increments corresponding to weeks, months or years, for
-example. Interest payments, in particular, correspond to this method of
-accumulation. These systems must be solved by Euler integration, with the step
-size chosen to correspond to the periodicity. <o:p></o:p></span></p>
+allows the construction of difference equations, where certain quantities accumulate
+in sudden increments corresponding to weeks, months or years, for example.
+Interest payments, in particular, correspond to this method of accumulation.
+These systems must be solved by Euler integration, with the step size chosen to
+correspond to the periodicity. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span style='mso-ansi-language:EN-US'>Furthermore, allow <span
-class=SpellE>Runge-Kutta</span> integration does not fail when used with
-discontinuous functions (such as are involved in the creation and destruction
-of instances of population submodels) the results will be no more precise than
-using Euler integration. <o:p></o:p></span></p>
+<p class=MsoNormal style='tab-stops:612.0pt'><span style='mso-ansi-language:
+EN-US'>Furthermore, although Runge-Kutta integration does not fail when used
+with discontinuous functions (such as are involved in the creation and
+destruction of instances of population submodels) the results will be no more
+precise than using Euler integration. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span style='mso-ansi-language:EN-US'>The choice between Euler
-and <span class=SpellE>Runge-Kutta</span> integration is made at run time,
-using a drop-down box in the Run Control. The chosen method is saved with the
-model and restored when the model is loaded. The user can experiment with
-running a model using either method, without having to rebuild the model, to
-understand whether a significant improvement is achieved. <o:p></o:p></span></p>
+<p class=MsoNormal><span style='mso-ansi-language:EN-US'>The choice between
+Euler and Runge-Kutta integration is made at run time, using a drop-down box in
+the <a href="../run/control.htm">Run Control</a>. The chosen method is saved
+with the model and restored when the model is loaded. The user can experiment
+with running a model using either method, without having to rebuild the model,
+to understand whether a significant improvement is achieved. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 

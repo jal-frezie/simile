@@ -24,22 +24,21 @@ w\:* {behavior:url(#default#VML);}
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>7</o:Revision>
-  <o:TotalTime>95</o:TotalTime>
+  <o:Revision>9</o:Revision>
+  <o:TotalTime>250</o:TotalTime>
   <o:Created>2004-07-28T12:33:00Z</o:Created>
-  <o:LastSaved>2004-08-06T11:20:00Z</o:LastSaved>
+  <o:LastSaved>2004-09-01T10:48:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>355</o:Words>
-  <o:Characters>2030</o:Characters>
+  <o:Words>415</o:Words>
+  <o:Characters>2371</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
-  <o:Lines>16</o:Lines>
-  <o:Paragraphs>4</o:Paragraphs>
-  <o:CharactersWithSpaces>2381</o:CharactersWithSpaces>
+  <o:Lines>19</o:Lines>
+  <o:Paragraphs>5</o:Paragraphs>
+  <o:CharactersWithSpaces>2781</o:CharactersWithSpaces>
   <o:Version>10.6626</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <w:WordDocument>
-  <w:SpellingState>Clean</w:SpellingState>
   <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
   <w:Compatibility>
    <w:BreakWrappedTables/>
@@ -137,9 +136,6 @@ a:visited, span.MsoHyperlinkFollowed
 	text-underline:none;
 	text-decoration:none;
 	text-line-through:none;}
-span.SpellE
-	{mso-style-name:"";
-	mso-spl-e:yes;}
 @page Section1
 	{size:21.0cm 842.0pt;
 	margin:72.0pt 89.85pt 72.0pt 89.85pt;
@@ -167,7 +163,7 @@ div.Section1
 	font-family:"Times New Roman";}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="18434"/>
+ <o:shapedefaults v:ext="edit" spidmax="20482"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -205,10 +201,14 @@ div.Section1
 src="iteration_files/image001.gif" v:shapes="_x0000_i1025"><![endif]><span
 style='mso-spacerun:yes'> </span>New iterative methods</span></h1>
 
-<p class=MsoNormal><span style='mso-ansi-language:EN-US'>A new &quot;alarm
-clock&quot; symbol and a new property for influence arrows have been introduced,
-together with changes to the program generator to allow in-time-step loops. The
-effect is to allow the creation of iterative models. <o:p></o:p></span></p>
+<p class=MsoNormal><span style='mso-ansi-language:EN-US'>A new <a
+href="../elements/iteration.htm">iteration symbol</a> and a new property for <a
+href="../elements/influence.htm">influence arrows</a> have been introduced,
+together with changes to the program generator to allow </span><span
+lang=EN-GB>a loop to be executed multiple times within one time step. Such
+looping may be required, for example, when the value of a variable cannot be
+calculated directly from others, but is found by trying many successive values
+to minimise some error function.</span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
@@ -217,28 +217,29 @@ an iterative loop are as follows. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span style='mso-ansi-language:EN-US'>The alarm symbol
+<p class=MsoNormal><span style='mso-ansi-language:EN-US'>The iteration symbol
 contains the condition that marks the successful convergence of the iteration.
 An influence arrow coming FROM the alarm symbol can be used as an argument to
-the function iterations( ). This function returns the number of iterations made
-so far. This function can be used to set the initial value (<span class=SpellE>aka</span>
+the function iterations(&nbsp;). This function returns the number of iterations
+made so far. This function can be used to set the initial value (also called
 the guess) for the loop, i.e. when the number of iterations so far is equal to
-zero. If the number of <span class=SpellE>iteractions</span> so far is one or
-more, then the last calculation should be used. Since the last calculation
-depends on the result calculated from the guess, a circular loop of influences
-is present. In the past, Simile would reject this loop at build time, but
-setting a new property of the influence arrow: &quot;Use values made in same
-time step&quot; to true, allows the loop to be processed. Influence arrows with
-this property set are drawn with a dashed line. <o:p></o:p></span></p>
+zero. If the number of iterations so far is one or more, then the result of the
+last calculation should be used. Since the last calculation depends on the
+result calculated from the guess, a circular loop of influences is present. In
+the past, Simile would reject this loop at build time, but setting a new
+property of the influence arrow: “Use values made in same time step” to true,
+allows the loop to be processed. Influence arrows with this property set are
+drawn with a dashed line.<span style='mso-spacerun:yes'>  </span>To set this
+property for an influence arrow, double-click on it to invoke the property
+dialogue box.<o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'>It is unlikely that
 any of the above description is comprehensible without an example. The included
-example model for Ball-Berry <span class=SpellE>stomatal</span> conductance
-poses a problem for conventional System Dynamics <span class=SpellE>modelling</span>
-tools because it depends upon the solution of the following pair of
-simultaneous equations. <o:p></o:p></span></p>
+example model for Ball-Berry stomatal conductance poses a problem for
+conventional System Dynamics modelling tools because it depends upon the
+solution of the following pair of simultaneous equations. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
@@ -250,11 +251,11 @@ A = Gs * A<sub>Q</sub><o:p></o:p></span></p>
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'>Apart from the
-parameters, g<sub>0</sub>, g<sub>1</sub>, H, C<sub>a</sub> and A<sub>Q</sub>, the
-equation for Gs depends only on A, and the equation for A depends only on Gs.
-In this implementation, the loop is opened, by introducing a place-holder for
-Gs, called Gs_0. This variable is calculated from A. A is calculated using Gs.
-A guess is made for the initial value of Gs. Subsequently, Gs is set to the
+external parameters, g<sub>0</sub>, g<sub>1</sub>, H, C<sub>a</sub> and A<sub>Q</sub>,
+the equation for Gs depends only on A, and the equation for A depends only on
+Gs. In this implementation, the loop is opened, by introducing a place-holder
+for Gs, called Gs_0. This variable is calculated from A. A is calculated using
+Gs. A guess is made for the initial value of Gs. Subsequently, Gs is set to the
 last calculated value of Gs_0. The influence arrow from Gs_0 to Gs is dashed,
 indicating that the value from the previous iteration is to be used. The alarm
 symbol terminates the iterative loop when Gs and Gs_0 differ by less than one
@@ -262,11 +263,10 @@ part in one thousand. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span style='mso-ansi-language:EN-US'><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span style='mso-ansi-language:EN-US'>That's all there is to
-it, except that it's worth noting what to do if the iteration does not
-converge. It is necessary to use the new &quot;Abort Execution&quot; command in
-the &quot;Model&quot; menu of the model diagram window, NOT the run control
-window.<o:p></o:p></span></p>
+<p class=MsoNormal><span style='mso-ansi-language:EN-US'>That’s all there is to
+it, except that it’s worth noting what to do if the iteration does not converge.
+It is necessary to use the new “Abort Execution” command in the “Model” menu of
+the model diagram window (i.e. NOT in the run control window).<o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 

@@ -169,29 +169,83 @@ div.Section1
 
 <div class=Section1>
 
-<h1><span lang=EN-GB>New scripting language</span></h1>
+<h1><span lang=EN-GB>Simile scripting language</span></h1>
 
+<h2><span lang=EN-GB>Introduction</span></h2>
 <p class=MsoNormal><span lang=EN-GB>A wholly new scripting language is being
 introduced in this version of Simile.<span style='mso-spacerun:yes'> 
-</span>The objective is to allow multiple simulation runs to be performed on
+</span>The objective is to allow multiple simulations using 
 one or more models, with different parameters, time step settings and so forth
-for each run, and for the results to be recorded to a text file, for later
-analysis.<span style='mso-spacerun:yes'>  </span>Several different approaches
+for each run. The results can be recorded to a text file, for later
+analysis, or processed in the script.<span style='mso-spacerun:yes'>  </span>
+Several different approaches
 to meeting this need have been considered, including providing a specific
 graphic interface such as a new run control.<span style='mso-spacerun:yes'> 
 </span>We concluded that scripting allowed the most flexibility and encouraged
 users to find applications beyond those which we have initially considered.</span></p>
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>
+Commands are provided to control key parts (model window, run control and data table) 
+of the Simile user interface. (Simile is hidden by default.) Program objects are created that 
+have commands (methods) that generally correspond to menu commands or tool buttons in the 
+interactive graphical interface.
+</span></p> 
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>
+Typically, the script interface to Simile is accessed by running the SimileScript application that is 
+provided with Simile. A program object to control the model window is created and then used to load a 
+model and scenario file. A run control object is then created to set time-steps, how long to 
+run the model for, etc, and a data table control object is created to record variables. At the end of  
+the simulation the data table object is used to write values to a file.
+</span></p>
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h2><span lang=EN-GB>Using Simile scripting</span></h2>
+<p class=MsoNormal><span lang=EN-GB>
+The script interface to Simile is accessed by running the SimileScript application that is 
+provided with Simile. Scripts can be pasted in to the window or loaded via the File-->Source menu item. 
+Commands can also be added one at a time. This can be useful to explore the script interface capablities. 
+Some example scripts are included below.
+</span></p> 
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>
+Simile script is an extension to TclTk and the full functionality is available to those that want to use it 
+(see http://www.tcl.tk/).
+</span></p> 
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h3><span lang=EN-GB>Example scripts</span></h3>
+<UL>
+<LI> TreesTableHelper.tcl </LI>
+<LI> TreesRuncontrol.tcl </LI>
+<LI> TreesFP.tcl </LI>
+<LI> TreesStats.tcl </LI>
+</UL> 
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>Scripts are written in Tcl/Tk and started
-using the executable “wish84.exe” in the System/bin directory of the Simile
-installation.<span style='mso-spacerun:yes'>  </span>Use the command “package
-require <span class=SpellE>SimileAutoObj</span>” to load Simile.</span></p>
+<h2><span lang=EN-GB>Access to Simile scripting from other TclTk installations</span></h2>
+<p class=MsoNormal><span lang=EN-GB>
+The scripting is provided by using TclTk and access to the script interface to Simile is available 
+from other TclTk 8.4 installations by using the 
+SimileAutoObj package. You will have to ensure that SimileAutoObj package is in the package 
+search path. Add the directory in the <Simile installation directory>/system/lib/SimileAutoObj 
+to your other Tcl interpreter rather than copying the directory to your other interpreters lib 
+directory as the SimileAutoObj package requires access to other files in the Simile installation. E.g.,
+</span></p>
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+<code>
+lappend auto_path {c:/program files/Simile40/system/lib}<BR/>
+package require SimileAutoObj
+</code>
+
+
+</span></p> 
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB>Examples to follow.</span></p>
 
 </div>
 

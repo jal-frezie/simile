@@ -38,6 +38,10 @@
 			<param name="Local" value="new\rungekutta.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Packages for distribution">
+			<param name="Local" value="new\packages.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Accessing external data">
 			<param name="Local" value="new\data.htm">
 			</OBJECT>
@@ -175,12 +179,20 @@
 			<param name="Name" value="Condition">
 			<param name="Local" value="elements\condition.htm">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Iteration">
+			<param name="Local" value="elements\iteration.htm">
+			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Working with Model Diagrams">
 		<param name="Local" value="diagrams\index.htm">
 		</OBJECT>
 	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Selecting model diagram elements">
+			<param name="Local" value="diagrams\selecting.htm">
+			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Adding node-type elements">
 			<param name="Local" value="diagrams\node.htm">
@@ -335,6 +347,20 @@
 			<param name="Name" value="Local names">
 			<param name="Local" value="equations\local.htm">
 			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Parameters">
+			<param name="Local" value="equations\parameter.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Variable parameters">
+				<param name="Local" value="equations\variable.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Fixed parameters">
+				<param name="Local" value="equations\fixed.htm">
+				</OBJECT>
+		</UL>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Components of an equation">
 			<param name="Local" value="equations\components.htm">
@@ -495,6 +521,10 @@
 						<param name="Local" value="equations\functions\sqrt.htm">
 						</OBJECT>
 					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="stop function">
+						<param name="Local" value="equations\functions\stop.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
 						<param name="Name" value="sum function">
 						<param name="Local" value="equations\functions\sum.htm">
 						</OBJECT>
@@ -514,6 +544,10 @@
 				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="Table function">
 					<param name="Local" value="equations\table.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Table dialogue">
+					<param name="Local" value="equations\tabledialogue.htm">
 					</OBJECT>
 				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="User-supplied functions">
@@ -634,6 +668,10 @@
 				<param name="Name" value="Role arrow properties dialogue box">
 				<param name="Local" value="submodels\association\dialogue.htm">
 				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="One-sided relationship enumeration">
+				<param name="Local" value="submodels\association\onesided.htm">
+				</OBJECT>
 		</UL>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
@@ -642,7 +680,7 @@
 		</OBJECT>
 	<UL>
 		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Building models">
+			<param name="Name" value="Running simulations">
 			<param name="Local" value="run\build.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
@@ -660,6 +698,10 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Run control">
 			<param name="Local" value="run\control.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Runge-Kutta integration">
+			<param name="Local" value="run\rungekutta.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Sliders">
