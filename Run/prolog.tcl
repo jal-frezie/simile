@@ -99,6 +99,9 @@ regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
 fconfigure $plPipe(stream) -translation {auto lf}
+if {[string match windows $tcl_platform(platform)]} {
+    fconfigure $plPipe(stream) -encoding euc-jp
+}
 #fileevent $plPipe readable Reader
 
 # send_pl_cmd main.
