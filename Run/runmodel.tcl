@@ -6,6 +6,10 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.6  2002/06/13 14:14:04  jaspert
+#Changes to store whether the desktop window is fullscreen and start again in
+#the same mode (only works in Windows -- recompile ame_cmx.cpp before using)
+#
 #Revision 1.5  2002/06/10 17:43:58  jaspert
 #
 #CV: problem with spurious popups resulting from the 'snap' effect
@@ -45,6 +49,10 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.6  2002/06/13 14:14:04  jaspert
+#Correct RCS directive #Changes to store whether the desktop window is fullscreen and start again in
+#Correct RCS directive #the same mode (only works in Windows -- recompile ame_cmx.cpp before using)
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.5  2002/06/10 17:43:58  jaspert
 #Correct RCS directive #
 #Correct RCS directive #CV: problem with spurious popups resulting from the 'snap' effect
@@ -152,8 +160,8 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 	WindowDetail $c [lindex $cats $depthParam] [lindex $args $depthParam] 0
     }
 
-    $c configure -width [expr $wr-$wl] -height [expr $wb-$wt] \
-	-scrollregion "$wl $wt $wr $wb"
+    $c configure -scrollregion "$wl $wt $wr $wb" \
+	-width [expr $wr-$wl] -height [expr $wb-$wt]
     $c coords 1 $wl $wt $wr $wb
 
 # set initial scaling factors
@@ -162,6 +170,17 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     set window_info($c,scale) $scale
 # last will be overwritten if drawing from Prolog
 
+    set topWin [winfo parent $c]
+    focus $c
+    update
+    scan [wm maxsize $topWin] "%d %d" mw mh
+#ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
+    if {[pack propagate $topWin] &&
+		($wr-$wl >= $mw-8 || $wb-$wt >= $mh-8)} {
+	focus $c
+	update
+	maximize_fg_win 1
+    }
 #ShowMessage debug info "Just done [$c coords 1]" ok
 }
 
@@ -180,11 +199,12 @@ proc ChangeParentTitle { wc title colour } {
 # which way the window was grown so the diagram is kept in the middle.
 
 proc SetSpace {c w h} {
-	global window_info
-		set cx [expr $window_info($c,width)/2]
-		set cy [expr $window_info($c,height)/2]
+    global window_info
+    set cx [expr $window_info($c,width)/2]
+    set cy [expr $window_info($c,height)/2]
     set window_info($c,width) [expr $w - 4]
     set window_info($c,height) [expr $h - 4]
+#ShowMessage debug info "New size is $w $h" ok
     RollBack $c 1 [expr $cx - $w/2 + 2] [expr $cy - $h/2 + 2] \
 	[expr $cx + $w/2 - 2] [expr $cy + $h/2 - 2]
 }
@@ -381,6 +401,7 @@ proc AddZoomMenu {canvas menu tellProlog} {
 			$canvas 0.8 $tellProlog"
 	$fm2 add command -label "Out lots" -command "DoZoom \
 			$canvas 0.512 $tellProlog"
+
 }
 
 proc AddFindMenu {canvas menu} {
@@ -705,6 +726,7 @@ proc AddEqnPopup {x y winId X Y} {
 	}
 	PositionPopup $X $Y
     }
+
 }
 
 proc AddPopupMessage {text colour isValue} {
@@ -772,6 +794,7 @@ proc PositionPopup {X Y} {
     if {$X>[winfo screenwidth .popup]/2} {
 	set xpoint -[expr [winfo screenwidth .popup]+10-$X]
     } else {
+
 	set xpoint +[expr $X+10]
     }
     if {$Y>[winfo screenheight .popup]/2} {
@@ -786,7 +809,7 @@ proc RemovePopup {} {
     global popper
     if {[winfo exists .popup]} {
 	destroy .popup
-    } else {
+    } elseif {[info exists popper]} {
 	after cancel $popper
     }
 }
@@ -829,6 +852,13 @@ proc InitStyle {style} {
     }
 }
 
+# After the initial model has been loaded we don't want to allow the window
+# to change size when something different is loaded
+proc FixSize {c} {
+    update idletasks
+    pack propagate [winfo parent $c] 0
+}
+    
 proc DestroyHelpers {} {
     KillHelpers
     if {[winfo exists .mre]} {
@@ -1057,7 +1087,10 @@ proc MakeFrames {windowId} {
     set canId $windowId.c.canvas
     canvas $canId -width 10 -height 10 \
 	    -yscrollcommand [list $windowId.c.yscroll set]
-    scrollbar $windowId.c.yscroll -orient vertical -command [list $canId yview]
+    scrollbar $windowId.c.yscroll -orient vertical -command [list $canId yview]
+
+
+
     pack $windowId.c.yscroll -side right -fill y
     pack $canId -side left -fill both -expand true
     pack $windowId.c -side top -fill both -expand true
@@ -1214,12 +1247,14 @@ proc MergeParams {} {
 	    } 
 	}
 	close $pStr
+
     }
     cd $oldDir
 }	
 
 # This tests for sensible model values.  
 # 0: not sensible 
+
 # 1: an integer
 # 2: a float 
 # 3: a list
@@ -1566,6 +1601,7 @@ proc compile_c {workingDir modelPath} {
 # under Windows, so just give each one a new name
 
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
+
 # it is running under Prolog. However it seems to work OK in WinNT.
 	    if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
 		set object $env(SIMTMPDIR)/objtemp.o
@@ -1617,6 +1653,7 @@ proc compile_c {workingDir modelPath} {
 
 # do not allow an old dcf to be saved with a new model
     if {[info exists exports(dcfId)]} {unset exports(dcfId)}
+
 }
 
 # This makes the extra bit that goes onto Tcl to run C programs. We don't
@@ -1720,6 +1757,7 @@ proc release_graph_data {graph_data_pointer} {
 # point on the x axis, and returns the y axis point. It is called from the
 # procedure that executes the model.
 
+
 proc graphpoint {xval graph_data_pointer} {
     variable graphdata
 
@@ -1728,6 +1766,7 @@ proc graphpoint {xval graph_data_pointer} {
 	set length [expr $xsize - 1]
 
 	set interval [expr $length*double($xval-$xlow)/($xhigh-$xlow)]
+
 	switch $range {
 		0 {
 			if {$interval < 0} {set interval 0}
@@ -1874,6 +1913,7 @@ proc IsArray {a} {
 }
 
 # utility procedure to fill in some holes in Tcl8.0
+
 
 proc ChooseText {choice ifTrue ifFalse} {
 	if {$choice} {

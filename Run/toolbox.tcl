@@ -172,9 +172,17 @@ proc exit_simile {Dir} {
 }
 
 proc ZapWindow { fullName } {
-    global window_info
+    global custom window_info
 
     upvar 0 window_info($fullName,parent) target
+#ShowMessage debug info "$winId $custom(first_up)" ok
+    if {[string match $target $custom(first_up)]} {
+	focus $target.canvas
+	update
+	set cacheStream [open $custom(prefDir)/layout w]
+	puts $cacheStream [maximize_fg_win]
+	close $cacheStream
+    } 
     destroy ${target}top
     destroy $target
     unset target
@@ -331,6 +339,7 @@ proc ClickObj { x y winId action} {
 proc RollBack { winId toProlog l t r b } {
     set newSpace 0
     scan [$winId cget -scrollregion] "%g %g %g %g" cl ct cr cb
+#ShowMessage debug info "Rolling from $cl $ct $cr $cb to $l $t $r $b" ok
     set pt [$winId canvasx $l]
     if {$pt < $cl-2} {
 	set cl $pt
@@ -480,15 +489,15 @@ proc ChangeRegion {w l t r b} {
 
 proc MainWindowDraw {winName winTitle wl wt wr wb \
 	colour initialScale args} {
-    global window_info looks env 
+    global window_info looks env custom
 
     set c [ModelWindow $winName]
     global modelWin 
     set modelWin $winName
     
     TweakWindow $c $winTitle 1 $wl $wt $wr $wb $colour
-    wm maxsize $winName [winfo screenwidth $winName] \
-	[winfo screenheight $winName]
+#    wm maxsize $winName [winfo screenwidth $winName] \
+#	[winfo screenheight $winName]
     
     wm protocol $winName WM_DELETE_WINDOW \
 	    [list byebye $winName]
@@ -499,11 +508,20 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
 
     set window_info($c,scale) $initialScale
 
-    tkwait visibility $winName
+#    tkwait visibility $winName
     set window_info($c,parent) $winName
     
     InterpMenu $c off
     focus $c
+    if {[file exists $custom(prefDir)/layout]} {
+	set stream [open $custom(prefDir)/layout r]
+	gets $stream whetherMaxed
+#ShowMessage debug info $whetherMaxed ok
+	maximize_fg_win $whetherMaxed
+	close $stream
+    }
+#    ShowMessage debug info "Messing with [wm frame $winName]" ok
+#    maximize_fg_win
     return $c
 }
 
@@ -809,6 +827,7 @@ proc SpitPS {winId psfile} {
 		-height [expr $detail*([$winId canvasy $window_info($winId,height)] \
 		- [$winId canvasy 0])] \
 		-pagewidth [expr $window_info($winId,width)/100.0]i \
+
 		-pageheight [expr $window_info($winId,height)/100.0]i
 	ZoomImage $winId all [expr 1.0/$detail] [expr 1.0/($fontscale*$detail)]
 }
@@ -871,6 +890,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     set fm2a [menu $fm.sub1a -tearoff 0]
     $fm2a add command -label "Legible" \
             -command "MenuSelect $winid.canvas file list_eqns"
+
     $fm2a add command -label "Prolog" \
             -command "MenuSelect $winid.canvas file prolog_eqns"
     $fm add separator
@@ -921,7 +941,7 @@ proc AddMainMenu { winid initWidth initDepths} {
         $fm entryconfigure "Build In Tcl" -state disabled
         $fm entryconfigure "Build In C++" -state disabled
     } else {
-        set custom(first_up) 1
+        set custom(first_up) $winid
     }
     $fm add separator
     $fm add cascade -label Add -menu $fm.sub1

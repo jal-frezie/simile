@@ -535,10 +535,20 @@ proc WriteDesc {canvas canvasFile date args} {
 # this needs because the canvas is called $c in the file
 
 proc InjectGraphics {c canvasFile} {
+    global window_info
+    set w [expr $window_info($c,width)+4]
+    set h [expr $window_info($c,height)+4]
     source $canvasFile
-# also, we need to tell Prolog the new internal extent...
-    scan [$c cget -scrollregion] "%g %g %g %g" cl ct cr cb
-    ResizeDesktop $c $cl $ct $cr $cb
+# At this point we may have loaded something with a scrollregion smaller than
+# the current window. In this case TweakWindow (from the .cnv file) will have
+# loaded this region as the new window size, so we 'grow' the window back to
+# its previous size which we saved. The xview and yview cmds here work around
+# a tcl bug that if the scrollregion is smaller than the window it may not all
+# be displayed.
+    update idletasks
+    $c xview moveto 0
+    $c yview moveto 0
+    SetSpace $c $w $h
 }
 
 # ConvertCRs: When a value is read from a canvas item it may have a

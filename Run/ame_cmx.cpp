@@ -85,6 +85,28 @@ FormatMessage(
 return (char*)lpMsgBuf;
 }
 
+extern "C" int maximizeWinCmd(
+	ClientData clientData,
+	Tcl_Interp *interp,
+	int objc,
+	Tcl_Obj *CONST objv[]
+)
+{
+  int bool_arg;
+  HWND hWnd = GetForegroundWindow();
+  if (objc >= 2) {
+    Tcl_GetBooleanFromObj(interp, objv[1], &bool_arg);
+    if (bool_arg) {
+      ShowWindow(hWnd, SW_MAXIMIZE);
+    } else {
+      ShowWindow(hWnd, SW_RESTORE);
+    }
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(IsZoomed(hWnd)));
+  }
+  return TCL_OK;
+}
+
 #else
     #include <dlfcn.h>
 
@@ -97,6 +119,17 @@ return (char*)lpMsgBuf;
 
 HINSTANCE flopen(char* fileName) {
   return dlopen(fileName, RTLD_NOW);
+}
+
+extern "C" int maximizeWinCmd(
+	ClientData clientData,
+	Tcl_Interp *interp,
+	int objc,
+	Tcl_Obj *CONST objv[]
+)
+{
+  // Nothing, till I find out how...
+	return TCL_OK;
 }
 
 #endif
@@ -1414,6 +1447,9 @@ __declspec( dllexport )
 int Ame_dll_Init(Tcl_Interp *interp) {
 
   globInterp = interp;
+  Tcl_CreateObjCommand(interp, "maximize_fg_win", maximizeWinCmd,
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+    
     Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     

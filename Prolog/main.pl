@@ -39,11 +39,12 @@ main :-
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),
 	dialogue:pass_functions(LibFuns),
-	make_desktop(Desktop),
+	make_desktop(Desktop, Canvas),
 	name(TempDir, TempStr),
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
 	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel)),
+	tcl_eval(Interp, ['FilterErrors FixSize', Canvas], _),
 	append_atoms(TempDir, '/.lock/', SplashLock),
 	output:trim_tree(SplashLock, ''),
         tk_main_loop,
@@ -52,7 +53,7 @@ main :-
 	state:kill_windows,
 	true.
 
-make_desktop(Desktop) :-
+make_desktop(Desktop, Canvas_name) :-
 	m_class:Root is_root,
 	(m_class:Root has_part Desktop, !;
 	m_class:Desktop is_new_part_of Root,
@@ -66,7 +67,7 @@ make_desktop(Desktop) :-
 	all(state, set_display_depth, [unify(Canvas_name),
 	    build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(InitDepths)]),
-	maintain:redraw_window(Canvas_name),
+/*	maintain:redraw_window(Canvas_name), */
 	menu:update_mode(select),
 	backup:initialize_ring,
 	state:initialize_phase.
