@@ -794,9 +794,7 @@ proc CanvasEditBind { c } {
                 [%W canvasy %y]] ,]
     }
     $c bind currently_editable <Delete> {
-        if {[%W select item] != {}} {
-            %W dchars [%W select item] sel.first sel.last
-        } elseif {[%W focus] != {}} {
+        if {![CanvasDelSeln %W]} {
             %W dchars [%W focus] insert
         }
     }
@@ -806,13 +804,12 @@ proc CanvasEditBind { c } {
         }
     }
     $c bind currently_editable <Control-h> {
-        if {[%W select item] != {}} {
-            %W dchars [%W select item] sel.first sel.last
-        } elseif {[%W focus] != {}} {
+        if {![CanvasDelSeln %W]} {
             set _t [%W focus]
-            %W icursor $_t [expr [%W index $_t insert]-1]
-            %W dchars $_t insert
-            unset _t
+	    if {[%W index $_t insert]} {
+		%W icursor $_t [expr [%W index $_t insert]-1]
+		%W dchars $_t insert
+	    }
         }
     }
     $c bind currently_editable <BackSpace> \
@@ -827,9 +824,7 @@ proc CanvasEditBind { c } {
     $c bind currently_editable <Any-Key> {
         # do not allow control chars other than the above mentioned
         if {[string compare %A { }] > -1} {
-            if {[%W select item] != {}} {
-                %W dchars [%W select item] sel.first sel.last
-            }
+            CanvasDelSeln %W
             %W insert [%W focus] insert %A
         }
     }
@@ -842,13 +837,41 @@ proc CanvasEditBind { c } {
         }
     }
     $c bind currently_editable <Key-Right> {
+	%W select clear
         %W icursor [%W focus] [expr [%W index [%W focus] insert]+1]
+    }
+    $c bind currently_editable <Shift-Right> {
+	set farEnd [%W index [%W focus] insert]
+	if {[llength [%W select item]]} {
+	    set newEnd [%W index [%W focus] sel.first]
+	    if {$newEnd==$farEnd} {
+		set newEnd [%W index [%W focus] sel.last]
+	    }
+	} else {
+	    set newEnd $farEnd
+	    %W select from [%W focus] $newEnd
+	}
+	%W select to [%W focus] [expr $newEnd+1]
     }
     $c bind currently_editable <Control-f> \
             [$c bind currently_editable <Key-Right>]
     
     $c bind currently_editable <Key-Left> {
+	%W select clear
         %W icursor [%W focus] [expr [%W index [%W focus] insert]-1]
+    }
+    $c bind currently_editable <Shift-Left> {
+	set farEnd [%W index [%W focus] insert]
+	if {[llength [%W select item]]} {
+	    set newEnd [%W index [%W focus] sel.first]
+	    if {$newEnd==$farEnd} {
+		set newEnd [%W index [%W focus] sel.last]
+	    }
+	} else {
+	    set newEnd $farEnd
+	    %W select from [%W focus] $newEnd
+	}
+	%W select to [%W focus] [expr $newEnd-1]
     }
     $c bind currently_editable <Control-b> \
             [$c bind currently_editable <Key-Left>]
@@ -869,10 +892,18 @@ proc CanvasEditBind { c } {
 # Next three procs are from Welch examples
 
 proc CanvasDelete {c} {
-    if {[$c select item] != {}} {
-        $c dchars [$c select item] sel.first sel.last
-    } elseif {[$c focus] != {}} {
+    CanvasDelSeln $c
+    if {[$c focus] != {}} {
         $c dchars [$c focus] insert
+    }
+}
+
+proc CanvasDelSeln {c} {
+    if {[llength [$c select item]]} {
+	$c dchars [$c select item] sel.first sel.last
+	return 1
+    } else {
+	return 0
     }
 }
 
@@ -893,12 +924,13 @@ proc CanvasTextCopy {c} {
     }
 }
 
+# [catch {selection get} _s] &&
 
 proc CanvasPaste {c {x {}} {y {}}} {
-    if {[catch {selection get} _s] &&
-        [catch {selection get -selection CLIPBOARD} _s]} {
+    if {[catch {selection get -selection CLIPBOARD} _s]} {
         return		;# No selection
     }
+    CanvasDelSeln $c
     $c insert [$c focus] insert $_s
 
 
