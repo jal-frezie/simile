@@ -711,7 +711,6 @@ proc ChangeRegion {w l t r b} {
 proc MainWindowDraw {winName winTitle wl wt wr wb \
             colour initialScale args} {
     global window_info looks env custom
-    
     set c [ModelWindow $winName]
     
     TweakWindow $c $winTitle 1 $wl $wt $wr $wb $colour

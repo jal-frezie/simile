@@ -201,14 +201,14 @@ menu_handle(Win, file, save_interface) :-
 menu_handle(Win, file, ExportCmd) :-
 	member([ExportCmd, Lang], [[compile_c, c], [compile_tcl, tcl]]),
 	Win shows_model Model,
-	start_progress_dialogue(Win),
+	start_progress_dialogue,
 	compile_to_file(Model, Lang),
 	finish_progress_dialogue.
 
 menu_handle(Win, file, RunCmd) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
 	Win shows_model Node,
-	start_progress_dialogue(Win),
+	start_progress_dialogue,
 	/* Compile the thing into whatever, load it */
 	scrub_run(0),
 	use_temp_dir(ProgFileDir),
@@ -626,8 +626,7 @@ compile_to_file(Node, Language) :-
 	get_extension_for(Language, Extension),
 	get_default_export_name(Node, Extension, FullName),
 	get_program_file(FullName, ChosenName),
-	(ChosenName = '', !;
-	compile(Language, Node, ChosenName)).
+	compile(Language, Node, ChosenName).
 
 get_extension_for(c, ".cpp").
 get_extension_for(tcl, ".tcl").
@@ -648,7 +647,7 @@ remove_model(Win, Parent) :-
 	    add_parameter(Parent, 0, fill_colour, ''),
 	    add_parameter(Parent, 0, fix_math_args, ''),
 	    redraw_window(Win);
-	start_progress_dialogue(Win),
+	start_progress_dialogue,
 	reassure_user("Creating new inputs for values from deleted submodel"),
 	cutoff(Parent);
 	(find_all_comps(Parent, Child),

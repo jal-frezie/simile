@@ -13,7 +13,7 @@ sicstus_module(dialogue, [do_equation_dialog/2,
 	do_disag_dialog/4, do_relation_dialog/9, test_eqn/7,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
-start_progress_dialogue/1,
+        start_progress_dialogue/0,
 	finish_progress_dialogue/0, warn_runtime/0, 
 reassure_user/1]).
 
@@ -628,10 +628,13 @@ get_import_file(Preferred, FileName) :-
 	get_file_name(Preferred, 'Import from:', 0, FileName).
 
 get_program_file(Preferred, FileName) :-
-	get_file_name(Preferred, 'Export to:', 1, FileName).
+        finish_progress_dialogue,
+	get_file_name(Preferred, 'Export to:', 1, FileName),
+        \+ FileName = '',
+        start_progress_dialogue.
 
-start_progress_dialogue(Win) :-
-	tk_start_progress_dialogue(Win).
+start_progress_dialogue :-
+	tk_start_progress_dialogue.
 
 reassure_user(String) :-
 	tk_update_infobox(String).

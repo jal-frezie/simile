@@ -707,7 +707,7 @@ put into the target program. */
 :- dynamic(use_tcl_proc_for/1).
 
 /* These are implemented by the parser. Note the units are descriptive since
-they should never actually be used to parse anything.*/
+they should never actually be used to parse anything. */
 
 function(sum, int, [array_or_list_of_ints]).
 function(product, int, [array_or_list_of_ints]).

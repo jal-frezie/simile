@@ -27,7 +27,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
 	prepare_equation/1, create_equation/3, fill_equation/10, fill_inputs/1,
 	interact_equation/1, destroy_equation/0,
-	tk_start_progress_dialogue/1, tk_update_infobox/1, 
+	tk_start_progress_dialogue/0, tk_update_infobox/1, 
 	tk_finish_progress_dialogue/0, tk_alter_model/0,
 	tk_scrub_run/1, tk_kill_helpers/0,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
@@ -369,8 +369,8 @@ sometimes call commands that run a long time from the console, I have
 this write to the console if in this mode, i.e., there is no Tcl/Tk
 interpreter running. */
 
-tk_start_progress_dialogue(Wid) :-
-	safe_tcl_eval(['OpenProgressBox', Wid], _).
+tk_start_progress_dialogue :-
+	safe_tcl_eval(['OpenProgressBox'], _).
 
 tk_update_infobox(String) :-
 	name(Text, String),

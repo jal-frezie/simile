@@ -957,9 +957,9 @@ proc SetHighlights {t} {
     }
 }
 
-proc OpenProgressBox {{parent .}} {
+proc OpenProgressBox {} {
     toplevel .progress
-    wm transient .progress $parent
+    wm transient .progress [focus]
     wm geometry .progress 400x100+0+0
     wm title .progress "Progress with current operation"
     message .progress.message -aspect 400 -text "Please wait"

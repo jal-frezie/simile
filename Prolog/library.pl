@@ -26,8 +26,7 @@ ame_save( File, Model, Date ) :-
 		   Classes ),
 	on_exception(_, open( File, write, Stream, [type(binary)]), 
 	fail), !,
-	state:find_current(Win),
-	dialogue:start_progress_dialogue(Win),
+	dialogue:start_progress_dialogue,
 	(dialogue:reassure_user("Writing root information"),
 	user:version_is(VStr),
 	name(SimV, VStr),
@@ -215,9 +214,8 @@ choose_breakpoint(Break) :-
 % if not toplevel, to avoid clashes. Date from file is returned.
 
 ame_merge( Parent, File, Date, HasCode ) :-
-	state:find_current(Win),
 	on_exception(_, open( File, read, Stream), fail),
-	dialogue:start_progress_dialogue(Win),
+	dialogue:start_progress_dialogue,
 	dialogue:reassure_user("Reading information from file"),
 	read( Stream, Header ),
 	((Header = source(_,version=V,edition=E,date=Date);
