@@ -52,8 +52,8 @@ namespace eval RunEnv {
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
             [list \
-            [list NoteBookPage.gif "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
-            [list NoteBook.gif "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
+            [list notebookpage.gif "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
+            [list notebook.gif "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
             [list \
             [list graph.gif "Create plotter" "::RunEnv::CreateHelperInCurrentContainer plotter1.25 {Plotter}"] \
             [list table.gif "Create table" "::RunEnv::CreateHelperInCurrentContainer tabular11510 {Table}"] \
@@ -264,8 +264,8 @@ proc RunEnv::AddNewPageToolBar {containerId page} {
     set PageToolbarItems [list \
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitPage $containerId vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitPage $containerId horizontal"] \
-            [list NoteBookPage.gif "Add notebook page" "RunEnv::AddNotebookPage $containerId"] \
-            [list NoteBook.gif "Add notebook" "RunEnv::AddNotebookPageToCurrentContainer"] \
+            [list notebookpage.gif "Add notebook page" "RunEnv::AddNotebookPage $containerId"] \
+            [list notebook.gif "Add notebook" "RunEnv::AddNotebookPageToCurrentContainer"] \
             [list graph.gif "Create plotter here" "::RunEnv::CreateHelperInWindow $containerId plotter1.25 {Plotter}"] \
             [list table.gif "Create plotter here" "::RunEnv::CreateHelperInWindow $containerId tabular11510 {Table}"] \
             [list display.gif "Choose display to create here" "::RunEnv::AllDisplaysPopup $containerId \
