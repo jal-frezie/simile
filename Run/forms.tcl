@@ -73,17 +73,17 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     $widget.equation.textbox.text insert 1.0 $current_equation
     set equation(units) [RealForUnity $units]
     if {[llength $mult]} {
-	set emult [join $mult ,]
+        set emult [join $mult ,]
     } else {
-	set emult none
+        set emult none
     }
     $widget.slider.cur_dims configure -text $emult
-# do not show a radiobutton if incomplete
-#    if {!$isParam && ![llength $current_equation]} {
-#	set equation(isparam) -2
-#    } else {
-	set equation(isparam) $isParam
-#    }
+    # do not show a radiobutton if incomplete
+    #    if {!$isParam && ![llength $current_equation]} {
+    #	set equation(isparam) -2
+    #    } else {
+    set equation(isparam) $isParam
+    #    }
     if {$equation(isparam)==-1} {
         set paramMenuState disabled
     } else {
@@ -110,11 +110,11 @@ proc create_equation {parent boxtitle indices} {
     ### End formula bar section
     
     set t [toplevel .equation -bd 4 -class Equation]
-#    if {[string equal Linux $tcl_platform(os)]} {
-#	update ;# let window draw so it can be moved off screen
-#	wm geometry .equation +0+[winfo vrootheight .equation]
-#	update ;# let it move off screen so text updates do not distract user
-#    }
+    #    if {[string equal Linux $tcl_platform(os)]} {
+    #	update ;# let window draw so it can be moved off screen
+    #	wm geometry .equation +0+[winfo vrootheight .equation]
+    #	update ;# let it move off screen so text updates do not distract user
+    #    }
     wm title $t $boxtitle
     wm transient $t $parent
     set equation(top) $t
@@ -124,7 +124,7 @@ proc create_equation {parent boxtitle indices} {
     set notebook [NoteBook $t.notebook]
     $notebook insert end Main -text Main
     set mainF [$notebook getframe Main]
-    $notebook insert end Documentation -text Documentation 
+    $notebook insert end Documentation -text Documentation
     set docF [$notebook getframe Documentation]
     set equation(notebook) $notebook
     set equation(main) $mainF
@@ -155,36 +155,36 @@ proc create_equation {parent boxtitle indices} {
     set lbf [Tree $fnFrame.table -showlines yes]
     $fnFrame setwidget $lbf
     pack $fnFrame -expand yes -fill both
-
+    
     foreach funk $equation(fnDefs) {
-	set box root
-	foreach level [split [join [lindex $funk 0] /] /] {
-	    set lname $box.[join $level _]
-	    if {![$lbf exists $lname]} {
-		$lbf insert end $box $lname -image $iconImages(open) \
-		    -text $level -open [string equal Built-in $level]
-	    }
-	    set box $lname
-	}
-	set component $box.[lindex $funk 1]
-	if {![$lbf exists $component]} {
-	    $lbf insert end $box $component \
-		-image $iconImages(function) -text [lrange $funk 1 end]
-	}
+        set box root
+        foreach level [split [join [lindex $funk 0] /] /] {
+            set lname $box.[join $level _]
+            if {![$lbf exists $lname]} {
+                $lbf insert end $box $lname -image $iconImages(open) \
+                        -text $level -open [string equal Built-in $level]
+            }
+            set box $lname
+        }
+        set component $box.[lindex $funk 1]
+        if {![$lbf exists $component]} {
+            $lbf insert end $box $component \
+                    -image $iconImages(function) -text [lrange $funk 1 end]
+        }
     }
-
-#    frame $functionsf.list
-#    set lbf [listbox $functionsf.list.flist \
-#	-height 8 -width 16 \
-#	-yscrollcommand [list $functionsf.list.scrollf set]]
-#    foreach funk $equation(fnDefs) {
-#        $lbf insert end $funk
-#    }
-#    scrollbar $functionsf.list.scrollf -command [list $lbf yview]
-#    pack $functionsf.list.flist -side left -fill both -expand true
-#    pack $functionsf.list.scrollf -side left -fill y
-#    pack $functionsf.list -anchor nw  -expand true -fill both
-
+    
+    #    frame $functionsf.list
+    #    set lbf [listbox $functionsf.list.flist \
+    #	-height 8 -width 16 \
+    #	-yscrollcommand [list $functionsf.list.scrollf set]]
+    #    foreach funk $equation(fnDefs) {
+    #        $lbf insert end $funk
+    #    }
+    #    scrollbar $functionsf.list.scrollf -command [list $lbf yview]
+    #    pack $functionsf.list.flist -side left -fill both -expand true
+    #    pack $functionsf.list.scrollf -side left -fill y
+    #    pack $functionsf.list -anchor nw  -expand true -fill both
+    
     pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
     TitleFrame $middleF.indices -text "Indices: "
     set indicesf [$middleF.indices getframe]
@@ -273,12 +273,12 @@ proc create_equation {parent boxtitle indices} {
     pack [entry $mainf.slider.minval -width 8 -textvariable equation(min)] -side left -padx 4 -pady 4
     pack [label $mainf.slider.maxlabel -text Maximum] -side left -padx 4 -pady 4
     pack [entry $mainf.slider.maxval -width 8 -textvariable equation(max)] -side left -padx 4 -pady 4
-
+    
     pack [label $mainf.slider.cur_dims] -side right -padx 4
     pack [label $mainf.slider.dims_txt -text "Current\ndimensions:"] -side right -padx 4
     pack [set eu [entry $mainf.slider.entry -width 8 -textvariable equation(units)]] -side right -padx 4 -pady 4
     pack [label $mainf.slider.unitslabel -text "Units:"] -side right -padx 4 -pady 4
-
+    
     pack $mainf.slider -anchor nw -fill x
     frame $mainf.file
     radiobutton $mainf.file.radio2 -text "Fixed parameter" -variable equation(isparam) -value 2
@@ -297,7 +297,7 @@ proc create_equation {parent boxtitle indices} {
     pack $mainf.equation.textbox.radio0 -anchor nw
     pack $mainf.equation.textbox -expand true -fill both -side left
     focus $en
-
+    
     frame $mainf.equation.textbox.buttons
     $notebook itemconfigure Main -raisecmd "focus $en"
     set comp [lrange $boxtitle [expr [lsearch $boxtitle for]+1] end]
@@ -308,8 +308,8 @@ proc create_equation {parent boxtitle indices} {
                 -command "equationDoGraph $t $en"]
         pack $graph -padx 8 -pady 4
         set table [button $mainf.equation.textbox.buttons.table \
-		       -text " Table... " \
-		       -command [list GetTable $t $comp $en]]
+                -text " Table... " \
+                -command [list GetTable $t $comp $en]]
         pack $table -padx 8 -pady 4
     } else  {
         set graph [button $mainf.equation.textbox.buttons.graph \
@@ -337,23 +337,23 @@ proc create_equation {parent boxtitle indices} {
     label $influencesf.captions.i -text "In units:"
     label $influencesf.captions.d -text "Dimensions:"
     pack $influencesf.captions.p $influencesf.captions.i \
-	$influencesf.captions.d -side left -fill x -expand true
+            $influencesf.captions.d -side left -fill x -expand true
     pack $influencesf.captions -fill x
     
-#    ScrolledWindow $influencesf.lists
+    #    ScrolledWindow $influencesf.lists
     frame $influencesf.lists
     scrollbar $influencesf.lists.yscroll -orient v \
-	-command [list $influencesf.lists.f yview]
+            -command [list $influencesf.lists.f yview]
     pack $influencesf.lists.yscroll -side right -fill y
     ScrollableFrame $influencesf.lists.f -constrainedwidth true \
-	-yscrollcommand [list AdjustCanvas $influencesf.lists f y]
-# [list $influencesf.lists.yscroll set]
-# [list AdjustCanvas $influencesf.lists f y]
-#    $influencesf.lists setwidget $influencesf.lists.f
-
+            -yscrollcommand [list AdjustCanvas $influencesf.lists f y]
+    # [list $influencesf.lists.yscroll set]
+    # [list AdjustCanvas $influencesf.lists f y]
+    #    $influencesf.lists setwidget $influencesf.lists.f
+    
     pack $influencesf.lists.f -fill x -expand true
     pack $influencesf.lists -side top -fill x -expand true
-
+    
     set canId [$influencesf.lists.f getframe]
     set lbp [frame $canId.plist -bd 2 -relief sunken]
     set lbi [frame $canId.ilist -bd 2 -relief sunken]
@@ -390,7 +390,7 @@ proc create_equation {parent boxtitle indices} {
     set equation(newGraphs) ""
     set equation(done) 0
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
-#    tkwait visibility $influencesf.lists.plist
+    #    tkwait visibility $influencesf.lists.plist
 }
 
 proc interact_equation {} {
@@ -416,39 +416,39 @@ proc interact_equation {} {
     set eqnFrame [$equation(main).main.main getframe]
     set listFrame [$equation(main).bottom.influences getframe]
     
-# OK the equation dialogue has finally reached its final size, but in order to
-# get the window manager to put it in an appropriate place we have to put it
-# up, let it draw (so it knows how big it wants to be), then remove and replace
-# it, because some of its BWidgets are buggy
-#    if {!$equation(done) && [string equal Linux $tcl_platform(os)]} {
-#	update ;# let all those BWidgets decide how big they want to be
-#	wm withdraw .equation
-#	wm deiconify .equation
-#    }
-
+    # OK the equation dialogue has finally reached its final size, but in order to
+    # get the window manager to put it in an appropriate place we have to put it
+    # up, let it draw (so it knows how big it wants to be), then remove and replace
+    # it, because some of its BWidgets are buggy
+    #    if {!$equation(done) && [string equal Linux $tcl_platform(os)]} {
+    #	update ;# let all those BWidgets decide how big they want to be
+    #	wm withdraw .equation
+    #	wm deiconify .equation
+    #    }
+    
     if {![winfo viewable $t]} {
-	tkwait visibility $t
+        tkwait visibility $t
     }
     grab $t
     tkwait variable equation(done)
     grab release $t
     switch $equation(done) {
-	1 {
-	    set units [UnityForReal $equation(units)]
-	    return [list [string trimright \
-                [$eqnFrame.equation.textbox.text get 1.0 end]] \
-                $units $equation(isparam) \
-                [string trimright [$descFrame.text get 1.0 end]] \
-                [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
-                $equation(min) $equation(max)]
-	} 2 {
-	    return [list $equation(paths,$equation(ckLine)) \
-			$equation(entry$equation(ckLine)) \
-			[UnityForReal $equation(unit$equation(ckLine))]]
-	} 3 {
-	    return [list \['[join $equation(table_data) ',']'\] \
-			$equation(table_values)]
-	}
+        1 {
+            set units [UnityForReal $equation(units)]
+            return [list [string trimright \
+                    [$eqnFrame.equation.textbox.text get 1.0 end]] \
+                    $units $equation(isparam) \
+                    [string trimright [$descFrame.text get 1.0 end]] \
+                    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
+                    $equation(min) $equation(max)]
+        } 2 {
+            return [list $equation(paths,$equation(ckLine)) \
+                    $equation(entry$equation(ckLine)) \
+                    [UnityForReal $equation(unit$equation(ckLine))]]
+        } 3 {
+            return [list \['[join $equation(table_data) ',']'\] \
+                    $equation(table_values)]
+        }
     }
 }
 
@@ -471,17 +471,17 @@ proc destroy_equation {} {
 
 proc UnityForReal {show} {
     if {[string equal real $show]} {
-	return 1
+        return 1
     } else {
-	return $show
+        return $show
     }
 }
 
 proc RealForUnity {show} {
     if {[string equal 1 $show]} {
-	return real
+        return real
     } else {
-	return $show
+        return $show
     }
 }
 
@@ -503,17 +503,17 @@ proc RollAll {s l1 l2 l3 top bot} {
 
 proc GetTable {parent comp box} {
     global equation table_entry table_viewer
-
+    
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
     if {[equationDoTable $parent $comp]} {
         if {[llength $table_entry(dataField)]} {
-	    set equation(table_data) [concat [list $table_entry(fileName) \
-						  $table_entry(dataField)] \
-					  $table_entry(indices)]
-	}
+            set equation(table_data) [concat [list $table_entry(fileName) \
+                    $table_entry(dataField)] \
+                    $table_entry(indices)]
+        }
         set equation(table_values) $table_entry(values)
-#puts $equation(table_values)
+        #puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
             $box insert insert table\(\[
             for {set count [llength $table_entry(indices)]
@@ -548,68 +548,68 @@ proc fill_inputs { triples } {
     set scroller [$widget.lists.f getframe]
     # Initialize variables and display  list
     foreach ipFrame {plist ilist dlist} {
-	foreach ipEntry [winfo children $scroller.$ipFrame] {
-	    destroy $ipEntry
-	}
+        foreach ipEntry [winfo children $scroller.$ipFrame] {
+            destroy $ipEntry
+        }
     }
     set line 0
     foreach vpiTriple $triples {
         set equation(paths,$line) [lindex $vpiTriple 0]
         set equation(oldentry,$line) [lindex $vpiTriple 1]
         set equation(oldunit,$line) [RealForUnity [lindex $vpiTriple 2]]
-
-	set p [entry $scroller.plist.p$line -bd 0 -relief flat \
-		   -textvariable "equation(entry$line)"]
-	bind $p <Enter> [list QueuePopup AddWidgetPopup \
-			       "Value(s) of [lindex $vpiTriple 0]" %X %Y]
-	bind $p <Double-1> "equationDouble %W $en; focus $en"
-	bind $p <FocusOut> "ListEditDone $line"
-	bind $p <Return> "ListEditDone $line"
-	bind $p <Leave> RemovePopup
-	$p config -highlightbackground [$p cget -background]
-	$p delete 0 end
-	$p insert end $equation(oldentry,$line)
-	pack $p -fill x -expand true
-
-	set u [entry $scroller.ilist.u$line -bd 0 -relief flat \
-		   -textvariable "equation(unit$line)"]
-	bind $u <FocusOut> "ListEditDone $line"
-	bind $u <Return> "ListEditDone $line"
-	$u config -highlightbackground [$u cget -background]
-	$u delete 0 end
-	$u insert end $equation(oldunit,$line)
-	pack $u -fill x -expand true
-	set d [entry $scroller.dlist.d$line -bd 0 -relief flat]
-	$d delete 0 end
-	$d insert end [lindex $vpiTriple 3]
-	$d config -highlightbackground [$d cget -background] \
-	    -disabledbackground [$d cget -background] \
-	    -disabledforeground [$d cget -foreground] -state disabled
-	pack $d -fill x -expand true
-	incr line
+        
+        set p [entry $scroller.plist.p$line -bd 0 -relief flat \
+                -textvariable "equation(entry$line)"]
+        bind $p <Enter> [list QueuePopup AddWidgetPopup \
+                "Value(s) of [lindex $vpiTriple 0]" %X %Y]
+        bind $p <Double-1> "equationDouble %W $en; focus $en"
+        bind $p <FocusOut> "ListEditDone $line"
+        bind $p <Return> "ListEditDone $line"
+        bind $p <Leave> RemovePopup
+        $p config -highlightbackground [$p cget -background]
+        $p delete 0 end
+        $p insert end $equation(oldentry,$line)
+        pack $p -fill x -expand true
+        
+        set u [entry $scroller.ilist.u$line -bd 0 -relief flat \
+                -textvariable "equation(unit$line)"]
+        bind $u <FocusOut> "ListEditDone $line"
+        bind $u <Return> "ListEditDone $line"
+        $u config -highlightbackground [$u cget -background]
+        $u delete 0 end
+        $u insert end $equation(oldunit,$line)
+        pack $u -fill x -expand true
+        set d [entry $scroller.dlist.d$line -bd 0 -relief flat]
+        $d delete 0 end
+        $d insert end [lindex $vpiTriple 3]
+        $d config -highlightbackground [$d cget -background] \
+                -disabledbackground [$d cget -background] \
+                -disabledforeground [$d cget -foreground] -state disabled
+        pack $d -fill x -expand true
+        incr line
     }
     # Make box mode compact if not used
     if {!$line} {
         pack forget $equation(main).bottom
     } else {
-	set showLines [min 8 $line]
-	$widget.lists.f configure -height \
-	    [expr $showLines*[winfo reqheight $scroller.plist.p0]+4]
+        set showLines [min 8 $line]
+        $widget.lists.f configure -height \
+                [expr $showLines*[winfo reqheight $scroller.plist.p0]+4]
     }
-#    else {
-#	$widget configure -height 100
-#    }
+    #    else {
+    #	$widget configure -height 100
+    #    }
     #    pack $t.bottom -fill x -expand true
-#    $equation(notebook) compute_size
-#    pack $equation(notebook)
+    #    $equation(notebook) compute_size
+    #    pack $equation(notebook)
 }
 
 proc fill_table {table_data table_values} {
     global equation
-#puts $table_data
+    #puts $table_data
     set equation(table_data) $table_data
-#    set equation(table_values) [TransEnums $trans $table_values]
-# Translation should be done in Prolog by reverse_engineer
+    #    set equation(table_values) [TransEnums $trans $table_values]
+    # Translation should be done in Prolog by reverse_engineer
     set equation(table_values) $table_values
 }
 
@@ -630,41 +630,41 @@ proc equationBindings { t en eu lbp lbi lbd \
     
     # Elimate the all binding tag because we
     # do our own focus management
-#    foreach w [list $en $eu $lbp $lbi $lbd $lbf $ok $can] {
-#        bind $w <Button-1> ListEditDone
-#        bindtags $w [list $t [winfo class $w] $w]
-#    }
+    #    foreach w [list $en $eu $lbp $lbi $lbd $lbf $ok $can] {
+    #        bind $w <Button-1> ListEditDone
+    #        bindtags $w [list $t [winfo class $w] $w]
+    #    }
     # Dialog-global cancel binding
     # Disabled because people type Ctrl-C to copy buffer into eqn box
     # bind $t <Control-c> equationCancel
     
     # Entry bindings
-#    foreach $w [list $en $eu] {
-#        bind $w <Return> equationOK
-#    }
-# Bindings for listboxes that used to hold input info -- these are gone
-# (Bindings should now be on individual entries instead)
-#    set PopCmd [list QueuePopup AddParamPopup %W %y %X %Y]
-#    bind $lbp <Enter> $PopCmd
-#    bind $lbp <Motion> "RemovePopup;$PopCmd"
-#    bind $lbp <Leave> RemovePopup
+    #    foreach $w [list $en $eu] {
+    #        bind $w <Return> equationOK
+    #    }
+    # Bindings for listboxes that used to hold input info -- these are gone
+    # (Bindings should now be on individual entries instead)
+    #    set PopCmd [list QueuePopup AddParamPopup %W %y %X %Y]
+    #    bind $lbp <Enter> $PopCmd
+    #    bind $lbp <Motion> "RemovePopup;$PopCmd"
+    #    bind $lbp <Leave> RemovePopup
     
-#    bind $lbp <Button-1> "equationClick %W %y"
-#    bind $lbp <Button-3> "equationRight %W %y"
-#    bind $lbp <Double-1> "equationDouble %W %y $en; focus $en"
+    #    bind $lbp <Button-1> "equationClick %W %y"
+    #    bind $lbp <Button-3> "equationRight %W %y"
+    #    bind $lbp <Double-1> "equationDouble %W %y $en; focus $en"
     
-#    bind $lbi <Button-1> "equationClick %W %y"
-#    bind $lbi <Button-3> "equationRight %W %y"
+    #    bind $lbi <Button-1> "equationClick %W %y"
+    #    bind $lbi <Button-3> "equationRight %W %y"
     
     $lbf bindText <Enter> [list QueuePopup AddFnPopup %X %Y]
     $lbf bindText <Leave> RemovePopup
     $lbf bindText <Double-1> [list functionClick $en]
-#    bind $lbf <Double-1> \
-#            "functionClick %W %y $en"
-     # popup boxes for functions
-#    bind $lbf <Enter> $PopCmd
-#    bind $lbf <Motion> "RemovePopup;$PopCmd"
-#    bind $lbf <Leave> RemovePopup
+    #    bind $lbf <Double-1> \
+    #            "functionClick %W %y $en"
+    # popup boxes for functions
+    #    bind $lbf <Enter> $PopCmd
+    #    bind $lbf <Motion> "RemovePopup;$PopCmd"
+    #    bind $lbf <Leave> RemovePopup
     set PopCmd [list QueuePopup AddIndexPopup %W %y %X %Y]
     bind $lbx <Enter> $PopCmd
     bind $lbx <Motion> "RemovePopup;$PopCmd"
@@ -692,19 +692,19 @@ proc equationBindings { t en eu lbp lbi lbd \
 proc equationDoGraph {parent box} {
     global equation
     if {[equationGraph $parent]} {
-	if {![string match *graph(*)* [$box get 1.0 end]]} {
-	    InsertFunction $box graph
-	}
-	set equation(done) 3
+        if {![string match *graph(*)* [$box get 1.0 end]]} {
+            InsertFunction $box graph
+        }
+        set equation(done) 3
     }
 }
 
 proc equationOK {} {
     global equation
-#    eval [bind [focus] <FocusOut>]
-#    set t [$equation(main).main.main getframe]
-#    event generate [focus] <FocusOut>
-#    focus $t.equation.textbox.text
+    #    eval [bind [focus] <FocusOut>]
+    #    set t [$equation(main).main.main getframe]
+    #    event generate [focus] <FocusOut>
+    #    focus $t.equation.textbox.text
     set equation(done) 1
 }
 
@@ -761,11 +761,11 @@ proc ListEditDone {line} {
     global equation
     set widget [$equation(main).bottom.influences getframe]
     set scroller [$widget.lists.f getframe]
-
+    
     if {![string equal $equation(entry$line) $equation(oldentry,$line)] || \
-	    ![string equal $equation(unit$line) $equation(oldunit,$line)]} {
-	set equation(ckLine) $line
-	set equation(done) 2
+                ![string equal $equation(unit$line) $equation(oldunit,$line)]} {
+        set equation(ckLine) $line
+        set equation(done) 2
     }
 }
 
@@ -806,7 +806,7 @@ proc AddEnumTypePopup {lb y X Y} {
     set popLine [$lb get [$lb nearest $y]]
     set memList disaggregate(enumtype,$popLine)
     if {[info exists $memList]} {
-	AddWidgetPopup "members: [set $memList]" $X $Y
+        AddWidgetPopup "members: [set $memList]" $X $Y
     }
 }
 
@@ -845,7 +845,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             comment enumLists eqnunit hide separate} {
     global disaggregate
     foreach varName {colour image imgpos type fatness \
-			 icount eqnunit hide separate} {
+                icount eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
     if [llength $icount]>0 {
@@ -853,7 +853,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     } else  {
         set disaggregate(icount) 1
     }
-#puts $disaggregate(icount)
+    #puts $disaggregate(icount)
     switch -- $step {
         -1 {
             set disaggregate(step) "Initialize only"
@@ -894,7 +894,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set colourf [$t.simple.left.colour getframe]
     set posRBs [frame $colourf.imageposns]
     pack [button $colourf.clear -text "Clear" -width 6 \
-	      -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
+            -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
     pack [button $colourf.fixcolour -text "Colour..." \
             -width 6 -command "UpdateColour $colourf"]  \
             -padx 2 -pady 4 -side left
@@ -905,10 +905,10 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             -padx 2 -pady 4 -side left
     pack $posRBs -padx 2 -pady 4 -side left
     set rbState [ChooseText [string equal $disaggregate(image) none] \
-		     disabled normal]
+            disabled normal]
     foreach rbutton {Tiled Centred Scaled} {
         pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
-		  -value $rbutton -variable disaggregate(imgpos)] -anchor w
+                -value $rbutton -variable disaggregate(imgpos)] -anchor w
     }
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
     pack $t.simple.left -side left; # -expand 1 -fill both
@@ -932,8 +932,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     label $t.commentlabel -text Comments:
     pack $t.commentlabel -padx 2 -pady 4 -anchor w
-# ScrolledWindow causes crash under Linux so replaced with ordinary frame
-#    frame $t.commentsSW
+    # ScrolledWindow causes crash under Linux so replaced with ordinary frame
+    #    frame $t.commentsSW
     ScrolledWindow $t.commentsSW
     text $t.commentsSW.comment -height 4 -width 40 -wrap word
     $t.commentsSW setwidget $t.commentsSW.comment
@@ -945,13 +945,13 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     TitleFrame $t.complex.enumtypes -text "Enumerated types"
     set enumtypef [$t.complex.enumtypes getframe]
     pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
-	-expand true
+            -expand true
     #    pack [frame $windowId.buttonframe] -side bottom
     listbox $canId.scrf -yscrollcommand [list AdjustCanvas $canId scrf y]
     foreach enumList $enumLists {
-	set newType [lindex $enumList 0]
-	set disaggregate(enumtype,$newType) [lrange $enumList 1 end]
-	$canId.scrf insert end $newType
+        set newType [lindex $enumList 0]
+        set disaggregate(enumtype,$newType) [lrange $enumList 1 end]
+        $canId.scrf insert end $newType
     }
     bind $canId.scrf <ButtonRelease-1> "EnableTypeOps $enumtypef"
     set PopCmd [list QueuePopup AddEnumTypePopup %W %y %X %Y]
@@ -960,27 +960,27 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     bind $canId.scrf <Leave> RemovePopup
     scrollbar $canId.yscroll -orient v -command [list $canId.scrf yview]
     menu $enumtypef.curmembers -tearoff 0 \
-	-postcommand [list AddEnumTypeMems $enumtypef]
-
+            -postcommand [list AddEnumTypeMems $enumtypef]
+    
     
     pack $canId.yscroll -side right -fill y
     pack $canId.scrf -side left -fill both -expand true
-
+    
     pack [set btnId [frame $enumtypef.btns]] -side left
     pack [entry $btnId.e -textvariable enumTypeMPEntry]
     bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
     pack [button $btnId.addtype -text "Add type" -command "AddEnumType $canId"] \
-	-padx 2 -pady 4 -fill x
+            -padx 2 -pady 4 -fill x
     pack [button $btnId.remtype -text "Remove type" -state disabled -command "RemoveEnumType $enumtypef"] \
-	-padx 2 -pady 4 -fill x
+            -padx 2 -pady 4 -fill x
     pack [button $btnId.addmems -text "Add member" -state disabled -command "AddEnumMem $enumtypef"] \
-	-padx 2 -pady 4 -fill x
+            -padx 2 -pady 4 -fill x
     pack [button $btnId.remmem -text "Remove member" -state disabled -command "RemoveEnumMem $enumtypef"] \
-	-padx 2 -pady 4 -fill x
+            -padx 2 -pady 4 -fill x
     pack [button $btnId.getmem -text "Get from file" -state disabled -command "GetEnumMems $enumtypef"] \
-	-padx 2 -pady 4 -fill x
+            -padx 2 -pady 4 -fill x
     pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
-
+    
     TitleFrame $t.complex.appearance -text Appearance
     set appearancef [$t.complex.appearance getframe]
     checkbutton $appearancef.hide -text "Hide contents" \
@@ -1049,14 +1049,14 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     destroy $t
     set icount {}
     if [string compare $disaggregate(icount) 1] {
-	foreach newIndex [split $disaggregate(icount) ,] {
-	    if {[string is integer $newIndex]} {
-		lappend icount $newIndex
-	    } else {
-		lappend icount \"$newIndex\"
-	    }
-	}
-	set icount [join $icount ,]
+        foreach newIndex [split $disaggregate(icount) ,] {
+            if {[string is integer $newIndex]} {
+                lappend icount $newIndex
+            } else {
+                lappend icount \"$newIndex\"
+            }
+        }
+        set icount [join $icount ,]
     }
     if {$disaggregate(done)} {
         switch $disaggregate(step) {
@@ -1068,19 +1068,19 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
                 set step $disaggregate(step)
             }
         }
-	set enumTypes {}
-	foreach {typename members} [array get disaggregate enumtype,*] {
-	    lappend enumTypes [concat [list [string range $typename 9 end]] \
-				   $members]
-	}
+        set enumTypes {}
+        foreach {typename members} [array get disaggregate enumtype,*] {
+            lappend enumTypes [concat [list [string range $typename 9 end]] \
+                    $members]
+        }
         set result [list $disaggregate(colour) $disaggregate(image) \
-			$disaggregate(imgpos) $disaggregate(type) \
-			$disaggregate(fatness) $icount \
-			$step $disaggregate(comment) \
-			$disaggregate(eqnunit) $disaggregate(hide) \
-			$disaggregate(separate) $enumTypes]
+                $disaggregate(imgpos) $disaggregate(type) \
+                $disaggregate(fatness) $icount \
+                $step $disaggregate(comment) \
+                $disaggregate(eqnunit) $disaggregate(hide) \
+                $disaggregate(separate) $enumTypes]
     } else {
-	set result {}
+        set result {}
     }
     unset disaggregate
     return $result
@@ -1088,7 +1088,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 
 proc ShowComplexity {t} {
     if {[string match [$t.simple.right.more cget -text] More]} {
-        pack $t.complex -anchor sw -side bottom 
+        pack $t.complex -anchor sw -side bottom
         wm geometry $t {}; # resize to size requested internally by its widgets
         $t.simple.right.more configure -text Less
     } else  {
@@ -1098,12 +1098,12 @@ proc ShowComplexity {t} {
 }
 
 proc ClearBG {posRBs} {
-    global disaggregate 
+    global disaggregate
     set disaggregate(colour) {}
     set disaggregate(image) {}
     set disaggregate(imgpos) none
     foreach button [winfo children $posRBs] {
-	$button configure -state disabled
+        $button configure -state disabled
     }
 }
 
@@ -1116,14 +1116,14 @@ proc OldAddEnumType {fr} {
     pack [entry .typeadder.what.e -textvariable addenumtype(name)] -side left
     pack [frame .typeadder.btns]
     pack [button .typeadder.btns.ok -text OK \
-	      -command "set addenumtype(done) 1"] -side left
+            -command "set addenumtype(done) 1"] -side left
     pack [button .typeadder.btns.cancel -text Cancel \
-	      -command "set addenumtype(done) 0"] -side left
+            -command "set addenumtype(done) 0"] -side left
     grab .typeadder
     tkwait variable addenumtype(done)
     grab release .typeadder
     if {$addenumtype(done)} {
-	$fr.scrf insert end $addenumtype(name)
+        $fr.scrf insert end $addenumtype(name)
     }
     destroy .typeadder
 }
@@ -1134,16 +1134,16 @@ proc AddEnumTypeMems {fr} {
     set enumEntry [list [$fr.listpair.scrf get $togo $togo]]
     $fr.curmembers delete 0 end
     foreach mem $disaggregate(enumtype,$enumEntry) {
-	$fr.curmembers add command -label $mem \
-	    -command [list snipET $enumEntry $mem]
+        $fr.curmembers add command -label $mem \
+                -command [list snipET $enumEntry $mem]
     }
 }
-	
+
 proc AddEnumType {fr} {
     global disaggregate enumTypeMPEntry
     if {[CheckForETDuplicates {enumerated type}]} {
-	$fr.scrf insert end $enumTypeMPEntry
-	set disaggregate(enumtype,$enumTypeMPEntry) {}
+        $fr.scrf insert end $enumTypeMPEntry
+        set disaggregate(enumtype,$enumTypeMPEntry) {}
     }
 }
 
@@ -1159,40 +1159,40 @@ proc RemoveEnumType {fr} {
 proc AddEnumMem {fr} {
     global disaggregate enumTypeMPEntry
     if {[CheckForETDuplicates member]} {
-	set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
-	lappend disaggregate(enumtype,$togo) $enumTypeMPEntry
+        set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+        lappend disaggregate(enumtype,$togo) $enumTypeMPEntry
     }
 }
 
 proc CheckForETDuplicates {new} {
     global disaggregate enumTypeMPEntry
     if {![llength $enumTypeMPEntry]} {
-	ShowMessage "No $new name" error \
-	    "You must enter a name for the new $new in the box." ok
-	return 0
-    }   
+        ShowMessage "No $new name" error \
+                "You must enter a name for the new $new in the box." ok
+        return 0
+    }
     set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
     if {![string equal none $def]} {
-	ShowMessage "Bad $new name" error \
-	    "This name corresponds to a physical unit (defined as $def)." ok
-	return 0
+        ShowMessage "Bad $new name" error \
+                "This name corresponds to a physical unit (defined as $def)." ok
+        return 0
     }
     foreach {type members} [array get disaggregate enumtype,*] {
-	set oldType [string range $type 9 end]
-	if {[string equal $enumTypeMPEntry $oldType]} {
-	    ShowMessage "Bad $new name" error \
-		"This submodel already has an enumerated type of this name." ok
-	    return 0
-	}
-	if {[lsearch $members $enumTypeMPEntry] != -1} {
-	    ShowMessage "Bad $new name" error \
-		"The enumerated type $oldType in this submodel already contains a member of this name." ok
-	    return 0
-	}
+        set oldType [string range $type 9 end]
+        if {[string equal $enumTypeMPEntry $oldType]} {
+            ShowMessage "Bad $new name" error \
+                    "This submodel already has an enumerated type of this name." ok
+            return 0
+        }
+        if {[lsearch $members $enumTypeMPEntry] != -1} {
+            ShowMessage "Bad $new name" error \
+                    "The enumerated type $oldType in this submodel already contains a member of this name." ok
+            return 0
+        }
     }
     return 1
 }
-  
+
 proc RemoveEnumMem {fr} {
     tk_popup $fr.curmembers [winfo pointerx $fr] [winfo pointery $fr]
     set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
@@ -1205,18 +1205,18 @@ proc GetEnumMems {fr} {
     set table_entry(data) {} ;# dont try to keep file origins
     set table_entry(values) {}
     for {set pos 0} {$pos < [llength $memList]} {incr pos} {
-	lappend table_entry(values) [expr $pos+1] \
-	    [list [lindex $memList $pos]]
+        lappend table_entry(values) [expr $pos+1] \
+                [list [lindex $memList $pos]]
     }
     if {[equationDoTable .disaggregation]} {
-	set fileState [list $table_entry(fileName) $table_entry(dataField)]
-	set fileData $table_entry(values)
-	foreach {pos mem} $fileData {
-	    set mem [lindex $mem 0]
-	    if {[lsearch $memList $mem]==-1} {
-		lappend memList $mem
-	    }
-	}
+        set fileState [list $table_entry(fileName) $table_entry(dataField)]
+        set fileData $table_entry(values)
+        foreach {pos mem} $fileData {
+            set mem [lindex $mem 0]
+            if {[lsearch $memList $mem]==-1} {
+                lappend memList $mem
+            }
+        }
     }
     EnableTypeOps $fr
 }
@@ -1225,20 +1225,20 @@ proc snipET {enumEntry mem} {
     global disaggregate
     set tgt [lsearch $disaggregate(enumtype,$enumEntry) $mem]
     set disaggregate(enumtype,$enumEntry) \
-	[lreplace $disaggregate(enumtype,$enumEntry) $tgt $tgt]
+            [lreplace $disaggregate(enumtype,$enumEntry) $tgt $tgt]
 }
-    
+
 proc EnableTypeOps {fr} {
     if {[llength [$fr.listpair.scrf curselection]]} {
-	set haveSeln normal
+        set haveSeln normal
     } else {
-	set haveSeln disabled
+        set haveSeln disabled
     }
     foreach btn {remtype addmems remmem getmem} {
-	$fr.btns.$btn config -state $haveSeln
+        $fr.btns.$btn config -state $haveSeln
     }
 }
-	
+
 proc UpdateColour {f} {
     global disaggregate
     
@@ -1267,27 +1267,27 @@ proc ChooseImage {posRBs} {
     while {$choosing} {
         set new [ChooseFile image.gif {Image for model background} 0]
         if {[llength $new]} {
-	    if {![catch {$newImage read $new -shrink} readFlop]} {
-		if {![llength $readFlop]} {
-		    set readFlop [string range [file extension $new] 1 end]
-		}
-		$newImage config -format $readFlop
+            if {![catch {$newImage read $new -shrink} readFlop]} {
+                if {![llength $readFlop]} {
+                    set readFlop [string range [file extension $new] 1 end]
+                }
+                $newImage config -format $readFlop
                 set disaggregate(image) $newImage
                 PutSize $newImage
                 set choosing 0
-		foreach button [winfo children $posRBs] {
-		    $button configure -state normal
-		}
-		if {[string equal none $disaggregate(imgpos)]} {
-		    set disaggregate(imgpos) Tiled
-		}
- 	    } else {
+                foreach button [winfo children $posRBs] {
+                    $button configure -state normal
+                }
+                if {[string equal none $disaggregate(imgpos)]} {
+                    set disaggregate(imgpos) Tiled
+                }
+            } else {
                 ShowMessage {Problem loading file} error $errorInfo ok
                 # prevent crasho if reading fails
                 #		$newImage config -width 100 -height 100
             }
         } else {
-	    image delete $newImage
+            image delete $newImage
             set choosing 0
         }
     }
@@ -1346,23 +1346,23 @@ proc RelationCheck {parent title type state init_comment} {
     frame .relcheck.top
     TitleFrame .relcheck.top.left -text "[string toupper $type 0 0] options:"
     set f [.relcheck.top.left getframe]
-
+    
     switch $type {
-	influence {
-	    set entries {"Use values made\nin same time step" use_sofar}
-	} relation {
-	    set entries {"Exclusive role" exclusive \
-			     "Allow base\ninstance lookup" can_lookup}
-	}
+        influence {
+            set entries {"Use values made\nin same time step" use_sofar}
+        } relation {
+            set entries {"Exclusive role" exclusive \
+                        "Allow base\ninstance lookup" can_lookup}
+        }
     }
     foreach {text attr} $entries {
-	pack [checkbutton $f.$attr -text $text \
-	      -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
-	set relation($attr) [lindex $state 0]
-	set state [lrange $state 1 end]
-	if {$relation($attr)==-1} {
-	    $f.$attr configure -state disabled
-	}
+        pack [checkbutton $f.$attr -text $text \
+                -variable relation($attr) -offvalue 0 -onvalue 1] -anchor w
+        set relation($attr) [lindex $state 0]
+        set state [lrange $state 1 end]
+        if {$relation($attr)==-1} {
+            $f.$attr configure -state disabled
+        }
     }
     pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
     frame .relcheck.top.right
@@ -1389,7 +1389,7 @@ proc RelationCheck {parent title type state init_comment} {
     destroy .relcheck
     set results [list $relation(done) $newComment]
     foreach {text attr} $entries {
-	lappend results $relation($attr)
+        lappend results $relation($attr)
     }
     return $results
 }
@@ -1439,21 +1439,25 @@ proc GetFindText {parent} {
 proc DoRegDialog {dtId} {
     global userinfo custom welcomeDone tcl_platform
     
+    if {[lsearch [package names] SimileAutoObj] > -1} {
+        return
+    }
+    
     if {$userinfo(Version)==$userinfo(oldVersion)} {
-	if {$userinfo(done)} {
-	    return
-	}
+        if {$userinfo(done)} {
+            return
+        }
     } else {
-	file mkdir $custom(prefDir)/Examples
-	foreach egFile [glob [pwd]/../Examples/*] {
-# next condition only matters in development environment
-	    if {![file isdirectory $egFile]} {
-		file copy -force $egFile $custom(prefDir)/Examples
-	    }
-	}
-	if {![llength $custom(hotlist)]} {
-	    set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
-	}
+        file mkdir $custom(prefDir)/Examples
+        foreach egFile [glob [pwd]/../Examples/*] {
+            # next condition only matters in development environment
+            if {![file isdirectory $egFile]} {
+                file copy -force $egFile $custom(prefDir)/Examples
+            }
+        }
+        if {![llength $custom(hotlist)]} {
+            set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
+        }
     }
     set t [toplevel .register -bd 4]
     wm title $t "Welcome to Simile version $userinfo(Version)"
@@ -1471,17 +1475,17 @@ proc DoRegDialog {dtId} {
     TitleFrame .register.create -text "Creating a model: "
     set create [.register.create getframe]
     if {[string match Windows $tcl_platform(platform)]} {
-	pack [message $create.m -text "Select compartments and flows from the toolbar\
-       to add to the diagram. Use the select (pointer) tool to edit captions\
-       and values. Run your model using the Build command of the Model menu."\
-       -width 400 -font {-family helvetica -size 8}]
-     } else {
-	 pack [message $create.m -text "Select compartments and flows from the toolbar\
-		      to add to the diagram. Use the select (pointer) tool to edit captions\
-		     and values. Run your model using the Build command of the Model menu."\
-		    -width 400]
-  }
-  pack $create -expand on -fill x
+        pack [message $create.m -text "Select compartments and flows from the toolbar\
+                to add to the diagram. Use the select (pointer) tool to edit captions\
+                and values. Run your model using the Build command of the Model menu."\
+                -width 400 -font {-family helvetica -size 8}]
+    } else {
+        pack [message $create.m -text "Select compartments and flows from the toolbar\
+                to add to the diagram. Use the select (pointer) tool to edit captions\
+                and values. Run your model using the Build command of the Model menu."\
+                -width 400]
+    }
+    pack $create -expand on -fill x
     #	pack [frame $create.buttons]
     #	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
     #	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
@@ -1493,25 +1497,25 @@ proc DoRegDialog {dtId} {
     
     frame $tasks.b
     if {[string match Darwin $tcl_platform(os)]} {
-	pack [button $tasks.b.new -text "New" -width 10  \
-		-command {set userinfo(done) $welcomeDone}] \
-		-padx 8 -pady 8 -side left
-	pack [button $tasks.b.open -text "Open..." -width 10 \
-		-command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
-		-padx 8 -pady 8 -side left
-	pack [button $tasks.b.reopen -text "Recent..." -width 10 \
-		-command "PopReopen $dtId"] \
-		-padx 8 -pady 8 -side left
+        pack [button $tasks.b.new -text "New" -width 10  \
+                -command {set userinfo(done) $welcomeDone}] \
+                -padx 8 -pady 8 -side left
+        pack [button $tasks.b.open -text "Open..." -width 10 \
+                -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
+                -padx 8 -pady 8 -side left
+        pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+                -command "PopReopen $dtId"] \
+                -padx 8 -pady 8 -side left
     } else  {
-	pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
-		-command {set userinfo(done) $welcomeDone}] \
-		-padx 8 -pady 8 -side left
-	pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
-		-command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
-		-padx 8 -pady 8 -side left
-	pack [button $tasks.b.reopen -text "Recent..." -width 10 \
-		-command "PopReopen $dtId"] \
-		-padx 8 -pady 8 -side left
+        pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
+                -command {set userinfo(done) $welcomeDone}] \
+                -padx 8 -pady 8 -side left
+        pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
+                -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
+                -padx 8 -pady 8 -side left
+        pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+                -command "PopReopen $dtId"] \
+                -padx 8 -pady 8 -side left
     }
     pack $tasks.b
     pack $tasks -fill x -expand on
@@ -1522,41 +1526,41 @@ proc DoRegDialog {dtId} {
     
     frame $links.m1
     if {[string match Windows $tcl_platform(platform)]} {
-	pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
-		-anchor w -side left
-	pack [set www1 [label $links.m1.centre -text "Getting Started" \
-		-font {-underline true -family helvetica -size 8} -fg blue \
-		-cursor hand2]] -anchor w -side left
-	pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
-		-anchor w -side left
-     } else {
-	 pack [label $links.m1.left -text " *  Show " ] \
-	   -anchor w -side left
-	 pack [set www1 [label $links.m1.centre -text "Getting Started" \
-	  -fg blue \
-	  -cursor hand2]] -anchor w -side left
-	 pack [label $links.m1.right -text " help pages" ] \
-	  -anchor w -side left
-     }
+        pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
+                -anchor w -side left
+        pack [set www1 [label $links.m1.centre -text "Getting Started" \
+                -font {-underline true -family helvetica -size 8} -fg blue \
+                -cursor hand2]] -anchor w -side left
+        pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
+                -anchor w -side left
+    } else {
+        pack [label $links.m1.left -text " *  Show " ] \
+                -anchor w -side left
+        pack [set www1 [label $links.m1.centre -text "Getting Started" \
+                -fg blue \
+                -cursor hand2]] -anchor w -side left
+        pack [label $links.m1.right -text " help pages" ] \
+                -anchor w -side left
+    }
     pack $links.m1 -anchor w
     frame $links.m2
     if {[string match Windows $tcl_platform(platform)]} {
-	pack [label $links.m2.left -text " *  Show " -font {-family helvetica -size 8}] \
-		-anchor w -side left
-	pack [set www2 [label $links.m2.centre -text "Example models" \
-		-font {-underline true -family helvetica -size 8} -fg blue \
-		-cursor hand2]] -anchor w -side left
-	pack [label $links.m2.right -text " help pages" -font {-family helvetica -size 8}] \
-		-anchor w -side left
+        pack [label $links.m2.left -text " *  Show " -font {-family helvetica -size 8}] \
+                -anchor w -side left
+        pack [set www2 [label $links.m2.centre -text "Example models" \
+                -font {-underline true -family helvetica -size 8} -fg blue \
+                -cursor hand2]] -anchor w -side left
+        pack [label $links.m2.right -text " help pages" -font {-family helvetica -size 8}] \
+                -anchor w -side left
     } else {
-	  pack [label $links.m2.left -text " *  Show " ] \
-		  -anchor w -side left
-	  pack [set www2 [label $links.m2.centre -text "Example models" \
-		  -fg blue \
-		  -cursor hand2]] -anchor w -side left
-	  pack [label $links.m2.right -text " help pages" ] \
-		  -anchor w -side left
-	    }
+        pack [label $links.m2.left -text " *  Show " ] \
+                -anchor w -side left
+        pack [set www2 [label $links.m2.centre -text "Example models" \
+                -fg blue \
+                -cursor hand2]] -anchor w -side left
+        pack [label $links.m2.right -text " help pages" ] \
+                -anchor w -side left
+    }
     pack $links.m2 -anchor w
     pack $links -expand on -fill x
     pack .register.links -expand on -fill x -padx 4 -pady 2
@@ -1576,11 +1580,11 @@ proc DoRegDialog {dtId} {
     # now put it in the middle of the desktop
     scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f
     scan [ wm geometry .register] {%dx%d} g h
-#ShowMessage debug info "Desktop $a x $s + $d + $f Welcome $g x $h" ok
-# if window is fullsize, offset info is garbage
+    #ShowMessage debug info "Desktop $a x $s + $d + $f Welcome $g x $h" ok
+    # if window is fullsize, offset info is garbage
     if {[string match zoomed [wm state $dtId]]} {
-	set d 0
-	set f 0
+        set d 0
+        set f 0
     }
     wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
     tkwait variable userinfo(done)
@@ -1775,16 +1779,16 @@ proc ShowAbout {winId} {
     
     set gen [frame .about.fr.gen]
     switch -regexp $userinfo(edn) {
-	evaluation {
-	    set info [label $gen.info -text "For upgrade to Standard\
-                or Enterprise Editions," -font {-family helvetica -size 10}]
-	} standard|teaching {
-        set info [label $gen.info -text "For support or to upgrade\
-                to Enterprise Edition," -font {-family helvetica -size 10}]
-	} enterprise {
-	    set info [label $gen.info -text "For support," \
-			  -font {-family helvetica -size 10}]
-	}
+        evaluation {
+            set info [label $gen.info -text "For upgrade to Standard\
+                    or Enterprise Editions," -font {-family helvetica -size 10}]
+        } standard|teaching {
+            set info [label $gen.info -text "For support or to upgrade\
+                    to Enterprise Edition," -font {-family helvetica -size 10}]
+        } enterprise {
+            set info [label $gen.info -text "For support," \
+                    -font {-family helvetica -size 10}]
+        }
     }
     pack $info -side left
     pack [label $gen.visit -text "please visit" -font {-family helvetica -size 10}]\
@@ -1814,7 +1818,7 @@ set bwVers [package require BWidget]
 
 proc ShowExpiryImminent {expTime} {
     global iconImages
-
+    
     toplevel .expiry
     #    wm transient .expiry $winId
     wm title .expiry "Expiry Imminent"
@@ -1875,11 +1879,11 @@ proc equationlisting_start {} {
     frame $w.mainframe
     set equationlist(textbox) [text $w.mainframe.textbox \
             -tabs {1c} -yscrollcommand [list $w.mainframe.scrl set]]
-
+    
     scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
     pack $w.mainframe.scrl -side right -fill y
     pack $equationlist(textbox) -side right -fill both -expand true
-
+    
     pack $w.mainframe -fill both -expand true
     image create photo equationlist(subimg)
     image create photo equationlist(compartmentimg)
@@ -1916,7 +1920,7 @@ proc equationlisting_start {} {
             -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure dummytag \
             -font {Helvetica 5}
-            
+    
     bind $w <Control-a>  {EquationListingSelectAll $equationlist(textbox)}
 }
 
@@ -1928,9 +1932,9 @@ proc EquationListingSelectAll {winId} {
 proc equationlisting_addsubmodel {isub submodel_label} {
     global equationlist
     $equationlist(textbox) configure  -state normal
-
+    
     set widget $equationlist(textbox)
-
+    
     $widget insert end "\n"
     $widget insert end [regsub -all "\n" $submodel_label " "] bigtag
     $widget insert end "\n"
@@ -1941,16 +1945,16 @@ proc equationlisting_addsubmodel {isub submodel_label} {
 
 proc equationlisting_addvariable {isub ivar vartype varlabel expression where description comments \
             inflows outflows} {
-#puts "inflows $inflows outflows $outflows"
+    #puts "inflows $inflows outflows $outflows"
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
     global equationlist
- 
+    
     set widget $equationlist(textbox)
     $equationlist(textbox) configure  -state normal
     $widget insert end " \n" dummy
-
+    
     #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
-
+    
     $widget insert end "[string totitle ${vartype}] " typtag
     $widget insert end " " descrtag
     $widget image create end -image equationlist(${vartype}img)
@@ -1979,39 +1983,39 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     set tidy_where [regsub -all "," $where "\n\t\t"]
     
     
-
+    
     # Label and Description, if any
     if [string match null $description] {
         $widget insert end "${tidy_varlabel}\n" eqntag
     } else  {
         $widget insert end "${tidy_varlabel}" eqntag
         $widget insert end " : ${tidy_description}\n" descrtag
-
+        
     }
     
     if {[string match compartment $vartype]} {
         # Compartment
         set inflows [string trim $inflows {[]}]
-	set inflows [split $inflows ,]
+        set inflows [split $inflows ,]
         set outflows [string trim $outflows {[]}]
-	set outflows [split $outflows ,]
+        set outflows [split $outflows ,]
         
         # intial value
-
+        
         $widget insert end "\tInitial value" eqntag
         $widget insert end " = " eqntag
         $widget insert end $expression eqntag
         $widget insert end "\n" eqntag
-
+        
         if ![string match null $where] {
             $widget insert end "\t$tidy_where" whrtag
-
+            
         }
         
         # ...rate equation
         if {[llength $outflows]>0 | [llength $inflows]>0} {
             set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
-
+            
             foreach inflow $inflows {
                 set text_string "$text_string + $inflow"
             }
@@ -2024,7 +2028,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     } else  {
         # Everything except compartments
         $widget insert end "\t$tidy_varlabel = $tidy_expression \n" eqntag
-
+        
         #add_text "$tidy_varlabel = $tidy_expression" {Helvetica 9} 20 0 black
         if ![string match {null} $where] {
             $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
@@ -2038,7 +2042,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
         #add_text "Comments: $tidy_comments" {Helvetica 9 italic} 20 0 #000088
     }
     $equationlist(textbox) configure  -state disabled
-
+    
 }
 
 
@@ -2095,7 +2099,7 @@ proc ReportProblem {name autoName fault} {
 
 proc NotifyOverLimit {limit} {
     global iconImages
-
+    
     toplevel .notify
     wm title .notify "Evaluation Edition"
     wm protocol .notify WM_DELETE_WINDOW {set ack 1}
