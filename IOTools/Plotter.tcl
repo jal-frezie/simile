@@ -188,7 +188,7 @@ proc display {w time step remainder} {
 	if {$plot($w,redraw)} {
 		bell
 	
-		drawGraphpad $w
+		#drawGraphpad $w
 #		drawGraph $w
 	} else {
 		plot_YY $w
@@ -350,21 +350,23 @@ proc drawGraphpad {w} {
     draw_Yaxis $w
     
     ### Blanking rectangles; # todo 2000 too big? jmm elsewhere too
-    set x2 [expr $x1+5]
-    $w.canvas create rectangle $x2 0 2000 2000 \
-            -tags {blanket blanket_right} -outline {}\
-            -fill $plot($w,canvas_colour)
-    $w.canvas create rectangle 0 0 $x0 2000 \
-            -tags {blanket blanket_left yslidable} -outline {}\
-            -fill $plot($w,canvas_colour)
-    set y2 [expr $y1]
-    $w.canvas create rectangle 0 0 2000 $y2 \
-            -tags {blanket blanket_top} -outline {}\
-            -fill $plot($w,canvas_colour)
-    set y2 [expr $y0+5]
-    $w.canvas create rectangle 0 $y2 2000 2000 \
-            -tags {blanket blanket_bottom xslidable} -outline {}\
-            -fill $plot($w,canvas_colour)
+################################################################################
+#     set x2 [expr $x1+5]
+#     $w.canvas create rectangle $x2 0 500 500 \
+#             -tags {blanket blanket_right} -outline {}\
+#             -fill $plot($w,canvas_colour)
+#     $w.canvas create rectangle 0 0 $x0 500 \
+#             -tags {blanket blanket_left yslidable} -outline {}\
+#             -fill $plot($w,canvas_colour)
+#     set y2 [expr $y1]
+#     $w.canvas create rectangle 0 0 500 $y2 \
+#             -tags {blanket blanket_top} -outline {}\
+#             -fill $plot($w,canvas_colour)
+#     set y2 [expr $y0+5]
+#     $w.canvas create rectangle 0 $y2 500 500 \
+#             -tags {blanket blanket_bottom xslidable} -outline {}\
+#             -fill $plot($w,canvas_colour)
+################################################################################
     
     
     ### Draw the top and right edges of the graph area
@@ -410,7 +412,7 @@ proc drawGraphpad {w} {
     ### Apply graticule and values to axis.
     # drawGraticule $w $Xintercept $Yintercept
     
-    $w.canvas raise blanket
+   # $w.canvas raise blanket
     $w.canvas raise toplevel
     
     ### Bindings
@@ -515,11 +517,11 @@ proc resize {w win x y width height} {
 
         set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]; #jmm
         set x2 [expr $x1+5]; # todo 2000 seems a bit big jmm
-		$w.canvas coords blanket_right $x2 0 2000 2000
+		##$w.canvas coords blanket_right $x2 0 500 500
 
         set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]; #jmm
         set y2 [expr $y0+5]
-        $w.canvas coords blanket_bottom 0 $y2 2000 2000
+        ##$w.canvas coords blanket_bottom 0 $y2 500 500
     }
 }
 
