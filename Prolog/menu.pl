@@ -146,8 +146,9 @@ stick_model_in(Parent, Name) :-
 		redraw_window(Win)),
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
-	    no canvas, images, autosave check or runnables */
+	    no canvas, images or runnables */
 	ame_merge(Parent, Name, _Date, no),
+	    check_autosave(Parent, Name, Tweaked),
 	    resize_canvas_for(Parent),
 	    redraw_window(Win);
 	do_dialogue("Error loading model", error, Checked, ok, _)),

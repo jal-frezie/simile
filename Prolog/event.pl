@@ -747,8 +747,7 @@ the internal portions of crossborder links so they still connect. */
 adjust_display_area(Wid, Visible) :-
 	Wid shows_model Parent,
 	expand_canvas(Parent, Visible),
-	tweak_link_connections(Parent, [0,0], l, [0,0,1,1]),
-	finish_move(none). /* no models have changed, only graphics */
+	tweak_link_connections(Parent, [0,0], l, [0,0,1,1]).
 
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	(var(Side); nonvar(Side), add_to_translation([0,0,1,1], Obj, Trans)),

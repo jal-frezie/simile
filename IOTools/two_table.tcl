@@ -364,9 +364,14 @@ namespace eval tabular11510 {
     proc VarPrecRender {winId val} {
 	variable precision
 	set prec $precision($winId)
-	set regular [format %.${prec}f $val]
-	set scientific [format %.${prec}e $val]
-	set shortSci [format %.[expr $prec-3]e $val]
+# if a c model is built with Windows math libraries, the numerical
+# values might not format as floats. Watch out for this problemette
+# and just return them as they are if it happens
+	if {[catch {
+	    set regular [format %.${prec}f $val]
+	    set scientific [format %.${prec}e $val]
+	    set shortSci [format %.[expr $prec-3]e $val]
+	}]} { return $val }
 	if {[string length $scientific]<[string length $regular]} {
 	    return $scientific
 	} else {
