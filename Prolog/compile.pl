@@ -995,12 +995,11 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    Actions = Assignments,
 	    Updates = [],
 	    SourceEqn = Source;
-	member(AssignType, [compartment, fp_compartment,
-				immigration, reproduction]),
+	member(AssignType, [compartment, immigration, reproduction]),
 	    UseStep = Step,
 	    Actions = Updates,
 	    Assignments = [],
-	    Source = incr(dt(Step), SourceEqn)), !,
+	    Source = incr(Step, SourceEqn)), !,
 	DestRef = elt(_, Dest, _),    
 	final_assignment(SourceEqn, Node, DestRef, Swaps, Step,
 			 Used, Expr, Setups, Path, RefList,
@@ -1063,8 +1062,7 @@ get_updates([], _, []).
 
 get_updates([instance(Type,_, incr(dt(Step), Expr), DestRef, _)
 	    | Compartments], Step, Updates) :-
-	member(Type, [compartment, fp_compartment,
-		       immigration, reproduction]), !,
+	member(Type, [compartment, immigration, reproduction]), !,
 	DestRef = elt(_, Dest, _),
 	final_assignment(Expr, DestRef, [], Step, _, NewAssign, _, Path, _,_),
 	Updates = [make(Dest, [], Path, Step, NewAssign) | Rest],
@@ -1580,8 +1578,8 @@ name_components( _, [], _).
 
 name_components(Language, [instance(Type, Node, _, elt(_, Var, _), _)
 			  | Compartments], Used) :-
-	(\+ member(Type, [function, init_function, id_function,
-			  fp_compartment, external]),
+	(\+ member(Type, [function, init_function,
+			  id_function, internal, external]),
 	    !;
 	caption_for(Node, Name),
 	    generate_name( Language, Name, Var, Used)),

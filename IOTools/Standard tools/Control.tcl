@@ -203,7 +203,7 @@ namespace eval runcontrol33857 {
                 #	    ShowMessage debug info "Twiddling $redoPhase" ok
             }
         }
-        
+        SetStep 0 0
         SetState $winId $sendvars(newData)
     }
     
@@ -311,7 +311,7 @@ namespace eval runcontrol33857 {
                 if {$bigPhase <= [GetPhaseCount]} {
                     $widget.bf.flag itemconfigure 1 -fill green
 		    CondUpdate $bigPhase
-                    if ![update_model $scaled_current $bigPhase] {
+                    if {![RKUpdateModel $scaled_current $bigPhase]} {
                         set sendvars(currentMode) exit
                     }
                     
@@ -348,6 +348,24 @@ namespace eval runcontrol33857 {
 	    }
 	}
     }
+
+    proc RKUpdateModel {current phase} {
+	for {set step 1} {$step < 4} {incr step} {
+	    SetStep $step 0
+	    if ![update_model $current $phase] {
+		return 0
+	    }
+	    if ![eval_model $current $phase] {
+		return 0
+	    }
+	}
+	SetStep 4 0
+	if ![update_model $current $phase] {
+	    return 0
+	}
+	return 1
+    }
+	
 
     proc CondUpdate {thisOp} {
 	global runState

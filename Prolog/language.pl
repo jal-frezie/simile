@@ -836,11 +836,17 @@ make_evaluation_routine(
 				Content_chars),
 /* End of graph clause */
 		name(Term, Content_chars);
-
+	Expr = stage_incr(Struct, Step, Delta), !, 
+	    make_scalar(Language, Struct, GraphN, SStruct, GraphD),
+	    make_pointer(Language, SStruct, VStruct),
+	    make_evaluation_routine_all(Language, [Step, Delta],
+					GraphN, [VStep, VDelta], GraphD),
+	    make_procedure_call_chars(Language, [stage_incr, VStruct, VStep,
+						 VDelta], Content_chars),
+	    name(Term, Content_chars);
 	Expr =.. [Op | Args],
-		make_evaluation_routine_all(Language, Args,
-			GraphN, VArgs, GraphD),
-		combine(Language, Op, VArgs, Term)).
+	    make_evaluation_routine_all(Language, Args, GraphN, VArgs, GraphD),
+	    combine(Language, Op, VArgs, Term)).
 
 /* make_evaluation_routine_all/many: Same as above, but takes a list of terms rather
 than just one, does not take a destination, and returns a list of expressions

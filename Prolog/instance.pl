@@ -160,23 +160,17 @@ instance_of(Type, Node, Path,
 
 instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	is_parameter(Node, PType),
-	(PType = 0,
+	(PType = 0, !,
 	    ArcFromF is_connector from _ to Node,
 	    ArcFromF has_type influence,
 	    initiates(ArcFromF, F),
-	    Instances = [Instance],
-	    CType = compartment;
-	PType = 1,
-	    F = Node,
-	    Instances = [FuncRef, Instance],
-	    CType = compartment;
-	PType = 2,
-	    F = Node,
-	    Instances = [FuncRef, Instance],
-	    CType = compartment),
+	    Instances = [Instance, DiffStruct];
+	F = Node,
+	    Instances = [FuncRef, Instance, DiffStruct]),
 
 	get_units(F, Base, Units),
 	Home = elt(Path, _, Base-Units),
+	Diffs = elt(Path, _, diffs-Units),
 	(\+ PType = 1, !;
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(init_function, F, Default, Home, Base-Units),
@@ -189,13 +183,15 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	Out_refs = [],
 	Out = 0),
 	merge_lists(In_refs, Out_refs, Refs),
-	apply_minmax(F, Home+Step*(In-Out), UpdateExpr),
-	/* compartments will be updated in a separate procedure from flows
+	/* apply_minmax(F, Home+Step*(In-Out), UpdateExpr),
+	compartments will be updated in a separate procedure from flows
 	so ordering will not be done -- otherwise the above would be
 	Home+Step*last(In-Out) */
 	
-	is_instance(CType, Node, incr(Step,UpdateExpr), Home,
-			Base-Units, Instance ).
+	is_instance(internal, Node, none, Diffs, diffs-Units, DiffStruct),
+	is_instance(compartment, Node,
+		    incr(Step, Home+stage_incr(Diffs, Step, (In-Out))),
+		    Home, Base-Units, Instance).
 
 /* Immigration and reproduction nodes behave like compartments with an inflow equal
 to their functional value and an initial value of 0.5. They are reset to 0 when

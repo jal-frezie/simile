@@ -57,6 +57,20 @@ void* advance_ptr(void* mType, void* mInst) {
   return (*advance_ptr_ref)(mType, mInst);
 }
 
+/* class definition and handling procedure for extra variables used in
+   complicated integration methods */
+
+class diffs {
+public:
+  diffs () {
+  }
+  ~diffs () {
+  }
+  double current_offset, cumulative_value;
+};
+
+double stage_incr (diffs*, int, double);
+
 /* abstract base class for submodels, with extractor virtual function */
 class submodeltype {
 public:

@@ -58,6 +58,30 @@ void do_setstep(double time, int phase) {
   dts[phase] = time;
 }
 
+double stage_incr (diffs *extras, int step, double v) {
+  double dv, old_offset;
+
+  dv = v*glob_element(dts, step);
+  switch (int(glob_element(dts, 0))) {
+  case 0:
+    return dv;
+  case 1:
+    extras->cumulative_value = dv/6;
+    return (extras->current_offset = dv/2);
+  case 2:
+    extras->cumulative_value += dv/3;
+    old_offset = extras->current_offset;
+    return (extras->current_offset = dv/2) - old_offset;
+  case 3:
+    extras->cumulative_value += dv/3;
+    old_offset = extras->current_offset;
+    return (extras->current_offset = dv) - old_offset;
+  case 4:
+    extras->cumulative_value += dv/6;
+    return extras->cumulative_value - extras->current_offset;
+  };
+};
+
 extern "C" 
 #ifdef WIN32
 __declspec( dllexport )

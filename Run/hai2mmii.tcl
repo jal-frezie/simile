@@ -110,6 +110,39 @@ proc SetStep {time phase} {
     }
 }
 
+proc stage_incr {ns_extras step v} {
+    upvar \#0 ::AME_model<>::$ns_extras extras
+
+    set dv [expr $v*[glob_element dts $step]];
+    switch [expr int([glob_element dts 0])] {
+	0 {
+	    return $dv
+	} 1 {
+	    set extras(cumulative_value) [expr $dv/6.0]
+#puts "1 $dv $extras(cumulative_value)"
+	    return [set extras(current_offset) [expr $dv/2.0]]
+	} 2 {
+	    set extras(cumulative_value) \
+		[expr $extras(cumulative_value)+$dv/3.0]
+#puts "2 $dv $extras(cumulative_value) $extras(current_offset)"
+	    set old_offset $extras(current_offset)
+	    return [expr [set extras(current_offset) [expr $dv/2.0]] \
+			- $old_offset]
+	} 3 {
+	    set extras(cumulative_value) \
+		[expr [set extras(cumulative_value)]+$dv/3.0]
+#puts "3 $dv $extras(cumulative_value) $extras(current_offset)"
+	    set old_offset $extras(current_offset)
+	    return [expr [set extras(current_offset) $dv] - $old_offset]
+	} 4 {
+	    set extras(cumulative_value) \
+		[expr $extras(cumulative_value)+$dv/6.0]
+#puts "4 $dv $extras(cumulative_value) $extras(current_offset)"
+	    return [expr $extras(cumulative_value) - $extras(current_offset)]
+	}
+    }
+}
+
 proc TransEnums {transList vals} {
 #puts "Translating $vals with $transList"
     if {[llength $vals]==1} {
