@@ -460,8 +460,9 @@ namespace eval $keyValue {
         set count $curHeaderRows
         foreach item $rowList {
             set rowIds($item) $count
-            $winId.t insert rows end
-            
+#            $winId.t insert rows end
+# changed to preserve widths/heights
+	    $winId.t config -rows [expr [$winId.t cget -rows]+1]
             set headerCol 0
             foreach headerElt $item {
                 if {[string match $headerElt $lastEntry($headerCol)]} {
@@ -495,7 +496,9 @@ namespace eval $keyValue {
         set count $curHeaderCols
         foreach item $colList {
             set colIds($item) $count
-            $winId.t insert cols end
+#            $winId.t insert cols end
+# changed to preserve widths/heights
+	    $winId.t config -cols [expr [$winId.t cget -cols]+1]
             
             set headerRow 0
             foreach headerElt $item {
