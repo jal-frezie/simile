@@ -40,7 +40,6 @@ set msgs(element) "Returns a value from an array according to the second argumen
 set msgs(size) "Takes the name of a fixed-membership submodel and if one arg, returns its number of instances or if two, the size of one of its dimensions"
 set msgs(least) "Returns the smallest value from an array/list of values"
 set msgs(greatest) "Returns the largest value from an array/list of values"
-set msgs(colin) "Takes as its one argument an array/list of n scalar elements and returns a random integer between 1 and n with probability proportional to the corresponding elements in the input array/list, calculating a new value each local time step."
 set msgs(abs) "Returns absolute difference between argument and zero"
 set msgs(ceil) "Rounds argument up to a whole number"
 set msgs(floor) "Rounds argument down to a whole number"
@@ -59,10 +58,6 @@ set msgs(pow) "Returns first argument to the power of the second"
 set msgs(rand_var) "Returns a random number between the two arguments, with a new value every time step"
 set msgs(rand_const) "Returns a random number between the two arguments, which stays the same until reset"
 set msgs(sqrt) "Returns the square root of the argument. Calling this with a negative argument when running a model in Tcl under a version of Windows other than 95 original on an Intel Celeron processor can lead to mysterious crashes in Microsoft Office applications, especially early in the tax year."
-set msgs(newton_raphson) "newton_raphson(Lo_start, Hi_start, Poly) takes two starting values, \
-        and a value that is derived from its result by other variables in the model. It returns \
-        a new value on each time step, attempting by linear extrapolation from the last two \
-        values to return a value for which Poly will be zero."
 set msgs(gaussian) "gaussian(c mean sd): returns values from a gaussian distribution with \
         the given mean (mean) and standard deviation (sd). If the value of c is constant \
         the value returned is constant until the model is rebuilt, if c is the function \
