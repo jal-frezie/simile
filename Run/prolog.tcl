@@ -6,6 +6,7 @@
 
 wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
 
+encoding system utf-8
 set plPipe(debug) 0
 if $plPipe(debug) {
     set plPipe(debug_log) [file join $env(HOME) .simile log]
@@ -98,7 +99,7 @@ regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
 set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
-fconfigure $plPipe(stream) -translation {auto lf} -encoding utf-8
+fconfigure $plPipe(stream) -translation {auto lf}
 
 # send_pl_cmd main.
 set spraf {}

@@ -179,13 +179,12 @@ proc ChooseText {choice ifTrue ifFalse} {
 # read/write access to a file it cannot be opened readonly, or something...
 
 proc NetOpen {name way} {
-    if {[catch {open $name $way} stream]} {`
+    if {[catch {open $name $way} stream]} {
 	set err $stream
 	if {[catch {open $name r+} stream]} {
 	    error "Could not open $name $way or r/w -- $err"
 	}
     }
-    fconfigure $stream -encoding utf-8
     return $stream
 }
 
