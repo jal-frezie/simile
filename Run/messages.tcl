@@ -91,8 +91,10 @@ set msgs(zoomout) "Zoom out"
 
 set help(g\\+\\+) "run/index.htm"
 set help(fill_equation) "equations/dialogue.htm"
+set help(expiry) "coviewexpiry.htm"
 
-set url(contents.htm) {Contents}
+set url(coviewexpiry.htm) {Permanent licence upgrade}
+set url(index.htm) {Contents}
 set url(start/index.htm) {Getting Started}
 set url(start/model.htm) {Simple bank account model}
 set url(start/step1.htm) {Step 1}
