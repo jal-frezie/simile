@@ -454,7 +454,7 @@ proc equationDoTable {parent doQuoting} {
     button .table.top.fbuttons.edit -text View/Edit -width 10 \
 	-command {EditListAsTable .table}
     button .table.top.fbuttons.ok -text OK -width 10 \
-	-command FinishTableSelection
+	-command {set table_entry(done) 1}
     button .table.top.fbuttons.cancel -text Cancel -width 10 \
 	-command "set table_entry(done) 0"
     button .table.top.fbuttons.help -text Help -width 10 \
@@ -563,9 +563,10 @@ proc EditListAsTable {parent} {
     focus $t
     grab $t
     tkwait variable table_viewer(done)
-    set table_entry(values) [${viewerId}::ExtractEdits $t]
     grab release $t
     destroy $t
+# extract step at end so window still gone if it fails
+    set table_entry(values) [${viewerId}::ExtractEdits $t]
 }
 
 proc GetDataFile {info} {
@@ -596,17 +597,6 @@ proc LoadDataFile {} {
     }
     close $stream
     return 1
-}
-
-proc FinishTableSelection {} {
-    global table_entry
-    
-    if {[lsearch $table_entry(allHeads) $table_entry(dataField)]<0} {
-        ShowMessage {Data column not found} warning \
-                "Your selection for data column is not in the headers of this table." ok
-    } else {
-        set table_entry(done) 1
-    }
 }
 
 proc AddIndex {lb pth where op dtype data} {
@@ -966,10 +956,11 @@ proc GetFromTable {parent compName} {
     set table_entry(values) [$widgetNames($compName) get 1.0 1.end]
     
     if {[equationDoTable $parent 0]} {
-        
-        set paramState($compName) \
-                [concat [list $table_entry(fileName) $table_entry(dataField)] \
-                $table_entry(indices)]
+        if {[llength $table_entry(dataField)]} {
+	    set paramState($compName) [concat [list $table_entry(fileName) \
+						   $table_entry(dataField)] \
+					   $table_entry(indices)]
+	}
         set paramData($compName) $table_entry(values)
         $widgetNames($compName) delete 1.0 end
         $widgetNames($compName) insert 1.0 $paramData($compName)

@@ -36,17 +36,19 @@ proc do_model {what args} {
     if [catch {eval $head $args} whoopsie] {
 	switch -- $mstep {
 	    -1 {
-		set action Initialization
+		set action initialization
 		unset running_c
 	    } 0 {
-		set action Reset
+		set action reset
 	    } default {
-		set action Execution
+		set action execution
 	    }
 	}
-	ShowMessage "$whoopsie doing model $what" error \
-	    "$what during $action of the model at time $mtime caused this: \
-	    $errorInfo" ok
+#	ShowMessage "$whoopsie doing model $what" error \
+#	    "$what during $action of the model at time $mtime caused this: \
+#	    $errorInfo" ok
+	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
+	BuildProblem none none $mess user
 	return 0
     } else {
 	return 1

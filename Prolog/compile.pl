@@ -222,7 +222,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 
 	LocalNames = [tree, type, set, newvalue, finished, current, context,
 		      dtarget, btarget, instance, start_time, time_step,
-		      times, ts, dts,
+		      time, times, ts, dts,
 		      init_time, parentId, channelId, version,
 		      on_reset, externs_done, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */

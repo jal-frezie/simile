@@ -465,8 +465,11 @@ proc GetTable {parent box} {
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
     if {[equationDoTable $parent 1]} {
-        set equation(table_data) [concat [list $table_entry(fileName) \
-                $table_entry(dataField)] $table_entry(indices)]
+        if {[llength $table_entry(dataField)]} {
+	    set equation(table_data) [concat [list $table_entry(fileName) \
+						  $table_entry(dataField)] \
+					  $table_entry(indices)]
+	}
         set equation(table_values) $table_entry(values)
 #puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {

@@ -44,6 +44,7 @@ namespace eval $keyValue {
         set lastDisplay($winId) 0.0
         variable displayUpdate
 	set displayUpdate($winId) 1
+	variable editMode
 
         menu $winId.formatMenu -tearoff 0 -postcommand \
                 [namespace code [list AddVars $winId]]
@@ -64,6 +65,11 @@ namespace eval $keyValue {
         if {![string match .viewer $winId]} {
             ::graphtools::MakeToolBar $winId $toolbarItems
         }
+	if {[info exists editMode($winId)]} {
+	    foreach surplus {0 1 2 5} {
+		$winId.bbframe.buttonBox itemconfigure $surplus -state disabled
+	    }
+	}
         
         scrollbar $winId.yscroll -command [list $winId.t yview]
         scrollbar $winId.xscroll -command [list $winId.t xview] \
@@ -628,26 +634,31 @@ namespace eval $keyValue {
 	    }
 	    incr ${level}Pt
 	}
+#puts "subscript template: $subscriptTemplate"
 
+	# next copy the 2-d table to an n-d array using these
         foreach rowEntry [array names rowIds $winId,*] {
 	    set rowsHeaders [lindex [split $rowEntry ,] 1]
 	    foreach colEntry [array names colIds $winId,*] {
 		set colsHeaders [lindex [split $colEntry ,] 1]
 		set subscript [eval {concat} $subscriptTemplate]
-		set values($subscript) \
-		    [set ::data${winId}($rowIds($rowEntry),$colIds($colEntry))]
+		set src ::data${winId}($rowIds($rowEntry),$colIds($colEntry))
+		if {[info exists $src]} {
+		    set values($subscript) [set $src]
+		}
 	    }
 	}
+#puts "values: [array get values]"
 
-# kill indices if this works
-	while {![info exists values()]} {
-	    foreach {indcol val} [array get values] {
-		unset values($indcol)
+# Now copy array values into lists with one less index
+# Any with fewer indices than rest will get ignoredddd
+	while {[llength [set vlist [array get values ?*]]]} {
+	    unset values
+	    foreach {indcol val} $vlist {
 		set shortcol [lrange $indcol 0 end-1]
 		lappend values($shortcol) [lindex $indcol end] $val
 	    }
 	}
-#	puts $values()
 	return [lindex $values() 1]
     }
 
