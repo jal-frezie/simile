@@ -158,7 +158,7 @@ package require mime 1.3.1
 
 proc TransferSaveFile {tree tgt way} {
     global mimeSquirter
-    switch $way {
+    catch {switch $way {
 	out {
 	    set multiT [mime::initialize -canonical multipart/mixed \
 			    -parts [GetParts $tree $tree]]
@@ -180,7 +180,9 @@ proc TransferSaveFile {tree tgt way} {
 		mime::getbody $bit -command SquirtMime -blocksize 256
 	    }
 	}
-    }
+    } 
+    } Lossage
+    return $Lossage
 }
 
 proc SquirtMime {args} {

@@ -123,19 +123,21 @@ load properly if they have already been declared */
 
 /* Things to ignore temporarily */
 
-/* Improved system for outputting floating-point numbers -- max of 6
+/* Improved system for outputting floating-point numbers -- max of 
 decimal places (thanks to Dan Diaz for making it work with print_to_chars)
--- currently unusable due to weird bug in gprolog
+-- previously unusable due to weird bug in gprolog */
 
 portray(F) :-
 	float(F),
-	format_to_codes(Fs, "~6f", [F]),
-	append(Ns, Os, Fs),
-	\+ (member(Ch, Os), \+ member(Ch, "0.")), !,
+	format_to_codes(Fs, "~8g", [F]),
+	/* number must look like float so add .0 if it doesnt */
+	(member(Ch, Fs), member(Ch, "e."), !,
+	    Ns = Fs;
+	append(Fs, ".0", Ns)),
 	get_print_stream(Stream),
 	format(Stream,"~s",[Ns]).
 
-regular stuff : xrefs occurs inside a model structure and contains other
+/* regular stuff : xrefs occurs inside a model structure and contains other
 model structures, making them circular. It must therefore be
 printed incompletely to avoid infinite loops... */
 
