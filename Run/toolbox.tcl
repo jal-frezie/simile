@@ -1378,7 +1378,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     pack $eb.label -side left
     
     
-    entry $eb.equation -width 40
+    entry $eb.equation -state disabled -width 40
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list accept_equation $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
@@ -1638,7 +1638,7 @@ proc ResetEqnBar {bar} {
 }
 
 proc SetEqnButtonState {bar newState} {
-    foreach eqnButton {tick cross inputs function} {
+    foreach eqnButton {equation tick cross inputs function} {
         $bar.$eqnButton configure -state $newState
     }
 }
