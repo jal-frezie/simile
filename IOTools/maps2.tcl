@@ -140,9 +140,21 @@ namespace eval ::maptools2 {
 	    CanvasBindPopup $cnv $polyId \
                     [list Colour for value: \
 			 [TransValue $useNodes($winId,dataETs) $newVal]]
-
+	    $cnv bind $polyId <Double-Button-1> \
+		[namespace code "SetSwatchColour $parentSpc $winId $icolour"]
         }
         
+    }
+    
+    proc SetSwatchColour { parentSpc winId icolour } {
+        variable ${parentSpc}::useNodes
+
+        set useNodes($winId,c$icolour) \
+	    [tk_chooseColor -initialcolor $useNodes($winId,c$icolour) \
+		 -title "Choose colour" -parent $winId]
+	recolour_scale $parentSpc $winId
+        ${parentSpc}::UpdateState $winId
+        ${parentSpc}::display $winId 0 0 0
     }
     
     proc reposn_scale {parentSpc winId} {

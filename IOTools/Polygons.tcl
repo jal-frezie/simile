@@ -645,20 +645,6 @@ $useNodes($winId,scaley)"
         return $sourcefile
     }
     
-    proc SetSwatchColour { winId swatchId } {
-        variable useNodes
-        set i [string range $swatchId 19 end]; # remove .helper3.legend.pop5
-        #    ShowMessage debug info "$swatchId; $i; $useNodes($winId,c$i)" ok
-        set useNodes($winId,c$i) \
-                [tk_chooseColor -initialcolor $useNodes($winId,c$i) \
-                -title "Choose colour" -parent $winId]
-        #    ShowMessage debug info "$swatchId; $i; $useNodes($winId,c$i)" ok
-        $swatchId  configure -bg $useNodes($winId,c$i)
-        UpdateState $winId
-        Repaint $winId $useNodes($winId,color)
-        display $winId 0 0 0
-    }
-    
 } ;
 # end of namespace
 
