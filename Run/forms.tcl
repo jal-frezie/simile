@@ -942,16 +942,27 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
 }
 
 proc GetFindText {parent} {
-    global find
+    global find where
     set t [toplevel .findentry -bd 4]
     wm transient $t $parent
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
     wm title $t "Find"
     wm resizable $t 0 0
-    
-    pack [message .findentry.m -text "Find caption containing text:" -width 300] -padx 0 -pady 2 -anchor nw
-    pack [entry .findentry.e -width 30] -padx 5 -pady 4 -anchor nw
-    bind .findentry.e <Return> "set find(done) 1"
+    set ft [frame .findentry.ft]
+    pack [message $ft.m -text "Find text:" -width 300] -padx 4 -pady 6 -anchor nw -side left
+    pack [entry $ft.e -width 40] -padx 4 -pady 6 -anchor nw -side left
+    bind $ft.e <Return> "set find(done) 1"
+    pack .findentry.ft -anchor nw -fill both
+    TitleFrame .findentry.rbs -text "Search for text in"
+    set rbs [.findentry.rbs getframe]
+    radiobutton $rbs.r1 -text "Captions" -variable where -value caption
+    radiobutton $rbs.r2 -text "Equations" -variable where -value equation
+    radiobutton $rbs.r3 -text "Descriptions and comments" -variable where -value description
+    pack $rbs.r1 -anchor nw
+    pack $rbs.r2 -anchor nw
+    pack $rbs.r3 -anchor nw
+    pack $rbs -anchor nw -fill both -padx 4 -pady 4
+    pack .findentry.rbs -anchor nw -fill both
     pack [set bs [frame .findentry.buttframe]]
     #pack [button $bs.clear -text Clear -width 10 -command ".findentry.e delete 0 end"] -padx 2 -pady 2 -side left
     pack [button $bs.ok -text OK -default active -width 10 -command "set find(done) 1"] -padx 2 -pady 4 -side left
@@ -959,10 +970,10 @@ proc GetFindText {parent} {
     
     tkwait visibility .findentry
     grab .findentry
-    focus .findentry.e
+    focus $ft.e
     tkwait variable find(done)
     grab release .findentry
-    set result [.findentry.e get]
+    set result [$ft.e get]
     destroy .findentry
     if {$find(done)} {
         return $result
