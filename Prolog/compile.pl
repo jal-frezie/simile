@@ -985,37 +985,36 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside*/
 	(is_parameter(Node, Is_P),
-	    1 >= Is_P,
-	    (member(AssignType, [init_function, function]),
-		Actions = Assignments,
-		Updates = [],
-		SourceEqn = Source;
-	    member(AssignType, [compartment, fp_compartment,
+	(member(AssignType, [function, init_function]),
+	    (Is_P < 1,
+		(AssignType = function, !, UseStep = Step; UseStep = 0);
+	     Is_P = 1,
+		UseStep = -1),
+	    Actions = Assignments,
+	    Updates = [],
+	    SourceEqn = Source;
+	member(AssignType, [compartment, fp_compartment,
 				immigration, reproduction]),
-		Actions = Updates,
-		Assignments = [],
-		Source = incr(dt(Step), SourceEqn)), !,
-		DestRef = elt(_, Dest, _),    
-		final_assignment(SourceEqn, DestRef, Swaps, Step,
-				 Used, Expr, Setups, Path, RefList,
-				 AllInters),
+	    Actions = Updates,
+	    Assignments = [],
+	    Source = incr(dt(Step), SourceEqn)), !,
+	DestRef = elt(_, Dest, _),    
+	final_assignment(SourceEqn, DestRef, Swaps, Step,
+			 Used, Expr, Setups, Path, RefList,
+			 AllInters),
 
 	/* on_reset is a special condition that makes sure compartment
 	    initializations are done in step 0 rather than -1 */
 	(AssignType = init_function, !,
-	    UseStep = 0,
 	    UseList = [on_reset | RefList];
+	UseList = RefList),
 	/* input parameters are set to their default values on model
 	    initialization only */
-	(Is_P = 1, !,
-	    UseStep = -1;
-	UseStep = Step),
-	    UseList = RefList),
 	connect_params([make(Dest, UseList, Path, UseStep, Expr) | Setups],
 		      Dest, AllInters, Actions, Inters);
-	Inters = [],
+	Assignments = [],
 	    Updates = [],
-	    Assignments = []).
+	    Inters = []).
 
 /* Now...when using a variable in the equation I have been putting
 'made_at' in the conditions, the idea being that I have to exit any
@@ -1126,7 +1125,8 @@ input_params_in(Vars, SmPath, SmStep,
 	    Type = init_function, Step = 0, Wait = [on_reset]),
 	    UseInds = VarInds;
 	ParamType = 1,
-	    Step = SmStep, Wait = [time],
+	    (Type = function, Step = SmStep, Wait = [time];
+	    Type = init_function, Step = 0, Wait = [on_reset]),
 	    member(UseInds, [[_], []]), /* at most one index for a slider */
 	    suffix(UseInds, VarInds)),
 	length(UseInds, Count),
