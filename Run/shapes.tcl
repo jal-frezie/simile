@@ -578,6 +578,7 @@ proc WriteDesc {canvas canvasFile date args} {
     global window_info
 
     set stream [open $canvasFile w]
+    fconfigure $stream -translation binary
     set title [wm title [winfo parent $canvas]]
     puts $stream "# written on $date"
     puts $stream [concat TweakWindow \$c \{$title\} \

@@ -163,6 +163,7 @@ proc TransferSaveFile {tree tgt way} {
 	    set multiT [mime::initialize -canonical multipart/mixed \
 			    -parts [GetParts $tree $tree]]
 	    set stream [open $tgt w]
+	    fconfigure $stream -translation binary
 	    mime::copymessage $multiT $stream
 	    # clean everything up
 	    close $stream
@@ -176,7 +177,7 @@ proc TransferSaveFile {tree tgt way} {
 		set newPath $tree/$oldPath
 		file mkdir [file dirname $newPath]
 		set mimeSquirter [open $newPath w]
-		fconfigure $mimeSquirter -translation binary
+#		fconfigure $mimeSquirter -translation binary
 		mime::getbody $bit -command SquirtMime -blocksize 256
 	    }
 	}
@@ -780,6 +781,8 @@ proc CanvasPaste {c {x {}} {y {}}} {
         return		;# No selection
     }
     $c insert [$c focus] insert $_s
+
+
 }
 
 
@@ -900,6 +903,9 @@ proc PrintNow {winId toDo} {
 
 proc SpitPS {winId psfile} {
     global window_info tcl_platform
+
+
+
     # now, zoom in by detail factor to get the line thickness resolution decent
     set detail 16
     # For font scale 1 seems right for Unix -- Windows takes about 1.6
