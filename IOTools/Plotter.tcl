@@ -549,6 +549,10 @@ namespace eval ::$keyValue {
             set colour [lindex $plot($w,YColours) $iplot]
             #puts "plot_Y iplot $iplot; lindex $plot($w,YColours) $iplot [lindex $plot($w,YColours) $iplot]"
             if {[catch {
+# Jasper does a quick'n'dirty -- if this is the first section of a new line
+# then the limits may not include the start point, so do an extra adjustLimits
+# to make sure it is on screen
+                    adjustLimits $w $Told $Yold
                     adjustLimits $w $Tnew $Ynew
                     drawPoint $w $Told $Yold $Tnew $Ynew $colour
                 } errMessage]} {
@@ -582,6 +586,7 @@ namespace eval ::$keyValue {
     
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour } {
+#puts "drawPoint w X0 Y0 X1 Y1 Colour  $w $X0 $Y0 $X1 $Y1 $Colour "
         global ::graphtools::plot
         
         set x0 [get_x $w $X0 $plot($w,Tscale)]

@@ -1392,7 +1392,9 @@ proc load_dll {lang progDir id node} {
 	    return 0
 	}
         if {[catch {loadmodel $progFile $node} model_id]} {
-            ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $model_id -- the program will attempt to build another one." ok
+	    if {[PrefValue custom(hackBreak) hackBreak]} {
+		ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $model_id -- the program will attempt to build another one." ok
+	    }
             unset model_id
             return 0
         }
