@@ -214,21 +214,24 @@ proc do_for_node {node args} {
 	    }
 	    set makeExec ../System/bin/wish$MAJ$sep$MIN
 #puts "starting $makeExec"
-	    set runState($node,interp) [open |$makeExec r+]
-	    fileevent $runState($node,interp) readable \
-		[list FeedModel $node]
+	    if {[string equal pipe $runHow(type)]} {
+		set runState($node,interp) [open |$makeExec r+]
+		fileevent $runState($node,interp) readable \
+		    [list FeedModel $node pipe]
 	    
-	    puts $runState($node,interp) "set runHow $runHow(type)"
-	    flush $runState($node,interp)
-	    puts $runState($node,interp) "source ../Run/runmodel.tcl"
-	    flush $runState($node,interp)
+		tell_runner $node "set runHow $runHow(type)"
+		tell_runner $node "source ../Run/runmodel.tcl"
+		do_in_node $node KickOff $node $simtmpdir $runHow(sendCmd)
+		set runState($node,modelReady) 1
 #	    puts $runState($node,interp) \
 #		[list KickOff $node $runHow(type) $simtmpdir]
 #	    flush $runState($node,interp)
 #puts "initialized"
-	    set runState($node,modelReady) 1
+	    } else {
+		set runState($node,interp) [exec $makeExec ../Run/initexec.tcl $node $simtmpdir $runHow(sendCmd) &]
+		tkwait variable runState($node,modelReady)
+	    }
 	    set runState($node,queueSize) 0
-	    do_in_node $node KickOff $node $simtmpdir $runHow(sender)
 	}
     }
     return [eval do_in_node $node $args]
@@ -247,8 +250,7 @@ proc do_in_node {node args} {
 	    }
 	}
 	if {$runState($node,modelReady)==1} {
-	    puts $runState($node,interp) $command
-	    flush $runState($node,interp)
+	    tell_runner $node $command
 	    incr runState($node,queueSize)
 #puts "put: $command for $runState($node,queueSize)"
 	    set runState($node,modelReady) 0
@@ -259,10 +261,10 @@ proc do_in_node {node args} {
 	    } else {
 		fileevent $runState($node,interp) readable {}
 		while {!$runState($node,modelReady)} {
-		    FeedModel $node
+		    FeedModel $node pipe
 		}
 		fileevent $runState($node,interp) readable \
-		    [list FeedModel $node]
+		    [list FeedModel $node pipe]
 	    }
 #puts "Got $result for $runState($node,queueSize)"
 	    incr runState($node,queueSize) -1
@@ -281,10 +283,12 @@ proc do_in_node {node args} {
     }
 }
 
-proc FeedModel {node} {
+proc FeedModel {node incoming} {
     global runState errorInfo
 
-    gets $runState($node,interp) incoming
+    if {[string equal pipe $incoming]} {
+	gets $runState($node,interp) incoming
+    }
     if {[string equal get [lindex $incoming 0]]} {
 #puts "get: $incoming"
 	if {[catch [lindex $incoming 1] response]} {
@@ -293,8 +297,7 @@ proc FeedModel {node} {
 	    set result [list res $response]
 	}
 #puts "put: $result"
-	puts $runState($node,interp) $result
-	flush $runState($node,interp)
+	tell_runner $node $result
     } else {
 	set runState($node,modelReady) 1
 	set runState($node,response$runState($node,queueSize)) $incoming
@@ -307,11 +310,22 @@ proc KillInterpFor {node} {
 	if {[string equal interp $runHow(type)]} {
 	    interp delete $runState($node,interp)
 	} else {
-	    puts $runState($node,interp) exit
-	    flush $runState($node,interp)
-	    close $runState($node,interp)
+	    tell_runner $node exit
+	    if {[string equal pipe $runHow(type)]} {
+		close $runState($node,interp)
+	    }
 	}
         unset runState($node,interp)
+    }
+}
+
+proc tell_runner {node action} {
+    global runState runHow
+    if {[string equal pipe $runHow(type)]} {
+	puts $runState($node,interp) $action
+	flush $runState($node,interp)
+    } else {
+	eval $runHow(sendOp) exec_for_$node {after idle [list $action]}
     }
 }
 
@@ -340,10 +354,14 @@ proc HaveValues {node} {
 }
 
 proc TryToKill {node} {
-    global runState
+    global runState runHow
 #puts "Trying to kill $node"
-    c_killmodel [pid $runState($node,interp)]
-    catch {close $runState($node,interp)}
+    if {[string equal pipe $runHow(type)]} {
+	c_killmodel [pid $runState($node,interp)]
+	catch {close $runState($node,interp)}
+    } else {
+	c_killmodel $runState($node,interp)
+    }
     unset runState($node,interp)
 # now supply bogus result to interrupted model call
     set runState($node,response$runState($node,queueSize)) {res 0}
@@ -591,6 +609,7 @@ proc ControlDraw {prologVersion} {
         } elseif {$toGo<7*$day} {
             #	    ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
             ShowExpiryImminent $expTime
+
         }
     }
     
@@ -741,6 +760,8 @@ proc ControlDraw {prologVersion} {
     return [list $sendvars(simV) [brainwash $simtmpdir] \
             $openModel $userinfo(edn)]
 }
+
+
 
 # After the initial model has been loaded we don't want to allow the window
 # to change size when something different is loaded
@@ -1002,6 +1023,7 @@ proc ConvertSSxml {} {
 proc EatNumber {str} {
     if {[scan $str %g%n floatVal floatSize]} {
 	if {[scan $str %d%n intVal intSize]} {
+
 	    if {$intSize == $floatSize} {
 		return [list $intVal $intSize]
 	    }

@@ -417,26 +417,23 @@ proc load_c_stub {} {
 #}
 #
 
-package require dde
-
 proc do_in_editor {args} {
-#    puts [list get $args]
+#    remote [list get $args]
 #    while {1} {
 #	set result [gets stdin]
 #	set info [lindex $result 1]
 #	switch [lindex $result 0] {
 #	    do {
-#	do $info
-#    } err {
+#		do $info
+#	    } err {
 #		error [lindex $info 0] [join $info \n]
 #	    } res {
 #		return $info
 #	    }
 #	}
 #    }
-# bugger that....
     global sender
-    return [eval $sender $args]
+    return [eval $sender {$args}]
 }
 
 proc PrefValue {arrVal val} {
@@ -454,15 +451,21 @@ proc ContextSensitiveHelp {xcontext page} {
 }
 
 proc do {argList} {
-    global runHow errorInfo
-
+    global errorInfo
     if {[catch $argList response]} {
 	set result [list err [split $errorInfo \n]]
     } else { 
 	set result [list res $response]
     }
+    return [remote $result]
+}
+
+proc remote {result} {
+    global runHow myNode sender
     if {[string equal interp $runHow]} {
 	return $result
+    } elseif {[string equal process $runHow]} {
+	eval $sender {after idle [list FeedModel $myNode [list $result]]}
     } else {
 	puts $result
     }

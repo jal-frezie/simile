@@ -519,20 +519,24 @@ proc do_for_node {dummyNode args} {
 # Other stuff related to reorganization
 proc KickOff {nMyNode nSimtmpdir nSender} {
     global myNode ;# a stopgap, we shouldn't need it
-    global custom runState simtmpdir tcl_platform sender
+    global custom runState simtmpdir sender tcl_platform
 
     set myNode $nMyNode
     set simtmpdir $nSimtmpdir
-    set custom(prefDir) [file dirname $nSimtmpdir]
     set sender $nSender
+    if {[string equal windows $tcl_platform(platform)]} {
+	package require dde
+	dde servername exec_for_$myNode
+	wm iconbitmap . -default ../Run/simile16.ico
+    } else {
+	tk appname exec_for_$myNode
+    }
+    set custom(prefDir) [file dirname $nSimtmpdir]
     load_c_stub
 
     set runState($nMyNode,modelRunning) 0
     LoadIconImages
     MakeHelperMenu
-    if {[string equal windows $tcl_platform(platform)]} {
-	wm iconbitmap . -default ../Run/simile16.ico
-    }
     wm withdraw .
 }
 
@@ -624,7 +628,8 @@ proc snap {topNode node} {
         $w.text insert end "in submodel "
         $w.text insert end "$submodels\n" colour3
     }
-    $w.text insert end "at time "
+    $w.text insert end "at time "
+
     $w.text insert end "$runState($topNode,currentTime)\n" colour3
     $w.text insert end "[clock format [clock seconds]]\n"
     $w.text insert end "Maxlevel=$maxlevel\n"
