@@ -304,6 +304,7 @@ namespace eval runcontrol33857 {
                 set bigPhase [PhaseFor $current $step [expr [GetPhaseCount]+1]]
                 if {$bigPhase <= [GetPhaseCount]} {
                     $widget.bf.flag itemconfigure 1 -fill green
+		    CondUpdate $bigPhase
                     if ![update_model $scaled_current $bigPhase] {
                         set sendvars(currentMode) exit
                     }
@@ -317,14 +318,14 @@ namespace eval runcontrol33857 {
                     if ![eval_model $scaled_current $bigPhase] {
                         set sendvars(currentMode) exit
                     }
-		    CondUpdate
                     # display the results if at a new time, or every time if in static mode
                     set numDisplays [expr floor(($current + $step/2)/$display)]
                     if {$numDisplays != $sendvars(prevDisplay) || $step == 0} {
                         $widget.bf.flag itemconfigure 1 -fill blue
+			CondUpdate disp
                         set sendvars(prevDisplay) $numDisplays
                         DoDisplay $current $display $step
-			CondUpdate
+			CondUpdate loop
                     }
                 }
                 
@@ -342,17 +343,32 @@ namespace eval runcontrol33857 {
 	}
     }
 
-    proc CondUpdate {} {
+    proc CondUpdate {thisOp} {
 	global runState
 
+	set flash 20
+	# first record how much time the last op took
 	set thisUpdate [clock clicks -milliseconds]
-	if {[info exists runState(lastUpdate)]} {
-	    if {[expr $thisUpdate-$runState(lastUpdate)<20]} {
-		return
-	    }
+	if {[info exists runState(lastCall)]} {
+	    set runState($runState(lastOp),took) \
+		[expr $thisUpdate-$runState(lastCall)]
+	    set currentOld [expr $thisUpdate-$runState(lastUpdate)>$flash]
+	} else {
+	    set currentOld 1
 	}
-	update
-	set runState(lastUpdate) $thisUpdate
+	set runState(lastOp) $thisOp
+	set runState(lastCall) $thisUpdate
+
+	if {[info exists runState($thisOp,took)]} {
+	    set startingLong [expr $runState($thisOp,took)>$flash]
+	} else {
+	    set startingLong 1
+	}
+
+	if {$currentOld || $startingLong} {
+	    update
+	    set runState(lastUpdate) $thisUpdate
+	}
     }
 
     proc SecondsInA {time} {
