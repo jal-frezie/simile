@@ -45,6 +45,7 @@ proc do_model {what args} {
 	switch $what {
 	    eval {set operation "calculate the value of"}
 	    update {set operation "update the state"}
+	    advance {set operation "advance the time point for"}
 	}
 
 	if {$model_id} {

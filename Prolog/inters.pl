@@ -301,7 +301,7 @@ make_intermediates(
 		raise_exception(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),
-	    get_actual_sizes(SubId, Dims, _,_,_), /* just a check */
+	    /* get_actual_sizes(SubId, Dims, _,_,_), just a check */
 	    get_dims_from_loops(SourceLoops, Dims, _),
 			    
 	    (SourceRef = arr(_, import(_, Away, _, Ptr, _, Ph, Var, _), _), !, 
@@ -1062,7 +1062,7 @@ indices_for(sm(_,_, Ptr, Spec), Inds) :-
 
 /* might do better to get submodel and use g_a_s to convert */
 type_ind(Ind, Type) :-
-	(integer(Ind); Ind = glob(_,_)), Type = int;
+	(var(Ind), !; integer(Ind); Ind = glob(_,_)), Type = int;
 	Type = a(Ind).
 	
 make_choose_form([LastElt], _,_, LastElt) :- !.
