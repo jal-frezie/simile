@@ -191,8 +191,8 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
 }
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
-			  colourScheme tagSet} {
-    global looks
+			  origX origY bgColour inFat colourScheme tagSet} {
+    global looks window_info
     #puts "drawing submodel with fill $fillColour"
     #    previously had min width of 1 to ensure stack visibility
     #    set width [expr $width0>1?$width0:1]
@@ -307,6 +307,39 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
                 $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
 		       -tag "$tagSet size_on_this realwidth($width) has_info"]
         $w move $lower $stackDistance $stackDistance
+    }
+
+#    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
+    if {$looks(gridPitch) && ![string equal incomplete $colourScheme]} {
+	set plRad [expr $cornerRad/$window_info($w,scale)]
+	set interval [expr $looks(gridPitch)*$inFat/100.0]
+	set gCol [Gradient $bgColour -0.1 $w]
+	set gTagSet "$tagSet /background/ /grid/"
+
+	for {set x [expr $origX+$interval*ceil(($l+1-$origX)/$interval)]} \
+	    {$x<$r} {set x [expr $x+$interval]} {
+		set fromEdge [max [expr $l+$plRad-$x] [expr $x+$plRad-$r]]
+		if {$fromEdge>0} {
+		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]
+		} else {
+		    set inStep 0
+		}
+		set linePts [ScaleRect $w $x ($t+$inStep) $x ($b-$inStep)]
+		eval {$w create line} $linePts {-width 0 -fill $gCol} \
+		    {-tag $gTagSet}
+	    }			    
+	for {set y [expr $origY+$interval*ceil(($t+1-$origY)/$interval)]} \
+	    {$y<$b} {set y [expr $y+$interval]} {
+		set fromEdge [max [expr $t+$plRad-$y] [expr $y+$plRad-$b]]
+		if {$fromEdge>0} {
+		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]
+		} else {
+		    set inStep 0
+		}
+		set linePts [ScaleRect $w ($l+$inStep) $y ($r-$inStep) $y]
+		eval {$w create line} $linePts {-width 0 -fill $gCol} \
+		    {-tag $gTagSet}
+	    }			    
     }
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
@@ -659,7 +692,10 @@ proc FlashSymbol {w name outlineColor textColor} {
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
             line {
-                $w itemconfigure $object -fill $outlineColor
+		if {![string match */background/* \
+			  [$w itemcget $object -tag]]} {
+		    $w itemconfigure $object -fill $outlineColor
+		}
             } oval {
                 $w itemconfigure $object -outline $outlineColor
             }
@@ -1485,7 +1521,7 @@ proc DoGraphics {box type middle size} {
         variable {PutCrossedCirc $box.canvas $l $t $r $b 100 1 {} \
                     normal "sample"}
         submodel {PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
-                    none none normal "sample"}
+                    none none 0 0 white 100 normal "sample"}
         flow {
             PutBowTie $box.canvas $l $t $r $b 100 {} normal "sample"
             PutFatArrow $box.canvas "25 [expr $middle-25] $middle \

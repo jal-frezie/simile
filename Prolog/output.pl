@@ -14,7 +14,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_file_name/4, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
-	submodel/9, bowtie/6, flow/5, influence/5, broken_influence/5,
+	submodel/13, bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
@@ -175,10 +175,11 @@ cloud(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutCloud', Wid, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
-submodel(Wid, [L, T, R, B], Stack, Fatness,
-	 FillColour, FillImage, Posn, Colour_scheme, Features) :-
+submodel(Wid, [L, T, R, B], Stack, Fatness, FillColour, FillImage, Posn,
+	 OrigX, OrigY, BgColour, InFat, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutRoundedRect', Wid, L, T, R, B, Stack, Fatness,
-		 FillColour, FillImage, Posn, Colour_scheme, br(Features)], _).
+		       FillColour, FillImage, Posn, OrigX, OrigY, BgColour,
+		       InFat, Colour_scheme, br(Features)], _).
 
 bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutBowTie', Wid, L, T, R, B, Fatness, Density,

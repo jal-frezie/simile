@@ -397,12 +397,16 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    multiple_draw(Comp, Num),
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour, FillImage, ImgPos),
-		Draw_command =.. [submodel, Wid, Screen_list, Num, Fatness,
-				  FillColour, FillImage, ImgPos,
-				  Colour_scheme, Comp];
+		get_window_colour(Comp, BgColour, _),
+		add_to_translation(Trans, Comp, InTrans),
+		find_fatness(InTrans, InFat),
+		untranslate([0,0], InTrans, [Ox, Oy]),
+		submodel(Wid, Screen_list, Num, Fatness,
+				  FillColour, FillImage, ImgPos, Ox, Oy,
+				  BgColour, InFat, Colour_scheme, Comp);
 	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,
-				  Density, Colour_scheme, [Comp]]),
-	    call(Draw_command),
+				  Density, Colour_scheme, [Comp]],
+		call(Draw_command)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 		((Style = cloud; \+ appears(Comp); Caption_detail =< Depth), !;
 		add_caption(Wid, Comp, BBox, Trans, Fatness, Colour_scheme)));
@@ -471,8 +475,8 @@ draw_rubberband(Style) :-
 	(Style = square, !,
 	    Fatness = 0;
 	find_fatness(Trans, Fatness)),
-	submodel(Window_id, Draw_box, 1, Fatness, clear, none, none,
-		 incomplete, [unfinished_component, '/background/']).
+	submodel(Window_id, Draw_box, 1, Fatness, clear, none,none, 0,0, white,
+		 100, incomplete, [unfinished_component, '/background/']).
 
 remove_old_rubberband :-
 	find_current(Window_id),

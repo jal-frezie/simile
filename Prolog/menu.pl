@@ -907,6 +907,7 @@ set_properties(Wid, Model) :-
 		event:move_boxes(Model, FatTrans),
 		(member(RerouteType, [flow, influence]),
 		find_all_comps(Model, Linkage),
+		appears(Linkage),
 		find_type(Linkage, RerouteType),
 		update_link_route(Linkage, no),
 		redisplay(Linkage),
