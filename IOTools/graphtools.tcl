@@ -1,27 +1,6 @@
 # graphs.tcl library of procedures for use in graph (chart) helpers,
 # e.g. plotter and timeprofiles
 
-#$Log: graphtools.tcl,v $
-#Revision 1.2  2002/07/24 17:40:54  jmm
-#Some messing about with axis scaling
-#
-#Revision 1.1.1.1  2002/05/23 15:33:18  jmm
-#First Commercial Release (2.91) 
-#
-#Revision 1.7  2002-05-15 00:02:10+01  jmm
-#Moved AxisRound into this file and improved it
-#
-#Revision 1.6  2002-05-13 23:46:08+01  jmm
-#Start work on precision of axis tick labels
-#YSlide and YStretch modify axis setting and scaling
-#
-#Revision 1.5  2002-05-13 12:24:43+01  jmm
-#added proc VarPrecRender
-#
-#Revision 1.4  2002-05-03 17:55:15+01  jmm
-#Added proc MakeToolBar
-#
-
 namespace eval graphtools {
 
 namespace export UpdateState draw_Xaxis draw_Yaxis Xstretch Ystretch \
@@ -56,7 +35,7 @@ namespace export UpdateState draw_Xaxis draw_Yaxis Xstretch Ystretch \
     for {set i 1} {$i <= 2} {incr i} {
         for {set j 1} {$j <= 45} {incr j} {
             set karray($i,$j) [lindex $klist [expr {2*($j-1)+$i-1}]]
-            #puts "i $i; j $j; k($i,$j) $k($i,$j)"
+            #puts "i $i; j $j; karray($i,$j) $karray($i,$j)"
         }
     }
     
@@ -76,7 +55,7 @@ proc graphtools::MakeToolBar {w toolbarItems} {
                 -helptext $helptext -command $command
     }
     pack $f -side top -fill x
-    pack $bbox -side top -anchor w
+    pack $bbox -side left -anchor w
     pack [Separator $w.belowbbox -orient horizontal] -side top
     
 }
@@ -493,6 +472,7 @@ proc graphtools::settings_axis { w} {
 # scale and number of intervals, respectively
 # Adapted from code from Robert Muetzelfeldt, IERM, University of Edinburgh
 # Jonathan Massheder, IERM, University of Edinburgh
+# xaxis true if xazis false if y
 proc graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval numInt \
             decimalPlaces } {
     upvar 1 $axisMin rmin $axisMax rmax $interval inter $numInt nint \
@@ -500,12 +480,12 @@ proc graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval numI
     global graphtools::karray
     
     if $xaxis {
-        set axis 2
+        set axis 2; # dealing with x axis for use with karray($axis,$?) 
     } else  {
-        set axis 1
+        set axis 1; # dealing with y axis
     }
     
-    if {$dataMin==0} {set dataMin 0.0000000001}
+    if {$dataMin==0} {set dataMin 0.0000000001}; # prevent div by zero errors
     
     if { $dataMin > $dataMax } {
         set min $dataMax
@@ -515,16 +495,26 @@ proc graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval numI
         set max $dataMax
     }
 #    ShowMessage debug info "$min $max" ok
-    set neg 0
+    # check if all data is negative, if so, use absolute values
     if {$max < 0.0} {
         set neg 1
         set min [expr {-$dataMax}]
         set max [expr {-$dataMin}]
+    } else  {
+        set neg 0
     }
     
+    # the range is zero (=max-min) add a 1 to the end of the decimal representation to max
+    # to make max > min. 
     if {$min == $max } {
-        set max ${max}1
+        #ShowMessage debug info "= min $min; max $max" ok
+        if {int($max)==$max} {
+            set max [expr {$max+0.1}]
+        } else  {
+            set max ${max}1
+        }      
         set min [expr {$min-($max-$min)}]
+        #ShowMessage debug info "after doctor =; min $min; max $max" ok
     }
     set intFactor [expr {log10($max - $min)}]
     set decmlPos [expr {int($intFactor)}]
