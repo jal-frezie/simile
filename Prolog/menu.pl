@@ -524,12 +524,6 @@ menu_handle(Win, edit, CutOrCopy) :-
 	New version: first, find the innermost submodel with the whole
 	selection in it */
 %	assert(suspend_display),
-	setof(Seln, (contains(TopModel, Seln),
-			\+ Seln = TopModel,
-			Seln is_of_sort box,
-			event:doomed(Seln)), SelnList),
-	find_innermost_selection_holder(SelnList, Model),
-
 	/* invert_seln_in(Model),
 	event:delete_net(Model),
 
@@ -552,7 +546,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output:date_is(Date),
-	save_isolated(CopyFile, Model, Date, yes),
+	save_isolated(CopyFile, TopModel, Date, yes),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
 	added so any external links and ghosts come out right
@@ -564,8 +558,6 @@ menu_handle(Win, edit, CutOrCopy) :-
 %	retract(suspend_display),
 
 	/* Restore original selection as we may have added submodels */
-	select_all_in(Model, off),
-	all(event, do_colours, [build(SelnList), unify(on)]),
 	(CutOrCopy = cut,
 	    event:delete_net(Model),
 	    finish_move(Model, 1);
@@ -701,15 +693,20 @@ invert_seln_in(Model) :-
 	    fail;
 	true).
 
-find_innermost_selection_holder([Comp | Rest], Innermost) :-
+find_innermost_selection_holder([Comp | Rest], Innermost, TempSels) :-
 	find_all_comps(Model, Comp),
 	(Rest = [], !,
-	    Innermost = Model;
-	find_innermost_selection_holder(Rest, HoldsRest),
+	    Innermost = Model,
+	    TempSels = [];
+	find_innermost_selection_holder(Rest, HoldsRest, MoreTempSels),
 	    contains(Innermost, HoldsRest, Adds),
 	    contains(Innermost, Model, MoreAdds), !,
 	    append(Adds, MoreAdds, AllAdds),
-	    all(draw, set_highlit_obj, [unify(0), build(AllAdds)])).
+	    (setof(TempSel, (member(TempSel, AllAdds),
+				\+ event:doomed(TempSel)), NewSels), !,
+		all(draw, set_highlit_obj, [unify(0), build(NewSels)]),
+		merge_lists(NewSels, MoreTempSels, TempSels);
+	    TempSels = MoreTempSels)).
 
 find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	get_shape(Model, internal_extent, [ML, MT, MR, MB]),
@@ -1179,8 +1176,8 @@ do_save(Model, New_name) :-
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),
 	output:date_is(Date),
-	(New_name = seln_only, !, Select = yes, CanvasModel = none;
-	    Select = no, CanvasModel = Model),
+	(New_name = seln_only, Select = yes, CanvasModel = none;
+	    \+ New_name = seln_only, Select = no, CanvasModel = Model),
 	save_isolated(TempFile, Model, Date, Select),
 	
 	/* Save image backgrounds */
@@ -1268,12 +1265,21 @@ try_save_files(Name) :-
 	(Name = TestName;
 	try_save_files(Name)).
 
-save_isolated(Name, Part, Date, SelnOnly) :-
+save_isolated(Name, Model, Date, SelnOnly) :-
 	assert(suspend_display),
-	cutout(Part);
-	(ame_save(Name, Part, Date, SelnOnly),
+	(SelnOnly = yes, !,
+	    setof(Seln, (contains(Model, Seln),
+			    \+ Seln = Model,
+			    Seln is_of_sort box,
+			    event:doomed(Seln)), SelnList),
+	    find_innermost_selection_holder(SelnList, Part, TempSels);
+	Part = Model,
+	    TempSels = []),
+	(cutout(Part);
+	ame_save(Name, Part, Date, SelnOnly),
 	    Done = 1;
 	true),
+	all(event, do_colours, [build(TempSels), unify(off)]),
 	restart_move,
 	retract(suspend_display),
 	nonvar(Done). /* fails if save failed */

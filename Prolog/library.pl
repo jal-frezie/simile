@@ -247,7 +247,7 @@ ame_merge( Parent, File, Date, HasCode, Translated ) :-
 	    m_update:superfast_delete(Parent),
 	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the evaluation edition.", [Fns, StopAt], Annoy),
 	    do_dialogue("Error loading model", error, Annoy, ok, _),
-	    finish_progress_dialogue,
+	    dialogue:finish_progress_dialogue,
 	    !, fail;
 
 	(SimileV >= 0.0, !;
