@@ -206,7 +206,7 @@ proc TransEnums {transList vals} {
 }
 
 proc TransValue {curLevel val} {
-    if {[llength $curLevel]} {
+    if {[llength $curLevel] && [string is integer $val]} {
 	return [lindex $curLevel $val]
     } else {
 	return $val
