@@ -646,10 +646,7 @@ proc RunDialog {canvas} {
     set defHelper $helperTable(RunControl)
     set runState(modelRunning) 2
     set runState(activeWindow) $canvas
-    # old location for this step
-    #    if {[UsingBLT]} {
-    #	Makemre $canvas
-    #    }
+
     if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
                 [array get helperTable] spare helperId]} {
         kill_helper_window $helperId
@@ -1194,14 +1191,15 @@ proc start_run {winId} {
     }
     set runState(currentTime) 0.0
     set runState(currentWin) $winId ;# enables rebuild from run control
+    if {[winfo exists .mre]} {wm withdraw .mre}; # hack to stop .mre obscuring FileParamDialogue
     set gotParams [FileParamDialogue 0 $winId]
     if {[PrefValue custom(helperManager) helperManager]} {
+        wm deiconify .mre   ; # hack to stop .mre obscuring FileParamDialogue
         raise $mre
     } else {
         
         ToggleIOToolMenu 1
     }
-    
     set runState(reloadParams) 1
     
     # MakeSlidersForInputs is currently done after initializing the
