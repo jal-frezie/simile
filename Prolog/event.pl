@@ -1061,7 +1061,8 @@ adjust_display_area(Wid, Visible) :-
 
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	find_all_links(Obj, Link, Where),
-	\+ get_highlit_obj(0, Link), /* do not tweak if part of move */
+	\+ (Side = c, get_highlit_obj(0, Link)),
+	/* do not tweak if part of move */
 	end_coords(Link, Where, [Xpt, Ypt]),
 	((member(Side, [nw, w, sw]), NewX is Xpt + XOff*(R-Xpt)/(R-L);
 	        member(Side, [ne, e, se]), NewX is Xpt + XOff*(Xpt-L)/(R-L);
