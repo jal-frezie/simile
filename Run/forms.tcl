@@ -1588,8 +1588,8 @@ proc BuildProblem {name autoName dir msg fault} {
 	} system {
 	    set Title "Build failure"
 	    set errLevel error
-	    set buttonTxt {Send bug report}
-	    set buttonCmd [list ReportProblem $name $autoName $dir $msg]
+	    set buttonTxt Help
+        set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
 	}
     }
     wm title .buildprob $Title
@@ -1605,15 +1605,20 @@ proc BuildProblem {name autoName dir msg fault} {
     pack [label $labf1.img -image warn] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
-    pack [label $labf1.lab2 -text $msg \
+    pack [label $labf1.lab2 -text $msg -wraplength 320 \
             -font {-family helvetica -size 10} -justify left] -side left
     pack $labf1 -padx 8 -pady 2
     
     set buttons [frame .buildprob.buttons]
-    pack [button $buttons.ok -text OK -width 20 \
+    pack [button $buttons.ok -text OK -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-    pack [button $buttons.help -text $buttonTxt -width 20 \
+    if [string match $fault system] {        
+            pack [button $buttons.report -text {Send bug report} -width 10 \
+                    -command [list ReportProblem $name $autoName $dir $msg]] \
+                    -side left -padx 4 -pady 4
+    }
+    pack [button $buttons.help -text $buttonTxt -width 10 \
 	      -command "set ack 1; $buttonCmd"] \
             -side left -padx 4 -pady 8
     pack $buttons

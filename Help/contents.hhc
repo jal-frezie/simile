@@ -697,10 +697,14 @@
 			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Working with files">
+		<param name="Name" value="Working with Files">
 		<param name="Local" value="files\index.htm">
 		</OBJECT>
 	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Model file format">
+			<param name="Local" value="files\format.htm">
+			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Export model declarations">
 			<param name="Local" value="files\prolog.htm">
@@ -712,6 +716,10 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Export PostScript graphics">
 			<param name="Local" value="files\postscript.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Reporting problems">
+			<param name="Local" value="files\problem.htm">
 			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
