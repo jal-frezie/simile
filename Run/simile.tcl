@@ -88,7 +88,7 @@ file mkdir $env(SIMTMPDIR)/.lock
 # a buggy implementation of file pathtype so hope that simile.exe always
 # gets us an absolute path...
 
-if {$argc} {
+if {$argc && ![string match Darwin $tcl_platform(os)] } {
     if {[string match windows $tcl_platform(platform)]} {
 	set argv [lindex $argv 0]
     }
@@ -149,3 +149,5 @@ switch $interface {
 	}
     }
 }
+
+
