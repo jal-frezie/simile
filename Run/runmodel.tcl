@@ -828,10 +828,16 @@ proc AddEqnPopup {x y winId X Y} {
         }
         if {$doVal} {
 	    set trans [GetFromProlog tk_get_info('$winId',$plName,types)]
-	    set value [lindex [GetModelValue $plName] 0]
+	    if {[catch {GetModelValue $plName} mVal]} {
+		set missing [lindex [split $mVal \"] 1]
+		set value \
+		    "Missing value: [lindex [DescribeComponent $missing] 0]"
+	    } else {
+		set value [lindex [GetModelValue $plName] 0]
 #puts "trans $trans value $value"
-	    if {![string match novalue $value]} {
-		set value [TransEnums $trans $value]
+		if {![string match novalue $value]} {
+		    set value [TransEnums $trans $value]
+		}
 	    }
             AddPopupMessage $value \#ffffc0 1
             # we might want to prettify this a bit first
