@@ -541,8 +541,10 @@ menu_handle(Win, edit, paste) :-
 %	redraw_window(Win),
 	
 	(Renumber = copy, !, /* paste into empty sole toplevel */
-	    setof(Mover, (contains(Model, Mover), \+ Mover = Model), Lighters);
-	setof(Mover, O^(member(O-Mover, Renumber)), Lighters)),
+	    setof(Mover, (contains(Model, Mover),
+			 appears(Mover), \+ Mover = Model), Lighters);
+	setof(Mover, O^(member(O-Mover, Renumber),
+			 appears(Mover)), Lighters)),
 	setof(Mover, (member(Mover, Lighters), find_all_comps(Model, Mover)),
 	      Movers),
 	all(event, adjust_posn,
