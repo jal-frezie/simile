@@ -807,8 +807,8 @@ instruction because they will not require individual initialization routines. */
 	     instance(internal, inter(Path, _,_),_, Count, int-[])],
 		get_dims_from_loops(Path, _, UseInds),
 		length(UseInds, IdxN),
-		ColFn =.. [collect, arr(Ptr, NMade, []), SmName, IdxN | UseInds],
-		CreateRules = [make(culled(Name), [], Path, 0, [ColFn]),
+		CFn =.. [collect, arr(Ptr, NMade, []), SmName, IdxN | UseInds],
+		CreateRules = [make(culled(Name), [on_reset], Path, 0, [CFn]),
 			       make(created(Name), [culled(Name)], Path, Step,
 				    [new_member(Ptr, Name, create(NMade))])],
 		Losses = [], ReproRules = [], ImmigRules = [];

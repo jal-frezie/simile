@@ -108,6 +108,10 @@ namespace eval slide139 {
 	} else {
 	    pack [label $f.caption -text [lindex $levels end]]
 	    set count [lindex $nodeDims $outerDims]
+	    # bodge it to work with record submodels
+	    if {[string equal RECORDS $count]} {
+		set count [expr [llength $initVal]/2]
+	    }
 	    for {set index 1} {$count >= $index} {incr index} {
 		set defVal [GetDefVal $initVal $outerDims $index]
 		if {[llength [lindex $trans $outerDims]]} {
