@@ -9,3 +9,4 @@ newton_raphson(Lo_start, Hi_start, Poly) --> (if time(1)==0 then Lo_start elseif
 npv(Earnings, Rate) --> sum(Earnings*makearray(Rate^(1-place_in(1)),count(Earnings))).
 true(_) --> 1==1.
 false(_) --> 1==0.
+pi(_) --> 3.1415926535897932384626433832795.
