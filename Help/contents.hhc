@@ -697,6 +697,24 @@
 			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Working with files">
+		<param name="Local" value="files\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Export model declarations">
+			<param name="Local" value="files\prolog.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Export C++ program">
+			<param name="Local" value="files\program.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Export PostScript graphics">
+			<param name="Local" value="files\postscript.htm">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Example Models">
 		<param name="Local" value="examples\index.htm">
 		</OBJECT>
