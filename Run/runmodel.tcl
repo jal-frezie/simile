@@ -1610,7 +1610,9 @@ proc load_dll {lang progFileDir modelPath node} {
     if {[string match tcl $lang]} {
 	source ../Functions/procs.tcl
 	source $nameBase.$lang
-	if {[info exists simile_version]} {
+	if {[info exists simile_version]} {
+
+
 	    return $simile_version
 	} else {
 	    return 0
@@ -1768,6 +1770,8 @@ proc build_c_stub {targetDir make_new_stub} {
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     if {!$make_new_stub} {
+#	Next line allows start on new o/s without rebuild but slows
+#	pkg_mkIndex $targetDir *.dll *.so
 	if {![catch {package require -exact Ame_dll $stubPkg} dummy]} {
 	    return
 	} else {
@@ -1777,7 +1781,9 @@ proc build_c_stub {targetDir make_new_stub} {
 
     set old_dir [pwd]
     cd $targetDir
-    set TCL [file dirname [file dirname [info library]]]
+#    set TCL [file dirname [file dirname [info library]]]
+#	To build for Tcl dll included under distribution directory...
+    set TCL ../System
 
     if $onUnix {
 # You may be asking yourself why I need to explicitly specify a location for

@@ -29,6 +29,8 @@
 #define SPLIT           4
 #define GHOST           5
 
+#define SIMILE_VERSION	"3.0"
+
 /* type declaration for structure representing a graph */
 
 class graph_data_type {

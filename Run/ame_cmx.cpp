@@ -22,8 +22,6 @@ them to be executed etc by Tcl commands. */
 #define GETCLASS       11
 #define	TEST	       99
 
-char simileVersion[] = "2.93";
-
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
@@ -41,35 +39,6 @@ DllEntryPoint(
     LPVOID reserved)		/* Not used. */
 {
     return TRUE;
-}
-
-// prototype, __stdcall seems to need one 
-extern "C" __declspec( dllexport ) int __stdcall info_copy(
-		HWND, HWND, const char*, char*,
-		char*, char*, char*, char*);
-
-// This writes a wee file with the supplied user name and company, and our own version
-// number. It is called from the installation procedure.
-
-extern "C" __declspec( dllexport ) int __stdcall info_copy(
-		HWND MainHandle, HWND DialogHandle,
-		const char* pInstallDir, char* pSupportDir,
-		char* pUser, char* pCompany, char* pSerial,
-		char* pAdditionsl) {
-	char destfile[256];
-	FILE *recept;
-
-	strcpy(destfile, pInstallDir);
-	strcat(destfile, "\\Run\\userinfo.txt");
-	recept = fopen(destfile, "w");
-	fputs(pUser, recept);
-	fputs("\n", recept);
-	fputs(pCompany, recept);
-	fputs("\n", recept);
-	fputs(simileVersion, recept);
-	fputs("\n", recept);
-	fclose(recept);
-	return(1);
 }
 
 char* GetErrorText() {
@@ -111,6 +80,7 @@ extern "C" int maximizeWinCmd(
 }
 
 #else
+
     #include <dlfcn.h>
 
     #define HINSTANCE void*
@@ -141,6 +111,8 @@ extern "C" int maximizeWinCmd(
 
 /* Definitions used in this code and the model code */
 #include <dllcalls.h>
+
+char simileVersion[] = SIMILE_VERSION;
 
 /* utility procedures making no direct reference to model classes/instances */
 void release_graph_data(graph_data_type *graph_data_pointer) {

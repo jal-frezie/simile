@@ -3,9 +3,9 @@
 # Just to give you an idea of (a) the sort of thing you can do in tcl,
 # and (b) my preferred programming style, check this out....
 
+lappend auto_path [pwd]/../Run [pwd]/../System/lib/Extras
 package require BWidget
 
-lappend auto_path [pwd]/../Run [pwd]/../System/library/Extras
 #tk_messageBox -message "library [info library] path $auto_path"
 
 source ../Run/shapes.tcl
@@ -21,7 +21,8 @@ source ../Run/mre.tcl
 
 # Test new Windows printing technology -- see file for credits/licence
 if {[string match windows $tcl_platform(platform)]} {
-    source ../System/library/Extras/printer/prntcanv.tcl
+#   pkg_mkIndex ../System/lib/Extras
+    source ../System/lib/Extras/prntcanv.tcl
 }
 
 # Make Simile a DDE server under Windows. Jonathan
@@ -533,6 +534,8 @@ set awaitBogusClick 0
 
 proc DropObj {winId xco yco} {
     global awaitBogusClick
+
+
     
     if {$awaitBogusClick} {
         set awaitBogusClick 0
@@ -838,6 +841,7 @@ proc CanvasTextCopy {c} {
         clipboard append $text
     }
 }
+
 
 proc CanvasPaste {c {x {}} {y {}}} {
     if {[catch {selection get} _s] &&
@@ -1161,7 +1165,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm1 add radiobutton -label Submodel -command "ItemSelect submodel"\
             -variable MIpushedbutton -value submodel
     $fm1 add radiobutton -label Relation -command "ItemSelect relation"\
-            -variable MIpushedbutton -value relation
+            -variable MIpushedbutton -value relation
     $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
             -variable MIpushedbutton -value creation
     $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
