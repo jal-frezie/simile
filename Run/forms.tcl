@@ -537,7 +537,7 @@ proc ChooseImage {posRBs} {
             } else {
                 ShowMessage {Problem loading file} error $errorInfo ok
                 # prevent crasho if reading fails
-                #		$newImage config -width 100 -height 100
+                #       $newImage config -width 100 -height 100
             }
         } else {
             image delete $newImage
@@ -577,7 +577,7 @@ proc OpenProgressBox {winId} {
     wm title .progress "Progress with current operation"
     pack [frame .progress.filler -width 400 -height 100]
     if {[LetItShow .progress]} {
-	grab .progress
+    grab .progress
     }
     destroy .progress.filler
     wm geometry .progress 400x100
@@ -605,11 +605,11 @@ proc RelationCheck {parent title type state init_comment} {
     switch $type {
         influence {
             set entries {"Use values made\nin same time step" use_sofar}
-	    set helpPage elements/influence.htm
+        set helpPage elements/influence.htm
         } relation {
             set entries {"Exclusive role" exclusive \
                         "Allow base\ninstance lookup" can_lookup}
-	    set helpPage submodels/association/dialogue.htm
+        set helpPage submodels/association/dialogue.htm
         }
     }
     foreach {text attr} $entries {
@@ -662,7 +662,7 @@ proc GetFindText {parent} {
     set ft [frame .findentry.ft]
     pack [message $ft.m -text "Find text:" -width 300] -padx 4 -pady 6 -anchor nw -side left
     pack [ComboBox $ft.e -width 40 -values $find(prevs) -editable 1] \
-	-padx 4 -pady 6 -anchor nw -side left
+    -padx 4 -pady 6 -anchor nw -side left
     $ft.e bind <Return> "set find(done) 1"
     pack .findentry.ft -anchor nw -fill both
     TitleFrame .findentry.rbs -text "Search for text in"
@@ -691,7 +691,7 @@ proc GetFindText {parent} {
     set result [$ft.e get]
     PackItUp .findentry
     if {$find(done)} {
-	set find(prevs) [AddIfAbsent $result $find(prevs)]
+    set find(prevs) [AddIfAbsent $result $find(prevs)]
         return $result
     }
 }
@@ -745,9 +745,9 @@ proc DoRegDialog {dtId} {
                 -width 400]
     }
     pack $create -expand on -fill x
-    #	pack [frame $create.buttons]
-    #	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
-    #	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
+    #   pack [frame $create.buttons]
+    #   pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
+    #   pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
     
     pack .register.create -expand on -fill x -padx 4 -pady 2
     
@@ -855,7 +855,7 @@ proc DoRegDialog {dtId} {
     puts $UserStream $userinfo(done)
     close $UserStream
     if {[string equal windows $tcl_platform(platform)]} {
-	file attributes $custom(prefDir)/.version -hidden true
+    file attributes $custom(prefDir)/.version -hidden true
     }
     
     # this never happens with welcome version
@@ -888,14 +888,14 @@ proc ContextSensitiveHelp {context page} {
         exec open -a "Help Viewer" ../Help/$page
     } else {
         set url [pwd]/../Help/$page
-	if {![info exists env(BROWSER)]} {
-	    foreach possBrowser {mozilla netscape iexplorer lynx} {
-		set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-		if {[llength $env(BROWSER)]} {
-		    break
-		}
-	    }
-	}
+    if {![info exists env(BROWSER)]} {
+        foreach possBrowser {mozilla netscape iexplorer lynx} {
+        set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+        if {[llength $env(BROWSER)]} {
+            break
+        }
+        }
+    }
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
@@ -976,14 +976,14 @@ proc VisitUrl {x} {
         exec rundll32 url.dll,FileProtocolHandler $x &
     } else {
         set url $x
-	if {![info exists env(BROWSER)]} {
-	    foreach possBrowser {mozilla netscape iexplorer lynx} {
-		set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-		if {[llength $env(BROWSER)]} {
-		    break
-		}
-	    }
-	}
+    if {![info exists env(BROWSER)]} {
+        foreach possBrowser {mozilla netscape iexplorer lynx} {
+        set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+        if {[llength $env(BROWSER)]} {
+            break
+        }
+        }
+    }
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
@@ -1009,47 +1009,53 @@ proc ShowAbout {winId} {
     label .about.upper -image dripu
     pack .about.upper -pady 4
     frame .about.fr -relief sunken -borderwidth 2
+    if [string match Darwin $tcl_platform(os)] {
+        set fSize 12; set fsSize 12
+    } else {
+        set fSize 12; set fsSize 8
+    }
     pack [label .about.fr.lab1 -text Version\ $sendvars(simV)\ $userinfo(edn) \
-            -font {-weight bold -family helvetica -size 12}]
+            -font "-weight bold -family helvetica -size $fSize"]
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
-            -font {-family helvetica -size 8}] -side left
+            -font "-family helvetica -size $fsSize"] -side left
     pack [label $platform.tcl -text "TclTk: [info patchlevel]" \
-            -font {-family helvetica -size 8}] -side left
+            -font "-family helvetica -size $fsSize"] -side left
     if {[string equal windows $tcl_platform(platform)]} {
-	pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
-            -font {-family helvetica -size 8}] -side left
+    pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
+            -font "-family helvetica -size $fsSize"] -side left
     }
     pack $platform
     if [info exists userinfo(exp_time)] {
         set edate [clock format $userinfo(exp_time) -format {%d %h %Y}]
         set expf [frame .about.fr.expf]
-        pack [label $expf.lab1 -text "This product expires on"] -side left
-        pack [label $expf.lab2 -text $edate] -side left
+        pack [label $expf.lab1 -text "This product expires on" \
+            -font "-family helvetica -size $fsSize"] -side left
+        pack [label $expf.lab2 -text $edate -font "-family helvetica -size $fsSize"] -side left
         pack $expf
     }
     pack [label .about.fr.lab4 -text "This product is registered to\
             $userinfo(name), $userinfo(corp)" \
-            -font {-family helvetica -size 8}]
+            -font "-family helvetica -size $fsSize"]
     
     set gen [frame .about.fr.gen]
     switch -regexp $userinfo(edn) {
         evaluation {
             set info [label $gen.info -text "For upgrade to Standard\
-                    or Enterprise Editions," -font {-family helvetica -size 10}]
+                    or Enterprise Editions," -font "-family helvetica -size $fSize"]
         } standard|teaching {
             set info [label $gen.info -text "For support or to upgrade\
-                    to Enterprise Edition," -font {-family helvetica -size 10}]
+                    to Enterprise Edition," -font "-family helvetica -size $fSize"]
         } enterprise {
             set info [label $gen.info -text "For support," \
-                    -font {-family helvetica -size 10}]
+                    -font "-family helvetica -size $fsSize"]
         }
     }
     pack $info -side left
-    pack [label $gen.visit -text "please visit" -font {-family helvetica -size 10}]\
+    pack [label $gen.visit -text "please visit" -font "-family helvetica -size $fsSize"]\
             -side left
     pack [label $gen.www -text www.simulistics.com -relief flat \
-            -font {-underline true -family helvetica -size 10} -fg blue -cursor hand2] -pady 2 -side left
+            -font "-underline true -family helvetica -size $fsSize" -fg blue -cursor hand2] -pady 2 -side left
     bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
     pack $gen -padx 4 -pady 2
     pack .about.fr -expand on -fill x -padx 8 -pady 2
@@ -1141,10 +1147,10 @@ proc equationlisting_start {} {
     
     pack $w.mainframe -fill both -expand true
     foreach imgType [list compartment flow variable creation \
-			 immigration loss reproduction condition alarm \
-			 event state squirt] {
-	image create photo equationlist(${imgType}img)
-	equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
+             immigration loss reproduction condition alarm \
+             event state squirt] {
+    image create photo equationlist(${imgType}img)
+    equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
     }
     
     $equationlist(textbox) tag configure bigtag \
@@ -1240,7 +1246,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         }
         if {![string match {null} $minmax]} {
             $widget insert end "\t$minmax\n"
-	}
+    }
         # ...rate equation
         if {[llength $outflows]>0 | [llength $inflows]>0} {
             set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
@@ -1265,7 +1271,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         }
         if {![string match {null} $minmax]} {
             $widget insert end "\t$minmax\n"
-	}
+    }
     }
     
     # Comments
@@ -1336,7 +1342,7 @@ proc BuildProblem {Title errLevel msg key args} {
             -side left -padx 4 -pady 4
     if {[llength $args]==2} {
         pack [button $buttons.report -text {Send bug report} -width 20 \
-		  -command [concat ReportProblem $args [list $msg]]] \
+          -command [concat ReportProblem $args [list $msg]]] \
                 -side left -padx 4 -pady 4
     }
     pack [button $buttons.help -text Help -width 10 \
