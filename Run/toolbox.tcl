@@ -1098,12 +1098,12 @@ proc AddMainMenu { winid initWidth initDepths} {
             -state disabled -accelerator "Ctrl+Z"
     $fm add command -label Redo -command "prolog tk_redo" \
             -state disabled -accelerator "Ctrl+Y"
-    AddFindMenu $winid.canvas $fm
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
         $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $winid.canvas" ;#\
-            # -state disabled -accelerator "Ctrl+Y"
-    }
+                # -state disabled -accelerator "Ctrl+Y"
+            }
+    AddFindMenu $winid.canvas $fm
     $fm add separator
     $fm add command -label Preferences... -command Pref_Dialog
     
@@ -1157,11 +1157,11 @@ proc AddMainMenu { winid initWidth initDepths} {
             -variable MIpushedbutton -value relation
     $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
             -variable MIpushedbutton -value creation
-    $fm1 add radiobutton -label Immigration -command "ItemSelect immigration"\
+    $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
             -variable MIpushedbutton -value immigration
     $fm1 add radiobutton -label Reproduction -command "ItemSelect reproduction"\
             -variable MIpushedbutton -value reproduction
-    $fm1 add radiobutton -label Loss -command "ItemSelect loss"\
+    $fm1 add radiobutton -label Extermination -command "ItemSelect loss"\
             -variable MIpushedbutton -value loss
     $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
             -variable MIpushedbutton -value condition
@@ -1184,16 +1184,16 @@ proc AddMainMenu { winid initWidth initDepths} {
     set fm [menu ${winid}top.tools -tearoff 0]
     ${winid}top add cascade -label Tools -underline 0 \
             -menu ${winid}top.tools
-    $fm add radiobutton -label Move -command "ModeSelect move"\
+    $fm add radiobutton -label "Label elements" -command "ModeSelect select"\
+            -variable MIpushedbutton -value select
+    $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
             -variable MIpushedbutton -value move
-    $fm add radiobutton -label "Copy submodel" -command "ModeSelect copy"\
-            -variable MIpushedbutton -value copy
-    $fm add radiobutton -label Ghost -command "ModeSelect ghost"\
-            -variable MIpushedbutton -value ghost
-    $fm add radiobutton -label Annotate -command "ModeSelect select"\
-            -variable MIpushedbutton -value annotate
-    $fm add radiobutton -label Delete -command "ModeSelect delete"\
+    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
             -variable MIpushedbutton -value delete
+    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
+            -variable MIpushedbutton -value copy
+    $fm add radiobutton -label "Create ghost nodes" -command "ModeSelect ghost"\
+            -variable MIpushedbutton -value ghost
     
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
