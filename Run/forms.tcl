@@ -1002,9 +1002,48 @@ proc DoRegDialog {} {
 }
 
 proc ContextSensitiveHelp {context page} {
-    global tcl_platform
+    global tcl_platform help
     if {[string match windows $tcl_platform(platform)]} {
         package require winhelp
         winhelp $context ../Help/simile.chm $page
+    } else {
+	package require Tkhtml
+	set oldDir [pwd]
+	cd ../Help
+	toplevel .hlpWindow 
+	wm title .hlpWindow {Simile help file}
+	wm protocol .hlpWindow WM_DELETE_WINDOW {set help(done) 0}
+	html .hlpWindow.main -base file:[pwd]/$page \
+	    -hyperlinkcommand GoHyper -resolvercommand ResolveHyper \
+	    -isvisitedcommand CheckHyper -unvisitedcolor blue \
+	    -yscrollcommand [list .hlpWindow.yscroll set] 
+	scrollbar .hlpWindow.yscroll -command [list .hlpWindow.main yview]
+	pack .hlpWindow.yscroll -side right -fill y -expand true
+	pack .hlpWindow.main -fill both -expand true
+	set stream [open $page r]
+	while {![eof $stream]} {
+	    gets $stream line
+	    .hlpWindow.main parse $line
+	}
+	close $stream
+	tkwait visibility .hlpWindow
+	grab .hlpWindow
+	tkwait variable help(done)
+	grab release .hlpWindow
+	destroy .hlpWindow
+	cd $oldDir
     }
+}
+
+proc CheckHyper {ywhat} {
+    return 0
+}
+
+proc GoHyper {ywhat} {
+    ShowMessage debug info $ywhat ok
+}
+
+proc ResolveHyper {args} {
+    ShowMessage debug info "Resolving $args" ok
+    return {}
 }
