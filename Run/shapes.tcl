@@ -124,9 +124,9 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
     set generic [list -width $width -tag "$tagSet realwidth($width) has_info"]
+    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
-# to draw the old style variable replace the above line with
-#    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
+# to draw the old style variable remove the above line
     eval {$w create arc $ml $mt $mr $mb -start 45 -extent 90} $generic
     eval {$w create arc $ml $mt $mr $mb -start 225 -extent 90} $generic
 
