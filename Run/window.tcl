@@ -1359,7 +1359,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         -menu ${winid}top.helpers
         $fm entryconfigure "Inspect elements" -state normal
     }
-    if ![string match Darwin $tcl_platform(os)] {
+    if ![string match aqua [tk windowingsystem]] {
         set fm [menu ${winid}top.help -tearoff 0]
         ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
         $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
@@ -1368,14 +1368,13 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #        $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
         $fm add command -label About... -command [list ShowAbout $winid]
     }
-    set nb [::ttk::frame $winid.toolSlot.navbar -border 2 -class Toolbar]
+    set nb [::ttk::frame $winid.toolSlot.navbar -class Toolbar]
     pack [Separator $nb.afterSeparator -orient horizontal] -fill x -side bottom
     if {[PrefValue custom(bigButtons) bigButtons]} {
         set buttonImages ../Images/Toolbar/Large
     } else {
         set buttonImages ../Images/Toolbar
     }
-    
     foreach navCmd {{new {file new}} {open {file open}} \
                 {save {file save}}  {print {local print}} {separator1}\
                 {undo {local undo}} {redo {local redo}} {separator2}\
@@ -1388,7 +1387,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [Separator $nb.$handle -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
-            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton\
+            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
@@ -1431,7 +1430,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     $nb.runenv state disabled
     
-    set tb [::ttk::frame $winid.toolSlot.toolbar -border 2 -class Toolbar]
+    set tb [::ttk::frame $winid.toolSlot.toolbar -class Toolbar]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
 # add state event squirt separator3 before creation for v5
     foreach mode {compartment variable flow influence separator1 submodel \
@@ -1441,7 +1440,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${mode}.gif]
-            set bt [::ttk::radiobutton $tb.$mode -command "ItemSelect $mode"  -variable MIpushedbutton -value $mode -image $testImg -style Toolbutton]
+            set bt [::ttk::radiobutton $tb.$mode -command "ItemSelect $mode"  \
+                -variable MIpushedbutton -value $mode -image $testImg -style Toolbutton]
             pack $bt -side left -padx 2 -pady 2
             BindPopup $bt $mode
             bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y"
@@ -1452,7 +1452,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     foreach mode {select ghost snap} {
         set testImg [image create photo -file $buttonImages/${mode}.gif]
         pack [::ttk::button $tb.$mode -image $testImg -command "ModeSelect $mode" -style Toolbutton] \
-                -side left -padx 2 -pady 2
+            -side left -padx 2 -pady 2
         BindPopup $tb.$mode $mode
     }
     if {![HaveValues $topNode]} {
@@ -1466,9 +1466,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ### Formula bar section
     ### Robert Muetzelfeldt
     ### Started 4/3/02
-    set eb [frame $winid.toolSlot.eqnbar -border 1 -relief flat]; # raised
+    set eb [::ttk::frame $winid.toolSlot.eqnbar -class Toolbar]
+    pack [Separator $eb.afterSeparator -orient horizontal] -fill x -side bottom
+    pack [frame $eb.gap1 -class Toolbar -height 2] -fill x -side bottom
     
-    label $eb.label -anchor e
+    ::ttk::label $eb.label -anchor e
     pack $eb.label -side left
     
     global equation msgs
@@ -1478,21 +1480,26 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
     bind $eb.equation <FocusOut> AbandonEqn
-    pack [button $eb.tick -state disabled -image $iconImages(tick) \
-            -borderwidth 1 \
+    frame $eb.padding1 -width 3
+    pack $eb.padding1 -side left
+    switch [tk windowingsystem] {
+        aqua {set buttonStyle ""}
+        win32 {set buttonStyle Toolbutton}
+        x11 {set buttonStyle Toolbutton}
+    }
+    pack [::ttk::button $eb.tick -state disabled -image $iconImages(tick) \
+            -style $buttonStyle \
             -command [list accept_equation $winid $eb.equation]] -side left
     
-    pack [button $eb.cross -state disabled -image $iconImages(cross) \
-            -borderwidth 1 \
+    pack [::ttk::button $eb.cross -state disabled -image $iconImages(cross) \
+            -style $buttonStyle \
             -command [list restore_equation $winid $eb]] -side left
     
-    frame $eb.padding -width 10
-    pack $eb.padding -side left
-    pack [Separator $eb.afterSeparator -orient horizontal] -fill x -side bottom
+    frame $eb.padding2 -width 3
+    pack $eb.padding2 -side left
     
     set image [image create photo -file "../Images/Eqnbar/inputs.gif"]
-    menubutton $eb.inputs -state disabled -menu $eb.inputs.menu \
-            -borderwidth 2 -relief raised -image $image
+    ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $image
     pack $eb.inputs -side left
     set m [menu $eb.inputs.menu -tearoff 0 \
             -postcommand [list AddInputs $winid $eb]]
@@ -1500,8 +1507,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     #    $m add command -label k -command bell
     #BindPopup $m foobar
     
-    menubutton $eb.function -state disabled -menu $eb.function.menu \
-            -borderwidth 2 -relief raised -image $iconImages(function)
+    ::ttk::menubutton $eb.function -state disabled -menu $eb.function.menu -image $iconImages(function)
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
     foreach funk [concat {{{{Built-in} {Model properties}} index}} \
