@@ -20,7 +20,7 @@ sicstus_module(draw,
 		find_relevant_windows/4, update_captions/1, 
 		update_color/1, shift_images/3,
 		give_focus/1, has_focus/1,
-		update_ability/5, scrub_run/2, kill_helpers/0,
+		update_ability/5, scrub_run/2, kill_helpers/1,
 		display_mode/1, display_menu/1, off/1, off_all/1, 
 		move_text/2, move_display/2, reroute_display/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
@@ -335,7 +335,7 @@ delete_window(Wid) :-
 	tk_kill_window(Wid).
 
 scrub_run(Node, Times) :- tk_scrub_run(Node, Times).
-kill_helpers :- tk_kill_helpers.
+kill_helpers(Node) :- tk_kill_helpers(Node).
 
 /* expand_canvas/2: grows the virtual display area of a model to
 encompass a new point, if indeed the point was outside its current

@@ -46,7 +46,11 @@ namespace eval slide139 {
         set geom [PrefValue custom(slidersPosition) slidersPosition]
 #        catch {wm geometry $winId $geom}
     }
-    
+
+    proc Restore {winId} {
+        initialize $winId
+    }
+
     proc InsertSlider {winId node title nest} {
 	global checkStates
         set initVal [lindex [GetModelValue $winId $node] 0]

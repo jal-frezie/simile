@@ -16,10 +16,8 @@ source ../Run/hai2mmii.tcl
 
 source ../Run/mre.tcl
 
-package require Tk
-wm withdraw .
-
 proc MakeHelperMenu {} {
+    global custom
     set fm [menu .helpers -tearoff 0]
 
     $fm add command -label "Load" -command LoadView
@@ -27,17 +25,34 @@ proc MakeHelperMenu {} {
     $fm add command -label "Clear" -command ClearView
     $fm add command -label "Close" -command KillHelpers
     $fm add command -label "Parameters..." \
-            -command {FileParamDialogue 1 [focus]}
+	-command {FileParamDialogue [GetNodeFromFocus] \
+		      [winfo toplevel [focus]] 1}
 
     set oldDir [pwd]
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
-    set ioDir [file join [PrefValue custom(prefDir) prefDir] IOTools]
+    set ioDir [file join $custom(prefDir) IOTools]
     if {[file exists $ioDir]} {
 	cd $ioDir
 	AddHelperSublist $fm.sub2 "Local" l
     }
     cd $oldDir
+}
+
+proc GetNodeFromFocus {} {
+    global window_info helperTable
+    set mHost [winfo toplevel [focus]]
+    if {[info exists window_info($mHost.canvas,top_node)]} {
+	return $window_info($mHost.canvas,top_node)
+    } else {
+#	do same thing for mre
+#puts "mHost $mHost pairs [array get helperTable *,whichRunEnv]"
+	foreach {inds val} [array get helperTable *,whichRunEnv] {
+	    if {[string equal $val $mHost]} {
+		return [string range $inds 0 end-12]
+	    }
+	}
+    }
 }
 
 # OK I have been having problems with people duplicating IO tool programs
@@ -48,7 +63,7 @@ proc MakeHelperMenu {} {
 
 proc AddHelperSublist {fm title ct} {
     global helperTable table_viewer
-
+#puts "Adding helpers in [pwd]"
     set m [menu $fm.sub$ct -tearoff 0]
     set nct 0
     set helperList [glob -nocomplain *.tcl]
@@ -57,7 +72,7 @@ proc AddHelperSublist {fm title ct} {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
             ShowMessage "Error loading I/O tool" warning \
-                    "I/O tool [pwd]/$helperApp had a $wibble" ok
+                    "I/O tool [pwd]/$helperApp had a $::errorInfo" ok
         } else {
             if {[info exists keyValue]} {
                 set action [${keyValue}::identify]
@@ -94,11 +109,8 @@ proc AddHelperSublist {fm title ct} {
     }
 }
 
-MakeHelperMenu
-set helperTable(current) none
-
 proc CreateHelperWindow {helperId helperTitle} {
-    set winId [NewHelperWindow $helperId $helperTitle]
+    set winId [NewHelperWindow [GetNodeFromFocus] $helperId $helperTitle]
     ${helperId}::initialize $winId
     if {[PrefValue custom(helperManager) helperManager]} {
         ::RunEnv::ChildrenFocusParent $winId
@@ -106,15 +118,14 @@ proc CreateHelperWindow {helperId helperTitle} {
     return $winId
 }
 
-proc NewHelperWindow {helperId helperTitle} {
+proc NewHelperWindow {node helperId helperTitle} {
     global helperTable tcl_platform
 
     # ShowMessage debug info "Making $helperId $helperTitle" ok
     if {[PrefValue custom(helperManager) helperManager]} {
-        set winId [NewMreHelperWindow $helperId $helperTitle]
+        set winId [NewMreHelperWindow $node $helperId $helperTitle]
     } else {
         set winId .helper[newInt]
-        set helperTable($winId,whichHelper) $helperId
         toplevel $winId
         wm title $winId $helperTitle
         if {![string match windows $tcl_platform(platform)]} {
@@ -122,6 +133,8 @@ proc NewHelperWindow {helperId helperTitle} {
         }
         wm protocol $winId WM_DELETE_WINDOW "kill_helper_window $winId"
     }
+    set helperTable($winId,whichHelper) $helperId
+    set helperTable($winId,whichModel) $node
     return $winId
 }
 
@@ -163,22 +176,31 @@ proc NewHelperWindow {helperId helperTitle} {
 proc GrabClicks {winId} {
     global helperTable
 
-    set helperTable(current) $winId
+    set topNode $helperTable($winId,whichModel)
+    set helperTable($topNode,current) $winId
 }
 
 proc ReleaseClicks {winId} {
     global helperTable
 
-    set helperTable(current) none
+    set topNode $helperTable($winId,whichModel)
+    unset helperTable($topNode,current)
 }
 
 proc kill_helper_window { winId } {
     # ShowMessage debug info "Killing $winId" ok
-    global helperTable
+    global helperTable runState sendvars
     if {[info exists helperTable($winId,whichHelper)]} {
-        if {[string compare $helperTable(current) $winId]==0} {
-            set helperTable(current) none
+	set topNode $helperTable($winId,whichModel)
+	if {[info exists helperTable($topNode,current)]} {
+	    if {[string compare $helperTable($topNode,current) $winId]==0} {
+		unset helperTable($topNode,current)
+	    }
         }
+	if {[string equal $winId $runState($topNode,helperId)]} {
+	    set sendvars($topNode,currentMode) kill
+	    unset runState($topNode,helperId)
+	}
         unset helperTable($winId,whichHelper)
         destroy $winId
         #	if {[PrefValue custom(helperManager) helperManager]} {
@@ -198,14 +220,12 @@ proc SetState {winId newState} {
     set helperTable($winId,status) $newState
 }
 
-proc ProdObj {nodeId caption} {
+proc ProdObj {topNode nodeId caption} {
     global helperTable
-    if {[string equal none $helperTable(current)]} {
-	return 0
-    } else {
-	switch -regexp [GetCompProperty topNode Type $nodeId] {
+    if {[info exists helperTable($topNode,current)]} {
+	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 	    REAL|INTEGER|FLAG|ENUMERATED {
-		set target $helperTable(current)
+		set target $helperTable($topNode,current)
 		
 		set helperId $helperTable($target,whichHelper)
 		${helperId}::click $target $nodeId $caption
@@ -215,6 +235,8 @@ proc ProdObj {nodeId caption} {
 	    }
 	}
 	return 1
+    } else {
+	return 0
     }
 }
 
@@ -242,20 +264,24 @@ proc Prettify {value} {
     }
 }
 
-proc DestroyHelpers {} {
-    global modelWin
+proc DestroyHelpers {node} {
     if {[winfo exists .mre]} {
-        ::RunEnv::Destroy
+        ::RunEnv::Destroy $node
     } else {
-        KillHelpers
+        KillHelpers $node
     }
 }
 
-proc KillHelpers {} {
-    global helperTable
+proc KillHelpers {node} {
+    global helperTable runState
     foreach graphBox [array name helperTable *,whichHelper] {
         scan $graphBox {%[^,]} window
-        kill_helper_window $window
+	if {[string equal $node $helperTable($window,whichModel)]} {
+	    kill_helper_window $window
+	}
+    }
+    if {[info exists runState($node,helperId)]} {
+	unset runState($node,helperId)
     }
 }
 
@@ -274,14 +300,17 @@ proc ClearView {} {
 
 proc SaveView {} {
     global helperTable nameOfHelperStateFile
-    set nameOfHelperStateFile \
+
+    set topNode [GetNodeFromFocus]
+    set nameOfHelperStateFile($topNode) \
 	[ChooseFile iotools.shf "Save view specification file" 1]
-    if {[llength $nameOfHelperStateFile]} {
-        set stream [NetOpen $nameOfHelperStateFile w]
+    if {[llength $nameOfHelperStateFile($topNode)]} {
+        set stream [NetOpen $nameOfHelperStateFile($topNode) w]
         foreach displayBox [array name helperTable *,whichHelper] {
             scan $displayBox {%[^,]} winId
             set helperId $helperTable($displayBox)
-            if {![string match $helperId $helperTable(RunControl)]} {
+            if {[string equal $topNode $helperTable($winId,whichModel)] && \
+		    ![string match $helperId $helperTable(RunControl)]} {
                 puts $stream $helperId
                 # substitute <cr>s so entry goes on one line
                 puts $stream [StripCrs [wm title $winId]]
@@ -300,14 +329,15 @@ proc SaveView {} {
 
 proc LoadView {} {
     global helperTable nameOfHelperStateFile errorInfo
-    set nameOfHelperStateFile \
+    set topNode [GetNodeFromFocus]
+    set nameOfHelperStateFile($topNode) \
 	[ChooseFile iotools.shf "Open view specification file" 0]
-    if {[llength $nameOfHelperStateFile]} {
-	CreateView $nameOfHelperStateFile
+    if {[llength $nameOfHelperStateFile($topNode)]} {
+	CreateView $topNode $nameOfHelperStateFile($topNode)
     }
 }
 
-proc CreateView {nameOfHelperStateFile} {
+proc CreateView {node nameOfHelperStateFile} {
     set stream [NetOpen $nameOfHelperStateFile r]
     while {[gets $stream helperId] >= 0} {
 	if {[llength $helperId]==4} {
@@ -318,7 +348,7 @@ proc CreateView {nameOfHelperStateFile} {
 			      yesnocancel]
 	    switch $response {
 		yes {
-		    Makemre UnusedArg
+		    raise [Makemre $node]
 		    RunEnv::LoadViewFile $stream $helperId
 		} no {
 		    LoadMREFormatView $stream
@@ -329,7 +359,7 @@ proc CreateView {nameOfHelperStateFile} {
 	    return
 	}
 	gets $stream helperTitle
-	set winId [NewHelperWindow $helperId [RestoreCrs $helperTitle]]
+	set winId [NewHelperWindow $node $helperId [RestoreCrs $helperTitle]]
 	gets $stream geometry
 	wm geometry $winId $geometry
 	gets $stream oldStatus
@@ -347,7 +377,7 @@ proc LoadMREFormatView {stream} {
     while {[gets $stream helperId] >= 0} {
         if {[namespace exists $helperId]} {
             set helperTitle [${helperId}::identify]
-            set winId [NewHelperWindow $helperId $helperTitle]
+            set winId [NewHelperWindow $node $helperId $helperTitle]
             gets $stream oldStatus
             set helperTable($winId,status) [RestoreCrs $oldStatus]
             ${helperId}::Restore $winId
@@ -355,48 +385,52 @@ proc LoadMREFormatView {stream} {
     }
 }
 
-proc TellAllHelpers {fun args} {
+proc TellAllHelpers {node fun args} {
     global helperTable
 
     foreach displayBox [array name helperTable *,whichHelper] {
         scan $displayBox {%[^,]} winId
-        set helperId $helperTable($displayBox)
-        eval {${helperId}::$fun $winId} $args
+	if {[string equal $node $helperTable($winId,whichModel)]} {
+	    set helperId $helperTable($displayBox)
+	    eval {${helperId}::$fun $winId} $args
+	}
     }
 }
 
-proc ScrubRun {times} {
+proc ScrubRun {node times} {
     global runState model_id instance_id
     #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
     #	error Bombed
     #    }
-    set runState(modelRunning) 0
-    if {$times && [info exists runState(currentTime)]} {
-        unset runState(currentTime)
+    set runState($node,modelRunning) 0
+    if {$times && [info exists runState($node,currentTime)]} {
+        unset runState($node,currentTime)
     }
-    if {[info exists model_id]} {
-        if {$model_id} {
-            if {[info exists instance_id]} {
+    if {[info exists model_id($node)]} {
+        if {$model_id($node)} {
+            if {[info exists instance_id($node)]} {
                 #ShowMessage debug info "Exiting $model_id $instance_id" ok
-                c_exitmodel $model_id $instance_id
-                unset instance_id
+                do_for_node $node c_exitmodel $model_id($node) \
+		    $instance_id($node)
+                unset instance_id($node)
             } else {
                 #ShowMessage debug info "Exiting $model_id 0" ok
-                c_exitmodel $model_id 0
+                do_for_node $node c_exitmodel $model_id($node) 0
             }
         } else {
-            if {[info exists instance_id]} {
+            if {[info exists instance_id($node)]} {
                 #ShowMessage debug info "Exiting $model_id $instance_id" ok
-		namespace delete ::AME_model<>
-                unset instance_id
+		do_for_node $node namespace delete ::AME_model<>
+                unset instance_id($node)
 	    }
         }
-        unset model_id
+        unset model_id($node)
+	ToggleIOToolMenu $node
     }
 }
 
 ############################## snap: start ###################################
-proc snap {node} {
+proc snap {topNode node} {
     global runState
     
     if {[catch {GetCompProperty topNode Caption $node} full_label]} {
@@ -410,7 +444,7 @@ proc snap {node} {
     set end_submodels [expr $last_slash-1]
     set submodels [string range $full_label 0 $end_submodels]
     set label [string range $full_label $start_label end]
-    wm title $w "$label at time $runState(currentTime)"
+    wm title $w "$label at time $runState($topNode,currentTime)"
     
     text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
             -xscrollcommand "$w.xscroll set" \
@@ -429,7 +463,7 @@ proc snap {node} {
     pack $w.text -expand yes -fill both
     
     set values(1) [TransEnums [GetTransTable $node] \
-		       [lindex [GetCompProperty topNode Value $node] 0]]
+		       [lindex [GetCompProperty $topNode Value $node] 0]]
     set length(1) [llength $values(1)]
     
     # Find number of levels of nesting
@@ -448,7 +482,7 @@ proc snap {node} {
         $w.text insert end "$submodels\n" colour3
     }
     $w.text insert end "at time "
-    $w.text insert end "$runState(currentTime)\n" colour3
+    $w.text insert end "$runState($topNode,currentTime)\n" colour3
     $w.text insert end "[clock format [clock seconds]]\n"
     $w.text insert end "Maxlevel=$maxlevel\n"
     if {$maxlevel==1} then {
@@ -549,24 +583,24 @@ proc snap_down3 {w values} {
     }
 }
 
-proc GetRunParams {} {
+proc GetRunParams {node} {
     global runState model_id
 
-    if {[info exists runState(currentTime)]} {
-	if {$runState(execTime) != $runState(currentTime)} {
-	    set runState(execDur) \
-		[expr $runState(execTime)+$runState(currentTime)]
+    if {[info exists runState($node,currentTime)]} {
+	if {$runState($node,execTime) != $runState($node,currentTime)} {
+	    set runState($node,execDur) \
+		[expr $runState($node,execTime)+$runState($node,currentTime)]
 	} else {
-	    set runState(execDur) $runState(execTime)
+	    set runState($node,execDur) $runState($node,execTime)
 	}
-	set runParams [list execTime $runState(execDur) \
-			   timeUnit $runState(timeUnit) \
-			   displayInt $runState(displayInt) intMethod \
-			   [set runState(oldIntMethod) $runState(intMethod)]]
-	if {[info exists model_id]} {
-	    set runState(phases) [GetPhaseCount]
-	    for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
-		lappend params $runState(update$phase)
+	set runParams [list execTime $runState($node,execDur) \
+			   timeUnit $runState($node,timeUnit) \
+			   displayInt $runState($node,displayInt) intMethod \
+			   [set runState($node,oldIntMethod) $runState($node,intMethod)]]
+	if {[info exists model_id($node)]} {
+	    set runState($node,phases) [GetPhaseCount $node]
+	    for {set phase 1} {$phase <= $runState($node,phases)} {incr phase} {
+		lappend params $runState($node,update$phase)
                 }
 	    lappend runParams phaseList $params
 	}
@@ -575,31 +609,34 @@ proc GetRunParams {} {
     return {}
 }
 
-proc SetRunParams {runParams} {
+proc SetRunParams {node runParams} {
     global runState
     
-    set runState(currentTime) 0.0
+    set runState($node,currentTime) 0.0
     #ShowMessage debug info set ok
     if {[string match execTime [lindex $runParams 0]]} {
-	array set runState $runParams
-	set runState(phases) 0
-	if {[info exists runState(phaseList)]} {
-	    foreach phase $runState(phaseList) {
-		incr runState(phases)
-		set runState(update$runState(phases)) $phase
-		set runState(prev_update$runState(phases)) $phase
+	# no longer as simple as "array set runState $runParams"
+	foreach {feature value} $runParams {
+	    set runState($node,$feature) $value
+	}
+	set runState($node,phases) 0
+	if {[info exists runState($node,phaseList)]} {
+	    foreach phase $runState($node,phaseList) {
+		incr runState($node,phases)
+		set runState($node,update$runState($node,phases)) $phase
+		set runState($node,prev_update$runState($node,phases)) $phase
 	    }
 	}
-	set runState(oldIntMethod) $runState(intMethod)
+	set runState($node,oldIntMethod) $runState($node,intMethod)
     } else {
-	set runState(execTime) [lindex $runParams 0]
-	set runState(displayInt) [lindex $runParams 1]
+	set runState($node,execTime) [lindex $runParams 0]
+	set runState($node,displayInt) [lindex $runParams 1]
 	for {set others 2} {$others < [llength $runParams]} {incr others} {
-	    set runState(update[expr $others-1]) [lindex $runParams $others]
-	    set runState(prev_update[expr $others-1]) \
+	    set runState($node,update[expr $others-1]) [lindex $runParams $others]
+	    set runState($node,prev_update[expr $others-1]) \
 		[lindex $runParams $others]
 	}
-	set runState(phases) [expr $others-2]
+	set runState($node,phases) [expr $others-2]
     }
     #puts [array get runState]
 }
@@ -607,48 +644,45 @@ proc SetRunParams {runParams} {
 # modelRunning is a global variable that indicates the status of the model
 # program: 0 = none, 1 = awaiting fixed params, 2 = up to date, 3 = out of date
 
-set runState(modelRunning) 0
-set this ::AME_model<>
-# var containing namespace id called 'this' for compatibility with c++
-
-proc StartRun {} {
+proc StartRun {node} {
     global runState helperTable running_c
     # ShowMessage debug info enter(start_run) ok
-    if {[info exists runState(currentTime)]} {
-        if {$runState(execTime) != $runState(currentTime)} {
-            set runState(execTime) \
-                    [expr $runState(execTime)+$runState(currentTime)]
+    if {[info exists runState($node,currentTime)]} {
+        if {$runState($node,execTime) != $runState($node,currentTime)} {
+            set runState($node,execTime) [expr $runState($node,execTime) + \
+					      $runState($node,currentTime)]
         }
-        for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
-            if {![info exists runState(prev_update$phase)]} {
-                set runState(update$phase) 0.1
-                set runState(prev_update$phase) 0.1
+        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+            if {![info exists runState($node,prev_update$phase)]} {
+                set runState($node,update$phase) 0.1
+                set runState($node,prev_update$phase) 0.1
             }
-            SetStep $runState(prev_update$phase) $phase
+            SetStep $node $runState($node,prev_update$phase) $phase
         }
     } else {
-        set runState(execTime) 100
-        set runState(displayInt) 1
-        for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
-            set runState(update$phase) 0.1
-	    set runState(time$phase) 0
-            set runState(prev_update$phase) 0.1
-            SetStep 0.1 $phase
-	    SetStep 0 -$phase
+        set runState($node,execTime) 100
+        set runState($node,displayInt) 1
+        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+            set runState($node,update$phase) 0.1
+	    set runState($node,time$phase) 0
+            set runState($node,prev_update$phase) 0.1
+            SetStep $node 0.1 $phase
+	    SetStep $node 0 -$phase
         }
     }
 
-    set runState(currentTime) 0.0
-    set runState(timeAtEval) 0.0
-#    set runState(currentWin) $winId ;# enables rebuild from run control
-    if {![FileParamDialogue 0]} {
-	return 0
-    }
+    set runState($node,currentTime) 0.0
+    set runState($node,timeAtEval) 0.0
+#    set runState($node,currentWin) $winId ;# enables rebuild from run control
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
-        raise [Makemre]
+        raise [set topWin [Makemre $node]]
     } else {
+	set topWin [winfo toplevel [focus]]
 #	ToggleIOToolMenu 1
+    }
+    if {![FileParamDialogue $node $topWin 0]} {
+	return 0
     }
 #    Now have to do this in Prolog so only running windows change
 #    foreach winData [array name window_info *,parent] {
@@ -658,8 +692,8 @@ proc StartRun {} {
 #        $navBar.runenv configure -state active
 #        $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
 #    }
-    set runState(reloadParams) 1
-    set runState(modelRunning) 2
+    set runState($node,reloadParams) 1
+    set runState($node,modelRunning) 2
 #    EnableTools Fix
 
     # MakeSlidersForInputs is currently done after initializing the
@@ -667,16 +701,17 @@ proc StartRun {} {
     # sliders. Here we must clear any old input tool values so they are not used.
 #    UnMakeSlidersForInputs
 
-    set defHelper $helperTable(RunControl)
+    if {![info exists runState($node,helperId)]} {
+	set defHelper $helperTable(RunControl)
     
-    if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
-                [array get helperTable] spare helperId]} {
-        kill_helper_window $helperId
+#    if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
+#                [array get helperTable] spare helperId]} {
+#       kill_helper_window $helperId
+#   }
+	set helperId [NewHelperWindow $node $defHelper "Default run control"]
+	${defHelper}::initialize $helperId
+	set runState($node,helperId) $helperId
     }
-    set helperId [NewHelperWindow $defHelper "Default run control"]
-    ${defHelper}::initialize $helperId
-    set runState(helperId) $helperId
-
 # Do not put up mre, sliders, etc if model has failed to start
 #    if {![info exists running_c]} {
 #	return
@@ -695,7 +730,10 @@ proc StartRun {} {
 #    MakeSlidersForInputs
     
     if {[PrefValue custom(helperManager) helperManager]} {
-        CreateHelperWindow $helperTable(VariableList) "Variables"; # JMM
+	set helperId $helperTable(VariableList)
+	set winId [NewHelperWindow $node $helperId "Variables"]
+	${helperId}::initialize $winId
+        ::RunEnv::ChildrenFocusParent $winId
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
 #	    $sliderBook delete InputSliders
@@ -703,7 +741,7 @@ proc StartRun {} {
 #	    unset ::RunEnv::sliderControlFrame
 #	}
 	set ctrlPane [winfo parent [winfo parent [winfo parent [winfo parent \
-					$::RunEnv::runControlFrame]]]]
+					$::RunEnv::runControlFrame($node)]]]]
 	update ;# so reqheight works next
 	$ctrlPane sash place 0 \
 	    10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
@@ -729,15 +767,15 @@ proc StartRun {} {
 #	TellHelperItsGone $oldInputHelper($removedInput) $removedInput
 #    }
 #    CheckFixedParamState
-    set widget [$runState(helperId).rcf getframe]
+    set widget [$runState($node,helperId).rcf getframe]
     $widget.topbuttons.reset invoke
     return 1
 }
 
-proc StartNow {} {
+proc StartNow {node} {
     global runState
 
-    set widget [$runState(helperId).rcf getframe]
+    set widget [$runState($node,helperId).rcf getframe]
     $widget.topbuttons.start invoke
 }
 
@@ -746,18 +784,18 @@ proc TellHelperItsGone {helperWin captionPath} {
 # delete it
 }
 
-proc CheckFixedParamState {} {
-    global inputHelper runState
-    if {$runState(modelRunning)==1 && \
-	    [lsearch [array get inputHelper] {}] == -1} { 
-	# fixed param with no src
-	set runState(modelRunning) 2
-	# this initializes the model
-        set widget [$runState(helperId).rcf getframe]
-        $widget.topbuttons.reset invoke
-	EnableTools IO
-    }
-}
+#proc CheckFixedParamState {node} {
+#    global inputHelper runState
+#    if {$runState($node,modelRunning)==1 && \
+#	    [lsearch [array get inputHelper] {}] == -1} { 
+#	# fixed param with no src
+#	set runState($node,modelRunning) 2
+#	# this initializes the model
+#        set widget [$runState($node,helperId).rcf getframe]
+#        $widget.topbuttons.reset invoke
+#	EnableTools IO
+#    }
+#}
 
 proc EnableTools {group} {
     set tgt .helpers.sub2
@@ -785,7 +823,7 @@ proc remove_c_model {} {
     #    }
 }
 
-proc update_executable {lang} {
+proc update_executable {node lang} {
     #    ShowMessage debug info "References are $finderList" ok
     global model_id instance_id
 
@@ -794,36 +832,38 @@ proc update_executable {lang} {
     # better already be loaded
     switch $lang {
 	c {
-	    set instance_id [c_createmodel $model_id]
+	    set instance_id($node) [do_for_node $node c_createmodel \
+					$model_id($node)]
 	} tcl {
     #    ShowMessage debug info "model instance $instance_id created" ok
-	    set model_id 0
-	    set instance_id 0
+	    set model_id($node) 0
+	    set instance_id($node) 0
 	}
     }
-    return [StartRun]
+    return [StartRun $node]
 }
 
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
 # is always that most recently added (even if not recompiled)
 
-proc load_dll {lang progDir id node incs} {
+proc load_dll {topNode lang progDir id node incs} {
     #   phasecount and nodedata are set in generated code
-    global phasecount nodedata nodecount model_id model_ids model_prog env
+    global model_id model_ids model_prog env
     if {[string match tcl $lang]} {
 	if {![file exists $progDir/model.tcl]} {
 	    return 0
 	}
 	# This won't catch defns in subdirectories
         foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
-            source $fnFile
+            do_for_node $topNode source $fnFile
         }
         foreach fnFile $incs {
-            source $fnFile
+            do_for_node $topNode source $fnFile
         }
-        source [set model_prog $progDir/model.tcl]
-        if {[info exists simile_version]} {
-	    return [expr $simile_version==$env(SIMILE_VERSION)]
+        set model_prog($topNode) $progDir/model.tcl
+	do_for_node $topNode source $model_prog($topNode)
+	if {![catch {do_for_node $topNode set simile_version} buildV]} {
+	    return [expr $buildV==$env(SIMILE_VERSION)]
         } else {
             return 0
         }
@@ -832,16 +872,17 @@ proc load_dll {lang progDir id node incs} {
 	if {![file exists $progFile]} {
 	    return 0
 	}
-        if {[catch {loadmodel $progFile $node} model_id]} {
+        if {[catch {do_for_node $topNode loadmodel $progFile $node} \
+		 new_model_id]} {
 	    if {[PrefValue custom(hackBreak) hackBreak]} {
-		ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $model_id -- the program will attempt to build another one." ok
+		ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $new_model_id -- the program will attempt to build another one." ok
 	    }
-            unset model_id
             return 0
         }
+	set model_id($topNode) $new_model_id
         #        set model_id [loadmodel $nameBase[info sharedlibextension] $node]
-        set model_ids($node) $model_id
-        return $model_id
+        set model_ids($node) $new_model_id
+        return $new_model_id
     }
 }
 
@@ -1017,157 +1058,6 @@ proc ListSameNumbers {list1 list2} {
 #}
 
 
-proc setup_graph_data {args} {
-    eval {graph_table 22} $args
-}
-
-proc release_graph_data {graph_data_pointer} {
-    # no need to release in tcl
-}
-
-
-# this procedure takes the data describing a function entered as a graph, and a
-# point on the x axis, and returns the y axis point. It is called from the
-# procedure that executes the model.
-
-
-proc graphpoint {xval index} {
-    graph_table 23 $index $xval
-}
-
-proc getinstance {varName dest newvalue} {
-    # If newvalue exists, it should be copied to target and returned
-    upvar 1 $varName target
-    upvar 1 $dest returnList
-
-    if {[string compare $newvalue NULL]} {
-        set target $newvalue
-
-    } ;# end(if,$set)
-    lappend returnList $target
-    return $returnList
-} ;# end(procedure,getinstance)
-
-proc do_setstepmodel {value level} {
-    global ts dts
-    if {$level<0} { ;# lazy
-	set ts([expr -$level]) $value
-    } else {
-	set dts($level) $value
-    }
-}
-
-proc at_time_step {} {
-    return [expr [glob_element dts 0]<=1]
-}
-
-proc loses {prob phase} {
-    if {$prob >= 1} {
-	return 1
-    } else {
-	set kills_per_step [expr [glob_element dts 0]?4:1]
-	return [expr [ame_rand 0 1] > \
-		    pow(1-$prob, [glob_element dts $phase]/$kills_per_step)]
-    }
-}
-
-# delete_list is a dummy procedure. What it should do is clear the
-# submodel instances from the list supplied, but since (a) it would also
-# need the parent namespace and (b) they tend to get reused anyway in
-# tcl, I have not bothered.
-
-proc delete_list {list_id} {
-}
-
-proc glob_element {arrptr phase} {
-    upvar #0 $arrptr arr
-    return $arr($phase)
-}
-
-# When there are multiple models, prune will be called with some reference
-# to the source namespace. For now we add that inside the proc...
-
-proc prune {target metaTxt idCount} {
-    upvar 1 $metaTxt meta
-    set status 1
-    while {[string compare [set $meta] 0] && \
-                [set status [compare_instance_status \
-                [set submodelptr [set $meta]]::instanceid \
-                $target $idCount]]==-1} {
-        set $meta [set ${submodelptr}::next]
-        namespace delete $submodelptr
-    }
-    return [expr !$status]
-}
-
-proc compare_instance_status {testInstName refInst num} {
-    upvar 1 $testInstName testInst
-    #    ShowMessage debug info "testInst $testInst refInst $refInst" ok
-    if {[string match 0 $testInst]} {return 1}
-    for {set ptr 0} {$ptr < $num} {incr ptr} {
-        if {[lindex $testInst $ptr]<[lindex $refInst $ptr]} {return -1}
-        if {[lindex $testInst $ptr]>[lindex $refInst $ptr]} {return 1}
-    }
-    return 0
-}
-
-proc compare_values {v1 indexTxt v2 length step} {
-    # ShowMessage debug info "compare_values\n$v1\n$indexTxt\n$v2\n$length\n$step" ok
-    upvar 1 $indexTxt index
-    compare_lists 1 $v1 index $v2 $length $step
-}
-
-proc compare_lists {count nestlist1 indexTxt list2 length step} {
-    upvar 1 $indexTxt index
-
-    set hunting 2
-
-    while {$hunting==2} {
-        if {$index >= $length} {
-            set hunting 0
-        } else {
-            set list1 [lindex $nestlist1 $index]
-            set hunting [compare_tcl_lists $count $list1 $list2]
-            if {$hunting == 2} {
-                incr index $step
-            }
-        }
-    }
-    return $hunting
-}
-
-proc compare_tcl_lists {count list1 list2} {
-
-    for {set ptr 0} {$ptr < $count} {incr ptr} {
-        set diff [expr [lindex $list1 $ptr]-[lindex $list2 $ptr]]
-        if {$diff < 0} {
-            return 2 ; Dead parent condition
-        }
-        if {$diff > 0} {
-            return 0 ; Non-existence condition
-        }
-    }
-    return 1
-}
-proc init_pop_member {new_one index parent channel} {
-    upvar 1 $new_one tgt
-
-    set ${tgt}::instanceid $index
-    set ${tgt}::parentId $parent
-    set ${tgt}::channelId $channel
-    set ${tgt}::new_instance 1
-    set ${tgt}::next 0
-}
-
-proc ame_rand {lowBound highBound} {
-    return [expr $lowBound +[random01]*($highBound - $lowBound)]
-}
-
-
-proc stop {code} {
-    error "User-defined interruption code $code"
-}
-
 proc SampleFrom {a} {
     if {[llength $a] == 1} {
         return $a
@@ -1187,8 +1077,6 @@ proc IsArray {a} {
     string compare $a [lindex $a 0]
 }
 
-load_c_stub
-LoadIconImages
 set intCount 0
 
 proc newInt {} {

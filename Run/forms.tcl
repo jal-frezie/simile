@@ -8,12 +8,6 @@
 package require BWidget
 catch {namespace import BWidget::*}
 
-# great steaming botch
-source ../IOTools/graphtools.tcl
-source ../IOTools/DisplayFormats.tcl
-source ../IOTools/two_table.tcl
-set table_viewer(id) $keyValue
-
 proc equationResources {} {
     
     #    foreach equation(ebox) {name description comment units} {

@@ -635,9 +635,10 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 void get_value_pointer(void* tgt, char* id, int count, int* inds) {
   node_data_line* data_line;
   char caption[255];
+  char* varName;
   int dims[32], path[32];
   Tcl_Obj* valPtr;
-  int stepIndex;
+  int stepIndex, rv;
   Model* mSpare;
 
   data_line = searchinfo(id, &mSpare, caption, dims, path);
@@ -647,25 +648,19 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
   }
   
   if (data_line->eval == TABLE) {
-      valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("paramData", -1),
-	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
+    varName = "paramData ";
   } else if (data_line->eval == INPUT) {
     if (data_line->datatype == FLAG) {
-      valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("checkStates", -1),
-	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
+      varName = "checkStates ";
     } else if (data_line->datatype == ENUMERATED) {
-      valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("comboChoices", -1),
-	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
+      varName = "comboChoices ";
     } else {
-      valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("sliderVals", -1),
-	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
-    /* adding TCL_LEAVE_ERR_MSG above gives user error if variable does not 
-       exist -- though for now we want this to do nothing */
+      varName = "sliderVals ";
     }
   }
-  if (!valPtr) {
-    serviceError = TCL_OK;
-  } else {
+  if (Tcl_VarEval(globInterp, "BringParameter ", varName, caption, NULL) 
+      == TCL_OK) {
+    valPtr = Tcl_GetObjResult(globInterp);
     switch (data_line->datatype) {
     case FLAG:
       serviceError = Tcl_GetBooleanFromObj(globInterp, valPtr, (int*)tgt);

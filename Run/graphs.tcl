@@ -692,13 +692,13 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
-proc FileParamDialogue {mustShow} {
+proc FileParamDialogue {topNode topWin mustShow} {
     global paramData widgetNames loadingProject
-    set allNodes [GetCompProperty topNode Objects]
+    set allNodes [GetCompProperty $topNode Objects]
     # do it now to shake out errors before opening window
         
     set t [toplevel .fpdialogue]
-    wm transient $t
+    wm transient $t $topWin
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t "Enter file parameters"
     if {!$mustShow} {
@@ -708,9 +708,9 @@ proc FileParamDialogue {mustShow} {
     array unset widgetNames
     foreach node $allNodes {
         set isInput [lsearch {TABLE INPUT} \
-			 [GetCompProperty topNode Eval $node]]
+			 [GetCompProperty $topNode Eval $node]]
 	if {$isInput != -1} {
-	    AddEntry $t $node $mustShow $isInput
+	    AddEntry $t $topNode $node $mustShow $isInput
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
@@ -720,7 +720,7 @@ proc FileParamDialogue {mustShow} {
                 -text "All values must be set to run the model." -width 400]
         pack [frame $bfrm.lpad] -side left -fill x -expand true
         pack [button $bfrm.ok -text "OK" \
-		  -command [list DoneParams $t] -width 10] \
+		  -command [list DoneParams $topNode $t] -width 10] \
                 -side left -padx 2 -pady 2
         pack [button $bfrm.cancel -text "Cancel" -command CancelParams -width 10] \
                 -side left -padx 2 -pady 2
@@ -760,15 +760,15 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
-proc AddEntry {winId node mustShow isInput} {
+proc AddEntry {winId topNode node mustShow isInput} {
     global paramData paramDims widgetNames iconImages
-    set compName [GetCompProperty topNode Caption $node]
-    if {[string match SUBMODEL [GetCompProperty topNode Class $node]]} {
+    set compName [GetCompProperty $topNode Caption $node]
+    if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
 	set paramData($compName) {}
 	return
     }
     set levels [split $compName /]
-    set nodeDims [GetCompProperty topNode Dims $node]
+    set nodeDims [GetCompProperty $topNode Dims $node]
 
 # bit of voodoo...get table relating numerical indices of node to enymerated
 # types (from prolog) and use to translate array bounds. Do this first because
@@ -791,7 +791,7 @@ proc AddEntry {winId node mustShow isInput} {
 	    set last boolean
 	}
     } else {
-	set last [GetCompProperty topNode Type $node]
+	set last [GetCompProperty $topNode Type $node]
     }
     if {[llength $dimList]} {
 	append dimList " of $last"
@@ -804,7 +804,7 @@ proc AddEntry {winId node mustShow isInput} {
     } else {
 	set slotCaption [lindex $levels end]
     }
-    pack [set slot [frame [MakeSubFrames spare $winId.sliderframe $levels \
+    pack [set slot [frame [MakeSubFrames $topNode $winId.sliderframe $levels \
 			       fileparams 0]]] -fill x -expand on
     pack [label $slot.l -text $slotCaption -fg red] -side left
     if {$nodeDims>1} {
@@ -824,7 +824,8 @@ proc AddEntry {winId node mustShow isInput} {
 	      -command [namespace code [list RevertData $winId $compName]]] \
 	-side right
     pack [button $slot.tick -image $iconImages(tick) -borderwidth 1 \
-	      -command [namespace code [list AcceptData $winId $compName 1]]] \
+	      -command [namespace code [list AcceptData $winId $topNode \
+					    $compName 1]]] \
 	-side right
     }
     set widgetNames($compName) $slot
@@ -834,7 +835,7 @@ proc AddEntry {winId node mustShow isInput} {
 	    $slot.l configure -fg black
 	}
     } else {
-	AcceptData $winId $compName 0
+	AcceptData $winId $topNode $compName 0
     }
 }
 
@@ -878,21 +879,21 @@ proc purge {list toGo} {
     return $done
 }
 
-proc DoneParams {winId} {
+proc DoneParams {topNode winId} {
     global widgetNames paramData
 
     foreach compName [array names widgetNames] {
-	AcceptData $winId $compName 1
+	AcceptData $winId $topNode $compName 1
     }
     if {![llength $paramData(needed)]} {
 	set paramData(done) 1
     }
 }
 
-proc AcceptData {winId compName complain} {
+proc AcceptData {winId topNode compName complain} {
     global paramDims paramData widgetNames runState inputHelper running_c
 
-    set node [GetCompProperty topNode IdFromCapt $compName]
+    set node [GetCompProperty $topNode IdFromCapt $compName]
     if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
 	set paramData($compName) [$widgetNames($compName).e get]
     }
@@ -903,7 +904,7 @@ proc AcceptData {winId compName complain} {
 # or model not yet started
     if {![info exists running_c]} {
 	set dataChanged 1
-    } elseif {[catch {GetCompProperty topNode Value $node} oldVal]} {
+    } elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
 	set dataChanged 1
     } elseif {[string compare [lindex $oldVal 0] $paramData($compName)]} {
 	set dataChanged 1
@@ -924,9 +925,9 @@ proc AcceptData {winId compName complain} {
 #puts "recordId is $recordId"
 		if {[string first $recordId $compName]==0 && \
 		    ![string equal $recordId $compName]} {
-		    set recordNode [GetCompProperty topNode \
+		    set recordNode [GetCompProperty $topNode \
 					IdFromCapt $recordId]
-		    set outerDims [lrange [GetCompProperty topNode Dims \
+		    set outerDims [lrange [GetCompProperty $topNode Dims \
 					       $recordNode] 0 end-1]
 #puts "node $recordNode outer dims $outerDims"
 		    if {[string match $outerDims \
@@ -1127,18 +1128,18 @@ proc Save {spare smPath} {
 # new relative pathnames and I can only generate these starting from the absolute
 # pathname. And the only way to get that without a hack is to cd to it...
 
-proc Open {spare smPath} {
+proc Open {topNode smPath} {
     global SimileProject
     set metaFile [ChooseFile params.spf "Load parameters from:" 0]
     set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
-	MergeParams $smPath $metaFile 1
+	MergeParams $topNode $smPath $metaFile 1
 
     }
 }
 }
 
-proc MergeParams {smPath metaFile interactive} {
+proc MergeParams {topNode smPath metaFile interactive} {
     global paramState paramData widgetNames
     
     set oldDir [pwd]
@@ -1147,7 +1148,7 @@ proc MergeParams {smPath metaFile interactive} {
 	#ShowMessage debug info "Restoring $savedValue" ok
 	set IdAndValue [split $savedValue =]
 	set restoredComp [RestoreCrs $smPath[lindex $IdAndValue 0]]
-	set node [GetCompProperty topNode IdFromCapt $restoredComp]
+	set node [GetCompProperty $topNode IdFromCapt $restoredComp]
 	set trans [GetTransTable $node]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
 	if {[info exists paramData($restoredComp)]} {
@@ -1263,27 +1264,28 @@ proc GetFromTable {parent compName} {
 }
 
 # try to minimize effort at runtime -- list timepoints for each node...
-proc InitTimeSeries {} {
+proc InitTimeSeries {topNode} {
     global setFromSeries paramData
     array unset setFromSeries
-    foreach node [GetCompProperty topNode Objects] {
-	if {[string match INPUT [GetCompProperty topNode Eval $node]]} {
+    foreach node [GetCompProperty $topNode Objects] {
+	if {[string match INPUT [GetCompProperty $topNode Eval $node]]} {
 #puts "timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1
 	    }
 	    if {[array size $node]} {
-		set setFromSeries($node,times) [lsort [array names $node]]
-		set setFromSeries($node,next) 0
+		set setFromSeries($topNode,$node,times) \
+		    [lsort [array names $node]]
+		set setFromSeries($topNode,$node,next) 0
 #puts "initted $setFromSeries($node,times)"
 	    }
 	}
     }
 }
 
-proc ResetTimeSeries {} {
+proc ResetTimeSeries {topNode} {
     global setFromSeries
-    foreach pt [array names setFromSeries *,next] {
+    foreach pt [array names setFromSeries $topNode,*,next] {
 	set setFromSeries($pt) 0
     }
 }
@@ -1291,19 +1293,19 @@ proc ResetTimeSeries {} {
 # for each node we have a lsit of times in the time series, and a pointer to 
 # where we are in the list. If the time has gone past that pointed to, signal 
 # the data to be written and look at the next one...
-proc UpdateTimeSeries {newTime} {
+proc UpdateTimeSeries {topNode newTime} {
     global setFromSeries paramData
-    foreach list [array names setFromSeries *,times] {
-	set node [lindex [split $list ,] 0]
+    foreach list [array names setFromSeries $topNode,*,times] {
+	set node [lindex [split $list ,] 1]
 #puts "node $node times $setFromSeries($list) next $setFromSeries($node,next) newTime $newTime"
 	set jumping 1
 	while {$jumping} {
-	    if {[llength $setFromSeries($list)] > $setFromSeries($node,next)} {
-		set oldTime [lindex $setFromSeries($list) \
-				 $setFromSeries($node,next)]
+	    upvar 0 setFromSeries($topNode,$node,next) series
+	    if {[llength $setFromSeries($list)] > $series} {
+		set oldTime [lindex $setFromSeries($list) $series]
 		if {$newTime >= $oldTime} {
 		    set useTime $oldTime
-		    incr setFromSeries($node,next)
+		    incr series
 		} else {
 		    set jumping 0
 		}

@@ -125,7 +125,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	     close(Stream),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
-	     compile_c_program(TopNode, CheckDir, Tgt),
+	     compile_c_program(CheckDir, Tgt),
 		 (Tgt = -1, !,
 		     raise_exception(compilation_failed);
 		  (Parent has_changed_model_refinement c_new of Tgt;

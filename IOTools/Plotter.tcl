@@ -98,14 +98,13 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        global runState
 	variable runCount
         
         #initialize $winId; #allows default values for vars missing from GetState
         # loses vars to plot
         
         set plot($winId,Xmin_data) [GetModelTime $winId]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
-        set plot($winId,Xmax_data) [expr {[GetModelTime $winId]+$runState(execTime)}]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
+        set plot($winId,Xmax_data) [GetModelEndTime $winId]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
         ################################################################################
         set YYold($winId) {}
         set YYnew($winId) {}
@@ -672,11 +671,10 @@ namespace eval ::$keyValue {
     
     proc adjustLimits {w Tnew Ynew} {
         global ::graphtools::plot
-        global runState
         
         if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
             if {$Tnew>$plot($w,Xmax_axis)} {
-                set plot($w,Xmax_data) [expr {[GetModelTime $w]+$runState(execTime)}]
+                set plot($w,Xmax_data) [GetModelEndTime $w]
             }
             if {$Tnew<$plot($w,Xmin_axis)} {
                 set plot($w,Xmin_data) $Tnew

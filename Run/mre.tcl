@@ -9,7 +9,6 @@ namespace eval RunEnv {
     
     package require BWidget
     
-    variable mainframe
     variable status
     variable prgtext
     variable prgindic
@@ -20,7 +19,7 @@ namespace eval RunEnv {
     variable runControlWindId
     variable dp0;    # display pane
     variable toolbars; # list of toolbar items
-    variable CurrentContainer {}
+    variable CurrentContainer
     
     variable width 780; # window width  # should be an option
     variable height 580; #window height  # should be an option
@@ -37,9 +36,9 @@ namespace eval RunEnv {
             [list open.gif "Load a configuration of displays" RunEnv::LoadView] \
             [list save.gif "Save the display configuration" RunEnv::SaveView] ]\
             [list \
-            [list copyc.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
-            [list cut.gif "Cut display" [list ::RunEnv::CutHelper $::RunEnv::CurrentContainer"]] \
-            [list paste.gif "Paste display" [list ::RunEnv::PasteHelper $::RunEnv::CurrentContainer"]] \
+            [list copyc.gif "Copy display" ::RunEnv::CopyHelper] \
+            [list cut.gif "Cut display" ::RunEnv::CutHelper] \
+            [list paste.gif "Paste display" ::RunEnv::PasteHelper] \
             [list delete.gif "Remove display or container" "::RunEnv::DeleteHelperCurrentContainer" ] \
             [list print.gif "Print display" ::RunEnv::PrintCurrentContainer]] \
             [list \
@@ -56,26 +55,32 @@ namespace eval RunEnv {
             [list clear.gif "Clear all displays" "ClearView"]]\
             [list \
             [list mainwin.gif "Go to Model Window" "RaiseModelWindow"]]]
-}
 
 # A top level window to contain the helpers
-proc RunEnv::Create { } {
+proc Create { node } {
     global helperTable tcl_platform
-    variable mainframe
     variable runControlFrame
     variable sliderControlFrame;
     variable variableListFrame;
-    variable ::RunEnv::mainframe; ## duplicate?
     variable explorerPane
     variable dp0;    # display pane
+    variable dp0s;    # display panes for all models
     variable toolbars; # list of toolbar items
     variable width
     variable height
+    variable currentNode
     
-    if {![winfo exists .mre]} then {
+    if {[info exists helperTable($node,whichRunEnv)]} {
+	return $helperTable($node,whichRunEnv)
+    } else {
+	set mreId .mre[newInt]
+	set helperTable($node,whichRunEnv) $mreId
+
         #tk_messageBox -message MakeMRE -type ok
-        toplevel .mre -width 200m -height 150m
-        wm title .mre "Run-Time Environment - Simile"
+        toplevel $mreId -width 200m -height 150m
+        wm title $mreId "Run-Time Environment - Simile"
+	set currentNode $node
+	bind $mreId <FocusIn> [namespace code "InMreFor $node"]
        set descmenu {
             "&File" all file 0 {
                 {command "&New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::KillDisplays} }
@@ -89,25 +94,28 @@ proc RunEnv::Create { } {
                             {} -command { ::RunEnv::PrintCurrentContainer } }
                 {separator}
                 {command "Pa&rameters..." {} "Modify file parameters"  \
-                            {} -command { FileParamDialogue 1 } }
+                            {} -command { ::RunEnv::InvokeFPDialogue } }
                 {separator}
                 {command "&Close"    {} "Close the Run Environment window" \
-                            {} -command {RunEnv::Destroy} }
+                            {} -command RunEnv::Destroy }
             }
             "&Edit" all edit 0 {
-                {command "Co&py"    {} "Copy display" {} -command "RunEnv::CopyHelper $::RunEnv::CurrentContainer" }
-                {command "Cu&t"    {} "Cut display" {} -command "RunEnv::CutHelper $::RunEnv::CurrentContainer" }
-                {command "&Paste"    {} "Paste display" {} -command "::RunEnv::PasteHelper $::RunEnv::CurrentContainer" }
+                {command "Co&py"    {} "Copy display" {} \
+		     -command RunEnv::CopyHelper }
+                {command "Cu&t"    {} "Cut display" {} \
+		     -command RunEnv::CutHelper }
+                {command "&Paste"    {} "Paste display" {} \
+		     -command ::RunEnv::PasteHelper }
                 {separator}
                 {command "&Remove"    {} "Remove display or container" {} -command {::RunEnv::DeleteHelperCurrentContainer}}
                 {command "&Clear all"    {} "Clear all displays" {} -command {ClearView} }
             }
             "&Help" all help 0 {
-                {command "&Contents..." {} "View the help file contents" {} -command {ContextSensitiveHelp .mre run/single.htm} }
+                {command "&Contents..." {} "View the help file contents" {} -command {ContextSensitiveHelp $mreId run/single.htm} }
             }
         }
         
-        set mainframe [MainFrame .mre.mainframe -width 200m -height 150m \
+        set mainframe [MainFrame $mreId.mainframe -width 200m -height 150m \
                 -menu         $descmenu \
                 -textvariable RunEnv::status \
                 -progressvar  RunEnv::prgindic]
@@ -143,6 +151,8 @@ proc RunEnv::Create { } {
         set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
         
         set dp0 [frame $mainpw.mainDisplayPane]
+	set dp0s($node) $dp0
+
         $mainpw add $controlPane $dp0 -width 270; # must be wide enough (270ish) for the sliders
         
         # Add a panedwindow to split the hier/contol pane into hierrachical pane and control pane
@@ -154,8 +164,10 @@ proc RunEnv::Create { } {
         # Add notebook for controls, explorer etc
         NoteBook $explorerPane.notebook
         $explorerPane.notebook insert end "Explorer" -text "Explorer"
-        set variableListFrame [frame [$explorerPane.notebook getframe Explorer].variables]
-        pack $explorerPane.notebook $variableListFrame -fill both -expand yes
+        set variableListFrame($node) \
+	    [frame [$explorerPane.notebook getframe Explorer].variables]
+        pack $explorerPane.notebook $variableListFrame($node) \
+	    -fill both -expand yes
         
 #        $explorerPane.notebook insert end "InputSliders" -text "Input sliders"
 #        set sliderControlFrame \
@@ -164,17 +176,18 @@ proc RunEnv::Create { } {
         #$explorerPane.notebook insert end "Output" -text "Output"
         #set outputFrame \
         #        [frame [$explorerPane.notebook getframe "Output"].sliders -container true]
-        pack $variableListFrame -fill both -expand yes
+        pack $variableListFrame($node) -fill both -expand yes
         $explorerPane.notebook raise Explorer
         
         NoteBook $runcontrolpane.notebook
         $runcontrolpane.notebook insert end "RunControl" -text "Run Control"
-        set runControlFrame  [frame [$runcontrolpane.notebook getframe RunControl].variables]
+        set runControlFrame($node) \
+	    [frame [$runcontrolpane.notebook getframe RunControl].variables]
         pack $runcontrolpane.notebook -fill both -expand yes
-        pack $runControlFrame -fill both -expand yes
+        pack $runControlFrame($node) -fill both -expand yes
         $runcontrolpane.notebook raise RunControl
         
-        RunEnv::AddNotebook $dp0
+        AddNotebook $dp0
         
         pack $mainframe -fill both -expand yes
         pack $mainpw -fill both -expand yes
@@ -187,16 +200,34 @@ proc RunEnv::Create { } {
         # run control is automatically created when model is run
         # input slider helper is automatically created if needed when model is run
         
-        wm geometry .mre ${width}x${height}
+        wm geometry $mreId ${width}x${height}
         if {[string match unix $tcl_platform(platform)]} {
-            wm iconbitmap .mre @../Images/dribble.xbm
+            wm iconbitmap $mreId @../Images/dribble.xbm
         }; # on Windows uses default icon set in Runmodel.tcl
-        wm protocol .mre WM_DELETE_WINDOW ::RunEnv::Destroy
+        wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::Destroy
+	return $mreId
     } ; # if .mre exists
-    return .mre
 }
 
-proc RunEnv::AddNotebook {containerId} {
+proc InMreFor {node} {
+    variable currentNode
+    variable CurrentContainer
+    variable CurrentContainers
+    variable dp0
+    variable dp0s
+
+    set currentNode $node
+    set CurrentContainer $CurrentContainers($node)
+    set dp0 $dp0s($node)
+}
+
+proc InvokeFPDialogue {} {
+    global helperTable
+    variable currentNode
+    FileParamDialogue $currentNode $helperTable($currentNode,whichRunEnv) 1
+}
+
+proc AddNotebook {containerId} {
     destroy $containerId.abovebox
     destroy $containerId.bbox
     destroy $containerId.belowbox
@@ -226,7 +257,7 @@ proc RunEnv::AddNotebook {containerId} {
     pack $containerId.notebook -fill both -expand yes
 }
 
-proc RunEnv::EditTabLabel { notebook tabId } {
+proc EditTabLabel { notebook tabId } {
     variable TabEditText
     set TabEditText [$notebook itemcget $tabId -text]
     #based on equationRight
@@ -247,18 +278,19 @@ proc RunEnv::EditTabLabel { notebook tabId } {
     }
 }
 
-proc RunEnv::PageRaiseCmd {notebook pageId} {
+proc PageRaiseCmd {notebook pageId} {
     set pageF [$notebook getframe $pageId]
     set firstPane [lindex [$pageF.panedwindow panes] 0]
     #ShowMessage debug info "PageRaiseCmd firstPane $firstPane" ok
     SetCurrentContainer $firstPane
 }
 
-proc RunEnv::AddNotebookToCurrentContainer {} {
-    AddNotebook $::RunEnv::CurrentContainer
+proc AddNotebookToCurrentContainer {} {
+    variable CurrentContainer
+    AddNotebook $CurrentContainer
 }
 
-proc RunEnv::AddNotebookPage {containerId} {
+proc AddNotebookPage {containerId} {
     if {[string match notebook [winfo name $containerId]]} {
         set ParentContainer $containerId
     } else  {
@@ -285,23 +317,24 @@ proc RunEnv::AddNotebookPage {containerId} {
     
 }
 
-proc RunEnv::AddNotebookPageToCurrentContainer {} {
-    AddNotebookPage $::RunEnv::CurrentContainer
+proc AddNotebookPageToCurrentContainer {} {
+    variable CurrentContainer
+    AddNotebookPage $CurrentContainer
 }
 
-proc ::RunEnv::AllDisplaysPopup {containerId} {
+proc AllDisplaysPopup {containerId} {
     variable CurrentContainer $containerId
     tk_popup .helpPopup [winfo pointerx .mre] [winfo pointery .mre]
 }
 
-proc RunEnv::AllDisplaysPopupCurrentContainer {} {
+proc AllDisplaysPopupCurrentContainer {} {
     # .helpers.sub2 made by runmodel.tcl AddHelperSublist
     tk_popup .helpers.sub2 [winfo pointerx .mre] [winfo pointery .mre]
 }
 
 # Not used - possibly never will be but is skeleton to use the selection for transfer
 # of copied helper
-proc RunEnv::SelectionHandler {offset maxChars} {
+proc SelectionHandler {offset maxChars} {
     global helperTable
     variable CurrentContainer
     set SelStr [StripCrs $helperTable($CurrentContainer.container,status)]
@@ -309,7 +342,7 @@ proc RunEnv::SelectionHandler {offset maxChars} {
     return [string range $SelStr $offset $last]
 }
 
-proc ::RunEnv::PrintCurrentContainer {} {
+proc PrintCurrentContainer {} {
     global helperTable env tcl_platform
     variable CurrentContainer
     variable canvasId
@@ -321,7 +354,7 @@ proc ::RunEnv::PrintCurrentContainer {} {
         } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
             set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
             namespace eval :: {
-                PrintNow $::RunEnv::canvasId
+                PrintNow $canvasId
             }
         } else {
             ShowMessage Warning warning \
@@ -331,7 +364,7 @@ proc ::RunEnv::PrintCurrentContainer {} {
     }
 }
 
-proc ::RunEnv::CopyHelper {containerId} {
+proc CopyHelper {} {
     global helperTable simtmpdir tcl_platform
     variable CurrentContainer
     variable CurrentHelperId
@@ -354,7 +387,7 @@ proc ::RunEnv::CopyHelper {containerId} {
             } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
                 set canvasId [::${CurrentHelperId}::GetCanvas $CurrentContainer.container]
                 namespace eval :: {
-                    CopyCanvasToWindowsClipboard $::RunEnv::canvasId
+                    CopyCanvasToWindowsClipboard $canvasId
                 }
             } else {
                 ShowMessage Warning warning \
@@ -368,12 +401,12 @@ proc ::RunEnv::CopyHelper {containerId} {
     }
 }
 
-proc ::RunEnv::CutHelper {containerId} {
-    CopyHelper $containerId
+proc CutHelper {} {
+    CopyHelper
     DeleteHelperCurrentContainer
 }
 
-proc ::RunEnv::PasteHelper {containerId} {
+proc PasteHelper {} {
     global helperTable simtmpdir
     variable CurrentContainer
     variable CurrentHelperId
@@ -391,7 +424,7 @@ proc ::RunEnv::PasteHelper {containerId} {
     }
 }
 
-proc ::RunEnv::DeleteHelperContainer {containerId page} {
+proc DeleteHelperContainer {containerId page} {
     global helperTable
     # container is the frame a helper would be displayed in
     # a parent is the notebook or panedwindow the container belongs to
@@ -400,7 +433,7 @@ proc ::RunEnv::DeleteHelperContainer {containerId page} {
     if {![winfo exists $containerId]} {
         return
     }
-    set parentPath [::RunEnv::FindParentpanedwindowOrNotebook $containerId]
+    set parentPath [FindParentpanedwindowOrNotebook $containerId]
     set parentType [winfo name $parentPath]
     set children [winfo children $containerId]
     #ShowMessage debug info "DeleteHelperContainer: $containerId\n \
@@ -417,11 +450,12 @@ proc ::RunEnv::DeleteHelperContainer {containerId page} {
     if {[winfo exists $containerId]} {SetCurrentContainer $containerId }
 }
 
-proc ::RunEnv::DeleteHelperCurrentContainer {} {
-    DeleteHelperContainer $::RunEnv::CurrentContainer {}
+proc DeleteHelperCurrentContainer {} {
+    variable CurrentContainer
+    DeleteHelperContainer $CurrentContainer {}
 }
 
-proc RunEnv::DeleteNotebookPage {notebook page} {
+proc DeleteNotebookPage {notebook page} {
     set pages [$notebook pages]
     #puts "$notebook has pages $pages"
     set n [llength $pages]
@@ -470,7 +504,7 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
     }
 }
 
-proc RunEnv::DeletePane {parentPath containerId} {
+proc DeletePane {parentPath containerId} {
     #ShowMessage debug info "DeletePane\n parentPath $parentPath\n \
     #        containerId $containerId\n \
     #        panes [$parentPath panes]" ok;
@@ -503,7 +537,7 @@ proc RunEnv::DeletePane {parentPath containerId} {
     }
 }
 
-proc RunEnv::SplitPage {containerId orientation} {
+proc SplitPage {containerId orientation} {
     set parentPath [FindParentpanedwindowOrNotebook $containerId]
     if {[string match notebook [winfo name $parentPath]]} {
         #ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
@@ -551,11 +585,12 @@ proc RunEnv::SplitPage {containerId orientation} {
     }
 }
 
-proc RunEnv::SplitCurrentContainer {orientation} {
-    SplitPage $::RunEnv::CurrentContainer $orientation
+proc SplitCurrentContainer {orientation} {
+    variable CurrentContainer
+    SplitPage $CurrentContainer $orientation
 }
 
-proc ::RunEnv::FindParentpanedwindowOrNotebook {containerId} {
+proc FindParentpanedwindowOrNotebook {containerId} {
     #puts "Finding parent for $containerId"
     set parentPath [winfo parent $containerId]
     set parentName [winfo name $parentPath]
@@ -563,62 +598,70 @@ proc ::RunEnv::FindParentpanedwindowOrNotebook {containerId} {
         notebook { return $parentPath }
         panedwindow { return $parentPath }
         "" { return ""}
-        default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
+        default {FindParentpanedwindowOrNotebook $parentPath}
     }
 }
 
-proc ::RunEnv::FindParentPanedwindow {containerId} {
+proc FindParentPanedwindow {containerId} {
     set parentPath [winfo parent $containerId]
     set parentName [winfo name $parentPath]
     switch $parentName {
         panedwindow { return $parentPath }
         "" { return ""}
-        default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
+        default {FindParentpanedwindowOrNotebook $parentPath}
     }
 }
 
-proc ::RunEnv::FindParentNotebook {containerId} {
+proc FindParentNotebook {containerId} {
     set parentPath [winfo parent $containerId]
     set parentName [winfo name $parentPath]
     switch $parentName {
         notebook { return $parentPath }
         "" { return ""}
-        default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
+        default {FindParentpanedwindowOrNotebook $parentPath}
     }
 }
 
-proc ::RunEnv::FindParentNotebookPage {containerId} {
+proc FindParentNotebookPage {containerId} {
     set parentPath [winfo parent $containerId]
     set parentName [winfo name $parentPath]
     switch -glob $parentName {
         fpage* { return $parentPath }
         "" { return ""}
-        default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
+        default {FindParentpanedwindowOrNotebook $parentPath}
     }
 }
 
-proc RunEnv::Destroy {} {
+proc Destroy {} {
     global helperTable window_info model_id
     variable runControlWindId
-    variable mainframe
+    variable currentNode
     
+    set node $currentNode
     # stop the run
-    if {[info exists runControlWindId]} {
-        set ControlSpace $helperTable($runControlWindId,whichHelper)
-        ::${ControlSpace}::Terminate
+    upvar 0 runControlWindId($node) rcw
+    if {[info exists rcw]} {
+        set ControlSpace $helperTable($rcw,whichHelper)
+        ::${ControlSpace}::Terminate $rcw
     }
     
     destroy .helpPopup
     destroy .pageContextMenu
-    KillHelpers
+    KillHelpers $node
     foreach winData [array name window_info *,parent] {
-        set navBar $window_info($winData).toolSlot.navbar
-        $navBar.runenv configure -state disable
+	upvar 0 window_info([string range $winData 0 end-7],whichModel) model
+	if {[info exists model]} {
+	    if {[string equal $node $model]} {
+		set navBar $window_info($winData).toolSlot.navbar
+		$navBar.runenv configure -state disable
+	    }
+	}
     }
-    destroy .mre
+    destroy $helperTable($node,whichRunEnv)
+    unset helperTable($node,whichRunEnv)
 }
 
-proc RunEnv::Addpanedwindow {containerId orientation} {
+proc Addpanedwindow {containerId orientation} {
     set pwidth  [winfo width $containerId]
     set pheight [winfo height $containerId]
     #ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
@@ -655,18 +698,22 @@ proc RunEnv::Addpanedwindow {containerId orientation} {
     return $containerId.panedwindow
 }
 
-proc RunEnv::SetCurrentContainer {win} {
+proc SetCurrentContainer {win} {
     #ShowMessage debug info "SetCurrentContainer $win" ok
-    variable mainframe
+    global helperTable
+    variable currentNode
+    variable CurrentContainer
+    variable CurrentContainers
     if {![string match pane* [winfo name $win]]} {
         return
     }
+    set mainframe $helperTable($currentNode,whichRunEnv).mainframe
     set mreMenu [winfo parent [$mainframe getmenu help]]
     set pw [FindParentPanedwindow $win]
     #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
     set tb1 [$mainframe gettoolbar 0]
     if {[winfo exists $win.container]} {
-#        $mreMenu entryconfigure Add -state disable
+        $mreMenu entryconfigure Add -state disable
         [$mainframe getmenu edit] entryconfigure Copy -state normal
         [$mainframe getmenu edit] entryconfigure Cut -state normal
         [$mainframe getmenu edit] entryconfigure Paste -state disable
@@ -720,11 +767,12 @@ proc RunEnv::SetCurrentContainer {win} {
         }
     }
     focus $win
-    set ::RunEnv::CurrentContainer $win
+    set CurrentContainers($currentNode) $win
+    set CurrentContainer $win
 }
 
 # Return a list of all children, found recursively, of a widget
-proc RunEnv::GetChildren { widget } {
+proc GetChildren { widget } {
     #ShowMessage debug info "GetChildren" ok
     set allChildren [winfo children $widget]
     foreach child $allChildren {
@@ -734,7 +782,7 @@ proc RunEnv::GetChildren { widget } {
 }
 
 # Return a list of all widgets in an input list of a certain widget class
-proc RunEnv::GetWidgetClass {widgetList widgetClass} {
+proc GetWidgetClass {widgetList widgetClass} {
     set classList []
     foreach widget $widgetList {
         if {[string match [winfo class $widget] $widgetClass]} {
@@ -746,7 +794,7 @@ proc RunEnv::GetWidgetClass {widgetList widgetClass} {
 
 # Return a list of all widgets in an input list with a certain name
 # at the end of its path
-proc RunEnv::GetWidgetsWithName {widgetList name} {
+proc GetWidgetsWithName {widgetList name} {
     set nameList []
     foreach widget $widgetList {
         #ShowMessage debug info "$widget\n[lindex [split $widget .] end]" ok
@@ -757,7 +805,7 @@ proc RunEnv::GetWidgetsWithName {widgetList name} {
     return $nameList
 }
 
-proc RunEnv::RemoveHelperPageDlg {} {
+proc RemoveHelperPageDlg {} {
     variable dp0;    # display pane
     variable listboxData {}
     global helperTable
@@ -783,7 +831,7 @@ proc RunEnv::RemoveHelperPageDlg {} {
     destroy $dlg
 }
 
-proc RunEnv::RemoveHelperPageDlgOK {dlg} {
+proc RemoveHelperPageDlgOK {dlg} {
     variable listboxData
     set selection [$dlg.listbox curselection]
     foreach item $selection {
@@ -794,16 +842,16 @@ proc RunEnv::RemoveHelperPageDlgOK {dlg} {
     $dlg enddialog 0
 }
 
-proc RunEnv::CreateDisplayPageContextMenu {} {
+proc CreateDisplayPageContextMenu {} {
     if  {![winfo exists .pageContextMenu]} {
         set m [menu .pageContextMenu -tearoff 0]
         $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
         $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {Table}"
         $m add cascade -label "Choose display to create ..." -menu .helpers.sub2
         $m add separator
-        $m add command -label "Copy display" -command "::RunEnv::CopyHelper $::RunEnv::CurrentContainer"
-        $m add command -label "Cut display" -command "::RunEnv::CutHelper $::RunEnv::CurrentContainer"
-        $m add command -label "Paste display" -command "::RunEnv::PasteHelper $::RunEnv::CurrentContainer"
+        $m add command -label "Copy display" -command ::RunEnv::CopyHelper
+        $m add command -label "Cut display" -command ::RunEnv::CutHelper
+        $m add command -label "Paste display" -command ::RunEnv::PasteHelper
         $m add separator
         $m add command -label "Split page horizontally" -command "::RunEnv::SplitCurrentContainer vertical"
         $m add command -label "Split page vertically" -command "::RunEnv::SplitCurrentContainer horizontal"
@@ -815,15 +863,15 @@ proc RunEnv::CreateDisplayPageContextMenu {} {
     }
 }
 
-proc RunEnv::KillDisplays {} {
+proc KillDisplays {} {
     global helperTable
-    global ::RunEnv::dp0
+    variable dp0
     
-    destroy $RunEnv::dp0.notebook
-    RunEnv::AddNotebook $dp0
+    destroy $dp0.notebook
+    AddNotebook $dp0
 }
 
-proc RunEnv::ChildrenFocusParent {parent} {
+proc ChildrenFocusParent {parent} {
     # despite the inner frame being called the container its the pane
     # could clean up the naming sometime
     set Container [winfo parent $parent]
@@ -835,8 +883,9 @@ proc RunEnv::ChildrenFocusParent {parent} {
     }
 }
 
-proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
+proc NewHelperInWindow {containerId helperId helperTitle} {
     global helperTable
+    variable currentNode
     #ShowMessage debug info "NewHelperInWindow: \
     #        containerId $containerId helperId $helperId helperTitle $helperTitle\n \
     #        containers children: [winfo children $containerId]" ok
@@ -849,51 +898,57 @@ proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
     pack $winId -fill both -expand yes
     set helperTable($helperTitle) $winId
     set helperTable($winId,whichHelper) $helperId
+    set helperTable($winId,whichModel) $currentNode
     bind $winId <Destroy>  "kill_helper_window $winId"
-    RunEnv::SetCurrentContainer [winfo parent $winId]
+    SetCurrentContainer [winfo parent $winId]
     return $winId
 }
 
 #  nameOfHelperStateFile is global because helpers might want to save names of
 # other files they need relative to it, e.g., file param helper
 
-proc RunEnv::SaveView {} {
+proc SaveView {} {
     global helperTable nameOfHelperStateFile
     variable dp0
-    variable mainframe
+    variable currentNode
     
     set nameOfHelperStateFile \
 	[ChooseFile Displays.shf "Save display configuration" 1]
     if {[llength $nameOfHelperStateFile]} {
+	set mainframe $helperTable($currentNode,whichRunEnv).mainframe
         set stream [NetOpen $nameOfHelperStateFile w]
         
+	set mreId $helperTable($currentNode,whichRunEnv)
         # save skeleton mre config
-        puts $stream "[winfo x .mre] [winfo y .mre] [winfo width .mre] [winfo height .mre]"
+        puts $stream "[winfo x $mreId] [winfo y $mreId] \
+[winfo width $mreId] [winfo height $mreId]"
         puts $stream "[[$mainframe getframe].mainpw sash coord 0]"
         puts $stream "[[$mainframe getframe].mainpw.controlPane.panedwindow sash coord 0]"
-        SaveNotebookConfig $dp0.notebook $stream
+        SaveNotebookConfig $dp0.notebook [string length $dp0.] $stream
         
         close $stream
     }
 }
 
-proc RunEnv::SaveNotebookConfig {notebook stream} {
-    puts $stream "notebook $notebook"
+proc SaveNotebookConfig {notebook loss stream} {
+    set nb [string range $notebook $loss end]
+    puts $stream "notebook $nb"
     foreach page [$notebook pages] {
         set pagecaption [$notebook itemcget $page -text]
         regsub -all " " $pagecaption _ noSpcpagecaption
-        puts $stream "page $notebook $page $noSpcpagecaption"
+        puts $stream "page $nb $page $noSpcpagecaption"
         foreach child [winfo children [$notebook getframe $page]]  {
-            puts $stream "$notebook $page $child"
+#            puts $stream \
+#		"$nb $page [string range $child $loss end]"
             switch [winfo name $child] {
                 container {
-                    SaveContainer $child $stream
+                    SaveContainer $child $loss $stream
                 }
                 panedwindow {
-                    SavePanedwindowConfig $child $stream
+                    SavePanedwindowConfig $child $loss $stream
                 }
                 notebook {
-                    SaveNotebookConfig $child $stream
+                    SaveNotebookConfig $child $loss $stream
                 }
                 default {
                     #puts $stream "Unhandled Notebook page child: $child"
@@ -903,20 +958,20 @@ proc RunEnv::SaveNotebookConfig {notebook stream} {
     }
 }
 
-proc RunEnv::SavePanedwindowConfig {panedwindow stream} {
-    puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
+proc SavePanedwindowConfig {panedwindow loss stream} {
+    puts $stream "panedwindow [string range $panedwindow $loss end] [$panedwindow cget -orient]"
     foreach pane [$panedwindow panes] {
-        puts $stream "pane $pane"
+        puts $stream "pane [string range $pane $loss end]"
         foreach child [winfo children $pane] {
             switch [winfo name $child] {
                 container {
-                    SaveContainer $child $stream
+                    SaveContainer $child $loss $stream
                 }
                 panedwindow {
-                    SavePanedwindowConfig $child $stream
+                    SavePanedwindowConfig $child $loss $stream
                 }
                 notebook {
-                    SaveNotebookConfig $child $stream
+                    SaveNotebookConfig $child $loss $stream
                 }
                 default {
                     # puts $stream "Unhandled Notebook page child: $child"
@@ -926,14 +981,14 @@ proc RunEnv::SavePanedwindowConfig {panedwindow stream} {
     }
     for {set index 0} {$index < [expr [llength [$panedwindow panes]]-1]} \
             {incr index} {
-                puts $stream "sash [winfo parent $pane] $index [$panedwindow sash coord $index]"
+                puts $stream "sash [string range [winfo parent $pane] $loss end] $index [$panedwindow sash coord $index]"
             }
 }
 
-proc RunEnv::SaveContainer {winId stream} {
+proc SaveContainer {winId loss stream} {
     global helperTable
     set helperId $helperTable($winId,whichHelper)
-    puts $stream "container [winfo parent $winId]"
+    puts $stream "container [string range [winfo parent $winId] $loss end]"
     puts $stream $helperId
     # substitute <cr>s so entry goes on one line
     # not a toplevel #puts $stream [StripCrs [wm title $winId]]
@@ -945,7 +1000,7 @@ proc RunEnv::SaveContainer {winId stream} {
     }
 }
 
-proc RunEnv::LoadView {} {
+proc LoadView {} {
     set HelperStateFileName \
             [ChooseFile Displays.shf "Open view specification file" 0]
     if {[llength $HelperStateFileName]} {
@@ -953,9 +1008,8 @@ proc RunEnv::LoadView {} {
     }
 }
 
-proc RunEnv::LoadSHF {HelperStateFileName} {
+proc LoadSHF {HelperStateFileName} {
     global helperTable nameOfHelperStateFile errorInfo
-    variable mainframe
     variable dp0
     
     set nameOfHelperStateFile $HelperStateFileName
@@ -968,8 +1022,8 @@ proc RunEnv::LoadSHF {HelperStateFileName} {
             LoadViewFile $stream $line
         } elseif {[llength $line]==1}  {
             # assume that it is an shf made by the multiple window run env
-            destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
-            RunEnv::AddNotebook $dp0
+            destroy $dp0.notebook; #what if there is an error in the file delete MRE, rebuild
+            AddNotebook $dp0
             seek $stream 0 start
             while {[gets $stream helperId] >= 0} {
                 set emptyPage [MainNotebookEmptyPage]
@@ -995,7 +1049,7 @@ proc RunEnv::LoadSHF {HelperStateFileName} {
 		    ChildrenFocusParent $winId
 		}
             }
-            $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
+            $dp0.notebook raise [lindex [$dp0.notebook pages] 0]
             
         } else  {
             ShowMessage Error error "Unknown display configuration file format" ok
@@ -1004,15 +1058,17 @@ proc RunEnv::LoadSHF {HelperStateFileName} {
     }
 }
 
-proc RunEnv::LoadViewFile {stream line} {
+proc LoadViewFile {stream line} {
     global helperTable
-    variable mainframe
     variable dp0
+    variable currentNode
     
-    destroy $RunEnv::dp0.notebook
+    destroy $dp0.notebook
+    set mainframe $helperTable($currentNode,whichRunEnv).mainframe
     # read and set .mre position and size
     scan $line "%i %i %i %i" x y width height
-    wm geometry .mre ${width}x${height}+${x}+${y}
+    wm geometry $helperTable($currentNode,whichRunEnv) \
+	${width}x${height}+${x}+${y}
     
     gets $stream line
     scan $line "%i %i" x y;
@@ -1030,15 +1086,16 @@ proc RunEnv::LoadViewFile {stream line} {
             panedwindow {
                 #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
                 scan $line "%s %s %s" widget path orient
-                panedwindow $path -orient $orient
+                panedwindow $dp0.$path -orient $orient
                 #set containerId [winfo parent $path]
                 #ShowMessage debug info "containerId $containerId" ok
                 #$notebook raise $pageId; # or $panedwindow sash place won't work
-                pack $path -expand yes -fill both
+                pack $dp0.$path -expand yes -fill both
             }
             pane {
                 #%puts $stream "pane $pane"
-                scan $line "%s %s" widget path
+                scan $line "%s %s" widget tail
+		set path $dp0.$tail
                 frame $path -highlightcolor black  -highlightthickness 1
                 set panedwindow [winfo parent $path]
                 $panedwindow add $path
@@ -1047,7 +1104,8 @@ proc RunEnv::LoadViewFile {stream line} {
                         "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
             }
             sash {
-                scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
+                scan $line "%s %s %i %i %i" sash windowtail index sashx sashy
+		set panedwindow $dp0.$windowtail
                 # the page this pane is in must be raised and update called!
                 # or $panedwindow sash place won't work
                 set $notebook [FindParentNotebook $panedwindow]
@@ -1062,7 +1120,8 @@ proc RunEnv::LoadViewFile {stream line} {
             }
             notebook {
                 #puts $stream "notebook $notebook"
-                scan $line "%s %s" widget path
+                scan $line "%s %s" widget tail
+		set path $dp0.$tail
                 NoteBook $path
                 set containerId [winfo parent $path]
                 #ShowMessage debug info "containerId $containerId" ok
@@ -1072,7 +1131,8 @@ proc RunEnv::LoadViewFile {stream line} {
             }
             page {
                 #puts $stream "page $notebook $page $pagecaption"
-                scan $line "%s %s %s %s" widget notebook pageId noSpcpagecaption
+                scan $line "%s %s %s %s" widget nbtail pageId noSpcpagecaption
+		set notebook $dp0.$nbtail
                 regsub -all _ $noSpcpagecaption " " pagecaption
                 
                 #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
@@ -1091,17 +1151,18 @@ proc RunEnv::LoadViewFile {stream line} {
             }
         }
     }
-    $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
+    $dp0.notebook raise [lindex [$dp0.notebook pages] 0]
 }
 
-proc RunEnv::LoadContainer {stream line} {
+proc LoadContainer {stream line} {
     global helperTable
+    variable dp0
     
     #ShowMessage debug info "LoadContainer: stream $stream, line $line" ok
     scan $line "%s %s" item containerId
     gets $stream helperId
     #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
-    set winId [NewHelperInWindow $containerId $helperId ""]
+    set winId [NewHelperInWindow $dp0.$containerId $helperId ""]
     gets $stream oldStatus
     set helperTable($winId,status) [RestoreCrs $oldStatus]
     ${helperId}::Restore $winId
@@ -1109,10 +1170,31 @@ proc RunEnv::LoadContainer {stream line} {
     ChildrenFocusParent $winId
 }
 
-proc NewMreHelperWindow {helperId helperTitle} {
+proc MainNotebookEmptyPage {} {
+    variable dp0
+    foreach page [$dp0.notebook pages] {
+        if {![winfo exists \
+                    [$dp0.notebook getframe $page].panedwindow.pane0.container]} {
+            return [$dp0.notebook getframe $page].panedwindow.pane0
+        }
+    }
+    return none
+}
+
+proc UniqueId {basename pagenames} {
+    # basename is the root of the Id, numbers after / are appended to it
+    # pagenames is the list of existing names
+    set i 1
+    while {[lsearch -exact $pagenames $basename/$i] > -1} {
+        incr i
+    }
+    set title $basename/$i
+}
+} ;# end of namespace RunEnv
+
+proc NewMreHelperWindow {node helperId helperTitle} {
     global helperTable
     variable ::RunEnv::dp0;    # display pane
-    variable ::RunEnv::mainframe
     
     #ShowMessage debug info "NewMreHelperWindow: helperId $helperId; helperTitle $helperTitle" ok
     
@@ -1122,7 +1204,9 @@ proc NewMreHelperWindow {helperId helperTitle} {
         foreach winIdHelper [array name helperTable *,whichHelper] {
             if {[string match $helperTable($winIdHelper) $helperId]} {
                 scan $winIdHelper {%[^,]} winId
-                kill_helper_window $winId
+		if {[string equal $node $helperTable($winId,whichModel)]} {
+		    kill_helper_window $winId
+		}
             }
         }
     }
@@ -1134,16 +1218,16 @@ proc NewMreHelperWindow {helperId helperTitle} {
     ## must each get a new frame (bag) whenever they are rebuilt
     switch $helperId \
 	$helperTable(RunControl) {
-	    set bag $RunEnv::runControlFrame.bag
+	    set bag $RunEnv::runControlFrame($node).bag
 	    if {[winfo exists $bag]} {
 		destroy $bag
 	    }
 	    pack [frame $bag] -fill both -expand on
 	    set winId $bag
-	    set ::RunEnv::runControlWindId $bag
+	    set ::RunEnv::runControlWindId($node) $bag
 	} \
 	$helperTable(VariableList) {
-	    set bag $RunEnv::variableListFrame.bag
+	    set bag $RunEnv::variableListFrame($node).bag
 	    if {[winfo exists $bag]} {
 		destroy $bag
 	    }
@@ -1158,36 +1242,13 @@ proc NewMreHelperWindow {helperId helperTitle} {
         bind $winId <Destroy>  "kill_helper_window $winId"
         bind $winId <Button-1> "+::RunEnv::SetCurrentContainer $winId"
         set helperTable($helperTitle) $winId
-        set helperTable($winId,whichHelper) $helperId
     }
     
     return $winId
 }
 
-
-proc RunEnv::MainNotebookEmptyPage {} {
-    variable dp0
-    foreach page [$dp0.notebook pages] {
-        if {![winfo exists \
-                    [$dp0.notebook getframe $page].panedwindow.pane0.container]} {
-            return [$dp0.notebook getframe $page].panedwindow.pane0
-        }
-    }
-    return none
-}
-
-proc RunEnv::UniqueId {basename pagenames} {
-    # basename is the root of the Id, numbers after / are appended to it
-    # pagenames is the list of existing names
-    set i 1
-    while {[lsearch -exact $pagenames $basename/$i] > -1} {
-        incr i
-    }
-    set title $basename/$i
-}
-
 # A top level window to contain the helpers
 # overrides mre.tcl Makemre
-proc Makemre { } {
-    return [RunEnv::Create]
+proc Makemre { node } {
+    return [RunEnv::Create $node]
 }

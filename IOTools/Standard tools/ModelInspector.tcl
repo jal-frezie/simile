@@ -88,7 +88,8 @@ namespace eval ::ModelInspector63654 {
                 set type [GetModelType $component]; # Simile < 2.7 - not very good
             }
             switch $type {
-                INTERNAL { continue; # don't show internal variables }
+                INTERNAL { continue ;# don't show internal variables
+		}
                 SUBMODEL { set image $im(submodel) }
                 VARIABLE     {set image $im(variable) }
                 COMPARTMENT  {set image $im(compartment) }
@@ -130,11 +131,13 @@ namespace eval ::ModelInspector63654 {
 #	OpenLevel 0; # open up level 0 only (so can see level 1)
         
 	$tableframe.table bindImage <Button-1> \
-		[namespace code "OnElementClick $SubbedComp $component"]
+	    [namespace code "OnElementClick $winId"]
         $tableframe.table bindText <Button-1> \
-		[namespace code "OnElementClick $SubbedComp $component"]
-	    $tableframe.table bindImage <Enter> [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
-	    $tableframe.table bindText <Enter> [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
+	    [namespace code "OnElementClick $winId"]
+	$tableframe.table bindImage <Enter> \
+	    [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
+	$tableframe.table bindText <Enter> \
+	    [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
 	$tableframe.table bindImage <Leave> RemovePopup
 	$tableframe.table bindText <Leave> RemovePopup
     }
@@ -143,37 +146,32 @@ namespace eval ::ModelInspector63654 {
         return ""
     }
 
-    proc OnElementClick { capt node } {
-    global helperTable
-    variable tableframe
-    if {![string match none $helperTable(current)]} {
-        set PathList [split $capt /]
-	set caption [lindex $PathList end]; # just the var name
-	ProdObj $node $caption
-        }
+    proc OnElementClick { winId node } {
+	set caption [$winId.tableframe.table itemcget $node -text]
+	ProdFromHelper $winId $node $caption
     }
     
-	proc DoInspPopup {winId X Y plName} {
-	    global running_c
-#	    ShowMessage debug info $args ok
-	    if {[info exists running_c]} {
-		PostPopup $X $Y
-		set trans [GetTransTable $plName]
-		if {[catch {GetModelValue $winId $plName} mVal]} {
-		    set missing [lindex [split $mVal \"] 1]
-		    set value \
+    proc DoInspPopup {winId X Y plName} {
+	global running_c
+	#	    ShowMessage debug info $args ok
+	if {[info exists running_c]} {
+	    PostPopup $X $Y
+	    set trans [GetTransTable $plName]
+	    if {[catch {GetModelValue $winId $plName} mVal]} {
+		set missing [lindex [split $mVal \"] 1]
+		set value \
 		    "Missing value: [lindex [DescribeComponent $missing] 0]"
-		} else {
-		    set value [lindex [GetModelValue $winId $plName] 0]
-#puts "trans $trans value $value"
-		    if {![string match novalue $value]} {
-			set value [TransEnums $trans $value]
-		    }
+	    } else {
+		set value [lindex [GetModelValue $winId $plName] 0]
+		#puts "trans $trans value $value"
+		if {![string match novalue $value]} {
+		    set value [TransEnums $trans $value]
 		}
-		AddPopupMessage $value \#ffffc0 1
 	    }
+	    AddPopupMessage $value \#ffffc0 1
 	}
-
+    }
+    
     proc Restore {winId} {initialize $winId}
     
     proc OpenLevel {level} {

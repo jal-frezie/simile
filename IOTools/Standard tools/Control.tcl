@@ -12,11 +12,6 @@
 
 set keyValue runcontrol33857
 
-global runState
-set runState(oldIntMethod) Euler
-set runState(intMethod) Euler
-set runState(timeUnit) unit
-
 namespace eval runcontrol33857 {
     variable sendvars
     
@@ -34,31 +29,37 @@ namespace eval runcontrol33857 {
     
     proc SwapDistVar {win} {
         variable sendvars
-        variable timeSteps
+	variable myModel
         set widget [$win.rsf getframe]
+	set node $myModel($win)
+
         set pt [$widget.edit.capt getvalue]
-        $widget.edit.num configure -textvar runState(update[expr $pt+1])
-        set sendvars(captList) {}
-        for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
-            lappend sendvars(captList) \
-                    [list Time step \#$phase {(} $::runState(update$phase) {)}]
+        $widget.edit.num configure -textvar runState($node,update[expr $pt+1])
+        set sendvars($node,captList) {}
+        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+            lappend sendvars($node,captList) \
+		[list Time step \#$phase {(} $::runState($node,update$phase) {)}]
         }
-        $timeSteps configure -values $sendvars(captList)
+        $widget.edit.capt configure -values $sendvars($node,captList)
         focus $widget.edit.num
     }
     
     proc initialize {t} {
         variable sendvars
-        variable timeSteps
+	variable myModel
+        global runState
         global stopImg
         global pauseImg
         global playImg
         #	global runState
         
-        
+        upvar 1 node node
+	set myModel($t) $node
+	set runState($node,oldIntMethod) Euler
+	set runState($node,intMethod) Euler
+	set runState($node,timeUnit) unit
+
         if {[string match $t [winfo toplevel $t]]} {
-            wm protocol $t WM_DELETE_WINDOW \
-                    "[namespace code Terminate]; destroy $t"
             wm title $t "Run control"; # $t isn't a toplevel under MRE
             set geom [PrefValue custom(runControlPosition) runControlPosition]
             if {[string compare default $geom]} {
@@ -85,11 +86,11 @@ namespace eval runcontrol33857 {
         
         frame $rcf.bf
         set cnvs [canvas $rcf.bf.flag -width 12 -height 12]
-        $cnvs create oval 2 2 10 10 -fill [RestingColour]
+        $cnvs create oval 2 2 10 10 -fill [RestingColour $node]
         $cnvs create oval 0 0 12 12 -outline grey
         pack $rcf.bf.flag -side right -anchor e
-        after idle set runState(fractDone) 0
-        pack [ProgressBar $rcf.bf.bar -variable runState(fractDone) \
+        after idle set runState($node,fractDone) 0
+        pack [ProgressBar $rcf.bf.bar -variable runState($node,fractDone) \
                 -maximum 1] -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.bf -side left -fill x -expand true
         
@@ -103,20 +104,20 @@ namespace eval runcontrol33857 {
         set captWidth 20
         pack [frame $rsf.unitselection] -pady 2
         pack [label $rsf.unitselection.caption -text "Select time units" -width $captWidth -anchor w] -side left
-        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
+        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars($node,timeUnit) \
         #                unit second minute hour day week month year Ma
         set widget [ComboBox $rsf.unitselection.pulldown \
-                -textvariable runState(timeUnit) \
+                -textvariable runState($node,timeUnit) \
                 -values {unit second minute hour day week month year Ma}]
         #        $widget setvalue first
         pack $rsf.unitselection.pulldown -side left
         
         pack [frame $rsf.integration] -pady 2
         pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left
-        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
+        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars($node,timeUnit) \
         #                unit second minute hour day week month year Ma
         set widget [ComboBox $rsf.integration.pulldown \
-                -textvariable runState(intMethod) \
+                -textvariable runState($node,intMethod) \
                 -values {Euler {4th-order Runge-Kutta}}]
         #        $widget setvalue first
         pack $rsf.integration.pulldown -side left
@@ -128,21 +129,21 @@ namespace eval runcontrol33857 {
             label $rsf.$name.capt -text $capt -width $captWidth -anchor w
             pack $rsf.$name.capt -side left
             entry $rsf.$name.num -relief sunken \
-                    -textvar runState($var) -width 8
+                    -textvar runState($node,$var) -width 8
             pack $rsf.$name.num -side left
-            label $rsf.$name.unit -textvar runState(timeUnit)
+            label $rsf.$name.unit -textvar runState($node,timeUnit)
             pack $rsf.$name.unit -side left
             pack $rsf.$name  -anchor w -pady 2
         }
-        set sendvars(captList) {}
-        for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
-            lappend sendvars(captList) \
-                    [list Time step \#$phase {(} $::runState(update$phase) {)}]
+        set sendvars($node,captList) {}
+        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+            lappend sendvars($node,captList) \
+                    [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
         }
         pack [frame $rsf.edit] -anchor w -pady 2
-        set timeSteps [ComboBox $rsf.edit.capt -values $sendvars(captList) -editable 0 \
-                -width $captWidth -modifycmd [list [namespace current]::SwapDistVar $t]]
-        pack $timeSteps -side left
+        pack [ComboBox $rsf.edit.capt -values $sendvars($node,captList) \
+		  -modifycmd [list [namespace current]::SwapDistVar $t] \
+		  -editable 0 -width $captWidth] -side left
         pack $rsf.edit.capt -side left
         pack [label $rsf.edit.colon -text " "] -side left
         pack [entry $rsf.edit.num -relief sunken -width 8] -side left
@@ -152,51 +153,48 @@ namespace eval runcontrol33857 {
         pack $t.rsf -padx 1 -pady 1 -fill x
         
         
-        #        set sendvars(timeUnit) unit
-        set sendvars(expected_end) 0
+        #        set sendvars($node,timeUnit) unit
+        set sendvars($node,expected_end) 0
         SendData $t
-        set sendvars(prevDisplay) 0.0
-        set sendvars(currentMode) stop
-    }
-    
-    proc Terminate {} {
-        variable sendvars
-        set sendvars(currentMode) kill
+        set sendvars($node,prevDisplay) 0.0
+        set sendvars($node,currentMode) stop
     }
     
     proc SetMode { winId action } {
-        global runState
         global playImg
         global stopImg
         global pauseImg
+	global runState
         variable sendvars
+	variable myModel
         
-        if {[string match stop $sendvars(currentMode)] || \
-                    [string match exit $sendvars(currentMode)] && \
+	set node $myModel($winId)
+        if {[string match stop $sendvars($node,currentMode)] || \
+                    [string match exit $sendvars($node,currentMode)] && \
                     [string match reset $action]} {
             set widget [$winId.rcf getframe]
-	    switch -regexp [CheckUpToDate $action] {
+	    switch -regexp [CheckUpToDate $node $action] {
 		yes|cancel {
 		    return
 		} no {
-		    if {$runState(modelRunning)==2} {
-			set runState(modelRunning) 3
+		    if {$runState($node,modelRunning)==2} {
+			set runState($node,modelRunning) 3
 		    }
 		} fail {
-		    set sendvars(currentMode) exit
-		    set runState(modelRunning) 0
+		    set sendvars($node,currentMode) exit
+		    set runState($node,modelRunning) 0
 		    $widget.bf.flag itemconfigure 1 -fill red
 		    return
 		}
 	    }
-            if {$runState(modelRunning) == 1} {
+            if {$runState($node,modelRunning) == 1} {
                 ShowMessage "Fixed parameters not loaded" warning \
                         "The model cannot be run because it contains fixed input parameter
 s for which no source has yet been defined" ok
                 return
             }
             if {[string match start $action] && \
-                        [info exists runState(reloadParams)]} {
+                        [info exists runState($node,reloadParams)]} {
                 if {[string compare [ShowMessage "Parameters out of date" warning \
                             "New file parameters will not take effect until the model is reset. Start anyway?" okcancel] ok]} {
                     return
@@ -204,76 +202,78 @@ s for which no source has yet been defined" ok
             }
             
             SendData $winId
-            set sendvars(currentMode) $action
+            set sendvars($node,currentMode) $action
             $widget.topbuttons.start configure -image $pauseImg
 	    $widget.topbuttons.start configure -command \
 		"[namespace current]::SetMode $winId stop"
 
             RollSimulation $winId
-            if {[string match kill $sendvars(currentMode)]} {
-                set sendvars(currentMode) stop
+            if {[string match kill $sendvars($node,currentMode)]} {
+                set sendvars($node,currentMode) stop
             } else {
                 $widget.topbuttons.start configure -image $playImg
 		$widget.topbuttons.start configure -command \
 		    "[namespace current]::SetMode $winId start"
             }
         } else {
-	    set sendvars(currentMode) $action
+	    set sendvars($node,currentMode) $action
         }
     }
     
     proc SendData { winId } {
         global runState redoPhase
         variable sendvars
+	variable myModel
         
-        set phases [GetPhaseCount]
-        set sendvars(newData) \
-                "$runState(timeUnit) $runState(displayInt) \
-                $runState(update$phases) $runState(currentTime) \
-                $runState(execTime)"
+	set node $myModel($winId)        
+        set phases [GetPhaseCount $node]
+        set sendvars($node,newData) \
+                "$runState($node,timeUnit) $runState($node,displayInt) \
+                $runState($node,update$phases) $runState($node,currentTime) \
+                $runState($node,execTime)"
         # This loop sets the array of dts in the model
-        set unitLength [expr [SecondsInA $runState(timeUnit)]/[SecondsInA day]]
+        set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set tweaked 0
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
-            set tick $runState(update$setPhase)
-            #puts "Checking $tick is $runState(prev_update$setPhase) and $runState(currentTime) is $runState(timeAtEval)"
-            if {$runState(prev_update$setPhase) != $tick} {
-                set runState(prev_update$setPhase) $tick
-                SetStep [expr $tick*$unitLength] $setPhase
-                set redoPhase $setPhase
+            set tick $runState($node,update$setPhase)
+            #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
+            if {$runState($node,prev_update$setPhase) != $tick} {
+                set runState($node,prev_update$setPhase) $tick
+                SetStep $node [expr $tick*$unitLength] $setPhase
+                set redoPhase($node) $setPhase
                 set tweaked 1
-                #	    ShowMessage debug info "Twiddling $redoPhase" ok
+                #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
             }
-            if {$runState(timeAtEval) != $runState(currentTime)} {
-                set runState(time$setPhase) $runState(currentTime)
-                SetStep $runState(currentTime) -$setPhase
-                set redoPhase $setPhase
-                #	    ShowMessage debug info "Twiddling $redoPhase" ok
+            if {$runState($node,timeAtEval) != $runState($node,currentTime)} {
+                set runState($node,time$setPhase) $runState($node,currentTime)
+                SetStep $node $runState($node,currentTime) -$setPhase
+                set redoPhase($node) $setPhase
+                #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
             }
         }
 	# allow model to be saved if run settings are changed
-        if {$tweaked || ![string match $runState(oldIntMethod) $runState(intMethod)]} {
-            RunSettingsAllowSave
+        if {$tweaked || ![string match $runState($node,oldIntMethod) $runState($node,intMethod)]} {
+            prolog tk_run_settings_tweaked($node)
         }
-        SetStep 0 0
-        SetState $winId $sendvars(newData)
+        SetStep $node 0 0
+        SetState $winId $sendvars($node,newData)
     }
     
     # Current time display is updated as an idle callback because altering it causes the
     # progress bar to update, which would do all idle callbacks anyway
-    proc UpdateTimes { current left length } {
+    proc UpdateTimes { node current left length } {
         global runState
-        if {[info exists runState(oldTimeCopy)]} {
-            after cancel $runState(oldTimeCopy)
+        if {[info exists runState($node,oldTimeCopy)]} {
+            after cancel $runState($node,oldTimeCopy)
         }
-        set runState(timeAtEval) $current
-        set runState(currentTime) $current
-	set runState(oldTimeCopy) [after idle set runState(fractDone) \
+        set runState($node,timeAtEval) $current
+        set runState($node,currentTime) $current
+	set runState($node,oldTimeCopy) [after idle set runState($node,fractDone) \
 				       [expr 1-(double($left)/$length)]]
-        set runState(execTime) $left
+        set runState($node,execTime) $left
     }
     
-    proc PhaseFor {current step soFar} {
+    proc PhaseFor {node current step soFar} {
         global runState
         set last [expr $current-($step/2.0)]
         set next [expr $last+$step]
@@ -281,14 +281,14 @@ s for which no source has yet been defined" ok
             return 1
         }
         set try [expr $soFar-1]
-        set nextStep $runState(update$try)
+        set nextStep $runState($node,update$try)
         
         set tryCurrent [expr $nextStep*floor($last/$nextStep)]
         set tryNext [expr $nextStep*floor($next/$nextStep)]
         if {$tryCurrent == $tryNext} {
             return $soFar
         } else {
-            return [PhaseFor $tryNext $nextStep $try]
+            return [PhaseFor $node $tryNext $nextStep $try]
         }
     }
     
@@ -297,45 +297,47 @@ s for which no source has yet been defined" ok
     proc RollSimulation { winId } {
         variable sendvars
         global errorInfo redoPhase runState
+	variable myModel
         
-        set phases [GetPhaseCount]
-        set unitLength [expr [SecondsInA $runState(timeUnit)]/[SecondsInA day]]
+	set node $myModel($winId)        
+        set phases [GetPhaseCount $node]
+        set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set widget [$winId.rcf getframe]
-        while {[lsearch {exit stop kill} $sendvars(currentMode)]==-1} {
+        while {[lsearch {exit stop kill} $sendvars($node,currentMode)]==-1} {
             # Collect any changes that have been made by the user
-            if {[info exists sendvars(newData)]} {
-                scan $sendvars(newData) "%s %s %s %s %s" \
+            if {[info exists sendvars($node,newData)]} {
+                scan $sendvars($node,newData) "%s %s %s %s %s" \
                         unit display update current exec
-                unset sendvars(newData)
+                unset sendvars($node,newData)
                 set scaled_current [expr $current*$unitLength]
                 set timeToEnd [expr $update>=0?$exec:-$exec]
-                if {abs($current + $exec - $sendvars(expected_end)) > abs($update/2.0) || ![info exists sendvars(run_length)]} {
-                    set sendvars(run_length) $exec
-                    set sendvars(expected_end) \
+                if {abs($current + $exec - $sendvars($node,expected_end)) > abs($update/2.0) || ![info exists sendvars($node,run_length)]} {
+                    set sendvars($node,run_length) $exec
+                    set sendvars($node,expected_end) \
                             [expr $current + $timeToEnd]
                 }
             }
-            switch $sendvars(currentMode) {
+            switch $sendvars($node,currentMode) {
                 reset {
                     for {set tweakPhase 1} {$tweakPhase <= $phases} \
                             {incr tweakPhase} {
-                                set runState(time$tweakPhase) 0.0
-                                SetStep 0.0 -$tweakPhase
+                                set runState($node,time$tweakPhase) 0.0
+                                SetStep $node 0.0 -$tweakPhase
                             }
                     set current 0.0
-                    set exec $sendvars(run_length)
-                    UpdateTimes $current $exec $sendvars(run_length)
+                    set exec $sendvars($node,run_length)
+                    UpdateTimes $node $current $exec $sendvars($node,run_length)
                     set scaled_current 0.0
-                    if {[info exists runState(reloadParams)]} {
-                        set redoPhase -1
-                        unset runState(reloadParams)
+                    if {[info exists runState($node,reloadParams)]} {
+                        set redoPhase($node) -1
+                        unset runState($node,reloadParams)
                     } else {
-                        set redoPhase 0
+                        set redoPhase($node) 0
                     }
-                    set sendvars(prevDisplay) 0.0
-                    set sendvars(currentMode) stop
-                    #		    if ![do_model advance $scaled_current $redoPhase] {
-                    #			set sendvars(currentMode) exit
+                    set sendvars($node,prevDisplay) 0.0
+                    set sendvars($node,currentMode) stop
+                    #		    if ![do_model advance $scaled_current $redoPhase($node)] {
+                    #			set sendvars($node,currentMode) exit
                     #		    }
                 }
             }
@@ -343,31 +345,31 @@ s for which no source has yet been defined" ok
             # On reset and at start, initialize the model
             # to make sure all the values are set, and initialize displays
             
-            if {[info exists redoPhase]} {
+            if {[info exists redoPhase($node)]} {
                 $widget.bf.flag itemconfigure 1 -fill yellow
                 update
-                if {$redoPhase == -1} {
-                    InitTimeSeries
-                } elseif {$redoPhase == 0} {
-                    ResetTimeSeries
+                if {$redoPhase($node) == -1} {
+                    InitTimeSeries $node
+                } elseif {$redoPhase($node) == 0} {
+                    ResetTimeSeries $node
                 }
-                UpdateTimeSeries 0
-                if ![do_model eval $scaled_current $redoPhase] {
-                    set sendvars(currentMode) exit
+                UpdateTimeSeries $node 0
+                if ![do_model $node eval $scaled_current $redoPhase($node)] {
+                    set sendvars($node,currentMode) exit
                 }
-                if {$redoPhase < 1} {
-                    TellAllHelpers reset
+                if {$redoPhase($node) < 1} {
+                    TellAllHelpers $node reset
                 }
-                TellAllHelpers display $current $display $update
-                unset redoPhase
+                TellAllHelpers $node display $current $display $update
+                unset redoPhase($node)
             }
             
             # Now run the model
-            if {[string match start $sendvars(currentMode)]} {
+            if {[string match start $sendvars($node,currentMode)]} {
                 if {$exec < abs(1.001*$update)} {
                     set step $timeToEnd
-                    set sendvars(currentMode) stop
-                    set exec $sendvars(run_length)
+                    set sendvars($node,currentMode) stop
+                    set exec $sendvars($node,run_length)
                 } else {
                     set step $update
                     set exec [expr $exec - abs($step)]
@@ -377,30 +379,31 @@ s for which no source has yet been defined" ok
                 # Advance time to the end of the tick
                 
                 set current [expr $current + $step]
-                UpdateTimeSeries $current
+                UpdateTimeSeries $node $current
                 set scaled_current [expr $current*$unitLength]
-                UpdateTimes $current $exec $sendvars(run_length)
+                UpdateTimes $node $current $exec $sendvars($node,run_length)
                 
-                set bigPhase [PhaseFor $current $step [expr $phases+1]]
+                set bigPhase [PhaseFor $node $current $step [expr $phases+1]]
                 if {$bigPhase <= $phases} {
                     $widget.bf.flag itemconfigure 1 -fill green
-                    CondUpdate $bigPhase
-                    if {![do_model advance $scaled_current $bigPhase]} {
-                        set sendvars(currentMode) exit
+                    CondUpdate $node $bigPhase
+                    if {![do_model $node advance $scaled_current $bigPhase]} {
+                        set sendvars($node,currentMode) exit
                     }
-                    switch -exact -- $runState(intMethod) {
+                    switch -exact -- $runState($node,intMethod) {
                         Euler {
-                            SetStep 0 0
-                            if {![do_model update $scaled_current $bigPhase]} {
-                                set sendvars(currentMode) exit
+                            SetStep $node 0 0
+                            if {![do_model $node update $scaled_current $bigPhase]} {
+                                set sendvars($node,currentMode) exit
                             }
                         } {4th-order Runge-Kutta} {
-                            if {![RKUpdate $scaled_current $bigPhase $phases]} {
-                                set sendvars(currentMode) exit
+                            if {![RKUpdate $node $scaled_current \
+				      $bigPhase $phases]} {
+                                set sendvars($node,currentMode) exit
                             }
                         } default {
-			    ShowMessage "Execution problem" error "Integration method $runState(intMethod) not supported" ok
-			    set sendvars(currentMode) exit
+			    ShowMessage "Execution problem" error "Integration method $runState($node,intMethod) not supported" ok
+			    set sendvars($node,currentMode) exit
 			}
                     }
                     
@@ -411,20 +414,20 @@ s for which no source has yet been defined" ok
                     
                     for {set tweakPhase $bigPhase} {$tweakPhase <= $phases} \
                             {incr tweakPhase} {
-                                set runState(time$tweakPhase) $scaled_current
-                                SetStep $scaled_current -$tweakPhase
+                                set runState($node,time$tweakPhase) $scaled_current
+                                SetStep $node $scaled_current -$tweakPhase
                             }
-                    if ![do_model eval $scaled_current $bigPhase] {
-                        set sendvars(currentMode) exit
+                    if ![do_model $node eval $scaled_current $bigPhase] {
+                        set sendvars($node,currentMode) exit
                     }
                     # display the results if at a new time, or every time if in static mode
                     set numDisplays [expr floor(($current + $step/2)/$display)]
-                    if {$numDisplays != $sendvars(prevDisplay) || $step == 0} {
+                    if {$numDisplays != $sendvars($node,prevDisplay) || $step == 0} {
                         $widget.bf.flag itemconfigure 1 -fill blue
-                        CondUpdate disp
-                        set sendvars(prevDisplay) $numDisplays
-                        TellAllHelpers display $current $display $step
-                        CondUpdate loop
+                        CondUpdate $node disp
+                        set sendvars($node,prevDisplay) $numDisplays
+                        TellAllHelpers $node display $current $display $step
+                        CondUpdate $node loop
                     }
                 }
                 
@@ -432,82 +435,82 @@ s for which no source has yet been defined" ok
                 # set step [expr $exec>$update?$update:$exec]
             }
         }
-        switch $sendvars(currentMode) {
+        switch $sendvars($node,currentMode) {
             kill {
             } exit {
                 $widget.bf.flag itemconfigure 1 -fill red
             } default {
-                $widget.bf.flag itemconfigure 1 -fill [RestingColour]
+                $widget.bf.flag itemconfigure 1 -fill [RestingColour $node]
             }
         }
     }
     
-    proc RKUpdate {current phase phases} {
+    proc RKUpdate {node current phase phases} {
         global runState
-        SetStep 1 0
-        if ![do_model update $current $phase] {
+        SetStep $node 1 0
+        if ![do_model $node update $current $phase] {
             return 0
         }
         for {set tweakPhase $phase} {$tweakPhase <= $phases} \
                 {incr tweakPhase} {
-                    set interTime [expr ($runState(time$tweakPhase)+$current)/2]
-                    SetStep $interTime -$tweakPhase
+                    set interTime [expr ($runState($node,time$tweakPhase)+$current)/2]
+                    SetStep $node $interTime -$tweakPhase
                 }
-        SetStep 2 0
-        if ![do_model eval $current $phase] {
+        SetStep $node 2 0
+        if ![do_model $node eval $current $phase] {
             return 0
         }
-        if ![do_model update $current $phase] {
+        if ![do_model $node update $current $phase] {
             return 0
         }
-        SetStep 3 0
-        if ![do_model eval $current $phase] {
+        SetStep $node 3 0
+        if ![do_model $node eval $current $phase] {
             return 0
         }
-        if ![do_model update $current $phase] {
+        if ![do_model $node update $current $phase] {
             return 0
         }
         for {set tweakPhase $phase} {$tweakPhase <= $phases} \
                 {incr tweakPhase} {
-                    SetStep $current -$tweakPhase
+                    SetStep $node $current -$tweakPhase
                 }
-        SetStep 4 0
-        if ![do_model eval $current $phase] {
+        SetStep $node 4 0
+        if ![do_model $node eval $current $phase] {
             return 0
         }
-        if ![do_model update $current $phase] {
+        if ![do_model $node update $current $phase] {
             return 0
         }
-        SetStep 1 0
+        SetStep $node 1 0
         return 1
     }
     
     
-    proc CondUpdate {thisOp} {
+    proc CondUpdate {node thisOp} {
         global runState
         
         set flash 20
         # first record how much time the last op took
         set thisUpdate [clock clicks -milliseconds]
-        if {[info exists runState(lastCall)]} {
-            set runState($runState(lastOp),took) \
-                    [expr $thisUpdate-$runState(lastCall)]
-            set currentOld [expr $thisUpdate-$runState(lastUpdate)>$flash]
+        if {[info exists runState($node,lastCall)]} {
+            set runState($node,$runState($node,lastOp),took) \
+                    [expr $thisUpdate-$runState($node,lastCall)]
+            set currentOld [expr $thisUpdate-$runState($node,lastUpdate)>$flash]
         } else {
             set currentOld 1
         }
-        set runState(lastOp) $thisOp
-        set runState(lastCall) $thisUpdate
+        set runState($node,lastOp) $thisOp
+        set runState($node,lastCall) $thisUpdate
         
-        if {[info exists runState($thisOp,took)]} {
-            set startingLong [expr $runState($thisOp,took)>$flash]
+        if {[info exists runState($node,$thisOp,took)]} {
+            set startingLong [expr $runState($node,$thisOp,took)>$flash]
         } else {
             set startingLong 1
         }
         
         if {$currentOld || $startingLong} {
             update
-            set runState(lastUpdate) $thisUpdate
+            set runState($node,lastUpdate) $thisUpdate
         }
     }
     
@@ -525,9 +528,9 @@ s for which no source has yet been defined" ok
         }
     }
     
-    proc RestingColour {} {
+    proc RestingColour {node} {
         global runState
-        return [lindex "grey red black purple" $runState(modelRunning)]
+        return [lindex "grey red black purple" $runState($node,modelRunning)]
     }
     
     # No need to do anything for update, because it updates itself

@@ -5,10 +5,10 @@
 # things to pass information to and from the executing model. These are the new
 # definitions that rae required for this purpose.
 
-proc do_model {what args} {
+proc do_model {node what args} {
     global running_c errorInfo model_id instance_id varName model_prog
     
-    if {![info exists model_id]} {
+    if {![info exists model_id($node)]} {
 	ShowMessage "Model not loaded" error \
 	"This operation cannot be done as there is no model program loaded." \
 	ok
@@ -17,16 +17,16 @@ proc do_model {what args} {
     set mtime [lindex $args 0]
     set mstep [lindex $args 1]
     if {$mstep == -1} {
-	set running_c $model_id
-    } elseif {![info exists running_c]} {
+	set running_c($node) $model_id($node)
+    } elseif {![info exists running_c($node)]} {
 	ShowMessage "Model not running" error \
 	"This operation cannot be done as there is no model program running." \
 	ok
 	return 0
     }
 
-    if {$model_id} {
-	set head [list c_${what}model $model_id $instance_id]
+    if {$model_id($node)} {
+	set head [list c_${what}model $model_id($node) $instance_id($node)]
     } else {
 	if {[string match eval $what]}  {
 	    set mproc int_evalmodel
@@ -36,7 +36,7 @@ proc do_model {what args} {
 	set head ::AME_model<>::$mproc
     }
 
-    if [catch {eval $head $args} whoopsie] {
+    if [catch {eval do_for_node $node $head $args} whoopsie] {
 #	ShowMessage "$whoopsie doing model $what" error \
 #	    "$what during $action of the model at time $mtime caused this: \
 #	    $errorInfo" ok
@@ -48,25 +48,28 @@ proc do_model {what args} {
 	    advance {set operation "advance the time point for"}
 	}
 
-	if {$model_id} {
+	if {$model_id($node)} {
 	    set target "a value"
 	} else {
-	    set modelLine [lindex [split $errorInfo \n] end-5]
+	    set modelLine [lindex [split $errorInfo \n] end-10] ;# was 5
 	    regexp { (\d+)\)$} $modelLine spare lineNo
-	    set mStream [open $model_prog r]
+	    set mStream [open $model_prog($node) r]
 	    set mLine {}
 	    while {![string match "proc $mproc *" $mLine]} {
 		gets $mStream mLine
 	    }
+#puts "found proc $mLine"
 	    for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
 		gets $mStream mLine
 	    }
+#puts "picked line $mLine"
 	    close $mStream
 	    if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
-		set dest [namespace eval AME_model<> "set spare $targetName"]
+		set dest [do_for_node $node namespace eval AME_model<> \
+			      "set spare $targetName"]
 		set targetList [DescribeComponent $dest]
-		if {[catch {GetNodeIdFromRef $dest [lindex $targetList 1]} \
-			 TargetId]} {
+		if {[catch {do_for_node $node GetNodeIdFromRef $dest \
+				[lindex $targetList 1]} TargetId]} {
 		    set target [lindex $targetList 0]
 		    set whoopsie dest_missing
 		} else {
@@ -82,8 +85,8 @@ proc do_model {what args} {
 	    "can't read \"*\": no such variable" {
 		set ref [lindex [split $whoopsie \"] 1]
                 set sourceList [DescribeComponent $ref] 
-		if {[catch {GetNodeIdFromRef $ref [lindex $sourceList 1]} \
-			 TargetId]} {
+		if {[catch {do_for_node $node GetNodeIdFromRef $ref \
+				[lindex $sourceList 1]} TargetId]} {
 		    set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
 		} else {
 		    set vdesc "[lindex $sourceList 0] (node $TargetId)"
@@ -116,7 +119,7 @@ proc do_model {what args} {
 	    -1 {
 		set action initialization
 		set timing {}
-		ScrubRun 0
+		ScrubRun $node 0
 	    } 0 {
 		set action reset
 		set timing {}
@@ -131,17 +134,6 @@ While it was trying to $operation $target during $action of the model$timing, $p
 	return 0
     } else {
 	return 1
-    }
-}
-
-# right now to get the node id
-proc GetNodeIdFromRef {dest indices} {
-    global nodedata nodecount
-    for {set record 0} {$nodecount>$record} {incr record} {
-	if {[string equal $dest [burrow_to ::AME_model<> \
-				    [lindex $nodedata($record) 4] $indices]]} {
-	    return [lindex $nodedata($record) 0]
-	}
     }
 }
 
@@ -180,50 +172,19 @@ proc MakeContext {levels} {
     }
 }
 
-proc SetStep {time phase} {
+proc SetStep {node time phase} {
     global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
+    if {![info exists model_id($node)]} {
+	WarnNoProgram $node
     }
     
-    if {$model_id} {
+    if {$model_id($node)} {
 #puts "setstep $time $phase"
-	c_setstepmodel $time $phase
+	do_for_node $node c_setstepmodel $time $phase
+    } elseif {$phase<0} { ;# lazy
+	do_for_node $node set ts([expr -$phase]) $time
     } else {
-	do_setstepmodel $time $phase
-    }
-}
-
-proc step_incr {step v} {
-    return [expr $v*[glob_element dts $step]]
-}
-
-proc stage_incr {ns_extras step v} {
-    upvar \#0 $ns_extras extras
-    if {![info exists extras]} {
-	set extras [list 0 0]
-    }
-
-    set dv [step_incr $step $v]
-    switch [expr int([glob_element dts 0])] {
-	0 {
-	    return $dv
-	} 1 {
-	    set current_offset [expr $dv/2.0]
-	    set extras [list [expr $dv/6.0] $current_offset]
-	    return $current_offset
-	} 2 {
-	    set current_offset [expr $dv/2.0]
-	    set old_offset [lindex $extras 1]
-	    set extras [list [expr [lindex $extras 0]+$dv/3.0] $current_offset]
-	    return [expr $current_offset-$old_offset]
-	} 3 {
-	    set old_offset [lindex $extras 1]
-	    set extras [list [expr [lindex $extras 0]+$dv/3.0] $dv]
-	    return [expr $dv-$old_offset]
-	} 4 {
-	    return [expr [lindex $extras 0]+$dv/6.0-[lindex $extras 1]]
-	}
+	do_for_node $node set dts($phase) $time
     }
 }
 
@@ -274,7 +235,11 @@ proc TransBounds {transList vals} {
 }
 	    
 proc GetModelTime { winId } {
-    return [GetModelProperty $winId Time]
+    return [GetModelProperty $winId CurrentTime]
+}
+
+proc GetModelEndTime { winId } {
+    return [GetModelProperty $winId EndTime]
 }
 
 # Something like this which just gets model structure we want to be
@@ -338,35 +303,51 @@ proc GetMaxValue {winId node } {
     return [GetModelProperty $winId MaxVal $node]
 }
 
+proc ProdFromHelper {winId node caption} {
+    global helperTable
+    ProdObj $helperTable($winId,whichModel) $node $caption
+}
+
 proc GetModelProperty {winId args} {
+    global helperTable
+    set topNode $helperTable($winId,whichModel)
 # translate from helper window to top node here
-    return [eval GetCompProperty topNode $args]
+    return [eval GetCompProperty $topNode $args]
 }
     
 proc GetCompProperty {topNode prop args} {
-    global model_id
-#puts "Getting top $topNode prop $prop arg0 [lindex $args 0] rest [lrange $args 1 end]"	
-    if {![info exists model_id]} {
-	WarnNoProgram
+    global runState model_id
+#    puts "Getting top $topNode prop $prop arg0 [lindex $args 0] rest [lrange $args 1 end] interps [interp slaves]"	
+    if {![info exists model_id($topNode)]} {
+	WarnNoProgram $topNode
     }
-    if {$model_id} {
-	return [eval GetCCompProperty $topNode $prop $args]
+    switch -regexp $prop {
+	CurrentTime {
+	    return $runState($topNode,currentTime)
+	} EndTime {
+	    return [expr $runState($topNode,currentTime) + \
+			$runState($topNode,execTime)]
+	}
+    }
+       
+    if {$model_id($topNode)} {
+	set result [eval GetCCompProperty $topNode $prop $args]
     } else {
-	return [eval GetTclCompProperty $topNode $prop $args]
+	set result [eval GetTclCompProperty $topNode $prop $args]
     }
+#puts "result $result"
+return $result
 }
 
 proc GetCCompProperty {topNode prop args} {
-    global runState running_c model_id instance_id
-    global nodedata nodecount
+    global running_c model_id instance_id
     set node [lindex $args 0]
     set set [lrange $args 1 end]
     # first do cases that don't need any other data
     switch -regexp $prop {
-	Time {
-	    return $runState(currentTime)
-	} Objects {
-	    return [lrange [listobjects $model_id] 1 end]
+	Objects {
+	    return [lrange [do_for_node $topNode listobjects \
+				$model_id($topNode)] 1 end]
 	} Class|Type|Eval {
 	    array set propData [list Class,cIdx 11 Class,names \
 			    {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
@@ -376,10 +357,10 @@ proc GetCCompProperty {topNode prop args} {
 			    Eval,cIdx 2 Eval,names \
 			    {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST}]
 	    return [lindex $propData($prop,names) \
-			    [getvalue $model_id $node $propData($prop,cIdx)]]
+			    [c_getvalue $topNode $node $propData($prop,cIdx)]]
 	} Dims {
 	    set specials {RECORDS MEMBERS SEPARATE}
-	    set fullList [getvalue $model_id $node 0]
+	    set fullList [c_getvalue $topNode $node 0]
 	    
 	    set idx 0
 	    foreach elt $fullList {
@@ -393,76 +374,85 @@ proc GetCCompProperty {topNode prop args} {
 	    }
 	    return $fullList
 	} Graph {
-	    set index [getvalue $model_id $node 3]
+	    set index [c_getvalue $topNode $node 3]
 	    if {[llength $set]} {
-		eval {setup_graph_data $index} $set
+		eval {do_for_node $topNode setup_graph_data $index} $set
 	    } else {
-		return [graph_table 21 $index]
+		return [do_for_node $topNode graph_table 21 $index]
 	    }
 	} Caption {
-	    return [getvalue $model_id $node 5]
+	    return [c_getvalue $topNode $node 5]
 	} IdFromCapt {
-	    if {[catch {getnodeid $model_id $node} match]} {
+	    if {[catch {do_for_node $topNode getnodeid $model_id($topNode) \
+			    $node} match]} {
 		return nomatch
 	    }
 	    return $match
 	} MinVal {
-	    return [getvalue $model_id $node 6]
+	    return [c_getvalue $topNode $node 6]
 	} MaxVal {
-	    return [getvalue $model_id $node 8]
+	    return [c_getvalue $topNode $node 8]
 	} Value {
 	    if {![info exists running_c]} {
-		WarnNoData
+		WarnNoData $topNode
 	    }	
 	    set newVs [lindex $set 0]
 	    # new version -- remove list wrapping sometime
 	    if {[string length $newVs]} {
-		return [list [insert $model_id $instance_id $node $newVs]]
+		return [list [do_for_node $topNode insert $model_id($topNode) \
+				  $instance_id($topNode) $node $newVs]]
 	    } else {
-		return [list [extract $model_id $instance_id $node]]
+		return [list [do_for_node $topNode extract \
+				  $model_id($topNode) $instance_id($topNode) \
+				  $node]]
 	    }
 	}
     }
 }
+
+# wraps c++ defined version in different interp
+proc c_getvalue {topNode node action} {
+    global model_id
+    return [do_for_node $topNode getvalue $model_id($topNode) $node $action]
+}
 	    
 proc GetTclCompProperty {topNode prop args} {
-    global runState running_c
-    global nodedata nodecount
+    global running_c
     set node [lindex $args 0]
     set set [lrange $args 1 end]
+    set nodecount [do_for_node $topNode set nodecount]
     # first do cases that don't need any other data
     switch -regexp $prop {
-	Time {
-	    return $runState(currentTime)
-	} Objects {
+	Objects {
 	    set result {}
 	    for {set record 1} {$nodecount>$record} {incr record} {
-		lappend result [lindex $nodedata($record) 0]
+		lappend result [lindex [do_for_node $topNode \
+					    set nodedata($record)] 0]
 	    }
 	    return $result
 	} Class|Type|Eval {
 	    array set propData [list Class 7 Type 0 Eval 1]
-	    return [lindex [getinfo $node] $propData($prop)]
+	    return [getinfo $topNode $node $propData($prop)]
 	} Dims {
-	    return [lindex [getinfo $node] 2]
+	    return [getinfo $topNode $node 2]
 	} Graph {
-	    set index [lindex [getinfo $node] 4]
+	    set index [getinfo $topNode $node 4]
 	    if {[llength $set]} {
-		eval {setup_graph_data $index} $set
+		eval {do_for_node $topNode setup_graph_data $index} $set
 	    } else {
-		return [graph_table 21 $index]
+		return [do_for_node $topNode graph_table 21 $index]
 	    }
 	} Caption {
-	    set numericPath [lindex [getinfo $node] 3]
+	    set numericPath [getinfo $topNode $node 3]
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
 	    for {set level 1} {$level < [llength $numericPath] - 1} \
 		{incr level} {
 		    set subpath [lrange $numericPath 0 $level]
 		    lappend subpath 0
 		    for {set record 1} {$nodecount>$record} {incr record} {
-			if {[ListSameNumbers \
-				 [lindex $nodedata($record) 4] $subpath]} {
-			    append fullPath / [lindex $nodedata($record) 9]
+			set line [do_for_node $topNode set nodedata($record)]
+			if {[ListSameNumbers [lindex $line 4] $subpath]} {
+			    append fullPath / [lindex $line 9]
 			    break
 			}
 		    }
@@ -473,8 +463,8 @@ proc GetTclCompProperty {topNode prop args} {
 		error "Could not find caption for node $node"
 	    }
 	} IdFromCapt {
-	    for {set line 1} {$nodecount>$line} {incr line} {
-		set id [lindex $nodedata($line) 0]
+	    for {set record 1} {$nodecount>$record} {incr record} {
+		set id [lindex [do_for_node $topNode set nodedata($record)] 0]
 		if {[string compare $node \
 			 [GetTclCompProperty $topNode Caption $id]] == 0} {
 		    return $id
@@ -482,217 +472,48 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	    return nomatch
 	} MinVal {
-	    lindex [getinfo $node] 5
+	    getinfo $topNode $node 5
 	} MaxVal {
-	    lindex [getinfo $node] 6
+	    getinfo $topNode $node 6
 	} Value {
 	    if {![info exists running_c]} {
-		WarnNoData
+		WarnNoData $topNode
 	    }	
-	    set newVs [lindex $set 0]
-	    set nodeData [getinfo $node]
-	    if {[string compare [lindex $nodeData 0] NULL]} {
-		set type [lindex $nodeData 0]
-		set dims [lindex $nodeData 2]
-		set tree [lindex $nodeData 3]
-		return [list [FillValue ::AME_model<> $tree $type $dims \
-				  {} 0 $newVs]]
-	    } else {
-		return novalue
-	    }
+	    return [do_for_node $topNode tcl_insert $node [lindex $set 0]]
 	}
     }
 }
 	    
-proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
-    upvar 1 $nextRefPtr nextRef
-#puts "FLV $nextRef $listDims $dimPlace"
-    set result {}
-    set smHandle $nextRef
-    set nextElt [set [burrow_to $smHandle {2 0} {}]]
-    set newDimPlace [expr $dimPlace+1]
-    while {[string match $listDims [lrange $nextElt 0 $dimPlace]]} {
-	if {[llength $nextElt] == $newDimPlace} {
-	    set result [FillValue $smHandle $newTree $type $innerDims {} 0 {}]
-	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
-	} else {
-	    set newIndex [lindex $nextElt $newDimPlace]
-	    set subVals [FillListValues nextRef $newTree $type $innerDims \
-				[concat $listDims $newIndex] $newDimPlace]
-	    if {[llength $subVals]} {
-		lappend result $newIndex $subVals
-	    }
-	}
-	if {[string compare $nextRef 0]} {
-	    set smHandle $nextRef
-	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
-	} else {
-	    break
-	}
-    }
-    return $result
+proc getinfo {topNode node field} {
+    do_for_node $topNode getinfo $node $field
 }
-
-proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
-#    puts "filling tree $tree bounds $useDims inds $dims place $dimPlace"
-    set nextUseDim [lindex $useDims 0]
-    if {[lsearch {RECORDS MEMBERS} $nextUseDim]!=-1} {
-	set breakPt [lsearch $tree -1]
-	set oldTree [lrange $tree 0 [expr $breakPt-1]]
-	set newTree [lrange $tree [expr $breakPt+1] end]
-	set nextRef [set [burrow_to $smHandle $oldTree $dims]]
-	set result {}
-	array set arrayVals $newVals
-
-	if {[string compare $nextRef 0]} {
-	    return [FillListValues nextRef $newTree $type \
-			[lrange $useDims 1 end] {} -1]
-	} else {
-	    return
-	}
-
-#	while {[string compare $nextRef 0]} {
-#	    set smHandle ::AME_model<>::$nextRef
-#	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
-#	    lappend result $nextElt
-#	    if {[info exists arrayVals($nextElt)]} {
-#		set eltVals $arrayVals($nextElt)
-#	    } else {
-#		set eltVals {}
-#	    }
-#	    lappend result [FillValue $smHandle $newTree $type \
-#		    [lrange $useDims 1 end] {} 0 $eltVals]
-#	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
-#	}
-#	return $result	    
-    }  elseif {!$nextUseDim} {
-	if {[string match VALUELESS $type]} {
-	    return sm
-	} else {
-	    set tgtVar [burrow_to $smHandle $tree $dims]
-	    set oldVal [set $tgtVar]
-	    if {[llength $newVals]} {
-		set $tgtVar $newVals
-	    }
-	    return $oldVal
-	}
-    } else {
-	array set arrayVals $newVals
-	set result {}
-	for {set nextDim 1} {$nextUseDim>=$nextDim} \
-		{incr nextDim} {
-	    if {[info exists arrayVals($nextDim)]} {
-		set eltVals $arrayVals($nextDim)
-	    } else {
-		set eltVals {}
-	    }
-	    set subVals [FillValue $smHandle $tree $type \
-		    [lrange $useDims 1 end] \
-		    [concat $dims $nextDim] [expr $dimPlace+1] $eltVals]
-	    if {[llength $subVals]} {
-		lappend result $nextDim $subVals
-	    }
-		    
-	}
-	return $result
-    }
-}
-
-proc burrow_to {level id_meta dim_list} {
-    while {[lindex $id_meta 0]>0} {
-	append level ::[${level}::get_pointer [step_list id_meta 1] dim_list]
-	if {[lindex $id_meta 0]==-1} {
-	    set inst1 [set ::$level]
-	    set nInds [llength [set ${inst1}::instanceid]]
-	    append level <[lrange $dim_list 0 [expr $nInds-1]]>
-	    set dim_list [lrange $dim_list $nInds end]
-	    set id_meta [lrange $id_meta 1 end]
-	}
-    }
-    return $level
-}
-	
-proc step_list {dimList climb} {    
-    upvar $climb $dimList useList
-    set head [lindex $useList 0]
-    set useList [lrange $useList 1 end]
-    return $head
-}
-
-# because the data is all in order, this would be nicer if I only went through
-# the table once, adding the names as I found them, but...
-
-# Also note that we start with the numerical path of the top level model so
-# its caption is _not_ included
-	
-# getinfo: this used to be generated, indeed what follows comes from the generator
-# but the value of nodecount was the only thing that ever changed, so now this is
-# just written as a global, as is the data table.
-
-proc getinfo  {nodeName} {
-    global nodedata nodecount
-    for {set record 0} {$nodecount>$record} {incr record} {
-        if {![string compare $nodeName [lindex $nodedata($record) 0]]} {
-            return [lrange $nodedata($record) 1 end]
-        } ;# end(if,![string compare $nodeName [lindex $nodedata($count) 0]])
-    } ;# end(for,count)
-    return [list NULL NULL NULL NULL NULL]
-} ;# end(procedure,getinfo)
-
-# and now that nodedata are variable, I can do interesting stuff
-# like get a node's internal id from its caption pathname, like this. This must
-# have a nice name because it's part of the helper app interface.
 
 # this could be more efficient
 
-proc GetPhaseCount {} {
+proc GetPhaseCount {topNode} {
     global model_id phasecount
-    if {![info exists model_id]} {
-	WarnNoProgram
+    if {![info exists model_id($topNode)]} {
+	WarnNoProgram $topNode
 	return nomatch
     }	
-    if {$model_id} {
-	return [c_setstepmodel 0 0]
+    if {$model_id($topNode)} {
+	return [do_for_node $topNode c_setstepmodel 0 0]
     } else {
-	return $phasecount
+	return [do_for_node $topNode set phasecount]
     }
 }
 
-proc WarnNoProgram {} {
+proc WarnNoProgram {node} {
     global errorInfo
-    error "This operation cannot be done as there is no model program loaded."
+    error "This operation cannot be done as there is no model program loaded for node $node."
 }
 
-proc WarnNoData {} {
-    error "This operation cannot be done as there is no model program running."
+proc WarnNoData {node} {
+    error "This operation cannot be done as there is no model program running for node $node."
 }
 
-# Boot on the other foot now: this is called by the model to get values from
-# the helpers
-
-proc collect {tgt node count args} {
-# ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
-    if {[string match TABLE [GetCompProperty topNode Eval $node]]} {
-	upvar \#0 paramData inputSrc
-    } else {
-	upvar \#0 [InputVarFor topNode $node] inputSrc
-    }
-    set sub [join [concat $node $args] ,]
-# Check that input source exists, it will not if model is being initialized
-    if {[info exists inputSrc($sub)]} {
-	set $tgt $inputSrc($sub)
-    }
-}
-
-proc InputVarFor {topNode node} {	
-    switch [GetCompProperty $topNode Type $node] {
-	FLAG {
-	    return checkStates
-	} ENUMERATED {
-	    return comboChoices
-	} default {
-	    return sliderVals
-	}
-    }
-    
+proc BringParameter {array sub} {
+#puts "looking for $array\($sub\)"
+    upvar \#0 $array inputSrc
+    return $inputSrc($sub)
 }

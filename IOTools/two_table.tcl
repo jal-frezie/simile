@@ -17,7 +17,6 @@ namespace eval $keyValue {
     package require BWidget
     namespace import ::DisplayFormat::*
     
-    
     variable displayFormat; # array of list $formatName $decimalplaces $ShowNegInRed
     # Lists of format names stored in the format array - array names are categories
     # PropertiesDlg uses these categorised lists to fill the list boxes
