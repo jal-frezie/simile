@@ -567,14 +567,16 @@ proc RunEnv::Destroy {} {
     global helperTable modelWin window_info model_id
     variable runControlWindId
     
-# stop the run
-    set ControlSpace $helperTable($runControlWindId,whichHelper)
-    ::${ControlSpace}::Terminate
-
-    foreach helper [array name helperTable *,whichHelper] {
-        scan $helper {%[^,]} winId
-        bind $winId <Destroy> {}; # so the helper notebook pages are not destroyed 2ce - bomb!
+    # stop the run
+    if {[info exists runControlWindId]} {
+        set ControlSpace $helperTable($runControlWindId,whichHelper)
+        ::${ControlSpace}::Terminate
     }
+    
+    #foreach helper [array name helperTable *,whichHelper] {
+    #    scan $helper {%[^,]} winId
+    #    bind $winId <Destroy> {}; # so the helper notebook pages are not destroyed 2ce - bomb!
+    #}
     destroy .pageContextMenu
     KillHelpers
     foreach winData [array name window_info *,parent] {
