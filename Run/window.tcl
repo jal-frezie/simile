@@ -1115,15 +1115,15 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ${winid}top add cascade -label Model -underline 0 \
             -menu ${winid}top.model
     $fm add command -label "Run" \
-            -command "MenuSelect $c file run_c" \
-            -accelerator "Ctrl+B"
-    AddAccelerator $winid model "Run" "<Control-b>"
+                    -command "MenuSelect $c file run_c" \
+                    -accelerator "Ctrl+R"
+    AddAccelerator $winid model "Run" "<Control-r>"
     $fm add command -label "Debug" \
-            -command "MenuSelect $c file run_tcl" \
-            -accelerator "Ctrl+T"
-    AddAccelerator $winid model "Debug" "<Control-t>"
+                    -command "MenuSelect $c file run_tcl" \
+                    -accelerator "Ctrl+D"
+    AddAccelerator $winid model "Debug" "<Control-d>"
     $fm add command -label "Abort execution" \
-            -command "FinishExec $c"
+                    -command "FinishExec $c"
     if {!$isTopLevel} {
         $fm entryconfigure "Build In Tcl" -state disabled
         $fm entryconfigure "Build In C++" -state disabled
