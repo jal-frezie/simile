@@ -144,16 +144,19 @@ proc do_for_node {node args} {
 	$newInterp eval source ../Run/runmodel.tcl
 	$newInterp eval [list set chosenPaths(latest) $chosenPaths(latest)]
 	set runStatus($node,interp) $newInterp
+puts "Opened $newInterp for $node"
     }
     return [$runStatus($node,interp) eval $args]
 }
 
 proc ScrubRun {node times} {
     global runStatus
-    do_for_node $node ScrubRun $times
-    if {[info exists runStatus($node,running)]} {
-	unset runStatus($node,running)
-	ToggleIOToolMenu $node
+    if {[info exists runStatus($node,interp)]} {
+	do_for_node $node ScrubRun $times
+	if {[info exists runStatus($node,running)]} {
+	    unset runStatus($node,running)
+	    ToggleIOToolMenu $node
+	}
     }
 }
 
