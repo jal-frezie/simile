@@ -555,14 +555,14 @@ expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 		    length(GRefs, L);
 		m_update:build_array(any, Dims, Depth),
 	        make_inds_for(Dims, PLoops, Inds)),
-		    PLoops = Loops),
+		    Type-PLoops = Loops),
 	    /* pass dims up the recursion loop */
 	    length(Dims, L),
 	    list_of(x, L, DimB),
 	    append(DimB, _, DimL),
 	    DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, true);
 	Param = (ExpInt=Defn,Use),
-	    member(input_link(_,SubL, ExpInt, Loops, something),
+	    member(input_link(_,SubL, ExpInt, Type-Loops, something),
 		   AllInputs), !,
 	    replace_subexps(Use, dialogue, expand_params,
 			     dim_data(DimL, AllInputs), top_down, _,
@@ -570,7 +570,8 @@ expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 	    replace_subexps(Defn, dialogue, expand_params,
 			     dim_data(SubL, AllInputs), top_down, _,
 			     DefnExpr),
-	    DoneExpr = (param(arr(_,ExpInt,_),_, Loops,_,_)=DefnExpr,UseExpr);
+	    DoneExpr = (param(arr(_,ExpInt,_), Type, Loops,_,_)=DefnExpr,
+			   UseExpr);
 	Param =.. [Cumulative, Item],
 	    member(Cumulative, [sum, product, least, greatest,
 				any, all, count]), !,

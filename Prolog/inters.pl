@@ -593,11 +593,12 @@ make_intermediates(
 	    counterfactual arm of a conditional */
 	
 	Source = (Param=SubExp,Rest), !,
-	    (Param = param(arr(_, Ref, _), _, LoopSlot,_,_); /* parsing */
+	    (Param = param(arr(_, Ref, _), UnitSlot, LoopSlot,_,_);
+		/* parsing */
 	    Param = use_inter(Ref)), /* building code */
 	    make_intermediates(make_inter(SubExp, Ref), SubId, Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
-			Step, Used, _Units, MidInters,
+			Step, Used, UnitSlot, MidInters,
 			part_result(XIContext, SubSetups, _,_)),
 	    compile:remove_non_loopers(XIContext, XILoops),
 	    suffix(XILoops, LoopSlot),
