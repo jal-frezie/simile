@@ -1194,8 +1194,7 @@ start point, allowing it to be used for end-to-end deletes. */
 fast_delete(Dead) :-
 	delete_implicit_node(Dead),
 	state:shows_model(Win,Dead),
-	    state:destroy_window(Win),
-	    maintain:kill_window(Win),
+	    maintain:delete_window(Win),
 	    fail;
 	Dead is_no_longer_model_class;
 	Dead is_connector from In to Out,
@@ -1210,8 +1209,7 @@ superfast_delete(Dead) :-
 	    superfast_delete(AlsoDead),
 	    AlsoDead is_no_longer_model_class,
 	    state:shows_model(Win,AlsoDead),
-	    state:destroy_window(Win),
-	    maintain:kill_window(Win),
+	    maintain:delete_window(Win),
 	    fail;
 	true.
 
@@ -1531,6 +1529,7 @@ make_desktop(Desktop, Canvas_name) :-
 	state:get_initial_window_size(X, Y),
 	image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
 	image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
+	backup:initialize_ring(Desktop),
 	InitDepths=[0,32,32,32,32,32,32,showAll],
 	event:new_window_for(Desktop, Canvas_name, InitDepths, 1),
 	all(state, set_display_depth, [unify(Canvas_name),

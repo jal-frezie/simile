@@ -16,12 +16,11 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	submodel/7, bowtie/6, 
 	flow/5, influence/5, ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
-	tk_add_window/8, tk_delete_window/1, 
-	change_title_to/3, current_edit/2, force_edit/2,
+	tk_add_window/8, change_title_to/3, current_edit/2, force_edit/2,
 	get_component_from_gui/4, 
 	get_text/3, change_text_to/3, 
 	inject_graphics/2, save_canvas/4,
-	tk_grow_canvas/2, tk_display_area/1, tk_update_ability/4,  update_tk/0,
+	tk_grow_canvas/2, tk_display_area/1, tk_update_ability/5,  update_tk/0,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
@@ -38,14 +37,14 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/1,
 	check_directory/1, windowize/2,
 	compile_c_program/2, load_executable/4, find_phase/3,
-	kill_window/1, exit_AME/0]).
+	tk_kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
-	user:tcl_eval(['FilterErrors' | Cmd], Result),
-	(\+ input:log_interaction, !;
-	    backup:into_save_file(safe_tcl_eval(Cmd, Result))).
+	user:tcl_eval(['FilterErrors' | Cmd], Result).
+/*	(\+ input:log_interaction, !;
+	    backup:into_save_file(safe_tcl_eval(Cmd, Result))). */
 
 tk_cursor_in(Win, Cursor) :-
 	safe_tcl_eval([Win, 'config -cursor', Cursor], _).
@@ -223,9 +222,6 @@ tk_add_window(Wid, Title, [L, T, R, B], Cname, BG, Scale, InitDepths, IsTL) :-
 		      CanvasString),
 	name(Cname, CanvasString).
 
-tk_delete_window(Cname) :-
-	safe_tcl_eval([destroy, sqb([winfo, parent, Cname])], _).
-
 change_title_to(Wid, New_title, NewBG) :-
 	safe_tcl_eval(['ChangeParentTitle', Wid, br(write(New_title)), NewBG], _).
 
@@ -279,8 +275,8 @@ save_canvas(Wid, File, Depths, Date) :-
 change_text_to(Wid, Comp, New_title) :-
 	safe_tcl_eval(['ChangeObjectTitle', Wid, Comp, br(write(New_title))], _).
 
-tk_update_ability(Un, Men, Itm, Re) :-
-	safe_tcl_eval(['UpdateAbility', Un, Men, Itm, Re], _).
+tk_update_ability(Wid, Un, Men, Itm, Re) :-
+	safe_tcl_eval(['UpdateAbility', Wid, Un, Men, Itm, Re], _).
 
 update_tk :-
 	safe_tcl_eval([update, idletasks], _).
@@ -528,7 +524,7 @@ separate_with_crs([L | Lrest], [L, chars("\n") | Drest]) :-
 get_tcl_shpiel(ErrChars) :-
 	safe_tcl_eval([set, errorInfo], ErrChars).
 
-kill_window(Win) :-
+tk_kill_window(Win) :-
 	safe_tcl_eval(['ZapWindow', Win], _).
 
 exit_AME :-

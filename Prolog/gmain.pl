@@ -211,29 +211,8 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)), */
-	tcl_eval(['FilterErrors ControlDraw', br(PlogV)], EnvVars),
-	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
-	retractall(version_is(_)),
-	assert(version_is(VStr)),
-	name(E, EStr),
-	state:set_edition(E),
-
-	state:set_mode(none),
-	inters:read_library_funx(LibFuns),
-	dialogue:pass_functions(LibFuns),
-	menu:update_mode(select),
-	m_update:make_desktop(Desktop, Canvas),
-	backup:initialize_ring,
-	state:initialize_phase,
-	name(TempDir, TempStr),
-	backup:retractall(use_temp_dir(_)),
-	backup:assert(use_temp_dir(TempDir)),
-	name(OpenModel, OpenStr),
-	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel); true), !,
-	tcl_eval(['FilterErrors FixSize', Canvas], _),
-	append_atoms(TempDir, '/.lock/', SplashLock),
-	output:trim_tree(SplashLock, ''),
-	tk_main_loop.
+	state:kickoff(PlogV),
+        tk_main_loop.
 
 :- op(500, fx, ['!']).
 /* Works but buggers up GNU prolog (do after loading?) */

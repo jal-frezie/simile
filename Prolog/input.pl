@@ -6,25 +6,27 @@ identical to that in which they are used. Where this is the case, the calls from
 use goals that start with "tk_" to make the diffreence clear.
 */
 
-sicstus_module(input, [tk_undo/1, tk_redo/1, tk_get_info/3, tk_get_params/2,
+sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3, tk_get_params/2,
 	tk_click_obj/5, tk_click/3, tk_doubleclick/3, tk_unclick/2, 
 	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5,
 	tk_embrace/2, tk_abandon/0, tk_abandon_eqn/0,
 	compile_to_file/1, tk_off_window/1, tk_kill_everything/0,
 	tk_set_new_size/4, tk_change_size/4,  set_style/1]).
 
-sicstus_use_module([backup, event, menu]).
+sicstus_use_module([library(lists), backup, event, menu]).
 
-tk_undo(Wids) :-
+tk_undo(Cur, Wids) :-
 	show_wait_cursor,
-	finish_window_resize,
-	undo_edit(Wids),
+	nth0(Cur, Wids, Wid),
+	finish_window_resize(Wid),
+	undo_edit(Wid, Wids),
 	show_normal_cursor.
 
-tk_redo(Wids) :-
+tk_redo(Cur, Wids) :-
 	show_wait_cursor,
-	finish_window_resize,
-	redo_edit(Wids),
+	nth0(Cur, Wids, Wid),
+	finish_window_resize(Wid),
+	redo_edit(Wid, Wids),
 	show_normal_cursor.
 
 tk_get_info(Wid, Comp, What) :-
@@ -36,9 +38,10 @@ tk_get_params(Wid, Comp) :-
 :- dynamic(log_interaction/0).
 
 tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
-	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)),
+/* Extra debugging data not put into save file while swapping to MDI
+	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)), */
 	prioritize_window(Wid),
-	finish_window_resize,
+	finish_window_resize(Wid),
 	(Action = click,
 		click_obj(Virt_X, Virt_Y, Name);
 	Action = clicktext,
@@ -49,43 +52,43 @@ tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
 	    retract(log_interaction)).
 
 tk_click(Wid, Virt_X, Virt_Y) :-
-	into_save_file(tk_click(Wid, Virt_X, Virt_Y)),
+/*	into_save_file(tk_click(Wid, Virt_X, Virt_Y)), */
 	prioritize_window(Wid),
-	finish_window_resize,
+	finish_window_resize(Wid),
 	click(Virt_X, Virt_Y).
 
 tk_doubleclick(Wid, Virt_X, Virt_Y) :-
-	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)),
+/*	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)), */
 	show_wait_cursor,
-	finish_window_resize,
+	finish_window_resize(Wid),
 	asserta(log_interaction),
 	doubleclick(Virt_X, Virt_Y),
 	retract(log_interaction),
 	show_normal_cursor.
 
-tk_unclick(X, Y) :- 
-	into_save_file(tk_unclick(X, Y)),
+tk_unclick(_X, _Y) :- 
+/*	into_save_file(tk_unclick(X, Y)), */
 	unclick.
 
 tk_drag(Virt_X, Virt_Y) :-
 	drag(Virt_X, Virt_Y).
 
 tk_menu(Window, Header, Item) :-
-	into_save_file(tk_menu(Window, Header, Item)),
+/*	into_save_file(tk_menu(Window, Header, Item)), */
 	show_wait_cursor,
-	finish_window_resize,
+	finish_window_resize(Window),
 	finish_old_edit(none),
 	menu_handle(Window, Header, Item),
 	show_normal_cursor.
 
 tk_menu_select(Obj_type, from_box) :-
-	into_save_file(tk_menu_select(Obj_type, from_box) ),
+/*	into_save_file(tk_menu_select(Obj_type, from_box) ), */
 	show_wait_cursor,
 	menu_select(Obj_type),
 	show_normal_cursor.
 
 tk_mode_select(Mode) :-
-	into_save_file(tk_mode_select(Mode)),
+%%	into_save_file(tk_mode_select(Mode)),
 	show_wait_cursor,
 	mode_select(Mode),
 	show_normal_cursor.
@@ -97,9 +100,10 @@ tk_visible(Wid, L, T, R, B) :-
 	    asserta(resizing_windows)),
 	adjust_display_area(Wid, [L, T, R, B]).
 
-finish_window_resize :-
+finish_window_resize(Wid) :-
 	\+ retract(resizing_windows), !;
-	finish_move(none).
+	state:Wid shows_model Model,
+	finish_move(Model).
 
 tk_embrace(Wid, Comp) :-
 	prioritize_window(Wid),
@@ -123,7 +127,7 @@ tk_change_size(Node, New_size, XDefOffset, YDefOffset) :-
 	show_normal_cursor.
 
 tk_off_window(Wid) :-
-	into_save_file(tk_off_window(Wid)),
+%%	into_save_file(tk_off_window(Wid)),
 	finish_old_edit(none),
 	off_window(Wid).
 

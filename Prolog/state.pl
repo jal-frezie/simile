@@ -6,7 +6,7 @@ interaction with the application, and provides predicates to make this info
 available to the other modules that use it.
 */
 
-sicstus_module(state, [get_initial_window_size/2, create_window/2, 
+sicstus_module(state, [kickoff/1, get_initial_window_size/2, create_window/2, 
 	destroy_window/1,
 	clear_model_file/1, set_model_file/2, get_model_file/2, get_edition/1,
 	kill_windows/0, shows_model/2, monitors_variable/2,
@@ -29,6 +29,29 @@ sicstus_module(state, [get_initial_window_size/2, create_window/2,
 	change_style/1, get_style/1]).
 
 sicstus_use_module(library(lists)).
+
+kickoff(Vnum) :-
+	output:safe_tcl_eval(['ControlDraw', br(Vnum)], EnvVars),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
+	retractall(version_is(_)),
+	assert(version_is(VStr)),
+	name(E, EStr),
+	set_edition(E),
+
+	set_mode(none),
+	inters:read_library_funx(LibFuns),
+	dialogue:pass_functions(LibFuns),
+	menu:update_mode(select),
+	m_update:make_desktop(Desktop, Canvas),
+	initialize_phase,
+	name(TempDir, TempStr),
+	backup:retractall(use_temp_dir(_)),
+	backup:assert(use_temp_dir(TempDir)),
+	name(OpenModel, OpenStr),
+	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel); true), !,
+	output:safe_tcl_eval(['FixSize', Canvas], _),
+	utility:append_atoms(TempDir, '/.lock/', SplashLock),
+	output:trim_tree(SplashLock, '').
 
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).

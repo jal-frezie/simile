@@ -18,17 +18,17 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		get_component_from_gui/4, get_text/3,
 		find_relevant_windows/4, update_captions/1, 
 		update_color/1, shift_images/3,
-		give_focus/1, update_ability/4, scrub_run/1, kill_helpers/0,
+		give_focus/1, update_ability/5, scrub_run/1, kill_helpers/0,
 		display_mode/1, display_menu/1, off/1, off_all/1, 
 		move_text/2, move_display/2, reroute_display/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
 		add_window/8, redraw_window/1, inject_graphics/2,
 		display_area/1,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
-		highlight/2, normalize/1, current_edit/2, exterminate/1,
+		highlight/2, normalize/1, current_edit/2,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
-		tk_get_pref/2, kill_window/1, exit_AME/0,
+		tk_get_pref/2, exit_AME/0,
 	tk_equationlisting_start/0,tk_equationlisting_addsubmodel/2,
 	tk_equationlisting_addvariable/10]).
 
@@ -55,8 +55,12 @@ update_captions(Model) :-
 	    fail;
 	true).
 
-update_ability(Un, Men, Itm, Re) :-
-	tk_update_ability(Un, Men, Itm, Re).
+update_ability(Model, Un, Men, Itm, Re) :-
+	Win shows_model SubModel,
+	contains(Model, SubModel),
+	tk_update_ability(Win, Un, Men, Itm, Re),
+	fail;
+	true.
 
 display_mode(New_mode) :-
 	tk_display_mode(New_mode).
@@ -247,7 +251,7 @@ give_focus(Obj) :-
 
 /* exterminate: removes deleted stuff from the screen. Includes recursive calls to match the recursive action of deletion from model.
 
-first blow away windows, this saves work. */
+first blow away windows, this saves work.
 
 exterminate(Obj) :-
 	Win shows_model Obj,
@@ -267,7 +271,7 @@ exterminate(Obj) :-
 
 exterminate(_).
 
-/* add_caption: This is somewhat tricky as most of our GUI languages support the user directly editing the names of the components, and indeed, 
+add_caption: This is somewhat tricky as most of our GUI languages support the user directly editing the names of the components, and indeed, 
 Powersim does this. Still, we must simply call a textual output device, and when the user changes the name of the component we will end up coming through here, where a pre-draw check will (in the tk case) show us that the name has already changed, thus not needing further interference. 
 */
 
@@ -317,7 +321,7 @@ redraw_window(_) :- !.
 
 delete_window(Wid) :-
 	destroy_window(Wid),
-	tk_delete_window(Wid).
+	tk_kill_window(Wid).
 
 scrub_run(Times) :- tk_scrub_run(Times).
 kill_helpers :- tk_kill_helpers.

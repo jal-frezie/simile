@@ -10,6 +10,10 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.5  2003/11/26 17:16:55  jaspert
+#Sorted out undo/redo/restore for multiple toplevel windows
+#Model inspector popups now translate enumerated types
+#
 #Revision 1.4  2003/11/20 13:37:33  jaspert
 #Enabled the MDI interface -- use 'new top-level'
 #
@@ -217,7 +221,10 @@ namespace eval ::ModelInspector63654 {
 #	    ShowMessage debug info $args ok
 	    if {[info exists running_c]} {
 		PostPopup $X $Y
-		AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
+		set trans [GetFromProlog tk_get_info(dummy,$plName,types)]
+		set value [TransEnums $trans \
+			       [lindex [GetModelValue $plName] 0]]
+		AddPopupMessage $value \#ffffc0 1
 	    }
 	}
 

@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
-	undo_edit/1, redo_edit/1, menu_select/1, mode_select/1,
+	undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
 	off_window/1, kill_everything/0, set_style/1]).
 	
@@ -35,30 +35,35 @@ show_normal_cursor :-
 	fail;
 	true.
 
-undo_edit(Wids) :-
-	go_back(Further),
+undo_edit(Wid, Wids) :-
+	Wid shows_model ClickedModel,
+	contains(Model, ClickedModel),
+	is_toplevel(Model),
+	go_back(Model, Further),
 	all(menu, check_exist, [build(Wids)]),
 	redraw_window(_),
-	update_ability(undo, edit, 'Undo', Further),
-	update_ability(redo, edit, 'Redo', 1),
+	update_ability(Model, undo, edit, 'Undo', Further),
+	update_ability(Model, redo, edit, 'Redo', 1),
 	save_allowed(CanSave),
-	update_ability(save, file, 'Save', CanSave).
+	update_ability(Model, save, file, 'Save', CanSave).
 
-redo_edit(Wids) :-
-	go_forward(Further),
+redo_edit(Wid, Wids) :-
+	Wid shows_model ClickedModel,
+	contains(Model, ClickedModel),
+	is_toplevel(Model),
+	go_forward(Model, Further),
 	all(menu, check_exist, [build(Wids)]),
 	redraw_window(_),
-	update_ability(undo, edit, 'Undo', 1),
-	update_ability(redo, edit, 'Redo', Further),
+	update_ability(Model, undo, edit, 'Undo', 1),
+	update_ability(Model, redo, edit, 'Redo', Further),
 	save_allowed(CanSave),
-	update_ability(save, file, 'Save', CanSave).
+	update_ability(Model, save, file, 'Save', CanSave).
 
 check_exist(Wid) :-
 	Wid shows_model Mod,
 	(get_shape(Mod, internal_extent, Rect), !,
 	    output:tk_grow_canvas(Wid, Rect);
-	destroy_window(Wid),
-	    kill_window(Wid)).
+	delete_window(Wid)).
 	
 menu_select(Seln) :-
 	update_mode(add),
@@ -113,23 +118,21 @@ stick_model_in(Parent, Name) :-
 	    /* date not needed */
 	    output:my_delete_file(PrologData),
 
-	    ((get_av_pair(Parent, 0, separate, 1); is_toplevel(Parent)), !,
-		TryDll = '';
-	    TryDll = 0),
-	    add_parameter(Parent, 1, c_new, TryDll),
-
 	    /* Now if the saved model has any images these will be in the top
 	    dir (fttb) so get them loaded */
 	    transfer_images(Parent, TargetDir, in),
 		  
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	    (Translated = false,
+		TryDll = '',
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 		output:my_file_exists(GraphFileName), !,
 		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName);
 	    /* this should call Prolog back with the display detail vals */
-	    NeedsRedraw = 1),
+	    TryDll = 0,
+		NeedsRedraw = 1),
+	    add_parameter(Parent, 1, c_new, TryDll),
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
@@ -761,8 +764,9 @@ not_runnable(Model) :-
 */
 
 check_deletable(Win, Parent) :-
-	(get_save_status(Win, safe), !;
-		ok_to_delete(Parent)).
+	(\+ find_all_comps(Parent, _), !;
+	    get_save_status(Win, safe), !;
+	    ok_to_delete(Parent)).
 
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
@@ -805,6 +809,7 @@ delete_tree(Target) :-
 	find_type(Target, submodel),
 	    caption_for(Target, Caption),
 	    sicstus_format_to_chars("Deleting submodel ~a", [Caption], Ms),
+	    clear_model_file(Target),
 	    reassure_user(Ms),
 	    fail;
 	find_all_links(Target, Comp),
@@ -842,15 +847,14 @@ off_window(Win) :-
 	(is_toplevel(Model), !,
 	    check_deletable(Win, Model),
 	    start_progress_dialogue,
+	    scrub_autosave(Model),
 	    superfast_delete(Model),
 	    delete_tree(Model),
-	    scrub_autosave(Model),
 	    finish_progress_dialogue,
 	    (is_toplevel(_Remains), !;
 		exit_AME,
 		user:wind_up);
-	destroy_window(Win),
-	    kill_window(Win)).
+	delete_window(Win)).
 
 kill_everything :-
 	Win shows_model Model,
@@ -916,7 +920,7 @@ do_save(Model, New_name) :-
 	set_model_file(Model, Name),
 	update_captions(Model),
 	clear_autosave(Model, Name),
-	update_ability(save, file, 'Save', 0),
+	update_ability(Model, save, file, 'Save', 0),
 	mark_model_danger(Model, safe),
         finish_progress_dialogue, !;
         finish_progress_dialogue, fail.

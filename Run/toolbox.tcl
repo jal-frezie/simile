@@ -1060,8 +1060,8 @@ proc MenuSelect { window button item } {
 proc DoLocalCmd {win item} {
     global pushedbutton
     switch $item {
-	undo {UnOrReDo 0}
-	redo {UnOrReDo 1}
+	undo {UnOrReDo $win 0}
+	redo {UnOrReDo $win 1}
         print {PrintNow $win}
         rerun {Rerun $win 1}
         zoomin {DoZoom $win 1.414214 1}
@@ -1145,16 +1145,17 @@ proc SaveAll {} {
 }
 
 
-proc UnOrReDo {fwd} {
+proc UnOrReDo {curWin fwd} {
     global window_info
     foreach win [array names window_info *,parent] {
 	lappend canList '[lindex [split $win ,] 0]'
     }
+    set curPos [lsearch $canList '$curWin']
     set canArgs [join $canList ,]
     if {$fwd} {
-	prolog tk_redo(\[$canArgs\])
+	prolog tk_redo($curPos,\[$canArgs\])
     } else {
-	prolog tk_undo(\[$canArgs\])
+	prolog tk_undo($curPos,\[$canArgs\])
     }
 }
 
@@ -1775,16 +1776,14 @@ proc Rerun {winId go} {
     }
 }
 
-proc UpdateAbility {what where which whether} {
+proc UpdateAbility {c what where which whether} {
     global window_info
-    foreach winData [array name window_info *,parent] {
-        set winId $window_info($winData)
-        set newState [ChooseText $whether normal disabled]
-        ${winId}top.$where entryconfigure $which -state $newState
-        AcceleratorState $winId $where $which $newState
-        set navBar $winId.toolSlot.navbar
-        $navBar.$what configure -state $newState
-    }
+    set winId $window_info($c,parent)
+    set newState [ChooseText $whether normal disabled]
+    ${winId}top.$where entryconfigure $which -state $newState
+    AcceleratorState $winId $where $which $newState
+    set navBar $winId.toolSlot.navbar
+    $navBar.$what configure -state $newState
 }
 
 proc ToggleIOToolMenu {on} {

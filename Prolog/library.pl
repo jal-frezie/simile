@@ -27,7 +27,7 @@ ame_save( File, Model, Date ) :-
 	on_exception(_, open(WFile, write, Stream), 
 	fail), !,
 	(dialogue:reassure_user("Writing root information"),
-	user:version_is(VStr),
+	state:version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
 	state:get_edition(Edition),
@@ -252,7 +252,7 @@ ame_merge( Parent, File, Date, HasCode, Translated ) :-
 	(SimileV >= 4.0, !;
 	dialogue:reassure_user("Updating pre-Simile 4.0 model representation"),
 	    adjust_to_8),
-	user:version_is(MyVStr),
+	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
 	sicstus_format_to_chars("This file was created with a later version of Simile than the one you are currently running. To avoid potential problems, please update your copy to version ~f or later.", [SimileV], FutureShock),

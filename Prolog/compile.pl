@@ -261,7 +261,7 @@ bits and pieces */
 	all(compile, insert_enum_phases, [build(VMSPs), unify(StateForm)]),
 	all(compile, insert_enum_phases, [build(VMSPs), unify(SortedForm)]),
 
-	user:version_is(VStr),
+	state:version_is(VStr),
 	name(V, VStr),
 	render(Language, variable_declaration,
 	       [real, simile_version, [], V], 0, [VersionDec]),
