@@ -385,6 +385,7 @@ menu_handle(Win, file, list_eqnsxxx) :-
 %################################### Bob's changes: end
 
 menu_handle(Win, file, prolog_eqns) :-
+	start_progress_dialogue,
 	Win shows_model Model,
 	get_default_export_name(Model, ".pl", DefName),
 	get_program_file(DefName, FileName),
@@ -397,7 +398,8 @@ menu_handle(Win, file, prolog_eqns) :-
 	write_with_breaks(Stream, submodel_equation_list(SmCapt, EqnTerms)),
 	nl(Stream),
 	fail;
-	close(Stream)).
+	close(Stream),
+	finish_progress_dialogue).
 
 menu_handle(Win, file, export_prolog) :-
 	Win shows_model Model,
