@@ -2053,7 +2053,10 @@ proc newInt {} {
 proc FilterErrors {args} {
     global errorInfo
     if {[catch $args retVal]} {
-	bgerror $retVal
+	set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
+	if {[string match yes $ans]} {
+	    ErrorHelp $errorInfo
+	}
     } else {
 	return $retVal
     }

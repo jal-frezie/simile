@@ -1002,7 +1002,7 @@ proc DoRegDialog {} {
 }
 
 proc ContextSensitiveHelp {context page} {
-    global tcl_platform help
+    global tcl_platform helphtml
     if {[string match windows $tcl_platform(platform)]} {
         package require winhelp
         winhelp $context ../Help/simile.chm $page
@@ -1012,7 +1012,7 @@ proc ContextSensitiveHelp {context page} {
 	cd ../Help
 	toplevel .hlpWindow 
 	wm title .hlpWindow {Simile help file}
-	wm protocol .hlpWindow WM_DELETE_WINDOW {set help(done) 0}
+	wm protocol .hlpWindow WM_DELETE_WINDOW {set helphtml(done) 0}
 	html .hlpWindow.main -base file:[pwd]/$page \
 	    -hyperlinkcommand GoHyper -resolvercommand ResolveHyper \
 	    -isvisitedcommand CheckHyper -unvisitedcolor blue \
@@ -1028,7 +1028,7 @@ proc ContextSensitiveHelp {context page} {
 	close $stream
 	tkwait visibility .hlpWindow
 	grab .hlpWindow
-	tkwait variable help(done)
+	tkwait variable helphtml(done)
 	grab release .hlpWindow
 	destroy .hlpWindow
 	cd $oldDir
@@ -1046,4 +1046,41 @@ proc GoHyper {ywhat} {
 proc ResolveHyper {args} {
     ShowMessage debug info "Resolving $args" ok
     return {}
+}
+
+proc ErrorHelp {diagnostic} {
+    global diagno help
+    toplevel .diag
+    wm title .diag {Error diagnostics}
+    wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
+    pack [message .diag.m -text "This is the full text of the error report."]
+    pack [frame .diag.f -height 4]
+    text .diag.f.e -height 4 -yscrollcommand [list .diag.f.y set]
+    .diag.f.e insert 1.0 $diagnostic
+    scrollbar .diag.f.y -command [list .diag.f.e yview]
+    pack .diag.f.y -side right -fill y -expand true
+    pack .diag.f.e -fill x -expand true
+
+    pack [message .diag.m2 -text "The following relevant help topics were found:"]
+    pack [listbox .diag.l]
+    bind .diag.l <ButtonRelease-1> {GetHelp}
+    pack [button .diag.b -text Done -command {set diagno(done) 0}]
+
+    foreach key [array names help] {
+	if {[regexp $key $diagnostic]} {
+	    .diag.l insert end $help($key)
+	}
+    }
+    tkwait visibility .diag 
+    grab .diag
+    tkwait variable diagno(done)
+    unset diagno(done)
+    grab release .diag
+    destroy .diag
+}
+	      
+proc GetHelp {} {
+    global SIMILE_PATH
+    cd $SIMILE_PATH/help
+    ContextSensitiveHelp .diag [.diag.l get [.diag.l curselection]]
 }

@@ -88,3 +88,5 @@ set msgs(flip_h) "Flip the model diagram horizontally"
 set msgs(zoomin) "Zoom in"
 set msgs(zoomfit) "Zoom to fit"
 set msgs(zoomout) "Zoom out"
+
+set help(g\\+\\+) "run/index.htm"
