@@ -16,11 +16,14 @@ proc equationGraph {parent} {
     toplevel .graph -class graphEntry -bd 4
     wm transient .graph $parent
     wm protocol .graph WM_DELETE_WINDOW {set graph(done) 0}
+# One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size    
+#    wm geometry .graph 640x480
     focus .graph
     grab .graph
     if {![info exists graph(pts)]} {
-	# set default values for new graph
-	GraphEntry .graph 0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
+# set default values for new graph
+# Changed default size to 50x50 to let it fit into MRE
+	GraphEntry .graph 0 100 50 100 0 50 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
     } else {
 	GraphEntry .graph $graph(lowx) \
 		$graph(highx) $graph(width) \
