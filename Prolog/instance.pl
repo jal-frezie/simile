@@ -459,8 +459,8 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % are little lists not atoms now.
 
 process_expr(TableValues, Var, NewVar, Recurse) :-
-	m_update:get_solo_list_depth(Var, Dims),
-	    NewVar = input(_, Var,_, Dims),
+	m_update:get_solo_list_depth(Var, DimExp),
+	    NewVar = input(_, Var, _, DimExp),
 	    Recurse = 0;
 	Var = size(_), Recurse = 0;
 	build_table_ref(TableValues, Var, NewVar), Recurse = 1.

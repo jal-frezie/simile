@@ -13,11 +13,12 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	copy_term(DestPathForm, DestPath),
 	
 	(replace_subexps(Expr, inters, insert_paths,
-		sub(DestRef, Swaps, _II), top_down, _, FullExpr), !;
+		sub(DestRef, Swaps, ExpInters), top_down, _, FullExpr),
+	    length(ExpInters, _L), !;
 	raise_exception(preprocessor_failure(Target))),
 
 	(on_exception(_, make_intermediates(FullExpr, Target, DestPath,
-		BackSwap, [], [], Step, Used, _, AllInters,
+		BackSwap, ExpInters, [], Step, Used, _, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula)),
 		      fail);
 	sicstus_format_to_chars("Simile failed to convert the equation for component \"~a\" into executable code. See progress box for the location of this component. This is probably because changes were made elsewhere in the model since this component was defined, and as a result its equation no longer makes sense. You should edit the equation again.", [Target], MesgStr),
@@ -89,11 +90,13 @@ insert_paths(sub(DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    append(LocalLoops, Path, Loops),
 	    NewVar = param(arr(SmPtr, Ref, Inds), Type, Loops, BackSwap, Wait),
 	    Recurse = 0;
-	Var = input(_, Ref, _, DimExp),
+	(m_update:get_solo_list_depth(Var, DimExp),
+	    Ref = Var; /* inter in macro */
+	Var = input(_, Ref, _, DimExp)),
 	    m_update:build_array(any, Dims, DimExp),
-	    NewVar = make_inter(_, Ref),
+	    NewVar = use_inter(Ref),
 	    /* just to make sure same var is used for name each occurrence */
-	    member(instance(internal,_, NewVar,_, any-Dims), InterInputs),
+	    member(instance(internal,_, NewVar,_, _-Dims), InterInputs),
 	    Recurse = 0;	  
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
@@ -229,16 +232,13 @@ make_intermediates(
 	a subexpression that matches this one: need to save loops as well
 	as context!! Cannot do this with randoms (other than in explicit
 	inters), which should all be different. */
-	UseInter = instance(internal,_, OrigSource, Name, Units-InterDims),
-	(fail,
-	    Source = param(arr(_, Param, _), Units, SourceContext, TestSwap,_),
-	    TestSwap == exp_inter,
-	    OrigSource = make_inter(_, Param),
-	    merge_lists([UseInter], PrevInters, NewInters);
-	OrigSource = Source,
-	\+ (contains_something(random, Source), \+ Source = make_inter(_,_)),
-	member(UseInter, PrevInters),
-	    NewInters = PrevInters), !,
+	(Source = use_inter(Param),
+	    OrigSource = make_inter(_, Param);
+	\+ contains_something(random, Source),
+	    OrigSource = Source),
+	member(instance(internal,_, OrigSource, Name, Units-InterDims),
+	       PrevInters), !,
+	    NewInters = PrevInters,
 	    Setups = [],
 	    Args = [Name],
 	    pointer_from(DestPath, SourcePtr),
@@ -329,7 +329,9 @@ make_intermediates(
 	
 	Source =.. [Functor | _],
 	(Functor = make_inter, !,
+	    UseSource = use_inter(Ref),
 	    sicstus_format_to_chars("~w_for_~a", [Ref, Target], TotalNameStr);
+	UseSource = Source,
 	    sicstus_format_to_chars("~a_~a", [Target, Functor], TotalNameStr)),
 	name(TotalNameBase, TotalNameStr),
 	generate_name(c, TotalNameBase, TotalName, Used),
@@ -416,7 +418,7 @@ make_intermediates(
 	    SourceRef = TotalRef),
 	append(SourceLoops, DestPath, SourceContext),
 	append([SourceLoops, NowBuilding, DestPath], ClearContextForm),
-	copy_term([ClearContextForm, TotalRef, DestPath],
+	=([ClearContextForm, TotalRef, DestPath],
 		  [ClearContext, ClearRef, ClearPath]),
 
 	(UsingDim == true, !,
@@ -453,7 +455,7 @@ make_intermediates(
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
 	merge_lists([instance(internal, inter(SourceContext, TotalRef, Target),
-			      Source, TotalName, Units-InterDims)],
+			      UseSource, TotalName, Units-InterDims)],
 		    OldInters, NewInters));	  
 
 	/* third case: a numerical value. Usable in any context.  */
@@ -568,7 +570,7 @@ make_intermediates(
 	
 	Source = (Param=SubExp,Rest), !,
 	    (Param = param(arr(_, Ref, _), _,_,_,_); /* parsing */
-	    Param = make_inter(_, Ref)), /* building code */
+	    Param = use_inter(Ref)), /* building code */
 	    make_intermediates(make_inter(SubExp, Ref), Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
 			Step, Used, _Units, MidInters,

@@ -433,7 +433,7 @@ match_param_dims([], _, []).
 match_param_dims([input_link(_,_, Name, LType-LDims, _) | MoreLinks],
 		 Inters, Err) :-
 	select(I, Inters, MoreInters),
-	I = instance(internal, _, make_inter(_, Name), _, IType-IDims),
+	I = instance(internal, _, use_inter(Name), _, IType-IDims),
 	real_dims_only(IDims, Dims),
 	(prefix(IDims, LDims), !,
 	    (promote_unit(IType, LType), !,
