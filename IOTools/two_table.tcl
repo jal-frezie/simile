@@ -22,7 +22,7 @@ namespace eval tabular11510 {
 	    [namespace code [list AddVars $winId]]
 
 	set toolbarItems [list \
-            [list new.gif "Clear" [namespace code "clear $winId"] ] \
+            [list clear.gif "Clear" [namespace code "clear $winId"] ] \
             [list add.gif "Add a variable" \
 		 [namespace code "AddVariable $winId"]] \
             [list remove.gif "Remove a variable" \
