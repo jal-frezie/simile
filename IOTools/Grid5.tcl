@@ -102,6 +102,8 @@ namespace eval grid005 {
         AddToolbar $winId
         $winId.bbframe.buttonBox itemconfigure 0 -state disable
 	NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
+        set useNodes($winId,dataMin) 1e100
+        set useNodes($winId,dataMax) -1e100
         InitialiseGrid $winId $useNodes($winId,display1)
         set useNodes($winId,freeze) false
     }
