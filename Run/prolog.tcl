@@ -80,11 +80,21 @@ proc ShowStack {} {
 }
 
 proc do_tail {header args} {
+    global errorInfo
     regsub -all \\\\n $args \n withCrs
-#puts "Tcl starting $withCrs"
-    set res [eval $withCrs]
-#puts "Tcl got $res from $withCrs"
-    send_pl_cmd result:$res
+    set oldDir [pwd]
+    if {[catch $withCrs retVal]} {
+        set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
+        if {[string match yes $ans]} {
+            BuildProblem "User interface problem" error $errorInfo execution \
+		unsaved none
+        }
+        cd $oldDir
+	set response error:$retVal
+    } else {
+	set response result:$retVal
+    }
+    send_pl_cmd $response
 }
 
 proc send_pl_cmd {withCrs} {

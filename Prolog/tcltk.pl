@@ -129,7 +129,10 @@ wait_for_tcl(Result) :-
 	    append(CmdStr, ".", TermStr),
 	    do_cmd(TermStr),
 	    fail;
-	append("result:", Result, TclStr)), !.
+	append("result:", Result, TclStr);
+	append("error:", Result, TclStr),
+	    name(ResultAtom, Result),
+	    raise_exception(ResultAtom)), !.
 	
 	
 do_cmd(TermStr) :-

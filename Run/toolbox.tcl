@@ -78,23 +78,23 @@ proc AttackGlobalVariable {array elt val} {
     return ;# because letting it return an array causes a crash
 }
 
-# Prolog typically calls this to make error handling prettier
+# Prolog typically called this to make error handling prettier
 
-proc FilterErrors {args} {
-    global errorInfo
-    set oldDir [pwd]
-    if {[catch $args retVal]} {
-        set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
-        if {[string match yes $ans]} {
-            BuildProblem "User interface problem" error $errorInfo execution \
-         unsaved none
-        }
-        cd $oldDir
-        return -1
-    } else {
-        return $retVal
-    }
-}
+# proc FilterErrors {args} {
+#     global errorInfo
+#     set oldDir [pwd]
+#     if {[catch $args retVal]} {
+#         set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
+#         if {[string match yes $ans]} {
+#             BuildProblem "User interface problem" error $errorInfo execution \
+#          unsaved none
+#         }
+#         cd $oldDir
+#         return -1
+#     } else {
+#         return $retVal
+#     }
+# }
 
 # Now to switch off all error reporting from Tcl (Unintended feature of
 # Version 8.0p2, any image file will do)
