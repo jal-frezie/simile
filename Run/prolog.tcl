@@ -14,7 +14,7 @@ proc Reader {} {
     }
     if {[gets $plPipe noCrs] >= 0} {
 	regsub -all \\\\n $noCrs \n line
-#	puts [concat < $line]
+	puts [concat < $line]
 	if {[string match get_tcl_cmd $line]} {
 	    send_tcl_cmd
 	} elseif {[string match send_tcl_cmd [lindex $line 0]]} {
@@ -27,32 +27,12 @@ proc Reader {} {
     }
 }
 
-# Non queueing version -- a process that calls a prolog command is suspended
-# until Prolog is available. If something else gets Prolog first it is
-# suspended again so Prolog only gets one thing at a time
-#
-#proc prolog {plCmd} {
-#    global prologWaiting callback
-#    if {$callback} {
-#	puts "> callback $plCmd"
-#    }
-#    while {!$prologWaiting} {
-#	tkwait variable prologWaiting
-#    }
-#    set prologWaiting 0
-#    send_pl_cmd $plCmd
-#}
-
-#proc send_tcl_cmd {} {
-#    global prologWaiting
-#    set prologWaiting 1
-#}
-
 proc prolog {plCmd} {
     global plQueue prologWaiting
     if {$prologWaiting} {
 	set prologWaiting 0
 	send_pl_cmd $plCmd
+	KeepLooking
     } else {
 	lappend plQueue $plCmd
    }
@@ -84,7 +64,14 @@ proc send_pl_cmd {withCrs} {
     puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
-    Reader
+#    Reader
+}
+
+proc KeepLooking {} {
+    global prologWaiting
+    while {!$prologWaiting} {
+	Reader
+    }
 }
 
 set running 0
@@ -108,4 +95,4 @@ set spraf {}
 while {![string match ready $spraf]} {
     gets $plPipe spraf
 }
-Reader
+KeepLooking

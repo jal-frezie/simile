@@ -4,6 +4,7 @@
 # and (b) my preferred programming style, check this out....
 
 lappend auto_path [pwd]/../System/library/Extras
+#tk_messageBox -message $auto_path
 
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
@@ -15,7 +16,6 @@ source ../Run/runmodel.tcl
 # work properly
 
 source ../Run/mre.tcl
-
 
 proc AttackGlobalVariable {array elt val} {
     global $array
@@ -519,13 +519,6 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
     
     InterpMenu $c off
     focus $c
-    if {[file exists $custom(prefDir)/layout]} {
-	set stream [open $custom(prefDir)/layout r]
-	gets $stream whetherMaxed
-#ShowMessage debug info $whetherMaxed ok
-	maximize_fg_win $whetherMaxed
-	close $stream
-    }
 #    ShowMessage debug info "Messing with [wm frame $winName]" ok
 #    maximize_fg_win
     return $c
@@ -1224,6 +1217,7 @@ proc AddDetailMenu {winId fm3 initVals} {
 		{compartment "Compartments..."} \
 		{submodel "Submodels and relations..."} \
 		{caption "Captions..."}} {
+
 	    set cat [lindex $category 0]
 	    set rads($winId,$cat) [lindex $initVals $posn]
 		incr posn
@@ -1288,6 +1282,7 @@ proc ToggleIOToolMenu {on} {
     global window_info
     foreach winData [array name window_info *,parent] {
 	set topMenu $window_info($winData)top
+
 	if {$on} {
 	    $topMenu insert "Help" cascade -label "I/O tools" -underline 0 \
 		    -menu .helpers
@@ -1366,6 +1361,7 @@ proc RaiseModelWindow {} {
 ##############################    Formula bar    #############################
 
 proc accept_equation {text} {
+
     global equation
     global equationbar
     
@@ -1384,9 +1380,10 @@ proc AddInputs {bar} {
     $bar.inputs.menu delete 0 end
     set winId $equationbar(winId)
     set node $equationbar(node)
-    foreach paramName [GetFromProlog tk_get_params('$winId',$node)] {
+    foreach paramList [GetFromProlog tk_get_params('$winId',$node)] {
+	set paramName [lindex $paramList 1]
 	$bar.inputs.menu add command -label $paramName \
-		-command [list InsertParam $bar $paramName]
+	    -command [list InsertParam $bar $paramName]
     }
 }
 

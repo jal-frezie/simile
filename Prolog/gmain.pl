@@ -149,7 +149,11 @@ main :-
 	append_atoms([Vname, ' ', Vnum], PlogV),
 	version_is(V),
         nl, write(ready), nl,
-	/* on_exception(ErrorFunction, 
+	/* tcl files are sourced into the startup script rather
+	than loaded by Prolog because they contain references
+	to global variables which only work at top level
+
+	on_exception(ErrorFunction, 
 		     tcl_eval([source, '../Run/toolbox.tcl'], _),
 		     (ErrorFunction =.. [_, _, String],
 			 name(Bug, String),

@@ -6,6 +6,9 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.12  2002/07/20 22:12:21  jaspert
+#pipe fiddling
+#
 #Revision 1.11  2002/07/18 16:58:48  jaspert
 #Changes to eqn dialogue box
 #
@@ -68,6 +71,9 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.12  2002/07/20 22:12:21  jaspert
+#Correct RCS directive #pipe fiddling
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.11  2002/07/18 16:58:48  jaspert
 #Correct RCS directive #Changes to eqn dialogue box
 #Correct RCS directive #
@@ -362,7 +368,17 @@ proc AdjustWidth {winId object factor} {
 	$winId dtag $object $tag
 	set width [expr $oldWidth*$factor]
 	$winId addtag realwidth($width) withtag $object
-	return $width
+	return $width
+
+
+
+
+
+
+
+
+
+
     } else {
 		return 1
 	}
@@ -690,6 +706,7 @@ proc ProdObj {nodeId caption} {
     switch -regexp [GetModelType $nodeId] {
 	REAL|INTEGER|FLAG {
 	    set target $helperTable(current)
+
 	    set helperId $helperTable($target,whichHelper)
 	    ${helperId}::click $target $nodeId $caption
 	} default {
@@ -893,8 +910,20 @@ proc InitStyle {style} {
 
 # After the initial model has been loaded we don't want to allow the window
 # to change size when something different is loaded
+# This is also a convenient time at which to hide the console
+# if it is showing
 proc FixSize {c} {
+    global custom
     update idletasks
+    maximize_fg_win 0 ;# seems necessary for console to hide
+    catch {console hide}	
+    if {[file exists $custom(prefDir)/layout]} {
+	set stream [open $custom(prefDir)/layout r]
+	gets $stream whetherMaxed
+#ShowMessage debug info $whetherMaxed ok
+	maximize_fg_win $whetherMaxed
+	close $stream
+    }
     pack propagate [winfo parent $c] 0
 }
     
@@ -1057,6 +1086,7 @@ proc start_run {lang winId} {
     if {[PrefValue custom(helperManager) helperManager]} {
         raise $mre
     } else {
+
 	ToggleIOToolMenu 1
     }
     
@@ -1118,6 +1148,7 @@ proc FileParamDialogue {mustShow parent} {
 	grab $t
 	tkwait variable paramData(/done/)
 	grab release $t
+
     }
     destroy $t
 }
@@ -1354,6 +1385,7 @@ proc GetFromTable {parent compName} {
     set equation(table_data) {}
 
     if {[equationDoTable $parent]} {
+
 	set paramState($compName) \
 		[concat [list $table_entry(fileName) $table_entry(dataField)] \
 		$table_entry(indices)]
@@ -1618,6 +1650,7 @@ proc FindPhase {node submodel} {
     }
     foreach nodeTypePair $subs {
 	set subFind [FindPhase $node [lindex $subs 0]]
+
 	if {$subFind != -1} {
 	    switch [lindex $subs 1] {
 		EXOGENOUS {
@@ -1744,6 +1777,7 @@ proc build_c_stub {targetDir make_new_stub} {
 	    if {$make_new_stub || ![file exists $TARGET]} {
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
 # it is running under Prolog. However it seems to work OK in WinNT.
+
 		if {$make_new_stub != 1} {
 		    set dll tcl${MAJ}${MIN}
 #ShowMessage debug info "TCL is $TCL" ok
@@ -1845,6 +1879,7 @@ proc getinstance {varName dest newvalue} {
 
         if {[string compare $newvalue NULL]} {
             set target $newvalue
+
         } ;# end(if,$set)
         lappend returnList $target
     return $returnList
@@ -1930,6 +1965,7 @@ proc compare_lists {count nestlist1 indexTxt list2 length step} {
 }
 
 proc compare_tcl_lists {count list1 list2} {
+
 	for {set ptr 0} {$ptr < $count} {incr ptr} {
 		set diff [expr [lindex $list1 $ptr]-[lindex $list2 $ptr]]
 		if {$diff < 0} {

@@ -54,9 +54,13 @@ get_info(_, Comp, comment) :-
 
 get_params(_, Comp) :-
 	find_node_with_data(Comp, _, Func),
-	(setof(br(write(Param)), param_of(Func, Param), Params), !;
+	get_input_info(Func, Params),
+/*	(setof(br(write(Param)), param_of(Func, Param), Params), !;
 	    Params = []),
-	callback(br(Params)).
+	callback(Params). */
+	output:get_from_list(Params, Table),
+	output:bracketize(Table, BrTable),
+	callback(BrTable).
 
 :- dynamic(min_size_is/1).
 :- dynamic(max_size_is/1).

@@ -29,7 +29,6 @@ set env(SP_PATH) $SIMILE_PATH/System
 
 switch $tcl_platform(platform) {
     windows {
-	console hide
 # This is needed for dll interface with tcl later than 8.0p2
 	set env(TCL_LIBRARY) [info library]
 
