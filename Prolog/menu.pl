@@ -109,7 +109,8 @@ stick_model_in(Parent, Name) :-
 	name(Checked, CheckedStr),
 	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
-	    ame_merge(Parent, PrologData, _Date, Checked), /* date not needed */
+	    ame_merge(Parent, PrologData, _Date, Checked, Translated),
+	    /* date not needed */
 	    output:my_delete_file(PrologData),
 
 	    ((get_av_pair(Parent, 0, separate, 1); is_toplevel(Parent)), !,
@@ -122,9 +123,7 @@ stick_model_in(Parent, Name) :-
 	    transfer_images(Parent, TargetDir, in),
 		  
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
-	    (is_toplevel(Parent),
-	/* only try graphics file for toplevel windows because if loading into
-	    submodel the Prolog node ids will no longer match it */
+	    (Translated = false,
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 		output:my_file_exists(GraphFileName), !,
 		Win shows_model Parent,
@@ -134,7 +133,7 @@ stick_model_in(Parent, Name) :-
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
-	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no),
+	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no, _),
 		     (make_nice_error_message(ProLoss, ProLite),
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
 	    NeedsRedraw = 1),

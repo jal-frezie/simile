@@ -84,14 +84,15 @@ void do_exitmodel(void* handle) {
 
 /* setstep: the model class instances contain an array of doubles called
 dts representing the time steps at the various phases. This function reaches
-in and sets one of them.
+in and sets one of them. Returns phase count. Node that dts[0] is set to
+the integration step being done: 0 for Euler, 1-4 for the four stages of RK
 
-Also uses to get phase count; makes no change if arg is 0 */
+Also uses to get phase count */
 
 int do_setstep(double time, int phase) {
   if (phase<0) { /* lazy */
     ts[-phase] = time;
-  } else if (phase>0) {
+  } else {
     dts[phase] = time;
   }
   return(phasecount);

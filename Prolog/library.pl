@@ -4,7 +4,7 @@
 **** is defined in terms of the model class ADT 			    ****
 *******************************************************************************/
 
-sicstus_module( library, [ame_save/3, ame_merge/4, count_functions/2] ).
+sicstus_module( library, [ame_save/3, ame_merge/5, count_functions/2] ).
 
 sicstus_use_module( [library(lists),
 	sp_only, ame_gen,m_class,utility,text,build] ).
@@ -207,7 +207,7 @@ choose_breakpoint(Break) :-
 % structure in it, and adds it into Parent. All structures are renamed
 % if not toplevel, to avoid clashes. Date from file is returned.
 
-ame_merge( Parent, File, Date, HasCode ) :-
+ame_merge( Parent, File, Date, HasCode, Translated ) :-
 	open( File, read, Stream),
 	dialogue:reassure_user("Reading information from file"),
 	read( Stream, Header ),
@@ -220,10 +220,14 @@ ame_merge( Parent, File, Date, HasCode ) :-
 	    Date=old,
 	    E = standard,
 	    SimileV = -1), 
-	(Parent = node00001, !, /* do not bother with renaming if opening
-	                           first model */
-	    InitBindings = copy;
-	InitBindings = []),
+	(Parent = node00000,
+	    \+ (_ has_part Other, \+ Other = Parent), !,
+	    /* do not bother with renaming if opening
+	    first and only model */
+	    InitBindings = copy,
+	    Translated = false;   
+	InitBindings = [],
+	    Translated = true),
 	store_term( Term, Stream, Parent, InitBindings, [] ),
 	close( Stream ),
 

@@ -45,11 +45,13 @@ Parent has_part Child :-
 root is_root.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Make a new node name
+% Make a new node name (only allow node00000 if database is empty)
 
 :- op(450, xf, is_new_model_class).
 
 Node is_new_model_class :-
+	\+ _ is_part_of _, !,
+	    Node = node00000;
 	unique_name( node, Node ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
