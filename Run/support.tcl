@@ -3,8 +3,6 @@
 # Actually none of them have to but it makes things more consistent with the
 # c++ implementation.
 
-wm withdraw .
-
 # var containing namespace id called 'this' for compatibility with c++
 set this ::AME_model<>
 

@@ -192,7 +192,7 @@ proc do_for_node {node args} {
     global runState
     if {![info exists runState($node,interp)]} {
 #        set runState($node,interp) [interp create]
-	set makeExec ../System/bin/wish8.4
+	set makeExec ../System/bin/tclsh8.4
 	set runState($node,interp) [open |$makeExec r+]
 #        $runState($node,interp) alias BringParameter BringParameter
 #        $runState($node,interp) eval source ../Run/support.tcl
