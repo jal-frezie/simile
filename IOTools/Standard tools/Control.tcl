@@ -73,7 +73,8 @@ namespace eval runcontrol33857 {
         $cnvs create oval 0 0 10 10 -outline grey
         pack $rcf.bf.flag -side right -anchor e
         tk_optionMenu $rcf.bf.pulldown [namespace current]::sendvars(timeUnit) \
-                unit second minute hour day week month year
+                unit second minute hour day week month year Ma
+        pack $rcf.bf.pulldown -side right
         pack [ProgressBar $rcf.bf.bar -variable runState(currentTime)] \
                 -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.bf -side left -fill x
@@ -381,6 +382,7 @@ namespace eval runcontrol33857 {
             week {return 604800.0}
             month {return 2628000.0}
             year {return 31536000.0}
+            Ma {return 31536000000000.0}
         }
     }
     
