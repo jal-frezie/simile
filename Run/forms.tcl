@@ -1461,10 +1461,14 @@ proc equationlisting_start {} {
     
     frame $w.mainframe
     set equationlist(textbox) [text $w.mainframe.textbox \
-            -tabs {1c} -yscrollcommand [list $w.mainframe.scrl set]]
-    scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
-    pack $equationlist(textbox) -side left -fill both -expand true
-    pack $w.mainframe.scrl -side left -fill y
+            -tabs {1c} -yscrollcommand [list $w.mainframe.scrl set]]
+
+    scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
+
+    pack $equationlist(textbox) -side left -fill both -expand true
+
+    pack $w.mainframe.scrl -side left -fill y
+
     pack $w.mainframe -fill both -expand true
     image create photo equationlist(subimg)
     image create photo equationlist(compartmentimg)
@@ -1488,13 +1492,15 @@ proc equationlisting_start {} {
     $equationlist(textbox) tag configure bigtag \
             -font {Helvetica 12 bold} -wrap word -spacing3 5 -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure descrtag \
-            -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 45
+            -font {Helvetica 10} -wrap word -lmargin1 10 -lmargin2 45
     $equationlist(textbox) tag configure cmttag \
-            -font {Helvetica 10} -wrap word -lmargin1 55 -lmargin2 55
+            -font {Helvetica 10} -wrap word -lmargin1 0 -lmargin2 75
     $equationlist(textbox) tag configure whrtag \
-            -font {Helvetica 10 italic} -wrap word -lmargin1 55 -lmargin2 55
+            -font {Helvetica 10 italic} -wrap word -lmargin1 0 -lmargin2 75
     $equationlist(textbox) tag configure eqntag \
-            -font {Helvetica 10 bold} -wrap char -lmargin1 35 -lmargin2 45
+            -font {Helvetica 10 bold} -wrap char -lmargin1 5 -lmargin2 45
+    $equationlist(textbox) tag configure typtag \
+            -font {Helvetica 10} -wrap word -lmargin1 5 -lmargin2 45
     $equationlist(textbox) tag configure initag \
             -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure dummytag \
@@ -1504,12 +1510,15 @@ proc equationlisting_start {} {
 
 proc equationlisting_addsubmodel {isub submodel_label} {
     global equationlist
-    $equationlist(textbox) configure  -state normal
-    set widget $equationlist(textbox)
-    $widget insert end "\n"
-    $widget insert end [regsub -all "\n" $submodel_label " "] bigtag
-    $widget insert end "\n"
-    $equationlist(textbox) configure  -state disabled
+    $equationlist(textbox) configure  -state normal
+
+    set widget $equationlist(textbox)
+
+    $widget insert end "\n"
+    $widget insert end [regsub -all "\n" $submodel_label " "] bigtag
+    $widget insert end "\n"
+    $equationlist(textbox) configure  -state disabled
+    update idletasks
 }
 
 
@@ -1517,15 +1526,17 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
             inflows outflows} {
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
     global equationlist
-    
-    set widget $equationlist(textbox)
-    $equationlist(textbox) configure  -state normal
-    $widget insert end " \n" dummy
-    
-    #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
-    $widget insert end "  " descr
-    $widget image create end -image equationlist(${vartype}img)
-    $widget insert end " ${vartype}: " cmttag
+ 
+    set widget $equationlist(textbox)
+    $equationlist(textbox) configure  -state normal
+    $widget insert end " \n" dummy
+
+    #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
+
+    $widget insert end "${vartype} " typtag
+    $widget insert end " " descrtag
+    $widget image create end -image equationlist(${vartype}img)
+    $widget insert end " " descrtag
     
     set tidy_varlabel [regsub -all "\n" $varlabel " "]
     # ToDo 2: Remove scaling information from graph() functions
@@ -1544,15 +1555,17 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     set tidy_comments [regsub -all "\n" $comments " "]
     set where [regsub -all "\n" $where " "]
     set where [string range $where 1 end-1]
-    set tidy_where [regsub -all "," $where "\n"]
+    set tidy_where [regsub -all "," $where "\n\t\t"]
     
-    
+    
+
     # Label and Description, if any
     if [string match null $description] {
-        $widget insert end "\t${tidy_varlabel}\n" eqntag
+        $widget insert end "${tidy_varlabel}\n" eqntag
     } else  {
-        $widget insert end "\t${tidy_varlabel}, " eqntag
-        $widget insert end "${tidy_description}\n" descrtag
+        $widget insert end "${tidy_varlabel}" eqntag
+        $widget insert end " : ${tidy_description}\n" descrtag
+
     }
     
     if {[string match compartment $vartype]} {
@@ -1562,18 +1575,22 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
         set outflows [string trim $outflows {[]}]
         regsub -all , $outflows { } outflows
         
-        # intial value
-        $widget insert end "\tInitial value" eqntag
-        $widget insert end " = " eqntag
-        $widget insert end $expression eqntag
-        $widget insert end "\n" eqntag
+        # intial value
+
+        $widget insert end "\tInitial value" eqntag
+        $widget insert end " = " eqntag
+        $widget insert end $expression eqntag
+        $widget insert end "\n" eqntag
+
         if ![string match null $where] {
-            $widget insert end "\t$tidy_where" whrtag
+            $widget insert end "\t$tidy_where" whrtag
+
         }
         
         # ...rate equation
         if {[llength $outflows]>0 | [llength $inflows]>0} {
-            set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
+            set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
+
             foreach inflow $inflows {
                 set text_string "$text_string + $inflow"
             }
@@ -1585,7 +1602,8 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
         
     } else  {
         # Everything except compartments
-        $widget insert end "\t$tidy_varlabel = $tidy_expression \n" eqntag
+        $widget insert end "\t$tidy_varlabel = $tidy_expression \n" eqntag
+
         #add_text "$tidy_varlabel = $tidy_expression" {Helvetica 9} 20 0 black
         if ![string match {null} $where] {
             $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
@@ -1598,7 +1616,8 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
         $widget insert end "\tComments:\n\t\t$tidy_comments \n" cmttag; # should be empty if comments null
         #add_text "Comments: $tidy_comments" {Helvetica 9 italic} 20 0 #000088
     }
-    $equationlist(textbox) configure  -state disabled
+    $equationlist(textbox) configure  -state disabled
+
 }
 
 
