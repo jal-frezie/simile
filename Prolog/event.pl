@@ -43,7 +43,9 @@ get_info(Wid, Comp, desc) :-
 	callback(br(write(Eqn))).
 
 get_info(_, Comp, comment) :-
-	find_node_with_data(Comp, _, Func),
+	(find_type(Comp, relation), !,
+	    find_name_host(Comp, Func);
+	find_node_with_data(Comp, _, Func)),
 	(get_av_pair(Func, _, comment, Cmt), !;
 	Cmt = 'no comment'),
 	(get_av_pair(Func, _, description, Desc),
