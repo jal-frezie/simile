@@ -356,7 +356,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		add_parameter(AffectedNode, 0, min_val, MinVal),
 		add_parameter(AffectedNode, 0, max_val, MaxVal),
 		update_links_and_vars(New_inputs);
-	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
+%	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
 	    (FinalComplaint = continue, !;
