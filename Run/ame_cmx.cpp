@@ -7,6 +7,8 @@ them to be executed etc by Tcl commands. */
 #include <tcl.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
+#include <setjmp.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
 
 #define	GETDIMS		0
@@ -935,6 +937,8 @@ extern "C" int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
    return serviceError;
 }
 
+jmp_buf env;
+
 extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
@@ -969,16 +973,27 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	return error;
    }
 
-   serviceError = TCL_OK;
-   try {
-     modelType->eval(modelHandle, starttime, phase, FALSE);
-   }
-   catch (int userCode) {
-     serviceError = TCL_ERROR;
-     sprintf(spare, "User-defined interruption code %d", userCode);
+   error = setjmp(env);
+   if (error) {
+     sprintf(spare, "The model program performed an illegal operation, generating signal %d -- try running it in Tcl for more information.", error);
      Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-   }  
-   return serviceError;
+     return TCL_ERROR;
+   } else {
+     serviceError = TCL_OK;
+     try {
+       modelType->eval(modelHandle, starttime, phase, FALSE);
+     }
+     catch (int userCode) {
+       serviceError = TCL_ERROR;
+       sprintf(spare, "User-defined interruption code %d", userCode);
+       Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
+     }
+     return serviceError;
+   }
+}
+
+static void exit_sighandler(int x){
+  longjmp(env, x);
 }
 
 extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1612,8 +1627,9 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
     crash(interp, "program");
   }
 #endif
-    Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  signal(SIGSEGV,exit_sighandler);
+  Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     
     Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
