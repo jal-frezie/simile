@@ -69,6 +69,7 @@ switch $tcl_platform(platform) {
 	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
+        set graph(font) [list helvetica 10]
     } unix {
 	tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
@@ -76,7 +77,13 @@ switch $tcl_platform(platform) {
 #		$env(SP_PATH)/library:[file dirname [info library]]
 	# the following can be edited for your configuration
 	set env(PRINTCMD) lpr
-	set graph(origin) 1
+        if [string match Darwin $tcl_platform(os)] {
+            set graph(origin) 3
+            set graph(font) [list helvetica 12]
+        } else {
+	    set graph(origin) 1
+            set graph(font) [list helvetica 10]
+        }
     }
 }
 
@@ -119,10 +126,10 @@ wm withdraw .
 toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash
-.splash.c create text 270.0 275.0 -font {-family helvetica -size 10} -fill #660066 -text "Version $env(SIMILE_VERSION)"
+.splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
-.splash.c create text 270.0 295.0 -font {-family helvetica -size 10} -fill #660066 -text "Registered to $regInfo"
+.splash.c create text 270.0 295.0 -font $graph(font) -fill #660066 -text "Registered to $regInfo"
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
