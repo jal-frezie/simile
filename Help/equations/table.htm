@@ -15,22 +15,23 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>8</o:Revision>
-  <o:TotalTime>151</o:TotalTime>
+  <o:Revision>13</o:Revision>
+  <o:TotalTime>288</o:TotalTime>
   <o:Created>2002-07-17T15:09:00Z</o:Created>
-  <o:LastSaved>2003-01-08T12:28:00Z</o:LastSaved>
+  <o:LastSaved>2004-09-01T18:52:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>1120</o:Words>
-  <o:Characters>6388</o:Characters>
+  <o:Words>893</o:Words>
+  <o:Characters>5091</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
-  <o:Lines>53</o:Lines>
-  <o:Paragraphs>14</o:Paragraphs>
-  <o:CharactersWithSpaces>7494</o:CharactersWithSpaces>
-  <o:Version>10.4219</o:Version>
+  <o:Lines>42</o:Lines>
+  <o:Paragraphs>11</o:Paragraphs>
+  <o:CharactersWithSpaces>5973</o:CharactersWithSpaces>
+  <o:Version>10.6626</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:Zoom>BestFit</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
   <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
   <w:Compatibility>
    <w:BreakWrappedTables/>
@@ -128,6 +129,9 @@ a:visited, span.MsoHyperlinkFollowed
 	text-underline:none;
 	text-decoration:none;
 	text-line-through:none;}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
 @page Section1
 	{size:21.0cm 842.0pt;
 	margin:72.0pt 89.85pt 72.0pt 89.85pt;
@@ -138,8 +142,8 @@ div.Section1
 	{page:Section1;}
  /* List Definitions */
  @list l0
-	{mso-list-id:1200049921;
-	mso-list-template-ids:1215712588;}
+	{mso-list-id:1683242486;
+	mso-list-template-ids:-1531312388;}
 @list l0:level1
 	{mso-level-number-format:bullet;
 	mso-level-text:\F0B7;
@@ -228,7 +232,7 @@ table.MsoTableGrid
 	font-family:"Times New Roman";}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="9218"/>
+ <o:shapedefaults v:ext="edit" spidmax="11266"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -241,17 +245,27 @@ table.MsoTableGrid
 
 <h1><span lang=EN-GB>Table function</span></h1>
 
-<p class=MsoNormal><span lang=EN-GB>The table dialogue window is used to create
-a table from data stored in a file.<span style='mso-spacerun:yes'>  </span>The
-required data are extracted from the file, and saved with the model.<span
-style='mso-spacerun:yes'>  </span>This has three main uses:</span></p>
+<p class=MsoNormal><span lang=EN-GB>The <a href="tabledialogue.htm">table
+dialogue</a> window is used to create a table from data stored in a file.<span
+style='mso-spacerun:yes'>  </span>The required data are extracted from the
+file, and saved with the model.<span style='mso-spacerun:yes'>  </span>If you
+do not wish or need to store the data in the model, you can use a <a
+href="../data/index.htm">file parameter</a> to access the data when the model
+is run.<span style='mso-spacerun:yes'>  </span>This is significantly quicker;
+so much so, that for extremely large data sets it is the only feasible
+approach.<span style='mso-spacerun:yes'>  </span></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>There are three main uses of the table
+function:</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <ul style='margin-top:0cm' type=disc>
  <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
-     lang=EN-GB>entering a value for some variable for each instance of a multiple-instance
-     submodel; </span></li>
+     lang=EN-GB>entering a value for some variable for each instance of a
+     multiple-instance submodel; </span></li>
  <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
      lang=EN-GB>entering time-series data; and</span></li>
  <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
@@ -267,7 +281,7 @@ table.<span style='mso-spacerun:yes'>  </span>Because it is implemented as a
 function, the table can be used in the equation for the variable together with
 other components.<span style='mso-spacerun:yes'>  </span>Each table has zero or
 more indices, which are used to extract a particular item of data from the
-table. <span style='mso-spacerun:yes'> </span>If there is no index, the row
+table.<span style='mso-spacerun:yes'>  </span>If there is no index, the row
 number is used instead.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
@@ -275,68 +289,13 @@ number is used instead.</span></p>
 <p class=MsoNormal><span lang=EN-GB>For example, a series of samples of soil
 quality might have two indices, an x- and a y-coordinate.<span
 style='mso-spacerun:yes'>  </span>The data column would record the soil quality
-for each (x,y) pair.<span style='mso-spacerun:yes'>  </span>The table function
-would then be table(x,y) and would return the value representing soil quality
-at the given coordinates.<span style='mso-spacerun:yes'>  </span>In this case,
-x and y could be influences from other variables or could be derived from the
-index of a multiple-instance submodel.<span style='mso-spacerun:yes'> 
-</span>In other cases, the index might be derived from simulation time.</span></p>
-
-<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
-
-<h2><span lang=EN-GB>Storing data in a file</span></h2>
-
-<p class=MsoNormal><span lang=EN-GB>In order to be able to access the data,
-they must be stored in a certain format in the file.<span
-style='mso-spacerun:yes'>  </span>The file should be rectangular, consisting of
-a certain number of rows and a certain number of columns.<span
-style='mso-spacerun:yes'>  </span>The number of columns corresponds to the
-number of variables in the file (or, in database terms, the number of fields
-for each record).<span style='mso-spacerun:yes'>  </span>The file has as many
-records as there are units for which data were recorded, plus a single header
-record.<span style='mso-spacerun:yes'>  </span>The format is comma-separated
-values (CSV) which means that each value is separated by a comma from the
-preceding value.<span style='mso-spacerun:yes'>  </span>There is no comma at
-the end of a record.<span style='mso-spacerun:yes'>  </span>Most software
-packages that handle data can create files in this format.</span></p>
-
-<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB>The following is an example of a simple
-file containing data on the age, height and diameter of five trees: </span></p>
-
-<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB>age, height, diameter <br>
-25, 15, 0.31 <br>
-32, 17, 0.37 <br>
-16, 10, 0.2 <br>
-19, 12, 0.23 <br>
-21, 14, 0.29 </span></p>
-
-<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
-
-<h2><span lang=EN-GB>Creating a table</span></h2>
-
-<p class=MsoNormal><span lang=EN-GB>After selecting a CSV file, the table dialogue
-reads and displays the column headings in a list box.<span
-style='mso-spacerun:yes'>  </span>Exactly one of these headings is used to
-designate the data column.<span style='mso-spacerun:yes'>   </span>Drag this
-column heading from the list box to the edit box labelled “Use as data
-column”.<span style='mso-spacerun:yes'>  </span>In the example file shown above,
-you would have the choice of “age”, “height” or “diameter” and could drag any
-one of these to the data column edit box.</span></p>
-
-<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB>If you wish to create one or more indices
-to the data column, drag the heading corresponding to the desired index into
-the list box labelled “Use as index”.<span style='mso-spacerun:yes'>  </span>To
-delete an index, drag the column heading from the “Use as index” list box back
-into the “Table column headings” list box.<span style='mso-spacerun:yes'> 
-</span>It is not always necessary to designate an index.<span
-style='mso-spacerun:yes'>  </span>If none is given, the row number is used to
-access each record.</span></p>
+for each (<span class=SpellE>x,y</span>) pair.<span style='mso-spacerun:yes'> 
+</span>The table function would then be table(<span class=SpellE>x,y</span>)
+and would return the value representing soil quality at the given
+coordinates.<span style='mso-spacerun:yes'>  </span>In this case, x and y could
+be influences from other variables or could be derived from the index of a
+multiple-instance submodel.<span style='mso-spacerun:yes'>  </span>In other
+cases, the index might be derived from simulation time.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -372,11 +331,11 @@ the equation dialogue window by clicking “OK”.</span></p>
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB>Notice that Simile has automatically
-inserted “table([index(1)])”<b style='mso-bidi-font-weight:normal'> </b><span
+inserted “table()”<b style='mso-bidi-font-weight:normal'> </b><span
 style='mso-spacerun:yes'> </span>into the Equation box.<span
-style='mso-spacerun:yes'>  </span>This is the default, and is just what you
-need: this indicates that each value in the column of data from the file will
-be assigned to the corresponding instance number in the model.<span
+style='mso-spacerun:yes'>  </span>Change this to “table([index(1)])” : this
+indicates that each value in the column of data from the file will be assigned
+to the corresponding instance number in the model.<span
 style='mso-spacerun:yes'>  </span>Note also the square brackets, which are used
 to pass the argument to the table function as an <a href="arrays.htm">array</a>.</span></p>
 
@@ -404,15 +363,15 @@ column heading corresponding to the simulation time into the list box labelled
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>The text “table([index(1)])”<span
-style='mso-spacerun:yes'>  </span>is still inserted into the equation box, but
-this time it is not what you need.<span style='mso-spacerun:yes'>  </span>You
-must replace the [index(1)] argument to the table function with
-[int(time())].<span style='mso-spacerun:yes'>  </span>Because time() returns a
-floating point number, the int() function is used to convert it to an
-integer.<span style='mso-spacerun:yes'>  </span>The text now reads “table([int(time())])”.<span
-style='mso-spacerun:yes'>  </span>Note again the square brackets, which are
-used to pass the argument to the table function as an <a href="arrays.htm">array</a>.</span></p>
+<p class=MsoNormal><span lang=EN-GB>The text “table()”<span
+style='mso-spacerun:yes'>  </span>is inserted into the equation box.<span
+style='mso-spacerun:yes'>  </span>Change this to table([<span class=SpellE>int</span>(time())]).<span
+style='mso-spacerun:yes'>  </span>Because time() returns a floating point
+number, the <span class=SpellE>int</span>() function is used to convert it to
+an integer.<span style='mso-spacerun:yes'>  </span>The text now reads “table([<span
+class=SpellE>int</span>(time())])”.<span style='mso-spacerun:yes'>  </span>Note
+again the square brackets, which are used to pass the argument to the table
+function as an <a href="arrays.htm">array</a>.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -428,18 +387,18 @@ style='mso-spacerun:yes'>  </span>For example, if we have a series of pairs of
 temperature and rainfall values that produce different growth rates, we can use
 the expression “table([temperature, rainfall]).<span style='mso-spacerun:yes'> 
 </span>Note that both arguments must be integers.<span
-style='mso-spacerun:yes'>  </span>If they are not, use the int() function to
-convert them.<span style='mso-spacerun:yes'>  </span>Note again the square
-brackets, which are used to pass the argument to the table function as an <a
-href="arrays.htm">array</a>.</span></p>
+style='mso-spacerun:yes'>  </span>If they are not, use the <span class=SpellE>int</span>()
+function to convert them.<span style='mso-spacerun:yes'>  </span>Note again the
+square brackets, which are used to pass the argument to the table function as
+an <a href="arrays.htm">array</a>.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <h2><span lang=EN-GB>Final notes</span></h2>
 
 <p class=MsoNormal><span lang=EN-GB>When preparing to use multiple indices, it
-is often best to arrange the index columns in the data file in a logical
-sequence, for example as follows:</span></p>
+is often best to arrange the index columns in the data file in a logical sequence,
+for example as follows:</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
