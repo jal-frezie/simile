@@ -76,6 +76,13 @@ get_info(_Wid, Comp, types) :-
 	callback(TypeListList);
 	callback(none).
 
+get_info(_, Name, is_unit) :-
+	(units:baseline(Name), !,
+	    Def = baseline;
+	units:unit_definition(Name, Def), !;
+	Def = none),
+	callback(write(Def)).
+
 insert_mem_list(Bound, Model, Trans) :-
 	(Bound = boolean,
 	    Trans = [false, true];

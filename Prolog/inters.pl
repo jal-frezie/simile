@@ -274,8 +274,13 @@ make_intermediates(
 	    (Step = dummy, !,
 		Units = OrigUnits;
 	    unmake_enum_units(OrigUnits, Units)), !,
+
+	    (member(OrigUnits, [n(Type), a(Type)]),
+	    \+ ame_gen:resolve_enum_type(_, SubId, _, OrigUnits), !,
+		raise_exception(no_local_defn_for_type(Type, SubId));
+		
 	    get_dims_from_loops(OrigLoops, Dims, _),
-	    get_dims_from_loops(SourceLoops, Dims, _),
+		get_dims_from_loops(SourceLoops, Dims, _)),
 	    
 	    (SourceRef = arr(_, import(_, Away, _, Ptr, _, Ph, Var, _), _), !, 
 		(var(Away), !, /* external toplink, stub will find from arc */

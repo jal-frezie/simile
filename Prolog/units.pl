@@ -108,8 +108,8 @@ unit_definition(ha, hectare).
 
 unit_definition(degree, radian*22/1260).
 unit_definition(litre,	metre*metre*metre/1000).
-unit_definition(pint,	litre*4/7). /* not in USA */
-unit_definition(gallon,	pint*8).
+unit_definition(pint,	gallon/8).
+unit_definition(gallon,	litre*454609/100000). /* not in USA */
 
 unit_definition(minute,	second*60).
 unit_definition(hour,	minute*60).
@@ -121,14 +121,14 @@ unit_definition(year,	day*365). /* not quite right */
 unit_definition(millimetre, metre/1000).
 unit_definition(centimetre, metre/100).
 unit_definition(kilometre, metre*1000).
-unit_definition(inch,	metre*10/394).
+unit_definition(inch,	metre*254/10000).
 unit_definition(foot,	inch*12).
 unit_definition(yard,	foot*3).
 unit_definition(mile,   yard*1760).
 
 unit_definition(hectare, 10000*metre*metre).
 unit_definition(gramme,	kilogramme/1000).
-unit_definition(pound,	gramme*454). /* avoirdupois */
+unit_definition(pound,	kilogramme*45359237/100000000). /* avoirdupois */
 unit_definition(ounce,	pound/16).
 unit_definition(stone,	pound*14).
 unit_definition(cwt,	stone*8).
@@ -142,8 +142,8 @@ unit_definition(kgf,	kilogramme*gravity).
 unit_definition(lbf,	pound*gravity).
 
 unit_definition(joule,	newton*metre).
-unit_definition(kilocalorie,	joule*4200).
-unit_definition(calorie,	kilocalorie/1000).
+unit_definition(kilocalorie,	calorie*1000).
+unit_definition(calorie,	joule*41868/10000).
 unit_definition(kwh,	kilowatt*hour). /* energy to power and back again, wtfn? */
 
 unit_definition(watt,	joule/second).
