@@ -734,16 +734,13 @@ proc DoRegDialog {dtId} {
     
     TitleFrame .register.create -text "Creating a model: "
     set create [.register.create getframe]
+    set msgtxt "Select compartments and flows from the toolbar\
+                to add to the diagram. Use the select (pointer) tool to edit captions\
+                and values. Run your model using the Run command of the Model menu."
     if {[string match Windows $tcl_platform(platform)]} {
-        pack [message $create.m -text "Select compartments and flows from the toolbar\
-                to add to the diagram. Use the select (pointer) tool to edit captions\
-                and values. Run your model using the Build command of the Model menu."\
-                -width 400 -font {-family helvetica -size 8}]
+        pack [message $create.m -text $msgtxt -width 400 -font {-family helvetica -size 8}]
     } else {
-        pack [message $create.m -text "Select compartments and flows from the toolbar\
-                to add to the diagram. Use the select (pointer) tool to edit captions\
-                and values. Run your model using the Build command of the Model menu."\
-                -width 400]
+        pack [message $create.m -text $msgtxt -width 400]
     }
     pack $create -expand on -fill x
     #   pack [frame $create.buttons]
@@ -756,6 +753,7 @@ proc DoRegDialog {dtId} {
     set tasks [.register.tasks getframe]
     
     frame $tasks.b
+    # MacVersion does not display compound (image + text) buttons at all well.
     if {[string match Darwin $tcl_platform(os)]} {
         pack [button $tasks.b.new -text "New" -width 10  \
                 -command {set userinfo(done) $welcomeDone}] \
