@@ -1403,10 +1403,14 @@ proc compile_c {workingDir modelPath} {
     
     set oldDir [pwd]
     cd $workingDir$modelPath
-    ShowMessage {Code editing opportunity} info \
-            "About to compile model.cpp in [pwd]" ok
+    if {[PrefValue custom(hackBreak) hackBreak]} {
+	ShowMessage {Code editing opportunity} info \
+	"About to compile model.cpp in [pwd]" ok
+    }
     set TARGET model[info sharedlibextension]
-    
+    
+
+
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
@@ -1471,16 +1475,18 @@ proc compile_c {workingDir modelPath} {
 # itself loads dlls for the actual models as they are built.
 
 proc load_c_stub {} {
-    global tcl_platform env
+    global tcl_platform env userinfo
     
     scan [info tclversion] {%d.%d} MAJ MIN
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     #	Next line allows start on new o/s without rebuild but slows
-    catch {pkg_mkIndex ../Run *.dll *.so}
+    catch {pkg_mkIndex ../Run *[info sharedlibextension]}
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
 	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
-    }    
+    } else {
+	loadcommands
+    }
 }
 
 proc ListSameNumbers {list1 list2} {
@@ -1500,6 +1506,7 @@ proc insert_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \
     set $graph_data_pointer [format "%f %f %d %f %f %d %d %s" \
             $xlow $xhigh $xspan $ylow $yhigh $yspan $xsize $array_data]
 }
+
 
 proc setup_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \
             xsize args} {

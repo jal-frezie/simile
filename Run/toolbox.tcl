@@ -51,9 +51,8 @@ proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo
     
     wm withdraw .
-    # loading stub sets license entries
-    load_c_stub
 
+    # loading stub sets license entries
 # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
 	set env(LD_LIBRARY_PATH) /usr/local/ActiveTcl/lib
@@ -62,6 +61,9 @@ proc ControlDraw {prologVersion} {
 	set env(licensee_name) "Support team"
 	set env(licensee_corp) "Simulistics, inc."
     }
+
+    # loading stub sets license entries
+    load_c_stub
 
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
@@ -73,18 +75,22 @@ proc ControlDraw {prologVersion} {
     set userinfo(corp) $env(licensee_corp)
     set userinfo(Version) $env(SIMILE_VERSION)
     
+    set userinfo(license_code) \
+	[join [lrange [split $env(license_code) =] 1 end] =]
+    load_c_stub
+
     # eezi-hack implementation of time limit: to do this anything like
     # properly, have stub dll check unix time against clock time
 
     set day [expr 24*60*60]
-    if {$sendvars(final_expiry)} {
-	set expTime $sendvars(final_expiry)
+    if {$userinfo(final_expiry)} {
+	set expTime $userinfo(final_expiry)
     } else {
 	set expTime [expr [clock seconds]+365*$day]
     }
-    if {$sendvars(days_after_install)} {
+    if {$userinfo(days_after_install)} {
 	set installTime [lindex [lindex [split $env(install_time) =] 1] 0]
-	set relExpTime [expr $installTime+$sendvars(days_after_install)*$day]
+	set relExpTime [expr $installTime+$userinfo(days_after_install)*$day]
 	set expTime [min $expTime $relExpTime]
     }
     set toGo [expr $expTime-[clock seconds]]
@@ -170,6 +176,8 @@ proc ControlDraw {prologVersion} {
     #JMM add postions for run control and slider
     Pref_Add {{custom(runControlPosition) runControlPosition "+0-20" "Position of run control"} \
                 {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"}}
+    Pref_Add {{custom(hackBreak) hackBreak OFF \
+		   "Pause to edit c++ code?"}}
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
                         "Use which C++ compiler?"}}
@@ -195,7 +203,7 @@ proc ControlDraw {prologVersion} {
     }
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] \
-		$openModel $sendvars(edn)]
+		$openModel $userinfo(edn)]
 }
 
 package require mime
@@ -657,6 +665,7 @@ proc AbandonObj {} {
 }
 
 # ChangeRegion causes a window to respond to a change in the size of its canvas.
+
 # Strange things can happen if the canvas is shrunk below the size of the viewport
 # so a little zoom is slipped in if this looks like happening. This is commented
 # out for now because it can send a cmd back to Prolog, which calls this again,
@@ -1487,7 +1496,7 @@ proc ShowAbout {winId} {
     pack [label .about.f.l1 -text SIMILE]
     pack [label .about.f.l2 -text Simulistics\ Ltd.]
     pack [label .about.f.l3]
-    pack [label .about.f.l4 -text Version\ $sendvars(simV)\ $sendvars(edn)]
+    pack [label .about.f.l4 -text Version\ $sendvars(simV)\ $userinfo(edn)]
     #    pack [label .about.f.l5 -text [clock format [file mtime ../Run/main.sav]]]
     pack [label .about.f.l6 -text "Prolog: $sendvars(proV)"]
     pack [label .about.f.l7 -text "TclTk: [info patchlevel] (by $interface)"]

@@ -14,6 +14,8 @@ set edition standard
 set final_expiry {}
 # days after install: 0 for no installation expiry
 set days_after_install 0
+# License code required to verify name/corp/edition: 0 for no
+set needs_license 1
 
 if {[llength $final_expiry]} {
     set expiry_ticks [clock scan $final_expiry]
@@ -24,6 +26,9 @@ if {[llength $final_expiry]} {
 set defns [list -DSIM_EDITION=\"$edition\" \
 	       -DSIM_FINAL_EXPIRY=$expiry_ticks \
 	       -DSIM_DAYS_AFTER_INSTALL=$days_after_install]
+if {$needs_license} {
+	lappend defns -DSIM_LICENSED
+}
 scan [info tclversion] {%d.%d} MAJ MIN
 set onUnix [string match unix $tcl_platform(platform)]
 #	To build for Tcl dll included under distribution directory...
@@ -53,9 +58,13 @@ if $onUnix {
     # it is running under Prolog. However it seems to work OK in WinNT.
     if {[string match gnu $compiler_for_windows]} {
 	eval {exec g++ -c -o obj.o} $defns \
-	    {-I. -I$TCL/include ./ame_cmx.cpp}
-	
+	    {-I. -I$TCL/include ./ame_cmx.cpp}	
 	exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=g++ obj.o $tclLib
+	
+	# Do the install dll as well
+	eval {exec g++ -c -o obj.o} $defns \
+	    {-I. -I$TCL/include ./install.cpp}	
+	exec dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o
 	
 	# Method using command line calls to MSVC 4.0 or later -- works well
     } else {

@@ -189,6 +189,7 @@ proc Pref_Dialog {} {
 #            ShowMessage debug info "$item; [PrefRes $item]" ok
             switch -glob -- [PrefRes $item] {
                 init* {set frame $displayF}
+                hackBreak {set frame $compF}
                 compChoice {set frame $compF}
                 comp* {set frame $popupF}
                 bigButtons {set frame $barF}

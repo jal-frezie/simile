@@ -1105,7 +1105,23 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
   int *short_tree, *new_tree;
   int arrayLength, arrayPosn, id_count, id_val, *id_ptr;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
-  switch (*use_dims) {
+  switch (*use_dims) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   case -2:
     new_tree = tree;
     while (*new_tree++ != -2) {}
@@ -1242,6 +1258,7 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
     resultPtr = Tcl_NewStringObj("novalue", -1);
   } else {
     resultPtr = fill_value(modelType, modelHandle, path, data_line->datatype, 
+
 			   dims+count, current_dims, current_dims+count,
 			   newData);
     /*
@@ -1406,7 +1423,7 @@ extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
 		  Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
     return TCL_ERROR;
   }
-  if (Tcl_VarEval(interp, "::md5::hmac ", secret, " $hvfe587gw938", NULL)) {
+  if (Tcl_VarEval(interp, "::md5::hmac ", secret, " $hvfe587gw938", NULL) != TCL_OK) {
     return TCL_ERROR;
   }
   /* check it matches what we got before */
@@ -1432,6 +1449,88 @@ extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
     } */
   return TCL_OK;
 }
+
+extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+  if (argc != 1) {
+    interp->result = "No arguments for loadcommands please!";
+    return TCL_ERROR;
+  }
+  char licenseStr[256];
+
+       /* Data about version etc held in dll for safety and convenience:
+	these will become globals because we are not in the scope of a
+       procedure */
+       Tcl_SetVar2(interp, "userinfo", "edn", SIM_EDITION, 0);
+       Tcl_SetVar2Ex(interp, "userinfo", "final_expiry", 
+		     Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
+       Tcl_SetVar2Ex(interp, "userinfo", "days_after_install", 
+		     Tcl_NewIntObj(SIM_DAYS_AFTER_INSTALL), 0);
+
+/* If this version requires a license then check we have the right
+one. */
+#ifdef SIM_LICENSED
+  if (Tcl_VarEval(interp, "::md5::hmac ", secret, 
+	" $userinfo(name)@$userinfo(corp)%$userinfo(edn)", NULL) != TCL_OK) {
+	return TCL_ERROR;
+  }
+  /* check it matches what we got before */
+  if (strcmp(Tcl_GetVar2(interp, "userinfo", "license_code", 0), 
+	Tcl_GetStringResult(interp))) {
+    crash();
+  }
+#endif
+    Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+    
+    Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
+			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+    Tcl_CreateObjCommand(interp, "c_updatemodel", updatemodelCmd, 
+			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+    Tcl_CreateObjCommand(interp, "c_evalmodel", evalmodelCmd, 
+			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+    Tcl_CreateObjCommand(interp, "c_setstepmodel", setstepCmd, 
+			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+    Tcl_CreateObjCommand(interp, "c_exitmodel", exitmodelCmd, (ClientData)NULL,
+        (Tcl_CmdDeleteProc *)NULL);
+
+
+    Tcl_CreateObjCommand(interp, "getvalue", interfaceCmd, (ClientData)NULL,
+
+        (Tcl_CmdDeleteProc *)NULL);
+    
+    Tcl_CreateObjCommand(interp, "extract", extractCmd, (ClientData)NULL,
+        (Tcl_CmdDeleteProc *)NULL);
+    
+    Tcl_CreateObjCommand(interp, "insert", extractCmd, (ClientData)1,
+        (Tcl_CmdDeleteProc *)NULL);
+    
+    Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
+        (Tcl_CmdDeleteProc *)NULL);
+
+    Tcl_CreateObjCommand(interp, "listobjects", listobjCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+    
+    Tcl_CreateObjCommand(interp, "randseed", randseedCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+    Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+    Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+     Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+     Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+    return TCL_OK;
+  }
 
 /*
  * The following declarations refer to internal Tk routines.  These
@@ -1471,65 +1570,11 @@ __declspec( dllexport )
 int Ame_dll_Init(Tcl_Interp *interp) {
  int maj, min;
  char pkgName[16];
+
    globInterp = interp;
-    Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
+    Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     
-    Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_updatemodel", updatemodelCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_evalmodel", evalmodelCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_setstepmodel", setstepCmd, 
-			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "c_exitmodel", exitmodelCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-
-
-    Tcl_CreateObjCommand(interp, "getvalue", interfaceCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "extract", extractCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "insert", extractCmd, (ClientData)1,
-        (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
-        (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "listobjects", listobjCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    
-    Tcl_CreateObjCommand(interp, "randseed", randseedCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-    Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-    Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-     Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-     Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-
-       /* Data about version etc held in dll for safety and convenience:
-	these will become globals because we are not in the scope of a
-       procedure */
-       Tcl_SetVar2(interp, "sendvars", "edn", SIM_EDITION, 0);
-       Tcl_SetVar2Ex(interp, "sendvars", "final_expiry", 
-		     Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
-       Tcl_SetVar2Ex(interp, "sendvars", "days_after_install", 
-		     Tcl_NewIntObj(SIM_DAYS_AFTER_INSTALL), 0);
-
     sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
 	    simileVersion, FORUNIX);
     return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
