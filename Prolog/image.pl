@@ -313,6 +313,7 @@ get_circle_crossings([Xj, Yj], Rad, [X0, Y0], F, G, Tp, [X, Y]) :-
 	Fsq is F*F,
 	Gsq is G*G,
 	FGsq is Fsq+Gsq,
+	FGsq > 0,
 	Xj0 is Xj - X0,
 	Yj0 is Yj - Y0,
 	FyGx is F*Yj0 - G*Xj0,
