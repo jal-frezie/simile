@@ -927,11 +927,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     \+ Moving_obj is_of_sort line,
 		     find_all_comps(Parent, Moving_obj),
 		     get_shape(Parent, internal_extent, ParentShape),
-		     setof(Mover, (Mover = Moving_obj; /* in case cloud */
-				  find_all_comps(Parent, Mover),
-				      get_highlit_obj(0, Mover),
-				      \+ has_outer_equiv(Mover, Parent, _)),
-			   Movers),
+		     setof(Mover, moves_with_seln(Parent, Mover), Movers),
 		     \+ (member(Crasher, Movers),
 			find_new_box(Crasher, Xoffset, Yoffset, _, BadPosn),
 			( \+ fits_inside(BadPosn, ParentShape);
@@ -979,8 +975,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		m_update:Moving_obj is_connector from Box to _);
 	Phase = moving_finish, Inner_move = finish,
 	    (continues_in(Moving_obj, Box), !;
-		m_update:Moving_obj is_connector from _ to EndPt,
-	        get_host(EndPt, Box))),
+		local_ends(Moving_obj, _, Box))),
 	find_type(Box, EType),
 	/* find drag point in parent model */
 	find_all_comps(Parent, Moving_obj),
@@ -1043,6 +1038,14 @@ drag_to(Xpt, Ypt, Target) :-
 	remove_old_rubberband,
 	draw_rubberband(round).
 
+moves_with_seln(Parent, Obj) :-
+	find_all_comps(Parent, Obj),
+	(Obj is_of_sort box,
+	    get_highlit_obj(0, Obj);
+	local_ends(Obj, P1, P2),
+	    moves_with_seln(Parent, P1),
+	    moves_with_seln(Parent, P2)).
+
 resize_top_win(Wid, W, H) :-
 	Wid shows_model Mod,
 	change_shape(Mod, bounding_box, [0,0,W,H]).
@@ -1065,8 +1068,7 @@ adjust_display_area(Wid, Visible) :-
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	find_all_comps(Box, Obj),
 	find_all_links(Obj, Link, Where),
-	\+ (Side = c, get_highlit_obj(0, Link),
-	       \+ has_outer_equiv(Link, Box, _)),
+	\+ (Side = c, moves_with_seln(Box, Link)),
 	/* do not tweak if part of move */
 	end_coords(Link, Where, [Xpt, Ypt]),
 	((member(Side, [nw, w, sw]), NewX is Xpt + XOff*(R-Xpt)/(R-L);
@@ -1111,8 +1113,7 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 	find_type(Moving_obj, Type),
 	get_shape(Moving_obj, course, [Finish | Rest]),
 	append(Middle, [Start], Rest),
-	m_class:Moving_obj is_connector from Source to DestFn,
-	get_host(DestFn, Dest),
+	local_ends(Moving_obj, Source, Dest),
 	member([End, Way, Comp],
 	       [[start, out, Dest], [finish, in, Source]]),
 	(Type is_class_of_sort has_bowtie,
@@ -1227,13 +1228,15 @@ normalize_deletes(Target) :-
 	    fail;
 	recursive_highlight(Target, on, seln);
 	recursive_highlight(Target, off, base);
-	    keep_only_if_links_stay(Target, base), fail;
+	ghost_link(_L, Base, Target),
+	    doomed(Base),
+	    highlight(Target, 2), fail;
+	keep_only_if_links_stay(Target, base), fail;
 	true.
 
 recursive_highlight(Target, Way, Where) :-
 	(Target is_of_sort box, !,
-	    (fail, depends_on_links(Target), !;
-		change_delete_status(Target, Way, Where)),
+	    change_delete_status(Target, Way, Where),
 	    Also = Target;
 	tk_get_pref(deleteEndToEnd, 1),
 	    m_class:connects(Target, Start, Mid),
@@ -1245,8 +1248,7 @@ recursive_highlight(Target, Way, Where) :-
 	    adjust_link_forwards(Target, Way, Also, Where);
 	    bring_dependents_into_line([Start, Finish], Where), fail);
 	tk_get_pref(deleteEndToEnd, 0),
-	    m_class:Target is_connector from Start to Mid,
-	    get_host(Mid, Finish),
+	    local_ends(Target, Start, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
 	    bring_dependents_into_line([Start, Finish], Where),
@@ -1319,9 +1321,12 @@ keep_only_if_links_stay(Damage, Where) :-
 match_delete_status(Ends, Way, Where) :-
 	Way = on;
 	member(End, Ends),
-	/* (\+ depends_on_links(End); Where = seln), */
 	\+ at_def_con(End, Where), !, Way = on;
 	Way = off.
+
+local_ends(Link, Start, Finish) :-
+	m_class:Link is_connector from Start to Mid,
+	get_host(Mid, Finish).
 
 doomed(End) :-
 	get_highlit_obj(L, End),
