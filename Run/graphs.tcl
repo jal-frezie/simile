@@ -656,12 +656,12 @@ proc ChooseDataHeader {eb pth where op dtype data} {
 proc FillIfSmall {entry text} {
     $entry delete 1.0 end
     set verbosity [string length $text]
-#    if {$verbosity>500} {
-#	$entry insert 1.0 [EndsOnly $text 1 $verbosity 500]
-#	$entry configure -state disabled
-#    } else {
+    if {$verbosity>500} {
+	$entry insert 1.0 [EndsOnly $text 1 $verbosity 500]
+	$entry configure -state disabled
+    } else {
 	$entry insert 1.0 $text
-#    }
+    }
 }
 
 proc FileParamDialogue {mustShow parent} {
@@ -793,27 +793,27 @@ proc DoneParams {oldMissing} {
         if {[string match TABLE [GetModelEval $node]]} {
             set compName [GetCaptionPathFromId $node]
 	    if {[string match normal [$widgetNames($compName) cget -state]]} {
-		set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
+	       set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
+	    }
             #ShowMessage debug info "-paramData($compName)- is -$paramData($compName)-" ok
-		set dataChanged 0
-		if {![llength $paramData($compName)]} {
-		    set empties 1
-		    # for each constant value, check whether it has been changed, and if so,
-		    # flag a complete model rebuild. Do same if running_c lost due to crash
-		} elseif {[lsearch $oldMissing $compName] > -1} {
-		    set dataChanged 1
-		} elseif {![info exists running_c]} {
-		    set dataChanged 1
-		} elseif {[string compare [lindex [GetModelValue $node] 0] \
-			       $paramData($compName)]} {
-		    set dataChanged 1
-		}
+	    set dataChanged 0
+	    if {![llength $paramData($compName)]} {
+		set empties 1
+		# for each constant value, check whether it has been changed, and if so,
+		# flag a complete model rebuild. Do same if running_c lost due to crash
+	    } elseif {[lsearch $oldMissing $compName] > -1} {
+		set dataChanged 1
+	    } elseif {![info exists running_c]} {
+		set dataChanged 1
+	    } elseif {[string compare [lindex [GetModelValue $node] 0] \
+			   $paramData($compName)]} {
+		set dataChanged 1
+	    }
 	    # Make array form if data has changed
-		if {$dataChanged} {
-		    set runState(reloadParams) 1
-		    set trans [GetFromProlog tk_get_info({},$node,types)]
-		    ListToArray $node $trans $paramData($compName)
-		}
+	    if {$dataChanged} {
+		set runState(reloadParams) 1
+		set trans [GetFromProlog tk_get_info({},$node,types)]
+		ListToArray $node $trans $paramData($compName)
 	    }
 	}
     }

@@ -555,9 +555,9 @@ proc collect {tgt node count args} {
 	    }
 	}
     }
-	set sub [join [concat $node $args] ,]
+    set sub [join [concat $node $args] ,]
 # Check that input source exists, it will not if model is being initialized
-	if {[info exists inputSrc($sub)]} {
-	    set $tgt $inputSrc($sub)
-	}
+    if {[info exists inputSrc($sub)]} {
+	set $tgt $inputSrc($sub)
+    }
 }

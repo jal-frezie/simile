@@ -22,7 +22,11 @@ first(BoolArr) --> [clear]=makearray(if place_in(1)==1 then 1
 				    elseif element(BoolArr,place_in(1)) then 0
 				    else element(sofar([clear]),place_in(1)-1),
 				     count(BoolArr)),sum([clear])+1.
-
+best(Incoming) --> [local]=Incoming,[records]=makearray(
+			if place_in(1)==1 then 1
+			elseif element([local],place_in(1))>element([local],element(sofar([records]),place_in(1)-1)) then place_in(1)
+			else element(sofar([records]),place_in(1)-1),count([local])),
+element([records],count([local])).
 delay(val,steps) -->
 	ptw = (if last(ptw)==1000 then 1 else last(ptw)+1),
 	ptr = ptw-steps-1000*floor((ptw-steps-1)/1000),
