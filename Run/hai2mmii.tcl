@@ -60,6 +60,7 @@ proc SetStep {time phase} {
     }
     
     if {$model_id} {
+#puts "setstep $time $phase"
 	c_setstepmodel $time $phase
     } else {
 	do_setstepmodel $time $phase

@@ -998,7 +998,7 @@ extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
 
    while (nodeModelPoint) {
      modelType = nodeModelPoint->model;
-     if (modelType->phases>=phase) {
+     if (modelType->phases>=abs(phase)) {
        modelType->setstep(starttime, phase);
      }
      nodeModelPoint = nodeModelPoint->next;

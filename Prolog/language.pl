@@ -799,8 +799,11 @@ make_evaluation_routine(
 	    get_element_ref(Language, IndSet, Count, Term);
 	number(Expr), !,
 	    Term=Expr;
-	member(Expr, [time, ind_time, time(P), ind_time(P)]), !,
-	    refer_value(Language, start_time, Term);
+	member(Expr, [time(P), ind_time(P)]), !,
+	    make_procedure_call_chars(Language, [glob_element, ts, P],
+				      TimeElmtStr),
+	    name(Term, TimeElmtStr);
+
 	Expr = dt(P), !, /* still used for explicit references to dt */
 	    make_procedure_call_chars(Language, [glob_element, dts, P],
 				      TimeElmtStr),
@@ -836,6 +839,13 @@ make_evaluation_routine(
 				Content_chars),
 /* End of graph clause */
 		name(Term, Content_chars);
+	Expr = step_incr(Step, Delta), !, 
+	    make_evaluation_routine_all(Language, [Step, Delta],
+					GraphN, [VStep, XDelta], GraphD),
+	    make_expr(Language, XDelta, VDelta),
+	    make_procedure_call_chars(Language, [step_incr, VStep,
+						 VDelta], Content_chars),
+	    name(Term, Content_chars);
 	Expr = stage_incr(Struct, Step, Delta), !, 
 	    make_scalar(Language, Struct, GraphN, SStruct, GraphD),
 	    make_pointer(Language, SStruct, VStruct),

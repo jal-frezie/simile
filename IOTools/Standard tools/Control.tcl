@@ -213,11 +213,14 @@ namespace eval runcontrol33857 {
                 set redoPhase $setPhase
                 #	    ShowMessage debug info "Twiddling $redoPhase" ok
             }
+            if {$runState(timeAtEval) != $runState(currentTime)} {
+		set runState(time$setPhase) $runState(currentTime)
+                SetStep $runState(currentTime) -$setPhase
+                set redoPhase $setPhase
+                #	    ShowMessage debug info "Twiddling $redoPhase" ok
+            }
         }
-	if {$runState(timeAtEval) != $runState(currentTime)} {
-	    set redoPhase 1 ;# compromise
-	}
-        SetStep 0 0
+	SetStep 0 0
         SetState $winId $sendvars(newData)
     }
     
@@ -258,6 +261,7 @@ namespace eval runcontrol33857 {
         variable sendvars
         global errorInfo redoPhase runState
         
+	set phases [GetPhaseCount]
         set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
         set widget [$winId.rcf getframe]
         while {[lsearch {exit stop kill} $sendvars(currentMode)]==-1} {
@@ -278,6 +282,11 @@ namespace eval runcontrol33857 {
             }
             switch $sendvars(currentMode) {
 		reset {
+		    for {set tweakPhase 1} {$tweakPhase <= $phases} \
+			{incr tweakPhase} {
+			    set runState(time$tweakPhase) 0.0
+			    SetStep 0.0 -$tweakPhase
+			}
 		    set current 0.0
 		    set exec $sendvars(run_length)
 		    UpdateTimes $current $exec
@@ -320,26 +329,27 @@ namespace eval runcontrol33857 {
                 # Advance time to the end of the tick
                 
                 set current [expr $current + $step]
+		set scaled_current [expr $current*$unitLength]
                 UpdateTimes $current $exec
                 
-                set bigPhase [PhaseFor $current $step [expr [GetPhaseCount]+1]]
-                if {$bigPhase <= [GetPhaseCount]} {
+                set bigPhase [PhaseFor $current $step [expr $phases+1]]
+                if {$bigPhase <= $phases} {
                     $widget.bf.flag itemconfigure 1 -fill green
 		    CondUpdate $bigPhase
+		    if {![do_model advance $scaled_current $bigPhase]} {
+			set sendvars(currentMode) exit
+		    }
 		    switch -exact -- $sendvars(intMethod) {
 		    Euler {
 			SetStep 0 0
 			if {![do_model update $scaled_current $bigPhase]} {
-			    return 0
+			    set sendvars(currentMode) exit
 			}
 		    } {4th-order Runge-Kutta} {
-			if {![RKUpdateModel $scaled_current $bigPhase]} {
+			if {![RKUpdate $scaled_current $bigPhase $phases]} {
 			    set sendvars(currentMode) exit
 			}
 		    }
-		    }
-		    if {![do_model advance $scaled_current $bigPhase]} {
-			set sendvars(currentMode) exit
 		    }
 
                      # If time is used at all in update phase it is in a
@@ -347,7 +357,11 @@ namespace eval runcontrol33857 {
                     # a last(...) function. So it is the time of the last
                     # step we need -- so dont change it till now
                     
-                    set scaled_current [expr $current*$unitLength]
+		    for {set tweakPhase $bigPhase} {$tweakPhase <= $phases} \
+			{incr tweakPhase} {
+			    set runState(time$tweakPhase) $scaled_current
+			    SetStep $scaled_current -$tweakPhase
+			}
                     if ![do_model eval $scaled_current $bigPhase] {
                         set sendvars(currentMode) exit
                     }
@@ -376,15 +390,37 @@ namespace eval runcontrol33857 {
 	}
     }
 
-    proc RKUpdateModel {current phase} {
-	for {set step 1} {$step < 4} {incr step} {
-	    SetStep $step 0
-	    if ![do_model update $current $phase] {
-		return 0
+    proc RKUpdate {current phase phases} {
+	global runState
+	SetStep 1 0
+	if ![do_model update $current $phase] {
+	    return 0
+	}
+	for {set tweakPhase $phase} {$tweakPhase <= $phases} \
+	    {incr tweakPhase} {
+		set interTime [expr ($runState(time$tweakPhase)+$current)/2]
+		SetStep $interTime -$tweakPhase
 	    }
-	    if ![do_model eval $current $phase] {
-		return 0
+	if ![do_model eval $current $phase] {
+	    return 0
+	}
+	SetStep 2 0
+	if ![do_model update $current $phase] {
+	    return 0
+	}
+	if ![do_model eval $current $phase] {
+	    return 0
+	}
+	SetStep 3 0
+	if ![do_model update $current $phase] {
+	    return 0
+	}
+	for {set tweakPhase $phase} {$tweakPhase <= $phases} \
+	    {incr tweakPhase} {
+		SetStep $current -$tweakPhase
 	    }
+	if ![do_model eval $current $phase] {
+	    return 0
 	}
 	SetStep 4 0
 	if ![do_model update $current $phase] {

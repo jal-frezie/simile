@@ -1221,8 +1221,10 @@ proc start_run {winId} {
         set runState(displayInt) 1
         for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
             set runState(update$phase) 0.1
+	    set runState(time$phase) 0
             set runState(prev_update$phase) 0.1
             SetStep 0.1 $phase
+	    SetStep 0 -$phase
         }
     }
 
@@ -1618,8 +1620,12 @@ proc max {first last} {
 }
 
 proc do_setstepmodel {value level} {
-    global dts
-    set dts($level) $value
+    global ts dts
+    if {$level<0} { ;# lazy
+	set ts([expr -$level]) $value
+    } else {
+	set dts($level) $value
+    }
 }
 
 # delete_list is a dummy procedure. What it should do is clear the

@@ -501,8 +501,13 @@ make_intermediates(
 	    pointer_from(ChanPath, ChannelPtr),
 	    SourceRef = (arr(ChannelPtr, channelId, [])==ChannelNum),
 	    Units = boolean;
+	Source = time(N),
+	    ((N=0; N = ''), SourceRef = time(Step);
+	    integer(N), SourceRef = Source;
+	    raise_exception(bad_index_number(N, time))),
+	    Units = real, !;
 	Source = dt(N),
-	    (N=0, SourceRef = dt(Step);
+	    ((N=0; N = ''), SourceRef = dt(Step);
 	    integer(N), SourceRef = Source;
 	    raise_exception(bad_index_number(N, dt))),
 	    Units = real, !;
@@ -770,7 +775,7 @@ function(any, boolean, [array_or_list_of_boolean]).
 function(all, boolean, [array_or_list_of_boolean]).
 function(channel_is, boolean, [channel]).
 function(dt, real, [const_int]).
-function(time, real, []).
+function(time, real, [const_int]).
 function(init_time, real, []).
 function(parent, int, []).
 /* legacy versions from before we had empty arg lists */

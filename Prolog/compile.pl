@@ -217,7 +217,8 @@ extraction procedures, including 'tree' which is fairly
 important...(or was, back when the A stood for Agroforestry)... */
 
 	LocalNames = [tree, type, set, newvalue, finished, current, context,
-		      dtarget, btarget, instance, start_time, time_step, time,
+		      dtarget, btarget, instance, start_time, time_step,
+		      times, ts, dts,
 		      init_time, parentId, channelId, version,
 		      on_reset, externs_done, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
@@ -255,6 +256,8 @@ bits and pieces */
 	       [real, simile_version, [], V], 0, [VersionDec]),
 	render(Language, variable_declaration,
 	       [int, phasecount, [], Phases], 0, [PhaseDec]),
+	render(Language, variable_declaration,
+	       [real, ts, [Phases]], 0, [Times]),
 	render(Language, variable_declaration,
 	       [real, dts, [Phases]], 0, [DTs]),
 
@@ -296,7 +299,7 @@ wot need them */
 		StructTypeComment, InitTypes], TypeSection),
 
 	send_to_dest(Stream, ['#include <support1.cpp>', VersionDec,
-			      PhaseDec, DTs]),
+			      PhaseDec, Times, DTs]),
 
 	output:list_matching_files('../Functions/*.cpp', FnIncs),
 	/* the /* in the above line does not start a comment */
@@ -390,8 +393,9 @@ pick_state_vars([One | All], Rate, State, Update) :-
 	pick_state_vars(All, MoreRate, MoreState, MoreUpdate),
 	(One = make(_,_,_,_, [assign(SV, SV+stage_incr(_,_,_))]), !,
 	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
-	(One = make(culled(_), _,_,_,_);
-	 One = make(lastvalue(_), _,_,_,_);
+	(One = make(Tgt, _,_,_,_),
+	    member(Tgt, [created(_), settled(_), bred(_), culled(_),
+			 lastvalue(_)]);
 	 One = make(_,_,_,_, [assign(SV, SV+step_incr(_,_))])), !,
 	    Rate = MoreRate, State = [One | MoreState], Update = MoreUpdate;
 	Rate = [One | MoreRate], State = MoreState, Update = MoreUpdate).

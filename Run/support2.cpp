@@ -61,7 +61,11 @@ dts representing the time steps at the various phases. This function reaches
 in and sets one of them. */
 
 void do_setstep(double time, int phase) {
-  dts[phase] = time;
+  if (phase<0) { /* lazy */
+    ts[-phase] = time;
+  } else {
+    dts[phase] = time;
+  }
 }
 
 double step_incr (int step, double v) {
