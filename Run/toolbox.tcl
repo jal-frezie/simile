@@ -676,6 +676,8 @@ proc ClickObj { x y winId X Y action} {
     
     if {!$target} {
         # a background click
+	$winId select clear
+	$winId focus {}
 	if {$RB && [string equal select $pushedbutton]} {
 	    prolog [list tk_${action}('$winId', $xco , $yco , 2)]
 	    tk_popup [winfo parent $winId]top.edit $X $Y
@@ -925,7 +927,8 @@ proc AcceleratorState {winName menu item state} {
     if {[info exists accelerator($menu,$item)]} {
         if {[string match normal $state]} {
             bind $winName $accelerator($menu,$item) \
-                    [${winName}top.$menu entrycget $item -command]
+		[list if "\[DoingSelection $winName\]" \
+		     [${winName}top.$menu entrycget $item -command]]
         } else  {
             bind $winName $accelerator($menu,$item) {}
         }
@@ -937,6 +940,11 @@ proc AddAccelerator {winName menu item event} {
     global accelerator
     set accelerator($menu,$item) $event
     AcceleratorState $winName $menu $item [${winName}top.$menu entrycget $item -state]
+}
+
+proc DoingSelection {winName} {
+    return [expr ![llength [$winName.canvas focus]] \
+		&& [string match [focus] $winName.canvas]]
 }
 
 proc AddCanvasBindings { c } {
@@ -1546,7 +1554,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     AddAccelerator $winid edit "Unselect all" "<Control-u>"
     $fm add command -label "Invert selection" \
 	-command "MenuSelect $c edit invsel" -accelerator "Ctrl+*"
-#    AddAccelerator $winid edit "Invert selection" "<Control-Asterisk>"
+    AddAccelerator $winid edit "Invert selection" "<Control-Shift-8>"
 
     AddFindMenu $c $fm
     $fm add separator
