@@ -7,7 +7,7 @@ use goals that start with "tk_" to make the diffreence clear.
 */
 
 sicstus_module(input, [tk_undo/0, tk_redo/0, tk_get_info/3, tk_get_params/2,
-	tk_click_obj/5, tk_click/3, tk_doubleclick/2, tk_unclick/2, 
+	tk_click_obj/5, tk_click/3, tk_doubleclick/3, tk_unclick/2, 
 	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5, 
 	tk_embrace/2, tk_abandon/0, tk_abandon_eqn/0,
 	compile_to_file/1, tk_off_window/1, 
@@ -46,7 +46,7 @@ tk_click(Wid, Virt_X, Virt_Y) :-
 	prioritize_window(Wid),
 	click(Virt_X, Virt_Y).
 
-tk_doubleclick(Virt_X, Virt_Y) :-
+tk_doubleclick(_Wid, Virt_X, Virt_Y) :-
 	show_wait_cursor,
 	doubleclick(Virt_X, Virt_Y),
 	show_normal_cursor.
