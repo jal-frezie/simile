@@ -1475,21 +1475,27 @@ proc ToggleIOToolMenu {node} {
         if {[string equal $node $window_info($win)]} {
             set c [string range $win 0 end-9]
             set winData $window_info($c,parent)
-            
             set topMenu ${winData}top
-        if {[$topMenu index last]==7} {
-        $topMenu delete "I/O tools"
-        }
+# MacOS defines the Help menu for the application, so there is one fewer menu
+            if [string match Darwin $tcl_platform(os)] {
+                set numberOfMenus 6
+            } else {
+                set numberOfMenus 7
+            }
+            if {[$topMenu index last]==$numberOfMenus} {
+                $topMenu delete "I/O tools"
+            }
             $winData.toolSlot.navbar.runenv configure -state disabled
             if {[HaveValues $node]} {
                 set newState normal
                 if {[PrefValue custom(helperManager) helperManager]} {
                     $winData.toolSlot.navbar.runenv configure -state normal
                 } else {
-            if {![winfo exists $topMenu.helpers]} {
-            set menuSpec [do_in_node $node ListMenuContents .helpers]
-            ReconstituteMenu $topMenu.helpers $menuSpec $node
-            }
+                    if {![winfo exists $topMenu.helpers]} {
+                        set menuSpec [do_in_node $node ListMenuContents .helpers]
+                        ReconstituteMenu $topMenu.helpers $menuSpec $node
+                    }
+# Add menu at end if using MacOS, since Help menu is not defined by application
                     if [string match Darwin $tcl_platform(os)] {
                         $topMenu insert end cascade -label "I/O tools" \
                                 -underline 0 -menu $topMenu.helpers
@@ -1498,7 +1504,6 @@ proc ToggleIOToolMenu {node} {
                                 -underline 0 -menu $topMenu.helpers
                     }
                 }
-
             } else {
                 set newState disabled
             }
