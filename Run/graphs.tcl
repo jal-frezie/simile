@@ -1183,11 +1183,15 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	#ShowMessage debug info "Restoring $savedValue" ok
 	set IdAndValue [split $savedValue =]
 	set restoredComp [RestoreCrs $smPath[lindex $IdAndValue 0]]
-	set node [GetCompProperty $topNode IdFromCapt $restoredComp]
-	set trans [GetTransTable $node]
+	if {$origVersion<4.0} {
+	    # pre-multiple desktop -- trim outermost model
+	    if {[string equal /Desktop/ [string range $restoredComp 0 8]]} {
+		set restoredComp [string range $restoredComp 8 end]
+	    }
+	}
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
 	if {[info exists paramData($restoredComp)]} {
-	    if {$origVersion>3.3} {
+	    if {$origVersion>=4.0} {
 		set paramData($restoredComp) [lindex $IdAndValue 2]
 		set reference [string equal reference [lindex $IdAndValue 1]]
 		if {$reference} {
@@ -1213,9 +1217,13 @@ proc MergeParams {topNode smPath oldPath interactive} {
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
 		set paramData($restoredComp) \
 		    [LoadTableData $paramState($restoredComp)]
-	    } elseif {![SensibleValue $trans $paramData($restoredComp)]} {
-		ShowMessage "Error merging parameters" error "Parameterization file contained the entry $paramData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
-		set paramData($restoredComp) {}
+	    } else {
+		set node [GetCompProperty $topNode IdFromCapt $restoredComp]
+		set trans [GetTransTable $node]
+		if {![SensibleValue $trans $paramData($restoredComp)]} {
+		    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $paramData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
+		    set paramData($restoredComp) {}
+		}
 	    }
 	    if {$interactive} {
 		FillIfSmall $widgetNames($restoredComp).e \
