@@ -23,7 +23,7 @@ proc initialize {winId} {
     pack [message $winId.intro -aspect 800] -fill x
     variable grid
     variable viewVector
-    set pi 3.1416
+    set pi 3.14
     array set viewVector {angle -0.3 elevation 0.5}
     scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
 	-resolution 0.01 \
@@ -107,6 +107,7 @@ proc click {winId node caption} {
 		SetState $winId sizeval
 	    }
 	    sizeval {
+		ReleaseClicks $winId
 		$ms configure -text {}
 		SaveState $winId
 		display $winId 0 0 0
