@@ -1284,16 +1284,16 @@ proc DoRegDialog {dtId} {
     
     TitleFrame .register.create -text "Creating a model: "
     set create [.register.create getframe]
-    if {[string match Darwin $tcl_platform(os)]} {
+    if {[string match Windows $tcl_platform(platform)]} {
 	pack [message $create.m -text "Select compartments and flows from the toolbar\
-                     to add to the diagram. Use the select (pointer) tool to edit captions\
-                    and values. Run your model using the Build command of the Model menu."\
-                   -width 400]
+       to add to the diagram. Use the select (pointer) tool to edit captions\
+       and values. Run your model using the Build command of the Model menu."\
+       -width 400 -font {-family helvetica -size 8}]
      } else {
 	 pack [message $create.m -text "Select compartments and flows from the toolbar\
-	to add to the diagram. Use the select (pointer) tool to edit captions\
-	and values. Run your model using the Build command of the Model menu."\
-	-width 400 -font {-family helvetica -size 8}]
+		      to add to the diagram. Use the select (pointer) tool to edit captions\
+		     and values. Run your model using the Build command of the Model menu."\
+		    -width 400]
   }
   pack $create -expand on -fill x
     #	pack [frame $create.buttons]
