@@ -1302,3 +1302,51 @@ proc ShowAbout {winId} {
     grab release .about
     destroy .about
 }
+
+proc ShowExpiryImminent {expTime} {
+    toplevel .expiry
+#    wm transient .expiry $winId
+    wm title .expiry "Expiry Imminent"
+    wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
+    wm attributes .expiry -toolwindow true
+
+    set labf1 [frame .expiry.labf1]
+    image create photo warn
+    warn read "../Images/warning.gif"
+    pack [label $labf1.img -image warn] -side left
+    pack [label $labf1.lab1 -text "Warning:" \
+            -font {-weight bold -family helvetica -size 10}] -side left
+    pack [label $labf1.lab2 -text "This product will shortly expire." \
+            -font {-family helvetica -size 10}] -side left
+    pack $labf1 -padx 8 -pady 2
+
+    set labf2 [frame .expiry.labf2]
+    pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
+    pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
+            -fg blue -cursor hand2 -font {-underline true -family helvetica -size 10}]] -side left
+    bind $www <Button-1> {VisitUrl "http://www.simulistics.com/"}
+    pack [label $labf2.lab3 -text "before" -font {-family helvetica -size 10}] -side left
+    pack [label $labf2.lab4 -text [clock format $expTime -format {%d %h %Y}] \
+            -font {-family helvetica -size 10}] -side left
+    pack [label $labf2.lab5 -text "to upgrade." -font {-family helvetica -size 10}] -side left
+    pack $labf2 -padx 8 -pady 2
+    
+    set buttons [frame .expiry.buttons]
+    pack [button $buttons.ok -text OK -width 10 \
+            -command {set ack 1}] \
+            -side left -padx 4 -pady 4
+    pack [button $buttons.help -text Help -width 10 \
+            -command {ContextSensitiveHelp .expiry coviewexpiry.htm}] \
+            -side left -padx 4 -pady 8
+    pack $buttons
+    
+    set height [winfo reqheight .expiry]
+    set width [winfo reqwidth .expiry]
+    set sheight [winfo screenheight .expiry]
+    set swidth [winfo screenwidth .expiry]
+    wm geometry .expiry +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    update
+
+    tkwait variable ack
+    destroy .expiry
+}

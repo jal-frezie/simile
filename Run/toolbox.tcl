@@ -104,7 +104,8 @@ proc ControlDraw {prologVersion} {
 	    set crumble "This version of Simile has passed its expiry date."
 	    error $crumble
 	} elseif {$toGo<7*$day} {
-	    ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
+#	    ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
+        ShowExpiryImminent $expTime
 	}
     }
 
