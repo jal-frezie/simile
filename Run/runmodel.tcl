@@ -243,6 +243,7 @@ proc DoZoom { winId factor toProlog} {
 # out right when zooming prior to Postscript export.
 
 proc ZoomImage {winId which factor fontor} {
+    #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
     global window_info looks 
     
     $winId scale $which 0 0 $factor $factor
@@ -337,8 +338,8 @@ proc ExtractFontData {font} {
 # This updates the width of a canvas object when it is zoomed. The actual width
 # is rounded internally to an integer, so we store the full value in a tag called
 # realwidth(...) which is also updated by this procedure.
-
 proc AdjustWidth {winId object factor} {
+    global fiddledXfontPixelsToPoints
     if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
                 tag oldWidth]<1} {
         set oldWidth [$winId itemcget $object -width]
@@ -347,11 +348,17 @@ proc AdjustWidth {winId object factor} {
         $winId dtag $object $tag
         #ShowMessage debug info "AdjustWidth $object oldWidth $oldWidth" ok
 
-}
+    }
         
     if {[string match text [$winId type $object]]} {
-        #ShowMessage debug info "AdjustWidth text 1 oldWidth $oldWidth" ok
+        #ShowMessage debug info "AdjustWidth text 1 oldWidth $oldWidth\n\
+            #[$winId itemcget $object -font]" ok
+        # set oldWidth to the text size in points if textsize is zero (from [$winId itemcget $object -width])
+        #    or the font description is in X Windows format and oldWidth originally in points
         if {$oldWidth==0} {
+            set oldWidth [font actual [$winId itemcget $object -font] -size]
+        }        
+        if {![string match -family [$winId itemcget $object -font]] } {
             set oldWidth [font actual [$winId itemcget $object -font] -size]
         }
         #ShowMessage debug info "AdjustWidth text 2 oldWidth $oldWidth" ok
