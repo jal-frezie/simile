@@ -634,11 +634,11 @@ build_submodel_functions( Language, Phases, Inters,
 			  Used, ExtUsers, AllGraphs, Decls) :-
 	reassure_user("Ordering model execution assignments"),
 
-	ExtBlocker = make(externs_done, [externs_done], [], 0, []),
-	/* rough and ready -- the two externs_done instructions will each
-	block the other plus anything else dependent on this condition */
-	order_all_assignments(Phases, [ExtBlocker, ExtBlocker | SortedForm],
-			IntOrdered, [ExtBlocker, ExtBlocker | ExtUsers]),
+	NotDone is Phases+1,
+	ExtBlocker = make(externs_done, [], [], NotDone, []),
+	/* rough and ready -- phase NotDone means it never gets scheduled */
+	order_all_assignments(Phases, [ExtBlocker | SortedForm],
+			IntOrdered, [ExtBlocker | ExtUsers]),
 	order_all_assignments(Phases, ExtUsers, ExtOrdered, Lost),
 	(\+ Lost = [],
 	    select(Awkward, Lost, Others),

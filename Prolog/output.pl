@@ -38,7 +38,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/2,
 	check_directory/1, windowize/2,
 	compile_c_program/2, check_exec_fns_fresh/5, load_executable/6,
-			find_phase/3, tk_kill_window/1, exit_AME/0]).
+			find_phase/4, tk_kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
@@ -540,8 +540,9 @@ load_tcl_program(List, Response) :-
 	separate_with_crs(List, DigestibleList),
 	safe_tcl_eval(DigestibleList, Response).
 
-find_phase(SourceId, SubmodelId, Phase) :-
-	safe_tcl_eval(['FindPhase', SourceId, SubmodelId], PhaseStr),
+find_phase(Node, SourceId, SubmodelId, Phase) :-
+	safe_tcl_eval([do_for_node, Node, 'FindPhase', SourceId, SubmodelId],
+		      PhaseStr),
 	name(Phase, PhaseStr).
 	
 separate_with_crs([], []).

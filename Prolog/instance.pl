@@ -331,7 +331,9 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 		PhaseSet = 1; /* Comes in from outside */
 	    nonvar(Home),
 		Entry is_connector from NodeID to _,
-		output:find_phase(SourceID, NodeID, PhaseSet),
+		contains(TopNode, Node),
+		backup:is_toplevel(TopNode),
+		output:find_phase(TopNode, SourceID, NodeID, PhaseSet),
 		Ref = elt(Path, Var, _)), /* match var to submodel */
 	    RefExp = elt(Path, import(ImpType, Away, _L, _P0, _P, PhaseSet,
 				    Var, ArcIndex), FarUnits-UseDims)),

@@ -1084,12 +1084,12 @@ proc set_connections {connects} {
 # dlls loaded so far)
 
 proc FindPhase {node submodel} {
-    global model_id model_ids
+    global model_id myNode model_ids
 
-    set model_id $model_ids($submodel)
-    foreach subnode [listobjects $model_id] {
+    set model_id($myNode) $model_ids($submodel)
+    foreach subnode [listobjects $model_id($myNode)] {
         set subtype [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
-			 [get_value $model_id $subnode 2]]
+			 [getvalue $model_id($myNode) $subnode 2]]
         if {[string match $node $subnode]} {
             if {[string match EXOGENOUS $subtype]} {
                 return 1
@@ -1097,7 +1097,7 @@ proc FindPhase {node submodel} {
                 return 0
             }
         }
-        if {[get_value $model_id $subnode 1]==4} { ;# EXTERNAL
+        if {[getvalue $model_id($myNode) $subnode 1]==4} { ;# EXTERNAL
             lappend subs [list $subnode $subtype]
         }
     }
