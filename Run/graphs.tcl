@@ -112,6 +112,9 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     button $buttons.cancel -text Cancel -width 10 \
 	-command [list set graph($t,done) 0]
     pack $buttons.cancel -padx 4 -pady 4 -anchor e
+    button $buttons.edit -text "Edit as table" -width 10 \
+	-command [list EditAsTable $t $grid]
+    pack $buttons.edit -padx 4 -pady 4 -anchor e
     button $buttons.help -text Help -width 10 -command {ContextSensitiveHelp .graph equations/graph.htm}
     pack $buttons.help -padx 4 -pady 4 -anchor e
     pack $buttons -fill x -padx 8 -pady 8
@@ -219,6 +222,22 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     return $graph($t,done)
 }
 
+proc EditAsTable {t canvas} {
+    global graph
+    set size [llength $graph($t,points)]
+    set range [expr $graph($t,highx)-$graph($t,lowx)]
+    for {set index 0} {$index < $size} {incr index} {
+	lappend table \
+	    [expr $graph($t,lowx)+$range*$index/($size-1.0)] \
+	    [PointToYValue $t [lindex $graph($t,points) $index]]
+    }
+    set newList [EditListAsTable $t $table]
+    foreach {index y} $newList {
+	set zone [expr round(($size-1.0)*$index/$range)]
+	GStick $canvas $zone [YValueToPoint $t $y]
+    }
+}
+
 proc SetDefaultGraph {xlow xhigh xspan ylow yhigh yspan range size points} {
     global equation
     set equation(table_data) [list /graph/ $ylow $yhigh $yspan $size \
@@ -276,9 +295,14 @@ proc YEntry {c} {
     }
     set zone [expr round(([llength $graph($t,points)]-1.0)*\
             ($xvalue-$graph($t,lowx))/($graph($t,highx)-$graph($t,lowx)))]
-    set y [expr round($graph($t,height)*\
-            ($yvalue-$graph($t,lowy))/($graph($t,highy)-$graph($t,lowy)))]
+    set y [YValueToPoint $t $yvalue]
     GStick $c $zone $y
+}
+
+proc YValueToPoint {t yvalue} {
+    global graph
+    return [expr round($graph($t,height)*\
+	       ($yvalue-$graph($t,lowy))/($graph($t,highy)-$graph($t,lowy)))]
 }
 
 proc GDrag {c ox oy} {
@@ -321,7 +345,12 @@ proc GStick {c zone y} {
     }
     set xvalue [expr $graph($t,lowx) + \
             ($graph($t,highx)-$graph($t,lowx))*$zone/([llength $graph($t,points)]-1.0)]
-    set yvalue [expr $graph($t,lowy) + \
+    set yvalue [PointToYValue $t $y]
+}
+
+proc PointToYValue {t y} {
+    global graph
+    return [expr $graph($t,lowy) + \
             ($graph($t,highy)-$graph($t,lowy))*($y*1.0)/$graph($t,height)]
 }
 
@@ -448,7 +477,8 @@ proc equationDoTable {parent} {
     button .table.top.fbuttons.load -text Load -width 10 \
 	-command [list AcquireTableData $lidx]
     button .table.top.fbuttons.edit -text View/Edit -width 10 \
-	-command {EditListAsTable .table}
+	-command {set table_entry(values) \
+		      [EditListAsTable .table $table_entry(values)]}
     button .table.top.fbuttons.ok -text OK -width 10 \
 	-command {set table_entry(done) 1}
     button .table.top.fbuttons.cancel -text Cancel -width 10 \
@@ -537,8 +567,8 @@ proc AcquireTableData {lidx} {
     set table_entry(values) [LoadTableData $tableSpec]
 }
 
-proc EditListAsTable {parent} {
-    global helperTable table_entry table_viewer
+proc EditListAsTable {parent values} {
+    global helperTable table_viewer
 
     set t .table_edit
     toplevel $t -bd 4
@@ -549,7 +579,7 @@ proc EditListAsTable {parent} {
     set ::${viewerId}::editMode($t) 1
     ${viewerId}::initialize $t
 
-    set ${viewerId}::dataStore($t,0,0.0) $table_entry(values)
+    set ${viewerId}::dataStore($t,0,0.0) $values
     set ${viewerId}::displayList($t) eqn_table
     set ${viewerId}::orientList($t) {none cols rows cols}
     set ${viewerId}::displayFormat($t,0) {General 4 0}
@@ -561,7 +591,7 @@ proc EditListAsTable {parent} {
     grab release $t
     destroy $t
 # extract step at end so window still gone if it fails
-    set table_entry(values) [${viewerId}::ExtractEdits $t]
+    return [${viewerId}::ExtractEdits $t]
 }
 
 proc GetDataFile {info} {
