@@ -439,6 +439,21 @@ menu_handle(Win, file, export_prolog) :-
 	save_isolated(FileName, Model, Date),
         finish_progress_dialogue.
 
+menu_handle(Win, edit, Component) :-
+	Component is_primitive,
+	get_edit_model(Win, Model, Tgt),
+	(Component is_class_of_sort box, !,
+	    event:insert(Win, Model, Tgt, Component);
+	(Tgt = [Xpt, Ypt], !,
+	        set_current_coords(Xpt, Ypt),
+	        event:make_terminator(Component, Model, StartPt),
+	        nonvar(StartPt);
+	    StartPt = Tgt),
+	    event:do_linear(Component, StartPt),
+	    advance_phase_to(targetting),
+	    set_adding_object(Component),
+	    assert(event:instant_link)).
+
 /* Delete the selection */
 menu_handle(Win, edit, delete) :-
         start_progress_dialogue,
@@ -586,9 +601,9 @@ menu_handle(Win, window, NastyAtom) :-
 
 menu_handle(_, _, _).
 
-get_edit_model(Win, Model, Pt) :-
-	event:menu_submodel_is(Model, Pt), !;
-	Win shows_model Model.
+get_edit_model(Win, Comp, Pt) :-
+	(event:menu_submodel_is(Comp, Pt), !;
+	Win shows_model Comp).
 
 select_all_in(Model, Way) :-
 	contains(Model, Bit),

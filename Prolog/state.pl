@@ -232,13 +232,11 @@ set_mode(New_mode) :-
 :- dynamic(adding_object_is/1).
 
 get_adding_object(Cur_obj) :-
-	mode_is(add),
 	adding_object_is(Cur_obj).
 
 /* set_adding_object: the kind of object we are adding to the system. This will fail if called in a mode other than add mode. 
 */
 set_adding_object(New_obj) :-
-	mode_is(add),
 	retractall(adding_object_is(_)),
 	assertz(adding_object_is(New_obj)).
 

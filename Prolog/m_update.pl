@@ -1119,7 +1119,13 @@ presence_affects(Item, Affected) :-
 	    Emerge is_connector from Item to _,
 	    find_type(Emerge, influence),
 	    terminates(Emerge, Fn),
-	    implicit_function(Affected, Fn);
+	    (implicit_function(Affected, Fn);
+	    is_ghost(Fn),
+		Further is_connector from Fn to _,
+		find_type(Further, influence),
+		terminates(Further, FarFn),
+		implicit_function(Affected, FarFn),
+		\+ contains(Item, Affected));
 	find_type(Item, relation),
 	    Item is_connector from _ to Affected,
 	    terminates(Item, Affected);

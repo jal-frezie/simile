@@ -749,10 +749,6 @@ proc ClickObj { x y winId X Y action} {
             }
         }
         ### End equation bar
-
-	# Note with menu up the unclick will be lost so do it now
-	if {$RB} {
-	}
     }
 }
 
@@ -1495,6 +1491,27 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     set fm [menu ${winid}top.edit -tearoff 0 \
 	       -postcommand "prolog tk_bar_edit_menu('$c')"]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
+
+    $fm add cascade -label "Create new" -menu $fm.add
+    set em1 [menu $fm.add -tearoff 0]
+    foreach type {Compartment Variable Flow Influence} {
+	$em1 add command -label $type -command \
+	    "MenuSelect $c edit [string tolower $type]"
+    }
+    $em1 add command -label "Role arrow" -command \
+	"MenuSelect $c edit relation"
+    $em1 add cascade -label "Membership control" -menu $em1.sub
+    set em2 [menu $em1.sub -tearoff 0]
+    foreach type {Creation Immigration Reproduction Loss} {
+	$em2 add command -label $type -command \
+	    "MenuSelect $c edit [string tolower $type]"
+    }
+    $em2 add command -label "Existence condition" -command \
+	"MenuSelect $c edit condition"
+    $em2 add command -label "Iteration condition" -command \
+	"MenuSelect $c edit alarm"
+    $fm add separator
+
     $fm add command -label Undo -command "UnOrReDo $c 0" \
             -state disabled -accelerator "Ctrl+Z"
     AddAccelerator $winid edit Undo "<Control-z>"
@@ -1620,17 +1637,17 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     ${winid}top add cascade -label Tools -underline 0 \
             -menu ${winid}top.tools
     $fm add radiobutton -label "Label/move elements" \
-	-command "ModeSelect select" -variable pushedbutton -value select
+	-command "ModeSelect select" -variable MIpushedbutton -value select
 #    $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
-            -variable pushedbutton -value move
+            -variable MIpushedbutton -value move
     $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
-            -variable pushedbutton -value delete
+            -variable MIpushedbutton -value delete
 #    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
-            -variable pushedbutton -value copy
+            -variable MIpushedbutton -value copy
     $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost"\
-            -variable pushedbutton -value ghost
+            -variable MIpushedbutton -value ghost
     $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
-            -variable pushedbutton -value snap -state disabled
+            -variable MIpushedbutton -value snap -state disabled
     
     if {[info exists window_info(showIO)]} {
         ${winid}top add  cascade -label "I/O tools" -underline 0 -menu .helpers

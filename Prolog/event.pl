@@ -120,7 +120,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    advance_phase_to(dragging),
 	    drag_to(NewXpt, NewYpt, Name);
 	(click_on([NewXpt, NewYpt], Name, CD), !; true),
-	adjust_edit_menu(Wid, Parent, [NewXpt, NewYpt]),
+	adjust_edit_menu(Wid, Parent, Name),
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
@@ -200,21 +200,16 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	adjust_edit_menu(Wid, Parent, Point).
 
 click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
-	get_mode(add),
 	finish_old_edit(none),
+	get_mode(add),
 	set_start_coords(Xpt, Ypt),
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
 	get_adding_object(New_obj),
 	(New_obj is_class_of_sort box, !,
-		(New_obj is_class_of_sort rounded_rect,
-			advance_phase_to(rubberband);
-		add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
-		give_focus(NewNode),
-		select_text(Wid, NewNode),
-	    (setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
-		NewLooks = []),
-	    all(event, spread_colour, [build(NewLooks), unify(yes)]));
+	    (New_obj is_class_of_sort rounded_rect,
+		advance_phase_to(rubberband);
+	    insert(Wid, Parent, [Xpt, Ypt], New_obj));
 	make_terminator(New_obj, Parent, DropNode),
 	    (var(DropNode), !;
 		do_linear(New_obj, DropNode))).
@@ -242,26 +237,43 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	    
 	click_on([Xtr, Ytr], Parent, CD)).
 
-adjust_edit_menu(Wid, Parent, Point) :-
+insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
+	add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
+	give_focus(NewNode),
+	select_text(Wid, NewNode),
+	(setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
+	    NewLooks = []),
+	all(event, spread_colour, [build(NewLooks), unify(yes)]).
+
+adjust_edit_menu(Wid, Comp, Point) :-
 	retractall(menu_submodel_will_be(Wid, _,_)),
-	assert(menu_submodel_will_be(Wid, Parent, Point)).
+	assert(menu_submodel_will_be(Wid, Comp, Point)).
 
 bar_edit_menu(Wid) :-
-	(menu_submodel_will_be(Wid, Parent, Point), !;
+	(menu_submodel_will_be(Wid, Comp, Point), !;
 	restore_edit_menu(Wid),
-	    menu_submodel_will_be(Wid, Parent, Point)),
+	    menu_submodel_will_be(Wid, Comp, Point)),
 	retractall(menu_submodel_is(_, _)),
-	assert(menu_submodel_is(Parent, Point)),
-	Wid shows_model Model,
-	(contains(Parent, Lit), \+ Lit = Parent,
+	assert(menu_submodel_is(Comp, Point)),
+	(Point = [_,_], !,
+	    CanAddNode = 1;
+	 CanAddNode = 0),
+	    
+	(contains(Comp, Lit), \+ Lit = Comp,
 	    get_highlit_obj(N, Lit),
 	    N<2, !,
 	    Cuttable = 1;
 	Cuttable = 0),
-	(selected_box_is(_Any), !,
+	(selected_box_is(_Any), Point = [_,_], !,
 	    Pastable = 1;
 	Pastable = 0),
 	Wid shows_model Model,
+	update_ability(Model, none, 'edit.add', 'Compartment', CanAddNode),
+	update_ability(Model, none, 'edit.add', 'Variable', CanAddNode),
+	update_ability(Model, none, 'edit.add', '{Role arrow}', CanAddNode),
+	update_ability(Model, none, 'edit.add', '{Membership control}',
+		       CanAddNode),
+
 	update_ability(Model, none, edit, 'Cut', Cuttable),
 	update_ability(Model, none, edit, 'Copy', Cuttable),
 	update_ability(Model, none, edit, 'Delete', Cuttable),
@@ -381,8 +393,9 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 /* do_colours/1: When an object is selected this should set it and its
 neighbours to the appropriate colours, i.e.,
 blue: moves in bulk, copies and deletes
-dark green: drags and deletes
-light green: deletes */
+turquoise: drags and deletes
+dark green: deletes
+light green: changes status */
 
 do_colours(Obj, Way) :-
 	(Way = on,
@@ -444,7 +457,6 @@ displayed */
 /* finish_old_edit: this is called when the user does something which ends the
 process of editing the text associated with a node. It gets the text from the GUI
 and updates the prolog record of the nodes caption.
-
 This used to be a dowdy, little-regarded rule which mattered not whether it
 succeeded, but was thrust into the limelight on 22/1/98 when it was given the
 task of preventing users entering duplicate captions within the same parent. Note
@@ -817,6 +829,7 @@ check_entries(InterParent, Trans, Pair, NewPair, Comp) :-
 
 
 :- dynamic(moved_something/0).
+:- dynamic(instant_link/0).
 
 move_something :-
 	moved_something, !;
@@ -824,6 +837,7 @@ move_something :-
 
 drag_to(Xpt, Ypt, _Comp) :-
 	get_mode(select),
+	\+ instant_link,
 	get_phase(rubberband),
 	get_start_coords(OldX, OldY),
 	clear_incomplete,
@@ -832,7 +846,7 @@ drag_to(Xpt, Ypt, _Comp) :-
 	draw_rubberband(square).
 
 drag_to(Xpt, Ypt, Comp) :-
-	get_mode(add),
+	(get_mode(add); instant_link),
 	get_adding_object(Ltype),
 	get_phase(Phase),
 	(Ltype is_class_of_sort line, Phase = dragging,
@@ -1106,7 +1120,7 @@ multi_object_mode :-
 components makes sense */
 
 multi_level_mode :-
-	get_mode(add),
+	(get_mode(add); instant_link),
 		get_adding_object(Type),
 		Type is_class_of_sort line;
 	get_mode(ghost);
@@ -1471,7 +1485,8 @@ select_bagged(Rect, Model) :-
 	    select_bagged(NewRect, Caught);
 	 \+ (get_shape(Caught, bounding_box, Outer),
 		fits_inside(Rect, Outer)),
-		do_colours(Caught, on)),
+	    \+ (get_highlit_obj(N, Caught), N<2),
+	    do_colours(Caught, on)),
 	fail.
 
 zoom_to_area :-
@@ -1485,7 +1500,7 @@ zoom_to_area :-
 	remove_old_rubberband.
 	
 unclick_obj :-
-	get_mode(add),
+	(get_mode(add); retract(instant_link)),
 	get_adding_object(New_obj),
 	get_current_node(Parent), 
 	(New_obj is_class_of_sort line,
