@@ -178,7 +178,8 @@ proc create_equation {parent boxtitle indices} {
     regsub { for } $boxtitle {: } eqnRBtext
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
-    set en [text $mainf.equation.textbox.text -height 4 -width 80 -yscrollcommand "$mainf.equation.textbox.scroll set"]
+    set en [text $mainf.equation.textbox.text -height 4 -width 80 -relief sunken -bd 2 -highlightthickness 0 \
+            -yscrollcommand "$mainf.equation.textbox.scroll set"]
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
     pack $en -side right -expand true -fill both
@@ -252,7 +253,7 @@ proc create_equation {parent boxtitle indices} {
     TitleFrame $descF.description -text "Title: "
     set descf [$descF.description getframe]
     label $descf.desclabel -text "Description:"
-    text $descf.text -height 1 -width 20
+    text $descf.text -height 1 -width 20 -relief sunken -bd 2 -highlightthickness 0
     pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
     pack $descf -side top  -fill x -expand off
@@ -263,7 +264,7 @@ proc create_equation {parent boxtitle indices} {
     label $docF.cmtlabel -text Comments:
     pack $docF.cmtlabel -side top
     pack [set frm [frame $docF.cmtFrame]] -fill both -expand true
-    text $frm.text -height 3 -width 40 -wrap word \
+    text $frm.text -height 3 -width 40 -wrap word -relief sunken -bd 2 -highlightthickness 0 \
             -yscrollcommand "$frm.scrly set"
     scrollbar $frm.scrly -orient vert -command "$frm.text yview"
     pack $frm.text -side left -fill both -expand true
