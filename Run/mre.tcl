@@ -43,7 +43,8 @@ namespace eval RunEnv {
             [list copyc.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
             [list cut.gif "Cut display" [list ::RunEnv::CutHelper $::RunEnv::CurrentContainer"]] \
             [list paste.gif "Paste display" [list ::RunEnv::PasteHelper $::RunEnv::CurrentContainer"]] \
-            [list delete.gif "Remove display or container" "::RunEnv::DeleteHelperCurrentContainer" ]] \
+            [list delete.gif "Remove display or container" "::RunEnv::DeleteHelperCurrentContainer" ] \
+            [list print.gif "Print display" ::RunEnv::PrintCurrentContainer]] \
             [list \
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
