@@ -17,8 +17,8 @@ sicstus_module(dialogue, [do_equation_dialog/2,
 	finish_progress_dialogue/0, warn_runtime/0, 
 reassure_user/1]).
 
-sicstus_use_module([library(lists), library(charsio), 
-		m_update, ame_gen, output, utility, inters]).
+sicstus_use_module([library(lists),
+		    sp_only, m_update, ame_gen, output, utility, inters]).
 
 /* helpers for sending function list */
 pass_functions(LibFuns) :-

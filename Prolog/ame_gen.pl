@@ -20,7 +20,7 @@ sicstus_module(ame_gen,
 		find_type/2, find_all_comps/2, draws_inside/2,
 		is_primitive/1, is_of_sort/2, is_class_of_sort/2]).
 
-sicstus_use_module([library(lists), library(charsio), m_class, utility, text]).
+sicstus_use_module([library(lists), sp_only, m_class, utility, text]).
 
 /* Full syntax error text currently not displayed because it is too
 distressing to users. Not sure why I use open_chars_stream and read_term

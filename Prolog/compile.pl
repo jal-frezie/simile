@@ -6,8 +6,8 @@
 
 sicstus_module( compile, [compile/3, new_exec_for/1] ).
 
-sicstus_use_module( [library(charsio),library(ordsets),library(lists),
-		instance,inters,language,render,m_class,utility,output,
+sicstus_use_module( [library(ordsets),library(lists),
+		sp_only,instance,inters,language,render,m_class,utility,output,
 		ame_gen, m_update, units, text, dialogue] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -6,8 +6,8 @@
 
 sicstus_module( language, [do_assign_list/9, make_evaluation_routine_all/5] ).
 
-sicstus_use_module( [render,m_class,utility,
-		ame_gen,units,text,library(lists),library(charsio)] ).
+sicstus_use_module( [sp_only, render,m_class,utility,
+		ame_gen,units,text,library(lists)] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -80,8 +80,6 @@ do_assign_list(_, [], _, [], [Result], _, [], [], Result).
 
 /* This makes a loop for a fixed membership submodel.
 Should really be done with make_array_assignment. */
-
-:- discontiguous(do_assignment/9).
 
 do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
                 GraphCount, Preambles, 
@@ -413,45 +411,6 @@ do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graph_count,
 		       Graph_count, NewPres, NewPosts,
 		       Used, Graphs, Temps, Results).
 
-move_base_ptrs(_,_,_,_, [], [], []).
-move_base_ptrs(L, Pointer, Action, Indent, [Name | Names], [Ptr | BasePtrs],
-	       [Saver | SaveBaseRefs]) :-
-	length(BasePtrs, Count),
-	make_struct_reference(L, Pointer, baseptrs, SafeArray),
-	make_indexed_reference(L, SafeArray, [Count], Target),
-	(Action = save,
-	    refer_value(L, Ptr, PtrRef),
-	    render(L, assignment, Target=PtrRef, Indent, [Saver]);
-	Action = restore,
-	    /* Now because of the ANSI c++ standard we have
-	    to cast the base model pointer explicitly to the
-	    right type -- the array in which the assoc model
-	    stores them is type (void *) */
-	    (L = c,
-	        sicstus_format_to_chars("(~atype *)~a", [Name, Target], CastTgtStr),
-		name(CastTgt, CastTgtStr);
-	    L = tcl,
-	        refer_value(L, Target, CastTgt)),
-	    render(L, assignment, Ptr=CastTgt, Indent, [Saver])),
-	move_base_ptrs(L, Pointer, Action, Indent, Names, BasePtrs,
-		       SaveBaseRefs).
-
-make_section_cond(L, VMPtrs, PassTest) :-
-	refer_value(L, phase, PhaseRef),
-	(VMPtrs = [], !,
-	    PassTest = PhaseRef;
-	all(language, make_new_base_cond,
-	    [unify(L), build(VMPtrs), build(LocaleTests)]),
-	    build_disjunction(L, LocaleTests, NewTest),
-	    combine(L, ?, [NewTest, -1:PhaseRef], PassTest)).
-	    
-	
-make_new_base_cond(L, new_context(Ptr, Phase), LocCond) :-
-	refer_value(L, phase, PhaseRef),
-	combine(L, >=, [Phase, PhaseRef], PhaseTest),
-	make_new_check(L, Ptr, FlagTest),
-	combine(L, '&&', [PhaseTest, FlagTest], LocCond).
-
 /* This one should be easy too. When I extract the procedures for initializing
 submodel instances where these can't always be done at init time, I leave an
 'init_population' node. For population submodels, which do also need to be
@@ -662,42 +621,6 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 			Graph_count, Preambles, [NewCurrent | Postambles],
 			Used, Graphs, Temps, Results).
 
-check_local_var(L, Name, NameBase, Type, Used, Temps) :-
-    (nonvar(Name), !;
-    generate_name(L, NameBase, Name, Used)),
-    Temps = [[Type, Name, []]].
-	
-get_term_refs(_,_, Test, Test) :-
-	atom(Test), \+ Test=[].
-
-get_term_refs(L, Pointer, LossNodes, DeadRef) :-
-	member(LossVal, LossNodes),
-	make_struct_reference(L, Pointer, LossVal, IsDead),
-	refer_value(L, IsDead, DeadRef).
-
-/* special clause for use from membership setter, which passes its list match
-test instead of a list of local cond nodes...*/
-
-build_disjunction(_, [Item], Item).
-
-build_disjunction(L, [Item1, Item2 | Rest], Dis) :-
-	build_disjunction(L, [Item2 | Rest], Others),
-	(L = c; L = tcl), Op = ('||'),
-	Dis =.. [Op, Others, Item1].
-
-/* This makes the expression for an individual's probability of dying
-from a particular ill over a particular period of time, where Val is
-the probability of dying over one time unit. If Val is >= 1, the
-result is always 1. */
-
-test_probs(L, Val, Step, Result) :-
-	make_procedure_call_chars(L, [glob_element, dts, Step], MultValStr),
-	name(MultVal, MultValStr),
-	combine(L, rand, [0,1], Fate),
-	combine(L, max, [1-Val, 0], Chance),
-	combine(L, ^, [Chance, MultVal], Survives),
-	combine(L, >, [Fate, Survives], Result).
-
 /* This is a fairly horrrible clause that puts in what is done when a new submodel
 instance is generated; if the instance fails to exist, it terminates building it,
 so the end of the last if clause is left on the postambles. Should be less
@@ -780,6 +703,81 @@ do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], GraphN,
 	do_assign_list(L, Clauses,
 		       NewGraphCount, Preambles, [NewCurrent | Postambles],
 		       Used, LaterGraphs, Temps, Results).
+
+move_base_ptrs(_,_,_,_, [], [], []).
+move_base_ptrs(L, Pointer, Action, Indent, [Name | Names], [Ptr | BasePtrs],
+	       [Saver | SaveBaseRefs]) :-
+	length(BasePtrs, Count),
+	make_struct_reference(L, Pointer, baseptrs, SafeArray),
+	make_indexed_reference(L, SafeArray, [Count], Target),
+	(Action = save,
+	    refer_value(L, Ptr, PtrRef),
+	    render(L, assignment, Target=PtrRef, Indent, [Saver]);
+	Action = restore,
+	    /* Now because of the ANSI c++ standard we have
+	    to cast the base model pointer explicitly to the
+	    right type -- the array in which the assoc model
+	    stores them is type (void *) */
+	    (L = c,
+	        sicstus_format_to_chars("(~atype *)~a", [Name, Target], CastTgtStr),
+		name(CastTgt, CastTgtStr);
+	    L = tcl,
+	        refer_value(L, Target, CastTgt)),
+	    render(L, assignment, Ptr=CastTgt, Indent, [Saver])),
+	move_base_ptrs(L, Pointer, Action, Indent, Names, BasePtrs,
+		       SaveBaseRefs).
+
+make_section_cond(L, VMPtrs, PassTest) :-
+	refer_value(L, phase, PhaseRef),
+	(VMPtrs = [], !,
+	    PassTest = PhaseRef;
+	all(language, make_new_base_cond,
+	    [unify(L), build(VMPtrs), build(LocaleTests)]),
+	    build_disjunction(L, LocaleTests, NewTest),
+	    combine(L, ?, [NewTest, -1:PhaseRef], PassTest)).
+	    
+	
+make_new_base_cond(L, new_context(Ptr, Phase), LocCond) :-
+	refer_value(L, phase, PhaseRef),
+	combine(L, >=, [Phase, PhaseRef], PhaseTest),
+	make_new_check(L, Ptr, FlagTest),
+	combine(L, '&&', [PhaseTest, FlagTest], LocCond).
+
+check_local_var(L, Name, NameBase, Type, Used, Temps) :-
+    (nonvar(Name), !;
+    generate_name(L, NameBase, Name, Used)),
+    Temps = [[Type, Name, []]].
+	
+get_term_refs(_,_, Test, Test) :-
+	atom(Test), \+ Test=[].
+
+get_term_refs(L, Pointer, LossNodes, DeadRef) :-
+	member(LossVal, LossNodes),
+	make_struct_reference(L, Pointer, LossVal, IsDead),
+	refer_value(L, IsDead, DeadRef).
+
+/* special clause for use from membership setter, which passes its list match
+test instead of a list of local cond nodes...*/
+
+build_disjunction(_, [Item], Item).
+
+build_disjunction(L, [Item1, Item2 | Rest], Dis) :-
+	build_disjunction(L, [Item2 | Rest], Others),
+	(L = c; L = tcl), Op = ('||'),
+	Dis =.. [Op, Others, Item1].
+
+/* This makes the expression for an individual's probability of dying
+from a particular ill over a particular period of time, where Val is
+the probability of dying over one time unit. If Val is >= 1, the
+result is always 1. */
+
+test_probs(L, Val, Step, Result) :-
+	make_procedure_call_chars(L, [glob_element, dts, Step], MultValStr),
+	name(MultVal, MultValStr),
+	combine(L, rand, [0,1], Fate),
+	combine(L, max, [1-Val, 0], Chance),
+	combine(L, ^, [Chance, MultVal], Survives),
+	combine(L, >, [Fate, Survives], Result).
 
 /* Another group of rules with lots of arguments... */
 make_evaluation_routine(

@@ -32,7 +32,7 @@ substitute(E, [G | T1], F, [H | T2]) :-
 :- include('node.pl').
 :- include('link.pl').
 :- include('build.pl').
-:- include('gnutils.pl').
+:- include('utility.pl').
 :- include('ame_gen.pl').
 :- include('library.pl').
 

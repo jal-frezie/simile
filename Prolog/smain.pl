@@ -6,7 +6,8 @@ This starts off the application and goes into an event loop from which it is dri
 
 :- [syntax].
 
-:- 	use_module([library(lists), library(charsio), tcltk, input, utility]).
+:- 	use_module([library(lists), library(charsio),
+		    sp_only, tcltk, input, utility]).
 
 /* xrefs occurs inside a model structure and contains other
 model structures, making them circular. It must therefore be

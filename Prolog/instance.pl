@@ -5,8 +5,8 @@
 
 sicstus_module(instance, [instantiate_all/2] ).
 
-sicstus_use_module([m_class, inters, ame_gen, units, utility,
-	       library(lists),library(ordsets),library(charsio)]).
+sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility,
+	       library(lists),library(ordsets)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 instance_type(instance(Type, _, _, _, _), Type).

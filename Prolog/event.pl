@@ -13,9 +13,9 @@ sicstus_module(event, [get_info/3, get_params/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 	adjust_display_area/2, prioritize_window/1]).
 
-sicstus_use_module([dialogue, m_update, image, maintain,
+sicstus_use_module([sp_only, dialogue, m_update, image, maintain,
 		    state, backup, submodel, ame_gen, utility,
-		    library(lists), library(charsio), library(ordsets)]).
+		    library(lists), library(ordsets)]).
 
 get_info(_Wid, Comp, eqn) :-
 	(Comp is_of_sort has_function,

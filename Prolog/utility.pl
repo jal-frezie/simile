@@ -2,39 +2,20 @@
 **** Commonly used utility procedures for AME				    ****
 *******************************************************************************/
 
-sicstus_module( utility, [discontiguous/1, sicstus_read_from_chars/2,
-	sicstus_write_to_chars/2, sicstus_format_to_chars/3,
-	sicstus_write_chars/2, sicstus_put/2,
-	unique_name/2, unique_name/3, indent/1, delete_member/2,
-		     y_or_n/1, any_setof/3,foreach/3, wrap/3,
-		     all/3, unify_all/2, get_precedence/2,
-		     replace_in_list/4,writelist/1,writelisttofile/2, do_writing/2,
-		     delall/3, append/2, append_atoms/2, append_atoms/3,
-		     try/1,equate/2,
-		merge_lists/2, merge_lists/3, split_lists/3,
-		get_ground_part/2, generate_name/4, generate_name/5,
-		     ensure_unused/3, close_end/3, count_to/4] ).
+sicstus_module( utility, [unique_name/2, unique_name/3, indent/1,
+			  delete_member/2,
+			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
+			  all/3, unify_all/2, get_precedence/2,
+			  replace_in_list/4,writelist/1,writelisttofile/2,
+			  do_writing/2,
+			  delall/3, append/2, append_atoms/2, append_atoms/3,
+			  try/1,equate/2,
+			  merge_lists/2, merge_lists/3, split_lists/3,
+			  get_ground_part/2, generate_name/4, generate_name/5,
+			  ensure_unused/3, close_end/3, count_to/4] ).
 
-sicstus_use_module( [database, text, library(charsio), library(lists),
-		library(ordsets)] ).
+sicstus_use_module( [database, text, library(lists), library(ordsets)] ).
 
-discontiguous(_).
-
-sicstus_read_from_chars(Term, Result) :-
-        read_from_chars(Term, Result).
-
-sicstus_write_to_chars(Term, Result) :-
-        write_to_chars(Term, Result).
-
-sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
-	format_to_chars(Template, [V1 | Vars], Result).
-
-sicstus_write_chars(Stream, Chars) :-
-	name(Atom, Chars),
-	write(Stream, Atom).
-
-sicstus_put(Stream, Char) :-
-	put(Stream, Char).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a unique symbol, prefixed by an Atom
 
@@ -263,28 +244,6 @@ try Call :-
 	call( Call ),
 	!.
 try _ .
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% equate X Y is true is X = Y numerically. It delays until the necessary
-% instantiation is reached
-
-equate( X, Y ) :-
-	when(( ground( X ); ground( Y )), eq( X, Y )).
-
-eq( X, Y ) :-
-	ground( [X,Y] ),
-	!,
-	X =:= Y.
-eq( X, Y ) :-
-	ground( Y ),
-	var( X ),
-	!,
-	X is Y.
-eq( X, Y ) :-
-	ground( X ),
-	var( Y ),
-	!,
-	Y is X.
 
 merge_lists([], L, L).
 

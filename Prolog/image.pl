@@ -35,8 +35,8 @@ sicstus_module(image,
 	   translate_between/4, translate/3, rel_translate/3,
 	   untranslate/3, add_to_translation/3, subtract_from_translation/3]).
 
-sicstus_use_module([library(lists), library(charsio),
-			ame_gen, utility, state, text, m_class, m_update]).
+sicstus_use_module([library(lists),
+		    sp_only, ame_gen, state, text, m_class, m_update]).
 
 get_colour(Submodel, Colour) :-
 	Submodel has_class_refinement fill_colour of Colour, !;

@@ -15,21 +15,8 @@ sicstus_module( render, [render/5, make_assignment/4, render_all/5,
 		make_integer/3, command_substitute/3,
 		generate_data_decls/10, make_procedure_call_chars/3] ).
 
-sicstus_use_module( [m_class, utility, ame_gen, units, text, utility,
-		library(charsio), library(lists)] ).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% render converts proglog atoms or terms float valid expressions in the named
-% programming language. Used names are not duplicated
-
-:- discontiguous(render/5).
-
-/* c and tcl rendition functions are organized by their purpose */
-
-/* assignment */
-render(L, assignment, Dest=Source, Indent, Atom) :-
-	make_assignment(L, Dest, Source, Assign),
-	render(L, function, Assign, Indent, Atom).
+sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
+		library(lists)] ).
 
 make_assignment(L, Dest, Source, AssignStr) :-
 	(L = tcl, Template = "set ~a ";
@@ -44,6 +31,75 @@ make_pointer(c, Var, Ptr) :-
 	name(Ptr, PtrStr).
 make_pointer(tcl, Var, Var).
 
+make_indexed_namespace(L, Base, Indices, Result) :-
+	L = c,
+	    make_indexed_reference(L, Base, Indices, Result);
+	L = tcl,
+	    make_list_context_id(tcl, Indices, BraceTerm),
+	    sicstus_format_to_chars("~w<~w>", [Base, BraceTerm], ResultStr),
+	    name(Result, ResultStr).
+
+resolve_pointer(c, Var, Res) :-
+	sicstus_format_to_chars("*~a", [Var], ResStr),
+	name(Res, ResStr).
+
+resolve_pointer(tcl, Var, Res) :-
+	refer_value(tcl, Var, Res).
+
+make_increment_expr(L, Current, Step, Expr) :-
+	(L = c,
+		(Step = 1, !,
+			sicstus_format_to_chars("++~w", [Current], Expr);
+		Step = -1, !,
+			sicstus_format_to_chars("--~w", [Current], Expr);
+		sicstus_format_to_chars("~w += ~w", [Current, Step], Expr));
+	L = tcl,
+		(Step = 1, !,
+			sicstus_format_to_chars("incr ~w", [Current], Expr);
+		sicstus_format_to_chars("incr ~w ~w", 
+				[Current, Step], Expr))).
+
+ptr_compare(L, Ptr1, Ptr2, Expr) :-
+	L = c,
+	    Expr = (Ptr1 '!=' Ptr2);
+	L = tcl,
+	    make_procedure_call_chars(L, [string, compare, Ptr1, Ptr2],
+				      ExprStr),
+	    name(Expr, ExprStr).
+
+make_cons_dest(instance(Type, Sym, _, Nm, _), ConLine, DeLine) :-
+	Type = submodel,
+	variable_size(Sym), !,
+	    Nm = Name,
+	    render(c, assignment, Name=0, 8, ConLine),
+	    render(c, procedure_call, delete_list(Name), 8, DeLine);
+	Type = external, !,
+	    Nm = elt(_, Name, _),
+	    make_constant_string(c, Sym, SymCStr),
+	    name(SymC, SymCStr),
+	    make_procedure_call_chars(c, [fetch_instance, SymC], FetchStr),
+	    name(Fetch, FetchStr),
+	    render(c, assignment, Name=Fetch, 8, ConLine),
+	    render(c, procedure_call, discard_instance(Name), 8, DeLine);
+	[ConLine, DeLine] = [[], []].
+
+count_base_ptrs([], 0).
+count_base_ptrs([base(_,_, Ptrs) | More], N) :-
+	length(Ptrs, Here),
+	count_base_ptrs(More, M),
+	N is M+Here.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% render converts proglog atoms or terms float valid expressions in the named
+% programming language. Used names are not duplicated
+
+/* c and tcl rendition functions are organized by their purpose */
+
+/* assignment */
+render(L, assignment, Dest=Source, Indent, Atom) :-
+	make_assignment(L, Dest, Source, Assign),
+	render(L, function, Assign, Indent, Atom).
+
 render(L, open_context, Pointer=[_, _, MPTargetRef], Indent1, Result1) :-
 	render(L, assignment, Pointer=MPTargetRef, Indent1, Result1).
 
@@ -54,14 +110,6 @@ render(L, enter_context, NewPointer=[CurrentPointer, Struct, Indices],
 	make_struct_reference(L, CurrentPointer, Struct, Base)),
 	make_indexed_namespace(L, Base, Indices, Target),
 	render(L, make_reference, NewPointer=Target, Indent, Result).
-
-make_indexed_namespace(L, Base, Indices, Result) :-
-	L = c,
-	    make_indexed_reference(L, Base, Indices, Result);
-	L = tcl,
-	    make_list_context_id(tcl, Indices, BraceTerm),
-	    sicstus_format_to_chars("~w<~w>", [Base, BraceTerm], ResultStr),
-	    name(Result, ResultStr).
 
 /* this creates a reference to a value in a deep context. */
 
@@ -84,13 +132,6 @@ render(tcl, assign_space, Dest=[Top, Struct, Indices], Indent, Result) :-
 	render(tcl, enter_context, Dest = [Top, Struct, Indices],
 			Indent, Line2),
 	append(Line1, Line2, Result).
-
-resolve_pointer(c, Var, Res) :-
-	sicstus_format_to_chars("*~a", [Var], ResStr),
-	name(Res, ResStr).
-
-resolve_pointer(tcl, Var, Res) :-
-	refer_value(tcl, Var, Res).
 
 /* comment */
 render( c, comment, Comment, Indent, [Atom]) :-
@@ -150,27 +191,6 @@ Incrementation, including unity incrementation and decrementation. */
 render(L, increment_by, [Current, Step], Indent, Increment) :-
 	make_increment_expr(L, Current, Step, ActionStr),
 	render(L, function, ActionStr, Indent, Increment).
-
-make_increment_expr(L, Current, Step, Expr) :-
-	(L = c,
-		(Step = 1, !,
-			sicstus_format_to_chars("++~w", [Current], Expr);
-		Step = -1, !,
-			sicstus_format_to_chars("--~w", [Current], Expr);
-		sicstus_format_to_chars("~w += ~w", [Current, Step], Expr));
-	L = tcl,
-		(Step = 1, !,
-			sicstus_format_to_chars("incr ~w", [Current], Expr);
-		sicstus_format_to_chars("incr ~w ~w", 
-				[Current, Step], Expr))).
-
-ptr_compare(L, Ptr1, Ptr2, Expr) :-
-	L = c,
-	    Expr = (Ptr1 '!=' Ptr2);
-	L = tcl,
-	    make_procedure_call_chars(L, [string, compare, Ptr1, Ptr2],
-				      ExprStr),
-	    name(Expr, ExprStr).
 
 render(L, if_start, ConditionExpr, Indent, [Line]) :-
 	(L = c, !,
@@ -261,22 +281,6 @@ render(c, public_cons_dest,
 	append([[Pub, Cons | ConLines], [EndStr, De | DeLines], [EndStr]],
 	       PubConDe).
 
-make_cons_dest(instance(Type, Sym, _, Nm, _), ConLine, DeLine) :-
-	Type = submodel,
-	variable_size(Sym), !,
-	    Nm = Name,
-	    render(c, assignment, Name=0, 8, ConLine),
-	    render(c, procedure_call, delete_list(Name), 8, DeLine);
-	Type = external, !,
-	    Nm = elt(_, Name, _),
-	    make_constant_string(c, Sym, SymCStr),
-	    name(SymC, SymCStr),
-	    make_procedure_call_chars(c, [fetch_instance, SymC], FetchStr),
-	    name(Fetch, FetchStr),
-	    render(c, assignment, Name=Fetch, 8, ConLine),
-	    render(c, procedure_call, discard_instance(Name), 8, DeLine);
-	[ConLine, DeLine] = [[], []].
-
 /* end of any kind of loop */
 render( L, end(Loop), Name, Indent, [For_End]) :-
 	member(Loop, [for, while, switch, case, class, cond, procedure,
@@ -296,12 +300,6 @@ render(L, function, Act, Indent, [Line]) :-
 	(L = tcl, append(Leader, Act, CharList);
 	L = c, append([Leader, Act, ";"], CharList)),
 	name(Line, CharList).
-
-count_base_ptrs([], 0).
-count_base_ptrs([base(_,_, Ptrs) | More], N) :-
-	length(Ptrs, Here),
-	count_base_ptrs(More, M),
-	N is M+Here.
 
 /* This process for making a class declaration in c actually sticks close
 to the nature of a class, rather than the nature of a submodel. The latter
@@ -330,6 +328,105 @@ render(c, pointer_declaration, instance(submodel, SmName,
 	all(render, do_base_pointers, [build(Bases), append(Temps2, [])]),
 	append(Temps1, Temps2, Temps),
 	render_all(c, variable_declaration, Temps, Indent, Rest).
+
+render(c, data_declaration,
+		instance(NodeType, SymbolicName, _, NameIn,
+		Type-Dims),
+		Indent, Decl) :-
+	(NodeType = submodel, !,
+	    NameIn = NameBase,
+	    (variable_size(SymbolicName), !,
+			/* variable length submodel - declare a pointer */
+		resolve_pointer(c, NameBase, Name),
+		UseDims = [];
+	    Name = NameBase,
+		get_node_size(SymbolicName, UseDims));
+	    (NameIn = elt(_, Name, _), !;
+		Name = NameIn),
+	    UseDims = Dims),
+	render(c, variable_declaration, [Type, Name, UseDims],
+			Indent, Decl).
+
+/* next clause generates nested namespace declarations for tcl. They look as
+if the nested loops use the same counter variable, but this is OK because each
+loop is in a different namespace... */
+
+render(tcl, class_declaration,
+       instance(NodeType, SymbolicName, _, Name, _), Indent, Decl) :-
+	NodeType = submodel, !,
+	    (variable_size(SymbolicName), !,
+		append_atoms(Name, maker, ProcName),
+		render(tcl, procedure_start,
+		       call(_, ProcName, [_, instance]), Indent, Opens),
+		render(tcl, end(procedure), ProcName, Indent, Closes),
+		NewIndent is Indent + 4,
+		refer_value(tcl, instance, Target);
+	    get_node_size(SymbolicName, What),
+		make_array_assignment(tcl, Indent, What, _,
+				      NewIndent, _, Indices, Opens, Closes),
+		make_indexed_namespace(tcl, Name, Indices, Target)),
+	    declare_namespace(Target, Indent, ClassDecl),
+	    append([Opens, ClassDecl, Closes], Decl);
+	Decl = [].
+
+render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
+	(nonvar(Dims), !,
+	    FgResult = Result;
+	Dims = [],
+	    render(L, comment, 'Next field had undefined dims', 0, Fg),
+	    append(Fg, Result, FgResult)),
+	type_for_unit(Unit, Type),
+	(member(-1, Dims), !, /* no null arrays please */
+	    Result = [];
+	Init = [], !,
+	    (L = c,
+		(Dims = void, Counts = [''];
+		all(render, boost, [build(Dims), build(Counts)])),
+		make_indexed_reference(L, Name, Counts, ArrayName),
+		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
+					       ArrayName], Chars),
+		name(Decl, Chars),
+		Result = [Decl];
+	    L = tcl,
+		render(c, variable_declaration, [Type, Name, Dims], 
+		       Indent, CDecl),
+		render_all(tcl, comment, CDecl, 0, Result));
+
+	Init = [InitialValues],
+	    (L = c,
+		DeepIndent is Indent + 4,
+		swap_squares_for_curlies(InitialValues, InitString),
+		InitString = [FirstLine | LateLines],
+		(Dims = void, Counts = [''];
+		all(render, boost, [build(Dims), build(Counts)])),
+		make_indexed_reference(L, Name, Counts, ArrayName),
+		sicstus_format_to_chars("~*s~a ~a = ~s",
+				[Indent, " ", Type, ArrayName, FirstLine],
+				Chars1),
+			name(NewFirstLine, Chars1),
+			list_of(32, DeepIndent, TabIn),
+			prepend_spaces(LateLines, TabIn, NewLateLines),
+			append(EarlyLines, [LastLine], [NewFirstLine | NewLateLines]),
+			sicstus_format_to_chars("~a;", [LastLine], Chars2),
+			name(NewLastLine, Chars2),
+			append(EarlyLines, [NewLastLine], Result);
+		L = tcl,
+		        (Dims = void,
+			    length(InitialValues, InitDim),
+			    InitDims = [InitDim];
+			InitDims = Dims),
+			assign_initial_values(Name, InitialValues, 0, InitDims,
+					Indent, Result))).
+
+render(c, release_memory, Var, Indent, [Result]) :-
+	sicstus_format_to_chars("~*sdelete ~a;", [Indent, " ", Var], ResultStr),
+	name(Result, ResultStr).
+
+render(tcl, release_memory, Pointer, Indent, [Result]) :-
+	resolve_pointer(tcl, Pointer, Zap),
+	sicstus_format_to_chars("~*snamespace delete ~a",
+			[Indent, " ", Zap], ResultStr),
+	name(Result, ResultStr).
 
 do_base_pointers(base(_,_, []), []).
 do_base_pointers(base(instance(submodel, _, xrefs(_, Parent, _,_), _, Type-_),
@@ -446,46 +543,6 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	/* No need to handle ghosts and link terminators */
 		NodeData = []).
 
-render(c, data_declaration,
-		instance(NodeType, SymbolicName, _, NameIn,
-		Type-Dims),
-		Indent, Decl) :-
-	(NodeType = submodel, !,
-	    NameIn = NameBase,
-	    (variable_size(SymbolicName), !,
-			/* variable length submodel - declare a pointer */
-		resolve_pointer(c, NameBase, Name),
-		UseDims = [];
-	    Name = NameBase,
-		get_node_size(SymbolicName, UseDims));
-	    (NameIn = elt(_, Name, _), !;
-		Name = NameIn),
-	    UseDims = Dims),
-	render(c, variable_declaration, [Type, Name, UseDims],
-			Indent, Decl).
-
-/* next clause generates nested namespace declarations for tcl. They look as
-if the nested loops use the same counter variable, but this is OK because each
-loop is in a different namespace... */
-
-render(tcl, class_declaration,
-       instance(NodeType, SymbolicName, _, Name, _), Indent, Decl) :-
-	NodeType = submodel, !,
-	    (variable_size(SymbolicName), !,
-		append_atoms(Name, maker, ProcName),
-		render(tcl, procedure_start,
-		       call(_, ProcName, [_, instance]), Indent, Opens),
-		render(tcl, end(procedure), ProcName, Indent, Closes),
-		NewIndent is Indent + 4,
-		refer_value(tcl, instance, Target);
-	    get_node_size(SymbolicName, What),
-		make_array_assignment(tcl, Indent, What, _,
-				      NewIndent, _, Indices, Opens, Closes),
-		make_indexed_namespace(tcl, Name, Indices, Target)),
-	    declare_namespace(Target, Indent, ClassDecl),
-	    append([Opens, ClassDecl, Closes], Decl);
-	Decl = [].
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* make_array_assignment/9: all subscripts other than those for submodel loops and
 those used for referring to individual array elements are generated and put in
@@ -540,55 +597,6 @@ pick_types(All, Types, Picked) :-
 	Picked = Rest),
 	pick_types(More, Types, Rest).
 
-render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
-	(nonvar(Dims), !,
-	    FgResult = Result;
-	Dims = [],
-	    render(L, comment, 'Next field had undefined dims', 0, Fg),
-	    append(Fg, Result, FgResult)),
-	type_for_unit(Unit, Type),
-	(member(-1, Dims), !, /* no null arrays please */
-	    Result = [];
-	Init = [], !,
-	    (L = c,
-		(Dims = void, Counts = [''];
-		all(render, boost, [build(Dims), build(Counts)])),
-		make_indexed_reference(L, Name, Counts, ArrayName),
-		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
-					       ArrayName], Chars),
-		name(Decl, Chars),
-		Result = [Decl];
-	    L = tcl,
-		render(c, variable_declaration, [Type, Name, Dims], 
-		       Indent, CDecl),
-		render_all(tcl, comment, CDecl, 0, Result));
-
-	Init = [InitialValues],
-	    (L = c,
-		DeepIndent is Indent + 4,
-		swap_squares_for_curlies(InitialValues, InitString),
-		InitString = [FirstLine | LateLines],
-		(Dims = void, Counts = [''];
-		all(render, boost, [build(Dims), build(Counts)])),
-		make_indexed_reference(L, Name, Counts, ArrayName),
-		sicstus_format_to_chars("~*s~a ~a = ~s",
-				[Indent, " ", Type, ArrayName, FirstLine],
-				Chars1),
-			name(NewFirstLine, Chars1),
-			list_of(32, DeepIndent, TabIn),
-			prepend_spaces(LateLines, TabIn, NewLateLines),
-			append(EarlyLines, [LastLine], [NewFirstLine | NewLateLines]),
-			sicstus_format_to_chars("~a;", [LastLine], Chars2),
-			name(NewLastLine, Chars2),
-			append(EarlyLines, [NewLastLine], Result);
-		L = tcl,
-		        (Dims = void,
-			    length(InitialValues, InitDim),
-			    InitDims = [InitDim];
-			InitDims = Dims),
-			assign_initial_values(Name, InitialValues, 0, InitDims,
-					Indent, Result))).
-
 boost(P, Q) :- Q is P+1.
 
 /* prepend_spaces puts indent blanks on strings and turns them to atoms */
@@ -599,16 +607,6 @@ prepend_spaces([H|T], Gap, [H2 | T2]) :-
 	append(Gap, H, Line),
 	name(H2, Line),
 	prepend_spaces(T, Gap, T2).
-
-render(c, release_memory, Var, Indent, [Result]) :-
-	sicstus_format_to_chars("~*sdelete ~a;", [Indent, " ", Var], ResultStr),
-	name(Result, ResultStr).
-
-render(tcl, release_memory, Pointer, Indent, [Result]) :-
-	resolve_pointer(tcl, Pointer, Zap),
-	sicstus_format_to_chars("~*snamespace delete ~a",
-			[Indent, " ", Zap], ResultStr),
-	name(Result, ResultStr).
 
 get_empty_list(L, NewList) :-
 	L = c,

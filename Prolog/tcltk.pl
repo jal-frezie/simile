@@ -1,7 +1,7 @@
 %%% tcl_eval(+Cmd, -Result) evaluates the Tcl command represented by Cmd
 %%% (roughly as SICStus, but smarter handling of chars/1).
 
-sicstus_use_module(library(charsio)).
+sicstus_use_module(sp_only).
 
 tcl_eval(Cmd, Result) :-
         decode_command(Cmd, BrokenString),

@@ -4,8 +4,7 @@ sicstus_module(inters, [final_assignment/10, make_intermediates/11,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			make_inds_for/3, pointer_from/2, path_section_for/6]).
 
-sicstus_use_module([library(lists), library(charsio),
-		    ame_gen, units, utility]).
+sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
 final_assignment(Expr, DestRef, Swaps, Step, Used, 
                  NewFormula, Setups, Context, Prerequisites, NewInters) :-

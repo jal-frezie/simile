@@ -39,7 +39,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	compile_c_program/3, load_executable/4, find_phase/3,
 	kill_window/1, exit_AME/0]).
 
-sicstus_use_module([library(lists), library(charsio), state, text, utility]).
+sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
 	user:tcl_eval(['FilterErrors' | Cmd], Result),

@@ -30,8 +30,8 @@ sicstus_module(m_update,
 		add_new_line_between/4, change_class/3, get_disag_params/2,
 		time_step_for/3, make_ghost/3, get_possible_start/2]).
 
-sicstus_use_module([library(lists), library(charsio),
-		units, utility, ame_gen, m_class, text]).
+sicstus_use_module([library(lists),
+		sp_only, units, utility, ame_gen, m_class, text]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                                                                         %%%

@@ -7,8 +7,8 @@
 sicstus_module( library, [ame_save/3, ame_merge/4,
 			  count_functions/2, write_with_breaks/2] ).
 
-sicstus_use_module( [library(lists),library(charsio),
-	ame_gen,m_class,utility,text,build] ).
+sicstus_use_module( [library(lists),
+	sp_only, ame_gen,m_class,utility,text,build] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ame_save/3 - saves the submodels starting at the nodes listed in arg1 to the file
