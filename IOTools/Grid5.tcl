@@ -79,7 +79,7 @@ namespace eval grid005 {
         variable useNodes
         namespace import -force ::maptools2::*
 	set state [GetState $winId]
-# looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g"
+# looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
 	set useNodes($winId,display1) [GetIdFromCaptionPath $winId [lindex $state 1]]
 	set useNodes($winId,colvals) [GetIdFromCaptionPath $winId [lindex $state 2]]
 	set colourBase [lsearch $state colourmap]
@@ -89,6 +89,10 @@ namespace eval grid005 {
 	set rangeBase [lsearch $state aspect]
 	foreach rangePt {nswatches min max} {
 	    set useNodes($winId,$rangePt) [lindex $state [incr rangeBase]]
+	}
+	set multBase [lsearch $state magnification]
+	if {$multBase != -1} {
+	    set useNodes($winId,mult) [lindex $state [incr multBase]]
 	}
         set useNodes($winId,caption) [lindex $state 1]
         
@@ -169,7 +173,8 @@ namespace eval grid005 {
 		[GetCaptionPathFromId $winId $useNodes($winId,colvals)] colourmap \
                 $useNodes($winId,cbot) $useNodes($winId,cmid) $useNodes($winId,ctop) \
                 aspect $useNodes($winId,nswatches)\
-                $useNodes($winId,min) $useNodes($winId,max)]
+                $useNodes($winId,min) $useNodes($winId,max) \
+		magnification $useNodes($winId,mult)]
         
     }
     
@@ -214,7 +219,11 @@ namespace eval grid005 {
             set n $useNodes($winId,ncol)
         }
         
-        set mult [expr {int(380/$n)}]
+        if {[info exists useNodes($winId,mult)]} {
+	    set mult $useNodes($winId,mult)
+	} else {
+	    set mult [expr {int(380/$n)}]
+	}
 	if {$mult<2} {
 	    set mult 1
 	    $winId.bbframe.buttonBox itemconfigure 2 -state disable
@@ -537,6 +546,7 @@ namespace eval grid005 {
         $winId.c xview moveto [expr $xmiddle-([lindex $view 1]-[lindex $view 0])/2]
         set view [$winId.c yview]
         $winId.c yview moveto [expr $ymiddle-([lindex $view 1]-[lindex $view 0])/2]
+        UpdateState $winId
     }
     
     proc ScrollPhoto {winId axis args} {
