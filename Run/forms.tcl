@@ -214,7 +214,14 @@ proc create_equation {parent boxtitle indices} {
     pack $keypadf.keys.row4.col6 -expand true
     pack $keypadf.keys.row5.col4 -expand true
     pack $keypadf.keys.row5.col6 -expand true
-    
+    # 3. Leave a slight gap between the text and numberic keypads
+    pack $keypadf.keys.row0.col4 -padx [list 4 0]
+    pack $keypadf.keys.row1.col4 -padx [list 4 0]
+    pack $keypadf.keys.row2.col4 -padx [list 4 0]
+    pack $keypadf.keys.row3.col4 -padx [list 4 0]
+    pack $keypadf.keys.row4.col4 -padx [list 4 0]
+    pack $keypadf.keys.row5.col4 -padx [list 4 0]
+     
     pack $keypadf.keys -side left -anchor nw
     pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $middleF -expand off -fill x
