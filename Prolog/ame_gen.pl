@@ -93,7 +93,7 @@ make_legible_for_prolog(String, ProcessedString) :-
 	append(Fixed1, [39 | Fixed3], ProcessedString).
 
 make_legible_for_prolog(String, ProcessedString) :-
-	[Sp, Pt, N0, Eu, El] = " .0Ee",
+	[Sp, Pt, N0, Eu, El, Po, Pc] = " .0Ee()",
 	Nums = "0123456789",
 	/* do not start a number with a point */
 	(append(Prefix, [N, Pt | Suffix], [start | String]),
@@ -110,7 +110,11 @@ make_legible_for_prolog(String, ProcessedString) :-
 	append(Before, [NotN | Ns], Prefix),
 	\+ member(NotN, [Pt | Nums]),
 	\+ (member(Num, Ns), \+ member(Num, Nums)), !,
-	    append([Before, [NotN | Ns], [N, Pt, N0, E | Rest]], [start | NewString])),
+	    append([Before, [NotN | Ns], [N, Pt, N0, E | Rest]],
+		   [start | NewString]);
+	/* If a function has no args, pop in an empty atom */
+	append(Prefix, [Po, Pc | Suffix], [start | String]), !,
+	    append(Prefix, [Po, 39, 39, Pc | Suffix], [start | NewString])),
 	make_legible_for_prolog(NewString, ProcessedString);
 	ProcessedString = String.
 

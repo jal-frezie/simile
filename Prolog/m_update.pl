@@ -518,7 +518,7 @@ analyze_array(Array, Base_type, Dims) :-
 	Base_type = Array, Dims = [].
 
 get_solo_list_depth(List,Depth) :-
-	atom(List), Depth = 0;
+	atom(List), \+ List = '', Depth = 0;
 	(List = [Ellie]; List = {Ellie}),
 		get_solo_list_depth(Ellie, D), Depth is D+1.
 

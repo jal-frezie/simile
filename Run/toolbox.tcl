@@ -4,7 +4,7 @@
 # and (b) my preferred programming style, check this out....
 
 lappend auto_path [pwd]/../Run [pwd]/../System/library/Extras
-#tk_messageBox -message $auto_path
+#tk_messageBox -message "library [info library] path $auto_path"
 
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
@@ -51,6 +51,9 @@ proc ControlDraw {prologVersion} {
     
     # On startup, check run count and offer registration if 0
     set UserStream [open ../Run/userinfo.txt r]
+    # First two lines not used here
+    gets $UserStream userinfo(prologId)
+    gets $UserStream userinfo(interface)
     gets $UserStream userinfo(Name)
     gets $UserStream userinfo(Corp)
     gets $UserStream userinfo(Version)

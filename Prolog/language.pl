@@ -845,7 +845,7 @@ make_evaluation_routine(
 	    get_element_ref(Language, IndSet, Count, Term);
 	number(Expr), !,
 	    Term=Expr;
-	(Expr = time(P); Expr = ind_time(P)), !,
+	member(Expr, [time, ind_time, time(P), ind_time(P)]), !,
 	    refer_value(Language, start_time, Term);
 	Expr = dt(P), !,
 	    make_procedure_call_chars(Language, [glob_element, dts, P],

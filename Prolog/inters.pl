@@ -128,10 +128,13 @@ read_library_funx(Done) :-
 read_funcs(Stream, Type, Done) :-
 	on_exception(WrongUDF, read(Stream, Line),
 		     (ame_gen:make_nice_error_message(WrongUDF, Bug),
-			 sicstus_format_to_chars("Parsing user-defined ~as", [Type],
-					 ProbAct),
+			 sicstus_format_to_chars("Parsing user-defined ~as",
+						 [Type], ProbAct),
 			 do_dialogue(ProbAct, warning, Bug, ok, _))),
 	(nonvar(Bug), !,
+	    sicstus_format_to_chars("Parsing user-defined ~as", [Type],
+					 ProbAct),
+	    do_dialogue(ProbAct, warning, Bug, ok, _),
 	    read_funcs(Stream, Type, Done);
 	 Line == end_of_file, !,
 	    close(Stream),
@@ -580,7 +583,10 @@ make_intermediates(
 		SourceList = [Param],
 		ResultList = [SourceRef],
 		Arg_template = [RUnits];
-	    Source =.. [Op | SourceList],
+	    Source =.. [Op | PlSourceList],
+		(PlSourceList = [''], !,
+		    SourceList = [];
+		 SourceList = PlSourceList),
 		length(SourceList, Arity),
 		length(Arg_template, Arity),
 	        (function(Op, RUnits, Arg_template);
@@ -661,11 +667,15 @@ function(product, int, [array_or_list_of_ints]).
 function(count, int, [array_or_list_of_any]).
 function(any, boolean, [array_or_list_of_boolean]).
 function(all, boolean, [array_or_list_of_boolean]).
-function(parent, int, [dummy_int]).
 function(channel_is, boolean, [channel]).
+function(dt, real, [const_int]).
+function(time, real, []).
+function(init_time, real, []).
+function(parent, int, []).
+/* legacy versions from before we had empty arg lists */
 function(time, real, [const_int]).
 function(init_time, real, [const_int]).
-function(dt, real, [const_int]).
+function(parent, int, [dummy_int]).
 
 function(last, any, [any]).
 function(prev, given_units, [const_int]).

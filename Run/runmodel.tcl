@@ -1620,25 +1620,11 @@ proc compile_c {workingDir modelPath} {
 	}
 	windows {
 	    set TOOLDIR [file attributes $TOOLDIR -shortname]
-# Something seems to be broken with freeing and deleting dlls
-# under Windows, so just give each one a new name
-
-# Method using MingW32 gcc: Dlls refuse to load into tcl when
-
-# it is running under Prolog. However it seems to work OK in WinNT.
 	    if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
-#catch {exec gcc -v} vInfo
-#ShowMessage debug info "using $vInfo" ok
 		set dll ame_dll${MAJ}${MIN}
-	        exec gcc -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-#		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp objtemp.o
-#		file delete junk.tmp
-#		exec dlltool --dllname $TARGET --base-file base.tmp \
-#			--output-exp exptemp.exp --def $TOOLDIR/model.def
-		exec dllwrap --output-lib=libmodel.a --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=gcc objtemp.o
-#		exec gcc -mdll -o $TARGET objtemp.o -Wl,exptemp.exp
-#		file delete exptemp.exp
-
+	        exec g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
+		exec dllwrap --output-lib=libmodel.a --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+		file delete exptemp.exp
 		
 # Method using command line calls to MSVC 4.0 or later -- works well
 	    } else {
@@ -1723,19 +1709,8 @@ proc build_c_stub {targetDir make_new_stub} {
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
 # it is running under Prolog. However it seems to work OK in WinNT.
 	if {$make_new_stub != 1} {
-#catch {exec gcc -v} vInfo
-#ShowMessage debug info "using $vInfo" ok
-#ShowMessage debug info "TCL is $TCL" ok
-#		exec dlltool --dllname $TCL/bin/$dll.dll --output-lib lib$dll.a --def tcltk.def
 	    exec g++ -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
-#		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
-#		    obj.o -L. -l$dll
-#		    file delete junk.tmp
-#		exec dlltool --dllname $TARGET --base-file base.tmp \
-#		    --output-exp exp.exp --def stub.def
-	    exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=gcc obj.o $tclLib
-#		exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
-#		file delete exp.exp
+	    exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=g++ obj.o $tclLib
 
 # Method using command line calls to MSVC 4.0 or later -- works well
 	} else {

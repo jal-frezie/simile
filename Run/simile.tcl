@@ -2,9 +2,6 @@
 # SIMILE batch file
 # Make sure the first line refers to a version of TclTk with shared libraries
 
-set prolog gnu
-set interface pipe
-
 proc GetRealFile {link} {
     if {[catch {set base [file readlink $link]}]} {
 	return $link
@@ -116,6 +113,13 @@ set env(START_DIR) [pwd] ;# was $SIMILE_PATH/Tutorial
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder
 cd $SIMILE_PATH/Run
+
+set UserStream [open userinfo.txt r]
+gets $UserStream prologId
+gets $UserStream interfaceId
+close $UserStream
+set prolog [lindex [split $prologId =] 1]
+set interface [lindex [split $interfaceId =] 1]
 
 # tk_messageBox -title debug -icon info \
 #	-message "TCL library is [info library]\n \
