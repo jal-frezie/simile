@@ -16,11 +16,7 @@ namespace eval slide139 {
         foreach node [GetObjectList] {
             if {[string match INPUT [GetModelEval $node]]} {
                 set title [GetCaptionPathFromId $node]
-                if {[string match FLAG [GetModelType $node]]} {
-                    InsertCheck $winId nodebox[incr boxCount] $node $title
-                } else {
-                    InsertSlider $winId nodebox[incr boxCount] $node $title
-                }
+                InsertSlider $winId nodebox[incr boxCount] $node $title
             }
         }
         if {!$boxCount} {
@@ -45,77 +41,93 @@ namespace eval slide139 {
 #        catch {wm geometry $winId $geom}
     }
     
-    proc InsertCheck {winId boxname node title} {
-        global checkStates
-        set def [lindex [GetModelValue $node] 0]
-        set levels [lrange [split $title /] 1 end]
-        set f [MakeSubFrames $winId.checkframe $levels]
-        set count [lindex [GetModelDims $node] 0]
-        if {$count == 0} {
-            pack [checkbutton $f -text [lindex $levels end] \
-                    -variable checkStates($node) \
-                    -offvalue 0 -onvalue 1 -relief ridge]
-            set checkStates($node) $def
-        } else {
-            array set defArr $def
-            pack [set checkArr [frame $f]]
-            pack [label $checkArr.caption -text [lindex $levels end]]
-            for {set index 1} {$count >= $index} {incr index} {
-                pack [checkbutton $checkArr.elt$index \
-                        -variable checkStates($node,$index) \
-                        -borderwidth 1 -padx 0 -offvalue 0 -onvalue 1]
-                set checkStates($node,$index) $defArr($index)
-                if {fmod($index,5)==0} {
-                    $checkArr.elt$index configure -bg blue
-                }
-            }
-        }
-    }
-    
     proc InsertSlider {winId boxname node title} {
-        set min [GetMinValue $node]
-        set def [lindex [GetModelValue $node] 0]
-        set max [GetMaxValue $node]
+	global checkStates
+	set isFlag [string match FLAG [GetModelType $node]]
+        set initVal [lindex [GetModelValue $node] 0]
         #ShowMessage debug info $def ok
         set levels [lrange [split $title /] 1 end]
         pack [set f [frame [MakeSubFrames $winId.sliderframe $levels]]] \
                 -fill x -expand true
-        set magnitude [expr $max - $min]
-        if {[string match INTEGER [GetModelType $node]]} {
-            set spacing 1
-        } else {
-            set spacing [expr $magnitude/100.0]
-        }
-        set count [SliderArray $node]
+	if {$isFlag} {
+	} else {
+	    set min [GetMinValue $node]
+	    set max [GetMaxValue $node]
+	    set magnitude [expr $max - $min]
+	    if {[string match INTEGER [GetModelType $node]]} {
+		set spacing 1
+	    } else {
+		set spacing [expr $magnitude/100.0]
+	    }
+	}
+	set nodeDims [GetModelDims $node]
+	for {set outerDims [expr [llength $nodeDims]-1]} \
+	    {$outerDims > 0 && [lindex $nodeDims $outerDims] <= 0} \
+	    {incr outerDims -1} {}
+        set count [lindex $nodeDims $outerDims]
         if {$count == 0} {
-            scale $f.scale -length 120 -orient horizontal -showvalue false \
+	    if {$isFlag} {
+		pack [checkbutton $f -text [lindex $levels end] \
+			  -variable checkStates($node) \
+			  -offvalue 0 -onvalue 1 -relief ridge]
+		set checkStates($node) [GetDefVal $initVal $outerDims 0]
+	    } else {
+		scale $f.scale -length 120 -orient h -showvalue false \
                     -sliderlength 10 -from $min -to $max \
                     -tickinterval [expr $magnitude/5.0] \
                     -resolution $spacing \
                     -variable sliderVals($node)
-            $f.scale set $def
-            pack $f.scale -side right -fill x -expand true
-            pack [label $f.caption -text [lindex $levels end]]
-            pack [entry $f.entry -textvariable sliderVals($node) -width 8]  -padx 1 -pady 1
+		$f.scale set [GetDefVal $initVal $outerDims 0]
+		pack $f.scale -side right -fill x -expand true
+		pack [label $f.caption -text [lindex $levels end]]
+		pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
+		    -padx 1 -pady 1
+	    }
         } else {
-            array set defArr $def
-            pack [label $f.caption -text [lindex $levels end]]
-            for {set elt 1} {$count >= $elt} {incr elt} {
-                pack [frame $f.elt$elt] -fill x -expand true
-                pack [message $f.elt$elt.id -text $elt] -side left
-                pack [entry $f.elt$elt.val -textvariable sliderVals($node,$elt) \
-                        -width 8] -side left -padx 1 -pady 1
-                set newScale $f.elt$elt.scale
-                scale $newScale -length 180 \
+	    pack [label $f.caption -text [lindex $levels end]]
+	    for {set index 1} {$count >= $index} {incr index} {
+		if {$isFlag} {
+		    set line [expr ($index+9)/10]
+		    set row $f.row$line
+		    if {![winfo exists $row]} {
+			pack [frame $row]
+			pack [label $row.low -text $index] -side left
+			pack [label $row.high -text [min 10*$line $count]] \
+				  -side right
+		    }
+		    pack [checkbutton $row.elt$index -borderwidth 1 \
+			      -variable checkStates($node,$index) \
+			      -padx 0 -offvalue 0 -onvalue 1] -side left
+		    set checkStates($node,$index) \
+			[GetDefVal $initVal $outerDims $index]
+		    set newbg white
+		    if {fmod($line,2)==0} {
+			set newbg \#e0e0ff
+		    }
+		    if {fmod($index,2)==0} {
+			set newbg \#c0c0ff
+		    }
+		    $row.elt$index configure -bg $newbg
+		} else {
+		    pack [frame $f.elt$index] -fill x -expand true
+		    pack [message $f.elt$index.id -text $index] -side left
+		    pack [entry $f.elt$index.val \
+			      -textvariable sliderVals($node,$index) \
+			      -width 8] -side left -padx 1 -pady 1
+		    set newScale $f.elt$index.scale
+		    scale $newScale -length 180 \
                         -orient horizontal -showvalue false \
                         -sliderlength 10 -from $min -to $max \
                         -resolution $spacing \
-                        -variable sliderVals($node,$elt)
-                $newScale set $defArr($elt)
-                pack $newScale -fill x -expand true
-            }
-            $newScale configure -tickinterval [expr $magnitude/5.0]
-            # only put legend on bottom one
+                        -variable sliderVals($node,$index)
+		    $newScale set [GetDefVal $initVal $outerDims $index]
+		    pack $newScale -fill x -expand true
+		    # only put legend on bottom one
+		    if {$count==$index} {
+			$newScale configure -tickinterval [expr $magnitude/5.0]
+		    }
+		}
+	    }
         }
     }
     
@@ -175,16 +187,23 @@ namespace eval slide139 {
         }
     }
     
-    
-    proc SliderArray {node} {
-        # Need last positive val in dim array, or 0 if none
-        set retDim 0
-        foreach dim [GetModelDims $node] {
-            if {$dim>0} {
-                set retDim $dim
-            }
-        }
-        return $retDim
+    proc GetDefVal {vals levels index} {
+#ShowMessage debug info "GetDefVal $vals $levels $index" ok
+	if {$levels==0 && $index>0} {
+	    array set subvals $vals
+	    return [GetDefVal $subvals($index) 0 0]
+	} elseif {[llength  $vals]==1} {
+	    return $vals
+	} else {
+	    incr levels -1
+	    foreach {indx val} $vals {
+		set subResult [GetDefVal $val $levels $index]
+		if {[llength $subResult]} {
+		    return $subResult
+		}
+	    }
+	}
+	return {}
     }
     
     proc click {winId node caption} {
