@@ -15,8 +15,8 @@ itcl::class ::ModelWindowExtn::ImportExportSimileMLExtn {
         set exportMenu ${winId}top.file.sub1
         
         # $this is a built in variable for each object referencing that object
-        $importMenu add command -label "SimileML ..." -command "$this LoadSimileML"
-        $exportMenu add command -label "SimileML ..." -command "$this SaveSimileML"       
+        $importMenu insert 0 command -label "SimileML ..." -command "$this LoadSimileML"
+        $exportMenu insert 0 command -label "SimileML ..." -command "$this SaveSimileML"
         
     }
     
