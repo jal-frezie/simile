@@ -1317,12 +1317,11 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		/* At this point we need to replace the innermost loop with an
 		assignment if using an id-based condition, and move the
 		condition evaluation outside that loop...*/
-		(append(Slower,
-			   [[IdOpen,
-			     make(_, IdConds, [_IdLevel, SmLevel | _More], _,
-				  [assign(_, IdExpr)]),
-			     _IdClose | NoIdConds] | Faster], SubPasses),
+		(append(Slower, [Now | Faster], SubPasses),
+		    append(IdOpens, [make(_, IdConds, _,_,
+				  [assign(_, IdExpr)]),_Cls | NoIdConds], Now),
 		    member(can_find_id, IdConds),
+		    /* check condition is for this level...oh sod it */
 		    /* find last looping construct */
 		    append(OuterLoops, [make(_,_,_,_, [open_index(IdRef, _)])
 				       | SmLoop], OpenLoops),
@@ -1336,9 +1335,9 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		    replace_subexps(IdExpr, compile, indices_direct,
 				    [Ptr | Inds], top_down, _, IxExpr),
 		    IdRef = arr('', IdVar, []),
-		    append(OuterLoops,
-			   [IdOpen, make(_,_,_,_, [assign(IdRef, IxExpr)])
-					| SmLoop], UseLoops),
+		    append(IdOpens, [make(_,_,_,_, [assign(IdRef, IxExpr)])
+					| SmLoop], Next),
+		    append(OuterLoops, Next, UseLoops),
 		    append(Slower, [NoIdConds | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
 		    UseSubPasses = SubPasses),
