@@ -241,7 +241,7 @@ proc create_equation {parent boxtitle indices} {
 
 # Bottom frame has the influences and parameters list boxes
     frame $t.bottom
-    TitleFrame $t.bottom.influences -text "Influences : "
+    TitleFrame $t.bottom.influences -text "Influences: "
     set influencesf [$t.bottom.influences getframe]
     frame $influencesf.captions
     label $influencesf.captions.p -text "Parameter:"
