@@ -9,7 +9,7 @@ interface of the application. It responds by:
 */
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
-	menu_handle/3, set_box_size/4, change_size/2,
+	menu_handle/3, set_box_size/5, change_size/3,
 	off_window/1, kill_everything/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
@@ -1160,8 +1160,8 @@ delete_tree(Target) :-
 	off(Target),
 	    fast_delete(Target).
 
-change_size(Type, New_size) :-
-	find_type(Obj, _),
+change_size(TopNode, Type, New_size) :-
+	contains(TopNode, Obj),
 	draw_style_for(Obj, Type),
 	(Type = submodel; Type = influence; Type = relation;
 	Type = flow,
@@ -1180,7 +1180,7 @@ change_size(Type, New_size) :-
 	redisplay(Obj),
 	fail.
 
-change_size(_,_).
+change_size(_,_,_).
 
 off_window(Win) :-
 	Win shows_model Model,
@@ -1379,7 +1379,7 @@ get_default_export_name(Model, Extn, Export) :-
 	name(Export, ExportStr).
 	
 	
-/* style selection between eng and sd is largely redundant now... */
+/* style selection between eng and sd is largely redundant now... 
 
 reroute_for(Style) :-
 	find_type(Function, function),
@@ -1404,3 +1404,4 @@ reroute_for(Style) :-
 	fail.
 
 reroute_for(_).
+*/

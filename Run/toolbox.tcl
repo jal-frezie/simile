@@ -730,12 +730,6 @@ proc ControlDraw {prologVersion} {
         file attributes $custom(prefDir) -hidden true
     }
     CheckCompilerLocation
-    foreach nodeType {normal generic compartment channel text \
-                variable function submodel flow influence \
-                ghost_link relation} {
-        ResetLooks $nodeType
-    }
-    CustomizeLooks
 #    MakeHelperMenu
     LoadModelWindowExtensions
     

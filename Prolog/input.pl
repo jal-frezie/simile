@@ -14,8 +14,8 @@ sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
 		       tk_embrace/2, tk_abandon/0,
 		       tk_abandon_eqn/0, compile_to_file/1,
 		       tk_run_settings_tweaked/1, tk_off_window/1,
-		       tk_kill_everything/1, tk_set_new_size/4,
-		       tk_change_size/4, tk_do_colours/2]).
+		       tk_kill_everything/1, tk_set_new_size/3,
+		       tk_change_size/3, tk_do_colours/2]).
 
 sicstus_use_module([library(lists), backup, event, menu]).
 
@@ -127,15 +127,13 @@ tk_abandon :-
 tk_abandon_eqn :-
 	abandon_eqn.
 
-tk_set_new_size(Node, New_size, XDefOffset, YDefOffset) :-
-	show_wait_cursor,
-	set_box_size(Node, New_size, XDefOffset, YDefOffset),
-	show_normal_cursor.
+tk_set_new_size(Node, CType, New_size) :-
+	set_box_size(Node, CType, New_size, 0,0).
 
-tk_change_size(Node, New_size, XDefOffset, YDefOffset) :-
+tk_change_size(TopNode, CType, New_size) :-
 	show_wait_cursor,
-	set_box_size(Node, New_size, XDefOffset, YDefOffset),
-	change_size(Node, New_size),
+	set_box_size(TopNode, CType, New_size, 0,0),
+	change_size(TopNode, CType, New_size),
 	show_normal_cursor.
 
 tk_run_settings_tweaked(Node) :-

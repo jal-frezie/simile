@@ -17,8 +17,8 @@ sicstus_module(state,
 		get_start_coords/2, set_start_coords/2, get_current_coords/2,
 		set_current_coords/2, get_border_offsets/4, set_border_offsets/4,
 		get_mode/1, set_mode/1, get_current_node/1, set_current_node/1,
-		get_running_model/1, set_running_model/1, get_box_size/2,
-		get_text_offset/3, set_box_size/4, get_adding_object/1,
+		get_running_model/1, set_running_model/1, get_box_size/3,
+		get_text_offset/4, set_box_size/5, get_adding_object/1,
 		set_adding_object/1, set_highlit_obj/2, get_highlit_obj/2,
 		forget_highlit_obj/2, initialize_phase/0, advance_phase_to/1,
 		get_phase/1, get_line_start_obj/1, set_moving_obj/1, get_moving_obj/1,
@@ -192,21 +192,27 @@ set_border_offsets(L,T,R,B) :-
 	retractall(border_offsets_are(_, _, _, _)),
 	assertz(border_offsets_are(L,T,R,B)).
 
-:- dynamic(box_size_is/4).
+:- dynamic(box_size_is/5).
 
-get_box_size(Box_type, Cur_box_size) :-
-	box_size_is(Box_type, Abs_box_size,_,_),
+/* note assymetry -- its easier to get size for local submodel but to set it
+for top level model */
+
+get_box_size(Parent, Box_type, Cur_box_size) :-
+	ame_gen:contains(Top, Parent),
+	backup:is_toplevel(Top),
+	box_size_is(Top, Box_type, Abs_box_size,_,_),
 	(member(Box_type-Scale, [compartment-0.6, function-0.3, variable-0.3,
 				cloud-0.5, channel-0.6]), !,
 	    Cur_box_size is Scale*Abs_box_size;
 	Cur_box_size = Abs_box_size).
 
-get_text_offset(Box_type, XDefOffset, YDefOffset) :-
-	box_size_is(Box_type, _, XDefOffset, YDefOffset).
+get_text_offset(TopNode, Box_type, XDefOffset, YDefOffset) :-
+	box_size_is(TopNode, Box_type, _, XDefOffset, YDefOffset).
 
-set_box_size(Box_type, New_box_size, XDefOffset, YDefOffset) :-
-	retractall(box_size_is(Box_type, _,_,_)),
-	assertz(box_size_is(Box_type, New_box_size, XDefOffset, YDefOffset)).
+set_box_size(TopNode, Box_type, New_box_size, XDefOffset, YDefOffset) :-
+	retractall(box_size_is(TopNode, Box_type, _,_,_)),
+	assertz(box_size_is(TopNode, Box_type, New_box_size,
+			    XDefOffset, YDefOffset)).
 
 :- dynamic(current_node_is/1).
 
@@ -353,14 +359,16 @@ get_style(Style) :-
 	Style = sd.
 
 /* Set editing state to initial default... */
-box_size_is(compartment, 50, 0, 0).
-box_size_is(function, 50, 0, 0).
-box_size_is(variable, 50, 0, 0).
-box_size_is(cloud, 50, 0, 0).
-box_size_is(submodel, 50, 0, 0).
-box_size_is(channel, 50, 0, 0).
-box_size_is(flow, 50, 0, 0).
-box_size_is(influence, 50, 0, 0).
-box_size_is(ghost_link, 50, 0, 0).
-box_size_is(relation, 50, 0, 0).
+set_initial_box_sizes(TopNode) :-
+	retractall(box_size_is(TopNode, _,_,_,_)),
+	assert(box_size_is(TopNode, compartment, 50, 0, 0)),
+	assert(box_size_is(TopNode, function, 50, 0, 0)),
+	assert(box_size_is(TopNode, variable, 50, 0, 0)),
+	assert(box_size_is(TopNode, cloud, 50, 0, 0)),
+	assert(box_size_is(TopNode, submodel, 50, 0, 0)),
+	assert(box_size_is(TopNode, channel, 50, 0, 0)),
+	assert(box_size_is(TopNode, flow, 50, 0, 0)),
+	assert(box_size_is(TopNode, influence, 50, 0, 0)),
+	assert(box_size_is(TopNode, ghost_link, 50, 0, 0)),
+	assert(box_size_is(TopNode, relation, 50, 0, 0)).
 

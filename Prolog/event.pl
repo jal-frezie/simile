@@ -441,7 +441,7 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 	    make_node(Parent, New_obj, Comp_name),
 	    set_shape(Comp_name, centre, [Xpt, Ypt]);
 	use_style_for(New_obj, NewObjStyle),
-	    get_box_size(NewObjStyle, Cur_size),
+	    get_box_size(Parent, NewObjStyle, Cur_size),
 	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, Box),
 	    attempt_addition(New_obj, Parent, Box, Comp_name, no, yes).
 
@@ -450,7 +450,7 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
 	check_translation(Submodel),
 	use_style_for(New_obj, NewObjStyle),
-	get_box_size(NewObjStyle, Cur_size),
+	get_box_size(Submodel, NewObjStyle, Cur_size),
 	get_shape(Submodel, internal_extent, [L, T, R, B]),
 	MaxDist is max(max(BestX - L, R - BestX), max(BestY - T, B - BestY)),
 	snap_to_grid([10,10], [Step, _]),
@@ -616,9 +616,9 @@ doubleclick_on(Edit_thing) :-
 	(Edit_type = submodel, !,
 	    finish_old_edit(none), /* because leaving the window */
 	all(event, get_display_depth,
-	    [unify(Wid), build([ghost_link, influence, variable, flow, 
-				compartment, submodel, caption, sections]), 
-	     build(Depths)]),
+	    [unify(Wid),
+	    build([ghost_link, influence, variable, flow, compartment, 
+		   submodel, caption, sections, text]), build(Depths)]),
 	    contains(TopNode, Edit_thing),
 	    is_toplevel(TopNode),
 	    new_window_for(Edit_thing, TopNode, NewWin, Depths, 0),
@@ -1120,7 +1120,7 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 			shape_route(Type, NewPt, Finish, Route);
 		End = finish,
 			shape_route(Type, Start, NewPt, Route)),
-*/	    get_box_size(flow, FlowBox),
+*/	    get_box_size(Source, flow, FlowBox),
 
 	    BowSize is FlowBox/2,
 	    get_middle_segment(Route, BowSize, BowShape),
@@ -1510,7 +1510,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	(member(Edge, [sw, s, se, c]), !, NewB is OldB+YOff; NewB = OldB),
 	NewBox = [NewL, NewT, NewR, NewB],
 	/* Check it is not too small */
-	get_box_size(submodel, Standard),
+	get_box_size(Submodel, submodel, Standard),
 	NewR-NewL > Standard//2,
 	NewB-NewT > Standard//2,
 	find_all_comps(Parent, Submodel),
@@ -1599,7 +1599,7 @@ select_bagged(Rect, Model) :-
 	    \+ (get_highlit_obj(N, Caught), N<2),
 	    do_colours(Caught, on)),
 	fail.
-
+/*
 zoom_to_area :-
 	get_incomplete([OldX, OldY, NewX, NewY]),
 	get_box_size(submodel, Standard),
@@ -1607,9 +1607,8 @@ zoom_to_area :-
 	abs(NewY-OldY) < Standard//2;
 	find_current(Wid),
 	    display_area(Wid)), !,
-	/* Rubberband is used by Tk to get size of new draw window */
 	remove_old_rubberband.
-	
+*/
 unclick_obj :-
 	(retract(instant_link(New_obj));
 	 get_mode(add),
@@ -1912,7 +1911,7 @@ attempt_new_component(Parent, Box) :-
 	Box = [L,T,R,B],
 	W is R - L,
 	H is B - T,
-	get_box_size(submodel, Standard),
+	get_box_size(Parent, submodel, Standard),
 	W > Standard//2,
 	H > Standard//2,
 	attempt_addition(submodel, Parent, Box, Node_name, yes, yes),
@@ -1975,7 +1974,7 @@ resnap(Node, SelOnly) :-
 	    middle(BB, [XMid, YMid]),
 	    snap_to_grid([XMid, YMid], [Xpt, Ypt]),
 	    use_style_for(New_obj, NewObjStyle),
-	    get_box_size(NewObjStyle, Cur_size),
+	    get_box_size(Node, NewObjStyle, Cur_size),
 	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, NBB),
 	    XOff is Xpt-XMid, YOff is Ypt-YMid,
 	    change_shape(Bit, bounding_box, NBB),

@@ -90,7 +90,7 @@ proc ClosePipe {} {
 }
 
 # These allow GNU prolog to use a decent amount of memory
-set vm_usage 524288
+set vm_usage 262144
 set env(GLOBALSZ) [expr $vm_usage/2]
 set env(LOCALSZ) [expr $vm_usage/4]
 set env(TRAILSZ) [expr $vm_usage*3/16]
@@ -110,4 +110,3 @@ while {![string match ready $spraf]} {
     }
 }
 KeepLooking
-

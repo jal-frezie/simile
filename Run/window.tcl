@@ -363,6 +363,13 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info($c,top_node) $topNode
     if {[set window_info($c,is_top_level) $isTopLevel]} {
 	set window_info($c,topCapt) {}
+
+	foreach nodeType {normal generic compartment channel text \
+			      variable function submodel flow influence \
+			      ghost_link relation} {
+	    ResetLooks $topNode $nodeType
+	}
+	CustomizeLooks $topNode
     } else {
 	set window_info($c,topCapt) $window_info(lastClickCapt)
     }

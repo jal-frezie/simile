@@ -24,13 +24,13 @@ proc GetPoints {lo rad} {
 }
 
 proc GetObjectSize {w type fatness} {
-    global looks
-    return [expr [Scale $w $looks($type,objectsize)]*$fatness/100.0]
+    global looks window_info
+    return [expr [Scale $w $looks($window_info($w,top_node),$type,objectsize)]*$fatness/100.0]
 }
 
 proc GetLineSize {w type fatness} {
-    global looks
-    return [expr [Scale $w $looks($type,lines)]*$fatness/100.0]
+    global looks window_info
+    return [expr [Scale $w $looks($window_info($w,top_node),$type,lines)]*$fatness/100.0]
 }
 
 proc ScaleRect {w l t r b} {
@@ -97,7 +97,6 @@ proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
 
 
 proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
-    global looks
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set width [GetLineSize $w flow $fatness]
     
@@ -214,7 +213,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     if {$fatness == 0} {
         set cornerDiam 0
     } else {
-        set cornerDiam [expr $looks(submodel,objectsize)*$shortSide/200]
+        set cornerDiam [expr $looks($window_info($w,top_node),submodel,objectsize)*$shortSide/200]
     }
     set cornerRad [expr 0.5*$cornerDiam]
     # This is the diameter of the rounded corner as fraction of the box width
@@ -390,7 +389,6 @@ proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
 }
 
 proc PutRelation { w ptz fatness colourScheme tagSet} {
-    global looks
     # Have to use eval because points are packed in a list -- what a language
     set width [expr 5*[GetLineSize $w relation $fatness]]
     set arrowRad [expr [GetObjectSize $w relation $fatness]/10]
@@ -408,8 +406,6 @@ proc PutRelation { w ptz fatness colourScheme tagSet} {
 }
 
 proc PutFatArrow { w ptz fatness colourScheme tagSet} {
-    global looks
-    
     set width [expr 5*[GetLineSize $w flow $fatness]]
     set features [GetObjectSize $w flow $fatness]
     #    set width [Scale $w [expr $fatness/10.0]]
@@ -625,20 +621,21 @@ proc DrawBlob {w startX startY size tags} {
 # This puts random bits of normally non-editable text on the screen...
 
 proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
-    global looks
+    global looks window_info
     
     if {[string equal vflow $ptype]} {
 	set type flow
     } else {
 	set type $ptype
     }
+    set n $window_info($w,top_node)
     if {[string compare $colourScheme normal]} {
-        set textColor $looks($type,$colourScheme)
+        set textColor $looks($n,$type,$colourScheme)
     } else {
-        set textColor $looks($type,text)
+        set textColor $looks($n,$type,text)
     }
     
-    set fontData [ExtractFontData $looks($type,font)]
+    set fontData [ExtractFontData $looks($n,$type,font)]
     set realFont [Scale $w [lindex $fontData 3]*$fatness/100]
 #    if {$realFont<10} {
 #        set closeFont 10
@@ -648,11 +645,11 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
             [lindex $fontData 2] $realFont]
     set textX [Scale $w [expr [lindex $ptz 0] \
-            + $looks($ptype,xoffset)*$fatness/100]]
+            + $looks($n,$ptype,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] \
-            + $looks($ptype,yoffset)*$fatness/100]]
+            + $looks($n,$ptype,yoffset)*$fatness/100]]
 # experimental background box for text
-    if {$looks($type,txtbg)} {
+    if {$looks($n,$type,txtbg)} {
 	set txtbg \#ffffc0
     } else {
 	set txtbg {}
@@ -661,11 +658,19 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
 		     -tag "$tagSet /${type}_text/"]
     $w dtag $backBox editable
     $w dtag $backBox currently_editable
-    if {$looks($type,txtbd)} {
+    if {$looks($n,$type,txtbd)} {
 	$w create line 0 0 1 1 -fill $textColor -tag [$w gettags $backBox]
     }
+    set ankh $looks($n,$ptype,textanchor)
+    if {[string match *e $ankh]} {
+	set tjust right
+    } elseif {[string match *w $ankh]} {
+	set tjust left
+    } else {
+	set tjust center ;# Blooaaargh! Spell it right dudes!
+    }
     set textItem [$w create text $textX $textY -text $capt -fill $textColor \
-	-font $useFont -anchor $looks($ptype,textanchor) \
+	-font $useFont -anchor $ankh -justify $tjust \
 	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"]
     FixBackBox $w $textItem
 }
@@ -693,17 +698,18 @@ proc SelectText {w node} {
 # type.
 
 proc ColorSymbol { w name type density colorSpec } {
-    global looks
+    global looks window_info
     
+    set n $window_info($w,top_node)
     if {[string match cloud $type]} {
         set type flow
     }
     if {[string compare $colorSpec normal]} {
-        set outlineColor $looks($type,$colorSpec)
+        set outlineColor $looks($n,$type,$colorSpec)
         set textColor $outlineColor
     } else {
-        set outlineColor $looks($type,outline)
-        set textColor $looks($type,text)
+        set outlineColor $looks($n,$type,outline)
+        set textColor $looks($n,$type,text)
     }
     FlashSymbol $w $name $outlineColor $textColor
 
@@ -766,10 +772,11 @@ proc FillSymbol { w name color } {
 }
 
 proc ResetColours { w type density colourScheme name } {
-    global looks
+    global looks window_info
     
+    set n $window_info($w,top_node)
     ColorSymbol $w $name $type $density $colourScheme
-    set fillColor $looks($type,fill)
+    set fillColor $looks($n,$type,fill)
     FillSymbol $w $name $fillColor
 }
 
@@ -783,13 +790,16 @@ proc ColourExists {col} {
 
 # adapted from Welch p265
 proc WriteDesc {canvas canvasFile date args} {
-    global window_info looks
+    global window_info
     
     set stream [NetOpen $canvasFile w]
     fconfigure $stream -translation lf
     set title [wm title [winfo parent $canvas]]
     puts $stream "# written on $date"
-    puts $stream [list array set looks [array get looks *,*]]
+#    puts $stream [list array set looks [array get looks *,*]]
+# needs special to preserve top-level node name...like this
+    puts $stream [concat LoadModelLooks \$c \
+		      [list [MakeLooksSaver $window_info($canvas,top_node)]]]
     puts $stream [concat TweakWindow \$c \{$title\} \
             $window_info($canvas,scale) \
             [$canvas cget -scrollregion] clear $args]
@@ -836,7 +846,9 @@ proc WriteDesc {canvas canvasFile date args} {
 }
 
 proc MakeImage {base inst w h args} {
-    global looks
+    global looks window_info
+    
+    set n $window_info($w,top_node)
     #    if {![info exists imageSources($base)]} {
     #	image create photo $base
     #	$base read $file -shrink
@@ -845,7 +857,7 @@ proc MakeImage {base inst w h args} {
     #    }
     image create photo $inst -width $w -height $h
     set shortSide [expr $w<$h?$w:$h]
-    set intRad [expr int($looks(submodel,objectsize)*$shortSide/400)]
+    set intRad [expr int($looks($n,submodel,objectsize)*$shortSide/400)]
     if {![llength $args]} {
 	set args Tiled
     }
@@ -1035,6 +1047,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
     #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
     global window_info looks
 
+    set n $window_info($winId,top_node)
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
         set objList [$winId find withtag $which]
@@ -1093,7 +1106,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
 		}
 	    } else {
 		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
-		set intRad [expr int($looks(submodel,objectsize)* \
+		set intRad [expr int($looks($n,submodel,objectsize)* \
 					 $shortSide/400)]
 		$tgtImage config -width $newWidth -height $newHt
 		regexp {source\(([^\)]+)\)} [$winId gettags $object] \
@@ -1248,7 +1261,7 @@ proc ForSearchType {winId item} {
 }
 
 proc NextCaption {canvas} {
-    global looks find window_info
+    global find window_info
     if {![info exists find(List,$canvas)]} {
         ShowMessage "Operation failed" error "No search in progress!" ok
         return
@@ -1299,6 +1312,7 @@ proc NextCaption {canvas} {
 proc Customize {winId mode} {
     global looks done window_info custom
     
+    set n $window_info($winId.canvas,top_node)
     set looks(width) 200
     
     set t [toplevel .customize -bd 4]
@@ -1320,6 +1334,7 @@ proc Customize {winId mode} {
     canvas $t.canvas -width [expr $looks(width) + 50] \
             -height [expr $looks(width) + 50]
     set window_info($t.canvas,scale) 1
+    set window_info($t.canvas,top_node) $n
     set custom(showgrids,$t.canvas) 0
     pack $t.canvas
     
@@ -1341,15 +1356,15 @@ proc Customize {winId mode} {
         set tf [frame $text.font]
         label $tf.what -text "Font: "
         pack $tf.what -side left
-        tk_optionMenu $tf.family looks($object,family) \
+        tk_optionMenu $tf.family looks($n,$object,family) \
                 helvetica times system courier symbol
         bind $tf.family.menu <Leave> "ZotFont $t 120"
         pack $tf.family -side left
-        tk_optionMenu $tf.weight looks($object,weight) \
+        tk_optionMenu $tf.weight looks($n,$object,weight) \
                 bold normal
         bind $tf.weight.menu <Leave> "ZotFont $t 120"
         pack $tf.weight -side left
-        tk_optionMenu $tf.style looks($object,style) \
+        tk_optionMenu $tf.style looks($n,$object,style) \
                 italic roman
         bind $tf.style.menu <Leave> "ZotFont $t 120"
         pack $tf.style -side left
@@ -1358,16 +1373,18 @@ proc Customize {winId mode} {
 	set tb [frame $text.backbox]
 	label $tb.bdwhat -text "Show border"
 	pack $tb.bdwhat -side left
+	set looks(txtbd) $looks($n,$object,txtbd)
 	checkbutton $tb.bd -variable looks(txtbd) \
-	    -command "ZotObjectSize $t $object 0"
+	    -command "ZotObjectSize $t $n $object 0"
 	pack $tb.bd -side left
 	label $tb.bgwhat -text "Show background"
 	pack $tb.bgwhat -side left
+	set looks(txtbg) $looks($n,$object,txtbg)
 	checkbutton $tb.bg -variable looks(txtbg) \
-	    -command "ZotObjectSize $t $object 0"
+	    -command "ZotObjectSize $t $n $object 0"
 	pack $tb.bg -side left
         button $tb.col -text "Set colour" \
-                -command "ZotColor $t $tb.col $object"
+                -command "ZotColor $t $n $tb.col $object"
         pack $tb.col -side left
 	pack $tb
 	pack $t.text -fill x
@@ -1379,7 +1396,7 @@ proc Customize {winId mode} {
 	frame $graphics.setcolours
 	foreach flashType {outline fill incomplete} {
 	    button $graphics.setcolours.$flashType -text "Set $flashType" \
-                -command "ZotColor $t $graphics.setcolours.$flashType $object"
+                -command "ZotColor $t $n $graphics.setcolours.$flashType $object"
 	    pack $graphics.setcolours.$flashType -side left
 	}
 	pack $graphics.setcolours
@@ -1387,7 +1404,7 @@ proc Customize {winId mode} {
 	frame $graphics.flashcolours
 	foreach flashType {select highlight target} {
 	    button $graphics.flashcolours.$flashType -text "Set $flashType" \
-                -command "ZotColor $t $graphics.flashcolours.$flashType $object"
+                -command "ZotColor $t $n $graphics.flashcolours.$flashType $object"
 	    pack $graphics.flashcolours.$flashType -side left
 	}
 	pack $graphics.flashcolours
@@ -1397,7 +1414,7 @@ proc Customize {winId mode} {
 	pack $graphics.objectsize.what -side left
 	scale $graphics.objectsize.scale -from 0 -to $looks(width) \
             -length $looks(width) -orient horizontal -showvalue false \
-            -resolution 1 -command "ZotObjectSize $t $object"
+            -resolution 1 -command "ZotObjectSize $t $n $object"
 	pack $graphics.objectsize.scale -side left
 	pack $graphics.objectsize
     
@@ -1406,51 +1423,56 @@ proc Customize {winId mode} {
 	pack $graphics.lines.what -side left
 	scale $graphics.lines.scale -from 0 -to 10 -length $looks(width) \
             -orient horizontal -showvalue false -resolution 0.05 \
-            -command "ZotObjectSize $t $object"
+            -command "ZotObjectSize $t $n $object"
 	pack $graphics.lines.scale -side left
 	pack $graphics.lines
 	pack $t.graphics -fill x
     }
     
     frame $t.actions
-    button $t.actions.load -text "Load" -command "ReadLooks $t $object"
-    pack $t.actions.load -side left
-    button $t.actions.save -text "Save" -command "SaveLooks $t $object"
-    pack $t.actions.save -side left
-    button $t.actions.normal -text "Normalize" -command "LoadLooks $t $object normal"
+#    button $t.actions.load -text "Load" \
+#	-command "ReadLooks $t $n $object"
+#    pack $t.actions.load -side left
+#    button $t.actions.save -text "Save" \
+#	-command "SaveLooks $t $object"
+#    pack $t.actions.save -side left
+    button $t.actions.normal -text "Normalize" \
+	-command "LoadLooks $t $n $object normal"
     pack $t.actions.normal -side left
     button $t.actions.done -text "Done" -command "set done 1"
     pack $t.actions.done -side left
-    button $t.actions.apply -text "Apply" -command "ApplyLooks $t $object"
+    button $t.actions.apply -text "Apply" \
+	-command "ApplyLooks $t $n $object"
     pack $t.actions.apply -side left
     button $t.actions.cancel -text "Cancel" -command "set done 0"
     pack $t.actions.cancel -side left
     pack $t.actions
-    LoadLooks $t $object $object
-    RememberLooks $object
+    LoadLooks $t $n $object $object
+    RememberLooks $n
     
     grab $t
     tkwait variable done
     grab release $t
     if {$done} {
-        ApplyLooks $t $object
+        ApplyLooks $t $n $object
     } else {
-        array set looks $looks(safe)
+        UseLooksSaver $n $looks(safe)
     }
+    unset window_info($t.canvas,top_node)
     destroy $t
 }
 
-proc LoadLooks {t target object} {
+proc LoadLooks {t n target object} {
     global looks
     
     if {[string compare $target influence]} {
         #ShowMessage debug info "ExtractFontData looks($object,font) [ExtractFontData $looks($object,font)]" ok
-        scan [ExtractFontData $looks($object,font)] "%s %s %s %d" \
-                looks($target,family) looks($target,weight) \
-                looks($target,style) textsize
+        scan [ExtractFontData $looks($n,$object,font)] "%s %s %s %d" \
+                looks($n,$target,family) looks($n,$target,weight) \
+                looks($n,$target,style) textsize
         [$t.text getframe].size.scale set $textsize
 	[$t.text getframe].backbox.col configure \
-	    -activebackground $looks($object,text)
+	    -activebackground $looks($n,$object,text)
     }
     
     set middle [expr $looks(width)/2 + 25]
@@ -1458,15 +1480,15 @@ proc LoadLooks {t target object} {
     if {[string compare $object text]} {
 	set g [$t.graphics getframe]
 	foreach flash {outline fill incomplete} {
-	    $g.setcolours.$flash configure -activebackground $looks($object,$flash)
+	    $g.setcolours.$flash configure -activebackground $looks($n,$object,$flash)
 	}
 	foreach flash {select highlight target} {
-	    $g.flashcolours.$flash configure -activebackground $looks($object,$flash)
+	    $g.flashcolours.$flash configure -activebackground $looks($n,$object,$flash)
 	}
     
-	$g.objectsize.scale set $looks($object,objectsize)
-	$g.lines.scale set $looks($object,lines)
-	DoGraphics $t $target $middle $looks($object,objectsize)
+	$g.objectsize.scale set $looks($n,$object,objectsize)
+	$g.lines.scale set $looks($n,$object,lines)
+	DoGraphics $t $target $middle $looks($n,$object,objectsize)
     } else {
 	$t.canvas delete sample
         PutText $t.canvas [list $middle $middle] \
@@ -1494,32 +1516,32 @@ proc ExtractFontData {font} {
     return [list $family $weight $style $textsize]
 }
 
-proc CopyLooks {t object} {
+proc CopyLooks {t n object} {
     global looks
     if {[string compare $object influence]} {
-        set looks($object,font) [ResetFont $t]
+        set looks($n,$object,font) [ResetFont $t]
         if {[string compare $object text]} {
-	    UpdateOffsets $t $object
+	    UpdateOffsets $t $n $object
 	}
-        set looks($object,textanchor) [GetTextAnchor $t]
-	set looks($object,text) \
+        set looks($n,$object,textanchor) [GetTextAnchor $t]
+	set looks($n,$object,text) \
 	    [[$t.text getframe].backbox.col cget -activebackground]
-	set looks($object,txtbd) $looks(txtbd)
-	set looks($object,txtbg) $looks(txtbg)
+	set looks($n,$object,txtbd) $looks(txtbd)
+	set looks($n,$object,txtbg) $looks(txtbg)
     }
     if {[string compare $object text]} {
 	set g [$t.graphics getframe]
 	foreach colour {outline fill incomplete} {
-	    set looks($object,$colour) \
+	    set looks($n,$object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
 	}
 	foreach colour {select highlight target} {
-	    set looks($object,$colour) \
+	    set looks($n,$object,$colour) \
                 [$g.flashcolours.$colour cget -activebackground]
 	}
-	set looks($object,objectsize) [$g.objectsize.scale get]
-	set looks($object,lines) [$g.lines.scale get]
-	set looks(compartment,lines) [$g.lines.scale get] ;# for generic sample
+	set looks($n,$object,objectsize) [$g.objectsize.scale get]
+	set looks($n,$object,lines) [$g.lines.scale get]
+	set looks($n,compartment,lines) [$g.lines.scale get] ;# for generic sample
     }
 }
 
@@ -1602,7 +1624,6 @@ proc SampleMark { x y w } {
     # now we pick the closest apex to the clicked point, snap to that and then do
     # an absolute drag!
     
-    global looks
     set textbox [$w bbox movable]
     set vline1 [expr (2*[lindex $textbox 0] + [lindex $textbox 2])/3]
     set vline2 [expr ([lindex $textbox 0] + 2*[lindex $textbox 2])/3]
@@ -1671,15 +1692,15 @@ proc ZotFont { t param } {
     FixBackBox $t.canvas $txt
 }
 
-proc ZotColor {t role type} {
+proc ZotColor {t n role type} {
     set newColour [tk_chooseColor -initialcolor \
             [$role cget -activebackground]]
     $role configure -activebackground $newColour
-    CopyLooks $t $type
+    CopyLooks $t $n $type
     ResetColours $t.canvas $type {} normal sample
 }
 
-proc ZotObjectSize {t type size} {
+proc ZotObjectSize {t n type size} {
     global looks
     
 
@@ -1690,7 +1711,7 @@ proc ZotObjectSize {t type size} {
         set useLooks $type
 #    }
     
-    CopyLooks $t $useLooks
+    CopyLooks $t $n $useLooks
     if {[string compare text $type]} {
 	DoGraphics $t $useLooks $middle \
 	    [[$t.graphics getframe].objectsize.scale get]
@@ -1701,12 +1722,12 @@ proc ZotObjectSize {t type size} {
     }
 }
 
-proc UpdateOffsets {t type} {
+proc UpdateOffsets {t n type} {
     global looks
     set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
-    set looks($type,xoffset) [expr $looks($type,xoffset) + \
+    set looks($n,$type,xoffset) [expr $looks($n,$type,xoffset) + \
             [lindex $offsets 0] - [lindex $looks(cheat) 0]]
-    set looks($type,yoffset) [expr $looks($type,yoffset) + \
+    set looks($n,$type,yoffset) [expr $looks($n,$type,yoffset) + \
             [lindex $offsets 1] - [lindex $looks(cheat) 1]]
     set looks(cheat) $offsets
 }
@@ -1715,29 +1736,29 @@ proc GetTextAnchor {t} {
     $t.canvas itemcget [GetCaptionItem $t.canvas sample] -anchor
 }
 
-proc ResetLooks {type} {
+proc ResetLooks {c type} {
     global looks
     
-    set looks($type,font) [AssembleFont Helvetica bold roman 120]
-    set looks($type,txtbd) 0
-    set looks($type,txtbg) 0
-    set looks($type,outline) black
-    set looks($type,fill) $looks(buttonColor)
-    set looks($type,text) black
-    set looks($type,select) blue3
-    set looks($type,highlight) green4
-    set looks($type,target) green2
+    set looks($c,$type,font) [AssembleFont Helvetica bold roman 120]
+    set looks($c,$type,txtbd) 0
+    set looks($c,$type,txtbg) 0
+    set looks($c,$type,outline) black
+    set looks($c,$type,fill) $looks(buttonColor)
+    set looks($c,$type,text) black
+    set looks($c,$type,select) blue3
+    set looks($c,$type,highlight) green4
+    set looks($c,$type,target) green2
 #    set looks($type,affect) green2
-    set looks($type,incomplete) red3
+    set looks($c,$type,incomplete) red3
     
-    set looks($type,objectsize) 50
-    set looks($type,lines) 1
-    set looks($type,xoffset) 0
-    set looks($type,yoffset) 0
-    set looks($type,textanchor) n
+    set looks($c,$type,objectsize) 50
+    set looks($c,$type,lines) 1
+    set looks($c,$type,xoffset) 0
+    set looks($c,$type,yoffset) 0
+    set looks($c,$type,textanchor) n
 }
 
-proc CustomizeLooks {} {
+proc CustomizeLooks {c} {
     global looks
     
     #    prolog tk_set_new_size(compartment,30,0,0)
@@ -1745,11 +1766,11 @@ proc CustomizeLooks {} {
     #    prolog tk_set_new_size(function,15,0,0)
     #    prolog tk_set_new_size(cloud,25,0,0)
     #    prolog tk_set_new_size(channel,30,0,0)
-    set looks(vflow,xoffset) 2
-    set looks(vflow,yoffset) 0
-    set looks(vflow,textanchor) w
-    set looks(submodel,textanchor) sw
-    set looks(text,textanchor) c
+    set looks($c,vflow,xoffset) 2
+    set looks($c,vflow,yoffset) 0
+    set looks($c,vflow,textanchor) w
+    set looks($c,submodel,textanchor) sw
+    set looks($c,text,textanchor) c
 }
 
 proc Desystematize {colorSpec} {
@@ -1758,83 +1779,121 @@ proc Desystematize {colorSpec} {
             [lindex $rgb 1] [lindex $rgb 2]]
 }
 
-proc ApplyLooks {t type} {
-    RememberLooks $type
+proc ApplyLooks {t topNode type} {
+    RememberLooks $topNode
     if {[string compare $type generic]} {
-	CopyLooks $t $type
-        ExportLooks $t $type
+	CopyLooks $t $topNode $type
+        ExportLooks $t $topNode $type
     } else {
         foreach object {generic compartment channel function variable text \
                     submodel flow influence relation} {
-            CopyLooks $t $object
-            ExportLooks $t $object
+            CopyLooks $t $topNode $object
+            ExportLooks $t $topNode $object
         }
     }
 }
 
-proc RememberLooks {object} {
+proc RememberLooks {n} {
     global looks
-    set looks(safe) [array get looks $object,*]
-    if {[string equal generic $object]} {
-	eval lappend looks(safe) [array get looks compartment,*]
-# cos this is what we tamper with for sample
-    }
+    set looks(safe) [MakeLooksSaver $n]
 }
 
-proc ExportLooks {t type} {
+proc ExportLooks {t topNode type} {
     global looks window_info
     
-    prolog [format "tk_change_size(%s,%d,%f,%f)" $type $looks($type,objectsize) \
-            $looks($type,xoffset) $looks($type,yoffset)]
+    prolog [format "tk_change_size(%s,%s,%d)" $topNode $type $looks($topNode,$type,objectsize)]
     if {[string match flow $type]} {
-        prolog [format "tk_change_size(%s,%d,%f,%f)" cloud $looks($type,objectsize) \
-                $looks($type,xoffset) $looks($type,yoffset)]
+        prolog [format "tk_change_size(%s,%s,%d)" $topNode cloud $looks($topNode,$type,objectsize)]
     }
     #	foreach windae [array name window_info *,parent] {
     #		set canvas [string trimright $windae ,parent]
     #	}
 }
 
-proc ReadLooks {t type} {
+#proc ReadLooks {t n topNode type} {
+#    global looks
+#    
+#    set customFile [ChooseFile looks.cus "Choose a customization file" 0]
+#    set stream [NetOpen $customFile r]
+#    
+#    while {[gets $stream elementName] >= 0} {
+#        gets $stream elementValue
+#        if {[string match "$type,*" $elementName] || \
+#                    [string compare $type generic] == 0} {
+#            set looks($elementName) $elementValue
+#        }
+#    }
+#    
+#    close $stream
+#    LoadLooks $t $n $type $type
+#    if {[string match generic $type]} {
+#        foreach object {generic compartment channel function variable text \
+#                    submodel flow influence} {
+#            ExportLooks $t $topNode $object
+#        }
+#        destroy $t
+#    }
+#}
+
+# next needs fix to translate node ids
+#proc SaveLooks {t type} {
+#    global looks
+#    
+#    set customFile [ChooseFile looks.cus "Name for customization file" 1]
+#    set stream [NetOpen $customFile w]
+#    
+#    foreach element [array names looks] {
+#        puts $stream $element
+#        puts $stream $looks($element)
+#    }
+#    close $stream
+#}
+
+proc MakeLooksSaver {n} {
     global looks
-    
-    set customFile [ChooseFile looks.cus "Choose a customization file" 0]
-    set stream [NetOpen $customFile r]
-    
-    while {[gets $stream elementName] >= 0} {
-        gets $stream elementValue
-        if {[string match "$type,*" $elementName] || \
-                    [string compare $type generic] == 0} {
-            set looks($elementName) $elementValue
-        }
+
+    set objects {normal generic compartment channel text \
+		     variable function submodel flow influence \
+		     ghost_link relation}
+    set aspects {font txtbd txtbg outline fill text select highlight target \
+		     incomplete objectsize lines xoffset yoffset textanchor}
+    for {set obj 0} {$obj < [llength $objects]} {incr obj} {
+	set sublist {}
+	for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
+	    lappend sublist \
+		$looks($n,[lindex $objects $obj],[lindex $aspects $asp])
+	}
+	lappend result $sublist
     }
-    
-    close $stream
-    LoadLooks $t $type $type
-    if {[string match generic $type]} {
-        foreach object {generic compartment channel function variable text \
-                    submodel flow influence} {
-            ExportLooks $t $object
-        }
-        destroy $t
+    return [list $objects $aspects $result]
+}
+
+proc UseLooksSaver {n state} {
+    global looks
+    set objects [lindex $state 0]
+    set aspects [lindex $state 1]
+    set values [lindex $state 2]
+    for {set obj 0} {$obj < [llength $objects]} {incr obj} {
+	set sublist [lindex $values $obj]
+	for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
+	    set looks($n,[lindex $objects $obj],[lindex $aspects $asp]) \
+		[lindex $sublist $asp]
+	}
     }
 }
 
-proc SaveLooks {t type} {
-    global looks
-    
-    set customFile [ChooseFile looks.cus "Name for customization file" 1]
-    set stream [NetOpen $customFile w]
-    
-    foreach element [array names looks] {
-        puts $stream $element
-        puts $stream $looks($element)
+proc LoadModelLooks {w state} {
+    global looks window_info
+    set top $window_info($w,top_node)
+    UseLooksSaver $top $state
+    foreach type [lindex $state 0] {
+# now tell Prolog what we got (but not to redraw)
+	prolog [format "tk_set_new_size(%s,%s,%d)" $top $type \
+		$looks($top,$type,objectsize)]
     }
-    close $stream
 }
 
 button .b
 set looks(buttonColor) [Desystematize [.b cget -bg]]
 set looks(windowColor) white
 destroy .b
-

@@ -1605,6 +1605,7 @@ make_desktop(Desktop, Canvas_name) :-
         m_class:Desktop has_new_class submodel,
         unique_name_for_new(Root, 'Desktop', ModelName),
         m_class:Desktop has_new_class_refinement name of ModelName,
+	state:set_initial_box_sizes(Desktop),
         state:get_initial_window_size(X, Y),
         image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
         image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
