@@ -69,7 +69,7 @@ proc CombineGraphData { formula } {
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     global graph tcl_platform
     
-    set graph(bd) 4
+    set graph(bd) 3
 	
     switch $tcl_platform(platform) {
 	unix {
@@ -82,55 +82,58 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     }
     regsub -all , $points " " graph(points)
 
-    wm title $t "Sketch graph"
-    
-    TitleFrame $t.left -text "Graph pad"
-    set left [$t.left getframe]
-    frame $left.upper
-    frame $left.upper.yentry
-    entry $left.upper.yentry.topentry -relief sunken -textvar graph(lowy) -width 8
-    pack $left.upper.yentry.topentry -side top
-    label $left.upper.yentry.toplabel -text "Y max"
-    pack $left.upper.yentry.toplabel -side top
-    entry $left.upper.yentry.bottomentry -relief sunken -textvar graph(highy) -width 8
-    pack $left.upper.yentry.bottomentry -side bottom
-    label $left.upper.yentry.bottomlabel -text "Y min"
-    pack $left.upper.yentry.bottomlabel -side bottom
-    pack $left.upper.yentry -side left -fill y
-    
-    frame $left.upper.gridf
-    set graph(width) $xspan
-    set graph(height) $yspan
-    set grid [canvas $left.upper.gridf.canvas -width [expr $graph(width)+1] \
-		  -height [expr $graph(height)+1] -bd $graph(bd) -relief ridge]
-    set graph(increment) [expr $graph(width)/([llength $graph(points)] - 1.0)]
-    
     set graph(lowy) $ylow
     set graph(highy) $yhigh
     set graph(lowx) $xlow
     set graph(highx) $xhigh
     
+    wm title $t "Sketch graph"
+    
+    TitleFrame $t.gph -text "Graph pad"
+    set gph [$t.gph getframe]
+    frame $gph.yentry 
+    entry $gph.yentry.topentry -relief sunken -textvar graph(lowy) -width 8
+    pack $gph.yentry.topentry -side top -pady 2
+    label $gph.yentry.toplabel -text "Y max"
+    pack $gph.yentry.toplabel -side top -pady 2
+    label $gph.yentry.label -text "Value"
+    pack $gph.yentry.label -side top -fill y -expand true
+    label $gph.yentry.bottomlabel -text "Y min"
+    pack $gph.yentry.bottomlabel -side top -pady 2
+    entry $gph.yentry.bottomentry -relief sunken -textvar graph(highy) -width 8
+    pack $gph.yentry.bottomentry -side top -pady 2
+    grid $gph.yentry -column 0 -row 0 -sticky ns -padx 2 -pady 2
+    
+    frame $gph.gridf
+    set graph(width) $xspan
+    set graph(height) $yspan
+    set grid [canvas $gph.gridf.canvas -width [expr $graph(width)+1] \
+		  -height [expr $graph(height)+1] -bd $graph(bd) -relief groove]
+    set graph(increment) [expr $graph(width)/([llength $graph(points)] - 1.0)]
+    
     bind $grid <Button-1> "GClick %W %x %y"
     bind $grid <B1-Motion> "GDrag %W %x %y"
     bind $grid <Configure> "AttackShape %W %w %h"
     pack $grid -fill both -expand true
-    pack $left.upper.gridf -fill both -expand true -side left
-    pack $left.upper -fill both -expand true -side top
+    grid $gph.gridf -column 1 -row 0 -sticky nesw  -padx 2 -pady 2
 
-    frame $left.xentry
-    label $left.xentry.startlabel -text " " -width 8
-    pack $left.xentry.startlabel -side left
-    entry $left.xentry.leftentry -relief sunken -textvar graph(lowx) -width 8
-    pack $left.xentry.leftentry -side left -padx 2
-    label $left.xentry.xmin -text "X min"
-    pack $left.xentry.xmin -side left -padx 2
-    entry $left.xentry.rightentry -relief sunken -textvar graph(highx) -width 8
-    pack $left.xentry.rightentry -side right -padx 2
-    label $left.xentry.rightlabel -text "X max"
-    pack $left.xentry.rightlabel -side right -padx 2
-    pack $left.xentry -side top -fill x
-    pack $left -expand on -fill both -side left
-    pack $t.left -side left -expand on -fill both -padx 2 -pady 2
+    frame $gph.dummy
+    grid $gph.dummy -column 0 -row 1  -padx 2 -pady 2 -sticky nesw
+
+    frame $gph.xentry 
+    entry $gph.xentry.leftentry -relief sunken -textvar graph(lowx) -width 8
+    pack $gph.xentry.leftentry -side left -padx 2
+    label $gph.xentry.xmin -text "X min" 
+    pack $gph.xentry.xmin -side left -padx 2
+    label $gph.xentry.arg -text "Argument"
+    pack $gph.xentry.arg  -side left -fill x -expand true
+    label $gph.xentry.rightlabel -text "X max"
+    pack $gph.xentry.rightlabel -side left -padx 2
+    entry $gph.xentry.rightentry -relief sunken -textvar graph(highx) -width 8
+    pack $gph.xentry.rightentry -side left -padx 2
+    grid $gph.xentry -column 1 -row 1 -sticky we -padx 2 -pady 2
+    pack $gph -expand on -fill both -side left
+    pack $t.gph -side left -expand on -fill both -padx 2 -pady 2
 
     frame $t.right
     
