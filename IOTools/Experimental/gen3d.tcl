@@ -78,6 +78,7 @@ proc initialize {winId} {
 proc clear {winId} {
     variable useNodes
     set useNodes($winId,selected) {}
+    set useNodes($winId,captions) {}
     display $winId 0 0 0
     ShowKey $winId
 }
