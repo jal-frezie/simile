@@ -450,11 +450,25 @@ proc FindCaption {canvas} {
     if {[string compare $findable {}]} {
 	set find(List,$canvas) {}
 	foreach caption [$canvas find withtag is_caption] {
-	    if {[string match *$findable* [$canvas itemcget $caption -text]]} {
+	    if {[string match *$findable* [ForSearchType $canvas $caption]]} {
 		lappend find(List,$canvas) $caption
 	    }
 	}
 	NextCaption $canvas
+    }
+}
+
+proc ForSearchType {winId item} {
+    global find
+    set plName [ExtractPrologName $winId $item]
+    switch $find(where) {
+	caption { 
+	    return [$winId itemcget $item -text]
+	} equation {
+	    return [GetFromProlog tk_get_info('$winId',$plName,eqn)]
+	} description {
+	    return [GetFromProlog tk_get_info('$winId',$plName,comment)]
+	}
     }
 }
 

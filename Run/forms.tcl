@@ -942,7 +942,7 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
 }
 
 proc GetFindText {parent} {
-    global find where
+    global find
     set t [toplevel .findentry -bd 4]
     wm transient $t $parent
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
@@ -955,9 +955,11 @@ proc GetFindText {parent} {
     pack .findentry.ft -anchor nw -fill both
     TitleFrame .findentry.rbs -text "Search for text in"
     set rbs [.findentry.rbs getframe]
-    radiobutton $rbs.r1 -text "Captions" -variable where -value caption
-    radiobutton $rbs.r2 -text "Equations" -variable where -value equation
-    radiobutton $rbs.r3 -text "Descriptions and comments" -variable where -value description
+    set find(where) caption
+    radiobutton $rbs.r1 -text "Captions" -variable find(where) -value caption
+    radiobutton $rbs.r2 -text "Equations" -variable find(where) -value equation
+    radiobutton $rbs.r3 -text "Descriptions and comments" \
+	-variable find(where) -value description
     pack $rbs.r1 -anchor nw
     pack $rbs.r2 -anchor nw
     pack $rbs.r3 -anchor nw
