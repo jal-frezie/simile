@@ -13,7 +13,7 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	copy_term(DestPathForm, DestPath),
 	
 	(replace_subexps(Expr, inters, insert_paths,
-		sub(DestRef, Swaps), top_down, _, FullExpr), !;
+		sub(DestRef, Swaps, _II), top_down, _, FullExpr), !;
 	raise_exception(preprocessor_failure(Target))),
 
 	(on_exception(_, make_intermediates(FullExpr, Target, DestPath,
@@ -48,32 +48,24 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	    Exited = []),
 	add_extra_dependencies(Exited, FullExpr, NewArgs, Prerequisites).
 
-insert_paths(sub(DestRef, Swaps), Var, NewVar, Recurse) :-
-	(Var = elt(RealPathForm, Ref, Unit-Dims), !,
-	    /* from compartment expressions -- used? */
-	    [Location, Link]=[in_hierarchy, none];
-	Var = input(Location, PathExp, Link, DimExp),
-	    ([Location, Link, RealPathForm, Ref] =
-	    [exp_inter, none, [],           PathExp], !,
-		(nonvar(Ref), !;
-		sicstus_write_to_chars(Ref, Rep),
-		    name(Ref, Rep));
-	    PathExp = elt(RealPathForm, Ref, Unit-Dims))),
+insert_paths(sub(DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
+	(Var = input(Location, PathExp, Link, _);
+	Var = PathExp,
+	    /* from compartment expressions -- used? -- and dest ref */
+	    [Location, Link]=[in_hierarchy, none]),
+	PathExp = elt(RealPathForm, Ref, Unit-Dims), !,
 	    (get_conversion(_, Unit, Unit, _), !,
 		Type = real;
 	    Type = Unit),
-
 	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
 		import_path_for(Dims, RealPathForm, ArcI, 0, Ptr0, LvlN, PtrN,
 				LocalLoops, Inds),
 		RealPath = [];
 	    make_inds_for(Dims, LocalLoops, Inds),
 		copy_term(RealPathForm, RealPath)),
-	    
+
 	    pointer_from(RealPath, SmPtr),
-	    (Location = exp_inter,
-		BackSwap = exp_inter;
-	    Location = in_hierarchy,
+	    (Location = in_hierarchy,
 		Wait = true,
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),
@@ -97,6 +89,12 @@ insert_paths(sub(DestRef, Swaps), Var, NewVar, Recurse) :-
 	    append(LocalLoops, Path, Loops),
 	    NewVar = param(arr(SmPtr, Ref, Inds), Type, Loops, BackSwap, Wait),
 	    Recurse = 0;
+	Var = input(_, Ref, _, DimExp),
+	    m_update:build_array(any, Dims, DimExp),
+	    NewVar = make_inter(_, Ref),
+	    /* just to make sure same var is used for name each occurrence */
+	    member(instance(internal,_, NewVar,_, any-Dims), InterInputs),
+	    Recurse = 0;	  
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
 
@@ -229,21 +227,24 @@ make_intermediates(
 		  ) :-
 	/* zeroth case: we have already made an intermediate variable for
 	a subexpression that matches this one: need to save loops as well
-	as context!! Cannot do this with randoms, which should all be
-	different. */
-	UseInter = instance(internal, inter(SourceContext, SourceRef, _),
-			    OrigSource, Name, _),
-	(Source = param(arr(_, Param, _), Units, SourceContext, TestSwap,_),
+	as context!! Cannot do this with randoms (other than in explicit
+	inters), which should all be different. */
+	UseInter = instance(internal,_, OrigSource, Name, Units-InterDims),
+	(fail,
+	    Source = param(arr(_, Param, _), Units, SourceContext, TestSwap,_),
 	    TestSwap == exp_inter,
 	    OrigSource = make_inter(_, Param),
 	    merge_lists([UseInter], PrevInters, NewInters);
 	OrigSource = Source,
-	\+ contains_something(random, Source),
-	member(instance(internal, inter(SourceContext, SourceRef, _), Source,
-			Name, _), PrevInters),
+	\+ (contains_something(random, Source), \+ Source = make_inter(_,_)),
+	member(UseInter, PrevInters),
 	    NewInters = PrevInters), !,
 	    Setups = [],
-	    Args = [Name];
+	    Args = [Name],
+	    pointer_from(DestPath, SourcePtr),
+	    make_inds_for(InterDims, SourceLoops, IntInds),
+	    append(SourceLoops, DestPath, SourceContext),
+	    SourceRef = arr(SourcePtr, Name, IntInds);  
 	  
 	/* first case: a reference to another variable. If we are referring to
 	a variable via a 'back swap' i.e., it comes from an associated model
@@ -313,7 +314,7 @@ make_intermediates(
 	Source = all(Epsilon),
 	    InitVal = 1,
 	    IncrOp = ('&&');
-	member(Source, [make_inter(Epsilon, _), delay(Epsilon),
+	member(Source, [make_inter(Epsilon, Ref), delay(Epsilon),
 			last(Epsilon), exists(Epsilon)]),
 	    MadeDim = new_dim), !,
 
@@ -327,7 +328,9 @@ make_intermediates(
 	NowBuilding = []),
 	
 	Source =.. [Functor | _],
-	sicstus_format_to_chars("~a_~a", [Target, Functor], TotalNameStr),
+	(Functor = make_inter, !,
+	    sicstus_format_to_chars("~w_for_~a", [Ref, Target], TotalNameStr);
+	    sicstus_format_to_chars("~a_~a", [Target, Functor], TotalNameStr)),
 	name(TotalNameBase, TotalNameStr),
 	generate_name(c, TotalNameBase, TotalName, Used),
 	copy_term(DestPath, TotalPath),
@@ -401,7 +404,8 @@ make_intermediates(
 	append(BuildInds, NewInds, SrcInds),
 	TotalRef = arr(SourcePtr, TotalName, SrcInds),
 
-	add_extra_dependencies(Exited, Source, OldArgs, Depends),
+	add_extra_dependencies(Exited
+			      , Source, OldArgs, Depends),
 	ClearingFor = TotalName,
 	(Functor = last, !, Args = [TotalName]; /* bit of a hack...since
 	    we use the total from the previous time step we don't need to
@@ -448,8 +452,7 @@ make_intermediates(
 	append([Clearing, Preps, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
-	copy_term(SourceContext, InterContext),
-	merge_lists([instance(internal, inter(InterContext, TotalRef, Target),
+	merge_lists([instance(internal, inter(SourceContext, TotalRef, Target),
 			      Source, TotalName, Units-InterDims)],
 		    OldInters, NewInters));	  
 
@@ -554,13 +557,8 @@ make_intermediates(
 		    ALoops),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
 		raise_exception(only_works_on_array(Source))),
-	    (nonvar(Limit), !; Limit = 0), /* for prev(0) dimensions */
+	    /* (nonvar(Limit), !; Limit = 0), for prev(0) dimensions */
 	    
-/*	    (append(TailLoops, [set(IntIndxRef, loop(_Limit)) | ItemLoops],
-		    ALoops),
-	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
-		raise_exception(only_works_on_array(Source))), */
-
 	    append(ASetups, ISetups, Setups),
 	    merge_lists(AArgs, IArgs, Args),
 	    longest_path([ABase, IBase], EltBase),
@@ -568,8 +566,10 @@ make_intermediates(
 	    /* 'catch' is in case we use an element that doesn't exist in the
 	    counterfactual arm of a conditional */
 	
-	Source = (param(arr(_, Param, _), _,_,_,_)=SubExp,Rest), !,
-	    make_intermediates(make_inter(SubExp, Param), Target, 
+	Source = (Param=SubExp,Rest), !,
+	    (Param = param(arr(_, Ref, _), _,_,_,_); /* parsing */
+	    Param = make_inter(_, Ref)), /* building code */
+	    make_intermediates(make_inter(SubExp, Ref), Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
 			Step, Used, _Units, MidInters,
 			part_result(_, SubSetups, _,_)),

@@ -460,7 +460,7 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 
 process_expr(TableValues, Var, NewVar, Recurse) :-
 	m_update:get_solo_list_depth(Var, Dims),
-	    NewVar = input(_,_,_, Dims),
+	    NewVar = input(_, Var,_, Dims),
 	    Recurse = 0;
 	Var = size(_), Recurse = 0;
 	build_table_ref(TableValues, Var, NewVar), Recurse = 1.

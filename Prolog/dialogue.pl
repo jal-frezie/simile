@@ -140,19 +140,18 @@ update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
 LateInputs],
 		   Input_list), !,
 		get_term(Parm_st, New_param, Complaint0),
-		get_term(New_unit_st, Units_for_new, Complaint1),
+		get_term(New_unit_st, NewUnits, Complaint1),
 		append(Complaint0, Complaint1, Complaint2),
 		(Complaint2 = [], !,
-		    (get_solo_list_depth(New_param, Depth), !,
-			analyze_array(Current_unit, CurrentBase, CurrentDims),
-			length(CurrentDims, RealDepth),
-			(\+ RealDepth = Depth, !,
-			    sicstus_format_to_chars("Your local name for ~w,~w, has ~d sets of brackets round it but indicates an array nested to depth~d -- this could be confusing. ", [New_var, New_param, Depth, RealDepth], Complaint);
-			(Units_for_new = '', !,
+		    sicstus_format_to_chars("local name for ~w", [New_var],
+					    ShowParam),
+		    (check_param_brackets(ShowParam, New_param, Current_unit,
+					 Complaint), !;
+			(NewUnits = '', !,
 			    NewInputUnit = Current_unit;
-			build_array(Units_for_new, CurrentDims, NewInputUnit),
-			    check_unit(Units_for_new, CurrentBase, 2, Complaint)));
-			sicstus_format_to_chars("Your local name for ~w, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ", [New_var, New_param], Complaint));
+			analyze_array(Current_unit, CurrentBase, CurrentDims),
+			    build_array(NewUnits, CurrentDims, NewInputUnit),
+			    check_unit(NewUnits, CurrentBase, 2, Complaint)));
 		Complaint = Complaint2);
 	    Complaint = "Select an input before supplying its new parameter name and/or local units"),
 			
@@ -166,6 +165,30 @@ LateInputs],
 	    assert(input_list_is(Input_list))),
 	fail.
 
+check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-
+	get_solo_list_depth(New_param, Depth), !,
+	explain_brackets(Current_unit, Desc2, no, SP, OKN),
+	(OKN = New_param, atom(SP), !, fail;
+	    explain_brackets(Depth, Desc1, no, SP, New_param),
+	    sicstus_format_to_chars("Your ~s, ~w, has brackets round it that would indicate ~s. However it actually stands for ~s so should appear as follows: ~w. ", [ShowParam, New_param, Desc1, Desc2, OKN], Complaint));
+	    sicstus_format_to_chars("Your ~s, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ",
+				    [ShowParam, New_param], Complaint).
+
+explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
+	((atom(Dims); var(Dims)), !,
+	    PL1 = "a ",
+	    Type = "single value",
+	    SubType = "",
+	    RightBrs = BaseName;
+	(Dims = list(Middle), PL1 = "a ", Type = "list",
+	    RightBrs = {InnerBrs};
+	 Dims = array(Middle, _), PL1 = "an ", Type = "array",
+	    RightBrs = [InnerBrs]),
+	    explain_brackets(Middle, SubType, yes, BaseName, InnerBrs)),
+	(Many = yes, Pref = " of ", Plural = "s";
+	    Many = no, PL1 = Pref, Plural = ""),
+	append([Pref, Type, Plural, SubType], Desc).
+	    
 	
 update_equation(Function, IndxCount, InterInputs, TypeBase,
 		[Eqn_st, Unit_st, Is_P_st,
@@ -398,8 +421,8 @@ test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
 	(ParseError = [], !,
 	    get_dims_from_loops(Context, XDims, _),
 	    Dest = instance(internal,_, make_inter(_, '/dest/'),_, Type-XDims),
-	    real_dims_only(XDims, Dims),
 	    match_param_dims(ExpInters, [Dest | Inters], TestError),
+	    real_dims_only(XDims, Dims),
 	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]);
 	    /* Hack alert. The term representing the dest context has indices
 	    (so index(n) will work) but no loops, so we don't need to add it
@@ -412,14 +435,16 @@ match_param_dims([input_link(_,_, Name, LType-LDims, _) | MoreLinks],
 	select(I, Inters, MoreInters),
 	I = instance(internal, _, make_inter(_, Name), _, IType-IDims),
 	real_dims_only(IDims, Dims),
-	real_dims_only(LDims, FixedLDims),
-	((UseDims = Dims, prefix(UseLDims, FixedLDims);
-	UseLDims = FixedLDims, prefix(UseDims, Dims)),
-	all(dialogue, check_dim_match,
-	     [build(UseDims), build(UseLDims)]), !,
+	(prefix(IDims, LDims), !,
 	    (promote_unit(IType, LType), !,
-		match_param_dims(MoreLinks, MoreInters, Err);
+		(\+ Name = '/dest/',
+		    build_array(IType, Dims, Array),
+		    check_param_brackets("explicit intermediate result",
+					 Name, Array, Err), !;
+		    match_param_dims(MoreLinks, MoreInters, Err));
+		      
 		format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err));
+	real_dims_only(LDims, FixedLDims),
 	format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err)).
 /* also check name of exp inter for right brackets */
 
@@ -436,7 +461,7 @@ expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 	/* when making dummy links for explicit intermediate results, check
 	the 1sr field (influence id) uis a free var, and if so, use the
 	4th field to hold the dims */
-	    member(input_link(Link, _, Param, IDims, Units), InterInputs), !,
+	    member(input_link(Link,_, Param, IDims, Units), InterInputs), !,
 	        (nonvar(Link), !,
 		    analyze_array(Units, Base, Dims),
                     (units:get_conversion(_, Base, Base, _), !,
@@ -445,10 +470,10 @@ expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 		IDims = Type-Dims,
 		    length(Dims, 4)),
 		make_inds_for(Dims, Loops, Inds),
-		DoneExpr = param(arr(_,Param, Inds), Type, Loops, _, true),
+		DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true),
 	    Recurse = 0;
 	(Param = (ExpInt=_,_),
-	    member(input_link(_,_, ExpInt, _, Dims), InterInputs), !,
+	    member(input_link(_,_, ExpInt,_, Dims), InterInputs), !,
 	    var(Dims), /* only checked so we dont stick on the recursion */
 	    Dims = something,
 	    DoneExpr = Param;

@@ -503,8 +503,8 @@ build_array(Base_type, Dims, Array) :-
 	Dims = [], Base_type = Array;
 	Dims = [Dim | SubDims],
 		build_array(Base_type, SubDims, Sub_type),
-		(Dim = var, !,
-			Array = list(Sub_type);
+		(Dim = var,
+		    Array = list(Sub_type), !;
 		Array = array(Sub_type, Dim)).
 
 analyze_array(Array, Base_type, Dims) :-
