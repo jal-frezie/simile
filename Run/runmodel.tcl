@@ -600,15 +600,19 @@ proc snap {topNode node} {
     global runState
     
     set full_label [GetCompProperty $topNode Caption $node]
-    set w .snap[clock seconds]
+    set w .snap[newInt]
     toplevel $w
+    wm protocol $w WM_DELETE_WINDOW "unset runState(nst$w); unset runState(val$w); destroy $w"
     set last_slash [string last / $full_label]
     set start_label [expr $last_slash+1]
     set end_submodels [expr $last_slash-1]
     set submodels [string range $full_label 0 $end_submodels]
     set label [string range $full_label $start_label end]
     wm title $w "[BlankCrs $label] at time $runState($topNode,currentTime)"
-    
+    set tbItems [list [list save.gif "Save to file" "SaveSnap $w $label"] \
+		     [list refresh.gif "Update" \
+			  "UpdateSnap $w $label $submodels $topNode $node"]]
+    ::graphtools::MakeToolBar $w $tbItems
     text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
             -xscrollcommand "$w.xscroll set" \
             -width 30 -height 20 -wrap none\
@@ -625,18 +629,20 @@ proc snap {topNode node} {
     pack $w.xscroll -side bottom -fill x
     pack $w.text -expand yes -fill both
     
-    set values(1) [TransEnums [GetTransTable $node] \
-		       [lindex [GetCompProperty $topNode Value $node] 0]]
-    set length(1) [llength $values(1)]
-    
-    # Find number of levels of nesting
-    for {set level 1} {$level<10} {incr level} {
-        set nextlevel [expr $level+1]
-        set values($nextlevel) [lindex $values($level) 1]
-        set length($nextlevel) [llength $values($nextlevel)]
-        if {$length($nextlevel)<=1} then {break}
+    UpdateSnap $w $label $submodels $topNode $node
+}
+
+proc UpdateSnap {w label submodels topNode node} {
+    global runState
+
+    $w.text delete 1.0 end
+    set v1 [set runState(val$w) [TransEnums [GetTransTable $node] \
+		     [lindex [GetCompProperty $topNode Value $node] 0]]]
+    set runState(nst$w) 0
+    while {[llength $v1]>1} {
+	incr runState(nst$w)
+	set v1 [lindex $v1 1]
     }
-    set maxlevel $level
     
     $w.text insert end "Variable "
     $w.text insert end "$label\n" colour3
@@ -648,16 +654,17 @@ proc snap {topNode node} {
 
     $w.text insert end "$runState($topNode,currentTime)\n" colour3
     $w.text insert end "[clock format [clock seconds]]\n"
-    $w.text insert end "Maxlevel=$maxlevel\n"
-    if {$maxlevel==1} then {
-        snap_down1 $w $values(1)
-    } elseif {$maxlevel==2} then {
-        snap_down2 $w $values(1)
+    $w.text insert end "Maxlevel=$runState(nst$w)\n"
+    if {$runState(nst$w)==0} then {
+        $w.text insert end $runState(val$w)
+    } elseif {$runState(nst$w)==1} then {
+        snap_down1 $w $runState(val$w)
+    } elseif {$runState(nst$w)==2} then {
+        snap_down2 $w $runState(val$w)
     } else {
-        snap_down3 $w $values(1)
+        snap_down3 $w $runState(val$w)
     }
 }
-
 
 proc snap_down1 {w values} {
     set i 0
@@ -744,6 +751,31 @@ proc snap_down3 {w values} {
             $w.text insert end \n
             set i 0
         }
+    }
+}
+
+proc SaveSnap {w vname} {
+    global runState
+
+    set filename [ChooseFile snap.csv "Save snapshot data as.." 1]
+    if {[llength $filename]} {
+	set out [NetOpen $filename w]
+	for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
+	    puts -nonewline $out index${idx},
+	}
+    }
+    puts $out $vname
+    SquirtLine $out {} $runState(val$w)
+    close $out
+}
+
+proc SquirtLine {str idcs val} {
+    if {[llength $val]>1} {
+	foreach {idx sub} $val {
+	    SquirtLine $str $idcs$idx, $sub
+	}
+    } else {
+	puts $str $idcs$val
     }
 }
 
