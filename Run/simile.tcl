@@ -103,6 +103,7 @@ if {$argc} {
 
 # Directory to start in
 set env(START_DIR) [pwd] ;# was $SIMILE_PATH/Tutorial
+set env(START_DIR) $SIMILE_PATH/Examples
 
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder
