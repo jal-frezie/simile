@@ -37,7 +37,7 @@ proc do_model {what args} {
 	switch -- $mstep {
 	    -1 {
 		set action initialization
-		unset running_c
+		ScrubRun 0
 	    } 0 {
 		set action reset
 	    } default {

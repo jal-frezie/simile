@@ -10,6 +10,10 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.2  2003/10/08 11:42:23  jaspert
+#Made a few tweaks to prevent the system from attempting to access model values after
+#the model has failed to initialize
+#
 #Revision 1.1  2003/08/21 12:31:39  jaspert
 #Modified helper interface to include call to reset {winId} when model is reset
 #Edited helpers accordingly (note those that use it are now incompatible with 3.2)
@@ -212,9 +216,12 @@ namespace eval ::ModelInspector63654 {
     }
     
 	proc DoInspPopup {X Y plName} {
+	    global running_c
 #	    ShowMessage debug info $args ok
-	    PostPopup $X $Y
-	    AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
+	    if {[info exists running_c]} {
+		PostPopup $X $Y
+		AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
+	    }
 	}
 
     proc Restore {winId} {initialize $winId}
@@ -233,4 +240,3 @@ namespace eval ::ModelInspector63654 {
     }
     
 }; # end namespace
-

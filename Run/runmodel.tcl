@@ -667,7 +667,7 @@ set this ::AME_model<>
 # an instance of the run control on the screen
 
 proc RunDialog {canvas} {
-    global runState helperTable
+    global runState helperTable running_c
 
     #    ShowMessage debug info enter(RunDialog) ok
 
@@ -684,6 +684,11 @@ proc RunDialog {canvas} {
 
     ${defHelper}::SetMode $helperId reset
     set runState(helperId) $helperId
+
+# Do not put up mre, sliders, etc if model has failed to start
+    if {![info exists running_c]} {
+	return
+    }
 
 # remake notebook page for sliders if earlier deleted
     if {[PrefValue custom(helperManager) helperManager]} {
