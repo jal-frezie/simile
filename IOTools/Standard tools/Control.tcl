@@ -29,9 +29,10 @@ proc clear {t} {
 
 proc SwapDistVar {win} {
 # ShowMessage debug info [list [set $sv] $win $w] ok
-    set pt [$win.edit.capt getvalue]
-    $win.edit.num configure -textvar runState(update[expr $pt+1])
-    focus $win.edit.num
+    set widget [$win.rsf getframe]
+    set pt [$widget.edit.capt getvalue]
+    $widget.edit.num configure -textvar runState(update[expr $pt+1])
+    focus $widget.edit.num
 }
     
 proc initialize {t} {
@@ -40,62 +41,74 @@ proc initialize {t} {
     set geom [PrefValue custom(runControlPosition) runControlPosition]
     catch {wm geometry $t $geom}
 
+    TitleFrame $t.rcf -text "Run status and control"
+    set rcf [$t.rcf getframe]
+    frame $rcf.bf
+    set cnvs [canvas $rcf.bf.flag -width 10 -height 10]
+    $cnvs create oval 2 2 8 8 -fill [RestingColour]
+    $cnvs create oval 0 0 10 10 -outline grey
+    pack $rcf.bf.flag -side right -anchor e
+    #jmm	label $t.top.caption -text "Time units: "
+    #jmm	pack $t.top.caption -side left
+    tk_optionMenu $rcf.bf.pulldown [namespace current]::sendvars(timeUnit) \
+            unit second minute hour day week month year
+    #	pack $t.top.pulldown -side right
+    pack [ProgressBar $rcf.bf.bar -variable runState(currentTime)] \
+            -fill x -expand true -side top -padx 4 -pady 4
+    pack $rcf.bf -side top -fill x
+    
+    foreach mode {play pause stop} {
+        set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
+    }
+    frame $rcf.topbuttons
+    Button $rcf.topbuttons.reset -image $stopImg -width 32 \
+            -command "[namespace current]::SetMode $t reset"
+    pack $rcf.topbuttons.reset -side left  -padx 1 -expand true -fill x
+    Button $rcf.topbuttons.start -image $playImg -width 32  \
+            -command "[namespace current]::SetMode $t start"
+    pack $rcf.topbuttons.start -side left  -padx 1 -expand true -fill x
+    Button $rcf.topbuttons.stop -image $pauseImg -state disabled -width 32  \
+            -command "[namespace current]::SetMode $t stop"
+    pack $rcf.topbuttons.stop -side left -padx 1 -expand true -fill x
+    pack $rcf.topbuttons -side top
+    
+    pack $rcf -fill x
+    pack $t.rcf -fill x -padx 2 -pady 2
+
+
+    TitleFrame $t.rsf -text "Run settings"
+    set rsf [$t.rsf getframe]
     foreach {name capt var} {exec {Execute for } execTime \
 				 current {Current time } currentTime \
 				 disp {Display interval } displayInt} {
-        frame $t.$name
-        label $t.$name.capt -text $capt -width 15 -anchor w
-        pack $t.$name.capt -side left
-        entry $t.$name.num -relief sunken \
-                        -textvar runState($var) -width 10
-        pack $t.$name.num -side left
-        label $t.$name.unit -textvar [namespace current]::sendvars(timeUnit)
-        pack $t.$name.unit -side left
+        frame $rsf.$name
+        label $rsf.$name.capt -text $capt -width 15 -anchor w
+        pack $rsf.$name.capt -side left
+        entry $rsf.$name.num -relief sunken \
+                        -textvar runState($var) -width 8
+        pack $rsf.$name.num -side left
+        label $rsf.$name.unit -textvar [namespace current]::sendvars(timeUnit)
+        pack $rsf.$name.unit -side left
 #jmm            label $t.exec.plural -text (s)
 #jmm            pack $t.exec.plural -side left
-	pack $t.$name  -pady 2; #6 -fill x
+	    pack $rsf.$name  -anchor w -pady 2; #6 -fill x
     }
     set sendvars(captList) {}
     for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
 	lappend sendvars(captList) [list Time step #$phase]
     }
-    pack [frame $t.edit]
-    pack [ComboBox $t.edit.capt -values $sendvars(captList) -editable 0 \
-	    -width 20 -modifycmd [list [namespace current]::SwapDistVar $t]] \
+    pack [frame $rsf.edit] -anchor w -pady 2
+    pack [ComboBox $rsf.edit.capt -values $sendvars(captList) -editable 0 \
+	    -width 11 -modifycmd [list [namespace current]::SwapDistVar $t]] \
 	    -side left
-    pack $t.edit.capt -side left
-    pack [label $t.edit.colon -text :] -side left
-    pack [entry $t.edit.num -relief sunken -width 10] -side left
-    $t.edit.capt setvalue first
+    pack $rsf.edit.capt -side left
+    pack [label $rsf.edit.colon -text " "] -side left
+    pack [entry $rsf.edit.num -relief sunken -width 8] -side left
+    $rsf.edit.capt setvalue first
     SwapDistVar $t
+    pack $rsf -fill x
+    pack $t.rsf -padx 2 -pady 2 -fill x
 
-    pack [ProgressBar $t.bar -variable runState(currentTime)] \
-	    -fill x -expand true
-
-    foreach mode {play pause stop} {
-	set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
-    }
-    frame $t.topbuttons
-    button $t.topbuttons.reset -image $stopImg \
-	    -command "[namespace current]::SetMode $t reset"
-    pack $t.topbuttons.reset -side left
-    button $t.topbuttons.start -image $playImg \
-	    -command "[namespace current]::SetMode $t start"
-    pack $t.topbuttons.start -side left
-    button $t.topbuttons.stop -image $pauseImg -state disabled \
-	    -command "[namespace current]::SetMode $t stop"
-    pack $t.topbuttons.stop -side left
-    pack $t.topbuttons -side left
-
-	frame $t.top
-	canvas $t.top.flag -width 30 -height 30 -bg [RestingColour]
-	pack $t.top.flag -side left
-#jmm	label $t.top.caption -text "Time units: "
-#jmm	pack $t.top.caption -side left
-	tk_optionMenu $t.top.pulldown [namespace current]::sendvars(timeUnit) \
-		unit second minute hour day week month year
-	pack $t.top.pulldown -side right
-	pack $t.top -side left
 
 	set sendvars(timeUnit) unit
 	set sendvars(expected_end) 0
@@ -138,12 +151,13 @@ proc SetMode { winId action } {
 	}
 	
 	SendData $winId
-	set sendvars(newMode) $action
-	$winId.topbuttons.start configure -state disabled
-	$winId.topbuttons.stop configure -state normal
+    set sendvars(newMode) $action
+    set widget [$winId.rcf getframe]
+	$widget.topbuttons.start configure -state disabled
+	$widget.topbuttons.stop configure -state normal
 	RollSimulation $winId
-	$winId.topbuttons.start configure -state normal
-	$winId.topbuttons.stop configure -state disabled
+	$widget.topbuttons.start configure -state normal
+	$widget.topbuttons.stop configure -state disabled
     } else {
 	set sendvars(newMode) $action
     }   
@@ -206,6 +220,7 @@ proc RollSimulation { winId } {
     
     set sendvars(currentMode) reset ;# a botch
     set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
+    set widget [$winId.rcf getframe]
     while {[string compare $sendvars(currentMode) exit] && \
 	    [string compare $sendvars(currentMode) stop]} {
 # Collect any changes that have been made by the user
@@ -219,7 +234,7 @@ proc RollSimulation { winId } {
 		    > $update/2} {
 		set sendvars(run_length) $exec
 		set sendvars(expected_end) [expr $current + $exec]
-		$winId.bar configure \
+		$widget.bf.bar configure \
 			-maximum [expr int(ceil($sendvars(expected_end)))]
 	    }
 	}
@@ -248,7 +263,7 @@ proc RollSimulation { winId } {
 # to make sure all the values are set, and initialize displays
 
 	if {[info exists redoPhase]} {
-	    $winId.top.flag configure -bg yellow
+	    $widget.bf.flag itemconfigure 1 -fill yellow
 	    update idletasks
 	    if ![eval_model $scaled_current $redoPhase] {
 		set sendvars(currentMode) exit
@@ -275,7 +290,7 @@ proc RollSimulation { winId } {
 
 	    set bigPhase [PhaseFor $current $step [expr [GetPhaseCount]+1]]
 	    if {$bigPhase <= [GetPhaseCount]} {
-		$winId.top.flag configure -bg green
+		$widget.bf.flag itemconfigure 1 -fill green
 		update
 		if ![update_model $scaled_current $bigPhase] {
 		    set sendvars(currentMode) exit
@@ -293,7 +308,7 @@ proc RollSimulation { winId } {
     # display the results if at a new time, or every time if in static mode
 		set numDisplays [expr floor(($current + $step/2)/$display)]
 		if {$numDisplays != $sendvars(prevDisplay) || $step == 0} {
-		    $winId.top.flag configure -bg blue
+		    $widget.bf.flag itemconfigure 1 -fill blue
 		    update idletasks
 		    set sendvars(prevDisplay) $numDisplays
 		    DoDisplay $current $display $step
@@ -305,7 +320,7 @@ proc RollSimulation { winId } {
 	}
     }
 
-    $winId.top.flag configure -bg [lindex "[RestingColour] black" \
+    $widget.bf.flag itemconfigure 1 -fill [lindex "[RestingColour] black" \
 	    [string match exit $sendvars(currentMode)]]
 }
 
