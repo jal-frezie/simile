@@ -1,0 +1,27 @@
+66 87 780 580
+274 2
+2 234
+notebook .mre.mainframe.frame.mainpw.mainDisplayPane.notebook
+page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/1 Page_1
+.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/1 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow
+panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow vertical
+pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow.pane0
+container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow.pane0
+plotterXY1.0
+/WIN/,yborder_bottom 30 /WIN/,X_scalestep 0 /WIN/,Ylabels y /WIN/,AxisDivisions 10 /WIN/,Xmax_data -1e20 /WIN/,Ymax_data -1e20 /WIN/,Y_max_scalestep 0 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,DrawPoints 0 /WIN/,Xprecision 0 /WIN/,xborder_right 15 /WIN/,XaxisLabel x /WIN/,Yprecision 0 /WIN/,canvas_colour #e0e0e0 /WIN/,pointer 1 /WIN/,DrawLines 1 /WIN/,Xvars node00022 /WIN/,Xmin_axis 1e20 /WIN/,ystep_Ylabels 12 /WIN/,Ymin_axis 1e20 /WIN/,xwindow_size 0 /WIN/,grid off /WIN/,Y_min_scalestep 0 /WIN/,xborder_left 50 /WIN/,y_Xlabel 10 /WIN/,state ycoord /WIN/,yborder_top 30 /WIN/,Xmajorstep 0.5 /WIN/,x_Xlabel 100 /WIN/,fontValues {Helvetica 8 normal} /WIN/,fontTitle {Helvetica 8 normal} /WIN/,Xmax_axis -1e20 /WIN/,Ymax_axis -1e20 /WIN/,ylength 391 /WIN/,x_Ylabels 25 /WIN/,y_Ylabels 0 /WIN/,Xmin_data 1e20 /WIN/,Ymin_data 1e20 /WIN/,Ymajorstep 2 /WIN/,grapharea_colour white /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Xminorstep 0.25 /WIN/,topright 1 /WIN/,ywindow_size 0 /WIN/,Yvars node00024 /WIN/,redraw 0 /WIN/,nodeCount 2 /WIN/,xstep_Ylabels 120 /WIN/,Yminorstep 0.25 /WIN/,xlength 403
+sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow 0 2 5
+page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/2 Page_2
+.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/2 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow
+panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow vertical
+pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0
+sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow 0 2 5
+page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/3 Page_3
+.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/3 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow
+panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow vertical
+pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0
+sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow 0 2 5
+page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/4 Page_4
+.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/4 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow
+panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow vertical
+pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow.pane0
+sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow 0 2 5
