@@ -1030,8 +1030,8 @@ proc SpitPS {winId psfile} {
     global window_info
     set detail [PrepForExport $winId there]
     if {[info exists window_info($winId,width)]} {
-	set useWidth window_info($winId,width)
-	set useHeight window_info($winId,height)
+	set useWidth $window_info($winId,width)
+	set useHeight $window_info($winId,height)
     } else {
 	set useWidth [winfo width $winId]
 	set useHeight [winfo height $winId]
