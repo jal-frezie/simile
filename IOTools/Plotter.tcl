@@ -556,7 +556,7 @@ namespace eval ::$keyValue {
                     adjustLimits $w $Tnew $Ynew
                     drawPoint $w $Told $Yold $Tnew $Ynew $colour
                 } errMessage]} {
-                if {[string is integer %Ynew] || [string is double $Ynew]} {
+                if {[string is double $Ynew]&&[lsearch {inf nan} $Ynew]==-1} {
                     ErrorHelp $errorInfo
                 } else  {
                     set xm [expr $plot($w,xborder_left)+60]
