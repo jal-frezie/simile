@@ -215,10 +215,6 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
   long int tgtModel;
   enum_type_data *usedTypes[32], **usedTypePtr;
 
-  if (argc < 3) {
-    interp->result = "At least three arguments for interface please!";
-    return TCL_ERROR;
-  }
   error = Tcl_GetIntFromObj(interp, argv[2], &action);
   if (error != TCL_OK) {
     return error;
@@ -375,6 +371,19 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
   }
 }
       
+Tcl_Obj* make_exec_error(Tcl_Interp* interp, char* phase, char* tgt, 
+			 double time, int step, char* complaint) {
+  Tcl_Obj* errList;
+
+  errList=Tcl_NewListObj(0, NULL);
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(phase, -1));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(tgt, -1));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewDoubleObj(time));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewIntObj(step));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(complaint, -1));
+  return errList;
+}
+
 /* Here is code that has been added by hand to make these procedures available
 as Tcl commands so the dialog box can call them as if it were a Tcl simulation.
  This one is called after a new dll has been built, to set the function
@@ -409,7 +418,7 @@ FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
     break;
     
   default:
-    interp->result = "Two arguments for loadmodel please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "filename node_id");
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -423,8 +432,8 @@ FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
    int error;
    char errorTxt[256];
    if (argc != 2) {
-	interp->result = "One argument for create please!";
-	return TCL_ERROR;
+     Tcl_WrongNumArgs(interp, 1, argv, "model_id");
+     return TCL_ERROR;
    }
 
    error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
@@ -441,138 +450,99 @@ FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
    }
 }
 
-FINDABLE int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
+/* This one creates an array to hold values for a model parameter and
+   tells the model subsystem that it is to use this array to get
+   values 
+
+First two args are model type and instance, 3rd is node name */
+
+FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-   double starttime;
-   int phase;
-   int error;
+  int error;
 
-   if (argc != 5) {
-	interp->result = "Four arguments for update please!";
-	return TCL_ERROR;
-   }
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
 
-   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   error = Tcl_GetDoubleFromObj(interp, argv[3], &starttime);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   error = Tcl_GetIntFromObj(interp, argv[4], &phase);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   serviceError = TCL_OK;
-   update(modelType, modelHandle, starttime, phase);
-   return serviceError;
+  if (use_array_for_params(modelType, modelHandle, 
+		       Tcl_GetStringFromObj(argv[3], NULL), NULL)) {
+    return TCL_OK;
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
+    return TCL_ERROR;
+  }
 }
 
-FINDABLE int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
+/* This is a special dumbed-down command that allows Simile to stick a
+   value into the parameter array for a node at a point specified by a
+   list of indices without having to worry about where the array is,
+   what its dimensions and datatype are, etc etc -- anyone else using
+   the 5-D interface will probably want to keep the array pointer and
+   write it themselves, but since the model extension has to do all
+   this stuff we can take advantage... */
+
+FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-   double starttime;
-   int phase;
-   int error;
+  int i, count, error, indxs[32];
+  double val;
+  Tcl_Obj* elt;
 
-   if (argc != 5) {
-	interp->result = "Four arguments for advance please!";
-	return TCL_ERROR;
-   }
+  if (argc != 6) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id value index_list");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
 
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
+  error = Tcl_GetDoubleFromObj(interp, argv[4], &val);
+  if (error != TCL_OK) {
+    return error;
+  }
 
-   error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
-   if (error != TCL_OK) {
-	return error;
-   }
+  error = Tcl_ListObjLength(interp, argv[5], &count);
+  if (error != TCL_OK) {
+    return error;
+  }
 
-   error = Tcl_GetDoubleFromObj(interp, argv[3], &starttime);
-   if (error != TCL_OK) {
-	return error;
-   }
+  for (i=0;i<count;i++) {
+    error = Tcl_ListObjIndex(interp, argv[5], i, &elt);
+    if (error != TCL_OK) {
+      return error;
+    }
+    error = Tcl_GetIntFromObj(interp, elt, indxs + i);
+    if (error != TCL_OK) {
+      return error;
+    }
+  }
 
-   error = Tcl_GetIntFromObj(interp, argv[4], &phase);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   serviceError = TCL_OK;
-   advance(modelType, modelHandle, starttime, phase);
-   return serviceError;
-}
-
-FINDABLE int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
-	int argc, Tcl_Obj *CONST argv[]) {
-  char spare[256];
-   double starttime;
-   int phase;
-
-   int error;
-
-   if (argc != 5) {
-	interp->result = "Four arguments for eval please!";
-	return TCL_ERROR;
-   }
-
-   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
-   if (error != TCL_OK) {
-	return error;
-
-   }
-
-   error = Tcl_GetDoubleFromObj(interp, argv[3], &starttime);
-   if (error != TCL_OK) {
-	return error;
-
-   }
-
-   error = Tcl_GetIntFromObj(interp, argv[4], &phase);
-   if (error != TCL_OK) {
-	return error;
-   }
-
-   error = eval(modelType, modelHandle, starttime, phase, FALSE);
-   if (error < 0) {
-     sprintf(spare, "Illegal operation signal %d", -error);
-     Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-     return TCL_ERROR;
-   } else if (error > 0) {
-     sprintf(spare, "User-defined interruption code %d", error);
-     Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-     return TCL_ERROR;
-   } else {
-     return TCL_OK;
-   }
-}
-
-Tcl_Obj* make_exec_error(Tcl_Interp* interp, char* phase, char* tgt, 
-			 double time, int step, char* complaint) {
-  Tcl_Obj* errList;
-
-  errList=Tcl_NewListObj(0, NULL);
-  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(phase, -1));
-  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(tgt, -1));
-  Tcl_ListObjAppendElement(interp, errList, Tcl_NewDoubleObj(time));
-  Tcl_ListObjAppendElement(interp, errList, Tcl_NewIntObj(step));
-  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(complaint, -1));
-  return errList;
+  switch (set_param_array_elt(modelType, modelHandle, 
+			      Tcl_GetStringFromObj(argv[3], NULL), val, indxs)) {
+  case 1:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("No array has been created for this node", -1));
+    return TCL_ERROR;
+  case 0:
+  /* might want to return something here if array hasn't been defined */
+    return TCL_OK;
+  }
 }
 
 FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
@@ -581,7 +551,7 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   int phase, error;
 
   if (argc != 4) {
-    interp->result = "Three arguments for reset please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase");
     return TCL_ERROR;
   }
   
@@ -623,7 +593,7 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
   int phase, error;
 
   if (argc != 6) {
-    interp->result = "Five arguments for execute please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase start_time end_time");
     return TCL_ERROR;
   }
   
@@ -680,8 +650,8 @@ FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
    int error;
 
    if (argc != 3) {
-	interp->result = "Two arguments for setstep please!";
-	return TCL_ERROR;
+     Tcl_WrongNumArgs(interp, 1, argv, "interval/phase step_id");
+     return TCL_ERROR;
    }
 
    error = Tcl_GetDoubleFromObj(interp, argv[1], &starttime);
@@ -708,7 +678,7 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
   char* dllProblem;
 
   if (argc != 3) {
-    interp->result = "Two arguments for exit please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id");
     return TCL_ERROR;
   }
   
@@ -738,7 +708,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
   char* nodeId;
   
   if (argc != 3) {
-    interp->result = "Two arguments for get_node_id please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id caption");
     return TCL_ERROR;
   }
   
@@ -749,7 +719,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
   
   nodeId = getNodeId(modelType, Tcl_GetStringFromObj(argv[2], NULL));
   if (nodeId) {
-    interp->result = nodeId;
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(nodeId, -1));
     return TCL_OK;
   } else {
     Tcl_AppendResult(interp, "No node with caption string ",
@@ -762,6 +732,11 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
    int error;
+  if (argc < 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id node_id action ?parameters?");
+    return TCL_ERROR;
+  }
+
    error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
    if (error != TCL_OK) {
 	return error;
@@ -775,7 +750,7 @@ FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
   int action, index, error;
 
   if (argc < 3) {
-    interp->result = "At least two arguments for graph_table please!";
+    Tcl_WrongNumArgs(interp, 2, argv, "graph_id");
     return TCL_ERROR;
   }
 
@@ -1053,7 +1028,7 @@ FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp,
    long int modelType;
 
    if (argc != 2) {
-     interp->result = "One argument for listobjects please!";
+     Tcl_WrongNumArgs(interp, 1, argv, "model_id");
      return TCL_ERROR;
    }
    error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
@@ -1069,7 +1044,7 @@ FINDABLE int randseedCmd(ClientData clientData, Tcl_Interp *interp,
    int seed, error;
 
    if (argc != 2) {
-     interp->result = "One argument for randseed please!";
+     Tcl_WrongNumArgs(interp, 1, argv, "seed");
      return TCL_ERROR;
    }
    error = Tcl_GetIntFromObj(interp, argv[1], &seed);
@@ -1097,7 +1072,7 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_Obj *resultPtr;
 
    if (argc != 1) {
-     interp->result = "No arguments for random01 please!";
+     Tcl_WrongNumArgs(interp, 1, argv, "");
      return TCL_ERROR;
    }
     resultPtr = Tcl_GetObjResult(interp);
@@ -1132,7 +1107,7 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_Obj** destObjs;
   connectRecord* currConnect;
    if (argc != 2) {
-     interp->result = "One argument for set_connection_database please!";
+     Tcl_WrongNumArgs(interp, 1, argv, "connection_list");
      return TCL_ERROR;
    }
    // Move strings from the arg to a more easily searchable data structure
@@ -1149,7 +1124,7 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
        return error;
      }
      if (spare != 4) {
-       interp->result="set_connection_database items need four elements each!";
+       Tcl_SetObjResult(interp, Tcl_NewStringObj("set_connection_database items need four elements each!", -1));
        return TCL_ERROR;
      }
      currConnect = &(*connectDataPtr)[count];
@@ -1275,11 +1250,8 @@ int my_hmac(Tcl_Interp *interp, const char* key, const char* text) {
 FINDABLE int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
 			      int argc, Tcl_Obj *CONST argv[]) {
    if (argc != 2) {
-     interp->result = "One argument for get_auth_code please!";
+     Tcl_WrongNumArgs(interp, 1, argv, "source_string");
      return TCL_ERROR;
-
-
-
    }
    /* set ModelText [mime::getbody $Part($Model)] */
    if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
@@ -1311,7 +1283,7 @@ from our little secret -- after checking that the edition specified is right */
 FINDABLE int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 2) {
-    interp->result = "One argument for check_auth_code please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "source_string");
     return TCL_ERROR;
   }
   /* set ModelText [mime::getbody $Part($Model)] */
@@ -1357,10 +1329,10 @@ FINDABLE int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int GetVersionCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
-    interp->result = "No arguments for get_simile_version please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "");
     return TCL_ERROR;
   }
-  interp->result = simileVersion;
+  Tcl_SetObjResult(interp, Tcl_NewStringObj(simileVersion, -1));
   return TCL_OK;
 }
 
@@ -1370,7 +1342,7 @@ FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_Obj* resultPtr;
 
   if (argc != 2) {
-    interp->result = "One argument for c_killmodel please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "pid");
     return TCL_ERROR;
   }
   error = Tcl_GetIntFromObj(interp, argv[1], &pid);
@@ -1385,7 +1357,7 @@ FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
-    interp->result = "No arguments for loadcommands please!";
+    Tcl_WrongNumArgs(interp, 1, argv, "");
     return TCL_ERROR;
   }
 
@@ -1444,13 +1416,10 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "c_createmodel", createmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_updatemodel", updatemodelCmd, 
+  Tcl_CreateObjCommand(interp, "c_setparamarray", setparamarrayCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_advancemodel", advancemodelCmd, 
-		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
-  Tcl_CreateObjCommand(interp, "c_evalmodel", evalmodelCmd, 
+  Tcl_CreateObjCommand(interp, "c_setparamelement", setparamelementCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_resetmodel", resetmodelCmd, 

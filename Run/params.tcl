@@ -289,9 +289,11 @@ proc AcceptData {winId topNode compName complain} {
 	# submodel it represents
 	set recordDims $paramDims($compName)
 	set afterTIME [string equal TIME [lindex $recordDims 0]]
+	set useCppArray [expr !$afterTIME] 
 #puts "node $compName has dims $recordDims"
 	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
 #puts "recordDims $recordDims recordDepth $recordDepth" 
+	    set useCppArray 0
 	    foreach recordId [array names paramData] {
 #puts "recordId is $recordId"
 		if {[string first $recordId $compName]==0 && \
@@ -311,8 +313,11 @@ proc AcceptData {winId topNode compName complain} {
 	    }
 	}
 #puts "About to ListToArray $node {} $trans $recordDims $paramData($compName)"
+	if {$useCppArray} {
+	    c_setparamarray 0 0 $node
+	}
 	if {[catch {ListToArray $topNode $node {} $trans $recordDims \
-			$paramData($compName)} result]} {
+			$paramData($compName) $useCppArray} result]} {
 # new bit for using it as an input tool: notify that we have values
 	    lappend paramData(needed) $compName
 	    if {$complain>-1} {
@@ -350,7 +355,7 @@ proc rsearch {list tgt} {
     }
 }
 
-proc ListToArray {topNode tgt subs trans dims list} {
+proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 #do_in_editor puts "Go! tgt $tgt trans $trans dims $dims list $list"
 # skip over any vm arrays, their indices will not appear
 # in calls for values, but keep the translation list in sync
@@ -375,10 +380,11 @@ proc ListToArray {topNode tgt subs trans dims list} {
 		    set idAndSubs $tgt[string range $subs 4 end]
 		    set comboTypes($idAndSubs) $list
 		    EnumTypeToNumber [InputVarFor $topNode $tgt] $idAndSubs \
-			$list $thisTrans
+			$list $thisTrans $useCppArray
 		    return 1
 		} else {
-		    EnumTypeToNumber paramData $tgt$subs $list $thisTrans
+		    EnumTypeToNumber paramData $tgt$subs \
+			$list $thisTrans $useCppArray
 		    return 0
 		}
 	    } default {
@@ -427,7 +433,7 @@ proc ListToArray {topNode tgt subs trans dims list} {
 # just like other dimensions, i.e., all must be set
 	set redoStep 1
 # Next call removes old time series data from the system
-	EnumTypeToNumber paramData $tgt {} {}
+	EnumTypeToNumber paramData $tgt {} {} $useCppArray
 	foreach arrayPt [array names sub] {
 	    if {[string equal NOW $arrayPt]} {
 		if {[llength $subs]} {
@@ -437,7 +443,7 @@ proc ListToArray {topNode tgt subs trans dims list} {
 		error [list $arrayPt "Time point must be NOW or a number."]
 	    }
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
-			    [lrange $dims 1 end] $sub($arrayPt)} step]} {
+			    [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
 		error [concat $arrayPt $step]
 	    } elseif {$step<1} {
 		set redoStep -1
@@ -459,7 +465,8 @@ proc ListToArray {topNode tgt subs trans dims list} {
 	}
 
 #do_in_editor puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
-	EnumTypeToNumber paramData [lindex [lindex $dims 0] 1]$subs $last {}
+	EnumTypeToNumber paramData [lindex [lindex $dims 0] 1]$subs $last {} \
+	     $useCppArray
 # probably won't work anyway for time series
 	set requireStep 0
     } else {
@@ -475,7 +482,7 @@ proc ListToArray {topNode tgt subs trans dims list} {
 	}
 	if {[catch {ListToArray $topNode $tgt $subs,$arrayPt \
 			[lrange $trans 1 end] [lrange $dims 1 end] \
-			$sub($indx)} mis]} {
+			$sub($indx) $useCppArray} mis]} {
 	    error [concat $indx $mis]
 	} elseif {$mis<1} {
 	    set redoStep $requireStep
@@ -484,7 +491,7 @@ proc ListToArray {topNode tgt subs trans dims list} {
     return $redoStep
 }
 	    
-proc EnumTypeToNumber {varData tgt head trans} {
+proc EnumTypeToNumber {varData tgt head trans useCppArray} {
     global $varData
 
     if {![llength $head]} {
@@ -501,14 +508,28 @@ proc EnumTypeToNumber {varData tgt head trans} {
 		error [list "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
 	    }
 	} else {
-	    set ${varData}($tgt) $poss
+	    PlaceInArray $tgt $poss $varData $useCppArray
 	}
     } elseif {![string is double $head]} {
 	error [list "Data value $head is not a number."]
     } else {
-	set ${varData}($tgt) $head
+	PlaceInArray $tgt $head $varData $useCppArray
+#	set ${varData}($tgt) $head
     }
 #puts "just went set paramData($tgt) $paramData($tgt)"
+}
+
+proc PlaceInArray {where what varData inC} {
+    if {$inC} {
+	set map [split $where ,]
+	if {[catch {c_setparamelement 0 0 [lindex $map 0] $what \
+			[lrange $map 1 end]} urr]} {
+	    error [list $urr]
+	}
+    } else {
+	global $varData
+	set ${varData}($where) $what
+    }
 }
 
 proc NumberToEnumType {idx trans} {

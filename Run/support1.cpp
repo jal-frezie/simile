@@ -20,7 +20,7 @@ ame_rand_type* ame_rand_ref;
 graphpoint_type* graphpoint_ref;
 release_graph_data_type* release_graph_data_ref;
 compare_instance_status_type* compare_instance_status;
-get_value_pointer_type* get_value_pointer;
+get_value_pointer_type* get_value_pointer_ref;
 fetch_instance_type* fetch_instance_ref;
 update_submodel_type* update_submodel_ref;
 advance_submodel_type* advance_submodel_ref;
@@ -149,7 +149,7 @@ void collect (DestClass* dest, char* node_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  (*get_value_pointer)(dest, node_id, id_count, curIndices);
+  (*get_value_pointer_ref)(dest, node_id, id_count, curIndices);
 }
    
 template <class SMClass>

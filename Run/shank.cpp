@@ -71,7 +71,7 @@ int max(int a, int b) {
 
 ame_rand_type* ame_rand;
 interact_gui_type* interact_gui;
-get_value_pointer_type* get_value_pointer;
+get_value_pointer_type* get_client_value_pointer;
 fetch_instance_type fetch_instance;
 update_submodel_type update_submodel;
 advance_submodel_type advance_submodel;
@@ -130,7 +130,7 @@ double graphpoint(double xval, graph_data_type* graphdata, int index) {
 	/* Interval is distance from left of graph in point units */
 	interval = spaces*(xval - use_graph_pointer->xlow)/
 		(use_graph_pointer->xhigh - use_graph_pointer->xlow);
-	switch(use_graph_pointer->range) {
+	switch (use_graph_pointer->range) {
 	case 0: case 4: case 5: /* truncate to fit on graph */
 	  interval = interval<0?0:(interval>spaces?spaces:interval);
 	  break;
@@ -381,7 +381,7 @@ public:
       xtime+=freq;
       set_dts(big_phase, xtime);
       (*advancemodel)(id, xtime, big_phase);
-      switch(how_int) {
+      switch (how_int) {
       case EULER:
 	advance_time(big_phase, 1);
 	setdt(0,0);
@@ -568,7 +568,7 @@ public:
 
 listNodeModel* nodeModelList = NULL;
 
-/* listable class for enumerated types, similar to above */
+/* listable class for enumerated types, similar to above
 class listEnumTypes {
 public:
   enum_type_data* enumTypePtr;
@@ -585,6 +585,190 @@ public:
     }
   }
 };
+
+listable class for keeping track of arrays associated with parameters */
+
+class listParamArray {
+public:
+  char* nodeId;
+  node_data_line *nodeLine;
+  int fullDims[32];
+  BOOLEAN myArraySpace;
+  char* dataPtr;
+  listParamArray* next;
+
+  void remove_vm_dims() {
+    int *src, *dest;
+    BOOLEAN cutting_bases = FALSE;
+
+    dest = src = fullDims;
+    do {
+      switch (*src) {
+      case MEMBERS:
+	continue;
+      case START_VM:
+	cutting_bases = TRUE;
+	continue;
+      case END_VM:
+	cutting_bases = FALSE;
+	continue;
+      default:
+	if (!cutting_bases) {
+	  *(dest++) = *src;
+	}
+      }
+    } while (*(src++));
+  }
+
+  listParamArray(char* newNodeId) {
+    int sparePath[32];
+    long int spareModel;
+    char spareCapt[255];
+    enum_type_data *spareTypes[32]; // might need for reading files
+
+    nodeId = strdup(newNodeId);
+    nodeLine = searchinfo(nodeId, &spareModel, spareCapt, fullDims, sparePath,
+			  spareTypes);
+    remove_vm_dims();
+    myArraySpace = FALSE;
+    dataPtr = NULL;
+    next = NULL;
+  }      
+
+  ~listParamArray() {
+    delete(nodeId);
+    if (dataPtr && myArraySpace) delete(dataPtr);
+    if (next) delete(next);
+  }
+    
+  char* create_space(void* newDataPtr) {
+    int arraySz, *dimPtr;
+
+    if (newDataPtr) {
+      if (myArraySpace) {
+	delete dataPtr;
+      }
+      myArraySpace = FALSE;
+      dataPtr = (char*)newDataPtr;
+    } else if (!myArraySpace) {
+      switch (nodeLine->datatype) {
+      case REAL:
+	arraySz = sizeof(double);
+	break;
+      case INTEGER:
+	arraySz = sizeof(int);
+	break;
+      case FLAG:
+	arraySz = sizeof(BOOLEAN);
+	break;
+      }
+      // will have to add stuff to get ptr to jump over vm dims -- or purge
+      for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
+        arraySz = *dimPtr*arraySz;
+      }
+      dataPtr = new char[arraySz];
+      myArraySpace = TRUE;
+    }
+    return dataPtr;
+  }  
+
+  int serial(int* indxs) {
+    int off, *dimPtr;
+    off = 0;
+    for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
+      off=*dimPtr*off+*indxs-1;
+      indxs+=1;
+    }
+    return(off);
+  }
+
+  int insert_elt(double val, int* indxs) {
+    int howFarDown;
+
+    howFarDown = serial(indxs);
+
+    switch (nodeLine->datatype) {
+    case REAL:
+      *(double*)(dataPtr + sizeof(double)*howFarDown) = val;
+      break;
+    case INTEGER:
+      *(int*)(dataPtr + sizeof(int)*howFarDown) = (int)val;
+      break;
+    case FLAG:
+      *(BOOLEAN*)(dataPtr + sizeof(BOOLEAN)*howFarDown) = (BOOLEAN)val;
+      break;
+    }
+    return 0;
+  }
+
+  void extract_elt(void* tgt, int* indxs) {
+    int howFarDown;
+
+    howFarDown = serial(indxs);
+    switch (nodeLine->datatype) {
+    case REAL:
+      *(double*)tgt = *(double*)(dataPtr + sizeof(double)*howFarDown);
+      break;
+    case INTEGER:
+      *(int*)tgt = *(int*)(dataPtr + sizeof(int)*howFarDown);
+      break;
+    case FLAG:
+      *(BOOLEAN*)tgt = *(BOOLEAN*)(dataPtr + sizeof(BOOLEAN)*howFarDown);
+      break;
+    }
+  }
+};   // end of listParamArray class
+
+listParamArray* param_array_base = NULL;
+
+listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
+  if (!start) {
+    return NULL;
+  } else if (!strcmp(start->nodeId, seekNodeId)) {
+    return start;
+  } else {
+    return param_array_item(start->next, seekNodeId);
+  }
+}
+  
+void* use_array_for_params(long int modelType, long int modelHandle,
+			   char* nodeId, void* dataSpace) {
+  listParamArray* arrSlot;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    arrSlot = new listParamArray(nodeId);
+    if (!arrSlot->nodeLine) {
+      delete arrSlot;
+      return NULL;
+    }
+    arrSlot->next = param_array_base;
+    param_array_base = arrSlot;
+  }
+
+  return arrSlot->create_space(dataSpace);
+}
+
+int set_param_array_elt(long int modelType, long int modelHandle,
+			 char* nodeId, double val, int* indxs) {
+  listParamArray* arrLocn;
+  arrLocn = param_array_item(param_array_base, nodeId);
+  if (!arrLocn) {
+    return(1);
+  } else {
+    return(arrLocn->insert_elt(val, indxs));
+  }
+}  
+
+void get_value_pointer(void* modelSlot, char* nodeId, int ic, int* indxs) {
+  listParamArray* paramArrayItem;
+
+  paramArrayItem = param_array_item(param_array_base, nodeId);
+  if (paramArrayItem) {
+    paramArrayItem->extract_elt(modelSlot, indxs);
+  } else {
+    get_client_value_pointer(modelSlot, nodeId, ic, indxs);
+  }
+}
 
 char* load_model(char* fileName, char* nodeName, long int* modelType) {
   Model* newModel;
@@ -921,7 +1105,7 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
 			     char* simileVersionPtr,
 			     connectRecord*** connectDataPtr, 
 			     int** connCountPtr) {
-  get_value_pointer = get_value_pointer_ptr;
+  get_client_value_pointer = get_value_pointer_ptr;
   ame_rand = ame_rand_ptr;
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
@@ -952,6 +1136,10 @@ void setdt(double starttime, int phase) {
 char* myexit(long int modelType, long int modelHandle) {  
   if (modelHandle) { 
     ((Model*)modelType)->exitmodel((void*)modelHandle);
+  }
+  if (param_array_base) {
+    delete param_array_base;
+    param_array_base = NULL;
   }
   if (nodeModelList) {
     try {
