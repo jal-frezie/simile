@@ -312,3 +312,5 @@ int step_list(int **dim_list, int unused) {
 
 void discard_instance(void* instanceId) {
 }
+
+#include "../Functions/procs.cpp"

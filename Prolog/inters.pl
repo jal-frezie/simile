@@ -122,29 +122,40 @@ expand_library(DestRef, Var, NewVar) :-
 
 read_library_funx(Done) :-
 	retractall(macro_expansion(_Line)), /* in case I ship it after a run */
-	open('../Run/functions.mcr', read, Stream),
+	open('../Functions/macros.pl', read, Stream1),
 	/* rel path only needed in dev sys */
-	read_funcs(Stream, Done).
+	read_funcs(Stream1, macro, Done1),
+	open('../Functions/defns.pl', read, Stream2),
+	read_funcs(Stream2, defn, Done2),
+	append(Done1, Done2, Done).
 
-read_funcs(Stream, Done) :-
+read_funcs(Stream, Type, Done) :-
 	on_exception(WrongUDF, read(Stream, Line),
 		     (ame_gen:make_nice_error_message(WrongUDF, Bug),
-			 do_dialogue("Parsing user-defined functions",
-				     warning, Bug, ok, _))),
+			 format_to_chars("Parsing user-defined ~as", [Type],
+					 ProbAct),
+			 do_dialogue(ProbAct, warning, Bug, ok, _))),
 	(nonvar(Bug), !,
-	    read_funcs(Stream, Done);
+	    read_funcs(Stream, Type, Done);
 	 Line == end_of_file, !,
 	    close(Stream),
 	    Done = [];
-	Line = (Macro --> _Defn),
+	(Type = macro,
+	    Line = (Macro --> _Defn),
 	    assert(macro_expansion(Line)),
 	    Macro =.. [Fn | _Args],
-	    read_funcs(Stream, More),
-	    append_atoms(Fn, ' (user-defined macro)', FnEntry),
+	    append_atoms(Fn, ' (user-defined macro)', FnEntry);
+	Type = defn,
+	    Line = function(Functor, _ReturnType, _ArgTypes),
+	    assert(Line),
+	    assert(use_tcl_proc_for(Functor)),
+	    append_atoms(Functor, ' (user-defined procedure)', FnEntry)),
+	    read_funcs(Stream, Type, More),
 	    Done = [FnEntry | More];
-	format_to_chars("The file functions.mcr contained the line ~w which \c
-		       is in the wrong format for a macro definition -- \c
-		       please refer to the documentation.", [Line], Bug),
+	format_to_chars("The file ~as.mcr contained the line ~w which \c
+		       is in the wrong format for a ~a -- \c
+		       please refer to the documentation.", [Type, Type, Line],
+		       Bug),
 	    do_dialogue("Parsing user-defined functions",
 				     warning, Bug, ok, _),
 	    read_funcs(Stream, Done)).
@@ -623,6 +634,9 @@ promote_unit(Lo, Hi) :-
 but will ultimately replace them. They should be applied in a way that allows
 an integer to be treated as a real -- if an arg is real, so is result */
 
+:- dynamic(function/3).
+:- dynamic(use_tcl_proc_for/1).
+
 function(assign, any, [any, any]).
 function(time, real, [const_int]).
 function(ind_time, real, [const_int]).
@@ -693,6 +707,9 @@ operator(';', boolean, [boolean, boolean]).
 operator(and, boolean, [boolean, boolean]).
 operator(or, boolean, [boolean, boolean]).
 operator('!=', boolean, [boolean, boolean]).
+
+use_tcl_proc_for(min).
+use_tcl_proc_for(max).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* add_zeros has the mind-numbingly monotonous task of shifting

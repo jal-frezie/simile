@@ -47,7 +47,7 @@ get_info(_, Comp, comment) :-
 	(get_av_pair(Func, _, comment, Cmt), !;
 	Cmt = 'no comment'),
 	(get_av_pair(Func, _, description, Desc),
-	    format_to_chars("~a\n~a", [Desc, Cmt], PopStr),
+	    format_to_chars("~w\n~w", [Desc, Cmt], PopStr),
 	    name(Pop, PopStr), !;
 	Pop = Cmt),
 	callback(br(write(Pop))).

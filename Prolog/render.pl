@@ -948,7 +948,7 @@ aid lazy evaluation as is done for Choose... */
 		(L = tcl; L = c),
 			make_procedure_call_chars(L, [ame_rand | VArgExprs], CharList);
 	L = tcl,
-		(member(Op, [min, max]),
+		(inters:use_tcl_proc_for(Op),
 			make_procedure_call_chars(L, [Op | VArgExprs], CharList);
 		member(Op, [and, ',', '&&']),
 			format_to_chars("[if {~w} then {expr ~w} else {expr 0}]",

@@ -67,7 +67,7 @@ make_desktop(Desktop, Canvas_name) :-
 	all(state, set_display_depth, [unify(Canvas_name),
 	    build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(InitDepths)]),
-/*	maintain:redraw_window(Canvas_name), */
+	maintain:redraw_window(Canvas_name),
 	menu:update_mode(select),
 	backup:initialize_ring,
 	state:initialize_phase.

@@ -6,6 +6,11 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.7  2002/06/18 15:30:04  jaspert
+#Moved macro definitions to Functions/macros.pl
+#Added user defined procedures: definitions in Functions/defns.pl
+#Code in Functions/procs.tcl and .cpp
+#
 #Revision 1.6  2002/06/13 14:14:04  jaspert
 #Changes to store whether the desktop window is fullscreen and start again in
 #the same mode (only works in Windows -- recompile ame_cmx.cpp before using)
@@ -49,6 +54,11 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.7  2002/06/18 15:30:04  jaspert
+#Correct RCS directive #Moved macro definitions to Functions/macros.pl
+#Correct RCS directive #Added user defined procedures: definitions in Functions/defns.pl
+#Correct RCS directive #Code in Functions/procs.tcl and .cpp
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.6  2002/06/13 14:14:04  jaspert
 #Correct RCS directive #Changes to store whether the desktop window is fullscreen and start again in
 #Correct RCS directive #the same mode (only works in Windows -- recompile ame_cmx.cpp before using)
@@ -171,8 +181,6 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 # last will be overwritten if drawing from Prolog
 
     set topWin [winfo parent $c]
-    focus $c
-    update
     scan [wm maxsize $topWin] "%d %d" mw mh
 #ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
     if {[pack propagate $topWin] &&
@@ -1087,7 +1095,7 @@ proc MakeFrames {windowId} {
     set canId $windowId.c.canvas
     canvas $canId -width 10 -height 10 \
 	    -yscrollcommand [list $windowId.c.yscroll set]
-    scrollbar $windowId.c.yscroll -orient vertical -command [list $canId yview]
+    scrollbar $windowId.c.yscroll -orient vertical -command [list $canId yview]
 
 
 
@@ -1498,6 +1506,7 @@ proc load_dll {lang progFileDir modelPath node} {
 	    namespace delete ::AME_model<>
 	}
 	set exports(target) $nameBase.$lang
+	source ../Functions/procs.tcl
 	source $nameBase.$lang
 	if {[info exists simile_version]} {
 	    return $simile_version

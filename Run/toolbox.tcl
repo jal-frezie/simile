@@ -261,13 +261,6 @@ proc ClickObj { x y winId action} {
 #    set awaitBogusClick 1
 
     set node [ExtractPrologName $winId $target]
-
-###############################################
-### Equation bar
-### Ultimate hack: this is to get focus back
-### to a symbol on model diagram once you have
-### clicked in the equation bar edit field.
-
     global equationbar
     global pushedbutton
 
@@ -291,8 +284,10 @@ proc ClickObj { x y winId action} {
 	    
 	    if {![string compare $target $obj]} {
 		set action clicktext
+		focus $winId
 	    }
 	}
+	prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node)]
 
 ### Formula bar
 ### Added by Jasper: ignore all eqnbar stuff if none in current window or
@@ -327,8 +322,6 @@ proc ClickObj { x y winId action} {
 	}
     }
 ### End equation bar
-
-    prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node)]
   }
 }
 
@@ -383,16 +376,17 @@ proc DropObj {winId xco yco} {
 	global awaitBogusClick
 
 	if {$awaitBogusClick} {
-		set awaitBogusClick 0
+	    set awaitBogusClick 0
 	} else {
+#	    focus $winId
     set x [$winId canvasx $xco]
     set y [$winId canvasy $yco]
     set canx [Unscale $winId $x]
     set cany [Unscale $winId $y]
-		if {[$winId find overlapping [expr $x-2] [expr $y-2] \
-				[expr $x+2] [expr $y+2]] == {}} {
-			$winId focus {}
-		}
+#		if {[$winId find overlapping [expr $x-2] [expr $y-2] \
+#				[expr $x+2] [expr $y+2]] == {}} {
+#			$winId focus {}
+#		}
     prolog [list tk_click('$winId', $canx , $cany )]
 	}
 }
@@ -1352,6 +1346,7 @@ proc accept_equation {text} {
     set yco $equationbar(yco)
     set node $equationbar(node)
     prolog [list tk_click_obj('$winId',  doubleclick, $xco , $yco , $node)]
+    focus $winId
 }
 
 proc AddInputs {bar} {
@@ -1375,6 +1370,7 @@ proc restore_equation {bar} {
     global equationbar
     $bar.equation delete 0 end
     $bar.equation insert end $equationbar($bar)
+    focus $bar.equation
 }
 
 ##############################    Formula bar    #############################
