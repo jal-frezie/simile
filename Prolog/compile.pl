@@ -79,10 +79,10 @@ build_instances(Language, DestDir, Parent, TopNode,
 	(setof(Fn, list_user_fns(Parent, Fn), LevelFnsUsed),
 	    merge_lists(LevelFnsUsed, SubFnsUsed, FnsUsed);
 	FnsUsed = SubFnsUsed),
-	(/* Parent has_model_refinement c_new of 0,
-	 model can go incomplete then complete again without change
+	(/* model can go incomplete then complete again without change
 	 so check all */
 	     \+ check_level_for_reds(Parent),
+	    Parent has_model_refinement c_new of 0,
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1,
 	    LocalFnsUsed = [];
