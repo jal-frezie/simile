@@ -82,11 +82,12 @@ tk_drag(Virt_X, Virt_Y) :-
 
 tk_menu(Window, Header, Item) :-
 /*	into_save_file(tk_menu(Window, Header, Item)), */
-	show_wait_cursor,
-	finish_window_resize(Window),
-	finish_old_edit(none),
-	(menu_handle(Window, Header, Item); true),
-	show_normal_cursor.
+    show_wait_cursor,
+    (Window = '.hi.canvas', !;
+     finish_window_resize(Window)),
+    finish_old_edit(none),
+    (menu_handle(Window, Header, Item); true),
+    show_normal_cursor.
 
 tk_menu_select(Obj_type, from_box) :-
 /*	into_save_file(tk_menu_select(Obj_type, from_box) ), */

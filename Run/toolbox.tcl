@@ -820,6 +820,14 @@ proc ControlDraw {prologVersion} {
 # if there are any logfiles from unsaved models, pick one
     }
     
+    # Base window has menu to display on Mac when no model windows open
+    set ::equation(fnDefs) {}
+    menu .hitop
+    frame .hi
+    frame .hi.toolSlot
+    . config -menu .hitop	
+    AddMainMenu .hi _ 1 0 {}
+
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] \
             $openModel $userinfo(edn)]

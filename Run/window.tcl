@@ -1026,7 +1026,7 @@ proc DoLocalCmd {win item} {
 # Alastair 31 Jan 2005
 #
 
-if [string match "Darwin" $tcl_platform(os)] {
+if {[string match "Darwin" $tcl_platform(os)]} {
 #
 # The Quit command in the application menu ALWAYS calls exit, so we must quit 
 # by that route however it is invoked (keyboard shortcut or mouse click)
@@ -1034,7 +1034,9 @@ if [string match "Darwin" $tcl_platform(os)] {
   rename exit wishExit
   proc exit {} {
       global window_info
-      set currentDesk $window_info([winfo toplevel [focus]].canvas,top_node)
+      set currentDesk _
+      catch {set currentDesk \
+		 $window_info([winfo toplevel [focus]].canvas,top_node)}
       prolog tk_kill_everything($currentDesk)
   }
   bind all <Command-q> exit
@@ -1191,7 +1193,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c edit invsel" -accelerator "$accKey+*"
     AddAccelerator $winid edit "Invert selection" "<$accSym-Shift-8>"
     
-    AddFindMenu $c $fm
+    AddFindMenu $winid $c $fm
     $fm add separator
     $fm add command -label "Properties..." \
             -command "MenuSelect $c edit properties"
@@ -1533,7 +1535,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $nb.redo configure -state disabled
 }
 
-proc AddFindMenu {canvas menu} {
+proc AddFindMenu {winid canvas menu} {
     global tcl_platform
     if [string match "Darwin" $tcl_platform(os)] {
       set accKey Cmd
@@ -1545,10 +1547,10 @@ proc AddFindMenu {canvas menu} {
     $menu add separator
     $menu add command -label Find... -command "FindCaption $canvas" \
             -accelerator "$accKey+F"
-    AddAccelerator [winfo parent $canvas] edit "Find..." "<$accSym-f>"
+    AddAccelerator $winid edit "Find..." "<$accSym-f>"
     $menu add command -label "Find next" -command "NextCaption $canvas" \
             -accelerator "F3"
-    AddAccelerator [winfo parent $canvas] edit "Find next" "<F3>"
+    AddAccelerator $winid edit "Find next" "<F3>"
 }
 
 proc AddZoomMenu {canvas menu tellProlog} {
@@ -1586,7 +1588,7 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
 	}
     }
 }
-	
+
 #proc PostRealHelperMenu {winId} {
 #    global window_info runState
 #    
