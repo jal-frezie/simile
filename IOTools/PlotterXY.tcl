@@ -139,9 +139,6 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         variable lastTime
         
-        set xm [expr $plot($w,xborder_left)+60]
-        set ym [expr $plot($w,yborder_top)+20]
-        
         set newbox nodebox[incr plot($w,nodeCount)]
         set name [GetCaptionPathFromId $node]
         
@@ -149,29 +146,22 @@ namespace eval ::$keyValue {
         if {[string compare $testResult novalue]} {
             switch $plot($w,state) {
                 xcoord {
-                    #               $ms configure -text "Now click on the value representing the Y coordinates."
                     set plot($w,Xvars) $node
                     set plot($w,XaxisLabel) $caption
-                    #lappend plot($w,XaxisLabel) $caption; # allow more than one pair of var
-                    #lappend plot($w,Xvars)   $node
                     set plot($w,state) ycoord
-                    $w.canvas delete prompt
-                    $w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-                            -text "Select the y axis variable by clicking on a variable in the Explorer window\
-                            or a Model Diagram."
+                    
+                    $w.mess config -text "Select y variable: click on a variable in \
+                            the Explorer window or a Model Diagram."
                     GrabClicks $w
                 }
                 ycoord {
-                    #               $ms configure -text "Now select a value to determine the colour of the objects."
                     set plot($w,Yvars) $node
-                    #set plot($w,Ylabels) $caption; #labels with spaces treated as a list
                     lappend plot($w,Ylabels) $caption; # allow more than one pair of var
-                    #lappend plot($w,Yvars)   $node; # allow more than one pair of var
                     set useNodes($w,state) display
                     drawGraphpad $w
                     UpdateState $w
                     ReleaseClicks $w
-                    $w.canvas delete prompt
+                    $w.mess config -text {}; # clear prompt       
                     set lastTime($w) [GetModelTime]
                     display $w [GetModelTime] 0 0
                     display $w [GetModelTime] 0 0
@@ -265,11 +255,11 @@ namespace eval ::$keyValue {
                 [list property.gif " Properties " [namespace code "Settings $w"]]]
         #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
         #    [list " settings " [namespace code "settings $w"]] \
-        #    [list " redraw " [namespace code "resetGraph $w"]] \
-        
-        
+        #    [list " redraw " [namespace code "resetGraph $w"]] 
         ::graphtools::MakeToolBar $w $toolbarItems
         
+        pack [label $w.mess] ;# for instructions
+                
         # create canvas for graph
         canvas $w.canvas \
                 -width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
@@ -283,11 +273,14 @@ namespace eval ::$keyValue {
     proc AddVariable { winId } {
         global ::graphtools::plot
         
-        set xm [expr $plot($winId,xborder_left)+60]
-        set ym [expr $plot($winId,yborder_top)+20]
-        $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
+        #set xm [expr $plot($winId,xborder_left)+60]
+        #set ym [expr $plot($winId,yborder_top)+20]
+        #$winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
                 -text "Select the x axis variable by clicking on a variable in the Explorer window\
                 or a Model Diagram."
+        $winId.mess config -text "Select x variable: click on a variable in \
+                        the Explorer window or a Model Diagram."
+                
         set plot($winId,state) xcoord
         GrabClicks $winId
     }
@@ -630,7 +623,7 @@ namespace eval ::$keyValue {
         
         #    ShowMessage debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
         if {[llength $Ynew]==1} then {
-            set colour [lindex $plot($w,YColours) $iplot]
+            set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
             adjustLimits $w $Tnew $Ynew
             #        ShowMessage debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
             drawPoint $w $Told $Yold $Tnew $Ynew $colour

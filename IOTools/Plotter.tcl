@@ -126,7 +126,6 @@ namespace eval ::$keyValue {
         #tk_messageBox -message "Click node $node" -type ok
         global ::graphtools::plot
         
-        set newbox nodebox[incr plot($w,nodeCount)]
         set name [GetCaptionPathFromId $node]
         
         set testResult [GetModelValue $node]
@@ -142,7 +141,7 @@ namespace eval ::$keyValue {
             #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
         }
         ReleaseClicks $w
-        $w.canvas delete prompt
+        $w.mess config -text {}; # delete prompt
     }
     
     # Called at start up only
@@ -207,6 +206,8 @@ namespace eval ::$keyValue {
         #    [list " redraw " [namespace code "resetGraph $w"]]
         ::graphtools::MakeToolBar $w $toolbarItems
         
+        pack [label $w.mess] ;# for instructions
+                
         # create canvas for graph
         canvas $w.canvas -bg $plot($w,canvas_colour) -relief solid ;#\
                 #-width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
@@ -222,13 +223,7 @@ namespace eval ::$keyValue {
     }
     
     proc AddVariable { winId } {
-        global ::graphtools::plot
-        
-        set xm [expr $plot($winId,xborder_left)+60]
-        set ym [expr $plot($winId,yborder_top)+60]
-        $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-                -text "Click on a variable in the Explorer window\
-                or a Model Diagram"
+        $winId.mess config -text "Click on a variable in the Explorer window or a Model Diagram."
         GrabClicks $winId
     }
     
