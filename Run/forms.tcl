@@ -157,14 +157,18 @@ proc create_equation {parent boxtitle indices} {
     pack $t.middle.keypad -anchor nw -padx 2 -pady 2 -side left
 
     frame $t.middle.buttons
-    set ok [button $t.middle.buttons.ok -command equationOK -width 10 -default active -text "OK"]
-    set can [button $t.middle.buttons.cancel -command equationCancel -width 10 -text "Cancel"]
-    set cmt [button $t.middle.buttons.comment -width 10 -text "Comments..."]
-    set help [button $t.middle.buttons.help -width 10 -text "Help"]
-    pack $t.middle.buttons.ok -side top -padx 8 -pady 4 -anchor e
-    pack $t.middle.buttons.cancel -side top -padx 8 -pady 4 -anchor e
-    pack $t.middle.buttons.comment -side top -padx 8 -pady 4 -anchor e
-    pack $t.middle.buttons.help -side top -padx 8 -pady 4 -anchor e
+    set ok [button $t.middle.buttons.ok -command equationOK \
+            -width 10 -default active -text "OK"]
+    set can [button $t.middle.buttons.cancel -command equationCancel \
+            -width 10 -text "Cancel"]
+    set cmt [button $t.middle.buttons.comment \
+            -width 10 -text "Comments..."]
+    set help [button $t.middle.buttons.help -command {ContextSensitiveHelp .equation equations/dialogue.htm} \
+            -width 10 -text "Help"]
+    pack $ok -side top -padx 8 -pady 4 -anchor e
+    pack $can -side top -padx 8 -pady 4 -anchor e
+    pack $cmt -side top -padx 8 -pady 4 -anchor e
+    pack $help -side top -padx 8 -pady 4 -anchor e
     pack $t.middle.buttons -anchor e -side left
     pack $t.middle -anchor nw -fill x
     
@@ -663,11 +667,14 @@ proc Disaggregate {parent title colour type fatness icount step \
     
     
     frame $t.simple.right
-    button $t.simple.right.ok -text "OK" -width 10 -default active -command {set disaggregate(done) 1}
+    button $t.simple.right.ok -text "OK" -width 10 -default active \
+            -command {set disaggregate(done) 1}
     pack $t.simple.right.ok  -padx 2 -pady 4
-    button $t.simple.right.cancel -text "Cancel" -width 10 -command {set disaggregate(done) 0}
+    button $t.simple.right.cancel -text "Cancel" -width 10 \
+            -command {set disaggregate(done) 0}
     pack $t.simple.right.cancel -padx 2 -pady 4
-    button $t.simple.right.help -text "Help" -width 10
+    button $t.simple.right.help -text "Help" -width 10 \
+            -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
     pack $t.simple.right.help -padx 2 -pady 4
     button $t.simple.right.more -text "More" -width 10 -command "ShowComplexity $t"
     pack $t.simple.right.more -padx 2 -pady 4
@@ -707,7 +714,7 @@ proc Disaggregate {parent title colour type fatness icount step \
             -variable disaggregate(matherror)
     pack $mathf.matherror -anchor w
     frame $mathf.step
-    label $mathf.step.caption -text "Time step:"
+    label $mathf.step.caption -text "Time step index:"
     pack $mathf.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
@@ -884,4 +891,13 @@ proc DoRegDialog {} {
     tkwait variable userinfo(done)
     grab release .register
     destroy .register
+}
+
+proc ContextSensitiveHelp {context page} {
+    global tcl_platform
+    if {[string match windows $tcl_platform(platform)]} {
+        load winhelp
+        package require winhelp
+        winhelp $context ../Help/simile.chm $page
+    }
 }
