@@ -9,15 +9,8 @@ rankings(ExL) --> [L] = ExL,
     count([L]))).
 colin(List) --> legg=rand_var(0,sum(List)),
 1+sum(if subtotals(List)<legg then 1 else 0).
-newton_raphson(Lo_start, Hi_start, Poly) --> (if time(1)==0 then Lo_start elseif time(1)==dt(0) then Hi_start else prev(2)+(prev(1)-prev(2))*last(last(Poly))/(last(last(Poly))-last(Poly))).
-true('') --> 1==1.
-false('') --> 1==0.
-pi('') --> 3.1415926535897932384626433832795.
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
-iterations(Alarm) --> st=sofar(if Alarm then 0 else st+1),st.
 
-% returns the sign of a number, -1 if negative or 1 if positive
-sgn(real) --> choose(real==0,1,int(real/abs(real))).
 first(BoolArr) --> [clear]=makearray(if place_in(1)==1 then 1
 				    elseif element(BoolArr,place_in(1)) then 0
 				    else element(sofar([clear]),place_in(1)-1),
@@ -27,12 +20,3 @@ best(Incoming) --> [local]=Incoming,[records]=makearray(
 			elseif element([local],place_in(1))>element([local],element(sofar([records]),place_in(1)-1)) then place_in(1)
 			else element(sofar([records]),place_in(1)-1),count([local])),
 element([records],count([local])).
-delay(val,steps) -->
-	ptw = (if last(ptw)==1000 then 1 else last(ptw)+1),
-	ptr = ptw-steps-1000*floor((ptw-steps-1)/1000),
-	[array] = makearray(if place_in(1)==ptw then
-			   val
-		  else
-			   last(element([array],place_in(1))),
-			1000),
-	element([array],ptr).
