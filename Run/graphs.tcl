@@ -599,6 +599,9 @@ proc DoneTableData {lidx} {
 proc AcquireTableData {lidx redo} {
     global table_entry
 
+    if {![llength $table_entry(dataField)]} {
+	return
+    }
     set idcs {}
     foreach itm [$lidx items] {
         lappend idcs [$lidx itemcget $itm -text]
@@ -607,7 +610,7 @@ proc AcquireTableData {lidx redo} {
     set tableSpec [concat [list $table_entry(fileName) \
 			       $table_entry(dataField)] $table_entry(indices)]
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
-#puts "Loading with $tableSpec"
+#do_in_editor puts "Loading with $tableSpec not $table_entry(data)"
 	set table_entry(values) [LoadTableData $tableSpec]
 	set table_entry(source) 2
 	set table_entry(data) $tableSpec
