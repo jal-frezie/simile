@@ -1521,7 +1521,7 @@ proc CanvasPaste {c {x {}} {y {}}} {
     }
     CanvasDelSeln $c
     $c insert [$c focus] insert $_s
-    
+
     
 }
 
