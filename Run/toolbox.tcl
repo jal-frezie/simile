@@ -1146,8 +1146,12 @@ proc LaunchHelp {} {
     }
 }
 
+if {![info exists interface]} {
+    set interface dll
+}
+
 proc ShowAbout {winId} {
-    global sendvars userinfo
+    global sendvars userinfo interface
     toplevel .about
     wm transient .about $winId
     wm title .about About\ SIMILE
@@ -1164,7 +1168,7 @@ proc ShowAbout {winId} {
     pack [label .about.f.l4 -text Version\ $sendvars(simV)]
 #    pack [label .about.f.l5 -text [clock format [file mtime ../Run/main.sav]]]
     pack [label .about.f.l6 -text "Prolog: $sendvars(proV)"]
-    pack [label .about.f.l7 -text "TclTk: [info patchlevel]"]
+    pack [label .about.f.l7 -text "TclTk: [info patchlevel] (by $interface)"]
     pack [label .about.l6]
     pack [label .about.l7 -text "This product is registered to \
 $userinfo(Name), $userinfo(Corp)"]
