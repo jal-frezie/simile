@@ -1084,10 +1084,9 @@ proc DoRegDialog {dtId} {
             and values. Run your model using the Build command of the Model menu."\
             -width 400 -font {-family helvetica -size 8}]
     pack $create -expand on -fill x
-	pack [frame $create.buttons]
-	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
-	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
-	pack [button $create.buttons.reopen -text "Reopen..." -command "PopReopen $dtId; set userinfo(done) \$welcomeDone"] -padx 4 -side left
+#	pack [frame $create.buttons]
+#	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
+#	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
 
     pack .register.create -expand on -fill x -padx 4 -pady 2
     
@@ -1097,8 +1096,11 @@ proc DoRegDialog {dtId} {
     frame $tasks.b
     pack [button $tasks.b.new -text "New" -width 10 -command {set userinfo(done) $welcomeDone}] \
             -padx 8 -pady 8 -side left
-    pack [button $tasks.b.open -text "Open" -width 10 \
-            -command "MenuSelect $dtId.canvas file open; set userinfo(done) $welcomeDone" ] \
+    pack [button $tasks.b.open -text "Open..." -width 10 \
+            -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
+            -padx 8 -pady 8 -side left
+    pack [button $tasks.b.reopen -text "Reopen" -width 10 \
+            -command "PopReopen $dtId; set userinfo(done) \$welcomeDone"] \
             -padx 8 -pady 8 -side left
     pack $tasks.b
     pack $tasks -fill x -expand on
