@@ -452,7 +452,7 @@ write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
 		Entry = ((CompType:Dest=Eqn) where PPairs))).
 
 get_flows(CompartmentNode, Direction, Names) :-
-	findall(Name,(flows(Direction, CompartmentNode, Arc),caption_for(Arc,Caption),generate_name( prolog, Caption, Name, _ )), Names).
+	findall(Name,(instance:flows(Direction, CompartmentNode, Arc),caption_for(Arc,Caption),generate_name( prolog, Caption, Name, _ )), Names).
 
 get_ppairs([],[]).
 /* Only include a "...where P=V" entry where P is not the default parameter name for V. */
