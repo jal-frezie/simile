@@ -263,16 +263,36 @@ itcl::class similescript::RunControl {
     }
     
     public method SetValue {path value} {
-        # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
-        #set winId $runState($modelNode,helperId)
-        do_for_node $modelNode set ::sliderVals([do_for_node $modelNode GetIdFromCaptionPath $path]) $value
-        Reset
-        #tk_messageBox -message "SetValue $path $value\n\
-        #        modelNode $modelNode \n\
-        #        [GetValue $path]\n\
-        #        [namespace current]\n\
-        #        [namespace eval :: [list namespace children]]"
-        return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
+        set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
+        switch -- [$this GetModelEval $path] {
+            INPUT {
+                switch -glob -- [$this GetModelType $path] {
+                    FLAG {
+                        do_for_node $modelNode set ::checkStates($nodeId) $value
+                    }
+                    ENUM(*) {
+                        set trans [GetTransTable $nodeId]
+                        set comboChoices($nodeId) $defVal
+                    }
+                    default {
+                        do_for_node $modelNode set ::sliderVals($nodeId) $value
+                    }
+                }
+            }
+            TABLE {
+                do_for_node $modelNode set ::paramData($nodeId) $value
+                do_for_node $modelNode set ::runState($modelNode,reloadParams) 1
+                Reset
+            }
+            default {
+                if {[string match [$this GetModelClass $path]  COMPARTMENT]} {
+                    do_for_node $modelNode SetModelValue $nodeId
+                } else  {
+                    puts "$path is not a parameter (variable or fixed) or compartment so it's value cannot be changed."
+                }
+            }
+        }
+        return [do_for_node $modelNode GetModelValue $nodeId]
     }
     
     public method GetMinValue {path} {
