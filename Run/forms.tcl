@@ -1163,12 +1163,14 @@ proc equationlisting_start {} {
     
     set fm [menu $w.fileMenu -tearoff 0]
     $m add cascade -label File -underline 0 -menu $fm
+    $fm add command -label Save -command "EquationListingSave $w" \
+            -accelerator "$accKey+S"
+    $fm add separator
     if {[string match windows $tcl_platform(platform)]} {
         $fm add command -label Print -command "EquationListingPrint $w" \
                 -accelerator "$accKey+P"
     }
-    $fm add command -label Save -command "EquationListingSave $w" \
-            -accelerator "$accKey+S"
+    $fm add separator
     $fm add command -label Close -command "destroy $w"
     
     set fm [menu $w.editMenu -tearoff 0]
@@ -1251,6 +1253,7 @@ proc EquationListingFindPopup {winId} {
 }
 
 proc EquationListingSelectAll {winId} {
+    focus $winId 
     $winId tag add sel 1.0 end
 }
 
