@@ -24,6 +24,8 @@ namespace eval ::graphtools {
     variable YYnew
     variable Told
     variable Tnew
+    variable box
+    variable canvas
     
     global ::graphtools::karray
     
@@ -70,7 +72,7 @@ proc ::graphtools::UpdateState {winId} {
 }
 
 
-proc ::graphtools::marker {} {tk_messageBox -message "hello"}
+proc ::graphtools::marker {} {tk_messageBox -message "marker"}
 
 
 # redraw graph after adjusting limits to Coordinates range
@@ -101,13 +103,13 @@ proc ::graphtools::resetGraph { w } {
 
 proc ::graphtools::get_x { w X Xscale} {
     global ::graphtools::plot
-    expr $plot($w,xborder_left)+($X-$plot($w,Xmin_axis))/$Xscale
+    expr {$plot($w,xborder_left)+($X-$plot($w,Xmin_axis))/$Xscale}
 }
 
 proc ::graphtools::get_y { w Y Yscale} {
     global ::graphtools::plot
-    expr $plot($w,yborder_top)+$plot($w,ylength) \
-            -($Y-$plot($w,Ymin_axis))/$Yscale
+    expr {$plot($w,yborder_top)+$plot($w,ylength) \
+                -($Y-$plot($w,Ymin_axis))/$Yscale}
 }
 
 ### Calculate the position of X where Y-axis intersects X-axis
@@ -159,14 +161,6 @@ proc ::graphtools::gridOnOff {  w } {
     if {$plot($w,grid)=="on"} {set plot($w,grid) off} else {set plot($w,grid) on}
     drawGraphpad $w
     drawGraph $w
-}
-
-
-proc ::graphtools::myAssembleFont {family weight style textsize} {
-    set font [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
-            $family $weight $style $textsize]
-    #tk_messageBox -message "font $font"
-    return $font
 }
 
 proc ::graphtools::draw_Xaxis { w } {
@@ -366,40 +360,159 @@ proc ::graphtools::Yslide { w can x y} {
     set plot($w,Ymin_axis) [expr $plot($w,Ymin_axis) - $axisShift]
 }
 
+proc ::graphtools::BoxBegin {w x y} {
+    # Welch 2nd ed. ex 31-11
+    # w is the canvas
+    global ::graphtools::box
+    set box($w,anchor) [list $x $y]
+    catch {unset box($w,last)}
+}
+
+proc ::graphtools::BoxDrag {w x y} {
+    # Welch 2nd ed. ex 31-11
+    global ::graphtools::box
+    catch {$w delete $box($w,last)}
+    set box($w,last) [eval {$w create rect} $box($w,anchor) {$x $y -tag selnBox}]
+}
+
+proc ::graphtools::InitZoom {canvas} {
+    variable binding
+
+    # save old bindings
+    set binding($canvas,Button-1) [bind $canvas <Button-1>]
+    set binding($canvas,B1-Motion) [bind $canvas <B1-Motion>]
+    set binding($canvas,ButtonRelease-1) [bind $canvas <ButtonRelease-1>]
+    
+    bind $canvas <Button-1> {::graphtools::BoxBegin %W %x %y}
+    bind $canvas <B1-Motion> {::graphtools::BoxDrag %W %x %y}
+    bind $w.canvas <ButtonRelease-1> {::graphtools::ZoomUsingSelnBox %W %x %y}
+}
+
+proc ::graphtools::ExitZoom {canvas} {
+    variable binding
+    bind $canvas <Button-1> $binding($canvas,Button-1)
+    bind $canvas <B1-Motion> $binding($canvas,B1-Motion)
+}
+
+# Not finished. Needs blankets.
+proc ::graphtools::ZoomUsingSelnBox {canvas x2 y2} {
+    global ::graphtools::box
+    global ::graphtools::plot
+    
+    set w [winfo parent $canvas]
+    #ShowMessage debug info "ZoomUsingSelnBox $::graphtools::plot($w,Tscale) $::graphtools::plot($w,Yscale)" ok
+    
+    set coordList [$canvas coords $box($canvas,last)]
+    set x1 [lindex $coordList 0]
+    set y1 [lindex $coordList 1]
+    catch {$canvas delete $box($canvas,last)}
+    set dataX1 [get_datax $w $x1 $plot($w,Tscale)]
+    set dataX2 [get_datax $w $x2 $plot($w,Tscale)]
+    set dataY1 [get_datay $w $y1 $plot($w,Yscale)]
+    set dataY2 [get_datay $w $y2 $plot($w,Yscale)]
+    
+    #ShowMessage debug info "ZoomUsingSelnBox canvas coord ($x1,$y1) ($x2,$y2)\n\
+    #        data coord ($dataX1,$dataY1) ($dataX2,$dataY2)" ok
+######################################################################    
+    # scale x
+    set OldRange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
+    set OldXmin_axis $plot($w,Xmin_axis)
+    
+    set numInt 0
+    set numMinorInt 0
+    #puts "adjustX lim Tnew $Tnew; plot(w,Xmin_data) $plot($w,Xmin_data); \
+    #        plot(w,Xmax_data) $plot($w,Xmax_data)\n\
+    #        plot(w,Xmin_axis) $plot($w,Xmin_axis); plot(w,Xmax_axis) $plot($w,Xmax_axis)"
+    AxisRound $dataX1 $dataX2 $plot($w,FewXAxisTicks) \
+            plot($w,Xmin_axis) plot($w,Xmax_axis) \
+            plot($w,Xmajorstep) numInt plot($w,Xminorstep) numMinorInt plot($w,Xprecision)
+    
+    set Trange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
+    
+    set scaleChange [expr {$OldRange/$Trange}]
+    set plot($w,Tscale) [expr $Trange/$plot($w,xlength)]
+    set x0 $plot($w,xborder_left)
+    set y0 $plot($w,yborder_top)
+    $w.canvas scale xaxis_item $x0 $y0 $scaleChange 1
+    
+    set xmove [expr {\
+        [get_x $w $OldXmin_axis $plot($w,Tscale)] \
+                -[get_x $w $plot($w,Xmin_axis) $plot($w,Tscale)] }]
+    $w.canvas move xaxis_item $xmove 0
+    
+    draw_Xaxis $w
+    
+    ######################################################################
+    # scale y
+            set numInt 0
+            set numMinorInt 0
+            set OldYrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
+            set OldYmax_axis $plot($w,Ymax_axis)
+            AxisRound $dataY1 $dataY1 0 \
+                    plot($w,Ymin_axis) plot($w,Ymax_axis) \
+                    plot($w,Ymajorstep) numInt plot($w,Yminorstep) numMinorInt plot($w,Yprecision)
+            #puts "adjustLimits plot($w,Yprecision) $plot($w,Yprecision)"
+            set plot($w,Yminorstep) [expr {$plot($w,Ymajorstep)/2}]
+            set Yrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
+            set scaleChange [expr {$OldYrange/$Yrange}]
+            #        ShowMessage debug info "$plot($w,Ymin_data) $plot($w,Ymax_data) \
+            #                $plot($w,Ymin_axis) $plot($w,Ymax_axis) \
+            #                $plot($w,Ymajorstep) $numInt $scaleChange" ok
+            
+            set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
+            set x0 $plot($w,xborder_left)
+            #        ShowMessage debug info "$plot($w,Ymax_axis) $OldYmax_axis \
+            #                $plot($w,Yscale)\
+            #                [expr {($plot($w,Ymax_axis)-$OldYmax_axis)*$plot($w,Yscale)}]" ok
+            
+            set y0 $plot($w,yborder_top)
+            $w.canvas scale yaxis_item $x0 $y0 1 $scaleChange
+            
+            set ymove [expr {\
+                -[get_y $w $plot($w,Ymax_axis) $plot($w,Yscale)]\
+                        +[get_y $w $OldYmax_axis $plot($w,Yscale)] }]
+            $w.canvas move yaxis_item 0 $ymove
+            
+            draw_Yaxis $w
+        }
 
 proc ::graphtools::CanvasMark { w x y can} {
+    # Welch 2nd ed. ex 31-2
     global ::graphtools::canvas
     global ::graphtools::plot
     
+    # map from view co-ord (bindings) to canvas co-ord
     set canvas($can,x) $x; # set in CanvasMark bound to B1
     set canvas($can,y) $y
-    #    ShowMessage debug info "$x $y" ok
     
+    # Robert plotter specific
     set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
     if {[expr {abs($y-$y0)}]<4} then {
         set canvas($can,obj) [lindex [$can find withtag xslidable] 0]
         return
     }
+    # remember the object and its location
     set canvas($can,obj) [$can find closest $x $y]
-    set canvas($can,tag) [lindex [$can gettags $canvas($can,obj)] 0]
+    set canvas($can,tag) [lindex [$can gettags $canvas($can,obj)] 0]; # Robert
     set canvas($can,x) $x
     set canvas($can,y) $y
-    set canvas($can,dx) 0
-    set canvas($can,dy) 0
-    #puts$line "Mark: $canvas($can,tag)"
+    set canvas($can,dx) 0; # Robert
+    set canvas($can,dy) 0; # Robert
 }
 
 proc ::graphtools::CanvasDrag {x y can} {
+    # Welch 2nd ed. ex 31-2
     global ::graphtools::canvas
+    # map from view co-ord (bindings) to canvas co-ord
     #set x [$can canvasx $x]
     #set y [$can canvasy $y]
+    # move the current object
     set dx [expr $x-$canvas($can,x)]
     set dy [expr $y-$canvas($can,y)]
     $can move $canvas($can,obj) $dx $dy
     set canvas($can,x) $x
     set canvas($can,y) $y
 }
-
 
 proc ::graphtools::Ylabel_move {can x y} {
     global ::graphtools::canvas
@@ -452,12 +565,9 @@ proc ::graphtools::settings_axis { w} {
     
     frame $wset.buttons
     foreach item  [list \
-            [list "cancel" "Cancel" \
-            [namespace code "do_axis_settings plot $w $wset cancel"]] \
-            [list "ok" "OK" \
-            [namespace code "do_axis_settings plot $w $wset ok"]] \
-            [list "apply" "Apply" \
-            [namespace code "do_axis_settings plot $w $wset apply"]]] {
+            [list "cancel" "Cancel" [namespace code "do_axis_settings plot $w $wset cancel"]] \
+            [list "ok" "OK"  [namespace code "do_axis_settings plot $w $wset ok"]] \
+            [list "apply" "Apply"  [namespace code "do_axis_settings plot $w $wset apply"]]] {
                 set name [lindex $item 0]
                 set label [lindex $item 1]
                 button $wset.buttons.$name -text $label  \
@@ -602,7 +712,6 @@ proc ::graphtools::VarPrecRender {winId val precision} {
 }
 
 # Scales data x and y pixel co-ord to x and y data values
-
 proc ::graphtools::get_datax {w Xc Xscale} {
     global ::graphtools::plot
     expr {($Xc-$plot($w,xborder_left))*$Xscale+$plot($w,Xmin_axis)}
@@ -610,7 +719,6 @@ proc ::graphtools::get_datax {w Xc Xscale} {
 
 proc ::graphtools::get_datay {w Yc Yscale} {
     global ::graphtools::plot
-    expr {($Yc-$plot($w,yborder_top)-$plot($w,ylength))*$Yscale \
-                +$plot($w,Ymin_axis)}
+    expr {($plot($w,yborder_top)+$plot($w,ylength)-$Yc)*$Yscale +$plot($w,Ymin_axis)}
 }
 
