@@ -6,6 +6,10 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.3  2002/05/31 09:53:31  jaspert
+#Changed GetClickedObj to pick closest obj up to a certain distance
+#	--Jasper
+#
 #Revision 1.2  2002/05/30 16:17:09  jaspert
 #*** empty log message ***
 #
@@ -21,6 +25,10 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.3  2002/05/31 09:53:31  jaspert
+#Correct RCS directive #Changed GetClickedObj to pick closest obj up to a certain distance
+#Correct RCS directive #	--Jasper
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.2  2002/05/30 16:17:09  jaspert
 #Correct RCS directive #*** empty log message ***
 #Correct RCS directive #
@@ -592,23 +600,20 @@ proc ProdObj {nodeId caption} {
     }
 }
 
-# GetClickedObj: returns the object at the target position. Because
-# there is no way of getting Tcl to ignore the closest object no
-# matter how far away it is, this is what we do. We create a tiny line
-# the requisite number of pixels away from the search point then do
-# the find. If the line is found, then nothing is closer.
-
-#    Do not declare a click on an object if it was the background of
-#    a submodel
+# GetClickedObj: returns the object at the target position. We want to return
+# the closest object within a certain number of pixels. Since there is always
+# something in the background we will get that if our search radius is too 
+# small, so we gradually increase it until we find a non-background thing or
+# we reach the edge of our search radius.
 
 proc GetClickedObj { winId canx cany } {
-    set target [$winId find closest $canx $cany 10]
-    if {[string match */background/* [$winId gettags $target]]} {
-	set result 0
-    } else {
-	set result $target
+    for {set halo 0} {$halo < 10} {incr halo 2} {
+	set target [$winId find closest $canx $cany $halo]
+	if {![string match */background/* [$winId gettags $target]]} {
+	    return $target
+	}
     }
-    return $result
+    return 0
 }
 
 proc BindPopup {widget keywd} {
