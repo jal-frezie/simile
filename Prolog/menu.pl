@@ -10,7 +10,7 @@ interface of the application. It responds by:
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	undo_edit/1, redo_edit/1, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
-	off_window/1, set_style/1]).
+	off_window/1, kill_everything/0, set_style/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, maintain, 
 	state, backup, library, ame_gen, utility, 
@@ -169,7 +169,7 @@ menu_handle(Win, file, new) :-
 	set_save_status(Win, safe),
 	update_captions(Parent).
 
-menu_handle(Win, file, new_toplevel) :-
+menu_handle(_Win, file, new_toplevel) :-
 	m_update:make_desktop(_,_).
 
 menu_handle(Win, file, open) :-
@@ -837,15 +837,35 @@ off_window(Win) :-
 	Win shows_model Model,
 	(is_toplevel(Model), !,
 	    check_deletable(Win, Model),
-	    (Sub shows_model _,
-		destroy_window(Sub),
-		kill_window(Sub),
-		fail;
+	    start_progress_dialogue,
+	    superfast_delete(Model),
+	    delete_tree(Model),
 	    scrub_autosave(Model),
+	    finish_progress_dialogue,
+	    (is_toplevel(_Remains), !;
 		exit_AME,
 		user:wind_up);
 	destroy_window(Win),
-	kill_window(Win)).
+	    kill_window(Win)).
+
+kill_everything :-
+	Win shows_model Model,
+	is_toplevel(Model),
+	off_window(Win),
+	fail;
+	true.
+	
+/* If we know we are finished, no need to do all the deletion, just exit */
+wkill_everything :-
+	Sub shows_model Model,
+	    (is_toplevel(Model),
+		\+ check_deletable(Win, Model);
+	    destroy_window(Sub),
+	        kill_window(Sub),
+		scrub_autosave(Model),
+		fail);
+	exit_AME,
+	    user:wind_up.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Target) :-
@@ -894,7 +914,8 @@ do_save(Model, New_name) :-
 	/* Now build the multi-part MIME format save file */
         reassure_user("Creating MIME-format saved file"),
 	output:save_file(SaveDir, Name, Oops),
-        (Oops = [], !;
+
+        (   Oops = [], !;
             do_dialogue("Problem building output file", error, Oops, ok, _),
 	    fail),
 

@@ -1269,16 +1269,13 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm2 add command -label "PostScript graphics" \
             -command "DoWithErrors ExportPostscript $winid.canvas"
     $fm add separator
-    if {!$isTopLevel} {
-        $fm add command -label Close -command "byebye $winid" \
-                -accelerator "Alt+x"
-        AddAccelerator $winid file Close "<Alt-x>"
-    } else {
 
-        $fm add command -label Exit -command "byebye $winid" \
-                -accelerator "Alt+x"
-        AddAccelerator $winid file Exit "<Alt-x>"
-    }
+    $fm add command -label Close -command "byebye $winid" \
+	-accelerator "Alt+x"
+    AddAccelerator $winid file Close "<Alt-x>"
+    $fm add command -label Exit -command "prolog tk_kill_everything"
+
+
     set fm [menu ${winid}top.edit -tearoff 0]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
     $fm add command -label Undo -command "UnOrReDo 0" \

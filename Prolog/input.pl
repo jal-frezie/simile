@@ -10,7 +10,7 @@ sicstus_module(input, [tk_undo/1, tk_redo/1, tk_get_info/3, tk_get_params/2,
 	tk_click_obj/5, tk_click/3, tk_doubleclick/3, tk_unclick/2, 
 	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5,
 	tk_embrace/2, tk_abandon/0, tk_abandon_eqn/0,
-	compile_to_file/1, tk_off_window/1, 
+	compile_to_file/1, tk_off_window/1, tk_kill_everything/0,
 	tk_set_new_size/4, tk_change_size/4,  set_style/1]).
 
 sicstus_use_module([backup, event, menu]).
@@ -126,3 +126,6 @@ tk_off_window(Wid) :-
 	into_save_file(tk_off_window(Wid)),
 	finish_old_edit(none),
 	off_window(Wid).
+
+tk_kill_everything :-
+	kill_everything.
