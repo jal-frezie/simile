@@ -194,9 +194,9 @@ namespace eval slide139 {
 					  [$cbox cget -text]]+1]
     }
 
-    proc Open {winId smPath} {
+    proc oldOpen {winId smPath} {
         global checkStates sliderVals
-        set metaFile [ChooseFile inputs.spi "Load input values from:" 0]
+        set metaFile [ChooseFile inputs.spf "Load input values from:" 0]
         if {[llength $metaFile]} {
             set iStr [open $metaFile r]
             while {[gets $iStr savedValue] != -1} {
@@ -252,11 +252,12 @@ namespace eval slide139 {
     }
 
     proc Save {winId smPath} {
-	global helperTable
+	global helperTable simtmpdir env
 #puts "Saving submodel $smPath inputs"
         set metaFile [ChooseFile inputs.spf "Save input values as:" 1]
         if {[llength $metaFile]} {
-            set iStr [open $metaFile w]
+	    set part [file join $simtmpdir temp_out.spf]
+            set iStr [open $part w]
 
 	    set topNode $helperTable($winId,whichModel)
 	    set snip [string length $smPath]
@@ -286,6 +287,22 @@ namespace eval slide139 {
 		}
 	    }
 	    close $iStr
+	    set PartType "application/x-simile"
+	    set Description "Simile parameter file"
+	    set style attachment
+	    set newMime [mime::initialize -canonical $PartType \
+			 -header [list "Content-Disposition" $style] \
+			 -header [list "Content-Description" $Description] \
+			 -header [list "Simile-Version" $env(SIMILE_VERSION)] \
+			 -header [list "Simile-Origin" input-param-tool] \
+			 -file $part]
+	    set stream [NetOpen $metaFile w]
+	    fconfigure $stream -translation binary
+	    mime::copymessage $newMime $stream
+        # clean everything up
+	    close $stream
+	    mime::finalize $newMime
+	    file delete $part
 	}
     }
 
