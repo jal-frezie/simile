@@ -400,7 +400,7 @@ proc ScrubRun {times} {
             $navBar.runenv configure -state disable
             $window_info($winData)top.tools entryconfigure {Inspect elements} -state disable
         }
-        ToggleIOToolMenu 0
+#        ToggleIOToolMenu 0
     }
     if {[info exists running_c]} {unset running_c}
 }

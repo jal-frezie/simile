@@ -17,7 +17,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	submodel/7, bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
-	tk_add_window/8, change_title_to/3, current_edit/2, force_edit/2,
+	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
 	get_component_from_gui/4, 
 	get_text/3, change_text_to/3, 
 	inject_graphics/2, save_canvas/4,
@@ -30,7 +30,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/0, tk_update_infobox/1, 
 	tk_finish_progress_dialogue/0, tk_alter_model/0,
-	tk_scrub_run/1, tk_kill_helpers/0,
+	tk_scrub_run/2, tk_kill_helpers/0,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	set_interp_menu_state/1,
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
@@ -225,8 +225,9 @@ zap_route(Wid, Obj, Coords) :-
 zap_bowtie(Wid, Obj, Coords) :-
 	safe_tcl_eval(['MoveBowtie', Wid, Obj, br(Coords)], _).
 		
-tk_add_window(Wid, Title, [L, T, R, B], Cname, BG, Scale, InitDepths, IsTL) :-
-	safe_tcl_eval(['MainWindowDraw', Wid, br(write(Title)), 
+tk_add_window(Wid, TopNode, Title, [L, T, R, B], Cname, BG, Scale, InitDepths,
+	      IsTL) :-
+	safe_tcl_eval(['MainWindowDraw', TopNode, Wid, br(write(Title)), 
 			L, T, R, B, BG, Scale, IsTL | InitDepths],
 		      CanvasString),
 	name(Cname, CanvasString).
@@ -403,8 +404,8 @@ update_tk_variable(Nodename, Val, Time) :-
 tk_alter_model :-
 	safe_tcl_eval(['AlterModel'], _).
 
-tk_scrub_run(Times) :-
-	safe_tcl_eval(['ScrubRun', Times], _).
+tk_scrub_run(Node, Times) :-
+	safe_tcl_eval(['ScrubRun', Node, Times], _).
 	
 tk_kill_helpers :-
 	safe_tcl_eval(['DestroyHelpers'], _).

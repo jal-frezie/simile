@@ -208,6 +208,15 @@ menu_handle(Win, file, new) :-
 	set_save_status(Win, safe),
 	update_captions(Parent).
 
+menu_handle(_Win, file, new_toplevel) :-
+	m_update:make_desktop(_,_).
+
+menu_handle(_Win, open_toplevel, Name) :-
+	check_if_already_open(Name), !;
+	m_update:make_desktop(Parent, _),
+	stick_model_in(Parent, Name, reopen),
+	warn_runtime.
+
 menu_handle(Win, file, open) :-
 	Win shows_model Parent,
 	check_deletable(Win, Parent),
@@ -299,7 +308,7 @@ menu_handle(Win, file, RunCmd) :-
 	Win shows_model Node,
 	start_progress_dialogue,
 	/* Compile the thing into whatever, load it */
-	scrub_run(0),
+	scrub_run(Node, 0),
 	use_temp_dir(Dir),
 	(rebuild_code(Lang, Node, Dir, Interp), !,
 	    /* no much point going for run */
@@ -310,7 +319,7 @@ menu_handle(Win, file, RunCmd) :-
 			output:prepare_tcl_execution(Interp)),
 		     (do_dialogue("Compilation or startup error", error,
 				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
-			 scrub_run(0))),
+			 scrub_run(Node, 0))),
 	    set_running_model(Node);
 	true),
 	(retract(new_exec_for(_Any)), !,
@@ -953,7 +962,7 @@ flip_innards(Node_name, Action) :-
 
 rebuild_code(Lang, Node, ProgFileDir, Interp) :-
 	(interp_for(Node, Interp), !;
-	    output:safe_tcl_eval(['KickoffRunInterp'], InterpStr),
+	    output:safe_tcl_eval(['KickoffRunInterp', Node], InterpStr),
 	    name(Interp, InterpStr),
 	    assert(interp_for(Node, Interp))),
 	(on_exception(Whoops, compile(Lang, Node, ProgFileDir, Interp), true),
@@ -961,7 +970,7 @@ rebuild_code(Lang, Node, ProgFileDir, Interp) :-
 	    Whoops = compilation_failed),
 	(Whoops = yes;
 	    show_error(Node, Whoops),
-	    scrub_run(0),
+	    scrub_run(Node, 0),
 	    fail).
 
 show_error(Model, Lossage) :-

@@ -47,22 +47,23 @@ if {[string match windows $tcl_platform(platform)]} {
 set equationbar(current_action) null
 
 proc NewTopLevel {} {
-    set newInstance [interp create]
-    $newInstance eval package require Tk 
-    $newInstance eval set IAmASlave 1
-    $newInstance eval set argc 0
-    $newInstance eval source ../Run/simile.tcl
-#    MenuSelect dummy file new_toplevel
+    MenuSelect dummy file new_toplevel
+#    set newInstance [interp create]
+#    $newInstance eval package require Tk 
+#    $newInstance eval set IAmASlave 1
+#    $newInstance eval set argc 0
+#    $newInstance eval source ../Run/simile.tcl
+
 }
 
 proc OpenTopLevel {model} {
-#    MenuSelect dummy open_toplevel $model
-    set newInstance [interp create]
-    $newInstance eval package require Tk 
-    $newInstance eval set IAmASlave 1
-    $newInstance eval set argc 1
-    $newInstance eval [list set argv $model]
-    $newInstance eval source ../Run/simile.tcl
+    MenuSelect dummy open_toplevel $model
+#    set newInstance [interp create]
+#    $newInstance eval package require Tk 
+#    $newInstance eval set IAmASlave 1
+#    $newInstance eval set argc 1
+#    $newInstance eval [list set argv $model]
+#    $newInstance eval source ../Run/simile.tcl
 }
 
 proc AttackGlobalVariable {array elt val} {
@@ -147,19 +148,22 @@ proc do_in_interp {interp args} {
     $interp eval $args
 }
 
-proc KickoffRunInterp {} {
+proc KickoffRunInterp {node} {
     global runStatus userinfo
 
     set newInterp [interp create]
     $newInterp alias PrefValue PrefValue
     $newInterp alias GetTransTable GetTransTable
     $newInterp eval source ../Run/runmodel.tcl
-    set runStatus(interp) $newInterp
+    set runStatus($node,interp) $newInterp
     return $newInterp
 }
 
-proc ScrubRun {times} {
-# do inter-interp communication
+proc ScrubRun {node times} {
+    global runStatus
+    if {[info exists runStatus($node,interp)]} {
+	$runStatus($node,interp) eval ScrubRun $times
+    }
 }
 
 proc ControlDraw {prologVersion} {
@@ -770,6 +774,7 @@ proc ClickObj { x y winId X Y action} {
     global equationbar
     global pushedbutton
     global runStatus
+    global window_info
     
 #puts "$action it!"
 
@@ -817,14 +822,15 @@ proc ClickObj { x y winId X Y action} {
     
     set node [ExtractPrologName $winId $target]
     set caption [ExtractCaption $winId $node]
-    if {[info exists runStatus(interp)]} {
-	if {[$runStatus(interp) eval ProdObj $node $caption]} {
+    set topNode $window_info($winId,top_node)
+    if {[info exists runStatus($topNode,interp)]} {
+	if {[$runStatus($topNode,interp) eval ProdObj $node $caption]} {
 	   return
 	    # IO tool took the click, so do no more
 	}
     }
     if {[string compare $pushedbutton snap]==0} then {
-        snap $node
+        snap $topNode $node
     } else {
         if {[string equal click $action]} {
             set obj [GetCaptionItem $winId $node]
@@ -1033,7 +1039,7 @@ proc ChangeRegion {w l t r b} {
 #                                                                     #
 #######################################################################
 
-proc MainWindowDraw {winName winTitle wl wt wr wb \
+proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
             colour initialScale isTopLevel args} {
     global window_info looks env custom
     set c [ModelWindow $winName]
@@ -1046,8 +1052,9 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
             [list byebye $winName]
     
     AddMainMenu $winName [expr $wr-$wl] $isTopLevel $args
-    AddCanvasBindings $c
+    AddCanvasBindings $c $topNode
     
+    set window_info($c,top_node) $topNode
     set window_info($c,scale) $initialScale
     set window_info($c,is_top_level) $isTopLevel
     
@@ -1232,7 +1239,7 @@ proc DoingSelection {winName} {
 		&& [string match [focus] $winName.canvas]]
 }
 
-proc AddCanvasBindings { c } {
+proc AddCanvasBindings { c topNode } {
     bind $c <Button-1> {ClickObj %x %y %W %X %Y click}
     bind $c <Control-Button-1> {ClickObj %x %y %W %X %Y ctrl}
     # Doubleclicks now bound to objects not canvas
@@ -1261,14 +1268,16 @@ proc AddCanvasBindings { c } {
     
     # Stuff to put a popup help window on a canvas item
     # (could use tag 'has_info' for this)
-    $c bind has_info <Enter> [list QueuePopup AddEqnPopup %x %y %W %X %Y]
+    $c bind has_info <Enter> [list QueuePopup AddEqnPopup $topNode \
+				  %x %y %W %X %Y]
     $c bind has_info <Leave> RemovePopup
 }
 
-proc AddEqnPopup {x y winId X Y} {
-    global pushedbutton equationbar
+proc AddEqnPopup {topNode x y winId X Y} {
+    global pushedbutton equationbar errorInfo
     set doDesc [PrefValue custom(compDescPop) compDescPop]
-    set doVal [expr [HasValues] && [PrefValue custom(compValPop) compValPop]]
+    set doVal [expr [HasValues $topNode] && \
+		   [PrefValue custom(compValPop) compValPop]]
     set doCmt [PrefValue custom(compCmtPop) compCmtPop]
     if {[string compare select $pushedbutton] || \
                 !$doDesc && !$doVal && !$doCmt} {
@@ -1310,18 +1319,9 @@ proc AddEqnPopup {x y winId X Y} {
             AddPopupMessage $fromProlog #ffe0c0 0
         }
         if {$doVal} {
-#	    set trans [GetFromProlog tk_get_info('$winId',$plName,types)]
-	    if {[catch {GetModelValue $plName} mVal]} {
-		set missing [lindex [split $mVal \"] 1]
-		set value \
-		    "Missing value: $missing"
-	    } else {
-		set value [lindex $mVal 0]
-#puts "trans $trans value $value"
-#		if {![string match novalue $value]} {
-#		    set value [TransEnums $trans $value]
-#		}
-# hai2mmii (or prolog) should take care of translation...
+	    if {[catch {GetModelValue $topNode $plName} value]} {
+		set missing [lindex [split $value \"] 1]
+		set value "Missing value: $missing"
 	    }
             AddPopupMessage $value \#ffffc0 1
             # we might want to prettify this a bit first
@@ -1344,12 +1344,12 @@ proc AddPopupMessage {text colour isValue} {
     }
 }
 
-proc HasValues {} {
+proc HasValues {node} {
     global runStatus
-    if {![info exists runStatus(interp)]} {
+    if {![info exists runStatus($node,interp)]} {
 	return 0
     } else {
-	return [$runStatus(interp) eval info exists running_c]
+	return [$runStatus($node,interp) eval info exists running_c]
     }
 }
 
@@ -2607,7 +2607,7 @@ proc restore_equation {winId bar} {
 
 
 ############################## snap: start ###################################
-proc snap {node} {
+proc snap {topNode node} {
     global runState
     
     if {[catch {set full_label [GetCaptionPathFromId $node]}]} {
@@ -2640,7 +2640,7 @@ proc snap {node} {
     pack $w.xscroll -side bottom -fill x
     pack $w.text -expand yes -fill both
     
-    set values(1) [lindex [GetModelValue $node] 0]
+    set values(1) [GetModelValue $topNode $node]
     set length(1) [llength $values(1)]
     
     # Find number of levels of nesting
@@ -2760,12 +2760,19 @@ proc snap_down3 {w values} {
     }
 }
 
-proc GetModelValue {node} {
+proc GetModelValue {topNode node} {
     global runStatus
 
-    if {![info exists runStatus(interp)]} {
+    if {![info exists runStatus($topNode,interp)]} {
 	return novalue
     } else {
-	return [$runStatus(interp) eval GetModelValue $node]
+	set value [$runStatus($topNode,interp) eval GetModelValue $node]
+	if {![string match novalue $value]} {
+	    set trans [GetTransTable $node]
+	    return [$runStatus($topNode,interp) eval \
+			[list TransEnums $trans [lindex $value 0]]]
+	} else {
+	    return novalue
+	}
     }
 }

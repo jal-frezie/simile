@@ -291,10 +291,11 @@ namespace eval $keyValue {
     }
     
     proc GetTransVals {varId} {
+	# this is not right, it should only get the trans table once
 	global userinfo
 	set value [lindex [GetModelValue $varId] 0]
 	if {$userinfo(Version) >= 4.0} {
-	    set trans [GetFromProlog tk_get_info(dummy,$varId,types)]
+	    set trans [GetTransTable $varId]
 	    return [TransEnums $trans $value]
 	} else {
 	    return $value

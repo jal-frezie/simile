@@ -606,7 +606,9 @@ doubleclick_on(Edit_thing) :-
 	    [unify(Wid), build([ghost_link, influence, variable, flow, 
 				compartment, submodel, caption, sections]), 
 	     build(Depths)]),
-	    new_window_for(Edit_thing, NewWin, Depths, 0),
+	    contains(TopNode, Edit_thing),
+	    is_toplevel(TopNode),
+	    new_window_for(Edit_thing, TopNode, NewWin, Depths, 0),
 	    all(event, set_display_depth,
 		[unify(NewWin),
 		build([ghost_link, influence, variable, flow, compartment,
@@ -710,11 +712,11 @@ spread_colour(Node, NewDims) :-
 	(normalize_ghosts_etc(Hit); */
 	fail; true.
 
-new_window_for(Submodel, Canvas_name, InitDepths, IsTopLevel) :-
+new_window_for(Submodel, TopNode, Canvas_name, InitDepths, IsTopLevel) :-
 	utility:unique_name('.mswindow', Topwin),
 	window_size_for(Submodel, Sub_extent, Scale),
 	get_window_colour(Submodel, Colour),
-	add_window(Topwin, Submodel, Sub_extent, Canvas_name, 
+	add_window(Topwin, TopNode, Submodel, Sub_extent, Canvas_name, 
 		Colour, Scale, InitDepths, IsTopLevel),
 	create_window(Canvas_name, Submodel),
 	make_current(Canvas_name),
