@@ -88,7 +88,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     #    wm geometry $winName +0+84
     
     # set the display depths to those we recorded
-#ShowMessage debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
+    #ShowMessage debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
     set cats {ghost_link influence variable flow \
                 compartment submodel caption sections}
     for {set depthParam 0} {$depthParam < [llength $args]} {incr depthParam} {
@@ -179,7 +179,7 @@ proc SetSpace {c w h} {
     set cy $window_info($c,height)
     set window_info($c,width) [expr $w - 4]
     set window_info($c,height) [expr $h - 4]
-#    ShowMessage debug info "New size is $w $h" ok
+    #    ShowMessage debug info "New size is $w $h" ok
     RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
             [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
 }
@@ -241,7 +241,7 @@ proc DoZoom { winId factor toProlog} {
 
 proc ZoomImage {winId which factor fontor} {
     #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
-    global window_info looks 
+    global window_info looks
     
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
@@ -262,8 +262,8 @@ proc ZoomImage {winId which factor fontor} {
                     set newTextSize 1
                 }
                 $winId itemconfigure $object -font \
-                            [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-                            [lindex $fontData 2] $newTextSize]
+                        [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+                        [lindex $fontData 2] $newTextSize]
             } line {
                 $winId itemconfigure $object \
                         -width [AdjustWidth $winId $object $factor]
@@ -301,18 +301,18 @@ proc ZoomImage {winId which factor fontor} {
 #     scan $font {-Adobe-%[^-]-%[^-]-%[^-]-Normal--*-%d-*-*-*-*-*-*} \
 #         family weight style textsize
 #     return [list $family $weight $style $textsize]
-# 
+#
 # }
-# 
+#
 # proc AssembleFont {family weight style textsize} {
 #     return [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
-#             $family $weight $style $textsize]   
+#             $family $weight $style $textsize]
 # }
 ################################################################################
 
 proc AssembleFont {family weight style textsize} {
     return [list -family $family -weight $weight -slant $style \
-		-size [expr round($textsize/12.0)]]
+            -size [expr round($textsize/12.0)]]
 }
 
 proc ExtractFontData {font} {
@@ -333,12 +333,12 @@ proc ExtractFontData {font} {
 proc AdjustWidth {winId object factor} {
     if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
                 tag oldWidth]<1} {
-	if {[string match text [$winId type $object]]} {
-	    set currentFont [$winId itemcget $object -font]
-	    set oldWidth [expr [font actual $currentFont -size]*12.0]
-	} else {
-	    set oldWidth [$winId itemcget $object -width]
-	}
+        if {[string match text [$winId type $object]]} {
+            set currentFont [$winId itemcget $object -font]
+            set oldWidth [expr [font actual $currentFont -size]*12.0]
+        } else {
+            set oldWidth [$winId itemcget $object -width]
+        }
     } else {
         $winId dtag $object $tag
     }
@@ -463,7 +463,7 @@ proc AddFindMenu {canvas menu} {
     AddAccelerator [winfo parent $canvas] edit "Find..." "<Control-f>"
     $menu add command -label "Find next" -command "NextCaption $canvas" \
             -accelerator "F3"
-            AddAccelerator [winfo parent $canvas] edit "Find next" "<F3>"
+    AddAccelerator [winfo parent $canvas] edit "Find next" "<F3>"
 }
 
 proc FindCaption {canvas} {
@@ -562,8 +562,8 @@ proc AddHelperSublist {fm title ct} {
     set helperList [glob -nocomplain *.tcl]
     foreach helperApp [lsort $helperList] {
         if [catch {source $helperApp} wibble] {
-	    # done at startup -- make sure dialog is not concealed
-	    wm withdraw .
+            # done at startup -- make sure dialog is not concealed
+            wm withdraw .
             ShowMessage "Error loading I/O tool" warning \
                     "I/O tool [pwd]/$helperApp had a $wibble" ok
         } else {
@@ -645,7 +645,7 @@ proc RunDialog {canvas} {
     set defHelper $helperTable(RunControl)
     set runState(modelRunning) 2
     set runState(activeWindow) $canvas
-
+    
     if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
                 [array get helperTable] spare helperId]} {
         kill_helper_window $helperId
@@ -788,11 +788,11 @@ proc CanvasBindPopup {canvas widget keywd} {
 
 proc QueuePopup {args} {
     global popper
-#puts "queueing $cmd"
-# Only allow one cmd in pipeline at a time -- two added if dragging an
-# incomplete obj which Prolog then deletes (Tk bug workaround - 10 points)
+    #puts "queueing $cmd"
+    # Only allow one cmd in pipeline at a time -- two added if dragging an
+    # incomplete obj which Prolog then deletes (Tk bug workaround - 10 points)
     if {[info exists popper]} {
-	after cancel $popper
+        after cancel $popper
     }
     set popper [after 500 $args]
 }
@@ -809,7 +809,7 @@ proc AddEqnPopup {x y winId X Y} {
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set target [GetClickedObj $winId $canx $cany 2]
-#puts "Adding for $target"
+    #puts "Adding for $target"
     #    set target [$winId find closest $canx $cany 1]
     #puts "targeting $target"
     if {$target} {
@@ -937,7 +937,7 @@ proc PostPopup {X Y} {
 
 proc RemovePopup {args} {
     global popper
-#puts "Removing popup"
+    #puts "Removing popup"
     if {[winfo exists .popup]} {
         destroy .popup
     }
@@ -976,7 +976,7 @@ proc FixSize {c} {
     set win [winfo parent $c]
     wm state $win normal
     # seems necessary for console to hide
-#    catch {console hide}
+    #    catch {console hide}
     if {[file exists $custom(prefDir)/layout]} {
         set stream [open $custom(prefDir)/layout r]
         gets $stream whetherMaxed
@@ -1003,7 +1003,7 @@ proc DestroyHelpers {} {
     if {[winfo exists .mre]} {
         ::RunEnv::Destroy
     } else {
-	KillHelpers
+        KillHelpers
     }
 }
 
@@ -1132,7 +1132,7 @@ proc AlterModel {} {
 }
 
 proc ScrubRun {times} {
-    global runState running_c model_id instance_id
+    global runState running_c model_id instance_id window_info
     #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
     #	error Bombed
     #    }
@@ -1154,6 +1154,13 @@ proc ScrubRun {times} {
             namespace delete ::AME_model<>
         }
         unset model_id
+        foreach winData [array name window_info *,parent] {
+            set toolBar $window_info($winData).toolSlot.toolbar
+            $toolBar.snap configure -state disable
+            set navBar $window_info($winData).toolSlot.navbar
+            $navBar.runenv configure -state disable
+            $window_info($winData)top.tools entryconfigure {Inspect elements} -state disable
+        }
         ToggleIOToolMenu 0
     }
     if {[info exists running_c]} {unset running_c}
@@ -1172,13 +1179,6 @@ proc start_run {winId} {
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
         set mre [Makemre $winId]
-        foreach winData [array name window_info *,parent] {
-#            set toolBar $window_info($winData).toolSlot.toolbar
-#            $toolBar.snap configure -state active
-            set navBar $window_info($winData).toolSlot.navbar
-            $navBar.runenv configure -state active
-#            $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
-        }
     }
     if {[info exists runState(currentTime)]} {
         if {$runState(execTime) != $runState(currentTime)} {
@@ -1211,6 +1211,13 @@ proc start_run {winId} {
     } else {
         
         ToggleIOToolMenu 1
+    }
+    foreach winData [array name window_info *,parent] {
+        set toolBar $window_info($winData).toolSlot.toolbar
+        $toolBar.snap configure -state active
+        set navBar $window_info($winData).toolSlot.navbar
+        $navBar.runenv configure -state active
+        $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
     }
     set runState(reloadParams) 1
     
@@ -1287,7 +1294,7 @@ proc build_tcl_program {winId} {
     
     set model_id 0
     if {[start_run $winId]} {
-	RunDialog "Current model"
+        RunDialog "Current model"
     }
 }
 
@@ -1303,7 +1310,7 @@ proc update_c_executable {winId} {
     #    ShowMessage debug info "model instance $instance_id created" ok
     
     if {[start_run $winId]} {
-	RunDialog "Current model"
+        RunDialog "Current model"
     }
 }
 
@@ -1407,14 +1414,14 @@ proc compile_c {workingDir modelPath} {
     set oldDir [pwd]
     cd $workingDir$modelPath
     if {[PrefValue custom(hackBreak) hackBreak]} {
-	ShowMessage {Code editing opportunity} info \
-	"About to compile model.cpp in [pwd]" ok
+        ShowMessage {Code editing opportunity} info \
+                "About to compile model.cpp in [pwd]" ok
     }
     set TARGET model[info sharedlibextension]
     
-
-
-
+    
+    
+    
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
@@ -1487,11 +1494,11 @@ proc load_c_stub {} {
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-    # maybe we built the package index for a different os, try again
-	catch {pkg_mkIndex ../System/lib/Stubs *[info sharedlibextension]}
-	if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-	    error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
-	}
+        # maybe we built the package index for a different os, try again
+        catch {pkg_mkIndex ../System/lib/Stubs *[info sharedlibextension]}
+        if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
+            error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
+        }
     }
     loadcommands
 }
