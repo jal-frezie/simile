@@ -32,11 +32,14 @@ proc TraceObj {winId x y} {
 }
 
 proc ModelWindow {winName} {
-
+global tcl_platform
     menu ${winName}top
     toplevel $winName -menu ${winName}top
-    wm iconbitmap $winName @../Images/dribble.xbm
-
+    
+    switch $tcl_platform(platform) {
+        windows { wm iconbitmap $winName -default ../Run/similev2.ico }
+        unix { wm iconbitmap $winName @../Images/dribble.xbm}
+    }
     # Create a scrollable canvas
     set c [canvas $winName.canvas \
 	       -confine 1 \
@@ -450,9 +453,9 @@ proc MakeHelperMenu {} {
 	$fm add command -label "Save" -command SaveView
 	$fm add command -label "Clear" -command ClearView
 	$fm add command -label "Close" -command KillHelpers
-    $fm add command -label "Parameters..." \
-	    -command {FileParamDialogue 1 [focus]}
-	set oldDir [pwd]
+    $fm add command -label "Parameters..." \
+    		    -command {FileParamDialogue 1 [focus]}
+    set oldDir [pwd]
 	cd ../IOTools
 	AddHelperSublist $fm "Add tool" 2
 	cd $oldDir
