@@ -1433,7 +1433,7 @@ proc ContextSensitiveHelp {context page} {
         package require winhelp
         winhelp $context ../Help/simile.chm $page
     } elseif { [string match Darwin $tcl_platform(os)] } {
-        exec java -classpath . OpenUrl $page
+        exec open -a "Help Viewer" ../Help/$page
     } else {
         set url [pwd]/../Help/$page
         expr {
@@ -2018,5 +2018,6 @@ proc NotifyOverLimit {limit} {
     tkwait variable ack
     destroy .notify
 }
+
 
 
