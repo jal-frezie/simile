@@ -1,4 +1,4 @@
-#!/usr/bin/wish
+#!/usr/local/ActiveTcl/bin/wish
 
 # SIMILE batch file
 # Make sure the first line refers to a version of TclTk with shared libraries
