@@ -109,7 +109,9 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	(check_if_already_open(Name), !;
 	 set_model_file(Parent, Name),
 	    is_toplevel(Parent),
-	    get_default_export_name(Parent, "", NodeName),
+	    get_default_export_name(Parent, "", DefName),
+	    find_all_comps(Root, Parent),
+	    m_update:unique_name_for_new(Root, DefName, NodeName),
 	    add_parameter(Parent, 0, name, NodeName),
 	    fail);
 	use_temp_dir(LocalDir),

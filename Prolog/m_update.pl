@@ -1601,7 +1601,7 @@ make_desktop(Desktop, Canvas_name) :-
         state:get_initial_window_size(X, Y),
         image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
         image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
-        backup:initialize_ring(Desktop),
+	initialize_ring(Desktop),
         InitDepths=[0,32,32,32,32,32,32,showAll],
         event:new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
         all(state, set_display_depth, [unify(Canvas_name),
