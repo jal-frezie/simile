@@ -455,18 +455,22 @@ process. */
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 ParamList, ParseError) :-
 	reverse(IndxCount, IndxSzs),
-	append(InterInputs, ExpInters, AllInputs),
+	append(InterInputs, [input_link(_, DimL, '/dest/', DLoops,_)
+			    | ExpInters], AllInputs),
 	
 	replace_subexps(Equation, dialogue, expand_params,
-			dim_data(_DimL, AllInputs), top_down, _ParamSubs,
+			dim_data(DimL, AllInputs), top_down, _ParamSubs,
 			FullExpr),
+	get_ground_part(DimL, DimDG),
+	length(DimDG, LenD),
+	length(DimDV, LenD),
+	make_inds_for(DimDV, DLoops, _),
 	length(ExpInters, _), !, /* close list end */
-	all(dialogue, set_param_dims, [build(ExpInters)]),
-	(member(input_link(_, DimG, Param, _, PDims), ExpInters),
-	    \+ Param = '/dest/',
+	(member(input_link(_, DimP, Param, _, PDims), ExpInters),
 	    (var(PDims), !,
 		decode_error(undefined_parameter(Param), ParseError);
-	    build_array(1, DimG, Array),
+	    get_ground_part(DimP, DimG),
+		build_array(1, DimG, Array),
 		check_param_brackets("explicit intermediate result",
 					 Param, Array, ParseError)), !;
 
@@ -535,32 +539,37 @@ check_dim_match(P, Q) :- P=Q; Q=0.
 get3rd(input_link(_,_,A,_,_), A).
 
 expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
-	(get_solo_list_depth(Param, _),
+	(get_solo_list_depth(Param, Depth),
 	/* when making dummy links for explicit intermediate results, check
 	the 1st field (influence id) is a free var, and if so, use the
 	4th field to hold the dims */
-	member(input_link(Link, LRefs, Param, IDims, Units), AllInputs), !,
+	member(input_link(Link, LRefs, Param, Loops, Units), AllInputs), !,
 	    (nonvar(Link), !,
 		analyze_array(Units, Base, Dims),
 		(units:get_conversion(_, Base, Base, _), !,
 		    Type = real;
 		Type = Base),
-		make_inds_for(Dims, Loops, Inds),
-		/* pass dims up the recursion loop */
-		length(Dims, L),
-		list_of(x, L, DimL);
-	    IDims = Inds-Loops,
-		DimL = LRefs),
-	    DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true);
+		make_inds_for(Dims, PLoops, Inds);
+	    (Param = '/dest/', !,
+		    get_ground_part(LRefs, GRefs),
+		    length(GRefs, L);
+		m_update:build_array(any, Dims, Depth),
+	        make_inds_for(Dims, PLoops, Inds)),
+		    PLoops = Loops),
+	    /* pass dims up the recursion loop */
+	    length(Dims, L),
+	    list_of(x, L, DimB),
+	    append(DimB, _, DimL),
+	    DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, true);
 	Param = (ExpInt=Defn,Use),
-	    member(input_link(_,SubL, ExpInt, _-Loops, something),
+	    member(input_link(_,SubL, ExpInt, Loops, something),
 		   AllInputs), !,
-	    replace_subexps(Defn, dialogue, expand_params,
-			     dim_data(SubL, AllInputs), top_down, _,
-			     DefnExpr),
 	    replace_subexps(Use, dialogue, expand_params,
 			     dim_data(DimL, AllInputs), top_down, _,
 			     UseExpr),
+	    replace_subexps(Defn, dialogue, expand_params,
+			     dim_data(SubL, AllInputs), top_down, _,
+			     DefnExpr),
 	    DoneExpr = (param(arr(_,ExpInt,_),_, Loops,_,_)=DefnExpr,UseExpr);
 	Param =.. [Cumulative, Item],
 	    member(Cumulative, [sum, product, least, greatest, any, all]), !,
@@ -573,8 +582,10 @@ expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 	    DParam =.. [do | Param],
 	    length(DoneExpr, N),
 	    DDone =.. [do | DoneExpr];
-	 Param = makearray(DParam, Count),
-	    DoneExpr = makearray(DDone, Count)),
+	 Param = makearray(Elt, Count),
+	    DParam = do(Elt, Count),
+	    DDone = do(EltExpr, CountExpr),
+	    DoneExpr = makearray(EltExpr, CountExpr)),
 	    replace_subexps(DParam, dialogue, expand_params,
 			    dim_data(SubL, AllInputs), top_down, _,
 			    DDone),
