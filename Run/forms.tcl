@@ -1533,7 +1533,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
 
     #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
 
-    $widget insert end "${vartype} " typtag
+    $widget insert end "[string totitle ${vartype}] " typtag
     $widget insert end " " descrtag
     $widget image create end -image equationlist(${vartype}img)
     $widget insert end " " descrtag
