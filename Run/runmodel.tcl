@@ -811,15 +811,24 @@ proc AddEqnPopup {x y winId X Y} {
         set plName [ExtractPrologName $winId $target]
         if {$doDesc} {
             set fromProlog [GetFromProlog tk_get_info('$winId',$plName,eqn)]
+	    set link " = "
             if {![string length $fromProlog] || \
                         [string match $fromProlog <none>]} {
-                set fromProlog \
-                        [GetFromProlog tk_get_info('$winId',$plName,desc)]
-            }
+		set fromProlog \
+		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
+		set link " : "
+	    }
+	    set caption [GetText $winId $plName]
+	    if {[string equal /no_caption/ $caption]} {
+		set desc $fromProlog
+	    } else {
+		set desc $caption$link$fromProlog
+	    }
             # after going Prolog, check popup window still there
             # note colour etc are not comments though they look like them in emacs
+	    
             if {![winfo exists .popup]} return
-            AddPopupMessage $fromProlog #c0ffc0 0
+            AddPopupMessage $desc #c0ffc0 0
         }
         if {$doCmt} {
             set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]

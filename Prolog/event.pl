@@ -26,7 +26,9 @@ get_info(_Wid, Comp, eqn) :-
 
 get_info(Wid, Comp, desc) :-
 	find_type(Comp, LType),
-	(setof(Dest, m_update:connects(Comp, Source, Dest), Dests),
+	((LType = influence, !,
+	    setof(Dest, m_update:connects(Comp, Source, Dest), Dests);
+	  m_update:connects(Comp, Source, Dests)),
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
 	    Wid shows_model Context,
@@ -37,9 +39,9 @@ get_info(Wid, Comp, desc) :-
 			    EqnStr),
 	    name(Eqn, EqnStr);
 	LType = submodel,
-	    image:make_header(Comp, Eqn);
-	caption_for(Comp, Capt),
-	    append_atoms([LType, ': ', Capt], Eqn)),
+	    image:quick_file(Comp, EqnStr),
+	    name(Eqn, EqnStr);
+	Eqn = LType),
 	callback(br(write(Eqn))).
 
 get_info(_, Comp, comment) :-
@@ -126,8 +128,8 @@ click_obj(Xpt, Ypt, Name, CD) :-
 click_text(Xpt, Ypt, Name, CD) :-
 	get_mode(select),
 	    \+ (get_highlit_obj(N, Name), N<2), !,
-	    give_focus(Name),
-	    advance_phase_to(text_grabbing);
+	    finish_old_edit(Name),
+	    give_focus(Name);
 	click_obj(Xpt, Ypt, Name, CD),
 	    (get_phase(moving); get_phase(moving_border(_))),
 	    advance_phase_to(moving_text).
@@ -285,17 +287,11 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 
 click_on([Xpt, Ypt], Moving_obj, CD) :-
 	find_type(Moving_obj,TargetSort),
-	(get_mode(copy),
-		TargetSort = submodel,
-		advance_phase_to(action_choice);
 	get_mode(ghost),
-		\+ is_ghost(Moving_obj),
-		get_style(Style),
-		member([Style, Ghostable], [[sd, [compartment, variable]],
-			[engineering, [compartment, function]],
-			[generic, [compartment, variable, function]]]),
-		member(TargetSort, Ghostable),
-		advance_phase_to(action_choice)),
+	\+ is_ghost(Moving_obj),
+	member(TargetSort, [compartment, variable]),
+	advance_phase_to(action_choice),
+		
 	highlight(Moving_obj, 1),
 	set_moving_obj(Moving_obj),
 	get_shape(Moving_obj, bounding_box, [L,T,R,B]), !,
@@ -435,11 +431,11 @@ finish_old_edit(NextEdit) :-
 			sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.", [OldName, Name, Dodgy], Blurb)), !,
 		    sicstus_format_to_chars("Error renaming node ~a.",
 					    [OldName], Head),
-		    do_dialogue(Head, warning, Blurb, ok, _),
 		    /* Put old caption back; this is turned on for now */
 		    update_captions(Prev_highlight),
+		    do_dialogue(Head, warning, Blurb, ok, _),
 %	            highlight(Prev_highlight, 0),
-		    give_focus(Prev_highlight),
+%		    give_focus(Prev_highlight),
 		    fail;
 		change_name(RenamedNode, Name),
 		    finish_move(Parent)));
@@ -909,17 +905,16 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 
 drag_to(Xpt, Ypt, Target) :-
 	get_phase(dragging),
-	(get_mode(copy); 
 	get_mode(ghost),
-		(get_highlit_obj(2, OldTarget),
-			normalize(OldTarget),
-			fail;
-		find_type(Target, submodel), !;
-		ghost_type(Start, _, _),
-			\+ Target = Start,
-			\+ find_ghosts(Target, _),
-			/* find_type(Target, Type), Allow target''s type to differ */ 
-			highlight(Target, 2))),
+	(get_highlit_obj(2, OldTarget),
+	    normalize(OldTarget),
+	    fail;
+	 find_type(Target, submodel), !;
+	    ghost_type(Start, _, _),
+	    \+ Target = Start,
+	    \+ find_ghosts(Target, _),
+	    /* find_type(Target, Type), Allow target''s type to differ */ 
+	    highlight(Target, 2)),
 	get_border_offsets(Loff,Toff,Roff,Boff),
 	L is Xpt-Loff,
 	T is Ypt-Toff,
@@ -1061,7 +1056,6 @@ multi_level_mode :-
 	get_mode(add),
 		get_adding_object(Type),
 		Type is_class_of_sort line;
-	get_mode(copy);
 	get_mode(ghost);
 	get_mode(delete).
 
@@ -1114,7 +1108,7 @@ adjust_link_backwards(Target, Way, Also) :-
 	    change_delete_status(Prev, off);
 	 Way = on,
 	    \+ (m_class:sequence(Prev, Other),
-		   \+ doomed([Other])),
+		   \+ doomed(Other)),
 	    change_delete_status(Prev, on)),
 	 (Also = Prev; adjust_link_backwards(Prev, Way, Also)).
 	
@@ -1125,12 +1119,12 @@ adjust_link_forwards(Target, Way, Also) :-
 	 Way = off,
 	    m_class:connects(Next, _, Mid),
 	    get_host(Mid, Finish),
-	    \+ doomed([Finish]),
+	    \+ doomed(Finish),
 	    change_delete_status(Next, off)),
 	(Also = Next; adjust_link_forwards(Next, Way, Also)).
 	
 change_delete_status(Target, Way) :-
-	(doomed([Target]), !,
+	(doomed(Target), !,
 	    Way = off,
 	    normalize(Target);					
 	Way = on,
@@ -1151,16 +1145,17 @@ depends_on_links(Damage) :-
 keep_only_if_links_stay(Damage) :-
 	setof(NeedsIt, find_all_links(Damage, NeedsIt), NeedIt),
 	member(HasIt, NeedIt),
-	\+ doomed([HasIt]), !,
+	\+ doomed(HasIt), !,
 	normalize(Damage);
 	highlight(Damage, 2).
 
 match_delete_status(Ends, Way) :-
-	doomed(Ends), !, Way = on;
+	Way = on;
+	member(End, Ends),
+	doomed(End), !, Way = on;
 	Way = off.
 
-doomed(Ends) :-
-	member(End, Ends),
+doomed(End) :-
 	get_highlit_obj(L, End),
 	(L<2; \+ depends_on_links(End), L<3).
 
@@ -1473,28 +1468,6 @@ unclick_obj :-
 	(\+ retract(moved_something), !;
 	finish_move(Submodel)).
 
-unclick_obj :-
-	get_mode(copy),
-	get_phase(dragging),
-	initialize_phase,
-	get_moving_obj(Start),
-	get_shape(Start, internal_extent, Inside),
-	normalize(Start),
-	get_incomplete(Box),
-	remove_old_rubberband,
-	get_current_node(Parent),
-	use_temp_dir(Dir),
-	append_atoms(Dir, '/copytemp.sml', CopyFile),
-        start_progress_dialogue,
-	menu:save_isolated(CopyFile, Start, none),
-	(attempt_addition(submodel, Parent, Box, Component_name, no), !,
-	    library:ame_merge(Component_name, CopyFile, _, 'fuck it', _),
-	    set_shape(Component_name, internal_extent, Inside),
-	    redisplay(Component_name),
-	    update_runnable(Parent);
-	true),
-        finish_progress_dialogue.
-
 /* Unclick in ghost mode. If unclicking in space, a new ghost node is created. If
 unclicking on an existing node this node is made into a ghost of the source node
 if it is of a suitable type. The target node's own equation information remains,
@@ -1769,21 +1742,16 @@ dissolve_component(Node) :-
 	find_all_comps(Parent, Node),
 	subtract_from_translation([0,0,1,1], Node, Node_trans),
 	(move_boxes(Node, Node_trans),
-	(setof(Part, m_class:Node has_part Part, Orphan_nodes), !; Orphan_nodes = []),
+	(setof(Part, m_class:Node has_part Part, Orphan_nodes), !;
+	    Orphan_nodes = []),
 	(setof(IntLink, 
-		(IntLink draws_inside Node, \+ has_outer_equiv(IntLink, Node, _)),
-		OrphanLinks), !; OrphanLinks = []),
-	(setof(UsedCaption,
-		Part^(find_all_comps(Parent, Part),
-		      appears(Part),
-		      \+ is_ghost(Part),
-		      \+ Node = Part,
-		      caption_for(Part, UsedCaption)),
-		UsedNow), !,
-	    append(UsedNow, _, Used),
-	    retitle_duplicates(Orphan_nodes, Used),
-	    retitle_duplicates(OrphanLinks, Used);
+	   (IntLink draws_inside Node, \+ has_outer_equiv(IntLink, Node, _)),
+	       OrphanLinks), !; OrphanLinks = []),
+	append(Orphan_nodes, OrphanLinks, Orphans),
+	(list_captions(Parent, Used), !,
+	    all(event, retitle_duplicate, [build(Orphans), unify(Used)]);
 	true),
+	    
 	/* First, strip the model's dimensions and check external vars */
 	(image:dim_spec_for(Node, "Simple"), !;
 	add_parameter(Node, 0, multiplication_spec, [count=[]]),
@@ -1807,16 +1775,22 @@ dissolve_component(Node) :-
 	    fail;
 	true)).
 
-retitle_duplicates([], _).
+list_captions(Parent, Used) :-
+	setof(UsedCaption,
+	      Part^(find_all_comps(Parent, Part),
+		    appears(Part),
+		    \+ is_ghost(Part),
+		    caption_for(Part, UsedCaption)),
+	      UsedNow), !,
+	append(UsedNow, _, Used).
 
-retitle_duplicates([Node | Rest], Used) :-
+retitle_duplicate(Node, Used) :-
 	caption_for(Node, OldCapt),
 	ensure_unused(OldCapt, NewCapt, Used, []),
 	(NewCapt = OldCapt, !;
 	(Name_type = 0; Name_type = 2),
 	    add_parameter(Node, Name_type, name, NewCapt), !,
-	    update_captions(Node)),
-	retitle_duplicates(Rest, Used).
+	    update_captions(Node)).
 
 remove_highlights :-
 	get_highlit_obj(_, Old_doomed_thing),

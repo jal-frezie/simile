@@ -479,6 +479,7 @@ menu_handle(Win, edit, paste) :-
 	(find_space_for(SBox, Model, Pt, [Xoffset, Yoffset]), !,
 	reassure_user("Paste in progress"),
 	select_all_in(Model, on),
+	(event:list_captions(Model, Used), !; true),
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	ame_merge(Model, CopyFile, _Date, _HasCode, _Renumber),
@@ -489,6 +490,7 @@ menu_handle(Win, edit, paste) :-
 			 get_highlit_obj(0, Mover)), Movers),
 	all(event, adjust_posn,
 	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
+	all(event, retitle_duplicate, [build(Movers), unify(Used)]),
 	all(maintain, redisplay, [build(Movers)]),
 	    /* New part is highlit already, this just corrects display */
 	all(maintain, highlight, [build(Movers), unify(0)]),

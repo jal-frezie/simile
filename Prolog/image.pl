@@ -597,10 +597,7 @@ end_coords(Link, Where, [Xpt, Ypt]) :-
 /* make_header: generates the text to put in a window's title bar */
 
 make_header(Model, Header) :-
-	(get_model_file(Model, Name), !,
-		name(Name, NameChars),
-		split_path_chars(NameChars, _, _, FileNameChars);
-	FileNameChars = "unsaved"),
+	quick_file(Model, FileNameChars),
 /* Do not put whole path up this makes confusing taskbar icons
 	abs_path_for(Model, Path), */
 	caption_for(Model, Title),
@@ -614,6 +611,12 @@ make_header(Model, Header) :-
 			HeaderChars),
 	name(Header, HeaderChars).
 
+quick_file(Model, FileNameChars) :-
+	get_model_file(Model, Name), !,
+		name(Name, NameChars),
+		split_path_chars(NameChars, _, _, FileNameChars);
+	FileNameChars = "unsaved".
+	
 dim_spec_for(Model, DimSpec) :-
 	is_population(Model), !,
 		DimSpec = "Population";

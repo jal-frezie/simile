@@ -652,7 +652,7 @@ proc ClickObj { x y winId action} {
             set obj [GetCaptionItem $winId $node]
 
 # This bit used to start a drag selecting some caption text
-            if {[string compare $obj {}] && ![string compare [focus] $winId]} {
+            if {[string compare $obj {}]} {
                 set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
                 $winId icursor $obj $realPlace
                 $winId select clear
