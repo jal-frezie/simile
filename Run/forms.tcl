@@ -441,11 +441,9 @@ proc interact_equation {} {
                 [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
                 $equation(min) $equation(max)]
 	} 2 {
-	    set fru [list $equation(paths,$equation(ckLine)) \
+	    return [list $equation(paths,$equation(ckLine)) \
 			$equation(entry$equation(ckLine)) \
 			[UnityForReal $equation(unit$equation(ckLine))]]
-	    puts $fru
-	    return $fru
 	} 3 {
 	    return [list \['[join $equation(table_data) ',']'\] \
 			$equation(table_values)]

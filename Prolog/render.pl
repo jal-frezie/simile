@@ -453,10 +453,10 @@ do_base_pointers(L, base(instance(submodel,_, xrefs(_, Parent, _,_),_, Type-_),
 	declare_pointer(L, Ptr, BasePtd),
 	do_base_pointers(L, base(Parent, _, Ptrs), Rest).
 
-do_loop_pointers(L, SmName, Type, Name, [[Type, Ptd, []] | Late]) :-
+do_loop_pointers(L, SmName, Type, Name, Late) :-
 
-	append_atoms(Name, pointer, Ptr),
-	declare_pointer(L, Ptr, Ptd),
+/*	append_atoms(Name, pointer, Ptr),
+	declare_pointer(L, Ptr, Ptd), */
 	(variable_size(SmName), !,
 	    append_atoms(Name, meta, Meta),
 	    declare_pointer(L, Meta, MetaPtd),

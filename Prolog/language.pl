@@ -111,11 +111,11 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 	Indent is 4*Nesting,
 	/* some of this belongs in the next disjunction */
 
-	(nonvar(Pointer), !;
-	append_atoms(Name, pointer, Pointer)),
-/*	append_atoms(Name, 'type*', Type),
+	(nonvar(Pointer), !,
+	    Temps0 = [];
+	append_atoms(Name, 'type*', Type),
         append_atoms(Name, pointer, PointerForm),
-	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0), */
+	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0)),
 
 	make_evaluation_routine_all(L, IndExprs, Graph_count,
 				    RefIndices, Graph_data),
@@ -145,7 +145,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 
 	do_assign_list(L, Clauses, NewGraphCount, [Current | Preambles],
 			[Starters, Finishers | Postambles],
-			Used, LaterGraphs, Temps, Results).
+			Used, LaterGraphs, Temps1, Results),
+	merge_lists(Temps1, Temps0, Temps).
 
 
 /* start non-generating vm  submodel loop;	still need to
@@ -224,8 +225,11 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	Indent3 is Indent2 + 4,
 	Indent4 is Indent3 + 4,
 
-	(nonvar(Pointer), !;
-	append_atoms(Name, pointer, Pointer)),
+	(nonvar(Pointer), !,
+	    Temps0 = [];
+	append_atoms(Name, 'type*', Type),
+	    append_atoms(Name, pointer, PointerForm),
+	    check_local_var(L, Pointer, PointerForm, Type, Used, Temps0)),
 	make_evaluation_routine_all(L, LocalIndices, 0, RefIndices, _),
 	make_struct_reference(L, Pointer, next, OnPointer),
 	refer_value(L, OnPointer, OnPointerRef),
@@ -300,7 +304,8 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 			Graph_count, [Current | Preambles],
 			[Starters, Finishers | Postambles],
 			Used, Graphs, Temps2, Results),
-	merge_lists(Temps1, Temps2, Temps).
+	merge_lists(Temps1, Temps2, Temps3),
+	merge_lists(Temps0, Temps3, Temps).
 
 do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
 	      Graph_count, Preambles, 
