@@ -484,7 +484,9 @@ proc ClickObj { x y winId action} {
 
     global helperTable
     global pushedbutton
+    global clicktime
 
+    set clicktime [clock clicks -milliseconds]
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
@@ -616,6 +618,12 @@ proc ResizeDesktop {winId cl ct cr cb} {
 
 proc DragObj {winId xco yco} {
     global window_info
+    global clicktime
+
+    set dragtime [clock clicks -milliseconds]
+    if {$dragtime>$clicktime && $dragtime-$clicktime<200} {
+	return
+    }
     
     set canx [$winId canvasx $xco]
     set cany [$winId canvasy $yco]
