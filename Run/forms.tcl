@@ -71,11 +71,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     set widget [$equation(main).main.main getframe]
     $widget.equation.textbox.text delete 1.0 end
     $widget.equation.textbox.text insert 1.0 $current_equation
-    if {[string equal 1 $units]} {
-	set equation(units) real
-    } else {
-	set equation(units) $units
-    }
+    set equation(units) [RealForUnity $units]
     set equation(mult) [join $mult ,]
 
 # do not show a radiobutton if incomplete
@@ -266,7 +262,7 @@ proc create_equation {parent boxtitle indices} {
     TitleFrame $mainF.main.main -text "Data source: "
     set mainf [$mainF.main.main getframe]
     frame $mainf.slider
-    radiobutton $mainf.slider.radio1 -text "Slider: " -variable equation(isparam) -value 1
+    radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
     pack [label $mainf.slider.minlabel -text Minimum] -side left -padx 4 -pady 4
     pack [entry $mainf.slider.minval -width 8 -textvariable equation(min)] -side left -padx 4 -pady 4
@@ -274,7 +270,7 @@ proc create_equation {parent boxtitle indices} {
     pack [entry $mainf.slider.maxval -width 8 -textvariable equation(max)] -side right -padx 4 -pady 4
     pack $mainf.slider -anchor nw
     frame $mainf.file
-    radiobutton $mainf.file.radio2 -text "File" -variable equation(isparam) -value 2
+    radiobutton $mainf.file.radio2 -text "Fixed parameter" -variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
     pack $mainf.file -anchor nw
     frame $mainf.equation
@@ -443,11 +439,7 @@ proc interact_equation {} {
     grab release $t
     switch $equation(done) {
 	1 {
-	    if {[string equal real $equation(units)]} {
-		set units 1
-	    } else {
-		set units $equation(units)
-	    }
+	    set units [UnityForReal $equation(units)]
 	    return [list [string trimright \
                 [$eqnFrame.equation.textbox.text get 1.0 end]] \
                 $units $equation(isparam) \
@@ -464,6 +456,7 @@ proc interact_equation {} {
 		    lappend rlist [$uselist get $equation(ckLine)]
 		}
 	    }
+	    lreplace $rlist 1 1 [UnityForReal [lindex $rlist 1]]
 	    return $rlist
 	} 3 {
 	    return [list \['[join $equation(table_data) ',']'\] \
@@ -487,6 +480,22 @@ proc destroy_equation {} {
     
     focus [wm transient $equation(top)].canvas
     destroy $equation(top)
+}
+
+proc UnityForReal {show} {
+    if {[string equal real $show]} {
+	return 1
+    } else {
+	return $show
+    }
+}
+
+proc RealForUnity {show} {
+    if {[string equal 1 $show]} {
+	return real
+    } else {
+	return $show
+    }
 }
 
 # Scrolls all listboxes in response to scrollbar
@@ -557,7 +566,7 @@ proc fill_inputs { triples } {
     foreach vpiTriple $triples {
         lappend equation(pathlist) [lindex $vpiTriple 0]
         $widget.lists.plist insert end [lindex $vpiTriple 1]
-        $widget.lists.ilist insert end [lindex $vpiTriple 2]
+        $widget.lists.ilist insert end [RealForUnity [lindex $vpiTriple 2]]
         $widget.lists.dlist insert end [lindex $vpiTriple 3]
     }
     
@@ -1955,7 +1964,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
                 set text_string "$text_string + $inflow"
             }
             foreach outflow $outflows {
-                set text_string "$text_string + $outflow"
+                set text_string "$text_string - $outflow"
             }
             $widget insert end "\t$text_string\n" eqntag
         }

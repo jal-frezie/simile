@@ -425,9 +425,9 @@ proc GetObjectList { } {
 	WarnNoProgram
     }
     if {$model_id} {
-	return [listobjects $model_id]
+	return [lrange [listobjects $model_id] 1 end]
     } else {
-	for {set record 0} {$nodecount>$record} {incr record} {
+	for {set record 1} {$nodecount>$record} {incr record} {
 	    lappend result [lindex $nodedata($record) 0]
 	}
 	return $result

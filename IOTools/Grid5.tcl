@@ -49,6 +49,7 @@ namespace eval grid005 {
     proc AddToolbar {winId} {
         set toolbarItems [list \
                 [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
+                [list save.gif "Save as GIF"   [namespace code "SaveAsFile $winId"]]\
                 [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
                 [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
                 [list property.gif " Properties " [namespace code "Settings $winId"]]\
@@ -607,5 +608,22 @@ namespace eval grid005 {
         }
     }
     
+    
+    proc SaveAsFile {winId} {
+        variable useNodes
+        # should have dialog to set for options
+        set filename [ tk_getSaveFile -defaultextension .gif \
+                -filetypes {{{GIF Files} {.gif} }}\
+                -initialdir {} \
+                -initialfile "" \
+                -parent $winId \
+                -title "Save Grid Display to image file"\
+        ]
+        $useNodes($winId,visibleMap) write $filename \
+                -format gif
+                #-from x1 y1 x2 y2\
+                #-grayscale
+                #-background {}
+    }
 } ;
 # end of namespace
