@@ -36,7 +36,7 @@ namespace eval runcontrol33857 {
         set sendvars(captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
             lappend sendvars(captList) \
-                    [list Time step #$phase $::runState(update$phase)]
+                    [list Time step #$phase {(} $::runState(update$phase) {)}]
         }
         $timeSteps configure -values $sendvars(captList)
         focus $widget.edit.num
@@ -88,7 +88,7 @@ namespace eval runcontrol33857 {
                     current {Current time } currentTime \
                     disp {Display interval } displayInt} {
             frame $rsf.$name
-            label $rsf.$name.capt -text $capt -width 15 -anchor w
+            label $rsf.$name.capt -text $capt -width 24 -anchor w
             pack $rsf.$name.capt -side left
             entry $rsf.$name.num -relief sunken \
                     -textvar runState($var) -width 8
@@ -100,13 +100,11 @@ namespace eval runcontrol33857 {
         set sendvars(captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
             lappend sendvars(captList) \
-                    [list Time step #$phase $::runState(update$phase)]
+                    [list Time step #$phase {(} $::runState(update$phase) {)}]
         }
-        #runState(update[expr $pt+1])
-        #ShowMessage debug info "RunControl init dts [array get ::runState]" ok
         pack [frame $rsf.edit] -anchor w -pady 2
         set timeSteps [ComboBox $rsf.edit.capt -values $sendvars(captList) -editable 0 \
-                -width 16 -modifycmd [list [namespace current]::SwapDistVar $t]]              
+                -width 20 -modifycmd [list [namespace current]::SwapDistVar $t]]
         pack $timeSteps -side left
         pack $rsf.edit.capt -side left
         pack [label $rsf.edit.colon -text " "] -side left
