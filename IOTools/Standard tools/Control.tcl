@@ -257,7 +257,7 @@ namespace eval runcontrol33857 {
         }
 	# allow model to be saved if run settings are changed
         if {$tweaked || ![string match $runState($node,oldIntMethod) $runState($node,intMethod)]} {
-            prolog tk_run_settings_tweaked($node)
+            do_in_editor prolog tk_run_settings_tweaked($node)
         }
         SetStep $node 0 0
         SetState $winId $sendvars($node,newData)
