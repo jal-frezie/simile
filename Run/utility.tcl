@@ -503,8 +503,9 @@ proc PackItUp {t} {
     global tcl_platform
     set parent [wm transient $t]
     destroy $t
-    if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
-	focus -force [winfo toplevel $parent]
-    }
+# The need for these lines was removed by a TkAqua patch applied 10 March 2005.
+#    if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
+#	focus -force [winfo toplevel $parent]
+#    }
 }
 
