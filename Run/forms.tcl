@@ -1557,9 +1557,22 @@ proc equationlisting_scrollit {widget} {
     $widget set
 }
 
-proc BuildProblem {msg} {
+proc BuildProblem {name autoName dir msg fault} {
     toplevel .buildprob
-    wm title .buildprob "Problem making runnable model"
+    switch $fault {
+	user {
+	    set Title "Problem with model"
+	    set errLevel warning
+	    set buttonTxt Help
+	    set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
+	} system {
+	    set Title "Build failure"
+	    set errLevel error
+	    set buttonTxt {Send bug report}
+	    set buttonCmd [list ReportProblem $name $autoName $dir $msg]
+	}
+    }
+    wm title .buildprob $Title
     wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
@@ -1577,11 +1590,11 @@ proc BuildProblem {msg} {
     pack $labf1 -padx 8 -pady 2
     
     set buttons [frame .buildprob.buttons]
-    pack [button $buttons.ok -text OK -width 10 \
+    pack [button $buttons.ok -text OK -width 20 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-    pack [button $buttons.help -text Help -width 10 \
-            -command {ContextSensitiveHelp .buildprob run/index.htm}] \
+    pack [button $buttons.help -text $buttonTxt -width 20 \
+	      -command "set ack 1; $buttonCmd"] \
             -side left -padx 4 -pady 8
     pack $buttons
     
@@ -1594,6 +1607,46 @@ proc BuildProblem {msg} {
     
     tkwait variable ack
     destroy .buildprob
+}
+
+proc ReportProblem {name autoName dir fault} {
+
+    set mimes {}
+#    set unique [clock seconds].[pid]
+#    set bound "-----NEXT_PART_$unique"
+    if {![string match unsaved $name]} {
+	set Disposition "inline; filename=\"[file tail $name]\""
+	    lappend mimes [mime::initialize -canonical application/x-simile \
+			   -header [list Content-Disposition $Disposition] \
+			   -header [list Content-Description "Simile model"] \
+			   -file $name]
+#        set fid [open $name r]
+#        fconfigure $fid -translation binary
+#        if {[catch {read $fid [file size $name]} data]} {
+#            return -code error $data
+#        }
+#        close $fid
+#        append outputData "$bound\nContent-Disposition: form-data;\
+#            name=\"imagefile\"; filename=\"[file tail $name]\"\nContent-Type: text/plain\n\n$data\n"
+    }
+    if {![string match unsaved $autoName]} {
+	set Disposition "inline; filename=\"[file tail $autoName]\""
+	    lappend mimes [mime::initialize -canonical application/x-simile \
+			   -header [list Content-Disposition $Disposition] \
+			   -header [list Content-Description "Change log"] \
+			   -file $autoName]
+    }
+    lappend mimes [mime::initialize -canonical text/plain \
+		       -header [list Content-Disposition inline] \
+		       -header [list Content-Description "Error message"] \
+		       -string $fault]
+    set multiT [mime::initialize -canonical multipart/mixed -parts $mimes]
+    set data [mime::buildmessage $multiT]
+
+    package require http
+    upvar 0 [::http::geturl http://www.simulistics.com/cgi-bin/saveit.cgi \
+		 -type application/x-zip -query [zip -mode compress $data]] reply
+    ShowMessage {Simile phone home!} info $reply(body) ok
 }
 
 proc NotifyOverLimit {limit} {

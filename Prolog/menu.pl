@@ -246,11 +246,11 @@ rebuild_code(Lang, Node) :-
 	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true), !;
 	    Whoops = compilation_failed),
 	(Whoops = yes;
-	    show_error(Whoops),
+	    show_error(Node, Whoops),
 	    scrub_run(0),
 	    fail).
 
-show_error(Lossage) :-
+show_error(Model, Lossage) :-
 	(Lossage = compilation_failed, !,
 	    Text = "Something went wrong while trying to convert your model into a program.",
 	    Fault = system;
@@ -312,7 +312,11 @@ show_error(Lossage) :-
 	    Fault = user;
 	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
 	    Fault = system),
-	output:safe_tcl_eval(['BuildProblem', br(chars(Text)), Fault], _).
+	(get_name_for(Model, Name), !; Name = unsaved),
+	use_temp_dir(Dir),
+	(backup:autosave_file_is(AutoName), !; AutoName = none),
+	output:safe_tcl_eval(['BuildProblem', br(Name), br(AutoName), br(Dir),
+			      br(chars(Text)), Fault], _).
 
 write_chars_to_file(_, []).
 
