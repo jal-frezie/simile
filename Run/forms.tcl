@@ -5,6 +5,9 @@
 # <name> (<units>)' and we need to keep the box up to display errors while entering
 # the equation. Put up warning messages if the units change etc etc etc. 
 
+package require -exact BWidget 1.2.1
+catch {namespace import BWidget::*}
+
 proc equationResources {} {
 
 #    foreach equation(ebox) {name description comment units} {
@@ -38,7 +41,8 @@ proc equationResources {} {
 }
 
 proc fill_equation {current_equation units mult isParam \
-		table_data desc comment min max} {
+        table_data desc comment min max} {
+        
 	global equation 
 	global equationbar
 
@@ -61,12 +65,12 @@ proc fill_equation {current_equation units mult isParam \
     }
                                 ### End formula bar section
 
-    set widget [$equation(top).properties.properties getframe]
+    set widget [$equation(main).properties.properties getframe]
     $widget.description.text delete 1.0 end
     $widget.description.text insert 1.0 $desc
-#	$equation(top).main.cmtFrame.text delete 1.0 end
-#	$equation(top).main.cmtFrame.text insert 1.0 $comment
-    set widget [$equation(top).main.main getframe]
+    $equation(doc).cmtFrame.text delete 1.0 end
+	$equation(doc).cmtFrame.text insert 1.0 $comment
+    set widget [$equation(main).main.main getframe]
     $widget.equation.textbox.text delete 1.0 end
     $widget.equation.textbox.text insert 1.0 [ExtractGraphData $current_equation]
 	set equation(units) $units
@@ -99,15 +103,40 @@ proc create_equation {parent boxtitle indices} {
                                 ### End formula bar section
 
     set t [toplevel .equation -bd 4 -class Equation]
-	set equation(top) $t
 	wm title $t $boxtitle
+    set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     equationResources
+    
+    set notebook [NoteBook $t.notebook]
+    $notebook insert end Main -text Main
+        set mainF [$notebook getframe Main]
+    $notebook insert end Documentation -text Documentation
+        set docF [$notebook getframe Documentation]
+    set equation(notebook) $notebook
+    set equation(main) $mainF
+    set equation(doc) $docF
+    
+    # frame for buttons
+    set buttonF [frame $t.buttons]
+    set ok [button $buttonF.ok -command equationOK \
+            -width 10 -default active -text "OK"]
+    set can [button $buttonF.cancel -command equationCancel \
+            -width 10 -text "Cancel"]
+    set help [button $buttonF.help -command {ContextSensitiveHelp .equation equations/dialogue.htm} \
+            -width 10 -text "Help"]
+    pack $help -side right -padx 8 -pady 4 -anchor e
+    pack $can -side right -padx 8 -pady 4 -anchor e
+    pack $ok -side right -padx 8 -pady 4 -anchor e
+    #    pack $buttonF.buttons -anchor e -side left
+    pack $buttonF -anchor nw -fill x -side bottom
 
-# Middle frame has the functions, indices and keypad, as well as the major buttons
-    frame $t.middle
-    TitleFrame $t.middle.functions -text "Functions: "
-    set functionsf [$t.middle.functions getframe]
+    # Middle frame has the functions, indices and keypad
+    # created variable middleF to point to the Middle frame makes moving the frame in
+    # the widget hierrachy easier Jonathan 22 Aug 2002
+    set middleF [frame $mainF.middle]
+    TitleFrame $middleF.functions -text "Functions: "
+    set functionsf [$middleF.functions getframe]
     frame $functionsf.list
     set lbf [listbox $functionsf.list.flist \
             -height 9 \
@@ -119,9 +148,9 @@ proc create_equation {parent boxtitle indices} {
     pack $functionsf.list.flist -side left -fill both -expand true
     pack $functionsf.list.scrollf -side left -fill y
     pack $functionsf.list -anchor nw  -expand true -fill both
-    pack $t.middle.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
-    TitleFrame $t.middle.indices -text "Indices: "
-    set indicesf [$t.middle.indices getframe]
+    pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
+    TitleFrame $middleF.indices -text "Indices: "
+    set indicesf [$middleF.indices getframe]
     frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
             -height 9 \
@@ -133,10 +162,10 @@ proc create_equation {parent boxtitle indices} {
     pack $indicesf.list.ilist -side left -fill both -expand true
     pack $indicesf.list.scrolli -side left -fill y
     pack $indicesf.list -anchor nw -expand true -fill both
-    pack $t.middle.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
+    pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
 # Stella special: a keypad frame to prevent users having to touch their kbd
-    TitleFrame $t.middle.keypad -text "Keypad: "
-    set keypadf [$t.middle.keypad getframe]
+    TitleFrame $middleF.keypad -text "Keypad: "
+    set keypadf [$middleF.keypad getframe]
     frame $keypadf.keys
     set keys {< > -> = ( ) , / 7 8 9 * 4 5 6 - 1 2 3 + 0 dummy . DEL}
     for {set row 0} {$row < 6} {incr row} {
@@ -154,28 +183,14 @@ proc create_equation {parent boxtitle indices} {
     pack $keypadf.keys.row5.col0 -expand false
     pack $keypadf.keys.row5.col2 -expand false
     pack $keypadf.keys -side left -anchor nw
-    pack $t.middle.keypad -anchor nw -padx 2 -pady 2 -side left
-
-    frame $t.middle.buttons
-    set ok [button $t.middle.buttons.ok -command equationOK \
-            -width 10 -default active -text "OK"]
-    set can [button $t.middle.buttons.cancel -command equationCancel \
-            -width 10 -text "Cancel"]
-    set cmt [button $t.middle.buttons.comment \
-            -width 10 -text "Comments..."]
-    set help [button $t.middle.buttons.help -command {ContextSensitiveHelp .equation equations/dialogue.htm} \
-            -width 10 -text "Help"]
-    pack $ok -side top -padx 8 -pady 4 -anchor e
-    pack $can -side top -padx 8 -pady 4 -anchor e
-    pack $cmt -side top -padx 8 -pady 4 -anchor e
-    pack $help -side top -padx 8 -pady 4 -anchor e
-    pack $t.middle.buttons -anchor e -side left
-    pack $t.middle -anchor nw -fill x
+    pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left
+    pack $middleF -expand off -fill x
+    
     
 # Now for the main frame: the equation and its commentary
-	frame $t.main
-    TitleFrame $t.main.main -text "Data source: "
-    set mainf [$t.main.main getframe]
+	frame $mainF.main
+    TitleFrame $mainF.main.main -text "Data source: "
+    set mainf [$mainF.main.main getframe]
     frame $mainf.slider
     radiobutton $mainf.slider.radio1 -text "Slider: " -variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
@@ -194,7 +209,7 @@ proc create_equation {parent boxtitle indices} {
     regsub { for } $boxtitle {: } eqnRBtext
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
-    set en [text $mainf.equation.textbox.text -height 1 -width 30 -yscrollcommand "$mainf.equation.textbox.scroll set"]
+    set en [text $mainf.equation.textbox.text -height 4 -width 30 -yscrollcommand "$mainf.equation.textbox.scroll set"]
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$mainf.equation.textbox.text yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
     pack $mainf.equation.textbox.text -side right -expand true -fill both
@@ -211,13 +226,13 @@ proc create_equation {parent boxtitle indices} {
     pack $table -padx 8 -pady 4
     pack $mainf.equation.textbox.buttons -anchor e -side left
     pack $mainf.equation -expand true -fill both -anchor nw
-    pack $t.main.main -anchor nw -expand true -fill both -padx 2 -pady 2
-    pack $t.main -anchor nw -expand true -fill both
+    pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2
+    pack $mainF.main -anchor nw -expand true -fill both -anchor nw
 
 # Miscellaneous other stuff below
-    frame $t.properties
-    TitleFrame $t.properties.properties -text "Properties: "
-    set propertiesf [$t.properties.properties getframe]
+    set propertiesF [frame $mainF.properties]
+    TitleFrame $propertiesF.properties -text "Properties: "
+    set propertiesf [$propertiesF.properties getframe]
     frame $propertiesf.description
     label $propertiesf.description.desclabel -text "Description:"
     text $propertiesf.description.text -height 1 -width 20
@@ -238,14 +253,14 @@ proc create_equation {parent boxtitle indices} {
     pack $em -side left -fill x -expand true -padx 2 -pady 2
     pack $propertiesf.mult -side left -fill x -expand true  -padx 4 -pady 4
 
-    pack $t.properties.properties -fill x -expand true -anchor nw \
+    pack $propertiesF.properties -fill x -expand true -anchor nw \
 	-padx 2 -pady 2
-    pack $t.properties  -fill x  -anchor nw
+    pack $propertiesF  -fill x  -anchor nw
 
 # Bottom frame has the influences and parameters list boxes
-    frame $t.bottom
-    TitleFrame $t.bottom.influences -text "Influences: "
-    set influencesf [$t.bottom.influences getframe]
+    set bottomF [frame $mainF.bottom]
+    TitleFrame $bottomF.influences -text "Influences: "
+    set influencesf [$bottomF.influences getframe]
     frame $influencesf.captions
     label $influencesf.captions.p -text "Parameter:"
     label $influencesf.captions.i -text "In units:"
@@ -268,9 +283,23 @@ proc create_equation {parent boxtitle indices} {
     pack $influencesf.lists.dlist -side left -fill both -expand true
     pack $influencesf.lists.scroll -side left -fill y
     pack $influencesf.lists -side top -fill both -expand true
-    pack $t.bottom.influences -fill x -expand true -anchor nw -padx 2 -pady 2
-    pack $t.bottom -fill x 
+    pack $bottomF.influences -fill x -expand true -anchor nw -padx 2 -pady 2
+    pack $bottomF -fill x
+    
+    # comments in the Documentation page
+    label $docF.cmtlabel -text Comments:
+    pack $docF.cmtlabel -side top
+    pack [set frm [frame $docF.cmtFrame]] -fill both -expand true
+    text $frm.text -height 3 -width 40 \
+            -yscrollcommand "$frm.scrly set"
+    scrollbar $frm.scrly -orient vert -command "$frm.text yview"
+    pack $frm.text -side left -fill both -expand true
+    pack $frm.scrly -side right -fill y
+    
 
+    $notebook raise Main
+    pack $notebook -fill both -expand true
+    $notebook compute_size
     set equation(newGraphs) ""
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
     tkwait visibility $influencesf.lists.plist   
@@ -298,9 +327,9 @@ proc interact_equation {} {
                                  ### End formula bar section
 
     set t $equation(top)
-    set descFrame [$equation(top).properties.properties getframe]
-    set eqnFrame [$equation(top).main.main getframe]
-    set listFrame [$equation(top).bottom.influences getframe]
+    set descFrame [$equation(main).properties.properties getframe]
+    set eqnFrame [$equation(main).main.main getframe]
+    set listFrame [$equation(main).bottom.influences getframe]
 
     set equation(done) 0
     grab $t
@@ -382,37 +411,37 @@ proc GetTable {parent box} {
 
 proc fill_inputs { triples } {
     global equation
-	global equationbar
-
-
-                                 ### Formula bar section
+    global equationbar
+    
+    
+    ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
     }
     if {[string compare $equationbar(current_action) tick]==0} then {
         return
     }
-                                 ### End formula bar section
-
-    set t $equation(top)
-    set widget [$equation(top).bottom.influences getframe]
-	# Initialize variables and display  list
+    ### End formula bar section
+    
+    set t $equation(main)
+    set widget [$equation(main).bottom.influences getframe]
+    # Initialize variables and display  list
     set equation(pathlist) {}
     $widget.lists.plist delete 0 end
-    $widget.lists.ilist delete 0 end 
-    $widget.lists.dlist delete 0 end 
-
-	foreach vpiTriple $triples {
-	    lappend equation(pathlist) [lindex $vpiTriple 0]
+    $widget.lists.ilist delete 0 end
+    $widget.lists.dlist delete 0 end
+    
+    foreach vpiTriple $triples {
+        lappend equation(pathlist) [lindex $vpiTriple 0]
         $widget.lists.plist insert end [lindex $vpiTriple 1]
         $widget.lists.ilist insert end [lindex $vpiTriple 2]
         $widget.lists.dlist insert end [lindex $vpiTriple 3]
-	}
-
-# Make box mode compact if not used
+    }
+    
+    # Make box mode compact if not used
     set equation(listlength) [llength $triples]
     if {!$equation(listlength)} {
-	pack forget $t.bottom
+        pack forget $t.bottom
     } elseif {$equation(listlength)<=8} {
         $widget.lists.plist configure -height $equation(listlength)
         $widget.lists.ilist configure -height $equation(listlength)
@@ -421,6 +450,9 @@ proc fill_inputs { triples } {
     }
     set equation(selected,$widget.lists.plist) -1
     set equation(selected,$widget.lists.ilist) -1
+#    pack $t.bottom -fill x -expand true
+    $equation(notebook) compute_size
+    pack $equation(notebook)
 }
 
 proc equationBindings { t en eu lbp lbi lbd \
@@ -533,7 +565,8 @@ proc equationRight { lb y } {
 # because Prolog has to use the value entered for the old one first
 	return
     }
-    set ebox .equation.bottom.influences.f.lists.e
+    set widget [$equation(main).bottom.influences getframe]
+    set ebox $widget.lists.e
     set equation(lbid) $lb
     set equation(ckLine) [$lb nearest $y]
 #    if {$ckLine == [$lb curselection]} {
@@ -555,7 +588,8 @@ proc equationRight { lb y } {
 
 proc ListEditDone {} {
     global equation
-    set ebox .equation.bottom.influences.f.lists.e
+    set widget [$equation(main).bottom.influences getframe]
+    set ebox $widget.lists.e
     if {[winfo exists $ebox]} {
 	if {[string compare $equation(listedit) \
 		 [$equation(lbid) get $equation(ckLine)]]} {
@@ -666,15 +700,14 @@ proc Disaggregate {parent title colour type fatness icount step \
             -width 10 -command "UpdateColour $colourf"]  \
             -padx 2 -pady 4 -side left
     if {[catch {image type $disaggregate(colour)}]} {
-	$colourf.fixcolour configure -bg $disaggregate(colour) 
+        $colourf.fixcolour configure -bg $disaggregate(colour)
     }
     pack [button $colourf.setimage -text "Image..." \
             -width 10 -command ChooseImage] \
             -padx 2 -pady 4 -side left
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
     pack $t.simple.left -side left -expand 1 -fill both
-    
-    
+       
     frame $t.simple.right
     button $t.simple.right.ok -text "OK" -width 10 -default active \
             -command {set disaggregate(done) 1}
