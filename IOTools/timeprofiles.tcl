@@ -205,6 +205,9 @@ proc ShowHelper {w} {
 #    ShowMessage debug info "ShowHelper af drawGraphpad ok
 }
 
+proc reset {winId} {
+}
+
 # Invoked at every time interval.
 proc display {w time step remainder} {
     global ::graphtools::plot

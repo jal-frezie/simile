@@ -10,6 +10,11 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.1  2003/08/21 12:31:39  jaspert
+#Modified helper interface to include call to reset {winId} when model is reset
+#Edited helpers accordingly (note those that use it are now incompatible with 3.2)
+#Moved ModelInspector to standard tools where it belongs
+#
 #Revision 1.9  2003/01/09 12:01:44  jaspert
 #Improved popup implementation, now delays model explorer popups
 #
@@ -74,6 +79,9 @@ namespace eval ::ModelInspector63654 {
     proc clear {winId} {
     }
     
+    proc reset {winId} {
+    }
+
     proc initialize {winId} {
         variable tableframe
         set im(submodel) [image create photo submodel_im -file "../Images/Toolbar/submodel.gif"]

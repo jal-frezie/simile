@@ -20,7 +20,6 @@
 set keyValue "plotterXY1.0"
 
 namespace eval ::$keyValue {
-    variable lastTime
         
     proc identify {} {
         return "XY Plotter"
@@ -33,7 +32,6 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        variable lastTime
         
         namespace import -force ::graphtools::*
         
@@ -98,7 +96,6 @@ namespace eval ::$keyValue {
         set YYnew($w) {}
         set Told($w) {}
         set Tnew($w) {}
-        set lastTime($w) [GetModelTime]
         
         SetState $w {}
         
@@ -114,13 +111,11 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        variable lastTime
         
         set YYold($winId) {}
         set YYnew($winId) {}
         set Told($winId) {}
         set Tnew($winId) {}
-        set lastTime($winId) [GetModelTime]
         
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
@@ -137,7 +132,6 @@ namespace eval ::$keyValue {
     proc click {w node caption} {
         #       tk_messageBox -message "Click node $caption $node" -type ok
         global ::graphtools::plot
-        variable lastTime
         
         set newbox nodebox[incr plot($w,nodeCount)]
         set name [GetCaptionPathFromId $node]
@@ -162,7 +156,6 @@ namespace eval ::$keyValue {
                     UpdateState $w
                     ReleaseClicks $w
                     $w.mess config -text {}; # clear prompt       
-                    set lastTime($w) [GetModelTime]
                     display $w [GetModelTime] 0 0
                     display $w [GetModelTime] 0 0
                     $w.bbframe.buttonBox itemconfigure 1 -state disable; #disable the add var button
@@ -200,25 +193,24 @@ namespace eval ::$keyValue {
         drawGraphpad $w;
         
     }
-    
-    # Invoked at every time interval.
-    proc display {w time step remainder} {
-        global ::graphtools::plot
-        variable lastTime
-        #    global ::graphtools::Xvalues
+
+	proc reset {winId} {
         global ::graphtools::YYold
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        
-        if {$time < $lastTime($w) } {
-            set YYold($w) {}
-            set YYnew($w) {}
-            set Told($w) {}
-            set Tnew($w) {}
-        }
-        set lastTime($w) $time
+ 
+            set YYold($winId) {}
+            set YYnew($winId) {}
+            set Told($winId) {}
+            set Tnew($winId) {}
+	}
 
+    # Invoked at every time interval.
+    proc display {w time step remainder} {
+        global ::graphtools::plot
+        #    global ::graphtools::Xvalues
+       
         get_Yvalues $w
         get_Xvalues $w
         
@@ -674,7 +666,6 @@ namespace eval ::$keyValue {
         global ::graphtools::Told
         global ::graphtools::Tnew
         global ::graphtools::plot
-        variable lastTime
         
         set plot($w,Ymax_axis) -1e200
         set plot($w,Ymin_axis) 1e200
@@ -700,7 +691,6 @@ namespace eval ::$keyValue {
         drawGraphpad $w
         display $w [GetModelTime] 0 0
         display $w [GetModelTime] 0 0
-        set lastTime($w) [GetModelTime]
     }
     
     proc adjustLimits {w Tnew Ynew} {

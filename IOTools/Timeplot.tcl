@@ -27,7 +27,14 @@ namespace eval ::origplot72514 {
         GrabClicks $windowId
         SetState $windowId plotThis
     }
-    
+
+    proc reset {winId} {
+	variable timeplotvars
+	AdvanceColour timeplotvars($winId,colour)
+	    #		ShowMessage debug info "colour now $timeplotvars($winName,colour)" ok
+	set timeplotvars($winId) {}
+    }
+
     proc Restore {winId} {
         set name [lindex [GetState $winId] 2]
         set node [GetIdFromCaptionPath $name]
@@ -85,7 +92,7 @@ namespace eval ::origplot72514 {
         variable canvasMargin
         
         set timeplotvars(sliderLength) 30
-        set timeplotvars($t,colour) red
+        set timeplotvars($t,colour) blue
         set timeplotvars($t,tree) $tree
         set timeplotvars($t,unit) $unit
         set isReal [string compare $unit flag]
@@ -481,26 +488,21 @@ namespace eval ::origplot72514 {
         
         set isReal [string compare $timeplotvars($winName,unit) flag]
         
-        if {[llength $timeplotvars($winName)] && [llength $value]} {
-            if {[string compare $time false] && \
-                    $time > $timeplotvars($winName,early)} {
-		if {$isReal} {
-		    PlotFloats $value $timeplotvars($winName) $time \
-                        $timeplotvars($winName,early) $winName $can index black
-		} else {
-		    set theight [expr $timeplotvars($winName,height)-45]
-		    set fheight [expr $timeplotvars($winName,height)-5]
-		    $can create line \
-                        $timeplotvars($winName,early) \
-                        [expr $timeplotvars($winName)?$theight:$fheight] \
-                        $timeplotvars($winName,early) \
-                        [expr $value?$theight:$fheight] \
-                        $time \
-                        [expr $value?$theight:$fheight] -tags graph
-		}
+        if {[llength $timeplotvars($winName)] && [llength $value] && \
+		[string compare $time false]} {
+	    if {$isReal} {
+		PlotFloats $value $timeplotvars($winName) $time \
+		    $timeplotvars($winName,early) $winName $can index black
 	    } else {
-		AdvanceColour timeplotvars($winName,colour)
-		#		ShowMessage debug info "colour now $timeplotvars($winName,colour)" ok
+		set theight [expr $timeplotvars($winName,height)-45]
+		set fheight [expr $timeplotvars($winName,height)-5]
+		$can create line \
+		    $timeplotvars($winName,early) \
+		    [expr $timeplotvars($winName)?$theight:$fheight] \
+		    $timeplotvars($winName,early) \
+		    [expr $value?$theight:$fheight] \
+		    $time \
+		    [expr $value?$theight:$fheight] -tags graph
 	    }
 	}
         if {$isReal} {

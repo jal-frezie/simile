@@ -1170,13 +1170,13 @@ proc LoadMREFormatView {stream} {
     }
 }
 
-proc DoDisplay {current display exec} {
+proc TellAllHelpers {fun args} {
     global helperTable
 
     foreach displayBox [array name helperTable *,whichHelper] {
         scan $displayBox {%[^,]} winId
         set helperId $helperTable($displayBox)
-        ${helperId}::display $winId $current $display $exec
+        eval {${helperId}::$fun $winId} $args
     }
 }
 

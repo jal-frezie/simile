@@ -253,8 +253,17 @@ namespace eval slide139 {
 	}
 	return {}
     }
-    
-    proc click {winId node caption} {
+ 
+# No need to define click because we never request them   
+#    proc click {winId node caption} {
+#    }
+
+    proc reset {winId} {
+	global sliderVals
+	variable compList
+	foreach node [array names compList] {
+	    set compList($node) [lindex [GetModelValue $node] 0]
+	}
     }
 
 # purpose of display proc here is only to stop compartment sliders
@@ -265,15 +274,11 @@ namespace eval slide139 {
 	global sliderVals
 	variable compList
 	foreach node [array names compList] {
-	    if {$time==0} {
-		set compList($node) [lindex [GetModelValue $node] 0]
+	    if {[llength $compList($node)]==1} {
+		set sliderVals($node) $compList($node)
 	    } else {
-		if {[llength $compList($node)]==1} {
-		    set sliderVals($node) $compList($node)
-		} else {
-		    foreach {indx val} $compList($node) {
-			set sliderVals($node,$indx) $val
-		    }
+		foreach {indx val} $compList($node) {
+		    set sliderVals($node,$indx) $val
 		}
 	    }		
 	}

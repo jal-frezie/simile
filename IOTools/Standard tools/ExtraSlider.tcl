@@ -16,6 +16,9 @@ namespace eval $keyValue {
 	slide139::InsertSlider $winId [GetIdFromCaptionPath $capt] $capt 0
     }
 
+    proc reset {winId} {
+    }
+
     proc click {winId node caption} {
 	ReleaseClicks $winId
 	pack forget $winId.m

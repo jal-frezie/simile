@@ -122,8 +122,8 @@ namespace eval ::$keyValue {
 	set runCount($winId) 1
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
-        doDisplay $winId [GetModelTime] 0 0
-        doDisplay $winId [GetModelTime] 0 0
+        display $winId [GetModelTime] 0 0
+        display $winId [GetModelTime] 0 0
     }
     
     proc GetCanvas {winId} {
@@ -142,8 +142,8 @@ namespace eval ::$keyValue {
             lappend plot($w,Yvars)   $node
             
             UpdateState $w
-            doDisplay $w [GetModelTime] 0 0
-            doDisplay $w [GetModelTime] 0 0
+            display $w [GetModelTime] 0 0
+            display $w [GetModelTime] 0 0
         } else {
             #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
         }
@@ -169,19 +169,17 @@ namespace eval ::$keyValue {
         drawGraphpad $w;
     }
     
-    # Invoked at every time interval.
-    proc display {w time step remainder} {
+    proc reset {winId} {
 	variable runCount
-	if {!$time} {
-	    incr runCount($w)
-	}
-	doDisplay $w $time $step $remainder
+        global ::graphtools::YYnew
+
+	incr runCount($winId)
+# prevent flyback
+	set YYnew($winId) {}
     }
 
-# display mec put in doDisplay so internal calls to it dont increment
-# run count
-
-    proc doDisplay {w time step remainder} {
+    # Invoked at every time interval.
+    proc display {w time step remainder} {
         # remainder isn't time remaining to run (seems to be usually 1) use $runState(execTime)
         global ::graphtools::plot
         global ::graphtools::YYold
@@ -633,10 +631,8 @@ namespace eval ::$keyValue {
         set y0 [get_y $w $Y0 $plot($w,Yscale)]
         set y1 [get_y $w $Y1 $plot($w,Yscale)]
         
-        if {$x0<$x1} {
-            $w.canvas create line $x0 $y0 $x1 $y1 \
-                    -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
-        }
+	$w.canvas create line $x0 $y0 $x1 $y1 \
+	    -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
     }
     
     
@@ -670,8 +666,8 @@ namespace eval ::$keyValue {
 
         $w.canvas delete prompt
         drawGraphpad $w
-        doDisplay $w [GetModelTime] 0 0
-        doDisplay $w [GetModelTime] 0 0
+        display $w [GetModelTime] 0 0
+        display $w [GetModelTime] 0 0
     }
     
     proc adjustLimits {w Tnew Ynew} {

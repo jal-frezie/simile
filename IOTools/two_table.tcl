@@ -241,7 +241,10 @@ namespace eval $keyValue {
         }
         display $winId [GetModelTime] 0 0
     }
-    
+
+    proc reset {winId} {
+    }
+
     proc display {winId tCur tStep tRem} {
         variable dataStore
         variable displayList

@@ -42,7 +42,10 @@ namespace eval grid005 {
         }
         
     }
-    
+
+    proc reset {winId} {
+    }
+
     proc AddToolbar {winId} {
         set toolbarItems [list \
                 [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
@@ -554,7 +557,7 @@ namespace eval grid005 {
         set dataT [expr int([lindex $visible 2]*$useNodes($winId,nrow))]
         set dataB [expr int(0.9999*[lindex $visible 3]*$useNodes($winId,nrow))]
         $winId.c coords 1 [$winId.c canvasx 0] [$winId.c canvasy 0]
-puts "Displaying $dataL $dataT $dataR $dataB"
+#puts "Displaying $dataL $dataT $dataR $dataB"
         $useNodes($winId,visibleMap) copy $useNodes($winId,hiddenMap) \
                 -from $dataL $dataT $dataR $dataB -to 0 0 \
                 -zoom $useNodes($winId,mult) -shrink

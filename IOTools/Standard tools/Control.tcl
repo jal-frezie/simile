@@ -332,8 +332,11 @@ namespace eval runcontrol33857 {
                 if ![do_model eval $scaled_current $redoPhase] {
                     set sendvars(currentMode) exit
                 }
+                if {$redoPhase < 1} {
+		    TellAllHelpers reset
+		}
+                TellAllHelpers display $current $display $update
                 unset redoPhase
-                DoDisplay $current $display $update
             }
             
             # Now run the model
@@ -393,7 +396,7 @@ namespace eval runcontrol33857 {
                         $widget.bf.flag itemconfigure 1 -fill blue
 			CondUpdate disp
                         set sendvars(prevDisplay) $numDisplays
-                        DoDisplay $current $display $step
+                        TellAllHelpers display $current $display $step
 			CondUpdate loop
                     }
                 }
@@ -501,6 +504,9 @@ namespace eval runcontrol33857 {
     }
     
     # No need to do anything for update, because it updates itself
+    proc reset {winId} {
+    }
+
     proc display {args} {
     }
     

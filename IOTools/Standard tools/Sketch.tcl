@@ -44,6 +44,9 @@ proc click {windowId nodename caption} {
 }
     
 # No need to do anything to graph sketch when displays update
+    proc reset {winId} {
+    }
+
 proc display {args} {
 }
 

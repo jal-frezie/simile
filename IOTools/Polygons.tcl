@@ -207,6 +207,9 @@ $useNodes($winId,scaley)"
         SetState $winId $saveString
     }
     
+    proc reset {winId} {
+    }
+
     proc display {winId time step remainder} {
         variable useNodes
         Repaint $winId $useNodes($winId,color)

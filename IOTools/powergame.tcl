@@ -451,6 +451,11 @@ proc listboxselect {x} {
 }
 
 
+    proc reset {winId} {
+    variable col
+	incr col
+    }
+
 
 proc DoEachTimeStep {win time} {
    global info
@@ -468,9 +473,6 @@ proc DoEachTimeStep {win time} {
        puts $info(logfile) {}
        bell
    }
-    if {$time==0} {
-	incr col
-    }
    set canvas_height [$win.canvas cget -height]
    $win.canvas delete movie
    $win.canvas delete prediction

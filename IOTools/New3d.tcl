@@ -279,6 +279,9 @@ proc initialize {winId} {
 # proc initialize {winId}
 ##################################################
 
+proc reset {winId} {
+}
+
 ##################################################
 # proc click {winId node caption}
 proc click {winId node caption} {
