@@ -911,7 +911,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		 adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
 		     reroute_display(Moving_obj),
 		     move_text(Moving_obj, [Xoffset, Yoffset]);
-		 find_all_comps(Parent, Moving_obj),
+		 get_highlit_obj(0, Moving_obj),
+		     find_all_comps(Parent, Moving_obj),
 		     get_shape(Parent, internal_extent, ParentShape),
 		     setof(Mover, (Mover = Moving_obj; /* in case cloud */
 				  find_all_comps(Parent, Mover),
