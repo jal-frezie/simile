@@ -291,6 +291,10 @@
 				<param name="Local" value="equations\boolean.htm">
 				</OBJECT>
 			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Intermediate variables">
+				<param name="Local" value="equations\intermediates.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
 				<param name="Name" value="Functions">
 				<param name="Local" value="equations\functions.htm">
 				</OBJECT>

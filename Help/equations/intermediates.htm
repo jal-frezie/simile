@@ -8,38 +8,30 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <meta name=ProgId content=Word.Document>
 <meta name=Generator content="Microsoft Word 10">
 <meta name=Originator content="Microsoft Word 10">
-<link rel=File-List href="snapshot_files/filelist.xml">
-<link rel=Edit-Time-Data href="snapshot_files/editdata.mso">
-<!--[if !mso]>
-<style>
-v\:* {behavior:url(#default#VML);}
-o\:* {behavior:url(#default#VML);}
-w\:* {behavior:url(#default#VML);}
-.shape {behavior:url(#default#VML);}
-</style>
-<![endif]-->
-<title>Working with model diagrams : Inspect model variable</title>
+<link rel=File-List href="intermediates_files/filelist.xml">
+<title>Working with equations : Intermediate variables</title>
 <!--[if gte mso 9]><xml>
  <o:DocumentProperties>
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>5</o:Revision>
-  <o:TotalTime>29</o:TotalTime>
-  <o:Created>2003-03-03T17:05:00Z</o:Created>
-  <o:LastSaved>2003-04-10T09:01:00Z</o:LastSaved>
+  <o:Revision>4</o:Revision>
+  <o:TotalTime>110</o:TotalTime>
+  <o:Created>2003-04-10T09:41:00Z</o:Created>
+  <o:LastSaved>2003-04-10T09:49:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>196</o:Words>
-  <o:Characters>1120</o:Characters>
+  <o:Words>143</o:Words>
+  <o:Characters>816</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
-  <o:Lines>9</o:Lines>
-  <o:Paragraphs>2</o:Paragraphs>
-  <o:CharactersWithSpaces>1314</o:CharactersWithSpaces>
+  <o:Lines>6</o:Lines>
+  <o:Paragraphs>1</o:Paragraphs>
+  <o:CharactersWithSpaces>958</o:CharactersWithSpaces>
   <o:Version>10.4219</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:Zoom>BestFit</w:Zoom>
+  <w:SpellingState>Clean</w:SpellingState>
   <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
   <w:Compatibility>
    <w:BreakWrappedTables/>
@@ -137,6 +129,16 @@ a:visited, span.MsoHyperlinkFollowed
 	text-underline:none;
 	text-decoration:none;
 	text-line-through:none;}
+pre
+	{margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Courier New";
+	mso-fareast-font-family:"Times New Roman";}
+span.SpellE
+	{mso-style-name:"";
+	mso-spl-e:yes;}
 @page Section1
 	{size:21.0cm 842.0pt;
 	margin:72.0pt 89.85pt 72.0pt 89.85pt;
@@ -189,67 +191,48 @@ table.MsoTableGrid
 
 <div class=Section1>
 
-<h1><span lang=EN-GB><!--[if gte vml 1]><v:shapetype id="_x0000_t75"
- coordsize="21600,21600" o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe"
- filled="f" stroked="f">
- <v:stroke joinstyle="miter"/>
- <v:formulas>
-  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
-  <v:f eqn="sum @0 1 0"/>
-  <v:f eqn="sum 0 0 @1"/>
-  <v:f eqn="prod @2 1 2"/>
-  <v:f eqn="prod @3 21600 pixelWidth"/>
-  <v:f eqn="prod @3 21600 pixelHeight"/>
-  <v:f eqn="sum @0 0 1"/>
-  <v:f eqn="prod @6 1 2"/>
-  <v:f eqn="prod @7 21600 pixelWidth"/>
-  <v:f eqn="sum @8 21600 0"/>
-  <v:f eqn="prod @7 21600 pixelHeight"/>
-  <v:f eqn="sum @10 21600 0"/>
- </v:formulas>
- <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
- <o:lock v:ext="edit" aspectratio="t"/>
-</v:shapetype><v:shape id="_x0000_i1025" type="#_x0000_t75" style='width:12pt;
- height:11.25pt'>
- <v:imagedata src="snapshot_files/image005.gif" o:title="snap"/>
-</v:shape><![endif]--><![if !vml]><img width=16 height=15
-src="snapshot_files/image005.gif" v:shapes="_x0000_i1025"><![endif]><span
-style='mso-spacerun:yes'>  </span>Inspect model variable</span></h1>
+<h1><span lang=EN-GB>Intermediate variables</span></h1>
 
-<p class=MsoNormal><span lang=EN-GB>The snapshot tool is provided to inspect
-the values of complex data structures held by some model elements.<span
-style='mso-spacerun:yes'>  </span>By hovering over a model variable it is
-possible to <a href="preferences/view.htm">view</a> pop-up windows that contain
-an elements equation, description and value.<span style='mso-spacerun:yes'> 
-</span>But in some cases, particularly where the data have more than one
-dimension, this pop-up window is rather hard to read.<span
-style='mso-spacerun:yes'>  </span>In this case, use the snapshot tool.<span
-style='mso-spacerun:yes'>  </span>This will pop-up a larger window with the
-values structured by dimension.</span></p>
+<p class=MsoNormal><span lang=EN-GB>Local variable assignments can be made
+before an expression, separated from the expression by a comma.<span
+style='mso-spacerun:yes'>  </span>The expression returning the value of the
+element must come at the end.<span style='mso-spacerun:yes'>  </span>The local
+variables can be used in the expression, often to simplify it.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>As its name implies, the snapshot tool
-provides a view of the data structure at a moment in time.<span
-style='mso-spacerun:yes'>  </span>You can leave the window displaying the
-snapshot open, run the model for some more time, and then click again on the
-same element to open a second window that displays the new data structure.<span
-style='mso-spacerun:yes'>  </span>Having the two windows open at the same time,
-each labelled with the time at which the snapshot was taken, is the easiest way
-to trace changes to an element or sequence of elements.</span></p>
+<p class=MsoNormal><span lang=EN-GB>In the following example, the local
+variable <i style='mso-bidi-font-style:normal'>q</i> is assigned a value, then
+the main expression follows after a comma, with <i style='mso-bidi-font-style:
+normal'>q</i> being used to simplify what would otherwise be an extremely
+complex expression:</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>Note that the snapshot tool is disabled
-until the model has been built.<span style='mso-spacerun:yes'>  </span>Only
-after building the model do the elements have values.<span
-style='mso-spacerun:yes'>  </span>The tool is available at any point during the
-model run.</span></p>
+<pre><span style='color:black'>q=(<span class=SpellE>Topt-Tmin</span>)/(<span
+class=SpellE>Tmax-Topt</span>), <o:p></o:p></span></pre><pre><span
+style='color:black'>if ((T&gt;<span class=SpellE>Tmin</span>)&amp;&amp;(T&lt;<span
+class=SpellE>Tmax</span>)) then <o:p></o:p></span></pre><pre><span
+style='color:black'><span style='mso-spacerun:yes'>   </span>(((T-<span
+class=SpellE>Tmin</span>)^q) * (<span class=SpellE>Tmax</span>-T)) / (((<span
+class=SpellE>Topt-Tmin</span>)^q) * (<span class=SpellE>Tmax-Topt</span>)) <o:p></o:p></span></pre><pre><span
+style='color:black'>else <o:p></o:p></span></pre><pre><span style='color:black'><span style='mso-spacerun:yes'>   </span>0<o:p></o:p></span></pre>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>The are three parameters influencing this
+expression, <span class=SpellE><i style='mso-bidi-font-style:normal'>Topt</i></span>,
+<span class=SpellE><i style='mso-bidi-font-style:normal'>Tmin</i></span>, and <span
+class=SpellE><i style='mso-bidi-font-style:normal'>Tmax</i></span>, through influence
+arrows in the normal way.<span style='mso-spacerun:yes'>  </span>The assignment
+of a value to <i style='mso-bidi-font-style:normal'>q</i> is a purely local
+affair.<o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u>
-&gt;&gt; <u><a href="index.htm"><u>Working with model diagrams</u></a></u></span></p>
+&gt;&gt; <u><a href="index.htm"><u>Working with equations</u></a></u> &gt;&gt; <u><a
+href="components.htm"><u>Components of an equation</u></a></u><o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 

@@ -1,18 +1,18 @@
 [OPTIONS]
-Auto Index=Yes
+Binary Index=No
 Compatibility=1.1 or later
 Compiled file=simile.chm
 Contents file=contents.hhc
 Default Window=Normal
 Default topic=index.htm
 Display compile progress=No
+Enhanced decompilation=Yes
 Full-text search=Yes
-Index file=index.hhk
 Language=0x809 English (United Kingdom)
 Title=Simile help file
 
 [WINDOWS]
-Normal=,"contents.hhc","index.hhk","index.htm","index.htm",,,,,0x60520,,0x304e,,0x90000,,,,,,0
+Normal=,"contents.hhc",,"index.htm","index.htm",,,,,0x60520,,0x304e,,0xb0000,,,,,,0
 
 
 [FILES]
@@ -190,6 +190,8 @@ files\postscript.htm
 files\program.htm
 files\problem.htm
 files\format.htm
+files\limit.htm
+equations\intermediates.htm
 
 [INFOTYPES]
 
