@@ -187,10 +187,6 @@ namespace eval runcontrol33857 {
 		    if {$runState($node,modelRunning)==3} {
 			set runState($node,modelRunning) 4
 		    }
-		} fail {
-		    set runState($node,modelRunning) 0
-		    $widget.bf.flag itemconfigure 1 -fill white
-		    return
 		}
 	    }
             switch $runState($node,modelRunning) {

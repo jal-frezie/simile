@@ -221,8 +221,9 @@ proc do_for_node {node args} {
 	    
 		tell_runner $node "set runHow $runHow(type)"
 		tell_runner $node "source ../Run/runmodel.tcl"
-		do_in_node $node KickOff $node $simtmpdir $runHow(sendCmd)
 		set runState($node,modelReady) 1
+		set runState($node,queueSize) 0
+		do_in_node $node KickOff $node $simtmpdir $runHow(sendCmd)
 #	    puts $runState($node,interp) \
 #		[list KickOff $node $runHow(type) $simtmpdir]
 #	    flush $runState($node,interp)
@@ -230,12 +231,17 @@ proc do_for_node {node args} {
 	    } else {
 		set runState($node,interp) [exec $makeExec ../Run/initexec.tcl $node $simtmpdir $runHow(sendCmd) &]
 		tkwait variable runState($node,modelReady)
+		set runState($node,queueSize) 0
 	    }
-	    set runState($node,queueSize) 0
 	}
     }
     return [eval do_in_node $node $args]
 }
+
+# the 'queue' is necessary because threads stopped by tkwait variable must
+# be re-started in the reverse order they were stopped. This means that if
+# one call gets a result while another is waiting to start, the second must be
+# started -- and finished -- before the first can use its result.
 
 proc do_in_node {node args} {
     global runState runHow
@@ -249,29 +255,24 @@ proc do_in_node {node args} {
 		tkwait variable runState($node,modelReady)
 	    }
 	}
-	if {$runState($node,modelReady)==1} {
-	    tell_runner $node $command
-	    incr runState($node,queueSize)
-#puts "put: $command for $runState($node,queueSize)"
-	    set runState($node,modelReady) 0
-	    upvar \#0 runState($node,response$runState($node,queueSize)) result
-	    if {[string equal parallel $runHow(time)]} {
-		tkwait variable \
-		    runState($node,response$runState($node,queueSize))
-	    } else {
-		fileevent $runState($node,interp) readable {}
-		while {!$runState($node,modelReady)} {
-		    FeedModel $node pipe
-		}
-		fileevent $runState($node,interp) readable \
-		    [list FeedModel $node pipe]
-	    }
-#puts "Got $result for $runState($node,queueSize)"
-	    incr runState($node,queueSize) -1
+	tell_runner $node $command
+	incr runState($node,queueSize)
+#puts "put: $command"
+	set runState($node,modelReady) 0
+	upvar \#0 runState($node,response$runState($node,queueSize)) result
+	if {[string equal parallel $runHow(time)]} {
+	    tkwait variable \
+		runState($node,response$runState($node,queueSize))
 	} else {
-	    set result {res 0}
-#puts "$command: model dead"
+	    fileevent $runState($node,interp) readable {}
+	    while {!$runState($node,modelReady)} {
+		FeedModel $node pipe
+	    }
+	    fileevent $runState($node,interp) readable \
+		[list FeedModel $node pipe]
 	}
+#puts "Got $result"
+	incr runState($node,queueSize) -1
     }
     set info [lindex $result 1]
     switch [lindex $result 0] {
@@ -298,6 +299,7 @@ proc FeedModel {node incoming} {
 	}
 #puts "put: $result"
 	tell_runner $node $result
+#	eval $runHow(sendOp) exec_for_$node {$result}
     } else {
 	set runState($node,modelReady) 1
 	set runState($node,response$runState($node,queueSize)) $incoming
@@ -520,7 +522,8 @@ proc CheckUpToDate {node action} {
                     if {[string equal $node $window_info($win)]} {
                         set winId [string range $win 0 end-9]
                         if {$window_info($winId,is_top_level)} {
-                            return [Rerun $winId [string match start $action]]
+                            after idle Rerun $winId \
+				[string match start $action]
                         }
                     }
                 }

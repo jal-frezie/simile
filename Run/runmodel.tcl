@@ -549,6 +549,9 @@ proc ScrubRun {node times} {
     if {$times && [info exists runState($node,currentTime)]} {
         unset runState($node,currentTime)
     }
+    if {[winfo exists $runState($node,cnvs)]} {
+	$runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
+    }
     if {[info exists model_id($node)]} {
         if {$model_id($node)} {
             if {[info exists instance_id($node)]} {
@@ -628,7 +631,7 @@ proc snap {topNode node} {
         $w.text insert end "in submodel "
         $w.text insert end "$submodels\n" colour3
     }
-    $w.text insert end "at time "
+    $w.text insert end "at time "
 
     $w.text insert end "$runState($topNode,currentTime)\n" colour3
     $w.text insert end "[clock format [clock seconds]]\n"
@@ -903,6 +906,7 @@ proc StartRun {node} {
 	set ctrlPane [winfo parent [winfo parent [winfo parent [winfo parent \
 					$::RunEnv::runControlFrame($node)]]]]
 	update ;# so reqheight works next
+#	tkwait visibility $runState($node,helperId)
 	$ctrlPane sash place 0 \
 	    10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
     }

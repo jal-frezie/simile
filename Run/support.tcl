@@ -409,21 +409,23 @@ proc load_c_stub {} {
     randseed [clock clicks]
 }
 
-#if {[string equal process $runHow]} {
-#    proc BringParameter {args} {
-#	puts [list get $args]
-#	return [gets stdin]
-#    }
-#}
+# this version allowed supposedly unlimited nested callbacks, but the 
+# rest of the system could not cope...
 #
-
-proc do_in_editor {args} {
+#proc do_in_editor {args} {
+#    global runHow edResponse
+#
 #    remote [list get $args]
-#    while {1} {
-#	set result [gets stdin]
-#	set info [lindex $result 1]
-#	switch [lindex $result 0] {
-#	    do {
+#    while (1) { ;# this loop onle ever once if dde/send
+#	if {[string equal pipe $runHow]} {
+#	    set edResponse [gets stdin]
+#	} else {
+#	    if {[info exists edResponse]} {unset edResponse}
+#	    tkwait variable edResponse
+#	} 
+#	set info [lindex $edResponse 1]
+#	switch [lindex $edResponse 0] {
+#	    do { ;# will not happen if dde/send
 #		do $info
 #	    } err {
 #		error [lindex $info 0] [join $info \n]
@@ -432,8 +434,28 @@ proc do_in_editor {args} {
 #	    }
 #	}
 #    }
-    global sender
-    return [eval $sender {$args}]
+#}
+#
+#proc err {info} {
+#    global edResponse
+#    set edResponse [list err $info]
+#}
+#
+#proc res {info} {
+#    global edResponse
+#    set edResponse [list res $info]
+#}
+#
+# so now only simple callbacks are allowed and these are done synchronously
+
+proc do_in_editor {args} {
+    global runHow sender
+    if {[string equal process $runHow]} {
+	return [eval $sender {$args}]
+    } else {
+	puts $args
+	return [gets stdin]
+    }
 }
 
 proc PrefValue {arrVal val} {

@@ -1122,7 +1122,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file run_c" \
             -accelerator "Ctrl+B"
     AddAccelerator $winid model "Build In C++" "<Control-b>"
-    $fm add command -label "Finish execution" \
+    $fm add command -label "Abort execution" \
             -command "FinishExec $c"
     if {!$isTopLevel} {
         $fm entryconfigure "Build In Tcl" -state disabled
