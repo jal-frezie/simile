@@ -1539,17 +1539,20 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     $widget insert end " " descrtag
     
     set tidy_varlabel [regsub -all "\n" $varlabel " "]
-    # ToDo 2: Remove scaling information from graph() functions
+    # Remove scaling information from graph() functions
     #         in $expression
     #         I.e.     graph(.....),X)
     #         becomes  graph(X)
     #         (as originally entered in the Equation dialogue)
-    set c1 [expr [string first graph( $expression]+5]
-    set firstpart [string range $expression 0 $c1]
-    set rest [string range $expression [expr $c1+1] end]
-    set c2 [string first ), $rest]
-    set secondpart [string range $rest [expr $c2+2] end]
-    set expression "$firstpart$secondpart"
+    set IndexOfGraph [string first graph( $expression]; # -1 if not found
+    if {$IndexOfGraph >= 0} {
+        set c1 [expr $IndexOfGraph + 5]
+        set firstpart [string range $expression 0 $c1]
+        set rest [string range $expression [expr $c1+1] end]
+        set c2 [string first ), $rest]
+        set secondpart [string range $rest [expr $c2+2] end]
+        set expression "${firstpart}$secondpart"
+    }
     set tidy_expression [regsub -all "\n" $expression " "]
     set tidy_description [regsub -all {\n} $description { }]
     set tidy_comments [regsub -all "\n" $comments " "]
