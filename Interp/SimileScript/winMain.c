@@ -17,7 +17,7 @@ then build tk
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: winMain.c,v 1.1 2004/09/02 17:10:55 jmm Exp $
+ * RCS: @(#) $Id: winMain.c,v 1.2 2004/12/14 10:44:18 jmm Exp $
  */
 
 #include <tk.h>
@@ -217,8 +217,9 @@ Tcl_AppInit(interp)
 	Tcl_Eval(interp, "foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}");
 
 	Tcl_Eval(interp, "console title SimileScript");
-	Tcl_Eval(interp, "console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything}}}");
-
+	//Tcl_Eval(interp, "console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}");
+    Tcl_Eval(interp, "console eval {exit);
+    
     return TCL_OK;
 
 error:
