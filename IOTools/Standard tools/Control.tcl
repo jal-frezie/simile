@@ -201,9 +201,14 @@ namespace eval runcontrol33857 {
         SetState $winId $sendvars(newData)
     }
     
+# Current time display is updated as an idle callback because altering it causes the 
+# progress bar to update, which would do all idle callbacks anyway
     proc UpdateTimes { current left } {
         global runState
-        set runState(currentTime) $current
+	if {[info exists runState(oldTimeCopy)]} {
+	    after cancel $runState(oldTimeCopy)
+	}
+        set runState(oldTimeCopy) [after idle set runState(currentTime) $current]
         set runState(execTime) $left
     }
     
@@ -272,7 +277,7 @@ namespace eval runcontrol33857 {
             
             if {[info exists redoPhase]} {
                 $widget.bf.flag itemconfigure 1 -fill yellow
-                update idletasks
+                update
                 if ![eval_model $scaled_current $redoPhase] {
                     set sendvars(currentMode) exit
                 }
@@ -299,7 +304,6 @@ namespace eval runcontrol33857 {
                 set bigPhase [PhaseFor $current $step [expr [GetPhaseCount]+1]]
                 if {$bigPhase <= [GetPhaseCount]} {
                     $widget.bf.flag itemconfigure 1 -fill green
-                    update
                     if ![update_model $scaled_current $bigPhase] {
                         set sendvars(currentMode) exit
                     }
@@ -313,13 +317,14 @@ namespace eval runcontrol33857 {
                     if ![eval_model $scaled_current $bigPhase] {
                         set sendvars(currentMode) exit
                     }
+		    CondUpdate
                     # display the results if at a new time, or every time if in static mode
                     set numDisplays [expr floor(($current + $step/2)/$display)]
                     if {$numDisplays != $sendvars(prevDisplay) || $step == 0} {
                         $widget.bf.flag itemconfigure 1 -fill blue
-                        update idletasks
                         set sendvars(prevDisplay) $numDisplays
                         DoDisplay $current $display $step
+			CondUpdate
                     }
                 }
                 
@@ -336,7 +341,20 @@ namespace eval runcontrol33857 {
 	    }
 	}
     }
-    
+
+    proc CondUpdate {} {
+	global runState
+
+	set thisUpdate [clock clicks -milliseconds]
+	if {[info exists runState(lastUpdate)]} {
+	    if {[expr $thisUpdate-$runState(lastUpdate)<20]} {
+		return
+	    }
+	}
+	update
+	set runState(lastUpdate) $thisUpdate
+    }
+
     proc SecondsInA {time} {
         switch $time {
             second {return 1.0}

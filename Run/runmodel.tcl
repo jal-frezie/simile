@@ -1124,7 +1124,6 @@ proc DoDisplay {current display exec} {
         set helperId $helperTable($displayBox)
         ${helperId}::display $winId $current $display $exec
     }
-    update
 }
 
 proc AlterModel {} {
