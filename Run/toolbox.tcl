@@ -264,9 +264,11 @@ proc do_for_node {node args} {
 # does it again as long as it works
 
 proc tickle {node} {
-	if {![catch {do_in_node $node expr 1}]} {
-		after 1000 tickle $node
-	}
+    global runState
+    if {![catch {if {$runState($node,modelReady)} {
+	             do_in_node $node expr 1}}]} {
+	after 1000 tickle $node
+    }
 }
 
 # the 'queue' is necessary because threads stopped by tkwait variable must
@@ -440,6 +442,7 @@ proc GetRunParams {node} {
 
 
 proc load_dll {topNode lang progDir id node incs} {
+    ScrubRun $topNode 0
     do_for_node $topNode load_dll $topNode $lang $progDir $id $node $incs
 }
 

@@ -314,7 +314,6 @@ menu_handle(Win, file, CompOrBuild) :-
 	    output:safe_tcl_eval([info, sharedlibextension], IdentStr),
 	    Vers = Serial;
 	 CompOrBuild = build_c,
-	    ToBuild = 0,
 	    IdentStr = ".cpp",
 	    Vers = ''),
 	Win shows_model Model,
@@ -330,7 +329,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	    CompDir = Temp;
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
-	(\+ rebuild_code(c, Model, CompDir, ToBuild), !;
+	(\+ rebuild_code(c, Model, CompDir), !;
 	(get_av_pair(Model, 1, c_new, Serial), !; Serial = ''),
 	    caption_for(Model, Capt),
 	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
@@ -343,9 +342,8 @@ menu_handle(Win, file, RunCmd) :-
 	Win shows_model Node,
 	start_progress_dialogue(Win),
 	/* Compile the thing into whatever, load it */
-	scrub_run(Node, 0),
 	use_temp_dir(Dir),
-	(rebuild_code(Lang, Node, Dir, 1), !,
+	(rebuild_code(Lang, Node, Dir), !,
 	    /* no much point going for run */
 	    finish_progress_dialogue,
 	    on_exception(_Whoops,
@@ -1005,16 +1003,12 @@ flip_innards(Node_name, Action) :-
 		change_shape(Thing, Whatever, New_wherever),
 		fail).
 
-rebuild_code(Lang, Node, ProgFileDir, ToBuild) :-
-	(on_exception(Whoops, (Lang = c,
-				  tk_get_pref(compChoice, 'None'),
-				  ToBuild = 1,
-				  raise_exception(no_compiler);
-			       compile(Lang, Node, ProgFileDir)), true), !;
+rebuild_code(Lang, Node, ProgFileDir) :-
+	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true), !;
 	    Whoops = compilation_failed),
 	(Whoops = yes;
 	    show_error(Node, Whoops),
-	    scrub_run(Node, 0),
+            scrub_run(Node, 0),
 	    fail).
 
 show_error(Model, Lossage) :-
@@ -1160,7 +1154,7 @@ cutoff(Parent) :-
 cutout(Parent) :-
 	find_all_links(Parent, Child),
 	sever_links(Child, Parent),
-	fail.
+	fail.
 		
 delete_tree(Target) :-
 	find_type(Target, submodel),

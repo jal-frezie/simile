@@ -380,13 +380,13 @@ namespace eval runcontrol33857 {
 		    if {$runState($node,modelRunning)<3} {
 			set runState($node,modelRunning) 3
 		    }
+		    if {$redoPhase($node) < 1} {
+			TellAllHelpers $node reset
+		    }
+		    TellAllHelpers $node display $current $display $update
 		} else {
                     set sendvars($node,currentMode) exit
                 }
-                if {$redoPhase($node) < 1} {
-                    TellAllHelpers $node reset
-                }
-                TellAllHelpers $node display $current $display $update
                 unset redoPhase($node)
             }
             
