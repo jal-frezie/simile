@@ -7,19 +7,19 @@ package require Itcl
 namespace import ::itcl::*
 
 if {[string match windows $tcl_platform(platform)]} {
-  package require tcom
-  ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+#  package require tcom
+#  ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
 }
 
 package require Tk
 
 #puts "SimileAutoObj; pwd [pwd]"
 
+###############################################################################
 set argc 0; # simile.tcl expects to be called from the command line - tell it no args
 source "[pwd]/../../Run/simile.tcl"
-if {[winfo exists .register]} {
-    .register.tasks getframe].b.new invoke
-}
+puts "sourced"
+###############################################################################
 
 class ModelWindowImpl {
     
@@ -29,10 +29,15 @@ class ModelWindowImpl {
     }
     
     constructor {} {
-        #cd f:/progra~1/Simile/System/bin
-        #set argc 0; # simile.tcl expects to be called from the command line - tell it no args
-        #source f:/progra~1/Simile/Run/simile.tcl; # ABSOLUTE PATH !!!!!!!!!!!! todo
-    }
+################################################################################
+#          puts "constructor"
+#          
+#          global argc
+#  set argc 0; # simile.tcl expects to be called from the command line - tell it no args
+#  source "[pwd]/../../Run/simile.tcl"
+#  puts "sourced"
+################################################################################
+}
     
     public method HideModelWindow {} {
         # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
@@ -60,7 +65,7 @@ class ModelWindowImpl {
     }
 
     public method FileOpen {modelFile} {
-	Reopen [GetModelWindow].canvas $modelFile reopen}
+	Reopen [GetModelWindow].canvas $modelFile reopen
     }
    
     public method FileSave {} {
@@ -119,8 +124,26 @@ class ModelWindowImpl {
     
 }
 
+class RunControlImpl {
+    constructor {} {
+        //return [CreateHelperWindow runcontrol33857 {Run control}]
+        # get a pointer to the run control
+    }
+}
+
+class RunModelExplorerImpl {
+    constructor {} {
+        return [CreateHelperWindow ModelInspector63654 {Model Explorer}]
+    }
+}
+
+class TableHelperImpl {
+    constructor {} {
+        return [CreateHelperWindow tabular11510 {Table}]
+    }
+}
 
 if {[string match windows $tcl_platform(platform)]} {
-  ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+#  ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
 }
 
