@@ -590,7 +590,7 @@ make_intermediates(
 	        NeedType = int),
 		promote_unit(Int, NeedType), !,
 		IntIndxRef = IndxRef;
-	    Int = real, !, /* for legacy cases */
+	    promote_arg(Int, real, _), !, /* for legacy cases */
 	        IntIndxRef = simile_int(IndxRef);
 	    raise_exception(needs_number_index(Source))),
 	    

@@ -649,7 +649,7 @@ decode_error(ParseError, TestError) :-
 	    sicstus_format_to_chars("You have used the index number ~d, but it must be between 1 and the number of available indices, which is ~d.", [SimpleError, Avail], TestError);
 	Type = needs_number_index, !,
 	    SimpleError =.. [Functor, _, Ind],
-	    sicstus_format_to_chars("The function \"~a\" needs a numerical value for it's second argument. \"~w\" does not fit -- it evaluates to a boolean or something.",
+	    sicstus_format_to_chars("The function \"~a\" needs a numerical value for its second argument. \"~w\" does not fit -- it evaluates to a boolean or something.",
 			   [Functor, Ind], TestError);
 	Type = got_list_for_array, !,
 	    SimpleError =.. [Functor, Arr | _],
