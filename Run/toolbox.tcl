@@ -219,7 +219,9 @@ proc TransferSaveFile {tree tgt way} {
 		    set runState(phases) [expr $others-2]
 		} else {
 		    set Disposition [mime::getheader $bit Content-Disposition]
-		    set oldPath [lindex [lindex $Disposition 0] 1]
+		    if {![regexp \"(.*)\" $Disposition all oldPath]} {
+			set oldPath [lindex [lindex $Disposition 0] 1]
+		    }
 		    set newPath $tree$oldPath
 		    file mkdir [file dirname $newPath]
 		    set mimeSquirter [open $newPath w]
@@ -244,22 +246,26 @@ proc GetParts {top tree} {
                 .gif {
                     set PartType "image/gif"
                     set Description "Image"
+		    set style inline
                 }
                 .pl {
                     set PartType "application/x-simile"
                     set Description "Simile model"
+		    set style inline
                 }
                 .cnv {
                     set PartType "application/x-simile"
                     set Description "Simile canvas description"
+		    set style attachment
                 }
                 default {
                     set PartType "application/x-simile"
                     set Description "Data"
+		    set style attachment
                 }
             }
 	    set relPath [string range $subtree [string length $top] end]
-            set Disposition [concat "inline;" $relPath]
+            set Disposition "${style}; filename=\"$relPath\""
 	    set newMime [mime::initialize -canonical $PartType \
                     -header [list "Content-Disposition" $Disposition] \
                     -header [list "Content-Description" $Description] \
@@ -290,8 +296,8 @@ proc byebye {winId} {
     prolog [list tk_off_window( '$winId.canvas' )]
 }
 
-proc exit_simile {Dir} {
-    global custom model_id instance_id plPipe
+proc exit_simile {} {
+    global custom model_id instance_id
     if {[info exists instance_id]} {
         c_exitmodel $model_id $instance_id
     }
@@ -301,11 +307,6 @@ proc exit_simile {Dir} {
         puts $cacheStream $oldFile
     }
     close $cacheStream
-    if {[info exists plPipe]} {
-	close $plPipe
-    }
-    file delete -force $Dir
-    destroy .
 }
 
 proc ZapWindow { fullName } {
@@ -681,7 +682,7 @@ proc AddAccelerators { winName } {
     bind $winName <Control-o> "MenuSelect $winName.canvas file open"
     bind $winName <Control-s> "MenuSelect $winName.canvas file save"
     bind $winName <Control-p> "PrintNow $winName.canvas"
-    bind $winName <Alt-x> "prolog tk_finish"
+    bind $winName <Alt-x> "byebye $winName"
     
     #edit
     bind $winName <Control-z> "prolog tk_undo"
@@ -1092,9 +1093,10 @@ proc AddMainMenu { winid initWidth initDepths} {
             -command "MenuSelect $winid.canvas file prolog_eqns"
     $fm add separator
     if {[info exists custom(first_up)]} {
-        $fm add command -label Close -command "byebye $winid"
+        $fm add command -label Close -command "byebye $winid" \
+                -accelerator "Alt+x"
     } else {
-        $fm add command -label Exit -command "prolog tk_finish"\
+        $fm add command -label Exit -command "byebye $winid" \
                 -accelerator "Alt+x"
     }
     set fm [menu ${winid}top.edit -tearoff 0]

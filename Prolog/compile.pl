@@ -89,6 +89,9 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 	   \+ check_executable(Language, CheckDir),
 	     \+ check_level_for_reds(Parent);
 	   \+ load_executable(Language, DestDir, LongName, Parent)), !,
+	     \+ (Language = c,
+		    tk_get_pref(compChoice, 'None'),
+		    raise_exception('To run this model as a c++ program you need to select a c++ compiler to use. Please consult the documentation for help installing a c++ compiler.')),
 	     retractall(entry_arcs_are(_)),
 	     assert(entry_arcs_are([])),
 	     instantiate_all(Parent, Model),
@@ -107,7 +110,9 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 	     (Parent has_changed_model_refinement c_new of 1;
 		Parent has_new_model_refinement c_new of 1),
 	     (Language = tcl, !;
-	     compile_c_program(DestDir, LongName),
+	     compile_c_program(DestDir, LongName, Err),
+		 (Err = [], !;
+		 raise_exception('Failed to make an executable model.')),
 		 assert(new_exec_for(Parent))),
 	     load_executable(Language, DestDir, LongName, Parent);
 	 true),

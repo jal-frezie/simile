@@ -28,7 +28,7 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		highlight/2, normalize/1, current_edit/2, exterminate/1,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
-		tk_get_pref/2, kill_window/1, exit_AME/1]).
+		tk_get_pref/2, kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), state, image, ame_gen, output]).
 

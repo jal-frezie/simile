@@ -104,3 +104,8 @@ make_desktop(Desktop, Canvas_name) :-
 	menu:update_mode(select),
 	backup:initialize_ring,
 	state:initialize_phase.
+
+wind_up :-
+	backup:use_temp_dir(TempDir),
+	output:my_delete_file(TempDir),
+	tcl_eval([destroy, '.'], _).

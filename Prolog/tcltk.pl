@@ -128,3 +128,6 @@ do_cmd(TermStr) :-
 	(sicstus_read_from_chars(TermStr, Cmd),
 	call(Cmd), !),
 	(write(PlError), nl)).
+
+wind_up :-
+	halt(0).

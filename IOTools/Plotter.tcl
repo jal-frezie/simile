@@ -236,7 +236,7 @@ proc AddVariable { winId } {
     set ym [expr $plot($winId,yborder_top)+20]
     $winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
             -text "Click on a variable in the Explorer window\
-            or a Model Diagram."
+            or a Model Diagram ($winId)"
     GrabClicks $winId
 }
 

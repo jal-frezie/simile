@@ -25,7 +25,8 @@ ame_save( File, Model, Date ) :-
 		   Classes ),
 	on_exception(_, open( File, write, Stream, [type(binary)]), 
 	fail), !,
-	dialogue:start_progress_dialogue('.'),
+	state:shows_model(Win, Model),
+	dialogue:start_progress_dialogue(Win),
 	(dialogue:reassure_user("Writing root information"),
 	user:version_is(VStr),
 	name(SimV, VStr),
@@ -166,7 +167,7 @@ reading the file under Unix */
 write_with_breaks(Stream, Term) :-
 	user:printq_to_codes(TermStr, Term),
 	append(TermStr, ".", FullTermStr),
-	insert_breaks(Stream, Term, [], FullTermStr),
+	sicstus_write_chars(Stream, FullTermStr),
 	sicstus_put(Stream, 10).
 
 /* Clever part disabled to try to help mime stuff */
@@ -174,7 +175,7 @@ write_with_breaks(Stream, Term) :-
 insert_breaks(Stream, Term, Done, Rest) :-
 	length(Rest, RLen),
 	choose_breakpoint(Break),
-	( /* Break >= RLen, */ !,
+	(Break >= RLen, !,
 	    sicstus_write_chars(Stream, Rest);
 	length(Line, Break),
 	    append(Line, NewRest, Rest),
@@ -211,7 +212,8 @@ choose_breakpoint(Break) :-
 % if not toplevel, to avoid clashes. Date from file is returned.
 
 ame_merge( Parent, File, Date ) :-
-	dialogue:start_progress_dialogue('.'),
+	state:shows_model(Win, Parent),
+	dialogue:start_progress_dialogue(Win),
 	dialogue:reassure_user("Reading information from file"),
 	open( File, read, Stream),
 	read( Stream, Header ),

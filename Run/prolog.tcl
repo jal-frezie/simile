@@ -9,8 +9,7 @@ wm protocol . WM_DELETE_WINDOW {close $plPipe; destroy .}
 proc Reader {} {
     global plPipe running
     if {[eof $plPipe]} {
-	catch {close $plPipe}
-	destroy .
+	ClosePipe
     }
     if {[gets $plPipe noCrs] >= 0} {
 	regsub -all \\\\n $noCrs \n line
@@ -21,8 +20,8 @@ proc Reader {} {
 	    eval do_tail $line
 	} elseif {[string match debug [lindex $line 0]]} {
 	} else {
-	    tk_messageBox -title {Unexpected Prolog output} -icon warning \
-		-message $line -type ok
+#	    tk_messageBox -title {Unexpected Prolog output} -icon warning \
+#		-message $line -type ok
 	}
     }
 }
@@ -69,6 +68,13 @@ proc KeepLooking {} {
     }
 }
 
+proc ClosePipe {} {
+    global plPipe env
+    close $plPipe
+    file delete -force $env(SIMTMPDIR)
+    exit
+}
+
 set running 0
 set plQueue {}
 set prologWaiting 0
@@ -91,7 +97,7 @@ fconfigure $plPipe -translation {auto lf}
 set spraf {}
 while {![string match ready $spraf]} {
     if {[gets $plPipe spraf]<0} {
-	exit
+	ClosePipe
     }
 }
 KeepLooking

@@ -1618,7 +1618,7 @@ proc load_dll {lang progFileDir modelPath node} {
     } else {
 	if {[catch {loadmodel $nameBase[info sharedlibextension] $node} \
 		model_id]} {
-	    ShowMessage {Loading model dll} info "Loading model dll failed because $model_id -- the program will attempt to build another one." ok
+	    ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $model_id -- the program will attempt to build another one." ok
 	    unset model_id
 	    return 0
 	}
@@ -2052,11 +2052,14 @@ proc newInt {} {
 
 proc FilterErrors {args} {
     global errorInfo
+    set oldDir [pwd]
     if {[catch $args retVal]} {
 	set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
 	if {[string match yes $ans]} {
 	    ErrorHelp $errorInfo
 	}
+	cd $oldDir
+	return -1
     } else {
 	return $retVal
     }

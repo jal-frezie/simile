@@ -10,8 +10,7 @@ interface of the application. It responds by:
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	undo/0, redo/0, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
-	off_window/1, 
-	finish/0, set_style/1]).
+	off_window/1, set_style/1]).
 	
 sicstus_use_module([compile, dialogue, m_update, image, maintain, 
 		    state, backup, library, ame_gen, utility,
@@ -570,21 +569,16 @@ change_size(_,_).
 
 off_window(Win) :-
 	Win shows_model Model,
-	(get_save_status(Win, safe);
-	_ shows_model HigherLevel,
-		\+ HigherLevel = Model,
-		contains(HigherLevel, Model);
-	ok_to_delete(Model)),
-	scrub_autosave(Model),
+	(is_toplevel(Model), !,
+	    check_deletable(Win, Model),
+	    (Sub shows_model _,
+		destroy_window(Sub),
+		kill_window(Sub),
+		fail;
+	    exit_AME,
+		user:wind_up);
 	destroy_window(Win),
-	kill_window(Win),
-	(_ shows_model _, !;
-	    use_temp_dir(Dir),
-	    exit_AME(Dir)).
-
-finish :-
-	\+ (Win shows_model _,
-		\+ off_window(Win)).
+	kill_window(Win)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Target) :-
