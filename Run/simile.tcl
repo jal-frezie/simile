@@ -56,7 +56,7 @@ if {[string match Darwin $tcl_platform(os)]} {
 pack [canvas .c -width 510 -height 340]
 .c create image 255 170 -image splash
 .c create text 392.0 285.0 -font {-weight bold -family helvetica -size 12} -text "Version $env(SIMILE_VERSION)"
-.c create text 392.0 320.0 -font {-family helvetica -size 10} -text "© 2002 Simulistics Ltd."
+.c create text 392.0 320.0 -font {-family helvetica -size 10} -text "© 2003 Simulistics Ltd."
 
 wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2-170]
 wm overrideredirect . 1
