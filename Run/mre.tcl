@@ -210,14 +210,14 @@ proc RunEnv::AddNotebook {containerId} {
         $containerId.notebook insert end $pageId -text "Page $i" \
                 -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
         bind [$containerId.notebook getframe $pageId] <Button-3> \
-                "tk_popup .pageContextMenu %X %Y"
+                "+tk_popup .pageContextMenu %X %Y"
         set newContainer [$containerId.notebook getframe $pageId]
         panedwindow $newContainer.panedwindow -orient vertical
         pack $newContainer.panedwindow -expand yes -fill both
         frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1; # -relief ridge;# jmm
-        bind $newContainer.panedwindow.pane0 <Button-1> "::RunEnv::SetCurrentContainer %W"
+        bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
         bind $newContainer.panedwindow.pane0 <Button-3> \
-                "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
         $newContainer.panedwindow add $newContainer.panedwindow.pane0 -sticky nesw
     }
 
@@ -277,9 +277,9 @@ proc RunEnv::AddNotebookPage {containerId} {
         panedwindow $newContainer.panedwindow -orient vertical
         pack $newContainer.panedwindow -expand yes -fill both
         frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1
-        bind $newContainer.panedwindow.pane0 <Button-1> "::RunEnv::SetCurrentContainer %W"
+        bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
         bind $newContainer.panedwindow.pane0 <Button-3> \
-                "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
         $newContainer.panedwindow add $newContainer.panedwindow.pane0
         return $newContainer.panedwindow.pane0
     } else  {
@@ -459,18 +459,19 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
 
 proc RunEnv::DeletePane {parentPath containerId} {
     #ShowMessage debug info "DeletePane\n parentPath $parentPath\n \
-    #            containerId $containerId\n \
-    #            panes [$parentPath panes]" ok; 
+    #        containerId $containerId\n \
+    #        panes [$parentPath panes]" ok;
     $parentPath forget $containerId
     destroy $containerId
+    SetCurrentContainer [lindex [$parentPath panes] 0]
     # all panedwindows are in a notebook parent
     if {[llength [$parentPath panes]]==0} {
         set parentPage [winfo parent $parentPath]
         set parentNoteBook [winfo parent $parentPage]
-        #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
+    #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
         #                parentPage $parentPage; parentNoteBook $parentNoteBook\n \
         #                pages [$parentNoteBook pages]\n \
-        #                current page [$parentNoteBook raise]" ok; 
+        #                current page [$parentNoteBook raise]" ok;
         destroy $parentPath
         if {[string match NoteBook [winfo class $parentNoteBook]]} {
             DeleteNotebookPage $parentNoteBook [$parentNoteBook raise]; #current page
@@ -530,9 +531,9 @@ proc RunEnv::SplitPage {containerId orientation} {
         # add a new pane
         set paneId [UniqueId $parentPath.pane [$parentPath panes]]
         frame $paneId -highlightcolor black -highlightthickness 1
-        bind $paneId <Button-1> "::RunEnv::SetCurrentContainer %W"
+        bind $paneId <Button-1> "+::RunEnv::SetCurrentContainer %W"
         bind $paneId <Button-3> \
-                "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
         $parentPath add $paneId -after $containerId
         
         update; # or sash place won't work
@@ -637,12 +638,12 @@ proc RunEnv::Addpanedwindow {containerId orientation} {
     #ShowMessage debug info "RunEnv::Addpanedwindow width $width; height $height" ok
     frame $containerId.panedwindow.pane0 -highlightcolor black -highlightthickness 1
     frame $containerId.panedwindow.pane1 -highlightcolor black  -highlightthickness 1
-    bind $containerId.panedwindow.pane0 <Button-1> "::RunEnv::SetCurrentContainer %W"
-    bind $containerId.panedwindow.pane1 <Button-1> "::RunEnv::SetCurrentContainer %W"
+    bind $containerId.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
+    bind $containerId.panedwindow.pane1 <Button-1> "+::RunEnv::SetCurrentContainer %W"
     bind $containerId.panedwindow.pane0 <Button-3> \
-            "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+            "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
     bind $containerId.panedwindow.pane1 <Button-3> \
-            "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+            "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
     $containerId.panedwindow add $containerId.panedwindow.pane0 $containerId.panedwindow.pane1 \
             -width $width -height $height
     SetCurrentContainer $containerId.panedwindow.pane0
@@ -805,7 +806,7 @@ proc RunEnv::CreateDisplayPageContextMenu {} {
         $m add command -label "Add notebook" -command "RunEnv::AddNotebookToCurrentContainer"
         $m add command -label "Add notebook page" -command "RunEnv::AddNotebookPageToCurrentContainer"
         $m add separator
-        $m add command -label "Delete pane or page" -command "::RunEnv::DeleteHelperCurrentContainer"
+        $m add command -label "Delete" -command "::RunEnv::DeleteHelperCurrentContainer"
     }
 }
 
@@ -825,7 +826,7 @@ proc RunEnv::ChildrenFocusParent {parent} {
     #        parent : $parent; container $Container\n\
     #        children [winfo children $parent]" ok
     foreach child [winfo children $parent] {
-        bind $child <Button-1> "::RunEnv::SetCurrentContainer $Container"
+        bind $child <Button-1> "+::RunEnv::SetCurrentContainer $Container"
     }
 }
 
@@ -1018,9 +1019,9 @@ proc RunEnv::LoadViewFile {stream line} {
                 frame $path -highlightcolor black  -highlightthickness 1
                 set panedwindow [winfo parent $path]
                 $panedwindow add $path
-                bind $path <Button-1> "::RunEnv::SetCurrentContainer %W"
+                bind $path <Button-1> "+::RunEnv::SetCurrentContainer %W"
                 bind $path <Button-3> \
-                        "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                        "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
             }
             sash {
                 scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
@@ -1055,9 +1056,9 @@ proc RunEnv::LoadViewFile {stream line} {
                 $notebook insert end $pageId -text $pagecaption \
                         -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
                 # page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
-                bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
+                bind [$notebook getframe $pageId] <Button-1> "+::RunEnv::SetCurrentContainer %W"
                 bind [$notebook getframe $pageId] <Button-3> \
-                        "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                        "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
                 #$notebook raise $pageId
                 #catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
                 
@@ -1143,7 +1144,7 @@ proc NewMreHelperWindow {helperId helperTitle} {
             }
     if {$def==0} {
         bind $winId <Destroy>  "kill_helper_window $winId"
-        bind $winId <Button-1> "::RunEnv::SetCurrentContainer $winId"
+        bind $winId <Button-1> "+::RunEnv::SetCurrentContainer $winId"
         set helperTable($helperTitle) $winId
         set helperTable($winId,whichHelper) $helperId
     }
