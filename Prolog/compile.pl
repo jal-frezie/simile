@@ -1301,6 +1301,9 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		all(compile, get_pass_ends,
 		    [build([D1, D1 | AllLoops]), build([D2, D2 | OpenLoops]),
 		     build(LastStep)]),
+		all(inters, indices_for,
+		    [build(AllLoops), append(LoopInds, [])]),
+		append(LoopInds, LocalInds, Inds),
 
 		/* At this point we need to replace the innermost loop with an
 		assignment if using an id-based condition, and move the
@@ -1317,17 +1320,20 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		    member(SmLoop,
 			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !,
 		    append_atoms(Submodel, cond, IdVar),
+		    /* OK Normally a reference to index(n) in a vm submodel
+		    gets turned to an element of instanceid, but this will not
+		    yet have been filled when assigning the cond, so replace
+		    with direct references to loop inds */
+		    replace_subexps(IdExpr, compile, indices_direct,
+				    [Ptr | Inds], top_down, _, IxExpr),
 		    IdRef = arr('', IdVar, []),
 		    append(OuterLoops,
-			   [IdOpen, make(_,_,_,_, [assign(IdRef, IdExpr)])
+			   [IdOpen, make(_,_,_,_, [assign(IdRef, IxExpr)])
 					| SmLoop], UseLoops),
 		    append(Slower, [NoIdConds | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
 		    UseSubPasses = SubPasses),
 				    
-		all(inters, indices_for,
-		    [build(AllLoops), append(LoopInds, [])]),
-		append(LoopInds, LocalInds, Inds),
 		get_base_ptrs(BLoops, _, BasePtrs),
 		extract_action(Outer, [bound_gen_loop(ParentPtr, Submodel)]),
 		extract_action(GenStep, [generate(Submodel, ParentPtr,
@@ -1356,6 +1362,10 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		   OrderedAssign), !;
 	OrderedAssign = [],
 	    Left = Later).
+
+indices_direct([MPtr | Inds], ind(IPtr, N), Ind, 0) :-
+	MPtr == IPtr,
+	nth0(N, Inds, Ind).
 
 ptr_to_last_vm(Path, Ptrs) :-
 	member(sm(_,_, Ptr, vm_loop(_,_,_,Phase)), Path), !,
