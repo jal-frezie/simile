@@ -395,11 +395,12 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
         */
 	((var(ParseUnit), !,
 	(DimExprs = TargetExprs, !,
-	    ((member(Unit_base, [any, const_int, a(_ET), int]),
+	    ((member(Unit_base, [any, boolean, const_int, a(_ET), int]),
 	          Unit_type = Unit_base;	 
 	      get_conversion(_, Unit_base, Unit_base, _),
 	          Unit_type = real), !,
-		(member(Target_base, [any, n(_ET), a(_ET), int, const_int]),
+		(member(Target_base, [any, n(_ET), a(_ET),
+				      boolean, int, const_int]),
 		    Target_type = Target_base;	 
 	        Target_type = real),
 		(Severity = 0, !;
