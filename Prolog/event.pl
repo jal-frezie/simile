@@ -1270,8 +1270,8 @@ change_delete_status(Target, Way) :-
 	true).
 
 depends_on_links(Damage) :-
-	find_type(Damage, cloud);
-	is_parameter(Damage, N), N>0.
+	find_type(Damage, cloud) /* keep unattached parameters for now ;
+	is_parameter(Damage, N), N>0 */ .
 
 keep_only_if_links_stay(Damage) :-
 	setof(NeedsIt, find_all_links(Damage, NeedsIt), NeedIt),
