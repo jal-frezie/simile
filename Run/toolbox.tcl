@@ -1871,8 +1871,8 @@ proc DragComponentIn {winId button x y} {
     set top [winfo parent $winId]
     foreach level [list $top $winId] {
 	scan [winfo geometry $level] %dx%d+%d+%d w h ox oy
-	incr x -$ox
-	incr y -$oy
+	incr x [expr -$ox]
+	incr y [expr -$oy]
     }
 
     if {$x<0 || $x>$w || $y<0 || $y>$h} {
