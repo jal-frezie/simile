@@ -210,6 +210,10 @@
 			<param name="Local" value="diagrams\rescale.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Inspect model variable">
+			<param name="Local" value="diagrams\snapshot.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Controlling the detail displayed">
 			<param name="Local" value="diagrams\detail.htm">
 			</OBJECT>
