@@ -28,6 +28,8 @@ namespace eval grid005 {
         set useNodes($winId,nswatches) 32
         set useNodes($winId,integer) 0
         set useNodes($winId,freeze) false
+        set useNodes($winId,min) 0
+        set useNodes($winId,max) 100
         SetState $winId {}
         AddToolbar $winId
         set NToolButtons [$winId.bbframe.buttonBox index last]
@@ -158,18 +160,14 @@ namespace eval grid005 {
     
     proc InitialiseGrid {winId display1} {
         variable useNodes
-        if {![info exists useNodes($winId,min)]} {
-            set useNodes($winId,min) [GetMinValue $display1]
-            if {$useNodes($winId,min)==-1e100} {
-                set useNodes($winId,min) 0
-            }
+
+        set min [GetMinValue $display1]
+        if {$min!=-1e100} {
+            set useNodes($winId,min) $min
         }
-        
-        if {![info exists useNodes($winId,max)]} {
-            set useNodes($winId,max) [GetMaxValue $display1]
-            if {$useNodes($winId,max)==1e100} {
-                set useNodes($winId,max) 100
-            }
+        set max [GetMaxValue $display1]
+        if {$max!=1e100} {
+            set useNodes($winId,max) $max
         }
         set useNodes($winId,range) [expr {$useNodes($winId,max)-$useNodes($winId,min)}]
         
