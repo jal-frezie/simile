@@ -358,7 +358,7 @@ match_with_ends(Node, Far, Arc, Way) :-
 	get_highlit_obj(0, Node),
 	    get_highlit_obj(0, Far), !,
 	    highlight(Arc, 0);
-	highlight(Arc, 1),
+	/* highlight(Arc, 1), */
 	((get_highlit_obj(P, Node);
 	    get_highlit_obj(P, Far)),
 	    P<2;
@@ -609,7 +609,10 @@ spread_colour(Node, NewDims) :-
 	    redisplay_border(Hit),
 	    presence_affects(Hit, MayChange),
 	    spread_dims(MayChange)),
-	fail; true.
+	/* Component colour will be normalized so get its links normal too */
+	normalize_ghosts_etc(Hit);
+	clear_deletes(Hit);
+	true.
 
 new_window_for(Submodel, Canvas_name, InitDepths, IsTopLevel) :-
 	utility:unique_name('.mswindow', Topwin),

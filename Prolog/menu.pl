@@ -467,11 +467,11 @@ menu_handle(Win, edit, unselall) :-
         start_progress_dialogue,
 	reassure_user("Unselecting whole model"),
 	(Win shows_model Model,
-	    contains(Model, Sub),
-	    find_type(Sub, submodel),
-	    find_all_comps(Sub, Bit),
-	    get_highlit_obj(_, Bit),
-	    normalize(Bit),
+	    contains(Model, Bit),
+	    Bit is_of_sort box,
+	    get_highlit_obj(0, Bit),
+	    \+ Bit = Model,
+	    event:do_colours(Bit, off),
 	    fail;
 	finish_progress_dialogue).
 	   
@@ -537,8 +537,9 @@ menu_handle(_, _, _).
 
 select_all_in(Model) :-
 	contains(Model, Bit),
+	    Bit is_of_sort box,
 	    \+ Bit = Model,
-	    highlight(Bit, 0),
+	    event:do_colours(Bit, on),
 	    fail;
 	true.
 	
