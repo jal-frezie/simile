@@ -109,7 +109,8 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 }
 
 # Circles are drawn as many-hedrons until the bug that stops ovals stippling
-# is fixed (still buggy as hell in TclTk 8.4.6)
+# is fixed (still buggy as hell in TclTk 8.4.6...actually not, it just needs
+# outlinestipple as well as stipple -- so its rectangles that are buggy?)
 
 proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
     set width [GetLineSize $w variable $fatness]
@@ -118,62 +119,24 @@ proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
-    set bulge [expr 1.2*$rad]
-    set bounds [list $hm [expr $vm-$bulge] [expr $hm+.866*$bulge] [expr $vm-.5*$bulge] \
-            [expr $hm+.866*$bulge] [expr $vm+.5*$bulge] $hm [expr $vm+$bulge] \
-            [expr $hm-.866*$bulge] [expr $vm+.5*$bulge] [expr $hm-.866*$bulge] \
-            [expr $vm-.5*$bulge] $hm [expr $vm-$bulge]]
-#    set p1 [eval {$w create poly} $bounds {-smooth true -outline {} \
-#	   -tag "$tagSet has_info"}]
-#    set lwidth [expr 2*$width]
-#    set p1 [eval {$w create line} $bounds {-smooth true \
-	   -width $lwidth -tag "$tagSet realwidth($lwidth) has_info"}]
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
-    set bulge [expr 0.707*$rad]
-    set xl [expr $hm-$bulge]
-    set xt [expr $vm-$bulge]
-    set xr [expr $hm+$bulge]
-    set xb [expr $vm+$bulge]
-
     $w create arc $ml $mt $mr $mb -width $width -start 135 -extent 90 \
             -tag "$tagSet realwidth($width) has_info"
     $w create arc $ml $mt $mr $mb -width $width -start 315 -extent 90 \
             -tag "$tagSet realwidth($width) has_info"
 
+# to draw the old style variable leave out the arcs but
 #    $w create line $xl $xt $xr $xb -width $width \
 #            -tag "$tagSet realwidth($width) has_info"
 #   $w create line $xr $xt $xl $xb -width $width \
 #           -tag "$tagSet realwidth($width) has_info"
     
     
-    #    $w create oval $ml $mt $mr $mb -outline {} -tag $tagSet
-    #    scan [GetPoints $ml $rad] {%f %f %f %f %f} h0 h1 h2 h3 h4
-    #    scan [GetPoints $mt $rad] {%f %f %f %f %f} v0 v1 v2 v3 v4
-    #    scan [GetPoints $mr -$rad] {%f %f %f %f %f} h9 h8 h7 h6 h5
-    #    scan [GetPoints $mb -$rad] {%f %f %f %f %f} v9 v8 v7 v6 v5
-    #    $w create polygon $h2 $v7 $h1 $v6 $h0 $v5 \
-    #	    $ml $vm $h0 $v4 $h1 $v3 $h2 $v2 $h3 $v1 $h4 $v0 \
-    #	    $hm $mt $h5 $v0 $h6 $v1 $h7 $v2 $h8 $v3 $h9 $v4 \
-    #	    $mr $vm $h9 $v5 $h8 $v6 $h7 $v7 $h6 $v8 $h5 $v9 \
-    #	    $hm $mb $h4 $v9 $h3 $v8 -outline {} -tag $tagSet
-    #    $w create line $h2 $v2 $h7 $v7 -width $width \
-    #	    -tag "$tagSet realwidth($width)"
-    #    $w create line $h2 $v7 $h7 $v2 -width $width \
-    #	    -tag "$tagSet realwidth($width)"
-    #    $w create line $h2 $v7 $h1 $v6 $h0 $v5 \
-    #	    $ml $vm $h0 $v4 $h1 $v3 $h2 $v2 $h3 $v1 $h4 $v0 \
-    #	    $hm $mt $h5 $v0 $h6 $v1 $h7 $v2 \
-    #	-width $width -tag "$tagSet size_on_this realwidth($width)"
-    
     set stackDepth 1
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
-        set stackSide [eval {$w create line} $bounds \
-                {-smooth true -width $width -tag "$tagSet size_on_this realwidth($width)"}]
-        #	set stackSide [$w create line $h7 $v2 $h8 $v3 $h9 $v4 \
-        #		$mr $vm $h9 $v5 $h8 $v6 $h7 $v7 $h6 $v8 $h5 $v9 \
-        #		$hm $mb $h4 $v9 $h3 $v8 $h2 $v7 \
-        #		-width $width -tag "$tagSet size_on_this realwidth($width)"]
+        set stackSide [$w create oval $ml $mt $mr $mb -width $width \
+			   -tag "$tagSet size_on_this realwidth($width)"]
         if {$stackDepth} {
             $w lower $stackSide $p1
             $w move $stackSide $stackDistance $stackDistance
