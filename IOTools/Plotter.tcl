@@ -52,9 +52,9 @@ namespace eval ::$keyValue {
         set plot($w,redraw) 0
         set plot($w,topright) 1
         set plot($w,grid) on
-        set plot($w,xlength) 350
+        set plot($w,xlength) 330
         set plot($w,ylength) 200
-        set plot($w,xborder_left) 50
+        set plot($w,xborder_left) 70
         set plot($w,xborder_right) 15
         set plot($w,yborder_top) 30
         set plot($w,yborder_bottom) 30
@@ -474,42 +474,42 @@ namespace eval ::$keyValue {
     }
     
     ### apply graticule and grid to graph
-    proc drawGraticule {w Xintercept Yintercept} {
-        global ::graphtools::plot
-        
-        # distance between each graticule.
-        set Xgraticule  [expr ($plot($w,Width)  - 2*$plot($w,Xborder)) / double($plot($w,AxisDivisions))]
-        set Ygraticule  [expr ($plot($w,Height) - 2*$plot($w,Yborder)) / double($plot($w,AxisDivisions))]
-        
-        # value per division ( set to 0.1 if a division = 0)
-        set Xdivision [expr (abs($plot($w,Xmax))+abs($plot($w,Xmin)))  / double($plot($w,AxisDivisions))]
-        set Ydivision [expr (abs($plot($w,Ymax))+abs($plot($w,Ymin)))  / double($plot($w,AxisDivisions))]
-        
-        # draw values and grid lines
-        set i [expr -1*$plot($w,AxisDivisions)]
-        while {$i<= $plot($w,AxisDivisions)} {
-            set x [expr floor( $Xintercept + $i * $Xgraticule) ]
-            set y [expr floor( $Yintercept - $i * $Ygraticule) ]
-            
-            # draw Y axis values and vertical grid lines
-            if {($x <= [expr $plot($w,Width)-$plot($w,Xborder)]) && ($x >= $plot($w,Xborder)) } {
-                set dec [decimalPlaces [expr $i*$Xdivision]]
-                if {$plot($w,grid)=="on"} {
-                    $w.canvas create line $x $plot($w,Yborder) $x [expr $plot($w,Height)-$plot($w,Yborder)] -width 1 -fill gray -tags graph
-                }
-                $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -tags graph
-            }
-            # draw X axis values and horizontal grid lines
-            if {($y <= [expr $plot($w,Height)-$plot($w,Yborder)]) && ($y >= $plot($w,Yborder)) } {
-                set dec [decimalPlaces [expr $i*$Ydivision]]
-                if {$plot($w,grid)=="on"} {
-                    $w.canvas create line $plot($w,Xborder) $y [expr $plot($w,Width)-$plot($w,Xborder)] $y  -width 1 -fill gray -tags graph
-                }
-                $w.canvas create text [expr $Xintercept-15] $y -text [format $dec [expr $i*$Ydivision]] -tags graph
-            }
-            incr i
-        }
-    }
+#    proc drawGraticule {w Xintercept Yintercept} {
+#        global ::graphtools::plot
+#        
+#        # distance between each graticule.
+#        set Xgraticule  [expr ($plot($w,Width)  - 2*$plot($w,Xborder)) / double($plot($w,AxisDivisions))]
+#        set Ygraticule  [expr ($plot($w,Height) - 2*$plot($w,Yborder)) / double($plot($w,AxisDivisions))]
+#        
+#        # value per division ( set to 0.1 if a division = 0)
+#        set Xdivision [expr (abs($plot($w,Xmax))+abs($plot($w,Xmin)))  / double($plot($w,AxisDivisions))]
+#        set Ydivision [expr (abs($plot($w,Ymax))+abs($plot($w,Ymin)))  / double($plot($w,AxisDivisions))]
+#        
+#        # draw values and grid lines
+#        set i [expr -1*$plot($w,AxisDivisions)]
+#        while {$i<= $plot($w,AxisDivisions)} {
+#            set x [expr floor( $Xintercept + $i * $Xgraticule) ]
+#            set y [expr floor( $Yintercept - $i * $Ygraticule) ]
+#            
+#            # draw Y axis values and vertical grid lines
+#            if {($x <= [expr $plot($w,Width)-$plot($w,Xborder)]) && ($x >= $plot($w,Xborder)) } {
+#                set dec [decimalPlaces [expr $i*$Xdivision]]
+#                if {$plot($w,grid)=="on"} {
+#                    $w.canvas create line $x $plot($w,Yborder) $x [expr $plot($w,Height)-$plot($w,Yborder)] -width 1 -fill gray -tags graph
+#                }
+#                $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -tags graph
+#            }
+#            # draw X axis values and horizontal grid lines
+#            if {($y <= [expr $plot($w,Height)-$plot($w,Yborder)]) && ($y >= $plot($w,Yborder)) } {
+#                set dec [decimalPlaces [expr $i*$Ydivision]]
+#                if {$plot($w,grid)=="on"} {
+#                    $w.canvas create line $plot($w,Xborder) $y [expr $plot($w,Width)-$plot($w,Xborder)] $y  -width 1 -fill gray -tags graph
+#                }
+#                $w.canvas create text [expr $Xintercept-15] $y -text [format $dec [expr $i*$Ydivision]] -tags graph
+#            }
+#            incr i
+#        }
+#    }
     
     
     ############################################################################

@@ -228,7 +228,7 @@ proc ::graphtools::draw_Yaxis { w} {
     }
     
     $w.canvas delete ytick
-    
+
     set x0 $plot($w,xborder_left)
     set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
     set y1 $plot($w,yborder_top)
@@ -638,28 +638,33 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     #puts "lograngem $lograngem; ScaleCoeff $ScaleCoeff; ScaledMin $ScaledMin; ScaledMax $ScaledMax; ScaledRange $ScaledRange"
     set nint $karray($axis,[expr {int($ScaledRange)}])
     
-    set rounddiff [expr {$ScaledRange/$ScaleCoeff}]
+    #set rounddiff [expr {$ScaledRange/$ScaleCoeff}]
     set inter [expr {ceil($ScaledRange/$nint)/$ScaleCoeff}]
     #puts "axis $axis; intdiff [expr {int(abs($ScaledRange))}]; nint $nint"
     set rmin [expr {$ScaledMin/$ScaleCoeff}]
     set rmax [expr {$rmin+$nint*$inter}]
     
-    if {$lograngem>0} {
-        set decmlPos 0
-    } else  {
-        set decmlPos [expr {int(abs($lograngem))}]
-    }
+# how precisely do we need to label our axes?
+    set biggestOffset [max abs($dataMax) abs($dataMin)]
+    set decmlPos \
+	[expr int(log10($biggestOffset)-floor(log10($inter)))]
+    
+#    if {$lograngem>0} {
+#        set decmlPos 0
+#    } else  {
+#        set decmlPos [expr {int(abs($lograngem))}]
+#    }
     
     set NminorInt [expr {floor(20/$nint)}]; # total minor intervals on axis
     set NminorInt [expr {ceil($NminorInt/$nint)}]; # per major interval
     set minorInt [expr {$inter/$NminorInt}]
     #puts "nint $nint; NminorInt $NminorInt; inter $inter; minorInt $minorInt;\
-            N inters [expr {$nint*$NminorInt}] "
+    #        N inters [expr {$nint*$NminorInt}] "
     
     #puts "lograngem $lograngem; ScaleCoeff $ScaleCoeff; ScaledMin $ScaledMin; ScaledMax $ScaledMax\n\
-            ScaledRange $ScaledRange;"
+    #        ScaledRange $ScaledRange;"
     #puts "AxisRound rmin $rmin; rmax $rmax; inter $inter; nint $nint; \
-            minorInt $minorInt; NminorInt $NminorInt; "
+    #        minorInt $minorInt; NminorInt $NminorInt; "
 }
 
 proc ::graphtools::do_axis_settings { w wset action} {
@@ -702,8 +707,13 @@ proc ::graphtools::boxed {w} {
 proc ::graphtools::VarPrecRender {winId val precision} {
     global ::graphtools::plot
     
-    set regular [format %.${precision}f $val]
+    if {$val==0} {
+	return 0
+    }
+    set decimals [max 0 [expr int($precision-log10(abs($val)))]]
+    set regular [format %.${decimals}f $val]
     set scientific [format %.${precision}e $val]
+#puts "$val to $precision is $regular or $scientific"
     if {[string length $scientific]<[string length $regular]} {
         return $scientific
     } else {

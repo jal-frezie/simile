@@ -11,8 +11,8 @@ proc KeepLooking {} {
     while {![info exists prologExit]} {
 	if {[eof $plPipe]} {
 	    ClosePipe
-	}
-	if {[gets $plPipe noCrs] >= 0} {
+	    set prologExit 1
+	} elseif {[gets $plPipe noCrs] >= 0} {
 	    regsub -all \\\\n $noCrs \n line
 #	    puts [concat < $line]
 	    if {[catch {set cmd [lindex $line 0]} mess]} {
@@ -63,13 +63,13 @@ proc send_pl_cmd {withCrs} {
 }
 
 proc ClosePipe {} {
-    global plPipe simtmpdir
+    global plPipe simtmpdir IAmASlave
     file delete -force $simtmpdir
     if {[catch {close $plPipe} spew]} {
 	wm withdraw . ;# banner will hide error mesg if not yet withdrawn
 	bgerror $spew
     }
-    exit
+    destroy .
 }
 
 # These allow GNU prolog to use a decent amount of memory
