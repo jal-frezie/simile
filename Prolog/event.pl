@@ -1482,6 +1482,12 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 
 update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_shape(Submodel, bounding_box, [OldL, OldT, OldR, OldB]),
+	/* work out what the caption was nearest to */
+	(get_shape(Obj, caption_offset, [XT, YT]);
+	    get_shape(Obj, caption_offset, [XT, YT, _Anchor])), !,
+	OldCapX is OldL + XT,
+	OldCapY is OldT + YT,
+	get_closest_edge(Submodel, [OldCapX, OldCapY], CapEdge),
 	(member(Edge, [nw, w, sw, c]), !, NewL is OldL+XOff; NewL = OldL),
 	(member(Edge, [nw, n, ne, c]), !, NewT is OldT+YOff; NewT = OldT),
 	(member(Edge, [ne, e, se, c]), !, NewR is OldR+XOff; NewR = OldR),
@@ -1498,7 +1504,11 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	\+ (find_all_comps(Submodel, Inside),
 	       get_shape(Inside, bounding_box, InBox),
 	       \+ fits_inside(InBox, NewExtent)),
-	
+	map([OldL, OldT, OldR, OldB], CapEdge, _,_, OBX, OBY),
+	map(NewBox, CapEdge, _,_, NBX, NBY),
+	NXT is OldCapX+NBX-OBX-NewL,
+	NYT is OldCapY+NBY-OBY-NewT,
+	change_shape(Submodel, caption_offset, [NXT, NYT]),
 	change_shape(Submodel, internal_extent, NewExtent),
 	change_shape(Submodel, bounding_box, NewBox),
 	/* make_links_follow(Submodel), */

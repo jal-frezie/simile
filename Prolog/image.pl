@@ -15,7 +15,7 @@ in response to successful editing operations.
 
 sicstus_module(image,
 	  [get_colour/4, get_window_colour/3,
-	   get_closest_edge/3, get_inner_bound/3, get_outer_bound/4,
+	   get_closest_edge/3, map/6, get_inner_bound/3, get_outer_bound/4,
 	   change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
 	   targets/5, inside_shape/3, near/2,
 	   crossing_point/5, make_bounding_box/5,
@@ -552,25 +552,15 @@ find_new_box(Obj, Xoffset, Yoffset, [L, T, R, B],
 	B1 is B + Yoffset.
 
 /* Very simple except for text of a submodel, in which case we make the base
-the nearest corner, side or middle to the new text position */
+the nearest corner, side or middle to the new text position. This complex bit
+has now been moved to when we actually move the border. */
 
 update_text_position(Obj, XTOff, YTOff) :-
-	get_shape(Obj, caption_offset, [XT, YT, Anchor]),
+	(get_shape(Obj, caption_offset, [XT, YT]);
+	    get_shape(Obj, caption_offset, [XT, YT, _Anchor])), !,
 	NXT is XT + XTOff,
 	NYT is YT + YTOff,
-	(find_type(Obj, submodel), !,
-	    get_shape(Obj, bounding_box, [L,T,R,B]),
-	    map([L,T,R,B], Anchor, _,_, BaseX, BaseY),
-	    AbsX is BaseX+NXT,
-	    AbsY is BaseY+NYT,
-
-	    slice(AbsY, T, B, Row),
-	    slice(AbsX, L, R, Col),
-	    map([L,T,R,B], NewAnchor, Row, Col, NewBaseX, NewBaseY),
-	    NewXTOff is AbsX-NewBaseX,
-	    NewYTOff is AbsY-NewBaseY;
-	[NewXTOff, NewYTOff, NewAnchor] = [NXT, NYT, Anchor]),
-	change_shape(Obj, caption_offset, [NewXTOff, NewYTOff, NewAnchor]).
+	change_shape(Obj, caption_offset, [NXT, NYT]).
 
 map([L,T,R,B], Anchor, Row, Col, X, Y) :-
 	    HC = (L+R)/2, /* only do math if we need to */
