@@ -9,7 +9,6 @@ them to be executed etc by Tcl commands. */
 #include <string.h>
 #include <math.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
-#include <sys/types.h>
 #include <signal.h> /* for killing stuck model execution */
 
 #define	GETDIMS		0
@@ -62,6 +61,16 @@ FormatMessage(
     NULL 
 );
 return (char*)lpMsgBuf;
+}
+
+int kill (int pid, int sig) {
+  HANDLE procHandle;
+  BOOL outcome;
+
+  procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
+  outcome = TerminateProcess(procHandle, sig);
+  CloseHandle(procHandle);
+  return(outcome);
 }
 
 #else
@@ -150,11 +159,17 @@ double graphpoint(double xval, int index) {
 	return use_graph_pointer->ylow + 
 		(use_graph_pointer->yhigh - use_graph_pointer->ylow)*
 		intersection/use_graph_pointer->yspan;
+
 }
 
 void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
 }
+
+
+
+
+
 
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
 			     int num) {
@@ -767,11 +782,12 @@ extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
       return TCL_ERROR;
     }
 
-    nodeModelList = new listNodeModel(nodeName, 
+    nodeModelList = new listNodeModel(nodeName, 
 				      modelType,
 				      nodeModelList);
     Tcl_SetObjResult(interp, Tcl_NewLongObj((long int)modelType));
     break;
+
 
   default:
     interp->result = "Two arguments for loadmodel please!";
@@ -927,6 +943,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
   char spare[256];
    double starttime;
    int phase;
+
    int error;
 
    if (argc != 5) {
@@ -1083,6 +1100,7 @@ extern "C" int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
   return do_interface(interp, argc-1, argv+1);
 }
 
+
 extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int action, index, count, error;
@@ -1150,6 +1168,7 @@ extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
     } /* if(error) */
     error = Tcl_GetIntFromObj(interp, argv[5], &(graphptr->xspan));
     if (error != TCL_OK) {
+
       return error;
     } /* if(error) */
     error = Tcl_GetDoubleFromObj(interp, argv[6], &(graphptr->ylow));
@@ -1205,7 +1224,7 @@ extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
 of arrays. It will put shorter lists in front of longer, though they should
 always be the same length. */
 
-int obj_compare_instance_status(Tcl_Obj* Obj, Tcl_Obj* RefObj) {
+int obj_compare_instance_status(Tcl_Obj* Obj, Tcl_Obj* RefObj) {
   int count, num1, num2, val1, val2;
   Tcl_Obj **objVals, **refVals;
 
@@ -1319,6 +1338,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
   int next_handle[] = {1,0}, id_handle[] = {2,0};
   switch (*use_dims) {
   case SEPARATE:
+
     new_tree = tree;
     while (*new_tree++ != SEPARATE) {}
 
@@ -1892,6 +1912,7 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
  *	This procedure performs application-specific initialization.
  *	Most applications, especially those that incorporate additional
  *	packages, will have their own version of this procedure.
+
  *
  * Results:
  *	Returns a standard Tcl completion code, and leaves an error
