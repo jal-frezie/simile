@@ -88,7 +88,7 @@ proc fill_equation {current_equation units mult isParam \
 proc create_equation {parent boxtitle indices} {
     global equation 
     global equationbar
-
+    
                                  ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
@@ -190,7 +190,10 @@ proc create_equation {parent boxtitle indices} {
     pack $mainf.file -anchor nw
     frame $mainf.equation
     frame $mainf.equation.textbox
-    radiobutton $mainf.equation.textbox.radio0 -text "Equation: " -variable equation(isparam) -value 0
+    
+    regsub { for } $boxtitle {: } eqnRBtext
+    radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
+    
     set en [text $mainf.equation.textbox.text -height 1 -width 30 -yscrollcommand "$mainf.equation.textbox.scroll set"]
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$mainf.equation.textbox.text yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
