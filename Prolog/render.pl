@@ -345,7 +345,7 @@ render(L, data_declaration,
 	    UseDims = Dims),
 	all(ame_gen, enum_type_ref, [build(UseDims), unify(SymbolicName),
 				     build(_), build(Nums), build(_),
-				     unify(_)]),
+				     build(_)]),
 	render(L, variable_declaration, [Type, Name, Nums],
 			Indent, Decl).
 
