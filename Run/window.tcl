@@ -361,6 +361,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
             colour initialScale isTopLevel args} {
     global window_info looks env custom
     set c [ModelWindow $winName]
+    set custom(showgrids,$c) [PrefValue custom(initGrid) initGrid]
     
     TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
@@ -511,23 +512,25 @@ proc ChangeParentTitle {wc title bg} {
 
 set looks(gridPitch) 15.0
 
-proc AddGrid {c col wl wt wr wb} {
-    global looks window_info
-    if {![PrefValue custom(initGrid) initGrid]} {
-	return
+proc AddGrid {c onCol wl wt wr wb} {
+    global looks window_info custom
+    if {$custom(showgrids,$c)} {
+	set col $onCol
+    } else {
+	set col {}
     }
     set interval [expr $looks(gridPitch)*$window_info($c,scale)]
     for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
 	{set x [expr $x+$interval]} {
 	set nearx [expr int($x)]
 	$c create line $nearx $wt $nearx $wb -fill $col \
-	    -tag {/background/ /base/ /grid/}
+	    -tag "realcolour($onCol) /background/ /base/ /grid/"
     }
     for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
 	{set y [expr $y+$interval]} {
 	set neary [expr int($y)]
 	$c create line $wl $neary $wr $neary -fill $col \
-	    -tag {/background/ /base/ /grid/}
+	    -tag "realcolour($onCol) /background/ /base/ /grid/"
     }
 }
 
@@ -928,6 +931,7 @@ proc DoLocalCmd {win item} {
         redo {UnOrReDo $win 1}
         print {PrintNow $win}
         rerun {Rerun $win 1}
+	tog_grid {ToggleGrid $win}
         zoomin {DoZoom $win 1.414214 1}
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
@@ -1077,6 +1081,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -label "Component bar" -variable custom(showtoolbar,$winid)
     $fm add check -command "toggleBar $winid" \
             -label "Equation bar" -variable custom(showeqnbar,$winid)
+    $fm add check -command "UpdateGrid $c" \
+            -label "Grids" -variable custom(showgrids,$c)
     
     $fm add separator
     AddZoomMenu $c $fm 1
@@ -1200,9 +1206,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 {save {file save}}  {print {local print}} {separator1}\
                 {undo {local undo}} {redo {local redo}} {separator2}\
                 {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator3}\
-                {zoomin {local zoomin}} {zoomsel {local tosel}} \
+			{tog_grid {local tog_grid}} {separator4} \
+			{zoomin {local zoomin}} {zoomsel {local tosel}} \
                 {zoomfit {local tofit}} {zoomout {local zoomout}} \
-                {separator4}   } {
+                {separator5}   } {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
             pack [Separator $nb.$handle -orient vertical] -fill y -side left
@@ -1214,9 +1221,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             BindPopup $nb.$handle $handle
         }
     }
+    if {[PrefValue custom(initGrid) initGrid]} {
+	$nb.tog_grid configure -state active -relief sunken
+    }
     
-    foreach navCmd {{rerun {local rerun}} {separator5} \
-                {find {local find}} {findmore {local findnext}} {separator6}} {
+    foreach navCmd {{rerun {local rerun}} {separator6} \
+                {find {local find}} {findmore {local findnext}} {separator7}} {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
             pack [Separator $nb.$handle -orient vertical] -fill y -side left
@@ -1361,7 +1371,6 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             [PrefValue custom(initNavbar) initNavbar]]
     set custom(showeqnbar,$winid) [expr $initWidth>=$navWidth && \
             [PrefValue custom(initEqnbar) initEqnbar]]
-    
     
     pack [Separator $winid.toolSlot.topseparator -orient horizontal] -fill x -side top
     if {$custom(shownavbar,$winid)} {
@@ -1558,6 +1567,34 @@ proc toggleBar {winId} {
         if {$custom(show${which}bar,$winId)} {
             pack $barname -fill x
         }
+    }
+}
+
+proc ToggleGrid {winId} {
+    global custom
+
+    set custom(showgrids,$winId) [expr !$custom(showgrids,$winId)]
+    UpdateGrid $winId
+}
+
+proc UpdateGrid {winId} {
+    global custom window_info
+
+    set toolBar $window_info($winId,parent).toolSlot.navbar
+    if {$custom(showgrids,$winId)} {
+        $toolBar.tog_grid configure -state active -relief sunken
+    } else {
+        $toolBar.tog_grid configure -state normal -relief flat
+    }
+    
+    foreach gridLine [$winId find withtag /grid/] {
+	if {$custom(showgrids,$winId)} {
+	    regexp {realcolour\(([^\)]+)\)} [$winId gettags $gridLine] \
+                tag oldColour
+	} else {
+	    set oldColour {}
+	}
+	$winId itemconfigure $gridLine -fill $oldColour
     }
 }
 

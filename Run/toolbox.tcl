@@ -635,7 +635,7 @@ proc ControlDraw {prologVersion} {
                 {custom(compValPop) compValPop ON  "Value"}
         {custom(compCmtPop) compCmtPop ON  "Comment"} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
-                {custom(gridSnap) gridSnap ON "Snap to grid"} \
+                {custom(gridSnap) gridSnap OFF "Snap to grid"} \
 		{custom(defBackground) defBackground {CHOICE White Clear} \
 		       "Default background"} \
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \

@@ -184,7 +184,7 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 			  origX origY bgColour inFat colourScheme tagSet} {
-    global looks window_info
+    global looks window_info custom
     #puts "drawing submodel with fill $fillColour"
     #    previously had min width of 1 to ensure stack visibility
     #    set width [expr $width0>1?$width0:1]
@@ -302,12 +302,16 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     }
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
-    if {[PrefValue custom(initGrid) initGrid] && 
-	    ![string equal incomplete $colourScheme]} {
+    if {![string equal incomplete $colourScheme]} {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
 	set interval [expr $looks(gridPitch)*$inFat/100.0]
-	set gCol [Gradient $bgColour -0.1 $w]
-	set gTagSet "$tagSet /background/ /grid/"
+	set nCol [Gradient $bgColour -0.1 $w]
+	set gTagSet "$tagSet realcolour($nCol) /background/ /grid/"
+	if {$custom(showgrids,$w)} {
+	    set gCol $nCol
+	} else {
+	    set gCol {}
+	}
 
 	for {set x [expr $origX+$interval*ceil(($l+1-$origX)/$interval)]} \
 	    {$x<$r} {set x [expr $x+$interval]} {
