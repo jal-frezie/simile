@@ -1396,9 +1396,9 @@ proc ShowAbout {winId} {
 # images must be global because if building a c++ program we may be in a different directory
 set bwVers [package require BWidget]
 image create photo warningIcon
-warningIcon read "[file dirname [info library]]/bwidget${bwVers}/images/warning.gif"
+warningIcon read "${::BWIDGET::LIBRARY}/images/warning.gif"
 image create photo errorIcon
-errorIcon read "[file dirname [info library]]/bwidget${bwVers}/images/error.gif"
+errorIcon read "${::BWIDGET::LIBRARY}/images/error.gif"
 
 proc ShowExpiryImminent {expTime} {
     toplevel .expiry
