@@ -5,7 +5,7 @@ set keyValue tabular11510
 namespace eval tabular11510 {
 
     proc identify {} {
-	return "Storing data table"
+	return "Data table"
     }
 
     proc initialize {winId} {
