@@ -312,7 +312,7 @@ proc ZoomImage {winId which factor fontor} {
 
 proc AssembleFont {family weight style textsize} {
     return [list -family $family -weight $weight -slant $style \
-            -size [expr round($textsize/12.0)]]
+            -size [expr round($textsize/12.0)]]
 
 
 }
@@ -824,7 +824,7 @@ proc AddEqnPopup {x y winId X Y} {
                         [string match $fromProlog <none>]} {
                 set fromProlog \
                         [GetFromProlog tk_get_info('$winId',$plName,desc)]
-            }
+            }
             # after going Prolog, check popup window still there
             # note colour etc are not comments though they look like them in emacs
             if {![winfo exists .popup]} return
@@ -1034,7 +1034,7 @@ proc ClearView {} {
         set helperId $helperTable($displayBox)
         catch {${helperId}::clear $winId}; # in case helper has no clear proc
     }
-}
+}
 
 proc BlankCrs {withCrs} {
     regsub -all \n $withCrs { } noCrs
@@ -1760,4 +1760,4 @@ proc FilterErrors {args} {
     } else {
         return $retVal
     }
-    }
+}

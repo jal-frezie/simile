@@ -633,7 +633,12 @@ proc FileParamDialogue {mustShow parent} {
             while {[set sep [lsearch $nodeDims -1]]>-1} {
                 set nodeDims [lreplace $nodeDims $sep $sep]
             }
-            set dimList [join [lrange $nodeDims 0 end-1] x]
+# bit of voodoo...get table relating numerical indices of node to enymerated
+# types (from prolog) and use to translate array bounds
+	    set trans [GetFromProlog tk_get_info('$t',$node,types)]
+ShowMessage debug info "$node $trans $nodeDims" ok
+	    set nodeDims [TransBounds $trans [lrange $nodeDims 0 end-1]]
+            set dimList [join $nodeDims x]
             if {[string length $dimList]} {
                 set slotCaption "[lindex $levels end] ($dimList):"
             } else {

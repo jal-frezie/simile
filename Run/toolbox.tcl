@@ -465,20 +465,14 @@ proc canvasTLDistance {winId x y} {
 # the thread until it returns, but something is wrong -- occasionally 
 # fromProlog doesn't get set. Answer: set it first. Or fix the actual
 # bug -- it seems 'update idletasks' somehow interferes with this, 
-# resulting in the variable not getting set, or something.
+# resulting in the variable not getting set, or something. Bug seems fixed now
+# by new pipe interface technology -- might still do funnies if the Prolog
+# command calls Tcl back though...
 
 proc GetFromProlog {prologCmd} {
     global fromProlog
-# remove next line to demo problem
-    set fromProlog {}
-
     prolog $prologCmd
-    if {![info exists fromProlog]} {
-	tkwait variable fromProlog
-    }
-    set result $fromProlog
-    unset fromProlog
-    return $result
+    return $fromProlog
 }
 
 # Procedure for when Tcl recognizes what object is clicked but being a

@@ -6,22 +6,24 @@
 
 wm protocol . WM_DELETE_WINDOW {close $plPipe; destroy .}
 
-proc Reader {} {
-    global plPipe running
-    if {[eof $plPipe]} {
-	ClosePipe
-    }
-    if {[gets $plPipe noCrs] >= 0} {
-	regsub -all \\\\n $noCrs \n line
-#	puts [concat < $line]
-	if {[catch {set cmd [lindex $line 0]} mess]} {
-	    DebugMess "Could not parse $line : $mess"
-	} elseif {[string match get_tcl_cmd $cmd]} {
-	    send_tcl_cmd
-	} elseif {[string match send_tcl_cmd $cmd]} {
-	    eval do_tail $line
-	} else {
-	    DebugMess $line
+proc KeepLooking {} {
+    global plPipe
+    while {![info exists prologExit]} {
+	if {[eof $plPipe]} {
+	    ClosePipe
+	}
+	if {[gets $plPipe noCrs] >= 0} {
+	    regsub -all \\\\n $noCrs \n line
+#	    puts [concat < $line]
+	    if {[catch {set cmd [lindex $line 0]} mess]} {
+		DebugMess "Could not parse $line : $mess"
+	    } elseif {[string match get_tcl_cmd $cmd]} {
+		set prologExit 1
+	    } elseif {[string match send_tcl_cmd $cmd]} {
+		eval do_tail $line
+	    } else {
+		DebugMess $line
+	    }
 	}
     }
 }
@@ -37,30 +39,18 @@ proc DebugMess {Mess} {
 }
 
 proc prolog {plCmd} {
-    global plQueue prologWaiting
-    if {$prologWaiting} {
-	set prologWaiting 0
-	send_pl_cmd $plCmd
-	KeepLooking
-    } else {
-	lappend plQueue $plCmd
-   }
-}
-
-proc send_tcl_cmd {} {
-    global plQueue prologWaiting
-    if {![llength $plQueue]} {
-	set prologWaiting 1
-    } else {
-	set plCmd [lindex $plQueue 0]
-	set plQueue [lrange $plQueue 1 end]
-	send_pl_cmd $plCmd
-    }
+#puts "Prolog starting $plCmd"
+    send_pl_cmd command:$plCmd
+    KeepLooking
+#puts "Prolog finished $plCmd"
 }
 
 proc do_tail {header args} {
     regsub -all \\\\n $args \n withCrs
-    send_pl_cmd [eval $withCrs]
+#puts "Tcl starting $withCrs"
+    set res [eval $withCrs]
+#puts "Tcl got $res from $withCrs"
+    send_pl_cmd result:$res
 }
 
 proc send_pl_cmd {withCrs} {
@@ -69,13 +59,6 @@ proc send_pl_cmd {withCrs} {
 #    puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
-}
-
-proc KeepLooking {} {
-    global prologWaiting
-    while {!$prologWaiting} {
-	Reader
-    }
 }
 
 proc ClosePipe {} {
@@ -87,11 +70,6 @@ proc ClosePipe {} {
     }
     exit
 }
-
-set running 0
-set plQueue {}
-set prologWaiting 0
-set callback 0
 
 # These allow GNU prolog to use a decent amount of memory
 set env(GLOBALSZ) 131072
