@@ -10,10 +10,10 @@ namespace eval DisplayFormat {
     package require calendar
     namespace import ::calendar::GregorianCalendar::*
        
-    proc General {val prec lz} {
+    proc General {val prec} {
         # was VarPrecRender
         if {[catch {
-	    set regular [format %${lz}.${prec}f $val]
+                set regular [format %.${prec}f $val]
                 set scientific [format %.${prec}e $val]
                 set shortSci [format %.[expr $prec-3]e $val]
             }]} { return $val }
@@ -28,20 +28,20 @@ namespace eval DisplayFormat {
         }
     }
     
-    proc Fixed {val dp lz} {
+    proc Fixed {val dp} {
         return [format %.${dp}f $val]
     }
     
-    proc Scientific {val dp lz} {
+    proc Scientific {val dp} {
         return [format %.${dp}e $val]
     }
     
-    proc Percent {var dp lz} {
+    proc Percent {var dp} {
         return [Fixed [expr {100*$var}] $dp $lz]%
     }
     
     # val is in degrees returns string degree:minutes:sec
-    proc DMS {val dp  leadingZeros} {
+    proc DMS {val dp} {
         if {$val==0} {
             set sign 1
         } else  {
@@ -55,20 +55,20 @@ namespace eval DisplayFormat {
         return [format %d:%d:%d $degrees_int $minutes_int $seconds]
     }
     
-    proc RadinDMS {val dp leadingZeros} {
+    proc RadinDMS {val dp} {
         set val [expr {$val*180.0/3.14159}]
         DMS $val
     }
     
     set datevar(ERA) CE
     
-    proc YYYYMMDD {val dp  leadingZeros} {
+    proc YYYYMMDD {val dp} {
         set j [expr {int($val+2415020)}]; # need Rata die (Julian Day here) for 1900 or 1900-1?
         JulianDayToEYMD  $j datevar
         return [format %.4d/%.2d/%.2d  $datevar(YEAR) $datevar(MONTH) $datevar(DAY_OF_MONTH)]
     }
     
-    proc HHMM {val dp  leadingZeros} {
+    proc HHMM {val dp} {
         set val [expr {24*$val}]
         set hours_int [expr {int($val)}]
         set minutes [expr {($val-$hours_int)*60}]
@@ -76,7 +76,7 @@ namespace eval DisplayFormat {
         return [format %.2d:%.2d $hours_int $minutes_int]
     }
     
-    proc HHMMSS {val dp leadingZeros} {
+    proc HHMMSS {val dp} {
         set val [expr {24*$val}]
         set hours_int [expr {int($val)}]
         set minutes [expr {($val-$hours_int)*60}]
@@ -85,12 +85,12 @@ namespace eval DisplayFormat {
         return [format %.2d:%.2d:%.2d $hours_int $minutes_int $seconds]
     }
     
-    proc YYYYMMDDHHMMSS {val dp leadingZeros} {
+    proc YYYYMMDDHHMMSS {val dp} {
         set time [expr {$val-int($val)}]
-        return "[YYYYMMDD $val $dp $leadingZeros] [HHMMSS $time $dp $leadingZeros]"
+        return "[YYYYMMDD $val $dp] [HHMMSS $time $dp]"
     }
     
-    proc Boolean {val dp leadingZeros} {
+    proc Boolean {val dp} {
         if {$val} {
             return true
         } else  {
