@@ -145,7 +145,7 @@ $useNodes($winId,scaley)"
                         ReleaseClicks $winId
                         set useNodes($winId,color) $node
                         catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
-                        SetColours2 $winId $node
+                        SetColourMap useNodes $winId $node
                         DrawPolys $winId $useNodes($winId,xcoord) \
                                 $useNodes($winId,ycoord) \
                                 $node
@@ -161,7 +161,7 @@ $useNodes($winId,scaley)"
                         ReleaseClicks $winId
                         set useNodes($winId,color) $node
                         catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
-                        SetColours2 $winId $node
+                        SetColourMap useNodes $winId $node
                         DrawPolys $winId {} {} $node
                         set useNodes($winId,state) displaying
 			UpdateState $winId
@@ -174,35 +174,6 @@ $useNodes($winId,scaley)"
             $ms configure -text \
                     "This component does not have a value; please choose a compartment, variable or flow."
         }
-    }
-    
-    proc SetColours2 {winId node} {
-        variable useNodes
-        set useNodes($winId,integer) \
-	    [string match INTEGER [GetModelType $node]]
-        set min [GetMinValue $node]
-        if {$min!=-1e100} {
-            set useNodes($winId,min) $min
-        }
-        set max [GetMaxValue $node]
-        if {$max!=1e100} {
-            set useNodes($winId,max) $max
-        }
-        set useNodes($winId,range) \
-                [expr $useNodes($winId,max)-$useNodes($winId,min)]
-        if [expr !$useNodes($winId,integer) || [expr $useNodes($winId,range) > 32]] {
-            set useNodes($winId,nswatches) 32
-        } else  {
-            set useNodes($winId,nswatches) \
-                    [expr int($useNodes($winId,range)+fmod($useNodes($winId,range),2))]
-            set useNodes($winId,max) \
-                    [expr $useNodes($winId,max)\
-                    +fmod($useNodes($winId,range),2)]
-        }
-        #    ShowMessage debug info "min $useNodes($winId,min); \
-        #            max $useNodes($winId,max); $useNodes($winId,range); \
-        #            $useNodes($winId,nswatches)" ok
-        SetColours useNodes $winId
     }
     
     proc UpdateState {winId} {
@@ -256,7 +227,8 @@ $useNodes($winId,scaley)"
 	$exampleWidget configure -bg $useNodes($winId,c$whichCol)
         SetColours useNodes $winId
         UpdateState $winId
-        ColourScale useNodes $winId
+	recolour_scale [namespace current] $winId
+#        ColourScale useNodes $winId
         Repaint $winId $useNodes($winId,color)
     }
 
@@ -305,6 +277,7 @@ $useNodes($winId,scaley)"
 	    -yscrollcommand [namespace code [list ScrollMe $winId y]] \
 	    -bg beige -scrollregion {0 0 10 10}
         pack $vp.c -fill both -expand true
+	recolour_scale [namespace current] $winId
 	bind $vp.c <Configure> \
 	    [namespace code "recolour_scale [namespace current] $winId"]
     }

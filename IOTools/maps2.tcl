@@ -12,31 +12,87 @@
 
 namespace eval ::maptools2 {
     
+    proc SetColourMap {winData winId node} {
+        upvar 1 $winData useNodes
+# OK, do things differently if it is an enumerated type
+	set useNodes($winId,dataETs) [lindex [GetTransTable $node] end]
+	set useNodes($winId,ETCount) [llength $useNodes($winId,dataETs)]
+	if {$useNodes($winId,ETCount)} {
+	    set useNodes($winId,min) 1
+	    set useNodes($winId,max) [expr $useNodes($winId,ETCount)-1]
+	    set useNodes($winId,range) [expr $useNodes($winId,max)-1]
+	    set useNodes($winId,nswatches) $useNodes($winId,range)
+	} else {
+	    set useNodes($winId,integer) \
+		[string match INTEGER [GetModelType $node]]
+	    if {$useNodes($winId,integer)} {
+		set bigNum 268435455
+	    } else {
+		set bigNum 1e100
+	    }
+	    set min [GetMinValue $node]
+	    if {$min!=-$bigNum} {
+		set useNodes($winId,min) $min
+	    }
+	    set max [GetMaxValue $node]
+	    if {$max!=$bigNum} {
+		set useNodes($winId,max) $max
+	    }
+	    set useNodes($winId,range) \
+                [expr $useNodes($winId,max)-$useNodes($winId,min)]
+	    if [expr !$useNodes($winId,integer) || [expr $useNodes($winId,range) > 32]] {
+		set useNodes($winId,nswatches) 32
+	    } else  {
+		set useNodes($winId,nswatches) \
+                    [expr int($useNodes($winId,range)+fmod($useNodes($winId,range),2))]
+		set useNodes($winId,max) \
+                    [expr $useNodes($winId,max)\
+			 +fmod($useNodes($winId,range),2)]
+	    }
+        }
+#	ShowMessage debug info "min $useNodes($winId,min); \
+#                    max $useNodes($winId,max); dataETs $useNodes($winId,dataETs); $useNodes($winId,range); \
+#                    $useNodes($winId,nswatches)" ok
+	SetColours useNodes $winId
+    }
+    
     proc SetColours {winData winId} {
         #    ShowMessage debug info "proc SetColours" ok
         upvar 1 $winData useNodes
         
-        scan [winfo rgb $winId $useNodes($winId,cbot)] "%d %d %d" botr botg botb
-        scan [winfo rgb $winId $useNodes($winId,cmid)] "%d %d %d" midr midg midb
-        scan [winfo rgb $winId $useNodes($winId,ctop)] "%d %d %d" topr topg topb
+	if {$useNodes($winId,ETCount)} {
+	    set defCols {blue orange green brown purple red black DeepSkyBlue \
+                    HotPink ForestGreen}
+	    for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
+		if {$icolour<[llength $defCols]} {
+		    set useNodes($winId,c$icolour) [lindex $defCols $icolour]
+		} else {
+		    set useNodes($winId,c$icolour) gray4
+		}
+	    }
+	} else {
+	    scan [winfo rgb $winId $useNodes($winId,cbot)] "%d %d %d" botr botg botb
+	    scan [winfo rgb $winId $useNodes($winId,cmid)] "%d %d %d" midr midg midb
+	    scan [winfo rgb $winId $useNodes($winId,ctop)] "%d %d %d" topr topg topb
         
-        set max $useNodes($winId,nswatches); #[expr int($useNodes($winId,max))]
-        set min 0; #[expr int($useNodes($winId,min))]
-        set med [expr int(($useNodes($winId,nswatches))/2.0)]
+	    set max $useNodes($winId,nswatches); #[expr int($useNodes($winId,max))]
+	    set min 0; #[expr int($useNodes($winId,min))]
+	    set med [expr int(($useNodes($winId,nswatches))/2.0)]
         #    ShowMessage debug info "$min $max $med" ok
         # make the colour descriptions, this should improve speed
-        for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
-            if {$icolour<$med} {
-                set red [expr ($icolour*$midr+($med-$icolour)*$botr)/$med]
-                set green [expr ($icolour*$midg+($med-$icolour)*$botg)/$med]
-                set blue [expr ($icolour*$midb+($med-$icolour)*$botb)/$med]
-            } elseif {$icolour<=$max} {
-                set red [expr (($icolour-$med)*$topr+($max-$icolour)*$midr)/$med]
-                set green [expr (($icolour-$med)*$topg+($max-$icolour)*$midg)/$med]
-                set blue [expr (($icolour-$med)*$topb+($max-$icolour)*$midb)/$med]
-            }
-            set useNodes($winId,c$icolour) [format #%04x%04x%04x $red $green $blue]
-        }
+	    for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
+		if {$icolour<$med} {
+		    set red [expr ($icolour*$midr+($med-$icolour)*$botr)/$med]
+		    set green [expr ($icolour*$midg+($med-$icolour)*$botg)/$med]
+		    set blue [expr ($icolour*$midb+($med-$icolour)*$botb)/$med]
+		} elseif {$icolour<=$max} {
+		    set red [expr (($icolour-$med)*$topr+($max-$icolour)*$midr)/$med]
+		    set green [expr (($icolour-$med)*$topg+($max-$icolour)*$midg)/$med]
+		    set blue [expr (($icolour-$med)*$topb+($max-$icolour)*$midb)/$med]
+		}
+		set useNodes($winId,c$icolour) [format \#%04x%04x%04x $red $green $blue]
+	    }
+	}
     }
     
     proc recolour_scale {parentSpc winId} {
@@ -189,6 +245,7 @@ namespace eval ::maptools2 {
         }
     }
     
+# redundant
     proc ColourScale {winData winId} {
         #    ShowMessage debug info "proc ColourScale" ok
         upvar 1 $winData useNodes
@@ -251,6 +308,5 @@ namespace eval ::maptools2 {
         return [expr {[string is integer $str] || [string is double $str]}]
     }
     
-    namespace export SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertCaption InsertLegend ColourScale GetQuadList Flatten IsNumber
+    namespace export SetColourMap SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertCaption InsertLegend ColourScale GetQuadList Flatten IsNumber
 }
-

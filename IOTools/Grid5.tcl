@@ -40,7 +40,6 @@ namespace eval grid005 {
         for {set i 1} {$i<=$NToolButtons} {incr i} {
             $winId.bbframe.buttonBox itemconfigure $i -state disable
         }
-        SetColours useNodes $winId
         if {[string match $winId [winfo toplevel $winId]]} {
             wm geometry $winId 500x500
         }
@@ -104,7 +103,7 @@ namespace eval grid005 {
 	}
         set useNodes($winId,caption) [lindex $state 1]
         
-        SetColours useNodes $winId
+        SetColourMap useNodes $winId $useNodes($winId,color)
         AddToolbar $winId
         $winId.bbframe.buttonBox itemconfigure 0 -state disable
 	NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
@@ -135,20 +134,7 @@ namespace eval grid005 {
                     pack forget $ms
                     ReleaseClicks $winId
                     set useNodes($winId,color) $node
-
-# OK, do things differently if it is an enumerated type
-		    set useNodes($winId,dataETs) \
-			[lindex [GetTransTable $node] end]
-		    if {![llength $useNodes($winId,dataETs)]} {
-			set min [GetMinValue $node]
-			if {$min!=-1e100} {
-			    set useNodes($winId,min) $min
-			}
-			set max [GetMaxValue $node]
-			if {$max!=1e100} {
-			    set useNodes($winId,max) $max
-			}
-		    }
+		    SetColourMap useNodes $winId $node
                     catch {wm title $winId $caption}
                     InitialiseGrid $winId $node
                     UpdateState $winId
