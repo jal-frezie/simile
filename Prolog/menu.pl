@@ -96,7 +96,8 @@ update_mode(NewMode) :-
 	NewMode = copy, !,
 	    assert(cursor_is(exchange));
 	NewMode = ghost, !,
-	    assert(cursor_is(dq('@../Images/ghost.xbm ../Images/ghost.mask.xbm black white')));
+/*	    assert(cursor_is(dq('@../Images/ghost.xbm ../Images/ghost.mask.xbm black white'))); */
+	    assert(cursor_is(gumby));
 	NewMode = delete, !,
 	    assert(cursor_is(pirate));
 	NewMode = snap, !,
@@ -1072,6 +1073,7 @@ do_save(Model, New_name) :-
 	are saved */
 	select_all_in(Model, off),
 	check_save_canvas(SaveDir, Model, Date),
+
 
 	/* here is where we get the user to enter the name to save it
 	as.  This may be tried multiple times, which is why it is done after

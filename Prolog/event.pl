@@ -7,7 +7,7 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-sicstus_module(event, [get_info/3, get_params/2,
+sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
 		  click_obj/4, click_text/4, click/3,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
@@ -117,7 +117,8 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    drag_to(NewXpt, NewYpt, Name);
-	click_on([NewXpt, NewYpt], Name, CD),
+	(click_on([NewXpt, NewYpt], Name, CD), !; true),
+	adjust_edit_menu(Wid, Parent, [NewXpt, NewYpt]),
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
@@ -188,25 +189,13 @@ click_on_sub(_, Point, _, _, _, Comp) :-
 This starts addition. Last clause creates a new cloud when starting a flow in the
 middle of nowhere; i could also do variables for influences. */
 :- dynamic(menu_submodel_is/2).
+:- dynamic(menu_submodel_will_be/3).
 
 click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	targets(Wid, Parent, Point, Depth, Child), !, 
 	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD);
 	CD = 2,
-	retractall(menu_submodel_is(_, _)),
-	assert(menu_submodel_is(Parent, Point)),
-	(contains(Parent, Lit), \+ Lit = Parent,
-	    get_highlit_obj(N, Lit),
-	    N<2, !,
-	    Cuttable = 1;
-	Cuttable = 0),
-	(selected_box_is(_Any), !,
-	    Pastable = 1;
-	Pastable = 0),
-	Wid shows_model Model,
-	update_ability(Model, none, edit, 'Cut', Cuttable),
-	update_ability(Model, none, edit, 'Copy', Cuttable),
-	update_ability(Model, none, edit, 'Paste', Pastable).
+	adjust_edit_menu(Wid, Parent, Point).
 
 click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	get_mode(add),
@@ -250,6 +239,39 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 		advance_phase_to(rubberband));
 	    
 	click_on([Xtr, Ytr], Parent, CD)).
+
+adjust_edit_menu(Wid, Parent, Point) :-
+	retractall(menu_submodel_will_be(Wid, _,_)),
+	assert(menu_submodel_will_be(Wid, Parent, Point)).
+
+bar_edit_menu(Wid) :-
+	(menu_submodel_will_be(Wid, Parent, Point), !;
+	restore_edit_menu(Wid),
+	    menu_submodel_will_be(Wid, Parent, Point)),
+	retractall(menu_submodel_is(_, _)),
+	assert(menu_submodel_is(Parent, Point)),
+	Wid shows_model Model,
+	(contains(Parent, Lit), \+ Lit = Parent,
+	    get_highlit_obj(N, Lit),
+	    N<2, !,
+	    Cuttable = 1;
+	Cuttable = 0),
+	(selected_box_is(_Any), !,
+	    Pastable = 1;
+	Pastable = 0),
+	Wid shows_model Model,
+	update_ability(Model, none, edit, 'Cut', Cuttable),
+	update_ability(Model, none, edit, 'Copy', Cuttable),
+	update_ability(Model, none, edit, 'Delete', Cuttable),
+	update_ability(Model, none, edit, 'Paste', Pastable).
+
+/* restore_edit_menu makes sure it will be appropriate for a menubar
+selection, i.e., top submodel and corner position */
+restore_edit_menu(Wid) :-
+	retractall(menu_submodel_will_be(Wid, _,_)),
+	Wid shows_model Model,
+	get_shape(Model, internal_extent, [L,T,_,_]),
+	assert(menu_submodel_will_be(Wid, Model, [L,T])).
 
 click_on([Xpt, Ypt], Poss_start, CD) :-
 	get_mode(add),
@@ -1420,6 +1442,8 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
 	get_mode(select),
+	    find_current(Wid),
+	    restore_edit_menu(Wid),
 	    get_phase(rubberband), !, /* used to call proc below */
 	    get_incomplete(Box),
 	    get_translation(Trans),
@@ -1429,7 +1453,6 @@ unclick :-
 	    T is min(OldY, NewY),
 	    R is max(OldX, NewX),
 	    B is max(OldY, NewY),
-	    find_current(Wid),
 	    Wid shows_model Model,
 	    (select_bagged([L, T, R, B], Model);
 	    remove_old_rubberband),

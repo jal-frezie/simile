@@ -637,18 +637,25 @@ proc GetFromProlog {prologCmd} {
 # maleficent pile of junk refuses to pass on this information so we have
 # to interrogate it to find what is closest to the click point
 
-proc ClickObj { x y winId action} {
+proc ClickObj { x y winId X Y action} {
     global clicktime
-#    puts "$action it!"
+#puts "$action it!"
 
     switch $action {
 	ctrl {
 	    set action click
+	    set RB 0
 	    set CD 1
 	} right {
 	    set action click
-	    set CD 2
+	    set RB 1
+	    set CD 0
+	} ctrl-right {
+	    set action click
+	    set RB 1
+	    set CD 1
 	} default {
+	    set RB 0
 	    set CD 0
 	}
     }
@@ -658,23 +665,23 @@ proc ClickObj { x y winId action} {
     global pushedbutton
     
     set clicktime [clock clicks -milliseconds]
-    if {[string equal inf $x]} {
-	if {[scan [$winId cget -scrollregion] "%g %g" canx cany]<2} {
-	    set canx 0
-	    set cany 0
-	}
-    } else {
-	set canx [$winId canvasx $x]
-	set cany [$winId canvasy $y]
-    }
+    set canx [$winId canvasx $x]
+    set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
     
+    focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
     
-    if {!$target || $CD==2} {
+    if {!$target} {
         # a background click
-        prolog [list tk_${action}('$winId', $xco , $yco , $CD)]
+	if {$RB && [string equal select $pushedbutton]} {
+	    prolog [list tk_${action}('$winId', $xco , $yco , 2)]
+	    tk_popup [winfo parent $winId]top.edit $X $Y
+	    prolog [list tk_unclick( $xco , $yco )]
+	} else {
+	    prolog [list tk_${action}('$winId', $xco , $yco , $CD)]
+	}
         return
     }
     
@@ -686,7 +693,7 @@ proc ClickObj { x y winId action} {
     } elseif {[string compare $pushedbutton snap]==0} then {
         snap $node
     } else {
-        if {[string compare $action click] == 0} {
+        if {[string equal click $action]} {
             set obj [GetCaptionItem $winId $node]
 
 # This bit used to start a drag selecting some caption text
@@ -701,13 +708,15 @@ proc ClickObj { x y winId action} {
             
             if {![string compare $target $obj]} {
                 set action clicktext
-                if {[string match select $pushedbutton]} {
-                    focus $winId
-                }
             }
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node \
 				      , $CD)]
+	# Right button puts up context menu. 
+	if {$RB && [string equal select $pushedbutton]} {
+	    tk_popup [winfo parent $winId]top.edit $X $Y
+	    prolog [list tk_unclick( $xco , $yco )]
+	}
         
         ### Formula bar
         ### Added by Jasper: ignore all eqnbar stuff if none in current window or
@@ -740,8 +749,13 @@ proc ClickObj { x y winId action} {
             }
         }
         ### End equation bar
+
+	# Note with menu up the unclick will be lost so do it now
+	if {$RB} {
+	}
     }
 }
+
 
 # This is called when an operatio may have brought into view an area of canvas
 # the existence of which was previously unknown to Prolog; it sends the virtual
@@ -929,14 +943,16 @@ proc AddAccelerator {winName menu item event} {
 }
 
 proc AddCanvasBindings { c } {
-    bind $c <Button-1> {ClickObj %x %y %W click}
-    bind $c <Control-Button-1> {ClickObj %x %y %W ctrl}
+    bind $c <Button-1> {ClickObj %x %y %W %X %Y click}
+    bind $c <Control-Button-1> {ClickObj %x %y %W %X %Y ctrl}
     # Doubleclicks now bound to objects not canvas
-    bind $c <Double-1> {ClickObj %x %y %W doubleclick}
+    bind $c <Double-1> {ClickObj %x %y %W %X %Y doubleclick}
     
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
-    bind $c <Button-3> {DoB3 %x %y %W %X %Y}
+    bind $c <Button-3> {ClickObj %x %y %W %X %Y right}
+    bind $c <Control-Button-3> {ClickObj %x %y %W %X %Y ctrl-right}
+    bind $c <ButtonRelease-3> {ReleaseObj %W %x %y}
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <FocusOut> {AbandonObj}
     
@@ -957,12 +973,6 @@ proc AddCanvasBindings { c } {
     # (could use tag 'has_info' for this)
     $c bind has_info <Enter> [list QueuePopup AddEqnPopup %x %y %W %X %Y]
     $c bind has_info <Leave> RemovePopup
-}
-
-# B3 has two actions; this does them both
-proc DoB3 {x y W X Y} {
-    PostMenu $W $X $Y
-    ClickObj $x $y $W right
 }
 
 # Canvas chapter (of Welch)
@@ -1144,10 +1154,6 @@ proc WindowDetail {window category level redraw} {
     #	    }
     #	}
     #    }
-}
-
-proc PostMenu {canvas x y} {
-    tk_popup [winfo parent $canvas]top.edit $x $y
 }
 
 # This patches a bug with error reporting in Tk 8.0. Also puts up a
@@ -1487,7 +1493,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
 # for what is available, overridden later if it is popup
     set fm [menu ${winid}top.edit -tearoff 0 \
-	       -postcommand "ClickObj inf inf $c right"]
+	       -postcommand "prolog tk_bar_edit_menu('$c')"]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
     $fm add command -label Undo -command "UnOrReDo $c 0" \
             -state disabled -accelerator "Ctrl+Z"
@@ -1563,32 +1569,37 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm add separator
     $fm add cascade -label Add -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
+
+    # The radiobuttons use MIpushedbutton as their variable because
+    # the command procedure has to know what the old pushedbutton was
+    # so it can unpress it, so they cannot use that
+
     $fm1 add radiobutton -label Compartment -command "ItemSelect compartment"\
-            -variable pushedbutton -value compartment
+            -variable MIpushedbutton -value compartment
     $fm1 add radiobutton -label Variable -command "ItemSelect variable"\
-            -variable pushedbutton -value variable
+            -variable MIpushedbutton -value variable
     $fm1 add radiobutton -label Flow -command "ItemSelect flow"\
-            -variable pushedbutton -value flow
+            -variable MIpushedbutton -value flow
     $fm1 add radiobutton -label Influence -command "ItemSelect influence"\
-            -variable pushedbutton -value influence
+            -variable MIpushedbutton -value influence
     $fm1 add radiobutton -label Submodel -command "ItemSelect submodel"\
-            -variable pushedbutton -value submodel
+            -variable MIpushedbutton -value submodel
     $fm1 add radiobutton -label Relation -command "ItemSelect relation"\
-            -variable pushedbutton -value relation
+            -variable MIpushedbutton -value relation
     
     
     $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
-            -variable pushedbutton -value creation
+            -variable MIpushedbutton -value creation
     $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
-            -variable pushedbutton -value immigration
+            -variable MIpushedbutton -value immigration
     $fm1 add radiobutton -label Reproduction -command "ItemSelect reproduction"\
-            -variable pushedbutton -value reproduction
+            -variable MIpushedbutton -value reproduction
     $fm1 add radiobutton -label Extermination -command "ItemSelect loss"\
-            -variable pushedbutton -value loss
+            -variable MIpushedbutton -value loss
     $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
-            -variable pushedbutton -value condition
+            -variable MIpushedbutton -value condition
     $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
-            -variable pushedbutton -value alarm
+            -variable MIpushedbutton -value alarm
     $fm add command -label "Properties..." \
             -command "MenuSelect $c edit properties"
     $fm add cascade -label Flip -menu $fm.sub2
@@ -1963,18 +1974,20 @@ proc InterpMenu {winId state} {
 set pushedbutton select
 
 proc ModeSelect {modes} {
-    global pushedbutton
+    global pushedbutton MIpushedbutton
     UpdateToolbars $modes
     set pushedbutton $modes
+    set MIpushedbutton $modes
     prolog [list tk_mode_select( $modes )]
 }
 
 proc ItemSelect {newItem} {
     global adds
-    global pushedbutton
+    global pushedbutton MIpushedbutton
     set adds $newItem
     UpdateToolbars $newItem
     set pushedbutton $newItem
+    set MIpushedbutton $newItem
     prolog [list tk_menu_select( $newItem , from_box)]
 }
 
@@ -1983,6 +1996,7 @@ proc ItemSelect {newItem} {
 
 proc UpdateToolbars {newAction} {
     global pushedbutton window_info tcl_platform
+#puts "UpdateToolbars $pushedbutton $newAction"
     foreach winData [array name window_info *,parent] {
         set toolBar $window_info($winData).toolSlot.toolbar
         $toolBar.$pushedbutton configure -state normal
