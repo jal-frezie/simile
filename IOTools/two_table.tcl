@@ -111,6 +111,14 @@ namespace eval tabular11510 {
 	}
     }
 
+    proc clear {winId} {
+	variable dataStore
+	foreach entry [array names dataStore $winId,*,*] {
+	    unset dataStore($entry)
+	}
+	display $winId [GetModelTime] 0 0
+    }
+
     proc display {winId tCur tStep tRem} {
 	variable dataStore
 	variable displayList
