@@ -1208,9 +1208,15 @@ do_save(Model, New_name) :-
 	as.  This may be tried multiple times, which is why it is done after
 	writing all the saved components to temp file. */
 
+        finish_progress_dialogue, /* Allow file selector to take focus */
 	(New_name = false,
 	    get_model_file(Model, Name);
 	try_save_files(Name)),
+
+	/* Starts dialogue, but if backtracking, finishes again before
+	retrying dialogue */
+	(start_progress_dialogue;
+        finish_progress_dialogue, fail),
 
 	/* Now build the multi-part MIME format save file */
         reassure_user("Creating MIME-format saved file"),
@@ -1228,8 +1234,7 @@ do_save(Model, New_name) :-
 	clear_autosave(Model, Name),
 	update_ability(Model, save, file, 'Save', 0),
 	mark_model_danger(Model, safe)),
-        finish_progress_dialogue, !;
-        finish_progress_dialogue, fail.
+        finish_progress_dialogue.
 
 transfer_images(Model, TopDir, Way) :-
 	setof(ImageSpec,
