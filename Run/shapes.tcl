@@ -191,7 +191,6 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
 proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
     global looks
 #puts "drawing submodel with fill $fillColour"
-    set width [GetLineSize $w submodel $fatness]
 #    previously had min width of 1 to ensure stack visibility
 #    set width [expr $width0>1?$width0:1]
 
@@ -201,7 +200,11 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
     if {$mb < $mt} {set temp $mb ; set mb $mt ; set mt $temp}
 
     set shortSide [expr ($mr - $ml)<($mb - $mt) ? ($mr - $ml) : ($mb - $mt)]
-    set cornerDiam [expr $looks(submodel,objectsize)*$shortSide/200]
+    if {$fatness == 0} {
+	set cornerDiam 0
+    } else {
+	set cornerDiam [expr $looks(submodel,objectsize)*$shortSide/200]
+    }
     set cornerRad [expr 0.5*$cornerDiam]
 # This is the diameter of the rounded corner as fraction of the box width
 
@@ -248,6 +251,7 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
     if {[llength $contents]} {
 	$w lower $poly [lindex $contents 0]
     }
+    set width [GetLineSize $w submodel $fatness]
     $w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
 	    $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 	    $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 \

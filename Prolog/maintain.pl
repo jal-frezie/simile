@@ -23,9 +23,10 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		move_text/2, move_display/2, reroute_display/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
 		add_window/7, redraw_window/1, inject_graphics/2,
+		display_area/2,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2, exterminate/1,
-		draw_incomplete/0, remove_old_incomplete/0, draw_rubberband/0,
+		draw_incomplete/0, remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, kill_window/1, exit_AME/1]).
 
@@ -36,6 +37,9 @@ cursor_in(Win, Cursor) :-
 
 callback(Content) :-
 	tk_callback(Content).
+
+display_area(Win, LTRB) :-
+	tk_display_area(Win, LTRB).
 
 update_captions(Model) :-
 	get_window_colour(Model, Colour),
@@ -436,14 +440,16 @@ remove_old_incomplete :-
 	find_current(Window_id),
 	kill_featured(Window_id, unfinished_line).
 
-draw_rubberband :-
+draw_rubberband(Style) :-
 	get_incomplete(Box),
 	find_current(Window_id),
 	get_translation(Trans),
 	untranslate(Box, Trans, Draw_box),
-	find_fatness(Trans, Fatness),
+	(Style = square, !,
+	    Fatness = 0;
+	find_fatness(Trans, Fatness)),
 	submodel(Window_id, Draw_box, 1, Fatness, clear, 
-			incomplete, [unfinished_component]).
+			incomplete, [unfinished_component, '/background/']).
 
 remove_old_rubberband :-
 	find_current(Window_id),

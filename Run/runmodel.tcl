@@ -106,7 +106,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 # last will be overwritten if drawing from Prolog
 
 # Now just in case we are loading this from a .cnv file and Prolog doesnt
-# know how big the canvas is...
+# know how big the canvas is...or something else funny is happening...
 #    ResizeDesktop $c $wl $wt $wr $wb
 
     if {[string match image [$c type /base/]]} {
@@ -350,23 +350,28 @@ proc DisplayAll { winId } {
 	set br [expr $br + $clearBorder]
 	set bb [expr $bb + $clearBorder]
 
-	set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
-# zoom to correct size
-	set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
-	set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
-	set scale [expr $xscale>$yscale?$yscale:$xscale]
+	DisplayArea $winId $bl $bt $br $bb
+    }
+}
 
+proc DisplayArea {winId bl bt br bb} {
+    global window_info
+    set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
+# zoom to correct size
+    set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
+    set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
+    set scale [expr $xscale>$yscale?$yscale:$xscale]
+    
 # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
 
- 	ZoomImage $winId all $scale $scale
+    ZoomImage $winId all $scale $scale
 
-	set bl [expr $bl*$scale]
-	set bt [expr $bt*$scale]
-	set br [expr $br*$scale]
-	set bb [expr $bb*$scale]
+    set bl [expr $bl*$scale]
+    set bt [expr $bt*$scale]
+    set br [expr $br*$scale]
+    set bb [expr $bb*$scale]
 
-	ResizeDesktop $winId $bl $bt $br $bb
-    }
+    ResizeDesktop $winId $bl $bt $br $bb
 }
 
 proc ExtractPrologName { winId target } {

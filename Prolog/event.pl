@@ -151,8 +151,9 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 	    (var(DropNode), !;
 		do_linear(New_obj, DropNode))).
 
-click_in(_, _, _, _, Parent) :-
+click_in(_, [Xpt, Ypt], _, _, Parent) :-
 	(get_mode(select), !,
+	    set_start_coords(Xpt, Ypt),
 	    finish_old_edit(none),
 	    give_focus('{}');   
 	get_translation(Old_trans),
@@ -589,6 +590,14 @@ check_entries(InterParent, Trans, Pair, NewPair, Comp) :-
 		NewPair = InterPair,
 		Comp = InterParent).
 
+drag_to(Xpt, Ypt, _Comp) :-
+	get_mode(select),
+	(get_phase(text_grabbing), !;
+	get_original_click(OldX, OldY),
+	add_incomplete([OldX, OldY, Xpt, Ypt]),
+	remove_old_rubberband,
+	draw_rubberband(square)).
+
 drag_to(Xpt, Ypt, Comp) :-
 	get_mode(add),
 	get_adding_object(Ltype),
@@ -599,7 +608,7 @@ drag_to(Xpt, Ypt, Comp) :-
 		get_start_coords(OldX, OldY),
 		add_incomplete([OldX, OldY, Xpt, Ypt]),
 		remove_old_rubberband,
-		draw_rubberband;
+		draw_rubberband(round);
 	true).
 
 drag_to(Xpt, Ypt, Moving_obj) :-
@@ -715,7 +724,7 @@ drag_to(Xpt, Ypt, Target) :-
 	B is Ypt+Boff,
 	add_incomplete([L,T,R,B]),
 	remove_old_rubberband,
-	draw_rubberband.
+	draw_rubberband(round).
 
 drag_to(_, _, Doomed_thing) :-
 	get_mode(delete),
@@ -1089,7 +1098,8 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
 	(get_mode(select),
-		get_phase(text_grabbing);
+		(get_phase(text_grabbing), !;
+		    zoom_to_area);
 	get_phase(info_extract)), !,
 		initialize_phase;	
 	get_phase(action_choice), !,
@@ -1097,6 +1107,22 @@ unclick :-
 	unclick_obj,
 		true.
 
+zoom_to_area :-
+	get_incomplete([OldX, OldY, NewX, NewY]),
+	remove_old_rubberband,
+	L is min(OldX, NewX),
+	T is min(OldY, NewY),
+	R is max(OldX, NewX),
+	B is max(OldY, NewY),
+	W is R - L,
+	H is B - T,
+	get_box_size(submodel, Standard),
+	W > Standard//2,
+	H > Standard//2,
+	fail,
+	find_current(Wid),
+	display_area(Wid, [L, T, R, B]).
+	
 unclick_obj :-
 	get_mode(add),
 	get_adding_object(New_obj),
