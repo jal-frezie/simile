@@ -765,7 +765,11 @@ proc AddEqnPopup {node x y winId X Y} {
         if {$doVal} {
 	    set cptPath [GetClickCapt $winId $canx $cany $plName]
 	    set execName [do_for_node $node GetIdFromCaptionPath $cptPath]
-	    AddPopupMessage novalue \#ffffc0 $node GetShortVals $node $execName
+	    if {[string equal nomatch $execName]} {
+		AddPopupMessage novalue \#ffffc0
+	    } else {
+		AddPopupMessage novalue \#ffffc0 $node GetShortVals $node $execName
+	    }
 	}
     }
 }
