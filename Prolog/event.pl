@@ -137,9 +137,9 @@ click: Handles mouse clicks in a model window. Ignore if running model.
 click(Xpt, Ypt, CD) :-
 	find_current(Wid),
 	Wid shows_model Parent,
+	save_params([0,0,1,1], 0, Parent),
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
-	    save_params([0,0,1,1], 0, Parent),
 	    advance_phase_to(dragging),
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
@@ -342,7 +342,7 @@ do_colours(Obj, Way) :-
 	    trail(Obj, _, Way);
 	(Way = on;
 	Way = off,
-	    highlight_ghosts_etc(Obj, Ghost, normalize(Ghost));
+	    normalize_ghosts_etc(Obj);
 	    clear_deletes(Obj);
 	    Way = off).
 
@@ -1061,15 +1061,23 @@ clear_deletes(Target) :-
 /* highlight_deletes: this highlights all the objects which will be zapped if a particular delete selection is made. The target itself highlights at defcon 0 and any colateral damage at defcon 1. */
 
 highlight_deletes(Target) :-
-	highlight_ghosts_etc(Target, Ghost, highlight(Ghost, 3)); 
+	highlight_ghosts_etc(Target); 
 	recursive_highlight(Target, 2);
 	highlight(Target, 1).
 
-highlight_ghosts_etc(Target, Ghost, DoToGhost) :-
+highlight_ghosts_etc(Target) :-
 	(Base = Target; ghost_link(Target, Base, Ghost)),
 	m_class:initiates(Link, Base),
 	ghost_link(Link, Base, Ghost),
-	call(DoToGhost),
+	\+ get_highlit_obj(_, Ghost),
+	highlight(Ghost, 3),
+	fail.
+
+normalize_ghosts_etc(Target) :-
+	(Base = Target; ghost_link(Target, Base, Ghost)),
+	m_class:initiates(Link, Base),
+	ghost_link(Link, Base, Ghost),
+	normalize(Ghost),
 	fail.
 
 recursive_highlight(Target, Col) :-

@@ -442,6 +442,47 @@ menu_handle(Win, edit, cut) :-
 	    event:update_runnable(Model),
 	    finish_progress_dialogue).
 	   
+menu_handle(Win, edit, selall) :-
+        start_progress_dialogue,
+	reassure_user("Selecting whole model"),
+	(Win shows_model Model,
+	    contains(Model, Sub),
+	    find_type(Sub, submodel),
+	    find_all_comps(Sub, Bit),
+	    highlight(Bit, 0),
+	    fail;
+	finish_progress_dialogue).
+	   
+menu_handle(Win, edit, unselall) :-
+        start_progress_dialogue,
+	reassure_user("Unselecting whole model"),
+	(Win shows_model Model,
+	    contains(Model, Sub),
+	    find_type(Sub, submodel),
+	    find_all_comps(Sub, Bit),
+	    get_highlit_obj(_, Bit),
+	    normalize(Bit),
+	    fail;
+	finish_progress_dialogue).
+	   
+menu_handle(Win, edit, invsel) :-
+        start_progress_dialogue,
+	reassure_user("Inverting selection"),
+	Win shows_model Model,
+	setof(Bit, 
+	    Sub^(contains(Model, Sub),
+		 find_type(Sub, submodel),
+		 find_all_comps(Sub, Bit),
+		 \+ (get_highlit_obj(N, Bit),
+			normalize(Bit),
+			N = 0;
+		    \+ Bit is_of_sort box)),
+	      NewSel),
+	(member(Node, NewSel),
+	    event:do_colours(Node, on),
+	    fail;
+	finish_progress_dialogue).
+	   
 menu_handle(Win, edit, properties) :-
 	Win shows_model Model,
 	set_properties(Win, Model).
