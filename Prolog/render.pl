@@ -148,6 +148,7 @@ which they do, and add as comments. */
 render( Target, NotNeeded, Variable, Indent, Comment) :-
 	member([NotNeeded, Target, Translation],
 			[[duplicate_context, c, tcl],
+			 [global_declaration, c, tcl],
 			 [public_cons_dest, tcl, c],
 			 [end(class), tcl, c],
 			 [data_declaration, tcl, c],
@@ -370,6 +371,9 @@ render(tcl, class_declaration,
 	    declare_namespace(Target, Indent, ClassDecl),
 	    append([Opens, ClassDecl, Closes], Decl);
 	Decl = [].
+
+render(tcl, global_declaration, [_, Name | _], _Indent, [Result]) :-
+	append_atoms('global ', Name, Result).
 
 render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 	(nonvar(Dims), !,
@@ -629,21 +633,28 @@ and returns a set of assignments to initialize the variables (6).
 The list of init vals is in list-of-lists format to match the way initialization
 works in c, though this is untested for multidimensionals. */
 
-assign_initial_values(Var, Val, 0, [], Indent, Result) :-
-	render(tcl, assignment, Var=Val, Indent, Result).
+assign_initial_values(Var, Val, _,_, Indent, [Result]) :-
+	atomic(Val), !,
+	    render(tcl, assignment, Var=Val, Indent, [Result]);
+	make_tcl_array_set([], [], Val, List),
+	    name(Var, VarStr),
+	    make_arg_string(tcl, List, ListStr),
+	    append(["array set ", VarStr, " {", ListStr, "}"], ResultStr),
+	    name(Result, ResultStr).
+	
+make_tcl_array_set(SoFar, Inds, Val, Done) :-
+	atomic(Val), !,
+	    comma_separate(Inds, IndCsvStr),
+	    name(IndCsv, IndCsvStr),
+	    append(SoFar, [IndCsv, Val], Done);
+	make_tcl_array_elts(SoFar, Inds, 0, Val, Done).
 
-assign_initial_values(_, _, Count, [Bound | _], _, []) :- 
-	Count > Bound, !.
-
-assign_initial_values(_, [], _,_,_, []).
-
-assign_initial_values(Var, [Vals | Rest], Count, [Dim | Deep], Indent, Result) :-
-	make_indexed_reference(tcl, Var, [Count], Dest),
-	assign_initial_values(Dest, Vals, 0, Deep, Indent, Result0),
-	Next is Count + 1,
-	assign_initial_values(Var, Rest, Next, [Dim | Deep], Indent, 
-			Result1),
-	append(Result0, Result1, Result).
+make_tcl_array_elts(A, _,_, [], A).
+make_tcl_array_elts(SoFar, Inds, N, [Val | Rest], Done) :-
+	append(Inds, [N], MoreInds),
+	make_tcl_array_set(SoFar, MoreInds, Val, Mid),
+	M is N+1,
+	make_tcl_array_elts(Mid, Inds, M, Rest, Done).
 
 swap_squares_for_curlies(ListList, Strings) :-
 	(make_list_chars(c, ListList, NestStr), !;

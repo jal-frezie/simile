@@ -461,19 +461,14 @@ make_intermediates(
 	merge_lists([Inter], OldInters, NewInters));	  
 
 	/* third case: a numerical value. Usable in any context.  */
-	get_actual_sizes(SubId, [Source], [SrcNum], [SrcType], SrcUnits),
-	    (Step = dummy, !,
-		SourceRef = SrcType,
-		Units = SrcUnits;
-	    SourceRef = SrcNum,
-		unmake_enum_units(SrcUnits, Units)), !,
+	decode_number(Source, SubId, Step, SourceRef, Units), !,
 	    SourceContext = [],
 	    Setups = [],
 	    Args = [],
 	    NewInters = PrevInters;
 
-	fail, /* suspended due to scope problems */
-	add_zeros(Source, BoundArray, ConstBounds, Units), !,
+	/* fail, suspended due to scope problems */
+	add_zeros(Source, SubId, Step, BoundArray, ConstBounds, Units), !,
 	    make_inds_for(ConstBounds, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
 	    SourceRef = arr('', ArrayName, Inds),
@@ -690,6 +685,14 @@ make_intermediates(
 	    UseArgs = SubArgs);
 	raise_exception(undecipherable_operand(Source, SubId)).
 
+decode_number(Source, SubId, Step, SourceRef, Units) :-
+	get_actual_sizes(SubId, [Source], [SrcNum], [SrcType], SrcUnits),
+	(Step = dummy, !,
+	    SourceRef = SrcType,
+	    Units = SrcUnits;
+	SourceRef = SrcNum,
+	    unmake_enum_units(SrcUnits, Units)).
+
 unmake_enum_units(SrcUnits, Units) :-
 	SrcUnits = n(_),
 	    Units = const_int;
@@ -899,7 +902,7 @@ use_tcl_proc_for(max).
 /* add_zeros has the mind-numbingly monotonous task of shifting
 all the array elements along one so that wooly-minded treehuggers can address
 the first element as index 1. To relieve the tedium it also checks that
-the list contains only numbers, and returns its (ORIGINAL) dimensions.
+the list contains only numbers, and returns its (ORIGINAL) dimensions. */
 
 zero_copy([], []) :- !.
 
@@ -909,25 +912,23 @@ zero_copy([H | T], [ZH | ZT]) :-
 
 zero_copy(_, 0).
 
-add_zeros(L, [Zeros | NL], N, U) :-
-	add_zeros_all(L, NL, Zeros, N, U), !.
+add_zeros(L, SubId, Step, [Zeros | NL], N, U) :-
+	add_zeros_all(L, SubId, Step, NL, Zeros, N, U), !.
 
-add_zeros(N, RN, [], U) :-
-	get_actual_sizes([N], [RN]),
-	(integer(RN), !, U = int;
-	    U = real).
+add_zeros(N, SubId, Step, RN, [], U) :-
+	decode_number(N, SubId, Step, RN, U).
 
-add_zeros_all([], [], _, [0 | _], int).
+add_zeros_all([], _,_, [], _, [0 | _], int).
 
-add_zeros_all([H | T], [NH | NT], Zeros, [N | R], U) :-
-	add_zeros(H, NH, R, U1),
+add_zeros_all([H | T], SubId, Step, [NH | NT], Zeros, [N | R], U) :-
+	add_zeros(H, SubId, Step, NH, R, U1),
 	zero_copy(NH, Zeros),
-	add_zeros_all(T, NT, Zeros, [M | R], UN),
+	add_zeros_all(T, SubId, Step, NT, Zeros, [M | R], UN),
 	([U1, UN, U] = [int, int, int], !;
 	    U = real),
 	N is M+1.
 
-Retursn expressions for a model's indices, those for outer loops first */
+/* Returns expressions for a model's indices, those for outer loops first */
 indices_for(set(_, loop(_)), []).
 
 indices_for(sm(_,_, Ptr, Spec), Inds) :-

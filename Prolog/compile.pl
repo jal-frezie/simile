@@ -270,8 +270,9 @@ bits and pieces */
 	
 	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
 */
-	build_submodel_functions(Language, Phases, Inters, StateForm,
-				 UpdateForm, SortedForm, Used,
+	render_all(Language, global_declaration, Constants, 0, GlobalDeclText),
+	build_submodel_functions(Language, Phases, GlobalDeclText, Inters,
+				 StateForm, UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, GraphClearText, Fns),
 
 	length(AllGraphs, GraphTotal),
@@ -315,14 +316,16 @@ wot need them */
 	/* the " in the above line does not start a quoted string */
 	send_to_dest(Stream, FullIncs),
 	
-	send_to_dest(Stream, TypeSection),
 	reassure_user("Generating constant declarations"),
 	render_all(Language, variable_declaration, 
 			Constants, 0, ConstDeclText),
 	render( Language, comment, 'CONSTANT DECLARATIONS', 0,
 							ConstDeclComment),
-	append(ConstDeclComment, ConstDeclText, ConstDecls),
+	append([ConstDeclComment, GlobalDeclText, ConstDeclText], ConstDecls),
 	send_to_dest(Stream, ConstDecls),
+
+	send_to_dest(Stream, TypeSection),
+
 	render( Language, comment, 'STRUCTURE POINTER DECLARATIONS', 0,
 							StructPtrComment),
 	append(StructPtrComment, PointerDecls, PointerSection),
@@ -549,7 +552,7 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 		 Proc_ending,Blank], Decls).
 */
 
-build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
+build_eval_proc(Language, ProcName, OrderedForm, Globals, Inters, Used,
 		AllGraphs, GraphClearText, Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
@@ -587,7 +590,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 	Blank = [''],
 
 	append([EvalProcDeclComment,Blank,EvalProcDeclText,Blank,
-	TempDeclText1, Blank,GraphSetupText,Blank,
+	Globals, Blank, TempDeclText1, Blank,GraphSetupText,Blank,
 	FuncComment,Blank,FuncStatements,Blank,
 	Proc_ending,Blank], Decls).
 
@@ -597,7 +600,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Inters,
+build_submodel_functions( Language, Phases, Globals, Inters,
 			  StateForm, UpdateForm, SortedForm,
 			  Used, ExtUsers, AllGraphs, GraphClearText, Decls) :-
 	reassure_user("Ordering model execution assignments"),
@@ -619,14 +622,14 @@ build_submodel_functions( Language, Phases, Inters,
 	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
 
 	reassure_user("Generating code for model execution"),
-	build_eval_proc(Language, updatemodel, OrdUpdates, [], Used,
+	build_eval_proc(Language, updatemodel, OrdUpdates, [], [], Used,
 			_, _, UpDecls),
-	build_eval_proc(Language, advancemodel, OrdStates, [], Used,
+	build_eval_proc(Language, advancemodel, OrdStates, [], [], Used,
 			_, _, AdvDecls),
-	build_eval_proc(Language, int_evalmodel, IntOrdered, Inters, Used,
-		IntGraphs, IntClearText, IntDecls),
-	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Inters, Used,
-		ExtGraphs, ExtClearText, ExtDecls),
+	build_eval_proc(Language, int_evalmodel, IntOrdered, Globals, Inters,
+			Used, IntGraphs, IntClearText, IntDecls),
+	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Globals, Inters,
+			Used, ExtGraphs, ExtClearText, ExtDecls),
 	all(user, append, [build([IntGraphs, IntClearText, IntDecls]),
 			   build([ExtGraphs, ExtClearText, ExtDecls]),
 			   build([AllGraphs, GraphClearText, EvDecls])]),
