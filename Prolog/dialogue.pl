@@ -77,8 +77,8 @@ BoxHeaderStr),
 	all(dialogue, index_names_and_sizes,
 	    [build(ISpecs), build(IndexList), build(IndxCount)]),
 	create_equation(Win, BoxHeader, IndexList),
-	(get_av_pair(Part, 0, spec, EquationStr), !,
-	    name(Equation, EquationStr);
+	(get_av_pair(Part, 0, spec, Equation),
+	    atom(Equation), /* do not use old string version */ !;
 	get_av_pair(Part, 0, value, Equation), !;
 		Equation = ''),
 	(get_av_pair(Part, 0, units, Units), !,
@@ -288,12 +288,13 @@ for it,
 
 	name(Desc, Desc_st),
 	name(Comment, Cmt_st),
+	sicstus_atom_chars(OldEqn, Eqn_st),
 
 	(FinalComplaint = [], !,
 	    update_parameterhood(Function, Is_P, AffectedNode),
 	    build_array(NewUnits, EqnDims, NewArraySpec),
 		add_parameter(AffectedNode, 0, value, Result),
-		add_parameter(AffectedNode, 0, spec, Eqn_st),
+		add_parameter(AffectedNode, 0, spec, OldEqn),
 		add_parameter(AffectedNode, 0, units, NewArraySpec),
 		add_parameter(AffectedNode, 0, description, Desc),
 		add_parameter(AffectedNode, 0, comment, Comment),
@@ -301,7 +302,7 @@ for it,
 		add_parameter(AffectedNode, 0, min_val, Min),
 		add_parameter(AffectedNode, 0, max_val, Max),
 		update_links_and_vars(New_inputs);
-	fill_equation(Result, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
+	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
 	    (FinalComplaint = continue, !;

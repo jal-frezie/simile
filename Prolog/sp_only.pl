@@ -31,6 +31,9 @@ sicstus_writeq(Stream, Term) :-
 sicstus_put(Stream, Char) :-
 	put(Stream, Char).
 
+sicstus_atom_chars(Atom, Chars) :-
+	atom_chars(Atom, Chars).
+
 trim_float(F, FStr) :-
 	float(F),
 	name(F, FStr).

@@ -93,6 +93,9 @@ sicstus_writeq(Stream, Term) :-
 sicstus_put(Stream, Char) :-
 	put_byte(Stream, Char).
 
+sicstus_atom_chars(Atom, Chars) :-
+	atom_codes(Atom, Chars).
+
 raise_exception(Error) :-
 	throw(Error).
 
