@@ -260,55 +260,55 @@ proc ZoomImage {winId which factor {optFontor none}} {
     }
     foreach object $objList {
         switch [$winId type $object] {
-            text {
-                set fontData [ExtractFontData [$winId itemcget $object -font]]
-                set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
-puts "Caption [$winId itemcget $object -text] font $fontData newsize $newTextSize"
-                if {$newTextSize < 1} {
-                    set newTextSize 1
-                }
-                $winId itemconfigure $object -font \
-                        [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-                        [lindex $fontData 2] $newTextSize]
-            } line {
-                $winId itemconfigure $object \
-                        -width [AdjustWidth $winId $object $factor]
-                AdjustArrow $winId $object $factor
-            } image {
-                set tgtImage [$winId itemcget $object -image]
-                set newWidth [expr round($factor*[$tgtImage cget -width])]
-                set newHt [expr round($factor*[$tgtImage cget -height])]
-                scan [$winId coords $object] {%f %f} newX newY
-                
-		if {[string compare none optFontor]} {
+        text {
+	    set fontData [ExtractFontData [$winId itemcget $object -font]]
+	    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+#puts "Caption [$winId itemcget $object -text] font $fontData newsize $newTextSize"
+	    if {$newTextSize < 1} {
+		set newTextSize 1
+	    }
+	    $winId itemconfigure $object -font \
+		[AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+		     [lindex $fontData 2] $newTextSize]
+	} line {
+	    $winId itemconfigure $object \
+		-width [AdjustWidth $winId $object $factor]
+	    AdjustArrow $winId $object $factor
+	} image {
+	    set tgtImage [$winId itemcget $object -image]
+	    set newWidth [expr round($factor*[$tgtImage cget -width])]
+	    set newHt [expr round($factor*[$tgtImage cget -height])]
+	    scan [$winId coords $object] {%f %f} newX newY
+	    
+	    if {[string compare none optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
 # so scale image rather tha re-tiling it
-		    if {$factor > 1} {
-			image create photo temp
-			temp copy $tgtImage
-			$tgtImage config -width $newWidth -height $newHt
-			$tgtImage copy temp -zoom [expr round($factor)]
-		    } else {
-			$tgtImage copy $tgtImage \
-			    -subsample [expr round(1.0/$factor)]
-		    }
-                } elseif {[string match "*/base/*" [$winId gettags $object]]} {
-                    ResizeBackgnd $winId $newX $newY \
-                            [expr $newX+$newWidth] [expr $newY+$newHt]
-                } else {
-                    set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
-                    set intRad [expr int($looks(submodel,objectsize)* \
-                            $shortSide/400)]
-                    $tgtImage config -width $newWidth -height $newHt
-                    regexp {source\(([^\)]+)\)} [$winId gettags $object] \
-                            all sourceImage
-                    FillSmImage $sourceImage $tgtImage $newWidth $newHt \
-                            $intRad
-                }
-            } default {
-                $winId itemconfigure $object \
-                        -width [AdjustWidth $winId $object $factor]
-            }
+		if {$factor > 1} {
+		    image create photo temp
+		    temp copy $tgtImage
+		    $tgtImage config -width $newWidth -height $newHt
+		    $tgtImage copy temp -zoom [expr round($factor)]
+		} else {
+		    $tgtImage copy $tgtImage \
+			-subsample [expr round(1.0/$factor)]
+		}
+	    } elseif {[string match "*/base/*" [$winId gettags $object]]} {
+		ResizeBackgnd $winId $newX $newY \
+		    [expr $newX+$newWidth] [expr $newY+$newHt]
+	    } else {
+		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
+		set intRad [expr int($looks(submodel,objectsize)* \
+					 $shortSide/400)]
+		$tgtImage config -width $newWidth -height $newHt
+		regexp {source\(([^\)]+)\)} [$winId gettags $object] \
+		    all sourceImage
+		FillSmImage $sourceImage $tgtImage $newWidth $newHt \
+		    $intRad
+	    }
+	} default {
+	    $winId itemconfigure $object \
+		-width [AdjustWidth $winId $object $factor]
+	}
 	}
     }
 }
