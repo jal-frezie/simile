@@ -280,7 +280,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 }
 
 proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
-    #do_in_editor puts \
+#do_in_editor puts \
 	   "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
     if {[lsearch {RECORDS MEMBERS} $nextUseDim]!=-1} {

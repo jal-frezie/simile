@@ -495,8 +495,7 @@ proc GetTclCompProperty {topNode prop args} {
 		return $extracted
 	    }
 	} Dims|Trans {
-	    set numericPath [getinfo $node 5]
-	    set dimRefs [GetFullDims $numericPath typeList]
+	    set dimRefs [GetFullDims [findRecord $node] typeList]
 	    set count 0
 	    set transList {}
 	    while {$count<[llength $dimRefs]-1} {
@@ -535,15 +534,12 @@ proc GetTclCompProperty {topNode prop args} {
 		return [graph_table 21 $index]
 	    }
 	} Caption {
-	    set numericPath [getinfo $node 5]
-	    return [GetFullCaption $numericPath]
+	    return [GetFullCaption [findRecord $node]]
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
 	} IdFromCapt {
 	    for {set record 1} {$nodecount>$record} {incr record} {
-		set id [lindex $nodedata($record) 0]
-		if {[string compare $node \
-			 [GetTclCompProperty $topNode Caption $id]] == 0} {
-		    return $id
+		if {[string equal $node [GetFullCaption $nodedata($record)]]} {
+		    return [lindex $nodedata($record) 0]
 		}
 	    }
 	    return nomatch
@@ -557,19 +553,28 @@ proc GetTclCompProperty {topNode prop args} {
     }
 }
 
-proc GetFullCaption {handle} {
+proc ParentLine {line} {
     global nodedata
-    if {[llength $handle] < 3} {
+    set handle [lindex $line 6]
+    if {[lindex $handle end-1]<0} {
+	set ptHand [lreplace $handle end-2 end 0]
+    } else {
+	set ptHand [lreplace $handle end-1 end 0]
+    }
+    foreach {n ptLine} [array get nodedata] {
+	if {[ListSameNumbers [lindex $ptLine 6] $ptHand]} {
+	    return $ptLine
+	}
+    }
+}    
+
+proc GetFullCaption {line} {
+    global nodedata
+    if {[llength [lindex $line 6]] < 3} {
 	return {}
     } else {
-	set parentCapt [GetFullCaption [lreplace $handle end-1 end 0]]
-	foreach record [array names nodedata] {
-	    set line $nodedata($record)
-	    if {[ListSameNumbers [lindex $line 6] $handle]} {
-		append parentCapt / [lindex $line 11]
-		break
-	    }
-	}
+	set parentCapt [GetFullCaption [ParentLine $line]]
+	append parentCapt / [lindex $line 11]
 	return $parentCapt
     }
 }				      
@@ -586,23 +591,15 @@ proc TypeAsList {arrName count} {
     return $result
 }
 
-proc GetFullDims {handle ETptrs} {
-    global nodedata
+proc GetFullDims {line ETptrs} {
 #do_in_editor puts $handle
     upvar 1 $ETptrs localETs
-    if {[llength $handle] < 3} {
-	set line $nodedata(0)
+    if {[llength [lindex $line 6]] < 3} {
 	set parentDims 0
 	set localETs {}
     } else {
-	set parentDims [GetFullDims [lreplace $handle end-1 end 0] localETs]
-	foreach record [array names nodedata] {
-	    set line $nodedata($record)
-	    if {[ListSameNumbers [lindex $line 6] $handle]} {
-		break
-	    }
-	}
-#do_in_editor puts $parentDims
+	set ptLine [ParentLine $line]
+	set parentDims [GetFullDims $ptLine localETs]
     }
 # add this levels type data -- reverse order cos outer models start list
     set count [lindex $line 2]
