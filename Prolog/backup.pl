@@ -10,7 +10,8 @@ sicstus_module(backup, [initialize_ring/0, finish_move/1, restart_move/0,
 			clear_autosave/2, check_autosave/2, scrub_autosave/1,
 			is_toplevel/1, use_temp_dir/1]).
 
-sicstus_use_module([ame_gen, database, library(lists), library(charsio)]).
+sicstus_use_module([ame_gen, database, utility,
+		    library(lists), library(charsio)]).
 
 :- dynamic(autosave_file_is/1).
 

@@ -210,8 +210,8 @@ bits and pieces */
 	extract_assignments(instance(submodel, _,xrefs(FullModel, _,_,_), _,_),
 			    [], TopStep, Phases, [], Used,
 			    Inters, UpdateForm, ReevaluateForm),
-/*	set_free_phases(UpdateForm, Phases),
-	set_free_phases(ReevaluateForm, Phases), */
+	set_free_phases(UpdateForm, Phases),
+	set_free_phases(ReevaluateForm, Phases),
 	pick_state_vars(ReevaluateForm, EvaluateForm, StateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	check_functions(EvaluateForm, UpdateForm, Phases, SortedForm),
@@ -1327,12 +1327,12 @@ insert_level_enum_phases(vm_spec_pair(Name, Phase),
 	(member(sm(Name, _,_, vm_loop(_,_,_, Phase)), Path), !; true),
 	insert_level_enum_phases(vm_spec_pair(Name, Phase), Insts).	
 
-/* This one just inserts the shortest time step into any undecided phases
+/* This one just inserts the shortest time step into any undecided phases */
 set_free_phases([], _).
 set_free_phases([make(_,_,_, Ph, _) | Insts], Phases) :-
 	(nonvar(Ph); Ph = Phases),
 	set_free_phases(Insts, Phases).
-*/
+
 made_in(Feature, sm(Submodel, _,_,_), Pass) :-
 	Test =.. [Feature, Submodel],
 	member(make(Test, _,_,_,_), Pass).
