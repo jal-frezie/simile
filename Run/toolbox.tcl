@@ -1469,7 +1469,7 @@ proc UpdateAbility {c what where which whether} {
 }
 
 proc ToggleIOToolMenu {node} {
-    global window_info custom model_id
+    global window_info custom model_id tcl_platform
     
     foreach win [array names window_info *,top_node] {
         if {[string equal $node $window_info($win)]} {
@@ -1490,8 +1490,13 @@ proc ToggleIOToolMenu {node} {
             set menuSpec [do_in_node $node ListMenuContents .helpers]
             ReconstituteMenu $topMenu.helpers $menuSpec $node
             }
-                    $topMenu insert "Help" cascade -label "I/O tools" \
-                            -underline 0 -menu $topMenu.helpers
+                    if [string match Darwin $tcl_platform(os)] {
+                        $topMenu insert end cascade -label "I/O tools" \
+                                -underline 0 -menu $topMenu.helpers
+                    } else {
+                        $topMenu insert "Help" cascade -label "I/O tools" \
+                                -underline 0 -menu $topMenu.helpers
+                    }
                 }
 
             } else {
