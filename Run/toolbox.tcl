@@ -18,7 +18,9 @@ source ../Run/runmodel.tcl
 source ../Run/mre.tcl
 
 # Test new Windows printing technology -- see file for credits/licence
-source ../System/library/Extras/printer/prntcanv.tcl
+if {[string match windows $tcl_platform(platform)]} {
+    source ../System/library/Extras/printer/prntcanv.tcl
+}
 
 # Make Simile a DDE server under Windows. Jonathan
 # Must be after the sourcing or Simile fails

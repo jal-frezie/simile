@@ -26,7 +26,7 @@ namespace eval tabular11510 {
 		 [namespace code [list ChangePrecision $winId 1]]] \
 	    [list lprec.gif "Decrease precision" \
 		 [namespace code [list ChangePrecision $winId -1]]] \
-            [list new.gif "Layout" [namespace code "Layout $winId"] ]]
+            [list property.gif "Layout" [namespace code "Layout $winId"] ]]
 
 	::graphtools::MakeToolBar $winId $toolbarItems
 
