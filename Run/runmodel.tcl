@@ -770,25 +770,24 @@ proc GetClickedObj { winId canx cany range} {
 }
 
 proc BindPopup {widget keywd} {
-    bind $widget <Enter> [list QueuePopup "AddWidgetPopup $keywd %X %Y"]
+    bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
     bind $widget <Leave> RemovePopup
 }
 
 proc MenuBindPopup {widget keyList} {
     bind $widget <Enter> [list QueuePopup \
-            [list AddMenuPopup $widget $keyList %y %X %Y 1]]
+            AddMenuPopup $widget $keyList %y %X %Y 1]
     bind $widget <Motion> [list AddMenuPopup $widget $keyList %y %X %Y 0]
     bind $widget <Leave> RemovePopup
 }
 
 # This is used for items on IO tool canvases -- model components have eqnpopups
 proc CanvasBindPopup {canvas widget keywd} {
-    $canvas bind $widget <Enter> [list QueuePopup \
-            [list AddWidgetPopup $keywd %X %Y]]
+    $canvas bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
     $canvas bind $widget <Leave> RemovePopup
 }
 
-proc QueuePopup {cmd} {
+proc QueuePopup {args} {
     global popper
 #puts "queueing $cmd"
 # Only allow one cmd in pipeline at a time -- two added if dragging an
@@ -796,7 +795,7 @@ proc QueuePopup {cmd} {
     if {[info exists popper]} {
 	after cancel $popper
     }
-    set popper [after 500 $cmd]
+    set popper [after 500 $args]
 }
 
 proc AddEqnPopup {x y winId X Y} {

@@ -538,7 +538,7 @@ proc equationBindings { t en eu lbp lbi lbd \
     foreach $w [list $en $eu] {
         bind $w <Return> equationOK
     }
-    set PopCmd [list QueuePopup "AddParamPopup %W %y %X %Y"]
+    set PopCmd [list QueuePopup AddParamPopup %W %y %X %Y]
     bind $lbp <Enter> $PopCmd
     bind $lbp <Motion> "RemovePopup;$PopCmd"
     bind $lbp <Leave> RemovePopup
@@ -555,7 +555,7 @@ proc equationBindings { t en eu lbp lbi lbd \
     bind $lbf <Double-1> \
             "functionClick %W %y $en"
     # popup boxes for functions
-    set PopCmd [list QueuePopup "AddFnPopup %W %y %X %Y"]
+    set PopCmd [list QueuePopup AddFnPopup %W %y %X %Y]
     bind $lbf <Enter> $PopCmd
     bind $lbf <Motion> "RemovePopup;$PopCmd"
     bind $lbf <Leave> RemovePopup

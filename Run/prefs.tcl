@@ -220,7 +220,7 @@ proc PrefDialogItem { frame item width } {
 # No longer use consistent width -- each label is allowed its own
 #    label $f.label -text [PrefComment $item] -width $width
     label $f.label -text [PrefComment $item] -anchor w
-    bind $f.label <Enter> [list QueuePopup "AddWidgetPopup [PrefRes $item] %X %Y"]
+    bind $f.label <Enter> [list QueuePopup AddWidgetPopup [PrefRes $item] %X %Y]
     bind $f.label <Leave> RemovePopup
 # Delay packing label until we know whether it goes to the left or right of the item
 #    pack $f.label -side left -anchor w

@@ -10,6 +10,9 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.9  2003/01/09 12:01:44  jaspert
+#Improved popup implementation, now delays model explorer popups
+#
 #Revision 1.8  2002/11/08 11:07:46  jaspert
 #Multi-line component names now appear all on one line
 #
@@ -180,8 +183,8 @@ namespace eval ::ModelInspector63654 {
         
         $tableframe.table bindImage <Button-1> [namespace code OnElementClick]
         $tableframe.table bindText <Button-1> [namespace code OnElementClick]
-	$tableframe.table bindImage <Enter> "[namespace code DoInspPopup] %X %Y"
-	$tableframe.table bindText <Enter> "[namespace code DoInspPopup] %X %Y"
+	    $tableframe.table bindImage <Enter> [list QueuePopup [namespace code DoInspPopup] %X %Y]
+	    $tableframe.table bindText <Enter> [list QueuePopup [namespace code DoInspPopup] %X %Y]
 	$tableframe.table bindImage <Leave> RemovePopup
 	$tableframe.table bindText <Leave> RemovePopup
     }

@@ -761,7 +761,7 @@ proc AddCanvasBindings { c } {
     
     # Stuff to put a popup help window on a canvas item
     # (could use tag 'has_info' for this)
-    $c bind has_info <Enter> [list QueuePopup "AddEqnPopup %x %y %W %X %Y"]
+    $c bind has_info <Enter> [list QueuePopup AddEqnPopup %x %y %W %X %Y]
     $c bind has_info <Leave> RemovePopup
 }
 
