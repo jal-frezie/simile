@@ -265,6 +265,7 @@ recognized by Prolog unless we tell it about them...
 
 /* :- op(500, fx, ['!']).
 Works but buggers up GNU prolog (do after loading?) */
+:- op(500, fx, [not]).
 
 :- op(700, yfx, ['<=']).
 
@@ -272,7 +273,7 @@ Works but buggers up GNU prolog (do after loading?) */
 
 :- op(750, yfx, ['&&', and]).
 
-:- op(800, yfx, ['||', or]).
+:- op(800, yfx, ['||', or, xor]).
 
 :- op(850, xfy, [?, :, then, else, elseif]).
 

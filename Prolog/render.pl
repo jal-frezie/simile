@@ -1009,6 +1009,16 @@ the next few lines in place, and math_protect asserted, AME will do the same. */
 			TargetOp = ('||');
 		L = basic,
 			TargetOp = 'OR');
+	member(Op, [xor]), !,
+		((L = c; L = tcl),
+			TargetOp = ('!=');
+		L = basic,
+			TargetOp = 'XOR');
+	member(Op, [not, '!']), !,
+		((L = c; L = tcl),
+			TargetOp = ('!');
+		L = basic,
+			TargetOp = 'NOT');
 	Op = (^), !,
 		(L = c,
 			TargetOp = 'pow';

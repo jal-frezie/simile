@@ -766,6 +766,8 @@ operator(',', boolean, [boolean, boolean]).
 operator(';', boolean, [boolean, boolean]).
 operator(and, boolean, [boolean, boolean]).
 operator(or, boolean, [boolean, boolean]).
+operator(xor, boolean, [boolean, boolean]).
+operator(not, boolean, [boolean]).
 operator((=\=), boolean, [boolean, boolean]).
 
 use_tcl_proc_for(min).
