@@ -448,7 +448,7 @@ make_intermediates(
 	    (integer(SourceRef), !, Units = const_int;
 		Units = real);
 
-	fail, /* suspended due to scope problems */
+	/* fail, suspended due to scope problems */
 	add_zeros(Source, BoundArray, ConstBounds, Units), !,
 	    make_inds_for(ConstBounds, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
@@ -1039,15 +1039,7 @@ get_dims_from_loops(Loops, Dims, Inds) :-
 	    Inds = RInds),
 	get_dims_from_loops(InnerLoops, RDims, RInds).
 
-/* Criteria for looping models. Note that as well as an index loop
-(first clause) a fixed membership submodel counts as looping because
-if it is opened for just one element it won't have an index loop but
-we must still wait for the index to be made. This is done before
-anything inside the submodel is doable, so if loops is true it wont be
-entered before that. */
-
 loops(set(_, loop(_))).
-loops(sm(_,_,_, fm_loop([_|_]))).
 loops(sm(_,_,_, vm_loop(_,_,_,_))).
 loops(sm(_,_,_, rm_loop(_,_,_))).
 

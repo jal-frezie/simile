@@ -371,8 +371,8 @@ make_assoc_loop_names(L, Instance, Used,
 	make_assoc_loop_names(L, Instance, Used, Bases).
 
 invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
-	ancestor(Instance, BaseInstance, _,_,_), !,
-	    Ptrs = [];
+	ancestor(Instance, BaseInstance, _), !,
+	    Ptrs = []; /* 19/12/02: does this ever happen...? */
 	BaseInstance = instance(submodel, BaseSm, xrefs(_, Parent, _,_), _,_),
 	    caption_for(BaseSm, BaseCapt),
 	    append_atoms(LinkName, BaseCapt, Context),
@@ -926,14 +926,22 @@ convert_base_specs(time, on_reset).
 convert_base_specs(enumerate(Model), startable(Model)).
 
 get_route_between(Start, Finish, Exited, Entered) :-
-	ancestor(Start, Top, Exited, TopPtr, _),
-	ancestor(Finish, Top, Entered, TopPtr, _), !.
+	ancestor(Start, Top, StartTree),
+	ancestor(Finish, Top, EndTree), !,
+	levels_to_path(StartTree, Exited, TopPtr, _),
+	levels_to_path(EndTree, Entered, TopPtr, _).
 
-ancestor(Instance, Instance, [], Ptr, Ptr).
-ancestor(instance(submodel, SmName, xrefs(_, Parent, _, _), Name, _-SmDims),
-	 Instance, Path, TopPtr, LoPtr) :-
+ancestor(Instance, Instance, []).
+ancestor(Instance, Top, [Instance | Higher]) :-
+	Instance = instance(submodel, _, xrefs(_, Parent, _,_), _,_),
+	ancestor(Parent, Top, Higher).
+
+levels_to_path([], [], Ptr, Ptr).
+
+levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
+	       Path, TopPtr, LoPtr) :-
 	path_section_for(SmName, Name, SmDims, Level, HiPtr, LoPtr),
-	ancestor(Parent, Instance, Higher, TopPtr, HiPtr),
+	levels_to_path(MoreLevels, Higher, TopPtr, HiPtr),
 	append(Level, Higher, Path).
 
 name_from_elt(FullRef, Cond) :-
@@ -1436,7 +1444,7 @@ get_non_looping_levels(Path, [make(_,_, IPath, _,_) | More], Levels) :-
 	    /* note == used in futile attempt to stop similar levels
 	    codesignating -- put more info in level struct to stop this */
 	suffix(NLPart, UsePath),
-	\+ (member(Looper, NLPart), loops(Looper)), !,
+	\+ (member(Looper, NLPart), open_separately(Looper)), !,
 	merge_lists(NLPart, MoreLevels, Levels)).
 
 get_pass_ends(Level, StartInit, Finish) :-
@@ -1506,12 +1514,23 @@ member_either(X, A, B) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 remove_non_loopers(Path, LoopsOnly) :-
 	append(AllLoops, [NotLoop | SomeLoops], Path),
-	\+ loops(NotLoop), !,
+	\+ open_separately(NotLoop), !,
 	remove_non_loopers(SomeLoops, AlsoAllLoops),
 	append(AllLoops, AlsoAllLoops, LoopsOnly);
 	Path = LoopsOnly.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* When we open a submodel we normally open all those inside it at the same
+time, but we need to wait if (a) it is a looping level (so we don't do anything
+more often than we have to) or (b) if it needs an index expression (so the
+variables used are made before we open it) */
+
+open_separately(Level) :-
+	loops(Level);
+	Level = sm(_,_,_, fm_loop(Inds)),
+	member(I, Inds),
+	nonvar(I).
+
 generate_graph_handlers([], [], []).
 
 generate_graph_handlers([[_, _, PointerData | NumericalData] | AllGraphs],
