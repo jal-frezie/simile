@@ -99,6 +99,7 @@ namespace eval ::$keyValue {
         global ::graphtools::Told
         global ::graphtools::Tnew
         global runState
+	variable runCount
         
         #initialize $winId; #allows default values for vars missing from GetState
         # loses vars to plot
@@ -114,6 +115,11 @@ namespace eval ::$keyValue {
         
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
+
+	foreach node $plot($winId,Yvars) {
+	    set plot(caption,$node) [file tail [GetCaptionPathFromId $node]]
+	}
+	set runCount($winId) 1
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
         doDisplay $winId [GetModelTime] 0 0
