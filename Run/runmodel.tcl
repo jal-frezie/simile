@@ -50,7 +50,7 @@ proc TraceObj {winId x y} {
 proc ModelWindow {winName} {
     global tcl_platform
     menu ${winName}top
-    toplevel $winName -menu ${winName}top
+    toplevel $winName -bg white -menu ${winName}top
     
     switch $tcl_platform(platform) {
         windows { wm iconbitmap $winName -default ../Run/similev2.ico }
