@@ -335,7 +335,9 @@ cannot_call_in(Prev_highlight, Parent, Name) :-
 
 change_name(RenamedNode, Name) :-
 	(add_parameter(RenamedNode, 0, name, Name);
-	    find_name_host(RenamedNode, ArcWithName),
+	    (find_type(RenamedNode, relation), !,
+		find_name_host(RenamedNode, ArcWithName);
+	    ArcWithName = RenamedNode),
 	    add_parameter(ArcWithName, 2, name, Name)),
 	(status_affects(RenamedNode, OtherGhost),
 	    update_captions(OtherGhost),
