@@ -15,7 +15,8 @@ namespace eval ::maptools2 {
     proc SetColourMap {winData winId node} {
         upvar 1 $winData useNodes
 # OK, do things differently if it is an enumerated type
-	set useNodes($winId,dataETs) [lindex [GetTransTable $node] end]
+	set useNodes($winId,allETs) [GetTransTable $node]
+	set useNodes($winId,dataETs) [lindex $useNodes($winId,allETs) end]
 	set useNodes($winId,ETCount) [llength $useNodes($winId,dataETs)]
 	if {$useNodes($winId,ETCount)} {
 	    set useNodes($winId,min) 1

@@ -141,7 +141,7 @@ namespace eval grid005 {
 #                    destroy $winId.intro
                     set NToolButtons [$winId.bbframe.buttonBox index last]
                     for {set i 1} {$i<=$NToolButtons} {incr i} {
-			if {![llength $useNodes($winId,dataETs)] || \
+			if {!$useNodes($winId,ETCount) || \
 				[lsearch {4 6 7} $i]==-1} {
 			    $winId.bbframe.buttonBox itemconfigure $i \
 				-state normal
@@ -432,8 +432,8 @@ namespace eval grid005 {
                         return
                     }
                     
-                    if {$icolour < 1} {
-                        set icolour 1
+                    if {$icolour < 0} {
+                        set icolour 0
                     } elseif {$icolour > $nswatches} {
                         set icolour $nswatches
                     }
@@ -531,7 +531,8 @@ namespace eval grid005 {
                 raise .popup
             }
             set cell [expr ($row-1)*$ncol+$col-1]
-            set value [lindex $useNodes($winId,values) $cell]
+            set value [TransValue $useNodes($winId,dataETs) \
+			   [lindex $useNodes($winId,values) $cell]]
             set index [expr $cell+1]
             
             .popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"

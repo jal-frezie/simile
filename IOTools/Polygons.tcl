@@ -247,6 +247,7 @@ $useNodes($winId,scaley)"
         array set quadarray $quadlist
         foreach id [array names quadarray] {
             set indxs [join $id ,]
+            set dispIndxs [join [TransEnums $useNodes($winId,allETs) $id] ,]
             set value [lindex $quadarray($id) 0]
 	    if {$value < $useNodes($winId,datamin)} {
 		set useNodes($winId,datamin) $value
@@ -256,7 +257,8 @@ $useNodes($winId,scaley)"
 	    }
             foreach polyId [$winId.viewport.c find withtag [IdToTag $indxs]] {
 		CanvasBindPopup $winId.viewport.c $polyId \
-                    [list Index $id Value $value]
+                    [list Index $dispIndxs Value \
+			 [TransValue $useNodes($winId,dataETs) $value]]
 		set newColour [ColourFor $winId $value]
 		if {![string match $newColour \
 			  [$winId.viewport.c itemcget $polyId -fill]]} {
