@@ -1784,3 +1784,4 @@ proc ClearWindow {winId} {
     ResetEqnBar [winfo parent $winId].toolSlot.eqnbar
 }
 
+

@@ -509,3 +509,4 @@ proc min {first last} {
 proc max {first last} {
     return [expr $first>$last?$first:$last]
 }
+
