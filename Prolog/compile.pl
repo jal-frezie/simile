@@ -235,12 +235,11 @@ bits and pieces */
 	set_free_phases(Deltas, Phases), */
 	extract_assignments(instance(submodel, _,xrefs(FullModel, _,_,_), _,_),
 			    [], TopStep, Phases, [], Used,
-			    Inters, UpdateForm, ReevaluateForm),
+			    Inters, ReevaluateForm),
 	(Phases > 0, !;
 	    raise_exception(no_phases)),
-	set_free_phases(UpdateForm, Phases),
 	set_free_phases(ReevaluateForm, Phases),
-	pick_state_vars(ReevaluateForm, EvaluateForm, StateForm),
+	pick_state_vars(ReevaluateForm, EvaluateForm, StateForm, UpdateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	check_functions(EvaluateForm, UpdateForm, Phases, VMSPs, SortedForm),
 	/* first off, unify all matching vm level specs in the two lists so
@@ -385,14 +384,16 @@ invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 	    invent_ptr_names(L, LinkName, Parent, Instance, Used, MorePtrs),
 	    Ptrs = [Ptr | MorePtrs].
 
-pick_state_vars(All, Rate, State) :-
-	append(AllRate, [OneState | SomeState], All),
-	OneState = make(lastvalue(_), _,_,_,_), !,
-	    pick_state_vars(SomeState, MoreRate, MoreState),
-	    append(AllRate, MoreRate, Rate),
-	    State = [OneState | MoreState];
-	Rate = All,
-	    State = [].
+pick_state_vars([], [], [], []).
+
+pick_state_vars([One | All], Rate, State, Update) :-
+	pick_state_vars(All, MoreRate, MoreState, MoreUpdate),
+	(One = make(_,_,_,_, [assign(SV, SV+stage_incr(_,_,_))]), !,
+	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
+	(One = make(culled(_), _,_,_,_);
+	 One = make(_,_,_,_, [assign(SV, SV+step_incr(_,_))])), !,
+	    Rate = MoreRate, State = [One | MoreState], Update = MoreUpdate;
+	Rate = [One | MoreRate], State = MoreState, Update = MoreUpdate).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % check_functions tests for circularity, then puts each function
@@ -717,7 +718,7 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
-		    Inters, UpdateList, AssignList) :-
+		    Inters, AssignList) :-
 	Instance = instance(submodel, _, xrefs(model(Functions, Submodels),
 					       _,_,_), _,_),
 	(setof(ParamUpdate,
@@ -728,13 +729,12 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
 	     unify(Used), append(Inters0, []),
-	     append(UpdateList0, []), append(AssignList0, ParamUpdates)]),
+	     append(AssignList0, ParamUpdates)]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
-	     append(Inters, Inters0), append(UpdateList, UpdateList0),
-	     append(AssignList, AssignList0)]).
+	     append(Inters, Inters0), append(AssignList, AssignList0)]).
 
 biggest(B1, B2, Big) :-
 	Big is max(B1, B2).
@@ -745,7 +745,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
 			    Path, Swaps, TopStep, MaxStep, Used,
-			    Inters, UpdateList, AssignList) :-
+			    Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
 			    Name, _-Dims),
@@ -880,7 +880,7 @@ instruction because they will not require individual initialization routines. */
 	[BaseSides, SmInters, Specials] = [[], [], []]),
 
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps,
-			    Used, FnInters, UpdateList, AssignList0),
+			    Used, FnInters, AssignList0),
 	append(FnInters, SmInters, Inters),
 	append(Specials, AssignList0, AssignList).
 
@@ -966,7 +966,7 @@ list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
 get_assignment(instance(AssignType, Node, Source, DestRef, _),
-	       DestPath, Step, Swaps, Used, Inters, Updates, Assignments) :-
+	       DestPath, Step, Swaps, Used, Inters, Assignments) :-
 	AssignType = external, !,
 	    (Inters = [],
 	    Source = for_extern(CondElts, Tops),
@@ -980,8 +980,8 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    Assignments = [make(ints(Dest), [time], DestPath, _,
 				[int_eval_submodel(Node, arr(Ptr, Dest, []),
 						   BuiltWith)]),
-			   make(exts(Dest), [time | Conds], DestPath, _, Xvl)],
-	    Updates = [make(none, [time], DestPath, _,
+			   make(exts(Dest), [time | Conds], DestPath, _, Xvl),
+			   make(none, [time], DestPath, _,
 				[update_submodel(Node, arr(Ptr, Dest, []),
 						   BuiltWith)])]);
 	    /* Only make assignments for functions, for now, and
@@ -993,13 +993,9 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 		(AssignType = init_function, !, UseStep = 0; UseStep = Step);
 	     Is_P = 1,
 		UseStep = -1),
-	    Actions = Assignments,
-	    Updates = [],
 	    SourceEqn = Source;
 	member(AssignType, [compartment, immigration, reproduction]),
 	    UseStep = Step,
-	    Actions = Updates,
-	    Assignments = [],
 	    Source = incr(Step, SourceEqn)), !,
 	DestRef = elt(_, Dest, _),    
 	final_assignment(SourceEqn, Node, DestRef, Swaps, Step,
@@ -1017,9 +1013,8 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	/* input parameters are set to their default values on model
 	    initialization only */
 	connect_params([make(Dest, UseList, Path, UseStep, Expr) | Setups],
-		      Dest, AllInters, Actions, Inters);
+		      Dest, AllInters, Assignments, Inters);
 	Assignments = [],
-	    Updates = [],
 	    Inters = []).
 
 /* Now...when using a variable in the equation I have been putting

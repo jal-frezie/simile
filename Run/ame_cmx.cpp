@@ -1488,6 +1488,16 @@ extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+extern "C" int GetVersionCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+  if (argc != 1) {
+    interp->result = "No arguments for get_simile_version please!";
+    return TCL_ERROR;
+  }
+  interp->result = simileVersion;
+  return TCL_OK;
+}
+
 extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
@@ -1571,6 +1581,9 @@ one. */
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
      Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+     Tcl_CreateObjCommand(interp, "get_simile_verson", GetVersionCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     return TCL_OK;
   }

@@ -66,10 +66,14 @@ proc SetStep {time phase} {
     }
 }
 
+proc step_incr {step v} {
+    return [expr $v*[glob_element dts $step]]
+}
+
 proc stage_incr {ns_extras step v} {
     upvar \#0 ::AME_model<>::$ns_extras extras
 
-    set dv [expr $v*[glob_element dts $step]];
+    set dv [step_incr $step $v]
     switch [expr int([glob_element dts 0])] {
 	0 {
 	    return $dv

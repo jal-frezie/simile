@@ -64,10 +64,14 @@ void do_setstep(double time, int phase) {
   dts[phase] = time;
 }
 
+double step_incr (int step, double v) {
+  return v*glob_element(dts, step);
+}
+
 double stage_incr (diffs *extras, int step, double v) {
   double dv, old_offset;
 
-  dv = v*glob_element(dts, step);
+  dv = step_incr(step, v);
   switch (int(glob_element(dts, 0))) {
   case 0:
     return dv;

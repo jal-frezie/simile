@@ -75,6 +75,7 @@ public:
 };
 
 double stage_incr (diffs*, int, double);
+double step_incr (int, double);
 
 /* abstract base class for submodels, with extractor virtual function */
 class submodeltype {

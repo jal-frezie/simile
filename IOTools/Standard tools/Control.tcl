@@ -311,10 +311,10 @@ namespace eval runcontrol33857 {
                 if {$bigPhase <= [GetPhaseCount]} {
                     $widget.bf.flag itemconfigure 1 -fill green
 		    CondUpdate $bigPhase
-                    if {![do_model advance $scaled_current $bigPhase]} {
+                    if {![RKUpdateModel $scaled_current $bigPhase]} {
                         set sendvars(currentMode) exit
                     }
-                    if {![RKUpdateModel $scaled_current $bigPhase]} {
+                    if {![do_model advance $scaled_current $bigPhase]} {
                         set sendvars(currentMode) exit
                     }
                     

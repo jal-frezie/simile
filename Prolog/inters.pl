@@ -837,6 +837,7 @@ language -- they and the operators are hidden */
 
 operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
+operator(step_incr, real, [int, real]).
 
 operator(!, boolean, [boolean]).
 operator(+, int, [int]).

@@ -201,7 +201,7 @@ for them I go back to the symbolic model anyway. Unfortunately this is the other
 Oh well, why don't I just mega-ly botch it and have each primitive return a variable number of instances..."virtual" symbolic name means not in the original model. */
 
 instance_of(Type, Node, Path,
-	    [instance(Type, Node, incr(Step,Home+Step*Value),
+	    [instance(Type, Node, incr(Step,Home+step_incr(Step, Value)),
 		      Home, real-[]),
 	     instance(init_function, Node, 0.5, Home, real-[])],
 	    [instance(function, Function, _, Value, _)]) :-

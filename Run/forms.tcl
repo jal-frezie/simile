@@ -826,9 +826,11 @@ proc Disaggregate {parent title colour type fatness icount step \
     
     label $t.commentlabel -text Comments:
     pack $t.commentlabel -padx 2 -pady 4 -anchor w
-    ScrolledWindow $t.commentsSW
+# ScrolledWindow causes crash under Linux so replaced with ordinary frame
+    frame $t.commentsSW
+#    ScrolledWindow $t.commentsSW
     text $t.commentsSW.comment -height 4 -width 40 -wrap word
-    $t.commentsSW setwidget $t.commentsSW.comment
+#    $t.commentsSW setwidget $t.commentsSW.comment
     $t.commentsSW.comment insert 1.0 $comment
     pack $t.commentsSW.comment $t.commentsSW -anchor nw -fill both -expand true
     
@@ -1651,7 +1653,7 @@ proc equationlisting_start {} {
             -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure dummytag \
             -font {Helvetica 5}
-            
+            
     bind $w <Control-a>  {EquationListingSelectAll $equationlist(textbox)}
 }
 
@@ -1937,3 +1939,4 @@ proc NotifyOverLimit {limit} {
     tkwait variable ack
     destroy .notify
 }
+
