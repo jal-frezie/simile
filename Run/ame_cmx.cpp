@@ -84,6 +84,16 @@ HINSTANCE flopen(char* fileName) {
   return dlopen(fileName, RTLD_NOW);
 }
 
+/*
+ * Unix version: does not have min & max defined
+ */
+int min(int a, int b) {
+  return a<b?a:b;
+}
+int max(int a, int b) {
+  return a>b?a:b;
+}
+
 #endif
 #include <locale.h>
 
@@ -93,14 +103,7 @@ HINSTANCE flopen(char* fileName) {
 char simileVersion[] = SIMILE_VERSION;
 
 /* utility procedures making no direct reference to model classes/instances */
-graph_data_type* graphdata;
-
-int min(int a, int b) {
-  return a<b?a:b;
-}
-int max(int a, int b) {
-  return a>b?a:b;
-}
+graph_data_type *graphdata;
 
 double graphpoint(double xval, int index) {
 	double interval, intersection;
