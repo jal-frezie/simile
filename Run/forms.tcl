@@ -1230,3 +1230,69 @@ proc VisitUrl {x} {
         }
     }
 }
+
+proc ShowAbout {winId} {
+    global sendvars userinfo interface
+    toplevel .about
+    wm transient .about $winId
+    wm title .about About\ SIMILE
+    image create photo dripu
+    image create photo dripl
+    dripu read "../Images/HelpAboutUpper.gif"
+    dripl read "../Images/HelpAboutLower.gif"
+    label .about.upper -image dripu
+    pack .about.upper -pady 4
+    frame .about.fr -relief sunken -borderwidth 2
+    pack [label .about.fr.lab1 -text Version\ $sendvars(simV)\ $userinfo(edn) \
+            -font {-weight bold -family helvetica -size 12}]
+    set platform [frame .about.fr.platform]
+    pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
+            -font {-family helvetica -size 8}] -side left
+    pack [label $platform.tcl -text "TclTk: [info patchlevel]" \
+            -font {-family helvetica -size 8}] -side left
+    pack $platform
+    if [info exists userinfo(exp_time)] {
+        set edate [clock format $userinfo(exp_time) -format {%d %h %Y}]
+        set expf [frame .about.fr.expf]
+        pack [label $expf.lab1 -text "This product expires on"] -side left
+        pack [label $expf.lab2 -text $edate] -side left
+        pack $expf
+    }
+    pack [label .about.fr.lab4 -text "This product is registered to\
+            $userinfo(name), $userinfo(corp)" \
+            -font {-family helvetica -size 8}]
+    
+    set gen [frame .about.fr.gen]
+    if [string match evaluation $userinfo(edn)] {
+        set info [label $gen.info -text "For upgrade to Standard\
+                or Enterprise Editions," -font {-family helvetica -size 10}]
+    } elseif [string match standard $userinfo(edn)] {
+        set info [label $gen.info -text "For support or to upgrade\
+                to Enterprise Edition," -font {-family helvetica -size 10}]
+    } else {
+        set info [label $gen.info -text "For support," \
+                -font {-family helvetica -size 10}]
+    }
+    pack $info -side left
+    pack [label $gen.visit -text "please visit" -font {-family helvetica -size 10}]\
+            -side left
+    pack [label $gen.www -text www.simulistics.com -relief flat \
+            -font {-underline true -family helvetica -size 10} -fg blue -cursor hand2] -pady 2 -side left
+    bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
+    pack $gen -padx 4 -pady 2
+    pack .about.fr -expand on -fill x -padx 8 -pady 2
+    
+    label .about.lower -image dripl
+    pack .about.lower
+    
+    pack [button .about.b -text OK -width 10 -default active \
+            -command "set sendvars(doneAbout) 1"] -pady 2
+    pack [label .about.l16]
+    wm geometry .about +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-250]
+    grab .about
+    
+    tkwait variable sendvars(doneAbout)
+    grab release .about
+    destroy .about
+}
+
