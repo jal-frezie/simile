@@ -176,12 +176,10 @@ needs_quoting(Foo, Noo) :-
 	append([39 | Barq], [39], Noo).
 
 double_single_quotes(NoneDone, AllDone) :-
-        append(NoQuotes, [39 | StillUndone], NoneDone), !,
+        append(NoQuotes, [Baddie | StillUndone], NoneDone),
+	member([Baddie, Good1, Good2], [[39, 39,39],[10, 92,110]]), !,
             double_single_quotes(StillUndone, NowDone),
-            append(NoQuotes, [39, 39 | NowDone], AllDone);
-        append(NoQuotes, [10 | StillUndone], NoneDone), !,
-            double_single_quotes(StillUndone, NowDone),
-            append(NoQuotes, [92, 110 | NowDone], AllDone);
+            append(NoQuotes, [Good1, Good2 | NowDone], AllDone);
         AllDone = NoneDone.
 
 runtime_entry(start) :-

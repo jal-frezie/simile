@@ -93,7 +93,7 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    make_inds_for(Dims, Loops, _),
 	    NewVar = use_inter(Var),
 	    /* just to make sure same var is used for name each occurrence */
-	    member(instance(internal, inter(_,_, Loops), NewVar,_, _-Dims),
+	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
 		   InterInputs),
 	    Recurse = 0;
 	Var = channel_is(input(Location, elt(RealPathForm, Ref, Unit-Dims),
