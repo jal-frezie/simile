@@ -4,10 +4,7 @@
 
 # Create a Tcl object/command (modelWin) with which to control that instance of Simile
 similescript::ModelWindow modelWin
-
-# The mode is expected to have the model window not visible, however,
-# at present Simile lock up if the model window is not visible, so:-
-modelWin Show 
+#modelWin Show 
 
 # Tell Simile not to use the single window Model Run Environment
 # We will are not going to use any helper anyway here.
