@@ -608,7 +608,7 @@ proc ResetColours { w type density colourScheme name } {
 proc WriteDesc {canvas canvasFile date args} {
     global window_info
     
-    set stream [open $canvasFile w]
+    set stream [NetOpen $canvasFile w]
     fconfigure $stream -translation binary
     set title [wm title [winfo parent $canvas]]
     puts $stream "# written on $date"
@@ -1197,7 +1197,7 @@ proc ReadLooks {t type} {
     global looks
     
     set customFile [ChooseFile looks.cus "Choose a customization file" 0]
-    set stream [open $customFile r]
+    set stream [NetOpen $customFile r]
     
     while {[gets $stream elementName] >= 0} {
         gets $stream elementValue
@@ -1222,7 +1222,7 @@ proc SaveLooks {t type} {
     global looks
     
     set customFile [ChooseFile looks.cus "Name for customization file" 1]
-    set stream [open $customFile w]
+    set stream [NetOpen $customFile w]
     
     foreach element [array names looks] {
         puts $stream $element

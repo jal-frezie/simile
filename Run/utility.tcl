@@ -96,3 +96,15 @@ proc RecordPathChoice {fileType chosenFile recordEntry} {
 	set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
     }
 }
+
+# This deals with the quirk of Netware file systems that if the user has
+# read/write access to a file it cannot be opened readonly, or something...
+
+proc NetOpen {name way} {
+    if {[catch {open $name $way} stream]} {
+	if {[catch {open $name r+} stream]} {
+	    error "Could not open $name $way or r/w"
+	}
+    }
+    return $stream
+}

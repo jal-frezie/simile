@@ -287,7 +287,7 @@ proc PrefSave {} {
 	global pref
     global tcl_platform
     if [catch {
-		set old [open $pref(userDefaults) r]
+		set old [NetOpen $pref(userDefaults) r]
 		set oldValues [split [read $old] \n]
 		close $old
 	}] {

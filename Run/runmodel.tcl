@@ -1014,7 +1014,7 @@ proc FixSize {c} {
     # seems necessary for console to hide
     #    catch {console hide}
     if {[file exists $custom(prefDir)/layout]} {
-        set stream [open $custom(prefDir)/layout r]
+        set stream [NetOpen $custom(prefDir)/layout r]
         gets $stream whetherMaxed
         #ShowMessage debug info $whetherMaxed ok
         catch {
@@ -1086,7 +1086,7 @@ proc SaveView {} {
     set nameOfHelperStateFile \
 	[ChooseFile iotools.shf "Save view specification file" 1]
     if {[llength $nameOfHelperStateFile]} {
-        set stream [open $nameOfHelperStateFile w]
+        set stream [NetOpen $nameOfHelperStateFile w]
         foreach displayBox [array name helperTable *,whichHelper] {
             scan $displayBox {%[^,]} winId
             set helperId $helperTable($displayBox)
@@ -1112,7 +1112,7 @@ proc LoadView {} {
     set nameOfHelperStateFile \
 	[ChooseFile iotools.shf "Open view specification file" 0]
     if {[llength $nameOfHelperStateFile]} {
-        set stream [open $nameOfHelperStateFile r]
+        set stream [NetOpen $nameOfHelperStateFile r]
         while {[gets $stream helperId] >= 0} {
             if {[llength $helperId]==4} {
                 set response [ShowMessage {Inappropriate view specification} \

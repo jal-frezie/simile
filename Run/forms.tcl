@@ -1532,7 +1532,7 @@ proc DoRegDialog {dtId} {
     wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
     tkwait variable userinfo(done)
     
-    set UserStream [open $custom(prefDir)/version w]
+    set UserStream [NetOpen $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)
     puts $UserStream $userinfo(Version)

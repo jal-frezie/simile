@@ -364,7 +364,7 @@ proc ::RunEnv::CopyHelper {containerId} {
                         "[${CurrentHelperId}::identify] does not support copying" ok
             }
             set copyfile $env(SIMTMPDIR)/mrecopy.txts
-            set stream [open $copyfile w]
+            set stream [NetOpen $copyfile w]
             catch {puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]}
             close $stream
         }
@@ -383,7 +383,7 @@ proc ::RunEnv::PasteHelper {containerId} {
     
     set copyfile $env(SIMTMPDIR)/mrecopy.txts
     if {[file exists $copyfile]} {
-        set stream [open $copyfile r]
+        set stream [NetOpen $copyfile r]
         set winId [NewHelperInWindow $CurrentContainer $CurrentHelperId ""]
         gets $stream oldStatus
         set helperTable($winId,status) [RestoreCrs $oldStatus]
@@ -868,7 +868,7 @@ proc RunEnv::SaveView {} {
     set nameOfHelperStateFile \
 	[ChooseFile Displays.shf "Save display configuration" 1]
     if {[llength $nameOfHelperStateFile]} {
-        set stream [open $nameOfHelperStateFile w]
+        set stream [NetOpen $nameOfHelperStateFile w]
         
         # save skeleton mre config
         puts $stream "[winfo x .mre] [winfo y .mre] [winfo width .mre] [winfo height .mre]"
@@ -961,7 +961,7 @@ proc RunEnv::LoadSHF {HelperStateFileName} {
     
     set nameOfHelperStateFile $HelperStateFileName
     if {[llength $nameOfHelperStateFile]} {
-        set stream [open $nameOfHelperStateFile r]
+        set stream [NetOpen $nameOfHelperStateFile r]
         
         # check for run env that made the shf
         gets $stream line

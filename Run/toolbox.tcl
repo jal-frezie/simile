@@ -174,7 +174,7 @@ proc ControlDraw {prologVersion} {
     }
     
     if {[file exists $custom(prefDir)/version]} {
-        set UserStream [open $custom(prefDir)/version r]
+        set UserStream [NetOpen $custom(prefDir)/version r]
         gets $UserStream userinfo(name)
         gets $UserStream userinfo(corp)
         gets $UserStream userinfo(oldVersion)
@@ -185,7 +185,7 @@ proc ControlDraw {prologVersion} {
         set userinfo(done) 0
     }
     
-    set UserStream [open $custom(prefDir)/version w]
+    set UserStream [NetOpen $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)
     puts $UserStream $userinfo(Version)
@@ -196,7 +196,7 @@ proc ControlDraw {prologVersion} {
     
     set custom(hotlist) {}
     if {[file exists $custom(prefDir)/recent]} {
-        set cacheStream [open $custom(prefDir)/recent r]
+        set cacheStream [NetOpen $custom(prefDir)/recent r]
         while {[gets $cacheStream oldFile]>0} {
             if {[file exists $oldFile] && \
                         [lsearch $custom(hotlist) $oldFile]==-1} {
@@ -336,7 +336,7 @@ proc SaveFile {tree tgt} {
         }
         set multiT [mime::initialize -canonical multipart/mixed \
                 -parts $parts]
-        set stream [open $tgt w]
+        set stream [NetOpen $tgt w]
         fconfigure $stream -translation binary
         mime::copymessage $multiT $stream
         # clean everything up
@@ -403,7 +403,7 @@ proc LoadFile {tree tgt} {
                         }
                         set newPath $tree$oldPath
                         file mkdir [file dirname $newPath]
-                        set mimeSquirter [open $newPath w]
+                        set mimeSquirter [NetOpen $newPath w]
                         fconfigure $mimeSquirter -translation binary
                         mime::getbody $bit -command SquirtMime -blocksize 256
                     }
@@ -509,7 +509,7 @@ proc GetParts {top tree} {
 # Debug: write the body to see if it's baaad...yes it was
 # Workaround: don't save anything as text/plain, stick to application/x-simile
 #	    set debugname ${subtree}.mim
-#	    set stream [open $debugname w]
+#	    set stream [NetOpen $debugname w]
 #	    fconfigure $stream -translation binary
 #	    mime::copymessage $newMime $stream
 #	    close $stream
@@ -537,7 +537,7 @@ proc exit_simile {} {
         c_exitmodel $model_id $instance_id
     }
     
-    set cacheStream [open $custom(prefDir)/recent w]
+    set cacheStream [NetOpen $custom(prefDir)/recent w]
     foreach oldFile $custom(hotlist) {
         puts $cacheStream $oldFile
     }
@@ -552,7 +552,7 @@ proc ZapWindow { fullName } {
     if {$window_info($fullName,is_top_level)} {
         focus $target.canvas
         update
-        set cacheStream [open $custom(prefDir)/layout w]
+        set cacheStream [NetOpen $custom(prefDir)/layout w]
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
         close $cacheStream
@@ -1210,7 +1210,7 @@ proc OpenAll {win} {
 proc OpenProjectFile {win path} {
     global SimileProject loadingProject
     set loadingProject 1
-    set projectF [open $path/model.spj r]
+    set projectF [NetOpen $path/model.spj r]
     gets $projectF SimileProjectData
     close $projectF
     #ShowMessage debug info "open_all win $win; $SimileProjectData" ok
@@ -1268,7 +1268,7 @@ proc SaveProjectFile {path} {
     
 #ShowMessage debug info "SaveProjectFile [array get SimileProject]\n\
 #            $path/[file tail $nameOfHelperStateFile]" ok
-    set projectF [open $ProjectFile w]
+    set projectF [NetOpen $ProjectFile w]
     puts $projectF [array get SimileProject]
     close $projectF
 }

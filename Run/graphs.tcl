@@ -1048,7 +1048,7 @@ proc Save {smPath} {
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
     set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
-        set pStr [open $metaFile w]
+        set pStr [NetOpen $metaFile w]
         
         foreach compName [array names widgetNames $smPath*] {
 	    set compTail [string range $compName [string length $smPath] end]
@@ -1090,7 +1090,7 @@ proc	MergeParams {smPath metaFile interactive} {
     global paramState paramData widgetNames
     
     set oldDir [pwd]
-    set pStr [open $metaFile r]
+    set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
 	#ShowMessage debug info "Restoring $savedValue" ok
 	set IdAndValue [split $savedValue =]
@@ -1280,7 +1280,7 @@ proc UpdateTimeSeries {newTime} {
 proc LoadTableData {tableSpec} {
     
 #ShowMessage debug info "Loading table with data $tableSpec" ok
-    set tStr [open [lindex $tableSpec 0] r]
+    set tStr [NetOpen [lindex $tableSpec 0] r]
     gets $tStr headerLine
     set headerList [split $headerLine ,]
 #ShowMessage debug info "Headers are $headerList" ok
