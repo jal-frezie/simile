@@ -204,7 +204,7 @@ proc RunEnv::AddNotebook {containerId} {
     
     for  {set i 1} {$i<=4} {incr i} {
         set pageId [UniqueId page [$containerId.notebook pages]]
-        $containerId.notebook insert end $pageId -text $i \
+        $containerId.notebook insert end $pageId -text "Page$i" \
                 -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
         bind [$containerId.notebook getframe $pageId] <Button-3> \
                 "tk_popup .pageContextMenu %X %Y"
@@ -244,7 +244,7 @@ proc RunEnv::AddNotebookPage {containerId} {
     if {[string match notebook [winfo name $ParentContainer]]} {
         set pageId [UniqueId page [$ParentContainer pages]]
         set pageIndex [expr {[llength [$ParentContainer pages]]+1}]
-        $ParentContainer insert end $pageId -text $pageIndex \
+        $ParentContainer insert end $pageId -text "Page$pageIndex" \
                 -raisecmd "::RunEnv::PageRaiseCmd $ParentContainer $pageId"
         set newContainer [$ParentContainer getframe $pageId]
         panedwindow $newContainer.panedwindow -orient vertical
