@@ -65,7 +65,7 @@ return (char*)lpMsgBuf;
     #define LOAD_DLL flopen
 #ifdef SIM_OPSYS_Darwin
 #define UNLOAD_DLL dummyunload
-BOOL dummyunload() {
+int dummyunload(HINSTANCE unused) {
   return(1);
 }
 #else
