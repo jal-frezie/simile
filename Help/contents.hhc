@@ -62,6 +62,10 @@
 			<param name="Local" value="new\iteration.htm">
 			</OBJECT>
 		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Scripting">
+			<param name="Local" value="new\scripting.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Other new stuff">
 			<param name="Local" value="new\other.htm">
 			</OBJECT>
@@ -709,6 +713,10 @@
 					</OBJECT>
 			</UL>
 		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Scripting">
+			<param name="Local" value="new\scripting.htm">
+			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Working with External Data">
