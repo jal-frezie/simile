@@ -1,0 +1,344 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 10">
+<meta name=Originator content="Microsoft Word 10">
+<link rel=File-List href="fmod_files/filelist.xml">
+<link rel=Edit-Time-Data href="fmod_files/editdata.mso">
+<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]-->
+<title>Built-in functions : fmod function</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Alastair Davies</o:Author>
+  <o:LastAuthor>Alastair Davies</o:LastAuthor>
+  <o:Revision>4</o:Revision>
+  <o:TotalTime>24</o:TotalTime>
+  <o:Created>2002-07-17T15:37:00Z</o:Created>
+  <o:LastSaved>2003-01-08T12:32:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>441</o:Words>
+  <o:Characters>2515</o:Characters>
+  <o:Company> </o:Company>
+  <o:Lines>20</o:Lines>
+  <o:Paragraphs>5</o:Paragraphs>
+  <o:CharactersWithSpaces>2951</o:CharactersWithSpaces>
+  <o:Version>10.4219</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:DisplayHorizontalDrawingGridEvery>0</w:DisplayHorizontalDrawingGridEvery>
+  <w:DisplayVerticalDrawingGridEvery>0</w:DisplayVerticalDrawingGridEvery>
+  <w:UseMarginsForDrawingGridOrigin/>
+  <w:Compatibility>
+   <w:FootnoteLayoutLikeWW8/>
+   <w:ShapeLayoutLikeWW8/>
+   <w:AlignTablesRowByRow/>
+   <w:ForgetLastTabAlignment/>
+   <w:DoNotUseHTMLParagraphAutoSpacing/>
+   <w:LayoutRawTableWidth/>
+   <w:LayoutTableRowsApart/>
+   <w:UseWord97LineBreakingRules/>
+  </w:Compatibility>
+  <w:DoNotOptimizeForBrowser/>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Tahoma;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:1627421319 -2147483648 8 0 66047 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	line-height:15.0pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";}
+h1
+	{mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	text-align:center;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:14.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Tahoma;
+	mso-bidi-font-family:"Times New Roman";
+	mso-font-kerning:14.0pt;
+	mso-bidi-font-weight:normal;}
+h2
+	{mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:12.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Tahoma;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-font-weight:normal;}
+h3
+	{mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0cm;
+	margin-bottom:3.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	font-size:10.0pt;
+	font-family:Tahoma;
+	mso-bidi-font-family:"Times New Roman";
+	mso-bidi-font-weight:normal;}
+p.MsoToc1, li.MsoToc1, div.MsoToc1
+	{mso-style-update:auto;
+	mso-style-noshow:yes;
+	mso-style-next:Normal;
+	margin:0cm;
+	margin-bottom:.0001pt;
+	line-height:15.0pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";}
+p.MsoFootnoteText, li.MsoFootnoteText, div.MsoFootnoteText
+	{mso-style-noshow:yes;
+	margin:0cm;
+	margin-bottom:.0001pt;
+	line-height:15.0pt;
+	mso-pagination:widow-orphan;
+	font-size:8.0pt;
+	mso-bidi-font-size:10.0pt;
+	font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";}
+a:link, span.MsoHyperlink
+	{color:blue;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;
+	text-underline:single;}
+@page Section1
+	{size:595.3pt 841.9pt;
+	margin:72.0pt 90.0pt 72.0pt 90.0pt;
+	mso-header-margin:36.0pt;
+	mso-footer-margin:36.0pt;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="4098"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:36.0pt'>
+
+<div class=Section1>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
+style='mso-ansi-language:EN-GB'>fmod(X,Y)<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>Returns
+remainder after dividing X by Y<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal style='tab-stops:63.8pt'><b style='mso-bidi-font-weight:
+normal'><span lang=EN-GB style='mso-ansi-language:EN-GB'>Inputs</span></b><span
+lang=EN-GB style='mso-ansi-language:EN-GB'>:<span style='mso-tab-count:1'>          </span>numeric,
+numeric<o:p></o:p></span></p>
+
+<p class=MsoNormal style='tab-stops:63.8pt'><b style='mso-bidi-font-weight:
+normal'><span lang=EN-GB style='mso-ansi-language:EN-GB'>Result</span></b><span
+lang=EN-GB style='mso-ansi-language:EN-GB'>:<span style='mso-tab-count:1'>          </span>numeric<o:p></o:p></span></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
+style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></b></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
+style='mso-ansi-language:EN-GB'>Examples</span></b><span lang=EN-GB
+style='mso-ansi-language:EN-GB'>:<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>fmod(7,3)
+--&gt; 0.333 (7/2 = 2.333, i.e. the remainder is 0.333)<br>
+fmod(time(1),1) --&gt; a result that climbs from 0 to 1 repeatedly (i.e. a
+sawtooth pattern) as the simulation proceeds.<span style='mso-spacerun:yes'> 
+</span>See comments below.<br>
+fmod((index(1)-1),5)+1 --&gt; 1,2,3,4,5,1,2,3,4,5,1,2,3... for successive
+values of index(1).<span style='mso-spacerun:yes'>  </span>See comments below.<o:p></o:p></span></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
+style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></b></p>
+
+<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
+style='mso-ansi-language:EN-GB'>Comments<o:p></o:p></span></b></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>This
+apparently obscure function in fact has (at least) two very valuable uses.<span
+style='mso-spacerun:yes'>   </span><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>First, it
+can be used to generate regular cycles, in particular annual or daily
+cycles.<span style='mso-spacerun:yes'>  </span>Consider the case or a model
+with the time unit being one year, and a time step of less than a year.<span
+style='mso-spacerun:yes'>  </span>You want various exogenous variables (such as
+temperature or rainfall) to vary in a prescribed fashion during the course of
+each year, with the annual pattern repeating itself from one year to the
+next.<span style='mso-spacerun:yes'>  </span>The following diagram is typical
+of the model fragment you could use for representing this:<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><!--[if gte vml 1]><v:shapetype
+ id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
+ path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f">
+ <v:stroke joinstyle="miter"/>
+ <v:formulas>
+  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+  <v:f eqn="sum @0 1 0"/>
+  <v:f eqn="sum 0 0 @1"/>
+  <v:f eqn="prod @2 1 2"/>
+  <v:f eqn="prod @3 21600 pixelWidth"/>
+  <v:f eqn="prod @3 21600 pixelHeight"/>
+  <v:f eqn="sum @0 0 1"/>
+  <v:f eqn="prod @6 1 2"/>
+  <v:f eqn="prod @7 21600 pixelWidth"/>
+  <v:f eqn="sum @8 21600 0"/>
+  <v:f eqn="prod @7 21600 pixelHeight"/>
+  <v:f eqn="sum @10 21600 0"/>
+ </v:formulas>
+ <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+ <o:lock v:ext="edit" aspectratio="t"/>
+</v:shapetype><v:shape id="_x0000_i1025" type="#_x0000_t75" style='width:288.75pt;
+ height:80.25pt' fillcolor="window">
+ <v:imagedata src="fmod_files/image001.gif" o:title="season1"/>
+</v:shape><![endif]--><![if !vml]><img width=385 height=107
+src="fmod_files/image001.gif" v:shapes="_x0000_i1025"><![endif]><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>The
+variable time is simply set equal to current simulation time, using the
+function time(1).<span style='mso-spacerun:yes'>  </span>The variable season is
+set to rise from 0 to 1 every year.<span style='mso-spacerun:yes'>  </span>If
+your model used a time unit of one week, then the equation would be changed to<br>
+</span><span lang=EN-GB style='font-family:"Courier New";mso-ansi-language:
+EN-GB'>season = fmod(time,52)<br>
+</span><span lang=EN-GB style='mso-ansi-language:EN-GB'>and the value for
+season would then correspond to week number.<span style='mso-spacerun:yes'> 
+</span>The equations for rainfall and temperature are for illustration purposes
+only: you would need to replace them by something appropriate.<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>Second, the
+fmod function can be used to generate a regular spatial arrangement (rows and
+columns) for a 2D grid.<span style='mso-spacerun:yes'>  </span>Let's say that
+you are modelling an area of 10x10 grid squares.<span
+style='mso-spacerun:yes'>  </span>In Simile, you would set up a submodel,
+called perhaps Patch, with 25 instances.<span style='mso-spacerun:yes'> 
+</span>In order to give each patch location on a grid, each one needs to have a
+row and column attributes, with each patch having a unique combination of the
+numbers 1..5 for row and column.<span style='mso-spacerun:yes'>  </span>The
+only thing we know about each patch is that it has an index number (given by
+the built-in function index(1)), a value ranging between 1 and 25.<span
+style='mso-spacerun:yes'>   </span>The trick is to get row number to be, in
+sequence,<br>
+</span><span lang=EN-GB style='font-family:"Courier New";mso-bidi-font-family:
+"Times New Roman";mso-ansi-language:EN-GB'>1,1,1,1,1,2,2,2,2,2,3,3,3...<br>
+</span><span lang=EN-GB style='mso-ansi-language:EN-GB'>and column number to
+be, in sequence,<br>
+</span><span lang=EN-GB style='font-family:"Courier New";mso-bidi-font-family:
+"Times New Roman";mso-ansi-language:EN-GB'>1,2,3,4,5,1,2,3,4,5,1,2,3...<br>
+</span><span lang=EN-GB style='mso-ansi-language:EN-GB'>thus giving each of the
+25 instances a unique row-and-column pair.<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>This is
+readily done using the following two equations:<br>
+</span><span lang=EN-GB style='font-family:"Courier New";mso-bidi-font-family:
+"Times New Roman";mso-ansi-language:EN-GB'>row = floor((index(1)-1)/5)+1<br>
+column = fmod((index(1)-1),5)+1<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>See the
+floor function to understand why the row numbers should be in the first
+sequence above.<span style='mso-spacerun:yes'>  </span>For column, we divide
+the index number for each instance by 5, taking the remainder: the '-1' and +1'
+are there to ensure that we get the results in the blocks of five that we
+require.<span style='mso-spacerun:yes'>  </span>See a grid-based spatial model
+example to see this in action.<span style='mso-spacerun:yes'>    </span><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal>In: <u><a href="../../index.htm" target="_top"><u>Contents</u></a></u>
+&gt;&gt; <u><a href="../index.htm"><u>Working with equations</u></a></u>
+&gt;&gt; <u><a href="../functions.htm"><u>Functions</u></a></u> &gt;&gt; <u><a
+href="../builtin.htm"><u>Built-in functions</u></a></u></p>
+
+<p class=MsoNormal><o:p>&nbsp;</o:p></p>
+
+</div>
+
+</body>
+
+</html>

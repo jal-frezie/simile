@@ -1,0 +1,277 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 10">
+<meta name=Originator content="Microsoft Word 10">
+<link rel=File-List href="load_files/filelist.xml">
+<title>Working with submodels : Loading a saved submodel as a stand-alone model</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Alastair Davies</o:Author>
+  <o:Template>Help Page.dot</o:Template>
+  <o:LastAuthor>Alastair Davies</o:LastAuthor>
+  <o:Revision>6</o:Revision>
+  <o:TotalTime>7</o:TotalTime>
+  <o:Created>2002-08-05T10:14:00Z</o:Created>
+  <o:LastSaved>2003-01-07T18:49:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>239</o:Words>
+  <o:Characters>1368</o:Characters>
+  <o:Company>Simulistics Ltd</o:Company>
+  <o:Lines>11</o:Lines>
+  <o:Paragraphs>3</o:Paragraphs>
+  <o:CharactersWithSpaces>1604</o:CharactersWithSpaces>
+  <o:Version>10.4219</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>BestFit</w:Zoom>
+  <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:"Gill Sans MT";
+	panose-1:2 11 5 2 2 1 4 2 2 3;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:7 0 0 0 3 0;}
+@font-face
+	{font-family:Tahoma;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:1627421319 -2147483648 8 0 66047 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	mso-ansi-language:EN-GB;}
+h1
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	text-align:center;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	color:green;
+	mso-font-kerning:16.0pt;
+	mso-ansi-language:EN-GB;}
+h2
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:12.0pt;
+	mso-bidi-font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;
+	mso-bidi-font-style:italic;}
+h3
+	{mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0cm;
+	margin-bottom:6.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	font-size:10.0pt;
+	mso-bidi-font-size:13.0pt;
+	font-family:Tahoma;
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+@page Section1
+	{size:21.0cm 842.0pt;
+	margin:72.0pt 89.85pt 72.0pt 89.85pt;
+	mso-header-margin:35.45pt;
+	mso-footer-margin:35.45pt;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:88355551;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-2010740328 67698689 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l0:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;}
+@list l0:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1
+	{mso-list-id:926842878;
+	mso-list-template-ids:627220992;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+ol
+	{margin-bottom:0cm;}
+ul
+	{margin-bottom:0cm;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:36.0pt'>
+
+<div class=Section1>
+
+<h1><a name=Loadingasavedsubmodelasastandalonemodel><span lang=EN-GB>Loading a
+saved submodel as a stand-alone model</span></a></h1>
+
+<p class=MsoNormal><span lang=EN-GB>Any model or submodel saved to file can be
+treated as a submodel or as a model.<span style='mso-spacerun:yes'>  </span>No
+real distinction is made between the two concepts.<span
+style='mso-spacerun:yes'>  </span>If you load a previously-saved model into a
+submodel window, then it will become a submodel in the current model.<span
+style='mso-spacerun:yes'>  </span>If, on the other hand, you load a
+previously-saved submodel into the desktop window (i.e. the main, top-level
+window), then it will become a model in its own right.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>So, in order to load a previously-saved
+submodel as a stand-alone model, all you need to do is to start a new session
+of Simile (or select the “New” command from the “File” menu in the desktop
+window), then select the “Open” command from the “File” menu in the desktop
+window, and find the .sml file that contains the previously-saved submodel.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>Any variables in the submodel that had
+previously received influences from outside the submodel automatically become “<a
+href="../equations/parameter.htm">Input parameters</a>”.<span
+style='mso-spacerun:yes'>  </span>If they had been previously assigned min and
+max values, then you will get a slider for each such variable when you come to
+run the submodel (now a model).<span style='mso-spacerun:yes'>  </span>Any such
+variable that had not been assigned minimum and maximum values will appear red
+when you load the submodel, and you need to open up the <a
+href="../equations/dialogue.htm">equation dialogue</a> for this variable and
+either:</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l0 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN-GB>unclick the “Input parameter” check box and enter a value into
+     its equation dialogue; or</span></li>
+ <li class=MsoNormal style='mso-list:l0 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN-GB>enter min and max values.</span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u>
+&gt;&gt; <u><a href="index.htm"><u>Working with submodels</u></a></u><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+</div>
+
+</body>
+
+</html>

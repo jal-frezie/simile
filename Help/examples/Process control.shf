@@ -1,0 +1,20 @@
+ModelInspector63654
+Variables
+191x667+0+0
+
+plotter7659
+Plotter
+371x409+0+0
+/WIN/,nodeCount 2 /WIN/,x_Xlabel 100 /WIN/,grapharea_colour white /WIN/,X_scalestep 0 /WIN/,fontValues {Helvetica 10 normal} /WIN/,Yvars {node00002 node00014} /WIN/,Ymajorstep 0.2 /WIN/,fontLabels {Helvetica 10 normal} /WIN/,y_Ylabels 0 /WIN/,Xmin_data 0 /WIN/,Y_max_scalestep 0 /WIN/,ystep_Ylabels 12 /WIN/,Xmax_data 0 /WIN/,pointer 1 /WIN/,topright 1 /WIN/,Y_min_scalestep 0 /WIN/,xwindow_size 0 /WIN/,xstep_Ylabels 120 /WIN/,Xminorstep 1.0 /WIN/,fontTitle {Helvetica 10 normal} /WIN/,xborder_right 15 /WIN/,ywindow_size 0 /WIN/,Ymin_data 0 /WIN/,yborder_top 30 /WIN/,y_Xlabel 10 /WIN/,redraw 0 /WIN/,Ymax_data 10 /WIN/,yborder_bottom 30 /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,xborder_left 50 /WIN/,Xmin_axis 0 /WIN/,ylength 130 /WIN/,AxisDivisions 10 /WIN/,Yminorstep 0.1 /WIN/,xlength 151 /WIN/,Xmax_axis 10 /WIN/,canvas_colour #e0e0e0 /WIN/,Xmajorstep 2 /WIN/,grid on /WIN/,Ymin_axis 0 /WIN/,x_Ylabels 25 /WIN/,Ymax_axis 1 /WIN/,Ylabels {Temperature {Set point}}
+plotter7659
+Plotter
+371x409+0+0
+/WIN/,redraw 0 /WIN/,fontTitle {Helvetica 10 normal} /WIN/,Ymin_data 0 /WIN/,Yvars node00043 /WIN/,Ymax_data 10 /WIN/,fontValues {Helvetica 10 normal} /WIN/,Xmin_axis 0 /WIN/,Ylabels Output /WIN/,Ymajorstep 0.2 /WIN/,Xmax_axis 10 /WIN/,xwindow_size 0 /WIN/,yborder_bottom 30 /WIN/,fontLabels {Helvetica 10 normal} /WIN/,x_Xlabel 100 /WIN/,yborder_top 30 /WIN/,ywindow_size 0 /WIN/,ystep_Ylabels 12 /WIN/,Ymin_axis 0 /WIN/,Xminorstep 1.0 /WIN/,x_Ylabels 25 /WIN/,Ymax_axis 1 /WIN/,grid on /WIN/,xborder_left 50 /WIN/,pointer 1 /WIN/,xstep_Ylabels 120 /WIN/,nodeCount 1 /WIN/,grapharea_colour white /WIN/,topright 1 /WIN/,xborder_right 15 /WIN/,Y_max_scalestep 0 /WIN/,Yminorstep 0.1 /WIN/,y_Ylabels 0 /WIN/,Xmin_data 0 /WIN/,y_Xlabel 10 /WIN/,AxisDivisions 10 /WIN/,Xmax_data 0 /WIN/,Y_min_scalestep 0 /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,ylength 130 /WIN/,canvas_colour #e0e0e0 /WIN/,Xmajorstep 2 /WIN/,xlength 151 /WIN/,X_scalestep 0
+plotter7659
+Plotter
+730x409+0+0
+/WIN/,yborder_bottom 30 /WIN/,Yvars node00029 /WIN/,Ymin_axis 0 /WIN/,Xmajorstep 2 /WIN/,AxisDivisions 10 /WIN/,y_Xlabel 10 /WIN/,x_Ylabels 25 /WIN/,Ymax_axis 1 /WIN/,canvas_colour #e0e0e0 /WIN/,grapharea_colour white /WIN/,nodeCount 1 /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,ylength 130 /WIN/,xwindow_size 0 /WIN/,grid on /WIN/,xlength 151 /WIN/,Y_max_scalestep 0 /WIN/,yborder_top 30 /WIN/,ywindow_size 0 /WIN/,fontValues {Helvetica 10 normal} /WIN/,Ymajorstep 0.2 /WIN/,y_Ylabels 0 /WIN/,Xmin_data 0 /WIN/,Y_min_scalestep 0 /WIN/,fontLabels {Helvetica 10 normal} /WIN/,Xmax_data 0 /WIN/,xborder_left 50 /WIN/,Ylabels e /WIN/,redraw 0 /WIN/,fontTitle {Helvetica 10 normal} /WIN/,Xminorstep 1.0 /WIN/,Ymin_data 0 /WIN/,x_Xlabel 100 /WIN/,ystep_Ylabels 12 /WIN/,Ymax_data 10 /WIN/,xstep_Ylabels 120 /WIN/,Xmin_axis 0 /WIN/,pointer 1 /WIN/,Xmax_axis 10 /WIN/,X_scalestep 0 /WIN/,xborder_right 15 /WIN/,Yminorstep 0.1 /WIN/,topright 1
+tabular11508
+Data table
+730x409+0+0
+nodebox1 {node00029 {/Desktop/PID controller/e} read} nodebox2 {node00033 {/Desktop/PID controller/Integral Error} read} nodebox3 {node00045 {/Desktop/PID controller/dPV} read} nodebox4 {node00043 {/Desktop/PID controller/Output} read} nodeCount 4

@@ -1,0 +1,372 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 10">
+<meta name=Originator content="Microsoft Word 10">
+<link rel=File-List href="timestep_files/filelist.xml">
+<title>Working with submodels : Time step index</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Alastair Davies</o:Author>
+  <o:Template>Help Page.dot</o:Template>
+  <o:LastAuthor>Alastair Davies</o:LastAuthor>
+  <o:Revision>8</o:Revision>
+  <o:TotalTime>83</o:TotalTime>
+  <o:Created>2002-10-03T15:22:00Z</o:Created>
+  <o:LastSaved>2003-01-07T18:47:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>605</o:Words>
+  <o:Characters>3453</o:Characters>
+  <o:Company>Simulistics Ltd</o:Company>
+  <o:Lines>28</o:Lines>
+  <o:Paragraphs>8</o:Paragraphs>
+  <o:CharactersWithSpaces>4050</o:CharactersWithSpaces>
+  <o:Version>10.4219</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>BestFit</w:Zoom>
+  <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:"Gill Sans MT";
+	panose-1:2 11 5 2 2 1 4 2 2 3;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:7 0 0 0 3 0;}
+@font-face
+	{font-family:Tahoma;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:1627421319 -2147483648 8 0 66047 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	mso-ansi-language:EN-GB;}
+h1
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	text-align:center;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	color:green;
+	mso-font-kerning:16.0pt;
+	mso-ansi-language:EN-GB;}
+h2
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:12.0pt;
+	mso-bidi-font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;
+	mso-bidi-font-style:italic;}
+h3
+	{mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0cm;
+	margin-bottom:6.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	font-size:10.0pt;
+	mso-bidi-font-size:13.0pt;
+	font-family:Tahoma;
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+@page Section1
+	{size:21.0cm 842.0pt;
+	margin:72.0pt 89.85pt 72.0pt 89.85pt;
+	mso-header-margin:35.45pt;
+	mso-footer-margin:35.45pt;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:841436978;
+	mso-list-template-ids:-524240394;}
+@list l0:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l1
+	{mso-list-id:1644045344;
+	mso-list-template-ids:1236821780;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l2
+	{mso-list-id:1657493691;
+	mso-list-type:hybrid;
+	mso-list-template-ids:258123548 1180714332 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l2:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;
+	color:windowtext;}
+@list l2:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+ol
+	{margin-bottom:0cm;}
+ul
+	{margin-bottom:0cm;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="10242"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:36.0pt'>
+
+<div class=Section1>
+
+<h1><span lang=EN-GB>Time step index</span></h1>
+
+<h3><span lang=EN-GB>Introduction</span></h3>
+
+<p class=MsoNormal><span lang=EN-GB>Specifying different time step indices for
+different submodels is an advanced topic.<span style='mso-spacerun:yes'> 
+</span>It can lead to misleading results, and should be used only in accordance
+with the following notes.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>By default, all the model state variables
+are updated using the same time step.<span style='mso-spacerun:yes'> 
+</span>Since Euler integration is used to update the state variables,
+differential equations are, in practice, solved as if they were difference
+equations, with a small but finite </span><span lang=EN-GB style='font-family:
+Arial'>&#948;</span><span lang=EN-GB>t.<span style='mso-spacerun:yes'> 
+</span>By specifying </span><span lang=EN-GB style='font-family:Arial'>&#948;</span><span
+lang=EN-GB>t , the time step, to be reasonable small, the results of the
+difference equations are the same as the expected results of the differential
+equations.<span style='mso-spacerun:yes'>  </span>You can, however, take
+advantage of this ability to specify </span><span lang=EN-GB style='font-family:
+Arial'>&#948;</span><span lang=EN-GB>t, to use different time steps for
+different submodels.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>A common example is in the calculation of
+compound interest on money in a savings account.<span
+style='mso-spacerun:yes'>  </span>It is important when specifying that interest
+is to be compounded, that the period over which the compounding occurs is
+specified.<span style='mso-spacerun:yes'>  </span>For example, the same
+investment in two savings accounts, both paying compound interest at 12 per
+cent, will yield different amounts after one year if one account compounds
+monthly and the other compounds annually.<span style='mso-spacerun:yes'> 
+</span>In modelling these accounts, you would need to specify a different </span><span
+lang=EN-GB style='font-family:Arial'>&#948;</span><span lang=EN-GB>t, the time
+step, for each, in order that the state variable (the amount in the account)
+was updated at different rates, either monthly or annually.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>It is possible to specify up to seven time
+step indices.<span style='mso-spacerun:yes'>  </span>For each new time step
+category that you request, an extra <b style='mso-bidi-font-weight:normal'>Time
+step #<i style='mso-bidi-font-style:normal'>x</i></b> entry is added in the <a
+href="../run/control.htm">Run Control</a> window, and that is where you specify
+the actual time step (e.g. 0.01) to be used for each index.</span></p>
+
+<h3><span lang=EN-GB>Notes</span></h3>
+
+<p class=MsoNormal><span lang=EN-GB>The following notes will help you use this
+concept:</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l2 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN-GB>Note that the TIME UNIT is the same over the whole model, and
+     that all flows are expressed per time unit.<span
+     style='mso-spacerun:yes'>  </span>The run control also specifies how long
+     the model should be run for, in terms of time units.</span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l2 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN-GB>Each submodel TIME STEP is specified in terms of a multiple of
+     the time unit.<span style='mso-spacerun:yes'>  </span>The submodel time
+     steps *must* be ordered from long to short, #1 must be the longest, #7 the
+     shortest.<span style='mso-spacerun:yes'>  </span>During each time step
+     that affects a submodel (i.e. its own and all longer ones) all the
+     elements of the submodel are updated.<span style='mso-spacerun:yes'> 
+     </span>Note, particularly, that since flows are expressed in time units, a
+     compartment's value does not change each time step by the value that is
+     entered (or calculated) for the flow, but by the same multiple of that
+     value as the time step is of the time unit.</span></li>
+</ul>
+
+<h3><span lang=EN-GB>Special cases</span></h3>
+
+<p class=MsoNormal><span lang=EN-GB>In addition to the seven time step indices
+available, there are two special cases.<span style='mso-spacerun:yes'> 
+</span>“Time step #-1” and “Time step #0” have special meanings.<span
+style='mso-spacerun:yes'>  </span>The former denotes that the submodel should
+be updated only when the model is built.<span style='mso-spacerun:yes'> 
+</span>The latter denotes that the submodel should be updated only when the
+model is built or when the reset button on the Run Control is used.<span
+style='mso-spacerun:yes'>  </span>In neither case will the submodel be updated
+during the simulation.</span></p>
+
+<h3><span lang=EN-GB>Example</span></h3>
+
+<p class=MsoNormal><span lang=EN-GB>For the example of compound interest given
+above, set the time step index for the annual submodel to #1 and for the
+monthly submodel to #2.<span style='mso-spacerun:yes'>  </span>In the run
+control, you will then need to set time step #1 = 12 and time step #2 = 1.<span
+style='mso-spacerun:yes'>    </span>Flows in both submodels will be expressed
+in the same time units, in this case, per month.<span
+style='mso-spacerun:yes'>  </span></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>Note that this is exactly equivalent to
+time step #1 = 1 and time step #2 = (1/12).<span style='mso-spacerun:yes'> 
+</span>Then the implicit time unit is one year, and the flows will be expressed
+on an annual basis.<span style='mso-spacerun:yes'>  </span></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>As a final point, note that it is possible
+to set explicitly the time unit for each flow.<span style='mso-spacerun:yes'> 
+</span>Enter explicit <a href="../equations/units.htm">physical units</a> such
+as kg/week or kg/day.<span style='mso-spacerun:yes'>  </span>If the compartment
+has compatible physical units, such as kg, then the appropriate conversion will
+be performed.<span style='mso-spacerun:yes'>  </span>If you do this, note
+especially that you must be consistent throughout a network of flows.<span
+style='mso-spacerun:yes'>  </span></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u>
+&gt;&gt; <u><a href="index.htm"><u>Working with submodels</u></a></u> &gt;&gt; <u><a
+href="dialogue.htm"><u>Submodel properties</u></a></u><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+</div>
+
+</body>
+
+</html>

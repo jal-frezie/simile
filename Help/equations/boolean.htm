@@ -1,0 +1,804 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 10">
+<meta name=Originator content="Microsoft Word 10">
+<link rel=File-List href="boolean_files/filelist.xml">
+<title>Working with equations : Boolean expressions</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Alastair Davies</o:Author>
+  <o:Template>Help Page.dot</o:Template>
+  <o:LastAuthor>Alastair Davies</o:LastAuthor>
+  <o:Revision>8</o:Revision>
+  <o:TotalTime>307</o:TotalTime>
+  <o:Created>2002-08-22T09:27:00Z</o:Created>
+  <o:LastSaved>2003-01-08T14:58:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>297</o:Words>
+  <o:Characters>1693</o:Characters>
+  <o:Company>Simulistics Ltd</o:Company>
+  <o:Lines>14</o:Lines>
+  <o:Paragraphs>3</o:Paragraphs>
+  <o:CharactersWithSpaces>1987</o:CharactersWithSpaces>
+  <o:Version>10.4219</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>BestFit</w:Zoom>
+  <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:"Gill Sans MT";
+	panose-1:2 11 5 2 2 1 4 2 2 3;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:7 0 0 0 3 0;}
+@font-face
+	{font-family:Tahoma;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:1627421319 -2147483648 8 0 66047 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	mso-ansi-language:EN-GB;}
+h1
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	text-align:center;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	color:green;
+	mso-font-kerning:16.0pt;
+	mso-ansi-language:EN-GB;}
+h2
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:12.0pt;
+	mso-bidi-font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;
+	mso-bidi-font-style:italic;}
+h3
+	{mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0cm;
+	margin-bottom:6.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	font-size:10.0pt;
+	mso-bidi-font-size:13.0pt;
+	font-family:Tahoma;
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+@page Section1
+	{size:21.0cm 842.0pt;
+	margin:72.0pt 89.85pt 72.0pt 89.85pt;
+	mso-header-margin:35.45pt;
+	mso-footer-margin:35.45pt;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:312683256;
+	mso-list-type:hybrid;
+	mso-list-template-ids:1292789108 67698689 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l0:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;}
+@list l0:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l0:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1
+	{mso-list-id:488792504;
+	mso-list-type:hybrid;
+	mso-list-template-ids:1297880194 67698689 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;}
+@list l1:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2
+	{mso-list-id:887837630;
+	mso-list-template-ids:-801204214;}
+@list l2:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l3
+	{mso-list-id:1333216870;
+	mso-list-template-ids:-344010270;}
+@list l3:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+ol
+	{margin-bottom:0cm;}
+ul
+	{margin-bottom:0cm;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+table.MsoTableGrid
+	{mso-style-name:"Table Grid";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	border:solid windowtext 1.0pt;
+	mso-border-alt:solid windowtext .5pt;
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-border-insideh:.5pt solid windowtext;
+	mso-border-insidev:.5pt solid windowtext;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:36.0pt'>
+
+<div class=Section1>
+
+<h1><a name=Conditionalexpressions><span lang=EN-GB>Boolean expressions</span></a></h1>
+
+<p class=MsoNormal><span lang=EN-GB>Boolean expressions return only “true” or
+“false”.<span style='mso-spacerun:yes'>  </span>Boolean expressions are
+commonly used in <a href="conditions.htm">conditional expressions</a> to decide
+between two or more alternative actions.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h2><span lang=EN-GB>Mathematical comparisons</span></h2>
+
+<p class=MsoNormal><span lang=EN-GB>A simple condition consists of a direct
+comparison between two values, using the relational operators</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<table class=MsoTableGrid border=0 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;mso-yfti-tbllook:480;mso-padding-alt:0cm 5.4pt 0cm 5.4pt'>
+ <tr style='mso-yfti-irow:0'>
+  <td width=59 valign=top style='width:44.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>&gt;</span></p>
+  </td>
+  <td width=180 valign=top style='width:135.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>greater than</span></p>
+  </td>
+  <td width=84 valign=top style='width:63.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X &gt; Y</span></p>
+  </td>
+  <td width=216 valign=top style='width:162.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X is greater than Y</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:1'>
+  <td width=59 valign=top style='width:44.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>&lt;</span></p>
+  </td>
+  <td width=180 valign=top style='width:135.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>less than</span></p>
+  </td>
+  <td width=84 valign=top style='width:63.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X &lt; Y</span></p>
+  </td>
+  <td width=216 valign=top style='width:162.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X is less than Y</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=59 valign=top style='width:44.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>&gt;=</span></p>
+  </td>
+  <td width=180 valign=top style='width:135.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>greater than or equal to</span></p>
+  </td>
+  <td width=84 valign=top style='width:63.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X &gt;= Y</span></p>
+  </td>
+  <td width=216 valign=top style='width:162.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X is greater than or equal to Y</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:3'>
+  <td width=59 valign=top style='width:44.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>&lt;=</span></p>
+  </td>
+  <td width=180 valign=top style='width:135.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>less than or equal to</span></p>
+  </td>
+  <td width=84 valign=top style='width:63.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X &lt;= Y</span></p>
+  </td>
+  <td width=216 valign=top style='width:162.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X is less than or equal to Y</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:4'>
+  <td width=59 valign=top style='width:44.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>==</span></p>
+  </td>
+  <td width=180 valign=top style='width:135.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>equal to</span></p>
+  </td>
+  <td width=84 valign=top style='width:63.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X == Y</span></p>
+  </td>
+  <td width=216 valign=top style='width:162.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X is equal to Y</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:5;mso-yfti-lastrow:yes'>
+  <td width=59 valign=top style='width:44.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>!=</span></p>
+  </td>
+  <td width=180 valign=top style='width:135.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>not equal to</span></p>
+  </td>
+  <td width=84 valign=top style='width:63.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X != Y</span></p>
+  </td>
+  <td width=216 valign=top style='width:162.0pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>X is not equal to Y</span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>Thus, the following are legal examples:</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt left 108.0pt'><span
+     lang=EN-GB>5 &gt; 3<span style='mso-tab-count:1'>                </span>though
+     it’s hard to see the point of this, since this is always true</span></li>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt left 108.0pt'><span
+     lang=EN-GB>height &lt;= 30<span style='mso-tab-count:1'>     </span>where
+     the variable “height” is an influencing variable</span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>Each of the two terms, on the left and
+right of the comparison, can themselves be arbitrary mathematical expressions. <span
+style='mso-spacerun:yes'> </span>Thus, the following are also legal:</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l0 level1 lfo6;tab-stops:list 36.0pt'><span
+     lang=EN-GB>5 &gt; 3*2<span style='mso-spacerun:yes'>  </span>(result is
+     false, since 5 &lt; 6)</span></li>
+ <li class=MsoNormal style='mso-list:l0 level1 lfo6;tab-stops:list 36.0pt'><span
+     lang=EN-GB>0.1*height &lt;= 30</span></li>
+ <li class=MsoNormal style='mso-list:l0 level1 lfo6;tab-stops:list 36.0pt'><span
+     lang=EN-GB>k*z+2 &lt; 17*h</span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h2><span lang=EN-GB>Logical comparisons</span></h2>
+
+<p class=MsoNormal><span lang=EN-GB>Four Boolean operators can be used in
+expressions.<span style='mso-spacerun:yes'>  </span>There are “and”, “or”,
+“xor” and “not”.<span style='mso-spacerun:yes'>  </span>The following table shows
+the two alternative forms of these operators, which can also written in
+symbolic form.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none;mso-border-alt:solid silver .5pt;
+ mso-yfti-tbllook:480;mso-padding-alt:0cm 5.4pt 0cm 5.4pt;mso-border-insideh:
+ .5pt solid silver;mso-border-insidev:.5pt solid silver'>
+ <tr style='mso-yfti-irow:0'>
+  <td width=95 valign=top style='width:71.6pt;border:solid silver 1.0pt;
+  mso-border-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=96 valign=top style='width:72.0pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=377 valign=top style='width:282.85pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:1'>
+  <td width=95 valign=top style='width:71.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>A and B</span></p>
+  </td>
+  <td width=96 valign=top style='width:72.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>A &amp;&amp; B</span></p>
+  </td>
+  <td width=377 valign=top style='width:282.85pt;border-top:none;border-left:
+  none;border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;
+  mso-border-top-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>true if and only if both A and B are true</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=95 valign=top style='width:71.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>A or B</span></p>
+  </td>
+  <td width=96 valign=top style='width:72.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>A ; B</span></p>
+  </td>
+  <td width=377 valign=top style='width:282.85pt;border-top:none;border-left:
+  none;border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;
+  mso-border-top-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>true if either A is true or B is true</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:3'>
+  <td width=95 valign=top style='width:71.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>A xor B</span></p>
+  </td>
+  <td width=96 valign=top style='width:72.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>A != B</span></p>
+  </td>
+  <td width=377 valign=top style='width:282.85pt;border-top:none;border-left:
+  none;border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;
+  mso-border-top-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>true if either A is true or B is true,
+  but not both</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:4;mso-yfti-lastrow:yes'>
+  <td width=95 valign=top style='width:71.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>not A</span></p>
+  </td>
+  <td width=96 valign=top style='width:72.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>! A</span></p>
+  </td>
+  <td width=377 valign=top style='width:282.85pt;border-top:none;border-left:
+  none;border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;
+  mso-border-top-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB>true if and only if A is not true</span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>The truth tables for the four operators are
+given here.<span style='mso-spacerun:yes'>  </span>Note that “and”, “or” and
+“xor” require two operands, whilst “not” requires one operand.<span
+style='mso-spacerun:yes'>  </span>The equation parser will signal an error if
+an incorrect number of operands is used.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none;mso-border-alt:solid silver .5pt;
+ mso-yfti-tbllook:480;mso-padding-alt:0cm 5.4pt 0cm 5.4pt;mso-border-insideh:
+ .5pt solid silver;mso-border-insidev:.5pt solid silver'>
+ <tr style='mso-yfti-irow:0'>
+  <td width=47 valign=top style='width:35.6pt;border:solid silver 1.0pt;
+  mso-border-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>A</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>B</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><b
+  style='mso-bidi-font-weight:normal'><span lang=EN-GB>and<o:p></o:p></span></b></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><b
+  style='mso-bidi-font-weight:normal'><span lang=EN-GB>or<o:p></o:p></span></b></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><b
+  style='mso-bidi-font-weight:normal'><span lang=EN-GB>xor<o:p></o:p></span></b></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:none;border-right:solid silver 1.0pt;
+  mso-border-left-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-right-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><b
+  style='mso-bidi-font-weight:normal'><span lang=EN-GB><o:p>&nbsp;</o:p></span></b></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>A</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:solid silver 1.0pt;
+  border-left:none;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><b
+  style='mso-bidi-font-weight:normal'><span lang=EN-GB>not<o:p></o:p></span></b></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:1'>
+  <td width=47 valign=top style='width:35.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:none;border-right:solid silver 1.0pt;
+  mso-border-left-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-right-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=47 valign=top style='width:35.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:none;border-right:solid silver 1.0pt;
+  mso-border-left-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-right-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:3'>
+  <td width=47 valign=top style='width:35.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>1</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:none;border-right:solid silver 1.0pt;
+  mso-border-left-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-right-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:4;mso-yfti-lastrow:yes'>
+  <td width=47 valign=top style='width:35.6pt;border:solid silver 1.0pt;
+  border-top:none;mso-border-top-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB>0</span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border:none;border-right:solid silver 1.0pt;
+  mso-border-left-alt:solid silver .5pt;mso-border-left-alt:solid silver .5pt;
+  mso-border-right-alt:solid silver .5pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=48 valign=top style='width:36.0pt;border-top:none;border-left:none;
+  border-bottom:solid silver 1.0pt;border-right:solid silver 1.0pt;mso-border-top-alt:
+  solid silver .5pt;mso-border-left-alt:solid silver .5pt;mso-border-alt:solid silver .5pt;
+  padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u>
+&gt;&gt; <u><a href="index.htm"><u>Working with equations</u></a></u> &gt;&gt; <u><a
+href="components.htm"><u>Components of an equation</u></a></u><o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+</div>
+
+</body>
+
+</html>

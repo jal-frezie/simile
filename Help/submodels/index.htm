@@ -1,0 +1,705 @@
+<html xmlns:v="urn:schemas-microsoft-com:vml"
+xmlns:o="urn:schemas-microsoft-com:office:office"
+xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=ProgId content=Word.Document>
+<meta name=Generator content="Microsoft Word 10">
+<meta name=Originator content="Microsoft Word 10">
+<link rel=File-List href="index_files/filelist.xml">
+<link rel=Edit-Time-Data href="index_files/editdata.mso">
+<!--[if !mso]>
+<style>
+v\:* {behavior:url(#default#VML);}
+o\:* {behavior:url(#default#VML);}
+w\:* {behavior:url(#default#VML);}
+.shape {behavior:url(#default#VML);}
+</style>
+<![endif]-->
+<title>Working with submodels</title>
+<!--[if gte mso 9]><xml>
+ <o:DocumentProperties>
+  <o:Author>Alastair Davies</o:Author>
+  <o:Template>Help Page.dot</o:Template>
+  <o:LastAuthor>Alastair Davies</o:LastAuthor>
+  <o:Revision>14</o:Revision>
+  <o:TotalTime>58</o:TotalTime>
+  <o:Created>2002-08-21T13:29:00Z</o:Created>
+  <o:LastSaved>2003-01-13T15:22:00Z</o:LastSaved>
+  <o:Pages>1</o:Pages>
+  <o:Words>395</o:Words>
+  <o:Characters>2257</o:Characters>
+  <o:Company>Simulistics Ltd</o:Company>
+  <o:Lines>18</o:Lines>
+  <o:Paragraphs>5</o:Paragraphs>
+  <o:CharactersWithSpaces>2647</o:CharactersWithSpaces>
+  <o:Version>10.4219</o:Version>
+ </o:DocumentProperties>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <w:WordDocument>
+  <w:Zoom>BestFit</w:Zoom>
+  <w:AttachedTemplate HRef="Help Page.dot"></w:AttachedTemplate>
+  <w:Compatibility>
+   <w:BreakWrappedTables/>
+   <w:SnapToGridInCell/>
+   <w:WrapTextWithPunct/>
+   <w:UseAsianBreakRules/>
+  </w:Compatibility>
+  <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
+ </w:WordDocument>
+</xml><![endif]-->
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:"Gill Sans MT";
+	panose-1:2 11 5 2 2 1 4 2 2 3;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:7 0 0 0 3 0;}
+@font-face
+	{font-family:Tahoma;
+	panose-1:2 11 6 4 3 5 4 4 2 4;
+	mso-font-charset:0;
+	mso-generic-font-family:swiss;
+	mso-font-pitch:variable;
+	mso-font-signature:1627421319 -2147483648 8 0 66047 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{mso-style-parent:"";
+	margin:0cm;
+	margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:Tahoma;
+	mso-fareast-font-family:"Times New Roman";
+	mso-bidi-font-family:"Times New Roman";
+	mso-ansi-language:EN-GB;}
+h1
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	text-align:center;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:1;
+	font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	color:green;
+	mso-font-kerning:16.0pt;
+	mso-ansi-language:EN-GB;}
+h2
+	{mso-style-next:Normal;
+	margin-top:0cm;
+	margin-right:0cm;
+	margin-bottom:12.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:2;
+	font-size:12.0pt;
+	mso-bidi-font-size:14.0pt;
+	font-family:"Gill Sans MT";
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;
+	mso-bidi-font-style:italic;}
+h3
+	{mso-style-next:Normal;
+	margin-top:12.0pt;
+	margin-right:0cm;
+	margin-bottom:6.0pt;
+	margin-left:0cm;
+	mso-pagination:widow-orphan;
+	page-break-after:avoid;
+	mso-outline-level:3;
+	font-size:10.0pt;
+	mso-bidi-font-size:13.0pt;
+	font-family:Tahoma;
+	mso-bidi-font-family:Arial;
+	mso-ansi-language:EN-GB;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	mso-text-animation:none;
+	text-decoration:none;
+	text-underline:none;
+	text-decoration:none;
+	text-line-through:none;}
+@page Section1
+	{size:21.0cm 842.0pt;
+	margin:72.0pt 89.85pt 72.0pt 89.85pt;
+	mso-header-margin:35.45pt;
+	mso-footer-margin:35.45pt;
+	mso-paper-source:0;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:78525602;
+	mso-list-template-ids:-835817850;}
+@list l0:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l1
+	{mso-list-id:291601203;
+	mso-list-template-ids:794435764;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l2
+	{mso-list-id:300381023;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-1544663846 67698689 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l2:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;}
+@list l2:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l2:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l3
+	{mso-list-id:303507111;
+	mso-list-template-ids:735215910;}
+@list l3:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l4
+	{mso-list-id:487673014;
+	mso-list-type:hybrid;
+	mso-list-template-ids:831665082 1180714332 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l4:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;
+	color:windowtext;}
+@list l4:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l4:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l5
+	{mso-list-id:519969523;
+	mso-list-template-ids:483687232;}
+@list l5:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l6
+	{mso-list-id:811410276;
+	mso-list-template-ids:-982905712;}
+@list l6:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l7
+	{mso-list-id:839850376;
+	mso-list-template-ids:1980903130;}
+@list l7:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l8
+	{mso-list-id:1282954079;
+	mso-list-type:hybrid;
+	mso-list-template-ids:1041646236 -293426028 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l8:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;
+	color:windowtext;}
+@list l8:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l8:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l8:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l8:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l8:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l8:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l8:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l8:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l9
+	{mso-list-id:1926838925;
+	mso-list-template-ids:-968335048;}
+@list l9:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l10
+	{mso-list-id:2013220594;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-710009856 -293426028 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l10:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;
+	color:windowtext;}
+@list l10:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l10:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l10:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l10:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l10:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l10:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l10:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l10:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+ol
+	{margin-bottom:0cm;}
+ul
+	{margin-bottom:0cm;}
+-->
+</style>
+<!--[if gte mso 10]>
+<style>
+ /* Style Definitions */
+ table.MsoNormalTable
+	{mso-style-name:"Table Normal";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	mso-style-noshow:yes;
+	mso-style-parent:"";
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+table.MsoTableGrid
+	{mso-style-name:"Table Grid";
+	mso-tstyle-rowband-size:0;
+	mso-tstyle-colband-size:0;
+	border:solid windowtext 1.0pt;
+	mso-border-alt:solid windowtext .5pt;
+	mso-padding-alt:0cm 5.4pt 0cm 5.4pt;
+	mso-border-insideh:.5pt solid windowtext;
+	mso-border-insidev:.5pt solid windowtext;
+	mso-para-margin:0cm;
+	mso-para-margin-bottom:.0001pt;
+	mso-pagination:widow-orphan;
+	font-size:10.0pt;
+	font-family:"Times New Roman";}
+</style>
+<![endif]--><!--[if gte mso 9]><xml>
+ <o:shapedefaults v:ext="edit" spidmax="12290"/>
+</xml><![endif]--><!--[if gte mso 9]><xml>
+ <o:shapelayout v:ext="edit">
+  <o:idmap v:ext="edit" data="1"/>
+ </o:shapelayout></xml><![endif]-->
+</head>
+
+<body lang=EN-US link=blue vlink=purple style='tab-interval:36.0pt'>
+
+<div class=Section1>
+
+<h1><a name=Workingwithsubmodels><span lang=EN-GB>Working with submodels</span></a></h1>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>Simile enables you to wrap any part of your
+model diagram up in a round-cornered box, called a submodel.<span
+style='mso-spacerun:yes'>  </span>The submodel concept can be used to address a
+wide range of modelling needs, including plug-and-play modularity, disaggregation,
+spatial modelling and individual-based modelling.<span
+style='mso-spacerun:yes'>  </span>If you are new to Simile, you are strongly
+encouraged to read the <a href="../elements/submodel.htm">introduction</a> to the
+submodel element, so that you are aware of the various uses of submodels in
+your modelling.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h2><span lang=EN-GB>Defining properties</span></h2>
+
+<p class=MsoNormal><span lang=EN-GB>A submodel’s properties are set using a
+dialogue box invoked by double-clicking anywhere within the submodel in <!--[if gte vml 1]><v:shapetype
+ id="_x0000_t75" coordsize="21600,21600" o:spt="75" o:preferrelative="t"
+ path="m@4@5l@4@11@9@11@9@5xe" filled="f" stroked="f">
+ <v:stroke joinstyle="miter"/>
+ <v:formulas>
+  <v:f eqn="if lineDrawn pixelLineWidth 0"/>
+  <v:f eqn="sum @0 1 0"/>
+  <v:f eqn="sum 0 0 @1"/>
+  <v:f eqn="prod @2 1 2"/>
+  <v:f eqn="prod @3 21600 pixelWidth"/>
+  <v:f eqn="prod @3 21600 pixelHeight"/>
+  <v:f eqn="sum @0 0 1"/>
+  <v:f eqn="prod @6 1 2"/>
+  <v:f eqn="prod @7 21600 pixelWidth"/>
+  <v:f eqn="sum @8 21600 0"/>
+  <v:f eqn="prod @7 21600 pixelHeight"/>
+  <v:f eqn="sum @10 21600 0"/>
+ </v:formulas>
+ <v:path o:extrusionok="f" gradientshapeok="t" o:connecttype="rect"/>
+ <o:lock v:ext="edit" aspectratio="t"/>
+</v:shapetype><v:shape id="_x0000_i1025" type="#_x0000_t75" style='width:12pt;
+ height:11.25pt'>
+ <v:imagedata src="index_files/image002.gif" o:title="select"/>
+</v:shape><![endif]--><![if !vml]><img border=0 width=16 height=15
+src="index_files/image002.gif" v:shapes="_x0000_i1025"><![endif]><span
+style='mso-spacerun:yes'> </span>select mode, or by using the “Properties”
+command of the “Model” menu, when the submodel is opened in a separate window.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l2 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN-GB><a href="dialogue.htm">Submodel properties dialogue</a></span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h2><span lang=EN-GB>Operations on submodels</span></h2>
+
+<p class=MsoNormal><span lang=EN-GB>The following tools are used to perform
+operations on submodels.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<table class=MsoTableGrid border=0 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;mso-yfti-tbllook:480;mso-padding-alt:0cm 5.4pt 0cm 5.4pt'>
+ <tr style='mso-yfti-irow:0'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><!--[if gte vml 1]><v:shape
+   id="_x0000_i1026" type="#_x0000_t75" style='width:12pt;height:11.25pt'>
+   <v:imagedata src="index_files/image001.gif" o:title="move"/>
+  </v:shape><![endif]--><![if !vml]><img border=0 width=16 height=15
+  src="index_files/image001.gif" v:shapes="_x0000_i1026"><![endif]></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><a href="movegroups.htm">Using a submodel
+  to move blocks of model elements around</a></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:1'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:2'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><!--[if gte vml 1]><v:shape
+   id="_x0000_i1027" type="#_x0000_t75" style='width:12pt;height:11.25pt'>
+   <v:imagedata src="index_files/image002.gif" o:title="select"/>
+  </v:shape><![endif]--><![if !vml]><img border=0 width=16 height=15
+  src="index_files/image002.gif" v:shapes="_x0000_i1027"><![endif]></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><a href="window.htm">Opening a new window
+  for a submodel</a></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:3'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:4'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><!--[if gte vml 1]><v:shape
+   id="_x0000_i1028" type="#_x0000_t75" style='width:12pt;height:11.25pt'>
+   <v:imagedata src="index_files/image003.gif" o:title="save"/>
+  </v:shape><![endif]--><![if !vml]><img border=0 width=16 height=15
+  src="index_files/image003.gif" v:shapes="_x0000_i1028"><![endif]></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><a href="save.htm">Saving a submodel</a></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:5'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:6'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB
+  style='color:blue'><!--[if gte vml 1]><v:shape id="_x0000_i1029" type="#_x0000_t75"
+   style='width:12pt;height:11.25pt'>
+   <v:imagedata src="index_files/image004.gif" o:title="open"/>
+  </v:shape><![endif]--><![if !vml]><img border=0 width=16 height=15
+  src="index_files/image004.gif" v:shapes="_x0000_i1029"><![endif]><span
+  class=MsoHyperlink><o:p></o:p></span></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><a href="load.htm">Loading a saved
+  submodel as a stand-alone model</a><span class=MsoHyperlink><o:p></o:p></span></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:7'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:8'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB
+  style='color:blue'><!--[if gte vml 1]><v:shape id="_x0000_i1030" type="#_x0000_t75"
+   style='width:12pt;height:11.25pt'>
+   <v:imagedata src="index_files/image004.gif" o:title="open"/>
+  </v:shape><![endif]--><![if !vml]><img border=0 width=16 height=15
+  src="index_files/image004.gif" v:shapes="_x0000_i1030"><![endif]><span
+  class=MsoHyperlink><o:p></o:p></span></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><a href="import.htm">Loading a saved
+  stand-alone model as a submodel</a><span class=MsoHyperlink><o:p></o:p></span></span></p>
+  </td>
+ </tr>
+ <tr style='mso-yfti-irow:9;mso-yfti-lastrow:yes'>
+  <td width=95 valign=top style='width:71.6pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+  <td width=473 valign=top style='width:354.8pt;padding:0cm 5.4pt 0cm 5.4pt'>
+  <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+  </td>
+ </tr>
+</table>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h2><span lang=EN-GB>Multiple-instance submodels</span></h2>
+
+<p class=MsoNormal><span lang=EN-GB>Multiple-instance submodels are one of Simile’s
+most valuable features, for constructing object-based models.<span
+style='mso-spacerun:yes'>  </span>For real-world objects, such as a tree, it is
+useful to be able to model several particular instances of the object, each
+acting in the same general way, though differing in their particular
+attributes.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l8 level1 lfo6;tab-stops:list 36.0pt'><span
+     lang=EN-GB><a href="multiple/fixed.htm">Fixed membership</a> submodels
+     have a specified number of instances</span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l8 level1 lfo6;tab-stops:list 36.0pt'><span
+     lang=EN-GB><a href="multiple/population.htm">Population</a> (variable
+     membership) submodels offer control over the number of instances using special
+     model elements</span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<h2><span lang=EN-GB>Advanced use of submodels</span></h2>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='color:blue;mso-list:l10 level1 lfo10;tab-stops:
+     list 36.0pt'><span lang=EN-GB style='color:windowtext'><a
+     href="plugplay/index.htm">Plug-and-play modularity</a> uses submodels to
+     substitute one alternative section of a model for another, or to include a
+     model developed for another purpose or at a different time within a second
+     model.</span><span class=MsoHyperlink><span lang=EN-GB><o:p></o:p></span></span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='color:blue;mso-list:l10 level1 lfo10;tab-stops:
+     list 36.0pt'><span lang=EN-GB style='color:windowtext'><a
+     href="conditional.htm">Conditional submodels</a> use Boolean logic to
+     determine the existence or otherwise of parts of the model.</span><span
+     lang=EN-GB><o:p></o:p></span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='color:blue;mso-list:l4 level1 lfo14;tab-stops:list 36.0pt'><span
+     lang=EN-GB style='color:windowtext'><a href="satellite.htm">Satellite
+     submodels</a> are used to extract a subset of values from a population
+     submodel according to a given condition.</span><span class=MsoHyperlink><span
+     lang=EN-GB><o:p></o:p></span></span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='color:blue;mso-list:l10 level1 lfo10;tab-stops:
+     list 36.0pt'><span lang=EN-GB style='color:windowtext'><a
+     href="association/index.htm">Association submodels</a> represent the
+     properties of an association between two other submodels.</span><span
+     class=MsoHyperlink><span lang=EN-GB><o:p></o:p></span></span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u></span></p>
+
+</div>
+
+</body>
+
+</html>
