@@ -136,7 +136,7 @@ proc ClickObj { x y winId X Y action} {
         # IO tool took the click, so do no more
     }
     if {[string compare $pushedbutton snap]==0} then {
-        snap $topNode $node
+        do_in_node $topNode snap $topNode $node
     } else {
         if {[string equal click $action]} {
             set obj [GetCaptionItem $winId $node]
