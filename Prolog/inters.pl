@@ -94,8 +94,9 @@ insert_paths(sub(DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    m_update:build_array(any, Dims, DimExp),
 	    NewVar = use_inter(Var),
 	    /* just to make sure same var is used for name each occurrence */
-	    member(instance(internal,_, NewVar,_, _-Dims), InterInputs),
-	    Recurse = 0;	  
+	    member(instance(internal, inter(_,_, Dims), NewVar,_, _-Dims),
+		   InterInputs),
+	    Recurse = 0;
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
 
@@ -238,7 +239,8 @@ make_intermediates(
 	member(Inter, PrevInters), !,
 	    NewInters = PrevInters,
 	    Setups = [],
-	    refer_inter(Inter, DestPath, Units,SourceContext, Args, SourceRef);
+	    refer_inter(Inter, DestPath, BuildingArrays,
+			Units, SourceContext, Args, SourceRef);
 
 	/* first case: a reference to another variable. If we are referring to
 	a variable via a 'back swap' i.e., it comes from an associated model
@@ -315,9 +317,11 @@ make_intermediates(
 	/* If we are making an explicit intermediate variable then we
 	do NOT want it to have a different value each time we go round a loop!
 	Or do we...probably yes actually if making it inside a makearray. But
-	don't use extra dims if values will all be the same...*/
+	don't use extra dims if values will all be the same...actually dont
+	do it anyway, is just too hard */
 	
-	(contains_something(individuates, Source), !,
+	(\+ Source = make_inter(_,_),
+	contains_something(individuates, Source), !,
 	    NowBuilding = BuildingArrays;
 	NowBuilding = []),
 	
@@ -439,9 +443,10 @@ make_intermediates(
 	append([Clearing, Preps, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
-	Inter = instance(internal, inter(InterContext, _, BuildDims),
+	Inter = instance(internal, inter(InterContext, _, TotalDims),
 			      UseSource, TotalName, Units-InterDims),
-	refer_inter(Inter, DestPath, Units, SourceContext, Args, SourceRef),
+	refer_inter(Inter, DestPath, BuildingArrays,
+		    Units, SourceContext, Args, SourceRef),
 	merge_lists([Inter], OldInters, NewInters));	  
 
 	/* third case: a numerical value. Usable in any context.  */
@@ -643,8 +648,9 @@ dissociate(SubArgs, [later(Arg) | UseArgs]) :-
 	dissociate(Rest, UseArgs).
 dissociate(Args, Args).
 	
-refer_inter(instance(internal, inter(Context, _,_), Source, Name, Units-Dims),
-	    DestPath, Units, SourceContext, Args, SourceRef) :-
+refer_inter(instance(internal, inter(Context, _, SubexpDims), Source, Name,
+		     Units-Dims),
+	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
 	    (Source = last(_), !,
 		Args = [Name]; /* bit of a hack...since
 	    we use the total from the previous time step we don't need to
@@ -652,7 +658,10 @@ refer_inter(instance(internal, inter(Context, _,_), Source, Name, Units-Dims),
 	    using made_at(...) should prevent it being removed as an idler */
 	    Args = [made_at(Name, Context)]),
 	    pointer_from(DestPath, SourcePtr),
-	    make_inds_for(Dims, SourceLoops, IntInds),
+	    make_inds_for(Dims, IntLoops, IntInds),
+	    make_inds_for(SubexpDims, SourceLoops, _),
+	    append(SpareLoops, SourceLoops, IntLoops),
+	    suffix(SpareLoops, BuildLoops),
 	    append(SourceLoops, DestPath, SourceContext),
 	    SourceRef = arr(SourcePtr, Name, IntInds).
 	  

@@ -426,11 +426,12 @@ spread_dims(Obj) :-
 	get_av_pair(Obj, 0, units, GivenUnits),
 	get_input_info(Obj, Input_list),
 	
-	(test_eqn(Equation, 32, Input_list, Type, Array, _ParamList, []),
+	(test_eqn(Equation, 32, Input_list, Type, FoundArray, _ParamList, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
-	    (get_actual_sizes(GivenArray, Array), !,
+	    (get_actual_sizes(FoundArray, Array),
+		get_actual_sizes(GivenArray, Array), !,
 		UseArray = GivenArray;
-	    UseArray = Array,
+	    UseArray = FoundArray,
 		UnitsChanged = yes),
 	    (Type = real, !, Base = 1; Base = Type),
 	    (check_unit(GivenBase, Base, 2, []), !,
@@ -1371,10 +1372,10 @@ when its time comes. */
 delete_net :-
 	(get_highlit_obj(1, Target),
 	    find_type(Target, influence),
-	    (is_top_arc(Target),
+	    (\+ is_top_arc(Target);
+	    is_top_arc(Target),
 		find_all_comps(Sm, Target),
-		add_parameter(Sm, 1, c_new, 0);
-	    \+ is_top_arc(Target));
+		add_parameter(Sm, 1, c_new, 0));
 	get_highlit_obj(1, Target),
 	    find_type(Target, flow);
 	get_highlit_obj(1, Target)),
