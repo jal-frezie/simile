@@ -294,7 +294,8 @@ tk_change_color(Wid, Obj, Type, Density, Value) :-
 	safe_tcl_eval(['ColorSymbol', Wid, Obj, Type, Density, Value], _).
 
 shift_images(TopDir, Fillers, Way) :-
-	safe_tcl_eval(['ShiftImages', TopDir, Way | Fillers], _).
+	windowize(TopDir, WTopDir),
+	safe_tcl_eval(['ShiftImages', WTopDir, Way | Fillers], _).
 
 kill_featured(Wid, Victim_id) :-
 	safe_tcl_eval([Wid, delete, Victim_id], _).
