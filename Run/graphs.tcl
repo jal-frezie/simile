@@ -624,15 +624,16 @@ proc EditListAsTable {parent valueArray} {
     set b .table_edit.buttonzone
     toplevel .table_edit -bd 4
     wm transient .table_edit $parent
+    wm title .table_edit "Table Editor"
     wm protocol .table_edit WM_DELETE_WINDOW {set table_viewer(done) 0}
 
     pack [frame $b] -side bottom
 # button frame packed first so it is not squeeeezed if window dragged smaller
     pack [frame $t] -fill x -expand true
     pack [button $b.ok -text OK \
-	      -command "set table_viewer(done) 1"] -side left
+	      -command "set table_viewer(done) 1" -width 10] -padx 2 -pady 2 -side left
     pack [button $b.cancel -text Cancel \
-	      -command "set table_viewer(done) 0"] -side left
+	      -command "set table_viewer(done) 0" -width 10] -padx 2 -pady 2 -side left
     
     set viewerId $table_viewer(id)
     set ::${viewerId}::editMode($t) 1
