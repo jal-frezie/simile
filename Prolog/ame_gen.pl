@@ -11,7 +11,8 @@ sicstus_module(ame_gen,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
-		get_actual_sizes/2, get_node_size/2,
+		get_actual_sizes/5, enum_type_ref/4,
+		get_node_size/2, get_node_size/4,
 		is_population/1, is_conditional/1, get_all_dims/2,
 		variable_size/1, list_links/2,
 		get_link_exits/2, get_chain/5, contains/2, contains/3,
@@ -66,6 +67,7 @@ space_elts([Elt], Elt).
 space_elts([Elt | Rest], Desc) :-
 	space_elts(Rest, Cont),
 	append_atoms([Elt, ' ', Cont], Desc).
+space_elts(Elt, Elt).
 
 connect_bits([], '', 0).
 
@@ -92,13 +94,17 @@ unjustified. I don't want to process anything in single quotes for
 instance... */
 
 make_legible_for_prolog(String, NewString) :-
-	[Sq, Dq, Sp, Pt, N0, Eu, El, Po, Pc, Xm, Eq] = "\'\" .0Ee()!=",
+	[BS, Sq, Dq, Sp, Pt, N0, Eu, El, Po, Pc, Xm, Eq] = "\\\'\" .0Ee()!=",
 	Nums = "0123456789",
 	append(Prefix, ToTweak, [start | String]),
 	/* Do not process anything in single quotes */
 	(ToTweak = [Sq | AfterQuote],
 	append(InQuotes, [Sq | Suffix], AfterQuote),
 	    append([Sq | InQuotes], [Sq], Tweaked);
+	/* Ignore backslashes that are sometimes added by Tcl to get things
+	    into list format */
+	ToTweak = [BS | Suffix],
+	    Tweaked = [];
 	/* Put single quotes round things in double quotes so they are read as
 	    atoms rather than lists of Ascii codes */
 	ToTweak = [Dq | AfterQuote],
@@ -368,34 +374,65 @@ numbers of submodel instances, and translates those that can be translated,
 stripping out those which cannot, or which correspond to non-disaggregated
 submodels. */
 
-get_actual_sizes([], []).
+get_actual_sizes(_, [], [], [], any).
 
-get_actual_sizes([Sub | Rest], AllSizes) :-
-	get_actual_sizes(Rest, Sizes),
-	(Sub = none, AllSizes = Sizes;
-	(number(Sub); Sub = var), !, AllSizes = [Sub | Sizes];
+get_actual_sizes(Node, [Sub | Rest], AllNs, AllSizes, Units) :-
+	get_actual_sizes(Node, Rest, MoreNs, Sizes, MoreUnits),
+	(Sub = none, AllNs = MoreNs, AllSizes = Sizes, Units = MoreUnits;
+	enum_type_ref(Sub, Node, Num, Units0),
+	    AllNs = [Num | MoreNs],
+	    AllSizes = [Sub | Sizes],
+	    inters:promote_unit(Units0, Units),
+	    inters:promote_unit(MoreUnits, Units);
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
 	    (setof(Size_source, name_matches(Size_source, ModName), Sources), !,
 		(Sources = [Source], !,
-		    get_node_size(Source, RealSize),
+		    get_node_size(Source, RealN, RealSize, Units0),
 		    (var(Ind), !,
+			append(RealN, MoreNs, AllNs),
 			append(RealSize, Sizes, AllSizes);
+		    nth(Ind, RealN, UseN),
 		    nth(Ind, RealSize, UseSize),
-			AllSizes = [UseSize | Sizes]);
+			AllNs = [UseN | MoreNs],
+			AllSizes = [UseSize | Sizes]),
+		    inters:promote_unit(Units0, Units),
+		    inters:promote_unit(MoreUnits, Units);
 		    raise_exception(['Cannot resolve reference to size of ',
 			Size_source,
 			'. There are multiple submodels of this name.']));
 		raise_exception(['Cannot resolve reference to size of ',
-			ModName, '. There is no submodel of this name']))).
+			ModName, '. There is no submodel of this name']))), !.
 
 name_matches(Node, Name) :-
 	Node has_class submodel,
 	caption_for(Node, Name).
 
+enum_type_ref(Ref, Model, Value, Units) :-
+	(integer(Ref),
+	    Units = const_int;
+	Ref = var, 
+	    Units = int;
+	number(Ref),
+	    Units = real),
+	    Value = Ref, !;
+	m_class:Model has_class_refinement enum_types of TypeList,
+	    member(TypeName-TypeMems, TypeList),
+	    (Match = TypeName; nth(Value, TypeMems, Match)),
+	    append_atoms(['"', Match, '"'], Ref),
+	    (number(Value),
+		Units=a(TypeName);
+	    length(TypeMems, Value),
+		Units=n(TypeName)), !;
+	m_class:Parent has_part Model,
+	    enum_type_ref(Ref, Parent, Value, Units).
+
 get_node_size(Source, Size) :-
+	get_node_size(Source, _, Size, _).
+
+get_node_size(Source, SizeN, Size, SizeUnits) :-
 	Source has_class_refinement multiplication_spec of Multi,
 	member(count=Dim, Multi),
-	get_actual_sizes(Dim, Size), !,
+	get_actual_sizes(Source, Dim, SizeN, Size, SizeUnits), !,
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
 	    sicstus_format_to_chars("~a has a reference to a variable membership model in its dimensions.", [Capt], Wibble),

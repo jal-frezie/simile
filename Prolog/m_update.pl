@@ -258,19 +258,18 @@ list_link_index_meanings(DestCapt, [exits(Link, [Start | SRest]) | LRest],
 				 Last),
 	append(First, Last, Meanings).
 
-append_base_role(BaseMeaning, RoleCaptStr, FullMeaning) :-
+append_base_role(ind_spec(BaseMeaning, Posn, N), RoleCaptStr,
+		 ind_spec(FullMeaning, Posn, N)) :-
 	name(BaseMeaning, BaseMeaningStr),
 	append(BaseMeaningStr, RoleCaptStr, FullMeaningStr),
 	name(FullMeaning, FullMeaningStr).
 
 list_node_index_meanings(_, [], []).
 
-list_node_index_meanings(Capt, Indices, [Meaning | Meanings]) :-
+list_node_index_meanings(Capt, Indices, [ind_spec(Capt, DimCount, Dim)
+					| Meanings]) :-
 	append(Early, [Dim], Indices),
 	length(Indices, DimCount),
-	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [DimCount,
-		Capt, Dim], MeaningStr),
-	name(Meaning, MeaningStr),
 	list_node_index_meanings(Capt, Early, Meanings).
 
 /* valid_input lists all the links that can be considered the
@@ -391,11 +390,12 @@ as follows:
 check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	analyze_array(Unit_term, Unit_base, DimExprs),
 	analyze_array(Target_unit, Target_base, TargetExprs),
-	(on_exception(ParseUnit, (get_actual_sizes(DimExprs,Dims0),
+	/* (on_exception(ParseUnit, (get_actual_sizes(DimExprs,Dims0),
 				 get_actual_sizes(TargetExprs,Dims1)), true),
-	(var(ParseUnit), !,
-	(Dims0 = Dims1, !,
-	    ((member(Unit_base, [any, boolean, a(_ET), int]),
+        */
+	((var(ParseUnit), !,
+	(DimExprs = TargetExprs, !,
+	    ((member(Unit_base, [any, boolean, const_int, a(_ET), int]),
 	          Unit_type = Unit_base;	 
 	      get_conversion(_, Unit_base, Unit_base, _),
 	          Unit_type = real), !,
@@ -419,7 +419,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 		
 	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", [Unit_term], Complaint));
 	    
-	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, Dims0, Dims1], Complaint));
+	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, DimExprs, TargetExprs], Complaint));
 	sicstus_format_to_chars("Unit expression ~w or ~w is out of date: ~w",
 			[Unit_term, Target_unit, ParseUnit], Complaint));
 	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which cannot be evaluated to a positive integer constant.",
@@ -516,7 +516,7 @@ analyze_array(Array, Base_type, Dims) :-
 	Base_type = Array, Dims = [].
 
 get_solo_list_depth(List,Dims) :-
-	atom(List), \+ List = '', Dims = _;
+	atom(List), \+ List = '', \+ name(List, [34 | _]), Dims = _;
 	(List = [Ellie], Dims = array(D, _);
 	    List = {Ellie}, Dims = list(D)),
 		get_solo_list_depth(Ellie, D).

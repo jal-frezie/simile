@@ -1277,7 +1277,7 @@ proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Rep]} {
 	set prefx $base/model
 	if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
-	    file copy ${prefx}${Rep}[info sharedlibextension] \
+	    file copy -force ${prefx}${Rep}[info sharedlibextension] \
 		${prefx}[info sharedlibextension]
 	} else {
 	    file delete -force ${prefx}[info sharedlibextension]

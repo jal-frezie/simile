@@ -80,7 +80,7 @@ instantiate_nodes([Node|Nodes], New_instances, Path, ResultIn, ResultOut) :-
 instantiate_trees([], [], _, []).
 
 instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
-	get_node_size(Node, Multiple),
+	get_node_size(Node, Multiple, _,_),
 	pointer_from(Path, HiPtr),
 	path_section_for(Node, Name, Multiple, NewBit, HiPtr, _),
 	append(NewBit, Path, NewPath),
@@ -248,7 +248,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	    InputPairs = []),
 	apply_minmax(Node, UseExpr, FullExpr),
 	replace_subexps(FullExpr, instance, process_expr,
-			sub(Node, TableList, InputPairs, Refs), top_down,
+			sub(TableList, InputPairs, Refs), top_down,
 			Switched, FinalExpr),
 	(member(var_pair(_, Sub), Switched),
 	    m_update:get_solo_list_depth(Sub, _),
@@ -341,7 +341,7 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 				    Var, ArcIndex), FarUnits-UseDims)),
 
 	m_update:analyze_array(SourceUnits, FarUnits, FarDims),
-	get_actual_sizes(FarDims, UseDims),
+	get_actual_sizes(Node, FarDims, _, UseDims, _),
 	m_update:analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, ImpType).
@@ -411,7 +411,7 @@ language */
 get_units(Node, Type, Dims) :-
 	(Node has_class_refinement units of Unit, !; Unit = 1),
 	m_update:analyze_array(Unit, Type, Number),
-	get_actual_sizes(Number, Dims).
+	get_actual_sizes(Node, Number, _, Dims, _).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* Puts references to connecting flows into compartment definition; note that flows
@@ -462,10 +462,7 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % list of name-node pairs, and reconstructs the resulting expression. Only they
 % are little lists not atoms now.
 
-process_expr(sub(Fn, TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
-	(Var = size(_); Var = size(_,_)),
-	    get_actual_sizes([Var], [NewVar]),
-	    Recurse = 0;	  
+process_expr(sub(TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
 	m_update:get_solo_list_depth(Var, _),
 	(member(input_pair(Var, Node, Away, Home, OutVar, NewVar),
 		   InputPairs),
@@ -475,8 +472,6 @@ process_expr(sub(Fn, TableValues, InputPairs, Refs), Var, NewVar, Recurse) :-
 		find_all_comps(HomeSm, Home),
 		is_instance(_, HomeSm, _, Away, _, TopRef),
 		member(TopRef, Refs)), !;
-	inters:enum_type_ref(Var, Fn, Value, _Units),
-	    NewVar=Value;
 	NewVar = Var),
 	    Recurse = 0;
 	build_table_ref(TableValues, Var, NewVar), Recurse = 1.

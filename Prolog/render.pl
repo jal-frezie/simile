@@ -340,11 +340,13 @@ render(c, data_declaration,
 		resolve_pointer(c, NameBase, Name),
 		UseDims = [];
 	    Name = NameBase,
-		get_node_size(SymbolicName, UseDims));
+		/* get_node_size(SymbolicName, UseDims) */ UseDims = Dims);
 	    (NameIn = elt(_, Name, _), !;
 		Name = NameIn),
 	    UseDims = Dims),
-	render(c, variable_declaration, [Type, Name, UseDims],
+	all(ame_gen, enum_type_ref,
+	    [build(UseDims), unify(SymbolicName), build(Nums), build(_)]),
+	render(c, variable_declaration, [Type, Name, Nums],
 			Indent, Decl).
 
 /* next clause generates nested namespace declarations for tcl. They look as
@@ -361,7 +363,7 @@ render(tcl, class_declaration,
 		render(tcl, end(procedure), ProcName, Indent, Closes),
 		NewIndent is Indent + 4,
 		refer_value(tcl, instance, Target);
-	    get_node_size(SymbolicName, What),
+	    get_node_size(SymbolicName, What, _,_),
 		make_array_assignment(tcl, Indent, What, _,
 				      NewIndent, _, Indices, Opens, Closes),
 		make_indexed_namespace(tcl, Name, Indices, Target)),
@@ -485,7 +487,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	        DefEval = 'SPLIT';
 	    (Unit = boolean, !, Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
-	    Unit = int, !, Type = 'INTEGER',
+	    member(Unit, [int, a(_)]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-1073741823, 1073741823];
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),

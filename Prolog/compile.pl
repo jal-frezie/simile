@@ -482,7 +482,9 @@ generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], []).
 generate_local_decls(L, [Instance | Instances], Tree, Level,
 		     Dims, ExtSets, Graphs,
 		     PublicDecls, TypeDecls, PointerDecls, Exts, NodeData) :-
-	Instance = instance(_,_,_,_, _-SmDims),
+	Instance = instance(_, Node, _,_, _-SmSizes),
+	all(ame_gen, enum_type_ref,
+	    [build(SmSizes), unify(Node), build(SmDims), build(_)]),
 	(is_instance_list(Instance), !,
 	    append(Tree, [Level, -1], DeepTree),
 	    append(Dims, [-1], NewDims);
@@ -1003,7 +1005,7 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    Assignments = [],
 	    Source = incr(dt(Step), SourceEqn)), !,
 	DestRef = elt(_, Dest, _),    
-	final_assignment(SourceEqn, DestRef, Swaps, Step,
+	final_assignment(SourceEqn, Node, DestRef, Swaps, Step,
 			 Used, Expr, Setups, Path, RefList,
 			 AllInters),
 

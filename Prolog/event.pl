@@ -461,8 +461,8 @@ spread_dims(Node) :-
 	
 	(test_eqn(Equation, Node, 32, Input_list, Type, FoundArray, _Ps, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
-	    (get_actual_sizes(FoundArray, Array),
-		get_actual_sizes(GivenArray, Array), !,
+	    (get_actual_sizes(Node, FoundArray, _, Array, _),
+		get_actual_sizes(Node, GivenArray, _, Array, _), !,
 		UseArray = GivenArray;
 	    UseArray = FoundArray,
 		UnitsChanged = yes),

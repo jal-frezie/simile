@@ -528,8 +528,8 @@ set_properties(Wid, Model) :-
 		get_term(ListStr, UseCount, Error),
 		(\+ Error = [],
 		    append("Invalid dimension string -- ", Error, Wibble);
-		get_actual_sizes(UseCount, Sizes),
-/*		get_actual_sizes(Model, UseCount, Sizes, _,_), */
+/*		get_actual_sizes(UseCount, Sizes), */
+		get_actual_sizes(Model, UseCount, Sizes, _,_),
 		    (member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),
 			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);

@@ -432,10 +432,10 @@ multiple_draw(VComp, Num) :-
 		Num = -1;
 	is_conditional(Comp), !,
 		Num = 0;
-	(get_node_size(Comp, [RealVal | _]);
+	(get_node_size(Comp, [Val | _]);
 	(implicit_function(Comp, CompFn); CompFn=Comp),
-		CompFn has_class_refinement units of array(_, Val),
-		get_actual_sizes([Val], [RealVal])), !,
+		CompFn has_class_refinement units of array(_, Val)),
+		enum_type_ref(Val, Comp, RealVal, _), !,
 		Num is min(RealVal, 4);
 	Num = 1).
 
@@ -700,14 +700,14 @@ would require the function to be parsed, which takes too long.
 
 Fails if either there is a link without a corresponding variable, or vice versa. */
 
-checks_out_locally(Function) :- 
-	Function has_class_refinement value of Expr,
+checks_out_locally(Func) :- 
+	Func has_class_refinement value of Expr,
 	\+ Expr = '', /* sometimes given to flow to get bowtie on right
 		      section */
-	instance:apply_minmax(Function, Expr, FullExpr),
-	replace_subexps(FullExpr, image, pick_var, _, top_down, Pairs, _),
-	(setof(Source, valid_input(Function, Source), Sources), !; Sources = []),
-	pair_off(Function, Sources, Pairs).
+	instance:apply_minmax(Func, Expr, FullExpr),
+	replace_subexps(FullExpr, image, pick_var, Func, top_down, Pairs, _),
+	(setof(Source, valid_input(Func, Source), Sources), !; Sources = []),
+	pair_off(Func, Sources, Pairs).
 
 pick_var(_, V, _, 0) :-
 	get_solo_list_depth(V, _).
@@ -715,10 +715,6 @@ pick_var(_, V, _, 0) :-
 /* pair_off is true if every variable in the expression represents a role of some link to the function, and every link to the function has at least one variable representing some role it has. Later we may keep the unit error and pop it up when the user mouses over to see why the node is red... */
 
 pair_off(_, [], []).
-
-pair_off(Function, [], [var_pair(EnumRef, _) | More]) :-
-	inters:enum_type_ref(EnumRef, Function, _Val, _Units),
-	pair_off(Function, [], More).
 
 pair_off(Function, [Source | Sources], Pairs) :-
 	setof(var_pair(Var, _),

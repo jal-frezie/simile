@@ -1,21 +1,21 @@
-sicstus_module(inters, [final_assignment/10, make_intermediates/11,
-			expand_library/3, enum_type_ref/4, function/3,
+sicstus_module(inters, [final_assignment/11, make_intermediates/12,
+			expand_library/3, function/3,
 			promote_unit/2, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			make_inds_for/3, pointer_from/2, path_section_for/6]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
-final_assignment(Expr, DestRef, Swaps, Step, Used, 
+final_assignment(Expr, Sm, DestRef, Swaps, Step, Used, 
                  NewFormula, Setups, Context, Prerequisites, NewInters) :-
 	DestRef = elt(DestPathForm, Target, _-Dims),
 	copy_term(DestPathForm, DestPath),
 	
 	replace_subexps(Expr, inters, insert_paths,
-		sub(DestRef, Swaps, ExpInters), top_down, _, FullExpr),
+		sub(Sm, DestRef, Swaps, ExpInters), top_down, _, FullExp),
 	length(ExpInters, _L), /* close end of list */
 
-	on_exception(Problem, make_intermediates(FullExpr, Target, DestPath,
+	on_exception(Problem, make_intermediates(FullExp, Sm, Target, DestPath,
 		BackSwap, ExpInters, [], Step, Used, _, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula)),
 		      raise_exception(conversion_failure(Target, Problem))),
@@ -43,14 +43,16 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	    
 	(setof(Model, has_extras(Context, DestPath, Model), Exited), !;
 	    Exited = []),
-	add_extra_dependencies(Exited, FullExpr, NewArgs, Prerequisites).
+	add_extra_dependencies(Exited, FullExp, NewArgs, Prerequisites).
 
-insert_paths(sub(DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
+insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, _);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link]=[in_hierarchy, none]),
-	PathExp = elt(RealPathForm, Ref, Unit-Dims), !,
+	PathExp = elt(RealPathForm, Ref, Unit-DimTypes), !,
+	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
+					 build(Dims), build(_)]),
 	    (get_conversion(_, Unit, Unit, _), !,
 		Type = real;
 	    Type = Unit),
@@ -201,24 +203,14 @@ import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	    PtrN = Ptr0,
 	    make_inds_for(Dims, LocalLoops, Inds).
 
-enum_type_ref(Ref, Model, Value, Units) :-
-	m_class:Model has_class_refinement enum_types of TypeList,
-	    member(TypeName-TypeMems, TypeList),
-	    (Match = TypeName; nth(Value, TypeMems, Match)),
-	    append_atoms(['"', Match, '"'], Ref),
-	    (number(Value),
-		Units=a(TypeName);
-	    length(TypeMems, Value),
-		Units=n(TypeName)), !;
-	m_class:Parent has_part Model,
-	    enum_type_ref(Ref, Parent, Value, Units).
-	    
 /* make_intermediates: This introduces variables for any intermediate results
 required while evaluating a variable. The process is explained in great detail
 in exec_contexts.txt. Meantime, here is the list of arguments: */
 
 make_intermediates(
     Source, /* representation of the formula we are trying to evaluate */
+    SubId, /* Id of submodel containing expression, needed for evaluating
+		  enumerated types */
     Target, /* The variable we are making, we may have to wait for it before
 		  saving something for next step */
     DestPath, /* a list giving the context in which we are attempting to
@@ -271,12 +263,15 @@ make_intermediates(
 	associated or base models. BackSwap keeps track of this constraint.*/
 
 	copy_term(Source,
-		  param(SourceRef, Units, SourceLoops, TermSwap, Wait)), !,
+		  param(SourceRef, SrcUnits, SourceLoops, TermSwap, Wait)), !,
 	    /* very selective unification needed to feed back right dims to
 	    parameter info (in case it is a ref to final result) but not
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
-	    Source = param(_, Units, OrigLoops, _,_),
+	    Source = param(_, SrcUnits, OrigLoops, _,_),
+	    (Step = dummy, !,
+		Units = SrcUnits;
+	    unmake_enum_units(SrcUnits, Units)),
 	    get_dims_from_loops(OrigLoops, Dims, _),
 	    get_dims_from_loops(SourceLoops, Dims, _),
 	    
@@ -357,7 +352,7 @@ make_intermediates(
 	name(TotalNameBase, TotalNameStr),
 	generate_name(c, TotalNameBase, TotalName, Used),
 	copy_term(DestPath, TotalPath),
-	make_intermediates(Epsilon, TotalName, TotalPath, SubSwap,
+	make_intermediates(Epsilon, SubId, TotalName, TotalPath, SubSwap,
 			   PrevInters, NowBuilding, Step, Used, ArgUnits,
 			   OldInters, part_result(SubContext, OldSetups,
 						  OldArgs, IncrementRef)),
@@ -470,13 +465,16 @@ make_intermediates(
 	merge_lists([Inter], OldInters, NewInters));	  
 
 	/* third case: a numerical value. Usable in any context.  */
-	get_actual_sizes([Source],[SourceRef]), !,
+	get_actual_sizes(SubId, [Source], [SrcNum], [SrcType], SrcUnits),
+	    (Step = dummy, !,
+		SourceRef = SrcType,
+		Units = SrcUnits;
+	    SourceRef = SrcNum,
+		unmake_enum_units(SrcUnits, Units)), !,
 	    SourceContext = [],
 	    Setups = [],
 	    Args = [],
-	    NewInters = PrevInters,
-	    (integer(SourceRef), !, Units = const_int;
-		Units = real);
+	    NewInters = PrevInters;
 
 	fail, /* suspended due to scope problems */
 	add_zeros(Source, BoundArray, ConstBounds, Units), !,
@@ -511,17 +509,22 @@ make_intermediates(
 	    Units = real, !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
-	    get_dims_from_loops(BuildingArrays, _, DestInds);
+	    get_dims_from_loops(BuildingArrays, DestDims, DestVals),
+	    (Step = dummy, !,
+		DestInds = DestDims;
+	    DestInds = DestVals);
 	Source = index(IndN), !,
 	    reverse(DestPath, BackDP),
 	    all(inters, indices_for, [build(BackDP), append(DestInds, [])])),
 	    (integer(IndN), !;
 	    raise_exception(bad_index_number(N, index))),
-	    (length([_ | OuterInds], IndN),
-		suffix([SourceRef | OuterInds], DestInds), !;
 	    length(DestInds, AvailInds),
+	    IndPosn is AvailInds-IndN,
+	    (nth0(IndPosn, DestInds, SourceRef),
+		(Step = dummy,
+		    type_ind(SourceRef, Units);
+		Units = int), !;
 		raise_exception(index_number_out_of_range(IndN, AvailInds))),
-	    Units = int,
 	    (nonvar(SourceRef), !; SourceRef = glob(_, _))),
 	SourceContext = DestPath,
 	Setups = [],
@@ -535,12 +538,11 @@ make_intermediates(
 	context. */
 
 	(Source = makearray(Element, Dim),
-	    (Dim =.. [size | _], !,
-		DimVal = Dim;
-	    make_intermediates(Dim, dum, DestPath,_, PrevInters, [], 0, Used,
-			  Dun, MidInters, part_result(_, DimSetups,_, DimVal)),
-		Dun = const_int, !;
-	    raise_exception(bad_index_number(Dim, makearray))),
+	    make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters, [],
+				Step, Used, Dun, MidInters,
+				part_result([], DimSetups,_, DimVal)),
+		(promote_unit(Dun, const_int);
+		 raise_exception(bad_index_number(Dim, makearray))), !,
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	make_choose_form(Source, keep(LocalInd), 1, Element),
 	    length(Source, DimVal),
@@ -548,32 +550,34 @@ make_intermediates(
 	    MidInters = PrevInters,
 	    NowBuilding = BuildingArrays), !,
 	    LocalLoop = set(LocalInd, loop(DimVal)),
-	    make_intermediates(Element, Target, DestPath, BackSwap, MidInters,
-			NowBuilding, Step, Used, Units, NewInters,
+	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
+			MidInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, EltSetups, Args, SourceRef)),
 	    append(DimSetups, EltSetups, Setups),
 	    get_model_and_loops(EltContext, DestPath, _, EltLoops, EltBase),
 	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
 
 	Source = element(Array, Indx), !,
-	    make_intermediates(Indx, Target, DestPath, BackSwap, PrevInters,
-			       BuildingArrays, Step, Used, Int, MidInters,
-			       part_result(IContext, ISetups, IArgs, IndxRef)),
-	    (promote_unit(Int, int), !,
+	    make_intermediates(Indx, SubId, Target, DestPath, BackSwap,
+			PrevInters, BuildingArrays, Step, Used, Int, MidInters,
+			part_result(IContext, ISetups, IArgs, IndxRef)),
+	    make_intermediates(Array, SubId, Target, DestPath, BackSwap,
+			MidInters, BuildingArrays, Step, Used,Units, NewInters,
+			part_result(AContext, ASetups, AArgs, SourceRef)),
+	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
+	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
+	    (append(TailLoops, [set(IntIndxRef, loop(Limit)) | ItemLoops],
+		    ALoops),
+	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
+		raise_exception(only_works_on_array(Source))),
+	    ((Step = dummy,
+		type_ind(Limit, NeedType);
+	     NeedType = int), !,
+		promote_unit(Int, NeedType), !,
 		IntIndxRef = IndxRef;
 	    Int = real, !, /* for legacy cases */
 	        IntIndxRef = simile_int(IndxRef);
 	    raise_exception(needs_number_index(Source))),
-	    make_intermediates(Array, Target, DestPath, BackSwap, MidInters,
-			   BuildingArrays, Step, Used, Units, NewInters,
-			   part_result(AContext, ASetups, AArgs, SourceRef)),
-	    get_model_and_loops(IContext, DestPath, _, ILoops, IBase),
-	    get_model_and_loops(AContext, DestPath, _, ALoops, ABase),
-	    (append(TailLoops, [set(IntIndxRef, loop(_Limit)) | ItemLoops],
-		    ALoops),
-	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
-		raise_exception(only_works_on_array(Source))),
-	    /* (nonvar(Limit), !; Limit = 0), for prev(0) dimensions */
 	    
 	    append(ASetups, ISetups, Setups),
 	    merge_lists(AArgs, IArgs, Args),
@@ -585,13 +589,13 @@ make_intermediates(
 	Source = (Param=SubExp,Rest), !,
 	    (Param = param(arr(_, Ref, _), _, LoopSlot,_,_); /* parsing */
 	    Param = use_inter(Ref)), /* building code */
-	    make_intermediates(make_inter(SubExp, Ref), Target, 
+	    make_intermediates(make_inter(SubExp, Ref), SubId, Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
 			Step, Used, _Units, MidInters,
 			part_result(XIContext, SubSetups, _,_)),
 	    compile:remove_non_loopers(XIContext, XILoops),
 	    suffix(XILoops, LoopSlot),
-	    make_intermediates(Rest, Target, 
+	    make_intermediates(Rest, SubId, Target, 
 			DestPath, BackSwap, MidInters, BuildingArrays, 
 			Step, Used, Units, NewInters,
 			part_result(SourceContext, ExSetups, Args, SourceRef)),
@@ -644,21 +648,24 @@ make_intermediates(
 		 SourceList = PlSourceList),
 		length(SourceList, Arity),
 		length(Arg_template, Arity),
-	        (function(Op, RUnits, Arg_template);
-		 operator(Op, RUnits, Arg_template);
-		 (function(Op, _, WrongLen); operator(Op, _, WrongLen)),
+		length(ResultList, Arity),
+		SourceRef =.. [Op | ResultList]),
+		make_all_intermediates(SourceList, SubId, Target, DestPath,
+				BackSwap, PrevInters, BuildingArrays, Step,
+				Used, UnitList, NewInters, PartResultList),
+		/* If this was an operator we need to pick one such that the
+		args match up */
+		(fn_or_op(Op, RUnits, Arg_template),
+		    /* first, check my units are right... */
+		    try_units(RUnits, Arg_template, UnitList, Units);
+		 fn_or_op(Op, RUnits, Arg_template),
+		    raise_exception(mismatched_units(Source, Arg_template,
+						     UnitList));
+		 fn_or_op(Op, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
 		    raise_exception(wrong_no_of_args(Source, Op,
 						     Arity, FnArity));
 		 raise_exception(no_such_function(Source, Op))),
-		/* probably need to add dims to units */
-		    length(ResultList, Arity),
-		    SourceRef =.. [Op | ResultList]),
-	    make_all_intermediates(SourceList, Target, DestPath, BackSwap,
-				   PrevInters, BuildingArrays, Step, Used,
-				   UnitList, NewInters, PartResultList),
-	/* first, check my units are right... */
-    propagate_units(Source, RUnits, Arg_template, UnitList, Units),
 	/* Now...if there are contexts in which all these things can be
 	evaluated, return results based on them. */
 	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
@@ -666,7 +673,20 @@ make_intermediates(
 	    raise_exception(cannot_combine_argument_dimensions(Source))),
 	    (Source = sofar(_), !,
 		dissociate(SubArgs, UseArgs);
-	    UseArgs = SubArgs).
+	    UseArgs = SubArgs);
+	raise_exception(undecipherable_operand(Source, SubId)).
+
+unmake_enum_units(SrcUnits, Units) :-
+	SrcUnits = n(_),
+	    Units = const_int;
+	SrcUnits = a(_),
+	    Units = int;
+	Units = SrcUnits.
+
+fn_or_op(Op, RUnits, AUnits) :-
+	var(Op), !;
+	function(Op, RUnits, AUnits);
+	operator(Op, RUnits, AUnits).
 
 dissociate(SubArgs, [later(Arg) | UseArgs]) :- 
 	select(made_at(Arg, _), SubArgs, Rest), !,
@@ -704,17 +724,22 @@ swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 		MadeDim = new_dim).
 
 propagate_units(Source, Lowest, Want, Get, Result) :-
+	try_units(Lowest, Want, Get, Result), !;
+	raise_exception(mismatched_units(Source, Want, Get)).
+	
+
+try_units(Lowest, Want, Get, Result) :-	
 	promote_unit(Lowest, Result),
 /*	member(Result, [boolean, int, real]), */
 	substitute(Lowest, Want, Result, SettleFor),
-	all(inters, promote_unit, [build(Get), build(SettleFor)]);
-	raise_exception(mismatched_units(Source, Get, Want)). 
+	all(inters, promote_unit, [build(Get), build(SettleFor)]). 
 	
 promote_unit(Lo, Hi) :-
 	Lo = Hi;
 	member([Lo, Higher], [[n(_ET), [const_int, int, real]],
 			      [const_int, [int, real]],
-			      [any, [boolean, a(_ET), n(_ET), int, real]],
+			      [any, [boolean, a(_ET), n(_ET),
+				     const_int, int, real]],
 			      [int, [real]]]),
 	member(Hi, Higher).
 
@@ -821,15 +846,21 @@ operator(/, real, [real, real]).
 
 operator(^, int, [int, int]).
 operator(==, boolean, [real, real]).
-operator(=:=, boolean, [boolean, boolean]).
+operator(==, boolean, [boolean, boolean]).
+operator(==, boolean, [a(T), a(T)]).
 operator('!=', boolean, [real, real]).
-operator(<>, boolean, [real, real]).
-operator('=\\=', boolean, [boolean, boolean]).
+operator('!=', boolean, [boolean, boolean]).
+operator('!=', boolean, [a(T), a(T)]).
 operator(<, boolean, [real, real]).
+operator(<, boolean, [a(T), a(T)]).
 operator(<=, boolean, [real, real]).
+operator(<=, boolean, [a(T), a(T)]).
 operator(>, boolean, [real, real]).
+operator(>, boolean, [a(T), a(T)]).
 operator(>=, boolean, [real, real]).
+operator(>=, boolean, [a(T), a(T)]).
 operator(<>, boolean, [real, real]).
+operator(<>, boolean, [a(T), a(T)]).
 
 operator('&&', boolean, [boolean, boolean]).
 operator('||', boolean, [boolean, boolean]).
@@ -847,7 +878,7 @@ use_tcl_proc_for(max).
 /* add_zeros has the mind-numbingly monotonous task of shifting
 all the array elements along one so that wooly-minded treehuggers can address
 the first element as index 1. To relieve the tedium it also checks that
-the list contains only numbers, and returns its (ORIGINAL) dimensions. */
+the list contains only numbers, and returns its (ORIGINAL) dimensions.
 
 zero_copy([], []) :- !.
 
@@ -875,20 +906,29 @@ add_zeros_all([H | T], [NH | NT], Zeros, [N | R], U) :-
 	    U = real),
 	N is M+1.
 
-/* Retursn expressions for a model's indices, those for outer loops first */
-indices_for(set(_,_), []).
+Retursn expressions for a model's indices, those for outer loops first */
+indices_for(set(_, loop(Bound)), []).
+
 indices_for(sm(_,_, Ptr, Spec), Inds) :-
-	Spec = fm_loop(Inds);	  
+	Spec = fm_loop(Inds);
 	Spec = vm_loop(pop, _,_,_), !,
-	    Inds = [ind(Ptr, pop)];
+	    Inds = [ind(Ptr, pop)];	  
 	Spec = vm_loop(Count, _,_,_),
 	    (Count = 0, !,
 		Inds = [];
 	    IndCt is Count - 1,
 		indices_for(sm(_,_, Ptr, vm_loop(IndCt, _,_,_)), Rest),
-		/* Inds = [ind(Ptr, IndCt) | Rest]).  for inner first */
+		/* Inds = [ind(Ptr, IndCt) | Rest].  for inner first */
 		append(Rest, [ind(Ptr, IndCt)], Inds)).
 
+/* might do better to get submodel and use g_a_s to convert */
+type_ind(Ind, Type) :-
+	(integer(Ind); var(Ind)), Type = int;
+	name(Ind, IndStr),
+	append([34 | IndName], [34], IndStr),
+	name(IndArg, IndName),
+	Type = a(IndArg).
+	
 make_choose_form([LastElt], _,_, LastElt) :- !.
 
 make_choose_form([Elt | Elts], Ind, N, Ind==N?Elt:Later) :-
@@ -954,15 +994,15 @@ longest_path([Path | Rest], Longest) :-
 	    suffix(Long, Path), Longest = Path).
 
 /* think about using all for this -- only cumulative inters is hard */
-make_all_intermediates([], _,_,_, I, _,_,_, [], I, []).
+make_all_intermediates([],_,_,_,_, I, _,_,_, [], I, []).
 
-make_all_intermediates([Source | Components], Target, DestPath,
+make_all_intermediates([Source | Components], SubId, Target, DestPath,
 		       Swaps, PrevInters, BuildingArrays, Step, Used,
 		       [Unit | UnitList], NewInters, [Result | ResultList]) :-
-	make_intermediates(Source, Target, 
+	make_intermediates(Source, SubId, Target, 
 			   DestPath, Swaps, PrevInters, BuildingArrays, 
 			   Step, Used, Unit, NextInters, Result),
-	make_all_intermediates(Components, Target, DestPath, Swaps,
+	make_all_intermediates(Components, SubId, Target, DestPath, Swaps,
 			       NextInters, BuildingArrays, Step, Used,
 			       UnitList, NewInters, ResultList).
 

@@ -71,8 +71,9 @@ do_equation_dialog(Win, Part) :-
 	sicstus_format_to_chars("~a for ~a", [TitleForm, Caption], 
 BoxHeaderStr),
 	name(BoxHeader, BoxHeaderStr),
-	list_index_meanings(Part, IndexList),
-	length(IndexList, IndxCount),
+	list_index_meanings(Part, ISpecs),
+	all(dialogue, index_names_and_sizes,
+	    [build(ISpecs), build(IndexList), build(IndxCount)]),
 	create_equation(Win, BoxHeader, IndexList),
 	(get_av_pair(Part, 0, spec, EquationStr), !,
 	    name(Equation, EquationStr);
@@ -116,6 +117,11 @@ BoxHeaderStr),
 	!, destroy_equation.
 	/* last cut necessary because otherwise a retry will cause 
 errors */
+
+index_names_and_sizes(ind_spec(Name, Posn, Dim), Meaning, Dim) :-
+	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [Posn, Name, Dim],
+				MeaningStr),
+	name(Meaning, MeaningStr).
 
 /* might change these one day so, e.g., compartments have
 automatic lower limit of 0, but not yet. */
@@ -178,9 +184,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    UsableInputs = [];
 	ParamWibble = "which is not referred to by any of its parameter names in the equation.",
 	    UsableInputs = InterInputs),
-	(Unit_st = "", !,
-	    UnitFormError = [];
-	get_term(Unit_st, Units, UnitFormError)),
+	get_term(Unit_st, Units, UnitFormError),
 	check_exp(Eqn_st, "Equation", Function, UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
 	(Is_P = 1, \+ Unit_st = "boolean", \+ EqnBase = boolean, !,
@@ -210,22 +214,22 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 						[any, any, any, any],
 			[EqnBase, MinBase, MaxBase, TypeBase], ComboType),
 		     decode_error(PropError, UnitError)),
-	    (ComboType = real, !, ComboUnits = 1; 
+	    (ComboType = real, !, ComboUnits = 1;
+		member(ComboType, [n(_), const_int]), ComboUnits = int;
 		ComboType = ComboUnits),
 	    (nonvar(UnitError),
 		NewUnits = Units;
-	     (Units = ComboUnits;
+	     (Units = ''; Units = ComboUnits;
 	      /* next line allows an int to be quietly made into a real if the
 	      expression is now real */
-	      check_unit(ComboUnits, Units, 2, [])), !,
-		NewUnits = ComboUnits,
-		UnitError = [];
+	      check_unit(ComboUnits, Units, 2, UnitError)), !,
+		NewUnits = ComboUnits;
 	    check_unit(Units, ComboUnits, 2, UnitMatchError),
 		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
 
 	    (UnitError = [], !,
-		(get_actual_sizes(EqnDims, MultInts),
+		(get_actual_sizes(Function, EqnDims, MultInts, _V, _U),
 		    member(Dim, MultInts),
 		    (Dim = var, !,
 			Complaint6 = "This equation evaluates to a list or an array of lists. Model components are not allowed to have list values.";
@@ -236,6 +240,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    Complaint6 = UnitError);
 	get_term(Unit_st, NewUnits, _),
 	    Complaint6 = Complaint5),
+	/* units cannot be const_int because we do not uet have the
+	technology to get values at build time */
 
 	/* Now, is there a reference to a table? If so, load the data 
 for it,
@@ -282,7 +288,7 @@ TableAttr),
 		add_parameter(AffectedNode, 0, min_val, Min),
 		add_parameter(AffectedNode, 0, max_val, Max),
 		update_links_and_vars(New_inputs);
-	fill_equation(Result, NewUnits, EqnDims, Is_P, TableData, TableVals,
+	fill_equation(Result, Units, EqnDims, Is_P, TableData, TableVals,
 		      Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
@@ -411,20 +417,25 @@ process. */
 
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 ParamList, TestError) :-
-	list_of(_, IndxCount, DestInds),
+	reverse(IndxCount, IndxSzs),
 	append(InterInputs, ExpInters, AllInputs),
 	
 	on_exception(ParseException,
 	    (replace_subexps(Equation, dialogue, expand_params,
-			     Fn-AllInputs, top_down, ParamSubs, FullExpr),
+			     AllInputs, top_down, ParamSubs, FullExpr),
 		length(ExpInters, _), !, /* close list end */
 	        (member(input_link(_,_, Param, _, PDims), ExpInters),
 		    \+ Param = '/dest/',
 		    var(PDims), !,
 		    raise_exception(undefined_parameter(Param));
-		make_intermediates(FullExpr, '/dest/',
-				   [sm(_,_,_, fm_loop(DestInds))], _, [],
-				   [], 1, _, Type, Inters,
+	/* hack alert: We are using the parser to get the dimensions of the
+		result. Thses should include enumerated type references,
+		so we do not want to convert these into numbers. Since we
+		are not making code we can use the time step field to tell it
+		this by setting it to 'dummy'. */
+		make_intermediates(FullExpr, Fn, '/dest/',
+				   [sm(_,_,_, fm_loop(IndxSzs))], _, [],
+				   [], dummy, _, Type, Inters,
 				   part_result(Context, _,_,_)))),
 	    decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
@@ -465,10 +476,8 @@ check_dim_match(P, Q) :- P=Q; Q=0.
 
 get1st(var_pair(A, _), A).
 
-expand_params(Node-InterInputs, Param, DoneExpr, Recurse) :-
-	(enum_type_ref(Param, Node, _Value, Type), !,
-	    DoneExpr = param(arr(_, Param, []), Type, [], _, true);
-	get_solo_list_depth(Param, _),
+expand_params(InterInputs, Param, DoneExpr, Recurse) :-
+	(get_solo_list_depth(Param, _),
 	/* when making dummy links for explicit intermediate results, check
 	the 1sr field (influence id) uis a free var, and if so, use the
 	4th field to hold the dims */
@@ -539,6 +548,11 @@ decode_error(ParseError, TestError) :-
 	Type = mismatched_units, !,
 	    More = [Get, Want],
 	    sicstus_format_to_chars("The arguments of \"~w\" have the following types: ~w. These cannot be matched to the expected argument types for this function, which are ~w.", [SimpleError, Get, Want], TestError);
+	Type = undecipherable_operand, !,
+	    More = [Var],
+	    find_all_comps(Sm, Var),
+	    caption_for(Sm, SmCapt),
+	    sicstus_format_to_chars("There is no definition for ~a in submodel ~a", [SimpleError, SmCapt], TestError);
 	/* default case */
 	    sicstus_format_to_chars("~w : ~a", [SimpleError, Type], TestError)).
 
