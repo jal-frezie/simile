@@ -23,6 +23,7 @@ sicstus_use_module( [library(ordsets),library(lists),
 :- dynamic(new_exec_for/1).
 
 compile( Language, Parent, DestDir) :-
+	tk_scrub_run(Parent, 0),
 	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),

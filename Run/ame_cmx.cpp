@@ -728,6 +728,7 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
       delete dllProblem;
       return TCL_ERROR;
     }
+    delete *connectDataPtr;
   return TCL_OK;
 }
 
