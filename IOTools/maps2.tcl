@@ -9,24 +9,6 @@
 
 # by Jasper Taylor, March 2001
 
-#$Log: maps2.tcl,v $
-#Revision 1.3  2003/02/12 17:31:58  jaspert
-#Moved a common IO tool procedure GetQuadList from Polygons.tcl to library
-#file maps2.tcl
-#
-#Revision 1.2  2002/10/18 14:24:47  jmm
-#proc GetCanvas added returns canvas for printing etc.
-#absolute namespaces used, i.e. start with ::
-#
-#Revision 1.1  2002/07/18 14:12:14  jmm
-#Required for polygon.tcl. All helpers using maps.tcl should eb updated to use maps2.tcl
-#
-#Revision 1.0  2002-05-12 22:19:26+01  jmm
-#Initial revision
-#
-#Revision 1.3  2002-04-29 17:26:49+01  jmm
-#Added RCS Log directive
-#
 
 namespace eval ::maptools2 {
 
@@ -125,6 +107,20 @@ proc GetQuadList {inds args} {
     }
 }
 
-namespace export SetColours InsertLegend ColourScale GetQuadList
+proc Flatten {nested flat} {
+    for {set i 1} {$i < [llength $nested]} {incr i 2} {
+        set subi [lindex $nested $i]
+        if {[string match {} $subi]} {
+            lappend flat {}
+        } elseif {[llength $subi] == 1} {
+            lappend flat $subi
+        } else {
+            set flat [Flatten $subi $flat]
+        }
+    }
+    return $flat
+}
+
+namespace export SetColours InsertLegend ColourScale GetQuadList Flatten
 }
 
