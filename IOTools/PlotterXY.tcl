@@ -63,6 +63,7 @@ namespace eval ::$keyValue {
         set plot($w,Yminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
         set plot($w,Ylabels) {}
         set plot($w,Yvars)   {}
+        set plot($w,Xvars)   {}
         set plot($w,redraw) 0
         set plot($w,topright) 1
         set plot($w,xlength) 350
@@ -348,24 +349,7 @@ namespace eval ::$keyValue {
         $w.canvas create line $x0 $y0 $x0 $y1 \
                 -tags {axis_line scalable markable yslidable}
         draw_Yaxis $w
-        
-        ### Blanking rectangles; # todo 2000 too big? jmm elsewhere too
-        set x2 [expr $x1+5]
-        $w.canvas create rectangle $x2 0 2000 2000 \
-                -tags {blanket blanket_right} -outline {}\
-                -fill $plot($w,canvas_colour)
-        $w.canvas create rectangle 0 0 $x0 2000 \
-                -tags {blanket blanket_left yslidable} -outline {}\
-                -fill $plot($w,canvas_colour)
-        set y2 [expr $y1]
-        $w.canvas create rectangle 0 0 2000 $y2 \
-                -tags {blanket blanket_top} -outline {}\
-                -fill $plot($w,canvas_colour)
-        set y2 [expr $y0+5]
-        $w.canvas create rectangle 0 $y2 2000 2000 \
-                -tags {blanket blanket_bottom xslidable} -outline {}\
-                -fill $plot($w,canvas_colour)
-        
+           
         
         ### Draw the top and right edges of the graph area
         
@@ -410,7 +394,6 @@ namespace eval ::$keyValue {
         ### Apply graticule and values to axis.
         # drawGraticule $w $Xintercept $Yintercept
         
-        $w.canvas raise blanket
         $w.canvas raise toplevel
         
         ### Bindings
@@ -516,11 +499,9 @@ namespace eval ::$keyValue {
             
             set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]; #jmm
             set x2 [expr $x1+5]; # todo 2000 seems a bit big jmm
-            $w.canvas coords blanket_right $x2 0 2000 2000
             
             set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]; #jmm
             set y2 [expr $y0+5]
-            $w.canvas coords blanket_bottom 0 $y2 2000 2000
         }
     }
     
