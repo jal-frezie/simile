@@ -458,7 +458,9 @@ make_intermediates(
 	    Units = ArgUnits,
 	    ReadyContext = ClearContext;
 	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
-	    (member(Functor, [any, all]), !,
+	    (Functor = any, ArgUnits = cond_spec, !,
+		[RUnits | ArgTemplate] = [cond_spec, cond_spec];
+	     member(Functor, [any, all]), !,
 		[RUnits | ArgTemplate] = [boolean, boolean];	
 		[RUnits | ArgTemplate] = [int, int]),
 	    append(NowBuilding, DestPath, ReadyContext),
