@@ -888,7 +888,7 @@ promote_unit(Lo, Hi) :-
 	promote_unit(Med, Hi).
 
 uses_as(any, Type) :-
-	member(Type, [boolean, a(_ET), n(_ET)]).
+	member(Type, [boolean, cond_spec, a(_ET), n(_ET)]).
 % uses_as(boolean, cond_spec).
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
