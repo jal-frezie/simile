@@ -741,11 +741,17 @@ proc LoadTableData {tableSpec} {
             foreach column $indexColumns {
                 set newIndex [lindex $entryList $column]
 		# enquote the above if indices of llength 1 are needed
-                lappend arrayIndex $newIndex
-                if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
-                    lappend maxIndices($indexCount) $newIndex
-                }
-                incr indexCount
+		if {[llength $newIndex]} {
+		    lappend arrayIndex $newIndex
+		    if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
+			lappend maxIndices($indexCount) $newIndex
+		    }
+		    incr indexCount
+		} else {
+		    # if there is an empty index field ignore the line
+		    set badIndex 1
+		    break
+		}
             }
         } else {
             incr lineCount
@@ -754,8 +760,16 @@ proc LoadTableData {tableSpec} {
             set indexCount 1
         }
         
-        set paramArray(top,[join $arrayIndex ,]) \
-	    [EnquoteIfNonNumeric [lindex $entryList $headerColumn]]
+        # ignore empty entries
+	if {[info exists badIndex]} {
+	    unset badIndex
+	} else {
+	    set potEntry [lindex $entryList $headerColumn]
+	    if {[llength $potEntry]} {
+		set paramArray(top,[join $arrayIndex ,]) \
+		    [EnquoteIfNonNumeric $potEntry]
+	    }
+	}
     }
     
     for {set idxIdx 0} {$idxIdx < $indexCount} {incr idxIdx} {
@@ -791,10 +805,11 @@ proc ArrayToList {topArray indexSoFar otherMaxes} {
 				    [lrange $otherMaxes 1 end]]
         }
     } else {
+# See if we can get away without setting missing values to 0
         if {[info exists array($indexSoFar)]} {
 	    set result $array($indexSoFar)
         } else {
-            set result 0
+#            set result 0
         }
     }
     return $result

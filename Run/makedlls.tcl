@@ -9,9 +9,9 @@
 # Compiler that will be used to make the stub for Windows
 set compiler_for_windows gnu
 # edition: evaluation, teaching, standard or enterprise
-set edition standard
+set edition teaching
 # date of final expiry: {hh:mm D M Y} or {} for permanent
-set final_expiry {}
+set final_expiry {00:00 01 Jan 2005}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
@@ -47,7 +47,7 @@ if $onUnix {
     # them error messages to the console but does not set LD_LIBRARY_PATH.
     set TARGET ${STUBS}/libame_dll$MAJ.$MIN[info sharedlibextension]
     if {[string match Darwin $tcl_platform(os)]} {
-        eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/Headers ./ame_cmx.cpp}
+        eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
         exec g++ -dynamiclib -o $TARGET ame_cmx.o -ldl -framework Tcl
     } else {
         eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}

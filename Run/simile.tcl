@@ -1,4 +1,4 @@
-#!/usr/local/lib/Simile/System/bin/wish
+#!/home/jaspert/Simile/System/bin/wish
 # SIMILE batch file
 
 # If there is an arg, it is the model to start with. Because this is sourced

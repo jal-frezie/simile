@@ -34,6 +34,7 @@ proc MakeHelperMenu {} {
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
     set ioDir [file join $custom(prefDir) IOTools]
+do_in_editor puts "locals in $ioDir"
     if {[file exists $ioDir]} {
 	cd $ioDir
 	AddHelperSublist $fm.sub2 "Local" l
