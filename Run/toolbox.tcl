@@ -1164,14 +1164,16 @@ proc PrintNow {winId} {
     global env tcl_platform
     
     if {[string match windows $tcl_platform(platform)]} {
+	set oldDir [pwd] ;# apparently printing can change directory
 	package require gdi
 	package require printer
 
 # print routines still seem unable to handle negative coordinates so
 # put image through prep mech
-    PrepForExport $winId there
-    printer::print_widget $winId 0
-    PrepForExport $winId back
+	PrepForExport $winId there
+	printer::print_widget $winId 0
+	PrepForExport $winId back
+	cd $oldDir
    } else {
     set tempPSFile $env(SIMTMPDIR)/temp.ps
     SpitPS $winId $tempPSFile
@@ -1240,9 +1242,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm add command -label New -command "MenuSelect $winid.canvas file new"\
             -accelerator "Ctrl+N"
     AddAccelerator $winid file New "<Control-n>"
-    $fm add command -label "New top-level" -command "MenuSelect $winid.canvas file new_toplevel"\
-            -accelerator "Ctrl+T"
-    AddAccelerator $winid file New "<Control-t>"
+    $fm add command -label "New top-level" -command "MenuSelect $winid.canvas file new_toplevel"
     $fm add command -label Open... -command "MenuSelect $winid.canvas file open"\
             -accelerator "Ctrl+O"
     AddAccelerator $winid file Open... "<Control-o>"

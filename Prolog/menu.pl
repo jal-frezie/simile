@@ -855,22 +855,11 @@ kill_everything :-
 	fail;
 	true.
 	
-/* If we know we are finished, no need to do all the deletion, just exit */
-wkill_everything :-
-	Sub shows_model Model,
-	    (is_toplevel(Model),
-		\+ check_deletable(Win, Model);
-	    destroy_window(Sub),
-	        kill_window(Sub),
-		scrub_autosave(Model),
-		fail);
-	exit_AME,
-	    user:wind_up.
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Target) :-
 	get_default_export_name(Target, ".sml", Handle),
-	sicstus_format_to_chars("Component ~a has not been saved since it was last modified. Save it now?", [Handle], Query),
+	caption_for(Target, Title),
+	sicstus_format_to_chars("Component ~a (in ~a) has not been saved since it was last modified. Save it now?", [Handle, Title], Query),
 	do_dialogue("Save changes", question, Query, yesnocancel, Reply),
 	(Reply = yes, do_save(Target, false);
 	Reply = no).
