@@ -257,13 +257,18 @@ proc AddMenuPopup {widget list y X Y new} {
 }
 
 proc PostPopup {X Y} {
+    global tcl_platform
     if {[winfo exists .popup]} {
         destroy .popup
     }
-    toplevel .popup -width 1 -height 1 -bd 1 -bg black
+    if [string match Darwin $tcl_platform(os)] {
+        toplevel .popup
+        ::tk::unsupported::MacWindowStyle style .popup help none
+    } else {
+        toplevel .popup -width 1 -height 1 -bd 1 -bg black
 # leaves one pixel of black showing round edge of messages
-    wm overrideredirect .popup 1
-
+        wm overrideredirect .popup 1
+    }
     # This moves the popup window to whichever quadrant of the moused-over
     # component is all on the screen. It sticks it to the bottom left to start with
     # so it doesn't grab the focus, then updates so the requested size can be found
