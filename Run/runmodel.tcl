@@ -709,6 +709,16 @@ proc SetRunParams {node runParams} {
 proc StartRun {node} {
     global runState window_info helperTable running_c
     # ShowMessage debug info enter(start_run) ok
+#    set runState($node,currentWin) $winId ;# enables rebuild from run control
+    if {[info exists helperTable($node,whichRunEnv)]} {
+	set fpParent $helperTable($node,whichRunEnv)
+    } else {
+	set fpParent [FindNodeTopWin $node]
+    }
+    if {![FileParamDialogue $node $fpParent 0]} {
+	return 0
+    }
+
     if {[info exists runState($node,currentTime)]} {
         if {$runState($node,execTime) != $runState($node,currentTime)} {
             set runState($node,execTime) [expr $runState($node,execTime) + \
@@ -735,15 +745,7 @@ proc StartRun {node} {
 
     set runState($node,currentTime) 0.0
     set runState($node,timeAtEval) 0.0
-#    set runState($node,currentWin) $winId ;# enables rebuild from run control
-    if {[info exists helperTable($node,whichRunEnv)]} {
-	set fpParent $helperTable($node,whichRunEnv)
-    } else {
-	set fpParent [FindNodeTopWin $node]
-    }
-    if {![FileParamDialogue $node $fpParent 0]} {
-	return 0
-    }
+
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
         raise [set topWin [Makemre $node]]
