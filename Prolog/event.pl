@@ -300,23 +300,7 @@ bar_edit_menu(Wid) :-
 	(Point = [_,_], !,
 	    CanAddNode = 1;
 	 CanAddNode = 0),
-	    
-	(contains(Comp, Lit), \+ Lit = Comp,
-	    get_highlit_obj(N, Lit),
-	    N<2, !,
-	    Cuttable = 1,
-	    Dellable = 1;
-	contains(Comp, Lit), \+ Lit = Comp,
-	    get_highlit_obj(2, Lit), !,
-	    Cuttable = 0,
-	    Dellable = 1;
-	Cuttable = 0,
-	    Dellable = 0),
-	use_pref_dir(Dir),
-	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	(output:my_file_exists(CopyFile), Point = [_,_], !,
-	    Pastable = 1;
-	Pastable = 0),
+	set_selection_abilities(Comp),    
 	Wid shows_model Model,
 	update_ability(Model, none, edit, '{Create new}', CanCreate),
 	update_ability(Model, none, 'edit.add', 'Compartment', CanAddNode),
@@ -324,13 +308,7 @@ bar_edit_menu(Wid) :-
 	update_ability(Model, none, 'edit.add', '{Role arrow}', CanAddNode),
 	update_ability(Model, none, 'edit.add', '{Membership control}',
 		       CanAddNode),
-
-	update_ability(Model, none, edit, 'Cut', Cuttable),
-	update_ability(Model, none, edit, 'Copy', Cuttable),
-	update_ability(Model, none, edit, 'Paste', Pastable),
-	update_ability(Model, none, edit, 'Delete', Dellable),
-	update_ability(Model, none, edit, '{Reroute links}', Dellable),
-	update_ability(Model, none, edit, '{Align to grid}', Dellable).
+	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode).
 
 /* restore_edit_menu makes sure it will be appropriate for a menubar
 selection, i.e., top submodel and corner position */
@@ -1598,6 +1576,7 @@ select_bagged(Rect, Model) :-
 		fits_inside(Rect, Outer)),
 	    \+ (get_highlit_obj(N, Caught), N<2),
 	    do_colours(Caught, on)),
+	set_selection_abilities(Model),
 	fail.
 /*
 zoom_to_area :-
@@ -1839,7 +1818,7 @@ delete_net(Top) :-
 	    normalize(ExGhost),
 	    change_ghosthood(ExGhost),
 	    fail;
-	true.
+	set_selection_abilities(Top).
 
 deletable(Top, FollowArcs, Tgt) :-
 	contains(Top, Tgt), !;
@@ -1863,10 +1842,39 @@ kill_primitive(Target) :-
 	    update_captions(NewVisLook),
 	    fail.
 
-embrace(_, Obj) :-
+embrace(Wid, Obj) :-
+	restore_edit_menu(Wid),
+	menu_submodel_will_be(Wid, Comp, Point),
+	retractall(menu_submodel_is(_, _)),
+	assert(menu_submodel_is(Comp, Point)),
+	set_selection_abilities(Comp),
 	(Obj = 0, !;
 	give_focus(Obj) /* ,
 	highlight(Obj, 0) */).
+	
+set_selection_abilities(Comp) :-
+	(contains(Comp, Lit), \+ Lit = Comp,
+	    get_highlit_obj(N, Lit),
+	    N<2, !,
+	    Cuttable = 1,
+	    Dellable = 1;
+	contains(Comp, Lit), \+ Lit = Comp,
+	    get_highlit_obj(2, Lit), !,
+	    Cuttable = 0,
+	    Dellable = 1;
+	Cuttable = 0,
+	    Dellable = 0),
+	use_pref_dir(Dir),
+	append_atoms(Dir, '/clipboard.pl', CopyFile),
+	(output:my_file_exists(CopyFile), !,
+	    Pastable = 1;
+	Pastable = 0),
+	update_ability(Model, none, edit, 'Cut', Cuttable),
+	update_ability(Model, none, edit, 'Copy', Cuttable),
+	update_ability(Model, none, edit, 'Paste', Pastable),
+	update_ability(Model, none, edit, 'Delete', Dellable),
+	update_ability(Model, none, edit, '{Reroute links}', Dellable),
+	update_ability(Model, none, edit, '{Align to grid}', Dellable).
 	
 abandon :-
 	finish_old_edit(none).

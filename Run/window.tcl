@@ -318,7 +318,6 @@ proc DragObj {winId xco yco} {
     prolog [list tk_drag( $virtx , $virty )]
 }
 
-
 proc ReleaseObj {winId xco yco} {
     set canx [Unscale $winId [$winId canvasx $xco]]
     set cany [Unscale $winId [$winId canvasy $yco]]
@@ -669,8 +668,8 @@ proc AcceleratorState {winName menu item state} {
     if {[info exists accelerator($menu,$item)]} {
         if {[string match normal $state]} {
             bind $winName $accelerator($menu,$item) \
-                    [list if "\[DoingSelection $winName\]" \
-                    [${winName}top.$menu entrycget $item -command]]
+		[list if "\[DoingSelection $winName\]" \
+                   [${winName}top.$menu entrycget $item -command]]
         } else  {
             bind $winName $accelerator($menu,$item) {}
         }
@@ -1634,10 +1633,9 @@ proc DragComponentIn {winId button x y} {
 #	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
 #	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
 #    }
-
     focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
-    
+
     # Now simulate what Prolog would get from an add component menu selection
     if {$target} {
         set node [ExtractPrologName $winId $target]

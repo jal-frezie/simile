@@ -610,7 +610,8 @@ menu_handle(Win, edit, paste) :-
 	event:snap_to_grid(Pt, GPt),
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	stick_model_in(Win, Model, CopyFile, insert(GPt)).
+	stick_model_in(Win, Model, CopyFile, insert(GPt)),
+	event:set_selection_abilities(Model).
 	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue(Win),
@@ -719,7 +720,7 @@ select_all_in(Model, Way) :-
 		get_highlit_obj(0, Bit),
 		event:do_colours(Bit, off)),
 	    fail;
-	true.
+	event:set_selection_abilities(Model).
 	
 invert_seln_in(Model) :-
 	(setof(Bit, 
@@ -733,7 +734,7 @@ invert_seln_in(Model) :-
 	member(Node, NewSel),
 	    event:do_colours(Node, on),
 	    fail;
-	true).
+	event:set_selection_abilities(Model)).
 
 find_innermost_selection_holder([Comp | Rest], Innermost, TempSels) :-
 	find_all_comps(Model, Comp),
