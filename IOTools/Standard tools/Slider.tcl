@@ -96,6 +96,7 @@ namespace eval slide139 {
 		} ENUMERATED {
 		ComboBox $f.combo -values $possVals -editable 0 \
 		    -text [lindex $possVals [expr $defVal-1]] \
+		    -textvariable comboTypes($node) \
 		    -modifycmd [namespace code [list SetChoiceNumber $f.combo $node]]
 		pack $f.combo -side right -fill x -expand true
 		pack [label $f.caption -text [lindex $levels end]]
@@ -155,6 +156,7 @@ namespace eval slide139 {
 		    pack [frame $f.elt$index] -fill x -expand true
 		    ComboBox $f.elt$index.c -values $possVals -editable 0 \
 			-text [lindex $possVals [expr $defVal-1]] \
+			-textvariable comboTypes($node,$index) \
 			-modifycmd [namespace code "SetChoiceNumber \
                              $f.elt$index.c $node,$index"]
 		    pack $f.elt$index.c -side right -fill x -expand true

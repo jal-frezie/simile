@@ -976,12 +976,12 @@ proc rsearch {list tgt} {
     }
 }
 
-# need new version that 
 proc ListToArray {topNode tgt subs trans dims list} {
 #puts "Go! tgt $tgt trans $trans list $list"
 # skip over any vm arrays, their indices will not appear
 # in calls for values, but keep the translation list in sync
 # ... string match stops cleanly at end of list
+    global comboTypes
     while {[string match MEMBERS [lindex $dims 0]]} {
 	set trans [lrange $trans 1 end]
 	set dims [lrange $dims 1 end]
@@ -993,8 +993,10 @@ proc ListToArray {topNode tgt subs trans dims list} {
 		error [list "Missing value"]
 	    } 1 {
 		if {![string last ,NOW $subs 3]} {
-		    EnumTypeToNumber [InputVarFor $topNode $tgt] \
-			$tgt[string range $subs 4 end] $list $thisTrans
+		    set idAndSubs $tgt[string range $subs 4 end]
+		    set comboTypes($idAndSubs) $list
+		    EnumTypeToNumber [InputVarFor $topNode $tgt] $idAndSubs \
+			$list $thisTrans
 		    return 1
 		} else {
 		    EnumTypeToNumber paramData $tgt$subs $list $thisTrans
