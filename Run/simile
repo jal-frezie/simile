@@ -4,13 +4,10 @@
 
 if expr $0 : '.*/'; then
     # program invoked by filename
-    if expr "$0" : '[/~]'; then
-        # filename is absolute path: use as target
-	LOC="$0";
-    else
-	# filename is relative path : prepend dir for target
-	LOC="`pwd`/$0";
-    fi
+    OLDDIR=`pwd`
+    cd `dirname "$0"`
+    LOC=`pwd`/`basename "$0"`
+    cd "$OLDDIR"
 else
     # program invoked by command: find target
     LOC=`which $0`;
