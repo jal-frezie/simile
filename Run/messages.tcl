@@ -1,6 +1,6 @@
 proc LoadUserFunctionMessages {} {
     set oldDir [pwd]
-    cd ../functions/help
+    cd ../Functions/Help
     
     foreach file [glob -nocomplain *.tcl] {
         if [catch {source $file} wibble] {
@@ -275,7 +275,7 @@ set url(examples/control.htm) {Process control}
 set url(examples/supply.htm) {Supply and demand}
 
 set oldDir [pwd]
-cd ../functions/help
+cd ../Functions/Help
 
 set MessageFiles [glob -nocomplain *.tcl]
 foreach file [glob -nocomplain *.tcl] {
