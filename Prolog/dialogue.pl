@@ -73,9 +73,6 @@ do_equation_dialog(Win, Part) :-
 	ClickedObj is_of_sort boolean_value, !,
 	    TypeBase = boolean,
 	    TitleForm = 'Condition';
-	ClickedObj is_of_sort boolean_value, !,
-	    TypeBase = boolean,
-	    TitleForm = 'Condition';
 	ClickedObj is_of_sort level, !, /* other than the above */
 	    TypeBase = real,
 	    TitleForm = 'Value';
@@ -274,7 +271,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	          (\+ (ComboBase = any, Is_P = 2),
 			  member(TypeBase, [any, a(_), int, boolean]);
 		      TypeBase = real)),
-		promote_arg(ComboBase, TypeBase, ComboUnits), !,
+		(promote_arg(ComboBase, TypeBase, ComboUnits);
+		    ComboBase = boolean, TypeBase = cond_spec), !,
 		(nonvar(ComboUnits); ComboUnits = TypeBase);
            sicstus_format_to_chars("The equation for a component of this type must have units which can be used as ~w. The values entered have units of ~w, which cannot be converted.", [TypeBase,ComboBase], UnitError));
 	    true),
@@ -729,7 +727,8 @@ decode_error(ParseError, TestError) :-
 			   [SimpleError], TestError);
 	Type = mismatched_units, !,
 	    More = [Get, Want],
-	    sicstus_format_to_chars("The arguments of \"~w\" have the following types: ~w. These cannot be matched to the expected argument types for this function, which are ~w.", [SimpleError, Get, Want], TestError);
+	    SimpleError =.. [Fn | _],
+	    sicstus_format_to_chars("The arguments of the function \"~a\" in the term \"~w\" have the following types: ~w. These cannot be matched to the expected argument types for this function, which are ~w.", [Fn, SimpleError, Get, Want], TestError);
 	Type = wrong_param_units, !,
 	    More = [UseType, DefType],
 	    sicstus_format_to_chars("The equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [SimpleError, UseType, DefType], TestError);
