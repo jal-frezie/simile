@@ -668,8 +668,7 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     $w dtag $backBox currently_editable
     set textItem [$w create text $textX $textY -text $capt -fill $textColor \
 	-font $useFont -anchor $looks($ptype,textanchor) \
-	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info \
-backbox_is($backBox)"]
+	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"]
     eval {$w coords $backBox} [$w bbox $textItem]
 }
 

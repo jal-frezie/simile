@@ -887,9 +887,11 @@ proc CanvasEditBind { c } {
 }
 
 proc FixBackBox {c textItem} {
-    regexp {backbox_is\(([^\)]+)\)} [$c gettags $textItem] all backBox
-    if {[info exists backBox]} {
-	eval {$c coords $backBox} [$c bbox $textItem]
+    set nid [ExtractPrologName $c $textItem]
+    foreach backBox [$c find withtag $nid] {
+	if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
+	    eval {$c coords $backBox} [$c bbox $textItem]
+	}
     }
 }
 
