@@ -302,7 +302,8 @@ find_reference(Object, Index, Remote) :-
 /* do_dialogue: Takes a string to display and a list of button identifiers, and puts up a modal dialogue box containing them. The last value is the identifier of the button that was hit to end the dialogue. */
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-do_dialogue(Header, Icon, Blurb, Buttons, Response) :-
+do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
+	escape_curlies(RiskyBlurb, Blurb),
 	output:safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
 			  br(chars(Blurb)), Buttons], Feedback),
 	name(Response, Feedback).

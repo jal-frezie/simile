@@ -2,7 +2,8 @@
 **** Text Processing - utlities for building the compiled output
 *******************************************************************************/
 
-sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3]).
+sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3,
+		      escape_curlies/2]).
 
 sicstus_use_module( [library( lists ), utility, sp_only] ).
 
@@ -78,3 +79,20 @@ uppercase(L, H) :-
 lowercase(L, H) :-
 	"a" =< H, H =< "z";
 	\+ L = c, (223 =< H, H =< 246; 248=<H, H=<255).
+
+escape_curlies(Risky, Safe) :-
+	[BS] = "\\",
+	append(Go, [CB | Stop], Risky),
+	member(CB, "{}"),
+	/* curly is already escaped if preceded by an even number of BSs */
+	\+ (append(Normal, BSes, Go),
+	       \+ (member(NotNotBS, BSes),
+		      \+ NotNotBS = BS),
+		suffix(NotBS, Normal),
+		\+ NotBS = BS,
+		length(BSes, Odd),
+		Odd is 2*(Odd//2)+1), !,
+	    append(Go, [BS, CB | Stop], Better),
+	    escape_curlies(Better, Safe);	  
+	Safe = Risky.
+	
