@@ -17,26 +17,30 @@ package provide SimileAutoObj 1.0
 package require Itcl
 namespace import ::itcl::*
 
-if {[string match windows $tcl_platform(platform)]} {
-    package require tcom
-    ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
-}
+namespace current
 
 package require Tk
 
+if {[string match windows $tcl_platform(platform)]} {
+    package require tcom
+    #tk_messageBox -message "[file join [file dirname [info script]] SimileAutoObj.tlb]"
+    #    ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+}
 
+#tk_messageBox -message "[info script]\n\
+#        [file dirname [info script]]/../../../Run/simile.tcl"
+#C:/Documents and Settings/jmm/My Documents/Program Files/Simile/System/lib/SimileAutoObj/SimileAutoObj.itcl
 set SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
 
-###############################################################################
 set argc 0; # simile.tcl expects to be called from the command line - tell it no args
-source "[pwd]/../../Run/simile.tcl"
-#puts "sourced"
-###############################################################################
+set argv {}
+source "[file dirname [info script]]/../../../Run/simile.tcl"
 
 
 class ModelWindowImpl {
     
-    #variable winId ?init
+    variable modelNode node00000
+    variable desktop /Desktop1
     
     private method GetModelWindow {} {
         global window_info
@@ -44,7 +48,7 @@ class ModelWindowImpl {
     }
     
     public method CreateHelperWindow {helperId helperTitle} {
-        set winId [NewHelperWindow node00000 $helperId $helperTitle]
+        set winId [do_for_node $modelNode NewHelperWindow $modelNode $helperId $helperTitle]
         ${helperId}::initialize $winId
         if {[PrefValue custom(helperManager) helperManager]} {
             ::RunEnv::ChildrenFocusParent $winId
@@ -54,6 +58,7 @@ class ModelWindowImpl {
     
     constructor {} {
         Hide
+        UseMRE false
     }
     
     public method Hide {} {
@@ -78,7 +83,7 @@ class ModelWindowImpl {
     }
     
     public method FileOpenDlg {} {
-        MenuSelect [GetModelWindow].canvas file
+        MenuSelect [GetModelWindow].canvas file open_all
     }
     
     public method FileOpen {modelFile} {
@@ -124,8 +129,8 @@ class ModelWindowImpl {
     public method BuildCPP {} {
         # builds the model with CPP and returns a run control command/object
         MenuSelect [GetModelWindow].canvas file run_c
-        set rc [RunControlImpl ::runControl $this]
-        return $rc
+        #set rc [RunControlImpl ::runControl $this]
+        #return $rc
     }
     
     public method BuildTcl {} {
@@ -138,39 +143,74 @@ class ModelWindowImpl {
     public method ListEquations {} {
         MenuSelect [GetModelWindow].canvas file list_eqns
     }
+
+    public method LoadParams {filepath} {
+        #MergeParams {topNode smPath oldPath interactive}
+        MergeParams $modelNode $desktop  $filepath 0
+    }
+    
 }
 
-class RunControlImpl {
-    
+class HelperController {
+    # Class providing basic control of existing helpers
+    # The constructor DOES NOT create a helper use class Helper
     variable winId;    #Tk path to RunControl window
     variable keyvalue; # RunControl namespace
     variable modelNode node00000
     
-    constructor {modelWindow} {
-        global runState
-        global helperTable
-        set keyvalue $helperTable(RunControl)
-        set winId $runState($modelNode,helperId)
-        Hide
+    destructor {
+        destroy $winId
     }
-    
     public method Show {} {
-        wm deiconify $winId
+        do_for_node $modelNode wm deiconify $winId
     }
     
     public method Hide {} {
-        wm withdraw $winId
+        puts "HelperController Hide $winId; $modelNode"
+        do_for_node $modelNode wm withdraw $winId
+    }
+    
+    public method Clear {} {
+        $keyvalue::clear
+    }
+}
+
+class Helper {
+    
+    inherit HelperController
+    
+    constructor {modelWindow winTitle} {
+        puts "Helper constr $modelWindow [KeyValue] $winTitle"
+        #do_for_node $modelNode
+        set winId [$modelWindow CreateHelperWindow [KeyValue] $winTitle]
+        Hide
+    }
+    
+    # All derived classes must reimplement with correct keyvalue
+    public method KeyValue {} {
+        return abstractHelper
+    }
+}
+
+class RunControlImpl {
+    
+    inherit HelperController
+    
+    constructor {modelWindow} {
+        set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
+        set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
+        Hide
     }
     
     public method Run {} {
         # returns the time to complete (to run the simulation)
-        set timestr [time [list ${keyvalue}::SetMode $winId start]]
+        set timestr [time [list do_for_node $modelNode ${keyvalue}::SetMode $winId start]]
         set musec [lindex $timestr 0]
         return "[expr {$musec/1e6}] sec"
     }
     
     public method Reset {} {
-        ${keyvalue}::SetMode $winId reset
+        do_for_node $modelNode ${keyvalue}::SetMode $winId reset
     }
     
     # No point in a stop command as the Run is not script interuptable
@@ -180,67 +220,57 @@ class RunControlImpl {
     
     public method SetTimeUnits {units} {
         # units: unit second minute hour day week month year Ma
-        global runState
-        set runState($modelNode,timeUnit) $units
+        do_for_node $modelNode set ::runState($modelNode,timeUnit) $units
     }
     
     public method GetTimeUnits {} {
         global runState
-        return $runState($modelNode,timeUnit)
+        return [do_for_node $modelNode set ::runState($modelNode,timeUnit)]
     }
     
     public method GetIntegrationMethod {} {
-        global runState
-        return $runState($modelNode,intMethod)
+        #return $runState($modelNode,intMethod)
+        return [do_for_node $modelNode set ::runState($modelNode,intMethod)]
     }
     public method SetIntegrationMethod {method} {
-        global runState
-        set runState($modelNode,intMethod) $method
+        do_for_node $modelNode set ::runState($modelNode,intMethod) $method
     }
     
     public method SetIntegrationMethodEuler {} {
-        global runState
-        set runState($modelNode,intMethod) Euler
+        do_for_node $modelNode set ::runState($modelNode,intMethod) Euler
     }
     
     public method SetIntegrationMethodRungeKutta {} {
-        global runState
-        set runState($modelNode,intMethod) {4th-order Runge-Kutta}
+        do_for_node $modelNode set ::runState($modelNode,intMethod) {4th-order Runge-Kutta}
     }
     
     public method SetExecuteFor {time} {
-        global runState
-        set runState($modelNode,execTime) $time
+        do_for_node $modelNode set ::runState($modelNode,execTime) $time
     }
     
     public method GetExecuteFor {} {
-        global runState
-        return $runState($modelNode,execTime)
+        return [do_for_node $modelNode set ::runState($modelNode,execTime)]
     }
     
     public method GetCurrentTime {} {
-        global runState
-        return $runState($modelNode,currentTime)
+        return [do_for_node $modelNode set ::runState($modelNode,currentTime)]
     }
     
     public method SetDisplayInterval {timeStep} {
-        global runState
-        set runState($modelNode,displayInt) $timeStep
+        do_for_node $modelNode set ::runState($modelNode,displayInt) $timeStep
     }
     
     public method GetDisplayInterval {} {
-        global runState
-        return $runState($modelNode,displayInt)
+        return [do_for_node $modelNode set ::runState($modelNode,displayInt)]
     }
     
     public method GetNumberOfTimeSteps {} {
-        return [GetPhaseCount $modelNode]
+        return [do_for_node $modelNode GetPhaseCount $modelNode]
     }
     
     public method SetTimeStep {number timestep} {
-        global runState
-        if {0<$number && $number<=[GetPhaseCount $modelNode]} {
-            set runState($modelNode,update${number}) $timestep
+        if {0<$number && $number<=[GetNumberOfTimeSteps]} {
+            do_for_node $modelNode set ::runState($modelNode,update${number}) $timestep
         } elseif {$number==0 || $number==-1}  {
             puts "Timestep 0 and -1 cannot be specified."
         } else  {
@@ -249,9 +279,8 @@ class RunControlImpl {
     }
     
     public method GetTimeStep {number} {
-        global runState
-        if {0<$number && $number<=[GetPhaseCount $modelNode]} {
-            return $runState($modelNode,update${number})
+        if {0<$number && $number<=[do_for_node $modelNode GetPhaseCount $modelNode]} {
+            return [do_for_node $modelNode set ::runState($modelNode,update${number})]
         } elseif {$number==0 || $number==-1}  {
             puts "Timestep 0 and -1 cannot be specified."
         } else  {
@@ -260,112 +289,89 @@ class RunControlImpl {
     }
     
     public method GetValue {path} {
-        global runState
-        set winId $runState(node00000,helperId)
-        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
+        set winId [do_for_node $modelNode set ::runState($modelNode,helperId)]
+        return [do_for_node $modelNode GetModelValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
     public method SetValue {path value} {
-        global runState
         # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
-        set winId $runState(node00000,helperId)
-        SetModelValue $winId [GetIdFromCaptionPath $winId $path] $value
-        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
-    }
-    
-    public method SetValueNew {path value} {
-        global runState
-        # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
-        set winId $runState(node00000,helperId)
-        SetModelValue $winId [GetIdFromCaptionPath $winId $path] $value
-        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
+        #set winId $runState($modelNode,helperId)
+        do_for_node $modelNode set ::sliderVals([do_for_node $modelNode GetIdFromCaptionPath $winId /r]) $value
+        Reset
+        return [do_for_node $modelNode GetModelValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
     public method GetMinValue {path} {
         global runState
-        set winId $runState(node00000,helperId)
-        return [::GetMinValue $winId [GetIdFromCaptionPath $winId $path]]
+        set winId [do_for_node $modelNode set ::runState($modelNode,helperId)]
+        return [do_for_node $modelNode GetMinValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
     public method GetMaxValue {path} {
         global runState
-        return [::GetMaxValue $winId [GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetMaxValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
     #paths
-    public method GetModelType {} {
-        return [GetModelType $winId $modelNode]
+    public method GetModelType {path} {
+        return [do_for_node $modelNode GetModelType $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
-    public method GetModelEval {} {
-        return [GetModelEval $winId $modelNode]
+    public method GetModelEval {path} {
+        return [do_for_node $modelNode GetModelEval $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
-    public method GetModelDims {} {
-        return [GetModelDims $winId $modelNode]
+    public method GetModelDims {path} {
+        return [do_for_node $modelNode GetModelDims $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
-    public method GetModelClass {} {
-        return [GetModelClass $winId $modelNode]
+    public method GetModelClass {path} {
+        return [do_for_node $modelNode GetModelClass $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
-    public method GetObjectList {} {
-        return [GetObjectList $winId]
-    }
+    ################################################################################
+    # # what would a scripter do with this?
+    #     public method GetObjectList {} {
+    #         return [do_for_node $modelNode GetObjectList $winId]
+    #     }
+    ################################################################################
     
-    public method GetPhaseCount {} {
-        return [GetPhaseCount $modelNode]
+    # any use??
+    public method GetPhaseCount {path} {
+        return [do_for_node $modelNode GetPhaseCount [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
     }
     
 }
 
-################################################################################
-# class ModelExplorerImpl  {
-#     constructor {modelWindow} {
-#         return [$modelWindow CreateHelperWindow ModelInspector63654 {Model Explorer}]
-#     }
-# }
-################################################################################
+#set keyvalue tabular11510
+#set winId [$modelWindow CreateHelperWindow $keyvalue {Table}]
+#Hide
+#chain
+#SetUpdateAtDisplayInterval false
 
 class TableHelperImpl {
-    variable winId;    #Tk path to Table helper window
-    variable keyvalue; # Table helper namespace
-    variable modelNode node00000
     
-    constructor {modelWindow} {
-        global runState
-        global helperTable
-        set keyvalue tabular11510
-        set winId [$modelWindow CreateHelperWindow $keyvalue {Table}]
-        Hide
-        SetUpdateAtDisplayInterval false
+    inherit Helper
+    
+    constructor {modelWindow winTitle} {
+        Helper::constructor $modelWindow $winTitle
+    } {
+        puts "TableHelperImpl constr: $modelWindow [KeyValue] $winTitle"
     }
     
-    destructor {
-        destroy $winId
-    }
-    
-    public method Show {} {
-        wm deiconify $winId
-    }
-    
-    public method Hide {} {
-        wm withdraw $winId
+    public method KeyValue {} {
+        return tabular11510
     }
     
     public method AddVariable {path} {
         global helperTable
-        set helperTable(node00000,current) $winId
+        set helperTable(modelNode,current) $winId
         ${keyvalue}::click $winId [GetIdFromCaptionPath $winId $path] $path
     }
     
     public method RemoveVariable {path} {
         set var $path; # prop needs nodeId TODO
         ${keyvalue}::Remove $winId $var
-    }
-    
-    public method Clear {} {
-        $keyvalue::clear
     }
     
     public method SetUpdateAtDisplayInterval {value} {
@@ -387,7 +393,39 @@ class TableHelperImpl {
     
 }
 
-if {[string match windows $tcl_platform(platform)]} {
-    ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+class PlotterImpl {
+    inherit Helper
+    constructor {modelWindow winTitle} {
+        Helper::constructor $modelWindow $winTitle
+    } {
+        puts "Plotter constr: $modelWindow [KeyValue]"
+    }
+    
+    public method KeyValue {} {
+        return plotter1.25
+    }
 }
+
+class FileWriteImpl {
+    inherit Helper
+    constructor {modelWindow winTitle} {
+        Helper::constructor $modelWindow $winTitle
+    } {
+        puts "FileWriteImpl constr: $modelWindow [KeyValue]"
+    }
+    
+    public method KeyValue {} {
+        return filewriter220604
+    }
+}
+
+
+if {[string match windows $tcl_platform(platform)]} {
+    #    ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+}
+
+#find classes
+#PlotterImpl p modelWin2 pl1
+#puts [p info inherit]
+#puts [p info heritage]
 
