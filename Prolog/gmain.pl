@@ -174,7 +174,8 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)), */
-	tcl_eval(['FilterErrors ControlDraw', br(PlogV)], EnvVars),
+	state:edition_is(E),
+	tcl_eval(['FilterErrors ControlDraw', br(PlogV), E], EnvVars),
 	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
