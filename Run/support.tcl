@@ -78,7 +78,15 @@ proc collect {tgt node count args} {
     if {[string match TABLE [getinfo $node 1]]} {
 	set inputSrc paramData
     } else {
-	set inputSrc [InputVarFor $node]
+	switch [getinfo $node 0] {
+	    FLAG {
+		set inputSrc checkStates
+	    } ENUMERATED {
+		set inputSrc comboChoices
+	    } default {
+		set inputSrc sliderVals
+	    }
+	}
     }
     set sub [join [concat $node $args] ,]
     set val [BringParameter $inputSrc $sub]
@@ -238,18 +246,6 @@ proc ame_rand {lowBound highBound} {
 
 proc stop {code} {
     error "User-defined interruption code $code"
-}
-
-proc InputVarFor {node} {	
-    switch [getinfo $node 0] {
-	FLAG {
-	    return checkStates
-	} ENUMERATED {
-	    return comboChoices
-	} default {
-	    return sliderVals
-	}
-    }
 }
 
 proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {

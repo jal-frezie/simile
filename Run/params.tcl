@@ -304,7 +304,7 @@ proc rsearch {list tgt} {
 }
 
 proc ListToArray {topNode tgt subs trans dims list} {
-#puts "Go! tgt $tgt trans $trans list $list"
+#do_in_editor puts "Go! tgt $tgt trans $trans list $list"
 # skip over any vm arrays, their indices will not appear
 # in calls for values, but keep the translation list in sync
 # ... string match stops cleanly at end of list
@@ -349,8 +349,8 @@ proc ListToArray {topNode tgt subs trans dims list} {
 	set role "Index value"
 	if {[string match TIME [lindex $dims 0]]} {
 	    set role "Time point"
-	    if {![string is double $indx]} {
-		error [list "$role $indx is not a number."]
+	    if {!([string is double $indx] || [string equal NOW $indx])} {
+		error [list "$role $indx must be NOW or a number."]
 	    }
 	} elseif {[string compare {} $thisTrans]} {
 	    set poss [lsearch $thisTrans $indx]
