@@ -220,7 +220,7 @@ itcl::class similescript::RunControl {
     #}
     
     public method MergeParams {filepath {smPath {}}} {
-        do_for_node $modelNode MergeParams $modelNode $smPath $filepath 0
+        do_for_node $modelNode ZapParams $modelNode $smPath $filepath
     }
 
     public method SetTimeUnits {units} {

@@ -204,12 +204,7 @@ namespace eval slide139 {
 	set metaFile [ChooseFile params.spf "Load parameters from:" 0]
 	if {[llength $metaFile]} {
 	    set topNode $helperTable($winId,whichModel)
-	    array unset whichParamsAffected
-	    MergeParams $topNode $smPath $metaFile 0
-
-	    foreach inputPath [array names whichParamsAffected] {
-		AcceptData $winId $topNode $inputPath -1
-	    }
+	    ZapParams $topNode $smPath $metaFile
 	}
     }
 

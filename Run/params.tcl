@@ -26,7 +26,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
                 -text "All values must be set to run the model." -width 400]
         pack [frame $bfrm.lpad] -side left -fill x -expand true
         pack [button $bfrm.ok -text "OK" \
-		  -command [list DoneParams $topNode $t] -width 10] \
+		  -command [list DoneParams $topNode] -width 10] \
                 -side left -padx 2 -pady 2
         pack [button $bfrm.cancel -text "Cancel" -command CancelParams -width 10] \
                 -side left -padx 2 -pady 2
@@ -194,11 +194,22 @@ proc purge {list toGo} {
     return $done
 }
 
-proc DoneParams {topNode winId} {
+proc ZapParams {topNode smPath metaFile} {
+    global whichParamsAffected
+
+    array unset whichParamsAffected
+    MergeParams $topNode $smPath $metaFile 0
+
+    foreach inputPath [array names whichParamsAffected] {
+	AcceptData winId $topNode $inputPath -1
+    }
+}
+
+proc DoneParams {topNode} {
     global widgetNames paramData
 
     foreach compName [array names widgetNames] {
-	AcceptData $winId $topNode $compName 1
+	AcceptData winId $topNode $compName 1
     }
     if {![llength $paramData(needed)]} {
 	set paramData(done) 1
