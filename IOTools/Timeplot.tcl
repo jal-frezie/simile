@@ -8,21 +8,6 @@
 
 # Show which variable being plotted in MRE JMM
 
-#$Log: Timeplot.tcl,v $
-#Revision 1.2  2002/10/18 14:24:47  jmm
-#proc GetCanvas added returns canvas for printing etc.
-#absolute namespaces used, i.e. start with ::
-#
-#Revision 1.1.1.1  2002/05/23 15:33:18  jmm
-#First Commercial Release (2.91)
-#
-#Revision 1.13  2002-05-03 18:49:13+01  jmm
-#Updated to work with mre.tcl 1.29
-#
-#Revision 1.12  2002-04-29 17:27:25+01  jmm
-#Added RCS Log directive
-#
-
 set keyValue origplot72514
 
 namespace eval ::origplot72514 {
@@ -61,14 +46,15 @@ namespace eval ::origplot72514 {
             if {[string compare $testResult novalue]} {
                 ReleaseClicks $winId
                 pack forget $winId.intro
-                wm title $winId "$caption (plot against time)"
-                # Show which variable being plotted in MRE JMM
+                # Show which variable being plotted change for MRE JMM
                 if {[PrefValue custom(helperManager) helperManager]} {
                     #                ShowMessage debug info "FindHelperPage [RunEnv::FindHelperPage $winId]; Caption $caption" ok
-                    set notebookPage [RunEnv::FindHelperPage $winId]
+                    set notebookPage [RunEnv::FindHelperPage $winId]; #sdoesn't work anymore todo
                     set notebook [lindex $notebookPage 0]
                     set page [lindex $notebookPage 1]
-                    $notebook itemconfigure $page -text "$caption (plot against time)"
+                    #ShowMessage debug info "$notebook itemconfigure $page -text" ok; #" "$caption (plot against time)"
+                } else  {
+                    wm title $winId "$caption (plot against time)"
                 }
                 MakeTimePlot $winId $node real
                 UpdateDisplay $winId [lindex $testResult 0] [GetModelTime]
@@ -222,6 +208,7 @@ namespace eval ::origplot72514 {
         
         pack $t.right -side left -fill both -expand true
         bind $t <Configure> [namespace code "WhoopCanvas %W %x %y %w %h $isReal"]
+        bind $t.right.canvas <Configure> [namespace code "WhoopCanvas %W %x %y %w %h $isReal"]
         
         set timeplotvars($t,width) 200.0
         set timeplotvars($t,height) 200.0
