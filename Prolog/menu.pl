@@ -817,14 +817,15 @@ continuation(Rerouters, Start, Rest, Remains) :-
 	
 display_submodels(_,[]).
 display_submodels(Isub,[Submodel|Submodels]):-
-	%rel_path_name(Submodel, _, _,_, SmCapt),
-	%sicstus_format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
-	%rel_path_name(RemoteNode, DestBox, Relation, SourceLocation, RemoteName)
-	abs_path_name(Submodel, root, Path), % (Base, root, Path) SHOULD remove root model name
-%:-use_module(library(charsio)).
-%:-use_module(library(lists)).
-%atom_to_chars(model/sm1/sm2/var, L).
-%nth(N,[a,s,d,/,f,g,h,/,d,f,g,h],/)
+	abs_path_name(Submodel, root, Abspath), 
+	% remove the model file name prefix from submodel paths
+	( sub_atom(Abspath,Before, 1, AfterSlash, /), 
+	  atom_length(Abspath,Len),
+	  Tail is Len-Before,
+	  sub_atom(Abspath,Before, Tail, _, Path)
+	  ;  
+	  Path=Abspath 
+	),
 	sicstus_format_to_chars("Equations in ~a", [Path], HeaderStr),
 	name(Header, HeaderStr),
 	tk_equationlisting_addsubmodel(Isub,Header),
