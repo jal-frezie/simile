@@ -494,7 +494,9 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 		DefEval = 'DERIVED');
 	    InstType = submodel, !, Type = 'VALUELESS',
 	        [Wee, Muckle] = [0, 0],
-	        DefEval = 'SPLIT';
+	        (by_record(BaseName), !,
+		    DefEval = 'TABLE';
+		    DefEval = 'SPLIT');
 	    (Unit = boolean, Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
 	    Unit = a(Enum), !, Type = 'ENUMERATED',

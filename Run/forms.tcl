@@ -801,7 +801,7 @@ proc Disaggregate {parent title colour type fatness icount step \
     set countf [$t.simple.left.count getframe]
     
     frame $countf.radio
-    foreach rbutton {{population "Using population symbols"} {generated "Using specified dimensions:"}} {
+    foreach rbutton {{population "Using population symbols"} {records "One per data record"} {generated "Using specified dimensions:"}} {
         radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
                 -value [lindex $rbutton 0] \
                 -variable disaggregate(type) \

@@ -364,7 +364,7 @@ public:
       return NULL;
     }
   }
-};
+};
 
 
 
@@ -459,8 +459,8 @@ node_data_line* searchinfo(char* node, Model** tgtModel,
 	append_ints_to_null(path, bottomLine->path, 0, 0);
       } else if (searchinfo(searchPoint->node, &tryModel,
 			    caption, dims, path)) { /* ref to tryModel spare */
-	append_ints_to_null(dims, bottomLine->dims, -2, 0);
-	append_ints_to_null(path, bottomLine->path, -2, 
+	append_ints_to_null(dims, bottomLine->dims, SEPARATE, 0);
+	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
 	strcpy(strrchr(caption, '/'), localCapt);
       } else {
@@ -683,6 +683,7 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
     case FLAG:
       serviceError = Tcl_GetBooleanFromObj(globInterp, valPtr, (int*)tgt);
       return;
+    case VALUELESS: /* getting number of instances for record submodel */
     case INTEGER:
     case ENUMERATED:
       serviceError = Tcl_GetIntFromObj(globInterp, valPtr, (int*)tgt);
@@ -700,7 +701,7 @@ void* fetch_instance(char* nodeId) {
 
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
   level = type->get_ptr(level, id_meta, dims);
-  if (*(*id_meta)++ == -2) {
+  if (*(*id_meta)++ == SEPARATE) {
     type = (Model*)*(*id_meta)++;
     return search_ptr(type, *(void**)level, id_meta, dims);
   } else {
@@ -830,7 +831,7 @@ extern "C" int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	 // Botch to cope with the fact that we start from the
 	 // submodel instance not its structure in the parent when
 	 // importing a value from a separate submodel
-	 if (tree[count2] == -2) {
+	 if (tree[count2] == SEPARATE) {
 	   count2 += 3;
 	 }
 	 if (tree[count2] == -1) {
@@ -1216,15 +1217,16 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
   int arrayLength, arrayPosn, arrayOut;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
   switch (*use_dims) {
-  case -2:
+  case SEPARATE:
     new_tree = tree;
-    while (*new_tree++ != -2) {}
+    while (*new_tree++ != SEPARATE) {}
 
     smHandle = *(void**)(localType->get_ptr(smHandle, &tree, &dims));
     localType = (Model*)*(new_tree++);
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
-  case -1:
+  case MEMBERS:
+  case RECORDS:
     new_tree = tree;
     while (*new_tree++ != -1) {}
 
@@ -1558,7 +1560,7 @@ extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
   }
   if (strcmp("enterprise", Tcl_GetVar(interp, "h76rt4g7", 0))) {
     return TCL_OK;
-  }
+  }
   if (Tcl_VarEval(interp, "regexp -all {node\(node} $hvfe587gw938",
 		  NULL) != TCL_OK) {
     return TCL_ERROR;

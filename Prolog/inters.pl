@@ -993,7 +993,8 @@ indices_for(set(_, loop(_)), []).
 
 indices_for(sm(_,_, Ptr, Spec), Inds) :-
 	Spec = fm_loop(Inds, _);
-	Spec = vm_loop(pop, _,_,_), !,
+	Spec = vm_loop(N, _,_,_),
+	member(N, [pop, rec]), !,
 	    Inds = [ind(Ptr, pop)];	  
 	Spec = vm_loop(Count, _,_,_),
 	    (Count = 0, !,
@@ -1201,10 +1202,12 @@ get_dims_from_loops([], [], []).
 
 get_dims_from_loops(Loops, Dims, Inds) :-
 	append(InnerLoops, [Loop], Loops),
-	(Loop = sm(_,_,_, VLoop),
+	(Loop = sm(_,_, Ptr, VLoop),
 	\+ VLoop = fm_loop(_,_), !,
 	    Dims = [var | RDims],
-	    Inds = [none | RInds];
+	    (VLoop = vm_loop(rec, _,_,_), !,
+		Inds = [ind(Ptr, pop) | RInds];
+	    Inds = [none | RInds]);
 	Loop = set(Ind, loop(Dim)), !,
 	    Dims = [Dim | RDims],
 	    Inds = [Ind | RInds];

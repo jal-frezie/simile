@@ -227,11 +227,11 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	(Unit_st = "", Eqn_st = "",
 	    /* If no eqn or units supplied, assume real */
 	    (Is_P > 0, NewUnits = 1; NewUnits = ''), UnitError = [], !;
-	MinBase = any, EqnBase = any, MaxBase = any, var(TypeBase), !,
-	    /* If units but no eqn or limits supplied, accept any */
+	/* If units but no eqn or limits supplied, accept any */
+/*	MinBase = any, EqnBase = any, MaxBase = any, var(TypeBase), !,
 	    NewUnits = Units,
 	    UnitError = UnitFormError;
-/*	on_exception(PropError, propagate_units([eqn=Result, min=Min, max=Max,
+	on_exception(PropError, propagate_units([eqn=Result, min=Min, max=Max,
 						 type=TypeBase], any,
 						[any, any, any, any],
 			[EqnBase, MinBase, MaxBase, TypeBase], ComboType),
@@ -240,7 +240,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		member(ComboType, [n(_), const_int]), ComboUnits = int;
 		ComboType = ComboUnits), */
 
-            (member(TypeBase, [int, real, boolean, a(_)]),
+            (member(TypeBase, [a(_), int, real, boolean]),
 		promote_arg(EqnBase, TypeBase, ComboUnits), !,
 		(nonvar(ComboUnits); ComboUnits = TypeBase);
 	    UnitError = "Could not match units."),

@@ -141,8 +141,7 @@ extern "C"
 __declspec( dllexport )
 #endif
 void* burrow_to(void* level, int** id_meta, int** dim_list) {
-  while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
--2 means nested separate-dll submodel */
+  while (**id_meta>0) { 
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
   }
   return(level);

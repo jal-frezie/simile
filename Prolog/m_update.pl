@@ -1416,12 +1416,12 @@ get_disag_params(Submodel, [Colour, Nature, Fat, Count, Step, Comment,
 			    EnumSpecs, Fix, Hide, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour, !;
 	    Colour = white),
-	(is_population(Submodel), !,
-		Nature = population;
-	Nature = generated),
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(count=Count, Multi), !;
 	Count=[]),
+	(Submodel has_class_refinement multiplication_spec of Multi,
+	    member(type=Nature, Multi), !;
+	Nature = generated),
 	time_step_for(Submodel, 'Default', Step),
 	(Submodel has_class_refinement comment of Comment, !;
 	Comment = ''),

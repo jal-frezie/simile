@@ -233,7 +233,7 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 #    puts "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
-    if {$nextUseDim == -1} {
+    if {[lsearch {RECORDS MEMBERS} $nextUseDim]!=-1} {
 	set newTree [lrange $tree [expr [lsearch $tree -1]+1] end]
 	set nextRef [set [burrow_to $smHandle $tree $dims]]
 	set result {}
@@ -363,9 +363,17 @@ proc GetModelDims { node } {
 	WarnNoProgram
     }	
     if {$model_id} {
-# helper apps don't need to know about separate submodels so...
+	set specials {RECORDS MEMBERS SEPARATE}
 	set fullList [getvalue $model_id $node 0]
-	while {[set sep [lsearch $fullList -2]]>-1} {
+
+	set idx 0
+	foreach elt $fullList {
+	    if {$elt<0} {
+		lset fullList $idx [lindex $specials [expr -$elt-1]]
+	    }
+	}
+# helper apps don't need to know about separate submodels so...
+	while {[set sep [lsearch $fullList SEPARATE]]>-1} {
 	    set fullList [lreplace $fullList $sep $sep]
 	}
 	return $fullList

@@ -129,15 +129,18 @@ proc 	    AddEntry {winId node} {
     set compName [GetCaptionPathFromId $node]
     set levels [lrange [split $compName /] 1 end]
     set nodeDims [GetModelDims $node]
-    while {[set sep [lsearch $nodeDims -1]]>-1} {
-	set nodeDims [lreplace $nodeDims $sep $sep]
-    }
     set paramDims($compName) [lrange $nodeDims 0 end-1]
+
 # bit of voodoo...get table relating numerical indices of node to enymerated
-# types (from prolog) and use to translate array bounds
+# types (from prolog) and use to translate array bounds. Do this first because
+# there will be null entries in the table for vm model levels.
     set trans [GetFromProlog tk_get_info('$winId',$node,types)]
 #ShowMessage debug info "$node $trans $nodeDims" ok
     set nodeDims [TransBounds $trans $nodeDims]
+
+    while {[set sep [lsearch $nodeDims MEMBERS]]>-1} {
+	set nodeDims [lreplace $nodeDims $sep $sep]
+    }
     set dimList [join [lrange $nodeDims 0 end-1] { x }]
     set last [lindex $nodeDims end]
     if {[string compare $last 0]} {
@@ -237,7 +240,31 @@ proc AcceptData {winId compName} {
     if {$dataChanged} {
 	set runState(reloadParams) 1
 	set trans [GetFromProlog tk_get_info({},$node,types)]
-	set misses [ListToArray $node $trans $paramDims($compName) \
+
+	# Now replace each -1 in the dims with the id of the by-record
+	# submodel it represents
+	set recordDims $paramDims($compName)
+	while {[set recordDepth [lsearch $recordDims RECORDS]] != -1} {
+#puts "recordDims $recordDims recordDepth $recordDepth" 
+	    foreach recordId [array names inputHelper] {
+#puts "recordId is $recordId"
+		if {[string first $recordId $compName]==0 && \
+		    ![string equal $recordId $compName]} {
+		    set recordNode [GetIdFromCaptionPath $recordId]
+		    set outerDims [lrange [GetModelDims $recordNode] 0 end-1]
+#puts "node $recordNode outer dims $outerDims"
+		    if {[string match $outerDims \
+			     [lrange $recordDims 0 $recordDepth]]} {
+			set recordDims [lset recordDims $recordDepth \
+					    [list -1 $recordNode]]
+			set inputHelper($recordId) $compName
+			break
+		    }
+		}
+	    }
+	}
+
+	set misses [ListToArray $node {} $trans $recordDims \
 			$paramData($compName)]
 # new bit for using it as an input tool: notify that we have values
 	if {[llength $misses]} {
@@ -252,20 +279,25 @@ proc AcceptData {winId compName} {
 }
 
 # need new version that 
-proc ListToArray {tgt trans dims list} {
+proc ListToArray {tgt subs trans dims list} {
 #puts "Go! tgt $tgt trans $trans list $list"
+# skip over any vm arrays, their indices will not appear
+# in calls for values, but keep the translation list in sync
+# ... string match stops cleanly at end of list
+    while {[string match MEMBERS [lindex $dims 0]]} {
+	set trans [lrange $trans 1 end]
+	set dims [lrange $dims 1 end]
+    }
     set thisTrans [lindex $trans 0]
-    switch [llength $list] { 0 {
-	return [list all "Missing value"]
-    } 1 {
+    if {[llength $list]==1} {
 #puts "setting paramData($tgt) to $headNum"
 	if {[llength $dims]} {
 	    set userDims [join $dims { x }]
 	    return [list "scalar $list supplied instead of array of $userDims"]
 	} else {
-	    return [EnumTypeToNumber $tgt $list $thisTrans]
+	    return [EnumTypeToNumber $tgt$subs $list $thisTrans]
 	}
-    } default {
+    } else {
 	if {![llength $dims]} {
 	    return [list "Array $list supplied instead of scalar"]
 	}
@@ -273,18 +305,30 @@ proc ListToArray {tgt trans dims list} {
 	    return [list [lindex $list end] "Missing value"]
 	}
 	array set sub $list
-	for {set arrayPt 1} {$arrayPt <= [lindex $dims 0]} {incr arrayPt} {
+#puts "dims remaining $dims"
+	if {[llength [lindex $dims 0]]==2 && [lindex [lindex $dims 0] 0]==-1} {
+# by-record submodel; check up to biggest
+
+# OK hows this for branez...use
+# the number of elements, because if there is an element larger than the
+# number of elements, one the same or smaller will be missing!
+	    set last [array size sub]
+#puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
+	    EnumTypeToNumber [lindex [lindex $dims 0] 1]$subs $last {}
+	} else {
+	    set last [lindex $dims 0]
+	}
+	for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
 	    set indx [NumberToEnumType $arrayPt $thisTrans]
 	    if {![info exists sub($indx)]} {
 		return [list $indx "Missing value"]
 	    }
-	    set mis [ListToArray $tgt,$arrayPt [lrange $trans 1 end] \
+	    set mis [ListToArray $tgt $subs,$arrayPt [lrange $trans 1 end] \
 			 [lrange $dims 1 end] $sub($indx)]
 	    if {[llength $mis]} {
 		return [concat $indx $mis]
 	    }
 	}
-    }
     }
     return {}
 }
@@ -299,6 +343,7 @@ proc EnumTypeToNumber {tgt head trans} {
 	set paramData($tgt) $poss
     } else {
 	set paramData($tgt) $head
+#puts "just went set paramData($tgt) $head"
     }
     return {}
 }

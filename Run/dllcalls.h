@@ -6,6 +6,7 @@
 #define BOOLEAN         int
 /* possibly needed for Unix */
 
+/* component types */
 #define	SUBMODEL	0
 #define VARIABLE        1
 #define COMPARTMENT     2
@@ -17,6 +18,7 @@
 #define LOSS            8
 #define ALARM           9
 
+/* data types */
 #define	VALUELESS	0
 #define REAL            1
 #define INTEGER         2
@@ -24,12 +26,18 @@
 #define EXTERNAL        4
 #define ENUMERATED      5
 
+/* source of value */
 #define EXOGENOUS       0
 #define DERIVED         1
 #define TABLE           2
 #define INPUT           3
 #define SPLIT           4
 #define GHOST           5
+
+/* special dimensions */
+#define RECORDS        -1
+#define MEMBERS        -2
+#define SEPARATE       -3
 
 #define SIMILE_VERSION	"4.0"
 

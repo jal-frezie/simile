@@ -569,7 +569,7 @@ set_properties(Wid, Model) :-
 			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
 		    Spec = [count=UseCount]);
 		Wibble = "Could not convert dimensions to numbers");
-	    NewNature = population,
+	    member(NewNature, [population, records]),
 		Spec = [type=NewNature]),
 	    (nonvar(Spec),
 		add_parameter(Model, 0, multiplication_spec, Spec);
@@ -694,6 +694,9 @@ show_error(Model, Lossage) :-
 	Lossage = link_inconsistency(Pair), !,
 	    sicstus_format_to_chars("This model cannot be executed because it contains an inconsistent link equivalence ~w.", [Pair], Text),
 	    Fault = system;
+	Lossage = no_defining_param(Capt), !,
+	    sicstus_format_to_chars("Model ~w cannot be executed because its instance count must be set to the number of data records provided for its fixed parameters -- and it has no fixed parameters.", [Capt], Text),
+	    Fault = user;
 	Lossage = circular_evaluation(CircSet), !,
 	    sicstus_format_to_chars("This model cannot be executed because it contains the following circular set(s) of function evaluations: ~w",
 				   [CircSet], Text),

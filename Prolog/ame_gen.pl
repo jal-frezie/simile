@@ -13,7 +13,7 @@ sicstus_module(ame_gen,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
 		get_actual_size/5, get_actual_sizes/5, enum_type_ref/4,
 		get_node_size/2, get_node_size/4,
-		is_population/1, is_conditional/1, get_all_dims/2,
+		is_population/1, by_record/1, is_conditional/1, get_all_dims/2,
 		variable_size/1, list_links/2,
 		get_link_exits/2, get_chain/5, contains/2, contains/3,
 		purge/3, generates/2, upper/2, lower/2, mybagof/3,
@@ -543,7 +543,12 @@ get_base_sections([], []).
 
 is_population(Node) :-
 	Node has_class_refinement multiplication_spec of Spec,
-	member(type=population, Spec).
+	member(type=Type, Spec),
+	member(Type, [population, records]).
+
+by_record(Node) :-
+	Node has_class_refinement multiplication_spec of Spec,
+	member(type=records, Spec).
 
 is_conditional(Node) :-
 	Link is_connector from _ to Node,

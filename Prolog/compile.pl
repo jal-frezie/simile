@@ -172,7 +172,18 @@ check_level_for_reds(Submodel) :-
 	    find_all_comps(Parent, F2), S2 = Submodel,
 	       Submodel has_part F1, find_all_comps(Submodel, S1)),
 	raise_exception(link_inconsistency(Before-After));
+	by_record(Submodel),
+	reassure_user("Checking for a fixed parameter to define submodel membership"),
+	\+ defines_membership(Submodel, _Param),
+	caption_for(Submodel, OuterText),
+	raise_exception(no_defining_param(OuterText));
 	fail.
+
+defines_membership(SmByRec, Fp) :-
+	find_all_comps(SmByRec, Comp),
+	(is_parameter(Fp, 2), Fp = Comp;
+	\+ by_record(Comp),
+	    defines_membership(Comp, Fp)).
 
 % The code works by first giving names to the mathematical entities in the
 % model, and then working out bit by bit what the program has to be.
@@ -419,12 +430,6 @@ check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	reassure_user("Sorting assignments into correct time steps"),
 	sort_assignments(Functions, UseCompartments, Phases, Sorted, VMSPs).
 
-is_instance_list(Instance) :-
-	Instance = instance(_, Model, xrefs(_, Parent, _,_), _,_),
-	variable_size(Model),
-	(\+ Model has_class_refinement separate of 1;
-	    Parent = instance(_,_,_, 'AME_model', _)).
-
 /* generate_main_decls does all the declarations except the ones for
 temporary variables used when expanding expressions.
 * New version, for 2.34: Does all the recursing itself, and also generates
@@ -488,12 +493,16 @@ generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], []).
 generate_local_decls(L, [Instance | Instances], Tree, Level,
 		     Dims, ExtSets, Graphs,
 		     PublicDecls, TypeDecls, PointerDecls, Exts, NodeData) :-
-	Instance = instance(_, Node, _,_, _-SmSizes),
+	Instance = instance(_, Node, Loc, _, _-SmSizes),
 	all(ame_gen, enum_type_ref,
 	    [build(SmSizes), unify(Node), build(SmDims), build(_)]),
-	(is_instance_list(Instance), !,
+	(variable_size(Node),
+	(\+ Node has_class_refinement separate of 1;
+	    Loc = xrefs(_, instance(_,_,_, 'AME_model', _), _,_)), !,
 	    append(Tree, [Level, -1], DeepTree),
-	    append(Dims, [-1], NewDims);
+	    (by_record(Node), !,
+		append(Dims, ['RECORDS'], NewDims);
+		append(Dims, ['MEMBERS'], NewDims));
 	append(Tree, [Level], DeepTree),
 	    append(Dims, SmDims, NewDims)),
 	generate_data_decls(L, Level, NewDims, DeepTree, Instance,
@@ -788,16 +797,29 @@ instruction because they will not require individual initialization routines. */
 
         (is_population(SmName), !,
 	    BaseSides = [],
-	    append_atoms(Name, count, CountName),
+	    append_atoms(Name, count, Count),
+	    Level = [sm(_,_,_, vm_loop(_,_,_, Step))],
+	    (by_record(SmName), !,
+		append_atoms(Name, made, NMade),
+		SmInters =
+	    [instance(internal, inter(LocalPath, _,_), _, parentId, int-[]),
+	     instance(internal, inter(LocalPath, _,_), _, channelId, int-[]),
+	     instance(internal, inter(Path, _,_),_, NMade, int-[]),
+	     instance(internal, inter(Path, _,_),_, Count, int-[])],
+		get_dims_from_loops(Path, _, UseInds),
+		length(UseInds, IdxN),
+		ColFn =.. [collect, arr(Ptr, NMade, []), SmName, IdxN | UseInds],
+		CreateRules = [make(culled(Name), [], Path, 0, [ColFn]),
+			       make(created(Name), [culled(Name)], Path, Step,
+				    [new_member(Ptr, Name, create(NMade))])],
+		Losses = [], ReproRules = [], ImmigRules = [];
 	    SmInters = [instance(internal, inter(LocalPath, _,_), _, parentId,
 				 int-[]),
 			instance(internal, inter(LocalPath, _,_), _, channelId,
 				 int-[]),
-			instance(internal, inter(Path, _,_), _, CountName,
-				 int-[])],
+			instance(internal, inter(Path, _,_),_, Count, int-[])],
 	    /* generate instructions for each immigration, reproduction  etc.
 	    node...*/
-	    Level = [sm(_,_,_, vm_loop(_,_,_, Step))],
 	    /* little botch-ette: all the population adjustments have to be
 	    done in the same loop because cull leaves the metapointer at the
 	    end of the instance list and the others expect to find it there.
@@ -815,9 +837,6 @@ instruction because they will not require individual initialization routines. */
 	    (setof(LossBox, member(instance(loss, _,_, elt(_, LossBox, _), _),
 				   Functions), Losses), !;
 	    Losses = []),
-	    LossRules = [make(culled(Name), [pop_startable(Name),
-					     time | BasesEnumerated],
-			Path, Step, [lose(Step, Ptr, Name, Losses)])],
 
 	    (setof(make(bred(Name), [culled(Name), time], Path, Step,
 			[reproduce(Ptr, Name, InitSpec)]),
@@ -834,10 +853,9 @@ instruction because they will not require individual initialization routines. */
 				   elt(_, InitSpec, _), U),
 			  ParentFns)),
 		   ImmigRules), !; 
-	    ImmigRules = []),
+	    ImmigRules = [])),
 	    
 	    /* Something that will be done in the initialization procedure, to make sure we don't try to create any before we can run this procedure */
-	    append_atoms(Name, count, Count),
 	    append([[make(can_enter(Name), [created(Name), settled(Name),
 					    bred(Name), culled(Name)],
 			  Path, Step, []),
@@ -847,8 +865,11 @@ instruction because they will not require individual initialization routines. */
 			 [assign(arr(Ptr, Name, []), 0)]),
 		    make(pop_startable(Name), [init_list(Name), on_reset],
 			 Path, Step, [reset_list(Ptr, Name),
-			     assign(arr(Ptr, Count, []), 0)]) | CreateRules],
-		   ImmigRules, ReproRules, LossRules], Specials);  
+			     assign(arr(Ptr, Count, []), 0)]),
+		    make(culled(Name), [pop_startable(Name),
+					time | BasesEnumerated], Path, Step,
+			 [lose(Step, Ptr, Name, Losses)]) | CreateRules],
+		    ImmigRules, ReproRules], Specials);  
 
 	/* For variable-membership submodels we must not run the generate step
 	    before the bases are enumerated because running it prevents the
@@ -1148,7 +1169,7 @@ input_params_in(Vars, SmPath, SmStep,
 
 vars_only(List, AllVar) :-
 	select(NonVar, List, Rest),
-	nonvar(NonVar), !,
+	NonVar == none, !,
 	vars_only(Rest, AllVar);
 	List = AllVar.
 
