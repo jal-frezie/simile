@@ -104,14 +104,14 @@ update_mode(NewMode) :-
 	    assert(cursor_is(question_arrow));
 	assert(cursor_is(arrow))).
 
-stick_model_in(Parent, Name, Mode) :-
+stick_model_in(Win, Parent, Name, Mode) :-
 	Mode = reopen,
 	check_if_already_open(Name), !;
 	use_temp_dir(LocalDir),
 	(event:list_captions(Parent, Used), !; true),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
         reassure_user("Decoding MIME-format saved file"),
 	output:load_file(Parent, TargetDir, Name, CheckedStr),
 	name(Checked, CheckedStr),
@@ -231,10 +231,10 @@ menu_handle(Win, file, new) :-
 menu_handle(_Win, file, new_toplevel) :-
 	m_update:make_desktop(_,_).
 
-menu_handle(_Win, open_toplevel, Name) :-
+menu_handle(Win, open_toplevel, Name) :-
 	check_if_already_open(Name), !;
 	m_update:make_desktop(Parent, _),
-	stick_model_in(Parent, Name, reopen).
+	stick_model_in(Win, Parent, Name, reopen).
 
 menu_handle(Win, file, open) :-
 	Win shows_model Parent,
@@ -242,7 +242,7 @@ menu_handle(Win, file, open) :-
 	get_load_file(Name),
 	(Name = '', !;
 	remove_model(Win, Parent),
-	stick_model_in(Parent, Name, reopen)).
+	stick_model_in(Win, Parent, Name, reopen)).
 
 menu_handle(Win, GetMode, Name) :-
 	Win shows_model Parent,
@@ -253,19 +253,19 @@ menu_handle(Win, GetMode, Name) :-
 	GetMode = insert,
 	    UseMode = insert([0,0]),
 	    select_all_in(Parent, off)),
-	stick_model_in(Parent, Name, UseMode).
+	stick_model_in(Win, Parent, Name, UseMode).
 
 menu_handle(Win, file, save) :-
 	Win shows_model Model,
-	do_save(Model, false).
+	do_save(Win, Model, false).
 
 menu_handle(Win, file, save_as) :-
 	Win shows_model Model,
-	do_save(Model, true).
+	do_save(Win, Model, true).
 
 menu_handle(Win, file, save_seln_as) :-
 	Win shows_model Model,
-	do_save(Model, seln_only).
+	do_save(Win, Model, seln_only).
 
 menu_handle(Win, file, save_interface) :-
 	Win shows_model Model,
@@ -276,7 +276,7 @@ menu_handle(Win, file, save_interface) :-
 	
 	get_default_export_name(Model, ".isf", DefName),
 	get_program_file(DefName, FileName),
-	start_progress_dialogue,
+	start_progress_dialogue(Win),
 	open_native(FileName, write, Stream),
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
 	save_references(Stream, Model),
@@ -306,7 +306,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	name(Ident, IdentStr),
 	get_default_export_name(Model, IdentStr, DefN),
 	get_program_file(DefN, Tgt),
-	start_progress_dialogue,
+	start_progress_dialogue(Win),
 	use_temp_dir(Temp),
 	find_all_comps(Base, Model),
 	(Base = root,
@@ -324,7 +324,7 @@ menu_handle(Win, file, CompOrBuild) :-
 menu_handle(Win, file, RunCmd) :-
 	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
 	Win shows_model Node,
-	start_progress_dialogue,
+	start_progress_dialogue(Win),
 	/* Compile the thing into whatever, load it */
 	scrub_run(Node, 0),
 	use_temp_dir(Dir),
@@ -487,7 +487,7 @@ menu_handle(Win, file, export_prolog) :-
 	get_default_export_name(Model, ".pl", DefName),
 	get_program_file(DefName, FileName),
 	output:date_is(Date),
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	save_isolated(FileName, Model, Date, no),
         finish_progress_dialogue.
 
@@ -508,7 +508,7 @@ menu_handle(Win, edit, Component) :-
 
 /* Delete the selection */
 menu_handle(Win, edit, reroute) :-
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	reassure_user("Reroute in progress"),
 	get_edit_model(Win, Model, _),
 	/* Get selected links top-down, flows first */
@@ -522,7 +522,7 @@ menu_handle(Win, edit, reroute) :-
 	finish_progress_dialogue.
 
 menu_handle(Win, edit, delete) :-
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	reassure_user("Delete in progress"),
 	get_edit_model(Win, Model, _),
 	event:delete_net(Model),
@@ -534,7 +534,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	    Msg = "Cut in progress";
 	CutOrCopy = copy,
 	    Msg = "Copy in progress"),
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	reassure_user(Msg),
 	get_edit_model(Win, TopModel, _),
 
@@ -586,24 +586,24 @@ menu_handle(Win, edit, paste) :-
 	get_edit_model(Win, Model, Pt),
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	stick_model_in(Model, CopyFile, insert(Pt)).
+	stick_model_in(Win, Model, CopyFile, insert(Pt)).
 	
 menu_handle(Win, edit, selall) :-
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	reassure_user("Selecting whole model"),
 	get_edit_model(Win, Model, _),
 	select_all_in(Model, on),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, unselall) :-
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	reassure_user("Unselecting whole model"),
 	get_edit_model(Win, Model, _),
 	select_all_in(Model, off),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, invsel) :-
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	reassure_user("Inverting selection"),
 	get_edit_model(Win, Model, _),
 	invert_seln_in(Model),
@@ -1065,7 +1065,7 @@ not_runnable(Model) :-
 check_deletable(Win, Parent) :-
 	(\+ find_all_comps(Parent, _), !;
 	    get_save_status(Win, safe), !;
-	    ok_to_delete(Parent)).
+	    ok_to_delete(Win, Parent)).
 
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
@@ -1079,7 +1079,7 @@ remove_model(Win, Parent) :-
 	    add_parameter(Parent, 0, comment, ''),
 	    add_parameter(Parent, 0, fill_colour, ''),
 	    redraw_window(Win);
-	start_progress_dialogue,
+	start_progress_dialogue(Win),
 	reassure_user("Creating new inputs for values from deleted submodel"),
 	cutoff(Parent);
 	(find_all_comps(Parent, Child),
@@ -1146,7 +1146,7 @@ off_window(Win) :-
 	Win shows_model Model,
 	(is_toplevel(Model), !,
 	    check_deletable(Win, Model),
-	    start_progress_dialogue,
+	    start_progress_dialogue(Win),
 	    remove_model(Win, Model),
 	    delete_tree(Model),
 	    finish_progress_dialogue,
@@ -1163,15 +1163,15 @@ kill_everything :-
 	true.
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-ok_to_delete(Target) :-
+ok_to_delete(Win, Target) :-
 	get_default_export_name(Target, ".sml", Handle),
 	caption_for(Target, Title),
 	sicstus_format_to_chars("Component ~a (in ~a) has not been saved since it was last modified. Save it now?", [Handle, Title], Query),
 	do_dialogue("Save changes", question, Query, yesnocancel, Reply),
-	(Reply = yes, do_save(Target, false);
+	(Reply = yes, do_save(Win, Target, false);
 	Reply = no).
 
-do_save(Model, New_name) :-
+do_save(Win, Model, New_name) :-
 	count_functions(Model, N),
 	state:eval_fn_limit_is(Limit),
 	(N > Limit,
@@ -1184,7 +1184,7 @@ do_save(Model, New_name) :-
 	abs_path_name(Model, root, Point),
 	append_atoms([Dir, '/', Point], SaveDir),
 	
-        start_progress_dialogue,
+        start_progress_dialogue(Win),
 	/* Remove any old executables (and make sure dirs exist) */
 	save_dlls(Point, Dir, Model, Model, _),
 
@@ -1215,7 +1215,7 @@ do_save(Model, New_name) :-
 
 	/* Starts dialogue, but if backtracking, finishes again before
 	retrying dialogue */
-	(start_progress_dialogue;
+	(start_progress_dialogue(Win);
         finish_progress_dialogue, fail),
 
 	/* Now build the multi-part MIME format save file */

@@ -50,7 +50,7 @@ kickoff(Vnum) :-
 
 	name(OpenModel, OpenStr),
 	(OpenModel = '';
-	    menu:stick_model_in(Desktop, OpenModel, reopen);
+	    menu:stick_model_in(Canvas, Desktop, OpenModel, reopen);
 	    true), !,
 	output:safe_tcl_eval(['FixSize', Canvas], _).
 
