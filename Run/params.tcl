@@ -124,7 +124,7 @@ proc AddEntry {winId topNode node mustShow isInput} {
             # Using entries played merry hell with very long arrays -- texts work better
     pack [entry $slot.e -width 30] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName
-    bind $slot.e <Return> "$slot.tick invoke"
+    bind $slot.e <Return> [list $slot.tick invoke]
     if {[info exists paramData($compName)]} {
 	FillIfSmall $slot.e $paramData($compName)
     } else {
