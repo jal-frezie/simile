@@ -189,10 +189,16 @@ proc CheckFnsFresh {L progDir id userFnList} {
 
 # this exists in case I don't want to exploit the concat in eval
 proc do_for_node {node args} {
-    global runState
+    global runState tcl_platform
     if {![info exists runState($node,interp)]} {
 #        set runState($node,interp) [interp create]
-	set makeExec ../System/bin/tclsh8.4
+	scan [info tclversion] {%d.%d} MAJ MIN
+	if {[string equal windows $tcl_platform(platform)]} {
+	    set sep {}
+	} else {
+	    set sep .
+	}
+	set makeExec ../System/bin/tclsh$MAJ$sep$MIN
 	set runState($node,interp) [open |$makeExec r+]
 #        $runState($node,interp) alias BringParameter BringParameter
 #        $runState($node,interp) eval source ../Run/support.tcl
