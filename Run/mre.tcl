@@ -124,24 +124,22 @@ namespace eval RunEnv {
                     -textvariable RunEnv::status \
                     -progressvar  RunEnv::prgindic]
             
-            set tb1  [$mainframe addtoolbar]
-            #set sep [Separator $tb1.sep -orient vertical]
-            #pack $sep -fill y -padx 4
-            
+            set tb1  [::ttk::frame [$mainframe getframe].tbar -class Toolbar]
             # build the toolbar  from the toolbarItems list
             set tbnum 0
             foreach toolbar $toolbars {
-                set bbox [ButtonBox $tb1.bbox$tbnum -spacing 0 -padx 1 -pady 1]
+                set i 0
                 foreach item $toolbar {
                     set gif [lindex $item 0]
                     set helptext [lindex $item 1]
                     set command [lindex $item 2]
-                    set newButton [$bbox add -image [image create photo  -file "../Images/Toolbar/$gif"] \
-                            -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
+                    set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "../Images/Toolbar/$gif"] \
                             -command $command]
+                    pack $newButton -padx 1 -pady 1  -side left -anchor w
                     BindPopup $newButton $helptext
+                    incr i
                 }
-                pack $bbox -side left -anchor w
+                pack $tb1 -side top -anchor w -fill x
                 incr tbnum
                 pack [Separator $tb1.sep$tbnum -orient vertical] -side left -fill y -padx 4
             }
@@ -153,7 +151,6 @@ namespace eval RunEnv {
             # Add a PanedWindow for the hierrachical/run control view and main display window
             set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
             set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
-            
             set dp0 [frame $mainpw.mainDisplayPane]
             set dp0s($node) $dp0
             
@@ -166,30 +163,20 @@ namespace eval RunEnv {
             $hiercontrolpw add $runcontrolpane $explorerPane ;# -height 240
             
             # Add notebook for controls, explorer etc
-            NoteBook $explorerPane.notebook
-            $explorerPane.notebook insert end "Explorer" -text "Explorer"
-            set variableListFrame($node) \
-                    [frame [$explorerPane.notebook getframe Explorer].variables]
-            pack $explorerPane.notebook $variableListFrame($node) \
-                    -fill both -expand yes
+            set variableListFrame($node) [frame $explorerPane.variables]
+            pack $variableListFrame($node) -fill both -expand yes
             
             #        $explorerPane.notebook insert end "InputSliders" -text "Input sliders"
             #        set sliderControlFrame \
             #                [frame [$explorerPane.notebook getframe "InputSliders"].sliders]
-            
-            #$explorerPane.notebook insert end "Output" -text "Output"
-            #set outputFrame \
-            #        [frame [$explorerPane.notebook getframe "Output"].sliders -container true]
+            #        $explorerPane.notebook insert end "Output" -text "Output"
+            #        set outputFrame \
+            #                [frame [$explorerPane.notebook getframe "Output"].sliders -container true]
+
             pack $variableListFrame($node) -fill both -expand yes
-            $explorerPane.notebook raise Explorer
             
-            NoteBook $runcontrolpane.notebook
-            $runcontrolpane.notebook insert end "RunControl" -text "Run Control"
-            set runControlFrame($node) \
-                    [frame [$runcontrolpane.notebook getframe RunControl].variables]
-            pack $runcontrolpane.notebook -fill both -expand yes
+            set runControlFrame($node) [frame $runcontrolpane.variables]
             pack $runControlFrame($node) -fill both -expand yes
-            $runcontrolpane.notebook raise RunControl
             
             AddNotebook $dp0
             
@@ -225,7 +212,6 @@ namespace eval RunEnv {
 
     proc RaiseModelWindow {} {
 	variable currentNode
-
 	do_in_editor RaiseModelWindow $currentNode
     }
 
@@ -239,28 +225,31 @@ namespace eval RunEnv {
         destroy $containerId.abovebox
         destroy $containerId.bbox
         destroy $containerId.belowbox
-        NoteBook $containerId.notebook
+        
+        ::ttk::notebook $containerId.notebook
         
         for  {set i 1} {$i<=4} {incr i} {
-            set pageId [UniqueId page [$containerId.notebook pages]]
-            $containerId.notebook insert end $pageId -text "Page $i" \
-                    -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
-            bind [$containerId.notebook getframe $pageId] <Button-3> \
-                    "+tk_popup .pageContextMenu %X %Y"
-            set newContainer [$containerId.notebook getframe $pageId]
+       #     set pageId [UniqueId page [$containerId.notebook tabs]]
+       #     bind [$containerId.notebook getframe $pageId] <Button-3> \
+       #             "+tk_popup .pageContextMenu %X %Y"
+            set newContainer [frame $containerId.notebook.page$i]
             panedwindow $newContainer.panedwindow -orient vertical
             pack $newContainer.panedwindow -expand yes -fill both
             frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1; # -relief ridge;# jmm
+            $containerId.notebook add $newContainer -text "Page $i"
+            bind all <<NotebookTabChanged>> "::RunEnv::PageRaiseCmd $containerId.notebook"
             bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
             bind $newContainer.panedwindow.pane0 <Button-3> \
                     "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
             $newContainer.panedwindow add $newContainer.panedwindow.pane0 -sticky nesw
         }
         
-        $containerId.notebook bindtabs <Double-1> "::RunEnv::EditTabLabel $containerId.notebook"
-        $containerId.notebook bindtabs <Button-3> "::RunEnv::EditTabLabel $containerId.notebook"
         
-        $containerId.notebook raise [lindex [$containerId.notebook pages] 0]
+#        $containerId.notebook bindtabs <Double-1> "::RunEnv::EditTabLabel $containerId.notebook"
+#        $containerId.notebook bindtabs <Button-3> "::RunEnv::EditTabLabel $containerId.notebook"
+        
+        $containerId.notebook select [lindex [$containerId.notebook tabs] 0]
+        SetCurrentContainer $newContainer.panedwindow.pane0
         
         pack $containerId.notebook -fill both -expand yes
     }
@@ -288,10 +277,11 @@ namespace eval RunEnv {
         }
     }
     
-    proc PageRaiseCmd {notebook pageId} {
-        set pageF [$notebook getframe $pageId]
+    proc PageRaiseCmd {notebook} {
+        set pageId [expr [$notebook index current]+1]
+        set pageF $notebook.page$pageId
         set firstPane [lindex [$pageF.panedwindow panes] 0]
-        #ShowMessage debug info "PageRaiseCmd firstPane $firstPane" ok
+   #     ShowMessage debug info "PageRaiseCmd firstPane $firstPane" ok
         SetCurrentContainer $firstPane
     }
     
@@ -308,11 +298,10 @@ namespace eval RunEnv {
         }
         #ShowMessage debug info "containerId $containerId\nParentContainer $ParentContainer" ok
         if {[string match notebook [winfo name $ParentContainer]]} {
-            set pageId [UniqueId page [$ParentContainer pages]]
-            set pageIndex [expr {[llength [$ParentContainer pages]]+1}]
-            $ParentContainer insert end $pageId -text "Page $pageIndex" \
-                    -raisecmd "::RunEnv::PageRaiseCmd $ParentContainer $pageId"
-            set newContainer [$ParentContainer getframe $pageId]
+            set pageId [UniqueId page [$ParentContainer tabs]]
+            set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
+            set newContainer [frame $ParentContainer.page$pageId]
+            $ParentContainer add $newContainer -text "Page $pageIndex"
             panedwindow $newContainer.panedwindow -orient vertical
             pack $newContainer.panedwindow -expand yes -fill both
             frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1
@@ -461,10 +450,11 @@ namespace eval RunEnv {
     }
     
     proc DeleteNotebookPage {notebook page} {
-        set pages [$notebook pages]
+        set pages [$notebook tabs]
+        set page [$notebook index current]
         #puts "$notebook has pages $pages"
         set n [llength $pages]
-        set index [lsearch $pages $page]
+        set index [lsearch -regexp $pages page$page]
         #puts "DeleteNotebookPage  $notebook; $page\n \
         #            page $page; n pages: $n; \n \
         #            parent [winfo parent $notebook]"
@@ -475,8 +465,8 @@ namespace eval RunEnv {
                 return
             }
         }
-        $notebook delete $page 1
-        set pages [$notebook pages]
+        $notebook forget $page
+        set pages [$notebook tabs]
         set n [llength $pages]
         #ShowMessage debug info "DeleteNotebookPage after delete page pages $n" ok; #########
         if {$n==0} {
@@ -732,11 +722,11 @@ namespace eval RunEnv {
             [$mainframe getmenu edit] entryconfigure Copy -state normal
             [$mainframe getmenu edit] entryconfigure Cut -state normal
             [$mainframe getmenu edit] entryconfigure Paste -state disable
-            $tb1.bbox1 itemconfigure 2 -state disabled; # paste button
-            $tb1.bbox3 itemconfigure 1 -state disabled; # Add Notebook button
-            $tb1.bbox4 itemconfigure 0 -state disabled; # add helper buttons
-            $tb1.bbox4 itemconfigure 1 -state disabled
-            $tb1.bbox4 itemconfigure 2 -state disabled
+     #       $tb1.bbox1 itemconfigure 2 -state disabled; # paste button
+     #       $tb1.bbox3 itemconfigure 1 -state disabled; # Add Notebook button
+     #       $tb1.bbox4 itemconfigure 0 -state disabled; # add helper buttons
+     #       $tb1.bbox4 itemconfigure 1 -state disabled
+     #       $tb1.bbox4 itemconfigure 2 -state disabled
             
             .pageContextMenu entryconfigure 0 -state disabled
             .pageContextMenu entryconfigure 1 -state disabled
@@ -747,14 +737,14 @@ namespace eval RunEnv {
             
             if {[string match vertical [$pw cget -orient]]} {
                 #ShowMessage debug info "vert $tb1.bbox2" ok
-                $tb1.bbox2 itemconfigure 1 -state disabled
-                $tb1.bbox2 itemconfigure 0 -state normal
+     #           $tb1.bbox2 itemconfigure 1 -state disabled
+     #           $tb1.bbox2 itemconfigure 0 -state normal
                 .pageContextMenu entryconfigure 10 -state disabled
                 .pageContextMenu entryconfigure 9 -state normal
             } else  {
                 #ShowMessage debug info "horiz $tb1.bbox2" ok
-                $tb1.bbox2 itemconfigure 0 -state disabled
-                $tb1.bbox2 itemconfigure 1 -state normal
+     #           $tb1.bbox2 itemconfigure 0 -state disabled
+     #           $tb1.bbox2 itemconfigure 1 -state normal
                 .pageContextMenu entryconfigure 9 -state disabled
                 .pageContextMenu entryconfigure 10 -state normal
             }
@@ -763,13 +753,13 @@ namespace eval RunEnv {
             [$mainframe getmenu edit] entryconfigure Copy -state disable
             [$mainframe getmenu edit] entryconfigure Cut -state disable
             [$mainframe getmenu edit] entryconfigure Paste -state normal
-            $tb1.bbox1 itemconfigure 2 -state normal; # paste button
-            $tb1.bbox2 itemconfigure 1 -state normal
-            $tb1.bbox2 itemconfigure 0 -state normal
-            $tb1.bbox3 itemconfigure 1 -state normal; # Add Notebook button
-            $tb1.bbox4 itemconfigure 0 -state normal; # add helper buttons
-            $tb1.bbox4 itemconfigure 1 -state normal
-            $tb1.bbox4 itemconfigure 2 -state normal
+     #       $tb1.bbox1 itemconfigure 2 -state normal; # paste button
+     #       $tb1.bbox2 itemconfigure 1 -state normal
+     #       $tb1.bbox2 itemconfigure 0 -state normal
+     #       $tb1.bbox3 itemconfigure 1 -state normal; # Add Notebook button
+     #       $tb1.bbox4 itemconfigure 0 -state normal; # add helper buttons
+     #       $tb1.bbox4 itemconfigure 1 -state normal
+     #       $tb1.bbox4 itemconfigure 2 -state normal
             
             .pageContextMenu entryconfigure 0 -state normal
             .pageContextMenu entryconfigure 1 -state normal
@@ -1222,10 +1212,10 @@ namespace eval RunEnv {
         # basename is the root of the Id, numbers after / are appended to it
         # pagenames is the list of existing names
         set i 1
-        while {[lsearch -exact $pagenames $basename/$i] > -1} {
+        while {[lsearch -regexp $pagenames $basename$i] > -1} {
             incr i
         }
-        set title $basename/$i
+        return $i
     }
 } ;# end of namespace RunEnv
 
@@ -1285,11 +1275,14 @@ proc NewMreHelperWindow {node helperId helperTitle} {
 }
 
 proc RaiseMREFor {node} {
-    global helperTable
+    global helperTable tcl_platform
 
     set myMre $helperTable($node,whichRunEnv)
     wm deiconify $myMre
     raise $myMre
+    if [string match Darwin $tcl_platform(os)] {
+       tclAE::send -s misc actv
+    }
 }
 
 # A top level window to contain the helpers

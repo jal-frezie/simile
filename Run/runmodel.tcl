@@ -1,7 +1,3 @@
-# Go for closest thing to the old 'agroforestry' colours?
-# tk_bisque
-# No, it's horrible...
-
 # First few procedures in here are utilities used by both the
 # helper applications and the AME interface: put these in a new file.
 
@@ -14,14 +10,34 @@ source ../Run/hai2mmii.tcl
 
 source ../Run/support.tcl
 
-# botch -- mre.tcl has to be loaded after the other tcls or it doesn't
+# mre.tcl has to be loaded after the other tcls or it doesn't
 # work properly
 
 source ../Run/mre.tcl
 
 proc MakeHelperMenu {} {
-    global custom myNode
+    global custom myNode tcl_platform
     set fm [menu .helpers -tearoff 0]
+
+#
+# MacOS X specific procedures for the run-time window
+# Alastair 31 Jan 2005
+#
+
+if [string match "Darwin" $tcl_platform(os)] {
+#
+# The Quit command in the application menu ALWAYS calls exit, so we must quit 
+# by that route however it is invoked (keyboard shortcut or mouse click)
+#
+  rename exit wishExit
+  proc exit {} {
+    do_in_editor tclAE::send -s misc actv
+    do_in_editor prolog tk_kill_everything('.mswindow00001.canvas')
+  }
+  bind all <Command-q> exit
+  package require tclAE
+  tclAE::send -s misc actv
+}
 
     $fm add command -label "Load" -command LoadView
     $fm add command -label "Save" -command SaveView
@@ -966,12 +982,10 @@ proc StartRun {node} {
 #	    $sliderBook raise Explorer
 #	    unset ::RunEnv::sliderControlFrame
 #	}
-	set ctrlPane [winfo parent [winfo parent [winfo parent [winfo parent \
-					$::RunEnv::runControlFrame($node)]]]]
+	set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
 	update ;# so reqheight works next
 #	tkwait visibility $runState($node,helperId)
-	$ctrlPane sash place 0 \
-	    10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
+	$ctrlPane sash place 0 10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
     }
 # Now list all the inputs in the model, so we can avoid running it until
 # all have tools attached to provide their values
@@ -1232,9 +1246,9 @@ proc ModelDirectory {} {
     global custom
     return [file dirname [lindex $custom(hotlist) 0]]
 }
-
 if {[catch {eval KickOff $argv} err]} {
     ShowMessage {Simile obliterfried!} error $err ok
 }
+
 do_in_editor set runState($myNode,modelReady) 1
 
