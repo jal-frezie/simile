@@ -113,7 +113,13 @@ toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash
 .splash.c create text 270.0 275.0 -font {-family helvetica -size 10} -fill #660066 -text "Version $env(SIMILE_VERSION)"
-.splash.c create text 270.0 295.0 -font {-family helvetica -size 10} -fill #660066 -text "Registered to $env(licensee_name), $env(licensee_corp)"
+set regInfo $env(licensee_name)
+if {[info exists env(licensee_corp)]} {
+    if {[llength $env(licensee_corp)]} {
+	append regInfo ", $env(licensee_corp)"
+    }
+}
+.splash.c create text 270.0 295.0 -font {-family helvetica -size 10} -fill #660066 -text "Registered to $regInfo"
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
