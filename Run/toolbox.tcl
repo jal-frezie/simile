@@ -106,7 +106,7 @@ proc ControlDraw {simileVersion prologVersion} {
                 {custom(initEqnbar) initEqnbar ON "Equation bar"} \
                 {custom(bigButtons) bigButtons OFF "Use large buttons"} \
                 {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
-                {custom(compDescPop) compDescPop ON "Description"} \
+                {custom(compDescPop) compDescPop ON "Equation"} \
                 {custom(compValPop) compValPop ON  "Value"}
                 {custom(compCmtPop) compCmtPop ON  "Comment"} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
