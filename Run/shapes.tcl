@@ -652,24 +652,22 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     set textY [Scale $w [expr [lindex $ptz 1] \
             + $looks($ptype,yoffset)*$fatness/100]]
 # experimental background box for text
-    if {$looks($type,txtbd)} {
-	set txtbd black
-    } else {
-	set txtbd {}
-    }
     if {$looks($type,txtbg)} {
 	set txtbg \#ffffc0
     } else {
 	set txtbg {}
     }
-    set backBox [$w create rect 0 0 1 1 -outline $txtbd -fill $txtbg \
+    set backBox [$w create rect 0 0 1 1 -outline {} -fill $txtbg \
 		     -tag "$tagSet /${type}_text/"]
     $w dtag $backBox editable
     $w dtag $backBox currently_editable
+    if {$looks($type,txtbd)} {
+	$w create line 0 0 1 1 -fill $textColor -tag [$w gettags $backBox]
+    }
     set textItem [$w create text $textX $textY -text $capt -fill $textColor \
 	-font $useFont -anchor $looks($ptype,textanchor) \
 	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"]
-    eval {$w coords $backBox} [$w bbox $textItem]
+    FixBackBox $w $textItem
 }
 
 # This is called when a new node with a caption is added. The caption should be
@@ -716,8 +714,9 @@ proc FlashSymbol {w name outlineColor textColor} {
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
             line {
-		if {![string match */background/* \
-			  [$w itemcget $object -tag]]} {
+		if {[string match */*_text/* [$w gettags $object]]} {
+		    $w itemconfigure $object -fill $textColor
+		} elseif {![string match */background/* [$w gettags $object]]} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
             } oval|arc {
@@ -1818,4 +1817,3 @@ button .b
 set looks(buttonColor) [Desystematize [.b cget -bg]]
 set looks(windowColor) white
 destroy .b
-

@@ -888,9 +888,14 @@ proc CanvasEditBind { c } {
 
 proc FixBackBox {c textItem} {
     set nid [ExtractPrologName $c $textItem]
+    scan [$c bbox $textItem] "%g %g %g %g" l t r b
     foreach backBox [$c find withtag $nid] {
 	if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
-	    eval {$c coords $backBox} [$c bbox $textItem]
+	    if {[string equal line [$c type $backBox]]} {
+		$c coords $backBox $r $t $l $t $l $b $r $b $r $t
+	    } else {
+		$c coords $backBox $l $t $r $b
+	    }
 	}
     }
 }
@@ -1045,7 +1050,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add command -label Close -command "MenuClose $c" \
             -accelerator "Alt+x"
     AddAccelerator $winid file Close "<Alt-x>"
-    $fm add command -label Exit -command "prolog tk_kill_everything"
+    $fm add command -label Exit -command "prolog tk_kill_everything('$c')"
     
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
@@ -1567,7 +1572,7 @@ proc DragComponentIn {winId button x y} {
 
 proc ExtractPrologName { winId target } {
     set tagList [$winId gettags $target]
-    set objNamePosn [lsearch -regexp $tagList {(node)|(arc)[0-9]*}]
+    set objNamePosn [lsearch -regexp $tagList {((node)|(arc)[0-9]*)|(sample)}]
     return [lindex $tagList $objNamePosn]
 }
 
@@ -1783,5 +1788,3 @@ proc ClearWindow {winId} {
     $winId delete doomed
     ResetEqnBar [winfo parent $winId].toolSlot.eqnbar
 }
-
-

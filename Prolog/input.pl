@@ -14,7 +14,7 @@ sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
 		       tk_embrace/2, tk_abandon/0,
 		       tk_abandon_eqn/0, compile_to_file/1,
 		       tk_run_settings_tweaked/1, tk_off_window/1,
-		       tk_kill_everything/0, tk_set_new_size/4,
+		       tk_kill_everything/1, tk_set_new_size/4,
 		       tk_change_size/4, tk_do_colours/2]).
 
 sicstus_use_module([library(lists), backup, event, menu]).
@@ -146,8 +146,8 @@ tk_off_window(Wid) :-
 	finish_old_edit(none),
 	off_window(Wid).
 
-tk_kill_everything :-
-	kill_everything.
+tk_kill_everything(Wid) :-
+	kill_everything(Wid).
 
 tk_do_colours(Node, Way) :-
 	do_colours(Node, Way).

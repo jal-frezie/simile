@@ -10,7 +10,7 @@ interface of the application. It responds by:
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
-	off_window/1, kill_everything/0]).
+	off_window/1, kill_everything/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
 	state, backup, library, ame_gen, utility, ss_import,
@@ -1190,11 +1190,11 @@ off_window(Win) :-
 		user:wind_up);
 	delete_window(Win)).
 
-kill_everything :-
+kill_everything(Win) :-
 	Win shows_model Model,
 	is_toplevel(Model), !,
 	off_window(Win),
-	kill_everything.
+	kill_everything(_).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Win, Target) :-
