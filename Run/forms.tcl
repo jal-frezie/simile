@@ -1650,7 +1650,7 @@ proc PopReopen {win} {
 }
 
 proc ContextSensitiveHelp {context page} {
-    global tcl_platform helphtml
+    global tcl_platform helphtml env
     if { [string match windows $tcl_platform(platform)] } {
         package require winhelp
         winhelp $context ../Help/simile.chm $page

@@ -992,6 +992,19 @@ proc ConvertSSxml {} {
     close $importDest
 }
 
+# Prolog may need some help recognizing Tcular number formats...
+
+proc EatNumber {str} {
+    if {[scan $str %g%n floatVal floatSize]} {
+	if {[scan $str %d%n intVal intSize]} {
+	    if {$intSize == $floatSize} {
+		return [list $intVal $intSize]
+	    }
+	}
+	return [list [format %\#.8g $floatVal] $floatSize]
+    }
+}    
+
 # Path names derived from Windows environment variables must be
 # 'brainwashed' i.e., stripped of their native culture and turned
 # into blank-faced Unix-style forward-slash-separated automata.

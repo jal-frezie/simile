@@ -101,7 +101,7 @@ unjustified. I don't want to process anything in single quotes for
 instance... */
 
 make_legible_for_prolog(String, NewString) :-
-	[BS, Sq, Dq, Sp, Pt, N0, Eu, El, Po, Pc, Xm, Eq] = "\\\'\" .0Ee()!=",
+	[BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq] = "\\\'\" .()!=",
 	Nums = "0123456789",
 	append(Prefix, ToTweak, String),
 	/* Do not process anything in single quotes */
@@ -126,23 +126,15 @@ make_legible_for_prolog(String, NewString) :-
 	ToTweak = [Dq | AfterQuote],
 	append(InQuotes, [Dq | Suffix], AfterQuote),
 	    append([Sq, Dq | InQuotes], [Dq, Sq], Tweaked);
-	/* do not start a number with a point */
-	ToTweak = [N, Pt | Suffix],
-	\+ member(N, Nums),
-		Tweaked = [N, N0, Pt];
+	/* If a number, parse it in Tcl as prologs are idiosyncratic */
+	ToTweak = [N | _],
+	    member(N, [Pt | Nums]),
+	    bite_off_number(ToTweak, Tweaked, Suffix);
 	/* separate a unary operator from other symbols */
 	ToTweak = [M, N | Suffix],
 	member(M, "+-*/\\^<>=`~:.?@#$&"),	
 	member(N, "-"), /* 	    (not + cos we use ++) */
 	    Tweaked = [M, Sp, N];
-	/* Make sure scientific notation numbers contain point (and skip them
-	in any case so the e/E doesnt look like an atom/var) */
-	append(Ns, [E | Suffix], ToTweak),
-	    member(E, [Eu, El]), /* must be an exponent */
-	    (select(Pt, Ns, AllNums), Insert = [E];
-		AllNums = Ns, Insert = [Pt, N0, E]),
-	    \+ (member(NotN, AllNums), \+ member(NotN, Nums)),
-	    append(Ns, Insert, Tweaked);
 	/* If a function has no args, pop in an empty atom */
 	ToTweak = [Po, Pc | Suffix],
 	    Tweaked = [Po, Sq, Sq, Pc];
@@ -156,6 +148,14 @@ make_legible_for_prolog(String, NewString) :-
 	append([Prefix, Tweaked, NewSuffix], NewString);	
 	NewString = String.
 
+bite_off_number(String, Num, Left) :-
+	output:safe_tcl_eval(['EatNumber', chars(String)], RList),
+	append(Num, [32 | SzStr], RList),
+	name(Size, SzStr),
+	append(Eaten, Left, String),
+	length(Eaten, Size).
+
+/*
 number_follows(All, Number, Rest, Type) :-
 	member(Type, [scientific, any_float, any_int]),
 	append(Number, Rest, All),
@@ -186,7 +186,7 @@ unsigned_int(Num) :-
 	\+ (member(N, Num), nonum(N)).
 	  
 nonum(N) :- \+ member(N, "0123456789").
-
+*/
 	
 
 get_host(Object, Visible) :-
