@@ -1790,7 +1790,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -borderwidth 2 -relief raised -image $iconImages(function)
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
-    global equation
+    global equation msgs
 
     foreach funk $equation(fnDefs) {
 	set box $m
@@ -1799,12 +1799,13 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 	    set lname $box.[string tolower [join $level _]]
 	    if {[catch {$box index $level}]} {
 		menu $lname -tearoff 0
+		MenuBindPopup $lname {}
 		$box add cascade -menu $lname -label $level
 	    }
 	    set box $lname
 	}
 	set component [lindex $funk 1]
-	if {[catch {$box index $component}]} {
+	if {[catch {$box index $component\(\)}]} {
 	    $box add command -label $component\(\) \
                 -command [list InsertFunction $eb.equation $component]
 	}

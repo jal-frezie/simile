@@ -915,6 +915,7 @@ proc AddWidgetPopup {key X Y} {
 }
 
 proc AddMenuPopup {widget list y X Y new} {
+    global msgs
     if {$new} {
         PostPopup $X $Y
         pack [message .popup.message -aspect 400 -bg \#ffffc0] \
@@ -924,8 +925,20 @@ proc AddMenuPopup {widget list y X Y new} {
     if {[string match none $entry] || ![winfo exists .popup.message]} {
         return
     }
-    set line [lindex $list $entry]
-    set message "[lindex $line 1]: [lindex $line 0]"
+    if {[llength $list]} {
+	set line [lindex $list $entry]
+	set message "[lindex $line 1]: [lindex $line 0]"
+    } else {
+	set key [$widget entrycget $entry -label]
+	if {[string equal command [$widget type $entry]]} {
+	    set key [string range $key 0 end-2]
+	}
+	if {[info exists msgs($key)]} {
+	    set message $msgs($key)
+	} else {
+	    set message $key
+	}
+    }
     .popup.message configure -text $message
 }
 

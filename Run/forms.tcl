@@ -768,7 +768,7 @@ proc functionClick {boxname fn} {
 }
 
 proc AddFnPopup {X Y fnName} {
-    AddWidgetPopup $fnName $X $Y
+    AddWidgetPopup [lindex [split $fnName .] end] $X $Y
 }
 
 proc AddParamPopup {lb y X Y} {
