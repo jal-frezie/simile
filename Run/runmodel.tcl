@@ -707,7 +707,7 @@ proc SetRunParams {node runParams} {
 # program: 0 = none, 1 = awaiting fixed params, 2 = up to date, 3 = out of date
 
 proc StartRun {node} {
-    global runState helperTable running_c
+    global runState window_info helperTable running_c
     # ShowMessage debug info enter(start_run) ok
     if {[info exists runState($node,currentTime)]} {
         if {$runState($node,execTime) != $runState($node,currentTime)} {
@@ -739,7 +739,7 @@ proc StartRun {node} {
     if {[info exists helperTable($node,whichRunEnv)]} {
 	set fpParent $helperTable($node,whichRunEnv)
     } else {
-	set fpParent [winfo toplevel [focus]]
+	set fpParent [FindNodeTopWin $node]
     }
     if {![FileParamDialogue $node $fpParent 0]} {
 	return 0

@@ -2605,15 +2605,18 @@ proc SetEqnButtonState {bar newState} {
 }
 
 proc RaiseModelWindow {} {
+    set win [FindNodeTopWin $::RunEnv::currentNode]
+    wm deiconify $win
+    raise $win
+}
+
+proc FindNodeTopWin {node} {
     global window_info
-    set node $::RunEnv::currentNode
-    
     foreach {key win} [array get window_info *,parent] {
         set c [string range $key 0 end-7]
         if {[string equal $node $window_info($c,top_node)] && \
                     [info exists window_info($c,is_top_level)]} {
-            wm deiconify $win
-            raise $win
+            return $win
         }
     }
 }
