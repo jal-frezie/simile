@@ -478,7 +478,7 @@ trim_tree(Top, Point) :-
 shift_dll(Point, Top, Loc, Repl) :-
 	windowize(Point, WPoint),
 	windowize(Loc, WLoc),
-	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), Repl], _).
+	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), br(Repl)],_).
 
 /* Only works for an all-in-one model for now...*/
 prepare_tcl_execution(Wid) :-
