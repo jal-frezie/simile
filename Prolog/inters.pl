@@ -476,15 +476,14 @@ make_intermediates(
 	context. */
 
 	(Source = makearray(Element, Dim),
-	    (make_intermediates(Dim, dum, [], _, [], [], 0, _, Arg2_Units, _,
-				part_result(_,_,_, NumDim)),
-		Arg2_Units = const_int, !;
+	    (make_intermediates(Dim, dum, [], _, [], [], 0, _, const_int, _,_),
+		!;
 	    raise_exception(bad_index_number(Dim, makearray))),
 	    NowBuilding = [LocalLoop | BuildingArrays];
 	make_choose_form(Source, keep(LocalInd), 1, Element),
-	    length(Source, NumDim),
+	    length(Source, Dim),
 	    NowBuilding = BuildingArrays), !,
-	    LocalLoop = set(LocalInd, loop(NumDim)),
+	    LocalLoop = set(LocalInd, loop(Dim)),
 	    make_intermediates(Element, Target, DestPath, BackSwap, PrevInters,
 			NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),

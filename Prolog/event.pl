@@ -140,15 +140,16 @@ click_in(Wid, Point, Trans, Depth, Parent) :-
 click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 	get_mode(add),
 	set_start_coords(Xpt, Ypt),
+	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
 	get_adding_object(New_obj),
 	(New_obj is_class_of_sort box,
 		(New_obj is_class_of_sort rounded_rect,
 			advance_phase_to(rubberband);
 		add_at_point(Xpt, Ypt, New_obj, Parent, _));
-	New_obj = flow, Starter = cloud,
-		add_at_point(Xpt, Ypt, Starter, Parent, DropNode),
-		do_linear(New_obj, DropNode)).
+	make_terminator(New_obj, Parent, DropNode),
+	    (var(DropNode), !;
+		do_linear(New_obj, DropNode))).
 
 click_in(_, _, _, _, Parent) :-
 	(get_mode(select), !,
@@ -1104,7 +1105,8 @@ unclick_obj :-
 			get_highlit_obj(0, WrongFinish),
 			normalize(WrongFinish);
 		    make_terminator(New_obj, Finish_thing, Terminator),
-			tie_ends(New_obj, Start_thing, Terminator),
+			(var(Terminator), !;
+			    tie_ends(New_obj, Start_thing, Terminator)),
 			normalize(OrigStart),
 			normalize(Finish_thing));
 		get_phase(barge),
@@ -1268,12 +1270,27 @@ make_terminator(LineType, FinishZone, Terminator) :-
 	LineType = flow, TermType = cloud,
 	/* set influence/variable as alternative if required */
 	get_current_coords(FinalX, FinalY),
-	add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator), !;
+	(add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator);
+	 do_dialogue("Addition error", error, "Unable to make terminator here",
+		ok, _)), !;
 	LineType = influence,
 		FinishZone is_of_sort has_function,
       (implicit_function(FinishZone, Terminator);
 		add_implicit_function(FinishZone, Terminator)), !;
 	Terminator = FinishZone.
+
+make_terminator(LineType, FinishZone, Terminator) :-
+	find_type(FinishZone, submodel), !,
+	(LineType = flow, TermType = cloud,
+	/* set influence/variable as alternative if required */
+	    get_current_coords(FinalX, FinalY),
+	    add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator), !;
+	do_dialogue("Addition error", error, "Unable to make terminator here",
+		ok, _), fail);
+	LineType = influence,
+	    FinishZone is_of_sort has_function,
+	    (implicit_function(FinishZone, Terminator), !;
+		add_implicit_function(FinishZone, Terminator)).
 
 /* delete_net deletes everything highlit. It orders them
 influences-flows-nodes so nothing has been consequentially deleted
