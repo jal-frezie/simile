@@ -18,19 +18,21 @@ package require Itcl
 namespace import ::itcl::*
 
 if {[string match windows $tcl_platform(platform)]} {
-    #  package require tcom
-    #  ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+    package require tcom
+    ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
 }
 
 package require Tk
 
-#puts "SimileAutoObj; pwd [pwd]"
+
+set SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
 
 ###############################################################################
 set argc 0; # simile.tcl expects to be called from the command line - tell it no args
 source "[pwd]/../../Run/simile.tcl"
-puts "sourced"
+#puts "sourced"
 ###############################################################################
+
 
 class ModelWindowImpl {
     
@@ -54,12 +56,12 @@ class ModelWindowImpl {
         HideModelWindow
     }
     
-    public method HideModelWindow {} {
+    public method Hide {} {
         # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
         wm withdraw [GetModelWindow]
     }
     
-    public method ShowModelWindow {} {
+    public method Show {} {
         # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
         wm deiconify [GetModelWindow]
     }
@@ -120,48 +122,26 @@ class ModelWindowImpl {
     
     # Model Menu
     public method BuildCPP {} {
+        # builds the model with CPP and returns a run control command/object
         MenuSelect [GetModelWindow].canvas file run_c
+        set rc [RunControlImpl ::runControl $this]
+        return $rc
     }
     
     public method BuildTcl {} {
+        # builds the model with Tcl and returns a run control command/object
         MenuSelect [GetModelWindow].canvas file run_tcl
+        set rc [RunControlImpl ::runControl $this]
+        return $rc
     }
     
     public method ListEquations {} {
         MenuSelect [GetModelWindow].canvas file list_eqns
     }
-    
-    
-    public method GetValue {path} {
-        global runState
-        set winId $runState(node00000,helperId)
-        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
-    }
-    
-    public method SetValue {path value} {
-        global runState
-        # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
-        set winId $runState(node00000,helperId)
-        SetModelValue $winId [GetIdFromCaptionPath $winId $path] $value
-        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
-    }
-    
-    public method GetMinValue {path} {
-        global runState
-        set winId $runState(node00000,helperId)
-        return [::GetMinValue $winId [GetIdFromCaptionPath $winId $path]]
-    }
-    
-    public method GetMaxValue {path} {
-        global runState
-        set winId $runState(node00000,helperId)
-        return [::GetMaxValue $winId [GetIdFromCaptionPath $winId $path]]
-    }
-    
 }
 
 class RunControlImpl {
-                       
+    
     variable winId;    #Tk path to RunControl window
     variable keyvalue; # RunControl namespace
     variable modelNode node00000
@@ -184,7 +164,9 @@ class RunControlImpl {
     
     public method Run {} {
         # returns the time to complete (to run the simulation)
-        return [time [list ${keyvalue}::SetMode $winId start]]
+        set timestr [time [list ${keyvalue}::SetMode $winId start]]
+        set musec [lindex $timestr 0]
+        return "[expr {$musec/1e6}] sec"
     }
     
     public method Reset {} {
@@ -192,7 +174,7 @@ class RunControlImpl {
     }
     
     # No point in a stop command as the Run is not script interuptable
-    #public method Stop {} { 
+    #public method Stop {} {
     #    ${keyvalue}::SetMode $winId stop
     #}
     
@@ -251,16 +233,99 @@ class RunControlImpl {
         return $runState($modelNode,displayInt)
     }
     
-    public method SetTimeStep {Number} {
+    public method GetNumberOfTimeSteps {} {
+        return [GetPhaseCount $modelNode]
+    }
+    
+    public method SetTimeStep {number timestep} {
+        global runState
+        if {0<$number && $number<=[GetPhaseCount $modelNode]} {
+            set runState($modelNode,update${number}) $timestep
+        } elseif {$number==0 || $number==-1}  {
+            puts "Timestep 0 and -1 cannot be specified."
+        } else  {
+            puts "Timestep $number is not in use."
+        }
+    }
+    
+    public method GetTimeStep {number} {
+        global runState
+        if {0<$number && $number<=[GetPhaseCount $modelNode]} {
+            return $runState($modelNode,update${number})
+        } elseif {$number==0 || $number==-1}  {
+            puts "Timestep 0 and -1 cannot be specified."
+        } else  {
+            puts "Timestep $number is not in use."
+        }
+    }
+    
+    public method GetValue {path} {
+        global runState
+        set winId $runState(node00000,helperId)
+        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
+    }
+    
+    public method SetValue {path value} {
+        global runState
+        # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
+        set winId $runState(node00000,helperId)
+        SetModelValue $winId [GetIdFromCaptionPath $winId $path] $value
+        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
+    }
+    
+    public method SetValueNew {path value} {
+        global runState
+        # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
+        set winId $runState(node00000,helperId)
+        SetModelValue $winId [GetIdFromCaptionPath $winId $path] $value
+        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
+    }
+    
+    public method GetMinValue {path} {
+        global runState
+        set winId $runState(node00000,helperId)
+        return [::GetMinValue $winId [GetIdFromCaptionPath $winId $path]]
+    }
+    
+    public method GetMaxValue {path} {
+        global runState
+        return [::GetMaxValue $winId [GetIdFromCaptionPath $winId $path]]
+    }
+    
+    #paths
+    public method GetModelType {} {
+        return [GetModelType $winId $modelNode]
+    }
+    
+    public method GetModelEval {} {
+        return [GetModelEval $winId $modelNode]
+    }
+    
+    public method GetModelDims {} {
+        return [GetModelDims $winId $modelNode]
+    }
+    
+    public method GetModelClass {} {
+        return [GetModelClass $winId $modelNode]
+    }
+    
+    public method GetObjectList {} {
+        return [GetObjectList $winId]
+    }
+    
+    public method GetPhaseCount {} {
+        return [GetPhaseCount $modelNode]
     }
     
 }
 
-class ModelExplorerImpl  {
-    constructor {modelWindow} {
-        return [$modelWindow CreateHelperWindow ModelInspector63654 {Model Explorer}]
-    }
-}
+################################################################################
+# class ModelExplorerImpl  {
+#     constructor {modelWindow} {
+#         return [$modelWindow CreateHelperWindow ModelInspector63654 {Model Explorer}]
+#     }
+# }
+################################################################################
 
 class TableHelperImpl {
     variable winId;    #Tk path to Table helper window
@@ -274,6 +339,10 @@ class TableHelperImpl {
         set winId [$modelWindow CreateHelperWindow $keyvalue {Table}]
         Hide
         SetUpdateAtDisplayInterval false
+    }
+    
+    destructor {} {
+        destroy $winId
     }
     
     public method Show {} {
@@ -319,6 +388,6 @@ class TableHelperImpl {
 }
 
 if {[string match windows $tcl_platform(platform)]} {
-    #  ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+    ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
 }
 
