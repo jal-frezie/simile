@@ -702,6 +702,8 @@ Fails if either there is a link without a corresponding variable, or vice versa.
 
 checks_out_locally(Function) :- 
 	Function has_class_refinement value of Expr,
+	\+ Expr = '', /* sometimes given to flow to get bowtie on right
+		      section */
 	instance:apply_minmax(Function, Expr, FullExpr),
 	replace_subexps(FullExpr, image, pick_var, _, top_down, Pairs, _),
 	(setof(Source, valid_input(Function, Source), Sources), !; Sources = []),

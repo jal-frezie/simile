@@ -539,7 +539,7 @@ add_implicit_function(Exp_node, Node_name) :-
 		new_line(influence, [], Node_name, Exp_node, _),
 		(Exp_node is_of_sort boolean_value, !,
 		    Node_name has_new_class_refinement units of boolean;
-		true);
+		 true);
 	Exp_node has_class submodel,
 	Parent has_part Exp_node,
 	Parent has_model_refinement references of ParentRefs, !,

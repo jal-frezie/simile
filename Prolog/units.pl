@@ -68,6 +68,7 @@ combine_signs(/, /, *).
 baseline(metre).
 baseline(kilogramme).
 baseline(second).
+baseline(kelvin).
 baseline(radian).
 
 :- dynamic(unit_definition/2).
@@ -128,5 +129,3 @@ unit_definition(kwh,	kilowatt*hour). /* energy to power and back again, wtfn? */
 
 unit_definition(watt,	joule/second).
 unit_definition(kilowatt,	watt*1000).
-
-unit_definition(kelvin, 1).
