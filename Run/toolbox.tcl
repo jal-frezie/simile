@@ -101,44 +101,28 @@ proc ControlDraw {simileVersion prologVersion} {
     }
     
     Pref_Init $custom(prefDir)/prefs ../Run/sysprefs
-    Pref_Add {{custom(initNavbar) initNavbar ON \
-                    "Toolbar in new model windows"} \
-                {custom(initToolbar) initToolbar ON \
-                    "Component bar in new model windows"} \
-                {custom(initEqnbar) initEqnbar ON \
-                    "Equation bar in new model windows"} \
-                {custom(bigButtons) bigButtons OFF \
-                    "Bigger buttons for tool and component bars"} \
-                {custom(saveExtras) saveExtras {CHOICE {Model file only} \
-                        {Canvas file}} "Save models as..."} \
-                {custom(compDescPop) compDescPop ON \
-                    "Model component description popups"}
-        {custom(compValPop) compValPop ON \
-                    "Model component value popups"}
-        {custom(compCmtPop) compCmtPop ON \
-                    "Model component comment popups"} \
-                {custom(recentCount) recentCount 10 \
-                    "Show how many reopen options"} \
-                {custom(flowRouting) flowRouting ON \
-                    "Rectilinear flow routing"} \
-                {custom(deleteEndToEnd) deleteEndToEnd ON \
-                    "Delete links end-to-end"}}
+    Pref_Add {{custom(initNavbar) initNavbar ON "Tool bar"} \
+                {custom(initToolbar) initToolbar ON "Component bar"} \
+                {custom(initEqnbar) initEqnbar ON "Equation bar"} \
+                {custom(bigButtons) bigButtons OFF "Use large buttons"} \
+                {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
+                {custom(compDescPop) compDescPop ON "Description"} \
+                {custom(compValPop) compValPop ON  "Value"}
+                {custom(compCmtPop) compCmtPop ON  "Comment"} \
+                {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
+                {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
+                {custom(deleteEndToEnd) deleteEndToEnd ON "Delete links end-to-end"}}
+    # JMM change wording and change default to ON
+    Pref_Add {{custom(helperManager) helperManager ON \
+                "Use single window manager"}};
     #JMM add postions for run control and slider
-    # How is popup text set?
-    Pref_Add {{custom(runControlPosition) \
-                    runControlPosition "+0-20" \
-                    "Position of Run Control (when seperate window)"} \
-                {custom(slidersPosition) \
-                    slidersPosition "+0+0" \
-                    "Position of Input Sliders (when seperate window)"}}
+    Pref_Add {{custom(runControlPosition) runControlPosition "+0-20" "Position of run control"} \
+                     {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"}}
     if {[string match windows $tcl_platform(platform)]} {
 	file attributes $custom(prefDir) -hidden true
         Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
                         "Use which C++ compiler?"}}
     }
-    # JMM change wording and change default to ON
-    Pref_Add {{custom(helperManager) helperManager ON \
-	    "Use single window Run Time Environment"}};
 
     foreach nodeType {normal generic compartment channel \
                 variable function cloud submodel flow influence \
