@@ -77,16 +77,19 @@ namespace eval grid005 {
     proc Restore {winId} {
         variable useNodes
         namespace import -force ::maptools2::*
-        scan [GetState $winId] "displaying %s %s colourmap %s %s %s aspect %d %g %g" \
-                nodePath colvalPath \
-                useNodes($winId,cbot) useNodes($winId,cmid) useNodes($winId,ctop) \
-                useNodes($winId,nswatches)\
-                useNodes($winId,min) useNodes($winId,max)
-        set useNodes($winId,display1) [GetIdFromCaptionPath $nodePath]
-        set useNodes($winId,colvals) [GetIdFromCaptionPath $colvalPath]
-        regexp /*.$ $nodePath match; # match start with /
-        regsub / $match {} match; #get rid of the /
-        set useNodes($winId,caption) $match
+	set state [GetState $winId]
+# looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g"
+	set useNodes($winId,display1) [GetIdFromCaptionPath [lindex $state 1]]
+	set useNodes($winId,colvals) [GetIdFromCaptionPath [lindex $state 2]]
+	set colourBase [lsearch $state colourmap]
+	foreach colourPt {cbot cmid ctop} {
+	    set useNodes($winId,$colourPt) [lindex $state [incr colourBase]]
+	}
+	set rangeBase [lsearch $state aspect]
+	foreach rangePt {nswatches min max} {
+	    set useNodes($winId,$rangePt) [lindex $state [incr rangeBase]]
+	}
+        set useNodes($winId,caption) [lindex $state 1]
         
         SetColours useNodes $winId
         AddToolbar $winId
