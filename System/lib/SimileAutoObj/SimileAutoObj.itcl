@@ -125,7 +125,7 @@ itcl::class similescript::ModelWindow {
     public method BuildTcl {} {
         # builds the model with Tcl and returns a run control command/object
         MenuSelect [GetModelWindow].canvas file run_tcl
-        set rc [RunControl ::runControl $this]
+        set rc [similescript::RunControl ::runControl $this]
         return $rc
     }
     
