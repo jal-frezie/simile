@@ -95,8 +95,6 @@ if {$argc} {
     } else {
 	set env(OPEN_MODEL) $arg1
     }
-#tk_messageBox -title debug -icon info \
-#	-message "Initial file is $env(OPEN_MODEL)" -type ok
 }
 
 # Directory to start in

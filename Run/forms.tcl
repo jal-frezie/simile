@@ -1071,20 +1071,33 @@ proc DoRegDialog {dtId} {
     wm title $t "Welcome to Simile version $userinfo(Version)"
     wm transient $t $dtId
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
-
+    set welcomeDone 0
     image create photo welcome
     welcome read "../Images/Welcome.gif"
     pack [label .register.welcome -image welcome] -anchor w
     
-    TitleFrame .register.create -text "Create a model: "
+    TitleFrame .register.create -text "Creating a model: "
     set create [.register.create getframe]
     
-    pack [message $create.m -text "Select compartments or flows from the toolbar\
-            to add to the diagram. Use the select (pointer) tool to edit its caption\
-            or value. Run your model using the Build command of the Model menu."\
+    pack [message $create.m -text "Select compartments and flows from the toolbar\
+            to add to the diagram. Use the select (pointer) tool to edit captions\
+            and values. Run your model using the Build command of the Model menu."\
             -width 400 -font {-family helvetica -size 8}]
     pack $create -expand on -fill x
     pack .register.create -expand on -fill x -padx 4 -pady 2
+    
+    TitleFrame .register.tasks -text "Choose a model: "
+    set tasks [.register.tasks getframe]
+    
+    frame $tasks.b
+    pack [button $tasks.b.new -text "New" -width 10 -command {set userinfo(done) $welcomeDone}] \
+            -padx 8 -pady 8 -side left
+    pack [button $tasks.b.open -text "Open" -width 10 \
+            -command "MenuSelect $dtId.canvas file open; set userinfo(done) $welcomeDone" ] \
+            -padx 8 -pady 8 -side left
+    pack $tasks.b
+    pack $tasks -fill x -expand on
+    pack .register.tasks -fill x -padx 4 -pady 2
     
     TitleFrame .register.links -text "Useful links: "
     set links [.register.links getframe]
@@ -1114,7 +1127,7 @@ proc DoRegDialog {dtId} {
     pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left 
     pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
             -side left
-    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
+#    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
     tkwait visibility .register
 
     grab .register

@@ -972,7 +972,7 @@ proc UpdateTimes { current left } {
 # This is also a convenient time at which to hide the console
 # if it is showing
 proc FixSize {c} {
-    global custom
+    global custom openModel
     update idletasks
     set win [winfo parent $c]
     wm state $win normal
@@ -992,8 +992,11 @@ proc FixSize {c} {
         close $stream
     }
     pack propagate $win 0
-    DoRegDialog $win
-
+    update
+    if {[string match $openModel {}]} {
+        DoRegDialog $win
+    }
+    
 }
 
 proc DestroyHelpers {} {
@@ -1408,7 +1411,8 @@ proc compile_c {workingDir modelPath} {
 	"About to compile model.cpp in [pwd]" ok
     }
     set TARGET model[info sharedlibextension]
-    
+    
+
 
 
     set TOOLDIR $oldDir/../Run

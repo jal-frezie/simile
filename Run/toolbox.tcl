@@ -51,7 +51,7 @@ proc AttackGlobalVariable {array elt val} {
 # Actually I think not, it seems to prevent the window menu appearing as well
 
 proc ControlDraw {prologVersion} {
-    global sendvars custom tcl_platform env userinfo
+    global sendvars custom tcl_platform env userinfo openModel
     
     wm withdraw .
 
@@ -1115,7 +1115,7 @@ proc FillReopen {winId} {
 
 proc AddMainMenu { winid initWidth initDepths} {
     global custom MIpushedbutton tcl_platform
-    
+
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
