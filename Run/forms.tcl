@@ -1148,6 +1148,42 @@ proc equationlisting_start {} {
     toplevel $w
     wm title $w "Equation listing"
     
+    if [string match "Darwin" $tcl_platform(os)] {
+        set accKey Cmd
+        set accSym Command
+        #set fm [menu ${winid}top.apple -tearoff 0]
+        #$fm delete 0 7
+        #$fm add command -label "About Simile..." -command "ShowAbout $winid"
+        #${winid}top add cascade -menu $fm
+    } else {
+        set accKey Ctrl
+        set accSym Control
+    }
+    set m [menu $w.topMenu -tearoff 0]
+    
+    set fm [menu $w.fileMenu -tearoff 0]
+    $m add cascade -label File -underline 0 -menu $fm
+    if {[string match windows $tcl_platform(platform)]} {
+        $fm add command -label Print -command "EquationListingPrint $w" \
+                -accelerator "$accKey+P"
+    }
+    $fm add command -label Save -command "EquationListingSave $w" \
+            -accelerator "$accKey+S"
+    $fm add command -label Close -command "destroy $w"
+    
+    set fm [menu $w.editMenu -tearoff 0]
+    $m add cascade -label Edit -underline 0 -menu $fm
+    $fm add command -label "Select All" \
+            -command {EquationListingSelectAll $equationlist(textbox)} \
+            -accelerator "$accKey+A"
+    $fm add command -label Copy -command {tk_textCopy $equationlist(textbox)} \
+            -accelerator "$accKey+C"
+    #        $fm add command -label "Find" \
+    #                -command "EquationListingFindPopup $w" \
+    #        -accelerator "$accKey+F"
+    
+    $w configure -menu $m
+    
     frame $w.mainframe
     set equationlist(textbox) [text $w.mainframe.textbox \
             -tabs {1c} -relief sunken -bd 2 -highlightthickness 0 -yscrollcommand [list $w.mainframe.scrl set]]
@@ -1181,6 +1217,37 @@ proc equationlisting_start {} {
             -font {Helvetica 5}
     
     bind $w <Control-a>  {EquationListingSelectAll $equationlist(textbox)}
+}
+
+proc EquationListingFindPopup {winId} {
+    
+    global seltxt repltxt
+    
+    set t [toplevel .equationListingFindpop -width 10c -height 4c]
+    
+    grab $t
+    wm title $t "Find Text"
+    
+    
+    label $t.lab1 -text "Find :           "
+    place $t.lab1 -in $t -x 2 -y 6
+    entry $t.en1 -width 20 -relief sunken -textvariable seltxt
+    place $t.en1 -in $t -x 72  -y 6
+    
+    menubutton $t.finb -text "Find" -menu $t.finb.menu
+    place $t.finb -in $t -x 2 -y 90
+    menu $t.finb.menu
+    $t.finb.menu add command -label Forward -command {FindWord  -forwards $seltxt}
+    $t.finb.menu add command -label Backward -command {FindWord -backwards $seltxt}
+    
+    button $t.tagall -text "Find next" -command {Find}
+    place $t.tagall -in $t -x 250 -y 36
+    
+    button $t.dismis -text Cancel -command [namespace code "destroy $t"]
+    place $t.dismis -in $t -x 250 -y 90
+    
+    
+    focus $t.en1
 }
 
 proc EquationListingSelectAll {winId} {
@@ -1293,6 +1360,47 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     
 }
 
+proc EquationListingSave {winId} {
+    global equationlist
+    
+    set types {
+        {{Text Files} {.txt} }
+        {{All Files} * }
+    }
+    
+    set fname [tk_getSaveFile\
+            -defaultextension .txt \
+            -filetypes $types \
+            -initialdir [GetPathChoice .sml] \
+            -initialfile equations.txt \
+            -parent $winId ]
+    if {![string match "" $fname]} {
+        set f [open $fname w]
+        puts $f [$equationlist(textbox) get 1.0 end]
+        close $f
+    }
+}
+
+proc EquationListingPrint {winId} {
+    global simtmpdir env tcl_platform
+    global printargs equationlist
+    
+    if {[string match windows $tcl_platform(platform)]} {
+        set oldDir [pwd] ;# apparently printing can change directory
+        package require gdi
+        package require printer
+        
+        set hdc [printer dialog select]
+        if { [lindex $hdc 1] == 0 } {
+            # User has canceled printing
+            return
+        }
+        set printargs(hDC) [ lindex $hdc 0 ]
+        
+        print_data [$equationlist(textbox) get 1.0 end]
+        cd $oldDir
+    }
+}
 
 proc add_text {text font across down colour} {
     global equationlist
