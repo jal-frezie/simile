@@ -10,6 +10,9 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.8  2002/11/08 11:07:46  jaspert
+#Multi-line component names now appear all on one line
+#
 #Revision 1.7  2002/11/07 18:04:33  jaspert
 #Model explorer can distinguish between submodels with same caption
 #All sliders now have value entry to left of slider
@@ -109,7 +112,8 @@ namespace eval ::ModelInspector63654 {
                 }
                 set submodel($path) $component
                 $tableframe.table insert end $parent $component \
-                        -text [lindex $path end]  -open 1 -image $im(submodel)
+		    -text [BlankCrs [lindex $path end]]  -open 1 \
+		    -image $im(submodel)
             }
         }
         foreach component [GetObjectList] {
@@ -157,7 +161,7 @@ namespace eval ::ModelInspector63654 {
             
             if {![$tableframe.table exists $component]} {
                 # search parent for node with same text
-                set text [lindex $path end]
+                set text [BlankCrs [lindex $path end]]
                 set sameText 0
                 foreach node [$tableframe.table nodes $parent] {
                     #ShowMessage debug info "$node" ok ; # Simile node IDs
@@ -167,7 +171,7 @@ namespace eval ::ModelInspector63654 {
                 }
                 if {!$sameText} {
                     $tableframe.table insert end $parent $component \
-                            -text $text -image $image
+			-text $text -image $image
                 }
             }
         }
