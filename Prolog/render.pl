@@ -1050,7 +1050,7 @@ the next few lines in place, and math_protect asserted, AME will do the same.
 			TargetOp = 'NOT');
 	Op = (^), !,
 		(L = c,
-			TargetOp = 'pow';
+			TargetOp = 'mypow';
 		L = tcl,
 			TargetOp = 'pow';
 		L = basic,
