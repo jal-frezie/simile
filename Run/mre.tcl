@@ -1140,6 +1140,9 @@ namespace eval RunEnv {
                     }
                     set path $dp0.$tail
                     ::ttk::notebook $path
+		    bind $path <<NotebookTabChanged>> \
+			[list ::RunEnv::PageRaiseCmd $path]
+        
                     set containerId [winfo parent $path]
                     #ShowMessage debug info "containerId $containerId" ok
                     bind $path <Double-1> "::RunEnv::EditTabLabel %W"
