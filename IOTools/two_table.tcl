@@ -267,9 +267,13 @@ namespace eval $keyValue {
     }
     
     proc GetTransVals {varId} {
-	set trans [GetFromProlog tk_get_info(dummy,$varId,types)]
 	set value [lindex [GetModelValue $varId] 0]
-	return [TransEnums $trans $value]
+	if {[info exists TransEnums]} {
+	    set trans [GetFromProlog tk_get_info(dummy,$varId,types)]
+	    return [TransEnums $trans $value]
+	} else {
+	    return $value
+	}
     }
 
     proc CopyToClipboard {winId} {
