@@ -136,7 +136,7 @@ namespace eval slide139 {
     
     proc MergeInputVals {} {
         global checkStates sliderVals
-        set metaFile [ChooseFile inputs.spi "Save input values as:" 0]
+        set metaFile [ChooseFile inputs.spi "Load input values from:" 0]
         if {[llength $metaFile]} {
             set iStr [open $metaFile r]
             while {[gets $iStr savedValue] != -1} {
