@@ -18,6 +18,20 @@ proc FileParamDialogue {topNode topWin mustShow} {
 	    AddEntry $t $topNode $node $mustShow $notInput
         }
     }
+# now check for any parameter values that are no longer needed
+    set ::bermudaTriangle {}
+    foreach curVal [array names paramData /*] {
+	if {[llength $paramData($curVal)]} {
+	    switch [ExistCheck $topNode $curVal {Current database}] {
+		break {
+		    CancelParams
+		    break
+		} continue {
+		    unset paramData($curVal)
+		}
+	    }
+	}
+    }
     if {$mustShow || [llength $paramData(needed)]} {
         pack [set bfrm [frame .fpdialogue.buttons ]] \
                 -fill x
@@ -600,6 +614,7 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	set metaFile $oldPath
 	set origVersion 0.0
     }
+    set ::bermudaTriangle {}
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
 	#ShowMessage debug info "Restoring $savedValue" ok
@@ -612,7 +627,11 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	    }
 	}
         #ShowMessage debug info "Component is $restoredComp" ok
-	set node [GetCompProperty $topNode IdFromCapt $restoredComp]
+	set node [ExistCheck $topNode $restoredComp {The file}]
+	switch $node {
+	    break {break}
+	    continue {continue}
+	}
 	set nType [GetCompProperty $topNode Eval $node]
 	set startLine [lsearch {INPUT TABLE} $nType]
 	if {$startLine!=-1} {
@@ -671,6 +690,48 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	file delete $metaFile
     }
     cd $oldDir
+}
+
+proc ExistCheck {topNode restoredComp source} {
+    global bermudaTriangle
+
+    set lostAtSea 0
+    foreach ship $bermudaTriangle {
+	if {![string first $ship $restoredComp]} {
+	    set lostAtSea 1
+	}
+    }
+    if {$lostAtSea} {
+	return continue
+    }
+
+    set node [GetCompProperty $topNode IdFromCapt $restoredComp]
+    if {[string equal nomatch $node]} {
+	set nextLook $restoredComp
+	while {[string equal nomatch $node]} {
+	    set lostBit $nextLook
+	    set nextLook [join [lrange [split $lostBit /] 0 end-1] /]
+	    if {[llength $nextLook]} {
+		set node [GetCompProperty $topNode IdFromCapt $nextLook]
+	    } else {
+		set node $topNode
+	    }
+	}
+	if {[string equal $lostBit $restoredComp]} {
+	    set lostType component
+	} else {
+	    set lostType submodel
+	}
+	set act [ShowMessage "Unused parameters" warning "$source contains parameter values for the $lostType $lostBit, which does not exist in the model. Do you want to ignore these values and continue reading the file?" okcancel]
+	if {[string equal cancel $act]} {
+	    return break
+	}
+	if {[string equal submodel $lostType]} {
+	    lappend bermudaTriangle $lostBit
+	}
+	return continue
+    }
+    return $node
 }
 
 # This checks whether a parameter really has the value specified by its
