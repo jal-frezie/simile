@@ -641,6 +641,10 @@
 					<param name="Name" value="Time profiles helper">
 					<param name="Local" value="run\tools\profiles.htm">
 					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Initialise pseudo-random number generator">
+					<param name="Local" value="run\tools\random.htm">
+					</OBJECT>
 			</UL>
 		</UL>
 	</UL>
