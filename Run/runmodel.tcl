@@ -859,7 +859,7 @@ proc FixSize {c} {
     global custom
     update idletasks
     maximize_fg_win 0 ;# seems necessary for console to hide
-    catch {console hide}	
+#    catch {console hide}	
     if {[file exists $custom(prefDir)/layout]} {
 	set stream [open $custom(prefDir)/layout r]
 	gets $stream whetherMaxed
@@ -1683,7 +1683,7 @@ proc compile_c {workingDir modelPath} {
 # reason
 
 #	exec $TOOLS32/bin/nmake $TOOLDIR/amemodel/amemodel.mak
-#	file rename $TOOLDIR/amemodel/debug/amemodel.dll $TARGET
+#	file rename $TOOLDIR/amemodel/debug/amemodel.dll $TARGET
 	}   
     }
 #    file delete $c_prog

@@ -164,7 +164,7 @@ package require mime 1.3.1
 
 
 proc TransferSaveFile {tree tgt way} {
-    global mimeSquirter runState errorInfo
+    global mimeSquirter runState errorInfo model_id
     catch {switch $way {
 	out {
 	    set parts [GetParts $tree $tree]
@@ -176,7 +176,10 @@ proc TransferSaveFile {tree tgt way} {
 		    set runState(execDur) $runState(execTime)
 		}
 		set runParams [list $runState(execDur) $runState(displayInt)]
-		for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
+		if {[info exists model_id]} {
+		    set runState(phases) [GetPhaseCount]
+		}
+		for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
 		    lappend runParams $runState(update$phase)
 		}
 		lappend parts [mime::initialize -canonical text/plain \
@@ -209,6 +212,7 @@ proc TransferSaveFile {tree tgt way} {
 			    set runState(prev_update[expr $others-1]) \
 				[lindex $runParams $others]
 			}
+		    set runState(phases) [expr $others-2]
 		} else {
 		    set Disposition [mime::getheader $bit Content-Disposition]
 		    set oldPath [lindex [lindex $Disposition 0] 1]

@@ -43,7 +43,6 @@ proc send_tcl_cmd {} {
     if {![llength $plQueue]} {
 	set prologWaiting 1
     } else {
-#	puts {> unqueueing}
 	set plCmd [lindex $plQueue 0]
 	set plQueue [lrange $plQueue 1 end]
 	send_pl_cmd $plCmd
@@ -51,11 +50,8 @@ proc send_tcl_cmd {} {
 }
 
 proc do_tail {header args} {
-#    global callback
-#    set callback 1
     regsub -all \\\\n $args \n withCrs
     send_pl_cmd [eval $withCrs]
-#    set callback 0
 }
 
 proc send_pl_cmd {withCrs} {
@@ -64,7 +60,6 @@ proc send_pl_cmd {withCrs} {
 #    puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
-#    Reader
 }
 
 proc KeepLooking {} {

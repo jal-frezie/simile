@@ -40,7 +40,7 @@ main :-
 	state:retractall(model_in(_,_)),
 	prolog_flag(version, PlogV),
         nl, write(ready), nl,
-	tcl_eval(['FilterErrors ControlDraw', br(PlogV)], EnvVars),
+	tcl_eval(['FilterErrors', 'ControlDraw', br(PlogV)], EnvVars),
 	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
@@ -53,7 +53,7 @@ main :-
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
 	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel)),
-	tcl_eval(['FilterErrors FixSize', Canvas], _),
+	tcl_eval(['FilterErrors', 'FixSize', Canvas], _),
 /*	append_atoms(TempDir, '/.lock/', SplashLock),
 	output:trim_tree(SplashLock, ''),
 */        tk_main_loop.
