@@ -467,7 +467,7 @@ proc ring_bell {} {
 proc resize {w win x y width height} {
     global ::graphtools::plot
     
-	if {[regexp (\.\[^.\]*)\.canvas $win full id]} {
+	if {[regexp (\.\[^.\]*)\.canvas$ $win full id]} {
 		set x0 $plot($w,xborder_left)
 		set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
 		set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]

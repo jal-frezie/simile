@@ -338,6 +338,12 @@ proc ExtractFontData {font} {
 # This updates the width of a canvas object when it is zoomed. The actual width
 # is rounded internally to an integer, so we store the full value in a tag called
 # realwidth(...) which is also updated by this procedure.
+
+# This is ABSOLUTELY NOT the place to do any hacks concerning actual
+# font sizes etc. The whole point of this tag is to keep a separate
+# record of what the parameter ought to be. Fiddling the actual
+# numbers used can go elsewhere.
+
 proc AdjustWidth {winId object factor} {
     global fiddledXfontPixelsToPoints
     if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \

@@ -167,6 +167,9 @@ proc ControlDraw {prologVersion edition} {
     } else {
         set openModel {}
     }
+    if {[llength $openModel]} {
+	set openModel [brainwash $openModel]
+    }
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] $openModel]
 }

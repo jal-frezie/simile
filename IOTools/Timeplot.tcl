@@ -49,9 +49,9 @@ namespace eval ::origplot72514 {
                 # Show which variable being plotted change for MRE JMM
                 if {[PrefValue custom(helperManager) helperManager]} {
                     #                ShowMessage debug info "FindHelperPage [RunEnv::FindHelperPage $winId]; Caption $caption" ok
-                    set notebookPage [RunEnv::FindHelperPage $winId]; #sdoesn't work anymore todo
-                    set notebook [lindex $notebookPage 0]
-                    set page [lindex $notebookPage 1]
+#                    set notebookPage [RunEnv::FindHelperPage $winId]; #sdoesn't work anymore todo
+#                    set notebook [lindex $notebookPage 0]
+#                    set page [lindex $notebookPage 1]
                     #ShowMessage debug info "$notebook itemconfigure $page -text" ok; #" "$caption (plot against time)"
                 } else  {
                     wm title $winId "$caption (plot against time)"
