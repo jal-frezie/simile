@@ -845,7 +845,7 @@ check_entries(InterParent, Trans, Pair, NewPair, Comp) :-
 
 
 :- dynamic(moved_something/0).
-:- dynamic(instant_link/0).
+:- dynamic(instant_link/1).
 
 move_something :-
 	moved_something, !;
@@ -853,7 +853,7 @@ move_something :-
 
 drag_to(Xpt, Ypt, _Comp) :-
 	get_mode(select),
-	\+ instant_link,
+	\+ instant_link(_),
 	get_phase(rubberband),
 	get_start_coords(OldX, OldY),
 	clear_incomplete,
@@ -862,8 +862,9 @@ drag_to(Xpt, Ypt, _Comp) :-
 	draw_rubberband(square).
 
 drag_to(Xpt, Ypt, Comp) :-
-	(get_mode(add); instant_link),
-	get_adding_object(Ltype),
+	(instant_link(Ltype), !;
+	get_mode(add),
+	    get_adding_object(Ltype)),
 	get_phase(Phase),
 	(Ltype is_class_of_sort line, Phase = dragging,
 		sort_for_finish(Comp, Ltype, Xpt, Ypt);
@@ -1136,9 +1137,10 @@ multi_object_mode :-
 components makes sense */
 
 multi_level_mode :-
-	(get_mode(add); instant_link),
-		get_adding_object(Type),
-		Type is_class_of_sort line;
+	(instant_link(Type);
+	 get_mode(add),
+	    get_adding_object(Type)),
+	Type is_class_of_sort line;
 	get_mode(ghost);
 	get_mode(delete).
 
@@ -1526,8 +1528,9 @@ zoom_to_area :-
 	remove_old_rubberband.
 	
 unclick_obj :-
-	(get_mode(add); retract(instant_link)),
-	get_adding_object(New_obj),
+	(retract(instant_link(New_obj));
+	 get_mode(add),
+	    get_adding_object(New_obj)),
 	get_current_node(Parent), 
 	(New_obj is_class_of_sort line,
 		(get_phase(dragging),

@@ -451,8 +451,7 @@ menu_handle(Win, edit, Component) :-
 	    StartPt = Tgt),
 	    event:do_linear(Component, StartPt),
 	    advance_phase_to(targetting),
-	    set_adding_object(Component),
-	    event:assert(instant_link)).
+	    event:assert(instant_link(Component))).
 
 /* Delete the selection */
 menu_handle(Win, edit, delete) :-

@@ -437,9 +437,8 @@ display_link_in(Wid, Link, Depth, Trans) :-
 find_fatness([_,_,FatX,FatY], Fatness) :-
 	Fatness is 100/sqrt(FatX*FatY).
 
-draw_incomplete :-
+draw_incomplete(Line_type) :-
 	get_incomplete([_Parent | Draw_coords]),
-	get_adding_object(Line_type),
 	find_current(Window_id),
 	get_translation(Trans),
 	find_fatness(Trans, Fatness),
@@ -505,7 +504,7 @@ draw_links(Type, Top, Up_list, Down_list) :-
 	(var(Rest2), !; 
 		Screen_route = [Out | _], 
 		draw_up_links(Type, Rest2, in, Trans, Last2, Out)),
-	draw_incomplete.
+	draw_incomplete(Type).
 
 draw_up_links(_, [], _,_,_,_).
 
@@ -524,19 +523,19 @@ draw_up_links(Type, [Node | Rest], Dir, Trans, Prev, Point) :-
 
 show_invisible_links(Links) :-
 	find_current(Wid),
-		Wid shows_model Backgnd,
-		member(Link, Links),
-		find_all_comps(Daddy, Link),
-		m_update:contains(Backgnd, Daddy, Chain),
-		length(Chain, Depth),
-		draw_style_for(Link, Type),
-		\+ draws_at(Wid, Type, Depth),
-		translate_between(Backgnd, Daddy, Trans),
-		get_shape(Link, course, Route),
-		untranslate(Route, Trans, ScreenRoute),
-		add_incomplete([Daddy | ScreenRoute]),
-		fail;
-	draw_incomplete.
+	    Wid shows_model Backgnd,
+	    member(Link, Links),
+	    find_all_comps(Daddy, Link),
+	    m_update:contains(Backgnd, Daddy, Chain),
+	    length(Chain, Depth),
+	    draw_style_for(Link, Type),
+	    \+ draws_at(Wid, Type, Depth),
+	    translate_between(Backgnd, Daddy, Trans),
+	    get_shape(Link, course, Route),
+	    untranslate(Route, Trans, ScreenRoute),
+	    add_incomplete([Daddy | ScreenRoute]),
+	    fail;
+	draw_incomplete(Type).
 
 
 
