@@ -245,6 +245,7 @@ namespace eval ::$keyValue {
     
     
     proc Settings {w} {
+        global ::graphtools::plot
         # copy the values of the variables to be edited to temp, but namespace accessible, variables
         variable FewXAxisTicks $::graphtools::plot($w,FewXAxisTicks)
         
@@ -285,7 +286,16 @@ namespace eval ::$keyValue {
         # copy the values from the temp values to those to be edited if OK clicked
         if {[$dlg draw] == 0} {
             # OK button was clicked
+            
+            # redraw the x-axis according to FewXAxisTicks must be done only when FewXAxisTicks
+            # has been changed but here to it anyway instead of checking if changed
             set ::graphtools::plot($w,FewXAxisTicks) $FewXAxisTicks
+            set numInt 0; set numMinorInt 0
+            AxisRound $plot($w,Xmin_data) $plot($w,Xmax_data) $plot($w,FewXAxisTicks) \
+                    plot($w,Xmin_axis) plot($w,Xmax_axis) \
+                    plot($w,Xmajorstep) numInt plot($w,Xminorstep) numMinorInt plot($w,Xprecision)
+            draw_Xaxis $w
+            
             UpdateState $w
         }
         #ShowMessage debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
@@ -368,13 +378,15 @@ namespace eval ::$keyValue {
         $w.canvas raise toplevel
         
         ### Bindings
-        $w.canvas bind axis_line <Double-1> \
-                [namespace code "settings_axis $w"]
-        $w.canvas bind all <Button-1> \
-                [namespace code "CanvasMark $w %x %y %W"]
-        $w.canvas bind movable <B1-Motion> \
-                [namespace code "CanvasDrag %x %y %W"]
-        
+        #$w.canvas bind axis_line <Double-1> \
+        #        [namespace code "settings_axis $w"]
+################################################################################
+#         $w.canvas bind all <Button-1> \
+#                 [namespace code "CanvasMark $w %x %y %W"]
+#         $w.canvas bind movable <B1-Motion> \
+#                 [namespace code "CanvasDrag %x %y %W"]
+################################################################################
+                
         for {set i 0} {$i<$nYlabel} {incr i} {
             set vartag {}
             append vartag var $i
@@ -408,7 +420,7 @@ namespace eval ::$keyValue {
     proc resize {w win x y width height} {
         global ::graphtools::plot
         
-        if {[regexp (\.\[^.\]*)\.canvas $win full id]} {
+        if {[string match Canvas [winfo class $win]]} {
             set x0 $plot($w,xborder_left)
             set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
             set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
@@ -743,18 +755,6 @@ namespace eval ::$keyValue {
             lappend YYnew($w) [list $node $values]
             #        ShowMessage debug info "$YYnew($w)" ok
         }
-    }
-    
-    # Scales data X and Y values to canvas coordinates (pixels)
-    proc get_x {w X Xscale} {
-        global ::graphtools::plot
-        expr {$plot($w,xborder_left)+($X-$plot($w,Xmin_axis))/$Xscale}
-    }
-    
-    proc get_y {w Y Yscale} {
-        global ::graphtools::plot
-        expr {$plot($w,yborder_top)+$plot($w,ylength) \
-                    -($Y-$plot($w,Ymin_axis))/$Yscale}
     }
     
     proc RemoveVariableDlg {w} {
