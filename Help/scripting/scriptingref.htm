@@ -1,6 +1,7 @@
 <html xmlns:v="urn:schemas-microsoft-com:vml"
 xmlns:o="urn:schemas-microsoft-com:office:office"
 xmlns:w="urn:schemas-microsoft-com:office:word"
+xmlns:st1="urn:schemas-microsoft-com:office:smarttags"
 xmlns="http://www.w3.org/TR/REC-html40">
 
 <head>
@@ -10,22 +11,26 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <meta name=Originator content="Microsoft Word 10">
 <link rel=File-List href="scriptingref_files/filelist.xml">
 <title>Scripting : Command Reference</title>
+<o:SmartTagType namespaceuri="urn:schemas-microsoft-com:office:smarttags"
+ name="City"/>
+<o:SmartTagType namespaceuri="urn:schemas-microsoft-com:office:smarttags"
+ name="place"/>
 <!--[if gte mso 9]><xml>
  <o:DocumentProperties>
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>2</o:Revision>
+  <o:Revision>3</o:Revision>
   <o:TotalTime>188</o:TotalTime>
   <o:Created>2005-02-22T08:43:00Z</o:Created>
-  <o:LastSaved>2005-02-22T08:43:00Z</o:LastSaved>
+  <o:LastSaved>2005-02-22T09:23:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>1466</o:Words>
-  <o:Characters>8357</o:Characters>
+  <o:Words>1467</o:Words>
+  <o:Characters>8364</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
   <o:Lines>69</o:Lines>
   <o:Paragraphs>19</o:Paragraphs>
-  <o:CharactersWithSpaces>9804</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>9812</o:CharactersWithSpaces>
   <o:Version>10.6735</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
@@ -39,7 +44,12 @@ xmlns="http://www.w3.org/TR/REC-html40">
   </w:Compatibility>
   <w:BrowserLevel>MicrosoftInternetExplorer4</w:BrowserLevel>
  </w:WordDocument>
-</xml><![endif]-->
+</xml><![endif]--><!--[if !mso]><object
+ classid="clsid:38481807-CA0E-42D2-BF39-B33AF135CC4D" id=ieooui></object>
+<style>
+st1\:*{behavior:url(#ieooui) }
+</style>
+<![endif]-->
 <style>
 <!--
  /* Font Definitions */
@@ -180,8 +190,8 @@ div.Section1
 	mso-level-number-position:left;
 	text-indent:-18.0pt;}
 @list l1
-	{mso-list-id:1891069714;
-	mso-list-template-ids:-1248408788;}
+	{mso-list-id:1354769491;
+	mso-list-template-ids:1846831042;}
 @list l1:level1
 	{mso-level-number-format:bullet;
 	mso-level-text:\F0B7;
@@ -213,7 +223,7 @@ ul
 	font-family:"Times New Roman";}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="20482"/>
+ <o:shapedefaults v:ext="edit" spidmax="21506"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -341,8 +351,8 @@ normal'>?smPath?</i> </span></p>
 
 </div>
 
-<p class=MsoNormal><span lang=EN-GB>In order to run a model with file
-parameters use the command above before building the model.<span
+<p class=MsoNormal><span lang=EN-GB>In order to run a model with file parameters
+use the command above before building the model.<span
 style='mso-spacerun:yes'>  </span><i style='mso-bidi-font-style:normal'>smPath</i>
 (submodel path) can be omitted if the parameter variables in the file are
 relative to the top level of the model. </span></p>
@@ -363,8 +373,8 @@ style='mso-bidi-font-style:normal'>bool</i> </span></p>
 lang=EN-GB> must be either “true” or “false” (or other versions of Boolean
 values accepted by Tcl).<span style='mso-spacerun:yes'>  </span>If “true” the
 single-window Model Run Environment is used. Otherwise, seperate windows will
-be produced for each helper (display). This command is only of use if the
-helpers are made visible.</span></p>
+be produced for each helper (display). This command is only of use if the helpers
+are made visible.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -390,8 +400,8 @@ normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB> Debug </span></p
 
 </div>
 
-<p class=MsoNormal><span lang=EN-GB>Makes a loaded model runable using Tcl as the
-model execution environment. Tcl is slower than the usual compiled C++
+<p class=MsoNormal><span lang=EN-GB>Makes a loaded model runable using Tcl as
+the model execution environment. Tcl is slower than the usual compiled C++
 executable but has more error checking. However, error checking (dubugging) is
 usually done from the graphical Simile user interface. </span></p>
 
@@ -733,8 +743,8 @@ padding:1.0pt 4.0pt 1.0pt 4.0pt'>
 
 <p class=MsoNormal style='border:none;mso-border-alt:solid windowtext .5pt;
 padding:0cm;mso-padding-alt:1.0pt 4.0pt 1.0pt 4.0pt'><i style='mso-bidi-font-style:
-normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB><span
-style='mso-spacerun:yes'>  </span>GetTimeUnits</span></p>
+normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB> <span
+style='mso-spacerun:yes'> </span>GetTimeUnits</span></p>
 
 </div>
 
@@ -752,8 +762,8 @@ style='mso-spacerun:yes'>  </span>GetValue <i style='mso-bidi-font-style:normal'
 
 </div>
 
-<p class=MsoNormal><span lang=EN-GB>Return the value of a model variable given by
-the variable path <i style='mso-bidi-font-style:normal'>path.</i></span></p>
+<p class=MsoNormal><span lang=EN-GB>Return the value of a model variable given
+by the variable path <i style='mso-bidi-font-style:normal'>path.</i></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -882,7 +892,8 @@ normal'>path</i></span></p>
 <p class=MsoNormal><span lang=EN-GB>Returns evaluation method of a model
 component given by<span style='mso-spacerun:yes'>  </span><i style='mso-bidi-font-style:
 normal'>path</i>. The evaluation method will be one of EXOGENOUS, DERIVED,
-TABLE, INPUT, SPLIT or GHOST.</span></p>
+TABLE, INPUT, </span><st1:City><st1:place><span lang=EN-GB>SPLIT</span></st1:place></st1:City><span
+lang=EN-GB> or GHOST.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -1121,7 +1132,7 @@ normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB> Hide</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm"><u>Contents</u></a></u>
+<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u>
 &gt;&gt; <u><a href="index.htm"><u>Scripting</u></a></u></span></p>
 
 </div>

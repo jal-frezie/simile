@@ -15,21 +15,22 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>5</o:Revision>
-  <o:TotalTime>137</o:TotalTime>
+  <o:Revision>6</o:Revision>
+  <o:TotalTime>138</o:TotalTime>
   <o:Created>2005-02-21T18:54:00Z</o:Created>
-  <o:LastSaved>2005-02-21T20:15:00Z</o:LastSaved>
+  <o:LastSaved>2005-02-22T09:24:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>324</o:Words>
-  <o:Characters>1853</o:Characters>
+  <o:Words>326</o:Words>
+  <o:Characters>1859</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
   <o:Lines>15</o:Lines>
   <o:Paragraphs>4</o:Paragraphs>
-  <o:CharactersWithSpaces>2173</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>2181</o:CharactersWithSpaces>
   <o:Version>10.6735</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <w:WordDocument>
+  <w:Zoom>BestFit</w:Zoom>
   <w:Compatibility>
    <w:BreakWrappedTables/>
    <w:SnapToGridInCell/>
@@ -43,13 +44,6 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <!--
  /* Font Definitions */
  @font-face
-	{font-family:Wingdings;
-	panose-1:5 0 0 0 0 0 0 0 0 0;
-	mso-font-charset:2;
-	mso-generic-font-family:auto;
-	mso-font-pitch:variable;
-	mso-font-signature:0 268435456 0 0 -2147483648 0;}
-@font-face
 	{font-family:Tahoma;
 	panose-1:2 11 6 4 3 5 4 4 2 4;
 	mso-font-charset:0;
@@ -143,16 +137,59 @@ div.Section1
 	{page:Section1;}
  /* List Definitions */
  @list l0
-	{mso-list-id:911965942;
-	mso-list-type:hybrid;
-	mso-list-template-ids:-893247506 67698689 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+	{mso-list-id:857692941;
+	mso-list-template-ids:-1429559836;}
 @list l0:level1
 	{mso-level-number-format:bullet;
 	mso-level-text:\F0B7;
 	mso-level-tab-stop:36.0pt;
 	mso-level-number-position:left;
 	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
 	font-family:Symbol;}
+@list l1
+	{mso-list-id:911965942;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-893247506 67698689 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;}
+@list l1:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
 ol
 	{margin-bottom:0cm;}
 ul
@@ -176,7 +213,7 @@ ul
 	font-family:"Times New Roman";}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="19458"/>
+ <o:shapedefaults v:ext="edit" spidmax="20482"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -193,9 +230,9 @@ ul
 
 <p class=MsoNormal><span lang=EN-GB>A wholly new scripting language is being
 introduced in this version of Simile. The objective is to allow multiple
-simulations using one or more models, with different parameters, time step
-settings and so forth for each run. The results can be recorded to a text file,
-for later analysis, or processed in the script. Several different approaches to
+simulations using one or more models, with different parameters, time step settings
+and so forth for each run. The results can be recorded to a text file, for
+later analysis, or processed in the script. Several different approaches to
 meeting this need have been considered, including providing a specific graphic
 interface such as a new run control. We concluded that scripting allowed the
 most flexibility and encouraged users to find applications beyond those which
@@ -213,10 +250,10 @@ interactive graphical interface.</span></p>
 
 <h2><span lang=EN-GB>Using Simile scripting</span></h2>
 
-<p class=MsoNormal><span lang=EN-GB>Typically, the script interface to Simile is
-accessed by running the SimileScript application that is provided with Simile.
-A program object to control the model window is created and then used to load a
-model and scenario file. A run control object is then created to set
+<p class=MsoNormal><span lang=EN-GB>Typically, the script interface to Simile
+is accessed by running the SimileScript application that is provided with
+Simile. A program object to control the model window is created and then used
+to load a model and scenario file. A run control object is then created to set
 time-steps, how long to run the model for, etc, and a data table control object
 is created to record variables. At the end of the simulation the data table
 object is used to write values to a file.</span></p>
@@ -238,17 +275,17 @@ href="http://www.tcl.tk/">http://www.tcl.tk/</a>).</span></p>
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <ul style='margin-top:0cm' type=disc>
- <li class=MsoNormal style='mso-list:l0 level1 lfo1;tab-stops:list 36.0pt'><span
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
      lang=EN-GB><a href="scriptingref.htm">Command reference</a></span></li>
- <li class=MsoNormal style='mso-list:l0 level1 lfo1;tab-stops:list 36.0pt'><span
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
      lang=EN-GB><a href="ExampleScripts.htm">Example scripts</a></span></li>
- <li class=MsoNormal style='mso-list:l0 level1 lfo1;tab-stops:list 36.0pt'><span
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
      lang=EN-GB><a href="FromOtherInterp.htm">From other interpreters</a></span></li>
 </ul>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm"><u>Contents</u></a></u></span></p>
+<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u></span></p>
 
 </div>
 
