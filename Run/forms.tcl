@@ -1441,8 +1441,12 @@ proc DoRegDialog {dtId} {
     } else {
 	file mkdir $custom(prefDir)/Examples
 	foreach egFile [glob [pwd]/../Examples/*] {
-	    file copy $egFile $custom(prefDir)/Examples
+# next condition only matters in development environment
+	    if {![file isdirectory $egFile]} {
+		file copy -force $egFile $custom(prefDir)/Examples
+	    }
 	}
+	set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
     }
     set t [toplevel .register -bd 4]
     wm title $t "Welcome to Simile version $userinfo(Version)"

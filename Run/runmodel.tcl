@@ -197,9 +197,11 @@ proc kill_helper_window { winId } {
 		unset helperTable($topNode,current)
 	    }
         }
-	if {[string equal $winId $runState($topNode,helperId)]} {
-	    set sendvars($topNode,currentMode) kill
-	    unset runState($topNode,helperId)
+	if {[info exists runState($topNode,helperId)]} {
+	    if {[string equal $winId $runState($topNode,helperId)]} {
+		set sendvars($topNode,currentMode) kill
+		unset runState($topNode,helperId)
+	    }
 	}
         unset helperTable($winId,whichHelper)
         destroy $winId
@@ -273,15 +275,16 @@ proc DestroyHelpers {node} {
 }
 
 proc KillHelpers {node} {
-    global helperTable runState
+    global helperTable
     foreach graphBox [array name helperTable *,whichHelper] {
         scan $graphBox {%[^,]} window
 	if {[string equal $node $helperTable($window,whichModel)]} {
 	    kill_helper_window $window
 	}
     }
-    if {[info exists runState($node,helperId)]} {
-	unset runState($node,helperId)
+    if {[info exists helperTable($node,whichRunEnv)]} {
+	destroy $helperTable($node,whichRunEnv)
+	unset helperTable($node,whichRunEnv)
     }
 }
 
@@ -637,6 +640,8 @@ proc SetRunParams {node runParams} {
 		[lindex $runParams $others]
 	}
 	set runState($node,phases) [expr $others-2]
+	set runState($node,timeUnit) day
+	set runState($node,intMethod) Euler
     }
     #puts [array get runState]
 }

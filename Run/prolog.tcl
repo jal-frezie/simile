@@ -4,17 +4,26 @@
 # interpreter in a non-blocking pipe. Commands are then passed between
 # the two along the pipe.
 
-wm protocol . WM_DELETE_WINDOW {close $plPipe; destroy .}
+wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
+
+set plPipe(debug) 1
+if $plPipe(debug) {
+    set plPipe(debug_log) [file join $env(HOME) .simile log]
+    set plPipe(debug_stream) [NetOpen $plPipe(debug_log) w]
+}
 
 proc KeepLooking {} {
     global plPipe
     while {![info exists prologExit]} {
-	if {[eof $plPipe]} {
+	if {[eof $plPipe(stream)]} {
 	    ClosePipe
 	    set prologExit 1
-	} elseif {[gets $plPipe noCrs] >= 0} {
+	} elseif {[gets $plPipe(stream) noCrs] >= 0} {
 	    regsub -all \\\\n $noCrs \n line
 #	    puts [concat < $line]
+	    if {$plPipe(debug)} {
+		puts $plPipe(debug_stream) [concat < $line]
+	    }
 	    if {[catch {set cmd [lindex $line 0]} mess]} {
 		DebugMess "Could not parse $line : $mess"
 	    } elseif {[string match get_tcl_cmd $cmd]} {
@@ -55,20 +64,24 @@ proc do_tail {header args} {
 }
 
 proc send_pl_cmd {withCrs} {
-    global plPipe
+    global plPipe debug
     regsub -all \n $withCrs \\n plCmd
 #    puts [concat > $plCmd]
-    puts $plPipe $plCmd
-    flush $plPipe
+    if {$plPipe(debug)} {
+	puts $plPipe(debug_stream) [concat > $plCmd]
+    }
+    puts $plPipe(stream) $plCmd
+    flush $plPipe(stream)
 }
 
 proc ClosePipe {} {
     global plPipe simtmpdir
     file delete -force $simtmpdir
-    if {[catch {close $plPipe} spew]} {
+    if {[catch {close $plPipe(stream)} spew]} {
 	wm withdraw . ;# banner will hide error mesg if not yet withdrawn
 	bgerror $spew
     }
+    close $plPipe(debug_stream)
     destroy .
 }
 
@@ -81,15 +94,15 @@ set env(TRAILSZ) [expr $vm_usage*3/16]
 # Pop a backslash before chars that would break tcl lists
 regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
-set plPipe [open |$PROLOG_CMD r+]
+set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
-fconfigure $plPipe -translation {auto lf}
+fconfigure $plPipe(stream) -translation {auto lf}
 #fileevent $plPipe readable Reader
 
 # send_pl_cmd main.
 set spraf {}
 while {![string match ready $spraf]} {
-    if {[gets $plPipe spraf]<0} {
+    if {[gets $plPipe(stream) spraf]<0} {
 	ClosePipe
     }
 }
