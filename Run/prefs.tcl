@@ -4,6 +4,9 @@
 #
 # proc PrefSave {} modified to use Windows short filenames 
 
+package require -exact BWidget 1.2.1
+catch {namespace import BWidget::*}
+
 proc Status {burble} {
     ShowMessage "Error with preferences" error $burble ok
 }
@@ -106,46 +109,78 @@ proc PrefValueSet { varName value } {
 # Example 42-5
 # A user interface to the preference items.
 #
-
-proc Pref_Dialog {} {
-	global pref
-	if [catch {toplevel .pref}] {
-		raise .pref
-	} else {
-		wm title .pref "Preferences"
-		set buttons [frame .pref.but -bd 5]
-		pack .pref.but -side top -fill x
-		button $buttons.quit -text Dismiss \
-			-command {PrefDismiss}
-		button $buttons.save -text Save \
-			-command {PrefSave}
-		button $buttons.reset -text Reset \
-			-command {PrefReset ; PrefDismiss}
-		label $buttons.label \
-			 -text "Mouse over labels for info on each item"
-		pack $buttons.label -side left -fill x
-		pack $buttons.quit $buttons.save $buttons.reset \
-			-side right -padx 4
-
-		frame .pref.b -borderwidth 2 -relief raised
-		pack .pref.b -fill both
-		set body [frame .pref.b.b -bd 10]
-		pack .pref.b.b -fill both
-
-		set maxWidth 0
-		foreach item $pref(items) {
-			set len [string length [PrefComment $item]]
-			if {$len > $maxWidth} {
-				set maxWidth $len
-			}
-		}
-		set pref(uid) 0
-		foreach item $pref(items) {
-			PrefDialogItem $body $item $maxWidth
-		}
-	}
+proc Pref_HelpCommand { Page } {
+    tk_messageBox -message "$Page help to be implemented " -type ok
 }
 
+proc Pref_Apply {} {
+    tk_messageBox -message "Apply to be implemented " -type ok
+}
+
+
+proc Pref_Dialog {} {
+    global pref
+    if [winfo exists .pref] {
+        raise .pref
+    } else  {
+        set dlg [toplevel .pref]
+        wm title .pref "Preferences"
+        ButtonBox $dlg.bbox -default 0
+        $dlg.bbox add -name ok -text OK -underline 0 -command {PrefSave}
+        $dlg.bbox add -name cancel -text Cancel -underline 0  -command {PrefDismiss}
+        $dlg.bbox add -name default -text Default -underline 0 \
+                -command {PrefReset ; PrefDismiss}
+        $dlg.bbox add -name help -text Help -underline 0 -command "::Pref_HelpCommand Preferences"
+        pack $dlg.bbox -side bottom -anchor e
+        
+        set notebook [NoteBook $dlg.notebook -height 350 -width 550]
+        $notebook insert end View -text View
+            set displayTF [TitleFrame [$notebook getframe View].displayTF \
+                -text "In new windows, display:"]
+            set displayF [$displayTF getframe]
+            set popupTF [TitleFrame [$notebook getframe View].popuptTF \
+                -text "Display popups over model components for:"]
+            set popupF [$popupTF getframe]
+            set miscViewF [frame [$notebook getframe View].miscViewF -relief groove ]
+        $notebook insert end Edit -text Edit
+        $notebook insert end Build -text Build
+            set manyWinTF [TitleFrame [$notebook getframe Build].manyWintf \
+                    -text "If using multiple window run time environment, position of:"]
+            set manyWinF [$manyWinTF getframe]
+            $notebook insert end Save -text Save
+        $notebook raise View
+        pack $displayTF $popupTF $miscViewF $manyWinTF $notebook  -fill both
+        
+#        ShowMessage debug info "$pref(items)" ok
+        
+       set maxWidth 0
+       foreach item $pref(items) {
+            set len [string length [PrefComment $item]]
+            if {$len > $maxWidth} {
+                set maxWidth $len
+            }
+       }
+       set pref(uid) 0
+        foreach item $pref(items) {
+#            ShowMessage debug info "$item; [PrefRes $item]" ok
+            switch -glob -- [PrefRes $item] {
+                init* {set frame $displayF}
+                compChoice {set frame [$notebook getframe Build]}
+                comp* {set frame $popupF}
+                bigButtons {set frame $miscViewF}
+                flowRouting {set frame [$notebook getframe Edit]}
+                deleteEndToEnd {set frame [$notebook getframe Edit]}
+                saveExtras {set frame [$notebook getframe Save]}
+                recentCount {set frame [$notebook getframe Save]}
+                runControlPosition {set frame $manyWinF}
+                slidersPosition {set frame $manyWinF}
+                helperManager {set frame [$notebook getframe Build]}
+                default {set frame $displayTF}
+            }
+            PrefDialogItem $frame $item $maxWidth
+       }       
+    }
+}
 
 #
 # Example 42-6
@@ -153,34 +188,34 @@ proc Pref_Dialog {} {
 #
 
 proc PrefDialogItem { frame item width } {
-	global pref
-	incr pref(uid)
-	set f [frame $frame.p$pref(uid) -borderwidth 2]
-	pack $f -fill x
-	label $f.label -text [PrefComment $item] -width $width
-	bind $f.label <Enter> [list QueuePopup \
-		"AddWidgetPopup [PrefRes $item] %X %Y"]
-	bind $f.label <Leave> RemovePopup
-	pack $f.label -side left
-	set default [PrefDefault $item]
-	if {[regexp "^CHOICE " $default]} {
-		foreach choice [lreplace $default 0 0] {
-			incr pref(uid)
-			radiobutton $f.c$pref(uid) -text $choice \
-				-variable [PrefVar $item] -value $choice
-			pack $f.c$pref(uid) -side left
-		}
-	} else {
-		if {$default == "OFF" || $default == "ON"} {
-			# This is a boolean
-			set varName [PrefVar $item]
-			checkbutton $f.check -variable $varName \
-				-command [list PrefFixupBoolean $f.check $varName]
-			PrefFixupBoolean $f.check $varName
-			pack $f.check -side left
-		} else {
-			# This is a string or numeric
-			entry $f.entry -width 10 -relief sunken
+    global pref
+    incr pref(uid)
+    set f [frame $frame.p$pref(uid) -borderwidth 2]
+    pack $f -fill x
+    label $f.label -text [PrefComment $item] -width $width
+    bind $f.label <Enter> [list QueuePopup \
+            "AddWidgetPopup [PrefRes $item] %X %Y"]
+    bind $f.label <Leave> RemovePopup
+    pack $f.label -side left
+    set default [PrefDefault $item]
+    if {[regexp "^CHOICE " $default]} {
+        foreach choice [lreplace $default 0 0] {
+            incr pref(uid)
+            radiobutton $f.c$pref(uid) -text $choice \
+                    -variable [PrefVar $item] -value $choice
+            pack $f.c$pref(uid) -side left
+        }
+    } else {
+        if {$default == "OFF" || $default == "ON"} {
+            # This is a boolean
+            set varName [PrefVar $item]
+            checkbutton $f.check -variable $varName \
+                    -command [list PrefFixupBoolean $f.check $varName]
+            PrefFixupBoolean $f.check $varName
+            pack $f.check -side left
+        } else {
+            # This is a string or numeric
+            entry $f.entry -width 10 -relief sunken
 			pack $f.entry -side left -fill x -expand true
 			set pref(entry,[PrefVar $item]) $f.entry
 			set varName [PrefVar $item]
