@@ -446,15 +446,16 @@ my_delete_file(DelFile) :-
 	windowize(DelFile, WDelFile),
 	safe_tcl_eval([file, delete, '-force', br(WDelFile)], _).
 
-save_file(From, To, Using, Oops) :-
+save_file(From, To, Oops) :-
 	windowize(From, WFrom),
 	windowize(To, WTo),
-	safe_tcl_eval(['SaveFile', br(WFrom), br(WTo), Using], Oops).
+	safe_tcl_eval(['SaveFile', br(WFrom), br(WTo)], Oops).
 
-load_file(From, To, Using, Oops) :-
+load_file(From, To, Checked) :-
 	windowize(From, WFrom),
 	windowize(To, WTo),
-	safe_tcl_eval(['LoadFile', br(WFrom), br(WTo), Using], Oops).
+	safe_tcl_eval(['LoadFile', br(WFrom), br(WTo)], CheckStr),
+	name(Checked, CheckStr).
 
 check_directory(Dir) :-
 	windowize(Dir, WDir),

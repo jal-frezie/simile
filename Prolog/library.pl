@@ -4,7 +4,8 @@
 **** is defined in terms of the model class ADT 			    ****
 *******************************************************************************/
 
-sicstus_module( library, [ame_save/3, ame_merge/3, write_with_breaks/2] ).
+sicstus_module( library, [ame_save/3, ame_merge/4,
+			  count_functions/2, write_with_breaks/2] ).
 
 sicstus_use_module( [library(lists),library(charsio),
 	ame_gen,m_class,utility,text,build] ).
@@ -213,7 +214,7 @@ choose_breakpoint(Break) :-
 % structure in it, and adds it into Parent. All structures are renamed
 % if not toplevel, to avoid clashes. Date from file is returned.
 
-ame_merge( Parent, File, Date ) :-
+ame_merge( Parent, File, Date, HasCode ) :-
 	state:find_current(Win),
 	dialogue:start_progress_dialogue(Win),
 	dialogue:reassure_user("Reading information from file"),
@@ -226,12 +227,26 @@ ame_merge( Parent, File, Date ) :-
 	    read(Stream, Term);
 	Term = Header,
 	    Date=old,
+	    E = standard,
 	    SimileV = -1), 
 	(Parent = node00001, !,
 	    InitBindings = copy;
 	InitBindings = []),
 	store_term( Term, Stream, Parent, InitBindings, [] ),
 	close( Stream ),
+
+	(state:edition_is(evaluation),
+	(HasCode=no;
+	\+ E = enterprise),
+	\+ HasCode = 'fuck it',
+	state:eval_fn_limit_is(StopAt),
+	count_functions(Parent, Fns),
+	Fns > StopAt, !,
+	    m_update:superfast_delete(Parent),
+	    dialogue:finish_progress_dialogue,
+	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the evaluation edition.", [Fns, StopAt], Annoy),
+	    do_dialogue("Error loading model", error, Annoy, ok, _),
+	    !, fail;
 
 	(SimileV >= 0.0, !;
 	dialogue:reassure_user("Updating pre-AME 4.0 model representation"),
@@ -243,9 +258,14 @@ ame_merge( Parent, File, Date ) :-
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
 	sicstus_format_to_chars("This file was created with a later version of Simile than the one you are currently running. To avoid potential problems, please update your copy to version ~f or later.", [SimileV], FutureShock),
-	    do_dialogue("Future shock!", warning, FutureShock, ok, _)),
+	    do_dialogue("Future shock!", warning, FutureShock, ok, _))),
 
 	dialogue:finish_progress_dialogue.
+
+count_functions(Model, N) :-
+	setof(Node, (contains(Model, Node), find_type(Node, function)), Nodes),
+	    length(Nodes, N), !;
+	N = 0.
 
 adjust_to_4 :-
 	Link no_longer_has_attribute destination of Dest,
@@ -359,8 +379,8 @@ store_term( Term, Stream, Parent, Bindings, Rest ) :-
 	!,
 	read( Stream, NextTerm ),
 	store_term( NextTerm, Stream, Parent, NewBindings, Rest ).
-store_term( Term, Stream, Parent, Bindings, Rest ) :- 	% delay and try again
-						% if something fails
+store_term( Term, Stream, Parent, Bindings, Rest ) :-
+				% delay and try again% if something fails
 	read( Stream, NextTerm ),
 	store_term( NextTerm, Stream, Parent, Bindings, [Term|Rest] ).
 

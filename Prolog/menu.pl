@@ -116,11 +116,10 @@ stick_model_in(Parent, Name) :-
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
-	edition_is(ReadingWith),
-	output:load_file(TargetDir, Name, ReadingWith, Oops),
-	(Oops = [], !,
+	output:load_file(TargetDir, Name, Checked),
+	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
-	    ame_merge(Parent, PrologData, _Date), /* date not needed */
+	    ame_merge(Parent, PrologData, _Date, Checked), /* date not needed */
 	    output:my_delete_file(PrologData),
 
 	    ((get_av_pair(Parent, 0, separate, 1); is_toplevel(Parent)), !,
@@ -148,11 +147,10 @@ stick_model_in(Parent, Name) :-
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images, autosave check or runnables */
-	\+ ReadingWith = evaluation,
-	    ame_merge(Parent, Name, _Date),
+	ame_merge(Parent, Name, _Date, no),
 	    resize_canvas_for(Parent),
 	    redraw_window(Win);
-	do_dialogue("Error loading model", error, Oops, ok, _)),
+	do_dialogue("Error loading model", error, Checked, ok, _)),
 	add_parameter(Parent, 0, file_name, Name),
 	update_captions(Parent).
 
@@ -593,18 +591,14 @@ ok_to_delete(Target) :-
 	Reply = no).
 
 do_save(Model, New_name) :-
-	setof(Node, (contains(Model, Node), appears(Node)), Nodes),
-	length(Nodes, N),
-	(N > 15,
-	    (edition_is(evaluation),
-	    	do_dialogue("Error saving model", error, "This model has more than 15 components and thus cannot be saved in the evaluation edition.", ok, _),
-		!, fail;
-	    edition_is(standard),
-		ReadableBy = standard;
-	    edition_is(enterprise),
-		ReadableBy = evaluation);
-	15 >= N,
-	    ReadableBy = evaluation),
+	count_functions(Model, N),
+	state:eval_fn_limit_is(Limit),
+	(N > Limit,
+	 edition_is(evaluation), !,
+	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the evaluation edition.", [N, Limit], Annoy),
+	    do_dialogue("Error saving model", error, Annoy, ok, _),
+	    fail;
+	true),
 	(New_name = false,
 	    get_name_for(Model, Name);
 	try_save_files(Name)),
@@ -636,7 +630,7 @@ do_save(Model, New_name) :-
 	output:my_delete_file(CanvasName)),
 
 	/* Now build the multi-part MIME format save file */
-	output:save_file(SaveDir, Name, ReadableBy, Oops),
+	output:save_file(SaveDir, Name, Oops),
         (Oops = [], !;
             do_dialogue("Problem building output file", error, Oops, ok, _),
 	    fail),

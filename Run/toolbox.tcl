@@ -171,9 +171,9 @@ proc ControlDraw {prologVersion edition} {
 }
 
 package require mime
-package require sha1
+package require md5
 
-proc SaveFile {tree tgt using} {
+proc SaveFile {tree tgt} {
     global mimeSquirter runState errorInfo model_id
     catch {
 	set parts [GetParts $tree $tree]
@@ -196,7 +196,7 @@ proc SaveFile {tree tgt using} {
 			   -string $runParams]
 	}
 	set multiT [mime::initialize -canonical multipart/mixed \
-			-header [list "Readability" $using] -parts $parts]
+			-parts $parts]
 	set stream [open $tgt w]
 	fconfigure $stream -translation binary
 	mime::copymessage $multiT $stream
@@ -207,21 +207,18 @@ proc SaveFile {tree tgt using} {
     return $Lossage
 }
 
-proc LoadFile {tree tgt using} {
+proc LoadFile {tree tgt} {
     global mimeSquirter runState errorInfo model_id
-    catch {
+    set CodeChecked no
+    if {[catch {
 	set multiT [mime::initialize -file $tgt]
 	if {[catch {set intent [mime::getheader $multiT Readability]}]} {
 	    set intent standard
 	}
-	if {[string match evaluation $using] && \
-		![string match evaluation $intent]} {
-	    error "You cannot load this model with the evaluation edition because it contains more than 15 components, and it was not created with the enterprise edition."
-	}
 	foreach bit [mime::getproperty $multiT parts] {
-	    set Description [mime::getheader $bit Content-Description]
+	    set Desc [mime::getheader $bit Content-Description]
 	    #ShowMessage debug info $Description ok
-	    switch [lindex $Description 0] {
+	    switch [lindex $Desc 0] {
 		"Run Status" {
 		    set runParams [mime::getbody $bit]
 		    set runState(currentTime) 0.0
@@ -237,9 +234,13 @@ proc LoadFile {tree tgt using} {
 			}
 		    set runState(phases) [expr $others-2]
 		} "Authentication Code" {
-		    check_auth_code [mime::getbody $bit] $lastBit
+		    set AuthCode [mime::getbody $bit]
 		} default {
-		    set lastBit $bit
+		    if {[string match "Simile model" [lindex $Desc 0]] && \
+			    [info exists AuthCode]} {
+			check_auth_code $bit
+			set CodeChecked yes
+		    }
 		    set Disposition [mime::getheader $bit Content-Disposition]
 		    if {![regexp \"(.*)\" $Disposition all oldPath]} {
 			set oldPath [lindex [lindex $Disposition 0] 1]
@@ -252,9 +253,11 @@ proc LoadFile {tree tgt using} {
 		}
 	    }
 	}
-    } Lossage
-#ShowMessage debug info $Lossage ok
-    return $Lossage
+    } Lossage]} {
+	return Lossage
+    } else {
+	return $CodeChecked
+    }
 }
 
 proc GetParts {top tree} {
@@ -292,7 +295,6 @@ proc GetParts {top tree} {
                     -header [list "Content-Disposition" $Disposition] \
                     -header [list "Content-Description" $Description] \
                     -file $subtree]
-	    lappend mimes $newMime
 	    if {[string match "Simile model" $Description]} {
 		set HmacCode [get_auth_code $newMime]
 		set codeT [mime::initialize -canonical text/plain \
@@ -300,6 +302,7 @@ proc GetParts {top tree} {
 		   -string $HmacCode]
 		lappend mimes $codeT
 	    }
+	    lappend mimes $newMime
 	
 # Debug: write the body to see if it's baaad...yes it was
 # Workaround: don't save anything as text/plain, stick to application/x-simile

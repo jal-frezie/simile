@@ -1207,7 +1207,7 @@ unclick_obj :-
 	append_atoms(Dir, '/copytemp.sml', CopyFile),
 	menu:save_isolated(CopyFile, Start, none),
 	attempt_addition(submodel, Parent, Box, Component_name, no),
-	library:ame_merge(Component_name, CopyFile, _),
+	library:ame_merge(Component_name, CopyFile, _, 'fuck it'),
 	set_shape(Component_name, internal_extent, Inside),
 	redisplay(Component_name),
 	update_runnable(Parent).

@@ -44,6 +44,7 @@ destroy_window(Dead_win) :-
 	retractall(model_in(Dead_win, _)).
 
 edition_is(standard).
+eval_fn_limit_is(25).
 
 :- dynamic(suspend_display/0).
 
