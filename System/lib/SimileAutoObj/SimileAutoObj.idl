@@ -1,0 +1,84 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+object,
+uuid(B97A60C4-8459-413d-B043-3C621A92EAAB),
+dual,
+helpstring("IModelWindow: Interface"),
+pointer_default(unique)
+]
+interface IModelWindow: IDispatch
+{
+    [id(1), helpstring("method FileNew")]
+    HRESULT FileNew();
+    
+    [id(2), helpstring("method FileOpen")]
+    HRESULT FileOpen();
+    
+    [id(3), helpstring("method FileSave")]
+    HRESULT FileSave();
+    
+    [id(4), helpstring("method FileSaveAs")]
+    HRESULT FileSaveAs();
+    
+    [id(5), helpstring("method FilePrint")]
+    HRESULT FilePrint();
+    
+    [id(6), helpstring("method FileExportModel")]
+    HRESULT FileExportModel();
+    
+    [id(7), helpstring("method FileExportCPPCodeExec")]
+    HRESULT FileExportCPPCodeExec();
+    
+    [id(8), helpstring("method FileExportPostscript")]
+    HRESULT FileExportPostscript();
+    
+    [id(9), helpstring("method Exit")]
+    HRESULT Exit();
+
+    [id(10), helpstring("method Preferences")]
+    HRESULT Preferences();
+
+    [id(11), helpstring("method BuildCPP")]
+    HRESULT BuildCPP();
+    
+    [id(12), helpstring("method BuildTcl")]
+    HRESULT BuildTcl();
+    
+    [id(13), helpstring("method ListEquations")]
+    HRESULT ListEquations();
+    
+    [id(14), helpstring("method LoadModelExplorer")]
+    HRESULT LoadModelExplorer();
+
+    [id(15), helpstring("method HideModelWindow")]
+    HRESULT HideModelWindow();
+
+    [id(16), helpstring("method ShowModelWindow")]
+    HRESULT ShowModelWindow();
+
+    [id(17), helpstring("method UseMRE")]
+    HRESULT UseMRE([in] int flag);
+
+};
+
+[
+uuid(0C59DF3D-B939-4fc8-BAEC-77E79E4ECA64),
+version(1.0),
+helpstring("SimileAutoObject 1.0 Type Library")
+]
+library SimileAutoObj
+{
+    importlib("stdole32.tlb");
+    
+    
+    [
+    uuid(12E9AFF9-1A4F-46c0-A128-F931A65E6839),
+    helpstring("Model Class")
+    ]
+    coclass ModelWindow
+    {
+        [default] interface IModelWindow;
+    };
+};

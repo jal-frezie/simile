@@ -1,0 +1,115 @@
+package provide SimileAutoObj 1.0
+
+# must be pipe interface
+# must be in the Simile distribution tree
+
+package require Itcl
+namespace import ::itcl::*
+
+package require tcom
+::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
+
+package require Tk
+tk_messageBox -message SimileAutoObj
+# this should probably be in a constructor
+#lappend auto_path f:/progra~1/Simile/System/lib
+cd f:/progra~1/Simile/System/bin
+set argc 0; # simile.tcl expects to be called from the command line - tell it no args
+source f:/progra~1/Simile/Run/simile.tcl; # ABSOLUTE PATH !!!!!!!!!!!! todo
+
+class ModelWindowImpl {
+    
+    private method GetModelWindow {} {
+        global window_info
+        return $window_info([lindex [lsort [array name window_info *,parent]] 0])
+    }
+    
+    constructor {} {
+        #cd f:/progra~1/Simile/System/bin
+        #set argc 0; # simile.tcl expects to be called from the command line - tell it no args
+        #source f:/progra~1/Simile/Run/simile.tcl; # ABSOLUTE PATH !!!!!!!!!!!! todo
+    }
+    
+    public method HideModelWindow {} {
+        # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
+        wm withdraw [GetModelWindow]
+    }
+
+    public method UseMRE {bool} {
+        # IS THIS GOING TO HAVE A TYPE PROBLEM???
+        global custom
+        set custom(helperManager) $bool
+    }
+
+    public method ShowModelWindow {} {
+        # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
+        wm deiconify [GetModelWindow]
+    }
+
+    # File Menu
+    public method FileNew {} {
+        MenuSelect [GetModelWindow].canvas file new
+    }
+    
+    public method FileOpen {} {
+        MenuSelect [GetModelWindow].canvas file open
+    }
+       
+    public method FileSave {} {
+        MenuSelect [GetModelWindow].canvas file save
+    }
+    
+    public method FileSaveAs {} {
+        MenuSelect [GetModelWindow].canvas file save_as
+    }
+    
+    public method FilePrint {} {
+        MenuSelect PrintNow [GetModelWindow].canvas
+    }
+    
+    public method FileExportModel {} {
+        MenuSelect [GetModelWindow].canvas file export_prolog
+    }
+    
+    public method FileExportCPPCodeExec {} {
+        MenuSelect [GetModelWindow].canvas file compile_c
+    }
+    
+    public method FileExportPostscript {} {
+        DoWithErrors ExportPostscript [GetModelWindow].canvas
+    }
+    
+    public method Exit {} {
+        # DOESN'T WORK
+        byebye [GetModelWindow]
+        # prolog tk_finish; # generates existance error
+    }
+    
+    # Edit Menu - not supporting editing the model
+    public method Preferences {} {
+        Pref_Dialog
+    }
+    
+    # Model Menu
+    public method BuildCPP {} {
+        MenuSelect [GetModelWindow].canvas file run_c
+    }
+    
+    public method BuildTcl {} {
+        MenuSelect [GetModelWindow].canvas file run_tcl
+    }
+    
+    public method ListEquations {} {
+        MenuSelect [GetModelWindow].canvas file list_eqns
+    }
+    
+    # IOTools
+    public method LoadModelExplorer {} {
+        #Load ModelExplorer helper
+        CreateHelperWindow ModelInspector63654 {Model Explorer}
+    }
+    
+}
+
+
+::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
