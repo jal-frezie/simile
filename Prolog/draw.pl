@@ -387,7 +387,11 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    untranslate(BBox, Trans, Screen_list),
 	    find_fatness(Trans, Fatness),
 	    get_flash(Comp, Colour_scheme),
-	    multiple_draw(Comp, Num),
+	    multiple_draw(Comp, MNum),
+	    find_base(Comp, BComp),
+	    is_parameter(BComp, P),
+	    Num is MNum+10*max(0, P),
+	    
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour, FillImage, ImgPos),
 		get_window_colour(Comp, BgColour, _),

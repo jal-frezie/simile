@@ -37,7 +37,7 @@ proc ScaleRect {w l t r b} {
     return [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
 }
 
-proc PutRectangle { w l t r b stack fatness density colourScheme tagSet} {
+proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set width [GetLineSize $w compartment $fatness]
@@ -45,6 +45,10 @@ proc PutRectangle { w l t r b stack fatness density colourScheme tagSet} {
     set stackDepth 0
     $w create line $mr $mt $ml $mt $ml $mb -width $width \
             -tag "$tagSet size_on_this realwidth($width)"
+
+    set decor [expr $extras/10] ;# no decor yet for input param compartments
+    set stack [expr $extras-10*$decor]
+
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
         set sl [expr $ml+$stackDistance]
@@ -112,26 +116,41 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 # is fixed (still buggy as hell in TclTk 8.4.6...actually not, it just needs
 # outlinestipple as well as stipple -- so its rectangles that are buggy?)
 
-proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
+proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w variable $fatness]
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
+    set generic [list -width $width -tag "$tagSet realwidth($width) has_info"]
     set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
-    $w create arc $ml $mt $mr $mb -width $width -start 45 -extent 90 \
-            -tag "$tagSet realwidth($width) has_info"
-    $w create arc $ml $mt $mr $mb -width $width -start 225 -extent 90 \
-            -tag "$tagSet realwidth($width) has_info"
+# to draw the old style variable replace the above line with
+#    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
+    eval {$w create arc $ml $mt $mr $mb -start 45 -extent 90} $generic
+    eval {$w create arc $ml $mt $mr $mb -start 225 -extent 90} $generic
 
-# to draw the old style variable leave out the arcs but
-#    $w create line $xl $xt $xr $xb -width $width \
-#            -tag "$tagSet realwidth($width) has_info"
-#   $w create line $xr $xt $xl $xb -width $width \
-#           -tag "$tagSet realwidth($width) has_info"
+    set decor [expr $extras/10]
+    set stack [expr $extras-10*$decor]
     
-    
+    switch $decor {
+	1 {
+	    set sl [expr $ml-2*$rad]
+	    set sr [expr $mr+2*$rad]
+	    set st [expr $mt+$rad/2]
+	    set sb [expr $mb-$rad/2]
+
+	    eval {$w create line $sl $st $sl $sb} $generic
+	    eval {$w create line $sl $vm $ml $vm} $generic
+	    eval {$w create line $mr $vm $sr $vm} $generic
+	    eval {$w create line $sr $st $sr $sb} $generic
+	} 2 {
+	    set st [expr $mt-2*$rad]
+	    eval {$w create poly $ml $st $hm $st $ml $vm} $generic
+	    eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
+	}
+    }
+	    
     set stackDepth 1
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
@@ -691,7 +710,7 @@ proc StippleSymbol {w name density selected} {
             line {
                 $w itemconfigure $object -stipple $density
             }
-            rectangle|arc|polygon {
+            rectangle|arc|oval|polygon {
                 $w itemconfigure $object -outlinestipple $density \
 		    -stipple $density
             }

@@ -214,8 +214,7 @@ make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
 	B is Ypt + Cur_size/2.
 
 density_for(Comp, Density) :-
-	(is_parameter(Comp, P), P>0;
-	    Comp has_type relation;
+	(Comp has_type relation;
 	    find_base(Comp, Base), \+ Base = Comp), !,
 	Density = gray50;
 	Density = '{}'.
