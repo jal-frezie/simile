@@ -1252,7 +1252,7 @@ proc MergeParams {} {
 		    cd [file dirname $FileOrVal]
 # ...and stick the new absolute pathname into the spec! Easy!!
 		    set paramState($restoredComp) \
-			[concat [pwd]/[file tail $FileOrVal] \
+			[concat [list [pwd]/[file tail $FileOrVal]] \
 			     [lrange $paramData($restoredComp) 1 end]]
 # now just load up the data
 #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
