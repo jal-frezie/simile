@@ -378,19 +378,8 @@ double myabs(double a) {
   return fabs(a);
 }
 
-/* Do same for pow, just in case -- absolute power corrupts absolutely */
-int mypow(int a, int b) {
-  return int(pow(a,b));
-}
-double mypow(int a, double b) {
-  return pow(a,b);
-}
-double mypow(double a, int b) {
-  return pow(a,b);
-}
-double mypow(double a, double b) {
-  return pow(a,b);
-}
+/* Do same for pow, just in case -- absolute power corrupts absolutely -- 
+actually not, cos an int to an int can also be a float if 2nd is -ve */
 
 int step_list(int **dim_list, int unused) {
   return *(*dim_list)++;

@@ -1046,7 +1046,7 @@ operator(/, 1, [1,1]).
 
 /* Comparison ops need int arg version to avoid unnecessarily constraining
 parameters to real */
-operator(^, int, [int, int]).
+operator(^, real, [real, real]).
 operator(==, boolean, [int, int]).
 operator(==, boolean, [real, real]).
 operator(==, boolean, [boolean, boolean]).
