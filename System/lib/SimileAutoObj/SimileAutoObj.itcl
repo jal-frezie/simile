@@ -3,6 +3,7 @@ package provide SimileAutoObj 1.0
 # Notes
 # must be pipe interface
 # must be in the Simile distribution tree
+# Welcome dialog (register) must be made not to appear 
 
 # todo
 # ModelWindowImpl expose more hai2mmii.tcl
@@ -10,6 +11,8 @@ package provide SimileAutoObj 1.0
 #
 # RunControlImpl  need to set submodel timesteps
 # TableHelperImpl to be implemented
+
+
 
 
 package require Itcl
