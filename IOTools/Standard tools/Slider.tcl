@@ -35,7 +35,6 @@ namespace eval slide139 {
                     -command [namespace code SaveInputVals]] \
                     -side left -padx 2 -pady 4
             #	pack [frame $bfrm.rpad] -side left -fill x
-            set_size $winId
         }
         set geom [PrefValue custom(slidersPosition) slidersPosition]
 #        catch {wm geometry $winId $geom}

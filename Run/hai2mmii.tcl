@@ -472,3 +472,18 @@ proc collect {tgt node count args} {
 	}
     }
 }
+
+proc FileCollect {tgt node argList} {
+    global paramData
+    set compName [GetCaptionPathFromId $node]
+    
+    set field $paramData($compName)
+    while {[string compare $argList {}]} {
+        #ShowMessage debug info "Array setting $field" ok
+        array set items $field
+        set field $items([lindex $argList 0])
+        set argList [lrange $argList 1 end]
+    }
+    set $tgt $field ;# tgt is passed by reference
+}
+
