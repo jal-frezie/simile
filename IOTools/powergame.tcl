@@ -6,22 +6,22 @@ namespace eval $keyValue {
     variable col 0
 
 proc identify {} {
-	return "Power to Change"
+    return "Power to Change"
 }
 
 proc initialize {winId} {
-   DoAtStart $winId
+    DoAtStart $winId {}
 }
 
 proc Restore {winId} {
-   DoAtStart $winId
+    DoAtStart $winId [GetState $winId]
 }
 
 proc display {winId time step remainder} {
    DoEachTimeStep $winId $time	
 }
 
-proc DoAtStart {win} {
+proc DoAtStart {win elements} {
    global info
 
    set info(attributes,edit) \
@@ -62,20 +62,26 @@ proc DoAtStart {win} {
    set info(attributes,warning) \
       {type conditions message}
 
-   set info(hyperlinks) {}
+    if {[llength $elements]} {
+	set file [lindex $elements 0]
+	set elements [lreplace $elements 0 0]
+    } else {
+	clipboard clear
+	clipboard append "Please select a Simile user interface design file"
+	set file [tk_getOpenFile -filetypes {{"User interface design file" {".txt"}}} \
+		      -title "Load user interface design file"]
+	set ch [open $file r]
+	set elements [read $ch]
+	close $ch
+	SetState $win [linsert $elements 0 $file]
+    }
+    set info(current_file) $file
 
-   clipboard clear
-   clipboard append "Please select a Simile user interface design file"
-   set file [tk_getOpenFile -filetypes {{"User interface design file" {".txt"}}} \
-      -title "Load user interface design file"]
-   set ch [open $file r]
+   set info(hyperlinks) {}
     set info(logfile) [open [file rootname $file].log w]
 # 'catch' is used in next line because event seems to get generated twice when
 # closing the window directly
     bind $win <Destroy> [namespace code {DoAtEnd %W}]
-   set elements [read $ch]
-   close $ch
-   set info(current_file) $file
 
    set canvas_settings [lindex $elements 0]
    set info(canvas_settings) $canvas_settings
@@ -288,7 +294,6 @@ proc click {win node caption} {
 
 proc set_attributes_ok {win w ielement type n} {
    global info
-    variable col
 
    set attributes $info(attributes,$type)
 
@@ -303,7 +308,13 @@ proc set_attributes_ok {win w ielement type n} {
       }
    }
    destroy $w
+    clear $win
+    save_state $win
+}
 
+proc clear {win} {
+   global info
+    variable col
    $win.canvas delete all
 
     foreach ielement $info(ielements) {
@@ -342,10 +353,15 @@ proc attributes_save_to_file {canvas w ielement n file} {
       set attribute [lindex $attributes $i]
       set info($ielement,$attribute) [$w.frame1.entry$i get]
    }
+    save_state $canvas
+    write_state_to_file $canvas $file
+}
 
-   file delete $file
-   set ch [open $file w]
-   puts $ch [list $info(canvas_settings)]
+proc save_state {winId} {
+    global info
+
+    set state $info(current_file)
+   lappend state [list $info(canvas_settings)]
    foreach ielement $info(ielements) {
       set output {}
       set type $info($ielement,type)
@@ -355,9 +371,18 @@ proc attributes_save_to_file {canvas w ielement n file} {
          set attribute [lindex $attributes $i]
          lappend output $info($ielement,$attribute)
       }
-   puts $ch [list $output]
+   lappend state [list $output]
    }
-   close $ch
+   SetState $winId $state
+}
+
+proc write_state_to_file {winId file} {
+    file delete $file
+    set ch [open $file w]
+    foreach line [GetState $winId] {
+	puts $ch $line
+    }
+    close $ch
 }
 
 
