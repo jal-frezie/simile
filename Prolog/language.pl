@@ -801,12 +801,12 @@ make_evaluation_routine(
 	    Term=Expr;
 	member(Expr, [time, ind_time, time(P), ind_time(P)]), !,
 	    refer_value(Language, start_time, Term);
-	Expr = dt(P), !,
+/*	Expr = dt(P), !,
 	    make_procedure_call_chars(Language, [glob_element, dts, P],
 				      TimeElmtStr),
 	    name(Term, TimeElmtStr);
 
-	Expr = assign(Tgt, SubExpr), !,
+*/	Expr = assign(Tgt, SubExpr), !,
 	    make_scalar(Language, Tgt, GraphN, Dest, GraphD),
 	    make_evaluation_routine(Language, SubExpr, GraphN, Source, GraphD),
 	    make_expr(Language, Source, SourceExp),
@@ -840,7 +840,8 @@ make_evaluation_routine(
 	    make_scalar(Language, Struct, GraphN, SStruct, GraphD),
 	    make_pointer(Language, SStruct, VStruct),
 	    make_evaluation_routine_all(Language, [Step, Delta],
-					GraphN, [VStep, VDelta], GraphD),
+					GraphN, [VStep, XDelta], GraphD),
+	    make_expr(Language, XDelta, VDelta),
 	    make_procedure_call_chars(Language, [stage_incr, VStruct, VStep,
 						 VDelta], Content_chars),
 	    name(Term, Content_chars);
