@@ -42,11 +42,6 @@ namespace eval runcontrol33857 {
         focus $widget.edit.num
     }
 
-    proc SetTimeUnits {widget} {
-        variable sendvars
-        set sendvars(timeUnit) [$widget getvalue]
-    }
-
     proc initialize {t} {
         variable sendvars
         variable timeSteps
