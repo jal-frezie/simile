@@ -274,7 +274,7 @@ menu_handle(Win, file, save_interface) :-
 	get_default_export_name(Model, ".isf", DefName),
 	get_program_file(DefName, FileName),
 	start_progress_dialogue,
-	open(FileName, write, Stream),
+	open_native(FileName, write, Stream),
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
 	save_references(Stream, Model),
 	(member(Type, [relation, flow, influence]),
@@ -640,7 +640,7 @@ menu_handle(Win, edit, Action) :-
 
 menu_handle(Win, edit, set_interface) :-
 	get_import_file('plugplay.isf', SpecFile),
-	open(SpecFile, read, Stream),
+	open_native(SpecFile, read, Stream),
 	read(Stream, interface_spec_for(SubmodelName, _)),
 	Win shows_model Submodel,
 	caption_for(Submodel, OldName),

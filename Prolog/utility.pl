@@ -9,7 +9,7 @@ sicstus_module( utility, [wake/0, genint/2, portray/1, trim_float/2,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
 			  writelist/1,writelisttofile/2,
-			  do_writing/2,
+			  do_writing/2, open_native/3,
 			  delall/3, append/2, append_atoms/2, append_atoms/3,
 			  try/1,equate/2,
 			  merge_lists/2, merge_lists/3, split_lists/3,
@@ -244,7 +244,7 @@ do_writing([Atom | Rest], Str) :-
 % read the above
 
 readlistfromfile( List , File) :-
-	open(File,read,Str),
+	open_native(File,read,Str),
 	do_reading(List,Str),
 	close(Str).
 
@@ -254,6 +254,13 @@ do_reading([Atom | Rest], Str) :-
 	do_reading( Rest, Str ).
 
 do_reading([], _Str).
+
+/* Opening files is one of the few times Prolog talks directly to the OS, so we
+need to change its own ttfn encoding to utf8 */
+
+open_native(FileTtfn, Mode, Stream) :-
+	user:deEncode(_, FileTtfn, FileUtf8, _),
+	open(FileUtf8, Mode, Stream).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 

@@ -174,7 +174,7 @@ read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
 				     unify(BuiltIn), append(Done, Local)]).
 
 read_func_file(File, Context, IsBuiltIn, Done) :-
-	open(File, read, Stream),
+	open_native(File, read, Stream),
 	name(File, FileStr),
 	append(Base, ".pl", FileStr),
 	name(Context, ContextStr),

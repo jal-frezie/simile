@@ -22,7 +22,7 @@ ame_save( File, Model, Date, SelOnly ) :-
 	\+ ( member( Node, Models ),
 	     \+ Node is_model_class ),
 	output:windowize(File, WFile),
-	on_exception(_, open(WFile, write, Stream), 
+	on_exception(_, open_native(WFile, write, Stream), 
 	fail), !,
 	(dialogue:reassure_user("Writing root information"),
 	state:version_is(VStr),
@@ -216,7 +216,7 @@ choose_breakpoint(Break) :-
 % if not toplevel, to avoid clashes. Date from file is returned.
 
 ame_merge( Parent, File, Date, HasCode, Translated ) :-
-	open( File, read, Stream),
+	open_native( File, read, Stream),
 	dialogue:reassure_user("Reading information from file"),
 	read( Stream, Header ),
 	((Header = source(_,version=V,edition=E,date=Date);
@@ -372,7 +372,7 @@ adjust_to_8 :-
 	    Comp no_longer_has_class_refinement TclBound of TermInUtf8;
 	 Fixing = arc,
 	    Comp no_longer_has_attribute TclBound of TermInUtf8),
-	replace_subexps(TermInUtf8, library, reEncode, _, top_down,
+	replace_subexps(TermInUtf8, user, reEncode, _, top_down,
 			_VPs, TermInTtfn),
 	(Fixing = node,
 	    Comp has_new_class_refinement TclBound of TermInTtfn;
@@ -380,12 +380,6 @@ adjust_to_8 :-
 	    Comp has_new_attribute TclBound to TermInTtfn),
 	fail;
 	true.
-
-reEncode(_, Utf8Atom, TtfnAtom, 0) :-
-	atom(Utf8Atom),
-	name(Utf8Atom, Utf8Str),
-	user:all_utf8_to_ttfn(Utf8Str, TtfnStr),
-	name(TtfnAtom, TtfnStr).
 
 shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
 	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-

@@ -117,7 +117,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	     (Language = c, Extn = '.cpp';
 	     Language = tcl, Extn = '.tcl'),
 	     append_atoms([WCheckDir, '/', model, Extn], WProgName),
-	     open(WProgName, write, Stream),
+	     open_native(WProgName, write, Stream),
 	     on_exception(Puke,
 		protected_build(Language, Stream, MyStep, 
 		Model, EntryArcs, Includes),

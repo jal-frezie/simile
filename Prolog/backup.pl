@@ -150,7 +150,7 @@ into_save_file(Model, ActList) :-
 	(retract(translation_info(Model, TransInfo)), !,	    
 	    append(TransInfo, ActList, FullList);
 	FullList = ActList),
-	on_exception(Lossage, (open(File, append, Save),
+	on_exception(Lossage, (open_native(File, append, Save),
 				  write_with_breaks(Save, FullList),
 				  close(Save)),
 		(sicstus_format_to_chars("Could not create an autosave file for this model. ~w. This may mean that the model was loaded from a read-only file system. No autosave data will be stored until the model is saved somewhere else.", [Lossage], Wibble),
@@ -317,7 +317,7 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 	     do_dialogue("Restore option", question,
 			 "Simile left a log file of unsaved changes when this model was last edited. Do you want to apply these changes now?",
 			 yesno, yes), !,
-		open(AutoName, read, Load),
+		open_native(AutoName, read, Load),
 		(IdSwaps = copy, !,
 		    setof(Comp-Comp, contains(Model, Comp), UseIdSwaps);
 		 UseIdSwaps = [Model-Model | IdSwaps]),
