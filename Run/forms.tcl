@@ -271,7 +271,7 @@ proc create_equation {parent boxtitle indices} {
     TitleFrame $mainF.main.main -text "Data source: "
     set mainf [$mainF.main.main getframe]
     frame $mainf.slider
-    ::ttk::radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
+    radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
     pack [label $mainf.slider.minlabel -text Minimum] -side left -padx 4 -pady 4
     pack [::ttk::entry $mainf.slider.minval -width 8 -textvariable equation(min)] -side left -padx 4 -pady 4
@@ -285,14 +285,14 @@ proc create_equation {parent boxtitle indices} {
     
     pack $mainf.slider -anchor nw -fill x
     frame $mainf.file
-    ::ttk::radiobutton $mainf.file.radio2 -text "Fixed parameter" -variable equation(isparam) -value 2
+    radiobutton $mainf.file.radio2 -text "Fixed parameter" -variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
     pack $mainf.file -anchor nw
     frame $mainf.equation
     frame $mainf.equation.textbox
     
     regsub { for } $boxtitle {: } eqnRBtext
-    ::ttk::radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
+    radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 80 -yscrollcommand "$mainf.equation.textbox.scroll set"]
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
@@ -910,7 +910,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
         }
     }
     if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .disaggregation -bd 4 -class Disaggregation]; ::tk::unsupported::MacWindowStyle style .disaggregation floatZoomProc
+      set t [toplevel .disaggregation -bd 4 -class Disaggregation]; ::tk::unsupported::MacWindowStyle style .disaggregation floatGrowProc
     } else {
       set t [toplevel .disaggregation -bd 4 -class Disaggregation]
       wm transient $t $parent
@@ -927,7 +927,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     frame $countf.radio
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-        ::ttk::radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
+        radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
                 -value [lindex $rbutton 0] \
                 -variable disaggregate(type) \
                 -command "SetHighlights $countf"
@@ -956,7 +956,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set rbState [ChooseText [string equal $disaggregate(image) none] \
             disabled normal]
     foreach rbutton {Tiled Centred Scaled} {
-        pack [::ttk::radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
+        pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
                 -value $rbutton -variable disaggregate(imgpos)] -anchor w
     }
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
@@ -1016,7 +1016,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $canId.scrf -side left -fill both -expand true
     
     pack [set btnId [frame $enumtypef.btns]] -side left
-    pack [entry $btnId.e -textvariable enumTypeMPEntry]
+    pack [::ttk::entry $btnId.e -textvariable enumTypeMPEntry] -padx 2
     bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
     pack [button $btnId.addtype -text "Add type" -command "AddEnumType $canId"] \
             -padx 2 -pady 4 -fill x
@@ -1097,6 +1097,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     } elseif ($disaggregate(fatness)!=1.0) {
         ShowComplexity $t
     } elseif ($disaggregate(hide)) {
+        ShowComplexity $t
+    } elseif [info exists enumList] {
         ShowComplexity $t
     }
     
@@ -1393,12 +1395,12 @@ proc SetHighlights {t} {
 proc OpenProgressBox {winId} {
     global tcl_platform
     if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .progress -bd 4]; ::tk::unsupported::MacWindowStyle style .progress floatZoomProc
+      set t [toplevel .progress -bd 4]; ::tk::unsupported::MacWindowStyle style .progress floatProc
     } else {
       toplevel .progress
       wm transient .progress $winId
     }
-    if 0 {wm geometry .progress 400x100+0+0}
+    wm geometry .progress 400x100
     wm title .progress "Progress with current operation"
     message .progress.message -aspect 400 -text "Please wait"
     pack .progress.message -fill both -expand true
@@ -1416,7 +1418,11 @@ proc CloseProgressBox {} {
 proc RelationCheck {parent title type state init_comment} {
     global relation tcl_platform
     
-    set t [toplevel .relcheck -bd 4]
+    if [string match Darwin $tcl_platform(os)] {
+      set t [toplevel .relcheck -bd 4]; ::tk::unsupported::MacWindowStyle style $t floatGrowProc
+    } else {
+      set t [toplevel .relcheck -bd 4]
+    }
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
     wm title $t "Properties of [BlankCrs $title]"
@@ -1478,7 +1484,7 @@ set find(prevs) {}
 proc GetFindText {parent} {
     global find tcl_platform
     if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .findentry -bd 4 -class Equation]; ::tk::unsupported::MacWindowStyle style .findentry floatZoomProc
+      set t [toplevel .findentry -bd 4 -class Equation]; ::tk::unsupported::MacWindowStyle style .findentry floatGrowProc
     } else {
       set t [toplevel .findentry -bd 4]
       wm transient $t $parent
@@ -1547,7 +1553,7 @@ proc DoRegDialog {dtId} {
         }
     }
     if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .register]; ::tk::unsupported::MacWindowStyle style .register floatZoomProc
+      set t [toplevel .register]; ::tk::unsupported::MacWindowStyle style .register floatProc
     } else {
       set t [toplevel .register -bd 4]
       wm transient $t $dtId
@@ -1760,7 +1766,11 @@ proc ErrorHelp {diagnostic} {
     toplevel .diag
     set parent [focus]
     if {[string length $parent]>1} {
+      if [string match Darwin $tcl_platform(os)] {
+        ::tk::unsupported::MacWindowStyle style .diag floatGrowProc
+      } else {
         wm transient .diag $parent
+      }
     }
     wm title .diag {Error diagnostics}
     wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
@@ -2154,15 +2164,23 @@ proc add_text {text font across down colour} {
 # execution interps, so the reporting stuff can be kept in the editor interp
 
 proc BuildProblem {Title errLevel msg key args} {
-    global iconImages help
+    global iconImages help tcl_platform
 
     set ProbWin .bprob[clock clicks]
     toplevel $ProbWin
     set active [focus]
     if {[llength $active]} {
+      if [string match Darwin $tcl_platform(os)] {
+        ::tk::unsupported::MacWindowStyle style $ProbWin floatGrowProc
+      } else {
 	wm transient $ProbWin $active
+      }
     } else {
+      if [string match Darwin $tcl_platform(os)] {
+        ::tk::unsupported::MacWindowStyle style $ProbWin floatGrowProc
+      } else {
 	wm transient $ProbWin
+      }
     }
 #    switch $fault {
 #        user {
@@ -2181,11 +2199,9 @@ proc BuildProblem {Title errLevel msg key args} {
 #    }
     wm title $ProbWin $Title
     wm protocol $ProbWin WM_DELETE_WINDOW {set ack 1}
-    global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
         wm attributes $ProbWin -toolwindow true
     }
-    
     set labf1 [frame $ProbWin.labf1]
     pack [label $labf1.img -image $iconImages($errLevel)] -side left 
     pack [label $labf1.lab1 -text "Warning:" \
