@@ -66,7 +66,7 @@ namespace eval slide139 {
         set count [lindex $nodeDims $outerDims]
         if {$count == 0} {
 	    if {$isFlag} {
-		pack [checkbutton $f -text [lindex $levels end] \
+		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
 			  -offvalue 0 -onvalue 1 -relief ridge]
 		set checkStates($node) [GetDefVal $initVal $outerDims 0]

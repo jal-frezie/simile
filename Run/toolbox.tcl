@@ -170,8 +170,8 @@ proc ControlDraw {prologVersion edition} {
     return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] $openModel]
 }
 
-package require mime 1.3.1
-
+package require mime
+package require sha1
 
 proc SaveFile {tree tgt using} {
     global mimeSquirter runState errorInfo model_id
@@ -221,33 +221,39 @@ proc LoadFile {tree tgt using} {
 	foreach bit [mime::getproperty $multiT parts] {
 	    set Description [mime::getheader $bit Content-Description]
 	    #ShowMessage debug info $Description ok
-	    if {[string match "Run Status" [lindex $Description 0]]} {
-		set runParams [mime::getbody $bit]
-		set runState(currentTime) 0.0
-		#ShowMessage debug info set ok
-		set runState(execTime) [lindex $runParams 0]
-		set runState(displayInt) [lindex $runParams 1]
-		for {set others 2} {$others < [llength $runParams]} \
-		    {incr others} {
-			set runState(update[expr $others-1]) \
-			    [lindex $runParams $others]
-			set runState(prev_update[expr $others-1]) \
-			    [lindex $runParams $others]
-		    }
-		set runState(phases) [expr $others-2]
-	    } else {
-		set Disposition [mime::getheader $bit Content-Disposition]
-		if {![regexp \"(.*)\" $Disposition all oldPath]} {
+	    switch [lindex $Description 0] {
+		"Run Status" {
+		    set runParams [mime::getbody $bit]
+		    set runState(currentTime) 0.0
+		    #ShowMessage debug info set ok
+		    set runState(execTime) [lindex $runParams 0]
+		    set runState(displayInt) [lindex $runParams 1]
+		    for {set others 2} {$others < [llength $runParams]} \
+			{incr others} {
+			    set runState(update[expr $others-1]) \
+				[lindex $runParams $others]
+			    set runState(prev_update[expr $others-1]) \
+				[lindex $runParams $others]
+			}
+		    set runState(phases) [expr $others-2]
+		} "Authentication Code" {
+		    check_auth_code [mime::getbody $bit] $lastBit
+		} default {
+		    set lastBit $bit
+		    set Disposition [mime::getheader $bit Content-Disposition]
+		    if {![regexp \"(.*)\" $Disposition all oldPath]} {
 			set oldPath [lindex [lindex $Disposition 0] 1]
+		    }
+		    set newPath $tree$oldPath
+		    file mkdir [file dirname $newPath]
+		    set mimeSquirter [open $newPath w]
+		    fconfigure $mimeSquirter -translation binary
+		    mime::getbody $bit -command SquirtMime -blocksize 256
 		}
-		set newPath $tree$oldPath
-		file mkdir [file dirname $newPath]
-		set mimeSquirter [open $newPath w]
-		fconfigure $mimeSquirter -translation binary
-		mime::getbody $bit -command SquirtMime -blocksize 256
 	    }
 	}
     } Lossage
+#ShowMessage debug info $Lossage ok
     return $Lossage
 }
 
@@ -287,6 +293,14 @@ proc GetParts {top tree} {
                     -header [list "Content-Description" $Description] \
                     -file $subtree]
 	    lappend mimes $newMime
+	    if {[string match "Simile model" $Description]} {
+		set HmacCode [get_auth_code $newMime]
+		set codeT [mime::initialize -canonical text/plain \
+		   -header [list "Content-Description" "Authentication Code"] \
+		   -string $HmacCode]
+		lappend mimes $codeT
+	    }
+	
 # Debug: write the body to see if it's baaad...yes it was
 # Workaround: don't save anything as text/plain, stick to application/x-simile
 #	    set debugname ${subtree}.mim

@@ -1363,6 +1363,88 @@ extern "C" int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
+char secret[] = "RobbieWilliamsIsCliffRichardsLoveChild";
+char edition[] = "standard";
+
+void crash () {
+  /* oh dear. */
+  /* oh dear, oh dear. */
+  while (1) {}
+}	 
+
+extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+   if (argc != 2) {
+     interp->result = "One argument for get_auth_code please!";
+     return TCL_ERROR;
+   }
+   /* set ModelText [mime::getbody $Part($Model)] */
+   if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
+	       Tcl_GetStringFromObj(argv[1], NULL), "]", NULL) != TCL_OK) {
+     return TCL_ERROR;
+   }
+   /* regexp {edition=([^,]*),} $ModelText all putativeEdition */
+   if (Tcl_VarEval(interp, 
+		   "regexp {edition=([^,]*),} $hvfe587gw938 all h76rt4g7",
+		   NULL) != TCL_OK) {
+     return TCL_ERROR;
+   }
+   if (strcmp(edition, Tcl_GetVar(interp, "h76rt4g7", 0))) {
+     crash();
+   }
+   /* ::sha1::hmac "Expensive" $ModelText */
+   return Tcl_VarEval(interp, "::sha1::hmac ", secret, " $hvfe587gw938", NULL);
+   }   
+
+/* This bit exists solely to make our lives difficult, especially if we are
+thinking of ripping off Simulistics, Inc. A special security code is generated
+from our little secret -- after checking that the edition specified is right */
+
+extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+  int trouble;
+  if (argc != 3) {
+    interp->result = "Two arguments for get_auth_code please!";
+    return TCL_ERROR;
+  }
+  /* set ModelText [mime::getbody $Part($Model)] */
+  if (Tcl_VarEval(interp, "set hvfe587gw938 [mime::getbody ", 
+		  Tcl_GetStringFromObj(argv[2], NULL), "]", NULL) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  if (Tcl_VarEval(interp, "::sha1::hmac ", secret, " $hvfe587gw938", NULL)) {
+    return TCL_ERROR;
+  }
+  /* check it matches what we got before */
+  if (strcmp(Tcl_GetStringFromObj(argv[1], NULL), 
+	     Tcl_GetStringResult(interp))) {
+    crash();
+  }
+  /* Also if we are evaluation, it was not written by enterprise and it has 
+     more than 30 lines beginning 'node...' there are grounds to suspect foul
+     play... */
+  if (strcmp("evaluation", edition)) {
+    return TCL_OK;
+  }
+  if (Tcl_VarEval(interp, 
+		  "regexp {edition=([^,]*),} $hvfe587gw938 all h76rt4g7",
+		  NULL) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  if (strcmp("enterprise", Tcl_GetVar(interp, "h76rt4g7", 0))) {
+    return TCL_OK;
+  }
+  if (Tcl_VarEval(interp, "regexp -all {node\(node} $hvfe587gw938",
+		  NULL) != TCL_OK) {
+    return TCL_ERROR;
+  }
+  Tcl_GetIntFromObj(interp, Tcl_GetObjResult(interp), &trouble);
+  if (trouble > 30) {
+    crash();
+  }
+  return TCL_OK;
+}
+
 /*
  * The following declarations refer to internal Tk routines.  These
  * interfaces are available for use, but are not supported.
@@ -1443,6 +1525,12 @@ int Ame_dll_Init(Tcl_Interp *interp) {
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
     Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+     Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
+			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+     Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
     sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
