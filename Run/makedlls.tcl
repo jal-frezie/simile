@@ -24,7 +24,8 @@ if {[llength $final_expiry]} {
 }
 
 set defns [list -DSIM_FINAL_EXPIRY=$expiry_ticks \
-	       -DSIM_DAYS_AFTER_INSTALL=$days_after_install]
+	       -DSIM_DAYS_AFTER_INSTALL=$days_after_install \
+	      -DSIM_OPSYS_$tcl_platform(os)]
 lappend defns -DSIM_[string toupper $edition]
 if {$needs_license} {
 	lappend defns -DSIM_LICENSED

@@ -29,7 +29,7 @@ compile( Language, Parent, DestDir) :-
 	(Parent has_class_refinement fix_math_args of Do, !;
 	Do = 0),
 	state:set_math_protect(Do),
-	build_instances(Language, DestDir, Parent, 1, '', _,_),
+	build_instances(Language, DestDir, Parent, 1, _,_),
 	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
@@ -69,28 +69,25 @@ is_entry(Entry) :-
 	    DLLSpec has_part End),
 	DLLSpec has_class_refinement separate of 1.
 	
-build_instances(Language, DestDir, Parent, Step, NamePath,
-		ChangeNext, KeepParents) :-
+build_instances(Language, DestDir, Parent, Step, ChangeNext, KeepParents) :-
 	caption_for(Parent, Name),
-	append_atoms([NamePath, '/', Name], LongName),
-	append_atoms(DestDir, LongName, CheckDir),
+	append_atoms([DestDir, '/', Name], CheckDir),
 	check_directory(CheckDir),
 	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
-	build_sub_instances(Language, DestDir, Parent, MyStep,
-			    LongName, CompsChanged, KeepDir),
+	build_sub_instances(Language, CheckDir, Parent, MyStep,
+			    CompsChanged, KeepDir),
 	(Parent has_model_refinement c_new of 0,
 	     \+ check_level_for_reds(Parent),
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1;
 	ChangeTop = CompsChanged),
-	((Parent has_class_refinement separate of 1; NamePath = ''), !,
+	((Parent has_class_refinement separate of 1;
+	  backup:is_toplevel(Parent)), !,
 	 ((ChangeTop == 1,
 	        all(compile, delete_prog,
 		    [unify(CheckDir), build(['.tcl', '.cpp', '.dll', '.so'])]);
-	   \+ check_executable(Language, CheckDir),
-	     \+ check_level_for_reds(Parent);
-	   \+ load_executable(Language, DestDir, LongName, Parent)), !,
+	   \+ reuse_old_exec(Language, Parent, CheckDir)),
 	     \+ (Language = c,
 		    tk_get_pref(compChoice, 'None'),
 		    raise_exception(no_compiler)),
@@ -108,14 +105,16 @@ build_instances(Language, DestDir, Parent, Step, NamePath,
 		Model, EntryArcs),
 		(reclose(Stream), raise_exception(Puke))),
 	     close(Stream),
-	     (Parent has_changed_model_refinement c_new of 1;
-		Parent has_new_model_refinement c_new of 1),
-	     (Language = tcl, !;
-	     compile_c_program(DestDir, LongName, Err),
-		 (Err = [], !;
-		 raise_exception(compilation_failed)),
+	     (Language = tcl, !,
+		 Tgt = 'model.tcl';
+	     compile_c_program(CheckDir, Tgt),
+		 (Tgt = -1, !,
+		     raise_exception(compilation_failed);
+		  (Parent has_changed_model_refinement c_new of Tgt;
+		      Parent has_new_model_refinement c_new of Tgt)),
 		 assert(new_exec_for(Parent))),
-	     load_executable(Language, DestDir, LongName, Parent);
+	     append_atoms([CheckDir, '/', Tgt], CheckExec),
+	     load_executable(Language, CheckExec, Parent);
 	 true),
 	KeepDir = 1;
 	ChangeNext = ChangeTop),
@@ -123,6 +122,15 @@ build_instances(Language, DestDir, Parent, Step, NamePath,
 	(KeepDir == 1, !,
 	    KeepParents = 1;
 	safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _)).
+
+reuse_old_exec(Language, Parent, CheckDir) :-
+	(Language = c, !,
+	    Parent has_model_refinement c_new of OldTgt;
+	OldTgt = 'model.tcl'),
+	append_atoms([CheckDir, '/', OldTgt], CheckExec),
+	(my_file_exists(CheckExec),
+	    load_executable(Language, CheckExec, Parent);
+	 check_level_for_reds(Parent)).
 
 /* reclose: compiled version has a tendency to close streams when exiting their
 functions on an exception, so this only closes if it has to...*/
@@ -138,15 +146,14 @@ delete_prog(Base, Extn) :-
 	append_atoms([Base, '/', model, Extn], FullName),
 	my_delete_file(FullName).
 	
-build_sub_instances(Language, DestDir, Parent, Step, NamePath,
-		    ChangeTop, KeepDir) :-
+build_sub_instances(Language, DestDir, Parent, Step, ChangeTop, KeepDir) :-
 	(setof( Submodel, (Parent has_part Submodel,
 			      Submodel has_class submodel,
 			      appears(Submodel)), Submodels), !; 
 	    Submodels = []),
 	all(compile, build_instances, 
 	    [unify(Language), unify(DestDir), build(Submodels), unify(Step),
-	     unify(NamePath), unify(ChangeTop), unify(KeepDir)]).
+	     unify(ChangeTop), unify(KeepDir)]).
 
 check_level_for_reds(Submodel) :-
 	reassure_user("Checking all model values are defined"),

@@ -35,8 +35,8 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/9, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/1,
-	check_directory/1, check_executable/2, windowize/2,
-	compile_c_program/3, load_executable/4, find_phase/3,
+	check_directory/1, windowize/2,
+	compile_c_program/2, load_executable/3, find_phase/3,
 	kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
@@ -467,10 +467,6 @@ check_directory(Dir) :-
 	windowize(Dir, WDir),
 	safe_tcl_eval([file, mkdir, br(WDir)], _).
 
-check_executable(Lang, Dir) :-
-	windowize(Dir, WDir),
-	safe_tcl_eval(['CheckExec', Lang, br(WDir)], "yes").
-
 attach_tree(Load, Top, Point) :-
 	windowize(Point, WPoint),
 	safe_tcl_eval(['AttachTree', br(Load), br(Top), br(WPoint)], _).
@@ -495,13 +491,14 @@ build_interconnects(FinderList) :-
 	bracketize(FinderList, FinderTclList),
 	safe_tcl_eval([set_connections, FinderTclList], _).
 	
-compile_c_program(ProgDir, ModelPath, Err) :-
+compile_c_program(ModelPath, Err) :-
 	windowize(ModelPath, WModelPath),
-	safe_tcl_eval([compile_c, br(ProgDir), br(WModelPath)], Err).
+	safe_tcl_eval([compile_c, br(WModelPath)], ErrStr),
+	name(Err, ErrStr).
 
-load_executable(L, ProgDir, ModelPath, Node) :-
+load_executable(L, ModelPath, Node) :-
 	windowize(ModelPath, WModelPath),
-	safe_tcl_eval([load_dll, L, br(ProgDir), br(WModelPath), Node], MStr),
+	safe_tcl_eval([load_dll, L, br(WModelPath), Node], MStr),
 	\+ MStr = "0".
 					
 load_tcl_program(List, Response) :-

@@ -1245,17 +1245,6 @@ proc remove_c_model {} {
     #    }
 }
 
-proc CheckExec {Lang Dir} {
-    if {[string match tcl $Lang]} {
-        set Extn .tcl
-    } else {
-        set Extn [info sharedlibextension]
-    }
-    if {[file exists $Dir/model$Extn]} {
-        return yes
-    }
-}
-
 # Path names derived from Windows environment variables must be
 # 'brainwashed' i.e., stripped of their native culture and turned
 # into blank-faced Unix-style forward-slash-separated automata.
@@ -1320,26 +1309,21 @@ proc update_c_executable {winId} {
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
 # is always that most recently added (even if not recompiled)
 
-proc load_dll {lang progFileDir modelPath node} {
+proc load_dll {lang progFile node} {
     #   phasecount and nodedata are set in generated code
     global phasecount nodedata nodecount model_id model_ids
-    set nameBase $progFileDir$modelPath/model
     if {[string match tcl $lang]} {
         foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
             source $fnFile
         }
-        source $nameBase.$lang
+        source $progFile
         if {[info exists simile_version]} {
-            
-            
-            
             return $simile_version
         } else {
             return 0
         }
     } else {
-        if {[catch {loadmodel $nameBase[info sharedlibextension] $node} \
-                    model_id]} {
+        if {[catch {loadmodel $progFile $node} model_id]} {
             ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $model_id -- the program will attempt to build another one." ok
             unset model_id
             return 0
@@ -1411,17 +1395,20 @@ proc FindPhase {node submodel} {
     return -1
 }
 
-proc compile_c {workingDir modelPath} {
+proc compile_c {workingDir} {
     global tcl_platform env
     
     set oldDir [pwd]
-    cd $workingDir$modelPath
+    cd $workingDir
     if {[PrefValue custom(hackBreak) hackBreak]} {
         ShowMessage {Code editing opportunity} info \
                 "About to compile model.cpp in [pwd]" ok
     }
-    set TARGET model[info sharedlibextension]
-    
+# get a so far unused file name
+    set TARGET model[newInt][info sharedlibextension]
+    while {[file exists $TARGET]} {
+	set TARGET model[newInt][info sharedlibextension]
+    }
     
     
     
@@ -1484,6 +1471,7 @@ proc compile_c {workingDir modelPath} {
     
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
+    return $TARGET
 }
 
 # This makes the extra bit that goes onto Tcl to run C programs. We don't
@@ -1745,5 +1733,4 @@ proc FilterErrors {args} {
     } else {
         return $retVal
     }
-    
-}
+    }

@@ -63,8 +63,15 @@ return (char*)lpMsgBuf;
 
     #define HINSTANCE void*
     #define LOAD_DLL flopen
+#ifdef SIM_OPSYS_Darwin
+#define UNLOAD_DLL dummyunload
+BOOL dummyunload() {
+  return(1);
+}
+#else
     #define UNLOAD_DLL !dlclose
 /* dlclose inverted cos it seems to return NULL when it works */
+#endif
     #define WHAT_WENT_WRONG (char*)dlerror
     #define FIND_FUNCTION dlsym
     #define FORUNIX 1
@@ -988,6 +995,8 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
     modelType->exit(modelHandle);
   }
 
+  /* Impossible to unload dlls on the Mac so do not unload any until I work out
+     how to tell what we are on...
   if (nodeModelList) {
     try {
       delete nodeModelList;
@@ -997,6 +1006,7 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
       return TCL_ERROR;
     }
   }
+  */
   nodeModelList = NULL;
   return TCL_OK;
 }
