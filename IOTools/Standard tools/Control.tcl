@@ -135,7 +135,6 @@ namespace eval runcontrol33857 {
         
         set sendvars(timeUnit) unit
         set sendvars(expected_end) 0
-        
         SendData $t
         set sendvars(prevDisplay) 0.0
         set sendvars(currentMode) stop
@@ -215,6 +214,9 @@ namespace eval runcontrol33857 {
                 #	    ShowMessage debug info "Twiddling $redoPhase" ok
             }
         }
+	if {$runState(timeAtEval) != $runState(currentTime)} {
+	    set redoPhase 1 ;# compromise
+	}
         SetStep 0 0
         SetState $winId $sendvars(newData)
     }
@@ -226,6 +228,7 @@ namespace eval runcontrol33857 {
 	if {[info exists runState(oldTimeCopy)]} {
 	    after cancel $runState(oldTimeCopy)
 	}
+	set runState(timeAtEval) $runState(currentTime)
         set runState(oldTimeCopy) [after idle set runState(currentTime) $current]
         set runState(execTime) $left
     }

@@ -990,12 +990,6 @@ proc Prettify {value} {
     }
 }
 
-proc UpdateTimes { current left } {
-    global sendvars
-    set sendvars(currentTime) $current
-    set sendvars(execTime) $left
-}
-
 # After the initial model has been loaded we don't want to allow the window
 # to change size when something different is loaded
 # This is also a convenient time at which to hide the console
@@ -1233,6 +1227,7 @@ proc start_run {winId} {
     }
 
     set runState(currentTime) 0.0
+    set runState(timeAtEval) 0.0
     set runState(currentWin) $winId ;# enables rebuild from run control
     if {[winfo exists .mre]} {wm withdraw .mre}; # hack to stop .mre obscuring FileParamDialogue
     set gotParams [FileParamDialogue 0 $winId]
