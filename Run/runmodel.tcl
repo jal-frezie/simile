@@ -609,9 +609,11 @@ proc snap {topNode node} {
     set submodels [string range $full_label 0 $end_submodels]
     set label [string range $full_label $start_label end]
     wm title $w "[BlankCrs $label] at time $runState($topNode,currentTime)"
-    set tbItems [list [list save.gif "Save to file" "SaveSnap $w $label"] \
-		     [list refresh.gif "Update" \
-			  "UpdateSnap $w $label $submodels $topNode $node"]]
+    set tbItems [list \
+		 [list save.gif "Save to file" \
+		      [list SaveSnap $w $label]] \
+		 [list refresh.gif "Update" \
+		      [list UpdateSnap $w $label $submodels $topNode $node]]]
     ::graphtools::MakeToolBar $w $tbItems
     text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
             -xscrollcommand "$w.xscroll set" \
