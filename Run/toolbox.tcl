@@ -200,7 +200,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
 set runHow(launch) open
 
 # set this to interactive or script, for how to do the initialization
-set runHow(init) script
+set runHow(init) interactive
 
 # set this to send or pipe, for the way to pass data to the exec
 # process send must be async because a sync send will not allow

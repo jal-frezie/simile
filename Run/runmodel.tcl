@@ -582,11 +582,15 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
     MakeHelperMenu
     wm withdraw .
 
-    do_in_editor set runState($myNode,modelReady) 1
-
     if {[string equal get_data $readPipe]} {
-	fileevent stdin readable {gets stdin blether; eval $blether}
+	fileevent stdin readable EatInput
     }
+    do_in_editor set runState($myNode,modelReady) 1
+}
+
+proc EatInput {} {
+    gets stdin blether
+    eval $blether
 }
 
 proc ScrubRun {node times} {
