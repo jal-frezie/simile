@@ -55,8 +55,10 @@ namespace eval runcontrol33857 {
         
         upvar 1 node node
 	set myModel($t) $node
-	set runState($node,oldIntMethod) Euler
-	set runState($node,intMethod) Euler
+	if {![info exists runState($node,intMethod)]} {
+	    set runState($node,intMethod) Euler
+	}
+	set runState($node,oldIntMethod) $runState($node,intMethod)
 	set runState($node,timeUnit) unit
 
         if {[string match $t [winfo toplevel $t]]} {

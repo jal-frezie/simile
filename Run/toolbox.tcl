@@ -69,7 +69,7 @@ proc OpenTopLevel {model} {
 
 proc AttackGlobalVariable {array elt val} {
     global $array
-    #ShowMessage debug info "Setting $array$elt" ok
+#puts "Setting $array$elt to $val"
     set $array$elt $val
     return ;# because letting it return an array causes a crash
 }
@@ -214,28 +214,16 @@ proc do_for_node {node args} {
 	    }
 	    set makeExec ../System/bin/wish$MAJ$sep$MIN
 #puts "starting $makeExec"
-#	    if {[string equal pipe $runHow(type)]} {
-		set runState($node,interp) [open |$makeExec r+]
+	    set runState($node,interp) [open |$makeExec r+]
+	    if {[string equal pipe $runHow(type)]} {
 		fileevent $runState($node,interp) readable \
 		    [list FeedModel $node pipe]
-	    
-		tell_runner $node "set runHow $runHow(type)"
-		tell_runner $node "source ../Run/runmodel.tcl"
-		set runState($node,modelReady) 1
-		set runState($node,queueSize) 0
-		do_in_node $node KickOff $node $simtmpdir $runHow(sendCmd)
-#	    puts $runState($node,interp) \
-#		[list KickOff $node $runHow(type) $simtmpdir]
-#	    flush $runState($node,interp)
-#puts "initialized"
-#	    } else {
-#		set runState($node,interp) [exec $makeExec ../Run/initexec.tcl $node $simtmpdir $runHow(sendCmd) &]
-#		set runState($node,interp) [open [list |$makeExec ../Run/initexec.tcl $node $simtmpdir $runHow(sendCmd)] r+]
-#		tkwait variable runState($node,modelReady)
-#		set runState($node,queueSize) 0
-
-
-#	    }
+	    }
+	    tell_runner $node "set runHow $runHow(type)"
+	    tell_runner $node "source ../Run/runmodel.tcl"
+	    set runState($node,modelReady) 1
+	    set runState($node,queueSize) 0
+	    do_in_node $node KickOff $node $simtmpdir $runHow(sendCmd)
 	}
     }
     return [eval do_in_node $node $args]
@@ -261,7 +249,7 @@ proc do_in_node {node args} {
 	if {$runState($node,modelReady)==1} {
 	tell_runner $node $command
 	incr runState($node,queueSize)
-#puts "put: $command"
+puts "put: $command"
 	set runState($node,modelReady) 0
 	upvar \#0 runState($node,response$runState($node,queueSize)) result
 	if {[string equal parallel $runHow(time)]} {
@@ -275,11 +263,11 @@ proc do_in_node {node args} {
 	    fileevent $runState($node,interp) readable \
 		[list FeedModel $node pipe]
 	}
-#puts "Got $result"
+puts "Got $result"
 	incr runState($node,queueSize) -1
 	} else {
 	    set result {res 0}
-#puts "$command: model dead"
+puts "$command: model dead"
 	}
     }
     set info [lindex $result 1]
@@ -299,13 +287,13 @@ proc FeedModel {node incoming} {
 	gets $runState($node,interp) incoming
     }
     if {[string equal get [lindex $incoming 0]]} {
-#puts "get: $incoming"
+puts "get: $incoming"
 	if {[catch [lindex $incoming 1] response]} {
 	    set result [list err [split $errorInfo \n]]
 	} else {
 	    set result [list res $response]
 	}
-#puts "returned: $result"
+puts "returned: $result"
 	tell_runner $node $result
 #	eval $runHow(sendOp) exec_for_$node {$result}
     } else {
@@ -1100,7 +1088,8 @@ proc OpenProjectFile {win path} {
             set command [ChooseText \
                     [PrefValue custom(helperManager) helperManager] \
                     ::RunEnv::LoadSHF CreateView]
-            $command $window_info($win,top_node) \
+	    set topNode $window_info($win,top_node)
+            do_in_node $topNode $command $topNode \
                     ${path}/$SimileProject(nameOfHelperStateFile)
         }
     }
@@ -1117,6 +1106,7 @@ proc SaveAll {win} {
 proc SaveProjectFile {topNode path} {
     global custom runState nameOfHelperStateFile
     global SimileProject model_id
+    puts [array get nameOfHelperStateFile]
     #ShowMessage debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
@@ -1126,9 +1116,7 @@ proc SaveProjectFile {topNode path} {
     # is it builtC|builtTcl|notbuilt
     if {[HaveValues $topNode]} {
         set SimileProject(modelRunning) 1
-        if {$model_id($topNode)} {
-            set SimileProject(running_c) 1
-        }
+	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
     if {[info exists nameOfHelperStateFile($topNode)]} {
         file copy -force $nameOfHelperStateFile($topNode) $path
@@ -1138,7 +1126,7 @@ proc SaveProjectFile {topNode path} {
     # shf file name loaded
     
     #ShowMessage debug info "SaveProjectFile [array get SimileProject]\n\
-    #            $path/[file tail $nameOfHelperStateFile]" ok
+    #            $path/[file tail $nameOfHelperStateFile($topNode)]" ok
     set projectF [NetOpen $ProjectFile w]
     puts $projectF [array get SimileProject]
     close $projectF

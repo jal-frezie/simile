@@ -936,6 +936,8 @@ namespace eval RunEnv {
         set nameOfHelperStateFile \
                 [ChooseFile Displays.shf "Save display configuration" 1]
         if {[llength $nameOfHelperStateFile]} {
+	    do_in_editor AttackGlobalVariable nameOfHelperStateFile \
+		($currentNode) $nameOfHelperStateFile
             set mainframe $helperTable($currentNode,whichRunEnv).mainframe
             set tempFile [file join $simtmpdir temp_out.shf]
             set stream [NetOpen $tempFile w]
@@ -1024,17 +1026,18 @@ namespace eval RunEnv {
     }
     
     proc LoadView {} {
+	variable currentNode
         set HelperStateFileName [ChooseFile Displays.shf \
                 "Open view specification file" 0]
         if {[llength $HelperStateFileName]} {
-            LoadSHF $HelperStateFileName
+            LoadSHF $currentNode $HelperStateFileName
         }
     }
     
-    proc LoadSHF {oldPath} {
+    proc LoadSHF {currentNode oldPath} {
         global mimeSquirter simtmpdir
         global helperTable nameOfHelperStateFile errorInfo
-        variable dp0
+        variable dp0 
         if {[catch {
                 set multiT [mime::initialize -file $oldPath]
                 set origVersion [mime::getheader $multiT Simile-Version]
@@ -1058,6 +1061,8 @@ namespace eval RunEnv {
         }
         
         set nameOfHelperStateFile $oldPath
+        do_in_editor AttackGlobalVariable nameOfHelperStateFile \
+	    ($currentNode) $oldPath
         set stream [NetOpen $metaFile r]
         
         if {[string equal mre $origin]} {
