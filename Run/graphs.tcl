@@ -495,6 +495,7 @@ proc equationDoTable {parent tgt} {
     wm transient .table $parent
     wm title .table "Table data for $tgt"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
+    set table_entry(source) 0
     
     frame .table.top
     label .table.top.instructions -text "Create table from file by dragging \
@@ -610,7 +611,9 @@ proc EditTableData {lidx} {
     if {![llength $table_entry(values)]} {
 	AcquireTableData $lidx
     }
-    EditListAsTable .table table_entry(values)
+    if {[EditListAsTable .table table_entry(values)]} {
+	set table_entry(source) 1
+    }
 }
 
 proc DoneTableData {lidx} {
@@ -618,7 +621,7 @@ proc DoneTableData {lidx} {
     if {![llength $table_entry(values)]} {
 	AcquireTableData $lidx
     }
-    set table_entry(done) 1
+    set table_entry(done) $table_entry(source)
 }
 
 proc AcquireTableData {lidx} {
@@ -633,6 +636,7 @@ proc AcquireTableData {lidx} {
 			       $table_entry(dataField)] $table_entry(indices)]
 #puts "Loading with $tableSpec"
     set table_entry(values) [LoadTableData $tableSpec]
+    set table_entry(source) 2
 }
 
 proc EditListAsTable {parent valueArray} {
@@ -796,7 +800,7 @@ proc MakeFrames {windowId} {
 }
 
 proc AddEntry {winId topNode node mustShow isInput} {
-    global paramData paramDims widgetNames iconImages
+    global paramData paramDims widgetNames iconImages msgs
     set compName [GetCompProperty $topNode Caption $node]
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
 	set paramData($compName) {}
@@ -812,6 +816,9 @@ proc AddEntry {winId topNode node mustShow isInput} {
     if {$isInput} {
 	set nodeDims [linsert $nodeDims 0 TIME]
 	set trans [linsert $trans 0 {}]
+    }
+    if {![info exists msgs(param_source_$compName)]} {
+	set msgs(param_source_$compName) Unsaved
     }
     set paramDims($compName) [lrange $nodeDims 0 end-1]
 
@@ -848,6 +855,7 @@ proc AddEntry {winId topNode node mustShow isInput} {
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
     pack [entry $slot.e -width 30] -side left -fill x -expand on
+    BindPopup $slot.e param_source_$compName
     bind $slot.e <Return> "$slot.tick invoke"
     if {[info exists paramData($compName)]} {
 	FillIfSmall $slot.e $paramData($compName)
@@ -932,7 +940,7 @@ proc DoneParams {topNode winId} {
 }
 
 proc AcceptData {winId topNode compName complain} {
-    global paramDims paramData widgetNames runState inputHelper running_c
+    global paramDims paramData widgetNames runState inputHelper running_c msgs
 
     set node [GetCompProperty $topNode IdFromCapt $compName]
     if {$complain > -1} {
@@ -955,6 +963,8 @@ proc AcceptData {winId topNode compName complain} {
     }
     # Make array form if data has changed
     if {$dataChanged} {
+#	set msgs(param_source_$compName) Unsaved
+# only if the actual entry field has been edited
 	set trans [GetTransTable $node]
 
 	# Now replace each -1 in the dims with the id of the by-record
@@ -1184,7 +1194,7 @@ proc Clear {spare smPath} {
 }
 
 proc Save {spare smPath} {
-    global paramState paramData widgetNames SimileProject simtmpdir env
+    global paramState paramData widgetNames SimileProject simtmpdir env msgs
 #ShowMessage debug info "Save $smPath" ok
     
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
@@ -1196,6 +1206,7 @@ proc Save {spare smPath} {
         foreach compName [array names widgetNames $smPath*] {
 	    set compTail [string range $compName [string length $smPath] end]
 	    set SubbedComp [StripCrs $compTail]
+	    set newPopup  "Specified by $metaFile"
 	    if {[info exists paramState($compName)]} {
 		if {[string equal $paramData($compName) \
 			 [LoadTableData $paramState($compName)]]} {
@@ -1203,10 +1214,13 @@ proc Save {spare smPath} {
 				     [lindex $paramState($compName) 0]]
 		    puts $pStr "$SubbedComp=reference=[lreplace \
                                 $paramState($compName) 0 0 $relName]"
+		    set msgs(param_source_$compName) [concat $newPopup \
+			  (reference to $relName)]
 		    continue
 		}
 	    }
 	    puts $pStr "$SubbedComp=literal=$paramData($compName)"
+	    set msgs(param_source_$compName) "$newPopup (literal)"
 	}
         close $pStr
 	set PartType "application/x-simile"
@@ -1247,7 +1261,7 @@ proc Open {topNode smPath} {
 
 proc MergeParams {topNode smPath oldPath interactive} {
     global paramState paramData widgetNames mimeSquirter simtmpdir \
-	whichParamsAffected
+	whichParamsAffected msgs
     
     set oldDir [pwd]
     if {[catch { 
@@ -1289,6 +1303,7 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	    }
                 #ShowMessage debug info "Param data is $paramData($restoredComp)" ok
                 
+	    set newPopup "Specified by $oldPath"
                 # OK here we go...try and follow this...first go to the starting point..
 	    if {$reference} {
 		# Now use the saved relative path to move to the .csv file's directory
@@ -1302,6 +1317,8 @@ proc MergeParams {topNode smPath oldPath interactive} {
 		set paramData($restoredComp) \
 		    [LoadTableData $paramState($restoredComp)]
 		set whichParamsAffected($restoredComp) 1
+		set msgs(param_source_$restoredComp) [concat $newPopup \
+			  (reference to $VFile)]
 	    } else {
 		set node [GetCompProperty $topNode IdFromCapt $restoredComp]
 		set trans [GetTransTable $node]
@@ -1311,6 +1328,7 @@ proc MergeParams {topNode smPath oldPath interactive} {
 		}
 		if {[SensibleValue $trans $paramData($restoredComp)]>1} {
 		    set whichParamsAffected($restoredComp) 1
+		    set msgs(param_source_$restoredComp) "$newPopup (literal)"
 		} else {
 		    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $paramData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
 		    set paramData($restoredComp) {}
@@ -1390,7 +1408,7 @@ proc Relativize {current remote} {
 }
 
 proc GetFromTable {parent compName} {
-    global paramState paramData widgetNames table_entry
+    global paramState paramData widgetNames table_entry msgs
     if {[info exists paramState($compName)]} {
 	set table_entry(data) $paramState($compName)
     } else {
@@ -1401,7 +1419,8 @@ proc GetFromTable {parent compName} {
     } else {
 	set table_entry(values) $paramData($compName)
     }
-    if {[equationDoTable $parent $compName]} {
+    set newSource [equationDoTable $parent $compName]
+    if {$newSource} {
         if {[llength $table_entry(dataField)]} {
 	    set paramState($compName) [concat [list $table_entry(fileName) \
 						   $table_entry(dataField)] \
@@ -1409,6 +1428,19 @@ proc GetFromTable {parent compName} {
 	}
         set paramData($compName) $table_entry(values)
         FillIfSmall $widgetNames($compName).e $paramData($compName)
+	switch $newSource {
+	    2 {
+		set msgs(param_source_$compName) \
+		    [list Loaded from $table_entry(fileName) \
+			 Column: $table_entry(dataField)]
+		if {[llength $table_entry(indices)]} {
+		    lappend msgs(param_source_$compName) \
+			[concat \(index columns: $table_entry(indices)\)]
+		}
+	    } 1 {
+		set msgs(param_source_$compName) Unsaved
+	    }
+	}
     }
 }
 
