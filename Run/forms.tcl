@@ -1094,19 +1094,23 @@ proc ErrorHelp {diagnostic} {
     toplevel .diag
     wm title .diag {Error diagnostics}
     wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
-    labelframe .diag.errorf -text "Full text of the error report:"
-    text .diag.errorf.e -yscrollcommand [list .diag.errorf.y set]
+    labelframe .diag.errorf -text "Diagnostics:"
+    message .diag.errorf.errorm -text "Full text of the error report:" -aspect 5000
+    pack .diag.errorf.errorm -side top
+    text .diag.errorf.e -yscrollcommand [list .diag.errorf.y set] -width 20 -height 8
     .diag.errorf.e insert 1.0 $diagnostic
     scrollbar .diag.errorf.y -command [list .diag.errorf.e yview]
-    pack .diag.errorf -fill both -expand true -padx 10 -pady 10
-    pack .diag.errorf.y -side right -fill y -expand true -anchor w
-    pack .diag.errorf.e -fill both -expand true -anchor e
+    pack .diag.errorf.e -fill both -expand true -side left  -padx 4 -pady 4
+    pack .diag.errorf.y -side left -fill y
+    pack .diag.errorf -fill both -expand true -padx 4 -pady 4
     
-    labelframe .diag.topicsf -text "The following relevant help topics were found:"
-    pack [listbox .diag.topicsf.l] -fill both -expand on
-    pack .diag.topicsf -fill both -expand on  -padx 10 -pady 10
+    labelframe .diag.topicsf -text "Help:"
+    message .diag.topicsf.errorm -text "The following relevant help topics were found.  Double-click a page title to view it." -aspect 5000
+    pack .diag.topicsf.errorm -side top -padx 4 -pady 4
+    pack [listbox .diag.topicsf.l -width 20 -height 8] -fill both -expand on  -padx 4 -pady 4
+    pack .diag.topicsf -fill both -expand on  -padx 4 -pady 4
     bind .diag.topicsf.l <ButtonRelease-1> {GetHelp}
-    pack [button .diag.b -text Done -command {set diagno(done) 0}] -pady 10 -padx 10
+    pack [button .diag.b -text OK -width 10 -command {set diagno(done) 0}] -pady 4
     
     foreach key [array names help] {
         if {[regexp $key $diagnostic]} {
@@ -1124,5 +1128,5 @@ proc ErrorHelp {diagnostic} {
 proc GetHelp {} {
     global SIMILE_PATH
     cd $SIMILE_PATH/help
-    ContextSensitiveHelp .diag [.diag.l get [.diag.l curselection]]
+    ContextSensitiveHelp .diag [.diag.topicsf.l get [.diag.topicsf.l curselection]]
 }
