@@ -448,22 +448,41 @@ proc load_c_stub {} {
 #
 # so now only simple callbacks are allowed and these are done synchronously
 
+# set to get_data or await_cmd -- if the former, then after sending commands
+# to the editor this will execute a get to read the pipe, otherwise it waits
+# for a command to set the return value
+set readPipe get_data
+
 proc do_in_editor {args} {
-    global runHow sender
-    if {[string equal process $runHow]} {
+    global runHow sender fromEditor readPipe
+#    tk_messageBox -message "callback $args"
+    if {[string equal send_sync $runHow]} {
 	return [eval $sender {$args}]
-    } else {
-	puts [list get $args]
-	set result [gets stdin]
-        set info [lindex $result 1]
-        switch [lindex $result 0] {
-            err {
-                error [lindex $info 0] [join $info \n]
-            } res {
-                return $info
-            }
-        }
     }
+    remote [list get $args]
+    if {[string match get_data $readPipe]} {
+	set fromEditor [gets stdin]
+    } else {
+	tkwait variable fromEditor
+    }
+    set info [lindex $fromEditor 1]
+    switch [lindex $fromEditor 0] {
+	err {
+	    error [lindex $info 0] [join $info \n]
+	} res {
+	    return $info
+	}
+    }
+}
+
+proc res {value} {
+    global fromEditor
+    set fromEditor [list res $value]
+}
+
+proc err {value} {
+    global fromEditor
+    set fromEditor [list err $value]
 }
 
 proc PrefValue {arrVal val} {
@@ -481,9 +500,9 @@ proc ContextSensitiveHelp {xcontext page} {
 }
 
 proc exit_exec {} {
-	wm deiconify .
 	remote done
-	exit
+	wm deiconify .
+	after idle exit
 }
 
 proc do {argList} {
@@ -498,12 +517,16 @@ proc do {argList} {
 
 proc remote {result} {
     global runHow myNode sender
-    if {[string equal interp $runHow]} {
-	return $result
-    } elseif {[string equal process $runHow]} {
-	eval $sender {after idle [list FeedModel $myNode [list $result]]}
-    } else {
-	puts $result
+    switch $runHow {
+	interp {
+	    return $result
+	} send_async {
+	    eval $sender {after idle [list FeedModel $myNode [list $result]]}
+	} send_sync {
+	    eval $sender {FeedModel $myNode [list $result]}
+	} pipe {
+	    puts $result
+	}
     }
     return done
 }

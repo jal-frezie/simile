@@ -518,13 +518,15 @@ proc do_for_node {dummyNode args} {
 }
 
 # Other stuff related to reorganization
-proc KickOff {nMyNode nSimtmpdir nSender} {
+proc KickOff {nMyNode nSimtmpdir nSender nRunHow} {
     global myNode ;# a stopgap, we shouldn't need it
-    global custom runState simtmpdir sender tcl_platform
+    global custom runState simtmpdir sender tcl_platform runHow
 
     set myNode $nMyNode
     set simtmpdir $nSimtmpdir
     set sender $nSender
+    set runHow $nRunHow
+
     if {[string equal windows $tcl_platform(platform)]} {
 	package require dde
 	dde servername exec_for_$myNode
@@ -1173,3 +1175,6 @@ proc ModelDirectory {} {
     global custom
     return [file dirname [lindex $custom(hotlist) 0]]
 }
+
+eval KickOff $argv
+do_in_editor set runState($myNode,modelReady) 1

@@ -191,9 +191,22 @@ proc CheckFnsFresh {L progDir id userFnList} {
     return [concat $stat $files]
 }
 
-# set this to interp or process to run models in a separate interpreter
-# or process
-set runHow(type) process
+# set this to exec or open depending on what command is used to start the
+# execution process -- must be open if pipes are used
+set runHow(launch) open
+
+# set this to interactive or script, for how to do the initialization
+set runHow(init) interactive
+
+# set this to send or pipe, for the way to pass data to the exec process
+# send must be async because a sync send will not allow callbacks to be handled
+set runHow(call) pipe
+
+# set this to send_sync, send_async or pipe, for the way to get data from
+# the exec process
+set runHow(return) send_sync
+
+# this is obsolete and must be 'parallel'
 set runHow(time) parallel
 
 # this exists in case I don't want to exploit the concat in eval
@@ -201,9 +214,9 @@ proc do_for_node {node args} {
     global runState tcl_platform runHow simtmpdir
 
     if {![info exists runState($node,interp)]} {
-	if {[string equal interp $runHow(type)]} {
+	if {[string equal interp $runHow(call)]} {
 	    set runState($node,interp) [interp create]
-	    $runState($node,interp) eval set runHow $runHow(type)
+	    $runState($node,interp) eval set runHow $runHow(return)
 	    $runState($node,interp) eval source ../Run/support.tcl
 	} else {
 	    scan [info tclversion] {%d.%d} MAJ MIN
@@ -213,17 +226,31 @@ proc do_for_node {node args} {
 		set sep .
 	    }
 	    set makeExec ../System/bin/wish$MAJ$sep$MIN
-#puts "starting $makeExec"
-	    set runState($node,interp) [open |$makeExec w]
-	    if {[string equal pipe $runHow(type)]} {
+	    set srcLoc ../Run/runmodel.tcl			   
+	    set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return)]
+	    if {[string equal script $runHow(init)]} {
+		set launchArgs [concat $srcLoc $scArgs]
+	    } else {
+		set launchArgs {}
+	    }
+	    if {[string equal open $runHow(launch)]} {
+		set runState($node,interp) \
+		    [open [concat |$makeExec $launchArgs] r+]
+	    } else {
+		set runState($node,interp) \
+		    [eval exec $makeExec $launchArgs &]
+	    }
+	    if {[string equal pipe $runHow(return)]} {
 		fileevent $runState($node,interp) readable \
 		    [list FeedModel $node pipe]
 	    }
-	    tell_runner $node "set runHow $runHow(type)"
-	    tell_runner $node "source ../Run/runmodel.tcl"
-	    set runState($node,modelReady) 1
+	    if {[string equal interactive $runHow(init)]} {
+		tell_runner $node [list set argv $scArgs]
+		tell_runner $node [list source $srcLoc]
+	    }
+	    tkwait variable runState($node,modelReady)
+puts "Go! mr is '$runState($node,modelReady)'"
 	    set runState($node,queueSize) 0
-	    do_in_node $node KickOff $node $simtmpdir $runHow(sendCmd)
 	}
     }
     return [eval do_in_node $node $args]
@@ -238,7 +265,7 @@ proc do_in_node {node args} {
     global runState runHow
 
     set command [list do $args]
-    if {[string equal interp $runHow(type)]} {
+    if {[string equal interp $runHow(call)]} {
 	set result [$runState($node,interp) eval $command]
     } else {
 	if {[string equal parallel $runHow(time)]} {
@@ -249,7 +276,7 @@ proc do_in_node {node args} {
 	if {$runState($node,modelReady)==1} {
 	tell_runner $node $command
 	incr runState($node,queueSize)
-#puts "put: $command"
+puts "put: $command"
 	set runState($node,modelReady) 0
 	upvar \#0 runState($node,response$runState($node,queueSize)) result
 	if {[string equal parallel $runHow(time)]} {
@@ -263,11 +290,11 @@ proc do_in_node {node args} {
 	    fileevent $runState($node,interp) readable \
 		[list FeedModel $node pipe]
 	}
-#puts "Got $result"
+puts "Got $result"
 	incr runState($node,queueSize) -1
 	} else {
 	    set result {res 0}
-#puts "$command: model dead"
+puts "$command: model dead"
 	}
     }
     set info [lindex $result 1]
@@ -293,8 +320,8 @@ puts "get: $incoming"
 	} else {
 	    set result [list res $response]
 	}
-puts "returned: $result"
 	tell_runner $node $result
+puts "returned: $result"
 #	eval $runHow(sendOp) exec_for_$node {$result}
     } else {
 	set runState($node,modelReady) 1
@@ -305,13 +332,14 @@ puts "returned: $result"
 proc KillInterpFor {node} {
     global runState runHow
     if {[info exists runState($node,interp)]} {
-	if {[string equal interp $runHow(type)]} {
+	if {[string equal interp $runHow(call)]} {
 	    interp delete $runState($node,interp)
 	} else {
 #	    tell_runner $node {wm deiconify .}
 	    do_in_node $node exit_exec
-	    if {[string equal pipe $runHow(type)]} {
-		close $runState($node,interp)
+	    if {[string equal pipe $runHow(call)]} {
+#		gets $runState($node,interp)
+#		close $runState($node,interp)
 	    }
 	}
         unset runState($node,interp)
@@ -320,12 +348,12 @@ proc KillInterpFor {node} {
 
 proc tell_runner {node action} {
     global runState runHow
-#    if {[string equal pipe $runHow(type)]} {
+    if {[string equal pipe $runHow(call)]} {
 	puts $runState($node,interp) $action
 	flush $runState($node,interp)
-#    } else {
-#	eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
-#    }
+    } else {
+	eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
+    }
 }
 
 proc do_if_running {node args} {
@@ -355,9 +383,11 @@ proc HaveValues {node} {
 proc TryToKill {node} {
     global runState runHow
 #puts "Trying to kill $node"
-    c_killmodel [pid $runState($node,interp)]
-    if {[string equal pipe $runHow(type)]} {
+    if {[string equal pipe $runHow(call)]} {
+	c_killmodel [pid $runState($node,interp)]
 	catch {close $runState($node,interp)}
+    } else {
+	c_killmodel $runState($node,interp)
     }
     unset runState($node,interp)
 # now supply bogus result to interrupted model call
@@ -1121,6 +1151,7 @@ proc SaveProjectFile {topNode path tgt} {
     # save any shf files names
     
     set ProjectFile $path/model.spj
+    array unset SimileProject
     
     # is it builtC|builtTcl|notbuilt
     if {[HaveValues $topNode]} {
