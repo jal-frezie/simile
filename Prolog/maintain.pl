@@ -294,9 +294,11 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	DefAnchor = c),
 
 	(get_shape(Id, caption_offset, [XOff, YOff, Anchor]), !;
-/*	get_text_offset(Style, XOff, YOff), */
-	  XOff = 0, YOff = 0, Anchor = DefAnchor,
-	  set_shape(Id, caption_offset, [XOff, YOff, Anchor])),
+	 get_shape(Id, caption_offset, [XOff, YOff]), !, /* old style */
+	    Anchor = DefAnchor,
+	    change_shape(Id, caption_offset, [XOff, YOff, Anchor]);
+	 XOff = 0, YOff = 0, Anchor = DefAnchor,
+	    set_shape(Id, caption_offset, [XOff, YOff, Anchor])),
 	image:map(Box, Anchor, _,_, TextX, TextY),
 	VirtX is TextX + XOff,
 	VirtY is TextY + YOff,

@@ -192,10 +192,14 @@ exclude_boxes([[BL,BT,BR,BB] | Rest], [NL,NT,NR,NB], Edge, PBound, Bound) :-
 	exclude_boxes(Rest, [NL, NT, NR, NB], Edge, NBound, Bound).
 
 get_closest_edge(Node, [X,Y], Edge) :-
-	get_shape(Node, bounding_box, [L, T, R, B]),
-	LM is L-X, TM is T-Y, RM is X-R, BM is Y-B,
+	get_shape(Node, bounding_box, [L,T,R,B]),
+	slice(Y, T, B, Row),
+	slice(X, L, R, Col),
+	map([L,T,R,B], Edge, Row, Col, _,_).
+
+/*	LM is L-X, TM is T-Y, RM is X-R, BM is Y-B,
 	MM is max(max(LM, TM), max(RM, BM)),
-	member(MM-Edge, [LM-l, TM-t, RM-r, BM-b]).
+	member(MM-Edge, [LM-l, TM-t, RM-r, BM-b]). */
 
 make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
 	((New_obj is_class_of_sort regular_box; New_obj = channel),

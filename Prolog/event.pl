@@ -115,14 +115,14 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
 	    get_closest_edge(Name, [NewXpt, NewYpt], Edge),
-	    advance_phase_to(moving_border(Edge)),
+	    advance_phase_to(moving_border(Edge)) /* ,
 	    retractall(min_size_is(_)),
 	    (get_inner_bound(Name, Edge, CompBound), !,
 		assert(min_size_is(CompBound));
 	    true),
 	    retractall(max_size_is(_)),
 	    get_outer_bound(Name, Parent, Edge, CompSpace),
-	    assert(max_size_is(CompSpace));
+	    assert(max_size_is(CompSpace)) */ ;
 	true)).
 
 click_text(Xpt, Ypt, Name, CD) :-
@@ -835,7 +835,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 			 [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
 		     all(event, tweak_link_connections,
 			 [build(Movers), unify([Xoffset, Yoffset]),
-			  build(_), build(_)]),
+			  unify(c), build(_)]),
 		     all(maintain, move_display,
 			 [build(Movers), unify([Xoffset, Yoffset])]));
 /*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
@@ -952,24 +952,25 @@ the internal portions of crossborder links so they still connect. */
 adjust_display_area(Wid, Visible) :-
 	Wid shows_model Parent,
 	expand_canvas(Parent, Visible),
-	tweak_link_connections(Parent, [0,0], l, [0,0,1,1]).
+	tweak_link_connections(Parent, [0,0], nw, [0,0,1,1]).
 
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
-	(var(Side); nonvar(Side), add_to_translation([0,0,1,1], Obj, Trans)),
 	find_all_links(Obj, Link, Where),
 	\+ get_highlit_obj(0, Link), /* do not tweak if part of move */
 	end_coords(Link, Where, [Xpt, Ypt]),
-	(nonvar(Side),
-	    (Side = l, NewX is Xpt + XOff*(R-Xpt)/(R-L), NewY = Ypt;
-	    Side = t, NewY is Ypt + YOff*(B-Ypt)/(B-T), NewX = Xpt;
-	    Side = r, NewX is Xpt + XOff*(Xpt-L)/(R-L), NewY = Ypt;
-	    Side = b, NewY is Ypt + YOff*(Ypt-T)/(B-T), NewX = Xpt),
+	((member(Side, [nw, w, sw]), NewX is Xpt + XOff*(R-Xpt)/(R-L);
+	        member(Side, [ne, e, se]), NewX is Xpt + XOff*(Xpt-L)/(R-L);
+	        member(Side, [n, s]), NewX = Xpt),
+	    (member(Side, [nw, n, ne]),  NewY is Ypt + YOff*(B-Ypt)/(B-T);
+		member(Side, [sw, s, se]), NewY is Ypt + YOff*(Ypt-T)/(B-T);
+		member(Side, [w, e]), NewY = Ypt),
+	    add_to_translation([0,0,1,1], Obj, Trans),
 	    (has_outer_equiv(Inner, Obj, Link),
 		select(Where, [start, finish], [Other]),
 		translate([NewX, NewY], Trans, Peri),
 		tweak_endpoint(Inner, Other, Peri);
 	    \+ has_outer_equiv(Inner, Obj, Link));
-	var(Side),
+	Side = c,
 	    NewX is Xpt + XOff,
 	    NewY is Ypt + YOff),
 	tweak_endpoint(Link, Where, [NewX, NewY]),
@@ -1346,15 +1347,40 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 		Down_list = [Rel_end2 | Rest2];
 	Down_list = Full_downs).
 
-/* anything this complex has got to be wrong */
-
 update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_shape(Submodel, bounding_box, [OldL, OldT, OldR, OldB]),
+	(member(Edge, [nw, w, sw, c]), !, NewL is OldL+XOff; NewL = OldL),
+	(member(Edge, [nw, n, ne, c]), !, NewT is OldT+YOff; NewT = OldT),
+	(member(Edge, [ne, e, se, c]), !, NewR is OldR+XOff; NewR = OldR),
+	(member(Edge, [sw, s, se, c]), !, NewB is OldB+YOff; NewB = OldB),
+	NewBox = [NewL, NewT, NewR, NewB],
+	find_all_comps(Parent, Submodel),
+	get_shape(Parent, internal_extent, ParentShape),
+	fits_inside(NewBox, ParentShape),
+	\+ (get_overlaps(Parent, NewBox, Obstacle), \+ Obstacle = Submodel),
+	
+	add_to_translation([0,0,1,1], Submodel, ModelTrans),
+	translate(NewBox, ModelTrans, NewExtent),
+	/* Check that everything that was in the model is still in it */
+	\+ (find_all_comps(Submodel, Inside),
+	       get_shape(Inside, bounding_box, InBox),
+	       \+ fits_inside(InBox, NewExtent)),
+	
+	change_shape(Submodel, internal_extent, NewExtent),
+	change_shape(Submodel, bounding_box, NewBox),
+	/* make_links_follow(Submodel), */
+	tweak_link_connections(Submodel, [XOff, YOff], Edge,
+			       [OldL, OldT, OldR, OldB]).
+
+/* anything this complex has got to be wrong */
+
+old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
+	get_shape(Submodel, bounding_box, [OldL, OldT, OldR, OldB]),
 	member(get(Edge, Outward, Motion, Start, NewBox, InnerEdge),
-	       [get(l, <, XOff, OldL, [New, OldT, OldR, OldB], InnerL),
-		get(t, <, YOff, OldT, [OldL, New, OldR, OldB], InnerT),
-		get(r, >, XOff, OldR, [OldL, OldT, New, OldB], InnerR),
-		get(b, >, YOff, OldB, [OldL, OldT, OldR, New], InnerB)]),
+	       [get(w, <, XOff, OldL, [New, OldT, OldR, OldB], InnerL),
+		get(n, <, YOff, OldT, [OldL, New, OldR, OldB], InnerT),
+		get(e, >, XOff, OldR, [OldL, OldT, New, OldB], InnerR),
+		get(s, >, YOff, OldB, [OldL, OldT, OldR, New], InnerB)]),
 
 	New is Start+Motion,
 	max_size_is(MaxSize),
@@ -1466,7 +1492,7 @@ unclick_obj :-
 	    attempt_new_component(Parent, [L, T, R, B], [0, 0, W, H]);
 	New_obj is_primitive,
 	    \+ New_obj is_class_of_sort line,
-	    (setof(NewLook, presence_affects(Target, NewLook), NewLooks), !;
+	    (setof(NewLook, presence_affects(New_obj, NewLook), NewLooks), !;
 		NewLooks = []),
 	    all(event, spread_colour, [build(NewLooks), unify(yes)])),
 	update_runnable(Parent).
