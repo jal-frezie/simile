@@ -3,6 +3,8 @@
 # Just to give you an idea of (a) the sort of thing you can do in tcl,
 # and (b) my preferred programming style, check this out....
 
+package require BWidget
+
 lappend auto_path [pwd]/../Run [pwd]/../System/library/Extras
 #tk_messageBox -message "library [info library] path $auto_path"
 
@@ -1054,7 +1056,7 @@ proc FillReopen {winId} {
 proc AddMainMenu { winid initWidth initDepths} {
     global custom MIpushedbutton tcl_platform
     
-    set fm [menu ${winid}top.file -tearoff 0 \
+    set fm [menu ${winid}top.file -tearoff 0 -relief flat\
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
     $fm add command -label New -command "MenuSelect $winid.canvas file new"\
@@ -1098,12 +1100,12 @@ proc AddMainMenu { winid initWidth initDepths} {
             -state disabled -accelerator "Ctrl+Z"
     $fm add command -label Redo -command "prolog tk_redo" \
             -state disabled -accelerator "Ctrl+Y"
+    AddFindMenu $winid.canvas $fm
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
         $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $winid.canvas" ;#\
-                # -state disabled -accelerator "Ctrl+Y"
-            }
-    AddFindMenu $winid.canvas $fm
+            # -state disabled -accelerator "Ctrl+Y"
+    }
     $fm add separator
     $fm add command -label Preferences... -command Pref_Dialog
     
@@ -1157,11 +1159,11 @@ proc AddMainMenu { winid initWidth initDepths} {
             -variable MIpushedbutton -value relation
     $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
             -variable MIpushedbutton -value creation
-    $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
+    $fm1 add radiobutton -label Immigration -command "ItemSelect immigration"\
             -variable MIpushedbutton -value immigration
     $fm1 add radiobutton -label Reproduction -command "ItemSelect reproduction"\
             -variable MIpushedbutton -value reproduction
-    $fm1 add radiobutton -label Extermination -command "ItemSelect loss"\
+    $fm1 add radiobutton -label Loss -command "ItemSelect loss"\
             -variable MIpushedbutton -value loss
     $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
             -variable MIpushedbutton -value condition
@@ -1184,16 +1186,16 @@ proc AddMainMenu { winid initWidth initDepths} {
     set fm [menu ${winid}top.tools -tearoff 0]
     ${winid}top add cascade -label Tools -underline 0 \
             -menu ${winid}top.tools
-    $fm add radiobutton -label "Label elements" -command "ModeSelect select"\
-            -variable MIpushedbutton -value select
-    $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
+    $fm add radiobutton -label Move -command "ModeSelect move"\
             -variable MIpushedbutton -value move
-    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
-            -variable MIpushedbutton -value delete
-    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
+    $fm add radiobutton -label "Copy submodel" -command "ModeSelect copy"\
             -variable MIpushedbutton -value copy
-    $fm add radiobutton -label "Create ghost nodes" -command "ModeSelect ghost"\
+    $fm add radiobutton -label Ghost -command "ModeSelect ghost"\
             -variable MIpushedbutton -value ghost
+    $fm add radiobutton -label Annotate -command "ModeSelect select"\
+            -variable MIpushedbutton -value annotate
+    $fm add radiobutton -label Delete -command "ModeSelect delete"\
+            -variable MIpushedbutton -value delete
     
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
@@ -1202,61 +1204,84 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label About... -command [list ShowAbout $winid]
     
     set nb [frame $winid.toolSlot.navbar -border 2]
+    pack [Separator $nb.afterSeparator -orient horizontal] -fill x -side bottom
     if {[PrefValue custom(bigButtons) bigButtons]} {
         set buttonImages ../Images/Toolbar/Large
     } else {
         set buttonImages ../Images/Toolbar
     }
+    
     foreach navCmd {{new {file new}} {open {file open}} \
-                {save {file save}}  {print {local print}} \
-                {undo {local undo}} {redo {local redo}} \
-                {flip_h {edit flip_h}} {flip_v {edit flip_v}} \
+                {save {file save}}  {print {local print}} {separator1}\
+                {undo {local undo}} {redo {local redo}} {separator2}\
+                {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator3}\
                 {zoomin {local zoomin}} {zoomfit {local tofit}} \
-                {zoomout {local zoomout}}   } {
+                {zoomout {local zoomout}} {separator4}   } {
         set handle [lindex $navCmd 0]
-        set testImg [image create photo -file $buttonImages/${handle}.gif]
-        pack [button $nb.$handle -image $testImg -borderwidth 3 \
-                -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
-                -side left
-        BindPopup $nb.$handle $handle
-    }
-    pack [frame $nb.spacer -width 12 -height 24] -side left
-    
-    foreach navCmd {{rerun {local rerun}} {find {local find}} {findmore {local findnext}}} {
-        set handle [lindex $navCmd 0]
-        set testImg [image create photo -file $buttonImages/${handle}.gif]
-        pack [button $nb.$handle -image $testImg -borderwidth 3 \
-                -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
-                -side left
-        BindPopup $nb.$handle $handle
+        if {[string match separator* $handle]} {
+            pack [Separator $nb.$handle -orient vertical] -fill y -side left
+        } else  {
+            set testImg [image create photo -file $buttonImages/${handle}.gif]
+            pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised\
+                    -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                    -side left -padx 2 -pady 2
+            BindPopup $nb.$handle $handle
+        }
     }
     
+    foreach navCmd {{rerun {local rerun}} {separator5} \
+                {find {local find}} {findmore {local findnext}} {separator6}} {
+        set handle [lindex $navCmd 0]
+        if {[string match separator* $handle]} {
+            pack [Separator $nb.$handle -orient vertical] -fill y -side left
+        } else  {
+            set testImg [image create photo -file $buttonImages/${handle}.gif]
+            pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised \
+                -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                -side left -padx 2 -pady 2
+            BindPopup $nb.$handle $handle
+        }
+    }
+        
     # button to raise single-window run env (ready for more tools in this section)
-    pack [frame $nb.spacer2 -width 12 -height 24] -side left
     foreach navCmd {{runenv {local raiseMRE}}} {
         set handle [lindex $navCmd 0]
-        set testImg [image create photo -file $buttonImages/${handle}.gif]
-        pack [button $nb.$handle -image $testImg -borderwidth 3 \
-                -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
-                -side left
-        BindPopup $nb.$handle $handle
+        if {[string match separator* $handle]} {
+            pack [Separator $nb.$handle -orient vertical] -fill y -side left
+        } else  {
+            set testImg [image create photo -file $buttonImages/${handle}.gif]
+            pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised \
+                    -command [concat "MenuSelect $winid.canvas" [lindex $navCmd 1]]] \
+                    -side left -padx 2 -pady 2
+            BindPopup $nb.$handle $handle
+        }
     }
     $nb.runenv configure -state disabled
     
     set tb [frame $winid.toolSlot.toolbar -border 2]
-    foreach mode {compartment variable flow influence submodel \
-                relation creation immigration reproduction loss condition} {
-        set testImg [image create photo -file $buttonImages/${mode}.gif]
-        pack [button $tb.$mode -image $testImg -command "ItemSelect $mode" \
-                -borderwidth 3] -side left
-        BindPopup $tb.$mode $mode
+    pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
+    foreach mode {compartment variable flow influence separator1 submodel \
+                relation separator2 creation immigration reproduction loss condition} {
+        if {[string match separator* $mode]} {
+            pack [Separator $tb.$mode -orient vertical] -fill y -side left
+        } else  {
+            set testImg [image create photo -file $buttonImages/${mode}.gif]
+            pack [button $tb.$mode -image $testImg -command "ItemSelect $mode" \
+                    -borderwidth 1 -relief flat -overrelief raised] -side left -padx 2 -pady 2
+            BindPopup $tb.$mode $mode
+        }
     }
-    pack [frame $tb.spacer -width 12 -height 24] -side left
-    foreach mode {select move delete copy ghost snap} {
-        set testImg [image create photo -file $buttonImages/${mode}.gif]
-        pack [button $tb.$mode -image $testImg -command "ModeSelect $mode" \
-                -borderwidth 3] -side left
-        BindPopup $tb.$mode $mode
+    pack [Separator $tb.spacer -orient vertical] -fill y -side left
+    
+    foreach mode {select move delete copy ghost separator3 snap} {
+        if {[string match separator* $mode]} {
+            pack [Separator $tb.$mode -orient vertical] -fill y -side left
+        } else  {
+            set testImg [image create photo -file $buttonImages/${mode}.gif]
+            pack [button $tb.$mode -image $testImg -command "ModeSelect $mode" \
+                    -borderwidth 1 -relief flat -overrelief raised] -side left -padx 2 -pady 2
+            BindPopup $tb.$mode $mode
+        }
     }
     $tb.snap configure -state disabled
         
@@ -1266,7 +1291,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     ### Formula bar section
     ### Robert Muetzelfeldt
     ### Started 4/3/02
-    set eb [frame $winid.toolSlot.eqnbar -border 1 -relief raised]
+    set eb [frame $winid.toolSlot.eqnbar -border 1 -relief flat]; # raised
     
     label $eb.label -anchor e
     pack $eb.label -side left
@@ -1287,7 +1312,8 @@ proc AddMainMenu { winid initWidth initDepths} {
     
     frame $eb.padding -width 10
     pack $eb.padding -side left
-    
+    pack [Separator $eb.afterSeparator -orient horizontal] -fill x -side bottom
+        
     set image [image create photo -file "../Images/Eqnbar/inputs.gif"]
     menubutton $eb.inputs -state disabled -menu $eb.inputs.menu \
             -borderwidth 2 -relief raised -image $image
@@ -1326,6 +1352,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     set custom(showeqnbar,$winid) [expr $initWidth>=$navWidth && \
             [PrefValue custom(initEqnbar) initEqnbar]]
     
+    pack [Separator $winid.toolSlot.topseparator -orient horizontal] -fill x -side top 
     if {$custom(shownavbar,$winid)} {
         pack $nb -fill x
     }
@@ -1566,7 +1593,7 @@ proc UpdateToolbars {newAction} {
     set MIpushedbutton $newAction
     foreach winData [array name window_info *,parent] {
         set toolBar $window_info($winData).toolSlot.toolbar
-        $toolBar.$pushedbutton configure -relief raised
+        $toolBar.$pushedbutton configure -relief flat
         $toolBar.$newAction configure -relief sunken
         ResetEqnBar $window_info($winData).toolSlot.eqnbar
     }
