@@ -448,8 +448,8 @@ proc RollAll {s l1 l2 l3 top bot} {
 }
 
 proc GetTable {parent box} {
-    global equation table_entry
-    
+    global equation table_entry table_viewer
+
     if {[equationDoTable $parent]} {
         set equation(table_data) [concat [list $table_entry(fileName) \
                 $table_entry(dataField)] $table_entry(indices)]
@@ -516,11 +516,13 @@ proc fill_inputs { triples } {
     pack $equation(notebook)
 }
 
-proc fill_table {table_data table_values} {
+proc fill_table {node table_data table_values} {
     global equation
 
     set equation(table_data) $table_data
-    set equation(table_values) $table_values
+    set trans [GetFromProlog tk_get_info({},$node,types)]
+puts "node is $node   trans is $trans"
+    set equation(table_values) [TransEnums $trans $table_values]
 }
 
 proc equationBindings { t en eu lbp lbi lbd \
@@ -871,6 +873,8 @@ proc Disaggregate {parent title colour type fatness icount step \
 	-padx 2 -pady 4 -fill x
     pack [button $btnId.remmem -text "Remove member" -state disabled -command "RemoveEnumMem $enumtypef"] \
 	-padx 2 -pady 4 -fill x
+    pack [button $btnId.getmem -text "Get from file" -state disabled -command "GetEnumMems $enumtypef"] \
+	-padx 2 -pady 4 -fill x
     pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
 
     TitleFrame $t.complex.appearance -text Appearance
@@ -1025,6 +1029,28 @@ proc AddEnumMem {fr} {
 
 proc RemoveEnumMem {fr} {
     tk_popup $fr.curmembers [winfo pointerx $fr] [winfo pointery $fr]
+    set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+}
+
+proc GetEnumMems {fr} {
+    global equation table_entry
+    set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+    upvar \#0 disaggregate(enumtype,$togo) memList
+    set equation(table_data) {} ;# dont try to keep file origins
+    set equation(table_values) {}
+    for {set pos 0} {$pos < [llength $memList]} {incr pos} {
+	lappend equation(table_values) [expr $pos+1] \
+	    [list [lindex $memList $pos]]
+    }
+    if {[equationDoTable .disaggregation]} {
+	set fileState [list $table_entry(fileName) $table_entry(dataField)]
+	set fileData [LoadTableData $fileState 0]
+	foreach {pos mem} $fileData {
+	    if {[lsearch $memList $mem]==-1} {
+		lappend memList $mem
+	    }
+	}
+    }
 }
 
 proc snipET {enumEntry mem} {
@@ -1040,7 +1066,7 @@ proc EnableTypeOps {fr} {
     } else {
 	set haveSeln disabled
     }
-    foreach btn {remtype addmems remmem} {
+    foreach btn {remtype addmems remmem getmem} {
 	$fr.btns.$btn config -state $haveSeln
     }
 }

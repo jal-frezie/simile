@@ -618,28 +618,6 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
-proc ViewTable {} {
-    global helperTable table_entry data.viewer
-    toplevel .viewer -bd 4
-    wm transient .viewer .table
-    $helperTable(TableViewer)::initialize .viewer
-    
-    set stream [open $table_entry(fileName) r]
-    set row 0
-    while {[gets $stream line] >= 0} {
-        set col 0
-        foreach field [split $line ,] {
-            set data.viewer($row,$col) $field
-            incr col
-        }
-        incr row
-    }
-    close $stream
-    .viewer.t configure -rows $row -cols $col -titlerows 1 -state disabled
-    focus .viewer
-    grab .viewer
-}
-
 proc FileParamDialogue {mustShow parent} {
     global paramData widgetNames
     set allNodes [GetObjectList]

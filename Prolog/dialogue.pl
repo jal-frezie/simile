@@ -109,7 +109,8 @@ BoxHeaderStr),
 	get_input_info(Part, Input_list),
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
-	fill_table(TableList, TableVals),
+	get_host(Part, Visible),
+	fill_table(Visible, TableList, TableVals),
 	retractall(input_list_is(_)),
 	assert(input_list_is(Input_list)),
 	repeat,
@@ -157,7 +158,7 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    assert(table_data_is([file = FileName, data = DataField,
 				  indices = Indices, current = DataTable,
 				  units=Units, bounds=Dims])),
-	    fill_table(TableData, TableVals);
+	    fill_table(Function, TableData, TableVals);
 	do_dialogue("Problem with input data", warning, Complaint,
 		    ok, _)),
 	fail.

@@ -15,7 +15,7 @@ set final_expiry {}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
-set needs_license 1
+set needs_license 0
 
 if {[llength $final_expiry]} {
     set expiry_ticks [clock scan $final_expiry]

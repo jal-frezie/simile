@@ -105,7 +105,7 @@ proc TransEnums {transList vals} {
     if {[llength $vals]==1} {
 	set curLevel [lindex $transList 0]
 	if {[llength $curLevel]} {
-	    return [lindex $curLevel $vals]
+	    return [list [lindex $curLevel $vals]]
 	} else {
 	    return $vals
 	}
@@ -121,6 +121,7 @@ proc TransEnums {transList vals} {
     }
 }
 
+# below probly unnnecesssary cos indices always single values now
 proc TransIndices {transList vals} {
     if {[llength $vals]} {
 	return [concat [TransEnums $transList [lindex $vals 0]] \
@@ -134,22 +135,7 @@ proc TransBounds {transList vals} {
     if {[llength $vals]} {
 	set level [lindex $transList 0]
 	if {[llength $level]} {
-	    set header [lindex $level 0]
-	} else {
-	    set header [lindex $vals 0]
-	}
-	return [concat $header \
-	    [TransBounds [lrange $transList 1 end] [lrange $vals 1 end]]]
-    } else {
-	return {}
-    }
-}
-	    
-proc TransBounds {transList vals} {
-    if {[llength $vals]} {
-	set level [lindex $transList 0]
-	if {[llength $level]} {
-	    set header [lindex $level 0]
+	    set header [list [lindex $level 0]]
 	} else {
 	    set header [lindex $vals 0]
 	}

@@ -763,7 +763,7 @@ proc ProdObj {nodeId caption} {
     global helperTable
 
     switch -regexp [GetModelType $nodeId] {
-        REAL|INTEGER|FLAG {
+        REAL|INTEGER|FLAG|ENUMERATED {
             set target $helperTable(current)
 
             set helperId $helperTable($target,whichHelper)
