@@ -549,8 +549,12 @@ menu_handle(Win, edit, invsel) :-
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, properties) :-
-	Win shows_model Model,
-	set_properties(Win, Model).
+	get_edit_model(Win, Model, Tgt),
+	(Tgt = [_, _], !,
+	    event:set_properties(Win, Model);
+	find_type(Tgt, submodel), !,
+	    event:set_properties(Win, Tgt);
+	event:doubleclick_on(Tgt)).
 
 menu_handle(Win, edit, Action) :-
 	member(Action, [flip_v, flip_h]),

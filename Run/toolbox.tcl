@@ -1542,6 +1542,8 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 
     AddFindMenu $c $fm
     $fm add separator
+    $fm add command -label "Properties..." \
+            -command "MenuSelect $c edit properties"
     $fm add command -label Preferences... -command Pref_Dialog
     
     
@@ -1617,8 +1619,6 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -variable MIpushedbutton -value condition
     $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
             -variable MIpushedbutton -value alarm
-    $fm add command -label "Properties..." \
-            -command "MenuSelect $c edit properties"
     $fm add cascade -label Flip -menu $fm.sub2
     set fm2 [menu $fm.sub2 -tearoff 0]
     $fm2 add command -label Horizontal \
