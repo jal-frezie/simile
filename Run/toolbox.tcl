@@ -2352,11 +2352,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     if {[HaveValues $topNode]} {
         ${winid}top add  cascade -label "I/O tools" -underline 0 \
-                -menu $winid.helpers
+	    -menu ${winid}top.helpers
         $fm entryconfigure "Inspect elements" -state normal
     }
-    menu $winid.helpers -tearoff 0 \
-	-postcommand [list after idle PostRealHelperMenu $winid]
     
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
@@ -2582,19 +2580,39 @@ proc AddZoomMenu {canvas menu tellProlog} {
     
 }
 
-proc PostRealHelperMenu {winId} {
-    global window_info runState
-    
-    set dotlessWinName [string range $winId 1 end]
-    set bloodyClone $winId.\#${dotlessWinName}top.\#$dotlessWinName\#helpers
-    set tgtx [winfo rootx $bloodyClone]
-    set tgty [winfo rooty $bloodyClone]
-    event generate $bloodyClone <ButtonRelease-1>
-    
-    set node $window_info($winId.canvas,top_node)
-    do_for_node $node .helpers post $tgtx $tgty
-    do_for_node $node focus .helpers
+proc ReconstituteMenu {newMenu mList tgtNode} {
+    menu $newMenu -tearoff 0
+    set subs 0
+    foreach entrySpec $mList {
+	set type [lindex $entrySpec 0]
+	$newMenu add $type -label [lindex $entrySpec 1]
+	switch $type {
+	    command {
+		$newMenu entryconfigure last -command \
+		    [concat do_in_node $tgtNode [lindex $entrySpec 2]]
+	    } cascade {
+		set subMenu $newMenu.sub$subs
+		incr subs
+		ReconstituteMenu $subMenu [lindex $entrySpec 2] $tgtNode
+		$newMenu entryconfigure last -menu $subMenu
+	    }
+	}
+    }
 }
+	
+#proc PostRealHelperMenu {winId} {
+#    global window_info runState
+#    
+#    set dotlessWinName [string range $winId 1 end]
+#    set bloodyClone $winId.\#${dotlessWinName}top.\#$dotlessWinName\#helpers
+#    set tgtx [winfo rootx $bloodyClone]
+#    set tgty [winfo rooty $bloodyClone]
+#    event generate $bloodyClone <ButtonRelease-1>
+#    
+#    set node $window_info($winId.canvas,top_node)
+#    do_for_node $node .helpers post $tgtx $tgty
+#    do_for_node $node focus .helpers
+#}
 
 # below used to find out what the bloody clone is called when writing above
 #proc allwins {win} {
@@ -2808,8 +2826,12 @@ proc ToggleIOToolMenu {node} {
                 if {[PrefValue custom(helperManager) helperManager]} {
                     $winData.toolSlot.navbar.runenv configure -state normal
                 } else {
+		    if {![winfo exists $topMenu.helpers]} {
+			set menuSpec [do_in_node $node ListMenuContents .helpers]
+			ReconstituteMenu $topMenu.helpers $menuSpec $node
+		    }
                     $topMenu insert "Help" cascade -label "I/O tools" \
-                            -underline 0 -menu $winData.helpers
+                            -underline 0 -menu $topMenu.helpers
                 }
             } else {
                 set newState disabled

@@ -42,6 +42,24 @@ proc MakeHelperMenu {} {
     cd $oldDir
 }
 
+proc ListMenuContents {menu} {
+    set mList {}
+    for {set item 0} {$item <= [$menu index last]} {incr item} {
+	set type [$menu type $item]
+	set entry [list $type [$menu entrycget $item -label]]
+	switch $type {
+	    command {
+		lappend entry [$menu entrycget $item -command]
+	    } cascade {
+		set subMenu [$menu entrycget $item -menu]
+		lappend entry [ListMenuContents $subMenu]
+	    }
+	}
+	lappend mList $entry
+    }
+    return $mList
+}
+
 proc MessFileParams {topNode parent} {
     global runState
     switch -exact -- [FileParamDialogue $topNode $parent 1] {
@@ -502,7 +520,7 @@ proc do_for_node {dummyNode args} {
 # Other stuff related to reorganization
 proc KickOff {nMyNode nRunHow nSimtmpdir} {
     global myNode ;# a stopgap, we shouldn't need it
-    global runHow custom runState simtmpdir
+    global runHow custom runState simtmpdir tcl_platform
 
     set myNode $nMyNode
     set runHow $nRunHow
@@ -511,6 +529,9 @@ proc KickOff {nMyNode nRunHow nSimtmpdir} {
     set runState($nMyNode,modelRunning) 0
     LoadIconImages
     MakeHelperMenu
+    if {[string equal windows $tcl_platform(platform)]} {
+	wm iconbitmap . -default ../Run/simile16.ico
+    }
     wm withdraw .
 }
 
@@ -1137,4 +1158,3 @@ proc ModelDirectory {} {
     global custom
     return [file dirname [lindex $custom(hotlist) 0]]
 }
-
