@@ -199,6 +199,10 @@ namespace eval grid005 {
         }
         
         set mult [expr {int(380/$n)}]
+	if {$mult<2} {
+	    set mult 1
+	    $winId.bbframe.buttonBox itemconfigure 2 -state disable
+	}
         set useNodes($winId,mult) $mult
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
         set yheight [expr {$mult*$useNodes($winId,nrow)+20}]
@@ -216,7 +220,7 @@ namespace eval grid005 {
         $winId.c create image 0 0 -anchor nw -image $useNodes($winId,visibleMap)
         
         DrawGrid5 $winId $display1
-        $winId.c configure -scrollregion [$winId.c bbox all]
+#        $winId.c configure -scrollregion [$winId.c bbox all]
     }
     
     proc recolour_scale {winId} {
@@ -520,7 +524,7 @@ namespace eval grid005 {
         
         $winId.c configure -scroll "0 0 \
                 [expr $useNodes($winId,ncol)*$useNodes($winId,mult)] \
-                [expr $useNodes($winId,nrow)*$useNodes($winId,mult)]"
+                [expr $useNodes($winId,nrow)*$useNodes($winId,mult)+40]"
         set view [$winId.c xview]
         $winId.c xview moveto [expr $xmiddle-([lindex $view 1]-[lindex $view 0])/2]
         set view [$winId.c yview]
