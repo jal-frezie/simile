@@ -908,7 +908,7 @@ recursive_highlight(Target) :-
 	    fail).
 
 thread_link(Top_arc) :-
-	update_link_route(Top_arc),
+	update_link_route(Top_arc, yes),
 	update_equivs(Top_arc),
 	(m_update:equivalent_arcs(Top_arc, NewArc),
 		redisplay(NewArc),
@@ -922,7 +922,7 @@ thread_link(Top_arc) :-
 
 make_links_follow(Obj) :-
 	find_all_links(Obj, Link),
-	adjust_link(Link),
+	adjust_link(Link, no),
 	fail; true.
 
 /* move_link: adjusts the route of a link, making a new connection point
@@ -934,12 +934,12 @@ end of a flow or connecting a link due to reading an interface spec
 file (surely some mistake?) */
 
 move_link(Link) :-
-	adjust_link(Link),
+	adjust_link(Link, yes),
 	update_equivs(Link).
 
-adjust_link(Link) :-
+adjust_link(Link, Recurse) :-
 	(get_shape(Link, course, OldCourse); true),
-	update_link_route(Link),
+	update_link_route(Link, Recurse),
 	get_shape(Link, course, NewCourse),
 	reroute_display(Link),
 	(find_type(Link, flow), !,
@@ -1469,7 +1469,7 @@ relate_graphics(Node_name, Node_trans) :-
 	((find_all_links(Node_name, Link), find_type(Link, flow);
 	find_all_links(Node_name, Link), \+ find_type(Link, flow)),
 	    (DoLink = Link; has_outer_equiv(DoLink, Node_name, Link)),
-	    update_link_route(DoLink),
+	    update_link_route(DoLink, yes),
 	    redisplay(DoLink),
 	    make_links_follow(DoLink),
 	    fail;
@@ -1522,7 +1522,7 @@ dissolve_component(Node) :-
 	    redisplay_border(OrphanNode),
 	    fail;
 	member(MovedLink, MovedLinks),
-	    update_link_route(MovedLink),
+	    update_link_route(MovedLink, yes),
 	    redisplay(MovedLink),
 	    make_links_follow(MovedLink),
 	    fail;

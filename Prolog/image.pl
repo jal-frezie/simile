@@ -29,7 +29,7 @@ sicstus_module(image,
 	   adjust_bowtie/2, adjust_spline/2, adjust_posn/2,
 	   get_caption_anchor/2, end_coords/3,
 	   update_text_position/3, make_header/2, set_completion/2,
-	   update_link_route/1, shape_route/4, route_link/4,
+	   update_link_route/2, shape_route/4, route_link/4,
 	   route_interior_part_link/5, route_part_link/5,
 	   route_parent_child_link/5, get_middle_segment/3,
 	   translate_between/4, translate/3, rel_translate/3,
@@ -544,9 +544,9 @@ update_text_position(Obj, XTOff, YTOff) :-
 	NYT is YT + YTOff,
 	change_shape(Obj, caption_offset, [NXT, NYT]).
 
-update_link_route(Link) :-
-	get_hierarchy(Link, start, Source_stack),
-	get_hierarchy(Link, finish, Dest_stack),
+update_link_route(Link, Recurse) :-
+	get_hierarchy(Link, start, Source_stack, Recurse),
+	get_hierarchy(Link, finish, Dest_stack, Recurse),
 	Link has_type Type,
 	route_link(Type, Source_stack, Dest_stack, Route),
 	(Link has_changed_graphical_attribute course to Route, !;
@@ -574,19 +574,24 @@ Same applies to next rule as well. */
 		get_source_hierarchy(Prev_link, Rest));
 	Rest = []).
 
-get_hierarchy(Link, End, [Top | Rest]) :-
+get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
 	Link is_connector from TopStart to TopEnd,
 	member([TopNode, End, Equiv], [[TopStart, start, FarLink-Link],
 				   [TopEnd, finish, Link-FarLink]]),
 	get_host(TopNode, Top),
 	(Top has_class submodel,
+	    (Recurse = no, !,
+		end_coords(Link, End, Pt),
+		Rest = [];
+	    Pt = Top,
 		Top has_model_refinement link_equivalences of Links,
 		member(Equiv, Links), !,
 		(select(End, [start, finish], [Other]),
 		    end_coords(FarLink, Other, FarPt),
 		    [FarPt] = Rest;
-		get_hierarchy(FarLink, End, Rest));
-	Rest = []).
+		get_hierarchy(FarLink, End, Rest)));
+	Pt = Top,
+		Rest = []).
 
 end_coords(Link, Where, [Xpt, Ypt]) :-
 	get_shape(Link, course, Course),
