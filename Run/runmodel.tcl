@@ -860,7 +860,6 @@ proc DestroyHelpers {} {
     if {[winfo exists .mre]} {
     ::RunEnv::Destroy
     }
-    $modelWin.toolSlot.toolbar.snap configure -state disable    
 }
 
 proc KillHelpers {} {
@@ -985,14 +984,18 @@ proc GetModelTime {} {
 
 proc start_run {lang winId} {
     global runState
-    global modelWin
+    global window_info
 
 # ShowMessage debug info enter(start_run) ok
     if {[PrefValue custom(helperManager) helperManager]} {
-# ShowMessage debug info "About to make MRE" ok
+#    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
     set mre [Makemre $winId]
-    $modelWin.toolSlot.navbar.runenv configure -state active
-    $modelWin.toolSlot.toolbar.snap configure -state active
+    foreach winData [array name window_info *,parent] {
+        set toolBar $window_info($winData).toolSlot.toolbar
+        $toolBar.snap configure -state active
+        set navBar $window_info($winData).toolSlot.navbar
+        $navBar.runenv configure -state active
+    }
     }
     if {[info exists runState(currentTime)]} {
 	if {$runState(execTime) != $runState(currentTime)} {
