@@ -64,19 +64,17 @@ values. */
 do_equation_dialog(Win, Part) :-
 	caption_for(Part, Caption),
 	get_host(Part, ClickedObj),
-	(find_type(ClickedObj, compartment), !,
-	    TypeBase = real,
-	    TitleForm = 'Initial value';
-	ClickedObj is_of_sort cond_value, !,
+	(ClickedObj is_of_sort cond_value, !,
 	    TypeBase = cond_spec,
 	    TitleForm = 'Condition/Specifiation';
 	ClickedObj is_of_sort boolean_value, !,
 	    TypeBase = boolean,
 	    TitleForm = 'Condition';
-	ClickedObj is_of_sort level, !, /* other than the above */
-	    TypeBase = real,
-	    TitleForm = 'Value';
-	TitleForm = 'Equation'),
+	(\+ ClickedObj is_of_sort level, !; /* other than the above */
+	    TypeBase = real),
+	(ClickedObj is_of_sort init_eval, !,
+	    TitleForm = 'Initial value';
+	TitleForm = 'Equation')),
 	(ClickedObj is_of_sort channel, !,
 	    TypeDims = [];
 	true),
@@ -700,10 +698,11 @@ decode_error(ParseError, TestError) :-
 	Type = index_number_out_of_range, !,
 	    More = [Avail],
 	    sicstus_format_to_chars("You have used the index number ~d, but it must be between 1 and the number of available indices, which is ~d.", [SimpleError, Avail], TestError);
-	Type = needs_number_index, !,
-	    SimpleError =.. [Functor, _, Ind],
-	    sicstus_format_to_chars("The function \"~a\" needs a numerical value for its second argument. \"~w\" does not fit -- it evaluates to a boolean or something.",
-			   [Functor, Ind], TestError);
+	Type = needs_index_of_type, !,
+	    SimpleError =.. [Functor, Arr, Ind],
+	    More = [TypeNeeded, TypeGiven],
+	    sicstus_format_to_chars("The function \"~a\", when applied to the array \"~w\", needs a value of type ~w for its second argument. \"~w\" does not fit -- it has a value of type ~w, which cannot be converted to a value of the required type.",
+		[Functor, Arr, TypeNeeded, Ind, TypeGiven], TestError);
 	Type = got_list_for_array, !,
 	    SimpleError =.. [Functor, Arr | _],
 	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a variable membership list.", [Functor, Arr], TestError);

@@ -450,7 +450,10 @@ make_intermediates(
 	(Functor = count,
 	    IncrExpr = FillRef+1,
 	    (nonvar(SumLoop), SumLoop = set(_, loop(SourceRef)),
-		Units = const_int,
+		(integer(SourceRef),
+		    Units = const_int;
+		atom(SourceRef),
+		    Units = n(SourceRef)),
 		UsingDim = true;
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
@@ -657,15 +660,20 @@ make_intermediates(
 		    ALoops),
 	    \+ (member(OtherLoop, ItemLoops), loops(OtherLoop));
 		raise_exception(only_works_on_array(Source))),
-	    ((Step = dummy,
+	    (Step = dummy,
 		type_ind(Limit, NeedType);
 	     \+ Step = dummy,
 	        NeedType = int),
-		promote_unit(Int, NeedType), !,
-		IntIndxRef = IndxRef;
-	    promote_arg(Int, real, _), !, /* for legacy cases */
-	        IntIndxRef = simile_int(IndxRef);
-	    raise_exception(needs_number_index(Source))),
+	    ((promote_unit(Int, NeedType);
+	      Int = n(AnET), NeedType = a(AnET)), !,
+		/* special case -- count or name of ET can refer to last elt */
+		TryIndxRef = IndxRef;
+	    promote_arg(Int, real, _),
+		promote_arg(NeedType, real, _), !, /* for legacy cases */
+	        TryIndxRef = simile_int(IndxRef);
+	    raise_exception(needs_index_of_type(Source, NeedType, Int))),
+	    (IntIndxRef = TryIndxRef, !;
+	    raise_exception(redundant_array(Source))),
 	    
 	    append(ASetups, ISetups, Setups),
 	    merge_lists(AArgs, IArgs, Args),
