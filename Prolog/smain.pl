@@ -39,12 +39,12 @@ main :-
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
 	prolog_flag(version, PlogV),
-	state:edition_is(E),
         nl, write(ready), nl,
-	tcl_eval(['FilterErrors', 'ControlDraw', br(PlogV), E], EnvVars),
-	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
+	tcl_eval(['FilterErrors', 'ControlDraw', br(PlogV)], EnvVars),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, E]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
+	state:set_edition(E),
 
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),

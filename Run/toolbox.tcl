@@ -47,31 +47,48 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
-proc ControlDraw {prologVersion edition} {
+proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo
     # geometry XY help message JMM
     #            "Position of Run Control when not using the Run Time \
     #                    Environment in the form +/-x+/-y." \
     
     wm withdraw .
+    # loading stub sets license entries
+    load_c_stub
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
-    set sendvars(edn) $edition
     
     # no longer have a separate floating toolbar
     
     # On startup, check run count and offer registration if 0
-    set UserStream [open ../Run/userinfo.txt r]
-    # First two lines not used here
-
-
-    gets $UserStream userinfo(prologId)
-    gets $UserStream userinfo(interface)
-    gets $UserStream userinfo(name)
-    gets $UserStream userinfo(corp)
-    gets $UserStream userinfo(Version)
-    close $UserStream
+    set userinfo(name) $env(licensee_name)
+    set userinfo(corp) $env(licensee_corp)
+    set userinfo(Version) $env(SIMILE_VERSION)
     
+    # eezi-hack implementation of time limit: to do this anything like
+    # properly, have stub dll check unix time against clock time
+
+    set day [expr 24*60*60]
+    if {$sendvars(final_expiry)} {
+	set expTime $sendvars(final_expiry)
+    } else {
+	set expTime [expr [clock seconds]+365*$day]
+    }
+    if {$sendvars(days_after_install)} {
+	set installTime [lindex [lindex [split $env(install_time) =] 1] 0]
+	set relExpTime [expr $installTime+$sendvars(days_after_install)*$day]
+	set expTime [min $expTime $relExpTime]
+    }
+    set toGo [expr $expTime-[clock seconds]]
+
+    if {$toGo<0} {
+	set crumble "This version of Simile has passed its expiry date."
+        error $crumble
+    } elseif {$toGo<7*$day} {
+	ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
+    }
+	
     if {[file exists ~]} {
         set custom(prefDir) ~/.simile
     } else {
@@ -170,7 +187,8 @@ proc ControlDraw {prologVersion edition} {
         set openModel {}
     }
     # Take the opportunity to pass the temp directory name etc to Prolog
-    return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] $openModel]
+    return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] \
+		$openModel $sendvars(edn)]
 }
 
 package require mime
@@ -209,6 +227,7 @@ proc SaveFile {tree tgt} {
     } Lossage
     return $Lossage
 }
+
 
 proc LoadFile {tree tgt} {
     global mimeSquirter runState errorInfo model_id
@@ -428,13 +447,9 @@ proc canvasTLDistance {winId x y} {
 
 proc GetFromProlog {prologCmd} {
     global fromProlog
+    set fromProlog {}
     prolog $prologCmd
-    if {![info exists fromProlog]} {
-	tkwait variable fromProlog
-    }
-    set res $fromProlog
-    unset fromProlog
-    return $res
+    return $fromProlog
 }
 
 # Procedure for when Tcl recognizes what object is clicked but being a
@@ -832,7 +847,7 @@ proc CanvasDelete {c} {
     }
 }
 
-proc CanvasTextCopy {c} {
+proc CanvasTextCopy {c} {
     if {[$c select item] != {}} {
         clipboard clear
         set t [$c select item]
@@ -1124,6 +1139,7 @@ proc AddMainMenu { winid initWidth initDepths} {
         $fm add command -label Close -command "byebye $winid" \
                 -accelerator "Alt+x"
     } else {
+
         $fm add command -label Exit -command "byebye $winid" \
                 -accelerator "Alt+x"
     }
@@ -1456,6 +1472,7 @@ proc ShowAbout {winId} {
     pack [frame .about.f] -fill x -expand true
     pack [label .about.f.dl -image drip] -side left
     pack [label .about.f.dr -image drip] -side right
+
     pack [label .about.f.l0]
     pack [label .about.f.l1 -text SIMILE]
     pack [label .about.f.l2 -text Simulistics\ Ltd.]

@@ -1359,16 +1359,15 @@ extern "C" int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
 
 /* String to use as secret */
 char secret[] = "R^6tf*Y}@?>H(U(ddJ(::{><Lu8H*G";
-char edition[] = "standard";
 
 void crash () {
-  /* oh dear. */
-  /* oh dear, oh dear. */
-  while (1) {}
+ /* oh dear. */
+ /* oh dear, oh dear. */
+ while (1) {}
 }	 
 
 extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
+			      int argc, Tcl_Obj *CONST argv[]) {
    if (argc != 2) {
      interp->result = "One argument for get_auth_code please!";
      return TCL_ERROR;
@@ -1384,7 +1383,7 @@ extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
 		   NULL) != TCL_OK) {
      return TCL_ERROR;
    }
-   if (strcmp(edition, Tcl_GetVar(interp, "h76rt4g7", 0))) {
+   if (strcmp(SIM_EDITION, Tcl_GetVar(interp, "h76rt4g7", 0))) {
      crash();
    }
    /* ::sha1::hmac "Expensive" $ModelText */
@@ -1470,9 +1469,9 @@ extern "C"
 __declspec( dllexport )
 #endif
 int Ame_dll_Init(Tcl_Interp *interp) {
-  int maj, min;
-  char pkgName[16];
-  globInterp = interp;
+ int maj, min;
+ char pkgName[16];
+   globInterp = interp;
     Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     
@@ -1521,6 +1520,15 @@ int Ame_dll_Init(Tcl_Interp *interp) {
 
      Tcl_CreateObjCommand(interp, "check_auth_code", CheckAuthCodeCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+       /* Data about version etc held in dll for safety and convenience:
+	these will become globals because we are not in the scope of a
+       procedure */
+       Tcl_SetVar2(interp, "sendvars", "edn", SIM_EDITION, 0);
+       Tcl_SetVar2Ex(interp, "sendvars", "final_expiry", 
+		     Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
+       Tcl_SetVar2Ex(interp, "sendvars", "days_after_install", 
+		     Tcl_NewIntObj(SIM_DAYS_AFTER_INSTALL), 0);
 
     sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
 	    simileVersion, FORUNIX);

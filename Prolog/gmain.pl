@@ -174,11 +174,11 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)), */
-	state:edition_is(E),
-	tcl_eval(['FilterErrors ControlDraw', br(PlogV), E], EnvVars),
-	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
+	tcl_eval(['FilterErrors ControlDraw', br(PlogV)], EnvVars),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, E]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
+	state:set_edition(E),
 
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),

@@ -32,7 +32,7 @@ ame_save( File, Model, Date ) :-
 	user:version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
-	state:edition_is(Edition),
+	state:get_edition(Edition),
 	write_with_breaks(Stream, source(program='AME', version=V,
 					 edition=Edition, date=Date)),
 	sicstus_put(Stream, 10),
@@ -235,7 +235,7 @@ ame_merge( Parent, File, Date, HasCode ) :-
 	store_term( Term, Stream, Parent, InitBindings, [] ),
 	close( Stream ),
 
-	(state:edition_is(evaluation),
+	(state:get_edition(evaluation),
 	(HasCode=no;
 	\+ E = enterprise),
 	\+ HasCode = 'fuck it',

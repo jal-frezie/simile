@@ -24,7 +24,6 @@ regsub -all /\./ [GetRealFile $scriptCmd] / scriptCmd
 
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
-set env(SIMILE_VERSION) 3.0
 
 switch $tcl_platform(platform) {
     windows {
@@ -52,6 +51,16 @@ switch $tcl_platform(platform) {
 	set env(PRINTCMD) lpr
     }
 }
+
+set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
+gets $UserStream prologId
+gets $UserStream interfaceId
+gets $UserStream env(install_time)
+gets $UserStream env(licensee_name)
+gets $UserStream env(licensee_corp)
+gets $UserStream env(SIMILE_VERSION)
+close $UserStream
+
 # first put up the splash screen
 package require Img
 image create photo splash
@@ -118,10 +127,6 @@ set env(START_DIR) [pwd] ;# was $SIMILE_PATH/Tutorial
 # files in -- must be a subfolder of the installation folder
 cd $SIMILE_PATH/Run
 
-set UserStream [open userinfo.txt r]
-gets $UserStream prologId
-gets $UserStream interfaceId
-close $UserStream
 set prolog [lindex [split $prologId =] 1]
 set interface [lindex [split $interfaceId =] 1]
 

@@ -1,0 +1,79 @@
+#!/usr/local/ActiveTcl/bin/tclsh
+
+# This makes the extra bit that goes onto Tcl to run C programs. We don't
+# really need to build it every time we run the program, that's just while
+# it's being debugged, once it's right we'll just load it. This component
+# itself loads dlls for the actual models as they are built.
+
+# These are the settings for the particular version we want to make
+# Compiler that will be used to make the stub for Windows
+set compiler_for_windows gnu
+# edition: evaluation, standard or enterprise
+set edition standard
+# date of final expiry: {hh:mm D M Y} or {} for permanent
+set final_expiry {}
+# days after install: 0 for no installation expiry
+set days_after_install 0
+
+if {[llength $final_expiry]} {
+    set expiry_ticks [clock scan $final_expiry]
+} else {
+    set expiry_ticks 0
+}
+
+set defns [list -DSIM_EDITION=\"$edition\" \
+	       -DSIM_FINAL_EXPIRY=$expiry_ticks \
+	       -DSIM_DAYS_AFTER_INSTALL=$days_after_install]
+scan [info tclversion] {%d.%d} MAJ MIN
+set onUnix [string match unix $tcl_platform(platform)]
+#	To build for Tcl dll included under distribution directory...
+set TCL [file dirname [file dirname [info library]]]
+#ShowMessage debug info "TCL $TCL" ok
+
+if $onUnix {
+    # You may be asking yourself why I need to explicitly specify a location for
+    # the Tcl library files, since they should be in LD_LIBRARY_PATH. It is because
+    # some people find it easier to build the stub from exec_only.tcl, which gives
+    # them error messages to the console but does not set LD_LIBRARY_PATH.
+    set TARGET libame_dll$MAJ.$MIN.so
+    eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
+    exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN
+} else {
+    set TCL [file attributes $TCL -shortname]
+    set TARGET ame_dll$MAJ$MIN.dll
+    set dll tcl${MAJ}${MIN}
+    
+    # Older TclTks may have a special library for Visual C, which is also used by mingw
+    set tclLib $TCL/lib/${dll}vc.lib
+    if {![file exists $tclLib]} {
+	set tclLib $TCL/lib/$dll.lib
+    }
+    
+    # Method using MingW32 gcc: Dlls refuse to load into tcl when
+    # it is running under Prolog. However it seems to work OK in WinNT.
+    if {[string match gnu $compiler_for_windows]} {
+	eval {exec g++ -c -o obj.o} $defns \
+	    {-I. -I$TCL/include ./ame_cmx.cpp}
+	
+	exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=g++ obj.o $tclLib
+	
+	# Method using command line calls to MSVC 4.0 or later -- works well
+    } else {
+	set TOOLS32 [file dirname $env(MSVCDIR)/any] ;# brainwash
+	eval {exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
+		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
+	    {-I. -I$TOOLS32/include -I$TCL/include ./ame_cmx.cpp}
+	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET $tclLib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
+    }
+    
+    # Also if in Windows we need to prepare a way for gcc to link the
+    # tcl dll into the model program. The MSVC compiler is used to
+    # build the stub (for now) because it makes life easier, but users
+    # should not have to buy it...
+    #	    exec impdef /windows/system/tcl80.dll >tcl80.def
+    #	    exec dlltool --dllname tcl80.dll --def tcltk.def \
+        #		--output-lib libtcl80.a
+    # and likewise to link the model dll into the stub...
+    #	    exec dlltool --dllname ame_dll.dll --def ame_dll.def \
+        #		--output-lib libame_dll.a
+}

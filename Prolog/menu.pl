@@ -279,7 +279,7 @@ menu_handle(Win, file, export_prolog) :-
 	count_functions(Model, N),
 	state:eval_fn_limit_is(Limit),
 	(N > Limit,
-	    edition_is(evaluation), !,
+	    get_edition(evaluation), !,
 	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the evaluation edition.", [N, Limit], Annoy),
 	    do_dialogue("Error saving model", error, Annoy, ok, _),
 	    fail;
@@ -612,7 +612,7 @@ do_save(Model, New_name) :-
 	count_functions(Model, N),
 	state:eval_fn_limit_is(Limit),
 	(N > Limit,
-	 edition_is(evaluation), !,
+	 get_edition(evaluation), !,
 	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the evaluation edition.", [N, Limit], Annoy),
 	    do_dialogue("Error saving model", error, Annoy, ok, _),
 	    fail;

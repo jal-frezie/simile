@@ -7,7 +7,7 @@ available to the other modules that use it.
 */
 
 sicstus_module(state, [get_initial_window_size/2, create_window/2, 
-	destroy_window/1, edition_is/1,
+	destroy_window/1, get_edition/1,
 	kill_windows/0, shows_model/2, monitors_variable/2,
 	depth_list_is/1, set_display_depth/3, get_display_depth/3, 
 	set_current_depth/1, get_current_depth/1,
@@ -43,7 +43,14 @@ create_window(New_win, Model) :-
 destroy_window(Dead_win) :-
 	retractall(model_in(Dead_win, _)).
 
-edition_is(standard).
+:- dynamic(edition_is/1).
+
+get_edition(Cur_depth) :-
+	edition_is(Cur_depth).
+
+set_edition(New_depth) :-
+	assertz(edition_is(New_depth)).
+
 eval_fn_limit_is(25).
 
 :- dynamic(suspend_display/0).
