@@ -643,12 +643,12 @@ make_intermediates(
 	        Arg_template = [boolean, RUnits, RUnits],
 		ResultList = [RTest, RTrue, RFalse],
 		ValRef = (RTest?RTrue:RFalse);
-	    Source = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, Param),
+	    Source = graph(Param),
 		SourceList = [Param],
 		RUnits = real,
 		Arg_template = [real],
 		ResultList = [RVal],
-		ValRef = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, RVal);
+		ValRef = graph(SubId, RVal);
 	    Source = table(SourceList),
 		(Step = dummy,
 		    dialogue:table_data_is(TableData),

@@ -12,68 +12,35 @@
 #	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
 proc equationGraph {parent} {
-    global graph equation
+    global equation
     toplevel .graph -class graphEntry -bd 4
     wm transient .graph $parent
-    wm protocol .graph WM_DELETE_WINDOW {set graph(done) 0}
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
     #    wm geometry .graph 640x480
     focus .graph
     grab .graph
-    if {![info exists graph(pts)]} {
-        # set default values for new graph
-        # Changed default size to 50x50 to let it fit into MRE
-        GraphEntry .graph 0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
-    } else {
-        GraphEntry .graph $graph(lowx) \
-                $graph(highx) $graph(width) \
-                $graph(lowy) $graph(highy) \
-                $graph(height) $graph(range) $graph(size) \
-                $graph(pts)
+    # set default values for new graph
+    set graphArgs {0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200}
+    if {[info exists equation(table_data)]} {
+	if {[string equal /graph/ [lindex $equation(table_data) 0]]} {
+	    set graphArgs [concat [lrange $equation(table_data) 5 7] \
+			       [lrange $equation(table_data) 1 3] \
+			       [lindex $equation(table_data) 8] \
+			       [lindex $equation(table_data) 4] \
+			       $equation(table_values)]
+	}
     }
+    set done [eval {GraphEntry .graph} $graphArgs]
     grab release .graph
     destroy .graph
     grab $equation(top)
-    return $graph(.graph,done)
-}
-
-proc ExtractGraphData { formula } {
-    global graph
-    #ShowMessage debug info "Getting graph from $formula" ok
-    while {[regexp "graph\\( *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*),\
-                *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *points\\((\[^)\]*)\\)," \
-                $formula match graph(lowx) \
-                graph(highx) graph(width) \
-                graph(lowy) graph(highy) \
-                graph(height) graph(range) graph(size) \
-                graph(pts)]} {
-        # next line puts backslashes before chars in match expr which would
-        # otherwise be special to regsub (I may not have them all)
-        #ShowMessage debug info "Got expr $match" ok
-        regsub -all \[\\(\\)\\+\] $match \\\\\\0 match
-        #ShowMessage debug info "Subbed it to $match" ok
-        regsub $match $formula graph( formula
-    }
-    return $formula
-}
-
-proc CombineGraphData { formula } {
-    global graph
-    if {[string match *graph\(* $formula]} {
-        regsub -all "graph\\(" $formula \
-                [format graph(%g,%g,%g,%g,%g,%g,%g,%g,points(%s), \
-                $graph(lowx) \
-                $graph(highx) $graph(width) \
-                $graph(lowy) $graph(highy) \
-                $graph(height) $graph(range) $graph(size) \
-                $graph(pts)] formula
-    }
-    return $formula
+    return $done
 }
 
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
     global tcl_platform graph
+    wm protocol $t WM_DELETE_WINDOW "set graph($t,done) -1"
     
     set graph(bd) 3
     
@@ -210,6 +177,9 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     while {!$niceFormat} {
         tkwait variable graph($t,done)
         
+        if {$graph($t,done)==-1} {
+	    return 0
+	}
         if {$graph($t,done)} {
             if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
                         $graph($t,lowx) $graph($t,highx)]} {
@@ -250,16 +220,10 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
 }
 
 proc SetDefaultGraph {xlow xhigh xspan ylow yhigh yspan range size points} {
-    global graph
-    set graph(range) $range
-    set graph(size) $size
-    set graph(pts) $points
-    set graph(lowy) $ylow
-    set graph(highy) $yhigh
-    set graph(height) $yspan
-    set graph(lowx) $xlow
-    set graph(highx) $xhigh
-    set graph(width) $xspan
+    global equation
+    set equation(table_data) [list /graph/ $ylow $yhigh $yspan $size \
+				  $xlow $xhigh $xspan $range]
+    set equation(table_values) $points
 }
 
 proc CheckFloaty {args} {

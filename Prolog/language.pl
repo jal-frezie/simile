@@ -843,24 +843,28 @@ make_evaluation_routine(
 	     Language = tcl, Functor = int),
 	    IntExpr =.. [Functor, SubExpr],
 	    make_evaluation_routine(Language, IntExpr, GraphN, Term, GraphD);
-	Expr = graph(XLow, XHigh, XSpan,
-			YLow, YHigh, YSpan, Range, NumPts, Points, XAxis), !,
-		(nonvar(GraphD),
-			raise_exception(extra_graph(Expr, XAxis, GraphD));
-		true),
-		Points =.. [points | PointList],
-		make_evaluation_routine(Language, XAxis, 0, GraphTerm,
+	Expr = graph(NodeId, XAxis), !,
+	    (nonvar(GraphD),
+		raise_exception(extra_graph(Expr, XAxis, GraphD));
+	    true),
+	    NodeId has_class_refinement table_data of
+	        [file='/graph/', data=[YLow, YHigh, YSpan],
+		 indices=[XLow, XHigh, XSpan, Range], current=Points,
+		 units=_, bounds=NumPts | _],
+	    name(Points, PointStr),
+	    append([91 | PointStr], "]", PointListStr),
+	    get_term(PointListStr, PointList, _),
+	    make_evaluation_routine(Language, XAxis, 0, GraphTerm,
 					'higher in same context'),
-
-		make_indexed_reference(Language, graphdata, [GraphN], Dataset),
-		make_pointer(Language, Dataset, GraphStruct),
-		GraphD = [GraphN, GraphStruct, XLow, XHigh, XSpan,
+	    make_indexed_reference(Language, graphdata, [GraphN], Dataset),
+	    make_pointer(Language, Dataset, GraphStruct),
+	    GraphD = [GraphN, GraphStruct, XLow, XHigh, XSpan,
 				YLow, YHigh, YSpan, Range, NumPts | PointList],
-		make_procedure_call_chars(Language,
-				[graphpoint, GraphTerm, GraphStruct],
-				Content_chars),
+	    make_procedure_call_chars(Language,
+				      [graphpoint, GraphTerm, GraphStruct],
+				      Content_chars),
 /* End of graph clause */
-		name(Term, Content_chars);
+	    name(Term, Content_chars);
 	Expr = stop(Ident), !, 
 	    make_evaluation_routine(Language, Ident,
 					GraphN, XIdent, GraphD),

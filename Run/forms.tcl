@@ -70,7 +70,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     $equation(doc).cmtFrame.text insert 1.0 $comment
     set widget [$equation(main).main.main getframe]
     $widget.equation.textbox.text delete 1.0 end
-    $widget.equation.textbox.text insert 1.0 [ExtractGraphData $current_equation]
+    $widget.equation.textbox.text insert 1.0 $current_equation
     set equation(units) $units
     set equation(mult) [join $mult ,]
 
@@ -290,8 +290,6 @@ proc create_equation {parent boxtitle indices} {
     frame $mainf.equation.textbox.buttons
     $notebook itemconfigure Main -raisecmd "focus $mainf.equation.textbox.text"
     
-    set grfimg [image create photo -file "../Images/Toolbar/graph.gif"]
-    set tblimg [image create photo -file "../Images/Toolbar/table.gif"]
     if {[string match Darwin $tcl_platform(os)]} {
         set graph [button $mainf.equation.textbox.buttons.graph \
                 -text " Graph... "\
@@ -303,11 +301,11 @@ proc create_equation {parent boxtitle indices} {
         pack $table -padx 8 -pady 4
     } else  {
         set graph [button $mainf.equation.textbox.buttons.graph \
-                -compound left -image $grfimg -text " Graph... "\
+                -compound left -image $iconImages(graph) -text " Graph... "\
                 -command "equationDoGraph $t $mainf.equation.textbox.text"]
         pack $graph -padx 8 -pady 4
         set table [button $mainf.equation.textbox.buttons.table \
-                -compound left -image $tblimg -text " Table... "\
+                -compound left -image $iconImages(table) -text " Table... "\
                 -command "GetTable $t $mainf.equation.textbox.text"]
         pack $table -padx 8 -pady 4
     }
@@ -441,8 +439,8 @@ proc interact_equation {} {
     grab release $t
     switch $equation(done) {
 	1 {
-	    return [list [string trimright [CombineGraphData \
-                [$eqnFrame.equation.textbox.text get 1.0 end]]] \
+	    return [list [string trimright \
+                [$eqnFrame.equation.textbox.text get 1.0 end]] \
                 $equation(units) $equation(isparam) \
                 [string trimright [$descFrame.text get 1.0 end]] \
                 [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
@@ -575,7 +573,7 @@ proc fill_inputs { triples } {
 
 proc fill_table {node table_data table_values} {
     global equation
-
+#puts $table_data
     set equation(table_data) $table_data
     set trans [GetFromProlog tk_get_info({},$node,types)]
     set equation(table_values) [TransEnums $trans $table_values]
@@ -656,9 +654,12 @@ proc equationBindings { t en eu lbp lbi lbd \
 }
 
 proc equationDoGraph {parent box} {
-    if {[equationGraph $parent] && \
-                ![string match *graph(*)* [$box get 1.0 end]]} {
-        InsertFunction $box graph
+    global equation
+    if {[equationGraph $parent]} {
+	if {![string match *graph(*)* [$box get 1.0 end]]} {
+	    InsertFunction $box graph
+	}
+	set equation(done) 3
     }
 }
 

@@ -94,10 +94,14 @@ BoxHeaderStr),
 	retractall(table_data_is(_)),
 	(get_av_pair(Part, 0, table_data, TableSpec),
 	    TableSpec = [file=FilePath, data=DataField,
-			 indices=Indices, current=Values | _], !,
+			 indices=Indices, current=Values | Rest], !,
 	    assert(table_data_is(TableSpec)),
+	    (FilePath = '/graph/', !,
+		Rest = [units=_, bounds=Bounds | _],
+		append([FilePath | DataField], [Bounds | Indices], TableList),
+		TableVals = Values;
 	    TableList = [FilePath, DataField | Indices],
-	    reverse_engineer(Values, 0, TableVals);
+		reverse_engineer(Values, 0, TableVals));
 	TableList = '', TableVals = '{}'),
 	(get_av_pair(Part, 0, description, Desc), !;
 		Desc = ''),
@@ -157,17 +161,23 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	assert(input_list_is(InList)),
 	get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
+	TableData = [FileName | DataSpec],
+	(FileName = '/graph/', !,
+	    length(DataField, 3),
+	    append(DataField, [Dims | Indices], DataSpec),
+	    name(DataTable, Data_st),
+	    Units = 1;
 	get_table_data(Function, Data_st, DataTable,
 		       TableVals, Units, Dims, Complaint),
-	(Complaint = [], !,
-	    TableData = [FileName, DataField | Indices], 
-	    retractall(table_data_is(_)),
-	    assert(table_data_is([file = FileName, data = DataField,
-				  indices = Indices, current = DataTable,
-				  units=Units, bounds=Dims]));
-%	    fill_table(Function, TableData, TableVals);
-	do_dialogue("Problem with input data", warning, Complaint,
-		    ok, _)),
+	    (\+ Complaint = [], !,
+		do_dialogue("Problem with input data", warning, Complaint, ok,
+			    _),
+		fail;
+	    DataSpec = [DataField | Indices])),
+	retractall(table_data_is(_)),
+	assert(table_data_is([file = FileName, data = DataField,
+			      indices = Indices, current = DataTable,
+			      units=Units, bounds=Dims])),
 	fail.
 
 update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
@@ -285,19 +295,20 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	/* units cannot be const_int because we do not uet have the
 	technology to get values at build time */
 
-	/* Now, is there a reference to a table? If so, load the data 
-for it,
-	complaining if it is not there. Otherwise ignore any data. */
-	(replace_subexps(Result, dialogue, table_ref, 0, top_down, [_ | _], _),
-	    !,
-	    (table_data_is(TableAttr),
-		FileError = [];
+	/* Now, is there a reference to a table or graph? If so, load the data 
+	for it, complaining if it is not there. Otherwise ignore any data. */
+	replace_subexps(Result, dialogue, table_ref, 0, top_down, TGMatch, _),
+	(TGMatch = [], !,
 	    TableAttr = '',
-	        FileError = "Equation refers to a data table, but no table specification has been entered.\n"),
-	    append(Complaint6, FileError, Complaint7);
-		
-	TableAttr = '',
-	    Complaint7 = Complaint6),
+	    FileError = [];
+	 TGMatch = [_,_ | _], !,
+	    TableAttr = '',
+	    FileError = "Equation refers to more than one data table or sketch graph. \n";
+	 table_data_is(TableAttr), !,
+	    FileError = [];
+	 TableAttr = '',
+	        FileError = "Equation refers to a data table or sketch graph, but no table or graph data has been entered. \n"),
+	append(Complaint6, FileError, Complaint7),
 	/* table data is auto-generated so should be well formed */
 
 	(Complaint7 = [], \+ Eqn_st = [], !,
@@ -358,7 +369,8 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	append([Pref, TypeStr, Plural, SubType], Desc).
 	    
 	
-table_ref(_, table(_), _, 0).
+table_ref(_, Ref, _, 0) :-
+	member(Ref, [table(_), graph(_)]).
 
 get_table_data(Function, Data, Table, Orig, Units, Dims, Complaint) :-
 	on_exception(Complaint,

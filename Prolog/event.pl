@@ -20,7 +20,9 @@ sicstus_use_module([sp_only, dialogue, m_update, image, draw,
 get_info(_Wid, Comp, eqn) :-
 	(Comp is_of_sort has_function,
 	    find_node_with_data(Comp, _, Func),
-	    (get_av_pair(Func, 0, value, Eqn), !; Eqn = '');
+	    (get_av_pair(Func, 0, spec, Eqn), atom(Eqn), !;
+		get_av_pair(Func, 0, value, Eqn), !;
+		Eqn = '');
 	 Eqn = '<none>'),
 	callback(br(write(Eqn))).
 
