@@ -25,7 +25,7 @@ them to be executed etc by Tcl commands. */
 #define WRITEGRAPH     22
 #define USEGRAPH       23
 
-/* #define USE_MY_HMAC */
+#define USE_MY_HMAC
 
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
