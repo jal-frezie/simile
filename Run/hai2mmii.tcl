@@ -5,7 +5,7 @@
 # things to pass information to and from the executing model. These are the new
 # definitions that rae required for this purpose.
 
-proc update_model {args} {
+proc do_model {what args} {
     global running_c errorInfo model_id instance_id
     
     if {![info exists model_id]} {
@@ -26,55 +26,11 @@ proc update_model {args} {
     }
 
     if {$model_id} {
-	set head [list c_updatemodel $model_id $instance_id]
-    } else {
-	set head ::AME_model<>::updatemodel
-    }
-
-    if [catch {eval $head $args} whoopsie] {
-	switch -- $mstep {
-	    -1 {
-		set action Initialization
-		unset running_c
-	    } 0 {
-		set action Reset
-	    } default {
-		set action Evaluation
-	    }
-	}
-	ShowMessage "$whoopsie running model" error \
-	    "$action of the model at time $mtime caused this error: \
-	    $errorInfo" ok
-	return 0
-    } else {
-	return 1
-    }
-}
-
-proc eval_model {args} {
-    global running_c errorInfo model_id instance_id
-    
-    if {![info exists model_id]} {
-	ShowMessage "Model not loaded" error \
-	"This operation cannot be done as there is no model program loaded." \
-	ok
-	return 0
-    }
-    set mtime [lindex $args 0]
-    set mstep [lindex $args 1]
-    if {$mstep == -1} {
-	set running_c $model_id
-    } elseif {![info exists running_c]} {
-	ShowMessage "Model not running" error \
-	"This operation cannot be done as there is no model program running." \
-	ok
-	return 0
-    }
-
-    if {$model_id} {
-	set head [list c_evalmodel $model_id $instance_id]
-    } else {
+	set head [list c_${what}model $model_id $instance_id]
+    } elseif {[string match eval $what]}  {
 	set head ::AME_model<>::int_evalmodel
+    } else {
+	set head ::AME_model<>::${what}model
     }
 
     if [catch {eval $head $args} whoopsie] {
@@ -85,11 +41,11 @@ proc eval_model {args} {
 	    } 0 {
 		set action Reset
 	    } default {
-		set action Evaluation
+		set action Execution
 	    }
 	}
-	ShowMessage "$whoopsie running model" error \
-	    "$action of the model at time $mtime caused this error: \
+	ShowMessage "$whoopsie doing model $what" error \
+	    "$what during $action of the model at time $mtime caused this: \
 	    $errorInfo" ok
 	return 0
     } else {

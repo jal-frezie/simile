@@ -76,6 +76,7 @@ typedef int compare_instance_status_type (const int*, const int*, int);
 typedef void get_value_pointer_type(void*, char*, int, int*);
 typedef void* fetch_instance_type(char*);
 typedef void update_submodel_type(char*, void*, double, int);
+typedef void advance_submodel_type(char*, void*, double, int);
 typedef void eval_submodel_type(char*, void*, double, int, BOOLEAN);
 typedef void search_from_type(void*, int, void*);
 typedef void* advance_ptr_type(void*, void*);

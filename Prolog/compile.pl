@@ -611,9 +611,10 @@ build_submodel_functions( Language, Phases, Inters,
 	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
 
 	reassure_user("Generating code for model execution"),
-	append(OrdStates, OrdUpdates, AllUpdates),
-	build_eval_proc(Language, updatemodel, AllUpdates, [], Used,
+	build_eval_proc(Language, updatemodel, OrdUpdates, [], Used,
 			_, _, UpDecls),
+	build_eval_proc(Language, advancemodel, OrdStates, [], Used,
+			_, _, AdvDecls),
 	build_eval_proc(Language, int_evalmodel, IntOrdered, Inters, Used,
 		IntGraphs, IntClearText, IntDecls),
 	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Inters, Used,
@@ -621,7 +622,7 @@ build_submodel_functions( Language, Phases, Inters,
 	all(user, append, [build([IntGraphs, IntClearText, IntDecls]),
 			   build([ExtGraphs, ExtClearText, ExtDecls]),
 			   build([AllGraphs, GraphClearText, EvDecls])]),
-	append(UpDecls, EvDecls, Decls).
+	append([UpDecls, AdvDecls, EvDecls], Decls).
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-

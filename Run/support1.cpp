@@ -17,6 +17,7 @@ compare_instance_status_type* compare_instance_status;
 get_value_pointer_type* get_value_pointer;
 fetch_instance_type* fetch_instance_ref;
 update_submodel_type* update_submodel_ref;
+advance_submodel_type* advance_submodel_ref;
 eval_submodel_type* eval_submodel_ref;
 search_from_type* search_from_ref;
 advance_ptr_type* advance_ptr_ref;
@@ -38,6 +39,10 @@ void* fetch_instance(char* inst) {
 
 void update_submodel(char* id, void* inst, double time, int step) {
   (*update_submodel_ref)(id, inst, time, step);
+}
+
+void advance_submodel(char* id, void* inst, double time, int step) {
+  (*advance_submodel_ref)(id, inst, time, step);
 }
 
 void int_eval_submodel(char* id, void* inst, double time, int step) {

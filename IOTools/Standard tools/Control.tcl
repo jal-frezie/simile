@@ -284,7 +284,7 @@ namespace eval runcontrol33857 {
             if {[info exists redoPhase]} {
                 $widget.bf.flag itemconfigure 1 -fill yellow
                 update
-                if ![eval_model $scaled_current $redoPhase] {
+                if ![do_model eval $scaled_current $redoPhase] {
                     set sendvars(currentMode) exit
                 }
                 unset redoPhase
@@ -311,6 +311,9 @@ namespace eval runcontrol33857 {
                 if {$bigPhase <= [GetPhaseCount]} {
                     $widget.bf.flag itemconfigure 1 -fill green
 		    CondUpdate $bigPhase
+                    if {![do_model advance $scaled_current $bigPhase]} {
+                        set sendvars(currentMode) exit
+                    }
                     if {![RKUpdateModel $scaled_current $bigPhase]} {
                         set sendvars(currentMode) exit
                     }
@@ -321,7 +324,7 @@ namespace eval runcontrol33857 {
                     # step we need -- so dont change it till now
                     
                     set scaled_current [expr $current*$unitLength]
-                    if ![eval_model $scaled_current $bigPhase] {
+                    if ![do_model eval $scaled_current $bigPhase] {
                         set sendvars(currentMode) exit
                     }
                     # display the results if at a new time, or every time if in static mode
@@ -352,15 +355,15 @@ namespace eval runcontrol33857 {
     proc RKUpdateModel {current phase} {
 	for {set step 1} {$step < 4} {incr step} {
 	    SetStep $step 0
-	    if ![update_model $current $phase] {
+	    if ![do_model update $current $phase] {
 		return 0
 	    }
-	    if ![eval_model $current $phase] {
+	    if ![do_model eval $current $phase] {
 		return 0
 	    }
 	}
 	SetStep 4 0
-	if ![update_model $current $phase] {
+	if ![do_model update $current $phase] {
 	    return 0
 	}
 	return 1

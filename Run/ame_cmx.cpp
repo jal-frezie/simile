@@ -142,6 +142,7 @@ compare_instance_status_type compare_instance_status;
 get_value_pointer_type get_value_pointer;
 fetch_instance_type fetch_instance;
 update_submodel_type update_submodel;
+advance_submodel_type advance_submodel;
 eval_submodel_type eval_submodel;
 search_from_type search_from;
 advance_ptr_type advance_ptr;
@@ -151,13 +152,14 @@ get_remote_value_type get_remote_value;
  */
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*,
-			  void*, void*, void*, void*, void*, 
+			  void*, void*, void*, void*, void*, void*,
 			  int*, node_data_line**, graph_data_type**,
 			  int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef void setstep_type(double, int);
 typedef void updatemodel_type(void*, double, int);
+typedef void advancemodel_type(void*, double, int);
 typedef void evalmodel_type(void*, double, int, BOOLEAN);
 typedef void* getpointer_type(void*, int**, int**);
 typedef void exitmodel_type(void*);
@@ -176,6 +178,7 @@ class Model {
   createmodel_type *createmodel;
   setstep_type *setstepmodel;
   updatemodel_type *updatemodel;
+  advancemodel_type *advancemodel;
   evalmodel_type *evalmodel;
   getpointer_type *getpointer;
   exitmodel_type *exitmodel;
@@ -210,6 +213,8 @@ public:
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
     updatemodel = (updatemodel_type *)FIND_FUNCTION(handle, "do_updatemodel");
+    advancemodel = (advancemodel_type *)FIND_FUNCTION(handle, 
+						      "do_advancemodel");
     evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
     setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
     getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
@@ -222,6 +227,7 @@ public:
 			    (void*)get_value_pointer, 
 			    (void*)fetch_instance,
 			    (void*)update_submodel,
+			    (void*)advance_submodel,
 			    (void*)eval_submodel,
 			    (void*)search_from,
 			    (void*)advance_ptr,
@@ -270,6 +276,10 @@ public:
 
   void update(void* id, double start, int phase) {
     (*updatemodel)(id, start, phase);
+  }
+
+  void advance(void* id, double start, int phase) {
+    (*advancemodel)(id, start, phase);
   }
 
   void eval(void* id, double start, int phase, BOOLEAN exo) {
@@ -732,6 +742,11 @@ void update_submodel(char* nodeId, void* instanceId,
   nodeModelList->nodeModel(nodeId)->update(instanceId, start_time, phase);
 }
 
+void advance_submodel(char* nodeId, void* instanceId,
+		       double start_time, int phase) {
+  nodeModelList->nodeModel(nodeId)->advance(instanceId, start_time, phase);
+}
+
 void eval_submodel(char* nodeId, void* instanceId,
 		       double start_time, int phase, BOOLEAN exo) {
   nodeModelList->nodeModel(nodeId)->eval(instanceId, start_time, phase, exo);
@@ -881,6 +896,42 @@ extern "C" int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
 
    serviceError = TCL_OK;
    modelType->update(modelHandle, starttime, phase);
+   return serviceError;
+}
+
+extern "C" int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+   double starttime;
+   int phase;
+   int error;
+
+   if (argc != 5) {
+	interp->result = "Four arguments for advance please!";
+	return TCL_ERROR;
+   }
+
+   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+   if (error != TCL_OK) {
+	return error;
+   }
+
+   error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+   if (error != TCL_OK) {
+	return error;
+   }
+
+   error = Tcl_GetDoubleFromObj(interp, argv[3], &starttime);
+   if (error != TCL_OK) {
+	return error;
+   }
+
+   error = Tcl_GetIntFromObj(interp, argv[4], &phase);
+   if (error != TCL_OK) {
+	return error;
+   }
+
+   serviceError = TCL_OK;
+   modelType->advance(modelHandle, starttime, phase);
    return serviceError;
 }
 
@@ -1099,22 +1150,6 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
   int arrayLength, arrayPosn, id_count, id_val, *id_ptr;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
   switch (*use_dims) {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   case -2:
     new_tree = tree;
     while (*new_tree++ != -2) {}
@@ -1492,6 +1527,9 @@ one. */
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
     Tcl_CreateObjCommand(interp, "c_updatemodel", updatemodelCmd, 
+			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+
+    Tcl_CreateObjCommand(interp, "c_advancemodel", advancemodelCmd, 
 			 (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
     Tcl_CreateObjCommand(interp, "c_evalmodel", evalmodelCmd, 

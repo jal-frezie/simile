@@ -15,6 +15,7 @@ a class pointer before calling them. */
 #ifdef WIN32
 extern "C" __declspec( dllexport ) double get_version(void);
 extern "C" __declspec( dllexport ) void do_updatemodel(void*, double, int);
+extern "C" __declspec( dllexport ) void do_advancemodel(void*, double, int);
 extern "C" __declspec( dllexport ) void do_evalmodel(void*, double, int, 
      BOOLEAN);
 extern "C" __declspec( dllexport ) void do_setstep(double, int);
@@ -22,6 +23,7 @@ extern "C" __declspec( dllexport ) void do_exitmodel(void*);
 #else
 extern "C" double get_version(void);
 extern "C" void do_updatemodel(void*, double, int);
+extern "C" void do_advancemodel(void*, double, int);
 extern "C" void do_evalmodel(void*, double, int, BOOLEAN);
 extern "C" void do_setstep(double, int);
 extern "C" void do_exitmodel(void*);
@@ -35,6 +37,10 @@ double get_version() {
 
 void do_updatemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->updatemodel(time, phase);
+}
+
+void do_advancemodel(void* handle, double time, int phase) {
+  ((AME_model *)handle)->advancemodel(time, phase);
 }
 
 void do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
@@ -105,6 +111,7 @@ void* compare_instance_status_ptr,
 void* get_value_pointer_ptr, 
 void* fetch_instance_ptr,
 void* update_submodel_ptr,
+void* advance_submodel_ptr,
 void* eval_submodel_ptr,
 void* search_from_ptr,
 void* advance_ptr_ptr,
@@ -121,6 +128,7 @@ int* arc_count, char*** arc_id_list) {
   get_value_pointer = (get_value_pointer_type*)get_value_pointer_ptr;
   fetch_instance_ref = (fetch_instance_type*)fetch_instance_ptr;
   update_submodel_ref = (update_submodel_type*)update_submodel_ptr;
+  advance_submodel_ref = (advance_submodel_type*)advance_submodel_ptr;
   eval_submodel_ref = (eval_submodel_type*)eval_submodel_ptr;
   search_from_ref = (search_from_type*)search_from_ptr;
   advance_ptr_ref = (advance_ptr_type*)advance_ptr_ptr;
