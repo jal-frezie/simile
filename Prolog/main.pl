@@ -14,6 +14,9 @@ printed incompletely to avoid infinite loops... */
 portray(xrefs(Model, _, _, _)) :-
 	print(xrefs(Model,'Links')).
 
+portray(sm(Model, _,_,_)) :-
+	print(sm(Model)).
+
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */

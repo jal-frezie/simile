@@ -1,5 +1,6 @@
 subtotals(Arr) --> makearray((if place_in(1)==1 then 0 else
-	element(prev(0),place_in(1)-1))+element(Arr,place_in(1)),count(Arr)).
+	element(sofar(prev(0)),place_in(1)-1))+element(Arr,place_in(1)),
+	count(Arr)).
 rankings(L) --> sum(makearray(if element(L,place_in(1))>=L then 1 else 0,
 				count(L))).
 colin(List) --> legg=rand_var(0,sum(List)),

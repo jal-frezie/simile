@@ -6,6 +6,23 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.5  2002/06/10 17:43:58  jaspert
+#
+#CV: problem with spurious popups resulting from the 'snap' effect
+#added in 2.9 (runmodel.tcl toolbox.tcl)
+#
+#Fixed an error that appeared if a popup comment containing an unmatched quote
+#got elided (runmodel.tcl)
+#
+#New implementation of rollovers -- Equations can now include the
+#'sofar(x)' function, which means 'make sure x is being built in the
+#current loop, and hope the value from x I am accessing is already
+#built at this point'. So for instance to get an array of Fibonacci
+#numbers in a single time step you could say:
+#makearray(if place_in(1)<=2 then 1 else
+#    sofar(element(prev(0),place_in(1)-2)+element(prev(0),place_in(1)-1)),20)
+# ----------------------------------------------------------------------
+#
 #Revision 1.4  2002/05/31 16:08:20  jaspert
 #*** empty log message ***
 #
@@ -28,6 +45,23 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.5  2002/06/10 17:43:58  jaspert
+#Correct RCS directive #
+#Correct RCS directive #CV: problem with spurious popups resulting from the 'snap' effect
+#Correct RCS directive #added in 2.9 (runmodel.tcl toolbox.tcl)
+#Correct RCS directive #
+#Correct RCS directive #Fixed an error that appeared if a popup comment containing an unmatched quote
+#Correct RCS directive #got elided (runmodel.tcl)
+#Correct RCS directive #
+#Correct RCS directive #New implementation of rollovers -- Equations can now include the
+#Correct RCS directive #'sofar(x)' function, which means 'make sure x is being built in the
+#Correct RCS directive #current loop, and hope the value from x I am accessing is already
+#Correct RCS directive #built at this point'. So for instance to get an array of Fibonacci
+#Correct RCS directive #numbers in a single time step you could say:
+#Correct RCS directive #makearray(if place_in(1)<=2 then 1 else
+#Correct RCS directive #    sofar(element(prev(0),place_in(1)-2)+element(prev(0),place_in(1)-1)),20)
+#Correct RCS directive # ----------------------------------------------------------------------
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.4  2002/05/31 16:08:20  jaspert
 #Correct RCS directive #*** empty log message ***
 #Correct RCS directive #
@@ -612,8 +646,8 @@ proc ProdObj {nodeId caption} {
 # small, so we gradually increase it until we find a non-background thing or
 # we reach the edge of our search radius.
 
-proc GetClickedObj { winId canx cany } {
-    for {set halo 0} {$halo < 10} {incr halo 2} {
+proc GetClickedObj { winId canx cany range} {
+    for {set halo 0} {$halo < $range} {incr halo 2} {
 	set target [$winId find closest $canx $cany $halo]
 	if {![string match */background/* [$winId gettags $target]]} {
 	    return $target
@@ -627,6 +661,7 @@ proc BindPopup {widget keywd} {
     bind $widget <Leave> RemovePopup
 }
 
+# This is used for items on IO tool canvases -- model components have eqnpopups
 proc CanvasBindPopup {canvas widget keywd} {
     $canvas bind $widget <Enter> [list QueuePopup \
 	    [list AddWidgetPopup $keywd %X %Y]]
@@ -649,7 +684,7 @@ proc AddEqnPopup {x y winId X Y} {
     }
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
-    set target [GetClickedObj $winId $canx $cany]
+    set target [GetClickedObj $winId $canx $cany 1]
     if {$target} {
 	PostPopup $X $Y
 	set plName [ExtractPrologName $winId $target]
@@ -658,31 +693,35 @@ proc AddEqnPopup {x y winId X Y} {
 	    if {![llength $fromProlog] || [string match $fromProlog <none>]} {
 		prolog tk_get_info('$winId',$plName,desc)
 	    }
-	    AddPopupMessage $fromProlog #c0ffc0
+	    AddPopupMessage $fromProlog #c0ffc0 0
 	}
 	if {$doCmt} {
 	    prolog tk_get_info('$winId',$plName,comment)
-	    AddPopupMessage $fromProlog #ffe0c0
+	    AddPopupMessage $fromProlog #ffe0c0 0
 	}
         if {[expr [info exists running_c] && $doVal]} {
-	    AddPopupMessage [GetModelValue $plName] #ffffc0
+	    AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
 # we might want to prettify this a bit first
 	}
 	PositionPopup $X $Y
     }
 }
 
-proc AddPopupMessage {text colour} {
+proc AddPopupMessage {text colour isValue} {
     set verbosity [string length $text]
     if {$verbosity<20} {
 	pack [label .popup.message$colour \
 		-text $text -bg $colour] -fill x -expand true
     } else {
 	if {$verbosity>500} {
-	    set nvals [CountValues [lindex $text 0]]
+	    if {$isValue} {
+		set nvals " ([CountValues $text] values)"
+	    } else {
+		set nvals " ($verbosity characters)"
+	    }
 	    set text [string range $text 0 240].....[string range $text \
 		    [expr $verbosity-240] end]
-	    append text " ($nvals values)"
+	    append text $nvals
 	}
 	pack [message .popup.message$colour -aspect 400 \
 		-text $text -bg $colour] -fill x -expand true
@@ -730,20 +769,17 @@ proc PostPopup {X Y} {
 # then uses this size to move it to the right place
 
 proc PositionPopup {X Y} {
-    set xpoint [expr $X+10]
-    set ypoint [expr $Y+10]
-    wm geometry .popup +$xpoint+$ypoint
-    update
-# Popup window might expire rather than update, so check...
-    if {[winfo exists .popup]} {
-	if {$X>[winfo screenwidth .popup]/2} {
-	    set xpoint [expr $X-10-[winfo reqwidth .popup]]
-	}
-	if {$Y>[winfo screenheight .popup]/2} {
-	    set ypoint [expr $Y-10-[winfo reqheight .popup]]
-	}
-	wm geometry .popup +$xpoint+$ypoint
+    if {$X>[winfo screenwidth .popup]/2} {
+	set xpoint -[expr [winfo screenwidth .popup]+10-$X]
+    } else {
+	set xpoint +[expr $X+10]
     }
+    if {$Y>[winfo screenheight .popup]/2} {
+	set ypoint -[expr [winfo screenheight .popup]+10-$Y]
+    } else {
+	set ypoint +[expr $Y+10]
+    }
+    wm geometry .popup ${xpoint}${ypoint}
 }
 
 proc RemovePopup {} {

@@ -214,7 +214,7 @@ bits and pieces */
 	set_free_phases(UpdateForm, Phases),
 	set_free_phases(ReevaluateForm, Phases),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
-	check_functions(ReevaluateForm, UpdateForm, SortedForm),
+	check_functions(ReevaluateForm, UpdateForm, Phases, SortedForm),
 
 	user:version_is(V),
 	render(Language, variable_declaration,
@@ -342,7 +342,7 @@ invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
 % check_functions tests for circularity, then puts each function
 % evaluation into the slowest time step in which it needs to be updated
 
-check_functions(Functions, Compartments, Sorted) :-
+check_functions(Functions, Compartments, Phases, Sorted) :-
 	reassure_user("Checking for circularity in model assignment order"),
 	(dummy_order(Functions, [Start | Core]),
 	get_circle_from(Core, [Start], Loop),
@@ -354,8 +354,8 @@ check_functions(Functions, Compartments, Sorted) :-
 	UseCompartments = [make(on_reset, [], [], 0, []) | Compartments],
 	    
 	reassure_user("Sorting assignments into correct time steps"),
-	sort_assignments(Functions, UseCompartments, -1, HalfSorted),
-	delay_clearing(HalfSorted, Sorted).
+	sort_assignments(Functions, UseCompartments, Phases, Sorted) /*,
+	delay_clearing(HalfSorted, Sorted) */.
 
 is_instance_list(Instance) :-
 	Instance = instance(_, Model, xrefs(_, Parent, _,_), _,_),
@@ -556,10 +556,11 @@ build_submodel_functions( Language, Phases, Inters, UpdateForm, SortedForm,
 	/* rough and ready -- the two externs_done instructions will each
 	block the other plus anything else dependent on this condition */
 	order_submodel_assignments(Phases, [],
-				   [ExtBlocker, ExtBlocker | SortedForm],
-				   IntOrdered, ExtUsers, _),
+			[ExtBlocker, ExtBlocker | SortedForm],
+			IntOrdered, ExtUsers, _),
 	select(ExtBlocker, ExtUsers, ExtPass),
-	order_submodel_assignments(Phases, [], ExtPass, ExtOrdered, Lost, _),
+	order_submodel_assignments(Phases, [],
+			ExtPass, ExtOrdered, Lost, _),
 	(\+ Lost = [],
 	    select(Awkward, Lost, Others),
 	    \+ (order(Holdup, Awkward), member(Holdup, Others)),
@@ -975,12 +976,8 @@ connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
 	select(made_at(Param, OrigPath), Conds, MoreConds), !,
 	    get_common_path(Path, OrigPath, CommonPath),
 	    (CommonPath = OrigPath, !,
-		(Dest = Param, !,
-		/* Case to allow prev(0) to work like rollover */
-		    ChangedInsts = [make(Tgt, MoreConds, Path, Step, Acts)
-				   | LeftInsts];
 		ChangedInsts = [make(Tgt, [Param | MoreConds], Path, Step,
-				     Acts) | LeftInsts]);
+				     Acts) | LeftInsts];
 	    ChangedInsts = [make(Tgt, [made_for(Tgt, Param) | MoreConds], Path,
 				 Step, Acts),
 		     make(made_for(Tgt, Param), [Param], CommonPath, Step, [])
@@ -1091,21 +1088,63 @@ evaluated on that long time step. We start off looking for what can be
 evaluated on step 0 (initialization) then 1, and so on. Assume no
 compartments are updated on step 0 -- that would be silly! */
 
-sort_assignments(Instructions, Compartments, Phase, SortedForm) :-
+/* Experimental arse over tit version */
+
+sort_assignments(Instructions, Compartments, Phase, Left) :-
+	Instructions = [], !,
+	Left = [];
+	
+	NextInst = make(Efx, Conds, Path, DefP, Acts),
+	NewInst = make(Efx, Conds, Path, Phase, Acts),
+	select(NextInst, Instructions, Rest),
+	DefP >= Phase,
+	(Phase = -1;
+	(member(Cond, Conds);
+	    member(later(Cond), Conds); member(this_step(Cond), Conds)),
+	(Cond = time;
+	    member(make(Cond, _,_, SPhase, _), Compartments),
+	    SPhase >= Phase)), !,
+	sort_assignments(Rest, [NewInst | Compartments], Phase, More),
+	Left = [NewInst | More];
+
+	LongerPhase is Phase-1,
+	sort_assignments(Instructions, Compartments, LongerPhase, Left).
+
+			 /*
+sort_assignments(Instructions, MustDo, Compartments, Phase, SortedForm) :-
 	Instructions = [], !,
 	    SortedForm = Instructions;
-	(select(make(Efx, Conds, Path, Phase, Acts), Instructions, Others);
-	get_next_evaluation(Instructions, Compartments, _,_, Others,
-			    make(Efx, Conds, Path, DefP, Acts)),
+	    
+	NextInst = make(Efx, Conds, Path, DefP, Acts),
+	(member(TryNow, MustDo),
+	TryInst = make(TryNow, _,_,_,_),
+	member_either(TryInst, Instructions, Compartments), !,
+	    select_for([], TryInst, NextInst, Instructions, []);
+	true),
+	(DefP = Phase,
+	    select(NextInst, Instructions, Others);
+	get_next_evaluation(Instructions, Compartments, _,_, Others, NextInst),
 	    \+ (Phase < DefP, member(time, Conds))), !,
-	    sort_assignments(Others, Compartments, Phase, MoreSorted),
-	    SortedForm = [make(Efx, Conds, Path, Phase, Acts) | MoreSorted];
+	(setof(WaitCond, DefCond^(member(DefCond, Conds),
+		member(DefCond, [later(WaitCond), this_step(WaitCond)])),
+	      AlsoMustDo),
+	    (append(AlsoMustDo, MustDo, NowDo),
+		ToDo = Others;
+	    NowDo = [not(NextInst) | MustDo],
+		ToDo = Instructions);
+	NowDo = MustDo,
+	    ToDo = Others, !),
+		sort_assignments(Others, NowDo, Compartments, Phase,
+				 MoreSorted);
+	    sort_assignments(Instructions
+	SortedForm = [make(Efx, Conds, Path, Phase, Acts) | MoreSorted];
+	
 	ShorterPhase is Phase+1,
 	    purge(Compartments, [make(_,_,_, ShorterPhase, _)], Fluctuators),
-	    sort_assignments(Instructions, Fluctuators, ShorterPhase,
+	    sort_assignments(Instructions, [], Fluctuators, ShorterPhase,
 			     SortedForm).
 
-/* delay_clearing: what this one does is, when you have a running total it
+delay_clearing: what this one does is, when you have a running total it
 makes sure that the value is zeroed in the same phase as the total is
 incremented, otherwise we may add the values to it several times. Note that
 thanks to the radical implementation of subtotal, one total may have more than
@@ -1122,8 +1161,6 @@ delay_clearing(Mess, [make(clearing(Total), CConds, CPath, IPhase, CAct),
 		   Mess2),
 	    delay_clearing(Mess2, Better).
 
-delay_clearing(Neat, Neat).
-	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % order_assignments puts a list of make instructions (1) into order so that things are
 % calculated when they're used. 2nd argument is the submodel path of the last
@@ -1135,16 +1172,41 @@ phases, the instructions have an extra argument to say which phase they go in,
 allowing there to be more than two. */
 
 order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
-	order_phase(Phase, Path, RawAssign, ThisPhase, Later),
-	(unfinished_submodels(RawAssign, Phase, Path, Subs),
-	    member(SmLevel, Subs),
-	    /* Do not run a submodel with an outstanding 'can_enter' */
-	    \+ made_in(can_enter, SmLevel, Later),
+	order_phase(Phase, Path, RawAssign, ThisPhase, Later, []),
+	order_deeper_assignments(Phase, Path, Later, DeepAssign, Left, XPath),
+	list_extra_levels(ThisPhase, XPath, Path, ExtraStarts, Finishes),
 
+	/* Now check if we picked any instructions at this level with 'later'
+	conditions that we couldn't resolve: if so, redo order_phase. */
+	\+ (member(make(_, Conds, _,_,_), ThisPhase),
+	       member(later(Cond), Conds),
+	       member(make(Cond, _,_,_,_), Left)),
+	append([ExtraStarts, ThisPhase, Finishes, DeepAssign], OrderedAssign).
+	
+list_extra_levels(ThisPhase, XPath, Path, ExtraStarts, Finishes) :-
+	ThisPhase = [], !,
+	reverse(XPath, YPath),
+	all(compile, get_pass_ends,
+	    [build(YPath), build(ExtraStarts), build(Finishes)]);
+
+	ThisPhase = [make(_,_, IPath, _,_) | More],
+	append(Xtra, Path, IPath),
+	merge_lists(Xtra, XPath, MoreXtras),
+	append(Xtra, Path, IPath),
+	list_extra_levels(More, MoreXtras, Path, ExtraStarts, Finishes).
+
+order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left, Extras) :-
+	(unfinished_submodels(Later, Phase, Path, Subs),
+	    member(SmLevel, Subs),
+
+	    SmLevel = [Inner | Extras],
+	    /* Do not run a submodel with an outstanding 'can_enter' */
+	    \+ made_in(can_enter, Inner, Later),
+	    
 	    /* try something from what is left -- no commitment yet */
-	    get_pass_ends(SmLevel, StartPass),
-	    extract_action(FinishPass, [finish_level]),
-	    order_submodel_assignments(Phase, [SmLevel | Path], Later,
+	    get_pass_ends(Inner, StartPass, FinishPass),
+	    append(SmLevel, Path, NewPath),
+	    order_submodel_assignments(Phase, NewPath, Later,
 				       SubPasses, LaterYet, TestPhase),
 	    /* don't go to a level where I can't do anything (note test for
 	    having done something is on what is outstanding, as there may
@@ -1152,7 +1214,7 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 	    \+ LaterYet = Later,
 	    /* do not go into a sumbodel if I cannot get the existence
 	    test done by the time I come out */
-	    \+ made_in(existence_tested, SmLevel, LaterYet),
+	    \+ made_in(existence_tested, Inner, LaterYet),
 	   	    
 	    /* OK, have I just done an existence test for it? */
 	    (number(TestPhase),
@@ -1166,7 +1228,7 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 		GenCond = old), !,
 		/* and add extra loops that go around generate statement --
 		record test phase to use in later new instance tests */
-		SmLevel = sm(Submodel, ParentPtr, Ptr,
+		Inner = sm(Submodel, ParentPtr, Ptr,
 			     vm_loop(_, Dims, MoreLoops, _)),
 		ptr_to_last_vm(Path, ParentNew),
 		make_inds_for(Dims, Sets, LocalInds),
@@ -1175,7 +1237,8 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 		append([Sets | MoreLoops], BLoops),
 		reverse(BLoops, AllLoops),
 		all(compile, get_pass_ends,
-		    [build(AllLoops), build(OpenLoops)]),
+		    [build([D1, D1 | AllLoops]), build([D2, D2 | OpenLoops]),
+		     build(LastStep)]),
 		all(inters, indices_for,
 		    [build(AllLoops), append(LoopInds, [])]),
 		append(LoopInds, LocalInds, Inds),
@@ -1184,18 +1247,16 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 		extract_action(GenStep, [generate(Submodel, ParentPtr,
 				Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
 		SmNew = [new_context(Ptr, TestPhase)],
-		append([Outer | OpenLoops], [GenStep], FirstStep),
-		length(FirstStep, LoopCount),
-		list_of(FinishPass, LoopCount, LastStep);
+		append([Outer | OpenLoops], [GenStep], FirstStep);
 		
 	    /* no: just use start_submodel -- or give up on this
 	    submodel if it was enumerated in a shorter time step than we
 	    are doing now, or we might end up failing to set some values
 	    in new ones */
 
-	    \+ (SmLevel = sm(_,_,_, vm_loop(_,_,_, EnumPhase)),
+	    \+ (Inner = sm(_,_,_, vm_loop(_,_,_, EnumPhase)),
 		   EnumPhase > Phase), !,
-		ptr_to_last_vm([SmLevel | Path], SmNew),
+		ptr_to_last_vm(NewPath, SmNew),
 		FirstStep = [StartPass],
 		LastStep = [FinishPass]),
 	    /* Now put new/timing conditions round higher-level passes */
@@ -1203,11 +1264,12 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 
 	    /* Now if I have done some submodel assignments, recurse at
 		the same level */
-	    order_assignments(Phase, Path, LaterYet, MoreOrdered, Left),
-	    append([ThisPhase, FirstStep, CondPass, LastStep, MoreOrdered],
-		   OrderedAssign);
-	OrderedAssign = ThisPhase,
-	    Left = Later).
+	    order_assignments(Phase, Path, LaterYet, NewOrdered, Left),
+	    append([FirstStep, CondPass, LastStep, NewOrdered],
+		   OrderedAssign), !;
+	OrderedAssign = [],
+	    Left = Later,
+            Extras = []).
 
 ptr_to_last_vm(Path, Ptrs) :-
 	member(sm(_,_, Ptr, vm_loop(_,_,_,Phase)), Path), !,
@@ -1245,13 +1307,21 @@ relevant(Phase, new_context(Ptr, EnumPhase), UseContext) :-
 	    UseContext = [new_context(Ptr, EnumPhase)];
 	UseContext = [].
 
-order_phase(Phase, Path, RawAssign, ThisPass, Later) :-
+order_phase(Phase, Path, RawAssign, ThisPass, Later, Taboo) :-
 	pick_useful_instruction(RawAssign, [], Path, Instruction),
-	get_next_evaluation(RawAssign, [], Path, Phase, Others, Instruction),
-	    order_phase(Phase, Path, Others, Rest, Later),
-	    ThisPass = [Instruction | Rest], !;
+	get_next_evaluation(RawAssign, [], Path, Phase, Others,
+			    Instruction),
+	\+ member(Instruction, Taboo),
+	(order_phase(Phase, Path, Others, Rest, Later, Taboo),
+	    ThisPass = [Instruction | Rest];
+	(delayable(Instruction); !, fail),
+	    order_phase(Phase, Path, RawAssign, ThisPass, Later,
+			[Instruction | Taboo]));
 	ThisPass = [],
 	    Later = RawAssign.
+
+delayable(make(_, Conds, _,_,_)) :-
+	member(later(_), Conds), !.
 
 /* insert_level_enum_phases: when we find an enumerate instruction, we want to
 make sure that any time later we go into its submodel, the path will tell us
@@ -1287,21 +1357,22 @@ order_submodel_assignments(Phase, Path, RawAssign,
 		OrderedPasses = HighPasses,
 		Left = Later,
 		FoundTest = DoneTest;
-	    order_assignments(Phase, Path, Later, LastPass, Left),
+		order_assignments(Phase, Path, Later, LastPass, Left),
 		(Path = [TestModel | _],
 		made_in(existence_tested, TestModel, LastPass), !,
 		    FoundTest = Phase;
 		true),
 		append(HighPasses, [LastPass], OrderedPasses)).
 
-get_pass_ends(Level, StartInit) :-
-	Level = catch(Ind, Bound), !,
+get_pass_ends(Level, StartInit, Finish) :-
+	(Level = catch(Ind, Bound), !,
 	    extract_action(StartInit, [catch(Ind, Bound)]);
 	Level = set(Ind, IndSrc), !,
 	    extract_action(StartInit, [open_index(Ind, IndSrc)]);
 	Level = sm(Submodel, ParentPtr, Ptr, Inds),
 	    extract_action(StartInit,
-		[start_submodel(Submodel, ParentPtr, Ptr, Inds)]).
+		[start_submodel(Submodel, ParentPtr, Ptr, Inds)])),
+	extract_action(Finish, [finish_level]).
 
 prepares(V, F) :-
 	member(F, [element(V), increment(V)]).
@@ -1313,18 +1384,32 @@ unfinished_submodels([], _,_, []).
 unfinished_submodels([make(_,_, Path, FoundPhase, _) | Waiting],
 		     Phase, Current, Subs) :-
 	unfinished_submodels(Waiting, Phase, Current, MoreSubs),
-	(suffix([Sub | Current], Path), Phase >= FoundPhase, !,
-	    (member(Sub, MoreSubs), !,
+	(Phase >= FoundPhase,
+	    append(Extra, Current, Path),
+	    suffix([NewLoop | NoLoops], Extra),
+	    own_pass(NewLoop, Current),
+	    \+ (member(Looper, NoLoops), own_pass(Looper, Current)), !,
+	    (member([NewLoop | NoLoops], MoreSubs), !,
 		Subs = MoreSubs;
-	    Subs = [Sub | MoreSubs]);
+	    Subs = [[NewLoop | NoLoops] | MoreSubs]);
 	Subs = MoreSubs).
 
-get_next_evaluation(Assignments, Deferred, Path, Phase, Remainder, Next) :-
+get_next_evaluation(Assignments, Deferred, Path, Phase, Remainder,
+		    Next) :-
 	select(Next, Assignments, Remainder),
-	Next = make(_, Dependencies, Path, Phase, _),
-
+	Next = make(_, Dependencies, IPath, Phase, _),
+	fits_in(IPath, Path),
 	\+ (member(Prereq, Dependencies ),
 	    member_either(make(Prereq, _,_,_,_), Deferred, Remainder)).
+
+fits_in(IPath, Path) :-
+	append(Extras, Path, IPath), !, /* only succeed once if path is var */
+	\+ (member(Looper, Extras),
+	       own_pass(Looper, Path)).
+
+own_pass(Level, Path) :-
+	Path = [];
+	loops(Level).
 
 pick_useful_instruction(Assignments, Deferred, Path, Next) :-
 	suffix(TestPath, Path), /* get longest suffix first */

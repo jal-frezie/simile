@@ -1,6 +1,6 @@
 sicstus_module(inters, [final_assignment/10, make_intermediates/11,
 			expand_library/3, function/3, propagate_units/5,
-			wait_for_submodels/2, get_dims_from_loops/3,
+			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			make_inds_for/3, pointer_from/2, path_section_for/6]).
 
 sicstus_use_module([library(lists), library(charsio),
@@ -378,14 +378,14 @@ make_intermediates(
 	((Functor = delay; Functor = make_inter), !,
 	    Clearing = [];
 	Functor = last, !,
-	    Clearing = [make(initializing(TotalName), [on_reset], ClearContext,
-			     0, [assign(ClearRef, InitVal)]),
-			make(cleared(TotalName), [initializing(TotalName)],
-			     ClearPath, 0, [])];
-	Clearing = [make(clearing(ClearingFor), [], ClearContext, Step,
-		       [assign(ClearRef, InitVal)]),
-		  make(cleared(ClearingFor), [clearing(ClearingFor)],
-		       ClearPath, Step, [])]),
+            Clearing = [make(initializing(TotalName), [on_reset], ClearContext,
+                             0, [assign(ClearRef, InitVal)]),
+                        make(cleared(TotalName), [initializing(TotalName)],
+                             ClearPath, 0, [])];
+        Clearing = [make(clearing(ClearingFor), [this_step(TotalName)],
+			 ClearContext, Step, [assign(ClearRef, InitVal)]),
+                  make(cleared(ClearingFor), [clearing(ClearingFor)],
+                       ClearPath, Step, [])]),
 	(Functor = last, !,
 	    /* we can update the saved value as soon as it has been used,
 	    but we need to wait for all the goals that might use it */
@@ -528,8 +528,8 @@ make_intermediates(
 	    FunctionContext = []),
 
 	    (random(_, Source, _,_), !,
-		Args = [on_reset | SubArgs];
-	    Args = SubArgs),
+		Args = [on_reset | UseArgs];
+	    Args = UseArgs),
 
 /*	    replace_subexps(Source, inters, change_constituent,
 			    switch(Source, none, none),
@@ -559,6 +559,10 @@ make_intermediates(
 		    raise_exception(only_works_on_array(Source))),
 		list_of(int, TableDims, Arg_template),
 		SourceRef = table(ResultList);
+	    Source = sofar(Param),
+		SourceList = [Param],
+		ResultList = [SourceRef],
+		Arg_template = [RUnits];
 	    Source =.. [Op | SourceList],
 		length(SourceList, Arity),
 		length(Arg_template, Arity),
@@ -581,8 +585,16 @@ make_intermediates(
 	evaluated, return results based on them. */
 	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
 				SourceContext, Setups, SubArgs, ResultList), !;
-	    raise_exception(cannot_combine_argument_dimensions(Source))).
+	    raise_exception(cannot_combine_argument_dimensions(Source))),
+	    (Source = sofar(_), !,
+		dissociate(SubArgs, UseArgs);
+	    UseArgs = SubArgs).
 
+dissociate(SubArgs, [later(Arg) | UseArgs]) :-
+	select(made_at(Arg, _), SubArgs, Rest), !,
+	dissociate(Rest, UseArgs).
+dissociate(Args, Args).
+	
 swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 	(var(BackSwap), !; BackSwap = values_from_base),
 	    Context = BaseContext;

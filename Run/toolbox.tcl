@@ -220,7 +220,7 @@ proc FindObj { winId x y } {
     set canx [Scale $winId $x]
     set cany [Scale $winId $y]
 
-    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany]]
+    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 10]]
 }
 
 # canvasTLDistance returns the offset of a canvas coordinate from its top
@@ -241,7 +241,7 @@ proc ClickObj { x y winId action} {
 
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
-    set target [GetClickedObj $winId $canx $cany]
+    set target [GetClickedObj $winId $canx $cany 10]
 
     if {!$target} {
 	return
