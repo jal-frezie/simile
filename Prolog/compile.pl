@@ -1312,13 +1312,15 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 			     _IdClose | NoIdConds] | Faster], SubPasses),
 		    member(can_find_id, IdConds),
 		    /* find last looping construct */
-		    append(OuterLoops, [make(_,_,_,_, [open_index(IdRef, _)]),
-				       SmLoop], OpenLoops), !,
+		    append(OuterLoops, [make(_,_,_,_, [open_index(IdRef, _)])
+				       | SmLoop], OpenLoops),
+		    member(SmLoop,
+			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !,
 		    append_atoms(Submodel, cond, IdVar),
 		    IdRef = arr('', IdVar, []),
 		    append(OuterLoops,
-			   [IdOpen, make(_,_,_,_, [assign(IdRef, IdExpr)]),
-					SmLoop], UseLoops),
+			   [IdOpen, make(_,_,_,_, [assign(IdRef, IdExpr)])
+					| SmLoop], UseLoops),
 		    append(Slower, [NoIdConds | Faster], UseSubPasses), !;
 		UseLoops = OpenLoops,
 		    UseSubPasses = SubPasses),

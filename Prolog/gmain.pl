@@ -87,6 +87,9 @@ sicstus_write_chars(Stream, [Char | Rest]) :-
 	put_byte(Stream, Char),
 	sicstus_write_chars(Stream, Rest).
 
+sicstus_writeq(Stream, Term) :-
+	print(Stream, Term).
+
 sicstus_put(Stream, Char) :-
 	put_byte(Stream, Char).
 

@@ -2,7 +2,7 @@
 **** Commonly used utility procedures for AME				    ****
 *******************************************************************************/
 
-sicstus_module( utility, [unique_name/2, unique_name/3, indent/1,
+sicstus_module( utility, [wake/0, unique_name/2, unique_name/3, indent/1,
 			  delete_member/2,
 			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
 			  all/3, unify_all/2, get_precedence/2,
@@ -15,7 +15,11 @@ sicstus_module( utility, [unique_name/2, unique_name/3, indent/1,
 			  get_ground_part/2, generate_name/4, generate_name/5,
 			  ensure_unused/4, count_to/4] ).
 
-sicstus_use_module( [database, text, library(lists), library(ordsets)] ).
+sicstus_use_module([database, text, sp_only,
+		    library(lists), library(ordsets)]).
+
+/* call this when I want to start the debugger */
+wake.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a unique symbol, prefixed by an Atom
@@ -163,7 +167,7 @@ replace_in_list( C1, [X|L1s], C2, [X|L2s] ) :-
 % write ordinary
 
 write_with_breaks(Stream, Term) :-
-	print(Stream, Term),
+	sicstus_writeq(Stream, Term),
 	write(Stream, '.'),
 	nl(Stream).
 
