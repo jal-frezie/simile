@@ -527,6 +527,8 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow} {
     set runHow $nRunHow
 
     if {[string equal windows $tcl_platform(platform)]} {
+	source ../System/lib/Extras/prntcanv.tcl
+	# needed to copy helper canvasses
 	package require dde
 	dde servername exec_for_$myNode
 	wm iconbitmap . -default ../Run/simile16.ico

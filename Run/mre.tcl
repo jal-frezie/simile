@@ -266,13 +266,15 @@ namespace eval RunEnv {
     }
     
     proc EditTabLabel { notebook tabId } {
+	global helperTable
         variable TabEditText
+	variable currentNode
         set TabEditText [$notebook itemcget $tabId -text]
         #based on equationRight
         #ShowMessage debug info "TabRight tabId $tabId; label [$notebook itemcget $tabId -text]" ok
         catch {destroy .notebookTabTextEdit}
-        Dialog .notebookTabTextEdit -parent .mre  -cancel 1 -title {Edit tab label} \
-                -transient true
+        Dialog .notebookTabTextEdit -parent [winfo toplevel $notebook] \
+		-cancel 1 -title {Edit tab label} -transient true
         .notebookTabTextEdit add -text OK; # draw result 0
         .notebookTabTextEdit add -text Cancel; # draw result 1
         set ebox [entry .notebookTabTextEdit.ebox -width 20 -textvariable ::RunEnv::TabEditText]
@@ -280,7 +282,7 @@ namespace eval RunEnv {
         bind $ebox <Return> {.notebookTabTextEdit invoke 0}
         $ebox selection range 0 end
         focus $ebox
-        if {[.notebookTabTextEdit draw] == 0} then {
+	if {[.notebookTabTextEdit draw] == 0} then {
             # OK button selected
             $notebook itemconfigure $tabId -text $TabEditText
         }
@@ -328,11 +330,6 @@ namespace eval RunEnv {
     proc AddNotebookPageToCurrentContainer {} {
         variable CurrentContainer
         AddNotebookPage $CurrentContainer
-    }
-    
-    proc AllDisplaysPopup {containerId} {
-        variable CurrentContainer $containerId
-        tk_popup .helpPopup [winfo pointerx .mre] [winfo pointery .mre]
     }
     
     proc AllDisplaysPopupCurrentContainer {} {
@@ -396,8 +393,7 @@ namespace eval RunEnv {
                     ${CurrentHelperId}::CopyToClipboard $CurrentContainer.container
                 } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
                     set canvasId [::${CurrentHelperId}::GetCanvas $CurrentContainer.container]
-                    namespace eval :: \
-			[list CopyCanvasToWindowsClipboard $canvasId]
+                    CopyCanvasToWindowsClipboard $canvasId 0
                 } else {
                     ShowMessage Warning warning \
                             "[${CurrentHelperId}::identify] does not support copying" ok
@@ -433,7 +429,7 @@ namespace eval RunEnv {
         }
     }
     
-    proc DeleteHelperContainer {containerId page} {
+    proc DeleteHelperContainer {containerId page} {
         global helperTable
         # container is the frame a helper would be displayed in
         # a parent is the notebook or panedwindow the container belongs to
@@ -560,7 +556,7 @@ namespace eval RunEnv {
             # it's a pane to be split in the same orientation
             # add a new pane
             set paneId [UniqueId $parentPath.pane [$parentPath panes]]
-            frame $paneId -highlightcolor black -highlightthickness 1
+            frame $paneId -highlightcolor black -highlightthickness 1
             bind $paneId <Button-1> "+::RunEnv::SetCurrentContainer %W"
             bind $paneId <Button-3> \
                     "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
@@ -746,7 +742,7 @@ namespace eval RunEnv {
             .pageContextMenu entryconfigure 1 -state disabled
             .pageContextMenu entryconfigure 3 -state disabled
             .pageContextMenu entryconfigure 7 -state disabled
-            .pageContextMenu entryconfigure 12 -state disabled; # add notebook
+            .pageContextMenu entryconfigure 12 -state disabled; # add notebook
             #.pageContextMenu entryconfigure 13 -state disabled; # add notebook p0age
             
             if {[string match vertical [$pw cget -orient]]} {
@@ -821,43 +817,6 @@ namespace eval RunEnv {
             }
         }
         return $nameList
-    }
-    
-    proc RemoveHelperPageDlg {} {
-        variable dp0;    # display pane
-        variable listboxData {}
-        global helperTable
-        
-        set dlg [Dialog .wset -title "Remove" -parent .mre -modal local\
-                -default 0 -cancel 1]
-        
-        $dlg add -name ok -command [namespace code "RemoveHelperPageDlgOK $dlg"]
-        $dlg add -name cancel
-        listbox $dlg.listbox
-        set allChildren [GetChildren $dp0]
-        set allDisplaynotebooks [GetWidgetsWithName $allChildren notebook]
-        foreach notebook $allDisplaynotebooks {
-            foreach page [$notebook pages] {
-                set label [$notebook itemcget $page -text]
-                $dlg.listbox insert end $label
-                lappend listboxData [list $notebook $page]
-            }
-        }
-        pack $dlg.listbox -fill both -expand yes
-        
-        $dlg draw
-        destroy $dlg
-    }
-    
-    proc RemoveHelperPageDlgOK {dlg} {
-        variable listboxData
-        set selection [$dlg.listbox curselection]
-        foreach item $selection {
-            
-            kill_helper_window .[lindex [lindex $listboxData $item] 1]
-        }
-        unset listboxData
-        $dlg enddialog 0
     }
     
     proc CreateDisplayPageContextMenu {} {

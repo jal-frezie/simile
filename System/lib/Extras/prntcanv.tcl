@@ -354,7 +354,8 @@ namespace eval printer {
     variable vtgPrint
 
     set color [print_canvas.TransColor [$cw itemcget $id -fill]]
-    if {[string match $vtgPrint(printer.bg) $color]} {return}
+    if {[string match $vtgPrint(printer.bg) $color] || \
+	![llength $color]} {return}
     
     set coords  [$cw coords $id]
     set wdth    [$cw itemcget $id -width]
@@ -409,10 +410,11 @@ namespace eval printer {
         set cmmd "$cmmd -fill $fill"
     }
     
-    debug_puts "$cmmd"
+    debug_puts "$cmmd"
     eval $cmmd
   }
   
+
   ################################################################
   ## print_canvas.polygon
   ## Description:

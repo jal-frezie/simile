@@ -240,6 +240,26 @@ proc AdjustCanvas {winId pt dir args} {
     }
 }
 
+proc CopyCanvasToWindowsClipboard {canvas seln_only} {
+    global tcl_platform
+    
+    if {[string match windows $tcl_platform(platform)]} {
+        package require gdi
+        package require printer
+        package require wmf
+        
+
+        set hdc [wmf open]; #Opens a memory metafile
+        if {$seln_only} {
+	    ::printer::print_select $hdc $canvas withtag tocopy
+	} else {
+	    ::printer::print_canvas $hdc $canvas
+	}
+        set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
+        wmf copy $wmfdc; # Copy to the clipboard
+    }
+}
+
 # popup stuff -- here because both model windows and helpers use them
 
 proc BindPopup {widget keywd} {

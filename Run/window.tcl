@@ -1052,14 +1052,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # no need for this as cut/copy now does it -- keep so we can have non blue
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
-        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $c"
+        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $c 0"
     }
     $fm add separator
     
-    $fm add command -label Cut -command "CopyCanvasToWindowsClipboard $c; \
+    $fm add command -label Cut -command "CopyCanvasToWindowsClipboard $c 1; \
             MenuSelect $c edit cut" -accelerator "Ctrl+X"
     AddAccelerator $winid edit Cut "<Control-x>"
-    $fm add command -label Copy -command "CopyCanvasToWindowsClipboard $c; \
+    $fm add command -label Copy -command "CopyCanvasToWindowsClipboard $c 1; \
             MenuSelect $c edit copy" -accelerator "Ctrl+C"
     AddAccelerator $winid edit Copy "<Control-c>"
     $fm add command -label Paste -command "MenuSelect $c edit paste" \
@@ -1134,7 +1134,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -accelerator "Ctrl+L"
     AddAccelerator $winid model "List equations" "<Control-l>"
     $fm add separator
-    $fm add cascade -label Add -menu $fm.sub1
+    $fm add cascade -label Add -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
     
     # The radiobuttons use MIpushedbutton as their variable because

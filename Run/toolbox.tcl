@@ -1273,22 +1273,6 @@ proc PrepForExport {winId way} {
     }
 }
 
-proc CopyCanvasToWindowsClipboard {canvas} {
-    global tcl_platform
-    
-    if {[string match windows $tcl_platform(platform)]} {
-        package require gdi
-        package require printer
-        package require wmf
-        
-
-        set hdc [wmf open]; #Opens a memory metafile
-        printer::print_select $hdc $canvas withtag tocopy
-        set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
-        wmf copy $wmfdc; # Copy to the clipboard
-    }
-}
-
 proc PrintNow {winId} {
     global simtmpdir env tcl_platform
     
@@ -1447,6 +1431,7 @@ proc ToggleIOToolMenu {node} {
         }
     }
 }
+
 
 
 proc InterpMenu {winId state} {
