@@ -84,7 +84,7 @@ if $onUnix {
 # --dllname= argument rather than moving it afterwards, a mysterious
 # crash can occur 
 	puts $batSt "move 5d.dll ../System/bin/5d.dll"
-	puts $batSt "g++ -c $defns -I. -I$TCL/include shim.cpp"
+	puts $batSt "g++ -c $defns -I. -I$TCL/include ame_cmx.cpp"
 	puts $batSt "dllwrap --output-lib=${TGTLIB}/lib$mydll.a --dllname=$TARGET --def=stub.def --driver-name=g++ shim.o -L${TGTLIB} -l5ddll -l$dll"
 	# Do the install dll as well
 	puts $batSt "g++ -c -o obj.o $defns -I. ./install.cpp"
