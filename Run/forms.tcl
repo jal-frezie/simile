@@ -1364,7 +1364,7 @@ proc OpenProgressBox {winId} {
     wm title .progress "Progress with current operation"
     message .progress.message -aspect 400 -text "Please wait"
     pack .progress.message -fill both -expand true
-    LetItShow .progress
+#    LetItShow .progress
     grab .progress
     update
 }
@@ -1740,7 +1740,12 @@ proc ErrorHelp {diagnostic} {
     destroy .diag
 }
 
+# This actually isnt much use, because if a script creates a window then makes
+# it a slave of another withdrawn window, then calls this, the 'state' will
+# come up as 'normal' until an update happens.
+
 proc LetItShow {t} {
+#    puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
     }

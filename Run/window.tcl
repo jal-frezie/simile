@@ -1134,7 +1134,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -accelerator "Ctrl+L"
     AddAccelerator $winid model "List equations" "<Control-l>"
     $fm add separator
-    $fm add cascade -label Add -menu $fm.sub1
+    $fm add cascade -label Add -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
     
     # The radiobuttons use MIpushedbutton as their variable because
