@@ -140,10 +140,10 @@ read_funcs(File, Stream, Done) :-
 	 Line == end_of_file, !,
 	    close(Stream),
 	    Done = [];
+	all(user, call, [build(VPrs)]),
 	(Line = (Macro --> _Defn),
 	    /* Only allow free vars in function template -- fix them all then
 	    replace those in template with free ones */ 
-	    all(user, call, [build(VPrs)]),
 	    Macro =.. [Fn | Args],
 	    replace_subexps(Line, inters, free_params, switch(Args, _),
 			    top_down, _, NewLine),

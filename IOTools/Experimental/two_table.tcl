@@ -39,6 +39,7 @@ namespace eval tabular11510 {
 	pack $winId.sx -side bottom -fill x
 	pack $winId.sy -side right -fill y
 	CreateTable $winId
+	SaveState $winId
     }
 
     proc CreateTable {winId} {
@@ -58,6 +59,26 @@ namespace eval tabular11510 {
 	$winId.t tag config title -relief raised
 	$winId.t tag config OddRow -bg \#e0ffe0
 	$winId.t tag config OddCol -bg \#c0ffc0
+    }
+
+    proc Restore {winId} {
+	variable displayList
+	variable orientList
+	variable precision
+	set oldState [GetState $winId]
+	initialize $winId
+	set displayList($winId) [lindex $oldState 0]
+	set orientList($winId) [lindex $oldState 1]
+	set precision($winId) [lindex $oldState 2]
+	display $winId [GetModelTime] 0 0
+    }
+
+    proc SaveState {winId} {
+	variable displayList
+	variable orientList
+	variable precision
+	SetState $winId [list $displayList($winId) $orientList($winId) \
+			    $precision($winId)]
     }
 
     proc AddVariable { winId } {
@@ -83,6 +104,7 @@ namespace eval tabular11510 {
 		    [lindex [GetModelValue $node] 0]
 		Reconbobulate $winId
 	    }
+	    SaveState $winId
 	}
     }
 
@@ -332,6 +354,7 @@ namespace eval tabular11510 {
 	    set precision($winId) 3
 	} else {
 	    Reconbobulate $winId
+	    SaveState $winId
 	}
     }
     
@@ -399,6 +422,7 @@ namespace eval tabular11510 {
 	    set orientList($winId) [list [set ::${t}l1] [set ::${t}l2] \
 				[set ::${t}l3] [set ::${t}l4]]
 	    Reconbobulate $winId
+	    SaveState $winId
 	}
 	destroy $t
     }
