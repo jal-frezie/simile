@@ -1,7 +1,10 @@
-#############################################################################
-# Routines for entering a function graphically or as a table                #
-#############################################################################
-
+# Simile source code file: Run/graphs.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file contains procedures for entering a function graphically or as a table.
+#
 # This is what happens when the graph button is pushed. It reads the parameter
 # name and units from the boxes above the parameter list, then tries to find a
 # graph(...) naming that parameter in the equation. If it succeeds it sends off
@@ -39,7 +42,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     TitleFrame $t.gph -text "Graph pad"
     set gph [$t.gph getframe]
     frame $gph.yentry
-    entry $gph.yentry.topentry -relief sunken -textvar graph($t,lowy) -width 8
+    ::ttk::entry $gph.yentry.topentry -relief sunken -textvar graph($t,lowy) -width 8
     pack $gph.yentry.topentry -side top -pady 2
     label $gph.yentry.toplabel -text "Y max"
     pack $gph.yentry.toplabel -side top -pady 2
@@ -47,7 +50,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $gph.yentry.label -side top -fill y -expand true
     label $gph.yentry.bottomlabel -text "Y min"
     pack $gph.yentry.bottomlabel -side top -pady 2
-    entry $gph.yentry.bottomentry -relief sunken -textvar graph($t,highy) -width 8
+    ::ttk::entry $gph.yentry.bottomentry -relief sunken -textvar graph($t,highy) -width 8
     pack $gph.yentry.bottomentry -side top -pady 2
     grid $gph.yentry -column 0 -row 0 -sticky ns -padx 2 -pady 2
     
@@ -61,7 +64,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     bind $grid <Configure> "AttackShape %W %w %h"
     
     frame $gph.xentry
-    entry $gph.xentry.leftentry -relief sunken -textvar graph($t,lowx) -width 8
+    ::ttk::entry $gph.xentry.leftentry -relief sunken -textvar graph($t,lowx) -width 8
     pack $gph.xentry.leftentry -side left -padx 2
     label $gph.xentry.xmin -text "X min"
     pack $gph.xentry.xmin -side left -padx 2
@@ -69,7 +72,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $gph.xentry.arg  -side left -fill x -expand true
     label $gph.xentry.rightlabel -text "X max"
     pack $gph.xentry.rightlabel -side left -padx 2
-    entry $gph.xentry.rightentry -relief sunken -textvar graph($t,highx) -width 8
+    ::ttk::entry $gph.xentry.rightentry -relief sunken -textvar graph($t,highx) -width 8
     pack $gph.xentry.rightentry -side left -padx 2
     grid $gph.xentry -column 1 -row 1 -sticky we -padx 2 -pady 2
     
@@ -105,14 +108,14 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     frame $current.y
     label $current.y.yvalue -text "Y:"
     pack $current.y.yvalue -side left -padx 2 -pady 4
-    entry $current.y.yvaluebox -relief sunken -textvar yvalue -width 8
+    ::ttk::entry $current.y.yvaluebox -relief sunken -textvar yvalue -width 8
     bind $current.y.yvaluebox <Return> [list YEntry $grid]
     pack $current.y.yvaluebox -side left -padx 2 -pady 4
     pack $current.y -pady 4
     frame $current.x
     label $current.x.xvalue -text "X:"
     pack $current.x.xvalue -side left -padx 2 -pady 4
-    entry $current.x.xvaluebox -relief sunken -textvar xvalue -width 8
+    ::ttk::entry $current.x.xvaluebox -relief sunken -textvar xvalue -width 8
     pack $current.x.xvaluebox -side left  -padx 2 -pady 4
     pack $current.x -pady 4
     pack $current -pady 8 -padx 4 -fill x
@@ -125,6 +128,14 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set between [frame $right.between]
     label $between.outrange -text "Between points:"
     pack $between.outrange
+# Code fragment to switch to using menubutton from ComboBox
+# Work in progress / Alastair 9 Feb 2005
+#    set m [menu $between.outrangeMenu]
+#    foreach item {Interpolate Round} {
+#      $m add command -label $item -command "Reshape $t $item"
+#    }
+#    set mb [::ttk::menubutton $between.rangeopts -menu $m -text Interpolate] 
+#    pack $mb
     pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
 	      -modifycmd "Reshape $t" -width 12]
     pack $between -pady 8 -padx 4
@@ -485,10 +496,13 @@ proc FineX { c } {
 #####################################################################
 
 proc equationDoTable {parent tgt startLine} {
-    global table_entry iconImages
-    
-    toplevel .table -bd 4
-    wm transient .table $parent
+    global table_entry iconImages tcl_platform
+    if [string match Darwin $tcl_platform(os)] {
+        set t [toplevel .table -bd 4]; ::tk::unsupported::MacWindowStyle style .table floatZoomProc
+    } else {
+        toplevel .table -bd 4
+        wm transient .table $parent
+    }
     wm title .table "Table data for [BlankCrs $tgt]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
     set table_entry(source) 0
