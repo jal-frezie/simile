@@ -524,7 +524,7 @@ itcl::class ModelWindowExtn {
 
 proc LoadModelWindowExtensions {} {
     set origDir [pwd]
-    cd ../extensions
+    cd ../Extensions
     #tk_messageBox -message "LoadModelWindowExtensions pwd [pwd]" -type ok
     set extensionList [glob -nocomplain *.tcl]
     foreach extension [lsort $extensionList] {
