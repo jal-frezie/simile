@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Simile.c,v 1.1 2002/12/05 11:10:35 jmm Exp $
+ * RCS: @(#) $Id: Simile.c,v 1.2 2002/12/16 12:01:09 jmm Exp $
  */
 
 #include <tk.h>
@@ -62,7 +62,7 @@ extern int TK_LOCAL_APPINIT _ANSI_ARGS_((Tcl_Interp *interp));
 extern int TK_LOCAL_MAIN_HOOK _ANSI_ARGS_((int *argc, char ***argv));
 #endif
 
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -91,6 +91,8 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
     int argc;
     char buffer[MAX_PATH+1];
     char *p;
+	char *tempstr;
+
 
     Tcl_SetPanicProc(WishPanic);
 
@@ -126,6 +128,12 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
 #ifdef TK_LOCAL_MAIN_HOOK
     TK_LOCAL_MAIN_HOOK(&argc, &argv);
 #endif
+
+    if (argc>2) {
+    tempstr = argv[1];
+	argv[1] = argv[2];
+	argv[2] = tempstr;
+	}
 
     Tk_Main(argc, argv, TK_LOCAL_APPINIT);
     return 1;
@@ -187,6 +195,9 @@ Tcl_AppInit(interp)
 
 
     Tcl_Eval(interp, "set tcl_rcFileName [file dirname [info nameofexecutable]]/../../Run/Simile.tcl");
+    //Tcl_Eval(interp, "set argc 1");
+    //Tcl_Eval(interp, "set argv [lindex argv 1]");
+	//dross!! Tcl_Eval(interp, "if {$argc>0} { set argv [list $tcl_rcFileName [lindex ]]; set argc 1} ");
 
     return TCL_OK;
 
@@ -267,9 +278,47 @@ setargv(argcPtr, argvPtr)
 {
     char *cmdLine, *p, *arg, *argSpace;
     char **argv;
-    int argc, size, inquote, copy, slashes;
-    
-    cmdLine = GetCommandLine();	/* INTL: BUG */
+    int argc, size, inquote, copy, slashes; 
+    char buffer[MAX_PATH+1];
+    char buffer2[MAX_PATH+1];
+    char *pdest;
+    int result;
+
+	memset( buffer, 0, MAX_PATH+1 );
+	memset( buffer2, 0, MAX_PATH+1 );
+
+    GetModuleFileName(NULL, buffer, sizeof(buffer));
+
+    // find ../.. after chopping the file name off, i.e. the Simile install dir
+	pdest = strrchr( buffer, '\\' );
+    result = pdest - buffer;
+	strncpy(buffer2,buffer,result);
+	memset( buffer, 0, MAX_PATH+1 );
+
+	pdest = strrchr( buffer2, '\\' );
+    result = pdest - buffer2;
+	strncpy(buffer,buffer2,result);
+	memset( buffer2, 0, MAX_PATH+1 );
+
+	pdest = strrchr( buffer, '\\' );
+    result = pdest - buffer;
+	strncpy(buffer2,buffer,result);
+
+	// fill buffer2 with the full path of Simile.tcl
+	strncat( buffer2, "\\Run\\simile.tcl", strlen("\\Run\\simile.tcl") );
+	//strncat( buffer2, 0, 1 );
+
+	//wrap it in quotes in buffer
+	memset( buffer, 0, MAX_PATH+1 );
+	strncat( buffer, "\"", 1 );
+	strncat( buffer, buffer2, strlen(buffer2) );
+	strncat( buffer, "\"", 1 );
+
+    cmdLine = GetCommandLine(); /* INTL: BUG */
+	strncat( cmdLine, " ", strlen(" ") ); // space between args
+	strncat( cmdLine, buffer, strlen(buffer) );
+//	strncat( cmdLine, " f:\\progra~1\\simile\\run\\simile.tcl", strlen(" f:\\progra~1\\simile\\run\\simile.tcl") );
+
 
     /*
      * Precompute an overly pessimistic guess at the number of arguments
