@@ -1739,6 +1739,11 @@ proc ame_rand {lowBound highBound} {
     return [expr $lowBound +[random01]*($highBound - $lowBound)]
 }
 
+
+proc stop {code} {
+    error "User-defined interruption code $code"
+}
+
 proc SampleFrom {a} {
     if {[llength $a] == 1} {
         return $a

@@ -7,7 +7,7 @@
 
 # These are the settings for the particular version we want to make
 # Compiler that will be used to make the stub for Windows
-set compiler_for_windows microsoft
+set compiler_for_windows gnu
 # edition: evaluation, teaching, standard or enterprise
 set edition teaching
 # date of final expiry: {hh:mm D M Y} or {} for permanent

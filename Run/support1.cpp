@@ -10,6 +10,11 @@
    represents */
 void* myClassPtr;
 
+    
+int stop(int code) {
+  throw code;
+}
+
 /* Pointers to functions in the stub: */
 ame_rand_type* ame_rand_ref;
 release_graph_data_type* release_graph_data_ref;

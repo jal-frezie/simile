@@ -848,12 +848,11 @@ make_evaluation_routine(
 				Content_chars),
 /* End of graph clause */
 		name(Term, Content_chars);
-	Expr = step_incr(Step, Delta), !, 
-	    make_evaluation_routine_all(Language, [Step, Delta],
-					GraphN, [VStep, XDelta], GraphD),
-	    make_expr(Language, XDelta, VDelta),
-	    make_procedure_call_chars(Language, [step_incr, VStep,
-						 VDelta], Content_chars),
+	Expr = stop(Ident), !, 
+	    make_evaluation_routine(Language, Ident,
+					GraphN, XIdent, GraphD),
+	    make_expr(Language, XIdent, VIdent),
+	    make_procedure_call_chars(Language, [stop, VIdent], Content_chars),
 	    name(Term, Content_chars);
 	Expr = stage_incr(Struct, Step, Delta), !, 
 	    make_scalar(Language, Struct, GraphN, SStruct, GraphD),

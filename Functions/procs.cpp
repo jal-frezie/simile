@@ -17,7 +17,3 @@ double gaussian(double random, double mean, double sd) {
   have_spare=!have_spare;
   return(mean+sd*norm);
 }
-    
-int stop(int code) {
-  throw code;
-}

@@ -782,6 +782,7 @@ function(dt, real, [const_int]).
 function(time, real, [const_int]).
 function(init_time, real, []).
 function(parent, int, []).
+function(stop, int, [int]).
 /* legacy versions from before we had empty arg lists */
 function(time, real, [const_int]).
 function(init_time, real, [const_int]).
@@ -846,7 +847,6 @@ language -- they and the operators are hidden */
 
 operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
-operator(step_incr, real, [int, real]).
 
 operator(!, boolean, [boolean]).
 operator(+, int, [int]).

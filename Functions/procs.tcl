@@ -19,6 +19,3 @@ proc gaussian {random mean sd} {
     return [expr $mean+$sd*$norm]
 }
 
-proc stop {code} {
-    error "User-defined interruption code $code"
-}
