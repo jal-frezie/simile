@@ -352,7 +352,11 @@ do_colours(Obj, Way) :-
 of them and recolours them according to whether they fall into the selection */
 
 trail(Node, Arc, Way) :-
-	connector_and_far_end(Node, Arc, Far),
+	find_all_links(Node, Arc),
+	\+ has_outer_equiv(_, Node, Arc),
+	m_class:Arc is_connector from Start to Mid,
+	get_host(Mid, Finish),
+	select(Node, [Start, Finish], [Far]),
 	match_with_ends(Node, Far, Arc, Way),
 	trail(Arc, _, Way).
 
@@ -360,7 +364,7 @@ match_with_ends(Node, Far, Arc, Way) :-
 	get_highlit_obj(0, Node),
 	    get_highlit_obj(0, Far), !,
 	    highlight(Arc, 0);
-	/* highlight(Arc, 1), */
+	highlight(Arc, 1),
 	((get_highlit_obj(P, Node);
 	    get_highlit_obj(P, Far)),
 	    P<2;
@@ -1065,7 +1069,7 @@ clear_deletes(Target) :-
 
 highlight_deletes(Target) :-
 	highlight_ghosts_etc(Target); 
-	recursive_highlight(Target, 2);
+	recursive_highlight(Target, on);
 	highlight(Target, 1).
 
 highlight_ghosts_etc(Target) :-
@@ -1081,13 +1085,8 @@ normalize_ghosts_etc(Target) :-
 	m_class:initiates(Link, Base),
 	ghost_link(Link, Base, Ghost),
 	normalize(Ghost),
-	clear_deletes(Target).
-
-recursive_highlight(Target, Col) :-
-	\+ get_highlit_obj(_, Target), /* avoid infinite loop */
-	highlight(Target, Col),
-	collateral(Target, Comp),
-	recursive_highlight(Comp, Col).
+	fail;
+	recursive_highlight(Target, off).
 
 /* collateral works out what else changes with something's delete status. An
 earlier section of a link only changes if a later section is clear -- this is
@@ -1110,6 +1109,87 @@ collateral(Target, Damage) :-
 	    \+ (find_all_links(Damage, NeedsIt),
 		   \+ NeedsIt = Target,
 		   \+ get_highlit_obj(_, NeedsIt)).
+
+/* connected: deletion affects. */
+
+recursive_highlight(Target, Way) :-
+	(Target is_of_sort box, !,
+	    (depends_on_links(Target), !; change_delete_status(Target, Way)),
+	    Also = Target;
+	tk_get_pref(deleteEndToEnd, 1),
+	    m_class:connects(Target, Start, Mid),
+	    get_host(Mid, Finish),
+	    match_delete_status([Start, Finish], Way),
+	    change_delete_status(Target, Way),
+	    (Also = Target;
+	    adjust_link_backwards(Target, Way, Also);
+	    adjust_link_forwards(Target, Way, Also));
+	tk_get_pref(deleteEndToEnd, 0),
+	    m_class:Target is_connector from Start to Mid,
+	    get_host(Mid, Finish),
+	    match_delete_status([Start, Finish], Way),
+	    change_delete_status(Target, Way),
+	    Also = Target),
+
+	find_all_links(Also, Linked),
+	    \+ has_outer_equiv(_, Also, Linked),
+	    recursive_highlight(Linked, Way).
+
+adjust_link_backwards(Target, Way, Also) :-
+	m_class:sequence(Prev, Target),
+	(Way = off,
+	    change_delete_status(Prev, off);
+	 Way = on,
+	    \+ (m_class:sequence(Prev, Other),
+		   \+ doomed([Other])),
+	    change_delete_status(Prev, on)),
+	 (Also = Prev; adjust_link_backwards(Prev, Way, Also)).
+	
+adjust_link_forwards(Target, Way, Also) :-
+	m_class:sequence(Target, Next),
+	(Way = on,
+	    change_delete_status(Next, on);
+	 Way = off,
+	    m_class:connects(Next, _, Mid),
+	    get_host(Mid, Finish),
+	    \+ doomed([Finish]),
+	    change_delete_status(Next, off)),
+	(Also = Next; adjust_link_forwards(Next, Way, Also)).
+	
+change_delete_status(Target, Way) :-
+	(doomed([Target]), !,
+	    Way = off,
+	    normalize(Target);					
+	Way = on,
+	    highlight(Target, 2)),
+	/* Now change cloud etc to same colour as link */
+	(m_class:Target is_connector from End1 to End2,
+	    (Damage = End1; Damage = End2),
+	    \+ get_highlit_obj(0, Damage),
+	    depends_on_links(Damage),
+	    keep_only_if_links_stay(Damage),
+	    fail;
+	true).
+
+depends_on_links(Damage) :-
+	find_type(Damage, cloud);
+	is_parameter(Damage, N), N>0.
+
+keep_only_if_links_stay(Damage) :-
+	setof(NeedsIt, find_all_links(Damage, NeedsIt), NeedIt),
+	member(HasIt, NeedIt),
+	\+ doomed([HasIt]), !,
+	normalize(Damage);
+	highlight(Damage, 2).
+
+match_delete_status(Ends, Way) :-
+	doomed(Ends), !, Way = on;
+	Way = off.
+
+doomed(Ends) :-
+	member(End, Ends),
+	get_highlit_obj(L, End),
+	(L<2; \+ depends_on_links(End), L<3).
 
 thread_link(Top_arc) :-
 	update_link_route(Top_arc, yes),
@@ -1537,7 +1617,7 @@ change_ghosthood(Node) :-
 
 delete_by_dlg(Target) :-
 	remove_highlights,
-	recursive_highlight(Target, 2);
+	recursive_highlight(Target, on);
 	contains(Top, Target),
 	is_toplevel(Top),
 	delete_net(Top).
