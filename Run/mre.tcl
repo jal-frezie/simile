@@ -206,6 +206,8 @@ proc RunEnv::AddNotebook {containerId} {
         set pageId [UniqueId page [$containerId.notebook pages]]
         $containerId.notebook insert end $pageId -text $i \
                 -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
+        bind [$containerId.notebook getframe $pageId] <Button-3> \
+                "tk_popup .pageContextMenu %X %Y"
         set newContainer [$containerId.notebook getframe $pageId]
         panedwindow $newContainer.panedwindow -orient vertical
         pack $newContainer.panedwindow -expand yes -fill both
@@ -371,6 +373,7 @@ proc ::RunEnv::DeleteHelperContainer {containerId page} {
             panedwindow {DeletePane $parentPath $containerId}
         }
     }
+    if {[winfo exists $containerId]} {SetCurrentContainer $containerId }
 }
 
 proc ::RunEnv::DeleteHelperCurrentContainer {} {
@@ -626,18 +629,50 @@ proc RunEnv::SetCurrentContainer {win} {
     #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
     set tb1 [$mainframe gettoolbar 0]
     if {[winfo exists $win.container]} {
+        $tb1.bbox1 itemconfigure 2 -state disabled; # paste button
+        $tb1.bbox3 itemconfigure 1 -state disabled; # Add Notebook button
+        $tb1.bbox4 itemconfigure 0 -state disabled; # add helper buttons
+        $tb1.bbox4 itemconfigure 1 -state disabled
+        $tb1.bbox4 itemconfigure 2 -state disabled
+        if {[winfo exists .pageContextMenu]} {
+            .pageContextMenu entryconfigure 0 -state disabled
+            .pageContextMenu entryconfigure 1 -state disabled
+            .pageContextMenu entryconfigure 2 -state disabled
+            .pageContextMenu entryconfigure 6 -state disabled
+            .pageContextMenu entryconfigure 11 -state disabled; # add notebook 
+            #.pageContextMenu entryconfigure 12 -state disabled; # add notebook p0age
+        }
         if {[string match vertical [$pw cget -orient]]} {
             #ShowMessage debug info "vert $tb1.bbox2" ok
             $tb1.bbox2 itemconfigure 1 -state disabled
             $tb1.bbox2 itemconfigure 0 -state normal
+            .pageContextMenu entryconfigure 9 -state disabled
+            .pageContextMenu entryconfigure 8 -state normal
         } else  {
             #ShowMessage debug info "horiz $tb1.bbox2" ok
             $tb1.bbox2 itemconfigure 0 -state disabled
             $tb1.bbox2 itemconfigure 1 -state normal
+            .pageContextMenu entryconfigure 8 -state disabled
+            .pageContextMenu entryconfigure 9 -state normal
         }
     } else  {
+        $tb1.bbox1 itemconfigure 2 -state normal; # paste button
         $tb1.bbox2 itemconfigure 1 -state normal
         $tb1.bbox2 itemconfigure 0 -state normal
+        $tb1.bbox3 itemconfigure 1 -state normal; # Add Notebook button
+        $tb1.bbox4 itemconfigure 0 -state normal; # add helper buttons
+        $tb1.bbox4 itemconfigure 1 -state normal
+        $tb1.bbox4 itemconfigure 2 -state normal
+        if {[winfo exists .pageContextMenu]} {
+            .pageContextMenu entryconfigure 0 -state normal
+            .pageContextMenu entryconfigure 1 -state normal
+            .pageContextMenu entryconfigure 2 -state normal
+            .pageContextMenu entryconfigure 6 -state normal
+            .pageContextMenu entryconfigure 9 -state normal
+            .pageContextMenu entryconfigure 8 -state normal
+            .pageContextMenu entryconfigure 11 -state normal
+            #.pageContextMenu entryconfigure 12 -state normal
+        }
     }
     focus $win
     set ::RunEnv::CurrentContainer $win
@@ -767,6 +802,7 @@ proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
     set helperTable($helperTitle) $winId
     set helperTable($winId,whichHelper) $helperId
     bind $winId <Destroy>  "kill_helper_window $winId"
+    RunEnv::SetCurrentContainer [winfo parent $winId]
     return $winId
 }
 
@@ -1058,7 +1094,6 @@ proc NewMreHelperWindow {helperId helperTitle} {
             default {
                 set def 1
                 set winId [::RunEnv::NewHelperInWindow $::RunEnv::CurrentContainer $helperId $helperTitle]
-                #ChildrenFocusParent $winId                    
             }
     if {$def==0} {
         bind $winId <Destroy>  "kill_helper_window $winId"
@@ -1091,13 +1126,13 @@ proc RunEnv::UniqueId {basename pagenames} {
     set title $basename/$i
 }
 
-proc RunEnv::AssembleFont {family weight style textsize} {
+proc RunEnv::AssembleFontNew {family weight style textsize} {
     #ShowMessage debug info "AssembleFontNew $family $weight $style $textsize\n\
     [list family $family weight $weight slant $style size $textsize]" ok
     return [list -family $family -weight $weight -slant $style -size $textsize]
 }
 
-proc RunEnv::ExtractFontData {font} {
+proc RunEnv::ExtractFontDataNew {font} {
     #ShowMessage debug info "ExtractFontDataNew\n\
     font actual [font actual $font]\n\
             family [font actual $font -family]\n\
