@@ -439,7 +439,9 @@ proc LoadMREFormatView {node stream origVersion} {
 
 proc LoseDTRef {statusLine} {
     foreach elt $statusLine {
-	if {[string last /Desktop/ $elt 8]} {
+	if {[llength $elt]>1} {
+	    lappend result [LoseDTRef $elt]
+	} elseif {[string last /Desktop/ $elt 8]} {
 	    lappend result $elt
 	} else {
 	    lappend result [string range $elt 8 end]
