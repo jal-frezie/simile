@@ -762,7 +762,7 @@ proc Disaggregate {parent title colour type fatness icount step \
     }
     set t [toplevel .disaggregation -bd 4 -class Disaggregation]
     #	wm transient $t $parent
-    wm resizable $t 0 0
+    wm resizable $t 0 1
     wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $t "Properties of $title"
     
@@ -785,7 +785,7 @@ proc Disaggregate {parent title colour type fatness icount step \
     
     Entry $countf.value -textvariable disaggregate(icount) -width 10
     pack $countf.value -side left -anchor s -pady 4
-    pack $t.simple.left.count -expand 1 -fill both
+    pack $t.simple.left.count -expand 0;# -fill both
     
     TitleFrame $t.simple.left.colour -text "Background shade"
     set colourf [$t.simple.left.colour getframe]
@@ -805,7 +805,7 @@ proc Disaggregate {parent title colour type fatness icount step \
             -width 10 -command ChooseImage] \
             -padx 2 -pady 4 -side left
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
-    pack $t.simple.left -side left -expand 1 -fill both
+    pack $t.simple.left -side left; # -expand 1 -fill both
     
     frame $t.simple.right
     button $t.simple.right.ok -text "OK" -width 10 -default active \
@@ -821,14 +821,16 @@ proc Disaggregate {parent title colour type fatness icount step \
     pack $t.simple.right.more -padx 2 -pady 4
     pack $t.simple.right -anchor ne -padx 4 -pady 4
     
-    pack $t.simple -anchor nw -expand 1 -fill both
+    pack $t.simple -anchor nw -fill both; # -expand 1 -fill both
     
     
     label $t.commentlabel -text Comments:
-    pack $t.commentlabel -padx 2 -pady 4
-    text $t.comment -height 4 -width 40 -wrap word
-    $t.comment insert 1.0 $comment
-    pack $t.comment -anchor nw -fill both -expand true
+    pack $t.commentlabel -padx 2 -pady 4 -anchor w
+    ScrolledWindow $t.commentsSW
+    text $t.commentsSW.comment -height 4 -width 40 -wrap word
+    $t.commentsSW setwidget $t.commentsSW.comment
+    $t.commentsSW.comment insert 1.0 $comment
+    pack $t.commentsSW.comment $t.commentsSW -anchor nw -fill both -expand true
     
     frame $t.complex
     
@@ -924,7 +926,7 @@ proc Disaggregate {parent title colour type fatness icount step \
     grab $t
     tkwait variable disaggregate(done)
     grab release $t
-    set disaggregate(comment) [string trimright [$t.comment get 1.0 end]]
+    set disaggregate(comment) [string trimright [$t.commentsSW.comment get 1.0 end]]
     destroy $t
     if [string match $disaggregate(icount) 1] {
         set disaggregate(icount) [list]
@@ -958,7 +960,8 @@ proc Disaggregate {parent title colour type fatness icount step \
 
 proc ShowComplexity {t} {
     if {[string match [$t.simple.right.more cget -text] More]} {
-        pack $t.complex -anchor w
+        pack $t.complex -anchor sw -side bottom 
+        wm geometry $t {}; # resize to size requested internally by its widgets
         $t.simple.right.more configure -text Less
     } else  {
         pack forget $t.complex
@@ -1598,7 +1601,7 @@ proc ShowExpiryImminent {expTime} {
 
 ############################################## Equation listing
 proc equationlisting_start {} {
-    global equationlist
+    global equationlist tcl_platform
     set w .equations
     catch {destroy $w}
     toplevel $w
@@ -1648,6 +1651,12 @@ proc equationlisting_start {} {
             -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure dummytag \
             -font {Helvetica 5}
+            
+    bind $w <Control-a>  {EquationListingSelectAll $equationlist(textbox)}
+}
+
+proc EquationListingSelectAll {winId} {
+    $winId tag add sel 1.0 end
 }
 
 
