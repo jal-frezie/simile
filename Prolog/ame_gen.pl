@@ -350,7 +350,7 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 	(Dir = bottom_up,
 	RunTest =.. [Test, Data, NewExpr, FinalExpr, Recurse],
 	call(TestModule:RunTest), !, /* never recurse on bottom-up */
-	merge_lists([var_pair(NewExpr, FinalExpr)], VarPairs, AllVarPairs);
+	[var_pair(NewExpr, FinalExpr) | VarPairs] = AllVarPairs;
 	AllVarPairs = VarPairs,
 	    FinalExpr = NewExpr).
 
@@ -358,7 +358,7 @@ replace_all_subexps(Args, TestModule, Test, Data, Dir,
 		    VarPairs, NewArgs) :-
 	all(ame_gen, replace_subexps, [build(Args), unify(TestModule),
 				       unify(Test), unify(Data), unify(Dir),
-				       merge_lists(VarPairs, []),
+				       append(VarPairs, []),
 				       build(NewArgs)]).
 
 clobber_local_vars([], _, []).

@@ -437,6 +437,11 @@ check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
 				" field produced the following error: ",
 				ParseError], Error)).
 
+set_param_dims(input_link(_, DimL, _, Inds-Loops, _)) :-
+	length(DimL, N), !,
+	length(Dims, N),
+	make_inds_for(Dims, Loops, Inds).
+	
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
 now
 includes full type checking, it can be used to make sure the 
@@ -448,54 +453,62 @@ generation
 process. */
 
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
-	 ParamList, TestError) :-
+	 ParamList, ParseError) :-
 	reverse(IndxCount, IndxSzs),
 	append(InterInputs, ExpInters, AllInputs),
 	
-	on_exception(ParseException,
-	    (replace_subexps(Equation, dialogue, expand_params,
-			     AllInputs, top_down, ParamSubs, FullExpr),
-		length(ExpInters, _), !, /* close list end */
-	        (member(input_link(_,_, Param, _, PDims), ExpInters),
-		    \+ Param = '/dest/',
-		    var(PDims), !,
-		    raise_exception(undefined_parameter(Param));
+	replace_subexps(Equation, dialogue, expand_params,
+			dim_data(_DimL, AllInputs), top_down, _ParamSubs,
+			FullExpr),
+	length(ExpInters, _), !, /* close list end */
+	all(dialogue, set_param_dims, [build(ExpInters)]),
+	(member(input_link(_, DimG, Param, _, PDims), ExpInters),
+	    \+ Param = '/dest/',
+	    (var(PDims), !,
+		decode_error(undefined_parameter(Param), ParseError);
+	    build_array(1, DimG, Array),
+		check_param_brackets("explicit intermediate result",
+					 Param, Array, ParseError)), !;
+
 	/* hack alert: We are using the parser to get the dimensions of the
 		result. Thses should include enumerated type references,
 		so we do not want to convert these into numbers. Since we
 		are not making code we can use the time step field to tell it
 		this by setting it to 'dummy'. */
-		DummyDest = [sm(_,_,_, fm_loop(IndxSzs))],
-		    make_intermediates(FullExpr, Fn, '/dest/',
-				       DummyDest, _, [],
-				       [], dummy, _, Type, Inters,
-				       part_result(Context, _,_,_)),
-		    inters:get_model_and_loops(Context, DummyDest, _, Loops, _))),
-	    decode_error(ParseException, ParseError)),
-	(ParseError = [], !,
-	    get_dims_from_loops(Loops, XDims, _),
-	    Dest = instance(internal, inter(_,_, Loops), use_inter('/dest/'),
-			    _, Type-_),
-	    match_param_dims(ExpInters, [Dest | Inters], TestError),
-	    real_dims_only(XDims, Dims),
-	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]);
-	    /* Hack alert. The term representing the dest context has indices
-	    (so index(n) will work) but no loops, so we don't need to add it
-	    to the relative source contexts */
-	TestError = ParseError).
+	
+	DummyDest = [sm(_,_,_, fm_loop(IndxSzs))],
+	    on_exception(ParseException,
+			 (make_intermediates(FullExpr, Fn, '/dest/',
+					     DummyDest, _, [],
+					     [], dummy, _, Type, _I,
+					     part_result(Context, _,_,_)),
+			     inters:get_model_and_loops(Context, DummyDest, _,
+							Loops, _)),
+	    decode_error(ParseException, ParseError))),
+	get_dims_from_loops(Loops, XDims, _),
+	real_dims_only(XDims, Dims),
+	
+	all(dialogue, get3rd, [build(AllInputs), build(ParamList)]).
+	/* Hack alert. The term representing the dest context has indices
+	(   so index(n) will work) but no loops, so we don't need to add it
+	to the relative source contexts */
 
 match_param_dims([], _, []).
-match_param_dims([input_link(_, LLoops, Name, LType-_, _)
+match_param_dims([input_link(_, ULoops, Name, LType-_, _)
 		 | MoreLinks], Inters, Err) :-
 	select(I, Inters, MoreInters),
 	I = instance(internal, inter(_,_, ILoops), use_inter(Name),_, IType-_),
 
 	/* what follows is more or less a placeholder */
 	
+	length(ULoops, _),
 	get_dims_from_loops(ILoops, IDims, _),
 	real_dims_only(IDims, Dims),
-	(/* prefix(IDims, LDims), */
-	suffix(ILoops, LLoops), !,
+	(member(LLoops, ULoops),
+	    param_defn_use_mismatch(ILoops, LLoops), !,
+	    get_dims_from_loops(LLoops, LDims, _),
+	    real_dims_only(LDims, FixedLDims),
+	    sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err);
 	    (promote_unit(IType, LType), !,
 		(\+ Name = '/dest/',
 		    build_array(IType, Dims, Array),
@@ -503,11 +516,15 @@ match_param_dims([input_link(_, LLoops, Name, LType-_, _)
 					 Name, Array, Err), !;
 		    match_param_dims(MoreLinks, MoreInters, Err));
 		      
-		sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err));
-	get_dims_from_loops(LLoops, LDims, _),
-	real_dims_only(LDims, FixedLDims),
-	sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err)).
+		sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err))).
 /* also check name of exp inter for right brackets */
+
+param_defn_use_mismatch(DefnLoops, UseLoops) :-
+	prefix(DefnLoops, UseLoops),
+	length(UseLoops, _), !,
+	    member(set(_, loop(EltBound)), UseLoops),
+	    var(EltBound);
+	true.
 
 real_dims_only(IDims, Dims) :-
 	append(Dims, ISpares, IDims),
@@ -515,30 +532,67 @@ real_dims_only(IDims, Dims) :-
 
 check_dim_match(P, Q) :- P=Q; Q=0.
 
-get1st(var_pair(A, _), A).
+get3rd(input_link(_,_,A,_,_), A).
 
-expand_params(InterInputs, Param, DoneExpr, Recurse) :-
+expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 	(get_solo_list_depth(Param, _),
 	/* when making dummy links for explicit intermediate results, check
-	the 1sr field (influence id) uis a free var, and if so, use the
+	the 1st field (influence id) is a free var, and if so, use the
 	4th field to hold the dims */
-	member(input_link(Link, LRefs, Param, IDims, Units), InterInputs), !,
+	member(input_link(Link, LRefs, Param, IDims, Units), AllInputs), !,
 	    (nonvar(Link), !,
 		analyze_array(Units, Base, Dims),
 		(units:get_conversion(_, Base, Base, _), !,
 		    Type = real;
 		Type = Base),
-		make_inds_for(Dims, Loops, Inds);
-	    IDims = Type-Dims,
-		LRefs = Loops),
-	    DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true)),
-	Recurse = 0;
-	(Param = (ExpInt=_,_),
-	    member(input_link(_,_, ExpInt,_, Dims), InterInputs), !,
-	    var(Dims), /* only checked so we dont stick on the recursion */
-	    Dims = something,
-	    DoneExpr = Param;
-	expand_library('/dest/', Param, DoneExpr)),
+		make_inds_for(Dims, Loops, Inds),
+		/* pass dims up the recursion loop */
+		length(Dims, L),
+		list_of(x, L, DimL);
+	    IDims = Inds-Loops,
+		DimL = LRefs),
+	    DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true);
+	Param = (ExpInt=Defn,Use),
+	    member(input_link(_,SubL, ExpInt, _-Loops, something),
+		   AllInputs), !,
+	    replace_subexps(Defn, dialogue, expand_params,
+			     dim_data(SubL, AllInputs), top_down, _,
+			     DefnExpr),
+	    replace_subexps(Use, dialogue, expand_params,
+			     dim_data(DimL, AllInputs), top_down, _,
+			     UseExpr),
+	    DoneExpr = (param(arr(_,ExpInt,_),_, Loops,_,_)=DefnExpr,UseExpr);
+	Param =.. [Cumulative, Item],
+	    member(Cumulative, [sum, product, least, greatest, any, all]), !,
+	    replace_subexps(Item, dialogue, expand_params,
+			     dim_data(SubL, AllInputs), top_down, _,
+			     DDone),
+	    DoneExpr =.. [Cumulative, DDone],
+	    SubL = [x | DimL];
+	(length(Param, N), 
+	    DParam =.. [do | Param],
+	    length(DoneExpr, N),
+	    DDone =.. [do | DoneExpr];
+	 Param = makearray(DParam, Count),
+	    DoneExpr = makearray(DDone, Count)),
+	    replace_subexps(DParam, dialogue, expand_params,
+			    dim_data(SubL, AllInputs), top_down, _,
+			    DDone),
+	    DimL = [x | SubL];
+	Param = element(List, Index),
+	    replace_subexps(List, dialogue, expand_params,
+			    dim_data(ListL, AllInputs), top_down, _,
+			    ListExpr),
+	    replace_subexps(Index, dialogue, expand_params,
+			    dim_data(IndxL, AllInputs), top_down, _,
+			    IndXpr),
+	    DoneExpr = element(ListExpr, IndXpr),
+	    ListL = [x | DimL],
+	    suffix(Tail, DimL),
+	    var(Tail), !,
+	    Tail = IndxL),
+	    Recurse = 0;
+	expand_library('/dest/', Param, DoneExpr),
 	    Recurse = 1.
 
 decode_error(ParseError, TestError) :-
