@@ -164,7 +164,10 @@ read_funcs(File, Stream, Done) :-
 	    read_funcs(File, Stream, Done)).
 
 free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
-	nth(N, Fixed, Arg),
+	var(Arg), !; /* in case someone used an underscore */
+	nth(N, Fixed, ArgConst),
+	\+ var(ArgConst), /* in case some b**** used an underscore */
+	Arg = ArgConst,
 	nth(N, Var, ArgVar).
 
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-

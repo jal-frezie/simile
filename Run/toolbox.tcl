@@ -116,7 +116,8 @@ proc ControlDraw {prologVersion} {
     if {[file exists $custom(prefDir)/recent]} {
         set cacheStream [open $custom(prefDir)/recent r]
         while {[gets $cacheStream oldFile]>0} {
-            if {[file exists $oldFile]} {
+            if {[file exists $oldFile] && \
+		    [lsearch $custom(hotlist) $oldFile]==-1} {
                 lappend custom(hotlist) $oldFile
             }
         }
