@@ -689,8 +689,13 @@ proc AddFnPopup {lb y X Y} {
 
 proc AddParamPopup {lb y X Y} {
     global equation
-    AddWidgetPopup "Value(s) of [lindex $equation(pathlist) [$lb nearest $y]]" \
-            $X $Y
+    AddWidgetPopup "Value(s) of [lindex $equation(pathlist) [$lb nearest $y]]" $X $Y
+}
+
+proc AddEnumTypePopup {lb y X Y} {
+    global disaggregate
+    set popLine [$lb nearest $y]
+    AddWidgetPopup "members: $disaggregate(enumtype,[$lb get $popLine $popLine])" $X $Y
 }
 
 proc indexClick { lb y boxname} {
@@ -813,6 +818,38 @@ proc Disaggregate {parent title colour type fatness icount step \
     
     frame $t.complex
     
+    TitleFrame $t.complex.enumtypes -text "Enumerated types"
+    set enumtypef [$t.complex.enumtypes getframe]
+    pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
+	-expand true
+    #    pack [frame $windowId.buttonframe] -side bottom
+    listbox $canId.scrf -yscrollcommand [list AdjustCanvas $canId scrf y]
+    bind $canId.scrf <ButtonRelease-1> "EnableTypeOps $enumtypef"
+    set PopCmd [list QueuePopup AddEnumTypePopup %W %y %X %Y]
+    bind $canId.scrf <Enter> $PopCmd
+    bind $canId.scrf <Motion> "RemovePopup;$PopCmd"
+    bind $canId.scrf <Leave> RemovePopup
+    scrollbar $canId.yscroll -orient v -command [list $canId.scrf yview]
+    menu $enumtypef.curmembers -tearoff 0 \
+	-postcommand [list AddEnumTypeMems $enumtypef]
+
+    
+    pack $canId.yscroll -side right -fill y
+    pack $canId.scrf -side left -fill both -expand true
+
+    pack [set btnId [frame $enumtypef.btns]] -side left
+    pack [entry $btnId.e -textvariable enumTypeMPEntry]
+    bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
+    pack [button $btnId.addtype -text "Add type" -command "AddEnumType $canId"] \
+	-padx 2 -pady 4 -fill x
+    pack [button $btnId.remtype -text "Remove type" -state disabled -command "RemoveEnumType $enumtypef"] \
+	-padx 2 -pady 4 -fill x
+    pack [button $btnId.addmems -text "Add member" -state disabled -command "AddEnumMem $enumtypef"] \
+	-padx 2 -pady 4 -fill x
+    pack [button $btnId.remmem -text "Remove member" -state disabled -command "RemoveEnumMem $enumtypef"] \
+	-padx 2 -pady 4 -fill x
+    pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
+
     TitleFrame $t.complex.appearance -text Appearance
     set appearancef [$t.complex.appearance getframe]
     checkbutton $appearancef.hide -text "Hide contents" \
@@ -901,6 +938,80 @@ proc ShowComplexity {t} {
     }
 }
 
+proc OldAddEnumType {fr} {
+    global addenumtype
+    toplevel .typeadder
+    wm transient .typeadder $fr
+    pack [frame .typeadder.what]
+    pack [label .typeadder.what.l -text Name:] -side left
+    pack [entry .typeadder.what.e -textvariable addenumtype(name)] -side left
+    pack [frame .typeadder.btns]
+    pack [button .typeadder.btns.ok -text OK \
+	      -command "set addenumtype(done) 1"] -side left
+    pack [button .typeadder.btns.cancel -text Cancel \
+	      -command "set addenumtype(done) 0"] -side left
+    grab .typeadder
+    tkwait variable addenumtype(done)
+    grab release .typeadder
+    if {$addenumtype(done)} {
+	$fr.scrf insert end $addenumtype(name)
+    }
+    destroy .typeadder
+}
+
+proc AddEnumTypeMems {fr} {
+    global disaggregate
+    set togo [$fr.listpair.scrf curselection]
+    set enumEntry [list [$fr.listpair.scrf get $togo $togo]]
+    $fr.curmembers delete 0 end
+    foreach mem $disaggregate(enumtype,$enumEntry) {
+	$fr.curmembers add command -label $mem -command "snipET $enumEntry $mem"
+    }
+}
+	
+proc AddEnumType {fr} {
+    global disaggregate enumTypeMPEntry
+    $fr.scrf insert end $enumTypeMPEntry
+    set disaggregate(enumtype,[list $enumTypeMPEntry]) {}
+}
+
+proc RemoveEnumType {fr} {
+    global disaggregate
+    set togo [$fr.listpair.scrf curselection]
+    unset disaggregate(enumtype,[$fr.listpair.scrf get $togo $togo])
+    $fr.listpair.scrf delete $togo $togo
+    EnableTypeOps $fr
+}
+
+proc AddEnumMem {fr} {
+    global disaggregate enumTypeMPEntry
+    set togo [$fr.listpair.scrf curselection]
+    lappend disaggregate(enumtype,[$fr.listpair.scrf get $togo $togo]) \
+	$enumTypeMPEntry
+}
+
+proc RemoveEnumMem {fr} {
+    tk_popup $fr.curmembers [winfo pointerx $fr] [winfo pointery $fr]
+}
+
+proc snipET {enumEntry mem} {
+    global disaggregate
+    set tgt [lsearch $disaggregate(enumtype,$enumEntry) $mem]
+    set disaggregate(enumtype,$enumEntry) \
+	[lreplace $disaggregate(enumtype,$enumEntry) $tgt $tgt]
+}
+    
+proc EnableTypeOps {fr} {
+    if {[llength [$fr.listpair.scrf curselection]]} {
+	set haveSeln normal
+    } else {
+	set haveSeln disabled
+    }
+    foreach btn {remtype addmems remmem} {
+	$fr.btns.$btn config -state $haveSeln
+    }
+}
+	
 proc UpdateColour {f} {
     global disaggregate
     
