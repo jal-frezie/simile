@@ -448,7 +448,7 @@ make_intermediates(
 	    (integer(SourceRef), !, Units = const_int;
 		Units = real);
 
-	/* fail, suspended due to scope problems */
+	fail, /* suspended due to scope problems */
 	add_zeros(Source, BoundArray, ConstBounds, Units), !,
 	    make_inds_for(ConstBounds, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
