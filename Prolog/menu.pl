@@ -168,19 +168,33 @@ stick_model_in(Parent, Name, Mode) :-
 	    (member(Mover, Lighters),
 	        Mover is_of_sort box,
 		event:do_colours(Mover, on),
+		get_drawing_form(Mover, _, Box),
+		merge_box(Box),
 		fail;
-	    record_bbox(Parent, Box)),
+	    retract(combined_box_is(Box))),
 	    
 	    (find_space_for(Box, Parent, Lighters, Pt, [Xoffset, Yoffset]),
 		all(event, adjust_posn,
-		    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]);
-	    true),
-	    all(event, retitle_duplicate, [build(Movers), unify(Used)]),
-	    (member(Mover, Movers),
-		redisplay(Mover),
-		fail;
-	    finish_move(Parent, 1))).
+		    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
+		all(event, retitle_duplicate, [build(Movers), unify(Used)]),
+		(member(Mover, Movers),
+		    redisplay(Mover),
+		    fail;
+		 finish_move(Parent, 1));
+	    do_dialogue("Insertion error", error, "Unable to insert components here -- not enough free space", ok, _),
+		restart_move)).
 
+:- dynamic([combined_box_is/1]).
+
+merge_box([L1, T1, R1, B1]) :-
+	(retract(combined_box_is([L2, T2, R2, B2])),
+	    L is min(L1, L2),
+	    T is min(T1, T2),
+	    R is max(R1, R2),
+	    B is max(B1, B2), !;
+	 [L, T, R, B] = [L1, T1, R1, B1]),
+	assert(combined_box_is([L, T, R, B])).
+	
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
 	Win shows_model Model,
@@ -312,18 +326,18 @@ menu_handle(Win, file, RunCmd) :-
 	use_temp_dir(Dir),
 	(rebuild_code(Lang, Node, Dir), !,
 	    /* no much point going for run */
+	    finish_progress_dialogue,
 	    on_exception(_Whoops,
 			 output:prepare_execution(Node, Lang),
 		     (do_dialogue("Compilation or startup error", error,
 				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
 			 scrub_run(Node, 0))),
 	    set_running_model(Node);
-	true),
+	finish_progress_dialogue),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
 	    finish_move(Node, 0);
 	restart_move),
-	finish_progress_dialogue,
 	show_normal_cursor.
 
 %################################### Bob's changes (tcl/tk version): start (

@@ -396,7 +396,7 @@ tk_update_infobox(String) :-
 	name(Text, String),
 	safe_tcl_eval(['.progress.message configure -text', 
 				br(write(Text))], _),
-	safe_tcl_eval(['update idletasks'], _).
+	safe_tcl_eval([update], _).
 
 tk_finish_progress_dialogue :-
 	safe_tcl_eval(['CloseProgressBox'], _).
