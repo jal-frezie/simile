@@ -737,10 +737,12 @@ proc DoRegDialog {dtId} {
     set msgtxt "Select compartments and flows from the toolbar\
                 to add to the diagram. Use the select (pointer) tool to edit captions\
                 and values. Run your model using the Run command of the Model menu."
-    if {[string match Windows $tcl_platform(platform)]} {
-        pack [message $create.m -text $msgtxt -width 400 -font {-family helvetica -size 8}]
-    } else {
-        pack [message $create.m -text $msgtxt -width 400]
+    switch [tk windowingsystem] {
+        win32 {
+            pack [message $create.m -text $msgtxt -width 400 -font {-family helvetica -size 8}]
+        } default {
+            pack [message $create.m -text $msgtxt -width 400]
+        }
     }
     pack $create -expand on -fill x
     #   pack [frame $create.buttons]
@@ -754,26 +756,28 @@ proc DoRegDialog {dtId} {
     
     frame $tasks.b
     # MacVersion does not display compound (image + text) buttons at all well.
-    if {[string match Darwin $tcl_platform(os)]} {
-        pack [button $tasks.b.new -text "New" -width 10  \
+    switch [tk windowingsystem] {
+        aqua {
+            pack [button $tasks.b.new -text "New" -width 10  \
                 -command {set userinfo(done) $welcomeDone}] \
                 -padx 8 -pady 8 -side left
-        pack [button $tasks.b.open -text "Open..." -width 10 \
+            pack [button $tasks.b.open -text "Open..." -width 10 \
                 -command "MenuSelect $dtId.canvas local open_all; set userinfo(done) \$welcomeDone" ] \
                 -padx 8 -pady 8 -side left
-        pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+            pack [button $tasks.b.reopen -text "Recent..." -width 10 \
                 -command "PopReopen $dtId"] \
                 -padx 8 -pady 8 -side left
-    } else  {
-        pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
+        } default  {
+            pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
                 -command {set userinfo(done) $welcomeDone}] \
                 -padx 8 -pady 8 -side left
-        pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
+            pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
                 -command "MenuSelect $dtId.canvas local open_all; set userinfo(done) \$welcomeDone" ] \
                 -padx 8 -pady 8 -side left
-        pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+            pack [button $tasks.b.reopen -text "Recent..." -width 10 \
                 -command "PopReopen $dtId"] \
                 -padx 8 -pady 8 -side left
+        }
     }
     pack $tasks.b
     pack $tasks -fill x -expand on
@@ -783,22 +787,24 @@ proc DoRegDialog {dtId} {
     set links [.register.links getframe]
     
     frame $links.m1
-    if {[string match Windows $tcl_platform(platform)]} {
-        pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
+    switch [tk windowingsystem] {
+        win32 {
+            pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
                 -anchor w -side left
-        pack [set www1 [label $links.m1.centre -text "Getting Started" \
+            pack [set www1 [label $links.m1.centre -text "Getting Started" \
                 -font {-underline true -family helvetica -size 8} -fg blue \
                 -cursor hand2]] -anchor w -side left
-        pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
+            pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
                 -anchor w -side left
-    } else {
-        pack [label $links.m1.left -text " *  Show " ] \
+        } default {
+            pack [label $links.m1.left -text " *  Show " ] \
                 -anchor w -side left
-        pack [set www1 [label $links.m1.centre -text "Getting Started" \
+            pack [set www1 [label $links.m1.centre -text "Getting Started" \
                 -fg blue \
                 -cursor hand2]] -anchor w -side left
-        pack [label $links.m1.right -text " help pages" ] \
+            pack [label $links.m1.right -text " help pages" ] \
                 -anchor w -side left
+        }
     }
     pack $links.m1 -anchor w
 # Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
@@ -854,8 +860,8 @@ proc DoRegDialog {dtId} {
     puts $UserStream $userinfo(Version)
     puts $UserStream $userinfo(done)
     close $UserStream
-    if {[string equal windows $tcl_platform(platform)]} {
-    file attributes $custom(prefDir)/.version -hidden true
+    switch [tk windowingsystem] {
+        win32 {file attributes $custom(prefDir)/.version -hidden true}
     }
     
     # this never happens with welcome version
@@ -881,30 +887,32 @@ proc PopReopen {win} {
 
 proc ContextSensitiveHelp {context page} {
     global tcl_platform helphtml env
-    if { [string match windows $tcl_platform(platform)] } {
-        package require winhelp
-        winhelp $context ../Help/simile.chm $page
-    } elseif { [string match Darwin $tcl_platform(os)] } {
-        exec open -a "Help Viewer.app" ../Help/$page
-    } else {
-        set url [pwd]/../Help/$page
-    if {![info exists env(BROWSER)]} {
-        foreach possBrowser {mozilla netscape iexplorer lynx} {
-        set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-        if {[llength $env(BROWSER)]} {
-            break
-        }
-        }
-    }
+    switch [tk windowingsystem] {
+        win32 {
+            package require winhelp
+            winhelp $context ../Help/simile.chm $page
+        } aqua {
+            exec open -a "Help Viewer.app" ../Help/$page
+        } x11 {
+            set url [pwd]/../Help/$page
+            if {![info exists env(BROWSER)]} {
+                foreach possBrowser {mozilla netscape iexplorer lynx} {
+                    set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+                    if {[llength $env(BROWSER)]} {
+                        break
+                    }
+                }
+            }
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
-        if {[catch {exec $env(BROWSER) -remote $url}]} {
-            # perhaps browser doesn't understand -remote flag
-            if {[catch {exec $env(BROWSER) $url &} emsg]} {
-                error "Error displaying $url in browser\n$emsg"
+            if {[catch {exec $env(BROWSER) -remote $url}]} {
+                # perhaps browser doesn't understand -remote flag
+                if {[catch {exec $env(BROWSER) $url &} emsg]} {
+                    error "Error displaying $url in browser\n$emsg"
                 # Another possibility is to just pop a window up
                 # with the URL to visit in it. - DKF
+                }
             }
         }
     }
@@ -970,31 +978,28 @@ proc GetHelp {} {
 }
 
 proc VisitUrl {x} {
-    global tcl_platform env
-    if [string match windows $tcl_platform(platform)] {
-        set x [regsub -all -nocase {htm} $x {ht%6D}]
-        exec rundll32 url.dll,FileProtocolHandler $x &
-    } elseif [string match Darwin $tcl_platform(os)] {
-        exec open $x
-    } else {
-        set url $x
-    if {![info exists env(BROWSER)]} {
-        foreach possBrowser {mozilla netscape iexplorer lynx} {
-        set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
-        if {[llength $env(BROWSER)]} {
-            break
-        }
-        }
-    }
-        # lynx can also output formatted text to a variable
-        # with the -dump option, as a last resort:
-        # set formatted_text [ exec lynx -dump $url ] - PSE
-        if {[catch {exec $env(BROWSER) -remote $url}]} {
-            # perhaps browser doesn't understand -remote flag
-            if {[catch {exec $env(BROWSER) $url &} emsg]} {
-                error "Error displaying $url in browser\n$emsg"
-                # Another possibility is to just pop a window up
-                # with the URL to visit in it. - DKF
+    global env
+    switch [tk windowingsystem] {
+        win32 {
+            set x [regsub -all -nocase {htm} $x {ht%6D}]
+            exec rundll32 url.dll,FileProtocolHandler $x & 
+        } aqua {
+            exec open $x 
+        } x11 {
+            set url $x
+            if {![info exists env(BROWSER)]} {
+                foreach possBrowser {mozilla netscape iexplorer lynx} {
+                    set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+                    if {[llength $env(BROWSER)]} {
+                        break
+                    }
+                }
+            }
+            if {[catch {exec $env(BROWSER) -remote $url}]} {
+                # perhaps browser doesn't understand -remote flag
+                if {[catch {exec $env(BROWSER) $url &} emsg]} {
+                    error "Error displaying $url in browser\n$emsg"
+                }
             }
         }
     }
@@ -1011,10 +1016,12 @@ proc ShowAbout {winId} {
     label .about.upper -image dripu
     pack .about.upper -pady 4
     frame .about.fr -relief sunken -borderwidth 2
-    if [string match Darwin $tcl_platform(os)] {
-        set fSize 12; set fsSize 12
-    } else {
-        set fSize 8; set fsSize 8
+    switch [tk windowingsystem] {
+        aqua {
+            set fSize 12; set fsSize 12
+        } default {
+            set fSize 8; set fsSize 8
+        }
     }
     pack [label .about.fr.lab1 -text "Simile v$sendvars(simV) $userinfo(edn)" \
             -font "-family helvetica -size $fSize"]
@@ -1023,9 +1030,11 @@ proc ShowAbout {winId} {
             -font "-family helvetica -size $fsSize"] -side left
     pack [label $platform.tcl -text "TclTk: [info patchlevel]" \
             -font "-family helvetica -size $fsSize"] -side left
-    if {[string equal windows $tcl_platform(platform)]} {
-    pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
-            -font "-family helvetica -size $fsSize"] -side left
+    switch [tk windowingsystem] {
+        win32 {
+            pack [label $platform.g++ -text "MinGW g++: [exec ../System/bin/g++ -dumpversion]" \
+                -font "-family helvetica -size $fsSize"] -side left
+        }
     }
     pack $platform
     if [info exists userinfo(exp_time)] {
@@ -1087,8 +1096,8 @@ proc ShowExpiryImminent {expTime} {
     wm title .expiry "Expiry Imminent"
     wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
-    if {[string match windows $tcl_platform(platform)]} {
-        wm attributes .expiry -toolwindow true
+    switch [tk windowingsystem] {
+        win32 {wm attributes .expiry -toolwindow true}
     }
     
     set labf1 [frame .expiry.labf1]
@@ -1320,9 +1329,10 @@ proc BuildProblem {Title errLevel msg key args} {
 #    }
     wm title $ProbWin $Title
     wm protocol $ProbWin WM_DELETE_WINDOW {set ack 1}
-    if {[string match windows $tcl_platform(platform)]} {
-        wm attributes $ProbWin -toolwindow true
+    switch [tk windowingsystem] {
+        win32 {wm attributes $ProbWin -toolwindow true}
     }
+
     set labf1 [frame $ProbWin.labf1]
     pack [label $labf1.img -image $iconImages($errLevel)] -side left 
     pack [label $labf1.lab1 -text "Warning:" \
@@ -1411,8 +1421,8 @@ proc NotifyOverLimit {edn limit} {
     wm title .notify "Over Limit For Edition"
     wm protocol .notify WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
-    if {[string match windows $tcl_platform(platform)]} {
-        wm attributes .notify -toolwindow true
+    switch [tk windowingsystem] {
+    win32 {wm attributes .notify -toolwindow true}
     }
     
     set labf1 [frame .notify.labf1]
