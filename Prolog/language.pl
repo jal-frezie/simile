@@ -801,12 +801,12 @@ make_evaluation_routine(
 	    Term=Expr;
 	member(Expr, [time, ind_time, time(P), ind_time(P)]), !,
 	    refer_value(Language, start_time, Term);
-/*	Expr = dt(P), !,
+	Expr = dt(P), !, /* still used for explicit references to dt */
 	    make_procedure_call_chars(Language, [glob_element, dts, P],
 				      TimeElmtStr),
 	    name(Term, TimeElmtStr);
 
-*/	Expr = assign(Tgt, SubExpr), !,
+	Expr = assign(Tgt, SubExpr), !,
 	    make_scalar(Language, Tgt, GraphN, Dest, GraphD),
 	    make_evaluation_routine(Language, SubExpr, GraphN, Source, GraphD),
 	    make_expr(Language, Source, SourceExp),

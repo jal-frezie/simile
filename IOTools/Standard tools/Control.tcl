@@ -14,6 +14,7 @@ set keyValue runcontrol33857
 
 namespace eval runcontrol33857 {
     variable sendvars
+    set sendvars(intMethod) {4th-order Runge-Kutta}
     
     proc identify {} {
         return "Run control"
@@ -82,6 +83,7 @@ namespace eval runcontrol33857 {
         
         TitleFrame $t.rsf -text "Run settings"
         set rsf [$t.rsf getframe]
+
         pack [frame $rsf.unitselection] -pady 2
         pack [label $rsf.unitselection.caption -text "Select time units" -width 24 -anchor w] -side left
         #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
@@ -90,6 +92,16 @@ namespace eval runcontrol33857 {
                 -values {unit second minute hour day week month year Ma}]
 #        $widget setvalue first
         pack $rsf.unitselection.pulldown -side left
+
+        pack [frame $rsf.integration] -pady 2
+        pack [label $rsf.integration.caption -text "Integration method:" -width 24 -anchor w] -side left
+        #        tk_optionMenu $rsf.unitselection.pulldown [namespace current]::sendvars(timeUnit) \
+        #                unit second minute hour day week month year Ma
+        set widget [ComboBox $rsf.integration.pulldown  -textvariable [namespace current]::sendvars(intMethod) \
+			-values {Euler {4th-order Runge-Kutta}}]
+#        $widget setvalue first
+        pack $rsf.integration.pulldown -side left
+
         foreach {name capt var} {exec {Execute for } execTime \
                     current {Current time } currentTime \
                     disp {Display interval } displayInt} {
@@ -311,14 +323,23 @@ namespace eval runcontrol33857 {
                 if {$bigPhase <= [GetPhaseCount]} {
                     $widget.bf.flag itemconfigure 1 -fill green
 		    CondUpdate $bigPhase
-                    if {![RKUpdateModel $scaled_current $bigPhase]} {
-                        set sendvars(currentMode) exit
-                    }
-                    if {![do_model advance $scaled_current $bigPhase]} {
-                        set sendvars(currentMode) exit
-                    }
-                    
-                    # If time is used at all in update phase it is in a
+		    switch -exact -- $sendvars(intMethod) {
+		    Euler {
+			SetStep 0 0
+			if {![do_model update $scaled_current $bigPhase]} {
+			    return 0
+			}
+		    } {4th-order Runge-Kutta} {
+			if {![RKUpdateModel $scaled_current $bigPhase]} {
+			    set sendvars(currentMode) exit
+			}
+		    }
+		    }
+		    if {![do_model advance $scaled_current $bigPhase]} {
+			set sendvars(currentMode) exit
+		    }
+
+                     # If time is used at all in update phase it is in a
                     # state variable, where the model refers to it inside
                     # a last(...) function. So it is the time of the last
                     # step we need -- so dont change it till now

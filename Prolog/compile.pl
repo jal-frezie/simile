@@ -391,6 +391,7 @@ pick_state_vars([One | All], Rate, State, Update) :-
 	(One = make(_,_,_,_, [assign(SV, SV+stage_incr(_,_,_))]), !,
 	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
 	(One = make(culled(_), _,_,_,_);
+	 One = make(lastvalue(_), _,_,_,_);
 	 One = make(_,_,_,_, [assign(SV, SV+step_incr(_,_))])), !,
 	    Rate = MoreRate, State = [One | MoreState], Update = MoreUpdate;
 	Rate = [One | MoreRate], State = MoreState, Update = MoreUpdate).
