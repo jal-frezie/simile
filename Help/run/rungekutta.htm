@@ -8,24 +8,24 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <meta name=ProgId content=Word.Document>
 <meta name=Generator content="Microsoft Word 10">
 <meta name=Originator content="Microsoft Word 10">
-<link rel=File-List href="sliders_files/filelist.xml">
-<title>Running models : Sliders</title>
+<link rel=File-List href="rungekutta_files/filelist.xml">
+<title>Running models : Using Runge-Kutta integration</title>
 <!--[if gte mso 9]><xml>
  <o:DocumentProperties>
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>8</o:Revision>
-  <o:TotalTime>51</o:TotalTime>
-  <o:Created>2002-08-05T11:11:00Z</o:Created>
-  <o:LastSaved>2004-09-02T19:43:00Z</o:LastSaved>
+  <o:Revision>5</o:Revision>
+  <o:TotalTime>93</o:TotalTime>
+  <o:Created>2004-09-03T09:02:00Z</o:Created>
+  <o:LastSaved>2004-09-03T13:23:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>160</o:Words>
-  <o:Characters>918</o:Characters>
+  <o:Words>305</o:Words>
+  <o:Characters>1744</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
-  <o:Lines>7</o:Lines>
-  <o:Paragraphs>2</o:Paragraphs>
-  <o:CharactersWithSpaces>1076</o:CharactersWithSpaces>
+  <o:Lines>14</o:Lines>
+  <o:Paragraphs>4</o:Paragraphs>
+  <o:CharactersWithSpaces>2045</o:CharactersWithSpaces>
   <o:Version>10.6626</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
@@ -155,7 +155,7 @@ div.Section1
 	font-family:"Times New Roman";}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="10242"/>
+ <o:shapedefaults v:ext="edit" spidmax="20482"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -166,38 +166,55 @@ div.Section1
 
 <div class=Section1>
 
-<h1><a name=Thesliderswindow><span lang=EN-GB>Sliders </span></a><span
-lang=EN-GB>for Variable Parameters</span></h1>
+<h1><span lang=EN-GB>Runge-Kutta integration</span></h1>
+
+<p class=MsoNormal><span lang=EN-GB>Runge-Kutta integration provides more
+accurate values for a given level of computational effort than Euler
+integration, for those models involving only systems of differential
+equations.<span style='mso-spacerun:yes'>  </span>Simile always uses Euler
+integration by default, because it is applicable to any model.<o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB>This window contains one slider (or switch)
-for each variable marked as being an “<a href="../equations/variable.htm">Variable
-parameter</a>” in the <a href="../equations/dialogue.htm">equation dialogue</a>
-box for that variable.<span style='mso-spacerun:yes'>  </span>Note that each
-slider is scaled individually according to the maximum and minimum values
-provided in the equation dialogue box..<span style='mso-spacerun:yes'> 
-</span>This information comes from the values for Min and Max entered in the
-Equation dialogue window.<span style='mso-spacerun:yes'>  </span>The initial
-value for the slider comes from the value entered into the Equation field of
-that window; if no value is given, then the slider is positioned at the mid-way
-point.</span></p>
+<p class=MsoNormal><span lang=EN-GB>For example, consider the equation dy/dt =
+t, and given y = 0 at t = 0. In this case, there is an analytical solution, y =
+½t<sup>2</sup>, and therefore at t = 100, y = 5000. Using the Euler integration
+algorithm, and using a step-size of 0.1 (the default) Simile calculates the
+answer to be 4995. Using Runge-Kutta integration, the correct answer of 5000 is
+found using the same step size (and therefore approximately the same
+computational effort). Even using a step size of 0.01 the answer is calculated
+to be 4999.5, using Euler integration. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>The sliders are positioned by the user to
-set the value at the start of the simulation.<span style='mso-spacerun:yes'> 
-</span>Once the simulation is running, the sliders can be moved to provide
-dynamic control over the variable.<span style='mso-spacerun:yes'>  </span>The
-model is updated with the new value in the next time step.<span
-style='mso-spacerun:yes'>  </span>Sliders are grouped by submodel, if possible.</span></p>
+<p class=MsoNormal><span lang=EN-GB>However, it must be noted that Runge-Kutta
+integration is not always applicable, unlike Euler integration, which can be
+used to solve any system of differential or difference equations. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>In: <u><a href="../index.htm" target="_top"><u>Contents</u></a></u>
-&gt;&gt; <u><a href="index.htm"><u>Running models</u></a></u></span></p>
+<p class=MsoNormal><span lang=EN-GB>In particular, Simile allows the
+construction of difference equations, where certain quantities accumulate in
+sudden increments corresponding to weeks, months or years, for example.
+Interest payments, in particular, correspond to this method of accumulation.
+These systems must be solved by Euler integration, with the step size chosen to
+correspond to the periodicity. <o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>Furthermore, although Runge-Kutta
+integration does not fail when used with discontinuous functions (such as are
+involved in the creation and destruction of instances of population submodels)
+the results will be no more precise than using Euler integration. <o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN-GB>The choice between Euler and Runge-Kutta
+integration is made at run time, using a drop-down box in the <a
+href="control.htm">Run Control</a>. The chosen method is saved with the model
+and restored when the model is loaded. The user can experiment with running a
+model using either method, without having to rebuild the model, to understand
+whether a significant improvement is achieved. <o:p></o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
