@@ -400,7 +400,9 @@ choose_default_value(Node, Base, PType, Default) :-
 	    Default = use_param_state;
 	Node has_class_refinement value of Default, !;
 	Base = a(_), !,
-	    Default = 1;    
+	    Default = 1;
+	Base = boolean, !,
+	    Default = 0;
 	Node has_class_refinement min_val of MinExpr,
 	Node has_class_refinement max_val of MaxExpr, !,
 	    (Base = int, !,

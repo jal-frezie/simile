@@ -235,7 +235,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    EqnError = "You cannot have influences going to a component representing a file or input parameter.";
 	check_exp(Eqn_st, "Equation", Function, InterInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, ParamList, Result, EqnError)),
-	(Is_P = 1, \+ Units = a(_), \+ member(EqnBase, [boolean, a(_)]), !,
+	(Is_P = 1, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
 
