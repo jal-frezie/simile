@@ -1007,32 +1007,25 @@ proc PrepForExport {winId way} {
     set ltBorder 20
     set textscale [expr $detail*$textBoost]
     if {[string match there $way]} {
-	set jiggles(sr) [$winId cget -scrollregion]
-	if {[scan $jiggles(sr) "%g %g %g %g" sl st sr sb]<4} {
+	if {[scan [$winId cget -scrollregion] "%g %g %g %g" sl st sr sb]<4} {
 	    set sl 0; set st 0 
 	    set sr [winfo width $winId]; set sb [winfo height $winId]
 	}
-#ShowMessage debug info "Use scrollregion: $sl $st $sr $sb" ok
-#	if {[scan [$winId bbox size_on_this] "%d %d" \
-#	      jiggles(bl) jiggles(bt)]<2} {
-#	    scan [$winId bbox all] "%d %d" jiggles(bl) jiggles(bt)
-#	}
-#	set jiggles(bl) [expr $jiggles(bl)-$ltBorder]
-#	set jiggles(bt) [expr $jiggles(bt)-$ltBorder]
-#Above commented as we don't care where the actual components are
 	set jiggles(bl) $sl
 	set jiggles(bt) $st
+	set jiggles(br) $sr
+	set jiggles(bb) $sb
 
-#ShowMessage debug info "Use corner: $jiggles(bl) $jiggles(bt)" ok
-	$winId move all [expr -$jiggles(bl)] [expr -$jiggles(bt)]
+	$winId move all [expr -$sl] [expr -$st]
 # Don't bother moving the scrollregion, it will not be staying like this
-#	$winId configure -scrollregion [list \
-#	    [expr $detail*($sl-$jiggles(bl))] [expr $detail*($st-$jiggles(bt))] \
-#	    [expr $detail*($sr-$jiggles(bl))] [expr $detail*($sb-$jiggles(bt))]]
+# -- actually we need to move it because print_widget scales to it
+	$winId configure -scrollregion [list 0 0 \
+	    [expr $detail*($sr-$sl)] [expr $detail*($sb-$st)]]
 	ZoomImage $winId all $detail $textscale
     } else {
 	ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
-#	$winId configure -scrollregion $jiggles(sr)
+	$winId configure -scrollregion [list $jiggles(bl) $jiggles(bt) \
+		$jiggles(br) $jiggles(bb)]
 	$winId move all $jiggles(bl) $jiggles(bt)
     }
     return [list $jiggles(bl) $jiggles(bt) $detail]
@@ -1060,7 +1053,9 @@ proc PrintNow {winId} {
 	package require gdi
 	package require printer
 
-	PrepForExport $winId there
+# print routines still seem unable to handle negative coordinates so
+# put image through prep mech
+    PrepForExport $winId there
     printer::print_widget $winId 0
     PrepForExport $winId back
    } else {
@@ -1143,6 +1138,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label Save -command "MenuSelect $winid.canvas file save" \
             -accelerator "Ctrl+S"
     AddAccelerator $winid file Save "<Control-s>"
+
     $fm add command -label "Save as..." \
             -command "MenuSelect $winid.canvas file save_as"
     $fm add separator
@@ -1651,7 +1647,7 @@ proc SetEqnButtonState {bar newState} {
 proc RaiseModelWindow {} {
     global window_info
     set modelWin $window_info([lindex [lsort [array name window_info *,parent]] 0])
-    wm deiconify $modelWin
+    wm deiconify $modelWin
     raise $modelWin
 }
 
