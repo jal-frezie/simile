@@ -274,7 +274,7 @@ proc ZoomImage {winId which factor fontor} {
                 set newHt [expr round($factor*[$tgtImage cget -height])]
                 scan [$winId coords $object] {%f %f} newX newY
                 
-                if {[string match */base/* [$winId gettags $object]]} {
+                if {[string match "*/base/*" [$winId gettags $object]]} {
                     ResizeBackgnd $winId $newX $newY \
                             [expr $newX+$newWidth] [expr $newY+$newHt]
                 } else {
@@ -761,7 +761,7 @@ proc ProdObj {nodeId caption} {
 proc GetClickedObj { winId canx cany range} {
     for {set halo 1} {$halo < $range} {incr halo 2} {
         set target [$winId find closest $canx $cany $halo]
-        if {![string match */background/* [$winId gettags $target]]} {
+        if {![string match "*/background/*" [$winId gettags $target]]} {
             return $target
         }
     }
@@ -1257,7 +1257,7 @@ proc brainwash {ethnic} {
 
 proc TrimTree {Top Point} {
     if {[llength $Point]} {
-        foreach file [glob -nocomplain $Top/$Point/*] {
+        foreach file [glob -nocomplain "$Top/$Point/*"] {
             file delete -force $file
         }
     } else {
@@ -1315,7 +1315,7 @@ proc load_dll {lang progFileDir modelPath node} {
     global phasecount nodedata nodecount model_id model_ids
     set nameBase $progFileDir$modelPath/model
     if {[string match tcl $lang]} {
-        foreach fnFile [glob -nocomplain ../Functions/*.tcl] {
+        foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
             source $fnFile
         }
         source $nameBase.$lang
@@ -1421,8 +1421,13 @@ proc compile_c {workingDir modelPath} {
     scan [info tclversion] {%d.%d} MAJ MIN
     switch $tcl_platform(platform) {
         unix {
-            exec g++ -fPIC -c -O -I$TOOLDIR -I$TCL/include -o objtemp.o model.cpp
-            exec g++ -shared -o $TARGET objtemp.o
+            if {[string match Darwin $tcl_platform(os)]} {
+                exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
+                exec g++ -dynamiclib -o $TARGET objtemp.o
+            } else {
+                exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
+                exec g++ -shared -o $TARGET objtemp.o
+            }
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]

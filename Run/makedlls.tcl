@@ -40,9 +40,14 @@ if $onUnix {
     # the Tcl library files, since they should be in LD_LIBRARY_PATH. It is because
     # some people find it easier to build the stub from exec_only.tcl, which gives
     # them error messages to the console but does not set LD_LIBRARY_PATH.
-    set TARGET libame_dll$MAJ.$MIN.so
-    eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
-    exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN
+    set TARGET libame_dll$MAJ.$MIN[info sharedlibextension]
+    if {[string match Darwin $tcl_platform(os)]} {
+        eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/Headers ./ame_cmx.cpp}
+        exec g++ -dynamiclib -o $TARGET ame_cmx.o -ldl -framework Tcl
+    } else {
+        eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
+        exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl
+    }
 } else {
     set TCL [file attributes $TCL -shortname]
     set TARGET ame_dll$MAJ$MIN.dll
@@ -87,4 +92,5 @@ if $onUnix {
         #		--output-lib libame_dll.a
 }
 
-catch {pkg_mkIndex . *[info sharedlibextension]}
+pkg_mkIndex . *[info sharedlibextension]
+exit

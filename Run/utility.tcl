@@ -72,8 +72,12 @@ proc ChooseFile { preferred title canbenew } {
     if {[llength $active]} {
 	lappend switches -parent $active
     }
-    set chosenFile [eval [expr $canbenew?{tk_getSaveFile}:{tk_getOpenFile}] \
-	    $switches]
+    if {$canbenew} {
+        set cmd tk_getSaveFile
+    } else {
+        set cmd tk_getOpenFile
+    }
+    set chosenFile [eval $cmd $switches]
     cd $prevDir
     if {[string compare $chosenFile {}]} {
 	RecordPathChoice $fileType $chosenFile $recordEntry
