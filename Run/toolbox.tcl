@@ -638,13 +638,14 @@ proc ClickObj { x y winId action} {
     } else {
         if {[string compare $action click] == 0} {
             set obj [GetCaptionItem $winId $node]
-            
-            if {[string compare $obj {}] && ![string compare [focus] $winId]} {
-                set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
-                $winId icursor $obj $realPlace
-                $winId select clear
-                $winId select from $obj $realPlace
-            }
+
+# This bit used to start a drag selecting some caption text
+#            if {[string compare $obj {}] && ![string compare [focus] $winId]} {
+#                set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
+#                $winId icursor $obj $realPlace
+#                $winId select clear
+#                $winId select from $obj $realPlace
+#            }
             
             if {![string compare $target $obj]} {
                 set action clicktext
@@ -1190,8 +1191,8 @@ proc SaveProjectFile {path} {
     }
     # shf file name loaded
     
-    #ShowMessage debug info "SaveProjectFile [array get SimileProject]\n\
-            $path/[file tail $nameOfHelperStateFile]" ok
+#ShowMessage debug info "SaveProjectFile [array get SimileProject]\n\
+#            $path/[file tail $nameOfHelperStateFile]" ok
     set projectF [open $ProjectFile w]
     puts $projectF [array get SimileProject]
     close $projectF

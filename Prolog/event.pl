@@ -1514,7 +1514,6 @@ kill_primitive(Target) :-
 embrace(_, Obj) :-
 	(Obj = 0, !;
 	highlight(Obj, 0)).
-/*	write(Obj), nl. */
 	
 abandon :-
 	finish_old_edit(none).
