@@ -123,6 +123,7 @@ stick_model_in(Parent, Name) :-
 	(Oops = [], !,
 	    append_atoms(TargetDir, '/model.pl', PrologData),
 	    ame_merge(Parent, PrologData, _Date), /* date not needed */
+	    output:my_delete_file(PrologData),
 
 	    ((get_av_pair(Parent, 0, separate, 1); is_toplevel(Parent)), !,
 		TryDll = 1;
@@ -136,17 +137,18 @@ stick_model_in(Parent, Name) :-
 	    dir (fttb) so get them loaded */
 	    transfer_images(Parent, TargetDir, in),
 		  
+	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	    (is_toplevel(Parent),
 	/* only try graphics file for toplevel windows because if loading into
 	    submodel the Prolog node ids will no longer match it */
-	        append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 		output:my_file_exists(GraphFileName), !,
 		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName);
 	    /* this should call Prolog back with the display detail vals */
 	    resize_canvas_for(Parent),
-		redraw_window(Win));
+		redraw_window(Win)),
+	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
 	ame_merge(Parent, Name, _Date),
@@ -340,7 +342,8 @@ set_properties(Wid, Model) :-
 	    NewNature = population,
 		Spec = [type=NewNature]),
 	    add_parameter(Model, 0, multiplication_spec, Spec),
-	    (abs(NewFatness - Fatness) =< 0.005, !;
+	    ((abs(NewFatness - Fatness) =< 0.005;
+	      Fatness > 1, NewFatness > 0.995), !;
 	    FatFactor is Fatness/NewFatness,
 		FatTrans = [0,0, FatFactor, FatFactor],
 		get_shape(Model, internal_extent, Extent),

@@ -648,6 +648,7 @@ proc ShiftImages {topDir way args} {
 		    image create photo $image
 		    $image read $imgFile -shrink
 		    PutSize $image
+		    file delete $imgFile
 		} out {
 		    $image write $imgFile -format gif
 		}

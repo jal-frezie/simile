@@ -164,7 +164,7 @@ DOS-type CRLFs being used for the line breaks, which will then bugger up
 reading the file under Unix */
 
 write_with_breaks(Stream, Term) :-
-	user:writeq_to_codes(TermStr, Term),
+	user:printq_to_codes(TermStr, Term),
 	append(TermStr, ".", FullTermStr),
 	insert_breaks(Stream, Term, [], FullTermStr),
 	sicstus_put(Stream, 10).

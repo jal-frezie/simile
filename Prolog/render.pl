@@ -32,9 +32,11 @@ render(L, assignment, Dest=Source, Indent, Atom) :-
 	render(L, function, Assign, Indent, Atom).
 
 make_assignment(L, Dest, Source, AssignStr) :-
-	(L = tcl, Template = "set ~a ~w";
-	L = c, Template = "~a = ~w"),
-	sicstus_format_to_chars(Template, [Dest, Source], AssignStr).
+	(L = tcl, Template = "set ~a ";
+	L = c, Template = "~a = "),
+	sicstus_write_to_chars(Source, SourceStr),
+	sicstus_format_to_chars(Template, [Dest], DestStr),
+	append(DestStr, SourceStr, AssignStr).
 
 /* assignment of context */
 make_pointer(c, Var, Ptr) :-

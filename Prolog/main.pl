@@ -31,8 +31,9 @@ been loaded. Others are in ame_gen.pl */
 /* There are a few things where the GNU Prolog implementation is more concise
 than the Sicstus, like... */
 
-writeq_to_codes(TermStr, Term) :-
-	with_output_to_chars(writeq(Term), TermStr).
+printq_to_codes(TermStr, Term) :-
+	with_output_to_chars(write_term(Term, [quoted(true), portrayed(true)]),
+			     TermStr).
 
 :- dynamic(is_interpreter/1).
 

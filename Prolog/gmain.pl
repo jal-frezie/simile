@@ -118,6 +118,11 @@ all_ground([H | T]) :-
 	ground(H),
 	all_ground(T).
 
+/* Not in GNU prolog but should be */
+
+printq_to_codes(TermStr, Term) :-
+	write_term_to_codes(TermStr, Term, [quoted(true), portrayed(true)]).
+
 /* Things that are used in the eqn language but cause gnu prolog to not
 load properly if they have already been declared */
 

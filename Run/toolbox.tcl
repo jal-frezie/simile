@@ -174,7 +174,7 @@ proc TransferSaveFile {tree tgt way} {
 #		set Description [mime::getheader $bit Content-Description]
 		set Disposition [mime::getheader $bit Content-Disposition]
 		set oldPath [lindex [lindex $Disposition 0] 1]
-		set newPath $tree/$oldPath
+		set newPath $tree$oldPath
 		file mkdir [file dirname $newPath]
 		set mimeSquirter [open $newPath w]
 		fconfigure $mimeSquirter -translation binary
@@ -186,15 +186,6 @@ proc TransferSaveFile {tree tgt way} {
     return $Lossage
 }
 
-proc SquirtMime {args} {
-    global mimeSquirter
-    if {[string match end [lindex $args 0]]} {
-	close $mimeSquirter
-    } else {
-	puts -nonewline $mimeSquirter [lindex $args 1]
-    }
-}
-    
 proc GetParts {top tree} {
     set mimes {}
     foreach subtree [glob -nocomplain ${tree}/*] {
@@ -221,7 +212,7 @@ proc GetParts {top tree} {
                 }
             }
 	    set relPath [string range $subtree [string length $top] end]
-            set Disposition [concat "inline;" [file tail $relPath]]
+            set Disposition [concat "inline;" $relPath]
 	    lappend mimes [mime::initialize -canonical $PartType \
                     -header [list "Content-Disposition" $Disposition] \
                     -header [list "Content-Description" $Description] \
@@ -231,6 +222,15 @@ proc GetParts {top tree} {
     return $mimes
 }
 	    
+proc SquirtMime {args} {
+    global mimeSquirter
+    if {[string match end [lindex $args 0]]} {
+	close $mimeSquirter
+    } else {
+	puts -nonewline $mimeSquirter [lindex $args 1]
+    }
+}
+    
 proc byebye {winId} {
     prolog [list tk_off_window( '$winId.canvas' )]
 }
