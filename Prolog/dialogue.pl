@@ -409,7 +409,7 @@ get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 
 get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
 	name(Num, Data),
-	enum_type_ref(Num, Function, Table, Units, 0),
+	enum_type_ref(Num, Function, Table, Units, 1),
 	    Dims = [],
 	    Sizes = [];
 	output:chop_list(Data, Alternator),
@@ -422,7 +422,7 @@ feed_items(_, [], _, _, _, []).
 feed_items(Fn, [IndStr, ValStr | More], Table, Units, Dims, Sizes) :-
 	feed_items(Fn, More, Table, DUnit, Dims, LoSizes),
 	(name(Ind, IndStr),
-	    enum_type_ref(Ind, Fn, Posn, TUnit, 0),
+	    enum_type_ref(Ind, Fn, Posn, TUnit, 1),
 	    (TUnit = a(_), IUnit = TUnit;
 		IUnit = int);
 	append(["Table contained the index item ", IndStr,
@@ -478,8 +478,9 @@ reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep, NonZ) :-
 
 make_e_t(Table, Trans, TclRep) :-
 	Trans = [],
-	   TclRep = Table;
-	nth0(Table, Trans, TclRep).
+	    TclRep = Table;
+	nth0(Table, Trans, Enum),
+	    append_atoms(['{"', Enum, '"}'], TclRep).
 
 check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-
 	Eqn_st = [], !,

@@ -540,7 +540,7 @@ namespace eval $keyValue {
 		    set lineToShow $count
 		}
 		$winId.t set $count,$headerCol \
-		    [lindex [split $headerElt /] end]
+		    [lindex [lindex [split $headerElt /] end] 0]
                 incr headerCol
             }
             incr count
@@ -579,7 +579,7 @@ namespace eval $keyValue {
                         set lineToShow $count
                     }
                     $winId.t set $headerRow,$count \
-                            [lindex [split $headerElt /] end]
+			[lindex [lindex [split $headerElt /] end] 0]
                 }
                 incr headerRow
             }
@@ -650,7 +650,7 @@ namespace eval $keyValue {
 		set subscript [eval {concat} $subscriptTemplate]
 		set src ::data${winId}($rowIds($rowEntry),$colIds($colEntry))
 		if {[info exists $src]} {
-		    set values($subscript) [set $src]
+		    set values($subscript) [EnquoteIfNonNumeric [set $src]]
 		}
 	    }
 	}
@@ -662,7 +662,8 @@ namespace eval $keyValue {
 	    unset values
 	    foreach {indcol val} $vlist {
 		set shortcol [lrange $indcol 0 end-1]
-		lappend values($shortcol) [lindex $indcol end] $val
+		lappend values($shortcol) \
+		    [EnquoteIfNonNumeric [lindex $indcol end]] $val
 	    }
 	}
 	return [lindex $values() 1]
@@ -702,7 +703,7 @@ namespace eval $keyValue {
         
         if {[llength $index]} {
             set nextAxis [lindex $orientList($winId) [min $depth 3]]
-            lappend ${nextAxis}List [lindex $index 0]
+            lappend ${nextAxis}List $index
             incr depth
         }
         

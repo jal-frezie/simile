@@ -911,7 +911,7 @@ proc AcceptData {winId topNode compName complain} {
     }
     # Make array form if data has changed
     if {$dataChanged} {
-	set runState(reloadParams) 1
+	set runState($topNode,reloadParams) 1
 	set trans [GetTransTable $node]
 
 	# Now replace each -1 in the dims with the id of the by-record
@@ -997,7 +997,10 @@ proc ListToArray {tgt subs trans dims list} {
 	return [list [lindex $list end] "Missing value"]
     }
 	
-    array set sub $list
+    foreach {indx sublist} $list {
+	set sub([lindex $indx 0]) $sublist
+    }
+# was array set sub $list
 #puts "dims remaining $dims"
     if {[string match TIME [lindex $dims 0]]} {
 # If time, we can have as many or as few vals as we want, and they can be
@@ -1048,7 +1051,7 @@ proc ListToArray {tgt subs trans dims list} {
 proc EnumTypeToNumber {tgt head trans} {
     global paramData
     if {[string compare {} $trans]} {
-	set poss [lsearch $trans $head]
+	set poss [lsearch $trans [lindex $head 0]]
 	if {$poss == -1} {
 	    return [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
 	}
@@ -1214,7 +1217,7 @@ proc VarType {testVar types} {
         return 1
     } elseif {[string is double $testVar]} {
         return 2
-    } elseif {[lsearch $types $testVar]!=-1} {
+    } elseif {[lsearch $types [lindex $testVar 0]]!=-1} {
 	return 1
     } else {
         return 0
@@ -1358,7 +1361,7 @@ proc LoadTableData {tableSpec} {
             set arrayIndex {}
             set indexCount 0
             foreach column $indexColumns {
-                set newIndex [string trim [lindex $entryList $column]]
+                set newIndex [EnquoteIfNonNumeric [lindex $entryList $column]]
                 lappend arrayIndex $newIndex
                 if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
                     lappend maxIndices($indexCount) $newIndex
@@ -1373,7 +1376,7 @@ proc LoadTableData {tableSpec} {
         }
         
         set paramArray(top,[join $arrayIndex ,]) \
-	    [string trim [lindex $entryList $headerColumn]]
+	    [EnquoteIfNonNumeric [lindex $entryList $headerColumn]]
     }
     
     for {set idxIdx 0} {$idxIdx < $indexCount} {incr idxIdx} {
@@ -1383,6 +1386,14 @@ proc LoadTableData {tableSpec} {
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     return [ArrayToList paramArray top $indexList]
+}
+
+proc EnquoteIfNonNumeric {item} {
+    if {[string is double $item]} {
+	return $item
+    } else {
+	return \"[string trim $item]\"
+    }
 }
 
 proc ArrayToList {topArray indexSoFar otherMaxes} {

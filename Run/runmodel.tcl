@@ -675,15 +675,12 @@ proc StartRun {node} {
     set runState($node,currentTime) 0.0
     set runState($node,timeAtEval) 0.0
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
+    if {![FileParamDialogue $node [winfo toplevel [focus]] 0]} {
+	return 0
+    }
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
         raise [set topWin [Makemre $node]]
-    } else {
-	set topWin [winfo toplevel [focus]]
-#	ToggleIOToolMenu 1
-    }
-    if {![FileParamDialogue $node $topWin 0]} {
-	return 0
     }
 #    Now have to do this in Prolog so only running windows change
 #    foreach winData [array name window_info *,parent] {
