@@ -1,7 +1,7 @@
 # SIMILE batch file
 
 set scriptCmd [info script]
-puts $scriptCmd
+#tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
 
@@ -87,13 +87,13 @@ while {[file exists $tester]} {
 set env(SIMTMPDIR) $tester
 file mkdir $env(SIMTMPDIR)/.lock
 
-# If there is an arg, it is the model to start with. 
+# If there is an arg, it is the model to start with. Because this is sourced
+# from a script or special .exe there is never more than 1 arg
 if {$argc} {
-    set arg1 [lindex $argv 0]
-    if {[string match relative [file pathtype $arg1]]} {
-	set env(OPEN_MODEL) [pwd]/$arg1
+    if {[string match relative [file pathtype $argv]]} {
+	set env(OPEN_MODEL) [pwd]/$argv
     } else {
-	set env(OPEN_MODEL) $arg1
+	set env(OPEN_MODEL) $argv
     }
 }
 

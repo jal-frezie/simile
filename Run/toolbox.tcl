@@ -55,7 +55,6 @@ proc ControlDraw {prologVersion} {
     
     wm withdraw .
 
-    # loading stub sets license entries
 # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
 	set env(SIMILE_VERSION) 3.0
@@ -83,6 +82,11 @@ proc ControlDraw {prologVersion} {
 	[join [lrange [split $env(license_code) =] 1 end] =]
     # loading stub sets license entries
     load_c_stub
+
+# substitutes for license entries if we want to avoid loading stub
+#set userinfo(final_expiry) 0
+#set userinfo(days_after_install) 0
+#set userinfo(edn) standard
 
     # eezi-hack implementation of time limit: to do this anything like
     # properly, have stub dll check unix time against clock time
@@ -291,7 +295,7 @@ proc LoadFile {tree tgt} {
 	    }
 	}
     } Lossage]} {
-	return Lossage
+	return $Lossage
     } else {
 	return $CodeChecked
     }

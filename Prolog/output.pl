@@ -456,11 +456,10 @@ save_file(From, To, Oops) :-
 	windowize(To, WTo),
 	safe_tcl_eval(['SaveFile', br(WFrom), br(WTo)], Oops).
 
-load_file(From, To, Checked) :-
+load_file(From, To, Oops) :-
 	windowize(From, WFrom),
 	windowize(To, WTo),
-	safe_tcl_eval(['LoadFile', br(WFrom), br(WTo)], CheckStr),
-	name(Checked, CheckStr).
+	safe_tcl_eval(['LoadFile', br(WFrom), br(WTo)], Oops).
 
 check_directory(Dir) :-
 	windowize(Dir, WDir),

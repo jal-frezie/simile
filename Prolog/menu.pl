@@ -116,7 +116,8 @@ stick_model_in(Parent, Name) :-
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
-	output:load_file(TargetDir, Name, Checked),
+	output:load_file(TargetDir, Name, CheckedStr),
+	name(Checked, CheckedStr),
 	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
 	    ame_merge(Parent, PrologData, _Date, Checked), /* date not needed */
@@ -151,7 +152,7 @@ stick_model_in(Parent, Name) :-
 	    check_autosave(Parent, Name, Tweaked),
 	    resize_canvas_for(Parent),
 	    redraw_window(Win);
-	do_dialogue("Error loading model", error, Checked, ok, _)),
+	do_dialogue("Error loading model", error, CheckedStr, ok, _)),
 	add_parameter(Parent, 0, file_name, Name),
 	update_captions(Parent).
 

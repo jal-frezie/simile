@@ -216,9 +216,9 @@ choose_breakpoint(Break) :-
 
 ame_merge( Parent, File, Date, HasCode ) :-
 	state:find_current(Win),
+	on_exception(_, open( File, read, Stream), fail),
 	dialogue:start_progress_dialogue(Win),
 	dialogue:reassure_user("Reading information from file"),
-	open( File, read, Stream),
 	read( Stream, Header ),
 	((Header = source(_,version=V,edition=E,date=Date);
 	        Header = source(_,version=V,date=Date), E=standard;
