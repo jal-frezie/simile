@@ -19,8 +19,12 @@
 # draw at time zero
 
 #$Log: Piechart.tcl,v $
-#Revision 1.1  2002/05/27 16:54:58  jmm
-#Single pie, array indeces not yet shown
+#Revision 1.2  2002/05/29 17:25:39  jmm
+#Mult-dimenson arrays ok, but labels too spead out, resizing bug
+#
+#Revision 1.1  2002-05-28 14:17:28+01  jmm
+#Draws ONE piechart any array or multi-instance submodel values get added to the ONE pie.
+#Requires array element labelling
 #
 #Revision 1.0  2002-05-20 12:04:57+01  jmm
 #Initial revision
@@ -115,7 +119,7 @@ proc initialize {w} {
 }
 
 proc Restore {winId} {
-#    ShowMessage debug info "plotter.tcl Restore $winId" ok
+    #    ShowMessage debug info "plotter.tcl Restore $winId" ok
     namespace import -force ::graphtools::*; # todo make graphtools common
     global ::graphtools::plot
     global ::graphtools::Xvalues
@@ -129,28 +133,39 @@ proc Restore {winId} {
     set YYnew($winId) {}
     set Told($winId) {}
     set Tnew($winId) {}
-
+    
     
     regsub -all /WIN/ [GetState $winId] $winId restoreString
     array set plot $restoreString
-#    ShowMessage debug info $restoreString ok
+    #    ShowMessage debug info $restoreString ok
     ShowHelper $winId
+    get_Yvalues $winId
+    
+    plot_YY $winId
 }
 
 proc click {w node caption} {
     #tk_messageBox -message "Click node $node" -type ok
     global ::graphtools::plot
+    global ::graphtools::YYnew
     
     set newbox nodebox[incr plot($w,nodeCount)]
     set name [GetCaptionPathFromId $node]
     
     set testResult [GetModelValue $node]
     if {[string compare $testResult novalue]} {
-        lappend plot($w,Ylabels) $caption
-        lappend plot($w,Yvars)   $node
-        
-        drawGraphpad $w
-        UpdateState $w
+        set values [lindex [GetModelValue $node] 0]
+#ShowMessage debug info "[llength $values] $values" ok
+        #lappend plot($w,Ylabels) $caption
+            if {[llength $values]==1} then {
+                lappend plot($w,Ylabels) $caption
+            } else {
+                ArrayLabeling $w $caption $values {}
+            }
+            
+            lappend plot($w,Yvars)   $node
+            drawGraphpad $w
+            UpdateState $w
     } else {
         #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
     }
@@ -158,9 +173,25 @@ proc click {w node caption} {
     $w.canvas delete prompt
     raise $w; # bring the plotter back on top when it is a toplevel
     
-    get_Yvalues $w
-    plot_YY $w
-        
+    get_Yvalues $w
+            
+    plot_YY $w        
+}
+
+proc ArrayLabeling { w caption values index } {
+    global ::graphtools::plot
+#    ShowMessage debug info "ArrayLabeling [llength $values] $values" ok
+    if {[llength $values]==1} then {
+        lappend plot($w,Ylabels) ${caption}/$index
+    } else {
+        array set val_array $values
+        lappend index 1
+        foreach element [array names val_array] {
+            ArrayLabeling $w $caption $val_array($element) $index
+            set lastindex [lindex $index end]
+            set index [lreplace $index end end [incr lastindex]]
+        }
+    }
 }
 
 proc Menu { winId } {
@@ -299,13 +330,6 @@ proc drawGraphpad {w} {
     set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
     set y1 $plot($w,yborder_top)
     
-    ### Make the graph area
-################################################################################
-#     $w.canvas create rectangle $x0 $y0 $x1 $y1 \
-#             -fill $plot($w,grapharea_colour) \
-#             -outline {} -tags {scalable grapharea}
-#     
-################################################################################
 
     set nYlabel [llength $plot($w,Ylabels)]
     set j 0
@@ -433,7 +457,8 @@ proc plot_Y {w iplot Tnew Ynew} {
     variable pievalues
     
     if {[llength $Ynew]==1} then {
-        set piesum($w) [expr {$piesum($w)+$Ynew}]; # todo fix for MI
+        if {$Ynew<0} { set Ynew 0 }
+        set piesum($w) [expr {$piesum($w)+$Ynew}]
         lappend pievalues($w) $Ynew
     } else {
         array set Ynew_array $Ynew
