@@ -242,7 +242,9 @@ click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
 	get_adding_object(New_obj),
 	(New_obj is_class_of_sort box, !,
 	    (New_obj is_class_of_sort rounded_rect, !,
-		check_drawing_at_depth(Wid, New_obj, Depth),
+		Wid shows_model Top,
+		contains(Top, Parent, Ladder),
+		check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
 		advance_phase_to(rubberband);
 	    insert(Wid, Parent, [Xpt, Ypt], New_obj));
 	make_terminator(New_obj, Parent, DropNode),
@@ -278,7 +280,7 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	Wid shows_model Top,
 	contains(Top, Parent, Ladder),
 	length(Ladder, Depth),
-	check_drawing_at_depth(Wid, New_obj, Depth),
+	check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
 	add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
 	redisplay(NewNode),
 	give_focus(NewNode),
@@ -288,8 +290,10 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	    NewLooks = []),
 	all(event, spread_colour, [build(NewLooks), unify(yes)]).
 
-check_drawing_at_depth(Wid, New_obj, Depth) :-
-	(use_style_for(New_obj, NewStyle),
+check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
+	(\+ (member(Hider, Levels),
+		get_shape(Hider, hide_contents, 1)),
+	    use_style_for(New_obj, NewStyle),
 	    draws_at(Wid, NewStyle, Depth), !;
 	    do_dialogue("Failed to add component", warning,
 			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).

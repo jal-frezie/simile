@@ -174,6 +174,11 @@ windows) we only need to draw the new shape in windows illustrating its parent..
 
 redisplay(Comp) :-
 	find_relevant_windows(Comp, Window_id, Depth, Trans),
+	Window_id shows_model Top,
+	contains(Top, Comp, Levels),
+	\+ (member(Hider, Levels),
+	       \+ Hider = Comp,
+	       get_shape(Hider, hide_contents, 1)),
 	kill_recursive(Window_id, Comp),
 	display(Window_id, Comp, Depth, Trans, 1),
 	fail;

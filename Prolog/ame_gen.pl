@@ -581,7 +581,7 @@ contains(Big, Small, Chain) :-
 	nonvar(Big),
 		find_all_comps(Big, Son),
 		contains(Son, Small, Chain2),
-		append(Chain2, [Big], Chain).
+		append(Chain2, [Son], Chain).
 
 variable_size(Source) :-
 	is_population(Source);
