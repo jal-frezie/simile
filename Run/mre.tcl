@@ -43,7 +43,7 @@ namespace eval RunEnv {
             [list copyc.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
             [list cut.gif "Cut display" [list ::RunEnv::CutHelper $::RunEnv::CurrentContainer"]] \
             [list paste.gif "Paste display" [list ::RunEnv::PasteHelper $::RunEnv::CurrentContainer"]] \
-            [list delete.gif "Delete" "::RunEnv::DeleteHelperCurrentContainer" ]] \
+            [list delete.gif "Remove display" "::RunEnv::DeleteHelperCurrentContainer" ]] \
             [list \
             [list splithoriz.gif "Split page horizontally" "::RunEnv::SplitCurrentContainer vertical" ] \
             [list splitvert.gif "Split page vertically" "::RunEnv::SplitCurrentContainer horizontal"]] \
@@ -55,12 +55,14 @@ namespace eval RunEnv {
             [list table.gif "Create table" "CreateHelperWindow tabular11510 {Table}"] \
             [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
             [list \
+            [list clear.gif "Clear all displays" "ClearView"]]\
+            [list \
             [list mainwin.gif "Go to Model Window" "RaiseModelWindow"]]]
 }
 
 # A top level window to contain the helpers
 proc RunEnv::Create { ModelWin } {
-    global helperTable tcl_platform modelWin
+    global helperTable tcl_platform
     variable mainframe
     variable runControlFrame
     variable sliderControlFrame;
@@ -72,15 +74,10 @@ proc RunEnv::Create { ModelWin } {
     variable width
     variable height
     
-    destroy .helpPopup
     if {![winfo exists .mre]} then {
-        #    tk_messageBox -message MakeMRE -type ok
+        #tk_messageBox -message MakeMRE -type ok
         toplevel .mre -width 200m -height 150m
         wm title .mre "Run-Time Environment - Simile"
-        # Menu description
-        #"&Add" all add 0 {
-        #    {separator}
-        #}
         
         set descmenu {
             "&File" all file 0 {
@@ -105,8 +102,8 @@ proc RunEnv::Create { ModelWin } {
                 {separator}
                 {command "&Remove..."    {} "Remove a sheet" {} -command {::RunEnv::RemoveHelperPageDlg} }
                 {separator}
-                {command "&Clear all"    {} "Clear all sheets" {} -command {ClearView} }
-                {command "Cl&ose all"    {} "Close all sheets" {} -command {::RunEnv::KillDisplays} }
+                {command "&Clear all"    {} "Clear all displays" {} -command {ClearView} }
+                {command "Cl&ose all"    {} "Close all displays" {} -command {::RunEnv::KillDisplays} }
             }
             "&Help" all help 0 {
                 {command "&Contents..." {} "View the help file contents" {} -command {LaunchHelp} }
@@ -139,9 +136,11 @@ proc RunEnv::Create { ModelWin } {
             pack [Separator $tb1.sep$tbnum -orient vertical] -side left -fill y -padx 4
         }
         
+        #make a copy of the helper selection menu to use in the mre
+        .helpers.sub2 clone .mrehelpers; #from runmodel.tcl AddHelperSublist
         set mreMenu [winfo parent [$mainframe getmenu help]]
-        $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
-        
+        $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .mrehelpers
+    
         # Add a PanedWindow for the hierrachical/run control view and main display window
         set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
         set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
@@ -208,7 +207,7 @@ proc RunEnv::AddNotebook {containerId} {
     
     for  {set i 1} {$i<=4} {incr i} {
         set pageId [UniqueId page [$containerId.notebook pages]]
-        $containerId.notebook insert end $pageId -text "Page$i" \
+        $containerId.notebook insert end $pageId -text "Page $i" \
                 -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
         bind [$containerId.notebook getframe $pageId] <Button-3> \
                 "tk_popup .pageContextMenu %X %Y"
@@ -221,10 +220,34 @@ proc RunEnv::AddNotebook {containerId} {
                 "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
         $newContainer.panedwindow add $newContainer.panedwindow.pane0 -sticky nesw
     }
+
+    $containerId.notebook bindtabs <Double-1> "::RunEnv::EditTabLabel $containerId.notebook"
+    $containerId.notebook bindtabs <Button-3> "::RunEnv::EditTabLabel $containerId.notebook"
     
     $containerId.notebook raise [lindex [$containerId.notebook pages] 0]
     
     pack $containerId.notebook -fill both -expand yes
+}
+
+proc RunEnv::EditTabLabel { notebook tabId } {
+    variable TabEditText
+    set TabEditText [$notebook itemcget $tabId -text]
+    #based on equationRight
+    #ShowMessage debug info "TabRight tabId $tabId; label [$notebook itemcget $tabId -text]" ok
+    catch {destroy .notebookTabTextEdit}
+    Dialog .notebookTabTextEdit -parent .mre  -cancel 1 -title {Edit tab label} \
+            -transient true
+    .notebookTabTextEdit add -text OK; # draw result 0
+    .notebookTabTextEdit add -text Cancel; # draw result 1
+    set ebox [entry .notebookTabTextEdit.ebox -width 20 -textvariable ::RunEnv::TabEditText]
+    pack $ebox -pady 10 -padx 10
+    bind $ebox <Return> {.notebookTabTextEdit invoke 0}
+    $ebox selection range 0 end
+    focus $ebox
+    if {[.notebookTabTextEdit draw] == 0} then {
+        # OK button selected
+        $notebook itemconfigure $tabId -text $TabEditText
+    }
 }
 
 proc RunEnv::PageRaiseCmd {notebook pageId} {
@@ -248,7 +271,7 @@ proc RunEnv::AddNotebookPage {containerId} {
     if {[string match notebook [winfo name $ParentContainer]]} {
         set pageId [UniqueId page [$ParentContainer pages]]
         set pageIndex [expr {[llength [$ParentContainer pages]]+1}]
-        $ParentContainer insert end $pageId -text "Page$pageIndex" \
+        $ParentContainer insert end $pageId -text "Page $pageIndex" \
                 -raisecmd "::RunEnv::PageRaiseCmd $ParentContainer $pageId"
         set newContainer [$ParentContainer getframe $pageId]
         panedwindow $newContainer.panedwindow -orient vertical
@@ -276,7 +299,7 @@ proc ::RunEnv::AllDisplaysPopup {containerId} {
 
 proc RunEnv::AllDisplaysPopupCurrentContainer {} {
     # .helpers.sub2 made by runmodel.tcl AddHelperSublist
-    tk_popup .helpers.sub2 [winfo pointerx .mre] [winfo pointery .mre]
+    tk_popup .mrehelpers [winfo pointerx .mre] [winfo pointery .mre]
 }
 
 # Not used - possibly never will be but is skeleton to use the selection for transfer
@@ -514,7 +537,7 @@ proc RunEnv::SplitPage {containerId orientation} {
         
         update; # or sash place won't work
         $parentPath sash place $sash $sashx $sashy
-        SetCurrentContainer $paneId
+        #SetCurrentContainer $paneId
         
         #ShowMessage debug info "SplitPage $parentPath $containerId \n\
         #        paneId $paneId" ok; ##############
@@ -568,8 +591,9 @@ proc ::RunEnv::FindParentNotebookPage {containerId} {
 }
 
 proc RunEnv::Destroy {} {
-    global helperTable modelWin window_info model_id
+    global helperTable window_info model_id
     variable runControlWindId
+    variable mainframe
     
     # stop the run
     if {[info exists runControlWindId]} {
@@ -577,10 +601,8 @@ proc RunEnv::Destroy {} {
         ::${ControlSpace}::Terminate
     }
     
-    #foreach helper [array name helperTable *,whichHelper] {
-    #    scan $helper {%[^,]} winId
-    #    bind $winId <Destroy> {}; # so the helper notebook pages are not destroyed 2ce - bomb!
-    #}
+    destroy .mrehelpers
+    destroy .helpPopup
     destroy .pageContextMenu
     KillHelpers
     foreach winData [array name window_info *,parent] {
@@ -771,7 +793,7 @@ proc RunEnv::CreateDisplayPageContextMenu {} {
         set m [menu .pageContextMenu -tearoff 0]
         $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
         $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {Table}"
-        $m add cascade -label "Choose display to create ..." -menu .helpers.sub2; #from runmodel.tcl AddHelperSublist
+        $m add cascade -label "Choose display to create ..." -menu .mrehelpers
         $m add separator
         $m add command -label "Copy display" -command "::RunEnv::CopyHelper $::RunEnv::CurrentContainer"
         $m add command -label "Cut display" -command "::RunEnv::CutHelper $::RunEnv::CurrentContainer"
@@ -849,7 +871,8 @@ proc RunEnv::SaveNotebookConfig {notebook stream} {
     puts $stream "notebook $notebook"
     foreach page [$notebook pages] {
         set pagecaption [$notebook itemcget $page -text]
-        puts $stream "page $notebook $page $pagecaption"
+        regsub -all " " $pagecaption _ noSpcpagecaption
+        puts $stream "page $notebook $page $noSpcpagecaption"
         foreach child [winfo children [$notebook getframe $page]]  {
             puts $stream "$notebook $page $child"
             switch [winfo name $child] {
@@ -1019,11 +1042,15 @@ proc RunEnv::LoadViewFile {stream line} {
                 NoteBook $path
                 set containerId [winfo parent $path]
                 #ShowMessage debug info "containerId $containerId" ok
+                $path bindtabs <Double-1> "::RunEnv::EditTabLabel $containerId.notebook"
+                $path bindtabs <Button-3> "::RunEnv::EditTabLabel $containerId.notebook"
                 pack $path -fill both -expand yes
             }
             page {
                 #puts $stream "page $notebook $page $pagecaption"
-                scan $line "%s %s %s %s" widget notebook pageId pagecaption
+                scan $line "%s %s %s %s" widget notebook pageId noSpcpagecaption
+                regsub -all _ $noSpcpagecaption " " pagecaption
+                        
                 #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
                 $notebook insert end $pageId -text $pagecaption \
                         -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
