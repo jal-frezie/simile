@@ -700,7 +700,6 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
             [list byebye $winName]
     
     AddMainMenu $winName [expr $wr-$wl] $args
-    AddAccelerators $winName
     AddCanvasBindings $c
     
     set window_info($c,scale) $initialScale
@@ -715,25 +714,24 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
     return $c
 }
 
-proc AddAccelerators { winName } {
-    # file
-    bind $winName <Control-n> "MenuSelect $winName.canvas file new"
-    bind $winName <Control-o> "MenuSelect $winName.canvas file open"
-    bind $winName <Control-s> "MenuSelect $winName.canvas file save"
-    bind $winName <Control-p> "PrintNow $winName.canvas"
-    bind $winName <Alt-x> "byebye $winName"
-    
-    #edit
-    bind $winName <Control-z> "prolog tk_undo"
-    bind $winName <Control-f> "FindCaption $winName.canvas"
-    bind $winName <F3> "NextCaption $winName.canvas";
-    
-    #model
-    bind $winName <Control-t> "MenuSelect $winName.canvas file run_tcl"
-    bind $winName <Control-b> "MenuSelect $winName.canvas file run_c"
-    
-    #help
-    bind $winName <F1> "ContextSensitiveHelp $winName index.htm";
+proc AcceleratorState {winName menu item state} {
+    global accelerator
+    #puts "AcceleratorState {winName menu item state} $winName $menu $item $state [info exists accelerator($menu,$item)]"
+    if {[info exists accelerator($menu,$item)]} {
+        if {[string match normal $state]} {
+            bind $winName $accelerator($menu,$item) \
+                    [${winName}top.$menu entrycget $item -command]
+        } else  {
+            bind $winName $accelerator($menu,$item) {}
+        }
+    }
+}
+
+proc AddAccelerator {winName menu item event} {
+    #puts "AddAccelerator {winName menu item event} $winName $menu $item $event"
+    global accelerator
+    set accelerator($menu,$item) $event
+    AcceleratorState $winName $menu $item [${winName}top.$menu entrycget $item -state]
 }
 
 proc AddCanvasBindings { c } {
@@ -1118,17 +1116,21 @@ proc AddMainMenu { winid initWidth initDepths} {
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
     $fm add command -label New -command "MenuSelect $winid.canvas file new"\
             -accelerator "Ctrl+N"
+    AddAccelerator $winid file New "<Control-n>"
     $fm add command -label Open... -command "MenuSelect $winid.canvas file open"\
             -accelerator "Ctrl+O"
+    AddAccelerator $winid file Open... "<Control-o>"
     $fm add cascade -label "Reopen" -menu .openrecent
     $fm add command -label Save -command "MenuSelect $winid.canvas file save" \
             -accelerator "Ctrl+S"
+    AddAccelerator $winid file Save "<Control-s>"
     $fm add command -label "Save as..." \
             -command "MenuSelect $winid.canvas file save_as"
     $fm add separator
     $fm add command -label "Print..." \
             -command "PrintNow $winid.canvas"\
             -accelerator "Ctrl+P"
+    AddAccelerator $winid file "Print..." "<Control-p>"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
     $fm2 add command -label "C program" \
@@ -1150,21 +1152,23 @@ proc AddMainMenu { winid initWidth initDepths} {
     if {[info exists custom(first_up)]} {
         $fm add command -label Close -command "byebye $winid" \
                 -accelerator "Alt+x"
+        AddAccelerator $winid file Close "<Alt-x>"
     } else {
 
         $fm add command -label Exit -command "byebye $winid" \
                 -accelerator "Alt+x"
+        AddAccelerator $winid file Exit "<Alt-x>"
     }
     set fm [menu ${winid}top.edit -tearoff 0]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
     $fm add command -label Undo -command "prolog tk_undo" \
             -state disabled -accelerator "Ctrl+Z"
+    AddAccelerator $winid edit Undo "<Control-z>"
     $fm add command -label Redo -command "prolog tk_redo" \
             -state disabled
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
-        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $winid.canvas" ;#\
-            # -state disabled -accelerator "Ctrl+Y"
+        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $winid.canvas"
     }
     AddFindMenu $winid.canvas $fm
     $fm add separator
@@ -1194,9 +1198,11 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label "Build In Tcl" \
             -command "MenuSelect $winid.canvas file run_tcl" \
             -accelerator "Ctrl+T"
+    AddAccelerator $winid model "Build In Tcl" "<Control-t>"
     $fm add command -label "Build In C++" \
             -command "MenuSelect $winid.canvas file run_c" \
             -accelerator "Ctrl+B"
+    AddAccelerator $winid model "Build In C++" "<Control-b>"
     if {[info exists custom(first_up)]} {
         $fm entryconfigure "Build In Tcl" -state disabled
         $fm entryconfigure "Build In C++" -state disabled
@@ -1264,6 +1270,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
     $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
             -accelerator "F1"
+            AddAccelerator $winid help Contents "<F1>"
     $fm add command -label About... -command [list ShowAbout $winid]
     
     set nb [frame $winid.toolSlot.navbar -border 2]
@@ -1597,9 +1604,10 @@ proc Rerun {winId go} {
 proc UpdateAbility {what where which whether} {
     global window_info
     foreach winData [array name window_info *,parent] {
-	set winId $window_info($winData)
-	set newState [ChooseText $whether normal disabled]
-	${winId}top.$where entryconfigure $which -state $newState
+        set winId $window_info($winData)
+        set newState [ChooseText $whether normal disabled]
+        ${winId}top.$where entryconfigure $which -state $newState
+        AcceleratorState $winId $where $which $newState
         set navBar $winId.toolSlot.navbar
         $navBar.$what configure -state $newState
     }
@@ -1876,3 +1884,5 @@ proc snap_down3 {w values} {
         }
     }
 }
+
+console show
