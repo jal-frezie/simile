@@ -419,10 +419,11 @@ enum_type_ref(Ref, Model, Value, Units) :-
 	    member(TypeName-TypeMems, TypeList),
 	    (Match = TypeName; nth(Value, TypeMems, Match)),
 	    append_atoms(['"', Match, '"'], Ref),
+	    append_atoms(['"', TypeName, '"'], TypeRef),
 	    (number(Value),
-		Units=a(TypeName);
+		Units=a(TypeRef);
 	    length(TypeMems, Value),
-		Units=n(TypeName)), !;
+		Units=n(TypeRef)), !;
 	m_class:Parent has_part Model,
 	    enum_type_ref(Ref, Parent, Value, Units).
 

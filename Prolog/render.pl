@@ -487,7 +487,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	        DefEval = 'SPLIT';
 	    (Unit = boolean, !, Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
-	    member(Unit, [int, a(_)]), !, Type = 'INTEGER',
+	    member(Unit, [const_int, int, a(_)]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-1073741823, 1073741823];
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
@@ -871,7 +871,7 @@ type_for_unit(Unit, Type) :-
 	    Type = double;
 	Unit = boolean, !,
 	    Type = 'BOOLEAN';
-	member(Unit, [a(_ET), n(_ET)]),
+	member(Unit, [const_int, a(_ET), n(_ET)]),
 	    Type = int;
 	Type = Unit.
 

@@ -633,7 +633,9 @@ strings_to_atoms([],[]).
 strings_to_atoms([S | SR], [A | AR]) :-
 	(\+ S = [],
 	    all(dialogue, strings_to_atoms, [build(S), build(A)]), !;
-	name(A,S)),
+	/* If tcl has put it in curlies remove them */
+	(append([123 | InS], [125], S), !; InS = S),
+	name(A, InS)),
 	strings_to_atoms(SR, AR).
 
 integer_between(Lo, Hi, Int) :-

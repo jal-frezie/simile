@@ -731,7 +731,7 @@ proc InsertFunction {boxname functor} {
 proc Disaggregate {parent title colour type fatness icount step \
             comment enumLists matherror hide separate} {
     global disaggregate
-    
+
     foreach varName {colour type fatness icount matherror hide \
                 separate} {
         set disaggregate($varName) [set $varName]
@@ -934,12 +934,16 @@ proc Disaggregate {parent title colour type fatness icount step \
 	    lappend enumTypes [concat [list [string range $typename 9 end]] \
 				   $members]
 	}
-        return [list $disaggregate(colour) $disaggregate(type) \
+        set result [list $disaggregate(colour) $disaggregate(type) \
                 $disaggregate(fatness) $disaggregate(icount) \
                 $step $disaggregate(comment) \
                 $disaggregate(matherror) $disaggregate(hide) \
 		    $disaggregate(separate) $enumTypes]
+    } else {
+	set result {}
     }
+    unset disaggregate
+    return $result
 }
 
 proc ShowComplexity {t} {
@@ -986,22 +990,22 @@ proc AddEnumTypeMems {fr} {
 proc AddEnumType {fr} {
     global disaggregate enumTypeMPEntry
     $fr.scrf insert end $enumTypeMPEntry
-    set disaggregate(enumtype,[list $enumTypeMPEntry]) {}
+    set disaggregate(enumtype,$enumTypeMPEntry) {}
 }
 
 proc RemoveEnumType {fr} {
     global disaggregate
     set togo [$fr.listpair.scrf curselection]
-    unset disaggregate(enumtype,[$fr.listpair.scrf get $togo $togo])
-    $fr.listpair.scrf delete $togo $togo
+    set type [$fr.listpair.scrf get $togo]
+    unset disaggregate(enumtype,$type)
+    $fr.listpair.scrf delete $togo
     EnableTypeOps $fr
 }
 
 proc AddEnumMem {fr} {
     global disaggregate enumTypeMPEntry
-    set togo [$fr.listpair.scrf curselection]
-    lappend disaggregate(enumtype,[$fr.listpair.scrf get $togo $togo]) \
-	$enumTypeMPEntry
+    set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+    lappend disaggregate(enumtype,$togo) $enumTypeMPEntry
 }
 
 proc RemoveEnumMem {fr} {

@@ -659,8 +659,8 @@ make_intermediates(
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units);
 		 fn_or_op(Op, RUnits, Arg_template),
-		    raise_exception(mismatched_units(Source, Arg_template,
-						     UnitList));
+		    raise_exception(mismatched_units(Source,
+						     UnitList, Arg_template));
 		 fn_or_op(Op, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
 		    raise_exception(wrong_no_of_args(Source, Op,
@@ -924,10 +924,7 @@ indices_for(sm(_,_, Ptr, Spec), Inds) :-
 /* might do better to get submodel and use g_a_s to convert */
 type_ind(Ind, Type) :-
 	(integer(Ind); var(Ind)), Type = int;
-	name(Ind, IndStr),
-	append([34 | IndName], [34], IndStr),
-	name(IndArg, IndName),
-	Type = a(IndArg).
+	Type = a(Ind).
 	
 make_choose_form([LastElt], _,_, LastElt) :- !.
 
