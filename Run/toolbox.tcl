@@ -1450,6 +1450,8 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 	-accelerator "Ctrl+C"
     $fm add command -label Paste -command "MenuSelect $c edit paste" \
 	-accelerator "Ctrl+V"
+    $fm add command -label Delete -command "MenuSelect $c edit delete" \
+	-accelerator "Del"
     $fm add separator
 
     $fm add command -label "Select all" -command "MenuSelect $c edit selall" \
@@ -1556,7 +1558,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -variable pushedbutton -value move
     $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
             -variable pushedbutton -value delete
-    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
+#    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
             -variable pushedbutton -value copy
     $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost"\
             -variable pushedbutton -value ghost
@@ -1648,7 +1650,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
     
-    foreach mode {select delete copy ghost separator3 snap} {
+    foreach mode {select delete ghost separator3 snap} {
         if {[string match separator* $mode]} {
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {

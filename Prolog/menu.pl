@@ -430,7 +430,7 @@ menu_handle(Win, file, export_prolog) :-
         finish_progress_dialogue.
 
 /* Delete the selection */
-menu_handle(Win, edit, cut) :-
+menu_handle(Win, edit, delete) :-
         start_progress_dialogue,
 	reassure_user("Delete in progress"),
 	Win shows_model Model,
@@ -438,9 +438,13 @@ menu_handle(Win, edit, cut) :-
 	finish_move(Model),
 	finish_progress_dialogue.
 	   
-menu_handle(Win, edit, copy) :-
+menu_handle(Win, edit, CutOrCopy) :-
+	(CutOrCopy = cut,
+	    Msg = "Cut in progress";
+	CutOrCopy = copy,
+	    Msg = "Copy in progress"),
         start_progress_dialogue,
-	reassure_user("Copy in progress"),
+	reassure_user(Msg),
 	Win shows_model Model,
 	assert(suspend_display),
 	invert_seln_in(Model),
@@ -459,26 +463,46 @@ menu_handle(Win, edit, copy) :-
 	restart_move,
 	all(event, do_colours, [build(SelBits), unify(on)]),
 	retract(suspend_display),
+	(CutOrCopy = cut,
+	    event:delete_net(Model),
+	    finish_move(Model);
+	CutOrCopy = copy),
 	finish_progress_dialogue.
 
+menu_handle(Win, edit, paste) :-
+        start_progress_dialogue,
+	reassure_user("Paste in progress"),
+	Win shows_model Model,
+	select_all_in(Model, on),
+	use_temp_dir(Dir),
+	append_atoms(Dir, '/clipboard.pl', CopyFile),
+	ame_merge(Model, CopyFile, _Date, _HasCode, _Renumber),
+	redraw_window(Win),
+	invert_seln_in(Model),
+	
+	[Xoffset, Yoffset] =[20,10],
+	setof(Mover, (find_all_comps(Model, Mover),
+			 get_highlit_obj(0, Mover)), Movers),
+	all(event, adjust_posn,
+	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
+	all(maintain, move_display,
+	    [build(Movers), unify([Xoffset, Yoffset])]),
+	finish_move(Model),
+	finish_progress_dialogue.	
+	
 menu_handle(Win, edit, selall) :-
         start_progress_dialogue,
 	reassure_user("Selecting whole model"),
 	Win shows_model Model,
-	select_all_in(Model),
+	select_all_in(Model, on),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, unselall) :-
         start_progress_dialogue,
 	reassure_user("Unselecting whole model"),
-	(Win shows_model Model,
-	    contains(Model, Bit),
-	    Bit is_of_sort box,
-	    get_highlit_obj(0, Bit),
-	    \+ Bit = Model,
-	    event:do_colours(Bit, off),
-	    fail;
-	finish_progress_dialogue).
+	Win shows_model Model,
+	select_all_in(Model, off),
+	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, invsel) :-
         start_progress_dialogue,
@@ -540,12 +564,16 @@ menu_handle(Win, window, NastyAtom) :-
 
 menu_handle(_, _, _).
 
-select_all_in(Model) :-
+select_all_in(Model, Way) :-
 	contains(Model, Bit),
 	    Bit is_of_sort box,
 	    appears(Bit),
 	    \+ Bit = Model,
-	    event:do_colours(Bit, on),
+	    (Way = on,
+		event:do_colours(Bit, on);
+	    Way = off,
+		get_highlit_obj(0, Bit),
+		event:do_colours(Bit, off)),
 	    fail;
 	true.
 	
