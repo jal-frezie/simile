@@ -71,6 +71,7 @@ namespace eval tabular11510 {
 	set orientList($winId) [lindex $oldState 1]
 	set precision($winId) [lindex $oldState 2]
 	display $winId [GetModelTime] 0 0
+	SaveState $winId
     }
 
     proc SaveState {winId} {

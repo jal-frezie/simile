@@ -65,6 +65,7 @@ proc Restore {winId} {
     } else {
 	GrabClicks $winId
     }
+    SaveState $winId
 }
 
 proc GetCanvas {winId} {

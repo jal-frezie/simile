@@ -1011,6 +1011,24 @@ proc LoadView {} {
     if {[llength $savedView]} {
 	set stream [open $savedView r]
 	while {[gets $stream helperId] >= 0} {
+	    if {[llength $helperId]==4} {
+		set response [ShowMessage {Inappropriate view specification} \
+				  warning \
+"This view specification file was created within the integrated Model Run \
+Environment. Do you wish to launch a view-only version of MRE to view it?" \
+				  yesnocancel]
+		switch $response {
+		    yes {
+			Makemre UnusedArg
+			RunEnv::LoadViewFile $savedView
+		    } no {
+			LoadMREFormatView $stream
+		    } cancel {
+		    }
+		}
+		close $stream
+		return
+	    }
 	    gets $stream helperTitle
 	    set winId [NewHelperWindow $helperId [RestoreCrs $helperTitle]]
 	    gets $stream geometry
@@ -1020,6 +1038,19 @@ proc LoadView {} {
 	    ${helperId}::Restore $winId
 	}
 	close $stream
+    }
+}
+
+proc LoadMREFormatView {stream} {
+    global helperTable
+    while {[gets $stream helperId] >= 0} {
+	if {[namespace exists $helperId]} {
+	    set helperTitle [${helperId}::identify]
+	    set winId [NewHelperWindow $helperId $helperTitle]
+	    gets $stream oldStatus
+	    set helperTable($winId,status) [RestoreCrs $oldStatus]
+	    ${helperId}::Restore $winId
+	}
     }
 }
 

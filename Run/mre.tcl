@@ -801,11 +801,18 @@ proc RunEnv::SaveContainer {winId stream} {
 }
 
 proc RunEnv::LoadView {} {
-    global helperTable
-    variable mainframe
     
     set savedView [ChooseFile Displays.shf "Open view specification file" 0]
     if {[llength $savedView]} {
+	LoadViewFile $savedView
+    }
+    $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
+}
+
+proc RunEnv::LoadViewFile {savedView} {
+    global helperTable
+    variable mainframe
+
         destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
         set stream [open $savedView r]
         
@@ -882,8 +889,6 @@ proc RunEnv::LoadView {} {
                     }
         close $stream
     }
-    $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
-}
 
 proc RunEnv::LoadContainer {stream line} {
     global helperTable
