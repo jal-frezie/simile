@@ -24,6 +24,9 @@ source ../Run/mre.tcl
 if {[string match windows $tcl_platform(platform)]} {
 #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
+} else {
+    # avoid loading buggy Trf if ActiveTcl present on system
+    package ifneeded Trf 2.1 {}
 }
 
 # Make Simile a DDE server under Windows. Jonathan
