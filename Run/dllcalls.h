@@ -73,7 +73,7 @@ public:
 }; /* end of graph data type decl */
 
 graph_data_type* find_graph (int index, graph_data_type* use_graph_pointer) {
-  while (use_graph_pointer->index != index) {
+  while (use_graph_pointer && use_graph_pointer->index != index) {
     use_graph_pointer = use_graph_pointer->next;
   }
   return(use_graph_pointer);
@@ -103,6 +103,7 @@ public:
    method didn't work in win98) */
 
 typedef double ame_rand_type(double, double);
+typedef double graphpoint_type(double, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
 typedef void get_value_pointer_type(void*, char*, int, int*);

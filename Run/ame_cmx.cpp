@@ -7,19 +7,23 @@ them to be executed etc by Tcl commands. */
 #include <tcl.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
 
 #define	GETDIMS		0
 #define	GETTYPE		1
 #define	GETEVAL		2
 #define	GETGRAPH	3
-#define	SETGRAPH	4
 #define	GETCAPTION	5
 #define	GETMIN          6
 #define	GETMAX	        8
 #define GETPATH        10
 #define GETCLASS       11
 #define	TEST	       99
+
+#define READGRAPH      21
+#define WRITEGRAPH     22
+#define USEGRAPH       23
 
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
@@ -87,6 +91,42 @@ HINSTANCE flopen(char* fileName) {
 char simileVersion[] = SIMILE_VERSION;
 
 /* utility procedures making no direct reference to model classes/instances */
+graph_data_type* graphdata;
+
+double graphpoint(double xval, int index) {
+	double interval;
+	int length, spaces;
+	int *right,*left;
+	graph_data_type *use_graph_pointer;
+	
+	use_graph_pointer = find_graph(index, graphdata);
+
+	spaces = use_graph_pointer->xsize-1;
+	/* Interval is distance from left of graph in point units */
+	interval = spaces*(xval - use_graph_pointer->xlow)/
+		(use_graph_pointer->xhigh - use_graph_pointer->xlow);
+	switch(use_graph_pointer->range) {
+	case 0: /* truncate to fit on graph */
+	  interval = interval<0?0:(interval>spaces?spaces:interval);
+	  break;
+	case 2: /* wrap around graph range */
+	  interval = spaces*(interval/spaces - floor(interval/spaces));
+	  break;
+	/* case 1: extrapolate end sections of graph */
+	}
+	right = use_graph_pointer->points;
+	interval++;
+
+	for (length=spaces;length;length--) {
+		left = right;
+		right++;
+		if (--interval <= 1) break;
+	}
+	return use_graph_pointer->ylow + 
+		(use_graph_pointer->yhigh - use_graph_pointer->ylow)*
+		(interval*(*right) + (1-interval)*(*left))/use_graph_pointer->yspan;
+}
+
 void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
 }
@@ -134,9 +174,9 @@ public:
 int connCount;
 connectRecord* connectData;
 Tcl_Obj* connectInfoObject;
-graph_data_type* graphdata;
 
 ame_rand_type ame_rand;
+graphpoint_type graphpoint;
 release_graph_data_type release_graph_data;
 compare_instance_status_type compare_instance_status;
 get_value_pointer_type get_value_pointer;
@@ -152,7 +192,7 @@ get_remote_value_type get_remote_value;
  */
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
-			  void*, void*, void*, void*, void*, void*,
+			  void*, void*, void*, void*, void*, void*, void*,
 			  int*, node_data_line**, int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
@@ -220,6 +260,7 @@ public:
       
     nodecount = (*getcount)(this, 
 			    (void*)ame_rand, 
+			    (void*)graphpoint,
 			    (void*)release_graph_data, 
 			    (void*)compare_instance_status, 
 			    (void*)get_value_pointer, 
@@ -549,78 +590,8 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 
       return TCL_ERROR;
     }
-    graphptr = find_graph(data_line->graph, graphdata);
-    sprintf(current, "%f %f %d %f %f %d %d %d",
-            graphptr->xlow,
-            graphptr->xhigh,
-            graphptr->xspan,
-            graphptr->ylow,
-            graphptr->yhigh,
-            graphptr->yspan,
-            graphptr->range,
-            graphptr->xsize);
-    Tcl_SetStringObj(resultPtr, current, -1);
-
-    for (count=0;count<graphptr->xsize;count++) {
-      sprintf(current, " %d", graphptr->points[count]);
-      Tcl_AppendStringsToObj(resultPtr, current, 
-			     (char *)NULL);
-			     }
+    Tcl_SetIntObj(resultPtr, data_line->graph);
     return TCL_OK;
-  case SETGRAPH:
-    if (argc < 12) {
-      Tcl_SetStringObj(resultPtr, "At least 12 args needed to set graph!", -1);
-      return TCL_ERROR;
-    } /* if(error) */
-
-    graphptr = find_graph(data_line->graph, graphdata);
-    error = Tcl_GetDoubleFromObj(interp, argv[3], &(graphptr->xlow));
-    if (error != TCL_OK) {
-      return error;
-    } /* if(error) */
-        error = Tcl_GetDoubleFromObj(interp, argv[4], &(graphptr->xhigh));
-		 if (error != TCL_OK) {
-			return error;
-   } /* if(error) */
-        error = Tcl_GetIntFromObj(interp, argv[5], &(graphptr->xspan));
-		 if (error != TCL_OK) {
-			return error;
-   } /* if(error) */
-        error = Tcl_GetDoubleFromObj(interp, argv[6], &(graphptr->ylow));
-		 if (error != TCL_OK) {
-			return error;
-   } /* if(error) */
-        error = Tcl_GetDoubleFromObj(interp, argv[7], &(graphptr->yhigh));
-		 if (error != TCL_OK) {
-			return error;
-   } /* if(error) */
-        error = Tcl_GetIntFromObj(interp, argv[8], &(graphptr->yspan));
-		 if (error != TCL_OK) {
-
-			return error;
-   } /* if(error) */
-        error = Tcl_GetIntFromObj(interp, argv[9], &(graphptr->range));
-		 if (error != TCL_OK) {
-			return error;
-   } /* if(error) */
-        error = Tcl_GetIntFromObj(interp, argv[10], &(graphptr->xsize));
-		  if (error != TCL_OK) {
-			return error;
-   } /* if(error) */
-
-	 if (argc < 10 + graphptr->xsize) {
-		sprintf(current, "Only %d args for graph of %d datapoints!",
-			argc, graphptr->xsize);
-     	Tcl_SetStringObj(resultPtr, current, -1);
-	 return TCL_ERROR;
-   } /* if(error) */
-
-	 release_graph_data(graphptr);
-	 graphptr->points = (int *)malloc(graphptr->xsize*sizeof(int));
-	 for(count=0;count<graphptr->xsize;count++) {
-	   Tcl_GetIntFromObj(interp, argv[count+11], &(graphptr->points[count]));
-	 }
-	 return TCL_OK;
 
   case GETCAPTION:
     Tcl_SetStringObj(resultPtr, current, -1);
@@ -1093,6 +1064,123 @@ extern "C" int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
    }
 
   return do_interface(interp, argc-1, argv+1);
+}
+
+extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
+		 int argc, Tcl_Obj *CONST argv[]) {
+  int action, index, count, error;
+  Tcl_Obj* resultPtr;
+  graph_data_type* graphptr;
+  char current[255];
+  double xval;
+
+  if (argc < 3) {
+    interp->result = "At least two arguments for graph_table please!";
+    return TCL_ERROR;
+  }
+  error = Tcl_GetIntFromObj(interp, argv[1], &action);
+  if (error != TCL_OK) {
+    return error;
+  } /* if(error) */
+
+  error = Tcl_GetIntFromObj(interp, argv[2], &index);
+  if (error != TCL_OK) {
+    return error;
+  } /* if(error) */
+
+  resultPtr = Tcl_GetObjResult(interp);
+
+  switch (action) {
+  case READGRAPH:
+    graphptr = find_graph(index, graphdata);
+    sprintf(current, "%f %f %d %f %f %d %d %d",
+            graphptr->xlow,
+            graphptr->xhigh,
+            graphptr->xspan,
+            graphptr->ylow,
+            graphptr->yhigh,
+            graphptr->yspan,
+            graphptr->range,
+            graphptr->xsize);
+    Tcl_SetStringObj(resultPtr, current, -1);
+
+    for (count=0;count<graphptr->xsize;count++) {
+      sprintf(current, " %d", graphptr->points[count]);
+      Tcl_AppendStringsToObj(resultPtr, current, 
+			     (char *)NULL);
+			     }
+    return TCL_OK;
+  case WRITEGRAPH:
+    if (argc < 12) {
+      Tcl_SetStringObj(resultPtr, "At least 12 args needed to set graph!", -1);
+      return TCL_ERROR;
+    } /* if(error) */
+
+    graphptr = find_graph(index, graphdata);
+    if (!graphptr) { /* add a new graph */
+      graphptr = graphdata = new graph_data_type(index, graphdata);
+    }
+
+    error = Tcl_GetDoubleFromObj(interp, argv[3], &(graphptr->xlow));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    error = Tcl_GetDoubleFromObj(interp, argv[4], &(graphptr->xhigh));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    error = Tcl_GetIntFromObj(interp, argv[5], &(graphptr->xspan));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    error = Tcl_GetDoubleFromObj(interp, argv[6], &(graphptr->ylow));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    error = Tcl_GetDoubleFromObj(interp, argv[7], &(graphptr->yhigh));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    error = Tcl_GetIntFromObj(interp, argv[8], &(graphptr->yspan));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    error = Tcl_GetIntFromObj(interp, argv[9], &(graphptr->range));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    error = Tcl_GetIntFromObj(interp, argv[10], &(graphptr->xsize));
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    
+    if (argc-1 != 10+graphptr->xsize) {
+      sprintf(current, "Got %d args for graph of %d datapoints -- need %d",
+	      argc-1, graphptr->xsize, 10+graphptr->xsize);
+      Tcl_SetStringObj(resultPtr, current, -1);
+      return TCL_ERROR;
+    } /* if(error) */
+
+    //    release_graph_data(graphptr);
+    graphptr->points = new int[graphptr->xsize];
+    for(count=0;count<graphptr->xsize;count++) {
+      Tcl_GetIntFromObj(interp, argv[count+11], &(graphptr->points[count]));
+    }
+    return TCL_OK;
+
+ case USEGRAPH:
+    error = Tcl_GetDoubleFromObj(interp, argv[3], &xval);
+    if (error != TCL_OK) {
+      return error;
+    } /* if(error) */
+    Tcl_SetDoubleObj(resultPtr, graphpoint(xval, index));
+    return TCL_OK;
+
+  default:
+    sprintf(current, "graph_table does not support action %d", action);
+    Tcl_SetStringObj(resultPtr, current, -1);
+    return TCL_ERROR;
+  } /* end(switch,action) */
 }
 
 /* This does the same as compare_instance_status with Tcl_Obj lists instead
@@ -1635,9 +1723,10 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_CreateObjCommand(interp, "c_exitmodel", exitmodelCmd, (ClientData)NULL,
         (Tcl_CmdDeleteProc *)NULL);
 
-
     Tcl_CreateObjCommand(interp, "getvalue", interfaceCmd, (ClientData)NULL,
+        (Tcl_CmdDeleteProc *)NULL);
 
+    Tcl_CreateObjCommand(interp, "graph_table", graphCmd, (ClientData)NULL,
         (Tcl_CmdDeleteProc *)NULL);
     
     Tcl_CreateObjCommand(interp, "extract", extractCmd, (ClientData)NULL,

@@ -157,6 +157,7 @@ extern "C"
 __declspec( dllexport )
 #endif
   int get_count(void* useClassPtr, void* ame_rand_ptr, 
+		void* graphpoint_ptr, 
 		void* release_graph_data_ptr, 
 		void* compare_instance_status_ptr, 
 		void* get_value_pointer_ptr, 
@@ -176,6 +177,7 @@ __declspec( dllexport )
 
   /* ...and also giving us function pointers to save us using the linker... */
   ame_rand_ref = (ame_rand_type*)ame_rand_ptr;
+  graphpoint_ref = (graphpoint_type*)graphpoint_ptr;
   release_graph_data_ref = (release_graph_data_type*)release_graph_data_ptr;
   compare_instance_status = (compare_instance_status_type*)compare_instance_status_ptr;
   get_value_pointer = (get_value_pointer_type*)get_value_pointer_ptr;

@@ -529,22 +529,7 @@ proc GetModelClass { node } {
 }
 
 proc GetModelGraph {node} {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	return [getvalue $model_id $node 3]
-    } else {
-	variable graphdata
-	
-	set nodeData [getinfo $node]
-	if {[string compare [lindex $nodeData 4] NULL]} {
-	    return $graphdata([lindex $nodeData 4])
-	} else {
-	    return nograph
-	}
-    }
+    SetModelGraph $node
 }
 
 proc SetModelGraph {node args} {
@@ -553,9 +538,14 @@ proc SetModelGraph {node args} {
 	WarnNoProgram
     }	
     if {$model_id} {
-	eval {getvalue $model_id $node 4} $args
+	set index [getvalue $model_id $node 3]
     } else {
-	eval {setup_graph_data graphdata([lindex [getinfo $node] 4])} $args
+	set index [lindex [getinfo $node] 4]
+    }
+    if {[llength $args]} {
+	eval {setup_graph_data $index} $args
+    } else {
+	return [graph_table 21 $index]
     }
 }
 

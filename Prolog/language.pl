@@ -857,15 +857,10 @@ make_evaluation_routine(
 	    make_evaluation_routine(Language, XAxis, 0, GraphTerm,
 					'higher in same context'),
 	    /* Keep tcl working till it uses c++ graph access */
-	    (Language = tcl,
-		make_indexed_reference(Language, graphdata, [GraphN], Dataset),
-		make_pointer(Language, Dataset, GraphStruct);
-	    Language = c,
-		GraphStruct = GraphN),
-	    GraphD = [GraphN, GraphStruct, XLow, XHigh, XSpan,
+	    GraphD = [GraphN, GraphN, XLow, XHigh, XSpan,
 				YLow, YHigh, YSpan, Range, NumPts | PointList],
 	    make_procedure_call_chars(Language,
-				      [graphpoint, GraphTerm, GraphStruct],
+				      [graphpoint, GraphTerm, GraphN],
 				      Content_chars),
 /* End of graph clause */
 	    name(Term, Content_chars);

@@ -1681,13 +1681,8 @@ proc ListSameNumbers {list1 list2} {
 #}
 
 
-proc setup_graph_data {graph_data_pointer xlow xhigh xspan \
-			   ylow yhigh yspan xsize args} {
-    variable graphdata
-    set $graph_data_pointer [format "%f %f %d %f %f %d %d %s" \
-            $xlow $xhigh $xspan $ylow $yhigh $yspan $xsize $args]
-#    insert_graph_data $graph_data_pointer $xlow $xhigh $xspan $ylow $yhigh $yspan \
-            $xsize $args
+proc setup_graph_data {args} {
+    eval {graph_table 22} $args
 }
 
 proc release_graph_data {graph_data_pointer} {
@@ -1700,30 +1695,8 @@ proc release_graph_data {graph_data_pointer} {
 # procedure that executes the model.
 
 
-proc graphpoint {xval graph_data_pointer} {
-    variable graphdata
-
-    scan [set $graph_data_pointer] {%f %f %d %f %f %d %d %d %[^.]} \
-            xlow xhigh xspan ylow yhigh yspan range xsize array_data
-    set length [expr $xsize - 1]
-
-    set interval [expr $length*double($xval-$xlow)/($xhigh-$xlow)]
-
-    switch $range {
-        0 {
-            if {$interval < 0} {set interval 0}
-            if {$interval > $length} {set interval $length}
-        } 2 {
-            set interval [expr $length*($interval/$length - floor($interval/$length))]
-        }
-    }
-    set left [expr int($interval)]
-    if {$left < 0} {set left 0}
-    if {$left >= $length} {set left [expr $length - 1]}
-    set right [expr $left + 1]
-    set height [expr ($right - $interval)*[lindex $array_data $left] + \
-            ($interval - $left)*[lindex $array_data $right]]
-    return [expr $ylow + ($yhigh - $ylow)*$height/$yspan]
+proc graphpoint {xval index} {
+    graph_table 23 $index $xval
 }
 
 proc getinstance {varName dest newvalue} {

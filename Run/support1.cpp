@@ -19,6 +19,7 @@ int stop(int code) {
 
 /* Pointers to functions in the stub: */
 ame_rand_type* ame_rand_ref;
+graphpoint_type* graphpoint_ref;
 release_graph_data_type* release_graph_data_ref;
 compare_instance_status_type* compare_instance_status;
 get_value_pointer_type* get_value_pointer;
@@ -34,6 +35,10 @@ get_remote_value_type* get_remote_value;
 
 double ame_rand(double lo, double hi) {
   return (*ame_rand_ref)(lo, hi);
+}
+
+double graphpoint(double xval, int indx) {
+  return (*graphpoint_ref)(xval, indx);
 }
 
 void release_graph_data(graph_data_type* graph) {
@@ -348,45 +353,6 @@ int myabs(int a) {
 }
 double myabs(double a) {
   return fabs(a);
-}
-
-/* Before including the exported file itself let us declare the 
-helper procedures it uses. First the evaluator for graph functions. 
-Note that this supercharged c version extrapolates the edge 
-segments of the graph to cover points outside */
-
-double graphpoint(double xval, int index) {
-	double interval;
-	int length, spaces;
-	int *right,*left;
-	graph_data_type *use_graph_pointer;
-	
-	use_graph_pointer = find_graph(index, *graph_data_pointer);
-
-	spaces = use_graph_pointer->xsize-1;
-	/* Interval is distance from left of graph in point units */
-	interval = spaces*(xval - use_graph_pointer->xlow)/
-		(use_graph_pointer->xhigh - use_graph_pointer->xlow);
-	switch(use_graph_pointer->range) {
-	case 0: /* truncate to fit on graph */
-	  interval = max(0, min(spaces, interval));
-	  break;
-	case 2: /* wrap around graph range */
-	  interval = spaces*(interval/spaces - floor(interval/spaces));
-	  break;
-	/* case 1: extrapolate end sections of graph */
-	}
-	right = use_graph_pointer->points;
-	interval++;
-
-	for (length=spaces;length;length--) {
-		left = right;
-		right++;
-		if (--interval <= 1) break;
-	}
-	return use_graph_pointer->ylow + 
-		(use_graph_pointer->yhigh - use_graph_pointer->ylow)*
-		(interval*(*right) + (1-interval)*(*left))/use_graph_pointer->yspan;
 }
 
 int step_list(int **dim_list, int unused) {
