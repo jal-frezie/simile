@@ -1480,7 +1480,9 @@ one. */
 #ifdef SIM_LICENSED
   if (Tcl_VarEval(interp, "::md5::hmac ", secret, 
 	" $userinfo(name)@$userinfo(corp)%$userinfo(edn)", NULL) != TCL_OK) {
-	return TCL_ERROR;
+    /* raise another error so user doesnt see secret in trace */
+    Tcl_VarEval(interp, "::md5::hmac <secret>  $userinfo(name)@$userinfo(corp)%$userinfo(edn)", NULL);
+    return TCL_ERROR;
   }
   /* check it matches what we got before */
   if (strcmp(Tcl_GetVar2(interp, "userinfo", "license_code", 0), 

@@ -25,7 +25,7 @@ source ../Run/mre.tcl
 if {[string match windows $tcl_platform(platform)]} {
 #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
-} elseif {[string match linux $tcl_platform(platform)]} {
+} elseif {[string match Linux $tcl_platform(os)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
     package ifneeded Trf 2.1 {}
 }
