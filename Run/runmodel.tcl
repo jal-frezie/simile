@@ -558,6 +558,7 @@ proc NextCaption {canvas} {
 }
 
 proc MakeHelperMenu {} {
+    global custom
     set fm [menu .helpers -tearoff 0]
 
     $fm add command -label "Load" -command LoadView
@@ -570,6 +571,8 @@ proc MakeHelperMenu {} {
     set oldDir [pwd]
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
+    cd $custom(prefDir)/IOTools
+    AddHelperSublist $fm.sub2 "Local" l
     cd $oldDir
 }
 
@@ -581,7 +584,7 @@ proc MakeHelperMenu {} {
 
 proc AddHelperSublist {fm title ct} {
     global custom helperTable ;# custom used at toplevel in iotools
-    $fm add cascade -label $title... -menu $fm.sub$ct
+    $fm add cascade -label $title -menu $fm.sub$ct
     set m [menu $fm.sub$ct -tearoff 0]
     set nct 0
     set helperList [glob -nocomplain *.tcl]
@@ -622,11 +625,6 @@ proc AddHelperSublist {fm title ct} {
         }
     }
 }
-
-# new technology -- just one copy of the helper menu is made on startup
-# and it is put in all menubars
-
-MakeHelperMenu
 
 set helperTable(current) none
 

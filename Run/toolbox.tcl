@@ -173,6 +173,11 @@ proc ControlDraw {prologVersion} {
         file mkdir $custom(prefDir)
     }
 
+# new technology -- just one copy of the helper menu is made on startup
+# and it is put in all menubars
+
+    MakeHelperMenu
+
     if {[file exists $custom(prefDir)/version]} {
         set UserStream [NetOpen $custom(prefDir)/version r]
         gets $UserStream userinfo(name)
