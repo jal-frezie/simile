@@ -48,11 +48,9 @@ image create photo splash
 splash read $SIMILE_PATH/Images/splash.jpg
 pack [canvas .c -width 510 -height 340]
 .c create image 255 170 -image splash
-# .c create text 450.0 240.0 -font {-weight bold -family helvetica -size 30} -text SIMILE
 .c create text 392.0 285.0 -font {-weight bold -family helvetica -size 12} -text "Version $env(SIMILE_VERSION)"
 .c create text 392.0 320.0 -font {-family helvetica -size 10} -text "© 2002 Simulistics Ltd."
 
-# pack [label .l -image splash]
 wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2-170]
 wm overrideredirect . 1
 update
@@ -102,8 +100,7 @@ if {$argc} {
 }
 
 # Directory to start in
-set env(START_DIR) [pwd] ;# was $SIMILE_PATH/Tutorial
-set env(START_DIR) $SIMILE_PATH/Examples
+set env(START_DIR) $SIMILE_PATH/Examples ; # was $SIMILE_PATH/Tutorial or [pwd]
 
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder
