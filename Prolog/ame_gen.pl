@@ -124,6 +124,8 @@ make_legible_for_prolog(String, NewString) :-
 	member(N, Nums), member(E, [Eu, El]), /* must be an exponent */
 	suffix([NotN | Ns], Prefix),
 	\+ member(NotN, [Pt | Nums]),
+	\+ member(NotN, /* if last nondigit was alpha its part of an atom */
+		  "_QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm"),
 	\+ (member(Num, Ns), \+ member(Num, Nums)),
 	    Tweaked = [N, Pt, N0, E];
 	/* If a function has no args, pop in an empty atom */
