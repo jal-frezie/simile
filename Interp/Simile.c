@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Simile.c,v 1.5 2003/01/16 17:12:37 jaspert Exp $
+ * RCS: @(#) $Id: Simile.c,v 1.6 2003/01/16 17:12:37 jaspert Exp $
  */
 
 #include <tk.h>

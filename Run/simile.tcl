@@ -1,27 +1,6 @@
-#!/usr/local/ActiveTcl/bin/wish
-
 # SIMILE batch file
-# Make sure the first line refers to a version of TclTk with shared libraries
 
-proc GetRealFile {link} {
-    if {[catch {set base [file readlink $link]}]} {
-	return $link
-    }
-    if {[string match relative [file pathtype $base]]} {
-	set newLink [file dirname $link]/$base
-    } else {
-	set newLink $base
-    }
-    return [GetRealFile $newLink]
-}
-
-set scriptCmd [info script]
-if {[string match relative [file pathtype $scriptCmd]]} {
-    set scriptCmd [pwd]/$scriptCmd
-}
-# replace /./ in path with / to avoid confusing file dirname
-regsub -all /\./ [GetRealFile $scriptCmd] / scriptCmd
-
+puts [set scriptCmd [info script]]
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
 
