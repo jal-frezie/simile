@@ -9,16 +9,20 @@ namespace eval DisplayFormat {
     
     package require calendar
     namespace import ::calendar::GregorianCalendar::*
-       
+    
     proc General {val prec} {
         # was VarPrecRender
-	if {![string is double $val]} {
-	    return $val
-	}
+        if {![string is double $val]} {
+       	    return $val
+        }
         set regular [format %.${prec}f $val]
-	set scientific [format %.${prec}e $val]
-	set shortSci [format %.[expr $prec-3]e $val]
-
+        set scientific [format %.${prec}e $val]
+        if {$prec >= 3} {
+            set shortSci [format %.[expr $prec-3]e $val]
+        } else  {
+            set shortSci $scientific
+        }
+        
         if {[string length $scientific]<[string length $regular]} {
             return $scientific
         } else {
@@ -99,5 +103,5 @@ namespace eval DisplayFormat {
             return false
         }
     }
-        
+    
 }; #end namespace
