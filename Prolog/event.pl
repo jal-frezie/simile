@@ -1567,6 +1567,7 @@ unclick :-
 	    B is max(OldY, NewY),
 	    Wid shows_model Model,
 	    (select_bagged([L, T, R, B], Model);
+	    set_selection_abilities(Model),
 	    remove_old_rubberband),
 	    initialize_phase;
 	get_phase(action_choice), !,
@@ -1582,9 +1583,8 @@ select_bagged(Rect, Model) :-
 	 \+ (get_shape(Caught, bounding_box, Outer),
 		fits_inside(Rect, Outer)),
 	    \+ (get_highlit_obj(N, Caught), N<2),
-	    do_colours(Caught, on)),
-	set_selection_abilities(Model),
-	fail.
+	    do_colours(Caught, on),
+	    fail).
 /*
 zoom_to_area :-
 	get_incomplete([OldX, OldY, NewX, NewY]),

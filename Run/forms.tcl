@@ -1151,8 +1151,7 @@ proc equationlisting_start {} {
     
     pack $w.mainframe -fill both -expand true
     foreach imgType [list compartment flow variable creation \
-             immigration loss reproduction condition alarm \
-             event state squirt] {
+             immigration loss reproduction condition alarm] {
     image create photo equationlist(${imgType}img)
     equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
     }
