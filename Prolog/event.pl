@@ -408,7 +408,7 @@ doubleclick_on(Edit_thing) :-
 	    (get_av_pair(Control_thing, 0, units, OldUnits), !,
 		NewDims = no;
 	    NewDims = yes),
-	    spread_colour(Control_thing, NewDims),
+	    spread_colour(Edit_thing, NewDims),
 	    find_all_comps(Parent, Base),
 	    update_runnable(Parent)).
 	
@@ -419,7 +419,8 @@ dimensions too have changed. In any case, mark the submodel as in
 need of a rebuild as even if it doesn't change it will need to get the
 input values using the new units. */
 
-spread_dims(Obj) :-
+spread_dims(Node) :-
+	implicit_function(Node, Obj),
 	find_all_comps(Sm, Obj),
 	add_parameter(Sm, 1, c_new, 0),
 	get_av_pair(Obj, 0, value, Equation),
@@ -443,12 +444,12 @@ spread_dims(Obj) :-
 	(UnitsChanged = no, !;
 	build_array(UseBase, UseArray, NewUnits),
 	    add_parameter(Obj, 0, units, NewUnits)),
-	spread_colour(Obj, UnitsChanged).
+	spread_colour(Node, UnitsChanged).
 
 /* this will update colours of all nodes connected with the given node */
 
 spread_colour(Node, NewDims) :-
-	setof(More, status_affects(Node, More), SpreadList),
+	setof(More, (More = Node; status_affects(Node, More)), SpreadList),
 	(member(Hit, SpreadList), \+ find_type(Hit, influence);
 	member(Hit, SpreadList), find_type(Hit, influence)),
 	/* Do influences last cos they depend on others! */

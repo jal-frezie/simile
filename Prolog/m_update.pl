@@ -976,10 +976,7 @@ link_ends(New_obj, Start_thing, Terminator, Top_arc) :-
 	remove_border_nodes(New_obj, Terminator, Start_thing);
 	add_new_line_between(New_obj, Start_thing, Terminator, Top_arc),
 	get_action_point(Top_arc, Terminator, Last_new_arc),
-	(presence_affects(Last_new_arc, NewState),
-	    event:spread_colour(NewState, yes),
-	    fail;
-	true).
+	event:spread_colour(Last_new_arc, yes).
 
 load_references(Submodel, ReferenceCapts) :-
 	pair_with_captions(Submodel, References, ReferenceCapts),
@@ -1073,19 +1070,14 @@ boundaries, and deleting a non-final arc creates a new input node,
 only destination nodes are affected by arc deletion. And none at all
 if they are flows. */
 
-presence_affects(Arc, Affected) :-
-	find_ghosts(Arc, Affected);
-
-	/* case where deletion disconnects a flow from its fn */
-	find_base(Arc, Head),
-	(sequence(Head, Arc), sequence(Arc, Affected);
-	sequence(Arc, Head), sequence(Affected, Arc));
-	
-	terminates(Arc, Target),
-	(implicit_function(TargetVar, Target), !,
-	    find_base(TargetVar, AffectedVar),
-	    implicit_function(AffectedVar, Affected);
-	Affected = Target).
+presence_affects(Item, Affected) :-
+	status_affects(Item, Affected);
+	find_type(Item, influence),
+	    Item is_connector from _ to Fn,
+	    implicit_function(Affected, Fn);
+	find_type(Item, relation),
+	    Item is_connector from _ to Affected,
+	    terminates(Item, Affected).
 
 delete_obsolete_modes([], _, []).
 
@@ -1102,14 +1094,9 @@ delete_obsolete_modes([use(N, Dir, Local, Units) | R1], DeadRef, NewList) :-
 of the given item */
 
 status_affects(Item, Affected) :-
-	find_type(Item, flow),
-	    equivalent_arcs(Item, Affected);
-	\+ find_type(Item, flow),
-	    \+ find_type(Item, submodel),
-	    Affected = Item;
-	(supplies_value(Item, Downline);
-	    implicit_function(Downline, Item)),
-	status_affects(Downline, Affected).
+	find_ghosts(Item, Affected);
+	initiates(Affected, Item),
+	    find_type(Affected, influence).
 
 /* OK, now here's the easy, teenage, New York version...
 
@@ -1461,14 +1448,6 @@ get_possible_start(Base, Start) :-
 	(initiates(Start, Base);
 	sequence(Base, Start)),
 	Start has_type influence.
-
-supplies_value(Source, Dest) :-
-	Dest is_connector from Source to _,
-	Dest has_type influence;
-	next_section_of(Source, Dest);
-	Source has_type influence,
-	Source is_connector from _ to Dest,
-	Dest is_of_sort has_function.
 
 next_section_of(Source, Dest) :-
 /* works efficiently when source is defined */
