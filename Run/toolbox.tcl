@@ -204,7 +204,11 @@ set runHow(call) pipe
 
 # set this to send_sync, send_async or pipe, for the way to get data from
 # the exec process
-set runHow(return) send_sync
+if [string match Darwin $tcl_platform(os)] {
+  set runHow(return) pipe
+} else {
+  set runHow(return) send_sync
+}
 
 # this is obsolete and must be 'parallel'
 set runHow(time) parallel
@@ -225,7 +229,11 @@ proc do_for_node {node args} {
 	    } else {
 		set sep .
 	    }
-	    set makeExec ../System/bin/wish$MAJ$sep$MIN
+            if [string match Darwin $tcl_platform(os)] {
+              set makeExec {../System/bin/Simile\ model\ execution}
+            } else {
+              set makeExec ../System/bin/wish$MAJ$sep$MIN
+            }
 	    set srcLoc ../Run/runmodel.tcl			
 	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
 		set runHow(sendCmd) [list send [tk appname]]
@@ -469,7 +477,7 @@ proc compile_c {workingDir} {
         unix {
             if {[string match Darwin $tcl_platform(os)]} {
                 exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
-                exec g++ -dynamiclib -o $TARGET objtemp.o
+                exec g++ -bundle -o $TARGET objtemp.o
             } else {
                 exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
                 exec g++ -shared -o $TARGET objtemp.o
