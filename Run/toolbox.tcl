@@ -20,19 +20,16 @@ source ../Run/mre.tcl
 if {[string match windows $tcl_platform(platform)]} {
 #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
+    # Make Simile a DDE server under Windows. Jonathan autotesting
+    # Must be after the sourcing or Simile fails
+    catch {
+        package require dde 1.2
+        dde servername Simile
+    }
 } elseif {[string match Linux $tcl_platform(os)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
     # package ifneeded Trf 2.1 {}
 }
-
-# Make Simile a DDE server under Windows. Jonathan
-# Must be after the sourcing or Simile fails
-#### Commented out for now. Pending outcome of bug fixing (winfo exists "")
-#tk_messageBox -message [tk appname] -type ok
-#catch {
-#    package require dde 2.0
-#    dde register Simile
-#}
 
 proc AttackGlobalVariable {array elt val} {
     global $array
