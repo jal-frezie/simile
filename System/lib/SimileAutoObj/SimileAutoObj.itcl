@@ -219,7 +219,7 @@ itcl::class similescript::RunControl {
     #    ${keyvalue}::SetMode $winId stop
     #}
     
-    public method LoadParams {filepath {smPath {}}} {
+    public method MergeParams {filepath {smPath {}}} {
         do_for_node $modelNode MergeParams $modelNode $smPath $filepath 0
     }
 

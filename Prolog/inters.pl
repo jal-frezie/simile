@@ -352,7 +352,7 @@ make_intermediates(
 		    CommonContext = [sm(Away, _, Ptr, _) | _]),
 		append(SourceLoops, CommonContext, SourceContext);
 	    SourceRef = arr(_, Var, _),
-		Ph = 1,
+		Ph = -1,
 		SourceLoops = SourceContext),
 	    (var(Wait), !,
 		/* we are in the argument of last(...) so no need to wait for
@@ -365,6 +365,8 @@ make_intermediates(
 		    Args = [time]; /* or import from ancestor dll */
 		Var = externs_done, !, /* Made from imports by contained dll */
 		    Args = [externs_done, time]; 
+		Ph = 1, !,
+		    Args = [exts(Var)];
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	    (TermSwap = BackSwap, !;
 	    raise_exception(cannot_make_context(Target, TermSwap, BackSwap))),
