@@ -283,7 +283,12 @@ proc GetModelDims { node } {
 	WarnNoProgram
     }	
     if {$model_id} {
-	return [getvalue $model_id $node 0]
+# helper apps don't need to know about separate submodels so...
+	set fullList [getvalue $model_id $node 0]
+	while {[set sep [lsearch $fullList -2]]>-1} {
+	    set fullList [lreplace $fullList $sep $sep]
+	}
+	return $fullList
     } else {
 	lindex [getinfo $node] 2
     }
