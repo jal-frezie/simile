@@ -456,6 +456,7 @@ proc PutItThere {t parent} {
     } else {
 	wm transient $t
     }
+    wm geometry $t +[winfo screenwidth $t]+[winfo screenheight $t]
     return $t
 }
 
