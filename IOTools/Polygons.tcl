@@ -47,9 +47,8 @@ namespace eval ::polygon375 {
                 [list zoomin.gif "Zoom in" [namespace code "Zoom $winId 2 2"] ]\
                 [list zoomout.gif "Zoom out" [namespace code "Zoom $winId 0.5 0.5"] ]\
                 [list zoomfit.gif "Zoom to fit" [namespace code "Fit $winId"] ]\
-	        [list property.gif " Properties " [namespace code "Settings $winId"]]]
-# Edit function removed, too buggy 
-#                [list edit.gif " Enter edit mode " [namespace code "ChangeEditMode $winId"]]
+	            [list property.gif " Properties " [namespace code "Settings $winId"] ]\
+                [list edit.gif " Enter edit mode " [namespace code "ChangeEditMode $winId"]]]
 
         ::graphtools::MakeToolBar $winId $toolbarItems
     }
@@ -509,8 +508,8 @@ namespace eval ::polygon375 {
         }
         $winId.legend.pop$i configure -relief ridge -borderwidth 2
         $winId.buttons.msg configure -text \
-                "Drag over the polygons you wish \
-                to change the colour (value) of."
+                "Click on the polygon(s) whose colour (value) you wish \
+                to change."
         #    $winId.buttons.msg configure -text "new value $newVal"; # 1 $1 todo; debug line
         $winId.viewport.c configure -cursor spraycan
         bind $winId.viewport.c <B1-Motion> [namespace code "ChangeValue $winId %x %y"]
