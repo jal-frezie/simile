@@ -156,7 +156,7 @@ namespace eval ::ModelInspector63654 {
 #	    ShowMessage debug info $args ok
 	    if {[info exists running_c]} {
 		PostPopup $X $Y
-		set trans [GetFromProlog tk_get_info(dummy,$plName,types)]
+		set trans [GetTransTable $plName]
 		if {[catch {GetModelValue $plName} mVal]} {
 		    set missing [lindex [split $mVal \"] 1]
 		    set value \
