@@ -1009,8 +1009,10 @@ proc DoLocalCmd {win item} {
     }
 }
 
-proc ::tk::mac::Quit {} {
-  prolog tk_kill_everything('.mswindow00001.canvas')
+if [string match "Darwin" $tcl_platform(os)] {
+  proc ::tk::mac::Quit {} {
+    prolog tk_kill_everything('.mswindow00001.canvas')
+  }
 }
 
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
