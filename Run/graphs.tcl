@@ -721,7 +721,7 @@ proc AddEntry {winId node mustShow isInput} {
 	set paramData($compName) {}
 	return
     }
-    set levels [lrange [split $compName /] 1 end]
+    set levels [split $compName /]
     set nodeDims [GetModelDims $node]
 
 # bit of voodoo...get table relating numerical indices of node to enymerated
@@ -792,6 +792,10 @@ proc AddEntry {winId node mustShow isInput} {
     }
 }
 
+# MakeSubFrames puts up a load and a save button for each submodel frame, and
+# gives them the Load and Save commands in a given namespace. So we must put
+# the commands in a matching one...
+
 proc MakeSubFrames {parent hierarchy ns pt} {
     global iconImages
     set level [lindex $hierarchy $pt]
@@ -806,9 +810,12 @@ proc MakeSubFrames {parent hierarchy ns pt} {
         set path [join [lrange $hierarchy 0 $pt] /]
         # added setting of SimileProject element to store spf path
 	    pack [button $nextLevel.head.save -image $iconImages(save) \
-                -command "${ns}::Save /$path"] -side right
+		      -command [list ${ns}::Save $path]] -side right
 	    pack [button $nextLevel.head.open -image $iconImages(open) \
-                -command "${ns}::Open /$path"] -side right
+		      -command [list ${ns}::Open $path]] -side right
+	    if {![string length $level]} {
+		set level "TOP LEVEL"
+	    }
             pack [label $nextLevel.head.label -text $level:]
         }
         return [MakeSubFrames $nextLevel $hierarchy $ns $nextPt]
@@ -1032,23 +1039,19 @@ proc CancelParams {} {
     set paramData(done) 0
 }
 
-# MakeSubFrames puts up a load and a save button for each submodel frame, and
-# gives them the Load and Save commands in a given namespace. So we must put
-# the commands in a matching one...
-
 namespace eval fileparams {
 
 proc Save {smPath} {
     global paramState paramData widgetNames SimileProject
-    #ShowMessage debug info "Save $smPath" ok
+#ShowMessage debug info "Save $smPath" ok
     
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
     set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
         set pStr [open $metaFile w]
         
-        foreach compName [array names widgetNames $smPath/*] {
-	    set compTail [string range $compName [string length $smPath/] end]
+        foreach compName [array names widgetNames $smPath*] {
+	    set compTail [string range $compName [string length $smPath] end]
 	    set SubbedComp [StripCrs $compTail]
 	    if {[info exists paramState($compName)]} {
 		if {[string equal $paramData($compName) \
@@ -1091,7 +1094,7 @@ proc	MergeParams {smPath metaFile interactive} {
     while {[gets $pStr savedValue] != -1} {
 	#ShowMessage debug info "Restoring $savedValue" ok
 	set IdAndValue [split $savedValue =]
-	set restoredComp [RestoreCrs $smPath/[lindex $IdAndValue 0]]
+	set restoredComp [RestoreCrs $smPath[lindex $IdAndValue 0]]
 	set node [GetIdFromCaptionPath $restoredComp]
 	set trans [GetFromProlog tk_get_info(dummy,$node,types)]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok

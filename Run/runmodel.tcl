@@ -1090,7 +1090,7 @@ proc SaveView {} {
         foreach displayBox [array name helperTable *,whichHelper] {
             scan $displayBox {%[^,]} winId
             set helperId $helperTable($displayBox)
-            if {!([string match $helperId $helperTable(RunControl)]} {
+            if {![string match $helperId $helperTable(RunControl)]} {
                 puts $stream $helperId
                 # substitute <cr>s so entry goes on one line
                 puts $stream [StripCrs [wm title $winId]]
@@ -1108,7 +1108,7 @@ proc SaveView {} {
 }
 
 proc LoadView {} {
-    global helperTable nameOfHelperStateFile
+    global helperTable nameOfHelperStateFile errorInfo
     set nameOfHelperStateFile \
 	[ChooseFile iotools.shf "Open view specification file" 0]
     if {[llength $nameOfHelperStateFile]} {
@@ -1138,7 +1138,10 @@ proc LoadView {} {
             wm geometry $winId $geometry
             gets $stream oldStatus
             set helperTable($winId,status) [RestoreCrs $oldStatus]
-            ${helperId}::Restore $winId
+	    if {[catch {${helperId}::Restore $winId}]} {
+	        kill_helper_window $winId
+		ShowMessage "Problem restoring helper" warning $errorInfo ok
+	    }
         }
         close $stream
     }

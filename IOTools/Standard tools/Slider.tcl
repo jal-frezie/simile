@@ -51,7 +51,7 @@ namespace eval slide139 {
 	global checkStates
         set initVal [lindex [GetModelValue $node] 0]
         #ShowMessage debug info $def ok
-	set levels [lrange [split $title /] 1 end]
+	set levels [split $title /]
 	if {$nest} {
 	    pack [set f [frame [MakeSubFrames $winId.sliderframe $levels \
 				    [namespace current] 0]]] \
@@ -195,7 +195,7 @@ namespace eval slide139 {
                     #ShowMessage debug info "Doing type $type" ok
                 } else {
                     set pair [split $savedValue =]
-                    set elmt [GetIdFromCaptionPath $smPath/[lindex $pair 0]]
+                    set elmt [GetIdFromCaptionPath $smPath[lindex $pair 0]]
                     #ShowMessage debug info "Setting elmt $elmt" ok
                     set arr [lindex $pair 1]
                     if {[llength $arr]==1} {
@@ -242,8 +242,8 @@ namespace eval slide139 {
 
 proc PutRelSliderContents {iStr smPath elt val} {
     set fullCapt [GetCaptionPathFromId $elt]
-    if {[string match $smPath/* $fullCapt]} {
-	puts $iStr [string range $fullCapt [string length $smPath/] end]=$val
+    if {[string match $smPath* $fullCapt]} {
+	puts $iStr [string range $fullCapt [string length $smPath] end]=$val
     }
 }
 

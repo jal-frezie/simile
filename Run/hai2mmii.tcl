@@ -551,6 +551,9 @@ proc SetModelGraph {node args} {
 
 # because the data is all in order, this would be nicer if I only went through
 # the table once, adding the names as I found them, but...
+
+# Also note that we start with the numerical path of the top level model so
+# its caption is _not_ included
 	
 proc GetCaptionPathFromId {node} {
     global model_id
@@ -565,17 +568,21 @@ proc GetCaptionPathFromId {node} {
 	
 	set numericPath [lindex [getinfo $node] 3]
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
-	for {set level 0} {$level < [llength $numericPath] - 1} {incr level} {
+	for {set level 1} {$level < [llength $numericPath] - 1} {incr level} {
 	    set subpath [lrange $numericPath 0 $level]
 	    lappend subpath 0
-	    for {set record 0} {$nodecount>$record} {incr record} {
+	    for {set record 1} {$nodecount>$record} {incr record} {
 		if {[ListSameNumbers [lindex $nodedata($record) 4] $subpath]} {
 		    append fullPath / [lindex $nodedata($record) 9]
 		    break
 		}
 	    }
 	}
-	return $fullPath
+	if {[info exists fullPath]} {
+	    return $fullPath
+	} else {
+	    error "Could not find caption for node $node"
+	}
     }
 }
 
@@ -609,7 +616,7 @@ proc GetIdFromCaptionPath {caption} {
     } else {
 	global nodedata nodecount
 	
-	for {set line 0} {$nodecount>$line} {incr line} {
+	for {set line 1} {$nodecount>$line} {incr line} {
 	    set id [lindex $nodedata($line) 0]
 	    if {[string compare $caption \
 		    [GetCaptionPathFromId $id]] == 0} {

@@ -346,10 +346,10 @@ public:
     int count,level;
 
     *result = (char)NULL;
-    level = 0;
+    level = 1;
     while (tree[level]) {
       level++;
-      for (count=0;nodecount>count;count++) {
+      for (count=1;nodecount>count;count++) {
 	if (!compare_instance_status(nodedata[count].path,tree,level) &&
 	    !nodedata[count].path[level]) {
 	  strcat(result, "/");
@@ -445,7 +445,7 @@ that the submodel name is searched for in both models ) */
 int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   int count;
   char test[255];
-  for (count = 0; seekType->nodecount>count; ++count) {
+  for (count = 1; seekType->nodecount>count; ++count) {
     seekType->make_full_caption(seekType->nodedata[count].path, test);
 	  
     if (!strcmp(seeknode, test)) {
@@ -1119,6 +1119,8 @@ extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
     graphptr = find_graph(index, graphdata);
     if (!graphptr) { /* add a new graph */
       graphptr = graphdata = new graph_data_type(index, graphdata);
+    } else {
+      release_graph_data(graphptr);
     }
 
     error = Tcl_GetDoubleFromObj(interp, argv[3], &(graphptr->xlow));
@@ -1161,7 +1163,6 @@ extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
       return TCL_ERROR;
     } /* if(error) */
 
-    //    release_graph_data(graphptr);
     graphptr->points = new int[graphptr->xsize];
     for(count=0;count<graphptr->xsize;count++) {
       Tcl_GetIntFromObj(interp, argv[count+11], &(graphptr->points[count]));

@@ -340,7 +340,8 @@ proc ::RunEnv::CopyHelper {containerId} {
     variable CurrentHelperId
     variable canvasId
     
-    #ShowMessage debug info "CopyHelper container: $containerId; \n\
+    #ShowMessage debug info \
+	"CopyHelper container: $containerId; \n\
     CurrentContainer $CurrentContainer\n \
             selection owner: [selection own]\n\
             focus owner [focus]\n\
@@ -447,7 +448,8 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
         #ShowMessage debug info "DeleteNotebookPage n==0; new container $containerId" ok; ########
         destroy $notebook
         SetCurrentContainer $containerId
-        #ShowMessage debug info "DeleteNotebookPage  destroy notebook\n \
+        #ShowMessage debug info \
+	    "DeleteNotebookPage  destroy notebook\n \
         new container $containerId" ok; ########
     } else  {
         #ShowMessage debug info "DeleteNotebookPage default" ok
@@ -953,7 +955,7 @@ proc RunEnv::LoadView {} {
 }
 
 proc RunEnv::LoadSHF {HelperStateFileName} {
-    global helperTable nameOfHelperStateFile
+    global helperTable nameOfHelperStateFile errorInfo
     variable mainframe
     variable dp0
     
@@ -986,8 +988,13 @@ proc RunEnv::LoadSHF {HelperStateFileName} {
                 #wm geometry $winId $geometry # not a toplevel
                 gets $stream oldStatus
                 set helperTable($winId,status) [RestoreCrs $oldStatus]
-                ${helperId}::Restore $winId
-                ChildrenFocusParent $winId
+                if {[catch {${helperId}::Restore $winId}]} {
+		    DeleteHelperCurrentContainer
+		    ShowMessage "Problem restoring helper" warning $errorInfo \
+			ok
+		} else {
+		    ChildrenFocusParent $winId
+		}
             }
             $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
             
