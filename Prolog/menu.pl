@@ -1022,6 +1022,11 @@ show_error(Model, Lossage) :-
 	Lossage = bad_role(Lost), !,
 	    sicstus_format_to_chars("This model cannot be built because submodel ~a has a role arrow connecting it to a submodel in a separate executable module.", [Lost], Text),
 	    Fault = user;
+	Lossage = bad_instance_lookup(Node), !,
+	    find_all_comps(Submodel, Node),
+	    caption_for(Submodel, Capt),
+	    sicstus_format_to_chars("This model includes an attempt to use base instance lookup for the association submodel \"~a\". This cannot be done because index(1) in this submodel is the index of a variable-membership submodel other than itself.", [Capt], Text),
+	    Fault = user;
 	Lossage = preprocessor_failure(Target), !,
 	    sicstus_format_to_chars("Failed to substitute macro functions and references in ~a", [Target], text),
 	    Fault = system;

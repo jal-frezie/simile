@@ -1059,7 +1059,7 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    UseList = [on_reset | RefList];
 	/* can_find_id is a marker, not used as a condition */
 	AssignType = id_function, !,
-	    UseList = [can_find_id | RefList];
+	    UseList = [can_find_id(Node) | RefList];
 	UseList = RefList),
 	/* input parameters are set to their default values on model
 	    initialization only */
@@ -1356,13 +1356,14 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		(append(Slower, [Now | Faster], SubPasses),
 		    append(IdOpens, [make(_, IdConds, _,_,
 				  [assign(_, IdExpr)]),_Cls | NoIdConds], Now),
-		    member(can_find_id, IdConds),
+		    member(can_find_id(IdCond), IdConds),
 		    /* check condition is for this level...oh sod it */
 		    /* find last looping construct */
-		    append(OuterLoops, [make(_,_,_,_, [open_index(IdRef, _)])
+		    (append(OuterLoops, [make(_,_,_,_, [open_index(IdRef, _)])
 				       | SmLoop], OpenLoops),
-		    member(SmLoop,
-			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !,
+			member(SmLoop,
+			   [[make(_,_,_,_, [start_submodel(_,_,_,_)])],[]]), !;
+		    raise_exception(bad_instance_lookup(IdCond))),
 		    append_atoms(Submodel, cond, IdVar),
 		    /* OK Normally a reference to index(n) in a vm submodel
 		    gets turned to an element of instanceid, but this will not
