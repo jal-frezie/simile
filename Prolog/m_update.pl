@@ -410,7 +410,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
         */
 	(DimExprs = TargetExprs, !,
 	    ((member(Target_base, [any, n(_ET), a(_ET),
-				      boolean, int, const_int]), !,
+				      boolean, cond_spec, int, const_int]), !,
 	          Target_type = Target_base;	 
 	      get_conversion(_, Target_base, Target_base, _),
 	          Target_type = real),
@@ -561,7 +561,9 @@ add_implicit_function(Exp_node, Node_name) :-
 		find_all_comps(Parent, Exp_node),
 		make_node(Parent, function, Node_name),
 		new_line(influence, [], Node_name, Exp_node, _),
-		(Exp_node is_of_sort boolean_value, !,
+		(Exp_node is_of_sort cond_value, !,
+		    Node_name has_new_class_refinement units of cond_spec;
+		 Exp_node is_of_sort boolean_value, !,
 		    Node_name has_new_class_refinement units of boolean;
 		 true);
 	Exp_node has_class submodel,

@@ -68,6 +68,12 @@ do_equation_dialog(Win, Part) :-
 	(find_type(ClickedObj, compartment), !,
 	    TypeBase = real,
 	    TitleForm = 'Initial value';
+	ClickedObj is_of_sort cond_value, !,
+	    TypeBase = cond_spec,
+	    TitleForm = 'Condition/Specifiation';
+	ClickedObj is_of_sort boolean_value, !,
+	    TypeBase = boolean,
+	    TitleForm = 'Condition';
 	TitleForm = 'Equation'),
 	sicstus_format_to_chars("~a for ~a", [TitleForm, Caption], 
 BoxHeaderStr),
@@ -240,7 +246,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		member(ComboType, [n(_), const_int]), ComboUnits = int;
 		ComboType = ComboUnits), */
 
-            (member(TypeBase, [a(_), int, real, boolean]),
+            ((nonvar(TypeBase);
+		var(TypeBase), member(TypeBase, [a(_), int, real, boolean])),
 		promote_arg(EqnBase, TypeBase, ComboUnits), !,
 		(nonvar(ComboUnits); ComboUnits = TypeBase);
 	    UnitError = "Could not match units."),

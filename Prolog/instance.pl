@@ -235,9 +235,9 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	    UseExpr = GroundExpr,
 	    FType = init_function;
 	RType = condition,
-	    (GroundExpr = (index(1)==UseId),
+	    (GroundExpr = (index(1) is UseId),
 		UseExpr = [UseId+0];
-	    GroundExpr = any(index(1)==UseExpr)), !,
+	    GroundExpr = any(index(1) is UseExpr)), !,
 	    /* Try alternative way of enumerating instances */
 	    FType = id_function;
 	FType = function,

@@ -1368,7 +1368,7 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		    replace_subexps(IdExpr, compile, indices_direct,
 				    [Ptr | Inds], top_down, _, IxExpr),
 		    IdRef = arr('', IdVar, []),
-		    append(IdOpens, [make(_,_,_,_, [assign(IdRef, IxExpr)])
+		    append(IdOpens, [make(none,[],_,_, [assign(IdRef, IxExpr)])
 					| SmLoop], Next),
 		    append(OuterLoops, Next, UseLoops),
 		    append(Slower, [NoIdConds | Faster], UseSubPasses), !;

@@ -810,6 +810,7 @@ promote_unit(Lo, Hi) :-
 
 uses_as(any, Type) :-
 	member(Type, [boolean, a(_ET), n(_ET)]).
+uses_as(boolean, cond_spec).
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
 uses_as(int, real).
@@ -936,6 +937,7 @@ operator(==, boolean, [int, int]).
 operator(==, boolean, [real, real]).
 operator(==, boolean, [boolean, boolean]).
 operator(==, boolean, [a(T), a(T)]).
+operator(is, cond_spec, [int, int]).
 operator('!=', boolean, [int, int]).
 operator('!=', boolean, [real, real]).
 operator('!=', boolean, [boolean, boolean]).
