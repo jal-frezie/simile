@@ -463,8 +463,10 @@ proc AddFindMenu {canvas menu} {
     $menu add separator
     $menu add command -label Find... -command "FindCaption $canvas" \
             -accelerator "Ctrl+F"
+    AddAccelerator [winfo parent $canvas] edit "Find..." "<Control-f>"
     $menu add command -label "Find next" -command "NextCaption $canvas" \
             -accelerator "F3"
+            AddAccelerator [winfo parent $canvas] edit "Find next" "<F3>"
 }
 
 proc FindCaption {canvas} {
