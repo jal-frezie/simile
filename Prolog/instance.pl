@@ -189,9 +189,7 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	Home+Step*last(In-Out) */
 	
 	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffStruct),
-	    default_tick_is(Tick),
-	    append_atoms(['"', Tick, '"'], TickQ),
-	    Expr = incr(Step,Home++stage_incr(Diffs, Step, TickQ*Change)),
+	    Expr = incr(Step,Home++stage_incr(Diffs, Step, Change)),
 	    Local = [DiffStruct, Instance];
 	[Refs, Local, Expr] = [[], [Instance], none]),
 	    is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
@@ -424,7 +422,7 @@ get_units(Node, Type, Dims) :-
 intrinsically have same units as compartment, so we go back to their control nodes
 to get unit conversion factor */
 
-bind_and_build_term(Node, [Arc], _NodeBase, NodeDims, Var, [Ref]) :-
+bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	find_base(Arc, General_arc),
 	get_chain(General_arc, Node, _, Exits, Entries),
 	caption_for(Node, BadComp),
@@ -435,25 +433,16 @@ bind_and_build_term(Node, [Arc], _NodeBase, NodeDims, Var, [Ref]) :-
 	    caption_for(Multi, BadModel),
 	    raise_exception(flow_splits_at_border(BadArc, BadComp, BadModel));
 	implicit_function(General_arc, Controller),
-	get_units(Controller, _ArcUnits, ArcDims),
+	get_units(Controller, ArcUnits, ArcDims),
 	all(ame_gen, get_all_dims, [build(Exits), append(AllDims, ArcDims)]),
 	    (append(NodeDims, MergeDims, AllDims), !,
 		sum_dims(MergeDims, BaseVar, Var);
 	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
 						  AllDims, NodeDims)))),
-	is_instance(_, Controller, _, BaseVar, _, Ref).
-/*
+	is_instance(_, Controller, _, BaseVar, _, Ref),
 	default_tick_is(Tick),
-	((get_conversion(Var, ArcUnits, NodeBase/Tick, Term);
-		(get_conversion(_, ArcUnits, 1, _);
-			get_conversion(_, NodeBase, 1, _)),
-		Term = Var), !;
-	Term = Var,
-		caption_for(Controller, Capt),
-		sicstus_format_to_chars("Warning -- compartment with units ~w connects to flow defined from node ~w with incompatible units ~w -- conversion ommitted", 
-			[NodeBase, Capt, ArcUnits], Hassle),
-		do_dialogue("Compilation warning", warning, Hassle, ok, _)).
-*/
+	try_conversion(Var, ArcUnits, NodeBase/Tick, Term, _ImpType).
+
 bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
 	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),
 	bind_and_build_term(Node, Arcs, Base, Dims, MidTerm, MidRefs),

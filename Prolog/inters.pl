@@ -266,13 +266,10 @@ make_intermediates(
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
 	    Source = param(_, SrcUnits, OrigLoops, _,_),
-	    (m_update:use_units_in(SubId, 'No'),
-		nonvar(SrcUnits),
-		get_conversion(_, SrcUnits, SrcUnits, _),
-		Units = 1;
-	    Step = dummy, !,
-		Units = SrcUnits;
-	    unmake_enum_units(SrcUnits, Units)), !,
+	    remove_physical_units_if_disabled(SubId, SrcUnits, OrigUnits),
+	    (Step = dummy, !,
+		Units = OrigUnits;
+	    unmake_enum_units(OrigUnits, Units)), !,
 	    get_dims_from_loops(OrigLoops, Dims, _),
 	    get_dims_from_loops(SourceLoops, Dims, _),
 	    
@@ -501,9 +498,8 @@ make_intermediates(
 	    ((N=0; N = ''), SourceRef =.. [TRef, Step];
 	    integer(N), SourceRef = Source;
 	    raise_exception(bad_index_number(N, TRef))),
-	    (m_update:use_units_in(Sm, 'Yes'),
-		default_tick_is(Units);
-	    Units = 1), !;
+	    default_tick_is(OrigUnits),
+	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
 	Source = keep(SourceRef), !;
 	(Source = place_in(IndN), !,
 	    get_dims_from_loops(BuildingArrays, DestDims, DestVals),
@@ -676,15 +672,14 @@ make_intermediates(
 		    TattyUnits =.. [Op | UnitList],
 			sort_units(TattyUnits, Units, ConvFactor),
 			SourceRef = ConvFactor*ValRef), !;
-		Op = (++),
-		    UnitList = [Units, IncUnits],
-		    (get_conversion(1, IncUnits, Units, ConvFactor), !;
-		    raise_exception(mismatched_units(Source, UnitList,
-						     convertible))),
+		 Op = (++),
+		    /* Used for compartment increments -- no need to parse
+		    these, and conversion is done during instantiation (since
+		    it happens whether or not unit checking is on) so result
+		    units are simply those of 1st arg */
+		    UnitList = [Units, _IncUnits],
 		    ValRef = Arg1++Arg2,
-		    SourceRef = Arg1+(ConvFactor*Arg2);
-		    /* If this was an operator we need to pick one such that
-		    theargs match up */
+		    SourceRef = Arg1+Arg2;
 		Op = (^),
 		    UnitList = [Base, const_int],
 		    get_conversion(1, Base, Base, _),
@@ -713,11 +708,19 @@ make_intermediates(
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
 	get_actual_size(SubId, Source, [SrcNum], [SrcType], SrcUnits),
+	remove_physical_units_if_disabled(SubId, SrcUnits, OrigUnits),
 	(Step = dummy, !,
 	    SourceRef = SrcType,
-	    Units = SrcUnits;
+	    Units = OrigUnits;
 	SourceRef = SrcNum,
-	    unmake_enum_units(SrcUnits, Units)).
+	    unmake_enum_units(OrigUnits, Units)).
+
+remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
+	(m_update:use_units_in(SubId, 'No'),
+	    nonvar(SrcUnits),
+	    get_conversion(_, SrcUnits, SrcUnits, _), !,
+	    Units = 1;
+	Units = SrcUnits).
 
 unmake_enum_units(SrcUnits, Units) :-
 	SrcUnits = n(_),
@@ -903,7 +906,7 @@ operator(stage_incr, real, [diffs, int, real]).
 
 operator(!, boolean, [boolean]).
 operator(+, int, [int]).
-operator(++, int, [int]).
+/* operator(++, int, [int]). */
 operator(-, int, [int]).
 
 operator(+, int, [int, int]).
