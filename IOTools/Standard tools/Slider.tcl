@@ -15,13 +15,17 @@ namespace eval slide139 {
 	if {[info exists compList]} {
 	    unset compList
 	}
-	set toolbarItems [list \
-			      [list new.gif "Clear" \
-				   [namespace code "clear $winId"]] \
-			      [list add.gif "Add variables" \
-				   [namespace code "AddVariable $winId"]] \
-			      [list slider.gif "Add all variables" \
-				   [namespace code "AddAllVariables $winId /"]]]
+
+	menu $winId.slidervars -tearoff 0
+
+	set toolbarItems \
+	    [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
+		 [list add.gif "Add variables" \
+		      [namespace code "AddVariable $winId"]] \
+		 [list remove.gif "Remove a variable" \
+		      [namespace code "RemoveVariable $winId"]] \
+		 [list slider.gif "Add all variables" \
+		      [namespace code "AddAllVariables $winId /"]]]
 	
 	::graphtools::MakeToolBar $winId $toolbarItems
 	pack [message $winId.intro -aspect 800] -fill x
@@ -32,10 +36,15 @@ namespace eval slide139 {
 #        catch {wm geometry $winId $geom}
     }
 
+# Do not remove sliders when clearing data from displays
     proc clear {winId} {
+    }
+
+    proc Clear {winId} {
 	foreach current [winfo children $winId.sliderframe] {
 	    destroy $current
 	}
+	$winId.slidervars delete 0 end
 	SetState $winId {}
     }
 
@@ -50,10 +59,15 @@ namespace eval slide139 {
 
     proc AddVariable {winId} {
 	$winId.intro configure -text "Click on an input variable to add a slider for it, or on a submodel to add sliders for all input variables inside it."
-    GrabClicks $winId
+	GrabClicks $winId
     }
 
-    proc click {winId node caption} {
+    proc RemoveVariable { winId } {
+        tk_popup $winId.slidervars \
+	    [winfo pointerx $winId] [winfo pointery $winId]
+    }
+
+proc click {winId node caption} {
 	variable useNodes
 	
 	set fullCapt [GetCaptionPathFromId $node]
@@ -144,6 +158,8 @@ namespace eval slide139 {
 	} else {
 	    set f $winId
 	}
+	$winId.slidervars add command -label $title \
+	    -command [namespace code [list Remove $winId $title]]
         if {![info exists useDim]} {
 	    set defVal [GetDefVal $initVal -1 0]
 	    switch -glob $type {
@@ -251,6 +267,31 @@ namespace eval slide139 {
 	    }
 	    return $allVals
         }
+    }
+
+    proc Remove {winId title} {
+        set levels [split $title /]
+	set f [MakeSubFrames $winId $winId.sliderframe \
+		   $levels [namespace current] 0]
+	Prune $winId $f
+	set oldState [GetState $winId]
+	set wipqosn [lsearch $oldState [StripCrs $title]]
+	SetState $winId [lreplace $oldState $wipqosn $wipqosn]
+	$winId.slidervars delete $title
+    }
+
+    proc Prune {winId tree} {
+	set up [winfo parent $tree]
+	destroy $tree
+	if {![string equal ${winId}.sliderframe $up]} {
+	    foreach remain [winfo children $up] {
+		set box [winfo name $remain]
+		if {[string match box* $box] || [string match frame* $box]} {
+		    return
+		}
+	    }
+	    Prune $winId $up
+	}
     }
 
     proc SetChoiceNumber {cbox sub} {
