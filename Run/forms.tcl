@@ -1949,6 +1949,7 @@ proc equationlisting_start {} {
     image create photo equationlist(lossimg)
     image create photo equationlist(reproductionimg)
     image create photo equationlist(conditionimg)
+    image create photo equationlist(alarmimg)
     equationlist(subimg) read "../Images/Toolbar/submodel.gif"
     equationlist(compartmentimg) read "../Images/Toolbar/compartment.gif"
     equationlist(flowimg) read "../Images/Toolbar/flow.gif"
@@ -1958,6 +1959,7 @@ proc equationlisting_start {} {
     equationlist(lossimg) read "../Images/Toolbar/loss.gif"
     equationlist(reproductionimg) read "../Images/Toolbar/reproduction.gif"
     equationlist(conditionimg) read "../Images/Toolbar/condition.gif"
+    equationlist(alarmimg) read "../Images/Toolbar/alarm.gif"
     
     $equationlist(textbox) tag configure bigtag \
             -font {Helvetica 12 bold} -wrap word -spacing3 5 -lmargin1 10 -lmargin2 10
