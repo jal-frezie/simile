@@ -51,7 +51,6 @@ move_components(Migrants, California) :-
 			    \+ (Fix = sink, make_branch(Arc, California)),
 			    NewNodeType = variable;
 			Arc has_type flow,
-			    add_null_value_if_needed(Arc),
 			    NewNodeType = cloud;
 			Arc has_type relation,
 			    NewNodeType = submodel),
@@ -71,12 +70,6 @@ make_branch(Arc, California) :-
 	California has_changed_model_refinement link_equivalences of
 	        [InnerArc-Arc | Equivs].
 
-/* If a flow has multiple sections the bowtie is drawn on the one
-whose implicit function has a value, except if none have in which case
-it goes on the section at the source end. If dividing a flow with no
-values we need to add one to the section that currently has the bowtie
-in case that bowtie is not on the new source section (typical ghastly hack) */
-
 add_null_value_if_needed(Arc) :-
 	find_base(Arc, Base),
 	implicit_function(Base, BaseFn),
@@ -84,6 +77,19 @@ add_null_value_if_needed(Arc) :-
 	    BaseFn has_new_class_refinement value of '').
 	
 add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
+	/* If a flow has multiple sections the bowtie is drawn on the one
+	whose implicit function has a value, except if none have in which case
+	it goes on the section at the source end. If dividing a flow with no
+	values we need to add one to the section that currently has the bowtie
+	in case that bowtie is not on the new source section
+	(typical ghastly hack) */
+	(find_type(Flow, flow),
+	    find_base(Flow, Base),
+	    implicit_function(Base, BaseFn),
+	    \+ BaseFn has_class_refinement value of _Val, !,
+	    BaseFn has_new_class_refinement value of '';
+	true),
+
 	NewNode is_new_part_of California,
 	NewNode has_new_class NewClass,
 	((Direction = sink, Keep = out; Direction = source, Keep = in) ->

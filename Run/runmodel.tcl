@@ -1276,7 +1276,7 @@ proc ShiftDll {Point Top Loc Rep} {
     file mkdir $base
     if {[llength $Rep]} {
 	set prefx $base/model
-	if {$Rep} {
+	if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
 	    file rename ${prefx}${Rep}[info sharedlibextension] \
 		${prefx}[info sharedlibextension]
 	} else {
