@@ -8,14 +8,14 @@
 # These are the settings for the particular version we want to make
 # Compiler that will be used to make the stub for Windows
 set compiler_for_windows microsoft
-# edition: evaluation, standard or enterprise
-set edition standard
+# edition: evaluation, teaching, standard or enterprise
+set edition teaching
 # date of final expiry: {hh:mm D M Y} or {} for permanent
 set final_expiry {}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
-set needs_license 0
+set needs_license 1
 
 if {[llength $final_expiry]} {
     set expiry_ticks [clock scan $final_expiry]

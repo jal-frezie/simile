@@ -488,9 +488,10 @@ spread_dims(Node) :-
 	add_parameter(Sm, 1, c_new, 0),
 	get_av_pair(Obj, 0, value, Equation),
 	get_av_pair(Obj, 0, units, GivenUnits),
-	get_input_info(Obj, Input_list),
+	get_input_info(Obj, IList),
 	
-	(test_eqn(Equation, Node, [], Input_list, Type, FoundArray, _Ps, []),
+	(length(Inds, 32),
+	    test_eqn(Equation, Node, Inds, IList, Type, FoundArray, _Ps, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(Node, FoundArray, _, Array, _),
 		get_actual_sizes(Node, GivenArray, _, Array, _), !,
@@ -502,7 +503,7 @@ spread_dims(Node) :-
 		UseBase = GivenBase;
 	    UseBase = Base,
 		UnitsChanged = yes),
-	    update_links_and_vars(Input_list);
+	    update_links_and_vars(IList);
 	true),
 	(UnitsChanged = no, !;
 	build_array(UseBase, UseArray, NewUnits),

@@ -1511,15 +1511,17 @@ proc ShowAbout {winId} {
             -font {-family helvetica -size 8}]
     
     set gen [frame .about.fr.gen]
-    if [string match evaluation $userinfo(edn)] {
-        set info [label $gen.info -text "For upgrade to Standard\
+    switch -regexp $userinfo(edn) {
+	evaluation {
+	    set info [label $gen.info -text "For upgrade to Standard\
                 or Enterprise Editions," -font {-family helvetica -size 10}]
-    } elseif [string match standard $userinfo(edn)] {
+	} standard|teaching {
         set info [label $gen.info -text "For support or to upgrade\
                 to Enterprise Edition," -font {-family helvetica -size 10}]
-    } else {
-        set info [label $gen.info -text "For support," \
-                -font {-family helvetica -size 10}]
+	} enterprise {
+	    set info [label $gen.info -text "For support," \
+			  -font {-family helvetica -size 10}]
+	}
     }
     pack $info -side left
     pack [label $gen.visit -text "please visit" -font {-family helvetica -size 10}]\
