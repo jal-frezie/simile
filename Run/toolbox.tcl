@@ -5,8 +5,6 @@
 
 package require BWidget
 
-#tk_messageBox -message "library [info library] path $auto_path"
-
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
 source ../Run/messages.tcl
@@ -1274,7 +1272,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost"\
             -variable MIpushedbutton -value ghost
     $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
-            -variable MIpushedbutton -value snap
+            -variable MIpushedbutton -value snap; #-state disabled
     
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
@@ -1365,7 +1363,7 @@ proc AddMainMenu { winid initWidth initDepths} {
             BindPopup $tb.$mode $mode
         }
     }
-    $tb.snap configure -state disabled
+    #$tb.snap configure -state disabled
         
     $tb.select configure -relief sunken
     # heheheh...must be in select mode to make new window, except first
