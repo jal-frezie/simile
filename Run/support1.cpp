@@ -328,14 +328,6 @@ double max(double a, double b) {
   return a>b?a:b;
 }
 
-/* ...or abs for floats... */
-#ifdef WIN32
-#else
-double abs(double a) {
-  return fabs(a);
-}
-#endif
-
 /* Before including the exported file itself let us declare the 
 helper procedures it uses. First the evaluator for graph functions. 
 Note that this supercharged c version extrapolates the edge 
