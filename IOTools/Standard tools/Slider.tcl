@@ -52,13 +52,15 @@ namespace eval slide139 {
 	    } ENUMERATED {
 		set possVals [lrange [lindex $trans end] 1 end]
 	    } default {
-		set min [GetMinValue $winId $node]
-		set max [GetMaxValue $winId $node]
-		set magnitude [expr $max - $min]
+#		set min [GetMinValue $winId $node]
+#		set max [GetMaxValue $winId $node]
+#		set magnitude [expr $max - $min]
+		::graphtools::AxisRound [GetMinValue $winId $node] \
+		    [GetMaxValue $winId $node] 0 min max gap s1 s2 s3 s4
 		if {[string match INTEGER [GetModelType $winId $node]]} {
 		    set spacing 1
 		} else {
-		    set spacing [expr $magnitude/100.0]
+		    set spacing [expr $gap/100.0]
 		}
 	    }
 	}
@@ -99,8 +101,7 @@ namespace eval slide139 {
 		} default {
 		scale $f.scale -length 120 -orient h -showvalue false \
                     -sliderlength 10 -from $min -to $max \
-                    -tickinterval [expr $magnitude/5.0] \
-                    -resolution $spacing \
+                    -tickinterval $gap -resolution $spacing \
                     -variable sliderVals($node)
 		$f.scale set $defVal
 		pack $f.scale -side right -fill x -expand true
@@ -174,7 +175,7 @@ namespace eval slide139 {
 		    pack $newScale -fill x -expand true
 		    # only put legend on bottom one
 		    if {$count==$index} {
-			$newScale configure -tickinterval [expr $magnitude/5.0]
+			$newScale configure -tickinterval $gap
 		    }
 		    }
 		}
