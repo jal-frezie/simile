@@ -79,18 +79,18 @@ namespace eval runcontrol33857 {
         
         $t.nb add [frame $t.nb.rcf] -text "Run control"
         set rcf $t.nb.rcf
-        frame $rcf.upper
+        ttk::frame $rcf.upper -class Toolbar
         foreach mode {play pause stop} {
             set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
         }
         frame $rcf.upper.topbuttons
-        Button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
+        ::ttk::button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
                 -command "[namespace current]::SetMode $t reset"
-        pack $rcf.upper.topbuttons.reset -side left  -padx 1 -expand true -fill x
+        pack $rcf.upper.topbuttons.reset -side left  -padx 1 -pady 2 -expand true -fill x
         BindPopup $rcf.upper.topbuttons.reset "Reset simulation"
-        Button $rcf.upper.topbuttons.start -image $playImg -width 32  \
+        ::ttk::button $rcf.upper.topbuttons.start -image $playImg -width 32  \
                 -command "[namespace current]::SetMode $t start"
-        pack $rcf.upper.topbuttons.start -side left  -padx 1 -expand true -fill x
+        pack $rcf.upper.topbuttons.start -side left  -padx 1 -pady 2 -expand true -fill x
         BindPopup $rcf.upper.topbuttons.start "Run or pause simulation"
         pack $rcf.upper.topbuttons -side left
         
@@ -103,7 +103,7 @@ namespace eval runcontrol33857 {
         pack [set runState($node,progressBar) [::ttk::progress $rcf.upper.bf.bar -from 0 -to 100]] \
                 -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
-        pack $rcf.upper -side top -expand true -fill x
+        pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
         set captWidth 20
         frame $rcf.editBoxes
         foreach {name capt var} {exec {Execute for } execTime \
@@ -111,20 +111,20 @@ namespace eval runcontrol33857 {
                     disp {Display interval } displayInt} {
             frame $rcf.editBoxes.$name
             label $rcf.editBoxes.$name.capt -text $capt -width $captWidth -anchor w
-            pack $rcf.editBoxes.$name.capt -side left
+            pack $rcf.editBoxes.$name.capt -side left -anchor nw
             ::ttk::entry $rcf.editBoxes.$name.num -relief sunken \
                     -textvar runState($node,$var) -width 8
-            pack $rcf.editBoxes.$name.num -side left
+            pack $rcf.editBoxes.$name.num -side left -expand on -fill x -anchor nw
             label $rcf.editBoxes.$name.unit -textvar runState($node,timeUnit)
             pack $rcf.editBoxes.$name.unit -side left
-            pack $rcf.editBoxes.$name  -anchor w -pady 2
+            pack $rcf.editBoxes.$name  -anchor nw -pady 2 -fill x
         }
-        pack $rcf.editBoxes -side bottom -pady 2
+        pack $rcf.editBoxes -side bottom -pady 2 -expand on -fill both
         
         $t.nb add [frame $t.nb.rsf] -text "Run settings"
         set rsf $t.nb.rsf
-        pack [frame $rsf.unitselection] -pady 2
-        pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left
+        pack [frame $rsf.unitselection] -pady 2 -fill x
+        pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left -anchor nw
         ::ttk::menubutton $rsf.unitselection.pulldown
         set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
         foreach unit {unit second minute hour day week month year Ma} {
@@ -132,10 +132,10 @@ namespace eval runcontrol33857 {
         }
         $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
               -textvariable runState($node,timeUnit)
-        pack $rsf.unitselection.pulldown -side left
+        pack $rsf.unitselection.pulldown -side left -anchor nw
         
-        pack [frame $rsf.integration] -pady 2
-        pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left
+        pack [frame $rsf.integration] -pady 2 -fill x
+        pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left -anchor nw
         ::ttk::menubutton $rsf.integration.pulldown
         set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
         foreach method {Euler {Runge-Kutta}} {
@@ -143,23 +143,23 @@ namespace eval runcontrol33857 {
         }
         $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
               -textvariable runState($node,intMethod)
-        pack $rsf.integration.pulldown -side left
+        pack $rsf.integration.pulldown -side left -anchor nw
         
         set sendvars($node,captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             lappend sendvars($node,captList) \
                     [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
         }
-        pack [frame $rsf.edit] -anchor w -pady 2
+        pack [frame $rsf.edit] -pady 2 -expand on -fill both
         ::ttk::menubutton $rsf.edit.capt
         set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
         foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
           $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $t $index]
         }
         $rsf.edit.capt configure -menu $timeStepMenu -width 16
-        pack $rsf.edit.capt -side left
+        pack $rsf.edit.capt -side left -anchor nw
         pack [label $rsf.edit.colon -text " "] -side left
-        pack [::ttk::entry $rsf.edit.num -width 8] -side left
+        pack [::ttk::entry $rsf.edit.num -width 8] -side left -expand on -fill x -anchor nw
         SwapDistVar $t 1
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
