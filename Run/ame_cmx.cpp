@@ -853,7 +853,7 @@ int g_r_v_bug;
 
 void* get_remote_value(void* typeRef, void* topInstRef, int level,
 			    int arcIndx, int* subList) {
-  connectRecord* currentData;
+  connectRecord* currentData;
 
 
 
@@ -1641,7 +1641,7 @@ char edition[]="enterprise";
 void crash (Tcl_Interp *interp, char *cause) {
  /* oh dear. */
  /* oh dear, oh dear. */
-  Tcl_VarEval(interp, "tk_messageBox -title {Authorization failure} -icon error -message {Bad ", cause, " authorization. Simile will now exit.} -type ok", NULL);
+  Tcl_VarEval(interp, "ShowMessage {Authorization failure} error {Bad ", cause, " authorization. Simile will now exit.} ok", NULL);
   Tcl_Exit(-1);
 }	 
 #ifdef USE_MY_HMAC
