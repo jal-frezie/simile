@@ -7,10 +7,10 @@
 
 proc equationResources {} {
 
-    foreach entryBox {name description comment units vname pname iname} {
-	option add *Equation*$entryBox.relief		sunken	startup
-	option add *Equation*$entryBox.background	white	startup
-	option add *Equation*$entryBox.foreground	black	startup
+    foreach equation(ebox) {name description comment units} {
+	option add *Equation*$equation(ebox).relief		sunken	startup
+	option add *Equation*$equation(ebox).background	white	startup
+	option add *Equation*$equation(ebox).foreground	black	startup
     }
 
     # Text for the labels on variable/parameter/unit entries
@@ -31,7 +31,7 @@ proc equationResources {} {
     option add *Equation*table.underline 	0	startup
 
     # Size of the listboxes
-    foreach listBox {vlist plist ilist} {
+    foreach listBox {plist ilist} {
 	option add *Equation*$listBox.width	20	startup
 	option add *Equation*$listBox.height	10	startup
     }
@@ -105,50 +105,26 @@ proc create_equation {parent boxtitle indices} {
 	set equation(top) $t
 	wm title $t $boxtitle
 	equationResources
-
-	# Create entries for the variable, parameter and units fields
-	# The values are kept in equation(vname, pname, iname)
-
-	set equation(vname) ""
-	set equation(pname) ""
-	set equation(iname) ""
-
-	frame $t.top
-	pack $t.top -side top -fill x
-
-	label $t.top.v -padx 0
-	set ev [label $t.top.vname -textvariable equation(vname) -width 16]
-	label $t.top.p -padx 0
-	set ep [entry $t.top.pname -textvariable equation(pname) -width 16]
-	label $t.top.i -padx 0
-	set ei [entry $t.top.iname -textvariable equation(iname) -width 16]
-        button $t.top.alter -text Alter -command "set equation(done) 2"
-	
-	pack $t.top.v -side left
-	pack $t.top.vname -side left -fill x -expand true
-	pack $t.top.p -side left
-	pack $t.top.pname -side left -fill x -expand true
-	pack $t.top.i -side left
-	pack $t.top.iname -side left -fill x -expand true
-        pack $t.top.alter
+    frame $t.top
+    label $t.top.p -text "Parameter:"
+    label $t.top.i -text "In units:"
+    pack $t.top.p $t.top.i -side left -fill x -expand true
+    pack $t.top -fill x
 
 	frame $t.middle
-
+    
 	# Create three listboxen to hold the table contents
 	# These will scroll in combination a riddly diddly dee
 	# scroll bar is on the right hand side (I said...)
 
-        set rollList [list $t.middle.scroll $t.middle.vlist \
-		$t.middle.plist $t.middle.ilist]
+        set rollList [list $t.middle.scroll $t.middle.plist $t.middle.ilist]
 
-	set lbv [listbox $t.middle.vlist \
-		-yscrollcommand [concat RollAll $rollList]]
 	set lbp [listbox $t.middle.plist \
 		-yscrollcommand [concat RollAll $rollList]]
 	set lbi [listbox $t.middle.ilist \
 		-yscrollcommand [concat RollAll $rollList]]
 	scrollbar $t.middle.scroll -command [list ScrollAll \
-		[list $lbv $lbp $lbi]]
+		[list $lbp $lbi]]
 
 	# Create the OK and Cancel buttons
 	# The OK button has a rim to indicate it is the default
@@ -178,7 +154,6 @@ proc create_equation {parent boxtitle indices} {
 	# in a horizontal stack below the upper widgets
 	pack $t.middle -side top -fill both -expand true
 
-	pack $t.middle.vlist -side left -fill both -expand true
 	pack $t.middle.plist -side left -fill both -expand true
 	pack $t.middle.ilist -side left -fill both -expand true
 	pack $t.middle.scroll -side left -fill y
@@ -288,9 +263,9 @@ proc create_equation {parent boxtitle indices} {
 	pack $t.main -side bottom -fill both
 
 	set equation(newGraphs) ""
-	equationBindings $t $en $eu $ev $ep $ei $lbv $lbp $lbi \
+	equationBindings $t $en $eu $lbp $lbi \
 			$lbf $lbx $graph $table $ok $can
-	tkwait visibility $t.middle.vlist   
+	tkwait visibility $t.middle.plist   
 }
 
 proc interact_equation {} {
@@ -329,7 +304,16 @@ proc interact_equation {} {
 		    [string trimright [$t.main.cmtFrame.text get 1.0 end]] \
 			$equation(min) $equation(max)]
 	} elseif {$equation(done)==2} {
-	    return [list $equation(vname) $equation(pname) $equation(iname)]
+	    set rlist [list [lindex $equation(pathlist) $equation(ckLine)]]
+	    foreach list {plist ilist} {
+		set uselist .equation.middle.$list
+		if {[string match $uselist $equation(lbid)]} {
+		    lappend rlist $equation(listedit)
+		} else {
+		    lappend rlist [$uselist get $equation(ckLine)]
+		}
+	    }
+	    return $rlist
 	}
 }
 
@@ -358,11 +342,10 @@ proc ScrollAll {widgetList args} {
     }
 }
 
-proc RollAll {s l1 l2 l3 top bot} {
+proc RollAll {s l1 l2 top bot} {
     $s set $top $bot
     $l1 yview moveto $top
     $l2 yview moveto $top
-    $l3 yview moveto $top
 }
 
 proc GetTable {parent box} {
@@ -401,29 +384,38 @@ proc fill_inputs { triples } {
 
     set t $equation(top)
 	# Initialize variables and display  list
-	$t.middle.vlist delete 0 end
+    set equation(pathlist) {}
 	$t.middle.plist delete 0 end
 	$t.middle.ilist delete 0 end
 
 	foreach vpiTriple $triples {
-		$t.middle.vlist insert end [lindex $vpiTriple 0]
+	    lappend equation(pathlist) [lindex $vpiTriple 0]
 		$t.middle.plist insert end [lindex $vpiTriple 1]
 		$t.middle.ilist insert end [lindex $vpiTriple 2]
 	}
+
+# Make box mode compact if not used
+    set equation(listlength) [llength $triples]
+    if {!$equation(listlength)} {
+	pack forget $t.top
+	pack forget $t.middle
+    } elseif {$equation(listlength)<=10} {
+	$t.middle.plist configure -height $equation(listlength)
+	$t.middle.ilist configure -height $equation(listlength)
+	pack forget $t.middle.scroll
+    }
+    set equation(selected,$t.middle.plist) -1
+    set equation(selected,$t.middle.ilist) -1
 }
 
-proc equationBindings { t en eu ev ep ei lbv lbp lbi \
+proc equationBindings { t en eu lbp lbi \
 		lbf lbx gr ta ok can } {
 	# t - toplevel
 	# en - equation entry
 	# eu - units entry
-	# ev - variable entry box
-	# ep - parameter entry box
-	# ei - input units entry box
 
 	# lbf - listbox for available functions
 	# lbx - listbox for available indices
-	# lbv - variable listbox
 	# lbp - parameter listbox
 	# lbi - input units listbox
 	# gr - graph button
@@ -433,8 +425,9 @@ proc equationBindings { t en eu ev ep ei lbv lbp lbi \
 
 	# Elimate the all binding tag because we
 	# do our own focus management
-	foreach w [list $en $eu $ev $ep $ei $lbv $lbp $lbi \
+	foreach w [list $en $eu $lbp $lbi \
 			$lbf $ok $can] {
+	    bind $w <Button-1> ListEditDone
 	    bindtags $w [list $t [winfo class $w] $w]
 	}
 	# Dialog-global cancel binding
@@ -442,26 +435,22 @@ proc equationBindings { t en eu ev ep ei lbv lbp lbi \
 	# bind $t <Control-c> equationCancel
 
 	# Entry bindings
-	foreach $w [list $en $eu $ev $ep $ei] {
+	foreach $w [list $en $eu] {
 	    bind $w <Return> equationOK
 	}
+	set PopCmd [list QueuePopup "AddParamPopup %W %y %X %Y"]
+	bind $lbp <Enter> $PopCmd
+	bind $lbp <Motion> "RemovePopup;$PopCmd"
+	bind $lbp <Leave> RemovePopup
 
-	# A double click, or <space>, puts the name in the entry
-	bind $lbv <space> "equationTake $%W  equation(vname); focus $ev"
-	bind $lbv <Double-1> \
-		"equationClick %W %y equation(vname); focus $ev"
+	bind $lbp <Button-1> "equationClick %W %y"
+	bind $lbp <Button-3> "equationRight %W %y"
+	bind $lbp <Double-1> "equationDouble %W %y $en; focus $en"
 
-	bind $lbp <space> "equationTake $%W  equation(pname); focus $ep"
-	bind $lbp <Button-1> \
-		"equationClick %W %y equation(pname); focus $ep"
-	bind $lbp <Double-1> \
-		"equationDouble %W %y $en; focus $en"
-
-	bind $lbi <space> "equationTake $%W  equation(iname); focus $ei"
-	bind $lbi <Button-1> \
-		"equationClick %W %y equation(iname); focus $ei"
+	bind $lbi <Button-1> "equationClick %W %y"
+	bind $lbi <Button-3> "equationRight %W %y"
 	bind $lbi <Double-1> \
-		"equationDouble %W %y $eu; focus $eu; $eu icursor end"
+	    "equationDouble %W %y $eu; focus $eu; $eu icursor end"
 
 	bind $lbf <Double-1> \
 		"functionClick %W %y $en"
@@ -477,9 +466,9 @@ proc equationBindings { t en eu ev ep ei lbv lbp lbi \
 	# Button focus.  Extract the underlined letter
 	# from the button label to use as the focus key.
 	foreach but [list $ok $can] {
-		set char [string tolower [string index  \
-			[$but cget -text] [$but cget -underline]]]
-		bind $t <Alt-$char> "focus $but ; break"
+	    set char [string tolower [string index [$but cget -text] \
+					  [$but cget -underline]]]
+	    bind $t <Alt-$char> "focus $but ; break"
 	}
 	bind $gr <Tab> "focus $ta"
 	bind $ta <Tab> "focus $ok"
@@ -507,13 +496,54 @@ proc equationCancel {} {
 	set equation(done) 0
 }
 
-# Tricky bit: let's say clicking in either listbox loads the item into
-# the corresponding edit box...ie add boxname to call. (good tcl feature!)
+proc equationClick { lb y } {
+    global equation
 
-proc equationClick { lb y bname} {
+    if {$equation(selected,$lb)==$y} {
+	equationRight $lb $y
+    } else {
+	ListEditDone
+	set equation(selected,$lb) -1
+	after 500 [list set equation(selected,$lb) $y]
+    }
+}
+
+proc equationRight { lb y } {
+    global equation
+#    if {![llength [$lb curselection]]} {
+#	return
+#    }
+    ListEditDone
+    set ebox .equation.middle.e
+    set equation(lbid) $lb
+    set equation(ckLine) [$lb nearest $y]
+#    if {$ckLine == [$lb curselection]} {
+	entry $ebox -textvariable equation(listedit)
+	set equation(listedit) [$lb get $equation(ckLine)]
+    place $ebox -in $lb \
+	-rely [expr 1.0*$equation(ckLine)/$equation(listlength)] \
+	-relwidth 1
+    $ebox configure -font {-weight bold}
+    $ebox select from 0
+    $ebox select to end
+    focus $ebox
+    bind $ebox <Return> ListEditDone
+#    }
 	# Take the item the user clicked on
-	global equation
-	set $bname [$lb get [$lb nearest $y]]
+#	global equation
+#	set $bname [$lb get [$lb nearest $y]]
+}
+
+proc ListEditDone {} {
+    global equation
+    set ebox .equation.middle.e
+    if {[winfo exists $ebox]} {
+	if {[string compare $equation(listedit) \
+		 [$equation(lbid) get $equation(ckLine)]]} {
+	    set equation(done) 2
+	}
+	destroy $ebox
+    }
 }
 
 proc equationDouble { lb y boxname} {
@@ -540,6 +570,12 @@ proc AddFnPopup {lb y X Y} {
     AddWidgetPopup [lindex [$lb get [$lb nearest $y]] 0] $X $Y
 }
 
+proc AddParamPopup {lb y X Y} {
+    global equation
+    AddWidgetPopup "Value(s) of [lindex $equation(pathlist) [$lb nearest $y]]" \
+	$X $Y
+}
+
 proc indexClick { lb y boxname} {
 	# insert an index call using the line number clicked on
 	$boxname insert insert index([expr [$lb nearest $y]+1])
@@ -563,12 +599,6 @@ proc InsertFunction {boxname functor} {
 	$boxname insert $insertPoint $functor\(
     }
     focus $boxname
-}
-
-proc equationTake { lb bname} {
-	# Take the currently selected list item
-	global equation
-	set $bname [$lb get [$lb curselection]]
 }
 
 proc Disaggregate {parent title colour type fatness icount step \

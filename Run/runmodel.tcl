@@ -6,6 +6,9 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.11  2002/07/18 16:58:48  jaspert
+#Changes to eqn dialogue box
+#
 #Revision 1.10  2002/07/17 10:31:24  jaspert
 #Fixed some popup problems
 #
@@ -65,6 +68,9 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.11  2002/07/18 16:58:48  jaspert
+#Correct RCS directive #Changes to eqn dialogue box
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.10  2002/07/17 10:31:24  jaspert
 #Correct RCS directive #Fixed some popup problems
 #Correct RCS directive #
@@ -743,7 +749,8 @@ proc AddEqnPopup {x y winId X Y} {
 	set plName [ExtractPrologName $winId $target]
 	if {$doDesc} {
 	    set fromProlog [GetFromProlog tk_get_info('$winId',$plName,eqn)]
-	    if {![llength $fromProlog] || [string match $fromProlog <none>]} {
+	    if {![string length $fromProlog] || \
+		    [string match $fromProlog <none>]} {
 		set fromProlog \
 		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
 	    }
