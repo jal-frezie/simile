@@ -1099,7 +1099,7 @@ proc DoRegDialog {dtId} {
     pack [button $tasks.b.open -text "Open..." -width 10 \
             -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
             -padx 8 -pady 8 -side left
-    pack [button $tasks.b.reopen -text "Reopen" -width 10 \
+    pack [button $tasks.b.reopen -text "Recent..." -width 10 \
             -command "PopReopen $dtId"] \
             -padx 8 -pady 8 -side left
     pack $tasks.b
