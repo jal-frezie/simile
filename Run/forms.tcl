@@ -1196,7 +1196,6 @@ proc ContextSensitiveHelp {context page} {
                 [findExecutable mozilla        env(BROWSER)] ||
                 [findExecutable netscape       env(BROWSER)] ||
                 [findExecutable iexplorer      env(BROWSER)] ||
-                [findExecutable $env(NETSCAPE) env(BROWSER)] ||
                 [findExecutable lynx           env(BROWSER)]
             }
             # lynx can also output formatted text to a variable
