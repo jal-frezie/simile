@@ -652,12 +652,14 @@ proc ClickObj { x y winId action} {
             set obj [GetCaptionItem $winId $node]
 
 # This bit used to start a drag selecting some caption text
-#            if {[string compare $obj {}] && ![string compare [focus] $winId]} {
-#                set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
-#                $winId icursor $obj $realPlace
-#                $winId select clear
-#                $winId select from $obj $realPlace
-#            }
+            if {[string compare $obj {}] && ![string compare [focus] $winId]} {
+                set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
+                $winId icursor $obj $realPlace
+                $winId select clear
+		if {[lsearch [$winId gettags $obj] selected] == -1} {
+		    $winId select from $obj $realPlace
+		}
+            }
             
             if {![string compare $target $obj]} {
                 set action clicktext
@@ -932,11 +934,13 @@ proc DoB3 {x y W X Y} {
 
 proc CanvasEditBind { c } {
     
-#    $c bind currently_editable <B1-Motion> {
-#        %W select to current \
+    $c bind currently_editable <B1-Motion> {
+	if {[lsearch [%W gettags [%W focus]] selected] == -1} {
+	    %W select to current \
                 @[join [canvasTLDistance %W [%W canvasx %x] \
-                [%W canvasy %y]] ,]
-#    }
+			    [%W canvasy %y]] ,]
+	}
+    }
     $c bind currently_editable <Delete> {
         if {![CanvasDelSeln %W]} {
             %W dchars [%W focus] insert

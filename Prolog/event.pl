@@ -124,13 +124,13 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	true)).
 
 click_text(Xpt, Ypt, Name, CD) :-
-/* text grabbing disabled fttb
-	(get_mode(select), !,
+	get_mode(select),
+	    \+ (get_highlit_obj(N, Name), N<2), !,
+	    give_focus(Name),
 	    advance_phase_to(text_grabbing);
-	true), */
 	click_obj(Xpt, Ypt, Name, CD),
-	(get_phase(moving); get_phase(moving_border(_))),
-	advance_phase_to(moving_text).
+	    (get_phase(moving); get_phase(moving_border(_))),
+	    advance_phase_to(moving_text).
 /*
 click: Handles mouse clicks in a model window. Ignore if running model.
 */

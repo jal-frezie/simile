@@ -269,8 +269,7 @@ advance_phase_to(New_phase) :-
 	State_machine = 
 		[[peruse, [rubberband, moving, moving_border(D),
 			delete_hunt, action_choice,
-			moving_start, moving_finish, equiv_hunt,
-			text_grabbing, barge]],
+			moving_start, moving_finish, equiv_hunt, barge]],
 		 [action_choice, [dragging, targetting]],
 		 [targetting, [dragging, peruse]],
 		 [set_line_direction, [extend_line]],

@@ -106,9 +106,11 @@ proc create_equation {parent boxtitle indices} {
     ### End formula bar section
     
     set t [toplevel .equation -bd 4 -class Equation]
-    update ;# let window draw so it can be moved off screen
-    wm geometry .equation +0+[winfo vrootheight .equation]
-    update ;# let it move off screen so text updates do not distract user
+    if {[string equal Linux $tcl_platform(os)]} {
+	update ;# let window draw so it can be moved off screen
+	wm geometry .equation +0+[winfo vrootheight .equation]
+	update ;# let it move off screen so text updates do not distract user
+    }
     wm title $t $boxtitle
     # wm transient $t $parent
     set equation(top) $t
@@ -277,6 +279,8 @@ proc create_equation {parent boxtitle indices} {
     pack $mainf.equation.textbox.text -side right -expand true -fill both
     pack $mainf.equation.textbox.radio0 -anchor nw
     pack $mainf.equation.textbox -expand true -fill both -side left
+    focus $mainf.equation.textbox.text
+
     frame $mainf.equation.textbox.buttons
     $notebook itemconfigure Main -raisecmd "focus $mainf.equation.textbox.text"
     
@@ -391,8 +395,7 @@ proc create_equation {parent boxtitle indices} {
 }
 
 proc interact_equation {} {
-    global equation
-    global equationbar
+    global equation equationbar tcl_platform
     
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -418,7 +421,7 @@ proc interact_equation {} {
 # get the window manager to put it in an appropriate place we have to put it
 # up, let it draw (so it knows how big it wants to be), then remove and replace
 # it, because some of its BWidgets are buggy
-    if {!$equation(done)} {
+    if {!$equation(done) && [string equal Linux $tcl_platform(os)]} {
 	update ;# let all those BWidgets decide how big they want to be
 	wm withdraw .equation
 	wm deiconify .equation
@@ -475,7 +478,7 @@ proc destroy_equation {} {
 # Scrolls all listboxes in response to scrollbar
 
 proc ScrollAll {widgetList args} {
-    
+    
     foreach item $widgetList {
         eval {$item yview} $args
     }
@@ -1445,7 +1448,7 @@ proc DoRegDialog {dtId} {
     grab .register
     bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
     bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
-    #    focus .register.email
+    #   .register.email
     
     # now put it in the middle of the desktop
     scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f

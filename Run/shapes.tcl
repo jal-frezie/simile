@@ -526,7 +526,8 @@ proc ColorSymbol { w name type density colorSpec } {
         set textColor $looks($type,text)
     }
     FlashSymbol $w $name $outlineColor $textColor
-    StippleSymbol $w $name $density [string equal select $colorSpec]
+    StippleSymbol $w $name $density \
+	[expr [lsearch {select highlight} $colorSpec] != -1]
 }
 
 proc FlashSymbol {w name outlineColor textColor} {
