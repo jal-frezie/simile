@@ -846,10 +846,11 @@ proc InsertFunction {boxname functor} {
     focus $boxname
 }
 
-proc Disaggregate {parent title colour image type fatness icount step \
+proc Disaggregate {parent title colour image imgpos type fatness icount step \
             comment enumLists eqnunit hide separate} {
     global disaggregate
-    foreach varName {colour image type fatness icount eqnunit hide separate} {
+    foreach varName {colour image imgpos type fatness \
+			 icount eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
     if [llength $icount]>0 {
@@ -896,17 +897,24 @@ proc Disaggregate {parent title colour image type fatness icount step \
     
     TitleFrame $t.simple.left.colour -text "Background shade"
     set colourf [$t.simple.left.colour getframe]
-    pack [button $colourf.clear -text "Clear" -width 10 \
-	  -command {set disaggregate(colour) [set disaggregate(image) {}]}] \
-	-padx 2 -pady 4 -side left
-    pack [button $colourf.fixcolour -text "Colour" \
-            -width 10 -command "UpdateColour $colourf"]  \
+    set posRBs [frame $colourf.imageposns]
+    pack [button $colourf.clear -text "Clear" -width 6 \
+	      -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
+    pack [button $colourf.fixcolour -text "Colour..." \
+            -width 6 -command "UpdateColour $colourf"]  \
             -padx 2 -pady 4 -side left
     $colourf.fixcolour configure -bg $disaggregate(colour)
     set disaggregate(defColour) $disaggregate(colour)
     pack [button $colourf.setimage -text "Image..." \
-            -width 10 -command ChooseImage] \
+            -width 6 -command "ChooseImage $posRBs"] \
             -padx 2 -pady 4 -side left
+    pack $posRBs -padx 2 -pady 4 -side left
+    set rbState [ChooseText [string equal $disaggregate(image) none] \
+		     disabled normal]
+    foreach rbutton {Tiled Centred Scaled} {
+        pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
+		  -value $rbutton -variable disaggregate(imgpos)] -anchor w
+    }
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
     pack $t.simple.left -side left; # -expand 1 -fill both
     
@@ -1071,7 +1079,8 @@ proc Disaggregate {parent title colour image type fatness icount step \
 				   $members]
 	}
         set result [list $disaggregate(colour) $disaggregate(image) \
-			$disaggregate(type) $disaggregate(fatness) $icount \
+			$disaggregate(imgpos) $disaggregate(type) \
+			$disaggregate(fatness) $icount \
 			$step $disaggregate(comment) \
 			$disaggregate(eqnunit) $disaggregate(hide) \
 			$disaggregate(separate) $enumTypes]
@@ -1090,6 +1099,15 @@ proc ShowComplexity {t} {
     } else  {
         pack forget $t.complex
         $t.simple.right.more configure -text More
+    }
+}
+
+proc ClearBG {posRBs} {
+    global disaggregate
+    set disaggregate(colour) {}
+    set disaggregate(image) {}
+    foreach button [winfo children $posRBs] {
+	$button configure -state disabled
     }
 }
 
@@ -1238,7 +1256,7 @@ proc UpdateColour {f} {
 set imageSources(uid) 0
 package require Img
 
-proc ChooseImage {} {
+proc ChooseImage {posRBs} {
     global disaggregate
     global imageSources
     
@@ -1260,12 +1278,16 @@ proc ChooseImage {} {
                 set disaggregate(image) $newImage
                 PutSize $newImage
                 set choosing 0
+		foreach button [winfo children $posRBs] {
+		    $button configure -state normal
+		}
  	    } else {
                 ShowMessage {Problem loading file} error $errorInfo ok
                 # prevent crasho if reading fails
                 #		$newImage config -width 100 -height 100
             }
         } else {
+	    image delete $newImage
             set choosing 0
         }
     }

@@ -17,34 +17,43 @@ sicstus_use_module([sp_only, dialogue, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(ordsets)]).
 
+eqn_for(Comp, EqnStr) :-
+	find_node_with_data(Comp, _, Func),
+	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), !,
+	    name(Eqn, EqnStr);
+	 get_av_pair(Func, 0, value, Eqn),
+	    sicstus_write_to_chars(Eqn, EqnStr)).
+
 get_info(_Wid, Comp, eqn) :-
 	(Comp is_of_sort has_function,
-	    find_node_with_data(Comp, _, Func),
-	    (get_av_pair(Func, 0, spec, Eqn), atom(Eqn), !;
-		get_av_pair(Func, 0, value, Eqn), !;
-		Eqn = '');
-	 Eqn = '<none>'),
-	callback(br(write(Eqn))).
+	    (eqn_for(Comp, Eqn), !;
+		Eqn = "");
+	 Eqn = "<none>"),
+	callback(br(chars(Eqn))).
 
 get_info(Wid, Comp, desc) :-
+	Wid shows_model Context,
+	caption_for(Comp, Capt),
 	find_type(Comp, LType),
 	((LType = influence, !,
-	    setof(Dest, m_update:connects(Comp, Source, Dest), Dests);
-	  m_update:connects(Comp, Source, Dests)),
+	    setof(DestLoc, Dest^(m_update:connects(Comp, Source, Dest),
+				 abs_path_name(Dest, Context, DestLoc)),
+		  Dests);
+	  m_update:connects(Comp, Source, Dest),
+	      abs_path_name(Dest, Context, Dests)),
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
-	    Wid shows_model Context,
 	    abs_path_name(Source, Context, SourceLoc),
-	    all(m_update, abs_path_name, [build(Dests), unify(Context),
-					  build(DestLoc)]),
-	    sicstus_format_to_chars("~a from ~a to ~w", [LType, SourceLoc, DestLoc],
-			    EqnStr),
-	    name(Eqn, EqnStr);
+	    sicstus_format_to_chars("~a from ~a to ~w",
+				    [LType, SourceLoc, Dests], Desc);
 	LType = submodel,
-	    image:quick_file(Comp, EqnStr),
-	    name(Eqn, EqnStr);
-	Eqn = LType),
-	callback(br(write(Eqn))).
+	    image:quick_file(Comp, Desc);
+	eqn_for(Comp, Desc), !;
+	name(LType, Desc)),
+	(LType is_class_of_sort captionless, !,
+	    Eqn = Desc;
+	sicstus_format_to_chars("~a : ~s", [Capt, Desc], Eqn)),
+	callback(br(chars(Eqn))).
 
 get_info(_, Comp, comment) :-
 	(find_type(Comp, relation), !,

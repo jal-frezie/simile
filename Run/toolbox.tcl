@@ -1182,8 +1182,8 @@ proc ChangeParentTitle {wc title bg} {
 proc ResizeBackgnd {wc l t r b} {
     foreach baseItem [$wc find withtag /base/] {
 	if {[string match image [$wc type $baseItem]]} {
-	    set oldW [base$wc cget -width]
-	    set oldH [base$wc cget -height]
+#	    set oldW [base$wc cget -width]
+#	    set oldH [base$wc cget -height]
 	    $wc coords $baseItem $l $t
 	    set w [expr int($r-$l)]
 	    set h [expr int($b-$t)]
@@ -1276,29 +1276,17 @@ proc AddEqnPopup {topNode x y winId X Y} {
         PostPopup $X $Y
         set plName [ExtractPrologName $winId $target]
         if {$doDesc} {
-            set fromProlog [GetFromProlog tk_get_info('$winId',$plName,eqn)]
-	    set link " = "
-            if {![string length $fromProlog] || \
-                        [string match $fromProlog <none>]} {
-		set fromProlog \
-		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
-		set link " : "
-	    }
-	    set caption [GetText $winId $plName]
-	    if {[string equal /no_caption/ $caption]} {
-		set desc $fromProlog
-	    } else {
-		set desc $caption$link$fromProlog
-	    }
+            set desc [GetFromProlog tk_get_info('$winId',$plName,desc)]
+
             # after going Prolog, check popup window still there
             # note colour etc are not comments though they look like them in emacs
-	    
-            if {![winfo exists .popup]} return
+	    # actually new technology should make this unnecessary
+            #if {![winfo exists .popup]} return
             AddPopupMessage $desc #c0ffc0 0
         }
         if {$doCmt} {
             set fromProlog [GetFromProlog tk_get_info('$winId',$plName,comment)]
-            if {![winfo exists .popup]} return
+            #if {![winfo exists .popup]} return
             AddPopupMessage $fromProlog #ffe0c0 0
         }
         if {$doVal} {

@@ -14,7 +14,7 @@ in response to successful editing operations.
 */
 
 sicstus_module(image,
-	  [get_colour/3, get_window_colour/3,
+	  [get_colour/4, get_window_colour/3,
 	   get_closest_edge/3, get_inner_bound/3, get_outer_bound/4,
 	   selected_box_is/1, record_bbox/2,
 	   change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
@@ -39,11 +39,13 @@ sicstus_module(image,
 sicstus_use_module([library(lists),
 		    sp_only, ame_gen, state, text, m_class, m_update]).
 
-get_colour(Submodel, Colour, Image) :-
+get_colour(Submodel, Colour, Image, ImgPos) :-
 	(Submodel has_class_refinement fill_colour of Colour, !;
 	Colour = clear),
 	(Submodel has_class_refinement fill_image of Image, !;
-	Image = none).
+	Image = none),
+	(Submodel has_class_refinement image_posn of ImgPos, !;
+	ImgPos = none).
 
 /* This works out what you can see in a window background. If a model has a
 colour it covers all images behind it, but if it is clear they can all be seen
@@ -51,15 +53,14 @@ as they may have transparent bits. So to save drawing time it might be useful
 to give background colours to submodels with non-transparent images. */
 
 get_window_colour(Submodel, Colour, Images) :-
-	(Parent has_part Submodel,
-	    get_window_colour(Parent, BaseColour, BaseImages), !;
-	BaseColour = white,
-	    BaseImages = []),
-	get_colour(Submodel, TopColour, TopImage),
+	get_colour(Submodel, TopColour, TopImage, _),
 	(TopImage = none, !, AddImages = [];
 	    AddImages = [TopImage]),
 	(TopColour = clear, !,
-	    Colour = BaseColour,
+	    (Parent has_part Submodel,
+		get_window_colour(Parent, Colour, BaseImages), !;
+	    Colour = white,
+		BaseImages = []),
 	    append(BaseImages, AddImages, Images);
 	Colour = TopColour,
 	    Images = AddImages).

@@ -856,6 +856,8 @@ proc ZoomImage {winId which factor {optFontor none}} {
         catch {set window_info($winId,scale) \
                     [expr $window_info($winId,scale) * $factor]}
 
+	scan [$winId cget -scrollregion] "%g %g %g %g" bl bt br bb
+	ResizeBackgnd $winId $bl $bt $br $bb
     }
     if {[string match none $optFontor]} {
 	set fontor $factor
@@ -867,8 +869,6 @@ proc ZoomImage {winId which factor {optFontor none}} {
     } else {
         set fontor $optFontor
     }
-    ResizeBackgnd $winId $newX $newY \
-	[expr $newX+$newWidth] [expr $newY+$newHt]
     foreach object $objList {
         switch [$winId type $object] {
         text {
@@ -891,7 +891,8 @@ proc ZoomImage {winId which factor {optFontor none}} {
 	    set newHt [expr round($factor*[$tgtImage cget -height])]
 	    scan [$winId coords $object] {%f %f} newX newY
 
-	    if {[string compare none $optFontor]} {
+	    if {[string match "*/base/*" [$winId gettags $object]]} {
+	    } elseif {[string compare none $optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
 # so scale image rather tha re-tiling it
 		if {$factor > 1} {
@@ -903,7 +904,6 @@ proc ZoomImage {winId which factor {optFontor none}} {
 		    $tgtImage copy $tgtImage \
 			-subsample [expr round(1.0/$factor)]
 		}
-	    } elseif {[string match "*/base/*" [$winId gettags $object]]} {
 	    } else {
 		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
 		set intRad [expr int($looks(submodel,objectsize)* \
@@ -1033,6 +1033,9 @@ proc FindCaption {canvas} {
                 lappend find(List,$canvas) $caption
             }
         }
+	if {[info exists find(now,$canvas)]} {
+	    unset find(now,$canvas)
+	}
         NextCaption $canvas
     }
 }
@@ -1062,7 +1065,11 @@ proc NextCaption {canvas} {
 #        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
 #                $looks(variable,text)
 #    }
-    MenuSelect $canvas edit unselall
+    if {[info exists find(now,$canvas)]} {
+	prolog event:do_colours($find(now,$canvas),off)
+    } else {
+	MenuSelect $canvas edit unselall
+    }
     if {![llength $find(List,$canvas)]} {
         ShowMessage "Caption finder" info \
                 "No more matching $find(where)s in this window" ok

@@ -687,6 +687,11 @@ make_intermediates(
 		member(units=RUnits, TableData),
 		member(bounds=Arg_template, TableData),
 		ValRef = table(ResultList);
+	    Source = rand(Lo, Hi), /* deal with horrible legacy case */
+	        SourceList = [rand_var(Lo, Hi)],
+		RUnits = real,
+		Arg_template = [real],
+		[ValRef] = ResultList;
 	    Source =.. [Op | PlSourceList],
 		(PlSourceList = [''], !,
 		    SourceList = [];
@@ -941,8 +946,8 @@ builtin('Trigonometry', acosh, 1, [1]).
 builtin('Trigonometry', atanh, 1, [1]).
 builtin('Trigonometry', acoth, 1, [1]).
 
-builtin('Arithmetic', rand_const, 1, [1, 1]).
-builtin('Arithmetic', rand_var, 1, [1, 1]).
+builtin('Arithmetic', rand_const, real, [real, real]).
+builtin('Arithmetic', rand_var, real, [real, real]).
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
 builtin('Arithmetic', fmod, 1, [1, 1]).
 

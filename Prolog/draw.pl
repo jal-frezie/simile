@@ -386,7 +386,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    get_flash(Comp, Colour_scheme),
 	    multiple_draw(Comp, Num),
 	    (Style = submodel, !,
-		get_colour(Comp, FillColour, FillImage),
+		get_colour(Comp, FillColour, FillImage, ImgPos),
 		Draw_command =.. [submodel, Wid, Screen_list, Num, Fatness,
 				  FillColour, FillImage, Colour_scheme, Comp];
 	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,

@@ -421,13 +421,13 @@ tk_update_sim_display(Win, Current, Left) :-
 	safe_tcl_eval(['UpdateTimes', Win, Current, Left], _).
 	
 tk_do_disag_dialog(Win, Caption,
-		   [Colour, Image, Type, Fatness, CountList, Step,
+		   [Colour, Image, ImgPos, Type, Fatness, CountList, Step,
 		    Comment, EnumSpecs | Choices], ResultList) :-
 	all(utility, wrap, [build(CountList), unify(write), build(Count)]),
 	bracketize(EnumSpecs, EnumLists),
 	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)), Colour, Image,
-		       Type, Fatness, br(Count), Step, br(write(Comment)),
-		       EnumLists | Choices], New_P_string),
+		       ImgPos, Type, Fatness, br(Count), Step,
+		       br(write(Comment)), EnumLists | Choices], New_P_string),
 	chop_list(New_P_string, ResultListN),
 	(append(ResultList0, [EnumTypeList], ResultListN), !,
 	    chop_list(EnumTypeList, EnumTypeSpecLists),
