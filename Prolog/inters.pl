@@ -271,7 +271,7 @@ make_intermediates(
 	as context!! Cannot do this with randoms (other than in explicit
 	inters), which should all be different. */
 	Inter = instance(internal,_, Source,_,_),
-	member(Inter, PrevInters), !,
+	member(Inter, PrevInters),
 	\+ contains_something(random, Source), !,
 	    NewInters = PrevInters,
 	    Setups = [],
