@@ -1,3 +1,17 @@
+proc LoadUserFunctionMessages {} {
+    set oldDir [pwd]
+    cd ../functions/help
+    
+    foreach file [glob -nocomplain *.tcl] {
+        if [catch {source $file} wibble] {
+            # done at startup -- make sure dialog is not concealed
+            tk_messageBox -title "Error loading user function help" -icon warning \
+                    -message "help messages file [pwd]/$file had a $wibble" -type ok
+        }
+    }
+    cd $oldDir
+}
+
 set msgs(compartment) "Add compartments"
 set msgs(flow) "Add flows"
 set msgs(variable) "Add variables"
@@ -48,7 +62,6 @@ set msgs(channel_is) "Argument is an immigration, reproduction or creation chann
 set msgs(choose) "choose(a,b,c) is shorthand for 'if a then b else c'"
 set msgs(exp) "Returns e to the power of a number"
 set msgs(fmod) "Returns remainder after dividing first argument by second"
-set msgs(gaussian) "Returns values from a gaussian distribution"
 set msgs(hypot) "Returns length of hypotenuse of triangle with given base and height"
 set msgs(int) "Returns integer part of argument"
 set msgs(last) "Returns value of argument from last time step"
@@ -60,6 +73,13 @@ set msgs(pow) "Returns first argument to the power of the second"
 set msgs(rand_var) "Returns a random number between the two arguments, with a new value every time step"
 set msgs(rand_const) "Returns a random number between the two arguments, which stays the same until reset"
 set msgs(sqrt) "Returns the square root of the argument. Calling this with a negative argument when running a model in Tcl under a version of Windows other than 95 original on an Intel Celeron processor can lead to mysterious crashes in Microsoft Office applications, especially early in the tax year."
+set msgs(newton_raphson) "newton_raphson(Lo_start, Hi_start, Poly) takes two starting values, \
+        and a value that is derived from its result by other variables in the model. It returns \
+        a new value on each time step, attempting by linear extrapolation from the last two \
+        values to return a value for which Poly will be zero."
+set msgs(gaussian) "Returns values from a gaussian distribution"
+set msgs(sgn) "sgn(r): returns the sign of a r, -1 if negative or 1 if positive"
+
 
 set msgs(initToolbar) "Display component bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."
 set msgs(initNavbar) "Display tool bar in the desktop window when Simile starts, and in new submodel windows if they are large enough."
@@ -253,3 +273,18 @@ set url(examples/index.htm) {Example Models}
 set url(examples/forest.htm) {Forest tree growth}
 set url(examples/control.htm) {Process control}
 set url(examples/supply.htm) {Supply and demand}
+
+set oldDir [pwd]
+cd ../functions/help
+
+set MessageFiles [glob -nocomplain *.tcl]
+foreach file [glob -nocomplain *.tcl] {
+    if [catch {source $file} wibble] {
+        # done at startup -- make sure dialog is not concealed
+        tk_messageBox -title "Error loading user function help" -icon warning \
+                -message "help messages file [pwd]/$file had a $wibble" -type ok
+    }
+}
+cd $oldDir
+
+#LoadUserFunctionMessages doesn't work if call a proc !!!
