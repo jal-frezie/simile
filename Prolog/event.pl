@@ -1387,15 +1387,12 @@ unclick :-
 select_bagged(Rect, Model) :-
 	get_overlaps(Model, Rect, Caught),
 	(find_type(Caught, submodel),
-	    (add_to_translation([0,0,1,1], Caught, Trans),
-		translate(Rect, Trans, NewRect),
-		select_bagged(NewRect, Caught);
-	    get_shape(Caught, bounding_box, Outer),
-		\+ fits_inside(Rect, Outer),
-		do_colours(Caught, on));
-	Caught is_of_sort box,
-	    \+ find_type(Caught, submodel),
-	    do_colours(Caught, on)),
+	    add_to_translation([0,0,1,1], Caught, Trans),
+	    translate(Rect, Trans, NewRect),
+	    select_bagged(NewRect, Caught);
+	 \+ (get_shape(Caught, bounding_box, Outer),
+		fits_inside(Rect, Outer)),
+		do_colours(Caught, on)),
 	fail.
 
 zoom_to_area :-
