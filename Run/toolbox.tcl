@@ -676,7 +676,9 @@ proc ZapWindow { fullName } {
     destroy ${target}top
     
     destroy $target
-    unset target
+    foreach oldData [array names window_info $fullName,*] {
+	unset window_info($oldData)
+    }
 }
 
 proc ClearWindow {winId} {

@@ -505,7 +505,7 @@ menu_handle(Win, edit, reroute) :-
 
 menu_handle(Win, edit, delete) :-
         start_progress_dialogue,
-	reassure_user("Delte in progress"),
+	reassure_user("Delete in progress"),
 	get_edit_model(Win, Model, _),
 	event:delete_net(Model),
 	finish_move(Model, 1),

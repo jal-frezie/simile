@@ -343,8 +343,17 @@ adjust_to_6(Done) :-
 adjust_to_6(_).
 
 adjust_to_8 :-
-	Node has_class_refinement fix_math_args of V,
-	Node no_longer_has_class_refinement fix_math_args of V,
+	(Node has_class_refinement fix_math_args of V,
+	    Node no_longer_has_class_refinement fix_math_args of V;
+	    
+	Node has_class_refinement table_data of
+	    [file=F, data=T, indices=I, current=C],
+	/* table entered before enum_types invented */
+	    inters:add_zeros(C, Node, 0, NC, D, U),
+	    length(D, N),
+	    list_of(int, N, B),
+	    Node has_changed_class_refinement table_data of
+	[file=F, data=T, indices=I, current=NC, units=U, bounds=B, dims=D]),
 	adjust_to_8.
 
 adjust_to_8.
