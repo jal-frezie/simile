@@ -116,6 +116,8 @@ switch $tcl_platform(platform) {
 	set execExtn .exe
     } unix {
 	set execExtn {}
+# Currently cannot distribute Sicstus for Unix so use GNU anyway
+	set tgt Run/xgsimile
     }
 }
 
@@ -128,5 +130,3 @@ switch $interface {
 	exec $SIMILE_PATH/$tgt$execExtn &
     }
 }
-
-
