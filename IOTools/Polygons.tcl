@@ -142,8 +142,8 @@ proc click {winId node caption} {
 		sizeval {
 			pack forget $ms
 			ReleaseClicks $winId
-			set useNodes($winId,color) $node
-			wm title $winId "$caption (polygon diagram)"
+            set useNodes($winId,color) $node
+            catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
             SetColours2 $winId $node
             DrawPolys $winId $useNodes($winId,xcoord) \
 				$useNodes($winId,ycoord) \
@@ -158,7 +158,7 @@ proc click {winId node caption} {
 			pack forget $ms
 			ReleaseClicks $winId
 			set useNodes($winId,color) $node
-            wm title $winId "$caption (polygon diagram)"
+            catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
             SetColours2 $winId $node
 			DrawPolys $winId {} {} $node
 			set useNodes($winId,state) displaying
@@ -249,7 +249,7 @@ proc DrawPolys {winId xs ys hs} {
 # not finished yet    bind $winId.legend.scale <Double-Button-1> \
 #            [namespace code "OptionsDialog $winId"]
 
-    wm geometry $winId 650x500
+    catch {wm geometry $winId 650x500}; # if not a toplevel, ie MRE
     pack [set vp [frame $winId.viewport]] -fill both -expand true
     scrollbar $vp.xsc -orient horizontal -command [list $vp.c xview]
     pack $vp.xsc -side bottom -fill x
