@@ -18,7 +18,8 @@ switch $tcl_platform(platform) {
     windows {
 	set SIMILE_PATH [file dirname [file dirname [info script]]]
 
-	set env(TCL_LIBRARY) "C:/progra~1/tcl/lib/tcl8.3"
+	set env(TCL_LIBRARY) [info library]
+#	set env(TCL_LIBRARY) "C:/progra~1/tcl/lib/tcl8.3"
 #	set env(TK_LIBRARY) "C:/progra~1/tcl/lib/tk8.3"
 
 # This specifies the TclTk libraries used by the compiler
@@ -133,6 +134,7 @@ switch $tcl_platform(platform) {
 	exec $env(SP_PATH)/bin/sprt &
     }
 }
+
 # wait till prog is going before removing splash
 while {[file exists $env(SIMTMPDIR)/.lock]} {after 100}
 exit
