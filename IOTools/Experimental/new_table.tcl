@@ -12,8 +12,6 @@ namespace eval tabular11509 {
 
     proc initialize {winId} {
 	variable tableVars
-	variable headerLines
-	set headerLines($winId) 1
 
 	set toolbarItems [list \
             [list new.gif "Clear" [namespace code "clear $winId"] ] \
@@ -26,6 +24,45 @@ namespace eval tabular11509 {
 
 	::graphtools::MakeToolBar $winId $toolbarItems
 
+	scrollbar $winId.sy -command [list $winId.t yview]
+	scrollbar $winId.sx -command [list $winId.t xview] \
+	    -orient horizontal
+
+	pack [frame $winId.f] ;# for instructions
+	pack $winId.sx -side bottom -fill x -expand true
+	pack $winId.sy -side right -fill y -expand true
+	CreateTable $winId
+    }
+
+    proc clear {winId} {
+	set curVars [ListCurVars $winId]
+	destroy $winId.t
+	CreateTable $winId
+	
+	foreach caption $curVars {
+	    set newCol [$winId.t cget -cols]
+	    $winId.t configure -cols [expr $newCol+1]
+	    $winId.t set 0,$newCol $caption
+	}
+	display $winId [GetModelTime] 0 0
+    }
+
+    proc ListCurVars {winId} {
+	variable headerLines
+
+	set vars {}
+	for {set col 1} {$col < [$winId.t cget -cols]} {incr col} {
+	    if {[string length [$winId.t get 0,$col]]} {
+		lappend vars [$winId.t get 0,$col]
+	    }
+	}
+	return $vars
+    }
+	
+    proc CreateTable {winId} {
+	variable headerLines
+
+	set headerLines($winId) 1
 	table $winId.t -rows 1 -cols 1 -bg \#a0a0ff -variable data$winId \
 	    -titlerows 1 -titlecols 1 -selectmode extended -sparsearray 0 \
 	    -rowtagcommand [namespace code rowProc] \
@@ -34,13 +71,6 @@ namespace eval tabular11509 {
 	    -yscrollcommand [list $winId.sy set] \
 	    -xscrollcommand [list $winId.sx set]
     
-	scrollbar $winId.sy -command [list $winId.t yview]
-	scrollbar $winId.sx -command [list $winId.t xview] \
-	    -orient horizontal
-
-	pack [frame $winId.f] ;# for instructions
-	pack $winId.sx -side bottom -fill x -expand true
-	pack $winId.sy -side right -fill y -expand true
 	pack $winId.t -fill both -expand true
 
 	$winId.t set 0,0 Time
