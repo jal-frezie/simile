@@ -285,21 +285,19 @@ add_caption: This is somewhat tricky as most of our GUI languages support the us
 Powersim does this. Still, we must simply call a textual output device, and when the user changes the name of the component we will end up coming through here, where a pre-draw check will (in the tk case) show us that the name has already changed, thus not needing further interference. 
 */
 
-add_caption(Wid, Id, [L, T, R, B], Trans, Fatness, Colour_scheme) :-
+add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	caption_for(Id, Caption),
 	draw_style_for(Id, Style),
 
 	(Style = submodel, !,
-		TextX is L,
-		TextY is T;
-	TextX is (L + R)/2,
-		TextY is (T + B)/2),
+	    DefAnchor = nw;
+	DefAnchor = c),
 
-	(get_shape(Id, caption_offset, [XOff, YOff]), !;
+	(get_shape(Id, caption_offset, [XOff, YOff, Anchor]), !;
 /*	get_text_offset(Style, XOff, YOff), */
-	  XOff = 0, YOff = 0,
-	  set_shape(Id, caption_offset, [XOff, YOff])),
-
+	  XOff = 0, YOff = 0, Anchor = DefAnchor,
+	  set_shape(Id, caption_offset, [XOff, YOff, Anchor])),
+	image:map(Box, Anchor, _,_, TextX, TextY),
 	VirtX is TextX + XOff,
 	VirtY is TextY + YOff,
 	untranslate([VirtX, VirtY], Trans, ScreenPoint),

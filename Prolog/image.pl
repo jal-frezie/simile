@@ -548,11 +548,39 @@ find_new_box(Obj, Xoffset, Yoffset, [L, T, R, B],
 	R1 is R + Xoffset,
 	B1 is B + Yoffset.
 
+/* Very simple except for text of a submodel, in which case we make the base
+the nearest corner, side or middle to the new text position */
+
 update_text_position(Obj, XTOff, YTOff) :-
-	get_shape(Obj, caption_offset, [XT, YT]),
+	get_shape(Obj, caption_offset, [XT, YT, Anchor]),
 	NXT is XT + XTOff,
 	NYT is YT + YTOff,
-	change_shape(Obj, caption_offset, [NXT, NYT]).
+	(find_type(Obj, submodel), !,
+	    get_shape(Obj, bounding_box, [L,T,R,B]),
+	    map([L,T,R,B], Anchor, _,_, BaseX, BaseY),
+	    AbsX is BaseX+NXT,
+	    AbsY is BaseY+NYT,
+
+	    slice(AbsY, T, B, Row),
+	    slice(AbsX, L, R, Col),
+	    map([L,T,R,B], NewAnchor, Row, Col, NewBaseX, NewBaseY),
+	    NewXTOff is AbsX-NewBaseX,
+	    NewYTOff is AbsY-NewBaseY;
+	[NewXTOff, NewYTOff, NewAnchor] = [NXT, NYT, Anchor]),
+	change_shape(Obj, caption_offset, [NewXTOff, NewYTOff, NewAnchor]).
+
+map([L,T,R,B], Anchor, Row, Col, X, Y) :-
+	    HC = (L+R)/2, /* only do math if we need to */
+	    VC = (T+B)/2,
+	    nth(Row, [[[nw, L, T], [n, HC, T], [ne, R, T]],
+		      [[w, L, VC], [c, HC, VC], [e, R, VC]],
+		      [[sw, L, B], [s, HC, B], [se, R, B]]], Line),
+	    nth(Col, Line, [Anchor, X, Y]).
+	
+slice(Posn, LowSide, HiSide, N) :-
+	Posn < (3*LowSide+HiSide)/4, !, N=1;
+	Posn < (LowSide+3*HiSide)/4, !, N=2;
+	N=3.
 
 update_link_route(Link, Recurse) :-
 	get_hierarchy(Link, start, Source_stack, Recurse),
@@ -1039,7 +1067,7 @@ translate([Pair | Rest], Trans, [NewPair | NewRest]) :-
 	translate(Rest, Trans, NewRest).
 
 /* special version for offsets */
-rel_translate([OffX, OffY], [_,_, Xscale, Yscale], [NewX, NewY]) :-
+rel_translate([OffX, OffY, Anch], [_,_, Xscale, Yscale], [NewX, NewY, Anch]) :-
 	NewX is OffX*Xscale,
 	NewY is OffY*Yscale.
 
