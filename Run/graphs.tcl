@@ -69,7 +69,7 @@ proc CombineGraphData { formula } {
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     global graph tcl_platform
     
-    set graph(bd) 10
+    set graph(bd) 4
 	
     switch $tcl_platform(platform) {
 	unix {
