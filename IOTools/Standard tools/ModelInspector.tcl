@@ -16,6 +16,7 @@ namespace eval ::ModelInspector63654 {
     package require BWidget
     namespace import ::BWidget::*
     
+    
     variable tableframe
     
     proc identify {} {
@@ -32,6 +33,7 @@ namespace eval ::ModelInspector63654 {
     }
 
     proc initialize {winId} {
+        global tcl_platform
         variable tableframe
         set im(submodel) [image create photo submodel_im -file "../Images/Toolbar/submodel.gif"]
         set im(compartment) [image create photo  -file "../Images/Toolbar/compartment.gif"]
@@ -134,12 +136,14 @@ namespace eval ::ModelInspector63654 {
 	    [namespace code "OnElementClick $winId"]
         $tableframe.table bindText <Button-1> \
 	    [namespace code "OnElementClick $winId"]
-	$tableframe.table bindImage <Enter> \
-	    [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
-	$tableframe.table bindText <Enter> \
-	    [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
-	$tableframe.table bindImage <Leave> RemovePopup
-	$tableframe.table bindText <Leave> RemovePopup
+        if ![string match Darwin $tcl_platform(os)] {
+	    $tableframe.table bindImage <Enter> \
+	        [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
+	    $tableframe.table bindText <Enter> \
+	        [list QueuePopup [namespace code DoInspPopup] $winId %X %Y]
+	    $tableframe.table bindImage <Leave> RemovePopup
+	    $tableframe.table bindText <Leave> RemovePopup
+        }
     }
     
     proc GetCanvas {winId} {
