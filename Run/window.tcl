@@ -76,10 +76,7 @@ proc GetTransTable {node} {
 # to interrogate it to find what is closest to the click point
 
 proc ClickObj { x y winId X Y action} {
-    global clicktime
-    global equationbar
-    global pushedbutton
-    global window_info
+    global clicktime equationbar pushedbutton window_info looks
     
     #puts "$action it!"
     
@@ -107,6 +104,12 @@ proc ClickObj { x y winId X Y action} {
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
+    if {$looks(gridPitch)} {
+	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
+	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
+	set looks(lastXnode) $xco
+	set looks(lastYnode) $yco
+    }
     
     focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
@@ -255,7 +258,7 @@ proc ResizeDesktop {winId cl ct cr cb} {
 # of the window to follow the mouse.
 
 proc DragObj {winId xco yco} {
-    global window_info
+    global window_info looks
     global clicktime
     
     set dragtime [clock clicks -milliseconds]
@@ -267,6 +270,17 @@ proc DragObj {winId xco yco} {
     set cany [$winId canvasy $yco]
     set virtx [Unscale $winId $canx]
     set virty [Unscale $winId $cany]
+    if {$looks(gridPitch)} {
+	set virtx [expr $looks(gridPitch)*round($virtx/$looks(gridPitch))]
+	set virty [expr $looks(gridPitch)*round($virty/$looks(gridPitch))]
+
+	if {$virtx==$looks(lastXnode) && $virty==$looks(lastYnode)} {
+	    return
+	} else {
+	    set looks(lastXnode) $virtx
+	    set looks(lastYnode) $virty
+	}
+    }
     set sloth 5
     
     RollBack $winId 1 $xco $yco $xco $yco
@@ -491,26 +505,77 @@ proc ChangeParentTitle {wc title bg} {
                     -tag [concat $tag "source($colour) posn($posn)"]
         }
     }
-    $wc lower /base/ ;# should keep them in order
     ResizeBackgnd $wc $bl $bt $br $bb
 }
 
-proc AddGrid {c wl wt wr wb} {
+set looks(gridPitch) 15.0
+
+proc AddGrid {c col wl wt wr wb} {
     global looks window_info
-    set interval [expr 15.0*$window_info($c,scale)]
-    for {set x [expr $wl+$interval]} {$x<$wr} {set x [expr $x+$interval]} {
+    if {!$looks(gridPitch)} {
+	return
+    }
+    set interval [expr $looks(gridPitch)*$window_info($c,scale)]
+    for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
+	{set x [expr $x+$interval]} {
 	set nearx [expr int($x)]
-	$c create line $nearx $wt $nearx $wb -fill black \
+	$c create line $nearx $wt $nearx $wb -fill $col \
 	    -tag {/background/ /base/ /grid/}
     }
-    for {set y [expr $wt+$interval]} {$y<$wb} {set y [expr $y+$interval]} {
+    for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
+	{set y [expr $y+$interval]} {
 	set neary [expr int($y)]
-	$c create line $wl $neary $wr $neary -fill black \
+	$c create line $wl $neary $wr $neary -fill $col \
 	    -tag {/background/ /base/ /grid/}
     }
 }
 
+# following is pulled from tclers wiki
+    proc Gradient {rgb factor {window .}} {
+
+        foreach {r g b} [winfo rgb $window $rgb] {break}
+
+        ### Figure out color depth and number of bytes to use in
+        ### the final result.
+        if {($r > 255) || ($g > 255) || ($b > 255)} {
+            set max 65535
+            set len 4
+        } else {
+            set max 255
+            set len 2
+        }
+
+        ### Compute new red value by incrementing the existing
+        ### value by a value that gets it closer to either 0 (black)
+        ### or $max (white)
+        set range [expr {$factor >= 0.0 ? $max - $r : $r}]
+        set increment [expr {int($range * $factor)}]
+        incr r $increment
+
+        ### Compute a new green value in a similar fashion
+        set range [expr {$factor >= 0.0 ? $max - $g : $g}]
+        set increment [expr {int($range * $factor)}]
+        incr g $increment
+
+        ### Compute a new blue value in a similar fashion
+        set range [expr {$factor >= 0.0 ? $max - $b : $b}]
+        set increment [expr {int($range * $factor)}]
+        incr b $increment
+
+        ### Format the new rgb string
+        set rgb \
+            [format "#%.${len}X%.${len}X%.${len}X" \
+                 [expr {($r>$max)?$max:(($r<0)?0:$r)}] \
+                 [expr {($g>$max)?$max:(($g<0)?0:$g)}] \
+                 [expr {($b>$max)?$max:(($b<0)?0:$b)}]]
+
+        ### Return the new rgb string
+        return $rgb
+    }
+
 proc ResizeBackgnd {wc l t r b} {
+    global looks
+    set baseColor $looks(windowColor)
     foreach baseItem [$wc find withtag /base/] {
 	switch [$wc type $baseItem] {
 	    image {
@@ -536,12 +601,14 @@ proc ResizeBackgnd {wc l t r b} {
 		}
 	    } rectangle {
 		$wc coords $baseItem $l $t $r $b
+		set baseColor [$wc itemcget $baseItem -fill]
 	    } line {
 		$wc delete $baseItem
 	    }
         }
     }
-#    AddGrid $wc $l $t $r $b
+    AddGrid $wc [Gradient $baseColor -0.1 $wc] $l $t $r $b
+    $wc lower /base/ ;# should keep them in order
 }
 
 proc AcceleratorState {winName menu item state} {
@@ -1381,6 +1448,7 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
 # tcl mode parser
 
 proc DragComponentIn {winId button x y} {
+    global looks
     set whatToAdd [winfo name $button]
     #    set top [winfo parent $winId]
     #puts $x,$y
@@ -1402,6 +1470,10 @@ proc DragComponentIn {winId button x y} {
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
+    if {$looks(gridPitch)} {
+	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
+	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
+    }
     
     set target [GetClickedObj $winId $canx $cany 6]
     

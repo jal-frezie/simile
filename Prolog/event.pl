@@ -1483,8 +1483,8 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_shape(Submodel, bounding_box, [OldL, OldT, OldR, OldB]),
 	/* work out what the caption was nearest to */
-	(get_shape(Obj, caption_offset, [XT, YT]);
-	    get_shape(Obj, caption_offset, [XT, YT, _Anchor])), !,
+	(get_shape(Submodel, caption_offset, [XT, YT]);
+	    get_shape(Submodel, caption_offset, [XT, YT, _Anchor])), !,
 	OldCapX is OldL + XT,
 	OldCapY is OldT + YT,
 	get_closest_edge(Submodel, [OldCapX, OldCapY], CapEdge),
