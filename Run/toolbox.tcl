@@ -291,17 +291,20 @@ proc byebye {winId} {
 }
 
 proc exit_simile {Dir} {
-    global custom model_id instance_id
+    global custom model_id instance_id plPipe
     if {[info exists instance_id]} {
         c_exitmodel $model_id $instance_id
     }
     
-    file delete -force $Dir
     set cacheStream [open $custom(prefDir)/recent w]
     foreach oldFile $custom(hotlist) {
         puts $cacheStream $oldFile
     }
     close $cacheStream
+    if {[info exists plPipe]} {
+	close $plPipe
+    }
+    file delete -force $Dir
     destroy .
 }
 

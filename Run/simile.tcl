@@ -1,4 +1,5 @@
 #!/usr/bin/wish
+
 # SIMILE batch file
 # Make sure the first line refers to a version of TclTk with shared libraries
 
@@ -161,6 +162,5 @@ switch $interface {
 	    incr pause 100
 	    after 100
 	}
-	exit
     }
 }
