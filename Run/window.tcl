@@ -184,10 +184,7 @@ proc ClickObj { x y winId X Y action} {
         if {[string match $equationbar(current_action) click]} {
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
-                set label [BlankCrs [GetFromProlog \
-					 tk_get_info('$winId',$node,desc)]]
-		set label [string range $label 0 \
-			       [expr [string last : $label]-1]]=
+                set label [file tail [BlankCrs $context]]\ =
                 $bar.label configure -text $label
                 
                 set winid [winfo parent $winId]
