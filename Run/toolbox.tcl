@@ -960,7 +960,7 @@ proc DoLocalCmd {win item} {
         customize {Customize $win $pushedbutton}
         find {FindCaption $win}
         findnext {NextCaption $win}
-        raiseMRE {raise .mre}
+        raiseMRE { wm deiconify .mre; raise .mre}
     }
 }
 
@@ -1652,7 +1652,9 @@ proc SetEqnButtonState {bar newState} {
 
 proc RaiseModelWindow {} {
     global window_info
-    raise $window_info([lindex [lsort [array name window_info *,parent]] 0])
+    set modelWin $window_info([lindex [lsort [array name window_info *,parent]] 0])
+    wm deiconify $modelWin
+    raise $modelWin
 }
 
 ##############################    Formula bar    #############################
