@@ -82,7 +82,6 @@ tk_drag(Virt_X, Virt_Y) :-
 tk_menu(Window, Header, Item) :-
 /*	into_save_file(tk_menu(Window, Header, Item)), */
 	show_wait_cursor,
-	prioritize_window(Window),
 	finish_window_resize(Window),
 	finish_old_edit(none),
 	menu_handle(Window, Header, Item),

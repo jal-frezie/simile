@@ -853,12 +853,14 @@ proc InjectGraphics {c canvasFile} {
 }
 
 proc GetCaptionItem {w name} {
-    foreach object [$w find withtag $name] {
-        if {[string compare [$w type $object] text] == 0} {
-            set taglist [$w gettags $object]
-            if {[string match *is_caption* $taglist]} {
-                return $object
-            }
+    if {[winfo exists $w]} {
+	foreach object [$w find withtag $name] {
+	    if {[string compare [$w type $object] text] == 0} {
+		set taglist [$w gettags $object]
+		if {[string match *is_caption* $taglist]} {
+		    return $object
+		}
+	    }
         }
     }
 }
