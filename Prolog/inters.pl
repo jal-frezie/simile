@@ -338,7 +338,7 @@ make_intermediates(
 	don't use extra dims if values will all be the same...actually dont
 	do it anyway, is just too hard */
 	
-	(\+ Source = make_inter(_,_),
+	( /* \+ Source = make_inter(_,_), */
 	contains_something(individuates, Source), !,
 	    NowBuilding = BuildingArrays;
 	NowBuilding = []),

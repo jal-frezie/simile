@@ -305,11 +305,11 @@ for it,
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
 	    (FinalComplaint = continue, !;
-		do_dialogue("Problem with equation", warning, 
-FinalComplaint,
+		do_dialogue("Problem with equation", warning, FinalComplaint,
 			    ok, _)),
 	    !, /* green */ fail).
 
+/* This fails if the brackets are right */
 check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-
 	get_solo_list_depth(New_param, Depth), !,
 	explain_brackets(Current_unit, Desc2, no, SP, OKN),
@@ -472,7 +472,8 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
 	    get_dims_from_loops(Context, XDims, _),
-	    Dest = instance(internal,_, use_inter('/dest/'),_, Type-XDims),
+	    Dest = instance(internal, inter(_,_,XDims), use_inter('/dest/'),_,
+			    Type-_),
 	    match_param_dims(ExpInters, [Dest | Inters], TestError),
 	    real_dims_only(XDims, Dims),
 	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]);
@@ -482,10 +483,10 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	TestError = ParseError).
 
 match_param_dims([], _, []).
-match_param_dims([input_link(_,_, Name, LType-LDims, _) | MoreLinks],
-		 Inters, Err) :-
+match_param_dims([input_link(_,_, Name, LType-LDims, _)
+		 | MoreLinks], Inters, Err) :-
 	select(I, Inters, MoreInters),
-	I = instance(internal, _, use_inter(Name), _, IType-IDims),
+	I = instance(internal, inter(_,_, IDims), use_inter(Name), _, IType-_),
 	real_dims_only(IDims, Dims),
 	(prefix(IDims, LDims), !,
 	    (promote_unit(IType, LType), !,
