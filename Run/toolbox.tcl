@@ -16,10 +16,29 @@ source ../Run/runmodel.tcl
 
 source ../Run/mre.tcl
 
+# Find a new temporary directory
+if {[info exists env(TMP)]} {
+    set tempDir $env(TMP)
+} else {
+    if {[info exists env(TEMP)]} {
+	set tempDir $env(TEMP)
+    } else {
+	if {[string match windows $tcl_platform(platform)]} {
+	    set tempDir /temp
+	} else {
+	    set tempDir /tmp
+	}
+    }
+}
+
 # Test new Windows printing technology -- see file for credits/licence
 if {[string match windows $tcl_platform(platform)]} {
+    set tempDir [file attributes $tempDir -shortname]
+    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
+
     #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
+
     # Make Simile a DDE server under Windows. Jonathan autotesting
     # Must be after the sourcing or Simile fails
     package require dde 1.2
@@ -28,6 +47,18 @@ if {[string match windows $tcl_platform(platform)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
     # package ifneeded Trf 2.1 {}
 }
+
+set tester $tempDir/sim
+set go [clock clicks]
+while {[file exists $tester]} {
+    set guess_free [expr [clock clicks]-$go]
+    set tester $tempDir/sim$guess_free
+}
+#tk_messageBox -title debug -icon info \
+#	-message "Temp dir is $tester" -type ok
+
+set env(SIMTMPDIR) $tester
+file mkdir $env(SIMTMPDIR)
 
 proc NewTopLevel {} {
     MenuSelect dummy file new_toplevel
@@ -634,7 +665,7 @@ proc ClickObj { x y winId action} {
     
     set target [GetClickedObj $winId $canx $cany 6]
     
-    if {!$target} {
+    if {!$target || $CD==2} {
         # a background click
         prolog [list tk_${action}('$winId', $xco , $yco , $CD)]
         return
@@ -899,7 +930,6 @@ proc AddCanvasBindings { c } {
     bind $c <B1-Motion> {DragObj %W %x %y}
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
     bind $c <Button-3> {DoB3 %x %y %W %X %Y}
-    bind $c <ButtonRelease-3> {ReleaseObj %W %x %y}
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <FocusOut> {AbandonObj}
     
@@ -924,8 +954,8 @@ proc AddCanvasBindings { c } {
 
 # B3 has two actions; this does them both
 proc DoB3 {x y W X Y} {
-    ClickObj $x $y $W right
     PostMenu $W $X $Y
+    ClickObj $x $y $W right
 }
 
 # Canvas chapter (of Welch)
@@ -1386,7 +1416,6 @@ menu .openrecent -tearoff 0
 
 proc FillReopen {winId} {
     global custom
-    
     .openrecent delete 0 end
     set posted {}
     foreach hottie $custom(hotlist) {
@@ -1448,7 +1477,10 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm add command -label Exit -command "prolog tk_kill_everything"
     
     
-    set fm [menu ${winid}top.edit -tearoff 0]
+# edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
+# for what is available, overridden later if it is popup
+    set fm [menu ${winid}top.edit -tearoff 0 \
+	       -postcommand "ClickObj inf inf $c right"]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
     $fm add command -label Undo -command "UnOrReDo $c 0" \
             -state disabled -accelerator "Ctrl+Z"
@@ -1880,8 +1912,10 @@ proc UpdateAbility {c what where which whether} {
     set newState [ChooseText $whether normal disabled]
     ${winId}top.$where entryconfigure $which -state $newState
     AcceleratorState $winId $where $which $newState
-    set navBar $winId.toolSlot.navbar
-    $navBar.$what configure -state $newState
+    if {![string equal none $what]} {
+	set navBar $winId.toolSlot.navbar
+	$navBar.$what configure -state $newState
+    }
 }
 
 proc ToggleIOToolMenu {on} {

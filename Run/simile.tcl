@@ -88,38 +88,6 @@ wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2
 wm overrideredirect . 1
 update
 
-# Find a new temporary directory
-if {[info exists env(TMP)]} {
-    set tempDir $env(TMP)
-} else {
-    if {[info exists env(TEMP)]} {
-	set tempDir $env(TEMP)
-    } else {
-	if {[string match windows $tcl_platform(platform)]} {
-	    set tempDir /temp
-	} else {
-	    set tempDir /tmp
-	}
-    }
-}
-
-if [string match windows $tcl_platform(platform)] {
-    set tempDir [file attributes $tempDir -shortname]
-    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
-}
-
-set tester $tempDir/sim
-set go [clock clicks]
-while {[file exists $tester]} {
-    set guess_free [expr [clock clicks]-$go]
-    set tester $tempDir/sim$guess_free
-}
-#tk_messageBox -title debug -icon info \
-#	-message "Temp dir is $tester" -type ok
-
-set env(SIMTMPDIR) $tester
-file mkdir $env(SIMTMPDIR)/.lock
-
 # Directory to start in
 set env(START_DIR) $SIMILE_PATH/Examples ; # was $SIMILE_PATH/Tutorial or [pwd]
 
@@ -132,7 +100,6 @@ set interface [lindex [split $interfaceId =] 1]
 
 # tk_messageBox -title debug -icon info \
 #	-message "TCL library is [info library]\n \
-#	Temp dir is is $env(SIMTMPDIR)\n \
 #	Model is $env(OPEN_MODEL)" -type ok
 
 # this runs a program which starts AME from a saved state
@@ -162,12 +129,6 @@ switch $interface {
 	source ../Run/prolog.tcl
     } dll {
 	exec $SIMILE_PATH/$tgt$execExtn &
-	# wait till prog is going before removing splash
-	set pause 0
-	while {[file exists $env(SIMTMPDIR)/.lock] && $pause<3000} {
-	    incr pause 100
-	    after 100
-	}
     }
 }
 

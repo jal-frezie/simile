@@ -187,7 +187,19 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD);
 	CD = 2,
 	retractall(menu_submodel_is(_, _)),
-	assert(menu_submodel_is(Parent, Point)).
+	assert(menu_submodel_is(Parent, Point)),
+	(contains(Parent, Lit), \+ Lit = Parent,
+	    get_highlit_obj(N, Lit),
+	    N<2, !,
+	    Cuttable = 1;
+	Cuttable = 0),
+	(selected_box_is(_Any), !,
+	    Pastable = 1;
+	Pastable = 0),
+	Wid shows_model Model,
+	update_ability(Model, none, edit, 'Cut', Cuttable),
+	update_ability(Model, none, edit, 'Copy', Cuttable),
+	update_ability(Model, none, edit, 'Paste', Pastable).
 
 click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	get_mode(add),
