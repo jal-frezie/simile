@@ -353,7 +353,14 @@ adjust_to_8 :-
 	    length(D, N),
 	    list_of(int, N, B),
 	    Node has_changed_class_refinement table_data of
-	[file=F, data=T, indices=I, current=NC, units=U, bounds=B, dims=D]),
+	[file=F, data=T, indices=I, current=NC, units=U, bounds=B, dims=D];
+	Node has_class function,
+	    Node has_class_refinement value of Expr,
+	    replace_subexps(Expr, library, tabulate_graph_args,
+			    Table, top_down, VarPairs, NewExpr),
+	    VarPairs = [_],
+	    Node has_changed_class_refinement value of NewExpr,
+	    Node has_new_class_refinement table_data of Table),	    
 	adjust_to_8.
 
 adjust_to_8.
@@ -362,6 +369,11 @@ shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points),
 	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-
 	Points =.. [points | _].
 
+tabulate_graph_args([file='/graph/', data=[YL,YH,YR], indices=[XL,XH,XR,R],
+		     current=Pts, units=1, bounds=1, dims=N],
+		    graph(XL, XH, XR, YL, YH, YR, R, N, Ps, X), graph(X), 1) :-
+	Ps =.. [points | Pts].
+	
 inds_to_places(var_pair(Expr, NewExpr), Depth) :-
 	Expr = index(N),
 	    (Depth >= N, !,

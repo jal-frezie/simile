@@ -1133,7 +1133,8 @@ proc AddEnumTypeMems {fr} {
     set enumEntry [list [$fr.listpair.scrf get $togo $togo]]
     $fr.curmembers delete 0 end
     foreach mem $disaggregate(enumtype,$enumEntry) {
-	$fr.curmembers add command -label $mem -command "snipET $enumEntry $mem"
+	$fr.curmembers add command -label $mem \
+	    -command [list snipET $enumEntry $mem]
     }
 }
 	
@@ -1447,7 +1448,9 @@ proc DoRegDialog {dtId} {
 		file copy -force $egFile $custom(prefDir)/Examples
 	    }
 	}
-	set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
+	if {![llength $custom(hotlist)]} {
+	    set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
+	}
     }
     set t [toplevel .register -bd 4]
     wm title $t "Welcome to Simile version $userinfo(Version)"

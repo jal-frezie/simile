@@ -859,18 +859,19 @@ make_evaluation_routine(
 	    true),
 	    NodeId has_class_refinement table_data of
 	        [file='/graph/', data=[YLow, YHigh, YSpan],
-		 indices=[XLow, XHigh, XSpan, Range], current=Points,
+		 indices=[XLow, XHigh, XSpan, Range], current=PointList,
 		 units=_, _, dims=NumPts | _],
-	    name(Points, PointStr),
+	    /* name(Points, PointStr),
 	    append([91 | PointStr], "]", PointListStr),
-	    get_term(PointListStr, PointList, _),
+	    get_term(PointListStr, PointList, _), */
 	    make_evaluation_routine(Language, XAxis, 0, GraphTerm,
 					'higher in same context'),
+	    make_expr(Language, GraphTerm, GraphExpr),
 	    /* Keep tcl working till it uses c++ graph access */
 	    GraphD = [GraphN, GraphN, XLow, XHigh, XSpan,
 				YLow, YHigh, YSpan, Range, NumPts | PointList],
 	    make_procedure_call_chars(Language,
-				      [graphpoint, GraphTerm, GraphN],
+				      [graphpoint, GraphExpr, GraphN],
 				      Content_chars),
 /* End of graph clause */
 	    name(Term, Content_chars);

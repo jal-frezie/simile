@@ -267,7 +267,7 @@ proc GetModelGraph {winId node} {
     SetModelGraph $winId $node
 }
 
-proc SetModelGraph {winId node $args} {
+proc SetModelGraph {winId node args} {
     return [eval GetModelProperty $winId Graph $node $args]
 }
 

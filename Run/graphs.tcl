@@ -27,7 +27,7 @@ proc equationGraph {parent} {
 			       [lrange $equation(table_data) 1 3] \
 			       [lindex $equation(table_data) 8] \
 			       [lindex $equation(table_data) 4] \
-			       $equation(table_values)]
+			       [join $equation(table_values) ,]]
 	}
     }
     set done [eval {GraphEntry .graph} $graphArgs]
@@ -195,18 +195,18 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
                 # tk_messageBox -message "$rangeChoices $graph($t,rangeact)"
                 set graph($t,range) [SetCombos $t]
                 set graph($t,size) [llength $graph($t,points)]
-                regsub -all " " $graph($t,points) , graph($t,pts)
+                # regsub -all " " $graph($t,points) , graph($t,pts)
                 # Target is set to variable id if editing sketch at run time
                 if {[llength $target]} {
                     eval {SetModelGraph $t $target $graph($t,lowx) \
 			      $graph($t,highx) $graph($t,width) \
 			      $graph($t,lowy) $graph($t,highy) \
 			      $graph($t,height) $graph($t,range) \
-			      $graph($t,size)} [split $graph($t,pts) ,]
+			      $graph($t,size)} $graph($t,points)
                 } else {
                     SetDefaultGraph $graph($t,lowx) $graph($t,highx) $graph($t,width) \
 			$graph($t,lowy) $graph($t,highy) $graph($t,height) \
-			$graph($t,range) $graph($t,size) $graph($t,pts)
+			$graph($t,range) $graph($t,size) $graph($t,points)
                     set niceFormat 1
                 }
             }
@@ -1037,6 +1037,7 @@ proc ListToArray {tgt subs trans dims list} {
     for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
 	set indx [NumberToEnumType $arrayPt $thisTrans]
 	if {![info exists sub($indx)]} {
+#puts "No $indx in [array names sub]"
 	    return [list $indx "Missing value"]
 	}
 	set mis [ListToArray $tgt $subs,$arrayPt [lrange $trans 1 end] \

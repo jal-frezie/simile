@@ -104,7 +104,7 @@ BoxHeaderStr),
 	    (FilePath = '/graph/', !,
 		append([FilePath | DataField], [Bounds | Indices], TableList),
 		TableTrans = [[], []],
-		TableVals = Values;
+		TableVals = br(Values);
 	    TableList = [FilePath, DataField | Indices],
 		get_host(Part, Visible),
 		append(Bounds, [TUnits], TableTypes), 
@@ -173,7 +173,8 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	(FileName = '/graph/', !,
 	    length(DataField, 3),
 	    append(DataField, [Dims | Indices], DataSpec),
-	    name(DataTable, Data_st),
+	    output:chop_list(Data_st, DataStrs),
+	    all(user, sicstus_atom_chars, [build(DataTable), build(DataStrs)]),
 	    Units = 1,
 	    Bounds = 1;
 	get_table_data(Function, Data_st, DataTable,
