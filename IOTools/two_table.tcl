@@ -58,7 +58,8 @@ namespace eval $keyValue {
                 [list remove.gif "Remove a variable" \
                 [namespace code "RemoveVariable $winId"]] \
                 [list save.gif "Save to file" [namespace code "Save $winId"] ] \
-                [list property.gif "Properties" [namespace code "PropertiesDlg $winId"] ]]
+                [list property.gif "Properties" [namespace code "PropertiesDlg $winId"] ] \
+                [list refresh.gif Update [namespace code "Update $winId"]]]
         
         if {![string match .viewer $winId]} {
             ::graphtools::MakeToolBar $winId $toolbarItems
@@ -75,6 +76,14 @@ namespace eval $keyValue {
         CreateTable $winId
         clear $winId ;# cos MRE can re-use same frame
         SaveState $winId
+    }
+    
+    proc Update {winId} {
+        set origCursor [.mre cget -cursor]
+        .mre configure -cursor watch
+        update
+        Reconbobulate $winId
+        .mre configure -cursor $origCursor
     }
     
     proc CreateTable {winId} {
