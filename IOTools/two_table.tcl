@@ -370,6 +370,9 @@ namespace eval $keyValue {
         variable values
         variable rowNames
         variable colNames
+	variable rowIds
+	variable colIds
+
         if {[info exists rowNames]} {unset rowNames}
         if {[info exists colNames]} {unset colNames}
         if {[info exists values]} {unset values}
@@ -486,8 +489,11 @@ namespace eval $keyValue {
         
         set lastEntry(0) none
         set count $curHeaderRows
+        foreach entry [array names rowIds $winId,*] {
+            unset rowIds($entry)
+        }
         foreach item $rowList {
-            set rowIds($item) $count
+            set rowIds($winId,$item) $count
 #            $winId.t insert rows end
 # changed to preserve widths/heights
 	    $winId.t config -rows [expr [$winId.t cget -rows]+1]
@@ -522,8 +528,11 @@ namespace eval $keyValue {
         #puts "Column headers inserted"
         set lastEntry(0) none
         set count $curHeaderCols
+        foreach entry [array names colIds $winId,*] {
+            unset colIds($entry)
+        }
         foreach item $colList {
-            set colIds($item) $count
+            set colIds($winId,$item) $count
 #            $winId.t insert cols end
 # changed to preserve widths/heights
 	    $winId.t config -cols [expr [$winId.t cget -cols]+1]
@@ -560,8 +569,8 @@ namespace eval $keyValue {
         #puts "row headers inserted"
         foreach value [array names values] {
             set headers [split $value ,]
-            set rowHead $rowIds([lindex $headers 0])
-            set colHead $colIds([lindex $headers 1])
+            set rowHead $rowIds($winId,[lindex $headers 0])
+            set colHead $colIds($winId,[lindex $headers 1])
             $winId.t set $rowHead,$colHead \
                     [FormatValue $winId $values($value) [lindex $cellFormat($value) 0] \
                     [lindex $cellFormat($value) 1]]
@@ -578,7 +587,67 @@ namespace eval $keyValue {
             }
         }
     }
-    
+
+# OK you thought that was tricky, now we need one to go the other way and 
+# get the nested list format back from the table if it has been edited. What
+# are we working with? RowIds and ColIds list the table line for each set of
+# headers so we are probably best looping over these making an intermediate
+# array format (and perhaps picking out bounds) then converting that.
+
+    proc ExtractEdits {winId} {
+	variable rowIds
+	variable colIds
+	variable orientList
+	variable indices
+
+	variable dataStore
+	puts [array get dataStore]
+	
+	set rowsPt 0
+	set colsPt 0
+	set nonePt 0
+
+	# First, make a command that will convert ids into array subscripts
+	foreach level $orientList($winId) {
+	    if {![string match none $level]} {
+		if {$rowsPt+$colsPt+$nonePt+1==[llength $orientList($winId)]} {
+		    append subscriptTemplate \
+			"\[lrange \$${level}Headers [set ${level}Pt] end\]"
+		} else {
+		    append subscriptTemplate \
+			"\[lindex \$${level}Headers [set ${level}Pt]\] "
+		}
+	    }
+	    incr ${level}Pt
+	}
+
+	puts $subscriptTemplate
+        foreach rowEntry [array names rowIds $winId,*] {
+	    set rowsHeaders [lindex [split $rowEntry ,] 1]
+	    foreach colEntry [array names colIds $winId,*] {
+		set colsHeaders [lindex [split $colEntry ,] 1]
+		set subscript [eval {concat} $subscriptTemplate]
+		set values($subscript) \
+		    [set ::data${winId}($rowIds($rowEntry),$colIds($colEntry))]
+	    }
+	}
+	puts [array get values]
+
+# kill indices if this works
+	while {![info exists values()]} {
+	    foreach {indcol val} [array get values] {
+		unset values($indcol)
+		set shortcol [lrange $indcol 0 end-1]
+		lappend values($shortcol) [lindex $indcol end] $val
+	    }
+	}
+	puts $values()
+	unset dataStore
+	# need tweaking if time/var in use
+	set dataStore($winId,0,0.0) [lindex $values() 1]
+
+    }
+
     proc ReComp {l1 l2} {
         if {[string match $l1 $l2]} {
             return 0
@@ -612,9 +681,9 @@ namespace eval $keyValue {
         variable displayFormat
         
         if {[llength $index]} {
-            set nextAxis [lindex $orientList($winId) $depth]
+            set nextAxis [lindex $orientList($winId) [min $depth 3]]
             lappend ${nextAxis}List $index
-            if {$depth < 3} {incr depth}
+            incr depth
         }
         
         if {[llength $struct] == 1} {
@@ -775,6 +844,8 @@ namespace eval $keyValue {
         tkwait variable ${t}done
         
         if {[set ::${t}done]} {
+# only do if table is editable
+#	    ExtractEdits $winId
             set orientList($winId) [list [set ::${t}l1] [set ::${t}l2] \
                     [set ::${t}l3] [set ::${t}l4]]
 	    set displayUpdate($winId) [set ::${t}l5]

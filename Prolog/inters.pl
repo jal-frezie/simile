@@ -600,13 +600,15 @@ make_intermediates(
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
 			Step, Used, DefUnit, MidInters,
 			part_result(XIContext, SubSetups, _,_)),
-	    compile:remove_non_loopers(XIContext, XILoops),
+	    get_model_and_loops(XIContext, DestPath,_, XILoops,_),
 	    suffix(XILoops, LoopSlot),
 	    make_intermediates(Rest, SubId, Target, 
 			DestPath, BackSwap, MidInters, BuildingArrays, 
 			Step, Used, Units, NewInters,
 			part_result(SourceContext, ExSetups, Args, SourceRef)),
-	    propagate_units(Source, any, [any], [DefUnit], UseUnit),
+	    (promote_unit(DefUnit, UseUnit);
+		DefUnit = real, UseUnit = int;
+		raise_exception(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
 
 	\+ atom(Source),

@@ -500,45 +500,6 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	(   so index(n) will work) but no loops, so we don't need to add it
 	to the relative source contexts */
 
-match_param_dims([], _, []).
-match_param_dims([input_link(_, ULoops, Name, LType-_, _)
-		 | MoreLinks], Inters, Err) :-
-	select(I, Inters, MoreInters),
-	I = instance(internal, inter(_,_, ILoops), use_inter(Name),_, IType-_),
-
-	/* what follows is more or less a placeholder */
-	
-	length(ULoops, _),
-	get_dims_from_loops(ILoops, IDims, _),
-	real_dims_only(IDims, Dims),
-	(member(LLoops, ULoops),
-	    param_defn_use_mismatch(ILoops, LLoops), !,
-	    get_dims_from_loops(LLoops, LDims, _),
-	    real_dims_only(LDims, FixedLDims),
-	    sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err);
-	    (promote_unit(IType, LType), !,
-		(\+ Name = '/dest/',
-		    build_array(IType, Dims, Array),
-		    check_param_brackets("explicit intermediate result",
-					 Name, Array, Err), !;
-		    match_param_dims(MoreLinks, MoreInters, Err));
-		      
-		sicstus_format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err))).
-/* also check name of exp inter for right brackets */
-
-param_defn_use_mismatch(DefnLoops, UseLoops) :-
-	prefix(DefnLoops, UseLoops),
-	length(UseLoops, _), !,
-	    member(set(_, loop(EltBound)), UseLoops),
-	    var(EltBound);
-	true.
-
-real_dims_only(IDims, Dims) :-
-	append(Dims, ISpares, IDims),
-	\+ (member(Var, ISpares), nonvar(Var)), !.
-
-check_dim_match(P, Q) :- P=Q; Q=0.
-
 expand_params(dim_data(DimL, PsUsed, AllInputs), Param, DoneExpr, Recurse) :-
 	(get_solo_list_depth(Param, Depth),
 	/* when making dummy links for explicit intermediate results, check
@@ -658,6 +619,9 @@ decode_error(ParseError, TestError) :-
 	Type = mismatched_units, !,
 	    More = [Get, Want],
 	    sicstus_format_to_chars("The arguments of \"~w\" have the following types: ~w. These cannot be matched to the expected argument types for this function, which are ~w.", [SimpleError, Get, Want], TestError);
+	Type = wrong_param_units, !,
+	    More = [UseType, DefType],
+	    sicstus_format_to_chars("The equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [SimpleError, UseType, DefType], TestError);
 	Type = undecipherable_operand, !,
 	    More = [Var],
 	    find_all_comps(Sm, Var),

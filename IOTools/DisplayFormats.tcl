@@ -12,12 +12,12 @@ namespace eval DisplayFormat {
        
     proc General {val prec} {
         # was VarPrecRender
-        if {[catch {set regular [format %.${prec}f $val]}]} \
-	    {set regular $val}
-	if {[catch {set scientific [format %.${prec}e $val]}]} \
-	    {set scientific $val}
-	if {[catch {set shortSci [format %.[expr $prec-3]e $val]}]} \
-	    {set shortsci $val}
+	if {![string is double $val]} {
+	    return $val
+	}
+        set regular [format %.${prec}f $val]
+	set scientific [format %.${prec}e $val]
+	set shortSci [format %.[expr $prec-3]e $val]
 
         if {[string length $scientific]<[string length $regular]} {
             return $scientific
