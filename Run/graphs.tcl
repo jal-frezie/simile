@@ -422,7 +422,11 @@ pack .table.top.instructions -side top -anchor w -padx 2 -pady 2
 TitleFrame .table.top.fheads -text "Table column headings"
 set fheads [.table.top.fheads getframe]
 set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
-        -selectmode single -dropcmd DeleteIndex]
+		-selectmode single -dropcmd DeleteIndex \
+		-yscrollcommand [list AdjustCanvas $fheads lheads y]]
+scrollbar $fheads.yscroll -orient v -command [list $fheads.lheads yview]
+pack $fheads.yscroll -side right -fill y
+
 TitleFrame .table.top.fidx -text "Use as indices"
 set fidx [.table.top.fidx getframe]
 set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \

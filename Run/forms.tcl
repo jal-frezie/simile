@@ -1541,3 +1541,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where co
 proc equationlisting_scrollit {widget} {
     $widget set
 }
+
+proc NotifyOverLimit {limit} {
+    ShowMessage "Restriction notice" info "This model now has more than $limit equations. As this is the evaluation edition, you cannot save a model with more than this number of equations." ok
+}

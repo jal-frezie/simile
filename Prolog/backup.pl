@@ -5,7 +5,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 sicstus_module(backup, [initialize_ring/0, finish_move/1, restart_move/0,
-			get_save_status/2, set_save_status/2, 
+			get_save_status/2, set_save_status/2, save_allowed/1,
 			go_back/1, go_forward/1, make_auto_name/3,
 			clear_autosave/2, check_autosave/3, scrub_autosave/1,
 			is_toplevel/1, use_temp_dir/1]).
@@ -70,7 +70,8 @@ finish_move(Model) :-
 		fail;
 	maintain:update_ability(undo, edit, 'Undo', 1),
 	maintain:update_ability(redo, edit, 'Redo', 0),
-	maintain:update_ability(save, file, 'Save', 1),
+	save_allowed(CanSave),
+	maintain:update_ability(save, file, 'Save', CanSave),
 	retract(saved_state(first, First)),
 	retract(saved_state(last, _)),
 	retract(saved_state(current, Current)),
@@ -88,6 +89,25 @@ finish_move(Model) :-
 after putting up restore dialog, to be sure we are restoring from the same state
 we saved from. */
 
+:- dynamic(counted_fns/1).
+:- assert(counted_fns(0)).
+
+save_allowed(OK) :-
+	\+ state:get_edition(evaluation), OK = 1;
+	state:eval_fn_limit_is(Limit),
+	retract(counted_fns(OldTot)),
+	assert(counted_fns(0)),
+	(find_type(_Fun, function),
+	    retract(counted_fns(Were)),
+	    Are is Were+1,
+	    assert(counted_fns(Are)),
+	    Are > Limit,
+	    (OldTot > Limit;
+	    output:safe_tcl_eval(['NotifyOverLimit', Limit], _)), !,
+	    OK = 0;
+	OK = 1).
+
+	
 restart_move :-
 	fetch_update(DP),
 		(DP = remove(P),
@@ -242,7 +262,8 @@ check_autosave(Model, Name, Tweaked) :-
 		    Tweaked = 1,
 		    maintain:update_ability(undo, edit, 'Undo', UState),
 		    maintain:update_ability(redo, edit, 'Redo', RState),
-		    maintain:update_ability(save, file, 'Save', 1),
+		    save_allowed(CanSave),
+		    maintain:update_ability(save, file, 'Save', CanSave),
 		    set_save_status(Win, risky);
 		output:my_delete_file(AutoName));
 	    true);

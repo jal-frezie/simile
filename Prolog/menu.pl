@@ -39,13 +39,17 @@ undo :-
 	go_back(Further),
 	redraw_window(_),
 	update_ability(undo, edit, 'Undo', Further),
-	update_ability(redo, edit, 'Redo', 1).
+	update_ability(redo, edit, 'Redo', 1),
+	save_allowed(CanSave),
+	update_ability(save, file, 'Save', CanSave).
 
 redo :-
 	go_forward(Further),
 	redraw_window(_),
 	update_ability(undo, edit, 'Undo', 1),
-	update_ability(redo, edit, 'Redo', Further).
+	update_ability(redo, edit, 'Redo', Further),
+	save_allowed(CanSave),
+	update_ability(save, file, 'Save', CanSave).
 
 menu_select(Seln) :-
 	update_mode(add),
