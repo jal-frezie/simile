@@ -427,7 +427,7 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
 proc RunEnv::DeletePane {parentPath containerId} {
     #ShowMessage debug info "DeletePane\n parentPath $parentPath\n \
     #            containerId $containerId\n \
-    #            panes [$parentPath panes]" ok; ###########
+    #            panes [$parentPath panes]" ok; 
     $parentPath forget $containerId
     destroy $containerId
     # all panedwindows are in a notebook parent
@@ -437,20 +437,23 @@ proc RunEnv::DeletePane {parentPath containerId} {
         #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
         #                parentPage $parentPage; parentNoteBook $parentNoteBook\n \
         #                pages [$parentNoteBook pages]\n \
-        #                current page [$parentNoteBook raise]" ok; ###########
+        #                current page [$parentNoteBook raise]" ok; 
         destroy $parentPath
         DeleteNotebookPage $parentNoteBook [$parentNoteBook raise]; #current page
     }
 }
 
 proc RunEnv::SplitPage {containerId orientation} {
-    #ShowMessage debug info "SplitPage container $containerId $orientation" ok; ##############
-    
     set parentPath [FindParentpanedwindowOrNotebook $containerId]
+    #ShowMessage debug info "SplitPage container $containerId $orientation\n\
+    #    parentPath $parentPath" ok
     if {[string match notebook [winfo name $parentPath]]} {
         Addpanedwindow $containerId $orientation
     } elseif {(![string match $orientation [$parentPath cget -orient]])} {
-        Addpanedwindow $containerId $orientation
+        #ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
+        #        parentPath $parentPath" ok;
+        set newpw [Addpanedwindow $containerId $orientation]
+        #ShowMessage debug info "newpw $newpw" ok
     } else  {
         # it's a pane
         # existing panes original settings
@@ -498,6 +501,7 @@ proc RunEnv::SplitPage {containerId orientation} {
         
         update; # or sash place won't work
         $parentPath sash place $sash $sashx $sashy
+        SetCurrentContainer $paneId
         
         #ShowMessage debug info "SplitPage $parentPath $containerId \n\
         #        paneId $paneId" ok; ##############
@@ -515,6 +519,36 @@ proc ::RunEnv::FindParentpanedwindowOrNotebook {containerId} {
     switch $parentName {
         notebook { return $parentPath }
         panedwindow { return $parentPath }
+        "" { return ""}
+        default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
+    }
+}
+
+proc ::RunEnv::FindParentPanedwindow {containerId} {
+    set parentPath [winfo parent $containerId]
+    set parentName [winfo name $parentPath]
+    switch $parentName {
+        panedwindow { return $parentPath }
+        "" { return ""}
+        default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
+    }
+}
+
+proc ::RunEnv::FindParentNotebook {containerId} {
+    set parentPath [winfo parent $containerId]
+    set parentName [winfo name $parentPath]
+    switch $parentName {
+        notebook { return $parentPath }
+        "" { return ""}
+        default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
+    }
+}
+
+proc ::RunEnv::FindParentNotebookPage {containerId} {
+    set parentPath [winfo parent $containerId]
+    set parentName [winfo name $parentPath]
+    switch -glob $parentName {
+        fpage* { return $parentPath }
         "" { return ""}
         default {::RunEnv::FindParentpanedwindowOrNotebook $parentPath}
     }
@@ -582,10 +616,29 @@ proc RunEnv::Addpanedwindow {containerId orientation} {
             "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
     $containerId.panedwindow add $containerId.panedwindow.pane0 $containerId.panedwindow.pane1 \
             -width $width -height $height
+    return $containerId.panedwindow
 }
 
 proc RunEnv::SetCurrentContainer {win} {
     #ShowMessage debug info "SetCurrentContainer $win" ok
+    variable mainframe
+    set pw [FindParentPanedwindow $win]
+    #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
+    set tb1 [$mainframe gettoolbar 0]
+    if {[winfo exists $win.container]} {
+        if {[string match vertical [$pw cget -orient]]} {
+            #ShowMessage debug info "vert $tb1.bbox2" ok
+            $tb1.bbox2 itemconfigure 1 -state disabled
+            $tb1.bbox2 itemconfigure 0 -state normal
+        } else  {
+            #ShowMessage debug info "horiz $tb1.bbox2" ok
+            $tb1.bbox2 itemconfigure 0 -state disabled
+            $tb1.bbox2 itemconfigure 1 -state normal
+        }
+    } else  {
+        $tb1.bbox2 itemconfigure 1 -state normal
+        $tb1.bbox2 itemconfigure 0 -state normal
+    }
     focus $win
     set ::RunEnv::CurrentContainer $win
 }
@@ -817,7 +870,7 @@ proc RunEnv::LoadView {} {
             LoadViewFile $stream $line
         } elseif {[llength $line]==1}  {
             # assume that it is an shf made by the multiple window run env
-	    destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
+	        destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
             RunEnv::AddNotebook $dp0
             seek $stream 0 start
             while {[gets $stream helperId] >= 0} {
@@ -867,62 +920,70 @@ proc RunEnv::LoadViewFile {stream line} {
     [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
     
     while {[gets $stream line] >= 0} {
-	switch [scan $line %s] {
-	    container {
-		LoadContainer $stream $line
-	    }
-	    panedwindow {
-		#%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
-		scan $line "%s %s %s" widget path orient
-		panedwindow $path -orient $orient
-		#set containerId [winfo parent $path]
-		#ShowMessage debug info "containerId $containerId" ok
-		#$notebook raise $pageId; # or $panedwindow sash place won't work
-		pack $path -expand yes -fill both
-	    }
-	    pane {
-		#%puts $stream "pane $pane"
-		scan $line "%s %s" widget path
-		frame $path -highlightcolor black  -highlightthickness 1
-		set panedwindow [winfo parent $path]
-		$panedwindow add $path
-		bind $path <Button-1> "::RunEnv::SetCurrentContainer %W"
-		bind $path <Button-3> \
-		    "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-	    }
-	    sash {
-		scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
-		# the page this pane is in must be raised and update called!
-		#ShowMessage debug info "$panedwindow sash place $index $sashx $sashy " ok
-		update
-		$panedwindow sash place $index $sashx $sashy
-	    }
-	    notebook {
-		#puts $stream "notebook $notebook"
-		scan $line "%s %s" widget path
-		NoteBook $path
-		set containerId [winfo parent $path]
-		#ShowMessage debug info "containerId $containerId" ok
-		pack $path -fill both -expand yes
-	    }
-	    page {
-		#puts $stream "page $notebook $page $pagecaption"
-		scan $line "%s %s %s %s" widget notebook pageId pagecaption
-		#ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
-		$notebook insert end $pageId -text $pagecaption \
-		    -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
-		# page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
-		[$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
-		bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
-		bind [$notebook getframe $pageId] <Button-3> \
-		    "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-		catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
-		
-	    }
-	    default {
-		# puts $stream "Unhandled mre element"
-	    }
-	}
+        switch [scan $line %s] {
+            container {
+                LoadContainer $stream $line
+            }
+            panedwindow {
+                #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
+                scan $line "%s %s %s" widget path orient
+                panedwindow $path -orient $orient
+                #set containerId [winfo parent $path]
+                #ShowMessage debug info "containerId $containerId" ok
+                #$notebook raise $pageId; # or $panedwindow sash place won't work
+                pack $path -expand yes -fill both
+            }
+            pane {
+                #%puts $stream "pane $pane"
+                scan $line "%s %s" widget path
+                frame $path -highlightcolor black  -highlightthickness 1
+                set panedwindow [winfo parent $path]
+                $panedwindow add $path
+                bind $path <Button-1> "::RunEnv::SetCurrentContainer %W"
+                bind $path <Button-3> \
+                        "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+            }
+            sash {
+                scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
+                # the page this pane is in must be raised and update called!
+                # or $panedwindow sash place won't work
+                set $notebook [FindParentNotebook $panedwindow]
+                set $pageId [winfo name [FindParentNotebookPage $panedwindow]]
+                $notebook raise $pageId; 
+                update
+                #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy \n\
+                #        page [$notebook pages]\n\
+                #        FindParentNotebook $notebook \n\
+                #        FindParentNotebookPage $pageId" ok
+                $panedwindow sash place $index $sashx $sashy
+            }
+            notebook {
+                #puts $stream "notebook $notebook"
+                scan $line "%s %s" widget path
+                NoteBook $path
+                set containerId [winfo parent $path]
+                #ShowMessage debug info "containerId $containerId" ok
+                pack $path -fill both -expand yes
+            }
+            page {
+                #puts $stream "page $notebook $page $pagecaption"
+                scan $line "%s %s %s %s" widget notebook pageId pagecaption
+                #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
+                $notebook insert end $pageId -text $pagecaption \
+                        -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
+                # page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
+                [$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
+                bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
+                bind [$notebook getframe $pageId] <Button-3> \
+                        "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                #$notebook raise $pageId
+                #catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
+                
+            }
+            default {
+                # puts $stream "Unhandled mre element"
+            }
+        }
     }
     $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
 }
@@ -1030,7 +1091,96 @@ proc RunEnv::UniqueId {basename pagenames} {
     set title $basename/$i
 }
 
+proc RunEnv::AssembleFont {family weight style textsize} {
+    #ShowMessage debug info "AssembleFontNew $family $weight $style $textsize\n\
+    [list family $family weight $weight slant $style size $textsize]" ok
+    return [list -family $family -weight $weight -slant $style -size $textsize]
+}
 
+proc RunEnv::ExtractFontData {font} {
+    #ShowMessage debug info "ExtractFontDataNew\n\
+    font actual [font actual $font]\n\
+            family [font actual $font -family]\n\
+            weight [font actual $font -weight]\n\
+            style [font actual $font -slant]\n\
+            textsize [font actual $font -size] " ok
+    #ShowMessage debug info "ExtractFontData $font n ele[llength $font]\n\
+    #    family weight style textsize: $family $weight $style $textsize" ok
+    set family [font actual $font -family]
+    set weight [font actual $font -weight]
+    set style [font actual $font -slant]
+    set textsize [font actual $font -size]
+    #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
+    return [list $family $weight $style $textsize]
+}
+
+proc RunEnv::ZoomImage {winId which factor fontor} {
+    global window_info looks
+    
+    $winId scale $which 0 0 $factor $factor
+    if {[string compare $which all]} {
+        set objList [$winId find withtag $which]
+    } else {
+        set objList [$winId find all]
+        # and update the info...(if it's there)
+        catch {set window_info($winId,scale) \
+                    [expr $window_info($winId,scale) * $factor]}
+        
+    }
+    foreach object $objList {
+        switch [$winId type $object] {
+            text {
+                set fontData [ExtractFontData [$winId itemcget $object -font]]
+                if {[info exists window_info($winId,scale)]} {
+                    # a model window
+                    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+                    #ShowMessage debug info "ZoomImage model win" ok
+                    $winId itemconfigure $object -font \
+                            [AssembleFontXFLD [lindex $fontData 0] [lindex $fontData 1] \
+                            [lindex $fontData 2] $newTextSize]
+                } else  {
+                    # helper or other non-model canvas
+                    #ShowMessage debug info "ZoomImage model !win" ok
+                    set newTextSize [expr {int([lindex $fontData 3]*$fontor)}]; #[expr {int([lindex $fontData 3]*$factor*$fontor)}]
+                    $winId itemconfigure $object -font \
+                            [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+                            [lindex $fontData 2] $newTextSize]
+                }
+                if {$newTextSize < 8} {
+                    set newTextSize 8
+                }
+                # howMessage debug info "ZoomImage AssembleFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+                #                        [lindex $fontData 2] $newTextSize]" ok
+            } line {
+                $winId itemconfigure $object \
+                        -width [AdjustWidth $winId $object $factor]
+                AdjustArrow $winId $object $factor
+            } image {
+                set tgtImage [$winId itemcget $object -image]
+                set newWidth [expr round($factor*[$tgtImage cget -width])]
+                set newHt [expr round($factor*[$tgtImage cget -height])]
+                scan [$winId coords $object] {%f %f} newX newY
+                
+                if {[string match */base/* [$winId gettags $object]]} {
+                    ResizeBackgnd $winId $newX $newY \
+                            [expr $newX+$newWidth] [expr $newY+$newHt]
+                } else {
+                    set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
+                    set intRad [expr int($looks(submodel,objectsize)* \
+                            $shortSide/400)]
+                    $tgtImage config -width $newWidth -height $newHt
+                    regexp {source\(([^\)]+)\)} [$winId gettags $object] \
+                            all sourceImage
+                    FillSmImage $sourceImage $tgtImage $newWidth $newHt \
+                            $intRad
+                }
+            } default {
+                $winId itemconfigure $object \
+                        -width [AdjustWidth $winId $object $factor]
+            }
+        }
+    }
+}
 
 # A top level window to contain the helpers
 # overrides mre.tcl Makemre
