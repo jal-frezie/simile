@@ -529,24 +529,21 @@ menu_handle(Win, edit, paste) :-
 	selected_box_is(SBox),
 	(find_space_for(SBox, Model, Pt, [Xoffset, Yoffset]), !,
 	reassure_user("Paste in progress"),
-	select_all_in(Model, on),
+	select_all_in(Model, off),
 	(event:list_captions(Model, Used), !; true),
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	ame_merge(Model, CopyFile, _Date, _HasCode, _Renumber),
+	ame_merge(Model, CopyFile, _Date, _HasCode, Renumber),
 %	redraw_window(Win),
 	
-	setof(Mover, (find_all_comps(Model, Mover),
-			\+ get_highlit_obj(_, Mover)), Movers),
+	setof(Mover, O^member(O-Mover, Renumber), Movers),
 	all(event, adjust_posn,
 	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
-	invert_seln_in(Model),
 	all(event, retitle_duplicate, [build(Movers), unify(Used)]),
 	(member(Mover, Movers),
 	    redisplay(Mover),
-	    /* New part is highlit already, this just corrects display */
-	    get_highlit_obj(N, Mover),
-	    highlight(Mover, N),
+	    Mover is_of_sort box,
+	    event:do_colours(Mover, on),
 	    fail;
 	finish_move(Model));
 	    
