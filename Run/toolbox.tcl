@@ -306,29 +306,32 @@ proc GetParts {top tree} {
 	if {[file isdirectory $subtree]} {
 	    set mimes [concat $mimes [GetParts $top $subtree]]
 	} else {
-            set ext [file extension $subtree]
-            switch $ext {
-                .gif {
+            set ext [file tail $subtree]
+            switch -glob $ext {
+                *.gif {
                     set PartType "image/gif"
                     set Description "Image"
 		    set style inline
                 }
-                .pl {
+                model.pl {
                     set PartType "application/x-simile"
                     set Description "Simile model"
 		    set style inline
                 }
-                .cnv {
+                model.cnv {
                     set PartType "application/x-simile"
                     set Description "Simile canvas description"
 		    set style attachment
                 }
-                default {
+                model.* {
                     set PartType "application/x-simile"
                     set Description "Data"
 		    set style attachment
-                }
+                } default {
+		    set Description junk
+		}
             }
+	if {![string match junk $Description]} {
 	    set relPath [string range $subtree [string length $top] end]
             set Disposition "${style}; filename=\"$relPath\""
 	    set newMime [mime::initialize -canonical $PartType \
@@ -343,7 +346,7 @@ proc GetParts {top tree} {
 		lappend mimes $codeT
 	    }
 	    lappend mimes $newMime
-	
+	}
 # Debug: write the body to see if it's baaad...yes it was
 # Workaround: don't save anything as text/plain, stick to application/x-simile
 #	    set debugname ${subtree}.mim

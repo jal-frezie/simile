@@ -1277,16 +1277,16 @@ proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Rep]} {
 	set prefx $base/model
 	if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
-	    file rename -force ${prefx}${Rep}[info sharedlibextension] \
+	    file copy ${prefx}${Rep}[info sharedlibextension] \
 		${prefx}[info sharedlibextension]
 	} else {
 	    file delete -force ${prefx}[info sharedlibextension]
 	}
-	foreach file [glob -nocomplain ${prefx}*] {
-	    if {![string match ${prefx}.* $file]} {
-		file delete $file
-	    }
-	}
+#	foreach file [glob -nocomplain ${prefx}*] {
+#	    if {![string match ${prefx}.* $file]} {
+#		file delete $file
+#	    }
+#	}
     }
 }
 
