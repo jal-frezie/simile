@@ -235,18 +235,19 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     scan [GetPoints $mb -$cornerRad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
     
     set contents [$w find enclosed $ml $mt $mr $mb]
-    if {![string match clear $fillColour]} {
-        set poly [$w create polygon \
-                $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 \
-                $h6 $mt $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 \
-                $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
-                $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
-                $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
-                -fill $fillColour -tag "$tagSet /background/"]
-	# Now to stick it behind anything that might be drawn inside
-	if {[llength $contents]} {
-	    $w lower $poly [lindex $contents 0]
-	}
+    if {[string equal clear $fillColour]} {
+	set fillColour {}
+    }
+    set poly [$w create polygon \
+		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 \
+		  $h6 $mt $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 \
+		  $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
+		  $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
+		  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
+		  -fill $fillColour -tag "$tagSet /background/"]
+    # Now to stick it behind anything that might be drawn inside
+    if {[llength $contents]} {
+	$w lower $poly [lindex $contents 0]
     }
     if {![string equal none $fillImage]} {
         set poly [$w create image $ml $mt -anchor nw \

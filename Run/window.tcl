@@ -113,7 +113,6 @@ proc ClickObj { x y winId X Y action} {
     
     focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
-    
     if {!$target} {
         # a background click
         $winId select clear
@@ -127,17 +126,19 @@ proc ClickObj { x y winId X Y action} {
         }
         return
     }
-    
+    # if we have loaded an already built model, its node names may not match
+    # the ones given it in Prolog, so get them from the canvas
     set node [ExtractPrologName $winId $target]
-    set caption [GetText $winId $node]
+    set context [GetClickCapt $winId $canx $cany $node]
     set topNode $window_info($winId,top_node)
-    if {[do_if_running $topNode ProdObj $topNode $node $caption]} {
-        return
-        # IO tool took the click, so do no more
+    if {[do_if_running $topNode ProdObj $topNode {} $context]} {
+	return
     }
+    # IO tool took the click, so do no more
     if {[string compare $pushedbutton snap]==0} then {
         do_in_node $topNode snap $topNode $node
     } else {
+	set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
             set obj [GetCaptionItem $winId $node]
             
@@ -359,7 +360,11 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
             [list byebye $c]
     
     set window_info($c,top_node) $topNode
-    set window_info($c,is_top_level) $isTopLevel
+    if {[set window_info($c,is_top_level) $isTopLevel]} {
+	set window_info($c,topCapt) {}
+    } else {
+	set window_info($c,topCapt) $window_info(lastClickCapt)
+    }
     
     TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
@@ -736,7 +741,9 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-	    AddPopupMessage novalue \#ffffc0 $node GetShortVals $node $plName
+	    set cptPath [GetClickCapt $winId $canx $cany $plName]
+	    set execName [do_for_node $node GetIdFromCaptionPath $cptPath]
+	    AddPopupMessage novalue \#ffffc0 $node GetShortVals $node $execName
 	}
     }
 }
@@ -1576,6 +1583,29 @@ proc GetClickedObj { winId canx cany range} {
     }
     return 0
 }
+
+proc GetClickCapt { winId canx cany node} {
+    global window_info
+    set result $window_info($winId,topCapt)
+    set tgts [$winId find overlapping $canx $cany $canx $cany]
+    set lastNod none
+    foreach tgt $tgts {
+	if {[string match "*/background/*" [$winId gettags $tgt]] && \
+	    ![string match "*/base/*" [$winId gettags $tgt]]} {
+	    set thisNod [ExtractPrologName $winId $tgt]
+	    if {![string equal $thisNod $lastNod]} {
+		set lastNod $thisNod
+		set newText [GetText $winId $thisNod]
+		append result /$newText
+		if {[string equal $node $thisNod]} {
+		    return $result
+		}
+	    }
+	}
+    }
+    append result /[GetText $winId $node]
+    return $result
+}    
 
 proc AbleComp {winid} {
     global custom

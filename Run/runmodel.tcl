@@ -278,9 +278,12 @@ proc ProdObj {topNode nodeId caption} {
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
 		set target $helperTable($topNode,current)
-		
 		set helperId $helperTable($target,whichHelper)
-		${helperId}::click $target $nodeId $caption
+		if {![llength $nodeId]} { ;# get from caption
+		    set nodeId [GetIdFromCaptionPath $caption]
+		}
+		${helperId}::click $target $nodeId \
+		    [lindex [split $caption /] end]
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
 #                    "This component cannot be selected for an I/O tool because it has no associated value." ok
@@ -585,8 +588,8 @@ proc ScrubRun {node times} {
 
 }
 
-proc GetShortVals {node plName limit} {
-    set text [lindex [GetCompProperty $node Value $plName] 0]
+proc GetShortVals {topNode plName limit} {
+    set text [lindex [GetCompProperty $topNode Value $plName] 0]
     set count [ShrinkValueList text $limit]
     set text [PrettifyValList [TransEnums [GetTransTable $plName] $text]]
     return [list $count $text]

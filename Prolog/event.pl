@@ -568,7 +568,7 @@ finish_old_edit(NextEdit) :-
 %		    give_focus(Prev_highlight),
 		    fail;
 		change_name(RenamedNode, Name),
-		    finish_move(Parent, 0)));
+		    finish_move(Parent, 1))); /* 1 means date executable */
 	/* last line gets executed if no prev edit highlight, or display is
 	suspended */
 	true.
