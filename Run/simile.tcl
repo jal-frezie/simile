@@ -8,6 +8,9 @@ set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
 # Above seems unnecessary for sicstus 3.10
 
+# temporary to get wkng with local tcltk
+# lappend auto_path $SIMILE_PATH/System/lib
+
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2

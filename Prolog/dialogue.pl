@@ -240,8 +240,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		member(ComboType, [n(_), const_int]), ComboUnits = int;
 		ComboType = ComboUnits), */
 
-            ((var(TypeBase); promote_arg(EqnBase, TypeBase, _)), !,
-		ComboUnits = EqnBase;
+            (member(TypeBase, [int, real, boolean]),
+		promote_arg(EqnBase, TypeBase, ComboUnits), !,
+		(nonvar(ComboUnits); ComboUnits = TypeBase);
 	    UnitError = "Could not match units."),
            
 	    (nonvar(UnitError),
@@ -448,11 +449,6 @@ check_exp(Eqn_st, FieldName, Function, InterInputs, Base, Dims, Needed,
 				" field produced the following error: ",
 				ParseError], Error)).
 
-set_param_dims(input_link(_, DimL, _, Inds-Loops, _)) :-
-	length(DimL, N), !,
-	length(Dims, N),
-	make_inds_for(Dims, Loops, Inds).
-	
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
 now
 includes full type checking, it can be used to make sure the 

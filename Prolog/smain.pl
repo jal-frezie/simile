@@ -61,3 +61,6 @@ main :-
 /*	append_atoms(TempDir, '/.lock/', SplashLock),
 	output:trim_tree(SplashLock, ''),
 */        tk_main_loop.
+
+/* Uncomment following to make standalone executable */
+:- initialization(main).

@@ -382,16 +382,16 @@ make_intermediates(
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
 	    InitVal = 0;
-	(member(Functor, [make_inter, last, delay]), !,
-		InitVal = 0,
-		IncrExpr = IncrementRef,
-	        ArgTemplate = [RUnits],
-	        ReadyContext = ClearContext;
-	    IncrExpr =.. [IncrOp, IncrementRef, FillRef],
-	        (member(Functor, [any, all]), !,
-		    [RUnits | ArgTemplate] = [boolean, boolean];	
-		    [RUnits | ArgTemplate] = [int, int]),
-	        append(NowBuilding, DestPath, ReadyContext)),
+	member(Functor, [make_inter, last, delay]), !,
+	    InitVal = 0,
+	    IncrExpr = IncrementRef,
+	    Units = ArgUnits,
+	    ReadyContext = ClearContext;
+	IncrExpr =.. [IncrOp, IncrementRef, FillRef],
+	    (member(Functor, [any, all]), !,
+		[RUnits | ArgTemplate] = [boolean, boolean];	
+		[RUnits | ArgTemplate] = [int, int]),
+	    append(NowBuilding, DestPath, ReadyContext),
 	    propagate_units(Source, RUnits, ArgTemplate, [ArgUnits], Units)),
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
 
@@ -596,12 +596,13 @@ make_intermediates(
 			part_result(XIContext, SubSetups, _,_)),
 	    get_model_and_loops(XIContext, DestPath,_, XILoops,_),
 	    suffix(XILoops, LoopSlot),
+	    /* If we know what the parameter units are by now, use them */
+	    (nonvar(UseUnit), !; UseUnit = DefUnit),
 	    make_intermediates(Rest, SubId, Target, 
 			DestPath, BackSwap, MidInters, BuildingArrays, 
 			Step, Used, Units, NewInters,
 			part_result(SourceContext, ExSetups, Args, SourceRef)),
-	    (promote_unit(DefUnit, UseUnit);
-		DefUnit = real, UseUnit = int;
+	    (promote_arg(DefUnit, UseUnit,_FType);
 		raise_exception(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
 
@@ -646,10 +647,6 @@ make_intermediates(
 		    raise_exception(only_works_on_array(Source))),
 		list_of(int, TableDims, Arg_template)),
 		ValRef = table(ResultList);
-	    Source = sofar(Param),
-		SourceList = [Param],
-		ResultList = [ValRef],
-		Arg_template = [RUnits];
 	    Source =.. [Op | PlSourceList],
 		(PlSourceList = [''], !,
 		    SourceList = [];
@@ -692,6 +689,9 @@ make_intermediates(
 		    ValRef = _^Exp,
 		    raise_units(Base, Exp, Units),
 		    SourceRef = ValRef;
+		 Op = sofar,
+		    ValRef = sofar(SourceRef),
+		    UnitList = [Units];
 		 fn_or_op(Op, RUnits, Arg_template),
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units),
@@ -795,15 +795,15 @@ uses_as(const_int, int).
 uses_as(int, real).
 
 promote_arg(Lo, Hi, Phys) :-
+	var(Lo), !, Phys = Lo;
 	promote_unit(Lo, Tpt),
 	(   Tpt = real, Med = 1;
 	    Med = Tpt),
 	(Hi = real,
 	    (nonvar(Phys); var(Phys), Phys = Med),
 	    get_conversion(1, Med, Phys, N),
-	    1 is N;
-	\+ Hi = real,
-	    Hi = Med).
+	    1 is N, !;
+	Hi = Med).
 
 /* Operators and functions. These should be applied in a way that allows
 an integer to be treated as a real -- if an arg is real, so is result
@@ -839,6 +839,7 @@ function(init_time, real, [const_int]).
 function(parent, int, [dummy_int]).
 
 function(last, any, [any]).
+function(sofar, any, [any]).
 function(prev, given_units, [const_int]).
 function(makearray, array_of_any, [any, const_int]).
 function(place_in, int, [const_int]).
