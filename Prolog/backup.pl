@@ -68,7 +68,9 @@ finish_move(Model) :-
 		state:shows_model(Win, ShownModel),
 		set_save_status(Win, risky),
 		fail;
-	maintain:update_do_buttons(1,0),
+	maintain:update_ability(undo, edit, 'Undo', 1),
+	maintain:update_ability(redo, edit, 'Redo', 0),
+	maintain:update_ability(save, file, 'Save', 1),
 	retract(saved_state(first, First)),
 	retract(saved_state(last, _)),
 	retract(saved_state(current, Current)),
@@ -225,7 +227,9 @@ clear_autosave(Model, Name) :-
 check_autosave(Model, Name) :-
 	state:shows_model(Win, Model),
 	set_save_status(Win, safe),
-	maintain:update_do_buttons(0,0),
+	maintain:update_ability(undo, edit, 'Undo', 0),
+	maintain:update_ability(redo, edit, 'Redo', 0),
+	maintain:update_ability(save, file, 'Save', 0),
 	(is_toplevel(Model), !,
 	    initialize_ring,
 	    make_auto_name(Name, ".smx", AutoName),
@@ -241,7 +245,9 @@ check_autosave(Model, Name) :-
 		    (output:my_file_exists(DeadCanvas), !,
 			output:my_delete_file(DeadCanvas);
 		    true),
-		    maintain:update_do_buttons(UState, RState),
+		    maintain:update_ability(undo, edit, 'Undo', UState),
+		    maintain:update_ability(redo, edit, 'Redo', RState),
+		    maintain:update_ability(save, file, 'Save', 1),
 		    set_save_status(Win, risky);
 		output:my_delete_file(AutoName));
 	    true);

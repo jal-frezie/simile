@@ -39,12 +39,14 @@ show_normal_cursor :-
 undo :-
 	go_back(Further),
 	redraw_window(_),
-	update_do_buttons(Further, 1).
+	update_ability(undo, edit, 'Undo', Further),
+	update_ability(redo, edit, 'Redo', 1).
 
 redo :-
 	go_forward(Further),
 	redraw_window(_),
-	update_do_buttons(1, Further).
+	update_ability(undo, edit, 'Undo', 1),
+	update_ability(redo, edit, 'Redo', Further).
 
 menu_select(Seln) :-
 	update_mode(add),
@@ -126,6 +128,7 @@ stick_model_in(Parent, Name) :-
 	    dir (fttb) so get them loaded */
 	    transfer_images(Parent, TargetDir, in),
 		  
+	    check_autosave(Parent, PrologData),
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	    (is_toplevel(Parent),
 	/* only try graphics file for toplevel windows because if loading into
@@ -139,12 +142,11 @@ stick_model_in(Parent, Name) :-
 		redraw_window(Win)),
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
-	    no canvas, images or runnables */
+	    no canvas, images, autosave check or runnables */
 	ame_merge(Parent, Name, _Date),
 	    resize_canvas_for(Parent),
 	    redraw_window(Win)),
 	add_parameter(Parent, 0, file_name, Name),
-	check_autosave(Parent, Name),
 	update_captions(Parent).
 
 resize_canvas_for(Parent) :-
@@ -628,6 +630,7 @@ do_save(Model, New_name) :-
 	add_parameter(Model, 0, file_name, Name),
 	update_captions(Model),
 	clear_autosave(Model, Name),
+	update_ability(save, file, 'Save', 0),
 	mark_model_danger(Model, safe), !.
 
 transfer_images(Model, TopDir, Way) :-
@@ -716,7 +719,7 @@ reroute_for(Style) :-
 		\+ Style = sd,
 			(get_shape(Function, bounding_box, _);
 			\+ get_shape(Function, bounding_box, _),
-				(Zone = bounding_box; Zone = bowtie),
+				(Zone = bounding_box; Zone = bowtie),
 				get_shape(Recipient, Zone, [L, T, _, _]),
 				get_box_size(function, Size),
 				make_bounding_box(function, L, T, Size, Box),
@@ -740,4 +743,4 @@ set_style(New_style) :-
 		\+ New_style = sd, Old_style = sd), !,
 		reroute_for(New_style);
 	true).
-	
+

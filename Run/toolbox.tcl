@@ -212,7 +212,7 @@ proc GetParts {top tree} {
                 }
             }
 	    set relPath [string range $subtree [string length $top] end]
-            set Disposition [concat "inline;" $relPath]
+            set Disposition [concat "inline;" $relPath]
 	    set newMime [mime::initialize -canonical $PartType \
                     -header [list "Content-Disposition" $Disposition] \
                     -header [list "Content-Description" $Description] \
@@ -1409,12 +1409,14 @@ proc Rerun {winId go} {
     }
 }
 
-proc UpdateDoButtons {un re} {
+proc UpdateAbility {what where which whether} {
     global window_info
     foreach winData [array name window_info *,parent] {
-        set navBar $window_info($winData).toolSlot.navbar
-        $navBar.undo configure -state [ChooseText $un normal disabled]
-        $navBar.redo configure -state [ChooseText $re normal disabled]
+	set winId $window_info($winData)
+	set newState [ChooseText $whether normal disabled]
+	${winId}top.$where entryconfigure $which -state $newState
+        set navBar $winId.toolSlot.navbar
+        $navBar.$what configure -state $newState
     }
 }
 
@@ -1432,15 +1434,6 @@ proc ToggleIOToolMenu {on} {
             catch {$topMenu delete "I/O tools"}
         }
     }
-}
-
-proc UpdateDoMenu {canId un re} {
-    set winId [winfo parent $canId]
-    ${winId}top.edit entryconfigure Undo \
-            -state [ChooseText $un normal disabled]
-    ${winId}top.edit entryconfigure Redo \
-            -state [ChooseText $re normal disabled]
-    
 }
 
 proc InterpMenu {winId state} {
@@ -1697,5 +1690,4 @@ proc snap_down3 {w values} {
         }
     }
 }
-
 

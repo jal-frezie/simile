@@ -21,8 +21,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_component_from_gui/4, 
 	get_text/3, change_text_to/3, 
 	inject_graphics/2, save_canvas/4,
-	tk_grow_canvas/2, tk_update_do_buttons/2,
-	tk_update_do_menu/3, update_tk/0,
+	tk_grow_canvas/2, tk_update_ability/4,  update_tk/0,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
@@ -238,11 +237,8 @@ save_canvas(Wid, File, Depths, Date) :-
 change_text_to(Wid, Comp, New_title) :-
 	safe_tcl_eval(['ChangeObjectTitle', Wid, Comp, br(write(New_title))], _).
 
-tk_update_do_buttons(Un, Re) :-
-	safe_tcl_eval(['UpdateDoButtons', Un, Re], _).
-
-tk_update_do_menu(Wid, Un, Re) :-
-	safe_tcl_eval(['UpdateDoMenu', Wid, Un, Re], _).
+tk_update_ability(Un, Men, Itm, Re) :-
+	safe_tcl_eval(['UpdateAbility', Un, Men, Itm, Re], _).
 
 update_tk :-
 	safe_tcl_eval([update, idletasks], _).
