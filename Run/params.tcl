@@ -690,7 +690,7 @@ proc ReferenceWorks {compName} {
 #	}
 #    } else {
 # if not, get its status from the popup info -- it will not have changed
-	return [expr !([string match (literal) $msgs(param_source_$compName)] \
+	return [expr !([string match *(literal) $msgs(param_source_$compName)] \
 		   || [string equal Unsaved $msgs(param_source_$compName)])]
 #    }
 }
