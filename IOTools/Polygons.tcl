@@ -45,13 +45,16 @@ namespace eval ::polygon375 {
     }
     
     proc AddToolBar {winId} {
+        variable displayUpdate
+	set displayUpdate($winId) 1
         set toolbarItems [list \
                 [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
                 [list zoomin.gif "Zoom in" [namespace code "Zoom $winId 2 2"] ]\
                 [list zoomout.gif "Zoom out" [namespace code "Zoom $winId 0.5 0.5"] ]\
                 [list zoomfit.gif "Zoom to fit" [namespace code "Fit $winId"] ]\
 	            [list property.gif " Properties " [namespace code "Settings $winId"] ]\
-                [list edit.gif " Enter edit mode " [namespace code "ChangeEditMode $winId"]]]
+                [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode $winId"]] \
+                [list refresh.gif Update [namespace code "Update $winId"]]]
 
         ::graphtools::MakeToolBar $winId $toolbarItems
     }
@@ -213,7 +216,10 @@ $useNodes($winId,scaley)"
 
     proc display {winId time step remainder} {
         variable useNodes
-        Repaint $winId $useNodes($winId,color)
+	variable displayUpdate
+	if {$displayUpdate($winId)} {
+	    Repaint $winId $useNodes($winId,color)
+	}
     }
     
     proc Recolour {winId whichCol exampleWidget} {
@@ -225,9 +231,13 @@ $useNodes($winId,scaley)"
         UpdateState $winId
         ColourScale useNodes $winId
         Repaint $winId $useNodes($winId,color)
-        display $winId 0 0 0
     }
-    
+
+    proc Update {winId} {
+        variable useNodes
+        Repaint $winId $useNodes($winId,color)
+    }
+
     proc Repaint {winId hs} {
         variable useNodes
 	set useNodes($winId,datamin) 1e100
@@ -436,7 +446,11 @@ $useNodes($winId,scaley)"
         variable useNodes
         variable min
         variable max
-        set dlg [Dialog .polyprop -parent $winId -title "Polygon display properties" \
+	variable displayUpdate
+	global ${winId}l5
+
+        set ${winId}l5 $displayUpdate($winId)
+	set dlg [Dialog .polyprop -parent $winId -title "Polygon display properties" \
                 -modal local -default 0 -cancel 1]
         
         # copy display parameters to temp values
@@ -474,11 +488,14 @@ $useNodes($winId,scaley)"
         pack [LabelFrame $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
+        pack [checkbutton [$dlg getframe].update -variable ${winId}l5 \
+		  -text "Update at display intervals"]
         
         $dlg add -name ok \
                 -command [namespace code "OnClickSettingOkBtn $winId $coloursF $rangeF $dlg"]; # buttons 0
         $dlg add -name cancel -command "$dlg enddialog 1"
         $dlg draw; # waits for a button to be clicked. Button command must call $dlg enddialog _result_
+	set displayUpdate($winId) [set ${winId}l5]
         destroy $dlg
     }
     
