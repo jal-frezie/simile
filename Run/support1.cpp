@@ -328,6 +328,16 @@ double max(double a, double b) {
   return a>b?a:b;
 }
 
+/* Some c++ do not allow either abs to be overloaded with doubles, or fabs
+   with ints, so translate to myabs which works for both */
+
+int myabs(int a) {
+  return abs(a);
+}
+double myabs(double a) {
+  return fabs(a);
+}
+
 /* Before including the exported file itself let us declare the 
 helper procedures it uses. First the evaluator for graph functions. 
 Note that this supercharged c version extrapolates the edge 

@@ -1069,7 +1069,7 @@ the next few lines in place, and math_protect asserted, AME will do the same.
 	Op = arctan, !,
 		TargetOp = atan;
 	Op = abs, L = c, !,
-	        TargetOp = fabs;
+	        TargetOp = myabs;
 	TargetOp = Op),
 		Atom =.. [TargetOp | VArgs].
 
