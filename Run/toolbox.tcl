@@ -915,17 +915,19 @@ proc PrintNow {winId} {
 	package require printer
 #	package require Tkprint
 
+	set detail 16.0
 	set textBoost 1.6
-	scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb
-	$winId move all [expr -$bl] [expr -$bt]
-#	printer dialog select
-#	set resList [lindex [lindex [printer attr -get resolution] 0] 1]
-#	set screenRes 72.0
-#	set scale [expr [lindex $resList 0]/$screenRes]
-	ZoomImage $winId all 1 $textBoost
+	set textscale [expr $detail*$textBoost]
+	scan [$winId cget -scrollregion] "%g %g %g %g" sl st sr sb
+#	scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb
+#	$winId move all [expr -$bl] [expr -$bt]
+	$winId configure -scrollregion [list [expr $detail*$sl] \
+	    [expr $detail*$st] [expr $detail*$sr] [expr $detail*$sb]]
+	ZoomImage $winId all $detail $textscale
 	printer::print_widget $winId 0
-	ZoomImage $winId all 1 [expr 1/$textBoost]
-	$winId move all $bl $bt
+	ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
+	$winId configure -scrollregion [list $sl $st $sr $sb]
+#	$winId move all $bl $bt
    } else {
     set tempPSFile $env(SIMTMPDIR)/temp.ps
     SpitPS $winId $tempPSFile

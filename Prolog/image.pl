@@ -126,6 +126,7 @@ get_inclusions(Parent, Box, Included) :-
 
 get_overlaps(Parent, Target, Ignore) :-
 	find_all_comps(Parent, Part),
+	appears(Part),
 	/* ignore invisibles like ghost bowties */
 	\+ (Part = Ignore; find_type(Part, flow), is_ghost(Part)),
 	get_drawing_form(Part, _, Box),

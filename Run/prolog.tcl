@@ -88,6 +88,7 @@ set env(TRAILSZ) 49152
 regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
 set plPipe [open "|$PROLOG_CMD 2> $PROLOG_ERR" r+]
+#set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
 fconfigure $plPipe -translation {auto lf}
 #fileevent $plPipe readable Reader
 
