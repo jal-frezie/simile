@@ -672,6 +672,9 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
     if (data_line->datatype == FLAG) {
       valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("checkStates", -1),
 	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
+    } else if (data_line->datatype == ENUMERATED) {
+      valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("comboChoices", -1),
+	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
     } else {
       valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("sliderVals", -1),
 	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);

@@ -538,12 +538,7 @@ proc collect {tgt node count args} {
 	}
 # Check that input source exists, it will not if model is being initialized
 	if {[info exists inputSrc($sub)]} {
-	    if {[string match ENUMERATED [GetModelType $node]]} {
-		set ::AME_model<>::$tgt \
-		    [expr [lsearch $inputSrc(list,$node) $inputSrc($sub)]+1]
-	    } else {
-		set ::AME_model<>::$tgt $inputSrc($sub)
-	    }
+	    set ::AME_model<>::$tgt $inputSrc($sub)
 	}
     }
 }

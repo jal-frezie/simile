@@ -41,7 +41,7 @@ namespace eval slide139 {
     }
     
     proc InsertSlider {winId node title nest} {
-	global checkStates comboChoices
+	global checkStates
         set initVal [lindex [GetModelValue $node] 0]
         #ShowMessage debug info $def ok
 	set levels [lrange [split $title /] 1 end]
@@ -55,7 +55,7 @@ namespace eval slide139 {
 	switch [GetModelType $node] {
 	    FLAG {
 	    } ENUMERATED {
-		set comboChoices(list,$node) [lrange [lindex $trans end] 1 end]
+		set possVals [lrange [lindex $trans end] 1 end]
 	    } default {
 		set min [GetMinValue $node]
 		set max [GetMaxValue $node]
@@ -80,9 +80,9 @@ namespace eval slide139 {
 			  -offvalue 0 -onvalue 1 -relief ridge]
 		set checkStates($node) $defVal
 		} ENUMERATED {
-		ComboBox $f.combo -values $comboChoices(list,$node) \
-		    -editable 0 -textvariable comboChoices($node)
-		    set comboChoices($node) [lindex [lindex $trans 0] $defVal]
+		ComboBox $f.combo -values $possVals -editable 0 \
+		   -text [lindex $possVals [expr $defVal-1]] \
+		   -modifycmd [namespace code "SetChoiceNumber $f.combo $node"]
 		pack $f.combo -side right -fill x -expand true
 		pack [label $f.caption -text [lindex $levels end]]
 		} default {
@@ -133,10 +133,10 @@ namespace eval slide139 {
 		    $row.elt$index configure -bg $newbg
 		    } ENUMERATED {
 		    pack [frame $f.elt$index] -fill x -expand true
-		    ComboBox $f.elt$index.c -values $comboChoices(list,$node) \
-			-editable 0 -textvariable comboChoices($node,$index)
-		    set comboChoices($node,$index) \
-			[lindex [lindex $trans end] $defVal]
+		    ComboBox $f.elt$index.c -values $possVals -editable 0 \
+			-text [lindex $possVals [expr $defVal-1]] \
+			-modifycmd [namespace code "SetChoiceNumber \
+                             $f.elt$index.c $node,$index"]
 		    pack $f.elt$index.c -side right -fill x -expand true
 		    pack [label $f.elt$index.id -text $slTitle -width 10] \
 			-side left
@@ -164,7 +164,13 @@ namespace eval slide139 {
 	    }
         }
     }
-    
+
+    proc SetChoiceNumber {cbox sub} {
+	global comboChoices
+	set comboChoices($sub) [expr [lsearch [$cbox cget -values] \
+					  [$cbox cget -text]]+1]
+    }
+
     proc MergeInputVals {} {
         global checkStates sliderVals
         set metaFile [ChooseFile inputs.spi "Load input values from:" 0]
