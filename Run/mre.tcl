@@ -119,6 +119,16 @@ namespace eval RunEnv {
                 }
             }
             
+# MainFrame doesn't provide access to system menu, so hang fire with the following.            
+# Application menu item About Simile... for MacOS X
+#            if [string match "Darwin" $tcl_platform(os)] {
+#                 set dummy [menu .dummy]
+#                 $mreId configure -menu $dummy
+#                 set fm [menu $dummy.apple -tearoff 0]
+#                 $fm add command -label "About Simile..." -command "ShowAbout $mreId"
+#                 $dummy add cascade -menu $fm
+#            }
+            
             set mainframe [MainFrame $mreId.mainframe -width 200m -height 150m \
                     -menu         $descmenu \
                     -textvariable RunEnv::status \
