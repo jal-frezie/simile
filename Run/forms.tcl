@@ -1004,7 +1004,6 @@ proc DoRegDialog {} {
 proc ContextSensitiveHelp {context page} {
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
-        load winhelp
         package require winhelp
         winhelp $context ../Help/simile.chm $page
     }
