@@ -171,7 +171,6 @@ namespace eval ::$keyValue {
                     set lastTime($w) [GetModelTime]
                     display $w [GetModelTime] 0 0
                     display $w [GetModelTime] 0 0
-                    raise $w; # bring the plotter back on top when it is a toplevel
                 }
             }
             

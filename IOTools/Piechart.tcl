@@ -161,7 +161,6 @@ proc click {w node caption} {
     }
     ReleaseClicks $w
     $w.canvas delete prompt
-    raise $w; # bring the plotter back on top when it is a toplevel
     
     get_Yvalues $w
             
