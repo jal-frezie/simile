@@ -76,7 +76,6 @@ BoxHeaderStr),
 	list_index_meanings(Part, ISpecs),
 	all(dialogue, index_names_and_sizes,
 	    [build(ISpecs), build(IndexList), build(IndxCount)]),
-	create_equation(Win, BoxHeader, IndexList),
 	(get_av_pair(Part, 0, spec, Equation),
 	    atom(Equation), /* do not use old string version */ !;
 	get_av_pair(Part, 0, value, Equation), !;
@@ -107,6 +106,8 @@ BoxHeaderStr),
 		associated function */
 	is_parameter(ClickedObj, Is_P),
 	get_input_info(Part, Input_list),
+	
+	create_equation(Win, BoxHeader, IndexList),
 	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
 	get_host(Part, Visible),
@@ -582,9 +583,11 @@ expand_params(dim_data(DimL, PsUsed, AllInputs), Param, DoneExpr, Recurse) :-
 	    Recurse = 1.
 
 decode_error(ParseError, TestError) :-
-	ParseError =.. [Type, Cause | More],
-	replace_subexps(Cause, dialogue, collapse_params, _, top_down,
-			_, SimpleError),
+	ParseError =.. [Type | Causes],
+	(Causes = [Cause | More], !,
+	    replace_subexps(Cause, dialogue, collapse_params, _, top_down,
+			    _, SimpleError);
+	SimpleError = 'consistency check'),
 	(Type = undefined_parameter, !,
 	    sicstus_format_to_chars("This expression contains the term ~w, which appears to be used as a parameter, but it does not appear as a parameter name.", [SimpleError], TestError);
 	Type = needs_array_or_list, !,

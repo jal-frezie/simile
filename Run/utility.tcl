@@ -18,7 +18,9 @@ proc ShowMessage { title icon string resps {parent {}}} {
     if {[llength $active]} {
 	lappend mBoxCmd -parent $active
     }
-    return [eval $mBoxCmd]
+    set act [eval $mBoxCmd]
+    update
+    return $act
 }
 
 # ChooseFile -- this is a wrapper for the Tcl file dialog, which sets

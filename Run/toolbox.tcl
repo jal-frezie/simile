@@ -465,7 +465,7 @@ proc GetParts {top tree} {
                 }
                 *.spf {
                     set PartType "application/x-simile"
-                    set Description "Simile parameter file"
+                    set Description "Simile parameter file"
                     set style attachment
                 }
                 model.* {
@@ -1588,7 +1588,7 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
             -variable pushedbutton -value condition
     $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
-            -variable pushedbutton -value alarm
+            -variable pushedbutton -value alarm
     $fm add command -label "Properties..." \
             -command "MenuSelect $c edit properties"
     $fm add cascade -label Flip -menu $fm.sub2

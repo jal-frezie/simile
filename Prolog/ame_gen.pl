@@ -379,7 +379,7 @@ stripping out those which cannot, or which correspond to non-disaggregated
 submodels. */
 
 get_actual_size(Node, Sub, Nums, Sizes, Units) :-
-	Sub = none, !, Nums = [], Sizes = [], Units = any;
+	(Sub = none, !, Nums = [], Sizes = [], Units = any;
 	enum_type_ref(Sub, Node, Num, Units),
 	    Nums = [Num],
 	    Sizes = [Sub];
@@ -394,11 +394,14 @@ get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 		    nth(Ind, RealSize, UseSize),
 			Nums = [UseN],
 			Sizes = [UseSize]);
-		    raise_exception(['Cannot resolve reference to size of ',
-			ModName,
-			'. There are multiple submodels of this name.']));
-		raise_exception(['Cannot resolve reference to size of ',
-			ModName, '. There is no submodel of this name'])).
+		    sicstus_format_to_chars("Cannot resolve reference to size of ~a. There are multiple submodels of this name.", [ModName], Err));
+		sicstus_format_to_chars("Cannot resolve reference to size of ~w. There is no submodel of this name.", [ModName], Err));
+	atom(Sub),
+	    caption_for(Node, Capt),
+	    sicstus_format_to_chars("Cannot resolve reference to size of ~a at node ~a. There us no local enumerated type of this name.", [Sub, Capt], Err)),
+	(var(Err), !;
+	name(ErrName, Err),
+	   raise_exception(ErrName)).
 
 get_actual_sizes(Node, Subs, Nums, Sizes, _U) :-
 	all(ame_gen, get_actual_size,

@@ -124,6 +124,7 @@ get_all_links(Function, ids(RemoteNode, Relation, Home, Entry),
 	Link has_type influence,
 	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Home, Entry, Index, SourceLocation),
+	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	use_destination(Link, RemoteUnit, 
 			Index, LocalName, Local_unit),
 	find_all_comps(DestBox, Function),
@@ -138,6 +139,22 @@ get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 	get_unit_conversion(ValueSource, Function, Subs, 
 		Relation, Index, SourceLocation),
 	build_array(ActualUnits, Subs, RemoteUnit).
+
+check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
+	/* Now check if enumerated type definitions are same at each end */
+	analyze_array(RemoteUnit, Base, Dims),
+	(Base = a(Type);
+	Base = boolean, Type = boolean;
+	Type = 0), !,
+	(member(Checking, [Type | Dims]),
+	event:insert_mem_list(Checking, RemoteNode, SourceEnumSpec),
+	event:insert_mem_list(Checking, Function, DestEnumSpec),
+	\+ DestEnumSpec = SourceEnumSpec, !,
+	caption_for(RemoteNode, RemoteCapt),
+	sicstus_format_to_chars("You cannot refer to the value of ~a at this point because it depends on the enumerated type ~a, which at that point has the definition ~w but here has the definition ~w",
+	    [RemoteCapt, Checking, SourceEnumSpec, DestEnumSpec], ErrStr),
+        do_dialogue("Inconsistent type definitions", warning, ErrStr, ok, not);
+	true).
 
 /* origin_and_entrypoint/4: For any Link, this works out the Origin
 (Id of node where it starts), Home (id of top level link section if in

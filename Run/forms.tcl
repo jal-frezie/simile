@@ -1113,7 +1113,7 @@ proc CheckForETDuplicates {new} {
 	    "You must enter a name for the new $new in the box." ok
 	return 0
     }   
-    set def [GetFromProlog tk_get_info({},$enumTypeMPEntry,is_unit)]
+    set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
     if {![string equal none $def]} {
 	ShowMessage "Bad $new name" error \
 	    "This name corresponds to a physical unit (defined as $def)." ok
