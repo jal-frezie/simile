@@ -35,6 +35,7 @@ itcl::class similescript::ModelWindow {
     
     variable modelNode node00000
     variable desktop /Desktop1
+    variable model
     
     private method GetModelWindow {} {
         global window_info
@@ -78,6 +79,7 @@ itcl::class similescript::ModelWindow {
     # File Menu
     public method FileNew {} {
         MenuSelect [GetModelWindow].canvas file new
+        unset model
     }
     
     public method FileOpenDlg {} {
@@ -85,7 +87,11 @@ itcl::class similescript::ModelWindow {
     }
     
     public method FileOpen {modelFile} {
+        if {[info exists model]} {
+            $this FileNew"
+        }
         Reopen [GetModelWindow].canvas $modelFile reopen
+        set model $modelFile
     }
     
     public method FileSave {} {
@@ -124,9 +130,16 @@ itcl::class similescript::ModelWindow {
         Pref_Dialog
     }
     
+    private method RemoveRunControl {} {
+        if {[string match ::runControl [itcl::find object ::runControl]]} {
+            itcl::delete object ::runControl
+        }
+    }
+    
     # Model Menu
     public method BuildCPP {} {
         # builds the model with CPP and returns a run control command/object
+        RemoveRunControl
         MenuSelect [GetModelWindow].canvas file run_c
         set rc [similescript::RunControl ::runControl $this]
         return $rc
@@ -134,6 +147,7 @@ itcl::class similescript::ModelWindow {
     
     public method BuildTcl {} {
         # builds the model with Tcl and returns a run control command/object
+        RemoveRunControl
         MenuSelect [GetModelWindow].canvas file run_tcl
         set rc [similescript::RunControl ::runControl $this]
         return $rc
@@ -144,8 +158,7 @@ itcl::class similescript::ModelWindow {
     }
 
     public method LoadParams {filepath {smPath {}}} {
-        #MergeParams $modelNode $desktop  $filepath 0
-	do_for_node $modelNode set ::projectParams($smPath) $filepath
+	    do_for_node $modelNode set ::projectParams($smPath) $filepath
     }
     
 }
@@ -213,12 +226,7 @@ itcl::class similescript::RunControl {
     public method Reset {} {
         do_for_node $modelNode ${keyvalue}::SetMode $winId reset
     }
-    
-    # No point in a stop command as the Run is not script interuptable
-    #public method Stop {} {
-    #    ${keyvalue}::SetMode $winId stop
-    #}
-    
+      
     public method MergeParams {filepath {smPath {}}} {
         do_for_node $modelNode ZapParams $modelNode $smPath $filepath
     }
