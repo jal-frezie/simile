@@ -1130,7 +1130,7 @@ proc ModelWindow {winName} {
     toplevel $winName -menu ${winName}top
 
     switch $tcl_platform(platform) {
-        windows { wm iconbitmap $winName -default ../Run/similev2.ico }
+        windows { wm iconbitmap $winName -default ../Run/simile16.ico }
         unix { wm iconbitmap $winName @../Images/dribble.xbm}
     }
     # Create a scrollable canvas
