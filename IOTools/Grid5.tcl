@@ -22,6 +22,7 @@ namespace eval grid005 {
     proc initialize {winId} {
         variable useNodes
         namespace import -force ::maptools2::*
+        set useNodes($winId,editMode) 0
         set useNodes($winId,cbot) black
         set useNodes($winId,cmid) red
         set useNodes($winId,ctop) white
@@ -33,6 +34,7 @@ namespace eval grid005 {
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
         SetState $winId {}
+	message	$winId.msg -aspect 1000
         AddToolbar $winId
         set NToolButtons [$winId.bbframe.buttonBox index last]
         for {set i 1} {$i<=$NToolButtons} {incr i} {
@@ -55,6 +57,7 @@ namespace eval grid005 {
                 [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
                 [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
                 [list property.gif " Properties " [namespace code "Settings $winId"]]\
+			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
                 [list less.gif "Decrease range" [namespace code "DecreaseRange $winId"] ]\
                 [list greater.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
                 [list pause.gif " Freeze " [namespace code "ToggleFreeze $winId"]]]
@@ -62,8 +65,9 @@ namespace eval grid005 {
     }
     
     proc AddVariable {winId} {
-        set ms [message $winId.intro -text \
-                "Click on the variable containing the positions or IDs of the columns."]
+	set ms $winId.msg
+        $ms configure -text \
+    "Click on the variable containing the positions or IDs of the columns."
         GrabClicks $winId
         pack $ms
         $winId.bbframe.buttonBox itemconfigure 0 -state disable; #disable the add var button
@@ -80,9 +84,11 @@ namespace eval grid005 {
     proc Restore {winId} {
         variable useNodes
         namespace import -force ::maptools2::*
+        set useNodes($winId,editMode) 0
+	message	$winId.msg -aspect 1000
 	set state [GetState $winId]
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
-	set useNodes($winId,display1) [GetIdFromCaptionPath [lindex $state 1]]
+	set useNodes($winId,color) [GetIdFromCaptionPath [lindex $state 1]]
 	set useNodes($winId,colvals) [GetIdFromCaptionPath [lindex $state 2]]
 	set colourBase [lsearch $state colourmap]
 	foreach colourPt {cbot cmid ctop} {
@@ -104,7 +110,7 @@ namespace eval grid005 {
 	NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
-        InitialiseGrid $winId $useNodes($winId,display1)
+        InitialiseGrid $winId $useNodes($winId,color)
         set useNodes($winId,freeze) false
     }
     
@@ -115,7 +121,7 @@ namespace eval grid005 {
     proc click {winId node caption} {
         variable useNodes
         
-        set ms $winId.intro
+        set ms $winId.msg
         set testResult [GetModelValue $node]
         if {[string compare $testResult novalue]} {
             set state [GetState $winId]
@@ -128,24 +134,33 @@ namespace eval grid005 {
                 } display1 {
                     pack forget $ms
                     ReleaseClicks $winId
-                    set useNodes($winId,display1) $node
+                    set useNodes($winId,color) $node
 
-		    set min [GetMinValue $node]
-		    if {$min!=-1e100} {
-			set useNodes($winId,min) $min
-		    }
-		    set max [GetMaxValue $node]
-		    if {$max!=1e100} {
-			set useNodes($winId,max) $max
+# OK, do things differently if it is an enumerated type
+		    set useNodes($winId,dataETs) \
+			[lindex [GetTransTable $node] end]
+		    if {![llength $useNodes($winId,dataETs)]} {
+			set min [GetMinValue $node]
+			if {$min!=-1e100} {
+			    set useNodes($winId,min) $min
+			}
+			set max [GetMaxValue $node]
+			if {$max!=1e100} {
+			    set useNodes($winId,max) $max
+			}
 		    }
                     catch {wm title $winId $caption}
                     InitialiseGrid $winId $node
                     UpdateState $winId
-                    destroy $winId.intro
+#                    destroy $winId.intro
                     set NToolButtons [$winId.bbframe.buttonBox index last]
                     for {set i 1} {$i<=$NToolButtons} {incr i} {
-                        $winId.bbframe.buttonBox itemconfigure $i -state normal
-                    }
+			if {![llength $useNodes($winId,dataETs)] || \
+				[lsearch {4 6 7} $i]==-1} {
+			    $winId.bbframe.buttonBox itemconfigure $i \
+				-state normal
+			}
+		    }
                     raise $winId
                 }
             }
@@ -173,7 +188,7 @@ namespace eval grid005 {
     proc UpdateState {winId} {
         variable useNodes
         SetState $winId [list displaying \
-                [GetCaptionPathFromId $useNodes($winId,display1)] \
+                [GetCaptionPathFromId $useNodes($winId,color)] \
 		[GetCaptionPathFromId $useNodes($winId,colvals)] colourmap \
                 $useNodes($winId,cbot) $useNodes($winId,cmid) $useNodes($winId,ctop) \
                 aspect $useNodes($winId,nswatches)\
@@ -189,9 +204,9 @@ namespace eval grid005 {
 	    if {!$time} {
 		NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
 	    }
-            DrawGrid5 $winId $useNodes($winId,display1)
+            DrawGrid5 $winId $useNodes($winId,color)
             FillCanvas $winId
-            UpdateCaption $winId
+            UpdateCaption useNodes $winId
         }
     }
     
@@ -249,53 +264,12 @@ namespace eval grid005 {
         $winId.c bind all <B1-ButtonRelease> RemovePopup
         
         set useNodes($winId,visibleMap) [image create photo]
-        $winId.c create image 0 0 -anchor nw -image $useNodes($winId,visibleMap)
+        $winId.c create image 0 0 -image $useNodes($winId,visibleMap) \
+	    -anchor nw -tag map
+	recolour_scale [namespace current] $winId ;# do here for scrollers
+	bind $winId.c <Configure> \
+	    [namespace code "recolour_scale [namespace current] $winId"]
 #        $winId.c configure -scrollregion [$winId.c bbox all]
-    }
-    
-    proc recolour_scale {winId} {
-        variable useNodes
-        
-        #ShowMessage debug info "recolour_scale " ok
-        $winId.c delete colour_scale
-        if {$useNodes($winId,nrow)>$useNodes($winId,ncol)} then {
-            set n $useNodes($winId,nrow)
-        } else {
-            set n $useNodes($winId,ncol)
-        }
-        set leftSc [$winId.c canvasx 0]
-        set rightSc [$winId.c canvasx [winfo width $winId.c]]
-        set bottomSc [$winId.c canvasy [winfo height $winId.c]]
-        set topSc [expr $bottomSc-40]
-        set midSc [expr $bottomSc-20]
-        
-        # blank over bottom of display
-        $winId.c create rect $leftSc $topSc $rightSc $bottomSc \
-                -outline {} -fill [$winId.c cget -bg] -tag colour_scale
-        $winId.c create text [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30] \
-                -anchor c -tag {colour_scale caption}
-        UpdateCaption $winId
-        $winId.c create text [expr $leftSc+47] [expr $bottomSc-10] \
-                -text $useNodes($winId,min) -anchor e -tag colour_scale
-        $winId.c create text [expr $rightSc-48] [expr $bottomSc-10] \
-                -text $useNodes($winId,max) -anchor w -tag colour_scale
-        
-        set xmin [expr $leftSc+50]
-        set xmax [expr $rightSc-50]
-        set xincr [expr {($xmax-$xmin)/33}]
-        for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
-            set x0 [expr {$xmin+$icolour*$xincr}]
-            set x1 [expr {$x0+$xincr}]
-            set colour $useNodes($winId,c$icolour)
-            $winId.c create rectangle $x0 $midSc $x1 $bottomSc \
-                    -outline {} -fill $colour -tag colour_scale
-        }
-        
-    }
-    
-    proc UpdateCaption {winId} {
-        variable useNodes
-        $winId.c itemconfig caption -text "[file tail [GetCaptionPathFromId $useNodes($winId,display1)]] ($useNodes($winId,ncol)x$useNodes($winId,nrow), time = [GetModelTime])"
     }
     
     proc ToggleFreeze {winId} {
@@ -314,7 +288,7 @@ namespace eval grid005 {
         set useNodes($winId,min) [expr {$useNodes($winId,min)*10}]
         set useNodes($winId,max) [expr {$useNodes($winId,max)*10}]
         SetColours useNodes $winId
-        recolour_scale $winId
+        recolour_scale [namespace current] $winId
         UpdateState $winId
         display $winId 0 0 0
     }
@@ -324,7 +298,7 @@ namespace eval grid005 {
         set useNodes($winId,min) [expr {0.1*$useNodes($winId,min)}]
         set useNodes($winId,max) [expr {0.1*$useNodes($winId,max)}]
         SetColours useNodes $winId
-        recolour_scale $winId
+        recolour_scale [namespace current] $winId
         UpdateState $winId
         display $winId 0 0 0
     }
@@ -407,7 +381,7 @@ namespace eval grid005 {
         }
         $dlg enddialog 0
         SetColours useNodes $winId
-        recolour_scale $winId
+        recolour_scale [namespace current] $winId
         UpdateState $winId
         display $winId 0 0 0
     }
@@ -423,7 +397,7 @@ namespace eval grid005 {
         set cella [expr {$cell*2}]
         $c create text 250 210 -text $cella
         
-        set dis1 $useNodes($winId,display1)
+        set dis1 $useNodes($winId,color)
         set display1 [lindex [GetModelValue $dis1] 0]
         set this_colour [expr {int([lindex $display1 [expr $cell*2-1]])}]
         $c create text 250 230 -text "xx $this_colour xx"
@@ -489,6 +463,7 @@ namespace eval grid005 {
         }
         
         $useNodes($winId,hiddenMap) put $allData
+	set useNodes($winId,range) $range
     }
     
     proc zoomio {winId factor} {
@@ -521,16 +496,19 @@ namespace eval grid005 {
         $winId.c xview moveto [expr $xmiddle-([lindex $view 1]-[lindex $view 0])/2]
         set view [$winId.c yview]
         $winId.c yview moveto [expr $ymiddle-([lindex $view 1]-[lindex $view 0])/2]
+        recolour_scale [namespace current] $winId
         UpdateState $winId
     }
     
     proc ScrollPhoto {winId axis args} {
         #	puts $visible
+	variable useNodes
+
         if {[string match h $axis]} {
             FillCanvas $winId
         }
         eval {$winId.${axis}scroll set} $args
-        recolour_scale $winId
+        reposn_scale [namespace current] $winId
     }
     
     proc FillCanvas {winId} {
@@ -576,6 +554,30 @@ namespace eval grid005 {
             wm geometry .popup +$xpoint+$ypoint
             update
         }
+    }
+    
+    proc ChangeValue {winId newVal x y } {
+        variable useNodes
+        
+        set ncol $useNodes($winId,ncol)
+        set nrow $useNodes($winId,nrow)
+        set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
+        set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
+        if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
+            set cell [expr ($row-1)*$ncol+$col-1]
+            set value [lindex $useNodes($winId,values) $cell]
+            set index [expr $cell+1]
+
+            set vals [lindex [GetModelValue $useNodes($winId,color)] 0]
+	    set oddList {}
+	    foreach idx [split $index ,] {
+		lappend oddList [expr 2*$idx-1]
+	    }
+	    lset vals $oddList $newVal
+	    SetModelValue $useNodes($winId,color) $vals
+	}
+	DrawGrid5 $winId $useNodes($winId,color)
+	FillCanvas $winId
     }
     
     # need to recode for this legend

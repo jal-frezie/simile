@@ -39,6 +39,127 @@ namespace eval ::maptools2 {
         }
     }
     
+    proc recolour_scale {parentSpc winId} {
+        variable ${parentSpc}::useNodes
+        
+	set cnv [${parentSpc}::GetCanvas $winId]
+        #ShowMessage debug info "recolour_scale " ok
+        $cnv delete colour_scale
+#        if {$useNodes($winId,nrow)>$useNodes($winId,ncol)} then {
+#            set n $useNodes($winId,nrow)
+#        } else {
+#            set n $useNodes($winId,ncol)
+#        }
+        set leftSc [$cnv canvasx 0]
+        set rightSc [$cnv canvasx [winfo width $cnv]]
+        set bottomSc [$cnv canvasy [winfo height $cnv]]
+        set topSc [expr $bottomSc-40]
+        set midSc [expr $bottomSc-20]
+        
+        # blank over bottom of display
+        $cnv create rect $leftSc $topSc $rightSc $bottomSc \
+	    -outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
+        $cnv create text [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30] \
+                -anchor c -tag {colour_scale caption}
+#        UpdateCaption useNodes $winId
+        $cnv create text [expr $leftSc+47] [expr $bottomSc-10] \
+                -text $useNodes($winId,min) -anchor e -tag colour_scale
+        $cnv create text [expr $rightSc-48] [expr $bottomSc-10] \
+                -text $useNodes($winId,max) -anchor w -tag colour_scale
+        
+        set xmin [expr $leftSc+50]
+        set xmax [expr $rightSc-50]
+        set xincr [expr {($xmax-$xmin)/($useNodes($winId,nswatches)+1)}]
+        for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
+            set x0 [expr {$xmin+$icolour*$xincr}]
+            set x1 [expr {$x0+$xincr}]
+            set colour $useNodes($winId,c$icolour)
+            $cnv create rectangle $x0 $midSc $x1 $bottomSc -outline {} \
+		-fill $colour -tag "colour_scale swatch COL$icolour"
+        }
+        
+    }
+    
+    proc reposn_scale {parentSpc winId} {
+	set cnv [${parentSpc}::GetCanvas $winId]
+        set leftSc [$cnv canvasx 0]
+        set bottomSc [$cnv canvasy [winfo height $cnv]]
+
+	set oldPt [$cnv coords scale_base]
+	set xoff [expr $leftSc-[lindex $oldPt 0]]
+	set yoff [expr $bottomSc-[lindex $oldPt 3]]
+
+	$cnv move colour_scale $xoff $yoff
+    }
+
+    proc UpdateCaption {winData winId} {
+        upvar 1 $winData useNodes
+
+        $winId.c itemconfig caption -text "[file tail [GetCaptionPathFromId $useNodes($winId,color)]] ($useNodes($winId,ncol)x$useNodes($winId,nrow), time = [GetModelTime])"
+    }
+    
+    proc ChangeEditMode {ParentSpc winId} {
+        variable ${ParentSpc}::useNodes
+	set cnv [${ParentSpc}::GetCanvas $winId]
+        if $useNodes($winId,editMode)==1 {
+            set useNodes($winId,editMode) 0
+            pack forget $winId.msg
+	    $winId.bbframe.buttonBox itemconfigure 5 -state normal -relief raised
+	    $cnv bind swatch <ButtonPress> {}
+#            for  {set j 0} {$j <= $useNodes($winId,nswatches)} {incr j} {
+#                $winId.legend.pop$j configure -borderwidth 0
+#                bind $winId.legend.pop$j <ButtonPress> {}
+#            }
+            $cnv bind map <Button-1> {}
+            $cnv bind map <B1-Motion> {}
+	    $cnv configure -cursor {}
+        } else  {
+            set useNodes($winId,editMode) 1
+            $winId.msg configure -text \
+                    "Click on the colour bar to select the value to \
+                    'paint' polygons."
+	    pack $winId.msg -side bottom -fill x
+
+	    $winId.bbframe.buttonBox itemconfigure 5 -state active -relief sunken
+            #  bind mouse click to get the value to assign from the colour clicked upon
+	    $cnv bind swatch <ButtonPress> \
+		[namespace code "CnvGetNewVal $ParentSpc $winId %x %y"]
+#            for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
+#                bind $winId.legend.pop$swatch <ButtonPress> \
+#                        [namespace code "GetNewVal $winId $swatch"]
+#            }
+        }
+    }
+    
+    proc CnvGetNewVal {ParentSpc winId tgx tgy} {
+	variable ${ParentSpc}::useNodes
+	set cnv [${ParentSpc}::GetCanvas $winId]
+	set bndlist [$cnv coords scale_base]
+        set X [$cnv canvasx $tgx]
+        set Y [$cnv canvasy $tgy]
+	set zapped [$cnv find closest $X $Y]
+	for {set n 0} {$n <= $useNodes($winId,nswatches)} {incr n} {
+	    set byng [$cnv find withtag COL$n]
+	    if {$byng==$zapped} {
+		$cnv itemconfig $byng -outline black
+		set newVal [expr {int($useNodes($winId,min) + 0.5 + \
+					  $n * $useNodes($winId,range) \
+					  / $useNodes($winId,nswatches))}]
+	    } else {
+		$cnv itemconfig $byng  -outline {}
+	    }
+	}
+        $winId.msg configure -text \
+                "Click on the polygon(s) whose colour (value) you wish \
+                to change."
+	pack $winId.msg -side bottom -fill x
+        #    $winId.buttons.msg configure -text "new value $newVal"; # 1 $1 todo; debug line
+        $cnv configure -cursor spraycan
+        $cnv bind map <B1-Motion> "${ParentSpc}::ChangeValue $winId $newVal %x %y"
+        $cnv bind map <Button-1> "${ParentSpc}::ChangeValue $winId $newVal %x %y"
+    }
+
+# redundant
     proc InsertLegend {winData winId} {
         #    ShowMessage debug info "proc InsertLegend" ok
         upvar 1 $winData useNodes
@@ -130,7 +251,6 @@ namespace eval ::maptools2 {
         return [expr {[string is integer $str] || [string is double $str]}]
     }
     
-    namespace export SetColours InsertLegend ColourScale GetQuadList Flatten \
-            IsNumber
+    namespace export SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertCaption InsertLegend ColourScale GetQuadList Flatten IsNumber
 }
 

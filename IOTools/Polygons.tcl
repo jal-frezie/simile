@@ -16,7 +16,6 @@ set keyValue polygon375
 namespace eval ::polygon375 {
     variable useNodes
     variable newVal
-    variable editMode
     
     proc identify {} {
         return "Polygon diagram"
@@ -24,7 +23,7 @@ namespace eval ::polygon375 {
     
     proc initialize {winId} {
         variable useNodes
-        variable editMode 0
+        set useNodes($winId,editMode) 0
         namespace import -force ::maptools2::*
         
         set useNodes($winId,min) 0
@@ -53,7 +52,7 @@ namespace eval ::polygon375 {
                 [list zoomout.gif "Zoom out" [namespace code "Zoom $winId 0.5 0.5"] ]\
                 [list zoomfit.gif "Zoom to fit" [namespace code "Fit $winId"] ]\
 	            [list property.gif " Properties " [namespace code "Settings $winId"] ]\
-                [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode $winId"]] \
+			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
                 [list refresh.gif Update [namespace code "Update $winId"]]]
 
         ::graphtools::MakeToolBar $winId $toolbarItems
@@ -84,7 +83,7 @@ namespace eval ::polygon375 {
     
     proc Restore {winId} {
         variable useNodes
-        variable editMode 0
+        set useNodes($winId,editMode) 0
         namespace import -force ::maptools2::*
         
         AddToolBar $winId
@@ -301,21 +300,28 @@ $useNodes($winId,scaley)"
         pack $vp.xsc -side bottom -fill x
         scrollbar $vp.ysc -orient vertical -command [list $vp.c yview]
         pack $vp.ysc -side right -fill y
-        canvas $vp.c -width 10 -height 10 -xscrollcommand [list $vp.xsc set] \
-                -yscrollcommand [list $vp.ysc set] -bg beige \
-                -scrollregion {0 0 10 10}
+        canvas $vp.c -width 10 -height 10 \
+	    -xscrollcommand [namespace code [list ScrollMe $winId x]] \
+	    -yscrollcommand [namespace code [list ScrollMe $winId y]] \
+	    -bg beige -scrollregion {0 0 10 10}
         pack $vp.c -fill both -expand true
+	bind $vp.c <Configure> \
+	    [namespace code "recolour_scale [namespace current] $winId"]
     }
 
+    proc ScrollMe {winId way args} {
+	eval {$winId.viewport.${way}sc set} $args
+	reposn_scale [namespace current] $winId
+    }
+
+	
     proc DrawPolys {winId xs ys hs} {
         variable viewpoint
         variable useNodes
         
-        pack [frame $winId.buttons] -side bottom -fill x -pady 2m
-        message $winId.buttons.msg -aspect 1000
-        pack $winId.buttons.msg -fill x -side bottom -expand 1
-        InsertLegend useNodes $winId
-        ColourScale useNodes $winId
+        message $winId.msg -aspect 1000
+#        InsertLegend useNodes $winId
+        
         
         # not finished yet    bind $winId.legend.scale <Double-Button-1> \
         #            [namespace code "OptionsDialog $winId"]
@@ -345,10 +351,10 @@ $useNodes($winId,scaley)"
         #                 $winId.buttons.edit -side left
         ################################################################################
         
-        for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
-            bind $winId.legend.pop$swatch <Double-Button-1> \
-                    [namespace code "SetSwatchColour $winId %W"]
-        }
+#        for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
+#            bind $winId.legend.pop$swatch <Double-Button-1> \
+#                    [namespace code "SetSwatchColour $winId %W"]
+#        }
         
         ########## start polyfile changes
 
@@ -404,7 +410,7 @@ $useNodes($winId,scaley)"
 		set indxs [join $id ,]
 		#        ShowMessage debug info $corners ok
 		set polyId [eval {$winId.viewport.c create polygon} $corners \
-				{-outline black -tag [IdToTag $indxs] }]
+			    {-outline black -tag [list map [IdToTag $indxs]]}]
 	    }
 	}
 
@@ -439,35 +445,6 @@ $useNodes($winId,scaley)"
             set newColour $useNodes($winId,c$colNum)
         }
 #puts "Colour for $value is $colNum (range $useNodes($winId,range))"
-    }
-    
-    proc ChangeEditMode {winId} {
-        variable editMode
-        variable useNodes
-        if $editMode==1 {
-            set editMode 0
-            $winId.buttons.msg configure -text ""
-	    $winId.bbframe.buttonBox itemconfigure 5 -state normal -relief raised
-            for  {set j 0} {$j <= $useNodes($winId,nswatches)} {incr j} {
-                $winId.legend.pop$j configure -borderwidth 0
-                bind $winId.legend.pop$j <ButtonPress> {}
-            }
-            bind $winId.viewport.c <Button-1> {}
-            bind $winId.viewport.c <B1-Motion> {}
-	    $winId.viewport.c configure -cursor {}
-        } else  {
-            set editMode 1
-            $winId.buttons.msg configure -text \
-                    "Click on the colour bar to select the value to \
-                    'paint' polygons."
-
-	    $winId.bbframe.buttonBox itemconfigure 5 -state active -relief sunken
-            #  bind mouse click to get the value to assign from the colour clicked upon
-            for {set swatch 0} {$swatch<=$useNodes($winId,nswatches)} {incr swatch} {
-                bind $winId.legend.pop$swatch <ButtonPress> \
-                        [namespace code "GetNewVal $winId $swatch"]
-            }
-        }
     }
     
     proc Settings {winId} {
@@ -556,13 +533,12 @@ $useNodes($winId,scaley)"
         set useNodes($winId,range) [expr {$max($winId)-$min($winId)}]
         $dlg enddialog 0
         UpdateState $winId
-	ColourScale useNodes $winId
+	
         display $winId 0 0 0
     }
     
-    proc ChangeValue {winId X Y } {
+    proc ChangeValue {winId newVal X Y } {
         variable useNodes
-        variable newVal
         
         set X [$winId.viewport.c canvasx $X]
         set Y [$winId.viewport.c canvasy $Y]
@@ -604,6 +580,7 @@ $useNodes($winId,scaley)"
 	return [join $result ,]
     }
 
+# redundant
     proc GetNewVal {winId i} {
         variable newVal
         variable useNodes
@@ -618,14 +595,14 @@ $useNodes($winId,scaley)"
                 to change."
         #    $winId.buttons.msg configure -text "new value $newVal"; # 1 $1 todo; debug line
         $winId.viewport.c configure -cursor spraycan
-        bind $winId.viewport.c <B1-Motion> [namespace code "ChangeValue $winId %x %y"]
-        bind $winId.viewport.c <Button-1> [namespace code "ChangeValue $winId %x %y"]
+        $winId.viewport.c bind map <B1-Motion> [namespace code "ChangeValue $winId %x %y"]
+        $winId.viewport.c bind map <Button-1> [namespace code "ChangeValue $winId %x %y"]
     }
     
     proc Fit {winId} {
         scan [winfo geometry $winId.viewport.c] {%dx%d+} boxw boxh
-        scan [$winId.viewport.c bbox all] {%d %d %d %d} cl ct cr cb
-        Zoom $winId [expr ($boxw-2.0)/($cr-$cl)] [expr ($boxh-2.0)/($cb-$ct)]
+        scan [$winId.viewport.c bbox map] {%d %d %d %d} cl ct cr cb
+        Zoom $winId [expr ($boxw-2.0)/($cr-$cl)] [expr ($boxh-42.0)/($cb-$ct)]
     }
     
     proc Zoom {winId fx fy} {
@@ -633,8 +610,9 @@ $useNodes($winId,scaley)"
 	set useNodes($winId,scalex) [expr $fx*$useNodes($winId,scalex)]
 	set useNodes($winId,scaley) [expr $fy*$useNodes($winId,scaley)]
 	set id $winId.viewport.c
-        $id scale all [$id canvasx 325] [$id canvasy 250] $fx $fy
-        $id configure -scrollregion [$id bbox all]
+        $id scale map [$id canvasx 325] [$id canvasy 230] $fx $fy
+        $id configure -scrollregion [$id bbox map]
+	recolour_scale [namespace current] $winId
     }
     
     # new version in map tools
