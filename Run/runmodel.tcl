@@ -1243,6 +1243,7 @@ proc FileParamDialogue {mustShow parent} {
 proc MakeFrames {windowId} {
     frame $windowId.c
     set canId $windowId.c.canvas
+#    pack [frame $windowId.buttonframe] -side bottom
     ScrollableFrame $canId -width 10 -height 10 -yscrollincrement 1 \
             -yscrollcommand [list $windowId.c.yscroll set] -constrainedwidth true
     scrollbar $windowId.c.yscroll -orient v -command [list $canId yview]
@@ -1250,13 +1251,12 @@ proc MakeFrames {windowId} {
     pack $windowId.c.yscroll -side right -fill y
     pack $canId -side left -fill both -expand true
     pack $windowId.c -side top -fill both -expand true
+    pack [frame $windowId.checkframe] -in [$canId getframe] -side top -expand true -fill x -padx 2 -pady 2
+    pack [frame $windowId.sliderframe] -in [$canId getframe] -side top \
+            -fill x -expand true -padx 2 -pady 2
     
-    pack [frame $windowId.buttonframe] -side bottom
     #    $canId create window 0 0 -anchor ne -window [frame $windowId.checkframe]
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
-    pack [frame $windowId.checkframe] -in [$canId getframe] -side left
-    pack [frame $windowId.sliderframe] -in [$canId getframe] -side right \
-            -fill x -expand true
 }
 
 proc MakeSubFrames {parent hierarchy} {
@@ -1266,7 +1266,7 @@ proc MakeSubFrames {parent hierarchy} {
         set level [lindex $hierarchy 0]
         set nextLevel $parent.frame$level
         if {![winfo exists $nextLevel]} {
-            pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true
+            pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2
             pack [label $nextLevel.label -text $level:]
         }
         return [MakeSubFrames $nextLevel [lrange $hierarchy 1 end]]
@@ -1282,9 +1282,9 @@ proc set_size {winId} {
     set swidth [winfo reqwidth $winId.sliderframe]
     set height [max [winfo reqheight $winId.checkframe] \
             [winfo reqheight $winId.sliderframe]]
-    $winId.c.canvas configure -areawidth [expr $cwidth+$swidth] \
-            -areaheight $height -width [expr $cwidth+$swidth] \
-            -height [min $height 200]
+#    $winId.c.canvas configure -areawidth [expr $cwidth+$swidth] \
+#            -areaheight $height -width [expr $cwidth+$swidth] \
+#            -height [min $height 200]
 }
 
 proc DoneParams {oldMissing} {
