@@ -12,7 +12,7 @@ namespace eval DisplayFormat {
     
     proc General {val prec} {
         # was VarPrecRender
-        if {![string is double $val]} {
+        if {![string is double $val] || [string is integer $val]} {
        	    return $val
         }
         set regular [format %.${prec}f $val]
@@ -43,7 +43,7 @@ namespace eval DisplayFormat {
     }
     
     proc Percent {var dp} {
-        return [Fixed [expr {100*$var}] $dp $lz]%
+        return [Fixed [expr {100*$var}] $dp]%
     }
     
     # val is in degrees returns string degree:minutes:sec
