@@ -8,12 +8,7 @@
 namespace eval RunEnv {
     
     package require BWidget
-    if {[string match windows $tcl_platform(platform)]} {
-        package require gdi
-        package require printer
-        package require wmf
-    }
-    
+
     variable mainframe
     variable status
     variable prgtext
@@ -22,6 +17,7 @@ namespace eval RunEnv {
     variable sliderControlFrame;
     variable variableListFrame;
     variable explorerPane
+    variable runControlWindId
     variable dp0;    # display pane
     variable toolbars; # list of toolbar items
     variable CurrentContainer {}
@@ -93,7 +89,10 @@ proc RunEnv::Create { ModelWin } {
                 {command "&Save configuration..." {} "Save a configuation of displays" \
                             {} -command {::RunEnv::SaveView} }
                 {separator}
-                {command "&Parameters..." {} "Modify file parameters"  \
+                {command "&Print..." {} "Print display"  \
+                            {} -command { PrintCurrentContainer } }
+                {separator}
+                {command "Pa$rameters..." {} "Modify file parameters"  \
                             {} -command { FileParamDialogue 1 .mre } }
                 {separator}
                 {command "&Close"    {} "Close the Run Environment window" \
@@ -192,6 +191,7 @@ proc RunEnv::Create { ModelWin } {
         if {[string match unix $tcl_platform(platform)]} {
             wm iconbitmap .mre @../Images/dribble.xbm
         }; # on Windows uses default icon set in Runmodel.tcl
+        wm protocol .mre WM_DELETE_WINDOW ::RunEnv::Destroy       
     } ; # if .mre exists
     return .mre
 }
@@ -288,11 +288,11 @@ proc ::RunEnv::AllDisplaysPopup {containerId} {
 }
 
 proc RunEnv::AllDisplaysPopupCurrentContainer {} {
-    #tk_popup .helpPopup [winfo pointerx .mre] [winfo pointery .mre]
+    # .helpers.sub2 made by runmodel.tcl AddHelperSublist
     tk_popup .helpers.sub2 [winfo pointerx .mre] [winfo pointery .mre]
 }
 
-proc ::RunEnv::SelectionHandler {offset maxChars} {
+proc RunEnv::SelectionHandler {offset maxChars} {
     global helperTable
     variable CurrentContainer
     set SelStr [StripCrs $helperTable($CurrentContainer.container,status)]
@@ -300,21 +300,40 @@ proc ::RunEnv::SelectionHandler {offset maxChars} {
     return [string range $SelStr $offset $last]
 }
 
+proc ::RunEnv::PrintCurrentContainer {} {
+    global helperTable env tcl_platform
+    variable CurrentContainer
+    variable canvasId
+    return
+    
+    if [winfo exists $CurrentContainer.container] {
+            set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
+            PrintNow $::RunEnv::canvasId
+    }
+}
+
 proc ::RunEnv::CopyHelper {containerId} {
     global helperTable env tcl_platform
     variable CurrentContainer
     variable CurrentHelperId
+    variable canvasId
+        
     #ShowMessage debug info "CopyHelper container: $containerId; \n\
     #        CurrentContainer $CurrentContainer\n \
     #        selection owner: [selection own]\n\
     #        focus owner [focus]" ok
     if [winfo exists $CurrentContainer.container] {
+        
         #ShowMessage debug info "CopyHelper $containerId.container exists " ok
         #UpdateState $helperTable($containerId.container)
         if {[string match windows $tcl_platform(platform)]} {
             set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
-            #ShowMessage debug info "CopyHelper canvasId $canvasId" ok
-            #CopyCanvasToWindowsClipboard $canvasId
+            #ShowMessage debug info "CopyHelper canvasId $canvasId \n\
+            #        namespace [namespace current]" ok
+                    #namespace eval :: { }
+                #ShowMessage debug info "namespace [namespace current]" ok
+               CopyCanvasToWindowsClipboard $::RunEnv::canvasId
+            #{}
         }
         set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
         set copyfile $env(SIMTMPDIR)/mrecopy.txts
@@ -334,9 +353,9 @@ proc ::RunEnv::PasteHelper {containerId} {
     global helperTable env
     variable CurrentContainer
     variable CurrentHelperId
-    
+
     set copyfile $env(SIMTMPDIR)/mrecopy.txts
-    if {[file exists $copyfile]} {
+    if {[file exists $copyfile]} { 
         set stream [open $copyfile r]
         set winId [NewHelperInWindow $CurrentContainer $CurrentHelperId ""]
         gets $stream oldStatus
@@ -345,7 +364,7 @@ proc ::RunEnv::PasteHelper {containerId} {
         bind $winId <Destroy>  "kill_helper_window $winId"
         ChildrenFocusParent $winId
         close $stream
-    }    
+     }
 }
 
 proc ::RunEnv::DeleteHelperContainer {containerId page} {
@@ -518,7 +537,21 @@ proc ::RunEnv::FindParentpanedwindowOrNotebook {containerId} {
 }
 
 proc RunEnv::Destroy {} {
-    global helperTable modelWin
+    global helperTable modelWin window_info
+    variable runControlWindId
+    
+#    ShowMessage debug info "RunEnv::Destroy RunContol $runControlWindId" ok
+    
+    # 
+    # stop the model running by invoking the Run Control Stop button    
+    # helperId of runcontrol $helperTable(RunControl).
+    $helperTable(RunControl)::SetMode $runControlWindId reset
+    #update
+    #after 100        
+    #set $helperTable(RunControl)::sendvars(currentMode) stop
+    #tkwait variable $helperTable(RunControl)::sendvars
+    # debug info "$helperTable(RunControl)::sendvars(currentMode)" ok
+
     foreach helper [array name helperTable *,whichHelper] {
         scan $helper {%[^,]} winId
         bind $winId <Destroy> {}; # so the helper notebook pages are not destroyed 2ce - bomb!
@@ -801,18 +834,11 @@ proc RunEnv::SaveContainer {winId stream} {
 }
 
 proc RunEnv::LoadView {} {
+    global helperTable
+    variable mainframe
     
     set savedView [ChooseFile Displays.shf "Open view specification file" 0]
     if {[llength $savedView]} {
-	LoadViewFile $savedView
-    }
-    $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
-}
-
-proc RunEnv::LoadViewFile {savedView} {
-    global helperTable
-    variable mainframe
-
         destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
         set stream [open $savedView r]
         
@@ -889,6 +915,8 @@ proc RunEnv::LoadViewFile {savedView} {
                     }
         close $stream
     }
+    $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
+}
 
 proc RunEnv::LoadContainer {stream line} {
     global helperTable
@@ -933,6 +961,7 @@ proc NewMreHelperWindow {helperId helperTitle} {
                 }
                 pack [frame $bag]
                 set winId $bag
+                set ::RunEnv::runControlWindId $bag
             } \
             $helperTable(SliderControl) {
                 set bag $RunEnv::sliderControlFrame.bag
