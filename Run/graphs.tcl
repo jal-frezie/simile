@@ -421,18 +421,6 @@ proc FineX { c } {
 proc equationDoTable {parent} {
     global equation table_entry
     
-    if {[llength $equation(table_data)]} {
-        set table_entry(fileName) [lindex $equation(table_data) 0]
-        set table_entry(dataField) [lindex $equation(table_data) 1]
-        set table_entry(indices) [lrange $equation(table_data) 2 end]
-    } else {
-        if {![string compare \
-                    [GetDataFile "No data file yet specified"] {}]} {
-            return 0
-        }
-        set table_entry(indices) {}
-    }
-    
     toplevel .table -bd 4
     wm transient .table $parent
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
@@ -454,11 +442,6 @@ proc equationDoTable {parent} {
     set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
             -selectmode single \
             -dropcmd AddIndex]
-    set i 1
-    foreach idx $table_entry(indices) {
-        $lidx insert end id$i -text $idx
-        incr i
-    }
     pack $lheads  -expand true -fill both
     pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
@@ -504,7 +487,7 @@ proc equationDoTable {parent} {
     button $fdata.dfile.new -compound left -image $opn -text Browse \
             -command {GetDataFile "Select new data file"; LoadDataFile}
     button $fdata.dfile.view -compound left -image $tbl -text View \
-            -command ViewTable
+	-command {EditListAsTable .table}
     pack $fdata.dfile.new -side left -padx 4 -pady 4
     pack $fdata.dfile.view -side left -padx 4 -pady 4
     pack $fdata.dfile -side top -anchor w -expand true -fill x
@@ -512,9 +495,27 @@ proc equationDoTable {parent} {
     
     set t .table
     tkwait visibility .table
-    if {![LoadDataFile]} {
-        return 0
+    if {[llength $equation(table_data)]} {
+        set table_entry(fileName) [lindex $equation(table_data) 0]
+        set table_entry(dataField) [lindex $equation(table_data) 1]
+        set table_entry(indices) [lrange $equation(table_data) 2 end]
+	set i 1
+	foreach idx $table_entry(indices) {
+	    $lidx insert end id$i -text $idx
+	    incr i
+	}
+	LoadDataFile
+    } else {
+#        if {![string compare \
+#                    [GetDataFile "No data file yet specified"] {}]} {
+#            return 0
+#        }
+        set table_entry(indices) {}
     }
+    
+#    if {![LoadDataFile]} {
+#        return 0
+#    }
     
     focus $t
     grab $t
@@ -527,6 +528,31 @@ proc equationDoTable {parent} {
     set table_entry(indices) $idcs
     destroy $t
     return $table_entry(done)
+}
+
+proc EditListAsTable {parent} {
+    global helperTable equation table_viewer
+
+    set t .table_edit
+    toplevel $t -bd 4
+    wm transient $t $parent
+    wm protocol $t WM_DELETE_WINDOW {set table_viewer(done) 0}
+    
+    $helperTable(TableViewer)::initialize $t
+
+    set $helperTable(TableViewer)::dataStore($t,0,0.0) \
+	$equation(table_values)
+    set $helperTable(TableViewer)::displayList($t) eqn_table
+    set $helperTable(TableViewer)::orientList($t) \
+	{none cols rows cols}
+    set $helperTable(TableViewer)::displayFormat($t,0) {General 4 0}
+    $helperTable(TableViewer)::Reconbobulate $t
+
+    focus $t
+    grab $t
+    tkwait variable table_viewer(done)
+    grab release $t
+    destroy $t
 }
 
 proc GetDataFile {info} {
@@ -941,9 +967,15 @@ proc Relativize {current remote} {
     return [eval {file join} $base $tail]
 }
 
+
 proc GetFromTable {parent compName} {
     global paramState paramData widgetNames equation table_entry
-    set equation(table_data) {}
+    if {[info exists paramState($compName)]} {
+	set equation(table_data) $paramState($compName)
+    } else {
+	set equation(table_data) {}
+    }
+    set equation(table_values) [$widgetNames($compName) get 1.0 1.end]
     
     if {[equationDoTable $parent]} {
         
@@ -966,7 +998,7 @@ proc LoadTableData {tableSpec doQuoting} {
     
     set indexCount 0
     set lineCount 0
-    set maxIndices(0) 0
+    set maxIndices(0) {}
     foreach headerIndex [lrange $tableSpec 2 end] {
         lappend indexColumns [lsearch $headerList $headerIndex]
         set maxIndices($indexCount) {}

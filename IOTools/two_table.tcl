@@ -74,7 +74,8 @@ namespace eval $keyValue {
         pack $winId.xscroll -side bottom -fill x
         pack $winId.yscroll -side right -fill y
         CreateTable $winId
-        clear $winId ;# cos MRE can re-use same frame
+#        clear $winId ;# cos MRE can re-use same frame
+# Do less intrusively though
         SaveState $winId
     }
     
@@ -478,7 +479,9 @@ namespace eval $keyValue {
         set translateSide [lindex $orientList($winId) 1]
         set translateLevel [string match $translateSide \
                 [lindex $orientList($winId) 0]]
-        set timeToShow [GetModelTime]
+	if {[string compare none $timeSide]} {
+	    set timeToShow [GetModelTime]
+	}
         set varNamePosns($winId) {}
         
         set lastEntry(0) none

@@ -598,7 +598,7 @@ proc AddHelperSublist {fm title ct} {
                 if {[string match {Slider control} $action]} {
                     set helperTable(SliderControl) $keyValue
                 }
-                if {[string match {Storing data table} $action]} {
+                if {[string match {Data table} $action]} {
                     set helperTable(TableViewer) $keyValue
                 }
                 $m add command -label $action \
@@ -1229,7 +1229,9 @@ proc start_run {winId} {
     set runState(currentTime) 0.0
     set runState(timeAtEval) 0.0
     set runState(currentWin) $winId ;# enables rebuild from run control
-    set gotParams [FileParamDialogue 0 $winId]
+    if {![FileParamDialogue 0 $winId]} {
+	return 0
+    }
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
         raise [Makemre $winId]
@@ -1249,7 +1251,7 @@ proc start_run {winId} {
     # model, so default values calculated from eqns can be loaded to the
     # sliders. Here we must clear any old input tool values so they are not used.
     UnMakeSlidersForInputs
-    return $gotParams
+    return 1
 }
 
 # this gets rid of a c program that has been loaded into
