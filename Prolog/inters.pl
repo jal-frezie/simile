@@ -575,7 +575,7 @@ make_intermediates(
 	    SourceRef = (arr(ChannelPtr, channelId, [])==ChannelNum),
 	    Units = boolean;
 	Source =.. [TRef, N],
-	    member(TRef, [time, dt]),
+	    member(TRef, [time, dt, ind_time]),
 	    ((N=0; N = ''), SourceRef =.. [TRef, Step];
 	    integer(N), SourceRef = Source;
 	    raise_exception(bad_index_number(N, TRef))),
@@ -932,7 +932,7 @@ builtin('List handling', any, boolean, [array_or_list_of_boolean]).
 builtin('List handling', all, boolean, [array_or_list_of_boolean]).
 builtin('Model properties', channel_is, boolean, [channel]).
 builtin('Model properties', dt, real, [const_int]).
-builtin('Model properties', time, real, [const_int]).
+builtin('Model properties', time, real, []).
 builtin('Model properties', init_time, real, []).
 builtin('Model properties', parent, int, []).
 builtin('Model properties', stop, int, [int]).
