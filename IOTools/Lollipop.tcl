@@ -24,15 +24,17 @@ proc initialize {winId} {
     variable grid
     variable viewVector
     set pi 3.14
-    array set viewVector {angle -0.3 elevation 0.5}
+    array set viewVector [list $winId,angle -0.3 $winId,elevation 0.5 \
+			      $winId,cos_angle 1 $winId,cos_elevation 1 \
+			      $winId,sin_angle -0.3 $winId,sin_elevation 0.5]
     scale $winId.elv -orient v -from [expr $pi/2] -to [expr -$pi/2] \
 	-resolution 0.01 \
 	-command [namespace code "TweakScale $winId elevation"]
     $winId.elv set 0.5
-   canvas $winId.c -width 1 -height 1 -bg white
-   frame $winId.buttons -relief raised -bd 1
-   button $winId.buttons.but_print -text "Print..." \
-      -command "PrintNow $winId.c"
+    canvas $winId.c -width 1 -height 1 -bg white
+    frame $winId.buttons -relief raised -bd 1
+    button $winId.buttons.but_print -text "Print..." \
+	-command "PrintNow $winId.c"
     pack [label $winId.buttons.anglab -text "View angle:"] -side left
     scale $winId.buttons.ang -orient h -from -$pi -to $pi \
 	-resolution 0.01 \
@@ -124,7 +126,7 @@ proc SaveState {winId} {
     variable useNodes
     variable viewVector
     set state displaying
-    lappend state $viewVector(angle) $viewVector(elevation)
+    lappend state $viewVector($winId,angle) $viewVector($winId,elevation)
     foreach node $useNodes($winId,selected) {
 	lappend state [GetCaptionPathFromId $node]
     }
@@ -133,27 +135,33 @@ proc SaveState {winId} {
 
 proc Restore {winId} {
     variable useNodes
-    variable viewVector
     set state [GetState $winId]
     initialize $winId
     if {[string match displaying [lindex $state 0]]} {
 	$winId.buttons.ang set [lindex $state 1]
-	$winId.elv set [lindex $state 2]
 	foreach node [lrange $state 3 end] {
 	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
 	    lappend useNodes($winId,captions) [lindex [split $node /] end]
 	}
+	LoadPosns $winId
+	$winId.elv set [lindex $state 2]
     } else {
 	GrabClicks $winId
     }
     SaveState $winId
-    LoadPosns $winId
 }
 
 proc TweakScale {winId which where} {
     variable viewVector
-    set viewVector($which) $where
+    set viewVector($winId,$which) $where
     SaveState $winId
+
+    set viewVector($winId,cos_angle) [expr cos($viewVector($winId,angle))]
+    set viewVector($winId,sin_angle) [expr sin($viewVector($winId,angle))]
+    set viewVector($winId,cos_elevation) \
+	[expr cos($viewVector($winId,elevation))]
+    set viewVector($winId,sin_elevation) \
+	[expr sin($viewVector($winId,elevation))]
     WindowSizeChanged $winId
 }
 
@@ -205,8 +213,8 @@ proc DrawShapes {winId solids tag} {
 #ShowMessage debug info $object3d ok
 	switch [lindex $object3d 0] {
 	    line {
-		set startMap [project [lindex $object3d 2]]
-		set endMap [project [lindex $object3d 3]]
+		set startMap [project $winId [lindex $object3d 2]]
+		set endMap [project $winId [lindex $object3d 3]]
 		set startx [lindex $startMap 0]
 		set starty [lindex $startMap 1]
 		set endx [lindex $endMap 0]
@@ -218,10 +226,10 @@ proc DrawShapes {winId solids tag} {
 			   [expr ([lindex $startMap 2]+[lindex $endMap 2])/2] \
 				   [lindex $object3d 1]]
 	    } sphere {
-		set middle [project [lindex $object3d 2]]
+		set middle [project $winId [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
-		set rad [expr $viewVector(winY)*[lindex $object3d 3]/150.0]
+		set rad [expr $viewVector($winId,Y)*[lindex $object3d 3]/150.0]
 		lappend insts [list [list \
 		$winId.c create oval [expr $midx-$rad] [expr $midy-$rad] \
 		     [expr $midx+$rad] [expr $midy+$rad] -tag $tag \
@@ -230,7 +238,7 @@ proc DrawShapes {winId solids tag} {
 				   [lindex $object3d 1]]
 			       
 	    } text {
-		set middle [project [lindex $object3d 2]]
+		set middle [project $winId [lindex $object3d 2]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
 		lappend insts [list [list \
@@ -250,23 +258,23 @@ proc DrawShapes {winId solids tag} {
     }
 }
 
-proc project {pt3d} {
+proc project {winId pt3d} {
     variable viewVector
     set ptx [lindex $pt3d 0]
     set pty [lindex $pt3d 1]
     set ptz [lindex $pt3d 2]
 
-    set multx [expr cos($viewVector(angle))]
-    set multy [expr sin($viewVector(angle))]
+    set multx $viewVector($winId,cos_angle)
+    set multy $viewVector($winId,sin_angle)
 
     set rotx [expr $multx*$ptx - $multy*$pty]
     set roty [expr -$multx*$pty - $multy*$ptx]
 
-    set multx [expr cos($viewVector(elevation))]
-    set multy [expr sin($viewVector(elevation))]
+    set multx $viewVector($winId,cos_elevation)
+    set multy $viewVector($winId,sin_elevation)
 
-    set scx [expr $viewVector(winX)*($rotx/150.0 + .5)]
-    set scy [expr $viewVector(winY)*(($multx*$ptz - $multy*$roty)/-150.0 + .5)]
+    set scx [expr $viewVector($winId,X)*($rotx/150.0 + .5)]
+    set scy [expr $viewVector($winId,Y)*(($multx*$ptz - $multy*$roty)/-150.0 + .5)]
     set depth [expr -$multx*$roty - $multy*$ptz]
 
 #ShowMessage debug info "pt3d $pt3d rots $rotx $roty cams $scx $scy $depth" ok
@@ -280,7 +288,7 @@ proc ShowKey {winId} {
 
     set col 0
     set atx 20
-    set aty $viewVector(winY)
+    set aty $viewVector($winId,Y)
     
     $winId.c delete -withtag key
     foreach {x y sz} $useNodes($winId,captions) {
@@ -301,13 +309,13 @@ proc WindowSizeChanged {winId} {
     variable trunks
     if {[winfo viewable $winId.c]} {
 	$winId.c delete all
-	set viewVector(winX) [winfo width $winId.c]
-	set viewVector(winY) [winfo height $winId.c]
-	if {$viewVector(elevation)>=0} {
+	set viewVector($winId,X) [winfo width $winId.c]
+	set viewVector($winId,Y) [winfo height $winId.c]
+	if {$viewVector($winId,elevation)>=0} {
 	    DrawShapes $winId $grid grid
 	}
 	DrawShapes $winId $trunks trunks
-	if {$viewVector(elevation)<0} {
+	if {$viewVector($winId,elevation)<0} {
 	    DrawShapes $winId $grid grid
 	}
 	ShowKey $winId

@@ -12,14 +12,14 @@ namespace eval slide139 {
     
     proc initialize {winId} {
         MakeFrames $winId
-        set boxCount 0
         foreach node [GetObjectList] {
             if {[string match INPUT [GetModelEval $node]]} {
                 set title [GetCaptionPathFromId $node]
-                InsertSlider $winId nodebox[incr boxCount] $node $title
+                InsertSlider $winId $node $title 1
+		set done 1
             }
         }
-        if {!$boxCount} {
+        if {![info exists done]} {
             kill_helper_window $winId
         } else {
             pack [set bfrm [frame $winId.buttons]] \
@@ -40,14 +40,18 @@ namespace eval slide139 {
 #        catch {wm geometry $winId $geom}
     }
     
-    proc InsertSlider {winId boxname node title} {
+    proc InsertSlider {winId node title nest} {
 	global checkStates
 	set isFlag [string match FLAG [GetModelType $node]]
         set initVal [lindex [GetModelValue $node] 0]
         #ShowMessage debug info $def ok
-        set levels [lrange [split $title /] 1 end]
-        pack [set f [frame [MakeSubFrames $winId.sliderframe $levels]]] \
+	set levels [lrange [split $title /] 1 end]
+	if {$nest} {
+	    pack [set f [frame [MakeSubFrames $winId.sliderframe $levels]]] \
                 -fill x -expand true
+	} else {
+	    set f $winId
+	}
 	if {$isFlag} {
 	} else {
 	    set min [GetMinValue $node]

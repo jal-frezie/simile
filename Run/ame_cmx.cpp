@@ -384,16 +384,11 @@ caption fits the start of what we are after (after trimming the portion found
 from the search string, less the submodel itself -- note it may be an issue
 that the submodel name is searched for in both models ) */
 
-char trail[1024];
 int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   int count;
   char test[255];
-  strcat(trail, ". Seeking ");
-  strcat(trail, seeknode);
   for (count = 0; seekType->nodecount>count; ++count) {
     seekType->make_full_caption(seekType->nodedata[count].path, test);
-	strcat(trail, ". Found ");
-	strcat(trail, test);
 	  
     if (!strcmp(seeknode, test)) {
       *tgtModel = seekType;
@@ -1023,7 +1018,6 @@ extern "C" int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	return error;
    }
 
-   *trail=(char)NULL;
    tgtIndex = nodeModelAndId(modelType, Tcl_GetStringFromObj(argv[2], NULL),
 			     &tgtModel);
     if (tgtIndex != -1) {
@@ -1031,7 +1025,7 @@ extern "C" int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	return TCL_OK;
     } else {
 	Tcl_AppendResult(interp, "No node with caption string ",
-			 Tcl_GetStringFromObj(argv[2], NULL), " found", trail, 
+			 Tcl_GetStringFromObj(argv[2], NULL), " found.",
 		(char*)NULL);
 	return TCL_ERROR;
     }
