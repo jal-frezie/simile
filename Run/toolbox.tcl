@@ -1041,13 +1041,9 @@ proc CopyCanvasToWindowsClipboard {canvas} {
         package require printer
         package require wmf
         
-	#PrepForExport $canvas there
         set hdc [wmf open]; #Opens a memory metafile
         printer::print_canvas $hdc $canvas
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle        
-	#PrepForExport $canvas back
-
-        #ShowMessage debug info "[ wmf info $wmfdc ]" ok        
         wmf copy $wmfdc; # Copy to the clipboard        
     }
 }
@@ -1058,11 +1054,10 @@ proc PrintNow {winId} {
     if {[string match windows $tcl_platform(platform)]} {
 	package require gdi
 	package require printer
-#	package require Tkprint
 
-	#PrepForExport $winId there
-	printer::print_widget $winId 0
-	#PrepForExport $winId back
+	PrepForExport $winId there
+    printer::print_widget $winId 0
+    PrepForExport $winId back
    } else {
     set tempPSFile $env(SIMTMPDIR)/temp.ps
     SpitPS $winId $tempPSFile
@@ -1162,13 +1157,6 @@ proc AddMainMenu { winid initWidth initDepths} {
             -command "MenuSelect $winid.canvas file compile_c"
     $fm2 add command -label "PostScript file" \
             -command "DoWithErrors ExportPostscript $winid.canvas"
-    $fm2 add cascade -label "Equation list" -menu $fm.sub1a
-    set fm2a [menu $fm.sub1a -tearoff 0]
-    $fm2a add command -label "Legible" \
-            -command "MenuSelect $winid.canvas file list_eqns"
-    
-    $fm2a add command -label "Prolog" \
-            -command "MenuSelect $winid.canvas file prolog_eqns"
     $fm2 add command -label "Model description" \
             -command "MenuSelect $winid.canvas file export_prolog"
     $fm add separator
