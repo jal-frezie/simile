@@ -53,6 +53,16 @@ proc ControlDraw {prologVersion} {
     wm withdraw .
     # loading stub sets license entries
     load_c_stub
+
+# Defaults to use if debugging
+    if {![info exists env(SIMILE_VERSION)]} {
+	set env(LD_LIBRARY_PATH) /usr/local/ActiveTcl/lib
+	set env(SIMILE_VERSION) 3.0
+	set env(SIMTMPDIR) /tmp/simdevel
+	set env(licensee_name) "Support team"
+	set env(licensee_corp) "Simulistics, inc."
+    }
+
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
     
@@ -444,9 +454,16 @@ proc canvasTLDistance {winId x y} {
 
 proc GetFromProlog {prologCmd} {
     global fromProlog
+# remove next line to demo problem
     set fromProlog {}
+
     prolog $prologCmd
-    return $fromProlog
+    if {![info exists fromProlog]} {
+	tkwait variable fromProlog
+    }
+    set result $fromProlog
+    unset fromProlog
+    return $result
 }
 
 # Procedure for when Tcl recognizes what object is clicked but being a
