@@ -1321,6 +1321,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     set m [menu $eb.inputs.menu -tearoff 0 -postcommand [list AddInputs $eb]]
     #    $m add command -label biomass -command bell
     #    $m add command -label k -command bell
+    #BindPopup $m foobar
     
     set image [image create photo -file "../Images/Eqnbar/function.gif"]
     menubutton $eb.function -state disabled -menu $eb.function.menu \
@@ -1638,13 +1639,13 @@ proc AddInputs {bar} {
     $bar.inputs.menu delete 0 end
     set winId $equationbar(winId)
     set node $equationbar(node)
-    foreach paramList [GetFromProlog tk_get_params('$winId',$node)] {
+    set paramData [GetFromProlog tk_get_params('$winId',$node)]
+    foreach paramList $paramData {
         set paramName [lindex $paramList 1]
         $bar.inputs.menu add command -label $paramName \
                 -command [list InsertParam $bar $paramName]
     }
-
-
+    MenuBindPopup $bar.inputs.menu $paramData
 }
 
 proc InsertParam {bar paramName} {

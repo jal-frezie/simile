@@ -729,6 +729,12 @@ proc BindPopup {widget keywd} {
     bind $widget <Leave> RemovePopup
 }
 
+proc MenuBindPopup {widget keyList} {
+    bind $widget <Enter> [list QueuePopup \
+			      [list AddMenuPopup $widget $keyList %y %X %Y]]
+    bind $widget <Leave> RemovePopup
+}
+
 # This is used for items on IO tool canvases -- model components have eqnpopups
 proc CanvasBindPopup {canvas widget keywd} {
     $canvas bind $widget <Enter> [list QueuePopup \
@@ -818,6 +824,9 @@ proc CountValues {text} {
     }
 }
 
+# # character in colour spec is escaped purely for the benefit of the Emacs
+# tcl mode parser
+
 proc AddWidgetPopup {key X Y} {
     global msgs
     PostPopup $X $Y
@@ -827,9 +836,22 @@ proc AddWidgetPopup {key X Y} {
 	set message $key
     }
     pack [message .popup.message -aspect 400 \
-	    -text $message -bg #ffffc0] -fill x -expand true
+	    -text $message -bg \#ffffc0] -fill x -expand true
 }
- 
+
+proc AddMenuPopup {widget list y X Y} {
+    PostPopup $X $Y
+    set entry [$widget index @$y]
+    if {[string match none $entry]} {
+	return
+    }
+    set line [lindex $list $entry]
+    set message "[lindex $line 1]: [lindex $line 0]"
+    pack [message .popup.message -aspect 400 \
+	    -text $message -bg \#ffffc0] -fill x -expand true
+}
+    
+
 proc PostPopup {X Y} {
     if {[winfo exists .popup]} {
 	destroy .popup
