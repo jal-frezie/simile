@@ -135,24 +135,29 @@ expand_library(DestRef, Var, NewVar) :-
 read_library_funx(Done) :-
 	retractall(macro_expansion(_Cat, _Line)),
 	/* in case I ship it after a run */
-	output:list_matching_files('../Functions/*.pl', FnIncs),
-	/* the /* in the above line does not start a comment */
-	all(inters, read_func_file, [build(FnIncs), unify("../Functions/"),
-				     unify(yes), append(System, [])]),
+	read_func_tree('../Functions/', '../Functions/', yes, BuiltIns),
+
 	backup:use_pref_dir(UserStuff),
-	name(UserStuff, UserStuffStr),
-	append(UserStuffStr, "/Functions/", UserFnsStr),
-	name(UserFns, UserFnsStr),
-	append_atoms(UserFns, '*.pl', UserFnPlate),
-	output:list_matching_files(UserFnPlate, UserIncs),
-	all(inters, read_func_file, [build(UserIncs), unify(UserFnsStr),
-				     unify(no), append(Done, System)]).
+	append_atoms(UserStuff, '/Functions/', UserFns),
+	read_func_tree(UserFns, UserFns, no, Local),
+	append(BuiltIns, Local, Done).
+
+read_func_tree(TopDir, AllDirs, BuiltIn, Done) :-
+	append_atoms(AllDirs, '*.pl', LocalTpt),
+	output:list_matching_files(LocalTpt, FnIncs),
+	all(inters, read_func_file, [build(FnIncs), unify(TopDir),
+				     unify(BuiltIn), append(Local, [])]),
+	append_atoms(AllDirs, '*/', DeepTpt),
+	output:list_matching_files(DeepTpt, DeepDirs),
+	all(inters, read_func_tree, [unify(TopDir), build(DeepDirs),
+				     unify(BuiltIn), append(Done, Local)]).
 
 read_func_file(File, Context, IsBuiltIn, Done) :-
 	open(File, read, Stream),
 	name(File, FileStr),
 	append(Base, ".pl", FileStr),
-	append(Context, NameStr, Base),
+	name(Context, ContextStr),
+	append(ContextStr, NameStr, Base),
 	name(Name, NameStr),
 	read_funcs(Name, Stream, IsBuiltIn, Done).
 

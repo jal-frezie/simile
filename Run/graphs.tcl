@@ -1221,14 +1221,14 @@ proc InitTimeSeries {} {
     array unset setFromSeries
     foreach node [GetObjectList] {
 	if {[string match INPUT [GetModelEval $node]]} {
-puts "timePts [array names paramData $node,*]"
+#puts "timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1
 	    }
 	    if {[array size $node]} {
 		set setFromSeries($node,times) [lsort [array names $node]]
 		set setFromSeries($node,next) 0
-puts "initted $setFromSeries($node,times)"
+#puts "initted $setFromSeries($node,times)"
 	    }
 	}
     }

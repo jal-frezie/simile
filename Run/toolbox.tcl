@@ -129,6 +129,45 @@ proc TrimTree {Top Point} {
     }
 }
 
+# this takes the spec for a model executable file and a list of user-defined
+# functions. It gets the date on which the executable was made, then looks
+# up which file contains the function definition (for procedures we assume
+# that is the same base as the one containing its declaration) and drops out
+# if the latter is newer
+
+proc CheckFnsFresh {L progDir id userFnList} {
+    global equation custom
+    if {![file exists $progFile]} {
+	return 0
+    } 
+    set date [file mtime $progFile]
+    foreach func userFnList {
+	set functor [lindex [split $func /] 0] \;# remove arity
+	set posn [lsearch $equation(fnDefs) "{Macros *} $functor"]
+	if {$posn == -1} {
+	    set posn [lsearch $equation(fnDefs) "{Procedures *} $functor"]
+	}
+	if {$posn == -1} {
+	    return 4 ;# missing function
+	}
+	set fnSpec [lindex [lindex $equation(fnDefs) $posn] 0]
+	set fnBase $custom(prefDir)/[lindex $fnSpec 1]
+	if {[file mtime ${fnBase}.pl]>$date} {
+	    return 1 ;# Declaration out of date
+	}
+	if {[string equal Procedures [lindex $fnSpec 0]] && \
+		![string equal tcl $L]} {
+	    # no problem with tcl definitions, they are included at run time
+	    if {![file exists ${fnBase}.cpp]} {
+		return 3 ;# Missing or misplaced definition
+	    }
+	    if {[file mtime ${fnBase}.cpp]>$date} {
+		return 2 ;# Definition out of date
+	    }
+	}
+    }
+}
+
 # this exists in case I don't want to exploit the concat in eval
 proc do_for_node {node args} {
     global runStatus chosenPaths
@@ -2166,7 +2205,6 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
     global equation msgs
-
     foreach funk [concat {{{{Built-in} {Model properties}} index}} \
 		      $equation(fnDefs)] {
 	set box $m

@@ -819,6 +819,7 @@ proc load_dll {lang progDir id node} {
 	if {![file exists $progDir/model.tcl]} {
 	    return 0
 	}
+	# This won't catch defns in subdirectories or under .simile
         foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
             source $fnFile
         }

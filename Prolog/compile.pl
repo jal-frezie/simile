@@ -78,15 +78,18 @@ build_instances(Language, DestDir, Parent, TopNode,
 	(Parent has_model_refinement c_new of 0,
 	     \+ check_level_for_reds(Parent),
 	    Parent has_changed_model_refinement c_new of 1,
-	    ChangeTop = 1;
+	    ChangeTop = [1];
+	setof(Fn, list_user_fns(Parent, Fn), ChangeLocal),
+	    merge_lists(ChangeLocal, CompsChanged, ChangeTop);
 	ChangeTop = CompsChanged),
+
 	((Parent has_class_refinement separate of 1;
 	  backup:is_toplevel(Parent)), !,
-	 ((ChangeTop == 1,
+	 ((member(1, ChangeTop),
 	        all(compile, delete_prog,
 		    [unify(CheckDir),
 		     build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]);
-	   \+ reuse_old_exec(Language, Parent, CheckDir, TopNode)),
+	   \+ reuse_old_exec(Language, Parent, CheckDir, TopNode, ChangeTop)),
 	     \+ (Language = c,
 		    tk_get_pref(compChoice, 'None'),
 		    raise_exception(no_compiler)),
@@ -114,20 +117,28 @@ build_instances(Language, DestDir, Parent, TopNode,
 		 assert(new_exec_for(Parent))),
 	     load_executable(Language, CheckDir, Tgt, Parent, TopNode);
 	 true),
-	KeepDir = 1;
+	KeepDir = 1,
+	ChangeNext = [];
 	ChangeNext = ChangeTop),
 	/* delete dir if empty...*/
 	(KeepDir == 1, !,
 	    KeepParents = 1;
 	safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _)).
 
-reuse_old_exec(Language, Parent, CheckDir, Node) :-
+list_user_fns(Parent, Fn) :-
+	find_all_comps(Parent, Comp),
+	find_type(Comp, function),
+	Comp has_class_refinement uses_local_fns of FnList,
+	member(Fn, FnList).
+
+reuse_old_exec(Language, Parent, CheckDir, Node, UserFns) :-
 	(Language = c,
 	    (Parent has_model_refinement c_new of OldTgt;
 		OldTgt = '{}'), !;
 	    /* if no c_new look for dll with default name from save file */
 	OldTgt = 0),
-	(load_executable(Language, CheckDir, OldTgt, Parent, Node);
+	(check_exec_fns_fresh(Language, CheckDir, OldTgt, UserFns),
+	    load_executable(Language, CheckDir, OldTgt, Parent, Node);
 	 check_level_for_reds(Parent)).
 
 /* reclose: compiled version has a tendency to close streams when exiting their

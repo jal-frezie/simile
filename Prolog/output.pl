@@ -37,8 +37,8 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/2,
 	check_directory/1, windowize/2,
-	compile_c_program/3, load_executable/5, find_phase/3,
-	tk_kill_window/1, exit_AME/0]).
+	compile_c_program/3, check_exec_fns_fresh/4, load_executable/5,
+			find_phase/3, tk_kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
@@ -518,6 +518,10 @@ compile_c_program(TopNode, ModelPath, Err) :-
 	safe_tcl_eval([do_for_node, TopNode, compile_c, br(WModelPath)],
 		      ErrStr),
 	name(Err, ErrStr).
+
+check_exec_fns_fresh(L, ModelPath, Id, Fns) :-
+	windowize(ModelPath, WModelPath),
+	safe_tcl_eval(['CheckFnsFresh',  L, br(WModelPath), Id, br(Fns)], 0).
 
 load_executable(L, ModelPath, Id, Node, TopNode) :-
 	windowize(ModelPath, WModelPath),
