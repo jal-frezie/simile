@@ -3,7 +3,8 @@
 # Just to give you an idea of (a) the sort of thing you can do in tcl,
 # and (b) my preferred programming style, check this out....
 
-lappend auto_path [pwd]/../Run [pwd]/../System/lib/Extras
+# Simile distributed libraries should have precedence over any others
+set auto_path [linsert $auto_path 0 [pwd]/../Run [pwd]/../System/lib]
 package require BWidget
 
 #tk_messageBox -message "library [info library] path $auto_path"
@@ -981,11 +982,11 @@ proc CopyCanvasToWindowsClipboard {canvas} {
         package require printer
         package require wmf
         
-	PrepForExport $canvas there
+	#PrepForExport $canvas there
         set hdc [wmf open]; #Opens a memory metafile
         printer::print_canvas $hdc $canvas
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle        
-	PrepForExport $canvas back
+	#PrepForExport $canvas back
 
         #ShowMessage debug info "[ wmf info $wmfdc ]" ok        
         wmf copy $wmfdc; # Copy to the clipboard        
@@ -1000,9 +1001,9 @@ proc PrintNow {winId} {
 	package require printer
 #	package require Tkprint
 
-	PrepForExport $winId there
+	#PrepForExport $winId there
 	printer::print_widget $winId 0
-	PrepForExport $winId back
+	#PrepForExport $winId back
    } else {
     set tempPSFile $env(SIMTMPDIR)/temp.ps
     SpitPS $winId $tempPSFile
