@@ -35,8 +35,8 @@ proc equationResources {} {
     
     # Size of the listboxes
     foreach listBox {plist ilist} {
-	    option add *Equation*$listBox.width	15	startup
-	    option add *Equation*$listBox.height	4	startup
+        option add *Equation*$listBox.width	15	startup
+        option add *Equation*$listBox.height	4	startup
     }
 }
 
@@ -166,30 +166,30 @@ proc create_equation {parent boxtitle indices} {
     pack $indicesf.list -anchor nw -expand true -fill both
     pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
     
-# Stella special: a keypad frame to prevent users having to touch their kbd
-TitleFrame $middleF.keypad -text "Keypad: "
-set keypadf [$middleF.keypad getframe]
-frame $keypadf.keys
-set keys {< > -> = ( ) , / 7 8 9 * 4 5 6 - 1 2 3 + 0 dummy . DEL}
-for {set row 0} {$row < 6} {incr row} {
-    pack [frame $keypadf.keys.row$row] -fill x
-    for {set col 0} {$col < 4} {incr col} {
-        set act [lindex $keys [expr 4*$row+$col]]
-        pack [button $keypadf.keys.row$row.col$col \
-                -width 2 \
-                -text $act -command "HitKey $t \{$act\}"] \
-                -side left -fill x -expand true
+    # Stella special: a keypad frame to prevent users having to touch their kbd
+    TitleFrame $middleF.keypad -text "Keypad: "
+    set keypadf [$middleF.keypad getframe]
+    frame $keypadf.keys
+    set keys {< > -> = ( ) , / 7 8 9 * 4 5 6 - 1 2 3 + 0 dummy . DEL}
+    for {set row 0} {$row < 6} {incr row} {
+        pack [frame $keypadf.keys.row$row] -fill x
+        for {set col 0} {$col < 4} {incr col} {
+            set act [lindex $keys [expr 4*$row+$col]]
+            pack [button $keypadf.keys.row$row.col$col \
+                    -width 2 \
+                    -text $act -command "HitKey $t \{$act\}"] \
+                    -side left -fill x -expand true
+        }
     }
-}
-# Make DEL button double width
-destroy $keypadf.keys.row5.col1
-pack $keypadf.keys.row5.col0 -expand false
-pack $keypadf.keys.row5.col2 -expand false
-pack $keypadf.keys -side left -anchor nw
-pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
+    # Make DEL button double width
+    destroy $keypadf.keys.row5.col1
+    pack $keypadf.keys.row5.col0 -expand false
+    pack $keypadf.keys.row5.col2 -expand false
+    pack $keypadf.keys -side left -anchor nw
+    pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $middleF -expand off -fill x
     
-
+    
     # Now for the main frame: the equation and its commentary
     frame $mainF.main
     TitleFrame $mainF.main.main -text "Data source: "
@@ -233,7 +233,7 @@ pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $mainf.equation.textbox.buttons -anchor e -side left
     pack $mainf.equation -expand true -fill both -anchor nw
     pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2 -side left
-
+    
     pack $mainF.main -anchor nw -expand true -fill both -anchor nw
     
     # Miscellaneous other stuff below
@@ -278,7 +278,7 @@ pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $descf -side top  -fill x -expand off
     pack $descF.description  -fill x -expand off -padx 4 -pady 4
     pack $docF.descf -fill x -expand off
-
+    
     label $docF.cmtlabel -text Comments:
     pack $docF.cmtlabel -side top
     pack [set frm [frame $docF.cmtFrame]] -fill both -expand true
@@ -310,7 +310,7 @@ pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $propertiesF  -fill x  -anchor nw
     
     
-
+    
     $notebook raise Main
     pack $notebook -fill both -expand true
     $notebook compute_size
@@ -679,8 +679,11 @@ proc Disaggregate {parent title colour type fatness icount step \
                 separate} {
         set disaggregate($varName) [set $varName]
     }
-    set disaggregate(icount) [join $icount ,]
-    
+    if [llength $icount]>0 {
+        set disaggregate(icount) [join $icount ,]
+    } else  {
+        set disaggregate(icount) 1
+    }
     set t [toplevel .disaggregation -bd 4 -class Disaggregation]
     #	wm transient $t $parent
     wm resizable $t 0 0
@@ -809,6 +812,9 @@ proc Disaggregate {parent title colour type fatness icount step \
     grab release $t
     set disaggregate(comment) [string trimright [$t.comment get 1.0 end]]
     destroy $t
+    if [string match $disaggregate(icount) 1] {
+        set disaggregate(icount) [list]
+    }
     if {$disaggregate(done)} {
         return [list $disaggregate(colour) $disaggregate(type) \
                 $disaggregate(fatness) $disaggregate(icount) \
