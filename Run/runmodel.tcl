@@ -210,6 +210,15 @@ proc ReleaseClicks {winId} {
     unset helperTable($topNode,current)
 }
 
+proc NowExecuting {node} {
+    global helperTable
+    upvar \#0 $helperTable(RunControl)::sendvars($node,currentMode) mode
+    if {[info exists mode]} {
+	return [string equal start $mode]
+    }
+    return 0
+}
+
 proc kill_helper_window { winId } {
     # ShowMessage debug info "Killing $winId" ok
     global helperTable runState
@@ -222,18 +231,18 @@ proc kill_helper_window { winId } {
         }
 	if {[info exists runState($topNode,helperId)]} {
 	    if {[string equal $winId $runState($topNode,helperId)]} {
-		upvar 0 $helperTable(RunControl)::sendvars($topNode,currentMode) mode
-		if {[string equal start $mode]} {
-		    set kill_on_finish 1
+		if {[string equal start $helperTable(RunControl)::sendvars($topNode,currentMode)]} {
+#		    set kill_on_finish 1
+		    TryToKill $topNode
 		}
-		set mode kill
+#		set mode kill
 		unset runState($topNode,helperId)
 	    }
 	}
         unset helperTable($winId,whichHelper)
-        if {![info exists kill_on_finish]} {
+#        if {![info exists kill_on_finish]} {
 	    destroy $winId
-	}
+#	}
         #	if {[PrefValue custom(helperManager) helperManager]} {
         #	    RunEnv::OnDestroyHelper $winId
         #	}
@@ -500,6 +509,10 @@ proc ScrubRun {node times} {
     if {$times && [info exists runState($node,currentTime)]} {
         unset runState($node,currentTime)
     }
+    if {[NowExecuting $node]} {
+	TryToKill $node
+	return
+    }
     if {[info exists model_id($node)]} {
         if {$model_id($node)} {
             if {[info exists instance_id($node)]} {
@@ -678,7 +691,7 @@ proc snap_down3 {w values} {
 proc GetRunParams {node} {
     global runState model_id
 
-    if {[info exists runState($node,currentTime)]} {
+    if {[info exists runState($node,currentTime)] && ![NowExecuting $node]} {
 	if {$runState($node,execTime) != $runState($node,currentTime)} {
 	    set runState($node,execDur) \
 		[expr $runState($node,execTime)+$runState($node,currentTime)]

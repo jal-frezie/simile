@@ -174,7 +174,6 @@ namespace eval runcontrol33857 {
 	    if {[string match stop $action]} { ;# model still waiting to stop
 		if {[string equal yes [ShowMessage "Abort request" question "The model has not finished the last time step. You can abort it but the current values will be lost. Abort it now?" yesno]]} {
 		    TryToKill $node
-		    set runState($node,modelRunning) 0
 		    $widget.bf.flag itemconfigure 1 -fill white
 		}
 		return
@@ -313,7 +312,7 @@ namespace eval runcontrol33857 {
 	$widget.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $winId stop"
 
-        while {[lsearch {exit stop kill} $sendvars($node,currentMode)]==-1} {
+        while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
             # Collect any changes that have been made by the user
             if {[info exists sendvars($node,newData)]} {
                 scan $sendvars($node,newData) "%s %s %s %s %s" \
@@ -430,6 +429,10 @@ namespace eval runcontrol33857 {
                     if ![do_model $node eval $scaled_current $bigPhase] {
                         set sendvars($node,currentMode) exit
                     }
+		    # check run control etc are still there before going on
+		    if {![winfo exists $widget]} {
+			return
+		    }
                     # display the results if at a new time, or every time if in static mode
                     set numDisplays [expr floor(($current + $step/2)/$display)]
                     if {$numDisplays != $sendvars($node,prevDisplay) || $step == 0} {
@@ -454,16 +457,16 @@ namespace eval runcontrol33857 {
 		set runState($node,modelRunning) 2
 	    }
         }
-        switch $sendvars($node,currentMode) {
-            kill {
-		destroy $winId
-            } default {
+#        switch $sendvars($node,currentMode) {
+#            kill {
+#		destroy $winId
+#            } default {
                 $widget.topbuttons.start configure -image $playImg
 		$widget.topbuttons.start configure -command \
 		    "[namespace current]::SetMode $winId start"
                 $widget.bf.flag itemconfigure 1 -fill [RestingColour $node]
-            }
-        }
+#            }
+#        }
 	set sendvars($node,currentMode) stop
     }
     

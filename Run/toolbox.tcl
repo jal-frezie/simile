@@ -284,7 +284,7 @@ proc KillInterpFor {node} {
 
 proc TryToKill {node} {
     global runState model_id instance_id
-
+#puts "Trying to kill $node"
     c_killmodel [pid $runState($node,interp)]
     catch {close $runState($node,interp)}
     unset runState($node,interp)
@@ -292,6 +292,7 @@ proc TryToKill {node} {
     set runState($node,response$runState($node,queueSize)) {res {}}
 # and unstick anything still waiting for it
     set runState($node,modelReady) -1
+    set runState($node,modelRunning) 0
 
     unset instance_id($node)
     unset model_id($node)
@@ -1428,8 +1429,14 @@ proc AddEqnPopup {node x y winId X Y} {
     #    set target [$winId find closest $canx $cany 1]
     #puts "targeting $target"
     if {$target} {
-        PostPopup $X $Y
         set plName [ExtractPrologName $winId $target]
+        if {$doVal} {
+            if {[catch {GetCompProperty $node Value $plName} value]} {
+                set missing [lindex [split $value \"] 1]
+                set value "Missing value: $missing"
+            }
+        }
+        PostPopup $X $Y
         if {$doDesc} {
             set desc [GetFromProlog tk_get_info('$winId',$plName,desc)]
             
@@ -1445,10 +1452,6 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-            if {[catch {GetCompProperty $node Value $plName} value]} {
-                set missing [lindex [split $value \"] 1]
-                set value "Missing value: $missing"
-            }
             AddPopupMessage [lindex $value 0] \#ffffc0 [GetTransTable $plName]
         }
     }
