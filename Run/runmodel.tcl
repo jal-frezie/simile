@@ -1675,6 +1675,7 @@ proc load_c_stub {} {
         }
     }
     loadcommands
+    randseed [clock clicks]
 }
 
 proc ListSameNumbers {list1 list2} {

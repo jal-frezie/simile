@@ -65,7 +65,7 @@ proc OpenTopLevel {model} {
     $newInstance eval package require Tk 
     $newInstance eval set IAmASlave 1
     $newInstance eval set argc 1
-    $newInstance eval set argv $model
+    $newInstance eval [list set argv $model]
     $newInstance eval source ../Run/simile.tcl
 }
 
