@@ -940,7 +940,7 @@ proc AcceptData {winId topNode compName complain} {
 		}
 	    }
 	}
-
+#puts "About to ListToArray $node {} $trans $recordDims $paramData($compName)"
 	set misses [ListToArray $node {} $trans $recordDims \
 			$paramData($compName)]
 # new bit for using it as an input tool: notify that we have values
@@ -955,6 +955,7 @@ proc AcceptData {winId topNode compName complain} {
 	    set paramData(needed) [purge $paramData(needed) $compName]
 	}
     }
+#puts "paramData now [array get paramData]"
 }
 
 # rsearch gives index of last value
@@ -1326,15 +1327,15 @@ proc InitTimeSeries {topNode} {
     array unset setFromSeries
     foreach node [GetCompProperty $topNode Objects] {
 	if {[string match INPUT [GetCompProperty $topNode Eval $node]]} {
-#puts "timePts [array names paramData $node,*]"
+#puts "node $node timePts [array names paramData $node,*]"
 	    foreach timePt [array names paramData $node,*] {
 		set ${node}([lindex [split $timePt ,] 1]) 1
 	    }
 	    if {[array size $node]} {
 		set setFromSeries($topNode,$node,times) \
-		    [lsort [array names $node]]
+		    [lsort -real [array names $node]]
 		set setFromSeries($topNode,$node,next) 0
-#puts "initted $setFromSeries($node,times)"
+#puts "initted $setFromSeries($topNode,$node,times)"
 	    }
 	}
     }
@@ -1354,7 +1355,7 @@ proc UpdateTimeSeries {topNode newTime} {
     global setFromSeries paramData
     foreach list [array names setFromSeries $topNode,*,times] {
 	set node [lindex [split $list ,] 1]
-#puts "node $node times $setFromSeries($list) next $setFromSeries($node,next) newTime $newTime"
+#puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
 	set jumping 1
 	while {$jumping} {
 	    upvar 0 setFromSeries($topNode,$node,next) series
@@ -1372,7 +1373,8 @@ proc UpdateTimeSeries {topNode newTime} {
 	}
 
 	if {[info exists useTime]} {
-	    upvar \#0 [InputVarFor $node] inputSrc
+	    upvar \#0 [do_for_node $topNode InputVarFor $node] inputSrc
+#puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
 	    # do it the easy way if a scalar
 #puts "looking for paramData($node,$useTime)"
 	    if {[info exists paramData($node,$useTime)]} {
@@ -1381,6 +1383,7 @@ proc UpdateTimeSeries {topNode newTime} {
 		return
 	    }
 	    foreach tsValue [array names paramData $node,$useTime,*] {
+#puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
 		set inputSrc([join [lreplace [split $tsValue ,] 1 1] ,]) \
 		    $paramData($tsValue)
 	    }
