@@ -166,7 +166,8 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		    redraw_window(Win2),
 		    fail;
 		 true)),
-	    update_captions(Parent);
+	    update_captions(Parent),
+	    output:run_if_package;
 	Mode = insert(Pt),
 	    (Translated = copy, !, /* paste into empty sole toplevel */
 	    /* reset window title in case graphics injection changed it

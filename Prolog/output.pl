@@ -507,6 +507,9 @@ load_file(Node, From, To, Oops) :-
 	windowize(To, WTo),
 	safe_tcl_eval(['LoadFile', Node, br(WFrom), br(WTo)], Oops).
 
+run_if_package :-
+        safe_tcl_eval(['RunIfPackage'], _).
+
 check_directory(Dir) :-
 	windowize(Dir, WDir),
 	safe_tcl_eval([file, mkdir, br(WDir)], _).

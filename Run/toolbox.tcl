@@ -1174,8 +1174,12 @@ proc FinishExec {win} {
 }
 
 proc OpenAll {win} {
-    global loadingProject mimedir
     MenuSelect $win file open
+    RunIfPackage
+}
+
+proc RunIfPackage {} {
+    global loadingProject mimedir
     if {[info exists loadingProject]} {
         OpenProjectFile $mimedir
     }
@@ -1411,10 +1415,7 @@ proc Reopen {canvas oldFile op} {
     RecordPathChoice .sml $oldFile 1
     set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]
     MenuSelect $canvas $op $oldFile
-    global loadingProject mimedir
-    if {[info exists loadingProject]} {
-        OpenProjectFile $mimedir
-    }
+    RunIfPackage
 }
 
 menu .openrecent -tearoff 0

@@ -12,6 +12,7 @@
 wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
 
 encoding system utf-8
+set plPipe(stack) {}
 set plPipe(debug) 0
 if $plPipe(debug) {
     set plPipe(debug_log) [file join $env(HOME) .simile log]
@@ -56,10 +57,26 @@ proc DebugMess {Mess} {
 }
 
 proc prolog {plCmd} {
+    global plPipe
+    set oldStack $plPipe(stack)
+    set plPipe(stack) [AddCurrentToPipe $oldStack]
 #puts "Prolog starting $plCmd"
     send_pl_cmd command:$plCmd
     KeepLooking
 #puts "Prolog finished $plCmd"
+    set plPipe(stack) $oldStack
+}
+
+proc AddCurrentToPipe {stack} {
+    for {set l 1} {$l < [info level]} {incr l} {
+	lappend stack [info level $l]
+    }
+    return $stack
+}
+
+proc ShowStack {} {
+    global plPipe
+    ShowMessage "Stack is..." info [AddCurrentToPipe $plPipe(stack)] ok
 }
 
 proc do_tail {header args} {
