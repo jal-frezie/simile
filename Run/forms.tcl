@@ -1284,12 +1284,18 @@ proc DoRegDialog {dtId} {
     
     TitleFrame .register.create -text "Creating a model: "
     set create [.register.create getframe]
-    
-    pack [message $create.m -text "Select compartments and flows from the toolbar\
-            to add to the diagram. Use the select (pointer) tool to edit captions\
-            and values. Run your model using the Build command of the Model menu."\
-            -width 400 -font {-family helvetica -size 8}]
-    pack $create -expand on -fill x
+    if {[string match Darwin $tcl_platform(os)]} {
+	pack [message $create.m -text "Select compartments and flows from the toolbar\
+                     to add to the diagram. Use the select (pointer) tool to edit captions\
+                    and values. Run your model using the Build command of the Model menu."\
+                   -width 400]
+     } else {
+	 pack [message $create.m -text "Select compartments and flows from the toolbar\
+	to add to the diagram. Use the select (pointer) tool to edit captions\
+	and values. Run your model using the Build command of the Model menu."\
+	-width 400 -font {-family helvetica -size 8}]
+  }
+  pack $create -expand on -fill x
     #	pack [frame $create.buttons]
     #	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
     #	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
@@ -1300,27 +1306,26 @@ proc DoRegDialog {dtId} {
     set tasks [.register.tasks getframe]
     
     frame $tasks.b
-    if {[string match Darwin $tcl_platform(os)]} {
-        pack [button $tasks.b.new -text "New" -width 10  \
-                -command {set userinfo(done) $welcomeDone}] \
-                -padx 8 -pady 8 -side left
-        pack [button $tasks.b.open -text "Open..." -width 10 \
-                -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
-                -padx 8 -pady 8 -side left
-        pack [button $tasks.b.reopen -text "Recent..." -width 10 \
-                -command "PopReopen $dtId"] \
-                -padx 8 -pady 8 -side left
+    if {[string match Windows $tcl_platform(platform)]} {
+	pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
+		-command {set userinfo(done) $welcomeDone}] \
+		-padx 8 -pady 8 -side left
+	pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
+		-command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
+		-padx 8 -pady 8 -side left
+	pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+		-command "PopReopen $dtId"] \
+		-padx 8 -pady 8 -side left
     } else  {
-        pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
-                -command {set userinfo(done) $welcomeDone}] \
-                -padx 8 -pady 8 -side left
-        pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
-                -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
-                -padx 8 -pady 8 -side left
-        pack [button $tasks.b.reopen -text "Recent..." -width 10 \
-                -command "PopReopen $dtId"] \
-                -padx 8 -pady 8 -side left
-        
+	pack [button $tasks.b.new -text "New" -width 10  \
+		-command {set userinfo(done) $welcomeDone}] \
+		-padx 8 -pady 8 -side left
+	pack [button $tasks.b.open -text "Open..." -width 10 \
+		-command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
+		-padx 8 -pady 8 -side left
+	pack [button $tasks.b.reopen -text "Recent..." -width 10 \
+		-command "PopReopen $dtId"] \
+		-padx 8 -pady 8 -side left
     }
     pack $tasks.b
     pack $tasks -fill x -expand on
@@ -1330,22 +1335,42 @@ proc DoRegDialog {dtId} {
     set links [.register.links getframe]
     
     frame $links.m1
-    pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
-            -anchor w -side left
-    pack [set www1 [label $links.m1.centre -text "Getting Started" \
-            -font {-underline true -family helvetica -size 8} -fg blue \
-            -cursor hand2]] -anchor w -side left
-    pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
-            -anchor w -side left
+    if {[string match Windows $tcl_platform(platform)]} {
+	pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
+		-anchor w -side left
+	pack [set www1 [label $links.m1.centre -text "Getting Started" \
+		-font {-underline true -family helvetica -size 8} -fg blue \
+		-cursor hand2]] -anchor w -side left
+	pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
+		-anchor w -side left
+     } else {
+	 pack [label $links.m1.left -text " *  Show " ] \
+	   -anchor w -side left
+	 pack [set www1 [label $links.m1.centre -text "Getting Started" \
+	  -fg blue \
+	  -cursor hand2]] -anchor w -side left
+	 pack [label $links.m1.right -text " help pages" ] \
+	  -anchor w -side left
+     }
     pack $links.m1 -anchor w
     frame $links.m2
-    pack [label $links.m2.left -text " *  Show " -font {-family helvetica -size 8}] \
-            -anchor w -side left
-    pack [set www2 [label $links.m2.centre -text "Example models" \
-            -font {-underline true -family helvetica -size 8} -fg blue \
-            -cursor hand2]] -anchor w -side left
-    pack [label $links.m2.right -text " help pages" -font {-family helvetica -size 8}] \
-            -anchor w -side left
+    if {[string match Windows $tcl_platform(platform)]} {
+	pack [label $links.m2.left -text " *  Show " -font {-family helvetica -size 8}] \
+		-anchor w -side left
+	pack [set www2 [label $links.m2.centre -text "Example models" \
+		-font {-underline true -family helvetica -size 8} -fg blue \
+		-cursor hand2]] -anchor w -side left
+	pack [label $links.m2.right -text " help pages" -font {-family helvetica -size 8}] \
+		-anchor w -side left
+    } else {
+	  pack [label $links.m2.left -text " *  Show " ] \
+		  -anchor w -side left
+	  pack [set www2 [label $links.m2.centre -text "Example models" \
+		  -fg blue \
+		  -cursor hand2]] -anchor w -side left
+	  pack [label $links.m2.right -text " help pages" ] \
+		  -anchor w -side left
+	    }
     pack $links.m2 -anchor w
     pack $links -expand on -fill x
     pack .register.links -expand on -fill x -padx 4 -pady 2
@@ -1993,4 +2018,5 @@ proc NotifyOverLimit {limit} {
     tkwait variable ack
     destroy .notify
 }
+
 
