@@ -1084,6 +1084,11 @@ proc DoRegDialog {dtId} {
             and values. Run your model using the Build command of the Model menu."\
             -width 400 -font {-family helvetica -size 8}]
     pack $create -expand on -fill x
+	pack [frame $create.buttons]
+	pack [button $create.buttons.new -text "New model" -command {set userinfo(done) $welcomeDone}] -padx 4 -side left
+	pack [button $create.buttons.open -text "Open model" -command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone"] -padx 4 -side left
+	pack [button $create.buttons.reopen -text "Reopen..." -command "PopReopen $dtId; set userinfo(done) \$welcomeDone"] -padx 4 -side left
+
     pack .register.create -expand on -fill x -padx 4 -pady 2
     
     TitleFrame .register.tasks -text "Choose a model: "
@@ -1162,6 +1167,11 @@ proc DoRegDialog {dtId} {
 
     grab release .register
     destroy .register
+}
+
+proc PopReopen {win} {
+	FillReopen $win
+	tk_popup .openrecent [winfo pointerx .register] [winfo pointery .register]
 }
 
 proc ContextSensitiveHelp {context page} {
