@@ -234,17 +234,12 @@ make_intermediates(
 	    OrigSource = make_inter(_, Param);
 	\+ contains_something(random, Source),
 	    OrigSource = Source),
-	member(instance(internal, inter(InterContext, _, _),
-			OrigSource, Name, Units-InterDims),
-	       PrevInters), !,
+	Inter = instance(internal,_, OrigSource,_,_),
+	member(Inter, PrevInters), !,
 	    NewInters = PrevInters,
 	    Setups = [],
-	    Args = [made_at(Name, InterContext)],
-	    pointer_from(DestPath, SourcePtr),
-	    make_inds_for(InterDims, SourceLoops, IntInds),
-	    append(SourceLoops, DestPath, SourceContext),
-	    SourceRef = arr(SourcePtr, Name, IntInds);  
-	  
+	    refer_inter(Inter, DestPath, Units,SourceContext, Args, SourceRef);
+
 	/* first case: a reference to another variable. If we are referring to
 	a variable via a 'back swap' i.e., it comes from an associated model
 	via an exclusive role, then we cannot use any variables from other
@@ -403,25 +398,15 @@ make_intermediates(
 	make_inds_for(TotalDims, SourceLoops, NewInds),
 	FillRef = arr(TotalPtr, TotalName, FillInds),
 	append(BuildInds, NewInds, SrcInds),
-	TotalRef = arr(SourcePtr, TotalName, SrcInds),
+	ClearRef = arr(SourcePtr, TotalName, SrcInds),
 
-	add_extra_dependencies(Exited
-			      , Source, OldArgs, Depends),
-	ClearingFor = TotalName,
-	(Functor = last, !, Args = [TotalName]; /* bit of a hack...since
-	    we use the total from the previous time step we don't need to
-	    worry about accessing elements that haven't yet been set, and not
-	    using made_at(...) should prevent it being removed as an idler */
-	Args = [made_at(TotalName, SourceContext)]),
-	(UsingDim == true;
-	    SourceRef = TotalRef),
-	append(SourceLoops, DestPath, SourceContext),
-	append([SourceLoops, NowBuilding, DestPath], ClearContextForm),
-	=([ClearContextForm, TotalRef, DestPath],
-		  [ClearContext, ClearRef, ClearPath]),
+	add_extra_dependencies(Exited, Source, OldArgs, Depends),
+	append(SourceLoops, DestPath, InterContext),
+	append([SourceLoops, NowBuilding, DestPath], ClearContext),
 
 	(UsingDim == true, !,
 	    Setups = [],
+	    Args = [],
 	    NewInters = OldInters;
 	((Functor = delay; Functor = make_inter), !,
 	    Clearing = [];
@@ -429,11 +414,12 @@ make_intermediates(
             Clearing = [make(initializing(TotalName), [on_reset], ClearContext,
                              0, [assign(ClearRef, InitVal)]),
                         make(cleared(TotalName), [initializing(TotalName)],
-                             ClearPath, 0, [])];
-        Clearing = [make(clearing(ClearingFor), [this_step(TotalName)],
+                             DestPath, 0, [])];
+        Clearing = [make(clearing(TotalName), [this_step(TotalName)],
 			 ClearContext, Step, [assign(ClearRef, InitVal)]),
-                  make(cleared(ClearingFor), [clearing(ClearingFor)],
-                       ClearPath, Step, [])]),
+                  make(cleared(TotalName), [clearing(TotalName)],
+                       DestPath, Step, [])]), /* probably dont need separate
+	clearing/cleared steps, made_for would work */
 	(Functor = last, !,
 	    /* we can update the saved value as soon as it has been used,
 	    but we need to wait for all the goals that might use it...started
@@ -444,16 +430,19 @@ make_intermediates(
 	    Setting = [make(lastvalue(TotalName), [lastvalue(Target)],
 			    WriteContext, Step, [assign(FillRef, IncrExpr)]),
 		       make(TotalName, [cleared(TotalName), time],
-			    DestPath, Step, [])];
+			    ClearContext, Step, [])];
 	(Functor = delay, !, SetTime=0; SetTime = Step),
-	Setting = [make(TotalName, [cleared(TotalName) | Depends],
-		       WriteContext, SetTime, [assign(FillRef, IncrExpr)])]),
+        Setting = [make(increment(TotalName), [cleared(TotalName) | Depends],
+                       WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
+                  make(TotalName, [increment(TotalName)],
+                       ClearContext, SetTime, [])]),
 	append([Clearing, Preps, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
-	merge_lists([instance(internal, inter(SourceContext, TotalRef, Target),
-			      UseSource, TotalName, Units-InterDims)],
-		    OldInters, NewInters));	  
+	Inter = instance(internal, inter(InterContext, _, BuildDims),
+			      UseSource, TotalName, Units-InterDims),
+	refer_inter(Inter, DestPath, Units, SourceContext, Args, SourceRef),
+	merge_lists([Inter], OldInters, NewInters));	  
 
 	/* third case: a numerical value. Usable in any context.  */
 	get_actual_sizes([Source],[SourceRef]), !,
@@ -654,6 +643,19 @@ dissociate(SubArgs, [later(Arg) | UseArgs]) :-
 	dissociate(Rest, UseArgs).
 dissociate(Args, Args).
 	
+refer_inter(instance(internal, inter(Context, _,_), Source, Name, Units-Dims),
+	    DestPath, Units, SourceContext, Args, SourceRef) :-
+	    (Source = last(_), !,
+		Args = [Name]; /* bit of a hack...since
+	    we use the total from the previous time step we don't need to
+	    worry about accessing elements that haven't yet been set, and not
+	    using made_at(...) should prevent it being removed as an idler */
+	    Args = [made_at(Name, Context)]),
+	    pointer_from(DestPath, SourcePtr),
+	    make_inds_for(Dims, SourceLoops, IntInds),
+	    append(SourceLoops, DestPath, SourceContext),
+	    SourceRef = arr(SourcePtr, Name, IntInds).
+	  
 swap_vars(switch(Take, Add), Tgt, Add, 0) :-
 	nonvar(Tgt), Tgt = Take.
 
@@ -996,14 +998,14 @@ do_once(_, init_time(N), ind_time(N), 0).
 a different value for each submodel instance in which it is called, and
 hence must be called in the destination context. Ind_time(_) is here cos
 in a variable membership submodel, instances are initialized at different
-times. last(_) similarly -- even if the args are the same the results are
+times. last(_) similarly? -- even if the args are the same the results are
 different if one is brand new and the other not! Some things like randoms
 and place_in will also individuate over makearray elements. */
 
 individuates(_, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
 	nonvar(Subexp),
-	member(Subexp, [last(_), channel_is(_), ind_time(_),
+	member(Subexp, [channel_is(_), ind_time(_),
 			index(_), place_in(_)]).
 
 random(_, Subexp, _, 0) :-

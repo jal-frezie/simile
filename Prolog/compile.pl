@@ -1530,7 +1530,7 @@ open_separately(Level) :-
 	loops(Level);
 	Level = sm(_,_,_, fm_loop(Inds)),
 	member(I, Inds),
-	nonvar(I).
+	\+ I = glob(_,_).
 
 generate_graph_handlers([], [], []).
 

@@ -1,4 +1,4 @@
-subtotals(Arr) --> [st]=makearray((if place_in(1)==1 then 0 else
+subtotals(Arr) --> [st]=makearray((if place_in(1)==1 then 0.0 else
 	element(sofar([st]),place_in(1)-1))+element(Arr,place_in(1)),
 	count(Arr)),[st].
 rankings(L) --> sum(makearray(if element(L,place_in(1))>=L then 1 else 0,
