@@ -223,7 +223,8 @@ make_intermediates(
 	associated or base models. BackSwap keeps track of this constraint.
 
 	Some elements of the param may need to be copied rather than unified */
-	Source = param(SourceRef, Units, SourceLoops, TermSwap, Wait), !,
+	copy_term(Source,
+		  param(SourceRef, Units, SourceLoops, TermSwap, Wait)), !,
 	    (SourceRef = arr(_, import(_, Away, _, Ptr, _, Ph, Var, _), _), !, 
 		(var(Away), !, /* external toplink, stub will find from arc */
 		    CommonContext = [],
@@ -808,13 +809,13 @@ make_choose_form([Elt | Elts], Ind, N, Ind==N?Elt:Later) :-
 	make_choose_form(Elts, Ind, M, Later).
 
 /* If the source is in submodels that the dest is not, this copies their loops
-(because if there are two refs to it the loops might be different for each */
+(because if there are two refs to it the loops might be different for each
 copy_extras(Source, Dest, Extras) :-
 	append(Spare, Common, Source),
 	suffix(Common, Dest), !,
 	copy_term(Spare, Extras).
 
-/* This determines what happens when arrays of different dimensions are
+This determines what happens when arrays of different dimensions are
 combined. Originally, each element of the shallower array was taken as an array
 itself to make it the same dimensionality as the deeper one. e.g.
 [1,2] + [[0,0],[0,0]] = [[1,1],[2,2]]

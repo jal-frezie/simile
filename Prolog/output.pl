@@ -11,8 +11,7 @@ normally possible so the Tk change features are not used; objects are
 changed only by deleting and redrawing them.  */
 
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
-	display_dialog/4, get_file_name/4, chop_list/2,
-	enable_text_editing_in/1, disable_text_editing_in/1, 
+	get_file_name/4, enable_text_editing_in/1, disable_text_editing_in/1, 
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
 	submodel/7, bowtie/6, 
 	flow/5, influence/5, ghost_link/5, relation/5, text/7, 
@@ -52,20 +51,6 @@ tk_cursor_in(Win, Cursor) :-
 tk_callback(Data) :-
 	safe_tcl_eval(['AttackGlobalVariable fromProlog {}', Data], _).
 	
-display_dialog(Caption, Classes, Valid_ones, Result) :-
-	bracketize(Classes, Class_list),
-	safe_tcl_eval([attribute, br(write(Caption)), Class_list,
-		      br(Valid_ones)], Retval),
-	(Retval = [],
-		Result = [];
-	chop_list(Retval, [Arg1, Arg2, Arg3]),
-		name(Class, Arg1),
-		name(Attribute, Arg2),
-		append(Arg3, ".", Term3),
-		on_exception(_, sicstus_read_from_chars(Term3, Value), 
-		    name(Value, Arg3)),
-		Result = [Class, Attribute, Value]).
-
 curly(P, Text) :-
 	append([123 | Text], [125], P),
 	curly_text(Text).

@@ -168,8 +168,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		[Eqn_st, Unit_st, Is_P_st,
 		 Table_st, Desc_st, Comment_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
-	member([Is_P, ParamsAllowed, EqnNeeded, MinmaxNeeded],
-	       [[-1,1,1,0], [0,1,1,0], [1,0,0,1], [2,0,0,0]]),
+	member([Is_P, ParamsAllowed, EqnNeeded],
+	       [[-1,1,1], [0,1,1], [1,0,0], [2,0,0]]),
 	(ParamsAllowed = 0, !,
 	    ParamWibble = "but parameter default values are not allowed to have input variables themselves.",
 	    UsableInputs = [];
@@ -180,11 +180,13 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	get_term(Unit_st, Units, UnitFormError)),
 	check_exp(Eqn_st, "Equation", UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
-	
+	(Is_P = 1, \+ Unit_st = "boolean", \+ EqnBase = boolean, !,
+	    MinMaxNeeded = 1;
+	MinMaxNeeded = 0),
 	check_exp(Min_st, "Min. value", UsableInputs, MinBase, _MinDims,
-		  MinmaxNeeded, IndxCount, MinParamList, Min, Min_term_error),
+		  MinMaxNeeded, IndxCount, MinParamList, Min, Min_term_error),
 	check_exp(Max_st, "Max. value", UsableInputs, MaxBase, _MaxDims,
-		  MinmaxNeeded, IndxCount, MaxParamList, Max,
+		  MinMaxNeeded, IndxCount, MaxParamList, Max,
 		  Max_term_error),
 
 	merge_lists(MinParamList, MaxParamList, LimitParamList),

@@ -427,16 +427,13 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 		(BaseName has_class_refinement min_val of Min, 
 		number(Min), !;
 		Min = Wee),
-		(BaseName has_class_refinement value of Def, 
-		number(Def), !;
-		Def = 0),
 		(BaseName has_class_refinement max_val of Max, 
 		number(Max), !;
 		Max = Muckle),
 		/* make a value lookup entry for each node with this value */
 		setof([NodeName, Type, Eval, CappedDims, 
 				NewPath, GraphPointer,
-				Caption, Min, Def, Max, Class, Name],
+				Caption, Min, Max, Class, Name],
 			
 		     (NodeName = VisName;
 			 find_ghosts(VisName, NodeName)),
@@ -698,7 +695,7 @@ make_arg_string(L, [Arg | Rest], Arg_string) :-
 		append(String, [32 | Tail], Arg_string)), !. /* green */
 
 build_constant(Language, [String, Type, Eval, Dims, Array, GraphPtr, Caption,
-			  Min, Def, Max, Class, _Comment], Chars) :-
+			  Min, Max, Class, _Comment], Chars) :-
 	make_list_chars(Language, Dims, DimsString),
 	make_list_chars(Language, Array, ArrayString),
 	make_constant_string(Language, String, Quoted),
@@ -708,7 +705,7 @@ build_constant(Language, [String, Type, Eval, Dims, Array, GraphPtr, Caption,
 	name(Arg2, DimsString),
 	name(Arg3, ArrayString),
 	make_list_chars(Language, [Arg1, Type, Eval, Arg2, Arg3, GraphPtr,
-				   Min, Def, Max, Class, Arg5], Chars).
+				   Min, Max, Class, Arg5], Chars).
 /* 	render(Language, comment, Comment, 0, [CommentWd]),
 	name(CommentWd, CommentStr),
 Comment string removed because it interferes with list mode

@@ -301,18 +301,6 @@ proc GetMinValue { node } {
     }
 }
 
-proc GetDefValue { node } {
-    global model_id
-    if {![info exists model_id]} {
-	WarnNoProgram
-    }	
-    if {$model_id} {
-	return [getvalue $model_id $node 7]
-    } else {
-	lindex [getinfo $node] 6
-    }
-}
-
 proc GetMaxValue { node } {
     global model_id
     if {![info exists model_id]} {
@@ -466,16 +454,19 @@ proc WarnNoData {} {
 # the helpers
 
 proc collect {tgt node count args} {
-    global sliderVals checkStates
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
     if {[string match FILE [GetModelEval $node]]} {
 	FileCollect ::AME_model<>::$tgt $node $args
     } else {
 	set sub [join [concat $node $args] ,]
 	if {[string match FLAG [GetModelType $node]]} {
-	    set ::AME_model<>::$tgt $checkStates($sub)
+	    upvar #0 checkStates inputSrc
 	} else {
-	    set ::AME_model<>::$tgt $sliderVals($sub)
+	    upvar #0 sliderVals inputSrc
+	}
+# Check that input source exists, it will not if model is being initialized
+	if {[info exists inputSrc($sub)]} {
+	    set ::AME_model<>::$tgt $inputSrc($sub)
 	}
     }
 }

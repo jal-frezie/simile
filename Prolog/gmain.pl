@@ -146,17 +146,15 @@ portray(sm(Model, _,_,_)) :-
 runtime_entry(start) :-
 	main.
 
-version_is(2.92).
+:- dynamic(version_is/1).
 
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
-	state:get_style(New_style),
 	current_prolog_flag(prolog_name, Vname),
 	current_prolog_flag(prolog_version, Vnum),
 	append_atoms([Vname, ' ', Vnum], PlogV),
-	version_is(V),
         nl, write(ready), nl,
 	/* tcl files are sourced into the startup script rather
 	than loaded by Prolog because they contain references
@@ -168,8 +166,10 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)), */
-	tcl_eval(['FilterErrors ControlDraw', V, br(PlogV)], TempStr),
-	tcl_eval(['FilterErrors InitStyle', New_style], OpenStr),
+	tcl_eval(['FilterErrors ControlDraw', br(PlogV)], EnvVars),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
+	retractall(version_is(_)),
+	assert(version_is(VStr)),
 
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),
@@ -193,6 +193,7 @@ main :-
 	backup:initialize_ring,
 	state:initialize_phase,
 	name(TempDir, TempStr),
+	backup:retractall(use_temp_dir(_)),
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
 	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel)),

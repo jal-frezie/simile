@@ -56,7 +56,6 @@ public:
   int path[32];
   int graph;
   double min;
-  double def;
   double max;
   int compclass;
   char caption[256];

@@ -2,148 +2,9 @@
 # tk_bisque
 # No, it's horrible...
 
-# First few procedures in here are utilities used by both the helper applications
-# and the AME interface: put these in a new file.
+# First few procedures in here are utilities used by both the 
+# helper applications and the AME interface: put these in a new file.
 
-#$Log: runmodel.tcl,v $
-#Revision 1.14  2002/07/26 15:41:23  jaspert
-#Fixed some ghost-related bugs and some unwieldy generated Tcl code
-#(NB: You need the latest Prolog saved state or executable to go with this!)
-#
-#Revision 1.13  2002/07/22 21:23:09  jaspert
-#Made popups easier
-#
-#Revision 1.12  2002/07/20 22:12:21  jaspert
-#pipe fiddling
-#
-#Revision 1.11  2002/07/18 16:58:48  jaspert
-#Changes to eqn dialogue box
-#
-#Revision 1.10  2002/07/17 10:31:24  jaspert
-#Fixed some popup problems
-#
-#Revision 1.9  2002/07/15 16:24:08  jaspert
-#Important change here is GNU prolog compatibility
-#and the addition of the pipe interface.
-#
-#Revision 1.8  2002/06/20 17:12:47  jaspert
-#Prolog changes relating to GNU prolog port
-#Tcl changes for usability in tcltk 8.3
-#
-#Revision 1.7  2002/06/18 15:30:04  jaspert
-#Moved macro definitions to Functions/macros.pl
-#Added user defined procedures: definitions in Functions/defns.pl
-#Code in Functions/procs.tcl and .cpp
-#
-#Revision 1.6  2002/06/13 14:14:04  jaspert
-#Changes to store whether the desktop window is fullscreen and start again in
-#the same mode (only works in Windows -- recompile ame_cmx.cpp before using)
-#
-#Revision 1.5  2002/06/10 17:43:58  jaspert
-#
-#CV: problem with spurious popups resulting from the 'snap' effect
-#added in 2.9 (runmodel.tcl toolbox.tcl)
-#
-#Fixed an error that appeared if a popup comment containing an unmatched quote
-#got elided (runmodel.tcl)
-#
-#New implementation of rollovers -- Equations can now include the
-#'sofar(x)' function, which means 'make sure x is being built in the
-#current loop, and hope the value from x I am accessing is already
-#built at this point'. So for instance to get an array of Fibonacci
-#numbers in a single time step you could say:
-#makearray(if place_in(1)<=2 then 1 else
-#    sofar(element(prev(0),place_in(1)-2)+element(prev(0),place_in(1)-1)),20)
-# ----------------------------------------------------------------------
-#
-#Revision 1.4  2002/05/31 16:08:20  jaspert
-#*** empty log message ***
-#
-#Revision 1.3  2002/05/31 09:53:31  jaspert
-#Changed GetClickedObj to pick closest obj up to a certain distance
-#	--Jasper
-#
-#Revision 1.2  2002/05/30 16:17:09  jaspert
-#*** empty log message ***
-#
-#Revision 1.40  2002-05-04 15:43:46+01  jat
-#Supports separate update/eval procedures in model executable
-#Revision 1.39  2002-05-03 15:43:46+01  jmm
-#Make sure FileParamDialogue is on above mre:
-#proc FileParamDialogue calls raise .fpdialogue
-#proc start_run raises .mre if [UsingBLT]
-#
-#Revision 1.37  2002-05-02 07:12:45+01  jmm
-#Replaced (proc ShiftDll) $Name:  $AddLoc with ${Name}$AddLoc s RCS and possibly CVS
-#won't substitute the $Name:  $ with the Symbolic name of the revision
-#Revision 1.38  2002-05-02 07:16:30+01  jmm
-#Correct RCS directive #$Log: runmodel.tcl,v $
-#Correct RCS directive #Revision 1.14  2002/07/26 15:41:23  jaspert
-#Correct RCS directive #Fixed some ghost-related bugs and some unwieldy generated Tcl code
-#Correct RCS directive #(NB: You need the latest Prolog saved state or executable to go with this!)
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.13  2002/07/22 21:23:09  jaspert
-#Correct RCS directive #Made popups easier
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.12  2002/07/20 22:12:21  jaspert
-#Correct RCS directive #pipe fiddling
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.11  2002/07/18 16:58:48  jaspert
-#Correct RCS directive #Changes to eqn dialogue box
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.10  2002/07/17 10:31:24  jaspert
-#Correct RCS directive #Fixed some popup problems
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.9  2002/07/15 16:24:08  jaspert
-#Correct RCS directive #Important change here is GNU prolog compatibility
-#Correct RCS directive #and the addition of the pipe interface.
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.8  2002/06/20 17:12:47  jaspert
-#Correct RCS directive #Prolog changes relating to GNU prolog port
-#Correct RCS directive #Tcl changes for usability in tcltk 8.3
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.7  2002/06/18 15:30:04  jaspert
-#Correct RCS directive #Moved macro definitions to Functions/macros.pl
-#Correct RCS directive #Added user defined procedures: definitions in Functions/defns.pl
-#Correct RCS directive #Code in Functions/procs.tcl and .cpp
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.6  2002/06/13 14:14:04  jaspert
-#Correct RCS directive #Changes to store whether the desktop window is fullscreen and start again in
-#Correct RCS directive #the same mode (only works in Windows -- recompile ame_cmx.cpp before using)
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.5  2002/06/10 17:43:58  jaspert
-#Correct RCS directive #
-#Correct RCS directive #CV: problem with spurious popups resulting from the 'snap' effect
-#Correct RCS directive #added in 2.9 (runmodel.tcl toolbox.tcl)
-#Correct RCS directive #
-#Correct RCS directive #Fixed an error that appeared if a popup comment containing an unmatched quote
-#Correct RCS directive #got elided (runmodel.tcl)
-#Correct RCS directive #
-#Correct RCS directive #New implementation of rollovers -- Equations can now include the
-#Correct RCS directive #'sofar(x)' function, which means 'make sure x is being built in the
-#Correct RCS directive #current loop, and hope the value from x I am accessing is already
-#Correct RCS directive #built at this point'. So for instance to get an array of Fibonacci
-#Correct RCS directive #numbers in a single time step you could say:
-#Correct RCS directive #makearray(if place_in(1)<=2 then 1 else
-#Correct RCS directive #    sofar(element(prev(0),place_in(1)-2)+element(prev(0),place_in(1)-1)),20)
-#Correct RCS directive # ----------------------------------------------------------------------
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.4  2002/05/31 16:08:20  jaspert
-#Correct RCS directive #*** empty log message ***
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.3  2002/05/31 09:53:31  jaspert
-#Correct RCS directive #Changed GetClickedObj to pick closest obj up to a certain distance
-#Correct RCS directive #	--Jasper
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.2  2002/05/30 16:17:09  jaspert
-#Correct RCS directive #*** empty log message ***
-#Correct RCS directive #
-#Correct RCS directive #Revision 1.39  2002-05-03 15:43:46+01  jmm
-#Correct RCS directive #Make sure FileParamDialogue is on above mre:
-#Correct RCS directive #proc FileParamDialogue calls raise .fpdialogue
-#Correct RCS directive #proc start_run raises .mre if [UsingBLT]
-#Correct RCS directive # (from $log$)
-#
 
 source ../Run/graphs.tcl
 source ../Run/utility.tcl
@@ -382,7 +243,7 @@ proc AdjustWidth {winId object factor} {
 	$winId dtag $object $tag
 	set width [expr $oldWidth*$factor]
 	$winId addtag realwidth($width) withtag $object
-	return $width
+	return $width
 
 
 
@@ -647,6 +508,8 @@ proc RunDialog {canvas} {
     ${defHelper}::SetMode $helperId reset
     set runState(helperId) $helperId
     
+    MakeSlidersForInputs
+
     if {[PrefValue custom(helperManager) helperManager]} {
         CreateHelperWindow $helperTable(VariableList) "Variables"; # JMM
     }
@@ -660,13 +523,24 @@ proc RunDialog {canvas} {
 # switch and switchd are binary inputs so should be set by
 # toggles rather than sliders. Later...
 
-proc MakeSlidersForInputs { } {
-    global helperTable
+proc UnMakeSlidersForInputs { } {
+    global helperTable checkStates sliderVals
     # puts $inlist
     if {[info exists helperTable(autosliders)]} {
 	kill_helper_window $helperTable(autosliders)
 	unset helperTable(autosliders)
     }
+
+    if {[info exists checkStates]} {
+	unset checkStates
+    }
+    if {[info exists sliderVals]} {
+	unset sliderVals
+    }
+}
+
+proc MakeSlidersForInputs { } {
+    global helperTable
     set helperTable(autosliders) [NewHelperWindow $helperTable(SliderControl) \
 	    "Sliders for inputs"]
     $helperTable(SliderControl)::initialize $helperTable(autosliders)
@@ -907,24 +781,6 @@ proc UpdateTimes { current left } {
 	set sendvars(execTime) $left
 }
 
-proc InitStyle {style} {
-    global modelstyle env
-    switch $style {
-        generic {
-            set modelstyle "Generic"}
-        sd {
-            set modelstyle "System Dynamics"}
-        eng {
-            set modelstyle "Engineering"}
-    }
-
-# Pass Prolog the environment variable set to the initial model by the
-# startup script
-    if {[info exists env(OPEN_MODEL)]} {
-        return $env(OPEN_MODEL)
-    }
-}
-
 # After the initial model has been loaded we don't want to allow the window
 # to change size when something different is loaded
 # This is also a convenient time at which to hide the console
@@ -1108,7 +964,12 @@ proc start_run {lang winId} {
     }
     
     set runState(reloadParams) 1 
-    MakeSlidersForInputs
+
+# MakeSlidersForInputs is currently done after initializing the
+# model, so default values calculated from eqns can be loaded to the
+# sliders. Here we must clear any old input tool values so they are not used.
+
+    UnMakeSlidersForInputs
 }
 
 proc FileParamDialogue {mustShow parent} {
@@ -1694,7 +1555,7 @@ proc compile_c {workingDir modelPath} {
 
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
-# ShowMessage debug info "TCL is $TCL" ok
+#ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     scan [info tclversion] {%d.%d} MAJ MIN
     switch $tcl_platform(platform) {
 	unix {
@@ -1767,8 +1628,15 @@ proc compile_c {workingDir modelPath} {
 proc build_c_stub {targetDir make_new_stub} {
     global tcl_platform env
 
-    set old_dir [pwd]
     scan [info tclversion] {%d.%d} MAJ MIN
+    set stubPkg ame_dll_${MAJ}_${MIN}
+    if {!$make_new_stub} {
+	if {![catch {package require $stubPkg $env(SIMILE_VERSION)} dummy]} {
+	    return
+	}
+    }
+
+    set old_dir [pwd]
     cd $targetDir
     set TCL [file dirname [file dirname [info library]]]
     if {[info exists env(TCL_COMPILER)]} {
@@ -1784,36 +1652,33 @@ proc build_c_stub {targetDir make_new_stub} {
 # some people find it easier to build the stub from exec_only.tcl, which gives
 # them error messages to the console but does not set LD_LIBRARY_PATH.
 	    set TARGET $targetDir/libame_dll$MAJ.$MIN.so
-	    if {$make_new_stub || ![file exists $TARGET]} {
-		exec g++ -c -O -fPIC -I$targetDir -I$TCL/include ./ame_cmx.cpp
-		exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN
-	    }
+	    exec g++ -c -O -fPIC -I$targetDir -I$TCL/include ./ame_cmx.cpp
+	    exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN
 	}
 	windows {
 	    set TARGET $targetDir/ame_dll$MAJ$MIN.dll
-	    if {$make_new_stub || ![file exists $TARGET]} {
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
 # it is running under Prolog. However it seems to work OK in WinNT.
 
-		if {$make_new_stub != 1} {
-		    set dll tcl${MAJ}${MIN}
+	    if {$make_new_stub != 1} {
+		set dll tcl${MAJ}${MIN}
 #ShowMessage debug info "TCL is $TCL" ok
-		    exec gcc -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
-		    exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
-			    obj.o -L. -l$dll
+		exec gcc -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
+		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
+		    obj.o -L. -l$dll
 #		    file delete junk.tmp
-		    exec dlltool --dllname $TARGET --base-file base.tmp \
-			    --output-exp exp.exp --def stub.def
-		    exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
-		    file delete exp.exp
+		exec dlltool --dllname $TARGET --base-file base.tmp \
+		    --output-exp exp.exp --def stub.def
+		exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
+		file delete exp.exp
 
 # Method using command line calls to MSVC 4.0 or later -- works well
-		} else {
-		    set TOOLS32 [file dirname $env(MSVCDIR)/any]
-		    exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 -I$targetDir -I$TOOLS32/include -I$TCL/include ./ame_cmx.cpp
-		    exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET $TCL/lib/tcl${MAJ}${MIN}${COMPILER}.lib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
-		}
+	    } else {
+		set TOOLS32 [file dirname $env(MSVCDIR)/any]
+		exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 -I$targetDir -I$TOOLS32/include -I$TCL/include ./ame_cmx.cpp
+		exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET $TCL/lib/tcl${MAJ}${MIN}${COMPILER}.lib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
 	    }
+
 # Also if in Windows we need to prepare a way for gcc to link the
 # tcl dll into the model program. The MSVC compiler is used to
 # build the stub (for now) because it makes life easier, but users
@@ -1826,7 +1691,8 @@ proc build_c_stub {targetDir make_new_stub} {
 #		--output-lib libame_dll.a
 	}
     }
-    load $TARGET
+    pkg_mkIndex $targetDir
+    package require $stubPkg $env(SIMILE_VERSION)
     cd $old_dir
 }
 

@@ -36,6 +36,8 @@ writeq_to_codes(TermStr, Term) :-
 
 :- dynamic(is_interpreter/1).
 
+:- dynamic(version_is/1).
+
 set_interpreter(Interp) :-
 	assert(is_interpreter(Interp)).
 
@@ -46,15 +48,11 @@ tcl_eval(Cmd, Result) :-
 	is_interpreter(Interp),
 	tcl_eval(Interp, Cmd, Result).
 
-version_is(2.92).
-
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
-	state:get_style(New_style),
 	prolog_flag(version, Vnum),
-	version_is(V),
         tk_new([], Interp),
 	on_exception(ErrorFunction, 
 		     tcl_eval(Interp, [source, '../Run/toolbox.tcl'], _),
@@ -63,15 +61,18 @@ main :-
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)),
-	tcl_eval(Interp, ['FilterErrors ControlDraw', V, br(Vnum)], TempStr),
-	tcl_eval(Interp, ['FilterErrors InitStyle', New_style], OpenStr),
+	tcl_eval(Interp, ['FilterErrors ControlDraw', br(Vnum)], EnvVars),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr]),
 	set_interpreter(Interp),
+	retractall(version_is(_)),
+	assert(version_is(VStr)),
 
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),
 	dialogue:pass_functions(LibFuns),
 	make_desktop(Desktop, Canvas),
 	name(TempDir, TempStr),
+	backup:retractall(use_temp_dir(_)),
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
 	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel)),

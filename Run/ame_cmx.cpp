@@ -16,7 +16,6 @@ them to be executed etc by Tcl commands. */
 #define	SETGRAPH	4
 #define	GETCAPTION	5
 #define	GETMIN          6
-#define	GETDEF          7
 #define	GETMAX	        8
 #define GETPHASES       9
 #define GETPATH        10
@@ -184,6 +183,7 @@ public:
   int* UpTree;
 };
 
+char simileVersion[] = "2.93";
 int connCount;
 connectRecord* connectData;
 Tcl_Obj* connectInfoObject;
@@ -249,8 +249,13 @@ public:
     getversion = (getversion_type *)FIND_FUNCTION(handle, "get_version");
     if (getversion == NULL) {
       UNLOAD_DLL(handle);
-      throw DllLossage("get version of", fileName, WHAT_WENT_WRONG());
+      throw DllLossage("get version number of", fileName, WHAT_WENT_WRONG());
     }
+    if ((*getversion)() < atof(simileVersion)-0.00001) {
+      UNLOAD_DLL(handle);
+      throw DllLossage("find current version of", fileName, WHAT_WENT_WRONG());
+    }
+
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
     updatemodel = (updatemodel_type *)FIND_FUNCTION(handle, "do_updatemodel");
@@ -576,10 +581,6 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     Tcl_SetDoubleObj(resultPtr, data_line->min);
     return TCL_OK;
 
-  case GETDEF:
-    Tcl_SetDoubleObj(resultPtr, data_line->def);
-    return TCL_OK;
-
   case GETMAX:
     Tcl_SetDoubleObj(resultPtr, data_line->max);
     return TCL_OK;
@@ -723,14 +724,16 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
     } /* not sure about those -- don't I need the whole path? */
     if (data_line->datatype == FLAG) {
       valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("checkStates", -1),
-	Tcl_NewStringObj(caption, -1), TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
+	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
     } else {
       valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("sliderVals", -1),
-	Tcl_NewStringObj(caption, -1), TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
+	Tcl_NewStringObj(caption, -1), TCL_GLOBAL_ONLY);
+    /* adding TCL_LEAVE_ERR_MSG above gives user error if variable does not 
+       exist -- though for now we want this to do nothing */
     }
   }
-  if (strlen(Tcl_GetStringResult(globInterp))) {
-    serviceError = TCL_ERROR;
+  if (!valPtr) {
+    serviceError = TCL_OK;
   } else {
     switch (data_line->datatype) {
     case FLAG:
@@ -1446,7 +1449,8 @@ extern "C"
 __declspec( dllexport )
 #endif
 int Ame_dll_Init(Tcl_Interp *interp) {
-
+  int maj, min;
+  char pkgName[16];
   globInterp = interp;
   Tcl_CreateObjCommand(interp, "maximize_fg_win", maximizeWinCmd,
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
@@ -1494,6 +1498,7 @@ int Ame_dll_Init(Tcl_Interp *interp) {
     Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
-    return Tcl_PkgProvide(interp, "ame_dll", "1.0");
-
+    Tcl_GetVersion(&maj, &min, NULL, NULL);
+    sprintf(pkgName, "ame_dll_%d_%d", maj, min);
+    return Tcl_PkgProvide(interp, pkgName, simileVersion);
 }

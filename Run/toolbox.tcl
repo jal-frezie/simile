@@ -3,7 +3,7 @@
 # Just to give you an idea of (a) the sort of thing you can do in tcl,
 # and (b) my preferred programming style, check this out....
 
-lappend auto_path [pwd]/../System/library/Extras
+lappend auto_path [pwd]/../Run [pwd]/../System/library/Extras
 #tk_messageBox -message $auto_path
 
 source ../Run/shapes.tcl
@@ -29,14 +29,14 @@ proc AttackGlobalVariable {array elt val} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
-proc ControlDraw {simileVersion prologVersion} {
+proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo
     # geometry XY help message JMM
     #            "Position of Run Control when not using the Run Time \
     #                    Environment in the form +/-x+/-y." \
     
     wm withdraw .
-    set sendvars(simV) $simileVersion
+    set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
 
     # no longer have a separate floating toolbar
@@ -130,8 +130,17 @@ proc ControlDraw {simileVersion prologVersion} {
         ResetLooks $nodeType
     }
     CustomizeLooks
-# Take the opportunity to pass the temp directory name to Prolog
-    return [brainwash $env(SIMTMPDIR)]
+
+# Bogosity alert -- setting an env var to {} causes it to stay 
+# (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
+# would do here...
+    if {[info exists env(OPEN_MODEL)]} {
+	set openModel $env(OPEN_MODEL)
+    } else {
+	set openModel {}
+    }
+# Take the opportunity to pass the temp directory name etc to Prolog
+    return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] $openModel]
 }
 
 proc byebye {winId} {
@@ -166,6 +175,7 @@ proc ZapWindow { fullName } {
 	close $cacheStream
     } 
     destroy ${target}top
+
     destroy $target
     unset target
 }
@@ -696,7 +706,7 @@ proc WindowDetail {window category level redraw} {
 #	    if {[string match $category $cat]} {
 #		set hiding 0
 #	    } elseif {$hiding && $rads($cat)>$level || \
-#		    !$hiding && $rads($cat)<$level} {
+#		    !$hiding && $rads($cat)<$level} {
 #		set rads($cat) $level
 #		MenuSelect $window window \[detail,$cat,$level\]
 #	    }
@@ -709,6 +719,7 @@ proc PostMenu {canvas x y} {
 }
 
 # This patches a bug with error reporting in Tk 8.0. Also puts up a
+
 # feedback window allowing progress reports on long activities.
 
 proc MenuSelect { window button item } {
@@ -775,6 +786,7 @@ proc PrintNow {winId toDo} {
 #	ZoomImage $winId all $detail $detail
 #	ide_print_canvas $winId
 #	ZoomImage $winId all [expr 1.0/$detail] [expr 1.0/$detail]
+
 #	$winId move all $bl $bt
 #   } else {
     set tempPSFile $env(SIMTMPDIR)/temp.ps
@@ -1290,6 +1302,7 @@ proc UpdateDoMenu {canId un re} {
 			-state [ChooseText $un normal disabled]
 	${winId}top.edit entryconfigure Redo \
 			-state [ChooseText $re normal disabled]
+
 }
 
 proc InterpMenu {winId state} {

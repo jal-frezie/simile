@@ -216,7 +216,8 @@ bits and pieces */
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	check_functions(EvaluateForm, UpdateForm, Phases, SortedForm),
 
-	user:version_is(V),
+	user:version_is(VStr),
+	name(V, VStr),
 	render(Language, variable_declaration,
 	       [real, simile_version, [], V], 0, [VersionDec]),
 	render(Language, variable_declaration,
@@ -932,9 +933,10 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 				[update_submodel(Node, arr(Ptr, Dest, []),
 						   BuiltWith)])]);
 	    /* Only make assignments for functions, for now, and
-	    Do not make an assignment if we are expecting one from outside*/
+	    Do not make an assignment if we are expecting one on init/reset
+	    from outside*/
 	(is_parameter(Node, Is_P),
-	    0 >= Is_P,
+	    1 >= Is_P,
 	    (member(AssignType, [init_function, function]),
 		Actions = Assignments,
 		Updates = [],
@@ -950,11 +952,15 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 				 AllInters),
 
 	/* on_reset is a special condition that makes sure compartment
-	    initializations are done in phase 0 rather than -1 */
+	    initializations are done in step 0 rather than -1 */
 	(AssignType = init_function, !,
 	    UseStep = 0,
 	    UseList = [on_reset | RefList];
-	UseStep = Step,
+	/* input parameters are set to their default values on model
+	    initialization only */
+	(Is_P = 1, !,
+	    UseStep = -1;
+	UseStep = Step),
 	    UseList = RefList),
 	connect_params([make(Dest, UseList, Path, UseStep, Expr) | Setups],
 		      Dest, AllInters, Actions, Inters);

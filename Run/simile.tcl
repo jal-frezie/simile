@@ -26,6 +26,7 @@ regsub -all /\./ [GetRealFile $scriptCmd] / scriptCmd
 
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
+set env(SIMILE_VERSION) 2.93
 
 switch $tcl_platform(platform) {
     windows {
@@ -43,7 +44,7 @@ switch $tcl_platform(platform) {
 	    set env(MSVCDIR) $env(MSDEVDIR)
 	} else {
 	    # guess the location
-	    set env(MSDEVDIR) c:/msdev
+	    set env(MSDEVDIR) d:/progra~1/micros~1/vc98
 	    set env(MSVCDIR) $env(MSDEVDIR)
 	}
 
@@ -69,7 +70,7 @@ splash read $SIMILE_PATH/Images/splash.gif
 pack [canvas .c -width 640 -height 480]
 .c create image 320 240 -image splash
 # .c create text 450.0 240.0 -font {-weight bold -family helvetica -size 30} -text SIMILE
-.c create text 450.0 273.0 -font {-weight bold -family helvetica -size 16} -text {Version 2.92}
+.c create text 450.0 273.0 -font {-weight bold -family helvetica -size 16} -text "Version $env(SIMILE_VERSION)"
 .c create text 450.0 340.0 -font {-family helvetica -size 12} -text "© 2002 Simulistics Ltd."
 
 # pack [label .l -image splash]
@@ -109,7 +110,7 @@ while {[file exists $tester]} {
 set env(SIMTMPDIR) $tester
 file mkdir $env(SIMTMPDIR)/.lock
 
-# If there is an arg, it is the model to start with
+# If there is an arg, it is the model to start with. 
 if {$argc} {
     set arg1 [lindex $argv 0]
     if {[string match relative [file pathtype $arg1]]} {
@@ -128,7 +129,8 @@ cd $SIMILE_PATH/Run
 
 # tk_messageBox -title debug -icon info \
 #	-message "TCL library is [info library]\n \
-#	Path is $env(PATH)" -type ok
+#	Temp dir is is $env(SIMTMPDIR)\n \
+#	Model is $env(OPEN_MODEL)" -type ok
 
 # this runs a program which starts AME from a saved state
 # -- must be concurrent because script causes Windows problems if
