@@ -8,8 +8,8 @@ xmlns="http://www.w3.org/TR/REC-html40">
 <meta name=ProgId content=Word.Document>
 <meta name=Generator content="Microsoft Word 10">
 <meta name=Originator content="Microsoft Word 10">
-<link rel=File-List href="control_files/filelist.xml">
-<link rel=Edit-Time-Data href="control_files/editdata.mso">
+<link rel=File-List href="spiro_files/filelist.xml">
+<link rel=Edit-Time-Data href="spiro_files/editdata.mso">
 <!--[if !mso]>
 <style>
 v\:* {behavior:url(#default#VML);}
@@ -18,23 +18,23 @@ w\:* {behavior:url(#default#VML);}
 .shape {behavior:url(#default#VML);}
 </style>
 <![endif]-->
-<title>Example models : Process control</title>
+<title>Example models : Spirograph</title>
 <!--[if gte mso 9]><xml>
  <o:DocumentProperties>
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>6</o:Revision>
-  <o:TotalTime>7</o:TotalTime>
-  <o:Created>2002-08-05T16:18:00Z</o:Created>
-  <o:LastSaved>2003-01-23T15:50:00Z</o:LastSaved>
+  <o:Revision>7</o:Revision>
+  <o:TotalTime>90</o:TotalTime>
+  <o:Created>2003-01-23T15:03:00Z</o:Created>
+  <o:LastSaved>2003-01-23T15:51:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>124</o:Words>
-  <o:Characters>712</o:Characters>
+  <o:Words>159</o:Words>
+  <o:Characters>909</o:Characters>
   <o:Company>Simulistics Ltd.</o:Company>
-  <o:Lines>5</o:Lines>
-  <o:Paragraphs>1</o:Paragraphs>
-  <o:CharactersWithSpaces>835</o:CharactersWithSpaces>
+  <o:Lines>7</o:Lines>
+  <o:Paragraphs>2</o:Paragraphs>
+  <o:CharactersWithSpaces>1066</o:CharactersWithSpaces>
   <o:Version>10.4219</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
@@ -140,6 +140,66 @@ a:visited, span.MsoHyperlinkFollowed
 	mso-paper-source:0;}
 div.Section1
 	{page:Section1;}
+ /* List Definitions */
+ @list l0
+	{mso-list-id:797797152;
+	mso-list-template-ids:-106167278;}
+@list l0:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	mso-ansi-font-size:10.0pt;
+	font-family:Symbol;}
+@list l1
+	{mso-list-id:1191341065;
+	mso-list-type:hybrid;
+	mso-list-template-ids:-1165229484 1180714332 67698691 67698693 67698689 67698691 67698693 67698689 67698691 67698693;}
+@list l1:level1
+	{mso-level-number-format:bullet;
+	mso-level-text:\F0B7;
+	mso-level-tab-stop:36.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;
+	font-family:Symbol;
+	color:windowtext;}
+@list l1:level2
+	{mso-level-tab-stop:72.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level3
+	{mso-level-tab-stop:108.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level4
+	{mso-level-tab-stop:144.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level5
+	{mso-level-tab-stop:180.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level6
+	{mso-level-tab-stop:216.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level7
+	{mso-level-tab-stop:252.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level8
+	{mso-level-tab-stop:288.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+@list l1:level9
+	{mso-level-tab-stop:324.0pt;
+	mso-level-number-position:left;
+	text-indent:-18.0pt;}
+ol
+	{margin-bottom:0cm;}
+ul
+	{margin-bottom:0cm;}
 -->
 </style>
 <!--[if gte mso 10]>
@@ -170,17 +230,19 @@ div.Section1
 
 <div class=Section1>
 
-<h1><span lang=EN-GB>Process Control</span></h1>
+<h1><span lang=EN-GB>Spirograph</span></h1>
 
-<p class=MsoNormal><span lang=EN-GB>This model simulates the behaviour of a
-widely-used industrial PID controller.<span style='mso-spacerun:yes'>  </span>A
-gas burner is set to maintain the temperature of a water bath at a pre-set
-level.</span></p>
+<p class=MsoNormal><span lang=EN-GB>A novelty model, this reproduces the
+Spirograph’s ability to draw complex snowflake-like pictures.<span
+style='mso-spacerun:yes'>  </span>By varying the mechanical settings of the
+gears holding the pen, a vast variety of repeating patterns can be produced.<span
+style='mso-spacerun:yes'>  </span>In this model, there is no risk of tearing
+the paper.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><a
-href="control.sml"><!--[if gte vml 1]><v:shapetype id="_x0000_t75" coordsize="21600,21600"
+href="spiro.sml"><!--[if gte vml 1]><v:shapetype id="_x0000_t75" coordsize="21600,21600"
  o:spt="75" o:preferrelative="t" path="m@4@5l@4@11@9@11@9@5xe" filled="f"
  stroked="f">
  <v:stroke joinstyle="miter"/>
@@ -202,30 +264,51 @@ href="control.sml"><!--[if gte vml 1]><v:shapetype id="_x0000_t75" coordsize="21
  <o:lock v:ext="edit" aspectratio="t"/>
 </v:shapetype><v:shape id="_x0000_i1025" type="#_x0000_t75" style='width:24pt;
  height:24pt'>
- <v:imagedata src="control_files/image001.gif" o:title="Simile%20Icon"/>
+ <v:imagedata src="spiro_files/image001.gif" o:title="Simile Icon"/>
 </v:shape><![endif]--><![if !vml]><img border=0 width=32 height=32
-src="control_files/image001.gif" v:shapes="_x0000_i1025"><![endif]></a></span></p>
+src="spiro_files/image001.gif" v:shapes="_x0000_i1025"><![endif]></a></span></p>
 
 <p class=MsoNormal align=center style='text-align:center'><span lang=EN-GB><a
-href="control.sml">Process control</a><span class=MsoHyperlink><o:p></o:p></span></span></p>
+href="spiro.sml">Spirograph</a><span class=MsoHyperlink><o:p></o:p></span></span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <h3><span lang=EN-GB>Variation</span></h3>
 
-<p class=MsoNormal><span lang=EN-GB>Experiment with tuning the control, by
-varying the P, Ti, and Td constants.<span style='mso-spacerun:yes'> 
-</span>These are all controlled by sliders in the run-time environment
-window.<span style='mso-spacerun:yes'>  </span>A smaller Ti inclines the controller
-to over-compensate for errors in the process measurement.<span
-style='mso-spacerun:yes'>  </span>Note the wild swings that result.</span></p>
+<p class=MsoNormal><span lang=EN-GB>Experiment with different “Ring”, “Wheel”
+and “Hole” settings, using the sliders on the “Input sliders” tab.</span><span
+lang=EN style='mso-ansi-language:EN'><span style='mso-spacerun:yes'> 
+</span>These variables are:<o:p></o:p></span></p>
+
+<p class=MsoNormal><span lang=EN style='mso-ansi-language:EN'><o:p>&nbsp;</o:p></span></p>
+
+<ul style='margin-top:0cm' type=disc>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN style='mso-ansi-language:EN'>Ring = number of teeth on inside of
+     outer ring</span></li>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN style='mso-ansi-language:EN'>Wheel = number of teeth on gear that
+     rolls round inside</span></li>
+ <li class=MsoNormal style='mso-list:l1 level1 lfo3;tab-stops:list 36.0pt'><span
+     lang=EN style='mso-ansi-language:EN'>Hole = approx distance of pen from
+     edge of gear</span></li>
+</ul>
+
+<p class=MsoNormal><span lang=EN style='mso-ansi-language:EN'><o:p>&nbsp;</o:p></span></p>
+
+<p class=MsoNormal><span lang=EN style='mso-ansi-language:EN'>For more details
+on the spirograph, please see <a
+href="http://www.yesterdayland.com/popopedia/shows/toys/ty1379.php"
+target="_blank">http://www.yesterdayland.com/popopedia/shows/toys/ty1379.php</a>.<span
+style='mso-spacerun:yes'>  </span></span></p>
 
 <h3><span lang=EN-GB>Visualisation</span></h3>
 
 <p class=MsoNormal><span lang=EN-GB>A suitable configuration of visualisation
-tools can be loaded from the file “control.shf”.<span
-style='mso-spacerun:yes'>  </span>The plotter provides a convenient
-multiple-variable graph comparing temperature with its set point.<span
-style='mso-spacerun:yes'>  </span>The data table provides the numeric values on
-which the PID controller is operating.</span></p>
+tools can be loaded from the file “spiro.shf”.<span style='mso-spacerun:yes'> 
+</span>This uses the XY-plotter to draw the pictures.<span
+style='mso-spacerun:yes'>  </span>Reset (clear) the XY plotter in between each
+alteration to the sliders.</span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
