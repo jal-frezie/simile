@@ -81,9 +81,10 @@ proc KeepLooking {} {
 proc ClosePipe {} {
     global plPipe env
     file delete -force $env(SIMTMPDIR)
-    catch {close $plPipe} spew
-    wm withdraw . ;# banner will hide error mesg if not yet withdrawn
-    bgerror $spew
+    if {[catch {close $plPipe} spew]} {
+	wm withdraw . ;# banner will hide error mesg if not yet withdrawn
+	bgerror $spew
+    }
     exit
 }
 
