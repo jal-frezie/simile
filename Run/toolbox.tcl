@@ -578,7 +578,11 @@ proc newInt {} {
 proc UpdateExecution {node action} {
     after idle Rerun [FindNodeTopWin $node].canvas [string equal start $action]
 }
-
+# Not clear why this need only be set on MacOS, but it seems to work without on other platforms
+# so no sense in tinkering.  Probably because of different auto_path setting mechanisms.
+if [string match Darwin $tcl_platform(os)] {
+  set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl3.3
+}
 package require Itcl
 itcl::class ModelWindowExtn {
     variable winId
