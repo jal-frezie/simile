@@ -3,6 +3,9 @@
 # Jonathan Massheder
 
 # $Log: mre.tcl,v $
+# Revision 1.6  2002/09/17 11:05:22  jaspert
+# Run control restored to former glory -- only the different time step fields are on the pulldown menu any more
+#
 # Revision 1.5  2002/08/23 17:28:40  jaspert
 # Fixed recent bug with file parameters and older one with MRE under Linux
 #
@@ -178,7 +181,7 @@ proc RunEnv::Create { ModelWin } {
         
         # Add a PanedWindow to split the hier/contol pane into hierrachical pane and control pane
         set hiercontrolpw [PanedWindow $controlPane.pw -side right]
-        set runcontrolpane [$hiercontrolpw add -weight 1]; # add a pane for the runcontrol
+        set runcontrolpane [$hiercontrolpw add -weight 2]; # add a pane for the runcontrol
         set explorerPane [$hiercontrolpw add -weight 4]; # add a pane for the hierrachical view
         
         # Added notebook

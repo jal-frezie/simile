@@ -30,12 +30,7 @@ proc clear {t} {
 proc SwapDistVar {win} {
 # ShowMessage debug info [list [set $sv] $win $w] ok
     set pt [$win.edit.capt getvalue]
-    if {$pt > 2} {
-	set nextVar update[expr $pt-2]
-    } else {
-	set nextVar [lindex {execTime currentTime displayInt} $pt]
-    }
-    $win.edit.num configure -textvar runState($nextVar)
+    $win.edit.num configure -textvar runState(update[expr $pt+1])
     focus $win.edit.num
 }
     
@@ -45,21 +40,22 @@ proc initialize {t} {
     set geom [PrefValue custom(runControlPosition) runControlPosition]
     catch {wm geometry $t $geom}
 
-# example of old style
-#
-#        frame $t.exec
-#        label $t.exec.capt -text "Execute for " -width 15 -anchor w
-#        pack $t.exec.capt -side left
-#        entry $t.exec.num -relief sunken \
-#                        -textvar runState(execTime) -width 10
-#        pack $t.exec.num -side left
-#        label $t.exec.unit -textvar [namespace current]::sendvars(timeUnit)
-#        pack $t.exec.unit -side left
+    foreach {name capt var} {exec {Execute for } execTime \
+				 current {Current time } currentTime \
+				 disp {Display interval } displayInt} {
+        frame $t.$name
+        label $t.$name.capt -text $capt -width 15 -anchor w
+        pack $t.$name.capt -side left
+        entry $t.$name.num -relief sunken \
+                        -textvar runState($var) -width 10
+        pack $t.$name.num -side left
+        label $t.$name.unit -textvar [namespace current]::sendvars(timeUnit)
+        pack $t.$name.unit -side left
 #jmm            label $t.exec.plural -text (s)
 #jmm            pack $t.exec.plural -side left
-#    pack $t.exec  -pady 2; #6 -fill x
-
-    set sendvars(captList) {{Execute for} {Current time} {Display interval}}
+	pack $t.$name  -pady 2; #6 -fill x
+    }
+    set sendvars(captList) {}
     for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
 	lappend sendvars(captList) [list Time step #$phase]
     }
