@@ -367,7 +367,25 @@ adjust_to_8 :-
 	    Node has_new_class_refinement fill_image of Image),	    
 	adjust_to_8.
 
-adjust_to_8.
+adjust_to_8 :-
+	(Fixing = node,
+	    Comp no_longer_has_class_refinement TclBound of TermInUtf8;
+	 Fixing = arc,
+	    Comp no_longer_has_attribute TclBound of TermInUtf8),
+	replace_subexps(TermInUtf8, library, reEncode, _, top_down,
+			_VPs, TermInTtfn),
+	(Fixing = node,
+	    Comp has_new_class_refinement TclBound of TermInTtfn;
+	 Fixing = arc,
+	    Comp has_new_attribute TclBound to TermInTtfn),
+	fail;
+	true.
+
+reEncode(_, Utf8Atom, TtfnAtom, 0) :-
+	atom(Utf8Atom),
+	name(Utf8Atom, Utf8Str),
+	user:all_utf8_to_ttfn(Utf8Str, TtfnStr),
+	name(TtfnAtom, TtfnStr).
 
 shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
 	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-
