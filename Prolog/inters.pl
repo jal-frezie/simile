@@ -651,6 +651,9 @@ make_intermediates(
 		ResultList = [RTest, RTrue, RFalse],
 		ValRef = (RTest?RTrue:RFalse);
 	    Source = graph(Param),
+		(\+ Step = dummy;
+		 dialogue:table_data_is(_);
+		 raise_exception(missing_graph_or_table_data(Source))),
 		SourceList = [Param],
 		RUnits = real,
 		Arg_template = [real],
@@ -658,7 +661,8 @@ make_intermediates(
 		ValRef = graph(SubId, RVal);
 	    Source = table(SourceList),
 	    Step = dummy,
-		dialogue:table_data_is(TableData),
+		(dialogue:table_data_is(TableData);
+		 raise_exception(missing_graph_or_table_data(Source))),
 		member(units=RUnits, TableData),
 		member(bounds=Arg_template, TableData),
 		ValRef = table(ResultList);

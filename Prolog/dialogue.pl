@@ -166,7 +166,8 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    length(DataField, 3),
 	    append(DataField, [Dims | Indices], DataSpec),
 	    name(DataTable, Data_st),
-	    Units = 1;
+	    Units = 1,
+	    Bounds = 1;
 	get_table_data(Function, Data_st, DataTable,
 		       TableVals, Units, Bounds, Dims, Complaint),
 	    (\+ Complaint = [], !,
@@ -301,26 +302,18 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	technology to get values at build time */
 
 	/* Now, is there a reference to a table or graph? If so, load the data 
-	for it, complaining if it is not there. Otherwise ignore any data. */
+	for it. Otherwise ignore any data. */
 	replace_subexps(Result, dialogue, table_ref, 0, top_down, TGMatch, _),
-	(TGMatch = [], !,
-	    TableAttr = '',
-	    FileError = [];
-	 TGMatch = [_,_ | _], !,
-	    TableAttr = '',
-	    FileError = "Equation refers to more than one data table or sketch graph. \n";
-	 table_data_is(TableAttr), !,
-	    FileError = [];
-	 TableAttr = '',
-	        FileError = "Equation refers to a data table or sketch graph, but no table or graph data has been entered. \n"),
-	append(Complaint6, FileError, Complaint7),
+	(TGMatch = [_ | _],
+	    table_data_is(TableAttr), !;
+	 TableAttr = ''),
 	/* table data is auto-generated so should be well formed */
 
-	(Complaint7 = [], \+ Eqn_st = [], !,
+	(Complaint6 = [], \+ Eqn_st = [], !,
 	    check_param_usage(Function, InterInputs, ParamWibble,
 				  ParamList, New_inputs, FinalComplaint);
 	New_inputs = InterInputs,
-	    FinalComplaint = Complaint7),
+	    FinalComplaint = Complaint6),
 
 	name(Desc, Desc_st),
 	name(Comment, Cmt_st),
@@ -675,6 +668,9 @@ decode_error(ParseError, TestError) :-
 	    More = [Op, Arity, FnArity],
 	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": You have tried to use the function \"~a\" with ~d arguments, but it must take ~d",
 			   [SimpleError, Op, Arity, FnArity], TestError);
+	Type = missing_graph_or_table_data, !,
+	    sicstus_format_to_chars("Subexpression \"~w\" is a reference to a data table or sketch graph, but no data has been entered for it.",
+			   [SimpleError], TestError);
 	Type = cannot_combine_argument_dimensions, !,
 	    sicstus_format_to_chars("Simile cannot work out what dimensions the result of \"~w\" should have -- the dimensions of the arguments are incompatible.",
 			   [SimpleError], TestError);
