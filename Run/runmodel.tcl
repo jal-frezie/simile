@@ -299,13 +299,14 @@ proc ClearView {} {
 # other files they need relative to it, e.g., file param helper
 
 proc SaveView {} {
-    global helperTable nameOfHelperStateFile
+    global helperTable nameOfHelperStateFile simtmpdir
 
     set topNode [GetNodeFromFocus]
     set nameOfHelperStateFile($topNode) \
 	[ChooseFile iotools.shf "Save view specification file" 1]
     if {[llength $nameOfHelperStateFile($topNode)]} {
-        set stream [NetOpen $nameOfHelperStateFile($topNode) w]
+	set tempFile [file join $simtmpdir temp_out.shf]
+        set stream [NetOpen $tempFile w]
         foreach displayBox [array name helperTable *,whichHelper] {
             scan $displayBox {%[^,]} winId
             set helperId $helperTable($displayBox)
@@ -324,7 +325,28 @@ proc SaveView {} {
             }
         }
         close $stream
+	MimifySHF $tempFile $nameOfHelperStateFile($topNode) many_windows
     }
+}
+
+proc MimifySHF {inFile outFile origin} {
+    global env
+    set PartType "application/x-simile"
+    set Description "Simile I/O tool configuration file"
+    set style attachment
+    set newMime [mime::initialize -canonical $PartType \
+		     -header [list "Content-Disposition" $style] \
+		     -header [list "Content-Description" $Description] \
+		     -header [list "Simile-Version" $env(SIMILE_VERSION)] \
+		     -header [list "Simile-Origin" $origin] \
+		     -file $inFile]
+    set stream [NetOpen $outFile w]
+    fconfigure $stream -translation binary
+    mime::copymessage $newMime $stream
+    # clean everything up
+    close $stream
+    mime::finalize $newMime
+    file delete $inFile
 }
 
 proc LoadView {} {
@@ -337,32 +359,59 @@ proc LoadView {} {
     }
 }
 
-proc CreateView {node nameOfHelperStateFile} {
-    set stream [NetOpen $nameOfHelperStateFile r]
-    while {[gets $stream helperId] >= 0} {
-	if {[llength $helperId]==4} {
-	    set response [ShowMessage {Inappropriate view specification} \
-			      warning \
-			      "This view specification file was created within the integrated Model Run \
-                        Environment. Do you wish to launch a view-only version of MRE to view it?" \
-			      yesnocancel]
-	    switch $response {
-		yes {
-		    raise [Makemre $node]
-		    RunEnv::LoadViewFile $stream $helperId
-		} no {
-		    LoadMREFormatView $stream
-		} cancel {
-		}
-	    }
-	    close $stream
-	    return
+proc CreateView {node oldPath} {
+    global mimeSquirter simtmpdir errorInfo helperTable
+    if {[catch { 
+	set multiT [mime::initialize -file $oldPath]
+	set origVersion [mime::getheader $multiT Simile-Version]
+	set origin [mime::getheader $multiT Simile-Origin]
+	set metaFile [file join $simtmpdir temp_in.shf]
+	set mimeSquirter [NetOpen $metaFile w]
+	fconfigure $mimeSquirter -translation binary
+	mime::getbody $multiT -command SquirtMime -blocksize 256}]
+    } {
+	set metaFile $oldPath
+	set origVersion 0.0
+	set stream [NetOpen $metaFile r]
+	# check for run env that made the shf
+	gets $stream line
+	if {[llength $line]==4} {
+	    set origin mre
+	} else {
+	    set origin many_windows
 	}
+	close $stream
+    }
+
+    set nameOfHelperStateFile $oldPath
+    set stream [NetOpen $metaFile r]
+    if {[string equal mre $origin]} {
+	set response [ShowMessage {Inappropriate view specification} warning \
+			  "This view specification file was created within the integrated Model Run \
+                        Environment. Do you wish to launch a view-only version of MRE to view it?" \
+			  yesnocancel]
+	switch $response {
+	    yes {
+		raise [Makemre $node]
+		RunEnv::LoadViewFile $stream $origVersion
+	    } no {
+		LoadMREFormatView $node $stream $origVersion
+	    } cancel {
+	    }
+	}
+	close $stream
+	return
+    }
+    
+    while {[gets $stream helperId] >= 0} {
 	gets $stream helperTitle
 	set winId [NewHelperWindow $node $helperId [RestoreCrs $helperTitle]]
 	gets $stream geometry
 	wm geometry $winId $geometry
 	gets $stream oldStatus
+	if {$origVersion<4.0} {
+	    set oldStatus [LoseDTRef $oldStatus]
+	}
 	set helperTable($winId,status) [RestoreCrs $oldStatus]
 	if {[catch {${helperId}::Restore $winId}]} {
 	    kill_helper_window $winId
@@ -372,17 +421,31 @@ proc CreateView {node nameOfHelperStateFile} {
     close $stream
 }
 
-proc LoadMREFormatView {stream} {
+proc LoadMREFormatView {node stream origVersion} {
     global helperTable
     while {[gets $stream helperId] >= 0} {
         if {[namespace exists $helperId]} {
             set helperTitle [${helperId}::identify]
             set winId [NewHelperWindow $node $helperId $helperTitle]
             gets $stream oldStatus
-            set helperTable($winId,status) [RestoreCrs $oldStatus]
+	    if {$origVersion<4.0} {
+		set oldStatus [LoseDTRef $oldStatus]
+	    }
+            set helperTable($winId,status) [RestoreCrs [LoseDTRef $oldStatus]]
             ${helperId}::Restore $winId
         }
     }
+}
+
+proc LoseDTRef {statusLine} {
+    foreach elt $statusLine {
+	if {[string last /Desktop/ $elt 8]} {
+	    lappend result $elt
+	} else {
+	    lappend result [string range $elt 8 end]
+	}
+    }
+    return $result
 }
 
 proc TellAllHelpers {node fun args} {

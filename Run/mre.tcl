@@ -912,7 +912,7 @@ proc NewHelperInWindow {containerId helperId helperTitle} {
 # other files they need relative to it, e.g., file param helper
 
 proc SaveView {} {
-    global helperTable nameOfHelperStateFile
+    global helperTable nameOfHelperStateFile simtmpdir
     variable dp0
     variable currentNode
     
@@ -920,7 +920,8 @@ proc SaveView {} {
 	[ChooseFile Displays.shf "Save display configuration" 1]
     if {[llength $nameOfHelperStateFile]} {
 	set mainframe $helperTable($currentNode,whichRunEnv).mainframe
-        set stream [NetOpen $nameOfHelperStateFile w]
+	set tempFile [file join $simtmpdir temp_out.shf]
+        set stream [NetOpen $tempFile w]
         
 	set mreId $helperTable($currentNode,whichRunEnv)
         # save skeleton mre config
@@ -931,6 +932,7 @@ proc SaveView {} {
         SaveNotebookConfig $dp0.notebook [string length $dp0.] $stream
         
         close $stream
+        MimifySHF $tempFile $nameOfHelperStateFile mre
     }
 }
 
@@ -1005,64 +1007,84 @@ proc SaveContainer {winId loss stream} {
 }
 
 proc LoadView {} {
-    set HelperStateFileName \
-            [ChooseFile Displays.shf "Open view specification file" 0]
+    set HelperStateFileName [ChooseFile Displays.shf \
+				 "Open view specification file" 0]
     if {[llength $HelperStateFileName]} {
 	LoadSHF $HelperStateFileName
     }
 }
 
-proc LoadSHF {HelperStateFileName} {
+proc LoadSHF {oldPath} {
+    global mimeSquirter simtmpdir
     global helperTable nameOfHelperStateFile errorInfo
     variable dp0
-    
-    set nameOfHelperStateFile $HelperStateFileName
-    if {[llength $nameOfHelperStateFile]} {
-        set stream [NetOpen $nameOfHelperStateFile r]
-        
-        # check for run env that made the shf
-        gets $stream line
-        if {[llength $line]==4} {
-            LoadViewFile $stream $line
-        } elseif {[llength $line]==1}  {
-            # assume that it is an shf made by the multiple window run env
-            destroy $dp0.notebook; #what if there is an error in the file delete MRE, rebuild
-            AddNotebook $dp0
-            seek $stream 0 start
-            while {[gets $stream helperId] >= 0} {
-                set emptyPage [MainNotebookEmptyPage]
-                if {![string match none $emptyPage]} {
-                    set containerId [MainNotebookEmptyPage]
-                } else  {
-                    set containerId [AddNotebookPage $dp0.notebook]
-                }
-                #ShowMessage debug info "LoadView winId $containerId" ok
-                gets $stream helperTitle
-                #containerId helperId helperTitle
-                #set winId $containerId
-                set winId [NewHelperInWindow $containerId $helperId [RestoreCrs $helperTitle]]
-                gets $stream geometry
-                #wm geometry $winId $geometry # not a toplevel
-                gets $stream oldStatus
-                set helperTable($winId,status) [RestoreCrs $oldStatus]
-                if {[catch {${helperId}::Restore $winId}]} {
-		    DeleteHelperCurrentContainer
-		    ShowMessage "Problem restoring helper" warning $errorInfo \
-			ok
-		} else {
-		    ChildrenFocusParent $winId
-		}
-            }
-            $dp0.notebook raise [lindex [$dp0.notebook pages] 0]
-            
-        } else  {
-            ShowMessage Error error "Unknown display configuration file format" ok
-        }
-        close $stream
+    if {[catch { 
+	set multiT [mime::initialize -file $oldPath]
+	set origVersion [mime::getheader $multiT Simile-Version]
+	set origin [mime::getheader $multiT Simile-Origin]
+	set metaFile [file join $simtmpdir temp_in.shf]
+	set mimeSquirter [NetOpen $metaFile w]
+	fconfigure $mimeSquirter -translation binary
+	mime::getbody $multiT -command SquirtMime -blocksize 256}]
+    } {
+	set metaFile $oldPath
+	set origVersion 0.0
+	set stream [NetOpen $metaFile r]
+	# check for run env that made the shf
+	gets $stream line
+	if {[llength $line]==4} {
+	    set origin mre
+	} else {
+	    set origin many_windows
+	}
+	close $stream
     }
+    
+    set nameOfHelperStateFile $oldPath
+    set stream [NetOpen $metaFile r]
+        
+    if {[string equal mre $origin]} {
+	LoadViewFile $stream $origVersion
+    } elseif {[string equal many_windows $origin]}  {
+	# assume that it is an shf made by the multiple window run env
+	destroy $dp0.notebook; #what if there is an error in the file delete MRE, rebuild
+	AddNotebook $dp0
+	while {[gets $stream helperId] >= 0} {
+	    set emptyPage [MainNotebookEmptyPage]
+	    if {![string match none $emptyPage]} {
+		set containerId [MainNotebookEmptyPage]
+	    } else  {
+		set containerId [AddNotebookPage $dp0.notebook]
+	    }
+	    #ShowMessage debug info "LoadView winId $containerId" ok
+	    gets $stream helperTitle
+	    #containerId helperId helperTitle
+	    #set winId $containerId
+	    set winId [NewHelperInWindow $containerId $helperId [RestoreCrs $helperTitle]]
+	    gets $stream geometry
+	    #wm geometry $winId $geometry # not a toplevel
+	    gets $stream oldStatus
+	    if {$origVersion<4.0} {
+		set oldStatus [LoseDTRef $oldStatus]
+	    }
+	    set helperTable($winId,status) [RestoreCrs $oldStatus]
+	    if {[catch {${helperId}::Restore $winId}]} {
+		DeleteHelperCurrentContainer
+		ShowMessage "Problem restoring helper" warning $errorInfo \
+		    ok
+	    } else {
+		ChildrenFocusParent $winId
+	    }
+	}
+	$dp0.notebook raise [lindex [$dp0.notebook pages] 0]
+	
+    } else  {
+	ShowMessage Error error "Unknown display configuration file format $origin" ok
+    }
+    close $stream
 }
 
-proc LoadViewFile {stream line} {
+proc LoadViewFile {stream origVersion} {
     global helperTable
     variable dp0
     variable currentNode
@@ -1070,6 +1092,7 @@ proc LoadViewFile {stream line} {
     destroy $dp0.notebook
     set mainframe $helperTable($currentNode,whichRunEnv).mainframe
     # read and set .mre position and size
+    gets $stream line
     scan $line "%i %i %i %i" x y width height
     wm geometry $helperTable($currentNode,whichRunEnv) \
 	${width}x${height}+${x}+${y}
@@ -1085,11 +1108,14 @@ proc LoadViewFile {stream line} {
     while {[gets $stream line] >= 0} {
         switch [scan $line %s] {
             container {
-                LoadContainer $stream $line
+                LoadContainer $stream $line $origVersion
             }
             panedwindow {
                 #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
                 scan $line "%s %s %s" widget path orient
+		if {$origVersion<4.0} {
+		    set path [LoseTLRef $path]
+		}    
                 panedwindow $dp0.$path -orient $orient
                 #set containerId [winfo parent $path]
                 #ShowMessage debug info "containerId $containerId" ok
@@ -1099,6 +1125,9 @@ proc LoadViewFile {stream line} {
             pane {
                 #%puts $stream "pane $pane"
                 scan $line "%s %s" widget tail
+		if {$origVersion<4.0} {
+		    set tail [LoseTLRef $tail]
+		}
 		set path $dp0.$tail
                 frame $path -highlightcolor black  -highlightthickness 1
                 set panedwindow [winfo parent $path]
@@ -1109,6 +1138,9 @@ proc LoadViewFile {stream line} {
             }
             sash {
                 scan $line "%s %s %i %i %i" sash windowtail index sashx sashy
+		if {$origVersion<4.0} {
+		    set windowtail [LoseTLRef $windowtail]
+		}
 		set panedwindow $dp0.$windowtail
                 # the page this pane is in must be raised and update called!
                 # or $panedwindow sash place won't work
@@ -1125,6 +1157,9 @@ proc LoadViewFile {stream line} {
             notebook {
                 #puts $stream "notebook $notebook"
                 scan $line "%s %s" widget tail
+		if {$origVersion<4.0} {
+		    set tail [LoseTLRef $tail]
+		}
 		set path $dp0.$tail
                 NoteBook $path
                 set containerId [winfo parent $path]
@@ -1136,6 +1171,9 @@ proc LoadViewFile {stream line} {
             page {
                 #puts $stream "page $notebook $page $pagecaption"
                 scan $line "%s %s %s %s" widget nbtail pageId noSpcpagecaption
+		if {$origVersion<4.0} {
+		    set nbtail [LoseTLRef $nbtail]
+		}
 		set notebook $dp0.$nbtail
                 regsub -all _ $noSpcpagecaption " " pagecaption
                 
@@ -1158,16 +1196,31 @@ proc LoadViewFile {stream line} {
     $dp0.notebook raise [lindex [$dp0.notebook pages] 0]
 }
 
-proc LoadContainer {stream line} {
+proc LoseTLRef {path} {
+    if {[string last .mre.mainframe.frame.mainpw.mainDisplayPane. $path 43]} {
+	return $path
+    } else {
+	return [string range $path 44 end]
+    }
+}
+
+proc LoadContainer {stream line origVersion} {
     global helperTable
     variable dp0
     
     #ShowMessage debug info "LoadContainer: stream $stream, line $line" ok
     scan $line "%s %s" item containerId
+    if {$origVersion<4.0} {
+	set containerId [LoseTLRef $containerId]
+    }
+    
     gets $stream helperId
     #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
     set winId [NewHelperInWindow $dp0.$containerId $helperId ""]
     gets $stream oldStatus
+    if {$origVersion<4.0} {
+	set oldStatus [LoseDTRef $oldStatus]
+    }
     set helperTable($winId,status) [RestoreCrs $oldStatus]
     ${helperId}::Restore $winId
     #bind $winId <Destroy>  "kill_helper_window $winId"

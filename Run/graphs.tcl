@@ -663,7 +663,7 @@ proc LoadDataFile {} {
     set table_entry(allHeads) [split $firstLine ,]
     set i 1
     foreach hd $table_entry(allHeads) {
-        $fheads.lheads insert end hd$i -text $hd
+        $fheads.lheads insert end hd$i -text [string trim $hd]
         incr i
     }
     close $stream
@@ -1198,7 +1198,8 @@ proc MergeParams {topNode smPath oldPath interactive} {
 		    set VFile [lindex $paramData($restoredComp) 0]
 		}
 	    } else {
-		set paramData($restoredComp) [lindex $IdAndValue 1]
+		set paramData($restoredComp) [TrimFields \
+						  [lindex $IdAndValue 1]]
 		set VFile [lindex $paramData($restoredComp) 0]
 		set reference [file exists [file join [file dirname $oldPath] \
 						$VFile]]
@@ -1392,7 +1393,7 @@ proc LoadTableData {tableSpec} {
 #ShowMessage debug info "Loading table with data $tableSpec" ok
     set tStr [NetOpen [lindex $tableSpec 0] r]
     gets $tStr headerLine
-    set headerList [split $headerLine ,]
+    set headerList [TrimFields [split $headerLine ,]]
 #ShowMessage debug info "Headers are $headerList" ok
     
     set indexCount 0
@@ -1407,7 +1408,7 @@ proc LoadTableData {tableSpec} {
 #ShowMessage debug info "Columns: header $headerColumn" ok
     
     while {[gets $tStr entryLine] != -1} {
-        set entryList [split $entryLine ,]
+	set entryList [TrimFields [split $entryLine ,]]
 #ShowMessage debug info "Data line is $entryList" ok
         
         if {[info exists indexColumns]} {
@@ -1440,6 +1441,12 @@ proc LoadTableData {tableSpec} {
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     return [ArrayToList paramArray top $indexList]
+}
+proc TrimFields {dataLine} {
+    foreach entry $dataLine {
+	lappend entryList [string trim $entry]
+    }
+    return $entryList
 }
 
 proc EnquoteIfNonNumeric {item} {
