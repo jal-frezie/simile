@@ -1166,7 +1166,7 @@ proc ErrorHelp {diagnostic} {
     toplevel .diag
     wm title .diag {Error diagnostics}
     set parent [focus]
-    if {[llength $parent]} {
+    if {[string length $parent]>1} {
 	wm transient .diag $parent
     }
     wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
@@ -1204,7 +1204,7 @@ proc ErrorHelp {diagnostic} {
 
 proc GetHelp {} {
     global SIMILE_PATH diagno help
-    cd $SIMILE_PATH/help
+    cd $SIMILE_PATH/Help
     ContextSensitiveHelp .diag \
 	$help([lindex $diagno(keys) [.diag.topicsf.l curselection]])
 }
