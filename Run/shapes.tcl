@@ -1783,7 +1783,7 @@ proc CustomizeLooks {c} {
 
 proc Desystematize {colorSpec} {
     set rgb [winfo rgb . $colorSpec]
-    return [format "#%02x%02x%02x" [lindex $rgb 0] \
+    return [format "#%04x%04x%04x" [lindex $rgb 0] \
             [lindex $rgb 1] [lindex $rgb 2]]
 }
 
