@@ -1,11 +1,10 @@
+# Simile source code file: Run/prefs.tcl
 #
-# Example 42-1
-# Preferences initialization.
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
 #
-# proc PrefSave {} modified to use Windows short filenames 
-
-package require BWidget
-catch {namespace import BWidget::*}
+# This file contains procedures to set user preferences and the Preferences dialogue.
+#
 
 proc Status {burble} {
     ShowMessage "Error with preferences" error $burble ok

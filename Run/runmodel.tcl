@@ -1,17 +1,26 @@
-# First few procedures in here are utilities used by both the
-# helper applications and the AME interface: put these in a new file.
-
+# Simile source code file: Run/runmodel.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file loads all procedures, and sets up the model execution environment.
+#
+global tcl_platform
+if [string match "Darwin" $tcl_platform(os)] {
+    regsub -all /\\./ [info script] / scriptCmd
+    set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
+    lappend auto_path $SIMILE_PATH/System/lib
+}
 package require BWidget
+package require tile
 
 source ../Run/graphs.tcl
 source ../Run/utility.tcl
 source ../Run/params.tcl
 source ../Run/hai2mmii.tcl
-
 source ../Run/support.tcl
 
-# mre.tcl has to be loaded after the other tcls or it doesn't
-# work properly
+# mre.tcl has to be loaded after the other Tcl procedures are defined
 
 source ../Run/mre.tcl
 
@@ -24,21 +33,20 @@ proc MakeHelperMenu {} {
 # Alastair 31 Jan 2005
 #
 
-if [string match "Darwin" $tcl_platform(os)] {
+    if [string match "Darwin" $tcl_platform(os)] {
 #
 # The Quit command in the application menu ALWAYS calls exit, so we must quit 
 # by that route however it is invoked (keyboard shortcut or mouse click)
 #
-  rename exit wishExit
-  proc exit {} {
-    do_in_editor tclAE::send -s misc actv
-    do_in_editor prolog tk_kill_everything('.mswindow00001.canvas')
-  }
-  bind all <Command-q> exit
-  package require tclAE
-  tclAE::send -s misc actv
-}
-
+       rename exit wishExit
+       proc exit {} {
+            do_in_editor tclAE::send -s misc actv
+            do_in_editor prolog tk_kill_everything('.mswindow00001.canvas')
+        }
+        bind all <Command-q> exit
+        package require tclAE
+        tclAE::send -s misc actv
+    }
     $fm add command -label "Load" -command LoadView
     $fm add command -label "Save" -command SaveView
     $fm add command -label "Clear" -command ClearView

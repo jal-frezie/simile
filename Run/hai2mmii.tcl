@@ -1,10 +1,13 @@
-# Interfacing the model
-# =====================
-
+# Simile source code file: Run/hai2mmii.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file provides procedures to interface between the model and the IOTools.
 # When running a model in c, the helper application commands must do slightly different
-# things to pass information to and from the executing model. These are the new
-# definitions that rae required for this purpose.
-
+# things to pass information to and from the executing model. These are the definitions 
+# that are required for this purpose.
+#
 proc do_model {node what args} {
     global errorInfo model_id instance_id model_prog
     

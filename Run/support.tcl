@@ -1,4 +1,9 @@
-# this file contains tcl routines that have to go in the same interpreter as
+# Simile source code file: Run/support.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file contains procedures that have to go in the same interpreter as
 # the model, e.g., because they are called from it, or pass data using upvar.
 # Actually none of them have to but it makes things more consistent with the
 # c++ implementation.

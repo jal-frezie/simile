@@ -1,13 +1,11 @@
-# utility.tcl
-# ===========
+# Simile source code file: Run/utility.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file contains general purpose utilities, which are used both in 
+# the model diagram editor and the stand-alone run time environment.
 
-# This file contains general purpose utilities in Tcl, which are
-# likely to be used both in the AME editor interface and the
-# stand-alone run time environment.
-
-#############################################################################
-
-# Just so I know where this is...
 # Thanks to tk_abandon, I sometimes put several dialogues up at once, which,
 # thanks to a bug in tcltk, gets the wrong results for the lower ones...
 
@@ -151,7 +149,7 @@ proc load_c_stub {} {
 	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
     }
     loadcommands
-    randseed [clock clicks]
+    randseed 12
 }
 
 proc AdjustCanvas {winId pt dir args} {

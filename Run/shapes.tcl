@@ -1,3 +1,10 @@
+# Simile source code file: Run/shapes.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file contains procedures to set up the model canvas and for the Customise dialogue.
+#
 # PutRectangle: standard procedure for creating a rectangle. Arguments are:
 #  Handle of canvas to put it on
 #  x and y coords of centre

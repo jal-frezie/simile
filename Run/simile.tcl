@@ -1,11 +1,18 @@
 #!/home/jaspert/Simile/System/bin/wish
-# SIMILE batch file
-
+# Simile source code file: Run/simile.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file contains the code initially sourced into the Tcl interpreter and
+# itself sources toolbox.tcl to define all model diagram editor procedures, and
+# prolog.tcl to initiate communication with the Prolog component.
+#
 # If there is an arg, it is the model to start with. Because this is sourced
-# from a script or special .exe there is never more than 1 arg. Windows has
+# from a script or special .exe there is never more than one arg. Windows has
 # a buggy implementation of file pathtype so hope that simile.exe always
 # gets us an absolute path...
-
+#
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
     set runHow(sendOp) {dde eval}
@@ -16,11 +23,26 @@ if {[string match windows $tcl_platform(platform)]} {
 set oldProc Simile
 set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
 
+# replace /./ in path with / to avoid confusing file dirname
+regsub -all /\\./ [info script] / scriptCmd
+
+#tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
+set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
+set env(SP_PATH) $SIMILE_PATH/System
+# Above seems unnecessary for sicstus 3.10
+
+
 if {$argc && ![string match Darwin $tcl_platform(os)] } {
     if {[string match relative [file pathtype $argv]]} {
 	set env(OPEN_MODEL) [pwd]/$argv
     } else {
 	set env(OPEN_MODEL) $argv
+    }
+} else {
+    lappend auto_path $SIMILE_PATH/System/lib
+    proc ::tk::mac::OpenDocument {args} {
+        set env(OPEN_MODEL) $args
+        OpenTopLevel $args
     }
 }
 
@@ -33,19 +55,6 @@ if {[info exists env(OPEN_MODEL)]} {
     set remStartArgs NewTopLevel
 }
 
-if {[catch [concat $runHow(sendCmd) {$remStartArgs}]]} {
-#    tk_messageBox -message $errorInfo
-} else {
-    exit
-}
-
-# replace /./ in path with / to avoid confusing file dirname
-regsub -all /\\./ [info script] / scriptCmd
-
-#tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
-set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
-set env(SP_PATH) $SIMILE_PATH/System
-# Above seems unnecessary for sicstus 3.10
 
 # temporary to get wkng with local tcltk
 # lappend auto_path $SIMILE_PATH/System/lib
@@ -70,6 +79,8 @@ switch $tcl_platform(platform) {
     }
 }
 
+
+
 set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
 gets $UserStream prologId
 gets $UserStream interfaceId
@@ -82,13 +93,7 @@ close $UserStream
 
 # first put up the splash screen
 image create photo splash
-if {[string match Darwin $tcl_platform(os)]} {
-    splash read $SIMILE_PATH/Images/MacSplash.gif
-    set auto_path [linsert $auto_path 0 $SIMILE_PATH/System/lib]
-} else {
-    #package require Img
-    splash read $SIMILE_PATH/Images/splash.gif
-}
+splash read $SIMILE_PATH/Images/splash.gif
 
 # KDE launch feedback will fail unless root window is displayed briefly,
 # causing annoying eye candy to persist while program is running.
@@ -164,4 +169,3 @@ switch $interface {
 	exec $SIMILE_PATH/$tgt$execExtn &
     }
 }
-

@@ -1,3 +1,10 @@
+# Simile source code file: Run/params.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file contains procedures for reading and editing tables of data at run-time.
+#
 proc FileParamDialogue {topNode topWin mustShow} {
     global paramData widgetNames
     set allNodes [GetCompProperty $topNode Objects]

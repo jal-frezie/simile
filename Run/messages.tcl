@@ -1,3 +1,11 @@
+# Simile source code file: Run/messages.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file is sourced by toolbox.tcl, providing definitions of popup help text
+# and links to help file pages.
+#
 set msgs(compartment) "Add compartments"
 set msgs(flow) "Add flows"
 set msgs(variable) "Add variables"

@@ -1,3 +1,12 @@
+# Simile source code file: Run/window.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file contains procedures for drawing the main window.
+#
+
+
 # Scale translates coordinates in desktop space to canvas space. Used to include
 # 'round' because some floating point values caused trouble, but later Tcls do
 # not seem to mind them, and they help when things are made very small then zoomed.
@@ -1009,10 +1018,32 @@ proc DoLocalCmd {win item} {
     }
 }
 
+#
+# MacOS X specific procedures for the main window
+# Alastair 31 Jan 2005
+#
+
 if [string match "Darwin" $tcl_platform(os)] {
-  proc ::tk::mac::Quit {} {
+#
+# The Quit command in the application menu ALWAYS calls exit, so we must quit 
+# by that route however it is invoked (keyboard shortcut or mouse click)
+#
+  rename exit wishExit
+  proc exit {} {
     prolog tk_kill_everything('.mswindow00001.canvas')
   }
+  bind all <Command-q> exit
+#
+# Enable the Preferences command in the application menu using Carbon extension
+#
+  package require tclCarbonHICommand
+  carbon::enableMenuCommand pref 0
+  proc ::tk::mac::ShowPreferences {} {
+    Pref_Dialog
+  }
+#
+# Commands to raise window to front
+#
 }
 
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
@@ -1402,8 +1433,6 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     label $eb.label -anchor e
     pack $eb.label -side left
-    
-    package require -exact tile 0.5
     
     global equation msgs
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40

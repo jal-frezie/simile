@@ -1,18 +1,22 @@
-# Welcome to toolbox.tcl, the file containing the bits of tcl and tk
-# needed to supply the graphical interface to the modelling environment.
-# Just to give you an idea of (a) the sort of thing you can do in tcl,
-# and (b) my preferred programming style, check this out....
-
+# Simile source code file: Run/toolbox.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# This file loads all procedures, and sets up the model building environment.
+#
 package require BWidget
+catch {namespace import BWidget::*}
+package require tile
 
 source ../Run/window.tcl
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
+source ../Run/equation.tcl
 source ../Run/prefs.tcl
 #source ../Run/runmodel.tcl
 source ../Run/graphs.tcl
 source ../Run/utility.tcl
-
 source ../Run/messages.tcl
 
 # Find a new temporary directory
@@ -230,11 +234,12 @@ proc do_for_node {node args} {
 		set sep .
 	    }
             if [string match Darwin $tcl_platform(os)] {
-              set makeExec {../System/bin/Simile\ model\ execution}
+              set makeExec ../../MacOS/Simile
+              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
             } else {
               set makeExec ../System/bin/wish$MAJ$sep$MIN
             }
-	    set srcLoc ../Run/runmodel.tcl			
+            set srcLoc ../Run/runmodel.tcl			
 	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
 		set runHow(sendCmd) [list send [tk appname]]
 	    }
@@ -260,7 +265,11 @@ proc do_for_node {node args} {
 		tell_runner $node [list source $srcLoc]
 	    }
 	    tkwait variable runState($node,modelReady)
-#puts "Go! mr is '$runState($node,modelReady)'"
+#tk_messageBox -message "Go! mr is '$runState($node,modelReady)'"
+            if [string match Darwin $tcl_platform(os)] {
+              catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
+        #      carbon::processHICommand hide {}
+            }
 	    set runState($node,queueSize) 0
 	}
 	tickle $node
@@ -336,14 +345,12 @@ proc FeedModel {node incoming} {
 	gets $runState($node,interp) incoming
     }
     if {[string equal get [lindex $incoming 0]]} {
-#puts "get: $incoming"
 	if {[catch [lindex $incoming 1] response]} {
 	    set result [list err [split $errorInfo \n]]
 	} else {
 	    set result [list res $response]
 	}
 	tell_runner $node $result
-#puts "returned: $result"
 #	eval $runHow(sendOp) exec_for_$node {$result}
     } else {
 	set runState($node,modelReady) 1
@@ -1533,6 +1540,9 @@ proc RaiseModelWindow {node} {
     set win [FindNodeTopWin $node]
     wm deiconify $win
     raise $win
+    package require tclAE
+    tclAE::send -s misc actv
+   # carbon::processHICommand bfrt $win
 }
 
 proc FindNodeTopWin {node} {

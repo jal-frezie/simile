@@ -1,4 +1,9 @@
-# Attempt at a completely compilation-free Prolog/Tcl interface that
+# Simile source code file: Run/prolog.tcl
+#
+# (c) Simulistics Ltd. 2001-2005
+# (c) University of Edinburgh 1995-2001
+#
+# A completely compilation-free Prolog/Tcl interface that
 # will work with any implementation of either language. This file is
 # sourced into the Tcl interpreter where it starts the Prolog
 # interpreter in a non-blocking pipe. Commands are then passed between
