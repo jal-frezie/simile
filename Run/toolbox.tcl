@@ -3,8 +3,7 @@
 # Just to give you an idea of (a) the sort of thing you can do in tcl,
 # and (b) my preferred programming style, check this out....
 
-set simLib [file dirname [pwd]]/System/library
-lappend auto_path $simLib/Extras
+lappend auto_path [pwd]/../System/library/Extras
 
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
@@ -149,7 +148,7 @@ proc ControlDraw {simileVersion prologVersion} {
     }
     CustomizeLooks
 # Take the opportunity to pass the temp directory name to Prolog
-    return $env(SIMTMPDIR)
+    return [brainwash $env(SIMTMPDIR)]
 }
 
 proc byebye {winId} {
@@ -821,7 +820,6 @@ proc SpitPS {winId psfile} {
 		-height [expr $detail*([$winId canvasy $window_info($winId,height)] \
 		- [$winId canvasy 0])] \
 		-pagewidth [expr $window_info($winId,width)/100.0]i \
-
 		-pageheight [expr $window_info($winId,height)/100.0]i
 	ZoomImage $winId all [expr 1.0/$detail] [expr 1.0/($fontscale*$detail)]
 }

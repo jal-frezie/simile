@@ -18,9 +18,7 @@ switch $tcl_platform(platform) {
     windows {
 	set SIMILE_PATH [file dirname [file dirname [info script]]]
 
-# Directory containing tcl dlls must be in path
-	set env(PATH) "$SIMILE_PATH/System/bin;$env(PATH)"
-#	set env(TCL_LIBRARY) "C:/progra~1/tcl/lib/tcl8.3"
+	set env(TCL_LIBRARY) "C:/progra~1/tcl/lib/tcl8.3"
 #	set env(TK_LIBRARY) "C:/progra~1/tcl/lib/tk8.3"
 
 # This specifies the TclTk libraries used by the compiler
@@ -45,7 +43,7 @@ switch $tcl_platform(platform) {
 # such as "Program files". Or something...I dunno, how that Gates ever 
 # got to be a multi-billionaire, I just don't know...
 #
-	set env(PATH) "$env(MSDEVDIR)/bin;$env(PATH)"
+	set env(PATH) "$env(MSDEVDIR)/bin;c:/progra~1/tcl/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
     } unix {
 	# the following can be edited for your configuration
@@ -60,7 +58,7 @@ splash read $SIMILE_PATH/Images/splash.gif
 pack [canvas .c -width 640 -height 480]
 .c create image 320 240 -image splash
 # .c create text 450.0 240.0 -font {-weight bold -family helvetica -size 30} -text SIMILE
-.c create text 450.0 273.0 -font {-weight bold -family helvetica -size 16} -text {Version 2.91}
+.c create text 450.0 273.0 -font {-weight bold -family helvetica -size 16} -text {Version 2.92}
 .c create text 450.0 340.0 -font {-family helvetica -size 12} -text "© 2002 Simulistics Ltd."
 
 # pack [label .l -image splash]
@@ -100,8 +98,6 @@ while {[file exists $tester]} {
 set env(SIMTMPDIR) $tester
 file mkdir $env(SIMTMPDIR)/.lock
 
-set env(SP_PATH) $SIMILE_PATH/System
-
 # If there is an arg, it is the model to start with
 if {$argc} {
     set arg1 [lindex $argv 0]
@@ -126,9 +122,11 @@ cd $SIMILE_PATH/Run
 # this runs a program which starts AME from a saved state
 # -- must be concurrent because script causes Windows problems if
 # not finished
+
+set env(SP_PATH) $SIMILE_PATH/System
 switch $tcl_platform(platform) {
     windows {
-	exec $env(SP_PATH)/bin/sprt.exe &
+	exec $SIMILE_PATH/System/bin/sprt.exe &
     } unix {
 	set env(LD_LIBRARY_PATH) \
 		$env(SP_PATH)/library:[file dirname [info library]]

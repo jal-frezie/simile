@@ -6,6 +6,10 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.8  2002/06/20 17:12:47  jaspert
+#Prolog changes relating to GNU prolog port
+#Tcl changes for usability in tcltk 8.3
+#
 #Revision 1.7  2002/06/18 15:30:04  jaspert
 #Moved macro definitions to Functions/macros.pl
 #Added user defined procedures: definitions in Functions/defns.pl
@@ -54,6 +58,10 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.8  2002/06/20 17:12:47  jaspert
+#Correct RCS directive #Prolog changes relating to GNU prolog port
+#Correct RCS directive #Tcl changes for usability in tcltk 8.3
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.7  2002/06/18 15:30:04  jaspert
 #Correct RCS directive #Moved macro definitions to Functions/macros.pl
 #Correct RCS directive #Added user defined procedures: definitions in Functions/defns.pl
@@ -1184,7 +1192,11 @@ proc SaveParams {} {
 
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
     if {[llength $metaFile]} {
-	set pStr [open $metaFile w]
+	set pStr [open $metaFile w]
+
+
+
+
 	foreach node [GetObjectList] {
 	    if {[string match FILE [GetModelEval $node]]} {
 		set compName [GetCaptionPathFromId $node]
@@ -1368,6 +1380,7 @@ proc LoadTableData {tableSpec} {
 	set paramArray(top,[join $arrayIndex ,]) \
 		[lindex $entryList $headerColumn]
     }
+
     for {set idxIdx 0} {$idxIdx < $indexCount} {incr idxIdx} {
 	lappend indexList $maxIndices($idxIdx)
     }
@@ -1418,6 +1431,15 @@ proc CheckExec {Lang Dir} {
     if {[file exists $Dir/model$Extn]} {
 	return yes
     }
+}
+
+# Path names derived from Windows environment variables must be
+# 'brainwashed' i.e., stripped of their native culture and turned
+# into blank-faced Unix-style forward-slash-separated automata.
+# Otherwise mingw gcc variably gets culture shock. 
+
+proc brainwash {ethnic} {
+	return [file join [file dirname $ethnic] [file tail $ethnic]]
 }
 
 # TopDirFor gets the name of the directory in which to stick extra
@@ -1588,22 +1610,22 @@ proc FindPhase {node submodel} {
 proc compile_c {workingDir modelPath} {
     global tcl_platform env
         
-    set progFileDir $workingDir$modelPath
-    set c_prog $progFileDir/model.cpp
-    ShowMessage {Code editing opportunity} info "About to compile $c_prog" ok
-    set TARGET $progFileDir/model[info sharedlibextension]
+    set oldDir [pwd]
+    cd $workingDir$modelPath
+    ShowMessage {Code editing opportunity} info \
+	"About to compile model.cpp in [pwd]" ok
+    set TARGET model[info sharedlibextension]
 
-    set TOOLDIR [pwd]/../Run
+    set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
 # ShowMessage debug info "TCL is $TCL" ok
     scan [info tclversion] {%d.%d} MAJ MIN
     switch $tcl_platform(platform) {
 	unix {
-	    set object $env(SIMTMPDIR)/objtemp.o
-	    exec g++ -fPIC -c -O -I$TOOLDIR -I$TCL/include -o $object $c_prog
-	    exec g++ -shared -o $TARGET $object
-#	    file delete $c_prog
-	    file delete $object
+	    exec g++ -fPIC -c -O -I$TOOLDIR -I$TCL/include -o objtemp.o model.cpp
+	    exec g++ -shared -o $TARGET objtemp.o
+#	    file delete model.cpp
+	    file delete objtemp.o
 	}
 	windows {
 # Something seems to be broken with freeing and deleting dlls
@@ -1613,32 +1635,28 @@ proc compile_c {workingDir modelPath} {
 
 # it is running under Prolog. However it seems to work OK in WinNT.
 	    if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
-		set object $env(SIMTMPDIR)/objtemp.o
-		set export $env(SIMTMPDIR)/exptemp.exp
 		set dll ame_dll${MAJ}${MIN}
-#    ShowMessage debug info "object: $object; export: $export" ok
-        exec gcc -c -o $object -I$TOOLDIR -I. $c_prog
-		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp $object
+	        exec gcc -c -o objtemp.o -I$TOOLDIR -I. model.cpp
+		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp objtemp.o
 		file delete junk.tmp
 		exec dlltool --dllname $TARGET --base-file base.tmp \
-			--output-exp $export --def $TOOLDIR/model.def
-		exec gcc -mdll -o $TARGET $object -Wl,$export
-		file delete $export
+			--output-exp exptemp.exp --def $TOOLDIR/model.def
+		exec gcc -mdll -o $TARGET objtemp.o -Wl,exptemp.exp
+		file delete exptemp.exp
 		
 # Method using command line calls to MSVC 4.0 or later -- works well
 	    } else {
 		set TOOLS32 [file dirname $env(MSVCDIR)/any]
-		set object $env(SIMTMPDIR)/objtemp.obj
 		exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
 			-DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
 			-I. -I$TOOLS32/include -I$TCL/include \
-			-Fo$object $c_prog
+			-Foobjtemp.o model.cpp
 		exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
 			-align:0x1000 /MACHINE:IX86 \
 			-entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
 			ame_dll${MAJ}${MIN}.lib \
 			$TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
-			$TOOLS32/lib/oldnames.lib $object
+			$TOOLS32/lib/oldnames.lib objtemp.o
 	    }
 # Method using command line calls to Borland C++ 4.0 or later -- not finished
 
@@ -1658,11 +1676,11 @@ proc compile_c {workingDir modelPath} {
 	}   
     }
 #    file delete $c_prog
-    file delete $object
+    file delete objtemp.o
 
 # do not allow an old dcf to be saved with a new model
     if {[info exists exports(dcfId)]} {unset exports(dcfId)}
-
+    cd $oldDir
 }
 
 # This makes the extra bit that goes onto Tcl to run C programs. We don't
@@ -1689,7 +1707,7 @@ proc build_c_stub {targetDir make_new_stub} {
 # the Tcl library files, since they should be in LD_LIBRARY_PATH. It is because
 # some people find it easier to build the stub from exec_only.tcl, which gives
 # them error messages to the console but does not set LD_LIBRARY_PATH.
-	    set TARGET $targetDir/../System/library/libame_dll$MAJ.$MIN.so
+	    set TARGET $targetDir/libame_dll$MAJ.$MIN.so
 	    if {$make_new_stub || ![file exists $TARGET]} {
 		exec g++ -c -O -fPIC -I$targetDir -I$TCL/include ./ame_cmx.cpp
 		exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN
@@ -1700,13 +1718,13 @@ proc build_c_stub {targetDir make_new_stub} {
 	    if {$make_new_stub || ![file exists $TARGET]} {
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
 # it is running under Prolog. However it seems to work OK in WinNT.
-		if {$make_new_stub == 2} {
+		if {$make_new_stub != 1} {
 		    set dll tcl${MAJ}${MIN}
 		    exec gcc -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
 		    exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
 			    obj.o -L. -l$dll
 #		    file delete junk.tmp
-		    exec dlltool --dllname TARGET --base-file base.tmp \
+		    exec dlltool --dllname $TARGET --base-file base.tmp \
 			    --output-exp exp.exp --def stub.def
 		    exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
 		    file delete exp.exp
@@ -1954,6 +1972,7 @@ proc FilterErrors {args} {
     } else {
 	return $retVal
     }
+
 }
 
 build_c_stub "[pwd]/../Run" 0

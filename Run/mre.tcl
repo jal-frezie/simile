@@ -3,6 +3,10 @@
 # Jonathan Massheder
 
 # $Log: mre.tcl,v $
+# Revision 1.3  2002/06/20 17:12:47  jaspert
+# Prolog changes relating to GNU prolog port
+# Tcl changes for usability in tcltk 8.3
+#
 # Revision 1.2  2002/05/30 17:20:29  jmm
 # Added Parameters ( "Modify file parameters" ) to File menu as this was missing
 #
@@ -44,7 +48,7 @@
 
 namespace eval RunEnv {
     
-    package require BWidget
+    package require -exact BWidget 1.2.1
     namespace import ::BWidget::*
     
     #    variable notebook
@@ -339,7 +343,7 @@ proc RunEnv::OnDestroyHelper {winId} {
 proc RunEnv::RemoveHelperPageDlgOK {dlg} {
     variable listboxData
     set selection [$dlg.listbox curselection]
-    foreach item $selection {
+    foreach item $selection {
         kill_helper_window .[lindex [lindex $listboxData $item] 1]
     }
     unset listboxData

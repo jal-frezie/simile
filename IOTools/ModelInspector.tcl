@@ -10,8 +10,12 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
-#Revision 1.1  2002/05/23 15:33:18  jmm
-#*** empty log message ***
+#Revision 1.2  2002/06/20 17:12:47  jaspert
+#Prolog changes relating to GNU prolog port
+#Tcl changes for usability in tcltk 8.3
+#
+#Revision 1.1.1.1  2002/05/23 15:33:18  jmm
+#First Commercial Release (2.91) 
 #
 #Revision 1.12  2002-05-03 14:31:57+01  jmm
 #Got rid of references to BLT as it now uses BWidget instead. It is now available for use in the classic multiple window run-time environment.
@@ -24,7 +28,7 @@ set keyValue ModelInspector63654
 
 namespace eval ModelInspector63654 {
     
-    package require BWidget
+    package require -exact BWidget 1.2.1
     namespace import ::BWidget::*
     
     variable tableframe

@@ -6,4 +6,4 @@ The command that actually starts it is in main. */
 
 :- 	[syntax].
 :-	use_module(main).
-version_is(2.91).
+version_is(2.92).

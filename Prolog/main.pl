@@ -17,6 +17,9 @@ portray(xrefs(Model, _, _, _)) :-
 portray(sm(Model, _,_,_)) :-
 	print(sm(Model)).
 
+runtime_entry(start) :-
+	main.
+
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */

@@ -699,7 +699,7 @@ proc OpenProgressBox {{parent .}} {
     wm title .progress "Progress with current operation"
     message .progress.message -aspect 400 -text "Please wait"
     pack .progress.message -fill both -expand true
-    tkwait visibility .progress
+#    tkwait visibility .progress
     update
 }
 
