@@ -809,87 +809,15 @@ proc RunEnv::LoadView {} {
     
     set savedView [ChooseFile Displays.shf "Open view specification file" 0]
     if {[llength $savedView]} {
-        destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
         set stream [open $savedView r]
         
         # check for run env that made the shf
         gets $stream line
         if {[llength $line]==4} {
-            
-            # read and set .mre position and size
-            scan $line "%i %i %i %i" x y width height
-            wm geometry .mre ${width}x${height}+${x}+${y}
-            
-            gets $stream line
-            scan $line "%i %i" x y;
-            [$mainframe getframe].mainpw sash place  0 $x $y
-            
-            gets $stream line
-            scan $line "%i %i" x y
-            [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
-            
-            while {[gets $stream line] >= 0} {
-                switch [scan $line %s] {
-                    container {
-                        LoadContainer $stream $line
-                    }
-                    panedwindow {
-                        #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
-                        scan $line "%s %s %s" widget path orient
-                        panedwindow $path -orient $orient
-                        #set containerId [winfo parent $path]
-                        #ShowMessage debug info "containerId $containerId" ok
-                        #$notebook raise $pageId; # or $panedwindow sash place won't work
-                        pack $path -expand yes -fill both
-                    }
-                    pane {
-                        #%puts $stream "pane $pane"
-                        scan $line "%s %s" widget path
-                        frame $path -highlightcolor black  -highlightthickness 1
-                        set panedwindow [winfo parent $path]
-                        $panedwindow add $path
-                        bind $path <Button-1> "::RunEnv::SetCurrentContainer %W"
-                        bind $path <Button-3> \
-                                "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-                    }
-                    sash {
-                        scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
-                        # the page this pane is in must be raised and update called!
-                        #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy " ok
-                        update
-                        $panedwindow sash place $index $sashx $sashy
-                    }
-                    notebook {
-                        #puts $stream "notebook $notebook"
-                        scan $line "%s %s" widget path
-                        NoteBook $path
-                        set containerId [winfo parent $path]
-                        #ShowMessage debug info "containerId $containerId" ok
-                        pack $path -fill both -expand yes
-                    }
-                    page {
-                        #puts $stream "page $notebook $page $pagecaption"
-                        scan $line "%s %s %s %s" widget notebook pageId pagecaption
-                        #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
-                        $notebook insert end $pageId -text $pagecaption \
-                                -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
-                        # page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
-                        [$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
-                        bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
-                        bind [$notebook getframe $pageId] <Button-3> \
-                                "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-                        catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
-                        
-                    }
-                    default {
-                        # puts $stream "Unhandled mre element"
-                    }
-                }
-            }
-            close $stream
-            $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
+            LoadViewFile $stream $line
         } elseif {[llength $line]==1}  {
             # assume that it is an shf made by the multiple window run env
+	    destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
             RunEnv::AddNotebook $dp0
             seek $stream 0 start
             while {[gets $stream helperId] >= 0} {
@@ -911,13 +839,92 @@ proc RunEnv::LoadView {} {
                 ${helperId}::Restore $winId
                 ChildrenFocusParent $winId
             }
-            close $stream
             $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
             
         } else  {
             ShowMessage Error error "Unknown display configuration file format" ok
         }
+	close $stream
     }
+}
+
+proc RunEnv::LoadViewFile {stream line} {
+    global helperTable
+    variable mainframe
+    variable dp0
+    
+    destroy $RunEnv::dp0.notebook
+    # read and set .mre position and size
+    scan $line "%i %i %i %i" x y width height
+    wm geometry .mre ${width}x${height}+${x}+${y}
+    
+    gets $stream line
+    scan $line "%i %i" x y;
+    [$mainframe getframe].mainpw sash place  0 $x $y
+    
+    gets $stream line
+    scan $line "%i %i" x y
+    [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
+    
+    while {[gets $stream line] >= 0} {
+	switch [scan $line %s] {
+	    container {
+		LoadContainer $stream $line
+	    }
+	    panedwindow {
+		#%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
+		scan $line "%s %s %s" widget path orient
+		panedwindow $path -orient $orient
+		#set containerId [winfo parent $path]
+		#ShowMessage debug info "containerId $containerId" ok
+		#$notebook raise $pageId; # or $panedwindow sash place won't work
+		pack $path -expand yes -fill both
+	    }
+	    pane {
+		#%puts $stream "pane $pane"
+		scan $line "%s %s" widget path
+		frame $path -highlightcolor black  -highlightthickness 1
+		set panedwindow [winfo parent $path]
+		$panedwindow add $path
+		bind $path <Button-1> "::RunEnv::SetCurrentContainer %W"
+		bind $path <Button-3> \
+		    "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+	    }
+	    sash {
+		scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
+		# the page this pane is in must be raised and update called!
+		#ShowMessage debug info "$panedwindow sash place $index $sashx $sashy " ok
+		update
+		$panedwindow sash place $index $sashx $sashy
+	    }
+	    notebook {
+		#puts $stream "notebook $notebook"
+		scan $line "%s %s" widget path
+		NoteBook $path
+		set containerId [winfo parent $path]
+		#ShowMessage debug info "containerId $containerId" ok
+		pack $path -fill both -expand yes
+	    }
+	    page {
+		#puts $stream "page $notebook $page $pagecaption"
+		scan $line "%s %s %s %s" widget notebook pageId pagecaption
+		#ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
+		$notebook insert end $pageId -text $pagecaption \
+		    -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
+		# page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
+		[$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
+		bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
+		bind [$notebook getframe $pageId] <Button-3> \
+		    "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+		catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
+		
+	    }
+	    default {
+		# puts $stream "Unhandled mre element"
+	    }
+	}
+    }
+    $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
 }
 
 proc RunEnv::LoadContainer {stream line} {

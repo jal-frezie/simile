@@ -1091,7 +1091,7 @@ proc LoadView {} {
                 switch $response {
                     yes {
                         Makemre UnusedArg
-                        RunEnv::LoadViewFile $savedView
+                        RunEnv::LoadViewFile $stream $helperId
                     } no {
                         LoadMREFormatView $stream
                     } cancel {
