@@ -1,7 +1,3 @@
-fourex(a) --> b=4,a*b.
-bugged_mean(A) -->
-   N=count([x]),
-   sum([x])/N.
 subtotals(Arr) --> [st]=makearray((if place_in(1)==1 then 0.0 else
 element(sofar([st]),place_in(1)-1))+element(Arr,place_in(1)),
 count(Arr)),[st].
