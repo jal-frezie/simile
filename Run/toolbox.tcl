@@ -400,6 +400,9 @@ proc tell_runner {node action} {
     global runState runHow
 #puts "Sending \"$action\" to $node exec"
     if {[string equal pipe $runHow(call)]} {
+	if {[string equal get_data $runHow(readpipe)]} {
+	    set action [split $action \n] ;# command must be on one line
+	}
 	puts $runState($node,interp) $action
 	flush $runState($node,interp)
     } else {

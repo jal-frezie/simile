@@ -592,7 +592,7 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
 
 proc EatInput {} {
     gets stdin blether
-    eval $blether
+    eval [join $blether \n]
 }
 
 proc ScrubRun {node times} {
