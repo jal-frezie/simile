@@ -104,12 +104,12 @@ proc ClickObj { x y winId X Y action} {
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
-    if {$looks(gridPitch)} {
-	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
-	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
-	set looks(lastXnode) $xco
-	set looks(lastYnode) $yco
-    }
+#    if {$looks(gridPitch)} {
+#	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
+#	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
+#	set looks(lastXnode) $xco
+#	set looks(lastYnode) $yco
+#    }
     
     focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
@@ -270,17 +270,18 @@ proc DragObj {winId xco yco} {
     set cany [$winId canvasy $yco]
     set virtx [Unscale $winId $canx]
     set virty [Unscale $winId $cany]
-    if {$looks(gridPitch)} {
-	set virtx [expr $looks(gridPitch)*round($virtx/$looks(gridPitch))]
-	set virty [expr $looks(gridPitch)*round($virty/$looks(gridPitch))]
+#    if {$looks(gridPitch)} {
+#	set virtx [expr $looks(gridPitch)*round($virtx/$looks(gridPitch))]
+#	set virty [expr $looks(gridPitch)*round($virty/$looks(gridPitch))]
+#
+#	if {$virtx==$looks(lastXnode) && $virty==$looks(lastYnode)} {
+#	    return
+#	} else {
+#	    set looks(lastXnode) $virtx
+#	    set looks(lastYnode) $virty
+#	}
+#    }
 
-	if {$virtx==$looks(lastXnode) && $virty==$looks(lastYnode)} {
-	    return
-	} else {
-	    set looks(lastXnode) $virtx
-	    set looks(lastYnode) $virty
-	}
-    }
     set sloth 5
     
     RollBack $winId 1 $xco $yco $xco $yco
@@ -1470,10 +1471,10 @@ proc DragComponentIn {winId button x y} {
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
-    if {$looks(gridPitch)} {
-	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
-	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
-    }
+#    if {$looks(gridPitch)} {
+#	set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
+#	set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
+#    }
     
     set target [GetClickedObj $winId $canx $cany 6]
     

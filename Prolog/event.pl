@@ -124,7 +124,8 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	assert(clicked_obj_is(Name)),
 	find_current(Wid),
 	find_relevant_windows(Name, Wid, Depth, Trans),
-	translate([Xpt, Ypt], Trans, [NewXpt, NewYpt]),
+	translate([Xpt, Ypt], Trans, ActNewPt),
+	snap_to_grid(ActNewPt, [NewXpt, NewYpt]),
 	set_original_click(Xpt, Ypt),
 	find_all_comps(Parent, Name),
 	save_params(Trans, Depth, Parent),
@@ -157,7 +158,7 @@ click_text(Xpt, Ypt, Name, CD) :-
 	    (get_phase(moving); get_phase(moving_border(_))),
 	    advance_phase_to(moving_text).
 /*
-click: Handles mouse clicks in a model window. Ignore if running model.
+click: Handles mouse clicks in a model window.
 */
 click(Xpt, Ypt, CD) :-
 	find_current(Wid),
@@ -206,15 +207,30 @@ middle of nowhere; i could also do variables for influences. */
 :- dynamic(menu_submodel_is/2).
 :- dynamic(menu_submodel_will_be/3).
 
+snap_to_grid([], []).
+
+snap_to_grid([X, Y | Rest], [GX, GY | GRest]) :-
+	Pitch = 15,
+	GX is Pitch*round(X/Pitch),
+	GY is Pitch*round(Y/Pitch),
+	snap_to_grid(Rest, GRest).
+
+snap_to_grid([Pair | Rest], [NewPair | NewRest]) :-
+	snap_to_grid(Pair, NewPair),
+	snap_to_grid(Rest, NewRest).
+
+
 click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	targets(Wid, Parent, Point, Depth, Child), !, 
 	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD);
 	CD = 2,
-	adjust_edit_menu(Wid, Parent, Point).
+	snap_to_grid(Point, GPoint),
+	adjust_edit_menu(Wid, Parent, GPoint).
 
-click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, _CD) :-
+click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
 	finish_old_edit(none),
 	get_mode(add),
+	snap_to_grid(ActPt, [Xpt, Ypt]),
 	set_start_coords(Xpt, Ypt),
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
@@ -236,7 +252,8 @@ click_in(_,_,_,_, Parent, CD) :-
 	    give_focus('{}');   */
 	get_translation(Old_trans),
 	get_original_click(Orig_X, Orig_Y),
-	translate([Orig_X, Orig_Y], Old_trans, [Xtr, Ytr]),
+	translate([Orig_X, Orig_Y], Old_trans, ActOrig),
+	snap_to_grid(ActOrig, [Xtr, Ytr]),
 	
 	/* Background of unselected submodel: select a region */
 	(get_mode(select),
@@ -436,8 +453,8 @@ insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
 	get_box_size(NewObjStyle, Cur_size),
 	get_shape(Submodel, internal_extent, [L, T, R, B]),
 	MaxDist is max(max(BestX - L, R - BestX), max(BestY - T, B - BestY)),
-	count_to(0, MaxDist, 10, Distance),
-	count_to(0, Distance, 10, Range),
+	count_to(0, MaxDist, 15, Distance),
+	count_to(0, Distance, 15, Range),
 	((TargetX is BestX-Distance; TargetX is BestX+Distance),
 	(TargetY is BestY-Range; TargetY is BestY+Range);
 	(TargetY is BestY-Distance; TargetY is BestY+Distance),
@@ -787,6 +804,7 @@ in the parent. */
 window_size_for(Submodel, Size, 1) :-
 	get_shape(Submodel, internal_extent, Size).
 
+/*
 drag_obj(Xpt, Ypt, Name) :-
 	sift_and_set(Xpt, Ypt),
 	find_current(Wid),
@@ -794,7 +812,7 @@ drag_obj(Xpt, Ypt, Name) :-
 	translate([Xpt, Ypt], Trans, [RelXpt, RelYpt]),
 	drag_to(RelXpt, RelYpt, Name).
 
-/* The easy bit: ignore initial drags of one unit or less, and for larger ones
+The easy bit: ignore initial drags of one unit or less, and for larger ones
 register the user's choice of a drag rather than a click-start click-end. */
 
 sift_and_set(_, _) :-
@@ -831,12 +849,13 @@ drag(Xpt, Ypt) :-
 		get_current_node(Parent),
 			find_all_comps(Parent, Comp),
 			get_translation(Trans)),
-		translate([Xpt, Ypt], Trans, [NewXpt, NewYpt]);
+		translate([Xpt, Ypt], Trans, RelPt);
 	/* do not delete a submodel by unclicking inside it 
 	get_mode(delete), !,
 	    remove_highlights,
 	    fail; */
-	update_context(Wid, [Xpt, Ypt], [NewXpt, NewYpt], Comp)),
+	update_context(Wid, [Xpt, Ypt], RelPt, Comp)),
+	snap_to_grid(RelPt, [NewXpt, NewYpt]),
 	drag_to(NewXpt, NewYpt, Comp).
 
 /* This is a hideously complex procedure for working out what component I have
@@ -1938,6 +1957,10 @@ adjust_posn(Thing, Trans) :-
 	    rel_translate(Wherever, Trans, New_wherever);
 	\+ Whatever = caption_offset,
 	    translate(Wherever, Trans, New_wherever)),
+/*	(member(Trans, [[_,_,1,1], [_,_,1.0,1.0]]), !,
+	    NewOnGrid = New_wherever;
+	snap_to_grid(New_wherever, NewOnGrid)),
+*/
 	change_shape(Thing, Whatever, New_wherever),
 	fail; true.
 
