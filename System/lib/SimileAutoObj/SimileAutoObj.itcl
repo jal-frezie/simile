@@ -19,6 +19,7 @@ package require Tk
 
 if {[string match windows $tcl_platform(platform)]} {
     package require tcom
+    ::tcom::import [file join [file dirname [info script]] SimileAutoObj.tlb]
 }
 set ::SimileAutoObjLoaded true; # used so .register (welcome) dialog not produced
 
@@ -78,6 +79,7 @@ itcl::class similescript::ModelWindow {
     }
     
     constructor {} {
+        #tk_messageBox -message "ModelWin constructor"
         Hide
         UseMRE false
     }
@@ -86,6 +88,9 @@ itcl::class similescript::ModelWindow {
         if {![string match "" [itcl::find object similescript::RunControl]]} {
             delete object similescript::RunControl
         }
+        tk_messageBox -message "model win destructor"
+            
+        Exit
     }
     
     public method Hide {} {
@@ -109,11 +114,12 @@ itcl::class similescript::ModelWindow {
     }
     
     public method FileOpenDlg {} {
-        if {[info exists model]} {
-            $this FileNew"
-        }
-        MenuSelect [GetModelWindow].canvas file open_all
-        set model $modelFile
+        #if {[info exists model]} {
+        #    $this FileNew"
+        #}
+        #$c local open_all
+        MenuSelect [GetModelWindow].canvas local open_all
+        #set model $modelFile
     }
     
     public method Open {modelFile} {
@@ -144,18 +150,18 @@ itcl::class similescript::ModelWindow {
     # Model Menu
     public method Run {} {
         # builds the model with CPP and returns a run control command/object
-        RemoveRunControl
+        #RemoveRunControl
         MenuSelect [GetModelWindow].canvas file run_c
-        set rc [similescript::RunControl ::runControl $this]
-        return $rc
+        #set rc [similescript::RunControl ::runControl $this]
+        #return $rc
     }
     
     public method Debug {} {
         # builds the model with Tcl and returns a run control command/object
-        RemoveRunControl
+        #RemoveRunControl
         MenuSelect [GetModelWindow].canvas file run_tcl
-        set rc [similescript::RunControl ::runControl $this]
-        return $rc
+        #set rc [similescript::RunControl ::runControl $this]
+        #return $rc
     }
     
     public method ListEquations {} {
@@ -215,7 +221,8 @@ itcl::class similescript::RunControl {
     
     inherit HelperController
     
-    constructor {modelWindow} {
+    constructor {} {
+        set modelWindow [itcl::find object * -isa ::similescript::ModelWindow]
         set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
         set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
         Hide
@@ -446,13 +453,12 @@ itcl::class similescript::FileWriter {
     }
 }
 
-
+#::SimileAutoObj::
 if {[string match windows $tcl_platform(platform)]} {
-    #    ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {ModelWindowImpl #auto} {delete object}
+    #tk_messageBox -message "ModelWin before registerfactory"
+    ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {similescript::ModelWindow #auto} {delete object}
+    ::tcom::object registerfactory ::SimileAutoObj::RunControl {similescript::RunControl  #auto} {delete object}
+    #tk_messageBox -message "ModelWin after registerfactory"
 }
 
-#find classes
-#PlotterImpl p modelWin2 pl1
-#puts [p info inherit]
-#puts [p info heritage]
 
