@@ -42,7 +42,9 @@ namespace eval $keyValue {
         set displayList($winId) {}
         variable lastDisplay
         set lastDisplay($winId) 0.0
-        
+        variable displayUpdate
+	set displayUpdate($winId) 1
+
         menu $winId.formatMenu -tearoff 0 -postcommand \
                 [namespace code [list AddVars $winId]]
         
@@ -201,7 +203,7 @@ namespace eval $keyValue {
             set displayFormat($winId,$varIndex) {General 4 0}; # format dp Neg_in_red
             if {[GetModelTime]==$lastDisplay($winId)} {
                 set dataStore($winId,$varIndex,$lastDisplay($winId)) \
-                        [lindex [GetModelValue $node] 0]
+		    [GetTransVals $node]
             }
             Reconbobulate $winId
             SaveState $winId
@@ -235,32 +237,41 @@ namespace eval $keyValue {
         variable displayList
         variable lastDisplay
         variable orientList
+	variable displayUpdate
         
         set lastDisplay($winId) $tCur
         set varIndex 0
         foreach varCapt $displayList($winId) {
             if {[llength $varCapt]} { ;# check not deleted
                 set varId [GetIdFromCaptionPath $varCapt]
-                set dataStore($winId,$varIndex,$tCur) \
-                        [lindex [GetModelValue $varId] 0]
+                set dataStore($winId,$varIndex,$tCur) [GetTransVals $varId]
+              
             }
             incr varIndex
         }
-        set xScrollPosn [$winId.t xview]
-        set yScrollPosn [$winId.t yview]
-        Reconbobulate $winId
-        switch [lindex $orientList($winId) 0] {
-            rows {
-                $winId.t xview moveto [lindex $xScrollPosn 0]
-            } cols {
-                $winId.t yview moveto [lindex $yScrollPosn 0]
-            } none {
-                $winId.t xview moveto [lindex $xScrollPosn 0]
-                $winId.t yview moveto [lindex $yScrollPosn 0]
-            }
-        }
+	if {$displayUpdate($winId) || !$tStep} {
+	    set xScrollPosn [$winId.t xview]
+	    set yScrollPosn [$winId.t yview]
+	    Reconbobulate $winId
+	    switch [lindex $orientList($winId) 0] {
+		rows {
+		    $winId.t xview moveto [lindex $xScrollPosn 0]
+		} cols {
+		    $winId.t yview moveto [lindex $yScrollPosn 0]
+		} none {
+		    $winId.t xview moveto [lindex $xScrollPosn 0]
+		    $winId.t yview moveto [lindex $yScrollPosn 0]
+		}
+	    }
+	}
     }
     
+    proc GetTransVals {varId} {
+	set trans [GetFromProlog tk_get_info(dummy,$varId,types)]
+	set value [lindex [GetModelValue $varId] 0]
+	return [TransEnums $trans $value]
+    }
+
     proc CopyToClipboard {winId} {
         set titlecols [$winId.t cget -titlecols]
         set titlerows [$winId.t cget -titlerows]
@@ -561,16 +572,18 @@ namespace eval $keyValue {
         if {![llength $l2]} {
             return 1
         }
-        if {[catch {expr ($l2<$l1)-($l2>$l1)} math]} {
+	if {[string compare $l1 [lindex $l1 0]] || \
+		[string compare $l2 [lindex $l2 0]]} {
             set recurse [ReComp [lindex $l1 0] [lindex $l2 0]]
             if {$recurse} {
                 return $recurse
-            } else {
-                return [ReComp [lrange $l1 1 end] [lrange $l2 1 end]]
-            }
-        } else {
-            return $math
+            }    
+	    return [ReComp [lrange $l1 1 end] [lrange $l2 1 end]]
         }
+	if {[catch {expr ($l2<$l1)-($l2>$l1)} math]} {
+	    return [string compare $l1 $l2]
+	}
+	return $math
     }
     
     proc GrabIndices {winId depth rowsList colsList index struct varId} {
@@ -620,7 +633,7 @@ namespace eval $keyValue {
         variable orientList
         variable displayList
         variable format
-        variable displayFormat
+        variable displayUpdate
         
         set t [toplevel $winId.propertiesDlg]
         wm transient $t $winId
@@ -630,6 +643,7 @@ namespace eval $keyValue {
         set ::${t}l2 [lindex $orientList($winId) 1]
         set ::${t}l3 [lindex $orientList($winId) 2]
         set ::${t}l4 [lindex $orientList($winId) 3]
+        set ::${t}l5 $displayUpdate($winId)
         
         set nb [NoteBook $t.nb]
         pack $nb -expand on -fill both -padx 10 -pady 10
@@ -671,6 +685,9 @@ namespace eval $keyValue {
         pack [label $layoutP.l4.coll -text "On Columns"] -side left -anchor w
         pack [radiobutton $layoutP.l4.colb -variable ${t}l4 -value cols] -side left -anchor w
         
+        pack [frame $layoutP.l5]  -anchor w -padx 2 -pady 4
+        pack [checkbutton $layoutP.l5.update -variable ${t}l5 \
+		  -text "Update at display intervals"]
         
         #set newHeader [GetCaptionPathFromId $node]
         #set varIndex [lsearch $displayList($winId) $newHeader]
@@ -743,6 +760,7 @@ namespace eval $keyValue {
         if {[set ::${t}done]} {
             set orientList($winId) [list [set ::${t}l1] [set ::${t}l2] \
                     [set ::${t}l3] [set ::${t}l4]]
+	    set displayUpdate($winId) [set ::${t}l5]
             Reconbobulate $winId
             SaveState $winId
         }
