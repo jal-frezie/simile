@@ -9,8 +9,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
     global paramData widgetNames
     set allNodes [GetCompProperty $topNode Objects]
     # do it now to shake out errors before opening window
-    set t [toplevel .fpdialogue]
-    wm transient $t $topWin
+    set t [PutItThere .fpdialogue $topWin]
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t "Enter file parameters"
     if {!$mustShow} {
@@ -63,7 +62,8 @@ proc FileParamDialogue {topNode topWin mustShow} {
         pack [frame $bfrm.rpad] -side left -fill x -expand true
         raise .fpdialogue
 	set paramData(complete) 0
-        grab $t
+        LetItShow $t
+	grab $t
         tkwait variable paramData(done)
         grab release $t
         
@@ -71,7 +71,7 @@ proc FileParamDialogue {topNode topWin mustShow} {
         # Dialogue not needed because data OK so return good
         set paramData(done) 1
     }
-    destroy $t
+    PackItUp $t
     return $paramData(done)
 }
 

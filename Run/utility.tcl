@@ -439,3 +439,66 @@ proc max {first last} {
     return [expr $first>$last?$first:$last]
 }
 
+# This takes care of the ways of getting a good-looking transient
+# window on different platforms. Currently the extra MacOS command is
+# necessary to make sure dialogue boxes have titlebars, but if there
+# is no parent window it instead stops entry widgets in the dialogue
+# boxes getting text, and leads to a hang
+
+proc PutItThere {t parent} {
+    global tcl_platform
+    toplevel .$t -bd 4
+    if {[winfo exists $parent]} {
+	wm transient $t $parent
+	if [string match Darwin $tcl_platform(os)] {
+	    ::tk::unsupported::MacWindowStyle style $t floatGrowProc
+	}
+    } else {
+	wm transient $t
+    }
+    return $t
+}
+
+# This actually isnt much use, because if a script creates a window then makes
+# it a slave of another withdrawn window, then calls this, the 'state' will
+# come up as 'normal' until an update happens. Adding 'update idletasks'
+# may have sorted this.
+
+# Added functionality to move window to the centre of its parent, or
+# the screen if it has none
+
+proc LetItShow {t} {
+    update idletasks
+#puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
+    if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
+	tkwait visibility $t
+    }
+    set scw [winfo screenwidth $t]
+    set sch [winfo screenheight $t]
+    set wotParent [wm transient $t]
+#puts "Parent of $t is $wotParent"
+    if {[llength $wotParent]} {
+	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
+	    tgtw tgth tgtx tgty
+    } else {
+	set tgtx 0; set tgty 0
+	set tgtw $scw
+	set tgth $sch
+    }
+    set fillw [winfo reqwidth $t]
+    set fillh [winfo reqheight $t]
+    set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
+    set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
+    wm geometry $t +$left+$top
+    return [winfo viewable $t]
+}
+
+proc PackItUp {t} {
+    global tcl_platform
+    set parent [wm transient $t]
+    destroy $t
+    if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
+	focus -force [winfo toplevel $parent]
+    }
+}
+

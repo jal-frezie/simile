@@ -28,13 +28,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             set disaggregate(step) $step
         }
     }
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .disaggregation -bd 4 -class Disaggregation]; ::tk::unsupported::MacWindowStyle style .disaggregation floatGrowProc
-      set disaggregate(parent) $parent
-    } else {
-      set t [toplevel .disaggregation -bd 4 -class Disaggregation]
-      wm transient $t $parent
-    }
+    set t [PutItThere .disaggregation $parent]
     wm resizable $t 0 1
     wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $t "Properties of [BlankCrs $title]"
@@ -255,10 +249,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     tkwait variable disaggregate(done)
     grab release $t
     set disaggregate(comment) [string trimright [$t.commentsSW.comment get 1.0 end]]
-    destroy $t
-    if [string match Darwin $tcl_platform(os)] {
-      focus -force $disaggregate(parent)
-    }
+    PackItUp $t
 
     set icount {}
     if [string compare $disaggregate(icount) 1] {
@@ -323,12 +314,7 @@ proc ClearBG {posRBs} {
 
 proc OldAddEnumType {fr} {
     global addenumtype tcl_platform
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .typeadder -bd 4]; ::tk::unsupported::MacWindowStyle style .typeadder floatZoomProc
-    } else {
-      toplevel .typeadder
-      wm transient .typeadder $fr
-    }
+    PutItThere .typeadder $fr
     pack [frame .typeadder.what]
     pack [label .typeadder.what.l -text Name:] -side left
     pack [entry .typeadder.what.e -textvariable addenumtype(name)] -side left
@@ -343,7 +329,7 @@ proc OldAddEnumType {fr} {
     if {$addenumtype(done)} {
         $fr.scrf insert end $addenumtype(name)
     }
-    destroy .typeadder
+    PackItUp .typeadder
 }
 
 proc AddEnumTypeMems {fr} {
@@ -587,37 +573,28 @@ proc SetHighlights {t} {
 }
 
 proc OpenProgressBox {winId} {
-    global tcl_platform
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .progress -bd 4]; ::tk::unsupported::MacWindowStyle style .progress floatProc
-    } else {
-      toplevel .progress
-      wm transient .progress $winId
-    }
-    wm geometry .progress 400x100
+    PutItThere .progress $winId
     wm title .progress "Progress with current operation"
-    message .progress.message -aspect 400 -text "Please wait"
-    pack .progress.message -fill both -expand true
+    pack [frame .progress.filler -width 400 -height 100]
     if {[LetItShow .progress]} {
 	grab .progress
     }
+    destroy .progress.filler
+    wm geometry .progress 400x100
+    message .progress.message -aspect 400 -text "Please wait"
+    pack .progress.message -fill both -expand true
     update
 }
 
 proc CloseProgressBox {} {
     grab release .progress
-    destroy .progress
+    PackItUp .progress
 }
 
 proc RelationCheck {parent title type state init_comment} {
     global relation tcl_platform
     
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .relcheck -bd 4]; ::tk::unsupported::MacWindowStyle style $t floatGrowProc
-    } else {
-      set t [toplevel .relcheck -bd 4]
-    }
-    wm transient .relcheck $parent
+    set t [PutItThere .relcheck $parent]
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
     wm title $t "Properties of [BlankCrs $title]"
@@ -666,10 +643,7 @@ proc RelationCheck {parent title type state init_comment} {
     tkwait variable relation(done)
     grab release .relcheck
     set newComment [string trimright [$f.comment get 1.0 end]]
-    destroy .relcheck
-    if [string match Darwin $tcl_platform(os)] {
-      focus -force $parent
-    }
+    PackItUp .relcheck
     set results [list $relation(done) $newComment]
     foreach {text attr} $entries {
         lappend results $relation($attr)
@@ -681,12 +655,7 @@ set find(prevs) {}
 
 proc GetFindText {parent} {
     global find tcl_platform
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .findentry -bd 4 -class Equation]; ::tk::unsupported::MacWindowStyle style .findentry floatGrowProc
-    } else {
-      set t [toplevel .findentry -bd 4]
-      wm transient $t $parent
-    }
+    set t [PutItThere .findentry $parent]
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
     wm title $t "Find"
     wm resizable $t 0 0
@@ -720,10 +689,7 @@ proc GetFindText {parent} {
     tkwait variable find(done)
     grab release .findentry
     set result [$ft.e get]
-    destroy .findentry
-    if [string match Darwin $tcl_platform(os)] {
-      focus -force $parent
-    }
+    PackItUp .findentry
     if {$find(done)} {
 	set find(prevs) [AddIfAbsent $result $find(prevs)]
         return $result
@@ -753,12 +719,7 @@ proc DoRegDialog {dtId} {
             set custom(hotlist) [glob $custom(prefDir)/Examples/*.sml]
         }
     }
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .register]; ::tk::unsupported::MacWindowStyle style .register floatProc
-    } else {
-      set t [toplevel .register -bd 4]
-      wm transient $t $dtId
-    }
+    set t [PutItThere .register $dtId]
     wm title $t "Welcome to Simile version $userinfo(Version)"
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
     set welcomeDone 0
@@ -910,10 +871,7 @@ proc DoRegDialog {dtId} {
     }
     
     grab release .register
-    destroy .register
-    if [string match Darwin $tcl_platform(os)] {
-      focus -force $dtId
-    }
+    PackItUp .register
 }
 
 proc PopReopen {win} {
@@ -967,15 +925,9 @@ proc ResolveHyper {args} {
 
 proc ErrorHelp {diagnostic} {
     global diagno url help tcl_platform
-    toplevel .diag
     set parent [focus]
-    if {[string length $parent]>1} {
-      if [string match Darwin $tcl_platform(os)] {
-        ::tk::unsupported::MacWindowStyle style .diag floatGrowProc
-      } else {
-        wm transient .diag $parent
-      }
-    }
+    PutItThere .diag $parent
+
     wm title .diag {Error diagnostics}
     wm protocol .diag WM_DELETE_WINDOW {set diagno(done) 0}
     labelframe .diag.errorf -text "Diagnostics:"
@@ -1007,37 +959,7 @@ proc ErrorHelp {diagnostic} {
     tkwait variable diagno(done)
     unset diagno(done)
     grab release .diag
-    destroy .diag
-}
-
-# This actually isnt much use, because if a script creates a window then makes
-# it a slave of another withdrawn window, then calls this, the 'state' will
-# come up as 'normal' until an update happens. Adding 'update idletasks'
-# may have sorted this.
-
-proc LetItShow {t} {
-    update idletasks
-#    puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
-    if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
-	tkwait visibility $t
-    }
-    set scw [winfo screenwidth $t]
-    set sch [winfo screenheight $t]
-    set wotParent [wm transient $t]
-    if {[llength $wotParent]} {
-	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
-	    tgtw tgth tgtx tgty
-    } else {
-	set tgtx 0; set tgty 0
-	set tgtw $scw
-	set tgth $sch
-    }
-    set fillw [winfo reqwidth $t]
-    set fillh [winfo reqheight $t]
-    set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
-    set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
-    wm geometry $t +$left+$top
-    return [winfo viewable $t]
+    PackItUp .diag
 }
 
 proc GetHelp {} {
@@ -1078,8 +1000,7 @@ proc VisitUrl {x} {
 
 proc ShowAbout {winId} {
     global sendvars userinfo interface tcl_platform
-    toplevel .about
-    wm transient .about $winId
+    PutItThere .about $winId
     wm title .about About\ SIMILE
     image create photo dripu
     image create photo dripl
@@ -1144,7 +1065,7 @@ proc ShowAbout {winId} {
     
     tkwait variable sendvars(doneAbout)
     grab release .about
-    destroy .about
+    PackItUp .about
 }
 
 # images must be global because if building a c++ program we may be in a different directory
@@ -1373,21 +1294,8 @@ proc BuildProblem {Title errLevel msg key args} {
     global iconImages help tcl_platform
 
     set ProbWin .bprob[clock clicks]
-    toplevel $ProbWin
-    set active [focus]
-    if {[llength $active]} {
-      if [string match Darwin $tcl_platform(os)] {
-        ::tk::unsupported::MacWindowStyle style $ProbWin floatGrowProc
-      } else {
-	wm transient $ProbWin $active
-      }
-    } else {
-      if [string match Darwin $tcl_platform(os)] {
-        ::tk::unsupported::MacWindowStyle style $ProbWin floatGrowProc
-      } else {
-	wm transient $ProbWin
-      }
-    }
+    PutItThere $ProbWin [focus]
+
 #    switch $fault {
 #        user {
 #            set Title "Problem with model"
@@ -1446,7 +1354,7 @@ proc BuildProblem {Title errLevel msg key args} {
     grab $ProbWin
     tkwait variable ack
     grab release $ProbWin
-    destroy $ProbWin
+    PackItUp $ProbWin
 }
 
 proc ReportProblem {name autoName fault} {

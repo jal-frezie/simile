@@ -17,13 +17,7 @@ proc create_equation {parent boxtitle indices} {
     }
     ResetEqnBar [winfo parent $parent]
     ### End formula bar section
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .equation -bd 4 -class Equation]; ::tk::unsupported::MacWindowStyle style .equation floatZoomProc
-      set equation(parent) $parent
-    } else {
-      set t [toplevel .equation -bd 4 -class Equation]
-      wm transient $t $parent
-    }
+    set t [PutItThere .equation $parent]
     wm title $t [BlankCrs $boxtitle]
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
@@ -395,11 +389,7 @@ proc destroy_equation {} {
     }
     ### End formula bar section
     
-    focus [wm transient $equation(top)]
-    destroy $equation(top)
-    if [string match Darwin $tcl_platform(os)] {
-      focus -force $equation(parent)
-    }
+    PackItUp $equation(top)
 }
 
 proc UnityForReal {show} {
@@ -592,12 +582,7 @@ proc equationDoGraph {parent box} {
 
 proc equationGraph {parent} {
     global equation tcl_platform
-    if [string match Darwin $tcl_platform(os)] {
-      set t [toplevel .graph -bd 4 -class graphEntry]; ::tk::unsupported::MacWindowStyle style .graph floatZoomProc
-    } else {
-      toplevel .graph -class graphEntry -bd 4
-      wm transient .graph $parent
-    }
+    PutItThere .graph $parent
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
     focus .graph
     grab .graph
@@ -614,7 +599,7 @@ proc equationGraph {parent} {
     }
     set done [eval {GraphEntry .graph} $graphArgs]
     grab release .graph
-    destroy .graph
+    PackItUp .graph
     grab $parent
     return $done
 }

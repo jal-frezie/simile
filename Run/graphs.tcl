@@ -178,6 +178,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     if {![llength $target]} {
 	while {1} {
+	    LetItShow $t
 	    tkwait variable graph($t,done)
 	    if {$graph($t,done)==1} {
 		if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
@@ -497,12 +498,7 @@ proc FineX { c } {
 
 proc equationDoTable {parent tgt startLine} {
     global table_entry iconImages tcl_platform
-    if [string match Darwin $tcl_platform(os)] {
-        set t [toplevel .table -bd 4]; ::tk::unsupported::MacWindowStyle style .table floatZoomProc
-    } else {
-        toplevel .table -bd 4
-        wm transient .table $parent
-    }
+    PutItThere .table $parent
     wm title .table "Table data for [BlankCrs $tgt]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
     set table_entry(source) 0
@@ -581,7 +577,7 @@ proc equationDoTable {parent tgt startLine} {
     pack .table.bottom -side top -fill x
     
     set t .table
-    tkwait visibility .table
+    LetItShow .table
     if {[llength $table_entry(data)]} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
 	set table_entry(dataField) [lindex $table_entry(data) 1]
@@ -611,7 +607,7 @@ proc equationDoTable {parent tgt startLine} {
     grab $t
     tkwait variable table_entry(done)
     grab release $t
-    destroy $t
+    PackItUp $t
     grab $parent
     return $table_entry(done)
 }
@@ -654,10 +650,9 @@ proc AcquireTableData {lidx redo startLine} {
 proc EditListAsTable {parent valueArray} {
     global table_viewer
 
+    PutItThere .table_edit $parent
     set t .table_edit.helperzone
     set b .table_edit.buttonzone
-    toplevel .table_edit -bd 4
-    wm transient .table_edit $parent
     wm title .table_edit "Table Editor"
     wm protocol .table_edit WM_DELETE_WINDOW {set table_viewer(done) 0}
 
@@ -681,11 +676,11 @@ proc EditListAsTable {parent valueArray} {
     ${viewerId}::Reconbobulate $t
 
     focus .table_edit
+    LetItShow .table_edit
     grab .table_edit
     tkwait variable table_viewer(done)
     grab release .table_edit
-    destroy .table_edit
-    grab $parent
+    PackItUp .table_edit
 # extract step at end so window still gone if it fails
     if {$table_viewer(done)} {
 	set values [${viewerId}::ExtractEdits $t]
