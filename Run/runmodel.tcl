@@ -100,7 +100,6 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     $c configure -width 1 -height 1
     $c configure -scrollregion "$wl $wt $wr $wb" \
             -width [expr $wr-$wl] -height [expr $wb-$wt]
-    set window_info(prolog_ok) 0
     set window_info($c,width) [expr $wr - $wl]
     set window_info($c,height) [expr $wb - $wt]
     set window_info($c,scale) $scale
@@ -695,15 +694,24 @@ proc NewHelperWindow {helperId helperTitle} {
 # themselves up, or to the editor once they are done.
 
 proc GrabClicks {winId} {
-    global helperTable
+    global helperTable window_info
 
     set helperTable(current) $winId
+    foreach whosyadaddy [array names window_info *,parent] {
+	set c [string range $whosyadaddy 0 end-7]
+	set window_info(cursor_was) [$c cget -cursor]
+	$c config -cursor hand1
+    }
 }
 
 proc ReleaseClicks {winId} {
-    global helperTable
+    global helperTable window_info
 
     set helperTable(current) none
+    foreach whosyadaddy [array names window_info *,parent] {
+	set c [string range $whosyadaddy 0 end-7]
+	$c config -cursor $window_info(cursor_was)
+    }
 }
 
 proc kill_helper_window { winId } {

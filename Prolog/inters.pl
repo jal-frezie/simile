@@ -482,7 +482,8 @@ make_intermediates(
 	    NewInters = PrevInters;
 
 	(Source = table(1),
-	    m_class:SubId has_class_refinement table_data of TableData,
+	    (m_class:SubId has_class_refinement table_data of TableData;
+		raise_exception(missing_graph_or_table_data(Source))),
 	    member(dims=ConstBounds, TableData),
 	    member(current=BoundArray, TableData),
 	    member(units=OrigUnits, TableData),

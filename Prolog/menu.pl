@@ -96,8 +96,7 @@ update_mode(NewMode) :-
 	NewMode = copy, !,
 	    assert(cursor_is(exchange));
 	NewMode = ghost, !,
-/*	    assert(cursor_is(dq('@../Images/ghost.xbm ../Images/ghost.mask.xbm black white'))); */
-	    assert(cursor_is(gumby));
+	    assert(cursor_is(sqb('GetGhostCursor')));
 	NewMode = delete, !,
 	    assert(cursor_is(pirate));
 	NewMode = snap, !,

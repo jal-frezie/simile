@@ -703,6 +703,15 @@ proc ShiftImages {topDir way args} {
     }
 }
 
+proc GetGhostCursor {} {
+    global tcl_platform
+    if {[string equal Linux $tcl_platform(os)]} {
+	return {@../Images/ghost.xbm ../Images/ghost.mask.xbm black white}
+    } else {
+	return gumby
+    }
+}
+
 # this needs because the canvas is called $c in the file
 
 proc InjectGraphics {c canvasFile} {
