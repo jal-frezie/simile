@@ -488,7 +488,8 @@ proc compile_c {workingDir} {
 		}
             } Default {
 		set batSt [open runmingw.bat w]
-		puts $batSt "set PATH=[file join [file join [file dirname $TOOLDIR] System] bin]"
+		puts $batSt "set PATH=[file nativename [file join [file join \
+                        [file dirname $TOOLDIR] System] bin]]"
 		puts $batSt "g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp"
 		puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
 		close $batSt
