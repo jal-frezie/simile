@@ -340,7 +340,13 @@ namespace eval runcontrol33857 {
             if {[info exists redoPhase]} {
                 $widget.bf.flag itemconfigure 1 -fill yellow
                 update
-                if ![do_model eval $scaled_current $redoPhase] {
+                if {$redoPhase == -1} {
+		    InitTimeSeries
+		} elseif {$redoPhase == 0} {
+		    ResetTimeSeries
+		}
+		UpdateTimeSeries 0
+		if ![do_model eval $scaled_current $redoPhase] {
                     set sendvars(currentMode) exit
                 }
                 if {$redoPhase < 1} {
@@ -365,6 +371,7 @@ namespace eval runcontrol33857 {
                 # Advance time to the end of the tick
                 
                 set current [expr $current + $step]
+		UpdateTimeSeries $current
 		set scaled_current [expr $current*$unitLength]
                 UpdateTimes $current $exec $sendvars(run_length)
                 

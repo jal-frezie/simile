@@ -667,8 +667,9 @@ proc FileParamDialogue {mustShow parent} {
     }
     MakeFrames $t
     foreach node $allNodes {
-        if {[string match TABLE [GetModelEval $node]]} {
-	    AddEntry $t $node $mustShow
+        set isInput [lsearch {TABLE INPUT} [GetModelEval $node]]
+	if {$isInput != -1} {
+	    AddEntry $t $node $mustShow $isInput
         }
     }
     if {$mustShow || [llength $paramData(needed)]} {
@@ -719,7 +720,7 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
-proc AddEntry {winId node mustShow} {
+proc AddEntry {winId node mustShow isInput} {
     global paramData paramDims widgetNames iconImages
     set compName [GetCaptionPathFromId $node]
     if {[string match SUBMODEL [GetModelClass $node]]} {
@@ -728,12 +729,17 @@ proc AddEntry {winId node mustShow} {
     }
     set levels [lrange [split $compName /] 1 end]
     set nodeDims [GetModelDims $node]
-    set paramDims($compName) [lrange $nodeDims 0 end-1]
 
 # bit of voodoo...get table relating numerical indices of node to enymerated
 # types (from prolog) and use to translate array bounds. Do this first because
 # there will be null entries in the table for vm model levels.
     set trans [GetFromProlog tk_get_info('$winId',$node,types)]
+    if {$isInput} {
+	set nodeDims [linsert $nodeDims 0 TIME]
+	set trans [linsert $trans 0 {}]
+    }
+    set paramDims($compName) [lrange $nodeDims 0 end-1]
+
 #ShowMessage debug info "$node $trans $nodeDims" ok
     set nodeDims [TransBounds $trans $nodeDims]
 
@@ -862,7 +868,7 @@ proc AcceptData {winId compName complain} {
 		    if {[string match $outerDims \
 			     [lrange $recordDims 0 $recordDepth]]} {
 			set recordDims [lset recordDims $recordDepth \
-					    [list -1 $recordNode]]
+					    [list RECORDS $recordNode]]
 			break
 		    }
 		}
@@ -923,7 +929,23 @@ proc ListToArray {tgt subs trans dims list} {
 	}
 	array set sub $list
 #puts "dims remaining $dims"
-	if {[llength [lindex $dims 0]]==2 && [lindex [lindex $dims 0] 0]==-1} {
+	if {[string match TIME [lindex $dims 0]]} {
+# If time, we can have as many or as few vals as we want, and they can be
+# any positive number
+	    foreach arrayPt [array names sub] {
+		if {![string is double $arrayPt]} {
+		    return [list $timePoint "Time point must be a number."]
+		}
+		set mis [ListToArray $tgt $subs,$arrayPt $trans \
+			 [lrange $dims 1 end] $sub($arrayPt)]
+		if {[llength $mis]} {
+		    return [concat $arrayPt $mis]
+		}
+	    }
+	    return {}
+	} 
+	if {[llength [lindex $dims 0]]==2 && \
+		[string match RECORDS [lindex [lindex $dims 0] 0]]} {
 # by-record submodel; check up to biggest
 
 # OK hows this for branez...use
@@ -960,8 +982,8 @@ proc EnumTypeToNumber {tgt head trans} {
 	set paramData($tgt) $poss
     } else {
 	set paramData($tgt) $head
-#puts "just went set paramData($tgt) $head"
     }
+#puts "just went set paramData($tgt) $paramData($tgt)"
     return {}
 }
 
@@ -1152,6 +1174,73 @@ proc GetFromTable {parent compName} {
 	}
         set paramData($compName) $table_entry(values)
         FillIfSmall $widgetNames($compName).e $paramData($compName)
+    }
+}
+
+# try to minimize effort at runtime -- list timepoints for each node...
+proc InitTimeSeries {} {
+    global setFromSeries paramData
+    array unset setFromSeries
+    foreach node [GetObjectList] {
+	if {[string match INPUT [GetModelEval $node]]} {
+#puts "timePts [array names paramData $node,*]"
+	    foreach timePt [array names paramData $node,*] {
+		set ${node}([lindex [split $timePt ,] 1]) 1
+	    }
+	    if {[array size $node]} {
+		set setFromSeries($node,times) [lsort [array names $node]]
+		set setFromSeries($node,next) 0
+#puts "initted $setFromSeries($node,times)"
+	    }
+	}
+    }
+}
+
+proc ResetTimeSeries {} {
+    global setFromSeries
+    foreach pt [array names setFromSeries *,next] {
+	set setFromSeries($pt) 0
+    }
+}
+
+# for each node we have a lsit of times in the time series, and a pointer to 
+# where we are in the list. If the time has gone past that pointed to, signal 
+# the data to be written and look at the next one...
+proc UpdateTimeSeries {newTime} {
+    global setFromSeries paramData
+    foreach list [array names setFromSeries *,times] {
+	set node [lindex [split $list ,] 0]
+#puts "node $node times $setFromSeries($list) next $setFromSeries($node,next)"
+	set jumping 1
+	while {$jumping} {
+	    if {[llength $setFromSeries($list)] > $setFromSeries($node,next)} {
+		set oldTime [lindex $setFromSeries($list) \
+				 $setFromSeries($node,next)]
+		if {$newTime >= $oldTime} {
+		    set useTime $oldTime
+		    incr setFromSeries($node,next)
+		} else {
+		    set jumping 0
+		}
+	    } else {
+		set jumping 0
+	    }
+	}
+
+	if {[info exists useTime]} {
+	    upvar \#0 [InputVarFor $node] inputSrc
+	    # do it the easy way if a scalar
+#puts "looking for paramData($node,$useTime)"
+	    if {[info exists paramData($node,$useTime)]} {
+		set inputSrc($node) $paramData($node,$useTime)
+#puts "set inputSrc($useTime) $paramData($node,$useTime)"
+		return
+	    }
+	    foreach tsValue [array names paramData $node,$useTime,*] {
+		set inputSrc([join [lreplace [split $tsValue ,] 1 1] ,]) \
+		    $paramData($tsValue)
+	    }
+	}
     }
 }
 

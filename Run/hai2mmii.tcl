@@ -553,19 +553,24 @@ proc collect {tgt node count args} {
     if {[string match TABLE [GetModelEval $node]]} {
 	upvar \#0 paramData inputSrc
     } else {
-	switch [GetModelType $node] {
-	    FLAG {
-	    upvar \#0 checkStates inputSrc
-	    } ENUMERATED {
-	    upvar \#0 comboChoices inputSrc
-	    } default {
-	    upvar \#0 sliderVals inputSrc
-	    }
-	}
+	upvar \#0 [InputVarFor $node] inputSrc
     }
     set sub [join [concat $node $args] ,]
 # Check that input source exists, it will not if model is being initialized
     if {[info exists inputSrc($sub)]} {
 	set $tgt $inputSrc($sub)
     }
+}
+
+proc InputVarFor {node} {	
+    switch [GetModelType $node] {
+	FLAG {
+	    return checkStates
+	} ENUMERATED {
+	    return comboChoices
+	} default {
+	    return sliderVals
+	}
+    }
+    
 }
