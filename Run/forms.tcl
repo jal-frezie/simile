@@ -663,8 +663,11 @@ proc Disaggregate {parent title colour type fatness icount step \
             -width 10 -command "set disaggregate(colour) {}"]  \
             -padx 2 -pady 4 -side left
     pack [button $colourf.fixcolour -text "Colour" \
-            -width 10 -bg $disaggregate(colour) -command "UpdateColour $colourf"]  \
+            -width 10 -command "UpdateColour $colourf"]  \
             -padx 2 -pady 4 -side left
+    if {[catch {image type $disaggregate(colour)}]} {
+	$colourf.fixcolour configure -bg $disaggregate(colour) 
+    }
     pack [button $colourf.setimage -text "Image..." \
             -width 10 -command ChooseImage] \
             -padx 2 -pady 4 -side left

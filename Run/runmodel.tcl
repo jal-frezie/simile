@@ -128,13 +128,27 @@ proc ChangeParentTitle { wc title colour } {
 	$wc create rectangle $bl $bt $br $bb -fill $colour \
 	    -tag "/base/ /background/"
     } else {
-	image create photo base$wc \
-	    -width [expr int($br-$bl)] -height [expr int($bb-$bt)]
-	base$wc copy $colour
+	image create photo base$wc
 	$wc create image $bl $bt -anchor nw -image base$wc \
-	    -tag "/base/ /background/"
+	    -tag "/base/ /background/ source($colour)"
     }
     $wc lower /base/
+    ResizeBackgnd $wc $bl $bt $br $bb
+}
+
+proc ResizeBackgnd {wc l t r b} {
+    if {[string match image [$wc type /base/]]} {
+	set oldW [base$wc cget -width]
+	set oldH [base$wc cget -height]
+	$wc coords /base/ $l $t
+	set w [expr int($r-$l)]
+	set h [expr int($b-$t)]
+	base$wc configure -width $w -height $h
+	regexp {source\(([^\)]+)\)} [$wc gettags /base/] all sourceImage
+	base$wc copy $sourceImage -to 0 0 $w $h ;# clever stuff later
+    } else {
+	$wc coords /base/ $l $t $r $b
+    }
 }
 
 # SetSpace: this command is called when the canvas is 'configured' by attacking
@@ -233,13 +247,17 @@ proc ZoomImage {winId which factor fontor} {
     		$winId itemconfigure $object -font \
 					[AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
 					[lindex $fontData 2] $newTextSize]
-		}
-		line {
+		} line {
 		    	$winId itemconfigure $object \
 					-width [AdjustWidth $winId $object $factor]
 		    AdjustArrow $winId $object $factor
-		}
-		default {
+		} image {
+		    set newWidth [expr round($factor*[base$winId cget -width])]
+		    set newHt [expr round($factor*[base$winId cget -height])]
+		    scan [$winId coords $object] {%f %f} newX newY
+		    ResizeBackgnd $winId $newX $newY [expr $newX+$newWidth] \
+			[expr $newY+$newHt]
+		} default {
 		    $winId itemconfigure $object \
 					-width [AdjustWidth $winId $object $factor]
 		}
@@ -270,19 +288,9 @@ proc AdjustWidth {winId object factor} {
 	set width [expr $oldWidth*$factor]
 	$winId addtag realwidth($width) withtag $object
 	return $width
-
-
-
-
-
-
-
-
-
-
     } else {
-		return 1
-	}
+	return 1
+    }
 }			
 
 proc AdjustArrow {winId object factor} {
