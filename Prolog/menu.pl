@@ -1235,7 +1235,7 @@ check_save_canvas(SaveDir, Model, Date) :-
 		 build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(CurrentDepths)]),
 	    save_canvas(Win, CanvasName, CurrentDepths, Date);
-	\+ output:my_file_exists(CanvasName);
+	\+ output:my_file_exists(CanvasName), !;
 	output:my_delete_file(CanvasName)).
 
 save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
