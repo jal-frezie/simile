@@ -271,7 +271,7 @@ proc create_equation {parent boxtitle indices} {
     TitleFrame $mainF.main.main -text "Data source: "
     set mainf [$mainF.main.main getframe]
     frame $mainf.slider
-    radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
+    ::ttk::radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
     pack [label $mainf.slider.minlabel -text Minimum] -side left -padx 4 -pady 4
     pack [::ttk::entry $mainf.slider.minval -width 8 -textvariable equation(min)] -side left -padx 4 -pady 4
@@ -285,14 +285,14 @@ proc create_equation {parent boxtitle indices} {
     
     pack $mainf.slider -anchor nw -fill x
     frame $mainf.file
-    radiobutton $mainf.file.radio2 -text "Fixed parameter" -variable equation(isparam) -value 2
+    ::ttk::radiobutton $mainf.file.radio2 -text "Fixed parameter" -variable equation(isparam) -value 2
     pack $mainf.file.radio2 -side left
     pack $mainf.file -anchor nw
     frame $mainf.equation
     frame $mainf.equation.textbox
     
     regsub { for } $boxtitle {: } eqnRBtext
-    radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
+    ::ttk::radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 80 -yscrollcommand "$mainf.equation.textbox.scroll set"]
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
@@ -927,7 +927,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     frame $countf.radio
     foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-        radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
+        ::ttk::radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
                 -value [lindex $rbutton 0] \
                 -variable disaggregate(type) \
                 -command "SetHighlights $countf"
@@ -935,28 +935,28 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }
     pack $countf.radio -anchor w -side left
     
-    Entry $countf.value -textvariable disaggregate(icount) -width 10
+    ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
     pack $countf.value -side left -anchor s -pady 4
     pack $t.simple.left.count -expand 0;# -fill both
     
     TitleFrame $t.simple.left.colour -text "Background shade"
     set colourf [$t.simple.left.colour getframe]
     set posRBs [frame $colourf.imageposns]
-    pack [button $colourf.clear -text "Clear" -width 6 \
+    pack [button $colourf.clear -text "Clear" -width 7 \
             -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
     pack [button $colourf.fixcolour -text "Colour..." \
-            -width 6 -command "UpdateColour $colourf"]  \
+            -width 7 -command "UpdateColour $colourf"]  \
             -padx 2 -pady 4 -side left
     $colourf.fixcolour configure -bg $disaggregate(colour)
     set disaggregate(defColour) $disaggregate(colour)
     pack [button $colourf.setimage -text "Image..." \
-            -width 6 -command "ChooseImage $posRBs"] \
+            -width 7 -command "ChooseImage $posRBs"] \
             -padx 2 -pady 4 -side left
     pack $posRBs -padx 2 -pady 4 -side left
     set rbState [ChooseText [string equal $disaggregate(image) none] \
             disabled normal]
     foreach rbutton {Tiled Centred Scaled} {
-        pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
+        pack [::ttk::radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
                 -value $rbutton -variable disaggregate(imgpos)] -anchor w
     }
     pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
@@ -1056,18 +1056,30 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     label $mathf.eqnunit.caption -text "Use units in math:"
     pack $mathf.eqnunit.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
-    ComboBox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
-            -values [list Default Yes No] \
-            -width 10 -editable false
+    #::ttk::combobox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
+    #        -values [list Default Yes No] \
+    #        -width 10 -state readonly
+    ::ttk::menubutton $mathf.eqnunit.pulldown -width 10 -textvariable disaggregate(eqnunit)
+    set m [menu $mathf.eqnunit.pulldown.menu]
+    foreach item [list Default Yes No] {
+      $m add command -label $item -command "set disaggregate(eqnunit) $item"
+    }
+    $mathf.eqnunit.pulldown configure -menu $m
     pack $mathf.eqnunit.pulldown
     pack $mathf.eqnunit -anchor w -padx 4 -pady 6
     frame $mathf.step
     label $mathf.step.caption -text "Time step index:"
     pack $mathf.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
-    ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
-            -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
-            -width 10 -editable false
+    #ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
+    #        -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
+    #        -width 10 -state readonly
+    ::ttk::menubutton $mathf.step.pulldown -width 10 -textvariable disaggregate(step)
+    set m [menu $mathf.step.pulldown.menu] 
+    foreach item [list Default {Initialize only} {Reset only} 1 2 3 4 5 6 7] {
+      $m add command -label $item -command "set disaggregate(step) \"$item\""
+    }
+    $mathf.step.pulldown configure -menu $m
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
