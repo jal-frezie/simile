@@ -1098,6 +1098,10 @@ proc CanvasEditBind { c } {
     }
     $c bind currently_editable <Control-e> \
             [$c bind currently_editable <Key-End>]
+
+    $c bind currently_editable <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
+    $c bind currently_editable <<Copy>> {CanvasTextCopy %W}
+    $c bind currently_editable <<Paste>> {CanvasPaste %W}
 }
 
 # Next three procs are from Welch examples
