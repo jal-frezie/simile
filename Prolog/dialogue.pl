@@ -30,7 +30,7 @@ atomize_function(FnAtom) :-
 	inters:function(Functor, ResultSort, ArgSorts),
 	spell_out([ResultSort | ArgSorts], 1),
 	make_arg_list(ArgSorts, String),
-	sicstus_format_to_chars("~a (~s) returns ~w", [Functor, String, 
+	sicstus_format_to_chars("builtin ~a (~s) returns ~w", [Functor, String, 
 ResultSort],
 			FnChars),
 	name(FnAtom, FnChars).

@@ -53,7 +53,7 @@ proc AttackGlobalVariable {array elt val} {
 
 proc LoadIconImages {} {
     global iconImages
-    foreach fn {tick cross} {
+    foreach fn {tick cross function} {
 	set iconImages($fn) \
 	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
@@ -1632,15 +1632,14 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     #    $m add command -label k -command bell
     #BindPopup $m foobar
     
-    set image [image create photo -file "../Images/Eqnbar/function.gif"]
     menubutton $eb.function -state disabled -menu $eb.function.menu \
-            -borderwidth 2 -relief raised -image $image
+            -borderwidth 2 -relief raised -image $iconImages(function)
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
     global equation
     set useFunctions [lrange $equation(fnDefs) 0 9]
     foreach defn $useFunctions {
-        set cmd [lindex $defn 0]
+        set cmd [lindex $defn 1]
         $m add command -label $cmd\(\) \
                 -command [list InsertFunction $eb.equation $cmd]
     }

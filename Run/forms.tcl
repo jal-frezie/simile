@@ -93,9 +93,7 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 }
 
 proc create_equation {parent boxtitle indices} {
-    global equation
-    global equationbar
-    global tcl_platform
+    global equation equationbar tcl_platform iconImages
     
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
@@ -142,18 +140,35 @@ proc create_equation {parent boxtitle indices} {
     # the widget hierrachy easier Jonathan 22 Aug 2002
     set middleF [frame $mainF.middle]
     TitleFrame $middleF.functions -text "Functions: "
-    set functionsf [$middleF.functions getframe]
-    frame $functionsf.list
-    set lbf [listbox $functionsf.list.flist \
-            -height 8 -width 16 \
-            -yscrollcommand [list $functionsf.list.scrollf set]]
+    set fnFrame [$middleF.functions getframe].fnFrame
+    ScrolledWindow $fnFrame
+    set lbf [Tree $fnFrame.table -showlines yes]
+    $fnFrame setwidget $lbf
+    pack $fnFrame -expand yes -fill both
+    $lbf insert end root builtin -image $iconImages(open) -text Built-in
+    $lbf insert end root macro -image $iconImages(open) -text Macros
+    $lbf insert end root proc -image $iconImages(open) -text Procedures
+
     foreach funk $equation(fnDefs) {
-        $lbf insert end $funk
+	set component [lindex $funk 1]
+	if {![$lbf exists $component]} {
+	    $lbf insert end [lindex $funk 0] $component \
+		-image $iconImages(function) -text [lrange $funk 1 end]
+	}
     }
-    scrollbar $functionsf.list.scrollf -command [list $lbf yview]
-    pack $functionsf.list.flist -side left -fill both -expand true
-    pack $functionsf.list.scrollf -side left -fill y
-    pack $functionsf.list -anchor nw  -expand true -fill both
+
+#    frame $functionsf.list
+#    set lbf [listbox $functionsf.list.flist \
+            -height 8 -width 16 \
+	    -yscrollcommand [list $functionsf.list.scrollf set]]
+#    foreach funk $equation(fnDefs) {
+#        $lbf insert end $funk
+#    }
+#    scrollbar $functionsf.list.scrollf -command [list $lbf yview]
+#    pack $functionsf.list.flist -side left -fill both -expand true
+#    pack $functionsf.list.scrollf -side left -fill y
+#    pack $functionsf.list -anchor nw  -expand true -fill both
+
     pack $middleF.functions -side left -anchor nw -padx 2 -pady 2 -expand true -fill both
     TitleFrame $middleF.indices -text "Indices: "
     set indicesf [$middleF.indices getframe]
@@ -364,7 +379,6 @@ proc create_equation {parent boxtitle indices} {
     pack $propertiesF  -fill x  -anchor nw
     
     
-    
     $notebook raise Main
     pack $notebook -fill both -expand true
     set equation(newGraphs) ""
@@ -533,6 +547,14 @@ proc fill_inputs { triples } {
     #    pack $t.bottom -fill x -expand true
 #    $equation(notebook) compute_size
 #    pack $equation(notebook)
+
+# OK the equation dialogue has finally reached its final size, but in order to
+# get the window manager to put it in an appropriate place we have to put it
+# up, let it draw (so it knows how big it wants to be), then remove and replace
+# it, because some of its BWidgets are buggy
+    update
+    wm withdraw .equation
+    wm deiconify .equation
 }
 
 proc fill_table {node table_data table_values} {
@@ -549,7 +571,7 @@ proc equationBindings { t en eu lbp lbi lbd \
     # en - equation entry
     # eu - units entry
     
-    # lbf - listbox for available functions
+    # lbf - treebox for available functions
     # lbx - listbox for available indices
     # lbp - parameter listbox
     # lbi - input units listbox
@@ -584,13 +606,15 @@ proc equationBindings { t en eu lbp lbi lbd \
     bind $lbi <Button-1> "equationClick %W %y"
     bind $lbi <Button-3> "equationRight %W %y"
     
-    bind $lbf <Double-1> \
-            "functionClick %W %y $en"
-    # popup boxes for functions
-    set PopCmd [list QueuePopup AddFnPopup %W %y %X %Y]
-    bind $lbf <Enter> $PopCmd
-    bind $lbf <Motion> "RemovePopup;$PopCmd"
-    bind $lbf <Leave> RemovePopup
+    $lbf bindText <Enter> [list QueuePopup AddFnPopup %X %Y]
+    $lbf bindText <Leave> RemovePopup
+    $lbf bindText <Double-1> [list functionClick $en]
+#    bind $lbf <Double-1> \
+#            "functionClick %W %y $en"
+     # popup boxes for functions
+#    bind $lbf <Enter> $PopCmd
+#    bind $lbf <Motion> "RemovePopup;$PopCmd"
+#    bind $lbf <Leave> RemovePopup
     set PopCmd [list QueuePopup AddIndexPopup %W %y %X %Y]
     bind $lbx <Enter> $PopCmd
     bind $lbx <Motion> "RemovePopup;$PopCmd"
@@ -712,13 +736,13 @@ proc HitKey { winId char } {
     }
 }
 
-proc functionClick { lb y boxname} {
+proc functionClick {boxname fn} {
     # Take the item the user clicked on
-    InsertFunction $boxname [lindex [$lb get [$lb nearest $y]] 0]
+    InsertFunction $boxname $fn
 }
 
-proc AddFnPopup {lb y X Y} {
-    AddWidgetPopup [lindex [$lb get [$lb nearest $y]] 0] $X $Y
+proc AddFnPopup {X Y fnName} {
+    AddWidgetPopup $fnName $X $Y
 }
 
 proc AddParamPopup {lb y X Y} {

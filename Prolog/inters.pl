@@ -164,11 +164,15 @@ read_funcs(File, Stream, Done) :-
 		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
 		do_dialogue(ProbAct, warning, Bug, ok, _);
 	    assert(macro_expansion(NewLine))),
-	    append_atoms(Fn, ' (user-defined macro)', FnEntry);
-	Line = function(Functor, _ReturnType, _ArgTypes),
+	    append_atoms('macro ', Fn, FnEntry);
+	Line = function(Functor, ReturnType, ArgTypes),
 	    assert(Line),
 	    assert(use_tcl_proc_for(Functor)), !,
-	    append_atoms(Functor, ' (user-defined procedure)', FnEntry)),
+	    dialogue:spell_out([ReturnType | ArgTypes], 1),
+	    dialogue:make_arg_list(ArgTypes, String),
+	    sicstus_format_to_chars("proc ~a (~s) returns ~w",
+				    [Functor, String, ReturnType], FnChars),
+	    name(FnEntry, FnChars)),
 	    read_funcs(File, Stream, More),
 	    Done = [FnEntry | More];
 	Line = unit_definition(New, Old), !,
