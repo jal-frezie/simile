@@ -624,7 +624,7 @@ proc DragObj {winId xco yco} {
     global clicktime
     
     set dragtime [clock clicks -milliseconds]
-    if {$dragtime>$clicktime && $dragtime-$clicktime<200} {
+    if {$dragtime>$clicktime && $dragtime-$clicktime<100} {
 	return
     }
     

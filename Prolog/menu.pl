@@ -391,13 +391,10 @@ set_properties(Wid, Model) :-
 		_Window shows_model Submodel,
 		update_captions(Submodel),
 		fail;
-	    true),
+	    NewNature = Nature, UseCount = Count, !;
+		event:spread_colour(Model, yes)),
 	    
-	    (\+ (NewNature = Nature, UseCount = Count), 
-	    dims_affect(Model, Affected),
-		event:spread_dims(Affected),
-		fail;
-	    \+ (NewNature = Nature, UseCount = Count, NewStep = Step,
+	    (\+ (NewNature = Nature, UseCount = Count, NewStep = Step,
 		   NewFix = Fix, NewSeparate = Separate),
 		add_parameter(Model, 1, c_new, 0),
 		fail;
@@ -531,7 +528,7 @@ remove_model(Win, Parent) :-
 	    delete_tree(Child),
 	    fail;
 	reassure_user("Updating screen representation of components affected by this delete"),
-	    spread_colour(Parent),
+	    event:spread_colour(Parent, no),
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
 	add_parameter(Parent, 0, file_name, ''),

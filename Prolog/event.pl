@@ -404,18 +404,13 @@ doubleclick_on(Edit_thing) :-
 	    (get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
 	    do_equation_dialog(Wid, Control_thing),
 	    /* above fails if cancelled; if dialogue OK, then object is
-	    complete. Check makes sure display status is updated */
-	    check_complete(Base),
-	    update_color(Base),
-	    spread_colour(Base),
-	    (/* check here that the dims have changed */
-	    \+ get_av_pair(Control_thing, 0, units, OldUnits),
-	    redisplay(Base), /* could do update_color but for 'stacking' */
-	    dims_affect(Base, Affected),
-		spread_dims(Affected),
-		fail;
+	    complete. check here that the dims have changed */
+	    (get_av_pair(Control_thing, 0, units, OldUnits), !,
+		NewDims = no;
+	    NewDims = yes),
+	    spread_colour(Control_thing, NewDims),
 	    find_all_comps(Parent, Base),
-		update_runnable(Parent))).
+	    update_runnable(Parent)).
 	
 /* If something's dimensions have changed, check all the equations
 where it is used. If they do not check out unit-wise, try to re-do
@@ -427,32 +422,43 @@ input values using the new units. */
 spread_dims(Obj) :-
 	find_all_comps(Sm, Obj),
 	add_parameter(Sm, 1, c_new, 0),
-	implicit_function(Obj, Hidden),
-	(test_complete(Hidden), !;
-	    get_av_pair(Hidden, 0, value, Equation),
-	    get_av_pair(Hidden, 0, units, GivenUnits),
-	    get_input_info(Hidden, Input_list),
-
-	    test_eqn(Equation, 32, Input_list, Type, Array, _ParamList, []),
+	get_av_pair(Obj, 0, value, Equation),
+	get_av_pair(Obj, 0, units, GivenUnits),
+	get_input_info(Obj, Input_list),
+	
+	(test_eqn(Equation, 32, Input_list, Type, Array, _ParamList, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(GivenArray, Array), !,
 		UseArray = GivenArray;
-	    UseArray = Array),
+	    UseArray = Array,
+		UnitsChanged = yes),
 	    (Type = real, !, Base = 1; Base = Type),
 	    (check_unit(GivenBase, Base, 2, []), !,
-		UnitsChanged = no,
 		UseBase = GivenBase;
-	    UseBase = Base),
-	    build_array(UseBase, UseArray, NewUnits),
-	    add_parameter(Hidden, 0, units, NewUnits),
-	    (UnitsChanged = yes,
-		dims_affect(Obj, NextObj),
-		spread_dims(NextObj),
-		fail;
-	    update_links_and_vars(Input_list));
+	    UseBase = Base,
+		UnitsChanged = yes),
+	    update_links_and_vars(Input_list);
 	true),
-	check_complete(Obj),
-	redisplay(Obj).
+	(UnitsChanged = no, !;
+	build_array(UseBase, UseArray, NewUnits),
+	    add_parameter(Obj, 0, units, NewUnits)),
+	spread_colour(Obj, UnitsChanged).
+
+/* this will update colours of all nodes connected with the given node */
+
+spread_colour(Node, NewDims) :-
+	setof(More, status_affects(Node, More), SpreadList),
+	(member(Hit, SpreadList), \+ find_type(Hit, influence);
+	member(Hit, SpreadList), find_type(Hit, influence)),
+	/* Do influences last cos they depend on others! */
+	(NewDims = no,
+	    update_color(Hit);
+	NewDims = yes,
+	    check_complete(Hit),
+	    redisplay(Hit),
+	    presence_affects(Hit, MayChange),
+	    spread_dims(MayChange)),
+	fail; true.
 
 new_window_for(Submodel, Canvas_name, InitDepths) :-
 	utility:unique_name('.mswindow', Topwin),
@@ -1304,9 +1310,8 @@ reghost(Ghost, Base) :-
 		change_ghosthood(Ghost).
 
 change_ghosthood(Node) :-
-	update_color(Node),
 /*	make_links_follow(Node), */
-	spread_colour(Node).
+	spread_colour(Node, yes).
 
 delete_by_dlg(Target) :-
 	remove_highlights,
@@ -1385,19 +1390,15 @@ delete_net :-
 
 kill_primitive(Target) :-
 	off(Target),
-	(setof(NewLook, Fallout^(presence_affects(Target, Fallout),
-				 status_affects(Fallout, NewLook)),
-	       ChangedLooks), !;
+	(setof(NewLook, presence_affects(Target, NewLook), ChangedLooks), !;
 	    ChangedLooks = []),
 	forget_highlit_obj(_, Target),
 	(tk_get_pref(deleteEndToEnd, 1), /* no messing about */
 	    fast_delete(Target);
 	tk_get_pref(deleteEndToEnd, 0),
 	    do_delete(Target)),
-	(member(NewVisLook, ChangedLooks), \+ find_type(NewVisLook, influence);
-	member(NewVisLook, ChangedLooks), find_type(NewVisLook, influence)),
-	    check_complete(NewVisLook),
-	    update_color(NewVisLook),
+	member(NewVisLook, ChangedLooks),
+	    spread_colour(NewVisLook, yes),
 	    update_captions(NewVisLook),
 	    fail.
 
@@ -1490,10 +1491,7 @@ move_boxes(_, _).
 dissolve_component(Node) :-
 	find_all_comps(Parent, Node),
 	subtract_from_translation([0,0,1,1], Node, Node_trans),
-	(has_outer_equiv(Inner, Node, Outer),
-		/* demolition process will delete section nearest source so off this */
-		off(Inner), off(Outer), fail;
-	move_boxes(Node, Node_trans),
+	(move_boxes(Node, Node_trans),
 	(setof(Part, m_class:Node has_part Part, Orphan_nodes), !; Orphan_nodes = []),
 	(setof(IntLink, 
 		(IntLink draws_inside Node, \+ has_outer_equiv(IntLink, Node, _)),
@@ -1509,11 +1507,12 @@ dissolve_component(Node) :-
 		retitle_duplicates(OrphanLinks, Used);
 	true),
 	/* First, strip the model's dimensions and check external vars */
-	(\+ image:dim_spec_for(Node, "Simple"),
-	    add_parameter(Node, 0, multiplication_spec, [count=[]]),
-	    dims_affect(Node, Affected),
-	    spread_dims(Affected),
-	    fail;
+	(image:dim_spec_for(Node, "Simple"), !;
+	add_parameter(Node, 0, multiplication_spec, [count=[]]),
+	    spread_colour(Node, yes)),
+	(has_outer_equiv(Inner, Node, Outer),
+		/* demolition process will delete section nearest source so off this */
+		off(Inner), off(Outer), fail;
 	unencapsulate(Node, Orphan_nodes, MovedLinks)),
 	    /* Now everything from the dead submodel must be redisplayed
 	    because its fatness will have changed to match the new parent */

@@ -22,7 +22,7 @@ sicstus_module(m_update,
 		add_implicit_function/2, get_exogenous_node/2, 
 		find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
-		dims_affect/2, presence_affects/2, status_affects/2,
+		presence_affects/2, status_affects/2,
 		can_start/2, can_finish/3, continues_in/2, continues_from/2,
 		add_equivalence/3, is_no_longer_model_class/1,
 		list_cross_border_specs/2, is_top_arc/1,
@@ -465,18 +465,14 @@ update_links_and_vars([]).
 update_links_and_vars(InputList) :-
 	InputList = [input_link(id(Link,_,_), _,_,_,_) | _],
 	sort_for_link(InputList, Link, ThisList, OtherList),
-	make_role_list(ThisList, Roles),
+	all(m_update, make_role, [build(ThisList), build(Roles)]),
 	(Link has_changed_attribute role to Roles;
 		Link has_new_attribute role of Roles),
 	update_links_and_vars(OtherList).
 
-make_role_list([], []).
-
-make_role_list([input_link(id(_, Index, SourceLocation),
-		_, Name, _, FullUnit) | R1],
-		[use(Index, SourceLocation, Name, Unit) | R2]) :-
-	build_array(Unit, _, FullUnit),
-	make_role_list(R1, R2).
+make_role(input_link(id(_, Index, SourceLocation), _, Name, _, FullUnit),
+	  use(Index, SourceLocation, Name, Unit)) :-
+	build_array(Unit, _, FullUnit), !.
 
 /* sort_for_link: Takes a list of input link structures and an id for an influence, and returns lists of the link structures which use it and those which do not. */
 
@@ -980,7 +976,7 @@ link_ends(New_obj, Start_thing, Terminator, Top_arc) :-
 	add_new_line_between(New_obj, Start_thing, Terminator, Top_arc),
 	get_action_point(Top_arc, Terminator, Last_new_arc),
 	(presence_affects(Last_new_arc, NewState),
-	    maintain:spread_colour(NewState),
+	    event:spread_colour(NewState, yes),
 	    fail;
 	true).
 
@@ -1076,12 +1072,6 @@ boundaries, and deleting a non-final arc creates a new input node,
 only destination nodes are affected by arc deletion. And none at all
 if they are flows. */
 
-dims_affect(Start, End) :-
-	Inf is_connector from Start to _,
-	Inf has_type influence,
-	connects(Inf, _, Hidden),
-	implicit_function(End, Hidden).
-
 presence_affects(Arc, Affected) :-
 	find_ghosts(Arc, Affected);
 
@@ -1111,10 +1101,11 @@ delete_obsolete_modes([use(N, Dir, Local, Units) | R1], DeadRef, NewList) :-
 of the given item */
 
 status_affects(Item, Affected) :-
-	(find_type(Item, flow),
+	find_type(Item, flow),
 	    equivalent_arcs(Item, Affected);
 	\+ find_type(Item, flow),
-	    Affected = Item);
+	    \+ find_type(Item, submodel),
+	    Affected = Item;
 	(supplies_value(Item, Downline);
 	    implicit_function(Downline, Item)),
 	status_affects(Downline, Affected).
@@ -1472,8 +1463,7 @@ get_possible_start(Base, Start) :-
 
 supplies_value(Source, Dest) :-
 	Dest is_connector from Source to _,
-	Dest has_type influence,
-	\+ Source has_class submodel;
+	Dest has_type influence;
 	next_section_of(Source, Dest);
 	Source has_type influence,
 	Source is_connector from _ to Dest,
