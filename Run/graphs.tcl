@@ -449,15 +449,15 @@ proc CoarseX { c } {
     global graph
     
     set t [GetWidFromCanvas $c]
-    if {[llength $graph($t,points)] > 2} {
+    if {[llength $graph($t,points)]%2} {
         $c delete graph
-        set el 1
+        set el 0
         set graph($t,increment) [expr $graph($t,increment)*2]
         while {$el < [llength $graph($t,points)]} {
             set graph($t,points) [lreplace $graph($t,points) \
                     $el [expr $el + 1] [lindex $graph($t,points) $el]]
-            AddLine $c $el
             set el [expr $el + 1]
+            AddLine $c $el
         }
         RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
     }
