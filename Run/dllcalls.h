@@ -29,7 +29,7 @@
 #define SPLIT           4
 #define GHOST           5
 
-#define SIMILE_VERSION	"3.1"
+#define SIMILE_VERSION	"4.0"
 
 /* type declaration for structure representing a graph */
 

@@ -53,7 +53,7 @@ proc ControlDraw {prologVersion} {
 
 # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
-	set env(SIMILE_VERSION) 3.1
+	set env(SIMILE_VERSION) 4.0
 	set env(SIMTMPDIR) /tmp/simdevel
 	set env(licensee_name) "Support team"
 	set env(licensee_corp) "Simulistics, inc."
