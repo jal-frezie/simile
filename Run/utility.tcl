@@ -22,7 +22,7 @@ proc ShowMessage { title icon string resps {parent .}} {
 # filename has spaces in it.
 
 proc ChooseFile { preferred title canbenew } {
-    global __tk_filedialog chosenPaths env custom
+    global __tk_filedialog chosenPaths env
 
     set fileType [file extension $preferred]
 
@@ -59,21 +59,16 @@ proc ChooseFile { preferred title canbenew } {
 	    -initialfile $preferred]
     cd $prevDir
     if {[string compare $chosenFile {}]} {
-	RecordPathChoice $fileType $chosenFile
-	if {$recordEntry} {
-	    set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
-	}
+	RecordPathChoice $fileType $chosenFile $recordEntry
     }
     return $chosenFile
 }
 
-proc RecordPathChoice {fileType chosenFile} {
-    global chosenPaths
+proc RecordPathChoice {fileType chosenFile recordEntry} {
+    global chosenPaths custom
     set chosenPaths($fileType) \
 	    [set chosenPaths(latest) [file dirname $chosenFile]]
+    if {$recordEntry} {
+	set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
+    }
 }
-
-
-
-
-

@@ -125,7 +125,7 @@ proc ControlDraw {prologVersion edition} {
         }
     }
     if {[llength $custom(hotlist)]} {
-	RecordPathChoice .sml [lindex $custom(hotlist) 0]
+	RecordPathChoice .sml [lindex $custom(hotlist) 0] 0
     }
     
     Pref_Init $custom(prefDir)/prefs ../Run/sysprefs
@@ -163,12 +163,11 @@ proc ControlDraw {prologVersion edition} {
     # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
     # would do here...
     if {[info exists env(OPEN_MODEL)]} {
-        set openModel $env(OPEN_MODEL)
+        set openModel [brainwash $env(OPEN_MODEL)]
+    # Add to path and recently opened files data
+	RecordPathChoice .sml $openModel 1
     } else {
         set openModel {}
-    }
-    if {[llength $openModel]} {
-	set openModel [brainwash $openModel]
     }
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $env(SIMTMPDIR)] $openModel]
