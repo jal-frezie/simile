@@ -6,15 +6,14 @@ identical to that in which they are used. Where this is the case, the calls from
 use goals that start with "tk_" to make the diffreence clear.
 */
 
-:- module(input, [tk_undo/0, tk_redo/0, tk_get_info/3, tk_get_params/2,
+sicstus_module(input, [tk_undo/0, tk_redo/0, tk_get_info/3, tk_get_params/2,
 	tk_click_obj/5, tk_click/3, tk_doubleclick/2, tk_unclick/2, 
 	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5, 
 	tk_embrace/2, tk_abandon/1, compile_to_file/1, tk_off_window/1, 
-	tk_make_code_for/2,
 	tk_set_new_size/4, tk_change_size/4, 
 	tk_finish/0, set_style/1]).
 
-:-	use_module([event, menu]).
+sicstus_use_module([event, menu]).
 
 tk_undo :-
 	show_wait_cursor,
@@ -85,11 +84,6 @@ tk_embrace(Wid, Comp) :-
 
 tk_abandon(Wid) :-
 	abandon(Wid).
-
-tk_make_code_for(Model, Language) :-
-	show_wait_cursor,
-	make_code_for(Model, Language),
-	show_normal_cursor.
 
 tk_set_new_size(Node, New_size, XDefOffset, YDefOffset) :-
 	show_wait_cursor,

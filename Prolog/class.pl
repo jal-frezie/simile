@@ -7,8 +7,7 @@ sicstus_module( class, [is_class/1, has_class_attribute/2, is_new_class/1,
 		   is_no_longer_class/2, no_longer_has_class_attribute/2,
 		   has_class_attributes/2, has_changed_class_attribute/2,
 		   no_longer_has_class_attributes/1, 
-		   no_longer_has_class_attributes/2
-		  ] ).
+		   no_longer_has_class_attributes/2] ).
 
 sicstus_use_module( [database,utility] ).
 
@@ -100,3 +99,4 @@ Class no_longer_has_class_attributes  :-
 	Class has_class_attributes AttributeValuePairs,
 	foreach( Attribute=Value, AttributeValuePairs,
 		      Class no_longer_has_class_attribute Attribute of Value ).
+

@@ -81,17 +81,15 @@ do_assign_list(_, [], _, [], [Result], _, [], [], Result).
 /* This makes a loop for a fixed membership submodel.
 Should really be done with make_array_assignment. */
 
+:- discontiguous(do_assignment/9).
+
 do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
                 GraphCount, Preambles, 
                 [Current | Postambles],
                 Used, Graphs, Temps, Results) :-
         length(Postambles, Nesting),
         Indent is 4*Nesting,
-        (nonvar(Loop), !,
-            Temps = Temps0;
-        generate_name(L, loop, Loop, Used),
-            Temps = [[int, Loop, []] | Temps0],
-            Inds = []),
+	check_local_var(L, Loop, loop, int, Used, Temps0),
         make_indexed_reference(L, Loop, Inds, Count),
         render(L, comment, 'start list here', 0, [StartMark]),
         render(L, comment, 'end list here', 0, [EndMark]),
@@ -101,9 +99,47 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
         do_assign_list(L, Clauses,
                        GraphCount, [Current | Preambles],
                        [[Open, StartMark], [EndMark, Close] | Postambles],
-                       Used, Graphs, Temps0, Results).
+                       Used, Graphs, Temps1, Results),
+	merge_lists(Temps1, Temps0, Temps).
 
-/* start non-generating  submodel loop;	still need to
+/* Start fixed membership submodel. Note that we may have selected an index
+explicitly (using element(...)), so it can contain any expression, even a
+graph. */
+
+do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs))
+		 | Clauses], Graph_count, Preambles, 
+	      [Current | Postambles],
+	      Used, Graphs, Temps, Results) :-
+
+	length(Preambles, Nesting),
+	Indent is 4*Nesting,
+	/* some of this belongs in the next disjunction */
+
+	append_atoms(Name, 'type*', Type),
+        append_atoms(Name, pointer, PointerForm),
+	check_local_var(L, Pointer, PointerForm, Type, Used, Temps0),
+
+	make_evaluation_routine_all(L, IndExprs, Graph_count,
+				    RefIndices, Graph_data),
+	all(render, make_expr,
+	    [unify(L), build(RefIndices), build(RefExprs)]),
+	render(L, enter_context, Pointer=[Top, Name, RefExprs], 
+	       Indent, Starters),
+	Finishers = [],
+
+	(nonvar(Graph_data), !,
+	    NewGraphCount is Graph_count + 1,
+	    Graphs = [[index | Graph_data] | LaterGraphs];
+	NewGraphCount = Graph_count,
+	    Graphs = LaterGraphs),
+
+	do_assign_list(L, Clauses, NewGraphCount, [Current | Preambles],
+			[Starters, Finishers | Postambles],
+			Used, LaterGraphs, Temps1, Results),
+	merge_lists(Temps1, Temps0, Temps).
+
+
+/* start non-generating vm  submodel loop;	still need to
 add context for associated submodels if it is
 variable length, otherwise add the loops to explicitly
 hunt through them */
@@ -118,12 +154,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	/* some of this belongs in the next disjunction */
 
 	(LoopSpec = rm_loop(ArcIndex, Level, IExprs), !,
-	    (nonvar(Pointer), !,
-		Temps0 = [];
-	    generate_name(L, externpointer, Pointer, Used),
-		Temps0 = [['void*', Pointer, []]]),
-	    render(L, comment, 'start list here', 0, StartMark),
-	    render(L, comment, 'end list here', 0, EndMark),
+	    check_local_var(L, Pointer, externpointer, 'void*', Used, Temps0),
+	    refer_value(L, Pointer, PointerRef),
 
 	    length(IExprs, IndCount),
 	    make_procedure_call_chars(L, [arrange_indices, IndCount | IExprs],
@@ -131,75 +163,44 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	    name(ArrInds, AIStr),
 	    make_procedure_call_chars(L, [import_ptr, Level, Top,
 					  ArcIndex, ArrInds], LXStr),
-	    name(FullLocalExpr, LXStr),
-	    render(L, assignment, Pointer=FullLocalExpr, Indent, PreStart),
-	    refer_value(L, Pointer, PointerRef),
-	    ptr_compare(L, PointerRef, 0, PtrNonNull),
-	    render(L, while_start, PtrNonNull, Indent, Starts),
-	    Indent1 is Indent + 4,
+	    name(StartPtrRef, LXStr),
 
 	    /* finish same: move pointer to next instance in chain */
 	    make_procedure_call_chars(L, [advance_ptr, myClassPtr, PointerRef],
 				      AdvanceStr),
-	    name(AdvanceInst, AdvanceStr),
-	    render(L, assignment, Pointer=AdvanceInst, Indent1, PreFinish),
-	    render(L, end(while), Pointer, Indent, Finish),
-	    move_base_ptrs(L, Pointer, restore, Indent1, Names, BasePtrs,
-			   LoadBaseRefs),
-	    append([PreStart, Starts, StartMark, LoadBaseRefs], Starters),
-	    append([EndMark, PreFinish, Finish], Finishers);
+	    name(OnPointerRef, AdvanceStr);
+
 	LoopSpec = vm_loop(_,_, BaseLoops, _), !,
 	    (nonvar(Pointer), !;
 	    append_atoms(Name, pointer, Pointer)),
+	    refer_value(L, Pointer, PointerRef),
 	    Temps0 = [],
-	    render(L, comment, 'start list here', 0, StartMark),
-	    render(L, comment, 'end list here', 0, EndMark),
 	    all(compile, get_base_ptrs,
 		[build(BaseLoops), append(Names, []), append(BasePtrs, [])]),
 	    make_struct_reference(L, Top, Name, StartPointer),
 	    refer_value(L, StartPointer, StartPtrRef),
-	    render(L, assignment, Pointer=StartPtrRef, Indent, PreStart),
-	    refer_value(L, Pointer, PointerRef),
-	    ptr_compare(L, PointerRef, 0, PtrNonNull),
-	    render(L, while_start, PtrNonNull, Indent, Starts),
-	    Indent1 is Indent + 4,
 
 	    /* finish same: move pointer to next instance in chain */
 	    make_struct_reference(L, Pointer, next, OnPointer),
-	    refer_value(L, OnPointer, OnPointerRef),
-	    render(L, assignment, Pointer=OnPointerRef, Indent1, PreFinish),
-	    render(L, end(while), Pointer, Indent, Finish),
-	    move_base_ptrs(L, Pointer, restore, Indent1, Names, BasePtrs,
-			   LoadBaseRefs),
-	    append([PreStart, Starts, StartMark, LoadBaseRefs], Starters),
-	    append([EndMark, PreFinish, Finish], Finishers);
-	LoopSpec = fm_loop(IndExprs),
-	    append_atoms(Name, 'type*', Type),
-	    (nonvar(Pointer), !,
-		Temps0 = [];
-            append_atoms(Name, pointer, PointerForm),
-		generate_name(L, PointerForm, Pointer, Used),
-		Temps0 = [[Type, Pointer, []]]),
+	    refer_value(L, OnPointer, OnPointerRef)),
 
-	        make_evaluation_routine_all(L, IndExprs, Graph_count,
-						     RefIndices, Graph_data),
-		all(render, make_expr,
-		    [unify(L), build(RefIndices), build(RefExprs)]),
-		render(L, enter_context, Pointer=[Top, Name, RefExprs], 
-		       Indent, Starters),
-		Finishers = []),
+	render(L, assignment, Pointer=StartPtrRef, Indent, PreStart),
+	ptr_compare(L, PointerRef, 0, PtrNonNull),
+	render(L, while_start, PtrNonNull, Indent, Starts),
+	render(L, comment, 'start list here', 0, StartMark),
 
-	(nonvar(Graph_data), !,
-	    NewGraphCount is Graph_count + 1,
-	    Graphs = [[index | Graph_data] | LaterGraphs];
-	NewGraphCount = Graph_count,
-	    Graphs = LaterGraphs),
-	Continuation = Clauses,
+	render(L, comment, 'end list here', 0, EndMark),
+	Indent1 is Indent + 4,
+	render(L, assignment, Pointer=OnPointerRef, Indent1, PreFinish),
+	render(L, end(while), Pointer, Indent, Finish),
+	move_base_ptrs(L, Pointer, restore, Indent1, Names, BasePtrs,
+		       LoadBaseRefs),
+	append([PreStart, Starts, StartMark, LoadBaseRefs], Starters),
+	append([EndMark, PreFinish, Finish], Finishers),
 
-	do_assign_list(L, Continuation,
-			NewGraphCount, [Current | Preambles],
+	do_assign_list(L, Clauses, Graph_count, [Current | Preambles],
 			[Starters, Finishers | Postambles],
-			Used, LaterGraphs, Temps1, Results),
+			Used, Graphs, Temps1, Results),
 	merge_lists(Temps1, Temps0, Temps).
 
 
@@ -242,11 +243,14 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	    make_procedure_call_chars(L, [prune | PruneArgs], CallPruneStr),
 	    name(CallPrune, CallPruneStr)),
 	
-	(number(Phase), !,
+	(number(Phase), !, /* this should happen sometimes -- does it?
+			   For the time being I have made damn sure it
+			   does not because there were free variables
+			   in MemberCheckTest */
 	    generate_name(L, check_members, MemberCheck, Used),
 	    Temps1 = [[int, MemberCheck, []]],
-	    make_section_cond(L, Phase, VMPtrs, MemberCheckTest),
-	    make_expr(L, MemberCheckTest, MemberCheckExpr),
+	    make_section_cond(L, VMPtrs, MemberCheckTest),
+	    combine(L, >=, [Phase, MemberCheckTest], MemberCheckExpr),
 	    render(L, assignment, MemberCheck=MemberCheckExpr, Indent2,
 		   MakeMemberCheck),
 	    refer_value(L, MemberCheck, MemberCheckRef),
@@ -429,7 +433,7 @@ move_base_ptrs(L, Pointer, Action, Indent, [Name | Names], [Ptr | BasePtrs],
 	    right type -- the array in which the assoc model
 	    stores them is type (void *) */
 	    (L = c,
-	        format_to_chars("(~atype *)~a", [Name, Target], CastTgtStr),
+	        sicstus_format_to_chars("(~atype *)~a", [Name, Target], CastTgtStr),
 		name(CastTgt, CastTgtStr);
 	    L = tcl,
 	        refer_value(L, Target, CastTgt)),
@@ -697,6 +701,14 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 			Graph_count, Preambles, [NewCurrent | Postambles],
 			Used, Graphs, Temps, Results).
 
+check_local_var(L, Name, NameBase, Type, Used, Temps) :-
+    (nonvar(Name), !;
+    generate_name(L, NameBase, Name, Used)),
+    Temps = [[Type, Name, []]].
+	
+get_term_refs(_,_, Test, Test) :-
+	atom(Test), \+ Test=[].
+
 get_term_refs(L, Pointer, LossNodes, DeadRef) :-
 	member(LossVal, LossNodes),
 	make_struct_reference(L, Pointer, LossVal, IsDead),
@@ -705,14 +717,11 @@ get_term_refs(L, Pointer, LossNodes, DeadRef) :-
 /* special clause for use from membership setter, which passes its list match
 test instead of a list of local cond nodes...*/
 
-get_term_refs(_,_, Test, Test) :-
-	atom(Test), \+ Test=[].
-
 build_disjunction(_, [Item], Item).
 
 build_disjunction(L, [Item1, Item2 | Rest], Dis) :-
 	build_disjunction(L, [Item2 | Rest], Others),
-	(L = c; L = tcl), Op = '||',
+	(L = c; L = tcl), Op = ('||'),
 	Dis =.. [Op, Others, Item1].
 
 /* This makes the expression for an individual's probability of dying

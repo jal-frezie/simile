@@ -35,11 +35,11 @@ proc ControlDraw {simileVersion prologVersion} {
     #            "Position of Run Control when not using the Run Time \
     #                    Environment in the form +/-x+/-y." \
     
+    wm withdraw .
     set sendvars(simV) $simileVersion
     set sendvars(proV) $prologVersion
 
     # no longer have a separate floating toolbar
-    wm withdraw .
 
     # On startup, check run count and offer registration if 0
     set UserStream [open ../Run/userinfo.txt r]
@@ -68,7 +68,6 @@ proc ControlDraw {simileVersion prologVersion} {
 	set userinfo(oldVersion) 0
 	set userinfo(done) 0
     }
-
     if {!$userinfo(done) || $userinfo(Version)>$userinfo(oldVersion)} {
 	DoRegDialog
 	if {$userinfo(done) == 2} {
@@ -239,6 +238,17 @@ proc canvasTLDistance {winId x y} {
     return [list [expr $x-$cl] [expr $y-$ct]]
 }
 
+proc GetFromProlog {prologCmd} {
+    global fromProlog
+    prolog $prologCmd
+    if {![info exists fromProlog]} {
+	tkwait variable fromProlog
+    }
+    set result $fromProlog
+    unset fromProlog
+    return $result
+}
+
 # Procedure for when Tcl recognizes what object is clicked but being a
 # maleficent pile of junk refuses to pass on this information so we have
 # to interrogate it to find what is closest to the click point
@@ -292,7 +302,6 @@ proc ClickObj { x y winId action} {
 ### Added by Jasper: ignore all eqnbar stuff if none in current window or
 ### not in pointer mode
 
-	global fromProlog
     set bar [winfo parent $winId].toolSlot.eqnbar
     if {[catch {pack info $bar}] || [string compare $pushedbutton select]} {
 	set equationbar(current_action) null
@@ -300,10 +309,13 @@ proc ClickObj { x y winId action} {
 	set equationbar(current_action) $action
 #	ModeSelect move
 #	ModeSelect select
+
+
+
     }
 
     if {[string match $equationbar(current_action) click]} {
-	prolog tk_get_info('$winId',$node,eqn)
+	set fromProlog [GetFromProlog tk_get_info('$winId',$node,eqn)]
 	if {![string match <none> $fromProlog]} {
 	    set label [BlankCrs [ExtractCaption $winId $node]]
 	    $bar.label configure -text "$label = "
@@ -443,6 +455,7 @@ proc ReleaseObj {winId xco yco} {
 
 proc EmbraceObj {winId} {
     set nodeId [GetEdit $winId]
+
     prolog [list tk_embrace( '$winId' , $nodeId )]
 }
 
@@ -557,6 +570,7 @@ proc AddCanvasBindings { c } {
 
 # let's be sure never to show the highlight border...
 # (except for debugging)
+
     $c configure -highlightcolor white
 # now confer editability on the editable text items on this canvas
     CanvasEditBind $c
@@ -765,6 +779,7 @@ proc ExportPostscript { winId } {
     set psfile [ChooseFile image.ps "Name of postscript file" 1]
     # check for cancel
     if {![string match */ $psfile]} {
+
 	# force .ps extension
 	if {[string compare [file extension $psfile] .ps]} {
 	    set psfile [file root $psfile].ps
@@ -1049,6 +1064,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     
     label $eb.label -anchor e
     pack $eb.label -side left
+
     
     entry $eb.equation -width 40
     pack $eb.equation -side left -expand 1 -fill x
@@ -1089,6 +1105,7 @@ proc AddMainMenu { winid initWidth initDepths} {
 #   set image [image create photo -file "../Images/eqnbar/props.gif"]
 #   pack [button $eb.properties -state disabled -image $image -borderwidth 1] \
 #           -side left
+
 ### End of formula bar section
 
     update idletasks ;# to allow reqwidth to be calculated
@@ -1142,6 +1159,8 @@ proc ShowAbout {winId} {
     pack [label .about.f.l3]
     pack [label .about.f.l4 -text Version\ $sendvars(simV)]
 #    pack [label .about.f.l5 -text [clock format [file mtime ../Run/main.sav]]]
+    pack [label .about.f.l6 -text "Prolog: $sendvars(proV)"]
+    pack [label .about.f.l7 -text "TclTk: [info patchlevel]"]
     pack [label .about.l6]
     pack [label .about.l7 -text "This product is registered to \
 $userinfo(Name), $userinfo(Corp)"]
@@ -1206,6 +1225,7 @@ proc AddDetailMenu {winId fm3 initVals} {
 		$lastmenu add radio -label "$depth levels" \
 			-variable rads($winId,$cat) -value $depth \
 			-command "WindowDetail $winId $cat $depth 1"
+
 	    }
 	    $lastmenu add radio -label "All" -variable rads($winId,$cat) \
 		    -value 32 -command "WindowDetail $winId $cat 32 1"
@@ -1282,6 +1302,7 @@ proc InterpMenu {winId state} {
 }
 
 #initialize this variable, any button will do (if it is sunken)
+
 set pushedbutton select
 
 proc ModeSelect {modes} {
@@ -1348,12 +1369,11 @@ proc accept_equation {text} {
 }
 
 proc AddInputs {bar} {
-    global equationbar fromProlog
+    global equationbar
     $bar.inputs.menu delete 0 end
     set winId $equationbar(winId)
     set node $equationbar(node)
-    prolog [list tk_get_params('$winId', $node)]
-    foreach paramName $fromProlog {
+    foreach paramName [GetFromProlog tk_get_params('$winId',$node)] {
 	$bar.inputs.menu add command -label $paramName \
 		-command [list InsertParam $bar $paramName]
     }

@@ -10,7 +10,7 @@ screen; if it is, the draw is cancelled. Changes to an object are not
 normally possible so the Tk change features are not used; objects are
 changed only by deleting and redrawing them.  */
 
-:- module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
+sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	display_dialog/4, get_file_name/4, chop_list/2,
 	enable_text_editing_in/1, disable_text_editing_in/1, 
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
@@ -34,27 +34,17 @@ changed only by deleting and redrawing them.  */
 	tk_scrub_run/0, tk_kill_helpers/0,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	set_interp_menu_state/1,
-	tk_update_sim_display/3, file_exists/1, delete_file/1,
+	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/9, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/1,
 	check_directory/1, check_executable/2, windowize/2,
 	compile_c_program/2, load_executable/4, find_phase/3,
 	kill_window/1, exit_AME/1]).
 
-:- use_module([library(tcltk), library(lists), library(charsio),
-		state, text, utility]).
-
-:- dynamic is_interpreter/1.
-
-set_interpreter(Interp) :-
-	assert(is_interpreter(Interp)).
-
-unset_interpreter :-
-	retractall(is_interpreter(_)).
+sicstus_use_module([library(lists), library(charsio), state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
-	is_interpreter(Interp),
-	tcl_eval(Interp, ['FilterErrors' | Cmd], Result).
+	user:tcl_eval(['FilterErrors' | Cmd], Result).
 
 tk_cursor_in(Win, Cursor) :-
 	safe_tcl_eval([Win, 'config -cursor', Cursor], _).
@@ -72,7 +62,8 @@ display_dialog(Caption, Classes, Valid_ones, Result) :-
 		name(Class, Arg1),
 		name(Attribute, Arg2),
 		append(Arg3, ".", Term3),
-		on_exception(_, read_from_chars(Term3, Value), name(Value, Arg3)),
+		on_exception(_, sicstus_read_from_chars(Term3, Value), 
+		    name(Value, Arg3)),
 		Result = [Class, Attribute, Value]).
 
 curly(P, Text) :-
@@ -333,7 +324,7 @@ fill_inputs(List) :-
 brackets appear as text. */
 
 get_from_list([input_link(_, V, P, _, I) | R1], [[V, FP, I] | R2]) :-
-	write_to_chars(P, SP),
+	sicstus_write_to_chars(P, SP),
 	name(FP, SP),
 	get_from_list(R1, R2).
 
@@ -352,22 +343,16 @@ this write to the console if in this mode, i.e., there is no Tcl/Tk
 interpreter running. */
 
 tk_start_progress_dialogue(Wid) :-
-	(is_interpreter(Interp), !,
-		tcl_eval(Interp, ['OpenProgressBox', Wid], _);
-	true).
+	safe_tcl_eval(['OpenProgressBox', Wid], _).
 
 tk_update_infobox(String) :-
 	name(Text, String),
-	(is_interpreter(Interp), !,
-		tcl_eval(Interp, ['.progress.message configure -text', 
+	safe_tcl_eval(['.progress.message configure -text', 
 				br(write(Text))], _),
-		tcl_eval(Interp, ['update idletasks'], _);
-	write(Text), nl).
+	safe_tcl_eval(['update idletasks'], _).
 
 tk_finish_progress_dialogue :-
-	(is_interpreter(Interp), !,
-		tcl_eval(Interp, ['CloseProgressBox'], _);
-	true).
+	safe_tcl_eval(['CloseProgressBox'], _).
 
 /* general purpose utility */
 
@@ -431,11 +416,11 @@ replace_bad_char(Bad, Good) :-
 	member(Bad, "\\*?\"<>|\n"), !, [Good] = " ";
 	Good = Bad.
 
-file_exists(TestFile) :-
+my_file_exists(TestFile) :-
 	windowize(TestFile, WTestFile),
 	safe_tcl_eval([file, exists, br(WTestFile)], "1").
 
-delete_file(DelFile) :-
+my_delete_file(DelFile) :-
 	windowize(DelFile, WDelFile),
 	safe_tcl_eval([file, delete, br(WDelFile)], _).
 

@@ -6,7 +6,7 @@
 
 sicstus_module( library, [ame_save/3, ame_merge/3, write_with_breaks/2] ).
 
-sicstus_use_module( [library(lists),library(ordsets),library(charsio),
+sicstus_use_module( [library(lists),library(charsio),
 	ame_gen,m_class,utility,text,build] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -23,24 +23,25 @@ ame_save( File, Model, Date ) :-
 	any_setof( Class,
 		   Class is_class,
 		   Classes ),
-	on_exception(_, open( File, write, Stream, [type(binary)] ), fail), !,
+	on_exception(_, open( File, write, Stream, [type(binary)]), 
+	fail), !,
 	dialogue:start_progress_dialogue('.'),
 	(dialogue:reassure_user("Writing root information"),
 	user:version_is(V),
 	AME_V is V + 4, 
 	write_with_breaks(Stream, source(program='AME', version=AME_V,
 					 date=Date)),
-	nl( Stream ),
+	sicstus_put(Stream, 10),
 	write_with_breaks( Stream, roots( Models )),
-	nl( Stream ),
+	sicstus_put(Stream, 10),
 	write_with_breaks( Stream, properties(Props)),
-	nl( Stream ),
+	sicstus_put(Stream, 10),
 	dialogue:reassure_user("Writing node information"),
 	save_nodes( Models, Stream, ArcsUsed ),
-	nl( Stream ),
+	sicstus_put(Stream, 10),
 	dialogue:reassure_user("Writing class information"),
 	save_classes( Classes, Stream ),
-	nl( Stream ),
+	sicstus_put(Stream, 10),
 	dialogue:reassure_user("Writing arc information"),
 	save_arcs( ArcsUsed, Stream ),
 	close( Stream ),
@@ -63,7 +64,7 @@ save_nodes( [Node|Nodes], Stream, AllArcsUsed ) :-
 		   Children ),
 	append( Children, Nodes, NewNodes ),
 	save_nodes( NewNodes, Stream, ArcsUsed ),
-	ord_union( NewArcsUsed, ArcsUsed, AllArcsUsed ).
+	merge_lists( NewArcsUsed, ArcsUsed, AllArcsUsed ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_links - write out a data structure representing links in a module
@@ -163,20 +164,21 @@ DOS-type CRLFs being used for the line breaks, which will then bugger up
 reading the file under Unix */
 
 write_with_breaks(Stream, Term) :-
-	with_output_to_chars(writeq(Term), TermStr),
+	user:writeq_to_codes(TermStr, Term),
 	append(TermStr, ".", FullTermStr),
 	insert_breaks(Stream, Term, [], FullTermStr),
-	nl(Stream).
+	sicstus_put(Stream, 10).
 
 insert_breaks(Stream, Term, Done, Rest) :-
 	length(Rest, RLen),
 	choose_breakpoint(Break),
 	(Break >= RLen, !,
-	    name(LineAtom, Rest),
-	    write(Stream, LineAtom);
+	    sicstus_write_chars(Stream, Rest);
 	length(Line, Break),
 	    append(Line, NewRest, Rest),
 	    \+ suffix("\\", Line), /* do not put cr where it will be escaped */
+	    \+ prefix("'", NewRest), /* do not put cr before a single quote as
+		     this sometimes gets escaped along with the cr */
 	    (append([Done, Line, [10]], NewDone);
 	    append([Done, Line, [92, 10]], NewDone),
 		Escaped = true),
@@ -184,13 +186,13 @@ insert_breaks(Stream, Term, Done, Rest) :-
 		hits the end of a prolog atom, or escaped, which will work if
 		it goes inside a single-quoted atom */
 	    append(NewDone, NewRest, TestStr),
-	    on_exception(_Oops, read_from_chars(TestStr, TestTerm), fail),
+	    on_exception(_Oops, sicstus_read_from_chars(TestStr, TestTerm), 
+	        fail),
 	    Term = TestTerm, !,
-	    name(LineAtom, Line),
-	    write(Stream, LineAtom),
+	    sicstus_write_chars(Stream, Line),
 	      (Escaped = false, !;
-		  put(Stream, 92)),
-	      put(Stream, 10),
+		  sicstus_put(Stream, 92)),
+	      sicstus_put(Stream, 10),
 	    insert_breaks(Stream, Term, NewDone, NewRest)).
 
 choose_breakpoint(Break) :-
@@ -230,7 +232,7 @@ ame_merge( Parent, File, Date ) :-
 	    adjust_to_6([])),
 	user:version_is(MyV),
 	(MyV >= floor(SimileV), !;
-	format_to_chars("This file was created with a later version of Simile than the one you are currently running. To avoid potential problems, please update your copy to version ~f or later.", [SimileV], FutureShock),
+	sicstus_format_to_chars("This file was created with a later version of Simile than the one you are currently running. To avoid potential problems, please update your copy to version ~f or later.", [SimileV], FutureShock),
 	    do_dialogue("Future shock!", warning, FutureShock, ok, _)),
 
 	dialogue:finish_progress_dialogue.
@@ -360,8 +362,8 @@ deal_with_rest( [], PreviousLength, Parent, Bindings, Terms ) :-
 	(NewLength < PreviousLength, !,
 		deal_with_rest( Terms, NewLength, Parent, Bindings, [] );
 	(build:missing(Comp),
-	    format_to_chars("Component ~w missing. The following lines in the file contained references to model components that were not found: ~w", [Comp, Terms], MessStr);
-	format_to_chars("Simile had some sort of problem incorporating the following lines from the file into the model: ~w", Terms, MessStr)),
+	    sicstus_format_to_chars("Component ~w missing. The following lines in the file contained references to model components that were not found: ~w", [Comp, Terms], MessStr);
+	sicstus_format_to_chars("Simile had some sort of problem incorporating the following lines from the file into the model: ~w", Terms, MessStr)),
 		do_dialogue("Problem reading file", warning, MessStr, ok, _)).
 
 deal_with_rest( [Term|Terms], Length, Parent, Bindings, Rest ) :-

@@ -13,7 +13,7 @@ It is not used by model_update.pl; event will call it to make screen updates
 in response to successful editing operations.
 */
 
-:- module(image,
+sicstus_module(image,
 	  [get_colour/2, get_window_colour/2,
 	   get_closest_edge/3, get_inner_bound/3, get_outer_bound/4,
 	   change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
@@ -35,8 +35,8 @@ in response to successful editing operations.
 	   translate_between/4, translate/3,
 	   untranslate/3, add_to_translation/3, subtract_from_translation/3]).
 
-:-	use_module([library(lists), library(charsio),
-			ame_gen, state, text, m_class, m_update]).
+sicstus_use_module([library(lists), library(charsio),
+			ame_gen, utility, state, text, m_class, m_update]).
 
 get_colour(Submodel, Colour) :-
 	Submodel has_class_refinement fill_colour of Colour, !;
@@ -77,6 +77,10 @@ inside([X, Y], Comp) :-
 	Comp has_class Class,
 	inside_shape([X, Y], Class, Box).
 
+inside([X, Y], Comp) :-
+	get_shape(Comp, bowtie, [L, T, R, B]),
+	X > L, X < R, Y > T, Y < B.
+
 inside_shape([X, Y], Class, [L, T, R, B]) :-
 /* first do a rough test, for sake of speed: is point inside bounding box? */
 	X > L, X < R, Y > T, Y < B,
@@ -85,8 +89,8 @@ inside_shape([X, Y], Class, [L, T, R, B]) :-
 	(member(Class, [flow, compartment, channel]);
 		/* always, if in bounding box */
 	(Class = variable; Class = influence),
-		Cx is (L + R)//2, Cy is (T + B)//2,
-		Radius is (B - T)//2,
+		Cx is (L + R)/2, Cy is (T + B)/2,
+		Radius is (B - T)/2,
 		inside_range([X, Y], [Cx, Cy], Radius);
 	Class = function,
 		Narrowing is abs(2*Y - T - B)/4,
@@ -100,10 +104,6 @@ inside_shape([X, Y], Class, [L, T, R, B]) :-
 		Xmiss is max(0, max(L + Radius - X, X + Radius - R)),
 		Ymiss is max(0, max(T + Radius - Y, Y + Radius - B)),
 		Xmiss*Xmiss + Ymiss*Ymiss < Radius*Radius), !.
-
-inside([X, Y], Comp) :-
-	get_shape(Comp, bowtie, [L, T, R, B]),
-	X > L, X < R, Y > T, Y < B.
 
 inside_range([X1, Y1], [X2, Y2], R) :-
 	Xd is X1 - X2,
@@ -134,7 +134,7 @@ get_overlaps(Parent, Target, Ignore) :-
 get_inner_bound(Parent, Edge, Bound) :-
 	get_shape(Parent, internal_extent, [L, T, R, B]),
 	get_box_size(submodel, Standard),
-	MinDiam is Standard//2,
+	MinDiam is Standard/2,
 
 	member(Edge-PBoundExp, [l-(R-MinDiam), t-(B-MinDiam),
 	       r-(L+MinDiam), b-(T+MinDiam)]),
@@ -181,16 +181,16 @@ get_closest_edge(Node, [X,Y], Edge) :-
 
 make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
 	((New_obj is_class_of_sort regular_box; New_obj = channel),
-		L is Xpt - Cur_size//2,
-		R is Xpt + Cur_size//2;
+		L is Xpt - Cur_size/2,
+		R is Xpt + Cur_size/2;
 	New_obj is_class_of_sort elongated_box,
-		L is Xpt - 2*Cur_size//3,
-		R is Xpt + 2*Cur_size//3;
+		L is Xpt - 2*Cur_size/3,
+		R is Xpt + 2*Cur_size/3;
 	New_obj = flow,
-		L is Xpt - Cur_size//4,
-		R is Xpt + Cur_size//4),
-	T is Ypt - Cur_size//2,
-	B is Ypt + Cur_size//2.
+		L is Xpt - Cur_size/4,
+		R is Xpt + Cur_size/4),
+	T is Ypt - Cur_size/2,
+	B is Ypt + Cur_size/2.
 
 density_for(Comp, Density) :-
 	(is_parameter(Comp, P), P>0;
@@ -263,14 +263,18 @@ crossing_point([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
 		/* now choose a corner and constrain result to external segment */
 		Exit = [X, Y],
 		((Xj is L + Rad,
-			when(nonvar(X), X < Xj);
+		        XSide = less;
 		Xj is R - Rad,
-			when(nonvar(X), X > Xj)),
+		        XSide = more),
 		(Yj is T + Rad,
-			when(nonvar(Y), Y < Yj);
+		        YSide = less;
 		Yj is B - Rad,
-			when(nonvar(Y), Y > Yj)),
-		get_circle_crossings([Xj, Yj], Rad, [X1, Y1], Xoff, Yoff, _, Exit), !;
+		        YSide = more),
+		get_circle_crossings([Xj, Yj], Rad, [X1, Y1], Xoff, Yoff, _, 
+		                     Exit), 
+		(XSide = less, X < Xj; XSide = more, X > Xj),
+		(YSide = less, Y < Yj; YSide = more, Y > Yj),
+		!;
 		Exit = [Xx, Yx]); /* no corners crossed it comes out the side */
 	Class is_class_of_sort cloud, !,
 		setof(cross(Frag, Point), 
@@ -289,7 +293,6 @@ get_circle_crossings([Xj, Yj], Rad, [X0, Y0], F, G, Tp, [X, Y]) :-
 	Fsq is F*F,
 	Gsq is G*G,
 	FGsq is Fsq+Gsq,
-
 	Xj0 is Xj - X0,
 	Yj0 is Yj - Y0,
 	FyGx is F*Yj0 - G*Xj0,
@@ -302,24 +305,24 @@ get_circle_crossings([Xj, Yj], Rad, [X0, Y0], F, G, Tp, [X, Y]) :-
 		SqRoot is sqrt(Root),
 		(Tp is (FxGy - SqRoot)/FGsq; Tp is (FxGy + SqRoot)/FGsq)),
 	Tp > 0,
-	X is integer(X0 + F*Tp),
-	Y is integer(Y0 + G*Tp).
+	X is X0 + F*Tp,
+	Y is Y0 + G*Tp.
 
 get_submodel_corner_radius([L, T, R, B], Radius) :-
 		Radius is min(B - T, R - L)/8.
 
 get_cloud_centres([L, T, R, B], Rad, [Cx, Cy]) :-
-	Rad is (B - T)//3,
-	(Cy is (2*B + T)//3,
-		(Cx is (2*L + R)//3; Cx is (L + 2*R)//3);
-	Cy is (B + 2*T)//3, Cx is (L + R)//2).
+	Rad is (B - T)/3,
+	(Cy is (2*B + T)/3,
+		(Cx is (2*L + R)/3; Cx is (L + 2*R)/3);
+	Cy is (B + 2*T)/3, Cx is (L + R)/2).
 
 /* this used to find points on borders for drawing links to. It is now of
 historical interest only (it was inefficient). 
 
 iterate_to_crossing([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
-	X3 is (X1 + X2)//2,
-	Y3 is (Y1 + Y2)//2,
+	X3 is (X1 + X2)/2,
+	Y3 is (Y1 + Y2)/2,
 	((X3 = X1, Y3 = Y1; X3 = X2, Y3 = Y2), !,
 		Exit = [X3, Y3];
 	inside_shape([X3, Y3], Class, [L, T, R, B]), !,
@@ -333,12 +336,12 @@ get_box_crossing([X1, Y1], [X2, Y2], [L, T, R, B], [Xx, Yx]) :-
 	(Y1 = Y2, !, Yfract = 1;
 		Yfract is max((B - Y1)/(Y2 - Y1), (Y1 - T)/(Y1 - Y2))),
 	Fract is min(Xfract, Yfract),
-	Xx is integer(X1 + Fract*(X2 - X1)),
-	Yx is integer(Y1 + Fract*(Y2 - Y1)).
+	Xx is X1 + Fract*(X2 - X1),
+	Yx is Y1 + Fract*(Y2 - Y1).
 
 middle([L, T, R, B], [X, Y]) :-
-	X is (L + R)//2,
-	Y is (T + B)//2.
+	X is (L + R)/2,
+	Y is (T + B)/2.
 
 /* This tests whether the endpoints of a link are visible
 before drawing it; probably more trouble than it's worth.
@@ -359,8 +362,8 @@ on it. */
 get_drawing_form(Comp, Style, BBox) :-
 	get_shape(Comp, bowtie, [BL, BT, BR, BB]), !,
 	    Style = flow,
-	    Xpt is (BR+BL)//2,
-	    Ypt is (BB+BT)//2,
+	    Xpt is (BR+BL)/2,
+	    Ypt is (BB+BT)/2,
 	    get_bowtie_size(Cur_size),
 	    (BR-BL<BB-BT, !,
 		make_bounding_box(Style, Xpt, Ypt, Cur_size, [NL, NT, NR, NB]);
@@ -371,8 +374,8 @@ get_drawing_form(Comp, Style, BBox) :-
 	    draw_style_for(Base, Style),
 	    (Style = submodel, !,
 		BBox = [BL, BT, BR, BB];
-	    Xpt is (BR+BL)//2,
-		Ypt is (BB+BT)//2,
+	    Xpt is (BR+BL)/2,
+		Ypt is (BB+BT)/2,
 		get_box_size(Style, Cur_size),
 		make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox)).
 
@@ -440,7 +443,7 @@ has_bowtie(Comp) :-
 
 get_bowtie_size(Bowtie) :-
 	get_box_size(flow, Box),
-	Bowtie is Box//2.
+	Bowtie is Box/2.
 
 adjust_bowtie(Comp, Point) :-
 	find_type(Comp, flow),
@@ -516,8 +519,8 @@ any_distance([X, Y], Line, approach(D, [XC, YC], O)) :-
 	YL is FY-SY,
 	H is sqrt(XL*XL + YL*YL),
 	Off is ((X-SX)*YL-(Y-SY)*XL)/H,
-	XC is X-(Off*YL/H),
-	YC is Y+(Off*XL/H),
+	XC is (X-(Off*YL/H)),
+	YC is (Y+(Off*XL/H)),
 	D is abs(Off),
 	(YL*YL>=XL*XL,
 	YC >= min(SY, FY), max(SY, FY) >= YC,
@@ -603,7 +606,7 @@ make_header(Model, Header) :-
 	dim_spec_for(Model, DimSpec),
 	time_step_for(Model, default, Step),
 */
-	format_to_chars("~a (SIMILE model: ~s)", [Title, FileNameChars],
+	sicstus_format_to_chars("~a (SIMILE model: ~s)", [Title, FileNameChars],
 			HeaderChars),
 	name(Header, HeaderChars).
 
@@ -616,11 +619,11 @@ dim_spec_for(Model, DimSpec) :-
 		x_separate(Dims, DimSpec)).
 
 x_separate([N], Str) :- !,
-	write_to_chars(N, Str).
+	sicstus_write_to_chars(N, Str).
 
 x_separate([N | Rest], Str) :-
 	x_separate(Rest, SubStr),
-	format_to_chars("~dx~s", [N, SubStr], Str).
+	sicstus_format_to_chars("~dx~s", [N, SubStr], Str).
 
 /* complete/1: determines draw style of item.
 · Compartments and functions are complete if they have values set
@@ -686,13 +689,13 @@ of a non-visible node. */
 draws_complete(Item) :-
 	find_base(Item, BaseItem),
 	complete(BaseItem), !,
-	\+ (implicit_node(BaseItem, Extra), \+ complete(Extra)).
+	\+ (implicit_function(BaseItem, Extra), \+ complete(Extra)).
 
 /* check_complete removes the cache attribute forcing another test
 next time its completeness value is required. */
 
 check_complete(Item) :-
-	(Component = Item; implicit_node(Item, Component)),
+	(Component = Item; implicit_function(Item, Component)),
 	(Component no_longer_has_class_refinement complete of _;
 	Component no_longer_has_attribute complete of _),
 	fail; true.
@@ -711,7 +714,7 @@ checks_out_locally(Function) :-
 	pair_off(Function, Sources, Pairs).
 
 pick_var(_, V, D, 0) :-
-	dialogue:get_solo_list_depth(V, D).
+	get_solo_list_depth(V, D).
 
 /* pair_off is true if every variable in the expression represents a role of some link to the function, and every link to the function has at least one variable representing some role it has. Later we may keep the unit error and pop it up when the user mouses over to see why the node is red... */
 
@@ -738,10 +741,10 @@ line_dir_change_radius_is(8).
 /* Inwardly flowing...*/
 route_interior_part_link(Type, Dir, Start, [X, Y], Route) :-
 	get_shape(Start, internal_extent, [L, T, R, B]),
-	GL is integer(X - L),
-	GT is integer(Y - T),
-	GR is integer(R - X),
-	GB is integer(B - Y),
+	GL is X - L,
+	GT is Y - T,
+	GR is R - X,
+	GB is B - Y,
 	Clearance is min(min(GL, GR), min(GT, GB)),
 	(Clearance = GL, !, Border = [L, Y];
 	Clearance = GT, !, Border = [X, T];
@@ -813,12 +816,12 @@ blobify([X, Y], [L, T, R, B]) :-
 route_part_link(flow, Dir, Start, [X, Y], Route) :-
 	get_termination_zone(Start, Dir, [L, T, R, B], NodeType, _),
 	(L < X, X < R,
-		Y1 is (T + B)//2,
+		Y1 is (T + B)/2,
 		crossing_point([X, Y1], [X, Y], NodeType, [L, T, R, B],
 			       [_X, Y2]),
 		X2 = X;
 	T < Y, Y < B,
-		X1 is (L + R)//2,
+		X1 is (L + R)/2,
 		crossing_point([X1, Y], [X, Y], NodeType, [L, T, R, B],
 			       [X2, _Y]),
 		Y2 = Y),
@@ -882,16 +885,16 @@ route_link(flow, Start, Finish, [End, Beginning]) :-
 	get_termination_zone(Finish, out, [L2, T2, R2, B2], NodeType2, [CX2, CY2]),
         ((CX1 >= L2, CX1 =< R2, X = CX1;
 		    CX2 >= L1, CX2 =< R1, X = CX2),
-		Y2 is (T2 + B2)//2,
-		Y1 is (T1 + B1)//2,
+		Y2 is (T2 + B2)/2,
+		Y1 is (T1 + B1)/2,
 		crossing_point([X, Y1], [X, Y2], NodeType1, 
 				[L1, T1, R1, B1], Beginning),
 		crossing_point([X, Y2], Beginning, NodeType2, 
 				[L2, T2, R2, B2], End);
 	(CY1 >= T2, CY1 =< B2, Y = CY1;
 		    CY2 >= T1, CY2 =< B1, Y = CY2),
-		X2 is (L2 + R2)//2,
-		X1 is (L1 + R1)//2,
+		X2 is (L2 + R2)/2,
+		X1 is (L1 + R1)/2,
 		crossing_point([X1, Y], [X2, Y], NodeType1, 
 				[L1, T1, R1, B1], Beginning),
 		crossing_point([X2, Y], Beginning, NodeType2, 
@@ -952,11 +955,11 @@ middle segment to separate bowties. */
 
 kink_route([X1, Y1], [X2, Y2], [[X2, Y2], [KX2, KY2], [KX1, KY1], [X1, Y1]]) :-
 	abs(X2 - X1) > abs(Y2 - Y1), !,
-		KX1 is (6*X2 + 4*X1)//10,
+		KX1 is (6*X2 + 4*X1)/10,
 		KX2 = KX1,
 		KY1 = Y1,
 		KY2 = Y2;
-	KY1 is (6*Y2 + 4*Y1)//10,
+	KY1 is (6*Y2 + 4*Y1)/10,
 		KY2 is KY1,
 		KX1 is X1,
 		KX2 is X2.
@@ -970,14 +973,14 @@ centre(Low1, Low2, High1, High2, Middle) :-
 	Low is max(Low1, Low2),
 	High is min(High1, High2),
 	High >= Low,
-	Middle is (Low + High)//2.
+	Middle is (Low + High)/2.
 
 curve_route([X1, Y1], [X3, Y3], [X2, Y2]) :-
-	X2 is (2*X1 + 2*X3 + Y3 - Y1)//4,
-	Y2 is (2*Y1 + 2*Y3 + X1 - X3)//4.
+	X2 is (2*X1 + 2*X3 + Y3 - Y1)/4,
+	Y2 is (2*Y1 + 2*Y3 + X1 - X3)/4.
 
 get_linear(Acw_pt, Cw_pt, Acw_gap, Front_gap, Cw_gap, Mid_pt) :-
-	Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) // (2*Front_gap - Cw_gap - Acw_gap).
+	Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) / (2*Front_gap - Cw_gap - Acw_gap).
 
 get_middle_segment(List, Size, Bowtie) :-
 	length(List, L),

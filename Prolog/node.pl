@@ -12,7 +12,7 @@ sicstus_module( node,
 		 has_changed_model_refinement/2
 		] ).
 
-sicstus_use_module( [database,utility,library(lists)] ).
+sicstus_use_module( [m_struct,database,utility,library(lists)] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ABSTRACTION BOUNDARY STARTS HERE
@@ -53,14 +53,14 @@ Node has_new_class Class :-
 :- op( 500, xfy, has_new_class_refinement).
 
 Node has_new_class_refinement Refinement of Value :-
-	m_struct:Node is_model_class,
+	Node is_model_class,
 	\+ node_refinement( Node, Refinement, _AnyValue ),
 	assert_model( node_refinement( Node, Refinement, Value )).
 
 :- op( 500, xfy, has_new_model_refinement).
 
 Node has_new_model_refinement Refinement of Value :-
-	m_struct:Node is_model_class,
+	Node is_model_class,
 	\+ node_attribute( Node, Refinement, _AnyValue ),
 	assert_model( node_attribute( Node, Refinement, Value )).
 

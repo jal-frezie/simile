@@ -1,6 +1,7 @@
-/* units.pl --- yet another shiny, efficient new module written by Jasper to replace a huge steaming pile of convoluted entrails spewed up by Geraint. */
+/* units.pl --- yet another shiny, efficient new module written by Jasper to 
+replace a huge steaming pile of convoluted entrails spewed up by Geraint. */
 
-:- module(units, [get_conversion/4, default_tick_is/1]).
+sicstus_module(units, [get_conversion/4, default_tick_is/1]).
 
 default_tick_is(day).
 
@@ -24,8 +25,8 @@ in mm/month to mks was producing integers too large for Tcl execution. */
 
 add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
 	number(Unit), BaseOut = BaseIn,
-		(Sign = *, Mnum = Unit, Qnum = 1.0;
-		Sign = '/', Mnum = 1.0, Qnum = Unit);
+		(Sign = (*), Mnum = Unit, Qnum = 1.0;
+		Sign = (/), Mnum = 1.0, Qnum = Unit);
 	unit_definition(Unit, Defn),
 		add_conversion(Defn, Sign, BaseIn, BaseOut, Mnum, Qnum);
 	Unit =.. [Op, Top, Bottom],
@@ -48,7 +49,7 @@ add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
 
 select_factor_from(Expr, Factor, Sign, Rest) :-
 	Expr = 1, !, fail;
-	atomic(Expr), Factor = Expr, Sign = '*', Rest = 1, !;
+	atomic(Expr), Factor = Expr, Sign = (*), Rest = 1, !;
 	Expr =.. [Op, Ex1, Ex2],
 		(select_factor_from(Ex1, Factor, Sign, Rest_of_Ex1),
 			Rest =..[Op, Rest_of_Ex1, Ex2];

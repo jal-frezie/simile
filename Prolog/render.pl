@@ -22,6 +22,8 @@ sicstus_use_module( [m_class, utility, ame_gen, units, text, utility,
 % render converts proglog atoms or terms float valid expressions in the named
 % programming language. Used names are not duplicated
 
+:- discontiguous(render/5).
+
 /* c and tcl rendition functions are organized by their purpose */
 
 /* assignment */
@@ -32,11 +34,11 @@ render(L, assignment, Dest=Source, Indent, Atom) :-
 make_assignment(L, Dest, Source, AssignStr) :-
 	(L = tcl, Template = "set ~a ~w";
 	L = c, Template = "~a = ~w"),
-	format_to_chars(Template, [Dest, Source], AssignStr).
+	sicstus_format_to_chars(Template, [Dest, Source], AssignStr).
 
 /* assignment of context */
 make_pointer(c, Var, Ptr) :-
-	format_to_chars("&(~w)", [Var], PtrStr),
+	sicstus_format_to_chars("&(~w)", [Var], PtrStr),
 	name(Ptr, PtrStr).
 make_pointer(tcl, Var, Var).
 
@@ -56,7 +58,7 @@ make_indexed_namespace(L, Base, Indices, Result) :-
 	    make_indexed_reference(L, Base, Indices, Result);
 	L = tcl,
 	    make_list_context_id(tcl, Indices, BraceTerm),
-	    format_to_chars("~w<~w>", [Base, BraceTerm], ResultStr),
+	    sicstus_format_to_chars("~w<~w>", [Base, BraceTerm], ResultStr),
 	    name(Result, ResultStr).
 
 /* this creates a reference to a value in a deep context. */
@@ -67,7 +69,7 @@ render( L, make_reference, Dest=Source, Indent, [Atom]) :-
 
 render(c, assign_space, Dest=[_, Name, _], Indent, [Result]) :-
 	append_atoms(Name, type, Type),
-	format_to_chars( "~*s~a = new ~a;",
+	sicstus_format_to_chars( "~*s~a = new ~a;",
 			[Indent," ", Dest, Type], ResultStr),
 	name(Result, ResultStr).
 
@@ -82,7 +84,7 @@ render(tcl, assign_space, Dest=[Top, Struct, Indices], Indent, Result) :-
 	append(Line1, Line2, Result).
 
 resolve_pointer(c, Var, Res) :-
-	format_to_chars("*~a", [Var], ResStr),
+	sicstus_format_to_chars("*~a", [Var], ResStr),
 	name(Res, ResStr).
 
 resolve_pointer(tcl, Var, Res) :-
@@ -90,11 +92,11 @@ resolve_pointer(tcl, Var, Res) :-
 
 /* comment */
 render( c, comment, Comment, Indent, [Atom]) :-
-	 format_to_chars( "~*s/* ~w */", [Indent," ",Comment], CharList ),
+	 sicstus_format_to_chars( "~*s/* ~w */", [Indent," ",Comment], CharList ),
 	 name( Atom, CharList ).
 /* tcl comment starts with a ; in case goes after a command */
 render( tcl, comment, Comment, Indent, [Atom]) :-
-	 format_to_chars( "~*s;# ~w", [Indent," ",Comment], CharList ),
+	 sicstus_format_to_chars( "~*s;# ~w", [Indent," ",Comment], CharList ),
 	 name( Atom, CharList ).
 
 /* Things that do not appear at all in certain languages; generate for one in
@@ -127,7 +129,7 @@ render(tcl, clear_memory, instance(submodel, _, _, Name, _-Dims), Indent,
 		LineN = '',
 		NewIndent = Indent,
 		SpaceName = Name),
-	format_to_chars("~*snamespace delete ~w", [NewIndent," ", SpaceName], Expr),
+	sicstus_format_to_chars("~*snamespace delete ~w", [NewIndent," ", SpaceName], Expr),
 	name(Clearance,Expr).
 
 /* formatting to string
@@ -150,14 +152,14 @@ render(L, increment_by, [Current, Step], Indent, Increment) :-
 make_increment_expr(L, Current, Step, Expr) :-
 	(L = c,
 		(Step = 1, !,
-			format_to_chars("++~w", [Current], Expr);
+			sicstus_format_to_chars("++~w", [Current], Expr);
 		Step = -1, !,
-			format_to_chars("--~w", [Current], Expr);
-		format_to_chars("~w += ~w", [Current, Step], Expr));
+			sicstus_format_to_chars("--~w", [Current], Expr);
+		sicstus_format_to_chars("~w += ~w", [Current, Step], Expr));
 	L = tcl,
 		(Step = 1, !,
-			format_to_chars("incr ~w", [Current], Expr);
-		format_to_chars("incr ~w ~w", 
+			sicstus_format_to_chars("incr ~w", [Current], Expr);
+		sicstus_format_to_chars("incr ~w ~w", 
 				[Current, Step], Expr))).
 
 ptr_compare(L, Ptr1, Ptr2, Expr) :-
@@ -170,34 +172,34 @@ ptr_compare(L, Ptr1, Ptr2, Expr) :-
 
 render(L, if_start, ConditionExpr, Indent, [Line]) :-
 	(L = c, !,
-		format_to_chars("~*sif (~w) {", [Indent, " ", ConditionExpr], 
+		sicstus_format_to_chars("~*sif (~w) {", [Indent, " ", ConditionExpr], 
 				LineStr);
 	L = tcl, !,
-		format_to_chars("~*sif {~w} {", [Indent, " ", ConditionExpr], 
+		sicstus_format_to_chars("~*sif {~w} {", [Indent, " ", ConditionExpr], 
 				LineStr)),
 	name(Line, LineStr).
 
 render(L, else_clause, Cond, Indent, [Result]) :-
 	render(L, comment, Cond, 0, [Amble]),
-	format_to_chars("~*s} else { ~a", [Indent, " ", Amble], ResultStr),
+	sicstus_format_to_chars("~*s} else { ~a", [Indent, " ", Amble], ResultStr),
 	name(Result, ResultStr).
 
 render(L, switch_start, Condition, Indent, [Line]) :-
 	make_expr(L, Condition, ConditionExpr),
 	(L = c, Template = "~*sswitch (~w) {";
 	L = tcl, Template = "~*sswitch ~w {"),
-	format_to_chars(Template, [Indent, " ", ConditionExpr], LineStr),
+	sicstus_format_to_chars(Template, [Indent, " ", ConditionExpr], LineStr),
 	name(Line, LineStr).
 
 render(L, case_start, Match, Indent, [Line]) :-
 	(L = c, Template = "~*scase ~w:";
 	L = tcl, Template = "~*s~w { "),
-	format_to_chars(Template, [Indent, " ", Match], LineStr),
+	sicstus_format_to_chars(Template, [Indent, " ", Match], LineStr),
 	name(Line, LineStr).
 
 render(c, case_end, Match, Indent, [Line]) :-
 	render(c, comment, Match, 0, [Comment]),
-	format_to_chars("~*sbreak; ~w", [Indent, " ", Comment], LineStr),
+	sicstus_format_to_chars("~*sbreak; ~w", [Indent, " ", Comment], LineStr),
 	name(Line, LineStr).
 
 render(tcl, case_end, Match, Indent, Result) :-
@@ -212,17 +214,17 @@ render( L, for_start, [Name,Start,End,Step], Indent, [For_Start]) :-
 	L = tcl, Template = "~*sfor {~w} {~w} {~s} {"),
 	(Step > 0, !, Test = (End >= NameRef);
 	    Test = (NameRef >= End)),
-	format_to_chars( Template,
+	sicstus_format_to_chars( Template,
 		   [Indent," ",Init, Test, Incr], StartChars ),
 	name( For_Start, StartChars ).
 
 /* start of a while loop */
 render( c, while_start, Expr, Indent, [While_Start]) :- 
-	format_to_chars( "~*swhile ( ~w ) {", [Indent," ", Expr],
+	sicstus_format_to_chars( "~*swhile ( ~w ) {", [Indent," ", Expr],
 			StartChars ),
 	name( While_Start, StartChars ).
 render( tcl, while_start, Expr, Indent, [While_Start]) :- 
-	format_to_chars( "~*swhile {~w} {", [Indent," ",Expr],
+	sicstus_format_to_chars( "~*swhile {~w} {", [Indent," ",Expr],
 			StartChars ),
 	name( While_Start, StartChars ).
 
@@ -231,11 +233,11 @@ render( L, procedure_start, Call, Indent, [Proc_Start]) :-
 	Call =.. [call, RetType, Proc_name | Args],
 	make_param_string(L, Args, Arg_string),
 	(L = c,
-		format_to_chars( "~*s~w ~w (~s) {", 
+		sicstus_format_to_chars( "~*s~w ~w (~s) {", 
 				[Indent," ",RetType,Proc_name, Arg_string],
 				 StartChars );
 	L = tcl,
-		format_to_chars( "~*sproc ~w  {~s} {", 
+		sicstus_format_to_chars( "~*sproc ~w  {~s} {", 
 				[Indent," ",Proc_name, Arg_string], StartChars )),
 	name( Proc_Start, StartChars ).
 
@@ -244,9 +246,9 @@ render(c, public_cons_dest,
        instance(submodel, _, xrefs(model(Prims, Subs), _,_,_), _,
 		ClassName-_), Indent, PubConDe) :-
 	InIndent is Indent+4,
-	format_to_chars( "~*spublic:", [Indent," "], PubStr),
-	format_to_chars( "~*s~w () {", [InIndent," ",ClassName], ConsHd),
-	format_to_chars( "~*s~~~w () {", [InIndent," ",ClassName], DestHd),
+	sicstus_format_to_chars( "~*spublic:", [Indent," "], PubStr),
+	sicstus_format_to_chars( "~*s~w () {", [InIndent," ",ClassName], ConsHd),
+	sicstus_format_to_chars( "~*s~~~w () {", [InIndent," ",ClassName], DestHd),
 	append(Prims, Subs, Comps),
 	all(render, make_cons_dest,
 	    [build(Comps), append(ConLines, []), append(DeLines, [])]),
@@ -279,7 +281,7 @@ render( L, end(Loop), Name, Indent, [For_End]) :-
 		      declaration, namespace, catch]),
 	render(L, comment, end(Loop,Name), 0, [IdComment]),
 	(L = c, Format = "~*s}; ~a"; L = tcl, Format = "~*s} ~a"),
-	format_to_chars( Format, [Indent," ", IdComment], CharList ),
+	sicstus_format_to_chars( Format, [Indent," ", IdComment], CharList ),
 	name( For_End, CharList ).
 
 render(L, procedure_call, DataFunc, Indent, Line) :-
@@ -288,9 +290,9 @@ render(L, procedure_call, DataFunc, Indent, Line) :-
 	render(L, function, CallString, Indent, Line).
 
 render(L, function, Act, Indent, [Line]) :-
-	(L = c, FString = "~*s~s;";
-	L = tcl, FString = "~*s~s"),
-	format_to_chars(FString, [Indent," ",Act], CharList ),
+	list_of(32, Indent, Leader),
+	(L = tcl, append(Leader, Act, CharList);
+	L = c, append([Leader, Act, ";"], CharList)),
 	name(Line, CharList).
 
 count_base_ptrs([], 0).
@@ -307,13 +309,13 @@ render(c, class_declaration, Instance, Indent, ClassDecl) :-
 	Instance = instance(submodel, SymbolicName, _,_, Name-_),
 
 	(nonvar(SymbolicName), !,
-	    format_to_chars( "~*sclass ~w : public submodeltype {",
+	    sicstus_format_to_chars( "~*sclass ~w : public submodeltype {",
 			 [Indent, " ", Name], HeaderStr),
 	    render(c, public_cons_dest, Instance, Indent, PublicHeads);
-	format_to_chars( "~*sclass ~w {", [Indent, " ", Name], HeaderStr),
+	sicstus_format_to_chars( "~*sclass ~w {", [Indent, " ", Name], HeaderStr),
 	    PublicHeads = ['public:']),
 	name(Line1, HeaderStr),
-	format_to_chars("}; /* end(class,~w) */", [Name], EndStr),
+	sicstus_format_to_chars("}; /* end(class,~w) */", [Name], EndStr),
 	name(End, EndStr),
 
 	append([submodel_decls, '', Line1 | PublicHeads],
@@ -518,7 +520,7 @@ add_temps(OldTemps, [Var | Vars], Type, Dims, [[Type, Var, Dims] | Rest]) :-
 
 declare_namespace(Target, Indent, [Line2, submodel_decls,
 				   proc_decls, LastButOne]) :-
-	format_to_chars("~*snamespace eval ~w {",
+	sicstus_format_to_chars("~*snamespace eval ~w {",
 			[Indent, " ", Target], Line2string),
 	name(Line2, Line2string),
 	render(tcl, end(namespace), Target, Indent, [LastButOne]).
@@ -552,7 +554,7 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		(Dims = void, Counts = [''];
 		all(render, boost, [build(Dims), build(Counts)])),
 		make_indexed_reference(L, Name, Counts, ArrayName),
-		format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
+		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
 					       ArrayName], Chars),
 		name(Decl, Chars),
 		Result = [Decl];
@@ -569,14 +571,14 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		(Dims = void, Counts = [''];
 		all(render, boost, [build(Dims), build(Counts)])),
 		make_indexed_reference(L, Name, Counts, ArrayName),
-		format_to_chars("~*s~a ~a = ~s",
+		sicstus_format_to_chars("~*s~a ~a = ~s",
 				[Indent, " ", Type, ArrayName, FirstLine],
 				Chars1),
 			name(NewFirstLine, Chars1),
 			list_of(32, DeepIndent, TabIn),
 			prepend_spaces(LateLines, TabIn, NewLateLines),
 			append(EarlyLines, [LastLine], [NewFirstLine | NewLateLines]),
-			format_to_chars("~a;", [LastLine], Chars2),
+			sicstus_format_to_chars("~a;", [LastLine], Chars2),
 			name(NewLastLine, Chars2),
 			append(EarlyLines, [NewLastLine], Result);
 		L = tcl,
@@ -599,12 +601,12 @@ prepend_spaces([H|T], Gap, [H2 | T2]) :-
 	prepend_spaces(T, Gap, T2).
 
 render(c, release_memory, Var, Indent, [Result]) :-
-	format_to_chars("~*sdelete ~a;", [Indent, " ", Var], ResultStr),
+	sicstus_format_to_chars("~*sdelete ~a;", [Indent, " ", Var], ResultStr),
 	name(Result, ResultStr).
 
 render(tcl, release_memory, Pointer, Indent, [Result]) :-
 	resolve_pointer(tcl, Pointer, Zap),
-	format_to_chars("~*snamespace delete ~a",
+	sicstus_format_to_chars("~*snamespace delete ~a",
 			[Indent, " ", Zap], ResultStr),
 	name(Result, ResultStr).
 
@@ -643,7 +645,7 @@ assign_initial_values(Var, [Vals | Rest], Count, [Dim | Deep], Indent, Result) :
 
 swap_squares_for_curlies(ListList, Strings) :-
 	(make_list_chars(c, ListList, NestStr), !;
-	write_to_chars(ListList, NestStr)),
+	sicstus_write_to_chars(ListList, NestStr)),
 	split_lines(NestStr, Strings).
 
 split_lines(NestStr, [String | Strings]) :-
@@ -686,7 +688,7 @@ make_arg_string(_, [], []).
 
 make_arg_string(L, [Arg], String) :- 
 	make_list_chars(L, Arg, String), !;
-	write_to_chars(Arg, String), !.
+	sicstus_write_to_chars(Arg, String), !.
 
 make_arg_string(L, [Arg | Rest], Arg_string) :-
 	make_arg_string(L, [Arg], String),
@@ -697,20 +699,20 @@ make_arg_string(L, [Arg | Rest], Arg_string) :-
 		append(String, [32 | Tail], Arg_string)), !. /* green */
 
 build_constant(Language, [String, Type, Eval, Dims, Array, GraphPtr, Caption,
-			  Min, Def, Max, Class, Comment], Chars) :-
+			  Min, Def, Max, Class, _Comment], Chars) :-
 	make_list_chars(Language, Dims, DimsString),
 	make_list_chars(Language, Array, ArrayString),
-	render(Language, comment, Comment, 0, [CommentWd]),
 	make_constant_string(Language, String, Quoted),
 	make_constant_string(Language, Caption, Quoted2),
 	name(Arg1, Quoted),
 	name(Arg5, Quoted2),
 	name(Arg2, DimsString),
 	name(Arg3, ArrayString),
-	make_list_chars(Language, [Arg1, Type, Eval, Arg2, Arg3,
-				   GraphPtr, Min, Def, Max, Class, Arg5], Chars),
-	name(CommentWd, CommentStr).
-/* Comment string removed because it interferes with list mode
+	make_list_chars(Language, [Arg1, Type, Eval, Arg2, Arg3, GraphPtr,
+				   Min, Def, Max, Class, Arg5], Chars).
+/* 	render(Language, comment, Comment, 0, [CommentWd]),
+	name(CommentWd, CommentStr),
+Comment string removed because it interferes with list mode
 	append(BaseChars, [32 | CommentStr], Chars). */
 
 make_constant_list(_, [], []).
@@ -742,7 +744,7 @@ make_param_string(L, [Param], String) :- !,
 	Param = [Unit, Arg],
 	type_for_unit(Unit, Type),
 	(L = c,
-		format_to_chars("~w ~w", [Type, Arg], String);
+		sicstus_format_to_chars("~w ~w", [Type, Arg], String);
 	L = tcl,
 		name(Arg, String)).
 
@@ -769,7 +771,7 @@ make_procedure_call(tcl, List, Result) :-
 
 make_procedure_call(c, [Proc | Args], Result) :-
 	make_arg_string(c, Args, Contents),
-	format_to_chars("~w(~s)", [Proc, Contents], Result).
+	sicstus_format_to_chars("~w(~s)", [Proc, Contents], Result).
 
 get_element_ref(L, Array, Index, Result) :-
 	Index = pop, !,
@@ -781,7 +783,7 @@ get_element_ref(L, Array, Index, Result) :-
 	    make_indexed_reference(L, Array, [Index], Result);
 	L = tcl,
 	    refer_value(L, Array, ArrayRef),
-	    format_to_chars("[lindex ~w ~w]", [ArrayRef, Index], ResChars),
+	    sicstus_format_to_chars("[lindex ~w ~w]", [ArrayRef, Index], ResChars),
 	    name(Result, ResChars).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -793,15 +795,15 @@ inplement in BASIC. In Tcl, a structure is the same as a namespace */
 make_struct_reference(c, Struct, Var, Result) :-
 	Struct = '', !,
 	    Result = Var;
-	(format_to_chars("~w->~w", [Struct, Var], ResultStr),
+	(sicstus_format_to_chars("~w->~w", [Struct, Var], ResultStr),
 	    \+ prefix("*", ResultStr);
-	format_to_chars("(~w)->~w", [Struct, Var], ResultStr)), !,
+	sicstus_format_to_chars("(~w)->~w", [Struct, Var], ResultStr)), !,
 	name(Result, ResultStr).
 
 make_struct_reference(tcl, Struct, Var, Result) :-
 	Struct = '', !,
 	    Result = Var;
-	format_to_chars("${~w}::~w", [Struct, Var], ResultStr),
+	sicstus_format_to_chars("${~w}::~w", [Struct, Var], ResultStr),
 	    name(Result, ResultStr).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -814,20 +816,20 @@ make_indexed_reference(_, Base, [], Base).
 make_indexed_reference(L, Struct, Indices, Result) :-
 	L = c,
 	    Indices = [Inner | Rest],
-	    format_to_chars("~w[~w]", [Struct, Inner], MidStr),
+	    sicstus_format_to_chars("~w[~w]", [Struct, Inner], MidStr),
 	    name(Mid, MidStr),
 	    make_indexed_reference(L, Mid, Rest, Result);
 	L = tcl,
 	    comma_separate(Indices, IndListStr),
-	    format_to_chars("~w(~s)", [Struct, IndListStr], ResultString),
+	    sicstus_format_to_chars("~w(~s)", [Struct, IndListStr], ResultString),
 	    name(Result, ResultString).
 
 comma_separate([Solo], Str) :-
-	write_to_chars(Solo, Str), !.
+	sicstus_write_to_chars(Solo, Str), !.
 
 comma_separate([F | R], Str) :-
 	comma_separate(R, Str2),
-	format_to_chars("~w,~s", [F, Str2], Str).
+	sicstus_format_to_chars("~w,~s", [F, Str2], Str).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -877,7 +879,7 @@ make_expr(c, Expr, Expr).
 make_expr(tcl, Expr, Result) :-
 	atomic(Expr), !, 
 		Result = Expr;
-	format_to_chars("[expr ~w]", Expr, Result_string),
+	sicstus_format_to_chars("[expr ~w]", [Expr], Result_string),
 		name(Result, Result_string).
 
 make_expr_all(_, [], []).
@@ -889,9 +891,9 @@ make_expr_all(Language, [Expr0 | Expr], [Result0 | Result]) :-
 combine( L, Op, VArgs, Atom) :-
 	make_expr_all(L, VArgs, VArgExprs),
 	(
-	Op = ?, L = tcl, !,
+	Op = (?), L = tcl, !,
 	    VArgs = [VCond, VTrue:VFalse],
-	    format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
+	    sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
 			    [VCond, VTrue, VFalse], CharList);
 	    
 /* Yes, horrible, nasty, ugly, repugnant, grotesque Tcl has the a?b:c format but,
@@ -907,37 +909,37 @@ incorporation of the actual conditionality into program generation
 
 	Op = choose, !,
 		(L = c,
-			format_to_chars("(~w?~w:~w)", VArgs, CharList);
+			sicstus_format_to_chars("(~w?~w:~w)", VArgs, CharList);
 		L = tcl,
-			format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
+			sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
 					VArgs, CharList));
 
 	Op = if,
 		(L = c,
-			format_to_chars("(~w)", VArgs, CharList);
+			sicstus_format_to_chars("(~w)", VArgs, CharList);
 		L = tcl,
-			format_to_chars("[if ~w]",
+			sicstus_format_to_chars("[if ~w]",
 					VArgs, CharList));
 
 	Op = elseif,
 		(L = c,
-			format_to_chars("~w:(~w)", VArgs, CharList);
+			sicstus_format_to_chars("~w:(~w)", VArgs, CharList);
 		L = tcl,
-			format_to_chars("{expr ~w} else {if ~w}",
+			sicstus_format_to_chars("{expr ~w} else {if ~w}",
 					VArgs, CharList));
 
 	Op = then,
 		(L = c,
-			format_to_chars("~w?~w", VArgs, CharList);
+			sicstus_format_to_chars("~w?~w", VArgs, CharList);
 		L = tcl,
-			format_to_chars("{~w} ~w",
+			sicstus_format_to_chars("{~w} ~w",
 					VArgs, CharList));
 
 	Op = else,
 		(L = c,
-			format_to_chars("~w:~w", VArgs, CharList);
+			sicstus_format_to_chars("~w:~w", VArgs, CharList);
 		L = tcl,
-			format_to_chars("{expr ~w} else {expr ~w}",
+			sicstus_format_to_chars("{expr ~w} else {expr ~w}",
 					VArgs, CharList));
 			
 furthermore, Tcl lacks the min and max operators although there are perfectly
@@ -951,24 +953,24 @@ aid lazy evaluation as is done for Choose... */
 		(inters:use_tcl_proc_for(Op),
 			make_procedure_call_chars(L, [Op | VArgExprs], CharList);
 		member(Op, [and, ',', '&&']),
-			format_to_chars("[if {~w} then {expr ~w} else {expr 0}]",
+			sicstus_format_to_chars("[if {~w} then {expr ~w} else {expr 0}]",
 					VArgs, CharList);				
 		member(Op, [or, ';', '||']),
-			format_to_chars("[if {~w} then {expr 1} else {expr ~w}]",
+			sicstus_format_to_chars("[if {~w} then {expr 1} else {expr ~w}]",
 					VArgs, CharList))),
 
 	!, name(Atom, CharList);
 
-/* Here's a sticky botch...some models are written for modelling environments that
+/* Heres a sticky botch...some models are written for modelling environments that
 quietly stick in a huge but finite value when you, say, divide by zero. With 
 the next few lines in place, and math_protect asserted, AME will do the same. */
 
 	state:math_protect,
-	(Op = /,
+	(Op = (/),
 		VArgs = [Nom, Div],
 		Test = '==0',
 		Atom = double(Nom)/NewDiv;
-	Op = //,
+	Op = (//),
 		VArgs = [Nom, Div],
 		Test = '==0',
 		Atom = int(Nom)/int(NewDiv);
@@ -976,16 +978,16 @@ the next few lines in place, and math_protect asserted, AME will do the same. */
 		VArgs = [Div],
 		Test = '<=0',
 		Atom =.. [Op, NewDiv]), !,
-			format_to_chars("((~w)~w?1e-100:(~w))", [Div, Test, Div],
+			sicstus_format_to_chars("((~w)~w?1e-100:(~w))", [Div, Test, Div],
 					NewDivName),
 			name(NewDiv, NewDivName);
 
 /* Enough of these; I might need to do pow(a,b) and perhaps others too.
    Now to exorcise the demon of integer division... */
-	Op = /, !,
+	Op = (/), !,
 	    VArgs = [Nom, Div],
 	    Atom = double(Nom)/Div;
-	Op = //, !,
+	Op = (//), !,
 	    VArgs = [Nom, Div],
 	    Atom = int(Nom)/int(Div);
 	member(Op, [floor, ceil]), !,
@@ -994,21 +996,21 @@ the next few lines in place, and math_protect asserted, AME will do the same. */
 
 	(member(Op, [and, ',', '&&']), !,
 		(L = c,
-			TargetOp = '&&';
+			TargetOp = (&&);
 		L = basic,
 			TargetOp = 'AND');
 	member(Op, [or, ';', '||']), !,
 		(L = c,
-			TargetOp = '||';
+			TargetOp = ('||');
 		L = basic,
 			TargetOp = 'OR');
-	Op = '^', !,
+	Op = (^), !,
 		(L = c,
 			TargetOp = 'pow';
 		L = tcl,
 			TargetOp = 'pow';
 		L = basic,
-			TargetOp = '^');
+			TargetOp = (^));
 	Op = int, !,
 		((L = basic; L = tcl),
 			TargetOp = int;
@@ -1016,7 +1018,7 @@ the next few lines in place, and math_protect asserted, AME will do the same. */
 			TargetOp = '(int)');
 	Op = '<>', !,
 		((L = basic; L = tcl; L = c),
-			TargetOp = '!=');
+			TargetOp = ('!='));
 	Op = arctan, !,
 		TargetOp = atan;
 	TargetOp = Op),

@@ -18,12 +18,13 @@ sicstus_module(m_update,
 		moving_endpoint/3, update_links_and_vars/1,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
 		update_destination/2, build_array/3, analyze_array/3, 
-		delete_implicit_node/1, add_implicit_function/2,
-		get_exogenous_node/2, find_all_links/2, find_all_links/3,
+		get_solo_list_depth/2, delete_implicit_node/1, 
+		add_implicit_function/2, get_exogenous_node/2, 
+		find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
 		dims_affect/2, presence_affects/2, status_affects/2,
 		can_start/2, can_finish/3, continues_in/2, continues_from/2,
-		add_equivalence/3,
+		add_equivalence/3, is_no_longer_model_class/1,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
 		add_new_line_between/4, change_class/3, get_disag_params/2,
@@ -186,15 +187,15 @@ rel_path_name(RemoteNode, DestBox, Relation, SourceLocation, RemoteName) :-
 		RemoteName = AbsName;
 	(Relation has_type relation, !,
 	    (SourceLocation = in_base, !,
-		Dir = from;
-	    Dir = to),
+		Dir = (from);
+	    Dir = (to)),
 	    caption_for(Relation, RelCaption),
 	    initiates(Relation, BaseBox),
 	    caption_for(BaseBox, BaseBoxCaption),
-	    format_to_chars("~a (~a ~a in ~a)",
+	    sicstus_format_to_chars("~a (~a ~a in ~a)",
 			    [AbsName, Dir, BaseBoxCaption, RelCaption],
 			    RemoteStr);
-	format_to_chars("~a (active channel?)", [AbsName], RemoteStr)),
+	sicstus_format_to_chars("~a (active channel?)", [AbsName], RemoteStr)),
 	name(RemoteName, RemoteStr)).
 
 list_downs([], []).
@@ -246,7 +247,7 @@ list_link_index_meanings(DestCapt, [exits(Link, [Start | SRest]) | LRest],
 			 Meanings) :-
 	list_local_index_meanings(Start, BaseMeanings),
 	caption_for(Link, LinkCapt),
-	format_to_chars(" in ~a for ~a", [LinkCapt, DestCapt], RoleCaptStr),
+	sicstus_format_to_chars(" in ~a for ~a", [LinkCapt, DestCapt], RoleCaptStr),
 	all(m_update, append_base_role,
 	    [build(BaseMeanings), unify(RoleCaptStr), build(First)]),
 	list_link_index_meanings(DestCapt, [exits(Link, SRest) | LRest],
@@ -263,7 +264,7 @@ list_node_index_meanings(_, [], []).
 list_node_index_meanings(Capt, Indices, [Meaning | Meanings]) :-
 	append(Early, [Dim], Indices),
 	length(Indices, DimCount),
-	format_to_chars("Dimension ~d of ~a (~w)", [DimCount,
+	sicstus_format_to_chars("Dimension ~d of ~a (~w)", [DimCount,
 		Capt, Dim], MeaningStr),
 	name(Meaning, MeaningStr),
 	list_node_index_meanings(Capt, Early, Meanings).
@@ -415,16 +416,16 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 		    get_conversion(1, Unit_base, Target_base, Scale)),
 			(Severity = 2, !;
 			1 is Scale, !;
-			format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
+			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
 
-		    format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
+		    sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which is incompatible with the quantity it represents, specified as ~w.", [Unit_term, Unit_base, Target_base], Complaint));
 
-		format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Target_type, Unit_type], Complaint));
+		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Target_type, Unit_type], Complaint));
 		
-	    format_to_chars("Unit expression ~w is not recognized as a valid unit. ", Unit_term, Complaint));
+	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", Unit_term, Complaint));
 	    
-	format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, Dims0, Dims1], Complaint));
-	format_to_chars("Unit expression ~w or ~w is out of date: ~w",
+	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, Dims0, Dims1], Complaint));
+	sicstus_format_to_chars("Unit expression ~w or ~w is out of date: ~w",
 			[Unit_term, Target_unit, ParseUnit], Complaint)),
 	(nonvar(Complaint); Complaint = []).
 
@@ -514,6 +515,11 @@ analyze_array(Array, Base_type, Dims) :-
 		Dims = [Dim | SubDims];
 	Base_type = Array, Dims = [].
 
+get_solo_list_depth(List,Depth) :-
+	atom(List), Depth = 0;
+	(List = [Ellie]; List = {Ellie}),
+		get_solo_list_depth(Ellie, D), Depth is D+1.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                                                                         %%%
 %%%   ADDING A NEW COMPONENT TO THE MODEL                                   %%%
@@ -549,8 +555,25 @@ convert_refs([OldRef | R1], SoFar, [NewRef | R2]) :-
 	NowDone is SoFar + 1,
 	convert_refs(R1, NowDone, R2).
 	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Node is_no_longer_model_class succeeds if Node has been deleted from the tree
+% along with all its related information
+% NB much more work to do here once connectors are installed; think about
+% connectors through the model class boundary, and about inherited values
+
+:- op(450, xf, is_no_longer_model_class).
+
+Node is_no_longer_model_class :-
+	Node is_part_of Parent,
+	\+ Node has_part _OtherNode,
+	!,
+	Node no_longer_has_refinements,
+	Node no_longer_has_connections,
+	Node no_longer_has_graphical_attributes,
+	Node is_no_longer_part_of Parent.
+
 delete_implicit_node(Exp_node) :-
-	implicit_node(Exp_node, Imp_node),
+	implicit_function(Exp_node, Imp_node),
 	unghost(Imp_node),
 	Imp_node is_no_longer_model_class, fail;
 	true.
@@ -861,7 +884,7 @@ load_submodel_interface(Stream, Model, Type, Dir) :-
 	    get_submodel_interface(Model, Type, Dir, ExternalSection,
 			    link(SourceCapt, NewDestCapt, NewData)), !,
 	        (NewData = Properties, !;
-		format_to_chars("~a link type ~a from ~a to ~a, but it has properties ~w whereas in the specification it is ~w",
+		sicstus_format_to_chars("~a link type ~a from ~a to ~a, but it has properties ~w whereas in the specification it is ~w",
 				[Method, Type, SourceCapt, DestCapt,
 				 NewData, Properties],
 				Hassle))),
@@ -895,9 +918,9 @@ make_connection(Model, Type, Dir, ExternalSection,
 		[unify(Type), unify(InputSection),
 		 build(AllOutputs), build(_TopArcs)]),
 	    event:thread_link(ExternalSection);
-	    format_to_chars("Could not find a free ~a going ~a the model with destination caption ~a",
+	    sicstus_format_to_chars("Could not find a free ~a going ~a the model with destination caption ~a",
 			    [Type, Dir, DestCapt], Hassle));
-	format_to_chars("Could not find a free ~a going ~a the model with source caption ~a", [Type, Dir, SourceCapt], Hassle)).
+	sicstus_format_to_chars("Could not find a free ~a going ~a the model with source caption ~a", [Type, Dir, SourceCapt], Hassle)).
 
 check_input(Type, Dir, Model, SourceCapt, Properties, BorderSection) :-
 	BorderSection has_type Type,
@@ -986,7 +1009,7 @@ pair_with_captions(Model, [Do | Later], [Done | DoneLater]) :-
 	Done = '/disused/', (nonvar(Do) ; Do = obsolete), !;
 	/* Or we might be loading a model into a context that does not have
 	the right association links */
-	format_to_chars("Interface to submodel requires relation ~a but this does not occur in the parent.", [Done], ProbStr),
+	sicstus_format_to_chars("Interface to submodel requires relation ~a but this does not occur in the parent.", [Done], ProbStr),
 	do_dialogue("Problem setting interface", error, ProbStr, ok, _),
 	fail),
 	pair_with_captions(Model, Later, DoneLater).
@@ -1072,9 +1095,8 @@ presence_affects(Arc, Affected) :-
 	(sequence(Head, Arc), sequence(Arc, Affected);
 	sequence(Arc, Head), sequence(Affected, Arc));
 	
-	Arc is_connector from A to B,
-	(Affected = B /*;
-	Affected = A, find_type(Affected, submodel) */ ).
+	Arc is_connector from _A to B,
+	Affected = B.
 
 delete_obsolete_modes([], _, []).
 
@@ -1360,7 +1382,7 @@ unique_name_for_new(Parent, Type, Name) :-
 	utility:unique_name(Abbrev, TestName, _),
 	(Name = TestName;
 	count_to(0, 100000, 1, Sub),
-	    format_to_chars("~a_~d", [TestName, Sub], NameStr),
+	    sicstus_format_to_chars("~a_~d", [TestName, Sub], NameStr),
 	    name(Name, NameStr)),
 	\+ (Part has_class_refinement name of Name,
 	     Parent has_part Part;	

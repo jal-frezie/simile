@@ -5,9 +5,8 @@ moment (though they must have counterparts in the information the database conta
 about mathematical properties). To put it another way, it contains all the
 functions that are needed both in model_update and image. */
 
-sicstus_module(ame_gen, [get_term/3, get_host/2, appears/1, implicit_function/2,
-	implicit_variable/2, implicit_node/2,
-	is_parameter/2,
+sicstus_module(ame_gen, [get_term/3, get_host/2, appears/1, 
+	implicit_function/2, is_parameter/2,
 	is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 	find_reference/3,
 	do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
@@ -22,8 +21,7 @@ sicstus_module(ame_gen, [get_term/3, get_host/2, appears/1, implicit_function/2,
 	find_all_comps/2, draws_inside/2,
 	is_primitive/1, is_of_sort/2, is_class_of_sort/2]).
 
-sicstus_use_module([library(lists), library(tcltk), 
-		library(charsio), m_class, utility, text]).
+sicstus_use_module([library(lists), library(charsio), m_class, utility, text]).
 
 /* Full syntax error text currently not displayed because it is too
 distressing to users */
@@ -48,13 +46,16 @@ but this always raises an exception, otherwise I could just call it using
 with_output_to_chars. It's not perfect anyway, so I have consulted perror/1
 (which actually does the work) to inspire what follows... */
 
-make_nice_error_message(syntax_error(_,_, Problem, Bits, Where), Error) :-
+make_nice_error_message(ThrowUp, Error) :-
+	ThrowUp = syntax_error(_,_, Problem, Bits, Where), /* sicstus */
 	space_elts(Problem, Desc),
 	append(BitsBefore, BitsAfter, Bits),
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
 	connect_bits(BitsAfter, WindDown, _),
-	format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what you typed, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error).
+	sicstus_format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what you typed, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
+	ThrowUp = error(Info, _FailedOp), /* gnu */
+	    sicstus_write_to_chars(Info, Error).
 
 space_elts([Elt], Elt).
 space_elts([Elt | Rest], Desc) :-
@@ -114,33 +115,21 @@ make_legible_for_prolog(String, ProcessedString) :-
 	ProcessedString = String.
 
 get_host(Object, Visible) :-
-	Object = Visible, \+ implicit_node(_, Visible);
-	implicit_node(Visible, Object).
+	Object = Visible, \+ implicit_function(_, Visible);
+	implicit_function(Visible, Object).
 
 appears(Object) :-
 	(Drawable = bounding_box; Drawable = course),
 	Object has_graphical_attribute Drawable of _,
-	\+ implicit_node(_, Object),
+	\+ implicit_function(_, Object),
 	\+ (Object is_connector from Node to Self,
-		(implicit_variable(Node, Self);
-		implicit_function(Self, Node))).
-
-implicit_node(Exp_node, Imp_node) :-
-	implicit_function(Exp_node, Imp_node);
-	implicit_variable(Exp_node, Imp_node).
+		implicit_function(Self, Node)).
 
 implicit_function(Exp_node, Imp_node) :-
-	state:get_style(sd),
 	Arc is_connector from Imp_node to Exp_node,
 	Arc has_type influence,
 	Imp_node has_class function.
 	
-implicit_variable(Exp_node, Imp_node) :-
-	state:get_style(engineering),
-	Arc is_connector from Exp_node to Imp_node,
-	Arc has_type influence,
-	Imp_node has_class variable.
-
 /* interface for ghost property to rest of program. To test for ghosthood, use 'is_ghost' -- this returns the start and finish of a ghost link. To find the 'real' node for a given node, use find_base -- if the given node is real, it will be returned. Ghost_link can be used to determine the display status of links, and find_ghosts will return all the ghosts
 of a given base node. (Ghost relationship only exists between an absolute base node and its ghosts -- ghost-to-ghost links should be done away with!) */
 
@@ -274,8 +263,7 @@ Works but buggers up GNU prolog (do after loading?) */
 
 :- op(700, yfx, ['<=']).
 
-/* :- op(700, yfx, ['!=']).
-Buggers up GNU prolog and doesnt work anyway */
+:- op(700, yfx, ['=\\=', '!=']).
 
 :- op(750, yfx, ['&&', and]).
 
@@ -390,7 +378,7 @@ get_node_size(Source, Size) :-
 	get_actual_sizes(Dim, Size), !,
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
-	    format_to_chars("~a has a reference to a variable membership model in its dimensions.", [Capt], Wibble),
+	    sicstus_format_to_chars("~a has a reference to a variable membership model in its dimensions.", [Capt], Wibble),
 	    name(Wobble, Wibble),
 	    raise_exception(Wobble));
 	Size = [].
@@ -421,6 +409,8 @@ convert_to_refs(Capt, [Num | Nums], Refs) :-
 /* Purge removes all elements of the 2nd arg from the 1st leaving the 3rd.
 It uses the database so templates which match many different elements
 can be used. */
+
+:- dynamic(purging/1).
 
 purge(P, Unwanted, Pure) :-
 	assert(purging(Unwanted)),
@@ -513,13 +503,11 @@ swap_matches(Old=New, Old, New, 0).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-/* list_of/3 takes an item and returns a list of it of the given length.
-Uses an endless list so be careful about printing it. */
+/* list_of/3 takes an item and returns a list of it of the given length.*/
 
 list_of(Item, Length, Result) :-
-	Endless = [Item | Endless],
 	length(Result, Length),
-	prefix(Result, Endless).
+	prefix(Result, [Item | Result]).
 
 /* lower/2: turns uppercase letters in a string to lowercase */
 

@@ -19,13 +19,7 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 		BackSwap, [], [], Step, Used, _, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula)),
 		      fail);
-	format_to_chars("Simile failed to convert the equation for \c
-		       component \"~a\" into executable code. See progress \c
-		       box for the location of this component. This is \c
-		       probably because changes were made elsewhere in the \c
-		       model since this component was defined, and as a \c
-		       result its equation no longer makes sense. You \c
-		       should edit the equation again.", [Target], MesgStr),
+	sicstus_format_to_chars("Simile failed to convert the equation for component \"~a\" into executable code. See progress box for the location of this component. This is probably because changes were made elsewhere in the model since this component was defined, and as a result its equation no longer makes sense. You should edit the equation again.", [Target], MesgStr),
 	    name(Mesg, MesgStr),
 	    raise_exception(Mesg)),
 
@@ -39,7 +33,7 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	Args = [made_at(Idle, _)],
 	select(instance(internal, _,_, Idle, _-Dims),
 	       AllInters, NewInters), !,
-	    replace_subexps(AllSetups, compile, swap_vars,
+	    replace_subexps(AllSetups, inters, swap_vars,
 			    switch(Idle, Target), top_down, _, SubbedSetups),
 	    select(make(Target, NewArgs, Context, _, NewFormula), SubbedSetups,
 		   Setups);
@@ -55,7 +49,7 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 
 insert_paths(sub(DestRef, Swaps), Var, NewVar, Recurse) :-
 	var(Var), !,
-	    write_to_chars(Var, Rep),
+	    sicstus_write_to_chars(Var, Rep),
 	    name(NewVar, Rep),
 	    Recurse = 0;	  
 	(Var = elt(RealPathForm, Ref, Unit-Dims), !,
@@ -101,6 +95,8 @@ insert_paths(sub(DestRef, Swaps), Var, NewVar, Recurse) :-
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
 
+:- dynamic(macro_expansion/1).
+
 expand_library(DestRef, Var, NewVar) :-
 	macro_expansion(Macro),
 	    Macro = (Var --> NewVar);
@@ -132,7 +128,7 @@ read_library_funx(Done) :-
 read_funcs(Stream, Type, Done) :-
 	on_exception(WrongUDF, read(Stream, Line),
 		     (ame_gen:make_nice_error_message(WrongUDF, Bug),
-			 format_to_chars("Parsing user-defined ~as", [Type],
+			 sicstus_format_to_chars("Parsing user-defined ~as", [Type],
 					 ProbAct),
 			 do_dialogue(ProbAct, warning, Bug, ok, _))),
 	(nonvar(Bug), !,
@@ -148,17 +144,14 @@ read_funcs(Stream, Type, Done) :-
 	Type = defn,
 	    Line = function(Functor, _ReturnType, _ArgTypes),
 	    assert(Line),
-	    assert(use_tcl_proc_for(Functor)),
+	    assert(use_tcl_proc_for(Functor)), !,
 	    append_atoms(Functor, ' (user-defined procedure)', FnEntry)),
 	    read_funcs(Stream, Type, More),
 	    Done = [FnEntry | More];
-	format_to_chars("The file ~as.mcr contained the line ~w which \c
-		       is in the wrong format for a ~a -- \c
-		       please refer to the documentation.", [Type, Type, Line],
-		       Bug),
-	    do_dialogue("Parsing user-defined functions",
-				     warning, Bug, ok, _),
-	    read_funcs(Stream, Done)).
+	sicstus_format_to_chars("The file ~as.pl contained the line ~w which is in the wrong format for a ~a -- please refer to the documentation.", 
+	               [Type, Line, Type], Bug),
+	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
+	    read_funcs(Stream, Type, Done)).
 
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	append(Outer, [var | Inner], Dims), !,
@@ -244,7 +237,7 @@ make_intermediates(
 	    append(SourceLoops, CommonContext, SourceContext),
 	    (var(Wait), !,
 		/* we are in the argument of last(...) so no need to wait for
-		this before using it, just don't do it at init time */
+		this before using it, just dont do it at init time */
 		Args = [time];
 	    swap_back(SourceContext, TermSwap, ParamContext, _),
 		/* a typical parameter: made_at(...) will be linked to it at
@@ -266,10 +259,10 @@ make_intermediates(
 	(Source = count(Epsilon);
 	Source = sum(Epsilon),
 		InitVal = 0,
-		IncrOp = '+';
+		IncrOp = (+);
 	Source = product(Epsilon),
 		InitVal = 1,
-		IncrOp = '*';
+		IncrOp = (*);
 	Source = least(Epsilon),
 		InitVal = Muckle,
 		IncrOp = min;
@@ -279,10 +272,10 @@ make_intermediates(
 
 	Source = any(Epsilon),
 	    InitVal = 0,
-	    IncrOp = '||';
+	    IncrOp = ('||');
 	Source = all(Epsilon),
 	    InitVal = 1,
-	    IncrOp = '&&';
+	    IncrOp = ('&&');
 	member(Source, [make_inter(Epsilon), delay(Epsilon),
 			last(Epsilon), exists(Epsilon)]),
 	    MadeDim = new_dim), !,
@@ -297,7 +290,7 @@ make_intermediates(
 	NowBuilding = []),
 	
 	Source =.. [Functor | _],
-	format_to_chars("~a_~a", [Target, Functor], TotalNameStr),
+	sicstus_format_to_chars("~a_~a", [Target, Functor], TotalNameStr),
 	name(TotalNameBase, TotalNameStr),
 	generate_name(c, TotalNameBase, TotalName, Used),
 	copy_term(DestPath, TotalPath),
@@ -326,7 +319,7 @@ make_intermediates(
 	 Exited = []),
 
 	/* Total must have same dims as one element of its arg,
-	so let's work that out... */
+	so lets work that out... */
 	((Functor = exists,
 	        IncrExpr = 1,
 	        Units = boolean;
@@ -350,7 +343,7 @@ make_intermediates(
 	get_dims_from_loops(TailLoops, TotalDims, LoopInds),
 
 	/* get limit values for least and greatest -- should use limits.h
-	but no such for tcl and doesn't have float limits anyway, so...
+	but no such for tcl and doesnt have float limits anyway, so...
 
 	Actually it is unsound taking the very end value as a bit of
 	arithmetic can push it over the edge, so these two ints are midrange
@@ -426,7 +419,7 @@ make_intermediates(
 	    (integer(SourceRef), !, Units = const_int;
 		Units = real);
 
-	false, /* suspended due to scope problems */
+	fail, /* suspended due to scope problems */
 	add_zeros(Source, BoundArray, ConstBounds, Units), !,
 	    make_inds_for(ConstBounds, SourceContext, Inds),
 	    generate_name(c, array, ArrayName, Used),
@@ -525,7 +518,7 @@ make_intermediates(
 	    counterfactual arm of a conditional */
 	
 	Source = (Param=SubExp,Rest), !,
-	    replace_subexps(Rest, compile, swap_vars,
+	    replace_subexps(Rest, inters, swap_vars,
 			    switch(Param, make_inter(SubExp)), top_down, _,
 			    UseSource),
 	    make_intermediates(UseSource, Target, 
@@ -591,7 +584,7 @@ make_intermediates(
 				   PrevInters, BuildingArrays, Step, Used,
 				   UnitList, NewInters, PartResultList),
 	/* first, check my units are right... */
-	    propagate_units(Source, RUnits, Arg_template, UnitList, Units),
+    propagate_units(Source, RUnits, Arg_template, UnitList, Units),
 	/* Now...if there are contexts in which all these things can be
 	evaluated, return results based on them. */
 	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
@@ -606,6 +599,9 @@ dissociate(SubArgs, [later(Arg) | UseArgs]) :-
 	dissociate(Rest, UseArgs).
 dissociate(Args, Args).
 	
+swap_vars(switch(Take, Add), Tgt, Add, 0) :-
+	nonvar(Tgt), Tgt = Take.
+
 swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 	(var(BackSwap), !; BackSwap = values_from_base),
 	    Context = BaseContext;
@@ -630,20 +626,47 @@ promote_unit(Lo, Hi) :-
 			      [int, [real]]]),
 	member(Hi, Higher).
 
-/* Operators and functions. These currently duplicate those in dialogue.pl
-but will ultimately replace them. They should be applied in a way that allows
-an integer to be treated as a real -- if an arg is real, so is result */
+/* Operators and functions. These should be applied in a way that allows
+an integer to be treated as a real -- if an arg is real, so is result
+
+Note that most of these correspond to math functions provided by the
+target language. However, some are implemented in the equation parser
+-- they appear in this list anyway so that (a) they are listed in the
+eqn dialogue box and (b) if the user enters them with the wrong number
+of arguments they will be told so. Hopefully their correct use will be
+caught by the parser before this list is checked so they will not be
+put into the target program. */
 
 :- dynamic(function/3).
 :- dynamic(use_tcl_proc_for/1).
 
-function(assign, any, [any, any]).
-function(time, real, [const_int]).
-function(ind_time, real, [const_int]).
+/* These are implemented by the parser. Note the units are descriptive since
+they should never actually be used to parse anything.*/
 
-operator(!, boolean, [boolean]).
-operator(+, int, [int]).
-operator(-, int, [int]).
+function(sum, int, [array_or_list_of_ints]).
+function(product, int, [array_or_list_of_ints]).
+function(count, int, [array_or_list_of_any]).
+function(any, boolean, [array_or_list_of_boolean]).
+function(all, boolean, [array_or_list_of_boolean]).
+function(parent, int, [dummy_int]).
+function(channel_is, boolean, [channel]).
+function(time, int, [dummy_int]).
+function(init_time, int, [dummy_int]).
+function(dt, int, [const_int]).
+
+function(last, any, [any]).
+function(prev, given_units, [const_int]).
+function(makearray, array_of_any, [any, const_int]).
+function(place_in, int, [const_int]).
+function(element, any, [array_of_any, int]).
+function(size, int, [submodel_name]).
+function(size, int, [submodel_name, const_int]).
+function(least, int, [array_or_list_of_ints]).
+function(greatest, int, [array_or_list_of_ints]).
+
+/* These are the ones that are actually used by the parser, so the units have
+to be recognizable. Note that if something is down as returning an int for an
+int, it will be expected to return a real for a real, etc */
 
 function(sqrt, real, [real]).
 function(log, real, [real]).
@@ -673,16 +696,29 @@ function(acosh, real, [real]).
 function(atanh, real, [real]).
 function(acoth, real, [real]).
 
+function(rand, real, [real, real]).
+function(rand_var, real, [real, real]).
+function(pow, real, [real, real]). /* my c++ does not have int powers */
+function(fmod, real, [real, real]).
+
+function(hypot, real, [real, real]).
+function(atan2, real, [real, real]).
+function(acot2, real, [real, real]).
+
+function(max, int, [int, int]).
+function(min, int, [int, int]).
+
+operator(!, boolean, [boolean]).
+operator(+, int, [int]).
+operator(-, int, [int]).
+
+operator(+, int, [int, int]).
+operator(-, int, [int, int]).
 operator(*, int, [int, int]).
 operator(//, int, [int, int]).
 operator(/, real, [real, real]).
 
 operator(^, int, [int, int]).
-function(rand, real, [real, real]).
-function(rand_var, real, [real, real]).
-function(pow, int, [int, int]).
-function(fmod, real, [real, real]).
-
 operator(==, boolean, [real, real]).
 operator(=\=, boolean, [real, real]).
 operator(<, boolean, [real, real]).
@@ -691,22 +727,13 @@ operator(>, boolean, [real, real]).
 operator(>=, boolean, [real, real]).
 operator(<>, boolean, [real, real]).
 
-function(hypot, real, [real, real]).
-function(atan2, real, [real, real]).
-function(acot2, real, [real, real]).
-
-operator(+, int, [int, int]).
-operator(-, int, [int, int]).
-function(max, int, [int, int]).
-function(min, int, [int, int]).
-
 operator('&&', boolean, [boolean, boolean]).
 operator('||', boolean, [boolean, boolean]).
 operator(',', boolean, [boolean, boolean]).
 operator(';', boolean, [boolean, boolean]).
 operator(and, boolean, [boolean, boolean]).
 operator(or, boolean, [boolean, boolean]).
-operator('!=', boolean, [boolean, boolean]).
+operator((=\=), boolean, [boolean, boolean]).
 
 use_tcl_proc_for(min).
 use_tcl_proc_for(max).

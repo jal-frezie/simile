@@ -7,18 +7,18 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-:- module(menu, [show_wait_cursor/0, show_normal_cursor/0,
-	undo/0, redo/0, make_code_for/2, 
-	menu_select/1, mode_select/1,
+sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
+	undo/0, redo/0, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
 	off_window/1, 
 	finish/0, set_style/1]).
 	
-:-	use_module([compile, dialogue, m_update, image, maintain, 
+sicstus_use_module([compile, dialogue, m_update, image, maintain, 
 		    state, backup, library, ame_gen, utility,
 		    library(lists), library(charsio), library(ordsets)]).
 
-:-	dynamic running/1,cursor_is/1.
+:- dynamic(running/1).
+:- dynamic(cursor_is/1).
 cursor_is(arrow).
 
 show_wait_cursor :-
@@ -80,6 +80,8 @@ update_mode(NewMode) :-
 	assert(cursor_is(arrow))).
 
 /* menu_handle. First arg is title of menu, second is item selected. */
+
+:- discontiguous(menu_handle/3).
 
 menu_handle(Win, file, new) :-
 	Win shows_model Parent,
@@ -193,9 +195,7 @@ menu_handle(Win, file, ExportCmd) :-
 	finish_progress_dialogue.
 
 menu_handle(Win, file, RunCmd) :-
-	member([RunCmd, Lang, ProgExtn],
-		[[run_c, c, ".cpp"],
-		 [run_tcl, tcl, ".tcl"]]),
+	member([RunCmd, Lang], [[run_c, c], [run_tcl, tcl]]),
 	Win shows_model Node,
 	start_progress_dialogue(Win),
 	/* Compile the thing into whatever, load it */
@@ -203,7 +203,7 @@ menu_handle(Win, file, RunCmd) :-
 	use_temp_dir(ProgFileDir),
 	on_exception(Whoops, (compile(Lang, Node, ProgFileDir),
 				 CompileSuccess = yes),
-		(write_to_chars(Whoops, WhoopStr),
+		(sicstus_write_to_chars(Whoops, WhoopStr),
 		    do_dialogue("Error building program", error,
 				WhoopStr, ok, _),
 		    scrub_run)),
@@ -239,7 +239,7 @@ menu_handle(Win, file, list_eqns) :-
 	(contains(Model, Submodel),
 	find_type(Submodel, submodel),
 	rel_path_name(Submodel, Model, _,_, SmCapt),
-	format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
+	sicstus_format_to_chars("Equations in ~a", [SmCapt], HeaderStr),
 	name(Header, HeaderStr),
 	write(Stream, Header), nl(Stream),
 	write_eqn_term(Submodel, Entry, Comment),
@@ -320,12 +320,11 @@ set_properties(Wid, Model) :-
 		append([91 | CountStr], [93], ListStr),
 		get_term(ListStr, UseCount, Error),
 		(\+ Error = [],
-		    format_to_chars("Invalid dimension string -- ~s", [Error],
-				    Wibble);
+		    append("Invalid dimension string -- ", Error, Wibble);
 		get_actual_sizes(UseCount, Sizes),
 		    (member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),
-			format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
+			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
 		    Spec = [count=UseCount]);
 		Wibble = "Could not convert dimensions to numbers"),
 		    
@@ -395,7 +394,7 @@ menu_handle(Win, edit, set_interface) :-
 	Win shows_model Submodel,
 	caption_for(Submodel, OldName),
 	(OldName = SubmodelName, !;
-	format_to_chars("The interface specification you have chosen is for a submodel named ~a, whereas the current submodel is named ~a. Do you want the submodel renamed?", [SubmodelName, OldName], WrongNameStr),
+	sicstus_format_to_chars("The interface specification you have chosen is for a submodel named ~a, whereas the current submodel is named ~a. Do you want the submodel renamed?", [SubmodelName, OldName], WrongNameStr),
 	    do_dialogue("Submodel name mismatch", warning, WrongNameStr,
 			yesnocancel, Choice),
 	    (Choice = yes,
@@ -460,7 +459,7 @@ not_runnable(Model) :-
 		caption_for(Model, OuterText),
 		get_host(Target, VisTarget),
 		caption_for(VisTarget, InnerText),
-		format_to_chars("Cannot run model ~w because one of the inputs \c
+		sicstus_format_to_chars("Cannot run model ~w because one of the inputs \c
 				for ~w comes from ouside this model, therefore its value \c
 				cannot be calculated.", [OuterText, InnerText], Message),
 		do_dialogue("Cannot run model", error, Message, ok, _);
@@ -523,7 +522,7 @@ cutout(Parent) :-
 delete_tree(Target) :-
 	find_type(Target, submodel),
 	    caption_for(Target, Caption),
-	    format_to_chars("Deleting submodel ~a", [Caption], Ms),
+	    sicstus_format_to_chars("Deleting submodel ~a", [Caption], Ms),
 	    reassure_user(Ms),
 	    fail;
 	find_all_links(Target, Comp),
@@ -577,7 +576,7 @@ finish :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Target) :-
 	get_default_export_name(Target, ".sml", Handle),
-	format_to_chars("Component ~a has not been saved since it was last modified. Save it now?", Handle, Query),
+	sicstus_format_to_chars("Component ~a has not been saved since it was last modified. Save it now?", [Handle], Query),
 	do_dialogue("Save changes", question, Query, yesnocancel, Reply),
 	(Reply = yes, do_save(Target, false);
 	Reply = no).
@@ -608,8 +607,8 @@ do_save(Model, New_name) :-
 		 build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(CurrentDepths)]),
 	    save_canvas(Win, CanvasName, CurrentDepths, Date);
-	\+ output:file_exists(CanvasName);
-	output:delete_file(CanvasName)),
+	\+ output:my_file_exists(CanvasName);
+	output:my_delete_file(CanvasName)),
 	abs_path_name(Model, root, Point),
 	use_temp_dir(LocalDir),
 	save_dlls(Point, LocalDir, Model, Model, Name, _),
@@ -644,8 +643,7 @@ try_save_files(Name) :-
 
 save_if_poss(Name, Part, Date) :-
 	save_isolated(Name, Part, Date);
-	format_to_chars("AME had a problem writing to file ~w. \c
-			Device may be full or write-protected.",
+	sicstus_format_to_chars("AME had a problem writing to file ~w. Device may be full or write-protected.",
 			[Name], Message),
 		do_dialogue("Problem writing file", error, Message, ok, _),
 		fail.

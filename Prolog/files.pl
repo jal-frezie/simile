@@ -3,14 +3,14 @@
 Reads data from files other than .sml files, notably tables from .csv files.
 */
 
-:- module(files, [get_table_info/5]).
+sicstus_module(files, [get_table_info/5]).
 
-:- use_module([library(charsio), library(lists),
+sicstus_use_module([library(charsio), library(lists),
 	       ame_gen]).
 
 get_table_info(Path, Indices, DataField, Table, Error) :-
 	on_exception(Prang, open(Path, read, Stream),
-		     format_to_chars("Attempting to open the table file caused a ~w. Has the table been moved or deleted since last time you edited this component?", [Prang], Error)),
+		     sicstus_format_to_chars("Attempting to open the table file caused a ~w. Has the table been moved or deleted since last time you edited this component?", [Prang], Error)),
 	(nonvar(Error), !;
 	get_index_column_numbers(Stream, [DataField | Indices],
 			 [DataColumn | IndexColumns], Error),
@@ -25,7 +25,7 @@ get_index_column_numbers(Stream, Indices, IndexColumns, Error) :-
 	make_list(FirstLine, Headers),
 	(get_indices(Indices, Headers, IndexColumns), !;
 	Indices = [Datum | Rest],
-	format_to_chars("Could not find datum field ~w and index fields ~w in table headers ~w", 
+	sicstus_format_to_chars("Could not find datum field ~w and index fields ~w in table headers ~w", 
 	[Datum, Rest, Headers], Error)).
 
 read_line_to_string(Stream, String) :-
@@ -66,7 +66,7 @@ fill_table(Stream, Line, IndexColumns, DataColumn,
 	(nth(RoguePosn, [DataValue | IndexValues], Rogue),
 	\+ number(Rogue), !,
 	    nth(RoguePosn, [DataColumn | IndexColumns], Posn),
-	    format_to_chars("Element ~d of line ~d which reads ~w is non-numeric", [Posn, Line, List], Error);
+	    sicstus_format_to_chars("Element ~d of line ~d which reads ~w is non-numeric", [Posn, Line, List], Error);
 	(IndexValues = [], !,
 	    UseValues = [Line];
 	UseValues = IndexValues),    
@@ -88,7 +88,7 @@ zap_table_and_dims([IndexValue | R1], DataValue, Table, [Dim | R2],
 		NewDim = IndexValue;
 	    NewDim = Dim),
 	    zap_table_and_dims(R1, DataValue, SubTable, R2, R3, Error);
-	format_to_chars("Table data contains index value ~w which is not a positive integer.", [IndexValue], Error).
+	sicstus_format_to_chars("Table data contains index value ~w which is not a positive integer.", [IndexValue], Error).
 
 zero_undefined_slots(Val, []) :-
 	ground(Val); Val = 0.

@@ -6,8 +6,7 @@ This starts off the application and goes into an event loop from which it is dri
 
 :- [syntax].
 
-:- 	use_module([library(tcltk), library(lists), library(charsio),
-		    input, utility]).
+:- 	use_module([library(lists), library(charsio), tcltk, input, utility]).
 
 /* xrefs occurs inside a model structure and contains other
 model structures, making them circular. It must therefore be
@@ -34,18 +33,6 @@ than the Sicstus, like... */
 writeq_to_codes(TermStr, Term) :-
 	with_output_to_chars(writeq(Term), TermStr).
 
-:- dynamic(is_interpreter/1).
-
-set_interpreter(Interp) :-
-	assert(is_interpreter(Interp)).
-
-unset_interpreter :-
-	retractall(is_interpreter(_)).
-
-tcl_eval(Cmd, Result) :-
-	is_interpreter(Interp),
-	tcl_eval(Interp, Cmd, Result).
-
 version_is(2.92).
 
 main :-
@@ -55,17 +42,9 @@ main :-
 	state:get_style(New_style),
 	prolog_flag(version, Vnum),
 	version_is(V),
-        tk_new([], Interp),
-	on_exception(ErrorFunction, 
-		     tcl_eval(Interp, [source, '../Run/toolbox.tcl'], _),
-		     /* rel path only needed in dev sys */
-		     (ErrorFunction =.. [_, _, String],
-			 name(Bug, String),
-			 write(Bug), nl,
-			 fail)),
-	tcl_eval(Interp, ['FilterErrors ControlDraw', V, br(Vnum)], TempStr),
-	tcl_eval(Interp, ['FilterErrors InitStyle', New_style], OpenStr),
-	set_interpreter(Interp),
+        nl, write(ready), nl,
+	tcl_eval(['FilterErrors ControlDraw', V, br(Vnum)], TempStr),
+	tcl_eval(['FilterErrors InitStyle', New_style], OpenStr),
 
 	state:set_mode(none),
 	inters:read_library_funx(LibFuns),
@@ -75,14 +54,10 @@ main :-
 	backup:assert(use_temp_dir(TempDir)),
 	name(OpenModel, OpenStr),
 	(OpenModel = ''; menu:stick_model_in(Desktop, OpenModel)),
-	tcl_eval(Interp, ['FilterErrors FixSize', Canvas], _),
-	append_atoms(TempDir, '/.lock/', SplashLock),
+	tcl_eval(['FilterErrors FixSize', Canvas], _),
+/*	append_atoms(TempDir, '/.lock/', SplashLock),
 	output:trim_tree(SplashLock, ''),
-        tk_main_loop,
-        tcl_delete(Interp),
-	unset_interpreter,
-	state:kill_windows,
-	true.
+*/        tk_main_loop.
 
 make_desktop(Desktop, Canvas_name) :-
 	m_class:Root is_root,

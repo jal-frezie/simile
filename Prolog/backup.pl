@@ -25,6 +25,8 @@ get_save_status(Model, Stat) :-
 
 backup_states(32).
 
+:- dynamic(saved_state/2).
+
 initialize_ring :-
 	retractall(saved_state(_,_)),
 
@@ -107,7 +109,7 @@ record_changes(Slot) :-
 update_autosave(Slot) :-
 	(setof(Acts, saved_state(Slot, Acts), ActList), !; ActList = []),
 	on_exception(Lossage, into_save_file(ActList),
-		(format_to_chars("Could not create an autosave file for this model. ~w. This may mean that the model was loaded from a read-only file system. No autosave data will be stored until the model is saved somewhere else.", [Lossage], Wibble),
+		(sicstus_format_to_chars("Could not create an autosave file for this model. ~w. This may mean that the model was loaded from a read-only file system. No autosave data will be stored until the model is saved somewhere else.", [Lossage], Wibble),
 	do_dialogue("Autosave warning!", warning, Wibble, ok, _),
 	retract(autosave_file_is(_)))).
 
@@ -183,11 +185,7 @@ enact_from_file(Slot, [Act | Rest]) :-
 		database:assert(P);
 	Act = remove(P), 
 		(database:retract(P), !;
-		format_to_chars("The log file specified the removal from the database \c
-				of the term ~w at a point where this term was not in \c
-				the database. This is probably non-fatal, but it might be \c
-				a good idea to save the restored file and reload it in a \c
-				new program run.", [P], Mess), 
+		sicstus_format_to_chars("The log file specified the removal from the database of the term ~w at a point where this term was not in the database. This is probably non-fatal, but it might be a good idea to save the restored file and reload it in a new program run.", [P], Mess), 
 		do_dialogue("Problem restoring state", warning, Mess, ok, _))),
 	assert(saved_state(Slot, Act)),
 	enact_from_file(Slot, Rest).
@@ -231,7 +229,7 @@ check_autosave(Model, Name) :-
 	    initialize_ring,
 	    make_auto_name(Name, ".smx", AutoName),
 	    assert(autosave_file_is(AutoName)),
-	    (output:file_exists(AutoName), !,
+	    (output:my_file_exists(AutoName), !,
 		(do_dialogue("Restore option", question,
 			  "Simile left a log file of unsaved changes when this model was last edited. Do you want to apply these changes now?",
 			  yesno, yes), !,
@@ -239,12 +237,12 @@ check_autosave(Model, Name) :-
 		    /* If a restore is done, canvas file will be out of date,
 		    so kill it */
 		    make_auto_name(Name, ".cnv", DeadCanvas),
-		    (output:file_exists(DeadCanvas), !,
-			output:delete_file(DeadCanvas);
+		    (output:my_file_exists(DeadCanvas), !,
+			output:my_delete_file(DeadCanvas);
 		    true),
 		    maintain:update_do_buttons(UState, RState),
 		    set_save_status(Win, risky);
-		output:delete_file(AutoName));
+		output:my_delete_file(AutoName));
 	    true);
 	finish_move(Model)).
 	    
@@ -252,8 +250,8 @@ scrub_autosave(Model) :-
 	(is_toplevel(Model),
 	    database:clear_model([genint/2]),
 	    retract(autosave_file_is(AutoName)),
-	    output:file_exists(AutoName),
-	    output:delete_file(AutoName),
+	    output:my_file_exists(AutoName),
+	    output:my_delete_file(AutoName),
 	    fail;
 	true).
 

@@ -32,7 +32,7 @@ replace_char( Char1, Atom1, Char2, Atom2 ) :-
 % Makes a nice quoteless Prolog atom from a variable name
 
 alphanumeric_only( Input, Output ) :-
-	format_to_chars( "~w", [Input], InputChars),
+	sicstus_format_to_chars( "~w", [Input], InputChars),
 	trim_nonprinters(InputChars, [In1 | InList] ),
 	starter_only(In1, Out1),
 	continuer_only( InList, OutList ),

@@ -9,7 +9,7 @@ user alone until values have been entered: the sort that sit quietly
 alongside
 the rest of the program are handled through gui_input. */
 
-:- module(dialogue, [do_equation_dialog/2, 
+sicstus_module(dialogue, [do_equation_dialog/2, 
 	do_disag_dialog/4, do_relation_dialog/9, test_eqn/8,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
@@ -17,39 +17,20 @@ start_progress_dialogue/1,
 	finish_progress_dialogue/0, warn_runtime/0, 
 reassure_user/1]).
 
-:- use_module([library(lists), library(charsio), 
+sicstus_use_module([library(lists), library(charsio), 
 		m_update, ame_gen, files, output, utility, inters]).
 
 /* helpers for sending function list */
 pass_functions(LibFuns) :-
 	setof(FnAtom, atomize_function(FnAtom), FuncList),
-	BuiltIns = ['sum (array/list of scalars) returns scalar', 
-		'product (array/list of scalars) returns scalar', 
-		'count (array/list of any type) returns integer',
-		'any (array/list of booleans) returns boolean',
-		'all (array/list of booleans) returns boolean',
-		'parent (numeral) returns integer',
-		'channel_is (numeral) returns boolean',
-		'init_time (numeral) returns numeral',
-		'time (numeral) returns numeral',
-		'dt (numeral) returns numeral',
-		'last (any type) returns any type',
-		'prev (numeral) returns scalar',
-		'makearray (any type, numeral) returns array of type',
-		'place_in (numeral) returns integer',
-		'element (array of any type, integer) returns type',
-		'size (submodel name) returns integer',
-		'size (submodel name, numeral) returns integer',
-		'least (array/list of scalars) returns scalar', 
-		'greatest (array/list of scalars) returns scalar'],
-	append([BuiltIns, LibFuns, FuncList], AllFns),
+	append(LibFuns, FuncList, AllFns),
 	prepare_equation(AllFns).
 	
 atomize_function(FnAtom) :-
-	function(Functor, ResultSort, ArgSorts),
+	inters:function(Functor, ResultSort, ArgSorts),
 	spell_out([ResultSort | ArgSorts], 1),
-	make_list(ArgSorts, String),
-	format_to_chars("~a (~s) returns ~w", [Functor, String, 
+	make_arg_list(ArgSorts, String),
+	sicstus_format_to_chars("~a (~s) returns ~w", [Functor, String, 
 ResultSort],
 			FnChars),
 	name(FnAtom, FnChars).
@@ -58,18 +39,18 @@ spell_out([], _).
 
 spell_out([Dooda | Rest], N) :-
 	((var(Dooda), Type = Dooda; Dooda =.. [_, Type]), !, 
-		format_to_chars("type~d", [N], String),
+		sicstus_format_to_chars("type~d", [N], String),
 		name(Type, String),
 		M is N+1;
 	M = N),
 	spell_out(Rest, M).
 
-make_list([Arg], Str) :- !,
+make_arg_list([Arg], Str) :- !,
 	name(Arg, Str).
 
-make_list([Arg | Args], Str) :-
-	make_list([Arg], Str1),
-	make_list(Args, Str2),
+make_arg_list([Arg | Args], Str) :-
+	make_arg_list([Arg], Str1),
+	make_arg_list(Args, Str2),
 	append(Str1, [44, 32 | Str2], Str).
 
 /* the equation dialogue will only exit when a coherent set of 
@@ -87,7 +68,7 @@ do_equation_dialog(Win, Part) :-
 	    TypeBase = real,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
-	format_to_chars("~a for ~a", [TitleForm, Caption], 
+	sicstus_format_to_chars("~a for ~a", [TitleForm, Caption], 
 BoxHeaderStr),
 	name(BoxHeader, BoxHeaderStr),
 	list_index_meanings(Part, IndexList),
@@ -162,25 +143,17 @@ LateInputs],
 				get_array_nesting(Current_unit, 
 RealDepth),
 				(\+ RealDepth = Depth, !,
-					format_to_chars("Your local 
-name for ~w,\c
-~w, has ~d sets of brackets round it while it indicates an array 
-nested to depth\c
-~d -- this could be confusing. ", [New_var, New_param, Depth, 
-RealDepth], 
-							Complaint);
+					sicstus_format_to_chars("Your local name for ~w,~w, has ~d sets of brackets round it while it indicates an array nested to depth~d -- this could be confusing. ", 
+			[New_var, New_param, Depth, RealDepth], Complaint);
 				(Units_for_new = '', !,
 					NewInputUnit = Current_unit;
 				NewInputUnit = Units_for_new,
 					check_unit(Units_for_new, 
 Current_unit, 2, Complaint)));
-			format_to_chars("Your local name for ~w, ~w, 
-contains characters that might cause the interpreter to mistake it 
-for an expression, or vice versa. ", [New_var, New_param], 
-Complaint));
+			sicstus_format_to_chars("Your local name for ~w, ~w, contains characters that might cause the interpreter to mistake it for an expression, or vice versa. ",
+			[New_var, New_param], Complaint));
 		Complaint = Complaint2);
-	    Complaint = "Select an input before supplying its new 
-parameter name and/or local units"),
+	    Complaint = "Select an input before supplying its new parameter name and/or local units"),
 			
 	(Complaint = [], !,
 	    NewInputs = [input_link(Link, New_var, New_param, 
@@ -201,11 +174,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	member([Is_P, ParamsAllowed, EqnNeeded, MinmaxNeeded],
 	       [[-1,1,1,0], [0,1,1,0], [1,0,0,1], [2,0,0,0]]),
 	(ParamsAllowed = 0, !,
-	    ParamWibble = "but parameter default values are not 
-allowed to have input variables themselves.",
+	    ParamWibble = "but parameter default values are not allowed to have input variables themselves.",
 	    UsableInputs = [];
-	ParamWibble = "which is not \c
-referred to by any of its parameter names in the equation.",
+	ParamWibble = "which is not referred to by any of its parameter names in the equation.",
 	    UsableInputs = InterInputs),
 	(Unit_st = "", !,
 	    UnitError = [];
@@ -243,37 +214,26 @@ referred to by any of its parameter names in the equation.",
 	    ((Units = Combo_units;
 	      /* next line allows an int to be quietly made into a real if the
 	      expression is now real */
-	      check_unit(Combo_units, Units, 1, [])), !,
+	      check_unit(Combo_units, Units, 2, [])), !,
 		NewUnits = Combo_units,
 		UnitError = [];
 	    check_unit(Units, Combo_units, 2, UnitMatchError),
+		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
 
 	    (UnitError = [], !,
-		(analyze_array(Units, _Base, Multiples),
+		(analyze_array(NewUnits, _Base, Multiples),
 		    get_actual_sizes(Multiples, MultInts),
 		    member(Dim, MultInts),
 		    (Dim = var, !,
-		    format_to_chars("The unit expression ~w represents a \c
-				   list or an array of lists. Model \c
-				   components are not allowed to have list \c
-				   values.", [Units], Complaint6);
+		    sicstus_format_to_chars("The unit expression ~w represents a list or an array of lists. Model components are not allowed to have list values.", [NewUnits], Complaint6);
 		    \+ (integer(Dim), Dim > 1), !,
-		    format_to_chars("The unit expression ~w includes an \c
-				   array of size ~w, which is not a valid \c
-				   dimension for a model component -- they \c
-				   must be integers greater than 1.",
+		    sicstus_format_to_chars("The unit expression ~w includes an array of size ~w, which is not a valid dimension for a model component -- they must be integers greater than 1.",
 				   [Units, Dim], Complaint6));
 		Complaint6 = []);   
 	    Complaint6 = UnitError);
-	get_term(Unit_st, Units, _),
+	get_term(Unit_st, NewUnits, _),
 	    Complaint6 = Complaint5),
-
-	(Complaint6 = [], !,
-	    check_param_usage(Function, InterInputs, ParamWibble,
-				  ParamList, New_inputs, Complaint7);
-	New_inputs = InterInputs,
-	    Complaint7 = Complaint6),
 
 	/* Now, is there a reference to a table? If so, load the data 
 for it,
@@ -284,20 +244,24 @@ for it,
 	    get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
 	    (TableData = [FileName, DataField | Indices], !,
-		get_table_info(FileName, Indices, DataField, 
-DataTable,
+		get_table_info(FileName, Indices, DataField, DataTable,
 			       FileError),
 		TableAttr = [file = FileName, data = DataField,
 			     indices = Indices, current = DataTable];
-	    FileError = "Equation refers to a data table, but no 
-table specification has been entered.\n"),
-	    append(Complaint7, FileError, FinalComplaint);
+	    FileError = "Equation refers to a data table, but no table specification has been entered.\n"),
+	    append(Complaint6, FileError, Complaint7);
 		
 	TableAttr = '',
 	    TableData = '',
-	    FinalComplaint = Complaint6),
-	
+	    Complaint7 = Complaint6),
 	/* table data is auto-generated so should be well formed */
+
+	(Complaint7 = [], !,
+	    check_param_usage(Function, InterInputs, ParamWibble,
+				  ParamList, New_inputs, FinalComplaint);
+	New_inputs = InterInputs,
+	    FinalComplaint = Complaint7),
+
 	name(Desc, Desc_st),
 	name(Comment, Comment_st),
 
@@ -312,7 +276,7 @@ TableAttr),
 		add_parameter(AffectedNode, 0, min_val, Min),
 		add_parameter(AffectedNode, 0, max_val, Max),
 		update_links_and_vars(New_inputs);
-	fill_equation(Result, Units, Is_P, TableData, Desc, Comment, 
+	fill_equation(Result, NewUnits, Is_P, TableData, Desc, Comment, 
 Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
@@ -352,8 +316,7 @@ TestError),
 				" field produced the following error: ",
 				TestError], Error));
 		append(["Parsing ", FieldName, 
-				" field produced the following error: 
-",
+				" field produced the following error: ",
 				ParseError], Error)).
 
 /* test_eqn: replaces the old parse_eqn. Because make_intermediates 
@@ -378,7 +341,7 @@ InterInputs],
 	(member(var_pair(_, Param), ParamSubs),
 	 get_solo_list_depth(Param, _),
 	    \+ Param = '/dest/', !,
-	    format_to_chars("Reference to undefined parameter ~w", 
+	    sicstus_format_to_chars("Reference to undefined parameter ~w", 
 [Param],
 			    TestError);
 	on_exception(ParseError,
@@ -421,77 +384,43 @@ decode_error(ParseError, TestError) :-
 			_, SimpleError),
 	(Type = needs_array_or_list, !,
 		SimpleError =.. [Functor, SoleArg],
-		format_to_chars("The function \"~a\" performs an operation \c
-			       over a list or array of values represented by \c
-			       its argument. The argument \"~w\" however \c
-			       represents only one value.", [Functor, SoleArg],
-			       TestError);
+		sicstus_format_to_chars("The function \"~a\" performs an operation over a list or array of values represented by its argument. The argument \"~w\" however represents only one value.", 
+		[Functor, SoleArg], TestError);
 	    Type = avoid_var_size_inter, !,
 	    More = [TotalDims],
-	    format_to_chars("This formula can only run by making an \c
-			   intermediate variable for the subexpression \"\c
-			   ~w\".\n This subexpression has dimensions ~w, \c
-			   where \"var\" represents a list. Since this has \c
-			   a changing membership, it cannot be represented \c
-			   by a variable -- you need to do some more work \c
-			   inside the variable-membership submodel it comes \c
-			   from.", [SimpleError, TotalDims], TestError);
+	    sicstus_format_to_chars("This formula can only run by making an intermediate variable for the subexpression \"~w\".\n This subexpression has dimensions ~w, where \"var\" represents a list. Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from.", [SimpleError, TotalDims], TestError);
 	Type = needs_channel_parameter, !,
-	    format_to_chars("The argument of \"channel_for\" must be a value \c
-			   from a channel (creation, immigration, \c
-			   reproduction) for the population submodel \c
-			   containing its node. \"~w\" does not fit.",
+	    sicstus_format_to_chars("The argument of \"channel_for\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"~w\" does not fit.",
 			   [SimpleError], TestError);
 	Type = bad_index_number, !,
 	    More = [Functor],
-	    format_to_chars("The function \"~a\" sets or accesses some \c
-			   property of the model, and needs a non-negative \c
-			   integer constant as an argument to allow the \c
-			   right code to be built into the model \c
-			   to do this. \"~w\" \c
-			   does not fit.", [Functor, SimpleError], TestError);
+	    sicstus_format_to_chars("The function \"~a\" sets or accesses some property of the model, and needs a non-negative integer constant as an argument to allow the right code to be built into the model to do this. \"~w\" does not fit.", [Functor, SimpleError], TestError);
 	Type = index_number_out_of_range, !,
 	    More = [Avail],
-	    format_to_chars("You have used the index number ~d, but it must \c
-			   be between 1 and the number of available indices, \c
-			   which is ~d.", [SimpleError, Avail], TestError);
+	    sicstus_format_to_chars("You have used the index number ~d, but it must be between 1 and the number of available indices, which is ~d.", [SimpleError, Avail], TestError);
 	Type = needs_number_index, !,
 	    SimpleError =.. [Functor, _, Ind],
-	    format_to_chars("The function \"~a\" needs a numerical value for \c
-			   it's second argument. \"~w\" does not fit -- it \c
-			   evaluates to a boolean or something.",
+	    sicstus_format_to_chars("The function \"~a\" needs a numerical value for it's second argument. \"~w\" does not fit -- it evaluates to a boolean or something.",
 			   [Functor, Ind], TestError);
 	Type = only_works_on_array, !,
-	    SimpleError =.. [Functor, Arr, _],
-	    format_to_chars("The function \"~a\" needs a fixed membership \c
-			   array (of anything) for \c
-			   its first argument. \"~w\" does not fit -- it \c
-			   represents either a single value or a variable \c
-			   membership list.", [Functor, Arr], TestError);
+	    SimpleError =.. [Functor, Arr | _],
+	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents either a single value or a variable membership list.", [Functor, Arr], TestError);
 	Type = no_such_function, !,
 	    More = [Op],
-	    format_to_chars("Attempting to process subexpression \"~w\": \c
-			   Simile does not include \"~a\" as a function.",
+	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": Simile does not include \"~a\" as a function.",
 			   [SimpleError, Op], TestError);
 	Type = wrong_no_of_args, !,
 	    More = [Op, Arity, FnArity],
-	    format_to_chars("Attempting to process subexpression \"~w\": \c
-			   You have tried to use the function \"~a\" with ~d \c
-			   arguments, but it must take ~d",
+	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": You have tried to use the function \"~a\" with ~d arguments, but it must take ~d",
 			   [SimpleError, Op, Arity, FnArity], TestError);
 	Type = cannot_combine_argument_dimensions, !,
-	    format_to_chars("Simile cannot work out what dimensions the \c
-			   result of \"~w\" should have -- the dimensions of \c
-			   the arguments are incompatible.",
+	    sicstus_format_to_chars("Simile cannot work out what dimensions the result of \"~w\" should have -- the dimensions of the arguments are incompatible.",
 			   [SimpleError], TestError);
 	Type = mismatched_units, !,
 	    More = [Get, Want],
-	    format_to_chars("The arguments of \"~w\" have the following \c
-			   types: ~w. These cannot be matched to the \c
-			   expected argument types for this function, which \c
-			   are ~w.", [SimpleError, Get, Want], TestError);
+	    sicstus_format_to_chars("The arguments of \"~w\" have the following types: ~w. These cannot be matched to the expected argument types for this function, which are ~w.", [SimpleError, Get, Want], TestError);
 	/* default case */
-	    format_to_chars("~w : ~a", [SimpleError, Type], TestError)).
+	    sicstus_format_to_chars("~w : ~a", [SimpleError, Type], TestError)).
 
 collapse_params(_, param(arr(_, Param, _), _,_,_,_), Param, 0).
 
@@ -505,8 +434,7 @@ check_param_usage(Node, Current, WhyNoLinks, Used, Left, Challenge) :-
 	\+ (member(SpareParam, Used), 
 			member(input_link(_,_, SpareParam, _,_), 
 FromThat)), !,
-		format_to_chars("This node has a link from ~w, ~s 
-Remove this link?",
+		sicstus_format_to_chars("This node has a link from ~w, ~s Remove this link?",
 				[SourceCaption, WhyNoLinks], Wibble),
 		do_dialogue("Too many inputs", question, Wibble,
 			okcancel, Choice),
@@ -577,11 +505,6 @@ integer_between(Lo, Hi, Int) :-
 	(Int = Lo;
 	NotSoLo is Lo + 1, 
 		integer_between(NotSoLo, Hi, Int)).
-
-get_solo_list_depth(List,Depth) :-
-	atom(List), Depth = 0;
-	(List = [Ellie]; List = {Ellie}),
-		get_solo_list_depth(Ellie, D), Depth is D+1.
 
 get_array_nesting(Current_unit, Depth) :-
 	analyze_array(Current_unit, _, Dims),

@@ -614,7 +614,7 @@ proc Disaggregate {parent title colour type fatness icount step \
 	label $t.steps.caption -text "Time step:"
 	pack $t.steps.caption -side left
 	tk_optionMenu $t.steps.pulldown disaggregate(step) \
-		Default 0 1 2 3 4 5 6 7
+		Default -1 0 1 2 3 4 5 6 7
 	pack $t.steps.pulldown -side left
 	checkbutton $t.steps.hide -text "Hide contents" \
 		-variable disaggregate(hide) -relief raised
@@ -773,7 +773,7 @@ proc GetFindText {parent} {
 proc DoRegDialog {} {
     global userinfo
     set t [toplevel .register -bd 4]
-    wm title .register Registration
+    wm title $t Registration
     wm transient $t
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
 

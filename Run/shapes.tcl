@@ -60,7 +60,6 @@ proc PutRectangle { w l t r b stack fatness density colourScheme tagSet} {
 
 proc PutShape {c x y file fatness colourScheme title} {
     global window_info
-
     set nameList {compartment comp condition cond creation creation \
 	    immigration immig reproduction repro loss loss alarm alarm}
     set point [expr [lsearch $nameList $file] + 1]
@@ -549,23 +548,6 @@ proc InjectGraphics {c canvasFile} {
     $c xview moveto 0
     $c yview moveto 0
     SetSpace $c $w $h
-}
-
-# ConvertCRs: When a value is read from a canvas item it may have a
-# line break in it, which would mess up the reading of a file
-# containing it. This converts these into \n, which are innocuous in
-# files but seem to have the same effect when used to configure a new
-# item.
-
-proc ConvertCRs {value} {
-    set break1 [string first \n $value]
-    if {$break1 == -1} {
-	return $value
-    } else {
-	return [append dummy [string range $value 0 [expr $break1-1]] \
-		{\n} \
-		[ConvertCRs [string range $value [expr $break1+1] end]]]
-    }
 }
 
 proc GetCaptionItem {w name} {

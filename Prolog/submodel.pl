@@ -3,11 +3,11 @@
 **** manipulating models 						    ****
 *******************************************************************************/
 
-:- module(submodel, [encapsulate/2, unencapsulate/3, find_flow_control/2,
+sicstus_module(submodel, [encapsulate/2, unencapsulate/3, find_flow_control/2,
 			  extended_connection/3, extended_connection/4,
 			  extended_connections/3, extended_connections/4] ).
 
-:- use_module( [ame_gen,m_class,utility,library(lists)] ).
+sicstus_use_module( [ame_gen,m_class,utility,library(lists)] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % encapsulate/3 takes a list of nodes and arcs and makes them into a sub-model
@@ -153,7 +153,7 @@ make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 	    (	Cutoff = Post1; Cutoff = Post2),
 	    \+ member(Cutoff, [Origin, Submodel, Destination]),
 	    \+ _ is_connector from Cutoff to _,
-	    Cutoff is_no_longer_model_class,
+	    m_update:Cutoff is_no_longer_model_class,
 	    fail;
 	make_link_spec(Submodel, Others, NewLinks),
 	    scrap_spare_functions(Link)).
@@ -171,7 +171,7 @@ scrap_spare_functions(Link) :-
 			\+ Chaff = Grain,
 			(_ has_changed_termination finish from Chaff to Grain,
 				fail;
-			Chaff is_no_longer_model_class,
+			m_update:Chaff is_no_longer_model_class,
 				fail));
 	true.
 

@@ -3,9 +3,9 @@
 **** of a model class that is actually converted into runnable code.        ****
 *******************************************************************************/
 
-:- module(instance, [instantiate_all/2] ).
+sicstus_module(instance, [instantiate_all/2] ).
 
-:- use_module([m_class, inters, ame_gen, units, utility,
+sicstus_use_module([m_class, inters, ame_gen, units, utility,
 	       library(lists),library(ordsets),library(charsio)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,7 +42,7 @@ instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 		LowerNodes = []),
 	instantiate_trees(LowerNodes, Submodels, Path, TreeRefs),
 	caption_for(Parent, PCapt),
-	format_to_chars("Instantiating expressions from node values -- currently doing ~a", [PCapt], InfoString),
+	sicstus_format_to_chars("Instantiating expressions from node values -- currently doing ~a", [PCapt], InfoString),
 	dialogue:reassure_user(InfoString),
 	instantiate_nodes(TopNodes, ModelInstance, Path, TreeRefs, FullSet),
 	!.
@@ -295,23 +295,30 @@ instance_of(submodel, Node, Path,
 	     append(Tops, []), append(Refs, [])]),
 	DSpec = 'void*'-[].
 
-get_cond_and_ref(input_pair(_, Node, _, Home, OutVar, UseRef),
-		 Cond, Top, Refs) :-
-	is_instance(_, Node, _, OutVar, _, Ref),
-	(nonvar(Home), !,
-	    /* A top level link in this submodel. Add it to the link reference
-	    table and make an instruction to refer its parent by its index */
-	
-	    ref_for_arc(Home, HomeRef),
-	    find_all_comps(HomeSm, Home),
-	    is_instance(_, HomeSm, _, TopVar, _, TopRef),
-	    Cond = UseRef,
-	    Refs = [TopRef, Ref],
-	    Top = [search_from(HomeRef, TopVar, _)];
-	Top = [],
-	    Cond = in_hierarchy(elt(_, externs_done, _), none,_),
-	    Refs = [Ref]).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* flows have the value of the node connected to the bowtie if there is one, and 
+that of the continuation flow in the direction of this node if not. 
 
+Working out the continuation direction is now done when processing the function node, so just use this value. */
+
+instance_of(flow, Arc, _, [instance(flow, Arc, _, Value, Units)],
+	    [instance(function, Function, _, Value, Units)]) :-
+	FuncLink is_connector from _ to Arc,
+	initiates(FuncLink, Function).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* variables don't have any expressions of their own, they just have values which
+are the same as the functions from which they are generated. This also goes for
+condition, creation and loss nodes. Type is as function. */
+
+instance_of(Type, Node, _, [instance(Type, Node, _, Value, Dims)],
+		[instance(_, F, _, Value, Dims)]) :-
+	member(Type, [variable, condition, creation, loss]),
+	member(Node, [B, A]),
+	Arc is_connector from A to B, !,
+		initiates(Arc, F).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
 generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 				     Ref, ConvertedRef)) :-
@@ -326,7 +333,7 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 		all(maintain, caption_for,
 		    [build([Node, SourceID, Relation]),
 		     build([NodeCap, SrcCap, RelCap])]),
-		format_to_chars("This model cannot be built because it contains ~a, which has an influence from ~a (in a different executable module) which it refers to by the role ~a. References to roles currently do not work between separate executables.", [NodeCap, SrcCap, RelCap], RoleWibbleStr),
+		sicstus_format_to_chars("This model cannot be built because it contains ~a, which has an influence from ~a (in a different executable module) which it refers to by the role ~a. References to roles currently do not work between separate executables.", [NodeCap, SrcCap, RelCap], RoleWibbleStr),
 		name(RoleWibble, RoleWibbleStr),
 		raise_exception(RoleWibble);
 	    SourceLocation = in_hierarchy),
@@ -346,6 +353,23 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 	m_update:analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef =.. [SourceLocation, RefExp, Relation, ArcUnits],
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, ImpType).
+
+get_cond_and_ref(input_pair(_, Node, _, Home, OutVar, UseRef),
+		 Cond, Top, Refs) :-
+	is_instance(_, Node, _, OutVar, _, Ref),
+	(nonvar(Home), !,
+	    /* A top level link in this submodel. Add it to the link reference
+	    table and make an instruction to refer its parent by its index */
+	
+	    ref_for_arc(Home, HomeRef),
+	    find_all_comps(HomeSm, Home),
+	    is_instance(_, HomeSm, _, TopVar, _, TopRef),
+	    Cond = UseRef,
+	    Refs = [TopRef, Ref],
+	    Top = [search_from(HomeRef, TopVar, _)];
+	Top = [],
+	    Cond = in_hierarchy(elt(_, externs_done, _), none,_),
+	    Refs = [Ref]).
 
 ref_for_arc(Entry, ArcIndex) :-
 	compile:entry_arcs_are(ArcList),
@@ -371,29 +395,6 @@ apply_minmax(Node, BaseExpr, UpdateExpr) :-
 	\+ Max = '', !,
 		UpdateExpr = min(Max, MinnedExpr);
 	UpdateExpr = MinnedExpr).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/* flows have the value of the node connected to the bowtie if there is one, and 
-that of the continuation flow in the direction of this node if not. 
-
-Working out the continuation direction is now done when processing the function node, so just use this value. */
-
-instance_of(flow, Arc, _, [instance(flow, Arc, _, Value, Units)],
-	    [instance(function, Function, _, Value, Units)]) :-
-	FuncLink is_connector from _ to Arc,
-	initiates(FuncLink, Function).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/* variables don't have any expressions of their own, they just have values which
-are the same as the functions from which they are generated. This also goes for
-condition, creation and loss nodes. Type is as function. */
-
-instance_of(Type, Node, _, [instance(Type, Node, _, Value, Dims)],
-		[instance(_, F, _, Value, Dims)]) :-
-	member(Type, [variable, condition, creation, loss]),
-	member(Node, [B, A]),
-	Arc is_connector from A to B, !,
-		initiates(Arc, F).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 choose_default_value(Node, Base, PType, Default) :-
@@ -432,9 +433,7 @@ bind_and_build_term(Node, [Arc], _Op, Node_units, Term, [Ref]) :-
 	    caption_for(Node, BadComp),
 	    caption_for(Arc, BadArc),
 	    caption_for(Multi, BadModel),
-	    format_to_chars("Flow ~a cannot be connected to compartment ~a \c
-			   because its value would be split where it crosses \c
-			   the border of submodel ~a",
+	    sicstus_format_to_chars("Flow ~a cannot be connected to compartment ~a because its value would be split where it crosses the border of submodel ~a",
 			   [BadArc, BadComp, BadModel], BadStr),
 	    name(Bad, BadStr),
 	    raise_exception(Bad);
@@ -450,14 +449,9 @@ bind_and_build_term(Node, [Arc], _Op, Node_units, Term, [Ref]) :-
 		Term = Var), !;
 	Term = Var,
 		caption_for(Controller, Capt),
-		format_to_chars("Warning -- compartment with units ~w connects \c
-to flow defined from node ~w with incompatible units ~w -- conversion ommitted", 
+		sicstus_format_to_chars("Warning -- compartment with units ~w connects to flow defined from node ~w with incompatible units ~w -- conversion ommitted", 
 			[Node_units, Capt, ArcUnits], Hassle),
 		do_dialogue("Compilation warning", warning, Hassle, ok, _)).
-
-sum_dims([], Var, Var).
-sum_dims([_ | Rest], Middle, sum(Full)) :-
-	sum_dims(Rest, Middle, Full).
 
 bind_and_build_term(Node, [Arc|Arcs], Op, Node_units, NewTerm, Refs) :-
 	bind_and_build_term(Node, [Arc], Op, Node_units, Term1, [Ref]),
@@ -465,13 +459,17 @@ bind_and_build_term(Node, [Arc|Arcs], Op, Node_units, NewTerm, Refs) :-
 	merge_lists([Ref], MidRefs, Refs),
 	NewTerm =.. [Op,Term1,MidTerm].
 	
+sum_dims([], Var, Var).
+sum_dims([_ | Rest], Middle, sum(Full)) :-
+	sum_dims(Rest, Middle, Full).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arc_name_substitute takes a Prolog term apart, looks for atoms named in a
 % list of name-node pairs, and reconstructs the resulting expression. Only they
 % are little lists not atoms now.
 
 process_expr(TableValues, Var, NewVar, Recurse) :-
-	dialogue:get_solo_list_depth(Var, _), Recurse = 0;
+	m_update:get_solo_list_depth(Var, _), Recurse = 0;
 	Var = size(_), Recurse = 0;
 	build_table_ref(TableValues, Var, NewVar), Recurse = 1.
 

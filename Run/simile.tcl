@@ -2,6 +2,9 @@
 # SIMILE batch file
 # Make sure the first line refers to a version of TclTk with shared libraries
 
+set prolog sicstus
+set interface dll
+
 proc GetRealFile {link} {
     if {[catch {set base [file readlink $link]}]} {
 	return $link
@@ -14,13 +17,21 @@ proc GetRealFile {link} {
     return [GetRealFile $newLink]
 }
 
+set scriptCmd [info script]
+if {[string match relative [file pathtype $scriptCmd]]} {
+    set scriptCmd [pwd]/$scriptCmd
+}
+# replace /./ in path with / to avoid confusing file dirname
+regsub -all /\./ [GetRealFile $scriptCmd] / scriptCmd
+
+set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
+set env(SP_PATH) $SIMILE_PATH/System
+
 switch $tcl_platform(platform) {
     windows {
-	set SIMILE_PATH [file dirname [file dirname [info script]]]
-
+	console hide
+# This is needed for dll interface with tcl later than 8.0p2
 	set env(TCL_LIBRARY) [info library]
-#	set env(TCL_LIBRARY) "C:/progra~1/tcl/lib/tcl8.3"
-#	set env(TK_LIBRARY) "C:/progra~1/tcl/lib/tk8.3"
 
 # This specifies the TclTk libraries used by the compiler
 	set env(TCL_COMPILER) vc
@@ -44,12 +55,12 @@ switch $tcl_platform(platform) {
 # such as "Program files". Or something...I dunno, how that Gates ever 
 # got to be a multi-billionaire, I just don't know...
 #
-	set env(PATH) "$env(MSDEVDIR)/bin;c:/progra~1/tcl/bin;$env(PATH)"
+	set env(PATH) "c:/cygwin/bin;$env(MSDEVDIR)/bin;c:/progra~1/tcl/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
     } unix {
+	set env(LD_LIBRARY_PATH) \
+		$env(SP_PATH)/library:[file dirname [info library]]
 	# the following can be edited for your configuration
-	set SIMILE_PATH [file dirname [file dirname \
-		[GetRealFile [info script]]]]
 	set env(PRINTCMD) lpr
     }
 }
@@ -124,17 +135,32 @@ cd $SIMILE_PATH/Run
 # -- must be concurrent because script causes Windows problems if
 # not finished
 
-set env(SP_PATH) $SIMILE_PATH/System
-switch $tcl_platform(platform) {
-    windows {
-	exec $SIMILE_PATH/System/bin/sprt.exe &
-    } unix {
-	set env(LD_LIBRARY_PATH) \
-		$env(SP_PATH)/library:[file dirname [info library]]
-	exec $env(SP_PATH)/bin/sprt &
+switch $prolog {
+    gnu {
+	set tgt Run/xgsimile
+    } sicstus {
+	set tgt System/bin/sprt
     }
 }
 
-# wait till prog is going before removing splash
-while {[file exists $env(SIMTMPDIR)/.lock]} {after 100}
-exit
+switch $tcl_platform(platform) {
+    windows {
+	set execExtn .exe
+    } unix {
+	set execExtn {}
+    }
+}
+
+switch $interface {
+    pipe {
+	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
+	set PROLOG_ERR $tempDir/simerror.txt
+	source toolbox.tcl
+	source prolog.tcl
+    } dll {
+	exec $SIMILE_PATH/$tgt$execExtn &
+	# wait till prog is going before removing splash
+	while {[file exists $env(SIMTMPDIR)/.lock]} {after 100}
+	exit
+    }
+}

@@ -7,13 +7,13 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-:- module(event, [get_info/3, get_params/2,
+sicstus_module(event, [get_info/3, get_params/2,
 		  click_obj/3, click_text/3, click/2,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/1, drag/2,
 	adjust_display_area/2, prioritize_window/1]).
 
-:-	use_module([dialogue, m_update, image, maintain,
+sicstus_use_module([dialogue, m_update, image, maintain,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(charsio), library(ordsets)]).
 
@@ -33,7 +33,7 @@ get_info(Wid, Comp, desc) :-
 	    abs_path_name(Source, Context, SourceLoc),
 	    all(m_update, abs_path_name, [build(Dests), unify(Context),
 					  build(DestLoc)]),
-	    format_to_chars("~a from ~a to ~w", [LType, SourceLoc, DestLoc],
+	    sicstus_format_to_chars("~a from ~a to ~w", [LType, SourceLoc, DestLoc],
 			    EqnStr),
 	    name(Eqn, EqnStr);
 	LType = submodel,
@@ -47,7 +47,7 @@ get_info(_, Comp, comment) :-
 	(get_av_pair(Func, _, comment, Cmt), !;
 	Cmt = 'no comment'),
 	(get_av_pair(Func, _, description, Desc),
-	    format_to_chars("~w\n~w", [Desc, Cmt], PopStr),
+	    sicstus_format_to_chars("~w\n~w", [Desc, Cmt], PopStr),
 	    name(Pop, PopStr), !;
 	Pop = Cmt),
 	callback(br(write(Pop))).
@@ -106,10 +106,6 @@ click(Xpt, Ypt) :-
 		set_original_click(Xpt, Ypt),
 		click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent)).
 
-click_in(Wid, Point, Trans, Depth, Parent) :-
-	targets(Wid, Parent, Point, Depth, Child), !, 
-	click_on_sub(Wid, Point, Trans, Parent, Depth, Child).
-
 save_params(Trans, Depth, Parent) :-
 	set_translation(Trans),
 	set_current_depth(Depth),
@@ -132,6 +128,10 @@ click_on_sub(_, Point, _, _, _, Comp) :-
 
 This starts addition. Last clause creates a new cloud when starting a flow in the
 middle of nowhere; i could also do variables for influences. */
+
+click_in(Wid, Point, Trans, Depth, Parent) :-
+	targets(Wid, Parent, Point, Depth, Child), !, 
+	click_on_sub(Wid, Point, Trans, Parent, Depth, Child).
 
 click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 	get_mode(add),
@@ -290,15 +290,15 @@ finish_old_edit(NextEdit) :-
 			/* If name exists in submodel or contains dir chars,
 			block the update show message and highlight the node again */
 			(cannot_call_in(RenamedNode, Parent, Name),
-				format_to_chars("Cannot rename ~a. Its parent model already contains a component called ~a.",
+				sicstus_format_to_chars("Cannot rename ~a. Its parent model already contains a component called ~a.",
 						[OldName, Name], Blurb);
 			name(Name, NameStr),
 				(Dodgy = "."; Dodgy = "/"),
 				prefix(Begin, NameStr),
 				suffix(Dodgy, Begin),
-				format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.",
+				sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.",
 						[OldName, Name, Dodgy], Blurb)), !,
-					format_to_chars("Error renaming node ~a.",
+					sicstus_format_to_chars("Error renaming node ~a.",
 							[OldName], Head),
 					do_dialogue(Head, warning, Blurb, ok, _),
 					/* Put old caption back; this is turned on for now */
@@ -638,23 +638,6 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		move_text(Moving_obj, [Xoffset, Yoffset])),
 	set_start_coords(Xpt, Ypt).
 
-/* find_space handles pairs of values indicating ranges. The
-first gives the range which must be covered, the second the
-range already covered. The third is the new part to cover,
-and the fourth the part of the previous cover which has been used. Assumes ranges are same size. */
-
-find_space([TgtL, TgtH], [DoneL, DoneH], [NewL, NewH],
-		[UsedL, UsedH]) :-
-	DoneL < TgtL, !,
-		NewL is max(DoneH, TgtL),
-		NewH = TgtH,
-		UsedL = TgtL,
-		UsedH = NewL;
-	NewL = TgtL,
-		NewH is min(DoneL, TgtH),
-		UsedL = NewH,
-		UsedH = TgtH.
-		
 drag_to(Xpt, Ypt, Moving_obj) :-
 	get_mode(move),
 	get_phase(Phase),
@@ -706,6 +689,34 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	    tweak_endpoint(Root, finish, RootEndPt));
 	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)).
 
+drag_to(Xpt, Ypt, Target) :-
+	get_phase(dragging),
+	(get_mode(copy); 
+	get_mode(ghost),
+		(get_highlit_obj(2, OldTarget),
+			normalize(OldTarget),
+			fail;
+		find_type(Target, submodel), !;
+		ghost_type(Start, _, _),
+			\+ Target = Start,
+			\+ find_ghosts(Target, _),
+			/* find_type(Target, Type), Allow target's type to differ */ 
+			highlight(Target, 2))),
+	get_border_offsets(Loff,Toff,Roff,Boff),
+	L is Xpt-Loff,
+	T is Ypt-Toff,
+	R is Xpt+Roff,
+	B is Ypt+Boff,
+	add_incomplete([L,T,R,B]),
+	remove_old_rubberband,
+	draw_rubberband.
+
+drag_to(_, _, Doomed_thing) :-
+	get_mode(delete),
+	get_phase(delete_hunt),
+	remove_highlights,
+	highlight_deletes(Doomed_thing).
+
 /* adjust_display_area handles requests from the GUI to change the display
 area in a submodel. expand_canvas actually changes it; here we also reroute
 the internal portions of crossborder links so they still connect. */
@@ -736,6 +747,23 @@ tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	tweak_endpoint(Link, Where, [NewX, NewY]),
 	fail; true.
 
+/* find_space handles pairs of values indicating ranges. The
+first gives the range which must be covered, the second the
+range already covered. The third is the new part to cover,
+and the fourth the part of the previous cover which has been used. Assumes ranges are same size. */
+
+find_space([TgtL, TgtH], [DoneL, DoneH], [NewL, NewH],
+		[UsedL, UsedH]) :-
+	DoneL < TgtL, !,
+		NewL is max(DoneH, TgtL),
+		NewH = TgtH,
+		UsedL = TgtL,
+		UsedH = NewL;
+	NewL = TgtL,
+		NewH is min(DoneL, TgtH),
+		UsedL = NewH,
+		UsedH = TgtH.
+		
 /* tweak_endpoint/3: adjusts shape of line when endpoint is moved, currently
 resets middle as well if it is a flow, not otherwise! */
 
@@ -800,34 +828,6 @@ scale_difference([X1, Y1], [X2, Y2], Sc, [X, Y]) :-
 tweak_middle([[X1, Y1]], [Xt, Yt], [[X2, Y2]]) :-
 	X2 is X1+Xt,
 	Y2 is Y1+Yt.
-
-drag_to(Xpt, Ypt, Target) :-
-	get_phase(dragging),
-	(get_mode(copy); 
-	get_mode(ghost),
-		(get_highlit_obj(2, OldTarget),
-			normalize(OldTarget),
-			fail;
-		find_type(Target, submodel), !;
-		ghost_type(Start, _, _),
-			\+ Target = Start,
-			\+ find_ghosts(Target, _),
-			/* find_type(Target, Type), Allow target's type to differ */ 
-			highlight(Target, 2))),
-	get_border_offsets(Loff,Toff,Roff,Boff),
-	L is Xpt-Loff,
-	T is Ypt-Toff,
-	R is Xpt+Roff,
-	B is Ypt+Boff,
-	add_incomplete([L,T,R,B]),
-	remove_old_rubberband,
-	draw_rubberband.
-
-drag_to(_, _, Doomed_thing) :-
-	get_mode(delete),
-	get_phase(delete_hunt),
-	remove_highlights,
-	highlight_deletes(Doomed_thing).
 
 /* multi_object_mode: system is in a state in which dragging from one object to
 another makes sense (one day this but not the next might be true) */
@@ -1183,29 +1183,6 @@ unclick_obj :-
 		ok, _)),
 	update_runnable(Parent).
 
-ghost_type(Start, Type, Base) :-
-	get_moving_obj(Start),
-	find_base(Start, Base),
-	find_type(Base,StartType),
-	Type = StartType.
-
-/* event-level interface to ghost creation. This identifies a
-node's current ghost state, if it is a ghost it unghosts it,
-undrawing any ghost links that were there, then ghosts it to the new base if there is one, displaying the links. */
-
-reghost(Ghost, Base) :-
-	ghost_link(Link, _, Ghost),
-		off(Link),
-		fail;
-	make_ghost(Ghost, Base, TopLink),
-		thread_link(TopLink),
-		change_ghosthood(Ghost).
-
-change_ghosthood(Node) :-
-	update_color(Node),
-/*	make_links_follow(Node), */
-	spread_colour(Node).
-
 /* this clause handles deletion. If it is a submodel, the links that
 will become surplus are undisplayed, otherwise delete_net is
 called. */
@@ -1228,6 +1205,34 @@ unclick_obj :-
 		fail;
 	delete_net),
 	update_runnable(Parent).
+
+unclick_obj :-
+	(get_phase(barge); get_phase(moving); get_phase(moving_text);
+			get_phase(moving_start); get_phase(moving_finish)),
+	initialize_phase.
+
+ghost_type(Start, Type, Base) :-
+	get_moving_obj(Start),
+	find_base(Start, Base),
+	find_type(Base,StartType),
+	Type = StartType.
+
+/* event-level interface to ghost creation. This identifies a
+node's current ghost state, if it is a ghost it unghosts it,
+undrawing any ghost links that were there, then ghosts it to the new base if there is one, displaying the links. */
+
+reghost(Ghost, Base) :-
+	ghost_link(Link, _, Ghost),
+		off(Link),
+		fail;
+	make_ghost(Ghost, Base, TopLink),
+		thread_link(TopLink),
+		change_ghosthood(Ghost).
+
+change_ghosthood(Node) :-
+	update_color(Node),
+/*	make_links_follow(Node), */
+	spread_colour(Node).
 
 delete_by_dlg(Target) :-
 	remove_highlights,
@@ -1441,11 +1446,6 @@ retitle_duplicates([Node | Rest], Used) :-
 		update_captions(Node);
 	true),
 	retitle_duplicates(Rest, Used).
-
-unclick_obj :-
-	(get_phase(barge); get_phase(moving); get_phase(moving_text);
-			get_phase(moving_start); get_phase(moving_finish)),
-	initialize_phase.
 
 remove_highlights :-
 	get_highlit_obj(_, Old_doomed_thing),

@@ -6,6 +6,10 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.9  2002/07/15 16:24:08  jaspert
+#Important change here is GNU prolog compatibility
+#and the addition of the pipe interface.
+#
 #Revision 1.8  2002/06/20 17:12:47  jaspert
 #Prolog changes relating to GNU prolog port
 #Tcl changes for usability in tcltk 8.3
@@ -58,6 +62,10 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.9  2002/07/15 16:24:08  jaspert
+#Correct RCS directive #Important change here is GNU prolog compatibility
+#Correct RCS directive #and the addition of the pipe interface.
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.8  2002/06/20 17:12:47  jaspert
 #Correct RCS directive #Prolog changes relating to GNU prolog port
 #Correct RCS directive #Tcl changes for usability in tcltk 8.3
@@ -711,7 +719,7 @@ proc QueuePopup {cmd} {
 }
 
 proc AddEqnPopup {x y winId X Y} {
-    global pushedbutton running_c equationbar fromProlog
+    global pushedbutton running_c equationbar
     set doDesc [PrefValue custom(compDescPop) compDescPop]
     set doVal [PrefValue custom(compValPop) compValPop]
     set doCmt [PrefValue custom(compCmtPop) compCmtPop]
@@ -726,15 +734,16 @@ proc AddEqnPopup {x y winId X Y} {
 	PostPopup $X $Y
 	set plName [ExtractPrologName $winId $target]
 	if {$doDesc} {
-	    prolog tk_get_info('$winId',$plName,eqn)
+	    set fromProlog [GetFromProlog tk_get_info('$winId',$plName,eqn)]
 	    if {![llength $fromProlog] || [string match $fromProlog <none>]} {
-		prolog tk_get_info('$winId',$plName,desc)
+		set fromProlog \
+		    [GetFromProlog tk_get_info('$winId',$plName,desc)]
 	    }
 	    AddPopupMessage $fromProlog #c0ffc0 0
 	}
 	if {$doCmt} {
-	    prolog tk_get_info('$winId',$plName,comment)
-	    AddPopupMessage $fromProlog #ffe0c0 0
+	    AddPopupMessage \
+		[GetFromProlog tk_get_info('$winId',$plName,comment)] #ffe0c0 0
 	}
         if {[expr [info exists running_c] && $doVal]} {
 	    AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
@@ -1192,7 +1201,7 @@ proc SaveParams {} {
 
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
     if {[llength $metaFile]} {
-	set pStr [open $metaFile w]
+	set pStr [open $metaFile w]
 
 
 
@@ -1538,6 +1547,7 @@ proc load_dll {lang progFileDir modelPath node} {
     } else {
 	if {[catch {loadmodel $nameBase[info sharedlibextension] $node} \
 		model_id]} {
+ShowMessage debug warning "Failure to load model: $model_id" ok
 	    unset model_id
 	    return 0
 	}
@@ -1720,6 +1730,7 @@ proc build_c_stub {targetDir make_new_stub} {
 # it is running under Prolog. However it seems to work OK in WinNT.
 		if {$make_new_stub != 1} {
 		    set dll tcl${MAJ}${MIN}
+#ShowMessage debug info "TCL is $TCL" ok
 		    exec gcc -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
 		    exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
 			    obj.o -L. -l$dll

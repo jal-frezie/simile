@@ -13,7 +13,7 @@ doesn't even get all the info as to what objects are actually manipulated. OK, h
 on while I change the spec to reflect that.
 */
 
-:- 	module(maintain, [cursor_in/2, callback/1,
+sicstus_module(maintain, [cursor_in/2, callback/1,
 		enable_text_editing_in/1, disable_text_editing_in/1,
 		get_component_from_gui/4, get_text/3,
 		find_relevant_windows/4, update_captions/1, 
@@ -29,7 +29,7 @@ on while I change the spec to reflect that.
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, kill_window/1, exit_AME/1]).
 
-:-	use_module([library(lists), state, image, ame_gen, output]).
+sicstus_use_module([library(lists), state, image, ame_gen, output]).
 
 cursor_in(Win, Cursor) :-
 	tk_cursor_in(Win, Cursor).
@@ -319,15 +319,15 @@ redraw_window(Wid) :-
 	display(Wid, Component, 0, [0, 0, 1, 1], 1),
 	fail.
 
+/* Having drawn the components, succeed and don't come back...*/
+redraw_window(_) :- !.
+
 delete_window(Wid) :-
 	destroy_window(Wid),
 	tk_delete_window(Wid).
 
 scrub_run :- tk_scrub_run.
 kill_helpers :- tk_kill_helpers.
-
-/* Having drawn the components, succeed and don't come back...*/
-redraw_window(_) :- !.
 
 /* expand_canvas/2: grows the virtual display area of a model to
 encompass a new point, if indeed the point was outside its current
