@@ -1202,26 +1202,12 @@ proc equationlisting_start {} {
     pack $equationlist(textbox) -side right -fill both -expand true
     
     pack $w.mainframe -fill both -expand true
-    image create photo equationlist(subimg)
-    image create photo equationlist(compartmentimg)
-    image create photo equationlist(flowimg)
-    image create photo equationlist(variableimg)
-    image create photo equationlist(creationimg)
-    image create photo equationlist(immigrationimg)
-    image create photo equationlist(lossimg)
-    image create photo equationlist(reproductionimg)
-    image create photo equationlist(conditionimg)
-    image create photo equationlist(alarmimg)
-    equationlist(subimg) read "../Images/Toolbar/submodel.gif"
-    equationlist(compartmentimg) read "../Images/Toolbar/compartment.gif"
-    equationlist(flowimg) read "../Images/Toolbar/flow.gif"
-    equationlist(variableimg) read "../Images/Toolbar/variable.gif"
-    equationlist(creationimg) read "../Images/Toolbar/creation.gif"
-    equationlist(immigrationimg) read "../Images/Toolbar/immigration.gif"
-    equationlist(lossimg) read "../Images/Toolbar/loss.gif"
-    equationlist(reproductionimg) read "../Images/Toolbar/reproduction.gif"
-    equationlist(conditionimg) read "../Images/Toolbar/condition.gif"
-    equationlist(alarmimg) read "../Images/Toolbar/alarm.gif"
+    foreach imgType [list compartment flow variable creation \
+			 immigration loss reproduction condition alarm \
+			 event state squirt] {
+	image create photo equationlist(${imgType}img)
+	equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
+    }
     
     $equationlist(textbox) tag configure bigtag \
             -font {Helvetica 12 bold} -wrap word -spacing3 5 -lmargin1 10 -lmargin2 10
@@ -1439,6 +1425,7 @@ proc BuildProblem {Title errLevel msg key args} {
     set swidth [winfo screenwidth $ProbWin]
     wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
     update
+    focus $ProbWin
     grab $ProbWin
     tkwait variable ack
     grab release $ProbWin
