@@ -551,12 +551,12 @@ namespace eval ::$keyValue {
             if {[catch {
 # Jasper does a quick'n'dirty -- if this is the first section of a new line
 # then the limits may not include the start point, so do an extra adjustLimits
-# to make sure it is on screen
+# to make sure it is on screen...also put drawPoint 1st to catch errors
+                    drawPoint $w $Told $Yold $Tnew $Ynew $colour
                     adjustLimits $w $Told $Yold
                     adjustLimits $w $Tnew $Ynew
-                    drawPoint $w $Told $Yold $Tnew $Ynew $colour
                 } errMessage]} {
-                if {[string is double $Ynew]&&[lsearch {inf nan} $Ynew]==-1} {
+		if {![dodgyValue $Yold] && ![dodgyValue $Ynew]} {
                     ErrorHelp $errorInfo
                 } else  {
                     set xm [expr $plot($w,xborder_left)+60]
@@ -582,7 +582,9 @@ namespace eval ::$keyValue {
         }
     }
     
-    
+    proc dodgyValue {val} {
+	return [expr ![string is double $val] || [lsearch {inf nan} $val]>-1]
+    }
     
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour } {
