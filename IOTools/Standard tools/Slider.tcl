@@ -111,6 +111,7 @@ namespace eval slide139 {
 	    }
 	    return $defVal
 	} else {
+#	    set useTrans [lindex $trans $useDim]
 	    pack [label $f.caption -text [lindex $levels end]]
 	    set count [lindex $nodeDims $useDim]
 	    # bodge it to work with record submodels
@@ -118,9 +119,9 @@ namespace eval slide139 {
 		set count [expr [llength $initVal]/2]
 	    }
 	    for {set index 1} {$count >= $index} {incr index} {
-		set defVal [GetDefVal $initVal $outerDims $index]
-		if {[llength [lindex $trans $outerDims]]} {
-		    set slTitle [lindex [lindex $trans $outerDims] $index]
+		set defVal [GetDefVal $initVal $useDim $index]
+		if {[llength [lindex $trans $useDim]]} {
+		    set slTitle [lindex [lindex $trans $useDim] $index]
 		} else {
 		    set slTitle $index
 		}
@@ -216,7 +217,7 @@ namespace eval slide139 {
         }
     }
     
-    proc Save {winId smPath} {
+    proc oldSave {winId smPath} {
         global checkStates sliderVals
         set metaFile [ChooseFile inputs.spi "Save input values as:" 1]
         if {[llength $metaFile]} {
@@ -246,12 +247,47 @@ namespace eval slide139 {
         }
     }
 
-proc PutRelSliderContents {winId iStr smPath elt val} {
-    set fullCapt [GetCaptionPathFromId $winId $elt]
-    if {[string match $smPath* $fullCapt]} {
-	puts $iStr [string range $fullCapt [string length $smPath] end]=$val
+    proc Save {winId smPath} {
+puts "Saving submodel $smPath inputs"
+        set metaFile [ChooseFile inputs.spf "Save input values as:" 1]
+        if {[llength $metaFile]} {
+            set iStr [open $metaFile w]
+
+	    set snip [string length $smPath]
+	    foreach node [GetObjectList $winId] {
+		set title [GetCaptionPathFromId $winId $node]
+puts "trimming $title"
+		if {!($snip && [string last $smPath $title [expr $snip-1]])} {
+		    set titleTail [lrange $title $snip end]
+		    set trans [GetTransTable $node]
+# Below should be reimplemented in this interpreter somehow
+		    upvar \#0 [InputVarFor $node] collectPt
+		    
+		    foreach {elmt val} [array get collectPt $node*] {
+puts "got pair $elmt $val"
+			set id [split $elmt ,]
+			if {[llength $id]==2} {
+			    lappend arr($node) [lindex $id 1] $val
+			} else {
+			    puts $istr $titleTail=literal=\{NOW [TransEnums $trans $val]\}
+			}
+		    }
+		    foreach {arrNode vList} [array get $arr] {
+			puts $istr $titleTail=literal=\{NOW [TransEnums $trans $vList]\}
+		    }
+		}
+	    }
+	    close $iStr
+	}
     }
-}
+
+
+    proc PutRelSliderContents {winId iStr smPath elt val} {
+	set fullCapt [GetCaptionPathFromId $winId $elt]
+	if {[string match $smPath* $fullCapt]} {
+	    puts $iStr [string range $fullCapt [string length $smPath] end]=$val
+	}
+    }
 
     proc GetDefVal {vals levels index} {
 #ShowMessage debug info "GetDefVal $vals $levels $index" ok
