@@ -289,7 +289,7 @@ proc AcceptData {winId topNode compName complain} {
 	# submodel it represents
 	set recordDims $paramDims($compName)
 	set afterTIME [string equal TIME [lindex $recordDims 0]]
-	set useCppArray [expr !$afterTIME] 
+	set useCppArray [RunningInC]
 #puts "node $compName has dims $recordDims"
 	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
 #puts "recordDims $recordDims recordDepth $recordDepth" 
@@ -317,7 +317,8 @@ proc AcceptData {winId topNode compName complain} {
 	    c_setparamarray 0 0 $node
 	}
 	if {[catch {ListToArray $topNode $node {} $trans $recordDims \
-			$paramData($compName) $useCppArray} result]} {
+			$paramData($compName) \
+			[expr {$useCppArray && !$afterTIME}]} result]} {
 # new bit for using it as an input tool: notify that we have values
 	    lappend paramData(needed) $compName
 	    if {$complain>-1} {
@@ -522,8 +523,10 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 proc PlaceInArray {where what varData inC} {
     if {$inC} {
 	set map [split $where ,]
-	if {[catch {c_setparamelement 0 0 [lindex $map 0] $what \
-			[lrange $map 1 end]} urr]} {
+	ShowMessage debug99 info "About to BUFF node [lindex $map 0] and \
+indices [lrange $map 1 end] with $what" ok
+	if {[catch {c_setparamelement 0 0 [lindex $map 0] \
+			[lrange $map 1 end] $what} urr]} {
 	    error [list $urr]
 	}
     } else {

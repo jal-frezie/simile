@@ -499,7 +499,7 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_Obj* elt;
 
   if (argc != 6) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id value index_list");
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id index_list value");
     return TCL_ERROR;
   }
   
@@ -513,12 +513,12 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
 
-  error = Tcl_GetDoubleFromObj(interp, argv[4], &val);
+  error = Tcl_GetDoubleFromObj(interp, argv[5], &val);
   if (error != TCL_OK) {
     return error;
   }
 
-  error = Tcl_ListObjLength(interp, argv[5], &count);
+  error = Tcl_ListObjLength(interp, argv[4], &count);
   if (error != TCL_OK) {
     return error;
   }

@@ -655,11 +655,11 @@ public:
       case REAL:
 	arraySz = sizeof(double);
 	break;
-      case INTEGER:
-	arraySz = sizeof(int);
-	break;
       case FLAG:
 	arraySz = sizeof(BOOLEAN);
+	break;
+      default: // INTEGER or enumerated type
+	arraySz = sizeof(int);
 	break;
       }
       // will have to add stuff to get ptr to jump over vm dims -- or purge
@@ -691,11 +691,11 @@ public:
     case REAL:
       *(double*)(dataPtr + sizeof(double)*howFarDown) = val;
       break;
-    case INTEGER:
-      *(int*)(dataPtr + sizeof(int)*howFarDown) = (int)val;
-      break;
     case FLAG:
       *(BOOLEAN*)(dataPtr + sizeof(BOOLEAN)*howFarDown) = (BOOLEAN)val;
+      break;
+    default: // INTEGER or enumerated type
+      *(int*)(dataPtr + sizeof(int)*howFarDown) = (int)val;
       break;
     }
     return 0;
@@ -709,11 +709,11 @@ public:
     case REAL:
       *(double*)tgt = *(double*)(dataPtr + sizeof(double)*howFarDown);
       break;
-    case INTEGER:
-      *(int*)tgt = *(int*)(dataPtr + sizeof(int)*howFarDown);
-      break;
     case FLAG:
       *(BOOLEAN*)tgt = *(BOOLEAN*)(dataPtr + sizeof(BOOLEAN)*howFarDown);
+      break;
+    default: // INTEGER or enumerated type
+      *(int*)tgt = *(int*)(dataPtr + sizeof(int)*howFarDown);
       break;
     }
   }

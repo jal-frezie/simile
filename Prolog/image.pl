@@ -643,21 +643,6 @@ quick_file(Model, FileNameChars) :-
         split_path_chars(NameChars, _, _, FileNameChars);
     FileNameChars = "unsaved".
     
-dim_spec_for(Model, DimSpec) :-
-    is_population(Model), !,
-        DimSpec = "Population";
-    get_node_size(Model, Dims),
-        (Dims = [], !,
-            DimSpec = "Simple";
-        x_separate(Dims, DimSpec)).
-
-x_separate([N], Str) :- !,
-    sicstus_write_to_chars(N, Str).
-
-x_separate([N | Rest], Str) :-
-    x_separate(Rest, SubStr),
-    sicstus_format_to_chars("~dx~s", [N, SubStr], Str).
-
 /* complete/1: determines draw style of item.
 · Compartments and functions are complete if they have values set
 · As a special case a function can also be complete if it is linked only to a flow which also has a link from another function which has a value

@@ -2047,8 +2047,9 @@ dissolve_component(Node) :-
 	    all(event, retitle_duplicate, [build(Orphans), unify(Used)]);
 	true),
 	    
-	/* First, strip the model's dimensions and check external vars */
-	(image:dim_spec_for(Node, "Simple"), !;
+	/* First, strip the model's dimensions and check external vars --
+	should also do single-member conditionals, and seems not to work */
+	(get_node_size(Node, []), !;
 	add_parameter(Node, 0, multiplication_spec, [count=[]]),
 	    spread_colour(Node, yes)),
 	/* next, set its internal extent to its bounding box so I can snap its

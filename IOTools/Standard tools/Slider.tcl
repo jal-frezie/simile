@@ -166,6 +166,8 @@ proc click {winId node caption} {
 		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
+			  -command [list SetArrayIfUsed 0 0 $node {} \
+					$checkStates($node)] \
 			  -offvalue 0 -onvalue 1 -relief ridge]
 		set checkStates($node) $defVal
 		} ENUM(*) {
@@ -180,7 +182,8 @@ proc click {winId node caption} {
 		scale $f.scale -length 120 -orient h -showvalue false \
                     -sliderlength 10 -from $min -to $max \
                     -tickinterval $gap -resolution $spacing \
-                    -variable sliderVals($node)
+                    -variable sliderVals($node) \
+		    -command [list SetArrayIfUsed 0 0 $node {}]
 		    if {[llength $defVal]} {
 			$f.scale set $defVal
 		    }
@@ -218,6 +221,8 @@ proc click {winId node caption} {
 		    }
 		    pack [checkbutton $row.elt$index -borderwidth 1 \
 			      -variable checkStates($node,$index) \
+			      -command [list SetArrayIfUsed 0 0 $node $index \
+					    $checkStates($node,$index)] \
 			      -padx 0 -offvalue 0 -onvalue 1] -side left
 		    set checkStates($node,$index) $defVal
 		    BindPopup $row.elt$index "For $slTitle"
@@ -234,8 +239,8 @@ proc click {winId node caption} {
 		    ComboBox $f.elt$index.c -values $possVals -editable 0 \
 			-text [lindex $possVals [expr $defVal-1]] \
 			-textvariable comboTypes($node,$index) \
-			-modifycmd [namespace code "SetChoiceNumber \
-                             $f.elt$index.c $node,$index"]
+			-modifycmd [namespace code [list SetChoiceNumber \
+							$f.elt$index.c $node $index]]
 		    pack $f.elt$index.c -side right -fill x -expand true
 		    pack [label $f.elt$index.id -text $slTitle -width 10] \
 			-side left
@@ -252,7 +257,8 @@ proc click {winId node caption} {
                         -orient horizontal -showvalue false \
                         -sliderlength 10 -from $min -to $max \
                         -resolution $spacing \
-                        -variable sliderVals($node,$index)
+                        -variable sliderVals($node,$index) \
+			-command [list SetArrayIfUsed 0 0 $node $index]
 		    if {[llength $defVal]} {
 			$newScale set $defVal
 		    }
@@ -294,10 +300,22 @@ proc click {winId node caption} {
 	}
     }
 
-    proc SetChoiceNumber {cbox sub} {
+    proc SetArrayIfUsed {model_id instance_id node indices value} {
+    	if {[RunningInC]} {
+	    c_setparamelement $model_id $instance_id $node $indices $value
+	}
+    }
+
+    proc SetChoiceNumber {cbox node args} {
 	global comboChoices
-	set comboChoices($sub) [expr [lsearch [$cbox cget -values] \
-					  [$cbox cget -text]]+1]
+	if {[RunningInC]} {
+	    c_setparamelement 0 0 $node $args \
+		[expr [lsearch [$cbox cget -values] [$cbox cget -text]]+1]
+	} else {
+	    set sub [join [concat $node $args] ,]
+	    set comboChoices($sub) [expr [lsearch [$cbox cget -values] \
+					      [$cbox cget -text]]+1]
+	}
     }
 
 # If we load a file containing slider values, we only want to set the sliders
