@@ -13,9 +13,8 @@ package provide SimileAutoObj 1.0
 
 # Should abstract common helper behaviour, e.g. clear, hide and show
 
-
+#namespace eval similescript {
 package require Itcl
-namespace import ::itcl::*
 
 namespace current
 
@@ -37,7 +36,7 @@ set argv {}
 source "[file dirname [info script]]/../../../Run/simile.tcl"
 
 
-class ModelWindowImpl {
+class similescript::ModelWindow {
     
     variable modelNode node00000
     variable desktop /Desktop1
@@ -129,14 +128,14 @@ class ModelWindowImpl {
     public method BuildCPP {} {
         # builds the model with CPP and returns a run control command/object
         MenuSelect [GetModelWindow].canvas file run_c
-        #set rc [RunControlImpl ::runControl $this]
-        #return $rc
+        set rc [RunControl ::runControl $this]
+        return $rc
     }
     
     public method BuildTcl {} {
         # builds the model with Tcl and returns a run control command/object
         MenuSelect [GetModelWindow].canvas file run_tcl
-        set rc [RunControlImpl ::runControl $this]
+        set rc [RunControl ::runControl $this]
         return $rc
     }
     
@@ -151,7 +150,7 @@ class ModelWindowImpl {
     
 }
 
-class HelperController {
+class similescript::HelperController {
     # Class providing basic control of existing helpers
     # The constructor DOES NOT create a helper use class Helper
     variable winId;    #Tk path to RunControl window
@@ -175,7 +174,7 @@ class HelperController {
     }
 }
 
-class Helper {
+class similescript::Helper {
     
     inherit HelperController
     
@@ -192,7 +191,7 @@ class Helper {
     }
 }
 
-class RunControlImpl {
+class similescript::RunControl {
     
     inherit HelperController
     
@@ -290,43 +289,43 @@ class RunControlImpl {
     
     public method GetValue {path} {
         set winId [do_for_node $modelNode set ::runState($modelNode,helperId)]
-        return [do_for_node $modelNode GetModelValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     public method SetValue {path value} {
         # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
         #set winId $runState($modelNode,helperId)
-        do_for_node $modelNode set ::sliderVals([do_for_node $modelNode GetIdFromCaptionPath $winId /r]) $value
+        do_for_node $modelNode set ::sliderVals([do_for_node $modelNode GetIdFromCaptionPath /r]) $value
         Reset
-        return [do_for_node $modelNode GetModelValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     public method GetMinValue {path} {
         global runState
         set winId [do_for_node $modelNode set ::runState($modelNode,helperId)]
-        return [do_for_node $modelNode GetMinValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetMinValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     public method GetMaxValue {path} {
         global runState
-        return [do_for_node $modelNode GetMaxValue $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetMaxValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     #paths
     public method GetModelType {path} {
-        return [do_for_node $modelNode GetModelType $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetModelType [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     public method GetModelEval {path} {
-        return [do_for_node $modelNode GetModelEval $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetModelEval [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     public method GetModelDims {path} {
-        return [do_for_node $modelNode GetModelDims $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetModelDims [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     public method GetModelClass {path} {
-        return [do_for_node $modelNode GetModelClass $winId [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetModelClass [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     ################################################################################
@@ -338,7 +337,7 @@ class RunControlImpl {
     
     # any use??
     public method GetPhaseCount {path} {
-        return [do_for_node $modelNode GetPhaseCount [do_for_node $modelNode GetIdFromCaptionPath $winId $path]]
+        return [do_for_node $modelNode GetPhaseCount [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
 }
@@ -349,7 +348,7 @@ class RunControlImpl {
 #chain
 #SetUpdateAtDisplayInterval false
 
-class TableHelperImpl {
+class similescript::TableHelper {
     
     inherit Helper
     
@@ -366,7 +365,7 @@ class TableHelperImpl {
     public method AddVariable {path} {
         global helperTable
         set helperTable(modelNode,current) $winId
-        ${keyvalue}::click $winId [GetIdFromCaptionPath $winId $path] $path
+        ${keyvalue}::click $winId [GetIdFromCaptionPath $path] $path
     }
     
     public method RemoveVariable {path} {
@@ -393,7 +392,7 @@ class TableHelperImpl {
     
 }
 
-class PlotterImpl {
+class similescript::Plotter {
     inherit Helper
     constructor {modelWindow winTitle} {
         Helper::constructor $modelWindow $winTitle
@@ -406,7 +405,7 @@ class PlotterImpl {
     }
 }
 
-class FileWriteImpl {
+class similescript::FileWrite {
     inherit Helper
     constructor {modelWindow winTitle} {
         Helper::constructor $modelWindow $winTitle
