@@ -13,6 +13,8 @@ namespace eval tabular11510 {
 	set precision($winId) 4
 	variable orientList
 	set orientList($winId) {rows cols cols cols}
+	variable displayList
+	set displayList($winId) {}
 
 	set toolbarItems [list \
             [list new.gif "Clear" [namespace code "clear $winId"] ] \
@@ -21,7 +23,8 @@ namespace eval tabular11510 {
 	    [list mprec.gif "Increase precision" \
 		 [namespace code [list ChangePrecision $winId 1]]] \
 	    [list lprec.gif "Decrease precision" \
-		 [namespace code [list ChangePrecision $winId -1]]]]
+		 [namespace code [list ChangePrecision $winId -1]]] \
+            [list new.gif "Layout" [namespace code "Layout $winId"] ]]
 
 	::graphtools::MakeToolBar $winId $toolbarItems
 
@@ -37,13 +40,12 @@ namespace eval tabular11510 {
 
     proc CreateTable {winId} {
 	table $winId.t -rows 1 -cols 1 -bg \#a0ffa0 -variable data$winId \
-	    -titlerows 0 -titlecols 0 -selectmode extended -sparsearray 0 \
+	    -selectmode extended -sparsearray 0 \
 	    -rowtagcommand [namespace code rowProc] \
 	    -coltagcommand [namespace code colProc] \
 	    -rowseparator \n -colseparator \t \
 	    -yscrollcommand [list $winId.sy set] \
 	    -xscrollcommand [list $winId.sx set]
-    
 	pack $winId.t -fill both -expand true
 
 #	$winId.t set 0,0 Time
@@ -56,91 +58,243 @@ namespace eval tabular11510 {
     }
 
     proc AddVariable { winId } {
-	pack [label $winId.f.mess -text "Click on a variable in the Explorer window\ or a Model Diagram."]
+	pack [label $winId.f.mess -text "Click on a variable in the Explorer window or a Model Diagram."]
 	GrabClicks $winId
     }
 
     proc click {winId node caption} {
-	variable orientList
 	variable dataStore
 	variable displayList
 
+	destroy $winId.f.mess
 	set newHeader [GetCaptionPathFromId $node]
 	if {[lsearch $displayList($winId) $newHeader]>=0} {
 	    # Var already displayed, see it
 	} else {
+	    set varIndex [llength $displayList($winId)]
 	    lappend displayList($winId) $newHeader
-	    set dataStore($winId,$newHeader,[GetModelTime]) \
+	    set dataStore($winId,$varIndex,[GetModelTime]) \
 		[lindex [GetModelValue $node] 0]
 	    Reconbobulate $winId
 	}
     }
 
+    proc display {winId tCur tStep tRem} {
+	variable dataStore
+	variable displayList
+
+	set varIndex 0
+	foreach varCapt $displayList($winId) {
+	    set varId [GetIdFromCaptionPath $varCapt]
+	    set dataStore($winId,$varIndex,$tCur) \
+		[lindex [GetModelValue $varId] 0]
+	    incr varIndex
+	}
+	Reconbobulate $winId
+    }
+	
     proc Reconbobulate {winId} {
 	variable dataStore
 	variable orientList
+	variable displayList
 
 	variable values
 	variable rowNames
 	variable colNames
-
-	$winId.t delete rows 0 [$winId.t cget -rows]
-	$winId.t delete cols 0 [$winId.t cget -cols]
-	set values {}; set rowNames {}; set colNames {}
-	set nameAxis [lindex $orientList 0]
+	if {[info exists rowNames]} {unset rowNames}
+	if {[info exists colNames]} {unset colNames}
+	if {[info exists values]} {unset values}
 
 	foreach valId [array names dataStore] {
-	    set rowsList {}
-	    set colsList {}
+#puts "found $valId"
 	    set valDims [split $valId ,]
-	    lappend ${nameAxis}List [lindex $valDims 1]
+	    if {[string match $winId [lindex $valDims 0]]} {
+		if {[string match none [lindex $orientList($winId) 0]]} {
+		    if {[lindex $valDims 2]==[GetModelTime]} {
+			GrabIndices $winId 1 {} {} [lindex $valDims 1] \
+			    $dataStore($valId)
+		    }
+		} else {
+		    GrabIndices $winId 0 {} {} [lindex $valDims 2] \
+			[list [lindex $valDims 1] $dataStore($valId)]
+		}
+	    }
+	}
 
-	    GrabIndices 1 $rowsList $colsList [lindex $valDims 2] \
-		$dataStore($valId)
+        set curHeaderRows 0
+	set colList [lsort -command [namespace code ReComp] \
+			 [array names colNames]]
+	foreach item $colList {
+	    set len [llength $item]
+	    if {$len>$curHeaderRows} {
+		set curHeaderRows $len
+	    }
 	}
+
+	set curHeaderCols 0
+	set rowList [lsort -command [namespace code ReComp] \
+			 [array names rowNames]]
+	foreach item $rowList {
+	    set len [llength $item]
+	    if {$len>$curHeaderCols} {
+		set curHeaderCols $len
+	    }
+	}
+	set levels [expr $curHeaderRows+$curHeaderCols]
+	if {!$curHeaderRows} {set curHeaderRows 1}
+	if {!$curHeaderCols} {set curHeaderCols 1}
+
+	unset ::data$winId
+	foreach {span old} [$winId.t spans] {
+	    $winId.t spans $span 0,0
+	}
+	$winId.t config -rows $curHeaderRows -cols $curHeaderCols \
+	    -titlerows $curHeaderRows -titlecols $curHeaderCols
+	set rowsTop 0
+	set colsTop 0
+	set hideTime [string match none [lindex $orientList($winId) 0]]
+	set level $hideTime
+	while {$level-$hideTime < $levels} {
+	    switch $level {
+		0 {set topCapt Time}
+		1 {set topCapt Name}
+		default {set topCapt "Index [expr $level-1]"}
+	    }
+	
+	    if {$level<4} {set orient [lindex $orientList($winId) $level]}
+	    if {[string match rows $orient]} {
+		set tgtSq [expr $curHeaderRows-1],$rowsTop
+		set oldCapt [$winId.t get $tgtSq]
+		if {[llength $oldCapt]} {
+		    $winId.t set $tgtSq "$oldCapt \\ $topCapt"
+		} else {
+		    $winId.t set $tgtSq $topCapt
+		}
+		incr rowsTop
+	    } else {
+		set tgtSq $colsTop,[expr $curHeaderCols-1]
+		set oldCapt [$winId.t get $tgtSq]
+		if {[llength $oldCapt]} {
+		    $winId.t set $tgtSq "$topCapt \\ $oldCapt"
+		} else {
+		    $winId.t set $tgtSq $topCapt
+		}
+		incr colsTop
+	    }
+	    incr level
+	}
+
+	set translateSide [lindex $orientList($winId) 1]
+	set translateLevel [string match $translateSide \
+				[lindex $orientList($winId) 0]]
+
+	set lastEntry(0) none
 	set count 0
-	foreach item [lsort $rowNames] {
+	foreach item $rowList {
 	    set rowIds($item) $count
+	    $winId.t insert rows end
+
+	    set headerCol 0
+	    foreach headerElt $item {
+		if {[string match $headerElt $lastEntry($headerCol)]} {
+		    # header same as prev line so span it over
+		    $winId.t spans $lastLine($headerCol),$headerCol \
+			[expr $curHeaderRows+$count-$lastLine($headerCol)],0
+		} else {
+		    set lastEntry($headerCol) $headerElt
+		    set lastEntry([expr $headerCol+1]) none
+		    set lastLine($headerCol) [expr $curHeaderRows+$count]
+		    if {[string match rows $translateSide] && \
+			    $headerCol==$translateLevel} {
+			set headerElt [lindex $displayList($winId) $headerElt]
+		    }
+		    $winId.t set [expr $curHeaderRows+$count],$headerCol \
+			$headerElt
+		}
+		incr headerCol
+	    }
 	    incr count
 	}
-	$winId.t config -rows count
+
+	set lastEntry(0) none
 	set count 0
-	foreach item [lsort $colNames] {
+	foreach item $colList {
 	    set colIds($item) $count
+	    $winId.t insert cols end
+
+	    set headerRow 0
+	    foreach headerElt $item {
+		if {[string match $headerElt $lastEntry($headerRow)]} {
+		    # header same as prev line so span it over
+		    $winId.t spans $headerRow,$lastLine($headerRow) \
+			0,[expr $curHeaderCols+$count-$lastLine($headerRow)]
+		} else {
+		    set lastEntry($headerRow) $headerElt
+		    set lastEntry([expr $headerRow+1]) none
+		    set lastLine($headerRow) [expr $curHeaderCols+$count]
+		    if {[string match cols $translateSide] && \
+			    $headerRow==$translateLevel} {
+			set headerElt [lindex $displayList($winId) $headerElt]
+		    }
+		    $winId.t set $headerRow,[expr $curHeaderCols+$count] \
+			$headerElt
+		}
+		incr headerRow
+	    }
 	    incr count
 	}
-	$winId.t config -cols count
 
 	foreach value [array names values] {
 	    set headers [split $value ,]
-	    set rowHead $rowIds([lindex headers 0])
-	    set colHead $colIds([lindex headers 1])
-	    $winId.t set $rowHead,$colHead [VarPrecRender $values($headers)]
+	    set rowHead [expr $rowIds([lindex $headers 0])+$curHeaderRows]
+	    set colHead [expr $colIds([lindex $headers 1])+$curHeaderCols]
+	    $winId.t set $rowHead,$colHead \
+		[VarPrecRender $winId $values($value)]
 	}
     }
 
-    proc GrabIndices {depth rowsList colsList index struct} {
-	variable orientList
+    proc ReComp {l1 l2} {
+	if {[string match $l1 $l2]} {
+	    return 0
+	}
+	if {![llength $l1]} {
+	    return -1
+	}
+	if {![llength $l2]} {
+	    return 1
+	}
+	if {[catch {expr ($l2<$l1)-($l2>$l1)} math]} {
+	    set recurse [ReComp [lindex $l1 0] [lindex $l2 0]]
+	    if {$recurse} {
+		return $recurse
+	    } else {
+		return [ReComp [lrange $l1 1 end] [lrange $l2 1 end]]
+	    }
+	} else {
+	    return $math
+	}
+    }
 
+    proc GrabIndices {winId depth rowsList colsList index struct} {
+	variable orientList
+#puts "GrabIndices $winId $depth $rowsList $colsList $index $struct"
 	variable values
 	variable rowNames
 	variable colNames
 
-	set nextAxis [lindex orientList $depth]
+	set nextAxis [lindex $orientList($winId) $depth]
 	lappend ${nextAxis}List $index
+#puts "Appended $index to ${nextAxis}List giving [set ${nextAxis}List]"
 	
 	if {[llength $struct] == 1} {
 	    set values($rowsList,$colsList) $struct
-	    if {[lsearch $rowNames $rowsList]<0} {
-		lappend rowNames $rowsList
-	    }
-	    if {[lsearch $colNames $colssList]<0} {
-		lappend colNames $colsList
-	    }
+	    set rowNames($rowsList) {}
+	    set colNames($colsList) {}
 	} else {
-	    incr depth
+	    if {$depth < 3} {incr depth}
 	    foreach {newIndex newStruct} $struct {
-		GrabIndices $depth $rowsList $colsList $newIndex $newStruct
+		GrabIndices $winId $depth $rowsList $colsList $newIndex \
+		    $newStruct
 	    }
 	}
     }
@@ -173,4 +327,54 @@ namespace eval tabular11510 {
 	}
     }
 
+    proc Layout {winId} {
+	variable orientList
+
+	set t [toplevel $winId.layout]
+	set ::${t}l1 [lindex $orientList($winId) 0]
+	set ::${t}l2 [lindex $orientList($winId) 1]
+	set ::${t}l3 [lindex $orientList($winId) 2]
+	set ::${t}l4 [lindex $orientList($winId) 3]
+
+	pack [frame $t.l1]
+	pack [label $t.l1.lbl -text "Times: On rows"] -side left
+	pack [radiobutton $t.l1.rowb -variable ${t}l1 -value rows] -side left
+	pack [label $t.l1.coll -text "On columns"] -side left
+	pack [radiobutton $t.l1.colb -variable ${t}l1 -value cols] -side left
+	pack [label $t.l1.nonel1 -text "Current values only"] -side left
+	pack [radiobutton $t.l1.noneb -variable ${t}l1 -value none] -side left
+
+	pack [frame $t.l2]
+	pack [label $t.l2.lbl -text "Component names: On rows"] -side left
+	pack [radiobutton $t.l2.rowb -variable ${t}l2 -value rows] -side left
+	pack [label $t.l2.coll -text "On columns"] -side left
+	pack [radiobutton $t.l2.colb -variable ${t}l2 -value cols] -side left
+
+	pack [frame $t.l3]
+	pack [label $t.l3.lbl -text "First index: On rows"] -side left
+	pack [radiobutton $t.l3.rowb -variable ${t}l3 -value rows] -side left
+	pack [label $t.l3.coll -text "On columns"] -side left
+	pack [radiobutton $t.l3.colb -variable ${t}l3 -value cols] -side left
+
+	pack [frame $t.l4]
+	pack [label $t.l4.lbl -text "Other indices: On Rows"] -side left
+	pack [radiobutton $t.l4.rowb -variable ${t}l4 -value rows] -side left
+	pack [label $t.l4.coll -text "On columns"] -side left
+	pack [radiobutton $t.l4.colb -variable ${t}l4 -value cols] -side left
+
+	pack [frame $t.b]
+	pack [button $t.b.ok -text OK -command "set ${t}done 1"] -side left
+	pack [button $t.b.cancel -text Cancel -command "set ${t}done 0"] \
+	    -side left
+
+	grab $t
+	tkwait variable ${t}done
+
+	if {[set ::${t}done]} {
+	    set orientList($winId) [list [set ::${t}l1] [set ::${t}l2] \
+				[set ::${t}l3] [set ::${t}l4]]
+	    Reconbobulate $winId
+	}
+	destroy $t
+    }
 } ;# end of namespace
