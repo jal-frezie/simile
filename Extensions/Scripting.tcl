@@ -265,12 +265,12 @@ itcl::class similescript::RunControl {
         #set winId $runState($modelNode,helperId)
         do_for_node $modelNode set ::sliderVals([do_for_node $modelNode GetIdFromCaptionPath $path]) $value
         Reset
-        tk_messageBox -message "SetValue $path $value\n\
-                modelNode $modelNode \n\
-                [GetValue $path]\n\
-                [namespace current]\n\
-                [namespace eval :: [list namespace children]]"
-        #return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
+        #tk_messageBox -message "SetValue $path $value\n\
+        #        modelNode $modelNode \n\
+        #        [GetValue $path]\n\
+        #        [namespace current]\n\
+        #        [namespace eval :: [list namespace children]]"
+        return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
     public method GetMinValue {path} {
