@@ -1636,6 +1636,20 @@ proc do_setstepmodel {value level} {
     }
 }
 
+proc at_time_step {} {
+    return [expr [glob_element dts 0]<=1]
+}
+
+proc loses {prob phase} {
+    if {![at_time_step] || $prob <= 0} {
+	return 0
+    } elseif {$prob >= 1} {
+	return 1
+    } else {
+	return [expr [ame_rand 0 1]>pow(1-$prob, [glob_element dts 1])]
+    }
+}
+
 # delete_list is a dummy procedure. What it should do is clear the
 # submodel instances from the list supplied, but since (a) it would also
 # need the parent namespace and (b) they tend to get reused anyway in

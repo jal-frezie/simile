@@ -294,16 +294,21 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
 	      [Current | Postambles], Used, Graphs, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is 4*Nesting,
+	make_procedure_call_chars(L, [at_time_step], TimeStepCondStr),
+	name(TimeStepCond, TimeStepCondStr),
+	render(L, if_start, TimeStepCond, Indent, StartStepCheck),
+	render(L, end(cond), TimeStepCond, Indent, EndStepCheck),
 	make_struct_reference(L, Top, Name, SubPointer),
 	append_atoms(Name, meta, Meta),
-	render(L, make_reference, Meta=SubPointer, Indent, Starters),
+	render(L, make_reference, Meta=SubPointer, Indent, RefStart),
+	append(StartStepCheck, RefStart, Starters),
 
 	/* And here's the stuff that goes at the end of the loop... */
 	resolve_pointer(L, Meta, MPTarget),
 	refer_value(L, MPTarget, MPTargetRef),
 	render(L, procedure_call, delete_list(MPTargetRef), Indent, ChopTail),
 	render(L, assignment, MPTarget=0, Indent, EndLoop),
-	append(ChopTail, EndLoop, Finishers),
+	append([ChopTail, EndLoop, EndStepCheck], Finishers),
 
 	do_assign_list(L, Clauses,
 			Graph_count, [Current | Preambles],
@@ -769,7 +774,7 @@ build_disjunction(L, [Item1, Item2 | Rest], Dis) :-
 /* This makes the expression for an individual's probability of dying
 from a particular ill over a particular period of time, where Val is
 the probability of dying over one time unit. If Val is >= 1, the
-result is always 1. */
+result is always 1.
 
 test_probs(L, Val, Step, Result) :-
 	make_procedure_call_chars(L, [glob_element, dts, Step], MultValStr),
@@ -778,6 +783,15 @@ test_probs(L, Val, Step, Result) :-
 	combine(L, max, [1-Val, 0], Chance),
 	combine(L, ^, [Chance, MultVal], Survives),
 	combine(L, >, [Fate, Survives], Result).
+
+Waste of time building this expr for every loss node every run: it is now
+in the support code where it can also check the integration method (above
+comment left in in case we ever want to build the support code for a new
+target language) */
+
+test_probs(L, Val, Step, Result) :-
+	make_procedure_call_chars(L, [loses, Val, Step], ResultStr),
+	name(Result, ResultStr).
 
 /* Another group of rules with lots of arguments... */
 make_evaluation_routine(

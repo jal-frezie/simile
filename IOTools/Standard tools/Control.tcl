@@ -207,6 +207,7 @@ namespace eval runcontrol33857 {
         set unitLength [expr [SecondsInA $sendvars(timeUnit)]/[SecondsInA day]]
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
             set tick [expr $runState(update$setPhase)*$unitLength]
+#puts "Checking $tick is $runState(prev_update$setPhase) and $runState(currentTime) is $runState(timeAtEval)"
             if {$runState(prev_update$setPhase) != $tick} {
                 set runState(prev_update$setPhase) $tick
                 SetStep $tick $setPhase
@@ -231,7 +232,7 @@ namespace eval runcontrol33857 {
 	if {[info exists runState(oldTimeCopy)]} {
 	    after cancel $runState(oldTimeCopy)
 	}
-	set runState(timeAtEval) $runState(currentTime)
+	set runState(timeAtEval) $current
         set runState(oldTimeCopy) [after idle set runState(currentTime) $current]
         set runState(execTime) $left
     }
@@ -299,6 +300,9 @@ namespace eval runcontrol33857 {
 		    }
 		    set sendvars(prevDisplay) 0.0
 		    set sendvars(currentMode) stop
+#		    if ![do_model advance $scaled_current $redoPhase] {
+#			set sendvars(currentMode) exit
+#		    }
 		}
 	    }
             
@@ -401,17 +405,17 @@ namespace eval runcontrol33857 {
 		set interTime [expr ($runState(time$tweakPhase)+$current)/2]
 		SetStep $interTime -$tweakPhase
 	    }
+	SetStep 2 0
 	if ![do_model eval $current $phase] {
 	    return 0
 	}
-	SetStep 2 0
 	if ![do_model update $current $phase] {
 	    return 0
 	}
+	SetStep 3 0
 	if ![do_model eval $current $phase] {
 	    return 0
 	}
-	SetStep 3 0
 	if ![do_model update $current $phase] {
 	    return 0
 	}
@@ -419,13 +423,14 @@ namespace eval runcontrol33857 {
 	    {incr tweakPhase} {
 		SetStep $current -$tweakPhase
 	    }
+	SetStep 4 0
 	if ![do_model eval $current $phase] {
 	    return 0
 	}
-	SetStep 4 0
 	if ![do_model update $current $phase] {
 	    return 0
 	}
+	SetStep 1 0
 	return 1
     }
 	

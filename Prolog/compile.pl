@@ -394,8 +394,7 @@ pick_state_vars([One | All], Rate, State, Update) :-
 	(One = make(_,_,_,_, [assign(SV, SV+stage_incr(_,_,_))]), !,
 	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
 	(One = make(Tgt, _,_,_,_),
-	    member(Tgt, [created(_), settled(_), bred(_), culled(_),
-			 lastvalue(_)]);
+	    member(Tgt, [lastvalue(_)]);
 	 One = make(_,_,_,_, [assign(SV, SV+step_incr(_,_))])), !,
 	    Rate = MoreRate, State = [One | MoreState], Update = MoreUpdate;
 	Rate = [One | MoreRate], State = MoreState, Update = MoreUpdate).
@@ -810,7 +809,7 @@ instruction because they will not require individual initialization routines. */
 	    (setof(LossBox, member(instance(loss, _,_, elt(_, LossBox, _), _),
 				   Functions), Losses), !;
 	    Losses = []),
-	    LossRules = [make(culled(Name), [startable(Name),
+	    LossRules = [make(culled(Name), [pop_startable(Name),
 					     time | BasesEnumerated],
 			Path, Step, [lose(Step, Ptr, Name, Losses)])],
 
@@ -840,9 +839,9 @@ instruction because they will not require individual initialization routines. */
 			 LocalPath, Step, []),
 		    make(init_list(Name), [], Path, Step,
 			 [assign(arr(Ptr, Name, []), 0)]),
-		    make(startable(Name), [init_list(Name), on_reset], Path,
-			 Step, [reset_list(Ptr, Name),
-			  assign(arr(Ptr, Count, []), 0)]) | CreateRules],
+		    make(pop_startable(Name), [init_list(Name), on_reset],
+			 Path, Step, [reset_list(Ptr, Name),
+			     assign(arr(Ptr, Count, []), 0)]) | CreateRules],
 		   ImmigRules, ReproRules, LossRules], Specials);  
 
 	/* For variable-membership submodels we must not run the generate step

@@ -68,6 +68,16 @@ void do_setstep(double time, int phase) {
   }
 }
 
+int loses (double prob, int phase) {
+  if (glob_element(dts,0)>1 || prob<=0) {
+    return 0;
+  } else if (prob>1) {
+    return 1;
+  } else {
+    return ame_rand(0,1)>pow(1-prob,glob_element(dts,1));
+  }
+}
+
 double step_incr (int step, double v) {
   return v*glob_element(dts, step);
 }

@@ -523,10 +523,10 @@ proc collect {tgt node count args} {
 	switch [GetModelType $node] {
 	    FLAG {
 	    upvar \#0 checkStates inputSrc
-	    } INTEGER {
-	    upvar \#0 sliderVals inputSrc
 	    } ENUMERATED {
 	    upvar \#0 comboChoices inputSrc
+	    } default {
+	    upvar \#0 sliderVals inputSrc
 	    }
 	}
     }
