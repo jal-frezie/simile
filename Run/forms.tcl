@@ -390,7 +390,7 @@ proc create_equation {parent boxtitle indices} {
     set equation(newGraphs) ""
     set equation(done) 0
     equationBindings $t $en $eu $lbp $lbi $lbd $lbf $lbx $graph $table $ok $can
-    #    tkwait visibility $influencesf.lists.plist
+    #    LetItShow $influencesf.lists.plist
 }
 
 proc interact_equation {} {
@@ -426,9 +426,7 @@ proc interact_equation {} {
     #	wm deiconify .equation
     #    }
     
-    if {![winfo viewable $t]} {
-        tkwait visibility $t
-    }
+    LetItShow $t
     grab $t
     tkwait variable equation(done)
     grab release $t
@@ -1080,7 +1078,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     SetHighlights $countf
     
-    tkwait visibility $t
+    LetItShow $t
     grab $t
     tkwait variable disaggregate(done)
     grab release $t
@@ -1366,7 +1364,7 @@ proc OpenProgressBox {winId} {
     wm title .progress "Progress with current operation"
     message .progress.message -aspect 400 -text "Please wait"
     pack .progress.message -fill both -expand true
-    tkwait visibility .progress
+    LetItShow .progress
     grab .progress
     update
 }
@@ -1421,7 +1419,7 @@ proc RelationCheck {parent title type state init_comment} {
     $f.comment insert 1.0 $init_comment
     pack .relcheck.bottom
     
-    tkwait visibility .relcheck
+    LetItShow .relcheck
     grab .relcheck
     tkwait variable relation(done)
     grab release .relcheck
@@ -1464,7 +1462,7 @@ proc GetFindText {parent} {
     pack [button $bs.cancel -text Cancel -width 10 -command "set find(done) 0"] -padx 2 -pady 4 -side left
     pack [button $bs.help -text Help -width 10 -command "ContextSensitiveHelp .findentry diagrams/search.htm"] -padx 2 -pady 4 -side left
     
-    tkwait visibility .findentry
+    LetItShow .findentry
     grab .findentry
     focus $ft.e
     tkwait variable find(done)
@@ -1610,7 +1608,7 @@ proc DoRegDialog {dtId} {
     pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
             -side left
     #    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
-    tkwait visibility .register
+    LetItShow .register
     
     grab .register
     bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
@@ -1734,12 +1732,18 @@ proc ErrorHelp {diagnostic} {
             pack .diag.topicsf -fill both -expand on  -padx 4 -pady 4
         }
     }
-    tkwait visibility .diag
+    LetItShow .diag
     grab .diag
     tkwait variable diagno(done)
     unset diagno(done)
     grab release .diag
     destroy .diag
+}
+
+proc LetItShow {t} {
+    if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
+	tkwait visibility $t
+    }
 }
 
 proc GetHelp {} {
