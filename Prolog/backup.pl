@@ -7,7 +7,7 @@
 sicstus_module(backup, [initialize_ring/0, finish_move/1, restart_move/0,
 			get_save_status/2, set_save_status/2, 
 			go_back/1, go_forward/1, make_auto_name/3,
-			clear_autosave/2, check_autosave/2, scrub_autosave/1,
+			clear_autosave/2, check_autosave/3, scrub_autosave/1,
 			is_toplevel/1, use_temp_dir/1]).
 
 sicstus_use_module([ame_gen, database, utility,
@@ -224,7 +224,7 @@ clear_autosave(Model, Name) :-
 	    assert(autosave_file_is(AutoName));
 	true).
 	
-check_autosave(Model, Name) :-
+check_autosave(Model, Name, Tweaked) :-
 	state:shows_model(Win, Model),
 	set_save_status(Win, safe),
 	maintain:update_ability(undo, edit, 'Undo', 0),
@@ -239,12 +239,7 @@ check_autosave(Model, Name) :-
 			  "Simile left a log file of unsaved changes when this model was last edited. Do you want to apply these changes now?",
 			  yesno, yes), !,
 		    restore_save_file(AutoName, UState, RState),
-		    /* If a restore is done, canvas file will be out of date,
-		    so kill it */
-		    make_auto_name(Name, ".cnv", DeadCanvas),
-		    (output:my_file_exists(DeadCanvas), !,
-			output:my_delete_file(DeadCanvas);
-		    true),
+		    Tweaked = 1,
 		    maintain:update_ability(undo, edit, 'Undo', UState),
 		    maintain:update_ability(redo, edit, 'Redo', RState),
 		    maintain:update_ability(save, file, 'Save', 1),

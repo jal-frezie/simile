@@ -116,9 +116,7 @@ compartment(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :
 			Colour_scheme, br(Features)], _).
 
 channel(Wid, [L, T, R, B], _, Fatness, Decor, Colour_scheme, Features) :-
-	X is (L+R)/2,
-	Y is (T+B)/2,
-	safe_tcl_eval(['PutShape', Wid, X, Y, Decor, Fatness, 
+	safe_tcl_eval(['PutShape', Wid, L, T, R, B, Decor, Fatness, 
 			Colour_scheme, br(Features)], _).
 
 function(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-

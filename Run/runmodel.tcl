@@ -131,7 +131,7 @@ proc ChangeParentTitle { wc title colour } {
     }
     $wc delete /base/
     if {[catch {image type $colour}]} {
-	$wc create rectangle $bl $bt $br $bb -fill $colour \
+	$wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
 	    -tag "/base/ /background/"
     } else {
 	image create photo base$wc
@@ -424,7 +424,7 @@ proc NextCaption {canvas} {
 	unset find
     } else {
 	set this [lindex $find(List,$canvas) 0]
-	set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
+	set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
 #	$canvas itemconfigure $this -fill blue
 # left in in case the thing fails to highlight, or is exec_only
 
@@ -1161,7 +1161,7 @@ proc DoneParams {oldMissing} {
 	    }
 	}
     }
-    if {[info exists empties]} {
+    if {[info exists empties]} {
 	.fpdialogue.buttons.banner configure -text "Some values still missing!"
     } else {
 	set paramData(/done/) 1
@@ -1965,3 +1965,4 @@ proc FilterErrors {args} {
 }
 
 build_c_stub "[pwd]/../Run" 0
+

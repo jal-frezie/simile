@@ -136,7 +136,7 @@ proc ControlDraw {prologVersion} {
     }
     
     foreach nodeType {normal generic compartment channel \
-                variable function cloud submodel flow influence \
+                variable function submodel flow influence \
                 ghost_link relation} {
         ResetLooks $nodeType
     }

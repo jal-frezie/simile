@@ -128,13 +128,14 @@ stick_model_in(Parent, Name) :-
 	    dir (fttb) so get them loaded */
 	    transfer_images(Parent, TargetDir, in),
 		  
-	    check_autosave(Parent, PrologData),
+	    check_autosave(Parent, Name, Tweaked),
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	    (is_toplevel(Parent),
 	/* only try graphics file for toplevel windows because if loading into
 	    submodel the Prolog node ids will no longer match it */
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
-		output:my_file_exists(GraphFileName), !,
+		output:my_file_exists(GraphFileName),
+		var(Tweaked), !,
 		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName);
 	    /* this should call Prolog back with the display detail vals */

@@ -58,7 +58,7 @@ proc PutRectangle { w l t r b stack fatness density colourScheme tagSet} {
     ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutShape {c x y file fatness colourScheme title} {
+proc PutShape {c l t r b file fatness colourScheme title} {
     global window_info
     set nameList {compartment comp condition cond creation creation \
 	    immigration immig reproduction repro loss loss alarm alarm}
@@ -66,9 +66,9 @@ proc PutShape {c x y file fatness colourScheme title} {
     set fileName [lindex $nameList $point]
 
     source "../Images/$fileName.cnv"
-    set growth [expr $fatness/100]
+    set growth [expr $fatness*($r-$l)/3000.0]
     ZoomImage $c unscaled $growth $growth 
-    $c move unscaled $x $y
+    $c move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
     ZoomImage $c unscaled $window_info($c,scale) $window_info($c,scale)
     $c addtag $title withtag unscaled
     $c dtag unscaled
@@ -173,7 +173,7 @@ proc PutCrossedCirc { w l t r b stack fatness density colourScheme tagSet} {
 }
 
 proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
-    set width [GetLineSize $w cloud $fatness]
+    set width [GetLineSize $w flow $fatness]
 
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
 
@@ -185,7 +185,7 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
 	[expr (2*$mb + $mt)/3] -width $width \
 	-tag "$tagSet size_on_this realwidth($width)"
-    ResetColours $w cloud $density $colourScheme [lindex $tagSet 0]
+    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
@@ -508,7 +508,10 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
 
 proc ColorSymbol { w name type density colorSpec } {
     global looks
-
+    
+    if {[string match cloud $type]} {
+	set type flow
+    }
     if {[string compare $colorSpec normal]} {
 	set outlineColor $looks($type,$colorSpec)
 	set textColor $outlineColor
@@ -526,6 +529,8 @@ proc FlashSymbol {w name outlineColor textColor} {
 	    text {$w itemconfigure $object -fill $textColor}
 	    line {
 		$w itemconfigure $object -fill $outlineColor
+	    } oval {
+		$w itemconfigure $object -outline $outlineColor
 	    }
 	}
     }
@@ -537,7 +542,7 @@ proc StippleSymbol {w name density} {
 	    line {
 		$w itemconfigure $object -stipple $density
 	    }
-	    rectangle|oval|arc|polygon {
+	    rectangle|arc|polygon {
 		$w itemconfigure $object -stipple $density
 	    }
 	}
@@ -752,7 +757,7 @@ proc Customize {winId mode} {
 	}
     }
 
-    if {[string compare $object cloud] && [string compare $object influence]} {
+    if {[string compare $object influence]} {
 	frame $t.textsize
 	label $t.textsize.what -text "Text size: "
 	pack $t.textsize.what -side left
@@ -853,7 +858,7 @@ proc Customize {winId mode} {
 proc LoadLooks {t target object} {
 	global looks
 
-	if {[string compare $target cloud]  && [string compare $target influence]} {
+	if {[string compare $target influence]} {
 		scan [ExtractFontData $looks($object,font)] "%s %s %s %d" \
 			looks($target,family) looks($target,weight) \
 			looks($target,style) textsize
@@ -878,7 +883,7 @@ proc LoadLooks {t target object} {
 
 proc CopyLooks {t object} {
 	global looks
-	if {[string compare $object cloud]  && [string compare $object influence]} {
+	if {[string compare $object influence]} {
 	    set looks($object,font) [ResetFont $t]
 	    UpdateOffsets $t $object
 	    set looks($object,textanchor) [GetTextAnchor $t]
@@ -901,10 +906,10 @@ proc DoGraphics {box type middle size} {
     
     switch -regexp $type {
 	compartment {
-	    set l [expr $middle - 2*$size/3]
-	    set r [expr $middle + 2*$size/3]
-	    set t [expr $middle - $size/2]
-	    set b [expr $middle + $size/2]
+	    set l [expr $middle - 2*$size/5]
+	    set r [expr $middle + 2*$size/5]
+	    set t [expr $middle - 3*$size/10]
+	    set b [expr $middle + 3*$size/10]
 	}
 	submodel {
 	    set l [expr $middle - 80]
@@ -917,6 +922,18 @@ proc DoGraphics {box type middle size} {
 	    set r [expr $middle + $size/4]
 	    set t [expr $middle - $size/8]
 	    set b [expr $middle + $size/8]
+	}
+	function | variable {
+	    set l [expr $middle - 3*$size/20]
+	    set r [expr $middle + 3*$size/20]
+	    set t [expr $middle - 3*$size/20]
+	    set b [expr $middle + 3*$size/20]
+	}
+	channel {
+	    set l [expr $middle - 3*$size/10]
+	    set r [expr $middle + 3*$size/10]
+	    set t [expr $middle - 3*$size/10]
+	    set b [expr $middle + 3*$size/10]
 	}
 	default {
 	    set l [expr $middle - $size/2]
@@ -934,7 +951,7 @@ proc DoGraphics {box type middle size} {
 	set ybase $t
     }
     
-    if {[string compare $type cloud] && [string compare $type influence]} {
+    if {[string compare $type influence]} {
 	PutText $box.canvas [list $xbase $ybase] \
 		$type "sample movable" 100 normal "Sample $type"
 	set looks(cheat) [$box.canvas coords movable]
@@ -945,13 +962,11 @@ proc DoGraphics {box type middle size} {
 	switch -regexp $type {
 		compartment {PutRectangle $box.canvas $l $t $r $b 1 100 {} \
 			normal "sample"}
-		channel {PutShape $box.canvas $middle $middle \
+		channel {PutShape $box.canvas $l $t $r $b \
 			condition 100 normal "sample"}
 		function {PutHexagon $box.canvas $l $t $r $b 100 1 {} \
 			normal "sample"}
 		variable {PutCrossedCirc $box.canvas $l $t $r $b 100 1 {} \
-			normal "sample"}
-		cloud {PutCloud $box.canvas $l $t $r $b 100 1 {} \
 			normal "sample"}
 		submodel {PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
 			normal "sample"}
@@ -1104,7 +1119,8 @@ proc ApplyLooks {t type} {
     if {[string compare $type generic]} {
 	ExportLooks $t $type
     } else {
-	foreach object {generic compartment channel function variable cloud submodel flow influence relation} {
+	foreach object {generic compartment channel function variable \
+			    submodel flow influence relation} {
 	    CopyLooks $t $object
 	    ExportLooks $t $object
 	}
@@ -1117,10 +1133,14 @@ proc RememberLooks {object} {
 }
 
 proc ExportLooks {t type} {
-	global looks window_info
+    global looks window_info
 
-	prolog [format "tk_change_size(%s,%d,%f,%f)" $type $looks($type,objectsize) \
+    prolog [format "tk_change_size(%s,%d,%f,%f)" $type $looks($type,objectsize) \
 		$looks($type,xoffset) $looks($type,yoffset)]
+    if {[string match flow $type]} {
+	prolog [format "tk_change_size(%s,%d,%f,%f)" cloud $looks($type,objectsize) \
+		    $looks($type,xoffset) $looks($type,yoffset)]
+    }    
 #	foreach windae [array name window_info *,parent] {
 #		set canvas [string trimright $windae ,parent]
 #	}
@@ -1142,8 +1162,8 @@ proc ReadLooks {t type} {
 
 	close $stream
 	LoadLooks $t $type $type
-	if {[string compare $type generic] == 0} {
-		foreach object {generic compartment channel function variable cloud \
+	if {[string match generic $type]} {
+		foreach object {generic compartment channel function variable \
 				submodel flow influence} {
 			ExportLooks $t $object
 		}
