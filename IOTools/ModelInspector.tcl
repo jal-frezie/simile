@@ -10,6 +10,9 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.3  2002/07/24 17:33:35  jmm
+#Prevented ghosted variables showing up more than once.
+#
 #Revision 1.2  2002/06/20 17:12:47  jaspert
 #Prolog changes relating to GNU prolog port
 #Tcl changes for usability in tcltk 8.3
@@ -125,10 +128,11 @@ namespace eval ModelInspector63654 {
                 REPRODUCTION {set image $im(reproduction)}
                 IMMIGRATION  {set image $im(immigration)}
                 LOSS         {set image $im(loss)}
-                default      {set image  $im(variable)}
+                default      {set image $im(variable)}
             }
             
             set pathLength [llength $path]
+            #ShowMessage debug info "$component; $type; path $path;" ok
             if {$pathLength == 1} {
                 set parent root
             } else  {
@@ -137,21 +141,23 @@ namespace eval ModelInspector63654 {
             }
             #        ShowMessage debug info "$component; $parent; path $path" ok
             #        ShowMessage debug info "$path Type $type Value $value Node $component" ok
-            ##            if [catch {$tableframe.table insert end $path \
-            ##                        -data "Type $type Value $value " \
-            ##                        -icons "$image $image" -activeicons "$image $image"}] {
-            #                $tableframe.table entry configure $path -data "Type $type Value $value " \
-            #                        -icons "$image $image" -activeicons "$image $image"
-            #            }
             
             if {![$tableframe.table exists $component]} {
-                $tableframe.table insert end $parent $component \
-                        -text [lindex $path end]  -open 1 -image $image
+                # search parent for node with same text
+                set text [lindex $path end]
+                set sameText 0
+                foreach node [$tableframe.table nodes $parent] {
+                    if {[string match [$tableframe.table itemcget $node -text] $text]} {
+                        set sameText 1
+                    }
+                }
+                if {!$sameText} {
+                    $tableframe.table insert end $parent $component \
+                            -text $text  -open 1 -image $image
+                }
             }
         }
         
-        ##        $tableframe.table open -recurse root; # expand all the branches
-        ##        $tableframe.table bind all <Button-1> [namespace code OnElementClick]; # bad subst "P PlaceOnTop"
         $tableframe.table bindImage <Button-1> [namespace code OnElementClick]
         $tableframe.table bindText <Button-1> [namespace code OnElementClick]
     }
@@ -160,9 +166,6 @@ namespace eval ModelInspector63654 {
         global helperTable
         variable tableframe
         if {![string match none $helperTable(current)]} {
-##            set pathlist [$tableframe.table get -full current]; # full path as a list
-##            set path [join $pathlist / ]
-##            set node [GetIdFromCaptionPath "/$path"]
             set PathList [split [GetCaptionPathFromId $node] /]
             set caption [lindex $PathList end]; # just the var name
             ProdObj $node $caption
