@@ -937,6 +937,7 @@ extern "C" int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
 
 extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
+  char spare[256];
    double starttime;
    int phase;
    int error;
@@ -969,7 +970,14 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
    }
 
    serviceError = TCL_OK;
-   modelType->eval(modelHandle, starttime, phase, FALSE);
+   try {
+     modelType->eval(modelHandle, starttime, phase, FALSE);
+   }
+   catch (int userCode) {
+     serviceError = TCL_ERROR;
+     sprintf(spare, "User-defined interruption code %d", userCode);
+     Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
+   }  
    return serviceError;
 }
 

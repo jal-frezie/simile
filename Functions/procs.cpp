@@ -18,3 +18,6 @@ double gaussian(double random, double mean, double sd) {
   return(mean+sd*norm);
 }
     
+int stop(int code) {
+  throw code;
+}

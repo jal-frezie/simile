@@ -18,3 +18,7 @@ proc gaussian {random mean sd} {
     set have_spare [expr !$have_spare]
     return [expr $mean+$sd*$norm]
 }
+
+proc stop {code} {
+    error "User-defined interruption code $code"
+}
