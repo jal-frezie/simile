@@ -90,6 +90,7 @@ namespace eval ::polygon375 {
         AddToolBar $winId
 	regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set useNodes $restoreString
+	CaptionsToNodeIds $winId
         
         if {[string compare $useNodes($winId,sourcefile) model]==0} then {
 	    DrawPolys $winId $useNodes($winId,xcoord) \
@@ -150,6 +151,7 @@ $useNodes($winId,scaley)"
                                 $useNodes($winId,ycoord) \
                                 $node
                         set useNodes($winId,state) displaying
+			UpdateState $winId
                     }
                 }
             } else {
@@ -163,12 +165,12 @@ $useNodes($winId,scaley)"
                         SetColours2 $winId $node
                         DrawPolys $winId {} {} $node
                         set useNodes($winId,state) displaying
+			UpdateState $winId
                     }
                 }
             }
             ########## end polyfile changes
             
-            UpdateState $winId
         } else {
             $ms configure -text \
                     "This component does not have a value; please choose a compartment, variable or flow."
@@ -206,11 +208,37 @@ $useNodes($winId,scaley)"
     
     proc UpdateState {winId} {
         variable useNodes
-        
+        NodeIdsToCaptions $winId
         regsub -all $winId [array get useNodes $winId,*] /WIN/ saveString
+	CaptionsToNodeIds $winId
         SetState $winId $saveString
     }
     
+    proc NodeIdsToCaptions {winId} {
+	variable useNodes
+	foreach nodeRole [UsedNodes $winId] {
+	    set useNodes($winId,$nodeRole) \
+		[GetCaptionPathFromId $winId $useNodes($winId,$nodeRole)]
+	}
+    }
+
+    proc CaptionsToNodeIds {winId} {
+	variable useNodes
+	foreach nodeRole [UsedNodes $winId] {
+	    set useNodes($winId,$nodeRole) \
+		[GetIdFromCaptionPath $winId $useNodes($winId,$nodeRole)]
+	}
+    }
+
+    proc UsedNodes {winId} {
+	variable useNodes
+	if {[string equal model $useNodes($winId,sourcefile)]} {
+	    return {xcoord ycoord color}
+	} else {
+	    return {color}
+	}
+    }
+
     proc reset {winId} {
     }
 
