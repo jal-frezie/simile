@@ -507,8 +507,8 @@ proc RunEnv::DeletePane {parentPath containerId} {
 proc RunEnv::SplitPage {containerId orientation} {
     set parentPath [FindParentpanedwindowOrNotebook $containerId]
     #ShowMessage debug info "SplitPage container $containerId $orientation\n\
-    #    parentPath $parentPath" ok
-    if {1} {
+    #    parentPath $parentPath panes [$parentPath panes]" ok
+    if {[string match notebook [winfo name $parentPath]]} {
 
 # Note from Jasper -- above case previously checked for 
 # [string match notebook [winfo name $parentPath]]
@@ -529,7 +529,7 @@ proc RunEnv::SplitPage {containerId orientation} {
         set pwidth  [winfo width $containerId]
         set pheight [winfo height $containerId]
         set sash [lsearch [$parentPath panes] $containerId]
-        set sashCoord [$parentPath sash coord $sash]
+#        set sashCoord [$parentPath sash coord $sash]
         set contx [winfo x $containerId]
         set conty [winfo y $containerId]
         #ShowMessage debug info "SplitPage pane to be split \
@@ -543,16 +543,18 @@ proc RunEnv::SplitPage {containerId orientation} {
             vertical {
                 set width [expr {int(0.9*$pwidth)}]
                 set height [expr {int(0.9*$pheight/2)}]
-                set sashx [lindex $sashCoord 0]
-                set sashy [expr $conty+$height]
+#                set sashx [lindex $sashCoord 0]
+#                set sashy [expr $conty+$height]
             }
             horizontal {
                 set width [expr {int(0.9*$pwidth/2)}]
                 set height [expr {int(0.9*$pheight)}]
-                set sashx [expr {$contx+$width}]
-                set sashy [lindex $sashCoord 1]
+#                set sashx [expr {$contx+$width}]
+#                set sashy [lindex $sashCoord 1]
             }
         }
+	set sashx [expr $contx+$width]
+	set sashy [expr $conty+$height]
         
         
         #ShowMessage debug info "SplitPage new sash setting for existing pane (split)\

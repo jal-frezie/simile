@@ -1345,6 +1345,8 @@ proc AddMainMenu { winid initWidth initDepths} {
             -variable MIpushedbutton -value loss
     $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
             -variable MIpushedbutton -value condition
+    $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
+            -variable MIpushedbutton -value alarm
     $fm add command -label "Properties..." \
             -command "MenuSelect $winid.canvas edit properties"
     $fm add cascade -label Flip -menu $fm.sub2
@@ -1447,7 +1449,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     set tb [frame $winid.toolSlot.toolbar -border 2]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
     foreach mode {compartment variable flow influence separator1 submodel \
-                relation separator2 creation immigration reproduction loss condition} {
+                relation separator2 creation immigration reproduction loss condition alarm} {
         if {[string match separator* $mode]} {
 
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
