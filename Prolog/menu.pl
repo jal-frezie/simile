@@ -561,7 +561,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	    Msg = "Copy in progress"),
         start_progress_dialogue(Win),
 	reassure_user(Msg),
-	get_edit_model(Win, TopModel, _),
+	get_edit_model(Win, Model, _),
 
 	/* Old version: took too long
 	New version: first, find the innermost submodel with the whole
@@ -589,7 +589,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output:date_is(Date),
-	save_isolated(CopyFile, TopModel, Date, yes),
+	save_isolated(CopyFile, Model, Date, yes),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
 	added so any external links and ghosts come out right
