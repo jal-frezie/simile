@@ -811,6 +811,7 @@ proc UpdateColour {f} {
 }
 
 set imageSources(uid) 0
+package require Img
 
 proc ChooseImage {} {
     global disaggregate
@@ -822,14 +823,22 @@ proc ChooseImage {} {
 	set newImage backgnd$imageSources(uid)
     }
     image create photo $newImage
-
     set choosing 1
     while {$choosing} {
 	set new [ChooseFile image.gif {Image for model background} 0]
 	if {[llength $new]} {
 	    if {[catch {$newImage read $new -shrink} readFlop]} {
 		ShowMessage {Problem loading file} error $readFlop ok
+		# prevent crasho if reading fails
+#		$newImage config -width 100 -height 100
 	    } else {
+		set xtn [string trimleft [file extension $new] .]
+		if {[string match jpg $xtn]} {
+		    set fmt jpeg
+		} else {
+		    set fmt $xtn
+		}
+		$newImage config -format $fmt
 		set disaggregate(colour) $newImage
 		PutSize $newImage
 		set choosing 0

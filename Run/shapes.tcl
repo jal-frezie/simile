@@ -641,21 +641,33 @@ proc MakeImage {base inst w h} {
     FillSmImage $base $inst $w $h $intRad
 }
 
-# this is called from Prolog to load/save images with a model. Prolog does not
+# this is called from Prolog to load/save images with a model. Prolog does not
 # know difference between an image and a colour so this has to sort them out
 
 proc ShiftImages {topDir way args} {
     foreach image $args {
+#ShowMessage debug info "Moving $image $way" ok
 	if {[catch {winfo rgb . $image}] && [string compare image clear]} {
-	    set imgFile $topDir/${image}.gif
+	    set imgFile $topDir/${image}
 	    switch $way {
 		in {
 		    image create photo $image
-		    $image read $imgFile -shrink
+		    foreach fmt {gif jpeg} {
+			if {![catch {$image read $imgFile.$fmt -shrink}]} {
+			    $image config -format $fmt
+			    PutSize $image
+			    file delete $imgFile
+			    return
+			}
+		    }
+		# prevent crasho if reading fails
+		    $image read ../Images/drip.gif -shrink
+		    $image config -format gif
 		    PutSize $image
-		    file delete $imgFile
 		} out {
-		    $image write $imgFile -format gif
+		    set fmt [$image cget -format]
+#ShowMessage debug info "Writing $imgFile.$fmt" ok
+		    $image write $imgFile.$fmt -format $fmt
 		}
 	    }
 	}
@@ -1189,3 +1201,4 @@ set looks(buttonColor) [Desystematize [.b cget -bg]]
 set looks(darkerColor) [Desystematize [.b cget -disabledforeground]]
 set looks(windowColor) white
 destroy .b
+

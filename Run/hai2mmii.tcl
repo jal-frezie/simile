@@ -443,7 +443,9 @@ proc GetPhaseCount {} {
 }
 
 proc WarnNoProgram {} {
-    error "This operation cannot be done as there is no model program loaded."
+    global errorInfo
+    error "This operation cannot be done as there is no model program loaded. \
+($errorInfo)"
 }
 
 proc WarnNoData {} {

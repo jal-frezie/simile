@@ -769,7 +769,13 @@ instruction because they will not require individual initialization routines. */
 	    /* generate instructions for each immigration, reproduction  etc.
 	    node...*/
 	    Level = [sm(_,_,_, vm_loop(_,_,_, Step))],
-	    (setof(make(created(Name), [culled(Name), InitSpec], Path, 0,
+	    /* little botch-ette: all the population adjustments have to be
+	    done in the same loop because cull leaves the metapointer at the
+	    end of the instance list and the others expect to find it there.
+	    So creation is done in the local time step although there are only
+	    individuals to be created right after reset. Really, all of them
+	    should be done in the same instruction. */
+	    (setof(make(created(Name), [culled(Name), InitSpec], Path, Step,
 		[new_member(Ptr, Name, create(InitSpec))]),
 		   InitName^X^U^(SmName has_part InitName,
 			member(instance(creation, InitName, X,

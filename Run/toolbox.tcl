@@ -164,7 +164,7 @@ package require mime 1.3.1
 
 
 proc TransferSaveFile {tree tgt way} {
-    global mimeSquirter runState
+    global mimeSquirter runState errorInfo
     catch {switch $way {
 	out {
 	    set parts [GetParts $tree $tree]
@@ -222,7 +222,6 @@ proc TransferSaveFile {tree tgt way} {
 	}
     } 
     } Lossage
-#ShowMessage debug warning $Lossage ok
     return $Lossage
 }
 

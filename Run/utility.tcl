@@ -41,12 +41,17 @@ proc ChooseFile { preferred title canbenew } {
 # __tk_etc should set starting directory, but just in case...
     set prevDir [pwd]
     cd $__tk_filedialog(selectPath)
-    if [string match .sml $fileType] {
-	set typeList [list .sml .sim .ame]
-	set recordEntry 1
-    } else {
-	set typeList [list $fileType]
-	set recordEntry 0
+    switch $fileType {
+	.sml {
+	    set typeList [list .sml .sim .ame]
+	    set recordEntry 1
+	} .gif {
+	    set typeList [list .gif .jpg .jpeg]
+	    set recordEntry 0
+	} default {
+	    set typeList [list $fileType]
+	    set recordEntry 0
+	}
     }
     set typeList [list [list "$fileType files" $typeList]]
     set chosenFile [[expr $canbenew?{tk_getSaveFile}:{tk_getOpenFile}] \
