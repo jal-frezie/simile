@@ -342,8 +342,8 @@ proc ExtractFontData {font} {
 }
 
 proc AssembleFontNew {family weight style textsize} {
-    #ShowMessage debug info "AssembleFontNew $family $weight $style $textsize\n\
-            [list family $family weight $weight slant $style size $textsize]" ok
+    #ShowMessage debug info \"AssembleFontNew $family $weight $style $textsize\n\
+            [list family $family weight $weight slant $style size $textsize]\" ok
     return [list -family $family -weight $weight -slant $style -size $textsize]
 }
 
@@ -362,10 +362,10 @@ proc AdjustWidth {winId object factor} {
     set width [expr $oldWidth*$factor]
     $winId addtag realwidth($width) withtag $object
     #    if {[string match [$winId type $object] text]} {}
-    #    ShowMessage debug info "AdjustWidth $winId $object $factor\n\
+    #    ShowMessage debug info \"AdjustWidth $winId $object $factor\n\
                 winId gettags $object [$winId gettags $object]\n\
                 $winId itemcget $object -width [$winId itemcget $object -width]\n\
-                AdjustWidth oldWidth $oldWidth; newwidth $width    " ok
+                AdjustWidth oldWidth $oldWidth; newwidth $width    \" ok
    #{ }
     return $width
 }
@@ -527,7 +527,7 @@ proc NextCaption {canvas} {
     }
     if {![llength $find(List,$canvas)]} {
         ShowMessage "Caption finder" info \
-                "No more matching captions in this window" ok
+                "No more matching $find(where)s in this window" ok
         unset find
     } else {
         set this [lindex $find(List,$canvas) 0]
