@@ -1,6 +1,8 @@
 # SIMILE batch file
 
-set scriptCmd [info script]
+# replace /./ in path with / to avoid confusing file dirname
+regsub -all /\\./ [info script] / scriptCmd
+
 #tk_messageBox -title Invocation -icon info -message "$scriptCmd $argv" -type ok
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
