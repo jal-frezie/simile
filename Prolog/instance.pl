@@ -181,17 +181,11 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	(\+ PType = 1, !;
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(init_function, F, Default, Home, Base-Units),
-	(setof( Arc,
-		LastPt^( Arc is_connector from LastPt to Node,
-		  Arc has_type flow ),
-		InArcs ),
+	(setof( Arc, flows(in, Node, Arc), InArcs),
 	bind_and_build_term(Node, InArcs, '+', Base, In, In_refs);
 	In_refs = [],
 	In = 0),
-	(setof( Arc,
-		NextPt^( Arc is_connector from Node to NextPt,
-		  Arc has_type flow ),
-		OutArcs ),
+	(setof( Arc, flows(out, Node, Arc), OutArcs),
 	bind_and_build_term(Node, OutArcs, '+', Base, Out, Out_refs);
 	Out_refs = [],
 	Out = 0),
@@ -317,6 +311,13 @@ instance_of(Type, Node, _, [instance(Type, Node, _, Value, Dims)],
 	member(Node, [B, A]),
 	Arc is_connector from A to B, !,
 		initiates(Arc, F).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+flows(Dir, Comp, Flow) :-
+	(Tgt = Comp; find_ghosts(Comp, Tgt)),
+	(Dir = in, Dest = Tgt; Dir = out, Src = Tgt),
+	Flow is_connector from Src to Dest,
+	find_type(Flow, flow).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
