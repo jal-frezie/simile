@@ -20,10 +20,13 @@ namespace eval $keyValue {
     }
 
     proc click {winId node caption} {
-	ReleaseClicks $winId
-	pack forget $winId.m
-	slide139::InsertSlider $winId $node /$caption 0
-	SetState $winId [GetCaptionPathFromId $winId $node]
+	if {[llength [slide139::InsertSlider $winId $node /$caption 0]]} {
+	    ReleaseClicks $winId
+	    pack forget $winId.m
+	    SetState $winId [GetCaptionPathFromId $winId $node]
+	} else {
+	    $winId.m configure -text "This component is not a variable parameter, or if it is, it has too many dimensions to show a set of graphical input tools for it."
+	}
     }    
 
     proc display {winId time display remainder} {

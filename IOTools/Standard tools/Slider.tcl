@@ -17,33 +17,20 @@ namespace eval slide139 {
 	}
         MakeFrames $winId
         foreach node [GetObjectList $winId] {
-            if {[string match INPUT [GetModelEval $winId $node]]} {
-                set title [GetCaptionPathFromId $winId $node]
-                set initVal [InsertSlider $winId $node $title 1]
+	    set title [GetCaptionPathFromId $winId $node]
+	    set initVal [InsertSlider $winId $node $title 1]
+	    if {[llength $initVal]} {
 		set done 1
-		if {[string match COMPARTMENT [GetModelClass $winId $node]]} {
+		if {[string match COMPARTMENT \
+			 [GetModelClass $winId $node]]} {
 		    set compList($node) $initVal
 		}
 	    }
-        }
+	}
         if {![info exists done]} {
             kill_helper_window $winId
-        } else {
-#            pack [set bfrm [frame $winId.buttons]] \
-                    -fill x
-#            pack [frame $bfrm.lpad] -side left -fill x -expand true
-            
-#            set opimg [image create photo -file "../Images/Toolbar/open.gif"]
-#            set svimg [image create photo -file "../Images/Toolbar/save.gif"]
-#            pack [button $bfrm.merge -compound left -image $opimg -text "Load values" \
-                    -command [namespace code MergeInputVals]] \
-                    -side left -padx 2 -pady 4
-#            pack [button $bfrm.save -compound left -image $svimg -text "Save values" \
-                    -command [namespace code SaveInputVals]] \
-                    -side left -padx 2 -pady 4
-            #	pack [frame $bfrm.rpad] -side left -fill x
         }
-        set geom [PrefValue custom(slidersPosition) slidersPosition]
+	set geom [PrefValue custom(slidersPosition) slidersPosition]
 #        catch {wm geometry $winId $geom}
     }
 
@@ -53,16 +40,12 @@ namespace eval slide139 {
 
     proc InsertSlider {winId node title nest} {
 	global checkStates
+	if {![string match INPUT [GetModelEval $winId $node]]} {
+	    return {}
+	}
         set initVal [lindex [GetModelValue $winId $node] 0]
         #ShowMessage debug info $def ok
 	set levels [split $title /]
-	if {$nest} {
-	    pack [set f [frame [MakeSubFrames $winId $winId.sliderframe \
-				    $levels [namespace current] 0]]] \
-		-fill x -expand true
-	} else {
-	    set f $winId
-	}
 	set trans [GetTransTable $node]
 	switch [GetModelType $winId $node] {
 	    FLAG {
@@ -80,11 +63,27 @@ namespace eval slide139 {
 	    }
 	}
 	set nodeDims [GetModelDims $winId $node]
-	for {set outerDims [expr [llength $nodeDims]-1]} \
-	    {$outerDims >= 0 && [lindex $nodeDims $outerDims] <= 0} \
-	    {incr outerDims -1} {}
-        if {$outerDims == -1} {
-	    set defVal [GetDefVal $initVal $outerDims 0]
+	set outerDims 0
+	while {$outerDims<[llength $nodeDims]} {
+	    if {[lindex $nodeDims $outerDims]>0} {
+		if {[info exists useDim]} {
+		    # Cannot display sliders, too many dimensions
+		    return {}
+		} else {
+		    set useDim $outerDims
+		}
+	    }
+	    incr outerDims
+	}
+	if {$nest} {
+	    pack [set f [frame [MakeSubFrames $winId $winId.sliderframe \
+				    $levels [namespace current] 0]]] \
+		-fill x -expand true
+	} else {
+	    set f $winId
+	}
+        if {![info exists useDim]} {
+	    set defVal [GetDefVal $initVal -1 0]
 	    switch [GetModelType $winId $node] {
 		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
@@ -110,9 +109,10 @@ namespace eval slide139 {
 		    -padx 1 -pady 1
 		}
 	    }
+	    return $defVal
 	} else {
 	    pack [label $f.caption -text [lindex $levels end]]
-	    set count [lindex $nodeDims $outerDims]
+	    set count [lindex $nodeDims $useDim]
 	    # bodge it to work with record submodels
 	    if {[string equal RECORDS $count]} {
 		set count [expr [llength $initVal]/2]
@@ -177,9 +177,10 @@ namespace eval slide139 {
 		    }
 		    }
 		}
+		lappend allVals $index $defVal
 	    }
+	    return $allVals
         }
-	return $initVal
     }
 
     proc SetChoiceNumber {cbox sub} {
@@ -275,11 +276,23 @@ proc PutRelSliderContents {winId iStr smPath elt val} {
 #    proc click {winId node caption} {
 #    }
 
+# after reset, record the positions of compartment sliders so they can be put 
+# back there while model is running (see below)
+
     proc reset {winId} {
 	global sliderVals
 	variable compList
 	foreach node [array names compList] {
-	    set compList($node) [lindex [GetModelValue $winId $node] 0]
+	    if {[info exists sliderVals($node)]} {
+		# it's a single compartment
+		set compList($node) $sliderVals($node)
+	    } else {
+		unset compList($node)
+		foreach {indxSub val} [array get sliderVals $node,*] {
+		    set indx [lindex [split $indxSub ,] 0]
+		    lappend compList($node) $indx $val
+		}
+	    }
 	}
     }
 
