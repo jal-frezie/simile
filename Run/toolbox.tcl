@@ -407,6 +407,7 @@ proc ClearWindow {winId} {
     $winId addtag doomed all
     $winId dtag /base/ doomed
     $winId delete doomed
+    ResetEqnBar [winfo parent $winId].toolSlot.eqnbar
 }
 
 # Scale translates coordinates in desktop space to canvas space. Used to include
