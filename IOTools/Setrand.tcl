@@ -14,14 +14,14 @@ proc identify {} {
 }
 
 proc initialize {winId} {
-	set ms [message $winId.intro -text "Enter your value for the random number seed (integer)."]
-	pack $ms
+	set ms [message $winId.intro -aspect 400 -text "Enter an integer value for the random number seed:"]
+	pack $ms -padx 4 -pady 4
 	set exit [namespace code "Done $winId"]
 	set en [entry $winId.entry -textvariable [namespace current]::value]
 	bind $en <Return> $exit
-	pack $en
-	set bt [button $winId.bt -text OK -command $exit]
-	pack $bt
+	pack $en -padx 4 -pady 4
+	set bt [button $winId.bt -text "Set seed" -default active -width 10 -command $exit]
+	pack $bt -padx 4 -pady 4
 }
 
 proc Done {winId} {
