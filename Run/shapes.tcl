@@ -738,12 +738,12 @@ proc GoEdit { w comp } {
 
 proc EnableEdits { w } {
     focus $w
-    #    $w addtag currently_editable withtag editable
+    $w addtag currently_editable withtag editable
 }
 
 proc DisableEdits { w } {
     focus [winfo parent $w]
-    #    $w dtag currently_editable
+    $w dtag currently_editable
 }
 
 proc ChangeObjectTitle { w name title} {
