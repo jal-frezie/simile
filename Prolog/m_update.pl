@@ -358,7 +358,7 @@ use_destination(Link, RemoteUnit,
 	analyze_array(RemoteUnit, RBaseUnit, Subs),
 	/* Refer to value by same units as before, provided conversion
 	from actual units is possible */
-	(check_unit(LBaseUnit, RBaseUnit, 2, []), !,
+	(check_unit(RBaseUnit, LBaseUnit, 2, []), !,
 	    build_array(LBaseUnit, Subs, LocalUnit);
 	LocalUnit = RemoteUnit);
 	LocalUnit = RemoteUnit.

@@ -501,7 +501,7 @@ spread_dims(Node) :-
 	    UseArray = FoundArray,
 		UnitsChanged = yes),
 	    (Type = real, !, Base = 1; Base = Type),
-	    (check_unit(GivenBase, Base, 2, []), !,
+	    (check_unit(Base, GivenBase, 2, []), !,
 		UseBase = GivenBase;
 	    UseBase = Base,
 		UnitsChanged = yes),
