@@ -524,7 +524,7 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
   }
 
   for (i=0;i<count;i++) {
-    error = Tcl_ListObjIndex(interp, argv[5], i, &elt);
+    error = Tcl_ListObjIndex(interp, argv[4], i, &elt);
     if (error != TCL_OK) {
       return error;
     }

@@ -165,9 +165,9 @@ proc click {winId node caption} {
 	    switch -glob $type {
 		FLAG {
 		pack [checkbutton $f.check -text [lindex $levels end] \
-			  -variable checkStates($node) \
-			  -command [namespace code [list SetArrayIfUsed 0 0 $node {} $checkStates($node)]] \
-			  -offvalue 0 -onvalue 1 -relief ridge]
+			 -variable checkStates($node) \
+			 -command [namespace code [list CheckStateToC $node]] \
+			 -offvalue 0 -onvalue 1 -relief ridge]
 		set checkStates($node) $defVal
 		} ENUM(*) {
 		ComboBox $f.combo -values $possVals -editable 0 \
@@ -220,7 +220,8 @@ proc click {winId node caption} {
 		    }
 		    pack [checkbutton $row.elt$index -borderwidth 1 \
 			      -variable checkStates($node,$index) \
-			      -command [namespace code [list SetArrayIfUsed 0 0 $node $index $checkStates($node,$index)]] \
+			      -command [namespace code [list CheckStateToC \
+							    $node $index]] \
 			      -padx 0 -offvalue 0 -onvalue 1] -side left
 		    set checkStates($node,$index) $defVal
 		    BindPopup $row.elt$index "For $slTitle"
@@ -296,6 +297,12 @@ proc click {winId node caption} {
 	    }
 	    Prune $winId $up
 	}
+    }
+
+    proc CheckStateToC {node args} {
+	global checkStates
+	set sub [join [concat [list $node] $args] ,]
+	SetArrayIfUsed 0 0 $node $args $checkStates($sub)
     }
 
     proc SetArrayIfUsed {model_id instance_id node indices value} {
