@@ -871,7 +871,9 @@ drag(Xpt, Ypt) :-
 	    remove_highlights,
 	    fail; */
 	update_context(Wid, [Xpt, Ypt], RelPt, Comp)),
-	snap_to_grid(RelPt, [NewXpt, NewYpt]),
+	(get_phase(moving_text), !,
+	    RelPt = [NewXpt, NewYpt];
+	snap_to_grid(RelPt, [NewXpt, NewYpt])),
 	drag_to(NewXpt, NewYpt, Comp).
 
 /* This is a hideously complex procedure for working out what component I have
