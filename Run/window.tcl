@@ -1794,3 +1794,4 @@ proc ClearWindow {winId} {
     $winId delete doomed
     ResetEqnBar [winfo parent $winId].toolSlot.eqnbar
 }
+
