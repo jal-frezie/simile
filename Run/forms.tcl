@@ -1071,46 +1071,56 @@ proc DoRegDialog {dtId} {
     wm title $t "Welcome to Simile version $userinfo(Version)"
     wm transient $t $dtId
     wm protocol $t WM_DELETE_WINDOW {set userinfo(done) 0}
+
+    image create photo welcome
+    welcome read "../Images/Welcome.gif"
+    pack [label .register.welcome -image welcome] -anchor w
     
-    pack [message .register.m -text "Select compartments or flows from the toolbar to add to the diagram. Use the select (pointer) tool to edit its caption or value. Run your model using the Build command of the Model menu." \
-            -width 400] -pady 5
+    TitleFrame .register.create -text "Create a model: "
+    set create [.register.create getframe]
     
-    # Lord I dont know what is this fascination with hi-tech multi-function
-    # bug-ridden widgets, I'll just put the old version back, at least that
-    # works...
-    #    pack [LabelEntry  .register.name  \
-    #                -label "Name            " -labelanchor w -padx 5 \
-    #                -textvariable userinfo(Name)] -fill x -pady 5
-    #    pack [LabelEntry  .register.corp  -label "Company       " \
-    #                        -labelanchor w -padx 5 -textvariable userinfo(Corp)] -fill x -pady 5
-    #    pack [LabelEntry  .register.email -label "Email address" -labelanchor w -padx 5 \
-    #                 -textvariable userinfo(email)]  -fill x -pady 5
+    pack [message $create.m -text "Select compartments or flows from the toolbar\
+            to add to the diagram. Use the select (pointer) tool to edit its caption\
+            or value. Run your model using the Build command of the Model menu."\
+            -width 400 -font {-family helvetica -size 8}]
+    pack $create -expand on -fill x
+    pack .register.create -expand on -fill x -padx 4 -pady 2
     
-#    foreach {field label} {name "Name:" corp "Company:" \
-#                email "Email address:"} {
-#       pack [frame .register.$field] -fill x -expand true
-#        pack [label .register.$field.l -width 15 -text $label] -side left
-#        pack [entry .register.$field.e -textvariable userinfo($field)] \
-#                -fill x -expand true
-#    }
+    TitleFrame .register.links -text "Useful links: "
+    set links [.register.links getframe]
     
+    frame $links.m1
+    pack [label $links.m1.left -text " *  Show " -font {-family helvetica -size 8}] \
+            -anchor w -side left
+    pack [set www1 [label $links.m1.centre -text "Getting Started" \
+            -font {-underline true -family helvetica -size 8} -fg blue \
+            -cursor hand2]] -anchor w -side left
+    pack [label $links.m1.right -text " help pages" -font {-family helvetica -size 8}]\
+            -anchor w -side left
+    pack $links.m1 -anchor w
+    frame $links.m2
+    pack [label $links.m2.left -text " *  Show " -font {-family helvetica -size 8}] \
+            -anchor w -side left
+    pack [set www2 [label $links.m2.centre -text "Example models" \
+            -font {-underline true -family helvetica -size 8} -fg blue \
+            -cursor hand2]] -anchor w -side left
+    pack [label $links.m2.right -text " help pages" -font {-family helvetica -size 8}] \
+            -anchor w -side left
+    pack $links.m2 -anchor w
+    pack $links -expand on -fill x
+    pack .register.links -expand on -fill x -padx 4 -pady 2
     
-#    bind .register.email.e <Return> "set userinfo(done) 2"
-#    pack [set bs [frame .register.buttframe]] -pady 5
-#    pack [button $bs.enter -text "Register now" \
-#            -command {set userinfo(done) 2}] -side left
-#    pack [button $bs.later -text "Register later" \
-#            -command {set userinfo(done) 0}] -side left
-#    pack [button $bs.cancel -text "Don't register" \
-#            -command {set userinfo(done) 1}]
-    
-    pack [frame .register.checkframe]
-    pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left
-    pack [label .register.checkframe.l -text "Do not show this welcome screen again"] -side left
-    pack [button .register.ok -text OK -command {set userinfo(done) $welcomeDone}]
+    pack [frame .register.checkframe] -padx 4 -pady 4
+    pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left 
+    pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
+            -side left
+    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
     tkwait visibility .register
+
     grab .register
-#    focus .register.email
+    bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
+    bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
+    #    focus .register.email
 
     # now put it in the middle of the desktop
     scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f
