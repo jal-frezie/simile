@@ -48,7 +48,9 @@ redo :-
 	update_ability(redo, edit, 'Redo', Further).
 
 menu_select(Seln) :-
-	normalize(_),
+	/* if changing type of add, clear highlights */
+	get_mode(add),
+	    normalize(_),
 	    fail;
 	update_mode(add),
 	display_mode(add),
