@@ -143,9 +143,9 @@ itcl::class similescript::ModelWindow {
         MenuSelect [GetModelWindow].canvas file list_eqns
     }
 
-    public method LoadParams {filepath} {
-        #MergeParams {topNode smPath oldPath interactive}
-        MergeParams $modelNode $desktop  $filepath 0
+    public method LoadParams {filepath {smPath {}}} {
+        #MergeParams $modelNode $desktop  $filepath 0
+	do_for_node $modelNode set ::projectParams($smPath) $filepath
     }
     
 }
@@ -219,6 +219,10 @@ itcl::class similescript::RunControl {
     #    ${keyvalue}::SetMode $winId stop
     #}
     
+    public method LoadParams {filepath {smPath {}}} {
+        do_for_node $modelNode MergeParams $modelNode $smPath $filepath 0
+    }
+
     public method SetTimeUnits {units} {
         # units: unit second minute hour day week month year Ma
         do_for_node $modelNode set ::runState($modelNode,timeUnit) $units

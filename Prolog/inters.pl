@@ -365,7 +365,7 @@ make_intermediates(
 		    Args = [time]; /* or import from ancestor dll */
 		Var = externs_done, !, /* Made from imports by contained dll */
 		    Args = [externs_done, time]; 
-		Args = [made_at(exts(Var), ParamContext)])), /* Made in this dll */
+		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	    (TermSwap = BackSwap, !;
 	    raise_exception(cannot_make_context(Target, TermSwap, BackSwap))),
 	    Setups = [],
