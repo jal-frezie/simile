@@ -85,8 +85,8 @@ if {[string match Darwin $tcl_platform(os)]} {
     #package require Img
     splash read $SIMILE_PATH/Images/splash.gif
 }
-pack [canvas .c -width 400 -height 316] -padx 0 -pady 0
-.c create image 202 160 -image splash
+pack [canvas .c -width 400 -height 316 -bd -2] -padx 0 -pady 0
+.c create image 200 158 -image splash
 .c create text 270.0 275.0 -font {-family helvetica -size 10} -fill #660066 -text "Version $env(SIMILE_VERSION)"
     
 wm geometry . +[expr [winfo screenwidth .]/2-255]+[expr [winfo screenheight .]/2-170]
