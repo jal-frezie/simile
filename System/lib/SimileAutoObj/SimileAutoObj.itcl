@@ -1,4 +1,6 @@
-package provide SimileAutoObj 1.0
+package provide SimileAutoObj 1.1
+# 1.0 for Simile 4.0
+# 1.1 for Simile 4.1
 
 # Notes
 # must be pipe interface
@@ -20,7 +22,7 @@ if {![info exists window_info]} {
     
     rename exit ::renamed::exit
     proc exit {} {
-        prolog tk_kill_everything
+        prolog tk_kill_everything(_)
     }
     
     rename ShowMessage ::renamed::ShowMessage
