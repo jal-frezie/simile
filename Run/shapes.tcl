@@ -950,6 +950,7 @@ proc DoZoom { winId factor toProlog} {
             [expr [lindex $oldSize 2]*$factor] \
             [expr [lindex $oldSize 3]*$factor]]
     $winId configure -scrollregion $newReg
+    eval [list ResizeBackgnd $winId] $newReg
 
     # Find what is in the middle now
 
@@ -976,13 +977,12 @@ proc ZoomImage {winId which factor {optFontor none}} {
     if {[string compare $which all]} {
         set objList [$winId find withtag $which]
     } else {
-        set objList [$winId find all]
         # and update the info...(if it's there)
         catch {set window_info($winId,scale) \
                     [expr $window_info($winId,scale) * $factor]}
 
 	scan [$winId cget -scrollregion] "%g %g %g %g" bl bt br bb
-	ResizeBackgnd $winId $bl $bt $br $bb
+        set objList [$winId find all]
     }
     if {[string match none $optFontor]} {
 	set fontor $factor
@@ -995,7 +995,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
         set fontor $optFontor
     }
     foreach object $objList {
-        switch [$winId type $object] {
+	switch [$winId type $object] {
         text {
 	    set fontData [ExtractFontData [$winId itemcget $object -font]]
 	    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
@@ -1015,7 +1015,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
 	    set newWidth [expr round($factor*[$tgtImage cget -width])]
 	    set newHt [expr round($factor*[$tgtImage cget -height])]
 	    scan [$winId coords $object] {%f %f} newX newY
-
+	    
 	    if {[string match "*/base/*" [$winId gettags $object]]} {
 	    } elseif {[string compare none $optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
@@ -1135,6 +1135,7 @@ proc DisplayArea {winId} {
             [expr [lindex $oldSize 2]*$factor] \
             [expr [lindex $oldSize 3]*$factor]]
     $winId configure -scrollregion $newReg
+    eval [list ResizeBackgnd $winId] $newReg
 
     # First, find canvas point at centre of display
     set CurrentX [$winId canvasx [expr $window_info($winId,width)/2]]
