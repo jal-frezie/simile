@@ -6,6 +6,9 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
+#Revision 1.4  2002/05/31 16:08:20  jaspert
+#*** empty log message ***
+#
 #Revision 1.3  2002/05/31 09:53:31  jaspert
 #Changed GetClickedObj to pick closest obj up to a certain distance
 #	--Jasper
@@ -25,6 +28,9 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
+#Correct RCS directive #Revision 1.4  2002/05/31 16:08:20  jaspert
+#Correct RCS directive #*** empty log message ***
+#Correct RCS directive #
 #Correct RCS directive #Revision 1.3  2002/05/31 09:53:31  jaspert
 #Correct RCS directive #Changed GetClickedObj to pick closest obj up to a certain distance
 #Correct RCS directive #	--Jasper
@@ -1866,4 +1872,3 @@ proc FilterErrors {args} {
 }
 
 build_c_stub "[pwd]/../Run" 0
-
