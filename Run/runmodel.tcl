@@ -800,7 +800,8 @@ proc QueuePopup {args} {
 proc AddEqnPopup {x y winId X Y} {
     global pushedbutton running_c equationbar
     set doDesc [PrefValue custom(compDescPop) compDescPop]
-    set doVal [PrefValue custom(compValPop) compValPop]
+    set doVal [expr [info exists running_c] && \
+		   [PrefValue custom(compValPop) compValPop]]
     set doCmt [PrefValue custom(compCmtPop) compCmtPop]
     if {[string compare select $pushedbutton] || \
                 !$doDesc && !$doVal && !$doCmt} {
@@ -832,7 +833,7 @@ proc AddEqnPopup {x y winId X Y} {
             if {![winfo exists .popup]} return
             AddPopupMessage $fromProlog #ffe0c0 0
         }
-        if {[expr [info exists running_c] && $doVal]} {
+        if {$doVal} {
             AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
             # we might want to prettify this a bit first
         }
