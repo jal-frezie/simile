@@ -67,8 +67,19 @@ proc CombineGraphData { formula } {
 }
 
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
-    global graph
+    global graph tcl_platform
     
+    set graph(bd) 10
+	
+    switch $tcl_platform(platform) {
+	unix {
+	    set graph(exag) 3
+	    set graph(origin) 1
+	} windows {
+	    set graph(exag) 5
+	    set graph(origin) 2
+	}
+    }
     regsub -all , $points " " graph(points)
 
     wm title $t "Sketch graph"
@@ -90,7 +101,8 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     frame $left.upper.gridf
     set graph(width) $xspan
     set graph(height) $yspan
-    set grid [canvas $left.upper.gridf.canvas -width $graph(width) -height $graph(height)]
+    set grid [canvas $left.upper.gridf.canvas -width [expr $graph(width)+1] \
+		  -height [expr $graph(height)+1] -bd $graph(bd) -relief ridge]
     set graph(increment) [expr $graph(width)/([llength $graph(points)] - 1.0)]
     
     set graph(lowy) $ylow
@@ -210,18 +222,21 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
 }
 
 proc AddLine {c section} {
-	global graph
-
-	$c delete section$section
-	$c create line [expr round($graph(increment)*($section - 1))] \
-		[lindex $graph(points) [expr $section - 1]] \
-		[expr round($graph(increment)*$section)] \
-		[lindex $graph(points) $section] \
-		-tags "graph section$section"
+    global graph
+    set miss [expr $graph(bd)+$graph(origin)]
+    
+    $c delete section$section
+    $c create line [expr round($graph(increment)*($section-1))+$miss] \
+	[expr [lindex $graph(points) [expr $section - 1]]+$miss] \
+	[expr round($graph(increment)*$section)+$miss] \
+	[expr [lindex $graph(points) $section]+$miss] \
+	-tags "graph section$section"
 }
 
 proc GClick {c x y} {
 	global graph
+    set x [expr $x-$graph(bd)-$graph(origin)]
+    set y [expr $y-$graph(bd)-$graph(origin)]
 	set zone [expr round($x/$graph(increment))]
 	set graph(oldzone) $zone
 	set graph(oldy) $y
@@ -237,9 +252,11 @@ proc YEntry {c} {
 	GStick $c $zone $y
 }
 
-proc GDrag {c x y} {
+proc GDrag {c ox oy} {
 	global graph
 
+    set x [expr $ox-$graph(bd)-$graph(origin)]
+    set y [expr $oy-$graph(bd)-$graph(origin)]
 	set zone [expr round($x/$graph(increment))]
 	set gmove [expr abs($zone - $graph(oldzone))]
 	if {$gmove} {
@@ -251,13 +268,14 @@ proc GDrag {c x y} {
 			GStick $c $graph(oldzone) $graph(oldy)
 		}
 	} else {
-		GClick $c $x $y
+		GClick $c $ox $oy
 	}
 }
 
 proc GStick {c zone y} {
 	global graph xvalue yvalue
 
+    set y [max 0 [min $graph(height) $y]]
 	if {$zone >= 0 && $zone < [llength $graph(points)]} {
 		set graph(points) [lreplace $graph(points) $zone $zone $y]
 		if {$zone != 0} { 
@@ -274,35 +292,39 @@ proc GStick {c zone y} {
 }
 
 proc RedrawGrid {c w h inc} {
-    global looks
+    global looks graph
 
 	$c delete grid
 	set ylevel 0
-	while {$ylevel < 10} {
-		set height [expr round($ylevel*($h - 4)/10.0)+1]
-		$c create line 2 $height $w $height -fill $looks(darkerColor) \
-			-tags grid
+	while {$ylevel <= 10} {
+		set height [expr round($ylevel*$h/10.0)]
+	    $c create line 0 $height $w $height \
+		    -fill $looks(darkerColor) -tags grid
 		set ylevel [expr $ylevel + 1]
 	}
 	set xlevel 0
-	while {$xlevel < $w} {
-		$c create line [expr round($xlevel)] 2 [expr round($xlevel)] $h \
-				-fill $looks(darkerColor) -tags grid
+	while {$xlevel <= $w} {
+		$c create line [expr round($xlevel)] 0 [expr round($xlevel)] \
+		    $h -fill $looks(darkerColor) -tags grid
 		set xlevel [expr $xlevel + $inc]
 	}
+    set miss [expr $graph(bd)+$graph(origin)]
+    $c move grid $miss $miss
 }
 
 proc NewAttackShape {c w h} {
 	global graph
+    set exag [expr 2*$graph(bd)+3.0]
+puts "nas $c $w $h"
 
 	set x0 [expr $graph(width)*$graph(lowx)/($graph(lowx) - $graph(highx))]
 	set y0 [expr $graph(height)*$graph(lowy)/($graph(lowy) - $graph(highy))]
 
-	$c scale all $x0 $y0 [expr ($w - 4.0)/$graph(width)] \
-			[expr ($h - 4.0)/$graph(height)]
+	$c scale all $x0 $y0 [expr ($w - $exag)/$graph(width)] \
+			[expr ($h - $exag)/$graph(height)]
 
-	set $graph(width) [expr $w - 4]
-	set graph(height) [expr $h - 4]
+	set $graph(width) [expr $w - $exag]
+	set graph(height) [expr $h - $exag]
 }
 
 proc AttackShape {c w h} {
@@ -311,11 +333,13 @@ proc AttackShape {c w h} {
 # This version which is no longer called used to change the axis labels when the
 # graph window was resized. Now we keep them the same and stretch the graph
 
-	set graph(increment) [expr $graph(increment)*($w - 4)/$graph(width)]
-	set graph(width) [expr $w - 4]
+    set exag [expr 2*$graph(bd)+$graph(exag)]
+puts "nas $c $w $h"
+	set graph(increment) [expr $graph(increment)*($w-$exag)/$graph(width)]
+	set graph(width) [expr $w-$exag]
 
-	set vchange [expr double($h - 4)/$graph(height)]
-	set graph(height) [expr $h - 4]
+	set vchange [expr double($h-$exag)/$graph(height)]
+	set graph(height) [expr $h-$exag]
 	RedrawGrid $c $graph(width) $graph(height) $graph(increment)
 
 	set graph(points) [lreplace $graph(points) 0 0 \
