@@ -226,7 +226,7 @@ list_index_meanings(root, []).
 
 list_index_meanings(Submodel, Meanings) :-
 	list_local_index_meanings(Submodel, Group1),
-	Parent has_part Submodel,
+	find_all_comps(Parent, Submodel),
 	list_index_meanings(Parent, Group2),
 	append(Group1, Group2, Meanings).
 
