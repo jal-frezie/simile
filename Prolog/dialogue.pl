@@ -295,19 +295,20 @@ check_param_brackets(ShowParam, New_param, Current_unit, Complaint) :-
 				    [ShowParam, New_param], Complaint).
 
 explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
-	((atom(Dims); var(Dims)), !,
-	    PL1 = "a ",
-	    Type = "single value",
+	(nonvar(Dims), Dims =.. [Type, Middle | _],
+	    (Type = list, PL1 = "a ",
+		RightBrs = {InnerBrs};
+	    Type = array, PL1 = "an ",
+		RightBrs = [InnerBrs]), !,
+	    name(Type, TypeStr),
+	    explain_brackets(Middle, SubType, yes, BaseName, InnerBrs);
+	PL1 = "a ",
+	    TypeStr = "single value",
 	    SubType = "",
-	    RightBrs = BaseName;
-	(Dims = list(Middle), PL1 = "a ", Type = "list",
-	    RightBrs = {InnerBrs};
-	 Dims = array(Middle, _), PL1 = "an ", Type = "array",
-	    RightBrs = [InnerBrs]),
-	    explain_brackets(Middle, SubType, yes, BaseName, InnerBrs)),
+	    RightBrs = BaseName),
 	(Many = yes, Pref = " of ", Plural = "s";
 	    Many = no, PL1 = Pref, Plural = ""),
-	append([Pref, Type, Plural, SubType], Desc).
+	append([Pref, TypeStr, Plural, SubType], Desc).
 	    
 	
 table_ref(_, table(_), _, 0).
