@@ -1490,6 +1490,7 @@ proc CopyLooks {t object} {
     }
     set looks($object,objectsize) [$t.objectsize.scale get]
     set looks($object,lines) [$t.lines.scale get]
+    set looks(compartment,lines) [$t.lines.scale get] ;# for generic sample
     set looks($object,txtbd) $looks(txtbd)
     set looks($object,txtbg) $looks(txtbg)
 }
@@ -1737,6 +1738,10 @@ proc ApplyLooks {t type} {
 proc RememberLooks {object} {
     global looks
     set looks(safe) [array get looks $object,*]
+    if {[string equal generic $object]} {
+	eval lappend looks(safe) [array get looks compartment,*]
+# cos this is what we tamper with for sample
+    }
 }
 
 proc ExportLooks {t type} {
