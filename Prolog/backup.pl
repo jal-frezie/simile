@@ -19,7 +19,7 @@ sicstus_use_module([ame_gen, database, utility,
 
 set_save_status(Model, Stat) :-
 	retractall(save_status_of(Model, _)),
-	assertz(save_status_of(Model, Stat)).
+	assert(save_status_of(Model, Stat)).
 
 get_save_status(Model, Stat) :-
 	save_status_of(Model, Stat).
@@ -90,7 +90,7 @@ after putting up restore dialog, to be sure we are restoring from the same state
 we saved from. */
 
 :- dynamic(counted_fns/1).
-:- assert(counted_fns(0)).
+counted_fns(0).
 
 save_allowed(OK) :-
 	\+ state:get_edition(evaluation), OK = 1;
