@@ -752,11 +752,14 @@ proc GetRunParams {node} {
 			   timeUnit $runState($node,timeUnit) \
 			   displayInt $runState($node,displayInt) intMethod \
 			   [set runState($node,oldIntMethod) $runState($node,intMethod)]]
-	if {[info exists model_id($node)]} {
-	    set runState($node,phases) [GetPhaseCount $node]
-	    for {set phase 1} {$phase <= $runState($node,phases)} {incr phase} {
-		lappend params $runState($node,update$phase)
-                }
+# Keep all available phase info, we may have edited the model without runing it
+	for {set phase 1} {$phase <= 8} {incr phase} {
+	    if {![info exists runState($node,update$phase)]} {
+		break
+	    }
+	    lappend params $runState($node,update$phase)
+	}
+	if {[info exists params]} {
 	    lappend runParams phaseList $params
 	}
 	return $runParams
