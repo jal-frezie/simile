@@ -40,7 +40,7 @@ proc equationGraph {parent} {
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
     global tcl_platform graph
-    wm protocol $t WM_DELETE_WINDOW "set graph($t,done) -1"
+    bind $t <Destroy> "set graph($t,done) -1"
     
     set graph(bd) 3
     
