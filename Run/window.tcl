@@ -1030,8 +1030,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "PrintNow $c"\
             -accelerator "Ctrl+P"
     AddAccelerator $winid file "Print..." "<Control-p>"
-    $fm add cascade -label "Import" -menu $fm.sub0
-    set fm1 [menu $fm.sub0 -tearoff 0]
+    #$fm add cascade -label "Import" -menu $fm.sub0
+    #set fm1 [menu $fm.sub0 -tearoff 0]
 #    $fm1 add command -label "Spreadsheet..." \
 #            -command "MenuSelect $c file import_ss"
     $fm add cascade -label "Export" -menu $fm.sub1
@@ -1040,7 +1040,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file export_prolog"
     $fm2 add command -label "C++ code" \
             -command "MenuSelect $c file build_c"
-    $fm2 add command -label "executable binary" \
+            $fm2 add command -label "Compiled binary" \
             -command "MenuSelect $c file compile_c"
     $fm2 add command -label "PostScript graphics" \
             -command "ExportPostscript $c"
