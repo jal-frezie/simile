@@ -165,7 +165,6 @@ run\tools\others.htm
 run\tools\plotter.htm
 run\tools\profiles.htm
 run\tools\state.htm
-run\tools\table.htm
 run\tools\timeplot.htm
 data\index.htm
 data\overview.htm
@@ -184,6 +183,7 @@ examples\forest.htm
 examples\spiro.htm
 coviewexpiry.htm
 run\tools\random.htm
+run\tools\table.htm
 
 [INFOTYPES]
 
