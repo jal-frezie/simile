@@ -747,6 +747,36 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		[ValRef] = ResultList;
+/*	    Source = ordinality(ETExpr),
+	        SourceList = [ETExpr],
+		RUnits = int,
+		(Step = dummy,
+		    Arg_template = [a(_ETType)];
+		Arg_template = [int]),
+		[ValRef] = ResultList; */
+	    Source = first(ETExpr),
+	        SourceList = [ETExpr],
+		RUnits = boolean,
+		(Step = dummy,
+		    Arg_template = [a(_ETType)];
+		Arg_template = [int]),
+		[OldValRef] = ResultList,
+		ValRef = (OldValRef==1);
+	    Source = preceding(ETExpr),
+	        SourceList = [ETExpr],
+		[RUnits] = Arg_template,
+		(Step = dummy,
+		    RUnits = a(_ETType);
+		RUnits = int),
+		[OldValRef] = ResultList,
+		ValRef = OldValRef-1;
+	    Source = member(ETType, ETExpr),
+	        SourceList = [ETExpr],
+		(Step = dummy,
+		    RUnits = a(ETType);
+		RUnits = int),
+		Arg_template = [int],
+		[ValRef] = ResultList;
 	    Source =.. [Op | ArgListForm],
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
@@ -1131,7 +1161,8 @@ indices_for(sm(_,_, Ptr, Spec), Inds) :-
 
 /* might do better to get submodel and use g_a_s to convert */
 type_ind(Ind, Type) :-
-	(var(Ind), !; integer(Ind); Ind = glob(_,_)), Type = int;
+	var(Ind), !;
+	(integer(Ind); Ind = glob(_,_)), Type = int;
 	Type = a(Ind).
 	
 make_choose_form([LastElt], _,_, LastElt) :- !.

@@ -1209,6 +1209,11 @@ proc CheckForETDuplicates {new} {
                 "You must enter a name for the new $new in the box." ok
         return 0
     }
+    if {[string equal NULL $enumTypeMPEntry]} {
+	ShowMessage "Bad $new name" error \
+                "NULL is reserved for the value of a variable when it is not equal to any member of its type." ok
+        return 0
+    }
     set def [GetFromProlog tk_get_info({},'$enumTypeMPEntry',is_unit)]
     if {![string equal none $def]} {
         ShowMessage "Bad $new name" error \
