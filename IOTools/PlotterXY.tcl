@@ -26,7 +26,7 @@ namespace eval ::$keyValue {
     }
     
     proc initialize {w} {
-        global ::graphtools::plot
+        global ::graphtools::plot tcl_platform
         #    global ::graphtools::Xvalues
         global ::graphtools::YYold
         global ::graphtools::YYnew
@@ -71,14 +71,24 @@ namespace eval ::$keyValue {
         set plot($w,yborder_top) 30
         set plot($w,yborder_bottom) 30
         set plot($w,x_Ylabels) 25
-        set plot($w,y_Ylabels) 0
+        if [string match Darwin $tcl_platform(os)] {
+            set plot($w,y_Ylabels) 5
+        } else {
+            set plot($w,y_Ylabels) 0
+        }
         set plot($w,xstep_Ylabels) 120
         set plot($w,ystep_Ylabels) 12
         set plot($w,x_Xlabel) 100
         set plot($w,y_Xlabel) 10
-        set plot($w,fontValues) [list Helvetica 8 normal]
-        set plot($w,fontLabels) [list Helvetica 8 normal]
-        set plot($w,fontTitle) [list Helvetica 8 normal]
+        if [string match Darwin $tcl_platform(os)] {
+            set plot($w,fontValues) [list Helvetica 12 normal]
+            set plot($w,fontLabels) [list Helvetica 12 normal]
+            set plot($w,fontTitle) [list Helvetica 12 normal]
+        } else {
+            set plot($w,fontValues) [list Helvetica 8 normal]
+            set plot($w,fontLabels) [list Helvetica 8 normal]
+            set plot($w,fontTitle) [list Helvetica 8 normal]
+        }
         set plot($w,canvas_colour) #e0e0e0
         set plot($w,grapharea_colour) white
         set plot($w,pointer) 1
