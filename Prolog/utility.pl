@@ -356,13 +356,12 @@ generate_name( L, Atom, UnusedName, Used ) :-
 	        name(Atom, AtomStr),
 		(LocalStr = AtomStr; append(_, [SlashNo | LocalStr], AtomStr)),
 		    \+ member(SlashNo, LocalStr),
-		    (SeedStr = LocalStr; 
-			append(NameStr, [Space, Paren1 | CmtStr], LocalStr),
+		    (append(NameStr, [Space, Paren1 | CmtStr], LocalStr),
 			suffix([Space, I, N, Space | RoleCBStr], CmtStr),
 			append(RoleStr, [Paren2], RoleCBStr),
-			append([NameStr, "_", RoleStr], SeedStr)),
-			\+ append(_, [Space, Paren1 | _], SeedStr),
-			name(LocalName, SeedStr);
+			append([NameStr, "_", RoleStr], SeedStr), !;
+		     SeedStr = LocalStr),
+		     name(LocalName, SeedStr);
 		LocalName = Atom),
 		alphanumeric_only(LocalName , Name )),
 	close_end(Used, Already, NotYet),

@@ -537,6 +537,9 @@ proc AddHelperSublist {fm title ct} {
 		if {[string match {Slider control} $action]} {
 		    set helperTable(SliderControl) $keyValue
 		}
+		if {[string match {Storing data table} $action]} {
+		    set helperTable(TableViewer) $keyValue
+		}
 		$m add command -label $action \
 			-command [list CreateHelperWindow $keyValue $action]
 		unset keyValue

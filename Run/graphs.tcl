@@ -517,9 +517,23 @@ proc ChooseDataHeader {eb pth where op dtype data} {
 }
 
 proc ViewTable {} {
-    package require Tktable
+    global helperTable table_entry data.viewer
     toplevel .viewer -bd 4
     wm transient .viewer .table
-    table .viewer.t
-    pack .viewer.t
+    $helperTable(TableViewer)::initialize .viewer
+
+    set stream [open $table_entry(fileName) r]
+    set row 0
+    while {[gets $stream line] >= 0} {
+	set col 0
+	foreach field [split $line ,] {
+	    set data.viewer($row,$col) $field
+	    incr col
+	}
+	incr row
+    }
+    close $stream
+    .viewer.t configure -rows $row -cols $col -titlerows 1
+    focus .viewer
+    grab .viewer
 }
