@@ -29,7 +29,7 @@ ame_save( File, Model, Date, SelOnly ) :-
 	state:version_is(VStr),
 	name(SimV, VStr),
 	V is SimV + 4,
-	state:get_edition(Edition),
+	state:edition_is(Edition),
 	write_with_breaks(Stream, source(program='AME', version=V,
 					 edition=Edition, date=Date)),
 	nl(Stream),
@@ -241,15 +241,14 @@ ame_merge( Parent, File, Date, HasCode, Translated ) :-
 	store_term( Term, Stream, Parent, InitBindings, Translated, [] ),
 	close( Stream ),
 
-	(state:get_edition(evaluation),
+	(state:get_edition_and_limit(Edn, StopAt),
 	(HasCode=no;
 	\+ E = enterprise),
 	\+ HasCode = 'fuck it',
-	state:eval_fn_limit_is(StopAt),
 	count_functions(Parent, Fns),
 	Fns > StopAt, !,
 	    m_update:superfast_delete(Parent),
-	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the evaluation edition.", [Fns, StopAt], Annoy),
+	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, and it was not created by the enterprise edition, so it cannot be loaded in the ~a edition.", [Fns, StopAt, Edn], Annoy),
 	    do_dialogue("Error loading model", error, Annoy, ok, _),
 	    dialogue:finish_progress_dialogue,
 	    !, fail;

@@ -146,7 +146,11 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
-	    NeedsRedraw = 1),
+	    NeedsRedraw = 1;
+	/* insert failed because it took model over comp limit */
+	restart_move,
+	    finish_progress_dialogue,
+	    !, fail),
         finish_progress_dialogue,
 	(Mode = reopen,
 	    check_autosave(Parent, Name, Translated, NeedsRedraw),
@@ -493,15 +497,7 @@ menu_handle(_Win, file, import_ss) :-
 
 menu_handle(Win, file, export_prolog) :-
 	Win shows_model Model,
-	count_functions(Model, N),
-	state:eval_fn_limit_is(Limit),
-	(N > Limit,
-	    get_edition(evaluation), !,
-	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the evaluation edition.", [N, Limit], Annoy),
-	    do_dialogue("Error saving model", error, Annoy, ok, _),
-	    fail;
-	true),
-
+	\+ too_big_for_edn(Model),
 	get_default_export_name(Model, ".pl", DefName),
 	get_program_file(DefName, FileName),
 	output:date_is(Date),
@@ -1211,14 +1207,7 @@ ok_to_delete(Win, Target) :-
 	Reply = no).
 
 do_save(Win, Model, New_name) :-
-	count_functions(Model, N),
-	state:eval_fn_limit_is(Limit),
-	(N > Limit,
-	 get_edition(evaluation), !,
-	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the evaluation edition.", [N, Limit], Annoy),
-	    do_dialogue("Error saving model", error, Annoy, ok, _),
-	    fail;
-	true),
+	\+ too_big_for_edn(Model),
 	use_temp_dir(Dir),
 	abs_path_name(Model, root, Point),
 	append_atoms([Dir, '/', Point], SaveDir),
@@ -1284,6 +1273,13 @@ do_save(Win, Model, New_name) :-
 	update_ability(Model, save, file, 'Save', 0),
 	mark_model_danger(Model, safe)),
         finish_progress_dialogue.
+
+too_big_for_edn(Model) :-
+	state:get_edition_and_limit(Edn, Limit),
+	count_functions(Model, N),
+	N > Limit,
+	sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the ~a edition.", [N, Limit, Edn], Annoy),
+	do_dialogue("Error saving model", error, Annoy, ok, _).
 
 transfer_images(Model, TopDir, Way) :-
 	setof(ImageSpec,

@@ -9,7 +9,8 @@ available to the other modules that use it.
 sicstus_module(state,
 	       [kickoff/1, get_initial_window_size/2,
 		create_window/2, destroy_window/1, clear_model_file/1,
-		set_model_file/2, get_model_file/2, get_edition/1, kill_windows/0,
+		set_model_file/2, get_model_file/2, get_edition_and_limit/2,
+		kill_windows/0,
 		shows_model/2, monitors_variable/2, depth_list_is/1,
 		set_display_depth/3, get_display_depth/3, set_current_depth/1,
 		get_current_depth/1, suspend_display/0, make_current/1,
@@ -84,13 +85,12 @@ get_model_file(Model, File) :-
 
 :- dynamic(edition_is/1).
 
-get_edition(Cur_depth) :-
-	edition_is(Cur_depth).
+get_edition_and_limit(Ed, Limit) :-
+	edition_is(Ed),
+	member(Ed-Limit, [evaluation-25, teaching-50]).
 
 set_edition(New_depth) :-
 	assertz(edition_is(New_depth)).
-
-eval_fn_limit_is(25).
 
 :- dynamic(suspend_display/0).
 

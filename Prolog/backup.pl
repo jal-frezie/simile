@@ -110,8 +110,7 @@ restart_move :-
 counted_fns(0).
 
 save_allowed(Model, OK) :-
-	\+ state:get_edition(evaluation), !, OK = 1;
-	state:eval_fn_limit_is(Limit),
+	state:get_edition_and_limit(Edn, Limit), !,
 	retract(counted_fns(OldTot)),
 	assert(counted_fns(0)),
 	(contains(Model, Fun),
@@ -124,9 +123,10 @@ save_allowed(Model, OK) :-
 		/* canny buggers can get round save limit by killing the app
 		and restoring from logfile, so stop keeping logfile */
 	    retractall(autosave_file_is(Model, _F)),
-		output:safe_tcl_eval(['NotifyOverLimit', Limit], _)), !,
+		output:safe_tcl_eval(['NotifyOverLimit', Edn, Limit], _)), !,
 	    OK = 0;
-	OK = 1).
+	OK = 1);
+	OK = 1.
 
 	
 wrap(Old, New) :-

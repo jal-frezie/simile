@@ -2138,11 +2138,11 @@ proc ReportProblem {name autoName fault} {
     ShowMessage {Simile phone home!} info $reply(body) ok
 }
 
-proc NotifyOverLimit {limit} {
+proc NotifyOverLimit {edn limit} {
     global iconImages
     
     toplevel .notify
-    wm title .notify "Evaluation Edition"
+    wm title .notify "Over Limit For Edition"
     wm protocol .notify WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
@@ -2153,7 +2153,7 @@ proc NotifyOverLimit {limit} {
     pack [label $labf1.img -image $iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
-    pack [label $labf1.lab2 -text "The Evaluation Edition is limited to $limit functions. \n\
+    pack [label $labf1.lab2 -text "The $edn edition is limited to $limit functions. \n\
             You can continue to build and run this model, but\n\
             you will not be able to save it. " \
             -font {-family helvetica -size 10} -justify left] -side left
