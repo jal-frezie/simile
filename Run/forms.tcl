@@ -617,6 +617,7 @@ proc RelationCheck {parent title type state init_comment} {
     } else {
       set t [toplevel .relcheck -bd 4]
     }
+    wm transient .relcheck $parent
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
     wm title $t "Properties of [BlankCrs $title]"
@@ -1020,6 +1021,21 @@ proc LetItShow {t} {
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
     }
+    set scw [winfo screenwidth $t]
+    set sch [winfo screenheight $t]
+    set wotParent [wm transient $t]
+    if {[llength $wotParent]} {
+	scan [wm geometry $wotParent] {%dx%d+%d+%d} tgtw tgth tgtx tgty
+    } else {
+	set tgtx 0; set tgty 0
+	set tgtw $scw
+	set tgth $sch
+    }
+    set fillw [winfo reqwidth $t]
+    set fillh [winfo reqheight $t]
+    set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
+    set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
+    wm geometry $t +$left+$top
     return [winfo viewable $t]
 }
 
@@ -1520,4 +1536,3 @@ proc NotifyOverLimit {edn limit} {
     tkwait variable ack
     destroy .notify
 }
-
