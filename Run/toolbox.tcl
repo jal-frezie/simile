@@ -583,6 +583,8 @@ proc ChangeRegion {w l t r b} {
     }
 }
 
+set modelWin 0; #initialise modelWin -- no desktop Model window yet
+
 #######################################################################
 #                                                                     #
 # MainWindowDraw: puts a new model window on the screeen              #
@@ -592,11 +594,12 @@ proc ChangeRegion {w l t r b} {
 proc MainWindowDraw {winName winTitle wl wt wr wb \
             colour initialScale args} {
     global window_info looks env custom
-    
     set c [ModelWindow $winName]
     global modelWin
-    set modelWin $winName
-    
+    if {$modelWin==0} {
+        set modelWin $winName; # only first window (== desktop Model window )
+    }
+       
     TweakWindow $c $winTitle 1 $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
     #	[winfo screenheight $winName]
@@ -1488,6 +1491,7 @@ proc SetEqnButtonState {bar newState} {
 }
 
 proc RaiseModelWindow {} {
+    # raises the main model window
     global modelWin
     raise $modelWin
 }
