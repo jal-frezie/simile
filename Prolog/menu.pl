@@ -123,7 +123,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	name(Checked, CheckedStr),
 	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
-	    ame_merge(Parent, PrologData, _Date, Checked, Translated),
+	    ame_merge(Parent, PrologData, FileV, Checked, Translated),
 	    /* date not needed */
 	    output:my_delete_file(PrologData),
 
@@ -133,7 +133,10 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		  
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
-	    (output:my_file_exists(GraphFileName), !,
+	    (output:my_file_exists(GraphFileName),
+		FileV > 4.05, !,
+		/* reject canvas files older than v4.1 because clear submodels
+		need backgrounds to get paths graphically */
 		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName),
 		(Translated = copy;
@@ -143,7 +146,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
-	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no, Translated),
+	on_exception(ProLoss, ame_merge(Parent, Name, _FileV, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
 	    NeedsRedraw = 1;

@@ -219,7 +219,7 @@ choose_breakpoint(Break) :-
 % structure in it, and adds it into Parent. All structures are renamed
 % if not toplevel, to avoid clashes. Date from file is returned.
 
-ame_merge( Parent, File, Date, HasCode, Translated ) :-
+ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	open_native( File, read, Stream),
 	dialogue:reassure_user("Reading information from file"),
 	read( Stream, Header ),

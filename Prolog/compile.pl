@@ -26,6 +26,10 @@ compile( Language, Parent, DestDir) :-
 	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),
+	reassure_user("Checking that the model is complete and consistent"),
+	/* This is a stopgap, we should really update a property of the
+	submodel containing the destination whenever a link is added or
+	deleted so only to do these checks when needed */
 	build_instances(Language, DestDir, Parent, Parent, 1, _,_,_),
 	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
@@ -173,7 +177,6 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     merge_lists(LocalFnsUsed, []), unify(KeepDir)]).
 
 check_level_for_reds(Submodel) :-
-	reassure_user("Checking all model values are defined"),
 	find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
 	\+ is_ghost(VisEntity),
@@ -181,7 +184,6 @@ check_level_for_reds(Submodel) :-
 	caption_for(Submodel, OuterText),
 	caption_for(VisEntity, RedText),
 	raise_exception(unspecified(OuterText, RedText));
-	reassure_user("Checking all model links are consistent"),
 	Parent has_part Submodel,
 	Submodel has_model_refinement link_equivalences of Equivs,
 	member(Before-After, Equivs),
@@ -193,7 +195,6 @@ check_level_for_reds(Submodel) :-
 	       Submodel has_part F1, find_all_comps(Submodel, S1)),
 	raise_exception(link_inconsistency(Before-After));
 	by_record(Submodel),
-	reassure_user("Checking for a fixed parameter to define submodel membership"),
 	\+ defines_membership(Submodel, _Param),
 	caption_for(Submodel, OuterText),
 	raise_exception(no_defining_param(OuterText));
