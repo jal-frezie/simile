@@ -1780,3 +1780,8 @@ proc FilterErrors {args} {
         return $retVal
     }
 }
+
+proc ModelDirectory {} {
+    global custom
+    return [file dirname [lindex $custom(hotlist) 0]]
+}
