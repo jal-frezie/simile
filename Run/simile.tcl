@@ -12,18 +12,6 @@ switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
 	set env(TCL_LIBRARY) [info library]
-
-# Try to find the location of the compiler
-	if {[info exists env(MSVCDIR)]} {
-	    # No problem, all is well
-	} elseif {[info exists env(MSDEVDIR)]} {
-	    # later msvc -- move the variable
-	    set env(MSVCDIR) $env(MSDEVDIR)
-	} else {
-	    # guess the location
-	    set env(MSDEVDIR) d:/progra~1/micros~1/vc98
-	    set env(MSVCDIR) $env(MSDEVDIR)
-	}
 # Now, win95 etc needs the tcltk binaries in the path
 	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}

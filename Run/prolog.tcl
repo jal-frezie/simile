@@ -23,6 +23,7 @@ proc KeepLooking {} {
 		eval do_tail $line
 	    } else {
 		DebugMess $line
+		set prologExit 1
 	    }
 	}
     }

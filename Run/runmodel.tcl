@@ -599,6 +599,10 @@ proc AddHelperSublist {fm title ct} {
                     set helperTable(SliderControl) $keyValue
                 }
                 if {[string match {Data table} $action]} {
+
+
+
+
                     set helperTable(TableViewer) $keyValue
                 }
                 $m add command -label $action \
@@ -910,7 +914,8 @@ proc CountValues {text} {
 proc AddWidgetPopup {key X Y} {
     global msgs
     if {![PrefValue custom(popupHelp) popupHelp]} {
-	return
+	return
+
     }
     PostPopup $X $Y
     if {[info exists msgs($key)]} {
@@ -983,6 +988,7 @@ proc Prettify {value} {
     if {[llength $value]==1} {
         return $value
     } else {
+
         set newValue {}
         while {[llength $value]} {
             lappend newValue [join [list [lindex $value 0] \
@@ -1061,7 +1067,8 @@ proc StripCrs {withCrs} {
     regsub -all \n $withCrs \\n noCrs
     return $noCrs
 }
-
+
+
 proc RestoreCrs {noCrs} {
     regsub -all \\\\n $noCrs \n withCrs
 
@@ -1465,6 +1472,14 @@ proc compile_c {workingDir} {
             }
         }
         windows {
+                switch $tcl_platform(os) {
+                    {Windows NT} {
+			set mincmdline {cmd /c start /min}
+                    }
+                    {Windows 95} {
+			set mincmdline {start /m}
+		    }
+		}
             set TOOLDIR [file attributes $TOOLDIR -shortname]
             if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
                 set dll ame_dll${MAJ}${MIN}
@@ -1482,12 +1497,14 @@ proc compile_c {workingDir} {
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } else {
-                set TOOLS32 [file dirname $env(MSVCDIR)/any]
-                exec $minimizedcmdline $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
+#                set TOOLS32 [file dirname [lindex [split $env(MSVCDIR) \;] 0]/any]
+#		next line for debugging : works on mine!
+		set TOOLS32 {m:/program files/microsoft visual studio/vc98}
+                exec cl.exe -Ox -c -W3 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
                         -Foobjtemp.o model.cpp
-                exec $minimizedcmdline $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
+                exec link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
                         -align:0x1000 /MACHINE:IX86 \
                         -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
                         $TOOLDIR/../System/lib/Stubs/ame_dll${MAJ}${MIN}.lib \
@@ -1626,7 +1643,7 @@ proc do_setstepmodel {value level} {
     global ts dts
     if {$level<0} { ;# lazy
 	set ts([expr -$level]) $value
-    } else {
+    } else {
 	set dts($level) $value
     }
 }

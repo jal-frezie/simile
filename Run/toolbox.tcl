@@ -183,10 +183,45 @@ proc ControlDraw {prologVersion} {
         Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
                         "Use which C++ compiler?"}}
         file attributes $custom(prefDir) -hidden true
+	if {[string mat Microsoft [PrefValue custom(compChoice) compChoice]]} {
+	    set compiler cl.exe
+	    set possDirs {}
+	    if {[info exists env(MSVCDIR)]} {
+		set possDirs [concat $possDirs [split $env(MSVCDIR) \;]]
+	    }
+	    if {[info exists env(MSDEVDIR)]} {
+		set possDirs [concat $possDirs [split $env(MSDEVDIR) \;]]
+	    }
+	    lappend possDirs {c:/progra~1/micros~1/vc98} {}
+	}
     } else {
 	set custom(compChoice) GNU
     }
-    
+    if {[string mat GNU [PrefValue custom(compChoice) compChoice]]} {
+	set compiler g++
+	set possDirs {}
+    }
+    if {[info exists compiler]} {
+	if {[llength [set execLoc [auto_execok $compiler]]]} {
+	    # compiler tools are in path, hope libs and includes are nearby
+	    set env(MSVCDIR) [file dirname [file dirname $execLoc]]
+	} else {
+	    foreach possDir $possDirs {
+		if {[llength [auto_execok $possDir/bin/$compiler]]} {
+		    break
+		}
+	    }
+	    if {[llength $possDir]} {
+		set env(MSVCDIR) $possdir
+	    } else {
+		ShowMessage "C++ compiler setup problem" warning \
+		    "c++ compiler preference set to [PrefValue \
+custom(compChoice) compChoice] but no executable $compiler found in command \
+path or any of $possDirs" ok
+		set custom(compChoice) none
+	    }
+	}
+    }
     foreach nodeType {normal generic compartment channel \
                 variable function submodel flow influence \
                 ghost_link relation} {
@@ -1730,8 +1765,8 @@ proc accept_equation {winId text} {
     set equationbar(current_action) tick
     set equationbar(equation) [string trimright [$text get]]
     set node $equationbar($winId,node)
-    prolog [list tk_click_obj('$winId',  doubleclick, 0 , 0 , $node)]
-    focus $winId
+    prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node)]
+    focus $winId.canvas
 }
 
 proc AddInputs {winId bar} {
