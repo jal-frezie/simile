@@ -1023,7 +1023,9 @@ the next few lines in place, and math_protect asserted, AME will do the same.
    Now to exorcise the demon of integer division... */
 	Op = (/), !,
 	    VArgs = [Nom, Div],
-	    Atom = double(Nom)/Div;
+	    (L = c, !,
+		Atom = '(double)'(Nom)/Div;
+	    Atom = double(Nom)/Div);
 	Op = (//), !,
 	    VArgs = [Nom, Div],
 	    Atom = int(Nom)/int(Div);

@@ -483,7 +483,7 @@ proc compile_c {workingDir} {
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } else {
                 set TOOLS32 [file dirname $env(MSVCDIR)/any]
-                exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
+                exec $TOOLS32/bin/cl.exe -Ox -c -W1 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
                         -Foobjtemp.o model.cpp
