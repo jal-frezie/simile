@@ -137,9 +137,9 @@ double graphpoint(double xval, int index) {
 	*/
 	if (use_graph_pointer->range > 3) {
 	  intersection = *(use_graph_pointer->points + 
-			   max(0,min(spaces,int(interval+0.5))));
+			   max(0,min(spaces,(int)(interval+0.5))));
 	} else {
-	  lower = max(0,min(spaces-1,int(interval)));
+	  lower = max(0,min(spaces-1,(int)(interval)));
 	  interval -= lower;
 	  left = use_graph_pointer->points + lower;
 	  right = use_graph_pointer->points + min(spaces,lower+1);
@@ -152,7 +152,10 @@ double graphpoint(double xval, int index) {
 
 void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
-}
+}
+
+
+
 
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
 			     int num) {
@@ -442,6 +445,7 @@ int serviceError;
 appear in the object table. */
 
 int list(Model* listType, Tcl_Interp *interp) {
+
   Tcl_Obj *resultPtr;
   char* find;
   int line;
@@ -923,7 +927,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
    double starttime;
-   int phase;
+   int phase;
    int error;
 
    if (argc != 5) {
@@ -1473,6 +1477,18 @@ extern "C" int randseedCmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
+/* some built-in random generators are not very accurate. In this
+case we may use several random numbers to get a random double. */
+
+double rand_fract() {
+    double fraction = 0, precise = 1;
+    while (precise > 1e-16) {
+	precise = precise/(RAND_MAX+1);
+	fraction = fraction+precise*rand();
+    }
+    return fraction;
+}
+
 extern "C" int random01Cmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
     Tcl_Obj *resultPtr;
@@ -1482,7 +1498,7 @@ extern "C" int random01Cmd(ClientData clientData, Tcl_Interp *interp,
      return TCL_ERROR;
    }
     resultPtr = Tcl_GetObjResult(interp);
-    Tcl_SetDoubleObj(resultPtr, (double)rand()/RAND_MAX);
+    Tcl_SetDoubleObj(resultPtr, rand_fract());
    return TCL_OK;
 }
 
@@ -1490,9 +1506,8 @@ extern "C" int random01Cmd(ClientData clientData, Tcl_Interp *interp,
 themselves, but I want to test using the stub as a library, so let's have them
 call this... */
 
-double ame_rand(double lo, double hi)
-{
-    return  lo + (hi-lo)*(double)rand()/RAND_MAX;
+double ame_rand(double lo, double hi) {
+    return  lo + (hi-lo)*rand_fract();
 }
 
 extern "C" int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 
