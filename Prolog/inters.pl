@@ -141,14 +141,11 @@ read_func_file(File, Done) :-
 	read_funcs(File, Stream, Done).
 
 read_funcs(File, Stream, Done) :-
+	sicstus_format_to_chars("Parsing definitions in ~a", [File], ProbAct),
 	on_exception(WrongUDF, read_term(Stream, Line, [variable_names(VPrs)]),
 		     (make_nice_error_message(WrongUDF, Bug),
-			 sicstus_format_to_chars("Parsing definitions in ~a",
-						 [File], ProbAct),
 			 do_dialogue(ProbAct, warning, Bug, ok, _))),
 	(nonvar(Bug), !,
-	    sicstus_format_to_chars("Parsing definitions in ~a", [File],
-					 ProbAct),
 	    do_dialogue(ProbAct, warning, Bug, ok, _),
 	    read_funcs(File, Stream, Done);
 	 Line == end_of_file, !,
@@ -160,8 +157,11 @@ read_funcs(File, Stream, Done) :-
 	    replace those in template with free ones */ 
 	    Macro =.. [Fn | Args],
 	    replace_subexps(Line, inters, free_params, switch(Args, _),
-			    top_down, _, NewLine),
-	    assert(macro_expansion(NewLine)),
+				    top_down, Pairs, NewLine),
+	    (member(var_pair(Param, Free), Pairs), Free == free, !,
+		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
+		do_dialogue(ProbAct, warning, Bug, ok, _);
+	    assert(macro_expansion(NewLine))),
 	    append_atoms(Fn, ' (user-defined macro)', FnEntry);
 	Line = function(Functor, _ReturnType, _ArgTypes),
 	    assert(Line),
@@ -172,17 +172,19 @@ read_funcs(File, Stream, Done) :-
 	Line = unit_definition(New, Old), !,
 	    add_unit_definition(New, Old),
 	    read_funcs(File, Stream, Done);
-	sicstus_format_to_chars("The file ~as.pl contained the line ~w which is in the wrong format for a ~a -- please refer to the documentation.", 
-	               [Type, Line, Type], Bug),
+	sicstus_format_to_chars("The file ~a contained the line ~w which is in the wrong format for a macro, function or unit definition -- please refer to the documentation.", 
+	               [File, Line], Bug),
 	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
 	    read_funcs(File, Stream, Done)).
 
 free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
 	var(Arg), !; /* in case someone used an underscore */
-	nth(N, Fixed, ArgConst),
-	\+ var(ArgConst), /* in case some b**** used an underscore */
-	Arg = ArgConst,
-	nth(N, Var, ArgVar).
+	m_update:get_solo_list_depth(Arg, _),
+	(nth(N, Fixed, ArgConst),
+	    \+ var(ArgConst), /* in case some b**** used an underscore */
+	    Arg = ArgConst,
+	    nth(N, Var, ArgVar);
+	ArgVar = free).
 
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	append(Outer, [var | Inner], Dims), !,

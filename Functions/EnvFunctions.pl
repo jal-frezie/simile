@@ -84,7 +84,10 @@ quadraticLarger(A,B,C) -->
 % Roland B. Stull. 1995 West Publishing  Co.
 
 % Average radius of the earth (km)
-averageRadiusOfEarth --> (6356.766).
+/* averageRadiusOfEarth --> (6356.766).
+If this is to be a macro it should have a dummy arg -- see definition of pi.
+But it really needs to be defined as a unit of distance, like this: */
+unit_definition(averageRadiusOfEarth, 6356.766*km).
 
 % Mean horizontal windspeed (m/s) from U and V velocity components
 % U (m/s) is from west to east, V (m/s) is from south to north
