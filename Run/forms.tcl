@@ -454,6 +454,7 @@ proc GetTable {parent box} {
         set equation(table_data) [concat [list $table_entry(fileName) \
                 $table_entry(dataField)] $table_entry(indices)]
         set equation(table_values) [LoadTableData $equation(table_data)]
+#puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
             $box insert insert table\(\[
             for {set count [llength $table_entry(indices)]

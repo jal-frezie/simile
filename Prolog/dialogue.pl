@@ -145,11 +145,12 @@ all args being empty) escapes from here.
 Note that interact_equation should return strings for all these
 things. */
 
-update_equation(_,_, InList,_, [Table_st, Data_st]) :-
+update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	assert(input_list_is(InList)),
 	get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
-	get_table_data(Data_st, DataTable, TableVals, Complaint),
+	get_table_data(Function, Data_st, DataTable,
+		       TableVals, Units, Dims, Complaint),
 	(Complaint = [], !,
 	    TableData = [FileName, DataField | Indices], 
 	    retractall(table_data_is(_)),
@@ -334,36 +335,50 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	
 table_ref(_, table(_), _, 0).
 
-get_table_data(Data, Table, Orig, Complaint) :-
+get_table_data(Function, Data, Table, Orig, Units, Dims, Complaint) :-
 	on_exception(Complaint,
-		     (get_table_part(Data, Table, Orig, Dims),
-		     zero_empties(Table, Dims)), true).
+		     (get_table_part(Function, Data, Table,
+				     Orig, Units, Dims, Sizes),
+		     zero_empties(Table, Sizes)), true).
 
-get_table_part(Data, Table, Orig, Dims) :-
+get_table_part(Function, Data, Table, Orig, Units, Dims, Sizes) :-
 	name(Num, Data),
-	number(Num), !,
-	    Table = Num,
-	    Orig = Num,
-	    Dims = [];
+	enum_type_ref(Num, Function, Orig, Units),
+	    Table = Orig,
+	    Dims = [],
+	    Sizes = [];
 	output:chop_list(Data, Alternator),
-	    feed_items(Alternator, Table, SubOrig, Dims), !,
+	    feed_items(Function, Alternator, Table,
+		       SubOrig, Units, Dims, Sizes), !,
 	    Orig = br(SubOrig);
 	append(["Table contained the data item ", Data,
-		", which is not a numeric value."], Loss),
+		", which is not a recognizable constant."], Loss),
 	    raise_exception(Loss).
 
-feed_items([], _, [], []).
-feed_items([IndStr, ValStr | More], Table, [Ind, VOrig | TOrig], Dims) :-
-	feed_items(More, Table, TOrig, LoDims),
-	name(Ind, IndStr),
-	nth(Ind, Table, Line),
-	get_table_part(ValStr, Line, VOrig, HiDims),
-	max_all(LoDims, [Ind | HiDims], Dims).
+feed_items(_, [], _, [], _, _, []).
+feed_items(Fn, [IndStr, ValStr | More], Table, [Ind, VOrig | TOrig],
+	   Units, Dims, Sizes) :-
+	feed_items(Fn, More, Table, TOrig, DUnit, Dims, LoSizes),
+	(name(Ind, IndStr),
+	    enum_type_ref(Ind, Fn, Posn, IUnit);
+	append(["Table contained the index item ", IndStr,
+		", which is not a recognizable constant."], Loss),
+	    raise_exception(Loss)),
+	nth(Posn, Table, Line),
+	get_table_part(Fn, ValStr, Line, VOrig, Units, HiDims, HiSizes),
+	(Units = DUnit, !;
+	    raise_exception("Data units mismatch.")),
+	 (Dims = [IUnit | HiDims], !;
+	    raise_exception("Index units mismatch.")),
+	max_all(LoSizes, [Posn | HiSizes], Sizes).
 
 max_all(A, B, X) :-
 	A = [I1 | C], !,
 	    (B = [I2 | D], !,
-		I is max(I1, I2),
+		(I1=I, I2=I, !; I is max(I1, I2);
+		    format_to_chars("Cannot match index dimensions ~w and ~w.",
+				    [I1, I2], Loss),
+		    raise_exception(Loss)),
 		max_all(C, D, Y),
 		X = [I | Y];
 	    X = A);

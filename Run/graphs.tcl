@@ -921,11 +921,11 @@ proc GetFromTable {parent compName} {
 
 proc LoadTableData {tableSpec} {
     
-    ShowMessage debug info "Loading table with data $tableSpec" ok
+#ShowMessage debug info "Loading table with data $tableSpec" ok
     set tStr [open [lindex $tableSpec 0] r]
     gets $tStr headerLine
     set headerList [split $headerLine ,]
-    ShowMessage debug info "Headers are $headerList" ok
+#ShowMessage debug info "Headers are $headerList" ok
     
     set indexCount 0
     set lineCount 0
@@ -936,11 +936,11 @@ proc LoadTableData {tableSpec} {
         incr indexCount
     }
     set headerColumn [lsearch $headerList [lindex $tableSpec 1]]
-    ShowMessage debug info "Columns: header $headerColumn" ok
+#ShowMessage debug info "Columns: header $headerColumn" ok
     
     while {[gets $tStr entryLine] != -1} {
         set entryList [split $entryLine ,]
-        ShowMessage debug info "Data line is $entryList" ok
+#ShowMessage debug info "Data line is $entryList" ok
         
         if {[info exists indexColumns]} {
             set arrayIndex {}
@@ -968,25 +968,33 @@ proc LoadTableData {tableSpec} {
         lappend indexList $maxIndices($idxIdx)
     }
     
-    ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
+#ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     return [ArrayToList paramArray top $indexList]
 }
 
 proc ArrayToList {topArray indexSoFar otherMaxes} {
-    ShowMessage debug info "$indexSoFar $otherMaxes" ok
+#ShowMessage debug info "$indexSoFar $otherMaxes" ok
     upvar 1 $topArray array
     if {[llength $otherMaxes]} {
         foreach pt [lindex $otherMaxes 0] {
-            lappend result $pt [ArrayToList array $indexSoFar,$pt \
-                    [lrange $otherMaxes 1 end]]
+            lappend result [QuoteNonNumeric $pt] \
+		[ArrayToList array $indexSoFar,$pt [lrange $otherMaxes 1 end]]
         }
-        return $result
     } else {
         if {[info exists array($indexSoFar)]} {
-            return $array($indexSoFar)
+	    set result [QuoteNonNumeric $array($indexSoFar)]
         } else {
-            return 0
+            set result 0
         }
+    }
+    return $result
+}
+
+proc QuoteNonNumeric {val} {
+    if {[catch {expr 1*$val}]} {
+	return \"$val\"
+    } else {
+	return $val
     }
 }

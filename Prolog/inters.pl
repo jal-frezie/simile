@@ -268,10 +268,10 @@ make_intermediates(
 	    parameter info (in case it is a ref to final result) but not
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
-	    Source = param(_, Units, OrigLoops, _,_),
+	    Source = param(_, SrcUnits, OrigLoops, _,_),
 	    (Step = dummy, !,
 		Units = SrcUnits;
-	    unmake_enum_units(SrcUnits, Units)), 
+	    unmake_enum_units(SrcUnits, Units)), !,
 	    get_dims_from_loops(OrigLoops, Dims, _),
 	    get_dims_from_loops(SourceLoops, Dims, _),
 	    
@@ -622,10 +622,7 @@ make_intermediates(
 	    Source = (Test?True:False), !,
 		SourceList = [Test, True, False],
 		RUnits = any,
-	        (Step = dummy, !,
-		    SelectorUnits = a('"boolean"');
-		SelectorUnits = int), 
-		Arg_template = [SelectorUnits, RUnits, RUnits],
+	        Arg_template = [a('"boolean"'), RUnits, RUnits],
 		ResultList = [RTest, RTrue, RFalse],
 		SourceRef = (RTest?RTrue:RFalse);
 	    Source = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, Param),
@@ -681,7 +678,7 @@ make_intermediates(
 unmake_enum_units(SrcUnits, Units) :-
 	SrcUnits = n(_),
 	    Units = const_int;
-	SrcUnits = a(_),
+	SrcUnits = a(Type), \+ Type = '"boolean"',
 	    Units = int;
 	Units = SrcUnits.
 
