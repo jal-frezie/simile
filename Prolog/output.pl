@@ -104,6 +104,11 @@ get_file_name(Preferred, Action, CanBeNew, FileName) :-
 			  CanBeNew], RetVal),
 	name(FileName, RetVal).
 
+list_matching_files(Template, Matches) :-
+	safe_tcl_eval([glob, '-nocomplain', Template], GotStr),
+	chop_list(GotStr, MatchStrs),
+	all(user, name, [build(Matches), build(MatchStrs)]).
+
 enable_text_editing_in(Wid) :-
 	safe_tcl_eval(
 		['EnableEdits', Wid], _).

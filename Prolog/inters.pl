@@ -118,43 +118,42 @@ expand_library(DestRef, Var, NewVar) :-
 
 read_library_funx(Done) :-
 	retractall(macro_expansion(_Line)), /* in case I ship it after a run */
-	open('../Functions/macros.pl', read, Stream1),
-	/* rel path only needed in dev sys */
-	read_funcs(Stream1, macro, Done1),
-	open('../Functions/defns.pl', read, Stream2),
-	read_funcs(Stream2, defn, Done2),
-	append(Done1, Done2, Done).
+	output:list_matching_files('../Functions/*.pl', FnIncs),
+	/* the /* in the above line does not start a comment */
+	all(inters, read_func_file, [build(FnIncs), append(Done, [])]).
 
-read_funcs(Stream, Type, Done) :-
+read_func_file(File, Done) :-
+	open(File, read, Stream),
+	read_funcs(File, Stream, Done).
+
+read_funcs(File, Stream, Done) :-
 	on_exception(WrongUDF, read(Stream, Line),
 		     (ame_gen:make_nice_error_message(WrongUDF, Bug),
-			 sicstus_format_to_chars("Parsing user-defined ~as",
-						 [Type], ProbAct),
+			 sicstus_format_to_chars("Parsing definitions in ~a",
+						 [File], ProbAct),
 			 do_dialogue(ProbAct, warning, Bug, ok, _))),
 	(nonvar(Bug), !,
-	    sicstus_format_to_chars("Parsing user-defined ~as", [Type],
+	    sicstus_format_to_chars("Parsing definitions in ~a", [File],
 					 ProbAct),
 	    do_dialogue(ProbAct, warning, Bug, ok, _),
-	    read_funcs(Stream, Type, Done);
+	    read_funcs(File, Stream, Done);
 	 Line == end_of_file, !,
 	    close(Stream),
 	    Done = [];
-	(Type = macro,
-	    Line = (Macro --> _Defn),
+	(Line = (Macro --> _Defn),
 	    assert(macro_expansion(Line)),
 	    Macro =.. [Fn | _Args],
 	    append_atoms(Fn, ' (user-defined macro)', FnEntry);
-	Type = defn,
-	    Line = function(Functor, _ReturnType, _ArgTypes),
+	Line = function(Functor, _ReturnType, _ArgTypes),
 	    assert(Line),
 	    assert(use_tcl_proc_for(Functor)), !,
 	    append_atoms(Functor, ' (user-defined procedure)', FnEntry)),
-	    read_funcs(Stream, Type, More),
+	    read_funcs(File, Stream, More),
 	    Done = [FnEntry | More];
 	sicstus_format_to_chars("The file ~as.pl contained the line ~w which is in the wrong format for a ~a -- please refer to the documentation.", 
 	               [Type, Line, Type], Bug),
 	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
-	    read_funcs(Stream, Type, Done)).
+	    read_funcs(File, Stream, Done)).
 
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	append(Outer, [var | Inner], Dims), !,

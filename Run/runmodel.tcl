@@ -1613,7 +1613,9 @@ proc load_dll {lang progFileDir modelPath node} {
     global phasecount nodedata nodecount model_id model_ids
     set nameBase $progFileDir$modelPath/model
     if {[string match tcl $lang]} {
-	source ../Functions/procs.tcl
+	foreach fnFile [glob -nocomplain ../Functions/*.tcl] {
+	    source $fnFile
+	}
 	source $nameBase.$lang
 	if {[info exists simile_version]} {
 

@@ -291,6 +291,17 @@ wot need them */
 
 	send_to_dest(Stream, ['#include <support1.cpp>', VersionDec,
 			      PhaseDec, DTs]),
+
+	output:list_matching_files('../Functions/*.cpp', FnIncs),
+	/* the /* in the above line does not start a comment */
+	all(utility, append_atoms,
+	    [unify('#include "'), build(FnIncs), build(PartIncs)]),
+	/* the " in the above line does not start a quoted string */
+	all(utility, append_atoms,
+	    [build(PartIncs), unify('"'), build(FullIncs)]),
+	/* the " in the above line does not start a quoted string */
+	send_to_dest(Stream, FullIncs),
+	
 	send_to_dest(Stream, TypeSection),
 	reassure_user("Generating constant declarations"),
 	render_all(Language, variable_declaration, 
