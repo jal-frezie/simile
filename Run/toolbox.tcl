@@ -133,7 +133,7 @@ proc TrimTree {Top Point} {
 
 # this exists in case I don't want to exploit the concat in eval
 proc do_for_node {node args} {
-    global runStatus
+    global runStatus chosenPaths
     if {![info exists runStatus($node,interp)]} {
 	set newInterp [interp create]
 	$newInterp alias PrefValue PrefValue
@@ -142,6 +142,7 @@ proc do_for_node {node args} {
 	$newInterp alias RunSettingsAllowSave \
 	    prolog tk_run_settings_tweaked($node)
 	$newInterp eval source ../Run/runmodel.tcl
+	$newInterp eval set chosenPaths(latest) $chosenPaths(latest)
 	set runStatus($node,interp) $newInterp
     }
     return [$runStatus($node,interp) eval $args]
