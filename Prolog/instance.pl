@@ -188,7 +188,7 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	so ordering will not be done -- otherwise the above would be
 	Home+Step*last(In-Out) */
 	
-	is_instance(internal, Node, none, Diffs, diffs-Units, DiffStruct),
+	is_instance(internal, st(Node), none, Diffs, diffs-Units, DiffStruct),
 	is_instance(compartment, Node,
 		    incr(Step, Home+stage_incr(Diffs, Step, (In-Out))),
 		    Home, Base-Units, Instance).
