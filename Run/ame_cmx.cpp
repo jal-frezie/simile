@@ -970,7 +970,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 
    error = modelType->eval(modelHandle, starttime, phase, FALSE);
    if (error < 0) {
-     sprintf(spare, "The model program performed an illegal operation, generating signal %d -- try running it in Tcl for more information.", -error);
+     sprintf(spare, "Illegal operation signal %d", -error);
      Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
      return TCL_ERROR;
    } else if (error > 0) {

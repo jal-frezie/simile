@@ -49,7 +49,6 @@ proc do_model {what args} {
 
 	if {$model_id} {
 	    set target "a value"
-	    set node foo
 	} else {
 	    set modelLine [lindex [split $errorInfo \n] end-5]
 	    regexp { (\d+)\)$} $modelLine spare lineNo
@@ -65,35 +64,35 @@ proc do_model {what args} {
 	    regexp {set ([^ ]*) .*} $mLine spare targetName
 	    set dest [namespace eval AME_model<> "set spare $targetName"]
 	    set targetList [DescribeComponent $dest]
-	    set target [lindex $targetList 0]
-
-# right now to get the node id
-	    global nodedata nodecount
-	    for {set record 0} {$nodecount>$record} {incr record} {
-		if {[string equal $dest [burrow_to ::AME_model<> \
-					     [lindex $nodedata($record) 4] \
-					     [lindex $targetList 1]]]} {
-		    set node [lindex $nodedata($record) 0]
-		}
-	    }
+	    set target "[lindex $targetList 0] (node [GetNodeIdFromRef $dest \
+[lindex $targetList 1]])"
 	}
 
 	switch -glob -- $whoopsie {
 	    "can't read \"*\": no such element in array" - 
 	    "can't read \"*\": no such variable" {
 		set ref [lindex [split $whoopsie \"] 1]
-		set vdesc [lindex [DescribeComponent $ref] 0]
+                set sourceList [DescribeComponent $ref] 
+		set vdesc "[lindex $sourceList 0] (node [GetNodeIdFromRef \
+    $ref [lindex $sourceList 1]])"
 		set problem "it found that there was no value for $vdesc"
 	    } "User-defined interruption code *" {
 		set code [lindex $whoopsie end]
 		set problem "there was a user-defined interruption: $code"
+	    } "Illegal operation signal *" {
+		set code [lindex $whoopsie end]
+		set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
+		    SIGIOT SIGEMT SIGFPE SIGKILL SIGBUS SIGSEGV SIGSYS SIGPIPE 
+		    SIGALRM SIGTERM SIGUSR1 SIGUSR2 SIGCHLD SIGPWR SIGWINCH 
+		    SIGURG SIGIO SIGSTOP SIGTSTP SIGCONT SIGTTIN
+		    SIGTTOU SIGVTALRM SIGPROF} $code]
+		set problem "there was an OS signal: $code ($which)"
 	    } "domain error: argument not in valid range" -
 	    "floating-point value too large to represent" -
 	    "divide by zero" {
 		set problem "there was a math error: $whoopsie"
 	    } default {
-		BuildProblem none none "This happened while doing $mLine:
-$errorInfo" system
+		BuildProblem none none $errorInfo system
 		return 0
 	    }
 	}
@@ -112,11 +111,22 @@ $errorInfo" system
 	    }
 	}
 	set mess "Simile ran into a problem trying to run this model. 
-While it was trying to $operation $target (node $node) during $action of the model$timing, $problem."
+While it was trying to $operation $target during $action of the model$timing, $problem."
 	BuildProblem none none $mess user
 	return 0
     } else {
 	return 1
+    }
+}
+
+# right now to get the node id
+proc GetNodeIdFromRef {dest indices} {
+    global nodedata nodecount
+    for {set record 0} {$nodecount>$record} {incr record} {
+	if {[string equal $dest [burrow_to ::AME_model<> \
+				    [lindex $nodedata($record) 4] $indices]]} {
+	    return [lindex $nodedata($record) 0]
+	}
     }
 }
 
