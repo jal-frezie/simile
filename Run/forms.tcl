@@ -521,7 +521,6 @@ proc fill_table {node table_data table_values} {
 
     set equation(table_data) $table_data
     set trans [GetFromProlog tk_get_info({},$node,types)]
-puts "node is $node   trans is $trans"
     set equation(table_values) [TransEnums $trans $table_values]
 }
 

@@ -158,11 +158,14 @@ trim_float(F, Ns) :-
 /* If we rely on writeq to put non-readable atoms in quotes it will
 also convert wide characters into sets of hex codes enclosed in
 backslashes, which other Prologs cannot read. So we do it by hand
-instead. */
+instead.
+
+Note use of name rather than write_to_codes because latter causes
+confusion with the print stream. */
 
 needs_quoting(Foo, Bar) :-
 	atom(Foo),
-	write_to_codes(Bar, Foo),
+	name(Foo, Bar),
 	append(Bar, ".", Barb),
 	catch(read_from_codes(Barb, Foob), _Err, true),
 	\+ Foob == Foo.
