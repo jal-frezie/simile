@@ -762,7 +762,7 @@ proc ControlDraw {prologVersion} {
                 {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"} \
                 {custom(hackBreak) hackBreak OFF "Pause to edit C++ code?"} \
     }
-    if [string match Darwin $tcl_platform(os) {
+    if [string match Darwin $tcl_platform(os)] {
         Pref_Add {  {custom(popupHelp) popupHelp OFF "Popup help text"} \
                     {custom(compDescPop) compDescPop OFF "Equation"} \
                     {custom(compValPop) compValPop OFF  "Value"} \
