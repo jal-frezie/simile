@@ -4,8 +4,8 @@ AME starts up. Subsequently it can itself load other shared
 libraries corresponding to compiled model programs, and allow
 them to be executed etc by Tcl commands. */
 
-#include <tcl.h>
 #include <signal.h> /* for killing stuck model execution */
+#include <tcl.h>
 
 #define	GETDIMS		0
 #define	GETTYPE		1
@@ -308,6 +308,7 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
   Tcl_Obj* valPtr;
   int stepIndex, rv;
   long int mSpare;
+  double makeInt;
 
   data_line = searchinfo(id, &mSpare, caption, dims, path);
   strcpy(caption, data_line->name);
@@ -336,7 +337,12 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
     case VALUELESS: /* getting number of instances for record submodel */
     case INTEGER:
     case ENUMERATED:
-      serviceError = Tcl_GetIntFromObj(globInterp, valPtr, (int*)tgt);
+      /* if someone enters a float in a slider entry box or time series for
+	 an integer input, we want the nearest int value... */
+      serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, &makeInt);
+      if (serviceError == TCL_OK) {
+	*(int*)tgt = int(makeInt);
+      }
       return;
     case REAL:
       serviceError = Tcl_GetDoubleFromObj(globInterp, valPtr, (double*)tgt);
