@@ -1551,7 +1551,7 @@ unclick_obj :-
 	get_mode(delete),
 	get_phase(delete_hunt),
 	initialize_phase,
-
+	get_current_node(Parent),
 	contains(Top, Parent),
 	is_toplevel(Top),
 	delete_net(Top),
