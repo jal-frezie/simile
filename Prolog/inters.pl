@@ -1,5 +1,5 @@
 sicstus_module(inters, [final_assignment/11, make_intermediates/12,
-			expand_library/3, function/3,
+			expand_library/3, macro_expansion/2, function/4,
 			promote_unit/2, promote_arg/3, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			make_inds_for/3, pointer_from/2]).
@@ -109,10 +109,10 @@ enabling the channel ID to be got from it */
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
 
-:- dynamic(macro_expansion/1).
+:- dynamic(macro_expansion/2).
 
 expand_library(DestRef, Var, NewVar) :-
-	macro_expansion(Macro),
+	macro_expansion(_Cat, Macro),
 	    Macro = (Var --> NewVar);
 	Var = prev(N),
 	    ((\+ integer(N); N < 0),
@@ -133,7 +133,8 @@ expand_library(DestRef, Var, NewVar) :-
 	    NewVar = (Bool?V1:V2).
 
 read_library_funx(Done) :-
-	retractall(macro_expansion(_Line)), /* in case I ship it after a run */
+	retractall(macro_expansion(_Cat, _Line)),
+	/* in case I ship it after a run */
 	output:list_matching_files('../Functions/*.pl', FnIncs),
 	/* the /* in the above line does not start a comment */
 	all(inters, read_func_file, [build(FnIncs), unify("../Functions/"),
@@ -181,11 +182,11 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    (member(var_pair(Param, NewParam), Pairs), NewParam == Param, !,
 		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
 		do_dialogue(ProbAct, warning, Bug, ok, _);
-	    assert(macro_expansion(NewLine))),
+	    assert(macro_expansion(Category, NewLine))),
 	    append_atoms(['{', Category, ' {', File, '}} ', Fn], FnEntry);
 	Line = function(Functor, ReturnType, ArgTypes),
 	    WhereFound = 'Procedures',
-	    assert(Line),
+	    assert(function(Category, Functor, ReturnType, ArgTypes)),
 	    assert(use_tcl_proc_for(Functor)), !,
 	    dialogue:spell_out([ReturnType | ArgTypes], 1),
 	    dialogue:make_arg_list(ArgTypes, String),
@@ -747,6 +748,9 @@ make_intermediates(
 		    length(WrongLen, FnArity),
 		    raise_exception(wrong_no_of_args(Source, Op,
 						     Arity, FnArity));
+		 m_class:SubId has_class_refinement uses_local_fns of UserFns,
+		    member(Op/Arity, UserFns),
+		    raise_exception(lost_user_defined_fn(Source, Op, Arity));
 		 raise_exception(no_such_function(Source, Op))),
 	    (Source = sofar(_), !,
 		dissociate(SubArgs, UseArgs);
@@ -785,7 +789,7 @@ raise_units(Base, Num, Units) :-
 
 fn_or_op(Op, RUnits, AUnits) :-
 	var(Op), !;
-	function(Op, RUnits, AUnits);
+	function(_Cat, Op, RUnits, AUnits);
 	builtin(_Cat, Op, RUnits, AUnits);
 	operator(Op, RUnits, AUnits).
 
@@ -872,7 +876,7 @@ of arguments they will be told so. Hopefully their correct use will be
 caught by the parser before this list is checked so they will not be
 put into the target program. */
 
-:- dynamic(function/3).
+:- dynamic(function/4).
 :- dynamic(use_tcl_proc_for/1).
 
 /* These are implemented by the parser. Note the units are descriptive since

@@ -1013,7 +1013,7 @@ show_error(Model, Lossage) :-
 	    sicstus_format_to_chars("Failed to convert ~a into a program instruction. This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this variable inconsistent, in which case editing this variable again will make the model runnable. ", [Target], Amble),
 	    dialogue:decode_error(Problem, Explain),
 	    append([Amble, "The parser gave this message: ", Explain], Text),
-	    Fault = system;
+	    Fault = user;
 	Lossage = cannot_make_context(Target, BaseContext, BackSwap), !,
 	    sicstus_format_to_chars("Simile cannot work out which combination of program loops to put the instruction ~a into. Trying to modify ~w with ~w.",
 				    [Target, BaseContext, BackSwap], Text),

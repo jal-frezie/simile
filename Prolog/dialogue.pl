@@ -309,9 +309,15 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	technology to get values at build time */
 
 	/* Now, is there a reference to a table or graph? If so, load the data 
-	for it. Otherwise ignore any data. */
-	replace_subexps(Result, dialogue, table_ref, 0, top_down, TGMatch, _),
-	(TGMatch = [_ | _],
+	for it. Otherwise ignore any data. This also lists user-defined
+	functions (macros and procedures) */
+	replace_subexps(Result, dialogue, table_ref, UserFnOpen,
+			top_down, AllMatch, _),
+	(var(UserFnOpen), !,
+	    UserFnList = '';
+	get_ground_part(UserFnOpen, UserFnList)),
+	purge(AllMatch, [table(_), graph(_)], TGMatch),
+	(\+ TGMatch = AllMatch, /* some tables/graphs removed */
 	    table_data_is(TableAttr), !;
 	 TableAttr = ''),
 	/* table data is auto-generated so should be well formed */
@@ -331,6 +337,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    update_parameterhood(Function, Is_P, AffectedNode),
 	    build_array(NewUnits, EqnDims, NewArraySpec),
 		add_parameter(AffectedNode, 0, value, Result),
+		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
 		add_parameter(AffectedNode, 0, spec, OldEqn),
 		add_parameter(AffectedNode, 0, units, NewArraySpec),
 		add_parameter(AffectedNode, 0, description, Desc),
@@ -374,8 +381,21 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	append([Pref, TypeStr, Plural, SubType], Desc).
 	    
 	
-table_ref(_, Ref, _, 0) :-
-	member(Ref, [table(_), graph(_)]).
+table_ref(Datta, Ref, DumFn, Recurse) :-
+	member(Ref, [table(_), graph(_)]),
+	    Recurse = 0;	 
+	Ref =.. [Functor | Args],
+	    length(Args, Arity),
+	    (function(Cat, Functor, _R, TptArgs);
+		macro_expansion(Cat, (Fn --> _Defn)),
+		Fn =.. [Functor | TptArgs]),
+	    \+ Cat = 'Built-in',
+	    length(TptArgs, Arity),
+	    (Args = [''], UseArity = 0;
+		UseArity = Arity),
+	    DumFn =.. [userfnsubbedhere | Args],
+	    member(Functor/UseArity, Datta), !,
+	    Recurse = 1.
 
 get_table_data(Function, Data, Table, Orig, Units, Dims, Sizes, Complaint) :-
 	on_exception(Complaint,
@@ -672,6 +692,10 @@ decode_error(ParseError, TestError) :-
 	Type = only_works_on_array, !,
 	    SimpleError =.. [Functor, Arr | _],
 	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents either a single value or a variable membership list.", [Functor, Arr], TestError);
+	Type = lost_user_defined_fn, !,
+	    More = [Op, Arity],
+	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": When this was entered, \"~a\" was a user-defined function (a procedure or macro) with ~d arguments, but currently there is no definition for it.",
+			   [SimpleError, Op, Arity], TestError);
 	Type = no_such_function, !,
 	    More = [Op],
 	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": Simile does not include \"~a\" as a function.",
