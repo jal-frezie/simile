@@ -121,7 +121,7 @@ proc do_model {node what args} {
 	}
 	set mess "Simile ran into a problem trying to run this model. 
 While it was trying to $operation $target during $action of the model$timing, $problem."
-	BuildProblem none none $mess user
+	BuildProblem "Problem with model" warning $mess execution
 	return 0
     } else {
 	return 1

@@ -322,9 +322,13 @@ find_reference(Object, Index, Remote) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 do_dialogue(Header, Icon, RiskyBlurb, Buttons, Response) :-
 	escape_curlies(RiskyBlurb, Blurb),
+	(Buttons = ok, !,
+	    output:safe_tcl_eval(['BuildProblem', br(chars(Header)), Icon,
+				  br(chars(Blurb)), top], _),
+	    Response = Buttons;
 	output:safe_tcl_eval(['ShowMessage', br(chars(Header)), Icon,
-			  br(chars(Blurb)), Buttons], Feedback),
-	name(Response, Feedback).
+			      br(chars(Blurb)), Buttons], Feedback),
+	    name(Response, Feedback)).
 
 make_button_strings([], []).
 

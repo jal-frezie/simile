@@ -29,26 +29,26 @@ proc ShowMessage { title icon string resps {parent {}}} {
 # general error handling -- note that only user errors will be raised from
 # execution interps, so the reporting stuff can be kept in the editor interp
 
-proc BuildProblem {name autoName msg fault} {
-    global iconImages
+proc BuildProblem {Title errLevel msg key args} {
+    global iconImages help
 
     toplevel .buildprob
     wm transient .buildprob [focus]
-    switch $fault {
-        user {
-            set Title "Problem with model"
-            set errLevel warning
-            set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
-        } system {
-            set Title "Build failure"
-            set errLevel error
-            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
-        } tcl {
-            set Title "User interface problem"
-            set errLevel error
-            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
-        }
-    }
+#    switch $fault {
+#        user {
+#            set Title "Problem with model"
+#            set errLevel warning
+#            set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
+#        } system {
+#            set Title "Build failure"
+#            set errLevel error
+#            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+#        } tcl {
+#            set Title "User interface problem"
+#            set errLevel error
+#            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+#        }
+#    }
     wm title .buildprob $Title
     wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
@@ -74,14 +74,14 @@ proc BuildProblem {name autoName msg fault} {
     pack [button $buttons.ok -text OK -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-    if {![string match $fault user]} {
+    if {[llength $args]==2} {
         pack [button $buttons.report -text {Send bug report} -width 20 \
-                -command [list ReportProblem $name $autoName $msg]] \
+		  -command [concat ReportProblem $args [list $msg]]] \
                 -side left -padx 4 -pady 4
     }
     pack [button $buttons.help -text Help -width 10 \
-            -command "set ack 1; $buttonCmd"] \
-            -side left -padx 4 -pady 8
+           -command "set ack 1; ContextSensitiveHelp .buildprob $help($key)"] \
+           -side left -padx 4 -pady 8
     pack $buttons
     
     set height [winfo reqheight .buildprob]

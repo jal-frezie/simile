@@ -1089,10 +1089,13 @@ show_error(Model, Lossage) :-
 	    Fault = user;
 	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
 	    Fault = system),
+	ProbDesc = ['BuildProblem', br('Problem with model'),
+		    warning, br(chars(Text)), execution],
+	(Fault = user, !, FullProb = ProbDesc;
 	(get_model_file(Model, Name), !; Name = unsaved),
-	(backup:autosave_file_is(Model, AutoName), !; AutoName = none),
-	output:safe_tcl_eval(['BuildProblem', br(Name), br(AutoName),
-			      br(chars(Text)), Fault], _).
+	    (backup:autosave_file_is(Model, AutoName), !; AutoName = none),
+	    append(ProbDesc, [br(Name), br(AutoName)], FullProb)),
+	output:safe_tcl_eval(FullProb, _).
 
 /*
 Unused because only desktop is runnable anyway

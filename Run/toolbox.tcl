@@ -82,7 +82,8 @@ proc FilterErrors {args} {
     if {[catch $args retVal]} {
         set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
         if {[string match yes $ans]} {
-            BuildProblem unsaved none $errorInfo tcl
+            BuildProblem "User interface problem" error $errorInfo execution \
+		 unsaved none
         }
         cd $oldDir
         return -1
