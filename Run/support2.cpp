@@ -52,6 +52,13 @@ static void exit_sighandler(int x){
 int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
   int error;
 
+  /* Dont want a crash while running model to terminate Simile, so add 
+   handler. This has to be done on reset cos using the handler in some OS
+   causes it to be unset, and a reset can restart a crashed model. */
+  if (phase <= 0) {
+    signal(SIGSEGV,exit_sighandler);
+  }
+
   error = setjmp(env);
   if (error) {
     return -error;
@@ -159,8 +166,6 @@ void* advance_ptr_ptr,
 void* get_remote_value_ptr, int* phases, 
 node_data_line** data_ptr, graph_data_type** graph_ptr,
 int* arc_count, char*** arc_id_list) {
-  /* Dont want a crash while running model to terminate Simile, so... */
-  signal(SIGSEGV,exit_sighandler);
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
