@@ -1484,38 +1484,18 @@ proc ShowAbout {winId} {
     wm transient .about $winId
     wm title .about About\ SIMILE
     image create photo drip
-    drip read ../Images/drip.gif
+    drip read ../Images/HelpAbout.gif
     
-    pack [frame .about.f] -fill x -expand true
-    pack [label .about.f.dl -image drip] -side left
-    pack [label .about.f.dr -image drip] -side right
-
-    pack [label .about.f.l0]
-    pack [label .about.f.l1 -text SIMILE]
-    pack [label .about.f.l2 -text Simulistics\ Ltd.]
-    pack [label .about.f.l3]
-    pack [label .about.f.l4 -text Version\ $sendvars(simV)\ $userinfo(edn)]
-    #    pack [label .about.f.l5 -text [clock format [file mtime ../Run/main.sav]]]
-    pack [label .about.f.l6 -text "Prolog: $sendvars(proV)"]
-    pack [label .about.f.l7 -text "TclTk: [info patchlevel] (by $interface)"]
-    pack [label .about.l6]
-    pack [label .about.l7 -text "This product is registered to \
-            $userinfo(name), $userinfo(corp)"]
-    #    pack [label .about.l8 -text "for NON-COMMERCIAL use only."]
-    pack [label .about.l9]
-    pack [label .about.l10 -text "(C) Copyright 2002, Simulistics Ltd."]
-    pack [message .about.l12 -width 400 -text "Acknowledgements. \
-            Portions of this software are copyright University of Edinburgh, \
-            and Crown Copyright, Department for International Development."]
-    pack [label .about.l13]
-    pack [label .about.l14 -text "Supplied under licence."]
-    pack [label .about.l15]
-    
-    #    append mess "Version $sendvars(simV), \
-    #	[clock format [file mtime ../Run/main.sav]]\n"
-    #    append mess "using Prolog $sendvars(proV)\n"
-    #    append mess "and TclTk [info patchlevel]\n"
-    pack [button .about.b -text OK -command "set sendvars(doneAbout) 1"]
+    pack [canvas .about.c -width 510 -height 340]
+    .about.c create image 255 170 -image drip
+    .about.c create text 255.0 60.0 -font {-weight bold -family helvetica -size 10} -text Version\ $sendvars(simV)\ $userinfo(edn)
+    .about.c create text 255.0 80.0 -font {-family helvetica -size 8} -text "Prolog: $sendvars(proV)"
+    .about.c create text 255.0 95.0 -font {-family helvetica -size 8} -text "TclTk: [info patchlevel]"
+    .about.c create text 255.0 110.0 -font {-family helvetica -size 8} -text "This product is registered to\
+            $userinfo(name), $userinfo(corp)"
+  
+    pack [button .about.b -text OK -width 10 -default active \
+            -command "set sendvars(doneAbout) 1"]
     pack [label .about.l16]
     wm geometry .about +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-250]
     grab .about
