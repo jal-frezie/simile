@@ -117,6 +117,15 @@ namespace eval grid005 {
                     pack forget $ms
                     ReleaseClicks $winId
                     set useNodes($winId,display1) $node
+
+		    set min [GetMinValue $node]
+		    if {$min!=-1e100} {
+			set useNodes($winId,min) $min
+		    }
+		    set max [GetMaxValue $node]
+		    if {$max!=1e100} {
+			set useNodes($winId,max) $max
+		    }
                     catch {wm title $winId $caption}
                     InitialiseGrid $winId $node
                     UpdateState $winId
@@ -175,16 +184,6 @@ namespace eval grid005 {
     
     proc InitialiseGrid {winId display1} {
         variable useNodes
-
-        set min [GetMinValue $display1]
-        if {$min!=-1e100} {
-            set useNodes($winId,min) $min
-        }
-        set max [GetMaxValue $display1]
-        if {$max!=1e100} {
-            set useNodes($winId,max) $max
-        }
-        set useNodes($winId,range) [expr {$useNodes($winId,max)-$useNodes($winId,min)}]
         
         frame $winId.f
         scrollbar $winId.hscroll -orient horiz -command "$winId.c xview"
@@ -298,7 +297,6 @@ namespace eval grid005 {
         DataMinMax $winId datamin datamax
         set useNodes($winId,min) [expr {$useNodes($winId,min)*10}]
         set useNodes($winId,max) [expr {$useNodes($winId,max)*10}]
-        set useNodes($winId,range) [expr {$useNodes($winId,max)-$useNodes($winId,min)}]
         SetColours useNodes $winId
         recolour_scale $winId
         UpdateState $winId
@@ -309,7 +307,6 @@ namespace eval grid005 {
         variable useNodes
         set useNodes($winId,min) [expr {0.1*$useNodes($winId,min)}]
         set useNodes($winId,max) [expr {0.1*$useNodes($winId,max)}]
-        set useNodes($winId,range) [expr {$useNodes($winId,max)-$useNodes($winId,min)}]
         SetColours useNodes $winId
         recolour_scale $winId
         UpdateState $winId
@@ -393,7 +390,6 @@ namespace eval grid005 {
             focus $rangeF.maxF.entry
             return
         }
-        set useNodes($winId,range) [expr {$max($winId)-$min($winId)}]
         $dlg enddialog 0
         SetColours useNodes $winId
         recolour_scale $winId
@@ -469,7 +465,7 @@ namespace eval grid005 {
         
         set allData {}
         set min $useNodes($winId,min)
-        set range $useNodes($winId,range)
+        set range [expr $useNodes($winId,max)-$useNodes($winId,min)]
         
         set ncol $useNodes($winId,ncol)
         set nrow $useNodes($winId,nrow)
