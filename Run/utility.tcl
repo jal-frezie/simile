@@ -53,18 +53,18 @@ proc BuildProblem {name autoName msg fault} {
     }
     
     set labf1 [frame .buildprob.labf1]
-    pack [label $labf1.img -image $iconImages($errLevel)] -side left
+    pack [label $labf1.img -image $iconImages($errLevel)] -side left 
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \
-            -command [list AdjustScroll $labf1.lab2 yview]] -fill y
+            -command [list AdjustScroll $labf1.lab2 yview]] -fill y -expand on
     pack [text $labf1.lab2 -width 48 -height 10 -wrap word \
-            -yscrollcommand [list AdjustCanvas $labf1 lab1 y]]
+            -yscrollcommand [list AdjustCanvas $labf1 lab1 y]] -fill both -expand on
     $labf1.lab2 insert 1.0 $msg
     $labf1.lab2 config -state disabled
     #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
     #            -font {-family helvetica -size 10} -justify left] -side left
-    pack $labf1 -padx 8 -pady 2
+    pack $labf1 -padx 8 -pady 2 -fill both -expand on
     
     set buttons [frame .buildprob.buttons]
     pack [button $buttons.ok -text OK -width 10 \
@@ -423,3 +423,4 @@ proc min {first last} {
 proc max {first last} {
     return [expr $first>$last?$first:$last]
 }
+
