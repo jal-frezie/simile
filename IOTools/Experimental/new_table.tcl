@@ -5,6 +5,7 @@ set keyValue tabular11509
 namespace eval tabular11509 {
     variable tableVars
     variable precision 4
+    variable headerLines 1
 
     proc identify {} {
 	return "Widget-based data table"
@@ -42,9 +43,10 @@ namespace eval tabular11509 {
 	pack $winId.t -fill both -expand true
 
 	$winId.t set 0,0 Time
-	$winId.t tag cell base @0,0
+	$winId.t tag cell base 0,0
 	$winId.t tag raise base
 	$winId.t tag config base -fg black
+	$winId.t tag config title -relief raised
 	$winId.t tag config OddRow -bg \#e0e0ff
 	$winId.t tag config OddCol -bg \#c0c0ff
     }
@@ -60,16 +62,17 @@ namespace eval tabular11509 {
 	set newHeader [GetCaptionPathFromId $node]
 	set newCol [$winId.t cget -cols]
 	$winId.t configure -cols [expr $newCol+1]
-	$winId.t width $newCol [string length $newHeader]
+#	$winId.t width $newCol [string length $newHeader]
 	$winId.t set 0,$newCol $newHeader
 	destroy $winId.f.mess
     }
 
     proc display {winId tCur tStep tRem} {
+	variable headerLines
 
 	set curHt [$winId.t cget -rows]
 	set rowVal -1
-	for {set fillRow 1} {$fillRow < $curHt} {incr fillRow} {
+	for {set fillRow $headerLines} {$fillRow < $curHt} {incr fillRow} {
 	    set rowVal [$winId.t get $fillRow,0]
 	    if {$rowVal >= $tCur} {
 		break
@@ -77,16 +80,87 @@ namespace eval tabular11509 {
 	}
 
 	if {$rowVal != $tCur} {
-	    $winId.t insert rows [expr $fillRow-1]
+	    $winId.t insert rows -- [expr $fillRow-1]
 	}
 	$winId.t set $fillRow,0 $tCur
 	    
-	for {set fillCol 1} {$fillCol < [$winId.t cget -cols]} {incr fillCol} {
+	set fillCol 1 
+	while {$fillCol < [$winId.t cget -cols]} {
 	    set varCapt [$winId.t get 0,$fillCol]
-	    set varId [GetIdFromCaptionPath $varCapt]
-	    set varVal [lindex [GetModelValue $varId] 0]
-	    $winId.t set $fillRow,$fillCol [VarPrecRender $varVal]
+	    if {[string length $varCapt]} {
+		set varId [GetIdFromCaptionPath $varCapt]
+		set varVal [lindex [GetModelValue $varId] 0]
+		set fillCol [InsertVals $winId $varVal \
+				 [expr $fillRow-$headerLines] $fillCol]
+	    } else {
+		incr fillCol
+	    }
 	}
+    }
+
+    proc InsertVals {winId varVal fillRow args} {
+	variable headerLines
+
+	set fillPt [lindex $args end]
+	if {[llength $varVal] == 1} {
+	    $winId.t set [expr $fillRow+$headerLines],$fillPt \
+                [VarPrecRender $varVal]
+	    incr fillPt
+	} else {
+	    set hLevel [llength $args]
+	    if {$hLevel == $headerLines} {
+		$winId.t insert rows [expr $headerLines-1]
+		$winId.t spans 0,0 $headerLines,0
+		incr headerLines
+		$winId.t configure -titlerows $headerLines
+	    }
+	   
+	    set startPt $fillPt
+	    $winId.t spans [expr $hLevel-1],$startPt 0,0
+	    foreach {index value} $varVal {
+		while {[skipCol $winId $index $startPt $fillPt $hLevel]} {
+		    incr fillPt
+		}
+		set fillPt [eval {InsertVals $winId $value $fillRow} \
+				$args {$fillPt}]
+	    }
+
+	    # grow header cell above to cover all cols
+	    $winId.t spans [expr $hLevel-1],$startPt \
+		0,[expr $fillPt-$startPt-1]
+	}
+	return $fillPt
+    }
+
+    proc skipCol {winId index startPt fillPt hLevel} {
+	set prevHeader [$winId.t get [expr $hLevel-1],$fillPt]
+	if {$fillPt >= [$winId.t cget -cols] || \
+		$fillPt > $startPt && [string length $prevHeader]} {
+# finished our space so make new column
+	    $winId.t insert cols [expr $fillPt-1]
+	}
+	set curHeader [$winId.t get $hLevel,$fillPt]
+	if {[string length $curHeader]} {
+	    # make comparison work for multi-elt indices
+	    if {$curHeader < $index} {
+		return 1
+	    } elseif {$curHeader == $index} {
+		return 0
+	    } else {
+		$winId.t insert cols [expr $fillPt-1]
+		if {$startPt==$fillPt} {
+		    # Yeep, inserted a new col @ start -- move headers left
+		    for {set hiLevel [expr $hLevel-1]} {$hiLevel >= 0} \
+			{incr hiLevel -1} {
+			    $winId.t set $hiLevel,$fillPt \
+				[$winId.t get $hiLevel,[expr $fillPt+1]]
+			    $winId.t set $hiLevel,[expr $fillPt+1] {}
+			}
+		}
+	    }
+	}
+	$winId.t set $hLevel,$fillPt $index
+	return 0
     }
 
     proc rowProc row { if {$row>0 && $row%2} { return OddRow } }
