@@ -44,7 +44,7 @@ spell_out([Dooda | Rest], N) :-
 	spell_out(Rest, M).
 
 make_arg_list([Arg], Str) :- !,
-	name(Arg, Str).
+	sicstus_format_to_chars("~w", [Arg], Str).
 
 make_arg_list([Arg | Args], Str) :-
 	make_arg_list([Arg], Str1),

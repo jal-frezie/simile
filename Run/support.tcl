@@ -386,6 +386,18 @@ proc max {first last} {
     return [expr $first>$last?$first:$last]
 }
 
+proc following {lo} {
+    return [expr $lo+1] ;# fn will accept floats so better work with them
+}
+
+proc preceding {lo} {
+    return [expr $lo-1] ;# fn will accept floats so better work with them
+}
+
+proc first {lo} {
+    return [expr $lo==1] ;# fn will accept floats so better work with them
+}
+
 # this version allowed supposedly unlimited nested callbacks, but the 
 # rest of the system could not cope...
 #

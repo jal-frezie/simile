@@ -747,36 +747,6 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		[ValRef] = ResultList;
-/*	    Source = ordinality(ETExpr),
-	        SourceList = [ETExpr],
-		RUnits = int,
-		(Step = dummy,
-		    Arg_template = [a(_ETType)];
-		Arg_template = [int]),
-		[ValRef] = ResultList; */
-	    Source = first(ETExpr),
-	        SourceList = [ETExpr],
-		RUnits = boolean,
-		(Step = dummy,
-		    Arg_template = [a(_ETType)];
-		Arg_template = [int]),
-		[OldValRef] = ResultList,
-		ValRef = (OldValRef==1);
-	    Source = preceding(ETExpr),
-	        SourceList = [ETExpr],
-		[RUnits] = Arg_template,
-		(Step = dummy,
-		    RUnits = a(_ETType);
-		RUnits = int),
-		[OldValRef] = ResultList,
-		ValRef = OldValRef-1;
-	    Source = member(ETType, ETExpr),
-	        SourceList = [ETExpr],
-		(Step = dummy,
-		    RUnits = a(ETType);
-		RUnits = int),
-		Arg_template = [int],
-		[ValRef] = ResultList;
 	    Source =.. [Op | ArgListForm],
 		(ArgListForm = [''], !, ArgList = [];
 		    ArgList = ArgListForm),
@@ -1044,6 +1014,13 @@ builtin('Trigonometry', atan2, 1, [real, real]).
 builtin('Arithmetic', max, numeric, [numeric, numeric]).
 builtin('Arithmetic', min, numeric, [numeric, numeric]).
 
+builtin('List handling', following, a(T), [a(T)]).
+builtin('List handling', following, int, [int]).
+builtin('List handling', preceding, a(T), [a(T)]).
+builtin('List handling', preceding, int, [int]).
+builtin('List handling', first, boolean, [a(_T)]).
+builtin('List handling', first, boolean, [int]).
+
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
 
@@ -1113,6 +1090,9 @@ operator(not, boolean, [boolean]).
 
 use_tcl_proc_for(min).
 use_tcl_proc_for(max).
+use_tcl_proc_for(following).
+use_tcl_proc_for(preceding).
+use_tcl_proc_for(first).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* add_zeros has the mind-numbingly monotonous task of shifting

@@ -393,3 +393,14 @@ int step_list(int **dim_list, int unused) {
 void discard_instance(void* instanceId) {
 }
 
+int following(int lo) {
+  return lo+1;
+}
+
+int preceding(int lo) {
+  return lo-1;
+}
+
+int first(int lo) {
+  return lo==1;
+}

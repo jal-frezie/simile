@@ -25,7 +25,7 @@ int right_license(char* name, char* code) {
 	char edition[]="enterprise";
 	#endif
 
-	sprintf(buffer, "%s%%standard^%s", name, secret);
+	sprintf(buffer, "%s%%%s^%s", name, edition, secret);
 	MD5((const unsigned char *)buffer, strlen(buffer), md);
 
 	int i;
