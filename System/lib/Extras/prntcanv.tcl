@@ -410,7 +410,8 @@ namespace eval printer {
         set cmmd "$cmmd -fill $fill"
     }
     
-    debug_puts "$cmmd"
+    debug_puts "$cmmd"
+
     eval $cmmd
   }
   
@@ -429,18 +430,25 @@ namespace eval printer {
     variable vtgPrint
 
     set fcolor [print_canvas.TransColor [$cw itemcget $id -fill]]
-    if {![string length $fcolor]} {set fcolor $vtgPrint(printer.bg)}
     set ocolor [print_canvas.TransColor [$cw itemcget $id -outline]]
-    if {![string length $ocolor]} {set ocolor $vtgPrint(printer.bg)}
-    set smth    [$cw itemcget $id -smooth]
-    set splnstp [$cw itemcget $id -splinesteps]
-    set coords  [$cw coords $id]
-    set wdth [$cw itemcget $id -width]
 
-    set cmmd "gdi polygon $hdc $coords -width $wdth \
-		-fill $fcolor -outline $ocolor -smooth $smth -splinesteps $splnstp"
-    debug_puts "$cmmd"
-    eval $cmmd
+# OK, need 2B clever. Cannot print a transparent outline, so if
+# outline is transparent set it to fill colour unless fill is
+# also transparent in which case do nit print at all...
+
+    if {![string length $ocolor]} {set ocolor $fcolor}
+    if {[string length $ocolor]} {
+	set smth    [$cw itemcget $id -smooth]
+	set splnstp [$cw itemcget $id -splinesteps]
+	set coords  [$cw coords $id]
+	set wdth [$cw itemcget $id -width]
+
+	set cmmd [concat [list gdi polygon $hdc] $coords \
+	    [list -width $wdth -fill $fcolor -outline $ocolor \
+	    -smooth $smth -splinesteps $splnstp]]
+	debug_puts "$cmmd"
+	eval $cmmd
+    }
   }
 
 
@@ -484,17 +492,22 @@ namespace eval printer {
     variable vtgPrint
 
     set fcolor [print_canvas.TransColor [$cw itemcget $id -fill]]
-    if {![string length $fcolor]} {set fcolor $vtgPrint(printer.bg)}
     set ocolor [print_canvas.TransColor [$cw itemcget $id -outline]]
-    if {![string length $ocolor]} {set ocolor $vtgPrint(printer.bg)}
-    set coords  [$cw coords $id]
-    set wdth [$cw itemcget $id -width]
 
-    set cmmd "gdi rectangle $hdc $coords -width $wdth \
-		-fill $fcolor -outline $ocolor"
-    debug_puts "$cmmd"
-    eval $cmmd
-  }
+# OK, need 2B clever. Cannot print a transparent outline, so if
+# outline is transparent set it to fill colour unless fill is
+# also transparent in which case do nit print at all...
+
+    if {![string length $ocolor]} {set ocolor $fcolor}
+    if {[string length $ocolor]} {
+	set coords [$cw coords $id]
+	set wdth [$cw itemcget $id -width]
+	set cmmd [concat [list gdi rectangle $hdc] $coords \
+	    [list -width $wdth -fill $fcolor -outline $ocolor]]
+	debug_puts "$cmmd"
+	eval $cmmd
+    }
+}
 
 
   ################################################################
