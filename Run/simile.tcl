@@ -137,7 +137,6 @@ switch $tcl_platform(platform) {
 switch $interface {
     pipe {
 	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
-	set PROLOG_ERR $env(SIMTMPDIR)/simerror.txt
 	source toolbox.tcl
 	source prolog.tcl
     } dll {

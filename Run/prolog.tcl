@@ -80,8 +80,10 @@ proc KeepLooking {} {
 
 proc ClosePipe {} {
     global plPipe env
-    close $plPipe
     file delete -force $env(SIMTMPDIR)
+    catch {close $plPipe} spew
+    wm withdraw . ;# banner will hide error mesg if not yet withdrawn
+    bgerror $spew
     exit
 }
 
@@ -98,7 +100,7 @@ set env(TRAILSZ) 49152
 # Pop a backslash before chars that would break tcl lists
 regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
-set plPipe [open "|$PROLOG_CMD 2> $PROLOG_ERR" r+]
+set plPipe [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
 fconfigure $plPipe -translation {auto lf}
 #fileevent $plPipe readable Reader

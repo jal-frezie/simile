@@ -9,13 +9,13 @@
 # Compiler that will be used to make the stub for Windows
 set compiler_for_windows gnu
 # edition: evaluation, standard or enterprise
-set edition evaluation
+set edition standard
 # date of final expiry: {hh:mm D M Y} or {} for permanent
 set final_expiry {31 Jan 2004}
 # days after install: 0 for no installation expiry
 set days_after_install 0
 # License code required to verify name/corp/edition: 0 for no
-set needs_license 0
+set needs_license 1
 
 if {[llength $final_expiry]} {
     set expiry_ticks [clock scan $final_expiry]
