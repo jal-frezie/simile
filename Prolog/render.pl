@@ -19,7 +19,7 @@ sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
 		library(lists)] ).
 
 make_assignment(L, Dest, Source, AssignStr) :-
-	(L = tcl, Template = "set [set varName ~a] ";
+	(L = tcl, Template = "set ~a ";
 	L = c, Template = "~a = "),
 	sicstus_write_to_chars(Source, SourceStr),
 	sicstus_format_to_chars(Template, [Dest], DestStr),
@@ -38,6 +38,11 @@ make_indexed_namespace(L, Base, Indices, Result) :-
 	    make_list_context_id(tcl, Indices, BraceTerm),
 	    sicstus_format_to_chars("~w<~w>", [Base, BraceTerm], ResultStr),
 	    name(Result, ResultStr).
+
+declare_pointer(c, Var, Res) :-
+	resolve_pointer(c, Var, Res).
+
+declare_pointer(tcl, Var, Var).
 
 resolve_pointer(c, Var, Res) :-
 	sicstus_format_to_chars("*~a", [Var], ResStr),
@@ -150,9 +155,7 @@ render( Target, NotNeeded, Variable, Indent, Comment) :-
 			[[duplicate_context, c, tcl],
 			 [global_declaration, c, tcl],
 			 [public_cons_dest, tcl, c],
-			 [end(class), tcl, c],
-			 [data_declaration, tcl, c],
-			 [pointer_declaration, tcl, c]]),
+			 [end(class), tcl, c]]),
 	render(Translation, NotNeeded, Variable, Indent, Foreign),
 	render_all(Target, comment, Foreign, 0, Comment).
 
@@ -323,14 +326,15 @@ render(c, class_declaration, Instance, Indent, ClassDecl) :-
 	       [proc_decls, End], ClassDecl).
 	
 /* pointer declaration for a given type */
-render(c, pointer_declaration, instance(submodel, SmName, 
+render(L, pointer_declaration, instance(submodel, SmName, 
 		xrefs(_,_, Bases, _), Name, Type-_), Indent, Rest) :-
-	do_loop_pointers(SmName, Type, Name, Temps1),
-	all(render, do_base_pointers, [build(Bases), append(Temps2, [])]),
+	do_loop_pointers(L, SmName, Type, Name, Temps1),
+	all(render, do_base_pointers,
+	    [unify(L), build(Bases), append(Temps2, [])]),
 	append(Temps1, Temps2, Temps),
-	render_all(c, variable_declaration, Temps, Indent, Rest).
+	render_all(L, variable_declaration, Temps, Indent, Rest).
 
-render(c, data_declaration,
+render(L, data_declaration,
 		instance(NodeType, SymbolicName, _, NameIn,
 		Type-Dims),
 		Indent, Decl) :-
@@ -338,7 +342,7 @@ render(c, data_declaration,
 	    NameIn = NameBase,
 	    (variable_size(SymbolicName), !,
 			/* variable length submodel - declare a pointer */
-		resolve_pointer(c, NameBase, Name),
+		declare_pointer(L, NameBase, Name),
 		UseDims = [];
 	    Name = NameBase,
 		/* get_node_size(SymbolicName, UseDims) */ UseDims = Dims);
@@ -347,7 +351,7 @@ render(c, data_declaration,
 	    UseDims = Dims),
 	all(ame_gen, enum_type_ref,
 	    [build(UseDims), unify(SymbolicName), build(Nums), build(_)]),
-	render(c, variable_declaration, [Type, Name, Nums],
+	render(L, variable_declaration, [Type, Name, Nums],
 			Indent, Decl).
 
 /* next clause generates nested namespace declarations for tcl. They look as
@@ -390,13 +394,12 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		all(render, boost, [build(Dims), build(Counts)])),
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
-					       ArrayName], Chars),
-		name(Decl, Chars),
-		Result = [Decl];
+					       ArrayName], Chars);
 	    L = tcl,
-		render(c, variable_declaration, [Type, Name, Dims], 
-		       Indent, CDecl),
-		render_all(tcl, comment, CDecl, 0, Result));
+		sicstus_format_to_chars( "~*svariable ~a",
+				       [Indent, " ", Name], Chars)),
+	    name(Decl, Chars),
+	    Result = [Decl];
 
 	Init = [InitialValues],
 	    (L = c,
@@ -409,20 +412,24 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		sicstus_format_to_chars("~*s~a ~a = ~s",
 				[Indent, " ", Type, ArrayName, FirstLine],
 				Chars1),
-			name(NewFirstLine, Chars1),
-			list_of(32, DeepIndent, TabIn),
-			prepend_spaces(LateLines, TabIn, NewLateLines),
-			append(EarlyLines, [LastLine], [NewFirstLine | NewLateLines]),
-			sicstus_format_to_chars("~a;", [LastLine], Chars2),
-			name(NewLastLine, Chars2),
-			append(EarlyLines, [NewLastLine], Result);
-		L = tcl,
-		        (Dims = void,
-			    length(InitialValues, InitDim),
-			    InitDims = [InitDim];
-			InitDims = Dims),
-			assign_initial_values(Name, InitialValues, 0, InitDims,
-					Indent, Result))).
+		name(NewFirstLine, Chars1),
+		list_of(32, DeepIndent, TabIn),
+		prepend_spaces(LateLines, TabIn, NewLateLines),
+		append(EarlyLines, [LastLine], [NewFirstLine | NewLateLines]),
+		sicstus_format_to_chars("~a;", [LastLine], Chars2),
+		name(NewLastLine, Chars2),
+		append(EarlyLines, [NewLastLine], Result);
+	    L = tcl,
+		sicstus_format_to_chars( "~*svariable ~a",
+				       [Indent, " ", Name], Chars),
+		name(Decl, Chars),
+		(Dims = void,
+		    length(InitialValues, InitDim),
+		    InitDims = [InitDim];
+		    InitDims = Dims),
+		assign_initial_values(Name, InitialValues, 0, InitDims,
+				      Indent, Assignment),
+		Result = [Decl | Assignment])).
 
 render(L, break, _, I, [Result]) :-
 	list_of(32, I, Spacing),
@@ -440,20 +447,20 @@ render(tcl, release_memory, Pointer, Indent, [Result]) :-
 			[Indent, " ", Zap], ResultStr),
 	name(Result, ResultStr).
 
-do_base_pointers(base(_,_, []), []).
-do_base_pointers(base(instance(submodel, _, xrefs(_, Parent, _,_), _, Type-_),
+do_base_pointers(_, base(_,_, []), []).
+do_base_pointers(L, base(instance(submodel,_, xrefs(_, Parent, _,_),_, Type-_),
 		       _, [Ptr | Ptrs]), [[Type, BasePtd, []] | Rest]) :-
-	resolve_pointer(c, Ptr, BasePtd),
-	do_base_pointers(base(Parent, _, Ptrs), Rest).
+	declare_pointer(L, Ptr, BasePtd),
+	do_base_pointers(L, base(Parent, _, Ptrs), Rest).
 
-do_loop_pointers(SmName, Type, Name, Late) :-
+do_loop_pointers(L, SmName, Type, Name, Late) :-
 
 	variable_size(SmName), !,
 	    append_atoms(Name, pointer, Ptr),
-	    resolve_pointer(c, Ptr, Ptd),
+	    declare_pointer(L, Ptr, Ptd),
 	    append_atoms(Name, meta, Meta),
-	    resolve_pointer(c, Meta, MetaPtd),
-	    resolve_pointer(c, MetaPtd, MetaPtdPtd),
+	    declare_pointer(L, Meta, MetaPtd),
+	    declare_pointer(L, MetaPtd, MetaPtdPtd),
 	    append_atoms(Name, cond, Cond),
 	    Late = [[int, Cond, []], [Type, Ptd, []], [Type, MetaPtdPtd, []]];
 	Late = [].

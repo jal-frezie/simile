@@ -264,9 +264,9 @@ bits and pieces */
 	state:version_is(VStr),
 	name(V, VStr),
 	render(Language, variable_declaration,
-	       [real, simile_version, [], V], 0, [VersionDec]),
+	       [real, simile_version, [], V], 0, VersionDec),
 	render(Language, variable_declaration,
-	       [int, phasecount, [], Phases], 0, [PhaseDec]),
+	       [int, phasecount, [], Phases], 0, PhaseDec),
 	render(Language, variable_declaration,
 	       [real, ts, [Phases]], 0, [Times]),
 	render(Language, variable_declaration,
@@ -278,11 +278,10 @@ bits and pieces */
 	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
 */
 	render_all(Language, global_declaration,
-		   [[void, this, []], [void, varName, []] | Constants], 0,
-		   GlobalDeclText),
-	build_submodel_functions(Language, Phases, GlobalDeclText, Inters,
+		   [[void, this, []] | Constants], 0, GlobalDeclText),
+	build_submodel_functions(Language, Phases, Inters,
 				 StateForm, UpdateForm, SortedForm, Used,
-				 ExtSets, AllGraphs, GraphClearText, Fns),
+				 ExtSets, AllGraphs, GraphClearText, FnList),
 
 	length(AllGraphs, GraphTotal),
 	render( Language, comment, 'GRAPH DATA SPACE DECLARATION', 0,
@@ -314,9 +313,9 @@ wot need them */
 
 	render( Language, comment, 'GLOBAL DECLARATIONS', 0,
 		[GlobalDeclComment]),
-	send_to_dest(Stream, ['#include <support1.cpp>', GlobalDeclComment |
-			      GlobalDeclText]),
-	send_to_dest(Stream, [VersionDec, PhaseDec, Times, DTs]),
+	append([['#include <support1.cpp>',GlobalDeclComment | GlobalDeclText],
+		VersionDec, PhaseDec, [Times, DTs]], Headers),
+	send_to_dest(Stream, Headers),
 
 	output:list_matching_files('../Functions/*.cpp', FnIncs),
 	/* the /* in the above line does not start a comment */
@@ -339,9 +338,11 @@ wot need them */
 	send_to_dest(Stream, TypeSection),
 
 	render( Language, comment, 'STRUCTURE POINTER DECLARATIONS', 0,
-							StructPtrComment),
-	append(StructPtrComment, PointerDecls, PointerSection),
-	send_to_dest(Stream, PointerSection),
+							[StructPtrComment]),
+	append([GlobalDeclComment | GlobalDeclText],
+	       [StructPtrComment | PointerDecls], PointerSection),
+	all(compile, put_in_proc,
+	    [unify(PointerSection), build(FnList), append(Fns, [])]),
 
 /*	send_to_dest(Stream, Comps), */
 	send_to_dest(Stream, Fns),
@@ -364,6 +365,9 @@ wot need them */
 	send_to_dest(Stream, [EndTopType | Decls]),
 	send_to_dest(Stream, ['#include <support2.cpp>']).
 
+put_in_proc(Decls, [H1,H2,H3,H4 | Proc], ProcWDecls) :-
+	append([H1,H2,H3,H4 | Decls], Proc, ProcWDecls).
+	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* declare_structure/3: goes through submodels and starting with most deeply 
 nested, provides a name for each variable, and a name, type, tag and pointer
@@ -562,7 +566,7 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 		 Proc_ending,Blank], Decls).
 */
 
-build_eval_proc(Language, ProcName, OrderedForm, Globals, Inters, Used,
+build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 		AllGraphs, GraphClearText, Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
@@ -600,7 +604,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Globals, Inters, Used,
 	Blank = [''],
 
 	append([EvalProcDeclComment,Blank,EvalProcDeclText,Blank,
-	Globals, Blank, TempDeclText1, Blank,GraphSetupText,Blank,
+	TempDeclText1, Blank,GraphSetupText,Blank,
 	FuncComment,Blank,FuncStatements,Blank,
 	Proc_ending,Blank], Decls).
 
@@ -610,7 +614,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Globals, Inters, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Globals, Inters,
+build_submodel_functions( Language, Phases, Inters,
 			  StateForm, UpdateForm, SortedForm,
 			  Used, ExtUsers, AllGraphs, GraphClearText, Decls) :-
 	reassure_user("Ordering model execution assignments"),
@@ -632,7 +636,14 @@ build_submodel_functions( Language, Phases, Globals, Inters,
 	order_all_assignments(Phases, UpdateForm, OrdUpdates, _),
 
 	reassure_user("Generating code for model execution"),
-	build_eval_proc(Language, updatemodel, OrdUpdates, Globals, [], Used,
+	all(compile, build_eval_proc,
+	    [unify(Language),
+	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
+	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
+	     build([[], [], Inters, Inters]), unify(Used), 
+	     build([_, _, IntGraphs, ExtGraphs]),
+	     build([_, _, IntClearText, ExtClearText]), build(Decls)]),
+/*	build_eval_proc(Language, updatemodel, OrdUpdates, Globals, [], Used,
 			_, _, UpDecls),
 	build_eval_proc(Language, advancemodel, OrdStates, Globals, [], Used,
 			_, _, AdvDecls),
@@ -640,10 +651,9 @@ build_submodel_functions( Language, Phases, Globals, Inters,
 			Used, IntGraphs, IntClearText, IntDecls),
 	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Globals, Inters,
 			Used, ExtGraphs, ExtClearText, ExtDecls),
-	all(user, append, [build([IntGraphs, IntClearText, IntDecls]),
-			   build([ExtGraphs, ExtClearText, ExtDecls]),
-			   build([AllGraphs, GraphClearText, EvDecls])]),
-	append([UpDecls, AdvDecls, EvDecls], Decls).
+*/	all(user, append, [build([IntGraphs, IntClearText]),
+			   build([ExtGraphs, ExtClearText]),
+			   build([AllGraphs, GraphClearText])]).
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-

@@ -6,7 +6,7 @@
 # definitions that rae required for this purpose.
 
 proc do_model {what args} {
-    global running_c errorInfo model_id instance_id varName
+    global running_c errorInfo model_id instance_id varName model_prog
     
     if {![info exists model_id]} {
 	ShowMessage "Model not loaded" error \
@@ -27,13 +27,59 @@ proc do_model {what args} {
 
     if {$model_id} {
 	set head [list c_${what}model $model_id $instance_id]
-    } elseif {[string match eval $what]}  {
-	set head ::AME_model<>::int_evalmodel
     } else {
-	set head ::AME_model<>::${what}model
+	if {[string match eval $what]}  {
+	    set mproc int_evalmodel
+	} else {
+	    set mproc ${what}model
+	}
+	set head ::AME_model<>::$mproc
     }
 
     if [catch {eval $head $args} whoopsie] {
+#	ShowMessage "$whoopsie doing model $what" error \
+#	    "$what during $action of the model at time $mtime caused this: \
+#	    $errorInfo" ok
+#	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
+
+	switch $what {
+	    eval {set operation "calculate the value of"}
+	    update {set operation "update the state"}
+	}
+	set modelLine [lindex [split $errorInfo \n] end-5]
+	regexp { (\d+)\)$} $modelLine spare lineNo
+	set mStream [open $model_prog r]
+	set mLine {}
+	while {![string match "proc $mproc *" $mLine]} {
+	    gets $mStream mLine
+	}
+	for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
+	    gets $mStream mLine
+	}
+	close $mStream
+	regexp {set ([^ ]*) .*} $mLine spare targetName
+#	regexp {\$\{(\w+)\}::(\w+)(?:\(\$(\w+)\))?$} $targetName \
+	    spare ptr var idx
+	set dest [namespace eval AME_model<> "set spare $targetName"]
+	set target [DescribeComponent $dest]
+	puts [namespace eval AME_model<> {info vars}]
+	switch -glob -- $whoopsie {
+	    "can't read \"*\": no such element in array" - 
+	    "can't read \"*\": no such variable" {
+		set ref [lindex [split $whoopsie \"] 1]
+		set vdesc [DescribeComponent $ref]
+		set problem "it found that there was no value for $vdesc"
+	    } "domain error: argument not in valid range" -
+	    "floating-point value too large to represent" -
+	    "divide by zero" {
+		set problem "there was a math error: $whoopsie"
+	    } default {
+		BuildProblem none none "This happened while doing $mLine:
+$errorInfo" system
+		return 0
+	    }
+	}
+
 	switch -- $mstep {
 	    -1 {
 		set action initialization
@@ -47,33 +93,6 @@ proc do_model {what args} {
 		set timing " at time $mtime"
 	    }
 	}
-#	ShowMessage "$whoopsie doing model $what" error \
-#	    "$what during $action of the model at time $mtime caused this: \
-#	    $errorInfo" ok
-#	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
-
-	switch $what {
-	    eval {set operation "calculate the value of"}
-	    update {set operation "update the state variable"}
-	}
-	set target [DescribeComponent $varName]
-	switch -glob -- $whoopsie {
-	    "can't read \"*\": no such element in array" - 
-	    "can't read \"*\": no such variable" {
-		set ref [lindex [split $whoopsie \"] 1]
-		set vdesc [DescribeComponent $ref]
-		set problem "it found that there was no value for $vdesc"
-	    } "domain error: argument not in valid range" -
-	    "floating-point value too large to represent" -
-	    "divide by zero" {
-		set problem "there was a math error: $whoopsie"
-	    } default {
-		BuildProblem none none "This happened while setting $varName:
-$errorInfo" system
-		return 0
-	    }
-	}
-
 	set mess "Simile ran into a problem trying to run this model. 
 While it was trying to $operation $target during $action of the model$timing, $problem."
 	BuildProblem none none $mess user
