@@ -1085,6 +1085,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -accelerator "$accKey+O"
     AddAccelerator $winid file Open... "<$accSym-o>"
     $fm add cascade -label "Reopen" -menu .openrecent
+    if {[string equal .hi $winid]} {
+	return
+    }
     $fm add command -label Save -command "MenuSelect $c file save" \
             -accelerator "$accKey+S"
     AddAccelerator $winid file Save "<$accSym-s>"
@@ -1838,7 +1841,7 @@ proc MenuClose {winId} {
 proc byebye {winId} {
     global window_info tcl_platform
     prolog [list tk_off_window( '$winId' )]
-    if { \
+    if {![string match "Darwin" $tcl_platform(os)] && \
 	    ![llength [array names window_info *,is_top_level]]} {
 	prolog tk_kill_everything(_)
     }

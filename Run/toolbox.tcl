@@ -826,7 +826,7 @@ proc ControlDraw {prologVersion} {
     frame .hi
     frame .hi.toolSlot
     . config -menu .hitop	
-    AddMainMenu .hi _ 1 0 {}
+    AddMainMenu .hi _ 0 1 {}
 
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] \

@@ -257,6 +257,8 @@ menu_handle(Win, file, open) :-
 
 menu_handle(Win, reopen, Name) :-
 	check_if_already_open(Name), !;
+	Win = '.hi.canvas', !,
+	    menu_handle(Win, open_toplevel, Name);
 	Win shows_model Parent,
 	(is_toplevel(Parent),
 	    find_all_comps(Parent, _), !,
