@@ -152,6 +152,8 @@ namespace eval ::$keyValue {
                     #               $ms configure -text "Now click on the value representing the Y coordinates."
                     set plot($w,Xvars) $node
                     set plot($w,XaxisLabel) $caption
+                    #lappend plot($w,XaxisLabel) $caption; # allow more than one pair of var
+                    #lappend plot($w,Xvars)   $node
                     set plot($w,state) ycoord
                     $w.canvas delete prompt
                     $w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
@@ -162,7 +164,9 @@ namespace eval ::$keyValue {
                 ycoord {
                     #               $ms configure -text "Now select a value to determine the colour of the objects."
                     set plot($w,Yvars) $node
-                    set plot($w,Ylabels) $caption
+                    #set plot($w,Ylabels) $caption; #labels with spaces treated as a list
+                    lappend plot($w,Ylabels) $caption; # allow more than one pair of var
+                    #lappend plot($w,Yvars)   $node; # allow more than one pair of var
                     set useNodes($w,state) display
                     drawGraphpad $w
                     UpdateState $w
@@ -171,6 +175,7 @@ namespace eval ::$keyValue {
                     set lastTime($w) [GetModelTime]
                     display $w [GetModelTime] 0 0
                     display $w [GetModelTime] 0 0
+                    $w.bbframe.buttonBox itemconfigure 1 -state disable; #disable the add var button
                 }
             }
             
@@ -376,7 +381,9 @@ namespace eval ::$keyValue {
                 [expr $y0+$plot($w,yborder_bottom)-5] \
                 -text $plot($w,XaxisLabel) -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
-        set nYlabel [llength $plot($w,Ylabels)]
+
+        # legend vars only not elements of arrays
+        set nYlabel [llength $plot($w,Ylabels)]        
         set j 0
         set k 0
         for {set i 0} {$i<$nYlabel} {incr i} {
