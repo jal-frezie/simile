@@ -106,7 +106,12 @@ update_mode(NewMode) :-
 
 stick_model_in(Win, Parent, Name, Mode) :-
 	Mode = reopen,
-	check_if_already_open(Name), !;
+	(check_if_already_open(Name), !;
+	 set_model_file(Parent, Name),
+	    is_toplevel(Parent),
+	    get_default_export_name(Parent, "", NodeName),
+	    add_parameter(Parent, 0, name, NodeName),
+	    fail);
 	use_temp_dir(LocalDir),
 	(event:list_captions(Parent, Used), !; true),
 	abs_path_name(Parent, root, InsertDir),
@@ -145,11 +150,6 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    NeedsRedraw = 1),
         finish_progress_dialogue,
 	(Mode = reopen,
-	    set_model_file(Parent, Name),
-	    (is_toplevel(Parent), !,
-		get_default_export_name(Parent, "", NodeName),
-		add_parameter(Parent, 0, name, NodeName);
-	    true),
 	    check_autosave(Parent, Name, Translated, NeedsRedraw),
 	    (NeedsRedraw = 0,
 		/* Graphics update will have made a tk_visible call which we do
@@ -1260,7 +1260,13 @@ do_save(Win, Model, New_name) :-
 	set_model_file(Model, Name),
 	(is_toplevel(Model), !,
 	    get_default_export_name(Model, "", NodeName),
-	    add_parameter(Model, 0, name, NodeName);
+	    add_parameter(Model, 0, name, NodeName),
+	    /* copy save dir to new path */
+	    abs_path_name(Model, root, NewPoint),
+	    (NewPoint = Point, !;
+	    append_atoms([Dir, '/', NewPoint], NewSaveDir),
+		output:safe_tcl_eval(['file copy -force', SaveDir, NewSaveDir],
+				     _));
 	true),
 	update_captions(Model),
 	clear_autosave(Model, Name),

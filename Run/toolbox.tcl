@@ -436,6 +436,7 @@ proc load_dll {topNode lang progDir id node incs} {
 proc compile_c {workingDir} {
     global tcl_platform env
 
+    CheckCompilerLocation
     if {[PrefValue custom(hackBreak) hackBreak]} {
         ShowMessage {Code editing opportunity} info \
                 "About to compile model.cpp in $workingDir" ok
@@ -482,7 +483,7 @@ proc compile_c {workingDir} {
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } else {
-                set TOOLS32 [file dirname $env(MSVCDIR)/any]
+                set TOOLS32 [file dirname $env(MSVCDIR)/bin]
                 exec $TOOLS32/bin/cl.exe -Ox -c -W1 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
@@ -733,6 +734,38 @@ proc ControlDraw {prologVersion} {
         Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
                         "Use which C++ compiler?"}}
         file attributes $custom(prefDir) -hidden true
+    }
+    CheckCompilerLocation
+    foreach nodeType {normal generic compartment channel \
+                variable function submodel flow influence \
+                ghost_link relation} {
+        ResetLooks $nodeType
+    }
+    CustomizeLooks
+#    MakeHelperMenu
+    LoadModelWindowExtensions
+    
+    # Bogosity alert -- setting an env var to {} causes it to stay
+    # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
+    # would do here...
+    if {[info exists env(OPEN_MODEL)]} {
+        set openModel [brainwash $env(OPEN_MODEL)]
+        # Add to path and recently opened files data
+
+
+        RecordPathChoice .sml $openModel 1
+    } else {
+        set openModel {}
+    }
+    
+    # Take the opportunity to pass the temp directory name etc to Prolog
+    return [list $sendvars(simV) [brainwash $simtmpdir] \
+            $openModel $userinfo(edn)]
+}
+
+proc CheckCompilerLocation {} {
+    global tcl_platform custom env
+    if {[string match windows $tcl_platform(platform)]} {
         if {[string mat Microsoft [PrefValue custom(compChoice) compChoice]]} {
             set compiler cl.exe
             set possDirs {}
@@ -772,34 +805,7 @@ proc ControlDraw {prologVersion} {
             }
         }
     }
-    foreach nodeType {normal generic compartment channel \
-                variable function submodel flow influence \
-                ghost_link relation} {
-        ResetLooks $nodeType
-    }
-    CustomizeLooks
-#    MakeHelperMenu
-    LoadModelWindowExtensions
-    
-    # Bogosity alert -- setting an env var to {} causes it to stay
-    # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
-    # would do here...
-    if {[info exists env(OPEN_MODEL)]} {
-        set openModel [brainwash $env(OPEN_MODEL)]
-        # Add to path and recently opened files data
-
-
-        RecordPathChoice .sml $openModel 1
-    } else {
-        set openModel {}
-    }
-    
-    # Take the opportunity to pass the temp directory name etc to Prolog
-    return [list $sendvars(simV) [brainwash $simtmpdir] \
-            $openModel $userinfo(edn)]
 }
-
-
 
 # After the initial model has been loaded we don't want to allow the window
 # to change size when something different is loaded
