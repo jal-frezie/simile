@@ -27,3 +27,4 @@ set msgs(datePart) "datePart(DateTime): returns the date (integral) part of a da
 set msgs(timePart) "timePart(DateTime): returns the time fractional part of a date time value as \
         the fraction of a day"
 
+
