@@ -199,6 +199,10 @@ namespace eval grid005 {
         }
         
         set mult [expr {int(400/$n)}]
+	if {$mult<2} {
+	    set mult 1
+	    $winId.bbframe.buttonBox itemconfigure 2 -state disable
+	}
         set useNodes($winId,mult) $mult
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
         set yheight [expr {$mult*$useNodes($winId,nrow)+20}]
