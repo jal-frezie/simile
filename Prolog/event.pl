@@ -916,6 +916,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     reroute_display(Moving_obj),
 		     move_text(Moving_obj, [Xoffset, Yoffset]);
 		 get_highlit_obj(0, Moving_obj),
+		     \+ Moving_obj is_of_sort line,
 		     find_all_comps(Parent, Moving_obj),
 		     get_shape(Parent, internal_extent, ParentShape),
 		     setof(Mover, (Mover = Moving_obj; /* in case cloud */
@@ -2004,7 +2005,7 @@ resnap(Node, SelOnly) :-
 	fail; true.
 
 adjust_posn(Thing, Trans) :-
-		get_shape(Thing, Whatever, Wherever),
+	get_shape(Thing, Whatever, Wherever),
 	\+ Whatever = internal_extent,
 	(Whatever = caption_offset,
 	    rel_translate(Wherever, Trans, New_wherever);
