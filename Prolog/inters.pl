@@ -703,7 +703,7 @@ dissociate(SubArgs, [later(Arg) | UseArgs]) :-
 	dissociate(Rest, UseArgs).
 dissociate(Args, Args).
 	
-refer_inter(instance(internal, inter(Context, _, SourceLoops), Source, Name,
+refer_inter(instance(internal, inter(Context, _, ParamLoops), Source, Name,
 		     Units-Dims),
 	    DestPath, BuildLoops, Units, SourceContext, Args, SourceRef) :-
 	    (Source = last(_), !,
@@ -714,6 +714,7 @@ refer_inter(instance(internal, inter(Context, _, SourceLoops), Source, Name,
 	    Args = [made_at(Name, Context)]),
 	    pointer_from(DestPath, SourcePtr),
 	    make_inds_for(Dims, IntLoops, IntInds),
+	    copy_term(ParamLoops, SourceLoops),
 	    append(SpareLoops, SourceLoops, IntLoops),
 	    suffix(SpareLoops, BuildLoops),
 	    append(SourceLoops, DestPath, SourceContext),

@@ -572,7 +572,8 @@ expand_params(dim_data(DimL, AllInputs), Param, DoneExpr, Recurse) :-
 			     DefnExpr),
 	    DoneExpr = (param(arr(_,ExpInt,_),_, Loops,_,_)=DefnExpr,UseExpr);
 	Param =.. [Cumulative, Item],
-	    member(Cumulative, [sum, product, least, greatest, any, all]), !,
+	    member(Cumulative, [sum, product, least, greatest,
+				any, all, count]), !,
 	    replace_subexps(Item, dialogue, expand_params,
 			     dim_data(SubL, AllInputs), top_down, _,
 			     DDone),
