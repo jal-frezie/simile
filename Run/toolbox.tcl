@@ -119,9 +119,9 @@ proc ControlDraw {prologVersion} {
     Pref_Add {{custom(runControlPosition) runControlPosition "+0-20" "Position of run control"} \
                      {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"}}
     if {[string match windows $tcl_platform(platform)]} {
+	Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
+		       "Use which C++ compiler?"}}
 	file attributes $custom(prefDir) -hidden true
-        Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
-                        "Use which C++ compiler?"}}
     }
 
     foreach nodeType {normal generic compartment channel \
@@ -706,7 +706,7 @@ proc WindowDetail {window category level redraw} {
 #	    if {[string match $category $cat]} {
 #		set hiding 0
 #	    } elseif {$hiding && $rads($cat)>$level || \
-#		    !$hiding && $rads($cat)<$level} {
+#		    !$hiding && $rads($cat)<$level} {
 #		set rads($cat) $level
 #		MenuSelect $window window \[detail,$cat,$level\]
 #	    }
@@ -924,7 +924,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label "Customize..." \
 	    -command "DoLocalCmd $winid customize"
     
-    set fm [menu ${winid}top.model -tearoff 0]
+    set fm [menu ${winid}top.model -tearoff 0 -postcommand "AbleComp $winid"]
     ${winid}top add cascade -label Model -underline 0 \
             -menu ${winid}top.model
     $fm add command -label "Build In Tcl" \
@@ -1121,6 +1121,21 @@ proc AddMainMenu { winid initWidth initDepths} {
 
     $nb.undo configure -state disabled
     $nb.redo configure -state disabled
+}
+
+proc AbleComp {winid} {
+    global custom
+# Not done now because compiler choice not given in Unix, and we need to load
+# pre-built executables even if we have no compiler ourselves
+
+#    if {[string match $winid $custom(first_up)]} {
+#	if {[string match None [PrefValue custom(compChoice) compChoice]]} {
+#	    set cCompOption disabled
+#	} else {
+#	    set cCompOption normal
+#	}
+#	${winid}top.model entryconfigure "Build In C++" -state $cCompOption
+#    }
 }
 
 proc EmbraceEqn {winid} {

@@ -22,6 +22,8 @@ them to be executed etc by Tcl commands. */
 #define GETCLASS       11
 #define	TEST	       99
 
+char simileVersion[] = "2.93";
+
 #ifdef WIN32
     #define WIN32_LEAN_AND_MEAN
     #include <windows.h>
@@ -63,7 +65,9 @@ extern "C" __declspec( dllexport ) int __stdcall info_copy(
 	fputs(pUser, recept);
 	fputs("\n", recept);
 	fputs(pCompany, recept);
-	fputs("\n2.91\n", recept);
+	fputs("\n", recept);
+	fputs(simileVersion, recept);
+	fputs("\n", recept);
 	fclose(recept);
 	return(1);
 }
@@ -183,7 +187,6 @@ public:
   int* UpTree;
 };
 
-char simileVersion[] = "2.93";
 int connCount;
 connectRecord* connectData;
 Tcl_Obj* connectInfoObject;
@@ -974,6 +977,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
    error = Tcl_GetDoubleFromObj(interp, argv[3], &starttime);
    if (error != TCL_OK) {
 	return error;
+
    }
 
    error = Tcl_GetIntFromObj(interp, argv[4], &phase);

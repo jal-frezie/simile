@@ -906,11 +906,11 @@ proc ScrubRun {} {
     if {[info exists model_id]} {
 	if {$model_id} {
 	    if {[info exists instance_id]} {
-# ShowMessage debug info "Exiting $model_id $instance_id" ok
+#ShowMessage debug info "Exiting $model_id $instance_id" ok
 		c_exitmodel $model_id $instance_id
 		unset instance_id
 	    } else {
-# ShowMessage debug info "Exiting $model_id 0" ok
+#ShowMessage debug info "Exiting $model_id 0" ok
 		c_exitmodel $model_id 0
 	    }
 	}
@@ -1633,6 +1633,8 @@ proc build_c_stub {targetDir make_new_stub} {
     if {!$make_new_stub} {
 	if {![catch {package require $stubPkg $env(SIMILE_VERSION)} dummy]} {
 	    return
+	} else {
+ShowMessage debug info $dummy ok
 	}
     }
 
@@ -1663,6 +1665,7 @@ proc build_c_stub {targetDir make_new_stub} {
 	    if {$make_new_stub != 1} {
 		set dll tcl${MAJ}${MIN}
 #ShowMessage debug info "TCL is $TCL" ok
+		exec dlltool --dllname $TCL/bin/$dll.dll --output-lib lib$dll.a --def tcltk.def
 		exec gcc -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
 		exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
 		    obj.o -L. -l$dll
