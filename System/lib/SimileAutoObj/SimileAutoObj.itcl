@@ -1,7 +1,16 @@
 package provide SimileAutoObj 1.0
 
+# Notes
 # must be pipe interface
 # must be in the Simile distribution tree
+
+# todo
+# ModelWindowImpl expose more hai2mmii.tcl
+# Update SetValue code
+#
+# RunControlImpl  need to set submodel timesteps
+# TableHelperImpl to be implemented
+
 
 package require Itcl
 namespace import ::itcl::*
@@ -40,7 +49,7 @@ class ModelWindowImpl {
     }
     
     constructor {} {
-        
+        HideModelWindow
     }
     
     public method HideModelWindow {} {
@@ -48,15 +57,15 @@ class ModelWindowImpl {
         wm withdraw [GetModelWindow]
     }
     
+    public method ShowModelWindow {} {
+        # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
+        wm deiconify [GetModelWindow]
+    }
+    
     public method UseMRE {bool} {
         # IS THIS GOING TO HAVE A TYPE PROBLEM???
         global custom
         set custom(helperManager) $bool
-    }
-    
-    public method ShowModelWindow {} {
-        # SHOULD IT SHOW ALL WINDOWS!!!!!!!!
-        wm deiconify [GetModelWindow]
     }
     
     # File Menu
@@ -96,7 +105,7 @@ class ModelWindowImpl {
         DoWithErrors ExportPostscript [GetModelWindow].canvas
     }
     
-    public method Exit {} {
+    private method Exit {} {
         # DOESN'T WORK
         byebye [GetModelWindow]
         # prolog tk_finish; # generates existance error
@@ -121,58 +130,123 @@ class ModelWindowImpl {
     }
     
     
-    public method GetModelValue {Path} {
-        return GetModelValue $winId [GetIdFromCaptionPath $winId $caption]
+    public method GetValue {path} {
+        global runState
+        set winId $runState(node00000,helperId)
+        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
     }
     
-    public method SetModelValue {Path Value} {
-        SetModelValue $winId [GetIdFromCaptionPath $winId $caption] $Value
+    public method SetValue {path value} {
+        global runState
+        # CHECK IF INPUT VARIABLE OR COMPARTMENT AND WARN IF NOT
+        set winId $runState(node00000,helperId)
+        SetModelValue $winId [GetIdFromCaptionPath $winId $path] $value
+        return [GetModelValue $winId [GetIdFromCaptionPath $winId $path]]
+    }
+    
+    public method GetMinValue {path} {
+        global runState
+        set winId $runState(node00000,helperId)
+        return [::GetMinValue $winId [GetIdFromCaptionPath $winId $path]]
+    }
+    
+    public method GetMaxValue {path} {
+        global runState
+        set winId $runState(node00000,helperId)
+        return [::GetMaxValue $winId [GetIdFromCaptionPath $winId $path]]
     }
     
 }
 
 class RunControlImpl {
-    variable winId
+                       
+    variable winId;    #Tk path to RunControl window
+    variable keyvalue; # RunControl namespace
+    variable modelNode node00000
+    
     constructor {modelWindow} {
+        global runState
         global helperTable
-        #return  runcontrol33857 {Run control}]
-        # hide it
-        # get a pointer to the run control
-        #puts [array name helperTable *,runcontrol33857]
-        #puts [array name helperTable ]
-        set winId $helperTable(RunControl)
-        puts $winId
+        set keyvalue $helperTable(RunControl)
+        set winId $runState($modelNode,helperId)
+        Hide
     }
     
     public method Show {} {
+        wm deiconify $winId
     }
     
     public method Hide {} {
+        wm withdraw $winId
     }
     
     public method Run {} {
-        ${winId}::SetMode $t start
+        # returns the time to complete (to run the simulation)
+        return [time [list ${keyvalue}::SetMode $winId start]]
     }
     
-    public method Stop {} {
+    public method Reset {} {
+        ${keyvalue}::SetMode $winId reset
     }
     
-    public method Pause {} {
+    # No point in a stop command as the Run is not script interuptable
+    #public method Stop {} { 
+    #    ${keyvalue}::SetMode $winId stop
+    #}
+    
+    public method SetTimeUnits {units} {
+        # units: unit second minute hour day week month year Ma
+        global runState
+        set runState($modelNode,timeUnit) $units
     }
     
-    public method SetTimeUnits {} {
+    public method GetTimeUnits {} {
+        global runState
+        return $runState($modelNode,timeUnit)
     }
     
-    public method SetIntegrationMethod {} {
+    public method GetIntegrationMethod {} {
+        global runState
+        return $runState($modelNode,intMethod)
+    }
+    public method SetIntegrationMethod {method} {
+        global runState
+        set runState($modelNode,intMethod) $method
     }
     
-    public method SetExecuteFor {} {
+    public method SetIntegrationMethodEuler {} {
+        global runState
+        set runState($modelNode,intMethod) Euler
     }
     
-    public method SetCurrentTime {} {
+    public method SetIntegrationMethodRungeKutta {} {
+        global runState
+        set runState($modelNode,intMethod) {4th-order Runge-Kutta}
     }
     
-    public method SetDisplayInterval {} {
+    public method SetExecuteFor {time} {
+        global runState
+        set runState($modelNode,execTime) $time
+    }
+    
+    public method GetExecuteFor {} {
+        global runState
+        return $runState($modelNode,execTime)
+    }
+    
+    public method GetCurrentTime {} {
+        global runState
+        return $runState($modelNode,currentTime)
+    }
+    
+    public method SetDisplayInterval {timeStep} {
+        global runState
+        set runState($modelNode,displayInt) $timeStep
+    }
+    
+    public method GetDisplayInterval {} {
+        global runState
+        return $runState($modelNode,displayInt)
     }
     
     public method SetTimeStep {Number} {
