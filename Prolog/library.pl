@@ -130,21 +130,22 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 
 go_with(Comp, SelOnly) :-
 	SelOnly = no, !;
-	draw:get_highlit_obj(0, Comp), !;
-	Comp is_connector from A to B,
-	\+ (member(Leave, [A, B]),
-	       test_for(Leave, Test),
-	       \+ go_with(Test, SelOnly)), !;
+	draw:get_highlit_obj(N, Comp),
+	N<2, \+ connects_leaver(Comp), !;
 	\+ appears(Comp),
-	    (Use is_connector from Comp to _;
-	    Use is_connector from _ to Comp),
-	    go_with(Use, SelOnly), !.
+	(Comp is_connector from Start to Finish,
+	    member(Use, [Start, Finish]),
+	    appears(Use);
+	 Use is_connector from Comp to _;
+	 Use is_connector from _ to Comp),
+	go_with(Use, SelOnly), !.
 
-test_for(Node, Test) :-
-	appears(Node), !, Test = Node;
-	implicit_function(Test, Node), !;
-	Test has_part Node.
-
+connects_leaver(Arc) :-
+	Arc is_connector from Start to Mid,
+	get_host(Mid, Finish),
+	member(Use, [Start, Finish]),
+	appears(Use),
+	\+ go_with(Use, yes).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_arcs - write out data structures representing arcs; don't do the same
 % one twice because the input list is a set.

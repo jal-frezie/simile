@@ -436,7 +436,7 @@ menu_handle(Win, file, export_prolog) :-
 	get_program_file(DefName, FileName),
 	output:date_is(Date),
         start_progress_dialogue,
-	save_isolated(FileName, Model, Date),
+	save_isolated(FileName, Model, Date, no),
         finish_progress_dialogue.
 
 menu_handle(Win, edit, Component) :-
@@ -506,7 +506,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output:date_is(Date),
-	ame_save(CopyFile, Model, Date, yes),
+	save_isolated(CopyFile, Model, Date, yes),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
 	added so any external links and ghosts come out right
@@ -1147,7 +1147,7 @@ do_save(Model, New_name) :-
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),
 	output:date_is(Date),
-	save_isolated(TempFile, Model, Date),
+	save_isolated(TempFile, Model, Date, no),
 	
 	/* Save image backgrounds */
 	transfer_images(Model, SaveDir, out),
@@ -1232,10 +1232,10 @@ try_save_files(Name) :-
 	(Name = TestName;
 	try_save_files(Name)).
 
-save_isolated(Name, Part, Date) :-
+save_isolated(Name, Part, Date, SelnOnly) :-
 	assert(suspend_display),
 	cutout(Part);
-	(ame_save(Name, Part, Date, no),
+	(ame_save(Name, Part, Date, SelnOnly),
 	    Done = 1;
 	true),
 	restart_move,
