@@ -332,9 +332,11 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
 
   data_line = searchinfo(id, &mSpare, caption, dims, path, usedTypes);
   strcpy(caption, data_line->name);
+  strcpy(caption + strlen(caption), " { ");
   for (stepIndex = 0; count>stepIndex; ++stepIndex) {
-    sprintf(caption + strlen(caption), ",%d", inds[stepIndex]); 
+    sprintf(caption + strlen(caption), "%d ", inds[stepIndex]); 
   }
+  strcpy(caption + strlen(caption), "}");
   
   if (data_line->eval == TABLE) {
     varName = "paramData ";

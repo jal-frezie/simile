@@ -491,7 +491,7 @@ proc GetTclCompProperty {topNode prop args} {
 	    set extracted [getinfo $node $propData($prop)]
 	    if {[string is integer $extracted]} {
 		return ENUM([expr -10-$extracted])
-	    } else {
+	    } else {
 		return $extracted
 	    }
 	} Dims|Trans {
@@ -663,10 +663,13 @@ proc InputVarFor {topNode node} {
     }
 }
 
-proc BringParameter {array sub} {
+proc BringParameter {array node inds} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
-    if {[info exists inputSrc($sub)]} {
-	return $inputSrc($sub)
+    for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
+	set sub [join [concat $node [lrange $inds $ind1 end]] ,]
+	if {[info exists inputSrc($sub)]} {
+	    return $inputSrc($sub)
+	}
     }
 }
