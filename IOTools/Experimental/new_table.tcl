@@ -4,6 +4,7 @@ set keyValue tabular11509
 
 namespace eval tabular11509 {
     variable tableVars
+    variable precision 4
 
     proc identify {} {
 	return "Widget-based data table"
@@ -15,7 +16,12 @@ namespace eval tabular11509 {
 	set toolbarItems [list \
             [list new.gif "Clear" [namespace code "clear $winId"] ] \
             [list add.gif "Add a variable" \
-		 [namespace code "AddVariable $winId"]]]
+		 [namespace code "AddVariable $winId"]] \
+	    [list mprec.gif "Increase precision" \
+		 [namespace code [list ChangePrecision 1]]] \
+	    [list lprec.gif "Decrease precision" \
+		 [namespace code [list ChangePrecision -1]]]]
+
 	::graphtools::MakeToolBar $winId $toolbarItems
 
 	table $winId.t -rows 1 -cols 1 -bg \#a0a0ff -variable data$winId \
@@ -60,6 +66,7 @@ namespace eval tabular11509 {
     }
 
     proc display {winId tCur tStep tRem} {
+
 	set curHt [$winId.t cget -rows]
 	set rowVal -1
 	for {set fillRow 1} {$fillRow < $curHt} {incr fillRow} {
@@ -78,12 +85,36 @@ namespace eval tabular11509 {
 	    set varCapt [$winId.t get 0,$fillCol]
 	    set varId [GetIdFromCaptionPath $varCapt]
 	    set varVal [lindex [GetModelValue $varId] 0]
-	    $winId.t set $fillRow,$fillCol $varVal
+	    $winId.t set $fillRow,$fillCol [VarPrecRender $varVal]
 	}
     }
 
     proc rowProc row { if {$row>0 && $row%2} { return OddRow } }
     proc colProc col { if {$col>0 && $col%2} { return OddCol } }
+
+    proc ChangePrecision {diff} {
+	variable precision
+	incr precision $diff
+	if {$precision<3} {
+	    set precision 3
+	}
+    }
+    
+    proc VarPrecRender {val} {
+	variable precision
+	set regular [format %.${precision}f $val]
+	set scientific [format %.${precision}e $val]
+	set shortSci [format %.[expr $precision-3]e $val]
+	if {[string length $scientific]<[string length $regular]} {
+	    return $scientific
+	} else {
+	    if {$scientific && !$regular} {
+		return $shortSci
+	    } else {
+		return $regular
+	    }
+	}
+    }
 
 } ;# end of namespace
 

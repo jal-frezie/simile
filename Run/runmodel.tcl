@@ -83,7 +83,13 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     $c configure -scrollregion "$wl $wt $wr $wb" \
 	-width [expr $wr-$wl] -height [expr $wb-$wt]
 
-    $c coords /base/ $wl $wt $wr $wb
+    if {[string match image [$c type /base/]]} {
+	$c coords /base/ $wl $wt
+	base$wc configure -width [expr $wr-$wl]
+	base$wc configure -height [expr $wb-$wt]
+    } else {
+	$c coords /base/ $wl $wt $wr $wb
+    }
 
 # set initial scaling factors
     set window_info($c,width) [expr $wr - $wl]

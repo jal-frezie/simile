@@ -474,7 +474,7 @@ proc ChangeRegion {w l t r b} {
     set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
     set newReg [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
     $w configure -scrollregion $newReg
-    eval {$w coords 1} $newReg
+    eval {$w coords /base/} $newReg
 #ShowMessage debug info "Just done [$w coords 1]" ok
     if {$comp>1} {
 	DoZoom $w $comp 0
