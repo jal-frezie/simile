@@ -50,15 +50,14 @@ proc TraceObj {winId x y} {
 proc ModelWindow {winName} {
     global tcl_platform
     menu ${winName}top
-    toplevel $winName -bg white -menu ${winName}top
+    toplevel $winName -menu ${winName}top
     
     switch $tcl_platform(platform) {
         windows { wm iconbitmap $winName -default ../Run/similev2.ico }
         unix { wm iconbitmap $winName @../Images/dribble.xbm}
     }
     # Create a scrollable canvas
-    set c [canvas $winName.canvas \
-            -confine 1 \
+    set c [canvas $winName.canvas -bg white -confine 1 \
             -xscrollcommand "AdjustCanvas $winName toolSlot x" \
             -yscrollcommand "AdjustCanvas $winName canvas y" \
             -xscrollincrement 1 -yscrollincrement 1]
@@ -771,7 +770,7 @@ proc GetClickedObj { winId canx cany range} {
 
 proc BindPopup {widget keywd} {
     bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
-    bind $widget <Leave> RemovePopup
+    bind $widget <Leave> RemovePopup
 }
 
 proc MenuBindPopup {widget keyList} {
