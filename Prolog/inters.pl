@@ -848,7 +848,6 @@ function(init_time, real, [const_int]).
 function(parent, int, [dummy_int]).
 
 function(last, any, [any]).
-function(sofar, any, [any]).
 function(prev, given_units, [const_int]).
 function(makearray, array_of_any, [any, const_int]).
 function(place_in, int, [const_int]).

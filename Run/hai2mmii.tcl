@@ -41,7 +41,7 @@ proc do_model {what args} {
 #	    "$what during $action of the model at time $mtime caused this: \
 #	    $errorInfo" ok
 #	set mess "The $what step during $action of the model at time $mtime caused this problem:\n$errorInfo"
-puts "Urrr!! Urrr!! Urrr!! $errorInfo"
+#puts "Urrr!! Urrr!! Urrr!! $errorInfo"
 	switch $what {
 	    eval {set operation "calculate the value of"}
 	    update {set operation "update the state"}

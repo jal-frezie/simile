@@ -314,9 +314,9 @@ flows(Dir, Comp, Flow) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
 generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
-				     Ref, ConvertedRef)) :-
+				     Ref, ExprRef)) :-
 	m_update:get_all_links(Node, ids(SourceID, Relation, Home, Entry),
-			       input_link(id(_,_, SourceLocation), _,
+			       input_link(id(Link,_, SourceLocation), _,
 					  ArcName, SourceUnits, ArcUnits)),
         (var(Entry),
 	    NodeID = SourceID,
@@ -343,7 +343,12 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 	get_actual_sizes(Node, FarDims, _, UseDims, _),
 	m_update:analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
-	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, ImpType).
+	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, ImpType),
+	find_name_host(Link, ControlLink),
+	(m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
+	    ExprRef = sofar(ConvertedRef);
+	\+ m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
+	    ExprRef = ConvertedRef).
 
 get_cond_and_ref(input_pair(_, Node, _, Home, OutVar, UseRef),
 		 Cond, Top, Refs) :-
