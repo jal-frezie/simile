@@ -173,7 +173,7 @@ proc ControlDraw {prologVersion} {
     Pref_Add {{custom(runControlPosition) runControlPosition "+0-20" "Position of run control"} \
                 {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"}}
     Pref_Add {{custom(hackBreak) hackBreak OFF \
-		   "Pause to edit c++ code?"}}
+		   "Pause to edit C++ code?"}}
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {{custom(compChoice) compChoice {CHOICE None Microsoft GNU} \
                         "Use which C++ compiler?"}}
