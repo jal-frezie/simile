@@ -9,7 +9,8 @@ use goals that start with "tk_" to make the diffreence clear.
 sicstus_module(input, [tk_undo/0, tk_redo/0, tk_get_info/3, tk_get_params/2,
 	tk_click_obj/5, tk_click/3, tk_doubleclick/2, tk_unclick/2, 
 	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5, 
-	tk_embrace/2, tk_abandon/1, compile_to_file/1, tk_off_window/1, 
+	tk_embrace/2, tk_abandon/0, tk_abandon_eqn/0,
+	compile_to_file/1, tk_off_window/1, 
 	tk_set_new_size/4, tk_change_size/4, 
 	tk_finish/0, set_style/1]).
 
@@ -82,8 +83,11 @@ tk_embrace(Wid, Comp) :-
 	prioritize_window(Wid),
 	embrace(Wid, Comp).
 
-tk_abandon(Wid) :-
-	abandon(Wid).
+tk_abandon :-
+	abandon.
+
+tk_abandon_eqn :-
+	abandon_eqn.
 
 tk_set_new_size(Node, New_size, XDefOffset, YDefOffset) :-
 	show_wait_cursor,

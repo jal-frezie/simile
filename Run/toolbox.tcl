@@ -461,8 +461,8 @@ proc EmbraceObj {winId} {
 
 # This allows prolog to save the values of editing when the window is exited.
 # Comment it out to debug edit procedure from separate window.
-proc AbandonObj {winId} {
-    prolog [list tk_abandon( '$winId' )]
+proc AbandonObj {} {
+    prolog tk_abandon
 }
 
 # ChangeRegion causes a window to respond to a change in the size of its canvas.
@@ -561,7 +561,7 @@ proc AddCanvasBindings { c } {
     bind $c <ButtonRelease-1> {ReleaseObj %W %x %y}
     bind $c <Button-3> {PostMenu %W %X %Y}
     bind $c <FocusIn> {EmbraceObj %W}
-    bind $c <FocusOut> {AbandonObj %W}
+    bind $c <FocusOut> {AbandonObj}
 
 # text/clipboard action from Welch example
     bind $c <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
@@ -1069,6 +1069,8 @@ proc AddMainMenu { winid initWidth initDepths} {
     entry $eb.equation -width 40
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list accept_equation $eb.equation]
+    bind $eb.equation <FocusIn> "EmbraceEqn $winid"
+    bind $eb.equation <FocusOut> AbandonEqn
     set image [image create photo -file "../Images/Eqnbar/tick.gif"]
     pack [button $eb.tick -state disabled -image $image -borderwidth 1 \
             -command [list accept_equation $eb.equation]] -side left
@@ -1132,6 +1134,15 @@ proc AddMainMenu { winid initWidth initDepths} {
     $nb.redo configure -state disabled
 }
 
+proc EmbraceEqn {winid} {
+    global equationbar
+    prolog tk_embrace('$winid.canvas',$equationbar(node))
+}
+
+proc AbandonEqn {} {
+    prolog tk_abandon_eqn
+}
+    
 # should check env to get system directory
 proc LaunchHelp {} {
     global tcl_platform

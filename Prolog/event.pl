@@ -10,7 +10,7 @@ interface of the application. It responds by:
 sicstus_module(event, [get_info/3, get_params/2,
 		  click_obj/3, click_text/3, click/2,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
-	unclick/0, embrace/2, abandon/1, drag/2,
+	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 	adjust_display_area/2, prioritize_window/1]).
 
 sicstus_use_module([dialogue, m_update, image, maintain,
@@ -148,7 +148,8 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 
 click_in(_, _, _, _, Parent) :-
 	(get_mode(select), !,
-	    finish_old_edit(none);
+	    finish_old_edit(none),
+	    give_focus('{}');   
 	get_translation(Old_trans),
 	    get_original_click(Orig_X, Orig_Y),
 	    translate([Orig_X, Orig_Y], Old_trans, Old_point),
@@ -1317,8 +1318,11 @@ embrace(_, Obj) :-
 	highlight(Obj, 0)).
 /*	write(Obj), nl. */
 	
-abandon(_) :-
+abandon :-
 	finish_old_edit(none).
+
+abandon_eqn :-
+	normalize(_Obj).
 
 /* This will make a new node at the given position if the 4th
 arg is var, or move the given node there if it is not. Fails if it

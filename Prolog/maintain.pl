@@ -24,7 +24,7 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
 		add_window/7, redraw_window/1, inject_graphics/2,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
-		highlight/2, normalize/1, current_edit/2, force_edit/2, exterminate/1,
+		highlight/2, normalize/1, current_edit/2, exterminate/1,
 		draw_incomplete/0, remove_old_incomplete/0, draw_rubberband/0,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, kill_window/1, exit_AME/1]).
