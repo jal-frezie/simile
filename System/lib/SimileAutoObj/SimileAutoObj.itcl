@@ -31,6 +31,32 @@ proc exit {} {
     prolog tk_kill_everything
 }
 
+rename ShowMessage ::renamed::ShowMessage
+proc ShowMessage { title icon string resps {parent {}}} {
+    puts "$icon $title: $string"
+    switch -- $resps {
+        abortretryignore {
+            return abort
+           }
+        ok {
+            return ok
+        }
+        okcancel{
+            return ok
+        }
+        retrycancel {
+            return cancel
+        }
+        yesno {
+            return yes
+        }
+        yesnocancel {
+            return yes
+        }       
+    }
+    
+}
+
 itcl::class similescript::ModelWindow {
     
     variable modelNode node00000
@@ -77,16 +103,20 @@ itcl::class similescript::ModelWindow {
     }
     
     # File Menu
-    public method FileNew {} {
+    public method New {} {
         MenuSelect [GetModelWindow].canvas file new
         unset model
     }
     
     public method FileOpenDlg {} {
+        if {[info exists model]} {
+            $this FileNew"
+        }
         MenuSelect [GetModelWindow].canvas file open_all
+        set model $modelFile
     }
     
-    public method FileOpen {modelFile} {
+    public method Open {modelFile} {
         if {[info exists model]} {
             $this FileNew"
         }
@@ -94,40 +124,15 @@ itcl::class similescript::ModelWindow {
         set model $modelFile
     }
     
-    public method FileSave {} {
-        MenuSelect [GetModelWindow].canvas file save
-    }
-    
-    public method FileSaveAs {} {
-        MenuSelect [GetModelWindow].canvas file save_as
-    }
-    
-    public method FilePrint {} {
+    public method Print {} {
         MenuSelect PrintNow [GetModelWindow].canvas
     }
-    
-    public method FileExportModel {} {
-        MenuSelect [GetModelWindow].canvas file export_prolog
-    }
-    
-    public method FileExportCPPCodeExec {} {
-        MenuSelect [GetModelWindow].canvas file compile_c
-    }
-    
-    public method FileExportPostscript {} {
-        DoWithErrors ExportPostscript [GetModelWindow].canvas
-    }
-    
+        
     public method Exit {} {
         # DOESN'T WORK
         #byebye [GetModelWindow]
         # prolog tk_finish; # generates existance error
         prolog tk_kill_everything; # kill interp as well!!
-    }
-    
-    # Edit Menu - not supporting editing the model
-    public method Preferences {} {
-        Pref_Dialog
     }
     
     private method RemoveRunControl {} {
@@ -137,7 +142,7 @@ itcl::class similescript::ModelWindow {
     }
     
     # Model Menu
-    public method BuildCPP {} {
+    public method Run {} {
         # builds the model with CPP and returns a run control command/object
         RemoveRunControl
         MenuSelect [GetModelWindow].canvas file run_c
@@ -145,7 +150,7 @@ itcl::class similescript::ModelWindow {
         return $rc
     }
     
-    public method BuildTcl {} {
+    public method Debug {} {
         # builds the model with Tcl and returns a run control command/object
         RemoveRunControl
         MenuSelect [GetModelWindow].canvas file run_tcl
