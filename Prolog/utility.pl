@@ -12,7 +12,7 @@ sicstus_module( utility, [unique_name/2, unique_name/3, indent/1,
 			  try/1,equate/2,
 			  merge_lists/2, merge_lists/3, split_lists/3,
 			  get_ground_part/2, generate_name/4, generate_name/5,
-			  ensure_unused/3, close_end/3, count_to/4] ).
+			  ensure_unused/4, count_to/4] ).
 
 sicstus_use_module( [database, text, library(lists), library(ordsets)] ).
 
@@ -299,10 +299,10 @@ list of names used so far and returning a list with the new name appended
 on, however new technology has led to the use of an open-ended list. The
 5 argument version is for backward compatibility. */
 
-generate_name(L, Atom, N, Used, Used) :-
-	generate_name(L, Atom, N, Used).
+generate_name(L, Atom, N, Used) :-
+	generate_name(L, Atom, N, Used, []).
 
-generate_name( L, Atom, UnusedName, Used ) :-
+generate_name(L, Atom, UnusedName, Used, Spares) :-
 	(L = c; L = tcl; L = prolog),
 /* can get called with numeric arguments sometimes so do this... */
 	(number(Atom), !, alphanumeric_only( number, Name );
@@ -324,33 +324,33 @@ generate_name( L, Atom, UnusedName, Used ) :-
 		     name(LocalName, SeedStr);
 		LocalName = Atom),
 		alphanumeric_only(LocalName , Name )),
-	close_end(Used, Already, NotYet),
-	ensure_unused( Name, UnusedName, Already ),
-	NotYet = [UnusedName | _].
-
-close_end(Open, Closed, Free) :-
-	append(Closed, Free, Open),
-	var(Free), !.
+	ensure_unused( Name, UnusedName, Used, Spares).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ensure_unused renames a variable if it has appeared before.
 
-ensure_unused( Name, NewName, Used ) :-
-	nuke_unless_grounded(Name, Used),
+/* This version allows a bunch of names with related suffixes to be reserved
+-- the returned name plus the result of appending each suffix in the list */
+
+ensure_unused(Name, NewName, Used, Spares) :-
 	nuke_if_grounded(NewName),
-	try_set(Used, Name, NewName), !.
+	(Sig = ''; count_to(0, 100000, 1, N), append_atoms('_', N, Sig)),
+	append_atoms(Name, Sig, NewName),
+	all(utility, append_atoms,
+	    [unify(NewName), build(['' | Spares]), build(ToReserve)]),
+	\+ something_used_in(ToReserve, Used),
+	append(ToReserve, _, NewSuffix),
+	suffix(NewSuffix, Used), !.
 
-ensure_unused( Name, NewName, Used ) :-
-	count_to(0, 100000, 1, N),
-	name(N, NS),
-	name(Name, NameS),
-	append(NameS, [95 | NS], NewNameS),
-	name(Product, NewNameS),
-	try_set(Used, Product, NewName),
-	!.
+something_used_in(Testing, Used) :-
+	length(Used, _NNowUsed), !,
+	nuke_unless_grounded(Testing, Used),
+	member(Taken, Testing),
+	member(Taken, Used).
 
-nuke_unless_grounded(Name, Used) :-
+nuke_unless_grounded(Testing, Used) :-
 	ground(Used), !;
+	Testing = [Name | _],
 	raise_exception(['Cannot generate unique name from', Name,
 			'with variable in used list!']).
 
@@ -359,12 +359,6 @@ nuke_if_grounded(NewName) :-
 	raise_exception(['Attempt to generate new name already instantiated to',
 		NewName]);
 	true.
-
-try_set(Used, Product, Target) :-
-	\+ member(Product, Used),
-	(Target = Product, !;
-	raise_exception(['Bug in deferred execution triggered by setting', Product,
-		'-- vendor will be pleased to hear about it.'])).
 
 /* count_to returns a value between the supplied min and max. We are sometimes
 using it to seek for free space for new nodes; to speed things up we go in

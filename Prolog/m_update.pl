@@ -1392,12 +1392,13 @@ add_new_line_between(Line_type, Start, Finish, Top_link) :-
 
 unique_name_for_new(Parent, Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
-	utility:unique_name(Abbrev, TestName, _),
-	(Name = TestName;
+	repeat,
+	utility:unique_name(Abbrev, Name, _),
+/*	(Name = TestName;
 	count_to(0, 100000, 1, Sub),
 	    sicstus_format_to_chars("~a_~d", [TestName, Sub], NameStr),
 	    name(Name, NameStr)),
-	\+ (Part has_class_refinement name of Name,
+*/	\+ (Part has_class_refinement name of Name,
 	     Parent has_part Part;	
 	Part has_attribute name of Name,
 	     Part draws_inside Parent), !.

@@ -360,11 +360,8 @@ declare_submodel_structures(Language, [Instance | Instances], Used) :-
 	Instance = instance(submodel, Node, xrefs(Model, _, Bases, _), 
 		Name, Type-_),
 	caption_for(Node, Capt),
-	generate_name(Language, Capt, Name, Used),
+	generate_name(Language, Capt, Name, Used, [type]),
 	append_atoms(Name, type, Type),
-	member(Type, Used), !,
-	    /* add type name to used list if not already there
-	    so no component inside can use it and break C */
 	make_assoc_loop_names(Language, Instance, Used, Bases),
 	declare_structure(Language, Model, Used),
 	declare_submodel_structures(Language, Instances, Used).

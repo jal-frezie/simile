@@ -1569,9 +1569,10 @@ dissolve_component(Node) :-
 		      \+ is_ghost(Part),
 		      \+ Node = Part,
 		      caption_for(Part, UsedCaption)),
-		Used), !,
-		retitle_duplicates(Orphan_nodes, Used),
-		retitle_duplicates(OrphanLinks, Used);
+		UsedNow), !,
+	    append(UsedNow, _, Used),
+	    retitle_duplicates(Orphan_nodes, Used),
+	    retitle_duplicates(OrphanLinks, Used);
 	true),
 	/* First, strip the model's dimensions and check external vars */
 	(image:dim_spec_for(Node, "Simple"), !;
@@ -1599,13 +1600,12 @@ dissolve_component(Node) :-
 retitle_duplicates([], _).
 
 retitle_duplicates([Node | Rest], Used) :-
-	(caption_for(Node, OldCapt),
-		ensure_unused(OldCapt, NewCapt, Used),
-		\+ NewCapt = OldCapt,
-		(Name_type = 0; Name_type = 2),
-		add_parameter(Node, Name_type, name, NewCapt), !,
-		update_captions(Node);
-	true),
+	caption_for(Node, OldCapt),
+	ensure_unused(OldCapt, NewCapt, Used, []),
+	(NewCapt = OldCapt, !;
+	(Name_type = 0; Name_type = 2),
+	    add_parameter(Node, Name_type, name, NewCapt), !,
+	    update_captions(Node)),
 	retitle_duplicates(Rest, Used).
 
 remove_highlights :-
