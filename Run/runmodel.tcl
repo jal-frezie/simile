@@ -107,7 +107,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 
 # Now just in case we are loading this from a .cnv file and Prolog doesnt
 # know how big the canvas is...
-    ResizeDesktop $c $wl $wt $wr $wb
+#    ResizeDesktop $c $wl $wt $wr $wb
 
     if {[string match image [$c type /base/]]} {
 	$c coords /base/ $wl $wt
@@ -180,13 +180,13 @@ proc ResizeBackgnd {wc l t r b} {
 
 proc SetSpace {c w h} {
     global window_info
-    set cx [expr $window_info($c,width)/2]
-    set cy [expr $window_info($c,height)/2]
+    set cx $window_info($c,width)
+    set cy $window_info($c,height)
     set window_info($c,width) [expr $w - 4]
     set window_info($c,height) [expr $h - 4]
 #ShowMessage debug info "New size is $w $h" ok
-    RollBack $c 1 [expr $cx - $w/2 + 2] [expr $cy - $h/2 + 2] \
-	[expr $cx + $w/2 - 2] [expr $cy + $h/2 - 2]
+    RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
+	[expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
 }
 
 # This zooms canvas in or out. Because it can be done in response to a

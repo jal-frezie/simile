@@ -483,7 +483,7 @@ proc ClickObj { x y winId action} {
 proc RollBack { winId toProlog l t r b } {
     set newSpace 0
     scan [$winId cget -scrollregion] "%g %g %g %g" cl ct cr cb
-    #ShowMessage debug info "Rolling from $cl $ct $cr $cb to $l $t $r $b" ok
+#    puts "debug info Rolling from $cl $ct $cr $cb to $l $t $r $b ok"
     set pt [$winId canvasx $l]
     if {$pt < $cl-2} {
         set cl $pt
