@@ -63,10 +63,11 @@ main :-
 			 write(Bug), nl,
 			 fail)),
 	tcl_eval(Interp, ['FilterErrors ControlDraw', br(Vnum)], EnvVars),
-	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, E]),
+	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
 	set_interpreter(Interp),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
+	name(E, EStr),
 	state:set_edition(E),
 
 	state:set_mode(none),

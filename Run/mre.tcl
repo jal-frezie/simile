@@ -127,9 +127,10 @@ proc RunEnv::Create { ModelWin } {
                 set gif [lindex $item 0]
                 set helptext [lindex $item 1]
                 set command [lindex $item 2]
-                $bbox add -image [image create photo  -file "../Images/Toolbar/$gif"] \
-                        -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
-                        -helptext $helptext -command $command
+                set newButton [$bbox add -image [image create photo  -file "../Images/Toolbar/$gif"] \
+				   -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
+				   -command $command]
+		BindPopup $newButton $helptext
             }
             pack $bbox -side left -anchor w
             incr tbnum
