@@ -1267,10 +1267,10 @@ proc AddMainMenu { winid initWidth initDepths} {
     }
     set fm [menu ${winid}top.edit -tearoff 0]
     ${winid}top add cascade -label Edit -underline 0 -menu ${winid}top.edit
-    $fm add command -label Undo -command "prolog tk_undo" \
+    $fm add command -label Undo -command "UnOrReDo 0" \
             -state disabled -accelerator "Ctrl+Z"
     AddAccelerator $winid edit Undo "<Control-z>"
-    $fm add command -label Redo -command "prolog tk_redo" \
+    $fm add command -label Redo -command "UnOrReDo 1" \
             -state disabled
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
