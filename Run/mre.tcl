@@ -87,7 +87,7 @@ proc RunEnv::Create { ModelWin } {
                             {} -command {::RunEnv::LoadView} }
                 {command "&Save configuration..." {} "Save a configuration of displays" \
                             {} -command {::RunEnv::SaveView} }
-
+                
                 {separator}
                 {command "&Print..." {} "Print display"  \
                             {} -command { ::RunEnv::PrintCurrentContainer } }
@@ -155,6 +155,7 @@ proc RunEnv::Create { ModelWin } {
         set runcontrolpane [frame $hiercontrolpw.runcontrolPane]
         set explorerPane [frame $hiercontrolpw.explorerPane]
         $hiercontrolpw add $runcontrolpane $explorerPane ;# -height 240
+        
         # Add notebook for controls, explorer etc
         NoteBook $explorerPane.notebook
         $explorerPane.notebook insert end "Explorer" -text "Explorer"
@@ -213,7 +214,7 @@ proc RunEnv::AddNotebook {containerId} {
         bind [$containerId.notebook getframe $pageId] <Button-3> \
                 "+tk_popup .pageContextMenu %X %Y"
         set newContainer [$containerId.notebook getframe $pageId]
-        panedwindow $newContainer.panedwindow
+        panedwindow $newContainer.panedwindow -orient vertical
         pack $newContainer.panedwindow -expand yes -fill both
         frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1; # -relief ridge;# jmm
         bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
@@ -275,7 +276,7 @@ proc RunEnv::AddNotebookPage {containerId} {
         $ParentContainer insert end $pageId -text "Page $pageIndex" \
                 -raisecmd "::RunEnv::PageRaiseCmd $ParentContainer $pageId"
         set newContainer [$ParentContainer getframe $pageId]
-        panedwindow $newContainer.panedwindow
+        panedwindow $newContainer.panedwindow -orient vertical
         pack $newContainer.panedwindow -expand yes -fill both
         frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1
         bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
@@ -342,7 +343,7 @@ proc ::RunEnv::CopyHelper {containerId} {
     variable canvasId
     
     #ShowMessage debug info "CopyHelper container: $containerId; \n\
-            CurrentContainer $CurrentContainer\n \
+    CurrentContainer $CurrentContainer\n \
             selection owner: [selection own]\n\
             focus owner [focus]\n\
             container children [winfo children $CurrentContainer]\n\
@@ -426,6 +427,7 @@ proc ::RunEnv::DeleteHelperCurrentContainer {} {
 
 proc RunEnv::DeleteNotebookPage {notebook page} {
     set pages [$notebook pages]
+    #puts "$notebook has pages $pages"
     set n [llength $pages]
     set index [lsearch $pages $page]
     #puts "DeleteNotebookPage  $notebook; $page\n \
@@ -506,62 +508,16 @@ proc RunEnv::DeletePane {parentPath containerId} {
 
 proc RunEnv::SplitPage {containerId orientation} {
     set parentPath [FindParentpanedwindowOrNotebook $containerId]
-    #ShowMessage debug info "SplitPage container $containerId $orientation\n\
-    #    parentPath $parentPath panes [$parentPath panes]" ok
     if {[string match notebook [winfo name $parentPath]]} {
-
-# Note from Jasper -- above case previously checked for 
-# [string match notebook [winfo name $parentPath]]
-# but seeing as it seems to always do the right thing anyway, I removed this
-# test, so subsequent cases no longer ever get used
-# (Next one is the same anyway)
-
         #ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
         Addpanedwindow $containerId $orientation
-    } elseif {![string match $orientation [$parentPath cget -orient]]} {
+    } elseif {(![string match $orientation [$parentPath cget -orient]])} {
         #ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
-#        parentPath $parentPath" ok;
-        set newpw [Addpanedwindow $containerId $orientation]
+        #parentPath $parentPath" ok;
+        Addpanedwindow $containerId $orientation
         #ShowMessage debug info "newpw $newpw" ok
     } else  {
-        # it's a pane
-        # existing panes original settings
-        set pwidth  [winfo width $containerId]
-        set pheight [winfo height $containerId]
-        set sash [lsearch [$parentPath panes] $containerId]
-#        set sashCoord [$parentPath sash coord $sash]
-        set contx [winfo x $containerId]
-        set conty [winfo y $containerId]
-        #ShowMessage debug info "SplitPage pane to be split \
-        width $pwidth height $pheight \n \
-                sash index $sash coord $sashCoord\n\
-#                x [winfo x $containerId]; y [winfo y $containerId]" ok; ##############
-        
-        
-        # new settings
-        switch $orientation {
-            vertical {
-                set width [expr {int(0.9*$pwidth)}]
-                set height [expr {int(0.9*$pheight/2)}]
-#                set sashx [lindex $sashCoord 0]
-#                set sashy [expr $conty+$height]
-            }
-            horizontal {
-                set width [expr {int(0.9*$pwidth/2)}]
-                set height [expr {int(0.9*$pheight)}]
-#                set sashx [expr {$contx+$width}]
-#                set sashy [lindex $sashCoord 1]
-            }
-        }
-	set sashx [expr $contx+$width]
-	set sashy [expr $conty+$height]
-        
-        
-        #ShowMessage debug info "SplitPage new sash setting for existing pane (split)\
-        #        width $width height $height \n \
-        #        sash index $sash $sashx $sashy" ok; ##############
-        
-        
+        # it's a pane to be split in the same orientation 
         # add a new pane
         set paneId [UniqueId $parentPath.pane [$parentPath panes]]
         frame $paneId -highlightcolor black -highlightthickness 1
@@ -569,14 +525,32 @@ proc RunEnv::SplitPage {containerId orientation} {
         bind $paneId <Button-3> \
                 "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
         $parentPath add $paneId -after $containerId
+        ###############################################################################
+        set pwidth  [winfo width $containerId]
+        set pheight [winfo height $containerId]
+        set sash [expr {[lsearch [$parentPath panes] $containerId]}]
+        set sashCoord [$parentPath sash coord $sash]
+        set contx [winfo x $containerId]
+        set conty [winfo y $containerId]
+        # new settings
+        switch $orientation {
+            vertical {
+                set width [expr {int(0.9*$pwidth)}]
+                set height [expr {int(0.9*$pheight/2)}]
+                set sashx [lindex $sashCoord 0]
+                set sashy [expr $conty+$height]
+            }
+            horizontal {
+                set width [expr {int(0.9*$pwidth/2)}]
+                set height [expr {int(0.9*$pheight)}]
+                set sashx [expr {$contx+$width}]
+                set sashy [lindex $sashCoord 1]
+            }
+        }
+        ###############################################################################
         
-        update; # or sash place won't work
+        update idletasks; # or sash place won't work
         $parentPath sash place $sash $sashx $sashy
-        #SetCurrentContainer $paneId
-        
-        #ShowMessage debug info "SplitPage $parentPath $containerId \n\
-        #        paneId $paneId" ok; ##############
-        
     }
 }
 
@@ -585,6 +559,7 @@ proc RunEnv::SplitCurrentContainer {orientation} {
 }
 
 proc ::RunEnv::FindParentpanedwindowOrNotebook {containerId} {
+    #puts "Finding parent for $containerId"
     set parentPath [winfo parent $containerId]
     set parentName [winfo name $parentPath]
     switch $parentName {
@@ -950,9 +925,9 @@ proc RunEnv::SavePanedwindowConfig {panedwindow stream} {
         }
     }
     for {set index 0} {$index < [expr [llength [$panedwindow panes]]-1]} \
-	{incr index} {
-        puts $stream "sash [winfo parent $pane] $index [$panedwindow sash coord $index]"
-    }
+            {incr index} {
+                puts $stream "sash [winfo parent $pane] $index [$panedwindow sash coord $index]"
+            }
 }
 
 proc RunEnv::SaveContainer {winId stream} {
