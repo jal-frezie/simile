@@ -714,7 +714,7 @@ test_complete(Item) :-
 item on the screen. */
 
 complete(Item) :-
-	(Item is_of_sort connection,
+	(Item is_of_sort line,
 		(Item has_attribute complete of Complete, !, Complete = true;
 		test_complete(Item), Item has_new_attribute complete of true, !;
 		Item has_new_attribute complete of false, fail);

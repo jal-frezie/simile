@@ -586,7 +586,7 @@ doubleclick_obj(Xpt, Ypt, Name) :-
 	doubleclick_on(Name).
 
 doubleclick_on(Edit_thing) :-
-	get_mode(select),
+%	get_mode(select),
 	find_type(Edit_thing, Edit_type),
 	find_current(Wid),
 	(Edit_type = submodel, !,

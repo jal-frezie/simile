@@ -550,11 +550,25 @@ menu_handle(Win, edit, invsel) :-
 	   
 menu_handle(Win, edit, properties) :-
 	get_edit_model(Win, Model, Tgt),
-	(Tgt = [_, _], !,
-	    event:set_properties(Win, Model);
-	find_type(Tgt, submodel), !,
-	    event:set_properties(Win, Tgt);
-	event:doubleclick_on(Tgt)).
+	((Tgt = Model; Tgt = [_,_]), !,
+	    /* background or edit menu selection */
+	    (setof(PossTgt,
+		   (contains(Model, PossTgt),
+		       \+ PossTgt = Model,
+		       get_highlit_obj(0, PossTgt),
+		       PossTgt is_of_sort box),
+		   [Target | _]), !;
+		setof(PossTgt,
+		   (contains(Model, PossTgt),
+		       get_highlit_obj(1, PossTgt),
+		       PossTgt is_of_sort line),
+		   [Target | _]), !;
+		Target = Model);
+	    Target = Tgt),
+	(find_type(Target, submodel), !,
+	    set_properties(Win, Target);
+	event:doubleclick_on(Target), !;
+	    true).
 
 menu_handle(Win, edit, Action) :-
 	member(Action, [flip_v, flip_h]),

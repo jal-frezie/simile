@@ -706,7 +706,7 @@ proc ClickObj { x y winId X Y action} {
 		}
             }
             
-            if {![string compare $target $obj]} {
+            if {!$RB && [string equal $target $obj]} {
                 set action clicktext
             }
         }
