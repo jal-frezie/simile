@@ -912,7 +912,7 @@ builtin('Trigonometry', acosh, 1, [1]).
 builtin('Trigonometry', atanh, 1, [1]).
 builtin('Trigonometry', acoth, 1, [1]).
 
-builtin('Arithmetic', rand, 1, [1, 1]).
+builtin('Arithmetic', rand_const, 1, [1, 1]).
 builtin('Arithmetic', rand_var, 1, [1, 1]).
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
 builtin('Arithmetic', fmod, 1, [1, 1]).
@@ -1174,7 +1174,7 @@ though the modeller has probably erred if they do -- except for init_time,
 which is actually the same function as time but this makes sure it is only
 evaluated when the model is created. */
 
-do_once(_, rand_const(Lo, Hi), rand(Lo, Hi), 0).
+do_once(_, rand_const(Lo, Hi), rand_var(Lo, Hi), 0).
 do_once(_, init_time(N), ind_time(N), 0).
 
 /* individuates refers to a function such as rand_const or index, which gives
