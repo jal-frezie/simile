@@ -1619,13 +1619,13 @@ unclick_obj :-
 			get_highlit_obj(0, WrongFinish),
 			normalize(WrongFinish);
 		    make_terminator(New_obj, Finish_thing, Terminator),
+			normalize(OrigStart),
+			normalize(Finish_thing),
 			(var(Terminator), !;
 			    (find_type(Terminator, TType),
 				\+ member(TType, [submodel, cloud]), !;
 			    draw_line_to(Start_thing, New_obj, Terminator)),
-			    tie_ends(New_obj, Start_thing, Terminator)),
-			normalize(OrigStart),
-			normalize(Finish_thing)),
+			    tie_ends(New_obj, Start_thing, Terminator))),
 		    clear_incomplete,
 		    remove_old_incomplete;
 		get_phase(barge),

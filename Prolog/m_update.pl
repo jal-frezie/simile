@@ -1217,6 +1217,7 @@ status_affects(Item, Affected) :-
 	
 /* Do not start on links already continued or uncontinuable */
 start_full(Type, Link) :-
+	old_cloud(Link);
 	connects_ghost_flow(Type, Link);
 	find_type(Link, Type),
 	\+ (continues_in(Link, Node),
@@ -1229,6 +1230,7 @@ start_full(Type, Link) :-
 	       Floater is_of_sort cloud ).
 
 finish_full(Type, Link) :-
+	old_cloud(Link);
 	connects_ghost_flow(Type, Link);
 	find_type(Link, Type),
 	\+ (initiates(Link, Node),
@@ -1237,6 +1239,11 @@ finish_full(Type, Link) :-
 	    continues_from(Link, Node),
 		\+ (Node has_model_refinement link_equivalences of Equiv_list,
 		member(_-Link, Equiv_list))).
+
+old_cloud(Link) :-
+	find_type(Link, cloud),
+	(_F0 is_connector from Link to _;
+	    _F0 is_connector from _ to Link).
 
 connects_ghost_flow(Type, Link) :-
 	Type = influence,
