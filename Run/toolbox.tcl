@@ -1195,7 +1195,11 @@ proc SaveProjectFile {topNode path tgt} {
 proc UnOrReDo {curWin fwd} {
     global window_info
     foreach win [array names window_info *,parent] {
-        lappend canList '[lindex [split $win ,] 0]'
+        set spareWin [lindex [split $win ,] 0]
+	if {[string equal $window_info($spareWin,top_node) \
+		 $window_info($curWin,top_node)]} {
+	    lappend canList '$spareWin'
+	}
     }
     set curPos [lsearch $canList '$curWin']
     set canArgs [join $canList ,]

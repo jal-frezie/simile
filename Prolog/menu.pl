@@ -41,7 +41,6 @@ undo_edit(Wid, Wids) :-
 	is_toplevel(Model),
 	go_back(Model, Further),
 	all(menu, check_exist, [build(Wids)]),
-	redraw_window(_),
 	update_ability(Model, undo, edit, 'Undo', Further),
 	update_ability(Model, redo, edit, 'Redo', 1),
 	save_allowed(Model, CanSave),
@@ -53,7 +52,6 @@ redo_edit(Wid, Wids) :-
 	is_toplevel(Model),
 	go_forward(Model, Further),
 	all(menu, check_exist, [build(Wids)]),
-	redraw_window(_),
 	update_ability(Model, undo, edit, 'Undo', 1),
 	update_ability(Model, redo, edit, 'Redo', Further),
 	save_allowed(Model, CanSave),
@@ -62,7 +60,8 @@ redo_edit(Wid, Wids) :-
 check_exist(Wid) :-
 	Wid shows_model Mod,
 	(get_shape(Mod, internal_extent, Rect), !,
-	    output:tk_grow_canvas(Wid, Rect);
+	    output:tk_grow_canvas(Wid, Rect),
+	    redraw_window(Wid);
 	delete_window(Wid)).
 	
 menu_select(Seln) :-
