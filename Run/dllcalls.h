@@ -53,8 +53,31 @@ public:
    int yspan;
 	int range;
    int xsize; /* assume I can't initialize it here */
-   int *points;
+   int* points;
+
+   int index;
+   graph_data_type* next;
+
+   graph_data_type(int newIndex, graph_data_type* prev) {
+     index = newIndex;
+     next = prev;
+   }
+
+   ~graph_data_type() {
+     delete(points);
+     if (next) {
+       delete(next);
+     }
+   }
+
 }; /* end of graph data type decl */
+
+graph_data_type* find_graph (int index, graph_data_type* use_graph_pointer) {
+  while (use_graph_pointer->index != index) {
+    use_graph_pointer = use_graph_pointer->next;
+  }
+  return(use_graph_pointer);
+}
 
 /* This declares the structure used by the generated code to hold metadata
 about model components. It is repeated in the stub ame_cmx.cpp to access fields

@@ -1673,17 +1673,20 @@ proc ListSameNumbers {list1 list2} {
 
 # procedures to handle graph data
 
-proc insert_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \
-            xsize array_data} {
+#proc insert_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \
+\#            xsize array_data} {
+ #   variable graphdata
+ #   set $graph_data_pointer [format "%f %f %d %f %f %d %d %s" \
+ \#           $xlow $xhigh $xspan $ylow $yhigh $yspan $xsize $array_data]
+#}
+
+
+proc setup_graph_data {graph_data_pointer xlow xhigh xspan \
+			   ylow yhigh yspan xsize args} {
     variable graphdata
     set $graph_data_pointer [format "%f %f %d %f %f %d %d %s" \
-            $xlow $xhigh $xspan $ylow $yhigh $yspan $xsize $array_data]
-}
-
-
-proc setup_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \
-            xsize args} {
-    insert_graph_data $graph_data_pointer $xlow $xhigh $xspan $ylow $yhigh $yspan \
+            $xlow $xhigh $xspan $ylow $yhigh $yspan $xsize $args]
+#    insert_graph_data $graph_data_pointer $xlow $xhigh $xspan $ylow $yhigh $yspan \
             $xsize $args
 }
 

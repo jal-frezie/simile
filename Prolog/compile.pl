@@ -284,11 +284,12 @@ bits and pieces */
 				 ExtSets, AllGraphs, GraphClearText, FnList),
 
 	length(AllGraphs, GraphTotal),
-	render( Language, comment, 'GRAPH DATA SPACE DECLARATION', 0,
+/*	render( Language, comment, 'GRAPH DATA SPACE DECLARATION', 0,
 				[GraphDeclComment]),
 	render(Language, variable_declaration,
 	       [graph_data_type, graphdata, [GraphTotal]],
 	       0, [GraphDeclText]),
+*/
 	append(EntryArcs, [end], EntryList), /* because msvc++ barfs
 	                                        at empty lists */
 	all(render, make_constant_string,
@@ -308,8 +309,7 @@ wot need them */
 	append(InitTypes, [EndTopType], TypeDecls),
 	render( Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0,
 							StructTypeComment),
-	append([[GraphDeclComment, GraphDeclText | ArcDeclText],
-		StructTypeComment, InitTypes], TypeSection),
+	append([ArcDeclText, StructTypeComment, InitTypes], TypeSection),
 
 	render( Language, comment, 'GLOBAL DECLARATIONS', 0,
 		[GlobalDeclComment]),
@@ -696,8 +696,7 @@ make_exit_proc(Language, Instances, Dest, GraphClearText) :-
 							FinalProcDeclComment),
 	Blank = [''],
 	append([FinalProcDeclComment, Blank, FinalProcDeclText, Blank,
-		GraphClearText, Blank, Finalisers, Blank,
-		Proc_ending], Decls),
+		Finalisers, Blank, Proc_ending], Decls),
 	send_to_dest(Dest, Decls).
 
 /* correct_graph_headers: building the code for the functions produces graph info

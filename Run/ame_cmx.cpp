@@ -152,7 +152,7 @@ get_remote_value_type get_remote_value;
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*,
-			  int*, node_data_line**, graph_data_type**,
+			  int*, node_data_line**, graph_data_type***,
 			  int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
@@ -184,7 +184,7 @@ class Model {
 
 public:
   int phases;
-  graph_data_type* graphdata;
+  graph_data_type** graphdata;
   int nodecount;
   node_data_line* nodedata;
   int *connLines;
@@ -549,8 +549,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 
       return TCL_ERROR;
     }
-
-    graphptr = tgtModel->graphdata + data_line->graph;
+    graphptr = find_graph(data_line->graph, *tgtModel->graphdata);
     sprintf(current, "%f %f %d %f %f %d %d %d",
             graphptr->xlow,
             graphptr->xhigh,
@@ -566,7 +565,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
       sprintf(current, " %d", graphptr->points[count]);
       Tcl_AppendStringsToObj(resultPtr, current, 
 			     (char *)NULL);
-    }
+			     }
     return TCL_OK;
   case SETGRAPH:
     if (argc < 12) {
@@ -574,7 +573,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
       return TCL_ERROR;
     } /* if(error) */
 
-    graphptr = tgtModel->graphdata + data_line->graph;
+    graphptr = find_graph(data_line->graph, *tgtModel->graphdata);
     error = Tcl_GetDoubleFromObj(interp, argv[3], &(graphptr->xlow));
     if (error != TCL_OK) {
       return error;

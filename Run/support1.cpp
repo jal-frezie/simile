@@ -247,7 +247,7 @@ void* import_ptr(int level, void* topInstPtr,
     return NULL;
   }
 }
-  
+/*  
 void insert_graph_data(
    graph_data_type *graph_data_pointer,
    double xlow,
@@ -270,9 +270,11 @@ void insert_graph_data(
    graph_data_pointer->xsize = size;
    graph_data_pointer->points = array_data;
 }
+*/
+graph_data_type* graph_data_pointer = NULL;
 
 void setup_graph_data(
-   graph_data_type *graph_data_pointer,
+   int index,
    double xlow,
    double xhigh,
    int xspan,
@@ -286,7 +288,8 @@ void setup_graph_data(
    int length,right;
    int *array_data;
 
-   array_data = (int *)(malloc(xsize*sizeof(int)));
+   //   array_data = (int *)(malloc(xsize*sizeof(int)));
+   array_data = new int[xsize];
    
    va_start(argptr, xsize);
    right = va_arg(argptr, int);
@@ -296,8 +299,17 @@ void setup_graph_data(
 	right = va_arg(argptr,int);
    }
    va_end(argptr);
-   insert_graph_data(graph_data_pointer, xlow, xhigh, xspan,
-	   ylow, yhigh, yspan, range, xsize, array_data);
+
+   graph_data_pointer = new graph_data_type(index, graph_data_pointer);
+   graph_data_pointer->xlow = xlow;
+   graph_data_pointer->xhigh = xhigh;
+   graph_data_pointer->xspan = xspan;
+   graph_data_pointer->ylow = ylow;
+   graph_data_pointer->yhigh = yhigh;
+   graph_data_pointer->yspan = yspan;
+   graph_data_pointer->range = range;
+   graph_data_pointer->xsize = xsize;
+   graph_data_pointer->points = array_data;
 }
 
 /*
@@ -343,26 +355,28 @@ helper procedures it uses. First the evaluator for graph functions.
 Note that this supercharged c version extrapolates the edge 
 segments of the graph to cover points outside */
 
-double graphpoint(double xval, graph_data_type *graph_data_pointer)
-{
+double graphpoint(double xval, int index) {
 	double interval;
 	int length, spaces;
 	int *right,*left;
+	graph_data_type *use_graph_pointer;
+	
+	use_graph_pointer = find_graph(index, graph_data_pointer);
 
-	spaces = graph_data_pointer->xsize-1;
+	spaces = use_graph_pointer->xsize-1;
 	/* Interval is distance from left of graph in point units */
-	interval = spaces*(xval - graph_data_pointer->xlow)/
-		(graph_data_pointer->xhigh - graph_data_pointer->xlow);
-	switch(graph_data_pointer->range) {
+	interval = spaces*(xval - use_graph_pointer->xlow)/
+		(use_graph_pointer->xhigh - use_graph_pointer->xlow);
+	switch(use_graph_pointer->range) {
 	case 0: /* truncate to fit on graph */
-			interval = max(0, min(spaces, interval));
-			break;
+	  interval = max(0, min(spaces, interval));
+	  break;
 	case 2: /* wrap around graph range */
-			interval = spaces*(interval/spaces - floor(interval/spaces));
-			break;
+	  interval = spaces*(interval/spaces - floor(interval/spaces));
+	  break;
 	/* case 1: extrapolate end sections of graph */
 	}
-	right = graph_data_pointer->points;
+	right = use_graph_pointer->points;
 	interval++;
 
 	for (length=spaces;length;length--) {
@@ -370,9 +384,9 @@ double graphpoint(double xval, graph_data_type *graph_data_pointer)
 		right++;
 		if (--interval <= 1) break;
 	}
-	return graph_data_pointer->ylow + 
-		(graph_data_pointer->yhigh - graph_data_pointer->ylow)*
-		(interval*(*right) + (1-interval)*(*left))/graph_data_pointer->yspan;
+	return use_graph_pointer->ylow + 
+		(use_graph_pointer->yhigh - use_graph_pointer->ylow)*
+		(interval*(*right) + (1-interval)*(*left))/use_graph_pointer->yspan;
 }
 
 int step_list(int **dim_list, int unused) {

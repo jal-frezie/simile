@@ -157,18 +157,18 @@ extern "C"
 __declspec( dllexport )
 #endif
   int get_count(void* useClassPtr, void* ame_rand_ptr, 
-void* release_graph_data_ptr, 
-void* compare_instance_status_ptr, 
-void* get_value_pointer_ptr, 
-void* fetch_instance_ptr,
-void* update_submodel_ptr,
-void* advance_submodel_ptr,
-void* eval_submodel_ptr,
-void* search_from_ptr,
-void* advance_ptr_ptr,
-void* get_remote_value_ptr, int* phases, 
-node_data_line** data_ptr, graph_data_type** graph_ptr,
-int* arc_count, char*** arc_id_list) {
+		void* release_graph_data_ptr, 
+		void* compare_instance_status_ptr, 
+		void* get_value_pointer_ptr, 
+		void* fetch_instance_ptr,
+		void* update_submodel_ptr,
+		void* advance_submodel_ptr,
+		void* eval_submodel_ptr,
+		void* search_from_ptr,
+		void* advance_ptr_ptr,
+		void* get_remote_value_ptr, int* phases, 
+		node_data_line** data_ptr, graph_data_type*** graph_ptr,
+		int* arc_count, char*** arc_id_list) {
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
@@ -189,7 +189,7 @@ int* arc_count, char*** arc_id_list) {
   /* ...and we are telling stub... */
   *phases = phasecount;
   *data_ptr = nodedata;
-  *graph_ptr = graphdata;
+  *graph_ptr = &graph_data_pointer;
   *arc_count = (sizeof inputArcs)/sizeof(char*)-1; /* don't include filler */
   *arc_id_list = inputArcs;
   return((sizeof nodedata)/sizeof(node_data_line));
