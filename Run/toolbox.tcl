@@ -336,13 +336,15 @@ proc KillInterpFor {node} {
 	    interp delete $runState($node,interp)
 	} else {
 #	    tell_runner $node {wm deiconify .}
-	    do_in_node $node exit_exec
+#	    do_in_node $node exit_exec    
+#	    tell_runner $node exit
+	    TryToKill $node
 	    if {[string equal pipe $runHow(call)]} {
 #		gets $runState($node,interp)
 #		close $runState($node,interp)
 	    }
 	}
-        unset runState($node,interp)
+#       unset runState($node,interp)
     }
 }
 
@@ -383,7 +385,7 @@ proc HaveValues {node} {
 proc TryToKill {node} {
     global runState runHow
 #puts "Trying to kill $node"
-    if {[string equal pipe $runHow(call)]} {
+    if {[string equal open $runHow(launch)]} {
 	c_killmodel [pid $runState($node,interp)]
 	catch {close $runState($node,interp)}
     } else {
@@ -450,6 +452,7 @@ proc compile_c {workingDir} {
     scan [info tclversion] {%d.%d} MAJ MIN
     if {[catch {switch $tcl_platform(platform) {
         unix {
+
             if {[string match Darwin $tcl_platform(os)]} {
                 exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
                 exec g++ -dynamiclib -o $TARGET objtemp.o
@@ -487,6 +490,7 @@ proc compile_c {workingDir} {
                         $TOOLDIR/../System/lib/Stubs/ame_dll${MAJ}${MIN}.lib \
                         $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
                         $TOOLS32/lib/oldnames.lib objtemp.o
+
             }
             # Method using command line calls to Borland C++ 4.0 or later -- not finished
 
@@ -930,8 +934,9 @@ proc LoadFile {topNode tree tgt} {
         return $CodeChecked
     }
 }
-
+
 #                model.spj {
+
 #                    set PartType "application/x-simile"
 #                    set Description "Simile project file"
 #                    set style attachment
@@ -1023,6 +1028,7 @@ proc GetParts {top tree} {
             #	    mime::copymessage $newMime $stream
             #	    close $stream
         }
+
     }
     return $mimes
 }
@@ -1262,6 +1268,7 @@ proc CopyCanvasToWindowsClipboard {canvas} {
         package require printer
         package require wmf
         
+
         set hdc [wmf open]; #Opens a memory metafile
         printer::print_select $hdc $canvas withtag tocopy
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
