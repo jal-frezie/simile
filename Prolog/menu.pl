@@ -159,6 +159,9 @@ stick_model_in(Parent, Name, Mode) :-
 	    update_captions(Parent);
 	Mode = insert(Pt),
 	    (Translated = copy, !, /* paste into empty sole toplevel */
+	    /* reset window title in case graphics injection changed it
+	    (also makes sure there is a base canvas item */
+	        reset_titles(Parent),
 	        setof(Mover, (contains(Parent, Mover),
 				 appears(Mover), \+ Mover = Parent), Lighters);
 	    setof(Mover, O^(member(O-Mover, Translated),
@@ -963,7 +966,7 @@ flip_innards(Node_name, Action) :-
 		fail).
 
 rebuild_code(Lang, Node, ProgFileDir, ToBuild) :-
-	(on_exception(Whoops, (Language = c,
+	(on_exception(Whoops, (Lang = c,
 				  tk_get_pref(compChoice, 'None'),
 				  ToBuild = 1,
 				  raise_exception(no_compiler);

@@ -17,7 +17,7 @@ sicstus_module(draw,
 	       [cursor_in/2, callback/1,
 		enable_text_editing_in/1, disable_text_editing_in/1,
 		select_text/2, get_component_from_gui/4, get_text/3,
-		find_relevant_windows/4, update_captions/1, 
+		find_relevant_windows/4, update_captions/1, reset_titles/1,
 		update_color/1, shift_images/3,
 		give_focus/1, has_focus/1,
 		update_ability/5, scrub_run/2, kill_helpers/1,
@@ -46,14 +46,18 @@ display_area(Win) :-
 	tk_display_area(Win).
 
 update_captions(Model) :-
-	get_window_colour(Model, Colour, Images),
-	(Window shows_model Model,
-	    make_header(Model, Header),
-	    change_title_to(Window, Header, [Colour | Images]),
-	    fail;
-	caption_for(Model, New_caption),
+	reset_titles(Model),
+	(caption_for(Model, New_caption),
 	    find_relevant_windows(Model, Window, _, _),
 	    change_text_to(Window, Model, New_caption),
+	    fail;
+	true).
+
+reset_titles(Model) :-
+	make_header(Model, Header),
+	get_window_colour(Model, Colour, Images),
+	(Window shows_model Model,
+	    change_title_to(Window, Header, [Colour | Images]),
 	    fail;
 	true).
 
