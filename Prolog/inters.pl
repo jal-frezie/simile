@@ -650,9 +650,9 @@ function(any, boolean, [array_or_list_of_boolean]).
 function(all, boolean, [array_or_list_of_boolean]).
 function(parent, int, [dummy_int]).
 function(channel_is, boolean, [channel]).
-function(time, int, [dummy_int]).
-function(init_time, int, [dummy_int]).
-function(dt, int, [const_int]).
+function(time, real, [const_int]).
+function(init_time, real, [const_int]).
+function(dt, real, [const_int]).
 
 function(last, any, [any]).
 function(prev, given_units, [const_int]).

@@ -2,8 +2,8 @@
 # SIMILE batch file
 # Make sure the first line refers to a version of TclTk with shared libraries
 
-set prolog sicstus
-set interface dll
+set prolog gnu
+set interface pipe
 
 proc GetRealFile {link} {
     if {[catch {set base [file readlink $link]}]} {
