@@ -247,15 +247,18 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	finish_old_edit(Moving_obj),
 	give_focus(Moving_obj),
 
+	/* Control is down */
 	(CD = 1, !,
+	    /* object is not selected, if it is, clear it and stop */
 	    \+ (get_highlit_obj(N, Moving_obj), N<2,
-		   do_colours(Moving_obj, off));
-	(get_highlit_obj(N, Moving_obj), N<2,
-	    normalize(Moving_obj), !;
-	    normalize(_), fail;
-	    true)),
-	\+ is_toplevel(Moving_obj),
-	do_colours(Moving_obj, on),
+		   do_colours(Moving_obj, off)),
+	    do_colours(Moving_obj, on);
+	/* Object already selected */
+	get_highlit_obj(N, Moving_obj), N<2, !;
+	/* Object not selected; clear current, then select */    
+	(normalize(_), fail;
+	    \+ is_toplevel(Moving_obj),
+	    do_colours(Moving_obj, on))),
 	
 	(Moving_obj is_of_sort line,
 	    get_shape(Moving_obj, course, [End | Rest]),
@@ -343,7 +346,6 @@ do_colours(Obj, Way) :-
 	(Way = on;
 	Way = off,
 	    normalize_ghosts_etc(Obj);
-	    clear_deletes(Obj);
 	    Way = off).
 
 /* This gets the arcs connnected to a node, finds the object at the other end
@@ -609,10 +611,9 @@ spread_colour(Node, NewDims) :-
 	    redisplay_border(Hit),
 	    presence_affects(Hit, MayChange),
 	    spread_dims(MayChange)),
-	/* Component colour will be normalized so get its links normal too */
-	normalize_ghosts_etc(Hit);
-	clear_deletes(Hit);
-	true.
+	/* Component colour will be normalized so get its links normal too 
+	(normalize_ghosts_etc(Hit); */
+	fail; true.
 
 new_window_for(Submodel, Canvas_name, InitDepths, IsTopLevel) :-
 	utility:unique_name('.mswindow', Topwin),
@@ -1080,7 +1081,7 @@ normalize_ghosts_etc(Target) :-
 	m_class:initiates(Link, Base),
 	ghost_link(Link, Base, Ghost),
 	normalize(Ghost),
-	fail.
+	clear_deletes(Target).
 
 recursive_highlight(Target, Col) :-
 	\+ get_highlit_obj(_, Target), /* avoid infinite loop */
@@ -1344,7 +1345,8 @@ select_bagged(Rect, Model) :-
 	    get_shape(Caught, bounding_box, Outer),
 		\+ fits_inside(Rect, Outer),
 		do_colours(Caught, on));
-	\+ find_type(Caught, submodel),
+	Caught is_of_sort box,
+	    \+ find_type(Caught, submodel),
 	    do_colours(Caught, on)),
 	fail.
 

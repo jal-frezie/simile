@@ -1507,9 +1507,9 @@ next_section_of(Source, Dest) :-
 of them and recolours them according to whether they fall into the selection */
 
 connector_and_far_end(Node, Arc, Far) :-
-	(Node has_part End,
+	( /* Node has_part End,
 	    \+ find_type(End, function),
-	    \+ appears(End);
+	    \+ appears(End); */
 	get_host(End, Node)), 
 	(Arc is_connector from End to HiddenFn,
 	    appears(Arc),
@@ -1520,8 +1520,8 @@ connector_and_far_end(Node, Arc, Far) :-
 
 thing_or_bound(Obj, Seen) :-
 	get_host(Obj, Seen),
-	    appears(Seen), !;
-	Seen has_part Obj.
+	    appears(Seen), ! /* ;
+	Seen has_part Obj */ .
 
 /* Following rules trace value-dependence in opposite 
 directions, returning a list of intermediate primitives in 

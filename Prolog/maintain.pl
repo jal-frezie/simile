@@ -229,6 +229,7 @@ normalize(Obj) :-
 update_color(Obj) :-
 	appears(Obj),
 	check_complete(Obj),
+	\+ get_highlit_obj(_, Obj),
 	normal_colour_for(Obj, Colour),
 	change_color(Obj, Colour).
 

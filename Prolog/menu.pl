@@ -435,6 +435,7 @@ menu_handle(Win, edit, cut) :-
 	reassure_user("Delete in progress"),
 	Win shows_model Model,
 	event:delete_net(Model),
+	finish_move(Model),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, copy) :-
@@ -450,9 +451,13 @@ menu_handle(Win, edit, copy) :-
 	output:date_is(Date),
 	ame_save(CopyFile, Model, Date),
 	/* restart_move will put the rest of the model back but it will
-	not be selected, so select the original bit first */
-	select_all_in(Model),
+	not be selected, so list the nodes and select them after the rest is
+	added so any external links and ghosts come out right */
+	(setof(Bit, (contains(Model, Bit), Bit is_of_sort box, \+ Bit = Model),
+	      SelBits), !;
+	SelBits = []),
 	restart_move,
+	all(event, do_colours, [build(SelBits), unify(on)]),
 	retract(suspend_display),
 	finish_progress_dialogue.
 
@@ -538,6 +543,7 @@ menu_handle(_, _, _).
 select_all_in(Model) :-
 	contains(Model, Bit),
 	    Bit is_of_sort box,
+	    appears(Bit),
 	    \+ Bit = Model,
 	    event:do_colours(Bit, on),
 	    fail;
