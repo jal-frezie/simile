@@ -73,68 +73,24 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
 
     wm title $t "Sketch graph"
     
-    frame $t.left
-    entry $t.left.topentry -relief sunken -textvar graph(lowy)
-    pack $t.left.topentry -fill x
-    label $t.left.toplabel -text (Top)
-    pack $t.left.toplabel
+    TitleFrame $t.left -text "Graph pad"
+    set left [$t.left getframe]
+    frame $left.upper
+    frame $left.upper.yentry
+    entry $left.upper.yentry.topentry -relief sunken -textvar graph(lowy) -width 8
+    pack $left.upper.yentry.topentry -side top
+    label $left.upper.yentry.toplabel -text "Y max"
+    pack $left.upper.yentry.toplabel -side top
+    entry $left.upper.yentry.bottomentry -relief sunken -textvar graph(highy) -width 8
+    pack $left.upper.yentry.bottomentry -side bottom
+    label $left.upper.yentry.bottomlabel -text "Y min"
+    pack $left.upper.yentry.bottomlabel -side bottom
+    pack $left.upper.yentry -side left -fill y
     
-    label $t.left.startlabel -text Start: -justify right
-    pack $t.left.startlabel -side bottom -fill x
-    entry $t.left.bottomentry -relief sunken -textvar graph(highy)
-    pack $t.left.bottomentry -side bottom -fill x
-    label $t.left.bottomlabel -text (Bottom)
-    pack $t.left.bottomlabel -side bottom
-    
-    set b [frame $t.left.buttons]
-    button $b.enter -text Enter -command {set graph(done) 1}
-    pack $b.enter
-    button $b.cancel -text Cancel -command {set graph(done) 0}
-    pack $b.cancel
-    label $b.yvalue -text "Current Y value"
-    pack $b.yvalue
-    entry $b.yvaluebox -relief sunken -textvar yvalue
-    bind $b.yvaluebox <Return> [list YEntry $t.canvas]
-    pack $b.yvaluebox
-    label $b.xvalue -text "Current X value"
-    pack $b.xvalue
-    entry $b.xvaluebox -relief sunken -textvar xvalue
-    pack $b.xvaluebox
-    label $b.detail -text "X axis resolution:"
-    pack $b.detail
-    frame $b.detailbox
-    button $b.detailbox.less -text Less -command "CoarseX $t.canvas"
-    pack $b.detailbox.less -side left
-    button $b.detailbox.more -text More -command "FineX $t.canvas"
-    pack $b.detailbox.more -side left
-    pack $b.detailbox
-    label $b.outrange -text "Out of range:"
-    pack $b.outrange
-    set rangeChoices "Truncate Extrapolate Wraparound"
-#    eval {tk_optionMenu $b.rangeopts graph(rangeact)} $rangeChoices
-#    pack $b.rangeopts
-# caused odd bug needing multiple clicks on enter button
-    pack [ComboBox $b.rangeopts -values $rangeChoices -editable 0 \
-	    -textvariable graph(rangeact) -width 20]
-    set graph(rangeact) [lindex $rangeChoices $range]
-    pack $b -side left
-    
-    pack $t.left -side left -fill y
-    
-    frame $t.bottom
-    entry $t.bottom.leftentry -relief sunken -textvar graph(lowx)
-    pack $t.bottom.leftentry -side left
-    entry $t.bottom.rightentry -relief sunken -textvar graph(highx)
-    pack $t.bottom.rightentry -side right
-    label $t.bottom.rightlabel -text End:
-    pack $t.bottom.rightlabel -side right
-    pack $t.bottom -side bottom -fill x
-    
+    frame $left.upper.gridf
     set graph(width) $xspan
-    # was [expr round($graph(increment)*([llength $graph(points)] - 1))]
     set graph(height) $yspan
-    #	set cwidth [expr $graph(width)>400?$graph(width):400]
-    canvas $t.canvas -width $graph(width) -height $graph(height)
+    set grid [canvas $left.upper.gridf.canvas -width $graph(width) -height $graph(height)]
     set graph(increment) [expr $graph(width)/([llength $graph(points)] - 1.0)]
     
     set graph(lowy) $ylow
@@ -142,12 +98,89 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     set graph(lowx) $xlow
     set graph(highx) $xhigh
     
-    bind $t.canvas <Button-1> "GClick %W %x %y"
-    bind $t.canvas <B1-Motion> "GDrag %W %x %y"
-    bind $t.canvas <Configure> "AttackShape %W %w %h"
-    pack $t.canvas -fill both -expand true
+    bind $grid <Button-1> "GClick %W %x %y"
+    bind $grid <B1-Motion> "GDrag %W %x %y"
+    bind $grid <Configure> "AttackShape %W %w %h"
+    pack $grid -fill both -expand true
+    pack $left.upper.gridf -fill both -expand true -side left
+    pack $left.upper -fill both -expand true -side top
+
+    frame $left.xentry
+    label $left.xentry.startlabel -text " " -width 8
+    pack $left.xentry.startlabel -side left
+    entry $left.xentry.leftentry -relief sunken -textvar graph(lowx) -width 8
+    pack $left.xentry.leftentry -side left -padx 2
+    label $left.xentry.xmin -text "X min"
+    pack $left.xentry.xmin -side left -padx 2
+    entry $left.xentry.rightentry -relief sunken -textvar graph(highx) -width 8
+    pack $left.xentry.rightentry -side right -padx 2
+    label $left.xentry.rightlabel -text "X max"
+    pack $left.xentry.rightlabel -side right -padx 2
+    pack $left.xentry -side top -fill x
+    pack $left -expand on -fill both -side left
+    pack $t.left -side left -expand on -fill both -padx 2 -pady 2
+
+    frame $t.right
     
-    RedrawGrid $t.canvas $graph(width) $graph(height) $graph(increment)
+    set buttons [frame $t.right.buttons]
+    button $buttons.enter -text OK -width 10 -command {set graph(done) 1}
+    pack $buttons.enter -padx 4 -pady 4 -anchor e
+    button $buttons.cancel -text Cancel -width 10 -command {set graph(done) 0}
+    pack $buttons.cancel -padx 4 -pady 4 -anchor e
+    button $buttons.help -text Help -width 10 -command {ContextSensitiveHelp .graph equations/graph.htm}
+    pack $buttons.help -padx 4 -pady 4 -anchor e
+    pack $buttons -fill x -padx 8 -pady 8
+    
+    TitleFrame $t.right.current -text "Current Position: "
+    set current [$t.right.current getframe]
+    
+    frame $current.y
+    label $current.y.yvalue -text "Y:"
+    pack $current.y.yvalue -side left -padx 2 -pady 4
+    entry $current.y.yvaluebox -relief sunken -textvar yvalue -width 8
+    bind $current.y.yvaluebox <Return> [list YEntry $grid]
+    pack $current.y.yvaluebox -side left -padx 2 -pady 4
+    pack $current.y -pady 4
+    frame $current.x
+    label $current.x.xvalue -text "X:"
+    pack $current.x.xvalue -side left -padx 2 -pady 4
+    entry $current.x.xvaluebox -relief sunken -textvar xvalue -width 8
+    pack $current.x.xvaluebox -side left  -padx 2 -pady 4
+    pack $current.x -pady 4
+    pack $current -pady 8 -padx 4 -fill x
+    pack $t.right.current -pady 2 -padx 2 -fill x
+    pack $t.right -fill both -expand true
+    
+    TitleFrame $t.right.options -text "Options: "
+    set right [$t.right.options getframe]
+    
+    set out [frame $right.out]
+    label $out.outrange -text "Out of range:"
+    pack $out.outrange
+    set rangeChoices "Truncate Extrapolate Wraparound"
+    pack [ComboBox $out.rangeopts -values $rangeChoices -editable 0 -textvariable graph(rangeact) -width 12]
+    set graph(rangeact) [lindex $rangeChoices $range]
+    pack $out -pady 8 -padx 4
+    set resolution [frame $right.resolution]
+    label $resolution.detail -text "X axis resolution:"
+    pack $resolution.detail
+    frame $resolution.detailbox
+    #    button $resolution.detailbox.less -text Less -command "CoarseX $grid"
+    ArrowButton $resolution.detailbox.arrowleft -type button -dir \
+            left -command "CoarseX $grid" -width 25 -height 25 -clean 2
+    pack $resolution.detailbox.arrowleft -side left
+    #    button $resolution.detailbox.more -text More -command "FineX $grid"
+    ArrowButton $resolution.detailbox.arrowright -type button -dir right \
+            -command "FineX $grid" -width 25 -height 25 -clean 2
+    pack $resolution.detailbox.arrowright -side left
+    pack $resolution.detailbox
+    pack $resolution -pady 8 -padx 4 -fill both
+    pack $right -fill both
+    pack $t.right.options -fill both -padx 2 -pady 2 -expand true
+    
+    
+    
+    RedrawGrid $grid $graph(width) $graph(height) $graph(increment)
     
     focus $t
     grab $t
