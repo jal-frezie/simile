@@ -341,7 +341,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	advance_phase_to(action_choice),
 		
 	highlight(Moving_obj, 1),
-	set_moving_obj(Moving_obj),
+	set_line_start_obj(Moving_obj),
 	get_shape(Moving_obj, bounding_box, [L,T,R,B]), !,
 	Loff is Xpt-L,
 	Toff is Ypt-T,
@@ -1620,7 +1620,7 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
 	     select_text(Wid, Node_name))).
 
 ghost_type(Start, Type, Base) :-
-	get_moving_obj(Start),
+	get_line_start_obj(Start),
 	find_base(Start, Base),
 	find_type(Base,StartType),
 	Type = StartType.
