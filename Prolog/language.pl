@@ -613,7 +613,6 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	render(L, else_clause, NoInitDone, Indent1, NotSet),
 	render(L, assignment, NewInstance=0, Indent2, SetLoserOld),
 	render(L, end(cond), NoInitDone, Indent1, SetCheckDone),
-
 	(setof(LossTerm, LossVal^(get_term_refs(L, Pointer, LossNodes, LossVal),
 			test_probs(L, LossVal, Step, LossTerm)), LossTerms), !,
 	    build_disjunction(L, LossTerms, IsDead),

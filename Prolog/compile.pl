@@ -872,7 +872,8 @@ instruction because they will not require individual initialization routines. */
 		   CreateRules), !; 
 	    CreateRules = []),
 
-	    (setof(LossBox, member(instance(loss, _,_, elt(_, LossBox, _), _),
+	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
+						  elt(_, LossBox, _), U),
 				   Functions), Losses), !;
 	    Losses = []),
 
