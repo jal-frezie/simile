@@ -428,10 +428,11 @@ stripping out those which cannot, or which correspond to non-disaggregated
 submodels. */
 
 get_actual_size(Node, Sub, Nums, Sizes, Units) :-
-	(Sub = none, !, Nums = [], Sizes = [], Units = any;
-	enum_type_ref(Sub, Node, _, Num, Units, _),
+	(Sub = none, !, Nums = [], Sizes = [], Units = [any];
+	enum_type_ref(Sub, Node, _, Num, Unit, _),
 	    Nums = [Num],
-	    Sizes = [Sub];
+	    Sizes = [Sub],
+	    Units = [Unit];
 	(Sub = size(ModName); Sub = size(ModName, Ind)),
 	    contains(Top, Node),
 	    backup:is_toplevel(Top),
@@ -458,7 +459,7 @@ get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 get_actual_sizes(Node, Subs, Nums, Sizes, Units) :-
 	all(ame_gen, get_actual_size,
 	    [unify(Node), build(Subs), append(Nums, []), append(Sizes, []),
-	     build(Units)]).
+	     append(Units, [])]).
 
 name_matches(Node, Top, Name) :-
 	contains(Top, Node),
@@ -505,8 +506,7 @@ get_node_size(Source, Size) :-
 get_node_size(Source, SizeN, Size, Units) :-
 	Source has_class_refinement multiplication_spec of Multi,
 	member(count=Dim, Multi),
-	get_actual_sizes(Source, Dim, SizeN, Size, SizeUnits), !,
-	list_of(Units, _N, SizeUnits),
+	get_actual_sizes(Source, Dim, SizeN, Size, Units), !,
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
 	    sicstus_format_to_chars("~a has a reference to a variable membership model in its dimensions.", [Capt], Wibble),

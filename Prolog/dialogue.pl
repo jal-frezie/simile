@@ -502,7 +502,7 @@ check_limit(Eqn_st, FieldName, Function, Needed, Eqn, Value, Base, Error) :-
 	get_term(Eqn_st, Eqn, ParseError),
 	(ParseError = [], !,
 	    (on_exception(Error,
-			 get_actual_size(Function, Eqn, Values, S, Base),
+			 get_actual_size(Function, Eqn, Values, S, [Base]),
 			 true), !;
 	    sicstus_format_to_chars("Entry for ~s must be a numeric constant.",
 			[FieldName], Error)),	    

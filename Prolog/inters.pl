@@ -818,7 +818,7 @@ make_intermediates(
 	raise_exception(undecipherable_operand(Source, SubId)).
 
 decode_number(Source, SubId, Step, SourceRef, Units) :-
-	get_actual_size(SubId, Source, [SrcNum], [SrcType], SrcUnits),
+	get_actual_size(SubId, Source, [SrcNum], [SrcType], [SrcUnits]),
 	remove_physical_units_if_disabled(SubId, SrcUnits, OrigUnits),
 	(Step = dummy, !,
 	    SourceRef = SrcType,
