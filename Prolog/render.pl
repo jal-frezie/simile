@@ -524,9 +524,12 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	append([Dims, [0]], CappedDims), 
 
 	(/* Try not doing internals -- but will we need to for save/restore
-	 state? */
+	 state? init functions confuse sketch graph editing. */
 	\+ InstType = internal,
-	    get_host(BaseName, VisName),
+	get_host(BaseName, VisName),
+	find_type(VisName, VisType),
+	\+ (InstType = init_function,
+	       member(VisType, [immigration, reproduction])),
 	    caption_for(VisName, CaptionTail),
 	    (VisName is_of_sort value_outside, !,
 		Pop has_part VisName,
@@ -536,7 +539,6 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	    name(Caption, CaptionTtfnStr),
 	    user:all_ttfn_to_utf8(CaptionTtfnStr, CaptionUtf8Str),
 	    name(UseCaption, CaptionUtf8Str),
-	    find_type(VisName, VisType),
 	    member(VisType-Class, [submodel-'SUBMODEL',
 				   variable-'VARIABLE',
 				   compartment-'COMPARTMENT',
@@ -547,7 +549,6 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 				   reproduction-'REPRODUCTION',
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS']),
-				   
 	    (member([Name, GraphPointer | _], GraphOwners), !;
 	        GraphPointer = 0),
 

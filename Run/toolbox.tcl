@@ -1109,9 +1109,11 @@ proc OpenAll {win} {
 
 proc OpenProjectFile {path} {
     global SimileProject loadingProject window_info
-    set projectF [NetOpen $path/model.spj r]
+    set pFile [file join $path model.spj]
+    set projectF [NetOpen $pFile r]
     gets $projectF SimileProjectData
     close $projectF
+    file delete $pFile
     #ShowMessage debug info "open_all win $win; $SimileProjectData" ok
     array set SimileProject $SimileProjectData
     #ShowMessage debug info "open_all SimileProject(ModelFile) $SimileProject(ModelFile)" ok
@@ -1189,8 +1191,10 @@ proc SaveProjectFile {topNode path tgt} {
 	    [Relativize $tgt $spfPath]
     }
     set projectF [NetOpen $ProjectFile w]
-    puts $projectF [array get SimileProject]
-    puts $projectF {}
+    set statLine [array get SimileProject]
+    puts $statLine
+    ShowMessage debug info "putting $statLine" ok
+    puts $projectF $statLine
     close $projectF
 }
 

@@ -238,7 +238,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	\+ is_ghost(Result),
 	find_type(Result, RType),
 	Node has_class_refinement value of GroundExpr,
-	(member(RType, [compartment, creation]), !,
+	(member(RType, [creation, compartment]), !,
 	    UseExpr = GroundExpr,
 	    FType = init_function;
 	RType = condition,
