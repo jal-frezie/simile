@@ -200,10 +200,13 @@ proc CheckFnsFresh {L progDir id userFnList} {
 set runHow(launch) open
 
 # set this to interactive or script, for how to do the initialization
-set runHow(init) interactive
+set runHow(init) script
 
-# set this to send or pipe, for the way to pass data to the exec process
-# send must be async because a sync send will not allow callbacks to be handled
+# set this to send or pipe, for the way to pass data to the exec
+# process send must be async because a sync send will not allow
+# callbacks to be handled note that if init is interactive this cannot
+# be send because there is no way to set the exec process's
+# application name
 set runHow(call) pipe
 
 # set this to send_sync, send_async or pipe, for the way to get data from
@@ -213,6 +216,15 @@ if [string match Darwin $tcl_platform(os)] {
 } else {
   set runHow(return) send_sync
 }
+
+# Set this to await_cmd or get_data to decide how the exec process
+# expects to get commands. It only makes a difference if call is pipe
+# -- otherwise the exec gets commands directly anyway. If return is
+# pipe it must be get_data because it cannot process another command
+# from stdin while waiting for the last one to finish. Also if init is
+# script it must be get_data because the process does not accept
+# commands from stdin after initializing from a script.
+set runHow(readpipe) get_data
 
 # this is obsolete and must be 'parallel'
 set runHow(time) parallel
@@ -243,7 +255,8 @@ proc do_for_node {node args} {
         if {![info exists runHow(sendCmd)]} { ;# fix debug env
         set runHow(sendCmd) [list send [tk appname]]
         }
-        set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return)]
+        set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return) \
+		       $runHow(readpipe)]
         if {[string equal script $runHow(init)]} {
         set launchArgs [concat $srcLoc $scArgs]
         } else {
@@ -342,9 +355,10 @@ proc FeedModel {node incoming} {
     global runState errorInfo
 
     if {[string equal pipe $incoming]} {
-    gets $runState($node,interp) incoming_lines
+	gets $runState($node,interp) incoming_lines
         set incoming [join $incoming_lines \n]
     }
+#puts "Received \"$incoming\" from $node exec"
     if {[string equal get [lindex $incoming 0]]} {
     if {[catch [lindex $incoming 1] response]} {
         set result [list err [split $errorInfo \n]]
@@ -380,11 +394,12 @@ proc KillInterpFor {node} {
 
 proc tell_runner {node action} {
     global runState runHow
+#puts "Sending \"$action\" to $node exec"
     if {[string equal pipe $runHow(call)]} {
-    puts $runState($node,interp) $action
-    flush $runState($node,interp)
+	puts $runState($node,interp) $action
+	flush $runState($node,interp)
     } else {
-    eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
+	eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
     }
 }
 

@@ -554,7 +554,7 @@ proc do_for_node {dummyNode args} {
 }
 
 # Other stuff related to reorganization
-proc KickOff {nMyNode nSimtmpdir nSender nRunHow} {
+proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
     global myNode ;# a stopgap, we shouldn't need it
     global custom runState simtmpdir sender tcl_platform runHow
 
@@ -581,6 +581,12 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow} {
     LoadIconImages
     MakeHelperMenu
     wm withdraw .
+
+    do_in_editor set runState($myNode,modelReady) 1
+
+    if {[string equal get_data $readPipe]} {
+	fileevent stdin readable {gets stdin blether; eval $blether}
+    }
 }
 
 proc ScrubRun {node times} {
@@ -1257,6 +1263,3 @@ proc ModelDirectory {} {
 if {[catch {eval KickOff $argv} err]} {
     ShowMessage {Simile obliterfried!} error $err ok
 }
-
-do_in_editor set runState($myNode,modelReady) 1
-

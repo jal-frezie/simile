@@ -445,7 +445,7 @@ proc first {lo} {
 # set to get_data or await_cmd -- if the former, then after sending commands
 # to the editor this will execute a get to read the pipe, otherwise it waits
 # for a command to set the return value
-set readPipe get_data
+#set readPipe get_data
 
 # 'after idle' doesn't quite work in MacOS X
 proc start_in_editor {args} {
@@ -453,25 +453,25 @@ proc start_in_editor {args} {
 }
 
 proc do_in_editor {args} {
-    global runHow sender fromEditor readPipe
+    global runHow sender fromEditor
 #    tk_messageBox -message "callback $args"
     if {[string equal send_sync $runHow]} {
 	return [eval $sender {$args}]
     }
     remote [list get $args]
-    if {[string match get_data $readPipe]} {
-	set gotResp 0
-	while {!$gotResp} {
-	    set fromEditor [gets stdin]
-	    if {[string equal do [lindex $fromEditor 0]]} {
-		eval $fromEditor
-	    } else {
-		set gotResp 1
-	    }
-	}
-    } else {
+#    if {[string match get_data $readPipe]} {
+#	set gotResp 0
+#	while {!$gotResp} {
+#	    set fromEditor [gets stdin]
+#	    if {[string equal do [lindex $fromEditor 0]]} {
+#		eval $fromEditor
+#	    } else {
+#		set gotResp 1
+#	    }
+#	}
+#    } else {
 	tkwait variable fromEditor
-    }
+#    }
     set info [lindex $fromEditor 1]
     switch [lindex $fromEditor 0] {
 	err {
