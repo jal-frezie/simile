@@ -640,8 +640,10 @@ proc equationDoTable {parent tgt startLine} {
 proc EditTableData {lidx startLine} {
     global table_entry
     AcquireTableData $lidx 0 $startLine
-    if {[EditListAsTable .table table_entry(values)]} {
-	set table_entry(source) 1
+    if {[llength $table_entry(values)]} {
+	if {[EditListAsTable .table table_entry(values)]} {
+	    set table_entry(source) 1
+	}
     }
 }
 
@@ -739,6 +741,8 @@ proc LoadDataFile {} {
         incr i
     }
     close $stream
+    set fidx [.table.top.fidx getframe]
+    $fidx.lidx delete [$fidx.lidx items]
     return 1
 }
 
@@ -781,7 +785,10 @@ proc LoadTableData {tableSpec lineCount} {
     }
     set headerColumn [lsearch $headerList [lindex $tableSpec 1]]
 #ShowMessage debug info "Columns: header $headerColumn" ok
-    
+    if {$headerColumn==-1} {
+	ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column." ok
+	return
+    }
     while {[gets $tStr entryLine] != -1} {
 	set entryList [TrimFields [split $entryLine ,]]
 #ShowMessage debug info "Data line is $entryList" ok
