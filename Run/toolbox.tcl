@@ -2082,7 +2082,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if {$runState($topNode,modelRunning)>1} {
         ${winid}top add  cascade -label "I/O tools" -underline 0 \
 	    -menu .helpers
-	$rm entryconfigure "Inspect elements" -state normal
+	$fm entryconfigure "Inspect elements" -state normal
     }
 #    menu $winid.helpers -tearoff 0 \
 #	-postcommand [list after idle PostRealHelperMenu $winid]
