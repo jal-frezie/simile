@@ -49,9 +49,6 @@ proc AttackGlobalVariable {array elt val} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo
-    # geometry XY help message JMM
-    #            "Position of Run Control when not using the Run Time \
-    #                    Environment in the form +/-x+/-y." \
     
     wm withdraw .
     # loading stub sets license entries
@@ -677,8 +674,6 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
     global window_info looks env custom
     
     set c [ModelWindow $winName]
-    global modelWin
-    set modelWin $winName
     
     TweakWindow $c $winTitle 1 $wl $wt $wr $wb $colour
     #    wm maxsize $winName [winfo screenwidth $winName] \
@@ -713,9 +708,8 @@ proc AddAccelerators { winName } {
     
     #edit
     bind $winName <Control-z> "prolog tk_undo"
-    bind $winName <Control-y> "prolog tk_redo"
     bind $winName <Control-f> "FindCaption $winName.canvas"
-    bind $winName <F3> "NextCaption $winName.canvas"; # todo
+    bind $winName <F3> "NextCaption $winName.canvas";
     
     #model
     bind $winName <Control-t> "MenuSelect $winName.canvas file run_tcl"
@@ -848,7 +842,8 @@ proc CanvasDelete {c} {
     }
 }
 
-proc CanvasTextCopy {c} {
+proc CanvasTextCopy {c} {
+
     if {[$c select item] != {}} {
         clipboard clear
         set t [$c select item]
@@ -905,7 +900,6 @@ proc PostMenu {canvas x y} {
 }
 
 # This patches a bug with error reporting in Tk 8.0. Also puts up a
-
 # feedback window allowing progress reports on long activities.
 
 proc MenuSelect { window button item } {
@@ -1149,7 +1143,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label Undo -command "prolog tk_undo" \
             -state disabled -accelerator "Ctrl+Z"
     $fm add command -label Redo -command "prolog tk_redo" \
-            -state disabled -accelerator "Ctrl+Y"
+            -state disabled
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
         $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $winid.canvas" ;#\
@@ -1671,8 +1665,8 @@ proc SetEqnButtonState {bar newState} {
 }
 
 proc RaiseModelWindow {} {
-    global modelWin
-    raise $modelWin
+    global window_info
+    raise $window_info([lindex [lsort [array name window_info *,parent]] 0])
 }
 
 ##############################    Formula bar    #############################
