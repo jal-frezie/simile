@@ -121,7 +121,6 @@ equations\functions\product.htm
 equations\functions\rand_const.htm
 equations\functions\rand_var.htm
 equations\functions\size.htm
-equations\functions\sofar.htm
 equations\functions\sqrt.htm
 equations\functions\sum.htm
 equations\functions\time.htm
@@ -179,11 +178,6 @@ data\case2.htm
 data\case3.htm
 data\case4.htm
 data\case5.htm
-examples\index.htm
-examples\control.htm
-examples\forest.htm
-examples\spiro.htm
-coviewexpiry.htm
 files\prolog.htm
 files\index.htm
 files\postscript.htm

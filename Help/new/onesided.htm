@@ -15,17 +15,17 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:Author>Alastair Davies</o:Author>
   <o:Template>Help Page.dot</o:Template>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
-  <o:Revision>10</o:Revision>
-  <o:TotalTime>217</o:TotalTime>
+  <o:Revision>11</o:Revision>
+  <o:TotalTime>218</o:TotalTime>
   <o:Created>2004-07-28T12:33:00Z</o:Created>
-  <o:LastSaved>2004-09-03T13:35:00Z</o:LastSaved>
+  <o:LastSaved>2004-09-03T16:32:00Z</o:LastSaved>
   <o:Pages>1</o:Pages>
-  <o:Words>576</o:Words>
+  <o:Words>575</o:Words>
   <o:Characters>3284</o:Characters>
   <o:Company>Simulistics Ltd</o:Company>
   <o:Lines>27</o:Lines>
   <o:Paragraphs>7</o:Paragraphs>
-  <o:CharactersWithSpaces>3853</o:CharactersWithSpaces>
+  <o:CharactersWithSpaces>3852</o:CharactersWithSpaces>
   <o:Version>10.6626</o:Version>
  </o:DocumentProperties>
 </xml><![endif]--><!--[if gte mso 9]><xml>
@@ -159,7 +159,7 @@ div.Section1
 	font-family:"Times New Roman";}
 </style>
 <![endif]--><!--[if gte mso 9]><xml>
- <o:shapedefaults v:ext="edit" spidmax="18434"/>
+ <o:shapedefaults v:ext="edit" spidmax="19458"/>
 </xml><![endif]--><!--[if gte mso 9]><xml>
  <o:shapelayout v:ext="edit">
   <o:idmap v:ext="edit" data="1"/>
@@ -182,12 +182,12 @@ square grids. </span></p>
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB>In a square grid, each pixel has
-potentially eight neighbours: north-west, north, north-east, west, east, south-west,
-south and south-east. However, pixels at the edge of the grid will have only a
-subset of those neighbours. For example a pixel on the northern edge of the
-grid will have five neighbours (west, east, south-west, south, and south-west)
-and one in the south-west corner will have only three: (north, north-east and
-east). </span></p>
+potentially eight neighbours: north-west, north, north-east, west, east,
+south-west, south and south-east. However, pixels at the edge of the grid will
+have only a subset of those neighbours. For example a pixel on the northern
+edge of the grid will have five neighbours (west, east, south-west, south, and
+south-west) and one in the south-west corner will have only three: (north,
+north-east and east). </span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -210,11 +210,10 @@ neighbours. </span></p>
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB>To use this knowledge, we can create an
-association submodel, representing the relationship of
-&quot;neighbourhood&quot; between the central pixel and the (up to) eight
-pixels that border it. Two role arrows are drawn between the pixel submodel and
-the neighbourhood submodel, representing the pixel in the centre and the pixels
-in the border. </span></p>
+association submodel, representing the relationship of “neighbourhood” between
+the central pixel and the (up to) eight pixels that border it. Two role arrows
+are drawn between the pixel submodel and the neighbourhood submodel,
+representing the pixel in the centre and the pixels in the border. </span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
@@ -226,10 +225,10 @@ much <span class=SpellE>much</span> larger rasters than before. </span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
-<p class=MsoNormal><span lang=EN-GB>The final step is to create a condition in the
-neighbourhood model that evaluates for each pixel whether any given pixel is in
-the neighbourhood. Since each pixel has a list of its own neighbours, this
-condition is simply: </span></p>
+<p class=MsoNormal><span lang=EN-GB>The final step is to create a condition in
+the neighbourhood model that evaluates for each pixel whether any given pixel
+is in the neighbourhood. Since each pixel has a list of its own neighbours,
+this condition is simply: </span></p>
 
 <p class=MsoNormal><span lang=EN-GB>any( index(1) is {<span class=SpellE>neighbours_ids_border</span>}
 ) </span></p>
@@ -246,15 +245,15 @@ pixel. </span></p>
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 
 <p class=MsoNormal><span lang=EN-GB>Previously, this expression would have been
-written with the equality operator &quot;==&quot;, instead of the key word
-&quot;is&quot;. The new key word has been introduced in order to invoke the
-efficient program generation that is possible for rasters. This is not the only
-situation that is applicable: in general, as the name implies, the feature is
-useful for any situation where the relationship can be calculated in a loop
-over only ONE of the roles. In this case, because each pixel is able to
-calculate its own list of neighbours, it is not necessary to take each possible
-pair of pixels and determine if they are neighbours. It is from this short cut
-that the improvement in efficiency stems. </span></p>
+written with the equality operator “==”, instead of the key word “is”. The new
+key word has been introduced in order to invoke the efficient program
+generation that is possible for rasters. This is not the only situation that is
+applicable: in general, as the name implies, the feature is useful for any
+situation where the relationship can be calculated in a loop over only ONE of
+the roles. In this case, because each pixel is able to calculate its own list
+of neighbours, it is not necessary to take each possible pair of pixels and
+determine if they are neighbours. It is from this short cut that the
+improvement in efficiency stems. </span></p>
 
 <p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
 

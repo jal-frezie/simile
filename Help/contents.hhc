@@ -513,10 +513,6 @@
 						<param name="Local" value="equations\functions\size.htm">
 						</OBJECT>
 					<LI> <OBJECT type="text/sitemap">
-						<param name="Name" value="sofar function">
-						<param name="Local" value="equations\functions\sofar.htm">
-						</OBJECT>
-					<LI> <OBJECT type="text/sitemap">
 						<param name="Name" value="sqrt function">
 						<param name="Local" value="equations\functions\sqrt.htm">
 						</OBJECT>
@@ -828,24 +824,6 @@
 		<LI> <OBJECT type="text/sitemap">
 			<param name="Name" value="Reporting problems">
 			<param name="Local" value="files\problem.htm">
-			</OBJECT>
-	</UL>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="Example Models">
-		<param name="Local" value="examples\index.htm">
-		</OBJECT>
-	<UL>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Forest tree growth">
-			<param name="Local" value="examples\forest.htm">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Process control">
-			<param name="Local" value="examples\control.htm">
-			</OBJECT>
-		<LI> <OBJECT type="text/sitemap">
-			<param name="Name" value="Spirograph">
-			<param name="Local" value="examples\spiro.htm">
 			</OBJECT>
 	</UL>
 </UL>
