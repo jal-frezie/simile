@@ -333,7 +333,8 @@ proc PostPopup {X Y} {
     if {[winfo exists .popup]} {
         destroy .popup
     }
-    toplevel .popup -width 1 -height 1 -bd 0
+    toplevel .popup -width 1 -height 1 -bd 1 -bg black
+# leaves one pixel of black showing round edge of messages
     wm overrideredirect .popup 1
 
     # This moves the popup window to whichever quadrant of the moused-over
