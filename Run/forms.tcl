@@ -36,7 +36,7 @@ proc equationResources {} {
     # Size of the listboxes
     foreach listBox {plist ilist} {
 	option add *Equation*$listBox.width	15	startup
-	option add *Equation*$listBox.height	8	startup
+	option add *Equation*$listBox.height	4	startup
     }
 }
 
@@ -134,11 +134,11 @@ proc create_equation {parent boxtitle indices} {
     pack $buttonF -anchor nw -fill x -side bottom
 
     set descF [frame $mainF.descf]
-    TitleFrame $descF.description -text "Description"
+    TitleFrame $descF.description -text "Title: "
     set descf [$descF.description getframe]
-    #label $descf.desclabel -text "Description:"
+    label $descf.desclabel -text "Description:"
     text $descf.text -height 1 -width 20
-    #pack $descf.desclabel -side left -padx 2 -pady 2
+    pack $descf.desclabel -side left -padx 2 -pady 2
     pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
     pack $descf -side top  -fill x -expand off 
     pack $descF.description  -fill x -expand off -padx 4 -pady 4
@@ -152,7 +152,7 @@ proc create_equation {parent boxtitle indices} {
     set functionsf [$middleF.functions getframe]
     frame $functionsf.list
     set lbf [listbox $functionsf.list.flist \
-            -height 9 \
+            -height 4 \
             -yscrollcommand [list $functionsf.list.scrollf set]]
     foreach funk $equation(fnDefs) {
         $lbf insert end $funk
@@ -166,7 +166,7 @@ proc create_equation {parent boxtitle indices} {
     set indicesf [$middleF.indices getframe]
     frame $indicesf.list
     set lbx [listbox $indicesf.list.ilist \
-            -height 9 \
+            -height 4 \
             -yscrollcommand [list $indicesf.list.scrolli set]]
     foreach indx $indices {
         $lbx insert end $indx
@@ -176,27 +176,6 @@ proc create_equation {parent boxtitle indices} {
     pack $indicesf.list.scrolli -side left -fill y
     pack $indicesf.list -anchor nw -expand true -fill both
     pack $middleF.indices -side left -anchor nw  -padx 2 -pady 2 -expand true -fill both
-# Stella special: a keypad frame to prevent users having to touch their kbd
-    TitleFrame $middleF.keypad -text "Keypad: "
-    set keypadf [$middleF.keypad getframe]
-    frame $keypadf.keys
-    set keys {< > -> = ( ) , / 7 8 9 * 4 5 6 - 1 2 3 + 0 dummy . DEL}
-    for {set row 0} {$row < 6} {incr row} {
-         pack [frame $keypadf.keys.row$row] -fill x
-         for {set col 0} {$col < 4} {incr col} {
-                set act [lindex $keys [expr 4*$row+$col]]
-                pack [button $keypadf.keys.row$row.col$col \
-                        -width 2 \
-                        -text $act -command "HitKey $t \{$act\}"] \
-                        -side left -fill x -expand true
-         }
-    }
-# Make DEL button double width
-    destroy $keypadf.keys.row5.col1
-    pack $keypadf.keys.row5.col0 -expand false
-    pack $keypadf.keys.row5.col2 -expand false
-    pack $keypadf.keys -side left -anchor nw
-    pack $middleF.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
     pack $middleF -expand off -fill x
     
     
@@ -242,7 +221,30 @@ proc create_equation {parent boxtitle indices} {
     pack $table -padx 8 -pady 4
     pack $mainf.equation.textbox.buttons -anchor e -side left
     pack $mainf.equation -expand true -fill both -anchor nw
-    pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2
+    pack $mainF.main.main -anchor nw -expand true -fill both -padx 2 -pady 2 -side left
+
+# Stella special: a keypad frame to prevent users having to touch their kbd
+    TitleFrame $mainF.main.keypad -text "Keypad: "
+    set keypadf [$mainF.main.keypad getframe]
+    frame $keypadf.keys
+    set keys {< > -> = ( ) , / 7 8 9 * 4 5 6 - 1 2 3 + 0 dummy . DEL}
+    for {set row 0} {$row < 6} {incr row} {
+        pack [frame $keypadf.keys.row$row] -fill x
+        for {set col 0} {$col < 4} {incr col} {
+            set act [lindex $keys [expr 4*$row+$col]]
+            pack [button $keypadf.keys.row$row.col$col \
+                    -width 2 \
+                    -text $act -command "HitKey $t \{$act\}"] \
+                    -side left -fill x -expand true
+        }
+    }
+    # Make DEL button double width
+    destroy $keypadf.keys.row5.col1
+    pack $keypadf.keys.row5.col0 -expand false
+    pack $keypadf.keys.row5.col2 -expand false
+    pack $keypadf.keys -side left -anchor nw
+    pack $mainF.main.keypad -anchor nw -padx 2 -pady 2 -side left -fill y
+    
     pack $mainF.main -anchor nw -expand true -fill both -anchor nw
 
 # Miscellaneous other stuff below
