@@ -710,9 +710,13 @@ decode_error(ParseError, TestError) :-
 	    More = [Op],
 	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": Simile does not include \"~a\" as a function.",
 			   [SimpleError, Op], TestError);
+	Type = wrong_format_of_args, !,
+	    More = [Op, Args, MacroArgs],
+	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": You have tried to use the macro \"~a\" with arguments ~w, but it must take arguments of the form ~w",
+			   [SimpleError, Op, Args, MacroArgs], TestError);
 	Type = wrong_no_of_args, !,
 	    More = [Op, Arity, FnArity],
-	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": You have tried to use the function \"~a\" with ~d arguments, but it must take ~d",
+	    sicstus_format_to_chars("Attempting to process subexpression \"~w\": You have tried to use the macro or function \"~a\" with ~d arguments, but it must take ~d",
 			   [SimpleError, Op, Arity, FnArity], TestError);
 	Type = missing_graph_or_table_data, !,
 	    sicstus_format_to_chars("Subexpression \"~w\" is a reference to a data table or sketch graph, but no data has been entered for it.",

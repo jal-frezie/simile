@@ -112,8 +112,8 @@ enabling the channel ID to be got from it */
 :- dynamic(macro_expansion/2).
 
 expand_library(DestRef, Var, NewVar) :-
-	macro_expansion(_Cat, Macro),
-	    Macro = (Var --> NewVar);
+	/* macro_expansion(_Cat, Macro),
+	    Macro = (Var --> NewVar); */
 	Var = prev(N),
 	    ((\+ integer(N); N < 0),
 		raise_exception(bad_index_number(N, prev));
@@ -122,7 +122,9 @@ expand_library(DestRef, Var, NewVar) :-
 	    M is N-1,
 		NewVar = last(prev(M))), !;	  
 	do_once(_, Var, ToDo, _),
-	    NewVar = delay(ToDo);
+	    NewVar = delay(ToDo).
+	/* These have just been moved to macro_expansions so if statements can
+	    be used in other macros
 	Var = (if Bool then IfCl), !,
 	    NewVar = (Bool?IfCl);
 	Var = (ThenCl else ElseCl), !,
@@ -130,11 +132,15 @@ expand_library(DestRef, Var, NewVar) :-
 	Var = (ThenCl elseif Bool then IfCl), !,
 	    NewVar = (ThenCl:(Bool?IfCl));
 	Var = choose(Bool, V1, V2), !,
-	    NewVar = (Bool?V1:V2).
+	    NewVar = (Bool?V1:V2). */
 
 read_library_funx(Done) :-
 	retractall(macro_expansion(_Cat, _Line)),
 	/* in case I ship it after a run */
+	assert(macro_expansion('Built-in', (if Bool then ThenCl else ElseCl -->
+			       choose(Bool, ThenCl, ElseCl)))),
+	assert(macro_expansion('Built-in', (if Bool then ThenCl elseif IfCl -->
+			       choose(Bool, ThenCl, if IfCl)))),
 	read_func_tree('../Functions/', '../Functions/', yes, BuiltIns),
 
 	backup:use_pref_dir(UserStuff),
@@ -670,7 +676,7 @@ make_intermediates(
 		    /* need type for bool/int */
 		SourceList = Source,
 		ValRef = ResultList;
-	    Source = (Test?True:False), !,
+	    Source = choose(Test, True, False), !,
 		SourceList = [Test, True, False],
 		RUnits = any,
 	        Arg_template = [boolean, RUnits, RUnits],
@@ -697,14 +703,30 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		[ValRef] = ResultList;
-	    Source =.. [Op | PlSourceList],
-		(PlSourceList = [''], !,
-		    SourceList = [];
-		 SourceList = PlSourceList),
-		length(SourceList, Arity),
-		length(Arg_template, Arity),
-		length(ResultList, Arity),
-		ValRef =.. [Op | ResultList]),
+	    Source =.. [Op | PlArgList],
+		(PlArgList = [''], !,
+		    ArgList = [];
+		 ArgList = PlArgList),
+		length(ArgList, Arity),
+		(macro_expansion(MacroFrom, (PossSource --> ExpSource)),
+		    PossSource =.. [Op | ArgList], !,
+		    SourceList = [ExpSource],
+		    Arg_template = [RUnits],
+		    [ValRef] = ResultList;
+		 macro_expansion(MacroFrom, (PossSource --> _)),
+		    PossSource =.. [Op | WrongForm],
+		    length(WrongForm, Arity),
+		    raise_exception(wrong_format_of_args(Source, Op,
+						     ArgList, WrongForm));
+		 macro_expansion(MacroFrom, (PossSource --> _)),
+		    PossSource =.. [Op | WrongLen],
+		    length(WrongLen, FnArity),
+		    raise_exception(wrong_no_of_args(Source, Op,
+						     Arity, FnArity));
+		SourceList = ArgList,
+		    length(Arg_template, Arity),
+		    length(ResultList, Arity),
+		    ValRef =.. [Op | ResultList])),
 		make_all_intermediates(SourceList, SubId, Target, DestPath,
 				BackSwap, PrevInters, BuildingArrays, Step,
 				Used, UnitList, NewInters, PartResultList),
@@ -747,6 +769,9 @@ make_intermediates(
 			SourceRef = ValRef);
 		 ValRef = sofar(SourceRef),
 		    UnitList = [Units];
+		 nonvar(MacroFrom), /* Done macro: args already matched */
+		    [Units] = UnitList,
+		    SourceRef = ValRef;
 		 fn_or_op(Op, RUnits, Arg_template),
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units),

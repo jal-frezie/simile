@@ -88,10 +88,9 @@ trim_float(F, Ns) :-
 	    append(Mant, ".0", RMant),
 	    append(RMant, Exp, Ms)),
 
-        /* normal printing separates -ve floats from ops with a space, so */
-        (Ms = [45 | Rest], !,
-            Ns = [32, 45 | Rest];
-        Ns = Ms).
+        /* normal printing separates -ve floats from ops with a space, so...
+	actually all floats are trouble if straight after a unary */
+        Ns = [32 | Ms].
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % My own delete/3 which deletes one element from a list

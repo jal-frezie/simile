@@ -96,7 +96,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    check_exec_fns_fresh(Language, CheckDir, OldTgt, FnsUsed, RStrs),
 	    all(user, name, [build([Stat | Includes]), build(RStrs)]),
 	    (Stat < 3, !;
-		format_to_chars("This model cannot be built because it contains the user-defined function ~a, which should have a definition in the file ~a, but this file is missing.", Includes, ErrStr),
+		sicstus_format_to_chars("This model cannot be built because it contains the user-defined function ~a, which should have a definition in the file ~a, but this file is missing.", Includes, ErrStr),
 		name(Err, ErrStr),
 		raise_exception(Err)),
 	    ((ChangeTop == 1,
