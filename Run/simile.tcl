@@ -45,9 +45,14 @@ gets $UserStream env(SIMILE_VERSION)
 close $UserStream
 
 # first put up the splash screen
-package require Img
 image create photo splash
-splash read $SIMILE_PATH/Images/splash.jpg
+if {[string match Darwin $tcl_platform(os)]} {
+    splash read $SIMILE_PATH/Images/splash.gif
+    set auto_path [linsert $auto_path 0 $SIMILE_PATH/System/lib]
+} else {
+    package require Img
+    splash read $SIMILE_PATH/Images/splash.jpg
+}
 pack [canvas .c -width 510 -height 340]
 .c create image 255 170 -image splash
 .c create text 392.0 285.0 -font {-weight bold -family helvetica -size 12} -text "Version $env(SIMILE_VERSION)"

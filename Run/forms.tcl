@@ -914,7 +914,7 @@ proc UpdateColour {f} {
 }
 
 set imageSources(uid) 0
-package require Img
+# package require Img
 
 proc ChooseImage {} {
     global disaggregate

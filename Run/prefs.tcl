@@ -193,6 +193,7 @@ proc Pref_Dialog {} {
                 compChoice {set frame $compF}
                 comp* {set frame $popupF}
                 bigButtons {set frame $barF}
+                popupHelp {set frame $barF}
                 deleteEndToEnd {set frame $linkF}
                 flowRouting {set frame $flowF}
                 saveExtras {set frame $canvasF}

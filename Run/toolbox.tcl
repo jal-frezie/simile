@@ -163,6 +163,7 @@ proc ControlDraw {prologVersion} {
                 {custom(initToolbar) initToolbar ON "Component bar"} \
                 {custom(initEqnbar) initEqnbar ON "Equation bar"} \
                 {custom(bigButtons) bigButtons OFF "Use large buttons"} \
+                {custom(popupHelp) popupHelp ON "Popup help text"} \
                 {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
                 {custom(compDescPop) compDescPop ON "Equation"} \
                 {custom(compValPop) compValPop ON  "Value"}
@@ -1366,6 +1367,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     $tb.snap configure -state disabled
         
     $tb.select configure -relief sunken
+    $tb.select configure -state active
     # heheheh...must be in select mode to make new window, except first
     
     ### Formula bar section
@@ -1621,12 +1623,14 @@ proc ItemSelect {newItem} {
 # ie. those not in helper list
 
 proc UpdateToolbars {newAction} {
-    global pushedbutton window_info MIpushedbutton
+    global pushedbutton window_info MIpushedbutton tcl_platform
     set MIpushedbutton $newAction
     foreach winData [array name window_info *,parent] {
         set toolBar $window_info($winData).toolSlot.toolbar
-        $toolBar.$pushedbutton configure -relief flat
-        $toolBar.$newAction configure -relief sunken
+	$toolBar.$pushedbutton configure -state normal
+	$toolBar.$newAction configure -state active
+	$toolBar.$pushedbutton configure -relief flat
+	$toolBar.$newAction configure -relief sunken
         ResetEqnBar $window_info($winData).toolSlot.eqnbar
     }
 }

@@ -879,6 +879,9 @@ proc CountValues {text} {
 
 proc AddWidgetPopup {key X Y} {
     global msgs
+    if {![PrefValue custom(popupHelp) popupHelp]} {
+	return
+    }
     PostPopup $X $Y
     if {[info exists msgs($key)]} {
         set message $msgs($key)
