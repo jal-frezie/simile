@@ -143,7 +143,7 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
 	get_adding_object(New_obj),
-	(New_obj is_class_of_sort box,
+	(New_obj is_class_of_sort box, !,
 		(New_obj is_class_of_sort rounded_rect,
 			advance_phase_to(rubberband);
 		add_at_point(Xpt, Ypt, New_obj, Parent, _));
