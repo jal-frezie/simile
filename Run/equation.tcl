@@ -520,6 +520,7 @@ proc fill_inputs { triples } {
         set showLines [min 8 $line]
         $widget.lists.f configure -height \
                 [expr $showLines*[winfo reqheight $scroller.plist.p0]+4]
+        update
     }
 }
 
