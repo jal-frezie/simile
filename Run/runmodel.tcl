@@ -241,8 +241,13 @@ proc DoZoom { winId factor toProlog} {
 
 proc ZoomImage {winId which factor {optFontor none}} {
     #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
+<<<<<<< runmodel.tcl
     global window_info looks
 
+=======
+    global window_info looks
+    
+>>>>>>> 1.101.2.6
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
         set objList [$winId find withtag $which]
@@ -258,8 +263,14 @@ proc ZoomImage {winId which factor {optFontor none}} {
     } else {
 	set fontor $optFontor
     }
+    if {[string match none $optFontor]} {
+        set fontor $factor
+    } else {
+        set fontor $optFontor
+    }
     foreach object $objList {
         switch [$winId type $object] {
+<<<<<<< runmodel.tcl
         text {
 	    set fontData [ExtractFontData [$winId itemcget $object -font]]
 	    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
@@ -310,6 +321,57 @@ proc ZoomImage {winId which factor {optFontor none}} {
 		-width [AdjustWidth $winId $object $factor]
 	}
 	}
+=======
+            text {
+                set fontData [ExtractFontData [$winId itemcget $object -font]]
+                set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+                if {$newTextSize < 1} {
+                    set newTextSize 1
+                }
+                $winId itemconfigure $object -font \
+                        [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+                        [lindex $fontData 2] $newTextSize]
+            } line {
+                $winId itemconfigure $object \
+                        -width [AdjustWidth $winId $object $factor]
+                AdjustArrow $winId $object $factor
+            } image {
+                set tgtImage [$winId itemcget $object -image]
+                set newWidth [expr round($factor*[$tgtImage cget -width])]
+                set newHt [expr round($factor*[$tgtImage cget -height])]
+                scan [$winId coords $object] {%f %f} newX newY
+                
+                if {[string compare none optFontor]} {
+                    # Doing clever stuff with fonts, this zoom op is for a print
+                    # so scale image rather tha re-tiling it
+                    if {$factor > 1} {
+                        image create photo temp
+                        temp copy $tgtImage
+                        $tgtImage config -width $newWidth -height $newHt
+                        $tgtImage copy temp -zoom [expr round($factor)]
+                    } else {
+                        $tgtImage copy $tgtImage \
+                                -subsample [expr round(1.0/$factor)]
+                    }
+                } elseif {[string match "*/base/*" [$winId gettags $object]]} {
+                    ResizeBackgnd $winId $newX $newY \
+                            [expr $newX+$newWidth] [expr $newY+$newHt]
+                } else {
+                    set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
+                    set intRad [expr int($looks(submodel,objectsize)* \
+                            $shortSide/400)]
+                    $tgtImage config -width $newWidth -height $newHt
+                    regexp {source\(([^\)]+)\)} [$winId gettags $object] \
+                            all sourceImage
+                    FillSmImage $sourceImage $tgtImage $newWidth $newHt \
+                            $intRad
+                }
+            } default {
+                $winId itemconfigure $object \
+                        -width [AdjustWidth $winId $object $factor]
+            }
+        }
+>>>>>>> 1.101.2.6
     }
 }
 
@@ -330,9 +392,13 @@ proc ZoomImage {winId which factor {optFontor none}} {
 
 proc AssembleFont {family weight style textsize} {
     return [list -family $family -weight $weight -slant $style \
+<<<<<<< runmodel.tcl
             -size [expr round($textsize/12.0)]]
 
 
+=======
+            -size [expr round($textsize/12.0)]]
+>>>>>>> 1.101.2.6
 }
 
 proc ExtractFontData {font} {
@@ -665,7 +731,7 @@ proc RunDialog {canvas} {
     set defHelper $helperTable(RunControl)
     set runState(modelRunning) 2
     set runState(activeWindow) $canvas
-
+    
     if {[regexp "(.helper\[0-9\]+),whichHelper $defHelper" \
                 [array get helperTable] spare helperId]} {
         kill_helper_window $helperId
@@ -1452,9 +1518,6 @@ proc compile_c {workingDir} {
 	set serial [newInt]
 	set TARGET model${serial}[info sharedlibextension]
     }
-
-
-
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
@@ -1473,18 +1536,26 @@ proc compile_c {workingDir} {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
             if {[string match GNU [PrefValue custom(compChoice) compChoice]]} {
                 set dll ame_dll${MAJ}${MIN}
-                exec g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-                exec dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+                switch $tcl_platform(os) {
+                    {Windows NT} {
+                        exec cmd /c start /min g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
+                        exec cmd /c start /min dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+                    }
+                    {Windows 95} {
+                        exec start /m g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
+                        exec start /m dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+                    }
+                }
                 file delete exptemp.exp
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } else {
                 set TOOLS32 [file dirname $env(MSVCDIR)/any]
-                exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
+                exec $minimizedcmdline $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
                         -Foobjtemp.o model.cpp
-                exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
+                exec $minimizedcmdline $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
                         -align:0x1000 /MACHINE:IX86 \
                         -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
                         $TOOLDIR/../System/lib/Stubs/ame_dll${MAJ}${MIN}.lib \
@@ -1786,3 +1857,9 @@ proc ModelDirectory {} {
     global custom
     return [file dirname [lindex $custom(hotlist) 0]]
 }
+
+proc ModelDirectory {} {
+    global custom
+    return [file dirname [lindex $custom(hotlist) 0]]
+}
+
