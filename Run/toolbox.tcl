@@ -247,7 +247,7 @@ proc do_in_node {node args} {
 	    puts $runState($node,interp) $command
 	    flush $runState($node,interp)
 	    incr runState($node,queueSize)
-puts "put: $command for $runState($node,queueSize)"
+#puts "put: $command for $runState($node,queueSize)"
 	    set runState($node,modelReady) 0
 	    upvar \#0 runState($node,response$runState($node,queueSize)) result
 	    if {[string equal parallel $runHow(time)]} {
@@ -261,11 +261,11 @@ puts "put: $command for $runState($node,queueSize)"
 		fileevent $runState($node,interp) readable \
 		    [list FeedModel $node]
 	    }
-puts "Got $result for $runState($node,queueSize)"
+#puts "Got $result for $runState($node,queueSize)"
 	    incr runState($node,queueSize) -1
 	} else {
 	    set result {res 0}
-puts "$command: model dead"
+#puts "$command: model dead"
 	}
     }
     set info [lindex $result 1]
@@ -283,13 +283,13 @@ proc FeedModel {node} {
 
     gets $runState($node,interp) incoming
     if {[string equal get [lindex $incoming 0]]} {
-puts "get: $incoming"
+#puts "get: $incoming"
 	if {[catch [lindex $incoming 1] response]} {
 	    set result [list err [split $errorInfo \n]]
 	} else {
 	    set result [list res $response]
 	}
-puts "put: $result"
+#puts "put: $result"
 	puts $runState($node,interp) $result
 	flush $runState($node,interp)
     } else {
