@@ -157,8 +157,12 @@ trim_float(F, Ns) :-
 	format_to_codes(Fs, "~8g", [F]),
 	/* number must look like float so add .0 if it doesnt */
 	(member(Ch, Fs), member(Ch, "e."), !,
-	    Ns = Fs;
-	append(Fs, ".0", Ns)).
+	    Ms = Fs;
+	append(Fs, ".0", Ms)),
+        /* normal printing separates -ve floats from ops with a space, so */
+        (Ms = [45 | Rest], !,
+            Ns = [32, 45 | Rest];
+        Ns = Ms).
 	
 /* If we rely on writeq to put non-readable atoms in quotes it will
 also convert wide characters into sets of hex codes enclosed in
