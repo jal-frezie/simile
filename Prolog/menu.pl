@@ -49,12 +49,16 @@ redo :-
 	update_ability(redo, edit, 'Redo', Further).
 
 menu_select(Seln) :-
+	normalize(_),
+	    fail;
 	update_mode(add),
 	display_mode(add),
 	set_adding_object(Seln),
 	initialize_phase.
 
 mode_select(Seln) :-
+	normalize(_),
+	    fail;
 	update_mode(Seln),
 	display_menu(none),
 	initialize_phase.
