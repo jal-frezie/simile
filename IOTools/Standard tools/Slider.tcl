@@ -21,9 +21,9 @@ namespace eval slide139 {
                 set title [GetCaptionPathFromId $node]
                 set initVal [InsertSlider $winId $node $title 1]
 		set done 1
-            }
-            if {[string match INPUT [GetModelEval $node]]} {
-		set compList($node) $initVal
+		if {[string match COMPARTMENT [GetModelClass $node]]} {
+		    set compList($node) $initVal
+		}
 	    }
         }
         if {![info exists done]} {
