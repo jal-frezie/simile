@@ -226,7 +226,10 @@ proc do_for_node {node args} {
 		set sep .
 	    }
 	    set makeExec ../System/bin/wish$MAJ$sep$MIN
-	    set srcLoc ../Run/runmodel.tcl			   
+	    set srcLoc ../Run/runmodel.tcl			
+	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
+		set runHow(sendCmd) [list send [tk appname]]
+	    }
 	    set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return)]
 	    if {[string equal script $runHow(init)]} {
 		set launchArgs [concat $srcLoc $scArgs]

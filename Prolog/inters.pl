@@ -549,7 +549,7 @@ make_intermediates(
 	    member(dims=ConstBounds, TableData),
 	    member(current=BoundArray, TableData),
 	    member(units=OrigUnits, TableData),
-	    (member(OrigUnits, [boolean, 1]), !,
+	    (member(OrigUnits, [boolean, real]), !,
 		Units = OrigUnits;
 	    Units = int);
 	add_zeros(Source, SubId, Step, BoundArray, ConstBounds, Units)), !,
@@ -891,7 +891,7 @@ try_units(Lowest, Want, Get, Out) :-
 	promote_unit(Lowest, Result),
 	substitute(Lowest, Want, Result, SettleFor),
 	all(inters, promote_arg, [build(Get), build(SettleFor), unify(In)]),
-	(Result = real, !, Out = In; Out = Result). 
+	(Result = real, nonvar(In), !, Out = In; Out = Result). 
 	
 promote_unit(Lo, Hi) :-
 	Lo = Hi;
@@ -911,7 +911,7 @@ uses_as(int, real).
 promote_arg(Lo, Hi, Phys) :-
 	var(Lo), !, Phys = Lo;
 	promote_unit(Lo, Tpt),
-	(   Tpt = real, Med = 1;
+	(Tpt = real, Med = 1;
 	    Med = Tpt),
 	(Hi = real,
 	    (nonvar(Phys); var(Phys), Phys = Med),

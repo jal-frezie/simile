@@ -613,7 +613,15 @@ proc fill_inputs { triples } {
 proc fill_table {table_data table_values} {
     global equation
     #puts $table_data
-    set equation(table_data) $table_data
+    set equation(table_data) [lrange $table_data 0 end]
+    # you would think that the above line would not change the list, as it
+    # takes the range from start to finish. But it does -- Prolog has wrapped
+    # each element in curly brackets whether or not it needs it, and the effect
+    # of the lrange is to remove unnecessary sets of curlies so that later when
+    # we check if the elements have changed from the original list it does not
+    # matter if some other function has quietly got rid of their surplus curly
+    # brackets. Trust me, it works.
+
     #    set equation(table_values) [TransEnums $trans $table_values]
     # Translation should be done in Prolog by reverse_engineer
     set equation(table_values) $table_values

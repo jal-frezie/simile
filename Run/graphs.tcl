@@ -550,17 +550,17 @@ proc equationDoTable {parent tgt} {
     tkwait visibility .table
     if {[llength $table_entry(data)]} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
-        set table_entry(dataField) [lindex $table_entry(data) 1]
-        set table_entry(indices) [lrange $table_entry(data) 2 end]
+	set table_entry(dataField) [lindex $table_entry(data) 1]
+	set table_entry(indices) [lrange $table_entry(data) 2 end]
 	set i 1
 	foreach idx $table_entry(indices) {
 	    $lidx insert end id$i -text $idx
 	    incr i
 	}
-	if {![LoadDataFile]} {
-	    destroy $t
-	    return 0
-	}
+#	if {![LoadDataFile]} {
+#	    destroy $t
+#	    return 0
+#	}
     } else {
 #        if {![string compare \
 #                    [GetDataFile "No data file yet specified"] {}]} {
