@@ -33,7 +33,7 @@ char simileVersion[] = "2.93";
     #define UNLOAD_DLL FreeLibrary
     #define WHAT_WENT_WRONG GetErrorText
     #define FIND_FUNCTION GetProcAddress
-
+    #define FORUNIX 0
 BOOL APIENTRY
 DllEntryPoint(
     HINSTANCE hInst,		/* Library instance handle. */
@@ -119,7 +119,7 @@ extern "C" int maximizeWinCmd(
 /* dlclose inverted cos it seems to return NULL when it works */
     #define WHAT_WENT_WRONG dlerror
     #define FIND_FUNCTION dlsym
-
+    #define FORUNIX 1
 HINSTANCE flopen(char* fileName) {
   return dlopen(fileName, RTLD_NOW);
 }
@@ -699,7 +699,7 @@ void get_value_pointer(void* tgt, char* id, int count, int* inds) {
   Model* mSpare;
 
   data_line = searchinfo(id, &mSpare, caption, dims, path);
-  if (data_line->eval == FILE) {
+  if (data_line->eval == TABLE) {
     valPtr = Tcl_ObjGetVar2(globInterp, Tcl_NewStringObj("paramData", -1),
 	Tcl_NewStringObj(caption, -1), TCL_LEAVE_ERR_MSG | TCL_GLOBAL_ONLY);
     
@@ -1504,7 +1504,7 @@ int Ame_dll_Init(Tcl_Interp *interp) {
     Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
-    sprintf(pkgName, "%d.%d.%s", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
-	    simileVersion);
+    sprintf(pkgName, "%d.%d.%s.%d", TCL_MAJOR_VERSION, TCL_MINOR_VERSION, 
+	    simileVersion, FORUNIX);
     return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }

@@ -363,6 +363,7 @@ proc FillSmImage {fillColour smbg mw mh intRad} {
     set srcHeight [$fillColour cget -height]
     
 # Now copy the middle bit over
+    $smbg blank
     MyTile $smbg 0 $intRad $mw [expr $mh-$intRad] $fillColour \
 	$srcWidth $srcHeight
 
@@ -378,12 +379,6 @@ proc FillSmImage {fillColour smbg mw mh intRad} {
 	set fb [expr $ft+1]
 	MyTile $smbg $fl $ft $fr $fb $fillColour $srcWidth $srcHeight
     }
-}
-
-proc CopyQuad {dest l t r b src w h} {
-    set sl [expr int(fmod($l, $w))]
-    set st [expr int(fmod($t, $h))]
-    $dest copy $src -from $sl $st [expr $sl+$w] [expr $st+$h] -to $l $t $r $b
 }
 
 proc MyTile {dest l t r b src w h} {
@@ -629,14 +624,17 @@ proc WriteDesc {canvas canvasFile date args} {
 }
 
 proc MakeImage {base file inst w h} {
-    global imageSources
+    global imageSources looks
     if {![info exists imageSources($base)]} {
 	image create photo $base
 	$base read $file -shrink
+	PutSize $base
 	set imageSources($base) $file
     }
     image create photo $inst -width $w -height $h
-    $inst copy $base -to 0 0 $w $h
+    set shortSide [expr $w<$h?$w:$h]
+    set intRad [expr int($looks(submodel,objectsize)*$shortSide/400)]
+    FillSmImage $base $inst $w $h $intRad
 }
 
 # this needs because the canvas is called $c in the file
