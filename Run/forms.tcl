@@ -1890,6 +1890,7 @@ proc equationlisting_addsubmodel {isub submodel_label} {
 
 proc equationlisting_addvariable {isub ivar vartype varlabel expression where description comments \
             inflows outflows} {
+#puts "inflows $inflows outflows $outflows"
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
     global equationlist
  
@@ -1940,9 +1941,9 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     if {[string match compartment $vartype]} {
         # Compartment
         set inflows [string trim $inflows {[]}]
-        regsub -all , $inflows { } inflows
+	set inflows [split $inflows ,]
         set outflows [string trim $outflows {[]}]
-        regsub -all , $outflows { } outflows
+	set outflows [split $outflows ,]
         
         # intial value
 
