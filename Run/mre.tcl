@@ -451,10 +451,11 @@ proc RunEnv::SplitPage {containerId orientation} {
     #ShowMessage debug info "SplitPage container $containerId $orientation\n\
     #    parentPath $parentPath" ok
     if {[string match notebook [winfo name $parentPath]]} {
+        #ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
         Addpanedwindow $containerId $orientation
     } elseif {(![string match $orientation [$parentPath cget -orient]])} {
         #ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
-        #        parentPath $parentPath" ok;
+                parentPath $parentPath" ok;
         set newpw [Addpanedwindow $containerId $orientation]
         #ShowMessage debug info "newpw $newpw" ok
     } else  {
@@ -467,9 +468,9 @@ proc RunEnv::SplitPage {containerId orientation} {
         set contx [winfo x $containerId]
         set conty [winfo y $containerId]
         #ShowMessage debug info "SplitPage pane to be split \
-        #        width $pwidth height $pheight \n \
-        #        sash index $sash coord $sashCoord\n\
-        #        x [winfo x $containerId]; y [winfo y $containerId]" ok; ##############
+                width $pwidth height $pheight \n \
+                sash index $sash coord $sashCoord\n\
+                x [winfo x $containerId]; y [winfo y $containerId]" ok; ##############
         
         
         # new settings
@@ -621,16 +622,22 @@ proc RunEnv::Addpanedwindow {containerId orientation} {
             "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
     $containerId.panedwindow add $containerId.panedwindow.pane0 $containerId.panedwindow.pane1 \
             -width $width -height $height
+    SetCurrentContainer $containerId.panedwindow.pane0
     return $containerId.panedwindow
 }
 
 proc RunEnv::SetCurrentContainer {win} {
     #ShowMessage debug info "SetCurrentContainer $win" ok
     variable mainframe
+    if {![string match pane* [winfo name $win]]} {
+        return
+    }
+    set mreMenu [winfo parent [$mainframe getmenu help]]
     set pw [FindParentPanedwindow $win]
     #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
     set tb1 [$mainframe gettoolbar 0]
     if {[winfo exists $win.container]} {
+        $mreMenu entryconfigure Add -state disable
         $tb1.bbox1 itemconfigure 2 -state disabled; # paste button
         $tb1.bbox3 itemconfigure 1 -state disabled; # Add Notebook button
         $tb1.bbox4 itemconfigure 0 -state disabled; # add helper buttons
@@ -641,7 +648,7 @@ proc RunEnv::SetCurrentContainer {win} {
             .pageContextMenu entryconfigure 1 -state disabled
             .pageContextMenu entryconfigure 2 -state disabled
             .pageContextMenu entryconfigure 6 -state disabled
-            .pageContextMenu entryconfigure 11 -state disabled; # add notebook 
+            .pageContextMenu entryconfigure 11 -state disabled; # add notebook
             #.pageContextMenu entryconfigure 12 -state disabled; # add notebook p0age
         }
         if {[string match vertical [$pw cget -orient]]} {
@@ -658,6 +665,7 @@ proc RunEnv::SetCurrentContainer {win} {
             .pageContextMenu entryconfigure 9 -state normal
         }
     } else  {
+        $mreMenu entryconfigure Add -state normal
         $tb1.bbox1 itemconfigure 2 -state normal; # paste button
         $tb1.bbox2 itemconfigure 1 -state normal
         $tb1.bbox2 itemconfigure 0 -state normal
@@ -799,7 +807,10 @@ proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
     #        containers children: [winfo children $containerId]" ok
     
     set winId $containerId.container
-    frame $winId
+    if {[catch {frame $winId}]} {
+        error "Cannot create a display in the selected pane \
+                        because it already contains one.\nPlease select an empty pane and try again."; #return
+    }
     pack $winId -fill both -expand yes
     set helperTable($helperTitle) $winId
     set helperTable($winId,whichHelper) $helperId
