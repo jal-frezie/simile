@@ -1201,12 +1201,7 @@ proc GetModelTime {} {
 proc start_run {winId} {
     global runState
     global window_info
-
     # ShowMessage debug info enter(start_run) ok
-    if {[PrefValue custom(helperManager) helperManager]} {
-        #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
-        set mre [Makemre $winId]
-    }
     if {[info exists runState(currentTime)]} {
         if {$runState(execTime) != $runState(currentTime)} {
             set runState(execTime) \
@@ -1234,14 +1229,12 @@ proc start_run {winId} {
     set runState(currentTime) 0.0
     set runState(timeAtEval) 0.0
     set runState(currentWin) $winId ;# enables rebuild from run control
-    if {[winfo exists .mre]} {wm withdraw .mre}; # hack to stop .mre obscuring FileParamDialogue
     set gotParams [FileParamDialogue 0 $winId]
     if {[PrefValue custom(helperManager) helperManager]} {
-        wm deiconify .mre   ; # hack to stop .mre obscuring FileParamDialogue
-        raise $mre
+        #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
+        raise [Makemre $winId]
     } else {
-
-        ToggleIOToolMenu 1
+	ToggleIOToolMenu 1
     }
     foreach winData [array name window_info *,parent] {
         set toolBar $window_info($winData).toolSlot.toolbar

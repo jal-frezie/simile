@@ -490,7 +490,7 @@ spread_dims(Node) :-
 	get_av_pair(Obj, 0, units, GivenUnits),
 	get_input_info(Obj, Input_list),
 	
-	(test_eqn(Equation, Node, 32, Input_list, Type, FoundArray, _Ps, []),
+	(test_eqn(Equation, Node, [], Input_list, Type, FoundArray, _Ps, []),
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(Node, FoundArray, _, Array, _),
 		get_actual_sizes(Node, GivenArray, _, Array, _), !,
@@ -1355,6 +1355,12 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
 	    update_bowtie(NewArc, Route),
 	    redisplay(NewArc),
 	    fail;
+	    /* Now do this bit from thread_link to update destination node
+	presence_affects(Top_arc, Other_arc),
+		get_host(Other_arc, NewImage),
+		update_color(NewImage),
+		update_captions(NewImage),
+		fail; */
 	true).
 
 ghost_type(Start, Type, Base) :-
