@@ -324,10 +324,37 @@ namespace eval ::maptools2 {
         }
         return $flat
     }
-    
+
+    proc Flatten {nested} {
+	if {[llength $nested]==1} {
+	    return [list [list {} $nested]]
+	} else {
+	    set result {}
+	    foreach {indx val} $nested {
+		set eltResult [Flatten $val]
+		foreach pair $eltResult {
+		    lappend result [list [concat [list $indx] [lindex $pair 0]] [lindex $pair 1]]
+		}
+	    }
+	    return $result
+	}
+    }
+
+    proc PokeValue {node index newVal} {
+        if {[llength $index]>0} {
+            set vals [lindex [GetModelValue $node] 0]
+	    set oddList {}
+	    foreach idx $index {
+		lappend oddList [expr 2*$idx-1]
+	    }
+	    lset vals $oddList $newVal
+	    SetModelValue $node $vals
+	}
+    }
+
     proc IsNumber {str} {
         return [expr {[string is integer $str] || [string is double $str]}]
     }
     
-    namespace export SetColourMap SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertCaption InsertLegend ColourScale GetQuadList Flatten IsNumber
+    namespace export SetColourMap SetColours recolour_scale reposn_scale UpdateCaption ChangeEditMode InsertCaption InsertLegend ColourScale GetQuadList Flatten PokeValue IsNumber
 }

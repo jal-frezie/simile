@@ -525,15 +525,7 @@ $useNodes($winId,scaley)"
         #$winId.buttons.msg configure -text \
         #    "X $X; Y $Y; tags $tags; overlapping $overlapping; index $index"
         
-        if {[string length $index]>0} {
-            set vals [lindex [GetModelValue $useNodes($winId,color)] 0]
-	    set oddList {}
-	    foreach idx [split $index ,] {
-		lappend oddList [expr 2*$idx-1]
-	    }
-	    lset vals $oddList $newVal
-	    SetModelValue $useNodes($winId,color) $vals
-	}
+	PokeValue $useNodes($winId,color) [split $index ,] $newVal
         Repaint $winId $useNodes($winId,color)
     }
     

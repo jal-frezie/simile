@@ -159,9 +159,9 @@ namespace eval grid005 {
     proc NumDistinct {winId testResult} {
 	variable useNodes
 
-	set columns [Flatten [lindex $testResult 0] {}]
+	set columns [Flatten [lindex $testResult 0]]
 	foreach col $columns {
-	    set colvals($col) 1
+	    set colvals([lindex $col 1]) 1
 	}
 	if {[info exists colvals()]} {
 	    unset colvals()
@@ -395,7 +395,7 @@ namespace eval grid005 {
     proc DrawGrid5 {winId node} {
         variable useNodes
         
-        set values [Flatten [lindex [GetModelValue $node] 0] {}]
+        set values [Flatten [lindex [GetModelValue $node] 0]]
         set useNodes($winId,values) $values
         
         set ncell [llength $values]
@@ -417,7 +417,7 @@ namespace eval grid005 {
             set rowData($row) {}
             for {set col 1} {$col<=$ncol} {incr col} {
                 set cell [expr ($row-1)*$ncol+$col-1]
-                set celval [lindex $values $cell]
+                set celval [lindex [lindex $values $cell] 1]
                 set length [llength $celval]
                 
                 if {$length} {
@@ -531,9 +531,11 @@ namespace eval grid005 {
                 raise .popup
             }
             set cell [expr ($row-1)*$ncol+$col-1]
+	    set vLine [lindex $useNodes($winId,values) $cell]
             set value [TransValue $useNodes($winId,dataETs) \
-			   [lindex $useNodes($winId,values) $cell]]
-            set index [expr $cell+1]
+			   [lindex $vLine 1]]
+	    set index [join [TransEnums $useNodes($winId,allETs) \
+				 [lindex $vLine 0]] ,]
             
             .popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
             set xpoint [expr $X+15]
@@ -552,16 +554,8 @@ namespace eval grid005 {
         set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
             set cell [expr ($row-1)*$ncol+$col-1]
-            set value [lindex $useNodes($winId,values) $cell]
-            set index [expr $cell+1]
-
-            set vals [lindex [GetModelValue $useNodes($winId,color)] 0]
-	    set oddList {}
-	    foreach idx [split $index ,] {
-		lappend oddList [expr 2*$idx-1]
-	    }
-	    lset vals $oddList $newVal
-	    SetModelValue $useNodes($winId,color) $vals
+	    set vLine [lindex $useNodes($winId,values) $cell]
+	    PokeValue $useNodes($winId,color) [lindex $vLine 0] $newVal
 	}
 	DrawGrid5 $winId $useNodes($winId,color)
 	FillCanvas $winId
