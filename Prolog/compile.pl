@@ -1,0 +1,1382 @@
+/******************************************************************************
+*** COMPILATION module. This module contains all the templates necessary   ****
+*** to compile AME code. Everything is parameterised by language, BASIC    ****
+*** being the starting point.                                              ****
+******************************************************************************/
+
+sicstus_module( compile, [compile/3, new_exec_for/1] ).
+
+sicstus_use_module( [library(charsio),library(ordsets),library(lists),
+		instance,inters,language,render,m_class,utility,output,
+		ame_gen, m_update, units, text, dialogue] ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% compile( Language, Program ) is true if Program is an ordered list of
+% statements in the specified programming Language and Program embodies the
+% model specified in the KR.
+
+% Program is generated as a list of Prolog atoms, each of which is intended to
+% form one line of code in the output file; thus, the translator can have
+% control over layout, which may be important for some languages. (Having said
+% that, the current version does simple block-style indenting.
+
+:- dynamic(new_exec_for/1).
+
+compile( Language, Parent, DestDir) :-
+	(Language = tcl, !,
+	    unseparate(SeparateNodes);
+	list_interconnects),
+	(Parent has_class_refinement fix_math_args of Do, !;
+	Do = 0),
+	state:set_math_protect(Do),
+	build_instances(Language, DestDir, Parent, 1, '', _),
+	(Language = tcl, !,
+	    all(m_class, has_new_class_refinement,
+		[build(SeparateNodes), unify(separate of 1)]);  
+	true).
+
+unseparate(Nodes) :-
+	setof(N, N no_longer_has_class_refinement separate of 1, Nodes), !;
+	Nodes = [].
+
+list_interconnects :-
+	setof(TopArc, top_arc_for_exit(TopArc), TopArcs), !,
+	all(compile, entries_for, [build(TopArcs), build(XS)]),
+	build_interconnects(XS);
+	build_interconnects([]).
+	
+top_arc_for_exit(TopArc) :-
+	DLLSpec has_class_refinement separate of 1,
+	(End = DLLSpec;
+	DLLSpec has_part End,
+	    \+ appears(End), \+ find_type(End, function)),
+	Crossing is_connector from _ to End,
+	find_type(Crossing, influence),
+	equivalent_arcs(TopArc, Crossing),
+	is_top_arc(TopArc).
+
+entries_for(TopArc, [TopArc, TopNode, Source, Entries]) :-
+	find_all_comps(TopNode, TopArc),
+	initiates(TopArc, Source),
+	(setof(Entry, (equivalent_arcs(Entry, TopArc), is_entry(Entry)),
+	      Entries), !;
+	Entries = []).
+		  
+is_entry(Entry) :-
+	Entry is_connector from End to _,
+	(End = DLLSpec;
+	\+ appears(End), \+ find_type(End, function),
+	    DLLSpec has_part End),
+	DLLSpec has_class_refinement separate of 1.
+	
+build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
+	caption_for(Parent, Name),
+	append_atoms([NamePath, '/', Name], LongName),
+	append_atoms(DestDir, LongName, CheckDir),
+	check_directory(CheckDir),
+	time_step_for(Parent, Step, MyStep),
+	build_sub_instances(Language, DestDir, Parent, MyStep,
+			    LongName, CompsChanged),
+	(Parent has_model_refinement c_new of 0,
+	    \+ check_level_for_reds(Parent),
+	    Parent has_changed_model_refinement c_new of 1,
+	    ChangeTop = 1;
+	ChangeTop = CompsChanged),
+	((Parent has_class_refinement separate of 1; NamePath = ''), !,
+	 ((ChangeTop = 1,
+	        all(compile, delete_prog,
+		    [unify(CheckDir), build(['.tcl', '.cpp', '.dll', '.so'])]);
+	   \+ check_executable(Language, CheckDir);
+	   \+ load_executable(Language, DestDir, LongName, Parent)), !,
+	     retractall(entry_arcs_are(_)),
+	     assert(entry_arcs_are([])),
+	     instantiate_all(Parent, Model),
+	     entry_arcs_are(BackwardArcs),
+	     reverse(BackwardArcs, EntryArcs),
+	     (Language = c, Extn = '.cpp';
+	     Language = tcl, Extn = '.tcl'),
+	     append_atoms([CheckDir, '/', model, Extn], ProgName),
+	     windowize(ProgName, WProgName),
+	     open(WProgName, write, Stream),
+	     on_exception(Puke,
+		protected_build(Language, Stream, MyStep, 
+		Model, EntryArcs),
+		(reclose(Stream), raise_exception(Puke))),
+	     close(Stream),
+	     (Language = tcl, !;
+	     compile_c_program(DestDir, LongName),
+		 assert(new_exec_for(Parent))),
+	     load_executable(Language, DestDir, LongName, Parent);
+	 true),
+	ChangeNext = 0;
+	ChangeNext = ChangeTop).
+
+/* reclose: compiled version has a tendency to close streams when exiting their
+functions on an exception, so this only closes if it has to...*/
+
+reclose(Stream) :-
+	on_exception(_,close(Stream), true).
+
+/* delete_prog: if we are building a new program we will be marking the model
+as having it, so we don't want old ones in other languages (or old executables
+in other formats) hanging around. */
+
+delete_prog(Base, Extn) :-
+	append_atoms([Base, '/', model, Extn], FullName),
+	delete_file(FullName).
+	
+build_sub_instances(Language, DestDir, Parent, Step, NamePath, ChangeTop) :-
+	(setof( Submodel, (Parent has_part Submodel,
+			      Submodel has_class submodel,
+			      appears(Submodel)), Submodels), !; 
+	    Submodels = []),
+	all(compile, build_instances, 
+	    [unify(Language), unify(DestDir), build(Submodels), unify(Step),
+	     unify(NamePath), build(CompsChanged)]),
+	(member(1, CompsChanged), !,
+	    ChangeTop = 1;
+	ChangeTop = 0).
+
+check_level_for_reds(Submodel) :-
+	reassure_user("Checking all model values are defined"),
+	find_all_comps(Submodel, VisEntity),
+	appears(VisEntity),
+	\+ is_ghost(VisEntity),
+	\+ image:draws_complete(VisEntity),
+	caption_for(Submodel, OuterText),
+	caption_for(VisEntity, RedText),
+	format_to_chars("Model ~w cannot be executed because it contains \c
+		       component ~w, which has not been fully specified.",
+		       [OuterText, RedText], MessageStr),
+	name(Message, MessageStr),
+	raise_exception(Message);
+	fail.
+
+% The code works by first giving names to the mathematical entities in the
+% model, and then working out bit by bit what the program has to be.
+
+:- dynamic(entry_arcs_are/1).
+protected_build(Language, Stream, TopStep, FullModel, EntryArcs) :-
+	FullModel = model(_Channels, [instance(submodel, _, xrefs(_,
+	    instance(submodel, _, xrefs(FullModel, top, [], []),
+		     'AME_model', top-[]), _,_), _,_)]), 
+	/* Parent of top level model is not specified, so set it empty */
+	
+	% then, traverse it in a sensible order, and make up names for the
+	% variables in it. The (Prolog) variables representing them are then
+	% instantiated to those names.
+	% From this, we get a list of variables which may be considered
+	% global (compartment values, time paramaters), local (variables,
+	% functions, and flow values), and external (parameters, exogenous
+	% variables).
+
+	% Throughout the code below, Used is a list of the names used so far.
+
+/* Next, since all submodels are going to be represented as data structures 
+(including the toplevel one, as this may itself be multiple instance) we need to 
+generate structure type declarations for them, starting with the most deeply 
+nested. Data about submodel multiplicity is left in the main model. Start with c++ 
+keywords in list of things that cannot be used as variable names...*/
+
+	Keywords = [asm, auto, bad_cast, bad_typeid, break, case, catch,
+	char, class, const, const_cast, continue, default, delete, do, double,
+	dynamic_cast, else, enum, except, extern, false, far, finally, float, for, friend, 
+	goto, if, inline, int, long, namespace, near, new, operator, private, protected, 
+	public, register, reinterpret_cast, return, short, signed, sizeof, static, 
+	static_cast, struct, switch, template, this, throw, true, try, type_info, 
+	typedef, typeid, union, unsigned, using, virtual, void, volatile, while, 
+	xalloc],
+
+/* And there are also a few variable names that are sacred to the data
+extraction procedures, including 'tree' which is fairly
+important...(or was, back when the A stood for Agroforestry)... */
+
+	LocalNames = [tree, type, set, newvalue, finished, current, context,
+		      dtarget, btarget, instance, start_time, time_step, time,
+		      init_time, parentId, channelId, version,
+		      on_reset, externs_done, /* dummy conditions */
+		      use_param_state, /* indicates file parameter */
+		      id, dims /* arguments to extractor proc */ | _],
+	append(Keywords, LocalNames, Used),
+
+/* This gives names in the target programming language to all the variables, 
+structures corresponding to submodels, structure types, pointers and other 
+bits and pieces */
+
+	reassure_user("Choosing names for program variables"),
+	declare_structure(Language, FullModel, Used),
+
+/*	extract_submodel_updates(Instances, [], 1, Phases, Deltas),
+	set_free_phases(Deltas, Phases), */
+	extract_assignments(instance(submodel, _,xrefs(FullModel, _,_,_), _,_),
+			    [], TopStep, Phases, [], Used,
+			    Inters, UpdateForm, ReevaluateForm),
+	set_free_phases(UpdateForm, Phases),
+	set_free_phases(ReevaluateForm, Phases),
+	merge_inters(Inters, FullModel, AugmentedModel, Constants),
+	check_functions(ReevaluateForm, UpdateForm, SortedForm),
+
+	user:version_is(V),
+	render(Language, variable_declaration,
+	       [real, simile_version, [], V], 0, [VersionDec]),
+	render(Language, variable_declaration,
+	       [int, phasecount, [], Phases], 0, [PhaseDec]),
+	render(Language, variable_declaration,
+	       [real, dts, [Phases]], 0, [DTs]),
+
+	send_to_dest(Stream, ['#include <support1.cpp>', VersionDec,
+			      PhaseDec, DTs]),
+
+/* eval/update procedures are built here because they provide graph info
+	for later declaration builder
+	
+	update_submodel_compartments( Language, Phases, Used, Deltas, Comps),
+*/
+	build_submodel_functions(Language, Phases, Inters,
+				 UpdateForm, SortedForm, Used,
+				 ExtSets, AllGraphs, GraphClearText, Fns),
+
+	length(AllGraphs, GraphTotal),
+	render( Language, comment, 'GRAPH DATA SPACE DECLARATION', 0,
+				[GraphDeclComment]),
+	render(Language, variable_declaration,
+	       [graph_data_type, graphdata, [GraphTotal]],
+	       0, [GraphDeclText]),
+	append(EntryArcs, [end], EntryList), /* because msvc++ barfs
+	                                        at empty lists */
+	all(render, make_constant_string,
+	    [unify(Language), build(EntryList), build(ArcCharStrs)]),
+	all(user, name, [build(ArcChars), build(ArcCharStrs)]),
+	render(Language, variable_declaration,
+	       ['char*', inputArcs, void, ArcChars], 0,
+	       ArcDeclText),
+
+/* This generates the declarations in languages such as C and Tcl8.0
+wot need them */
+	reassure_user("Generating structure declarations"),
+	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
+				'AME_model', 'AME_model'-[]),
+	generate_main_decls(Language, RootInstance, [], 1, [], ExtSets,
+			    AllGraphs, TypeDecls, PointerDecls, NodeData),
+	append(InitTypes, [EndTopType], TypeDecls),
+	render( Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0,
+							StructTypeComment),
+	append([[GraphDeclComment, GraphDeclText | ArcDeclText],
+		StructTypeComment, InitTypes], TypeSection),
+	send_to_dest(Stream, TypeSection),
+	reassure_user("Generating constant declarations"),
+	render_all(Language, variable_declaration, 
+			Constants, 0, ConstDeclText),
+	render( Language, comment, 'CONSTANT DECLARATIONS', 0,
+							ConstDeclComment),
+	append(ConstDeclComment, ConstDeclText, ConstDecls),
+	send_to_dest(Stream, ConstDecls),
+	render( Language, comment, 'STRUCTURE POINTER DECLARATIONS', 0,
+							StructPtrComment),
+	append(StructPtrComment, PointerDecls, PointerSection),
+	send_to_dest(Stream, PointerSection),
+
+/*	send_to_dest(Stream, Comps), */
+	send_to_dest(Stream, Fns),
+	make_exit_proc(Language, [RootInstance], Stream, GraphClearText),
+
+	make_constant_list(Language, NodeData, StructText),
+	(Language = c,
+	    StructText = StructList,
+	    render(Language, variable_declaration,
+		   [node_data_line, nodedata, void, StructList], 0, Decls);
+	Language = tcl,
+	    make_procedure_call_chars(Language, [list | StructText],
+				      StructListStr),
+	    name(StructList, StructListStr),
+	    render(Language, assignment, nodedata=StructList, 0, Decls)),
+	
+	send_to_dest(Stream, [EndTopType | Decls]),
+	send_to_dest(Stream, ['#include <support2.cpp>']).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/* declare_structure/3: goes through submodels and starting with most deeply 
+nested, provides a name for each variable, and a name, type, tag and pointer
+name for each structure. Note we don't generate names for variables; they are
+all named after the nodes from which they take their values. */
+
+declare_structure(Language, model(Vars, Submodels), Used) :-
+
+	declare_submodel_structures(Language, Submodels, Used),
+	name_components( Language, Vars, Used).
+
+declare_submodel_structures(_, [], _).
+
+declare_submodel_structures(Language, [Instance | Instances], Used) :-
+	Instance = instance(submodel, Node, xrefs(Model, _, Bases, _), 
+		Name, Type-_),
+	caption_for(Node, Capt),
+	generate_name(Language, Capt, Name, Used),
+	append_atoms(Name, type, Type),
+	member(Type, Used), !,
+	    /* add type name to used list if not already there
+	    so no component inside can use it and break C */
+	make_assoc_loop_names(Language, Instance, Used, Bases),
+	declare_structure(Language, Model, Used),
+	declare_submodel_structures(Language, Instances, Used).
+
+make_assoc_loop_names(_,_,_, []).
+
+make_assoc_loop_names(L, Instance, Used,
+		[base(BaseInstance, Link, Ptrs) | Bases]) :-
+	caption_for(Link, LinkName),
+	invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs),
+	make_assoc_loop_names(L, Instance, Used, Bases).
+
+invent_ptr_names(L, LinkName, BaseInstance, Instance, Used, Ptrs) :-
+	ancestor(Instance, BaseInstance, _,_,_), !,
+	    Ptrs = [];
+	BaseInstance = instance(submodel, BaseSm, xrefs(_, Parent, _,_), _,_),
+	    caption_for(BaseSm, BaseCapt),
+	    append_atoms(LinkName, BaseCapt, Context),
+	    append_atoms(Context, ptr, PtrBase),
+	    generate_name(L, PtrBase, Ptr, Used),
+	    invent_ptr_names(L, LinkName, Parent, Instance, Used, MorePtrs),
+	    Ptrs = [Ptr | MorePtrs].
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% check_functions tests for circularity, then puts each function
+% evaluation into the slowest time step in which it needs to be updated
+
+check_functions(Functions, Compartments, Sorted) :-
+	reassure_user("Checking for circularity in model assignment order"),
+	(dummy_order(Functions, [Start | Core]),
+	get_circle_from(Core, [Start], Loop),
+	    all(compile, unfinished_in, [build(Loop), build(CircSet)]), 
+	    raise_exception(['This model cannot be executed because it',
+			     'contains the following circular set(s)',
+			     'of function evaluations:' | CircSet]);
+	true),
+	UseCompartments = [make(on_reset, [], [], 0, []) | Compartments],
+	    
+	reassure_user("Sorting assignments into correct time steps"),
+	sort_assignments(Functions, UseCompartments, -1, HalfSorted),
+	delay_clearing(HalfSorted, Sorted).
+
+is_instance_list(Instance) :-
+	Instance = instance(_, Model, xrefs(_, Parent, _,_), _,_),
+	variable_size(Model),
+	(\+ Model has_class_refinement separate of 1;
+	    Parent = instance(_,_,_, 'AME_model', _)).
+
+/* generate_main_decls does all the declarations except the ones for
+temporary variables used when expanding expressions.
+* New version, for 2.34: Does all the recursing itself, and also generates
+the model node data table and the extractor case statements */
+
+generate_main_decls(L, Instance, Tree, Level, Dims, ExtSets, Graphs,
+		    TypeDecls, PointerDecls, NodeData) :-
+	Instance = instance(submodel, SymbolicName, 
+			xrefs(Model, _, Bases, _), _, ModelType-_),
+	length(Tree, Depth),
+	Indent is 4*Depth,
+
+	(variable_size(SymbolicName), !,
+	    /* Declare the type with 'compartment' to hold instance numbers */
+	    list_local_index_meanings(SymbolicName, Bounds),
+	    append_atoms(ModelType, '*', PtrType),
+	    (is_population(SymbolicName), !,
+		DummyCompDims = [1],
+		MoreExtras = [];
+	    length(Bounds, IdCount),
+		DummyCompDims = [IdCount],
+		(render:count_base_ptrs(Bases, PtrCount),
+		    PtrCount > 0, !,
+		    /* model have an array of assoc pointers
+		    for multiple associations.
+		    ..good job I can get away with making them void... */
+		    MoreExtras = [instance(internal, _,_,
+					baseptrs, 'void*'-[PtrCount])];
+			MoreExtras = [])),
+	    Extras = [instance(internal, next, _, next, PtrType-[]),
+		      instance(internal, ids,_, instanceid, int-DummyCompDims),
+		      instance(internal, isnew, _, new_instance,
+			       'BOOLEAN'-[])
+		     | MoreExtras];
+	Extras = []),
+	extract_instances(Model, RealDecls),
+	append(Extras, RealDecls, SubInstances),
+	render(L, class_declaration, Instance, Indent, ThisDecl),
+
+	render(L, pointer_declaration, Instance, 0, LocalPtrs),
+	render(L, procedure_start, call('void*', get_pointer,
+					[int, id], ['int**', dims]), 0, Ext1),
+	refer_value(L, id, IdRef),
+	render(L, switch_start, IdRef, 4, Ext2),
+	render(L, end(switch), IdRef, 4, ExtM),
+	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
+	render(L, end(procedure), get_pointer, 0, ExtN),
+
+	generate_local_decls(L, SubInstances, Tree, Level, Dims, ExtSets,
+			     Graphs, Publics, SubTypeDecls, SubPointerDecls,
+			     Exts, NodeData),
+
+	append(MainClass, [proc_decls | EndClass], ThisDecl),
+	append(ClassStart, [submodel_decls | ClassEnd], MainClass),
+	append([ClassStart, SubTypeDecls, ClassEnd, Publics, Ext1, Ext2, Exts,
+		ExtM, ExtParanoia, ExtN, EndClass], TypeDecls),
+	append(LocalPtrs, SubPointerDecls, PointerDecls).
+	
+
+generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], []).
+generate_local_decls(L, [Instance | Instances], Tree, Level,
+		     Dims, ExtSets, Graphs,
+		     PublicDecls, TypeDecls, PointerDecls, Exts, NodeData) :-
+	Instance = instance(_,_,_,_, _-SmDims),
+	(is_instance_list(Instance), !,
+	    append(Tree, [Level, -1], DeepTree),
+	    append(Dims, [-1], NewDims);
+	append(Tree, [Level], DeepTree),
+	    append(Dims, SmDims, NewDims)),
+	generate_data_decls(L, Level, NewDims, DeepTree, Instance,
+			    ExtSets, Graphs, LocalPublicDecls,
+			    LocalExts, LocalNodeData),
+	(generate_main_decls(L, Instance, DeepTree, 1,
+			     NewDims, ExtSets, Graphs,
+		    DeepTypeDecls, DeepPointerDecls, DeepNodeData), !;
+	 /* Not a submodel */
+	    [DeepTypeDecls, DeepPointerDecls, DeepNodeData] = [[], [], []]),
+	NewLevel is Level + 1,
+	generate_local_decls(L, Instances, Tree, NewLevel, Dims,
+			     ExtSets, Graphs,
+			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
+			     MoreExts, MoreNodeData),
+	append(LocalPublicDecls, MorePublicDecls, PublicDecls), 
+	append(DeepTypeDecls, MoreTypeDecls, TypeDecls),
+	append(DeepPointerDecls, MorePointerDecls, PointerDecls),
+	append(LocalExts, MoreExts, Exts), 
+	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
+	    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% go through lists of things and extract assignments
+
+/* DeltaForm is used to indicate that nodes that depend on compartments cannot be set at initialization time. For the same reason we include NotionalInputUpdates -- update instructions for the input parameters, which are never actually executed but which are used to make sure nodes that depend on them are evaluated every time step.
+
+update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
+	reassure_user("Generating compartment update expressions"),
+	render(Language, procedure_start,
+	       call(void, do_updatemodel, [real, start_time], 
+			[int, phase]), 0,
+	       UpdateProcDeclText),
+	order_submodel_assignments(Phases, [], DeltaForm,
+				   UpdatePasses, [], _),
+	add_phase_conditions(UpdatePasses, -1, [], UpdateInstructions),
+	all(compile, extract_action, [build(UpdateInstructions),
+	    append(UpdateForm, [])]),
+	do_assign_list( Language, UpdateForm, _, [],
+			[[]], Used, [], Temp, Updates),
+	render(Language, end(procedure), updatemodel, 0, Proc_ending),
+
+	render_all(Language, variable_declaration, Temp, 4, TempDeclText),
+
+	render( Language, comment, 'UPDATE PROCEDURE DECLARATION', 0,
+							UpdateProcDeclComment),
+	render( Language, comment, 'UPDATE COMPARTMENT VALUES', 4,
+							CompComment),
+	render(Language, comment, 'TEMPORARY VARIABLES FOR COMPARTMENT UPDATES',
+				4, TempDeclComment),
+	Blank = [''],
+	append([UpdateProcDeclComment,Blank,UpdateProcDeclText,Blank,
+		 TempDeclComment, Blank, TempDeclText, Blank,
+		 CompComment,Blank,Updates,Blank,
+		 Proc_ending,Blank], Decls).
+*/
+
+build_eval_proc(Language, ProcName, Ordered, Inters, Used,
+		AllGraphs, GraphClearText, Decls) :-
+	add_phase_conditions(Ordered, -1, [], OrderedForm),
+	all(compile, extract_action,
+	    [build(OrderedForm), append(ActionForm, [])]),
+	do_assign_list( Language, ActionForm, 1, [], [[]], 
+			Used, ModelGraphs, Temp1, FuncStatements),
+	all(compile, correct_graph_header,
+	    [build(ModelGraphs), unify(Inters), build(AllGraphs)]),
+
+	render(Language, procedure_start,
+	       call(void, ProcName, [real, start_time], [int, phase]), 0,
+	       EvalProcDeclText),
+	render(Language, end(procedure), ProcName, 0, Proc_ending),
+
+	(\+ AllGraphs = [], !,
+/* following section used to be c only */
+	    generate_graph_handlers(AllGraphs, AllSetups, AllReleases),
+	    render_all(Language, procedure_call, AllReleases,
+		       4, GraphClearText),
+	    render_all(Language, procedure_call, AllSetups,
+		       8, GraphSetupPass),
+	    refer_value(Language, phase, PhRef),
+	    combine(Language, ==, [PhRef, -1], InitExpr),
+	    render(Language, if_start, InitExpr, 4, [GraphSetupCond]),
+	    render(Language, end(cond), initializing, 4, GraphSetupEnd),
+	    append([GraphSetupCond | GraphSetupPass], GraphSetupEnd,
+		   GraphSetupText);
+	        
+	GraphClearText = [],
+		GraphSetupText = []),
+	render_all(Language, variable_declaration, Temp1, 4, TempDeclText1),
+	render( Language, comment, 'EVALUATION PROCEDURE DECLARATION', 0,
+				EvalProcDeclComment),
+	render( Language, comment, 'UPDATE FUNCTION VALUES', 4,
+				FuncComment),
+	Blank = [''],
+
+	append([EvalProcDeclComment,Blank,EvalProcDeclText,Blank,
+	TempDeclText1, Blank,GraphSetupText,Blank,
+	FuncComment,Blank,FuncStatements,Blank,
+	Proc_ending,Blank], Decls).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% build_functions goes throught the functions and calculates their values. The
+% list is ordered and then rendered into the appropriate form for assignment in
+% the relevant language. Ratio is the multiplier to scale values in the inner
+% loop to the standard preferred unit
+
+build_submodel_functions( Language, Phases, Inters, UpdateForm, SortedForm,
+			  Used, ExtPass, AllGraphs, GraphClearText, Decls) :-
+	reassure_user("Ordering model execution assignments"),
+
+	/* first off, unify all matching vm level specs in the two lists so
+	that those that are completed when ordering their condition nodes
+	can be used later */
+	(setof(vm_spec_pair(Name, Phase),
+	      V1^V2^V3^member(make(enumerate(Name), V1, V2,
+			   Phase, V3), SortedForm),
+		  VmSpecPairs),
+	    all(compile, insert_level_enum_phases,
+		[build(VmSpecPairs), unify(UpdateForm)]),
+	    all(compile, insert_level_enum_phases,
+		[build(VmSpecPairs), unify(SortedForm)]), !;
+	true),
+
+	ExtBlocker = make(externs_done, [externs_done], [], 0, []),
+	/* rough and ready -- the two externs_done instructions will each
+	block the other plus anything else dependent on this condition */
+	order_submodel_assignments(Phases, [],
+				   [ExtBlocker, ExtBlocker | SortedForm],
+				   IntOrdered, ExtUsers, _),
+	select(ExtBlocker, ExtUsers, ExtPass),
+	order_submodel_assignments(Phases, [], ExtPass, ExtOrdered, Lost, _),
+	(\+ Lost = [],
+	    select(Awkward, Lost, Others),
+	    \+ (order(Holdup, Awkward), member(Holdup, Others)),
+	    format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Awkward], GoneStr),
+	    name(Gone, GoneStr),
+	    raise_exception(Gone);
+	true),
+	order_submodel_assignments(Phases, [], UpdateForm, OrdUpdates, _,_),
+
+	reassure_user("Generating code for model execution"),
+	/* We want to declare temporary variables separately in each procedure,
+	so make sure building one does not set names for the other */
+	copy_term(OrdUpdates, UpdateCopy),
+	copy_term(IntOrdered, IntCopy),
+	build_eval_proc(Language, updatemodel, UpdateCopy, [], Used,
+			_, _, UpDecls),
+	build_eval_proc(Language, int_evalmodel, IntCopy, Inters, Used,
+		IntGraphs, IntClearText, IntDecls),
+	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Inters, Used,
+		ExtGraphs, ExtClearText, ExtDecls),
+	all(user, append, [build([IntGraphs, IntClearText, IntDecls]),
+			   build([ExtGraphs, ExtClearText, ExtDecls]),
+			   build([AllGraphs, GraphClearText, EvDecls])]),
+	append(UpDecls, EvDecls, Decls).
+
+match_levels([], []).
+match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
+	match_levels(Insts, MoreLevels),
+	(member(Path, MoreLevels), !,
+	    Levels = MoreLevels;
+	Levels = [Path | MoreLevels]).
+
+/* get_circle_from/3: Takes a lot of instructions that contain a circularity,
+and a bunch of same that have already been linked up, and returns a set
+taken from both lists that constitute a circle. Should be obvious how it
+works. */
+
+dummy_order(Steps, Core) :-
+	select(Step, Steps, Rest),
+	\+ (order(Prev, Step),
+	       member(Prev, Rest)), !,
+	    dummy_order(Rest, Core);
+	Core = Steps.
+
+get_circle_from(Steps, [First | Linked], Circle) :-
+	order(Last, First),
+	(append(InLoop, [Last | _], Linked), !,
+	    Circle = [Last, First | InLoop];
+	select(Last, Steps, OtherSteps), !,
+	    get_circle_from(OtherSteps, [Last, First | Linked], Circle)).
+
+/* Procedure to clear memory at end of run */
+
+make_exit_proc(Language, Instances, Dest, GraphClearText) :-
+	render(Language, procedure_start,
+	       call(void, do_exitmodel), 0, FinalProcDeclText),
+
+
+	render_all(Language, clear_memory, Instances, 4, Finalisers),
+
+	render(Language, end(procedure), dummy, 0, Proc_ending),
+
+	render( Language, comment, 'FREE ALL DATA STRUCTURES', 4,
+							FinalProcDeclComment),
+	Blank = [''],
+	append([FinalProcDeclComment, Blank, FinalProcDeclText, Blank,
+		GraphClearText, Blank, Finalisers, Blank,
+		Proc_ending], Decls),
+	send_to_dest(Dest, Decls).
+
+/* correct_graph_headers: building the code for the functions produces graph info
+related to the variable being calculated, including intermediate variables, but when
+editing the graphs at run time we want to refer to them by the final result, so
+here we swap them round... */
+
+correct_graph_header([Inter | G1], Inters, Dest) :-
+	member(instance(internal, inter(_,_, Next), _, Inter, _), Inters), !,
+	    correct_graph_header([Next | G1], Inters, Dest);
+	Dest = [Inter | G1].
+	
+
+unfinished_in(make(L, _,_,_,_), L).
+
+/* merge_inters: takes the fullmodel and a list of function instances
+that have been created to hold intermediate results. Each of the latter
+includes a path spec which enables it to be added to the fullmodel at the
+appropriate point. */
+
+merge_inters([], M, M, []).
+
+merge_inters([Function | Rest], Model, NewModel, Constants) :-
+	Model = model(Functions, Submodels),
+	(Function = instance(internal, inter(Path, _,_), _, Name, Type-Dims),
+	    (append(LowPath, [sm(Top, _,_,_) | _], Path),
+		select(instance(submodel, P2, xrefs(NextModel, X2,X3,X4),
+				Top, P5), Submodels, OtherSubs), !,
+		merge_inters([instance(internal, inter(LowPath, _,_), _, Name, 
+				       Type-Dims)], NextModel, NewNext, []),
+		InterModel = model(Functions, [instance(submodel, P2,
+						      xrefs(NewNext, X2,X3,X4),
+				Top, P5) | OtherSubs]);
+		InterModel = model([Function | Functions], Submodels)),
+	    Constants = MoreConstants;
+	Function = instance(constant, _, Value, Name, Type-Dims),
+	    Constants = [[Type, Name, Dims, Value] | MoreConstants],
+	    InterModel = Model),
+	merge_inters(Rest, InterModel, NewModel, MoreConstants).
+
+/* extract_action: get the action part of a make instruction. */
+
+extract_action(make(Effect, _,_,_, Actions), Actions) :-
+	nonvar(Effect), !; Effect = none.
+
+/* extract_assignments creates the instructions that set the values of compartments
+and functions within a submodel. It also creates the instructions that determine how
+many individuals in each population submodel within it are created each round. */
+
+extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
+		    Inters, UpdateList, AssignList) :-
+	Instance = instance(submodel, _, xrefs(model(Functions, Submodels),
+					       _,_,_), _,_),
+	(setof(ParamUpdate,
+	       input_params_in(Functions, Path, Step, ParamUpdate),
+	       ParamUpdates), !;
+	ParamUpdates = []),
+	all(compile, get_assignment,
+	    [build(Functions),
+	     unify(Path), unify(Step), unify(Swaps),
+	     unify(Used), append(Inters0, []),
+	     append(UpdateList0, []), append(AssignList0, ParamUpdates)]),
+	all(compile, extract_submodel_assignment,
+	    [build(Submodels),
+	     unify(Functions), unify(Path),
+	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
+	     append(Inters, Inters0), append(UpdateList, UpdateList0),
+	     append(AssignList, AssignList0)]).
+
+biggest(B1, B2, Big) :-
+	Big is max(B1, B2).
+
+/* extract_submodel_assignment: this goes through the model listing all the expressions,
+and generating any intermediate nodes that are needed. We then make a version
+of the full model augmented with the extra nodes. */
+
+extract_submodel_assignment(Instance, ParentFns,
+			    Path, Swaps, TopStep, MaxStep, Used,
+			    Inters, UpdateList, AssignList) :-
+
+	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
+			    Name, _-Dims),
+	time_step_for(SmName, TopStep, Step),
+	caption_for(SmName, PCapt),
+	format_to_chars("Creating submodel value expressions -- currently doing ~a", [PCapt], InfoString),
+	dialogue:reassure_user(InfoString),
+
+	Model = model(Functions, _),
+	pointer_from(Path, Ptr),
+	/* bug flusher! (nonvar(Ptr); append_atoms(Name, pointer, Ptr)), */
+	path_section_for(SmName, Name, Dims, Level, Ptr, NewPtr),
+	append(Level, Path, LocalPath),
+	/* Do not allow an associated model to be started until its
+	bases have all been enumerated */
+
+	get_swaps_and_waits(Instance, Bases, in, InSwaps, 
+			    CurrentBaseMembershipsSet),
+	get_swaps_and_waits(Instance, Assocs, out, OutSwaps,
+			    LastLocalMembershipUsed),
+	append([Swaps, InSwaps, OutSwaps], NewSwaps),
+	append(CurrentBaseMembershipsSet, LastLocalMembershipUsed,
+	       BasesEnumerated),
+	
+/* Now add the special instructions for more exotic types of submodels. The new_member
+instruction is generated immediately after the pointer initialization (i.e., to run in
+the init phase) for create nodes, and in the execute phase for immigration nodes, along
+with dedicated instructions for reproduction and loss nodes. The latter all go in one
+instruction because they will not require individual initialization routines. */
+
+        (is_population(SmName), !,
+	    BaseSides = [],
+	    append_atoms(Name, count, CountName),
+	    SmInters = [instance(internal, inter(LocalPath, _,_), _, parentId,
+				 int-[]),
+			instance(internal, inter(LocalPath, _,_), _, channelId,
+				 int-[]),
+			instance(internal, inter(Path, _,_), _, CountName,
+				 int-[])],
+	    /* generate instructions for each immigration, reproduction  etc.
+	    node...*/
+	    Level = [sm(_,_,_, vm_loop(_,_,_, Step))],
+	    (setof(make(created(Name), [culled(Name), InitSpec], Path, 0,
+		[new_member(Ptr, Name, create(InitSpec))]),
+		   InitName^X^U^(SmName has_part InitName,
+			member(instance(creation, InitName, X,
+					elt(_, InitSpec, _), U), ParentFns)),
+		   CreateRules), !; 
+	    CreateRules = []),
+
+	    (setof(LossBox, member(instance(loss, _,_, elt(_, LossBox, _), _),
+				   Functions), Losses), !;
+	    Losses = []),
+	    LossRules = [make(culled(Name), [startable(Name),
+					     time | BasesEnumerated],
+			Path, Step, [lose(Step, Ptr, Name, Losses)])],
+
+	    (setof(make(bred(Name), [culled(Name), time], Path, Step,
+			[reproduce(Ptr, Name, InitSpec)]),
+		   S^X^U^member(instance(reproduction, S,X,
+					 elt(_, InitSpec, _), U),
+			  Functions),
+		   ReproRules), !; 
+	    ReproRules = []),
+
+	    (setof(make(settled(Name), [culled(Name), time, InitSpec], Path, Step,
+		[new_member(Ptr, Name, immigrate(InitSpec))]),
+		   InitName^X^U^(SmName has_part InitName,
+		   member(instance(immigration, InitName, X,
+				   elt(_, InitSpec, _), U),
+			  ParentFns)),
+		   ImmigRules), !; 
+	    ImmigRules = []),
+	    
+	    /* Something that will be done in the initialization procedure, to make sure we don't try to create any before we can run this procedure */
+	    append_atoms(Name, count, Count),
+	    append([[make(can_enter(Name), [created(Name), settled(Name),
+					    bred(Name), culled(Name)],
+			  Path, Step, []),
+		    make(enumerate(Name), [can_enter(Name)],
+			 LocalPath, Step, []),
+		    make(init_list(Name), [], Path, Step,
+			 [assign(arr(Ptr, Name, []), 0)]),
+		    make(startable(Name), [init_list(Name), on_reset], Path,
+			 Step, [reset_list(Ptr, Name),
+			  assign(arr(Ptr, Count, []), 0)]) | CreateRules],
+		   ImmigRules, ReproRules, LossRules], Specials);  
+
+	/* For variable-membership submodels we must not run the generate step
+	    before the bases are enumerated because running it prevents the
+	    model's initialization being moved outside that of its parent */
+
+	variable_size(SmName), !,
+	    SmInters = [],
+	    all(compile, get_base_side,
+		[unify(LocalPath), build(InSwaps), build(BaseSides)]),
+	    /* reverse(RevBaseSides, BaseSides),
+	    this was necessary so index meanings are compatible with earlier
+	    versions (not that they were...) */
+	    Level = [sm(_,_,_, vm_loop(_IndCount, Dims, BaseSides, _))],
+	    (setof(CondBox,
+		   member(instance(condition, _,_, elt(_, CondBox, _), _),
+			  Functions), Conds), !,
+		TestExpr = Conds;
+	    /* dummy generator node for other variable membership submodels */
+	    Conds = [], TestExpr = 1),
+	    all(compile, convert_base_specs,
+		[build(BasesEnumerated), build(BasesCleared)]),
+
+	    /* can_enter is needed to do anything in the model, but it must
+	    be an explicit precondition of existence_tested to make sure it
+	    happens in the right phase */
+	    Specials = [make(existence_tested(Name), [can_enter(Name) | Conds],
+			     LocalPath, Step, [test(Name, NewPtr, TestExpr)]),
+			make(enumerate(Name), [existence_tested(Name)],
+			     LocalPath, Step, []),
+			make(can_enter(Name),
+			     [startable(Name) | BasesEnumerated], Path, Step,
+			     []),
+			make(init_list(Name), [], Path, Step,
+			     [assign(arr(Ptr, Name, []), 0)]),
+			make(startable(Name), [init_list(Name) | BasesCleared],
+			     Path, Step, [reset_list(Ptr, Name)])];
+	[BaseSides, SmInters, Specials] = [[], [], []]),
+
+	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps,
+			    Used, FnInters, UpdateList, AssignList0),
+	append(FnInters, SmInters, Inters),
+	append(Specials, AssignList0, AssignList).
+
+get_base_side(Locale, path_substitution(Exited, Entered, _), Exited) :-
+	prefix(Entered, Locale), !;
+	prefix(Locale, Entered).
+
+get_swaps_and_waits(instance(submodel, ID, _,_,_), FarEnds, _, [], []):-
+	var(FarEnds),
+	    caption_for(ID, Lost),
+	    format_to_chars("This model cannot be built because submodel ~a has a role arrow connecting it to a submodel in a separate executable module.", [Lost], RoleWibbleStr),
+	    name(RoleWibble, RoleWibbleStr),
+	    raise_exception(RoleWibble);
+	FarEnds = [].
+
+get_swaps_and_waits(Instance, [base(Assoc, Link, Ptrs) | Rest], Dir,
+	  [path_substitution(Exited, Entered, Link) | MorePathSwaps], Waits) :-
+	find_name_host(Link, LinkWithAttrs),
+	(LinkWithAttrs has_attribute last_membership of Delay, !;
+	Delay = 0),
+	
+	(Dir = out,
+	    get_route_between(Instance, Assoc, Exited, Entered),
+	    Entered = [sm(_,_,_, vm_loop(_,_, AssocSides, _)) | _],
+	    Assoc = instance(submodel, _, xrefs(_,_, Bases, _), _,_),
+	    get_swaps_and_waits(Assoc, Bases, in, SwapsBack, _),
+	    all(compile, get_base_side, [unify(Entered), build(SwapsBack),
+					 build(AssocSides)]),
+	    /* reverse(RevAssocSides, AssocSides),
+	    Keeping my fingers crossed that removing this will not affect
+	    operation*/
+	    member(base(Instance, Link, FarPtrs), Bases),
+	    get_base_ptrs(Exited, _, FarPtrs),
+	    (Delay = 1, !,
+		wait_for_submodels(Entered, TheseWaits);
+	    TheseWaits = []);
+	Dir = in,
+	    get_route_between(Assoc, Instance, Exited, Entered),
+	    get_base_ptrs(Exited, _, Ptrs), /* this actually sets them */
+	    (Delay = 0, !,
+		wait_for_submodels(Exited, TheseWaits);
+	    TheseWaits = [time])),
+	
+	get_swaps_and_waits(Instance, Rest, Dir, MorePathSwaps, OtherWaits),
+	append(TheseWaits, OtherWaits, Waits).
+
+convert_base_specs(time, on_reset).
+convert_base_specs(enumerate(Model), startable(Model)).
+
+get_route_between(Start, Finish, Exited, Entered) :-
+	ancestor(Start, Top, Exited, TopPtr, _),
+	ancestor(Finish, Top, Entered, TopPtr, _), !.
+
+ancestor(Instance, Instance, [], Ptr, Ptr).
+ancestor(instance(submodel, SmName, xrefs(_, Parent, _, _), Name, _-SmDims),
+	 Instance, Path, TopPtr, LoPtr) :-
+	path_section_for(SmName, Name, SmDims, Level, HiPtr, LoPtr),
+	ancestor(Parent, Instance, Higher, TopPtr, HiPtr),
+	append(Level, Higher, Path).
+
+name_from_elt(FullRef, Cond) :-
+	(FullRef = IName*_Scale, !; FullRef = IName),
+	IName = in_hierarchy(elt(Path, Name, _), none, _),
+	wait_for_submodels(Path, Waits),
+	(Name = import(_,_,_,_,_, PhaseSet, Src, _), !,
+	(PhaseSet = 0, !,
+	    Cond = [Waits];
+	Cond = [Src | Waits]);
+	Cond = [Name | Waits]).
+
+insert_ptr(Path, search_from(_, Name, Ptr)) :-
+	member(sm(Name, _, Ptr, _), Path).
+
+/* get_assignments takes the list of instance functions for all the
+things that need to be evaluated in the model and turns them into a
+list of 'make' functions which include information about how to order
+the actions corresponding to them.*/
+
+get_assignment(instance(AssignType, Node, Source, DestRef, _),
+	       DestPath, Step, Swaps, Used, Inters, Updates, Assignments) :-
+	AssignType = external, !,
+	    (Inters = [],
+	    Source = for_extern(CondElts, Tops),
+	    all(compile, insert_ptr, [unify(DestPath), build(Tops)]),
+	    all(compile, name_from_elt, [build(CondElts), append(Conds, [])]),
+	    DestRef = elt(_, Dest, _),    
+	    pointer_from(DestPath, Ptr),
+	    ptr_to_last_vm(DestPath, BuiltWith),
+	    append(Tops,
+		   [ext_eval_submodel(Node, arr(Ptr, Dest, []), BuiltWith)],
+		   Insts),
+	    Assignments = [make(Dest, [time], DestPath, _,
+				[int_eval_submodel(Node, arr(Ptr, Dest, []),
+						   BuiltWith)]),
+			   make(Dest, [time | Conds], DestPath, _, Insts)],
+	    Updates = [make(Dest, [time], DestPath, _,
+				[update_submodel(Node, arr(Ptr, Dest, []),
+						   BuiltWith)])]);
+	    /* Only make assignments for functions, for now, and
+	    Do not make an assignment if we are expecting one from outside*/
+	(is_parameter(Node, Is_P),
+	    0 >= Is_P,
+	    (member(AssignType, [init_function, function]),
+		Actions = Assignments,
+		Updates = [],
+		SourceEqn = Source;
+	    member(AssignType, [compartment, fp_compartment,
+				immigration, reproduction]),
+		Actions = Updates,
+		Assignments = [],
+		Source = incr(dt(Step), SourceEqn)), !,
+		DestRef = elt(_, Dest, _),    
+		final_assignment(SourceEqn, DestRef, Swaps, Step,
+				 Used, Expr, Setups, Path, RefList,
+				 AllInters),
+
+	/* on_reset is a special condition that makes sure compartment
+	    initializations are done in phase 0 rather than -1 */
+	(AssignType = init_function, !,
+	    UseStep = 0,
+	    UseList = [on_reset | RefList];
+	UseStep = Step,
+	    UseList = RefList),
+	connect_params([make(Dest, UseList, Path, UseStep, Expr) | Setups],
+		      Dest, AllInters, Actions, Inters);
+	Inters = [],
+	    Updates = [],
+	    Assignments = []).
+
+/* Now...when using a variable in the equation I have been putting
+'made_at' in the conditions, the idea being that I have to exit any
+loops that build the variable before accessing a value with a
+different index at that level, so as to make sure they are all
+made. This checks which indices are different, and makes 'made_at'
+(renamed 'made_for') at that level. */
+
+connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
+	select(make(Tgt, Conds, Path, Step, Acts), AllInsts, LeftInsts),
+	select(made_at(Param, OrigPath), Conds, MoreConds), !,
+	    get_common_path(Path, OrigPath, CommonPath),
+	    (CommonPath = OrigPath, !,
+		(Dest = Param, !,
+		/* Case to allow prev(0) to work like rollover */
+		    ChangedInsts = [make(Tgt, MoreConds, Path, Step, Acts)
+				   | LeftInsts];
+		ChangedInsts = [make(Tgt, [Param | MoreConds], Path, Step,
+				     Acts) | LeftInsts]);
+	    ChangedInsts = [make(Tgt, [made_for(Tgt, Param) | MoreConds], Path,
+				 Step, Acts),
+		     make(made_for(Tgt, Param), [Param], CommonPath, Step, [])
+		    | LeftInsts]),
+	    LeftInters = AllInters,
+	    connect_params(ChangedInsts, Dest, LeftInters, Insts, Inters);
+	Insts = AllInsts,
+	    Inters = AllInters.
+
+/* (was) in a Geraint stylee -- may need speeding up */
+get_common_path(Path, OrigPath, CommonPath) :-
+	suffix(CommonPath, OrigPath),
+	/* sublist */ suffix(MatchPath, Path),
+	MatchPath == CommonPath, !.
+	
+swap_vars(switch(Take, Add), Tgt, Add, 0) :-
+	nonvar(Tgt), Tgt = Take.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+/*
+get_updates([], _, []).
+
+get_updates([instance(Type,_, incr(dt(Step), Expr), DestRef, _)
+	    | Compartments], Step, Updates) :-
+	member(Type, [compartment, fp_compartment,
+		       immigration, reproduction]), !,
+	DestRef = elt(_, Dest, _),
+	final_assignment(Expr, DestRef, [], Step, _, NewAssign, _, Path, _,_),
+	Updates = [make(Dest, [], Path, Step, NewAssign) | Rest],
+	get_updates( Compartments, Step, Rest).
+
+get_updates([instance(Type, Node, _, DestRef, _)
+	    | Compartments], Step, Updates) :-
+	Type = external, !,
+	    DestRef = elt(Path, Dest, _),
+	    pointer_from(Path, Ptr),
+	    Updates = [make(none, [], Path, _,
+			       [update_submodel(Node, arr(Ptr, Dest, []), [])])
+		      | Rest],
+	get_updates( Compartments, Step, Rest).
+
+get_updates([_ | Comps], Step, Done) :-
+	get_updates(Comps, Step, Done).
+
+extract_updates(Instance, Path, Step, BaseStep, Updates) :-
+	Instance = instance(submodel, _, xrefs(model(Functions, Submodels),
+					       _,_,_), _,_),
+	get_updates(Functions, Step, Updates0),
+	extract_submodel_updates(Submodels, Path, Step, SubStep, Updates1),
+	BaseStep is max(Step, SubStep),
+	append(Updates1, Updates0, Updates).
+
+extract_submodel_updates([Instance | Submodels], Path, TopStep,
+			 BaseStep, Updates) :-
+	Instance = instance(submodel, SmName, _, Name, _-Dims),
+	time_step_for(SmName, TopStep, Step),
+	pointer_from(Path, Ptr),
+	(variable_size(SmName), !,
+	    NextPath = [sm(Name, Ptr, _, vm_loop(0, _,_,_)) | Path];
+	make_inds_for(Dims, Loops, Inds),
+	    append([sm(Name, Ptr, _, fm_loop(Inds)) | Loops], Path,
+		   NextPath)),
+
+	extract_updates(Instance, NextPath, Step, NextStep, Updates0),
+	extract_submodel_updates(Submodels, Path, TopStep,LaterStep, Updates1),
+	append(Updates0, Updates1, Updates),
+	BaseStep is max(NextStep, LaterStep).
+
+extract_submodel_updates([], _,_, 0, []).
+*/
+/* input_params_in: This previously just made dummy assignments to input
+parameters so things using them could be put in the right timestep. However
+with version 2.34 it also makes the 'collect' functions whereby parameters ask
+for values from the execution environment. */
+
+input_params_in(Vars, SmPath, SmStep,
+		make(Val, Wait, Path, Step, [CollectFn])) :-
+	member(instance(Type, Param, _, elt(_, Val, _), _-Dims), Vars),
+	member(Type, [function, init_function]),
+	is_parameter(Param, ParamType),
+	ParamType > 0,
+	pointer_from(SmPath, DestPtr),
+	get_dims_from_loops(SmPath, _, SmInds),
+	make_inds_for(Dims, LocalPath, LocalInds),
+	append(LocalPath, SmPath, Path),
+	append(SmInds, LocalInds, Inds),
+	(ParamType = 2,
+	    (Type = function, Step = -1, Wait = [];
+	    Type = init_function, Step = 0, Wait = [on_reset]),
+	    UseInds = Inds;
+	ParamType = 1,
+	    Step = SmStep, Wait = [time],
+	    use_for_slider(Inds, UseInds)),
+	length(UseInds, Count),
+	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
+		      | UseInds].
+
+use_for_slider(Inds, UseInds) :-
+	reverse(Inds, RevInds),
+	(member(Ind, RevInds),
+	    var(Ind), !,
+	    UseInds = [Ind];
+	UseInds = []).
+
+/* sort_assignments: if a value makes no reference to time, and all
+its conditions are evaluated on a long time step, it can also be
+evaluated on that long time step. We start off looking for what can be
+evaluated on step 0 (initialization) then 1, and so on. Assume no
+compartments are updated on step 0 -- that would be silly! */
+
+sort_assignments(Instructions, Compartments, Phase, SortedForm) :-
+	Instructions = [], !,
+	    SortedForm = Instructions;
+	(select(make(Efx, Conds, Path, Phase, Acts), Instructions, Others);
+	get_next_evaluation(Instructions, Compartments, _,_, Others,
+			    make(Efx, Conds, Path, DefP, Acts)),
+	    \+ (Phase < DefP, member(time, Conds))), !,
+	    sort_assignments(Others, Compartments, Phase, MoreSorted),
+	    SortedForm = [make(Efx, Conds, Path, Phase, Acts) | MoreSorted];
+	ShorterPhase is Phase+1,
+	    purge(Compartments, [make(_,_,_, ShorterPhase, _)], Fluctuators),
+	    sort_assignments(Instructions, Fluctuators, ShorterPhase,
+			     SortedForm).
+
+/* delay_clearing: what this one does is, when you have a running total it
+makes sure that the value is zeroed in the same phase as the total is
+incremented, otherwise we may add the values to it several times. Note that
+thanks to the radical implementation of subtotal, one total may have more than
+one clearing instruction. */
+
+delay_clearing(Mess, [make(clearing(Total), CConds, CPath, IPhase, CAct), 
+		      make(cleared(Total), DConds, DPath, IPhase, DAct)
+		     | Better]) :-
+	select(make(clearing(Total), CConds, CPath, CPhase, CAct), Mess,
+	       Mess1),
+	member(make(Total, _,_, IPhase, _), Mess1),
+	IPhase > CPhase, !,
+	    select(make(cleared(Total), DConds, DPath, CPhase, DAct), Mess1,
+		   Mess2),
+	    delay_clearing(Mess2, Better).
+
+delay_clearing(Neat, Neat).
+	
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% order_assignments puts a list of make instructions (1) into order so that things are
+% calculated when they're used. 2nd argument is the submodel path of the last
+% one chosen; we prefer to keep assignments in a given submodel together, and
+% move only along hierarchical lines.
+
+/* New version where instead of being separated into lists for the different
+phases, the instructions have an extra argument to say which phase they go in,
+allowing there to be more than two. */
+
+order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
+	order_phase(Phase, Path, RawAssign, ThisPhase, Later),
+	(unfinished_submodels(RawAssign, Phase, Path, Subs),
+	    member(SmLevel, Subs),
+	    /* Do not run a submodel with an outstanding 'can_enter' */
+	    \+ made_in(can_enter, SmLevel, Later),
+
+	    /* try something from what is left -- no commitment yet */
+	    get_pass_ends(SmLevel, StartPass),
+	    extract_action(FinishPass, [finish_level]),
+	    order_submodel_assignments(Phase, [SmLevel | Path], Later,
+				       SubPasses, LaterYet, TestPhase),
+	    /* don't go to a level where I can't do anything (note test for
+	    having done something is on what is outstanding, as there may
+	    not actually have been any new commands generated!) */
+	    \+ LaterYet = Later,
+	    /* do not go into a sumbodel if I cannot get the existence
+	    test done by the time I come out */
+	    \+ made_in(existence_tested, SmLevel, LaterYet),
+	   	    
+	    /* OK, have I just done an existence test for it? */
+	    (number(TestPhase),
+		
+		/* yes: if test was done in a level above current,
+		this is the chosen submodel: set conditions for testing new
+	        instances. */
+	    
+	        (TestPhase < Phase,
+		    GenCond = TestPhase;
+		GenCond = old), !,
+		/* and add extra loops that go around generate statement --
+		record test phase to use in later new instance tests */
+		SmLevel = sm(Submodel, ParentPtr, Ptr,
+			     vm_loop(_, Dims, MoreLoops, _)),
+		ptr_to_last_vm(Path, ParentNew),
+		make_inds_for(Dims, Sets, LocalInds),
+		all(compile, ptr_to_last_vm,
+		    [build(MoreLoops), append(VMPtrs, ParentNew)]),
+		append([Sets | MoreLoops], BLoops),
+		reverse(BLoops, AllLoops),
+		all(compile, get_pass_ends,
+		    [build(AllLoops), build(OpenLoops)]),
+		all(inters, indices_for,
+		    [build(AllLoops), append(LoopInds, [])]),
+		append(LoopInds, LocalInds, Inds),
+		get_base_ptrs(BLoops, _, BasePtrs),
+		extract_action(Outer, [bound_gen_loop(ParentPtr, Submodel)]),
+		extract_action(GenStep, [generate(Submodel, ParentPtr,
+				Ptr, GenCond, VMPtrs, Inds, BasePtrs)]),
+		SmNew = [new_context(Ptr, TestPhase)],
+		append([Outer | OpenLoops], [GenStep], FirstStep),
+		length(FirstStep, LoopCount),
+		list_of(FinishPass, LoopCount, LastStep);
+		
+	    /* no: just use start_submodel -- or give up on this
+	    submodel if it was enumerated in a shorter time step than we
+	    are doing now, or we might end up failing to set some values
+	    in new ones */
+
+	    \+ (SmLevel = sm(_,_,_, vm_loop(_,_,_, EnumPhase)),
+		   EnumPhase > Phase), !,
+		ptr_to_last_vm([SmLevel | Path], SmNew),
+		FirstStep = [StartPass],
+		LastStep = [FinishPass]),
+	    /* Now put new/timing conditions round higher-level passes */
+	    add_phase_conditions(SubPasses, -1, SmNew, CondPass),
+
+	    /* Now if I have done some submodel assignments, recurse at
+		the same level */
+	    order_assignments(Phase, Path, LaterYet, MoreOrdered, Left),
+	    append([ThisPhase, FirstStep, CondPass, LastStep, MoreOrdered],
+		   OrderedAssign);
+	OrderedAssign = ThisPhase,
+	    Left = Later).
+
+ptr_to_last_vm(Path, Ptrs) :-
+	member(sm(_,_, Ptr, vm_loop(_,_,_,Phase)), Path), !,
+	    Ptrs = [new_context(Ptr, Phase)];
+	Ptrs = [].
+
+get_base_ptrs([], [], []).
+get_base_ptrs([Level | AlsoExited], Names, Ptrs) :-
+	(Level = sm(Model, _, Ptr, _),
+	    Names = [Model | NOthers],
+	    Ptrs = [Ptr | POthers];
+	Level = set(_,_),
+	    Names = NOthers,
+	    Ptrs = POthers),
+	get_base_ptrs(AlsoExited, NOthers, POthers).
+
+/* No need for a phase test on the last group, it is always executed
+add_phase_conditions([LastPhase], _,_, LastPhase) :- !.
+...actually there is because this might be a separate submodel in a
+large model with more phases, so... */
+add_phase_conditions([], _,_, []).
+
+add_phase_conditions([Group | Groups], Phase, Ptrs, Insts) :-
+	NextPhase is Phase+1,
+	add_phase_conditions(Groups, NextPhase, Ptrs, Rest),
+	(Group = [], !, Insts = Rest;
+	all(compile, relevant, [unify(Phase), build(Ptrs),
+				append(UsePtrs, [])]),
+	    extract_action(StartGroup, [check_phase(Phase, UsePtrs)]),
+	    extract_action(FinishGroup, [finish_level]),
+	    append([StartGroup | Group], [FinishGroup | Rest], Insts)).
+
+relevant(Phase, new_context(Ptr, EnumPhase), UseContext) :-
+	Phase < EnumPhase, !,
+	    UseContext = [new_context(Ptr, EnumPhase)];
+	UseContext = [].
+
+order_phase(Phase, Path, RawAssign, ThisPass, Later) :-
+	pick_useful_instruction(RawAssign, [], Path, Instruction),
+	get_next_evaluation(RawAssign, [], Path, Phase, Others, Instruction),
+	    order_phase(Phase, Path, Others, Rest, Later),
+	    ThisPass = [Instruction | Rest], !;
+	ThisPass = [],
+	    Later = RawAssign.
+
+/* insert_level_enum_phases: when we find an enumerate instruction, we want to
+make sure that any time later we go into its submodel, the path will tell us
+which phase the submodel was enumerated (had its membership decided) in. So
+here we instantiate the 4th arg of vm_loop to the phase in all the paths... */
+
+insert_level_enum_phases(_, []).
+
+insert_level_enum_phases(vm_spec_pair(Name, Phase),
+			 [make(_,_, Path, _,_) | Insts]) :-
+	(member(sm(Name, _,_, vm_loop(_,_,_, Phase)), Path), !; true),
+	insert_level_enum_phases(vm_spec_pair(Name, Phase), Insts).	
+
+/* This one just inserts the shortest time step into any undecided phases */
+set_free_phases([], _).
+set_free_phases([make(_,_,_, Ph, _) | Insts], Phases) :-
+	(nonvar(Ph); Ph = Phases),
+	set_free_phases(Insts, Phases).
+
+made_in(Feature, sm(Submodel, _,_,_), Pass) :-
+	Test =.. [Feature, Submodel],
+	member(make(Test, _,_,_,_), Pass).
+
+order_submodel_assignments(Phase, Path, RawAssign,
+			   OrderedPasses, Left, FoundTest) :-
+	Phase < -1, !,
+	    OrderedPasses = [],
+	    Left = RawAssign;
+	NextPhase is Phase-1,
+	    order_submodel_assignments(NextPhase, Path, RawAssign,
+				       HighPasses, Later, DoneTest),
+	    (number(DoneTest), !,
+		OrderedPasses = HighPasses,
+		Left = Later,
+		FoundTest = DoneTest;
+	    order_assignments(Phase, Path, Later, LastPass, Left),
+		(Path = [TestModel | _],
+		made_in(existence_tested, TestModel, LastPass), !,
+		    FoundTest = Phase;
+		true),
+		append(HighPasses, [LastPass], OrderedPasses)).
+
+get_pass_ends(Level, StartInit) :-
+	Level = catch(Ind, Bound), !,
+	    extract_action(StartInit, [catch(Ind, Bound)]);
+	Level = set(Ind, IndSrc), !,
+	    extract_action(StartInit, [open_index(Ind, IndSrc)]);
+	Level = sm(Submodel, ParentPtr, Ptr, Inds),
+	    extract_action(StartInit,
+		[start_submodel(Submodel, ParentPtr, Ptr, Inds)]).
+
+prepares(V, F) :-
+	member(F, [element(V), increment(V)]).
+
+/* Choose next submodel in which to evaluate assignments. */
+
+unfinished_submodels([], _,_, []).
+
+unfinished_submodels([make(_,_, Path, FoundPhase, _) | Waiting],
+		     Phase, Current, Subs) :-
+	unfinished_submodels(Waiting, Phase, Current, MoreSubs),
+	(suffix([Sub | Current], Path), Phase >= FoundPhase, !,
+	    (member(Sub, MoreSubs), !,
+		Subs = MoreSubs;
+	    Subs = [Sub | MoreSubs]);
+	Subs = MoreSubs).
+
+get_next_evaluation(Assignments, Deferred, Path, Phase, Remainder, Next) :-
+	select(Next, Assignments, Remainder),
+	Next = make(_, Dependencies, Path, Phase, _),
+
+	\+ (member(Prereq, Dependencies ),
+	    member_either(make(Prereq, _,_,_,_), Deferred, Remainder)).
+
+pick_useful_instruction(Assignments, Deferred, Path, Next) :-
+	suffix(TestPath, Path), /* get longest suffix first */
+	Priority = make(existence_tested(_), _, TestPath, _,_),
+	member_either(Priority, Assignments, Deferred), !,
+	    select_for(TestPath, Priority, Next, Assignments, Deferred);
+	true.
+
+/* select_for will return priority node or an action that leads to it. */
+
+select_for(Path, Priority, Next, Assignments, Deferred) :-
+	Next = Priority;
+	order(Needed, Priority),
+	    member_either(Needed, Assignments, Deferred),
+	    Needed = make(_,_, GenPath, _,_),
+	    suffix(Path, GenPath),
+	    select_for(Path, Needed, Next, Assignments, Deferred).
+
+order(make(Effect, _,_,_,_), make(_, Conds, Path, _,_)) :-
+	member(Effect, Conds);
+	Effect = can_enter(Model),
+	member(Model, Path).
+
+member_either(X, A, B) :-
+	member(X, A);
+	member(X, B).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+generate_graph_handlers([], [], []).
+
+generate_graph_handlers([[_, _, PointerData | NumericalData] | AllGraphs],
+		[Setup | AllSetups], 
+		[release_graph_data(PointerData) | AllReleases]) :-
+	Setup =.. [setup_graph_data, PointerData | NumericalData],
+	generate_graph_handlers(AllGraphs, AllSetups, AllReleases).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% name_components instantiates the unground parts of InstanceList which correspond
+% with components, using names specified in the KR or generated ones if no 
+% specified names exist.
+
+name_components( _, [], _).
+
+name_components(Language, [instance(Type, Node, _, elt(_, Var, _), _)
+			  | Compartments], Used) :-
+	(\+ member(Type, [function, init_function, fp_compartment, external]),
+	    !;
+	caption_for(Node, Name),
+	    generate_name( Language, Name, Var, Used)),
+	name_components( Language, Compartments, Used).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+send_to_dest(_, []).
+
+send_to_dest(Stream, Stuff) :-
+	do_writing(Stuff, Stream).
