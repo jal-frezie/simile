@@ -52,7 +52,11 @@ tk_callback(Data) :-
 
 new_chop_list(Left, Done, Depth, Args) :-
 	Left = [Here | More], !,
-	    (Here = 32,
+	    (Here = 92, /* backslash: next char escaped */
+	        More = [Escd | YetMore], !,
+		append(Done, [Here, Escd], NewDone),
+		new_chop_list(YetMore, NewDone, Depth, Args);
+	    Here = 32,
 	    Depth = 0, !,
 		new_chop_list(More, [], 0, MoreArgs),
 		(Done = [], !,
@@ -69,7 +73,8 @@ new_chop_list(Left, Done, Depth, Args) :-
 		new_chop_list(More, NewDone, NewDepth, Args));
 	\+ Done = [], !,
 	    format_to_chars("Incomplete argument ~s at end of line", [Done],
-			    Error),
+			    ErrorStr),
+	    name(Error, ErrorStr),
 	    raise_exception(Error);   
 	Args = [].
 
