@@ -32,14 +32,14 @@ namespace eval tabular11510 {
 	    ::graphtools::MakeToolBar $winId $toolbarItems
 	}
 
-	scrollbar $winId.sy -command [list $winId.t yview]
-	scrollbar $winId.sx -command [list $winId.t xview] \
+	scrollbar $winId.yscroll -command [list $winId.t yview]
+	scrollbar $winId.xscroll -command [list $winId.t xview] \
 	    -orient horizontal
 
 	pack [frame $winId.f] -fill both
 	pack [label $winId.f.mess] ;# for instructions
-	pack $winId.sx -side bottom -fill x
-	pack $winId.sy -side right -fill y
+	pack $winId.xscroll -side bottom -fill x
+	pack $winId.yscroll -side right -fill y
 	CreateTable $winId
 	SaveState $winId
     }
@@ -50,8 +50,8 @@ namespace eval tabular11510 {
 	    -rowtagcommand [namespace code rowProc] \
 	    -coltagcommand [namespace code colProc] \
 	    -rowseparator \n -colseparator \t \
-	    -yscrollcommand [list $winId.sy set] \
-	    -xscrollcommand [list $winId.sx set]
+	    -yscrollcommand [list AdjustCanvas $winId t y] \
+	    -xscrollcommand [list AdjustCanvas $winId f x]
 	pack $winId.t -fill both -expand true
 
 #	$winId.t set 0,0 Time

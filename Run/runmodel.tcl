@@ -19,16 +19,16 @@ proc AdjustScroll {canvas dir args} {
     }
 }
 
-proc AdjustCanvas {winId dir args} {
+proc AdjustCanvas {winId pt dir args} {
     set tgt $winId.${dir}scroll
     # hide scrollbar if full size
     if {[string match {0 1} $args]} {
         pack forget $tgt
     } else {
         if {[string match x $dir]} {
-            set placing {-side bottom -after $winId.toolSlot}
+            set placing {-side bottom -after $winId.$pt}
         } else {
-            set placing {-side right -before $winId.canvas}
+            set placing {-side right -before $winId.$pt}
         }
         eval {pack $tgt} $placing {-fill $dir}
         eval {$tgt set} $args
@@ -59,8 +59,8 @@ proc ModelWindow {winName} {
     # Create a scrollable canvas
     set c [canvas $winName.canvas \
             -confine 1 \
-            -xscrollcommand "AdjustCanvas $winName x" \
-            -yscrollcommand "AdjustCanvas $winName y" \
+            -xscrollcommand "AdjustCanvas $winName toolSlot x" \
+            -yscrollcommand "AdjustCanvas $winName canvas y" \
             -xscrollincrement 1 -yscrollincrement 1]
     # scrollincrements set the only way we can get precise scrolling...
     

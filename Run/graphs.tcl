@@ -642,7 +642,8 @@ proc MakeFrames {windowId} {
     set canId $windowId.c.canvas
 #    pack [frame $windowId.buttonframe] -side bottom
     ScrollableFrame $canId -yscrollincrement 1 \
-            -yscrollcommand [list AdjustCanvas $windowId.c y] -constrainedwidth true
+	-yscrollcommand [list AdjustCanvas $windowId.c canvas y] \
+	-constrainedwidth true
     scrollbar $windowId.c.yscroll -orient v -command [list $canId yview]
     
     pack $windowId.c.yscroll -side right -fill y
