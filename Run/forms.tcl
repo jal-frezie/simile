@@ -1658,13 +1658,14 @@ proc ContextSensitiveHelp {context page} {
         exec open -a "Help Viewer" ../Help/$page
     } else {
         set url [pwd]/../Help/$page
-        expr {
-            [info exists env(BROWSER)] ||
-            [findExecutable mozilla        env(BROWSER)] ||
-            [findExecutable netscape       env(BROWSER)] ||
-            [findExecutable iexplorer      env(BROWSER)] ||
-            [findExecutable lynx           env(BROWSER)]
-        }
+	if {![info exists env(BROWSER)]} {
+	    foreach possBrowser {mozilla netscape iexplorer lynx} {
+		set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+		if {[llength $env(BROWSER)]} {
+		    break
+		}
+	    }
+	}
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
@@ -1677,15 +1678,6 @@ proc ContextSensitiveHelp {context page} {
             }
         }
     }
-}
-
-proc findExecutable {progname varname} {
-    upvar 1 $varname result
-    set progs [auto_execok $progname]
-    if {[llength $progs]} {
-        set result [lindex $progs 0]
-    }
-    return [llength $progs]
 }
 
 proc CheckHyper {ywhat} {
@@ -1750,20 +1742,20 @@ proc GetHelp {} {
 }
 
 proc VisitUrl {x} {
-    global tcl_platform
+    global tcl_platform env
     if [string match windows $tcl_platform(platform)] {
         set x [regsub -all -nocase {htm} $x {ht%6D}]
         exec rundll32 url.dll,FileProtocolHandler $x &
     } else {
         set url $x
-        expr {
-            [info exists env(BROWSER)] ||
-            [findExecutable mozilla        env(BROWSER)] ||
-            [findExecutable netscape       env(BROWSER)] ||
-            [findExecutable iexplorer      env(BROWSER)] ||
-            [findExecutable $env(NETSCAPE) env(BROWSER)] ||
-            [findExecutable lynx           env(BROWSER)]
-        }
+	if {![info exists env(BROWSER)]} {
+	    foreach possBrowser {mozilla netscape iexplorer lynx} {
+		set env(BROWSER) [lindex [auto_execok $possBrowser] 0]
+		if {[llength $env(BROWSER)]} {
+		    break
+		}
+	    }
+	}
         # lynx can also output formatted text to a variable
         # with the -dump option, as a last resort:
         # set formatted_text [ exec lynx -dump $url ] - PSE
