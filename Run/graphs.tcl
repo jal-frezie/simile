@@ -122,7 +122,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $grid -fill both -expand true
     grid $gph.gridf -column 1 -row 0 -sticky nesw  -padx 2 -pady 2
     frame $gph.dummy
-    grid $gph.dummy -column 0 -row 1  -padx 2 -pady 2 -sticky nesw
+    grid $gph.dummy -column 0 -row 1 -padx 2 -pady 2 -sticky nesw 
 
     frame $gph.xentry 
     entry $gph.xentry.leftentry -relief sunken -textvar graph(lowx) -width 8
@@ -138,6 +138,9 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     grid $gph.xentry -column 1 -row 1 -sticky we -padx 2 -pady 2
     pack $gph -expand on -fill both -side left
     pack $t.gph -side left -expand on -fill both -padx 2 -pady 2
+    
+    grid rowconfigure $gph 0 -weight 1
+    grid columnconfigure $gph 1 -weight 1
 
     frame $t.right
     
