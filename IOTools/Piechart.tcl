@@ -19,8 +19,13 @@
 # draw at time zero
 
 #$Log: Piechart.tcl,v $
-#Revision 1.2  2002/05/29 17:25:39  jmm
-#Mult-dimenson arrays ok, but labels too spead out, resizing bug
+#Revision 1.3  2002/05/31 15:04:43  jmm
+#Labels for the slices are placed around the pie adjacent to the corresponding slice.
+#There are now 19 colours (I got tired). If there are more slices than colours the
+#colours are recycled
+#
+#Revision 1.2  2002-05-30 09:50:53+01  jmm
+#array > 1 dim labels ok, labels drawn off window, not resizing on window resize
 #
 #Revision 1.1  2002-05-28 14:17:28+01  jmm
 #Draws ONE piechart any array or multi-instance submodel values get added to the ONE pie.
@@ -63,7 +68,8 @@ proc initialize {w} {
     
     # choose colours for variables
     set plot($w,YColours) [list #0000ff #ff0000 #00ff00 #007777 #777700 \
-            #770077 #222244 #442222 #224422]
+            #770077 #222244 #442222 #224422 #C0C0C0 #FFFFFF #FF00FF #00FFFF \
+            #FFFF00 #FF3300 #FF9933 #0066CC #669999 #99FF66 ]
     set plot($w,Xmax_axis) 1
     set plot($w,Xmin_axis) 0
     set plot($w,Xmajorstep) 0.5
@@ -83,9 +89,9 @@ proc initialize {w} {
     set plot($w,xlength) 350
     set plot($w,ylength) 200
     set plot($w,xborder_left) 50
-    set plot($w,xborder_right) 15
-    set plot($w,yborder_top) 30
-    set plot($w,yborder_bottom) 30
+    set plot($w,xborder_right) 50
+    set plot($w,yborder_top) 50
+    set plot($w,yborder_bottom) 50
     set plot($w,x_Ylabels) 25
     set plot($w,y_Ylabels) 0
     set plot($w,xstep_Ylabels) 120
@@ -105,6 +111,7 @@ proc initialize {w} {
     set plot($w,Yprecision) 0
     set plot($w,linestyle) full
     set plot($w,pointstyle) circle
+    set plot($w,LabelDistance) 30
     
     set Xvalues($w) {}
     set YYold($w) {}
@@ -227,6 +234,7 @@ proc ShowHelper {w} {
     update
     resize $w win [winfo x $w.canvas] [winfo y $w.canvas] \
             [winfo width $w.canvas] [winfo height $w.canvas]
+    Repaint $w
 }
 
 # Invoked at every time interval.
@@ -331,34 +339,36 @@ proc drawGraphpad {w} {
     set y1 $plot($w,yborder_top)
     
 
-    set nYlabel [llength $plot($w,Ylabels)]
-    set j 0
-    set k 0
-    for {set i 0} {$i<$nYlabel} {incr i} {
-        set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
-        set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
-        set xa [expr $x-15]
-        set xb [expr $x-2]
-        set ya [expr $y+8]
-        set vartag {}
-        append vartag var $i
-        $w.canvas create line $xa $ya $xb $ya \
-                -fill [lindex $plot($w,YColours) $i] \
-                -width 2 \
-                -tags [list $vartag axis_label markable toplevel]
-        $w.canvas create text $x $y \
-                -text [lindex $plot($w,Ylabels) $i] \
-                -anchor nw \
-                -tags [list $vartag axis_label markable toplevel]
-        incr j
-        if {$j==2} {
-            incr k
-            set j 0
-        }
-    }
-    
+################################################################################
+#     set nYlabel [llength $plot($w,Ylabels)]
+#     set j 0
+#     set k 0
+#     for {set i 0} {$i<$nYlabel} {incr i} {
+#         set x [expr $plot($w,x_Ylabels)+$k*$plot($w,xstep_Ylabels)]
+#         set y [expr $plot($w,y_Ylabels)+$j*$plot($w,ystep_Ylabels)]
+#         set xa [expr $x-15]
+#         set xb [expr $x-2]
+#         set ya [expr $y+8]
+#         set vartag {}
+#         append vartag var $i
+#         $w.canvas create line $xa $ya $xb $ya \
+#                 -fill [lindex $plot($w,YColours) $i] \
+#                 -width 2 \
+#                 -tags [list $vartag axis_label markable toplevel]
+#         $w.canvas create text $x $y \
+#                 -text [lindex $plot($w,Ylabels) $i] \
+#                 -anchor nw \
+#                 -tags [list $vartag axis_label markable toplevel]
+#         incr j
+#         if {$j==2} {
+#             incr k
+#             set j 0
+#         }
+#     }
+#     
+################################################################################
 
-    bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
+    bind $w <Configure> [namespace code "resize $w %W %x %y %w %h; Repaint $w"]
 }
 
 proc resize {w win x y width height} {
@@ -379,7 +389,6 @@ proc resize {w win x y width height} {
     
     set plot($w,xlength) [expr $plot($w,xlength)+$width_diff]
     set plot($w,ylength) [expr $plot($w,ylength)+$height_diff]
-
 }
 
 proc Repaint {w} {
@@ -394,12 +403,17 @@ proc Repaint {w} {
     } else  {
         set length $plot($w,xlength)
     }
+    set plot($w,length) $length
+    
     set x1 $plot($w,xborder_left)
     set y1 [expr {$plot($w,yborder_top)}]
     set x2 [expr {$plot($w,xborder_left)+$length}]
-    set y2 [expr {$plot($w,yborder_top)+0.8*$length}]; # hack 0.9 to make a square
+    set y2 [expr {$plot($w,yborder_top)+$length}]; # hack 0.9 to make a square
+
+    set plot($w,cx) [expr {($x1+$x2)/2}]
+    set plot($w,cy) [expr {($y1+$y2)/2}]
     
-    $w.canvas delete slice
+    $w.canvas delete all
     
     DrawPie $w $x1 $y1 $x2 $y2 $pievalues($w) $piesum($w)
 }
@@ -474,10 +488,16 @@ proc DrawPie { w x1 y1 x2 y2 pievalues piesum } {
     set iplot 0
     set StartAngle 0
     foreach value $pievalues {
-        set colour [lindex $plot($w,YColours) $iplot]
+        set colour [lindex $plot($w,YColours) \
+                [expr {int(fmod($iplot,[llength $plot($w,YColours)]))}]]
         set Angle [expr {360*$value/$piesum}]
+        set LabelAngle [expr {$Angle/2+$StartAngle}]; # degrees
+        set r [expr {$plot($w,LabelDistance)+$plot($w,length)/2}]
+        set x [expr {$r*cos($LabelAngle*3.14159/180.0)+$plot($w,cx)}]
+        set y [expr {-1.0*$r*sin($LabelAngle*3.14159/180.0)+$plot($w,cy)}]
         $w.canvas create arc $x1 $y1 $x2 $x2 \
                 -fill $colour -start $StartAngle -extent $Angle -tags "scalable slice"
+        $w.canvas create text $x $y -text [lindex $plot($w,Ylabels) $iplot] -tag label
         incr iplot
         set StartAngle [expr {$StartAngle+$Angle}]
     }
@@ -506,7 +526,7 @@ proc clear { w } {
     set plot($w,Xminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
     set plot($w,Xprecision) 0
     set plot($w,Yprecision) 0
-    set Xvalues {}
+    set Xvalues($w) {}
 	set YYold($w) {}
 	set YYnew($w) {}
 
