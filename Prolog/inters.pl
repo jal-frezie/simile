@@ -1009,7 +1009,7 @@ indices_for(sm(_,_, Ptr, Spec), Inds) :-
 
 /* might do better to get submodel and use g_a_s to convert */
 type_ind(Ind, Type) :-
-	(integer(Ind); var(Ind)), Type = int;
+	(integer(Ind); Ind = glob(_,_)), Type = int;
 	Type = a(Ind).
 	
 make_choose_form([LastElt], _,_, LastElt) :- !.
