@@ -1044,12 +1044,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     AddAccelerator $winid file New "<$accSym-n>"
 #    $fm add command -label "New top-level" -command "NewTopLevel"
     $fm add command -label Open... -command "MenuSelect $c local open_all"\
-            -accelerator "Ctrl+O"
-    AddAccelerator $winid file Open... "<Control-o>"
+            -accelerator "$accKey+O"
+    AddAccelerator $winid file Open... "<$accSym-o>"
     $fm add cascade -label "Reopen" -menu .openrecent
     $fm add command -label Save -command "MenuSelect $c file save" \
-            -accelerator "Ctrl+S"
-    AddAccelerator $winid file Save "<Control-s>"
+            -accelerator "$accKey+S"
+    AddAccelerator $winid file Save "<$accSym-s>"
     
     $fm add command -label "Save as..." \
             -command "MenuSelect $c file save_as"
@@ -1061,8 +1061,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add separator
     $fm add command -label "Print..." \
             -command "PrintNow $c"\
-            -accelerator "Ctrl+P"
-    AddAccelerator $winid file "Print..." "<Control-p>"
+            -accelerator "$accKey+P"
+    AddAccelerator $winid file "Print..." "<$accSym-p>"
     #$fm add cascade -label "Import" -menu $fm.sub0
     #set fm1 [menu $fm.sub0 -tearoff 0]
 #    $fm1 add command -label "Spreadsheet..." \
@@ -1115,8 +1115,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add separator
     
     $fm add command -label Undo -command "UnOrReDo $c 0" \
-            -state disabled -accelerator "Ctrl+Z"
-    AddAccelerator $winid edit Undo "<Control-z>"
+            -state disabled -accelerator "$accKey+Z"
+    AddAccelerator $winid edit Undo "<$accSym-z>"
     $fm add command -label Redo -command "UnOrReDo $c 1" \
             -state disabled
     # no need for this as cut/copy now does it -- keep so we can have non blue
@@ -1127,14 +1127,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add separator
     
     $fm add command -label Cut -command "CopyCanvasToWindowsClipboard $c 1; \
-            MenuSelect $c edit cut" -accelerator "Ctrl+X"
-    AddAccelerator $winid edit Cut "<Control-x>"
+            MenuSelect $c edit cut" -accelerator "$accKey+X"
+    AddAccelerator $winid edit Cut "<$accSym-x>"
     $fm add command -label Copy -command "CopyCanvasToWindowsClipboard $c 1; \
-            MenuSelect $c edit copy" -accelerator "Ctrl+C"
-    AddAccelerator $winid edit Copy "<Control-c>"
+            MenuSelect $c edit copy" -accelerator "$accKey+C"
+    AddAccelerator $winid edit Copy "<$accSym-c>"
     $fm add command -label Paste -command "MenuSelect $c edit paste" \
-            -accelerator "Ctrl+V"
-    AddAccelerator $winid edit Paste "<Control-v>"
+            -accelerator "$accKey+V"
+    AddAccelerator $winid edit Paste "<$accSym-v>"
     $fm add command -label {Reroute links} \
             -command "MenuSelect $c edit reroute"
     $fm add command -label {Align to grid} \
@@ -1145,14 +1145,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add separator
     
     $fm add command -label "Select all" -command "MenuSelect $c edit selall" \
-            -accelerator "Ctrl+A"
-    AddAccelerator $winid edit "Select all" "<Control-a>"
+            -accelerator "$accKey+A"
+    AddAccelerator $winid edit "Select all" "<$accSym-a>"
     $fm add command -label "Unselect all" \
-            -command "MenuSelect $c edit unselall" -accelerator "Ctrl+U"
-    AddAccelerator $winid edit "Unselect all" "<Control-u>"
+            -command "MenuSelect $c edit unselall" -accelerator "$accKey+U"
+    AddAccelerator $winid edit "Unselect all" "<$accSym-u>"
     $fm add command -label "Invert selection" \
-            -command "MenuSelect $c edit invsel" -accelerator "Ctrl+*"
-    AddAccelerator $winid edit "Invert selection" "<Control-Shift-8>"
+            -command "MenuSelect $c edit invsel" -accelerator "$accKey+*"
+    AddAccelerator $winid edit "Invert selection" "<$accSym-Shift-8>"
     
     AddFindMenu $c $fm
     $fm add separator
@@ -1206,19 +1206,19 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -menu ${winid}top.model
     $fm add command -label "Run" -state $execEntryState \
                     -command "MenuSelect $c file run_c" \
-                    -accelerator "Ctrl+R"
-    AddAccelerator $winid model "Run" "<Control-r>"
+                    -accelerator "$accKey+R"
+    AddAccelerator $winid model "Run" "<$accSym-r>"
     $fm add command -label "Debug" -state $execEntryState \
                     -command "MenuSelect $c file run_tcl" \
-                    -accelerator "Ctrl+D"
-    AddAccelerator $winid model "Debug" "<Control-d>"
+                    -accelerator "$accKey+D"
+    AddAccelerator $winid model "Debug" "<$accSym-d>"
     $fm add command -label "Abort execution" -state $execEntryState \
                     -command "FinishExec $c"
     $fm add separator
     $fm add command -label "List equations" \
             -command "MenuSelect $c file list_eqns" \
-            -accelerator "Ctrl+L"
-    AddAccelerator $winid model "List equations" "<Control-l>"
+            -accelerator "$accKey+L"
+    AddAccelerator $winid model "List equations" "<$accSym-l>"
     $fm add separator
     $fm add cascade -label Add -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
@@ -1401,9 +1401,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     label $eb.label -anchor e
     pack $eb.label -side left
     
+    package require -exact tile 0.5
+    
     global equation msgs
 #    ComboBox $eb.equation -editable 1 -state disabled -width 40
-    entry $eb.equation -state disabled -width 40
+    ::ttk::entry $eb.equation -state disabled -width 40
     pack $eb.equation -side left -expand 1 -fill x
     bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
@@ -1495,10 +1497,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 }
 
 proc AddFindMenu {canvas menu} {
+    global tcl_platform
+    if [string match "Darwin" $tcl_platform(os)] {
+      set accKey Cmd
+      set accSym Command
+    } else {
+      set accKey Ctrl
+      set accSym Control
+    }
     $menu add separator
     $menu add command -label Find... -command "FindCaption $canvas" \
-            -accelerator "Ctrl+F"
-    AddAccelerator [winfo parent $canvas] edit "Find..." "<Control-f>"
+            -accelerator "$accKey+F"
+    AddAccelerator [winfo parent $canvas] edit "Find..." "<$accSym-f>"
     $menu add command -label "Find next" -command "NextCaption $canvas" \
             -accelerator "F3"
     AddAccelerator [winfo parent $canvas] edit "Find next" "<F3>"
