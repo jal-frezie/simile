@@ -1185,7 +1185,10 @@ proc ContextSensitiveHelp {context page} {
     global tcl_platform helphtml
     if { [string match windows $tcl_platform(platform)]} {
             package require winhelp
+            toplevel .dummy; # a window for winhelp to be on top of that we can get rid of
+                             # prevents winhelp from obscuring things
             winhelp $context ../Help/simile.chm $page
+            destroy .dummy; # jmm
     } else {
             set url [pwd]/../Help/$page
             expr {
