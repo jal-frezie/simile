@@ -732,15 +732,15 @@ proc Disaggregate {parent title colour type fatness icount step \
         set disaggregate(icount) 1
     }
     switch -- $step {
-	-1 {
-	    set disaggregate(step) "Initialize only"
-	} 0 {
-	    set disaggregate(step) "Reset only"
-	} default {
-	    set disaggregate(step) $step
-	}
+        -1 {
+            set disaggregate(step) "Initialize only"
+        } 0 {
+            set disaggregate(step) "Reset only"
+        } default {
+            set disaggregate(step) $step
+        }
     }
-
+    
     set t [toplevel .disaggregation -bd 4 -class Disaggregation]
     #	wm transient $t $parent
     wm resizable $t 0 0
@@ -840,8 +840,8 @@ proc Disaggregate {parent title colour type fatness icount step \
     pack $mathf.step.caption -side left
     #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
     ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
-	-values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
-	-width 10 -editable false
+            -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
+            -width 10 -editable false
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
@@ -874,15 +874,15 @@ proc Disaggregate {parent title colour type fatness icount step \
         set disaggregate(icount) [list]
     }
     if {$disaggregate(done)} {
-    switch $disaggregate(step) {
-	"Initialize only" {
-	    set step -1
-	} "Reset only" {
-	    set step 0
-	} default {
-	    set step $disaggregate(step)
-	}
-    }
+        switch $disaggregate(step) {
+            "Initialize only" {
+                set step -1
+            } "Reset only" {
+                set step 0
+            } default {
+                set step $disaggregate(step)
+            }
+        }
         return [list $disaggregate(colour) $disaggregate(type) \
                 $disaggregate(fatness) $disaggregate(icount) \
                 $step $disaggregate(comment) \
@@ -1404,7 +1404,7 @@ errorIcon read "${::BWIDGET::LIBRARY}/images/error.gif"
 proc ShowExpiryImminent {expTime} {
     toplevel .expiry
     #    wm transient .expiry $winId
-   wm title .expiry "Expiry Imminent"
+    wm title .expiry "Expiry Imminent"
     wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
@@ -1460,21 +1460,12 @@ proc equationlisting_start {} {
     wm title $w "Equation listing"
     
     frame $w.mainframe
-                 # ToDo 1: Make scrollbar marker refelect total canvas depth.
-                 #         Use [lindex [$equationlist(canvas) bbox textitem] 3]
-                 #         once eevrything's been written to the canvas, then
-                 #         set the canvas's scrollregion.      
-    set equationlist(canvas) [canvas $w.mainframe.canvas \
-           -yscrollcommand [list $w.mainframe.scrl set] -bg white \
-           -width 520 -height 600 ]
-    scrollbar $w.mainframe.scrl -command [list $equationlist(canvas) yview]
-    pack $equationlist(canvas) -side left -fill both -expand true
-    pack $w.mainframe.scrl -side left -fill y
+    set equationlist(textbox) [text $w.mainframe.textbox \
+            -tabs {1c} -yscrollcommand [list $w.mainframe.scrl set]]
+    scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
+    pack $equationlist(textbox) -side left -fill both -expand true
+    pack $w.mainframe.scrl -side left -fill y
     pack $w.mainframe -fill both -expand true
-
-    $equationlist(canvas) create text 2 2 -text "Simile model equation listing\n" \
-       -anchor nw -font {Helvetica 10 bold} -tags {textitem}
-    set ydown [$equationlist(canvas) bbox textitem]
     image create photo equationlist(subimg)
     image create photo equationlist(compartmentimg)
     image create photo equationlist(flowimg)
@@ -1494,43 +1485,54 @@ proc equationlisting_start {} {
     equationlist(reproductionimg) read "../Images/Toolbar/reproduction.gif"
     equationlist(conditionimg) read "../Images/Toolbar/condition.gif"
     
-    if {0} {
     $equationlist(textbox) tag configure bigtag \
-            -font {Helvetica 12 bold} -wrap word -lmargin1 10 -lmargin2 10 -spacing3 5
+            -font {Helvetica 12 bold} -wrap word -spacing3 5 -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure descrtag \
-            -font {Helvetica 10 bold} -lmargin1 10 -lmargin2 45 -wrap char
+            -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 45
     $equationlist(textbox) tag configure cmttag \
-            -font {Helvetica 10} -lmargin1 55 -lmargin2 55 -wrap word
+            -font {Helvetica 10} -wrap word -lmargin1 55 -lmargin2 55
     $equationlist(textbox) tag configure whrtag \
-            -font {Helvetica 10 italic} -lmargin1 55 -lmargin2 55 -wrap word
+            -font {Helvetica 10 italic} -wrap word -lmargin1 55 -lmargin2 55
     $equationlist(textbox) tag configure eqntag \
-            -font {Helvetica 10 bold} -lmargin1 35 -lmargin2 45 -wrap char
+            -font {Helvetica 10 bold} -wrap char -lmargin1 35 -lmargin2 45
     $equationlist(textbox) tag configure initag \
-            -font {Helvetica 10} -lmargin1 10 -lmargin2 10 -wrap char
+            -font {Helvetica 10} -wrap char -lmargin1 10 -lmargin2 10
     $equationlist(textbox) tag configure dummytag \
             -font {Helvetica 5}
-    }
 }
 
 
 proc equationlisting_addsubmodel {isub submodel_label} {
     global equationlist
-    set ydown [expr [lindex [$equationlist(canvas) bbox textitem] 3] + 5]
-    $equationlist(canvas) create line 0 $ydown 520 $ydown
-    add_text [regsub -all "\n" $submodel_label " "] {Helvetica 10 bold} 3 16 black
+    $equationlist(textbox) configure  -state normal
+    set widget $equationlist(textbox)
+    $widget insert end "\n"
+    $widget insert end [regsub -all "\n" $submodel_label " "] bigtag
+    $widget insert end "\n"
+    $equationlist(textbox) configure  -state disabled
 }
 
 
 proc equationlisting_addvariable {isub ivar vartype varlabel expression where description comments \
             inflows outflows} {
+    # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
     global equationlist
-
+    
+    set widget $equationlist(textbox)
+    $equationlist(textbox) configure  -state normal
+    $widget insert end " \n" dummy
+    
+    #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
+    $widget insert end "  " descr
+    $widget image create end -image equationlist(${vartype}img)
+    $widget insert end " ${vartype}: " cmttag
+    
     set tidy_varlabel [regsub -all "\n" $varlabel " "]
-                 # ToDo 2: Remove scaling information from graph() functions
-                 #         in $expression
-                 #         I.e.     graph(.....),X)
-                 #         becomes  graph(X)
-                 #         (as originally entered in the Equation dialogue)
+    # ToDo 2: Remove scaling information from graph() functions
+    #         in $expression
+    #         I.e.     graph(.....),X)
+    #         becomes  graph(X)
+    #         (as originally entered in the Equation dialogue)
     set c1 [expr [string first graph( $expression]+5]
     set firstpart [string range $expression 0 $c1]
     set rest [string range $expression [expr $c1+1] end]
@@ -1543,57 +1545,60 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     set where [regsub -all "\n" $where " "]
     set where [string range $where 1 end-1]
     set tidy_where [regsub -all "," $where "\n"]
-
-    # Icon image
-    set ydown [expr [lindex [$equationlist(canvas) bbox textitem] 3] + 10]
-    $equationlist(canvas) create image 3 $ydown \
-       -image equationlist(${vartype}img) -anchor nw
-
-    # Label
-    add_text $tidy_varlabel {Helvetica 9 bold} 20 10 black
-
-    # Description, if any
-    if ![string match null $description] {
-        add_text $tidy_description {Helvetica 9 italic} 20 0 black
+    
+    
+    # Label and Description, if any
+    if [string match null $description] {
+        $widget insert end "\t${tidy_varlabel}\n" eqntag
+    } else  {
+        $widget insert end "\t${tidy_varlabel}, " eqntag
+        $widget insert end "${tidy_description}\n" descrtag
     }
-
+    
     if {[string match compartment $vartype]} {
         # Compartment
         set inflows [string trim $inflows {[]}]
         regsub -all , $inflows { } inflows
         set outflows [string trim $outflows {[]}]
         regsub -all , $outflows { } outflows
-
-        # ...initial value
-        add_text "Initial value = $expression" {Helvetica 9} 20 0 black
-        if ![string match {\[null\]} $where] {
-            add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 black
+        
+        # intial value
+        $widget insert end "\tInitial value" eqntag
+        $widget insert end " = " eqntag
+        $widget insert end $expression eqntag
+        $widget insert end "\n" eqntag
+        if ![string match null $where] {
+            $widget insert end "\t$tidy_where" whrtag
         }
-
+        
         # ...rate equation
         if {[llength $outflows]>0 | [llength $inflows]>0} {
-            set text_string "d(${tidy_varlabel})/dt = "
+            set text_string "Rate of change = "; #"d(${tidy_varlabel})/dt = "
             foreach inflow $inflows {
                 set text_string "$text_string + $inflow"
             }
             foreach outflow $outflows {
                 set text_string "$text_string + $outflow"
             }
-            add_text $text_string {Helvetica 9} 20 0 black
+            $widget insert end "\t$text_string\n" eqntag
         }
         
     } else  {
         # Everything except compartments
-        add_text "$tidy_varlabel = $tidy_expression" {Helvetica 9} 20 0 black
-        if ![string match {\[null\]} $where] {
-            add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
+        $widget insert end "\t$tidy_varlabel = $tidy_expression \n" eqntag
+        #add_text "$tidy_varlabel = $tidy_expression" {Helvetica 9} 20 0 black
+        if ![string match {null} $where] {
+            $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
+            #add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
         }
     }
-
+    
     # Comments
     if ![string match null $comments] {
-        add_text "Comments: $tidy_comments" {Helvetica 9 italic} 20 0 #000088
+        $widget insert end "\tComments:\n\t\t$tidy_comments \n" cmttag; # should be empty if comments null
+        #add_text "Comments: $tidy_comments" {Helvetica 9 italic} 20 0 #000088
     }
+    $equationlist(textbox) configure  -state disabled
 }
 
 
@@ -1601,7 +1606,7 @@ proc add_text {text font across down colour} {
     global equationlist
     set ydown [expr [lindex [$equationlist(canvas) bbox textitem] 3] + $down]
     $equationlist(canvas) create text [expr $across+3] $ydown -text $text \
-       -anchor nw -font $font -tags {textitem} -width 500 -fill $colour
+            -anchor nw -font $font -tags {textitem} -width 500 -fill $colour
 }
 
 ############################################## End equation listing
@@ -1611,19 +1616,19 @@ proc add_text {text font across down colour} {
 proc BuildProblem {name autoName msg fault} {
     toplevel .buildprob
     switch $fault {
-	user {
-	    set Title "Problem with model"
-	    set errLevel warning
-	    set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
-	} system {
-	    set Title "Build failure"
-	    set errLevel error
-	    set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
-	} tcl {
-	    set Title "User interface problem"
-	    set errLevel error
-	    set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
-	}	    
+        user {
+            set Title "Problem with model"
+            set errLevel warning
+            set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
+        } system {
+            set Title "Build failure"
+            set errLevel error
+            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+        } tcl {
+            set Title "User interface problem"
+            set errLevel error
+            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+        }
     }
     wm title .buildprob $Title
     wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
@@ -1637,26 +1642,26 @@ proc BuildProblem {name autoName msg fault} {
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \
-	      -command [list AdjustScroll $labf1.lab2 yview]] -fill y
+            -command [list AdjustScroll $labf1.lab2 yview]] -fill y
     pack [text $labf1.lab2 -width 48 -height 10 -wrap word \
-	      -yscrollcommand [list AdjustCanvas $labf1 lab1 y]]
+            -yscrollcommand [list AdjustCanvas $labf1 lab1 y]]
     $labf1.lab2 insert 1.0 $msg
     $labf1.lab2 config -state disabled
-#    pack [label $labf1.lab2 -text $msg -wraplength 320 \
-#            -font {-family helvetica -size 10} -justify left] -side left
+    #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
+    #            -font {-family helvetica -size 10} -justify left] -side left
     pack $labf1 -padx 8 -pady 2
     
     set buttons [frame .buildprob.buttons]
     pack [button $buttons.ok -text OK -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-	if {![string match $fault user]} {        
-            pack [button $buttons.report -text {Send bug report} -width 20 \
-                    -command [list ReportProblem $name $autoName $msg]] \
-                    -side left -padx 4 -pady 4
+    if {![string match $fault user]} {
+        pack [button $buttons.report -text {Send bug report} -width 20 \
+                -command [list ReportProblem $name $autoName $msg]] \
+                -side left -padx 4 -pady 4
     }
     pack [button $buttons.help -text Help -width 10 \
-	      -command "set ack 1; $buttonCmd"] \
+            -command "set ack 1; $buttonCmd"] \
             -side left -padx 4 -pady 8
     pack $buttons
     
@@ -1673,42 +1678,42 @@ proc BuildProblem {name autoName msg fault} {
 }
 
 proc ReportProblem {name autoName fault} {
-
+    
     set mimes {}
-#    set unique [clock seconds].[pid]
-#    set bound "-----NEXT_PART_$unique"
+    #    set unique [clock seconds].[pid]
+    #    set bound "-----NEXT_PART_$unique"
     if {![string match unsaved $name]} {
-	set Disposition "inline; filename=\"[file tail $name]\""
-	    lappend mimes [mime::initialize -canonical application/x-simile \
-			   -header [list Content-Disposition $Disposition] \
-			   -header [list Content-Description "Simile model"] \
-			   -file $name]
-#        set fid [open $name r]
-#        fconfigure $fid -translation binary
-#        if {[catch {read $fid [file size $name]} data]} {
-#            return -code error $data
-#        }
-#        close $fid
-#        append outputData "$bound\nContent-Disposition: form-data;\
-#            name=\"imagefile\"; filename=\"[file tail $name]\"\nContent-Type: text/plain\n\n$data\n"
+        set Disposition "inline; filename=\"[file tail $name]\""
+        lappend mimes [mime::initialize -canonical application/x-simile \
+                -header [list Content-Disposition $Disposition] \
+                -header [list Content-Description "Simile model"] \
+                -file $name]
+        #        set fid [open $name r]
+        #        fconfigure $fid -translation binary
+        #        if {[catch {read $fid [file size $name]} data]} {
+        #            return -code error $data
+        #        }
+        #        close $fid
+        #        append outputData "$bound\nContent-Disposition: form-data;\
+        #            name=\"imagefile\"; filename=\"[file tail $name]\"\nContent-Type: text/plain\n\n$data\n"
     }
     if {![string match none $autoName]} {
-	set Disposition "inline; filename=\"[file tail $autoName]\""
-	    lappend mimes [mime::initialize -canonical application/x-simile \
-			   -header [list Content-Disposition $Disposition] \
-			   -header [list Content-Description "Change log"] \
-			   -file $autoName]
+        set Disposition "inline; filename=\"[file tail $autoName]\""
+        lappend mimes [mime::initialize -canonical application/x-simile \
+                -header [list Content-Disposition $Disposition] \
+                -header [list Content-Description "Change log"] \
+                -file $autoName]
     }
     lappend mimes [mime::initialize -canonical text/plain \
-		       -header [list Content-Disposition inline] \
-		       -header [list Content-Description "Error message"] \
-		       -string $fault]
+            -header [list Content-Disposition inline] \
+            -header [list Content-Description "Error message"] \
+            -string $fault]
     set multiT [mime::initialize -canonical multipart/mixed -parts $mimes]
     set data [mime::buildmessage $multiT]
-
+    
     package require http
     upvar 0 [::http::geturl http://www.simulistics.com/cgi-bin/saveit.cgi \
-		 -type application/x-zip -query [zip -mode compress $data]] reply
+            -type application/x-zip -query [zip -mode compress $data]] reply
     ShowMessage {Simile phone home!} info $reply(body) ok
 }
 
