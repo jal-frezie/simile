@@ -11,13 +11,20 @@ namespace eval slide139 {
     }
     
     proc initialize {winId} {
+	variable compList
+	if {[info exists compList]} {
+	    unset compList
+	}
         MakeFrames $winId
         foreach node [GetObjectList] {
             if {[string match INPUT [GetModelEval $node]]} {
                 set title [GetCaptionPathFromId $node]
-                InsertSlider $winId $node $title 1
+                set initVal [InsertSlider $winId $node $title 1]
 		set done 1
             }
+            if {[string match INPUT [GetModelEval $node]]} {
+		set compList($node) $initVal
+	    }
         }
         if {![info exists done]} {
             kill_helper_window $winId
@@ -163,6 +170,7 @@ namespace eval slide139 {
 		}
 	    }
         }
+	return $initVal
     }
 
     proc SetChoiceNumber {cbox sub} {
@@ -248,8 +256,27 @@ namespace eval slide139 {
     
     proc click {winId node caption} {
     }
+
+# purpose of display proc here is only to stop compartment sliders
+# being altered while model is running, since they refer only to
+# initial values
     
     proc display {winId time display remainder} {
+	global sliderVals
+	variable compList
+	foreach node [array names compList] {
+	    if {$time==0} {
+		set compList($node) [lindex [GetModelValue $node] 0]
+	    } else {
+		if {[llength $compList($node)]==1} {
+		    set sliderVals($node) $compList($node)
+		} else {
+		    foreach {indx val} $compList($node) {
+			set sliderVals($node,$indx) $val
+		    }
+		}
+	    }		
+	}
     }
     
 } ;# end of namespace

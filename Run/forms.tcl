@@ -108,7 +108,7 @@ proc create_equation {parent boxtitle indices} {
     
     set t [toplevel .equation -bd 4 -class Equation]
     wm title $t $boxtitle
-    wm transient $t $parent
+    # wm transient $t $parent
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     equationResources
@@ -762,7 +762,7 @@ proc Disaggregate {parent title colour type fatness icount step \
         }
     }
     set t [toplevel .disaggregation -bd 4 -class Disaggregation]
-    #	wm transient $t $parent
+    wm transient $t $parent
     wm resizable $t 0 1
     wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $t "Properties of $title"

@@ -201,19 +201,19 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	member([Is_P, ParamsAllowed, EqnNeeded],
 	       [[-1,1,0], [0,1,0], [1,0,0], [2,0,0]]),
 	(ParamsAllowed = 0, !,
-	    ParamWibble = "but parameter default values are not allowed to have input variables themselves.",
-	    UsableInputs = [];
-	ParamWibble = "which is not referred to by any of its parameter names in the equation.",
-	    UsableInputs = InterInputs),
+	    ParamWibble = "but parameter default values are not allowed to have input variables themselves.";
+	ParamWibble = "which is not referred to by any of its parameter names in the equation."),
 	get_term(Unit_st, Units, UnitFormError),
-	check_exp(Eqn_st, "Equation", Function, UsableInputs, EqnBase, EqnDims,
-		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
+	(ParamsAllowed = 0, \+ InterInputs = [], !,
+	    EqnError = "You cannot have influences going to a component representing a file or input parameter.";
+	check_exp(Eqn_st, "Equation", Function, InterInputs, EqnBase, EqnDims,
+		  EqnNeeded, IndxCount, EqParamList, Result, EqnError)),
 	(Is_P = 1, \+ Units = a(_), \+ EqnBase = a(_), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
-	check_exp(Min_st, "Min. value", Function, UsableInputs, MinBase, _Dims,
+	check_exp(Min_st, "Min. value", Function, [], MinBase, _Dims,
 		  MinMaxNeeded, IndxCount, MinParamList, Min, Min_term_error),
-	check_exp(Max_st, "Max. value", Function, UsableInputs, MaxBase, _Dims,
+	check_exp(Max_st, "Max. value", Function, [], MaxBase, _Dims,
 		  MinMaxNeeded, IndxCount, MaxParamList, Max,
 		  Max_term_error),
 

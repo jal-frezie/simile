@@ -385,7 +385,7 @@ menu_handle(Win, file, export_prolog) :-
 	get_program_file(DefName, FileName),
 	output:date_is(Date),
         start_progress_dialogue,
-	save_if_poss(FileName, Model, Date),
+	save_isolated(FileName, Model, Date),
         finish_progress_dialogue.
 
 menu_handle(Win, edit, properties) :-
@@ -830,9 +830,6 @@ do_save(Model, New_name) :-
 	    do_dialogue("Error saving model", error, Annoy, ok, _),
 	    fail;
 	true),
-	(New_name = false,
-	    get_name_for(Model, Name);
-	try_save_files(Name)),
 	use_temp_dir(Dir),
 	abs_path_name(Model, root, Point),
 	append_atoms([Dir, '/', Point], SaveDir),
@@ -844,23 +841,21 @@ do_save(Model, New_name) :-
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),
 	output:date_is(Date),
-	save_if_poss(TempFile, Model, Date),
+	save_isolated(TempFile, Model, Date),
 	
 	/* Save image backgrounds */
 	transfer_images(Model, SaveDir, out),
 
 	/* Save canvas file */
-	append_atoms(SaveDir, '/model.cnv', CanvasName),
-	(tk_get_pref(saveExtras, 'Canvas file'),
-	is_toplevel(Model),
-	 reassure_user("Saving canvas description"),
-	    Win shows_model Model,
-	    all(state, get_display_depth, [unify(Win),
-		 build([ghost_link, influence, variable, flow, compartment,
-		   submodel, caption, sections]), build(CurrentDepths)]),
-	    save_canvas(Win, CanvasName, CurrentDepths, Date);
-	\+ output:my_file_exists(CanvasName);
-	output:my_delete_file(CanvasName)),
+	check_save_canvas(SaveDir, Model, Date),
+
+	/* here is where we get the user to enter the name to save it
+	as.  This may be tried multiple times, which is why it is done after
+	writing all the saved components to temp file. */
+
+	(New_name = false,
+	    get_name_for(Model, Name);
+	try_save_files(Name)),
 
 	/* Now build the multi-part MIME format save file */
         reassure_user("Creating MIME-format saved file"),
@@ -885,6 +880,20 @@ transfer_images(Model, TopDir, Way) :-
 	      Fillers), !,
 	shift_images(TopDir, Fillers, Way);
 	true.
+
+	/* Save canvas file */
+check_save_canvas(SaveDir, Model, Date) :-
+	append_atoms(SaveDir, '/model.cnv', CanvasName),
+	(tk_get_pref(saveExtras, 'Canvas file'),
+	is_toplevel(Model), !,
+	 reassure_user("Saving canvas description"),
+	    Win shows_model Model,
+	    all(state, get_display_depth, [unify(Win),
+		 build([ghost_link, influence, variable, flow, compartment,
+		   submodel, caption, sections]), build(CurrentDepths)]),
+	    save_canvas(Win, CanvasName, CurrentDepths, Date);
+	\+ output:my_file_exists(CanvasName);
+	output:my_delete_file(CanvasName)).
 
 save_dlls(Point, LocalDir, Top, Model, SaveParent) :-
 	(setof(Sub, Part^(find_all_comps(Model, Part),
@@ -912,13 +921,6 @@ try_save_files(Name) :-
 	\+ TestName = '',
 	(Name = TestName;
 	try_save_files(Name)).
-
-save_if_poss(Name, Part, Date) :-
-	save_isolated(Name, Part, Date);
-	sicstus_format_to_chars("AME had a problem writing to file ~w. Device may be full or write-protected.",
-			[Name], Message),
-		do_dialogue("Problem writing file", error, Message, ok, _),
-		fail.
 
 save_isolated(Name, Part, Date) :-
 	assert(suspend_display),
