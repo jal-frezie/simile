@@ -263,6 +263,8 @@ proc ZoomImage {winId which factor fontor} {
                 if {$newTextSize < 10} {
                     set newTextSize 10
                 }
+#                ShowMessage debug info "ZoomImage AssembleFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+#                        [lindex $fontData 2] $newTextSize]" ok
                 $winId itemconfigure $object -font \
                         [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
                         [lindex $fontData 2] $newTextSize]
@@ -576,7 +578,11 @@ MakeHelperMenu
 set helperTable(current) none
 
 proc CreateHelperWindow {helperId helperTitle} {
-    ${helperId}::initialize [NewHelperWindow $helperId $helperTitle]
+    set winId [NewHelperWindow $helperId $helperTitle]
+    ${helperId}::initialize $winId
+    if {[PrefValue custom(helperManager) helperManager]} {
+        ::RunEnv::ChildrenFocusParent $winId
+    }
 }
 
 proc NewHelperWindow {helperId helperTitle} {
@@ -1516,7 +1522,7 @@ proc LoadTableData {tableSpec} {
                     set maxIndices($indexCount) $newIndex
                 }
                 incr indexCount
-            }
+            }
         } else {
             incr maxIndices(0)
             set arrayIndex $maxIndices(0)
