@@ -499,13 +499,14 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 	        (by_record(BaseName), !,
 		    DefEval = 'TABLE';
 		    DefEval = 'SPLIT');
-	    (Unit = boolean, Type = 'FLAG',
+	    (member(Unit, [boolean, cond_spec]), Type = 'FLAG',
 	        [Wee, Muckle] = [0, 1];
 	    Unit = a(Enum), !, Type = 'ENUMERATED',
 		Wee = 1,
 		enum_type_ref(Enum, BaseName, Muckle, _, 1);
 	    member(Unit, [const_int, int]), !, Type = 'INTEGER',
-	        [Wee, Muckle] = [-1073741823, 1073741823];
+	        [Wee, Muckle] = [-268435455, 268435455];
+		/* limits for GNU integers; Sicstus can go further */
 	    Type = 'REAL',
 	        [Wee, Muckle] = [-1.0e100, 1.0e100]),
 

@@ -34,6 +34,7 @@ tcl_eval(Cmd, Result) :-
 
 deEncode(_, A, A, 0) :- atom(A).
 reEncode(_, A, A, 0) :- atom(A).
+all_ttfn_to_utf8(S, S).
 
 main :-
 	/* first clear state from previous run (only matters in dev sys)

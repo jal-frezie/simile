@@ -218,11 +218,9 @@ click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, _CD) :-
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
 	get_adding_object(New_obj),
-	(draws_at(Wid, New_obj, Depth);
-	    do_dialogue("Failed to add component", warning,
-			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)),
 	(New_obj is_class_of_sort box, !,
-	    (New_obj is_class_of_sort rounded_rect,
+	    (New_obj is_class_of_sort rounded_rect, !,
+		check_drawing_at_depth(Wid, New_obj, Depth),
 		advance_phase_to(rubberband);
 	    insert(Wid, Parent, [Xpt, Ypt], New_obj));
 	make_terminator(New_obj, Parent, DropNode),
@@ -253,6 +251,10 @@ click_in(_,_,_,_, Parent, CD) :-
 	click_on([Xtr, Ytr], Parent, CD)).
 
 insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
+	Wid shows_model Top,
+	contains(Top, Parent, Ladder),
+	length(Ladder, Depth),
+	check_drawing_at_depth(Wid, New_obj, Depth),
 	add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
 	give_focus(NewNode),
 	do_colours(NewNode, on),
@@ -261,6 +263,12 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	    NewLooks = []),
 	all(event, spread_colour, [build(NewLooks), unify(yes)]).
 
+check_drawing_at_depth(Wid, New_obj, Depth) :-
+	(use_style_for(New_obj, NewStyle),
+	    draws_at(Wid, NewStyle, Depth);
+	    do_dialogue("Failed to add component", warning,
+			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).
+	    
 adjust_edit_menu(Wid, Comp, Point) :-
 	retractall(menu_submodel_will_be(Wid, _,_)),
 	assert(menu_submodel_will_be(Wid, Comp, Point)).
@@ -688,7 +696,8 @@ spread_dims(Node) :-
 	get_input_info(Obj, IList),
 	
 	(length(Inds, 32),
-	    test_eqn(Equation, Node, Inds, IList, Type, FoundArray, _, []),
+	    test_eqn(Equation, Node, Inds, IList, Type, FoundArray, _, Err),
+	    Err = [],
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(Node, FoundArray, _, Array, _),
 		get_actual_sizes(Node, GivenArray, _, Array, _), !,

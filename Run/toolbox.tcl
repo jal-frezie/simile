@@ -1504,6 +1504,7 @@ proc CanvasDelete {c} {
 proc CanvasDelSeln {c} {
     if {[llength [$c select item]]} {
         $c dchars [$c select item] sel.first sel.last
+	$c select clear
         return 1
     } else {
         return 0

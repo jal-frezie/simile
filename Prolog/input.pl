@@ -90,12 +90,14 @@ tk_menu(Window, Header, Item) :-
 tk_menu_select(Obj_type, from_box) :-
 /*	into_save_file(tk_menu_select(Obj_type, from_box) ), */
 	show_wait_cursor,
+	finish_old_edit(none),
 	menu_select(Obj_type),
 	show_normal_cursor.
 
 tk_mode_select(Mode) :-
 %%	into_save_file(tk_mode_select(Mode)),
 	show_wait_cursor,
+	finish_old_edit(none),
 	mode_select(Mode),
 	show_normal_cursor.
 
