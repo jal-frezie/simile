@@ -110,6 +110,36 @@ proc SetStep {time phase} {
     }
 }
 
+proc TransEnums {transList vals} {
+#puts "Translating $vals with $transList"
+    if {[llength $vals]==1} {
+	set curLevel [lindex $transList 0]
+	if {[llength $curLevel]} {
+	    return [lindex $curLevel [expr $vals-1]]
+	} else {
+	    return $vals
+	}
+    } else {
+	set indxCount [llength [lindex $vals 0]]
+	set argTrans [lrange $transList $indxCount end]
+	set result {}
+	foreach {index subVals} $vals {
+	    lappend result [TransIndices $transList $index] \
+		[TransEnums $argTrans $subVals]
+	}
+	return $result
+    }
+}
+
+proc TransIndices {transList vals} {
+    if {[llength $vals]} {
+	return [concat [TransEnums $transList [lindex $vals 0]] \
+	    [TransIndices [lrange $transList 1 end] [lrange vals 1 end]]]
+    } else {
+	return {}
+    }
+}
+	    
 # GetModelValue returns the current value of a node. This is numerical if the
 # node is scalar, a (possibly empty) list of alternating indices and values if
 # the node is an array or list, and 'novalue' if it does not have one, e.g., a

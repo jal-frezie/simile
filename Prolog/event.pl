@@ -52,6 +52,33 @@ get_info(_, Comp, comment) :-
 	Pop = Cmt),
 	callback(br(write(Pop))).
 
+get_info(_Wid, Comp, types) :-
+	list_index_meanings(Comp, ISpecs),
+	all(dialogue, index_names_and_sizes,
+	    [build(ISpecs), build(_), build(IndxCount)]),
+	(Comp is_of_sort has_function,
+	find_node_with_data(Comp, _, Func),
+	get_av_pair(Func, 0, units, Units),
+	    analyze_array(Units, Base, LDims),
+	    (Base = a(Type), !,
+	        append_atoms(['"', Type, '"'], VType);
+	    VType = 0),
+	    append([IndxCount, LDims, [VType]], AllBounds);
+	AllBounds = IndxCount),
+	all(event, insert_mem_list,
+	    [build(AllBounds), unify(Comp), build(AllTypes)]),
+	output:bracketize(AllTypes, TypeListList),
+	callback(TypeListList);
+	callback(none).
+
+insert_mem_list(Bound, Model, Mems) :-
+	(get_av_pair(Model, 0, enum_types, Pairs),
+	    member(Type-Mems, Pairs),
+	    append_atoms(['"', Type, '"'], Bound);
+	find_all_comps(Parent, Model),
+	    insert_mem_list(Bound, Parent, Mems);
+	Mems = []), !.
+
 get_params(_, Comp) :-
 	find_node_with_data(Comp, _, Func),
 	get_input_info(Func, Params),

@@ -834,7 +834,12 @@ proc AddEqnPopup {x y winId X Y} {
             AddPopupMessage $fromProlog #ffe0c0 0
         }
         if {$doVal} {
-            AddPopupMessage [lindex [GetModelValue $plName] 0] #ffffc0 1
+	    set trans [GetFromProlog tk_get_info('$winId',$plName,types)]
+	    set value [lindex [GetModelValue $plName] 0]
+	    if {![string match novalue $value]} {
+		set value [TransEnums $trans $value]
+	    }
+            AddPopupMessage $value \#ffffc0 1
             # we might want to prettify this a bit first
         }
     }
