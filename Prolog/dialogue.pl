@@ -501,7 +501,7 @@ decode_error(ParseError, TestError) :-
 	    More = [TotalDims],
 	    sicstus_format_to_chars("This formula can only run by making an intermediate variable for the subexpression \"~w\".\n This subexpression has dimensions ~w, where \"var\" represents a list. Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from.", [SimpleError, TotalDims], TestError);
 	Type = needs_channel_parameter, !,
-	    sicstus_format_to_chars("The argument of \"channel_for\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"~w\" does not fit.",
+	    sicstus_format_to_chars("The argument of \"channel_is\" must be a value from a channel (creation, immigration, reproduction) for the population submodel containing its node. \"~w\" does not fit.",
 			   [SimpleError], TestError);
 	Type = bad_index_number, !,
 	    More = [Functor],

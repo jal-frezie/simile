@@ -103,7 +103,7 @@ enabling the channel ID to be got from it */
 	    (Link = outside, !,
 		UsePath = [_ | RealPathForm];
 	    UsePath = RealPathForm),
-	    NewVar = channel_is(elt(UsePath, Ref, _)),
+	    NewVar = channel_is(param(arr(_, Ref,_),_, UsePath,_,_)),
 	    Recurse = 0;	  
 	expand_library(DestRef, Var, NewVar),
 	    Recurse = 1.
@@ -486,7 +486,7 @@ make_intermediates(
 	    SourceRef = arr(ChannelPtr, parentId, []),
 	    Units = int;
 	Source = channel_is(ChannelName), !,
-	    (ChannelName = elt(ChanPath, ChannelVar, _);
+	    (ChannelName = param(arr(_, ChannelVar,_),_, ChanPath,_,_);
 	    raise_exception(needs_channel_parameter(ChannelName))),
 	    nth(ChannelNum, Used, ChannelVar), !,
 	    suffix(ChanPath, DestPath),
