@@ -324,11 +324,11 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	( /* Control is down */
 	CD = 1, !,
 	    /* object is not selected, if it is, clear it and stop */
-	    \+ (get_highlit_obj(N, Moving_obj), N<2,
+	    \+ (doomed(Moving_obj),
 		   do_colours(Moving_obj, off)),
 	    do_colours(Moving_obj, on);
 	/* Object already selected */
-	get_highlit_obj(N, Moving_obj), N<2, !;
+	doomed(Moving_obj), !;
 	/* Object not selected; clear current, then select */    
 	(normalize(_), fail;
 	    \+ is_toplevel(Moving_obj),
@@ -1152,7 +1152,7 @@ highlight_deletes(Target) :-
 	highlight(Ghost, 3),
 	fail; 
 	recursive_highlight(Target, on);
-	highlight(Target, 1).
+	true.
 
 normalize_deletes(Target) :-
 	(Base = Target; ghost_link(Target, Base, Ghost)),
