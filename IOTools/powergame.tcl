@@ -1372,4 +1372,4 @@ proc debug {message} {
 }
  
 } ;
-# end of namespace·
+# end of namespace
