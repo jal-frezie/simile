@@ -1310,6 +1310,12 @@ proc DoRegDialog {dtId} {
     # now put it in the middle of the desktop
     scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f
     scan [ wm geometry .register] {%dx%d} g h
+#ShowMessage debug info "Desktop $a x $s + $d + $f Welcome $g x $h" ok
+# if window is fullsize, offset info is garbage
+    if {[string match zoomed [wm state $dtId]]} {
+	set d 0
+	set f 0
+    }
     wm geometry .register +[expr $d+($a-$g)/2]+[expr $f+($s-$h)/2]
     tkwait variable userinfo(done)
     
@@ -1578,7 +1584,7 @@ proc ShowExpiryImminent {expTime} {
             -side left -padx 4 -pady 8
     pack $buttons
     
-    set height [winfo reqheight .expiry]
+    set height [winfo reqheight .expiry]
     set width [winfo reqwidth .expiry]
     set sheight [winfo screenheight .expiry]
     set swidth [winfo screenwidth .expiry]
