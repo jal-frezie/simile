@@ -18,7 +18,7 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		get_component_from_gui/4, get_text/3, get_top_dir/2,
 		find_relevant_windows/4, update_captions/1, 
 		spread_colour/1, update_color/1, shift_images/3,
-		give_focus/1, update_ability/4, scrub_run/0, kill_helpers/0,
+		give_focus/1, update_ability/4, scrub_run/1, kill_helpers/0,
 		display_mode/1, display_menu/1, off/1, off_all/1, 
 		move_text/2, move_display/2, reroute_display/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
@@ -323,7 +323,7 @@ delete_window(Wid) :-
 	destroy_window(Wid),
 	tk_delete_window(Wid).
 
-scrub_run :- tk_scrub_run.
+scrub_run(Times) :- tk_scrub_run(Times).
 kill_helpers :- tk_kill_helpers.
 
 /* expand_canvas/2: grows the virtual display area of a model to

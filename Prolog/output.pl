@@ -29,7 +29,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/1, tk_update_infobox/1, 
 	tk_finish_progress_dialogue/0, tk_alter_model/0,
-	tk_scrub_run/0, tk_kill_helpers/0,
+	tk_scrub_run/1, tk_kill_helpers/0,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	set_interp_menu_state/1,
 	tk_update_sim_display/3, my_file_exists/1, my_delete_file/1,
@@ -349,8 +349,8 @@ update_tk_variable(Nodename, Val, Time) :-
 tk_alter_model :-
 	safe_tcl_eval(['AlterModel'], _).
 
-tk_scrub_run :-
-	safe_tcl_eval(['ScrubRun'], _).
+tk_scrub_run(Times) :-
+	safe_tcl_eval(['ScrubRun', Times], _).
 	
 tk_kill_helpers :-
 	safe_tcl_eval(['DestroyHelpers'], _).

@@ -162,12 +162,29 @@ proc ControlDraw {prologVersion} {
 
 package require mime 1.3.1
 
+
 proc TransferSaveFile {tree tgt way} {
-    global mimeSquirter
+    global mimeSquirter runState
     catch {switch $way {
 	out {
+	    set parts [GetParts $tree $tree]
+	    if {[info exists runState(currentTime)]} {
+		if {$runState(execTime) != $runState(currentTime)} {
+		    set runState(execDur) \
+			[expr $runState(execTime)+$runState(currentTime)]
+		} else {
+		    set runState(execDur) $runState(execTime)
+		}
+		set runParams [list $runState(execDur) $runState(displayInt)]
+		for {set phase 1} {$phase <= [GetPhaseCount]} {incr phase} {
+		    lappend runParams $runState(update$phase)
+		}
+		lappend parts [mime::initialize -canonical text/plain \
+		       -header [list "Content-Description" "Run Status"] \
+		       -string $runParams]
+	    }
 	    set multiT [mime::initialize -canonical multipart/mixed \
-			    -parts [GetParts $tree $tree]]
+			    -parts $parts]
 	    set stream [open $tgt w]
 	    fconfigure $stream -translation binary
 	    mime::copymessage $multiT $stream
@@ -177,18 +194,35 @@ proc TransferSaveFile {tree tgt way} {
 	} in {
 	    set multiT [mime::initialize -file $tgt]
 	    foreach bit [mime::getproperty $multiT parts] {
-#		set Description [mime::getheader $bit Content-Description]
-		set Disposition [mime::getheader $bit Content-Disposition]
-		set oldPath [lindex [lindex $Disposition 0] 1]
-		set newPath $tree$oldPath
-		file mkdir [file dirname $newPath]
-		set mimeSquirter [open $newPath w]
-		fconfigure $mimeSquirter -translation binary
-		mime::getbody $bit -command SquirtMime -blocksize 256
+		set Description [mime::getheader $bit Content-Description]
+#ShowMessage debug info $Description ok
+		if {[string match "Run Status" [lindex $Description 0]]} {
+		    set runParams [mime::getbody $bit]
+		    set runState(currentTime) 0.0
+#ShowMessage debug info set ok
+		    set runState(execTime) [lindex $runParams 0]
+		    set runState(displayInt) [lindex $runParams 1]
+		    for {set others 2} {$others < [llength $runParams]} \
+			{incr others} {
+			    set runState(update[expr $others-1]) \
+				[lindex $runParams $others]
+			    set runState(prev_update[expr $others-1]) \
+				[lindex $runParams $others]
+			}
+		} else {
+		    set Disposition [mime::getheader $bit Content-Disposition]
+		    set oldPath [lindex [lindex $Disposition 0] 1]
+		    set newPath $tree$oldPath
+		    file mkdir [file dirname $newPath]
+		    set mimeSquirter [open $newPath w]
+		    fconfigure $mimeSquirter -translation binary
+		    mime::getbody $bit -command SquirtMime -blocksize 256
+		}
 	    }
 	}
     } 
     } Lossage
+#ShowMessage debug warning $Lossage ok
     return $Lossage
 }
 
@@ -579,9 +613,10 @@ proc AbandonObj {} {
 
 proc ChangeRegion {w l t r b} {
     global window_info
-    
-    set hcomp [expr [Unscale $w $window_info($w,width)]/($r - $l)]
-    set vcomp [expr [Unscale $w $window_info($w,height)]/($b - $t)]
+
+    set allowScrollBar [winfo reqwidth [winfo parent $w].yscroll]
+    set hcomp [expr [Unscale $w [expr $window_info($w,width)-$allowScrollBar]]/($r - $l)]
+    set vcomp [expr [Unscale $w [expr $window_info($w,height)-$allowScrollBar]]/($b - $t)]
     set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
     set newReg [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
     $w configure -scrollregion $newReg
@@ -966,7 +1001,7 @@ proc PrintNow {winId} {
 }
 
 proc SpitPS {winId psfile} {
-    global window_info
+    global window_info
 
 
 

@@ -204,14 +204,14 @@ menu_handle(Win, file, RunCmd) :-
 	Win shows_model Node,
 	start_progress_dialogue(Win),
 	/* Compile the thing into whatever, load it */
-	scrub_run,
+	scrub_run(0),
 	use_temp_dir(ProgFileDir),
 	on_exception(Whoops, (compile(Lang, Node, ProgFileDir),
 				 CompileSuccess = yes),
 		(sicstus_write_to_chars(Whoops, WhoopStr),
 		    do_dialogue("Error building program", error,
 				WhoopStr, ok, _),
-		    scrub_run)),
+		    scrub_run(0))),
 	(CompileSuccess = no, !; /* not much point going for run */
 	on_exception(_Whoops,
 		    (Lang = c,
@@ -220,7 +220,7 @@ menu_handle(Win, file, RunCmd) :-
 			output:prepare_tcl_execution(Win)),
 		     (do_dialogue("Compilation or startup error", error,
 				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
-			 scrub_run))),
+			 scrub_run(0)))),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
 	    finish_move(Node);
@@ -492,7 +492,7 @@ check_deletable(Win, Parent) :-
 
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
-	    scrub_run,
+	    scrub_run(1),
 	    kill_helpers,
 	    superfast_delete(Parent),
 	    add_parameter(Parent, 0, step, ''),

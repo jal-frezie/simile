@@ -512,17 +512,22 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     
     # the range is zero (=max-min) add a 1 to the end of the decimal representation to max
     # to make max > min.
-    if {$min == $max } {
-        #ShowMessage debug info "= min $min; max $max" ok
-        if {int($max)==$max} {
-            set max [expr {$max+0.1}]
-        } else  {
-            set max ${max}1
-        }
-        set min [expr {$min-($max-$min)}]
-        #ShowMessage debug info "after doctor =; min $min; max $max" ok
+#    if {$min == $max } {
+#        #ShowMessage debug info "= min $min; max $max" ok
+#        if {int($max)==$max} {
+#            set max [expr {$max+0.1}]
+#        } else  {
+#            set max ${max}1
+#        }
+#        set min [expr {$min-($max-$min)}]
+#        #ShowMessage debug info "after doctor =; min $min; max $max" ok
+#    }
+#    set intFactor [expr {log10($max - $min)}]
+    if {$max-$min < 1e-10} {
+	set intFactor -10.0
+    } else {
+	set intFactor [expr {log10($max - $min)}]
     }
-    set intFactor [expr {log10($max - $min)}]
     set decmlPos [expr {int($intFactor)}]
     #    puts "1 intFactor $intFactor; decmlPos $decmlPos"
     
@@ -560,7 +565,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
     #jmm    set frac [expr {$imax - int($imax)}]
     set frac [expr {$imax - floor($imax)}]
     #    puts "frac $frac; imax $imax"
-    if { $frac <= 0 } {
+    if { $frac < 0 } {
         set imax [expr {floor($imax)}]
     } else {
         set imax [expr {floor($imax) + 1}]

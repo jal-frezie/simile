@@ -26,6 +26,16 @@ proc initialize {winId} {
     if {!$boxCount} {
 	kill_helper_window $winId
     } else {
+	pack [set bfrm [frame $winId.buttons -bd 2 -relief sunken]] \
+		-fill x
+	pack [frame $bfrm.lpad] -side left -fill x -expand true
+	pack [button $bfrm.merge -text "Load file" \
+		  -command [namespace code MergeInputVals]] \
+		-side left
+	pack [button $bfrm.save -text "Save file" \
+		  -command [namespace code SaveInputVals]] \
+		-side left
+	pack [frame $bfrm.rpad] -side left -fill x -expand true
 	set_size $winId
     }
     set geom [PrefValue custom(slidersPosition) slidersPosition]
@@ -107,6 +117,63 @@ proc InsertSlider {winId boxname node title} {
 	# only put legend on bottom one
     }
 }
+
+proc MergeInputVals {} {
+    global checkStates sliderVals
+    set metaFile [ChooseFile inputs.spi "Save input values as:" 0]
+    if {[llength $metaFile]} {
+	set iStr [open $metaFile r]
+	while {[gets $iStr savedValue] != -1} {
+	    if {[string match : [string range $savedValue end end]]} {
+		set type [string trimright $savedValue :]
+ShowMessage debug info "Doing type $type" ok
+	    } else {
+		set pair [split $savedValue =]
+		set elmt [GetIdFromCaptionPath [lindex $pair 0]]
+ShowMessage debug info "Setting elmt $elmt" ok
+		set arr [lindex $pair 1]
+		if {[llength $arr]==1} {
+		    set ${type}($elmt) $arr
+		} else {
+		    foreach {indx val} $arr {
+			set ${type}($elmt,$indx) $val
+		    }
+		}
+	    }
+	}
+    }
+}
+
+proc SaveInputVals {} {
+    global checkStates sliderVals
+    set metaFile [ChooseFile inputs.spi "Save input values as:" 1]
+    if {[llength $metaFile]} {
+	set iStr [open $metaFile w]
+
+	foreach type {checkStates sliderVals} {
+	    set arrs {}
+	    puts $iStr ${type}:
+	    foreach {elmt val} [array get $type] {
+		set id [split $elmt ,]
+		if {[llength $id]==2} {
+		    set var [lindex $id 0]
+		    if {[lsearch $arrs $var]==-1} {
+			lappend arrs $var
+		    }
+		    set ${var}([lindex $id 1]) $val
+		} else {
+		    puts $iStr [GetCaptionPathFromId $elmt]=$val
+		}
+	    }
+	    foreach arr $arrs {
+		puts $iStr [GetCaptionPathFromId $arr]=[array get $arr]
+		unset $arr
+	    }
+	}
+	close $iStr
+    }
+}
+
 
 proc SliderArray {node} {
 # Need last positive val in dim array, or 0 if none

@@ -19,6 +19,22 @@ proc AdjustScroll {canvas dir args} {
 	}
 }
 
+proc AdjustCanvas {winId dir args} {
+    set tgt $winId.${dir}scroll
+# hide scrollbar if full size
+    if {[string match {0 1} $args]} {
+	pack forget $tgt
+    } else {
+	if {[string match x $dir]} {
+	    set placing {-side bottom -after $winId.toolSlot}
+	} else {
+	    set placing {-side right -before $winId.canvas}
+	}
+	eval {pack $tgt} $placing {-fill $dir}
+	eval {$tgt set} $args
+    }
+}
+
 proc TraceObj {winId x y} {
     global helperTable
     set canx [$winId canvasx $x]
@@ -43,25 +59,24 @@ global tcl_platform
     # Create a scrollable canvas
     set c [canvas $winName.canvas \
 	       -confine 1 \
-	       -xscrollcommand [list $winName.xscroll set] \
-	       -yscrollcommand [list $winName.yscroll set] \
+	       -xscrollcommand "AdjustCanvas $winName x" \
+	       -yscrollcommand "AdjustCanvas $winName y" \
 	       -xscrollincrement 1 -yscrollincrement 1]
     # scrollincrements set the only way we can get precise scrolling...
 
 # this rectangle will be resized to fill the scrollable area and coloured to
 # show the background
     $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
+
+    # space for toolbar
+    frame $winName.toolSlot
+    pack $winName.toolSlot -fill x
+    
     scrollbar $winName.xscroll -orient horizontal \
 	-command [list AdjustScroll $c xview]
     scrollbar $winName.yscroll -orient vertical \
 	-command [list AdjustScroll $c yview]
     
-    # space for toolbar
-    frame $winName.toolSlot
-    pack $winName.toolSlot -fill x
-    
-    pack $winName.xscroll -side bottom -fill x
-    pack $winName.yscroll -side right -fill y
     pack $c -fill both -expand true
     
     bind $c <Configure> {SetSpace %W %w %h}
@@ -328,16 +343,17 @@ proc DisplayAll { winId } {
     if {[scan [$winId bbox size_on_this] "%d %d %d %d" \
 		bl bt br bb] == 4} {
 # ShowMessage debug info "Bounds are $bl $bt $br $bb" ok
-	set clearBorder [expr 10*$window_info($winId,scale)]
+	set clearBorder [expr 15*$window_info($winId,scale)]
 
 	set bl [expr $bl - $clearBorder]
 	set bt [expr $bt - $clearBorder]
 	set br [expr $br + $clearBorder]
 	set bb [expr $bb + $clearBorder]
 
+	set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
 # zoom to correct size
-	set xscale [expr $window_info($winId,width)/double($br - $bl)]
-	set yscale [expr $window_info($winId,height)/double($bb - $bt)]
+	set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
+	set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
 	set scale [expr $xscale>$yscale?$yscale:$xscale]
 
 # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
@@ -955,9 +971,15 @@ proc AlterModel {} {
     set runState(modelRunning) 1
 }
 
-proc ScrubRun {} {
+proc ScrubRun {times} {
     global runState running_c model_id instance_id
+#    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
+#	error Bombed
+#    }
     set runState(modelRunning) 0
+    if {$times && [info exists runState(currentTime)]} {
+	unset runState(currentTime)
+    }
     if {[info exists model_id]} {
 	if {$model_id} {
 	    if {[info exists instance_id]} {
