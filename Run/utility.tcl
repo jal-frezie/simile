@@ -49,16 +49,23 @@ proc ChooseFile { preferred title canbenew } {
     switch $fileType {
 	.sml {
 	    set typeList [list .sml .sim .ame]
+	    set desc Models
 	    set recordEntry 1
 	} .gif {
 	    set typeList [list .gif .jpg .jpeg]
+	    set desc Images
+	    set recordEntry 0
+	} {} {
+	    set typeList {}
+	    set desc Directories
 	    set recordEntry 0
 	} default {
 	    set typeList [list $fileType]
+	    set desc "$fileType files"
 	    set recordEntry 0
 	}
     }
-    set typeList [list [list "$fileType files" $typeList]]
+    set typeList [list [list $desc $typeList]]
     set switches [list -title $title -defaultextension $fileType \
 		      -filetypes $typeList -initialfile $preferred]
     set active [focus]

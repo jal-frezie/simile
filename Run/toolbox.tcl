@@ -1158,10 +1158,8 @@ proc AddMainMenu { winid initWidth initDepths} {
     AddAccelerator $winid file "Print..." "<Control-p>"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
-    $fm2 add command -label "C program" \
+    $fm2 add command -label "c++ code & executables" \
             -command "MenuSelect $winid.canvas file compile_c"
-    $fm2 add command -label "Tcl/Tk script" \
-            -command "MenuSelect $winid.canvas file compile_tcl"
     $fm2 add command -label "PostScript file" \
             -command "DoWithErrors ExportPostscript $winid.canvas"
     $fm2 add cascade -label "Equation list" -menu $fm.sub1a

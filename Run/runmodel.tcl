@@ -1275,6 +1275,7 @@ proc ShiftDll {Point Top Loc Rep} {
     set base $Top/$Point$AddLoc
     file mkdir $base
     if {!$Rep} {
+        file delete -force ${base}/model.cpp
         file delete -force ${base}/model.dll
         file delete -force ${base}/model.so
     }
@@ -1422,8 +1423,6 @@ proc compile_c {workingDir modelPath} {
         unix {
             exec g++ -fPIC -c -O -I$TOOLDIR -I$TCL/include -o objtemp.o model.cpp
             exec g++ -shared -o $TARGET objtemp.o
-            file delete model.cpp
-            file delete objtemp.o
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]

@@ -29,7 +29,7 @@ compile( Language, Parent, DestDir) :-
 	(Parent has_class_refinement fix_math_args of Do, !;
 	Do = 0),
 	state:set_math_protect(Do),
-	build_instances(Language, DestDir, Parent, 1, '', _),
+	build_instances(Language, DestDir, Parent, 1, '', _,_),
 	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
@@ -69,21 +69,23 @@ is_entry(Entry) :-
 	    DLLSpec has_part End),
 	DLLSpec has_class_refinement separate of 1.
 	
-build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
+build_instances(Language, DestDir, Parent, Step, NamePath,
+		ChangeNext, KeepParents) :-
 	caption_for(Parent, Name),
 	append_atoms([NamePath, '/', Name], LongName),
 	append_atoms(DestDir, LongName, CheckDir),
 	check_directory(CheckDir),
+	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
 	build_sub_instances(Language, DestDir, Parent, MyStep,
-			    LongName, CompsChanged),
+			    LongName, CompsChanged, KeepDir),
 	(Parent has_model_refinement c_new of 0,
 	     \+ check_level_for_reds(Parent),
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1;
 	ChangeTop = CompsChanged),
 	((Parent has_class_refinement separate of 1; NamePath = ''), !,
-	 ((ChangeTop = 1,
+	 ((ChangeTop == 1,
 	        all(compile, delete_prog,
 		    [unify(CheckDir), build(['.tcl', '.cpp', '.dll', '.so'])]);
 	   \+ check_executable(Language, CheckDir),
@@ -99,8 +101,7 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 	     reverse(BackwardArcs, EntryArcs),
 	     (Language = c, Extn = '.cpp';
 	     Language = tcl, Extn = '.tcl'),
-	     append_atoms([CheckDir, '/', model, Extn], ProgName),
-	     windowize(ProgName, WProgName),
+	     append_atoms([WCheckDir, '/', model, Extn], WProgName),
 	     open(WProgName, write, Stream),
 	     on_exception(Puke,
 		protected_build(Language, Stream, MyStep, 
@@ -116,8 +117,12 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 		 assert(new_exec_for(Parent))),
 	     load_executable(Language, DestDir, LongName, Parent);
 	 true),
-	ChangeNext = 0;
-	ChangeNext = ChangeTop).
+	KeepDir = 1;
+	ChangeNext = ChangeTop),
+	/* delete dir if empty...*/
+	(KeepDir == 1, !,
+	    KeepParents = 1;
+	safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _)).
 
 /* reclose: compiled version has a tendency to close streams when exiting their
 functions on an exception, so this only closes if it has to...*/
@@ -133,17 +138,15 @@ delete_prog(Base, Extn) :-
 	append_atoms([Base, '/', model, Extn], FullName),
 	my_delete_file(FullName).
 	
-build_sub_instances(Language, DestDir, Parent, Step, NamePath, ChangeTop) :-
+build_sub_instances(Language, DestDir, Parent, Step, NamePath,
+		    ChangeTop, KeepDir) :-
 	(setof( Submodel, (Parent has_part Submodel,
 			      Submodel has_class submodel,
 			      appears(Submodel)), Submodels), !; 
 	    Submodels = []),
 	all(compile, build_instances, 
 	    [unify(Language), unify(DestDir), build(Submodels), unify(Step),
-	     unify(NamePath), build(CompsChanged)]),
-	(member(1, CompsChanged), !,
-	    ChangeTop = 1;
-	ChangeTop = 0).
+	     unify(NamePath), unify(ChangeTop), unify(KeepDir)]).
 
 check_level_for_reds(Submodel) :-
 	reassure_user("Checking all model values are defined"),

@@ -182,7 +182,6 @@ menu_handle(Win, file, save_as) :-
 	do_save(Model, true).
 
 menu_handle(Win, file, save_interface) :-
-	start_progress_dialogue,
 	Win shows_model Model,
 	caption_for(Model, MCaption),
 	(is_population(Model), !,
@@ -191,6 +190,7 @@ menu_handle(Win, file, save_interface) :-
 	
 	get_default_export_name(Model, ".isf", DefName),
 	get_program_file(DefName, FileName),
+	start_progress_dialogue,
 	open(FileName, write, Stream),
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
 	save_references(Stream, Model),
@@ -206,11 +206,18 @@ menu_handle(Win, file, save_interface) :-
 	close(Stream),
 	finish_progress_dialogue).
 	
-menu_handle(Win, file, ExportCmd) :-
-	member([ExportCmd, Lang], [[compile_c, c], [compile_tcl, tcl]]),
+menu_handle(Win, file, compile_c) :-
 	Win shows_model Model,
+	get_default_export_name(Model, [], DefN),
+	get_program_file(DefN, Tgt),
 	start_progress_dialogue,
-	compile_to_file(Model, Lang),
+	use_temp_dir(Temp),
+	is_toplevel(TopModel),
+	rebuild_code(c, TopModel, CompileSuccess),
+	(CompileSuccess = no, !;
+	abs_path_name(Model, root, Path),
+	    append_atoms([Temp, '/', Path], Top),
+	    output:safe_tcl_eval([file, copy, br(Top), br(Tgt)], _)),
 	finish_progress_dialogue.
 
 menu_handle(Win, file, RunCmd) :-
@@ -219,13 +226,7 @@ menu_handle(Win, file, RunCmd) :-
 	start_progress_dialogue,
 	/* Compile the thing into whatever, load it */
 	scrub_run(0),
-	use_temp_dir(ProgFileDir),
-	on_exception(Whoops, (compile(Lang, Node, ProgFileDir),
-				 CompileSuccess = yes),
-		(sicstus_write_to_chars(Whoops, WhoopStr),
-		    do_dialogue("Error building program", error,
-				WhoopStr, ok, _),
-		    scrub_run(0))),
+	rebuild_code(Lang, Node, CompileSuccess),
 	(CompileSuccess = no, !; /* not much point going for run */
 	on_exception(_Whoops,
 		    (Lang = c,
@@ -241,6 +242,15 @@ menu_handle(Win, file, RunCmd) :-
 	restart_move),
 	finish_progress_dialogue,
 	show_normal_cursor.
+
+rebuild_code(Lang, Node, CompileSuccess) :-
+	use_temp_dir(ProgFileDir),
+	on_exception(Whoops, (compile(Lang, Node, ProgFileDir),
+				 CompileSuccess = yes),
+		(sicstus_write_to_chars(Whoops, WhoopStr),
+		    do_dialogue("Error building program", error,
+				WhoopStr, ok, _),
+		    scrub_run(0))).
 
 write_chars_to_file(_, []).
 
@@ -389,11 +399,11 @@ menu_handle(Win, file, list_eqnsxxx) :-
 %################################### Bob's changes: end
 
 menu_handle(Win, file, prolog_eqns) :-
-	start_progress_dialogue,
 	Win shows_model Model,
 	get_default_export_name(Model, ".pl", DefName),
 	get_program_file(DefName, FileName),
 	open(FileName, write, Stream),
+	start_progress_dialogue,
 	(contains(Model, Submodel),
 	find_type(Submodel, submodel),
 	rel_path_name(Submodel, Model, _,_, SmCapt),
@@ -631,16 +641,6 @@ not_runnable(Model) :-
 		do_dialogue("Cannot run model", error, Message, ok, _);
 		fail.
 */
-
-compile_to_file(Node, Language) :-
-	get_extension_for(Language, Extension),
-	get_default_export_name(Node, Extension, FullName),
-	get_program_file(FullName, ChosenName),
-	compile(Language, Node, ChosenName).
-
-get_extension_for(c, ".cpp").
-get_extension_for(tcl, ".tcl").
-get_extension_for(basic, ".bas").
 
 check_deletable(Win, Parent) :-
 	(get_save_status(Win, safe), !;

@@ -629,9 +629,7 @@ get_import_file(Preferred, FileName) :-
 
 get_program_file(Preferred, FileName) :-
 	get_file_name(Preferred, 'Export to:', 1, FileName),
-        (\+ FileName = '';
-        finish_progress_dialogue,
-	    fail).
+        \+ FileName = ''.
 
 start_progress_dialogue :-
 	tk_start_progress_dialogue.
