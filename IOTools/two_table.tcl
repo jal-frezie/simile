@@ -12,7 +12,7 @@ global tcl_platform
 #     source ../System/lib/Extras/prntproc.tcl
 # }
 ################################################################################
-    
+
 namespace eval $keyValue {
     package require BWidget
     namespace import ::DisplayFormat::*
@@ -76,7 +76,7 @@ namespace eval $keyValue {
     }
     
     proc CreateTable {winId} {
-        table $winId.t -rows 1 -cols 1 -bg \#a0ffa0 -variable data$winId \
+        table $winId.t -rows 1 -cols 1 -variable data$winId -bg \#a0ffa0 \
                 -selectmode extended -sparsearray 0 \
                 -rowtagcommand [namespace code rowProc] \
                 -coltagcommand [namespace code colProc] \
@@ -84,6 +84,7 @@ namespace eval $keyValue {
                 -yscrollcommand [list AdjustCanvas $winId t y] \
                 -xscrollcommand [list AdjustCanvas $winId f x] \
                 -selecttitle true; # -state disabled set to normal to change it display, click etc
+        #
         
         pack $winId.t -fill both -expand true
         $winId.t tag configure red -fg red
@@ -188,6 +189,15 @@ namespace eval $keyValue {
         if {$varIndex<0} {
             set varIndex [llength $displayList($winId)]
             lappend displayList($winId) $newHeader
+################################################################################
+#             #ShowMessage debug info "[GetModelType $node]" ok
+#             # auto set display format doesn't work
+#             switch {[GetModelType $node]} {
+#                 INTEGER {set displayFormat($winId,$varIndex) {Fixed 0 0}}
+#                 FLAG    {set displayFormat($winId,$varIndex) {Boolean 4 0}}
+#                 default {set displayFormat($winId,$varIndex) {General 4 0}}
+#             }; # format dp Neg_in_red
+################################################################################
             set displayFormat($winId,$varIndex) {General 4 0}; # format dp Neg_in_red
             if {[GetModelTime]==$lastDisplay($winId)} {
                 set dataStore($winId,$varIndex,$lastDisplay($winId)) \
@@ -291,31 +301,37 @@ namespace eval $keyValue {
         $winId.t configure -titlerows $titlerows
         $winId.t configure -rowseparator $rsep -colseparator $csep
     }
-        
-################################################################################
-# requires prntproc.tcl
-#         proc Print {winId} {
-#             global printargs
-#             set hdc [printer dialog select]
-#             if { [lindex $hdc 1] == 0 } {
-#                 # User has canceled printing
-#                 return
-#             }
-#             set printargs(hDC) [ lindex $hdc 0 ]
-#             
-#             set titlecols [$winId.t cget -titlecols]
-#             set titlerows [$winId.t cget -titlerows]
-#             $winId.t configure -titlecols 0
-#             $winId.t configure -titlerows 0; # to allow all table to be selected by selection command
-#             $winId.t selection set origin end
-#             event generate $winId.t <<Copy>>
-#             #ShowMessage debug info "[selection get -displayof $winId.t -selection CLIPBOARD]" ok
-#             set data [selection get -displayof $winId.t -selection CLIPBOARD]
-#             print_data $data
-#         $winId.t configure -titlecols $titlecols
-#         $winId.t configure -titlerows $titlerows
-#     }
-################################################################################
+    
+    
+    proc Print {winId} {ShowMessage Warning warning \
+                "[identify] does not support printing.\n\
+                However, you can copy the contents and paste them into another application for printing." ok
+    }
+    
+    ################################################################################
+    # requires prntproc.tcl
+    #         proc Print {winId} {
+    #             global printargs
+    #             set hdc [printer dialog select]
+    #             if { [lindex $hdc 1] == 0 } {
+    #                 # User has canceled printing
+    #                 return
+    #             }
+    #             set printargs(hDC) [ lindex $hdc 0 ]
+    #
+    #             set titlecols [$winId.t cget -titlecols]
+    #             set titlerows [$winId.t cget -titlerows]
+    #             $winId.t configure -titlecols 0
+    #             $winId.t configure -titlerows 0; # to allow all table to be selected by selection command
+    #             $winId.t selection set origin end
+    #             event generate $winId.t <<Copy>>
+    #             #ShowMessage debug info "[selection get -displayof $winId.t -selection CLIPBOARD]" ok
+    #             set data [selection get -displayof $winId.t -selection CLIPBOARD]
+    #             print_data $data
+    #         $winId.t configure -titlecols $titlecols
+    #         $winId.t configure -titlerows $titlerows
+    #     }
+    ################################################################################
     
     proc Reconbobulate {winId} {
         variable dataStore
@@ -711,8 +727,11 @@ namespace eval $keyValue {
                 -side left -padx 2 -pady 4
         pack [button $t.b.cancel -text Cancel -width 10 -command "set ${t}done 0"] \
                 -side left -padx 2 -pady 4
-        pack [button $t.b.apply -text Apply -width 10 -command [namespace code "Reconbobulate $winId"]] \
-                -side left -padx 2 -pady 4
+################################################################################
+#                 pack [button $t.b.apply -text Apply -width 10 \
+#                         -command [namespace code "Reconbobulate $winId"]] \
+#                 -side left -padx 2 -pady 4
+################################################################################
         
         $nb raise layout
         grab $t
@@ -726,6 +745,8 @@ namespace eval $keyValue {
         }
         destroy $t
     }
+        
+    
     
     proc SetCatListboxSelection {listbox formatSpec} {
         variable format
