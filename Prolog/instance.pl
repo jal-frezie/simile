@@ -194,18 +194,28 @@ instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	[Refs, Local, Expr] = [[], [Instance], none]),
 	    is_instance(compartment, Node, Expr, Home, Base-Units, Instance).
 
-/* Immigration and reproduction nodes behave like compartments with an inflow equal
-to their functional value and an initial value of 0.5. They are reset to 0 when
-reaching 1 by the actions associated with them. Call them compartments -- when looking
-for them I go back to the symbolic model anyway. Unfortunately this is the other way round from how a compartment works -- there, the function contains the initial value. This means I have to come up with another node from somewhere as compartments no longer hold two values -- or else swap the 0.5 into the function and copy that's expression into the compartment.
+/* Immigration and reproduction nodes behave like compartments with an
+inflow equal to their functional value and an initial value of random
+between 0 and 1. It was previously 0.5 but this created too many
+artefacts from small changes in the time step. They are reset to 0
+when reaching 1 by the actions associated with them. Call them
+compartments -- when looking for them I go back to the symbolic model
+anyway. Unfortunately this is the other way round from how a
+compartment works -- there, the function contains the initial
+value. This means I have to come up with another node from somewhere
+as compartments no longer hold two values -- or else swap the random
+into the function and copy that's expression into the compartment.
 
-Oh well, why don't I just mega-ly botch it and have each primitive return a variable number of instances..."virtual" symbolic name means not in the original model. */
+Oh well, why don't I just mega-ly botch it and have each primitive
+return a variable number of instances..."virtual" symbolic name means
+not in the original model. */
 
 instance_of(Type, Node, Path,
 	    [instance(Type, Node,
 		      incr(Step, Home+stage_incr(Diffs, Step, Value)),
 		      Home, real-[]),
-	     instance(init_function, Node, 0.5, Home, real-[]), DiffStruct],
+	     instance(init_function, Node, rand_var(0,1), Home, real-[]),
+	     DiffStruct],
 	    [instance(function, Function, _, Value, _)]) :-
 	member(Type, [immigration, reproduction]),
 	Home = elt(Path, _, 1-[]),
