@@ -92,7 +92,7 @@ we saved from. */
 counted_fns(0).
 
 save_allowed(OK) :-
-	\+ state:get_edition(evaluation), OK = 1;
+	\+ state:get_edition(evaluation), !, OK = 1;
 	state:eval_fn_limit_is(Limit),
 	retract(counted_fns(OldTot)),
 	assert(counted_fns(0)),
