@@ -1,7 +1,15 @@
-*initToolbar: 1
-*desktopDetail: All
-*compChoice: GNU
-*saveExtras:    Canvas file
-*helperManager: OFF
-*runControlPosition: default
-*slidersPosition: default
+*initNavbar:	1
+*initToolbar:	1
+*initEqnbar:	1
+*bigButtons:	0
+*saveExtras:	Canvas file
+*compDescPop:	1
+*compValPop:	1
+*compCmtPop:	1
+*recentCount:	10
+*flowRouting:	1
+*deleteEndToEnd:	1
+*helperManager:	1
+*runControlPosition:	default
+*slidersPosition:	default
+*compChoice:	None
