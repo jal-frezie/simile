@@ -1301,7 +1301,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #    $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
     $fm add command -label About... -command [list ShowAbout $winid]
     
-    set nb [frame $winid.toolSlot.navbar -border 2]
+    set nb [::ttk::frame $winid.toolSlot.navbar -border 2 -class Toolbar]
     pack [Separator $nb.afterSeparator -orient horizontal] -fill x -side bottom
     if {[PrefValue custom(bigButtons) bigButtons]} {
         set buttonImages ../Images/Toolbar/Large
@@ -1322,7 +1322,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [Separator $nb.$handle -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
-            pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised\
+            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton\
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
@@ -1339,7 +1339,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [Separator $nb.$handle -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
-            pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised \
+            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
@@ -1353,7 +1353,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [Separator $nb.$handle -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${handle}.gif]
-            pack [button $nb.$handle -image $testImg -borderwidth 1 -relief flat -overrelief raised \
+            pack [::ttk::button $nb.$handle -image $testImg -style Toolbutton \
                     -command [concat "MenuSelect $c" [lindex $navCmd 1]]] \
                     -side left -padx 2 -pady 2
             BindPopup $nb.$handle $handle
@@ -1361,7 +1361,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     $nb.runenv configure -state disabled
     
-    set tb [frame $winid.toolSlot.toolbar -border 2]
+    set tb [::ttk::frame $winid.toolSlot.toolbar -border 2 -class Toolbar]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
     foreach mode {compartment variable flow influence separator1 submodel \
                 relation separator2 creation immigration reproduction loss condition alarm separator3 text} {
@@ -1370,7 +1370,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${mode}.gif]
-            set bt [button $tb.$mode -command "ItemSelect $mode" -image $testImg -borderwidth 1 -relief flat -overrelief raised]
+            set bt [::ttk::checkbutton $tb.$mode -command "ItemSelect $mode" -image $testImg -style Toolbutton]
             pack $bt -side left -padx 2 -pady 2
             BindPopup $bt $mode
             bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y"
@@ -1380,8 +1380,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     foreach mode {select ghost snap} {
         set testImg [image create photo -file $buttonImages/${mode}.gif]
-        pack [button $tb.$mode -image $testImg -command "ModeSelect $mode" \
-                -borderwidth 1 -relief flat -overrelief raised] \
+        pack [::ttk::button $tb.$mode -image $testImg -command "ModeSelect $mode" -style Toolbutton] \
                 -side left -padx 2 -pady 2
         BindPopup $tb.$mode $mode
     }
@@ -1389,8 +1388,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         $tb.snap configure -state disabled
     }
     
-    $tb.$pushedbutton configure -relief sunken
-    $tb.$pushedbutton configure -state active
+    #$tb.$pushedbutton configure -relief sunken
+    #$tb.$pushedbutton configure -state active
     
     
     ### Formula bar section
