@@ -123,13 +123,27 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
-    set generic [list -width $width -tag "$tagSet realwidth($width) has_info"]
-    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
-    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
-# to draw the old style variable remove the above line
-    eval {$w create arc $ml $mt $mr $mb -start 45 -extent 90} $generic
-    eval {$w create arc $ml $mt $mr $mb -start 225 -extent 90} $generic
 
+    # second approximation to fill
+    scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+    scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+    scan [GetPoints $mr -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+    scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
+
+    set generic [list -width $width -tag "$tagSet realwidth($width) has_info"]
+#    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
+
+    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] $tagSet]
+# to draw the old style variable remove the above line,
+# give arcs their outlines back and make sure they get flashed
+#    eval {$w create arc $ml $mt $mr $mb -start 45 -extent 90 -outline {}} $generic
+#    eval {$w create arc $ml $mt $mr $mb -start 225 -extent 90 -outline {}} $generic
+
+    eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
+    eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
+    eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
+            $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
+            $h8 $v1 $h9 $v2 $h10 $v3} $generic
     set decor [expr $extras/10]
     set stack [expr $extras-10*$decor]
     
@@ -151,12 +165,13 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 	}
     }
 	    
-    set stackDepth 1
+    set stackDepth 0
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
-        set stackSide [$w create oval $ml $mt $mr $mb -width $width \
-			   -tag "$tagSet size_on_this realwidth($width)"]
-        if {$stackDepth} {
+        set stackSide [eval {$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
+                $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 \
+                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10} $generic]
+         if {$stackDepth} {
             $w lower $stackSide $p1
             $w move $stackSide $stackDistance $stackDistance
             set p1 $stackSide
@@ -689,6 +704,7 @@ proc ColorSymbol { w name type density colorSpec } {
         set textColor $looks($type,text)
     }
     FlashSymbol $w $name $outlineColor $textColor
+
     StippleSymbol $w $name $density $colorSpec
 }
 
@@ -696,12 +712,12 @@ proc FlashSymbol {w name outlineColor textColor} {
     foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
-            line {
+            line|arc {
 		if {![string match */background/* \
 			  [$w itemcget $object -tag]]} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
-            } oval|arc {
+            } oval {
                 $w itemconfigure $object -outline $outlineColor
             }
         }
@@ -711,10 +727,10 @@ proc FlashSymbol {w name outlineColor textColor} {
 proc StippleSymbol {w name density selected} {
     foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
-            line {
+            line|arc {
                 $w itemconfigure $object -stipple $density
             }
-            rectangle|arc|oval|polygon {
+            rectangle|oval|polygon {
                 $w itemconfigure $object -outlinestipple $density \
 		    -stipple $density
             }
@@ -737,7 +753,7 @@ proc StippleSymbol {w name density selected} {
 
 proc FillSymbol { w name color } {
     foreach object [$w find withtag $name] {
-        foreach outlinable_type "rectangle oval arc polygon" {
+        foreach outlinable_type "rectangle oval polygon" {
             if {[string compare [$w type $object] $outlinable_type] == 0 && \
 		    ![string match */background/* [$w gettags $object]]} {
                 $w itemconfigure $object -fill $color
@@ -1277,7 +1293,7 @@ proc NextCaption {canvas} {
 # set looks(brushmap) [image create bitmap -file brush.xbm]
 
 proc Customize {winId mode} {
-    global looks done window_info
+    global looks done window_info custom
     
     set looks(width) 200
     
@@ -1328,6 +1344,7 @@ proc Customize {winId mode} {
     canvas $t.canvas -width [expr $looks(width) + 50] \
             -height [expr $looks(width) + 50]
     set window_info($t.canvas,scale) 1
+    set custom(showgrids,$t.canvas) 0
     pack $t.canvas
     
     label $t.tell -text "Drag text by chosen anchor to set default position"
@@ -1439,6 +1456,7 @@ proc ExtractFontData {font} {
     #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
     return [list $family $weight $style $textsize]
 }
+
 proc CopyLooks {t object} {
     global looks
     if {[string compare $object influence]} {
@@ -1524,7 +1542,7 @@ proc DoGraphics {box type middle size} {
                     condition 100 normal "sample"}
         function {PutHexagon $box.canvas $l $t $r $b 100 1 {} \
                     normal "sample"}
-        variable {PutCrossedCirc $box.canvas $l $t $r $b 100 1 {} \
+        variable {PutCrossedCirc $box.canvas $l $t $r $b 1 100 {} \
                     normal "sample"}
         submodel {PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
                     none none 0 0 white 100 normal "sample"}
@@ -1620,6 +1638,7 @@ proc ZotColor {t frame role type} {
 proc ZotObjectSize {t type size} {
     global looks
     
+
     set middle [expr $looks(width)/2 + 25]
     if {[string match generic $type]} {
         set useLooks compartment
