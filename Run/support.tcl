@@ -9,14 +9,18 @@ set this ::AME_model<>
 # searching through records like this is not the best way -- try and change
 # the tcl model code so the node id is the index
 
-proc getinfo {node field} {
+proc findRecord {node} {
     global nodedata
 
     foreach record [array names nodedata] {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
-	    return [lindex $nodedata($record) [expr $field+1]]
+	    return $nodedata($record)
 	}
     }
+}
+
+proc getinfo {node field} {
+    return [lindex [findRecord $node] [expr $field+1]]
 }
 
 # Graph handling stuff
@@ -45,9 +49,9 @@ proc tcl_insert {node newVs} {
 
     foreach record [array names nodedata] {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
-	    set type [lindex $nodedata($record) 1]
-	    set dims [lindex $nodedata($record) 3]
 	    set tree [lindex $nodedata($record) 4]
+	    set type [lindex $nodedata($record) 1]
+	    set dims [GetFullDims $tree]
 	    return [list [FillValue ::AME_model<> $tree $type $dims \
 			      {} 0 $newVs]]
 	}
@@ -422,7 +426,7 @@ proc do_in_editor {args} {
     set info [lindex $result 1]
     switch [lindex $result 0] {
 	err {
-	    error [lindex $info 0] [join [lrange $info 1 end] \n]
+	    error [lindex $info 0] [join $info \n]
 	} res {
 	    return $info
 	}

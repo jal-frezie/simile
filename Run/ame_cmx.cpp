@@ -166,11 +166,13 @@ void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
 }
 
-
-
-
-
-
+void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
+  while (*dest) { dest++; }
+  if (sep) { *(dest++)=sep; }
+  if (sep2) { *(dest++)=sep2; }
+  do { *(dest++)= *src; } while (*src++);
+}
+  
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
 			     int num) {
    int count;
@@ -379,36 +381,48 @@ public:
   }
 
   /* Now for the locally defined model class procedures */
-
-  void make_full_caption(int *tree, char *result) {
-    /* New version which does not depend on the nodedata array being in
-       any particular order -- and returns the whole caption */
-    int count,level;
-
-    *result = (char)NULL;
-    level = 1;
-    while (tree[level]) {
-      level++;
-      for (count=1;nodecount>count;count++) {
-	if (!compare_instance_status(nodedata[count].path,tree,level) &&
-	    !nodedata[count].path[level]) {
-	  strcat(result, "/");
-	  strcat(result, nodedata[count].caption);
+  int parent_line (int line) {
+    int count, level, test, *path;
+    path = nodedata[line].path;
+    for (count=0;nodecount>count;count++) {
+      level = 0;
+      while (test = nodedata[count].path[level]) {
+	if (test != path[level++]) {
 	  break;
 	}
       }
+      if (!test && path[level] &&!path[level+1]) {
+	return(count);
+      }
     }
+    return(-1);
+  }
+      
+  void make_full_caption(int line, char *result, int *dims) {
+    /* New version which does not depend on the nodedata array being in
+       any particular order -- and returns the whole caption */
+    int parent;
+
+    if ((parent = parent_line(line)) > 0) {
+      make_full_caption(parent, result, dims);
+    } else {
+      *result = (char)NULL;
+      *dims = 0;
+    }
+    strcat(result, "/");
+    strcat(result, nodedata[line].caption);
+    append_ints_to_null(dims, nodedata[line].dims, 0,0);
   }
   
-  node_data_line* getinfo(char* node_id) {
+  int getinfo(char* node_id) {
     int count;
 
     for (count=0;nodecount>count;++count) {
       if (!strcmp(node_id, nodedata[count].name)) { 
-	return(nodedata + count);
+	return count;
       }
     }
-    return NULL;
+    return -1;
   }
 
 } /* end of class Model */ ;
@@ -484,10 +498,10 @@ from the search string, less the submodel itself -- note it may be an issue
 that the submodel name is searched for in both models ) */
 
 int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
-  int count;
+  int count, spare_dims[32];
   char test[255];
   for (count = 1; seekType->nodecount>count; ++count) {
-    seekType->make_full_caption(seekType->nodedata[count].path, test);
+    seekType->make_full_caption(count, test, spare_dims);
 	  
     if (!strcmp(seeknode, test)) {
       *tgtModel = seekType;
@@ -514,33 +528,29 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
    Needs a new node_data_line, to which it is passed a ptr. Returns 0 if
    fails to find path. */
 
-void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
-  while (*dest) { dest++; }
-  if (sep) { *(dest++)=sep; }
-  if (sep2) { *(dest++)=sep2; }
-  do { *(dest++)= *src; } while (*src++);
-}
-  
 node_data_line* searchinfo(char* node, Model** tgtModel, 
 			   char* caption, int* dims, int* path) {
   listNodeModel* searchPoint = nodeModelList;
   Model* tryModel;
   node_data_line *bottomLine;
   char localCapt[256];
+  int local_dims[32];
+  int line;
 
   while (searchPoint) {
     tryModel = searchPoint->model;
-    if (bottomLine=tryModel->getinfo(node)) {
+    if ((line=tryModel->getinfo(node))>-1) {
+      bottomLine = tryModel->nodedata + line;
       *tgtModel = tryModel;
-      tryModel->make_full_caption(bottomLine->path, localCapt);
+      tryModel->make_full_caption(line, localCapt, local_dims);
       if (tryModel == modelType) {
 	strcpy(caption, localCapt);
 	*dims = *path = 0;
-	append_ints_to_null(dims, bottomLine->dims, 0, 0);
+	append_ints_to_null(dims, local_dims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
       } else if (searchinfo(searchPoint->node, &tryModel,
 			    caption, dims, path)) { /* ref to tryModel spare */
-	append_ints_to_null(dims, bottomLine->dims, SEPARATE, 0);
+	append_ints_to_null(dims, local_dims, SEPARATE, 0);
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
 	strcpy(caption + strlen(caption), /* was strrchr(caption, '/'), */
@@ -782,7 +792,7 @@ extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
       return TCL_ERROR;
     }
 
-    nodeModelList = new listNodeModel(nodeName, 
+    nodeModelList = new listNodeModel(nodeName,
 				      modelType,
 				      nodeModelList);
     Tcl_SetObjResult(interp, Tcl_NewLongObj((long int)modelType));
@@ -1224,7 +1234,7 @@ extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
 of arrays. It will put shorter lists in front of longer, though they should
 always be the same length. */
 
-int obj_compare_instance_status(Tcl_Obj* Obj, Tcl_Obj* RefObj) {
+int obj_compare_instance_status(Tcl_Obj* Obj, Tcl_Obj* RefObj) {
   int count, num1, num2, val1, val2;
   Tcl_Obj **objVals, **refVals;
 

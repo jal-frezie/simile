@@ -474,7 +474,8 @@ proc GetTclCompProperty {topNode prop args} {
 	    array set propData [list Class 7 Type 0 Eval 1]
 	    return [getinfo $node $propData($prop)]
 	} Dims {
-	    return [getinfo $node 2]
+	    set numericPath [getinfo $node 3]
+	    return [GetFullDims $numericPath]
 	} Graph {
 	    set index [getinfo $node 4]
 	    if {[llength $set]} {
@@ -484,24 +485,8 @@ proc GetTclCompProperty {topNode prop args} {
 	    }
 	} Caption {
 	    set numericPath [getinfo $node 3]
+	    return [GetFullCaption $numericPath]
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
-	    for {set level 1} {$level < [llength $numericPath] - 1} \
-		{incr level} {
-		    set subpath [lrange $numericPath 0 $level]
-		    lappend subpath 0
-		    for {set record 1} {$nodecount>$record} {incr record} {
-			set line $nodedata($record)
-			if {[ListSameNumbers [lindex $line 4] $subpath]} {
-			    append fullPath / [lindex $line 9]
-			    break
-			}
-		    }
-		}
-	    if {[info exists fullPath]} {
-		return $fullPath
-	    } else {
-		error "Could not find caption for node $node"
-	    }
 	} IdFromCapt {
 	    for {set record 1} {$nodecount>$record} {incr record} {
 		set id [lindex $nodedata($record) 0]
@@ -523,6 +508,43 @@ proc GetTclCompProperty {topNode prop args} {
 	}
     }
 }
+
+proc GetFullCaption {handle} {
+    global nodedata
+    if {[llength $handle] < 3} {
+	return {}
+    } else {
+	set parentCapt [GetFullCaption [lreplace $handle end-1 end 0]]
+	foreach record [array names nodedata] {
+	    set line $nodedata($record)
+	    if {[ListSameNumbers [lindex $line 4] $handle]} {
+		append parentCapt / [lindex $line 9]
+		break
+	    }
+	}
+	return $parentCapt
+    }
+}				      
+	    
+proc GetFullDims {handle} {
+    global nodedata
+#do_in_editor puts $handle
+    if {[llength $handle] < 2} {
+	return 0
+    } else {
+	set parentDims [GetFullDims [lreplace $handle end-1 end 0]]
+	foreach record [array names nodedata] {
+	    set line $nodedata($record)
+	    if {[ListSameNumbers [lindex $line 4] $handle]} {
+		set parentDims [concat [lrange $parentDims 0 end-1] \
+				    [lindex $line 3]]
+		break
+	    }
+	}
+#do_in_editor puts $parentDims
+	return $parentDims
+    }
+}				      
 	    
 #proc getinfo {topNode node field} {
 #    do_for_node $topNode getinfo $node $field

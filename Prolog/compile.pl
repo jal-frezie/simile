@@ -528,7 +528,7 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 			    ExtSets, Graphs, LocalPublicDecls,
 			    LocalExts, LocalNodeData),
 	(generate_main_decls(L, Instance, DeepTree, 1,
-			     NewDims, ExtSets, Graphs,
+			     [], ExtSets, Graphs,
 		    DeepTypeDecls, DeepPointerDecls, DeepNodeData), !;
 	 /* Not a submodel */
 	    [DeepTypeDecls, DeepPointerDecls, DeepNodeData] = [[], [], []]),
