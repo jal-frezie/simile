@@ -425,7 +425,7 @@ deleted */
 
 trail(Node, Arc, Way) :-
 	find_all_links(Node, Arc),
-	\+ has_outer_equiv(_, Node, Arc),
+	\+ (has_outer_equiv(_, Node, Arc), \+ get_highlit_obj(_, Arc)),
 	m_class:Arc is_connector from Start to Mid,
 	get_host(Mid, Finish),
 	select(Node, [Start, Finish], [Far]),
@@ -1219,11 +1219,16 @@ change_delete_status(Target, Way) :-
 	    highlight(Target, 2)),
 	/* Now change cloud etc to same colour as link */
 	(m_class:Target is_connector from End1 to End2,
+	    (Way = on,
+		get_highlit_obj(0, End1),
+		get_highlit_obj(0, End2),
+		highlight(Target, 0),
+		fail;
 	    (Damage = End1; Damage = End2),
 	    \+ get_highlit_obj(0, Damage),
 	    depends_on_links(Damage),
 	    keep_only_if_links_stay(Damage),
-	    fail;
+	    fail);
 	true).
 
 depends_on_links(Damage) :-
