@@ -10,7 +10,7 @@ set msgs(immigration) "Add immigration processes to population submodels"
 set msgs(reproduction) "Add reproduction processes to population submodels"
 set msgs(loss) "Add destruction processes to population submodels"
 set msgs(move) "Move components"
-set msgs(copysm) "Make copies of submodels"
+set msgs(copy) "Make copies of submodels"
 set msgs(ghost) "Create 'ghosts' of components"
 set msgs(select) "Select components"
 set msgs(delete) "Delete components"
@@ -90,6 +90,7 @@ set msgs(zoomfit) "Zoom to fit"
 set msgs(zoomout) "Zoom out"
 
 set help(g\\+\\+) "run/index.htm"
+set help(fill_equation) "equations/dialogue.htm"
 
 set url(contents.htm) {Contents}
 set url(start/index.htm) {Getting Started}
