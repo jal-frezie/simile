@@ -12,7 +12,7 @@ sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	menu_handle/3, set_box_size/4, change_size/2,
 	off_window/1, kill_everything/0]).
 	
-sicstus_use_module([sp_only, compile, dialogue, m_update, image, maintain, 
+sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
 	state, backup, library, ame_gen, utility, 
 	library(lists), library(ordsets)]).
 
@@ -491,9 +491,9 @@ menu_handle(Win, edit, paste) :-
 	all(event, adjust_posn,
 	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
 	all(event, retitle_duplicate, [build(Movers), unify(Used)]),
-	all(maintain, redisplay, [build(Movers)]),
+	all(draw, redisplay, [build(Movers)]),
 	    /* New part is highlit already, this just corrects display */
-	all(maintain, highlight, [build(Movers), unify(0)]),
+	all(draw, highlight, [build(Movers), unify(0)]),
 	finish_move(Model);
 	    
 	    caption_for(Model, Capt),

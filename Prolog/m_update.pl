@@ -1213,7 +1213,7 @@ start point, allowing it to be used for end-to-end deletes. */
 fast_delete(Dead) :-
 	delete_implicit_node(Dead),
 	state:shows_model(Win,Dead),
-	    maintain:delete_window(Win),
+	    draw:delete_window(Win),
 	    fail;
 	Dead is_no_longer_model_class;
 	Dead is_connector from In to Out,
@@ -1228,7 +1228,7 @@ superfast_delete(Dead) :-
 	    superfast_delete(AlsoDead),
 	    AlsoDead is_no_longer_model_class,
 	    state:shows_model(Win,AlsoDead),
-	    maintain:delete_window(Win),
+	    draw:delete_window(Win),
 	    fail;
 	true.
 
@@ -1347,7 +1347,7 @@ remove_border_nodes(LineType, Finish, Start) :-
 	stick_on_edge(Local, Far, Other, LineType, InputNode),
 	\+ _somethingElse is_connector from InputNode to _,
 	\+ _somethingElse is_connector from _ to InputNode,
-	maintain:off(InputNode),
+	draw:off(InputNode),
 	fast_delete(InputNode),
 	fail.
 
@@ -1553,4 +1553,4 @@ make_desktop(Desktop, Canvas_name) :-
         all(state, set_display_depth, [unify(Canvas_name),
             build([ghost_link, influence, variable, flow, compartment,
                    submodel, caption, sections]), build(InitDepths)]),
-        maintain:redraw_window(Canvas_name).
+        draw:redraw_window(Canvas_name).

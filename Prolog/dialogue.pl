@@ -27,12 +27,11 @@ pass_functions(LibFuns) :-
 	prepare_equation(AllFns).
 	
 atomize_function(FnAtom) :-
-	inters:function(Functor, ResultSort, ArgSorts),
+	inters:builtin(Category, Functor, ResultSort, ArgSorts),
 	spell_out([ResultSort | ArgSorts], 1),
 	make_arg_list(ArgSorts, String),
-	sicstus_format_to_chars("builtin ~a (~s) returns ~w", [Functor, String, 
-ResultSort],
-			FnChars),
+	sicstus_format_to_chars("{Built-in {~a}} ~a (~s) returns ~w",
+			[Category, Functor, String, ResultSort], FnChars),
 	name(FnAtom, FnChars).
 
 spell_out([], _).

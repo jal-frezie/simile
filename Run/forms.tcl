@@ -150,14 +150,20 @@ proc create_equation {parent boxtitle indices} {
     set lbf [Tree $fnFrame.table -showlines yes]
     $fnFrame setwidget $lbf
     pack $fnFrame -expand yes -fill both
-    $lbf insert end root builtin -image $iconImages(open) -text Built-in
-    $lbf insert end root macro -image $iconImages(open) -text Macros
-    $lbf insert end root proc -image $iconImages(open) -text Procedures
 
     foreach funk $equation(fnDefs) {
-	set component [lindex $funk 1]
+	set box root
+	foreach level [lindex $funk 0] {
+	    set lname $box.[join $level _]
+	    if {![$lbf exists $lname]} {
+		$lbf insert end $box $lname -image $iconImages(open) \
+		    -text $level
+	    }
+	    set box $lname
+	}
+	set component $box.[lindex $funk 1]
 	if {![$lbf exists $component]} {
-	    $lbf insert end [lindex $funk 0] $component \
+	    $lbf insert end $box $component \
 		-image $iconImages(function) -text [lrange $funk 1 end]
 	}
     }
@@ -747,7 +753,7 @@ proc HitKey { winId char } {
 
 proc functionClick {boxname fn} {
     # Take the item the user clicked on
-    InsertFunction $boxname $fn
+    InsertFunction $boxname [lindex [split $fn .] end]
 }
 
 proc AddFnPopup {X Y fnName} {

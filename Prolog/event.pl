@@ -13,7 +13,7 @@ sicstus_module(event, [get_info/3, get_params/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 	adjust_display_area/2, prioritize_window/1, run_settings_tweaked/0]).
 
-sicstus_use_module([sp_only, dialogue, m_update, image, maintain,
+sicstus_use_module([sp_only, dialogue, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(ordsets)]).
 
@@ -846,7 +846,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     all(event, tweak_link_connections,
 			 [build(Movers), unify([Xoffset, Yoffset]),
 			  unify(c), build(_)]),
-		     all(maintain, move_display,
+		     all(draw, move_display,
 			 [build(Movers), unify([Xoffset, Yoffset])]));
 /*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
 		     find_all_comps(Parent, Moving_obj),
@@ -1572,7 +1572,7 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
         (m_class:equivalent_arcs(Top_arc, NewArc),
 	    find_all_comps(Node, NewArc),
 	    get_incomplete([Node | ScreenRoute]),
-	    maintain:translate_between(Parent, Node, Trans),
+	    draw:translate_between(Parent, Node, Trans),
 	    translate(ScreenRoute, Trans, Route),
 	    set_shape(NewArc, course, Route),
 	    update_bowtie(NewArc, Route),

@@ -54,7 +54,7 @@ substitute(E, [G | T1], F, [H | T2]) :-
 :- include('output.pl').
 :- include('state.pl').
 :- include('image.pl').
-:- include('maintain.pl').
+:- include('draw.pl').
 :- include('event.pl').
 :- include('menu.pl').
 :- include('input.pl').

@@ -140,7 +140,11 @@ read_library_funx(Done) :-
 
 read_func_file(File, Done) :-
 	open(File, read, Stream),
-	read_funcs(File, Stream, Done).
+	name(File, FileStr),
+	append([46,46,47,70,117,110,99,116,105,111,110,115,47 | NameStr],
+	       ".pl", FileStr),
+	name(Name, NameStr),
+	read_funcs(Name, Stream, Done).
 
 read_funcs(File, Stream, Done) :-
 	sicstus_format_to_chars("Parsing definitions in ~a", [File], ProbAct),
@@ -164,14 +168,14 @@ read_funcs(File, Stream, Done) :-
 		sicstus_format_to_chars("Failed to parse macro definition:\n~w\nThe macro function contains the parameter ~w, which does not appear in the arguments of the macro template", [Line, Param], Bug),
 		do_dialogue(ProbAct, warning, Bug, ok, _);
 	    assert(macro_expansion(NewLine))),
-	    append_atoms('macro ', Fn, FnEntry);
+	    append_atoms(['{Macros {', File, '}} ', Fn], FnEntry);
 	Line = function(Functor, ReturnType, ArgTypes),
 	    assert(Line),
 	    assert(use_tcl_proc_for(Functor)), !,
 	    dialogue:spell_out([ReturnType | ArgTypes], 1),
 	    dialogue:make_arg_list(ArgTypes, String),
-	    sicstus_format_to_chars("proc ~a (~s) returns ~w",
-				    [Functor, String, ReturnType], FnChars),
+	    sicstus_format_to_chars("{Procedures {~a}} ~a (~s) returns ~w",
+			[File, Functor, String, ReturnType], FnChars),
 	    name(FnEntry, FnChars)),
 	    read_funcs(File, Stream, More),
 	    Done = [FnEntry | More];
@@ -749,6 +753,7 @@ raise_units(Base, Num, Units) :-
 fn_or_op(Op, RUnits, AUnits) :-
 	var(Op), !;
 	function(Op, RUnits, AUnits);
+	builtin(_Cat, Op, RUnits, AUnits);
 	operator(Op, RUnits, AUnits).
 
 dissociate(SubArgs, [later(Arg) | UseArgs]) :- 
@@ -837,75 +842,75 @@ put into the target program. */
 /* These are implemented by the parser. Note the units are descriptive since
 they should never actually be used to parse anything. */
 
-function(sum, int, [array_or_list_of_ints]).
-function(product, int, [array_or_list_of_ints]).
-function(count, int, [array_or_list_of_any]).
-function(any, boolean, [array_or_list_of_boolean]).
-function(all, boolean, [array_or_list_of_boolean]).
-function(channel_is, boolean, [channel]).
-function(dt, real, [const_int]).
-function(time, real, [const_int]).
-function(init_time, real, []).
-function(parent, int, []).
-function(stop, int, [int]).
+builtin('List handling', sum, int, [array_or_list_of_ints]).
+builtin('List handling', product, int, [array_or_list_of_ints]).
+builtin('List handling', count, int, [array_or_list_of_any]).
+builtin('List handling', any, boolean, [array_or_list_of_boolean]).
+builtin('List handling', all, boolean, [array_or_list_of_boolean]).
+builtin('Model properties', channel_is, boolean, [channel]).
+builtin('Model properties', dt, real, [const_int]).
+builtin('Model properties', time, real, [const_int]).
+builtin('Model properties', init_time, real, []).
+builtin('Model properties', parent, int, []).
+builtin('Model properties', stop, int, [int]).
 /* legacy versions from before we had empty arg lists */
-function(time, real, [const_int]).
-function(init_time, real, [const_int]).
-function(parent, int, [dummy_int]).
+builtin('Model properties', time, real, [const_int]).
+builtin('Model properties', init_time, real, [const_int]).
+builtin('Model properties', parent, int, [dummy_int]).
 
-function(last, any, [any]).
-function(prev, given_units, [const_int]).
-function(makearray, array_of_any, [any, const_int]).
-function(place_in, int, [const_int]).
-function(element, any, [array_of_any, int]).
-function(size, int, [submodel_name]).
-function(size, int, [submodel_name, const_int]).
-function(least, int, [array_or_list_of_ints]).
-function(greatest, int, [array_or_list_of_ints]).
+builtin('Model properties', last, any, [any]).
+builtin('Model properties', prev, given_units, [const_int]).
+builtin('List handling', makearray, array_of_any, [any, const_int]).
+builtin('List handling', place_in, int, [const_int]).
+builtin('List handling', element, any, [array_of_any, int]).
+builtin('Model properties', size, int, [submodel_name]).
+builtin('Model properties', size, int, [submodel_name, const_int]).
+builtin('List handling', least, int, [array_or_list_of_ints]).
+builtin('List handling', greatest, int, [array_or_list_of_ints]).
 
 /* These are the ones that are actually used by the parser, so the units have
 to be recognizable. Note that if something is down as returning an int for an
 int, it will be expected to return a real for a real, etc */
 
-function(sqrt, 1, [1]).
-function(log, 1, [1]).
-function(log10, 1, [1]).
-function(exp, 1, [1]).
-function(abs, int, [int]).
-function(int, int, [real]).
-function(ceil, int, [real]).
-function(floor, int, [real]).
+builtin('Arithmetic', sqrt, 1, [1]).
+builtin('Arithmetic', log, 1, [1]).
+builtin('Arithmetic', log10, 1, [1]).
+builtin('Arithmetic', exp, 1, [1]).
+builtin('Arithmetic', abs, int, [int]).
+builtin('Arithmetic', int, int, [real]).
+builtin('Arithmetic', ceil, int, [real]).
+builtin('Arithmetic', floor, int, [real]).
 
-function(sin, 1, [1]).
-function(cos, 1, [1]).
-function(tan, 1, [1]).
-function(cot, 1, [1]).
-function(sinh, 1, [1]).
-function(cosh, 1, [1]).
-function(tanh, 1, [1]).
-function(coth, 1, [1]).
+builtin('Trigonometry', sin, 1, [1]).
+builtin('Trigonometry', cos, 1, [1]).
+builtin('Trigonometry', tan, 1, [1]).
+builtin('Trigonometry', cot, 1, [1]).
+builtin('Trigonometry', sinh, 1, [1]).
+builtin('Trigonometry', cosh, 1, [1]).
+builtin('Trigonometry', tanh, 1, [1]).
+builtin('Trigonometry', coth, 1, [1]).
 
-function(asin, 1, [1]).
-function(acos, 1, [1]).
-function(atan, 1, [1]).
-function(arctan, 1, [1]).
-function(acot, 1, [1]).
-function(asinh, 1, [1]).
-function(acosh, 1, [1]).
-function(atanh, 1, [1]).
-function(acoth, 1, [1]).
+builtin('Trigonometry', asin, 1, [1]).
+builtin('Trigonometry', acos, 1, [1]).
+builtin('Trigonometry', atan, 1, [1]).
+builtin('Trigonometry', arctan, 1, [1]).
+builtin('Trigonometry', acot, 1, [1]).
+builtin('Trigonometry', asinh, 1, [1]).
+builtin('Trigonometry', acosh, 1, [1]).
+builtin('Trigonometry', atanh, 1, [1]).
+builtin('Trigonometry', acoth, 1, [1]).
 
-function(rand, 1, [1, 1]).
-function(rand_var, 1, [1, 1]).
-function(pow, 1, [1, 1]). /* my c++ does not have int powers */
-function(fmod, 1, [1, 1]).
+builtin('Arithmetic', rand, 1, [1, 1]).
+builtin('Arithmetic', rand_var, 1, [1, 1]).
+builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
+builtin('Arithmetic', fmod, 1, [1, 1]).
 
-function(hypot, real, [real, real]).
-function(atan2, 1, [real, real]).
-function(acot2, 1, [real, real]).
+builtin('Trigonometry', hypot, real, [real, real]).
+builtin('Trigonometry', atan2, 1, [real, real]).
+builtin('Trigonometry', acot2, 1, [real, real]).
 
-function(max, int, [int, int]).
-function(min, int, [int, int]).
+builtin('Arithmetic', max, int, [int, int]).
+builtin('Arithmetic', min, int, [int, int]).
 
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */

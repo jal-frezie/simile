@@ -68,10 +68,10 @@ finish_move(EditedModel) :-
 	set_save_status(Win, risky),
 	/* Only proceed for toplevel window containing model */
 	is_toplevel(Model),
-	maintain:update_ability(Model, undo, edit, 'Undo', 1),
-	maintain:update_ability(Model, redo, edit, 'Redo', 0),
+	draw:update_ability(Model, undo, edit, 'Undo', 1),
+	draw:update_ability(Model, redo, edit, 'Redo', 0),
 	save_allowed(Model, CanSave),
-	maintain:update_ability(Model, save, file, 'Save', CanSave),
+	draw:update_ability(Model, save, file, 'Save', CanSave),
 	retract(saved_state(Model, first, First)),
 	retract(saved_state(Model, last, _)),
 	retract(saved_state(Model, current, Current)),
@@ -252,9 +252,9 @@ clear_autosave(Model, Name) :-
 check_autosave(Model, Name, Tweaked) :-
 	state:shows_model(Win, Model),
 	set_save_status(Win, safe),
-	maintain:update_ability(Model, undo, edit, 'Undo', 0),
-	maintain:update_ability(Model, redo, edit, 'Redo', 0),
-	maintain:update_ability(Model, save, file, 'Save', 0),
+	draw:update_ability(Model, undo, edit, 'Undo', 0),
+	draw:update_ability(Model, redo, edit, 'Redo', 0),
+	draw:update_ability(Model, save, file, 'Save', 0),
 	(is_toplevel(Model), !,
 	    initialize_ring(Model),
 	    make_auto_name(Name, ".smx", AutoName),
@@ -265,10 +265,10 @@ check_autosave(Model, Name, Tweaked) :-
 			  yesno, yes), !,
 		    restore_save_file(Model, AutoName, UState, RState),
 		    Tweaked = 1,
-		    maintain:update_ability(Model, undo, edit, 'Undo', UState),
-		    maintain:update_ability(Model, redo, edit, 'Redo', RState),
+		    draw:update_ability(Model, undo, edit, 'Undo', UState),
+		    draw:update_ability(Model, redo, edit, 'Redo', RState),
 		    save_allowed(Model, CanSave),
-		    maintain:update_ability(Model, save, file, 'Save', CanSave),
+		    draw:update_ability(Model, save, file, 'Save', CanSave),
 		    set_save_status(Win, risky);
 		output:my_delete_file(AutoName));
 	    true);

@@ -323,7 +323,7 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 	    RefExp = Ref;
 	nonvar(Entry),
 	    (member(SourceLocation, [in_base, in_assoc]),
-		all(maintain, caption_for,
+		all(draw, caption_for,
 		    [build([Node, SourceID, Relation]),
 		     build([NodeCap, SrcCap, RelCap])]),
 		raise_exception(role_between_execs(NodeCap, SrcCap, RelCap));

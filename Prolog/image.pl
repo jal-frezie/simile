@@ -4,7 +4,7 @@ mathematical) aspects of a model. It uses the model database module model_class.
 which contains the graphical info together with the structural info, and it is made
 use of by:
 
-screen_maintain.pl (to ascertain what should be drawn on the screen),
+draw.pl (to ascertain what should be drawn on the screen),
 
 event.pl (to work out what a particular keyclick means in terms of edit
 commands).
@@ -984,7 +984,7 @@ route_link(Type, Start, Finish, Route) :-
 
 shape_route(Type, Beginning, End, Route) :-
 	Type = flow, !,
-	    (maintain:tk_get_pref(flowRouting, 1), !,
+	    (draw:tk_get_pref(flowRouting, 1), !,
 		kink_route(Beginning, End, Route);
 	    Route = [End, Beginning]);
 	/* influence */
