@@ -1878,7 +1878,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -command "MenuSelect $c file save_as"
     $fm add command -label "Save selection as..." \
             -command "MenuSelect $c file save_seln_as"
-    $fm add command -label "Save/Edit package" \
+    $fm add command -label "Save package" \
             -command "MenuSelect $c local save_all"
     
     $fm add separator
