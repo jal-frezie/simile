@@ -33,7 +33,7 @@ proc equationGraph {parent} {
     set done [eval {GraphEntry .graph} $graphArgs]
     grab release .graph
     destroy .graph
-    grab $equation(top)
+    grab $parent
     return $done
 }
 
@@ -597,6 +597,7 @@ proc equationDoTable {parent} {
     tkwait variable table_entry(done)
     grab release $t
     destroy $t
+    grab $parent
     return $table_entry(done)
 }
 
@@ -637,6 +638,7 @@ proc EditListAsTable {parent values} {
     tkwait variable table_viewer(done)
     grab release $t
     destroy $t
+    grab $parent
 # extract step at end so window still gone if it fails
     return [${viewerId}::ExtractEdits $t]
 }
