@@ -6,7 +6,6 @@ Contents file=contents.hhc
 Default Window=Normal
 Default topic=index.htm
 Display compile progress=No
-Enhanced decompilation=Yes
 Full-text search=Yes
 Language=0x809 English (United Kingdom)
 Title=Simile help file
@@ -206,6 +205,8 @@ new\enumerated.htm
 new\units.htm
 new\rungekutta.htm
 new\emit.htm
+elements\iteration.htm
+equations\tabledialogue.htm
 
 [INFOTYPES]
 
