@@ -92,6 +92,7 @@ proc clear {winId} {
 
 proc AddVariable {winId} {
     $winId.intro configure -text "Click on the array value representing the X coordinates of the treelike objects to be displayed."
+    $winId.bbframe.buttonBox itemconfigure 1 -state disabled
     GrabClicks $winId
     SetState $winId xcoord
 }
@@ -117,6 +118,7 @@ proc click {winId node caption} {
 		ReleaseClicks $winId
 		$ms configure -text {}
 		SaveState $winId
+		$winId.bbframe.buttonBox itemconfigure 1 -state normal
 		display $winId 0 0 0
 		ShowKey $winId
 	    }
