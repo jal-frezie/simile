@@ -6,7 +6,7 @@
 # and the AME interface: put these in a new file.
 
 #$Log: runmodel.tcl,v $
-#Revision 1.1  2002/05/23 15:33:18  jmm
+#Revision 1.2  2002/05/30 16:17:09  jaspert
 #*** empty log message ***
 #
 #Revision 1.40  2002-05-04 15:43:46+01  jat
@@ -21,7 +21,7 @@
 #won't substitute the $Name:  $ with the Symbolic name of the revision
 #Revision 1.38  2002-05-02 07:16:30+01  jmm
 #Correct RCS directive #$Log: runmodel.tcl,v $
-#Correct RCS directive #Revision 1.1  2002/05/23 15:33:18  jmm
+#Correct RCS directive #Revision 1.2  2002/05/30 16:17:09  jaspert
 #Correct RCS directive #*** empty log message ***
 #Correct RCS directive #
 #Correct RCS directive #Revision 1.39  2002-05-03 15:43:46+01  jmm
@@ -62,29 +62,32 @@ proc ModelWindow {winName} {
     toplevel $winName -menu ${winName}top
     wm iconbitmap $winName @../Images/dribble.xbm
 
-	# Create a scrollable canvas
-	set c [canvas $winName.canvas \
-		-confine 1 \
-		-xscrollcommand [list $winName.xscroll set] \
-		-yscrollcommand [list $winName.yscroll set] \
-		-xscrollincrement 1 -yscrollincrement 1]
-# scrollincrements set the only way we can get precise scrolling...
+    # Create a scrollable canvas
+    set c [canvas $winName.canvas \
+	       -confine 1 \
+	       -xscrollcommand [list $winName.xscroll set] \
+	       -yscrollcommand [list $winName.yscroll set] \
+	       -xscrollincrement 1 -yscrollincrement 1]
+    # scrollincrements set the only way we can get precise scrolling...
 
-	scrollbar $winName.xscroll -orient horizontal \
-		-command [list AdjustScroll $c xview]
-	scrollbar $winName.yscroll -orient vertical \
-		-command [list AdjustScroll $c yview]
-
-# space for toolbar
-	frame $winName.toolSlot
-	pack $winName.toolSlot -fill x
-
-	pack $winName.xscroll -side bottom -fill x
-	pack $winName.yscroll -side right -fill y
-	pack $c -fill both -expand true
-
-   bind $c <Configure> {SetSpace %W %w %h}
-   return $c
+# this rectangle will be resized to fill the scrollable area and coloured to
+# show the background
+    $c create rect 0 0 100 100 -outline {} -tag /background/
+    scrollbar $winName.xscroll -orient horizontal \
+	-command [list AdjustScroll $c xview]
+    scrollbar $winName.yscroll -orient vertical \
+	-command [list AdjustScroll $c yview]
+    
+    # space for toolbar
+    frame $winName.toolSlot
+    pack $winName.toolSlot -fill x
+    
+    pack $winName.xscroll -side bottom -fill x
+    pack $winName.yscroll -side right -fill y
+    pack $c -fill both -expand true
+    
+    bind $c <Configure> {SetSpace %W %w %h}
+    return $c
 }
 
 proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
@@ -101,8 +104,9 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 	WindowDetail $c [lindex $cats $depthParam] [lindex $args $depthParam] 0
     }
 
-$c configure -width [expr $wr-$wl] -height [expr $wb-$wt] \
+    $c configure -width [expr $wr-$wl] -height [expr $wb-$wt] \
 	-scrollregion "$wl $wt $wr $wb"
+    $c coords 1 $wl $wt $wr $wb
 
 # set initial scaling factors
     set window_info($c,width) [expr $wr - $wl]
@@ -110,13 +114,15 @@ $c configure -width [expr $wr-$wl] -height [expr $wb-$wt] \
     set window_info($c,scale) $scale
 # last will be overwritten if drawing from Prolog
 
+#ShowMessage debug info "Just done [$c coords 1]" ok
 }
 
 proc ChangeParentTitle { wc title colour } {
-	wm title [winfo parent $wc] $title
-	if {[string compare $colour clear]} {
-		$wc configure -background $colour
-	}
+    wm title [winfo parent $wc] $title
+    if {[string match clear $colour]} {
+	set colour {}
+    }
+    $wc itemconfigure 1 -fill $colour
 }
 
 # SetSpace: this command is called when the canvas is 'configured' by attacking
@@ -167,11 +173,11 @@ proc DoZoom { winId factor toProlog} {
 # Change the canvas area in accordance with the change in scale
 
     set oldSize [$winId cget -scrollregion]
-    $winId configure -scrollregion \
-	[list [expr [lindex $oldSize 0]*$factor] \
+    set newReg [list [expr [lindex $oldSize 0]*$factor] \
 	[expr [lindex $oldSize 1]*$factor] \
 	[expr [lindex $oldSize 2]*$factor] \
 	[expr [lindex $oldSize 3]*$factor]]
+    $winId configure -scrollregion $newReg
 
 # Find what is in the middle now
 
@@ -596,15 +602,12 @@ proc ProdObj {nodeId caption} {
 #    a submodel
 
 proc GetClickedObj { winId canx cany } {
-    set marker [$winId create line [expr $canx-2] [expr $cany-2] \
-	[expr $canx-2] $cany -tag /background/]
-    set target [$winId find closest $canx $cany 1]
+    set target [$winId find closest $canx $cany 10]
     if {[string match */background/* [$winId gettags $target]]} {
 	set result 0
     } else {
 	set result $target
     }
-    $winId delete $marker
     return $result
 }
 
@@ -1552,6 +1555,8 @@ proc compile_c {workingDir modelPath} {
 #		-DWIN32 -D_WIN32 -D_DLL -D_X86_=1 -DMODELCODE="$c_prog" \
 #		-I. -I$TOOLS32/include -I$TCL/include $TOOLDIR/support.cpp
 
+
+
 #	exec $TOOLS32/bin/ilink32.exe -Tpd $object $TARGET $TCL/lib/tcl${MAJ}${MIN}.lib
 # Method using MSVC's auto-generated Make file -- hangs for some
 # reason
@@ -1607,7 +1612,7 @@ proc build_c_stub {targetDir make_new_stub} {
 		    exec gcc -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
 		    exec gcc -mdll -o junk.tmp -Wl,--base-file,base.tmp \
 			    obj.o -L. -l$dll
-		    file delete junk.tmp
+#		    file delete junk.tmp
 		    exec dlltool --dllname TARGET --base-file base.tmp \
 			    --output-exp exp.exp --def stub.def
 		    exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
@@ -1856,3 +1861,4 @@ proc FilterErrors {args} {
 }
 
 build_c_stub "[pwd]/../Run" 0
+

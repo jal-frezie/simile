@@ -46,28 +46,9 @@ proc ControlDraw {simileVersion prologVersion} {
     set UserStream [open ../Run/userinfo.txt r]
     gets $UserStream userinfo(Name)
     gets $UserStream userinfo(Corp)
-    gets $UserStream userinfo(done)
-    close $UserStream
-    if {!$userinfo(done)} {
-	DoRegDialog
-	if {$userinfo(done) == 2} {
-	    if {[catch {package require http
-	    set regData [::http::formatQuery Name $userinfo(Name) \
-		    Organisation $userinfo(Corp) Email $userinfo(email)]
-	    ::http::geturl http://www.simulistics.com/products/SendMail.asp \
-		    -query $regData}]} {
-	    set userinfo(done) 0
-	    }
-	}
-    }
-    set UserStream [open ../Run/userinfo.txt w]
-    puts $UserStream $userinfo(Name)
-    puts $UserStream $userinfo(Corp)
-    puts $UserStream $userinfo(done)
+    gets $UserStream userinfo(Version)
     close $UserStream
 
-    set sendvars(running) 0
-    
     if {[file exists ~]} {
         set custom(prefDir) ~/.simile
     } else {
@@ -78,8 +59,41 @@ proc ControlDraw {simileVersion prologVersion} {
         file mkdir $custom(prefDir)
     }
 
+    if {[file exists $custom(prefDir)/version]} {
+	set UserStream [open $custom(prefDir)/version r]
+	gets $UserStream userinfo(Name)
+	gets $UserStream userinfo(Corp)
+	gets $UserStream userinfo(oldVersion)
+	gets $UserStream userinfo(done)
+    } else {
+	set userinfo(oldVersion) 0
+	set userinfo(done) 0
+    }
+
+    if {!$userinfo(done) || $userinfo(Version)>$userinfo(oldVersion)} {
+	DoRegDialog
+	if {$userinfo(done) == 2} {
+	    if {[catch {package require http
+	    set regData [::http::formatQuery Name $userinfo(Name) \
+			     Organisation $userinfo(Corp) Email $userinfo(email) \
+			    Version $userinfo(Version) OS $tcl_platform(os)]
+	    ::http::geturl http://www.simulistics.com/products/SendMail.asp \
+		    -query $regData}]} {
+	    set userinfo(done) 0
+	    }
+	}
+    }
+    set UserStream [open $custom(prefDir)/version w]
+    puts $UserStream $userinfo(Name)
+    puts $UserStream $userinfo(Corp)
+    puts $UserStream $userinfo(Version)
+    puts $UserStream $userinfo(done)
+    close $UserStream
+
+    set sendvars(running) 0
+    
     set custom(hotlist) {}
-    if [file exists $custom(prefDir)/recent] {
+    if {[file exists $custom(prefDir)/recent]} {
         set cacheStream [open $custom(prefDir)/recent r]
         while {[gets $cacheStream oldFile]>0} {
             if {[file exists $oldFile]} {
@@ -106,7 +120,7 @@ proc ControlDraw {simileVersion prologVersion} {
         {custom(compCmtPop) compCmtPop ON \
                     "Model component comment popups"} \
                 {custom(recentCount) recentCount 10 \
-                    "Show how many re options"} \
+                    "Show how many reopen options"} \
                 {custom(flowRouting) flowRouting ON \
                     "Rectilinear flow routing"} \
                 {custom(deleteEndToEnd) deleteEndToEnd ON \
@@ -167,7 +181,10 @@ proc ZapWindow { fullName } {
 }
 
 proc ClearWindow {winId} {
-	$winId delete all
+# Bit of tricky manoovering to delete all but 1st obj (window background)
+    $winId addtag doomed all
+    $winId dtag 1 doomed
+    $winId delete doomed
 }
 
 # Scale translates coordinates in desktop space to canvas space. Used to include
@@ -441,16 +458,18 @@ proc AbandonObj {winId} {
 # some time -- OK! 3rd param now cuts out Prolog if 0.
 
 proc ChangeRegion {w l t r b} {
-	global window_info
-
-	set hcomp [expr [Unscale $w $window_info($w,width)]/($r - $l)]
-	set vcomp [expr [Unscale $w $window_info($w,height)]/($b - $t)]
-	set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
-	if {$comp>1} {
-		DoZoom $w $comp 0
-	}
-	$w configure -scrollregion [list [Scale $w $l] [Scale $w $t] \
-		[Scale $w $r] [Scale $w $b]]
+    global window_info
+    
+    set hcomp [expr [Unscale $w $window_info($w,width)]/($r - $l)]
+    set vcomp [expr [Unscale $w $window_info($w,height)]/($b - $t)]
+    set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
+    set newReg [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
+    $w configure -scrollregion $newReg
+    eval {$w coords 1} $newReg
+#ShowMessage debug info "Just done [$w coords 1]" ok
+    if {$comp>1} {
+	DoZoom $w $comp 0
+    }
 }
 
 #######################################################################
@@ -468,7 +487,8 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
     set modelWin $winName
     
     TweakWindow $c $winTitle 1 $wl $wt $wr $wb $colour
-    wm maxsize $winName [winfo screenwidth $winName] [winfo screenheight $winName]
+    wm maxsize $winName [winfo screenwidth $winName] \
+	[winfo screenheight $winName]
     
     wm protocol $winName WM_DELETE_WINDOW \
 	    [list byebye $winName]
@@ -731,18 +751,15 @@ proc DoWithErrors {args} {
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
 
 proc ExportPostscript { winId } {
-
-        set title [wm title [winfo parent $winId]]
-	set psfile [ChooseFile [GetFileBase $title].ps \
-		"Name of postscript file" 1]
-	# check for cancel
-	if {![string match */ $psfile]} {
-		# force .ps extension
-		if {[string compare [file extension $psfile] .ps]} {
-			set psfile [file root $psfile].ps
-		}
-		SpitPS $winId $psfile
+    set psfile [ChooseFile image.ps "Name of postscript file" 1]
+    # check for cancel
+    if {![string match */ $psfile]} {
+	# force .ps extension
+	if {[string compare [file extension $psfile] .ps]} {
+	    set psfile [file root $psfile].ps
 	}
+	SpitPS $winId $psfile
+    }
 }
 
 proc PrintNow {winId toDo} {
@@ -877,12 +894,6 @@ proc AddMainMenu { winid initWidth initDepths} {
     set fm [menu ${winid}top.view -tearoff 0]
     ${winid}top add cascade -label View -underline 0 \
             -menu ${winid}top.view
-    set custom(showtoolbar,$winid) [expr $initWidth>=480 && \
-            [PrefValue custom(initToolbar) initToolbar]]
-    set custom(shownavbar,$winid) [expr $initWidth>=480 && \
-            [PrefValue custom(initNavbar) initNavbar]]
-    set custom(showeqnbar,$winid) [expr $initWidth>=480 && \
-            [PrefValue custom(initEqnbar) initEqnbar]]
     $fm add check -label Toolbar -variable custom(shownavbar,$winid) \
             -command "toggleBar $winid"
     $fm add check -command "toggleBar $winid" \
@@ -973,9 +984,6 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label About... -command [list ShowAbout $winid]
     
     set nb [frame $winid.toolSlot.navbar -border 2]
-    if {$custom(shownavbar,$winid)} {
-        pack $nb -fill x
-    }
     if {[PrefValue custom(bigButtons) bigButtons]} {
 	set buttonImages ../Images/Toolbar/Large
     } else {
@@ -1005,9 +1013,6 @@ proc AddMainMenu { winid initWidth initDepths} {
         BindPopup $nb.$handle $handle
     }
     set tb [frame $winid.toolSlot.toolbar -border 2]
-    if {$custom(showtoolbar,$winid)} {
-        pack $tb -fill x
-    }
     foreach mode {compartment variable flow influence submodel \
                 relation creation immigration reproduction loss condition} {
         set testImg [image create photo -file $buttonImages/${mode}.gif]
@@ -1029,9 +1034,6 @@ proc AddMainMenu { winid initWidth initDepths} {
 ### Robert Muetzelfeldt
 ### Started 4/3/02
     set eb [frame $winid.toolSlot.eqnbar -border 1 -relief raised]
-    if {$custom(showeqnbar,$winid)} {
-	pack $eb -fill x
-    }
     
     label $eb.label -anchor e
     pack $eb.label -side left
@@ -1076,7 +1078,27 @@ proc AddMainMenu { winid initWidth initDepths} {
 #   pack [button $eb.properties -state disabled -image $image -borderwidth 1] \
 #           -side left
 ### End of formula bar section
-    
+
+    update idletasks ;# to allow reqwidth to be calculated
+    set navWidth [winfo reqwidth $tb] ;# tool bar is widest
+#ShowMessage debug info "Toolbar needs $navWidth" ok
+    set custom(showtoolbar,$winid) [expr $initWidth>=$navWidth && \
+            [PrefValue custom(initToolbar) initToolbar]]
+    set custom(shownavbar,$winid) [expr $initWidth>=$navWidth && \
+            [PrefValue custom(initNavbar) initNavbar]]
+    set custom(showeqnbar,$winid) [expr $initWidth>=$navWidth && \
+            [PrefValue custom(initEqnbar) initEqnbar]]
+
+    if {$custom(shownavbar,$winid)} {
+        pack $nb -fill x
+    }
+    if {$custom(showtoolbar,$winid)} {
+        pack $tb -fill x
+    }
+    if {$custom(showeqnbar,$winid)} {
+	pack $eb -fill x
+    }
+
     $nb.undo configure -state disabled
     $nb.redo configure -state disabled
 }
@@ -1111,7 +1133,7 @@ proc ShowAbout {winId} {
     pack [label .about.l6]
     pack [label .about.l7 -text "This product is registered to \
 $userinfo(Name), $userinfo(Corp)"]
-    pack [label .about.l8 -text "for NON-COMMERCIAL use only."]
+#    pack [label .about.l8 -text "for NON-COMMERCIAL use only."]
     pack [label .about.l9]
     pack [label .about.l10 -text "(C) Copyright 2002, Simulistics Ltd."]
     pack [message .about.l12 -width 400 -text "Acknowledgements. \
@@ -1122,7 +1144,7 @@ $userinfo(Name), $userinfo(Corp)"]
     pack [label .about.l15]
 
 #    append mess "Version $sendvars(simV), \
-	    [clock format [file mtime ../Run/main.sav]]\n"
+#	[clock format [file mtime ../Run/main.sav]]\n"
 #    append mess "using Prolog $sendvars(proV)\n"
 #    append mess "and TclTk [info patchlevel]\n"
     pack [button .about.b -text OK -command "set sendvars(doneAbout) 1"]

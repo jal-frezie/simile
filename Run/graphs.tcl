@@ -34,6 +34,7 @@ proc equationGraph {parent} {
 
 proc ExtractGraphData { formula } {
 	global graph
+#ShowMessage debug info "Getting graph from $formula" ok
 	while {[regexp "graph\\( *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*),\
  *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *points\\((\[^)\]*)\\)," \
 				$formula match graph(lowx) \
@@ -43,8 +44,9 @@ proc ExtractGraphData { formula } {
 				graph(pts)]} {
 # next line puts backslashes before chars in match expr which would
 # otherwise be special to regsub (I may not have them all)
-		regsub -all \[\\(\\)\] $match \\\\\\0 match
-# tk_messageBox -message $match
+#ShowMessage debug info "Got expr $match" ok
+		regsub -all \[\\(\\)\\+\] $match \\\\\\0 match
+#ShowMessage debug info "Subbed it to $match" ok
 		regsub $match $formula graph( formula
 	}
 	return $formula
@@ -109,8 +111,11 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points} {
     label $b.outrange -text "Out of range:"
     pack $b.outrange
     set rangeChoices "Truncate Extrapolate Wraparound"
-    eval {tk_optionMenu $b.rangeopts graph(rangeact)} $rangeChoices
-    pack $b.rangeopts
+#    eval {tk_optionMenu $b.rangeopts graph(rangeact)} $rangeChoices
+#    pack $b.rangeopts
+# caused odd bug needing multiple clicks on enter button
+    pack [ComboBox $b.rangeopts -values $rangeChoices -editable 0 \
+	    -textvariable graph(rangeact) -width 20]
     set graph(rangeact) [lindex $rangeChoices $range]
     pack $b -side left
     
