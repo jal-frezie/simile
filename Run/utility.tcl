@@ -29,22 +29,19 @@ proc ShowMessage { title icon string resps {parent {}}} {
 # filename has spaces in it.
 
 proc ChooseFile { preferred title canbenew } {
-    global __tk_filedialog chosenPaths custom
+    global __tk_filedialog chosenPaths
 
     set fileType [file extension $preferred]
-
+    set egDir [PrefValue custom(prefDir) prefDir]/Examples
     if {[info exists chosenPaths($fileType)]} {
 	set __tk_filedialog(selectPath) $chosenPaths($fileType)
-    } else {
-    if {[info exists chosenPaths(latest)]} {
+    } elseif {[info exists chosenPaths(latest)]} {
 	set __tk_filedialog(selectPath) $chosenPaths(latest)
-    } else {
-    if {[info exists $custom(prefDir)/Examples]} {
-	set __tk_filedialog(selectPath) $custom(prefDir)/Examples
+    } elseif {[info exists $egDir]} {
+	set __tk_filedialog(selectPath) $egDir
     } else {
 	set __tk_filedialog(selectPath) [pwd]
-}   }   }
-
+    }
 # __tk_etc should set starting directory, but just in case...
     set prevDir [pwd]
     cd $__tk_filedialog(selectPath)
@@ -298,6 +295,18 @@ proc CountValues {text} {
             incr tot [CountValues [lindex $text $n]]
         }
         return $tot
+    }
+}
+
+proc LoadIconImages {} {
+    global iconImages
+    foreach fn {tick cross function} {
+	set iconImages($fn) \
+	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
+    }
+    foreach fn {graph table open save edit} {
+        set iconImages($fn) \
+                [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
 }
 

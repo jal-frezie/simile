@@ -514,7 +514,7 @@ finish_old_edit(NextEdit) :-
 %		    give_focus(Prev_highlight),
 		    fail;
 		change_name(RenamedNode, Name),
-		    finish_move(Parent)));
+		    finish_move(Parent, 0)));
 	/* last line gets executed if no prev edit highlight, or display is
 	suspended */
 	true.
@@ -636,7 +636,7 @@ doubleclick_on(Edit_thing) :-
 		(find_name_host(Messed, ControlThing),
 		    redisplay(Messed),
 		    fail;
-		finish_move(Parent));
+		finish_move(Parent, 1));
 	    OKd == 0);
 	\+ member(Edit_type, [cloud, influence]), !,
 	    find_node_with_data(Edit_thing, Base, Control_thing),
@@ -1595,7 +1595,7 @@ unclick_obj :-
 	true),
 	initialize_phase,
 	(\+ retract(moved_something), !;
-	finish_move(Submodel)).
+	finish_move(Submodel, 0)).
 
 /* Unclick in ghost mode. If unclicking in space, a new ghost node is created. If
 unclicking on an existing node this node is made into a ghost of the source node
@@ -1712,10 +1712,7 @@ For multiple code objects, it also records that this particular submodel's code
 must be rebuilt when the next runnable model is made. */
 
 update_runnable(Parent) :-
-	warn_runtime,
-	add_parameter(Parent, 1, tcl_new, 0),
-	add_parameter(Parent, 1, c_new, 0),
-	finish_move(Parent).
+	finish_move(Parent, 1).
 
 /* this routine quickly inserts a new component if a flow or influence is dropped in
 the middle of nowhere; only clouds on flows for now. 

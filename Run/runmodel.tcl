@@ -367,7 +367,7 @@ proc TellAllHelpers {fun args} {
 }
 
 proc ScrubRun {times} {
-    global runState running_c model_id instance_id window_info
+    global runState model_id instance_id window_info
     #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
     #	error Bombed
     #    }
@@ -392,7 +392,7 @@ proc ScrubRun {times} {
                 unset instance_id
 	    }
         }
-#        unset model_id
+        unset model_id
         foreach winData [array name window_info *,parent] {
             set toolBar $window_info($winData).toolSlot.toolbar
             $toolBar.snap configure -state disable
@@ -402,7 +402,6 @@ proc ScrubRun {times} {
         }
 #        ToggleIOToolMenu 0
     }
-    if {[info exists running_c]} {unset running_c}
 }
 
 proc GetModelTime {} {
@@ -467,7 +466,6 @@ proc StartRun {} {
     set runState(reloadParams) 1
     set runState(modelRunning) 2
 #    EnableTools Fix
-    set runState(modelUpdated) 0
 
     # MakeSlidersForInputs is currently done after initializing the
     # model, so default values calculated from eqns can be loaded to the
@@ -538,6 +536,14 @@ proc StartRun {} {
 #    CheckFixedParamState
     set widget [$runState(helperId).rcf getframe]
     $widget.topbuttons.reset invoke
+    return 1
+}
+
+proc StartNow {} {
+    global runState
+
+    set widget [$runState(helperId).rcf getframe]
+    $widget.topbuttons.start invoke
 }
 
 proc TellHelperItsGone {helperWin captionPath} {
@@ -584,27 +590,23 @@ proc remove_c_model {} {
     #    }
 }
 
-proc build_tcl_program {} {
-    global model_id instance_id
-    #   model_id set to 0 cos its existence is tested when getting model structure
-
-    set model_id 0
-    set instance_id 0
-    StartRun
-}
-
-proc update_c_executable {} {
+proc update_executable {lang} {
     #    ShowMessage debug info "References are $finderList" ok
     global model_id instance_id
 
     # For the toplevel model, make an instance. This will also make
     # instances of any fixed-membership submodels immediately, so they had
     # better already be loaded
-
-    set instance_id [c_createmodel $model_id]
+    switch $lang {
+	c {
+	    set instance_id [c_createmodel $model_id]
+	} tcl {
     #    ShowMessage debug info "model instance $instance_id created" ok
-
-    StartRun
+	    set model_id 0
+	    set instance_id 0
+	}
+    }
+    return [StartRun]
 }
 
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
@@ -983,6 +985,7 @@ proc IsArray {a} {
 
 package require Trf
 load_c_stub
+LoadIconImages
 set intCount 0
 
 proc newInt {} {

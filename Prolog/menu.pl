@@ -176,7 +176,7 @@ stick_model_in(Parent, Name, Mode) :-
 	    (member(Mover, Movers),
 		redisplay(Mover),
 		fail;
-	    finish_move(Parent))).
+	    finish_move(Parent, 1))).
 
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
@@ -204,7 +204,7 @@ menu_handle(Win, file, new) :-
 	Win shows_model Parent,
 	check_deletable(Win, Parent),
 	remove_model(Win, Parent),
-	finish_move(Parent),
+	finish_move(Parent, 0),
 	set_save_status(Win, safe),
 	update_captions(Parent).
 
@@ -214,8 +214,7 @@ menu_handle(_Win, file, new_toplevel) :-
 menu_handle(_Win, open_toplevel, Name) :-
 	check_if_already_open(Name), !;
 	m_update:make_desktop(Parent, _),
-	stick_model_in(Parent, Name, reopen),
-	warn_runtime.
+	stick_model_in(Parent, Name, reopen).
 
 menu_handle(Win, file, open) :-
 	Win shows_model Parent,
@@ -223,8 +222,7 @@ menu_handle(Win, file, open) :-
 	get_load_file(Name),
 	(Name = '', !;
 	remove_model(Win, Parent),
-	stick_model_in(Parent, Name, reopen),
-	warn_runtime).
+	stick_model_in(Parent, Name, reopen)).
 
 menu_handle(Win, GetMode, Name) :-
 	Win shows_model Parent,
@@ -235,8 +233,7 @@ menu_handle(Win, GetMode, Name) :-
 	GetMode = insert,
 	    UseMode = insert([0,0]),
 	    select_all_in(Parent, off)),
-	stick_model_in(Parent, Name, UseMode),
-	warn_runtime.
+	stick_model_in(Parent, Name, UseMode).
 
 menu_handle(Win, file, save) :-
 	Win shows_model Model,
@@ -295,7 +292,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	    CompDir = Temp;
 	abs_path_name(Base, root, Path),
 	    append_atoms([Temp, '/', Path], CompDir)),
-	(\+ rebuild_code(c, Model, CompDir, _), !;
+	(\+ rebuild_code(c, Model, CompDir), !;
 	(get_av_pair(Model, 1, c_new, Serial), !; Serial = ''),
 	    caption_for(Model, Capt),
 	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
@@ -310,13 +307,10 @@ menu_handle(Win, file, RunCmd) :-
 	/* Compile the thing into whatever, load it */
 	scrub_run(Node, 0),
 	use_temp_dir(Dir),
-	(rebuild_code(Lang, Node, Dir, Interp), !,
+	(rebuild_code(Lang, Node, Dir), !,
 	    /* no much point going for run */
 	    on_exception(_Whoops,
-		    (Lang = c,
-			output:prepare_c_execution(Interp);
-		    Lang = tcl,
-			output:prepare_tcl_execution(Interp)),
+			 output:prepare_execution(Node, Lang),
 		     (do_dialogue("Compilation or startup error", error,
 				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
 			 scrub_run(Node, 0))),
@@ -324,7 +318,7 @@ menu_handle(Win, file, RunCmd) :-
 	true),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
-	    finish_move(Node);
+	    finish_move(Node, 0);
 	restart_move),
 	finish_progress_dialogue,
 	show_normal_cursor.
@@ -481,7 +475,7 @@ menu_handle(Win, edit, Component) :-
 	get_edit_model(Win, Model, Tgt),
 	(Component is_class_of_sort box, !,
 	    event:insert(Win, Model, Tgt, Component),
-	    finish_move(Model);
+	    finish_move(Model, 1);
 	(Tgt = [Xpt, Ypt], !,
 	        set_current_coords(Xpt, Ypt),
 	        event:make_terminator(Component, Model, StartPt),
@@ -502,7 +496,7 @@ menu_handle(Win, edit, reroute) :-
 			    event:doomed(Rerouter),
 			    clear_shape(Rerouter, course)), Rerouters),
 	reroute_sections(Rerouters),
-	finish_move(Model),
+	finish_move(Model, 0),
 	remove_old_incomplete,
 	finish_progress_dialogue.
 
@@ -511,7 +505,7 @@ menu_handle(Win, edit, delete) :-
 	reassure_user("Delte in progress"),
 	get_edit_model(Win, Model, _),
 	event:delete_net(Model),
-	finish_move(Model),
+	finish_move(Model, 1),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, CutOrCopy) :-
@@ -571,7 +565,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	all(event, do_colours, [build(SelnList), unify(on)]),
 	(CutOrCopy = cut,
 	    event:delete_net(Model),
-	    finish_move(Model);
+	    finish_move(Model, 1);
 	CutOrCopy = copy),
 	finish_progress_dialogue.
 
@@ -633,7 +627,7 @@ menu_handle(Win, edit, Action) :-
 		redraw_window(OtherWin),
 		fail;
 	redisplay(Node_name)),
-	finish_move(Node_name).
+	finish_move(Node_name, 0).
 
 menu_handle(Win, edit, set_interface) :-
 	get_import_file('plugplay.isf', SpecFile),
@@ -656,7 +650,7 @@ menu_handle(Win, edit, set_interface) :-
 	(load_submodel_interface(Stream, Submodel, _, _),
 	    event:make_links_follow(Submodel),
 	    event:tweak_link_connections(Submodel, [0,0], l, [0,0,1,1]),
-	    finish_move(Submodel);
+	    finish_move(Submodel, 1);
 	close(Stream),
 	    restart_move,
 	    (FarWin shows_model Submodel,
@@ -923,14 +917,11 @@ set_properties(Wid, Model) :-
 	    
 	    (\+ (NewNature = Nature, UseCount = Count, NewStep = Step,
 		   NewFix = Fix, NewSeparate = Separate),
-		add_parameter(Model, 1, c_new, 0),
 		fail;
 	    \+ NewSeparate = Separate,
 		find_all_comps(Parent, Model),
-		add_parameter(Parent, 1, c_new, 0),
 		fail;
-	    warn_runtime,
-		finish_move(Model))).
+	    finish_move(Model, 1))).
 
 separate_type_from_mems([H | T], H-T).
 
@@ -960,12 +951,8 @@ flip_innards(Node_name, Action) :-
 		change_shape(Thing, Whatever, New_wherever),
 		fail).
 
-rebuild_code(Lang, Node, ProgFileDir, Interp) :-
-	(interp_for(Node, Interp), !;
-	    output:safe_tcl_eval(['KickoffRunInterp', Node], InterpStr),
-	    name(Interp, InterpStr),
-	    assert(interp_for(Node, Interp))),
-	(on_exception(Whoops, compile(Lang, Node, ProgFileDir, Interp), true),
+rebuild_code(Lang, Node, ProgFileDir) :-
+	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true),
 	    !;
 	    Whoops = compilation_failed),
 	(Whoops = yes;
@@ -1076,9 +1063,7 @@ check_deletable(Win, Parent) :-
 
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
-	    (retract(interp_for(Parent, Interp)), !,
-		output:safe_tcl_eval([interp, delete, Interp], _);
-	    true),
+	    output:safe_tcl_eval(['KillInterpFor', Parent], _),
 	    forget_highlit_obj(_,_),
 	    superfast_delete(Parent),
 	    add_parameter(Parent, 0, step, ''),
@@ -1100,8 +1085,7 @@ remove_model(Win, Parent) :-
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, DeleteDir),
 	output:trim_tree(LocalDir, DeleteDir),
-	scrub_autosave(Parent),
-	warn_runtime.
+	scrub_autosave(Parent).
 
 cutoff(Parent) :-
 	find_all_comps(Parent, Child),

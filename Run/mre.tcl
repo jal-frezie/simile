@@ -89,7 +89,7 @@ proc RunEnv::Create { } {
                             {} -command { ::RunEnv::PrintCurrentContainer } }
                 {separator}
                 {command "Pa&rameters..." {} "Modify file parameters"  \
-                            {} -command { FileParamDialogue 1 .mre } }
+                            {} -command { FileParamDialogue 1 } }
                 {separator}
                 {command "&Close"    {} "Close the Run Environment window" \
                             {} -command {RunEnv::Destroy} }

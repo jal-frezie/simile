@@ -4,7 +4,7 @@
 %%%                                                                         %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-sicstus_module(backup, [initialize_ring/1, finish_move/1, restart_move/0,
+sicstus_module(backup, [initialize_ring/1, finish_move/2, restart_move/0,
 			get_save_status/2, set_save_status/2, save_allowed/2,
 			go_back/2, go_forward/2, make_auto_name/3,
 			clear_autosave/2, check_autosave/4, scrub_autosave/1,
@@ -63,12 +63,18 @@ go_forward(Model, Further) :-
 		Further = 0;
 	Further = 1).
 
-finish_move(EditedModel) :-
+finish_move(EditedModel, ChangeExec) :-
 	m_update:contains(Model, EditedModel),
 	state:shows_model(Win, Model),
 	set_save_status(Win, risky),
+	(ChangeExec = 0;
+	 ChangeExec = 1,
+	    m_update:add_parameter(EditedModel, 1, c_new, 0)),
 	/* Only proceed for toplevel window containing model */
 	is_toplevel(Model),
+	(ChangeExec = 0;
+	 ChangeExec = 1,
+	    output:tk_alter_model(Model)),
 	draw:update_ability(Model, undo, edit, 'Undo', 1),
 	draw:update_ability(Model, redo, edit, 'Redo', 0),
 	save_allowed(Model, CanSave),
@@ -290,6 +296,7 @@ enact_changes(Model, Slot) :-
 
 clear_autosave(Model, Name) :-
 	(is_toplevel(Model),
+	    output:tk_alter_model(Model),
 	    scrub_autosave(Model), /* remove previous file */
 	    make_auto_name(Name, ".smx", AutoName),
 	    assert(autosave_file_is(Model, AutoName)),
@@ -327,7 +334,7 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 		 assert(translation_info(Model, [top_level_is(Model)]));
 	     assert(translation_info(Model, [top_level_is(Model),
 				     translated([Model-Model | IdSwaps])]))));
-	finish_move(Model)).
+	finish_move(Model, 0)).
 	    
 scrub_autosave(Model) :-
 	(is_toplevel(Model),

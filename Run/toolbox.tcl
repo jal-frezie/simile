@@ -95,18 +95,6 @@ proc FilterErrors {args} {
 # image create photo open -file "../Images/mailbox.gif"
 # Actually I think not, it seems to prevent the window menu appearing as well
 
-proc LoadIconImages {} {
-    global iconImages
-    foreach fn {tick cross function} {
-	set iconImages($fn) \
-	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
-    }
-    foreach fn {graph table open save edit} {
-        set iconImages($fn) \
-                [image create photo -file "../Images/Toolbar/${fn}.gif"]
-    }
-}
-
 proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Loc]} {
         set AddLoc /$Loc
@@ -144,25 +132,68 @@ proc TrimTree {Top Point} {
 }
 
 # this exists in case I don't want to exploit the concat in eval
-proc do_in_interp {interp args} {
-    $interp eval $args
-}
-
-proc KickoffRunInterp {node} {
-    global runStatus userinfo
-
-    set newInterp [interp create]
-    $newInterp alias PrefValue PrefValue
-    $newInterp alias GetTransTable GetTransTable
-    $newInterp eval source ../Run/runmodel.tcl
-    set runStatus($node,interp) $newInterp
-    return $newInterp
+proc do_for_node {node args} {
+    global runStatus
+    if {![info exists runStatus($node,interp)]} {
+	set newInterp [interp create]
+	$newInterp alias PrefValue PrefValue
+	$newInterp alias GetTransTable GetTransTable
+	$newInterp alias CheckUpToDate CheckUpToDate $node
+	$newInterp eval source ../Run/runmodel.tcl
+	set runStatus($node,interp) $newInterp
+    }
+    return [$runStatus($node,interp) eval $args]
 }
 
 proc ScrubRun {node times} {
     global runStatus
     if {[info exists runStatus($node,interp)]} {
 	$runStatus($node,interp) eval ScrubRun $times
+    }
+    ToggleIOToolMenu 0
+}
+
+proc KillInterpFor {node} {
+    global runStatus
+    if {[info exists runStatus($node,interp)]} {
+	$runStatus($node,interp) eval DestroyHelpers
+#	$runStatus($node,interp) eval after idle destroy .
+	interp delete $runStatus($node,interp)
+	unset runStatus($node,interp)
+    }
+}
+
+proc LoadProgram {node lang} {
+    global runStatus
+    set runStatus($node,updated) 0
+    set runStatus($node,lang) $lang
+    if {[do_for_node $node update_executable $lang]} {
+	set runStatus($node,running) 2
+	ToggleIOToolMenu 1
+    }
+}
+
+proc CheckUpToDate {node action} {
+    global runStatus window_info
+
+    if {$runStatus($node,updated) == 1} {
+	set updateChoice [ShowMessage "Model out of date" warning \
+			      "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
+	if {[string equal yes $updateChoice]} {
+	    set runStatus($node,running) 0
+	    # grits teeth
+	    foreach win [array names window_info *,top_node] {
+		if {[string equal $node $window_info($win)]} {
+		    set winId [string range $win 0 end-9]
+		    if {$window_info($winId,is_top_level)} {
+			return [Rerun $winId [string match start $action]]
+		    }
+		}
+	    }
+	}
+	return $updateChoice
+    } else {
+	return 
     }
 }
 
@@ -400,9 +431,9 @@ proc FixSize {c} {
 
 }
 
-proc AlterModel {} {
-    global runState
-    set runState(modelUpdated) 1
+proc AlterModel {topNode} {
+    global runStatus
+    set runStatus($topNode,updated) 1
 }
 
 package require mime
@@ -2059,8 +2090,11 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
             -variable MIpushedbutton -value snap -state disabled
     
     if {[info exists window_info(showIO)]} {
-        ${winid}top add  cascade -label "I/O tools" -underline 0 -menu .helpers
+        ${winid}top add  cascade -label "I/O tools" -underline 0 \
+	    -menu $winId.helpers
     }
+    menu $winid.helpers -tearoff 0 \
+	-postcommand [list after idle PostRealHelperMenu $winid]
     
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
@@ -2285,6 +2319,28 @@ proc AddZoomMenu {canvas menu tellProlog} {
 
 }
 
+proc PostRealHelperMenu {winId} {
+    global window_info runStatus
+
+    set dotlessWinName [string range $winId 1 end]
+    set bloodyClone $winId.\#${dotlessWinName}top.\#$dotlessWinName\#helpers
+    set tgtx [winfo rootx $bloodyClone]
+    set tgty [winfo rooty $bloodyClone]
+    event generate $bloodyClone <ButtonRelease-1>
+    
+    set node $window_info($winId.canvas,top_node)
+    $runStatus($node,interp) eval .helpers post $tgtx $tgty
+    $runStatus($node,interp) eval focus .helpers
+}
+# below used to find out what the bloody clone is called when writing above
+proc allwins {win} {
+puts $win
+puts [winfo geometry $win]
+foreach n [winfo children $win] {
+allwins $n
+}
+}
+
 # # character in colour spec is escaped purely for the benefit of the Emacs
 # tcl mode parser
 
@@ -2435,27 +2491,28 @@ proc AddDetailMenu {winId fm3 initVals} {
 }
 
 proc Rerun {winId go} {
-    global runState running_c
+    global runStatus window_info
     
-    if {$runState(modelRunning)!=2 || $runState(modelUpdated) == 1} {
-        if {![info exists running_c]} {
-            set runType run_tcl
+    set node $window_info($winId,top_node)
+    if {$runStatus($node,running)!=2 || $runStatus($node,updated) == 1} {
+        if {[info exists runStatus($node,lang)]} {
+            set runType run_$runStatus($node,lang)
         } else {
-            if {$running_c} {
-                set runType run_c
-            } else {
-                set runType run_tcl
-            }
+	    set runType run_tcl
         }
         MenuSelect $winId file $runType
     } else {
-        StartRun $winId
+        do_for_node $node StartRun
+	# assume if model was running before it will run again
     }
     # Only proceed if it worked
-    if {$go && $runState(modelRunning) == 2} {
-        set widget [$runState(helperId).rcf getframe]
-        $widget.topbuttons.start invoke
+    if {$runStatus($node,running) != 2} {
+	return fail
     }
+    if {$go} {
+	do_for_node $node StartNow
+    }
+    return yes
 }
 
 proc UpdateAbility {c what where which whether} {
@@ -2489,7 +2546,7 @@ proc ToggleIOToolMenu {on} {
         
         if {$on} {
             $topMenu insert "Help" cascade -label "I/O tools" -underline 0 \
-                    -menu .helpers
+                    -menu $window_info($winData).helpers
             # note Welch says put 'insert' and index other way round and give index to
             # left of new one rather than right. He's wrong.
         } else {

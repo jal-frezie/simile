@@ -174,26 +174,21 @@ namespace eval runcontrol33857 {
         if {[string match stop $sendvars(currentMode)] || \
                     [string match exit $sendvars(currentMode)] && \
                     [string match reset $action]} {
-            if {$runState(modelUpdated) == 1} {
-                set updateChoice [ShowMessage "Model out of date" warning \
-                        "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
-                switch $updateChoice {
-                    cancel {
-                        return
-                    } yes {
-                        Rerun $runState(currentWin) [string match start $action]
-                        return
-                    } no {
-                        if {$runState(modelRunning)==2} {
-                            set runState(modelRunning) 3
-                        }
-                        set runState(modelUpdated) 0
-                    }
-                } ;# switch
-            }
+	    switch -regexp [CheckUpToDate $action] {
+		yes|cancel {
+		    return
+		} no {
+		    if {$runState(modelRunning)==2} {
+			set runState(modelRunning) 3
+		    }
+		} fail {
+		    set runState(modelRunning) 0
+		}
+	    }
             if {$runState(modelRunning) == 1} {
                 ShowMessage "Fixed parameters not loaded" warning \
-                        "The model cannot be run because it contains fixed input parameters for which no source has yet been defined" ok
+                        "The model cannot be run because it contains fixed input parameter
+s for which no source has yet been defined" ok
                 return
             }
             if {[string match start $action] && \
@@ -437,7 +432,7 @@ namespace eval runcontrol33857 {
         switch $sendvars(currentMode) {
             kill {
             } exit {
-                $widget.bf.flag itemconfigure 1 -fill black
+                $widget.bf.flag itemconfigure 1 -fill red
             } default {
                 $widget.bf.flag itemconfigure 1 -fill [RestingColour]
             }

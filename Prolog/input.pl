@@ -109,7 +109,7 @@ tk_visible(Wid, L, T, R, B) :-
 finish_window_resize(Wid) :-
 	\+ retract(resizing_windows(Wid)), !;
 	state:Wid shows_model Model,
-	finish_move(Model).
+	finish_move(Model, 0).
 
 tk_embrace(Wid, Comp) :-
 	prioritize_window(Wid),

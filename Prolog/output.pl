@@ -29,7 +29,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	fill_equation/8, fill_inputs/1, fill_table/2,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/0, tk_update_infobox/1, 
-	tk_finish_progress_dialogue/0, tk_alter_model/0,
+	tk_finish_progress_dialogue/0, tk_alter_model/1,
 	tk_scrub_run/2, tk_kill_helpers/0,
 	update_tk_variable/3, tk_clear_graph/1, handle_tk_events/0, 
 	set_interp_menu_state/1,
@@ -355,7 +355,6 @@ fill_inputs(List) :-
 
 fill_table(TableData, TableVals) :-
 	bracketize(TableData, Tk_tableData),
-	bracketize(TableVals, Tk_TableVals),
 	safe_tcl_eval(['fill_table', Tk_tableData, TableVals], _).
 
 /* Do a bit of processing to the parameter name column so the square/curly
@@ -401,8 +400,8 @@ tk_finish_progress_dialogue :-
 update_tk_variable(Nodename, Val, Time) :-
 	safe_tcl_eval(['UpdateDisplay', Nodename, Val, Time], _).
 
-tk_alter_model :-
-	safe_tcl_eval(['AlterModel'], _).
+tk_alter_model(TopNode) :-
+	safe_tcl_eval(['AlterModel', TopNode], _).
 
 tk_scrub_run(Node, Times) :-
 	safe_tcl_eval(['ScrubRun', Node, Times], _).
@@ -502,26 +501,23 @@ shift_dll(Point, Top, Loc, Repl) :-
 	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), br(Repl)],_).
 
 /* Only works for an all-in-one model for now...*/
-prepare_tcl_execution(Interp) :-
-	safe_tcl_eval([Interp, eval, build_tcl_program], _).
+prepare_execution(Node, Lang) :-
+	safe_tcl_eval(['LoadProgram', Node, Lang], _).
 
-prepare_c_execution(Interp) :-
-	safe_tcl_eval([Interp, eval, update_c_executable], _).
-
-build_interconnects(Interp, FinderList) :-
+build_interconnects(TopNode, FinderList) :-
 	bracketize(FinderList, FinderTclList),
-	safe_tcl_eval([do_in_interp, Interp, set_connections, FinderTclList],
+	safe_tcl_eval([do_for_node, TopNode, set_connections, FinderTclList],
 		      _).
 	
-compile_c_program(Interp, ModelPath, Err) :-
+compile_c_program(TopNode, ModelPath, Err) :-
 	windowize(ModelPath, WModelPath),
-	safe_tcl_eval([do_in_interp, Interp, compile_c, br(WModelPath)],
+	safe_tcl_eval([do_for_node, TopNode, compile_c, br(WModelPath)],
 		      ErrStr),
 	name(Err, ErrStr).
 
-load_executable(L, ModelPath, Id, Node, RunInterp) :-
+load_executable(L, ModelPath, Id, Node, TopNode) :-
 	windowize(ModelPath, WModelPath),
-	safe_tcl_eval([do_in_interp, RunInterp,
+	safe_tcl_eval([do_for_node, TopNode, 
 		       load_dll, L, br(WModelPath), Id, Node], MStr),
 	\+ MStr = "0".
 					

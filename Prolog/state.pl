@@ -7,7 +7,7 @@ available to the other modules that use it.
 */
 
 sicstus_module(state,
-	       [kickoff/1, interp_for/2, get_initial_window_size/2,
+	       [kickoff/1, get_initial_window_size/2,
 		create_window/2, destroy_window/1, clear_model_file/1,
 		set_model_file/2, get_model_file/2, get_edition/1, kill_windows/0,
 		shows_model/2, monitors_variable/2, depth_list_is/1,
@@ -55,7 +55,6 @@ kickoff(Vnum) :-
 	output:safe_tcl_eval(['FixSize', Canvas], _).
 
 :- dynamic(model_in/2).
-:- dynamic(interp_for/2).
 :- dynamic(model_file/2).
 
 get_initial_window_size(640, 400).

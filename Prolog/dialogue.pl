@@ -14,8 +14,7 @@ sicstus_module(dialogue, [do_equation_dialog/2,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
         start_progress_dialogue/0,
-	finish_progress_dialogue/0, warn_runtime/0, 
-reassure_user/1]).
+	finish_progress_dialogue/0, reassure_user/1]).
 
 sicstus_use_module([library(lists),
 		    sp_only, m_update, ame_gen, output, utility, inters]).
@@ -848,6 +847,3 @@ reassure_user(String) :-
 
 finish_progress_dialogue :-
 	tk_finish_progress_dialogue.
-
-warn_runtime :-
-	tk_alter_model.
