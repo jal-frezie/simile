@@ -69,11 +69,49 @@ int max(int a, int b) {
 /* Definitions used in this code and the model code */
 #include <dllcalls.h>
 
+ame_rand_type* ame_rand;
+interact_gui_type* interact_gui;
+get_value_pointer_type* get_value_pointer;
+fetch_instance_type fetch_instance;
+update_submodel_type update_submodel;
+advance_submodel_type advance_submodel;
+eval_submodel_type eval_submodel;
+search_from_type search_from;
+advance_ptr_type advance_ptr;
+get_remote_value_type get_remote_value;
+
 char* xsimileVersion;
 int connCount;
 connectRecord* connectData;
 showMess_type* showMessLocal;
 char globMess[256];
+double ts[8], dts[8], steps[8];
+
+/* values for keeping track of GUI interaction and execution times */
+int last_op = 0;
+unsigned long int last_exit = 0, last_update = 0;
+unsigned long int took[]={0,0,0,0,0,0,0,0};
+
+BOOLEAN check_gui(double model_time, int this_op) {
+  unsigned long int flash, this_update;
+  BOOLEAN result;
+  
+  flash=CLOCKS_PER_SEC/50; // 20ms
+  // first record how much time the last op took
+  this_update=clock();
+  took[last_op]=this_update-last_exit;
+  last_op = this_op;
+  
+  if ((this_update-last_update)>flash || took[this_op]>flash) {
+    result=interact_gui(model_time);
+    this_update=clock(); // GUI may have taken time
+    last_update=this_update;
+  } else {
+    result=FALSE;
+  }
+  last_exit=this_update;
+  return result;
+}
 
 void showMess(char* mess) {
   (*showMessLocal)(mess);
@@ -147,16 +185,6 @@ void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
   do { *(dest++)= *src; } while (*src++);
 }
   
-ame_rand_type* ame_rand;
-get_value_pointer_type* get_value_pointer;
-fetch_instance_type fetch_instance;
-update_submodel_type update_submodel;
-advance_submodel_type advance_submodel;
-eval_submodel_type eval_submodel;
-search_from_type search_from;
-advance_ptr_type advance_ptr;
-get_remote_value_type get_remote_value;
-
 class DllLossage {
  public:
   char* action;
@@ -310,7 +338,11 @@ public:
     return (*createmodel)();
   }
 
-  /* Following can go anyway if new ones outside the model class work
+  /* 
+  Now for the locally defined model class procedures 
+
+  Following can go anyway if new ones outside the model class work
+
   void update(void* id, double start, int phase) {
     (*updatemodel)(id, start, phase);
   }
@@ -334,8 +366,99 @@ public:
   void exit(void* id) {
     (*exitmodel)(id);
   }
+*/
 
-  Now for the locally defined model class procedures */
+  int executemodel(void* id, int how_int, double start, double* end) {
+    double freq, xtime;
+    int big_phase, err;
+
+    freq = steps[phases];
+    for (xtime=int(start/freq + 1.5)*freq; xtime<=*end+0.5*freq; xtime+=freq) {
+      big_phase = phase_for(xtime, freq, phases+1);
+      if (check_gui(xtime, big_phase)) {
+	return -100; // should not conflict with os signal numbers
+      }
+      set_dts(big_phase, xtime);
+      (*advancemodel)(id, xtime, big_phase);
+      switch(how_int) {
+      case EULER:
+	advance_time(big_phase, 1);
+	setdt(0,0);
+	(*updatemodel)(id, xtime, big_phase);
+	break;
+      case RUNGE_KUTTA:
+	if (err=rk_update(id, xtime, big_phase, phases)) {
+	  *end=xtime;
+	  return err;
+	}
+	break;
+      }
+      if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
+	*end=xtime;
+	return err;
+      }
+    }
+    check_gui(*end, 0);
+    return 0;
+  }
+  
+  int phase_for(double current, double step, int so_far) {
+    int try_now, try_next;
+    double last, next, next_step;
+
+    if (so_far==1) {
+      return 1;
+    }
+    try_now = so_far-1;
+    next_step = steps[try_now];
+    last = current-step/2;
+    next = last+step;
+
+    try_next = (int)(next/next_step);
+    if (try_next == (int)(last/next_step)) {
+      return so_far;
+    } else {
+      return phase_for(next_step*try_next, next_step, try_now);
+    }
+  }
+
+  int rk_update(void* id, double xtime, int big_phase, int phases) {
+    int err;
+    setdt(1, 0);
+    (*updatemodel)(id, xtime, big_phase);
+    advance_time(big_phase, 0.5);
+    setdt(2, 0);
+    if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
+    (*updatemodel)(id, xtime, big_phase);
+    setdt(3, 0);
+    if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
+    (*updatemodel)(id, xtime, big_phase);
+    advance_time(big_phase, 0.5);
+    setdt(4, 0);
+    if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
+    (*updatemodel)(id, xtime, big_phase);
+    setdt(1, 0);
+    return 0;
+  }
+
+  void set_dts (int phase, double current) {
+    int tweak_phase;
+    for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
+      dts[tweak_phase]=current-ts[tweak_phase];
+      setdt(dts[tweak_phase],tweak_phase); 
+      // dts should only be global but im lazy
+    }
+  }
+  
+  void advance_time (int phase, double fraction) {
+    int tweak_phase;
+    for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
+      ts[tweak_phase]=ts[tweak_phase]+dts[tweak_phase]*fraction;
+      setdt(ts[tweak_phase],-tweak_phase); 
+      // ts should only be global but im lazy
+    }
+  }
+  
   int parent_line (int line) {
     int count, level, test, *path;
     path = nodedata[line].path;
@@ -702,6 +825,28 @@ int eval(long int modelType, long int modelHandle,
 					starttime, phase, exo);
 }
 
+/* Above ones should now only be called by the do_submodel routines,
+so we will simplify them eventually. These next two allow the client
+to drive the model...
+*/
+
+int reset(long int modelType, long int modelHandle, int top_phase) {
+  int tweak_phase;
+
+  for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
+    setdt(0,-tweak_phase);
+    setdt(steps[tweak_phase],tweak_phase);
+  }
+  return ((Model*)modelType)->evalmodel((void*)modelHandle, 
+					0, top_phase, FALSE);
+}
+
+int execute(long int modelType, long int modelHandle, int how_int,
+	 double starttime, double* endtime) {
+  return ((Model*)modelType)->executemodel((void*)modelHandle, 
+					how_int, starttime, endtime);
+}
+
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
   level = get_ptr((long int)type, (long int)level, id_meta, dims);
   if (*(*id_meta)++ == SEPARATE) {
@@ -768,13 +913,15 @@ int eval_submodel(char* nodeId, void* instanceId,
    to its callback procedures */
 
 void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
-				    ame_rand_type* ame_rand_ptr,
-				    showMess_type* showMess_ptr,
-				    char* simileVersionPtr,
-				    connectRecord*** connectDataPtr, 
-				    int** connCountPtr) {
+			     ame_rand_type* ame_rand_ptr,
+			     interact_gui_type* interact_gui_ptr,
+			     showMess_type* showMess_ptr,
+			     char* simileVersionPtr,
+			     connectRecord*** connectDataPtr, 
+			     int** connCountPtr) {
   get_value_pointer = get_value_pointer_ptr;
   ame_rand = ame_rand_ptr;
+  interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
   xsimileVersion = simileVersionPtr;
   // put pointers to our connection database globals into the given locations 
@@ -783,6 +930,11 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
 }
 
 int setstep(double starttime, int phase) {
+  steps[phase] = starttime;
+  return (nodeModelList->model)->phases;
+}
+
+void setdt(double starttime, int phase) {
   listNodeModel* nodeModelPoint = nodeModelList;
   Model* modelType;
 
@@ -793,7 +945,6 @@ int setstep(double starttime, int phase) {
     }
     nodeModelPoint = nodeModelPoint->next;
   }
-  return (nodeModelList->model)->phases;
 }
 
 char* myexit(long int modelType, long int modelHandle) {  

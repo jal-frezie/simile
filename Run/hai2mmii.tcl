@@ -8,7 +8,7 @@
 # things to pass information to and from the executing model. These are the definitions 
 # that are required for this purpose.
 #
-proc do_model {node what args} {
+proc old_do_model {node what args} {
     global errorInfo model_id instance_id model_prog
     
     if {![info exists model_id($node)]} {
@@ -73,65 +73,82 @@ proc do_model {node what args} {
                 set whoopsie unknown
             }
 	}
-
-	switch -glob -- $whoopsie {
-	    "can't read \"*\": no such element in array" - 
-	    "can't read \"*\": no such variable" {
-		set ref [lindex [split $whoopsie \"] 1]
-                set sourceList [DescribeComponent $ref] 
-		if {[catch {do_for_node $node GetNodeIdFromRef $ref \
-				[lindex $sourceList 1]} TargetId]} {
-		    set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
-		} else {
-		    set vdesc "[lindex $sourceList 0] (node $TargetId)"
-		    set problem "it found that there was no value for $vdesc"
-		}
-	    } dest_missing {
-		set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
-	    } "User-defined interruption code *" {
-		set code [lindex $whoopsie end]
-		set problem "there was a user-defined interruption: $code"
-	    } "Illegal operation signal *" {
-		set code [lindex $whoopsie end]
-		set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
-		    SIGIOT SIGEMT SIGFPE SIGKILL SIGBUS SIGSEGV SIGSYS SIGPIPE 
-		    SIGALRM SIGTERM SIGUSR1 SIGUSR2 SIGCHLD SIGPWR SIGWINCH 
-		    SIGURG SIGIO SIGSTOP SIGTSTP SIGCONT SIGTTIN
-		    SIGTTOU SIGVTALRM SIGPROF} $code]
-		set problem "there was an OS signal: $code ($which)"
-	    } "domain error: argument not in valid range" -
-	    "floating-point value too large to represent" -
-	    "divide by zero" {
-		set problem "there was a math error: $whoopsie"
-	    } default {
-		# could not get cause of error, raise again as general problem
-		error $whoopsie $errorInfo
-	    }
-	}
-
-	switch -- $mstep {
-	    -1 {
-		set action initialization
-		set timing {}
-#		ScrubRun $node 0
-	    } 0 {
-		set action reset
-		set timing {}
-	    } default {
-		set action execution
-		set timing " at time $mtime"
-	    }
-	}
-	set mess "Simile ran into a problem trying to run this model. 
-While it was trying to $operation $target during $action of the model$timing, $problem."
-# do it after idle so this process is not hung till user responds
-	start_in_editor [list BuildProblem "Problem with model" \
-				     warning $mess execution]
-	do_in_editor RaiseModelWindow $node
-	return 0
-    } else {
-	return 1
     }
+}
+
+proc ExplainError {what dest mtime mstep whoopsie} {
+    global myNode
+    switch $what {
+	int_evalmodel {set operation "calculate the value of"}
+	updatemodel {set operation "update the state"}
+	advancemodel {set operation "advance the time point for"}
+    }
+    if {![string equal none $dest]} {
+	set targetList [DescribeComponent $dest]
+	if {[catch {GetNodeIdFromRef $dest [lindex $targetList 1]} TargetId]} {
+	    set target [lindex $targetList 0]
+	    set whoopsie dest_missing
+	} else {
+	    set target "[lindex $targetList 0] (node $TargetId)"
+	}
+    } else {
+	set target something
+    }
+
+    switch -glob -- $whoopsie {
+	"can't read \"*\": no such element in array" - 
+	"can't read \"*\": no such variable" {
+	    set ref [lindex [split $whoopsie \"] 1]
+	    set sourceList [DescribeComponent $ref] 
+	    if {[catch {GetNodeIdFromRef $ref \
+			    [lindex $sourceList 1]} TargetId]} {
+		set problem "it found that there was no submodel instance when trying to get [lindex $sourceList 0]"
+	    } else {
+		set vdesc "[lindex $sourceList 0] (node $TargetId)"
+		set problem "it found that there was no value for $vdesc"
+	    }
+	} dest_missing {
+	    set problem "it found there was no instance with these indices. This may mean that you have specified a base model instance by an index which is out of range"
+	} "User-defined interruption code *" {
+	    set code [lindex $whoopsie end]
+	    set problem "there was a user-defined interruption: $code"
+	} "Illegal operation signal *" {
+	    set code [lindex $whoopsie end]
+	    set which [lindex {SIGEOF SIGHUP SIGINT SIGQUIT SIGILL SIGTRAP 
+		SIGIOT SIGEMT SIGFPE SIGKILL SIGBUS SIGSEGV SIGSYS SIGPIPE 
+		SIGALRM SIGTERM SIGUSR1 SIGUSR2 SIGCHLD SIGPWR SIGWINCH 
+		SIGURG SIGIO SIGSTOP SIGTSTP SIGCONT SIGTTIN
+		SIGTTOU SIGVTALRM SIGPROF} $code]
+	    set problem "there was an OS signal: $code ($which)"
+	} "domain error: argument not in valid range" -
+	"floating-point value too large to represent" -
+	"divide by zero" {
+	    set problem "there was a math error: $whoopsie"
+	} default {
+	    # could not get cause of error, raise again as general problem
+	    error $whoopsie $errorInfo
+	}
+    }
+    
+    switch -- $mstep {
+	-1 {
+	    set action initialization
+	    set timing {}
+	    #		ScrubRun $node 0
+	} 0 {
+	    set action reset
+	    set timing {}
+	} default {
+	    set action execution
+	    set timing " at time $mtime"
+	}
+    }
+    set mess "Simile ran into a problem trying to run this model. 
+While it was trying to $operation $target during $action of the model$timing, $problem."
+    # do it after idle so this process is not hung till user responds
+    start_in_editor [list BuildProblem "Problem with model" \
+			 warning $mess execution]
+    do_in_editor RaiseModelWindow $myNode
 }
 
 proc DescribeComponent {ref} {
@@ -170,7 +187,7 @@ proc MakeContext {levels} {
 }
 
 proc SetStep {node time phase} {
-    global model_id ts dts
+    global model_id steps ts
     if {![info exists model_id($node)]} {
 	WarnNoProgram $node
     }
@@ -178,10 +195,10 @@ proc SetStep {node time phase} {
     if {$model_id($node)} {
 #puts "setstep $time $phase"
 	c_setstepmodel $time $phase
-    } elseif {$phase<0} { ;# lazy
-	set ts([expr -$phase]) $time
-    } else {
-	set dts($phase) $time
+    } elseif {$phase>=0} { ;# lazy
+	set steps($phase) $time
+#    } else {
+#	set ts([expr {-$phase}]) $time
     }
 }
 
@@ -643,6 +660,50 @@ proc GetPhaseCount {topNode} {
 	return [c_setstepmodel 0 0]
     } else {
 	return $phasecount
+    }
+}
+
+# this one is called from the model and handled by the client
+proc InteractGUI {modelTime} {
+    global helperTable
+    return [$helperTable(RunControl)::RCInteractGUI $modelTime]
+}
+
+proc ResetModel {redo} {
+    global model_id instance_id myNode
+    if {![info exists model_id($myNode)]} {
+	WarnNoProgram $myNode
+	return 0
+    }	
+    if {[catch {
+	if {$model_id($myNode)} {
+	    c_resetmodel $model_id($myNode) $instance_id($myNode) $redo
+	} else {
+	    TclResetModel $redo
+	}
+    } errList]} {
+	eval ExplainError $errList
+	return 0
+    } else {
+	return 1
+    }
+}
+
+proc ExecuteModel {howInt start finish} {
+    global model_id instance_id myNode
+    if {[catch {
+	if {$model_id($myNode)} {
+	    c_executemodel $model_id($myNode) $instance_id($myNode) \
+		[expr [string equal "Runge-Kutta" $howInt]] $start $finish
+	} else {
+	    TclExecuteModel $howInt $start $finish
+	}
+    } errList]} {
+	InteractGUI [lindex $errList 2]
+	eval ExplainError $errList
+	return -1
+    } else {
+	return $errList
     }
 }
 

@@ -266,6 +266,9 @@ proc AcceptData {winId topNode compName complain} {
 # for each constant value, check whether it has been changed, and if so,
 # flag a complete model rebuild. Do same if running_c lost due to crash
 # or model not yet started
+
+# refinement needed: changes to compartments or time series only need a reset
+
     if {$runState($topNode,modelRunning)<=2} {
 	set dataChanged 1
     } elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
@@ -416,7 +419,7 @@ proc ListToArray {topNode tgt subs trans dims list} {
 # just like other dimensions, i.e., all must be set
 	set redoStep 1
 # Next call removes old time series data from the system
-	EnumTypeToNumber [InputVarFor $topNode $tgt] $tgt {} {}
+	EnumTypeToNumber paramData $tgt {} {}
 	foreach arrayPt [array names sub] {
 	    if {[string equal NOW $arrayPt]} {
 		if {[llength $subs]} {
@@ -479,6 +482,7 @@ proc EnumTypeToNumber {varData tgt head trans} {
     if {![llength $head]} {
 # empty head, signal to clear out old values
 	foreach oldEntry [array names $varData $tgt*] {
+ShowMessage debug info "Clearing ${varData}($oldEntry)" ok
 	    unset ${varData}($oldEntry)
 	}
     } elseif {[string compare {} $trans]} {
@@ -495,6 +499,7 @@ proc EnumTypeToNumber {varData tgt head trans} {
     } elseif {![string is double $head]} {
 	error [list "Data value $head is not a number."]
     } else {
+ShowMessage debug info "Setting ${varData}($tgt) to $head" ok
 	set ${varData}($tgt) $head
     }
 #puts "just went set paramData($tgt) $paramData($tgt)"
@@ -883,7 +888,13 @@ proc ResetTimeSeries {topNode} {
 # for each node we have a list of times in the time series, and a pointer to 
 # where we are in the list. If the time has gone past that pointed to, signal 
 # the data to be written and look at the next one...
-proc UpdateTimeSeries {topNode newTime} {
+
+# extra feature now the execution loop is in the target language: we
+# pass 'horizon': the time we are going to execute until (usually next
+# display point). Procedure returns the time at which a value next
+# changes if it is before then, so we can update before executing further
+
+proc UpdateTimeSeries {topNode newTime horizon} {
     global setFromSeries paramData comboTypes
     foreach list [array names setFromSeries $topNode,*,times] {
 	set node [lindex [split $list ,] 1]
@@ -892,12 +903,15 @@ proc UpdateTimeSeries {topNode newTime} {
 	while {$jumping} {
 	    upvar 0 setFromSeries($topNode,$node,next) series
 	    if {[llength $setFromSeries($list)] > $series} {
-		set oldTime [lindex $setFromSeries($list) $series]
-		if {$newTime >= $oldTime} {
-		    set useTime $oldTime
+		set actTime [lindex $setFromSeries($list) $series]
+		if {$newTime >= $actTime} {
+		    set useTime $actTime
 		    incr series
 		} else {
 		    set jumping 0
+		    if {$actTime<$horizon} {
+			set horizon $actTime
+		    }
 		}
 	    } else {
 		set jumping 0
@@ -928,5 +942,6 @@ proc UpdateTimeSeries {topNode newTime} {
 	    }
 	}
     }
+    return $horizon
 }
 

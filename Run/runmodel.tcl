@@ -936,7 +936,7 @@ proc StartRun {node} {
 	    set runState($node,time$phase) 0
             set runState($node,prev_update$phase) 0.1
             SetStep $node 0.1 $phase
-	    SetStep $node 0 -$phase
+#	    SetStep $node 0 -$phase
         }
     }
 

@@ -562,6 +562,117 @@ FINDABLE int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
    }
 }
 
+Tcl_Obj* make_exec_error(Tcl_Interp* interp, char* phase, char* tgt, 
+			 double time, int step, char* complaint) {
+  Tcl_Obj* errList;
+
+  errList=Tcl_NewListObj(0, NULL);
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(phase, -1));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(tgt, -1));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewDoubleObj(time));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewIntObj(step));
+  Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(complaint, -1));
+  return errList;
+}
+
+FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  char spare[256];
+  int phase, error;
+
+  if (argc != 4) {
+    interp->result = "Three arguments for reset please!";
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  if (error != TCL_OK) {
+    return error;
+    
+  }
+  
+  error = Tcl_GetIntFromObj(interp, argv[3], &phase);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = reset(modelType, modelHandle, phase);
+  if (error < 0) {
+    sprintf(spare, "Illegal operation signal %d", -error);
+  } else if (error > 0) {
+    sprintf(spare, "User-defined interruption code %d", error);
+  }
+  if (error) {
+    Tcl_SetObjResult(interp, make_exec_error(interp, "int_evalmodel", "none", 
+					     0, phase, spare));
+    return TCL_ERROR;
+  } else {
+    return TCL_OK;
+  }
+}
+
+FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  char spare[256];
+  double starttime, endtime;
+  int phase, error;
+
+  if (argc != 6) {
+    interp->result = "Five arguments for execute please!";
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  if (error != TCL_OK) {
+    return error;
+    
+  }
+  
+  error = Tcl_GetIntFromObj(interp, argv[3], &phase);
+  if (error != TCL_OK) {
+    return error;
+    
+  }
+  
+  error = Tcl_GetDoubleFromObj(interp, argv[4], &starttime);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetDoubleFromObj(interp, argv[5], &endtime);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = execute(modelType, modelHandle, phase, starttime, &endtime);
+  if (error == -100) {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+    return TCL_OK;
+  }
+  if (error) {
+    if (error < 0) {
+      sprintf(spare, "Illegal operation signal %d", -error);
+    } else {
+      sprintf(spare, "User-defined interruption code %d", error);
+    }
+    Tcl_SetObjResult(interp, make_exec_error(interp, "int_evalmodel", "none", 
+					     endtime, 1, spare));
+    return TCL_ERROR;
+  }
+  Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+  return TCL_OK;
+}
+
 FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
    double starttime;
@@ -1001,6 +1112,17 @@ double ame_rand(double lo, double hi) {
     return  lo + (hi-lo)*rand_fract();
 }
 
+BOOLEAN interact_gui(double now) {
+  BOOLEAN response;
+
+  Tcl_Obj* feedbackCmd;
+  feedbackCmd = Tcl_NewStringObj("InteractGUI", -1);
+  Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
+  Tcl_EvalObjEx(globInterp, feedbackCmd, 0);
+  Tcl_GetIntFromObj(globInterp, Tcl_GetObjResult(globInterp), &response);
+  return response;
+}
+
 FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   int count, count2, spare, error;
@@ -1330,6 +1452,12 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "c_evalmodel", evalmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
+  Tcl_CreateObjCommand(interp, "c_resetmodel", resetmodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_executemodel", executemodelCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
   Tcl_CreateObjCommand(interp, "c_setstepmodel", setstepCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
@@ -1414,7 +1542,8 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
   globInterp = interp;
-  proc_pointers_for_shank(get_tcl_value_pointer, ame_rand, showMess,
+  proc_pointers_for_shank(get_tcl_value_pointer, ame_rand, 
+			  interact_gui, showMess,
 			  simileVersion, &connectDataPtr, &connCountPtr);
   Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);

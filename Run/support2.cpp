@@ -70,10 +70,10 @@ FINDABLE int do_setstep(double time, int phase) {
   return(phasecount);
 }
 
-int at_time_step () {
-  return glob_element(dts,0)<=1;
-}
-
+//int at_time_step () {
+//  return glob_element(dts,0)<=1;
+//}
+//
 int loses (double prob, int phase) {
   int kills_per_step;
   if (prob>1) {

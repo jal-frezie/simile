@@ -96,7 +96,7 @@ public:
 
 double stage_incr (diffs*, int, double);
 double step_incr (int, double);
-int at_time_step ();
+//int at_time_step ();
 int loses (double, int);
 
 /* abstract base class for submodels, with extractor virtual function */

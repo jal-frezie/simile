@@ -149,10 +149,167 @@ proc stage_incr {ns_extras step v} {
     }
 }
 
-proc at_time_step {} {
-    return [expr [glob_element dts 0]<=1]
+proc do_model {what mtime mstep} {
+    if {[catch {eval ::AME_model<>::${what} $mtime $mstep}]} {
+	RaiseTclExecError $what $mtime $mstep
+    }
 }
 
+proc RaiseTclExecError {mproc mtime mstep} {
+    global myNode errorInfo model_prog
+
+    set errorList [split $errorInfo \n]
+    set whoopsie [lindex $errorList 0]
+    set modelLine [lindex $errorList end-5]
+    regexp { (\d+)\)$} $modelLine spare lineNo
+    set mStream [open $model_prog($myNode) r]
+    set mLine {}
+    while {![string match "proc $mproc *" $mLine]} {
+	gets $mStream mLine
+    }
+#puts "found proc $mLine"
+    for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
+	gets $mStream mLine
+    }
+#puts "picked line $mLine"
+    close $mStream
+    if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
+	set dest [namespace eval AME_model<> "set spare $targetName"]
+    } else {
+	set dest none
+    }
+    error [list $mproc $dest $mtime $mstep $whoopsie] $errorInfo
+}
+
+proc CheckGUI {modelTime thisOp} {
+    global GUILog
+    
+    set flash 20
+    # first record how much time the last op took
+    set thisUpdate [clock clicks -milliseconds]
+    if {[info exists GUILog(lastExit)]} {
+	set GUILog($GUILog(lastOp),took) [expr $thisUpdate-$GUILog(lastExit)]
+	set currentOld [expr $thisUpdate-$GUILog(lastUpdate)>$flash]
+    } else {
+	set currentOld 1
+    }
+    set GUILog(lastOp) $thisOp
+    
+    if {[info exists GUILog($thisOp,took)]} {
+	set startingLong [expr $GUILog($thisOp,took)>$flash]
+    } else {
+	set startingLong 1
+    }
+    
+    if {$currentOld || $startingLong} {
+	set result [InteractGUI $modelTime]
+	set thisUpdate [clock clicks -milliseconds] ;# GUI may have taken time
+	set GUILog(lastUpdate) $thisUpdate
+    } else {
+	set result 0
+    }
+    set GUILog(lastExit) $thisUpdate
+    return $result
+}
+    
+proc TclResetModel {topPhase} {
+    global ts steps phasecount
+    for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
+	set ts($tweakPhase) [expr -$steps($tweakPhase)]
+    }
+    SetDTs 1 0
+    AdvanceTime 1 1
+    do_model int_evalmodel 0 $topPhase
+    return 1
+}
+
+proc TclExecuteModel {howInt start end} {
+    global dts steps phasecount
+#    if {[string equal cancel [ShowMessage debug info "XM from $start to $end" okcancel]]} {
+#	error cancelled
+#    }
+    set freq $steps($phasecount)
+    for {set xtime [expr (floor($start/$freq+1.5))*$freq]} \
+	{$xtime<=$end+0.5*$freq} {set xtime [expr $xtime+$freq]} {
+	    set bigPhase [PhaseFor $xtime $freq [expr $phasecount+1]]
+	    if {[CheckGUI $xtime ph$bigPhase]} {
+		return 0
+	    }
+	    SetDTs $bigPhase $xtime
+	    do_model advancemodel $xtime $bigPhase
+	    switch -exact -- $howInt {
+		Euler {
+		    AdvanceTime $bigPhase 1
+		    set dts(0) 0
+		    do_model updatemodel $xtime $bigPhase
+		} {Runge-Kutta} {
+		    RKUpdate $xtime $bigPhase
+		} default {
+		    ShowMessage "Execution problem" error "Integration method $howInt not supported" ok
+		}
+	    }
+	    do_model int_evalmodel $xtime $bigPhase
+	}
+    CheckGUI $end ext
+    return 1
+}
+	    
+proc PhaseFor {current step soFar} {
+#ShowMessage debug info "PhaseFor $current $step $soFar" ok
+    global steps
+    if {$soFar == 1} {
+	return 1
+    }
+    set try [expr $soFar-1]
+    set nextStep $steps($try)
+    set last [expr $current-($step/2.0)]
+    set next [expr $last+$step]
+
+    set tryCurrent [expr $nextStep*floor($last/$nextStep)]
+    set tryNext [expr $nextStep*floor($next/$nextStep)]
+    if {$tryCurrent == $tryNext} {
+	return $soFar
+    } else {
+	return [PhaseFor $tryNext $nextStep $try]
+    }
+}
+
+proc RKUpdate {current phase} {
+    global dts
+    set dts(0) 1
+    do_model updatemodel $current $phase
+    AdvanceTime $phase 0.5
+    set dts(0) 2
+    do_model int_evalmodel $current $phase
+    do_model updatemodel $current $phase
+    set dts(0) 3
+    do_model int_evalmodel $current $phase
+    do_model updatemodel $current $phase
+    AdvanceTime $phase 0.5
+    set dts(0) 4
+    do_model int_evalmodel $current $phase
+    do_model updatemodel $current $phase
+    set dts(0) 1
+}
+    
+proc SetDTs {phase current} {
+    global ts dts phasecount
+    for {set tweakPhase $phase} {$tweakPhase<=$phasecount} {incr tweakPhase} {
+	set dts($tweakPhase) [expr $current-$ts($tweakPhase)]
+    }
+}
+
+proc AdvanceTime {phase fraction} {
+    global ts dts phasecount
+    for {set tweakPhase $phase} {$tweakPhase<=$phasecount} {incr tweakPhase} {
+	set ts($tweakPhase) [expr $ts($tweakPhase)+$dts($tweakPhase)*$fraction]
+    }
+}
+
+#proc at_time_step {} {
+#    return [expr [glob_element dts 0]<=1]
+#}
+#
 proc loses {prob phase} {
     if {$prob >= 1} {
 	return 1
@@ -309,7 +466,7 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	}
 
 #	while {[string compare $nextRef 0]} {
-#	    set smHandle ::AME_model<>::$nextRef
+#	    set smHandle do_model $nextRef
 #	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
 #	    lappend result $nextElt
 #	    if {[info exists arrayVals($nextElt)]} {

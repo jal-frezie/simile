@@ -2,6 +2,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
+#include <time.h>
 
 /* Primitives
 ---------- */
@@ -46,6 +47,10 @@
 #define SEPARATE       -3
 #define START_VM       -4
 #define END_VM         -5
+
+/* integration methods */
+#define EULER           0
+#define RUNGE_KUTTA     1
 
 #define SIMILE_VERSION	"4.3"
 
@@ -169,6 +174,7 @@ typedef struct connectRecord_t {
    method didn't work in win98) */
 
 typedef double ame_rand_type(double, double);
+typedef BOOLEAN interact_gui_type(double);
 typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
@@ -203,12 +209,16 @@ EXTDEC long int fetch_top_instance(long int, char*);
 EXTDEC void update(long int, long int, double, int);
 EXTDEC void advance(long int, long int, double, int);
 EXTDEC int eval(long int, long int, double, int, BOOLEAN);
+EXTDEC int reset(long int, long int, int);
+EXTDEC int execute(long int, long int, int, double, double*);
 EXTDEC int setstep(double, int);
+void setdt(double, int);
 EXTDEC char* myexit(long int, long int);
 
 EXTDEC void* get_ptr(long int, long int, int**, int**);
 EXTDEC char* getNodeId(long int, char*);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, ame_rand_type*,
-			     showMess_type*, char*, connectRecord***, int**);
+				    interact_gui_type*, showMess_type*, 
+				    char*, connectRecord***, int**);
 
