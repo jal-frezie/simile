@@ -764,7 +764,7 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 reroute_sections(Rerouters) :-
 	Rerouters = [];
 	member(Type, [relation, flow, influence]),
-	full_section(Rerouters, Type, [Go | Rest], TopArc, Remains),
+	full_section(Rerouters, Type, [Go | Rest], Remains),
 	suffix([Stop], [Go | Rest]),
 	(m_class:follows(Start, Go); m_class:Go is_connector from Start to _),
 	(m_class:follows(Stop, End); m_class:Stop is_connector from _ to Fn),
@@ -773,23 +773,18 @@ reroute_sections(Rerouters) :-
 	event:reuse_route(Type, Stop),
 	reroute_sections(Remains).
 
-full_section(Rerouters, Type, [Start | Rest], Top, Remains) :-
+full_section(Rerouters, Type, [Start | Rest], Remains) :-
 	select(Start, Rerouters, Left),
 	find_type(Start, Type),
 	\+ (m_class:follows(Before, Start), member(Before, Left)),
-	continuation(Left, Start, Rest, Top, Remains).
+	continuation(Left, Start, Rest, Remains).
 
-continuation(Rerouters, Start, Rest, TopArc, Remains) :-
+continuation(Rerouters, Start, Rest, Remains) :-
 	m_class:follows(Start, Next),
 	select(Next, Rerouters, Left), !,
-	continuation(Left, Next, More, FarArc, Remains),
-	Rest = [Next | More],
-	(find_all_links(M1, Start),
-	    find_all_comps(M1, Next), !,
-	    TopArc = Start;
-	TopArc = FarArc);
+	continuation(Left, Next, More, Remains),
+	Rest = [Next | More];
 	Rest = [],
-	TopArc = Start,
 	Remains = Rerouters.
 	
 display_submodels(_,[]).

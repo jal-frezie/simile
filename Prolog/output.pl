@@ -346,13 +346,14 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 			  br(write(Min)), br(write(Max))], _).
 */
 fill_equation(BadCurEqn, Cur_units, MultList, IsParam, Desc, Cmt, Min, Max) :-
-	sicstus_write_to_chars(BadCurEqn, BadCurEqnStr),
-	escape_curlies(BadCurEqnStr, CurEqnStr),
+%	sicstus_write_to_chars(BadCurEqn, BadCurEqnStr),
+%	escape_curlies(BadCurEqnStr, CurEqnStr),
 	all(utility, wrap, [build(MultList), unify(write), build(Mult)]),
 	safe_tcl_eval(['fill_equation',
-			  br(chars(CurEqnStr)), br(write(Cur_units)), br(Mult),
-			  br(write(IsParam)), br(write(Desc)), br(write(Cmt)),
-			  br(write(Min)), br(write(Max))], _).
+%		       br(chars(CurEqnStr)),
+		       br(write(BadCurEqn)), br(write(Cur_units)), br(Mult),
+		       br(write(IsParam)), br(write(Desc)), br(write(Cmt)),
+		       br(write(Min)), br(write(Max))], _).
 
 fill_inputs(List) :-
 	get_from_list(List, Table),
