@@ -1502,11 +1502,13 @@ proc UpdateToolbars {newAction} {
         $toolBar.$newAction configure -state active
         $toolBar.$pushedbutton configure -relief flat
         $toolBar.$newAction configure -relief sunken
-        ResetEqnBar $window_info($winData).toolSlot.eqnbar
+	SafeEqnBarEdit $window_info($winData)
+        ResetEqnBar $window_info($winData)
     }
 }
 
-proc ResetEqnBar {bar} {
+proc ResetEqnBar {winid} {
+    set bar $winid.toolSlot.eqnbar
 # for combobox version
 #    $bar.equation configure -text {}
     $bar.equation delete 0 end
@@ -1557,6 +1559,7 @@ proc accept_equation {winId text} {
 				 [$text cget -values]]
     set node $equationbar($winId,node)
     prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node, 0)]
+    set equationbar($winId,initText) $equationbar(equation)
     focus $winId.canvas
 }
 

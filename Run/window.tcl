@@ -172,7 +172,8 @@ proc ClickObj { x y winId X Y action} {
         ### Added by Jasper: ignore all eqnbar stuff if none in current window or
         ### not in pointer mode
         
-        set bar [winfo parent $winId].toolSlot.eqnbar
+	set winid [winfo parent $winId]
+        set bar $winid.toolSlot.eqnbar
         if {[catch {pack info $bar}] || [string compare $pushedbutton select]} {
             set equationbar(current_action) null
         } else {
@@ -180,14 +181,12 @@ proc ClickObj { x y winId X Y action} {
             #	ModeSelect move
             #	ModeSelect select
         }
-        
         if {[string match $equationbar(current_action) click]} {
+	    SafeEqnBarEdit $winid
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
                 set label [file tail [BlankCrs $context]]\ =
                 $bar.label configure -text $label
-                
-                set winid [winfo parent $winId]
                 set equationbar($winid,node) $node
                 set equationbar($winid,initText) $oldEqn
                 set equationbar(current_action) null
@@ -196,6 +195,21 @@ proc ClickObj { x y winId X Y action} {
             }
         }
         ### End equation bar
+    }
+}
+
+# make sure modeller really wanted to discard any previous edit
+proc SafeEqnBarEdit {winId} {
+    global equationbar
+    set bar $winId.toolSlot.eqnbar
+    if {[string equal normal [$bar.equation cget -state]]} {
+#puts [list [$bar.equation get] is $equationbar($winId,initText)]
+	if {![string eq [$bar.equation get] $equationbar($winId,initText)]} {
+	    set choix [ShowMessage "Save text edits" question "Do you want to save the changes you have made in the equation bar?" yesno]
+	    if {[string equal yes $choix]} {
+		accept_equation $winId $bar.equation
+	    }
+	}
     }
 }
 
@@ -1797,6 +1811,5 @@ proc ClearWindow {winId} {
     $winId addtag doomed all
     $winId dtag /base/ doomed
     $winId delete doomed
-    ResetEqnBar [winfo parent $winId].toolSlot.eqnbar
+    ResetEqnBar [winfo parent $winId]
 }
-

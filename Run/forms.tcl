@@ -106,7 +106,7 @@ proc create_equation {parent boxtitle indices} {
     if {[string compare $equationbar(current_action) tick]==0} then {
         return
     }
-    ResetEqnBar [winfo parent $parent].toolSlot.eqnbar
+    ResetEqnBar [winfo parent $parent]
     ### End formula bar section
     
     set t [toplevel .equation -bd 4 -class Equation]
