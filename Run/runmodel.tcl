@@ -1636,6 +1636,7 @@ proc build_c_stub {targetDir make_new_stub} {
     scan [info tclversion] {%d.%d} MAJ MIN
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION)
     if {!$make_new_stub} {
+	pkg_mkIndex $targetDir *.dll *.so
 	if {![catch {package require -exact Ame_dll $stubPkg} dummy]} {
 	    return
 	} else {
@@ -1660,22 +1661,19 @@ proc build_c_stub {targetDir make_new_stub} {
 	windows {
 	    set TCL [file attributes $TCL -shortname]
 	    set TARGET [file attributes $targetDir -shortname]/ame_dll$MAJ$MIN.dll
+	    set dll tcl${MAJ}${MIN}
 
-# Older TclTks have a special library for Visual C, which is also used by
-# mingw -- guessing the transition happened at 8.1
-    if {$MAJ+$MIN/10.0 < 8.1} {
-	set COMPILER vc
-    } else {
-	set COMPILER {}
-    }
-
+# Older TclTks may have a special library for Visual C, which is also used by mingw
+	set tclLib $TCL/lib/${dll}vc.lib
+	if {![file exists $tclLib]} {
+	    set tclLib $TCL/lib/$dll.lib
+	}
 
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
 # it is running under Prolog. However it seems to work OK in WinNT.
 	    if {$make_new_stub != 1} {
 #catch {exec gcc -v} vInfo
 #ShowMessage debug info "using $vInfo" ok
-		set dll tcl${MAJ}${MIN}
 #ShowMessage debug info "TCL is $TCL" ok
 #		exec dlltool --dllname $TCL/bin/$dll.dll --output-lib lib$dll.a --def tcltk.def
 		exec g++ -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
@@ -1684,7 +1682,7 @@ proc build_c_stub {targetDir make_new_stub} {
 #		    file delete junk.tmp
 #		exec dlltool --dllname $TARGET --base-file base.tmp \
 #		    --output-exp exp.exp --def stub.def
-		exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=gcc obj.o $TCL/lib/$dll$COMPILER.lib
+		exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=gcc obj.o $tclLib
 #		exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
 #		file delete exp.exp
 
@@ -1692,7 +1690,7 @@ proc build_c_stub {targetDir make_new_stub} {
 	    } else {
 		set TOOLS32 [file dirname $env(MSVCDIR)/any]
 		exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 -I$targetDir -I$TOOLS32/include -I$TCL/include ./ame_cmx.cpp
-		exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET $TCL/lib/tcl${MAJ}${MIN}${COMPILER}.lib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
+		exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET $tclLib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
 	    }
 
 # Also if in Windows we need to prepare a way for gcc to link the
@@ -1707,7 +1705,7 @@ proc build_c_stub {targetDir make_new_stub} {
 #		--output-lib libame_dll.a
 	}
     }
-    pkg_mkIndex $targetDir *
+    pkg_mkIndex $targetDir *.dll *.so
     package require -exact Ame_dll $stubPkg
     cd $old_dir
 }
