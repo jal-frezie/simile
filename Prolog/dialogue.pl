@@ -85,9 +85,11 @@ BoxHeaderStr),
 	    Base = '';
 	Base = 1),
 	    Dims = []),
-	(get_av_pair(Part, 0, table_data,
-			      [file=FilePath, data=DataField,
-			       indices=Indices, current=Values]), !,
+	retractall(table_data_is(_)),
+	(get_av_pair(Part, 0, table_data, TableSpec),
+	    TableSpec = [file=FilePath, data=DataField,
+			 indices=Indices, current=Values], !,
+	    assert(table_data_is(TableSpec)),
 	    TableList = [FilePath, DataField | Indices],
 	    reverse_engineer(Values, 0, TableVals);
 	TableList = '', TableVals = '{}'),
@@ -103,9 +105,9 @@ BoxHeaderStr),
 		associated function */
 	is_parameter(ClickedObj, Is_P),
 	get_input_info(Part, Input_list),
-	fill_equation(Equation, Base, Dims, Is_P, TableList, TableVals,
-		      Desc, Comment, Min, Max),
+	fill_equation(Equation, Base, Dims, Is_P, Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
+	fill_table(TableList, TableVals),
 	retractall(input_list_is(_)),
 	assert(input_list_is(Input_list)),
 	repeat,
@@ -141,6 +143,21 @@ all args being empty) escapes from here.
 Note that interact_equation should return strings for all these
 things. */
 
+update_equation(_,_, InList,_, [Table_st, Data_st]) :-
+	assert(input_list_is(InList)),
+	get_term(Table_st, TableData, _),
+	/* should be no errors as it is auto generated */
+	get_table_data(Data_st, DataTable, TableVals, Complaint),
+	(Complaint = [], !,
+	    TableData = [FileName, DataField | Indices], 
+	    retractall(table_data_is(_)),
+	    assert(table_data_is([file = FileName, data = DataField,
+				  indices = Indices, current = DataTable])),
+	    fill_table(TableData, TableVals);
+	do_dialogue("Problem with input data", warning, Complaint,
+		    ok, _)),
+	fail.
+
 update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
 	(name(New_var, Node_st),
 	    append(EarlyInputs,
@@ -174,8 +191,7 @@ LateInputs],
 	fail.
 
 update_equation(Function, IndxCount, InterInputs, TypeBase,
-		[Eqn_st, Unit_st, Is_P_st,
-		 Table_st, Data_st, Desc_st, Comment_st, Min_st, Max_st]) :-
+		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
 	member([Is_P, ParamsAllowed, EqnNeeded],
 	       [[-1,1,0], [0,1,0], [1,0,0], [2,0,0]]),
@@ -246,23 +262,15 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	/* Now, is there a reference to a table? If so, load the data 
 for it,
 	complaining if it is not there. Otherwise ignore any data. */
-	(replace_subexps(Result, dialogue, table_ref, 0, top_down, [_ 
-| _], _),
+	(replace_subexps(Result, dialogue, table_ref, 0, top_down, [_ | _], _),
 	    !,
-	    get_term(Table_st, TableData, _),
-	/* should be no errors as it is auto generated */
-	    (\+ Data_st = [], !,
-		get_table_data(Data_st, DataTable, TableVals),
-	        TableData = [FileName, DataField | Indices], 
-		TableAttr = [file = FileName, data = DataField,
-			     indices = Indices, current = DataTable],
+	    (table_data_is(TableAttr),
 		FileError = [];
-	    FileError = "Equation refers to a data table, but no table specification has been entered.\n"),
+	    TableAttr = '',
+	        FileError = "Equation refers to a data table, but no table specification has been entered.\n"),
 	    append(Complaint6, FileError, Complaint7);
 		
 	TableAttr = '',
-	    TableData = '',
-	    TableVals = '{}',
 	    Complaint7 = Complaint6),
 	/* table data is auto-generated so should be well formed */
 
@@ -273,7 +281,7 @@ for it,
 	    FinalComplaint = Complaint7),
 
 	name(Desc, Desc_st),
-	name(Comment, Comment_st),
+	name(Comment, Cmt_st),
 
 	(FinalComplaint = [], !,
 	    update_parameterhood(Function, Is_P, AffectedNode),
@@ -283,13 +291,11 @@ for it,
 		add_parameter(AffectedNode, 0, units, NewArraySpec),
 		add_parameter(AffectedNode, 0, description, Desc),
 		add_parameter(AffectedNode, 0, comment, Comment),
-		add_parameter(AffectedNode, 0, table_data, 
-TableAttr),
+	        add_parameter(AffectedNode, 0, table_data, TableAttr),
 		add_parameter(AffectedNode, 0, min_val, Min),
 		add_parameter(AffectedNode, 0, max_val, Max),
 		update_links_and_vars(New_inputs);
-	fill_equation(Result, Units, EqnDims, Is_P, TableData, TableVals,
-		      Desc, Comment, Min, Max),
+	fill_equation(Result, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
 	    (FinalComplaint = continue, !;
@@ -326,9 +332,10 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	
 table_ref(_, table(_), _, 0).
 
-get_table_data(Data, Table, Orig) :-
-	get_table_part(Data, Table, Orig, Dims),
-	zero_empties(Table, Dims).
+get_table_data(Data, Table, Orig, Complaint) :-
+	on_exception(Complaint,
+		     (get_table_part(Data, Table, Orig, Dims),
+		     zero_empties(Table, Dims)), true).
 
 get_table_part(Data, Table, Orig, Dims) :-
 	name(Num, Data),
@@ -337,8 +344,11 @@ get_table_part(Data, Table, Orig, Dims) :-
 	    Orig = Num,
 	    Dims = [];
 	output:chop_list(Data, Alternator),
-	    feed_items(Alternator, Table, SubOrig, Dims),
-	    Orig = br(SubOrig).
+	    feed_items(Alternator, Table, SubOrig, Dims), !,
+	    Orig = br(SubOrig);
+	append(["Table contained the data item ", Data,
+		", which is not a numeric value."], Loss),
+	    raise_exception(Loss).
 
 feed_items([], _, [], []).
 feed_items([IndStr, ValStr | More], Table, [Ind, VOrig | TOrig], Dims) :-

@@ -40,8 +40,7 @@ proc equationResources {} {
     }
 }
 
-proc fill_equation {current_equation units mult isParam \
-            table_data table_values desc comment min max} {
+proc fill_equation {current_equation units mult isParam desc comment min max} {
     
     global equation
     global equationbar
@@ -49,8 +48,6 @@ proc fill_equation {current_equation units mult isParam \
     set equationbar(units) $units
     #      set equationbar(mult) $mult
     set equationbar(isParam) $isParam
-    set equationbar(table_data) $table_data
-    set equationbar(table_values) $table_values
     set equationbar(desc) $desc
     set equationbar(comment) $comment
     set equationbar(min) $min
@@ -76,8 +73,6 @@ proc fill_equation {current_equation units mult isParam \
     $widget.equation.textbox.text insert 1.0 [ExtractGraphData $current_equation]
     set equation(units) $units
     set equation(mult) [join $mult ,]
-    set equation(table_data) $table_data
-    set equation(table_values) $table_values
 
 # do not show a radiobutton if incomplete
 #    if {!$isParam && ![llength $current_equation]} {
@@ -379,8 +374,6 @@ proc interact_equation {} {
         return [list $equationbar(equation) \
                 $equationbar(units) \
                 $equationbar(isParam) \
-                \['[join $equationbar(table_data) ',']'\] \
-                $equationbar(table_values) \
                 $equationbar(desc) \
                 $equationbar(comment) \
                 $equationbar(min) \
@@ -396,26 +389,29 @@ proc interact_equation {} {
     grab $t
     tkwait variable equation(done)
     grab release $t
-    if {$equation(done)==1} {
-        return [list [string trimright [CombineGraphData \
+    switch $equation(done) {
+	1 {
+	    return [list [string trimright [CombineGraphData \
                 [$eqnFrame.equation.textbox.text get 1.0 end]]] \
                 $equation(units) $equation(isparam) \
-                \['[join $equation(table_data) ',']'\] \
-                $equation(table_values) \
                 [string trimright [$descFrame.text get 1.0 end]] \
                 [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
                 $equation(min) $equation(max)]
-    } elseif {$equation(done)==2} {
-        set rlist [list [lindex $equation(pathlist) $equation(ckLine)]]
-        foreach list {plist ilist} {
-            set uselist $listFrame.lists.$list
-            if {[string match $uselist $equation(lbid)]} {
-                lappend rlist $equation(listedit)
-            } else {
-                lappend rlist [$uselist get $equation(ckLine)]
-            }
-        }
-        return $rlist
+	} 2 {
+	    set rlist [list [lindex $equation(pathlist) $equation(ckLine)]]
+	    foreach list {plist ilist} {
+		set uselist $listFrame.lists.$list
+		if {[string match $uselist $equation(lbid)]} {
+		    lappend rlist $equation(listedit)
+		} else {
+		    lappend rlist [$uselist get $equation(ckLine)]
+		}
+	    }
+	    return $rlist
+	} 3 {
+	    return [list \['[join $equation(table_data) ',']'\] \
+			$equation(table_values)]
+	}
     }
 }
 
@@ -468,7 +464,7 @@ proc GetTable {parent box} {
             $box delete [$box index {insert -1 chars}]
             $box insert insert \]\)
         }
-        
+        set equation(done) 3
     }
 }
 
@@ -517,6 +513,13 @@ proc fill_inputs { triples } {
     #    pack $t.bottom -fill x -expand true
     $equation(notebook) compute_size
     pack $equation(notebook)
+}
+
+proc fill_table {table_data table_values} {
+    global equation
+
+    set equation(table_data) $table_data
+    set equation(table_values) $table_values
 }
 
 proc equationBindings { t en eu lbp lbi lbd \

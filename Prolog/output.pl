@@ -25,7 +25,8 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
-	prepare_equation/1, create_equation/3, fill_equation/10, fill_inputs/1,
+	prepare_equation/1, create_equation/3,
+	fill_equation/8, fill_inputs/1, fill_table/2,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/0, tk_update_infobox/1, 
 	tk_finish_progress_dialogue/0, tk_alter_model/0,
@@ -330,20 +331,21 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
 */
-fill_equation(Cur_eqn, Cur_units, MultList, IsParam, TableData, TableVals,
-	      Desc, Comment, Min, Max) :-
+fill_equation(Cur_eqn, Cur_units, MultList, IsParam, Desc, Cmt, Min, Max) :-
 	all(utility, wrap, [build(MultList), unify(write), build(Mult)]),
-	bracketize(TableData, Tk_tableData),
 	safe_tcl_eval(['fill_equation',
 			  br(write(Cur_eqn)), br(write(Cur_units)), br(Mult),
-			  br(write(IsParam)), Tk_tableData, TableVals,
-			  br(write(Desc)), br(write(Comment)),
+			  br(write(IsParam)), br(write(Desc)), br(write(Cmt)),
 			  br(write(Min)), br(write(Max))], _).
 
 fill_inputs(List) :-
 	get_from_list(List, Table),
 	bracketize(Table, Tk_table),
 	safe_tcl_eval(['fill_inputs', Tk_table], _).
+
+fill_table(TableData, TableVals) :-
+	bracketize(TableData, Tk_tableData),
+	safe_tcl_eval(['fill_table', Tk_tableData, TableVals], _).
 
 /* Do a bit of processing to the parameter name column so the square/curly
 brackets appear as text. */
