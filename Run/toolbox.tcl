@@ -471,7 +471,6 @@ proc DestroyHelpers {node} {
 }
 
 proc load_dll {topNode lang progDir id node incs} {
-    ScrubRun $topNode 0
     do_for_node $topNode load_dll $topNode $lang $progDir $id $node $incs
 }
 

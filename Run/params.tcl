@@ -458,7 +458,7 @@ proc ListToArray {topNode tgt subs trans dims list} {
 	    error [list "Per-record submodel must have values for at least one member."]
 	}
 
-#puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
+#do_in_editor puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
 	EnumTypeToNumber paramData [lindex [lindex $dims 0] 1]$subs $last {}
 # probably won't work anyway for time series
 	set requireStep 0
