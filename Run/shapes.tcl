@@ -67,9 +67,9 @@ proc PutShape {c l t r b file fatness colourScheme title} {
     
     source "../Images/$fileName.cnv"
     set growth [expr ($r-$l)/30.0]
-    ZoomImage $c unscaled $growth $growth
+    ZoomImage $c unscaled $growth
     $c move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
-    ZoomImage $c unscaled $window_info($c,scale) $window_info($c,scale)
+    ZoomImage $c unscaled $window_info($c,scale)
     $c addtag $title withtag unscaled
     $c addtag has_info withtag unscaled
     $c dtag unscaled

@@ -211,7 +211,7 @@ proc DoZoom { winId factor toProlog} {
     # Next, scale all the window objects (centre must be 0 because all canvas/desktop
     # translation is done relative to 0)
     
-    ZoomImage $winId all $factor $factor
+    ZoomImage $winId all $factor
     
     # Change the canvas area in accordance with the change in scale
     
@@ -239,7 +239,7 @@ proc DoZoom { winId factor toProlog} {
 # when zooming). Font sizes have a separate parameter to enable them to come
 # out right when zooming prior to Postscript export.
 
-proc ZoomImage {winId which factor fontor} {
+proc ZoomImage {winId which factor {optFontor none}} {
     #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
     global window_info looks
     
@@ -252,6 +252,11 @@ proc ZoomImage {winId which factor fontor} {
         catch {set window_info($winId,scale) \
                     [expr $window_info($winId,scale) * $factor]}
         
+    }
+    if {[string match none $optFontor]} {
+	set fontor $factor
+    } else {
+	set fontor $optFontor
     }
     foreach object $objList {
         switch [$winId type $object] {
@@ -274,7 +279,19 @@ proc ZoomImage {winId which factor fontor} {
                 set newHt [expr round($factor*[$tgtImage cget -height])]
                 scan [$winId coords $object] {%f %f} newX newY
                 
-                if {[string match "*/base/*" [$winId gettags $object]]} {
+		if {[string compare none optFontor]} {
+# Doing clever stuff with fonts, this zoom op is for a print
+# so scale image rather tha re-tiling it
+		    if {$factor > 1} {
+			image create photo temp
+			temp copy $tgtImage
+			$tgtImage config -width $newWidth -height $newHt
+			$tgtImage copy temp -zoom [expr round($factor)]
+		    } else {
+			$tgtImage copy $tgtImage \
+			    -subsample [expr round(1.0/$factor)]
+		    }
+                } elseif {[string match "*/base/*" [$winId gettags $object]]} {
                     ResizeBackgnd $winId $newX $newY \
                             [expr $newX+$newWidth] [expr $newY+$newHt]
                 } else {
@@ -291,7 +308,7 @@ proc ZoomImage {winId which factor fontor} {
                 $winId itemconfigure $object \
                         -width [AdjustWidth $winId $object $factor]
             }
-        }
+	}
     }
 }
 
@@ -379,7 +396,7 @@ proc DisplayAll { winId } {
         
         # ShowMessage debug info "xscale $xscale yscale $yscale scale $scale" ok
         
-        ZoomImage $winId all $scale $scale
+        ZoomImage $winId all $scale
         
         set bl [expr $bl*$scale]
         set bt [expr $bt*$scale]
@@ -401,7 +418,7 @@ proc DisplayArea {winId} {
     set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
     set factor [expr $xscale>$yscale?$yscale:$xscale]
     
-    ZoomImage $winId all $factor $factor
+    ZoomImage $winId all $factor
     # Change the canvas area in accordance with the change in scale
     
     set oldSize [$winId cget -scrollregion]

@@ -1021,12 +1021,12 @@ proc PrepForExport {winId way} {
     global jiggles tcl_platform
 
     # now, zoom in by detail factor to get the line thickness resolution decent
-    set detail 16.0
+    set detail 4.0
     # For font scale 1 seems right for Unix -- Windows takes about 1.6
     if {[string match windows $tcl_platform(platform)]} {
         set textBoost 1.6
     } else {
-        set textBoost 1
+        set textBoost 1.0
     }
     set ltBorder 20
     set textscale [expr $detail*$textBoost]
