@@ -8,12 +8,12 @@ use goals that start with "tk_" to make the diffreence clear.
 
 sicstus_module(input, [tk_undo/0, tk_redo/0, tk_get_info/3, tk_get_params/2,
 	tk_click_obj/5, tk_click/3, tk_doubleclick/3, tk_unclick/2, 
-	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5, 
+	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5,
 	tk_embrace/2, tk_abandon/0, tk_abandon_eqn/0,
 	compile_to_file/1, tk_off_window/1, 
 	tk_set_new_size/4, tk_change_size/4,  set_style/1]).
 
-sicstus_use_module([event, menu]).
+sicstus_use_module([backup, event, menu]).
 
 tk_undo :-
 	show_wait_cursor,
@@ -32,43 +32,52 @@ tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
 
 tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
+	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)),
 	prioritize_window(Wid),
 	(Action = click,
 		click_obj(Virt_X, Virt_Y, Name);
 	Action = clicktext,
 		click_text(Virt_X, Virt_Y, Name);
 	Action = doubleclick,
-		doubleclick_obj(Virt_X, Virt_Y, Name);
-	Action = drag,
-		drag_obj(Virt_X, Virt_Y, Name)).
+		doubleclick_obj(Virt_X, Virt_Y, Name)).
 
 tk_click(Wid, Virt_X, Virt_Y) :-
+	into_save_file(tk_click(Wid, Virt_X, Virt_Y)),
 	prioritize_window(Wid),
 	click(Virt_X, Virt_Y).
 
-tk_doubleclick(_Wid, Virt_X, Virt_Y) :-
+tk_doubleclick(Wid, Virt_X, Virt_Y) :-
+	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)),
 	show_wait_cursor,
 	doubleclick(Virt_X, Virt_Y),
 	show_normal_cursor.
 
-tk_unclick(_, _) :-
+tk_unclick(X, Y) :-
+	into_save_file(tk_unclick(X, Y)),
 	unclick.
 
+:- dynamic(suspend_interaction_logging/0).
+
 tk_drag(Virt_X, Virt_Y) :-
-	drag(Virt_X, Virt_Y).
+	assert(suspend_interaction_logging),
+	drag(Virt_X, Virt_Y),
+	retractall(suspend_interaction_logging).
 
 tk_menu(Window, Header, Item) :-
+	into_save_file(tk_menu(Window, Header, Item)),
 	show_wait_cursor,
 	finish_old_edit(none),
 	menu_handle(Window, Header, Item),
 	show_normal_cursor.
 
 tk_menu_select(Obj_type, from_box) :-
+	into_save_file(tk_menu_select(Obj_type, from_box) ),
 	show_wait_cursor,
 	menu_select(Obj_type),
 	show_normal_cursor.
 
 tk_mode_select(Mode) :-
+	into_save_file(tk_mode_select(Mode)),
 	show_wait_cursor,
 	mode_select(Mode),
 	show_normal_cursor.
@@ -100,5 +109,6 @@ tk_change_size(Node, New_size, XDefOffset, YDefOffset) :-
 	show_normal_cursor.
 
 tk_off_window(Wid) :-
+	into_save_file(tk_off_window(Wid)),
 	finish_old_edit(none),
 	off_window(Wid).

@@ -442,7 +442,7 @@ write_eqn_term(Submodel, Entry, Description, Comment, InFlows, OutFlows) :-
 	 get_flows(VisNode, out, OutFlows), 
 	 get_flows(VisNode, in, InFlows) 
 	);
-	(CompType \= compartment, 
+	(\+ CompType = compartment, 
 	 InFlows = null, 
 	 OutFlows = null
 	)),

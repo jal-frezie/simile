@@ -8,7 +8,7 @@ sicstus_module(backup, [initialize_ring/0, finish_move/1, restart_move/0,
 			get_save_status/2, set_save_status/2, save_allowed/1,
 			go_back/1, go_forward/1, make_auto_name/3,
 			clear_autosave/2, check_autosave/3, scrub_autosave/1,
-			is_toplevel/1, use_temp_dir/1]).
+			is_toplevel/1, use_temp_dir/1, into_save_file/1]).
 
 sicstus_use_module([ame_gen, database, utility,
 		    library(lists), library(charsio)]).
@@ -188,7 +188,8 @@ repeat_action(ActSpec) :-
 			database:retract(P),
 			fail;
 		assert(saved_state(current, Next)));
-	retract(saved_state(first, First)),
+	ActSpec = [_|_],
+	        retract(saved_state(first, First)),
 		retract(saved_state(last, _)),
 		retract(saved_state(current, Current)),
 		retractall(saved_state(Current, _)),
