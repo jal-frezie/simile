@@ -269,10 +269,13 @@ proc LoadFile {tree tgt} {
 		    if {[string match execTime [lindex $runParams 0]]} {
 			array set runState $runParams
 			set runState(phases) 0
-			foreach phase $runState(phaseList) {
-			    incr runState(phases)
-			    set runState(update$runState(phases)) $phase
-			    set runState(prev_update$runState(phases)) $phase
+			if {[info exists runState(phaseList)]} {
+			    foreach phase $runState(phaseList) {
+				incr runState(phases)
+				set runState(update$runState(phases)) $phase
+				set runState(prev_update$runState(phases)) \
+				    $phase
+			    }
 			}
 			set runState(oldIntMethod) $runState(intMethod)
 		    } else {
