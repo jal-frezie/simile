@@ -1031,7 +1031,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	    (continues_in(Moving_obj, Box), !;
 		m_update:Moving_obj is_connector from _ to EndPt,
 	        get_host(EndPt, Box))),
-
+	wake,
 	find_type(Box, EType),
 	/* find drag point in parent model */
 	find_all_comps(Parent, Moving_obj),
@@ -1039,8 +1039,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	(Parent = Box, !,
 	    get_shape(Parent, internal_extent, ParentBox),
 	    subtract_from_translation([0,0,1,1], Box, Trans);
-	member(BoxAttr, [bounding_box, bowtie]),
-	    get_shape(Box, BoxAttr, ParentBox),
+	get_drawing_form(Box, _, ParentBox),
 	    (\+ EType = submodel;
 		add_to_translation([0,0,1,1], Box, Trans))),
 	    
