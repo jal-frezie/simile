@@ -575,6 +575,11 @@ proc equationBindings { t en eu lbp lbi lbd \
     bind $lbf <Motion> "RemovePopup;$PopCmd"
     bind $lbf <Leave> RemovePopup
     
+    set PopCmd [list QueuePopup AddIndexPopup %W %y %X %Y]
+    bind $lbx <Enter> $PopCmd
+    bind $lbx <Motion> "RemovePopup;$PopCmd"
+    bind $lbx <Leave> RemovePopup
+
     bind $lbx <Double-1> \
             "indexClick %W %y $en; focus $en"
     
@@ -703,6 +708,12 @@ proc AddFnPopup {lb y X Y} {
 proc AddParamPopup {lb y X Y} {
     global equation
     AddWidgetPopup "Value(s) of [lindex $equation(pathlist) [$lb nearest $y]]" $X $Y
+}
+
+proc AddIndexPopup {lb y X Y} {
+    global equation
+    set line [$lb nearest $y]
+    AddWidgetPopup "Index [expr $line+1] is [$lb get $line]" $X $Y
 }
 
 proc AddEnumTypePopup {lb y X Y} {
