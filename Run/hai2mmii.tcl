@@ -212,9 +212,11 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
 	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
 	} else {
 	    set newIndex [lindex $nextElt $newDimPlace]
-	    lappend result $newIndex
-	    lappend result [FillListValues nextRef $newTree $type $innerDims \
+	    set subVals [FillListValues nextRef $newTree $type $innerDims \
 				[concat $listDims $newIndex] $newDimPlace]
+	    if {[llength $subVals]} {
+		lappend result $newIndex $subVals
+	    }
 	}
 	if {[string compare $nextRef 0]} {
 	    set smHandle ::AME_model<>::$nextRef
@@ -271,15 +273,18 @@ proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 	array set arrayVals $newVals
 	for {set nextDim 1} {$nextUseDim>=$nextDim} \
 		{incr nextDim} {
-	    lappend result $nextDim
 	    if {[info exists arrayVals($nextDim)]} {
 		set eltVals $arrayVals($nextDim)
 	    } else {
 		set eltVals {}
 	    }
-	    lappend result [FillValue $smHandle $tree $type \
+	    set subVals [FillValue $smHandle $tree $type \
 		    [lrange $useDims 1 end] \
 		    [concat $dims $nextDim] [expr $dimPlace+1] $eltVals]
+	    if {[llength $subVals]} {
+		lappend result $nextDim $subVals
+	    }
+		    
 	}
 	return $result
     }

@@ -1279,12 +1279,13 @@ unclick_obj :-
 	append_atoms(Dir, '/copytemp.sml', CopyFile),
         start_progress_dialogue,
 	menu:save_isolated(CopyFile, Start, none),
-	attempt_addition(submodel, Parent, Box, Component_name, no),
-	library:ame_merge(Component_name, CopyFile, _, 'fuck it'),
-	set_shape(Component_name, internal_extent, Inside),
-	redisplay(Component_name),
-        finish_progress_dialogue,
-	update_runnable(Parent).
+	(attempt_addition(submodel, Parent, Box, Component_name, no), !,
+	    library:ame_merge(Component_name, CopyFile, _, 'fuck it'),
+	    set_shape(Component_name, internal_extent, Inside),
+	    redisplay(Component_name),
+	    update_runnable(Parent);
+	true),
+        finish_progress_dialogue.
 
 /* Unclick in ghost mode. If unclicking in space, a new ghost node is created. If
 unclicking on an existing node this node is made into a ghost of the source node

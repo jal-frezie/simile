@@ -171,7 +171,7 @@ namespace eval ::origplot72514 {
                     -resolution [expr $magnitude/100]
             pack $t.left.top.scale -side right -fill y -expand true
         } else {
-            if {$timeplotvars($t)} {
+            if {[llength $timeplotvars($t)]} {
                 AlterModel $t 1
             } else {
                 AlterModel $t 0
@@ -213,7 +213,7 @@ namespace eval ::origplot72514 {
         set timeplotvars($t,width) 200.0
         set timeplotvars($t,height) 200.0
         set timeplotvars($t,early) false
-        set timeplotvars($t) false
+        set timeplotvars($t) {}
         AddGraticule $t 10.0 $isReal 200.0
     }
     # This is the scale command. It calls it whenever it is updated, so we have to
@@ -481,27 +481,28 @@ namespace eval ::origplot72514 {
         
         set isReal [string compare $timeplotvars($winName,unit) flag]
         
-        if {[string compare $timeplotvars($winName) false] && \
-                    [string compare $time false] && \
+        if {[llength $timeplotvars($winName)] && [llength $value]} {
+            if {[string compare $time false] && \
                     $time > $timeplotvars($winName,early)} {
-            if {$isReal} {
-                PlotFloats $value $timeplotvars($winName) \
-                        $time $timeplotvars($winName,early) $winName $can index black
-            } else {
-                set theight [expr $timeplotvars($winName,height)-45]
-                set fheight [expr $timeplotvars($winName,height)-5]
-                $can create line \
+		if {$isReal} {
+		    PlotFloats $value $timeplotvars($winName) $time \
+                        $timeplotvars($winName,early) $winName $can index black
+		} else {
+		    set theight [expr $timeplotvars($winName,height)-45]
+		    set fheight [expr $timeplotvars($winName,height)-5]
+		    $can create line \
                         $timeplotvars($winName,early) \
                         [expr $timeplotvars($winName)?$theight:$fheight] \
                         $timeplotvars($winName,early) \
                         [expr $value?$theight:$fheight] \
                         $time \
                         [expr $value?$theight:$fheight] -tags graph
-            }
-        } else {
-            AdvanceColour timeplotvars($winName,colour)
-            #		ShowMessage debug info "colour now $timeplotvars($winName,colour)" ok
-        }
+		}
+	    } else {
+		AdvanceColour timeplotvars($winName,colour)
+		#		ShowMessage debug info "colour now $timeplotvars($winName,colour)" ok
+	    }
+	}
         if {$isReal} {
             set timeplotvars($winName,scale) [SampleFrom $timeplotvars($winName,entry)]
             set timeplotvars($winName,expectedValue) $timeplotvars($winName,scale)

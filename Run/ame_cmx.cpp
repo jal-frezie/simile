@@ -1171,8 +1171,8 @@ Tcl_Obj* fill_value(Model*, void*, int[], int, int*, int[], int*, Tcl_Obj*);
 
 Tcl_Obj* fill_list_value(Model* localType, void** smHandle, int tree[], 
 			 int type, int* use_dims, int dims[], int* dim_place) {
-  Tcl_Obj *localObj;
-  int next_handle[] = {1,0}, match, *new_dim_place, *short_tree;
+  Tcl_Obj *localObj, *localSubObj;
+  int next_handle[] = {1,0}, match, arrayOut, *new_dim_place, *short_tree;
   localObj = Tcl_NewListObj(0, NULL);
   while (*smHandle && 
 	 (match = match_type(localType, *smHandle, dims, dim_place)) != -1) {
@@ -1183,11 +1183,14 @@ Tcl_Obj* fill_list_value(Model* localType, void** smHandle, int tree[],
       *smHandle = *(void**)(localType->get_ptr(*smHandle, &short_tree, 
 						  NULL));
     } else {
-      Tcl_ListObjAppendElement(NULL, localObj, Tcl_NewIntObj(match));
       *dim_place=match;
-      Tcl_ListObjAppendElement(NULL, localObj,
-		       fill_list_value(localType, smHandle, tree, type,
-					       use_dims, dims, dim_place+1));
+      localSubObj = fill_list_value(localType, smHandle, tree, type,
+				    use_dims, dims, dim_place+1);
+      Tcl_ListObjLength(NULL, localSubObj, &arrayOut);
+      if (arrayOut) {
+	Tcl_ListObjAppendElement(NULL, localObj, Tcl_NewIntObj(match));
+	Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
+      }
     }
   }
   return(localObj);
@@ -1202,10 +1205,10 @@ up to the sizes specified in use_dims. */
 
 Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type, 
 		    int* use_dims, int dims[], int* dim_place, Tcl_Obj* nVs) {
-  Tcl_Obj *localObj, *localSubObj, **arrayVals, *eltVals;
+  Tcl_Obj *localObj, *indObj, *localSubObj, **arrayVals, *eltVals;
   void* model_val_ptr;
   int *short_tree, *new_tree;
-  int arrayLength, arrayPosn, id_count, id_val, *id_ptr;
+  int arrayLength, arrayPosn, arrayOut;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
   switch (*use_dims) {
   case -2:
@@ -1224,7 +1227,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
     localObj = fill_list_value(localType, &smHandle, new_tree, type, 
 			       use_dims+1, dim_place+1, dim_place+1);
     
-    /*    
+    /*    Version with multiple indices per value
     localObj = Tcl_NewListObj(0, NULL);
     if (nVs) {
       Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
@@ -1296,14 +1299,17 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
       eltVals = NULL;
     }
     for (*dim_place = 1; *use_dims >= *dim_place; ++*dim_place) {
-      localSubObj = Tcl_NewIntObj(*dim_place);
-      Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
+      indObj = Tcl_NewIntObj(*dim_place);
       if (nVs) {
-	eltVals = pick_elt_vals(arrayVals, arrayLength, localSubObj, 
-				&arrayPosn);
+	eltVals = pick_elt_vals(arrayVals, arrayLength, indObj, &arrayPosn);
       }
-      Tcl_ListObjAppendElement(NULL, localObj, fill_value(localType, smHandle, 
-		tree, type, use_dims+1, dims, dim_place+1, eltVals));
+      localSubObj = fill_value(localType, smHandle, 
+		tree, type, use_dims+1, dims, dim_place+1, eltVals);
+      Tcl_ListObjLength(NULL, localSubObj, &arrayOut);
+      if (arrayOut) {
+	Tcl_ListObjAppendElement(NULL, localObj, indObj);
+	Tcl_ListObjAppendElement(NULL, localObj, localSubObj);
+      }
     }
     break;
   }

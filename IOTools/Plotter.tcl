@@ -792,7 +792,9 @@ namespace eval ::$keyValue {
         foreach node $plot($w,Yvars) {
             set values [GetModelValue $node]
             set values [lindex $values 0]
-            lappend YYnew($w) [list $node $values]
+	    if {[llength $values]} {
+		lappend YYnew($w) [list $node $values]
+	    }
             #        ShowMessage debug info "$YYnew($w)" ok
         }
     }
