@@ -647,7 +647,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
 # how precisely do we need to label our axes?
     set biggestOffset [max abs($dataMax) abs($dataMin)]
     set decmlPos \
-	[expr int(log10($biggestOffset)-floor(log10($inter)))]
+	[expr int(1+log10($biggestOffset)-floor(log10($inter)))]
     
 #    if {$lograngem>0} {
 #        set decmlPos 0
@@ -712,7 +712,8 @@ proc ::graphtools::VarPrecRender {winId val precision} {
     }
     set decimals [max 0 [expr int($precision-log10(abs($val)))]]
     set regular [format %.${decimals}f $val]
-    set scientific [format %.${precision}e $val]
+    set scf %.[max 0 $precision-1]e
+    set scientific [format $scf $val]
 #puts "$val to $precision is $regular or $scientific"
     if {[string length $scientific]<[string length $regular]} {
         return $scientific

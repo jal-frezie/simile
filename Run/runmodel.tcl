@@ -32,7 +32,7 @@ proc MakeHelperMenu {} {
     set oldDir [pwd]
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
-    set ioDir [PrefValue custom(prefDir) prefDir]
+    set ioDir [file join [PrefValue custom(prefDir) prefDir] IOTools]
     if {[file exists $ioDir]} {
 	cd $ioDir
 	AddHelperSublist $fm.sub2 "Local" l
@@ -49,7 +49,6 @@ proc MakeHelperMenu {} {
 proc AddHelperSublist {fm title ct} {
     global helperTable table_viewer
 
-    $fm add cascade -label $title -menu $fm.sub$ct
     set m [menu $fm.sub$ct -tearoff 0]
     set nct 0
     set helperList [glob -nocomplain *.tcl]
@@ -87,6 +86,11 @@ proc AddHelperSublist {fm title ct} {
             cd ..
             incr nct
         }
+    }
+    if {[string equal none [$m index 0]]} {
+	destroy $m
+    } else {
+	$fm add cascade -label $title -menu $m
     }
 }
 
