@@ -139,17 +139,17 @@ namespace eval printer {
     # Uses 200 as a last resort.
     if { [ info exist ary(resx) ] == 0 } { 
         set ppi "pixels per inch"
-        if { [ info exist ary($ppt) ] == 0 } {
-            if { [ scan $ary($ppt) "%d%d" tmp1 tmp2 ] > 0 } {
+        if { [ info exist ary($ppi) ] == 0 } {
+            if { [ scan $ary($ppi) "%d%d" tmp1 tmp2 ] > 0 } {
                 set ary(resx) $tmp1
                 if { $tmp2 > 0 } {
                     set ary(resy) $tmp2
                 }
             } else {
-                if [ string match -nocase $ary($ppt) "medium" ] {
+                if [ string match -nocase $ary($ppi) "medium" ] {
                     set ary(resx) 300
                     set ary(resy) 300
-                } elseif [ string match -nocase $ary($ppt) "best" ] {
+                } elseif [ string match -nocase $ary($ppi) "best" ] {
                     set ary(resx) 600
                     set ary(resy) 600
                 } else {
