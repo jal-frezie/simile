@@ -796,32 +796,42 @@ proc RelationCheck {parent title init_exc init_delay init_comment} {
     global relation
 	
     set t [toplevel .relcheck -bd 4]
-    wm transient $t $parent
+    wm resizable $t 0 0 
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
-    wm title $t "Properties of relation $title"
+    wm title $t "Properties of $title"
     set relation(isexclusive) $init_exc
     set relation(useoldmemb) $init_delay
-    pack [checkbutton .relcheck.exclusive \
-		-text "Exclusive role" \
-		-variable relation(isexclusive) -offvalue 0 -onvalue 1]
-    BindPopup .relcheck.exclusive exclusive
-    pack [checkbutton .relcheck.oldmemb \
-		-text "Last membership" \
-		-variable relation(useoldmemb) -offvalue 0 -onvalue 1]
-    BindPopup .relcheck.oldmemb oldmemb
-    pack [text .relcheck.comment -width 32 -height 4]
-    pack [button .relcheck.bdone -text OK -command {set relation(done) 1}] \
-	    -side left
-    pack [button .relcheck.bc -text Cancel -command {set relation(done) 0}] \
-	    -side left
-    .relcheck.comment delete 1.0 end
-    .relcheck.comment insert 1.0 $init_comment
-
+    frame .relcheck.top
+    TitleFrame .relcheck.top.left -text "Association options:"
+    set f [.relcheck.top.left getframe]
+    pack [checkbutton $f.exclusive \
+            -text "Exclusive role" -variable relation(isexclusive) -offvalue 0 -onvalue 1] -anchor w
+#    BindPopup $f.exclusive exclusive
+    pack [checkbutton $f.oldmemb \
+            -text "Last membership" -variable relation(useoldmemb) -offvalue 0 -onvalue 1] -anchor w
+#    BindPopup $f.oldmemb oldmemb
+    pack .relcheck.top.left -side left -padx 4 -pady 4 -expand on -fill both -anchor nw
+    frame .relcheck.top.right
+    pack [button .relcheck.top.right.bdone \
+            -text OK -width 10 -command {set relation(done) 1}] -padx 4 -pady 4
+    pack [button .relcheck.top.right.bc \
+            -text Cancel -width 10 -command {set relation(done) 0}] -padx 4 -pady 4
+    pack [button .relcheck.top.right.help \
+             -text Help -width 10 -command {ContextSensitiveHelp .relcheck submodels/association/dialogue.htm}] -padx 4 -pady 4
+    pack .relcheck.top.right -side left
+    pack .relcheck.top -expand on -fill both
+    TitleFrame .relcheck.bottom -text "Comments:"
+    set f [.relcheck.bottom getframe]
+    pack [text $f.comment -width 40 -height 4 -wrap word] -anchor w -expand on -fill both -padx 2 -pady 2
+    $f.comment delete 1.0 end
+    $f.comment insert 1.0 $init_comment
+    pack .relcheck.bottom
+    
     tkwait visibility .relcheck
     grab .relcheck
     tkwait variable relation(done)
     grab release .relcheck
-    set newComment [.relcheck.comment get 1.0 end]
+    set newComment [$f.comment get 1.0 end]
     destroy .relcheck
 
     return [list $relation(done) $relation(isexclusive) $relation(useoldmemb) \
