@@ -14,7 +14,7 @@ $rc SetIntegrationMethod {4th-order Runge-Kutta}
 $rc SetIntegrationMethod Euler
 $rc SetIntegrationMethodRungeKutta
 $rc SetIntegrationMethodEuler
-$rc Run
+$rc Start
 $rc GetCurrentTime
 $rc Reset
 $rc GetTimeStep 1
@@ -29,7 +29,7 @@ $rc GetNumberOfTimeSteps
 after 500
 $rc Reset
 $rc Reset; # BRKS this once
-$rc Run
+$rc Start
 
 # note original units, set each possible time units and then revert to original
 # GetTimeUnits: unit second minute hour day week month year Ma
