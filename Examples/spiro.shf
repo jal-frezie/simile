@@ -1,6 +1,6 @@
-66 87 780 580
-274 2
-2 234
+54 81 780 580
+277 2
+2 237
 notebook .mre.mainframe.frame.mainpw.mainDisplayPane.notebook
 page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/1 Page_1
 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/1 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow
@@ -8,20 +8,13 @@ panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwi
 pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow.pane0
 container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow.pane0
 plotterXY1.0
-/WIN/,yborder_bottom 30 /WIN/,X_scalestep 0 /WIN/,Ylabels y /WIN/,AxisDivisions 10 /WIN/,Xmax_data -1e20 /WIN/,Ymax_data -1e20 /WIN/,Y_max_scalestep 0 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,DrawPoints 0 /WIN/,Xprecision 0 /WIN/,xborder_right 15 /WIN/,XaxisLabel x /WIN/,Yprecision 0 /WIN/,canvas_colour #e0e0e0 /WIN/,pointer 1 /WIN/,DrawLines 1 /WIN/,Xvars node00022 /WIN/,Xmin_axis 1e20 /WIN/,ystep_Ylabels 12 /WIN/,Ymin_axis 1e20 /WIN/,xwindow_size 0 /WIN/,grid off /WIN/,Y_min_scalestep 0 /WIN/,xborder_left 50 /WIN/,y_Xlabel 10 /WIN/,state ycoord /WIN/,yborder_top 30 /WIN/,Xmajorstep 0.5 /WIN/,x_Xlabel 100 /WIN/,fontValues {Helvetica 8 normal} /WIN/,fontTitle {Helvetica 8 normal} /WIN/,Xmax_axis -1e20 /WIN/,Ymax_axis -1e20 /WIN/,ylength 391 /WIN/,x_Ylabels 25 /WIN/,y_Ylabels 0 /WIN/,Xmin_data 1e20 /WIN/,Ymin_data 1e20 /WIN/,Ymajorstep 2 /WIN/,grapharea_colour white /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Xminorstep 0.25 /WIN/,topright 1 /WIN/,ywindow_size 0 /WIN/,Yvars node00024 /WIN/,redraw 0 /WIN/,nodeCount 2 /WIN/,xstep_Ylabels 120 /WIN/,Yminorstep 0.25 /WIN/,xlength 403
-sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow 0 2 5
+/WIN/,AxisDivisions 10 /WIN/,Ymax_data -1e20 /WIN/,IdArrayElements false /WIN/,FewXAxisTicks false /WIN/,canvas_colour #e0e0e0 /WIN/,Xvars node00022 /WIN/,Xmin_axis 1e20 /WIN/,Yscale 0.155844155844 /WIN/,y_Xlabel 10 /WIN/,xborder_left 50 /WIN/,fontValues {Helvetica 8 normal} /WIN/,Xmax_axis -1e20 /WIN/,ylength 385 /WIN/,Ymajorstep 2 /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,xlength 395 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,Xprecision 0 /WIN/,DrawLines 1 /WIN/,Ymin_axis 1e20 /WIN/,state ycoord /WIN/,x_Ylabels 25 /WIN/,Ymax_axis -1e20 /WIN/,grapharea_colour white /WIN/,Xminorstep 0.25 /WIN/,nodeCount 2 /WIN/,X_scalestep 0 /WIN/,yborder_bottom 30 /WIN/,Ylabels y /WIN/,Y_max_scalestep 0 /WIN/,DrawPoints 0 /WIN/,XaxisLabel x /WIN/,Yprecision 0 /WIN/,ystep_Ylabels 12 /WIN/,grid off /WIN/,Y_min_scalestep 0 /WIN/,x_Xlabel 100 /WIN/,y_Ylabels 0 /WIN/,Xmin_data 1e20 /WIN/,redraw 0 /WIN/,Yvars node00024 /WIN/,xstep_Ylabels 120 /WIN/,Yminorstep 0.25 /WIN/,Xmax_data -1e20 /WIN/,xborder_right 15 /WIN/,Tscale 0.253164556962 /WIN/,pointer 1 /WIN/,xwindow_size 0 /WIN/,yborder_top 30 /WIN/,Xmajorstep 0.5 /WIN/,fontTitle {Helvetica 8 normal} /WIN/,Ymin_data 1e20 /WIN/,topright 1 /WIN/,ywindow_size 0
+sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/1.panedwindow 0 2 8
 page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/2 Page_2
 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/2 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow
 panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow vertical
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane0
-sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow 0 2 5
-page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/3 Page_3
-.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/3 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow
-panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow vertical
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow.pane0
-sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/3.panedwindow 0 2 5
-page .mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/4 Page_4
-.mre.mainframe.frame.mainpw.mainDisplayPane.notebook page/4 .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow
-panedwindow .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow vertical
-pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow.pane0
-sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/4.panedwindow 0 2 5
+pane .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane/1
+container .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow.pane/1
+plotter1.25
+/WIN/,ylength 385 /WIN/,x_Xlabel 100 /WIN/,grapharea_colour white /WIN/,fontTitle {Helvetica 8 normal} /WIN/,xlength 395 /WIN/,Xmajorstep 2000.0 /WIN/,Ymin_data 106.0 /WIN/,xborder_left 50 /WIN/,IdArrayElements false /WIN/,Ymax_data 106.0 /WIN/,Yvars {node00022 node00024} /WIN/,Xmin_axis 0.0 /WIN/,redraw 0 /WIN/,yborder_bottom 30 /WIN/,topright 1 /WIN/,Xmax_axis 12000.0 /WIN/,Ylabels {x y} /WIN/,fontValues {Helvetica 8 normal} /WIN/,yborder_top 30 /WIN/,Tscale 30.3797468354 /WIN/,Ymajorstep 0.01 /WIN/,grid on /WIN/,ystep_Ylabels 12 /WIN/,fontLabels {Helvetica 8 normal} /WIN/,Xprecision 0 /WIN/,xstep_Ylabels 120 /WIN/,y_Xlabel 10 /WIN/,Ymin_axis 105.98 /WIN/,YColours {#0000ff #ff0000 #00ff00 #007777 #777700 #770077 #222244 #442222 #224422} /WIN/,Ymax_axis 106.02 /WIN/,xborder_right 15 /WIN/,x_Ylabels 25 /WIN/,Y_max_scalestep 0 /WIN/,nodeCount 2 /WIN/,Xminorstep 2000.0 /WIN/,Yscale 0.000103896103896 /WIN/,pointer 1 /WIN/,Y_min_scalestep 0 /WIN/,Yprecision 2 /WIN/,AxisDivisions 10 /WIN/,y_Ylabels 0 /WIN/,FewXAxisTicks false /WIN/,Xmin_data 0.0 /WIN/,canvas_colour #e0e0e0 /WIN/,xwindow_size 0 /WIN/,Xmax_data 12000.0 /WIN/,Yminorstep 0.005 /WIN/,ywindow_size 0 /WIN/,X_scalestep 0
+sash .mre.mainframe.frame.mainpw.mainDisplayPane.notebook.fpage/2.panedwindow 0 2 8
