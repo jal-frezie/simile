@@ -21,7 +21,8 @@ namespace eval ::$keyValue {
         global ::graphtools::Told
         global ::graphtools::Tnew
         variable runCount
-
+        variable ynodes
+        
         namespace import -force ::graphtools::*; # todo make graphtools common
         
         set plot($w,nodeCount) 0
@@ -83,7 +84,8 @@ namespace eval ::$keyValue {
         set Told($w) 0
         set Tnew($w) 0
         
-	set runCount($w) 1
+        set runCount($w) 1
+        set ynodes($w) {}
         SetState $w {}
         UpdateState $w
         
@@ -98,27 +100,26 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-	variable runCount
+        variable runCount
+        variable ynodes
         
-        #initialize $winId; #allows default values for vars missing from GetState
-        # loses vars to plot
-        
-        set plot($winId,Xmin_data) [GetModelTime]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
-        set plot($winId,Xmax_data) [GetModelEndTime]; # 0 jan 03  set plot($w,Xmin_data) $Tnew
-        ################################################################################
+        set plot($winId,Xmin_data) [GetModelTime]
+        set plot($winId,Xmax_data) [GetModelEndTime]
         set YYold($winId) {}
         set YYnew($winId) {}
         set Told($winId) 0
         set Tnew($winId) 0
-        ################################################################################
         
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
-
-	foreach node $plot($winId,Yvars) {
-	    set plot(caption,$node) [file tail [GetCaptionPathFromId $node]]
-	}
-	set runCount($winId) 1
+        
+        set ynodes($winId) {}
+        foreach path $plot($winId,Yvars) {
+            set node [GetIdFromCaptionPath $path]
+            set plot(caption,$node) [file tail $path]
+            lappend ynodes($winId) $node
+        }
+        set runCount($winId) 1
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
@@ -130,15 +131,17 @@ namespace eval ::$keyValue {
     }
     
     proc click {w node caption} {
-        #tk_messageBox -message "Click node $node" -type ok
         global ::graphtools::plot
+        variable ynodes
         
-        set name [GetCaptionPathFromId $node]
+        set path [GetCaptionPathFromId $node]
+        #ShowMessage debug info "node $node; caption $caption; path $path" ok
         
         set testResult [GetModelValue $node]
         if {[string compare $testResult novalue]} {
-	    set plot(caption,$node) $caption
-            lappend plot($w,Yvars)   $node
+            set plot(caption,$node) $caption
+            lappend plot($w,Yvars)   $path
+            lappend ynodes($w) $node
             
             UpdateState $w
             display $w [GetModelTime] 0 0
@@ -169,14 +172,14 @@ namespace eval ::$keyValue {
     }
     
     proc reset {winId} {
-	variable runCount
+        variable runCount
         global ::graphtools::YYnew
-
-	incr runCount($winId)
-# prevent flyback
-	set YYnew($winId) {}
+        
+        incr runCount($winId)
+        # prevent flyback
+        set YYnew($winId) {}
     }
-
+    
     # Invoked at every time interval.
     proc display {w time step remainder} {
         # remainder isn't time remaining to run (seems to be usually 1) use $runState(execTime)
@@ -222,7 +225,7 @@ namespace eval ::$keyValue {
         ::graphtools::MakeToolBar $w $toolbarItems
         
         pack [label $w.mess] ;# for instructions
-                
+        
         # create canvas for graph
         canvas $w.canvas -bg $plot($w,canvas_colour) -relief solid ;#\
                 #-width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
@@ -260,28 +263,28 @@ namespace eval ::$keyValue {
         $dlg add -name cancel
         
         # Create entry boxes
-################################################################################
-#         set entryF [frame [$dlg getframe].entries]
-#         foreach item [list \
-#                 [list xlow "X low" 0] \
-#                 [list xhigh "X high" 10] \
-#                 [list xinterval "X interval" 1] \
-#                 [list ylow "Y low" 0] \
-#                 [list yhigh "Y high" 10] \
-#                 [list yinterval "Y interval" 1]] {
-#                     set name [lindex $item 0]
-#                     set caption [lindex $item 1]
-#                     frame "$entryF.$name"
-#                     label "$entryF.$name.label" -text $caption
-#                     entry "$entryF.$name.entry"
-#                     "$entryF.$name.entry" insert 0 [lindex $item 2]
-#                     pack "$entryF.$name" -fill x
-#                     pack "$entryF.$name.label" -side left
-#                     pack "$entryF.$name.entry" -side right
-#                 }
-#         pack $entryF -side top
-################################################################################
-
+        ################################################################################
+        #         set entryF [frame [$dlg getframe].entries]
+        #         foreach item [list \
+        #                 [list xlow "X low" 0] \
+        #                 [list xhigh "X high" 10] \
+        #                 [list xinterval "X interval" 1] \
+        #                 [list ylow "Y low" 0] \
+        #                 [list yhigh "Y high" 10] \
+        #                 [list yinterval "Y interval" 1]] {
+        #                     set name [lindex $item 0]
+        #                     set caption [lindex $item 1]
+        #                     frame "$entryF.$name"
+        #                     label "$entryF.$name.label" -text $caption
+        #                     entry "$entryF.$name.entry"
+        #                     "$entryF.$name.entry" insert 0 [lindex $item 2]
+        #                     pack "$entryF.$name" -fill x
+        #                     pack "$entryF.$name.label" -side left
+        #                     pack "$entryF.$name.entry" -side right
+        #                 }
+        #         pack $entryF -side top
+        ################################################################################
+        
         set chkF [frame [$dlg getframe].checkbuttons -relief groove -width 300]
         pack [LabelFrame $chkF.fewXAxisTicksF -text "Few x-axis ticks"] -fill x
         pack [checkbutton $chkF.fewXAxisTicksF.cbutton -variable [namespace current]::FewXAxisTicks] -side right
@@ -306,7 +309,7 @@ namespace eval ::$keyValue {
         
         destroy $dlg
     }
-        
+    
     ### Draw on the graph canvas everything except the actual data points.
     proc drawGraphpad {w} {
         global ::graphtools::plot
@@ -348,7 +351,7 @@ namespace eval ::$keyValue {
                 [expr $y0+$plot($w,yborder_bottom)-5] \
                 -text "Time" -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
-
+        
         drawLegend $w
         
         ### Apply graticule and values to axis.
@@ -359,31 +362,31 @@ namespace eval ::$keyValue {
         ### Bindings
         #$w.canvas bind axis_line <Double-1> \
         #        [namespace code "settings_axis $w"]
-################################################################################
-#         $w.canvas bind all <Button-1> \
-#                 [namespace code "CanvasMark $w %x %y %W"]
-#         $w.canvas bind movable <B1-Motion> \
-#                 [namespace code "CanvasDrag %x %y %W"]
-################################################################################
-                
-################################################################################
-#         for {set i 0} {$i<$nYlabel} {incr i} {
-#             set vartag {}
-#             append vartag var $i
-#             $w.canvas bind $vartag <B1-Motion> \
-#                     [namespace code "Ylabel_move %W %x %y"]
-#         }
-#         $w.canvas bind Ylabel
-################################################################################
+        ################################################################################
+        #         $w.canvas bind all <Button-1> \
+        #                 [namespace code "CanvasMark $w %x %y %W"]
+        #         $w.canvas bind movable <B1-Motion> \
+        #                 [namespace code "CanvasDrag %x %y %W"]
+        ################################################################################
+        
+        ################################################################################
+        #         for {set i 0} {$i<$nYlabel} {incr i} {
+        #             set vartag {}
+        #             append vartag var $i
+        #             $w.canvas bind $vartag <B1-Motion> \
+        #                     [namespace code "Ylabel_move %W %x %y"]
+        #         }
+        #         $w.canvas bind Ylabel
+        ################################################################################
         
         bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
         bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
         
     }
-	
+    
     proc drawLegend {w} {
-	global ::graphtools::plot
-
+        global ::graphtools::plot
+        
         # legend vars only, not elements of arrays
         set nYlabel [llength $plot($w,Ylabels)]
         set j 0
@@ -473,42 +476,42 @@ namespace eval ::$keyValue {
     }
     
     ### apply graticule and grid to graph
-#    proc drawGraticule {w Xintercept Yintercept} {
-#        global ::graphtools::plot
-#        
-#        # distance between each graticule.
-#        set Xgraticule  [expr ($plot($w,Width)  - 2*$plot($w,Xborder)) / double($plot($w,AxisDivisions))]
-#        set Ygraticule  [expr ($plot($w,Height) - 2*$plot($w,Yborder)) / double($plot($w,AxisDivisions))]
-#        
-#        # value per division ( set to 0.1 if a division = 0)
-#        set Xdivision [expr (abs($plot($w,Xmax))+abs($plot($w,Xmin)))  / double($plot($w,AxisDivisions))]
-#        set Ydivision [expr (abs($plot($w,Ymax))+abs($plot($w,Ymin)))  / double($plot($w,AxisDivisions))]
-#        
-#        # draw values and grid lines
-#        set i [expr -1*$plot($w,AxisDivisions)]
-#        while {$i<= $plot($w,AxisDivisions)} {
-#            set x [expr floor( $Xintercept + $i * $Xgraticule) ]
-#            set y [expr floor( $Yintercept - $i * $Ygraticule) ]
-#            
-#            # draw Y axis values and vertical grid lines
-#            if {($x <= [expr $plot($w,Width)-$plot($w,Xborder)]) && ($x >= $plot($w,Xborder)) } {
-#                set dec [decimalPlaces [expr $i*$Xdivision]]
-#                if {$plot($w,grid)=="on"} {
-#                    $w.canvas create line $x $plot($w,Yborder) $x [expr $plot($w,Height)-$plot($w,Yborder)] -width 1 -fill gray -tags graph
-#                }
-#                $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -tags graph
-#            }
-#            # draw X axis values and horizontal grid lines
-#            if {($y <= [expr $plot($w,Height)-$plot($w,Yborder)]) && ($y >= $plot($w,Yborder)) } {
-#                set dec [decimalPlaces [expr $i*$Ydivision]]
-#                if {$plot($w,grid)=="on"} {
-#                    $w.canvas create line $plot($w,Xborder) $y [expr $plot($w,Width)-$plot($w,Xborder)] $y  -width 1 -fill gray -tags graph
-#                }
-#                $w.canvas create text [expr $Xintercept-15] $y -text [format $dec [expr $i*$Ydivision]] -tags graph
-#            }
-#            incr i
-#        }
-#    }
+    #    proc drawGraticule {w Xintercept Yintercept} {
+    #        global ::graphtools::plot
+    #
+    #        # distance between each graticule.
+    #        set Xgraticule  [expr ($plot($w,Width)  - 2*$plot($w,Xborder)) / double($plot($w,AxisDivisions))]
+    #        set Ygraticule  [expr ($plot($w,Height) - 2*$plot($w,Yborder)) / double($plot($w,AxisDivisions))]
+    #
+    #        # value per division ( set to 0.1 if a division = 0)
+    #        set Xdivision [expr (abs($plot($w,Xmax))+abs($plot($w,Xmin)))  / double($plot($w,AxisDivisions))]
+    #        set Ydivision [expr (abs($plot($w,Ymax))+abs($plot($w,Ymin)))  / double($plot($w,AxisDivisions))]
+    #
+    #        # draw values and grid lines
+    #        set i [expr -1*$plot($w,AxisDivisions)]
+    #        while {$i<= $plot($w,AxisDivisions)} {
+    #            set x [expr floor( $Xintercept + $i * $Xgraticule) ]
+    #            set y [expr floor( $Yintercept - $i * $Ygraticule) ]
+    #
+    #            # draw Y axis values and vertical grid lines
+    #            if {($x <= [expr $plot($w,Width)-$plot($w,Xborder)]) && ($x >= $plot($w,Xborder)) } {
+    #                set dec [decimalPlaces [expr $i*$Xdivision]]
+    #                if {$plot($w,grid)=="on"} {
+    #                    $w.canvas create line $x $plot($w,Yborder) $x [expr $plot($w,Height)-$plot($w,Yborder)] -width 1 -fill gray -tags graph
+    #                }
+    #                $w.canvas create text $x [expr $Yintercept+10] -text [format $dec [expr $i*$Xdivision]] -tags graph
+    #            }
+    #            # draw X axis values and horizontal grid lines
+    #            if {($y <= [expr $plot($w,Height)-$plot($w,Yborder)]) && ($y >= $plot($w,Yborder)) } {
+    #                set dec [decimalPlaces [expr $i*$Ydivision]]
+    #                if {$plot($w,grid)=="on"} {
+    #                    $w.canvas create line $plot($w,Xborder) $y [expr $plot($w,Width)-$plot($w,Xborder)] $y  -width 1 -fill gray -tags graph
+    #                }
+    #                $w.canvas create text [expr $Xintercept-15] $y -text [format $dec [expr $i*$Ydivision]] -tags graph
+    #            }
+    #            incr i
+    #        }
+    #    }
     
     
     ############################################################################
@@ -543,7 +546,7 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-
+        
         set Trange [expr {1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)}]
         set Yrange [expr {1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)}]
         set plot($w,Tscale) [expr {$Trange/$plot($w,xlength)}]
@@ -555,23 +558,23 @@ namespace eval ::$keyValue {
             foreach Yold $YYold($w) {
                 if {$node==[lindex $Yold 0]} {
                     plot_Y $w [captionNo $w $node] $Told($w) $Yold \
-			$Tnew($w) $Ynew
+                            $Tnew($w) $Ynew
                 }
             }
         }
     }
-
+    
     proc captionNo {w node} {
-	global ::graphtools::plot
-	variable runCount
-	set capt "$plot(caption,$node), run $runCount($w)"
-	set posn [lsearch $plot($w,Ylabels) $capt]
-	if {$posn==-1} {
-	    set posn [llength $plot($w,Ylabels)]
-	    lappend plot($w,Ylabels) $capt
+        global ::graphtools::plot
+        variable runCount
+        set capt "$plot(caption,$node), run $runCount($w)"
+        set posn [lsearch $plot($w,Ylabels) $capt]
+        if {$posn==-1} {
+            set posn [llength $plot($w,Ylabels)]
+            lappend plot($w,Ylabels) $capt
             drawLegend $w
-	}
-	return $posn
+        }
+        return $posn
     }
     
     proc plot_Y {w iplot Told Yold Tnew Ynew} {
@@ -582,14 +585,14 @@ namespace eval ::$keyValue {
             set colour [lindex $plot($w,YColours) $iplot]
             #puts "plot_Y iplot $iplot; lindex $plot($w,YColours) $iplot [lindex $plot($w,YColours) $iplot]"
             if {[catch {
-# Jasper does a quick'n'dirty -- if this is the first section of a new line
-# then the limits may not include the start point, so do an extra adjustLimits
-# to make sure it is on screen...also put drawPoint 1st to catch errors
+                    # Jasper does a quick'n'dirty -- if this is the first section of a new line
+                    # then the limits may not include the start point, so do an extra adjustLimits
+                    # to make sure it is on screen...also put drawPoint 1st to catch errors
                     drawPoint $w $Told $Yold $Tnew $Ynew $colour
                     adjustLimits $w $Told $Yold
                     adjustLimits $w $Tnew $Ynew
                 } errMessage]} {
-		if {![dodgyValue $Yold] && ![dodgyValue $Ynew]} {
+                if {![dodgyValue $Yold] && ![dodgyValue $Ynew]} {
                     ErrorHelp $errorInfo
                 } else  {
                     set xm [expr $plot($w,xborder_left)+60]
@@ -616,13 +619,13 @@ namespace eval ::$keyValue {
     }
     
     proc dodgyValue {val} {
-	return [expr ![string is double $val] || \
-		    [lsearch {inf nan +inf +nan -inf -nan} $val]>-1]
+        return [expr ![string is double $val] || \
+                [lsearch {inf nan +inf +nan -inf -nan} $val]>-1]
     }
     
     # Connect two points on the graph
     proc drawPoint { w X0 Y0 X1 Y1 Colour } {
-#puts "drawPoint w X0 Y0 X1 Y1 Colour  $w $X0 $Y0 $X1 $Y1 $Colour "
+        #puts "drawPoint w X0 Y0 X1 Y1 Colour  $w $X0 $Y0 $X1 $Y1 $Colour "
         global ::graphtools::plot
         
         set x0 [get_x $w $X0 $plot($w,Tscale)]
@@ -630,8 +633,8 @@ namespace eval ::$keyValue {
         set y0 [get_y $w $Y0 $plot($w,Yscale)]
         set y1 [get_y $w $Y1 $plot($w,Yscale)]
         
-	$w.canvas create line $x0 $y0 $x1 $y1 \
-	    -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
+        $w.canvas create line $x0 $y0 $x1 $y1 \
+                -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
     }
     
     
@@ -641,7 +644,7 @@ namespace eval ::$keyValue {
         global ::graphtools::YYold
         global ::graphtools::YYnew
         global ::graphtools::plot
-	variable runCount
+        variable runCount
         
         set plot($w,Xmax_axis) -1e100
         set plot($w,Xmin_axis) 1e100
@@ -660,9 +663,9 @@ namespace eval ::$keyValue {
         set YYold($w) {}
         set YYnew($w) {}
         
-	set runCount($w) 1
-	set plot($w,Ylabels) {}
-
+        set runCount($w) 1
+        set plot($w,Ylabels) {}
+        
         $w.canvas delete prompt
         drawGraphpad $w
         display $w [GetModelTime] 0 0
@@ -778,23 +781,25 @@ namespace eval ::$keyValue {
         global ::graphtools::plot
         global ::graphtools::YYold
         global ::graphtools::YYnew
+        variable ynodes
         
         set YYold($w) $YYnew($w)
         
         set YYnew($w) [list 1 2]
         set YYnew($w) [lreplace $YYnew($w) 0 end]
-        foreach node $plot($w,Yvars) {
+        foreach node $ynodes($w) {
             set values [GetModelValue $node]
             set values [lindex $values 0]
-	    if {[llength $values]} {
-		lappend YYnew($w) [list $node $values]
-	    }
+            if {[llength $values]} {
+                lappend YYnew($w) [list $node $values]
+            }
             #        ShowMessage debug info "$YYnew($w)" ok
         }
     }
     
     proc RemoveVariableDlg {w} {
         global ::graphtools::plot
+        variable ynodes
         
         set dlg [Dialog .plotterRemoveDlg -parent $w -title "Remove variable" \
                 -modal local -default 0 -cancel 1]
@@ -817,6 +822,7 @@ namespace eval ::$keyValue {
             if {![string match "" $index]} {
                 set plot($w,Ylabels) [lreplace $plot($w,Ylabels) $index $index]
                 set plot($w,Yvars) [lreplace $plot($w,Yvars) $index $index]
+                set ynodes($w) [lreplace $ynodes($w) $index $index]
                 drawGraphpad $w
             }
         }
