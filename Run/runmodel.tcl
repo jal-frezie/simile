@@ -259,9 +259,9 @@ proc ZoomImage {winId which factor fontor} {
         switch [$winId type $object] {
             text {
                 set fontData [ExtractFontData [$winId itemcget $object -font]]
-                    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
-                if {$newTextSize < 10} {
-                    set newTextSize 10
+                set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+                if {$newTextSize < 1} {
+                    set newTextSize 1
                 }
                 $winId itemconfigure $object -font \
                             [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
@@ -298,17 +298,42 @@ proc ZoomImage {winId which factor fontor} {
 }
 
 # textsize is not used, we now keep track of it separately to avoid rounding
-proc ExtractFontData {font} {
-    scan $font {-Adobe-%[^-]-%[^-]-%[^-]-Normal--*-%d-*-*-*-*-*-*} \
-        family weight style textsize
-    return [list $family $weight $style $textsize]
-}
+################################################################################
+# proc ExtractFontData {font} {
+#     scan $font {-Adobe-%[^-]-%[^-]-%[^-]-Normal--*-%d-*-*-*-*-*-*} \
+#         family weight style textsize
+#     return [list $family $weight $style $textsize]
+# 
+# }
+# 
+# proc AssembleFont {family weight style textsize} {
+#     return [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
+#             $family $weight $style $textsize]   
+# }
+################################################################################
 
 proc AssembleFont {family weight style textsize} {
-    return [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
-            $family $weight $style $textsize]   
+    #ShowMessage debug info "AssembleFontNew $family $weight $style $textsize\n\
+    [list family $family weight $weight slant $style size $textsize]" ok
+    return [list -family $family -weight $weight -slant $style -size $textsize]
 }
 
+proc ExtractFontData {font} {
+    #ShowMessage debug info "ExtractFontDataNew\n\
+    font actual [font actual $font]\n\
+            family [font actual $font -family]\n\
+            weight [font actual $font -weight]\n\
+            style [font actual $font -slant]\n\
+            textsize [font actual $font -size] " ok
+    #ShowMessage debug info "ExtractFontData $font n ele[llength $font]\n\
+    #    family weight style textsize: $family $weight $style $textsize" ok
+    set family [font actual $font -family]
+    set weight [font actual $font -weight]
+    set style [font actual $font -slant]
+    set textsize [font actual $font -size]
+    #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
+    return [list $family $weight $style $textsize]
+}
 # This updates the width of a canvas object when it is zoomed. The actual width
 # is rounded internally to an integer, so we store the full value in a tag called
 # realwidth(...) which is also updated by this procedure.
@@ -317,8 +342,19 @@ proc AdjustWidth {winId object factor} {
     if {[regexp {realwidth\(([0-9\.]+)\)} [$winId gettags $object] \
                 tag oldWidth]<1} {
         set oldWidth [$winId itemcget $object -width]
+        #ShowMessage debug info "AdjustWidth $object oldWidth $oldWidth" ok
     } else {
         $winId dtag $object $tag
+        #ShowMessage debug info "AdjustWidth $object oldWidth $oldWidth" ok
+
+}
+        
+    if {[string match text [$winId type $object]]} {
+        #ShowMessage debug info "AdjustWidth text 1 oldWidth $oldWidth" ok
+        if {$oldWidth==0} {
+            set oldWidth [font actual [$winId itemcget $object -font] -size]
+        }
+        #ShowMessage debug info "AdjustWidth text 2 oldWidth $oldWidth" ok
     }
     set width [expr $oldWidth*$factor]
     $winId addtag realwidth($width) withtag $object
@@ -948,7 +984,7 @@ proc FixSize {c} {
     set win [winfo parent $c]
     wm state $win normal
     # seems necessary for console to hide
-    catch {console hide}
+#    catch {console hide}
     if {[file exists $custom(prefDir)/layout]} {
         set stream [open $custom(prefDir)/layout r]
         gets $stream whetherMaxed
@@ -1457,6 +1493,7 @@ proc build_c_stub {targetDir make_new_stub} {
     #    set TCL [file dirname [file dirname [info library]]]
     #	To build for Tcl dll included under distribution directory...
     set TCL [file dirname [file dirname [info library]]]
+    #ShowMessage debug info "TCL $TCL" ok
     
     if $onUnix {
         # You may be asking yourself why I need to explicitly specify a location for
