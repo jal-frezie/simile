@@ -368,8 +368,7 @@ set_properties(Wid, Model) :-
 		(member(RerouteType, [flow, influence]),
 		find_all_comps(Model, Linkage),
 		find_type(Linkage, RerouteType),
-		update_link_route(Linkage),
-		redisplay(Linkage),
+		event:move_link(Linkage),
 		fail; true)),
 
 	    /* Changes in fatness require redrawing submodel's
