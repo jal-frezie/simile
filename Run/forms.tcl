@@ -976,6 +976,8 @@ proc VisitUrl {x} {
     if [string match windows $tcl_platform(platform)] {
         set x [regsub -all -nocase {htm} $x {ht%6D}]
         exec rundll32 url.dll,FileProtocolHandler $x &
+    } elseif [string match Darwin $tcl_platform(os)] {
+        exec open $x
     } else {
         set url $x
     if {![info exists env(BROWSER)]} {
