@@ -266,7 +266,8 @@ case... */
 
 make_auto_name(Name, NewExtn, AutoName) :-
 	name(Name, NameStr),
-	member(Extn, [".sml", ".SML", ".sim", ".SIM", ".ame", ".AME"]),
+	member(Extn, [".sml", ".SML", ".sim", ".SIM", ".ame", ".AME",
+		      ".pl", ".PL"]), /* .pl included to gruntle Alastair */
 	append(BaseStr, Extn, NameStr), !,
 	append(BaseStr, NewExtn, AutoNameStr),
 	name(AutoName, AutoNameStr).
