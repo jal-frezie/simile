@@ -721,7 +721,7 @@ doubleclick_on(Edit_thing) :-
 	    (get_av_pair(NewControlThing, 0, units, OldUnits), !,
 		NewDims = no;
 	    NewDims = yes),
-	    spread_colour(Edit_thing, NewDims),
+	    spread_colour(Base, NewDims),
 	    find_all_comps(Parent, Base),
 	    update_runnable(Parent)).
 	

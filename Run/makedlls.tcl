@@ -9,7 +9,7 @@
 # Compiler that will be used to make the stub for Windows
 set compiler_for_windows gnu
 # edition: evaluation, teaching, standard or enterprise
-set edition standard
+set edition teaching
 # date of final expiry: {hh:mm D M Y} or {} for permanent
 set final_expiry {5 Nov 2004}
 # days after install: 0 for no installation expiry

@@ -41,6 +41,11 @@
 
 #define SIMILE_VERSION	"4.0"
 
+class submodeltype {
+public:
+  virtual void* get_pointer(int id, int** dims) = 0;
+};
+
 /* type declaration for structure representing a graph */
 
 class graph_data_type {

@@ -129,7 +129,7 @@ proc ClickObj { x y winId X Y action} {
     }
     
     set node [ExtractPrologName $winId $target]
-    set caption [ExtractCaption $winId $node]
+    set caption [GetText $winId $node]
     set topNode $window_info($winId,top_node)
     if {[do_if_running $topNode ProdObj $topNode $node $caption]} {
         return
@@ -182,8 +182,11 @@ proc ClickObj { x y winId X Y action} {
         if {[string match $equationbar(current_action) click]} {
             set fromProlog [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $fromProlog]} {
-                set label [BlankCrs [ExtractCaption $winId $node]]
-                $bar.label configure -text "$label = "
+                set label [BlankCrs [GetFromProlog \
+					 tk_get_info('$winId',$node,desc)]]
+		set label [string range $label 0 \
+			       [expr [string last : $label]-1]]=
+                $bar.label configure -text $label
                 
                 set winid [winfo parent $winId]
                 set equationbar($winid,node) $node
@@ -195,17 +198,6 @@ proc ClickObj { x y winId X Y action} {
         }
         ### End equation bar
     }
-}
-
-
-proc ExtractCaption {win variable} {
-    set capt $variable
-    foreach obj [$win find withtag $variable] {
-        if {[string compare [$win type $obj] text] == 0} {
-            set capt [$win itemcget $obj -text]
-        }
-    }
-    return $capt
 }
 
 # This is called when an operatio may have brought into view an area of canvas
@@ -692,7 +684,7 @@ proc AddCanvasBindings { c topNode } {
 }
 
 proc AddEqnPopup {node x y winId X Y} {
-    global pushedbutton equationbar errorInfo runState
+    global pushedbutton errorInfo runState
     set doDesc [PrefValue custom(compDescPop) compDescPop]
     set doVal [expr [HaveValues $node] && \
             [PrefValue custom(compValPop) compValPop]]

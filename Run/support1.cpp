@@ -103,13 +103,13 @@ double step_incr (int, double);
 int at_time_step ();
 int loses (double, int);
 
-/* abstract base class for submodels, with extractor virtual function */
+/* abstract base class for submodels, with extractor virtual function
 class submodeltype {
 public:
   virtual void* get_pointer(int id, int** dims) = 0;
 };
 
-/* Fn template for deleting a linked list of models -- if non-null, 
+Fn template for deleting a linked list of models -- if non-null, 
 calls itself for the on pointer before deleting instance
 
 template <class SMClass>
