@@ -267,7 +267,7 @@ bits and pieces */
 	set_free_phases(Deltas, Phases), */
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
-			    EnumTypeSpecs, Inters, ReevaluateForm),
+			    Inters, ReevaluateForm),
 	/* EnumTypeSpecs will eventually go in a procedure outside
 the model class which will be called from getcount to initialize a
 list of them as soon as the model is loaded, thus allowing them to be
@@ -320,7 +320,7 @@ wot need them */
 	reassure_user("Generating structure declarations"),
 	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
 				'AME_model', 'AME_model'-[]),
-	generate_main_decls(Language, RootInstance, [], 1, [], EnumTypeSpecs,
+	generate_main_decls(Language, RootInstance, [], 1,
 			    ExtSets, Used, AllGraphs, TypeDecls, PointerDecls,
 			    EnumBits, NodeData),
 	append(InitTypes, [EndTopType], TypeDecls),
@@ -461,7 +461,7 @@ temporary variables used when expanding expressions.
 * New version, for 2.34: Does all the recursing itself, and also generates
 the model node data table and the extractor case statements */
 
-generate_main_decls(L, Instance, Tree, Level, Dims, EnumTypeSpecs, ExtSets,
+generate_main_decls(L, Instance, Tree, Level, ExtSets,
 		    Used, Graphs, TypeDecls, PointerDecls,
 		    EnumBits, NodeData) :-
 	Instance = instance(submodel, SymbolicName, 
@@ -505,7 +505,7 @@ generate_main_decls(L, Instance, Tree, Level, Dims, EnumTypeSpecs, ExtSets,
 	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
 	render(L, end(procedure), get_pointer, 0, ExtN),
 % Dims in next line replaced by [] for local dims only
-	generate_local_decls(L, SubInstances, Tree, Level, [], EnumTypeSpecs,
+	generate_local_decls(L, SubInstances, Tree, Level, [], 
 			     ExtSets, Used, Graphs, Publics, SubTypeDecls,
 			     SubPointerDecls, Exts, EnumBits, NodeData),
 
@@ -516,16 +516,15 @@ generate_main_decls(L, Instance, Tree, Level, Dims, EnumTypeSpecs, ExtSets,
 	append(LocalPtrs, SubPointerDecls, PointerDecls).
 	
 
-generate_local_decls(_, [], _,_,_,_,_,_,_, [], [], [], [], [], []).
+generate_local_decls(_, [], _,_,_,_,_,_, [], [], [], [], [], []).
 generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
-		     EnumTypeSpecs, ExtSets, Used, Graphs,
+		     ExtSets, Used, Graphs,
 		     PublicDecls, TypeDecls, PointerDecls, Exts,
 		     EnumBits, NodeData) :-
 	Instance = instance(_, Node, Loc, _, _-SmSizes),
 	all(ame_gen, enum_type_ref,
-	    [build(SmSizes), unify(Node), unify(EnumTypeSpecs),
-	     build(SmDims), build(_), build(_Posn)]),
-		/* In future, SmDims will be replaced by Posn, which is
+	    [build(SmSizes), unify(Node), build(_), build(_), build(Posn)]),
+		/* In the past, SmDims was replaced by Posn, which is
 		a number from -10 down indicating the data structure in the
 	        executable corresponding to the actual enumerated type. */
 	(variable_size(Node),
@@ -536,19 +535,19 @@ generate_local_decls(L, [Instance | Instances], Tree, Level, Dims,
 		append(Dims, ['RECORDS'], NewDims);
 		append(Dims, ['MEMBERS'], NewDims));
 	append(Tree, [Level], DeepTree),
-	    append(Dims, SmDims, NewDims)),
+	    append(Dims, Posn, NewDims)),
 	generate_data_decls(L, Level, NewDims, DeepTree, Instance, ExtSets,
-			    Used, Graphs, EnumTypeSpecs, LocalPublicDecls,
+			    Used, Graphs, LocalPublicDecls,
 			    LocalExts, LocalEnumBits, LocalNodeData),
-	(generate_main_decls(L, Instance, DeepTree, 1, NewDims,
-			     EnumTypeSpecs, ExtSets, Used, Graphs,
+	(generate_main_decls(L, Instance, DeepTree, 1,
+			     ExtSets, Used, Graphs,
 			     DeepTypeDecls, DeepPointerDecls,
 			     DeepEnumBits, DeepNodeData), !;
 	 /* Not a submodel */
 	    [DeepTypeDecls, DeepPointerDecls, DeepEnumBits, DeepNodeData] =
 	    [[],            [],               [],           []]),
 	NewLevel is Level + 1,
-	generate_local_decls(L, Instances, Tree, NewLevel, Dims, EnumTypeSpecs,
+	generate_local_decls(L, Instances, Tree, NewLevel, Dims,
 			     ExtSets, Used, Graphs,
 			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
 			     MoreExts, MoreEnumBits, MoreNodeData),
@@ -769,7 +768,7 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
-		    EnumTypeSpecs, Inters, AssignList) :-
+		    Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
 	(member(instance(alarm,_,_,elt(_, Al,_),_),
@@ -792,7 +791,7 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
-	     append(EnumTypeSpecs, ETS0), append(Inters, Inters0),
+	     append(Inters, Inters0),
 	     append(AssignList, AssignList0)]).
 
 biggest(B1, B2, Big) :-
@@ -812,7 +811,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
 			    Path, Swaps, TopStep, MaxStep, Used,
-			    EnumTypeSpecs, Inters, AssignList) :-
+			    Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
 			    Name, _-Dims),
@@ -962,7 +961,7 @@ instruction because they will not require individual initialization routines. */
 	    [BaseSides, SmInters, Specials] = [[], [], []]),
 
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps,
-			    Used, EnumTypeSpecs, FnInters, AssignList0),
+			    Used, FnInters, AssignList0),
 	append(FnInters, SmInters, Inters),
 	append(Specials, AssignList0, AssignList).
 
@@ -1198,7 +1197,7 @@ input_params_in(Vars, SmPath, SmStep,
 		make(Val, Wait, Path, Step, [CollectFn])) :-
 	member(instance(Type, Param, _, elt(_, Val, _), _-DimTypes), Vars),
 	member(Type, [function, init_function]),
-	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param), build(_),
+	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param),
 				     build(Dims), build(_), build(_)]),
 	is_parameter(Param, ParamType),
 	ParamType > 0,

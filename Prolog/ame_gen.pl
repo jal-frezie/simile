@@ -11,7 +11,7 @@ sicstus_module(ame_gen,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
-		get_actual_size/5, get_actual_sizes/5, enum_type_ref/6,
+		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
 		get_node_size/2, get_node_size/4,
 		is_population/1, by_record/1, is_conditional/1, get_all_dims/2,
 		variable_size/1, list_links/2,
@@ -429,7 +429,7 @@ submodels. */
 
 get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 	(Sub = none, !, Nums = [], Sizes = [], Units = [any];
-	enum_type_ref(Sub, Node, _, Num, Unit, _),
+	enum_type_ref(Sub, Node, Num, Unit, _),
 	    Nums = [Num],
 	    Sizes = [Sub],
 	    Units = [Unit];
@@ -466,7 +466,7 @@ name_matches(Node, Top, Name) :-
 	Node has_class submodel,
 	caption_for(Node, Name).
 
-enum_type_ref(Ref, Model, ExecTypes, Value, Units, ETSpec) :-
+enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 	(integer(Ref),
 	    Units = const_int;
 	Ref = var, 
@@ -484,9 +484,9 @@ enum_type_ref(Ref, Model, ExecTypes, Value, Units, ETSpec) :-
 	    Units = boolean;
 	(units:baseline(BareRef); units:unit_definition(BareRef, _)), !,
 	    Units = BareRef, Value = 1;
-	resolve_enum_type(BareRef, Model, ExecTypes, Value, Units, ETSpec)).
+	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)).
 
-resolve_enum_type(Ref, Model, ExecForms, Value, Units, ETSpec) :-
+resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
 	(m_class:Model has_class_refinement enum_types of TypeList, !;
 	    TypeList = []),
 	(nth0(Posn, TypeList, TypeName-TypeMems),
@@ -498,7 +498,7 @@ resolve_enum_type(Ref, Model, ExecForms, Value, Units, ETSpec) :-
 		Units=n(TypeRef)),
 	    ETSpec is -10-Posn, !;
 	m_class:Parent has_part Model,
-	    resolve_enum_type(Ref, Parent, _ExecForms, Value, Units, InnerSpec),
+	    resolve_enum_type(Ref, Parent, Value, Units, InnerSpec),
 	    length(TypeList, Skipped),
 	    ETSpec is InnerSpec - Skipped).
 	

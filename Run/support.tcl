@@ -54,7 +54,7 @@ proc tcl_insert {node newVs} {
 	if {[string equal $node [lindex $nodedata($record) 0]]} {
 	    set tree [lindex $nodedata($record) 6]
 	    set type [lindex $nodedata($record) 1]
-	    set dims [GetFullDims $tree]
+	    set dims [GetTclCompProperty dummy Dims $node]
 	    return [list [FillValue ::AME_model<> $tree $type $dims \
 			      {} 0 $newVs]]
 	}
@@ -459,10 +459,6 @@ proc err {value} {
 
 proc PrefValue {arrVal val} {
     return [do_in_editor PrefValue $arrVal $val]
-}
-
-proc GetTransTable {val} {
-    return [do_in_editor GetTransTable $val]
 }
 
 proc ContextSensitiveHelp {xcontext page} {

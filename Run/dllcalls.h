@@ -45,7 +45,7 @@
 #define MEMBERS        -2
 #define SEPARATE       -3
 
-#define SIMILE_VERSION	"4.0"
+#define SIMILE_VERSION	"4.1"
 
 #ifdef WIN32
     #ifdef SHARELIB
@@ -203,7 +203,8 @@ EXTDEC long int get_node_model_id(char*);
 EXTDEC void release_graph_data(graph_data_type*);
 EXTDEC double graphpoint(double, graph_data_type*, int);
 EXTDEC graph_data_type** get_graph_base(long int);
-EXTDEC node_data_line* searchinfo(char*, long int*, char*, int*, int*);
+EXTDEC node_data_line* searchinfo(char*, long int*, char*, 
+				  int*, int*, enum_type_data**);
 EXTDEC long int fetch_top_instance(long int, char*);
 
 EXTDEC void update(long int, long int, double, int);

@@ -72,23 +72,6 @@ get_info(_, Comp, comment) :-
 	Pop = Cmt),
 	callback(br(write(Pop))).
 
-get_info(_Wid, Comp, types) :-
-	list_index_meanings(Comp, ISpecs),
-	all(dialogue, index_names_and_sizes,
-	    [build(ISpecs), build(_), build(Indxs)]),
-	reverse(Indxs, IndxCount),
-	(Comp is_of_sort has_function,
-	find_node_with_data(Comp, _, Func),
-	get_av_pair(Func, 0, units, Units),
-	    analyze_array(Units, Base, LDims),
-	    append([IndxCount, LDims, [Base]], AllBounds);
-	AllBounds = IndxCount),
-	all(event, insert_mem_list,
-	    [build(AllBounds), unify(Comp), build(AllTypes)]),
-	output:bracketize(AllTypes, TypeListList),
-	callback(TypeListList);
-	callback(none).
-
 get_info(_, Name, is_unit) :-
 	(units:baseline(Name), !,
 	    Def = baseline;

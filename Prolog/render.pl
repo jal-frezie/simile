@@ -13,7 +13,7 @@ sicstus_module( render, [render/5, make_assignment/4, render_all/5,
 		make_pointer/3, resolve_pointer/3, 
 		make_constant_list/3, get_element_ref/4,
 		make_integer/3, command_substitute/3,
-		generate_data_decls/13, make_procedure_call_chars/3] ).
+		generate_data_decls/12, make_procedure_call_chars/3] ).
 
 sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
 		library(lists)] ).
@@ -344,8 +344,7 @@ render(L, data_declaration,
 		Name = NameIn),
 	    UseDims = Dims),
 	all(ame_gen, enum_type_ref, [build(UseDims), unify(SymbolicName),
-				     build(_), build(Nums), build(_),
-				     build(_)]),
+				     build(Nums), build(_), build(_)]),
 	render(L, variable_declaration, [Type, Name, Nums],
 			Indent, Decl).
 
@@ -461,7 +460,7 @@ do_loop_pointers(L, SmName, Type, Name, Late) :-
 	Late = []).
 
 generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
-		    ExecForms, Decl, Exts, EnumBits, NodeData) :-
+		    Decl, Exts, EnumBits, NodeData) :-
 	render(L, data_declaration, Inst, 4, Decl),
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-LocalDims),
 	render(L, case_start, Match, 8, [Ext1]),
@@ -506,7 +505,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 		a number from -10 down indicating the data structure in the
 	        executable corresponding to the actual enumerated type. */
 		Wee = 1,
-		enum_type_ref(Enum, BaseName, ExecForms, Muckle, _, Posn);
+		enum_type_ref(Enum, BaseName, Muckle, _, Posn);
 	    member(Unit, [const_int, int]), !, Type = 'INTEGER',
 	        [Wee, Muckle] = [-268435455, 268435455];
 		/* limits for GNU integers; Sicstus can go further */
@@ -521,7 +520,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	nth0(PType, [DefEval, 'INPUT', 'TABLE'], Eval)),
 	
 	append(Path, [0], NewPath),
-	append([Dims, [0]], CappedDims), 
+	append(Dims, [0], CappedDims), 
 
 	(/* Try not doing internals -- but will we need to for save/restore
 	 state? init functions confuse sketch graph editing. */
@@ -592,8 +591,10 @@ make_runtime_enum_data(L, Name-Mems, Used, ItemDecls,
 	EltPtrs = [NamePtr | MemPtrs],
 	append_atoms(Name, '_mems', ETTag),
 	generate_name(L, ETTag, ETPtr, Used),
+	all(utility, append_atoms,
+	    [build([Name | Mems]), unify('_txt'), build(EltNames)]),
 	all(utility, generate_name,
-	    [unify(L), build([Name | Mems]), build(EltPtrs), unify(Used)]),
+	    [unify(L), build(EltNames), build(EltPtrs), unify(Used)]),
 	all(render, templatify,
 	    [build([Name | Mems]), build(EltPtrs), build(VTemplates)]),
 	length(Mems, ETCount),

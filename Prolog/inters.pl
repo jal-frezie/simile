@@ -55,7 +55,7 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
 	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
-	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm), build(_),
+	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(_), build(_)]),
 	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
 		import_path_for(Dims, RealPathForm, ArcI, 0, Ptr0, LvlN, PtrN,
@@ -335,7 +335,7 @@ make_intermediates(
 
 	    (\+ var(OrigUnits),
 	    member(OrigUnits, [n(Type), a(Type)]),
-	    \+ ame_gen:resolve_enum_type(_, SubId, _,_, OrigUnits, _), !,
+	    \+ ame_gen:resolve_enum_type(_, SubId, _, OrigUnits, _), !,
 		raise_exception(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),

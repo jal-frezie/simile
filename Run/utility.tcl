@@ -460,7 +460,7 @@ proc CountValues {text} {
 }
 
 proc SquirtMime {args} {
-    global mimeSquirter
+    global mimeSquirter
 
     if {[string match end [lindex $args 0]]} {
         close $mimeSquirter

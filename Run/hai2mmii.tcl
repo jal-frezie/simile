@@ -352,6 +352,12 @@ proc GetMaxValue { node } {
     return [GetCompProperty $myNode MaxVal $node]
 }
 
+proc GetTransTable { node } {
+    global myNode
+    return [GetCompProperty $myNode Trans $node]
+#    return [do_in_editor GetTransTable $node]
+}
+
 proc ProdFromHelper {winId node caption} {
     global helperTable
     ProdObj $helperTable($winId,whichModel) $node $caption
@@ -442,6 +448,8 @@ proc GetCCompProperty {topNode prop args} {
 	    return [c_getvalue $topNode $node 6]
 	} MaxVal {
 	    return [c_getvalue $topNode $node 8]
+	} Trans {
+	    return [c_getvalue $topNode $node 12]
 	} Value {
 	    set newVs [lindex $set 0]
 	    # new version -- remove list wrapping sometime
@@ -483,12 +491,39 @@ proc GetTclCompProperty {topNode prop args} {
 	    set extracted [getinfo $node $propData($prop)]
 	    if {[string is integer $extracted]} {
 		return ENUM([expr -10-$extracted])
-	    } else {
+	    } else {
 		return $extracted
 	    }
-	} Dims {
+	} Dims|Trans {
 	    set numericPath [getinfo $node 5]
-	    return [GetFullDims $numericPath]
+	    set dimRefs [GetFullDims $numericPath typeList]
+	    set count 0
+	    set transList {}
+	    while {$count<[llength $dimRefs]-1} {
+		set aDim [lindex $dimRefs $count]
+		if {$aDim<=-10} {
+		    set usedET [lindex $typeList \
+				    [expr [llength $typeList]+$aDim+9]]
+		    lset dimRefs $count [lindex $usedET 0]
+		    lappend transList [lrange $usedET 1 end]
+		} else {
+		    lappend transList {}
+		}
+		incr count
+	    }
+	    if {[string equal Dims $prop]} {
+		return $dimRefs
+	    } else {
+		set vType [getinfo $node 0]
+		if {[string is integer $vType]} {
+		    set usedET [lindex $typeList \
+				    [expr [llength $typeList]+$vType+9]]
+		    lappend transList [lrange $usedET 1 end]
+		} elseif {[string equal FLAG $vType]} {
+		    lappend transList [list false true]
+		}
+		return $transList
+	    }
 	} Graph {
 	    set index [getinfo $node 6]
 	    if {!$index} {
@@ -538,25 +573,54 @@ proc GetFullCaption {handle} {
 	return $parentCapt
     }
 }				      
-	    
-proc GetFullDims {handle} {
+
+proc TypeAsList {arrName count} {
+    upvar \#0 $arrName arrVal
+    upvar \#0 $arrVal($count,1) tName
+    set result [list $arrVal($count,0) $tName]
+    upvar \#0 $arrVal($count,2) arrTypes
+    for {set elt 0} {$elt<$arrVal($count,0)} {incr elt} {
+	upvar \#0 $arrTypes($elt) arrTxt
+	lappend result $arrTxt
+    }
+    return $result
+}
+
+proc GetFullDims {handle ETptrs} {
     global nodedata
 #do_in_editor puts $handle
+    upvar 1 $ETptrs localETs
     if {[llength $handle] < 2} {
-	return 0
+	set line $nodedata(0)
+	set parentDims 0
+	set localETs {}
     } else {
-	set parentDims [GetFullDims [lreplace $handle end-1 end 0]]
+	set parentDims [GetFullDims [lreplace $handle end-1 end 0] localETs]
 	foreach record [array names nodedata] {
 	    set line $nodedata($record)
 	    if {[ListSameNumbers [lindex $line 6] $handle]} {
-		set parentDims [concat [lrange $parentDims 0 end-1] \
-				    [lindex $line 5]]
 		break
 	    }
 	}
 #do_in_editor puts $parentDims
-	return $parentDims
     }
+# add this levels type data -- reverse order cos outer models start list
+    set count [lindex $line 2]
+    while {$count} {
+	incr count -1
+	lappend localETs [TypeAsList [lindex $line 3] $count]
+    }
+# correct earlier enum type references to take account of this level
+    set count [llength $parentDims]
+    while {$count} {
+	incr count -1
+	set oVal [lindex $parentDims $count]
+	if {$oVal<=-10} {
+	    lset parentDims $count [expr $oVal-[lindex $line 2]]
+	}
+    }
+    set parentDims [concat [lrange $parentDims 0 end-1] [lindex $line 5]]
+    return $parentDims
 }				      
 	    
 #proc getinfo {topNode node field} {

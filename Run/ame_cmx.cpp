@@ -17,6 +17,7 @@ them to be executed etc by Tcl commands. */
 #define	GETMAX	        8
 #define GETPATH        10
 #define GETCLASS       11
+#define GETTRANS       12
 #define	TEST	       99
 
 #define READGRAPH      21
@@ -203,13 +204,13 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
 
 int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 {
-  int count;
   char current[255];
   int dims[32], path[32];
-  Tcl_Obj *resultPtr;
-  int error, action;
+  Tcl_Obj *resultPtr, *oneType;
+  int error, action, count;
   node_data_line *data_line;
   long int tgtModel;
+  enum_type_data *usedTypes[32], **usedTypePtr;
 
   if (argc < 3) {
     interp->result = "At least three arguments for interface please!";
@@ -221,7 +222,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
   } /* if(error) */
 
   if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[1], NULL), &tgtModel,
-			     current, dims, path))) {
+			     current, dims, path, usedTypes))) {
     sprintf(current, "noitem");
     resultPtr = Tcl_NewStringObj(current, -1);
     Tcl_SetObjResult(interp, resultPtr);
@@ -286,6 +287,24 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     resultPtr = Tcl_NewStringObj(current, -1);
     break;
 
+  case GETTRANS:
+    resultPtr = Tcl_NewListObj(0, NULL);
+    usedTypePtr = usedTypes;
+    while (*usedTypePtr) {
+      oneType = Tcl_NewListObj(0, NULL);
+      if ((*usedTypePtr)->count) {
+	Tcl_ListObjAppendElement(interp, oneType, 
+				 Tcl_NewStringObj((*usedTypePtr)->name, -1));
+      }
+      for (count=0; count<(*usedTypePtr)->count;count++) {
+	Tcl_ListObjAppendElement(interp, oneType, 
+			Tcl_NewStringObj((*usedTypePtr)->members[count], -1));
+      }
+      Tcl_ListObjAppendElement(interp, resultPtr, oneType);
+      usedTypePtr += 1;
+    }
+    break;
+
   default:
     sprintf(current, "getvalue does not support action %d",
 	    action);
@@ -309,8 +328,9 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
   int stepIndex, rv;
   long int mSpare;
   double makeInt;
+  enum_type_data* usedTypes[32];
 
-  data_line = searchinfo(id, &mSpare, caption, dims, path);
+  data_line = searchinfo(id, &mSpare, caption, dims, path, usedTypes);
   strcpy(caption, data_line->name);
   for (stepIndex = 0; count>stepIndex; ++stepIndex) {
     sprintf(caption + strlen(caption), ",%d", inds[stepIndex]); 
@@ -863,6 +883,7 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
   char spare[256];
   int dims[32], path[32];
   long int mSpare;
+  enum_type_data* usedTypes[32];
 
   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
   if (error != TCL_OK) {
@@ -891,7 +912,7 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
   resultPtr = Tcl_NewObj();
 
   if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[3], NULL), 
-			     &mSpare, spare, dims, path))) {
+			     &mSpare, spare, dims, path, usedTypes))) {
     resultPtr = Tcl_NewStringObj("novalue", -1);
   } else {
     resultPtr = fill_value(modelType, modelHandle, path, data_line->datatype, 

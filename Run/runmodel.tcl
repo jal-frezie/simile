@@ -585,10 +585,10 @@ proc ScrubRun {node times} {
 
 }
 
-proc GetShortVals {node plName transList limit} {
+proc GetShortVals {node plName limit} {
     set text [lindex [GetCompProperty $node Value $plName] 0]
     set count [ShrinkValueList text $limit]
-    set text [PrettifyValList [TransEnums $transList $text]]
+    set text [PrettifyValList [TransEnums [GetTransTable $plName] $text]]
     return [list $count $text]
 }
     

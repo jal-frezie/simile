@@ -1,8 +1,8 @@
-; dlltool --base-file M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01984.base --output-exp 5d.exp --dllname 5d.dll --output-def=shank.def --exclude-symbol=DllMainCRTStartup@12 --def M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01984.def --output-lib ../System/lib/lib5ddll.a
+; dlltool --base-file M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01392.base --output-exp 5d.exp --dllname 5d.dll --output-def=shank.def --exclude-symbol=DllMainCRTStartup@12 --def M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01392.def --output-lib ../System/lib/lib5ddll.a
 EXPORTS
 	_Z10graphpointdP15graph_data_typei @ 1 ; graphpoint(double, graph_data_type*, int)
 	_Z10load_modelPcS_Pl @ 2 ; load_model(char*, char*, long*)
-	_Z10searchinfoPcPlS_PiS1_ @ 3 ; searchinfo(char*, long*, char*, int*, int*)
+	_Z10searchinfoPcPlS_PiS1_PP14enum_type_data @ 3 ; searchinfo(char*, long*, char*, int*, int*, enum_type_data**)
 	_Z13get_data_lineli @ 4 ; get_data_line(long, int)
 	_Z14get_graph_basel @ 5 ; get_graph_base(long)
 	_Z14get_node_countl @ 6 ; get_node_count(long)

@@ -726,8 +726,7 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-	    AddPopupMessage novalue \#ffffc0 \
-		$node GetShortVals $node $plName [GetTransTable $plName]
+	    AddPopupMessage novalue \#ffffc0 $node GetShortVals $node $plName
 	}
     }
 }

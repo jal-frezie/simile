@@ -356,35 +356,39 @@ public:
     return(-1);
   }
       
-  void make_full_caption(int line, char *result, int* dims) {
+  int make_full_caption(int line, char *result, int* dims,
+			 enum_type_data** types) {
     /* New version which does not depend on the nodedata array being in
        any particular order -- and returns the whole caption */
-    int parent, *dest, *src;
-    
-
-
+    int parent, typesSoFar, count;
 
     if ((parent = parent_line(line)) > 0) {
-      make_full_caption(parent, result, dims);
+      typesSoFar = make_full_caption(parent, result, dims, types);
     } else {
       *result = (char)NULL;
+      *dims = 0;
+      typesSoFar = 0;
+      for (count=nodedata[parent].enum_type_count-1;count>=0;--count) {
+	types[typesSoFar++]=&(nodedata[parent].enum_type_ptrs[count]);
+      }
     }
+    // correct earlier enum type references to take account of this level
+    count = 0;
+    while (dims[count]) {
+      if (dims[count] <= ENUM_BASE) {
+	dims[count] = dims[count] - nodedata[line].enum_type_count;
+      }
+      count++;
+    }
+    // add this levels caption
     strcat(result, "/");
     strcat(result, nodedata[line].caption);
     append_ints_to_null(dims, nodedata[line].dims, 0, 0);
-    /*
-    dest = dims;
-    src = nodedata[line].dims;
-
-    while (*dest) { dest++; }
-    do {
-      if (*src<=-10) {
-	*(dest++)=find_et_struct(*src); // not yet used
-      } else {
-	*(dest++)=*src;
-      }
-    } while (*src++);
-    */
+    // add this levels type data -- reverse order cos outer models start list
+    for (count=nodedata[line].enum_type_count-1;count>=0;--count) {
+      types[typesSoFar++]=&(nodedata[line].enum_type_ptrs[count]);
+    }
+    return typesSoFar;
   }
   
   int find_et_struct(int fake_dim) {
@@ -442,6 +446,24 @@ public:
 
 listNodeModel* nodeModelList = NULL;
 
+/* listable class for enumerated types, similar to above */
+class listEnumTypes {
+public:
+  enum_type_data* enumTypePtr;
+  listEnumTypes* next;
+
+  listEnumTypes(enum_type_data* newType, listEnumTypes* prev) {
+    enumTypePtr = newType;
+    next = prev;
+  }
+
+  ~listEnumTypes() {
+    if (next) {
+      delete(next);
+    }
+  }
+};
+
 char* load_model(char* fileName, char* nodeName, long int* modelType) {
   Model* newModel;
   try {
@@ -484,9 +506,10 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   int count;
   char test[255];
   int dims[32];
+  enum_type_data* types[32];
+
   for (count = 1; seekType->nodecount>count; ++count) {
-    *dims = 0;
-    seekType->make_full_caption(count, test, dims);
+    seekType->make_full_caption(count, test, dims, types);
 	  
     if (!strcmp(seeknode, test)) {
       *tgtModel = seekType;
@@ -506,36 +529,77 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   return -1;
 }
 
+char* trueTxt = "true";
+enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
+
+void* append_ptrs_to_null(enum_type_data** dest, enum_type_data** src) {
+  while (*dest) {dest += 1; }
+  while (*src) {*dest = *src; dest += 1; src += 1; }
+  *dest = NULL;
+}
+
 /* global version of getinfo, uses the list defined above to search through all
    current models to find given node, and combine their extraction data
 
    Needs a new node_data_line, to which it is passed a ptr. Returns 0 if
-   fails to find path. */
+   fails to find path. 
 
-node_data_line* searchinfo(char* node, long int* tgtModel, 
-			   char* caption, int* dims, int* path) {
+   This is very ugly -- it should return a lot of NULLs if called with the
+   top node, and otherwise call itself recursively before getting the local
+   data, thus allowing it to pass pointers to current positions along the
+   result arrays to make_full_caption. Well that's stepwise refinement...
+*/
+
+node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
+			   int* dims, int* path, enum_type_data** usedTypes) {
   listNodeModel* searchPoint = nodeModelList;
   Model* tryModel;
   node_data_line *bottomLine;
   char localCapt[256];
-  int localDims[32];
-  int line;
+  int localDims[32], dimCount;
+  enum_type_data *thisType, *localTypes[32], *localUsed[32];
+  int line, typeCount, typeIdx;
 
   while (searchPoint) {
     tryModel = searchPoint->model;
     if ((line=tryModel->getinfo(node))>-1) {
       bottomLine = tryModel->nodedata + line;
-      *localDims = 0;
-      tryModel->make_full_caption(line, localCapt, localDims);
+      typeCount = tryModel->make_full_caption(line, localCapt, 
+					      localDims, localTypes);
+      dimCount = 0;
+      while (localDims[dimCount]) {
+	if (localDims[dimCount] <= ENUM_BASE) {
+	  thisType = localTypes[typeCount+localDims[dimCount]-ENUM_BASE-1];
+	  localUsed[dimCount] = thisType;
+	  localDims[dimCount] = thisType->count;
+	} else {
+	  localUsed[dimCount] = &noType;
+	}
+	++dimCount;
+      }
+      if (bottomLine->datatype <= ENUM_BASE) {
+	localUsed[dimCount++] = localTypes[typeCount+bottomLine->datatype
+					 -ENUM_BASE-1];
+      } else if (bottomLine->datatype == FLAG) {
+	localUsed[dimCount++] = &boolType;
+      } else if (bottomLine->datatype != SUBMODEL) {
+	localUsed[dimCount++] = &noType;
+      }
+      localUsed[dimCount] = NULL;
+
       if (searchPoint == nodeModelList) {
 	strcpy(caption, localCapt);
 	*dims = *path = 0;
+	*usedTypes = NULL;
 	append_ints_to_null(dims, localDims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
-      } else if (searchinfo(searchPoint->node, tgtModel, caption,dims,path)) {
+	append_ptrs_to_null(usedTypes, localUsed);
+      } else if (searchinfo(searchPoint->node, tgtModel, caption,
+			    dims, path, usedTypes)) {
 	append_ints_to_null(dims, localDims, SEPARATE, 0);
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
+	append_ptrs_to_null(usedTypes, localUsed);
 	strcpy(caption + strlen(caption), /* was strrchr(caption, '/'), */
 	       localCapt);
       } else {
@@ -559,6 +623,7 @@ long int fetch_top_instance(long int modelType, char* spare) {
    int* tree;
    connectRecord* currConnect;
    long int mSpare;
+   enum_type_data* spareTypes[32];
 
    /* this section sets up the connection database -- done here because all
 
@@ -568,9 +633,11 @@ long int fetch_top_instance(long int modelType, char* spare) {
      currConnect = &connectData[count];
 
      currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
-     if (searchinfo(currConnect->TopNode, &mSpare, spare, dims, path)) {
+     if (searchinfo(currConnect->TopNode, &mSpare, spare, 
+		    dims, path, spareTypes)) {
        tree = new int[32];
-       if (searchinfo(currConnect->SourceNode, &mSpare, spare, dims, tree)) {
+       if (searchinfo(currConnect->SourceNode, &mSpare, spare, 
+		      dims, tree, spareTypes)) {
 	 count2=0;
 	 while (path[count2]) {
 	   ++count2;
