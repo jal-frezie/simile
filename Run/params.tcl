@@ -101,8 +101,8 @@ proc AddEntry {winId topNode node mustShow notInput} {
     set levels [split $compName /]
     set nodeDims [GetCompProperty $topNode Dims $node]
 
-# bit of voodoo...get table relating numerical indices of node to enymerated
-# types (from prolog) and use to translate array bounds. Do this first because
+# bit of voodoo...get table relating numerical indices of node to enumerated
+# types (from model) and use to translate array bounds. Do this first because
 # there will be null entries in the table for vm model levels.
     set trans [GetTransTable $node]
     if {!$notInput} {
@@ -118,6 +118,9 @@ proc AddEntry {winId topNode node mustShow notInput} {
     set nodeDims [TransBounds $trans $nodeDims]
 
     set nodeDims [purge $nodeDims MEMBERS]
+    while {[set hackOpen [lsearch $nodeDims START_VM]]!=-1} {
+	set nodeDims [lreplace $nodeDims $hackOpen [lsearch $nodeDims END_VM]]
+    }
     set dimList [join [lrange $nodeDims 0 end-1] { x }]
     set last [lindex $nodeDims end]
     if {[string compare $last 0]} {
@@ -348,14 +351,19 @@ proc rsearch {list tgt} {
 }
 
 proc ListToArray {topNode tgt subs trans dims list} {
-#do_in_editor puts "Go! tgt $tgt trans $trans list $list"
+#do_in_editor puts "Go! tgt $tgt trans $trans dims $dims list $list"
 # skip over any vm arrays, their indices will not appear
 # in calls for values, but keep the translation list in sync
 # ... string match stops cleanly at end of list
     global comboTypes
     while {[string match MEMBERS [lindex $dims 0]]} {
-	set trans [lrange $trans 1 end]
 	set dims [lrange $dims 1 end]
+	set trans [lrange $trans 1 end]
+    }
+    if {[string match START_VM [lindex $dims 0]]} {
+	set endGap [lsearch $dims END_VM]
+	set dims [lreplace $dims 0 $endGap]
+	set trans [lrange $trans [expr $endGap-1] end]
     }
     set thisTrans [lindex $trans 0]
     if {![llength $dims]} {
