@@ -74,13 +74,13 @@ namespace eval grid005 {
     proc Restore {winId} {
         variable useNodes
         namespace import -force ::maptools2::*
-        
-        scan [GetState $winId] "displaying %s colourmap %s %s %s aspect %d %d %d %g %g" \
-                nodePath \
+        scan [GetState $winId] "displaying %s %s colourmap %s %s %s aspect %d %g %g" \
+                nodePath colvalPath \
                 useNodes($winId,cbot) useNodes($winId,cmid) useNodes($winId,ctop) \
-                useNodes($winId,nrow) useNodes($winId,ncol) useNodes($winId,nswatches)\
+                useNodes($winId,nswatches)\
                 useNodes($winId,min) useNodes($winId,max)
         set useNodes($winId,display1) [GetIdFromCaptionPath $nodePath]
+        set useNodes($winId,colvals) [GetIdFromCaptionPath $colvalPath]
         regexp /*.$ $nodePath match; # match start with /
         regsub / $match {} match; #get rid of the /
         set useNodes($winId,caption) $match
@@ -88,6 +88,7 @@ namespace eval grid005 {
         SetColours useNodes $winId
         AddToolbar $winId
         $winId.bbframe.buttonBox itemconfigure 0 -state disable
+	NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
         InitialiseGrid $winId $useNodes($winId,display1)
         set useNodes($winId,freeze) false
     }
@@ -105,17 +106,9 @@ namespace eval grid005 {
             set state [GetState $winId]
             switch $state {
                 display0 {
-                    set columns [Flatten [lindex $testResult 0] {}]
-                    foreach col $columns {
-                        set colvals($col) 1
-                    }
-                    if {[info exists colvals()]} {
-                        unset colvals()
-                    }
-                    set useNodes($winId,ncol) [array size colvals]
-                    set useNodes($winId,nrow) \
-                            [expr {[llength $columns]/$useNodes($winId,ncol)}]
-                    $ms configure -text "Grid has $useNodes($winId,ncol) columns and $useNodes($winId,nrow) rows. Now click on the variable to be displayed."
+                    NumDistinct $winId $testResult
+		    set useNodes($winId,colvals) $node
+		    $ms configure -text "Grid currently has $useNodes($winId,ncol) columns and $useNodes($winId,nrow) rows. Now click on the variable to be displayed."
                     SetState $winId display1
                 } display1 {
                     pack forget $ms
@@ -138,12 +131,28 @@ namespace eval grid005 {
         }
     }
     
+    proc NumDistinct {winId testResult} {
+	variable useNodes
+
+	set columns [Flatten [lindex $testResult 0] {}]
+	foreach col $columns {
+	    set colvals($col) 1
+	}
+	if {[info exists colvals()]} {
+	    unset colvals()
+	}
+	set useNodes($winId,ncol) [array size colvals]
+	set useNodes($winId,nrow) \
+	    [expr {[llength $columns]/$useNodes($winId,ncol)}]
+    }
+
     proc UpdateState {winId} {
         variable useNodes
         SetState $winId [list displaying \
-                [GetCaptionPathFromId $useNodes($winId,display1)] colourmap \
+                [GetCaptionPathFromId $useNodes($winId,display1)] \
+		[GetCaptionPathFromId $useNodes($winId,colvals)] colourmap \
                 $useNodes($winId,cbot) $useNodes($winId,cmid) $useNodes($winId,ctop) \
-                aspect $useNodes($winId,nrow) $useNodes($winId,ncol) $useNodes($winId,nswatches)\
+                aspect $useNodes($winId,nswatches)\
                 $useNodes($winId,min) $useNodes($winId,max)]
         
     }
@@ -152,6 +161,9 @@ namespace eval grid005 {
         variable useNodes
         if {[string match [lindex [GetState $winId] 0] displaying] && \
                     !$useNodes($winId,freeze)} then {
+	    if {!$time} {
+		NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
+	    }
             DrawGrid5 $winId $useNodes($winId,display1)
             FillCanvas $winId
             UpdateCaption $winId
@@ -263,7 +275,7 @@ namespace eval grid005 {
     
     proc UpdateCaption {winId} {
         variable useNodes
-        $winId.c itemconfig caption -text "[file tail [GetCaptionPathFromId $useNodes($winId,display1)]] (time = [GetModelTime])"
+        $winId.c itemconfig caption -text "[file tail [GetCaptionPathFromId $useNodes($winId,display1)]] ($useNodes($winId,ncol)x$useNodes($winId,nrow), time = [GetModelTime])"
     }
     
     proc ToggleFreeze {winId} {
