@@ -598,7 +598,11 @@ proc DoEachTimeStep {win time} {
 	     if {$info($i,current_value)!=$oldValue} {
 		 puts $info(logfile) "Slider $info($i,node_label) set to \
 $info($i,current_value) at time $time"
-		 SetModelValue $node_ID $info($i,current_value)
+# old version set model value directly -- only worked with compartments...
+#		 SetModelValue $node_ID $info($i,current_value)
+# new version sets variable queried by model -- works with explicit inputs
+		 global sliderVals
+		 set sliderVals($node_ID) $info($i,current_value)
 	     }
          }
 

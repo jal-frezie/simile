@@ -90,8 +90,14 @@ set env(SIMTMPDIR) $tester
 file mkdir $env(SIMTMPDIR)/.lock
 
 # If there is an arg, it is the model to start with. Because this is sourced
-# from a script or special .exe there is never more than 1 arg
+# from a script or special .exe there is never more than 1 arg. Windows has
+# a buggy implementation of file pathtype so hope that simile.exe always
+# gets us an absolute path...
+
 if {$argc} {
+    if {[string match windows $tcl_platform(platform)]} {
+	set argv [lindex $argv 0]
+    }
     if {[string match relative [file pathtype $argv]]} {
 	set env(OPEN_MODEL) [pwd]/$argv
     } else {
