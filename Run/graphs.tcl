@@ -563,7 +563,11 @@ proc FileParamDialogue {mustShow parent} {
         if {[string match TABLE [GetModelEval $node]]} {
             set compName [GetCaptionPathFromId $node]
             set levels [lrange [split $compName /] 1 end]
-	    set dimList [join [lrange [GetModelDims $node] 0 end-1] x]
+	    set nodeDims [GetModelDims $node]
+	    while {[set sep [lsearch $nodeDims -1]]>-1} {
+		set nodeDims [lreplace $nodeDims $sep $sep]
+	    }
+	    set dimList [join [lrange $nodeDims 0 end-1] x]
 	    if {[string length $dimList]} {
 		set slotCaption "[lindex $levels end] ($dimList):"
 	    } else {

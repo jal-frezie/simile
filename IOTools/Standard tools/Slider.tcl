@@ -65,10 +65,9 @@ namespace eval slide139 {
 	}
 	set nodeDims [GetModelDims $node]
 	for {set outerDims [expr [llength $nodeDims]-1]} \
-	    {$outerDims > 0 && [lindex $nodeDims $outerDims] <= 0} \
+	    {$outerDims >= 0 && [lindex $nodeDims $outerDims] <= 0} \
 	    {incr outerDims -1} {}
-        set count [lindex $nodeDims $outerDims]
-        if {$count == 0} {
+        if {$outerDims == -1} {
 	    if {$isFlag} {
 		pack [checkbutton $f.check -text [lindex $levels end] \
 			  -variable checkStates($node) \
@@ -88,6 +87,7 @@ namespace eval slide139 {
 	    }
         } else {
 	    pack [label $f.caption -text [lindex $levels end]]
+	    set count [lindex $nodeDims $outerDims]
 	    for {set index 1} {$count >= $index} {incr index} {
 		if {$isFlag} {
 		    set line [expr ($index+9)/10]

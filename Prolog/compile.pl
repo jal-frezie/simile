@@ -1120,23 +1120,24 @@ input_params_in(Vars, SmPath, SmStep,
 	make_inds_for(Dims, LocalPath, LocalInds),
 	append(LocalPath, SmPath, Path),
 	append(SmInds, LocalInds, Inds),
+	vars_only(Inds, VarInds),
 	(ParamType = 2,
 	    (Type = function, Step = -1, Wait = [];
 	    Type = init_function, Step = 0, Wait = [on_reset]),
-	    UseInds = Inds;
+	    UseInds = VarInds;
 	ParamType = 1,
 	    Step = SmStep, Wait = [time],
-	    use_for_slider(Inds, UseInds)),
+	    member(UseInds, [[_], []]), /* at most one index for a slider */
+	    suffix(UseInds, VarInds)),
 	length(UseInds, Count),
 	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
 		      | UseInds].
 
-use_for_slider(Inds, UseInds) :-
-	reverse(Inds, RevInds),
-	(member(Ind, RevInds),
-	    var(Ind), !,
-	    UseInds = [Ind];
-	UseInds = []).
+vars_only(List, AllVar) :-
+	select(NonVar, List, Rest),
+	nonvar(NonVar), !,
+	vars_only(Rest, AllVar);
+	List = AllVar.
 
 /* sort_assignments: if a value makes no reference to time, and all
 its conditions are evaluated on a long time step, it can also be

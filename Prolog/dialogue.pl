@@ -341,6 +341,7 @@ reverse_engineer(Table, Here, TclRep) :-
 check_exp(Eqn_st, FieldName, InterInputs, Base, Dims, Needed,
 	  IndxCount, ParamList, Equation, Error) :-
 	Eqn_st = [], !,
+	    Base = any,
 	    Dims = [],
 	    ParamList = [],
 	    Equation = '',
