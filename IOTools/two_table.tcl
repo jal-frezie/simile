@@ -74,8 +74,8 @@ namespace eval $keyValue {
         pack $winId.xscroll -side bottom -fill x
         pack $winId.yscroll -side right -fill y
         CreateTable $winId
-#        clear $winId ;# cos MRE can re-use same frame
-# Do less intrusively though
+        clear $winId ;# cos MRE can re-use same frame
+# note the above line is not intrusive
         SaveState $winId
     }
     

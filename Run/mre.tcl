@@ -214,7 +214,7 @@ proc RunEnv::AddNotebook {containerId} {
         bind [$containerId.notebook getframe $pageId] <Button-3> \
                 "+tk_popup .pageContextMenu %X %Y"
         set newContainer [$containerId.notebook getframe $pageId]
-        panedwindow $newContainer.panedwindow -orient vertical
+        panedwindow $newContainer.panedwindow
         pack $newContainer.panedwindow -expand yes -fill both
         frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1; # -relief ridge;# jmm
         bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
@@ -276,7 +276,7 @@ proc RunEnv::AddNotebookPage {containerId} {
         $ParentContainer insert end $pageId -text "Page $pageIndex" \
                 -raisecmd "::RunEnv::PageRaiseCmd $ParentContainer $pageId"
         set newContainer [$ParentContainer getframe $pageId]
-        panedwindow $newContainer.panedwindow -orient vertical
+        panedwindow $newContainer.panedwindow
         pack $newContainer.panedwindow -expand yes -fill both
         frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1
         bind $newContainer.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
@@ -509,12 +509,19 @@ proc RunEnv::SplitPage {containerId orientation} {
     set parentPath [FindParentpanedwindowOrNotebook $containerId]
     #ShowMessage debug info "SplitPage container $containerId $orientation\n\
     #    parentPath $parentPath" ok
-    if {[string match notebook [winfo name $parentPath]]} {
+    if {1} {
+
+# Note from Jasper -- above case previously checked for 
+# [string match notebook [winfo name $parentPath]]
+# but seeing as it seems to always do the right thing anyway, I removed this
+# test, so subsequent cases no longer ever get used
+# (Next one is the same anyway)
+
         #ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
         Addpanedwindow $containerId $orientation
-    } elseif {(![string match $orientation [$parentPath cget -orient]])} {
+    } elseif {![string match $orientation [$parentPath cget -orient]]} {
         #ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
-        parentPath $parentPath" ok;
+#        parentPath $parentPath" ok;
         set newpw [Addpanedwindow $containerId $orientation]
         #ShowMessage debug info "newpw $newpw" ok
     } else  {
@@ -529,7 +536,7 @@ proc RunEnv::SplitPage {containerId orientation} {
         #ShowMessage debug info "SplitPage pane to be split \
         width $pwidth height $pheight \n \
                 sash index $sash coord $sashCoord\n\
-                x [winfo x $containerId]; y [winfo y $containerId]" ok; ##############
+#                x [winfo x $containerId]; y [winfo y $containerId]" ok; ##############
         
         
         # new settings
