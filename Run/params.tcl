@@ -1,5 +1,5 @@
 proc FileParamDialogue {topNode topWin mustShow} {
-    global paramData widgetNames loadingProject
+    global paramData widgetNames
     set allNodes [GetCompProperty $topNode Objects]
     # do it now to shake out errors before opening window
         
@@ -496,13 +496,16 @@ proc CancelParams {} {
 namespace eval fileparams {
 
 proc Clear {spare smPath} {
-    global paramState paramData widgetNames
-
+    global paramState paramData widgetNames SimileProject msgs
+    foreach spfName [array names SimileProject fileparam,$smPath*] {
+	unset SimileProject($spfName)
+    }
     foreach compName [array names widgetNames $smPath*] {
 #	array unset paramState $compName
 #	array unset paramData $compName
 	$widgetNames($compName).e configure -state normal
 	$widgetNames($compName).e delete 0 end
+	set msgs(param_source_$compName) Unsaved
     }
 }
 
@@ -572,7 +575,8 @@ proc Open {topNode smPath} {
 proc MergeParams {topNode smPath oldPath interactive} {
     global paramState paramData widgetNames mimeSquirter simtmpdir \
 	whichParamsAffected msgs
-    
+
+#do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"    
     set oldDir [pwd]
     if {[catch { 
 	set multiT [mime::initialize -file $oldPath]
@@ -596,8 +600,10 @@ proc MergeParams {topNode smPath oldPath interactive} {
 		set restoredComp [string range $restoredComp 8 end]
 	    }
 	}
-            #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
-	if {[info exists paramData($restoredComp)]} {
+        #ShowMessage debug info "Component is $restoredComp" ok
+	set node [GetCompProperty $topNode IdFromCapt $restoredComp]
+	set nType [GetCompProperty $topNode Eval $node]
+	if {[lsearch {TABLE INPUT} $nType]!=-1} {
 	    if {$origVersion>=4.0} {
 		set paramData($restoredComp) [lindex $IdAndValue 2]
 		set reference [string equal reference [lindex $IdAndValue 1]]
@@ -611,7 +617,7 @@ proc MergeParams {topNode smPath oldPath interactive} {
 		set reference [file exists [file join [file dirname $oldPath] \
 						$VFile]]
 	    }
-                #ShowMessage debug info "Param data is $paramData($restoredComp)" ok
+	    #ShowMessage debug info "Param data is $paramData($restoredComp)" ok
                 
 	    set newPopup "Specified by $oldPath"
                 # OK here we go...try and follow this...first go to the starting point..
@@ -630,10 +636,8 @@ proc MergeParams {topNode smPath oldPath interactive} {
 		set msgs(param_source_$restoredComp) [concat $newPopup \
 			  (reference to $VFile)]
 	    } else {
-		set node [GetCompProperty $topNode IdFromCapt $restoredComp]
 		set trans [do_in_editor GetTransTable $node]
-		if {[string equal INPUT \
-			 [GetCompProperty $topNode Eval $node]]} {
+		if {[string equal INPUT $nType]} {
 		    set trans [linsert $trans 0 {}] ;# dont translate times
 		}
 		if {[SensibleValue $trans $paramData($restoredComp)]>1} {
@@ -718,25 +722,6 @@ proc VarType {testVar types} {
 	puts "No $testVar in $types"
         return 0
     }
-}
-
-# takes two file names and returns the second relative to the first
-proc Relativize {current remote} {
-    #	ShowMessage debug info "relativizing $current $remote" ok
-    set currentList [file split $current]
-    set remoteList [file split $remote]
-    set parted 0
-    set base {}
-    for {set sameCount 0} {$sameCount < [llength $currentList]} {incr sameCount} {
-        if {$parted} {
-            lappend base ..
-        } elseif {[string compare [lindex $currentList $sameCount] \
-                    [lindex $remoteList $sameCount]]} {
-            set tail [lrange $remoteList $sameCount end]
-            set parted 1
-        }
-    }
-    return [eval {file join} $base $tail]
 }
 
 proc GetFromTable {parent compName} {

@@ -249,7 +249,7 @@ proc do_in_node {node args} {
 	if {$runState($node,modelReady)==1} {
 	tell_runner $node $command
 	incr runState($node,queueSize)
-puts "put: $command"
+#puts "put: $command"
 	set runState($node,modelReady) 0
 	upvar \#0 runState($node,response$runState($node,queueSize)) result
 	if {[string equal parallel $runHow(time)]} {
@@ -263,11 +263,11 @@ puts "put: $command"
 	    fileevent $runState($node,interp) readable \
 		[list FeedModel $node pipe]
 	}
-puts "Got $result"
+#puts "Got $result"
 	incr runState($node,queueSize) -1
 	} else {
 	    set result {res 0}
-puts "$command: model dead"
+#puts "$command: model dead"
 	}
     }
     set info [lindex $result 1]
@@ -813,7 +813,7 @@ proc SaveFile {topNode tree tgt} {
     global SimileProjectDo
     
     if {[info exists SimileProjectDo]} {
-        SaveProjectFile $topNode $tree
+        SaveProjectFile $topNode $tree $tgt
         # shfs to $tree
         # spfs to $tree
         unset SimileProjectDo
@@ -889,7 +889,7 @@ proc LoadFile {topNode tree tgt} {
             # if there is a project file
             if {[file exists $tree/model.spj]} {
                 #ShowMessage debug info "LoadFile file is package" ok
-                set loadingProject 1
+                set loadingProject $tgt
                 set mimedir $tree
                 #OpenProjectFile $tree
             }
@@ -1079,6 +1079,15 @@ proc OpenProjectFile {win path} {
     # if params it should load the spfs
     # MergeParams {smPath metaFile interactive}
     if {[info exists SimileProject(modelRunning)]} {
+	set topNode $window_info($win,top_node)
+	if {[info exists SimileProject(spfList)]} {
+	    # file params cannot be loaded until model is ready, so set this
+	    # variable which will be read before opening the dialogue
+	    foreach {smPath spfRelPath} $SimileProject(spfList) {
+		do_in_node $topNode set ::projectParams($smPath) \
+		    [file join [file dirname $loadingProject] $spfRelPath]
+	    }
+	}
         if {[info exists SimileProject(running_c)]} {
             MenuSelect $win file run_c
         } else  {
@@ -1088,7 +1097,6 @@ proc OpenProjectFile {win path} {
             set command [ChooseText \
                     [PrefValue custom(helperManager) helperManager] \
                     ::RunEnv::LoadSHF CreateView]
-	    set topNode $window_info($win,top_node)
             do_in_node $topNode $command $topNode \
                     ${path}/$SimileProject(nameOfHelperStateFile)
         }
@@ -1103,7 +1111,7 @@ proc SaveAll {win} {
     MenuSelect $win file save_as
 }
 
-proc SaveProjectFile {topNode path} {
+proc SaveProjectFile {topNode path tgt} {
     global custom runState nameOfHelperStateFile
     global SimileProject model_id
     puts [array get nameOfHelperStateFile]
@@ -1127,6 +1135,11 @@ proc SaveProjectFile {topNode path} {
     
     #ShowMessage debug info "SaveProjectFile [array get SimileProject]\n\
     #            $path/[file tail $nameOfHelperStateFile($topNode)]" ok
+    set spfList [do_in_node $topNode array get ::SimileProject fileparam,*]
+    foreach {varName spfPath} $spfList {
+	lappend SimileProject(spfList) [string range $varName 10 end] \
+	    [Relativize $tgt $spfPath]
+    }
     set projectF [NetOpen $ProjectFile w]
     puts $projectF [array get SimileProject]
     close $projectF

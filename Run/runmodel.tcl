@@ -800,7 +800,7 @@ proc SetRunParams {node runParams} {
 # 3 = up to date, 4 = out of date
 
 proc StartRun {node} {
-    global runState window_info helperTable running_c
+    global runState window_info helperTable running_c projectParams
     # ShowMessage debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
     if {[info exists helperTable($node,whichRunEnv)]} {
@@ -810,6 +810,10 @@ proc StartRun {node} {
 	set fpParent {}
     }
     set runState($node,modelRunning) 1
+    foreach {smPath spFile} [array get projectParams] {
+	MergeParams $node $smPath $spFile 0
+	unset projectParams($smPath)
+    }
     if {[FileParamDialogue $node $fpParent 0]<1} {
 	if {[info exists runState($node,cnvs)]} {
 	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]

@@ -158,6 +158,25 @@ proc ChooseText {choice ifTrue ifFalse} {
     }
 }
 
+# takes two file names and returns the second relative to the first
+proc Relativize {current remote} {
+    #	ShowMessage debug info "relativizing $current $remote" ok
+    set currentList [file split $current]
+    set remoteList [file split $remote]
+    set parted 0
+    set base {}
+    for {set sameCount 0} {$sameCount < [llength $currentList]} {incr sameCount} {
+        if {$parted} {
+            lappend base ..
+        } elseif {[string compare [lindex $currentList $sameCount] \
+                    [lindex $remoteList $sameCount]]} {
+            set tail [lrange $remoteList $sameCount end]
+            set parted 1
+        }
+    }
+    return [eval {file join} $base $tail]
+}
+
 # This deals with the quirk of Netware file systems that if the user has
 # read/write access to a file it cannot be opened readonly, or something...
 
