@@ -208,21 +208,19 @@ namespace eval runcontrol33857 {
             set sendvars(currentMode) $action
             set widget [$winId.rcf getframe]
             $widget.topbuttons.start configure -image $pauseImg
+	    $widget.topbuttons.start configure -command \
+		"[namespace current]::SetMode $winId stop"
+
             RollSimulation $winId
             if {[string match kill $sendvars(currentMode)]} {
                 set sendvars(currentMode) stop
             } else {
                 $widget.topbuttons.start configure -image $playImg
+		$widget.topbuttons.start configure -command \
+		    "[namespace current]::SetMode $winId start"
             }
         } else {
-            set widget [$winId.rcf getframe]
-            if {[string match $playImg [$widget.topbuttons.start cget -image]]} {
-                set sendvars(currentMode) start
-            } elseif {[string match $pauseImg [$widget.topbuttons.start cget -image]]} {
-                set sendvars(currentMode) stop
-            } else  {
-                set sendvars(currentMode) $action
-            }
+	    set sendvars(currentMode) $action
         }
     }
     

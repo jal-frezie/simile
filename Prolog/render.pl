@@ -899,7 +899,9 @@ cannot_be_dollared(Str) :-
 type_for_unit(Unit, Type) :-
 	(Unit = real; get_conversion(_, Unit, Unit, _)), !,
 	    Type = double;
-	member(Unit, [boolean, const_int, a(_ET), n(_ET)]),
+	member(Unit, [boolean, cond_spec]),
+	    Type = 'BOOLEAN';
+	member(Unit, [const_int, a(_ET), n(_ET)]),
 	    Type = int;
 	Type = Unit.
 

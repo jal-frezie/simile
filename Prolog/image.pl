@@ -690,7 +690,8 @@ test_complete(Item) :-
 		(FromFunction is_connector from _ to Item,
 			FromFunction has_type influence;
 		Item has_class_refinement units of Units,
-		    analyze_array(Units, a(_), _Dims);
+		    analyze_array(Units, Base, _Dims),
+		    member(Base, [boolean, a(_)]);
 		Item has_class_refinement min_val of _Min,
 			Item has_class_refinement max_val of _Max;
 		Item has_class_refinement param_type of file);

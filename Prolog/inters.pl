@@ -687,7 +687,8 @@ make_intermediates(
 	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
 				SourceContext, Setups, SubArgs, ResultList), !;
 	    raise_exception(cannot_combine_argument_dimensions(Source))),
-		(member(Op, [*, /]),
+		(ValRef =.. [Op, _, _],
+		 member(Op, [*, /]),
 		    select(One, UnitList, [Other]),
 		    \+ promote_arg(One, 1, _),
 		    (promote_arg(Other, 1, _),
