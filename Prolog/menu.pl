@@ -1205,17 +1205,16 @@ off_window(Win) :-
 	    start_progress_dialogue(Win),
 	    remove_model(Win, Model),
 	    delete_tree(Model),
-	    finish_progress_dialogue,
-	    (is_toplevel(_Remains), !;
-		exit_AME,
-		user:wind_up);
+	    finish_progress_dialogue;
 	delete_window(Win)).
 
 kill_everything(Model) :-
-	 Win shows_model Model,
-	is_toplevel(Model), !,
-	off_window(Win),
-	kill_everything(_).
+	Win shows_model Model,
+	    is_toplevel(Model), !,
+	    off_window(Win),
+	    kill_everything(_);
+	exit_AME,
+	    user:wind_up.
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Win, Target) :-

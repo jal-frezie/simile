@@ -1819,22 +1819,27 @@ proc AddDetailMenu {winId fm3 initVals} {
 }
 
 proc MenuClose {winId} {
-    global window_info
-    foreach tlItem [array names window_info *,is_top_level] {
-	if {$window_info($tlItem) && [string last $winId $tlItem]} {
-	    set notLastTl 1
-	}
-    }
-    if {[info exists notLastTl]} {
+#    global window_info
+#    foreach tlItem [array names window_info *,is_top_level] {
+#	if {$window_info($tlItem) && [string last $winId $tlItem]} {
+#	    set notLastTl 1
+#	}
+#    }
+#    if {[info exists notLastTl]} {
 	byebye $winId
-    } else {
-	MenuSelect $winId file new
-    }
+#    } else {
+#	MenuSelect $winId file new
+#    }
 # if it is tl we should kill its submodel windows too
 }
 
 proc byebye {winId} {
+    global window_info tcl_platform
     prolog [list tk_off_window( '$winId' )]
+    if {![string equal Darwin $tcl_platform(os)] && \
+	    ![llength [array names window_info *,is_top_level]]} {
+	prolog tk_kill_everything(_)
+    }
 }
 
 proc exit_simile {} {
