@@ -1316,89 +1316,98 @@ proc Customize {winId mode} {
         }
     }
     
-    if {[string compare $object influence]} {
-        frame $t.textsize
-        label $t.textsize.what -text "Text size: "
-        pack $t.textsize.what -side left
-        scale $t.textsize.scale -from 10 -to 250 -length $looks(width) \
-                -orient horizontal -showvalue false -resolution 1 \
-                -command "ZotFont $t"
-        pack $t.textsize.scale -side left
-        pack $t.textsize
-        
-        frame $t.font
-        label $t.font.what -text "Font: "
-        pack $t.font.what -side left
-        tk_optionMenu $t.font.family looks($object,family) \
-                helvetica times system courier symbol
-        bind $t.font.family.menu <Leave> "ZotFont $t 120"
-        pack $t.font.family -side left
-        tk_optionMenu $t.font.weight looks($object,weight) \
-                bold normal
-        bind $t.font.weight.menu <Leave> "ZotFont $t 120"
-        pack $t.font.weight -side left
-        tk_optionMenu $t.font.style looks($object,style) \
-                italic roman
-        bind $t.font.style.menu <Leave> "ZotFont $t 120"
-        pack $t.font.style -side left
-        pack $t.font
-
-	frame $t.backbox
-	label $t.backbox.bdwhat -text "Show border"
-	pack $t.backbox.bdwhat -side left
-	checkbutton $t.backbox.bd -variable looks(txtbd) \
-	    -command "ZotObjectSize $t $object 0"
-	pack $t.backbox.bd -side left
-	label $t.backbox.bgwhat -text "Show background"
-	pack $t.backbox.bgwhat -side left
-	checkbutton $t.backbox.bg -variable looks(txtbg) \
-	    -command "ZotObjectSize $t $object 0"
-	pack $t.backbox.bg -side left
-	pack $t.backbox
-    }
-    
     canvas $t.canvas -width [expr $looks(width) + 50] \
             -height [expr $looks(width) + 50]
     set window_info($t.canvas,scale) 1
     set custom(showgrids,$t.canvas) 0
     pack $t.canvas
     
-    label $t.tell -text "Drag text by chosen anchor to set default position"
-    pack $t.tell
-    
-    frame $t.setcolours
-    foreach flashType {outline fill text} {
-        button $t.setcolours.$flashType -text "Set $flashType" \
-                -command "ZotColor $t setcolours $flashType $object"
-        pack $t.setcolours.$flashType -side left
+    if {[string compare $object influence]} {
+	TitleFrame $t.text -text "Text: "
+	set text [$t.text getframe]
+	label $text.tell \
+	    -text "Drag text by chosen anchor to set default position"
+	pack $text.tell
+        set ts [frame $text.size]
+        label $ts.what -text "Text size: "
+        pack $ts.what -side left
+        scale $ts.scale -from 10 -to 250 -length $looks(width) \
+                -orient horizontal -showvalue false -resolution 1 \
+                -command "ZotFont $t"
+        pack $ts.scale -side left
+        pack $ts
+        
+        set tf [frame $text.font]
+        label $tf.what -text "Font: "
+        pack $tf.what -side left
+        tk_optionMenu $tf.family looks($object,family) \
+                helvetica times system courier symbol
+        bind $tf.family.menu <Leave> "ZotFont $t 120"
+        pack $tf.family -side left
+        tk_optionMenu $tf.weight looks($object,weight) \
+                bold normal
+        bind $tf.weight.menu <Leave> "ZotFont $t 120"
+        pack $tf.weight -side left
+        tk_optionMenu $tf.style looks($object,style) \
+                italic roman
+        bind $tf.style.menu <Leave> "ZotFont $t 120"
+        pack $tf.style -side left
+        pack $tf
+
+	set tb [frame $text.backbox]
+	label $tb.bdwhat -text "Show border"
+	pack $tb.bdwhat -side left
+	checkbutton $tb.bd -variable looks(txtbd) \
+	    -command "ZotObjectSize $t $object 0"
+	pack $tb.bd -side left
+	label $tb.bgwhat -text "Show background"
+	pack $tb.bgwhat -side left
+	checkbutton $tb.bg -variable looks(txtbg) \
+	    -command "ZotObjectSize $t $object 0"
+	pack $tb.bg -side left
+        button $tb.col -text "Set colour" \
+                -command "ZotColor $t $tb.col $object"
+        pack $tb.col -side left
+	pack $tb
+	pack $t.text -fill x
     }
-    pack $t.setcolours
     
-    frame $t.flashcolours
-    foreach flashType {select highlight target incomplete} {
-        button $t.flashcolours.$flashType -text "Set $flashType" \
-                -command "ZotColor $t flashcolours $flashType $object"
-        pack $t.flashcolours.$flashType -side left
+    TitleFrame $t.graphics -text "Graphics: "
+    set graphics [$t.graphics getframe]
+    frame $graphics.setcolours
+    foreach flashType {outline fill incomplete} {
+        button $graphics.setcolours.$flashType -text "Set $flashType" \
+                -command "ZotColor $t $graphics.setcolours.$flashType $object"
+        pack $graphics.setcolours.$flashType -side left
     }
-    pack $t.flashcolours
+    pack $graphics.setcolours
     
-    frame $t.objectsize
-    label $t.objectsize.what -text "Relative size: "
-    pack $t.objectsize.what -side left
-    scale $t.objectsize.scale -from 0 -to $looks(width) \
+    frame $graphics.flashcolours
+    foreach flashType {select highlight target} {
+        button $graphics.flashcolours.$flashType -text "Set $flashType" \
+                -command "ZotColor $t $graphics.flashcolours.$flashType $object"
+        pack $graphics.flashcolours.$flashType -side left
+    }
+    pack $graphics.flashcolours
+    
+    frame $graphics.objectsize
+    label $graphics.objectsize.what -text "Relative size: "
+    pack $graphics.objectsize.what -side left
+    scale $graphics.objectsize.scale -from 0 -to $looks(width) \
             -length $looks(width) -orient horizontal -showvalue false \
             -resolution 1 -command "ZotObjectSize $t $object"
-    pack $t.objectsize.scale -side left
-    pack $t.objectsize
+    pack $graphics.objectsize.scale -side left
+    pack $graphics.objectsize
     
-    frame $t.lines
-    label $t.lines.what -text "Line thickness: "
-    pack $t.lines.what -side left
-    scale $t.lines.scale -from 0 -to 10 -length $looks(width) \
+    frame $graphics.lines
+    label $graphics.lines.what -text "Line thickness: "
+    pack $graphics.lines.what -side left
+    scale $graphics.lines.scale -from 0 -to 10 -length $looks(width) \
             -orient horizontal -showvalue false -resolution 0.05 \
             -command "ZotObjectSize $t $object"
-    pack $t.lines.scale -side left
-    pack $t.lines
+    pack $graphics.lines.scale -side left
+    pack $graphics.lines
+    pack $t.graphics -fill x
     
     frame $t.actions
     button $t.actions.load -text "Load" -command "ReadLooks $t $object"
@@ -1436,18 +1445,21 @@ proc LoadLooks {t target object} {
         scan [ExtractFontData $looks($object,font)] "%s %s %s %d" \
                 looks($target,family) looks($target,weight) \
                 looks($target,style) textsize
-        $t.textsize.scale set $textsize
+        [$t.text getframe].size.scale set $textsize
+	[$t.text getframe].backbox.col configure \
+	    -activebackground $looks($object,text)
     }
     
-    foreach flash {outline fill text} {
-        $t.setcolours.$flash configure -activebackground $looks($object,$flash)
+    set g [$t.graphics getframe]
+    foreach flash {outline fill incomplete} {
+        $g.setcolours.$flash configure -activebackground $looks($object,$flash)
     }
-    foreach flash {select highlight target incomplete} {
-        $t.flashcolours.$flash configure -activebackground $looks($object,$flash)
+    foreach flash {select highlight target} {
+        $g.flashcolours.$flash configure -activebackground $looks($object,$flash)
     }
     
-    $t.objectsize.scale set $looks($object,objectsize)
-    $t.lines.scale set $looks($object,lines)
+    $g.objectsize.scale set $looks($object,objectsize)
+    $g.lines.scale set $looks($object,lines)
     
     set middle [expr $looks(width)/2 + 25]
     DoGraphics $t $target $middle $looks($object,objectsize)
@@ -1479,20 +1491,23 @@ proc CopyLooks {t object} {
         set looks($object,font) [ResetFont $t]
         UpdateOffsets $t $object
         set looks($object,textanchor) [GetTextAnchor $t]
+	set looks($object,text) \
+	    [[$t.text getframe].backbox.col cget -activebackground]
+	set looks($object,txtbd) $looks(txtbd)
+	set looks($object,txtbg) $looks(txtbg)
     }
-    foreach colour {outline fill text} {
+    set g [$t.graphics getframe]
+    foreach colour {outline fill incomplete} {
         set looks($object,$colour) \
-                [$t.setcolours.$colour cget -activebackground]
+                [$g.setcolours.$colour cget -activebackground]
     }
-    foreach colour {select highlight target incomplete} {
+    foreach colour {select highlight target} {
         set looks($object,$colour) \
-                [$t.flashcolours.$colour cget -activebackground]
+                [$g.flashcolours.$colour cget -activebackground]
     }
-    set looks($object,objectsize) [$t.objectsize.scale get]
-    set looks($object,lines) [$t.lines.scale get]
-    set looks(compartment,lines) [$t.lines.scale get] ;# for generic sample
-    set looks($object,txtbd) $looks(txtbd)
-    set looks($object,txtbg) $looks(txtbg)
+    set looks($object,objectsize) [$g.objectsize.scale get]
+    set looks($object,lines) [$g.lines.scale get]
+    set looks(compartment,lines) [$g.lines.scale get] ;# for generic sample
 }
 
 proc DoGraphics {box type middle size} {
@@ -1616,12 +1631,13 @@ proc SampleMove {x y w} {
     $w move movable [expr $x-[lindex $oldPosn 0]] [expr $y-[lindex $oldPosn 1]]
 }
 
-proc ResetFont { t } {
+proc ResetFont { top } {
+    set t [$top.text getframe]
     return [AssembleFont [$t.font.family cget -text] \
             [$t.font.weight cget -text] \
             [$t.font.style cget -text] \
-            [$t.textsize.scale get]]
-            #[string index [$t.font.style cget -text] 0]
+            [$t.size.scale get]]
+            #[string index [$tf.style cget -text] 0]
 }
 
 # proc AssembleFont {family weight style textsize} {
@@ -1642,10 +1658,10 @@ proc ZotFont { t param } {
     FixBackBox $t.canvas $txt
 }
 
-proc ZotColor {t frame role type} {
+proc ZotColor {t role type} {
     set newColour [tk_chooseColor -initialcolor \
-            [$t.$frame.$role cget -activebackground]]
-    $t.$frame.$role configure -activebackground $newColour
+            [$role cget -activebackground]]
+    $role configure -activebackground $newColour
     CopyLooks $t $type
     ResetColours $t.canvas $type {} normal sample
 }
@@ -1662,7 +1678,8 @@ proc ZotObjectSize {t type size} {
 #    }
     
     CopyLooks $t $useLooks
-    DoGraphics $t $useLooks $middle [$t.objectsize.scale get]
+    DoGraphics $t $useLooks $middle \
+	[[$t.graphics getframe].objectsize.scale get]
 }
 
 proc UpdateOffsets {t type} {
