@@ -945,8 +945,11 @@ proc AcceptData {winId topNode compName complain} {
     set node [GetCompProperty $topNode IdFromCapt $compName]
     if {$complain > -1} {
 	if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
-	    set paramData($compName) \
-		[UglifyValList [$widgetNames($compName).e get]]
+	    set newData [UglifyValList [$widgetNames($compName).e get]]
+	    if {![string equal $newData $paramData($compName)]} {
+		set msgs(param_source_$compName) Unsaved
+		set paramData($compName) $newData
+	    }
 	}
     }
     
@@ -1207,20 +1210,17 @@ proc Save {spare smPath} {
 	    set compTail [string range $compName [string length $smPath] end]
 	    set SubbedComp [StripCrs $compTail]
 	    set newPopup  "Specified by $metaFile"
-	    if {[info exists paramState($compName)]} {
-		if {[string equal $paramData($compName) \
-			 [LoadTableData $paramState($compName)]]} {
-		    set relName [Relativize $metaFile \
-				     [lindex $paramState($compName) 0]]
-		    puts $pStr "$SubbedComp=reference=[lreplace \
+	    if {[ReferenceWorks $compName]} {
+		set relName [Relativize $metaFile \
+				 [lindex $paramState($compName) 0]]
+		puts $pStr "$SubbedComp=reference=[lreplace \
                                 $paramState($compName) 0 0 $relName]"
-		    set msgs(param_source_$compName) [concat $newPopup \
-			  (reference to $relName)]
-		    continue
-		}
+		set msgs(param_source_$compName) [concat $newPopup \
+						      (reference to $relName)]
+	    } else {
+		puts $pStr "$SubbedComp=literal=$paramData($compName)"
+		set msgs(param_source_$compName) "$newPopup (literal)"
 	    }
-	    puts $pStr "$SubbedComp=literal=$paramData($compName)"
-	    set msgs(param_source_$compName) "$newPopup (literal)"
 	}
         close $pStr
 	set PartType "application/x-simile"
@@ -1345,6 +1345,28 @@ proc MergeParams {topNode smPath oldPath interactive} {
 	file delete $metaFile
     }
     cd $oldDir
+}
+
+# This checks whether a parameter really has the value specified by its
+# .csv file reference
+
+proc ReferenceWorks {compName} {
+#    global paramState paramData widgetNames 
+    global msgs
+
+#    if {[string equal normal [$widgetNames($compName).e cget -status]]} {
+# if entry is editable, check match for table data
+#	if {[info exists paramState($compName)]} {
+#	    return [string equal $paramData($compName) \
+#			[LoadTableData $paramState($compName)]]
+#	} else {
+#	    return 0
+#	}
+#    } else {
+# if not, get its status from the popup info -- it will not have changed
+	return [expr !([string match (literal) $msgs(param_source_$compName)] \
+		   || [string equal Unsaved $msgs(param_source_$compName)])]
+#    }
 }
 
 # This tests for sensible model values.
