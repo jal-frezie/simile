@@ -838,14 +838,17 @@ set_properties(Wid, Model) :-
 	get_disag_params(Model, P_list),
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
 	(New_P_list = [], !; /* dialogue was cancelled */
-	New_P_list = [NewColour, NewNature, NewFatness, NewCount, NewStep,
-		      NewComment, NewFix, NewHide, NewSeparate, NewEnumSpecs],
-	    P_list = [Colour, Nature, Fatness, Count, Step, _Comment,
+	New_P_list = [NewColour, NewImage, NewNature, NewFatness,
+		      NewCount, NewStep, NewComment, NewFix,
+		      NewHide, NewSeparate, NewEnumSpecs],
+	    P_list = [Colour, Image, Nature, Fatness, Count, Step, _Comment,
 		      _EnumSpecs, Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
 	    add_parameter(Model, 0, fill_colour, NewColour)),
+	    (NewImage = Image, !;
+	    add_parameter(Model, 0, fill_image, NewImage)),
 	    (NewStep = 'Default', !,
 		add_parameter(Model, 0, step, '');
 	    add_parameter(Model, 0, step, NewStep)),
@@ -899,8 +902,8 @@ set_properties(Wid, Model) :-
 	    /* Changes in fatness require redrawing submodel's
 	    toplevel windows; this plus nature, count and visibility require
 	    redrawing it in other windows */
-	    ((NewColour = Colour, NewNature = Nature, FatFactor = 1,
-		UseCount = Count, NewHide = Hide), !;
+	    ((NewColour = Colour, NewImage = Image, NewNature = Nature,
+	      FatFactor = 1, UseCount = Count, NewHide = Hide), !;
 	    (\+ FatFactor = 1,
 		Win shows_model Model,
 		redraw_window(Win),
@@ -1227,7 +1230,7 @@ do_save(Model, New_name) :-
 transfer_images(Model, TopDir, Way) :-
 	setof(ImageSpec,
 	      Submodel^(contains(Model, Submodel),
-			get_av_pair(Submodel, 0, fill_colour, ImageSpec)),
+			get_av_pair(Submodel, 0, fill_image, ImageSpec)),
 	      Fillers), !,
 	shift_images(TopDir, Fillers, Way);
 	true.

@@ -46,10 +46,10 @@ display_area(Win) :-
 	tk_display_area(Win).
 
 update_captions(Model) :-
-	get_window_colour(Model, Colour),
+	get_window_colour(Model, Colour, Images),
 	(Window shows_model Model,
 	    make_header(Model, Header),
-	    change_title_to(Window, Header, Colour),
+	    change_title_to(Window, Header, [Colour | Images]),
 	    fail;
 	caption_for(Model, New_caption),
 	    find_relevant_windows(Model, Window, _, _),
@@ -386,9 +386,9 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    get_flash(Comp, Colour_scheme),
 	    multiple_draw(Comp, Num),
 	    (Style = submodel, !,
-		get_colour(Comp, FillColour),
-		Draw_command =.. [submodel, Wid, Screen_list, Num,
-				  Fatness, FillColour, Colour_scheme, Comp];
+		get_colour(Comp, FillColour, FillImage),
+		Draw_command =.. [submodel, Wid, Screen_list, Num, Fatness,
+				  FillColour, FillImage, Colour_scheme, Comp];
 	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]]),
 	    call(Draw_command),
@@ -460,8 +460,8 @@ draw_rubberband(Style) :-
 	(Style = square, !,
 	    Fatness = 0;
 	find_fatness(Trans, Fatness)),
-	submodel(Window_id, Draw_box, 1, Fatness, clear, 
-			incomplete, [unfinished_component, '/background/']).
+	submodel(Window_id, Draw_box, 1, Fatness, clear, none,
+		 incomplete, [unfinished_component, '/background/']).
 
 remove_old_rubberband :-
 	find_current(Window_id),

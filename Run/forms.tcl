@@ -846,10 +846,10 @@ proc InsertFunction {boxname functor} {
     focus $boxname
 }
 
-proc Disaggregate {parent title colour type fatness icount step \
+proc Disaggregate {parent title colour image type fatness icount step \
             comment enumLists eqnunit hide separate} {
     global disaggregate
-    foreach varName {colour type fatness icount eqnunit hide separate} {
+    foreach varName {colour image type fatness icount eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
     }
     if [llength $icount]>0 {
@@ -896,18 +896,14 @@ proc Disaggregate {parent title colour type fatness icount step \
     
     TitleFrame $t.simple.left.colour -text "Background shade"
     set colourf [$t.simple.left.colour getframe]
-    pack [button $colourf.clear -text "Clear" \
-            -width 10 -command "set disaggregate(colour) {}"]  \
-            -padx 2 -pady 4 -side left
+    pack [button $colourf.clear -text "Clear" -width 10 \
+	  -command {set disaggregate(colour) [set disaggregate(image) {}]}] \
+	-padx 2 -pady 4 -side left
     pack [button $colourf.fixcolour -text "Colour" \
             -width 10 -command "UpdateColour $colourf"]  \
             -padx 2 -pady 4 -side left
-    if {[catch {image type $disaggregate(colour)}]} {
-        $colourf.fixcolour configure -bg $disaggregate(colour)
-        set disaggregate(defColour) $disaggregate(colour)
-    } else {
-        set disaggregate(defColour) [$colourf.fixcolour cget -bg]
-    }
+    $colourf.fixcolour configure -bg $disaggregate(colour)
+    set disaggregate(defColour) $disaggregate(colour)
     pack [button $colourf.setimage -text "Image..." \
             -width 10 -command ChooseImage] \
             -padx 2 -pady 4 -side left
@@ -1074,11 +1070,11 @@ proc Disaggregate {parent title colour type fatness icount step \
 	    lappend enumTypes [concat [list [string range $typename 9 end]] \
 				   $members]
 	}
-        set result [list $disaggregate(colour) $disaggregate(type) \
-                $disaggregate(fatness) $icount \
-                $step $disaggregate(comment) \
-                $disaggregate(eqnunit) $disaggregate(hide) \
-		    $disaggregate(separate) $enumTypes]
+        set result [list $disaggregate(colour) $disaggregate(image) \
+			$disaggregate(type) $disaggregate(fatness) $icount \
+			$step $disaggregate(comment) \
+			$disaggregate(eqnunit) $disaggregate(hide) \
+			$disaggregate(separate) $enumTypes]
     } else {
 	set result {}
     }
@@ -1240,7 +1236,7 @@ proc UpdateColour {f} {
 }
 
 set imageSources(uid) 0
-# package require Img
+package require Img
 
 proc ChooseImage {} {
     global disaggregate
@@ -1256,19 +1252,18 @@ proc ChooseImage {} {
     while {$choosing} {
         set new [ChooseFile image.gif {Image for model background} 0]
         if {[llength $new]} {
-	    foreach fmt {gif jpeg} {
-		if {![catch {$newImage read $new -shrink} readFlop]} {
-		    $newImage config -format $fmt
+	    if {![catch {$newImage read $new -shrink} readFlop]} {
+		if {![llength $readFlop]} {
+		    set readFlop [string range [file extension $new] 1 end]
 		}
-	    }
-	    if {[string match {} [$newImage cget -format]]} {
-                ShowMessage {Problem loading file} error $readFlop ok
-                # prevent crasho if reading fails
-                #		$newImage config -width 100 -height 100
-            } else {
-                set disaggregate(colour) $newImage
+		$newImage config -format $readFlop
+                set disaggregate(image) $newImage
                 PutSize $newImage
                 set choosing 0
+ 	    } else {
+                ShowMessage {Problem loading file} error $errorInfo ok
+                # prevent crasho if reading fails
+                #		$newImage config -width 100 -height 100
             }
         } else {
             set choosing 0

@@ -14,7 +14,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_file_name/4, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
-	submodel/7, bowtie/6, flow/5, influence/5, broken_influence/5,
+	submodel/8, bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
@@ -175,9 +175,9 @@ cloud(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 			Colour_scheme, br(Features)], _).
 
 submodel(Wid, [L, T, R, B], Stack, Fatness,
-	 FillColour, Colour_scheme, Features) :-
+	 FillColour, FillImage, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutRoundedRect', Wid, L, T, R, B, Stack, Fatness,
-		 FillColour, Colour_scheme, br(Features)], _).
+		 FillColour, FillImage, Colour_scheme, br(Features)], _).
 
 bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutBowTie', Wid, L, T, R, B, Fatness, Density,
@@ -227,13 +227,16 @@ zap_bowtie(Wid, Obj, Coords) :-
 		
 tk_add_window(Wid, TopNode, Title, [L, T, R, B], Cname, BG, Scale, InitDepths,
 	      IsTL) :-
+	bracketize(BG, BGList),
 	safe_tcl_eval(['MainWindowDraw', TopNode, Wid, br(write(Title)), 
-			L, T, R, B, BG, Scale, IsTL | InitDepths],
+			L, T, R, B, BGList, Scale, IsTL | InitDepths],
 		      CanvasString),
 	name(Cname, CanvasString).
 
 change_title_to(Wid, New_title, NewBG) :-
-	safe_tcl_eval(['ChangeParentTitle', Wid, br(write(New_title)), NewBG], _).
+	bracketize(NewBG, NewBGList),
+	safe_tcl_eval(['ChangeParentTitle', Wid, br(write(New_title)),
+		       NewBGList], _).
 
 current_edit(Wid, Comp) :-
 	safe_tcl_eval(['GetEdit', Wid], CompStr),
@@ -417,12 +420,13 @@ handle_tk_events :- repeat, \+ tk_do_one_event, !.
 tk_update_sim_display(Win, Current, Left) :-
 	safe_tcl_eval(['UpdateTimes', Win, Current, Left], _).
 	
-tk_do_disag_dialog(Win, Caption, [Colour, Type, Fatness, CountList, Step,
-			    Comment, EnumSpecs | Choices], ResultList) :-
+tk_do_disag_dialog(Win, Caption,
+		   [Colour, Image, Type, Fatness, CountList, Step,
+		    Comment, EnumSpecs | Choices], ResultList) :-
 	all(utility, wrap, [build(CountList), unify(write), build(Count)]),
 	bracketize(EnumSpecs, EnumLists),
-	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)), Colour, Type,
-		       Fatness, br(Count), Step, br(write(Comment)),
+	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)), Colour, Image,
+		       Type, Fatness, br(Count), Step, br(write(Comment)),
 		       EnumLists | Choices], New_P_string),
 	chop_list(New_P_string, ResultListN),
 	(append(ResultList0, [EnumTypeList], ResultListN), !,

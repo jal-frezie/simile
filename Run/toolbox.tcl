@@ -144,7 +144,6 @@ proc do_for_node {node args} {
 	$newInterp eval source ../Run/runmodel.tcl
 	$newInterp eval [list set chosenPaths(latest) $chosenPaths(latest)]
 	set runStatus($node,interp) $newInterp
-puts "Opened $newInterp for $node"
     }
     return [$runStatus($node,interp) eval $args]
 }
@@ -1079,7 +1078,7 @@ proc ModelWindow {winName} {
 
     # this rectangle will be resized to fill the scrollable area and coloured to
     # show the background
-    $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
+    # $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
 
     # space for toolbar
     frame $winName.toolSlot
@@ -1145,13 +1144,6 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     set window_info($c,scale) $scale
     # last will be overwritten if drawing from Prolog
 
-    if {[string match image [$c type /base/]]} {
-        $c coords /base/ $wl $wt
-        base$c configure -width [expr int($wr-$wl)]
-        base$c configure -height [expr int($wb-$wt)]
-    } else {
-        $c coords /base/ $wl $wt $wr $wb
-    }
     ChangeParentTitle $c $winTitle $bg
 
     set topWin [winfo parent $c]
@@ -1164,45 +1156,43 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     #ShowMessage debug info "Just done [$c coords 1]" ok
 }
 
-proc ChangeParentTitle { wc title colour } {
+proc ChangeParentTitle {wc title bg} {
     wm title [winfo parent $wc] $title
-    if {[string match clear $colour]} {
-        set colour {}
-    }
-    # ok now base item can be an image or a rect...
-    if {[string match image [$wc type /base/]]} {
-        scan [$wc coords /base/] {%f %f} bl bt
-        set br [expr $bl+[base$wc cget -width]]
-        set bb [expr $bt+[base$wc cget -height]]
-        image delete base$wc
-    } else {
-        scan [$wc coords /base/] {%f %f %f %f} bl bt br bb
+    if {[string match clear $bg]} {
+        set bg {}
     }
     $wc delete /base/
-    if {[catch {image type $colour}]} {
-        $wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
+    scan [$wc cget -scrollregion] "%g %g %g %g" bl bt br bb
+
+    foreach colour $bg {
+	if {[string equal clear $colour]} {
+	} elseif {[catch {image type $colour}]} {
+	    $wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
                 -tag "/base/ /background/"
-    } else {
-        image create photo base$wc
-        $wc create image $bl $bt -anchor nw -image base$wc \
+	} else {
+	    image create photo base$wc
+	    $wc create image $bl $bt -anchor nw -image base$wc \
                 -tag "/base/ /background/ source($colour)"
+	}
     }
-    $wc lower /base/
+    $wc lower /base/ ;# should keep them in order
     ResizeBackgnd $wc $bl $bt $br $bb
 }
 
 proc ResizeBackgnd {wc l t r b} {
-    if {[string match image [$wc type /base/]]} {
-        set oldW [base$wc cget -width]
-        set oldH [base$wc cget -height]
-        $wc coords /base/ $l $t
-        set w [expr int($r-$l)]
-        set h [expr int($b-$t)]
-        base$wc configure -width $w -height $h
-        regexp {source\(([^\)]+)\)} [$wc gettags /base/] all sourceImage
-        base$wc copy $sourceImage -to 0 0 $w $h ;# clever stuff later
-    } else {
-        $wc coords /base/ $l $t $r $b
+    foreach baseItem [$wc find withtag /base/] {
+	if {[string match image [$wc type $baseItem]]} {
+	    set oldW [base$wc cget -width]
+	    set oldH [base$wc cget -height]
+	    $wc coords $baseItem $l $t
+	    set w [expr int($r-$l)]
+	    set h [expr int($b-$t)]
+	    base$wc configure -width $w -height $h
+	    regexp {source\(([^\)]+)\)} [$wc gettags $baseItem] all sourceImage
+	    base$wc copy $sourceImage -to 0 0 $w $h ;# clever stuff later
+	} else {
+	    $wc coords $baseItem $l $t $r $b
+	}
     }
 }
 

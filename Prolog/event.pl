@@ -715,9 +715,9 @@ spread_colour(Node, NewDims) :-
 new_window_for(Submodel, TopNode, Canvas_name, InitDepths, IsTopLevel) :-
 	utility:unique_name('.mswindow', Topwin),
 	window_size_for(Submodel, Sub_extent, Scale),
-	get_window_colour(Submodel, Colour),
+	get_window_colour(Submodel, Colour, Images),
 	add_window(Topwin, TopNode, Submodel, Sub_extent, Canvas_name, 
-		Colour, Scale, InitDepths, IsTopLevel),
+		[Colour | Images], Scale, InitDepths, IsTopLevel),
 	create_window(Canvas_name, Submodel),
 	make_current(Canvas_name),
 	set_save_status(Canvas_name, safe).
