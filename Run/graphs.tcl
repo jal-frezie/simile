@@ -487,11 +487,12 @@ proc FineX { c } {
 # TABLE LOADING
 #####################################################################
 
-proc equationDoTable {parent} {
+proc equationDoTable {parent tgt} {
     global table_entry iconImages
     
     toplevel .table -bd 4
     wm transient .table $parent
+    wm title .table "Table data for $tgt"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
     
     frame .table.top
@@ -651,7 +652,7 @@ proc GetDataFile {info} {
 proc LoadDataFile {} {
     global table_entry
     
-    wm title .table "Create table from file $table_entry(fileName)"
+#    wm title .table "Create table from file $table_entry(fileName)"
     set fheads [.table.top.fheads getframe]
     $fheads.lheads delete [$fheads.lheads items]
     
@@ -1350,7 +1351,7 @@ proc GetFromTable {parent compName} {
     } else {
 	set table_entry(values) $paramData($compName)
     }
-    if {[equationDoTable $parent]} {
+    if {[equationDoTable $parent $compName]} {
         if {[llength $table_entry(dataField)]} {
 	    set paramState($compName) [concat [list $table_entry(fileName) \
 						   $table_entry(dataField)] \

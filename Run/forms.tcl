@@ -291,33 +291,34 @@ proc create_equation {parent boxtitle indices} {
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 80 -yscrollcommand "$mainf.equation.textbox.scroll set"]
-    scrollbar $mainf.equation.textbox.scroll -orient vert -command "$mainf.equation.textbox.text yview"
+    scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
-    pack $mainf.equation.textbox.text -side right -expand true -fill both
+    pack $en -side right -expand true -fill both
     pack $mainf.equation.textbox.radio0 -anchor nw
     pack $mainf.equation.textbox -expand true -fill both -side left
-    focus $mainf.equation.textbox.text
+    focus $en
 
     frame $mainf.equation.textbox.buttons
-    $notebook itemconfigure Main -raisecmd "focus $mainf.equation.textbox.text"
+    $notebook itemconfigure Main -raisecmd "focus $en"
+    set comp [lrange $boxtitle [expr [lsearch $boxtitle for]+1] end]
     
     if {[string match Darwin $tcl_platform(os)]} {
         set graph [button $mainf.equation.textbox.buttons.graph \
                 -text " Graph... "\
-                -command "equationDoGraph $t $mainf.equation.textbox.text"]
+                -command "equationDoGraph $t $en"]
         pack $graph -padx 8 -pady 4
         set table [button $mainf.equation.textbox.buttons.table \
-                -text " Table... "\
-                -command "GetTable $t $mainf.equation.textbox.text"]
+		       -text " Table... " \
+		       -command [list GetTable $t $comp $en]]
         pack $table -padx 8 -pady 4
     } else  {
         set graph [button $mainf.equation.textbox.buttons.graph \
                 -compound left -image $iconImages(graph) -text " Graph... "\
-                -command "equationDoGraph $t $mainf.equation.textbox.text"]
+                -command "equationDoGraph $t $en"]
         pack $graph -padx 8 -pady 4
         set table [button $mainf.equation.textbox.buttons.table \
                 -compound left -image $iconImages(table) -text " Table... "\
-                -command "GetTable $t $mainf.equation.textbox.text"]
+                -command [list GetTable $t $comp $en]]
         pack $table -padx 8 -pady 4
     }
     pack $mainf.equation.textbox.buttons -anchor e -side left
@@ -500,12 +501,12 @@ proc RollAll {s l1 l2 l3 top bot} {
     $l3 yview moveto $top
 }
 
-proc GetTable {parent box} {
+proc GetTable {parent comp box} {
     global equation table_entry table_viewer
 
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
-    if {[equationDoTable $parent]} {
+    if {[equationDoTable $parent $comp]} {
         if {[llength $table_entry(dataField)]} {
 	    set equation(table_data) [concat [list $table_entry(fileName) \
 						  $table_entry(dataField)] \
