@@ -24,7 +24,7 @@ ame_save( File, Model, Date ) :-
 	any_setof( Class,
 		   Class is_class,
 		   Classes ),
-	on_exception(_, open( File, write, Stream, [type(binary)]), 
+	on_exception(_, open( File, write, Stream), 
 	fail), !,
 	dialogue:start_progress_dialogue,
 	(dialogue:reassure_user("Writing root information"),
@@ -34,17 +34,17 @@ ame_save( File, Model, Date ) :-
 	state:get_edition(Edition),
 	write_with_breaks(Stream, source(program='AME', version=V,
 					 edition=Edition, date=Date)),
-	sicstus_put(Stream, 10),
+	nl(Stream),
 	write_with_breaks( Stream, roots( Models )),
-	sicstus_put(Stream, 10),
+	nl(Stream),
 	write_with_breaks( Stream, properties(Props)),
-	sicstus_put(Stream, 10),
+	nl(Stream),
 	dialogue:reassure_user("Writing node information"),
 	save_nodes( Models, Stream, ArcsUsed ),
-	sicstus_put(Stream, 10),
+	nl(Stream),
 	dialogue:reassure_user("Writing class information"),
 	save_classes( Classes, Stream ),
-	sicstus_put(Stream, 10),
+	nl(Stream),
 	dialogue:reassure_user("Writing arc information"),
 	save_arcs( ArcsUsed, Stream ),
 	close( Stream ),
@@ -162,17 +162,22 @@ save_arcs( [Arc-Start-End|Arcs], Stream ) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % write a line with breaks to prevent it getting too long
 
+write_with_breaks(Stream, Term) :-
+	writeq(Stream, Term),
+	write(Stream, '.'),
+	nl(Stream).
+
 /* Line is written character by character in the hope that this will prevent
 DOS-type CRLFs being used for the line breaks, which will then bugger up
-reading the file under Unix */
+reading the file under Unix 
 
 write_with_breaks(Stream, Term) :-
 	user:printq_to_codes(TermStr, Term),
 	append(TermStr, ".", FullTermStr),
 	sicstus_write_chars(Stream, FullTermStr),
-	sicstus_put(Stream, 10).
+	nl(Stream).
 
-/* Clever part disabled to try to help mime stuff */
+/* Clever part disabled to try to help mime stuff
 
 insert_breaks(Stream, Term, Done, Rest) :-
 	length(Rest, RLen),
@@ -181,17 +186,17 @@ insert_breaks(Stream, Term, Done, Rest) :-
 	    sicstus_write_chars(Stream, Rest);
 	length(Line, Break),
 	    append(Line, NewRest, Rest),
-	    \+ suffix("\\", Line), /* do not put cr where it will be escaped */
+	    \+ suffix("\\", Line), /* do not put cr where it will be escaped
 	    \+ prefix("'", NewRest), /* do not put cr before a single quote as
-		     this sometimes gets escaped along with the cr */
+		     this sometimes gets escaped along with the cr 
 	    \+ suffix("-", Line), /* do not put cr between a - sign and its
-		     number, as the result will be read as -(n) by gnu */
+		     number, as the result will be read as -(n) by gnu 
 	    (append([Done, Line, [10]], NewDone);
 	    append([Done, Line, [92, 10]], NewDone),
 		Escaped = true),
 		/* try inserting a cr either on its own, which will work if it
 		hits the end of a prolog atom, or escaped, which will work if
-		it goes inside a single-quoted atom */
+		it goes inside a single-quoted atom 
 	    append(NewDone, NewRest, TestStr),
 	    on_exception(_Oops, sicstus_read_from_chars(TestStr, TestTerm), 
 	        fail),
@@ -199,7 +204,7 @@ insert_breaks(Stream, Term, Done, Rest) :-
 	    sicstus_write_chars(Stream, Line),
 	      (Escaped = false, !;
 		  sicstus_put(Stream, 92)),
-	      sicstus_put(Stream, 10),
+	      nl(Stream),
 	    insert_breaks(Stream, Term, NewDone, NewRest)).
 
 choose_breakpoint(Break) :-
@@ -207,7 +212,7 @@ choose_breakpoint(Break) :-
 	(Break is 72+Miss;
 	    Break is 71-Miss),
 	Break > 0.
-
+*/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ame_merge( Parent, File, Date ) opens File, reads the model
 % structure in it, and adds it into Parent. All structures are renamed

@@ -859,12 +859,12 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 	    (End = start,
 		append([NewFinish | NewMiddle], [NewPt], Route),
 		scale_difference(Start, NewPt, 2, TextMove),
-		(\+ find_type(Comp, submodel), !;
+		(appears(Comp), \+ find_type(Comp, submodel), !;
 		    NewFinish = Finish);
 	    End = finish,
 		append([NewPt | NewMiddle], [NewStart], Route),
 		scale_difference(Finish, NewPt, 2, TextMove),
-		(\+ find_type(Comp, submodel), !;
+		(appears(Comp), \+ find_type(Comp, submodel), !;
 		    NewStart = Start)),
 	    tweak_middle(Middle, TextMove, NewMiddle),
             (ground(Route), !;
