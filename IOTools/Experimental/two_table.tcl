@@ -34,10 +34,10 @@ namespace eval tabular11510 {
 	scrollbar $winId.sx -command [list $winId.t xview] \
 	    -orient horizontal
 
-	pack [frame $winId.f]
+	pack [frame $winId.f] -fill both
 	pack [label $winId.f.mess] ;# for instructions
-	pack $winId.sx -side bottom -fill x -expand true
-	pack $winId.sy -side right -fill y -expand true
+	pack $winId.sx -side bottom -fill x
+	pack $winId.sy -side right -fill y
 	CreateTable $winId
     }
 
