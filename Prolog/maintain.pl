@@ -22,7 +22,7 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		display_mode/1, display_menu/1, off/1, off_all/1, 
 		move_text/2, move_display/2, reroute_display/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
-		add_window/7, redraw_window/1, inject_graphics/2,
+		add_window/8, redraw_window/1, inject_graphics/2,
 		display_area/1,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2, exterminate/1,
@@ -301,9 +301,9 @@ add_caption(Wid, Id, [L, T, R, B], Trans, Fatness, Colour_scheme) :-
 /* redraw_window/1: Well it is simple to describe what this does; it redraws the contents of the window. But I won't know how it works till I've written it.
 */
 
-add_window(Wid, Model, Area, Cname, Colour, Scale, InitDepths) :-
+add_window(Wid, Model, Area, Cname, Colour, Scale, InitDs, IsTL) :-
 	make_header(Model, Header),
-	tk_add_window(Wid, Header, Area, Cname, Colour, Scale, InitDepths).
+	tk_add_window(Wid, Header, Area, Cname, Colour, Scale, InitDs, IsTL).
 
 redraw_window(Wid) :-
 	Wid shows_model Model,

@@ -1524,19 +1524,16 @@ get_action_point(Top, End, Point) :-
 
 make_desktop(Desktop, Canvas_name) :-
 	m_class:Root is_root,
-	(m_class:Root has_part Desktop, !;
 	m_class:Desktop is_new_part_of Root,
 	m_class:Desktop has_new_class submodel,
-	m_class:Desktop has_new_class_refinement name of 'Desktop',
+	unique_name_for_new(Root, 'Desktop', ModelName),
+	m_class:Desktop has_new_class_refinement name of ModelName,
 	state:get_initial_window_size(X, Y),
 	image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
-	image:set_shape(Desktop, bounding_box, [0, 0, X, Y])),
+	image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
 	InitDepths=[0,32,32,32,32,32,32,showAll],
-	event:new_window_for(Desktop, Canvas_name, InitDepths),
+	event:new_window_for(Desktop, Canvas_name, InitDepths, 1),
 	all(state, set_display_depth, [unify(Canvas_name),
 	    build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(InitDepths)]),
-	maintain:redraw_window(Canvas_name),
-	menu:update_mode(select),
-	backup:initialize_ring,
-	state:initialize_phase.
+	maintain:redraw_window(Canvas_name).

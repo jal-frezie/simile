@@ -16,7 +16,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	submodel/7, bowtie/6, 
 	flow/5, influence/5, ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
-	tk_add_window/7, tk_delete_window/1, 
+	tk_add_window/8, tk_delete_window/1, 
 	change_title_to/3, current_edit/2, force_edit/2,
 	get_component_from_gui/4, 
 	get_text/3, change_text_to/3, 
@@ -217,9 +217,10 @@ zap_route(Wid, Obj, Coords) :-
 zap_bowtie(Wid, Obj, Coords) :-
 	safe_tcl_eval(['MoveBowtie', Wid, Obj, br(Coords)], _).
 		
-tk_add_window(Wid, Title, [L, T, R, B], Cname, BG, Scale, InitDepths) :-
+tk_add_window(Wid, Title, [L, T, R, B], Cname, BG, Scale, InitDepths, IsTL) :-
 	safe_tcl_eval(['MainWindowDraw', Wid, br(write(Title)), 
-			L, T, R, B, BG, Scale | InitDepths], CanvasString),
+			L, T, R, B, BG, Scale, IsTL | InitDepths],
+		      CanvasString),
 	name(Cname, CanvasString).
 
 tk_delete_window(Cname) :-

@@ -17,7 +17,6 @@ them to be executed etc by Tcl commands. */
 #define	GETCAPTION	5
 #define	GETMIN          6
 #define	GETMAX	        8
-#define GETPHASES       9
 #define GETPATH        10
 #define GETCLASS       11
 #define	TEST	       99
@@ -157,7 +156,7 @@ typedef int getcount_type(void*, void*, void*, void*, void*, void*,
 			  int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
-typedef void setstep_type(double, int);
+typedef int setstep_type(double, int);
 typedef void updatemodel_type(void*, double, int);
 typedef void advancemodel_type(void*, double, int);
 typedef int evalmodel_type(void*, double, int, BOOLEAN);
@@ -286,8 +285,8 @@ public:
     return (*evalmodel)(id, start, phase, exo);
   }
 
-  void setstep(double start, int phase) {
-    (*setstepmodel)(start, phase);
+  int setstep(double start, int phase) {
+    return (*setstepmodel)(start, phase);
   }
 
   void* get_ptr(void* level, int** id_meta, int** dim_list) {
@@ -541,10 +540,6 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 
   case GETMAX:
     Tcl_SetDoubleObj(resultPtr, data_line->max);
-    return TCL_OK;
-
-  case GETPHASES:
-    Tcl_SetIntObj(resultPtr, modelType->phases);
     return TCL_OK;
 
   case GETGRAPH:
@@ -1017,6 +1012,7 @@ extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
      }
      nodeModelPoint = nodeModelPoint->next;
    }
+   Tcl_SetIntObj(Tcl_GetObjResult(interp), (nodeModelList->model)->phases);
    return TCL_OK;
 }
 

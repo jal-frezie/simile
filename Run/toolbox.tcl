@@ -462,7 +462,7 @@ proc ZapWindow { fullName } {
     
     upvar 0 window_info($fullName,parent) target
     #ShowMessage debug info "$winId $custom(first_up)" ok
-    if {[string match $target $custom(first_up)]} {
+    if {$window_info($fullName,is_top_level)} {
         focus $target.canvas
         update
         set cacheStream [open $custom(prefDir)/layout w]
@@ -556,6 +556,7 @@ proc ClickObj { x y winId action} {
 #    puts "$action it!"
 
     global helperTable
+    global equationbar
     global pushedbutton
 
     set clicktime [clock clicks -milliseconds]
@@ -573,8 +574,6 @@ proc ClickObj { x y winId action} {
     }
     
     set node [ExtractPrologName $winId $target]
-    global equationbar
-    global pushedbutton
     
     if {[string compare $helperTable(current) none]} {
         # go directly to helpers, do not pass Prolog, do not collect 200 error messages
@@ -773,7 +772,7 @@ proc ChangeRegion {w l t r b} {
 #######################################################################
 
 proc MainWindowDraw {winName winTitle wl wt wr wb \
-            colour initialScale args} {
+            colour initialScale isTopLevel args} {
     global window_info looks env custom
     set c [ModelWindow $winName]
     
@@ -783,11 +782,12 @@ proc MainWindowDraw {winName winTitle wl wt wr wb \
     
     wm protocol $winName WM_DELETE_WINDOW \
             [list byebye $winName]
-    
-    AddMainMenu $winName [expr $wr-$wl] $args
+
+    AddMainMenu $winName [expr $wr-$wl] $isTopLevel $args
     AddCanvasBindings $c
     
     set window_info($c,scale) $initialScale
+    set window_info($c,is_top_level) $isTopLevel
     
     #    tkwait visibility $winName
     set window_info($c,parent) $winName
@@ -1231,8 +1231,8 @@ proc FillReopen {winId} {
     }
 }
 
-proc AddMainMenu { winid initWidth initDepths} {
-    global custom MIpushedbutton tcl_platform window_info iconImages
+proc AddMainMenu { winid initWidth isTopLevel initDepths} {
+    global custom pushedbutton tcl_platform window_info iconImages
 
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
@@ -1240,6 +1240,9 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label New -command "MenuSelect $winid.canvas file new"\
             -accelerator "Ctrl+N"
     AddAccelerator $winid file New "<Control-n>"
+    $fm add command -label "New top-level" -command "MenuSelect $winid.canvas file new_toplevel"\
+            -accelerator "Ctrl+T"
+    AddAccelerator $winid file New "<Control-t>"
     $fm add command -label Open... -command "MenuSelect $winid.canvas file open"\
             -accelerator "Ctrl+O"
     AddAccelerator $winid file Open... "<Control-o>"
@@ -1266,7 +1269,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm2 add command -label "PostScript graphics" \
             -command "DoWithErrors ExportPostscript $winid.canvas"
     $fm add separator
-    if {[info exists custom(first_up)]} {
+    if {!$isTopLevel} {
         $fm add command -label Close -command "byebye $winid" \
                 -accelerator "Alt+x"
         AddAccelerator $winid file Close "<Alt-x>"
@@ -1321,11 +1324,9 @@ proc AddMainMenu { winid initWidth initDepths} {
             -command "MenuSelect $winid.canvas file run_c" \
             -accelerator "Ctrl+B"
     AddAccelerator $winid model "Build In C++" "<Control-b>"
-    if {[info exists custom(first_up)]} {
+    if {!$isTopLevel} {
         $fm entryconfigure "Build In Tcl" -state disabled
         $fm entryconfigure "Build In C++" -state disabled
-    } else {
-        set custom(first_up) $winid
     }
     $fm add separator
     $fm add command -label "List equations" \
@@ -1336,31 +1337,31 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add cascade -label Add -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
     $fm1 add radiobutton -label Compartment -command "ItemSelect compartment"\
-            -variable MIpushedbutton -value compartment
+            -variable pushedbutton -value compartment
     $fm1 add radiobutton -label Variable -command "ItemSelect variable"\
-            -variable MIpushedbutton -value variable
+            -variable pushedbutton -value variable
     $fm1 add radiobutton -label Flow -command "ItemSelect flow"\
-            -variable MIpushedbutton -value flow
+            -variable pushedbutton -value flow
     $fm1 add radiobutton -label Influence -command "ItemSelect influence"\
-            -variable MIpushedbutton -value influence
+            -variable pushedbutton -value influence
     $fm1 add radiobutton -label Submodel -command "ItemSelect submodel"\
-            -variable MIpushedbutton -value submodel
+            -variable pushedbutton -value submodel
     $fm1 add radiobutton -label Relation -command "ItemSelect relation"\
-            -variable MIpushedbutton -value relation
+            -variable pushedbutton -value relation
 
 
     $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
-            -variable MIpushedbutton -value creation
+            -variable pushedbutton -value creation
     $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
-            -variable MIpushedbutton -value immigration
+            -variable pushedbutton -value immigration
     $fm1 add radiobutton -label Reproduction -command "ItemSelect reproduction"\
-            -variable MIpushedbutton -value reproduction
+            -variable pushedbutton -value reproduction
     $fm1 add radiobutton -label Extermination -command "ItemSelect loss"\
-            -variable MIpushedbutton -value loss
+            -variable pushedbutton -value loss
     $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
-            -variable MIpushedbutton -value condition
+            -variable pushedbutton -value condition
     $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
-            -variable MIpushedbutton -value alarm
+            -variable pushedbutton -value alarm
     $fm add command -label "Properties..." \
             -command "MenuSelect $winid.canvas edit properties"
     $fm add cascade -label Flip -menu $fm.sub2
@@ -1381,17 +1382,17 @@ proc AddMainMenu { winid initWidth initDepths} {
     ${winid}top add cascade -label Tools -underline 0 \
             -menu ${winid}top.tools
     $fm add radiobutton -label "Label elements" -command "ModeSelect select"\
-            -variable MIpushedbutton -value select
+            -variable pushedbutton -value select
     $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
-            -variable MIpushedbutton -value move
+            -variable pushedbutton -value move
     $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
-            -variable MIpushedbutton -value delete
+            -variable pushedbutton -value delete
     $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
-            -variable MIpushedbutton -value copy
+            -variable pushedbutton -value copy
     $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost"\
-            -variable MIpushedbutton -value ghost
+            -variable pushedbutton -value ghost
     $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
-            -variable MIpushedbutton -value snap -state disabled
+            -variable pushedbutton -value snap -state disabled
 
     if {[info exists window_info(showIO)]} {
 	${winid}top add  cascade -label "I/O tools" -underline 0 -menu .helpers
@@ -1489,9 +1490,9 @@ proc AddMainMenu { winid initWidth initDepths} {
     }
     $tb.snap configure -state disabled
         
-    $tb.select configure -relief sunken
-    $tb.select configure -state active
-    # heheheh...must be in select mode to make new window, except first
+    $tb.$pushedbutton configure -relief sunken
+    $tb.$pushedbutton configure -state active
+
     
     ### Formula bar section
     ### Robert Muetzelfeldt
@@ -1744,8 +1745,8 @@ proc ModeSelect {modes} {
 
 proc ItemSelect {newItem} {
     global adds
-    set adds $newItem
     global pushedbutton
+    set adds $newItem
     UpdateToolbars $newItem
     set pushedbutton $newItem
     prolog [list tk_menu_select( $newItem , from_box)]
@@ -1755,8 +1756,7 @@ proc ItemSelect {newItem} {
 # ie. those not in helper list
 
 proc UpdateToolbars {newAction} {
-    global pushedbutton window_info MIpushedbutton tcl_platform
-    set MIpushedbutton $newAction
+    global pushedbutton window_info tcl_platform
     foreach winData [array name window_info *,parent] {
         set toolBar $window_info($winData).toolSlot.toolbar
 	$toolBar.$pushedbutton configure -state normal

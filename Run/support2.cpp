@@ -18,14 +18,14 @@ extern "C" __declspec( dllexport ) void do_updatemodel(void*, double, int);
 extern "C" __declspec( dllexport ) void do_advancemodel(void*, double, int);
 extern "C" __declspec( dllexport ) int do_evalmodel(void*, double, int, 
      BOOLEAN);
-extern "C" __declspec( dllexport ) void do_setstep(double, int);
+extern "C" __declspec( dllexport ) int do_setstep(double, int);
 extern "C" __declspec( dllexport ) void do_exitmodel(void*);
 #else
 extern "C" double get_version(void);
 extern "C" void do_updatemodel(void*, double, int);
 extern "C" void do_advancemodel(void*, double, int);
 extern "C" int do_evalmodel(void*, double, int, BOOLEAN);
-extern "C" void do_setstep(double, int);
+extern "C" int do_setstep(double, int);
 extern "C" void do_exitmodel(void*);
 #endif
 
@@ -84,14 +84,17 @@ void do_exitmodel(void* handle) {
 
 /* setstep: the model class instances contain an array of doubles called
 dts representing the time steps at the various phases. This function reaches
-in and sets one of them. */
+in and sets one of them.
 
-void do_setstep(double time, int phase) {
+Also uses to get phase count; makes no change if arg is 0 */
+
+int do_setstep(double time, int phase) {
   if (phase<0) { /* lazy */
     ts[-phase] = time;
-  } else {
+  } else if (phase>0) {
     dts[phase] = time;
   }
+  return(phasecount);
 }
 
 int at_time_step () {

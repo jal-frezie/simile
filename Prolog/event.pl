@@ -441,7 +441,7 @@ doubleclick_on(Edit_thing) :-
 	    [unify(Wid), build([ghost_link, influence, variable, flow, 
 				compartment, submodel, caption, sections]), 
 	     build(Depths)]),
-	    new_window_for(Edit_thing, NewWin, Depths),
+	    new_window_for(Edit_thing, NewWin, Depths, 0),
 	    all(event, set_display_depth,
 		[unify(NewWin), build([ghost_link, influence, variable, flow, 
 				       compartment, submodel, caption, sections]), 
@@ -531,12 +531,12 @@ spread_colour(Node, NewDims) :-
 	    spread_dims(MayChange)),
 	fail; true.
 
-new_window_for(Submodel, Canvas_name, InitDepths) :-
+new_window_for(Submodel, Canvas_name, InitDepths, IsTopLevel) :-
 	utility:unique_name('.mswindow', Topwin),
 	window_size_for(Submodel, Sub_extent, Scale),
 	get_window_colour(Submodel, Colour),
 	add_window(Topwin, Submodel, Sub_extent, Canvas_name, 
-		Colour, Scale, InitDepths),
+		Colour, Scale, InitDepths, IsTopLevel),
 	create_window(Canvas_name, Submodel),
 	make_current(Canvas_name),
 	set_save_status(Canvas_name, safe).

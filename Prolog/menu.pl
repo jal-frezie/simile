@@ -169,6 +169,9 @@ menu_handle(Win, file, new) :-
 	set_save_status(Win, safe),
 	update_captions(Parent).
 
+menu_handle(Win, file, new_toplevel) :-
+	m_update:make_desktop(_,_).
+
 menu_handle(Win, file, open) :-
 	Win shows_model Parent,
 	check_deletable(Win, Parent),

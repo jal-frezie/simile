@@ -10,6 +10,9 @@
 # initialization of multiple instances of the model.
 
 #$Log: ModelInspector.tcl,v $
+#Revision 1.4  2003/11/20 13:37:33  jaspert
+#Enabled the MDI interface -- use 'new top-level'
+#
 #Revision 1.3  2003/10/31 17:13:40  jaspert
 #Reorganization of file parameters as an input tool
 #
@@ -185,7 +188,7 @@ namespace eval ::ModelInspector63654 {
             }
         }
         
-	OpenLevel 0; # open up level 0 only (so can see level 1)
+#	OpenLevel 0; # open up level 0 only (so can see level 1)
         
         $tableframe.table bindImage <Button-1> [namespace code OnElementClick]
         $tableframe.table bindText <Button-1> [namespace code OnElementClick]

@@ -529,7 +529,7 @@ proc GetPhaseCount {} {
 	return nomatch
     }	
     if {$model_id} {
-	return [getvalue $model_id node00001 9]
+	return [c_setstepmodel 0 0]
     } else {
 	return $phasecount
     }

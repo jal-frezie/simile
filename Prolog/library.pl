@@ -220,7 +220,8 @@ ame_merge( Parent, File, Date, HasCode ) :-
 	    Date=old,
 	    E = standard,
 	    SimileV = -1), 
-	(Parent = node00001, !,
+	(Parent = node00001, !, /* do not bother with renaming if opening
+	                           first model */
 	    InitBindings = copy;
 	InitBindings = []),
 	store_term( Term, Stream, Parent, InitBindings, [] ),
