@@ -21,95 +21,114 @@
 on the regular Simile run control dialog box.</p>
 
 <h4><em>objectName</em> Start</h4>
-<p></p>
+<p>Start running the simulation. The simulation will run for the time set by, 
+<em>objectName</em> SetExecuteFor, or the default execution time stored in the model file. 
+Generally, your script will be clearer if you always use <em>objectName</em> SetExecuteFor. 
+Returns a string conataining the elapsed real-time to run the simulation (not CPU time), e.g.<BR />
+<BR />
+<B>1.27 sec</B><BR />
+<BR />
+</p>
 
 <h4><em>objectName</em>  Reset</h4>
-<p></p>
+<p>Resets the simulation to time zero.</p>
   
-<h4><em>objectName</em> SetDisplayInterval timeStep</h4>
-<p></p>
-
 <h4><em>objectName</em> SetExecuteFor time</h4>
-<p></p>
+<p>Set the simulation time for which the simulation will run when <em>objectName</em> Start is called.</p>
 
 <h4><em>objectName</em> SetIntegrationMethod method</h4>
-<p></p>
+<p>Set the integration method. method may be either, "4th-order Runge-Kutta" or "Euler"</p>
 
-  <h4><em>objectName</em>  SetIntegrationMethodEuler</h4>
-<p></p>
+<h4><em>objectName</em>  SetIntegrationMethodEuler</h4>
+<p>Sets the integration method to Euler</p>
 
-  <h4><em>objectName</em>  SetIntegrationMethodRungeKutta</h4>
-<p></p>
+<h4><em>objectName</em>  SetIntegrationMethodRungeKutta</h4>
+<p>Sets the integration method to 4th-order Runge-Kutta.</p>
 
-  <h4><em>objectName</em>  SetTimeStep number timestep</h4>
-<p></p>
+<h4><em>objectName</em>  SetTimeStep index timestep</h4>
+<p>Different submodels in a model can be specified as 
+operating on different <a href="../submodels/timestep.htm">time steps</a> (in the 
+<a href="../submodels/dialogue.htm">submodel properties dialoguetime steps</a>).
+Use this command to set timesteps.   </p>
 
-  <h4><em>objectName</em>  SetTimeUnits units</h4>
+<h4><em>objectName</em>  SetTimeUnits units</h4>
+<p>This setting is for use with <a href="../equations/units.htm">physical
+     units</a>, to specify the particular time unit, rather than using abstract
+     time units. If you have not specified
+     consistent physical units for all flows, you should not change this
+     setting from the default “unit”. If
+     you have specified consistent physical units, you should choose the unit
+     you wish to use to specify how long to execute the model for. Valid values 
+	 are; unit, second, minute, hour, day, week, month, year and Ma.</p>
+
+<h4><em>objectName</em> SetDisplayInterval timeStep</h4>
+<p>Set the simulation time interval at which displays (helpers) are updated.</p
+  
+<h4><em>objectName</em>  GetCurrentTime</h4>
+<p>Returns the current simulation time.</p>
+
+<h4><em>objectName</em>  GetDisplayInterval</h4>
+<p>Returns the simulation time interval at which displays (helpers) are updated.</p>
+
+<h4><em>objectName</em>  GetExecuteFor</h4>
+<p>Returns the simulation time for which the simulation will run when 
+<em>objectName</em> Start is called.</p>
+
+<h4><em>objectName</em>  GetIntegrationMethod</h4>
+<p>Returns the current integration method.</p>
+
+<h4><em>objectName</em>  GetNumberOfTimeSteps</h4>
+<p>Returns the number of different time steps used in the model.</p>
+
+<h4><em>objectName</em>  GetPhaseCount</h4>
+<p>A synonym for GetNumberOfTimeSteps.</p>
+
+<h4><em>objectName</em>  GetTimeStep index</h4>
+<p>Return the time interval for the given timestep index.</p>
+
+<h4><em>objectName</em>  GetTimeUnits</h4>
+<p>Returns the current time units.</p>
+
+<h4><em>objectName</em>  GetValue path</h4>
+<p>Return the value of a model variable given by the variable path <EM>path</em>.</p>
+
+  
+<h4><em>objectName</em>  MergeParams filepath ?smPath?</h4>
 <p></p>
 
   
-  <h4><em>objectName</em>  GetCurrentTime</h4>
+<h4><em>objectName</em>  SetValue path value</h4>
+<p>Set the value of a model variable given by the variable path <EM>path</em>. 
+This only makes sense for variable parameters. Constant parameters are set by
+ scenario file and other variables are calculated each time step.</p>
+
+<h4><em>objectName</em>  GetMaxValue path</h4>
 <p></p>
 
-  <h4><em>objectName</em>  GetDisplayInterval</h4>
+<h4><em>objectName</em>  GetMinValue path</h4>
 <p></p>
 
-  <h4><em>objectName</em>  GetExecuteFor</h4>
+<h4><em>objectName</em>  GetModelClass path</h4>
 <p></p>
 
-  <h4><em>objectName</em>  GetIntegrationMethod</h4>
+<h4><em>objectName</em>  GetModelDims path</h4>
 <p></p>
 
-  <h4><em>objectName</em>  GetNumberOfTimeSteps</h4>
+<h4><em>objectName</em>  GetModelEval path</h4>
 <p></p>
 
-  <h4><em>objectName</em>  GetPhaseCount</h4>
+<h4><em>objectName</em>  GetModelType path</h4>
 <p></p>
 
-  <h4><em>objectName</em>  GetTimeStep number</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetTimeUnits</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetValue path</h4>
-<p></p>
-
-  
-  <h4><em>objectName</em>  MergeParams filepath ?smPath?</h4>
-<p></p>
-
-  
-  <h4><em>objectName</em>  SetValue path value</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetMaxValue path</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetMinValue path</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetModelClass path</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetModelDims path</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetModelEval path</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetModelType path</h4>
-<p></p>
-
-  <h4><em>objectName</em>  GetAllPaths</h4>
+<h4><em>objectName</em>  GetAllPaths</h4>
 <p></p>
 
 
-  <h4><em>objectName</em>  Show</h4>
-<p></p>
+<h4><em>objectName</em>  Show</h4>
+<p>Make the run control dialogue visible.</p>
 
-  <h4><em>objectName</em>  Hide</h4>
-<p></p>
+<h4><em>objectName</em>  Hide</h4>
+<p>Hide the run control dialogue.</p>
 
   
 </body>
