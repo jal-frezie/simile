@@ -127,7 +127,7 @@ read_func_file(File, Done) :-
 	read_funcs(File, Stream, Done).
 
 read_funcs(File, Stream, Done) :-
-	on_exception(WrongUDF, read(Stream, Line),
+	on_exception(WrongUDF, read_term(Stream, Line, [variable_names(VPrs)]),
 		     (ame_gen:make_nice_error_message(WrongUDF, Bug),
 			 sicstus_format_to_chars("Parsing definitions in ~a",
 						 [File], ProbAct),
@@ -141,8 +141,13 @@ read_funcs(File, Stream, Done) :-
 	    close(Stream),
 	    Done = [];
 	(Line = (Macro --> _Defn),
-	    assert(macro_expansion(Line)),
-	    Macro =.. [Fn | _Args],
+	    /* Only allow free vars in function template -- fix them all then
+	    replace those in template with free ones */ 
+	    all(user, call, [build(VPrs)]),
+	    Macro =.. [Fn | Args],
+	    replace_subexps(Line, inters, free_params, switch(Args, _),
+			    top_down, _, NewLine),
+	    assert(macro_expansion(NewLine)),
 	    append_atoms(Fn, ' (user-defined macro)', FnEntry);
 	Line = function(Functor, _ReturnType, _ArgTypes),
 	    assert(Line),
@@ -157,6 +162,10 @@ read_funcs(File, Stream, Done) :-
 	               [Type, Line, Type], Bug),
 	    do_dialogue("Parsing user-defined functions", warning, Bug, ok, _),
 	    read_funcs(File, Stream, Done)).
+
+free_params(switch(Fixed, Var), Arg, ArgVar, 0) :-
+	nth(N, Fixed, Arg),
+	nth(N, Var, ArgVar).
 
 import_path_for(Dims, Path, ArcI, Lvl0, Ptr0, LvlN, PtrN, LocalLoops, Inds) :-
 	append(Outer, [var | Inner], Dims), !,
