@@ -1313,8 +1313,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 {save {file save}}  {print {local print}} {separator1}\
                 {undo {local undo}} {redo {local redo}} {separator2}\
                 {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator3}\
-			{tog_grid {local tog_grid}} {separator4} \
-			{zoomin {local zoomin}} {zoomsel {local tosel}} \
+                {zoomin {local zoomin}} {zoomsel {local tosel}} \
                 {zoomfit {local tofit}} {zoomout {local zoomout}} \
                 {separator5}   } {
         set handle [lindex $navCmd 0]
@@ -1328,8 +1327,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             BindPopup $nb.$handle $handle
         }
     }
+    set testImg [image create photo -file $buttonImages/tog_grid.gif]
+    pack [::ttk::checkbutton $nb.tog_grid -image $testImg -style Toolbutton \
+           -command [concat "MenuSelect $c" {local tog_grid}]] \
+           -side left -padx 2 -pady 2
     if {[PrefValue custom(initGrid) initGrid]} {
-	$nb.tog_grid configure -state active -relief sunken
+	  $nb.tog_grid state selected
     }
     
     foreach navCmd {{rerun {local rerun}} {separator6} \
@@ -1359,7 +1362,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             BindPopup $nb.$handle $handle
         }
     }
-    $nb.runenv configure -state disabled
+    $nb.runenv state disabled
     
     set tb [::ttk::frame $winid.toolSlot.toolbar -border 2 -class Toolbar]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
@@ -1370,7 +1373,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${mode}.gif]
-            set bt [::ttk::checkbutton $tb.$mode -command "ItemSelect $mode" -image $testImg -style Toolbutton]
+            set bt [::ttk::radiobutton $tb.$mode -command "ItemSelect $mode"  -variable MIpushedbutton -value $mode -image $testImg -style Toolbutton]
             pack $bt -side left -padx 2 -pady 2
             BindPopup $bt $mode
             bind $bt <ButtonRelease-1> "DragComponentIn $c $bt %X %Y"
@@ -1388,7 +1391,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         $tb.snap configure -state disabled
     }
     
-    #$tb.$pushedbutton configure -relief sunken
+    $tb.$pushedbutton state selected
     #$tb.$pushedbutton configure -state active
     
     
@@ -1724,9 +1727,9 @@ proc UpdateGrid {winId} {
 
     set toolBar $window_info($winId,parent).toolSlot.navbar
     if {$custom(showgrids,$winId)} {
-        $toolBar.tog_grid configure -state active -relief sunken
+        $toolBar.tog_grid state selected
     } else {
-        $toolBar.tog_grid configure -state normal -relief flat
+        $toolBar.tog_grid state !selected
     }
     
     foreach gridLine [$winId find withtag /grid/] {

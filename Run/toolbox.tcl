@@ -1505,10 +1505,10 @@ proc UpdateToolbars {newAction} {
     #puts "UpdateToolbars $pushedbutton $newAction"
     foreach winData [array name window_info *,parent] {
         set toolBar $window_info($winData).toolSlot.toolbar
-        $toolBar.$pushedbutton configure -state normal
-        $toolBar.$newAction configure -state active
-        $toolBar.$pushedbutton configure -relief flat
-        $toolBar.$newAction configure -relief sunken
+        $toolBar.$pushedbutton state !selected
+        $toolBar.$newAction state selected
+        #$toolBar.$pushedbutton configure -relief flat
+        #$toolBar.$newAction configure -relief sunken
 	SafeEqnBarEdit $window_info($winData)
         ResetEqnBar $window_info($winData)
     }
