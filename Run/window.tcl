@@ -183,8 +183,8 @@ proc ClickObj { x y winId X Y action} {
         }
         
         if {[string match $equationbar(current_action) click]} {
-            set fromProlog [GetFromProlog tk_get_info('$winId',$node,eqn)]
-            if {![string match <none> $fromProlog]} {
+            set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
+            if {![string match <none> $oldEqn]} {
                 set label [BlankCrs [GetFromProlog \
 					 tk_get_info('$winId',$node,desc)]]
 		set label [string range $label 0 \
@@ -193,7 +193,7 @@ proc ClickObj { x y winId X Y action} {
                 
                 set winid [winfo parent $winId]
                 set equationbar($winid,node) $node
-                set equationbar($winid,initText) $fromProlog
+                set equationbar($winid,initText) $oldEqn
                 set equationbar(current_action) null
                 SetEqnButtonState $bar normal
                 restore_equation $winid $bar
@@ -1326,11 +1326,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.label -side left
     
     global equation msgs
-    ComboBox $eb.equation -editable 1 -state disabled -width 40
+#    ComboBox $eb.equation -editable 1 -state disabled -width 40
+    entry $eb.equation -state disabled -width 40
     pack $eb.equation -side left -expand 1 -fill x
-    $eb.equation bind <Return> [list accept_equation $winid $eb.equation]
-    $eb.equation bind <FocusIn> "EmbraceEqn $winid"
-    $eb.equation bind <FocusOut> AbandonEqn
+    bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
+    bind $eb.equation <FocusIn> "EmbraceEqn $winid"
+    bind $eb.equation <FocusOut> AbandonEqn
     pack [button $eb.tick -state disabled -image $iconImages(tick) \
             -borderwidth 1 \
             -command [list accept_equation $winid $eb.equation]] -side left

@@ -1480,7 +1480,9 @@ proc UpdateToolbars {newAction} {
 }
 
 proc ResetEqnBar {bar} {
-    $bar.equation configure -text {}
+# for combobox version
+#    $bar.equation configure -text {}
+    $bar.equation delete 0 end
     $bar.label configure -text {}
     SetEqnButtonState $bar disabled
 }
@@ -1523,7 +1525,8 @@ proc accept_equation {winId text} {
     global equationbar
     set equationbar(current_action) tick
     set equationbar(equation) [string trimright [$text get]]
-    $text configure -values [AddIfAbsent $equationbar(equation) \
+# do if a combobox -- not now cos no cursor insert
+#    $text configure -values [AddIfAbsent $equationbar(equation) \
 				 [$text cget -values]]
     set node $equationbar($winId,node)
     prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node, 0)]
@@ -1544,14 +1547,16 @@ proc AddInputs {winId bar} {
 }
 
 proc InsertParam {bar paramName} {
-    
     $bar.equation insert insert $paramName
     focus $bar.equation
 }
 
 proc restore_equation {winId bar} {
     global equationbar
-    $bar.equation configure -text $equationbar($winId,initText)
+# for combobox version
+#    $bar.equation configure -text $equationbar($winId,initText)
+    $bar.equation delete 0 end
+    $bar.equation insert 0 $equationbar($winId,initText)
     focus $bar.equation
 }
 
