@@ -318,7 +318,7 @@ proc interact_equation {} {
         return [list $equationbar(equation) \
          $equationbar(units) \
          $equationbar(isParam) \
-         $equationbar(table_data) \
+	 \['[join $equationbar(table_data) ',']'\] \
          $equationbar(desc) \
          $equationbar(comment) \
          $equationbar(min) \
