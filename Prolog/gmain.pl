@@ -155,10 +155,16 @@ decimal places (thanks to Dan Diaz for making it work with print_to_chars)
 trim_float(F, Ns) :-
 	float(F),
 	format_to_codes(Fs, "~8g", [F]),
-	/* number must look like float so add .0 if it doesnt */
-	(member(Ch, Fs), member(Ch, "e."), !,
+	/* mantissa must look like float so add .0 if it doesnt */
+	(member(46, Fs), !,
 	    Ms = Fs;
-	append(Fs, ".0", Ms)),
+	(append(Mant, Exp, Fs),
+	        Exp = [E | _],
+	        member(E, "Ee"), !;
+	    Mant = Fs, Exp = []),
+	    append(Mant, ".0", RMant),
+	    append(RMant, Exp, Ms)),
+
         /* normal printing separates -ve floats from ops with a space, so */
         (Ms = [45 | Rest], !,
             Ns = [32, 45 | Rest];
