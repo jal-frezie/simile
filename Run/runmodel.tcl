@@ -107,7 +107,9 @@ proc AddHelperSublist {fm title ct} {
         if [catch {source $helperApp} wibble] {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
-            do_in_editor BuildProblem "Error loading I/O tool" warning \
+# do it after idle so this process is not hung till user responds
+            do_in_editor after idle \
+                    BuildProblem "Error loading I/O tool" warning \
                     "I/O tool [pwd]/$helperApp had a $::errorInfo" \
 		    helpers none none
         } else {
