@@ -449,6 +449,7 @@ namespace eval ::$keyValue {
         #$w.canvas bind graph <Motion> [namespace code ring_bell]
         
         bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
+        bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
         
         $w.canvas bind xslidable <Enter> \
                 [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
@@ -481,6 +482,7 @@ namespace eval ::$keyValue {
     
     proc resize {w win x y width height} {
         global ::graphtools::plot
+        #ShowMessage debug info "plotterxy resize"
 
         if {[regexp (\.\[^.\]*)\.canvas $win full id]} {
             set x0 $plot($w,xborder_left)
