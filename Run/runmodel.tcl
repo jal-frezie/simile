@@ -673,7 +673,12 @@ proc StartRun {node} {
     set runState($node,currentTime) 0.0
     set runState($node,timeAtEval) 0.0
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
-    if {![FileParamDialogue $node [winfo toplevel [focus]] 0]} {
+    if {[info exists helperTable($node,whichRunEnv)]} {
+	set fpParent $helperTable($node,whichRunEnv)
+    } else {
+	set fpParent [winfo toplevel [focus]]
+    }
+    if {![FileParamDialogue $node $fpParent 0]} {
 	return 0
     }
     if {[PrefValue custom(helperManager) helperManager]} {

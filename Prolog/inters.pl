@@ -141,6 +141,8 @@ read_library_funx(Done) :-
 			       choose(Bool, ThenCl, ElseCl)))),
 	assert(macro_expansion('Built-in', (if Bool then ThenCl elseif IfCl -->
 			       choose(Bool, ThenCl, if IfCl)))),
+	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
+					       (Bool?ThenCl:ElseCl)))),
 	read_func_tree('../Functions/', '../Functions/', yes, BuiltIns),
 
 	backup:use_pref_dir(UserStuff),
@@ -676,7 +678,7 @@ make_intermediates(
 		    /* need type for bool/int */
 		SourceList = Source,
 		ValRef = ResultList;
-	    Source = choose(Test, True, False), !,
+	    Source = (Test?True:False), !,
 		SourceList = [Test, True, False],
 		RUnits = any,
 	        Arg_template = [boolean, RUnits, RUnits],
