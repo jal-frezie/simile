@@ -265,8 +265,7 @@ proc do_for_node {node args} {
 
 proc tickle {node} {
     global runState
-    if {![catch {if {$runState($node,modelReady)} {
-	             do_in_node $node expr 1}}]} {
+    if {![catch {do_in_node $node expr 1}]} {
 	after 1000 tickle $node
     }
 }
@@ -594,7 +593,7 @@ proc ControlDraw {prologVersion} {
     
     # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
-        set env(SIMILE_VERSION) 4.1
+        set env(SIMILE_VERSION) 4.2
         set env(licensee_name) "Support team"
         set env(licensee_corp) "Simulistics Ltd"
         set env(license_code) default_license=28d4d4e4fd34b1407995899c5e655ad5

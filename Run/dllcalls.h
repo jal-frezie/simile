@@ -47,7 +47,7 @@
 #define START_VM       -4
 #define END_VM         -5
 
-#define SIMILE_VERSION	"4.1"
+#define SIMILE_VERSION	"4.2"
 
 #ifdef WIN32
     #ifdef SHARELIB

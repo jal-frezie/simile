@@ -107,9 +107,11 @@ proc AddHelperSublist {fm title ct} {
         if [catch {source $helperApp} wibble] {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
-            do_in_editor BuildProblem "Error loading I/O tool" warning \
-                    "I/O tool [pwd]/$helperApp had a $::errorInfo" \
-		    helpers none none
+# do it after idle so this process is not hung till user responds
+            do_in_editor after idle \
+		[list BuildProblem "Error loading I/O tool" warning \
+		     "I/O tool [pwd]/$helperApp had a $::errorInfo" \
+		     helpers none none]
         } else {
             if {[info exists keyValue]} {
                 set action [${keyValue}::identify]
@@ -122,7 +124,7 @@ proc AddHelperSublist {fm title ct} {
 #                if {[string match {Slider control} $action]} {
 #                    set helperTable(SliderControl) $keyValue
 #                }
-                if {[string match {Data table} $action]} {
+                if {[string match {Data table} $action]} {
                     set table_viewer(id) $keyValue
                 }
                 $m add command -label $action \
