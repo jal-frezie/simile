@@ -219,8 +219,8 @@ choose_breakpoint(Break) :-
 % if not toplevel, to avoid clashes. Date from file is returned.
 
 ame_merge( Parent, File, Date, HasCode ) :-
-	on_exception(_, open( File, read, Stream), fail),
 	dialogue:start_progress_dialogue,
+	open( File, read, Stream),
 	dialogue:reassure_user("Reading information from file"),
 	read( Stream, Header ),
 	((Header = source(_,version=V,edition=E,date=Date);

@@ -130,7 +130,7 @@ read_func_file(File, Done) :-
 
 read_funcs(File, Stream, Done) :-
 	on_exception(WrongUDF, read_term(Stream, Line, [variable_names(VPrs)]),
-		     (ame_gen:make_nice_error_message(WrongUDF, Bug),
+		     (make_nice_error_message(WrongUDF, Bug),
 			 sicstus_format_to_chars("Parsing definitions in ~a",
 						 [File], ProbAct),
 			 do_dialogue(ProbAct, warning, Bug, ok, _))),

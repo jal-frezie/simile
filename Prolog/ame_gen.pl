@@ -5,21 +5,20 @@ moment (though they must have counterparts in the information the database conta
 about mathematical properties). To put it another way, it contains all the
 functions that are needed both in model_update and image. */
 
-sicstus_module(ame_gen, [get_term/3, get_host/2, appears/1, 
-	implicit_function/2, is_parameter/2,
-	is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
-	find_reference/3,
-	do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
-	get_actual_sizes/2, get_node_size/2,
-	is_population/1, is_conditional/1, get_all_dims/2,
-	variable_size/1, 
-	list_links/2,
-	get_link_exits/2, get_chain/5, contains/2, contains/3,
-	purge/3, generates/2, upper/2, lower/2, mybagof/3,
-	list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
-	find_type/2, 
-	find_all_comps/2, draws_inside/2,
-	is_primitive/1, is_of_sort/2, is_class_of_sort/2]).
+sicstus_module(ame_gen,
+	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
+		implicit_function/2, is_parameter/2,
+		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
+		find_reference/3,
+		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
+		get_actual_sizes/2, get_node_size/2,
+		is_population/1, is_conditional/1, get_all_dims/2,
+		variable_size/1, list_links/2,
+		get_link_exits/2, get_chain/5, contains/2, contains/3,
+		purge/3, generates/2, upper/2, lower/2, mybagof/3,
+		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
+		find_type/2, find_all_comps/2, draws_inside/2,
+		is_primitive/1, is_of_sort/2, is_class_of_sort/2]).
 
 sicstus_use_module([library(lists), library(charsio), m_class, utility, text]).
 
@@ -56,8 +55,8 @@ make_nice_error_message(ThrowUp, Error) :-
 	length(BitsAfter, Where),
 	connect_bits(BitsBefore, RunUp, _),
 	connect_bits(BitsAfter, WindDown, _), !,
-	sicstus_format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what you typed, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
-	sicstus_format_to_chars("Unexpected Sicstus error message: ~w", [ThrowUp], Error));
+	sicstus_format_to_chars("Attempting to decipher this entry failed, generating this diagnostic message: \"~a\". This is what was read in, with an indication of where the problem was found:\n ~w <HERE> ~w", [Desc, RunUp, WindDown], Error);
+	sicstus_format_to_chars("Unexpected Prolog error message: ~w", [ThrowUp], Error));
 	ThrowUp = error(Info, _FailedOp), /* gnu */
 	    sicstus_write_to_chars(Info, Error).
 
@@ -78,7 +77,9 @@ connect_bits([Bit | More], Recon, Space) :-
 errtranslate_token(atom(X), X, 1) :- !.
 errtranslate_token(var(_,X,_), Y, 1) :- !, name(Y, X).
 errtranslate_token(number(X), X, 0) :- !.
-errtranslate_token(string(X), Y, 1) :- !, name(Y, X).
+errtranslate_token(string(X), Y, 1) :- !,
+	purge(X, [0,125], NiceX),
+	name(Y, NiceX).
 errtranslate_token(X-_, Y, Z) :- !, errtranslate_token(X, Y, Z).
 errtranslate_token(X, X, 0).
 

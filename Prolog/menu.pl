@@ -152,11 +152,13 @@ stick_model_in(Parent, Name) :-
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
-	ame_merge(Parent, Name, _Date, no),
+	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no),
+		     (finish_progress_dialogue,
+		     make_nice_error_message(ProLoss, ProLite),
+		     show_error(Parent, open_model_failed(Checked, ProLite)))),
 	    check_autosave(Parent, Name, Tweaked),
 	    resize_canvas_for(Parent),
-	    redraw_window(Win);
-	do_dialogue("Error loading model", error, CheckedStr, ok, _)),
+	    redraw_window(Win)),
 	add_parameter(Parent, 0, file_name, Name),
 	update_captions(Parent).
 
@@ -251,7 +253,10 @@ rebuild_code(Lang, Node) :-
 	    fail).
 
 show_error(Model, Lossage) :-
-	(Lossage = compilation_failed, !,
+	(Lossage = open_model_failed(MimeFail, PrologFail), !,
+	    format_to_chars("Simile could not open this file as a model. It could not be read as a MIME because: ~w. It could not be read as a model description because: ~s.", [MimeFail, PrologFail], Text),
+	    Fault = user;
+	Lossage = compilation_failed, !,
 	    Text = "Something went wrong while trying to convert your model into a program.",
 	    Fault = system;
 	Lossage = instantiation_failure(Node), !,
