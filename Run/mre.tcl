@@ -154,8 +154,7 @@ proc RunEnv::Create { ModelWin } {
         set hiercontrolpw [panedwindow $controlPane.panedwindow -orient vertical]
         set runcontrolpane [frame $hiercontrolpw.runcontrolPane]
         set explorerPane [frame $hiercontrolpw.explorerPane]
-        $hiercontrolpw add $runcontrolpane $explorerPane -height 240
-        
+        $hiercontrolpw add $runcontrolpane $explorerPane ;# -height 240
         # Add notebook for controls, explorer etc
         NoteBook $explorerPane.notebook
         $explorerPane.notebook insert end "Explorer" -text "Explorer"

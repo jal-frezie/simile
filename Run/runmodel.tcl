@@ -706,6 +706,9 @@ proc RunDialog {canvas} {
     } elseif {[winfo exists $helperTable(autosliders)]} {
 	$helperTable(autosliders).c.canvas configure -height 200
     }
+    set ctrlPane [winfo parent [winfo parent [winfo parent [winfo parent $::RunEnv::runControlFrame]]]]
+    $ctrlPane sash place 0 \
+	10 [expr [winfo reqheight $ctrlPane.runcontrolPane]+10]
 }
 
 # If running a model which includes input parameters, we must
