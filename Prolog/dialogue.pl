@@ -168,7 +168,7 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    name(DataTable, Data_st),
 	    Units = 1;
 	get_table_data(Function, Data_st, DataTable,
-		       TableVals, Units, Dims, Complaint),
+		       TableVals, Units, Bounds, Dims, Complaint),
 	    (\+ Complaint = [], !,
 		do_dialogue("Problem with input data", warning, Complaint, ok,
 			    _),
@@ -177,7 +177,7 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	retractall(table_data_is(_)),
 	assert(table_data_is([file = FileName, data = DataField,
 			      indices = Indices, current = DataTable,
-			      units=Units, bounds=Dims])),
+			      units=Units, bounds=Bounds, dims=Dims])),
 	fail.
 
 update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
@@ -377,7 +377,7 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 table_ref(_, Ref, _, 0) :-
 	member(Ref, [table(_), graph(_)]).
 
-get_table_data(Function, Data, Table, Orig, Units, Dims, Complaint) :-
+get_table_data(Function, Data, Table, Orig, Units, Dims, Sizes, Complaint) :-
 	on_exception(Complaint,
 		     (get_table_part(Function, Data, Table,
 				     Orig, Units, Dims, Sizes),
@@ -385,6 +385,7 @@ get_table_data(Function, Data, Table, Orig, Units, Dims, Complaint) :-
 
 get_table_part(Function, Data, Table, Orig, Units, Dims, Sizes) :-
 	name(Num, Data),
+	number(Num),
 	enum_type_ref(Num, Function, Orig, Units, 0),
 	    Table = Orig,
 	    Dims = [],

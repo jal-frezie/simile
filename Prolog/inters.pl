@@ -483,7 +483,7 @@ make_intermediates(
 
 	(Source = table(1),
 	    m_class:SubId has_class_refinement table_data of TableData,
-	    member(bounds=ConstBounds, TableData),
+	    member(dims=ConstBounds, TableData),
 	    member(current=BoundArray, TableData),
 	    member(units=OrigUnits, TableData),
 	    (member(OrigUnits, [boolean, 1]), !,

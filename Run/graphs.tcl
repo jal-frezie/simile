@@ -1304,7 +1304,7 @@ proc LoadTableData {tableSpec} {
             set arrayIndex {}
             set indexCount 0
             foreach column $indexColumns {
-                set newIndex [lindex $entryList $column]
+                set newIndex [string trim [lindex $entryList $column]]
                 lappend arrayIndex $newIndex
                 if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
                     lappend maxIndices($indexCount) $newIndex
@@ -1319,7 +1319,7 @@ proc LoadTableData {tableSpec} {
         }
         
         set paramArray(top,[join $arrayIndex ,]) \
-                [lindex $entryList $headerColumn]
+	    [string trim [lindex $entryList $headerColumn]]
     }
     
     for {set idxIdx 0} {$idxIdx < $indexCount} {incr idxIdx} {

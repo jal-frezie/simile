@@ -850,7 +850,7 @@ make_evaluation_routine(
 	    NodeId has_class_refinement table_data of
 	        [file='/graph/', data=[YLow, YHigh, YSpan],
 		 indices=[XLow, XHigh, XSpan, Range], current=Points,
-		 units=_, bounds=NumPts | _],
+		 units=_, _, dims=NumPts | _],
 	    name(Points, PointStr),
 	    append([91 | PointStr], "]", PointListStr),
 	    get_term(PointListStr, PointList, _),
