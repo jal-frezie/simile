@@ -60,6 +60,7 @@ namespace eval runcontrol33857 {
 	}
 	set runState($node,oldIntMethod) $runState($node,intMethod)
 	set runState($node,timeUnit) unit
+	set runState($node,oldUnit) $runState($node,timeUnit)
 
         if {[string match $t [winfo toplevel $t]]} {
             wm title $t "Run control"; # $t isn't a toplevel under MRE
@@ -244,10 +245,13 @@ namespace eval runcontrol33857 {
         # This loop sets the array of dts in the model
         set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set tweaked 0
+	set newBalls [expr ![string equal $runState($node,timeUnit) \
+				$runState($node,oldUnit)]]
+	set runState($node,oldUnit) $runState($node,timeUnit)
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
             set tick $runState($node,update$setPhase)
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
-            if {$runState($node,prev_update$setPhase) != $tick} {
+            if {$newBalls || ($runState($node,prev_update$setPhase)!=$tick)} {
                 set runState($node,prev_update$setPhase) $tick
                 SetStep $node [expr $tick*$unitLength] $setPhase
                 set redoPhase($node) $setPhase
