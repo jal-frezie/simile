@@ -18,7 +18,7 @@ start_progress_dialogue/1,
 reassure_user/1]).
 
 sicstus_use_module([library(lists), library(charsio), 
-		m_update, ame_gen, files, output, utility, inters]).
+		m_update, ame_gen, output, utility, inters]).
 
 /* helpers for sending function list */
 pass_functions(LibFuns) :-
@@ -84,9 +84,10 @@ BoxHeaderStr),
 	    Dims = []),
 	(get_av_pair(Part, 0, table_data,
 			      [file=FilePath, data=DataField,
-			       indices=Indices | _Values]), !,
-	    TableList = [FilePath, DataField | Indices];
-	TableList = ''),
+			       indices=Indices, current=Values]), !,
+	    TableList = [FilePath, DataField | Indices],
+	    reverse_engineer(Values, 0, TableVals);
+	TableList = '', TableVals = '{}'),
 	(get_av_pair(Part, 0, description, Desc), !;
 		Desc = ''),
 	(get_av_pair(Part, 0, comment, Comment), !;
@@ -99,7 +100,7 @@ BoxHeaderStr),
 		associated function */
 	is_parameter(ClickedObj, Is_P),
 	get_input_info(Part, Input_list),
-	fill_equation(Equation, Base, Dims, Is_P, TableList,
+	fill_equation(Equation, Base, Dims, Is_P, TableList, TableVals,
 		      Desc, Comment, Min, Max),
 	fill_inputs(Input_list),
 	retractall(input_list_is(_)),
@@ -168,7 +169,7 @@ LateInputs],
 	
 update_equation(Function, IndxCount, InterInputs, TypeBase,
 		[Eqn_st, Unit_st, Is_P_st,
-		 Table_st, Desc_st, Comment_st, Min_st, Max_st]) :-
+		 Table_st, Data_st, Desc_st, Comment_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
 	member([Is_P, ParamsAllowed, EqnNeeded],
 	       [[-1,1,1], [0,1,1], [1,0,0], [2,0,0]]),
@@ -239,16 +240,18 @@ for it,
 	    !,
 	    get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
-	    (TableData = [FileName, DataField | Indices], !,
-		get_table_info(FileName, Indices, DataField, DataTable,
-			       FileError),
+	    (\+ Data_st = [], !,
+		get_table_data(Data_st, DataTable, TableVals),
+	        TableData = [FileName, DataField | Indices], 
 		TableAttr = [file = FileName, data = DataField,
-			     indices = Indices, current = DataTable];
+			     indices = Indices, current = DataTable],
+		FileError = [];
 	    FileError = "Equation refers to a data table, but no table specification has been entered.\n"),
 	    append(Complaint6, FileError, Complaint7);
 		
 	TableAttr = '',
 	    TableData = '',
+	    TableVals = '{}',
 	    Complaint7 = Complaint6),
 	/* table data is auto-generated so should be well formed */
 
@@ -274,8 +277,8 @@ TableAttr),
 		add_parameter(AffectedNode, 0, min_val, Min),
 		add_parameter(AffectedNode, 0, max_val, Max),
 		update_links_and_vars(New_inputs);
-	fill_equation(Result, NewUnits, EqnDims, Is_P, TableData, Desc, Comment, 
-Min, Max),
+	fill_equation(Result, NewUnits, EqnDims, Is_P, TableData, TableVals,
+		      Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
 	    (FinalComplaint = continue, !;
@@ -285,6 +288,55 @@ FinalComplaint,
 	    !, /* green */ fail).
 
 table_ref(_, table(_), _, 0).
+
+get_table_data(Data, Table, Orig) :-
+	get_table_part(Data, Table, Orig, Dims),
+	zero_empties(Table, Dims).
+
+get_table_part(Data, Table, Orig, Dims) :-
+	name(Num, Data),
+	number(Num), !,
+	    Table = Num,
+	    Orig = Num,
+	    Dims = [];
+	output:chop_list(Data, Alternator),
+	    feed_items(Alternator, Table, SubOrig, Dims),
+	    Orig = br(SubOrig).
+
+feed_items([], _, [], []).
+feed_items([IndStr, ValStr | More], Table, [Ind, VOrig | TOrig], Dims) :-
+	feed_items(More, Table, TOrig, LoDims),
+	name(Ind, IndStr),
+	nth(Ind, Table, Line),
+	get_table_part(ValStr, Line, VOrig, HiDims),
+	max_all(LoDims, [Ind | HiDims], Dims).
+
+max_all(A, B, X) :-
+	A = [I1 | C], !,
+	    (B = [I2 | D], !,
+		I is max(I1, I2),
+		max_all(C, D, Y),
+		X = [I | Y];
+	    X = A);
+	X = B.
+
+zero_empties(Table, Dims) :-
+	Dims = [Top | Lower], !,
+	    length(Table, Top),
+	    all(dialogue, zero_empties, [build(Table), unify(Lower)]);
+	ground(Table), !;
+	Table = 0.
+
+reverse_engineer(Table, Here, TclRep) :-
+	Table = [Val | Rest], !,
+	    reverse_engineer(Val, 0, TclHead),
+	    There is Here+1,
+	    reverse_engineer(Rest, There, TclTail),
+	    TclInner = [There, TclHead | TclTail],
+	    (Here = 0, !,
+		TclRep = br(TclInner);
+	    TclRep = TclInner);
+	TclRep = Table.
 
 check_exp(Eqn_st, FieldName, InterInputs, Base, Dims, Needed,
 	  IndxCount, ParamList, Equation, Error) :-

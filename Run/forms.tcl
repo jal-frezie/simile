@@ -41,7 +41,7 @@ proc equationResources {} {
 }
 
 proc fill_equation {current_equation units mult isParam \
-        table_data desc comment min max} {
+        table_data table_values desc comment min max} {
         
 	global equation 
 	global equationbar
@@ -50,6 +50,7 @@ proc fill_equation {current_equation units mult isParam \
 #      set equationbar(mult) $mult
       set equationbar(isParam) $isParam
       set equationbar(table_data) $table_data
+      set equationbar(table_values) $table_values
       set equationbar(desc) $desc
       set equationbar(comment) $comment
       set equationbar(min) $min
@@ -76,6 +77,7 @@ proc fill_equation {current_equation units mult isParam \
 	set equation(units) $units
     set equation(mult) [join $mult ,]
 	set equation(table_data) $table_data
+	set equation(table_values) $table_values
 	
 	if {[set equation(isparam) $isParam]==-1} {
 	    set paramMenuState disabled
@@ -319,13 +321,13 @@ proc interact_equation {} {
          $equationbar(units) \
          $equationbar(isParam) \
 	 \['[join $equationbar(table_data) ',']'\] \
+	 $equationbar(table_values) \
          $equationbar(desc) \
          $equationbar(comment) \
          $equationbar(min) \
          $equationbar(max)]
     }
                                  ### End formula bar section
-
     set t $equation(top)
     set descFrame [$equation(main).properties.properties getframe]
     set eqnFrame [$equation(main).main.main getframe]
@@ -337,12 +339,13 @@ proc interact_equation {} {
     grab release $t
     if {$equation(done)==1} {
 	return [list [string trimright [CombineGraphData \
-					    [$eqnFrame.equation.textbox.text get 1.0 end]]] \
-		    $equation(units) $equation(isparam) \
-		    \['[join $equation(table_data) ',']'\] \
-		    [string trimright [$descFrame.description.text get 1.0 end]] \
-		    [string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
-		    $equation(min) $equation(max)]
+					[$eqnFrame.equation.textbox.text get 1.0 end]]] \
+		$equation(units) $equation(isparam) \
+		\['[join $equation(table_data) ',']'\] \
+		$equation(table_values) \
+		[string trimright [$descFrame.description.text get 1.0 end]] \
+		[string trimright [$equation(doc).cmtFrame.text get 1.0 end]] \
+		$equation(min) $equation(max)]
     } elseif {$equation(done)==2} {
 	set rlist [list [lindex $equation(pathlist) $equation(ckLine)]]
 	foreach list {plist ilist} {
@@ -395,6 +398,7 @@ proc GetTable {parent box} {
     if {[equationDoTable $parent]} {
 	set equation(table_data) [concat [list $table_entry(fileName) \
 		$table_entry(dataField)] $table_entry(indices)]
+	set equation(table_values) [LoadTableData $equation(table_data)]
 	if {![string match *table(*)* [$box get 1.0 end]]} {
 	    $box insert insert table\(\[
 	    for {set count [llength $table_entry(indices)]
@@ -449,7 +453,7 @@ proc fill_inputs { triples } {
         pack forget $widget.lists.scroll
     }
     set equation(selected,$widget.lists.plist) -1
-    set equation(selected,$widget.lists.ilist) -1
+    set equation(selected,$widget.lists.ilist) -1
 
 #    pack $t.bottom -fill x -expand true
     $equation(notebook) compute_size

@@ -25,7 +25,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
 	clear_display/1, set_interpreter/1, unset_interpreter/0,
-	prepare_equation/1, create_equation/3, fill_equation/9, fill_inputs/1,
+	prepare_equation/1, create_equation/3, fill_equation/10, fill_inputs/1,
 	interact_equation/1, destroy_equation/0,
 	tk_start_progress_dialogue/1, tk_update_infobox/1, 
 	tk_finish_progress_dialogue/0, tk_alter_model/0,
@@ -49,8 +49,33 @@ tk_cursor_in(Win, Cursor) :-
 
 tk_callback(Data) :-
 	safe_tcl_eval(['AttackGlobalVariable fromProlog {}', Data], _).
-	
-curly(P, Text) :-
+
+new_chop_list(Left, Done, Depth, Args) :-
+	Left = [Here | More], !,
+	    (Here = 32,
+	    Depth = 0, !,
+		new_chop_list(More, [], 0, MoreArgs),
+		(append([123 | NewArg], [125], Done), !;
+		    NewArg = Done),
+		Args = [NewArg | MoreArgs];
+	    (Here = 123, !,
+		NewDepth is Depth+1;
+	    Here = 125, !,
+		NewDepth is Depth-1;
+	    NewDepth = Depth),
+		append(Done, [Here], NewDone),
+		new_chop_list(More, NewDone, NewDepth, Args));
+	\+ Done = [], !,
+	    format_to_chars("Incomplete argument ~s at end of line", [Done],
+			    Error),
+	    raise_exception(Error);   
+	Args = [].
+
+chop_list(String, Args) :-
+	append(String, [32], NeatStr),
+	new_chop_list(NeatStr, [], 0, Args).
+
+/* curly(P, Text) :-
 	append([123 | Text], [125], P),
 	curly_text(Text).
 
@@ -67,24 +92,24 @@ curly_text(T) :-
 
 chop_list([], []).
 
-/* argument enclosed in curlybrackets */
+/* argument enclosed in curlybrackets 
 chop_list([123 | TclText], [Arg | Prolog_rest]) :-
 	append(Curly, TclRest, [123 | TclText]),
 	curly(Curly, Arg), !,
 	chop_list(TclRest, Prolog_rest).
 
-/* throw away inter-arg space */
+/* throw away inter-arg space 
 chop_list([32 | P], Q) :-
 	!, chop_list(P, Q).
 
-/* arg terminated by space or end of string */
+/* arg terminated by space or end of string 
 chop_list(Tcl_string, [Arg | Rest]) :-
 	append(Arg, [32 | Tcl_rest], Tcl_string), !,
 		chop_list(Tcl_rest, Rest);
 	\+ Tcl_string = [],
 		Arg = Tcl_string,
 		Rest = [].
-
+*/
 bracketize([H | T], br([BrH | BrT])) :-
 	!, bracketize(H, BrH), sub_bracketize(T, BrT).
 
@@ -296,13 +321,13 @@ fill_equation(Cur_eqn, Cur_units, MultList, IsParam, List, TableData,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
 */
-fill_equation(Cur_eqn, Cur_units, MultList, IsParam, TableData, Desc, Comment, 
-			Min, Max) :-
+fill_equation(Cur_eqn, Cur_units, MultList, IsParam, TableData, TableVals,
+	      Desc, Comment, Min, Max) :-
 	all(utility, wrap, [build(MultList), unify(write), build(Mult)]),
 	bracketize(TableData, Tk_tableData),
 	safe_tcl_eval(['fill_equation',
 			  br(write(Cur_eqn)), br(write(Cur_units)), br(Mult),
-			  br(write(IsParam)), Tk_tableData,
+			  br(write(IsParam)), Tk_tableData, TableVals,
 			  br(write(Desc)), br(write(Comment)),
 			  br(write(Min)), br(write(Max))], _).
 
