@@ -696,8 +696,11 @@ proc AddParamPopup {lb y X Y} {
 
 proc AddEnumTypePopup {lb y X Y} {
     global disaggregate
-    set popLine [$lb nearest $y]
-    AddWidgetPopup "members: $disaggregate(enumtype,[$lb get $popLine $popLine])" $X $Y
+    set popLine [$lb get [$lb nearest $y]]
+    set memList disaggregate(enumtype,$popLine)
+    if {[info exists $memList]} {
+	AddWidgetPopup "members: [set $memList]" $X $Y
+    }
 }
 
 proc indexClick { lb y boxname} {
