@@ -323,6 +323,16 @@ namespace eval $keyValue {
     
     # save table contents as CSV file
     proc Save {winId} {
+        set types {
+            {{Comma seperated values}       {.csv}        }
+            {{All Files}        *             }
+        }
+        set filename [ChooseFile table.csv "Save table contents as.." 1]
+        
+        SaveToNamedFile $winId $filename
+    }
+    
+    proc SaveToNamedFile {winId filename} {
         global custom
         set rsep [$winId.t cget -rowseparator]
         set csep [$winId.t cget -colseparator]
@@ -334,11 +344,6 @@ namespace eval $keyValue {
         $winId.t selection set origin end
         event generate $winId.t <<Copy>>
         set data [selection get -displayof $winId.t -selection CLIPBOARD]
-        set types {
-            {{Comma seperated values}       {.csv}        }
-            {{All Files}        *             }
-        }
-        set filename [ChooseFile table.csv "Save table contents as.." 1]
         if {$filename != ""} {
             set fileid [open $filename w]
             puts $fileid $data
