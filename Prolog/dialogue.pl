@@ -220,9 +220,9 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	append(EqnError, MinMaxError, Complaint5),
 	
 	(Complaint5 = [], !,
-	(Unit_st = "", Eqn_st = "", !,
+	(Unit_st = "", Eqn_st = "",
 	    /* If no eqn or units supplied, assume real */
-	    NewUnits = 1, UnitError = [];
+	    (Is_P = 0, NewUnits = ''; NewUnits = 1), UnitError = [], !;
 	var(MinBase), var(EqnBase), var(MaxBase), var(TypeBase), !,
 	    /* If units but no eqn or limits supplied, accept any */
 	    NewUnits = Units,
