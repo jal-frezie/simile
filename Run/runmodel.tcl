@@ -349,13 +349,6 @@ proc DisplayAll { winId } {
 	set bt [expr $bt - $clearBorder]
 	set br [expr $br + $clearBorder]
 	set bb [expr $bb + $clearBorder]
-
-	DisplayArea $winId $bl $bt $br $bb
-    }
-}
-
-proc DisplayArea {winId bl bt br bb} {
-    global window_info
     set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
 # zoom to correct size
     set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
@@ -372,6 +365,42 @@ proc DisplayArea {winId bl bt br bb} {
     set bb [expr $bb*$scale]
 
     ResizeDesktop $winId $bl $bt $br $bb
+    }
+}
+
+proc DisplayArea {winId} {
+    global window_info
+    if {[scan [$winId bbox unfinished_component] "%d %d %d %d" bl bt br bb] < 4} {
+	return
+    }
+    set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
+# zoom to correct size
+    set xscale [expr ($window_info($winId,width) - $allowScrollBar)/double($br - $bl)]
+    set yscale [expr ($window_info($winId,height) - $allowScrollBar)/double($bb - $bt)]
+    set factor [expr $xscale>$yscale?$yscale:$xscale]
+    
+    ZoomImage $winId all $factor $factor
+# Change the canvas area in accordance with the change in scale
+
+    set oldSize [$winId cget -scrollregion]
+    set newReg [list [expr [lindex $oldSize 0]*$factor] \
+	[expr [lindex $oldSize 1]*$factor] \
+	[expr [lindex $oldSize 2]*$factor] \
+	[expr [lindex $oldSize 3]*$factor]]
+    $winId configure -scrollregion $newReg
+
+# First, find canvas point at centre of display
+    set CurrentX [$winId canvasx [expr $window_info($winId,width)/2]]
+    set CurrentY [$winId canvasy [expr $window_info($winId,height)/2]]
+
+# Now find canvas point at centre of selected rectangle after zoom
+    set centre_x [expr $factor*($bl+$br)/2]
+    set centre_y [expr $factor*($bt+$bb)/2]
+
+# Now scroll it so what should be in the middle of the display is there
+
+    $winId xview scroll [expr round($centre_x - $CurrentX)] units
+    $winId yview scroll [expr round($centre_y - $CurrentY)] units
 }
 
 proc ExtractPrologName { winId target } {

@@ -23,7 +23,7 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		move_text/2, move_display/2, reroute_display/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
 		add_window/7, redraw_window/1, inject_graphics/2,
-		display_area/2,
+		display_area/1,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2, exterminate/1,
 		draw_incomplete/0, remove_old_incomplete/0, draw_rubberband/1,
@@ -38,8 +38,8 @@ cursor_in(Win, Cursor) :-
 callback(Content) :-
 	tk_callback(Content).
 
-display_area(Win, LTRB) :-
-	tk_display_area(Win, LTRB).
+display_area(Win) :-
+	tk_display_area(Win).
 
 update_captions(Model) :-
 	get_window_colour(Model, Colour),
