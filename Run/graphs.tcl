@@ -469,7 +469,7 @@ proc equationDoTable {parent tgt} {
     
     toplevel .table -bd 4
     wm transient .table $parent
-    wm title .table "Table data for $tgt"
+    wm title .table "Table data for [BlankCrs $tgt]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
     set table_entry(source) 0
     

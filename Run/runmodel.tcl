@@ -159,7 +159,7 @@ proc NewHelperWindow {node helperId helperTitle} {
     } else {
         set winId .helper[newInt]
         toplevel $winId
-        wm title $winId $helperTitle
+        wm title $winId [BlankCrs $helperTitle]
         if {![string match windows $tcl_platform(platform)]} {
             wm iconbitmap $winId @../Images/weegraph.xbm
         }
@@ -360,8 +360,7 @@ proc SaveView {} {
             if {[string equal $topNode $helperTable($winId,whichModel)] && \
 		    ![string match $helperId $helperTable(RunControl)]} {
                 puts $stream $helperId
-                # substitute <cr>s so entry goes on one line
-                puts $stream [StripCrs [wm title $winId]]
+                puts $stream [wm title $winId]
                 puts $stream [wm geometry $winId]
                 set clickedPaths {}
                 if {[info exists helperTable($winId,status)]} {
@@ -597,7 +596,7 @@ proc snap {topNode node} {
     set end_submodels [expr $last_slash-1]
     set submodels [string range $full_label 0 $end_submodels]
     set label [string range $full_label $start_label end]
-    wm title $w "$label at time $runState($topNode,currentTime)"
+    wm title $w "[BlankCrs $label] at time $runState($topNode,currentTime)"
     
     text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
             -xscrollcommand "$w.xscroll set" \

@@ -115,7 +115,7 @@ proc create_equation {parent boxtitle indices} {
     #	wm geometry .equation +0+[winfo vrootheight .equation]
     #	update ;# let it move off screen so text updates do not distract user
     #    }
-    wm title $t $boxtitle
+    wm title $t [BlankCrs $boxtitle]
     wm transient $t $parent
     set equation(top) $t
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
@@ -907,8 +907,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     wm transient $t $parent
     wm resizable $t 0 1
     wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
-    wm title $t "Properties of $title"
-    
+    wm title $t "Properties of [BlankCrs $title]"    
     
     frame $t.simple
     frame $t.simple.left
@@ -1382,7 +1381,7 @@ proc RelationCheck {parent title type state init_comment} {
     set t [toplevel .relcheck -bd 4]
     wm resizable $t 0 0
     wm protocol $t WM_DELETE_WINDOW {set relation(done) 0}
-    wm title $t "Properties of $title"
+    wm title $t "Properties of [BlankCrs $title]"
     frame .relcheck.top
     TitleFrame .relcheck.top.left -text "[string toupper $type 0 0] options:"
     set f [.relcheck.top.left getframe]

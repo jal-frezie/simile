@@ -82,7 +82,7 @@ namespace eval RunEnv {
             toplevel $mreId -width 200m -height 150m
 	    set mDesc [do_in_editor GetFromProlog tk_get_info({},$node,desc)]
 	    set modelCapt [string range $mDesc 0 [string first { : } $mDesc]]
-            wm title $mreId "$modelCapt execution - Simile"
+            wm title $mreId "[BlankCrs $modelCapt] execution - Simile"
             set currentNode $node
             bind $mreId <FocusIn> [namespace code "InMreFor $node"]
             set descmenu {

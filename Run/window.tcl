@@ -495,7 +495,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 }
 
 proc ChangeParentTitle {wc title bg} {
-    wm title [winfo parent $wc] $title
+    wm title [winfo parent $wc] [BlankCrs $title]
     if {[string match clear $bg]} {
         set bg {}
     }
