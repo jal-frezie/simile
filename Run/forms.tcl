@@ -1437,9 +1437,9 @@ proc GetFindText {parent} {
 }
 
 proc DoRegDialog {dtId} {
-    global userinfo custom welcomeDone tcl_platform
+    global userinfo custom welcomeDone tcl_platform SimileAutoObjLoaded
     
-    if {[lsearch [package names] SimileAutoObj] > -1} {
+    if {[info exists SimileAutoObjLoaded]} {
         return
     }
     
