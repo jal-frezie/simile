@@ -262,7 +262,7 @@ the lines. */
 
 get_text(Wid, Comp, Text) :-
 	safe_tcl_eval(['GetText', Wid, Comp], TextString),
-	name(Text, TextString).
+	sicstus_atom_chars(Text, TextString).
 
 tk_grow_canvas(Wid, [L, T, R, B]) :-
 	safe_tcl_eval(['ChangeRegion', Wid, L, T, R, B], _).

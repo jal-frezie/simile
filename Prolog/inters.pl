@@ -850,6 +850,7 @@ uses_as(any, Type) :-
 uses_as(boolean, cond_spec).
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
+uses_as(numeric, int).
 uses_as(const_int, const_ratio).
 uses_as(const_ratio, real).
 uses_as(int, real).
@@ -882,8 +883,8 @@ put into the target program. */
 /* These are implemented by the parser. Note the units are descriptive since
 they should never actually be used to parse anything. */
 
-builtin('List handling', sum, int, [array_or_list_of_ints]).
-builtin('List handling', product, int, [array_or_list_of_ints]).
+builtin('List handling', sum, numeric, [array_or_list_of_numerics]).
+builtin('List handling', product, numeric, [array_or_list_of_numerics]).
 builtin('List handling', count, int, [array_or_list_of_any]).
 builtin('List handling', any, boolean, [array_or_list_of_boolean]).
 builtin('List handling', all, boolean, [array_or_list_of_boolean]).
@@ -905,8 +906,8 @@ builtin('List handling', place_in, int, [const_int]).
 builtin('List handling', element, any, [array_of_any, int]).
 builtin('Model properties', size, int, [submodel_name]).
 builtin('Model properties', size, int, [submodel_name, const_int]).
-builtin('List handling', least, int, [array_or_list_of_ints]).
-builtin('List handling', greatest, int, [array_or_list_of_ints]).
+builtin('List handling', least, numeric, [array_or_list_of_numerics]).
+builtin('List handling', greatest, numeric, [array_or_list_of_numerics]).
 
 /* These are the ones that are actually used by the parser, so the units have
 to be recognizable. Note that if something is down as returning an int for an
@@ -916,7 +917,7 @@ builtin('Arithmetic', sqrt, 1, [1]).
 builtin('Arithmetic', log, 1, [1]).
 builtin('Arithmetic', log10, 1, [1]).
 builtin('Arithmetic', exp, 1, [1]).
-builtin('Arithmetic', abs, int, [int]).
+builtin('Arithmetic', abs, numeric, [numeric]).
 builtin('Arithmetic', int, int, [real]).
 builtin('Arithmetic', ceil, int, [real]).
 builtin('Arithmetic', floor, int, [real]).
@@ -949,8 +950,8 @@ builtin('Trigonometry', hypot, real, [real, real]).
 builtin('Trigonometry', atan2, 1, [real, real]).
 builtin('Trigonometry', acot2, 1, [real, real]).
 
-builtin('Arithmetic', max, int, [int, int]).
-builtin('Arithmetic', min, int, [int, int]).
+builtin('Arithmetic', max, numeric, [numeric, numeric]).
+builtin('Arithmetic', min, numeric, [numeric, numeric]).
 
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
