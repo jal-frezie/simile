@@ -373,7 +373,9 @@ namespace eval runcontrol33857 {
                     ResetTimeSeries $node
                 }
                 UpdateTimeSeries $node 0
-                if ![do_model $node eval $scaled_current $redoPhase($node)] {
+                if {[do_model $node eval $scaled_current $redoPhase($node)]} {
+		    set runState($node,modelRunning) 3
+		} else {
                     set sendvars($node,currentMode) exit
                 }
                 if {$redoPhase($node) < 1} {
@@ -456,25 +458,23 @@ namespace eval runcontrol33857 {
                 
                 # Finally, see if the allotted time has elapsed and swap modes if it has
                 # set step [expr $exec>$update?$update:$exec]
-            }
-	    if {[lsearch {start stop} $sendvars($node,currentMode)] > -1} {
-		if {$runState($node,modelRunning)==2} {
-		    set runState($node,modelRunning) 3
-		}
-	    } elseif {$runState($node,modelRunning)==2} {
+            } 
+        }
+	if {[string equal exit $sendvars($node,currentMode)]} {
+	    if {$runState($node,modelRunning)==2} {
 		set runState($node,modelRunning) 0
 	    } else {
 		set runState($node,modelRunning) 2
 	    }
-        }
+	}
 #        switch $sendvars($node,currentMode) {
 #            kill {
 #		destroy $winId
 #            } default {
-                $widget.topbuttons.start configure -image $playImg
-		$widget.topbuttons.start configure -command \
-		    "[namespace current]::SetMode $winId start"
-                $widget.bf.flag itemconfigure 1 -fill [RestingColour $node]
+	$widget.topbuttons.start configure -image $playImg
+	$widget.topbuttons.start configure -command \
+	    "[namespace current]::SetMode $winId start"
+	$widget.bf.flag itemconfigure 1 -fill [RestingColour $node]
 #            }
 #        }
 	set sendvars($node,currentMode) stop

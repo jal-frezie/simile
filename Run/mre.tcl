@@ -1045,8 +1045,9 @@ namespace eval RunEnv {
                 set metaFile [file join $simtmpdir temp_in.shf]
                 set mimeSquirter [NetOpen $metaFile w]
                 fconfigure $mimeSquirter -translation binary
-                mime::getbody $multiT -command SquirtMime -blocksize 256}]
-        } {
+                mime::getbody $multiT -command SquirtMime -blocksize 256
+	} syndrome]} {
+#do_in_editor puts "MIME open failed: $syndrome"
             set metaFile $oldPath
             set origVersion 0.0
             set stream [NetOpen $metaFile r]
@@ -1066,7 +1067,7 @@ namespace eval RunEnv {
         set stream [NetOpen $metaFile r]
         
         if {[string equal mre $origin]} {
-            LoadViewFile $stream $origVersion
+            LoadViewFile $currentNode $stream $origVersion
         } elseif {[string equal many_windows $origin]}  {
             # assume that it is an shf made by the multiple window run env
             destroy $dp0.notebook; #what if there is an error in the file delete MRE, rebuild
@@ -1106,10 +1107,9 @@ namespace eval RunEnv {
         close $stream
     }
     
-    proc LoadViewFile {stream origVersion} {
+    proc LoadViewFile {currentNode stream origVersion} {
         global helperTable
         variable dp0
-        variable currentNode
         
         destroy $dp0.notebook
         set mainframe $helperTable($currentNode,whichRunEnv).mainframe

@@ -249,7 +249,7 @@ proc do_for_node {node args} {
 		tell_runner $node [list source $srcLoc]
 	    }
 	    tkwait variable runState($node,modelReady)
-puts "Go! mr is '$runState($node,modelReady)'"
+#puts "Go! mr is '$runState($node,modelReady)'"
 	    set runState($node,queueSize) 0
 	}
     }
@@ -276,7 +276,7 @@ proc do_in_node {node args} {
 	if {$runState($node,modelReady)==1} {
 	tell_runner $node $command
 	incr runState($node,queueSize)
-puts "put: $command"
+#puts "put: $command"
 	set runState($node,modelReady) 0
 	upvar \#0 runState($node,response$runState($node,queueSize)) result
 	if {[string equal parallel $runHow(time)]} {
@@ -290,11 +290,11 @@ puts "put: $command"
 	    fileevent $runState($node,interp) readable \
 		[list FeedModel $node pipe]
 	}
-puts "Got $result"
+#puts "Got $result"
 	incr runState($node,queueSize) -1
 	} else {
 	    set result {res 0}
-puts "$command: model dead"
+#puts "$command: model dead"
 	}
     }
     set info [lindex $result 1]
@@ -314,14 +314,14 @@ proc FeedModel {node incoming} {
 	gets $runState($node,interp) incoming
     }
     if {[string equal get [lindex $incoming 0]]} {
-puts "get: $incoming"
+#puts "get: $incoming"
 	if {[catch [lindex $incoming 1] response]} {
 	    set result [list err [split $errorInfo \n]]
 	} else {
 	    set result [list res $response]
 	}
 	tell_runner $node $result
-puts "returned: $result"
+#puts "returned: $result"
 #	eval $runHow(sendOp) exec_for_$node {$result}
     } else {
 	set runState($node,modelReady) 1
@@ -924,7 +924,7 @@ proc LoadFile {topNode tree tgt} {
             # if there is a project file
             if {[file exists $tree/model.spj]} {
                 #ShowMessage debug info "LoadFile file is package" ok
-                set loadingProject $tgt
+                set loadingProject [list $topNode $tgt]
                 set mimedir $tree
                 #OpenProjectFile $tree
             }
@@ -934,7 +934,7 @@ proc LoadFile {topNode tree tgt} {
         return $CodeChecked
     }
 }
-
+
 #                model.spj {
 
 #                    set PartType "application/x-simile"
@@ -1100,11 +1100,11 @@ proc OpenAll {win} {
     global loadingProject mimedir
     MenuSelect $win file open
     if {[info exists loadingProject]} {
-        OpenProjectFile $win $mimedir
+        OpenProjectFile $mimedir
     }
 }
 
-proc OpenProjectFile {win path} {
+proc OpenProjectFile {path} {
     global SimileProject loadingProject window_info
     set projectF [NetOpen $path/model.spj r]
     gets $projectF SimileProjectData
@@ -1116,20 +1116,24 @@ proc OpenProjectFile {win path} {
     # if params it should load the spfs
     # MergeParams {smPath metaFile interactive}
     if {[info exists SimileProject(modelRunning)]} {
-	set topNode $window_info($win,top_node)
+	set topNode [lindex $loadingProject 0]
+	set win [FindNodeTopWin $topNode].canvas
+#puts "win $win topNode £topNode"
 	if {[info exists SimileProject(spfList)]} {
 	    # file params cannot be loaded until model is ready, so set this
 	    # variable which will be read before opening the dialogue
+	    set baseDir [file dirname [lindex $loadingProject 1]]
 	    foreach {smPath spfRelPath} $SimileProject(spfList) {
 		do_in_node $topNode set ::projectParams($smPath) \
-		    [file join [file dirname $loadingProject] $spfRelPath]
+		    [file join $baseDir $spfRelPath]
 	    }
 	}
-        if {[info exists SimileProject(running_c)]} {
+        if {$SimileProject(running_c)} {
             MenuSelect $win file run_c
         } else  {
             MenuSelect $win file run_tcl
         }
+	update
         if {[info exists SimileProject(nameOfHelperStateFile)]} {
             set command [ChooseText \
                     [PrefValue custom(helperManager) helperManager] \
@@ -1151,7 +1155,7 @@ proc SaveAll {win} {
 proc SaveProjectFile {topNode path tgt} {
     global custom runState nameOfHelperStateFile
     global SimileProject model_id
-    puts [array get nameOfHelperStateFile]
+#puts [array get nameOfHelperStateFile]
     #ShowMessage debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
@@ -1339,7 +1343,7 @@ proc Reopen {canvas oldFile op} {
     MenuSelect $canvas $op $oldFile
     global loadingProject mimedir
     if {[info exists loadingProject]} {
-        OpenProjectFile $canvas $mimedir
+        OpenProjectFile $mimedir
     }
 }
 

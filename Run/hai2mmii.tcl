@@ -6,18 +6,13 @@
 # definitions that rae required for this purpose.
 
 proc do_model {node what args} {
-    global running_c errorInfo model_id instance_id model_prog
+    global errorInfo model_id instance_id model_prog
     
     if {![info exists model_id($node)]} {
 	WarnNoProgram $node
     }
     set mtime [lindex $args 0]
     set mstep [lindex $args 1]
-    if {$mstep == -1} {
-	set running_c($node) $model_id($node)
-    } elseif {![info exists running_c($node)]} {
-	WarnNoData $node
-    }
 
     if {$model_id($node)} {
 	set head [list c_${what}model $model_id($node) $instance_id($node)]
@@ -374,6 +369,10 @@ proc GetCompProperty {topNode prop args} {
 	} EndTime {
 	    return [expr $runState($topNode,currentTime) + \
 			$runState($topNode,execTime)]
+	} Value {
+	    if {$runState($topNode,modelRunning)<=2} {
+		WarnNoData $topNode
+	    }
 	}
     }
        
@@ -387,7 +386,7 @@ return $result
 }
 
 proc GetCCompProperty {topNode prop args} {
-    global running_c model_id instance_id
+    global model_id instance_id
     set node [lindex $args 0]
     set set [lrange $args 1 end]
     # first do cases that don't need any other data
@@ -439,9 +438,6 @@ proc GetCCompProperty {topNode prop args} {
 	} MaxVal {
 	    return [c_getvalue $topNode $node 8]
 	} Value {
-	    if {![info exists running_c]} {
-		WarnNoData $topNode
-	    }	
 	    set newVs [lindex $set 0]
 	    # new version -- remove list wrapping sometime
 	    if {[string length $newVs]} {
@@ -463,7 +459,7 @@ proc c_getvalue {topNode node action} {
 }
 	    
 proc GetTclCompProperty {topNode prop args} {
-    global running_c nodecount nodedata
+    global nodecount nodedata
     set node [lindex $args 0]
     set set [lrange $args 1 end]
 #    set nodecount [do_for_node $topNode set nodecount]
@@ -508,9 +504,6 @@ proc GetTclCompProperty {topNode prop args} {
 	} MaxVal {
 	    getinfo $node 6
 	} Value {
-	    if {![info exists running_c]} {
-		WarnNoData $topNode
-	    }	
 	    return [tcl_insert $node [lindex $set 0]]
 	}
     }

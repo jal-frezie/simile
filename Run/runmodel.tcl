@@ -442,7 +442,7 @@ proc CreateView {node oldPath} {
 	switch $response {
 	    yes {
 		raise [Makemre $node]
-		RunEnv::LoadViewFile $stream $origVersion
+		RunEnv::LoadViewFile $node $stream $origVersion
 	    } no {
 		LoadMREFormatView $node $stream $origVersion
 	    } cancel {
@@ -802,7 +802,7 @@ proc SetRunParams {node runParams} {
 # 3 = up to date, 4 = out of date
 
 proc StartRun {node} {
-    global runState window_info helperTable running_c projectParams
+    global runState window_info helperTable projectParams
     # ShowMessage debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
     if {[info exists helperTable($node,whichRunEnv)]} {

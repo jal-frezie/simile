@@ -146,6 +146,10 @@ stick_model_in(Win, Parent, Name, Mode) :-
         finish_progress_dialogue,
 	(Mode = reopen,
 	    set_model_file(Parent, Name),
+	    (is_toplevel(Parent), !,
+		get_default_export_name(Parent, "", NodeName),
+		add_parameter(Parent, 0, name, NodeName);
+	    true),
 	    check_autosave(Parent, Name, Translated, NeedsRedraw),
 	    (NeedsRedraw = 0,
 		/* Graphics update will have made a tk_visible call which we do
@@ -1254,6 +1258,10 @@ do_save(Win, Model, New_name) :-
 	/* If that succeeded, mark model as saved */
 	(New_name = seln_only;
 	set_model_file(Model, Name),
+	(is_toplevel(Model), !,
+	    get_default_export_name(Model, "", NodeName),
+	    add_parameter(Model, 0, name, NodeName);
+	true),
 	update_captions(Model),
 	clear_autosave(Model, Name),
 	update_ability(Model, save, file, 'Save', 0),

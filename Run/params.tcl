@@ -208,7 +208,7 @@ proc DoneParams {topNode winId} {
 }
 
 proc AcceptData {winId topNode compName complain} {
-    global paramDims paramData widgetNames runState inputHelper running_c msgs
+    global paramDims paramData widgetNames runState inputHelper msgs
 
     set node [GetCompProperty $topNode IdFromCapt $compName]
     if {$complain > -1} {
@@ -225,7 +225,7 @@ proc AcceptData {winId topNode compName complain} {
 # for each constant value, check whether it has been changed, and if so,
 # flag a complete model rebuild. Do same if running_c lost due to crash
 # or model not yet started
-    if {![info exists running_c]} {
+    if {$runState($topNode,modelRunning)<=2} {
 	set dataChanged 1
     } elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
 	set dataChanged 1
