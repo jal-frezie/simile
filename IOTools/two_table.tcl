@@ -188,8 +188,8 @@ namespace eval $keyValue {
             if {[GetModelTime]==$lastDisplay($winId)} {
                 set dataStore($winId,$varIndex,$lastDisplay($winId)) \
                         [lindex [GetModelValue $node] 0]
-                Reconbobulate $winId
             }
+                Reconbobulate $winId
             SaveState $winId
         }
         #puts "vi $varIndex"
@@ -328,21 +328,27 @@ namespace eval $keyValue {
         if {[info exists colNames]} {unset colNames}
         if {[info exists values]} {unset values}
         
-        foreach valId [array names dataStore] {
-            set valDims [split $valId ,]
-            if {[string match $winId [lindex $valDims 0]]} {
-                set varId [lindex $valDims 1]
-                if {[string match none [lindex $orientList($winId) 0]]} {
-                    if {[lindex $valDims 2]==$lastDisplay($winId)} {
-                        GrabIndices $winId 1 {} {} [lindex $valDims 1] \
-                                $dataStore($valId) $varId
-                    }
-                } else {
-                    GrabIndices $winId 0 {} {} [lindex $valDims 2] \
-                            [list [lindex $valDims 1] $dataStore($valId)]  $varId
-                }
+	set varIndex 0
+        foreach varCapt $displayList($winId) {
+            if {[llength $varCapt]} { ;# check not deleted
+#		set dataStore($winId,$varIndex,$lastDisplay($winId)) empty
             }
+            incr varIndex
         }
+
+        foreach valId [array names dataStore $winId,*,*] {
+            set valDims [split $valId ,]
+	    set varId [lindex $valDims 1]
+	    if {[string match none [lindex $orientList($winId) 0]]} {
+		if {[lindex $valDims 2]==$lastDisplay($winId)} {
+		    GrabIndices $winId 1 {} {} $varId $dataStore($valId) $varId
+		}
+	    } else {
+		GrabIndices $winId 0 {} {} [lindex $valDims 2] \
+		    [list $varId $dataStore($valId)] $varId
+	    }
+        }
+
         #puts "Data transferred to 2-d table mirror array"
         
         set curHeaderRows 0
@@ -552,8 +558,11 @@ namespace eval $keyValue {
         variable cellFormat
         variable displayFormat
         
-        set nextAxis [lindex $orientList($winId) $depth]
-        lappend ${nextAxis}List $index
+	if {[llength $index]} {
+	    set nextAxis [lindex $orientList($winId) $depth]
+	    lappend ${nextAxis}List $index
+            if {$depth < 3} {incr depth}
+	}
         
         if {[llength $struct] == 1} {
             set values($rowsList,$colsList) $struct
@@ -562,7 +571,6 @@ namespace eval $keyValue {
             set rowNames($rowsList) {}
             set colNames($colsList) {}
         } else {
-            if {$depth < 3} {incr depth}
             foreach {newIndex newStruct} $struct {
                 GrabIndices $winId $depth $rowsList $colsList $newIndex \
                         $newStruct $varId
