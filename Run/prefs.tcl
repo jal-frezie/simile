@@ -109,9 +109,9 @@ proc PrefValueSet { varName value } {
 # Example 42-5
 # A user interface to the preference items.
 #
-proc Pref_HelpCommand { Page } {
-# A single help page covers all the notebook pages at present, so the Page variable is ignored.
-     ContextSensitiveHelp .pref  diagrams/preferences.htm
+proc Pref_HelpCommand { noteb } {
+    set Page [string tolower [$noteb raise]]
+    ContextSensitiveHelp .pref  "diagrams/preferences/$Page.htm"
 }
 
 proc Pref_Apply {} {
@@ -127,17 +127,6 @@ proc Pref_Dialog {} {
         set dlg [toplevel .pref]
         wm title .pref "Preferences"
         wm resizable .pref 0 0 
-        ButtonBox $dlg.bbox -default 0
-        $dlg.bbox add -name ok -text OK -underline 0 -width 8  \
-                -command {PrefSave}
-        $dlg.bbox add -name cancel -text Cancel -underline 0 -width 8 \
-                -command {PrefDismiss}
-        $dlg.bbox add -name default -text Default -underline 0 -width 8 \
-                -command {PrefReset ; PrefDismiss}
-        $dlg.bbox add -name help -text Help -underline 0 -width 8 \
-                -command "::Pref_HelpCommand Preferences"
-#        pack $dlg.bbox -side bottom -anchor e -padx 4 -pady 4
-        pack $dlg.bbox -side bottom -padx 4 -pady 8       
 #        set notebook [NoteBook $dlg.notebook -height 220 -width 440]
         set notebook [NoteBook $dlg.notebook ]
         $notebook insert end View -text View
@@ -167,6 +156,19 @@ proc Pref_Dialog {} {
         $notebook raise View
         pack $displayTF $popupTF $barTF $linkTF $flowTF $oneWinTF $manyWinTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
+        ButtonBox $dlg.bbox -default 0
+        $dlg.bbox add -name ok -text OK -underline 0 -width 8  \
+                -command {PrefSave}
+        $dlg.bbox add -name cancel -text Cancel -underline 0 -width 8 \
+                -command {PrefDismiss}
+        $dlg.bbox add -name default -text Default -underline 0 -width 8 \
+                -command {PrefReset}
+        #        $dlg.bbox add -name default -text Default -underline 0 -width 8 \
+        #                -command {PrefReset ; PrefDismiss}
+        $dlg.bbox add -name help -text Help -underline 0 -width 8 \
+                -command "::Pref_HelpCommand $notebook"
+        #        pack $dlg.bbox -side bottom -anchor e -padx 4 -pady 4
+        pack $dlg.bbox -side bottom -padx 4 -pady 8
         
 #        ShowMessage debug info "$pref(items)" ok
         
