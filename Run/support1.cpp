@@ -317,6 +317,32 @@ void setup_graph_data(
    (*graph_data_pointer)->points = array_data;
 }
 
+enum_data_type** enum_data_pointer;
+
+void setup_enum_type_data(
+   char *host, int mem_count, char* name, ...) {
+
+   char* right;
+   va_list argptr;
+   int length;
+   char** array_data;
+
+   //   array_data = (int *)(malloc(xsize*sizeof(int)));
+   array_data = new char*[mem_count];
+   
+   va_start(argptr, name);
+   right = va_arg(argptr, char*);
+
+   for (length=0;length<mem_count;length++) {
+	array_data[length] = right;
+	right = va_arg(argptr, char*);
+   }
+   va_end(argptr);
+
+   *enum_data_pointer = new enum_data_type(host, name, mem_count, array_data, 
+					   *enum_data_pointer);
+}
+
 /*
  * Unix version: does not have min & max defined
  */

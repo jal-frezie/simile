@@ -79,6 +79,32 @@ graph_data_type* find_graph (int index, graph_data_type* use_graph_pointer) {
   return(use_graph_pointer);
 }
 
+class enum_data_type {
+public:
+  char* host;
+  char* name;
+  int mem_count;
+  char** mems;
+
+  enum_data_type* next;
+
+  enum_data_type(char* newHost, char* newName,
+		 int newMC, char** newMems, enum_data_type* prev) {
+    host = newHost;
+    name = newName;
+    mem_count = newMC;
+    mems = newMems;
+    next = prev;
+  }
+
+   ~enum_data_type() {
+     delete(mems);
+     if (next) {
+       delete(next);
+     }
+   }
+}; /* end of enum data type decl */
+
 /* This declares the structure used by the generated code to hold metadata
 about model components. It is repeated in the stub ame_cmx.cpp to access fields
 outside the dll. */

@@ -115,6 +115,7 @@ char simileVersion[] = SIMILE_VERSION;
 
 /* utility procedures making no direct reference to model classes/instances */
 graph_data_type *graphdata;
+enum_data_type *enumtypedata;
 
 double graphpoint(double xval, int index) {
 	double interval, intersection;
@@ -235,7 +236,7 @@ get_remote_value_type get_remote_value;
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*, void*,
-			  int*, node_data_line**, int*, char***);
+			  void*, int*, node_data_line**, int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
@@ -314,6 +315,7 @@ public:
 			    (void*)advance_ptr,
 			    (void*)get_remote_value,
 			    (void*)&graphdata,
+			    (void*)&enumtypedata,
 			    &phases, &nodedata, 
 			    &inArcCount, &inArcList);
     /*	sprintf(erreur, "finding %d (%s) of %d connections, first has top %s and %d dests.", 

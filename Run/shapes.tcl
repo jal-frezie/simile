@@ -1717,7 +1717,6 @@ proc SaveLooks {t type} {
 
 button .b
 set looks(buttonColor) [Desystematize [.b cget -bg]]
-set looks(darkerColor) [Desystematize [.b cget -disabledforeground]]
 set looks(windowColor) white
 destroy .b
 

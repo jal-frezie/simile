@@ -78,8 +78,7 @@ make_cons_dest(instance(Type, Sym, _, Nm, _), ConLine, DeLine) :-
 	    render(c, procedure_call, delete_list(Name), 8, DeLine);
 	Type = external, !,
 	    Nm = elt(_, Name, _),
-	    make_constant_string(c, Sym, SymCStr),
-	    name(SymC, SymCStr),
+	    make_constant_string(c, Sym, SymC),
 	    make_procedure_call_chars(c, [fetch_instance, SymC], FetchStr),
 	    name(Fetch, FetchStr),
 	    render(c, assignment, Name=Fetch, 8, ConLine),
@@ -730,10 +729,8 @@ build_constant(Language, [String, Type, Eval, Dims, Array, GraphPtr, Caption,
 			  Min, Max, Class, _Comment], Chars) :-
 	make_list_chars(Language, Dims, DimsString),
 	make_list_chars(Language, Array, ArrayString),
-	make_constant_string(Language, String, Quoted),
-	make_constant_string(Language, Caption, Quoted2),
-	name(Arg1, Quoted),
-	name(Arg5, Quoted2),
+	make_constant_string(Language, String, Arg1),
+	make_constant_string(Language, Caption, Arg5),
 	name(Arg2, DimsString),
 	name(Arg3, ArrayString),
 	make_list_chars(Language, [Arg1, Type, Eval, Arg2, Arg3, GraphPtr,
@@ -750,7 +747,7 @@ make_constant_list(L, [Const | Rest], [Line | Lines]) :-
 	name(Line, String),
 	make_constant_list(L, Rest, Lines).
 
-make_constant_string(L, String, Const) :-
+make_constant_string(L, String, Atom) :-
 	name(String, Chars),
 	(L = tcl,
 		((member(32, Chars); member(10, Chars)), !,
@@ -758,7 +755,8 @@ make_constant_string(L, String, Const) :-
 		Const = Chars);
 	L = c,
 		mark_crs(Chars, StraightChars),
-		append([34 | StraightChars], [34], Const)).
+		append([34 | StraightChars], [34], Const)),
+	name(Atom, Const).
 
 mark_crs(With, Without) :-
 	append(L1, [10 | L2], With), !,

@@ -20,7 +20,7 @@ source ../Run/support.tcl
 source ../Run/mre.tcl
 
 proc MakeHelperMenu {} {
-    global custom
+    global custom myNode
     set fm [menu .helpers -tearoff 0]
 
     $fm add command -label "Load" -command LoadView
@@ -28,8 +28,7 @@ proc MakeHelperMenu {} {
     $fm add command -label "Clear" -command ClearView
     $fm add command -label "Close" -command KillHelpers
     $fm add command -label "Parameters..." \
-	-command {FileParamDialogue [GetNodeFromFocus] \
-		      [winfo toplevel [focus]] 1}
+	-command [list FileParamDialogue $myNode {} 1]
 
     set oldDir [pwd]
     cd ../IOTools

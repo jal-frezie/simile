@@ -13,7 +13,7 @@
 
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
-    global tcl_platform graph
+    global tcl_platform graph looks
     bind $t <Destroy> "set graph($t,done) -1"
     
     set graph(bd) 3
@@ -89,6 +89,8 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     button $buttons.help -text Help -width 10 -command {ContextSensitiveHelp .graph equations/graph.htm}
     pack $buttons.help -padx 4 -pady 4 -anchor e
     pack $buttons -fill x -padx 8 -pady 8
+    set looks(darkerColor) [$buttons.enter cget -disabledforeground]
+
     
     TitleFrame $t.right.current -text "Current Position: "
     set current [$t.right.current getframe]

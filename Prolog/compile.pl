@@ -262,9 +262,9 @@ bits and pieces */
 
 /*	extract_submodel_updates(Instances, [], 1, Phases, Deltas),
 	set_free_phases(Deltas, Phases), */
-	extract_assignments(instance(submodel, _,xrefs(FullModel, _,_,_), _,_),
-			    [], TopStep, Phases, [], Used,
-			    Inters, ReevaluateForm),
+	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
+				     _,_), [], TopStep, Phases, [], Used,
+			    EnumTypeSpecs, Inters, ReevaluateForm),
 	(Phases > 0, !;
 	    raise_exception(no_phases)),
 	set_free_phases(ReevaluateForm, Phases),
@@ -296,15 +296,14 @@ bits and pieces */
 */
 	render_all(Language, global_declaration,
 		   [[void, this, []] | Constants], 0, GlobalDeclText),
-	build_submodel_functions(Language, Phases, Inters,
+	build_submodel_functions(Language, Phases, Inters, EnumTypeSpecs,
 				 StateForm, UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, FnList),
 
 	append(EntryArcs, [end], EntryList), /* because msvc++ barfs
 	                                        at empty lists */
 	all(render, make_constant_string,
-	    [unify(Language), build(EntryList), build(ArcCharStrs)]),
-	all(user, name, [build(ArcChars), build(ArcCharStrs)]),
+	    [unify(Language), build(EntryList), build(ArcChars)]),
 	render(Language, variable_declaration,
 	       ['char*', inputArcs, void, ArcChars], 0,
 	       ArcDeclText),
@@ -578,7 +577,7 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 		 Proc_ending,Blank], Decls).
 */
 
-build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
+build_eval_proc(Language, ProcName, OrderedForm, Inters, EnumTypes, Used, 
 		AllGraphs, Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
@@ -591,10 +590,12 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 	       call(void, ProcName, [real, start_time], [int, phase]), 0,
 	       EvalProcDeclText),
 	render(Language, end(procedure), ProcName, 0, Proc_ending),
-
-	(\+ AllGraphs = [], !,
+	all(compile, make_et_fn,
+		[unify(Language), build(EnumTypes), build(ETSetups)]),
 /* following section used to be c only */
-	    generate_graph_handlers(AllGraphs, AllSetups),
+	generate_graph_handlers(AllGraphs, GraphSetups),
+	append(ETSetups, GraphSetups, AllSetups),
+	(\+ AllSetups = [], !,
 	    render_all(Language, procedure_call, AllSetups,
 		       8, GraphSetupPass),
 	    refer_value(Language, phase, PhRef),
@@ -623,7 +624,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Inters,
+build_submodel_functions( Language, Phases, Inters, EnumTypeSpecs,
 			  StateForm, UpdateForm, SortedForm,
 			  Used, ExtUsers, AllGraphs, Decls) :-
 	reassure_user("Ordering model execution assignments"),
@@ -649,8 +650,8 @@ build_submodel_functions( Language, Phases, Inters,
 	    [unify(Language),
 	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
 	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
-	     build([[], [], Inters, Inters]), unify(Used), 
-	     build([_, _, IntGraphs, ExtGraphs]), build(Decls)]),
+	     build([[],[], Inters, Inters]), build([[],[], EnumTypeSpecs, []]),
+	     unify(Used), build([_, _, IntGraphs, ExtGraphs]), build(Decls)]),
 /*	build_eval_proc(Language, updatemodel, OrdUpdates, Globals, [], Used,
 			_, _, UpDecls),
 	build_eval_proc(Language, advancemodel, OrdStates, Globals, [], Used,
@@ -754,8 +755,8 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
-		    Inters, AssignList) :-
-	Instance = instance(submodel, _, xrefs(model(Functions, Submodels),
+		    EnumTypeSpecs, Inters, AssignList) :-
+	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
 	(member(instance(alarm,_,_,elt([sm(_,_,_, fm_loop(_, Al))|_], Al,_),_),
 		Functions), !; true),
@@ -763,6 +764,9 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
 	       ParamUpdates), !;
 	ParamUpdates = []),
+	(Id has_class_refinement enum_types of ETS, !,
+	    all(compile, make_et_spec, [unify(Id), build(ETS), build(ETS0)]);
+	    ETS0 = []),
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
@@ -772,10 +776,19 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
-	     append(Inters, Inters0), append(AssignList, AssignList0)]).
+	     append(EnumTypeSpecs, ETS0), append(Inters, Inters0),
+	     append(AssignList, AssignList0)]).
 
 biggest(B1, B2, Big) :-
 	Big is max(B1, B2).
+
+make_et_spec(Id, Type-Mems, enum_type(Id, Type, Mems)).
+
+make_et_fn(L, enum_type(Id, Type, Mems), ProcHeader) :-
+	all(render, make_constant_string,
+	    [unify(L), build([Id, Type | Mems]), build([IdStr | Strings])]),
+	length(Mems, MemCount),
+	ProcHeader =.. [setup_enum_type_data, IdStr, MemCount | Strings].
 
 /* extract_submodel_assignment: this goes through the model listing all the expressions,
 and generating any intermediate nodes that are needed. We then make a version
@@ -783,7 +796,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
 			    Path, Swaps, TopStep, MaxStep, Used,
-			    Inters, AssignList) :-
+			    EnumTypeSpecs, Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
 			    Name, _-Dims),
@@ -930,7 +943,7 @@ instruction because they will not require individual initialization routines. */
 	[BaseSides, SmInters, Specials] = [[], [], []]),
 
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps,
-			    Used, FnInters, AssignList0),
+			    Used, EnumTypeSpecs, FnInters, AssignList0),
 	append(FnInters, SmInters, Inters),
 	append(Specials, AssignList0, AssignList).
 
