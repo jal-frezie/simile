@@ -786,7 +786,20 @@ proc Disaggregate {parent title colour type fatness icount step \
     pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
     
     # The above "complex" frame has been constructed, but is not packed until the "More" button is pressed
+    # unless, conditional expressions indicate that one of the complex attributes does not have its default
+    # value
     #    pack $t.complex -anchor w
+    if (![string match $disaggregate(step) Default]) {
+        ShowComplexity $t
+    } elseif ($disaggregate(matherror)) {
+        ShowComplexity $t
+    } elseif ($disaggregate(separate)) {
+        ShowComplexity $t
+    } elseif ($disaggregate(fatness)!=1.0) {
+        ShowComplexity $t
+    } elseif ($disaggregate(hide)) {
+        ShowComplexity $t
+    }
     
     SetHighlights $countf
     
