@@ -194,61 +194,21 @@ namespace eval slide139 {
 					  [$cbox cget -text]]+1]
     }
 
-    proc oldOpen {winId smPath} {
-        global checkStates sliderVals
-        set metaFile [ChooseFile inputs.spf "Load input values from:" 0]
-        if {[llength $metaFile]} {
-            set iStr [open $metaFile r]
-            while {[gets $iStr savedValue] != -1} {
-                if {[string match : [string range $savedValue end end]]} {
-                    set type [string trimright $savedValue :]
-                    #ShowMessage debug info "Doing type $type" ok
-                } else {
-                    set pair [split $savedValue =]
-                    set elmt [GetIdFromCaptionPath $winId \
-				  $smPath[lindex $pair 0]]
-                    #ShowMessage debug info "Setting elmt $elmt" ok
-                    set arr [lindex $pair 1]
-                    if {[llength $arr]==1} {
-                        set ${type}($elmt) $arr
-                    } else {
-                        foreach {indx val} $arr {
-                            set ${type}($elmt,$indx) $val
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    proc oldSave {winId smPath} {
-        global checkStates sliderVals
-        set metaFile [ChooseFile inputs.spi "Save input values as:" 1]
-        if {[llength $metaFile]} {
-            set iStr [open $metaFile w]
-            
-            foreach type {checkStates sliderVals} {
-                set arrs {}
-                puts $iStr ${type}:
-                foreach {elmt val} [array get $type] {
-                    set id [split $elmt ,]
-                    if {[llength $id]==2} {
-                        set var [lindex $id 0]
-                        if {[lsearch $arrs $var]==-1} {
-                            lappend arrs $var
-                        }
-                        set ${var}([lindex $id 1]) $val
-                    } else {
-                         PutRelSliderContents $winId $iStr $smPath $elmt $val
-                    }
-                }
-                foreach arr $arrs {
-		    PutRelSliderContents $winId $iStr $smPath $arr [array get $arr]
-                    unset $arr
-                }
-            }
-            close $iStr
-        }
+# If we load a file containing slider values, we only want to set the sliders
+# that are mentioned in that file. so MergeParams needs to make a list of them
+
+    proc Open {winId smPath} {
+	global helperTable whichParamsAffected
+	set metaFile [ChooseFile params.spf "Load parameters from:" 0]
+	if {[llength $metaFile]} {
+	    set topNode $helperTable($winId,whichModel)
+	    array unset whichParamsAffected
+	    MergeParams $topNode $smPath $metaFile 0
+
+	    foreach inputPath [array names whichParamsAffected] {
+		AcceptData $winId $topNode $inputPath -1
+	    }
+	}
     }
 
     proc Save {winId smPath} {
