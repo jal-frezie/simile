@@ -956,8 +956,8 @@ proc ClearView {} {
 	foreach displayBox [array name helperTable *,whichHelper] {
 		scan $displayBox {%[^,]} winId
 		set helperId $helperTable($displayBox)
-		${helperId}::clear $winId
-	}
+        catch {${helperId}::clear $winId}; # in case helper has no clear proc
+   }
 }
 
 proc BlankCrs {withCrs} {
@@ -1610,7 +1610,8 @@ proc load_dll {lang progFileDir modelPath node} {
     if {[string match tcl $lang]} {
 	source ../Functions/procs.tcl
 	source $nameBase.$lang
-	if {[info exists simile_version]} {
+	if {[info exists simile_version]} {
+
 
 
 	    return $simile_version
