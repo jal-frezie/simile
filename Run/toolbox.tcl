@@ -1172,7 +1172,10 @@ proc SaveProjectFile {topNode path tgt} {
 	set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
     if {[info exists nameOfHelperStateFile($topNode)]} {
-        file copy -force $nameOfHelperStateFile($topNode) $path
+	if {![string equal $path \
+		  [file dirname $nameOfHelperStateFile($topNode)]]} {
+	    file copy -force $nameOfHelperStateFile($topNode) $path
+	}
         set SimileProject(nameOfHelperStateFile) \
                 [file tail $nameOfHelperStateFile($topNode)]
     }
@@ -1189,8 +1192,6 @@ proc SaveProjectFile {topNode path tgt} {
     puts $projectF [array get SimileProject]
     close $projectF
 }
-
-
 
 proc UnOrReDo {curWin fwd} {
     global window_info
