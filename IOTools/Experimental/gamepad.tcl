@@ -12,7 +12,8 @@ namespace eval $keyValue {
     }
 
     proc Restore {winId} {
-	set capt [GetState $winId]
+	initialize $winId
+	click $winId [GetIdFromCaptionPath [GetState $winId]] {}
     }
 
     proc reset {winId} {
