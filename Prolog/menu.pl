@@ -95,6 +95,8 @@ update_mode(NewMode) :-
 	    assert(cursor_is(gumby));
 	NewMode = delete, !,
 	    assert(cursor_is(pirate));
+	NewMode = snap, !,
+	    assert(cursor_is(question_arrow));
 	assert(cursor_is(arrow))).
 
 stick_model_in(Parent, Name) :-

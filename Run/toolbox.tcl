@@ -559,16 +559,14 @@ proc ClickObj { x y winId action} {
     }
     
     set node [ExtractPrologName $winId $target]
-    if {[string compare $pushedbutton snap]==0} then {
-        snap $node
-        return
-    }
     global equationbar
     global pushedbutton
     
     if {[string compare $helperTable(current) none]} {
         # go directly to helpers, do not pass Prolog, do not collect 200 error messages
         ProdObj $node [ExtractCaption $winId $node]
+    } elseif {[string compare $pushedbutton snap]==0} then {
+        snap $node
     } else {
 	if {[string compare $action click] == 0} {
             set obj [GetCaptionItem $winId $node]
@@ -582,6 +580,9 @@ proc ClickObj { x y winId action} {
             
             if {![string compare $target $obj]} {
                 set action clicktext
+		if {[string match select $pushedbutton]} {
+		    focus $winId
+		}
             }
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node)]
