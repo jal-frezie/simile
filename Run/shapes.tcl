@@ -539,8 +539,7 @@ proc ColorSymbol { w name type density colorSpec } {
         set textColor $looks($type,text)
     }
     FlashSymbol $w $name $outlineColor $textColor
-    StippleSymbol $w $name $density \
-	[expr [lsearch {select highlight} $colorSpec] != -1]
+    StippleSymbol $w $name $density $colorSpec
 }
 
 proc FlashSymbol {w name outlineColor textColor} {
@@ -566,11 +565,18 @@ proc StippleSymbol {w name density selected} {
                 $w itemconfigure $object -stipple $density
             }
         }
-	if {$selected} {
-	    $w itemconfigure $object -tag \
-		[concat selected [$w gettags $object]]
-	} else {
-	    $w dtag $object selected
+	switch $selected {
+	    not {
+		$w dtag $object selected
+		$w dtag $object tocopy
+	    } highlight {
+		$w dtag $object tocopy
+		$w itemconfigure $object -tag \
+		    [concat selected [$w gettags $object]]
+	    } select {
+		$w itemconfigure $object -tag \
+		    [concat tocopy selected [$w gettags $object]]
+	    }
 	}
     }
 }

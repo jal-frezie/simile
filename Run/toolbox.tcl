@@ -1367,7 +1367,7 @@ proc CopyCanvasToWindowsClipboard {canvas} {
         package require wmf
         
         set hdc [wmf open]; #Opens a memory metafile
-        printer::print_canvas $hdc $canvas
+        printer::print_select $hdc $canvas withtag selected
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
         wmf copy $wmfdc; # Copy to the clipboard
     }
@@ -1536,17 +1536,18 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     AddAccelerator $winid edit Undo "<Control-z>"
     $fm add command -label Redo -command "UnOrReDo $c 1" \
             -state disabled
+# no need for this as cut/copy now does it -- keep so we can have non blue
     if {[string match windows $tcl_platform(platform)]} {
         $fm add separator
         $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $c"
     }
     $fm add separator
 
-    $fm add command -label Cut -command "MenuSelect $c edit cut" \
-	-accelerator "Ctrl+X"
+    $fm add command -label Cut -command "CopyCanvasToWindowsClipboard $c; \
+					MenuSelect $c edit cut" -accelerator "Ctrl+X"
     AddAccelerator $winid edit Cut "<Control-x>"
-    $fm add command -label Copy -command "MenuSelect $c edit copy" \
-	-accelerator "Ctrl+C"
+    $fm add command -label Copy -command "CopyCanvasToWindowsClipboard $c; \
+					MenuSelect $c edit copy" -accelerator "Ctrl+C"
     AddAccelerator $winid edit Copy "<Control-c>"
     $fm add command -label Paste -command "MenuSelect $c edit paste" \
 	-accelerator "Ctrl+V"
