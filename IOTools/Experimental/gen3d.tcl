@@ -59,6 +59,14 @@ proc initialize {winId} {
 	    [list text "-60 $y 0" [expr $y+50] blue] \
 	    [list text "60 $y 0" [expr $y+50] blue]
     }
+    for {set z 10} {$z <= 50} {incr z 10} {
+	set zposn [expr 2*$z]
+	lappend grid [list text "-50 -50 $zposn" $z black] \
+	    [list text "-50 50 $zposn" $z black] \
+	    [list text "50 50 $zposn" $z black] \
+	    [list text "50 -50 $zposn" $z black]
+    }
+
     SetState $winId initial
     set useNodes($winId,selected) {}
     set trunks {}
@@ -75,9 +83,6 @@ proc AddVariable {winId} {
     $winId.intro configure -text "Click on the array value representing the X coordinates of the treelike objects to be displayed."
     GrabClicks $winId
     SetState $winId xcoord
-}
-
-proc Restore {winId} {
 }
 
 proc click {winId node caption} {
@@ -100,7 +105,6 @@ proc click {winId node caption} {
 	    sizeval {
 		$ms configure -text {}
 		lappend useNodes($winId,selected) $node
-		SetState $winId displaying
 		SaveState $winId
 		display $winId 0 0 0
 	    }
@@ -112,11 +116,38 @@ proc click {winId node caption} {
 }
 
 proc SaveState {winId} {
+    variable useNodes
+    variable viewVector
+    set state displaying
+    lappend state $viewVector(angle) $viewVector(elevation)
+    foreach node $useNodes($winId,selected) {
+	lappend state [GetCaptionPathFromId $node]
+    }
+    SetState $winId $state
+}
+
+proc Restore {winId} {
+    variable useNodes
+    variable viewVector
+    set state [GetState $winId]
+    initialize $winId
+    if {[string match displaying [lindex $state 0]]} {
+	$winId.buttons.ang set [lindex $state 1]
+	$winId.elv set [lindex $state 2]
+	foreach node [lrange $state 3 end] {
+	    lappend useNodes($winId,selected) [GetIdFromCaptionPath $node]
+	}
+    } else {
+	GrabClicks $winId
+    }
+    SaveState $winId
+    LoadPosns $winId
 }
 
 proc TweakScale {winId which where} {
     variable viewVector
     set viewVector($which) $where
+    SaveState $winId
     WindowSizeChanged $winId
 }
 
@@ -137,13 +168,16 @@ proc LoadPosns {winId} {
 	set quadlist {}
 	polygon375::GetQuadList {} [lindex [GetModelValue $px] 0] \
 	    [lindex [GetModelValue $py] 0] [lindex [GetModelValue $h] 0]
+#ShowMessage debug info "List is $quadlist" ok
 	foreach {id data} $quadlist {
-	    set x [expr [lindex $data 0]-50]
-	    set y [expr [lindex $data 1]-50]
-	    set z [lindex $data 2]
-	    lappend trunks [list line "$x $y 0" "$x $y $z" 4 brown]
-	    lappend trunks [list sphere "$x $y [expr 1.5*$z]" [expr $z/2] \
-				1 [lindex $colours $col]]
+	    if {[llength $id]} {
+		set x [expr [lindex $data 0]-50]
+		set y [expr [lindex $data 1]-50]
+		set z [lindex $data 2]
+		lappend trunks [list line "$x $y 0" "$x $y $z" 4 brown]
+		lappend trunks [list sphere "$x $y [expr 1.5*$z]" [expr $z/2] \
+				    1 [lindex $colours $col]]
+	    }
 	}
 	incr col
 	if {$col==6} {set col 0}
@@ -173,7 +207,7 @@ proc DrawShapes {winId solids tag} {
 		set middle [project [lindex $object3d 1]]
 		set midx [lindex $middle 0]
 		set midy [lindex $middle 1]
-		set rad [expr $viewVector(winX)*[lindex $object3d 2]/150.0]
+		set rad [expr $viewVector(winY)*[lindex $object3d 2]/150.0]
 		lappend insts [list [list \
 		$winId.c create oval [expr $midx-$rad] [expr $midy-$rad] \
 		     [expr $midx+$rad] [expr $midy+$rad] -tag $tag \
