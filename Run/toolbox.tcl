@@ -499,7 +499,7 @@ proc compile_c {workingDir} {
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
             } Microsoft {
-                set TOOLS32 [file dirname $env(MSVCDIR)/bin]
+                set TOOLS32 [file dirname $env(MSVCDIR)/bin]
                 exec $TOOLS32/bin/cl.exe -Ox -c -W1 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
@@ -1595,13 +1595,17 @@ proc GetPathChoice {fileType} {
     global chosenPaths custom
     set egDir $custom(prefDir)/Examples
     if {[info exists chosenPaths($fileType)]} {
-	return $chosenPaths($fileType)
+	set ch $chosenPaths($fileType)
     } elseif {[info exists chosenPaths(latest)]} {
-	return $chosenPaths(latest)
+	set ch $chosenPaths(latest)
     } elseif {[file exists $egDir]} {
-	return $egDir
+	set ch $egDir
     } else {
-	return [pwd]
+	set ch [pwd]
     }
+# make sure it existsss
+    while {![file exists $ch]} {
+	set ch [file dirname $ch]
+    }
+    return $ch
 }
-
