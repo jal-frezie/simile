@@ -10,7 +10,7 @@ interface of the application. It responds by:
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/4, change_size/2,
-	off_window/1, kill_everything/0, set_style/1]).
+	off_window/1, kill_everything/0]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, maintain, 
 	state, backup, library, ame_gen, utility, 
@@ -78,8 +78,7 @@ mode_select(Seln) :-
 
 update_mode(NewMode) :-
 	get_mode(OldMode),
-	(\+ OldMode = select,
-	    normalize(_),
+	(normalize(_),
 	    fail;
 	OldMode = NewMode), !;
 	set_mode(NewMode),
@@ -1035,15 +1034,3 @@ reroute_for(Style) :-
 	fail.
 
 reroute_for(_).
-
-/* set_style: This handles changes to the diagram style in use. Styles available
-are generic, sd (System Dynamics) and eng (Engineering). */
-
-set_style(New_style) :-
-	get_style(Old_style),
-	change_style(New_style),
-	((New_style = sd, \+ Old_style = sd;
-		\+ New_style = sd, Old_style = sd), !,
-		reroute_for(New_style);
-	true).
-

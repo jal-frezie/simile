@@ -13,24 +13,26 @@ doesn't even get all the info as to what objects are actually manipulated. OK, h
 on while I change the spec to reflect that.
 */
 
-sicstus_module(maintain, [cursor_in/2, callback/1,
+sicstus_module(maintain,
+	       [cursor_in/2, callback/1,
 		enable_text_editing_in/1, disable_text_editing_in/1,
 		get_component_from_gui/4, get_text/3,
 		find_relevant_windows/4, update_captions/1, 
 		update_color/1, shift_images/3,
-		give_focus/1, update_ability/5, scrub_run/1, kill_helpers/0,
+		give_focus/1, has_focus/1,
+		update_ability/5, scrub_run/1, kill_helpers/0,
 		display_mode/1, display_menu/1, off/1, off_all/1, 
 		move_text/2, move_display/2, reroute_display/1,
 		wiggle_bowtie/1, redisplay/1, redisplay_border/1,
-		add_window/8, redraw_window/1, inject_graphics/2,
-		display_area/1,
+		add_window/8, redraw_window/1, delete_window/1,
+		inject_graphics/2, display_area/1,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, exit_AME/0,
-	tk_equationlisting_start/0,tk_equationlisting_addsubmodel/2,
-	tk_equationlisting_addvariable/10]).
+		tk_equationlisting_start/0,tk_equationlisting_addsubmodel/2,
+		tk_equationlisting_addvariable/10]).
 
 sicstus_use_module([library(lists), state, image, ame_gen, output]).
 
@@ -210,7 +212,7 @@ along with their bases. */
 highlight(Obj, Defcon) :-
 	set_highlit_obj(Defcon, Obj),
 	member(Defcon-Color, 
-		[0-select, 1-highlight, 2-target]),
+		[0-select, 1-highlight, 2-target, 3-affect]),
 	change_color(Obj, Color).
 
 normal_colour_for(Obj, Colour) :-
@@ -243,11 +245,14 @@ change_color(Obj, Color) :-
 
 change_color(_, _).
 
+:- dynamic(has_focus/1).
+
 give_focus(Obj) :-
 	Wid shows_model _,
 	force_edit(Wid, Obj),
 	fail;
-	true.
+	retractall(has_focus(_)),
+	assert(has_focus(Obj)).
 
 /* exterminate: removes deleted stuff from the screen. Includes recursive calls to match the recursive action of deletion from model.
 

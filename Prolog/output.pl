@@ -227,7 +227,7 @@ change_title_to(Wid, New_title, NewBG) :-
 
 current_edit(Wid, Comp) :-
 	safe_tcl_eval(['GetEdit', Wid], CompStr),
-	\+ CompStr = [],
+	\+ CompStr = [48],
 	name(Comp, CompStr).
  
 force_edit(Wid, Comp) :-
@@ -265,7 +265,9 @@ inject_graphics(Wid, File) :-
 	safe_tcl_eval(['InjectGraphics', Wid, br(write(File))], _).
 
 date_is(Date) :-
-	safe_tcl_eval(['clock format [clock seconds]'], DateStr),
+	/* gmt is specified because some systems have bug-inducing 8-bit
+	characters in their local time zone names !! */
+	safe_tcl_eval(['clock format [clock seconds] -gmt true'], DateStr),
 	name(Date, DateStr).
 
 save_canvas(Wid, File, Depths, Date) :-

@@ -608,7 +608,13 @@ proc GetFromProlog {prologCmd} {
 
 proc ClickObj { x y winId action} {
     global clicktime
-    #    puts "$action it!"
+#    puts "$action it!"
+    if {[string equal ctrl $action]} {
+	set action click
+	set CD 1
+    } else {
+	set CD 0
+    }
     
     global helperTable
     global equationbar
@@ -624,7 +630,7 @@ proc ClickObj { x y winId action} {
     
     if {!$target} {
         # a background click
-        prolog [list tk_${action}('$winId', $xco , $yco )]
+        prolog [list tk_${action}('$winId', $xco , $yco , $CD)]
         return
     }
     
@@ -654,7 +660,8 @@ proc ClickObj { x y winId action} {
                 }
             }
         }
-        prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node)]
+        prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node \
+				      , $CD)]
         
         ### Formula bar
         ### Added by Jasper: ignore all eqnbar stuff if none in current window or
@@ -877,6 +884,7 @@ proc AddAccelerator {winName menu item event} {
 
 proc AddCanvasBindings { c } {
     bind $c <Button-1> {ClickObj %x %y %W click}
+    bind $c <Control-Button-1> {ClickObj %x %y %W ctrl}
     # Doubleclicks now bound to objects not canvas
     bind $c <Double-1> {ClickObj %x %y %W doubleclick}
     
@@ -1935,7 +1943,7 @@ proc accept_equation {winId text} {
     set equationbar(current_action) tick
     set equationbar(equation) [string trimright [$text get]]
     set node $equationbar($winId,node)
-    prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node)]
+    prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node, 0)]
     focus $winId.canvas
 }
 

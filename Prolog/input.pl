@@ -7,12 +7,12 @@ use goals that start with "tk_" to make the diffreence clear.
 */
 
 sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3, tk_get_params/2,
-	tk_click_obj/5, tk_click/3, tk_doubleclick/3, tk_unclick/2, 
+	tk_click_obj/6, tk_click/4, tk_doubleclick/4, tk_unclick/2, 
 	tk_drag/2, tk_menu/3, tk_menu_select/2, tk_mode_select/1, tk_visible/5,
 	tk_embrace/2, tk_abandon/0, tk_abandon_eqn/0,
 	compile_to_file/1, tk_run_settings_tweaked/0,
 	tk_off_window/1, tk_kill_everything/0,
-	tk_set_new_size/4, tk_change_size/4,  set_style/1]).
+	tk_set_new_size/4, tk_change_size/4]).
 
 sicstus_use_module([library(lists), backup, event, menu]).
 
@@ -38,27 +38,27 @@ tk_get_params(Wid, Comp) :-
 
 :- dynamic(log_interaction/0).
 
-tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
+tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name, CD) :-
 /* Extra debugging data not put into save file while swapping to MDI
 	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)), */
 	prioritize_window(Wid),
 	finish_window_resize(Wid),
 	(Action = click,
-		click_obj(Virt_X, Virt_Y, Name);
+		click_obj(Virt_X, Virt_Y, Name, CD);
 	Action = clicktext,
-		click_text(Virt_X, Virt_Y, Name);
+		click_text(Virt_X, Virt_Y, Name, CD);
 	Action = doubleclick,
 	    asserta(log_interaction),
 	    doubleclick_obj(Virt_X, Virt_Y, Name),
 	    retract(log_interaction)).
 
-tk_click(Wid, Virt_X, Virt_Y) :-
+tk_click(Wid, Virt_X, Virt_Y, CD) :-
 /*	into_save_file(tk_click(Wid, Virt_X, Virt_Y)), */
 	prioritize_window(Wid),
 	finish_window_resize(Wid),
-	click(Virt_X, Virt_Y).
+	click(Virt_X, Virt_Y, CD).
 
-tk_doubleclick(Wid, Virt_X, Virt_Y) :-
+tk_doubleclick(Wid, Virt_X, Virt_Y, _CD) :-
 /*	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)), */
 	show_wait_cursor,
 	finish_window_resize(Wid),

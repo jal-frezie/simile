@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(event, [get_info/3, get_params/2,
-		  click_obj/3, click_text/3, click/2,
+		  click_obj/4, click_text/4, click/3,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 	adjust_display_area/2, prioritize_window/1, run_settings_tweaked/0]).
@@ -96,7 +96,7 @@ get_params(_, Comp) :-
 :- dynamic(max_size_is/1).
 :- dynamic(clicked_obj_is/1).
 
-click_obj(Xpt, Ypt, Name) :-
+click_obj(Xpt, Ypt, Name, CD) :-
 	assert(clicked_obj_is(Name)),
 	find_current(Wid),
 	find_relevant_windows(Name, Wid, Depth, Trans),
@@ -108,7 +108,7 @@ click_obj(Xpt, Ypt, Name) :-
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    drag_to(NewXpt, NewYpt, Name);
-	click_on([NewXpt, NewYpt], Name),
+	click_on([NewXpt, NewYpt], Name, CD),
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
@@ -123,18 +123,18 @@ click_obj(Xpt, Ypt, Name) :-
 	    assert(max_size_is(CompSpace));
 	true)).
 
-click_text(Xpt, Ypt, Name) :-
+click_text(Xpt, Ypt, Name, CD) :-
 /* text grabbing disabled fttb
 	(get_mode(select), !,
 	    advance_phase_to(text_grabbing);
 	true), */
-	click_obj(Xpt, Ypt, Name),
+	click_obj(Xpt, Ypt, Name, CD),
 	(get_phase(moving); get_phase(moving_border(_))),
 	advance_phase_to(moving_text).
 /*
 click: Handles mouse clicks in a model window. Ignore if running model.
 */
-click(Xpt, Ypt) :-
+click(Xpt, Ypt, CD) :-
 	find_current(Wid),
 	Wid shows_model Parent,
 	(get_phase(targetting),
@@ -144,7 +144,7 @@ click(Xpt, Ypt) :-
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
 	    set_original_click(Xpt, Ypt),
-	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent)).
+	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent, CD)).
 
 /* check we are in same model we started in */
 check_same_desktop(Parent) :-
@@ -161,14 +161,14 @@ save_params(Trans, Depth, Parent) :-
 	set_current_depth(Depth),
 	set_current_node(Parent).
 
-click_on_sub(Wid, _, Trans, Parent, Depth, Comp) :-
+click_on_sub(Wid, _, Trans, Parent, Depth, Comp, CD) :-
 	save_params(Trans, Depth, Parent),
 	find_type(Comp, submodel), !,
 	add_to_translation(Trans, Comp, New_trans),
 	New_depth is Depth + 1,
 	get_original_click(Orig_X, Orig_Y),
 	translate([Orig_X, Orig_Y], New_trans, New_point),
-	click_in(Wid, New_point, New_trans, New_depth, Comp).
+	click_in(Wid, New_point, New_trans, New_depth, Comp, CD).
 
 /* This allows a 'click' call from Tk to connect to a component. Try doing without
 it as clicking on a component should always generate a 'click_obj' call.
@@ -179,11 +179,11 @@ click_on_sub(_, Point, _, _, _, Comp) :-
 This starts addition. Last clause creates a new cloud when starting a flow in the
 middle of nowhere; i could also do variables for influences. */
 
-click_in(Wid, Point, Trans, Depth, Parent) :-
+click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	targets(Wid, Parent, Point, Depth, Child), !, 
-	click_on_sub(Wid, Point, Trans, Parent, Depth, Child).
+	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD).
 
-click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
+click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	get_mode(add),
 	set_start_coords(Xpt, Ypt),
 	set_current_coords(Xpt, Ypt),
@@ -197,7 +197,7 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 	    (var(DropNode), !;
 		do_linear(New_obj, DropNode))).
 
-click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
+click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	( /* get_mode(select), !,
 	    set_start_coords(Xpt, Ypt),
 	    save_params(Trans, Depth, Parent),
@@ -206,9 +206,9 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent) :-
 	get_translation(Old_trans),
 	    get_original_click(Orig_X, Orig_Y),
 	    translate([Orig_X, Orig_Y], Old_trans, Old_point),
-	    click_on(Old_point, Parent)).
+	    click_on(Old_point, Parent, CD)).
 
-click_on([Xpt, Ypt], Poss_start) :-
+click_on([Xpt, Ypt], Poss_start, CD) :-
 	get_mode(add),
 	get_adding_object(New_obj),
 	(New_obj is_class_of_sort line,
@@ -227,15 +227,23 @@ click_on([Xpt, Ypt], Poss_start) :-
 
 /* Move: drags object to new location; will decide later what it does with links and bowties. */
 
-click_on([Xpt, Ypt], Moving_obj) :-
+click_on([Xpt, Ypt], Moving_obj, CD) :-
 	get_mode(select),
 	set_moving_obj(Moving_obj),
 	set_start_coords(Xpt, Ypt),
 /* from select mode -- rest is from move */
-	give_focus(Moving_obj),
 	finish_old_edit(Moving_obj),
-	highlight(Moving_obj, 0),
-
+	give_focus(Moving_obj),
+	(CD = 1, !,
+	    \+ (get_highlit_obj(N, Moving_obj), N<2,
+		   do_colours(Moving_obj, off));
+	(get_highlit_obj(N, Moving_obj), N<2,
+	    normalize(Moving_obj), !;
+	    normalize(_), fail;
+	    true)),
+	\+ is_toplevel(Moving_obj),
+	do_colours(Moving_obj, on),
+	
 	(Moving_obj is_of_sort line,
 	    get_shape(Moving_obj, course, [End | Rest]),
 	    (MovingEnd = moving_finish,
@@ -255,7 +263,7 @@ click_on([Xpt, Ypt], Moving_obj) :-
 		highlight(Moving_obj, 2)) */ ;
 	advance_phase_to(moving)).
 
-click_on([Xpt, Ypt], Moving_obj) :-
+click_on([Xpt, Ypt], Moving_obj, CD) :-
 	find_type(Moving_obj,TargetSort),
 	(get_mode(copy),
 		TargetSort = submodel,
@@ -285,7 +293,7 @@ click_on([Xpt, Ypt], Moving_obj) :-
 	highlight(Edit_thing, 0).
 */
 
-click_on(_,_) :-
+click_on(_,_,_) :-
 	get_mode(delete),
 	get_phase(peruse),
 	advance_phase_to(delete_hunt),
@@ -303,6 +311,46 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 	make_bounding_box(New_obj, Xpt, Ypt, Cur_size, Box),
 	attempt_addition(New_obj, Parent, Box, Comp_name, no),
 	redisplay(Comp_name).
+
+/* do_colours/1: When an object is selected this should set it and its
+neighbours to the appropriate colours, i.e.,
+blue: moves in bulk, copies and deletes
+dark green: drags and deletes
+light green: deletes */
+
+do_colours(Obj, Way) :-
+	(Way = on,
+	    highlight_deletes(Obj);
+	Way = off),
+	m_class:Obj is_connector from A to B,	    
+	    trail(A, Obj, Way);
+	Obj is_of_sort box,
+	    (Way = on, highlight(Obj, 0); Way = off, highlight(Obj, 2)),
+	    trail(Obj, _, Way);
+	(Way = on;
+	Way = off,
+	    highlight_ghosts_etc(Obj, Ghost, normalize(Ghost));
+	    clear_deletes(Obj);
+	    Way = off).
+
+trail(Node, Arc, Way) :-
+	(m_class:Arc is_connector from Node to HiddenFn,
+	    get_host(HiddenFn, Far);
+	    get_host(HiddenFn, Node),
+	    m_class:Arc is_connector from Far to HiddenFn),
+	match_with_ends(Node, Far, Arc, Way),
+	trail(Arc, _, Way).
+
+match_with_ends(Node, Far, Arc, Way) :-
+	get_highlit_obj(0, Node),
+	    get_highlit_obj(0, Far), !,
+	    highlight(Arc, 0);
+	highlight(Arc, 1),
+	((get_highlit_obj(P, Node);
+	    get_highlit_obj(P, Far)),
+	    P<2;
+	    Way = on;
+	    highlight(Arc, 2)), !.
 
 /* do_linear/3: this is executed when a click marks the initial point
 of a line object. It moves the editor into a mode in which dragging
@@ -332,12 +380,14 @@ that ghost captions are not editable, but this routine will still be called when
 a ghost node is unselected. */
 
 finish_old_edit(NextEdit) :-
-	/* If no previous edit, do nothing */
+	/* Cannot get current window edit as this will already have changed.
+	If no previous edit, do nothing */
 	\+ suspend_display,
-	get_highlit_obj(0, Prev_highlight),
-	\+ Prev_highlight = 0, !,
+	has_focus(Prev_highlight),
+%	get_highlit_obj(0, Prev_highlight),
+%	\+ Prev_highlight = 0,
+	!,
 /*	Abandon update if selected comp was influence, cloud or same as new */
-	normalize(Prev_highlight),
 	find_base(Prev_highlight, RenamedNode),
 	find_current(Window_id),
 	get_text(Window_id, RenamedNode, Text),
@@ -348,27 +398,25 @@ finish_old_edit(NextEdit) :-
 		/* If name has changed check new one is usable and update it if so */
 		(Name = OldName, !;
 		find_all_comps(Parent, RenamedNode),
-			/* If name exists in submodel or contains dir chars,
-			block the update show message and highlight the node again */
-			(cannot_call_in(RenamedNode, Parent, Name),
-				sicstus_format_to_chars("Cannot rename ~a. Its parent model already contains a component called ~a.",
-						[OldName, Name], Blurb);
-			name(Name, NameStr),
-				(Dodgy = "."; Dodgy = "/"),
-				prefix(Begin, NameStr),
-				suffix(Dodgy, Begin),
-				sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.",
-						[OldName, Name, Dodgy], Blurb)), !,
-					sicstus_format_to_chars("Error renaming node ~a.",
-							[OldName], Head),
-					do_dialogue(Head, warning, Blurb, ok, _),
-					/* Put old caption back; this is turned on for now */
-					update_captions(Prev_highlight),
-					highlight(Prev_highlight, 0),
-		                        give_focus(Prev_highlight),
-					fail;
-		    change_name(RenamedNode, Name),
-               finish_move(Parent)));
+		    /* If name exists in submodel or contains dir chars,
+		    block the update show message and highlight the node again */
+		    (cannot_call_in(RenamedNode, Parent, Name),
+			sicstus_format_to_chars("Cannot rename ~a. Its parent model already contains a component called ~a.", [OldName, Name], Blurb);
+		    name(Name, NameStr),
+			(Dodgy = "."; Dodgy = "/"),
+			prefix(Begin, NameStr),
+			suffix(Dodgy, Begin),
+			sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.", [OldName, Name, Dodgy], Blurb)), !,
+		    sicstus_format_to_chars("Error renaming node ~a.",
+					    [OldName], Head),
+		    do_dialogue(Head, warning, Blurb, ok, _),
+		    /* Put old caption back; this is turned on for now */
+		    update_captions(Prev_highlight),
+%	            highlight(Prev_highlight, 0),
+		    give_focus(Prev_highlight),
+		    fail;
+		change_name(RenamedNode, Name),
+		    finish_move(Parent)));
 	/* last line gets executed if no prev edit highlight, or display is
 	suspended */
 	true.
@@ -736,24 +784,39 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		 adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
 		     reroute_display(Moving_obj),
 		     move_text(Moving_obj, [Xoffset, Yoffset]);
-		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
+		 find_all_comps(Parent, Moving_obj),
+		     get_shape(Parent, internal_extent, ParentShape),
+		     setof(Mover, (find_all_comps(Parent, Mover),
+				      get_highlit_obj(0, Mover)), Movers),
+		     \+ (member(Crasher, Movers),
+			find_new_box(Crasher, Xoffset, Yoffset, _, BadPosn),
+			( \+ fits_inside(BadPosn, ParentShape);
+			    get_overlaps(Parent, BadPosn, Crasher))),
+		     all(event, adjust_posn,
+			 [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
+		     all(event, tweak_link_connections,
+			 [build(Movers), unify([Xoffset, Yoffset]),
+			  build(_), build(_)]),
+		     all(maintain, move_display,
+			 [build(Movers), unify([Xoffset, Yoffset])]));
+/*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
 		     find_all_comps(Parent, Moving_obj),
-/* Succeed if parent doesn't have an extent limit, otherwise check it */
+ Succeed if parent doesn't have an extent limit, otherwise check it 
 		    (get_shape(Parent, internal_extent, Parent_shape), !,
 			fits_inside(NewPosn, Parent_shape);
 		    true),
 
-			/* Check we haven't run into any obstacles... */
+			Check we haven't run into any obstacles...
 		     \+ get_overlaps(Parent, NewPosn, Moving_obj),
 
-		     /* ...or crossed into another component... */
+		     ...or crossed into another component...
 		     \+ (targets(Wid, Parent, [Xpt, Ypt], 0, Model),
 			    \+ Model = Moving_obj),
 
 		     adjust_posn(Moving_obj, [Xoffset, Yoffset]),
 		     tweak_link_connections(Moving_obj, [Xoffset, Yoffset],
 					    _,_),
-		     move_display(Moving_obj, [Xoffset, Yoffset]));  
+		     move_display(Moving_obj, [Xoffset, Yoffset]));  */
 	  get_phase(moving_border(Edge)), !,
 	  update_object_boundary(Moving_obj, Edge, Xoffset, Yoffset),
 	  redisplay_border(Moving_obj);
@@ -856,6 +919,7 @@ adjust_display_area(Wid, Visible) :-
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	(var(Side); nonvar(Side), add_to_translation([0,0,1,1], Obj, Trans)),
 	find_all_links(Obj, Link, Where),
+	\+ get_highlit_obj(0, Link), /* do not tweak if part of move */
 	end_coords(Link, Where, [Xpt, Ypt]),
 	(nonvar(Side),
 	    (Side = l, NewX is Xpt + XOff*(R-Xpt)/(R-L), NewY = Ypt;
@@ -972,43 +1036,54 @@ multi_level_mode :-
 	get_mode(ghost);
 	get_mode(delete).
 
+clear_deletes(Target) :-
+	get_highlit_obj(N, Target),
+	member(N, [2,3]),
+	normalize(Target),
+	collateral(Target, Comp),
+	clear_deletes(Comp).
+
 /* highlight_deletes: this highlights all the objects which will be zapped if a particular delete selection is made. The target itself highlights at defcon 0 and any colateral damage at defcon 1. */
 
 highlight_deletes(Target) :-
-	/* highlight_ghosts_etc(Target); */
-	recursive_highlight(Target);
-	forget_highlit_obj(1, Target),
-		highlight(Target, 0).
+	highlight_ghosts_etc(Target, Ghost, highlight(Ghost, 3)); 
+	recursive_highlight(Target, 2);
+	highlight(Target, 1).
 
-highlight_ghosts_etc(Target) :-
+highlight_ghosts_etc(Target, Ghost, DoToGhost) :-
 	(Base = Target; ghost_link(Target, Base, Ghost)),
 	m_class:initiates(Link, Base),
 	ghost_link(Link, Base, Ghost),
-		highlight(Ghost, 2),
-		highlight(Link, 1),
-		fail.
+	call(DoToGhost),
+	fail.
 
-recursive_highlight(Target) :-
-	\+ get_highlit_obj(1, Target), /* avoid infinite loop */
-	highlight(Target, 1),
-	(find_all_links(Target, Comp),
-	    \+ has_outer_equiv(_, Target, Comp),
-	    recursive_highlight(Comp);
-	/* If deleting links end-to-end, do some serious damage */
+recursive_highlight(Target, Col) :-
+	\+ get_highlit_obj(_, Target), /* avoid infinite loop */
+	highlight(Target, Col),
+	collateral(Target, Comp),
+	recursive_highlight(Comp, Col).
+
+/* collateral works out what else changes with something's delete status. An
+earlier section of a link only changes if a later section is clear -- this is
+always the case if removing a delete highlight. */
+
+collateral(Target, Damage) :-
+	find_all_links(Target, Damage),
+	    \+ has_outer_equiv(_, Target, Damage);
 	tk_get_pref(deleteEndToEnd, 1),
-	    (m_class:follows(Target, Comp);
-	    m_class:follows(Comp, Target),
-		\+ (m_class:follows(Comp, RedCross),
-		       \+ Target = RedCross)),
-	    recursive_highlight(Comp);
-	/* also delete anything that has no further need to exist */
+	    (m_class:follows(Target, Damage);
+		m_class:follows(Damage, Target),
+		\+ (m_class:follows(Damage, RedCross),
+		       \+ RedCross = Target,
+		       \+ get_highlit_obj(_, RedCross)));
+
+	/* also anything that has no further need to exist */
 	m_class:Target is_connector from End1 to End2,
-	    (End = End1; End = End2),
-	    (find_type(End, cloud); is_parameter(End, 1)),
-	    \+ (find_all_links(End, NeedsIt),
-		   \+ get_highlit_obj(1, NeedsIt)),
-	    highlight(End, 1),
-	    fail).
+	    (Damage = End1; Damage = End2),
+	    (find_type(Damage, cloud); is_parameter(Damage, 1)),
+	    \+ (find_all_links(Damage, NeedsIt),
+		   \+ NeedsIt = Target,
+		   \+ get_highlit_obj(_, NeedsIt)).
 
 thread_link(Top_arc) :-
 	update_link_route(Top_arc, yes),
@@ -1285,10 +1360,7 @@ unclick_obj :-
 
 unclick_obj :- 
 	get_mode(select), /* was move */
-	(get_highlit_obj(2, WasMoved),
-	    normalize(WasMoved),
-	    fail;
-	get_phase(moving_border(_)), !,
+	(get_phase(moving_border(_)), !,
 	    get_moving_obj(Submodel),
 	    get_shape(Submodel, internal_extent, NewSize),
 	    adjust_toplevel_windows(Submodel, NewSize);
@@ -1312,7 +1384,7 @@ unclick_obj :-
         start_progress_dialogue,
 	menu:save_isolated(CopyFile, Start, none),
 	(attempt_addition(submodel, Parent, Box, Component_name, no), !,
-	    library:ame_merge(Component_name, CopyFile, _, 'fuck it'),
+	    library:ame_merge(Component_name, CopyFile, _, 'fuck it', _),
 	    set_shape(Component_name, internal_extent, Inside),
 	    redisplay(Component_name),
 	    update_runnable(Parent);
@@ -1351,9 +1423,8 @@ unclick_obj :-
 	get_mode(delete),
 	get_phase(delete_hunt),
 	initialize_phase,
-	get_highlit_obj(0, Target),
-	forget_highlit_obj(0, Target),
-	highlight(Target, 1),
+	get_highlit_obj(1, Target),
+	highlight(Target, 2),
 	find_all_comps(Parent, Target),
 	(find_type(Target, submodel),
 		(find_all_links(Target, OldLink),
@@ -1423,7 +1494,7 @@ change_ghosthood(Node) :-
 
 delete_by_dlg(Target) :-
 	remove_highlights,
-	recursive_highlight(Target);
+	recursive_highlight(Target, 2);
 	delete_net.
 	
 /* update_runnable: When a change is made to the display that would
@@ -1477,20 +1548,20 @@ influences-flows-nodes so nothing has been consequentially deleted
 when its time comes. */
 
 delete_net :-
-	(get_highlit_obj(1, Target),
+	(get_highlit_obj(2, Target),
 	    find_type(Target, influence),
 	    (\+ is_top_arc(Target);
 	    is_top_arc(Target),
 		find_all_comps(Sm, Target),
 		add_parameter(Sm, 1, c_new, 0));
-	get_highlit_obj(1, Target),
+	get_highlit_obj(2, Target),
 	    find_type(Target, flow);
-	get_highlit_obj(1, Target)),
-
+	get_highlit_obj(2, Target)),
+	
 	kill_primitive(Target); 
 	/* now un-highlight and redisplay the ghosts of the dead node
 	*/
-	get_highlit_obj(2, ExGhost),
+	get_highlit_obj(3, ExGhost),
 		normalize(ExGhost),
 		change_ghosthood(ExGhost),
 		fail;
@@ -1513,13 +1584,14 @@ kill_primitive(Target) :-
 
 embrace(_, Obj) :-
 	(Obj = 0, !;
-	highlight(Obj, 0)).
+	give_focus(Obj) /* ,
+	highlight(Obj, 0) */).
 	
 abandon :-
 	finish_old_edit(none).
 
-abandon_eqn :-
-	normalize(_Obj).
+abandon_eqn /* :-
+	normalize(_Obj) */ .
 
 /* This will make a new node at the given position if the 4th
 arg is var, or move the given node there if it is not. Fails if it
@@ -1585,16 +1657,18 @@ relate_graphics(Node_name, Node_trans) :-
 
 move_boxes(Node_name, Node_trans) :-
 	find_all_comps(Node_name, Thing),
-	get_shape(Thing, Whatever, Wherever),
+	adjust_posn(Thing, Node_trans),
+	fail; true.
+
+adjust_posn(Thing, Trans) :-
+		get_shape(Thing, Whatever, Wherever),
 	\+ Whatever = internal_extent,
 	(Whatever = caption_offset,
-	    rel_translate(Wherever, Node_trans, New_wherever);
+	    rel_translate(Wherever, Trans, New_wherever);
 	\+ Whatever = caption_offset,
-	    translate(Wherever, Node_trans, New_wherever)),
+	    translate(Wherever, Trans, New_wherever)),
 	change_shape(Thing, Whatever, New_wherever),
-	fail.
-
-move_boxes(_, _).
+	fail; true.
 
 dissolve_component(Node) :-
 	find_all_comps(Parent, Node),

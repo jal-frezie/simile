@@ -272,8 +272,8 @@ namespace eval runcontrol33857 {
         }
         set runState(timeAtEval) $current
         set runState(currentTime) $current
-        set runState(oldTimeCopy) [after idle set runState(fractDone) \
-                [expr 1-(double($left)/$length)]]
+	set runState(oldTimeCopy) [after idle set runState(fractDone) \
+				       [expr 1-(double($left)/$length)]]
         set runState(execTime) $left
     }
     
@@ -313,8 +313,7 @@ namespace eval runcontrol33857 {
                 unset sendvars(newData)
                 set scaled_current [expr $current*$unitLength]
                 set timeToEnd [expr $update>=0?$exec:-$exec]
-                if {abs($current + $exec - $sendvars(expected_end)) \
-                            > abs($update/2)} {
+                if {abs($current + $exec - $sendvars(expected_end)) > abs($update/2.0) || ![info exists sendvars(run_length)]} {
                     set sendvars(run_length) $exec
                     set sendvars(expected_end) \
                             [expr $current + $timeToEnd]
@@ -403,7 +402,10 @@ namespace eval runcontrol33857 {
                             if {![RKUpdate $scaled_current $bigPhase $phases]} {
                                 set sendvars(currentMode) exit
                             }
-                        }
+                        } default {
+			    ShowMessage "Execution problem" error "Integration method $runState(intMethod) not supported" ok
+			    set sendvars(currentMode) exit
+			}
                     }
                     
                     # If time is used at all in update phase it is in a

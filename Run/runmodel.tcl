@@ -1437,7 +1437,7 @@ proc update_c_executable {winId} {
 
 proc load_dll {lang progDir id node} {
     #   phasecount and nodedata are set in generated code
-    global phasecount nodedata nodecount model_id model_ids model_prog
+    global phasecount nodedata nodecount model_id model_ids model_prog env
     if {[string match tcl $lang]} {
 	if {![file exists $progDir/model.tcl]} {
 	    return 0
@@ -1447,7 +1447,7 @@ proc load_dll {lang progDir id node} {
         }
         source [set model_prog $progDir/model.tcl]
         if {[info exists simile_version]} {
-            return $simile_version
+	    return [expr $simile_version==$env(SIMILE_VERSION)]
         } else {
             return 0
         }

@@ -249,7 +249,7 @@ get_highlit_obj(N, Obj) :-
 
 /* Note that many objects can be highlit at once...*/
 set_highlit_obj(N, Obj) :-
-	get_highlit_obj(N, Obj), !;
+	forget_highlit_obj(_, Obj),
 	assertz(lit_obj_is(N, Obj)).
 
 forget_highlit_obj(N, Obj) :-

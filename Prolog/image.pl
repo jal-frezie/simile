@@ -26,7 +26,7 @@ sicstus_module(image,
 	   get_inclusions/3, get_overlaps/3, draws_at/3, right_section/2,
 		find_new_box/5, line_dir_change_radius_is/1,
 	   multiple_draw/2, update_bowtie/2,
-	   adjust_bowtie/2, adjust_spline/2, adjust_posn/2,
+	   adjust_bowtie/2, adjust_spline/2,
 	   get_caption_anchor/2, end_coords/3,
 	   update_text_position/3, make_header/2, set_completion/2,
 	   update_link_route/2, shape_route/4, route_link/4,
@@ -489,13 +489,6 @@ get_caption_anchor(Path, MidPt) :-
 	TY is SY/4 + FY/4 + MY/2,
 	MidPt = [TX, TY, TX, TY].
 
-adjust_posn(Comp, [XOff, YOff]) :-
-	get_shape(Comp, bounding_box, [L1, T1, R1, B1]),
-	L2 is L1 + XOff,
-	T2 is T1 + YOff,
-	R2 is R1 + XOff,
-	B2 is B1 + YOff,
-	change_shape(Comp, bounding_box, [L2, T2, R2, B2]).
 /*
 closest_centre([X, Y], [[X1, Y1], [X2, Y2] | Rest], Start, End, Distance) :-
 	(X1 = X2, Y > min(Y1, Y2), Y < max(Y1, Y2), 

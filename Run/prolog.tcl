@@ -73,9 +73,10 @@ proc ClosePipe {} {
 }
 
 # These allow GNU prolog to use a decent amount of memory
-set env(GLOBALSZ) 131072
-set env(LOCALSZ) 65536
-set env(TRAILSZ) 49152
+set vm_usage 8192
+set env(GLOBALSZ) [expr $vm_usage/2]
+set env(LOCALSZ) [expr $vm_usage/4]
+set env(TRAILSZ) [expr $vm_usage*3/16]
 
 # Pop a backslash before chars that would break tcl lists
 regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
