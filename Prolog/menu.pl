@@ -213,8 +213,7 @@ menu_handle(Win, file, compile_c) :-
 	start_progress_dialogue,
 	use_temp_dir(Temp),
 	is_toplevel(TopModel),
-	rebuild_code(c, TopModel, CompileSuccess),
-	(CompileSuccess = no, !;
+	(\+ rebuild_code(c, TopModel), !;
 	abs_path_name(Model, root, Path),
 	    append_atoms([Temp, '/', Path], Top),
 	    output:safe_tcl_eval([file, copy, br(Top), br(Tgt)], _)),
@@ -226,8 +225,7 @@ menu_handle(Win, file, RunCmd) :-
 	start_progress_dialogue,
 	/* Compile the thing into whatever, load it */
 	scrub_run(0),
-	rebuild_code(Lang, Node, CompileSuccess),
-	(CompileSuccess = no, !; /* not much point going for run */
+	(\+ rebuild_code(Lang, Node), !; /* not much point going for run */
 	on_exception(_Whoops,
 		    (Lang = c,
 			output:prepare_c_execution(Win);
@@ -243,14 +241,78 @@ menu_handle(Win, file, RunCmd) :-
 	finish_progress_dialogue,
 	show_normal_cursor.
 
-rebuild_code(Lang, Node, CompileSuccess) :-
+rebuild_code(Lang, Node) :-
 	use_temp_dir(ProgFileDir),
-	on_exception(Whoops, (compile(Lang, Node, ProgFileDir),
-				 CompileSuccess = yes),
-		     ((Whoops = compilation_failed;
-		       output:safe_tcl_eval(['BuildProblem',
-					     br(write(Whoops))], _)),
-			 scrub_run(0))).
+	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true), !;
+	    Whoops = compilation_failed),
+	(Whoops = yes;
+	    show_error(Whoops),
+	    scrub_run(0),
+	    fail).
+
+show_error(Lossage) :-
+	(Lossage = compilation_failed, !,
+	    Text = "Something went wrong while trying to convert your model into a program.",
+	    Fault = system;
+	Lossage = instantiation_failure(Node), !,
+	    caption_for(Node, Capt),
+	    sicstus_format_to_chars("There was a problem converting the model variable ~w (caption: ~w) into a program variable.", [Node, Capt], Text),
+	    Fault = system;
+	Lossage = bad_parameter(Node, Sub), !,
+	    caption_for(Node, Capt),
+	    sicstus_format_to_chars("The model variable ~w (caption: ~w) has an equation containing parameter ~w. This could not be matched with any inputs to the variable.", [Node, Capt, Sub], Text),
+	    Fault = system;
+	Lossage = role_between_execs(NodeCap, SrcCap, RelCap), !,
+	    sicstus_format_to_chars("This model cannot be built because it contains ~a, which has an influence from ~a (in a different executable module) which it refers to by the role ~a. References to roles currently do not work between separate executables.", [NodeCap, SrcCap, RelCap], Text),
+	    Fault = user;
+	Lossage = flow_splits_at_border(BadArc, BadComp, BadModel), !,
+	    sicstus_format_to_chars("Flow ~a cannot connect to compartment ~a because its value would be split where it crosses the border of submodel ~a",
+				    [BadArc, BadComp, BadModel], Text),
+	    Fault = user;
+	Lossage = flow_comp_dims_mismatch(BadArc, BadComp, AllDims, NodeDims), !,
+	    sicstus_format_to_chars("Flow ~a cannot be connected to compartment ~a because the flow has dimensions ~w which cannot be matched with those of the compartment, which are ~w", [BadArc, BadComp, AllDims, NodeDims], Text),
+	    Fault = user;
+	Lossage = no_compiler, !,
+	    Text = "To run this model as a c++ program you need to select a c++ compiler to use. Please consult the documentation for help installing a c++ compiler.",
+	    Fault = user;
+	Lossage = unspecified(OuterText, RedText), !,
+	    sicstus_format_to_chars("Model ~w cannot be executed because it contains component ~w (shown in red), which has not been fully specified.",
+				    [OuterText, RedText], Text),
+	    Fault = user;
+	Lossage = link_inconsistency(Pair), !,
+	    sicstus_format_to_chars("This model cannot be executed because it contains an inconsistent link equivalence ~w.", [Pair], Text),
+	    Fault = system;
+	Lossage = circular_evaluation(CircSet), !,
+	    sicstus_format_to_chars("This model cannot be executed because it contains the following circular set(s) of function evaluations: ~w",
+				   [CircSet], Text),
+	    Fault = user;
+	Lossage = ordering_failure(Awkward), !,
+	    sicstus_format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Awkward], Text),
+	    Fault = system;
+	Lossage = bad_role(Lost), !,
+	    sicstus_format_to_chars("This model cannot be built because submodel ~a has a role arrow connecting it to a submodel in a separate executable module.", [Lost], Text),
+	    Fault = user;
+	Lossage = preprocessor_failure(Target), !,
+	    sicstus_format_to_chars("Failed to substitute macro functions and references in ~a", [Target], text),
+	    Fault = system;
+	Lossage = conversion_failure(Target, Problem), !,
+	    sicstus_format_to_chars("Failed to convert ~a into a program instruction. This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this variable inconsistent, in which case editing this variable again will make the model runnable. ", [Target], Amble),
+	    dialogue:decode_error(Problem, Explain),
+	    append([Amble, "The parser gave this message: ", Explain], Text),
+	    Fault = system;
+	Lossage = cannot_make_context(Target, BaseContext, BackSwap), !,
+	    sicstus_format_to_chars("Simile cannot work out which combination of program loops to put the instruction ~a into. Trying to modify ~w with ~w.",
+				    [Target, BaseContext, BackSwap], Text),
+	    Fault = system;
+	Lossage = cannot_convert_to_code(Clause), !,
+	    sicstus_format_to_chars("This model generated the instruction ~w in the internal language, which could not be converted into your chosen target language.", [Clause], Text),
+	    Fault = system;
+	Lossage = extra_graph(Expr, XAxis, GraphD), !,
+	    sicstus_format_to_chars("While making an assignment for equation ~w, an extra graph function of ~w was found, but the equation already had one graph with data ~w.", [Expr, XAxis, GraphD], Text),
+	    Fault = user;
+	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
+	    Fault = system),
+	output:safe_tcl_eval(['BuildProblem', br(chars(Text)), Fault], _).
 
 write_chars_to_file(_, []).
 

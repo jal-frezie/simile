@@ -129,8 +129,7 @@ split_base_refs([base(M, _,_) | R1], [M | R2]) :-
 
 instantiate_node(Node, Class, Instances, Path, Old_instances, New_instances) :-
 	(instance_of( Class, Node, Path, Instances, Refs), !;
-	caption_for(Node, Trouble),
-	raise_exception(['Could not make a program variable for node', Trouble])),
+	raise_exception(instantiation_failure(Node))),
 	merge_lists(Instances, Old_instances, Mid_instances),
 	merge_lists(Refs, Mid_instances, New_instances).
 	
@@ -243,8 +242,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 			     Switched, FinalExpr),
 	     (member(var_pair(_, Sub), Switched),
 		 m_update:get_solo_list_depth(Sub, _),
-		 raise_exception(['Tried and failed to process constituent',
-				  Sub]);
+		 raise_exception(bad_parameter(Node, Sub));
 		 length(Refs, _Fix)),
 	     get_units(Node, Base, Units)),
 	 (member(RType, [compartment, creation]), !,
@@ -322,9 +320,7 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 		all(maintain, caption_for,
 		    [build([Node, SourceID, Relation]),
 		     build([NodeCap, SrcCap, RelCap])]),
-		sicstus_format_to_chars("This model cannot be built because it contains ~a, which has an influence from ~a (in a different executable module) which it refers to by the role ~a. References to roles currently do not work between separate executables.", [NodeCap, SrcCap, RelCap], RoleWibbleStr),
-		name(RoleWibble, RoleWibbleStr),
-		raise_exception(RoleWibble);
+		raise_exception(role_between_execs(NodeCap, SrcCap, RelCap));
 	    SourceLocation = in_hierarchy),
 	    ref_for_arc(Entry, ArcIndex),
 	    (var(Home),
@@ -424,18 +420,14 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	    get_all_dims(Multi, BadDims),
 	    \+ BadDims = [], !,
 	    caption_for(Multi, BadModel),
-	    sicstus_format_to_chars("Flow ~a cannot be connected to compartment ~a because its value would be split where it crosses the border of submodel ~a",
-			   [BadArc, BadComp, BadModel], BadStr),
-	    name(Bad, BadStr),
-	    raise_exception(Bad);
+	    raise_exception(flow_splits_at_border(BadArc, BadComp, BadModel));
 	implicit_function(General_arc, Controller),
 	get_units(Controller, ArcUnits, ArcDims),
 	all(ame_gen, get_all_dims, [build(Exits), append(AllDims, ArcDims)]),
 	    (append(NodeDims, MergeDims, AllDims), !,
 		sum_dims(MergeDims, BaseVar, Var);
-		sicstus_format_to_chars("Flow ~a cannot be connected to compartment ~a because the flow has dimensions ~w which cannot be matched with those of the compartment, which are ~w", [BadArc, BadComp, AllDims, NodeDims], BadStr),
-	    name(Bad, BadStr),
-	    raise_exception(Bad))),
+	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
+						  AllDims, NodeDims)))),
 	default_tick_is(Tick),
 	is_instance(_, Controller, _, BaseVar, _, Ref),
 	((get_conversion(Var, ArcUnits, NodeBase/Tick, Term);

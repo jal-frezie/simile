@@ -74,7 +74,7 @@ do_assign_list(L, [Clause | Clauses],
 	do_assignment(L, [Clause | Clauses],
 		      Graph_count, Preambles, Postambles,
 			Used, Graphs, Temps, Results);
-	raise_exception(['Failed to generate code for instruction', Clause]).
+	raise_exception(cannot_convert_to_code(Clause)).
 
 do_assign_list(_, [], _, [], [Result], _, [], [], Result).
 
@@ -771,12 +771,7 @@ do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], GraphN,
 	length(Postambles, Nesting),
 	Indent is 4*Nesting,
 	make_scalar(L, arr(P, Val, Is), GraphN, ScalarDest, Graph_data),
-
-	on_exception(Lossage, 
-		make_evaluation_routine(L, Source, GraphN, Term, Graph_data),
-		raise_exception(['Generating code for formula', Source, 
-			'caused the following problem:' | Lossage])),
-
+	make_evaluation_routine(L, Source, GraphN, Term, Graph_data),
 	make_expr(L, Term, Expr),
 	render(L, assignment, ScalarDest=Expr, Indent, Action),
 
@@ -833,8 +828,7 @@ make_evaluation_routine(
 	Expr = graph(XLow, XHigh, XSpan,
 			YLow, YHigh, YSpan, Range, NumPts, Points, XAxis), !,
 		(nonvar(GraphD),
-			raise_exception(['Found graph function for', XAxis, 
-				'-- only expected graph is', GraphD]);
+			raise_exception(extra_graph(Expr, XAxis, GraphD));
 		true),
 		Points =.. [points | PointList],
 		make_evaluation_routine(Language, XAxis, 0, GraphTerm,

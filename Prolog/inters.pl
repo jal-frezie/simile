@@ -17,13 +17,10 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	    length(ExpInters, _L), !;
 	raise_exception(preprocessor_failure(Target))),
 
-	(on_exception(_, make_intermediates(FullExpr, Target, DestPath,
+	on_exception(Problem, make_intermediates(FullExpr, Target, DestPath,
 		BackSwap, ExpInters, [], Step, Used, _, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula)),
-		      fail);
-	sicstus_format_to_chars("Simile failed to convert the equation for component \"~a\" into executable code. See progress box for the location of this component. This is probably because changes were made elsewhere in the model since this component was defined, and as a result its equation no longer makes sense. You should edit the equation again.", [Target], MesgStr),
-	    name(Mesg, MesgStr),
-	    raise_exception(Mesg)),
+		      raise_exception(conversion_failure(Target, Problem))),
 
 	get_model_and_loops(SourceContext, DestPath, _, SourceLoops, _),
 	append(SourceLoops, DestPath, BaseContext),
@@ -282,7 +279,7 @@ make_intermediates(
 		    Args = [externs_done, time]; 
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	    (TermSwap = BackSwap, !;
-	    raise_exception(cannot_make_context(TermSwap, BackSwap))),
+	    raise_exception(cannot_make_context(Target, TermSwap, BackSwap))),
 	    Setups = [],
 	    NewInters = PrevInters;
 	

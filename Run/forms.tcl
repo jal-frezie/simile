@@ -1557,9 +1557,22 @@ proc equationlisting_scrollit {widget} {
     $widget set
 }
 
-proc BuildProblem {msg} {
+proc BuildProblem {msg fault} {
     toplevel .buildprob
-    wm title .buildprob "Problem making runnable model"
+    switch $fault {
+	user {
+	    set Title "Problem with model"
+	    set errLevel warning
+	    set buttonTxt Help
+	    set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
+	} system {
+	    set Title "Build failure"
+	    set errLevel error
+	    set buttonTxt {Send bug report}
+	    set buttonCmd {ShowMessage {Bug report} info {Doesn't work yet} ok}
+	}
+    }
+    wm title .buildprob $Title
     wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
@@ -1568,7 +1581,7 @@ proc BuildProblem {msg} {
     
     set labf1 [frame .buildprob.labf1]
     image create photo warn
-    warn read "../Images/warning.gif"
+    warn read "../System/lib/bwidget1.5/Images/${errLevel}.gif"
     pack [label $labf1.img -image warn] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
@@ -1580,8 +1593,8 @@ proc BuildProblem {msg} {
     pack [button $buttons.ok -text OK -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-    pack [button $buttons.help -text Help -width 10 \
-            -command {ContextSensitiveHelp .buildprob run/index.htm}] \
+    pack [button $buttons.help -text $buttonTxt -width 10 \
+            -command $buttonCmd] \
             -side left -padx 4 -pady 8
     pack $buttons
     

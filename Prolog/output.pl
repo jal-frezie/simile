@@ -43,8 +43,8 @@ sicstus_use_module([library(lists), library(charsio), state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
 	user:tcl_eval(['FilterErrors' | Cmd], Result),
-	(input:suspend_interaction_logging;
-	backup:into_save_file(safe_tcl_eval(Cmd, Result))).
+	(\+ input:log_interaction, !;
+	    backup:into_save_file(safe_tcl_eval(Cmd, Result))).
 
 tk_cursor_in(Win, Cursor) :-
 	safe_tcl_eval([Win, 'config -cursor', Cursor], _).

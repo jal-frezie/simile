@@ -93,7 +93,7 @@ build_instances(Language, DestDir, Parent, Step, NamePath,
 	   \+ load_executable(Language, DestDir, LongName, Parent)), !,
 	     \+ (Language = c,
 		    tk_get_pref(compChoice, 'None'),
-		    raise_exception('To run this model as a c++ program you need to select a c++ compiler to use. Please consult the documentation for help installing a c++ compiler.')),
+		    raise_exception(no_compiler)),
 	     retractall(entry_arcs_are(_)),
 	     assert(entry_arcs_are([])),
 	     instantiate_all(Parent, Model),
@@ -156,10 +156,7 @@ check_level_for_reds(Submodel) :-
 	\+ image:draws_complete(VisEntity),
 	caption_for(Submodel, OuterText),
 	caption_for(VisEntity, RedText),
-	sicstus_format_to_chars("Model ~w cannot be executed because it contains component ~w, which has not been fully specified.",
-		       [OuterText, RedText], MessageStr),
-	name(Message, MessageStr),
-	raise_exception(Message);
+	raise_exception(unspecified(OuterText, RedText));
 	reassure_user("Checking all model links are consistent"),
 	Parent has_part Submodel,
 	Submodel has_model_refinement link_equivalences of Equivs,
@@ -170,9 +167,7 @@ check_level_for_reds(Submodel) :-
 	       Submodel has_part S2, find_all_comps(Submodel, F2);
 	    find_all_comps(Parent, F2), S2 = Submodel,
 	       Submodel has_part F1, find_all_comps(Submodel, S1)),
-	sicstus_format_to_chars("This model cannot be executed because it contains an inconsistent link equivalence ~w -- please report this to your Simulistics service centre.", [Before-After], MessageStr),
-	name(Message, MessageStr),
-	raise_exception(Message);
+	raise_exception(link_inconsistency(Before-After));
 	fail.
 
 % The code works by first giving names to the mathematical entities in the
@@ -402,10 +397,7 @@ check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	(dummy_order(Functions, [Start | Core]),
 	get_circle_from(Core, [Start], Loop),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
-	    sicstus_format_to_chars("This model cannot be executed because it contains the following circular set(s) of function evaluations: ~w",
-				   [CircSet], EStr),
-	    name(Err, EStr),
-	    raise_exception(Err);
+	    raise_exception(circular_evaluation(CircSet));
 	true),
 	UseCompartments = [make(on_reset, [], [], 0, []) | Comps],
 	    
@@ -603,9 +595,7 @@ build_submodel_functions( Language, Phases, Inters,
 	(\+ Lost = [],
 	    select(Awkward, Lost, Others),
 	    \+ (order(Holdup, Awkward), member(Holdup, Others)),
-	    sicstus_format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Awkward], GoneStr),
-	    name(Gone, GoneStr),
-	    raise_exception(Gone);
+	    raise_exception(ordering_failure(Awkward));
 	true),
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */
@@ -890,9 +880,7 @@ get_base_side(Locale, path_substitution(Exited, Entered, _), Exited) :-
 get_swaps_and_waits(instance(submodel, ID, _,_,_), FarEnds, _, [], []):-
 	var(FarEnds),
 	    caption_for(ID, Lost),
-	    sicstus_format_to_chars("This model cannot be built because submodel ~a has a role arrow connecting it to a submodel in a separate executable module.", [Lost], RoleWibbleStr),
-	    name(RoleWibble, RoleWibbleStr),
-	    raise_exception(RoleWibble);
+	    raise_exception(bad_role(Lost));
 	FarEnds = [].
 
 get_swaps_and_waits(Instance, [base(Assoc, Link, Ptrs) | Rest], Dir,

@@ -31,6 +31,8 @@ tk_get_info(Wid, Comp, What) :-
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
 
+:- dynamic(log_interaction/0).
+
 tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
 	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)),
 	prioritize_window(Wid),
@@ -39,7 +41,9 @@ tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name) :-
 	Action = clicktext,
 		click_text(Virt_X, Virt_Y, Name);
 	Action = doubleclick,
-		doubleclick_obj(Virt_X, Virt_Y, Name)).
+	    asserta(log_interaction),
+	    doubleclick_obj(Virt_X, Virt_Y, Name),
+	    retract(log_interaction)).
 
 tk_click(Wid, Virt_X, Virt_Y) :-
 	into_save_file(tk_click(Wid, Virt_X, Virt_Y)),
@@ -49,19 +53,17 @@ tk_click(Wid, Virt_X, Virt_Y) :-
 tk_doubleclick(Wid, Virt_X, Virt_Y) :-
 	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)),
 	show_wait_cursor,
+	asserta(log_interaction),
 	doubleclick(Virt_X, Virt_Y),
+	retract(log_interaction),
 	show_normal_cursor.
 
 tk_unclick(X, Y) :-
 	into_save_file(tk_unclick(X, Y)),
 	unclick.
 
-:- dynamic(suspend_interaction_logging/0).
-
 tk_drag(Virt_X, Virt_Y) :-
-	assert(suspend_interaction_logging),
-	drag(Virt_X, Virt_Y),
-	retractall(suspend_interaction_logging).
+	drag(Virt_X, Virt_Y).
 
 tk_menu(Window, Header, Item) :-
 	into_save_file(tk_menu(Window, Header, Item)),
