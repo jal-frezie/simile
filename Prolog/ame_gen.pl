@@ -159,9 +159,10 @@ influence_makes_ghost(Component) :-
 
 find_base(Ghost, Base) :-
 	Ghost has_type flow, !,
-	((sequence(Base, Ghost); sequence(Ghost, Base)),
+	((sequence(Base, Ghost); Base = Ghost; sequence(Ghost, Base)),
 	    implicit_function(Base, FlowFn),
-	    FlowFn has_class_refinement value of _Val, !;
+	    (FlowFn has_class_refinement value of _Val;
+		_Incoming is_connector from _Source to FlowFn), !;
 	(sequence(Base, Ghost); Base = Ghost),
 	\+ sequence(_, Base));
 /*	find_name_host(Ghost, Base); */
