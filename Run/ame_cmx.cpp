@@ -646,7 +646,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 			return error;
    } /* if(error) */
         error = Tcl_GetIntFromObj(interp, argv[8], &(graphptr->yspan));
-		 if (error != TCL_OK) {
+		 if (error != TCL_OK) {
 
 			return error;
    } /* if(error) */
@@ -1245,7 +1245,7 @@ Tcl_Obj* fill_value(Model* localType, void* smHandle, int tree[], int type,
   default: /* value is a dimension of the array we are accessing */
     localObj = Tcl_NewListObj(0, NULL);
     if (nVs) {
-      Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
+      Tcl_ListObjGetElements(NULL, nVs, &arrayLength, &arrayVals);
       arrayPosn = 0;
     } else {
       eltVals = NULL;
@@ -1504,7 +1504,12 @@ int Ame_dll_Init(Tcl_Interp *interp) {
     Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
 
-    Tcl_GetVersion(&maj, &min, NULL, NULL);
-    sprintf(pkgName, "ame_dll_%d_%d", maj, min);
-    return Tcl_PkgProvide(interp, pkgName, simileVersion);
+ /* Tcl_GetVersion does not work in 8.0
+   Tcl_GetVersion(&maj, &min, NULL, NULL); 
+    sprintf(pkgName, "ame_dll_%d_%d", maj, min); */
+
+	strcpy(pkgName, "info tclversion");
+	Tcl_Eval(interp, pkgName);
+	sprintf(pkgName, "%s.%s", interp->result, simileVersion);
+    return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }

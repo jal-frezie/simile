@@ -33,9 +33,6 @@ switch $tcl_platform(platform) {
 # This is needed for dll interface with tcl later than 8.0p2
 	set env(TCL_LIBRARY) [info library]
 
-# This specifies the TclTk libraries used by the compiler
-	set env(TCL_COMPILER) vc
-
 # Try to find the location of the compiler
 	if {[info exists env(MSVCDIR)]} {
 	    # No problem, all is well

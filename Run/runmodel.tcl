@@ -1634,9 +1634,9 @@ proc build_c_stub {targetDir make_new_stub} {
     global tcl_platform env
 
     scan [info tclversion] {%d.%d} MAJ MIN
-    set stubPkg ame_dll_${MAJ}_${MIN}
+    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION)
     if {!$make_new_stub} {
-	if {![catch {package require $stubPkg $env(SIMILE_VERSION)} dummy]} {
+	if {![catch {package require -exact Ame_dll $stubPkg} dummy]} {
 	    return
 	} else {
 	    ShowMessage {Loading dll} info "Loading stub dll caused a $dummy -- program will now attempt to build a new one" ok
@@ -1646,11 +1646,6 @@ proc build_c_stub {targetDir make_new_stub} {
     set old_dir [pwd]
     cd $targetDir
     set TCL [file dirname [file dirname [info library]]]
-    if {[info exists env(TCL_COMPILER)]} {
-	set COMPILER $env(TCL_COMPILER)
-    } else {
-	set COMPILER {}
-    }
 
     switch $tcl_platform(platform) {
 	unix {
@@ -1665,9 +1660,18 @@ proc build_c_stub {targetDir make_new_stub} {
 	windows {
 	    set TCL [file attributes $TCL -shortname]
 	    set TARGET [file attributes $targetDir -shortname]/ame_dll$MAJ$MIN.dll
+
+# Older TclTks have a special library for Visual C, which is also used by
+# mingw -- guessing the transition happened at 8.1
+    if {$MAJ+$MIN/10.0 < 8.1} {
+	set COMPILER vc
+    } else {
+	set COMPILER {}
+    }
+
+
 # Method using MingW32 gcc: Dlls refuse to load into tcl when
 # it is running under Prolog. However it seems to work OK in WinNT.
-
 	    if {$make_new_stub != 1} {
 #catch {exec gcc -v} vInfo
 #ShowMessage debug info "using $vInfo" ok
@@ -1680,7 +1684,7 @@ proc build_c_stub {targetDir make_new_stub} {
 #		    file delete junk.tmp
 #		exec dlltool --dllname $TARGET --base-file base.tmp \
 #		    --output-exp exp.exp --def stub.def
-		exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=gcc obj.o $TCL/lib/$dll.lib
+		exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=gcc obj.o $TCL/lib/$dll$COMPILER.lib
 #		exec gcc -mdll -o $TARGET obj.o -Wl,exp.exp -L. -l$dll
 #		file delete exp.exp
 
@@ -1703,8 +1707,8 @@ proc build_c_stub {targetDir make_new_stub} {
 #		--output-lib libame_dll.a
 	}
     }
-    pkg_mkIndex $targetDir
-    package require $stubPkg $env(SIMILE_VERSION)
+    pkg_mkIndex $targetDir *
+    package require -exact Ame_dll $stubPkg
     cd $old_dir
 }
 
