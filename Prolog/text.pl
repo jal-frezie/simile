@@ -2,7 +2,7 @@
 **** Text Processing - utlities for building the compiled output
 *******************************************************************************/
 
-sicstus_module( text, [split_path_chars/4, replace_char/4, alphanumeric_only/2] ).
+sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3]).
 
 sicstus_use_module( [library( lists ), utility, sp_only] ).
 
@@ -31,11 +31,11 @@ replace_char( Char1, Atom1, Char2, Atom2 ) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Makes a nice quoteless Prolog atom from a variable name
 
-alphanumeric_only( Input, Output ) :-
+alphanumeric_only( Input, L, Output ) :-
 	sicstus_format_to_chars( "~w", [Input], InputChars),
 	trim_nonprinters(InputChars, [In1 | InList] ),
-	starter_only(In1, Out1),
-	continuer_only( InList, OutList ),
+	starter_only(In1, L, Out1),
+	continuer_only( InList, L, OutList ),
 	name( Output, [Out1 | OutList] ).
 
 /* trim_nonprinters gets rid of non-printing chars from both ends of the string.
@@ -53,28 +53,22 @@ trim_nonprinters(All, Trimmed) :-
 	Trimmed = "anon".
 
 prints(Char) :-
-	Char > 32,
-	Char < 127.
+	Char > 32.
 	
-starter_only(H, C) :-
-	"a" =< H, H =< "z", !,
+starter_only(H, L, C) :-
+	("a" =< H, H =< "z"; \+ L = c, H>127), !,
 		C = H;
 	"A" =< H, H =< "Z", !,
 		C = H; /* used to add 32 to make all start with lowercase */
-	C is "x".
+	C is "_".
 
-continuer_only( [], [] ).
-continuer_only( [H|T1], [H|T2] ) :-
-	"a" =< H, H =< "z",
+continuer_only( [], _L, [] ).
+continuer_only( [H|T1], L, [H|T2] ) :-
+	("a" =< H, H =< "z";
+	    \+ L = c, H>127;
+	    "A" =< H, H =< "Z";
+	    "0" =< H, H =< "9"),
 	!,
-	continuer_only( T1, T2 ).
-continuer_only( [H|T1], [H|T2] ) :-
-	"A" =< H, H =< "Z",
-	!,
-	continuer_only( T1, T2 ).
-continuer_only( [H|T1], [H|T2] ) :-
-	"0" =< H, H =< "9",
-	!,
-	continuer_only( T1, T2 ).
-continuer_only( [_|T1], [95 | T2] ) :- /* replace with underscore */
-	continuer_only( T1, T2 ).
+	continuer_only( T1, L, T2 ).
+continuer_only( [_|T1], L, [95 | T2] ) :- /* replace with underscore */
+	continuer_only( T1, L, T2 ).

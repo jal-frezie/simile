@@ -319,10 +319,6 @@ generate_name(L, Atom, N, Used) :-
 
 generate_name(L, Atom, UnusedName, Used, Spares) :-
 	(L = c; L = tcl; L = prolog),
-/* can get called with numeric arguments sometimes so do this... */
-	(number(Atom), !, alphanumeric_only( number, Name );
-	/* atom is not a number; remove pathname and comment 
-			if prolog */
 	    (L = prolog, !,
 		[SlashNo] = "/", /* ends pathname */
 	        [Space, Paren1, Paren2] = " ()", /* begins comment */
@@ -338,7 +334,7 @@ generate_name(L, Atom, UnusedName, Used, Spares) :-
 		     SeedStr = LocalStr),
 		     name(LocalName, SeedStr);
 		LocalName = Atom),
-		alphanumeric_only(LocalName , Name )),
+		alphanumeric_only(LocalName, L, Name),
 	ensure_unused( Name, UnusedName, Used, Spares).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
