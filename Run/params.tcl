@@ -132,8 +132,8 @@ proc AddEntry {winId topNode node mustShow notInput} {
     pack [label $slot.l -text $slotCaption -fg red] -side left
     if {$nodeDims>1} {
 	pack [button $slot.b -image $iconImages(edit) -command [namespace code [list GetFromTable $winId $compName $notInput]]] -side right
+	BindPopup $slot.b "Get values from file"
     }
-    BindPopup $slot.b "Get values from file"
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
     pack [entry $slot.e -width 30] -side left -fill x -expand on
