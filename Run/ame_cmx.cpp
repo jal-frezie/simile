@@ -152,10 +152,7 @@ double graphpoint(double xval, int index) {
 
 void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
-}
-
-
-
+}
 
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
 			     int num) {
@@ -927,7 +924,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
    double starttime;
-   int phase;
+   int phase;
    int error;
 
    if (argc != 5) {
@@ -1483,7 +1480,7 @@ case we may use several random numbers to get a random double. */
 double rand_fract() {
     double fraction = 0, precise = 1;
     while (precise > 1e-16) {
-	precise = precise/(RAND_MAX+1);
+	precise = precise/(RAND_MAX+1.0);
 	fraction = fraction+precise*rand();
     }
     return fraction;
