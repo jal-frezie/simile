@@ -201,7 +201,7 @@ proc ControlDraw {prologVersion} {
     }
     if {[string mat GNU [PrefValue custom(compChoice) compChoice]]} {
 	set compiler g++
-	set possDirs {}
+	set possDirs {{}}
     }
     if {[info exists compiler]} {
 	if {[llength [set execLoc [auto_execok $compiler]]]} {
