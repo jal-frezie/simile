@@ -210,7 +210,10 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	(New_obj is_class_of_sort box, !,
 		(New_obj is_class_of_sort rounded_rect,
 			advance_phase_to(rubberband);
-		add_at_point(Xpt, Ypt, New_obj, Parent, _));
+		add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
+	    (setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
+		NewLooks = []),
+	    all(event, spread_colour, [build(NewLooks), unify(yes)]));
 	make_terminator(New_obj, Parent, DropNode),
 	    (var(DropNode), !;
 		do_linear(New_obj, DropNode))).
@@ -856,12 +859,12 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     tweak_link_connections(Moving_obj, [Xoffset, Yoffset],
 					    _,_),
 		     move_display(Moving_obj, [Xoffset, Yoffset]));  */
-	  get_phase(moving_border(Edge)), !,
-	  update_object_boundary(Moving_obj, Edge, Xoffset, Yoffset),
-	  redisplay_border(Moving_obj);
+	get_phase(moving_border(Edge)), !,
+	    update_object_boundary(Moving_obj, Edge, Xoffset, Yoffset),
+	    redisplay_border(Moving_obj);
 	get_phase(moving_text),
-		update_text_position(Moving_obj, Xoffset, Yoffset),
-		move_text(Moving_obj, [Xoffset, Yoffset])),
+	    update_text_position(Moving_obj, Xoffset, Yoffset),
+	    move_text(Moving_obj, [Xoffset, Yoffset])),
 	move_something,
 	set_start_coords(Xpt, Ypt).
 
@@ -1491,10 +1494,7 @@ unclick_obj :-
 	    H > Standard//2,
 	    attempt_new_component(Parent, [L, T, R, B], [0, 0, W, H]);
 	New_obj is_primitive,
-	    \+ New_obj is_class_of_sort line,
-	    (setof(NewLook, presence_affects(New_obj, NewLook), NewLooks), !;
-		NewLooks = []),
-	    all(event, spread_colour, [build(NewLooks), unify(yes)])),
+	    \+ New_obj is_class_of_sort line),
 	update_runnable(Parent).
 
 unclick_obj :- 
