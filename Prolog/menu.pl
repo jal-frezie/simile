@@ -470,10 +470,36 @@ menu_handle(Win, edit, CutOrCopy) :-
 	    Msg = "Copy in progress"),
         start_progress_dialogue,
 	reassure_user(Msg),
-	get_edit_model(Win, Model, _),
+	get_edit_model(Win, TopModel, _),
+
+	/* Old version: took too long
+	New version: first, find the innermost submodel with the whole
+	selection in it */
+	setof(Seln, (contains(TopModel, Seln),
+			Seln is_of_sort box,
+			\+ Seln = TopModel,
+			event:doomed(Seln)), SelnList),
+	find_innermost_selection_holder(SelnList, Model),
+
 	assert(suspend_display),
 	invert_seln_in(Model),
 	event:delete_net(Model),
+
+
+	/* Now delete unselected submodels containing selected components?
+	Why not just select them...
+
+	(contains(Innermost, Bit),
+	    \+ Bit = Innermost,
+	    find_type(Bit, submodel),
+	    \+ member(Bit, SelnList),
+	    contains(Bit, SelnBit),
+	    member(SelnBit, SelnList),
+	    
+		      
+	and unselected links across
+	selected submodels */
+	
 	/* OK, now I just have the originally selected bit left -- work out
 	how big it is, save it and enable pasting */
 	record_bbox(Model),
@@ -483,12 +509,12 @@ menu_handle(Win, edit, CutOrCopy) :-
 	ame_save(CopyFile, Model, Date),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
-	added so any external links and ghosts come out right */
+	added so any external links and ghosts come out right
 	(setof(Bit, (contains(Model, Bit), Bit is_of_sort box, \+ Bit = Model),
 	      SelBits), !;
-	SelBits = []),
+	SelBits = []), */
 	restart_move,
-	all(event, do_colours, [build(SelBits), unify(on)]),
+	all(event, do_colours, [build(SelnList), unify(on)]),
 	retract(suspend_display),
 	(CutOrCopy = cut,
 	    event:delete_net(Model),
@@ -652,6 +678,14 @@ invert_seln_in(Model) :-
 	    event:do_colours(Node, on),
 	    fail;
 	true).
+
+find_innermost_selection_holder([Comp | Rest], Innermost) :-
+	find_all_comps(Model, Comp),
+	(Rest = [], !,
+	    Innermost = Model;
+	find_innermost_selection_holder(Rest, HoldsRest),
+	    contains(Innermost, HoldsRest),
+	    contains(Innermost, Model), !).
 
 find_space_for([L, T, R, B], Model, DefPt, [TargetX, TargetY]) :-
 	get_shape(Model, internal_extent, [ML, MT, MR, MB]),
