@@ -1928,7 +1928,15 @@ proc compare_tcl_lists {count list1 list2} {
 	}
 	return 1
 }
-
+proc init_pop_member {new_one index parent channel} {
+    upvar 1 $new_one tail
+    set tgt AME_model<>::$tail
+    set ${tgt}::instanceid $index
+    set ${tgt}::parentId $parent
+    set ${tgt}::channelId $channel
+    set ${tgt}::new_instance 1
+    set ${tgt}::next 0
+}
 
 proc ame_rand {lowBound highBound} {
 	return [expr $lowBound +[random01]*($highBound - $lowBound)]

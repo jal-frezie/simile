@@ -349,15 +349,19 @@ generate_name( L, Atom, UnusedName, Used ) :-
 	(number(Atom), !, alphanumeric_only( number, Name );
 	/* atom is not a number; remove pathname and comment 
 			if prolog */
-		(L = prolog, !,
-			[SlashNo] = "/", /* ends pathname */
-			[Space, Paren] = " (", /* begins comment */
-			name(Atom, AtomStr),
-			(LocalStr = AtomStr; append(_, [SlashNo | LocalStr], AtomStr)),
-			\+ member(SlashNo, LocalStr),
-			(SeedStr = LocalStr; 
-				append(SeedStr, [Space, Paren | _], LocalStr)),
-			\+ append(_, [Space, Paren | _], SeedStr),
+	    (L = prolog, !,
+		[SlashNo] = "/", /* ends pathname */
+	        [Space, Paren1, Paren2] = " ()", /* begins comment */
+	        [I, N] = "in", /* precedes role */
+	        name(Atom, AtomStr),
+		(LocalStr = AtomStr; append(_, [SlashNo | LocalStr], AtomStr)),
+		    \+ member(SlashNo, LocalStr),
+		    (SeedStr = LocalStr; 
+			append(NameStr, [Space, Paren1 | CmtStr], LocalStr),
+			suffix([Space, I, N, Space | RoleCBStr], CmtStr),
+			append(RoleStr, [Paren2], RoleCBStr),
+			append([NameStr, "_", RoleStr], SeedStr)),
+			\+ append(_, [Space, Paren1 | _], SeedStr),
 			name(LocalName, SeedStr);
 		LocalName = Atom),
 		alphanumeric_only(LocalName , Name )),

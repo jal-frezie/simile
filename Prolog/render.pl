@@ -803,7 +803,11 @@ make_struct_reference(c, Struct, Var, Result) :-
 make_struct_reference(tcl, Struct, Var, Result) :-
 	Struct = '', !,
 	    Result = Var;
-	sicstus_format_to_chars("${~w}::~w", [Struct, Var], ResultStr),
+	(name(Struct, StructStr),
+	    cannot_be_dollared(StructStr), !,
+	    Format = "[set ~w]::~w";
+	Format = "${~w}::~w"),
+	sicstus_format_to_chars(Format, [Struct, Var], ResultStr),
 	    name(Result, ResultStr).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

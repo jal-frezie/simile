@@ -119,6 +119,16 @@ BOOLEAN prune (SMClass **metaptr, int id_count, ...) {
   return !status;
 }
 
+template <class SMClass>
+void init_pop_member (SMClass *new_one, int index, int parent, int channel) {
+  new_one->instanceid[0] = index;
+  new_one->instanceid[1] = 0;
+  new_one->parentId = parent;
+  new_one->channelId = channel;
+  new_one->new_instance = 1;
+  new_one->next = 0;
+}
+
 int* arrange_indices(int id_count, ...) {
   int length;
   va_list argptr;

@@ -478,15 +478,12 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	Indent is Nesting*4,
 	Indent1 is Indent + 4,
 
-	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr),
 	append_atoms(Name, count, Count),
 	append_atoms(Name, pointer, Pointer),
+	append_atoms(Name, meta, MetaPointer),
+	resolve_pointer(L, MetaPointer, MPTarget),
 	make_struct_reference(L, ParentPtr, Count, Index), 
 	refer_value(L, Index, RefIndex),
-
-	make_struct_reference(L, Pointer, parentId, NewParent),
-	make_struct_reference(L, Pointer, channelId, NewChannel),
-	make_struct_reference(L, Pointer, new_instance, NewInstance),
 
 	NewSpec =.. [_, InitVar],
 	UseElementRef = RefIndex,
@@ -497,26 +494,20 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	render(L, while_start, CompValRef>=1, Indent, Loop0),
 	make_expr(L, CompValRef-1, NewCompVal),
 	render(L, assignment, CompVal=NewCompVal, Indent1, Loop1),
-	render(L, increment_by, [Index, -1], Indent1, Loop1a),
-	fill_instance_ids(L, 0, Pointer, [RefIndex], Indent1, Loop3),
-	/* no parent we are doing creation/immigration here */
-	render(L, assignment, NewParent=0, Indent1, Loop3a),
-	nth(ChannelN, Used, InitVar), !,
-	render(L, assignment, NewChannel=ChannelN, Indent1, Loop3b),
-	render(L, assignment, NewInstance = 1, Indent1, Loop3c),
+	render(L, increment_by, [Index, 1], Indent1, Loop1a),
 	render(L, assign_space, Pointer=[ParentPtr, Name, [UseElementRef]],
 	       Indent1, Loop2),
-	append([Loop0, Loop1, Loop1a, Loop2,
-		Loop3, Loop3a, Loop3b, Loop3c],
-	       Starters),
+	nth(ChannelN, Used, InitVar), !,
+	render(L, procedure_call, init_pop_member(Pointer, RefIndex, 0,
+						  ChannelN), Indent1, Loop3),
+	/* no parent we are doing creation/immigration here */
+	append([Loop0, Loop1, Loop1a, Loop2, Loop3], Starters),
 
 	/* End of submodel loop; insert into list and do next */
-	make_struct_reference(L, Pointer, next, OnPointer),
-	refer_value(L, SubmodelStartPtr, SubmodelStartPtrRef),
-	render(L, assignment, OnPointer=SubmodelStartPtrRef,
-			Indent1, EndLoop0),
 	refer_value(L, Pointer, PointerRef),
-	render(L, assignment, SubmodelStartPtr=PointerRef, Indent1, EndLoop1),
+	render(L, assignment, MPTarget=PointerRef, Indent1, EndLoop0),
+	make_struct_reference(L, Pointer, next, OnPointer),
+	render(L, make_reference, MetaPointer=OnPointer, Indent1, EndLoop1),
 	render(L, end(while), 'New instances', Indent, EndLoop4),
 	append([EndLoop0, EndLoop1, EndLoop4], Finishers),
 
@@ -537,31 +528,26 @@ it in a local variable, but this way is conceptually simpler, which is everythin
 do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	      Graph_count, Preambles, [Current | Postambles],
 	      Used, Graphs, Temps, Results) :-
-	generate_name(L, breeder, Breeder, Used),
-	Temps = [[int, Breeder, []] | Temps0],
-	refer_value(L, Breeder, BreederRef),
 	length(Preambles, Nesting),
 	Indent is Nesting*4,
 	Indent1 is Indent + 4,
 	Indent2 is Indent1 + 4,
-	Indent3 is Indent2 + 4,
 
 	/* Now stick in a loop */
 	make_struct_reference(L, ParentPtr, Name, SubmodelStartPtr),
+	refer_value(L, SubmodelStartPtr, SubmodelStartPtrRef),
 	append_atoms(Name, count, Count),
 	append_atoms(Name, pointer, Pointer),
 	append_atoms(Name, meta, MetaPointer),
+	resolve_pointer(L, MetaPointer, MPTarget),
 	make_struct_reference(L, ParentPtr, Count, Index), 
 	refer_value(L, Index, RefIndex),
 
 	/* Set pointer to first model in list, and dive into loop */
-	render(L, make_reference, MetaPointer=SubmodelStartPtr, Indent, Loop0),
-	resolve_pointer(L, MetaPointer, MPTarget),
-	refer_value(L, MPTarget, MPTargetRef),
-	ptr_compare(L, MPTargetRef, 0, NotDone),
+	render(L, assignment, Pointer=SubmodelStartPtrRef, Indent, Loop0),
+	refer_value(L, Pointer, PointerRef),
+	ptr_compare(L, PointerRef, 0, NotDone),
 	render(L, while_start, NotDone, Indent, Loop1),
-	render(L, open_context, Pointer=[ParentPtr, Name, MPTargetRef],
-			Indent1, Loop2),
 
 	/* Conditional to avoid reproduction with new individuals  -- they have
 	not been initialized yet */
@@ -578,51 +564,31 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	 L = tcl,
 	    ParentId = ParentArray),
 	refer_value(L, ParentId, ParentRef),
-	render(L, assignment, Breeder=ParentRef, Indent1, Loop2a),
 	render(L, while_start, ReproRef>=1, Indent1, Loop3),
 	make_expr(L, ReproRef-1, NewRepro),
 	/* cannot use decrement because quantity is floating point */
 	render(L, assignment, Repro=NewRepro, Indent2, Loop4),
 
 	/* Now make context for new individual */
-	render(L, increment_by, [Index, -1], Indent2, Loop6),
+	render(L, increment_by, [Index, 1], Indent2, Loop6),
 	render(L, assign_space, 
-			Pointer=[ParentPtr, Name, [RefIndex]],
+			MPTarget=[ParentPtr, Name, [RefIndex]],
 			Indent2, Loop7),
-	make_struct_reference(L, Pointer, parentId, NewParent),
-	make_struct_reference(L, Pointer, channelId, NewChannel),
-	make_struct_reference(L, Pointer, new_instance, NewInstance),
 	nth(ChannelN, Used, ReproName), !,
-	fill_instance_ids(L, 0, Pointer, [RefIndex], Indent2, Loop8),
-	render(L, assignment, NewParent=BreederRef, Indent2, Loop8a),
-	render(L, assignment, NewChannel = ChannelN, Indent2, Loop8b),
-	render(L, assignment, NewInstance=1, Indent2, Loop8c),
-	append([Loop0, Loop1, Loop2, CheckOld, Loop2a, Loop3, Loop4,
-		Loop6, Loop7, Loop8, Loop8a, Loop8b, Loop8c], Starters),
+	render(L, procedure_call, init_pop_member(MPTarget, RefIndex, ParentRef,
+						  ChannelN), Indent1, Loop8),
+	append([Loop0, Loop1, CheckOld, Loop3, Loop4,
+		Loop6, Loop7, Loop8], Starters),
 
 	/* End of submodel loop; insert into list and do next */
-	make_struct_reference(L, Pointer, next, OnPointer),
-	refer_value(L, SubmodelStartPtr, SubmodelStartPtrRef),
-	render(L, assignment, OnPointer=SubmodelStartPtrRef, Indent2, EndLoop0),
-	/* patch to fix horrible bug: if parent is first in list, move the
-		metapointer when child gets put there! */
-
-	refer_value(L, MetaPointer, MetaPointerRef),
-	refer(L, SubmodelStartPtr, SubmodelStartRef),
-	ptr_compare(L, MetaPointerRef, SubmodelStartRef, MoveMeta),
-	render(L, if_start, !(MoveMeta), Indent2, Patch0),
-	render(L, make_reference, MetaPointer=OnPointer, Indent3, Patch1),
-	render(L, end(cond), 'Patch pointer interference', Indent2, Patch2),
-
-	refer_value(L, Pointer, PointerRef),
-	render(L, assignment, SubmodelStartPtr=PointerRef, Indent2, EndLoop1),
-	EndLoop3 = Loop2, /* indent is wrong but so what */
+	make_struct_reference(L, MPTarget, next, OnMeta),
+	render(L, make_reference, MetaPointer=OnMeta, Indent2, EndLoop1),
 	render(L, end(while), Repro, Indent1, EndLoop4),
-
-	render(L, make_reference, MetaPointer=OnPointer, Indent2, EndLoop9),
-	render(L, end(while), MPTargetRef, Indent, EndLoop12),
-	append([EndLoop0, Patch0, Patch1, Patch2,
-			EndLoop1, EndLoop3, EndLoop4, OldCheckDone,
+	make_struct_reference(L, Pointer, next, OnPointer),
+	refer_value(L, OnPointer, OnPointerRef),
+	render(L, assignment, Pointer=OnPointerRef, Indent1, EndLoop9),
+	render(L, end(while), PointerRef, Indent, EndLoop12),
+	append([EndLoop1, EndLoop4, OldCheckDone,
 			EndLoop9, EndLoop12], Finishers),
 
 	/* Get init from procedures and put in continuation of this loop; do not
@@ -631,7 +597,7 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 
 	do_assign_list(L, Continuation, Graph_count, [Current | Preambles],
 			[Starters, Finishers | Postambles],
-			Used, Graphs, Temps0, Results).
+			Used, Graphs, Temps, Results).
 
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to
 be one of these loops; the instruction has a list of the appropriate nodes. */
