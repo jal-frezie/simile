@@ -85,7 +85,7 @@ int connCount;
 connectRecord* connectData;
 showMess_type* showMessLocal;
 char globMess[256];
-double ts[8], dts[8], steps[8];
+double lts[8], ldts[8], steps[8];
 
 /* values for keeping track of GUI interaction and execution times */
 int last_op = 0;
@@ -444,8 +444,8 @@ public:
   void set_dts (int phase, double current) {
     int tweak_phase;
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
-      dts[tweak_phase]=current-ts[tweak_phase];
-      setdt(dts[tweak_phase],tweak_phase); 
+      ldts[tweak_phase]=current-lts[tweak_phase];
+      setdt(ldts[tweak_phase],tweak_phase); 
       // dts should only be global but im lazy
     }
   }
@@ -453,8 +453,8 @@ public:
   void advance_time (int phase, double fraction) {
     int tweak_phase;
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
-      ts[tweak_phase]=ts[tweak_phase]+dts[tweak_phase]*fraction;
-      setdt(ts[tweak_phase],-tweak_phase); 
+      lts[tweak_phase]=lts[tweak_phase]+ldts[tweak_phase]*fraction;
+      setdt(lts[tweak_phase],-tweak_phase); 
       // ts should only be global but im lazy
     }
   }
@@ -834,6 +834,7 @@ int reset(long int modelType, long int modelHandle, int top_phase) {
   int tweak_phase;
 
   for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
+    lts[tweak_phase]=0;
     setdt(0,-tweak_phase);
     setdt(steps[tweak_phase],tweak_phase);
   }
