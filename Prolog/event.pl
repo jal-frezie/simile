@@ -55,9 +55,6 @@ get_info(_, Comp, comment) :-
 get_params(_, Comp) :-
 	find_node_with_data(Comp, _, Func),
 	get_input_info(Func, Params),
-/*	(setof(br(write(Param)), param_of(Func, Param), Params), !;
-	    Params = []),
-	callback(Params). */
 	output:get_from_list(Params, Table),
 	output:bracketize(Table, BrTable),
 	callback(BrTable).
@@ -318,13 +315,7 @@ finish_old_edit(NextEdit) :-
 					highlight(Prev_highlight, 0),
 		                        give_focus(Prev_highlight),
 					fail;
-			(add_parameter(RenamedNode, 0, name, Name);
-			find_name_host(RenamedNode, ArcWithName),
-			    add_parameter(ArcWithName, 2, name, Name)),
-				(find_ghosts(RenamedNode, OtherGhost),
-					update_captions(OtherGhost),
-					fail;
-				update_captions(RenamedNode)),
+		    change_name(RenamedNode, Name),
                finish_move(Parent)));
 	/* last line gets executed if no prev edit highlight, or display is
 	suspended */
@@ -342,6 +333,45 @@ cannot_call_in(Prev_highlight, Parent, Name) :-
 	\+ (InSameModel = Prev_highlight; 
 		is_ghost(InSameModel)).
 
+change_name(RenamedNode, Name) :-
+	(add_parameter(RenamedNode, 0, name, Name);
+	    find_name_host(RenamedNode, ArcWithName),
+	    add_parameter(ArcWithName, 2, name, Name)),
+	(status_affects(RenamedNode, OtherGhost),
+	    update_captions(OtherGhost),
+	    presence_affects(OtherGhost, Reference),
+	    implicit_function(Reference, DownFunc),
+	    setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
+		  (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
+		      m_update:get_all_links(DownFunc, P0, InputSpec)),
+		   InputSpecs),
+	    get_av_pair(OtherGhost, 2, role, Roles),
+	    get_av_pair(DownFunc, 0, value, Eqn),
+	    m_update:already_used_in(InputSpecs, AllUsed),
+		/* but what about names already used in other links? Should
+		replace_subexps first then use old names then set vars */
+	    all(event, update_role, [build(Roles), unify(InputSpecs),
+				     unify(AllUsed), build(NewRoles)]),
+	    replace_subexps(Eqn, event, swap_def_params,
+			    [Roles, NewRoles], top_down, _, NewEqn),
+	    add_parameter(DownFunc, 0, value, NewEqn),
+	    add_parameter(DownFunc, 0, spec, ''), /* till I can update it */
+	    add_parameter(OtherGhost, 2, role, NewRoles)),
+	    fail;
+	 update_captions(RenamedNode).
+
+update_role(use(P1, P2, Ref, P3), InputSpecs, AllUsed,
+	    use(P1, P2, NewRef, P3)) :-
+	\+ Ref = usr(_),
+	member(input_link(_, Spec, Ref, Unit,_), InputSpecs), !,
+	generate_name(prolog, Spec, NewName, AllUsed),
+	m_update:add_brackets(NewName, Unit, NewRef);
+	NewRef = Ref.
+
+swap_def_params([Roles, NewRoles], OldParam, NewParam, 0) :-
+	member(use(P1, P2, OldParam, P3), Roles),
+	member(use(P1, P2, NewParam, P3), NewRoles).
+	
 /* After clicking and unclicking, the scale factor and the targetted object will still be stored, so a doubleclick can make use of these without going through the selection process again. */
 
 :- dynamic(doing_double_at/2).
@@ -1400,7 +1430,8 @@ kill_primitive(Target) :-
 	tk_get_pref(deleteEndToEnd, 0),
 	    do_delete(Target)),
 	member(NewVisLook, ChangedLooks),
-	    spread_colour(NewVisLook, yes),
+	    spread_colour(NewVisLook, yes), /* Only need to update dims
+					    if arc is a relation */
 	    update_captions(NewVisLook),
 	    fail.
 

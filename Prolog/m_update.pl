@@ -8,7 +8,7 @@ itself is only addressed from within the database module.
 */
 
 sicstus_module(m_update,
-	       [get_name_for/2, get_av_pair/4, param_of/2,
+	       [get_name_for/2, get_av_pair/4,
 		add_parameter/4, list_index_meanings/2,
 		list_local_index_meanings/2, get_input_info/2,
 		get_link_source_data/9, find_node_with_data/3,
@@ -105,13 +105,18 @@ Note that this will have to add instance parameters to the list in some cases wh
 dealing with multiple instances. */
 
 get_input_info(Function, Input_list) :-
-	setof(Link_entry,
+	(setof(Link_entry,
 	      IDs^get_all_links(Function, IDs, Link_entry),
 	      Input_list),
 	    decide_param_names(Input_list), !;
-	Input_list = [].
+	Input_list = []),
+	retractall(input_links_were(_)),
+	assert(input_links_were(Input_list)).
 
-get_all_links(Function, ids(RemoteNode, Relation, Home, Entry), Link_entry) :- 
+get_all_links(Function, ids(RemoteNode, Relation, Home, Entry),
+              input_link(id(Link, Index, SourceLocation),
+			RemoteName, LocalName, 
+			RemoteUnit, Local_unit)) :- 
 	/* this should be cut free */
 	(valid_input(Function, Link);
 	    Function has_class submodel,
@@ -123,10 +128,7 @@ get_all_links(Function, ids(RemoteNode, Relation, Home, Entry), Link_entry) :-
 			Index, LocalName, Local_unit),
 	find_all_comps(DestBox, Function),
 	rel_path_name(RemoteNode, DestBox, Relation, SourceLocation,
-		      RemoteName),
-	Link_entry = input_link(id(Link, Index, SourceLocation), 
-			RemoteName, LocalName, 
-			RemoteUnit, Local_unit).
+		      RemoteName).
 
 get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Home, Entry, Index, SourceLocation) :-
@@ -346,8 +348,9 @@ is_exclusive_role(Role) :-
 use_destination(Link, RemoteUnit, 
 		RelationIndex, LocalName, LocalUnit) :-
 	Link has_attribute role of DestData,
-	member(use(RelationIndex, _, PrevName, GivenUnit), 
-			DestData), !,
+	member(use(RelationIndex, _, PrevRep, GivenUnit), 
+			DestData),
+	(PrevRep = usr(PrevName); PrevRep = PrevName), !,
 	add_brackets(Inter_name, _, PrevName),
 	add_brackets(Inter_name, RemoteUnit, LocalName),
 	analyze_array(GivenUnit, LBaseUnit, _),
@@ -359,17 +362,6 @@ use_destination(Link, RemoteUnit,
 	LocalUnit = RemoteUnit);
 	LocalUnit = RemoteUnit.
 
-param_of(Func, Param) :-
-	find_type(Func, function),
-	Link is_connector from _ to Func,
-	(Link has_attribute role of DestData,
-	    member(use(_,_, Param, _), DestData);
-	\+ Link has_attribute role of _,
-	    get_link_source_data(Link, Func, RNode, RUnit, _,_,_,_,_),
-	    caption_for(RNode, Caption),
-	    generate_name(prolog, Caption, BareParam, _),
-	    add_brackets(BareParam, RUnit, Param)).
-		      
 add_brackets(Name, array(Unit, _), [Name2]) :- !, 
 	add_brackets(Name, Unit, Name2).
 
@@ -435,15 +427,15 @@ it lists all those which already have names, then generates new ones which diffe
 from these for those which havent. */
 
 decide_param_names(InputList) :-
-	(setof(LocalName, already_used_in(InputList, LocalName),
-			AlreadyUsed), !; AlreadyUsed = []),
-	append(AlreadyUsed, _, Used),
+	already_used_in(InputList, Used),
 	generate_new_names(InputList, Used).
 
-already_used_in(List, Name) :-
-	member(input_link(_,_,BrName,_,_), List),
-	ground(BrName),
-	add_brackets(Name, _, BrName).
+already_used_in(List, Used) :-
+	(setof(Name, (member(input_link(_,_,BrName,_,_), List),
+			      ground(BrName),
+			      add_brackets(Name, _, BrName)),
+			AlreadyUsed), !; AlreadyUsed = []),
+	append(AlreadyUsed, _, Used).
 
 insert_existing_names(_, N, N).
 
@@ -470,8 +462,14 @@ update_links_and_vars(InputList) :-
 		Link has_new_attribute role of Roles),
 	update_links_and_vars(OtherList).
 
-make_role(input_link(id(_, Index, SourceLocation), _, Name, _, FullUnit),
-	  use(Index, SourceLocation, Name, Unit)) :-
+make_role(InputLink, use(Index, SourceLoc, NewName, Unit)) :-
+	InputLink = input_link(id(Link, Index, SourceLoc),_, Name,_, FullUnit),
+	input_links_were(OldLinks),
+	(member(InputLink, OldLinks),
+	\+ (Link has_attribute role of OldRoles,
+	    member(use(Index, SourceLoc, usr(_), _), OldRoles)),
+	    NewName = Name;
+	NewName = usr(Name)),
 	build_array(Unit, _, FullUnit), !.
 
 /* sort_for_link: Takes a list of input link structures and an id for an influence, and returns lists of the link structures which use it and those which do not. */
@@ -1099,9 +1097,12 @@ delete_obsolete_modes([use(N, Dir, Local, Units) | R1], DeadRef, NewList) :-
 of the given item */
 
 status_affects(Item, Affected) :-
-	find_ghosts(Item, Affected);
-	initiates(Affected, Item),
-	    find_type(Affected, influence).
+	(Base = Item;
+	    find_ghosts(Item, Base)),
+	(Affected = Base;
+	initiates(Affected, Base),
+	    find_type(Affected, influence)),
+	\+ Affected = Item.
 
 /* OK, now here's the easy, teenage, New York version...
 

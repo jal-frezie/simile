@@ -86,3 +86,5 @@ if $onUnix {
     #	    exec dlltool --dllname ame_dll.dll --def ame_dll.def \
         #		--output-lib libame_dll.a
 }
+
+catch {pkg_mkIndex . *[info sharedlibextension]}

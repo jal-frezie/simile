@@ -723,7 +723,8 @@ pair_off(Function, [Source | Sources], Pairs) :-
 
 represents(Function, Source, Pairs, Var) :-
 	Source has_attribute role of UseList,
-	member(use(_,_, Var, SoughtUnit), UseList),
+	member(use(_,_, Ref, SoughtUnit), UseList),
+	(Ref = Var; Ref = usr(Var)),
 	member(var_pair(Var, _), Pairs),
 	get_link_source_data(Source, Function, _, FoundUnit, _,_,_,_,_),
 	check_unit(SoughtUnit, FoundUnit, 2, []).
