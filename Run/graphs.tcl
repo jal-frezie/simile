@@ -856,6 +856,8 @@ proc AcceptData {winId compName complain} {
 	# Now replace each -1 in the dims with the id of the by-record
 	# submodel it represents
 	set recordDims $paramDims($compName)
+	set afterTIME [string equal TIME [lindex $recordDims 0]]
+#puts "node $compName has dims $recordDims"
 	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
 #puts "recordDims $recordDims recordDepth $recordDepth" 
 	    foreach recordId [array names paramData] {
@@ -866,7 +868,7 @@ proc AcceptData {winId compName complain} {
 		    set outerDims [lrange [GetModelDims $recordNode] 0 end-1]
 #puts "node $recordNode outer dims $outerDims"
 		    if {[string match $outerDims \
-			     [lrange $recordDims 0 $recordDepth]]} {
+			     [lrange $recordDims $afterTIME $recordDepth]]} {
 			set recordDims [lset recordDims $recordDepth \
 					    [list RECORDS $recordNode]]
 			break
