@@ -502,9 +502,9 @@ set_properties(Wid, Model) :-
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
 	(New_P_list = [], !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewNature, NewFatness, NewCount, NewStep,
-		      NewComment, NewFix, NewHide, NewSeparate],
-	    P_list = [Colour, Nature, Fatness, Count, Step, _Comment, Fix,
-		      Hide, Separate],
+		      NewComment, NewFix, NewHide, NewSeparate, NewEnumSpecs],
+	    P_list = [Colour, Nature, Fatness, Count, Step, _Comment,
+		      _EnumSpecs, Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -514,7 +514,10 @@ set_properties(Wid, Model) :-
 	    add_parameter(Model, 0, step, NewStep)),
 	    add_parameter(Model, 0, comment, NewComment),
 	    add_parameter(Model, 0, fix_math_args, NewFix),	
-	    add_parameter(Model, 0, separate, NewSeparate),	
+	    add_parameter(Model, 0, separate, NewSeparate),
+	    all(menu, separate_type_from_mems,
+		[build(NewEnumSpecs), build(NewEnumTypes)]),
+	    add_parameter(Model, 0, enum_types, NewEnumTypes),
 	    (change_shape(Model, hide_contents, NewHide);
 		set_shape(Model, hide_contents, NewHide)),
 	    (NewNature = generated,
@@ -580,6 +583,8 @@ set_properties(Wid, Model) :-
 		fail;
 	    warn_runtime,
 		finish_move(Model))).
+
+separate_type_from_mems([H | T], H-T).
 
 flip_innards(Node_name, Action) :-
 	get_shape(Node_name, internal_extent, [IL, IT, IR, IB]),

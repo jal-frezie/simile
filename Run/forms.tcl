@@ -724,7 +724,7 @@ proc InsertFunction {boxname functor} {
 }
 
 proc Disaggregate {parent title colour type fatness icount step \
-            comment matherror hide separate} {
+            comment enumLists matherror hide separate} {
     global disaggregate
     
     foreach varName {colour type fatness icount matherror hide \
@@ -745,7 +745,6 @@ proc Disaggregate {parent title colour type fatness icount step \
             set disaggregate(step) $step
         }
     }
-    
     set t [toplevel .disaggregation -bd 4 -class Disaggregation]
     #	wm transient $t $parent
     wm resizable $t 0 0
@@ -824,6 +823,11 @@ proc Disaggregate {parent title colour type fatness icount step \
 	-expand true
     #    pack [frame $windowId.buttonframe] -side bottom
     listbox $canId.scrf -yscrollcommand [list AdjustCanvas $canId scrf y]
+    foreach enumList $enumLists {
+	set newType [lindex $enumList 0]
+	set disaggregate(enumtype,$newType) [lrange $enumList 1 end]
+	$canId.scrf insert end $newType
+    }
     bind $canId.scrf <ButtonRelease-1> "EnableTypeOps $enumtypef"
     set PopCmd [list QueuePopup AddEnumTypePopup %W %y %X %Y]
     bind $canId.scrf <Enter> $PopCmd
@@ -920,11 +924,16 @@ proc Disaggregate {parent title colour type fatness icount step \
                 set step $disaggregate(step)
             }
         }
+	set enumTypes {}
+	foreach {typename members} [array get disaggregate enumtype,*] {
+	    lappend enumTypes [concat [list [string range $typename 9 end]] \
+				   $members]
+	}
         return [list $disaggregate(colour) $disaggregate(type) \
                 $disaggregate(fatness) $disaggregate(icount) \
                 $step $disaggregate(comment) \
                 $disaggregate(matherror) $disaggregate(hide) \
-                $disaggregate(separate)]
+		    $disaggregate(separate) $enumTypes]
     }
 }
 

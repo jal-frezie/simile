@@ -1402,8 +1402,8 @@ unique_name_for_new(Parent, Type, Name) :-
 	Part has_attribute name of Name,
 	     Part draws_inside Parent), !.
 
-get_disag_params(Submodel, [Colour, Nature, Fat, Count, Step, Comment, Fix,
-			    Hide, Separate]) :-
+get_disag_params(Submodel, [Colour, Nature, Fat, Count, Step, Comment,
+			    EnumSpecs, Fix, Hide, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour, !;
 	    Colour = white),
 	(is_population(Submodel), !,
@@ -1415,6 +1415,10 @@ get_disag_params(Submodel, [Colour, Nature, Fat, Count, Step, Comment, Fix,
 	time_step_for(Submodel, 'Default', Step),
 	(Submodel has_class_refinement comment of Comment, !;
 	Comment = ''),
+	(Submodel has_class_refinement enum_types of EnumTypes,
+	    all(menu, separate_type_from_mems,
+		[build(EnumSpecs), build(EnumTypes)]), !;
+	EnumSpecs = []),
 	(Submodel has_class_refinement fix_math_args of Fix, !;
 	Fix = 0),
 	(Submodel has_graphical_attribute hide_contents of Hide, !;

@@ -614,7 +614,9 @@ OldComment,
 strings_to_atoms([],[]).
 
 strings_to_atoms([S | SR], [A | AR]) :-
-	name(A,S),
+	(\+ S = [],
+	    all(dialogue, strings_to_atoms, [build(S), build(A)]), !;
+	name(A,S)),
 	strings_to_atoms(SR, AR).
 
 integer_between(Lo, Hi, Int) :-
