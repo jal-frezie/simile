@@ -177,7 +177,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	ParamWibble = "which is not referred to by any of its parameter names in the equation.",
 	    UsableInputs = InterInputs),
 	(Unit_st = "", !,
-	    UnitError = [];
+	    UnitFormError = [];
 	get_term(Unit_st, Units, UnitFormError)),
 	check_exp(Eqn_st, "Equation", UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
@@ -203,11 +203,15 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    /* If units but no eqn or limits supplied, accept any */
 	    NewUnits = Units,
 	    UnitError = UnitFormError;
-	propagate_units(min(max(Min,Result),Max), any, [any, any, any, any],
+	on_exception(PropError, propagate_units(min(max(Min,Result),Max), any,
+						[any, any, any, any],
 			[MinBase, EqnBase, MaxBase, TypeBase], ComboType),
+		     decode_error(PropError, UnitError)),
 	    (ComboType = real, !, ComboUnits = 1; 
 		ComboType = ComboUnits),
-	    ((Units = ComboUnits;
+	    (nonvar(UnitError),
+		NewUnits = Units;
+	     (Units = ComboUnits;
 	      /* next line allows an int to be quietly made into a real if the
 	      expression is now real */
 	      check_unit(ComboUnits, Units, 2, [])), !,

@@ -379,7 +379,8 @@ make_intermediates(
 	        (nonvar(SumLoop), SumLoop = set(_, loop(SourceRef)),
 		    Units = const_int,
 		    UsingDim = true;
-		Units = int)), !,
+		Units = int,
+		    append(NowBuilding, DestPath, ReadyContext))), !,
 	    InitVal = 0,
 	    Preps = [];
 	(member(Functor, [make_inter, last, delay]), !,

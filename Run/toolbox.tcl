@@ -552,16 +552,12 @@ proc ClickObj { x y winId action} {
                 set label [BlankCrs [ExtractCaption $winId $node]]
                 $bar.label configure -text "$label = "
                 
-                set equationbar(winId) $winId
-                set equationbar(xco) $xco
-                set equationbar(yco) $yco
-                set equationbar(node) $node
-                
-                set equationbar(initText) $fromProlog
+		set winid [winfo parent $winId]
+                set equationbar($winid,node) $node
+                set equationbar($winid,initText) $fromProlog
                 set equationbar(current_action) null
-                set equationbar($bar) $equationbar(initText)
                 SetEqnButtonState $bar normal
-                restore_equation $bar
+                restore_equation $winid $bar
             }
         }
         ### End equation bar
@@ -1380,16 +1376,16 @@ proc AddMainMenu { winid initWidth initDepths} {
     
     entry $eb.equation -state disabled -width 40
     pack $eb.equation -side left -expand 1 -fill x
-    bind $eb.equation <Return> [list accept_equation $eb.equation]
+    bind $eb.equation <Return> [list accept_equation $winid $eb.equation]
     bind $eb.equation <FocusIn> "EmbraceEqn $winid"
     bind $eb.equation <FocusOut> AbandonEqn
     set image [image create photo -file "../Images/Eqnbar/tick.gif"]
     pack [button $eb.tick -state disabled -image $image -borderwidth 1 \
-            -command [list accept_equation $eb.equation]] -side left
+            -command [list accept_equation $winid $eb.equation]] -side left
     
     set image [image create photo -file "../Images/Eqnbar/cross.gif"]
     pack [button $eb.cross -state disabled -image $image -borderwidth 1 \
-            -command [list restore_equation $eb]] -side left
+            -command [list restore_equation $winid $eb]] -side left
     
     frame $eb.padding -width 10
     pack $eb.padding -side left
@@ -1399,7 +1395,8 @@ proc AddMainMenu { winid initWidth initDepths} {
     menubutton $eb.inputs -state disabled -menu $eb.inputs.menu \
             -borderwidth 2 -relief raised -image $image
     pack $eb.inputs -side left
-    set m [menu $eb.inputs.menu -tearoff 0 -postcommand [list AddInputs $eb]]
+    set m [menu $eb.inputs.menu -tearoff 0 \
+	       -postcommand [list AddInputs $winid $eb]]
     #    $m add command -label biomass -command bell
     #    $m add command -label k -command bell
     #BindPopup $m foobar
@@ -1467,8 +1464,8 @@ proc AbleComp {winid} {
 
 proc EmbraceEqn {winid} {
     global equationbar
-    if {[info exists equationbar(node)]} {
-        prolog tk_embrace('$winid.canvas',$equationbar(node))
+    if {[info exists equationbar($winid,node)]} {
+        prolog tk_embrace('$winid.canvas',$equationbar($winid,node))
     }
 }
 
@@ -1653,26 +1650,22 @@ proc RaiseModelWindow {} {
 
 ##############################    Formula bar    #############################
 
-proc accept_equation {text} {
+proc accept_equation {winId text} {
     
     global equation
     global equationbar
     
     set equationbar(current_action) tick
     set equationbar(equation) [string trimright [$text get]]
-    set winId $equationbar(winId)
-    set xco $equationbar(xco)
-    set yco $equationbar(yco)
-    set node $equationbar(node)
-    prolog [list tk_click_obj('$winId',  doubleclick, $xco , $yco , $node)]
+    set node $equationbar($winId,node)
+    prolog [list tk_click_obj('$winId',  doubleclick, 0 , 0 , $node)]
     focus $winId
 }
 
-proc AddInputs {bar} {
+proc AddInputs {winId bar} {
     global equationbar
     $bar.inputs.menu delete 0 end
-    set winId $equationbar(winId)
-    set node $equationbar(node)
+    set node $equationbar($winId,node)
     set paramData [GetFromProlog tk_get_params('$winId',$node)]
     foreach paramList $paramData {
         set paramName [lindex $paramList 1]
@@ -1688,10 +1681,10 @@ proc InsertParam {bar paramName} {
     focus $bar.equation
 }
 
-proc restore_equation {bar} {
+proc restore_equation {winId bar} {
     global equationbar
     $bar.equation delete 0 end
-    $bar.equation insert end $equationbar($bar)
+    $bar.equation insert end $equationbar($winId,initText)
     focus $bar.equation
 }
 
