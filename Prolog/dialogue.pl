@@ -490,9 +490,13 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 			     inters:get_model_and_loops(Context, DummyDest, _,
 							Loops, _)),
 	    decode_error(ParseException, ParseError))),
-	get_dims_from_loops(Loops, XDims, _),
-	real_dims_only(XDims, Dims).
-	/* Hack alert. The term representing the dest context has indices
+	(member(input_link(_,_, Param, _-PLoops, _), ExpInters),
+	    nth(N, PLoops, set(_, loop(Bound))),
+	    var(Bound),
+	    format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
+	get_dims_from_loops(Loops, Dims, _)).
+	/* real_dims_only(XDims, Dims).
+	Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it
 	to the relative source contexts */
 

@@ -247,12 +247,9 @@ make_intermediates(
 	a subexpression that matches this one: need to save loops as well
 	as context!! Cannot do this with randoms (other than in explicit
 	inters), which should all be different. */
-	(Source = use_inter(Param),
-	    OrigSource = make_inter(_, Param);
-	\+ contains_something(random, Source),
-	    OrigSource = Source),
-	Inter = instance(internal,_, OrigSource,_,_),
+	Inter = instance(internal,_, Source,_,_),
 	member(Inter, PrevInters), !,
+	\+ contains_something(random, Source), !,
 	    NewInters = PrevInters,
 	    Setups = [],
 	    refer_inter(Inter, DestPath, BuildingArrays,
@@ -594,7 +591,11 @@ make_intermediates(
 	Source = (Param=SubExp,Rest), !,
 	    (Param = param(arr(_, Ref, _), UseUnit, LoopSlot,_,_);
 		/* parsing */
-	    Param = use_inter(Ref)), /* building code */
+	    Param = use_inter(Ref),
+		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
+		       PrevInters),
+		append(Loops, BuildingArrays, Access),
+		get_dims_from_loops(Access, Dims, _)), /* building code */
 	    make_intermediates(make_inter(SubExp, Ref), SubId, Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
 			Step, Used, DefUnit, MidInters,
