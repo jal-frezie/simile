@@ -34,7 +34,7 @@ proc equationGraph {parent} {
     grab release .graph
     destroy .graph
     grab $equation(top)
-    return $graph(done)
+    return $graph(.graph,done)
 }
 
 proc ExtractGraphData { formula } {
@@ -73,7 +73,7 @@ proc CombineGraphData { formula } {
 
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
-    global graph tcl_platform
+    global tcl_platform graph
     
     set graph(bd) 3
     
@@ -88,21 +88,21 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     }
     set rangeChoices "Truncate Extrapolate Wraparound"
     
-    set graph(rangeact) [lindex $rangeChoices $range]
-    set graph(points) [split $points ,]
-    set graph(lowy) $ylow
-    set graph(highy) $yhigh
-    set graph(height) $yspan
-    set graph(lowx) $xlow
-    set graph(highx) $xhigh
-    set graph(width) $xspan
+    set graph($t,rangeact) [lindex $rangeChoices $range]
+    set graph($t,points) [split $points ,]
+    set graph($t,lowy) $ylow
+    set graph($t,highy) $yhigh
+    set graph($t,height) $yspan
+    set graph($t,lowx) $xlow
+    set graph($t,highx) $xhigh
+    set graph($t,width) $xspan
     
     catch {wm title $t "Sketch graph"}
     
     TitleFrame $t.gph -text "Graph pad"
     set gph [$t.gph getframe]
     frame $gph.yentry
-    entry $gph.yentry.topentry -relief sunken -textvar graph(lowy) -width 8
+    entry $gph.yentry.topentry -relief sunken -textvar graph($t,lowy) -width 8
     pack $gph.yentry.topentry -side top -pady 2
     label $gph.yentry.toplabel -text "Y max"
     pack $gph.yentry.toplabel -side top -pady 2
@@ -110,21 +110,21 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $gph.yentry.label -side top -fill y -expand true
     label $gph.yentry.bottomlabel -text "Y min"
     pack $gph.yentry.bottomlabel -side top -pady 2
-    entry $gph.yentry.bottomentry -relief sunken -textvar graph(highy) -width 8
+    entry $gph.yentry.bottomentry -relief sunken -textvar graph($t,highy) -width 8
     pack $gph.yentry.bottomentry -side top -pady 2
     grid $gph.yentry -column 0 -row 0 -sticky ns -padx 2 -pady 2
     
     frame $gph.gridf
-    set grid [canvas $gph.gridf.canvas -width [expr $graph(width)+1] \
-            -height [expr $graph(height)+1] -bd $graph(bd) -relief groove]
-    set graph(increment) [expr $graph(width)/([llength $graph(points)] - 1.0)]
+    set grid [canvas $gph.gridf.canvas -width [expr $graph($t,width)+1] \
+            -height [expr $graph($t,height)+1] -bd $graph(bd) -relief groove]
+    set graph($t,increment) [expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
     
     bind $grid <Button-1> "GClick %W %x %y"
     bind $grid <B1-Motion> "GDrag %W %x %y"
     bind $grid <Configure> "AttackShape %W %w %h"
     
     frame $gph.xentry
-    entry $gph.xentry.leftentry -relief sunken -textvar graph(lowx) -width 8
+    entry $gph.xentry.leftentry -relief sunken -textvar graph($t,lowx) -width 8
     pack $gph.xentry.leftentry -side left -padx 2
     label $gph.xentry.xmin -text "X min"
     pack $gph.xentry.xmin -side left -padx 2
@@ -132,16 +132,18 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $gph.xentry.arg  -side left -fill x -expand true
     label $gph.xentry.rightlabel -text "X max"
     pack $gph.xentry.rightlabel -side left -padx 2
-    entry $gph.xentry.rightentry -relief sunken -textvar graph(highx) -width 8
+    entry $gph.xentry.rightentry -relief sunken -textvar graph($t,highx) -width 8
     pack $gph.xentry.rightentry -side left -padx 2
     grid $gph.xentry -column 1 -row 1 -sticky we -padx 2 -pady 2
     
     frame $t.right
     
     set buttons [frame $t.right.buttons]
-    button $buttons.enter -text OK -width 10 -command {set graph(done) 1}
+    button $buttons.enter -text OK -width 10 \
+	-command [list set graph($t,done) 1]
     pack $buttons.enter -padx 4 -pady 4 -anchor e
-    button $buttons.cancel -text Cancel -width 10 -command {set graph(done) 0}
+    button $buttons.cancel -text Cancel -width 10 \
+	-command [list set graph($t,done) 0]
     pack $buttons.cancel -padx 4 -pady 4 -anchor e
     button $buttons.help -text Help -width 10 -command {ContextSensitiveHelp .graph equations/graph.htm}
     pack $buttons.help -padx 4 -pady 4 -anchor e
@@ -173,7 +175,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set out [frame $right.out]
     label $out.outrange -text "Out of range:"
     pack $out.outrange
-    pack [ComboBox $out.rangeopts -values $rangeChoices -editable 0 -textvariable graph(rangeact) -width 12]
+    pack [ComboBox $out.rangeopts -values $rangeChoices -editable 0 -textvariable graph($t,rangeact) -width 12]
     pack $out -pady 8 -padx 4
     set resolution [frame $right.resolution]
     label $resolution.detail -text "X axis resolution:"
@@ -202,46 +204,62 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     grid $gph.dummy -column 0 -row 1 -padx 2 -pady 2 -sticky nesw
     pack $grid -fill both -expand true
     
-    RedrawGrid $grid $graph(width) $graph(height) $graph(increment)
+    RedrawGrid $grid $graph($t,width) $graph($t,height) $graph($t,increment)
     
     set niceFormat 0
     while {!$niceFormat} {
-        tkwait variable graph(done)
+        tkwait variable graph($t,done)
         
-        if {$graph(done)} {
-            if {[CheckFloaty $graph(lowy) $graph(highy) \
-                        $graph(lowx) $graph(highx)]} {
-                # tk_messageBox -message "$rangeChoices $graph(rangeact)"
-                set graph(range) [lsearch $rangeChoices $graph(rangeact)]
-                set graph(size) [llength $graph(points)]
-                regsub -all " " $graph(points) , graph(pts)
+        if {$graph($t,done)} {
+            if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
+                        $graph($t,lowx) $graph($t,highx)]} {
+                # tk_messageBox -message "$rangeChoices $graph($t,rangeact)"
+                set graph($t,range) [lsearch $rangeChoices $graph($t,rangeact)]
+                set graph($t,size) [llength $graph($t,points)]
+                regsub -all " " $graph($t,points) , graph($t,pts)
                 # Target is set to variable id if editing sketch at run time
                 if {[llength $target]} {
-                    eval {SetModelGraph $target $graph(lowx) \
-                                $graph(highx) $graph(width) \
-                                $graph(lowy) $graph(highy) \
-                                $graph(height) $graph(range) $graph(size)} \
-                            [split $graph(pts) ,]
+                    eval {SetModelGraph $target $graph($t,lowx) \
+                                $graph($t,highx) $graph($t,width) \
+                                $graph($t,lowy) $graph($t,highy) \
+                                $graph($t,height) $graph($t,range) $graph($t,size)} \
+                            [split $graph($t,pts) ,]
                 } else {
+                    SetDefaultGraph $graph($t,lowx) $graph($t,highx) $graph($t,width) \
+			$graph($t,lowy) $graph($t,highy) $graph($t,height) \
+			$graph($t,range) $graph($t,size) $graph($t,pts)
                     set niceFormat 1
                 }
             }
         } else {
             if {[llength $target]} {
                 set lastSaved [GetModelGraph $target]
-                scan $lastSaved "%g %g %d %g %g %d %d" graph(lowx) \
-                        graph(highx) graph(width) \
-                        graph(lowy) graph(highy) \
-                        graph(height) range
-                set graph(rangeact) [lindex $rangeChoices $range]
-                set graph(points) [lrange $lastSaved 8 end]
+                scan $lastSaved "%g %g %d %g %g %d %d" graph($t,lowx) \
+                        graph($t,highx) graph($t,width) \
+                        graph($t,lowy) graph($t,highy) \
+                        graph($t,height) range
+                set graph($t,rangeact) [lindex $rangeChoices $range]
+                set graph($t,points) [lrange $lastSaved 8 end]
                 AttackShape $grid [winfo width $grid] [winfo height $grid]
             } else {
                 set niceFormat 1
             }
         }
     }
-    return $graph(done)
+    return $graph($t,done)
+}
+
+proc SetDefaultGraph {xlow xhigh xspan ylow yhigh yspan range size points} {
+    global graph
+    set graph(range) $range
+    set graph(size) $size
+    set graph(pts) $points
+    set graph(lowy) $ylow
+    set graph(highy) $yhigh
+    set graph(height) $yspan
+    set graph(lowx) $xlow
+    set graph(highx) $xhigh
+    set graph(width) $xspan
 }
 
 proc CheckFloaty {args} {
@@ -255,55 +273,65 @@ proc CheckFloaty {args} {
     }
 }
 
+proc GetWidFromCanvas {c} {
+    return [winfo parent [winfo parent [winfo parent [winfo parent $c]]]]
+}
+
 proc AddLine {c section} {
     global graph
     set miss [expr $graph(bd)+$graph(origin)]
+    set t [GetWidFromCanvas $c]
     
     $c delete section$section
-    $c create line [expr round($graph(increment)*($section-1))+$miss] \
-            [expr [lindex $graph(points) [expr $section - 1]]+$miss] \
-            [expr round($graph(increment)*$section)+$miss] \
-            [expr [lindex $graph(points) $section]+$miss] \
+    $c create line [expr round($graph($t,increment)*($section-1))+$miss] \
+            [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
+            [expr round($graph($t,increment)*$section)+$miss] \
+            [expr [lindex $graph($t,points) $section]+$miss] \
             -tags "graph section$section"
 }
 
 proc GClick {c x y} {
     global graph
+    set t [GetWidFromCanvas $c]
+
     set x [expr $x-$graph(bd)-$graph(origin)]
     set y [expr $y-$graph(bd)-$graph(origin)]
-    set zone [expr round($x/$graph(increment))]
-    set graph(oldzone) $zone
-    set graph(oldy) $y
+    set zone [expr round($x/$graph($t,increment))]
+    set graph($t,oldzone) $zone
+    set graph($t,oldy) $y
     GStick $c $zone $y
 }
 
 proc YEntry {c} {
     global graph xvalue yvalue
-    if {![CheckFloaty $graph(lowy) $graph(highy) $graph(lowx) $graph(highx) \
+    set t [GetWidFromCanvas $c]
+
+    if {![CheckFloaty $graph($t,lowy) $graph($t,highy) $graph($t,lowx) $graph($t,highx) \
                 $xvalue $yvalue]} {
         return
     }
-    set zone [expr round(([llength $graph(points)]-1.0)*\
-            ($xvalue-$graph(lowx))/($graph(highx)-$graph(lowx)))]
-    set y [expr round($graph(height)*\
-            ($yvalue-$graph(lowy))/($graph(highy)-$graph(lowy)))]
+    set zone [expr round(([llength $graph($t,points)]-1.0)*\
+            ($xvalue-$graph($t,lowx))/($graph($t,highx)-$graph($t,lowx)))]
+    set y [expr round($graph($t,height)*\
+            ($yvalue-$graph($t,lowy))/($graph($t,highy)-$graph($t,lowy)))]
     GStick $c $zone $y
 }
 
 proc GDrag {c ox oy} {
     global graph
+    set t [GetWidFromCanvas $c]
     
     set x [expr $ox-$graph(bd)-$graph(origin)]
     set y [expr $oy-$graph(bd)-$graph(origin)]
-    set zone [expr round($x/$graph(increment))]
-    set gmove [expr abs($zone - $graph(oldzone))]
+    set zone [expr round($x/$graph($t,increment))]
+    set gmove [expr abs($zone - $graph($t,oldzone))]
     if {$gmove} {
-        set step [expr ($zone - $graph(oldzone))/$gmove]
-        set incr [expr ($y - $graph(oldy))/$gmove]
-        while {$graph(oldzone) != $zone} {
-            set graph(oldzone) [expr $graph(oldzone) + $step]
-            set graph(oldy) [expr $graph(oldy) + $incr]
-            GStick $c $graph(oldzone) $graph(oldy)
+        set step [expr ($zone - $graph($t,oldzone))/$gmove]
+        set incr [expr ($y - $graph($t,oldy))/$gmove]
+        while {$graph($t,oldzone) != $zone} {
+            set graph($t,oldzone) [expr $graph($t,oldzone) + $step]
+            set graph($t,oldy) [expr $graph($t,oldy) + $incr]
+            GStick $c $graph($t,oldzone) $graph($t,oldy)
         }
     } else {
         GClick $c $ox $oy
@@ -313,23 +341,24 @@ proc GDrag {c ox oy} {
 proc GStick {c zone y} {
     global graph xvalue yvalue
     
-    if {![CheckFloaty $graph(lowy) $graph(highy) $graph(lowx) $graph(highx)]} {
+    set t [GetWidFromCanvas $c]
+    if {![CheckFloaty $graph($t,lowy) $graph($t,highy) $graph($t,lowx) $graph($t,highx)]} {
         return
     }
-    set y [max 0 [min $graph(height) $y]]
-    if {$zone >= 0 && $zone < [llength $graph(points)]} {
-        set graph(points) [lreplace $graph(points) $zone $zone $y]
+    set y [max 0 [min $graph($t,height) $y]]
+    if {$zone >= 0 && $zone < [llength $graph($t,points)]} {
+        set graph($t,points) [lreplace $graph($t,points) $zone $zone $y]
         if {$zone != 0} {
             AddLine $c $zone
         }
-        if {$zone != [expr [llength $graph(points)] - 1]} {
+        if {$zone != [expr [llength $graph($t,points)] - 1]} {
             AddLine $c [expr $zone + 1]
         }
     }
-    set xvalue [expr $graph(lowx) + \
-            ($graph(highx)-$graph(lowx))*$zone/([llength $graph(points)]-1.0)]
-    set yvalue [expr $graph(lowy) + \
-            ($graph(highy)-$graph(lowy))*($y*1.0)/$graph(height)]
+    set xvalue [expr $graph($t,lowx) + \
+            ($graph($t,highx)-$graph($t,lowx))*$zone/([llength $graph($t,points)]-1.0)]
+    set yvalue [expr $graph($t,lowy) + \
+            ($graph($t,highy)-$graph($t,lowy))*($y*1.0)/$graph($t,height)]
 }
 
 proc RedrawGrid {c w h inc} {
@@ -358,21 +387,22 @@ proc AttackShape {c w h} {
     
     # This version used to change the axis labels when the
     # graph window was resized. Now we keep them the same and stretch the graph
+    set t [GetWidFromCanvas $c]
     
     set exag [expr 2*$graph(bd)+$graph(exag)]
-    set graph(increment) [expr $graph(increment)*($w-$exag)/$graph(width)]
-    set graph(width) [expr $w-$exag]
+    set graph($t,increment) [expr $graph($t,increment)*($w-$exag)/$graph($t,width)]
+    set graph($t,width) [expr $w-$exag]
     
-    set vchange [expr double($h-$exag)/$graph(height)]
-    set graph(height) [expr $h-$exag]
-    RedrawGrid $c $graph(width) $graph(height) $graph(increment)
+    set vchange [expr double($h-$exag)/$graph($t,height)]
+    set graph($t,height) [expr $h-$exag]
+    RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
     
-    set graph(points) [lreplace $graph(points) 0 0 \
-            [expr round([lindex $graph(points) 0]*$vchange)]]
+    set graph($t,points) [lreplace $graph($t,points) 0 0 \
+            [expr round([lindex $graph($t,points) 0]*$vchange)]]
     set section 1
-    while {$section < [llength $graph(points)]} {
-        set graph(points) [lreplace $graph(points) $section $section \
-                [expr round([lindex $graph(points) $section]*$vchange)]]
+    while {$section < [llength $graph($t,points)]} {
+        set graph($t,points) [lreplace $graph($t,points) $section $section \
+                [expr round([lindex $graph($t,points) $section]*$vchange)]]
         AddLine $c $section
         set section [expr $section + 1]
     }
@@ -381,36 +411,38 @@ proc AttackShape {c w h} {
 proc CoarseX { c } {
     global graph
     
-    if {[llength $graph(points)] > 2} {
+    set t [GetWidFromCanvas $c]
+    if {[llength $graph($t,points)] > 2} {
         $c delete graph
         set el 1
-        set graph(increment) [expr $graph(increment)*2]
-        while {$el < [llength $graph(points)]} {
-            set graph(points) [lreplace $graph(points) \
-                    $el [expr $el + 1] [lindex $graph(points) $el]]
+        set graph($t,increment) [expr $graph($t,increment)*2]
+        while {$el < [llength $graph($t,points)]} {
+            set graph($t,points) [lreplace $graph($t,points) \
+                    $el [expr $el + 1] [lindex $graph($t,points) $el]]
             AddLine $c $el
             set el [expr $el + 1]
         }
-        RedrawGrid $c $graph(width) $graph(height) $graph(increment)
+        RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
     }
 }
 
 proc FineX { c } {
     global graph
     
-    if {$graph(increment) >= 2.0} {
+    set t [GetWidFromCanvas $c]
+    if {$graph($t,increment) >= 2.0} {
         $c delete graph
         set el 1
-        set graph(increment) [expr $graph(increment)/2]
-        while {$el < [llength $graph(points)]} {
-            set graph(points) [linsert $graph(points) $el \
-                    [expr ([lindex $graph(points) [expr $el - 1]] + \
-                    [lindex $graph(points) $el])/2]]
+        set graph($t,increment) [expr $graph($t,increment)/2]
+        while {$el < [llength $graph($t,points)]} {
+            set graph($t,points) [linsert $graph($t,points) $el \
+                    [expr ([lindex $graph($t,points) [expr $el - 1]] + \
+                    [lindex $graph($t,points) $el])/2]]
             AddLine $c $el
             AddLine $c [expr $el + 1]
             set el [expr $el + 2]
         }
-        RedrawGrid $c $graph(width) $graph(height) $graph(increment)
+        RedrawGrid $c $graph($t,width) $graph($t,height) $graph($t,increment)
     }
 }
 

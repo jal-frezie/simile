@@ -27,7 +27,6 @@ proc initialize {winId} {
 }
 
 proc click {windowId nodename caption} {
-    global graph
 
     set graphData [GetModelGraph $nodename]
     if {![string compare $graphData nograph]} {
