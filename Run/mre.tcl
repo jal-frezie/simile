@@ -60,7 +60,7 @@ namespace eval RunEnv {
             [list NoteBook.GIF "Add notebook" "RunEnv::AddNotebookToCurrentContainer"] \
             [list graph.gif "Create plotter" "::RunEnv::CreateHelperInCurrentContainer plotter1.25 {Plotter}"] \
             [list table.gif "Create table" "::RunEnv::CreateHelperInCurrentContainer tabular11510 {Table}"] \
-            [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"] \
+            [list display.GIF "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"] \
             [list mainwin.gif "Go to Model Window" "RaiseModelWindow"]]
         }
 
