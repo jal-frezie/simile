@@ -84,7 +84,7 @@ tk_menu(Window, Header, Item) :-
 	show_wait_cursor,
 	finish_window_resize(Window),
 	finish_old_edit(none),
-	menu_handle(Window, Header, Item),
+	(menu_handle(Window, Header, Item); true),
 	show_normal_cursor.
 
 tk_menu_select(Obj_type, from_box) :-

@@ -218,6 +218,9 @@ click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, _CD) :-
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
 	get_adding_object(New_obj),
+	(draws_at(Wid, New_obj, Depth);
+	    do_dialogue("Failed to add component", warning,
+			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)),
 	(New_obj is_class_of_sort box, !,
 	    (New_obj is_class_of_sort rounded_rect,
 		advance_phase_to(rubberband);
@@ -1737,10 +1740,9 @@ make_terminator(LineType, FinishZone, Terminator) :-
 	find_type(FinishZone, submodel),
 	    LineType = flow, TermType = cloud,
 	    /* set influence/variable as alternative if required */
-	    get_current_coords(FinalX, FinalY),
+	    get_current_coords(FinalX, FinalY), !,
 	    (add_at_point(FinalX, FinalY, TermType, FinishZone, Terminator);
-	    do_dialogue("Addition error", error,
-			"Unable to make terminator here", ok, _)), !;
+		true), !;
 	 LineType = influence,
 	    FinishZone is_of_sort has_function,
             (implicit_function(FinishZone, Terminator);
@@ -1827,7 +1829,7 @@ but now uses get_component_from_gui because it is quicker. */
 
 attempt_addition(Type, Parent, Box, Node_name, CanBag) :-
 	/* check it is inside its parent */
-	get_shape(Parent, internal_extent, Parent_size), !,
+	get_shape(Parent, internal_extent, Parent_size),
 	fits_inside(Box, Parent_size),
 
 	/* If CanBag is 'yes' the new box can be put around existing ones */
@@ -1842,11 +1844,15 @@ attempt_addition(Type, Parent, Box, Node_name, CanBag) :-
 	       get_shape(OtherSubmodel, bounding_box, OtherSubSize),
 	       fits_inside(Box, OtherSubSize)), */
 	
-	(nonvar(Node_name), !;
+	(nonvar(Node_name);
 	make_node(Parent, Type, Node_name),
-		add_implicit_function(Node_name, _)),
+		add_implicit_function(Node_name, _)), !,
 	set_shape(Node_name, bounding_box, Box),
-	make_links_follow(Node_name).
+	make_links_follow(Node_name);
+	sicstus_format_to_chars("Cannot add a ~a here due to overlaps.",
+				[Type], Wibble),
+	do_dialogue("Failed to add component", warning, Wibble, ok, _),
+	fail.
 
 attempt_new_component(Parent, Box, Extent) :-
 	attempt_addition(submodel, Parent, Box, Node_name, yes),
