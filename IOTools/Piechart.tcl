@@ -19,6 +19,10 @@
 # draw at time zero
 
 #$Log: Piechart.tcl,v $
+#Revision 1.5  2002/06/13 11:30:30  jmm
+#Final fix to plot labels next to corresponding values (slice size)
+#Will need more work when enummerated types are included in Simile.
+#
 #Revision 1.4  2002/06/11 13:37:59  jmm
 #Bug where an array of compartment values got out of order because Tcl does not preserve order in arrays the code assumed that it did was fixed.
 #
@@ -198,11 +202,8 @@ proc ArrayLabeling { w caption values index } {
         lappend plot($w,Ylabels) ${caption}/$index
     } else {
         array set val_array $values
-        lappend index 1
-        foreach element [array names val_array] {
-            ArrayLabeling $w $caption $val_array($element) $index
-            set lastindex [lindex $index end]
-            set index [lreplace $index end end [incr lastindex]]
+        foreach element [lsort -decreasing [array names val_array]] {
+            ArrayLabeling $w $caption $val_array($element) $element;
         }
     }
 }
@@ -414,7 +415,7 @@ proc Repaint {w} {
     set x1 $plot($w,xborder_left)
     set y1 [expr {$plot($w,yborder_top)}]
     set x2 [expr {$plot($w,xborder_left)+$length}]
-    set y2 [expr {$plot($w,yborder_top)+$length}]; # hack 0.9 to make a square
+    set y2 [expr {$plot($w,yborder_top)+$length}]
 
     set plot($w,cx) [expr {($x1+$x2)/2}]
     set plot($w,cy) [expr {($y1+$y2)/2}]
@@ -457,22 +458,18 @@ proc plot_YY {w} {
     variable piesum
     variable pievalues
     
-#    ShowMessage debug info "plt_YY" ok        
-    
-    
-    set iplot 0
+#    ShowMessage debug info "plot_YY" ok            
     set piesum($w) 0
     set pievalues($w) {}
     foreach Ynew $YYnew($w) {
 #        ShowMessage debug info "$Ynew" ok
-        plot_Y $w $iplot $Tnew($w) $Ynew
-        incr iplot
+        plot_Y $w {} $Tnew($w) $Ynew
     }
     
     Repaint $w 
 }
 
-proc plot_Y {w iplot Tnew Ynew} {
+proc plot_Y {w index Tnew Ynew} {
     global ::graphtools::plot
     variable piesum
     variable pievalues
@@ -483,9 +480,9 @@ proc plot_Y {w iplot Tnew Ynew} {
         lappend pievalues($w) $Ynew
     } else {
         array set Ynew_array $Ynew
-        foreach element [lsort -integer [array names Ynew_array]] {
+        foreach element [lsort -decreasing [array names Ynew_array]] {
 #            ShowMessage debug info "Ynew_array($element) $Ynew_array($element)" ok
-            plot_Y $w $iplot $Tnew $Ynew_array($element)
+            plot_Y $w $element $Tnew $Ynew_array($element)
         }
     }
 }
