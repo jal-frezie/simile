@@ -733,8 +733,8 @@ make_intermediates(
 		ValRef = (RTest?RTrue:RFalse);
 	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
-		 dialogue:table_data_is(_);
-		 raise_exception(missing_graph_or_table_data(Source))),
+		dialogue:table_data_is(_);
+		    raise_exception(missing_graph_or_table_data(Source))),
 		SourceList = [Param],
 		RUnits = real,
 		Arg_template = [real],
@@ -808,10 +808,12 @@ make_intermediates(
 			SourceRef = ValRef);
 		 ValRef = sofar(SourceRef),
 		    UnitList = [Units];
-		 fn_or_op(Lop, MxOp, RUnits, Arg_template),
+		 (var(Lop),
+		     SourceRef = ValRef;
+		  fn_or_op(Lop, MxOp, RUnits, Arg_template),
+		     SourceRef =.. [MxOp | ResultList]),
 		    /* first, check my units are right... */
-		    try_units(RUnits, Arg_template, UnitList, Units),
-		    SourceRef =.. [MxOp | ResultList];
+		    try_units(RUnits, Arg_template, UnitList, Units);
 		 fn_or_op(Lop, _, RUnits, Arg_template),
 		    raise_exception(mismatched_units(Source,
 						     UnitList, Arg_template));
@@ -859,7 +861,7 @@ raise_units(Base, Num, Units) :-
 	Units =.. [Do, Mid, Base].
 
 fn_or_op(Op, MxOp, RUnits, AUnits) :-
-	var(Op), !;
+	var(Op), MxOp = Op, !;
 	name(Op, OpStr),
 	(function(_Cat, MxOp, RUnits, AUnits);
 	builtin(_Cat, MxOp, RUnits, AUnits);
