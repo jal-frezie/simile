@@ -40,7 +40,7 @@ namespace eval RunEnv {
             [list open.gif "Load a configuation of displays" RunEnv::LoadView] \
             [list save.gif "Save the display configuation" RunEnv::SaveView] ]\
             [list \
-            [list copy.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
+            [list copyc.gif "Copy display" [list ::RunEnv::CopyHelper $::RunEnv::CurrentContainer]] \
             [list cut.gif "Cut display" [list ::RunEnv::CutHelper $::RunEnv::CurrentContainer"]] \
             [list paste.gif "Paste display" [list ::RunEnv::PasteHelper $::RunEnv::CurrentContainer"]] \
             [list delete.gif "Delete" "::RunEnv::DeleteHelperCurrentContainer" ]] \
