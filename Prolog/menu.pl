@@ -132,16 +132,14 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    transfer_images(Parent, TargetDir, in),
 		  
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
-	    (Translated = copy,
-		TryDll = '',
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
-		output:my_file_exists(GraphFileName), !,
+	    (output:my_file_exists(GraphFileName), !,
 		Win shows_model Parent,
-		inject_graphics(Win, GraphFileName);
+		inject_graphics(Win, GraphFileName),
+		(Translated = copy;
+		translate_canvas_pl_names(Win, Translated));
 	    /* this should call Prolog back with the display detail vals */
-	    TryDll = 0,
-		NeedsRedraw = 1),
-	    add_parameter(Parent, 1, c_new, TryDll),
+	    NeedsRedraw = 1),
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */

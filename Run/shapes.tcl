@@ -783,12 +783,13 @@ proc ColourExists {col} {
 
 # adapted from Welch p265
 proc WriteDesc {canvas canvasFile date args} {
-    global window_info
+    global window_info looks
     
     set stream [NetOpen $canvasFile w]
     fconfigure $stream -translation lf
     set title [wm title [winfo parent $canvas]]
     puts $stream "# written on $date"
+    puts $stream [list array set looks [array get looks *,*]]
     puts $stream [concat TweakWindow \$c \{$title\} \
             $window_info($canvas,scale) \
             [$canvas cget -scrollregion] clear $args]
@@ -897,7 +898,7 @@ proc GetGhostCursor {} {
 # this needs because the canvas is called $c in the file
 
 proc InjectGraphics {c canvasFile} {
-    global window_info
+    global window_info looks
     set w [expr $window_info($c,width)+4]
     set h [expr $window_info($c,height)+4]
     source $canvasFile

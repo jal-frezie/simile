@@ -177,9 +177,6 @@ proc ClickObj { x y winId X Y action} {
             set equationbar(current_action) $action
             #	ModeSelect move
             #	ModeSelect select
-            
-            
-            
         }
         
         if {[string match $equationbar(current_action) click]} {
@@ -452,6 +449,19 @@ proc SetSpace {c w h} {
     #    ShowMessage debug info "New size is $w $h" ok
     RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
             [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
+}
+
+proc TransCnvNames {c swaps} {
+    foreach pair $swaps {
+	set oldie [lindex [split $pair -] 0]
+	$c addtag $pair withtag $oldie
+	$c dtag all $oldie
+    }
+    foreach pair $swaps {
+	set newbie [lindex [split $pair -] 1]
+	$c addtag $newbie withtag $pair
+	$c dtag all $pair
+    }
 }
 
 proc TweakWindow {c winTitle scale wl wt wr wb bg args} {

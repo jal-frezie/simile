@@ -20,7 +20,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
 	get_component_from_gui/4, 
 	get_text/3, change_text_to/3, 
-	inject_graphics/2, save_canvas/4,
+	inject_graphics/2, translate_canvas_pl_names/2, save_canvas/4,
 	tk_grow_canvas/2, tk_display_area/1, tk_update_ability/5,  update_tk/0,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
@@ -276,6 +276,10 @@ tk_display_area(Wid) :-
 inject_graphics(Wid, File) :-
 	safe_tcl_eval(['InjectGraphics', Wid, br(write(File))], _).
 
+translate_canvas_pl_names(Wid, TList) :-
+	bracketize(TList, BList),
+	safe_tcl_eval(['TransCnvNames', Wid, BList], _).
+		       
 date_is(Date) :-
 	/* gmt is specified because some systems have bug-inducing 8-bit
 	characters in their local time zone names !! */
