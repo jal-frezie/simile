@@ -352,6 +352,10 @@ proc FineX { c } {
 	}
 }
 
+#####################################################################
+# TABLE LOADING
+#####################################################################
+
 proc equationDoTable {parent} {
     global equation table_entry
 
@@ -370,41 +374,75 @@ proc equationDoTable {parent} {
     toplevel .table -bd 4 
     wm transient .table $parent
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
-    pack [set t [frame .table.headerlist]] -side left -fill both -expand true
-    pack [message $t.info -text "Column headings: click to add to indices, doubleclick to select data column"]
 
-    set lbf [listbox $t.flist \
-	    -yscrollcommand [list $t.scrollf set]]
-    scrollbar $t.scrollf -command [list $lbf yview]
-    
-    pack $t.flist -side left -fill both
-    pack $t.scrollf -side left -fill y
-    bind $t.flist <Button-1> "selectIndex %W %y"
-    bind $t.flist <Double-1> "selectData %W %y"
-
-    pack [set t [frame .table.others]] -side left -fill both -expand true
-    pack [message $t.info -text "Current indices: click to remove. If none selected, row number will be used."]
-    pack [set t [frame $t.indices]] -fill both -expand true
-    set lbf [listbox $t.flist \
-	    -yscrollcommand [list $t.scrollf set]]
-    scrollbar $t.scrollf -command [list $lbf yview]
-    
-    pack $t.flist -side left -fill both
-    pack $t.scrollf -side left -fill y
-    bind $t.flist <Double-1> "deleteIndex %W %y"
-    eval {$t.flist insert end} $table_entry(indices)
-    set t .table.others
-    pack [message $t.info2 -text "Column header of data field"] -fill x -expand true
-    pack [entry $t.indicator2 -textvariable table_entry(dataField)]
-    pack [message $t.info3 -text "Data file:"] -fill x -expand true
-    pack [entry $t.indicator3 -textvariable table_entry(fileName)]
-    pack [set t [frame $t.buttons]] -fill both -expand true
-    pack [button $t.newfile -text "New file" \
-	    -command {GetDataFile "Select new data file"; LoadDataFile}] -side left
-    pack [button $t.ok -text "OK" -command "set table_entry(done) 1"] \
-	    -side left
-    pack [button $t.cancel -text "Cancel" -command "set table_entry(done) 0"] \
-	    -side left
+frame .table.top
+label .table.top.instructions -text "Create table from file by dragging \
+        column headings to act as either indices or as data."
+pack .table.top.instructions -side top -anchor w -padx 2 -pady 2        
+TitleFrame .table.top.fheads -text "Table column headings"
+set fheads [.table.top.fheads getframe]
+set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
+        -selectmode single -dropcmd DeleteIndex]
+TitleFrame .table.top.fidx -text "Use as indices"
+set fidx [.table.top.fidx getframe]
+set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
+        -selectmode single \
+        -dropcmd AddIndex]
+set i 1        
+foreach idx $table_entry(indices) {
+    $lidx insert end id$i -text $idx
+    incr i
+}
+pack $lheads  -expand true -fill both
+pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
+pack $lidx -expand true -fill both -anchor w
+pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 2
+#
+# OK, Cancel and Help buttons
+frame .table.top.fbuttons
+button .table.top.fbuttons.ok -text OK -width 10 \
+            -command "set table_entry(done) 1"
+button .table.top.fbuttons.cancel -text Cancel -width 10 \
+            -command "set table_entry(done) 0"
+button .table.top.fbuttons.help -text Help -width 10 \
+            -command {ContextSensitiveHelp .table equations/table.htm}
+pack .table.top.fbuttons.ok -side top -padx 4 -pady 4
+pack .table.top.fbuttons.cancel -side top -padx 4 -pady 4
+pack .table.top.fbuttons.help -side top -padx 4 -pady 4
+pack .table.top.fbuttons -side left  -anchor e
+pack .table.top -side top -expand true -fill both -anchor w
+#
+# Data file and data column heading
+frame .table.bottom
+TitleFrame .table.bottom.fdata -text "Data file and column heading "
+set fdata [.table.bottom.fdata getframe]
+frame  $fdata.dhead
+label $fdata.dhead.dheadlabel -text "Use as data column "
+set dhead [Entry $fdata.dhead.dhead \
+        -textvariable table_entry(dataField) \
+        -dropenabled true -droptypes LISTBOX_ITEM \
+        -dropcmd ChooseDataHeader]
+pack $fdata.dhead.dheadlabel -side left -anchor w
+pack $dhead -side left -anchor w -expand true -fill x
+pack $fdata.dhead -side top -anchor w -expand true -fill x
+pack $fdata -fill x
+pack .table.bottom.fdata -fill x
+frame $fdata.dfile 
+label $fdata.dfile.dfilelabel -text "Data file                    "
+set dfile [Entry $fdata.dfile.dfile \
+        -textvariable table_entry(fileName)]
+pack $fdata.dfile.dfilelabel -side left -anchor w
+pack $dfile -side left -anchor w -expand true -fill x
+set tbl [image create photo -file "C:/My Documents/table.gif" ]
+set opn [image create photo -file "C:/My Documents/open.gif" ]
+button $fdata.dfile.new -compound left -image $opn -text Browse \
+        -command {GetDataFile "Select new data file"; LoadDataFile}
+button $fdata.dfile.view -compound left -image $tbl -text View \
+        -command ViewTable        
+pack $fdata.dfile.new -side left -padx 4 -pady 4
+pack $fdata.dfile.view -side left -padx 4 -pady 4
+pack $fdata.dfile -side top -anchor w -expand true -fill x
+pack .table.bottom -side top -fill x
 
     set t .table
     tkwait visibility .table
@@ -416,7 +454,11 @@ proc equationDoTable {parent} {
     grab $t
     tkwait variable table_entry(done)
     grab release $t
-    set table_entry(indices) [.table.others.indices.flist get 0 end]
+    set idcs {}
+    foreach itm [$lidx items] {
+        lappend idcs [$lidx itemcget $itm -text]
+    }
+    set table_entry(indices) $idcs
     destroy $t
     return $table_entry(done)
 }
@@ -430,7 +472,8 @@ proc LoadDataFile {} {
     global table_entry
 
     wm title .table "Create table from file $table_entry(fileName)"
-    .table.headerlist.flist delete 0 end
+    set fheads [.table.top.fheads getframe]
+    $fheads.lheads delete [$fheads.lheads items]
 
     while {[catch {open $table_entry(fileName) r} stream]} {
 	if {![string compare \
@@ -440,29 +483,43 @@ proc LoadDataFile {} {
 	}
     }
     gets $stream firstLine
-    eval {.table.headerlist.flist insert end} [split $firstLine ,]
+    set hds [split $firstLine ,]
+    set i 1
+    foreach hd $hds {
+        $fheads.lheads insert end hd$i -text $hd
+        incr i
+    }
     close $stream
 	return 1
 }
 
-proc selectIndex {src y} {
-    set index [$src get [$src nearest $y]]
-    set t .table.others.indices.flist
-    set match [lsearch -exact $index [$t get 0 end]]
-    if {$match != -1} {
-	$t delete $match
+
+proc AddIndex {lb pth where op dtype data} {
+    # work around an apparent bug where .c is appended to path name
+    set path [string range $pth 0 [expr [string length $pth]-3]]
+    if ![$lb exists $data] {
+         $lb insert end $data -text [$path itemcget $data -text]
     }
-    $t insert end $index
 }
 
-proc deleteIndex {src y} {
-    $src delete [$src nearest $y]
+proc DeleteIndex {lb pth where op dtype data} {
+    # work around an apparent bug where .c is appended to path name
+    set path [string range $pth 0 [expr [string length $pth]-3]]
+    if ![string equal $lb $path] {
+       $path delete $data
+    }
 }
 
-proc selectData {src y} {
-    set index [$src get [$src nearest $y]]
-# undo effects of first click of pair
-    .table.others.indices.flist delete end
-    .table.others.indicator2 delete 0 end
-    .table.others.indicator2 insert end $index
+proc ChooseDataHeader {eb pth where op dtype data} {
+    # work around an apparent bug where .c is appended to path name
+    set path [string range $pth 0 [expr [string length $pth]-3]]
+    $eb configure -text [$path itemcget $data -text]
+}
+
+proc ViewTable {} {
+    package require Tktable
+    toplevel .viewer -bd 4
+    wm transient .viewer .table
+    table .viewer.t
+    pack .viewer.t
 }
