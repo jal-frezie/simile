@@ -152,21 +152,21 @@ namespace eval ::ModelInspector63654 {
     }
     
     proc DoInspPopup {winId X Y plName} {
-	global running_c
 	#	    ShowMessage debug info $args ok
-	if {[info exists running_c]} {
+#	if {[info exists running_c]} {
 	    PostPopup $X $Y
 	    set trans [GetTransTable $plName]
 	    if {[catch {GetModelValue $winId $plName} mVal]} {
-		set missing [lindex [split $mVal \"] 1]
-		set value \
-		    "Missing value: [lindex [DescribeComponent $missing] 0]"
+#		set missing [lindex [split $mVal \"] 1]
+#		set value \
+#		    "Missing value: [lindex [DescribeComponent $missing] 0]"
+		set value no_value
 	    } else {
-		set value [lindex [GetModelValue $winId $plName] 0]
+		set value [lindex $mVal 0]
 		#puts "trans $trans value $value"
 	    }
 	    AddPopupMessage $value \#ffffc0 $trans
-	}
+#	}
     }
     
     proc Restore {winId} {initialize $winId}
