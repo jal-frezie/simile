@@ -526,8 +526,8 @@ make_intermediates(
 	(Source = makearray(Element, Dim),
 	    (Dim =.. [size | _], !,
 		DimVal = Dim;
-	    make_intermediates(Dim, dum, [], _, PrevInters, [], 0, _, Dun,
-			       MidInters, part_result(_, DimSetups,_, DimVal)),
+	    make_intermediates(Dim, dum, DestPath,_, PrevInters, [], 0, Used,
+			  Dun, MidInters, part_result(_, DimSetups,_, DimVal)),
 		Dun = const_int, !;
 	    raise_exception(bad_index_number(Dim, makearray))),
 	    NowBuilding = [LocalLoop | BuildingArrays];
