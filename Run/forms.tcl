@@ -1185,10 +1185,7 @@ proc ContextSensitiveHelp {context page} {
     global tcl_platform helphtml
     if { [string match windows $tcl_platform(platform)]} {
         package require winhelp
-        toplevel .dummy; # a window for winhelp to be on top of that we can get rid of
-        # prevents winhelp from obscuring things
         winhelp $context ../Help/simile.chm $page
-        destroy .dummy; # jmm
     } else {
         set url [pwd]/../Help/$page
         expr {
@@ -1543,5 +1540,47 @@ proc equationlisting_scrollit {widget} {
 }
 
 proc NotifyOverLimit {limit} {
-    ShowMessage "Restriction notice" info "This model now has more than $limit equations. As this is the evaluation edition, you cannot save a model with more than this number of equations." ok
-}
+        toplevel .notify
+        wm title .notify "Evaluation Edition"
+        wm protocol .notify WM_DELETE_WINDOW {set ack 1}
+        wm attributes .notify -toolwindow true
+        
+        set labf1 [frame .notify.labf1]
+        image create photo warn
+        warn read "../Images/warning.gif"
+        pack [label $labf1.img -image warn] -side left
+        pack [label $labf1.lab1 -text "Warning:" \
+                -font {-weight bold -family helvetica -size 10}] -side left
+        pack [label $labf1.lab2 -text "The Evaluation Edition is limited to $limit functions. \n\
+                You can continue to build and run this model, but\n\
+                you will not be able to save it. " \
+                -font {-family helvetica -size 10} -justify left] -side left 
+        pack $labf1 -padx 8 -pady 2
+        
+        set labf2 [frame .notify.labf2]
+        pack [label $labf2.lab1 -text "Please visit" -font {-family helvetica -size 10}] -side left
+        pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
+                -fg blue -cursor hand2 -font {-underline true -family helvetica -size 10}]] -side left
+        bind $www <Button-1> {VisitUrl "http://www.simulistics.com/"}
+        pack [label $labf2.lab5 -text "to upgrade." -font {-family helvetica -size 10}] -side left
+        pack $labf2 -padx 8 -pady 2
+        
+        set buttons [frame .notify.buttons]
+        pack [button $buttons.ok -text OK -width 10 \
+                -command {set ack 1}] \
+                -side left -padx 4 -pady 4
+        pack [button $buttons.help -text Help -width 10 \
+                -command {ContextSensitiveHelp .notify coviewexpiry.htm}] \
+                -side left -padx 4 -pady 8
+        pack $buttons
+        
+        set height [winfo reqheight .notify]
+        set width [winfo reqwidth .notify]
+        set sheight [winfo screenheight .notify]
+        set swidth [winfo screenwidth .notify]
+        wm geometry .notify +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+        update
+        
+        tkwait variable ack
+        destroy .notify
+    }
