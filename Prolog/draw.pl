@@ -419,19 +419,19 @@ display_link_in(Wid, Link, Depth, Trans) :-
 			RelFatness, Colour_scheme, [Link]],
 	call(Draw_command),
 	((get_drawing_form(Link, flow, Bowtie),
-	        density_for(Link, Density),
+	  density_for(Link, Density),
 	  Density = {},
-		untranslate(Bowtie, Trans, Screen_bowtie),
+	        untranslate(Bowtie, Trans, Screen_bowtie),
 		bowtie(Wid, Screen_bowtie, RelFatness,
 		       Density, Colour_scheme, [Link]);
 	  Type = relation,
 	  	get_boundary_end(Link, true),
 	        get_caption_anchor(Coord_list, Bowtie)), !,
-		/* bowtied links (flows) and top sections of
-			relations have captions */
-		(get_display_depth(Wid, caption, Caption_detail),
+	    /* bowtied links (flows) and top sections of
+	    relations have captions */
+	    (get_display_depth(Wid, caption, Caption_detail),
 		Caption_detail =< Depth, !;
-		add_caption(Wid, Link, Bowtie, Trans, RelFatness, Colour_scheme));
+	    add_caption(Wid, Link, Bowtie, Trans, RelFatness, Colour_scheme));
 	true).
 
 find_fatness([_,_,FatX,FatY], Fatness) :-

@@ -452,7 +452,7 @@ menu_handle(Win, edit, Component) :-
 	    event:do_linear(Component, StartPt),
 	    advance_phase_to(targetting),
 	    set_adding_object(Component),
-	    assert(event:instant_link)).
+	    event:assert(instant_link)).
 
 /* Delete the selection */
 menu_handle(Win, edit, delete) :-

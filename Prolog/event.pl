@@ -487,10 +487,10 @@ finish_old_edit(NextEdit) :-
 		    (cannot_call_in(RenamedNode, Parent, Name),
 			sicstus_format_to_chars("Cannot rename ~a. Its parent model already contains a component called ~a.", [OldName, Name], Blurb);
 		    name(Name, NameStr),
-			(Dodgy = "."; Dodgy = "/"),
-			prefix(Begin, NameStr),
-			suffix(Dodgy, Begin),
-			sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.", [OldName, Name, Dodgy], Blurb)), !,
+			member(Dodgy, "\\./"),
+			member(Dodgy, NameStr),
+			sicstus_format_to_chars("Cannot rename ~a. The name ~a contains potentially confusing symbols ~s.",
+				[OldName, Name, [Dodgy]], Blurb)), !,
 		    sicstus_format_to_chars("Error renaming node ~a.",
 					    [OldName], Head),
 		    /* Put old caption back; this is turned on for now */
@@ -1613,6 +1613,7 @@ tie_ends(New_obj, Start_thing, Terminator) :-
 Clever bit: reuse the route of the rubberband link for the newly added one */
         find_current(Wid),
 	Wid shows_model Parent,
+	find_base(Top_arc, BowtieArc),
         (m_class:equivalent_arcs(Top_arc, NewArc),
 	    find_all_comps(Node, NewArc),
 	    get_incomplete([Node | ScreenRoute]),
@@ -1621,20 +1622,15 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
 	    set_shape(NewArc, course, Route),
 	    update_bowtie(NewArc, Route),
 	    redisplay(NewArc),
+
+	    (New_obj = relation,
+		get_boundary_end(NewArc, true);
+	    New_obj = flow,
+		NewArc = BowtieArc),
+	    give_focus(NewArc),
+	    select_text(Wid, NewArc),
 	    fail;
-	    /* Now do this bit from thread_link to update destination node
-	presence_affects(Top_arc, Other_arc),
-		get_host(Other_arc, NewImage),
-		update_color(NewImage),
-		update_captions(NewImage),
-		fail; */
-	(New_obj = influence, !;
-	 (New_obj = relation, !,
-		find_name_host(Top_arc, Node_name);
-	     New_obj = flow, !,
-		find_base(Top_arc, Node_name)),
-	     give_focus(Node_name),
-	     select_text(Wid, Node_name))).
+	 true).
 
 ghost_type(Start, Type, Base) :-
 	get_line_start_obj(Start),
