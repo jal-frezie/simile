@@ -8,8 +8,7 @@ itself is only addressed from within the database module.
 */
 
 sicstus_module(m_update,
-	       [get_name_for/2, get_av_pair/4,
-		add_parameter/4, list_index_meanings/2,
+	       [get_av_pair/4, add_parameter/4, list_index_meanings/2,
 		list_local_index_meanings/2, get_input_info/2,
 		get_link_source_data/9, find_node_with_data/3,
 		valid_input/2, insert_variable/5, check_unit/4,
@@ -38,9 +37,6 @@ sicstus_use_module([library(lists),
 %%%   UTILITY PROCEDURES FOR MANIPULATING COMPONENT PARAMETERS              %%%
 %%%                                                                         %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-get_name_for(Model, Name) :-
-	Model has_class_refinement file_name of Name.
 
 /* add_parameter: adds a new attribute-value pair to an object. Arg 1 is the object ID, 2 the type of parameter (0 = class refinement, 1 = model refinement, 2 = link attribute) 3 and 4 the attribute and value. */
 
@@ -718,12 +714,15 @@ can_connect(Arc, Node1, Node2) :-
 	   [cloud, [compartment, cloud]]]],
 	 [influence,
 	  [[compartment,
-	    [variable, flow, alarm, condition, creation,
+	    [variable, flow, compartment, alarm, condition, creation,
 	     immigration, reproduction, loss]], 
 	   [variable,
 	    [variable, flow, compartment,
 	     alarm, condition, creation, immigration, reproduction, loss]],
 	   [flow,
+	    [variable, flow, compartment,
+	     alarm, condition, creation, immigration, reproduction, loss]],
+	   [alarm,
 	    [variable, flow, compartment,
 	     alarm, condition, creation, immigration, reproduction, loss]],
 	   [creation, [variable, flow, compartment,

@@ -137,7 +137,7 @@ stick_model_in(Parent, Name) :-
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
 	    NeedsRedraw = 1),
         finish_progress_dialogue,
-	add_parameter(Parent, 0, file_name, Name),
+	set_model_file(Parent, Name),
 	check_autosave(Parent, Name, NeedsRedraw),
 	(NeedsRedraw = 0, !;
 	resize_canvas_for(Parent),
@@ -720,7 +720,7 @@ show_error(Model, Lossage) :-
 	    Fault = user;
 	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
 	    Fault = system),
-	(get_name_for(Model, Name), !; Name = unsaved),
+	(get_model_file(Model, Name), !; Name = unsaved),
 	(backup:autosave_file_is(AutoName), !; AutoName = none),
 	output:safe_tcl_eval(['BuildProblem', br(Name), br(AutoName),
 			      br(chars(Text)), Fault], _).
@@ -771,7 +771,7 @@ remove_model(Win, Parent) :-
 	    event:spread_colour(Parent, no),
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
-	add_parameter(Parent, 0, file_name, ''),
+	clear_model_file(Parent),
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, DeleteDir),
 	output:trim_tree(LocalDir, DeleteDir),
@@ -879,7 +879,7 @@ do_save(Model, New_name) :-
 	writing all the saved components to temp file. */
 
 	(New_name = false,
-	    get_name_for(Model, Name);
+	    get_model_file(Model, Name);
 	try_save_files(Name)),
 
 	/* Now build the multi-part MIME format save file */
@@ -890,7 +890,7 @@ do_save(Model, New_name) :-
 	    fail),
 
 	/* If that succeeded, mark model as saved */
-	add_parameter(Model, 0, file_name, Name),
+	set_model_file(Model, Name),
 	update_captions(Model),
 	clear_autosave(Model, Name),
 	update_ability(save, file, 'Save', 0),
@@ -966,7 +966,7 @@ mark_model_danger(Model, Danger) :-
 
 get_default_export_name(Model, Extn, Export) :-
 	[Slash] = "/", [Dot] = ".",
-	(get_name_for(Model, Path), !; Path = untitled),
+	(get_model_file(Model, Path), !; Path = untitled),
 	name(Path, PathStr),
 	(append(Dirs, File, PathStr),
 	    suffix([Slash], Dirs),

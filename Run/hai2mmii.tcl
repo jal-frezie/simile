@@ -405,7 +405,7 @@ proc GetModelClass { node } {
     }	
     if {$model_id} {
 	return [lindex {SUBMODEL VARIABLE COMPARTMENT FLOW CONDITION \
-		CREATION REPRODUCTION IMMIGRATION LOSS} \
+		CREATION REPRODUCTION IMMIGRATION LOSS ALARM} \
 		[getvalue $model_id $node 11]]
     } else {
 	lindex [getinfo $node] 7

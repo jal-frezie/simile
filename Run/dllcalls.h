@@ -15,6 +15,7 @@
 #define REPRODUCTION    6
 #define IMMIGRATION     7
 #define LOSS            8
+#define ALARM           9
 
 #define	VALUELESS	0
 #define REAL            1

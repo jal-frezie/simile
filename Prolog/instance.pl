@@ -298,7 +298,7 @@ condition, creation and loss nodes. Type is as function. */
 
 instance_of(Type, Node, _, [instance(Type, Node, FnType, Value, Dims)],
 		[instance(FnType, F, _, Value, Dims)]) :-
-	member(Type, [variable, condition, creation, loss]),
+	member(Type, [variable, condition, creation, loss, alarm]),
 	member(Node, [B, A]),
 	Arc is_connector from A to B, !,
 		initiates(Arc, F).

@@ -686,7 +686,7 @@ Obj is_class_of_sort Class :-
 		relation-[line, curved, connection],
 		cloud-[cloud, regular_box, box, captionless],
 		alarm-[regular_box, box, rectangle, channel, has_function,
-			   boolean_value, value_outside],
+			   boolean_value],
 		condition-[regular_box, box, rectangle, channel, has_function,
 			   boolean_value],
 		creation-[regular_box, box, rectangle, channel, has_function,

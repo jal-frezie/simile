@@ -7,7 +7,8 @@ available to the other modules that use it.
 */
 
 sicstus_module(state, [get_initial_window_size/2, create_window/2, 
-	destroy_window/1, get_edition/1,
+	destroy_window/1,
+	clear_model_file/1, set_model_file/2, get_model_file/2, get_edition/1,
 	kill_windows/0, shows_model/2, monitors_variable/2,
 	depth_list_is/1, set_display_depth/3, get_display_depth/3, 
 	set_current_depth/1, get_current_depth/1,
@@ -31,8 +32,7 @@ sicstus_module(state, [get_initial_window_size/2, create_window/2,
 sicstus_use_module(library(lists)).
 
 :- dynamic(model_in/2).
-:- dynamic(variable_in/2).
-:- dynamic(simulation_in/2).
+:- dynamic(model_file/2).
 
 get_initial_window_size(640, 400).
 
@@ -42,6 +42,16 @@ create_window(New_win, Model) :-
 
 destroy_window(Dead_win) :-
 	retractall(model_in(Dead_win, _)).
+
+clear_model_file(Model) :-
+	retractall(model_file(Model, _)).
+
+set_model_file(Model, File) :-
+	clear_model_file(Model),
+	assertz(model_file(Model, File)).
+
+get_model_file(Model, File) :-
+	model_file(Model, File).
 
 :- dynamic(edition_is/1).
 
@@ -67,9 +77,7 @@ depth_list_is([[submodel, relation],
 	       [ghost_link]]).
 
 kill_windows :-
-	retractall(model_in(_, _)),
-	retractall(variable_in(_, _)),
-	retractall(simulation_in(_, _)).
+	retractall(model_in(_, _)).
 
 :- op(500, xfy, shows_model).
 

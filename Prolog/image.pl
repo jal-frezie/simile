@@ -587,7 +587,7 @@ end_coords(Link, Where, [Xpt, Ypt]) :-
 /* make_header: generates the text to put in a window's title bar */
 
 make_header(Model, Header) :-
-	(get_name_for(Model, Name), !,
+	(get_model_file(Model, Name), !,
 		name(Name, NameChars),
 		split_path_chars(NameChars, _, _, FileNameChars);
 	FileNameChars = "unsaved"),
