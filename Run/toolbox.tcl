@@ -1194,6 +1194,7 @@ proc DoLocalCmd {win item} {
         raiseMRE { wm deiconify .mre; raise .mre}
         open_all {OpenAll $win}
         save_all {SaveAll $win}
+	insert {InsertModel $win}
     }
 }
 
@@ -1414,7 +1415,14 @@ proc SpitPS {winId psfile} {
     PrepForExport $winId back
 }
 
-proc Reopen {canvas oldFile} {
+proc InsertModel {winId} {
+    set insertion [ChooseFile model.sml "Model file to insert" 0]
+    if {![string match */ $insertion]} {
+	Reopen $winId $insertion insert
+    }
+}
+
+proc Reopen {canvas oldFile op} {
     global custom userinfo welcomeDone
     
     if [winfo exists .register] {
@@ -1423,7 +1431,7 @@ proc Reopen {canvas oldFile} {
     
     RecordPathChoice .sml $oldFile 1
     set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]
-    MenuSelect $canvas reopen $oldFile
+    MenuSelect $canvas $op $oldFile
     global loadingProject mimedir
     if {$loadingProject} {
         OpenProjectFile $canvas $mimedir
@@ -1442,7 +1450,7 @@ proc FillReopen {winId} {
         }
         if {[file exists $hottie] && [lsearch $posted $hottie]==-1} {
             .openrecent add command -label [file tail $hottie] \
-                    -command [list Reopen $winId.canvas $hottie]
+                    -command [list Reopen $winId.canvas $hottie reopen]
             lappend posted $hottie
         }
     }
@@ -1469,6 +1477,8 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     
     $fm add command -label "Save as..." \
             -command "MenuSelect $c file save_as"
+    $fm add command -label "Save selection as..." \
+            -command "MenuSelect $c file save_seln_as"
     $fm add command -label "Save/Edit package" \
             -command "MenuSelect $c local save_all"
     
@@ -1642,6 +1652,8 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm2 add command -label Vertical \
             -command "MenuSelect $c edit flip_v"
     
+    $fm add command -label "Insert..." \
+            -command "MenuSelect $c local insert"
     $fm add separator
     $fm add command -label "Save interface" \
             -command "MenuSelect $c file save_interface"

@@ -103,10 +103,12 @@ update_mode(NewMode) :-
 	    assert(cursor_is(question_arrow));
 	assert(cursor_is(arrow))).
 
-stick_model_in(Parent, Name) :-
+stick_model_in(Parent, Name, Mode) :-
+	Mode = reopen,
 	check_if_already_open(Name), !;
 	use_temp_dir(LocalDir),
 	Win shows_model Parent,
+	(event:list_captions(Parent, Used), !; true),
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
         start_progress_dialogue,
@@ -136,20 +138,44 @@ stick_model_in(Parent, Name) :-
 	    output:my_delete_file(GraphFileName);
 	/* legacy case, file opened is Prolog:
 	    no canvas, images or runnables */
-	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no, _),
+	on_exception(ProLoss, ame_merge(Parent, Name, _Date, no, Translated),
 		     (make_nice_error_message(ProLoss, ProLite),
 		     show_error(Parent, open_model_failed(Checked, ProLite)))),
 	    NeedsRedraw = 1),
         finish_progress_dialogue,
-	set_model_file(Parent, Name),
-	check_autosave(Parent, Name, Translated, NeedsRedraw),
-	(NeedsRedraw = 0,
-	/* Graphics update will have made a tk_visible call which we do not
-	want to save as a separate move so forget it */
-	input:retract(resizing_windows(Win)), !;
-	resize_canvas_for(Parent),
-	    redraw_window(Win)),
-	update_captions(Parent).
+	(Mode = reopen,
+	    set_model_file(Parent, Name),
+	    check_autosave(Parent, Name, Translated, NeedsRedraw),
+	    (NeedsRedraw = 0,
+		/* Graphics update will have made a tk_visible call which we do
+		not want to save as a separate move so forget it */
+ 	        input:retract(resizing_windows(Win)), !;
+	    resize_canvas_for(Parent),
+		redraw_window(Win)),
+	    update_captions(Parent);
+	Mode = insert,
+	    (Translated = copy, !, /* paste into empty sole toplevel */
+	        setof(Mover, (contains(Model, Mover),
+				 appears(Mover), \+ Mover = Model), Lighters);
+	    setof(Mover, O^(member(O-Mover, Translated),
+			 appears(Mover)), Lighters)),
+	    setof(Mover, (member(Mover, Lighters),
+			     find_all_comps(Model, Mover)), Movers),
+	    (member(Mover, Lighters),
+	        Mover is_of_sort box,
+		event:do_colours(Mover, on),
+		fail;
+	    record_bbox(Model, Box)),
+	    
+	    (find_space_for(Box, Model, Lighters, [0,0], [Xoffset, Yoffset]),
+		all(event, adjust_posn,
+		    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]);
+	    true),
+	    all(event, retitle_duplicate, [build(Movers), unify(Used)]),
+	    (member(Mover, Movers),
+		redisplay(Mover),
+		fail;
+	    finish_move(Model))).
 
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
@@ -190,20 +216,23 @@ menu_handle(Win, file, open) :-
 	get_load_file(Name),
 	(Name = '', !;
 	remove_model(Win, Parent),
-	stick_model_in(Parent, Name),
+	stick_model_in(Parent, Name, reopen),
 	warn_runtime).
 
-menu_handle(Win, reopen, Name) :-
+menu_handle(Win, GetMode, Name) :-
 	Win shows_model Parent,
-	check_deletable(Win, Parent),
-	remove_model(Win, Parent),
-	stick_model_in(Parent, Name),
+	(GetMode = reopen,
+	    check_deletable(Win, Parent),
+	    remove_model(Win, Parent);
+	GetMode = insert,
+	    select_all_in(Parent, off)),
+	stick_model_in(Parent, Name, GetMode),
 	warn_runtime.
 
 menu_handle(_Win, open_toplevel, Name) :-
 	check_if_already_open(Name), !;
 	m_update:make_desktop(Parent, _),
-	stick_model_in(Parent, Name),
+	stick_model_in(Parent, Name, reopen),
 	warn_runtime.
 
 menu_handle(Win, file, save) :-
@@ -213,6 +242,10 @@ menu_handle(Win, file, save) :-
 menu_handle(Win, file, save_as) :-
 	Win shows_model Model,
 	do_save(Model, true).
+
+menu_handle(Win, file, save_seln_as) :-
+	Win shows_model Model,
+	do_save(Model, seln_only).
 
 menu_handle(Win, file, save_interface) :-
 	Win shows_model Model,
@@ -501,7 +534,9 @@ menu_handle(Win, edit, CutOrCopy) :-
 	
 	/* OK, now I just have the originally selected bit left -- work out
 	how big it is, save it and enable pasting */
-	record_bbox(Model),
+	record_bbox(Model, Box),
+	retractall(selected_box_is(_)),
+	assert(selected_box_is(Box)),
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output:date_is(Date),
@@ -530,7 +565,7 @@ menu_handle(Win, edit, paste) :-
 	reassure_user("Checking for space to paste into"),
 	get_edit_model(Win, Model, Pt),
 	selected_box_is(SBox),
-	(find_space_for(SBox, Model, Pt, [Xoffset, Yoffset]), !,
+	(find_space_for(SBox, Model, [], Pt, [Xoffset, Yoffset]), !,
 	reassure_user("Paste in progress"),
 	select_all_in(Model, off),
 	(event:list_captions(Model, Used), !; true),
@@ -697,7 +732,7 @@ find_innermost_selection_holder([Comp | Rest], Innermost) :-
 	    append(Adds, MoreAdds, AllAdds),
 	    all(draw, set_highlit_obj, [unify(0), build(AllAdds)])).
 
-find_space_for([L, T, R, B], Model, DefPt, [TargetX, TargetY]) :-
+find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	get_shape(Model, internal_extent, [ML, MT, MR, MB]),
 	(nonvar(DefPt), !; DX is (L+R)/2, DY is (T+B)/2),
 	DefPt = [DX, DY],
@@ -729,7 +764,8 @@ find_space_for([L, T, R, B], Model, DefPt, [TargetX, TargetY]) :-
 	to check for interference */
 	NewL is L+TargetX, NewT is T+TargetY,
 	NewR is R+TargetX, NewB is B+TargetY,
-	\+ get_overlaps(Model, [NewL, NewT, NewR, NewB], _).
+	\+ (get_overlaps(Model, [NewL, NewT, NewR, NewB], Obstacle),
+	       \+ member(Obstacle, Including)).
 	
 :- op(950, yfx, [where]).
 
@@ -1146,7 +1182,9 @@ do_save(Model, New_name) :-
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),
 	output:date_is(Date),
-	save_isolated(TempFile, Model, Date, no),
+	(New_name = seln_only, !, Select = yes, CanvasModel = none;
+	    Select = no, CanvasModel = Model),
+	save_isolated(TempFile, Model, Date, Select),
 	
 	/* Save image backgrounds */
 	transfer_images(Model, SaveDir, out),
@@ -1154,7 +1192,7 @@ do_save(Model, New_name) :-
 	/* Save canvas file -- remove selection cos graphics but not state
 	are saved */
 	select_all_in(Model, off),
-	check_save_canvas(SaveDir, Model, Date),
+	check_save_canvas(SaveDir, CanvasModel, Date),
 
 
 	/* here is where we get the user to enter the name to save it
@@ -1169,16 +1207,18 @@ do_save(Model, New_name) :-
         reassure_user("Creating MIME-format saved file"),
 	output:save_file(SaveDir, Name, Oops),
 
-        (   Oops = [], !;
+        (   Oops = [];
+	    \+ Oops = [],
             do_dialogue("Problem building output file", error, Oops, ok, _),
 	    fail),
 
 	/* If that succeeded, mark model as saved */
+	(New_name = seln_only;
 	set_model_file(Model, Name),
 	update_captions(Model),
 	clear_autosave(Model, Name),
 	update_ability(Model, save, file, 'Save', 0),
-	mark_model_danger(Model, safe),
+	mark_model_danger(Model, safe)),
         finish_progress_dialogue, !;
         finish_progress_dialogue, fail.
 

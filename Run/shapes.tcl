@@ -544,7 +544,7 @@ proc ColorSymbol { w name type density colorSpec } {
 }
 
 proc FlashSymbol {w name outlineColor textColor} {
-    foreach object [GetColourObjs $w $name] {
+    foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
             text {$w itemconfigure $object -fill $textColor}
             line {
@@ -557,7 +557,7 @@ proc FlashSymbol {w name outlineColor textColor} {
 }
 
 proc StippleSymbol {w name density selected} {
-    foreach object [GetColourObjs $w $name] {
+    foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
             line {
                 $w itemconfigure $object -stipple $density
@@ -576,24 +576,14 @@ proc StippleSymbol {w name density selected} {
 }
 
 proc FillSymbol { w name color } {
-    foreach object [GetColourObjs $w $name] {
+    foreach object [$w find withtag $name] {
         foreach outlinable_type "rectangle oval polygon" {
-            if {[string compare [$w type $object] $outlinable_type] == 0} {
+            if {[string compare [$w type $object] $outlinable_type] == 0 && \
+		    ![string match */background/* [$w gettags $object]]} {
                 $w itemconfigure $object -fill $color
             }
         }
     }
-}
-
-proc GetColourObjs { w name } {
-    set result {}
-    foreach object [$w find withtag $name] {
-        if {![string match */background/* \
-                    [$w gettags $object]]} {
-            lappend result $object
-        }
-    }
-    return $result
 }
 
 proc ResetColours { w type density colourScheme name } {

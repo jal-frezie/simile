@@ -16,7 +16,7 @@ in response to successful editing operations.
 sicstus_module(image,
 	  [get_colour/2, get_window_colour/2,
 	   get_closest_edge/3, get_inner_bound/3, get_outer_bound/4,
-	   selected_box_is/1, record_bbox/1,
+	   selected_box_is/1, record_bbox/2,
 	   change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
 	   targets/5, inside_shape/3, near/2,
 	   crossing_point/5, make_bounding_box/5,
@@ -157,13 +157,11 @@ contains_box(Parent, Box) :-
 
 :- dynamic(selected_box_is/1).
 
-record_bbox(Parent) :-
-        setof(BB, Node^(find_all_comps(Parent, Node),
+record_bbox(Parent, Box) :-
+        setof(BB, Node^Shape^(find_all_comps(Parent, Node),
 			get_highlit_obj(0, Node),
-			get_drawing_form(Node, _, BB)), [Box1 | Boxes]),
-	combine_boxes(Box1, Boxes, Box),
-	retractall(selected_box_is(_)),
-	assert(selected_box_is(Box)).
+			get_drawing_form(Node, Shape, BB)), [Box1 | Boxes]),
+	combine_boxes(Box1, Boxes, Box).
 
 combine_boxes(Box, [], Box).
 combine_boxes([L1, T1, R1, B1], [[L2, T2, R2, B2] | More], Box) :-
