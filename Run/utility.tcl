@@ -18,7 +18,9 @@ proc ShowMessage { title icon string resps {parent {}}} {
     if {[llength $active]} {
 	lappend mBoxCmd -parent $active
     }
-    wm withdraw . ;# ensure mess is not obscured by splash screen
+    if {[winfo exists .splash]} {
+	destroy .splash ;# ensure mess is not obscured by splash screen
+    }
     set act [eval $mBoxCmd]
     update
     return $act

@@ -1,9 +1,22 @@
+#!/home/jaspert/Simile/System/bin/wish
 # SIMILE batch file
 
 # If there is an arg, it is the model to start with. Because this is sourced
 # from a script or special .exe there is never more than 1 arg. Windows has
 # a buggy implementation of file pathtype so hope that simile.exe always
 # gets us an absolute path...
+
+# KDE launch feedback will fail unless toplevel window is displayed briefly,
+# causing annoying eye candy to persist while program is running
+# it may be necessary to have the launch icon execute this file rather than the
+# launcher script to avoid this effect -- make sure the first line points to a
+# working wish, or <Simile>/System/bin/wish
+# This is also the reason why this file must have Unix style line ends
+
+if {[string equal Linux $tcl_platform(os)]} {
+    update
+}
+wm withdraw .
 
 if {[string match windows $tcl_platform(platform)]} {
     package require dde 1.2
@@ -87,12 +100,14 @@ if {[string match Darwin $tcl_platform(os)]} {
     #package require Img
     splash read $SIMILE_PATH/Images/splash.gif
 }
-pack [canvas .c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
-.c create image 200 158 -image splash
-.c create text 270.0 275.0 -font {-family helvetica -size 10} -fill #660066 -text "Version $env(SIMILE_VERSION)"
+
+toplevel .splash
+pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
+.splash.c create image 200 158 -image splash
+.splash.c create text 270.0 275.0 -font {-family helvetica -size 10} -fill #660066 -text "Version $env(SIMILE_VERSION)"
     
-wm geometry . +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
-wm overrideredirect . 1
+wm geometry .splash +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
+wm overrideredirect .splash 1
 update
 
 # This is the folder that AME should start looking for model

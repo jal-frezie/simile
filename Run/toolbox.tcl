@@ -828,7 +828,8 @@ proc FixSize {c} {
     }
     pack propagate $win 0
     update
-    wm withdraw .
+
+    destroy .splash
     if {[string match $openModel {}]} {
         DoRegDialog $win
     }
