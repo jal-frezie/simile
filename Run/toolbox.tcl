@@ -890,6 +890,22 @@ proc ExportPostscript { winId } {
     }
 }
 
+proc CopyCanvasToWindowsClipboard {canvas} {
+    global tcl_platform
+    
+    if {[string match windows $tcl_platform(platform)]} {
+        package require gdi
+        package require printer
+        package require wmf
+        
+        set hdc [wmf open]; #Opens a memory metafile
+        printer::print_canvas $hdc $canvas          
+        set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle        
+        #ShowMessage debug info "[ wmf info $wmfdc ]" ok        
+        wmf copy $wmfdc; # Copy to the clipboard        
+    }
+}
+
 proc PrintNow {winId} {
     global env tcl_platform
     
@@ -980,7 +996,7 @@ proc FillReopen {winId} {
 }
 
 proc AddMainMenu { winid initWidth initDepths} {
-    global custom MIpushedbutton
+    global custom MIpushedbutton tcl_platform
     
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
@@ -1027,6 +1043,11 @@ proc AddMainMenu { winid initWidth initDepths} {
     $fm add command -label Redo -command "prolog tk_redo" \
             -state disabled -accelerator "Ctrl+Y"
     AddFindMenu $winid.canvas $fm
+    if {[string match windows $tcl_platform(platform)]} {
+        $fm add separator
+        $fm add command -label "Copy diagram" -command "CopyCanvasToWindowsClipboard $winid.canvas" ;#\
+            # -state disabled -accelerator "Ctrl+Y"
+    }
     $fm add separator
     $fm add command -label Preferences... -command Pref_Dialog
     
