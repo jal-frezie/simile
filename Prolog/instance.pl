@@ -81,7 +81,7 @@ instantiate_nodes([Node|Nodes], New_instances, Path, ResultIn, ResultOut) :-
 instantiate_trees([], [], _, []).
 
 instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
-	get_node_size(Node, Multiple, _,_),
+	get_node_size(Node, Multiple),
 	pointer_from(Path, HiPtr),
 	path_section_for(Node, Name, Multiple, NewBit, HiPtr, _),
 	append(NewBit, Path, NewPath),
@@ -504,5 +504,7 @@ path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 		length(Bounds, NumInds),
 		SmSpec = vm_loop(NumInds, _Bounds, _Loops, _)),
 	    Level = [sm(Context, HiPtr, LoPtr, SmSpec)];
-	make_inds_for(SmDims, SmPath, SmInds),
+	all(ame_gen, enum_type_ref, [build(SmDims), unify(SmName), build(_),
+				     build(SmSizes), build(_), build(_)]),
+	    make_inds_for(SmSizes, SmPath, SmInds),
 	    Level = [sm(Context, HiPtr, LoPtr, fm_loop(SmInds, _)) | SmPath].

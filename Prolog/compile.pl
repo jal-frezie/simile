@@ -265,6 +265,10 @@ bits and pieces */
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
 			    EnumTypeSpecs, Inters, ReevaluateForm),
+	/* EnumTypeSpecs will eventually go in a procedure outside
+the model class which will be called from getcount to initialize a
+list of them as soon as the model is loaded, thus allowing them to be
+used when entering file parameters */
 	(Phases > 0, !;
 	    raise_exception(no_phases)),
 	set_free_phases(ReevaluateForm, Phases),
@@ -296,7 +300,7 @@ bits and pieces */
 */
 	render_all(Language, global_declaration,
 		   [[void, this, []] | Constants], 0, GlobalDeclText),
-	build_submodel_functions(Language, Phases, Inters, EnumTypeSpecs,
+	build_submodel_functions(Language, Phases, Inters,
 				 StateForm, UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, FnList),
 
@@ -313,8 +317,8 @@ wot need them */
 	reassure_user("Generating structure declarations"),
 	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
 				'AME_model', 'AME_model'-[]),
-	generate_main_decls(Language, RootInstance, [], 1, [], ExtSets,
-			    AllGraphs, TypeDecls, PointerDecls, NodeData),
+	generate_main_decls(Language, RootInstance, [], 1, EnumTypeSpecs,
+		ExtSets, AllGraphs, TypeDecls, PointerDecls, NodeData),
 	append(InitTypes, [EndTopType], TypeDecls),
 	render( Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0,
 							StructTypeComment),
@@ -453,7 +457,7 @@ temporary variables used when expanding expressions.
 * New version, for 2.34: Does all the recursing itself, and also generates
 the model node data table and the extractor case statements */
 
-generate_main_decls(L, Instance, Tree, Level, Dims, ExtSets, Graphs,
+generate_main_decls(L, Instance, Tree, Level, EnumTypeSpecs, ExtSets, Graphs,
 		    TypeDecls, PointerDecls, NodeData) :-
 	Instance = instance(submodel, SymbolicName, 
 			xrefs(Model, _, Bases, _), _, ModelType-_),
@@ -496,9 +500,9 @@ generate_main_decls(L, Instance, Tree, Level, Dims, ExtSets, Graphs,
 	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
 	render(L, end(procedure), get_pointer, 0, ExtN),
 
-	generate_local_decls(L, SubInstances, Tree, Level, Dims, ExtSets,
-			     Graphs, Publics, SubTypeDecls, SubPointerDecls,
-			     Exts, NodeData),
+	generate_local_decls(L, SubInstances, Tree, Level, EnumTypeSpecs,
+			     ExtSets, Graphs, Publics, SubTypeDecls,
+			     SubPointerDecls, Exts, NodeData),
 
 	append(MainClass, [proc_decls | EndClass], ThisDecl),
 	append(ClassStart, [submodel_decls | ClassEnd], MainClass),
@@ -509,30 +513,34 @@ generate_main_decls(L, Instance, Tree, Level, Dims, ExtSets, Graphs,
 
 generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], []).
 generate_local_decls(L, [Instance | Instances], Tree, Level,
-		     Dims, ExtSets, Graphs,
+		     EnumTypeSpecs, ExtSets, Graphs,
 		     PublicDecls, TypeDecls, PointerDecls, Exts, NodeData) :-
 	Instance = instance(_, Node, Loc, _, _-SmSizes),
 	all(ame_gen, enum_type_ref,
-	    [build(SmSizes), unify(Node), build(SmDims), build(_), unify(1)]),
+	    [build(SmSizes), unify(Node), unify(EnumTypeSpecs),
+	     build(SmDims), build(_), build(_Posn)]),
+		/* In future, SmDims will be replaced by Posn, which is
+		a number from -10 down indicating the data structure in the
+	        executable corresponding to the actual enumerated type. */
 	(variable_size(Node),
 	(\+ Node has_class_refinement separate of 1;
 	    Loc = xrefs(_, instance(_,_,_, 'AME_model', _), _,_)), !,
 	    append(Tree, [Level, -1], DeepTree),
 	    (by_record(Node), !,
-		append(Dims, ['RECORDS'], NewDims);
-		append(Dims, ['MEMBERS'], NewDims));
+		append([], ['RECORDS'], NewDims);
+		append([], ['MEMBERS'], NewDims));
 	append(Tree, [Level], DeepTree),
-	    append(Dims, SmDims, NewDims)),
+	    append([], SmDims, NewDims)),
 	generate_data_decls(L, Level, NewDims, DeepTree, Instance,
-			    ExtSets, Graphs, LocalPublicDecls,
+			    ExtSets, Graphs, EnumTypeSpecs, LocalPublicDecls,
 			    LocalExts, LocalNodeData),
 	(generate_main_decls(L, Instance, DeepTree, 1,
-			     [], ExtSets, Graphs,
+			     EnumTypeSpecs, ExtSets, Graphs,
 		    DeepTypeDecls, DeepPointerDecls, DeepNodeData), !;
 	 /* Not a submodel */
 	    [DeepTypeDecls, DeepPointerDecls, DeepNodeData] = [[], [], []]),
 	NewLevel is Level + 1,
-	generate_local_decls(L, Instances, Tree, NewLevel, Dims,
+	generate_local_decls(L, Instances, Tree, NewLevel, EnumTypeSpecs,
 			     ExtSets, Graphs,
 			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
 			     MoreExts, MoreNodeData),
@@ -577,7 +585,7 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 		 Proc_ending,Blank], Decls).
 */
 
-build_eval_proc(Language, ProcName, OrderedForm, Inters, EnumTypes, Used, 
+build_eval_proc(Language, ProcName, OrderedForm, Inters, Used, 
 		AllGraphs, Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
@@ -590,13 +598,10 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, EnumTypes, Used,
 	       call(void, ProcName, [real, start_time], [int, phase]), 0,
 	       EvalProcDeclText),
 	render(Language, end(procedure), ProcName, 0, Proc_ending),
-	all(compile, make_et_fn,
-		[unify(Language), build(EnumTypes), build(ETSetups)]),
 /* following section used to be c only */
 	generate_graph_handlers(AllGraphs, GraphSetups),
-	append(ETSetups, GraphSetups, AllSetups),
-	(\+ AllSetups = [], !,
-	    render_all(Language, procedure_call, AllSetups,
+	(\+ GraphSetups = [], !,
+	    render_all(Language, procedure_call, GraphSetups,
 		       8, GraphSetupPass),
 	    refer_value(Language, phase, PhRef),
 	    combine(Language, ==, [PhRef, -1], InitExpr),
@@ -624,7 +629,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, EnumTypes, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Inters, EnumTypeSpecs,
+build_submodel_functions( Language, Phases, Inters,
 			  StateForm, UpdateForm, SortedForm,
 			  Used, ExtUsers, AllGraphs, Decls) :-
 	reassure_user("Ordering model execution assignments"),
@@ -650,7 +655,7 @@ build_submodel_functions( Language, Phases, Inters, EnumTypeSpecs,
 	    [unify(Language),
 	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
 	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
-	     build([[],[], Inters, Inters]), build([[],[], EnumTypeSpecs, []]),
+	     build([[],[], Inters, Inters]),
 	     unify(Used), build([_, _, IntGraphs, ExtGraphs]), build(Decls)]),
 /*	build_eval_proc(Language, updatemodel, OrdUpdates, Globals, [], Used,
 			_, _, UpDecls),
@@ -1176,8 +1181,8 @@ input_params_in(Vars, SmPath, SmStep,
 		make(Val, Wait, Path, Step, [CollectFn])) :-
 	member(instance(Type, Param, _, elt(_, Val, _), _-DimTypes), Vars),
 	member(Type, [function, init_function]),
-	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param),
-				     build(Dims), build(_), unify(1)]),
+	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param), build(_),
+				     build(Dims), build(_), build(_)]),
 	is_parameter(Param, ParamType),
 	ParamType > 0,
 	pointer_from(SmPath, DestPtr),

@@ -244,7 +244,6 @@ proc do_in_node {node args} {
 	    }
 	}
 	if {$runState($node,modelReady)==1} {
-#puts "put: $command"
 	    puts $runState($node,interp) $command
 	    flush $runState($node,interp)
 	    incr runState($node,queueSize)
@@ -284,11 +283,13 @@ proc FeedModel {node} {
 
     gets $runState($node,interp) incoming
     if {[string equal get [lindex $incoming 0]]} {
+#puts "get: $incoming"
 	if {[catch [lindex $incoming 1] response]} {
 	    set result [list err [split $errorInfo \n]]
 	} else {
 	    set result [list res $response]
 	}
+#puts "put: $result"
 	puts $runState($node,interp) $result
 	flush $runState($node,interp)
     } else {

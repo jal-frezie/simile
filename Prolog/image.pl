@@ -455,7 +455,7 @@ multiple_draw(VComp, Num) :-
 	(get_node_size(Comp, [Val | _]);
 	(implicit_function(Comp, CompFn); CompFn=Comp),
 		CompFn has_class_refinement units of array(_, Val)),
-		enum_type_ref(Val, Comp, RealVal, _, 1), !,
+		enum_type_ref(Val, Comp, _, RealVal, _, _), !,
 		Num is min(RealVal, 4);
 	Num = 1).
 

@@ -531,7 +531,7 @@ proc equationDoTable {parent tgt} {
     pack $fdata.captions.dheadlabel -side top -anchor w -fill y -expand true
     pack $dhead -side top -expand true -fill x
     button $fdata.buttons.load -text Load -width 10 \
-	-command [list AcquireTableData $lidx]
+	-command [list AcquireTableData $lidx 1]
     pack $fdata.buttons.load -side top -padx 4 -pady 4
     label $fdata.captions.dfilelabel -text "Data file:"
     set dfile [Entry $fdata.entries.dfile \
@@ -584,9 +584,7 @@ proc equationDoTable {parent tgt} {
 
 proc EditTableData {lidx} {
     global table_entry
-    if {![llength $table_entry(values)]} {
-	AcquireTableData $lidx
-    }
+    AcquireTableData $lidx 0
     if {[EditListAsTable .table table_entry(values)]} {
 	set table_entry(source) 1
     }
@@ -594,13 +592,11 @@ proc EditTableData {lidx} {
 
 proc DoneTableData {lidx} {
     global table_entry
-    if {![llength $table_entry(values)]} {
-	AcquireTableData $lidx
-    }
+    AcquireTableData $lidx 0
     set table_entry(done) $table_entry(source)
 }
 
-proc AcquireTableData {lidx} {
+proc AcquireTableData {lidx redo} {
     global table_entry
 
     set idcs {}
@@ -610,9 +606,12 @@ proc AcquireTableData {lidx} {
     set table_entry(indices) $idcs
     set tableSpec [concat [list $table_entry(fileName) \
 			       $table_entry(dataField)] $table_entry(indices)]
+    if {$redo || ![string equal $tableSpec $table_entry(data)]} {
 #puts "Loading with $tableSpec"
-    set table_entry(values) [LoadTableData $tableSpec]
-    set table_entry(source) 2
+	set table_entry(values) [LoadTableData $tableSpec]
+	set table_entry(source) 2
+	set table_entry(data) $tableSpec
+    }
 }
 
 proc EditListAsTable {parent valueArray} {

@@ -521,14 +521,14 @@ proc GetTable {parent comp box} {
         set equation(table_values) $table_entry(values)
         #puts $equation(table_values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
-            $box insert insert table\(\[
-            for {set count [llength $table_entry(indices)]
-                if {!$count} {set count 1}} {$count>0} \
-                    {incr count -1} {
-                        $box insert insert index\($count\),
-                    }
-            $box delete [$box index {insert -1 chars}]
-            $box insert insert \]\)
+	    InsertFunction $box table
+#            $box insert insert table\(\[
+#            for {set count [llength $table_entry(indices)]
+#                if {!$count} {set count 1}} {$count>0} {incr count -1} {
+#                       $box insert insert index\($count\),
+#                   }
+#           $box delete [$box index {insert -1 chars}]
+#           $box insert insert \]\)
         }
         set equation(done) 3
     }
@@ -1240,7 +1240,7 @@ proc GetEnumMems {fr} {
         lappend table_entry(values) [expr $pos+1] \
                 [list [lindex $memList $pos]]
     }
-    if {[equationDoTable .disaggregation]} {
+    if {[equationDoTable .disaggregation "enumerated type"]} {
         set fileState [list $table_entry(fileName) $table_entry(dataField)]
         set fileData $table_entry(values)
         foreach {pos mem} $fileData {

@@ -55,8 +55,8 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
 	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
-	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
-					 build(Dims), build(_), unify(1)]),
+	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm), build(_),
+					 build(Dims), build(_), build(_)]),
 	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
 		import_path_for(Dims, RealPathForm, ArcI, 0, Ptr0, LvlN, PtrN,
 				LocalLoops, Inds),
@@ -335,7 +335,7 @@ make_intermediates(
 
 	    (\+ var(OrigUnits),
 	    member(OrigUnits, [n(Type), a(Type)]),
-	    \+ ame_gen:resolve_enum_type(_, SubId, _, OrigUnits), !,
+	    \+ ame_gen:resolve_enum_type(_, SubId, _,_, OrigUnits, _), !,
 		raise_exception(no_local_defn_for_type(Type, SubId));
 		
 	    get_dims_from_loops(OrigLoops, Dims, _)),
@@ -543,6 +543,7 @@ make_intermediates(
 	    NewInters = PrevInters;
 
 	(Source = table(1),
+	    \+ Step = dummy,
 	    (m_class:SubId has_class_refinement table_data of TableData;
 		raise_exception(missing_graph_or_table_data(Source))),
 	    member(dims=ConstBounds, TableData),
@@ -712,7 +713,7 @@ make_intermediates(
 	        Arg_template = [boolean, RUnits, RUnits],
 		ResultList = [RTest, RTrue, RFalse],
 		ValRef = (RTest?RTrue:RFalse);
-	    Source = graph(Param),
+	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
 		 dialogue:table_data_is(_);
 		 raise_exception(missing_graph_or_table_data(Source))),
@@ -723,6 +724,9 @@ make_intermediates(
 		ValRef = graph(SubId, RVal);
 	    Source = table(SourceList),
 	    Step = dummy,
+		\+ SourceList = '', /* let checker handle empty args */
+	        (SourceList = [_|_], !;
+		raise_exception(only_works_on_array(Source))),
 		(dialogue:table_data_is(TableData);
 		 raise_exception(missing_graph_or_table_data(Source))),
 		member(units=RUnits, TableData),
@@ -733,7 +737,9 @@ make_intermediates(
 		RUnits = real,
 		Arg_template = [real],
 		[ValRef] = ResultList;
-	    Source =.. [Op | ArgList],
+	    Source =.. [Op | ArgListForm],
+		(ArgListForm = [''], !, ArgList = [];
+		    ArgList = ArgListForm),
 		length(ArgList, Arity),
 		SourceList = ArgList,
 		length(Arg_template, Arity),
@@ -1002,6 +1008,13 @@ language -- they and the operators are hidden */
 
 operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
+
+/* These are handled by the parser but have special buttons to include them so
+we do not want them in the function list -- they only appear here so the right
+error comes up if they are used with the wrong number of args */
+
+operator(graph, real, [real]).
+operator(table, any, ['[index, ...]']).
 
 operator(!, boolean, [boolean]).
 operator(+, int, [int]).

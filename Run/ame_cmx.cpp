@@ -115,7 +115,6 @@ char simileVersion[] = SIMILE_VERSION;
 
 /* utility procedures making no direct reference to model classes/instances */
 graph_data_type *graphdata;
-enum_data_type *enumtypedata;
 
 double graphpoint(double xval, int index) {
 	double interval, intersection;
@@ -254,6 +253,7 @@ class Model {
   int count, count2, count3;
   int inArcCount;
   char** inArcList;
+  enum_data_type *enumtypedata;
 
   getcount_type *getcount;
   getversion_type *getversion;
@@ -403,7 +403,8 @@ public:
   void make_full_caption(int line, char *result, int *dims) {
     /* New version which does not depend on the nodedata array being in
        any particular order -- and returns the whole caption */
-    int parent;
+    int parent, *dest, *src;
+    
 
     if ((parent = parent_line(line)) > 0) {
       make_full_caption(parent, result, dims);
@@ -413,9 +414,28 @@ public:
     }
     strcat(result, "/");
     strcat(result, nodedata[line].caption);
-    append_ints_to_null(dims, nodedata[line].dims, 0,0);
+
+    dest = dims;
+    src = nodedata[line].dims;
+
+    while (*dest) { dest++; }
+    do {
+      if (*src<=-10) {
+	*(dest++)=find_et_struct(*src); // not yet used
+      } else {
+	*(dest++)=*src;
+      }
+    } while (*src++);
   }
   
+  int find_et_struct(int fake_dim) {
+    enum_data_type* seeker = enumtypedata;
+    while (fake_dim++ < -10) {
+      seeker = seeker->next;
+    }
+    return 3;
+  }
+
   int getinfo(char* node_id) {
     int count;
 
