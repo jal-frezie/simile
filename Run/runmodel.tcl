@@ -1483,13 +1483,14 @@ proc load_c_stub {} {
     scan [info tclversion] {%d.%d} MAJ MIN
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
-#    Next line allows start on new o/s without rebuild but slows
-#    catch {pkg_mkIndex ../Run *[info sharedlibextension]}
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
-    } else {
-	loadcommands
+	# maybe we built the package index for a different os, try again
+	catch {pkg_mkIndex ../Run *[info sharedlibextension]}
+	if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
+	    error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform)"
+	}
     }
+    loadcommands
 }
 
 proc ListSameNumbers {list1 list2} {

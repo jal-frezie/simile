@@ -27,7 +27,7 @@ if {[string match windows $tcl_platform(platform)]} {
     source ../System/lib/Extras/prntcanv.tcl
 } elseif {[string match Linux $tcl_platform(os)]} {
     # avoid loading buggy Trf if ActiveTcl present on system
-    package ifneeded Trf 2.1 {}
+    # package ifneeded Trf 2.1 {}
 }
 
 # Make Simile a DDE server under Windows. Jonathan
