@@ -127,9 +127,9 @@ proc RunEnv::Create { ModelWin } {
                 set helptext [lindex $item 1]
                 set command [lindex $item 2]
                 set newButton [$bbox add -image [image create photo  -file "../Images/Toolbar/$gif"] \
-				   -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
-				   -command $command]
-		BindPopup $newButton $helptext
+                        -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
+                        -command $command]
+                BindPopup $newButton $helptext
             }
             pack $bbox -side left -anchor w
             incr tbnum
@@ -140,7 +140,7 @@ proc RunEnv::Create { ModelWin } {
         .helpers.sub2 clone .mrehelpers; #from runmodel.tcl AddHelperSublist
         set mreMenu [winfo parent [$mainframe getmenu help]]
         $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .mrehelpers
-    
+        
         # Add a PanedWindow for the hierrachical/run control view and main display window
         set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
         set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
@@ -220,7 +220,7 @@ proc RunEnv::AddNotebook {containerId} {
                 "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
         $newContainer.panedwindow add $newContainer.panedwindow.pane0 -sticky nesw
     }
-
+    
     $containerId.notebook bindtabs <Double-1> "::RunEnv::EditTabLabel $containerId.notebook"
     $containerId.notebook bindtabs <Button-3> "::RunEnv::EditTabLabel $containerId.notebook"
     
@@ -318,13 +318,22 @@ proc ::RunEnv::PrintCurrentContainer {} {
     variable canvasId
     
     if [winfo exists $CurrentContainer.container] {
-        set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
-        namespace eval :: {
-            PrintNow $::RunEnv::canvasId
+        set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
+        if {![string match "" [info commands ::${CurrentHelperId}::Print]]} {
+            ::${CurrentHelperId}::Print $CurrentContainer.container
+        } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
+            set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
+            namespace eval :: {
+                PrintNow $::RunEnv::canvasId
+            } else {
+                ShowMessage Warning warning \
+                        "[$CurrentHelperId::identify] does not support printing" ok
+            }
+            
         }
     }
 }
-
+    
 proc ::RunEnv::CopyHelper {containerId} {
     global helperTable env tcl_platform
     variable CurrentContainer
@@ -335,25 +344,33 @@ proc ::RunEnv::CopyHelper {containerId} {
             CurrentContainer $CurrentContainer\n \
             selection owner: [selection own]\n\
             focus owner [focus]\n\
-            container children [winfo children $CurrentContainer]" ok
+            container children [winfo children $CurrentContainer]\n\
+            CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)" ok
     #ShowMessage debug info "CopyHelper $CurrentContainer.container exists [winfo exists $CurrentContainer.container]" ok
-    if [winfo exists $CurrentContainer.container] {
+    if {[winfo exists $CurrentContainer.container]} {
+        set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
         
         #UpdateState $helperTable($containerId.container)
         if {[string match windows $tcl_platform(platform)]} {
-            set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
-            #ShowMessage debug info "CopyHelper canvasId $canvasId \n\
-                    namespace [namespace current]" ok
-            namespace eval :: {
-                CopyCanvasToWindowsClipboard $::RunEnv::canvasId
+            if {![string match "" [info commands ::${CurrentHelperId}::CopyToClipboard]]} {
+                ${CurrentHelperId}::CopyToClipboard $CurrentContainer.container
+            } elseif {![string match "" [info commands ${CurrentHelperId}::GetCanvas]]} {
+                set canvasId [::$CurrentHelperId::GetCanvas $CurrentContainer.container]
+                #ShowMessage debug info "CopyHelper canvasId $canvasId \n\
+                namespace [namespace current]" ok
+                namespace eval :: {
+                    CopyCanvasToWindowsClipboard $::RunEnv::canvasId
+                }
+            } else {
+                #ShowMessage Warning warning \
+                        "[$CurrentHelperId::identify] does not support copying" ok
             }
+            set copyfile $env(SIMTMPDIR)/mrecopy.txts
+            set stream [open $copyfile w]
+            #ShowMessage debug info "$copyfile" ok
+            catch {puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]}
+            close $stream
         }
-        set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
-        set copyfile $env(SIMTMPDIR)/mrecopy.txts
-        set stream [open $copyfile w]
-        #ShowMessage debug info "$copyfile" ok
-        puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]
-        close $stream
     }
 }
 
@@ -416,7 +433,7 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
     set index [lsearch $pages $page]
     #puts "DeleteNotebookPage  $notebook; $page\n \
     #            page $page; n pages: $n; \n \
-    #            parent [winfo parent $notebook]" 
+    #            parent [winfo parent $notebook]"
     if {$n==1} {
         #ShowMessage debug info "DeleteNotebookPage n==1" ok
         if {[string match mainDisplayPane [winfo name [winfo parent $notebook]]]} {
@@ -479,7 +496,7 @@ proc RunEnv::DeletePane {parentPath containerId} {
         # all panedwindows are in a notebook parent
         set parentPage [winfo parent $parentPath]
         set parentNoteBook [winfo parent $parentPage]
-    #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
+        #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
         #                parentPage $parentPage; parentNoteBook $parentNoteBook\n \
         #                pages [$parentNoteBook pages]\n \
         #                current page [$parentNoteBook raise]" ok;
@@ -499,7 +516,7 @@ proc RunEnv::SplitPage {containerId orientation} {
         Addpanedwindow $containerId $orientation
     } elseif {(![string match $orientation [$parentPath cget -orient]])} {
         #ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
-                parentPath $parentPath" ok;
+        parentPath $parentPath" ok;
         set newpw [Addpanedwindow $containerId $orientation]
         #ShowMessage debug info "newpw $newpw" ok
     } else  {
@@ -512,7 +529,7 @@ proc RunEnv::SplitPage {containerId orientation} {
         set contx [winfo x $containerId]
         set conty [winfo y $containerId]
         #ShowMessage debug info "SplitPage pane to be split \
-                width $pwidth height $pheight \n \
+        width $pwidth height $pheight \n \
                 sash index $sash coord $sashCoord\n\
                 x [winfo x $containerId]; y [winfo y $containerId]" ok; ##############
         
@@ -850,7 +867,7 @@ proc RunEnv::NewHelperInWindow {containerId helperId helperTitle} {
     set winId $containerId.container
     if {[catch {frame $winId}]} {
         error "Cannot create a display in the selected pane \
-                        because it already contains one.\nPlease select an empty pane and try again."; #return
+                because it already contains one.\nPlease select an empty pane and try again."; #return
     }
     pack $winId -fill both -expand yes
     set helperTable($helperTitle) $winId
@@ -961,7 +978,7 @@ proc RunEnv::LoadView {} {
             LoadViewFile $stream $line
         } elseif {[llength $line]==1}  {
             # assume that it is an shf made by the multiple window run env
-	        destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
+            destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
             RunEnv::AddNotebook $dp0
             seek $stream 0 start
             while {[gets $stream helperId] >= 0} {
@@ -988,7 +1005,7 @@ proc RunEnv::LoadView {} {
         } else  {
             ShowMessage Error error "Unknown display configuration file format" ok
         }
-	close $stream
+        close $stream
     }
 }
 
@@ -1040,7 +1057,7 @@ proc RunEnv::LoadViewFile {stream line} {
                 # or $panedwindow sash place won't work
                 set $notebook [FindParentNotebook $panedwindow]
                 set $pageId [winfo name [FindParentNotebookPage $panedwindow]]
-                $notebook raise $pageId; 
+                $notebook raise $pageId;
                 update
                 #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy \n\
                 #        page [$notebook pages]\n\
@@ -1062,7 +1079,7 @@ proc RunEnv::LoadViewFile {stream line} {
                 #puts $stream "page $notebook $page $pagecaption"
                 scan $line "%s %s %s %s" widget notebook pageId noSpcpagecaption
                 regsub -all _ $noSpcpagecaption " " pagecaption
-                        
+                
                 #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
                 $notebook insert end $pageId -text $pagecaption \
                         -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
