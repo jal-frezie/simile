@@ -1161,6 +1161,9 @@ change_size(_,_).
 off_window(Win) :-
 	Win shows_model Model,
 	(is_toplevel(Model), !,
+	    finish_move(Model, 0), /* botch to make sure that if user chooses
+	to save the model, the restart_move in save_isolated doesnt bring an
+	earlier-deleted one back */
 	    check_deletable(Win, Model),
 	    start_progress_dialogue(Win),
 	    remove_model(Win, Model),
