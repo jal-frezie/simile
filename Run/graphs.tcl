@@ -654,10 +654,10 @@ proc ChooseDataHeader {eb pth where op dtype data} {
 }
 
 proc FileParamDialogue {mustShow parent} {
-    global paramData widgetNames
+    global paramData widgetNames loadingProject
     set allNodes [GetObjectList]
     # do it now to shake out errors before opening window
-    
+        
     set t [toplevel .fpdialogue]
     wm transient $t $parent
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
@@ -810,11 +810,12 @@ proc MakeSubFrames {parent hierarchy ns pt} {
         if {![winfo exists $nextLevel]} {
             pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2 -side bottom
 	    pack [frame $nextLevel.head] -fill x -expand true
-	    set path [join [lrange $hierarchy 0 $pt] /]
+        set path [join [lrange $hierarchy 0 $pt] /]
+        # added setting of SimileProject element to store spf path
 	    pack [button $nextLevel.head.save -image $iconImages(save) \
-		      -command "${ns}::Save /$path"] -side right
+                -command "${ns}::Save /$path"] -side right
 	    pack [button $nextLevel.head.open -image $iconImages(open) \
-		      -command "${ns}::Open /$path"] -side right
+                -command "${ns}::Open /$path"] -side right
             pack [label $nextLevel.head.label -text $level:]
         }
         return [MakeSubFrames $nextLevel $hierarchy $ns $nextPt]
@@ -1045,9 +1046,11 @@ proc CancelParams {} {
 namespace eval fileparams {
 
 proc Save {smPath} {
-    global paramState paramData widgetNames
+    global paramState paramData widgetNames SimileProject
+    #ShowMessage debug info "Save $smPath" ok
     
     set metaFile [ChooseFile params.spf "Save parameters as:" 1]
+    set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
         set pStr [open $metaFile w]
         
@@ -1077,11 +1080,11 @@ proc Save {smPath} {
 # pathname. And the only way to get that without a hack is to cd to it...
 
 proc Open {smPath} {
-    global paramState paramData widgetNames
-    
+    global paramState paramData widgetNames SimileProject
     
     set oldDir [pwd]
     set metaFile [ChooseFile params.spf "Load parameters from:" 0]
+    set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
         set pStr [open $metaFile r]
         while {[gets $pStr savedValue] != -1} {
