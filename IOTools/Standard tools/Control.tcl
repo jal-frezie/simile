@@ -30,7 +30,6 @@ namespace eval runcontrol33857 {
     proc SwapDistVar {win} {
         variable sendvars
         variable timeSteps
-        ShowMessage debug info [list [set $sv] $win $w] ok
         set widget [$win.rsf getframe]
         set pt [$widget.edit.capt getvalue]
         $widget.edit.num configure -textvar runState(update[expr $pt+1])
