@@ -243,7 +243,7 @@ proc DoZoom { winId factor toProlog} {
 # out right when zooming prior to Postscript export.
 
 proc ZoomImage {winId which factor fontor} {
-    global window_info looks
+    global window_info looks 
     
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
@@ -259,15 +259,26 @@ proc ZoomImage {winId which factor fontor} {
         switch [$winId type $object] {
             text {
                 set fontData [ExtractFontData [$winId itemcget $object -font]]
-                set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
-                if {$newTextSize < 10} {
-                    set newTextSize 10
+                if {[info exists window_info($winId,scale)]} {
+                    # a model window
+                    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+                    #ShowMessage debug info "ZoomImage model win" ok
+                    $winId itemconfigure $object -font \
+                            [AssembleFontXFLD [lindex $fontData 0] [lindex $fontData 1] \
+                            [lindex $fontData 2] $newTextSize]
+                } else  {
+                    # helper or other non-model canvas
+                    #ShowMessage debug info "ZoomImage model !win" ok
+                    set newTextSize [expr {int([lindex $fontData 3]*$fontor)}]; #[expr {int([lindex $fontData 3]*$factor*$fontor)}]
+                    $winId itemconfigure $object -font \
+                            [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+                            [lindex $fontData 2] $newTextSize]
+                }
+                if {$newTextSize < 8} {
+                    set newTextSize 8
                 }
 #                ShowMessage debug info "ZoomImage AssembleFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
 #                        [lindex $fontData 2] $newTextSize]" ok
-                $winId itemconfigure $object -font \
-                        [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-                        [lindex $fontData 2] $newTextSize]
             } line {
                 $winId itemconfigure $object \
                         -width [AdjustWidth $winId $object $factor]
@@ -300,16 +311,42 @@ proc ZoomImage {winId which factor fontor} {
 }
 
 # textsize is not used, we now keep track of it separately to avoid rounding
-proc ExtractFontData {font} {
-    scan $font {-Adobe-%[^-]-%[^-]-%[^-]-Normal--*-%d-*-*-*-*-*-*} \
-            family weight style textsize
-    return [list $family $weight $style $textsize]
-}
-
-proc AssembleFont {family weight style textsize} {
+proc AssembleFontXFLD {family weight style textsize} {
+#    ShowMessage debug info "AssembleFontOld \n\
+            family weight style textsize: $family $weight $style $textsize\n\
+            [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
+            $family $weight $style $textsize]" ok
     return [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
             $family $weight $style $textsize]
 }
+
+proc AssembleFont {family weight style textsize} {
+    return [AssembleFontNew $family $weight $style $textsize]
+}
+
+proc ExtractFontData {font} {
+    #ShowMessage debug info "ExtractFontDataNew\n\
+            font actual [font actual $font]\n\
+            family [font actual $font -family]\n\
+            weight [font actual $font -weight]\n\
+            style [font actual $font -slant]\n\
+            textsize [font actual $font -size] " ok
+    #ShowMessage debug info "ExtractFontData $font n ele[llength $font]\n\
+    #    family weight style textsize: $family $weight $style $textsize" ok
+    set family [font actual $font -family]
+    set weight [font actual $font -weight]
+    set style [font actual $font -slant]
+    set textsize [font actual $font -size]
+    #ShowMessage debug info "ExtractFontData [list $family $weight $style $textsize]" ok
+    return [list $family $weight $style $textsize]
+}
+
+proc AssembleFontNew {family weight style textsize} {
+    #ShowMessage debug info "AssembleFontNew $family $weight $style $textsize\n\
+            [list family $family weight $weight slant $style size $textsize]" ok
+    return [list -family $family -weight $weight -slant $style -size $textsize]
+}
+
 
 # This updates the width of a canvas object when it is zoomed. The actual width
 # is rounded internally to an integer, so we store the full value in a tag called
@@ -324,6 +361,12 @@ proc AdjustWidth {winId object factor} {
     }
     set width [expr $oldWidth*$factor]
     $winId addtag realwidth($width) withtag $object
+    #    if {[string match [$winId type $object] text]} {}
+    #    ShowMessage debug info "AdjustWidth $winId $object $factor\n\
+                winId gettags $object [$winId gettags $object]\n\
+                $winId itemcget $object -width [$winId itemcget $object -width]\n\
+                AdjustWidth oldWidth $oldWidth; newwidth $width    " ok
+   #{ }
     return $width
 }
 
