@@ -693,7 +693,6 @@ proc ControlDraw {prologVersion} {
         set simtmpdir $custom(prefDir)/sim$guess_free
     }
     file mkdir $simtmpdir
-    file attributes $simtmpdir -hidden true
 
     set UserStream [NetOpen $custom(prefDir)/.version w]
     puts $UserStream $userinfo(name)
@@ -701,7 +700,6 @@ proc ControlDraw {prologVersion} {
     puts $UserStream $userinfo(Version)
     puts $UserStream $userinfo(done)
     close $UserStream
-    file attributes $custom(prefDir)/.version -hidden true
     
     set sendvars(running) 0
     
@@ -749,7 +747,8 @@ proc ControlDraw {prologVersion} {
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {{custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
                         "Use which C++ compiler?"}}
-        file attributes $custom(prefDir) -hidden true
+	file attributes $simtmpdir -hidden true
+	file attributes $custom(prefDir)/.version -hidden true
     }
     CheckCompilerLocation
 #    MakeHelperMenu

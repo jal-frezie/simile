@@ -290,7 +290,7 @@ proc PrefEntrySet { entry varName } {
 # PrefSave writes the resource specifications to the
 # end of the per-user resource file,
 proc PrefSave {} {
-	global pref
+	global pref tcl_platform
     global tcl_platform
     if [catch {
 		set old [NetOpen $pref(userDefaults) r]
@@ -337,7 +337,9 @@ proc PrefSave {} {
 		Status "Cannot install $new: $err"
 		return
 	}
-    file attributes $old -hidden true
+    if {[string equal windows $tcl_platform(platform)]} {
+	file attributes $old -hidden true
+    }
     PrefDismiss
 }
 

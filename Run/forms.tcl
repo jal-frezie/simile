@@ -1640,7 +1640,9 @@ proc DoRegDialog {dtId} {
     puts $UserStream $userinfo(Version)
     puts $UserStream $userinfo(done)
     close $UserStream
-    file attributes $custom(prefDir)/.version -hidden true
+    if {[string equal windows $tcl_platform(platform)]} {
+	file attributes $custom(prefDir)/.version -hidden true
+    }
     
     # this never happens with welcome version
     if {$userinfo(done) == 2} {

@@ -1759,18 +1759,20 @@ proc byebye {winId} {
 }
 
 proc exit_simile {} {
-    global custom
+    global custom tcl_platform
     
     set cacheStream [NetOpen $custom(prefDir)/.recent w]
     foreach oldFile $custom(hotlist) {
         puts $cacheStream $oldFile
     }
     close $cacheStream
-    file attributes $custom(prefDir)/.recent -hidden true
+    if {[string equal windows $tcl_platform(platform)]} {
+	file attributes $custom(prefDir)/.recent -hidden true
+    }
 }
 
 proc ZapWindow { fullName } {
-    global custom window_info
+    global custom window_info tcl_platform
     
     upvar 0 window_info($fullName,parent) target
     #ShowMessage debug info "$winId $custom(first_up)" ok
@@ -1781,7 +1783,9 @@ proc ZapWindow { fullName } {
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
         close $cacheStream
-	file attributes $custom(prefDir)/.layout -hidden true
+	if {[string equal windows $tcl_platform(platform)]} {
+	    file attributes $custom(prefDir)/.layout -hidden true
+	}
     }
     destroy ${target}top
     
