@@ -511,6 +511,14 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
 	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"
 }
 
+proc SelectText {w node} {
+    set new [GetCaptionItem $w $node]
+    $w dtag currently_editable
+    $w itemconfigure $new -tag [concat currently_editable [$w gettags $new]]
+    $w focus $new
+    $w select from $new 0
+    $w select to $new end
+}
 
 # This procedure colours the symbol outline with the given identifier, by first
 # searching for all the graphical components that make it up and then
@@ -750,12 +758,12 @@ proc GoEdit { w comp } {
 }
 
 proc EnableEdits { w } {
-    focus $w
+#    focus $w
     $w addtag currently_editable withtag editable
 }
 
 proc DisableEdits { w } {
-    focus [winfo parent $w]
+#    focus [winfo parent $w]
     $w dtag currently_editable
 }
 

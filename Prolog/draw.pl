@@ -16,7 +16,7 @@ on while I change the spec to reflect that.
 sicstus_module(draw,
 	       [cursor_in/2, callback/1,
 		enable_text_editing_in/1, disable_text_editing_in/1,
-		get_component_from_gui/4, get_text/3,
+		select_text/2, get_component_from_gui/4, get_text/3,
 		find_relevant_windows/4, update_captions/1, 
 		update_color/1, shift_images/3,
 		give_focus/1, has_focus/1,
@@ -307,7 +307,7 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 		EditState = [];
 	get_mode(select), !,
 		EditState = [editable, currently_editable];
-	EditState = [editable, currently_editable]),
+	EditState = [editable]),
 /* currently added to last choice to test alternative edit prevention */
 	text(Wid, ScreenPoint, Style, [Id, fillable | EditState],
 			Fatness, Colour_scheme, Caption).

@@ -11,7 +11,8 @@ normally possible so the Tk change features are not used; objects are
 changed only by deleting and redrawing them.  */
 
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
-	get_file_name/4, enable_text_editing_in/1, disable_text_editing_in/1, 
+	get_file_name/4, enable_text_editing_in/1,
+	disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
 	submodel/7, bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
@@ -149,6 +150,9 @@ enable_text_editing_in(Wid) :-
 
 disable_text_editing_in(Wid) :-
 	safe_tcl_eval(['DisableEdits', Wid], _).
+
+select_text(Wid, Node) :-
+	safe_tcl_eval(['SelectText', Wid, Node], _).
 
 compartment(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutRectangle', Wid, L, T, R, B, Num, Fatness, Density, 

@@ -208,7 +208,7 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	update_ability(Model, none, edit, 'Copy', Cuttable),
 	update_ability(Model, none, edit, 'Paste', Pastable).
 
-click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
+click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	get_mode(add),
 	set_start_coords(Xpt, Ypt),
 	set_current_coords(Xpt, Ypt),
@@ -218,6 +218,9 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 		(New_obj is_class_of_sort rounded_rect,
 			advance_phase_to(rubberband);
 		add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
+		finish_old_edit(NewNode),
+		give_focus(NewNode),
+		select_text(Wid, NewNode),
 	    (setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
 		NewLooks = []),
 	    all(event, spread_colour, [build(NewLooks), unify(yes)]));
@@ -1756,7 +1759,11 @@ attempt_new_component(Parent, Box, Extent) :-
 	set_shape(Node_name, internal_extent, Extent),
 	add_to_translation([0, 0, 1, 1], Node_name, Node_trans),
 	relate_graphics(Node_name, Node_trans),
-	redisplay_border(Node_name).
+	redisplay_border(Node_name),
+	find_current(Wid),
+	finish_old_edit(Node_name),
+	give_focus(Node_name),
+	select_text(Wid, Node_name).
 
 relate_graphics(Node_name, Node_trans) :-
 	move_boxes(Node_name, Node_trans),
