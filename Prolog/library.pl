@@ -20,9 +20,6 @@ ame_save( File, Model, Date ) :-
 	(setof(A-V, Model has_class_refinement A of V, Props); Props = []),
 	\+ ( member( Node, Models ),
 	     \+ Node is_model_class ),
-	any_setof( Class,
-		   Class is_class,
-		   Classes ),
 	output:windowize(File, WFile),
 	on_exception(_, open(WFile, write, Stream), 
 	fail), !,
@@ -40,9 +37,6 @@ ame_save( File, Model, Date ) :-
 	nl(Stream),
 	dialogue:reassure_user("Writing node information"),
 	save_nodes( Models, Stream, ArcsUsed ),
-	nl(Stream),
-	dialogue:reassure_user("Writing class information"),
-	save_classes( Classes, Stream ),
 	nl(Stream),
 	dialogue:reassure_user("Writing arc information"),
 	save_arcs( ArcsUsed, Stream ),
@@ -125,18 +119,6 @@ save_node( Node, Stream, ArcsUsed ) :-
 		   ( Arc is_connector from Node to End, Node = Start;
 		     Arc is_connector from Start to Node, Node = End ),
 		   ArcsUsed ).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% save_classes - write out data structures representing class definitions
-
-save_classes( [], _ ).
-save_classes( [Class|Classes], Stream ) :-
-	any_setof( Attribute=Value,
-		   Class has_class_attribute Attribute of Value,
-		   AttributeValuePairs ),
-	write_with_breaks( Stream, class( Class, AttributeValuePairs,
-		[/* Graphics in here */] )),
-	save_classes( Classes, Stream ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_arcs - write out data structures representing arcs; don't do the same
@@ -224,11 +206,9 @@ ame_merge( Parent, File, Date, HasCode, Translated ) :-
 	    \+ (_ has_part Other, \+ Other = Parent), !,
 	    /* do not bother with renaming if opening
 	    first and only model */
-	    InitBindings = copy,
-	    Translated = false;   
-	InitBindings = [],
-	    Translated = true),
-	store_term( Term, Stream, Parent, InitBindings, [] ),
+	    InitBindings = copy;   
+	InitBindings = []),
+	store_term( Term, Stream, Parent, InitBindings, Translated, [] ),
 	close( Stream ),
 
 	(state:get_edition(evaluation),
@@ -370,43 +350,45 @@ arr_ind(_, Found, _, 0) :-
 % during the loading process. Arg4 is a set of commands to be tried again at
 % the end. Looping is stopped by checking the length of the delayed agenda.
 
-store_term( end_of_file, _, Parent, Bindings, Rest ) :- 
+store_term( end_of_file, _, Parent, Bindings, AllBindings, Rest ) :- 
 	!, % green cut
 	length( Rest, Number ),
 	dialogue:reassure_user("Co-ordinating model information"),
-	deal_with_rest( Rest, Number, Parent, Bindings, [] ).
-store_term( Term, Stream, Parent, Bindings, Rest ) :-
+	deal_with_rest( Rest, Number, Parent, Bindings, AllBindings, [] ).
+store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,
 	append( TermList, [Parent,Bindings,NewBindings], NewTermList ),
 	NewTerm =.. NewTermList,
 	call( build:NewTerm ),
 	!,
 	read( Stream, NextTerm ),
-	store_term( NextTerm, Stream, Parent, NewBindings, Rest ).
-store_term( Term, Stream, Parent, Bindings, Rest ) :-
+	store_term( NextTerm, Stream, Parent, NewBindings, AllBindings, Rest ).
+store_term( Term, Stream, Parent, Bindings, AllBindings, Rest ) :-
 				% delay and try again% if something fails
 	read( Stream, NextTerm ),
-	store_term( NextTerm, Stream, Parent, Bindings, [Term|Rest] ).
+	store_term( NextTerm, Stream, Parent, Bindings, AllBindings,
+		    [Term|Rest] ).
 
 % deal_with_rest does the same thing, but with a list of leftovers
 
-deal_with_rest( [], _, _, _, [] ).
-deal_with_rest( [], PreviousLength, Parent, Bindings, Terms ) :-
+deal_with_rest( [], _, _, B,B, [] ).
+deal_with_rest( [], PreviousLength, Parent, Bindings, AllBindings, Terms ) :-
 	length( Terms, NewLength ),
 	(NewLength < PreviousLength, !,
-		deal_with_rest( Terms, NewLength, Parent, Bindings, [] );
+	    deal_with_rest(Terms, NewLength, Parent, Bindings, AllBindings,[]);
 	(build:missing(Comp),
 	    sicstus_format_to_chars("Component ~w missing. The following lines in the file contained references to model components that were not found: ~w", [Comp, Terms], MessStr);
 	sicstus_format_to_chars("Simile had some sort of problem incorporating the following lines from the file into the model: ~w", Terms, MessStr)),
 		do_dialogue("Problem reading file", warning, MessStr, ok, _)).
 
-deal_with_rest( [Term|Terms], Length, Parent, Bindings, Rest ) :-
+deal_with_rest( [Term|Terms], Length, Parent, Bindings, AllBindings, Rest ) :-
 	Term =.. TermList,
 	append( TermList, [Parent,Bindings,NewBindings], NewTermList ),
 	NewTerm =.. NewTermList,
 	call( build:NewTerm ),
 	!,
-	deal_with_rest( Terms, Length, Parent, NewBindings, Rest ).
-deal_with_rest( [Term|Terms], Length, Parent, Bindings, Rest ) :-
-	deal_with_rest( Terms, Length, Parent, Bindings, [Term|Rest] ).
+	deal_with_rest(Terms, Length, Parent, NewBindings, AllBindings, Rest).
+deal_with_rest( [Term|Terms], Length, Parent, Bindings, AllBindings, Rest ) :-
+	deal_with_rest( Terms, Length, Parent, Bindings, AllBindings,
+			[Term|Rest] ).
 

@@ -95,7 +95,7 @@ decode_command(br(Cmd), Res) :- !,
         append([123 | In], [125], Res).
 decode_command(sqb(Cmd), Res) :- !,
 	decode_command(Cmd, In),
-        append([93 | In], [95], Res).
+        append([91 | In], [93], Res).
 decode_command(dq(Cmd), Res) :- !,
 	decode_command(Cmd, In),
         append([34 | In], [34], Res).

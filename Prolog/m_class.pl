@@ -20,12 +20,6 @@ sicstus_module(m_class, [is_new_part_of/2, is_part_of/2, has_part/2,
 	no_longer_has_graphical_attribute/2, 
 	no_longer_has_graphical_attributes/1, 
 	has_changed_graphical_attribute/2,
-	is_class/1, has_class_attribute/2, is_new_class/1,
-	has_new_class_attribute/2, is_no_longer_class/1,
-	is_no_longer_class/2, no_longer_has_class_attribute/2,
-	has_class_attributes/2, has_changed_class_attribute/2,
-	no_longer_has_class_attributes/1,
-	no_longer_has_class_attributes/2,
 	is_connector/2, is_new_connector/2,
 	is_also_connector/2,
 	is_no_longer_connector/1, is_no_longer_connector/2,
@@ -35,6 +29,5 @@ sicstus_module(m_class, [is_new_part_of/2, is_part_of/2, has_part/2,
 	connects/3, initiates/2, terminates/2, equivalent_arcs/2,
 	sequence/2, follows/2, no_longer_has_connections/1] ).
 
-sicstus_use_module( [library(lists),link,m_struct,node,class,graphics,
-		text,utility] ).
+sicstus_use_module([library(lists),link,m_struct,node,graphics,text,utility]).
 

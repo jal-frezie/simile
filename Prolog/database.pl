@@ -19,8 +19,6 @@ sicstus_module(database, [
 		subsystem/2,
 	/* for node */
 		node_class/2, node_refinement/3, node_attribute/3,
-	/* for class */
-		declared_class/1, attribute/3,
 	/* for graphics */
 		graphical_info/3]).
 
@@ -34,9 +32,6 @@ sicstus_module(database, [
 :- dynamic(node_refinement/3).
 :- dynamic(node_attribute/3).
 		
-:- dynamic(declared_class/1).
-:- dynamic(attribute/3).
-		
 :- dynamic(graphical_info/3).
 		
 :- op(500, xfy, [of, from, to]).
@@ -49,8 +44,6 @@ clear_database :-
 		subsystem/2,
 	/* for node */
 		node_class/2, node_refinement/3, node_attribute/3,
-	/* for class */
-		declared_class/1, attribute/3,
 	/* for graphics */
 		graphical_info/3]).
 

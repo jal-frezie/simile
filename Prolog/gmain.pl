@@ -27,7 +27,6 @@ substitute(E, [G | T1], F, [H | T2]) :-
 :- include('database.pl').
 :- include('text.pl').
 :- include('graphics.pl').
-:- include('class.pl').
 :- include('m_struct.pl').
 :- include('node.pl').
 :- include('link.pl').

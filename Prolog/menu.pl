@@ -104,6 +104,7 @@ update_mode(NewMode) :-
 	assert(cursor_is(arrow))).
 
 stick_model_in(Parent, Name) :-
+	check_if_already_open(Name), !;
 	use_temp_dir(LocalDir),
 	Win shows_model Parent,
 	abs_path_name(Parent, root, InsertDir),
@@ -123,7 +124,7 @@ stick_model_in(Parent, Name) :-
 	    transfer_images(Parent, TargetDir, in),
 		  
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
-	    (Translated = false,
+	    (Translated = copy,
 		TryDll = '',
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 		output:my_file_exists(GraphFileName), !,
@@ -141,7 +142,7 @@ stick_model_in(Parent, Name) :-
 	    NeedsRedraw = 1),
         finish_progress_dialogue,
 	set_model_file(Parent, Name),
-	check_autosave(Parent, Name, NeedsRedraw),
+	check_autosave(Parent, Name, Translated, NeedsRedraw),
 	(NeedsRedraw = 0, !;
 	resize_canvas_for(Parent),
 	    redraw_window(Win)),
@@ -149,6 +150,13 @@ stick_model_in(Parent, Name) :-
 	want to save as a separate move so forget it */
 	input:retract(resizing_windows(Win)),
 	update_captions(Parent).
+
+check_if_already_open(Name) :-
+	get_model_file(Model, Name),
+	Win shows_model Model,
+	output:safe_tcl_eval([wm, deiconify, sqb([winfo, toplevel, Win])], _),
+	output:safe_tcl_eval([raise, sqb([winfo, toplevel, Win])], _).
+
 
 resize_canvas_for(Parent) :-
 	find_all_comps(Parent, Lump),
@@ -193,6 +201,7 @@ menu_handle(Win, reopen, Name) :-
 	warn_runtime.
 
 menu_handle(_Win, open_toplevel, Name) :-
+	check_if_already_open(Name), !;
 	m_update:make_desktop(Parent, _),
 	stick_model_in(Parent, Name),
 	warn_runtime.

@@ -10,7 +10,7 @@
 % editing of ame files more user friendly.                                     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-sicstus_module(build, [source/5,roots/4,properties/4,class/6,
+sicstus_module(build, [source/5,roots/4,properties/4,
 	node/8,node/9,arc/9,ghosts/5] ).
 
 sicstus_use_module( [library( lists),m_class,utility] ).
@@ -45,45 +45,6 @@ properties([A-V | Rest], Root, B, B) :-
 	Root has_changed_class_refinement A of V, !;
 	Root has_new_class_refinement A of V),
 	properties(Rest, Root, B, B).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% update_class - checks if the named class already exists and if it is the same
-% as the loaded one; if so asks the user whether to override or not.
-
-class( Class, Attributes, 
-		[/* Graphics in here */],
-		_, Bind, Bind ) :-   % test if class is already loaded
-	Class is_class,			    % do nothing
-	\+ ( member( Attribute=Value, Attributes ),
-	     \+ Class has_class_attribute Attribute of Value  ),
-	\+ ( Class has_class_attribute Attribute of Value,
-	     \+ member( Attribute=Value, Attributes )),
-	!.
-class( Class, _Attributes,
-		[/* Graphics in here */],
-		_, Bind, Bind ) :-   % if different definition is loaded
-	Class is_class,			    % ask whether to overwrite
-	write( 'Found new definition of class ' ),
-	write( Class ),
-	write( ' - overwrite old definition? [y./n.] ' ),
-	y_or_n( n ),			    % if no, then don't
-	!.
-class( Class, Attributes,
-		[/* Graphics in here */],
-		_, Bind, Bind ) :-   % if yes then do.
-	Class is_class,
-	Class no_longer_has_class_attributes,
-	foreach( Attribute=Value, Attributes,
-		     Class has_new_class_attribute Attribute of Value ),
-	write( 'Old definition overwritten.' ),
-	nl.
-class( Class, Attributes,
-		[/* Graphics in here */],
-		_, Bind, Bind ) :-   % if the class is new, just load it.
-	\+ Class is_class,
-	Class is_new_class,
-	foreach( Attribute=Value, Attributes,
-		     Class has_new_class_attribute Attribute of Value ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % add_node inserts new information about a node, and updates bindings
