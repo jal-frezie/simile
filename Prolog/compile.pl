@@ -998,10 +998,11 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	(is_parameter(Node, Is_P),
 	(member(AssignType, [function, id_function, init_function]),
 	    (Is_P < 1,
-		(AssignType = init_function, !, UseStep = 0; UseStep = Step);
+		(AssignType = init_function, !, UseStep = 0; UseStep = Step),
+		SourceEqn = Source;
 	     Is_P = 1,
-		UseStep = -1),
-	    SourceEqn = Source;
+		UseStep = -1,
+		apply_minmax(Node, Source, SourceEqn));
 	member(AssignType, [compartment, immigration, reproduction]),
 	    UseStep = Step,
 	    Source = incr(Step, SourceEqn)), !,

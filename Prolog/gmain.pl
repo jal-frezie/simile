@@ -166,12 +166,13 @@ instead.
 Note use of name rather than write_to_codes because latter causes
 confusion with the print stream. */
 
-needs_quoting(Foo, Bar) :-
+needs_quoting(Foo, Noo) :-
 	atom(Foo),
 	name(Foo, Bar),
 	append(Bar, ".", Barb),
 	catch(read_from_codes(Barb, Foob), _Err, true),
-	\+ Foob == Foo.
+	\+ Foob == Foo,
+	append([39 | Bar], [39], Noo).
 
 runtime_entry(start) :-
 	main.

@@ -3,7 +3,7 @@
 **** of a model class that is actually converted into runnable code.        ****
 *******************************************************************************/
 
-sicstus_module(instance, [instantiate_all/2] ).
+sicstus_module(instance, [instantiate_all/2, apply_minmax/3] ).
 
 sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility,
 	       library(lists),library(ordsets)]).
@@ -377,7 +377,8 @@ try_conversion(RelatedRef, Units, BaseUnits, ConvertedRef, ImpType) :-
 	    ImpType = Units).
 /*
 This adds code that limits a model value to the range specified by its
-min/max attributes. This currently is not done.
+min/max attributes. This currently is not done except for initial values
+of input parameters. */
 
 apply_minmax(Node, BaseExpr, UpdateExpr) :-
 	(Node has_class_refinement min_val of Min,
@@ -388,7 +389,7 @@ apply_minmax(Node, BaseExpr, UpdateExpr) :-
 	\+ Max = '', !,
 		UpdateExpr = min(Max, MinnedExpr);
 	UpdateExpr = MinnedExpr).
-*/
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 choose_default_value(Node, Base, PType, Default) :-
