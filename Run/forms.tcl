@@ -1404,9 +1404,11 @@ proc PopReopen {win} {
 
 proc ContextSensitiveHelp {context page} {
     global tcl_platform helphtml
-    if { [string match windows $tcl_platform(platform)]} {
+    if { [string match windows $tcl_platform(platform)] } {
         package require winhelp
         winhelp $context ../Help/simile.chm $page
+    } elseif { [string match Darwin $tcl_platform(os)] } {
+        exec java -classpath . OpenUrl $page
     } else {
         set url [pwd]/../Help/$page
         expr {
