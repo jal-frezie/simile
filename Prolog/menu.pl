@@ -178,6 +178,7 @@ menu_handle(Win, file, save_as) :-
 	do_save(Model, true).
 
 menu_handle(Win, file, save_interface) :-
+	start_progress_dialogue,
 	Win shows_model Model,
 	caption_for(Model, MCaption),
 	(is_population(Model), !,
@@ -191,12 +192,15 @@ menu_handle(Win, file, save_interface) :-
 	save_references(Stream, Model),
 	(member(Type, [relation, flow, influence]),
 	member(Dir, [in, out]),
+	sicstus_format_to_chars("Listing ~as going ~a", [Type, Dir], ProgStr),
+	reassure_user(ProgStr),
 	nl(Stream),
 	write_with_breaks(Stream, section(Type, Dir)),
 	get_submodel_interface(Model, Type, Dir, _, Entry),
 	    write_with_breaks(Stream, Entry),
 	    fail;
-	close(Stream)).
+	close(Stream),
+	finish_progress_dialogue).
 	
 menu_handle(Win, file, ExportCmd) :-
 	member([ExportCmd, Lang], [[compile_c, c], [compile_tcl, tcl]]),
