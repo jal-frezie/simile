@@ -255,10 +255,11 @@ proc EditAsTable {t canvas} {
 	    [expr $graph($t,lowx)+$range*$index/($size-1.0)] \
 	    [PointToYValue $t [lindex $graph($t,points) $index]]
     }
-    set newList [EditListAsTable $t $table]
-    foreach {index y} $newList {
-	set zone [expr round(($size-1.0)*$index/$range)]
-	GStick $canvas $zone [YValueToPoint $t $y]
+    if {[EditListAsTable $t table]} {
+	foreach {index y} $table {
+	    set zone [expr round(($size-1.0)*$index/$range)]
+	    GStick $canvas $zone [YValueToPoint $t $y]
+	}
     }
 }
 
@@ -519,18 +520,14 @@ proc equationDoTable {parent tgt} {
     #
     # OK, Cancel and Help buttons
     frame .table.top.fbuttons
-    button .table.top.fbuttons.load -text Load -width 10 \
-	-command [list AcquireTableData $lidx]
     button .table.top.fbuttons.edit -text View/Edit -width 10 \
-	-command {set table_entry(values) \
-		      [EditListAsTable .table $table_entry(values)]}
+	-command [list EditTableData $lidx]
     button .table.top.fbuttons.ok -text OK -width 10 \
-	-command {set table_entry(done) 1}
+	-command [list DoneTableData $lidx]
     button .table.top.fbuttons.cancel -text Cancel -width 10 \
 	-command "set table_entry(done) 0"
     button .table.top.fbuttons.help -text Help -width 10 \
 	-command {ContextSensitiveHelp .table equations/table.htm}
-    pack .table.top.fbuttons.load -side top -padx 4 -pady 4
     pack .table.top.fbuttons.edit -side top -padx 4 -pady 4
     pack .table.top.fbuttons.ok -side top -padx 4 -pady 4
     pack .table.top.fbuttons.cancel -side top -padx 4 -pady 4
@@ -542,28 +539,34 @@ proc equationDoTable {parent tgt} {
     frame .table.bottom
     TitleFrame .table.bottom.fdata -text "Data file and column heading "
     set fdata [.table.bottom.fdata getframe]
-    frame  $fdata.dhead
-    label $fdata.dhead.dheadlabel -text "Use as data column "
-    set dhead [Entry $fdata.dhead.dhead \
+    frame $fdata.captions 
+    frame $fdata.entries
+    frame $fdata.buttons 
+    pack $fdata.captions -side left -fill y
+    pack $fdata.entries -side left -expand true -fill both
+    pack $fdata.buttons -side left -fill y
+
+    label $fdata.captions.dheadlabel -text "Use as data column:"
+    set dhead [Entry $fdata.entries.dhead \
             -textvariable table_entry(dataField) \
             -dropenabled true -droptypes LISTBOX_ITEM \
             -dropcmd ChooseDataHeader]
-    pack $fdata.dhead.dheadlabel -side left -anchor w
-    pack $dhead -side left -anchor w -expand true -fill x
-    pack $fdata.dhead -side top -anchor w -expand true -fill x
-    pack $fdata -fill x
-    pack .table.bottom.fdata -fill x
-    frame $fdata.dfile
-    label $fdata.dfile.dfilelabel -text "Data file                    "
-    set dfile [Entry $fdata.dfile.dfile \
+    pack $fdata.captions.dheadlabel -side top -anchor w -fill y -expand true
+    pack $dhead -side top -expand true -fill x
+    button $fdata.buttons.load -text Load -width 10 \
+	-command [list AcquireTableData $lidx]
+    pack $fdata.buttons.load -side top -padx 4 -pady 4
+    label $fdata.captions.dfilelabel -text "Data file:"
+    set dfile [Entry $fdata.entries.dfile \
             -textvariable table_entry(fileName)]
     bind $dfile <Return> LoadDataFile
-    pack $fdata.dfile.dfilelabel -side left -anchor w
-    pack $dfile -side left -anchor w -expand true -fill x
-    button $fdata.dfile.new -compound left -image $iconImages(open) \
+    pack $fdata.captions.dfilelabel -side bottom -anchor w -fill y -expand true
+    pack $dfile -side bottom -expand true -fill x
+    button $fdata.buttons.new -compound left -image $iconImages(open) \
 	-text Browse -command {GetDataFile "Select new data file";LoadDataFile}
-    pack $fdata.dfile.new -side left -padx 4 -pady 4
-    pack $fdata.dfile -side top -anchor w -expand true -fill x
+    pack $fdata.buttons.new -side bottom -padx 4 -pady 4
+    pack $fdata -fill x
+    pack .table.bottom.fdata -fill x
     pack .table.bottom -side top -fill x
     
     set t .table
@@ -602,6 +605,22 @@ proc equationDoTable {parent tgt} {
     return $table_entry(done)
 }
 
+proc EditTableData {lidx} {
+    global table_entry
+    if {![llength $table_entry(values)]} {
+	AcquireTableData $lidx
+    }
+    EditListAsTable .table table_entry(values)
+}
+
+proc DoneTableData {lidx} {
+    global table_entry
+    if {![llength $table_entry(values)]} {
+	AcquireTableData $lidx
+    }
+    set table_entry(done) 1
+}
+
 proc AcquireTableData {lidx} {
     global table_entry
 
@@ -616,32 +635,44 @@ proc AcquireTableData {lidx} {
     set table_entry(values) [LoadTableData $tableSpec]
 }
 
-proc EditListAsTable {parent values} {
+proc EditListAsTable {parent valueArray} {
     global table_viewer
 
-    set t .table_edit
-    toplevel $t -bd 4
-    wm transient $t $parent
-    wm protocol $t WM_DELETE_WINDOW {set table_viewer(done) 0}
+    set t .table_edit.helperzone
+    set b .table_edit.buttonzone
+    toplevel .table_edit -bd 4
+    wm transient .table_edit $parent
+    wm protocol .table_edit WM_DELETE_WINDOW {set table_viewer(done) 0}
+
+    pack [frame $t] -fill x -expand true
+    pack [frame $b]
+    pack [button $b.ok -text OK \
+	      -command "set table_viewer(done) 1"] -side left
+    pack [button $b.cancel -text Cancel \
+	      -command "set table_viewer(done) 0"] -side left
     
     set viewerId $table_viewer(id)
     set ::${viewerId}::editMode($t) 1
     ${viewerId}::initialize $t
 
+    upvar 1 $valueArray values
     set ${viewerId}::dataStore($t,0,0.0) $values
     set ${viewerId}::displayList($t) eqn_table
     set ${viewerId}::orientList($t) {none cols rows cols}
     set ${viewerId}::displayFormat($t,0) {General 4 0}
     ${viewerId}::Reconbobulate $t
 
-    focus $t
-    grab $t
+    focus .table_edit
+    grab .table_edit
     tkwait variable table_viewer(done)
-    grab release $t
-    destroy $t
+    grab release .table_edit
+    destroy .table_edit
     grab $parent
 # extract step at end so window still gone if it fails
-    return [${viewerId}::ExtractEdits $t]
+    if {$table_viewer(done)} {
+	set values [${viewerId}::ExtractEdits $t]
+    }
+    return $table_viewer(done)
 }
 
 proc GetDataFile {info} {
@@ -1114,6 +1145,7 @@ proc RevertData {winId compName} {
 }
 
 proc FillIfSmall {entry text} {
+    $entry configure -state normal
     $entry delete 0 end
     set limit 500
     set count [ShrinkValueList text $limit]
