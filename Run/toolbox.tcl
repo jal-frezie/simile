@@ -269,10 +269,12 @@ package require mime
 package require md5
 
 proc SaveFile {tree tgt} {
+    #ShowMessage debug info "SaveFile $tree $tgt" ok
     global mimeSquirter runState errorInfo model_id
     catch {
 	set parts [GetParts $tree $tree]
-	if {[info exists runState(currentTime)]} {
+    #ShowMessage debug info "SaveFile GetParts $tree" ok
+    if {[info exists runState(currentTime)]} {
 	    if {$runState(execTime) != $runState(currentTime)} {
 		set runState(execDur) \
 		    [expr $runState(execTime)+$runState(currentTime)]
@@ -1069,8 +1071,79 @@ proc DoLocalCmd {win item} {
         find {FindCaption $win}
         findnext {NextCaption $win}
         raiseMRE { wm deiconify .mre; raise .mre}
+        open_all {OpenAll $win}
+        save_all {SaveAll}
     }
 }
+
+set loadingProject 0
+
+proc OpenAll {win} {
+    global SimileProject loadingProject
+    set loadingProject 1
+    set ProjectFile \
+            [ChooseFile *.spj "Open package" 0]
+    set projectF [open $ProjectFile r]
+    gets $projectF SimileProjectData
+    close $projectF
+    #ShowMessage debug info "open_all win $win; $SimileProjectData" ok
+    array set SimileProject $SimileProjectData
+    #ShowMessage debug info "open_all SimileProject(ModelFile) $SimileProject(ModelFile)" ok
+    
+    Reopen $win $SimileProject(ModelFile)
+    # if params it should load the spfs
+    if {$SimileProject(modelRunning)} {
+        if {$SimileProject(running_c)} {
+            MenuSelect $win file run_c
+        } else  {
+            MenuSelect $win file run_tcl
+        }
+        if {![string match {} $SimileProject(nameOfHelperStateFile)]} {
+            ::RunEnv::LoadSHF $SimileProject(nameOfHelperStateFile)
+        }
+    }
+}
+
+proc SaveAll {} {
+    global custom runState running_c nameOfHelperStateFile
+    global SimileProject
+    # get desktop model name use .spj extension for now
+    # write sml file name to it
+    # save sml file
+    # save any current spf names to the spj file
+    # save any shf files names
+    
+    # get model file name
+    set SimileProject(ModelFile) [lindex $custom(hotlist) 0]
+    set ProjectFile [file rootname $SimileProject(ModelFile)].spj
+    
+    set ProjectFile \
+            [ChooseFile $ProjectFile "Create/Edit package" 1]
+    
+    # is it builtC|builtTcl|notbuilt
+    if [info exists runState(modelRunning)] {
+        set SimileProject(modelRunning) $runState(modelRunning)
+    } else {
+        set SimileProject(modelRunning) {}
+    }
+    if [info exists running_c] {
+        set SimileProject(running_c) $running_c
+    } else  {
+        set SimileProject(running_c) {}
+    }
+    if [info exists nameOfHelperStateFile] {
+        set SimileProject(nameOfHelperStateFile) $nameOfHelperStateFile
+    } else  {
+        set SimileProject(nameOfHelperStateFile) {}
+    }
+    # shf file name loaded
+    
+    #ShowMessage debug info "save_all [array get SimileProject]" ok
+    set projectF [open $ProjectFile w]
+    puts $projectF [array get SimileProject]
+    close $projectF
+}
+
 
 proc UnOrReDo {fwd} {
     global window_info
@@ -1258,9 +1331,19 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     $fm add command -label Save -command "MenuSelect $winid.canvas file save" \
             -accelerator "Ctrl+S"
     AddAccelerator $winid file Save "<Control-s>"
-
+    
     $fm add command -label "Save as..." \
             -command "MenuSelect $winid.canvas file save_as"
+
+    # project files for now - will merge with mime file so only save all - file manager
+    # file manager also to allow choice to auto run
+    $fm add separator
+    $fm add command -label "Open package..." \
+            -command "MenuSelect $winid.canvas local open_all"
+    $fm add command -label "Save/Edit package" \
+            -command "MenuSelect $winid.canvas local save_all"
+    # project files
+            
     $fm add separator
     $fm add command -label "Print..." \
             -command "PrintNow $winid.canvas"\
