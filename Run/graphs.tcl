@@ -16,20 +16,20 @@ proc equationGraph {parent} {
     toplevel .graph -class graphEntry -bd 4
     wm transient .graph $parent
     wm protocol .graph WM_DELETE_WINDOW {set graph(done) 0}
-# One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size    
-#    wm geometry .graph 640x480
+    # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
+    #    wm geometry .graph 640x480
     focus .graph
     grab .graph
     if {![info exists graph(pts)]} {
-# set default values for new graph
-# Changed default size to 50x50 to let it fit into MRE
-	GraphEntry .graph 0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
+        # set default values for new graph
+        # Changed default size to 50x50 to let it fit into MRE
+        GraphEntry .graph 0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
     } else {
-	GraphEntry .graph $graph(lowx) \
-		$graph(highx) $graph(width) \
-		$graph(lowy) $graph(highy) \
-		$graph(height) $graph(range) $graph(size) \
-		$graph(pts)
+        GraphEntry .graph $graph(lowx) \
+                $graph(highx) $graph(width) \
+                $graph(lowy) $graph(highy) \
+                $graph(height) $graph(range) $graph(size) \
+                $graph(pts)
     }
     grab release .graph
     destroy .graph
@@ -38,56 +38,56 @@ proc equationGraph {parent} {
 }
 
 proc ExtractGraphData { formula } {
-	global graph
-#ShowMessage debug info "Getting graph from $formula" ok
-	while {[regexp "graph\\( *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*),\
- *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *points\\((\[^)\]*)\\)," \
-				$formula match graph(lowx) \
-				graph(highx) graph(width) \
-				graph(lowy) graph(highy) \
-				graph(height) graph(range) graph(size) \
-				graph(pts)]} {
-# next line puts backslashes before chars in match expr which would
-# otherwise be special to regsub (I may not have them all)
-#ShowMessage debug info "Got expr $match" ok
-		regsub -all \[\\(\\)\\+\] $match \\\\\\0 match
-#ShowMessage debug info "Subbed it to $match" ok
-		regsub $match $formula graph( formula
-	}
-	return $formula
+    global graph
+    #ShowMessage debug info "Getting graph from $formula" ok
+    while {[regexp "graph\\( *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *(\[^,\]*),\
+                *(\[^,\]*), *(\[^,\]*), *(\[^,\]*), *points\\((\[^)\]*)\\)," \
+                $formula match graph(lowx) \
+                graph(highx) graph(width) \
+                graph(lowy) graph(highy) \
+                graph(height) graph(range) graph(size) \
+                graph(pts)]} {
+        # next line puts backslashes before chars in match expr which would
+        # otherwise be special to regsub (I may not have them all)
+        #ShowMessage debug info "Got expr $match" ok
+        regsub -all \[\\(\\)\\+\] $match \\\\\\0 match
+        #ShowMessage debug info "Subbed it to $match" ok
+        regsub $match $formula graph( formula
+    }
+    return $formula
 }
 
 proc CombineGraphData { formula } {
-	global graph
-	if {[string match *graph\(* $formula]} {
-		regsub -all "graph\\(" $formula \
-				[format graph(%g,%g,%g,%g,%g,%g,%g,%g,points(%s), \
-				$graph(lowx) \
-				$graph(highx) $graph(width) \
-				$graph(lowy) $graph(highy) \
-				$graph(height) $graph(range) $graph(size) \
-				$graph(pts)] formula
-		}
-	return $formula
+    global graph
+    if {[string match *graph\(* $formula]} {
+        regsub -all "graph\\(" $formula \
+                [format graph(%g,%g,%g,%g,%g,%g,%g,%g,points(%s), \
+                $graph(lowx) \
+                $graph(highx) $graph(width) \
+                $graph(lowy) $graph(highy) \
+                $graph(height) $graph(range) $graph(size) \
+                $graph(pts)] formula
+    }
+    return $formula
 }
 
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
-		      {target {}}} {
+            {target {}}} {
     global graph tcl_platform
     
     set graph(bd) 3
-	
+    
     switch $tcl_platform(platform) {
-	unix {
-	    set graph(exag) 3
-	    set graph(origin) 1
-	} windows {
-	    set graph(exag) 5
-	    set graph(origin) 2
-	}
+        unix {
+            set graph(exag) 3
+            set graph(origin) 1
+        } windows {
+            set graph(exag) 5
+            set graph(origin) 2
+        }
     }
     set rangeChoices "Truncate Extrapolate Wraparound"
-
+    
     set graph(rangeact) [lindex $rangeChoices $range]
     set graph(points) [split $points ,]
     set graph(lowy) $ylow
@@ -101,7 +101,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     TitleFrame $t.gph -text "Graph pad"
     set gph [$t.gph getframe]
-    frame $gph.yentry 
+    frame $gph.yentry
     entry $gph.yentry.topentry -relief sunken -textvar graph(lowy) -width 8
     pack $gph.yentry.topentry -side top -pady 2
     label $gph.yentry.toplabel -text "Y max"
@@ -116,17 +116,17 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     
     frame $gph.gridf
     set grid [canvas $gph.gridf.canvas -width [expr $graph(width)+1] \
-		  -height [expr $graph(height)+1] -bd $graph(bd) -relief groove]
+            -height [expr $graph(height)+1] -bd $graph(bd) -relief groove]
     set graph(increment) [expr $graph(width)/([llength $graph(points)] - 1.0)]
     
     bind $grid <Button-1> "GClick %W %x %y"
     bind $grid <B1-Motion> "GDrag %W %x %y"
     bind $grid <Configure> "AttackShape %W %w %h"
-
-    frame $gph.xentry 
+    
+    frame $gph.xentry
     entry $gph.xentry.leftentry -relief sunken -textvar graph(lowx) -width 8
     pack $gph.xentry.leftentry -side left -padx 2
-    label $gph.xentry.xmin -text "X min" 
+    label $gph.xentry.xmin -text "X min"
     pack $gph.xentry.xmin -side left -padx 2
     label $gph.xentry.arg -text "Argument"
     pack $gph.xentry.arg  -side left -fill x -expand true
@@ -135,7 +135,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     entry $gph.xentry.rightentry -relief sunken -textvar graph(highx) -width 8
     pack $gph.xentry.rightentry -side left -padx 2
     grid $gph.xentry -column 1 -row 1 -sticky we -padx 2 -pady 2
-
+    
     frame $t.right
     
     set buttons [frame $t.right.buttons]
@@ -196,62 +196,62 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $t.gph -side left -expand on -fill both -padx 2 -pady 2
     grid rowconfigure $gph 0 -weight 1
     grid columnconfigure $gph 1 -weight 1
-
+    
     grid $gph.gridf -column 1 -row 0 -sticky nesw  -padx 2 -pady 2
     frame $gph.dummy
-    grid $gph.dummy -column 0 -row 1 -padx 2 -pady 2 -sticky nesw 
+    grid $gph.dummy -column 0 -row 1 -padx 2 -pady 2 -sticky nesw
     pack $grid -fill both -expand true
-
+    
     RedrawGrid $grid $graph(width) $graph(height) $graph(increment)
     
     set niceFormat 0
     while {!$niceFormat} {
-	tkwait variable graph(done)
-	
-	if {$graph(done)} {
-	    if {[CheckFloaty $graph(lowy) $graph(highy) \
-			    $graph(lowx) $graph(highx)]} {
-		# tk_messageBox -message "$rangeChoices $graph(rangeact)"
-		set graph(range) [lsearch $rangeChoices $graph(rangeact)]
-		set graph(size) [llength $graph(points)]
-		regsub -all " " $graph(points) , graph(pts)
-		# Target is set to variable id if editing sketch at run time
-		if {[llength $target]} {
-		    eval {SetModelGraph $target $graph(lowx) \
-			      $graph(highx) $graph(width) \
-			      $graph(lowy) $graph(highy) \
-			      $graph(height) $graph(range) $graph(size)} \
-			[split $graph(pts) ,]
-		} else {
-		    set niceFormat 1
-		}
-	    }
-	} else {
-	    if {[llength $target]} {
-		set lastSaved [GetModelGraph $target]
-		scan $lastSaved "%g %g %d %g %g %d %d" graph(lowx) \
-		    graph(highx) graph(width) \
-		    graph(lowy) graph(highy) \
-		    graph(height) range
-		set graph(rangeact) [lindex $rangeChoices $range]
-		set graph(points) [lrange $lastSaved 8 end]
-		AttackShape $grid [winfo width $grid] [winfo height $grid]
-	    } else {
-		set niceFormat 1
-	    }
-	}
+        tkwait variable graph(done)
+        
+        if {$graph(done)} {
+            if {[CheckFloaty $graph(lowy) $graph(highy) \
+                        $graph(lowx) $graph(highx)]} {
+                # tk_messageBox -message "$rangeChoices $graph(rangeact)"
+                set graph(range) [lsearch $rangeChoices $graph(rangeact)]
+                set graph(size) [llength $graph(points)]
+                regsub -all " " $graph(points) , graph(pts)
+                # Target is set to variable id if editing sketch at run time
+                if {[llength $target]} {
+                    eval {SetModelGraph $target $graph(lowx) \
+                                $graph(highx) $graph(width) \
+                                $graph(lowy) $graph(highy) \
+                                $graph(height) $graph(range) $graph(size)} \
+                            [split $graph(pts) ,]
+                } else {
+                    set niceFormat 1
+                }
+            }
+        } else {
+            if {[llength $target]} {
+                set lastSaved [GetModelGraph $target]
+                scan $lastSaved "%g %g %d %g %g %d %d" graph(lowx) \
+                        graph(highx) graph(width) \
+                        graph(lowy) graph(highy) \
+                        graph(height) range
+                set graph(rangeact) [lindex $rangeChoices $range]
+                set graph(points) [lrange $lastSaved 8 end]
+                AttackShape $grid [winfo width $grid] [winfo height $grid]
+            } else {
+                set niceFormat 1
+            }
+        }
     }
     return $graph(done)
 }
 
 proc CheckFloaty {args} {
     if {![llength $args]} {
-	return 1
+        return 1
     } elseif {[catch {format %g [lindex $args 0]}]} {
-	ShowMessage "Numeric value required" warning "This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: [lindex $args 0]" ok
-	return 0
+        ShowMessage "Numeric value required" warning "This operation could not be completed because a numeric value must be placed in the entry field that currently contains this text: [lindex $args 0]" ok
+        return 0
     } else {
-	return [eval CheckFloaty [lrange $args 1 end]]
+        return [eval CheckFloaty [lrange $args 1 end]]
     }
 }
 
@@ -261,104 +261,104 @@ proc AddLine {c section} {
     
     $c delete section$section
     $c create line [expr round($graph(increment)*($section-1))+$miss] \
-	[expr [lindex $graph(points) [expr $section - 1]]+$miss] \
-	[expr round($graph(increment)*$section)+$miss] \
-	[expr [lindex $graph(points) $section]+$miss] \
-	-tags "graph section$section"
+            [expr [lindex $graph(points) [expr $section - 1]]+$miss] \
+            [expr round($graph(increment)*$section)+$miss] \
+            [expr [lindex $graph(points) $section]+$miss] \
+            -tags "graph section$section"
 }
 
 proc GClick {c x y} {
-	global graph
+    global graph
     set x [expr $x-$graph(bd)-$graph(origin)]
     set y [expr $y-$graph(bd)-$graph(origin)]
-	set zone [expr round($x/$graph(increment))]
-	set graph(oldzone) $zone
-	set graph(oldy) $y
-	GStick $c $zone $y
+    set zone [expr round($x/$graph(increment))]
+    set graph(oldzone) $zone
+    set graph(oldy) $y
+    GStick $c $zone $y
 }
 
 proc YEntry {c} {
     global graph xvalue yvalue
     if {![CheckFloaty $graph(lowy) $graph(highy) $graph(lowx) $graph(highx) \
-	      $xvalue $yvalue]} {
-	return
+                $xvalue $yvalue]} {
+        return
     }
     set zone [expr round(([llength $graph(points)]-1.0)*\
-			  ($xvalue-$graph(lowx))/($graph(highx)-$graph(lowx)))]
+            ($xvalue-$graph(lowx))/($graph(highx)-$graph(lowx)))]
     set y [expr round($graph(height)*\
-			  ($yvalue-$graph(lowy))/($graph(highy)-$graph(lowy)))]
+            ($yvalue-$graph(lowy))/($graph(highy)-$graph(lowy)))]
     GStick $c $zone $y
 }
 
 proc GDrag {c ox oy} {
-	global graph
-
+    global graph
+    
     set x [expr $ox-$graph(bd)-$graph(origin)]
     set y [expr $oy-$graph(bd)-$graph(origin)]
-	set zone [expr round($x/$graph(increment))]
-	set gmove [expr abs($zone - $graph(oldzone))]
-	if {$gmove} {
-		set step [expr ($zone - $graph(oldzone))/$gmove]
-		set incr [expr ($y - $graph(oldy))/$gmove]
-		while {$graph(oldzone) != $zone} {
-			set graph(oldzone) [expr $graph(oldzone) + $step]
-			set graph(oldy) [expr $graph(oldy) + $incr]
-			GStick $c $graph(oldzone) $graph(oldy)
-		}
-	} else {
-		GClick $c $ox $oy
-	}
+    set zone [expr round($x/$graph(increment))]
+    set gmove [expr abs($zone - $graph(oldzone))]
+    if {$gmove} {
+        set step [expr ($zone - $graph(oldzone))/$gmove]
+        set incr [expr ($y - $graph(oldy))/$gmove]
+        while {$graph(oldzone) != $zone} {
+            set graph(oldzone) [expr $graph(oldzone) + $step]
+            set graph(oldy) [expr $graph(oldy) + $incr]
+            GStick $c $graph(oldzone) $graph(oldy)
+        }
+    } else {
+        GClick $c $ox $oy
+    }
 }
 
 proc GStick {c zone y} {
     global graph xvalue yvalue
-
+    
     if {![CheckFloaty $graph(lowy) $graph(highy) $graph(lowx) $graph(highx)]} {
-	return
+        return
     }
     set y [max 0 [min $graph(height) $y]]
     if {$zone >= 0 && $zone < [llength $graph(points)]} {
-	set graph(points) [lreplace $graph(points) $zone $zone $y]
-	if {$zone != 0} { 
-	    AddLine $c $zone
-	}
-	if {$zone != [expr [llength $graph(points)] - 1]} {
-	    AddLine $c [expr $zone + 1]
-	}
+        set graph(points) [lreplace $graph(points) $zone $zone $y]
+        if {$zone != 0} {
+            AddLine $c $zone
+        }
+        if {$zone != [expr [llength $graph(points)] - 1]} {
+            AddLine $c [expr $zone + 1]
+        }
     }
     set xvalue [expr $graph(lowx) + \
-		    ($graph(highx)-$graph(lowx))*$zone/([llength $graph(points)]-1.0)]
+            ($graph(highx)-$graph(lowx))*$zone/([llength $graph(points)]-1.0)]
     set yvalue [expr $graph(lowy) + \
-		    ($graph(highy)-$graph(lowy))*($y*1.0)/$graph(height)]
+            ($graph(highy)-$graph(lowy))*($y*1.0)/$graph(height)]
 }
 
 proc RedrawGrid {c w h inc} {
     global looks graph
-
-	$c delete grid
-	set ylevel 0
-	while {$ylevel <= 10} {
-		set height [expr round($ylevel*$h/10.0)]
-	    $c create line 0 $height $w $height \
-		    -fill $looks(darkerColor) -tags grid
-		set ylevel [expr $ylevel + 1]
-	}
-	set xlevel 0
-	while {$xlevel <= $w} {
-		$c create line [expr round($xlevel)] 0 [expr round($xlevel)] \
-		    $h -fill $looks(darkerColor) -tags grid
-		set xlevel [expr $xlevel + $inc]
-	}
+    
+    $c delete grid
+    set ylevel 0
+    while {$ylevel <= 10} {
+        set height [expr round($ylevel*$h/10.0)]
+        $c create line 0 $height $w $height \
+                -fill $looks(darkerColor) -tags grid
+        set ylevel [expr $ylevel + 1]
+    }
+    set xlevel 0
+    while {$xlevel <= $w} {
+        $c create line [expr round($xlevel)] 0 [expr round($xlevel)] \
+                $h -fill $looks(darkerColor) -tags grid
+        set xlevel [expr $xlevel + $inc]
+    }
     set miss [expr $graph(bd)+$graph(origin)]
     $c move grid $miss $miss
 }
 
 proc AttackShape {c w h} {
-	global graph
-
-# This version used to change the axis labels when the
-# graph window was resized. Now we keep them the same and stretch the graph
-
+    global graph
+    
+    # This version used to change the axis labels when the
+    # graph window was resized. Now we keep them the same and stretch the graph
+    
     set exag [expr 2*$graph(bd)+$graph(exag)]
     set graph(increment) [expr $graph(increment)*($w-$exag)/$graph(width)]
     set graph(width) [expr $w-$exag]
@@ -368,50 +368,50 @@ proc AttackShape {c w h} {
     RedrawGrid $c $graph(width) $graph(height) $graph(increment)
     
     set graph(points) [lreplace $graph(points) 0 0 \
-			   [expr round([lindex $graph(points) 0]*$vchange)]]
+            [expr round([lindex $graph(points) 0]*$vchange)]]
     set section 1
     while {$section < [llength $graph(points)]} {
-	set graph(points) [lreplace $graph(points) $section $section \
-		       [expr round([lindex $graph(points) $section]*$vchange)]]
-	AddLine $c $section
-	set section [expr $section + 1]
+        set graph(points) [lreplace $graph(points) $section $section \
+                [expr round([lindex $graph(points) $section]*$vchange)]]
+        AddLine $c $section
+        set section [expr $section + 1]
     }
 }
 
 proc CoarseX { c } {
-	global graph
-
-	if {[llength $graph(points)] > 2} {
-		$c delete graph
-		set el 1
-		set graph(increment) [expr $graph(increment)*2]
-		while {$el < [llength $graph(points)]} {
-			set graph(points) [lreplace $graph(points) \
-				$el [expr $el + 1] [lindex $graph(points) $el]]
-			AddLine $c $el
-			set el [expr $el + 1]
-		}
-		RedrawGrid $c $graph(width) $graph(height) $graph(increment)
-	}
+    global graph
+    
+    if {[llength $graph(points)] > 2} {
+        $c delete graph
+        set el 1
+        set graph(increment) [expr $graph(increment)*2]
+        while {$el < [llength $graph(points)]} {
+            set graph(points) [lreplace $graph(points) \
+                    $el [expr $el + 1] [lindex $graph(points) $el]]
+            AddLine $c $el
+            set el [expr $el + 1]
+        }
+        RedrawGrid $c $graph(width) $graph(height) $graph(increment)
+    }
 }
 
 proc FineX { c } {
-	global graph
-
-	if {$graph(increment) >= 2.0} {
-		$c delete graph
-		set el 1
-		set graph(increment) [expr $graph(increment)/2]
-		while {$el < [llength $graph(points)]} {
-			set graph(points) [linsert $graph(points) $el \
-				[expr ([lindex $graph(points) [expr $el - 1]] + \
-				[lindex $graph(points) $el])/2]]
-			AddLine $c $el
-			AddLine $c [expr $el + 1]
-			set el [expr $el + 2]
-		}
-		RedrawGrid $c $graph(width) $graph(height) $graph(increment)
-	}
+    global graph
+    
+    if {$graph(increment) >= 2.0} {
+        $c delete graph
+        set el 1
+        set graph(increment) [expr $graph(increment)/2]
+        while {$el < [llength $graph(points)]} {
+            set graph(points) [linsert $graph(points) $el \
+                    [expr ([lindex $graph(points) [expr $el - 1]] + \
+                    [lindex $graph(points) $el])/2]]
+            AddLine $c $el
+            AddLine $c [expr $el + 1]
+            set el [expr $el + 2]
+        }
+        RedrawGrid $c $graph(width) $graph(height) $graph(increment)
+    }
 }
 
 #####################################################################
@@ -420,102 +420,102 @@ proc FineX { c } {
 
 proc equationDoTable {parent} {
     global equation table_entry
-
+    
     if {[llength $equation(table_data)]} {
-	set table_entry(fileName) [lindex $equation(table_data) 0]
-	set table_entry(dataField) [lindex $equation(table_data) 1]
-	set table_entry(indices) [lrange $equation(table_data) 2 end]
+        set table_entry(fileName) [lindex $equation(table_data) 0]
+        set table_entry(dataField) [lindex $equation(table_data) 1]
+        set table_entry(indices) [lrange $equation(table_data) 2 end]
     } else {
-	if {![string compare \
-		[GetDataFile "No data file yet specified"] {}]} {
-	    return 0
-	}
-	set table_entry(indices) {}
+        if {![string compare \
+                    [GetDataFile "No data file yet specified"] {}]} {
+            return 0
+        }
+        set table_entry(indices) {}
     }
-
-    toplevel .table -bd 4 
+    
+    toplevel .table -bd 4
     wm transient .table $parent
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
-
-frame .table.top
-label .table.top.instructions -text "Create table from file by dragging \
-        column headings to act as either indices or as data."
-pack .table.top.instructions -side top -anchor w -padx 2 -pady 2        
-TitleFrame .table.top.fheads -text "Table column headings"
-set fheads [.table.top.fheads getframe]
-set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
-		-selectmode single -dropcmd DeleteIndex \
-		-yscrollcommand [list AdjustCanvas $fheads lheads y]]
-scrollbar $fheads.yscroll -orient v -command [list $fheads.lheads yview]
-pack $fheads.yscroll -side right -fill y
-
-TitleFrame .table.top.fidx -text "Use as indices"
-set fidx [.table.top.fidx getframe]
-set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
-        -selectmode single \
-        -dropcmd AddIndex]
-set i 1        
-foreach idx $table_entry(indices) {
-    $lidx insert end id$i -text $idx
-    incr i
-}
-pack $lheads  -expand true -fill both
-pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
-pack $lidx -expand true -fill both -anchor w
-pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 2
-#
-# OK, Cancel and Help buttons
-frame .table.top.fbuttons
-button .table.top.fbuttons.ok -text OK -width 10 \
+    
+    frame .table.top
+    label .table.top.instructions -text "Create table from file by dragging \
+            column headings to act as either indices or as data."
+    pack .table.top.instructions -side top -anchor w -padx 2 -pady 2
+    TitleFrame .table.top.fheads -text "Table column headings"
+    set fheads [.table.top.fheads getframe]
+    set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
+            -selectmode single -dropcmd DeleteIndex \
+            -yscrollcommand [list AdjustCanvas $fheads lheads y]]
+    scrollbar $fheads.yscroll -orient v -command [list $fheads.lheads yview]
+    pack $fheads.yscroll -side right -fill y
+    
+    TitleFrame .table.top.fidx -text "Use as indices"
+    set fidx [.table.top.fidx getframe]
+    set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
+            -selectmode single \
+            -dropcmd AddIndex]
+    set i 1
+    foreach idx $table_entry(indices) {
+        $lidx insert end id$i -text $idx
+        incr i
+    }
+    pack $lheads  -expand true -fill both
+    pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
+    pack $lidx -expand true -fill both -anchor w
+    pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 2
+    #
+    # OK, Cancel and Help buttons
+    frame .table.top.fbuttons
+    button .table.top.fbuttons.ok -text OK -width 10 \
             -command FinishTableSelection
-button .table.top.fbuttons.cancel -text Cancel -width 10 \
+    button .table.top.fbuttons.cancel -text Cancel -width 10 \
             -command "set table_entry(done) 0"
-button .table.top.fbuttons.help -text Help -width 10 \
+    button .table.top.fbuttons.help -text Help -width 10 \
             -command {ContextSensitiveHelp .table equations/table.htm}
-pack .table.top.fbuttons.ok -side top -padx 4 -pady 4
-pack .table.top.fbuttons.cancel -side top -padx 4 -pady 4
-pack .table.top.fbuttons.help -side top -padx 4 -pady 4
-pack .table.top.fbuttons -side left  -anchor e
-pack .table.top -side top -expand true -fill both -anchor w
-#
-# Data file and data column heading
-frame .table.bottom
-TitleFrame .table.bottom.fdata -text "Data file and column heading "
-set fdata [.table.bottom.fdata getframe]
-frame  $fdata.dhead
-label $fdata.dhead.dheadlabel -text "Use as data column "
-set dhead [Entry $fdata.dhead.dhead \
-        -textvariable table_entry(dataField) \
-        -dropenabled true -droptypes LISTBOX_ITEM \
-        -dropcmd ChooseDataHeader]
-pack $fdata.dhead.dheadlabel -side left -anchor w
-pack $dhead -side left -anchor w -expand true -fill x
-pack $fdata.dhead -side top -anchor w -expand true -fill x
-pack $fdata -fill x
-pack .table.bottom.fdata -fill x
-frame $fdata.dfile 
-label $fdata.dfile.dfilelabel -text "Data file                    "
-set dfile [Entry $fdata.dfile.dfile \
-        -textvariable table_entry(fileName)]
-pack $fdata.dfile.dfilelabel -side left -anchor w
-pack $dfile -side left -anchor w -expand true -fill x
-set tbl [image create photo -file "../Images/Toolbar/table.gif" ]
-set opn [image create photo -file "../Images/Toolbar/open.gif" ]
-button $fdata.dfile.new -compound left -image $opn -text Browse \
-        -command {GetDataFile "Select new data file"; LoadDataFile}
-button $fdata.dfile.view -compound left -image $tbl -text View \
-        -command ViewTable        
-pack $fdata.dfile.new -side left -padx 4 -pady 4
-pack $fdata.dfile.view -side left -padx 4 -pady 4
-pack $fdata.dfile -side top -anchor w -expand true -fill x
-pack .table.bottom -side top -fill x
-
+    pack .table.top.fbuttons.ok -side top -padx 4 -pady 4
+    pack .table.top.fbuttons.cancel -side top -padx 4 -pady 4
+    pack .table.top.fbuttons.help -side top -padx 4 -pady 4
+    pack .table.top.fbuttons -side left  -anchor e
+    pack .table.top -side top -expand true -fill both -anchor w
+    #
+    # Data file and data column heading
+    frame .table.bottom
+    TitleFrame .table.bottom.fdata -text "Data file and column heading "
+    set fdata [.table.bottom.fdata getframe]
+    frame  $fdata.dhead
+    label $fdata.dhead.dheadlabel -text "Use as data column "
+    set dhead [Entry $fdata.dhead.dhead \
+            -textvariable table_entry(dataField) \
+            -dropenabled true -droptypes LISTBOX_ITEM \
+            -dropcmd ChooseDataHeader]
+    pack $fdata.dhead.dheadlabel -side left -anchor w
+    pack $dhead -side left -anchor w -expand true -fill x
+    pack $fdata.dhead -side top -anchor w -expand true -fill x
+    pack $fdata -fill x
+    pack .table.bottom.fdata -fill x
+    frame $fdata.dfile
+    label $fdata.dfile.dfilelabel -text "Data file                    "
+    set dfile [Entry $fdata.dfile.dfile \
+            -textvariable table_entry(fileName)]
+    pack $fdata.dfile.dfilelabel -side left -anchor w
+    pack $dfile -side left -anchor w -expand true -fill x
+    set tbl [image create photo -file "../Images/Toolbar/table.gif" ]
+    set opn [image create photo -file "../Images/Toolbar/open.gif" ]
+    button $fdata.dfile.new -compound left -image $opn -text Browse \
+            -command {GetDataFile "Select new data file"; LoadDataFile}
+    button $fdata.dfile.view -compound left -image $tbl -text View \
+            -command ViewTable
+    pack $fdata.dfile.new -side left -padx 4 -pady 4
+    pack $fdata.dfile.view -side left -padx 4 -pady 4
+    pack $fdata.dfile -side top -anchor w -expand true -fill x
+    pack .table.bottom -side top -fill x
+    
     set t .table
     tkwait visibility .table
     if {![LoadDataFile]} {
-	return 0
+        return 0
     }
-
+    
     focus $t
     grab $t
     tkwait variable table_entry(done)
@@ -536,17 +536,17 @@ proc GetDataFile {info} {
 
 proc LoadDataFile {} {
     global table_entry
-
+    
     wm title .table "Create table from file $table_entry(fileName)"
     set fheads [.table.top.fheads getframe]
     $fheads.lheads delete [$fheads.lheads items]
-
+    
     while {[catch {open $table_entry(fileName) r} stream]} {
-	if {![string compare \
-	    [GetDataFile "Cannot read file $table_entry(fileName)"] {}]} {
-		destroy .table
-		return 0
-	}
+        if {![string compare \
+                    [GetDataFile "Cannot read file $table_entry(fileName)"] {}]} {
+            destroy .table
+            return 0
+        }
     }
     gets $stream firstLine
     set table_entry(allHeads) [split $firstLine ,]
@@ -556,25 +556,25 @@ proc LoadDataFile {} {
         incr i
     }
     close $stream
-	return 1
+    return 1
 }
 
 proc FinishTableSelection {} {
     global table_entry
-
+    
     if {[lsearch $table_entry(allHeads) $table_entry(dataField)]<0} {
-	ShowMessage {Data column not found} warning \
-	    "Your selection for data column is not in the headers of this table." ok
+        ShowMessage {Data column not found} warning \
+                "Your selection for data column is not in the headers of this table." ok
     } else {
-	set table_entry(done) 1
+        set table_entry(done) 1
     }
 }
-	
+
 proc AddIndex {lb pth where op dtype data} {
     # work around an apparent bug where .c is appended to path name
     set path [string range $pth 0 [expr [string length $pth]-3]]
     if ![$lb exists $data] {
-         $lb insert end $data -text [$path itemcget $data -text]
+        $lb insert end $data -text [$path itemcget $data -text]
     }
 }
 
@@ -582,7 +582,7 @@ proc DeleteIndex {lb pth where op dtype data} {
     # work around an apparent bug where .c is appended to path name
     set path [string range $pth 0 [expr [string length $pth]-3]]
     if ![string equal $lb $path] {
-       $path delete $data
+        $path delete $data
     }
 }
 
@@ -597,16 +597,16 @@ proc ViewTable {} {
     toplevel .viewer -bd 4
     wm transient .viewer .table
     $helperTable(TableViewer)::initialize .viewer
-
+    
     set stream [open $table_entry(fileName) r]
     set row 0
     while {[gets $stream line] >= 0} {
-	set col 0
-	foreach field [split $line ,] {
-	    set data.viewer($row,$col) $field
-	    incr col
-	}
-	incr row
+        set col 0
+        foreach field [split $line ,] {
+            set data.viewer($row,$col) $field
+            incr col
+        }
+        incr row
     }
     close $stream
     .viewer.t configure -rows $row -cols $col -titlerows 1 -state disabled
@@ -629,20 +629,22 @@ proc FileParamDialogue {mustShow parent} {
         if {[string match TABLE [GetModelEval $node]]} {
             set compName [GetCaptionPathFromId $node]
             set levels [lrange [split $compName /] 1 end]
-	    set nodeDims [GetModelDims $node]
-	    while {[set sep [lsearch $nodeDims -1]]>-1} {
-		set nodeDims [lreplace $nodeDims $sep $sep]
-	    }
-	    set dimList [join [lrange $nodeDims 0 end-1] x]
-	    if {[string length $dimList]} {
-		set slotCaption "[lindex $levels end] ($dimList):"
-	    } else {
-		set slotCaption [lindex $levels end]
-	    }
+            set nodeDims [GetModelDims $node]
+            while {[set sep [lsearch $nodeDims -1]]>-1} {
+                set nodeDims [lreplace $nodeDims $sep $sep]
+            }
+            set dimList [join [lrange $nodeDims 0 end-1] x]
+            if {[string length $dimList]} {
+                set slotCaption "[lindex $levels end] ($dimList):"
+            } else {
+                set slotCaption [lindex $levels end]
+            }
             pack [set slot [frame [MakeSubFrames $t.sliderframe $levels]]] -fill x -expand on
-            pack [label $slot.l -text $slotCaption] -side left 
-            pack [button $slot.b -text "Read table" \
-                    -command [list GetFromTable $t $compName]] -side right 
+            pack [label $slot.l -text $slotCaption] -side left
+            if {$nodeDims>1} {
+                pack [button $slot.b -text "Read table" \
+                        -command [list GetFromTable $t $compName]] -side right
+            }
             
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
@@ -653,7 +655,7 @@ proc FileParamDialogue {mustShow parent} {
                 set paramData($compName) {}
             }
             set widgetNames($compName) $slot.e
-
+            
             # note whether we need to enter a parameter here...
             if {![llength $paramData($compName)]} {
                 lappend needed $compName
@@ -683,8 +685,8 @@ proc FileParamDialogue {mustShow parent} {
         grab release $t
         
     } else {
-	# Dialogue not needed because data OK so return good
-	set paramData(/done/) 1
+        # Dialogue not needed because data OK so return good
+        set paramData(/done/) 1
     }
     destroy $t
     return $paramData(/done/)
@@ -693,10 +695,10 @@ proc FileParamDialogue {mustShow parent} {
 proc MakeFrames {windowId} {
     frame $windowId.c
     set canId $windowId.c.canvas
-#    pack [frame $windowId.buttonframe] -side bottom
+    #    pack [frame $windowId.buttonframe] -side bottom
     ScrollableFrame $canId -yscrollincrement 1 \
-	-yscrollcommand [list AdjustCanvas $windowId.c canvas y] \
-	-constrainedwidth true
+            -yscrollcommand [list AdjustCanvas $windowId.c canvas y] \
+            -constrainedwidth true
     scrollbar $windowId.c.yscroll -orient v -command [list $canId yview]
     
     pack $windowId.c.yscroll -side right -fill y
