@@ -177,8 +177,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 	    UsableInputs = InterInputs),
 	(Unit_st = "", !,
 	    UnitError = [];
-	get_term(Unit_st, Units, UnitFormError),
-	    analyze_array(Units, Base, Dims)),
+	get_term(Unit_st, Units, UnitFormError)),
 	check_exp(Eqn_st, "Equation", UsableInputs, EqnBase, EqnDims,
 		  EqnNeeded, IndxCount, EqParamList, Result, EqnError),
 	
@@ -216,8 +215,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		append(UnitMatchError, UnitFormError, UnitError))),
 
 	    (UnitError = [], !,
-		(analyze_array(EqnDims, _Base, Multiples),
-		    get_actual_sizes(Multiples, MultInts),
+		(get_actual_sizes(EqnDims, MultInts),
 		    member(Dim, MultInts),
 		    (Dim = var, !,
 			Complaint6 = "This equation evaluates to a list or an array of lists. Model components are not allowed to have list values.";
@@ -286,12 +284,13 @@ table_ref(_, table(_), _, 0).
 check_exp(Eqn_st, FieldName, InterInputs, Base, Dims, Needed,
 	  IndxCount, ParamList, Equation, Error) :-
 	Eqn_st = [], !,
+	    Dims = [],
 	    ParamList = [],
 	    Equation = '',
 	    (Needed = 1, !,
 		append("You must supply a value for field ", FieldName, Error);
 	    Error = []);
-	    get_term(Eqn_st, Equation, ParseError),
+	get_term(Eqn_st, Equation, ParseError),
 	    (ParseError = [], !,
 		test_eqn(Equation, IndxCount, InterInputs, 
 			 Base, Dims, ParamList, TestError),
