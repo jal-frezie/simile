@@ -15,8 +15,6 @@ set keyValue runcontrol33857
 namespace eval runcontrol33857 {
     variable sendvars
 
-    package require -exact tile 0.5
-    
     proc identify {} {
         return "Run control"
     }
