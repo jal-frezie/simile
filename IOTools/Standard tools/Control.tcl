@@ -49,9 +49,17 @@ namespace eval runcontrol33857 {
         variable sendvars
         variable timeSteps
 	global runState
-        catch {wm title $t "Run control"}; # $t isn't a toplevel under MRE
-        set geom [PrefValue custom(runControlPosition) runControlPosition]
-        catch {wm geometry $t $geom}
+
+
+	if {[string match $t [winfo toplevel $t]]} {
+	    wm protocol $t WM_DELETE_WINDOW \
+		"[namespace code Terminate]; destroy $t"
+	    wm title $t "Run control"; # $t isn't a toplevel under MRE
+	    set geom [PrefValue custom(runControlPosition) runControlPosition]
+	    if {[string compare default $geom]} {
+		wm geometry $t $geom
+	    }
+	}
         
         TitleFrame $t.rcf -text "Run status and control"
         set rcf [$t.rcf getframe]
@@ -142,8 +150,6 @@ namespace eval runcontrol33857 {
         SendData $t
         set sendvars(prevDisplay) 0.0
         set sendvars(currentMode) stop
-	catch {wm protocol $t WM_DELETE_WINDOW \
-		   "[namespace code Terminate]; destroy $t"}
     }
 
     proc Terminate {} {

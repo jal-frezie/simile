@@ -1162,7 +1162,7 @@ proc FillReopen {winId} {
 }
 
 proc AddMainMenu { winid initWidth initDepths} {
-    global custom MIpushedbutton tcl_platform
+    global custom MIpushedbutton tcl_platform window_info
 
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
@@ -1318,12 +1318,17 @@ proc AddMainMenu { winid initWidth initDepths} {
             -variable MIpushedbutton -value ghost
     $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
             -variable MIpushedbutton -value snap -state disabled
-    
+
+    if {[info exists window_info(showIO)]} {
+	${winid}top add  cascade -label "I/O tools" -underline 0 -menu .helpers
+    }
+
     set fm [menu ${winid}top.help -tearoff 0]
     ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
     $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
             -accelerator "F1"
             AddAccelerator $winid help Contents "<F1>"
+    $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
     $fm add command -label About... -command [list ShowAbout $winid]
     
     set nb [frame $winid.toolSlot.navbar -border 2]
@@ -1624,6 +1629,18 @@ proc UpdateAbility {what where which whether} {
 
 proc ToggleIOToolMenu {on} {
     global window_info
+    if {[info exists window_info(showIO)]} {
+	if {$on} {
+	    return
+	} else {
+	    unset window_info(showIO)
+	}
+    } elseif {$on} {
+	set window_info(showIO) 1
+    } else {
+	return
+    }
+    
     foreach winData [array name window_info *,parent] {
         set topMenu $window_info($winData)top
         
@@ -1633,7 +1650,7 @@ proc ToggleIOToolMenu {on} {
             # note Welch says put 'insert' and index other way round and give index to
             # left of new one rather than right. He's wrong.
         } else {
-            catch {$topMenu delete "I/O tools"}
+            $topMenu delete "I/O tools"
         }
     }
 }
