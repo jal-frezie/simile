@@ -1013,24 +1013,29 @@ proc PrepForExport {winId way} {
 	    set sr [winfo width $winId]; set sb [winfo height $winId]
 	}
 #ShowMessage debug info "Use scrollregion: $sl $st $sr $sb" ok
-	if {[scan [$winId bbox size_on_this] "%d %d" \
-	      jiggles(bl) jiggles(bt)]<2} {
-	    scan [$winId bbox all] "%d %d" jiggles(bl) jiggles(bt)
-	}
-	set jiggles(bl) [expr $jiggles(bl)-$ltBorder]
-	set jiggles(bt) [expr $jiggles(bt)-$ltBorder]
+#	if {[scan [$winId bbox size_on_this] "%d %d" \
+#	      jiggles(bl) jiggles(bt)]<2} {
+#	    scan [$winId bbox all] "%d %d" jiggles(bl) jiggles(bt)
+#	}
+#	set jiggles(bl) [expr $jiggles(bl)-$ltBorder]
+#	set jiggles(bt) [expr $jiggles(bt)-$ltBorder]
+#Above commented as we don't care where the actual components are
+	set jiggles(bl) $sl
+	set jiggles(bt) $st
+
 #ShowMessage debug info "Use corner: $jiggles(bl) $jiggles(bt)" ok
 	$winId move all [expr -$jiggles(bl)] [expr -$jiggles(bt)]
-	$winId configure -scrollregion [list \
-	    [expr $detail*($sl-$jiggles(bl))] [expr $detail*($st-$jiggles(bt))] \
-	    [expr $detail*($sr-$jiggles(bl))] [expr $detail*($sb-$jiggles(bt))]]
+# Don't bother moving the scrollregion, it will not be staying like this
+#	$winId configure -scrollregion [list \
+#	    [expr $detail*($sl-$jiggles(bl))] [expr $detail*($st-$jiggles(bt))] \
+#	    [expr $detail*($sr-$jiggles(bl))] [expr $detail*($sb-$jiggles(bt))]]
 	ZoomImage $winId all $detail $textscale
     } else {
 	ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
-	$winId configure -scrollregion $jiggles(sr)
+#	$winId configure -scrollregion $jiggles(sr)
 	$winId move all $jiggles(bl) $jiggles(bt)
     }
-    return $detail
+    return [list $jiggles(bl) $jiggles(bt) $detail]
 }
 	
 proc CopyCanvasToWindowsClipboard {canvas} {
@@ -1076,22 +1081,16 @@ proc PrintNow {winId} {
 
 proc SpitPS {winId psfile} {
     global window_info
-    set detail [PrepForExport $winId there]
-    if {[info exists window_info($winId,width)]} {
-	set useWidth $window_info($winId,width)
-	set useHeight $window_info($winId,height)
-    } else {
-	set useWidth [winfo width $winId]
-	set useHeight [winfo height $winId]
-    }
+    scan [PrepForExport $winId there] "%g %g %g" xbase ybase detail
+    set useWidth [winfo width $winId]
+    set useHeight [winfo height $winId]
+
     $winId postscript -file $psfile -rotate true -pageanchor nw \
             -pagex 0 -pagey 0 \
-            -x [expr $detail*[$winId canvasx 0]] \
-            -y [expr $detail*[$winId canvasy 0]] \
-            -width [expr $detail*([$winId canvasx $useWidth] \
-				      - [$winId canvasx 0])] \
-            -height [expr $detail*([$winId canvasy $useHeight] \
-				       - [$winId canvasy 0])] \
+	-x [expr $detail*[$winId canvasx [expr -$xbase]]] \
+	-y [expr $detail*[$winId canvasy [expr -$ybase]]] \
+            -width [expr $detail*$useWidth] \
+            -height [expr $detail*$useHeight] \
             -pagewidth [expr $useWidth/100.0]i \
             -pageheight [expr $useHeight/100.0]i
     PrepForExport $winId back
