@@ -1493,7 +1493,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     set widget $equationlist(textbox)
     $equationlist(textbox) configure  -state normal
     $widget insert end " \n" dummy
-    #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows"
+    #puts "equationlisting_addvariable $varlabel $vartype $inflows $outflows $where"
     $widget insert end "  " descr
     $widget image create end -image equationlist(${vartype}img)
     $widget insert end " ${vartype}: " descrtag
@@ -1506,9 +1506,9 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where de
     
     if {[string match compartment $vartype]} {
         set inflows [string trim $inflows {[]}]
-        regsub -all , $inflows { } inflows
-        set outflows [string trim $outflows {[]}]
-        regsub -all , $outflows { } outflows
+        regsub -all , \"${inflows}\" {" "} inflows
+       set outflows [string trim $outflows {[]}]
+        regsub -all , \"${outflows}\" {" "} outflows
         # intial value
         $widget insert end "Initial value" eqntag
         $widget insert end " = " eqntag
@@ -1557,22 +1557,9 @@ proc equationlisting_scrollit {widget} {
     $widget set
 }
 
-proc BuildProblem {msg fault} {
+proc BuildProblem {msg} {
     toplevel .buildprob
-    switch $fault {
-	user {
-	    set Title "Problem with model"
-	    set errLevel warning
-	    set buttonTxt Help
-	    set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
-	} system {
-	    set Title "Build failure"
-	    set errLevel error
-	    set buttonTxt {Send bug report}
-	    set buttonCmd {ShowMessage {Bug report} info {Doesn't work yet} ok}
-	}
-    }
-    wm title .buildprob $Title
+    wm title .buildprob "Problem making runnable model"
     wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     if {[string match windows $tcl_platform(platform)]} {
@@ -1581,7 +1568,7 @@ proc BuildProblem {msg fault} {
     
     set labf1 [frame .buildprob.labf1]
     image create photo warn
-    warn read "../System/lib/bwidget1.5/Images/${errLevel}.gif"
+    warn read "../Images/warning.gif"
     pack [label $labf1.img -image warn] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
@@ -1593,8 +1580,8 @@ proc BuildProblem {msg fault} {
     pack [button $buttons.ok -text OK -width 10 \
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
-    pack [button $buttons.help -text $buttonTxt -width 10 \
-            -command $buttonCmd] \
+    pack [button $buttons.help -text Help -width 10 \
+            -command {ContextSensitiveHelp .buildprob run/index.htm}] \
             -side left -padx 4 -pady 8
     pack $buttons
     
