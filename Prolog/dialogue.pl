@@ -90,7 +90,7 @@ BoxHeaderStr),
 	retractall(table_data_is(_)),
 	(get_av_pair(Part, 0, table_data, TableSpec),
 	    TableSpec = [file=FilePath, data=DataField,
-			 indices=Indices, current=Values], !,
+			 indices=Indices, current=Values | _], !,
 	    assert(table_data_is(TableSpec)),
 	    TableList = [FilePath, DataField | Indices],
 	    reverse_engineer(Values, 0, TableVals);
@@ -155,7 +155,8 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	    TableData = [FileName, DataField | Indices], 
 	    retractall(table_data_is(_)),
 	    assert(table_data_is([file = FileName, data = DataField,
-				  indices = Indices, current = DataTable])),
+				  indices = Indices, current = DataTable,
+				  units=Units, bounds=Dims])),
 	    fill_table(TableData, TableVals);
 	do_dialogue("Problem with input data", warning, Complaint,
 		    ok, _)),
@@ -360,7 +361,9 @@ feed_items(Fn, [IndStr, ValStr | More], Table, [Ind, VOrig | TOrig],
 	   Units, Dims, Sizes) :-
 	feed_items(Fn, More, Table, TOrig, DUnit, Dims, LoSizes),
 	(name(Ind, IndStr),
-	    enum_type_ref(Ind, Fn, Posn, IUnit);
+	    enum_type_ref(Ind, Fn, Posn, TUnit),
+	    (TUnit = a(_), IUnit = TUnit;
+		IUnit = int);
 	append(["Table contained the index item ", IndStr,
 		", which is not a recognizable constant."], Loss),
 	    raise_exception(Loss)),

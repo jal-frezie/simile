@@ -632,10 +632,14 @@ make_intermediates(
 		ResultList = [RVal],
 		SourceRef = graph(V1,V2,V3,V4,V5,V6,V7,V8, Points, RVal);
 	    Source = table(SourceList),
-		RUnits = real,
+		(Step = dummy,
+		    dialogue:table_data_is(TableData),
+		    member(units=RUnits, TableData),
+		    member(bounds=Arg_template, TableData), !;
+		RUnits = int,
 		(length(SourceList, TableDims);
 		    raise_exception(only_works_on_array(Source))),
-		list_of(int, TableDims, Arg_template),
+		list_of(int, TableDims, Arg_template)),
 		SourceRef = table(ResultList);
 	    Source = sofar(Param),
 		SourceList = [Param],
