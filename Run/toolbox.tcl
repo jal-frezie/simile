@@ -676,8 +676,8 @@ proc ControlDraw {prologVersion} {
     
     if {[file exists $custom(prefDir)/version]} {
         set UserStream [NetOpen $custom(prefDir)/version r]
-        gets $UserStream userinfo(name)
-        gets $UserStream userinfo(corp)
+        gets $UserStream userinfo(oldname)
+        gets $UserStream userinfo(oldcorp)
         gets $UserStream userinfo(oldVersion)
         gets $UserStream userinfo(done)
         close $UserStream
