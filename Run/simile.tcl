@@ -60,6 +60,7 @@ switch $tcl_platform(platform) {
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
     } unix {
+	tk appname $oldProc ;# in case starting it from SimileAutoObj
 	set env(LD_LIBRARY_PATH) \
 		$env(SP_PATH)/library:[file dirname [info library]]
 	# the following can be edited for your configuration
