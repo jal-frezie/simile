@@ -389,28 +389,13 @@ get_node_size(Source, Size) :-
 	    raise_exception(Wobble));
 	Size = [].
 
-/* This returns all the array bounds associated with a submodel
-in the canonical order, i.e., those accessed by the highest index numbers first.
-
-'Context' is any models we might be inside whose association relations would cause us to ignore some of the dimensions of the source model. */
+/* This returns all the array bounds associated with a submodel in the
+canonical order, i.e., those accessed by the highest index numbers first. */
 
 get_all_dims(Source, AllDims) :-
-	get_all_dims(Source, [], AllDims).
-
-get_all_dims(Source, _Context, AllDims) :-
 	variable_size(Source), !,
 	    AllDims = [var];
-	get_node_size(Source, Sizes),
-	    caption_for(Source, Capt),
-	    (Sizes = [_], !,
-		AllDims = [size(Capt)];
-	    convert_to_refs(Capt, Sizes, AllDims)).
-
-convert_to_refs(_, [], []).
-convert_to_refs(Capt, [Num | Nums], Refs) :-
-	convert_to_refs(Capt, Nums, EarlyRefs),
-	length([Num | Nums], Index),
-	append(EarlyRefs, [size(Capt, Index)], Refs).
+	get_node_size(Source, AllDims).
 	
 /* Purge removes all elements of the 2nd arg from the 1st leaving the 3rd.
 It uses the database so templates which match many different elements

@@ -442,8 +442,9 @@ decide_param_names(InputList) :-
 	generate_new_names(InputList, Used).
 
 already_used_in(List, Name) :-
-	member(input_link(_,_,Name,_,_), List),
-	ground(Name).
+	member(input_link(_,_,BrName,_,_), List),
+	ground(BrName),
+	add_brackets(Name, _, BrName).
 
 insert_existing_names(_, N, N).
 
