@@ -1025,7 +1025,8 @@ proc LetItShow {t} {
     set sch [winfo screenheight $t]
     set wotParent [wm transient $t]
     if {[llength $wotParent]} {
-	scan [wm geometry $wotParent] {%dx%d+%d+%d} tgtw tgth tgtx tgty
+	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
+	    tgtw tgth tgtx tgty
     } else {
 	set tgtx 0; set tgty 0
 	set tgtw $scw
