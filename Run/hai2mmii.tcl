@@ -455,7 +455,7 @@ proc WarnNoData {} {
 
 proc collect {tgt node count args} {
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
-    if {[string match FILE [GetModelEval $node]]} {
+    if {[string match TABLE [GetModelEval $node]]} {
 	FileCollect ::AME_model<>::$tgt $node $args
     } else {
 	set sub [join [concat $node $args] ,]

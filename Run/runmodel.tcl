@@ -1017,7 +1017,7 @@ proc FileParamDialogue {mustShow parent} {
     set needed {}
     MakeFrames $t
     foreach node $allNodes {
-	if {[string match FILE [GetModelEval $node]]} {
+	if {[string match TABLE [GetModelEval $node]]} {
 	    set compName [GetCaptionPathFromId $node]
 
 	    set levels [lrange [split $compName /] 1 end]
@@ -1115,7 +1115,7 @@ proc DoneParams {oldMissing} {
     global paramData widgetNames runState running_c
 
     foreach node [GetObjectList] {
-	if {[string match FILE [GetModelEval $node]]} {
+	if {[string match TABLE [GetModelEval $node]]} {
 	    set compName [GetCaptionPathFromId $node]
 	    set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
 #ShowMessage debug info "-paramData($compName)- is -$paramData($compName)-" ok
@@ -1165,7 +1165,7 @@ proc SaveParams {} {
 
 
 	foreach node [GetObjectList] {
-	    if {[string match FILE [GetModelEval $node]]} {
+	    if {[string match TABLE [GetModelEval $node]]} {
 		set compName [GetCaptionPathFromId $node]
 		set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
 		
@@ -1532,7 +1532,7 @@ proc set_connections {connects} {
 
 # FindPhase tells us when a node in a separate submodel will be
 # available. The submodel indicates this by its eval phase. If DERIVED, INPUT
-# or FILE it can be used any time; if EXOGENOUS we must wait till that
+# or TABLE it can be used any time; if EXOGENOUS we must wait till that
 # submodel has been called. If it is in a nested submodel, then it is
 # usable after the phase in which the submodel is executed, or after
 # its own phase if that is SPLIT. -1 means node not found.

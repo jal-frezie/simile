@@ -77,7 +77,7 @@ build_instances(Language, DestDir, Parent, Step, NamePath, ChangeNext) :-
 	time_step_for(Parent, Step, MyStep),
 	build_sub_instances(Language, DestDir, Parent, MyStep,
 			    LongName, CompsChanged),
-	(\+ Parent has_model_refinement c_new of 1,
+	(Parent has_model_refinement c_new of 0,
 	     \+ check_level_for_reds(Parent),
 	    ChangeTop = 1;
 	ChangeTop = CompsChanged),
