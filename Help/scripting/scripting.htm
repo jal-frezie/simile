@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<html xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel=File-List href="scripting_files/filelist.xml">
+<title>Scripting: introduction</title>
+</head>
+
+<body>
+
+<div class=Section1>
+
+<h1>Simile scripting language</h1>
+
+<h2>Introduction</h2>
+
+<p>A wholly new scripting language is being
+introduced in this version of Simile. The objective is to allow multiple simulations using one or more models,
+with different parameters, time step settings and so forth for each run. The
+results can be recorded to a text file, for later analysis, or processed in the
+script. Several different approaches to
+meeting this need have been considered, including providing a specific graphic
+interface such as a new run control. We
+concluded that scripting allowed the most flexibility and encouraged users to
+find applications beyond those which we have initially considered.</p>
+
+<p>Commands are provided to control key parts
+(model window, run control and data table) of the Simile user interface.
+(Simile is hidden by default.) Program objects are created that have commands
+(methods) that generally correspond to menu commands or tool buttons in the
+interactive graphical interface.</p>
+
+<h1>Using Simile scripting</h1>
+<p>Typically, the script interface to Simile
+is accessed by running the SimileScript application that is provided with
+Simile. A program object to control the model window is created and then used
+to load a model and scenario file. A run control object is then created to set
+time-steps, how long to run the model for, etc, and a data table control object
+is created to record variables. At the end of the simulation the data table
+object is used to write values to a file.</p>
+
+<p>The script interface to Simile is accessed
+by running the SimileScript application that is provided with Simile. Scripts
+can be pasted in to the window or loaded via the File--&gt;Source menu item.
+Commands can also be added one at a time. This can be useful to explore the
+script interface capablities. Some example scripts are included below. </p>
+
+<p>Simile script is an extension to TclTk and
+the full functionality is available to those that want to use it (see
+http://www.tcl.tk/). </p>
+
+<ul>
+<li> <a href="scriptingref.htm">Command reference</a> </li>
+</ul>
+
+<ul>
+<li> <a href="ExampleScripts.htm">Example scripts</a> </li>
+</ul>
+
+<ul>
+<li> <a href="FromOtherInterp.htm">From other interpreters.htm</a> </li>
+</ul>
+
+<p><span lang=EN-GB>&nbsp;</span></p>
+
+</div>
+
+</body>
+
+</html>

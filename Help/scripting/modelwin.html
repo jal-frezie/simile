@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<html xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel=File-List href="scripting_files/filelist.xml">
+<title>Scripting: model window</title>
+</head>
+
+<body>
+
+<h2>Model window</h2>
+<h3>Create model window object</h3>
+<P>   <strong>similescript::ModelWindow</strong> <em>objectName</em> <BR>
+   e.g. similescript::ModelWindow modelWin</p>
+<em>objectName</em> commands (or methods in object based terminology) can now be used:
+<p />
+
+<h3>Model window object commands</h3>
+<p>Most of these commands correspond to Simile model window menu commands.</p>
+
+<h4><em>objectName</em> Open <em>modelFile</em></h4>
+<P>Load (open) an existing model file from disk. It takes one arguement, <em>modelFile</em>, 
+that is the file name of the model to be loaded. Only one model may be loaded at any time. To 
+remove the current model use: <em>objectName</em> New (see below).
+</p>
+
+<h4><em>objectName</em> New </h4>
+<P>Removes any existing model loaded (opened). This command corresponds to the Simile model window 
+<strong>File</strong> -&gt; <strong>New</strong> command. Removing the current model allows another
+model to be loaded.
+</p>
+
+<h4><em>objectName</em> FileOpenDlg</h4>
+<P>Opens a file open dialog box, allowing the script user to choose the model to load (open) 
+at script run-time.</p>
+
+<h4><em>objectName</em> LoadParams <em>filepath</em> <em>?smPath?</em> </h4>
+<p>In order to run a model with file parameters use the command above before building the model. 
+<em>smPath</em> (submodel path) can be omitted if the parameter variables in the file are relative 
+to the top level of the model. </p>
+
+<h4><em>objectName</em> UseMRE <em>bool</em> </h4>
+<p><em>bool</em> must be either <b>true</b> or <b>false</b> (or other versions of Boolean values accepted by Tcl). 
+If <b>true</b>
+the single-window Model Run Environment is used. Otherwise, seperate windows will be produced for each
+helper (display). This command is only of use if the helpers are made visible.</p>
+
+<h4><em>objectName</em> Run </h4>
+<p>Makes a loaded model runable.</p>
+
+<h4><em>objectName</em> Debug </h4>
+<p>Makes a loaded model runable using Tcl as the model execution environment. Tcl is slower than the usual compiled 
+C++ executable but has more error checking. However, error checking (dubugging) is usually done from the graphical
+Simile user interface. </p>
+
+<h4> <em>objectName</em> Show</h4>
+<p>Makes the model window visible.</p>
+
+<h4><em>objectName</em> Hide</h4>
+<p>Hides the model window (default).</p>
+
+</body>
+
+</html>

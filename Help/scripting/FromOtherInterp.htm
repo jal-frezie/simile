@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<html xmlns="http://www.w3.org/TR/REC-html40">
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel=File-List href="scripting_files/filelist.xml">
+<title>Scripting: example scripts</title>
+</head>
+
+<body>
+<h1>Access to Simile scripting from other TclTk installations</h1>
+
+<p>The scripting is provided by using TclTk
+and access to the script interface to Simile is available from other TclTk 8.4
+installations by using the SimileAutoObj package. You will have to ensure that
+SimileAutoObj package is in the package search path. Add the directory in the <Simile installation directory>/system/lib/SimileAutoObj
+to your other Tcl interpreter rather than copying the directory to your other
+interpreters lib directory as the SimileAutoObj package requires access to
+other files in the Simile installation. E.g., </p>
+
+<p><code>lappend auto_path {c:/program files/Simile40/system/lib}</code><br>
+<code>package require SimileAutoObj </code></p>
+
+</body>
+
+</html>
