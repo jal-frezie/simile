@@ -214,7 +214,7 @@ proc do_for_node {node args} {
 	    }
 	    set makeExec ../System/bin/wish$MAJ$sep$MIN
 #puts "starting $makeExec"
-	    set runState($node,interp) [open |$makeExec r+]
+	    set runState($node,interp) [open |$makeExec w]
 	    if {[string equal pipe $runHow(type)]} {
 		fileevent $runState($node,interp) readable \
 		    [list FeedModel $node pipe]
