@@ -743,7 +743,7 @@ swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 
 propagate_units(Source, Lowest, Want, Get, Result) :-
 	try_units(Lowest, Want, Get, Result), !;
-	raise_exception(mismatched_units(Source, Want, Get)).
+	raise_exception(mismatched_units(Source, Get, Want)).
 	
 
 try_units(Lowest, Want, Get, Result) :-	
@@ -918,14 +918,13 @@ add_zeros(L, SubId, Step, [Zeros | NL], N, U) :-
 add_zeros(N, SubId, Step, RN, [], U) :-
 	decode_number(N, SubId, Step, RN, U).
 
-add_zeros_all([], _,_, [], _, [0 | _], int).
+add_zeros_all([], _,_, [], _, [0 | _], any).
 
 add_zeros_all([H | T], SubId, Step, [NH | NT], Zeros, [N | R], U) :-
 	add_zeros(H, SubId, Step, NH, R, U1),
 	zero_copy(NH, Zeros),
 	add_zeros_all(T, SubId, Step, NT, Zeros, [M | R], UN),
-	([U1, UN, U] = [int, int, int], !;
-	    U = real),
+	propagate_units(list_parts(H,T), any, [any, any], [U1, UN], U),
 	N is M+1.
 
 /* Returns expressions for a model's indices, those for outer loops first */
