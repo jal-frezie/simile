@@ -378,7 +378,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	set_moving_obj(Moving_obj),
         set_start_coords(Xpt, Ypt),
 /* from select mode -- rest is from move */
-	finish_old_edit(Moving_obj),
+	finish_old_edit(none),
 	give_focus('{}'),
 
 	( /* Control is down */
