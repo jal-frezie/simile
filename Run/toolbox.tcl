@@ -891,6 +891,34 @@ proc ExportPostscript { winId } {
     }
 }
 
+proc PrepForExport {winId way} {
+    global jiggles tcl_platform
+
+    # now, zoom in by detail factor to get the line thickness resolution decent
+    set detail 16.0
+    # For font scale 1 seems right for Unix -- Windows takes about 1.6
+    if {[string match windows $tcl_platform(platform)]} {
+        set textBoost 1.6
+    } else {
+        set textBoost 1
+    }
+    set textscale [expr $detail*$textBoost]
+    if {[string match there $way]} {
+	set jiggles(sr) [$winId cget -scrollregion]
+	scan $jiggles(sr) "%g %g %g %g" sl st sr sb
+	scan [$winId bbox size_on_this] "%d %d" jiggles(bl) jiggles(bt)
+	$winId move all [expr -$jiggles(bl)] [expr -$jiggles(bt)]
+	$winId configure -scrollregion [list \
+	    [expr $detail*($sl-$jiggles(bl))] [expr $detail*($st-$jiggles(bt))] \
+	    [expr $detail*($sr-$jiggles(bl))] [expr $detail*($sb-$jiggles(bt))]]
+	ZoomImage $winId all $detail $textscale
+    } else {
+	ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
+	$winId configure -scrollregion $jiggles(sr)
+	$winId move all $jiggles(bl) $jiggles(bt)
+    }
+}
+	
 proc CopyCanvasToWindowsClipboard {canvas} {
     global tcl_platform
     
@@ -899,9 +927,12 @@ proc CopyCanvasToWindowsClipboard {canvas} {
         package require printer
         package require wmf
         
+	PrepForExport $canvas there
         set hdc [wmf open]; #Opens a memory metafile
-        printer::print_canvas $hdc $canvas          
+        printer::print_canvas $hdc $canvas
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle        
+	PrepForExport $canvas back
+
         #ShowMessage debug info "[ wmf info $wmfdc ]" ok        
         wmf copy $wmfdc; # Copy to the clipboard        
     }
@@ -915,19 +946,9 @@ proc PrintNow {winId} {
 	package require printer
 #	package require Tkprint
 
-	set detail 16.0
-	set textBoost 1.6
-	set textscale [expr $detail*$textBoost]
-	scan [$winId cget -scrollregion] "%g %g %g %g" sl st sr sb
-#	scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb
-#	$winId move all [expr -$bl] [expr -$bt]
-	$winId configure -scrollregion [list [expr $detail*$sl] \
-	    [expr $detail*$st] [expr $detail*$sr] [expr $detail*$sb]]
-	ZoomImage $winId all $detail $textscale
+	PrepForExport $winId there
 	printer::print_widget $winId 0
-	ZoomImage $winId all [expr 1/$detail] [expr 1/$textscale]
-	$winId configure -scrollregion [list $sl $st $sr $sb]
-#	$winId move all $bl $bt
+	PrepForExport $winId back
    } else {
     set tempPSFile $env(SIMTMPDIR)/temp.ps
     SpitPS $winId $tempPSFile
@@ -945,19 +966,10 @@ proc PrintNow {winId} {
 }
 
 proc SpitPS {winId psfile} {
-    global window_info tcl_platform
+    global window_info
 
 
-
-    # now, zoom in by detail factor to get the line thickness resolution decent
-    set detail 16
-    # For font scale 1 seems right for Unix -- Windows takes about 1.6
-    if {[string match windows $tcl_platform(platform)]} {
-        set fontscale 1.6
-    } else {
-        set fontscale 1
-    }
-    ZoomImage $winId all $detail [expr $fontscale*$detail]
+    PrepForExport $winId there
     $winId postscript -file $psfile -rotate true -pageanchor nw \
             -pagex 0 -pagey 0 \
             -x [expr $detail*[$winId canvasx 0]] \
@@ -968,7 +980,7 @@ proc SpitPS {winId psfile} {
             - [$winId canvasy 0])] \
             -pagewidth [expr $window_info($winId,width)/100.0]i \
             -pageheight [expr $window_info($winId,height)/100.0]i
-    ZoomImage $winId all [expr 1.0/$detail] [expr 1.0/($fontscale*$detail)]
+    PrepForExport $winId back
 }
 
 proc Reopen {canvas oldFile} {
@@ -1390,6 +1402,7 @@ proc toggleBar {winId} {
 }
 
 proc AddDetailMenu {winId fm3 initVals} {
+
     global rads
     set posn 0
     foreach category { \
