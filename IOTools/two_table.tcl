@@ -15,7 +15,7 @@ namespace eval $keyValue {
     namespace import ::DisplayFormat::*
     
     
-    variable displayFormat; # array of list $formatName $decimalplaces $leadingZeros $ShowNegInRed
+    variable displayFormat; # array of list $formatName $decimalplaces $ShowNegInRed
     # Lists of format names stored in the format array - array names are categories
     # PropertiesDlg uses these categorised lists to fill the list boxes
     # Format names correspond to procs of the same name that do the formatting.
@@ -33,8 +33,6 @@ namespace eval $keyValue {
     }
     
     proc initialize {winId} {
-        variable precision
-        set precision($winId) 4
         variable orientList
         set orientList($winId) {rows cols cols cols}
         variable displayList
@@ -54,10 +52,6 @@ namespace eval $keyValue {
                 [namespace code "AddVariable $winId"]] \
                 [list remove.gif "Remove a variable" \
                 [namespace code "RemoveVariable $winId"]] \
-                [list mprec.gif "Increase precision" \
-                [namespace code [list ChangePrecision $winId 1]]] \
-                [list lprec.gif "Decrease precision" \
-                [namespace code [list ChangePrecision $winId -1]]] \
                 [list save.gif "Save to file" [namespace code "Save $winId"] ] \
                 [list property.gif "Properties" [namespace code "PropertiesDlg $winId"] ]]
         
@@ -103,14 +97,18 @@ namespace eval $keyValue {
     proc Restore {winId} {
         variable displayList
         variable orientList
-        variable precision
         variable displayFormat
         set oldState [GetState $winId]
         initialize $winId
         set displayList($winId) [lindex $oldState 0]
         set orientList($winId) [lindex $oldState 1]
-        set precision($winId) [lindex $oldState 2]
-        array set displayFormat [lindex $oldState 3]
+        set
+        if {[llength &oldState]==3} {
+            # helper instance scope precision nolonger used
+            array set precision [lindex $oldState 3]; # backwards compatible
+        } else  {
+            array set displayFormat [lindex $oldState 2]
+        }
         display $winId [GetModelTime] 0 0
         SaveState $winId
     }
@@ -118,10 +116,9 @@ namespace eval $keyValue {
     proc SaveState {winId} {
         variable displayList
         variable orientList
-        variable precision
         variable displayFormat
         SetState $winId [list $displayList($winId) $orientList($winId) \
-                $precision($winId) [array get displayFormat]]
+                [array get displayFormat]]
     }
     
     proc AddVariable { winId } {
@@ -189,12 +186,12 @@ namespace eval $keyValue {
         if {$varIndex<0} {
             set varIndex [llength $displayList($winId)]
             lappend displayList($winId) $newHeader
-            set displayFormat($winId,$varIndex) {General 4 0 0}; # format dp leading_zeros Neg_in_red
+            set displayFormat($winId,$varIndex) {General 4 0}; # format dp Neg_in_red
             if {[GetModelTime]==$lastDisplay($winId)} {
                 set dataStore($winId,$varIndex,$lastDisplay($winId)) \
                         [lindex [GetModelValue $node] 0]
             }
-                Reconbobulate $winId
+            Reconbobulate $winId
             SaveState $winId
         }
         #puts "vi $varIndex"
@@ -261,6 +258,7 @@ namespace eval $keyValue {
         event generate $winId.t <<Copy>>
         $winId.t configure -titlecols $titlecols
         $winId.t configure -titlerows $titlerows
+        # should deselect all cells
     }
     
     # save table contents as CSV file
@@ -286,33 +284,42 @@ namespace eval $keyValue {
             puts $fileid $data
             close $fileid
         }
-               
+        
         $winId.t configure -titlecols $titlecols
         $winId.t configure -titlerows $titlerows
         $winId.t configure -rowseparator $rsep -colseparator $csep
     }
-    
-    proc Print {winId} {
-        global printargs
-        set hdc [printer dialog select]
-        if { [lindex $hdc 1] == 0 } {
-            # User has canceled printing
-            return
-        }
-        set printargs(hDC) [ lindex $hdc 0 ]
         
-        set titlecols [$winId.t cget -titlecols]
-        set titlerows [$winId.t cget -titlerows]
-        $winId.t configure -titlecols 0
-        $winId.t configure -titlerows 0; # to allow all table to be selected by selection command
-        $winId.t selection set origin end
-        event generate $winId.t <<Copy>>
-        #ShowMessage debug info "[selection get -displayof $winId.t -selection CLIPBOARD]" ok
-        set data [selection get -displayof $winId.t -selection CLIPBOARD]
-        print_data $data
-        $winId.t configure -titlecols $titlecols
-        $winId.t configure -titlerows $titlerows
-    }
+################################################################################
+# causes some Windows 98 machines to crash on slecting variables for plotter
+#         if {[string match windows $tcl_platform(platform)]} {
+
+#             source ../System/lib/Extras/prntproc.tcl
+
+#         }
+
+#         proc Print {winId} {
+#             global printargs
+#             set hdc [printer dialog select]
+#             if { [lindex $hdc 1] == 0 } {
+#                 # User has canceled printing
+#                 return
+#             }
+#             set printargs(hDC) [ lindex $hdc 0 ]
+#             
+#             set titlecols [$winId.t cget -titlecols]
+#             set titlerows [$winId.t cget -titlerows]
+#             $winId.t configure -titlecols 0
+#             $winId.t configure -titlerows 0; # to allow all table to be selected by selection command
+#             $winId.t selection set origin end
+#             event generate $winId.t <<Copy>>
+#             #ShowMessage debug info "[selection get -displayof $winId.t -selection CLIPBOARD]" ok
+#             set data [selection get -displayof $winId.t -selection CLIPBOARD]
+#             print_data $data
+#         $winId.t configure -titlecols $titlecols
+#         $winId.t configure -titlerows $titlerows
+#     }
+################################################################################
     
     proc Reconbobulate {winId} {
         variable dataStore
@@ -329,27 +336,27 @@ namespace eval $keyValue {
         if {[info exists colNames]} {unset colNames}
         if {[info exists values]} {unset values}
         
-	set varIndex 0
+        set varIndex 0
         foreach varCapt $displayList($winId) {
             if {[llength $varCapt]} { ;# check not deleted
-#		set dataStore($winId,$varIndex,$lastDisplay($winId)) empty
+                #		set dataStore($winId,$varIndex,$lastDisplay($winId)) empty
             }
             incr varIndex
         }
-
+        
         foreach valId [array names dataStore $winId,*,*] {
             set valDims [split $valId ,]
-	    set varId [lindex $valDims 1]
-	    if {[string match none [lindex $orientList($winId) 0]]} {
-		if {[lindex $valDims 2]==$lastDisplay($winId)} {
-		    GrabIndices $winId 1 {} {} $varId $dataStore($valId) $varId
-		}
-	    } else {
-		GrabIndices $winId 0 {} {} [lindex $valDims 2] \
-		    [list $varId $dataStore($valId)] $varId
-	    }
+            set varId [lindex $valDims 1]
+            if {[string match none [lindex $orientList($winId) 0]]} {
+                if {[lindex $valDims 2]==$lastDisplay($winId)} {
+                    GrabIndices $winId 1 {} {} $varId $dataStore($valId) $varId
+                }
+            } else {
+                GrabIndices $winId 0 {} {} [lindex $valDims 2] \
+                        [list $varId $dataStore($valId)] $varId
+            }
         }
-
+        
         #puts "Data transferred to 2-d table mirror array"
         
         set curHeaderRows 0
@@ -514,10 +521,10 @@ namespace eval $keyValue {
             set colHead $colIds([lindex $headers 1])
             $winId.t set $rowHead,$colHead \
                     [FormatValue $winId $values($value) [lindex $cellFormat($value) 0] \
-                    [lindex $cellFormat($value) 1] [lindex $cellFormat($value) 2]]
+                    [lindex $cellFormat($value) 1]]
             if {[lindex $cellFormat($value) 3]==1 & $values($value)<0} {
                 $winId.t tag cell red $rowHead,$colHead
-            }            
+            }
         }
         #puts "Table values inserted"
         switch $timeSide {
@@ -559,11 +566,11 @@ namespace eval $keyValue {
         variable cellFormat
         variable displayFormat
         
-	if {[llength $index]} {
-	    set nextAxis [lindex $orientList($winId) $depth]
-	    lappend ${nextAxis}List $index
+        if {[llength $index]} {
+            set nextAxis [lindex $orientList($winId) $depth]
+            lappend ${nextAxis}List $index
             if {$depth < 3} {incr depth}
-	}
+        }
         
         if {[llength $struct] == 1} {
             set values($rowsList,$colsList) $struct
@@ -582,29 +589,15 @@ namespace eval $keyValue {
     proc rowProc row { if {$row>0 && $row%2} { return OddRow } }
     proc colProc col { if {$col>0 && $col%2} { return OddCol } }
     
-    proc ChangePrecision {winId diff} {
-        variable precision
-        incr precision($winId) $diff
-        if {$precision($winId)<3} {
-            set precision($winId) 3
-        } else {
-            Reconbobulate $winId
-            SaveState $winId
-        }
-    }
-
-# FormatValue replaces VarPrecRender which is now DisplayFormat::General
-    proc FormatValue {winId val format prec LeadingZeros} {
-        #variable precision
-        #set prec $precision($winId)
-        #set LeadingZeros 0
+    # FormatValue replaces VarPrecRender which is now DisplayFormat::General
+    proc FormatValue {winId val format prec} {
         # if a c model is built with Windows math libraries, the numerical
         # values might not format as floats. Watch out for this problemette
         # and just return them as they are if it happens
         set format [regsub -all { } $format {}]; # spaces removed from format name to make a proc name
         switch $format {
-            #General { General $val $prec $LeadingZeros }
-            default { $format $val $prec $LeadingZeros}
+            #General { General $val $prec}
+            default { $format $val $prec}
         }
     }
     
@@ -691,24 +684,19 @@ namespace eval $keyValue {
         set formF [frame $formatF.formF]
         label $formF.label -text Format
         listbox $formF.listbox -exportselection off -selectmode single
-        pack $formF.label $formF.listbox -anchor w      
+        pack $formF.label $formF.listbox -anchor w
         
         # options
         set optionsF [labelframe $formatF.optionsF -text Options]
         
         frame $optionsF.decimalPlacesF
         pack [label $optionsF.decimalPlacesF.label -text "Decimal places"] -side left
-                        
+        
         set DecimalPlacesSB [spinbox $optionsF.decimalPlacesF.decimalPlacesSB -from 0 -to 20 -width 5]
         pack $DecimalPlacesSB -side right
         
-        frame $optionsF.leadingZerosF
-        pack [label $optionsF.leadingZerosF.label -text "Leading zeros"] -side left
-        set LeadingZerosSB [spinbox $optionsF.leadingZerosF.leadingZerosSB -from 0 -to 20 -width 5]
-        pack $LeadingZerosSB -side right
-        
         set NegInRedCB [checkbutton $optionsF.negInRedCB -text "Show negative numbers in red"]
-        pack $optionsF.decimalPlacesF $optionsF.leadingZerosF $NegInRedCB -fill x -pady 15
+        pack $optionsF.decimalPlacesF $NegInRedCB -fill x -pady 15
         
         pack $catF $formF $optionsF -side left -padx 10 -fill y
         
@@ -718,7 +706,7 @@ namespace eval $keyValue {
                 [list OnCatListBoxClick $catF.listbox $formF.listbox]]
         bind $formF.listbox <ButtonRelease-1> +[namespace code \
                 [list OnFormatListBoxClick $winId $varCB $formF.listbox]]
-                
+        
         SetFormatWidgets $winId $varCB $catF.listbox $formF.listbox $optionsF
         
         # buttons
@@ -729,7 +717,7 @@ namespace eval $keyValue {
                 -side left -padx 2 -pady 4
         pack [button $t.b.apply -text Apply -width 10 -command [namespace code "Reconbobulate $winId"]] \
                 -side left -padx 2 -pady 4
-                
+        
         $nb raise layout
         grab $t
         tkwait variable ${t}done
@@ -796,16 +784,13 @@ namespace eval $keyValue {
             FillFormatListBox $catlistbox $formlistbox
             SetFormatListboxSelection $formlistbox $formatSpec
             $optionsF.decimalPlacesF.decimalPlacesSB set [lindex $displayFormat($winId,$varIndex) 1]
-            $optionsF.leadingZerosF.leadingZerosSB set [lindex $displayFormat($winId,$varIndex) 2]
-            if {[lindex $displayFormat($winId,$varIndex) 3]} {
+            if {[lindex $displayFormat($winId,$varIndex) 2]} {
                 $optionsF.negInRedCB select
             } else  {
                 $optionsF.negInRedCB deselect
             }
             $optionsF.decimalPlacesF.decimalPlacesSB configure \
                     -command "lset [namespace current]::displayFormat($winId,$varIndex) 1 %s"
-            $optionsF.leadingZerosF.leadingZerosSB configure \
-                    -command "lset [namespace current]::displayFormat($winId,$varIndex) 2 %s"
             $optionsF.negInRedCB configure \
                     -command [namespace code "OnNegInRedCBClick $optionsF.negInRedCB $winId $varIndex"]
         }
@@ -814,7 +799,7 @@ namespace eval $keyValue {
     proc OnNegInRedCBClick {CB winId varIndex} {
         global negInRedCB
         variable displayFormat
-        lset displayFormat($winId,$varIndex) 3 $negInRedCB
+        lset displayFormat($winId,$varIndex) 2 $negInRedCB
     }
     
 } ;# end of namespace
