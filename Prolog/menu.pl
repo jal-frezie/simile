@@ -105,6 +105,7 @@ update_mode(NewMode) :-
 
 stick_model_in(Parent, Name) :-
 	use_temp_dir(LocalDir),
+	Win shows_model Parent,
 	abs_path_name(Parent, root, InsertDir),
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
         start_progress_dialogue,
@@ -126,7 +127,6 @@ stick_model_in(Parent, Name) :-
 		TryDll = '',
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 		output:my_file_exists(GraphFileName), !,
-		Win shows_model Parent,
 		inject_graphics(Win, GraphFileName);
 	    /* this should call Prolog back with the display detail vals */
 	    TryDll = 0,
