@@ -83,6 +83,7 @@ namespace eval ::$keyValue {
         set Tnew($w) 0
         
         SetState $w {}
+        UpdateState $w
         
         ShowHelper $w
     }
