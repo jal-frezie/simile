@@ -1526,20 +1526,27 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
 
     $fm add command -label Cut -command "MenuSelect $c edit cut" \
 	-accelerator "Ctrl+X"
+    AddAccelerator $winid edit Cut "<Control-x>"
     $fm add command -label Copy -command "MenuSelect $c edit copy" \
 	-accelerator "Ctrl+C"
+    AddAccelerator $winid edit Copy "<Control-c>"
     $fm add command -label Paste -command "MenuSelect $c edit paste" \
 	-accelerator "Ctrl+V"
+    AddAccelerator $winid edit Paste "<Control-v>"
     $fm add command -label Delete -command "MenuSelect $c edit delete" \
 	-accelerator "Del"
+    AddAccelerator $winid edit Delete "<Delete>"
     $fm add separator
 
     $fm add command -label "Select all" -command "MenuSelect $c edit selall" \
 	-accelerator "Ctrl+A"
+    AddAccelerator $winid edit "Select all" "<Control-a>"
     $fm add command -label "Unselect all" \
 	-command "MenuSelect $c edit unselall" -accelerator "Ctrl+U"
+    AddAccelerator $winid edit "Unselect all" "<Control-u>"
     $fm add command -label "Invert selection" \
 	-command "MenuSelect $c edit invsel" -accelerator "Ctrl+*"
+#    AddAccelerator $winid edit "Invert selection" "<Control-Asterisk>"
 
     AddFindMenu $c $fm
     $fm add separator
