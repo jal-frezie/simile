@@ -93,6 +93,12 @@ HINSTANCE flopen(char* fileName) {
 char simileVersion[] = SIMILE_VERSION;
 
 /* utility procedures making no direct reference to model classes/instances */
+int min(int a, int b) {
+  return a<b?a:b;
+}
+int max(int a, int b) {
+  return a>b?a:b;
+}
 graph_data_type* graphdata;
 
 double graphpoint(double xval, int index) {
@@ -108,15 +114,15 @@ double graphpoint(double xval, int index) {
 	interval = spaces*(xval - use_graph_pointer->xlow)/
 		(use_graph_pointer->xhigh - use_graph_pointer->xlow);
 	switch(use_graph_pointer->range) {
-	case 0: /* truncate to fit on graph */
+	case 0: case 4: case 5: /* truncate to fit on graph */
 	  interval = interval<0?0:(interval>spaces?spaces:interval);
 	  break;
-	case 2: /* wrap around graph range */
+	case 2: case 6: /* wrap around graph range */
 	  interval = spaces*(interval/spaces - floor(interval/spaces));
 	  break;
 	/* case 1: extrapolate end sections of graph */
 	}
-	right = use_graph_pointer->points;
+	/* right = use_graph_pointer->points;
 	interval++;
 
 	for (length=spaces;length;length--) {
@@ -124,9 +130,22 @@ double graphpoint(double xval, int index) {
 		right++;
 		if (--interval <= 1) break;
 	}
+	*/
+	int lower;
+	double intersection;
+	if (use_graph_pointer->range > 3) {
+	  intersection = *(use_graph_pointer->points + 
+			   max(0,min(spaces,int(interval+0.5))));
+	} else {
+	  lower = max(0,min(spaces-1,int(interval)));
+	  interval -= lower;
+	  left = use_graph_pointer->points + lower;
+	  right = use_graph_pointer->points + min(spaces,lower+1);
+	  intersection = interval*(*right) + (1-interval)*(*left);
+	}
 	return use_graph_pointer->ylow + 
 		(use_graph_pointer->yhigh - use_graph_pointer->ylow)*
-		(interval*(*right) + (1-interval)*(*left))/use_graph_pointer->yspan;
+		intersection/use_graph_pointer->yspan;
 }
 
 void release_graph_data(graph_data_type *graph_data_pointer) {

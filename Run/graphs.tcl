@@ -53,9 +53,6 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             set graph(origin) 2
         }
     }
-    set rangeChoices "Truncate Extrapolate Wraparound"
-    
-    set graph($t,rangeact) [lindex $rangeChoices $range]
     set graph($t,points) [split $points ,]
     set graph($t,lowy) $ylow
     set graph($t,highy) $yhigh
@@ -142,11 +139,20 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     TitleFrame $t.right.options -text "Options: "
     set right [$t.right.options getframe]
     
+    set between [frame $right.between]
+    label $between.outrange -text "Between points:"
+    pack $between.outrange
+    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
+	      -modifycmd "Reshape $t" -width 12]
+    pack $between -pady 8 -padx 4
     set out [frame $right.out]
     label $out.outrange -text "Out of range:"
     pack $out.outrange
-    pack [ComboBox $out.rangeopts -values $rangeChoices -editable 0 -textvariable graph($t,rangeact) -width 12]
+    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
+	      -editable 0 -width 12]
     pack $out -pady 8 -padx 4
+    SetCombos $t $range
+
     set resolution [frame $right.resolution]
     label $resolution.detail -text "X axis resolution:"
     pack $resolution.detail
@@ -187,16 +193,16 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
                         $graph($t,lowx) $graph($t,highx)]} {
                 # tk_messageBox -message "$rangeChoices $graph($t,rangeact)"
-                set graph($t,range) [lsearch $rangeChoices $graph($t,rangeact)]
+                set graph($t,range) [SetCombos $t]
                 set graph($t,size) [llength $graph($t,points)]
                 regsub -all " " $graph($t,points) , graph($t,pts)
                 # Target is set to variable id if editing sketch at run time
                 if {[llength $target]} {
                     eval {SetModelGraph $target $graph($t,lowx) \
-                                $graph($t,highx) $graph($t,width) \
-                                $graph($t,lowy) $graph($t,highy) \
-                                $graph($t,height) $graph($t,range) $graph($t,size)} \
-                            [split $graph($t,pts) ,]
+			      $graph($t,highx) $graph($t,width) \
+			      $graph($t,lowy) $graph($t,highy) \
+			      $graph($t,height) $graph($t,range) \
+			      $graph($t,size)} [split $graph($t,pts) ,]
                 } else {
                     SetDefaultGraph $graph($t,lowx) $graph($t,highx) $graph($t,width) \
 			$graph($t,lowy) $graph($t,highy) $graph($t,height) \
@@ -211,7 +217,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
                         graph($t,highx) graph($t,width) \
                         graph($t,lowy) graph($t,highy) \
                         graph($t,height) range
-                set graph($t,rangeact) [lindex $rangeChoices $range]
+		SetCombos $t $range
                 set graph($t,points) [lrange $lastSaved 8 end]
                 AttackShape $grid [winfo width $grid] [winfo height $grid]
             } else {
@@ -222,6 +228,24 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     return $graph($t,done)
 }
 
+proc SetCombos {t args} {
+    global graph
+    set right [$t.right.options getframe]
+    set bCombo $right.between.rangeopts
+    set rCombo $right.out.rangeopts
+    if {[llength $args]} {
+	set between [expr $args/4]
+	$bCombo configure -text [lindex [$bCombo cget -values] $between]
+	$rCombo configure -text [lindex [$rCombo cget -values] \
+				  [expr $args-4*$between]]
+    } else {
+	set between [lsearch [$bCombo cget -values] [$bCombo cget -text]]
+    }
+    set graph($t,between) $between
+    return [expr 4*$between+[lsearch [$rCombo cget -values] \
+				[$rCombo cget -text]]]
+}
+				  
 proc EditAsTable {t canvas} {
     global graph
     set size [llength $graph($t,points)]
@@ -266,11 +290,23 @@ proc AddLine {c section} {
     set t [GetWidFromCanvas $c]
     
     $c delete section$section
-    $c create line [expr round($graph($t,increment)*($section-1))+$miss] \
+    if {$graph($t,between)} {
+	$c create line [expr round($graph($t,increment)*($section-1))+$miss] \
+            [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
+	    [expr round($graph($t,increment)*($section-0.5))+$miss] \
+            [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
+	    [expr round($graph($t,increment)*($section-0.5))+$miss] \
+            [expr [lindex $graph($t,points) $section]+$miss] \
+            [expr round($graph($t,increment)*$section)+$miss] \
+            [expr [lindex $graph($t,points) $section]+$miss] \
+            -tags "graph section$section"
+    } else {
+	$c create line [expr round($graph($t,increment)*($section-1))+$miss] \
             [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
             [expr round($graph($t,increment)*$section)+$miss] \
             [expr [lindex $graph($t,points) $section]+$miss] \
             -tags "graph section$section"
+    }
 }
 
 proc GClick {c x y} {
@@ -375,6 +411,14 @@ proc RedrawGrid {c w h inc} {
     $c move grid $miss $miss
 }
 
+proc Reshape {t} {
+    set gph [$t.gph getframe]
+    set grid $gph.gridf.canvas
+
+    SetCombos $t
+    AttackShape $grid [winfo width $grid] [winfo height $grid]
+}
+    
 proc AttackShape {c w h} {
     global graph
     
