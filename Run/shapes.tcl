@@ -595,6 +595,8 @@ proc WriteDesc {canvas canvasFile date args} {
     puts $stream [concat TweakWindow \$c \{$title\} \
             $window_info($canvas,scale) \
             [$canvas cget -scrollregion] clear $args]
+# Now make sure Prolog knows the screen extent of what is loaded
+    puts $stream [concat ResizeDesktop \$c [$canvas cget -scrollregion]]
     # background colour parameter now ignored because the background is
     # a rectangle and as such is listed in the .cnv file...not...
     foreach object [$canvas find all] {

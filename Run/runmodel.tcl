@@ -89,6 +89,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     #    wm geometry $winName +0+84
     
     # set the display depths to those we recorded
+#ShowMessage debug info "TweakWindow $c $winTitle $scale $wl $wt $wr $wb $bg $args" ok
     set cats {ghost_link influence variable flow \
                 compartment submodel caption sections}
     for {set depthParam 0} {$depthParam < [llength $args]} {incr depthParam} {
@@ -97,17 +98,14 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
                 [lindex $args $depthParam] 0
     }
     
+    $c configure -width 1 -height 1
     $c configure -scrollregion "$wl $wt $wr $wb" \
             -width [expr $wr-$wl] -height [expr $wb-$wt]
-    # set initial scaling factors
+    set window_info(prolog_ok) 0
     set window_info($c,width) [expr $wr - $wl]
     set window_info($c,height) [expr $wb - $wt]
     set window_info($c,scale) $scale
     # last will be overwritten if drawing from Prolog
-    
-    # Now just in case we are loading this from a .cnv file and Prolog doesnt
-    # know how big the canvas is...or something else funny is happening...
-    #    ResizeDesktop $c $wl $wt $wr $wb
     
     if {[string match image [$c type /base/]]} {
         $c coords /base/ $wl $wt
@@ -182,7 +180,7 @@ proc SetSpace {c w h} {
     set cy $window_info($c,height)
     set window_info($c,width) [expr $w - 4]
     set window_info($c,height) [expr $h - 4]
-    #ShowMessage debug info "New size is $w $h" ok
+#    ShowMessage debug info "New size is $w $h" ok
     RollBack $c 1 [expr ($cx - $w)/2 + 2] [expr ($cy - $h)/2 + 2] \
             [expr ($cx + $w)/2 - 2] [expr ($cy + $h)/2 - 2]
 }

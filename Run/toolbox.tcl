@@ -55,11 +55,11 @@ proc ControlDraw {prologVersion} {
     # loading stub sets license entries
 # Defaults to use if debugging
     if {![info exists env(SIMILE_VERSION)]} {
-	set env(LD_LIBRARY_PATH) /usr/local/ActiveTcl/lib
 	set env(SIMILE_VERSION) 3.0
 	set env(SIMTMPDIR) /tmp/simdevel
 	set env(licensee_name) "Support team"
 	set env(licensee_corp) "Simulistics, inc."
+	set env(license_code) default_license=7d1cce6183f8ee8f96e6233cea1575f1
     }
 
     set sendvars(simV) $env(SIMILE_VERSION)
