@@ -14,21 +14,15 @@ proc Reader {} {
     }
     if {[gets $plPipe noCrs] >= 0} {
 	regsub -all \\\\n $noCrs \n line
-	puts [concat < $line]
-	if {$running} {
-	    if {[string match get_tcl_cmd $line]} {
-		send_tcl_cmd
-	    } elseif {[string match send_tcl_cmd [lindex $line 0]]} {
-		eval do_tail $line
-	    } elseif {[string match debug [lindex $line 0]]} {
-	    } else {
-		tk_messageBox -title {Unexpected Prolog output} -icon warning \
-		    -message $line -type ok
-	    }
+#	puts [concat < $line]
+	if {[string match get_tcl_cmd $line]} {
+	    send_tcl_cmd
+	} elseif {[string match send_tcl_cmd [lindex $line 0]]} {
+	    eval do_tail $line
+	} elseif {[string match debug [lindex $line 0]]} {
 	} else {
-	    if {[string match ready $line]} {
-		set running 1
-	    }
+	    tk_messageBox -title {Unexpected Prolog output} -icon warning \
+		-message $line -type ok
 	}
     }
 }
@@ -90,6 +84,7 @@ proc send_pl_cmd {withCrs} {
     puts [concat > $plCmd]
     puts $plPipe $plCmd
     flush $plPipe
+    Reader
 }
 
 set running 0
@@ -106,5 +101,11 @@ set env(TRAILSZ) 49152
 regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
 set plPipe [open "|$PROLOG_CMD 2> $PROLOG_ERR" r+]
-fconfigure $plPipe -translation {auto lf} -blocking 0
-fileevent $plPipe readable Reader
+fconfigure $plPipe -translation {auto lf}
+#fileevent $plPipe readable Reader
+
+set spraf {}
+while {![string match ready $spraf]} {
+    gets $plPipe spraf
+}
+Reader
