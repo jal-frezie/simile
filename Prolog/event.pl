@@ -151,10 +151,11 @@ click_obj(Xpt, Ypt, Name, CD) :-
 
 click_text(Xpt, Ypt, Name, CD) :-
 	get_mode(select),
+	    CD = 0,
 	    doomed(Name), !,
 	    finish_old_edit(Name),
 	    give_focus(Name);
-	click_obj(Xpt, Ypt, Name, CD),
+	click_obj(Xpt, Ypt, Name, 0),
 	    (get_phase(moving); get_phase(moving_border(_))),
 	    advance_phase_to(moving_text).
 /*

@@ -587,7 +587,9 @@ proc ChooseIntegerRatio {fraction} {
 	
 proc MoveText {w id ptz} {
     set mptz [ScaleList $w $ptz]
-    eval {$w move [GetCaptionItem $w $id]} $mptz
+    set textItem [GetCaptionItem $w $id]
+    eval {$w move $textItem} $mptz
+    FixBackBox $w $textItem
 }
 
 proc MoveObj {w id ptz} {
@@ -633,6 +635,7 @@ proc MoveBowtie {w id ptz} {
     }
     if {[info exists captionId]} {
         $w move $captionId [expr $ml - $oldl] [expr $mt - $oldt]
+	FixBackBox $w $captionId
     }
 }
 
@@ -665,9 +668,26 @@ proc PutText { w ptz type tagSet fatness colourScheme capt } {
             + $looks($type,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] \
             + $looks($type,yoffset)*$fatness/100]]
-    $w create text $textX $textY -text $capt -fill $textColor \
+# experimental background box for text
+    if {$looks($type,txtbd)} {
+	set txtbd black
+    } else {
+	set txtbd {}
+    }
+    if {$looks($type,txtbg)} {
+	set txtbg \#ffffc0
+    } else {
+	set txtbg {}
+    }
+    set backBox [$w create rect 0 0 1 1 -outline $txtbd -fill $txtbg \
+		     -tag "$tagSet /${type}_text/"]
+    $w dtag $backBox editable
+    $w dtag $backBox currently_editable
+    set textItem [$w create text $textX $textY -text $capt -fill $textColor \
 	-font $useFont -anchor $looks($type,textanchor) \
-	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"
+	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info \
+backbox_is($backBox)"]
+    eval {$w coords $backBox} [$w bbox $textItem]
 }
 
 # This is called when a new node with a caption is added. The caption should be
@@ -1340,6 +1360,17 @@ proc Customize {winId mode} {
         bind $t.font.style.menu <Leave> "ZotFont $t 120"
         pack $t.font.style -side left
         pack $t.font
+
+	frame $t.backbox
+	label $t.backbox.bdwhat -text "Show border"
+	pack $t.backbox.bdwhat -side left
+	checkbutton $t.backbox.bd -variable looks($object,txtbd)
+	pack $t.backbox.bd -side left
+	label $t.backbox.bgwhat -text "Show background"
+	pack $t.backbox.bgwhat -side left
+	checkbutton $t.backbox.bg -variable looks($object,txtbg)
+	pack $t.backbox.bg -side left
+	pack $t.backbox
     }
     
     canvas $t.canvas -width [expr $looks(width) + 50] \
@@ -1528,14 +1559,6 @@ proc DoGraphics {box type middle size} {
         set ybase $t
     }
     
-    if {[string compare $type influence]} {
-        PutText $box.canvas [list $xbase $ybase] \
-                $type "sample movable" 100 normal "Sample $type"
-        set looks(cheat) [$box.canvas coords movable]
-        $box.canvas bind movable <Button-1> {SampleMark %x %y %W}
-        $box.canvas bind movable <B1-Motion> {%W coords movable %x %y}
-    }
-    
     switch -regexp $type {
         compartment {PutRectangle $box.canvas $l $t $r $b 1 100 {} \
                     normal "sample"}
@@ -1562,6 +1585,14 @@ proc DoGraphics {box type middle size} {
                     [expr $middle-25] [expr 2*$middle - 25] $middle" \
                     100 normal "sample"
         }
+    }
+
+    if {[string compare $type influence]} {
+        PutText $box.canvas [list $xbase $ybase] \
+                $type "sample movable" 100 normal "Sample $type"
+        set looks(cheat) [$box.canvas coords [GetCaptionItem $box.canvas sample]]
+        $box.canvas bind movable <Button-1> {SampleMark %x %y %W}
+        $box.canvas bind movable <B1-Motion> {SampleMove %x %y %W}
     }
 }
 
@@ -1601,8 +1632,15 @@ proc SampleMark { x y w } {
         set a1 c
     }
     
-    $w itemconfigure movable -anchor $a1$a2
-    $w coords movable $x $y
+    set textItem [GetCaptionItem $w sample]
+    $w itemconfigure $textItem -anchor $a1$a2
+    $w coords $textItem $x $y
+    FixBackBox $w $textItem
+}
+
+proc SampleMove {x y w} {
+    set oldPosn [$w coords [GetCaptionItem $w sample]]
+    $w move movable [expr $x-[lindex $oldPosn 0]] [expr $y-[lindex $oldPosn 1]]
 }
 
 proc ResetFont { t } {
@@ -1625,7 +1663,10 @@ proc AssembleFont {family weight style textsize} {
 }
 
 proc ZotFont { t param } {
-    $t.canvas itemconfigure movable -font [ResetFont $t]
+    set txt [GetCaptionItem $t.canvas sample]
+    $t.canvas itemconfigure $txt \
+	-font [ResetFont $t]
+    FixBackBox $t.canvas $txt
 }
 
 proc ZotColor {t frame role type} {
@@ -1653,21 +1694,24 @@ proc ZotObjectSize {t type size} {
 
 proc UpdateOffsets {t type} {
     global looks
-    set offsets [$t.canvas coords movable]
+    set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
     set looks($type,xoffset) [expr $looks($type,xoffset) + \
             [lindex $offsets 0] - [lindex $looks(cheat) 0]]
     set looks($type,yoffset) [expr $looks($type,yoffset) + \
             [lindex $offsets 1] - [lindex $looks(cheat) 1]]
+    set looks(cheat) $offsets
 }
 
 proc GetTextAnchor {t} {
-    $t.canvas itemcget movable -anchor
+    $t.canvas itemcget [GetCaptionItem $t.canvas sample] -anchor
 }
 
 proc ResetLooks {type} {
     global looks
     
     set looks($type,font) [AssembleFont Helvetica bold roman 120]
+    set looks($type,txtbd) 0
+    set looks($type,txtbg) 0
     set looks($type,outline) black
     set looks($type,fill) $looks(buttonColor)
     set looks($type,text) black

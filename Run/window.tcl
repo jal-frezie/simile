@@ -149,11 +149,14 @@ proc ClickObj { x y winId X Y action} {
                 if {[lsearch [$winId gettags $obj] selected] != -1} {
                     $winId select from $obj $realPlace
                 }
+		if {[lsearch [$winId gettags $obj] backbox_is($target)]!=-1} {
+		    set CD -1
+		}
+		if {!$RB && ([string equal $target $obj] || $CD==-1)} {
+		    set action clicktext
+		}
             }
             
-            if {!$RB && [string equal $target $obj]} {
-                set action clicktext
-            }
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node \
                 , $CD)]
@@ -754,10 +757,12 @@ proc CanvasEditBind { c } {
         if {![CanvasDelSeln %W]} {
             %W dchars [%W focus] insert
         }
+	FixBackBox %W [%W focus]
     }
     $c bind currently_editable <Control-d> {
         if {[%W focus] != {}} {
             %W dchars [%W focus] insert
+	    FixBackBox %W [%W focus]
         }
     }
     $c bind currently_editable <Control-h> {
@@ -768,15 +773,18 @@ proc CanvasEditBind { c } {
                 %W dchars $_t insert
             }
         }
+	FixBackBox %W [%W focus]
     }
     $c bind currently_editable <BackSpace> \
             [$c bind currently_editable <Control-h>]
     
     $c bind currently_editable <Control-Delete> {
         %W delete [%W focus]
+	FixBackBox %W [%W focus]
     }
     $c bind currently_editable <Return> {
         %W insert [%W focus] insert \n
+	FixBackBox %W [%W focus]
     }
     $c bind currently_editable <Any-Key> {
         # do not allow control chars other than the above mentioned
@@ -784,12 +792,14 @@ proc CanvasEditBind { c } {
             CanvasDelSeln %W
             %W insert [%W focus] insert %A
         }
+	FixBackBox %W [%W focus]
     }
     bind $c <<PasteSelection>> {
 	.hidden_e delete 0 end
 	event generate .hidden_e <<PasteSelection>>
 	if {[%W focus] != {}} {
 	    %W insert [%W focus] insert [.hidden_e get]
+	    FixBackBox %W [%W focus]
 	}
     }
     $c bind currently_editable <Key-Right> {
@@ -844,7 +854,9 @@ proc CanvasEditBind { c } {
     $c bind currently_editable <Control-e> \
             [$c bind currently_editable <Key-End>]
     
-    $c bind currently_editable <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
+    $c bind currently_editable <<Cut>> {CanvasTextCopy %W; CanvasDelete %W
+	FixBackBox %W [%W focus]
+    }
     $c bind currently_editable <<Copy>> {CanvasTextCopy %W}
     $c bind currently_editable <<Paste>> {
 	.hidden_e delete 0 end
@@ -852,7 +864,15 @@ proc CanvasEditBind { c } {
 	CanvasDelSeln %W
 	if {[%W focus] != {}} {
 	    %W insert [%W focus] insert [.hidden_e get]
+	    FixBackBox %W [%W focus]
 	}
+    }
+}
+
+proc FixBackBox {c textItem} {
+    regexp {backbox_is\(([^\)]+)\)} [$c gettags $textItem] all backBox
+    if {[info exists backBox]} {
+	eval {$c coords $backBox} [$c bbox $textItem]
     }
 }
 
