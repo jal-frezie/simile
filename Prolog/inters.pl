@@ -526,7 +526,7 @@ make_intermediates(
 	    make_intermediates(Indx, Target, DestPath, BackSwap, PrevInters,
 			       BuildingArrays, Step, Used, Int, MidInters,
 			       part_result(IContext, ISetups, IArgs, IndxRef)),
-	    (member(Int, [int, const_int]), !,
+	    (promote_unit(Int, int), !,
 		IntIndxRef = IndxRef;
 	    Int = real, !, /* for legacy cases */
 	        IntIndxRef = simile_int(IndxRef);
