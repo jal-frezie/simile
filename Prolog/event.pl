@@ -210,6 +210,7 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 
 click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 	get_mode(add),
+	finish_old_edit(none),
 	set_start_coords(Xpt, Ypt),
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
@@ -218,7 +219,6 @@ click_in(Wid, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 		(New_obj is_class_of_sort rounded_rect,
 			advance_phase_to(rubberband);
 		add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
-		finish_old_edit(NewNode),
 		give_focus(NewNode),
 		select_text(Wid, NewNode),
 	    (setof(NewLook, presence_affects(NewNode, NewLook), NewLooks), !;
@@ -253,6 +253,7 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 
 click_on([Xpt, Ypt], Poss_start, CD) :-
 	get_mode(add),
+	finish_old_edit(none),
 	get_adding_object(New_obj),
 	(New_obj is_class_of_sort line,
 	    do_linear(New_obj, Poss_start);
@@ -1587,7 +1588,13 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
 		update_color(NewImage),
 		update_captions(NewImage),
 		fail; */
-	true).
+	(New_obj = influence, !;
+	 (New_obj = relation, !,
+		find_name_host(Top_arc, Node_name);
+	     New_obj = flow, !,
+		find_base(Top_arc, Node_name)),
+	     give_focus(Node_name),
+	     select_text(Wid, Node_name))).
 
 ghost_type(Start, Type, Base) :-
 	get_moving_obj(Start),
@@ -1761,7 +1768,6 @@ attempt_new_component(Parent, Box, Extent) :-
 	relate_graphics(Node_name, Node_trans),
 	redisplay_border(Node_name),
 	find_current(Wid),
-	finish_old_edit(Node_name),
 	give_focus(Node_name),
 	select_text(Wid, Node_name).
 
