@@ -520,13 +520,14 @@ expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 	/* when making dummy links for explicit intermediate results, check
 	the 1sr field (influence id) uis a free var, and if so, use the
 	4th field to hold the dims */
-	member(input_link(Link, Loops, Param, IDims, Units), InterInputs), !,
+	member(input_link(Link, LRefs, Param, IDims, Units), InterInputs), !,
 	    (nonvar(Link), !,
 		analyze_array(Units, Base, Dims),
 		(units:get_conversion(_, Base, Base, _), !,
 		    Type = real;
 		Type = Base);
-		IDims = Type-Dims,
+	    IDims = Type-Dims,
+		LRefs = Loops,
 		length(Dims, 4)),
 	    make_inds_for(Dims, Loops, Inds),
 	    DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true)),
