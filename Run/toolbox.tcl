@@ -659,6 +659,8 @@ proc ControlDraw {prologVersion} {
             file delete $oldPrefs
         }
         }
+    } elseif [string match Darwin $tcl_platform(os)] {
+        set custom(prefDir) [file join $env(HOME) "Simile"]
     } else {
         set custom(prefDir) $oldPrefs
     }
