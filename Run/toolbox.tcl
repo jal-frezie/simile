@@ -1791,13 +1791,33 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
     pack $eb.function -side left
     set m [menu $eb.function.menu -tearoff 0]
     global equation
-    set useFunctions [lrange $equation(fnDefs) 0 9]
-    foreach defn $useFunctions {
-        set cmd [lindex $defn 1]
-        $m add command -label $cmd\(\) \
-                -command [list InsertFunction $eb.equation $cmd]
+
+    foreach funk $equation(fnDefs) {
+	set box $m
+#puts "Adding $funk to $box"
+	foreach level [lindex $funk 0] {
+	    set lname $box.[string tolower [join $level _]]
+	    if {[catch {$box index $level}]} {
+		menu $lname -tearoff 0
+		$box add cascade -menu $lname -label $level
+	    }
+	    set box $lname
+	}
+	set component [lindex $funk 1]
+	if {[catch {$box index $component}]} {
+	    $box add command -label $component\(\) \
+                -command [list InsertFunction $eb.equation $component]
+	}
     }
-    $m add command -label "All functions..." -command bell
+
+
+#    set useFunctions [lrange $equation(fnDefs) 0 9]
+#    foreach defn $useFunctions {
+#        set cmd [lindex $defn 1]
+#        $m add command -label $cmd\(\) \
+                -command [list InsertFunction $eb.equation $cmd]
+#    }
+#    $m add command -label "All functions..." -command bell
     
     #   set image [image create photo -file "../Images/eqnbar/props.gif"]
     #   pack [button $eb.properties -state disabled -image $image -borderwidth 1] \
