@@ -475,7 +475,7 @@ make_intermediates(
 	for their signs */
 	(\+ member(Functor, [least, greatest]), !;
 	Units = int, !,
-	    [Wee, Muckle] = [-1073741823, 1073741823];
+	    [Wee, Muckle] = [-268435455, 268435455];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
 	(\+ (member(VarDim, TotalDims), VarDim == var);
