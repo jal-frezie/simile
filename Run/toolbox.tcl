@@ -24,9 +24,6 @@ source ../Run/mre.tcl
 if {[string match windows $tcl_platform(platform)]} {
 #   pkg_mkIndex ../System/lib/Extras
     source ../System/lib/Extras/prntcanv.tcl
-} else {
-# Do not load Trf2.1 in Unix it contains a buggy implementation of md5
-    package ifneeded Trf 2.1 {}
 }
 
 # Make Simile a DDE server under Windows. Jonathan
@@ -484,9 +481,7 @@ proc ClickObj { x y winId action} {
 
     global helperTable
     global pushedbutton
-    global clicktime
 
-    set clicktime [clock clicks -milliseconds]
     set canx [$winId canvasx $x]
     set cany [$winId canvasy $y]
     set xco [Unscale $winId $canx]
@@ -618,12 +613,6 @@ proc ResizeDesktop {winId cl ct cr cb} {
 
 proc DragObj {winId xco yco} {
     global window_info
-    global clicktime
-
-    set dragtime [clock clicks -milliseconds]
-    if {$dragtime>$clicktime && $dragtime-$clicktime<200} {
-	return
-    }
     
     set canx [$winId canvasx $xco]
     set cany [$winId canvasy $yco]
@@ -1499,34 +1488,43 @@ proc ShowAbout {winId} {
     dripu read "../Images/HelpAboutUpper.gif"
     dripl read "../Images/HelpAboutLower.gif"
     label .about.upper -image dripu
-    pack .about.upper
+    pack .about.upper -pady 4
     frame .about.fr -relief sunken -borderwidth 2
-    label .about.fr.lab1 -text Version\ $sendvars(simV)\ $userinfo(edn) \
-            -font {-weight bold -family helvetica -size 10}
-            label .about.fr.lab2 -text "Prolog: $sendvars(proV)" \
-                -font {-family helvetica -size 8}
-                label .about.fr.lab3 -text "TclTk: [info patchlevel]" \
-                        -font {-family helvetica -size 8}
-                        label .about.fr.lab4 -text "This product is registered to\
-                                $userinfo(name), $userinfo(corp)" \
-                                -font {-family helvetica -size 8}
-    pack .about.fr.lab1
-    pack .about.fr.lab2
-    pack .about.fr.lab3
-    pack .about.fr.lab4
-    pack .about.fr
+    pack [label .about.fr.lab1 -text Version\ $sendvars(simV)\ $userinfo(edn) \
+            -font {-weight bold -family helvetica -size 12}]
+    pack [label .about.fr.lab2 -text "Prolog: $sendvars(proV)" \
+            -font {-family helvetica -size 8}]
+    pack [label .about.fr.lab3 -text "TclTk: [info patchlevel]" \
+            -font {-family helvetica -size 8}]
+    pack [label .about.fr.lab4 -text "This product is registered to\
+            $userinfo(name), $userinfo(corp)" \
+            -font {-family helvetica -size 8}]
+    
+    set gen [frame .about.fr.gen]
+    if [string match evaluation $userinfo(edn)] {
+        set info [label $gen.info -text "For upgrade to Standard\
+                or Enterprise Editions," -font {-family helvetica -size 10}]
+    } elseif [string match standard $userinfo(edn)] {
+        set info [label $gen.info -text "For support or to upgrade\
+                to Enterprise Edition," -font {-family helvetica -size 10}]
+    } else {
+        set info [label $gen.info -text "For support," \
+                -font {-family helvetica -size 10}]
+    }
+    pack $info -side left
+    pack [label $gen.visit -text "please visit" -font {-family helvetica -size 10}]\
+            -side left
+    pack [label $gen.www -text www.simulistics.com -relief flat \
+            -font {-underline true -family helvetica -size 10} -fg blue -cursor hand2] -pady 2 -side left
+    bind $gen.www <Button-1> "VisitUrl http://www.simulistics.com/"
+    pack $gen -padx 4 -pady 2
+    pack .about.fr -expand on -fill x -padx 8 -pady 2
     
     label .about.lower -image dripl
     pack .about.lower
- #   pack [canvas .about.c -width 510 -height 340]
- #   .about.c create image 255 170 -image drip
- #   .about.c create text 255.0 60.0 -font {-weight bold -family helvetica -size 10} -text Version\ $sendvars(simV)\ $userinfo(edn)
- #   .about.c create text 255.0 80.0 -font {-family helvetica -size 8} -text "Prolog: $sendvars(proV)"
- #   .about.c create text 255.0 95.0 -font {-family helvetica -size 8} -text "TclTk: [info patchlevel]"
- #   .about.c create text 255.0 110.0 -font {-family helvetica -size 8} -text "This product is registered to\
- #           $userinfo(name), $userinfo(corp)"
+
     pack [button .about.b -text OK -width 10 -default active \
-            -command "set sendvars(doneAbout) 1"]
+            -command "set sendvars(doneAbout) 1"] -pady 2
     pack [label .about.l16]
     wm geometry .about +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-250]
     grab .about
