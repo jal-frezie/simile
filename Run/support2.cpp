@@ -19,14 +19,12 @@ extern "C" __declspec( dllexport ) void do_advancemodel(void*, double, int);
 extern "C" __declspec( dllexport ) int do_evalmodel(void*, double, int, 
      BOOLEAN);
 extern "C" __declspec( dllexport ) int do_setstep(double, int);
-extern "C" __declspec( dllexport ) void do_exitmodel(void*);
 #else
 extern "C" double get_version(void);
 extern "C" void do_updatemodel(void*, double, int);
 extern "C" void do_advancemodel(void*, double, int);
 extern "C" int do_evalmodel(void*, double, int, BOOLEAN);
 extern "C" int do_setstep(double, int);
-extern "C" void do_exitmodel(void*);
 #endif
 
 /* version needs its own special procedure because any other might change
@@ -76,11 +74,6 @@ int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
     return 0;
   }
 }
-
-void do_exitmodel(void* handle) {
-  ((AME_model *)handle)->do_exitmodel();
-}
-
 
 /* setstep: the model class instances contain an array of doubles called
 dts representing the time steps at the various phases. This function reaches
@@ -138,17 +131,6 @@ double stage_incr (diffs *extras, int step, double v) {
   default:
     return dv;
   };
-};
-
-extern "C" 
-#ifdef WIN32
-__declspec( dllexport )
-#endif
-void* burrow_to(void* level, int** id_meta, int** dim_list) {
-  while (**id_meta>0) { 
-    level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
-  }
-  return(level);
 };
 
 /* This is called only when we create the type, to return model constants */

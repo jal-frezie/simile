@@ -243,8 +243,6 @@ typedef int setstep_type(double, int);
 typedef void updatemodel_type(void*, double, int);
 typedef void advancemodel_type(void*, double, int);
 typedef int evalmodel_type(void*, double, int, BOOLEAN);
-typedef void* getpointer_type(void*, int**, int**);
-typedef void exitmodel_type(void*);
 
 /* Matching set of declarations for the pointers by which we will access
    these functions locally */
@@ -263,8 +261,6 @@ class Model {
   updatemodel_type *updatemodel;
   advancemodel_type *advancemodel;
   evalmodel_type *evalmodel;
-  getpointer_type *getpointer;
-  exitmodel_type *exitmodel;
 
 public:
   int phases;
@@ -300,8 +296,6 @@ public:
 						      "do_advancemodel");
     evalmodel = (evalmodel_type *)FIND_FUNCTION(handle, "do_evalmodel");
     setstepmodel = (setstep_type *)FIND_FUNCTION(handle, "do_setstep");
-    getpointer = (getpointer_type *)FIND_FUNCTION(handle, "burrow_to");
-    exitmodel = (exitmodel_type *)FIND_FUNCTION(handle, "do_exitmodel");
       
     nodecount = (*getcount)(this, 
 			    (void*)ame_rand, 
@@ -374,14 +368,6 @@ public:
 
   int setstep(double start, int phase) {
     return (*setstepmodel)(start, phase);
-  }
-
-  void* get_ptr(void* level, int** id_meta, int** dim_list) {
-    return (*getpointer)(level, id_meta, dim_list);
-  }
-
-  void exit(void* id) {
-    (*exitmodel)(id);
   }
 
   /* Now for the locally defined model class procedures */
@@ -492,6 +478,10 @@ Model *modelType;
 void* modelHandle;
 Tcl_Interp* globInterp;
 int serviceError;
+
+void exit(void* id) {
+    ((submodeltype*)id)->do_exitmodel();
+}
 
 int step_list(int **dim_list, int unused) {
   return *(*dim_list)++;
@@ -1197,7 +1187,7 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   if (modelHandle) { 
-    modelType->exit(modelHandle);
+    exit(modelHandle);
   }
 
   if (nodeModelList) {

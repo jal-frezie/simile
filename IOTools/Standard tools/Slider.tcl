@@ -15,9 +15,56 @@ namespace eval slide139 {
 	if {[info exists compList]} {
 	    unset compList
 	}
+	set toolbarItems [list \
+			      [list new.gif "Clear" \
+				   [namespace code "clear $winId"]] \
+			      [list add.gif "Add variables" \
+				   [namespace code "AddVariable $winId"]] \
+			      [list slider.gif "Add all variables" \
+				   [namespace code "AddAllVariables $winId /"]]]
+	
+	::graphtools::MakeToolBar $winId $toolbarItems
+	pack [message $winId.intro -aspect 800] -fill x
+
         MakeFrames $winId
+	set geom [PrefValue custom(slidersPosition) slidersPosition]
+#        catch {wm geometry $winId $geom}
+    }
+
+    proc clear {winId} {
+	foreach current [winfo children $winId.sliderframe] {
+	    destroy $current
+	}
+    }
+
+    proc Restore {winId} {
+        initialize $winId
+    }
+
+    proc AddVariable {winId} {
+	$winId.intro configure -text "Click on an input variable to add a slider for it, or on a submodel to add sliders for all input variables inside it."
+    GrabClicks $winId
+    }
+
+    proc click {winId node caption} {
+	variable useNodes
+	
+	set fullCapt [GetCaptionPathFromId $node]
+	if {[string equal SUBMODEL [GetModelClass $node]]} {
+	    AddAllVariables $winId $fullCapt
+	} else {
+	    InsertSlider $winId $node $fullCapt 1
+	}
+	$winId.intro configure -text {}
+	ReleaseClicks $winId
+    }
+
+    proc AddAllVariables {winId prefix} {
         foreach node [GetObjectList] {
 	    set title [GetCaptionPathFromId $node]
+	    if {[string first $prefix $title]} {
+		continue
+	    }
 	    set initVal [InsertSlider $winId $node $title 1]
 	    if {[llength $initVal]} {
 		set done 1
@@ -28,16 +75,9 @@ namespace eval slide139 {
 	    }
 	}
         if {![info exists done]} {
-            pack [message $winId.message -text "There are no variable parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."]
+            $winId.intro configure -text "There are no variable parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."
         }
-	set geom [PrefValue custom(slidersPosition) slidersPosition]
-#        catch {wm geometry $winId $geom}
     }
-
-    proc Restore {winId} {
-        initialize $winId
-    }
-
     proc InsertSlider {winId node title nest} {
 	global checkStates comboChoices
 	if {![string match INPUT [GetModelEval $node]]} {
@@ -79,9 +119,14 @@ namespace eval slide139 {
 	    incr outerDims
 	}
 	if {$nest} {
-	    pack [set f [frame [MakeSubFrames $winId $winId.sliderframe \
-				    $levels [namespace current] 0]]] \
-		-fill x -expand true
+	    set f [MakeSubFrames $winId $winId.sliderframe \
+				    $levels [namespace current] 0]
+	    if {[winfo exists $f]} {
+		$winId.c.canvas see $f
+		return
+	    } else {
+		pack [frame $f] -fill x -expand true
+	    }
 	} else {
 	    set f $winId
 	}
