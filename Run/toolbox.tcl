@@ -307,7 +307,7 @@ proc ControlDraw {prologVersion} {
 }
 
 package require mime
-package require md5
+package require md5 1.4
 
 proc SaveFile {tree tgt} {
 #ShowMessage debug info "SaveFile $tree $tgt" ok
