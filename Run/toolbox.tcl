@@ -50,7 +50,6 @@ proc NewTopLevel {} {
     MenuSelect dummy file new_toplevel
 #    set newInstance [interp create]
 #    $newInstance eval package require Tk 
-#    $newInstance eval set IAmASlave 1
 #    $newInstance eval set argc 0
 #    $newInstance eval source ../Run/simile.tcl
 
@@ -60,7 +59,6 @@ proc OpenTopLevel {model} {
     MenuSelect dummy open_toplevel $model
 #    set newInstance [interp create]
 #    $newInstance eval package require Tk 
-#    $newInstance eval set IAmASlave 1
 #    $newInstance eval set argc 1
 #    $newInstance eval [list set argv $model]
 #    $newInstance eval source ../Run/simile.tcl
@@ -413,13 +411,13 @@ proc ControlDraw {prologVersion} {
 # may well sit it exactly on top of the previous one
 
 proc FixSize {c} {
-    global custom openModel IAmASlave
+    global custom openModel
     update idletasks
     set win [winfo parent $c]
     wm state $win normal
     # seems necessary for console to hide
     #    catch {console hide}
-    if {![info exists IAmASlave] && [file exists $custom(prefDir)/layout]} {
+    if {[file exists $custom(prefDir)/layout]} {
         set stream [NetOpen $custom(prefDir)/layout r]
         gets $stream whetherMaxed
         #ShowMessage debug info $whetherMaxed ok
@@ -452,11 +450,11 @@ proc SaveFile {topNode tree tgt} {
     global mimeSquirter errorInfo
     global SimileProjectDo
     
-    if {[info exists SimileProjectDo] && $SimileProjectDo} {
-        SaveProjectFile $tree
+    if {[info exists SimileProjectDo]} {
+        SaveProjectFile $topNode $tree
         # shfs to $tree
         # spfs to $tree
-        set SimileProjectDo 0
+        unset SimileProjectDo
     }
     if {[catch {
         set parts [GetParts $tree $tree]
@@ -1525,19 +1523,16 @@ proc DoLocalCmd {win item} {
     }
 }
 
-set loadingProject 0
-
 proc OpenAll {win} {
     global loadingProject mimedir
     MenuSelect $win file open
-    if {$loadingProject} {
-            OpenProjectFile $win $mimedir
+    if {[info exists loadingProject]} {
+	OpenProjectFile $win $mimedir
     }
 }
 
 proc OpenProjectFile {win path} {
-    global SimileProject loadingProject
-    set loadingProject 1
+    global SimileProject loadingProject window_info
     set projectF [NetOpen $path/model.spj r]
     gets $projectF SimileProjectData
     close $projectF
@@ -1547,16 +1542,21 @@ proc OpenProjectFile {win path} {
     
     # if params it should load the spfs
     # MergeParams {smPath metaFile interactive}
-    if {$SimileProject(modelRunning)} {
-        if {$SimileProject(running_c)} {
+    if {[info exists SimileProject(modelRunning)]} {
+        if {[info exists SimileProject(running_c)]} {
             MenuSelect $win file run_c
         } else  {
             MenuSelect $win file run_tcl
         }
-        if {![string match {} $SimileProject(nameOfHelperStateFile)]} {
-            ::RunEnv::LoadSHF ${path}/$SimileProject(nameOfHelperStateFile)
+        if {[info exists SimileProject(nameOfHelperStateFile)]} {
+	    set command [ChooseText \
+			     [PrefValue custom(helperManager) helperManager] \
+			     ::RunEnv::LoadSHF CreateView]
+	    do_for_node $window_info($win,top_node) $command \
+		${path}/$SimileProject(nameOfHelperStateFile)
         }
     }
+    unset loadingProject
 }
 
 proc SaveAll {win} {
@@ -1566,8 +1566,8 @@ proc SaveAll {win} {
     MenuSelect $win file save_as
 }
 
-proc SaveProjectFile {path} {
-    global custom runState running_c nameOfHelperStateFile
+proc SaveProjectFile {topNode path} {
+    global custom runStatus nameOfHelperStateFile
     global SimileProject
     #ShowMessage debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
@@ -1576,21 +1576,15 @@ proc SaveProjectFile {path} {
     set ProjectFile $path/model.spj
     
     # is it builtC|builtTcl|notbuilt
-    if [info exists runState(modelRunning)] {
-        set SimileProject(modelRunning) $runState(modelRunning)
-    } else {
-        set SimileProject(modelRunning) {}
+    if [info exists runStatus($topNode,running)] {
+        set SimileProject(modelRunning) 1
+	if {[do_for_node $topNode set model_id]} {
+	    set SimileProject(running_c) 1
+	}
     }
-    if [info exists running_c] {
-        set SimileProject(running_c) $running_c
-    } else  {
-        set SimileProject(running_c) {}
-    }
-    if [info exists nameOfHelperStateFile] {
-        file copy -force $nameOfHelperStateFile $path
-        set SimileProject(nameOfHelperStateFile) [file tail $nameOfHelperStateFile]
-    } else  {
-        set SimileProject(nameOfHelperStateFile) {}
+    if {![catch {do_for_node $topNode set nameOfHelperStateFile} SHFname]} {
+        file copy -force $SHFname $path
+        set SimileProject(nameOfHelperStateFile) [file tail $SHFname]
     }
     # shf file name loaded
     
@@ -1761,7 +1755,7 @@ proc Reopen {canvas oldFile op} {
     set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]
     MenuSelect $canvas $op $oldFile
     global loadingProject mimedir
-    if {$loadingProject} {
+    if {[info exists loadingProject]} {
         OpenProjectFile $canvas $mimedir
     }
 }

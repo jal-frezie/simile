@@ -532,7 +532,10 @@ proc equationDoTable {parent} {
 	    $lidx insert end id$i -text $idx
 	    incr i
 	}
-	LoadDataFile
+	if {![LoadDataFile]} {
+	    destroy $t
+	    return 0
+	}
     } else {
 #        if {![string compare \
 #                    [GetDataFile "No data file yet specified"] {}]} {
@@ -608,8 +611,7 @@ proc LoadDataFile {} {
     
     while {[catch {open $table_entry(fileName) r} stream]} {
         if {![string compare \
-                    [GetDataFile "Cannot read file $table_entry(fileName)"] {}]} {
-            destroy .table
+		 [GetDataFile "Cannot read file $table_entry(fileName)"] {}]} {
             return 0
         }
     }

@@ -948,7 +948,9 @@ proc RunEnv::SaveContainer {winId stream} {
 proc RunEnv::LoadView {} {
     set HelperStateFileName \
             [ChooseFile Displays.shf "Open view specification file" 0]
-    LoadSHF $HelperStateFileName
+    if {[llength $HelperStateFileName]} {
+	LoadSHF $HelperStateFileName
+    }
 }
 
 proc RunEnv::LoadSHF {HelperStateFileName} {
