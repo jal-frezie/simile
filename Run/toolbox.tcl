@@ -1580,13 +1580,22 @@ proc DoLocalCmd {win item} {
         customize {Customize $win $pushedbutton}
         find {FindCaption $win}
         findnext {NextCaption $win}
-        raiseMRE { wm deiconify .mre; raise .mre}
+        raiseMRE {RaiseMREFor $win}
         open_all {OpenAll $win}
         save_all {SaveAll $win}
 	insert {InsertModel $win}
     }
 }
 
+proc RaiseMREFor {win} {
+    global window_info helperTable
+
+    set myMre $helperTable($window_info($win,top_node),whichRunEnv)
+    wm deiconify $myMre
+    raise $myMre
+}
+
+    
 proc OpenAll {win} {
     global loadingProject mimedir
     MenuSelect $win file open
@@ -2596,10 +2605,16 @@ proc SetEqnButtonState {bar newState} {
 
 proc RaiseModelWindow {} {
     global window_info
-    set modelWin $window_info([lindex [lsort [array name window_info *,parent]] 0])
-    wm deiconify $modelWin
-    
-    raise $modelWin
+    set node $::RunEnv::currentNode
+
+    foreach {key win} [array get window_info *,parent] {
+	set c [string range $key 0 end-7]
+	if {[string equal $node $window_info($c,top_node)] && \
+		[info exists window_info($c,is_top_level)]} {
+	    wm deiconify $win
+	    raise $win
+	}
+    }
 }
 
 ##############################    Formula bar    #############################
