@@ -327,7 +327,7 @@ proc LoadFile {tree tgt} {
 		    }
 #puts [array get runState]
 		} "Authentication Code" {
-		    set AuthCode [mime::getbody $bit]
+		    set AuthCode [string trimright [mime::getbody $bit]]
 		} default {
 		    if {[string match "Simile model" [lindex $Desc 0]] && \
 			    [info exists AuthCode]} {

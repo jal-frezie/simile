@@ -1515,7 +1515,7 @@ extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
      return TCL_ERROR;
    }
    if (strcmp(edition, Tcl_GetVar(interp, "h76rt4g7", 0))) {
-     crash(interp, "model");
+     crash(interp, "edition");
    }
    /* ::sha1::hmac "Expensive" $ModelText */
    return Tcl_VarEval(interp, "::md5::hmac ", secret, " $hvfe587gw938", NULL);
@@ -1542,8 +1542,9 @@ extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
   }
   /* check it matches what we got before */
   if (strcmp(Tcl_GetVar(interp, "AuthCode", 0), Tcl_GetStringResult(interp))) {
-    crash(interp, "edition");
+    crash(interp, "model");
   }
+  
   /* Also if we are evaluation, it was not written by enterprise and it has 
      more than 30 lines beginning 'node...' there are grounds to suspect foul
      play...actually it might not be their fault so don't do this...
