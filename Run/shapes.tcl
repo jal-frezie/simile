@@ -677,6 +677,7 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
 proc SelectText {w node} {
     global pushedbutton
     set new [GetCaptionItem $w $node]
+    if {![llength $new]} {return} ;# item has no text
     if {![string equal select $pushedbutton]} {
 	$w dtag currently_editable
 	$w itemconfig $new -tag [concat currently_editable [$w gettags $new]]
@@ -1372,42 +1373,44 @@ proc Customize {winId mode} {
 	pack $t.text -fill x
     }
     
-    TitleFrame $t.graphics -text "Graphics: "
-    set graphics [$t.graphics getframe]
-    frame $graphics.setcolours
-    foreach flashType {outline fill incomplete} {
-        button $graphics.setcolours.$flashType -text "Set $flashType" \
+    if {[string compare $object text]} {
+	TitleFrame $t.graphics -text "Graphics: "
+	set graphics [$t.graphics getframe]
+	frame $graphics.setcolours
+	foreach flashType {outline fill incomplete} {
+	    button $graphics.setcolours.$flashType -text "Set $flashType" \
                 -command "ZotColor $t $graphics.setcolours.$flashType $object"
-        pack $graphics.setcolours.$flashType -side left
-    }
-    pack $graphics.setcolours
-    
-    frame $graphics.flashcolours
-    foreach flashType {select highlight target} {
-        button $graphics.flashcolours.$flashType -text "Set $flashType" \
+	    pack $graphics.setcolours.$flashType -side left
+	}
+	pack $graphics.setcolours
+	
+	frame $graphics.flashcolours
+	foreach flashType {select highlight target} {
+	    button $graphics.flashcolours.$flashType -text "Set $flashType" \
                 -command "ZotColor $t $graphics.flashcolours.$flashType $object"
-        pack $graphics.flashcolours.$flashType -side left
-    }
-    pack $graphics.flashcolours
+	    pack $graphics.flashcolours.$flashType -side left
+	}
+	pack $graphics.flashcolours
     
-    frame $graphics.objectsize
-    label $graphics.objectsize.what -text "Relative size: "
-    pack $graphics.objectsize.what -side left
-    scale $graphics.objectsize.scale -from 0 -to $looks(width) \
+	frame $graphics.objectsize
+	label $graphics.objectsize.what -text "Relative size: "
+	pack $graphics.objectsize.what -side left
+	scale $graphics.objectsize.scale -from 0 -to $looks(width) \
             -length $looks(width) -orient horizontal -showvalue false \
             -resolution 1 -command "ZotObjectSize $t $object"
-    pack $graphics.objectsize.scale -side left
-    pack $graphics.objectsize
+	pack $graphics.objectsize.scale -side left
+	pack $graphics.objectsize
     
-    frame $graphics.lines
-    label $graphics.lines.what -text "Line thickness: "
-    pack $graphics.lines.what -side left
-    scale $graphics.lines.scale -from 0 -to 10 -length $looks(width) \
+	frame $graphics.lines
+	label $graphics.lines.what -text "Line thickness: "
+	pack $graphics.lines.what -side left
+	scale $graphics.lines.scale -from 0 -to 10 -length $looks(width) \
             -orient horizontal -showvalue false -resolution 0.05 \
             -command "ZotObjectSize $t $object"
-    pack $graphics.lines.scale -side left
-    pack $graphics.lines
-    pack $t.graphics -fill x
+	pack $graphics.lines.scale -side left
+	pack $graphics.lines
+	pack $t.graphics -fill x
+    }
     
     frame $t.actions
     button $t.actions.load -text "Load" -command "ReadLooks $t $object"
@@ -1450,19 +1453,25 @@ proc LoadLooks {t target object} {
 	    -activebackground $looks($object,text)
     }
     
-    set g [$t.graphics getframe]
-    foreach flash {outline fill incomplete} {
-        $g.setcolours.$flash configure -activebackground $looks($object,$flash)
-    }
-    foreach flash {select highlight target} {
-        $g.flashcolours.$flash configure -activebackground $looks($object,$flash)
-    }
-    
-    $g.objectsize.scale set $looks($object,objectsize)
-    $g.lines.scale set $looks($object,lines)
-    
     set middle [expr $looks(width)/2 + 25]
-    DoGraphics $t $target $middle $looks($object,objectsize)
+    
+    if {[string compare $object text]} {
+	set g [$t.graphics getframe]
+	foreach flash {outline fill incomplete} {
+	    $g.setcolours.$flash configure -activebackground $looks($object,$flash)
+	}
+	foreach flash {select highlight target} {
+	    $g.flashcolours.$flash configure -activebackground $looks($object,$flash)
+	}
+    
+	$g.objectsize.scale set $looks($object,objectsize)
+	$g.lines.scale set $looks($object,lines)
+	DoGraphics $t $target $middle $looks($object,objectsize)
+    } else {
+	$t.canvas delete sample
+        PutText $t.canvas [list $middle $middle] \
+                text "sample" 100 normal "Sample text box"
+    }
     $t.canvas configure -background $looks(windowColor)
     #	TweakObject $t target
 }
@@ -1489,25 +1498,29 @@ proc CopyLooks {t object} {
     global looks
     if {[string compare $object influence]} {
         set looks($object,font) [ResetFont $t]
-        UpdateOffsets $t $object
+        if {[string compare $object text]} {
+	    UpdateOffsets $t $object
+	}
         set looks($object,textanchor) [GetTextAnchor $t]
 	set looks($object,text) \
 	    [[$t.text getframe].backbox.col cget -activebackground]
 	set looks($object,txtbd) $looks(txtbd)
 	set looks($object,txtbg) $looks(txtbg)
     }
-    set g [$t.graphics getframe]
-    foreach colour {outline fill incomplete} {
-        set looks($object,$colour) \
+    if {[string compare $object text]} {
+	set g [$t.graphics getframe]
+	foreach colour {outline fill incomplete} {
+	    set looks($object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
-    }
-    foreach colour {select highlight target} {
-        set looks($object,$colour) \
+	}
+	foreach colour {select highlight target} {
+	    set looks($object,$colour) \
                 [$g.flashcolours.$colour cget -activebackground]
+	}
+	set looks($object,objectsize) [$g.objectsize.scale get]
+	set looks($object,lines) [$g.lines.scale get]
+	set looks(compartment,lines) [$g.lines.scale get] ;# for generic sample
     }
-    set looks($object,objectsize) [$g.objectsize.scale get]
-    set looks($object,lines) [$g.lines.scale get]
-    set looks(compartment,lines) [$g.lines.scale get] ;# for generic sample
 }
 
 proc DoGraphics {box type middle size} {
@@ -1678,8 +1691,14 @@ proc ZotObjectSize {t type size} {
 #    }
     
     CopyLooks $t $useLooks
-    DoGraphics $t $useLooks $middle \
-	[[$t.graphics getframe].objectsize.scale get]
+    if {[string compare text $type]} {
+	DoGraphics $t $useLooks $middle \
+	    [[$t.graphics getframe].objectsize.scale get]
+    } else {
+	$t.canvas delete sample
+        PutText $t.canvas [list $middle $middle] \
+                text "sample" 100 normal "Sample text box"
+    }
 }
 
 proc UpdateOffsets {t type} {
@@ -1730,6 +1749,7 @@ proc CustomizeLooks {} {
     set looks(vflow,yoffset) 0
     set looks(vflow,textanchor) w
     set looks(submodel,textanchor) sw
+    set looks(text,textanchor) c
 }
 
 proc Desystematize {colorSpec} {
@@ -1744,7 +1764,7 @@ proc ApplyLooks {t type} {
 	CopyLooks $t $type
         ExportLooks $t $type
     } else {
-        foreach object {generic compartment channel function variable \
+        foreach object {generic compartment channel function variable text \
                     submodel flow influence relation} {
             CopyLooks $t $object
             ExportLooks $t $object
@@ -1792,7 +1812,7 @@ proc ReadLooks {t type} {
     close $stream
     LoadLooks $t $type $type
     if {[string match generic $type]} {
-        foreach object {generic compartment channel function variable \
+        foreach object {generic compartment channel function variable text \
                     submodel flow influence} {
             ExportLooks $t $object
         }

@@ -1161,17 +1161,18 @@ change_size(Type, New_size) :-
 	draw_style_for(Obj, Type),
 	(Type = submodel; Type = influence; Type = relation;
 	Type = flow,
-		get_shape(Obj, bowtie, [L, T, R, B]),
-		Xpt is (L+R)/2,
-		Ypt is (T+B)/2,
-		adjust_bowtie(Obj, [Xpt, Ypt]);
+	    get_shape(Obj, bowtie, [L, T, R, B]),
+	    Xpt is (L+R)/2,
+	    Ypt is (T+B)/2,
+	    adjust_bowtie(Obj, [Xpt, Ypt]);
 	(Type = channel; Type is_primitive, Type is_class_of_sort box),
-		get_shape(Obj, bounding_box, [L, T, R, B]),
+	    (get_shape(Obj, bounding_box, [L, T, R, B]),
 		Xpt is (L+R)/2,
 		Ypt is (T+B)/2,	
 		make_bounding_box(Type, Xpt, Ypt, New_size, New_box),
 		change_shape(Obj, bounding_box, New_box),
-		event:make_links_follow(Obj)),
+		event:make_links_follow(Obj);
+	    get_shape(Obj, centre, _))),
 	redisplay(Obj),
 	fail.
 

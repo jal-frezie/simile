@@ -130,11 +130,11 @@ fits_inside([L, T, R, B], [BigL, BigT, BigR, BigB]) :-
 	Border = 0,
 	L > BigL + Border, R < BigR - Border, T > BigT + Border, B < BigB - Border.
 
-in_box(Parent, Comp, [L, T, R, B]) :-
+in_box(Parent, Comp, Outer) :-
 	find_all_comps(Parent, Comp),
 	get_host(Comp, Decider),
-	get_drawing_form(Decider, _, [L1, T1, R1, B1]),
-	L1 > L, T1 > T, R1 < R, B1 < B.
+	get_drawing_form(Decider, _, Inner),
+	fits_inside(Inner, Outer).
 
 get_inclusions(Parent, Box, Included) :-
 	setof(Component, in_box(Parent, Component, Box), Included), !;
@@ -147,7 +147,7 @@ get_overlaps(Parent, Target, Part) :-
 	\+ (find_type(Part, flow), is_ghost(Part)),
 	get_drawing_form(Part, _, Box),
 	interferes(Target, Box).
-	
+
 get_inner_bound(Parent, Edge, Bound) :-
 	get_shape(Parent, internal_extent, [L, T, R, B]),
 	get_box_size(submodel, Standard),
@@ -389,6 +389,10 @@ get_drawing_form(Comp, Style, BBox) :-
 		make_bounding_box(Style, Xpt, Ypt, Cur_size, [NL, NT, NR, NB]);
 	    make_bounding_box(Style, Ypt, Xpt, Cur_size, [NT, NL, NB, NR])),
 	    BBox = [NL, NT, NR, NB];
+	draw_style_for(Comp, text), !,
+	    Style = text,
+	    get_shape(Comp, centre, C),
+	    append(C, C, BBox);
 	get_shape(Comp, bounding_box, [BL, BT, BR, BB]),
 	    find_base(Comp, Base),
 	    draw_style_for(Base, Style),
@@ -404,8 +408,8 @@ i.e., if it has a deep enough display depth and so do others on which it
 depends, e.g., compartments for flows.  */
 
 draws_at(Wid, Type, Depth) :-
-	Type = caption, !,
-	    get_display_depth(Wid, caption, Detail),
+	member(Type, [caption, text]), !,
+	    get_display_depth(Wid, Type, Detail),
 	    Detail > Depth;
 	depth_list_is(List),
 	    draws_at(Wid, Type, List, Depth).
@@ -685,7 +689,8 @@ test_complete(Item) :-
 		(sequence(Control, Item);
 		    sequence(Item, Control)),
 		_ is_connector from _ to Control;
-	(Item is_of_sort cloud; Item is_of_sort channel);
+	(Item is_of_sort cloud; Item is_of_sort channel;
+	    find_type(Item, text));
 	Item has_class submodel,
 		(Item has_model_refinement link_equivalences of Links, !; 
 		Links = []),

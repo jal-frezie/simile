@@ -197,7 +197,7 @@ get_host(Object, Visible) :-
 	implicit_function(Visible, Object).
 
 appears(Object) :-
-	(Drawable = bounding_box; Drawable = course),
+	(Drawable = bounding_box; Drawable = course; Drawable = centre),
 	Object has_graphical_attribute Drawable of _,
 	\+ implicit_function(_, Object),
 	\+ (Object is_connector from Node to Self,
@@ -743,7 +743,7 @@ find_all_comps(Parent, Comp) :-
 
 Type is_primitive :-
 	member(Type, [compartment, function, variable, cloud,
-		      flow, influence, relation, alarm,
+		      flow, influence, relation, alarm, text,
 		      condition, creation, immigration, reproduction, loss]).
 
 :- op(500, xfy, is_class_of_sort).
@@ -761,6 +761,7 @@ Obj is_class_of_sort Class :-
 		influence-[line, curved, captionless],
 		relation-[line, curved],
 		cloud-[cloud, regular_box, box, captionless],
+		text-[box],
 		alarm-[regular_box, box, rectangle, channel, has_function,
 			   boolean_value],
 		condition-[regular_box, box, rectangle, channel, has_function,

@@ -1068,6 +1068,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $em1 add command -label "Role arrow" -command \
             "MenuSelect $c edit relation"
     $em1 add cascade -label "Membership control" -menu $em1.sub
+    $em1 add command -label "Text box" -command \
+            "MenuSelect $c edit text"
     set em2 [menu $em1.sub -tearoff 0]
     foreach type {Creation Immigration Reproduction Loss} {
         $em2 add command -label $type -command \
@@ -1153,6 +1155,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 {submodel "Submodels..."} \
                 {relation "Relations..."} \
                 {condition "Channels..."}
+                {text "Text boxes..."}
                 {select "All components..."}} {
 	$fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
 	    -label [lindex $category 1]
@@ -1215,6 +1218,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -variable MIpushedbutton -value condition
     $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
             -variable MIpushedbutton -value alarm
+    $fm1 add radiobutton -label "Text box" -command "ItemSelect text"\
+            -variable MIpushedbutton -value text
     $fm add cascade -label Flip -menu $fm.sub2
     set fm2 [menu $fm.sub2 -tearoff 0]
     $fm2 add command -label Horizontal \
@@ -1324,7 +1329,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set tb [frame $winid.toolSlot.toolbar -border 2]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
     foreach mode {compartment variable flow influence separator1 submodel \
-                relation separator2 creation immigration reproduction loss condition alarm} {
+                relation separator2 creation immigration reproduction loss condition alarm separator3 text} {
         if {[string match separator* $mode]} {
             
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
@@ -1702,7 +1707,8 @@ proc AddDetailMenu {winId fm3 initVals} {
                 {flow "Flows and clouds..."} \
                 {compartment "Compartments..."} \
                 {submodel "Submodels and relations..."} \
-                {caption "Captions..."}} {
+                {caption "Captions..."}
+	        {text "Text boxes..."}} {
         
         set cat [lindex $category 0]
         set rads($winId,$cat) [lindex $initVals $posn]

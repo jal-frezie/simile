@@ -1609,9 +1609,9 @@ make_desktop(Desktop, Canvas_name) :-
         image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
         image:set_shape(Desktop, bounding_box, [0, 0, X, Y]),
 	backup:new_autosave(Desktop, ModelName),
-	InitDepths=[0,32,32,32,32,32,32,showAll],
+	InitDepths=[0,32,32,32,32,32,32,showAll,32],
         event:new_window_for(Desktop, Desktop, Canvas_name, InitDepths, 1),
         all(state, set_display_depth, [unify(Canvas_name),
             build([ghost_link, influence, variable, flow, compartment,
-                   submodel, caption, sections]), build(InitDepths)]),
+                   submodel, caption, sections, text]), build(InitDepths)]),
         draw:redraw_window(Canvas_name).

@@ -187,7 +187,12 @@ redisplay_border(Comp) :-
 	true.
 
 display(Window_id, Comp, Depth, Trans, Recurse) :-
-	(Comp is_of_sort box,
+	(find_type(Comp, text), !,
+	    get_shape(Comp, centre, [X,Y]),
+	    find_fatness(Trans, Fatness),
+	    get_flash(Comp, Lit),
+	    add_caption(Window_id, Comp, [X,Y,X,Y], Trans, Fatness, Lit);
+	Comp is_of_sort box,
 	display_in(Window_id, Comp, Depth, Trans),
 	(Recurse = 1,
 	find_type(Comp, submodel),

@@ -139,8 +139,11 @@ click_text(Xpt, Ypt, Name, CD) :-
 	    finish_old_edit(Name),
 	    give_focus(Name);
 	click_obj(Xpt, Ypt, Name, 0),
-	    (get_phase(moving); get_phase(moving_border(_))),
-	    advance_phase_to(moving_text).
+	/* we do not want the text of a text item to get separated from its
+	anchor so do not allow a caption move, just move the whole thing */
+	    (find_type(Name, text);
+		(get_phase(moving); get_phase(moving_border(_))),
+		advance_phase_to(moving_text)).
 /*
 click: Handles mouse clicks in a model window.
 */
@@ -434,10 +437,13 @@ is not a box type, or if there is no room at the given position to put the objec
 */
 
 add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
+	New_obj = text, !,
+	    make_node(Parent, New_obj, Comp_name),
+	    set_shape(Comp_name, centre, [Xpt, Ypt]);
 	use_style_for(New_obj, NewObjStyle),
-	get_box_size(NewObjStyle, Cur_size),
-	make_bounding_box(New_obj, Xpt, Ypt, Cur_size, Box),
-	attempt_addition(New_obj, Parent, Box, Comp_name, no, yes).
+	    get_box_size(NewObjStyle, Cur_size),
+	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, Box),
+	    attempt_addition(New_obj, Parent, Box, Comp_name, no, yes).
 
 /* as above, but if there is no room it tries to add it nearby rather than failing and complaining */
 
@@ -616,10 +622,10 @@ doubleclick_on(Edit_thing) :-
 	    contains(TopNode, Edit_thing),
 	    is_toplevel(TopNode),
 	    new_window_for(Edit_thing, TopNode, NewWin, Depths, 0),
-	    all(event, set_display_depth,
+	    all(state, set_display_depth,
 		[unify(NewWin),
 		build([ghost_link, influence, variable, flow, compartment,
-		       submodel, caption, sections]), build(Depths)]),
+		       submodel, caption, sections, text]), build(Depths)]),
 	    redraw_window(NewWin);
 	(Edit_type = relation, Attrs = [exclusive, can_lookup];
 	    Edit_type = influence, Attrs = [use_sofar]), !,
