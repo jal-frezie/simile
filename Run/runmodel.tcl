@@ -1122,7 +1122,7 @@ proc GetModelTime {} {
 	return $runState(currentTime)
 }
 
-proc start_run {lang winId} {
+proc start_run {winId} {
     global runState
     global window_info
 
@@ -1616,7 +1616,7 @@ proc build_tcl_program {winId} {
 #   model_id set to 0 cos its existence is tested when getting model structure
 
     set model_id 0
-    start_run 0 $winId
+    start_run $winId
     RunDialog "Current model"
 }
 
@@ -1631,7 +1631,7 @@ proc update_c_executable {winId} {
     set instance_id [c_createmodel $model_id]
 #    ShowMessage debug info "model instance $instance_id created" ok
 
-    start_run 1 $winId
+    start_run $winId
     RunDialog "Current model"
 }
 

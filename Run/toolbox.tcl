@@ -1546,7 +1546,7 @@ proc AddDetailMenu {winId fm3 initVals} {
 
 proc Rerun {winId go} {
     global runState running_c
-    
+ 
     if {$runState(modelRunning)!=2} {
         if {![info exists running_c]} {
             set runType run_tcl
@@ -1559,6 +1559,7 @@ proc Rerun {winId go} {
         }
         MenuSelect $winId file $runType
     } else {
+	start_run $winId
         RunDialog $winId
         $runState(helperId).topbuttons.reset invoke
     }
