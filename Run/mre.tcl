@@ -79,10 +79,6 @@ proc RunEnv::Create { ModelWin } {
         #tk_messageBox -message MakeMRE -type ok
         toplevel .mre -width 200m -height 150m
         wm title .mre "Run-Time Environment - Simile"
-# Following was removed from next command        
-#                {command "Pa&rameters..." {} "Modify file parameters"  \
-#                            {} -command { FileParamDialogue 1 .mre } }
-#                {separator}
        set descmenu {
             "&File" all file 0 {
                 {command "&New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::KillDisplays} }
@@ -94,6 +90,9 @@ proc RunEnv::Create { ModelWin } {
                 {separator}
                 {command "&Print..." {} "Print display"  \
                             {} -command { ::RunEnv::PrintCurrentContainer } }
+                {separator}
+                {command "Pa&rameters..." {} "Modify file parameters"  \
+                            {} -command { FileParamDialogue 1 .mre } }
                 {separator}
                 {command "&Close"    {} "Close the Run Environment window" \
                             {} -command {RunEnv::Destroy} }

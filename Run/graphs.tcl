@@ -653,19 +653,8 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
-proc FillIfSmall {entry text} {
-    $entry delete 1.0 end
-    set verbosity [string length $text]
-    if {$verbosity>500} {
-	$entry insert 1.0 [EndsOnly $text 1 $verbosity 500]
-	$entry configure -state disabled
-    } else {
-	$entry insert 1.0 $text
-    }
-}
-
 proc FileParamDialogue {mustShow parent} {
-    global paramData widgetNames
+    global paramData
     set allNodes [GetObjectList]
     # do it now to shake out errors before opening window
     
@@ -673,65 +662,21 @@ proc FileParamDialogue {mustShow parent} {
     wm transient $t $parent
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
     wm title $t "Enter file parameters"
-    set needed {}
+    set paramData(needed) {}
     MakeFrames $t
     foreach node $allNodes {
         if {[string match TABLE [GetModelEval $node]]} {
-            set compName [GetCaptionPathFromId $node]
-            set levels [lrange [split $compName /] 1 end]
-            set nodeDims [GetModelDims $node]
-            while {[set sep [lsearch $nodeDims -1]]>-1} {
-                set nodeDims [lreplace $nodeDims $sep $sep]
-            }
-# bit of voodoo...get table relating numerical indices of node to enymerated
-# types (from prolog) and use to translate array bounds
-	    set trans [GetFromProlog tk_get_info('$t',$node,types)]
-#ShowMessage debug info "$node $trans $nodeDims" ok
-	    set nodeDims [TransBounds $trans $nodeDims]
-            set dimList [join [lrange $nodeDims 0 end-1] { x }]
-	    set last [lindex $nodeDims end]
-	    if {[string compare $last 0]} {
-		if {[llength $dimList]} {
-		    append dimList " of $last"
-		} else {
-		    set dimList "a $last"
-		}
-	    }
-            if {[string length $dimList]} {
-                set slotCaption "[lindex $levels end] ($dimList):"
-            } else {
-                set slotCaption [lindex $levels end]
-            }
-            pack [set slot [frame [MakeSubFrames $t.sliderframe $levels]]] -fill x -expand on
-            pack [label $slot.l -text $slotCaption] -side left
-            if {$nodeDims>1} {
-                pack [button $slot.b -text "Read table" \
-                        -command [list GetFromTable $t $compName]] -side right
-            }
-            
-            #	    pack [entry $slot.e -textvariable paramData($compName)]
-            # Using entries played merry hell with very long arrays -- texts work better
-            pack [text $slot.e -width 30 -height 1] -side right -fill x -expand on
-            if {[info exists paramData($compName)]} {
-		FillIfSmall $slot.e $paramData($compName)
-            } else {
-                set paramData($compName) {}
-            }
-            set widgetNames($compName) $slot.e
-            
-            # note whether we need to enter a parameter here...
-            if {![llength $paramData($compName)]} {
-                lappend needed $compName
-            }
+	    AddEntry $t $node
         }
     }
-    if {$mustShow || [llength $needed]} {
+    if {$mustShow || [llength $paramData(needed)]} {
         pack [set bfrm [frame .fpdialogue.buttons ]] \
                 -fill x
         pack [message $bfrm.banner \
                 -text "All values must be set to run the model." -width 400]
         pack [frame $bfrm.lpad] -side left -fill x -expand true
-        pack [button $bfrm.ok -text "OK" -command [list DoneParams $t $needed] -width 10] \
+        pack [button $bfrm.ok -text "OK" \
+		  -command [list DoneParams $t] -width 10] \
                 -side left -padx 2 -pady 2
         pack [button $bfrm.cancel -text "Cancel" -command CancelParams -width 10] \
                 -side left -padx 2 -pady 2
@@ -744,15 +689,15 @@ proc FileParamDialogue {mustShow parent} {
         pack [frame $bfrm.rpad] -side left -fill x -expand true
         raise .fpdialogue
         grab $t
-        tkwait variable paramData(/done/)
+        tkwait variable paramData(done)
         grab release $t
         
     } else {
         # Dialogue not needed because data OK so return good
-        set paramData(/done/) 1
+        set paramData(done) 1
     }
     destroy $t
-    return $paramData(/done/)
+    return $paramData(done)
 }
 
 proc MakeFrames {windowId} {
@@ -772,6 +717,71 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
+proc AddEntry {winId node} {
+    global paramData paramDims widgetNames iconImages
+    set compName [GetCaptionPathFromId $node]
+    if {[string match SUBMODEL [GetModelClass $node]]} {
+	set paramData($compName) {}
+	return
+    }
+    set levels [lrange [split $compName /] 1 end]
+    set nodeDims [GetModelDims $node]
+    set paramDims($compName) [lrange $nodeDims 0 end-1]
+
+# bit of voodoo...get table relating numerical indices of node to enymerated
+# types (from prolog) and use to translate array bounds. Do this first because
+# there will be null entries in the table for vm model levels.
+    set trans [GetFromProlog tk_get_info('$winId',$node,types)]
+#ShowMessage debug info "$node $trans $nodeDims" ok
+    set nodeDims [TransBounds $trans $nodeDims]
+
+    set nodeDims [purge $nodeDims MEMBERS]
+    set dimList [join [lrange $nodeDims 0 end-1] { x }]
+    set last [lindex $nodeDims end]
+    if {[string compare $last 0]} {
+	if {[string match false $last]} {
+	    set last boolean
+	}
+	if {[llength $dimList]} {
+	    append dimList " of $last"
+	} else {
+	    set dimList "a $last"
+	}
+    }
+    if {[string length $dimList]} {
+	set slotCaption "[lindex $levels end] ($dimList):"
+    } else {
+	set slotCaption [lindex $levels end]
+    }
+    pack [set slot [frame [MakeSubFrames $winId.sliderframe $levels]]] -fill x -expand on
+    pack [label $slot.l -text $slotCaption -fg red] -side left
+    if {$nodeDims>1} {
+	pack [button $slot.b -image $iconImages(open) -command [namespace code [list GetFromTable $winId $compName]]] -side right
+    }
+            #	    pack [entry $slot.e -textvariable paramData($compName)]
+            # Using entries played merry hell with very long arrays -- texts work better
+    pack [entry $slot.e -width 30] -side left -fill x -expand on
+    bind $slot.e <Return> "$slot.tick invoke"
+    if {[info exists paramData($compName)]} {
+	FillIfSmall $slot.e $paramData($compName)
+    } else {
+	set paramData($compName) {}
+    }
+    if {[string match normal [$slot.e cget -state]]} {
+    pack [button $slot.cross -image $iconImages(cross) -borderwidth 1 \
+	      -command [namespace code [list RevertData $winId $compName]]] \
+	-side right
+    pack [button $slot.tick -image $iconImages(tick) -borderwidth 1 \
+	      -command [namespace code [list AcceptData $winId $compName]]] \
+	-side right
+    }
+    set widgetNames($compName) $slot
+            # note whether we need to enter a parameter here...
+    if {![llength $paramData($compName)]} {
+	lappend paramData(needed) $compName
+    }
+}
+
 proc MakeSubFrames {parent hierarchy} {
     if {[llength $hierarchy]<=1} {
         return $parent.box$hierarchy
@@ -786,71 +796,196 @@ proc MakeSubFrames {parent hierarchy} {
     }
 }
 
-proc DoneParams {winId oldMissing} {
-    global paramData widgetNames runState running_c inputHelper
-    
-    foreach compName [array names widgetNames] {
-	set node [GetIdFromCaptionPath $compName]
-	    if {[string match normal [$widgetNames($compName) cget -state]]} {
-	       set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
-	    }
-            #ShowMessage debug info "-paramData($compName)- is -$paramData($compName)-" ok
-	    set dataChanged 0
-	    if {![llength $paramData($compName)]} {
-		set empties 1
-		# for each constant value, check whether it has been changed, and if so,
-		# flag a complete model rebuild. Do same if running_c lost due to crash
-	    } elseif {[lsearch $oldMissing $compName] > -1} {
-		set dataChanged 1
-	    } elseif {![info exists running_c]} {
-		set dataChanged 1
-	    } elseif {[string compare [lindex [GetModelValue $node] 0] \
-			   $paramData($compName)]} {
-		set dataChanged 1
-	    }
-	    # Make array form if data has changed
-	    if {$dataChanged} {
-		set runState(reloadParams) 1
-		set trans [GetFromProlog tk_get_info({},$node,types)]
-		ListToArray $node $trans $paramData($compName)
-# new bit for using it as an input tool: notify that we have values
-		set inputHelper($compName) winId
-	    }
+proc purge {list toGo} {
+    set done {}
+    foreach item $list {
+	if {[string compare $toGo $item]} {
+	    lappend done $item
+	}
     }
-    if {[info exists empties]} {
-	$winId.buttons.banner configure -text "Some values still missing!"
-    } else {
-	set paramData(/done/) 1
-# new bit for using it as an input tool: notify that we have values
-	CheckFixedParamState
+    return $done
+}
+
+proc DoneParams {winId} {
+    global widgetNames paramData
+
+    foreach compName [array names widgetNames] {
+	if {[string match normal [$widgetNames($compName).e cget -state]]} {
+	    AcceptData $winId $compName
+	}
+    }
+    if {![llength $paramData(needed)]} {
+	set paramData(done) 1
     }
 }
 
-proc ListToArray {tgt trans list} {
-#puts "Go! tgt $tgt trans $trans list $list"
-    global paramData
-    if {[llength $list]==1} {
-#puts "setting paramData($tgt) to $headNum"
-	set paramData($tgt) [EnumTypeToNumber $list [lindex $trans 0]]
-    } else {
-	foreach {indx val} $list {
-	    ListToArray $tgt,[EnumTypeToNumber $indx [lindex $trans 0]] \
-		[lrange $trans 1 end] $val
+proc AcceptData {winId compName} {
+    global paramDims paramData widgetNames runState inputHelper running_c
+
+    set node [GetIdFromCaptionPath $compName]
+    set paramData($compName) [$widgetNames($compName).e get]
+    
+    set dataChanged 0
+# for each constant value, check whether it has been changed, and if so,
+# flag a complete model rebuild. Do same if running_c lost due to crash
+# or model not yet started
+    if {![info exists running_c]} {
+	set dataChanged 1
+    } elseif {[catch {GetModelValue $node} oldVal]} {
+	set dataChanged 1
+    } elseif {[string compare [lindex $dataChanged 0] $paramData($compName)]} {
+	set dataChanged 1
+    }
+    # Make array form if data has changed
+    if {$dataChanged} {
+	set runState(reloadParams) 1
+	set trans [GetFromProlog tk_get_info({},$node,types)]
+
+	# Now replace each -1 in the dims with the id of the by-record
+	# submodel it represents
+	set recordDims $paramDims($compName)
+	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
+#puts "recordDims $recordDims recordDepth $recordDepth" 
+	    foreach recordId [array names paramData] {
+#puts "recordId is $recordId"
+		if {[string first $recordId $compName]==0 && \
+		    ![string equal $recordId $compName]} {
+		    set recordNode [GetIdFromCaptionPath $recordId]
+		    set outerDims [lrange [GetModelDims $recordNode] 0 end-1]
+#puts "node $recordNode outer dims $outerDims"
+		    if {[string match $outerDims \
+			     [lrange $recordDims 0 $recordDepth]]} {
+			set recordDims [lset recordDims $recordDepth \
+					    [list -1 $recordNode]]
+			break
+		    }
+		}
+	    }
+	}
+
+	set misses [ListToArray $node {} $trans $recordDims \
+			$paramData($compName)]
+# new bit for using it as an input tool: notify that we have values
+	if {[llength $misses]} {
+	    lappend paramData(needed) $compName
+	    ShowMessage "Setting $compName" warning "Problem with value at indices [lrange $misses 0 end-1]: [lindex $misses end]" ok
+	} else {
+	    $widgetNames($compName).l configure -fg black
+	    set paramData(needed) [purge $paramData(needed) $compName]
 	}
     }
 }
-	    
-proc EnumTypeToNumber {head trans} {
-    if {[string compare {} $trans]} {
-	return [lsearch $trans $head]
+
+# rsearch gives index of last value
+proc rsearch {list tgt} {
+    set all [lsearch -all $list $tgt]
+    if {[llength $all]} {
+	return [lindex $all end]
     } else {
-	set headNum $head
+	return -1
+    }
+}
+
+# need new version that 
+proc ListToArray {tgt subs trans dims list} {
+#puts "Go! tgt $tgt trans $trans list $list"
+# skip over any vm arrays, their indices will not appear
+# in calls for values, but keep the translation list in sync
+# ... string match stops cleanly at end of list
+    while {[string match MEMBERS [lindex $dims 0]]} {
+	set trans [lrange $trans 1 end]
+	set dims [lrange $dims 1 end]
+    }
+    set thisTrans [lindex $trans 0]
+    if {[llength $list]==1} {
+#puts "setting paramData($tgt) to $headNum"
+	if {[llength $dims]} {
+	    set userDims [join $dims { x }]
+	    return [list "scalar $list supplied instead of array of $userDims"]
+	} else {
+	    return [EnumTypeToNumber $tgt$subs $list $thisTrans]
+	}
+    } else {
+	if {![llength $dims]} {
+	    return [list "Array $list supplied instead of scalar"]
+	}
+	if {[llength $list]%2} {
+	    return [list [lindex $list end] "Missing value"]
+	}
+	array set sub $list
+#puts "dims remaining $dims"
+	if {[llength [lindex $dims 0]]==2 && [lindex [lindex $dims 0] 0]==-1} {
+# by-record submodel; check up to biggest
+
+# OK hows this for branez...use
+# the number of elements, because if there is an element larger than the
+# number of elements, one the same or smaller will be missing!
+	    set last [array size sub]
+#puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
+	    EnumTypeToNumber [lindex [lindex $dims 0] 1]$subs $last {}
+	} else {
+	    set last [lindex $dims 0]
+	}
+	for {set arrayPt 1} {$arrayPt <= $last} {incr arrayPt} {
+	    set indx [NumberToEnumType $arrayPt $thisTrans]
+	    if {![info exists sub($indx)]} {
+		return [list $indx "Missing value"]
+	    }
+	    set mis [ListToArray $tgt $subs,$arrayPt [lrange $trans 1 end] \
+			 [lrange $dims 1 end] $sub($indx)]
+	    if {[llength $mis]} {
+		return [concat $indx $mis]
+	    }
+	}
+    }
+    return {}
+}
+	    
+proc EnumTypeToNumber {tgt head trans} {
+    global paramData
+    if {[string compare {} $trans]} {
+	set poss [lsearch $trans $head]
+	if {$poss == -1} {
+	    return [list "$head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
+	}
+	set paramData($tgt) $poss
+    } else {
+	set paramData($tgt) $head
+#puts "just went set paramData($tgt) $head"
+    }
+    return {}
+}
+
+proc NumberToEnumType {idx trans} {
+    if {[llength $trans]} {
+	return [lindex $trans $idx]
+    } else {
+	return $idx
+    }
+}
+
+proc RevertData {winId compName} {
+    global paramData widgetNames
+    $widgetNames($compName).e delete 0 end
+    if {[info exists paramData($compName)]} {
+	$widgetNames($compName).e insert 0 $paramData($compName)
+    }
+}
+
+proc FillIfSmall {entry text} {
+    $entry delete 0 end
+    set verbosity [string length $text]
+    if {$verbosity>500} {
+	$entry insert 0 [EndsOnly $text 1 $verbosity 500]
+	$entry configure -state disabled
+    } else {
+	$entry insert 0 $text
     }
 }
 
 proc CancelParams {} {
     global paramData
-    set paramData(/done/) 0
+    set paramData(done) 0
 }
 
 proc SaveParams {} {
@@ -861,17 +996,6 @@ proc SaveParams {} {
         set pStr [open $metaFile w]
         
         foreach compName [array names widgetNames] {
-	set node [GetIdFromCaptionPath $compName]
-	if {[string match normal [$widgetNames($compName) cget -state]]} {
-	    set paramData($compName) [$widgetNames($compName) get 1.0 1.end]
-	    
-	    if {[info exists paramState($compName)]} {
-		if {[string compare $paramData($compName) \
-			 [LoadTableData $paramState($compName) 0]]} {
-		    unset paramState($compName)
-		}
-	    }
-	}
 	set SubbedComp [StripCrs $compName]
 	if {[info exists paramState($compName)]} {
 	    set relName [Relativize $metaFile \
@@ -929,7 +1053,8 @@ proc MergeParams {} {
                     set paramData($restoredComp) {}
                     ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
                 }
-                FillIfSmall $widgetNames($restoredComp) $paramData($restoredComp)
+                FillIfSmall $widgetNames($restoredComp).e \
+		    $paramData($restoredComp)
             }
         }
         close $pStr
@@ -995,7 +1120,6 @@ proc Relativize {current remote} {
     return [eval {file join} $base $tail]
 }
 
-
 proc GetFromTable {parent compName} {
     global paramState paramData widgetNames table_entry
     if {[info exists paramState($compName)]} {
@@ -1003,8 +1127,8 @@ proc GetFromTable {parent compName} {
     } else {
 	set table_entry(data) {}
     }
-    if {[string match normal [$widgetNames($compName) cget -state]]} {
-	set table_entry(values) [$widgetNames($compName) get 1.0 1.end]
+    if {[string match normal [$widgetNames($compName).e cget -state]]} {
+	set table_entry(values) [$widgetNames($compName).e get]
     } else {
 	set table_entry(values) $paramData($compName)
     }
@@ -1015,7 +1139,7 @@ proc GetFromTable {parent compName} {
 					   $table_entry(indices)]
 	}
         set paramData($compName) $table_entry(values)
-        FillIfSmall $widgetNames($compName) $paramData($compName)
+        FillIfSmall $widgetNames($compName).e $paramData($compName)
     }
 }
 

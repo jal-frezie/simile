@@ -562,8 +562,8 @@ proc MakeHelperMenu {} {
     $fm add command -label "Save" -command SaveView
     $fm add command -label "Clear" -command ClearView
     $fm add command -label "Close" -command KillHelpers
-#    $fm add command -label "Parameters..." \
-#            -command {FileParamDialogue 1 [focus]}
+    $fm add command -label "Parameters..." \
+            -command {FileParamDialogue 1 [focus]}
 
     set oldDir [pwd]
     cd ../IOTools
@@ -1192,7 +1192,7 @@ set this ::AME_model<>
 # var containing namespace id called 'this' for compatibility with c++
 
 proc StartRun {winId} {
-    global runState helperTable running_c window_info inputHelper
+    global runState helperTable running_c window_info
     # ShowMessage debug info enter(start_run) ok
     if {[info exists runState(currentTime)]} {
         if {$runState(execTime) != $runState(currentTime)} {
@@ -1221,9 +1221,9 @@ proc StartRun {winId} {
     set runState(currentTime) 0.0
     set runState(timeAtEval) 0.0
     set runState(currentWin) $winId ;# enables rebuild from run control
-#    if {![FileParamDialogue 0 $winId]} {
-#	return 0
-#    }
+    if {![FileParamDialogue 0 $winId]} {
+	return 0
+    }
     if {[PrefValue custom(helperManager) helperManager]} {
         #    ShowMessage debug info "About to make MRE [array name window_info *,parent]" ok
         raise [Makemre $winId]
@@ -1238,8 +1238,8 @@ proc StartRun {winId} {
         $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
     }
     set runState(reloadParams) 1
-    set runState(modelRunning) 1
-    EnableTools Fix
+    set runState(modelRunning) 2
+#    EnableTools Fix
     set runState(modelUpdated) 0
 
     # MakeSlidersForInputs is currently done after initializing the
@@ -1290,25 +1290,27 @@ proc StartRun {winId} {
     }
 # Now list all the inputs in the model, so we can avoid running it until
 # all have tools attached to provide their values
-    if {[info exists inputHelper]} {
-	array set oldInputHelper [array get inputHelper]
-	unset inputHelper
-    }
-    foreach node [GetObjectList] {
-	if {[string match TABLE [GetModelEval $node]]} {
-	    set name [GetCaptionPathFromId $node]
-	    if {[info exists oldInputHelper($name)]} {
-		set inputHelper($name) $oldInputHelper($name)
-		unset oldInputHelper($name)
-	    } else {
-		set inputHelper($name) {}
-	    }
-	}
-    }
-    foreach removedInput [array names oldInputHelper] {
-	TellHelperItsGone $oldInputHelper($removedInput) $removedInput
-    }
-    CheckFixedParamState
+#    if {[info exists inputHelper]} {
+#	array set oldInputHelper [array get inputHelper]
+#	unset inputHelper
+#    }
+#    foreach node [GetObjectList] {
+#	if {[string match TABLE [GetModelEval $node]]} {
+#	    set name [GetCaptionPathFromId $node]
+#	    if {[info exists oldInputHelper($name)]} {
+#		set inputHelper($name) $oldInputHelper($name)
+#		unset oldInputHelper($name)
+#	    } else {
+#		set inputHelper($name) {}
+#	    }
+#	}
+#    }
+#    foreach removedInput [array names oldInputHelper] {
+#	TellHelperItsGone $oldInputHelper($removedInput) $removedInput
+#    }
+#    CheckFixedParamState
+    set widget [$runState(helperId).rcf getframe]
+    $widget.topbuttons.reset invoke
 }
 
 proc TellHelperItsGone {helperWin captionPath} {

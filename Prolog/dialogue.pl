@@ -255,10 +255,10 @@ update_equation(Function, IndxCount, InterInputs, TypeBase,
 		UnitError = [];
 	    ((InterInputs = [];
 	      use_units_in(Function, 'No')),
-		(promote_arg(ComboUnits, Units, _);
-		    sicstus_format_to_chars("Units ~w are inappropriate for a value of type ~w", [Units, ComboUnits], UnitMatchError));
+		CheckLevel = 1;
+	    CheckLevel = 2),
 		/* Allow numerical entries to have any physical units */
-	    check_unit(ComboUnits, Units, 2, UnitMatchError)), !,
+	    check_unit(ComboUnits, Units, CheckLevel, UnitMatchError),
 		/* Result can be promoted/converted to given units -- ok */
 		NewUnits = Units,
 		append(UnitMatchError, UnitFormError, UnitError))),
