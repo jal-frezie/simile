@@ -30,7 +30,7 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, kill_window/1, exit_AME/0,
 	tk_equationlisting_start/0,tk_equationlisting_addsubmodel/2,
-	tk_equationlisting_addvariable/7]).
+	tk_equationlisting_addvariable/10]).
 
 sicstus_use_module([library(lists), state, image, ame_gen, output]).
 
@@ -531,7 +531,21 @@ tk_equationlisting_addsubmodel(Isub,Submodel):-
 		br(write(Isub)),
 		br(write(Submodel))], _).
 
-tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,Where,Comments) :-
+tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,Where, Description, Comments, InFlows, OutFlows) :-
+/*
+	safe_tcl_eval(['tk_messageBox -message {tk_equationlisting_addvariable ',
+		br(write(Isub)),
+		br(write(Ivar)),
+		br(write(VarType)),
+		br(write(VarLabel)),
+		br(write(Expression)),
+		br(write(Where)),
+		br(write(Description)),
+		br(write(Comments)),
+		br(write(InFlows)),
+		br(write(OutFlows)),'}'], _),  % jmm
+	safe_tcl_eval(['update idletasks'],_),  % jmm
+*/
 	safe_tcl_eval(['equationlisting_addvariable', 
 		br(write(Isub)),
 		br(write(Ivar)),
@@ -539,11 +553,13 @@ tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,Where,Comme
 		br(write(VarLabel)),
 		br(write(Expression)),
 		br(write(Where)),
-		br(write(Comments))], _),
+		br(write(Description)),
+		br(write(Comments)),
+		br(write(InFlows)),
+		br(write(OutFlows))], _),  % jmm
 	safe_tcl_eval(['update idletasks'], _).
 
 
 % ############################################ End Bob's changes
-
 
 
