@@ -225,16 +225,21 @@ menu_handle(Win, file, CompOrBuild) :-
 	    Vers = ''),
 	Win shows_model Model,
 	((is_toplevel(Model);
-	    get_av_pair(Model, 1, separate, 1)), !,
+	    get_av_pair(Model, 0, separate, 1)), !,
 	name(Ident, IdentStr),
 	get_default_export_name(Model, IdentStr, DefN),
 	get_program_file(DefN, Tgt),
 	start_progress_dialogue,
 	use_temp_dir(Temp),
-	(\+ rebuild_code(c, Model), !;
+	find_all_comps(Base, Model),
+	(Base = root,
+	    CompDir = Temp;
+	abs_path_name(Base, root, Path),
+	    append_atoms([Temp, '/', Path], CompDir)),
+	(\+ rebuild_code(c, Model, CompDir), !;
 	(get_av_pair(Model, 1, c_new, Serial), !; Serial = ''),
-	abs_path_name(Model, root, Path),
-	    append_atoms([Temp, '/', Path, '/model', Vers, Ident], Top),
+	    caption_for(Model, Capt),
+	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
 	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)),
 	finish_progress_dialogue;
 	do_dialogue("Error exporting code", error, "This submodel does not have its own code.", ok, _)).
@@ -245,7 +250,8 @@ menu_handle(Win, file, RunCmd) :-
 	start_progress_dialogue,
 	/* Compile the thing into whatever, load it */
 	scrub_run(0),
-	(\+ rebuild_code(Lang, Node), !; /* not much point going for run */
+	use_temp_dir(Dir),
+	(\+ rebuild_code(Lang, Node, Dir), !; /* no much point going for run */
 	on_exception(_Whoops,
 		    (Lang = c,
 			output:prepare_c_execution(Win);
@@ -638,8 +644,7 @@ flip_innards(Node_name, Action) :-
 		change_shape(Thing, Whatever, New_wherever),
 		fail).
 
-rebuild_code(Lang, Node) :-
-	use_temp_dir(ProgFileDir),
+rebuild_code(Lang, Node, ProgFileDir) :-
 	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true), !;
 	    Whoops = compilation_failed),
 	(Whoops = yes;
