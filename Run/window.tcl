@@ -664,8 +664,8 @@ proc ResizeBackgnd {wc l t r b} {
 
 proc AcceleratorState {winName menu item state} {
     global accelerator
-    #puts "AcceleratorState {winName menu item state} $winName $menu $item $state [info exists accelerator($menu,$item)]"
     if {[info exists accelerator($menu,$item)]} {
+    #puts "AcceleratorState {winName menu item state cmd} $winName $menu $item $state $accelerator($menu,$item)"
         if {[string match normal $state]} {
             bind $winName $accelerator($menu,$item) \
 		[list if "\[DoingSelection $winName\]" \

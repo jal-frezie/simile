@@ -1851,7 +1851,7 @@ embrace(Wid, Obj) :-
 	(Obj = 0, !;
 	give_focus(Obj) /* ,
 	highlight(Obj, 0) */).
-	
+
 set_selection_abilities(Comp) :-
 	(contains(Comp, Lit), \+ Lit = Comp,
 	    get_highlit_obj(N, Lit),
@@ -1869,12 +1869,12 @@ set_selection_abilities(Comp) :-
 	(output:my_file_exists(CopyFile), !,
 	    Pastable = 1;
 	Pastable = 0),
-	update_ability(Model, none, edit, 'Cut', Cuttable),
-	update_ability(Model, none, edit, 'Copy', Cuttable),
-	update_ability(Model, none, edit, 'Paste', Pastable),
-	update_ability(Model, none, edit, 'Delete', Dellable),
-	update_ability(Model, none, edit, '{Reroute links}', Dellable),
-	update_ability(Model, none, edit, '{Align to grid}', Dellable).
+	update_ability(Comp, none, edit, 'Cut', Cuttable),
+	update_ability(Comp, none, edit, 'Copy', Cuttable),
+	update_ability(Comp, none, edit, 'Paste', Pastable),
+	update_ability(Comp, none, edit, 'Delete', Dellable),
+	update_ability(Comp, none, edit, '{Reroute links}', Dellable),
+	update_ability(Comp, none, edit, '{Align to grid}', Dellable).
 	
 abandon :-
 	finish_old_edit(none).
