@@ -106,6 +106,9 @@ proc create_equation {parent boxtitle indices} {
     ### End formula bar section
     
     set t [toplevel .equation -bd 4 -class Equation]
+    update ;# let window draw so it can be moved off screen
+    wm geometry .equation +0+[winfo vrootheight .equation]
+    update ;# let it move off screen so text updates do not distract user
     wm title $t $boxtitle
     # wm transient $t $parent
     set equation(top) $t
@@ -416,7 +419,7 @@ proc interact_equation {} {
 # up, let it draw (so it knows how big it wants to be), then remove and replace
 # it, because some of its BWidgets are buggy
     if {!$equation(done)} {
-	update
+	update ;# let all those BWidgets decide how big they want to be
 	wm withdraw .equation
 	wm deiconify .equation
     }

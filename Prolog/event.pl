@@ -701,6 +701,12 @@ drag_to(Xpt, Ypt, _Comp) :-
 	remove_old_rubberband,
 	draw_rubberband(square)). */
 
+:- dynamic(moved_something/0).
+
+move_something :-
+	moved_something, !;
+	assert(moved_something).
+
 drag_to(Xpt, Ypt, Comp) :-
 	get_mode(add),
 	get_adding_object(Ltype),
@@ -720,10 +726,10 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	get_start_coords(OldX, OldY),
 	Xoffset is Xpt - OldX,
 	Yoffset is Ypt - OldY,
-	((get_phase(moving),
-		find_current(Wid),
-		 (Wid shows_model Moving_obj, !;
-		 adjust_bowtie(Moving_obj, [Xpt, Ypt]), !,
+	find_current(Wid),
+	\+ Wid shows_model Moving_obj,
+	(get_phase(moving),
+		 (adjust_bowtie(Moving_obj, [Xpt, Ypt]), !,
 		     wiggle_bowtie(Moving_obj),
 		     make_links_follow(Moving_obj) /* ,
 		     highlight(Moving_obj, 2) */;
@@ -750,11 +756,11 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     move_display(Moving_obj, [Xoffset, Yoffset]));  
 	  get_phase(moving_border(Edge)), !,
 	  update_object_boundary(Moving_obj, Edge, Xoffset, Yoffset),
-	  redisplay_border(Moving_obj) /* ,
-	  highlight(Moving_obj, 2) */);
+	  redisplay_border(Moving_obj);
 	get_phase(moving_text),
 		update_text_position(Moving_obj, Xoffset, Yoffset),
 		move_text(Moving_obj, [Xoffset, Yoffset])),
+	move_something,
 	set_start_coords(Xpt, Ypt).
 
 drag_to(Xpt, Ypt, Moving_obj) :-
@@ -806,7 +812,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		tweak_endpoint(ExtraObj, start, ExtraEndPt),
 		fail;
 	    tweak_endpoint(Root, finish, RootEndPt));
-	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)).
+	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)),
+	move_something.
 
 drag_to(Xpt, Ypt, Target) :-
 	get_phase(dragging),
@@ -1287,7 +1294,8 @@ unclick_obj :-
 	    adjust_toplevel_windows(Submodel, NewSize);
 	true),
 	initialize_phase,
-	finish_move(Submodel).
+	(\+ retract(moved_something), !;
+	finish_move(Submodel)).
 
 unclick_obj :-
 	get_mode(copy),
