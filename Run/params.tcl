@@ -370,7 +370,12 @@ proc ListToArray {topNode tgt subs trans dims list} {
     if {[string match TIME [lindex $dims 0]]} {
 # If time, we can have as many or as few vals as we want, and they can be
 # any positive number. If there are values other than NOW, do an init step
+
+# not quite working, note that later dimensions for a time point are treated
+# just like other dimensions, i.e., all must be set
 	set redoStep 1
+# Next call removes old time series data from the system
+	EnumTypeToNumber [InputVarFor $topNode $tgt] $tgt {} {}
 	foreach arrayPt [array names sub] {
 	    if {[string equal NOW $arrayPt]} {
 		if {[llength $subs]} {
@@ -428,7 +433,13 @@ proc ListToArray {topNode tgt subs trans dims list} {
 	    
 proc EnumTypeToNumber {varData tgt head trans} {
     global $varData
-    if {[string compare {} $trans]} {
+
+    if {![llength $head]} {
+# empty head, signal to clear out old values
+	foreach oldEntry [array names $varData $tgt*] {
+	    unset ${varData}($oldEntry)
+	}
+    } elseif {[string compare {} $trans]} {
 	set poss [lsearch $trans [lindex $head 0]]
 	if {$poss == -1} {
 	    if {[string equal false [lindex $trans 0]]} {
