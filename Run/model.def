@@ -5,8 +5,6 @@ do_updatemodel
 do_advancemodel
 do_evalmodel
 do_setstep
-do_exitmodel
-burrow_to
 get_count
 GetNodeCount
 GetNodeData
