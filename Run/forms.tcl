@@ -282,7 +282,7 @@ proc create_equation {parent boxtitle indices} {
     label $docF.cmtlabel -text Comments:
     pack $docF.cmtlabel -side top
     pack [set frm [frame $docF.cmtFrame]] -fill both -expand true
-    text $frm.text -height 3 -width 40 \
+    text $frm.text -height 3 -width 40 -wrap word \
             -yscrollcommand "$frm.scrly set"
     scrollbar $frm.scrly -orient vert -command "$frm.text yview"
     pack $frm.text -side left -fill both -expand true
