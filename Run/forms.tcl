@@ -1111,37 +1111,41 @@ proc DoRegDialog {} {
 
 proc ContextSensitiveHelp {context page} {
     global tcl_platform helphtml
-    if {[string match windows $tcl_platform(platform)]} {
-        package require winhelp
-        winhelp $context ../Help/simile.chm $page
+    if { [string match windows $tcl_platform(platform)]} {
+            package require winhelp
+            winhelp $context ../Help/simile.chm $page
     } else {
-        package require Tkhtml
-        set oldDir [pwd]
-        cd ../Help
-        toplevel .hlpWindow
-        wm title .hlpWindow {Simile help file}
-        wm protocol .hlpWindow WM_DELETE_WINDOW {set helphtml(done) 0}
-        html .hlpWindow.main -base file:[pwd]/$page \
-                -hyperlinkcommand GoHyper -resolvercommand ResolveHyper \
-                -isvisitedcommand CheckHyper -unvisitedcolor blue \
-                -yscrollcommand [list .hlpWindow.yscroll set]
-        scrollbar .hlpWindow.yscroll -command [list .hlpWindow.main yview]
-        pack .hlpWindow.yscroll -side right -fill y -expand true
-        pack .hlpWindow.main -fill both -expand true
-        set stream [open $page r]
-        while {![eof $stream]} {
-            gets $stream line
-            .hlpWindow.main parse $line
-        }
-        close $stream
-        tkwait visibility .hlpWindow
-        grab .hlpWindow
-        tkwait variable helphtml(done)
-        grab release .hlpWindow
-        destroy .hlpWindow
-        cd $oldDir
+            set url [pwd]/../Help/$page
+            expr {
+                [info exists env(BROWSER)] ||
+                [findExecutable mozilla        env(BROWSER)] ||
+                [findExecutable netscape       env(BROWSER)] ||
+                [findExecutable iexplorer      env(BROWSER)] ||
+                [findExecutable $env(NETSCAPE) env(BROWSER)] ||
+                [findExecutable lynx           env(BROWSER)]
+            }
+            # lynx can also output formatted text to a variable
+            # with the -dump option, as a last resort:
+            # set formatted_text [ exec lynx -dump $url ] - PSE
+            if {[catch {exec $env(BROWSER) -remote $url}]} {
+                # perhaps browser doesn't understand -remote flag
+                if {[catch {exec $env(BROWSER) $url &} emsg]} {
+                    error "Error displaying $url in browser\n$emsg"
+                    # Another possibility is to just pop a window up
+                    # with the URL to visit in it. - DKF
+                }
+           }        
     }
 }
+
+proc findExecutable {progname varname} {
+     upvar 1 $varname result
+     set progs [auto_execok $progname]
+     if {[llength $progs]} {
+         set result [lindex $progs 0]
+     }
+     return [llength $progs]
+ }
 
 proc CheckHyper {ywhat} {
     return 0
