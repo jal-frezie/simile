@@ -774,16 +774,16 @@ make_intermediates(
 	    (combine_subexp_results(DestPath, PartResultList, FunctionContext,
 				SourceContext, Setups, SubArgs, ResultList), !;
 	    raise_exception(cannot_combine_argument_dimensions(Source))),
-		(ValRef =.. [Op, _, _],
-		 member(Op, [*, /]),
+		(ValRef =.. [Lop, _, _],
+		 member(Lop, [*, /]),
 		    select(One, UnitList, [Other]),
 		    \+ promote_arg(One, 1, _),
 		    (promote_arg(Other, 1, _),
-			(UnitList == [Other, One], Op = (/),
+			(UnitList == [Other, One], Lop = (/),
 			    Units = 1/One;
 			 Units = One),
 			SourceRef = ValRef;
-		    TattyUnits =.. [Op | UnitList],
+		    TattyUnits =.. [Lop | UnitList],
 			sort_units(TattyUnits, Units, ConvFactor),
 			SourceRef = ConvFactor*ValRef), !;
 		ValRef = Arg1++Arg2,
@@ -810,7 +810,8 @@ make_intermediates(
 		    UnitList = [Units];
 		 (var(Lop),
 		     SourceRef = ValRef;
-		  fn_or_op(Lop, MxOp, RUnits, Arg_template),
+		  nonvar(Lop),
+		     fn_or_op(Lop, MxOp, RUnits, Arg_template),
 		     SourceRef =.. [MxOp | ResultList]),
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units);
