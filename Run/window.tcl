@@ -1054,10 +1054,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     if [string match "Darwin" $tcl_platform(os)] {
       set accKey Cmd
       set accSym Command
-      set fm [menu ${winid}top.apple -tearoff 0 -postcommand "FillReopen $winid"]
+      set fm [menu ${winid}top.apple -tearoff 0]
       $fm delete 0 7
       $fm add command -label "About Simile..." -command "ShowAbout $winid"
-      ${winid}top add cascade -label "Apple" -menu $fm
+      ${winid}top add cascade -menu $fm
     } else {
       set accKey Ctrl
       set accSym Control
@@ -1323,15 +1323,15 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 	    -menu ${winid}top.helpers
         $fm entryconfigure "Inspect elements" -state normal
     }
-    
-    set fm [menu ${winid}top.help -tearoff 0]
-    ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
-    $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
-            -accelerator "F1"
-    AddAccelerator $winid help Contents "<F1>"
-#    $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
-    $fm add command -label About... -command [list ShowAbout $winid]
-    
+    if ![string match Darwin $tcl_platform(os)] {
+        set fm [menu ${winid}top.help -tearoff 0]
+        ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
+        $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
+                -accelerator "F1"
+        AddAccelerator $winid help Contents "<F1>"
+#        $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
+        $fm add command -label About... -command [list ShowAbout $winid]
+    }
     set nb [::ttk::frame $winid.toolSlot.navbar -border 2 -class Toolbar]
     pack [Separator $nb.afterSeparator -orient horizontal] -fill x -side bottom
     if {[PrefValue custom(bigButtons) bigButtons]} {
