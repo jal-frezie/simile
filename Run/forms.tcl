@@ -802,25 +802,26 @@ proc DoRegDialog {dtId} {
                 -anchor w -side left
     }
     pack $links.m1 -anchor w
-    frame $links.m2
-    if {[string match Windows $tcl_platform(platform)]} {
-        pack [label $links.m2.left -text " *  Show " -font {-family helvetica -size 8}] \
-                -anchor w -side left
-        pack [set www2 [label $links.m2.centre -text "Example models" \
-                -font {-underline true -family helvetica -size 8} -fg blue \
-                -cursor hand2]] -anchor w -side left
-        pack [label $links.m2.right -text " help pages" -font {-family helvetica -size 8}] \
-                -anchor w -side left
-    } else {
-        pack [label $links.m2.left -text " *  Show " ] \
-                -anchor w -side left
-        pack [set www2 [label $links.m2.centre -text "Example models" \
-                -fg blue \
-                -cursor hand2]] -anchor w -side left
-        pack [label $links.m2.right -text " help pages" ] \
-                -anchor w -side left
-    }
-    pack $links.m2 -anchor w
+# Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
+#    frame $links.m2
+#    if {[string match Windows $tcl_platform(platform)]} {
+#        pack [label $links.m2.left -text " *  Show " -font {-family helvetica -size 8}] \
+#                -anchor w -side left
+#        pack [set www2 [label $links.m2.centre -text "Example models" \
+#                -font {-underline true -family helvetica -size 8} -fg blue \
+#                -cursor hand2]] -anchor w -side left
+#        pack [label $links.m2.right -text " help pages" -font {-family helvetica -size 8}] \
+#                -anchor w -side left
+#    } else {
+#        pack [label $links.m2.left -text " *  Show " ] \
+#                -anchor w -side left
+#        pack [set www2 [label $links.m2.centre -text "Example models" \
+#                -fg blue \
+#                -cursor hand2]] -anchor w -side left
+#        pack [label $links.m2.right -text " help pages" ] \
+#                -anchor w -side left
+#    }
+#    pack $links.m2 -anchor w
     pack $links -expand on -fill x
     pack .register.links -expand on -fill x -padx 4 -pady 2
     
@@ -833,8 +834,8 @@ proc DoRegDialog {dtId} {
     
     grab .register
     bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
-    bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
-    #   .register.email
+# Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
+#    bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
     
     # now put it in the middle of the desktop
     scan [ wm geometry $dtId] {%dx%d+%d+%d} a s d f
