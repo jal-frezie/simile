@@ -23,7 +23,7 @@ proc equationGraph {parent} {
     if {![info exists graph(pts)]} {
 # set default values for new graph
 # Changed default size to 50x50 to let it fit into MRE
-	GraphEntry .graph 0 100 50 100 0 50 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
+	GraphEntry .graph 0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200
     } else {
 	GraphEntry .graph $graph(lowx) \
 		$graph(highx) $graph(width) \
@@ -122,10 +122,6 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     bind $grid <Button-1> "GClick %W %x %y"
     bind $grid <B1-Motion> "GDrag %W %x %y"
     bind $grid <Configure> "AttackShape %W %w %h"
-    pack $grid -fill both -expand true
-    grid $gph.gridf -column 1 -row 0 -sticky nesw  -padx 2 -pady 2
-    frame $gph.dummy
-    grid $gph.dummy -column 0 -row 1 -padx 2 -pady 2 -sticky nesw 
 
     frame $gph.xentry 
     entry $gph.xentry.leftentry -relief sunken -textvar graph(lowx) -width 8
@@ -139,11 +135,6 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     entry $gph.xentry.rightentry -relief sunken -textvar graph(highx) -width 8
     pack $gph.xentry.rightentry -side left -padx 2
     grid $gph.xentry -column 1 -row 1 -sticky we -padx 2 -pady 2
-    pack $gph -expand on -fill both -side left
-    pack $t.gph -side left -expand on -fill both -padx 2 -pady 2
-    
-    grid rowconfigure $gph 0 -weight 1
-    grid columnconfigure $gph 1 -weight 1
 
     frame $t.right
     
@@ -174,7 +165,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $current.x -pady 4
     pack $current -pady 8 -padx 4 -fill x
     pack $t.right.current -pady 2 -padx 2 -fill x
-    pack $t.right -fill both -expand true
+    pack $t.right -side right -fill y
     
     TitleFrame $t.right.options -text "Options: "
     set right [$t.right.options getframe]
@@ -201,6 +192,16 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     pack $right -fill both
     pack $t.right.options -fill both -padx 2 -pady 2 -expand true
     
+    pack $gph -expand on -fill both -side left
+    pack $t.gph -side left -expand on -fill both -padx 2 -pady 2
+    grid rowconfigure $gph 0 -weight 1
+    grid columnconfigure $gph 1 -weight 1
+
+    grid $gph.gridf -column 1 -row 0 -sticky nesw  -padx 2 -pady 2
+    frame $gph.dummy
+    grid $gph.dummy -column 0 -row 1 -padx 2 -pady 2 -sticky nesw 
+    pack $grid -fill both -expand true
+
     RedrawGrid $grid $graph(width) $graph(height) $graph(increment)
     
     set niceFormat 0

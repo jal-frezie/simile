@@ -12,10 +12,9 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	DestRef = elt(DestPathForm, Target, _-Dims),
 	copy_term(DestPathForm, DestPath),
 	
-	(replace_subexps(Expr, inters, insert_paths,
+	replace_subexps(Expr, inters, insert_paths,
 		sub(DestRef, Swaps, ExpInters), top_down, _, FullExpr),
-	    length(ExpInters, _L), !;
-	raise_exception(preprocessor_failure(Target))),
+	length(ExpInters, _L), /* close end of list */
 
 	on_exception(Problem, make_intermediates(FullExpr, Target, DestPath,
 		BackSwap, ExpInters, [], Step, Used, _, AllInters,
@@ -103,7 +102,9 @@ expand_library(DestRef, Var, NewVar) :-
 	macro_expansion(Macro),
 	    Macro = (Var --> NewVar);
 	Var = prev(N),
-	    (N < 1,
+	    ((\+ integer(N); N < 0),
+		raise_exception(bad_index_number(N, prev));
+	    N < 1,
 		NewVar = DestRef;
 	    M is N-1,
 		NewVar = last(prev(M))), !;	  

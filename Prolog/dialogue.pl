@@ -404,20 +404,20 @@ process. */
 test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
 	list_of(_, IndxCount, DestInds),
 	append(InterInputs, ExpInters, AllInputs),
-	replace_subexps(Equation, dialogue, expand_params, AllInputs,
-			top_down, ParamSubs, FullExpr),
-	length(ExpInters, _), !, /* close list end */
-	(member(input_link(_,_, Param, _, PDims), ExpInters),
-	    \+ Param = '/dest/',
-	    var(PDims), !,
-	    sicstus_format_to_chars("Reference to undefined parameter ~w", 
-				    [Param], TestError);
+	
 	on_exception(ParseException,
-		     make_intermediates(FullExpr, '/dest/',
-					[sm(_,_,_, fm_loop(DestInds))], _, [],
-					[], 1, _, Type, Inters,
-					part_result(Context, _,_,_)),
-		     decode_error(ParseException, ParseError)),
+	    (replace_subexps(Equation, dialogue, expand_params,
+			     AllInputs, top_down, ParamSubs, FullExpr),
+		length(ExpInters, _), !, /* close list end */
+	        (member(input_link(_,_, Param, _, PDims), ExpInters),
+		    \+ Param = '/dest/',
+		    var(PDims), !,
+		    raise_exception(undefined_parameter(Param));
+		make_intermediates(FullExpr, '/dest/',
+				   [sm(_,_,_, fm_loop(DestInds))], _, [],
+				   [], 1, _, Type, Inters,
+				   part_result(Context, _,_,_)))),
+	    decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
 	    get_dims_from_loops(Context, XDims, _),
 	    Dest = instance(internal,_, use_inter('/dest/'),_, Type-XDims),
@@ -427,7 +427,7 @@ test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
 	    /* Hack alert. The term representing the dest context has indices
 	    (so index(n) will work) but no loops, so we don't need to add it
 	    to the relative source contexts */
-	TestError = ParseError)).
+	TestError = ParseError).
 
 match_param_dims([], _, []).
 match_param_dims([input_link(_,_, Name, LType-LDims, _) | MoreLinks],
@@ -484,11 +484,12 @@ decode_error(ParseError, TestError) :-
 	ParseError =.. [Type, Cause | More],
 	replace_subexps(Cause, dialogue, collapse_params, _, top_down,
 			_, SimpleError),
-	(Type = needs_array_or_list, !,
-		SimpleError =.. [Functor, SoleArg],
-		sicstus_format_to_chars("The function \"~a\" performs an operation over a list or array of values represented by its argument. The argument \"~w\" however represents only one value.", 
-		[Functor, SoleArg], TestError);
-	    Type = avoid_var_size_inter, !,
+	(Type = undefined_parameter, !,
+	    sicstus_format_to_chars("This expression contains the term ~w, which appears to be used as a parameter, but it does not appear as a parameter name.", [SimpleError], TestError);
+	Type = needs_array_or_list, !,
+	    SimpleError =.. [Functor, SoleArg],
+	    sicstus_format_to_chars("The function \"~a\" performs an operation over a list or array of values represented by its argument. The argument \"~w\" however represents only one value.", [Functor, SoleArg], TestError);
+	Type = avoid_var_size_inter, !,
 	    More = [TotalDims],
 	    sicstus_format_to_chars("This formula can only run by making an intermediate variable for the subexpression \"~w\".\n This subexpression has dimensions ~w, where \"var\" represents a list. Since this has a changing membership, it cannot be represented by a variable -- you need to do some more work inside the variable-membership submodel it comes from.", [SimpleError, TotalDims], TestError);
 	Type = needs_channel_parameter, !,

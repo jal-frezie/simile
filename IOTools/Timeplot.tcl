@@ -203,8 +203,8 @@ namespace eval ::origplot72514 {
         pack $t.right.xscroll -side bottom -fill x
         pack $t.right.yscroll -side right -fill y
         $t.right.yscroll set 0.0 1.0
+        pack $t.right.xscale -side bottom -fill x
         pack $can -fill both -expand true
-        pack $t.right.xscale -fill x
         
         pack $t.right -side left -fill both -expand true
         bind $t <Configure> [namespace code "WhoopCanvas %W %x %y %w %h $isReal"]
