@@ -17,42 +17,58 @@ locate_table(element(Name, _,_, Content), Table) :-
 	    locate_table(Nested, Table).
 
 convert_table([CElt | RElts], Model) :-
-	CElt = element(table-column, Attrs, _,_),
-	member(number-columns-repeated=NColStr, Attrs),
-	name(NCols, NColStr),
-	length(RElts, NRows),
-	NWidth is 45*NCols+75,
-	NHeight is 90*NRows+30,
-	NewExtent = [0, 0, NWidth, NHeight],
+	CElt = element(table-column, _,_,_), !,
+	    convert_table(RElts, Model);
+	NewExtent = [0,0,1000,1000],
 	change_shape(Model, internal_extent, NewExtent),
-	make_rows(RElts, 0, Model, Links),
+	make_rows([CElt | RElts], 0, Model, Links),
 	/* use setof to avoid making duplicates */
 	all(ss_import, link_node, [unify(Model), build(Links)]),
 	adjust_toplevel_windows(Model, NewExtent).
 
 make_rows([], _,_, []).
 
-make_rows([element(table-row, _,_, Cells) | RElts], N, Model, AllLinks) :-
+make_rows([element(table-row, Attrs, A3, Cells) | RElts], N, Model,
+	  AllLinks) :-
 	M is N+1,
 	make_cells(Cells, 0, M, Model, Links),
-	make_rows(RElts, M, Model, MoreLinks),
+	(select(number-rows-repeated=RStr, Attrs, XAttrs),
+	    name(R, RStr),
+	    R>1, !,
+	    NR is R-1,
+	    name(NR, NRStr),
+	    ToDo = [element(table-row, [number-rows-repeated=NRStr | XAttrs],
+			    A3, Cells) | RElts];
+	    ToDo = RElts),
+	make_rows(ToDo, M, Model, MoreLinks),
 	append(Links, MoreLinks, AllLinks).
 
 make_cells([], _,_,_, []).
 
-make_cells([element(table-cell, Attrs,_,_) | More], N1, M2, Model, AllLinks) :-
+make_cells([element(table-cell, Attrs, A3, A4) | RElts], N1, M2, Model,
+	   AllLinks) :-
 	M1 is N1+1,
-	make_cells(More, M1, M2, Model, MoreLinks),
-	(Attrs = [], !,
-	    AllLinks = MoreLinks;
-	X is 45*M1-15,
+	(select(number-columns-repeated=RStr, Attrs, XAttrs), !,
+	    name(R, RStr),
+	    (R>2, !,
+		NR is R-1,
+		name(NR, NRStr),
+		ToDo = [element(table-cell, [number-columns-repeated=NRStr
+					| XAttrs], A3, A4) | RElts];
+	    ToDo = [element(table-cell, XAttrs, A3, A4) | RElts]);
+	XAttrs = Attrs,
+	    ToDo = RElts),
+	make_cells(ToDo, M1, M2, Model, MoreLinks),
+	(member(value=_V, XAttrs), !,
+	    X is 45*M1-15,
 	    Y is 45*M2-15,
 	    event:add_at_point(X, Y, variable, Model, NComp),
 	    convert_to_alpha(M1, ColID),
 	    append_atoms(ColID, M2, CName),
 	    add_parameter(NComp, 0, name, CName),
 	    add_equation(NComp, Attrs, Links),
-	    AllLinks = [Links | MoreLinks]).
+	    AllLinks = [Links | MoreLinks];
+	AllLinks = MoreLinks).
 
 convert_to_alpha(N, Id) :-
 	(N<27, !,

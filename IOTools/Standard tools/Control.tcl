@@ -171,13 +171,15 @@ namespace eval runcontrol33857 {
                 [string match reset $action]} {
             set widget [$winId.rcf getframe]
 
-	    if {[string match stop $action]} { ;# model still waiting to stop
-		if {[string equal yes [ShowMessage "Abort request" question "The model has not finished the last time step. You can abort it but the current values will be lost. Abort it now?" yesno]]} {
-		    TryToKill $node
-		    $widget.bf.flag itemconfigure 1 -fill white
-		}
-		return
-	    }
+# following should never happen as run control is now in same interpreter
+# as the model
+#	    if {[string match stop $action]} { ;# model still waiting to stop
+#		if {[string equal yes [ShowMessage "Abort request" question "The model has not finished the last time step. You can abort it but the current values will be lost. Abort it now?" yesno]]} {
+#		    TryToKill $node
+#		    $widget.bf.flag itemconfigure 1 -fill white
+#		}
+#		return
+#	    }
 	    switch -regexp [do_in_editor CheckUpToDate $node $action] {
 		yes|cancel {
 		    return
@@ -231,10 +233,17 @@ namespace eval runcontrol33857 {
         
 	set node $myModel($winId)        
         set phases [GetPhaseCount $node]
-        set sendvars($node,newData) \
-                "$runState($node,timeUnit) $runState($node,displayInt) \
-                $runState($node,update$phases) $runState($node,currentTime) \
-                $runState($node,execTime)"
+	set sendvars($node,newData) {}
+	foreach entered [list displayInt update$phases currentTime execTime] {
+# for some reason tcl thinks an empty string is a number
+	    if {![llength $runState($node,$entered)] || \
+		    ![string is double $runState($node,$entered)]} {
+		ShowMessage "Bad run parameter" warning "Non-numeric value \"$runState($node,$entered)\" entered for run parameter $entered -- replacing with 1" ok
+		set runState($node,$entered) 1
+	    }
+	    lappend sendvars($node,newData) $runState($node,$entered)
+	}
+
         # This loop sets the array of dts in the model
         set unitLength [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set tweaked 0
@@ -315,16 +324,19 @@ namespace eval runcontrol33857 {
         while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
             # Collect any changes that have been made by the user
             if {[info exists sendvars($node,newData)]} {
-                scan $sendvars($node,newData) "%s %s %s %s %s" \
-                        unit display update current exec
-                unset sendvars($node,newData)
-                set scaled_current [expr $current*$unitLength]
-                set timeToEnd [expr $update>=0?$exec:-$exec]
-                if {abs($current + $exec - $sendvars($node,expected_end)) > abs($update/2.0) || ![info exists sendvars($node,run_length)]} {
-                    set sendvars($node,run_length) $exec
-                    set sendvars($node,expected_end) \
-                            [expr $current + $timeToEnd]
-                }
+#puts data:$sendvars($node,newData):data
+		foreach {idx param} \
+		    {0 display 1 update 2 current 3 exec} {
+			set $param [lindex $sendvars($node,newData) $idx]
+		    }
+		unset sendvars($node,newData)
+		set scaled_current [expr $current*$unitLength]
+		set timeToEnd [expr $update>=0?$exec:-$exec]
+		if {abs($current + $exec - $sendvars($node,expected_end)) > abs($update/2.0) || ![info exists sendvars($node,run_length)]} {
+		    set sendvars($node,run_length) $exec
+		    set sendvars($node,expected_end) \
+			[expr $current + $timeToEnd]
+		}
             }
             switch $sendvars($node,currentMode) {
                 reset {
