@@ -78,7 +78,7 @@ if $onUnix {
 	
 	# Method using command line calls to MSVC 4.0 or later -- works well
     } else {
-	set TOOLS32 [file dir [file dir [auto_execok cl.exe]]]
+	set TOOLS32 [file dir [file dir [lindex [auto_execok cl.exe] 0]]]
 	eval {exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
 		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
 	    {-I. -I$TOOLS32/include -I$TCL/include ./ame_cmx.cpp}

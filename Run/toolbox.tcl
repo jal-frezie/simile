@@ -206,7 +206,7 @@ proc ControlDraw {prologVersion} {
     if {[info exists compiler]} {
 	if {[llength [set execLoc [auto_execok $compiler]]]} {
 	    # compiler tools are in path, hope libs and includes are nearby
-	    set env(MSVCDIR) [file dirname [file dirname $execLoc]]
+	    set env(MSVCDIR) [file dirname [file dirname [lindex $execLoc 0]]]
 	} else {
 	    foreach possDir $possDirs {
 		if {[llength [auto_execok $possDir/bin/$compiler]]} {
@@ -214,7 +214,7 @@ proc ControlDraw {prologVersion} {
 		}
 	    }
 	    if {[llength $possDir]} {
-		set env(MSVCDIR) $possdir
+		set env(MSVCDIR) [lindex $possdir 0]
 	    } else {
 		ShowMessage "C++ compiler setup problem" warning \
 		    "c++ compiler preference set to [PrefValue \

@@ -7,8 +7,6 @@ them to be executed etc by Tcl commands. */
 #include <tcl.h>
 #include <stdio.h>
 #include <string.h>
-#include <signal.h>
-#include <setjmp.h>
 #include <stdlib.h> /* for rand procedure used by tcl models */
 
 #define	GETDIMS		0
@@ -162,7 +160,7 @@ typedef void* createmodel_type(void);
 typedef void setstep_type(double, int);
 typedef void updatemodel_type(void*, double, int);
 typedef void advancemodel_type(void*, double, int);
-typedef void evalmodel_type(void*, double, int, BOOLEAN);
+typedef int evalmodel_type(void*, double, int, BOOLEAN);
 typedef void* getpointer_type(void*, int**, int**);
 typedef void exitmodel_type(void*);
 
@@ -284,8 +282,8 @@ public:
     (*advancemodel)(id, start, phase);
   }
 
-  void eval(void* id, double start, int phase, BOOLEAN exo) {
-    (*evalmodel)(id, start, phase, exo);
+  int eval(void* id, double start, int phase, BOOLEAN exo) {
+    return (*evalmodel)(id, start, phase, exo);
   }
 
   void setstep(double start, int phase) {
@@ -366,7 +364,9 @@ public:
       return NULL;
     }
   }
-};
+};
+
+
 
 listNodeModel* nodeModelList = NULL;
 
@@ -749,9 +749,10 @@ void advance_submodel(char* nodeId, void* instanceId,
   nodeModelList->nodeModel(nodeId)->advance(instanceId, start_time, phase);
 }
 
-void eval_submodel(char* nodeId, void* instanceId,
+int eval_submodel(char* nodeId, void* instanceId,
 		       double start_time, int phase, BOOLEAN exo) {
-  nodeModelList->nodeModel(nodeId)->eval(instanceId, start_time, phase, exo);
+  return nodeModelList->nodeModel(nodeId)->eval(instanceId, start_time, 
+						phase, exo);
 }
 
 /* Here is code that has been added by hand to make these procedures available
@@ -937,8 +938,6 @@ extern "C" int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
    return serviceError;
 }
 
-jmp_buf env;
-
 extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
@@ -973,27 +972,18 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	return error;
    }
 
-   error = setjmp(env);
-   if (error) {
-     sprintf(spare, "The model program performed an illegal operation, generating signal %d -- try running it in Tcl for more information.", error);
+   error = modelType->eval(modelHandle, starttime, phase, FALSE);
+   if (error < 0) {
+     sprintf(spare, "The model program performed an illegal operation, generating signal %d -- try running it in Tcl for more information.", -error);
+     Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
+     return TCL_ERROR;
+   } else if (error > 0) {
+     sprintf(spare, "User-defined interruption code %d", error);
      Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
      return TCL_ERROR;
    } else {
-     serviceError = TCL_OK;
-     try {
-       modelType->eval(modelHandle, starttime, phase, FALSE);
-     }
-     catch (int userCode) {
-       serviceError = TCL_ERROR;
-       sprintf(spare, "User-defined interruption code %d", userCode);
-       Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-     }
-     return serviceError;
+     return TCL_OK;
    }
-}
-
-static void exit_sighandler(int x){
-  longjmp(env, x);
 }
 
 extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1568,7 +1558,7 @@ extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
   }
   if (strcmp("enterprise", Tcl_GetVar(interp, "h76rt4g7", 0))) {
     return TCL_OK;
-  }
+  }
   if (Tcl_VarEval(interp, "regexp -all {node\(node} $hvfe587gw938",
 		  NULL) != TCL_OK) {
     return TCL_ERROR;
@@ -1627,7 +1617,6 @@ extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
     crash(interp, "program");
   }
 #endif
-  signal(SIGSEGV,exit_sighandler);
   Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     
@@ -1733,7 +1722,3 @@ int Ame_dll_Init(Tcl_Interp *interp) {
 	    simileVersion, FORUNIX);
     return Tcl_PkgProvide(interp, "Ame_dll", pkgName);
 }
-
-
-
-

@@ -16,7 +16,7 @@ a class pointer before calling them. */
 extern "C" __declspec( dllexport ) double get_version(void);
 extern "C" __declspec( dllexport ) void do_updatemodel(void*, double, int);
 extern "C" __declspec( dllexport ) void do_advancemodel(void*, double, int);
-extern "C" __declspec( dllexport ) void do_evalmodel(void*, double, int, 
+extern "C" __declspec( dllexport ) int do_evalmodel(void*, double, int, 
      BOOLEAN);
 extern "C" __declspec( dllexport ) void do_setstep(double, int);
 extern "C" __declspec( dllexport ) void do_exitmodel(void*);
@@ -24,7 +24,7 @@ extern "C" __declspec( dllexport ) void do_exitmodel(void*);
 extern "C" double get_version(void);
 extern "C" void do_updatemodel(void*, double, int);
 extern "C" void do_advancemodel(void*, double, int);
-extern "C" void do_evalmodel(void*, double, int, BOOLEAN);
+extern "C" int do_evalmodel(void*, double, int, BOOLEAN);
 extern "C" void do_setstep(double, int);
 extern "C" void do_exitmodel(void*);
 #endif
@@ -43,11 +43,30 @@ void do_advancemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->advancemodel(time, phase);
 }
 
-void do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
-  if (exo) {
-    ((AME_model *)handle)->ext_evalmodel(time, phase);
+jmp_buf env;
+
+static void exit_sighandler(int x){
+  longjmp(env, x);
+}
+
+int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
+  int error;
+
+  error = setjmp(env);
+  if (error) {
+    return -error;
   } else {
-    ((AME_model *)handle)->int_evalmodel(time, phase);
+    try {
+      if (exo) {
+	((AME_model *)handle)->ext_evalmodel(time, phase);
+      } else {
+	((AME_model *)handle)->int_evalmodel(time, phase);
+      }
+    }
+    catch (int error) {
+      return error;
+    }
+    return 0;
   }
 }
 
@@ -140,6 +159,9 @@ void* advance_ptr_ptr,
 void* get_remote_value_ptr, int* phases, 
 node_data_line** data_ptr, graph_data_type** graph_ptr,
 int* arc_count, char*** arc_id_list) {
+  /* Dont want a crash while running model to terminate Simile, so... */
+  signal(SIGSEGV,exit_sighandler);
+
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
 

@@ -2,6 +2,8 @@
 #include	<string.h>
 #include	<stdlib.h>
 #include	<stdarg.h>
+#include        <signal.h>
+#include        <setjmp.h>
 #include	<math.h>
 
 #include <dllcalls.h>
@@ -51,11 +53,19 @@ void advance_submodel(char* id, void* inst, double time, int step) {
 }
 
 void int_eval_submodel(char* id, void* inst, double time, int step) {
-  (*eval_submodel_ref)(id, inst, time, step, 0);
+  int error;
+  error = (*eval_submodel_ref)(id, inst, time, step, 0);
+  if (error) {
+    throw error;
+  }
 }
 
 void ext_eval_submodel(char* id, void* inst, double time, int step) {
-  (*eval_submodel_ref)(id, inst, time, step, 1);
+  int error;
+  error = (*eval_submodel_ref)(id, inst, time, step, 1);
+  if (error) {
+    throw error;
+  }
 }
 
 void search_from(void* top, int section, void* found) {
