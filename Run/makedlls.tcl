@@ -52,7 +52,7 @@ if $onUnix {
     set TARGET ${STUBS}/libame_dll$MAJ.$MIN[info sharedlibextension]
     if {[string match Darwin $tcl_platform(os)]} {
         exec g++ -c -O -fPIC $defns -I. ./shank.cpp
-        exec g++ -dynamiclib -o $SHANK shank.o -ldl
+        exec g++ -dynamiclib -o $SHANK shank.o -L$TGTLIB -ldl
         eval {exec g++ -c -O -fPIC} $defns {-I. -I$MACOSX_HEADERS ./ame_cmx.cpp}
         exec g++ -dynamiclib -o $TARGET ame_cmx.o -F$MACOSX_FRAMEWORK -framework Tcl -L$TGTLIB -l5d -ldl 
     } else {
