@@ -1,0 +1,7 @@
+# box
+$c create rect -15 -15 15 15 -outline {} -tag unscaled
+$c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
+	-tag "unscaled size_on_this realwidth(1.0)"
+
+$c create line -10 0 -5 -5 0 0 -smooth true -tag "unscaled realwidth(2.5)"
+$c create line 10 0 5 -5 0 0 -smooth true -tag "unscaled realwidth(2.5)"
