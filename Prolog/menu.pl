@@ -1111,6 +1111,7 @@ remove_model(Win, Parent) :-
 	    add_parameter(Parent, 0, multiplication_spec, ''),
 	    add_parameter(Parent, 0, comment, ''),
 	    add_parameter(Parent, 0, fill_colour, ''),
+	    add_parameter(Parent, 0, fill_image, ''),
 	    redraw_window(Win);
 	start_progress_dialogue(Win),
 	reassure_user("Creating new inputs for values from deleted submodel"),
