@@ -1394,8 +1394,10 @@ unique_name_for_new(Parent, Type, Name) :-
 	Part has_attribute name of Name,
 	     Part draws_inside Parent), !.
 
-get_disag_params(Submodel, [Nature, Fat, Count, Step, Comment, Fix, Hide,
-			    Separate]) :-
+get_disag_params(Submodel, [Colour, Nature, Fat, Count, Step, Comment, Fix,
+			    Hide, Separate]) :-
+	(Submodel has_class_refinement fill_colour of Colour, !;
+	    Colour = white),
 	(is_population(Submodel), !,
 		Nature = population;
 	Nature = generated),

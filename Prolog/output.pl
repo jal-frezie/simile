@@ -14,7 +14,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_file_name/4, enable_text_editing_in/1, disable_text_editing_in/1, 
 	compartment/7, channel/7, function/7, variable/7, cloud/7, 
 	submodel/7, bowtie/6, 
-	flow/5, influence/5, ghost_link/5, relation/5, text/7, 
+	flow/5, influence/5, ghost_link/5, relation/5, text/7, get_top_dir/2,
 	shift_text/3, shift_obj/3, zap_route/3, zap_bowtie/3,
 	tk_add_window/7, tk_delete_window/1, 
 	change_title_to/3, current_edit/2, force_edit/2,
@@ -430,6 +430,11 @@ check_executable(Lang, Dir) :-
 attach_tree(Load, Top, Point) :-
 	windowize(Point, WPoint),
 	safe_tcl_eval(['AttachTree', br(Load), br(Top), br(WPoint)], _).
+
+get_top_dir(Name, TopDir) :-
+	windowize(Name, WName),
+	safe_tcl_eval(['TopDirFor', br(WName)], TopDirStr),
+	name(TopDir, TopDirStr).
 
 trim_tree(Top, Point) :-
 	windowize(Point, WPoint),

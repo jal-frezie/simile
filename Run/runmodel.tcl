@@ -81,12 +81,15 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 
     $c configure -scrollregion "$wl $wt $wr $wb" \
 	-width [expr $wr-$wl] -height [expr $wb-$wt]
-
 # set initial scaling factors
     set window_info($c,width) [expr $wr - $wl]
     set window_info($c,height) [expr $wb - $wt]
     set window_info($c,scale) $scale
 # last will be overwritten if drawing from Prolog
+
+# Now just in case we are loading this from a .cnv file and Prolog doesnt
+# know how big the canvas is...
+    ResizeDesktop $c $wl $wt $wr $wb
 
     if {[string match image [$c type /base/]]} {
 	$c coords /base/ $wl $wt
@@ -224,7 +227,7 @@ proc DoZoom { winId factor toProlog} {
 # out right when zooming prior to Postscript export.
 
 proc ZoomImage {winId which factor fontor} {
-    global window_info
+    global window_info looks
 
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
@@ -252,11 +255,24 @@ proc ZoomImage {winId which factor fontor} {
 					-width [AdjustWidth $winId $object $factor]
 		    AdjustArrow $winId $object $factor
 		} image {
-		    set newWidth [expr round($factor*[base$winId cget -width])]
-		    set newHt [expr round($factor*[base$winId cget -height])]
+		    set tgtImage [$winId itemcget $object -image]
+		    set newWidth [expr round($factor*[$tgtImage cget -width])]
+		    set newHt [expr round($factor*[$tgtImage cget -height])]
 		    scan [$winId coords $object] {%f %f} newX newY
-		    ResizeBackgnd $winId $newX $newY [expr $newX+$newWidth] \
-			[expr $newY+$newHt]
+
+		    if {[string match */base/* [$winId gettags $object]]} {
+			ResizeBackgnd $winId $newX $newY \
+			    [expr $newX+$newWidth] [expr $newY+$newHt]
+		    } else {
+			set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
+			set intRad [expr int($looks(submodel,objectsize)* \
+						 $shortSide/400)]
+			$tgtImage config -width $newWidth -height $newHt
+			regexp {source\(([^\)]+)\)} [$winId gettags $object] \
+			    all sourceImage
+			FillSmImage $sourceImage $tgtImage $newWidth $newHt \
+			    $intRad
+		    }
 		} default {
 		    $winId itemconfigure $object \
 					-width [AdjustWidth $winId $object $factor]
@@ -1420,7 +1436,9 @@ proc brainwash {ethnic} {
 # subdirectory of 'sim_bits' in the model directory.
 
 proc TopDirFor {model} {
-    return [file dirname $model]/sim_bits/[file rootname [file tail $model]]
+    set nDir [file dirname $model]/sim_bits/[file rootname [file tail $model]]
+    file mkdir -force $nDir
+    return $nDir
 }
 
 proc AttachTree {Load Top Point} {

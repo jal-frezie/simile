@@ -123,7 +123,8 @@ stick_model_in(Parent, Name) :-
 	(is_toplevel(Parent),
 	/* only try graphics file for toplevel windows because if loading into
 	    submodel the Prolog node ids will no longer match it */
-	make_auto_name(Name, ".cnv", GraphFileName),
+	get_top_dir(Name, TopDir),
+	append_atoms(TopDir, '/model.cnv', GraphFileName),
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 	on_exception(_, open(GraphFileName, read, Test), fail),
 	    files:read_line_to_string(Test, Line1),
@@ -295,14 +296,13 @@ menu_handle(Win, edit, properties) :-
 	set_properties(Win, Model).
 
 set_properties(Wid, Model) :-
-	get_window_colour(Model, Colour),
-	get_disag_params(Model, [Nature, Fatness | P_list]),
-	do_disag_dialog(Wid, Model, [Colour, Nature, Fatness | P_list],
-			New_P_list),
+	get_disag_params(Model, P_list),
+	do_disag_dialog(Wid, Model, P_list, New_P_list),
 	(New_P_list = [], !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewNature, NewFatness, NewCount, NewStep,
 		      NewComment, NewFix, NewHide, NewSeparate],
-	    P_list = [Count, Step, _Comment, Fix, Hide, Separate],
+	    P_list = [Colour, Nature, Fatness, Count, Step, _Comment, Fix,
+		      Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -603,7 +603,8 @@ do_save(Model, New_name) :-
 	    update_captions(Model),
 	    mark_model_danger(Model, safe)),
 	
-	make_auto_name(Name, ".cnv", CanvasName),
+	get_top_dir(Name, TopDir),
+	append_atoms(TopDir, '/model.cnv', CanvasName),
 	(tk_get_pref(saveExtras, 'Canvas file'),
 	is_toplevel(Model),
 	    Win shows_model Model,

@@ -190,6 +190,7 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
 
 proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
     global looks
+#puts "drawing submodel with fill $fillColour"
     set width [GetLineSize $w submodel $fatness]
 #    previously had min width of 1 to ensure stack visibility
 #    set width [expr $width0>1?$width0:1]
@@ -221,12 +222,15 @@ proc PutRoundedRect { w l t r b stack fatness fillColour colourScheme tagSet} {
 	
     if {![catch {image type $fillColour}]} {
 	set poly [$w create image $ml $mt -anchor nw \
-		      -tag "$tagSet /background/"]
+		      -tag "$tagSet /background/ source($fillColour)"]
 	set mw [expr int($mr-$ml)]
 	set mh [expr int($mb-$mt)]
-	image create photo sm$poly$w -width $mw -height $mh
-	$w itemconfig $poly -image sm$poly$w 
-	sm$poly$w copy $fillColour -to 0 0 $mw $mh
+	set smbg sm$poly$w
+	image create photo $smbg -width $mw -height $mh
+	$w itemconfig $poly -image $smbg
+	set intRad [expr int($cornerRad)]
+
+	FillSmImage $fillColour $smbg $mw $mh $intRad
     } else {
 	if {[string match clear $fillColour]} {
 	    set fillColour {}
@@ -348,6 +352,72 @@ proc PutFatArrow { w ptz fatness colourScheme tagSet} {
 	    "$tagSet startblob"
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
+
+# OK now watch carefully. Here we copy a rounded-rect area of an image
+# into the submodel background. First copy the image to a temporary one
+# the size of the submodel rectangle, so it can be tiled/stretched as
+# necessary...
+
+proc FillSmImage {fillColour smbg mw mh intRad} {
+    set srcWidth [$fillColour cget -width]
+    set srcHeight [$fillColour cget -height]
+    
+# Now copy the middle bit over
+    MyTile $smbg 0 $intRad $mw [expr $mh-$intRad] $fillColour \
+	$srcWidth $srcHeight
+
+# And now the shorter end bits, line by line
+    for {set line 0} {$line < $intRad} {incr line} {
+	set side [expr int(sqrt($intRad*$intRad - $line*$line))]
+	set fl [expr $intRad-$side]
+	set fr [expr $mw-$fl]
+	set ft [expr $intRad-$line]
+	set fb [expr $ft+1]
+	MyTile $smbg $fl $ft $fr $fb $fillColour $srcWidth $srcHeight
+	set ft [expr $mh-$ft]
+	set fb [expr $ft+1]
+	MyTile $smbg $fl $ft $fr $fb $fillColour $srcWidth $srcHeight
+    }
+}
+
+proc CopyQuad {dest l t r b src w h} {
+    set sl [expr int(fmod($l, $w))]
+    set st [expr int(fmod($t, $h))]
+    $dest copy $src -from $sl $st [expr $sl+$w] [expr $st+$h] -to $l $t $r $b
+}
+
+proc MyTile {dest l t r b src w h} {
+    for {set qt [expr ($t/$h)*$h]} {$qt < $b} {incr qt $h} {
+	if {$qt<$t} {
+	    set dt $t
+	    set st [expr $t-$qt]
+	} else {
+	    set dt $qt
+	    set st 0
+	}
+	if {$qt+$h>$b} {
+	    set sb [expr $b-$qt]
+	} else {
+	    set sb $h
+	}
+	for {set ql [expr ($l/$w)*$w]} {$ql < $r} {incr ql $w} {
+	    if {$ql<$l} {
+		set dl $l
+		set sl [expr $l-$ql]
+	    } else {
+		set dl $ql
+		set sl 0
+	    }
+	    if {$ql+$w>$r} {
+		set sr [expr $r-$ql]
+	    } else {
+		set sr $w
+	    }
+	    $dest copy $src -from $sl $st $sr $sb -to $dl $dt
+	}
+    }
+}
+
 
 proc MoveText {w id ptz} {
 	set mptz [ScaleList $w $ptz]
@@ -511,6 +581,7 @@ proc ResetColours { w type density colourScheme name } {
 # adapted from Welch p265
 proc WriteDesc {canvas canvasFile date args} {
     global window_info
+    global imageSources
 
     set stream [open $canvasFile w]
     set title [wm title [winfo parent $canvas]]
@@ -521,6 +592,16 @@ proc WriteDesc {canvas canvasFile date args} {
 # background colour parameter now ignored because the background is
 # a rectangle and as such is listed in the .cnv file...not...
     foreach object [$canvas find all] {
+# Insert special command to re-create any photos used
+	if {[string match image [$canvas type $object]]} {
+	    regexp {source\(([^\)]+)\)} [$canvas gettags $object] all \
+		sourceImage
+	    set localImage [$canvas itemcget $object -image]
+	    puts $stream [list MakeImage $sourceImage \
+			      $imageSources($sourceImage) $localImage \
+			      [$localImage cget -width] \
+			      [$localImage cget -height]]
+	}
 # Do not write base objs they get re-created
 	if {[string match */base/* [$canvas gettags $object]]} {
 	} else {
@@ -545,6 +626,17 @@ proc WriteDesc {canvas canvasFile date args} {
 	}
     }
     close $stream
+}
+
+proc MakeImage {base file inst w h} {
+    global imageSources
+    if {![info exists imageSources($base)]} {
+	image create photo $base
+	$base read $file -shrink
+	set imageSources($base) $file
+    }
+    image create photo $inst -width $w -height $h
+    $inst copy $base -to 0 0 $w $h
 }
 
 # this needs because the canvas is called $c in the file

@@ -810,14 +810,18 @@ proc UpdateColour {f} {
     }
 }
 
+set imageSources(uid) 0
+
 proc ChooseImage {} {
     global disaggregate
+    global imageSources
 
-    if {[catch {image type $disaggregate(colour)}]} {
-	set newImage [image create photo]
-    } else {
-	set newImage $disaggregate(colour)
+    set newImage backgnd$imageSources(uid)
+    while {![catch {image type $newImage}]} {
+	incr imageSources(uid)
+	set newImage backgnd$imageSources(uid)
     }
+    image create photo $newImage
 
     set choosing 1
     while {$choosing} {
@@ -827,12 +831,27 @@ proc ChooseImage {} {
 		ShowMessage {Problem loading file} error $readFlop ok
 	    } else {
 		set disaggregate(colour) $newImage
+		set imageSources($newImage) $new
+		PutSize $newImage
 		set choosing 0
 	    }
 	} else {
 	    set choosing 0
 	}
     }
+}
+
+proc PutSize {img} {
+    set width 0
+    while {![catch {$img get $width 0}]} {
+	incr width
+    }
+    set height 0
+    while {![catch {$img get 0 $height}]} {
+	incr height
+    }
+# set them so I can read later
+    $img config -width $width -height $height
 }
 
 proc SetHighlights {t} {
