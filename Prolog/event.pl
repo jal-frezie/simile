@@ -1667,8 +1667,8 @@ unclick_obj :-
 	initialize_phase.
 
 tie_ends(New_obj, Start_thing, Terminator) :-
-	link_ends(New_obj, Start_thing, Terminator, Top_arc),
-	reuse_route(New_obj, Top_arc).
+	link_ends(New_obj, Start_thing, Terminator, LastArc),
+	reuse_route(New_obj, LastArc).
 
 	/* 
 	(find_all_comps(TopBox, Top_arc),
@@ -1677,14 +1677,14 @@ tie_ends(New_obj, Start_thing, Terminator) :-
 	event:thread_link(Top_arc)).
 
 Clever bit: reuse the route of the rubberband link for the newly added one */
-reuse_route(New_obj, Top_arc) :-
+reuse_route(New_obj, LastArc) :-
         find_current(Wid),
 	Wid shows_model Parent,
-	find_base(Top_arc, BowtieArc),
-        (m_class:equivalent_arcs(Top_arc, NewArc),
+	find_base(LastArc, BowtieArc),
+        ((NewArc = LastArc; m_class:sequence(NewArc, LastArc)),
 	    find_all_comps(Node, NewArc),
 	    get_incomplete([Node | ScreenRoute]),
-	    draw:translate_between(Parent, Node, Trans),
+	    translate_between(Parent, Node, _D, Trans),
 	    translate(ScreenRoute, Trans, Route),
 	    set_shape(NewArc, course, Route),
 	    update_bowtie(NewArc, Route),

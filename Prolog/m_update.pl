@@ -1067,7 +1067,7 @@ check_output(Type, Dir, Model, SourceCapt, Properties, InputSection,
 		Dest = Model,
 		caption_for(BorderSection, Properties))).	
 
-link_ends(New_obj, Start_thing, Terminator, Top_arc) :-
+link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
 	remove_border_nodes(New_obj, Terminator, Start_thing);
 	add_new_line_between(New_obj, Start_thing, Terminator, Top_arc),
 	get_action_point(Top_arc, Terminator, Last_new_arc),

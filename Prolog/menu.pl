@@ -770,7 +770,7 @@ reroute_sections(Rerouters) :-
 	(m_class:follows(Stop, End); m_class:Stop is_connector from _ to Fn),
 	get_host(Fn, End),
 	event:draw_line_to(Start, Type, End),
-	event:reuse_route(Type, TopArc),
+	event:reuse_route(Type, Stop),
 	reroute_sections(Remains).
 
 full_section(Rerouters, Type, [Start | Rest], Top, Remains) :-

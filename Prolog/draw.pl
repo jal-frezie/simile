@@ -82,7 +82,7 @@ find_relevant_windows(Comp, Window_id, Depth, Trans) :-
 	Window_id shows_model Top,
 	translate_between(Top, Parent, Depth, Trans).
 
-translate_between(Model, Model, [0, 0, 1, 1]) :- !.
+/*translate_between(Model, Model, [0, 0, 1, 1]) :- !.
 
 translate_between(Big, Small, Trans) :-
 	find_all_comps(Parent, Small),
@@ -93,7 +93,15 @@ translate_between(Small, Big, Trans) :-
 	find_all_comps(Parent, Small),
 	translate_between(Parent, Big, SubTrans),
 	subtract_from_translation(SubTrans, Small, Trans).
-	
+
+translate_between(Big, Small, Trans) :-
+	contains(Big, Small, Chain), !,
+	all(image, =, [build(Chain), add_to_translation(Trans, [0,0,1,1])]).
+					      
+translate_between(Small, Big, Trans) :-
+	contains(Big, Small, Chain), !,
+	all(image, =, [build(Chain), subtract_from_translation(Trans, [0,0,1,1])]).
+*/					      
 kill_tree(Wid, Comp) :-
 	kill_featured(Wid, Comp),
 	find_all_comps(Comp, Subcomp),
@@ -500,7 +508,7 @@ draw_links(Type, Top, Up_list, Down_list) :-
 	/* assume that there is always something to draw */
 	find_current(Wid),
 	Wid shows_model Backgnd,
-	translate_between(Backgnd, Top, Trans),
+	translate_between(Backgnd, Top, _D, Trans),
 /*	remove_old_incomplete, (done on drag now to avoid cluttering target */
 	untranslate(Route, Trans, Screen_route),
 	add_incomplete([Top | Screen_route]),
@@ -536,7 +544,7 @@ show_invisible_links(Links) :-
 	    length(Chain, Depth),
 	    draw_style_for(Link, Type),
 	    \+ draws_at(Wid, Type, Depth),
-	    translate_between(Backgnd, Daddy, Trans),
+	    translate_between(Backgnd, Daddy, _D, Trans),
 	    get_shape(Link, course, Route),
 	    untranslate(Route, Trans, ScreenRoute),
 	    add_incomplete([Daddy | ScreenRoute]),
