@@ -200,7 +200,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
 set runHow(launch) open
 
 # set this to interactive or script, for how to do the initialization
-set runHow(init) interactive
+set runHow(init) script
 
 # set this to send or pipe, for the way to pass data to the exec
 # process send must be async because a sync send will not allow
@@ -247,7 +247,7 @@ proc do_for_node {node args} {
         }
             if [string match Darwin $tcl_platform(os)] {
               set makeExec ../../MacOS/Simile
-              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
+#              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
             } else {
               set makeExec ../System/bin/wish$MAJ$sep$MIN
             }
@@ -280,7 +280,7 @@ proc do_for_node {node args} {
         tkwait variable runState($node,modelReady)
 #tk_messageBox -message "Go! mr is '$runState($node,modelReady)'"
             if [string match Darwin $tcl_platform(os)] {
-              catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
+#              catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
         #      carbon::processHICommand hide {}
             }
         set runState($node,queueSize) 0

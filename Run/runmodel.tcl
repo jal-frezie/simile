@@ -36,7 +36,9 @@ if [string match "Darwin" $tcl_platform(os)] {
 #
     rename exit wishExit
     proc exit {} {
+	global myNode
 #	do_in_editor tclAE::send -s misc actv
+	do_in_editor RaiseModelWindow $myNode
 	start_in_editor prolog tk_kill_everything([GetNodeFromFocus])
     }
     bind all <Command-q> exit
@@ -1265,5 +1267,5 @@ proc ModelDirectory {} {
     return [file dirname [lindex $custom(hotlist) 0]]
 }
 if {[catch {eval KickOff $argv} err]} {
-    ShowMessage {Simile obliterfried!} error $err ok
+    ShowMessage {Simile obliterfried!} error $errorInfo ok
 }
