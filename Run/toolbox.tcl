@@ -139,6 +139,8 @@ proc do_for_node {node args} {
 	$newInterp alias PrefValue PrefValue
 	$newInterp alias GetTransTable GetTransTable
 	$newInterp alias CheckUpToDate CheckUpToDate $node
+	$newInterp alias RunSettingsAllowSave \
+	    prolog tk_run_settings_tweaked($node)
 	$newInterp eval source ../Run/runmodel.tcl
 	set runStatus($node,interp) $newInterp
     }
@@ -179,16 +181,20 @@ proc CheckUpToDate {node action} {
     if {$runStatus($node,updated) == 1} {
 	set updateChoice [ShowMessage "Model out of date" warning \
 			      "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
-	if {[string equal yes $updateChoice]} {
-	    set runStatus($node,running) 0
-	    # grits teeth
-	    foreach win [array names window_info *,top_node] {
-		if {[string equal $node $window_info($win)]} {
-		    set winId [string range $win 0 end-9]
-		    if {$window_info($winId,is_top_level)} {
-			return [Rerun $winId [string match start $action]]
+	switch $updateChoice {
+	    yes {
+		set runStatus($node,running) 0
+		# grits teeth
+		foreach win [array names window_info *,top_node] {
+		    if {[string equal $node $window_info($win)]} {
+			set winId [string range $win 0 end-9]
+			if {$window_info($winId,is_top_level)} {
+			    return [Rerun $winId [string match start $action]]
+			}
 		    }
 		}
+	    } no {
+		set runStatus($node,updated) 0 ;# do not ask again
 	    }
 	}
 	return $updateChoice
@@ -438,9 +444,9 @@ proc AlterModel {topNode} {
 
 package require mime
 
-proc SaveFile {tree tgt} {
+proc SaveFile {topNode tree tgt} {
 #ShowMessage debug info "SaveFile $tree $tgt" ok
-    global mimeSquirter runState errorInfo model_id
+    global mimeSquirter errorInfo
     global SimileProjectDo
     
     if {[info exists SimileProjectDo] && $SimileProjectDo} {
@@ -452,24 +458,8 @@ proc SaveFile {tree tgt} {
     if {[catch {
         set parts [GetParts $tree $tree]
  #ShowMessage debug info "SaveFile GetParts $tree" ok
-        if {[info exists runState(currentTime)]} {
-            if {$runState(execTime) != $runState(currentTime)} {
-                set runState(execDur) \
-                        [expr $runState(execTime)+$runState(currentTime)]
-            } else {
-                set runState(execDur) $runState(execTime)
-            }
-            set runParams [list execTime $runState(execDur) \
-                    timeUnit $runState(timeUnit) \
-                    displayInt $runState(displayInt) intMethod \
-                    [set runState(oldIntMethod) $runState(intMethod)]]
-            if {[info exists model_id]} {
-                set runState(phases) [GetPhaseCount]
-                for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
-                    lappend params $runState(update$phase)
-                }
-                lappend runParams phaseList $params
-            }
+	set runParams [do_for_node $topNode GetRunParams]
+	if {[llength $runParams]} {
             lappend parts [mime::initialize -canonical text/plain \
                     -header [list "Content-Description" "Run Status"] \
                     -string $runParams]
@@ -489,8 +479,8 @@ proc SaveFile {tree tgt} {
     }
 }
 
-proc LoadFile {tree tgt} {
-    global mimeSquirter runState errorInfo model_id
+proc LoadFile {topNode tree tgt} {
+    global mimeSquirter errorInfo
     global loadingProject mimedir
     #ShowMessage debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
@@ -505,33 +495,7 @@ proc LoadFile {tree tgt} {
                 switch [lindex $Desc 0] {
                     "Run Status" {
                         set runParams [mime::getbody $bit]
-                        set runState(currentTime) 0.0
-                        #ShowMessage debug info set ok
-                        if {[string match execTime [lindex $runParams 0]]} {
-                            array set runState $runParams
-                            set runState(phases) 0
-                            if {[info exists runState(phaseList)]} {
-                                foreach phase $runState(phaseList) {
-                                    incr runState(phases)
-                                    set runState(update$runState(phases)) $phase
-                                    set runState(prev_update$runState(phases)) \
-                                            $phase
-                                }
-                            }
-                            set runState(oldIntMethod) $runState(intMethod)
-                        } else {
-                            set runState(execTime) [lindex $runParams 0]
-                            set runState(displayInt) [lindex $runParams 1]
-                            for {set others 2} {$others < [llength $runParams]} \
-                                    {incr others} {
-                                        set runState(update[expr $others-1]) \
-                                                [lindex $runParams $others]
-                                set runState(prev_update[expr $others-1]) \
-                                        [lindex $runParams $others]
-                            }
-                            set runState(phases) [expr $others-2]
-                        }
-                        #puts [array get runState]
+			do_for_node $topNode SetRunParams $runParams
                     } "Authentication Code" {
                         set AuthCode [string trimright [mime::getbody $bit]]
                     } default {
@@ -684,10 +648,7 @@ proc byebye {winId} {
 }
 
 proc exit_simile {} {
-    global custom model_id instance_id
-    if {[info exists instance_id]} {
-        c_exitmodel $model_id $instance_id
-    }
+    global custom
     
     set cacheStream [NetOpen $custom(prefDir)/recent w]
     foreach oldFile $custom(hotlist) {

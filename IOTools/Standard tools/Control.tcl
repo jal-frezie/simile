@@ -174,6 +174,7 @@ namespace eval runcontrol33857 {
         if {[string match stop $sendvars(currentMode)] || \
                     [string match exit $sendvars(currentMode)] && \
                     [string match reset $action]} {
+            set widget [$winId.rcf getframe]
 	    switch -regexp [CheckUpToDate $action] {
 		yes|cancel {
 		    return
@@ -182,7 +183,10 @@ namespace eval runcontrol33857 {
 			set runState(modelRunning) 3
 		    }
 		} fail {
+		    set sendvars(currentMode) exit
 		    set runState(modelRunning) 0
+		    $widget.bf.flag itemconfigure 1 -fill red
+		    return
 		}
 	    }
             if {$runState(modelRunning) == 1} {
@@ -201,7 +205,6 @@ s for which no source has yet been defined" ok
             
             SendData $winId
             set sendvars(currentMode) $action
-            set widget [$winId.rcf getframe]
             $widget.topbuttons.start configure -image $pauseImg
 	    $widget.topbuttons.start configure -command \
 		"[namespace current]::SetMode $winId stop"
@@ -232,11 +235,11 @@ s for which no source has yet been defined" ok
         set unitLength [expr [SecondsInA $runState(timeUnit)]/[SecondsInA day]]
         set tweaked 0
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
-            set tick [expr $runState(update$setPhase)*$unitLength]
+            set tick $runState(update$setPhase)
             #puts "Checking $tick is $runState(prev_update$setPhase) and $runState(currentTime) is $runState(timeAtEval)"
             if {$runState(prev_update$setPhase) != $tick} {
                 set runState(prev_update$setPhase) $tick
-                SetStep $tick $setPhase
+                SetStep [expr $tick*$unitLength] $setPhase
                 set redoPhase $setPhase
                 set tweaked 1
                 #	    ShowMessage debug info "Twiddling $redoPhase" ok
@@ -250,7 +253,7 @@ s for which no source has yet been defined" ok
         }
 	# allow model to be saved if run settings are changed
         if {$tweaked || ![string match $runState(oldIntMethod) $runState(intMethod)]} {
-            prolog tk_run_settings_tweaked
+            RunSettingsAllowSave
         }
         SetStep 0 0
         SetState $winId $sendvars(newData)

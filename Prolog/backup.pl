@@ -296,7 +296,6 @@ enact_changes(Model, Slot) :-
 
 clear_autosave(Model, Name) :-
 	(is_toplevel(Model),
-	    output:tk_alter_model(Model),
 	    scrub_autosave(Model), /* remove previous file */
 	    make_auto_name(Name, ".smx", AutoName),
 	    assert(autosave_file_is(Model, AutoName)),

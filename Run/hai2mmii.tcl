@@ -107,8 +107,8 @@ proc do_model {what args} {
 	    "divide by zero" {
 		set problem "there was a math error: $whoopsie"
 	    } default {
-		BuildProblem none none $errorInfo system
-		return 0
+		# could not get cause of error, raise again as general problem
+		error $errorInfo
 	    }
 	}
 
@@ -655,8 +655,7 @@ proc GetPhaseCount {} {
 
 proc WarnNoProgram {} {
     global errorInfo
-    error "This operation cannot be done as there is no model program loaded. \
-($errorInfo)"
+    error "This operation cannot be done as there is no model program loaded."
 }
 
 proc WarnNoData {} {

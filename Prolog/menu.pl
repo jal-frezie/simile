@@ -114,7 +114,7 @@ stick_model_in(Parent, Name, Mode) :-
 	append_atoms([LocalDir, '/', InsertDir], TargetDir),
         start_progress_dialogue,
         reassure_user("Decoding MIME-format saved file"),
-	output:load_file(TargetDir, Name, CheckedStr),
+	output:load_file(Parent, TargetDir, Name, CheckedStr),
 	name(Checked, CheckedStr),
 	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
@@ -1206,7 +1206,7 @@ do_save(Model, New_name) :-
 
 	/* Now build the multi-part MIME format save file */
         reassure_user("Creating MIME-format saved file"),
-	output:save_file(SaveDir, Name, Oops),
+	output:save_file(Model, SaveDir, Name, Oops),
 
         (   Oops = [];
 	    \+ Oops = [],

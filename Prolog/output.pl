@@ -473,15 +473,15 @@ my_delete_file(DelFile) :-
 	windowize(DelFile, WDelFile),
 	safe_tcl_eval([file, delete, '-force', br(WDelFile)], _).
 
-save_file(From, To, Oops) :-
+save_file(Node, From, To, Oops) :-
 	windowize(From, WFrom),
 	windowize(To, WTo),
-	safe_tcl_eval(['SaveFile', br(WFrom), br(WTo)], Oops).
+	safe_tcl_eval(['SaveFile', Node, br(WFrom), br(WTo)], Oops).
 
-load_file(From, To, Oops) :-
+load_file(Node, From, To, Oops) :-
 	windowize(From, WFrom),
 	windowize(To, WTo),
-	safe_tcl_eval(['LoadFile', br(WFrom), br(WTo)], Oops).
+	safe_tcl_eval(['LoadFile', Node, br(WFrom), br(WTo)], Oops).
 
 check_directory(Dir) :-
 	windowize(Dir, WDir),

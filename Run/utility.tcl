@@ -23,6 +23,75 @@ proc ShowMessage { title icon string resps {parent {}}} {
     return $act
 }
 
+# general error handling -- note that only user errors will be raised from
+# execution interps, so the reporting stuff can be kept in the editor interp
+
+proc BuildProblem {name autoName msg fault} {
+    global iconImages
+
+    toplevel .buildprob
+    switch $fault {
+        user {
+            set Title "Problem with model"
+            set errLevel warning
+            set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
+        } system {
+            set Title "Build failure"
+            set errLevel error
+            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+        } tcl {
+            set Title "User interface problem"
+            set errLevel error
+            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
+        }
+    }
+    wm title .buildprob $Title
+    wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
+    global tcl_platform
+    if {[string match windows $tcl_platform(platform)]} {
+        wm attributes .buildprob -toolwindow true
+    }
+    
+    set labf1 [frame .buildprob.labf1]
+    pack [label $labf1.img -image $iconImages($errLevel)] -side left
+    pack [label $labf1.lab1 -text "Warning:" \
+            -font {-weight bold -family helvetica -size 10}] -side left
+    pack [scrollbar $labf1.yscroll -orient v \
+            -command [list AdjustScroll $labf1.lab2 yview]] -fill y
+    pack [text $labf1.lab2 -width 48 -height 10 -wrap word \
+            -yscrollcommand [list AdjustCanvas $labf1 lab1 y]]
+    $labf1.lab2 insert 1.0 $msg
+    $labf1.lab2 config -state disabled
+    #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
+    #            -font {-family helvetica -size 10} -justify left] -side left
+    pack $labf1 -padx 8 -pady 2
+    
+    set buttons [frame .buildprob.buttons]
+    pack [button $buttons.ok -text OK -width 10 \
+            -command {set ack 1}] \
+            -side left -padx 4 -pady 4
+    if {![string match $fault user]} {
+        pack [button $buttons.report -text {Send bug report} -width 20 \
+                -command [list ReportProblem $name $autoName $msg]] \
+                -side left -padx 4 -pady 4
+    }
+    pack [button $buttons.help -text Help -width 10 \
+            -command "set ack 1; $buttonCmd"] \
+            -side left -padx 4 -pady 8
+    pack $buttons
+    
+    set height [winfo reqheight .buildprob]
+    set width [winfo reqwidth .buildprob]
+    set sheight [winfo screenheight .buildprob]
+    set swidth [winfo screenwidth .buildprob]
+    wm geometry .buildprob +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    update
+    grab .buildprob
+    tkwait variable ack
+    grab release .buildprob
+    destroy .buildprob
+}
+
 # ChooseFile -- this is a wrapper for the Tcl file dialog, which sets
 # the path name to start looking in explicitly as use of the
 # -initialdir switch under Linux causes horrible misbehaviour if the
@@ -306,7 +375,11 @@ proc LoadIconImages {} {
     }
     foreach fn {graph table open save edit} {
         set iconImages($fn) \
-                [image create photo -file "../Images/Toolbar/${fn}.gif"]
+	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+    }
+    foreach fn {warning error} {
+        set iconImages($fn) \
+	    [image create photo -file "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
     }
 }
 

@@ -1786,12 +1786,10 @@ proc ShowAbout {winId} {
 
 # images must be global because if building a c++ program we may be in a different directory
 set bwVers [package require BWidget]
-image create photo warningIcon
-warningIcon read "${::BWIDGET::LIBRARY}/images/warning.gif"
-image create photo errorIcon
-errorIcon read "${::BWIDGET::LIBRARY}/images/error.gif"
 
 proc ShowExpiryImminent {expTime} {
+    global iconImages
+
     toplevel .expiry
     #    wm transient .expiry $winId
     wm title .expiry "Expiry Imminent"
@@ -1802,7 +1800,7 @@ proc ShowExpiryImminent {expTime} {
     }
     
     set labf1 [frame .expiry.labf1]
-    pack [label $labf1.img -image warningIcon] -side left
+    pack [label $labf1.img -image $iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "This product will shortly expire." \
@@ -2030,70 +2028,6 @@ proc add_text {text font across down colour} {
 
 
 
-proc BuildProblem {name autoName msg fault} {
-    toplevel .buildprob
-    switch $fault {
-        user {
-            set Title "Problem with model"
-            set errLevel warning
-            set buttonCmd {ContextSensitiveHelp .buildprob run/index.htm}
-        } system {
-            set Title "Build failure"
-            set errLevel error
-            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
-        } tcl {
-            set Title "User interface problem"
-            set errLevel error
-            set buttonCmd {ContextSensitiveHelp .buildprob files/problem.htm}
-        }
-    }
-    wm title .buildprob $Title
-    wm protocol .buildprob WM_DELETE_WINDOW {set ack 1}
-    global tcl_platform
-    if {[string match windows $tcl_platform(platform)]} {
-        wm attributes .buildprob -toolwindow true
-    }
-    
-    set labf1 [frame .buildprob.labf1]
-    pack [label $labf1.img -image ${errLevel}Icon] -side left
-    pack [label $labf1.lab1 -text "Warning:" \
-            -font {-weight bold -family helvetica -size 10}] -side left
-    pack [scrollbar $labf1.yscroll -orient v \
-            -command [list AdjustScroll $labf1.lab2 yview]] -fill y
-    pack [text $labf1.lab2 -width 48 -height 10 -wrap word \
-            -yscrollcommand [list AdjustCanvas $labf1 lab1 y]]
-    $labf1.lab2 insert 1.0 $msg
-    $labf1.lab2 config -state disabled
-    #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
-    #            -font {-family helvetica -size 10} -justify left] -side left
-    pack $labf1 -padx 8 -pady 2
-    
-    set buttons [frame .buildprob.buttons]
-    pack [button $buttons.ok -text OK -width 10 \
-            -command {set ack 1}] \
-            -side left -padx 4 -pady 4
-    if {![string match $fault user]} {
-        pack [button $buttons.report -text {Send bug report} -width 20 \
-                -command [list ReportProblem $name $autoName $msg]] \
-                -side left -padx 4 -pady 4
-    }
-    pack [button $buttons.help -text Help -width 10 \
-            -command "set ack 1; $buttonCmd"] \
-            -side left -padx 4 -pady 8
-    pack $buttons
-    
-    set height [winfo reqheight .buildprob]
-    set width [winfo reqwidth .buildprob]
-    set sheight [winfo screenheight .buildprob]
-    set swidth [winfo screenwidth .buildprob]
-    wm geometry .buildprob +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    update
-    grab .buildprob
-    tkwait variable ack
-    grab release .buildprob
-    destroy .buildprob
-}
-
 proc ReportProblem {name autoName fault} {
     
     set mimes {}
@@ -2135,6 +2069,8 @@ proc ReportProblem {name autoName fault} {
 }
 
 proc NotifyOverLimit {limit} {
+    global iconImages
+
     toplevel .notify
     wm title .notify "Evaluation Edition"
     wm protocol .notify WM_DELETE_WINDOW {set ack 1}
@@ -2144,7 +2080,7 @@ proc NotifyOverLimit {limit} {
     }
     
     set labf1 [frame .notify.labf1]
-    pack [label $labf1.img -image warningIcon] -side left
+    pack [label $labf1.img -image $iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [label $labf1.lab2 -text "The Evaluation Edition is limited to $limit functions. \n\

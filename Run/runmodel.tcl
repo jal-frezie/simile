@@ -409,6 +409,61 @@ proc GetModelTime {} {
     return $runState(currentTime)
 }
 
+proc GetRunParams {} {
+    global runState model_id
+
+    if {[info exists runState(currentTime)]} {
+	if {$runState(execTime) != $runState(currentTime)} {
+	    set runState(execDur) \
+		[expr $runState(execTime)+$runState(currentTime)]
+	} else {
+	    set runState(execDur) $runState(execTime)
+	}
+	set runParams [list execTime $runState(execDur) \
+			   timeUnit $runState(timeUnit) \
+			   displayInt $runState(displayInt) intMethod \
+			   [set runState(oldIntMethod) $runState(intMethod)]]
+	if {[info exists model_id]} {
+	    set runState(phases) [GetPhaseCount]
+	    for {set phase 1} {$phase <= $runState(phases)} {incr phase} {
+		lappend params $runState(update$phase)
+                }
+	    lappend runParams phaseList $params
+	}
+	return $runParams
+    }
+    return {}
+}
+
+proc SetRunParams {runParams} {
+    global runState
+    
+    set runState(currentTime) 0.0
+    #ShowMessage debug info set ok
+    if {[string match execTime [lindex $runParams 0]]} {
+	array set runState $runParams
+	set runState(phases) 0
+	if {[info exists runState(phaseList)]} {
+	    foreach phase $runState(phaseList) {
+		incr runState(phases)
+		set runState(update$runState(phases)) $phase
+		set runState(prev_update$runState(phases)) $phase
+	    }
+	}
+	set runState(oldIntMethod) $runState(intMethod)
+    } else {
+	set runState(execTime) [lindex $runParams 0]
+	set runState(displayInt) [lindex $runParams 1]
+	for {set others 2} {$others < [llength $runParams]} {incr others} {
+	    set runState(update[expr $others-1]) [lindex $runParams $others]
+	    set runState(prev_update[expr $others-1]) \
+		[lindex $runParams $others]
+	}
+	set runState(phases) [expr $others-2]
+    }
+    #puts [array get runState]
+}
+
 # modelRunning is a global variable that indicates the status of the model
 # program: 0 = none, 1 = awaiting fixed params, 2 = up to date, 3 = out of date
 
@@ -728,7 +783,7 @@ proc compile_c {workingDir} {
     set TCL [file dirname [file dirname [info library]]]
     #ShowMessage debug info "TCL is $TCL, TOOLDIR is $TOOLDIR" ok
     scan [info tclversion] {%d.%d} MAJ MIN
-    switch $tcl_platform(platform) {
+    if {[catch {switch $tcl_platform(platform) {
         unix {
             if {[string match Darwin $tcl_platform(os)]} {
                 exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
@@ -785,10 +840,14 @@ proc compile_c {workingDir} {
             #	file rename $TOOLDIR/amemodel/debug/amemodel.dll $TARGET
 
         }
-    }
+    }} chuckup]} {
+	set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try running the model in Tcl."
+	BuildProblem none none $badCompile user
+	set serial -1
+    } else {
     #    file delete $c_prog
-    file delete objtemp.o
-
+	file delete objtemp.o
+    }
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
     return $serial

@@ -12,7 +12,7 @@ sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
 		       tk_visible/5, tk_embrace/2, tk_abandon/0,
 		       tk_abandon_eqn/0, compile_to_file/1,
-		       tk_run_settings_tweaked/0, tk_off_window/1,
+		       tk_run_settings_tweaked/1, tk_off_window/1,
 		       tk_kill_everything/0, tk_set_new_size/4,
 		       tk_change_size/4, tk_do_colours/2]).
 
@@ -132,8 +132,8 @@ tk_change_size(Node, New_size, XDefOffset, YDefOffset) :-
 	change_size(Node, New_size),
 	show_normal_cursor.
 
-tk_run_settings_tweaked :-
-	run_settings_tweaked.
+tk_run_settings_tweaked(Node) :-
+	run_settings_tweaked(Node).
 
 tk_off_window(Wid) :-
 %%	into_save_file(tk_off_window(Wid)),
