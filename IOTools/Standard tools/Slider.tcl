@@ -42,7 +42,7 @@ namespace eval slide139 {
             set_size $winId
         }
         set geom [PrefValue custom(slidersPosition) slidersPosition]
-        catch {wm geometry $winId $geom}
+#        catch {wm geometry $winId $geom}
     }
     
     proc InsertCheck {winId boxname node title} {
