@@ -446,10 +446,8 @@ make_intermediates(
 		       make(TotalName, [cleared(TotalName), time],
 			    DestPath, Step, [])];
 	(Functor = delay, !, SetTime=0; SetTime = Step),
-	Setting = [make(increment(TotalName), [cleared(TotalName) | Depends],
-		       WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
-		  make(TotalName, [increment(TotalName)],
-		       DestPath, SetTime, [])]),
+	Setting = [make(TotalName, [cleared(TotalName) | Depends],
+		       WriteContext, SetTime, [assign(FillRef, IncrExpr)])]),
 	append([Clearing, Preps, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */

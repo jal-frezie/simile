@@ -420,7 +420,7 @@ test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
 		     decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
 	    get_dims_from_loops(Context, XDims, _),
-	    Dest = instance(internal,_, make_inter(_, '/dest/'),_, Type-XDims),
+	    Dest = instance(internal,_, use_inter('/dest/'),_, Type-XDims),
 	    match_param_dims(ExpInters, [Dest | Inters], TestError),
 	    real_dims_only(XDims, Dims),
 	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]);
