@@ -38,7 +38,8 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
     } else {
 	set env(OPEN_MODEL) $argv
     }
-} else {
+} 
+if [string match Darwin $tcl_platform(os)] {
     lappend auto_path $SIMILE_PATH/System/lib
     proc ::tk::mac::OpenDocument {args} {
         set env(OPEN_MODEL) $args
