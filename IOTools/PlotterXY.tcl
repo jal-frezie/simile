@@ -20,7 +20,8 @@
 set keyValue "plotterXY1.0"
 
 namespace eval ::$keyValue {
-    
+    variable lastTime
+        
     proc identify {} {
         return "XY Plotter"
     }
@@ -32,12 +33,11 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
+        variable lastTime
         
-        namespace import -force ::graphtools::*; # todo make graphtools common
+        namespace import -force ::graphtools::*
         
         set plot($w,nodeCount) 0
-        
-        # puts $line "Start" ;#Bob
         
         set plot($w,xwindow_size) 0
         set plot($w,ywindow_size) 0
@@ -48,14 +48,14 @@ namespace eval ::$keyValue {
         # choose colours for variables
         set plot($w,YColours) [list #0000ff #ff0000 #00ff00 #007777 #777700 \
                 #770077 #222244 #442222 #224422]
-                set plot($w,Xmax_axis) -1e20; #max is 1e300
+                set plot($w,Xmax_axis) -1e20
         set plot($w,Xmin_axis) 1e20
         set plot($w,Xmax_data) -1e20
         set plot($w,Xmin_data) 1e20
         set plot($w,Xmajorstep) 0.5
         set plot($w,Xminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
         set plot($w,XaxisLabel) {}
-        set plot($w,Ymax_axis) -1e20; #max is 1e300
+        set plot($w,Ymax_axis) -1e20
         set plot($w,Ymin_axis) 1e20
         set plot($w,Ymax_data) -1e20
         set plot($w,Ymin_data) 1e20
@@ -94,11 +94,11 @@ namespace eval ::$keyValue {
         set plot($w,DrawLines) 1
         set plot($w,DrawPoints) 0
         
-        #    set Xvalues($w) {}
         set YYold($w) {}
         set YYnew($w) {}
         set Told($w) {}
         set Tnew($w) {}
+        set lastTime($w) [GetModelTime]
         
         SetState $w {}
         
@@ -114,8 +114,8 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
+        variable lastTime
         
-        #    set Xvalues($winId) {}
         set YYold($winId) {}
         set YYnew($winId) {}
         set Told($winId) {}
@@ -125,50 +125,57 @@ namespace eval ::$keyValue {
         array set plot $restoreString
         #    ShowMessage debug info $restoreString ok
         ShowHelper $winId
+        display $winId [GetModelTime] 0 0
+        display $winId [GetModelTime] 0 0
+        set lastTime($winId) [GetModelTime]
     }
     
     proc GetCanvas {winId} {
         return $winId.canvas
     }
-
+    
     proc click {w node caption} {
-    #       tk_messageBox -message "Click node $caption $node" -type ok
-    global ::graphtools::plot
-    
-    set xm [expr $plot($w,xborder_left)+60]
-    set ym [expr $plot($w,yborder_top)+20]
-    
-    set newbox nodebox[incr plot($w,nodeCount)]
-    set name [GetCaptionPathFromId $node]
-    
-    set testResult [GetModelValue $node]
-    if {[string compare $testResult novalue]} {
-        switch $plot($w,state) {
-            xcoord {
-                #               $ms configure -text "Now click on the value representing the Y coordinates."
-                set plot($w,Xvars) $node
-                set plot($w,XaxisLabel) $caption
-                set plot($w,state) ycoord
-                $w.canvas delete prompt
-                $w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-                        -text "Select the y axis variable by clicking on a variable in the Explorer window\
-                        or a Model Diagram."
-                GrabClicks $w
-            }
-            ycoord {
-                #               $ms configure -text "Now select a value to determine the colour of the objects."
-                set plot($w,Yvars) $node
-                set plot($w,Ylabels) $caption
-                set useNodes($w,state) display
-                drawGraphpad $w
-                UpdateState $w
-                ReleaseClicks $w
-                $w.canvas delete prompt
-                raise $w; # bring the plotter back on top when it is a toplevel
-            }
-        }
+        #       tk_messageBox -message "Click node $caption $node" -type ok
+        global ::graphtools::plot
+        variable lastTime
         
+        set xm [expr $plot($w,xborder_left)+60]
+        set ym [expr $plot($w,yborder_top)+20]
         
+        set newbox nodebox[incr plot($w,nodeCount)]
+        set name [GetCaptionPathFromId $node]
+        
+        set testResult [GetModelValue $node]
+        if {[string compare $testResult novalue]} {
+            switch $plot($w,state) {
+                xcoord {
+                    #               $ms configure -text "Now click on the value representing the Y coordinates."
+                    set plot($w,Xvars) $node
+                    set plot($w,XaxisLabel) $caption
+                    set plot($w,state) ycoord
+                    $w.canvas delete prompt
+                    $w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
+                            -text "Select the y axis variable by clicking on a variable in the Explorer window\
+                            or a Model Diagram."
+                    GrabClicks $w
+                }
+                ycoord {
+                    #               $ms configure -text "Now select a value to determine the colour of the objects."
+                    set plot($w,Yvars) $node
+                    set plot($w,Ylabels) $caption
+                    set useNodes($w,state) display
+                    drawGraphpad $w
+                    UpdateState $w
+                    ReleaseClicks $w
+                    $w.canvas delete prompt
+                    set lastTime($w) [GetModelTime]
+                    display $w [GetModelTime] 0 0
+                    display $w [GetModelTime] 0 0
+                    raise $w; # bring the plotter back on top when it is a toplevel
+                }
+            }
+            
+            
         } else {
             #    $ms configure -text "This component does not have a value; please choose a variable to be plotted."
         }
@@ -203,12 +210,21 @@ namespace eval ::$keyValue {
     # Invoked at every time interval.
     proc display {w time step remainder} {
         global ::graphtools::plot
+        variable lastTime
         #    global ::graphtools::Xvalues
         global ::graphtools::YYold
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
         
+        if {$time < $lastTime($w) } {
+            set YYold($w) {}
+            set YYnew($w) {}
+            set Told($w) {}
+            set Tnew($w) {}
+        }
+        set lastTime($w) $time
+
         get_Yvalues $w
         get_Xvalues $w
         
@@ -240,7 +256,7 @@ namespace eval ::$keyValue {
         }
         
         set toolbarItems [list \
-                [list new.gif "Clear" [namespace code "clear $w"] ] \
+                [list clear.gif "Clear" [namespace code "clear $w"] ] \
                 [list add.gif "Add a variable"   [namespace code "AddVariable $w"]] \
                 [list property.gif " Properties " [namespace code "Settings $w"]]]
         #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
@@ -291,7 +307,7 @@ namespace eval ::$keyValue {
     }
     
     proc Settings {w} {
-        # copy the values of the variables to be edited to temp, but globally accessible, variables
+        # copy the values of the variables to be edited to temp, but namespace accessible, variables
         variable DrawLines $::graphtools::plot($w,DrawLines)
         variable DrawPoints $::graphtools::plot($w,DrawPoints)
         
@@ -315,6 +331,7 @@ namespace eval ::$keyValue {
             # OK button was clicked
             set ::graphtools::plot($w,DrawLines) $DrawLines
             set ::graphtools::plot($w,DrawPoints) $DrawPoints
+            UpdateState $w
         }
         #ShowMessage debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
         
@@ -349,7 +366,7 @@ namespace eval ::$keyValue {
         $w.canvas create line $x0 $y0 $x0 $y1 \
                 -tags {axis_line scalable markable yslidable}
         draw_Yaxis $w
-           
+        
         
         ### Draw the top and right edges of the graph area
         
@@ -466,8 +483,8 @@ namespace eval ::$keyValue {
     proc resize {w win x y width height} {
         global ::graphtools::plot
         #ShowMessage debug info "plotterxy resize"
-
-        if {[regexp (\.\[^.\]*)\.canvas $win full id]} {
+        
+        if {[regexp (\.\[^.\]*)\.canvas$ $win full id]} {
             set x0 $plot($w,xborder_left)
             set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]
             set x1 [expr $plot($w,xborder_left)+$plot($w,xlength)]
@@ -591,6 +608,19 @@ namespace eval ::$keyValue {
             plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
             incr iplot
         }
+################################################################################
+#         set iplot 0
+#         foreach Ynew $YYnew($w) {
+#             #puts "plot_YY Ynew $Ynew"
+#             set node [lindex $Ynew 0]
+#             foreach Yold $YYold($w) {
+#                 if {$node==[lindex $Yold 0]} {
+#                     plot_Y $w $iplot $Told($w) $Yold $Tnew($w) $Ynew
+#                     incr iplot; #each var gets an id NOT each element here
+#                 }
+#             }
+#         }
+################################################################################
     }
     
     proc plot_Y {w iplot Told Yold Tnew Ynew} {
@@ -643,13 +673,13 @@ namespace eval ::$keyValue {
     
     # clear graph
     proc clear { w } {
-        bell
         #    global ::graphtools::Xvalues
         global ::graphtools::YYold
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
         global ::graphtools::plot
+        variable lastTime
         
         set plot($w,Ymax_axis) -1e200
         set plot($w,Ymin_axis) 1e200
@@ -673,11 +703,13 @@ namespace eval ::$keyValue {
         set Tnew($w) {}
         
         drawGraphpad $w
+        display $w [GetModelTime] 0 0
+        display $w [GetModelTime] 0 0
+        set lastTime($w) [GetModelTime]
     }
     
     proc adjustLimits {w Tnew Ynew} {
         global ::graphtools::plot
-        variable scale_factor [list 2.0 2.5 2.0]
         
         #    ShowMessage debug info "adjustLimits $Tnew $Ynew" ok
         if { ( $Tnew>$plot($w,Xmax_axis) || ($Tnew<$plot($w,Xmin_axis)) )} {
@@ -691,12 +723,13 @@ namespace eval ::$keyValue {
             set OldXmin_axis $plot($w,Xmin_axis)
             
             set numInt 0
-            AxisRound $plot($w,Xmin_data) $plot($w,Xmax_data) 1 \
+            set numMinorInt 0
+            AxisRound $plot($w,Xmin_data) $plot($w,Xmax_data) 0 \
                     plot($w,Xmin_axis) plot($w,Xmax_axis) \
-                    plot($w,Xmajorstep) numInt plot($w,Xprecision)
+                    plot($w,Xmajorstep) numInt plot($w,Xminorstep) numMinorInt plot($w,Xprecision)
             
-            set plot($w,Xmajorstep) [expr {$plot($w,Xmajorstep)/2}]
-            set plot($w,Xminorstep) [expr {$plot($w,Ymajorstep)/2}]
+            #set plot($w,Xmajorstep) [expr {$plot($w,Xmajorstep)/2}]
+            #set plot($w,Xminorstep) [expr {$plot($w,Ymajorstep)/2}]
             set Trange [expr 1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)]
             
             set scaleChange [expr {$OldRange/$Trange}]
@@ -721,13 +754,14 @@ namespace eval ::$keyValue {
                 set plot($w,Ymin_data) $Ynew
             }
             set numInt 0
+            set numMinorInt 0
             set OldYrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
             set OldYmax_axis $plot($w,Ymax_axis)
-#ShowMessage debug info "$plot($w,Ymin_data) $plot($w,Ymax_data)" ok
+            #ShowMessage debug info "$plot($w,Ymin_data) $plot($w,Ymax_data)" ok
             AxisRound $plot($w,Ymin_data) $plot($w,Ymax_data) 0 \
                     plot($w,Ymin_axis) plot($w,Ymax_axis) \
-                    plot($w,Ymajorstep) numInt plot($w,Yprecision)
-            set plot($w,Yminorstep) [expr {$plot($w,Ymajorstep)/2}]
+                    plot($w,Ymajorstep) numInt plot($w,Yminorstep) numMinorInt plot($w,Yprecision)
+            #set plot($w,Yminorstep) [expr {$plot($w,Ymajorstep)/2}]
             set Yrange [expr 1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)]
             set scaleChange [expr {$OldYrange/$Yrange}]
             
