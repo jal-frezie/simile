@@ -138,10 +138,9 @@ proc RunEnv::Create { ModelWin } {
             pack [Separator $tb1.sep$tbnum -orient vertical] -side left -fill y -padx 4
         }
         
-        #make a copy of the helper selection menu to use in the mre
-        .helpers.sub2 clone .mrehelpers; #from runmodel.tcl AddHelperSublist
+        #from runmodel.tcl AddHelperSublist
         set mreMenu [winfo parent [$mainframe getmenu help]]
-        $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .mrehelpers
+        $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
         
         # Add a PanedWindow for the hierrachical/run control view and main display window
         set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
@@ -301,7 +300,7 @@ proc ::RunEnv::AllDisplaysPopup {containerId} {
 
 proc RunEnv::AllDisplaysPopupCurrentContainer {} {
     # .helpers.sub2 made by runmodel.tcl AddHelperSublist
-    tk_popup .mrehelpers [winfo pointerx .mre] [winfo pointery .mre]
+    tk_popup .helpers.sub2 [winfo pointerx .mre] [winfo pointery .mre]
 }
 
 # Not used - possibly never will be but is skeleton to use the selection for transfer
@@ -611,7 +610,6 @@ proc RunEnv::Destroy {} {
         ::${ControlSpace}::Terminate
     }
     
-    destroy .mrehelpers
     destroy .helpPopup
     destroy .pageContextMenu
     KillHelpers
@@ -803,7 +801,7 @@ proc RunEnv::CreateDisplayPageContextMenu {} {
         set m [menu .pageContextMenu -tearoff 0]
         $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
         $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {Table}"
-        $m add cascade -label "Choose display to create ..." -menu .mrehelpers
+        $m add cascade -label "Choose display to create ..." -menu .helpers.sub2
         $m add separator
         $m add command -label "Copy display" -command "::RunEnv::CopyHelper $::RunEnv::CurrentContainer"
         $m add command -label "Cut display" -command "::RunEnv::CutHelper $::RunEnv::CurrentContainer"

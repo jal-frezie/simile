@@ -904,6 +904,8 @@ proc MergeParams {} {
             #ShowMessage debug info "Restoring $savedValue" ok
             set IdAndValue [split $savedValue =]
             set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
+	    set node [GetIdFromCaptionPath $restoredComp]
+	    set trans [GetFromProlog tk_get_info(dummy,$node,types)]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
             if {[info exists paramData($restoredComp)]} {
                 set paramData($restoredComp) [lindex $IdAndValue 1]
@@ -923,7 +925,7 @@ proc MergeParams {} {
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
                     set paramData($restoredComp) \
                             [LoadTableData $paramState($restoredComp) 0]
-                } elseif {![SensibleValue $FileOrVal]} {
+                } elseif {![SensibleValue $trans $FileOrVal]} {
                     set paramData($restoredComp) {}
                     ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
                 }
@@ -943,13 +945,15 @@ proc MergeParams {} {
 # 2: a float
 # 3: a list
 
-proc SensibleValue {list} {
+proc SensibleValue {trans list} {
+    set curLevel [lindex $trans 0]
     if {[llength $list]==1} {
-        return [VarType $list]
+        return [VarType $list $curLevel]
     } else {
         for {set idx 0} {$idx < [llength $list]} {incr idx 2} {
-            if {[VarType [lindex $list $idx]] != 1 || \
-                        ![SensibleValue [lindex $list [expr $idx+1]]]} {
+            if {[VarType [lindex $list $idx] $curLevel] != 1 || \
+		    ![SensibleValue [lrange $trans 1 end] \
+			  [lindex $list [expr $idx+1]]]} {
                 return 0
             }
         }
@@ -957,13 +961,16 @@ proc SensibleValue {list} {
     }
 }
 
-# useful proc which returns 1 for an int, 2 for a float and 0 for all else
+# useful proc which returns 1 for an int, 2 for a float, 1 for a member of the 
+# supplied list (used for enum types) and 0 for all else
 
-proc VarType {testVar} {
-    if {[scan $testVar {%d %s} number spare]==1} {
+proc VarType {testVar types} {
+    if {[string is integer $testVar]} {
         return 1
-    } elseif {[scan $testVar {%f %s} number spare]==1} {
+    } elseif {[string is double $testVar]} {
         return 2
+    } elseif {[lsearch $types $testVar]!=-1} {
+	return 1
     } else {
         return 0
     }

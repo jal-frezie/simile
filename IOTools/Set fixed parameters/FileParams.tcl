@@ -41,8 +41,8 @@ proc SaveState {winId} {
     set state editing
     foreach compName [array names widgetNames] {
 	set node [GetIdFromCaptionPath $compName]
-	if {[string match normal [$widgetNames($compName) cget -state]]} {
-	    set paramData($compName) [$widgetNames($compName) get]
+	if {[string match normal [$widgetNames($compName).e cget -state]]} {
+	    set paramData($compName) [$widgetNames($compName).e get]
 	    
 	    if {[info exists paramState($compName)]} {
 		if {[string compare $paramData($compName) \
@@ -76,6 +76,8 @@ proc SaveState {winId} {
             set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
 	    set node [GetIdFromCaptionPath $restoredComp]
+	    puts $node
+	    set trans [GetFromProlog tk_get_info('$winId',$node,types)]
 	    AddEntry $winId $node
 
 	    set paramData($restoredComp) [lindex $IdAndValue 1]
@@ -95,11 +97,11 @@ proc SaveState {winId} {
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
 		set paramData($restoredComp) \
 		    [LoadTableData $paramState($restoredComp) 0]
-	    } elseif {![SensibleValue $FileOrVal]} {
+	    } elseif {![SensibleValue $trans $FileOrVal]} {
 		set paramData($restoredComp) {}
-		ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
+		ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it allowed as a value for a Simile component of this type." ok
 	    }
-	    FillIfSmall $widgetNames($restoredComp) $paramData($restoredComp)
+	    FillIfSmall $widgetNames($restoredComp).e $paramData($restoredComp)
         }
 	cd $oldDir
     }
@@ -139,6 +141,9 @@ proc 	    AddEntry {winId node} {
     set dimList [join [lrange $nodeDims 0 end-1] { x }]
     set last [lindex $nodeDims end]
     if {[string compare $last 0]} {
+	if {[string match false $last]} {
+	    set last boolean
+	}
 	if {[llength $dimList]} {
 	    append dimList " of $last"
 	} else {
@@ -151,7 +156,7 @@ proc 	    AddEntry {winId node} {
 	set slotCaption [lindex $levels end]
     }
     pack [set slot [frame [MakeSubFrames $winId.sliderframe $levels]]] -fill x -expand on
-    pack [label $slot.l -text $slotCaption] -side left
+    pack [label $slot.l -text $slotCaption -fg red] -side left
     if {$nodeDims>1} {
 	pack [button $slot.b -image $iconImages(open) -command [namespace code [list GetFromTable $winId $compName]]] -side right
     }
@@ -172,7 +177,7 @@ proc 	    AddEntry {winId node} {
 	      -command [namespace code [list AcceptData $winId $compName]]] \
 	-side right
     }
-    set widgetNames($compName) $slot.e
+    set widgetNames($compName) $slot
             # note whether we need to enter a parameter here...
     if {![llength $paramData($compName)]} {
 	lappend needed $compName
@@ -186,8 +191,8 @@ proc GetFromTable {parent compName} {
     } else {
 	set table_entry(data) {}
     }
-    if {[string match normal [$widgetNames($compName) cget -state]]} {
-	set table_entry(values) [$widgetNames($compName) get]
+    if {[string match normal [$widgetNames($compName).e cget -state]]} {
+	set table_entry(values) [$widgetNames($compName).e get]
     } else {
 	set table_entry(values) $paramData($compName)
     }
@@ -198,7 +203,7 @@ proc GetFromTable {parent compName} {
 					   $table_entry(indices)]
 	}
         set paramData($compName) $table_entry(values)
-        FillIfSmall $widgetNames($compName) $paramData($compName)
+        FillIfSmall $widgetNames($compName).e $paramData($compName)
     }
 }
 
@@ -206,7 +211,7 @@ proc OK {winId oldMissing} {
     global widgetNames
 
     foreach compName [array names widgetNames] {
-	if {[string match normal [$widgetNames($compName) cget -state]]} {
+	if {[string match normal [$widgetNames($compName).e cget -state]]} {
 	    AcceptData $winId $compName
 	}
     }
@@ -216,7 +221,7 @@ proc AcceptData {winId compName} {
     global paramDims paramData widgetNames runState inputHelper running_c
 
     set node [GetIdFromCaptionPath $compName]
-    set paramData($compName) [$widgetNames($compName) get]
+    set paramData($compName) [$widgetNames($compName).e get]
     
     set dataChanged 0
 # for each constant value, check whether it has been changed, and if so,
@@ -238,7 +243,8 @@ proc AcceptData {winId compName} {
 	if {[llength $misses]} {
 	    ShowMessage "Setting $compName" warning "Problem with value at indices [lrange $misses 0 end-1]: [lindex $misses end]" ok
 	} else {
-	    set inputHelper($compName) winId
+	    set inputHelper($compName) $winId
+	    $widgetNames($compName).l configure -fg black
 	    SaveState $winId
 	    CheckFixedParamState
 	}
@@ -307,9 +313,9 @@ proc NumberToEnumType {idx trans} {
 
 proc RevertData {winId compName} {
     global paramData widgetNames
-    $widgetNames($compName) delete 0 end
+    $widgetNames($compName).e delete 0 end
     if {[info exists paramData($compName)]} {
-	$widgetNames($compName) insert 0 $paramData($compName)
+	$widgetNames($compName).e insert 0 $paramData($compName)
     }
 }
 

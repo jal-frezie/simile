@@ -1668,7 +1668,7 @@ proc AddDetailMenu {winId fm3 initVals} {
 proc Rerun {winId go} {
     global runState running_c
  
-    if {$runState(modelRunning)!=2} {
+    if {$runState(modelRunning)!=2 || $runState(modelUpdated) == 1} {
         if {![info exists running_c]} {
             set runType run_tcl
         } else {
@@ -1680,10 +1680,7 @@ proc Rerun {winId go} {
         }
         MenuSelect $winId file $runType
     } else {
-	start_run $winId
-        RunDialog $winId
-        set widget [$runState(helperId).rcf getframe]
-        $widget.topbuttons.reset invoke
+	StartRun $winId
     }
     # Only proceed if it worked
     if {$go && $runState(modelRunning) == 2} {

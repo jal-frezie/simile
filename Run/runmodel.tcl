@@ -1239,6 +1239,7 @@ proc StartRun {winId} {
     }
     set runState(reloadParams) 1
     set runState(modelRunning) 1
+    EnableTools Fix
     set runState(modelUpdated) 0
 
     # MakeSlidersForInputs is currently done after initializing the
@@ -1316,13 +1317,27 @@ proc TellHelperItsGone {helperWin captionPath} {
 }
 
 proc CheckFixedParamState {} {
-    global inputHelper helperTable runState
+    global inputHelper runState
     if {$runState(modelRunning)==1 && \
 	    [lsearch [array get inputHelper] {}] == -1} { 
 	# fixed param with no src
 	set runState(modelRunning) 2
 	# this initializes the model
-	$helperTable(RunControl)::SetMode $runState(helperId) reset
+        set widget [$runState(helperId).rcf getframe]
+        $widget.topbuttons.reset invoke
+	EnableTools IO
+    }
+}
+
+proc EnableTools {group} {
+    set tgt .helpers.sub2
+    for {set entry 0} {$entry <= [$tgt index last]} {incr entry} {
+	set text [$tgt entrycget $entry -label]
+	if {[string match Fix $group]==[string match {Set fixed parameters...} $text]} {
+	    $tgt entryconfigure $entry -state normal
+	} else {
+	    $tgt entryconfigure $entry -state disabled
+	}
     }
 }
 
@@ -1375,6 +1390,7 @@ proc ShiftDll {Point Top Loc Rep} {
 		${prefx}[info sharedlibextension]
 	} else {
 	    file delete -force ${prefx}[info sharedlibextension]
+	    file delete -force ${prefx}.tcl
 	}
 #	foreach file [glob -nocomplain ${prefx}*] {
 #	    if {![string match ${prefx}.* $file]} {
