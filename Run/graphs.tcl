@@ -700,9 +700,8 @@ proc FileParamDialogue {mustShow parent} {
 proc MakeFrames {windowId} {
     ScrolledWindow $windowId.c
     set canId $windowId.c.canvas
-    ScrollableFrame $canId -yscrollincrement 1 \
-            -yscrollcommand [list AdjustCanvas $windowId.c canvas y] \
-            -constrainedwidth true
+    ScrollableFrame $canId -yscrollincrement 1 -constrainedwidth true ;# \
+            -yscrollcommand [list AdjustCanvas $windowId.c canvas y]
     $windowId.c setwidget $canId
     pack $windowId.c -side top -fill both -expand true
 
