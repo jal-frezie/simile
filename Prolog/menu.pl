@@ -443,7 +443,8 @@ menu_handle(Win, edit, Component) :-
 	Component is_primitive,
 	get_edit_model(Win, Model, Tgt),
 	(Component is_class_of_sort box, !,
-	    event:insert(Win, Model, Tgt, Component);
+	    event:insert(Win, Model, Tgt, Component),
+	    finish_move(Model);
 	(Tgt = [Xpt, Ypt], !,
 	        set_current_coords(Xpt, Ypt),
 	        event:make_terminator(Component, Model, StartPt),

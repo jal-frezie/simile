@@ -119,7 +119,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    drag_to(NewXpt, NewYpt, Name);
-	(click_on([NewXpt, NewYpt], Name, CD), !; true),
+	(CD < 2, click_on([NewXpt, NewYpt], Name, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
