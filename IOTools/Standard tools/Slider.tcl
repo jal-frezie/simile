@@ -115,13 +115,15 @@ namespace eval slide139 {
 	set nodeDims [GetModelDims $node]
 	set outerDims 0
 	while {$outerDims<[llength $nodeDims]} {
-	    if {[lindex $nodeDims $outerDims]>0} {
-		if {[info exists useDim]} {
+	    set latestDim [lindex $nodeDims $outerDims]
+	    if {[string is integer $latestDim] && $latestDim>0} {
+#		if {[info exists useDim]} {
 		    # Cannot display sliders, too many dimensions
-		    return {}
-		} else {
+# even if too many dims, innermost array is copied over others
+#		    return {}
+#		} else {
 		    set useDim $outerDims
-		}
+#		}
 	    }
 	    incr outerDims
 	}
@@ -160,7 +162,9 @@ namespace eval slide139 {
                     -sliderlength 10 -from $min -to $max \
                     -tickinterval $gap -resolution $spacing \
                     -variable sliderVals($node)
-		$f.scale set $defVal
+		    if {[llength $defVal]} {
+			$f.scale set $defVal
+		    }
 		pack $f.scale -side right -fill x -expand true
 		pack [label $f.caption -text [lindex $levels end]]
 		pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
@@ -230,7 +234,9 @@ namespace eval slide139 {
                         -sliderlength 10 -from $min -to $max \
                         -resolution $spacing \
                         -variable sliderVals($node,$index)
-		    $newScale set $defVal
+		    if {[llength $defVal]} {
+			$newScale set $defVal
+		    }
 		    pack $newScale -fill x -expand true
 		    # only put legend on bottom one
 		    if {$count==$index} {
@@ -319,11 +325,13 @@ namespace eval slide139 {
 
     proc GetDefVal {vals levels index} {
 #ShowMessage debug info "GetDefVal $vals $levels $index" ok
-	if {$levels==0 && $index>0} {
-	    array set subvals $vals
-	    return [GetDefVal $subvals($index) 0 0]
-	} elseif {[llength  $vals]==1} {
+	if {[llength  $vals]==1} {
 	    return $vals
+	} elseif {$levels==0 && $index>0} {
+	    array set subvals $vals
+	    if {[info exists subvals($index)]} {
+		return [GetDefVal $subvals($index) 0 0]
+	    }
 	} else {
 	    incr levels -1
 	    foreach {indx val} $vals {

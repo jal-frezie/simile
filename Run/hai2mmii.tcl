@@ -413,6 +413,7 @@ proc GetCCompProperty {topNode prop args} {
 		if {$elt<0} {
 		    lset fullList $idx [lindex $specials [expr -$elt-1]]
 		}
+		incr idx
 	    }
 	    # helper apps don't need to know about separate submodels so...
 	    while {[set sep [lsearch $fullList SEPARATE]]>-1} {
