@@ -359,6 +359,9 @@ proc ::RunEnv::DeleteHelperContainer {containerId page} {
     # a parent is the notebook or panedwindow the container belongs to
     #ShowMessage debug info "container $containerId; page $page; \
     #            parent [::RunEnv::FindParentpanedwindowOrNotebook $containerId]" ok
+    if {![winfo exists $containerId]} {
+        return
+    }
     set parentPath [::RunEnv::FindParentpanedwindowOrNotebook $containerId]
     set parentType [winfo name $parentPath]
     set children [winfo children $containerId]
@@ -442,7 +445,9 @@ proc RunEnv::DeletePane {parentPath containerId} {
         #                pages [$parentNoteBook pages]\n \
         #                current page [$parentNoteBook raise]" ok; 
         destroy $parentPath
-        DeleteNotebookPage $parentNoteBook [$parentNoteBook raise]; #current page
+        if {[string match NoteBook [winfo class $parentNoteBook]]} {
+            DeleteNotebookPage $parentNoteBook [$parentNoteBook raise]; #current page
+        }
     }
 }
 
@@ -561,20 +566,6 @@ proc ::RunEnv::FindParentNotebookPage {containerId} {
 proc RunEnv::Destroy {} {
     global helperTable modelWin window_info model_id
     variable runControlWindId
-    
-    #ShowMessage debug info "RunEnv::Destroy RunContol $runControlWindId" ok
-    
-    #
-    # stop the model running by invoking the Run Control Stop button
-    # helperId of runcontrol $helperTable(RunControl).
-    if {[info exists model_id]} {
-	$helperTable(RunControl)::SetMode $runControlWindId reset
-    }
-    #update
-    #after 100
-    #set $helperTable(RunControl)::sendvars(currentMode) stop
-    #tkwait variable $helperTable(RunControl)::sendvars
-    # debug info "$helperTable(RunControl)::sendvars(currentMode)" ok
     
     foreach helper [array name helperTable *,whichHelper] {
         scan $helper {%[^,]} winId
