@@ -632,18 +632,22 @@ proc FindParentNotebookPage {containerId} {
     }
 }
 
-proc Destroy {} {
+proc Destroy {args} {
     global helperTable window_info model_id
     variable runControlWindId
     variable currentNode
     
-    set node $currentNode
-    # stop the run
-    upvar 0 runControlWindId($node) rcw
-    if {[info exists rcw]} {
-        set ControlSpace $helperTable($rcw,whichHelper)
-        ::${ControlSpace}::Terminate $rcw
+    if {[llength $args]} {
+	set node $args
+    } else {
+	set node $currentNode
     }
+    # stop the run -- this is now done by killing the run control
+#    upvar 0 runControlWindId($node) rcw
+#    if {[info exists rcw]} {
+#        set ControlSpace $helperTable($rcw,whichHelper)
+#        ::${ControlSpace}::Terminate $rcw
+#    }
     
     destroy .helpPopup
     destroy .pageContextMenu

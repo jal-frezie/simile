@@ -702,12 +702,12 @@ namespace eval $keyValue {
         
         if {[llength $index]} {
             set nextAxis [lindex $orientList($winId) [min $depth 3]]
-            lappend ${nextAxis}List $index
+            lappend ${nextAxis}List [lindex $index 0]
             incr depth
         }
         
         if {[llength $struct] == 1} {
-            set values($rowsList,$colsList) $struct
+            set values($rowsList,$colsList) [lindex $struct 0]
             set cellFormat($rowsList,$colsList) $displayFormat($winId,$varId)
             
             set rowNames($rowsList) {}

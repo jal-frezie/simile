@@ -267,7 +267,7 @@ proc Prettify {value} {
 }
 
 proc DestroyHelpers {node} {
-    if {[winfo exists .mre]} {
+    if {[info exists helperTable($node,whichRunEnv)]} {
         ::RunEnv::Destroy $node
     } else {
         KillHelpers $node
@@ -281,10 +281,6 @@ proc KillHelpers {node} {
 	if {[string equal $node $helperTable($window,whichModel)]} {
 	    kill_helper_window $window
 	}
-    }
-    if {[info exists helperTable($node,whichRunEnv)]} {
-	destroy $helperTable($node,whichRunEnv)
-	unset helperTable($node,whichRunEnv)
     }
 }
 
