@@ -7,6 +7,7 @@
 
 package require BWidget
 catch {namespace import BWidget::*}
+package require -exact tile 0.5
 
 proc equationResources {} {
     
@@ -124,11 +125,11 @@ proc create_equation {parent boxtitle indices} {
     wm protocol $t WM_DELETE_WINDOW "equationCancel"
     equationResources
     
-    set notebook [NoteBook $t.notebook]
-    $notebook insert end Main -text Main
-    set mainF [$notebook getframe Main]
-    $notebook insert end Documentation -text Documentation
-    set docF [$notebook getframe Documentation]
+    set notebook [::ttk::notebook $t.notebook]
+    $notebook add [frame $notebook.main] -text Main
+    set mainF $notebook.main
+    $notebook add [frame $notebook.documentation] -text Documentation
+    set docF $notebook.documentation
     set equation(notebook) $notebook
     set equation(main) $mainF
     set equation(doc) $docF
@@ -273,13 +274,13 @@ proc create_equation {parent boxtitle indices} {
     radiobutton $mainf.slider.radio1 -text "Variable parameter: " -variable equation(isparam) -value 1
     pack $mainf.slider.radio1 -side left
     pack [label $mainf.slider.minlabel -text Minimum] -side left -padx 4 -pady 4
-    pack [entry $mainf.slider.minval -width 8 -textvariable equation(min)] -side left -padx 4 -pady 4
+    pack [::ttk::entry $mainf.slider.minval -width 8 -textvariable equation(min)] -side left -padx 4 -pady 4
     pack [label $mainf.slider.maxlabel -text Maximum] -side left -padx 4 -pady 4
-    pack [entry $mainf.slider.maxval -width 8 -textvariable equation(max)] -side left -padx 4 -pady 4
+    pack [::ttk::entry $mainf.slider.maxval -width 8 -textvariable equation(max)] -side left -padx 4 -pady 4
     
     pack [label $mainf.slider.cur_dims] -side right -padx 4
     pack [label $mainf.slider.dims_txt -text "Current\ndimensions:"] -side right -padx 4
-    pack [set eu [entry $mainf.slider.entry -width 8 -textvariable equation(units)]] -side right -padx 4 -pady 4
+    pack [set eu [::ttk::entry $mainf.slider.entry -width 8 -textvariable equation(units)]] -side right -padx 4 -pady 4
     pack [label $mainf.slider.unitslabel -text "Units:"] -side right -padx 4 -pady 4
     
     pack $mainf.slider -anchor nw -fill x
@@ -302,7 +303,7 @@ proc create_equation {parent boxtitle indices} {
     focus $en
     
     frame $mainf.equation.textbox.buttons
-    $notebook itemconfigure Main -raisecmd "focus $en"
+    #$notebook itemconfigure Main -raisecmd "focus $en"
     set comp [lrange $boxtitle [expr [lsearch $boxtitle for]+1] end]
     
     if {[string match Darwin $tcl_platform(os)]} {
@@ -377,7 +378,7 @@ proc create_equation {parent boxtitle indices} {
     pack $descf -side top  -fill x -expand off
     pack $descF.description  -fill x -expand off -padx 4 -pady 4
     pack $docF.descf -fill x -expand off
-    $notebook itemconfigure Documentation -raisecmd "focus $descf.text"
+    #$notebook itemconfigure Documentation -raisecmd "focus $descf.text"
     
     label $docF.cmtlabel -text Comments:
     pack $docF.cmtlabel -side top
@@ -388,7 +389,7 @@ proc create_equation {parent boxtitle indices} {
     pack $frm.text -side left -fill both -expand true
     pack $frm.scrly -side right -fill y
     
-    $notebook raise Main
+    $notebook select 0
     pack $notebook -fill both -expand true
     set equation(newGraphs) ""
     set equation(done) 0
