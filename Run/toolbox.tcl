@@ -189,7 +189,7 @@ proc ControlDraw {prologVersion} {
         {custom(compCmtPop) compCmtPop ON  "Comment"} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
-                {custom(deleteEndToEnd) deleteEndToEnd ON "Delete links end-to-end"}}
+                {custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"}}
     # JMM change wording and change default to ON
     Pref_Add {{custom(helperManager) helperManager ON \
                     "Use single window manager"}};
@@ -572,7 +572,7 @@ proc FindObj { winId x y } {
     set canx [Scale $winId $x]
     set cany [Scale $winId $y]
     
-    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 10]]
+    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 6]]
 }
 
 # canvasTLDistance returns the offset of a canvas coordinate from its top
@@ -626,7 +626,7 @@ proc ClickObj { x y winId action} {
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
     
-    set target [GetClickedObj $winId $canx $cany 10]
+    set target [GetClickedObj $winId $canx $cany 6]
     
     if {!$target} {
         # a background click
@@ -1119,6 +1119,7 @@ proc DoLocalCmd {win item} {
         print {PrintNow $win}
         rerun {Rerun $win 1}
         zoomin {DoZoom $win 1.414214 1}
+        tosel {DisplayArea $win}
         tofit {DisplayAll $win}
         zoomout {DoZoom $win .707107 1}
         customize {Customize $win $pushedbutton}
@@ -1567,8 +1568,9 @@ proc AddMainMenu { winid initWidth isTopLevel initDepths} {
                 {save {file save}}  {print {local print}} {separator1}\
                 {undo {local undo}} {redo {local redo}} {separator2}\
                 {flip_h {edit flip_h}} {flip_v {edit flip_v}} {separator3}\
-                {zoomin {local zoomin}} {zoomfit {local tofit}} \
-                {zoomout {local zoomout}} {separator4}   } {
+                {zoomin {local zoomin}} {zoomsel {local tosel}} \
+			{zoomfit {local tofit}} {zoomout {local zoomout}} \
+			{separator4}   } {
         set handle [lindex $navCmd 0]
         if {[string match separator* $handle]} {
             pack [Separator $nb.$handle -orient vertical] -fill y -side left

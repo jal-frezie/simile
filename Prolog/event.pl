@@ -198,15 +198,27 @@ click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
 		do_linear(New_obj, DropNode))).
 
 click_in(_, [Xpt, Ypt], Trans, Depth, Parent, CD) :-
-	( /* get_mode(select), !,
+	/* get_mode(select), !,
 	    set_start_coords(Xpt, Ypt),
 	    save_params(Trans, Depth, Parent),
 	    finish_old_edit(none),
 	    give_focus('{}');   */
 	get_translation(Old_trans),
-	    get_original_click(Orig_X, Orig_Y),
-	    translate([Orig_X, Orig_Y], Old_trans, Old_point),
-	    click_on(Old_point, Parent, CD)).
+	get_original_click(Orig_X, Orig_Y),
+	translate([Orig_X, Orig_Y], Old_trans, [Xtr, Ytr]),
+	
+	/* Background of unselected submodel: select a region */
+	(get_mode(select),
+	    \+ get_highlit_obj(0, Parent),
+	    set_start_coords(Xtr, Ytr),
+	    (CD = 0,
+		normalize(_),
+		fail;
+	    add_incomplete([Xtr, Ytr, Xtr, Ytr]),
+		draw_rubberband(square),
+		advance_phase_to(rubberband));
+	    
+	click_on([Xtr, Ytr], Parent, CD)).
 
 click_on([Xpt, Ypt], Poss_start, CD) :-
 	get_mode(add),
@@ -230,10 +242,11 @@ click_on([Xpt, Ypt], Poss_start, CD) :-
 click_on([Xpt, Ypt], Moving_obj, CD) :-
 	get_mode(select),
 	set_moving_obj(Moving_obj),
-	set_start_coords(Xpt, Ypt),
+        set_start_coords(Xpt, Ypt),
 /* from select mode -- rest is from move */
 	finish_old_edit(Moving_obj),
 	give_focus(Moving_obj),
+
 	(CD = 1, !,
 	    \+ (get_highlit_obj(N, Moving_obj), N<2,
 		   do_colours(Moving_obj, off));
@@ -739,21 +752,21 @@ check_entries(InterParent, Trans, Pair, NewPair, Comp) :-
 		NewPair = InterPair,
 		Comp = InterParent).
 
-/*
-drag_to(Xpt, Ypt, _Comp) :-
-	get_mode(select),
-	(get_phase(text_grabbing), !;
-	get_start_coords(OldX, OldY),
-	clear_incomplete,
-	add_incomplete([OldX, OldY, Xpt, Ypt]),
-	remove_old_rubberband,
-	draw_rubberband(square)). */
 
 :- dynamic(moved_something/0).
 
 move_something :-
 	moved_something, !;
 	assert(moved_something).
+
+drag_to(Xpt, Ypt, _Comp) :-
+	get_mode(select),
+	get_phase(rubberband),
+	get_start_coords(OldX, OldY),
+	clear_incomplete,
+	add_incomplete([OldX, OldY, Xpt, Ypt]),
+	remove_old_rubberband,
+	draw_rubberband(square).
 
 drag_to(Xpt, Ypt, Comp) :-
 	get_mode(add),
@@ -791,7 +804,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     \+ (member(Crasher, Movers),
 			find_new_box(Crasher, Xoffset, Yoffset, _, BadPosn),
 			( \+ fits_inside(BadPosn, ParentShape);
-			    get_overlaps(Parent, BadPosn, Crasher))),
+			    get_overlaps(Parent, BadPosn, Crashed),
+			    \+ member(Crashed, Movers))),
 		     all(event, adjust_posn,
 			 [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
 		     all(event, tweak_link_connections,
@@ -1291,14 +1305,35 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
-	/* (get_mode(select),
-		(get_phase(text_grabbing), !;
-		    zoom_to_area); 
-	get_phase(info_extract)), !,
-		initialize_phase; */
+	get_mode(select),
+	    get_phase(rubberband), !, /* used to call proc below */
+	    get_incomplete([OldX, OldY, NewX, NewY]),
+	    clear_incomplete,
+	    L is min(OldX, NewX),
+	    T is min(OldY, NewY),
+	    R is max(OldX, NewX),
+	    B is max(OldY, NewY),
+	    find_current(Wid),
+	    Wid shows_model Model,
+	    (select_bagged([L, T, R, B], Model);
+	    remove_old_rubberband),
+	    initialize_phase;
 	get_phase(action_choice), !,
 		advance_phase_to(targetting);
 	unclick_obj.
+
+select_bagged(Rect, Model) :-
+	get_overlaps(Model, Rect, Caught),
+	(find_type(Caught, submodel),
+	    (add_to_translation([0,0,1,1], Caught, Trans),
+		translate(Rect, Trans, NewRect),
+		select_bagged(NewRect, Caught);
+	    get_shape(Caught, bounding_box, Outer),
+		\+ fits_inside(Rect, Outer),
+		do_colours(Caught, on));
+	\+ find_type(Caught, submodel),
+	    do_colours(Caught, on)),
+	fail.
 
 zoom_to_area :-
 	get_incomplete([OldX, OldY, NewX, NewY]),
@@ -1340,22 +1375,23 @@ unclick_obj :-
 		    initialize_phase;
 		
 	New_obj is_class_of_sort rounded_rect,
-		get_phase(rubberband),
-		initialize_phase,
-		get_incomplete([OldX, OldY, NewX, NewY]),
-		remove_old_rubberband,
-		L is min(OldX, NewX),
-	 	T is min(OldY, NewY),
-		R is max(OldX, NewX),
-		B is max(OldY, NewY),
-		W is R - L,
-		H is B - T,
-		get_box_size(submodel, Standard),
-		W > Standard//2,
-		H > Standard//2,
-		attempt_new_component(Parent, [L, T, R, B], [0, 0, W, H]);
+	    get_phase(rubberband),
+	    initialize_phase,
+	    get_incomplete([OldX, OldY, NewX, NewY]),
+	    clear_incomplete,
+	    remove_old_rubberband,
+	    L is min(OldX, NewX),
+	    T is min(OldY, NewY),
+	    R is max(OldX, NewX),
+	    B is max(OldY, NewY),
+	    W is R - L,
+	    H is B - T,
+	    get_box_size(submodel, Standard),
+	    W > Standard//2,
+	    H > Standard//2,
+	    attempt_new_component(Parent, [L, T, R, B], [0, 0, W, H]);
 	New_obj is_primitive,
-		\+ New_obj is_class_of_sort line),
+	    \+ New_obj is_class_of_sort line),
 	update_runnable(Parent).
 
 unclick_obj :- 
@@ -1599,19 +1635,15 @@ interferes with another component -- the test previously used picks,
 but now uses get_component_from_gui because it is quicker. */
 
 attempt_addition(Type, Parent, Box, Node_name, CanBag) :-
+	/* check it is inside its parent */
+	get_shape(Parent, internal_extent, Parent_size), !,
+	fits_inside(Box, Parent_size),
+
 	/* If CanBag is 'yes' the new box can be put around existing ones */
-	(CanBag = no,
-	    \+ get_overlaps(Parent, Box, none);
-	CanBag = yes,
-	    Box = [L,T,R,B],
-	    \+ (member(Border, [[L, T, L, B], [L, T, R, T],
-				[R, T, R, B], [L, B, R, B]]),
-		   get_overlaps(Parent, Border, none))), 
-	
-/* check it is inside its parent */
-	(get_shape(Parent, internal_extent, Parent_size), !,
-		fits_inside(Box, Parent_size);
-	true),
+	\+ (get_overlaps(Parent, Box, Other),
+	       (CanBag = no;
+		   get_shape(Other, bounding_box, WeeBox),
+		   \+ fits_inside(WeeBox, Box))),
 	
 /* check it is not inside a submodel (GUI only checks border interference) */
 	\+ (find_all_comps(Parent, OtherSubmodel),

@@ -124,11 +124,11 @@ get_inclusions(Parent, Box, Included) :-
 	setof(Component, in_box(Parent, Component, Box), Included), !;
 	Included = [].
 
-get_overlaps(Parent, Target, Ignore) :-
+get_overlaps(Parent, Target, Part) :-
 	find_all_comps(Parent, Part),
 	appears(Part),
 	/* ignore invisibles like ghost bowties */
-	\+ (Part = Ignore; find_type(Part, flow), is_ghost(Part)),
+	\+ (find_type(Part, flow), is_ghost(Part)),
 	get_drawing_form(Part, _, Box),
 	interferes(Target, Box).
 	

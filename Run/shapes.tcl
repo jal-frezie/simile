@@ -526,7 +526,7 @@ proc ColorSymbol { w name type density colorSpec } {
         set textColor $looks($type,text)
     }
     FlashSymbol $w $name $outlineColor $textColor
-    StippleSymbol $w $name $density
+    StippleSymbol $w $name $density [string equal select $colorSpec]
 }
 
 proc FlashSymbol {w name outlineColor textColor} {
@@ -542,7 +542,7 @@ proc FlashSymbol {w name outlineColor textColor} {
     }
 }
 
-proc StippleSymbol {w name density} {
+proc StippleSymbol {w name density selected} {
     foreach object [GetColourObjs $w $name] {
         switch -regexp [$w type $object] {
             line {
@@ -552,6 +552,12 @@ proc StippleSymbol {w name density} {
                 $w itemconfigure $object -stipple $density
             }
         }
+	if {$selected} {
+	    $w itemconfigure $object -tag \
+		[concat selected [$w gettags $object]]
+	} else {
+	    $w dtag $object selected
+	}
     }
 }
 

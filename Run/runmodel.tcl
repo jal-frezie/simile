@@ -383,8 +383,7 @@ proc DisplayAll { winId } {
     global window_info
 
     # get desired display area
-    if {[scan [$winId bbox size_on_this] "%d %d %d %d" \
-                bl bt br bb] == 4} {
+    if {[scan [$winId bbox size_on_this] "%d %d %d %d" bl bt br bb] == 4} {
         # ShowMessage debug info "Bounds are $bl $bt $br $bb" ok
         set clearBorder [expr 15*$window_info($winId,scale)]
 
@@ -413,7 +412,7 @@ proc DisplayAll { winId } {
 
 proc DisplayArea {winId} {
     global window_info
-    if {[scan [$winId bbox unfinished_component] "%d %d %d %d" bl bt br bb] < 4} {
+    if {[scan [$winId bbox selected] "%d %d %d %d" bl bt br bb] < 4} {
         return
     }
     set allowScrollBar [winfo reqwidth [winfo parent $winId].yscroll]
@@ -471,6 +470,7 @@ proc AddZoomMenu {canvas menu tellProlog} {
             $canvas 1.953125 $tellProlog"
     $fm2 add command -label "In a bit" -command "DoZoom \
             $canvas 1.25 $tellProlog"
+    $fm2 add command -label "To selection" -command "DisplayArea $canvas"
     $fm2 add command -label "To fit" -command "DisplayAll $canvas"
     $fm2 add command -label "Out a bit" -command "DoZoom \
             $canvas 0.8 $tellProlog"

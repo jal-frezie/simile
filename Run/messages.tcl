@@ -93,6 +93,7 @@ set msgs(save) "Save"
 set msgs(flip_v) "Flip the model diagram vertically"
 set msgs(flip_h) "Flip the model diagram horizontally"
 set msgs(zoomin) "Zoom in"
+set msgs(zoomsel) "Zoom to selection"
 set msgs(zoomfit) "Zoom to fit"
 set msgs(zoomout) "Zoom out"
 
