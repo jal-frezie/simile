@@ -618,14 +618,14 @@ doubleclick_on(Edit_thing) :-
 	all(event, get_display_depth,
 	    [unify(Wid),
 	    build([ghost_link, influence, variable, flow, compartment, 
-		   submodel, caption, sections, text]), build(Depths)]),
+		   submodel, caption, text, sections]), build(Depths)]),
 	    contains(TopNode, Edit_thing),
 	    is_toplevel(TopNode),
 	    new_window_for(Edit_thing, TopNode, NewWin, Depths, 0),
 	    all(state, set_display_depth,
 		[unify(NewWin),
 		build([ghost_link, influence, variable, flow, compartment,
-		       submodel, caption, sections, text]), build(Depths)]),
+		       submodel, caption, text, sections]), build(Depths)]),
 	    redraw_window(NewWin);
 	(Edit_type = relation, Attrs = [exclusive, can_lookup];
 	    Edit_type = influence, Attrs = [use_sofar]), !,
