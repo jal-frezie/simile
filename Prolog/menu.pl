@@ -475,18 +475,19 @@ menu_handle(Win, edit, CutOrCopy) :-
 	/* Old version: took too long
 	New version: first, find the innermost submodel with the whole
 	selection in it */
-	setof(Seln, (contains(TopModel, Seln),
+%	assert(suspend_display),
+	setof(Seln, Mid^(find_all_comps(TopModel, Mid),
+			 contains(Mid, Seln),
 			Seln is_of_sort box,
-			\+ Seln = TopModel,
-			event:doomed(Seln)), SelnList),
+			event:doomed(Seln),
+			set_highlit_obj(0, Mid)), SelnList),
 	find_innermost_selection_holder(SelnList, Model),
 
-	assert(suspend_display),
-	invert_seln_in(Model),
+	/* invert_seln_in(Model),
 	event:delete_net(Model),
 
 
-	/* Now delete unselected submodels containing selected components?
+	Now delete unselected submodels containing selected components?
 	Why not just select them...
 
 	(contains(Innermost, Bit),
@@ -506,7 +507,7 @@ menu_handle(Win, edit, CutOrCopy) :-
 	use_temp_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
 	output:date_is(Date),
-	ame_save(CopyFile, Model, Date),
+	ame_save(CopyFile, Model, Date, yes),
 	/* restart_move will put the rest of the model back but it will
 	not be selected, so list the nodes and select them after the rest is
 	added so any external links and ghosts come out right
@@ -514,8 +515,8 @@ menu_handle(Win, edit, CutOrCopy) :-
 	      SelBits), !;
 	SelBits = []), */
 	restart_move,
-	all(event, do_colours, [build(SelnList), unify(on)]),
-	retract(suspend_display),
+%	all(event, do_colours, [build(SelnList), unify(on)]),
+%	retract(suspend_display),
 	(CutOrCopy = cut,
 	    event:delete_net(Model),
 	    finish_move(Model);
@@ -536,12 +537,18 @@ menu_handle(Win, edit, paste) :-
 	ame_merge(Model, CopyFile, _Date, _HasCode, Renumber),
 %	redraw_window(Win),
 	
-	setof(Mover, O^member(O-Mover, Renumber), Movers),
+	(Renumber = copy, !, /* paste into empty sole toplevel */
+	    setof(Mover, (contains(Model, Mover), \+ Mover = Model), Lighters);
+	setof(Mover, O^(member(O-Mover, Renumber)), Lighters)),
+	setof(Mover, (member(Mover, Lighters), find_all_comps(Model, Mover)),
+	      Movers),
 	all(event, adjust_posn,
 	    [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
 	all(event, retitle_duplicate, [build(Movers), unify(Used)]),
 	(member(Mover, Movers),
 	    redisplay(Mover),
+	    fail;
+	member(Mover, Lighters),
 	    Mover is_of_sort box,
 	    event:do_colours(Mover, on),
 	    fail;
@@ -1219,7 +1226,7 @@ try_save_files(Name) :-
 save_isolated(Name, Part, Date) :-
 	assert(suspend_display),
 	cutout(Part);
-	(ame_save(Name, Part, Date),
+	(ame_save(Name, Part, Date, no),
 	    Done = 1;
 	true),
 	restart_move,

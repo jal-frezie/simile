@@ -4,19 +4,20 @@
 **** is defined in terms of the model class ADT 			    ****
 *******************************************************************************/
 
-sicstus_module( library, [ame_save/3, ame_merge/5, count_functions/2] ).
+sicstus_module( library, [ame_save/4, ame_merge/5, count_functions/2] ).
 
 sicstus_use_module( [library(lists),
 	sp_only, ame_gen,m_class,utility,text,build] ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% ame_save/3 - saves the submodels starting at the nodes listed in arg1 to the file
+% ame_save/4 - saves the submodels starting at the nodes listed in arg1 to the file
 % named in arg 2
 % models are saved in terms of calls to predicates defined in construction:, 
 % thus keeping the abstract syntax away from the user.
 
-ame_save( File, Model, Date ) :-
-	(Model has_parts Models, !; Models = []),
+ame_save( File, Model, Date, SelOnly ) :-
+	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
+	       Models = []),
 	(setof(A-V, Model has_class_refinement A of V, Props); Props = []),
 	\+ ( member( Node, Models ),
 	     \+ Node is_model_class ),
@@ -36,10 +37,10 @@ ame_save( File, Model, Date ) :-
 	write_with_breaks( Stream, properties(Props)),
 	nl(Stream),
 	dialogue:reassure_user("Writing node information"),
-	save_nodes( Models, Stream, ArcsUsed ),
+	save_nodes( Models, Stream, SelOnly, ArcsUsed ),
 	nl(Stream),
 	dialogue:reassure_user("Writing arc information"),
-	save_arcs( ArcsUsed, Stream ),
+	save_arcs( ArcsUsed, Stream),
 	close( Stream ), !;
 	fail).
 
@@ -47,25 +48,28 @@ ame_save( File, Model, Date ) :-
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
 % Nodes and Arcs respectively - don't do the same node twice.
 
-save_nodes( [], _, [] ).
+save_nodes( [], _,_, [] ).
 
-save_nodes( [Node|Nodes], Stream, AllArcsUsed ) :-
-	save_node( Node, Stream, NewArcsUsed ),
-	save_links( Node, Stream ),
-	save_refs( Node, Stream ),
+save_nodes( [Node|Nodes], Stream, SelOnly, AllArcsUsed ) :-
+	save_node( Node, Stream, SelOnly, NewArcsUsed ),
+	save_links( Node, Stream, SelOnly ),
+	save_refs( Node, Stream, SelOnly ),
 	any_setof( Child,
-		   Node has_part Child,
+		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
 	append( Children, Nodes, NewNodes ),
-	save_nodes( NewNodes, Stream, ArcsUsed ),
+	save_nodes( NewNodes, Stream, SelOnly, ArcsUsed ),
 	merge_lists( NewArcsUsed, ArcsUsed, AllArcsUsed ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_links - write out a data structure representing links in a module
 
-save_links( Node, Stream ) :-
-	Node has_model_refinement link_equivalences of Links, \+ Links = [], !,
-		write_with_breaks( Stream, links( Node, Links ));
+save_links( Node, Stream, SelOnly ) :-
+	Node has_model_refinement link_equivalences of AllLinks,
+	setof(From-To, (member(From-To, AllLinks),
+			   go_with(From, SelOnly), go_with(To, SelOnly)),
+	      Links), !,
+	write_with_breaks( Stream, links( Node, Links ));
 	true.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -75,16 +79,17 @@ save_links( Node, Stream ) :-
 is deleted, there may be mentions to nonexistent components here. These are
 replaced by 'obsolete' so they do not cause errors when loading the model. */
 
-save_refs( Node, Stream ) :-
+save_refs( Node, Stream, SelOnly ) :-
 	Node has_model_refinement references of Refs,
 	all(library, check_ref_entry,
-	    [unify(Node), build(Refs), incr(0), build(SaveRefs)]),
+	    [unify(Node), build(Refs), unify(SelOnly), incr(0),
+	     build(SaveRefs)]),
 	write_with_breaks( Stream, references( Node, SaveRefs )), !;
 	true.
 
-check_ref_entry(Node, Ref, Count, SaveRef) :-
+check_ref_entry(Node, Ref, SelOnly, Count, SaveRef) :-
 	Ref = local(Rel),
-	    \+ find_reference(Node, Count, Rel), !,
+	    \+ (find_reference(Node, Count, Rel), go_with(Rel, SelOnly)), !,
 	    SaveRef = obsolete;
 	SaveRef = Ref.
 
@@ -95,10 +100,10 @@ incr(Count, NewCount) :-
 % save_node - write out a data structure representing a node to a stream
 % 1998: does not write model refinements
 
-save_node( Node, Stream, ArcsUsed ) :-
+save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 	Node has_class Class,
 	any_setof( Child,
-		   Node has_part Child,
+		   (Node has_part Child, go_with(Child, SelOnly)),
 		   Children ),
 	any_setof( CRAttr=CRValue,
 		   Node has_class_refinement CRAttr of CRValue,
@@ -116,9 +121,29 @@ save_node( Node, Stream, ArcsUsed ) :-
 			  ClassRefinements, /* ModelRefinements, */
 			GraphicalAttributeValuePairs)), 
 	any_setof( Arc-Start-End,
-		   ( Arc is_connector from Node to End, Node = Start;
+		   (( Arc is_connector from Node to End, Node = Start;
 		     Arc is_connector from Start to Node, Node = End ),
+		       go_with(Arc, SelOnly)),
 		   ArcsUsed ).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+go_with(Comp, SelOnly) :-
+	SelOnly = no, !;
+	draw:get_highlit_obj(0, Comp), !;
+	Comp is_connector from A to B,
+	\+ (member(Leave, [A, B]),
+	       test_for(Leave, Test),
+	       \+ go_with(Test, SelOnly)), !;
+	\+ appears(Comp),
+	    (Use is_connector from Comp to _;
+	    Use is_connector from _ to Comp),
+	    go_with(Use, SelOnly), !.
+
+test_for(Node, Test) :-
+	appears(Node), !, Test = Node;
+	implicit_function(Test, Node), !;
+	Test has_part Node.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_arcs - write out data structures representing arcs; don't do the same
@@ -378,7 +403,7 @@ deal_with_rest( [], PreviousLength, Parent, Bindings, AllBindings, Terms ) :-
 	    deal_with_rest(Terms, NewLength, Parent, Bindings, AllBindings,[]);
 	(build:missing(Comp),
 	    sicstus_format_to_chars("Component ~w missing. The following lines in the file contained references to model components that were not found: ~w", [Comp, Terms], MessStr);
-	sicstus_format_to_chars("Simile had some sort of problem incorporating the following lines from the file into the model: ~w", Terms, MessStr)),
+	sicstus_format_to_chars("Simile had some sort of problem incorporating the following lines from the file into the model: ~w", [Terms], MessStr)),
 		do_dialogue("Problem reading file", warning, MessStr, ok, _)).
 
 deal_with_rest( [Term|Terms], Length, Parent, Bindings, AllBindings, Rest ) :-

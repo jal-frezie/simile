@@ -158,7 +158,9 @@ contains_box(Parent, Box) :-
 :- dynamic(selected_box_is/1).
 
 record_bbox(Parent) :-
-        setof(BB, contains_box(Parent, BB), [Box1 | Boxes]),
+        setof(BB, Node^(find_all_comps(Parent, Node),
+			get_highlit_obj(0, Node),
+			get_drawing_form(Node, _, BB)), [Box1 | Boxes]),
 	combine_boxes(Box1, Boxes, Box),
 	retractall(selected_box_is(_)),
 	assert(selected_box_is(Box)).
