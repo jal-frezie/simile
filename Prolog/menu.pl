@@ -515,8 +515,10 @@ set_properties(Wid, Model) :-
 	    add_parameter(Model, 0, comment, NewComment),
 	    add_parameter(Model, 0, fix_math_args, NewFix),	
 	    add_parameter(Model, 0, separate, NewSeparate),
+	    (NewEnumSpecs = '', !,
+	        NewEnumTypes = [];
 	    all(menu, separate_type_from_mems,
-		[build(NewEnumSpecs), build(NewEnumTypes)]),
+		[build(NewEnumSpecs), build(NewEnumTypes)])),
 	    add_parameter(Model, 0, enum_types, NewEnumTypes),
 	    (change_shape(Model, hide_contents, NewHide);
 		set_shape(Model, hide_contents, NewHide)),
@@ -527,6 +529,7 @@ set_properties(Wid, Model) :-
 		(\+ Error = [],
 		    append("Invalid dimension string -- ", Error, Wibble);
 		get_actual_sizes(UseCount, Sizes),
+#		get_actual_sizes(Model, UseCount, Sizes, _,_),
 		    (member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),
 			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
