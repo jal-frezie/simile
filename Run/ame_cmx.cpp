@@ -348,6 +348,7 @@ public:
 	    !nodedata[count].path[level]) {
 	  strcat(result, "/");
 	  strcat(result, nodedata[count].caption);
+	  break;
 	}
       }
     }
