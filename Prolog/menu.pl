@@ -273,6 +273,22 @@ menu_handle(Win, file, prolog_eqns) :-
 	fail;
 	close(Stream)).
 
+menu_handle(Win, file, export_prolog) :-
+	Win shows_model Model,
+	count_functions(Model, N),
+	state:eval_fn_limit_is(Limit),
+	(N > Limit,
+	    edition_is(evaluation), !,
+	    sicstus_format_to_chars("This model has ~d equations. This is greater than ~d, so it cannot be saved in the evaluation edition.", [N, Limit], Annoy),
+	    do_dialogue("Error saving model", error, Annoy, ok, _),
+	    fail;
+	true),
+
+	get_default_export_name(Model, ".pl", DefName),
+	get_program_file(DefName, FileName),
+	output:date_is(Date),
+	save_if_poss(FileName, Model, Date).
+
 write_eqn_term(Submodel, Entry, Comment) :-
 	find_all_comps(Submodel, Component),	
 	find_type(Component, function),
@@ -611,6 +627,7 @@ do_save(Model, New_name) :-
 
 	/* save prolog data */
 	append_atoms(SaveDir, '/model.pl', TempFile),
+	output:date_is(Date),
 	save_if_poss(TempFile, Model, Date),
 	
 	/* Save image backgrounds */
@@ -624,7 +641,6 @@ do_save(Model, New_name) :-
 	    all(state, get_display_depth, [unify(Win),
 		 build([ghost_link, influence, variable, flow, compartment,
 		   submodel, caption, sections]), build(CurrentDepths)]),
-	    output:date_is(Date),
 	    save_canvas(Win, CanvasName, CurrentDepths, Date);
 	\+ output:my_file_exists(CanvasName);
 	output:my_delete_file(CanvasName)),

@@ -1103,6 +1103,8 @@ proc AddMainMenu { winid initWidth initDepths} {
     
     $fm2a add command -label "Prolog" \
             -command "MenuSelect $winid.canvas file prolog_eqns"
+    $fm2 add command -label "Model description" \
+            -command "MenuSelect $winid.canvas file export_prolog"
     $fm add separator
     if {[info exists custom(first_up)]} {
         $fm add command -label Close -command "byebye $winid" \

@@ -1175,6 +1175,7 @@ concession to usability, fast_delete removes its equivalence entry from its
 start point, allowing it to be used for end-to-end deletes. */
 
 fast_delete(Dead) :-
+	delete_implicit_node(Dead),
 	state:shows_model(Win,Dead),
 	    state:destroy_window(Win),
 	    maintain:kill_window(Win),
