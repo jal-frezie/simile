@@ -95,9 +95,8 @@ namespace eval $keyValue {
                 -rowseparator \n -colseparator \t \
                 -yscrollcommand [list AdjustCanvas $winId t y] \
                 -xscrollcommand [list AdjustCanvas $winId f x] \
-                -selecttitle true; # -state disabled set to normal to change it display, click etc
-        #
-        
+                -selecttitle true
+
         pack $winId.t -fill both -expand true
         $winId.t tag configure red -fg red
         
@@ -372,6 +371,7 @@ namespace eval $keyValue {
         variable lastDisplay
         variable varNamePosns
         variable cellFormat
+	variable editMode
         
         variable values
         variable rowNames
@@ -441,6 +441,8 @@ namespace eval $keyValue {
         set colsTop 0
         set hideTime [string match none [lindex $orientList($winId) 0]]
         set level $hideTime
+
+	$winId.t configure -state normal
         while {$level-$hideTime < $levels} {
             switch $level {
                 0 {set topCapt Time}
@@ -592,6 +594,9 @@ namespace eval $keyValue {
                 $winId.t see 0,$lineToShow
             }
         }
+        if {![info exists editMode($winId)]} {
+	    $winId.t configure -state disabled
+	}
     }
 
 # OK you thought that was tricky, now we need one to go the other way and 
@@ -606,9 +611,6 @@ namespace eval $keyValue {
 	variable orientList
 	variable indices
 
-	variable dataStore
-	puts [array get dataStore]
-	
 	set rowsPt 0
 	set colsPt 0
 	set nonePt 0
@@ -627,7 +629,6 @@ namespace eval $keyValue {
 	    incr ${level}Pt
 	}
 
-	puts $subscriptTemplate
         foreach rowEntry [array names rowIds $winId,*] {
 	    set rowsHeaders [lindex [split $rowEntry ,] 1]
 	    foreach colEntry [array names colIds $winId,*] {
@@ -637,7 +638,6 @@ namespace eval $keyValue {
 		    [set ::data${winId}($rowIds($rowEntry),$colIds($colEntry))]
 	    }
 	}
-	puts [array get values]
 
 # kill indices if this works
 	while {![info exists values()]} {
@@ -647,11 +647,8 @@ namespace eval $keyValue {
 		lappend values($shortcol) [lindex $indcol end] $val
 	    }
 	}
-	puts $values()
-	unset dataStore
-	# need tweaking if time/var in use
-	set dataStore($winId,0,0.0) [lindex $values() 1]
-
+#	puts $values()
+	return [lindex $values() 1]
     }
 
     proc ReComp {l1 l2} {
@@ -726,7 +723,9 @@ namespace eval $keyValue {
         variable displayList
         variable format
         variable displayUpdate
-        
+        variable editMode
+	variable dataStore
+
         set t [toplevel $winId.propertiesDlg]
         wm transient $t $winId
         wm title $t "Table properties"
@@ -851,7 +850,11 @@ namespace eval $keyValue {
         
         if {[set ::${t}done]} {
 # only do if table is editable
-#	    ExtractEdits $winId
+	    if {[info exists editMode($winId)]} {
+		unset dataStore
+		# need tweaking if time/var in use
+		set dataStore($winId,0,0.0) [ExtractEdits $winId]
+	    }
             set orientList($winId) [list [set ::${t}l1] [set ::${t}l2] \
                     [set ::${t}l3] [set ::${t}l4]]
 	    set displayUpdate($winId) [set ::${t}l5]

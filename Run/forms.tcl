@@ -462,6 +462,7 @@ proc RollAll {s l1 l2 l3 top bot} {
 proc GetTable {parent box} {
     global equation table_entry table_viewer
 
+    set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
     if {[equationDoTable $parent 1]} {
         set equation(table_data) [concat [list $table_entry(fileName) \
@@ -1045,13 +1046,13 @@ proc RemoveEnumMem {fr} {
 }
 
 proc GetEnumMems {fr} {
-    global equation table_entry
+    global table_entry
     set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
     upvar \#0 disaggregate(enumtype,$togo) memList
-    set equation(table_data) {} ;# dont try to keep file origins
+    set table_entry(data) {} ;# dont try to keep file origins
     set table_entry(values) {}
     for {set pos 0} {$pos < [llength $memList]} {incr pos} {
-	lappend equation(table_values) [expr $pos+1] \
+	lappend table_entry(values) [expr $pos+1] \
 	    [list [lindex $memList $pos]]
     }
     if {[equationDoTable .disaggregation 0]} {

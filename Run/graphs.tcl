@@ -419,7 +419,7 @@ proc FineX { c } {
 #####################################################################
 
 proc equationDoTable {parent doQuoting} {
-    global equation table_entry
+    global table_entry
     
     toplevel .table -bd 4
     wm transient .table $parent
@@ -498,10 +498,10 @@ proc equationDoTable {parent doQuoting} {
     
     set t .table
     tkwait visibility .table
-    if {[llength $equation(table_data)]} {
-        set table_entry(fileName) [lindex $equation(table_data) 0]
-        set table_entry(dataField) [lindex $equation(table_data) 1]
-        set table_entry(indices) [lrange $equation(table_data) 2 end]
+    if {[llength $table_entry(data)]} {
+        set table_entry(fileName) [lindex $table_entry(data) 0]
+        set table_entry(dataField) [lindex $table_entry(data) 1]
+        set table_entry(indices) [lrange $table_entry(data) 2 end]
 	set i 1
 	foreach idx $table_entry(indices) {
 	    $lidx insert end id$i -text $idx
@@ -563,6 +563,7 @@ proc EditListAsTable {parent} {
     focus $t
     grab $t
     tkwait variable table_viewer(done)
+    set table_entry(values) [${viewerId}::ExtractEdits $t]
     grab release $t
     destroy $t
 }
@@ -958,9 +959,9 @@ proc Relativize {current remote} {
 proc GetFromTable {parent compName} {
     global paramState paramData widgetNames table_entry
     if {[info exists paramState($compName)]} {
-	set equation(table_data) $paramState($compName)
+	set table_entry(data) $paramState($compName)
     } else {
-	set equation(table_data) {}
+	set table_entry(data) {}
     }
     set table_entry(values) [$widgetNames($compName) get 1.0 1.end]
     
