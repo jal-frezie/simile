@@ -14,10 +14,13 @@ namespace eval ArcMap {
     variable esriType {integer longint single double string date ObjId Geom Blob}
     
     variable esriCorekey HKEY_CLASSES_ROOT\\TypeLib\\{866AE5D3-530C-11D2-A2BD-0000F8774FB5}\\1.0\\0\\win32
-    variable esriCore_typelib [registry get $esriCorekey ""]
     variable esriMxkey HKEY_CLASSES_ROOT\\TypeLib\\{AA603763-259A-11D3-9F4A-00C04F6BC621}\\1.0\\0\\win32
-    variable esriMx_typelib [registry get $esriMxkey ""]
-    
+
+    if {[catch {
+        variable esriCore_typelib [registry get $esriCorekey ""]
+        variable esriMx_typelib [registry get $esriMxkey ""]}]} {
+    } else  {
+        
     proc StartArcMap {ref} {
         global Arc_ArcMap
         global Arc_Map
@@ -335,6 +338,7 @@ namespace eval ArcMap {
     ##puts [GetTableFieldNames $Layer]
     
     
+}
     
 }; # end namespace
 }
