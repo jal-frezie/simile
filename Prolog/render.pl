@@ -529,6 +529,9 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 		caption_for(Pop, CaptionHead),
 		append_atoms([CaptionHead, '/', CaptionTail], Caption);
 	    CaptionTail = Caption),
+	    name(Caption, CaptionTtfnStr),
+	    user:all_ttfn_to_utf8(CaptionTtfnStr, CaptionUtf8Str),
+	    name(UseCaption, CaptionUtf8Str),
 	    find_type(VisName, VisType),
 	    member(VisType-Class, [submodel-'SUBMODEL',
 				   variable-'VARIABLE',
@@ -553,7 +556,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, GraphOwners,
 		/* make a value lookup entry for each node with this value */
 		setof([NodeName, Type, PutEval, CappedDims, 
 				NewPath, GraphPointer,
-				Caption, Min, Max, Class, Name],
+				UseCaption, Min, Max, Class, Name],
 			
 		     (NodeName = VisName,
 			 PutEval = Eval;

@@ -5,7 +5,8 @@ sicstus_use_module(sp_only).
 
 tcl_eval(Cmd, Result) :-
         decode_command(Cmd, BrokenString),
-	remove_crs(BrokenString, String),
+	remove_crs(BrokenString, TtfnString),
+	all_ttfn_to_utf8(TtfnString, String),
 	append("send_tcl_cmd ", String, PlString),
 	name(TkCmd, PlString),
 	write(TkCmd), nl,
@@ -122,7 +123,8 @@ tk_main_loop :-
 wait_for_tcl(Result) :-
         repeat,
 	read_codes(JoinedTclStr),
-	restore_crs(TclStr, JoinedTclStr),
+	all_utf8_to_ttfn(JoinedTclStr, Joined),
+	restore_crs(TclStr, Joined),
 	(append("command:", CmdStr, TclStr),
 	    append(CmdStr, ".", TermStr),
 	    do_cmd(TermStr),
@@ -140,3 +142,92 @@ do_cmd(TermStr) :-
 
 wind_up :-
 	halt(0).
+
+/* cannot use all because of variable length source */
+all_utf8_to_ttfn([], []).
+
+all_utf8_to_ttfn(String, NewString) :-
+	append(Code, Rest, String),
+	utf8_to_unicode(Code, Char), !,
+	unicode_to_ttfn(Char, Start),
+	all_utf8_to_ttfn(Rest, More),
+	append(Start, More, NewString).
+
+utf8_to_unicode([H | String], Char) :-
+	H < 192, !,
+	    Char = H,
+	    String = [];
+	Spares is floor(7-log(256-H)/log(2))//1,
+	    length(String, Spares),
+	    TopVal is 128+(H /\ (63 >> Spares)),
+	    base64([TopVal | String], Char).
+
+base64([Last], Val):-
+	Val is Last-128.
+
+base64(String, All) :-
+	append(Rest, [Last], String),
+	base64(Rest, Tail),
+	All is 64*Tail + (Last-128).
+
+unicode_to_utf8(Char, [Key | String]) :-
+	Char < 128, !,
+	    Key = Char,
+	    String = [];
+	Length is floor(log(Char)/log(2)-1)//5,
+	    Key is (Char >> (6*Length)) \/ (255 >> (7-Length) << (7-Length)),
+	    length(String, Length),
+	    fill_chars(String, Char).
+
+fill_chars([], _Char).
+
+fill_chars(St, Char) :-
+	append(More, [Hole], St),
+	Hole is 128 \/ (Char /\ 63),
+	LChar is Char >> 6,
+	fill_chars(More, LChar).
+
+/* Now let's see how much easier this is with a properly designed encoding
+system... */
+
+/* cannot use all because of variable length source */
+all_ttfn_to_utf8([], []).
+
+all_ttfn_to_utf8(String, NewString) :-
+	append(Code, Rest, String),
+	ttfn_to_unicode(Code, Char), !,
+	unicode_to_utf8(Char, Start),
+	all_ttfn_to_utf8(Rest, More),
+	append(Start, More, NewString).
+
+ttfn_to_unicode([H | String], Val) :-
+	[H] = "X", !,
+	    convert_ttfn(String, Val);
+	String = [], Val = H.
+
+atom_heart("0123456789_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz").
+
+convert_ttfn([C1 | Rest], Val) :-
+	atom_heart(AtomMakers),
+	nth0(N, AtomMakers, C1),
+	(N >= 32, !,
+	    Val is N-31,
+	    Rest = [];
+	 convert_ttfn(Rest, TailVal),
+	    Val is N+32*TailVal).
+
+unicode_to_ttfn(Val, Chars) :-
+	Val < 192, \+ [Val] = "X", !,
+	    Chars = [Val];
+	spinout_ttfn(Val, Spun),
+	    append("X", Spun, Chars).
+
+spinout_ttfn(Val, [First | Rest]) :-
+	(Val < 32, !,
+	    Posn is 31+Val,
+	    Rest = [];
+	 Posn is Val /\ 31,
+	    Tail is Val >> 5,
+	    spinout_ttfn(Tail, Rest)),
+	atom_heart(AtomMakers),
+	nth0(Posn, AtomMakers, First).
