@@ -1769,7 +1769,7 @@ proc NotifyOverLimit {limit} {
             -command {set ack 1}] \
             -side left -padx 4 -pady 4
     pack [button $buttons.help -text Help -width 10 \
-            -command {ContextSensitiveHelp .notify coviewexpiry.htm}] \
+            -command {ContextSensitiveHelp .notify files/limit.htm}] \
             -side left -padx 4 -pady 8
     pack $buttons
     
