@@ -453,7 +453,7 @@ proc max {first last} {
 proc PutItThere {t parent} {
     global tcl_platform
     toplevel .$t -bd 4
-    if {[winfo exists $parent]} {
+    if {[winfo exists $parent] && [string compare . $parent]} {
 	wm transient $t $parent
 	if [string match Darwin $tcl_platform(os)] {
 	    ::tk::unsupported::MacWindowStyle style $t floatGrowProc
