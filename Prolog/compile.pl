@@ -740,8 +740,9 @@ merge_inters([Function | Rest], Model, NewModel, Constants) :-
 
 /* extract_action: get the action part of a make instruction. */
 
-extract_action(make(Effect, _,_,_, Actions), Actions) :-
-	nonvar(Effect), !; Effect = none.
+extract_action(make(Effect, Conds,_,_, Actions), Actions) :-
+	(nonvar(Effect), !; Effect = none),
+	(nonvar(Conds), !; Conds = []).
 
 /* extract_assignments creates the instructions that set the values of compartments
 and functions within a submodel. It also creates the instructions that determine how
@@ -1286,12 +1287,13 @@ allowing there to be more than two. */
 order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 	order_phase(Phase, Path, RawAssign, ThisPhase, Later, []),
 	order_deeper_assignments(Phase, Path, Later, DeepAssign, Left),
+	append(ThisPhase, DeepAssign, OrderedAssign),
 	/* Now check if we picked any instructions at this level with 'later'
 	conditions that we couldn't resolve: if so, redo order_phase. */
-	\+ (member(make(_, Conds, _,_,_), ThisPhase),
+	\+ (member(make(_, Conds, _,_,_), OrderedAssign),
 	       member(later(Cond), Conds),
-	       member(make(Cond, _,_,_,_), Left)),
-	append(ThisPhase, DeepAssign, OrderedAssign).
+	       member(make(Cond, _, CPath,_,_), Left),
+	       suffix(Path, CPath)).
 	
 order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 	(unfinished_submodels(Later, Phase, Path, Subs),
