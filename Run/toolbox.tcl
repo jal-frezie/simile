@@ -415,13 +415,15 @@ proc HaveValues {node} {
 proc TryToKill {node} {
     global runState runHow
 #puts "Trying to kill $node"
-    if {[string equal open $runHow(launch)]} {
-	c_killmodel [pid $runState($node,interp)]
-	catch {close $runState($node,interp)}
-    } else {
-	c_killmodel $runState($node,interp)
+    if {[info exists runState($node,interp)]} {
+	if {[string equal open $runHow(launch)]} {
+	    c_killmodel [pid $runState($node,interp)]
+	    catch {close $runState($node,interp)}
+	} else {
+	    c_killmodel $runState($node,interp)
+	}
+	unset runState($node,interp)
     }
-    unset runState($node,interp)
 # now supply bogus result to interrupted model call
     set runState($node,response$runState($node,queueSize)) {res 0}
 #puts "get: model killed"
