@@ -92,7 +92,7 @@ proc RunEnv::Create { ModelWin } {
                 {command "&Print..." {} "Print display"  \
                             {} -command { PrintCurrentContainer } }
                 {separator}
-                {command "Pa$rameters..." {} "Modify file parameters"  \
+                {command "Pa&rameters..." {} "Modify file parameters"  \
                             {} -command { FileParamDialogue 1 .mre } }
                 {separator}
                 {command "&Close"    {} "Close the Run Environment window" \
@@ -233,7 +233,11 @@ proc RunEnv::AddNotebookToCurrentContainer {} {
 }
 
 proc RunEnv::AddNotebookPage {containerId} {
-    set ParentContainer [FindParentpanedwindowOrNotebook $containerId]
+    if {[string match notebook [winfo name $containerId]]} {
+        set ParentContainer $containerId
+    } else  {
+        set ParentContainer [FindParentpanedwindowOrNotebook $containerId]
+    }
     #ShowMessage debug info "containerId $containerId\nParentContainer $ParentContainer" ok
     if {[string match notebook [winfo name $ParentContainer]]} {
         set pageId [UniqueId page [$ParentContainer pages]]
@@ -248,9 +252,11 @@ proc RunEnv::AddNotebookPage {containerId} {
         bind $newContainer.panedwindow.pane0 <Button-3> \
                 "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
         $newContainer.panedwindow add $newContainer.panedwindow.pane0
+        return $newContainer.panedwindow.pane0
     } else  {
-        AddNotebookPage $ParentContainer
+        return [AddNotebookPage $ParentContainer]
     }
+
 }
 
 proc RunEnv::AddNotebookPageToCurrentContainer {} {
@@ -371,7 +377,7 @@ proc ::RunEnv::DeleteHelperContainer {containerId page} {
     global helperTable
     # container is the frame a helper would be displayed in
     # a parent is the notebook or panedwindow the container belongs to
-    #    ShowMessage debug info "container $containerId; page $page; \
+    #ShowMessage debug info "container $containerId; page $page; \
     #            parent [::RunEnv::FindParentpanedwindowOrNotebook $containerId]" ok
     set parentPath [::RunEnv::FindParentpanedwindowOrNotebook $containerId]
     set parentType [winfo name $parentPath]
@@ -397,11 +403,11 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
     set pages [$notebook pages]
     set n [llength $pages]
     set index [lsearch $pages $page]
-#    ShowMessage debug info "DeleteNotebookPage  $notebook; $page\n \
+    #ShowMessage debug info "DeleteNotebookPage  $notebook; $page\n \
 #            page $page; n pages: $n; \n \
 #            parent [winfo parent $notebook]" ok; ########
     if {$n==1} {
-#        ShowMessage debug info "DeleteNotebookPage n==1" ok
+#ShowMessage debug info "DeleteNotebookPage n==1" ok
         if {[string match mainDisplayPane [winfo name [winfo parent $notebook]]]} {
             ShowMessage Information info "Cannot delete this page. The main notebook must have at least one page." ok
             return
@@ -410,16 +416,16 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
     $notebook delete $page 1
     set pages [$notebook pages]
     set n [llength $pages]
-#    ShowMessage debug info "DeleteNotebookPage after delete page pages $n" ok; #########
+     #ShowMessage debug info "DeleteNotebookPage after delete page pages $n" ok; #########
     if {$n==0} {
         set containerId [winfo parent $notebook]
-#        ShowMessage debug info "DeleteNotebookPage n==0; new container $containerId" ok; ########
+    #ShowMessage debug info "DeleteNotebookPage n==0; new container $containerId" ok; ########
         destroy $notebook
         SetCurrentContainer $containerId
-        ShowMessage debug info "DeleteNotebookPage  destroy notebook\n \
+        #ShowMessage debug info "DeleteNotebookPage  destroy notebook\n \
                 new container $containerId" ok; ########
     } else  {
-        ShowMessage debug info "DeleteNotebookPage default" ok
+        #ShowMessage debug info "DeleteNotebookPage default" ok
         # adjust any labels that should be = to index + 1
         set pages [$notebook pages]
         set i 0
@@ -441,7 +447,7 @@ proc RunEnv::DeleteNotebookPage {notebook page} {
 }
 
 proc RunEnv::DeletePane {parentPath containerId} {
-#    ShowMessage debug info "DeletePane\n parentPath $parentPath\n \
+    #ShowMessage debug info "DeletePane\n parentPath $parentPath\n \
 #            containerId $containerId\n \
 #            panes [$parentPath panes]" ok; ###########
     $parentPath forget $containerId
@@ -450,7 +456,7 @@ proc RunEnv::DeletePane {parentPath containerId} {
     if {[llength [$parentPath panes]]==0} {
         set parentPage [winfo parent $parentPath]
         set parentNoteBook [winfo parent $parentPage]
-#        ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
+    #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
 #                parentPage $parentPage; parentNoteBook $parentNoteBook\n \
 #                pages [$parentNoteBook pages]\n \
 #                current page [$parentNoteBook raise]" ok; ###########
@@ -540,7 +546,7 @@ proc RunEnv::Destroy {} {
     global helperTable modelWin window_info
     variable runControlWindId
     
-#    ShowMessage debug info "RunEnv::Destroy RunContol $runControlWindId" ok
+    #ShowMessage debug info "RunEnv::Destroy RunContol $runControlWindId" ok
     
     # 
     # stop the model running by invoking the Run Control Stop button    
@@ -568,7 +574,7 @@ proc RunEnv::Destroy {} {
 proc RunEnv::Addpanedwindow {containerId orientation} {
     set pwidth  [winfo width $containerId]
     set pheight [winfo height $containerId]
-    ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
+    #ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
     #        pwidth $pwidth; pheight $pheight" ok; ################
     panedwindow $containerId.panedwindow -orient $orientation
     pack $containerId.panedwindow -expand yes -fill both
@@ -583,7 +589,7 @@ proc RunEnv::Addpanedwindow {containerId orientation} {
             set height [expr {0.9*$pheight}]
         }
         default {
-            ShowMessage debug info "Addpanedwindow: incorrect value for orientation: $orientation;\
+            ShowMessage Error error "Addpanedwindow: incorrect value for orientation: $orientation;\
                     must be  must vertical or horizontal" ok
         }
     }
@@ -608,7 +614,7 @@ proc RunEnv::SetCurrentContainer {win} {
 
 # Return a list of all children, found recursively, of a widget
 proc RunEnv::GetChildren { widget } {
-    #    ShowMessage debug info "GetChildren" ok
+    #ShowMessage debug info "GetChildren" ok
     set allChildren [winfo children $widget]
     foreach child $allChildren {
         set allChildren [concat $allChildren [GetChildren $child]]
@@ -632,7 +638,7 @@ proc RunEnv::GetWidgetClass {widgetList widgetClass} {
 proc RunEnv::GetWidgetsWithName {widgetList name} {
     set nameList []
     foreach widget $widgetList {
-        #        ShowMessage debug info "$widget\n[lindex [split $widget .] end]" ok
+        #ShowMessage debug info "$widget\n[lindex [split $widget .] end]" ok
         if {[string match $name [lindex [split $widget .] end]]} {
             lappend nameList $widget
         }
@@ -708,7 +714,8 @@ proc RunEnv::KillDisplays {} {
 
 proc RunEnv::CreateHelperInWindow {containerId helperId helperTitle} {
     #ShowMessage debug info "CreateHelperInWindow: \
-    #containerId $containerId helperId $helperId helperTitle $helperTitle" ok
+    #        containerId $containerId helperId $helperId helperTitle $helperTitle\n\
+    #        children [winfo children $containerId]" ok
     set winId [NewHelperInWindow $containerId $helperId $helperTitle]
     ${helperId}::initialize $winId
     ChildrenFocusParent $winId
@@ -836,88 +843,120 @@ proc RunEnv::SaveContainer {winId stream} {
 proc RunEnv::LoadView {} {
     global helperTable
     variable mainframe
+    variable dp0
     
     set savedView [ChooseFile Displays.shf "Open view specification file" 0]
     if {[llength $savedView]} {
         destroy $RunEnv::dp0.notebook; #what if there is an error in the file delete MRE, rebuild
         set stream [open $savedView r]
         
-        # read and set .mre position and size
+        # check for run env that made the shf
         gets $stream line
-        scan $line "%i %i %i %i" x y width height
-        wm geometry .mre ${width}x${height}+${x}+${y}
-        
-        gets $stream line
-        scan $line "%i %i" x y;
-        [$mainframe getframe].mainpw sash place  0 $x $y
-        
-        gets $stream line
-        scan $line "%i %i" x y
-        [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
-                
-        while {[gets $stream line] >= 0} {
-            switch [scan $line %s] {
-                container {
-                    LoadContainer $stream $line
-                }
-                panedwindow {
-                    #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
-                    scan $line "%s %s %s" widget path orient
-                    panedwindow $path -orient $orient
-                    #set containerId [winfo parent $path]
-                    #ShowMessage debug info "containerId $containerId" ok
-                    #$notebook raise $pageId; # or $panedwindow sash place won't work
-                    pack $path -expand yes -fill both
-                }
-                pane {
-                    #%puts $stream "pane $pane"
-                    scan $line "%s %s" widget path
-                    frame $path -highlightcolor black  -highlightthickness 1
-                    set panedwindow [winfo parent $path]
-                    $panedwindow add $path
-                    bind $path <Button-1> "::RunEnv::SetCurrentContainer %W"
-                    bind $path <Button-3> \
-                            "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-                }
-                sash {
-                    scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
-                    # the page this pane is in must be raised and update called!
-                    #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy " ok
-                    update
-                    $panedwindow sash place $index $sashx $sashy
-                }
-                notebook {
-                    #puts $stream "notebook $notebook"
-                    scan $line "%s %s" widget path
-                    NoteBook $path
-                    set containerId [winfo parent $path]
-                    #ShowMessage debug info "containerId $containerId" ok
-                    pack $path -fill both -expand yes
-                }
-                page {
-                    #puts $stream "page $notebook $page $pagecaption"
-                    scan $line "%s %s %s %s" widget notebook pageId pagecaption
-                    #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
-                    $notebook insert end $pageId -text $pagecaption \
-                        -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
+        if {[llength $line]==4} {
+            
+            # read and set .mre position and size
+            scan $line "%i %i %i %i" x y width height
+            wm geometry .mre ${width}x${height}+${x}+${y}
+            
+            gets $stream line
+            scan $line "%i %i" x y;
+            [$mainframe getframe].mainpw sash place  0 $x $y
+            
+            gets $stream line
+            scan $line "%i %i" x y
+            [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
+            
+            while {[gets $stream line] >= 0} {
+                switch [scan $line %s] {
+                    container {
+                        LoadContainer $stream $line
+                    }
+                    panedwindow {
+                        #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
+                        scan $line "%s %s %s" widget path orient
+                        panedwindow $path -orient $orient
+                        #set containerId [winfo parent $path]
+                        #ShowMessage debug info "containerId $containerId" ok
+                        #$notebook raise $pageId; # or $panedwindow sash place won't work
+                        pack $path -expand yes -fill both
+                    }
+                    pane {
+                        #%puts $stream "pane $pane"
+                        scan $line "%s %s" widget path
+                        frame $path -highlightcolor black  -highlightthickness 1
+                        set panedwindow [winfo parent $path]
+                        $panedwindow add $path
+                        bind $path <Button-1> "::RunEnv::SetCurrentContainer %W"
+                        bind $path <Button-3> \
+                                "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                    }
+                    sash {
+                        scan $line "%s %s %i %i %i" sash panedwindow index sashx sashy
+                        # the page this pane is in must be raised and update called!
+                        #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy " ok
+                        update
+                        $panedwindow sash place $index $sashx $sashy
+                    }
+                    notebook {
+                        #puts $stream "notebook $notebook"
+                        scan $line "%s %s" widget path
+                        NoteBook $path
+                        set containerId [winfo parent $path]
+                        #ShowMessage debug info "containerId $containerId" ok
+                        pack $path -fill both -expand yes
+                    }
+                    page {
+                        #puts $stream "page $notebook $page $pagecaption"
+                        scan $line "%s %s %s %s" widget notebook pageId pagecaption
+                        #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
+                        $notebook insert end $pageId -text $pagecaption \
+                                -raisecmd "::RunEnv::PageRaiseCmd $containerId.notebook $pageId"
                         # page raised below before any panes so that must be moved todo                 -raisecmd "::RunEnv::PageRaiseCmd $notebook $pageId"
-                    [$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
-                    bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
-                    bind [$notebook getframe $pageId] <Button-3> \
-                            "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
-                    catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
-                
-                }
-                default {
-                    # puts $stream "Unhandled mre element"
+                        [$notebook getframe $pageId] configure -highlightcolor black  -highlightthickness 1
+                        bind [$notebook getframe $pageId] <Button-1> "::RunEnv::SetCurrentContainer %W"
+                        bind [$notebook getframe $pageId] <Button-3> \
+                                "::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
+                        catch {$notebook raise $pageId}; # or $panedwindow sash place won't work but panes nonexistant
+                        
+                    }
+                    default {
+                        # puts $stream "Unhandled mre element"
+                    }
                 }
             }
-                    }
-        close $stream
+            close $stream
+            $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
+        } elseif {[llength $line]==1}  {
+            # assume that it is an shf made by the multiple window run env
+            RunEnv::AddNotebook $dp0
+            seek $stream 0 start
+            while {[gets $stream helperId] >= 0} {
+                set emptyPage [MainNotebookEmptyPage]
+                if {![string match none $emptyPage]} {
+                    set containerId [MainNotebookEmptyPage]
+                } else  {
+                    set containerId [AddNotebookPage $dp0.notebook]
+                }
+                #ShowMessage debug info "LoadView winId $containerId" ok
+                gets $stream helperTitle
+                #containerId helperId helperTitle
+                #set winId $containerId
+                set winId [NewHelperInWindow $containerId $helperId [RestoreCrs $helperTitle]]
+                gets $stream geometry
+                #wm geometry $winId $geometry # not a toplevel
+                gets $stream oldStatus
+                set helperTable($winId,status) [RestoreCrs $oldStatus]
+                ${helperId}::Restore $winId
+            }
+            close $stream
+            $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
+            
+        } else  {
+            ShowMessage Error error "Unknown display configuration file format" ok
+        }
     }
-    $RunEnv::dp0.notebook raise [lindex [$RunEnv::dp0.notebook pages] 0]
 }
-
+    
 proc RunEnv::LoadContainer {stream line} {
     global helperTable
     
@@ -997,12 +1036,12 @@ proc NewMreHelperWindow {helperId helperTitle} {
 proc RunEnv::MainNotebookEmptyPage {} {
     variable dp0
     foreach page [$dp0.notebook pages] {
-        if {![winfo exists [$dp0.notebook getframe $page].container] & \
-                    ![winfo exists [$dp0.notebook getframe $page].panedwindow]} {
-            return $page
+        if {![winfo exists \
+            [$dp0.notebook getframe $page].panedwindow.pane0.container]} {
+            return [$dp0.notebook getframe $page].panedwindow.pane0
         }
     }
-    return -1
+    return none
 }
 
 proc RunEnv::UniqueId {basename pagenames} {
