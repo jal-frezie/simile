@@ -465,14 +465,16 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 		so we do not want to convert these into numbers. Since we
 		are not making code we can use the time step field to tell it
 		this by setting it to 'dummy'. */
-		make_intermediates(FullExpr, Fn, '/dest/',
-				   [sm(_,_,_, fm_loop(IndxSzs))], _, [],
-				   [], dummy, _, Type, Inters,
-				   part_result(Context, _,_,_)))),
+		DummyDest = [sm(_,_,_, fm_loop(IndxSzs))],
+		    make_intermediates(FullExpr, Fn, '/dest/',
+				       DummyDest, _, [],
+				       [], dummy, _, Type, Inters,
+				       part_result(Context, _,_,_)),
+		    inters:get_model_and_loops(Context, DummyDest, _, Loops, _))),
 	    decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
-	    get_dims_from_loops(Context, XDims, _),
-	    Dest = instance(internal, inter(_,_,Context), use_inter('/dest/'),
+	    get_dims_from_loops(Loops, XDims, _),
+	    Dest = instance(internal, inter(_,_, Loops), use_inter('/dest/'),
 			    _, Type-_),
 	    match_param_dims(ExpInters, [Dest | Inters], TestError),
 	    real_dims_only(XDims, Dims),
@@ -525,11 +527,10 @@ expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 		analyze_array(Units, Base, Dims),
 		(units:get_conversion(_, Base, Base, _), !,
 		    Type = real;
-		Type = Base);
+		Type = Base),
+		make_inds_for(Dims, Loops, Inds);
 	    IDims = Type-Dims,
-		LRefs = Loops,
-		length(Dims, 4)),
-	    make_inds_for(Dims, Loops, Inds),
+		LRefs = Loops),
 	    DoneExpr = param(arr(_, Param, Inds), Type, Loops, _, true)),
 	Recurse = 0;
 	(Param = (ExpInt=_,_),

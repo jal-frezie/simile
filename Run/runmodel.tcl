@@ -598,7 +598,7 @@ proc AddHelperSublist {fm title ct} {
                 if {[string match {Slider control} $action]} {
                     set helperTable(SliderControl) $keyValue
                 }
-                if {[string match {Data table} $action]} {
+                if {[string match {Data table} $action]} {
                     set helperTable(TableViewer) $keyValue
                 }
                 $m add command -label $action \
@@ -910,7 +910,7 @@ proc CountValues {text} {
 proc AddWidgetPopup {key X Y} {
     global msgs
     if {![PrefValue custom(popupHelp) popupHelp]} {
-	return
+	return
     }
     PostPopup $X $Y
     if {[info exists msgs($key)]} {
@@ -1061,7 +1061,7 @@ proc StripCrs {withCrs} {
     regsub -all \n $withCrs \\n noCrs
     return $noCrs
 }
-
+
 proc RestoreCrs {noCrs} {
     regsub -all \\\\n $noCrs \n withCrs
 
@@ -1299,7 +1299,7 @@ proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Rep]} {
 	set prefx $base/model
 	if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
-	    file rename -force ${prefx}${Rep}[info sharedlibextension] \
+	    file copy -force ${prefx}${Rep}[info sharedlibextension] \
 		${prefx}[info sharedlibextension]
 	} else {
 	    file delete -force ${prefx}[info sharedlibextension]
