@@ -589,7 +589,7 @@ get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
 		(select(End, [start, finish], [Other]),
 		    end_coords(FarLink, Other, FarPt),
 		    [FarPt] = Rest;
-		get_hierarchy(FarLink, End, Rest)));
+		get_hierarchy(FarLink, End, Rest, Recurse)));
 	Pt = Top,
 		Rest = []).
 
