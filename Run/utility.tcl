@@ -210,7 +210,9 @@ proc QueuePopup {args} {
         after cancel $popper(cmd)
     }
     set popper(cmd) [after 500 $args]
-    set popper(foc) [focus]
+    if {![winfo exists .popup]} {
+	set popper(foc) [focus]
+    }
 }
 
 proc AddWidgetPopup {key X Y} {
