@@ -1233,6 +1233,11 @@ proc AddMainMenu { winid initWidth initDepths} {
         set custom(first_up) $winid
     }
     $fm add separator
+    $fm add command -label "List equations" \
+            -command "MenuSelect $winid.canvas file list_eqns" \
+            -accelerator "Ctrl+L"
+    AddAccelerator $winid model "List equations" "<Control-l>"
+    $fm add separator
     $fm add cascade -label Add -menu $fm.sub1
     set fm1 [menu $fm.sub1 -tearoff 0]
     $fm1 add radiobutton -label Compartment -command "ItemSelect compartment"\
@@ -1862,3 +1867,4 @@ proc snap_down3 {w values} {
         }
     }
 }
+
