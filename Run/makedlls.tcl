@@ -51,13 +51,14 @@ if $onUnix {
     if {[string match Darwin $tcl_platform(os)]} {
         exec g++ -c -O -fPIC -I. ./shank.cpp
         exec g++ -dynamiclib -o $TARGET shank.o -ldl
-        eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/Headers ./ame_cmx.cpp}
-        exec g++ -dynamiclib -o $TARGET ame_cmx.o -L$TGTLIB -l5d -ldl -framework Tcl
+        eval {exec gcc -c -O -fPIC} $defns {-I. -I$TCL/Headers ./ame_cmx.cpp}
+        exec gcc -dynamiclib -o $TARGET ame_cmx.o -L$TGTLIB -l5d -ldl -framework Tcl
     } else {
+# first two lines also done in distribution to cope with different c++ libs
         exec g++ -c -O -fPIC -I. ./shank.cpp
         exec g++ -shared -o $SHANK shank.o
-        eval {exec g++ -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
-        exec g++ -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN \
+        eval {exec gcc -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
+        exec gcc -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN \
 	    -L$TGTLIB -l5d
     }
 } else {
@@ -87,7 +88,7 @@ if $onUnix {
 	puts $batSt "g++ -c $defns -I. -I$TCL/include ame_cmx.cpp"
 	puts $batSt "dllwrap --output-lib=${TGTLIB}/lib$mydll.a --dllname=$TARGET --def=stub.def --driver-name=g++ ame_cmx.o -L${TGTLIB} -l5ddll -l$dll"
 	# Do the install dll as well
-	puts $batSt "g++ -c -o obj.o $defns -I. ./install.cpp"
+	puts $batSt "g++ -c -o obj.o $defns -I. ./install.c"
 	puts $batSt "dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o"
 	
 	close $batSt
@@ -107,7 +108,7 @@ if $onUnix {
 	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:$TARGET ${TGTLIB}/5d.lib $tclLib $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./ame_cmx.obj
 	eval {exec $TOOLS32/bin/cl.exe -Ox -c -W3 -nologo \
 		  -DWIN32 -D_WIN32 -D_DLL -D_X86_=1} $defns \
-	    {-I. -I$TOOLS32/include ./install.cpp}
+	    {-I. -I$TOOLS32/include ./install.c}
 	exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO -align:0x1000 /MACHINE:IX86 -entry:_DllMainCRTStartup@12 -dll -out:install.dll $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib $TOOLS32/lib/oldnames.lib ./install.obj
     }
     

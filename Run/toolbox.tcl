@@ -601,6 +601,33 @@ proc ControlDraw {prologVersion} {
     
     # no longer have a separate floating toolbar
     
+    if {[file exists $env(HOME)]} {
+        set custom(prefDir) [file join $env(HOME) .simile]
+    } else {
+        set custom(prefDir) [pwd]/../Prefs
+    }
+    
+    if {![file exists $custom(prefDir)]} {
+        file mkdir $custom(prefDir)
+    }
+    
+    if {[file exists $custom(prefDir)/version]} {
+        set UserStream [NetOpen $custom(prefDir)/version r]
+        gets $UserStream userinfo(oldname)
+        gets $UserStream userinfo(oldcorp)
+        gets $UserStream userinfo(oldVersion)
+        gets $UserStream userinfo(done)
+        close $UserStream
+    } else {
+        set userinfo(oldVersion) 0
+        set userinfo(done) 0
+    }
+
+    if {$sendvars(simV)>$userinfo(oldVersion) && \
+	    [string match Linux $tcl_platform(os)]} {
+        exec g++ -c -O -fPIC -I. ./shank.cpp
+        exec g++ -shared -o ../System/lib/lib5d.so shank.o
+    }
     # loading stub sets license entries
     load_c_stub
     
@@ -639,17 +666,6 @@ proc ControlDraw {prologVersion} {
         }
     }
     
-    
-    if {[file exists $env(HOME)]} {
-        set custom(prefDir) [file join $env(HOME) .simile]
-    } else {
-        set custom(prefDir) [pwd]/../Prefs
-    }
-    
-    if {![file exists $custom(prefDir)]} {
-        file mkdir $custom(prefDir)
-    }
-    
     set simtmpdir $custom(prefDir)/sim
     set go [clock clicks]
     while {[file exists $simtmpdir]} {
@@ -658,19 +674,6 @@ proc ControlDraw {prologVersion} {
     }
     file mkdir $simtmpdir
 
-    
-    if {[file exists $custom(prefDir)/version]} {
-        set UserStream [NetOpen $custom(prefDir)/version r]
-        gets $UserStream userinfo(oldname)
-        gets $UserStream userinfo(oldcorp)
-        gets $UserStream userinfo(oldVersion)
-        gets $UserStream userinfo(done)
-        close $UserStream
-    } else {
-        set userinfo(oldVersion) 0
-        set userinfo(done) 0
-    }
-    
     set UserStream [NetOpen $custom(prefDir)/version w]
     puts $UserStream $userinfo(name)
     puts $UserStream $userinfo(corp)

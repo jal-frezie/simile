@@ -99,13 +99,13 @@ double step_incr (int, double);
 int at_time_step ();
 int loses (double, int);
 
-/* abstract base class for submodels, with extractor virtual function
+/* abstract base class for submodels, with extractor virtual function */
 class submodeltype {
 public:
   virtual void* get_pointer(int id, int** dims) = 0;
 };
 
-Fn template for deleting a linked list of models -- if non-null, 
+/* Fn template for deleting a linked list of models -- if non-null, 
 calls itself for the on pointer before deleting instance
 
 template <class SMClass>
@@ -289,6 +289,7 @@ void setup_graph_data(
    va_list argptr;
    int length,right;
    int *array_data;
+   graph_data_type* graphptr;
 
    //   array_data = (int *)(malloc(xsize*sizeof(int)));
    array_data = new int[xsize];
@@ -302,18 +303,22 @@ void setup_graph_data(
    }
    va_end(argptr);
 
-   *graph_data_pointer = new graph_data_type(index, *graph_data_pointer);
-   (*graph_data_pointer)->xlow = xlow;
-   (*graph_data_pointer)->xhigh = xhigh;
-   (*graph_data_pointer)->xspan = xspan;
-   (*graph_data_pointer)->ylow = ylow;
-   (*graph_data_pointer)->yhigh = yhigh;
-   (*graph_data_pointer)->yspan = yspan;
-   (*graph_data_pointer)->range = range;
-   (*graph_data_pointer)->xsize = xsize;
-   (*graph_data_pointer)->points = array_data;
-}
+   graphptr = new graph_data_type;
+   graphptr->index = index;
+   graphptr->next = *graph_data_pointer;
+   *graph_data_pointer = graphptr;
 
+   graphptr->xlow = xlow;
+   graphptr->xhigh = xhigh;
+   graphptr->xspan = xspan;
+   graphptr->ylow = ylow;
+   graphptr->yhigh = yhigh;
+   graphptr->yspan = yspan;
+   graphptr->range = range;
+   graphptr->xsize = xsize;
+   graphptr->points = array_data;
+}
+/*
 enum_data_type** enum_data_pointer;
 
 void setup_enum_type_data(

@@ -60,15 +60,9 @@
 #endif
 #define FINDABLE extern "C"
 
-class submodeltype {
-public:
-  virtual void* get_pointer(int id, int** dims) = 0;
-};
-
 /* type declaration for structure representing a graph */
 
-class graph_data_type {
-public:
+typedef struct graph_data_type_t {
    double xlow;
    double xhigh;
    int xspan;
@@ -80,8 +74,8 @@ public:
    int* points;
 
    int index;
-   graph_data_type* next;
-
+   struct graph_data_type_t* next;
+   /*
    graph_data_type(int newIndex, graph_data_type* prev) {
      index = newIndex;
      next = prev;
@@ -93,8 +87,8 @@ public:
        delete(next);
      }
    }
-
-}; /* end of graph data type decl */
+   */
+} graph_data_type; /* end of graph data type decl */
 
 
 graph_data_type* find_graph (int index, graph_data_type* use_graph_pointer) {
@@ -103,7 +97,7 @@ graph_data_type* find_graph (int index, graph_data_type* use_graph_pointer) {
   }
   return(use_graph_pointer);
 }
-
+/*
 class enum_data_type {
 public:
   char* host;
@@ -131,19 +125,17 @@ public:
 }; /* end of enum data type decl */
 
 /* above to be phased out -- we now have... */
-class enum_type_data {
- public:
+typedef struct enum_type_data_t {
   int count;
   char* name;
   char** members;
-}; /* end of enum type data type decl */
+} enum_type_data; /* end of enum type data type decl */
 
 /* This declares the structure used by the generated code to hold metadata
 about model components. It is repeated in the stub ame_cmx.cpp to access fields
 outside the dll. */
 
-class node_data_line {
-public:
+typedef struct node_data_line_t {
   char name[16];
   int datatype;
   int enum_type_count;
@@ -156,10 +148,9 @@ public:
   double max;
   int compclass;
   char caption[256];
-}; /* end(class,node_data_line) */
+} node_data_line; /* end(class,node_data_line) */
 
-class connectRecord {
-public:
+typedef struct connectRecord_t {
   char* TopArc;
   char* TopNode;
   void* TopModel; // should be Model* but one has to be declared first
@@ -168,7 +159,7 @@ public:
   char** Dests;
   void* SearchBase;
   int* UpTree;
-};
+} connectRecord;
 
 /* this is defined in the stub, which is loaded as a library...well it
    used to be, but now once the stub has loaded the dll it just sends

@@ -1,2 +1,2 @@
+; dlltool --base-file M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01024.base --output-exp install.exp --dllname install.dll --output-def=install.def --exclude-symbol=DllMainCRTStartup@12 --def M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01024.def
 EXPORTS
-info_copy@32

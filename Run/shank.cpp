@@ -183,7 +183,7 @@ class DllLossage {
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*, void*,
-			  void*, int*, node_data_line**, int*, char***);
+			  int*, node_data_line**, int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
@@ -201,7 +201,7 @@ class Model {
   int count, count2, count3;
   int inArcCount;
   char** inArcList;
-  enum_data_type *enumtypedata;
+  //  enum_data_type *enumtypedata;
 
   getcount_type *getcount;
   getversion_type *getversion;
@@ -264,7 +264,6 @@ public:
 			    (void*)advance_ptr,
 			    (void*)get_remote_value,
 			    (void*)&c_graphdata,
-			    (void*)&enumtypedata,
 			    &phases, &nodedata, 
 			    &inArcCount, &inArcList);
     /*	sprintf(erreur, "finding %d (%s) of %d connections, first has top %s and %d dests.", 
@@ -390,14 +389,14 @@ public:
     return typesSoFar;
   }
   
-  int find_et_struct(int fake_dim) {
+  /*  int find_et_struct(int fake_dim) {
     enum_data_type* seeker = enumtypedata;
     while (fake_dim++ < -10) {
       seeker = seeker->next;
     }
     return 3;
   }
-
+  */
   int getinfo(char* node_id) {
     int count;
     for (count=0;nodecount>count;++count) {

@@ -134,7 +134,6 @@ FINDABLE int get_count(void* useClassPtr, void* ame_rand_ptr,
 		void* advance_ptr_ptr,
 		void* get_remote_value_ptr, 
 		void* graph_ptr,
-		void* enumtype_ptr,
 		int* phases, node_data_line** data_ptr,
 		int* arc_count, char*** arc_id_list) {
 
@@ -155,7 +154,6 @@ FINDABLE int get_count(void* useClassPtr, void* ame_rand_ptr,
   advance_ptr_ref = (advance_ptr_type*)advance_ptr_ptr;
   get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
   graph_data_pointer = (graph_data_type**)graph_ptr;
-  enum_data_pointer = (enum_data_type**)enumtype_ptr;
 
   /* ...and we are telling stub... */
   *phases = phasecount;

@@ -1,15 +1,15 @@
-; dlltool --base-file M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01392.base --output-exp 5d.exp --dllname 5d.dll --output-def=shank.def --exclude-symbol=DllMainCRTStartup@12 --def M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01392.def --output-lib ../System/lib/lib5ddll.a
+; dlltool --base-file M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca00320.base --output-exp 5d.exp --dllname 5d.dll --output-def=shank.def --exclude-symbol=DllMainCRTStartup@12 --def M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca00320.def --output-lib ../System/lib/lib5ddll.a
 EXPORTS
-	_Z10graphpointdP15graph_data_typei @ 1 ; graphpoint(double, graph_data_type*, int)
+	_Z10graphpointdP17graph_data_type_ti @ 1 ; graphpoint(double, graph_data_type_t*, int)
 	_Z10load_modelPcS_Pl @ 2 ; load_model(char*, char*, long*)
-	_Z10searchinfoPcPlS_PiS1_PP14enum_type_data @ 3 ; searchinfo(char*, long*, char*, int*, int*, enum_type_data**)
+	_Z10searchinfoPcPlS_PiS1_PP16enum_type_data_t @ 3 ; searchinfo(char*, long*, char*, int*, int*, enum_type_data_t**)
 	_Z13get_data_lineli @ 4 ; get_data_line(long, int)
 	_Z14get_graph_basel @ 5 ; get_graph_base(long)
 	_Z14get_node_countl @ 6 ; get_node_count(long)
 	_Z17get_node_model_idPc @ 7 ; get_node_model_id(char*)
 	_Z18fetch_top_instancelPc @ 8 ; fetch_top_instance(long, char*)
-	_Z18release_graph_dataP15graph_data_type @ 9 ; release_graph_data(graph_data_type*)
-	_Z23proc_pointers_for_shankPFvPvPciPiEPFdddEPFvS0_ES0_PPP13connectRecordPS1_ @ 10 ; proc_pointers_for_shank(void (*)(void*, char*, int, int*), double (*)(double, double), void (*)(char*), char*, connectRecord***, int**)
+	_Z18release_graph_dataP17graph_data_type_t @ 9 ; release_graph_data(graph_data_type_t*)
+	_Z23proc_pointers_for_shankPFvPvPciPiEPFdddEPFvS0_ES0_PPP15connectRecord_tPS1_ @ 10 ; proc_pointers_for_shank(void (*)(void*, char*, int, int*), double (*)(double, double), void (*)(char*), char*, connectRecord_t***, int**)
 	_Z4evallldii @ 11 ; eval(long, long, double, int, int)
 	_Z6myexitll @ 12 ; myexit(long, long)
 	_Z6updatelldi @ 13 ; update(long, long, double, int)

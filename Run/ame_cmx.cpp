@@ -135,7 +135,10 @@ int do_graph(graph_data_type** graphdata, Tcl_Interp *interp,
 
     graphptr = find_graph(index, *graphdata);
     if (!graphptr) { /* add a new graph */
-      graphptr = *graphdata = new graph_data_type(index, *graphdata);
+      graphptr = new graph_data_type;
+      graphptr->index = index;
+      graphptr->next = *graphdata;
+      *graphdata = graphptr;
     } else {
       release_graph_data(graphptr);
     }
@@ -386,7 +389,7 @@ long int modelHandle;
 connectRecord** connectDataPtr;
 int* connCountPtr;
 
-extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
 			    int argc, Tcl_Obj *CONST argv[]) {
   char* fileName;
   char* nodeName;
@@ -415,7 +418,7 @@ extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
 /* Create also sets up the tables required to get data out of one submodel
    instance into another */
 
-extern "C" int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
    int error;
    char errorTxt[256];
@@ -438,7 +441,7 @@ extern "C" int createmodelCmd(ClientData clientData, Tcl_Interp *interp,
    }
 }
 
-extern "C" int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
    double starttime;
    int phase;
@@ -474,7 +477,7 @@ extern "C" int updatemodelCmd(ClientData clientData, Tcl_Interp *interp,
    return serviceError;
 }
 
-extern "C" int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
    double starttime;
    int phase;
@@ -510,7 +513,7 @@ extern "C" int advancemodelCmd(ClientData clientData, Tcl_Interp *interp,
    return serviceError;
 }
 
-extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
    double starttime;
@@ -559,7 +562,7 @@ extern "C" int evalmodelCmd(ClientData clientData, Tcl_Interp *interp,
    }
 }
 
-extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
    double starttime;
    int phase;
@@ -588,7 +591,7 @@ extern "C" int setstepCmd(ClientData clientData, Tcl_Interp *interp,
    structures first (though this probably gets done when the dlls are unloaded
 */
 
-extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
   char* dllProblem;
@@ -617,7 +620,7 @@ extern "C" int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-extern "C" int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
   char* nodeId;
@@ -644,7 +647,7 @@ extern "C" int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
-extern "C" int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
    int error;
    error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
@@ -655,7 +658,7 @@ extern "C" int interfaceCmd(ClientData clientData, Tcl_Interp *interp,
   return do_interface(interp, argc-1, argv+1);
 }
 
-extern "C" int graphCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int graphCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   int action, index, error;
 
@@ -877,7 +880,7 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
   return(localObj);
 }
 
-extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
+FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
   int iPosn, error;
@@ -930,7 +933,7 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-extern "C" int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
    int error;
    long int modelType;
@@ -947,7 +950,7 @@ extern "C" int listobjCmd(ClientData clientData, Tcl_Interp *interp,
    return list(modelType, interp);
 }
 
-extern "C" int randseedCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int randseedCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
    int seed, error;
 
@@ -975,7 +978,7 @@ double rand_fract() {
     return fraction;
 }
 
-extern "C" int random01Cmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
     Tcl_Obj *resultPtr;
 
@@ -996,7 +999,7 @@ double ame_rand(double lo, double hi) {
     return  lo + (hi-lo)*rand_fract();
 }
 
-extern "C" int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   int count, count2, spare, error;
   Tcl_Obj** EltPtr;
@@ -1144,7 +1147,7 @@ int my_hmac(Tcl_Interp *interp, const char* key, const char* text) {
 /* This gets the authorisation code that is needed for a particular combination
    of original simile edition and Prolog model specification */
 
-extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
 			      int argc, Tcl_Obj *CONST argv[]) {
    if (argc != 2) {
      interp->result = "One argument for get_auth_code please!";
@@ -1180,7 +1183,7 @@ extern "C" int GetAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
 thinking of ripping off Simulistics, Inc. A special security code is generated
 from our little secret -- after checking that the edition specified is right */
 
-extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 2) {
     interp->result = "One argument for check_auth_code please!";
@@ -1226,7 +1229,7 @@ extern "C" int CheckAuthCodeCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-extern "C" int GetVersionCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int GetVersionCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
     interp->result = "No arguments for get_simile_version please!";
@@ -1236,7 +1239,7 @@ extern "C" int GetVersionCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-extern "C" int killmodelCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   int error, pid;
   Tcl_Obj* resultPtr;
@@ -1254,7 +1257,7 @@ extern "C" int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-extern "C" int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
+FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   if (argc != 1) {
     interp->result = "No arguments for loadcommands please!";
