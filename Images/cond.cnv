@@ -3,6 +3,7 @@ $c create rect -15 -15 15 15 -outline {} -tag unscaled
 $c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
 	-tag "unscaled size_on_this realwidth(1.0)"
 
-$c create text 0 0 -text {?} -anchor c -tag "unscaled realwidth(20)" \
-	-font -Adobe-Helvetica-Bold-R-Normal--*-10-*-*-*-*-*-*
+$c create text 0 0 -text {?} -anchor c -tag "unscaled realwidth(600)" \
+	-font -Adobe-Helvetica-Bold-R-Normal--*-200-*-*-*-*-*-*
 # query
+
