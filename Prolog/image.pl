@@ -25,7 +25,7 @@ sicstus_module(image,
 	   draws_complete/1, check_complete/1, test_complete/1,
 	   get_inclusions/3, get_overlaps/3, draws_at/3, right_section/2,
 		find_new_box/5, line_dir_change_radius_is/1,
-	   multiple_draw/2, has_bowtie/1,
+	   multiple_draw/2, update_bowtie/2,
 	   adjust_bowtie/2, adjust_spline/2, adjust_posn/2,
 	   get_caption_anchor/2, end_coords/3,
 	   update_text_position/3, make_header/2, set_completion/2,
@@ -551,12 +551,14 @@ update_link_route(Link) :-
 	route_link(Type, Source_stack, Dest_stack, Route),
 	(Link has_changed_graphical_attribute course to Route, !;
 		Link has_new_graphical_attribute course of Route),
-	(has_bowtie(Link), !,
-		get_bowtie_size(Bowtie_size),
-		get_middle_segment(Route, Bowtie_size, Bowtie),
-		(Link has_changed_graphical_attribute bowtie to Bowtie, !;
-			Link has_new_graphical_attribute bowtie of Bowtie);
-	true).
+	update_bowtie(Link, Route).
+
+update_bowtie(Link, Route) :-
+	\+ has_bowtie(Link), !;
+	get_bowtie_size(Bowtie_size),
+	get_middle_segment(Route, Bowtie_size, Bowtie),
+	(   Link has_changed_graphical_attribute bowtie to Bowtie, !;
+	    Link has_new_graphical_attribute bowtie of Bowtie).
 
 get_source_hierarchy(Link, [Top | Rest]) :-
 	Link is_connector from TopNode to _,

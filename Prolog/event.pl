@@ -598,6 +598,7 @@ drag_to(Xpt, Ypt, _Comp) :-
 	get_mode(select),
 	(get_phase(text_grabbing), !;
 	get_start_coords(OldX, OldY),
+	clear_incomplete,
 	add_incomplete([OldX, OldY, Xpt, Ypt]),
 	remove_old_rubberband,
 	draw_rubberband(square)).
@@ -610,6 +611,7 @@ drag_to(Xpt, Ypt, Comp) :-
 		sort_for_finish(Comp, Ltype, Xpt, Ypt);
 	Ltype is_class_of_sort rounded_rect, Phase = rubberband,
 		get_start_coords(OldX, OldY),
+	        clear_incomplete,
 		add_incomplete([OldX, OldY, Xpt, Ypt]),
 		remove_old_rubberband,
 		draw_rubberband(round);
@@ -726,6 +728,7 @@ drag_to(Xpt, Ypt, Target) :-
 	T is Ypt-Toff,
 	R is Xpt+Roff,
 	B is Ypt+Boff,
+	clear_incomplete,
 	add_incomplete([L,T,R,B]),
 	remove_old_rubberband,
 	draw_rubberband(round).
@@ -1131,7 +1134,6 @@ unclick_obj :-
 		    get_line_finish_obj(Finish_thing),
 		    get_nearest_equivalent_link(New_obj, OrigStart,
 						Finish_thing, Start_thing),
-		    remove_old_incomplete,
 		    (Finish_thing = none, !,
 			get_highlit_obj(0, WrongFinish),
 			normalize(WrongFinish);
@@ -1139,7 +1141,9 @@ unclick_obj :-
 			(var(Terminator), !;
 			    tie_ends(New_obj, Start_thing, Terminator)),
 			normalize(OrigStart),
-			normalize(Finish_thing));
+			normalize(Finish_thing)),
+		    clear_incomplete,
+		    remove_old_incomplete;
 		get_phase(barge),
 		    /* Initial click on something that could not start line */
 		    get_highlit_obj(0, WrongStart),
@@ -1248,6 +1252,28 @@ unclick_obj :-
 	(get_phase(barge); get_phase(moving); get_phase(moving_text);
 			get_phase(moving_start); get_phase(moving_finish)),
 	initialize_phase.
+
+tie_ends(New_obj, Start_thing, Terminator) :-
+	link_ends(New_obj, Start_thing, Terminator, Top_arc),
+	/* 
+	(find_all_comps(TopBox, Top_arc),
+	    image:has_outer_equiv(Top_arc, TopBox, Join), !,
+	    event:thread_link(Join);
+	event:thread_link(Top_arc)).
+
+Clever bit: reuse the route of the rubberband link for the newly added one */
+        find_current(Wid),
+	Wid shows_model Parent,
+        (m_class:equivalent_arcs(Top_arc, NewArc),
+	    find_all_comps(Node, NewArc),
+	    get_incomplete([Node | ScreenRoute]),
+	    maintain:translate_between(Parent, Node, Trans),
+	    translate(ScreenRoute, Trans, Route),
+	    set_shape(NewArc, course, Route),
+	    update_bowtie(NewArc, Route),
+	    redisplay(NewArc),
+	    fail;
+	true).
 
 ghost_type(Start, Type, Base) :-
 	get_moving_obj(Start),

@@ -14,7 +14,7 @@ sicstus_module(m_update,
 		get_link_source_data/9, find_node_with_data/3,
 		valid_input/2, insert_variable/5, check_unit/4,
 		get_submodel_interface/5, load_submodel_interface/4,
-		tie_ends/3, load_references/2, save_references/2,
+		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
 		update_destination/2, build_array/3, analyze_array/3, 
@@ -974,13 +974,6 @@ check_output(Type, Dir, Model, SourceCapt, Properties, InputSection,
 	    Dir = out,
 		Dest = Model,
 		caption_for(BorderSection, Properties))).	
-
-tie_ends(New_obj, Start_thing, Terminator) :-
-	link_ends(New_obj, Start_thing, Terminator, Top_arc),
-	(find_all_comps(TopBox, Top_arc),
-	    image:has_outer_equiv(Top_arc, TopBox, Join), !,
-	    event:thread_link(Join);
-	event:thread_link(Top_arc)).
 
 link_ends(New_obj, Start_thing, Terminator, Top_arc) :-
 	remove_border_nodes(New_obj, Terminator, Start_thing);

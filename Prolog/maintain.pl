@@ -26,7 +26,7 @@ sicstus_module(maintain, [cursor_in/2, callback/1,
 		display_area/1,
 		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2, exterminate/1,
-		draw_incomplete/0, remove_old_incomplete/0, draw_rubberband/1,
+		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, kill_window/1, exit_AME/1]).
 
@@ -428,13 +428,15 @@ find_fatness([_,_,FatX,FatY], Fatness) :-
 	Fatness is 100/sqrt(FatX*FatY).
 
 draw_incomplete :-
-	get_incomplete(Draw_coords),
+	get_incomplete([_Parent | Draw_coords]),
 	get_adding_object(Line_type),
 	find_current(Window_id),
 	get_translation(Trans),
 	find_fatness(Trans, Fatness),
 	Draw_command =.. [Line_type, Window_id, Draw_coords, Fatness, incomplete, [unfinished_line]],
-	call(Draw_command).
+	call(Draw_command),
+	fail;
+	true.
 
 remove_old_incomplete :-
 	find_current(Window_id),
@@ -463,6 +465,7 @@ rather than into a box) or variable (if there's nothing at the end of the link,
 i.e., it is purely hierarchical). Only current window is drawn in. */
 
 draw_links(Type, Top, Up_list, Down_list) :-
+	clear_incomplete,
 	(reverse(Up_list, [Last | Rest]), !,
 		/* last is a node */
 		(reverse(Down_list, [Last2 | Rest2]), !,
@@ -485,14 +488,14 @@ draw_links(Type, Top, Up_list, Down_list) :-
 	translate_between(Backgnd, Top, Trans),
 /*	remove_old_incomplete, (done on drag now to avoid cluttering target */
 	untranslate(Route, Trans, Screen_route),
-	add_incomplete(Screen_route),
-	draw_incomplete,
+	add_incomplete([Top | Screen_route]),
 	(var(Rest), !; 
 		last(Screen_route, In), 
 		draw_up_links(Type, Rest, out, Trans, Last, In)),
 	(var(Rest2), !; 
 		Screen_route = [Out | _], 
-		draw_up_links(Type, Rest2, in, Trans, Last2, Out)).
+		draw_up_links(Type, Rest2, in, Trans, Last2, Out)),
+	draw_incomplete.
 
 draw_up_links(_, [], _,_,_,_).
 
@@ -504,8 +507,7 @@ draw_up_links(Type, [Node | Rest], Dir, Trans, Prev, Point) :-
 	(Dir = in, shape_route(Type, Border_point, Node, Route);
 	Dir = out, shape_route(Type, Node, Border_point, Route))),
 	untranslate(Route, New_trans, Screen_route),
-	add_incomplete(Screen_route),
-	draw_incomplete,
+	add_incomplete([Prev | Screen_route]),
 	(Dir = in, Screen_route = [Next | _];
 	Dir = out, last(Screen_route, Next)),
 	draw_up_links(Type, Rest, Dir, New_trans, Node, Next).
@@ -522,7 +524,6 @@ show_invisible_links(Links) :-
 		translate_between(Backgnd, Daddy, Trans),
 		get_shape(Link, course, Route),
 		untranslate(Route, Trans, ScreenRoute),
-		add_incomplete(ScreenRoute),
-		draw_incomplete,
+		add_incomplete([Daddy | ScreenRoute]),
 		fail;
-	true.
+	draw_incomplete.

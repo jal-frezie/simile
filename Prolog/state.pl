@@ -24,7 +24,8 @@ sicstus_module(state, [get_initial_window_size/2, create_window/2,
 	advance_phase_to/1, get_phase/1, get_line_start_obj/1, set_moving_obj/1, 
 	get_moving_obj/1, set_line_start_obj/1, get_line_finish_obj/1, 
 	set_line_finish_obj/1, get_translation/1, set_translation/1,
-	add_incomplete/1, get_incomplete/1, stays_positive_by_default/1,
+	clear_incomplete/0, add_incomplete/1, get_incomplete/1,
+		       stays_positive_by_default/1,
 	do_math_protect/0, set_math_protect/1, change_style/1, get_style/1]).
 
 sicstus_use_module(library(lists)).
@@ -237,8 +238,6 @@ advance_phase_to(New_phase) :-
 get_phase(Phase) :-
 	phase_is(Phase).
 
-/* add_incomplete/1: The incomplete line must be displayed in the current window even if it is not yet added to the model representation, therefore this is the place to store it. */
-
 :- dynamic(line_start_obj_is/1).
 
 set_line_start_obj(O) :-
@@ -275,10 +274,16 @@ set_translation(T) :-
 get_translation(T) :-
 	translation_is(T).
 
+/* add_incomplete/1 etc: The incomplete line must be displayed in the
+current window even if it is not yet added to the model
+representation, therefore this is the place to store it. */
+
 :- dynamic(incomplete/1).
 
+clear_incomplete :-
+	retractall(incomplete(_)).
+
 add_incomplete(Coord_list) :-
-	retractall(incomplete(_)),
 	assertz(incomplete(Coord_list)).
 
 get_incomplete(Coord_list) :-
