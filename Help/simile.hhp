@@ -192,6 +192,21 @@ files\problem.htm
 files\format.htm
 files\limit.htm
 equations\intermediates.htm
+new\index.htm
+new\onesided.htm
+new\halt.htm
+new\data.htm
+new\iteration.htm
+new\multiple.htm
+new\multiple.htm
+new\other.htm
+new\scripting.htm
+new\timeseries.htm
+new\selecting.htm
+new\enumerated.htm
+new\units.htm
+new\rungekutta.htm
+new\emit.htm
 
 [INFOTYPES]
 

@@ -13,6 +13,64 @@
 		<param name="Local" value="index.htm">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="What's new?">
+		<param name="Local" value="new\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Accessing external data">
+			<param name="Local" value="new\data.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Creating enumerated lists">
+			<param name="Local" value="new\enumerated.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Halting model execution">
+			<param name="Local" value="new\halt.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="One-sided relationship enumeration">
+			<param name="Local" value="new\onesided.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Other new stuff">
+			<param name="Local" value="new\other.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Reversing time">
+			<param name="Local" value="new\emit.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Scripting model execution">
+			<param name="Local" value="new\scripting.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Selecting model diagram elements">
+			<param name="Local" value="new\selecting.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Using iterative methods">
+			<param name="Local" value="new\iteration.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Using Runge-Kutta integration">
+			<param name="Local" value="new\rungekutta.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Working with multiple models">
+			<param name="Local" value="new\multiple.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Working with time series data">
+			<param name="Local" value="new\timeseries.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Working with units">
+			<param name="Local" value="new\units.htm">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Getting Started">
 		<param name="Local" value="start\index.htm">
 		</OBJECT>
