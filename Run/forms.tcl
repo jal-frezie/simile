@@ -1306,21 +1306,21 @@ proc DoRegDialog {dtId} {
     set tasks [.register.tasks getframe]
     
     frame $tasks.b
-    if {[string match Windows $tcl_platform(platform)]} {
-	pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
+    if {[string match Darwin $tcl_platform(os)]} {
+	pack [button $tasks.b.new -text "New" -width 10  \
 		-command {set userinfo(done) $welcomeDone}] \
 		-padx 8 -pady 8 -side left
-	pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
+	pack [button $tasks.b.open -text "Open..." -width 10 \
 		-command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
 		-padx 8 -pady 8 -side left
 	pack [button $tasks.b.reopen -text "Recent..." -width 10 \
 		-command "PopReopen $dtId"] \
 		-padx 8 -pady 8 -side left
     } else  {
-	pack [button $tasks.b.new -text "New" -width 10  \
+	pack [button $tasks.b.new -text "New" -width 65 -compound left -image wnew \
 		-command {set userinfo(done) $welcomeDone}] \
 		-padx 8 -pady 8 -side left
-	pack [button $tasks.b.open -text "Open..." -width 10 \
+	pack [button $tasks.b.open -text "Open..." -width 65 -compound left -image wopen \
 		-command "MenuSelect $dtId.canvas file open; set userinfo(done) \$welcomeDone" ] \
 		-padx 8 -pady 8 -side left
 	pack [button $tasks.b.reopen -text "Recent..." -width 10 \
