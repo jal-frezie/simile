@@ -159,10 +159,11 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 
 	length(Preambles, Nesting),
 	Indent is 4*Nesting,
+	Indent1 is Indent + 4,
 	/* some of this belongs in the next disjunction */
 
 	(LoopSpec = rm_loop(ArcIndex, Level, IExprs), !,
-	    check_local_var(L, Pointer, externpointer, 'void*', Used, Temps0),
+	    check_local_var(L, Pointer, externpointer, 'void*', Used, Temps1),
 	    refer_value(L, Pointer, PointerRef),
 
 	    length(IExprs, IndCount),
@@ -176,7 +177,8 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	    /* finish same: move pointer to next instance in chain */
 	    make_procedure_call_chars(L, [advance_ptr, myClassPtr, PointerRef],
 				      AdvanceStr),
-	    name(OnPointerRef, AdvanceStr);
+	    name(OnPointerRef, AdvanceStr),
+	    LoadBaseRefs = [];
 
 	LoopSpec = vm_loop(_,_, BaseLoops, _), !,
 	    append_atoms(Name, 'type*', Type),
@@ -185,6 +187,11 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	    refer_value(L, Pointer, PointerRef),
 	    all(compile, get_base_ptrs,
 		[build(BaseLoops), append(Names, []), append(BasePtrs, [])]),
+	    move_base_ptrs(L, Pointer, restore, Indent1,
+			   Names, BasePtrs, Types, LoadBaseRefs),
+	    all(language, check_local_var,
+		[unify(L), build(BasePtrs), unify(bad), build(Types),
+		 unify(Used), append(Temps1, Temps0)]),
 	    make_struct_reference(L, Top, Name, StartPointer),
 	    refer_value(L, StartPointer, StartPtrRef),
 
@@ -195,18 +202,15 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	render(L, assignment, Pointer=StartPtrRef, Indent, PreStart),
 	ptr_compare(L, PointerRef, 0, PtrNonNull),
 	render(L, while_start, PtrNonNull, Indent, Starts),
-	Indent1 is Indent + 4,
 	render(L, assignment, Pointer=OnPointerRef, Indent1, PreFinish),
 	render(L, end(while), Pointer, Indent, Finish),
-	move_base_ptrs(L, Pointer, restore, Indent1, Names, BasePtrs,
-		       LoadBaseRefs),
 	append([PreStart, Starts, LoadBaseRefs], Starters),
 	append([PreFinish, Finish], Finishers),
 
 	do_assign_list(L, Clauses, Graph_count, [Current | Preambles],
 			[Starters, Finishers | Postambles],
-			Used, Graphs, Temps1, Results),
-	merge_lists(Temps1, Temps0, Temps).
+			Used, Graphs, Temps2, Results),
+	merge_lists(Temps2, Temps1, Temps).
 
 
 /* Start a submodel loop with a generate/test pair inside. This happens once per time step for variable membership models apart from populations. Each possible instance of the model is either generated or pulled out of the list, for testing later. If the phase is 'new' then previously existing instances are skipped over. */
@@ -283,7 +287,7 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	values local and remote, with a 0 at the end so the extractor
 	knows where to stop */
 	fill_instance_ids(L, 0, Pointer, RefIndices, Indent4, FillInstanceId),
-	move_base_ptrs(L, Pointer, save, Indent4, _, BasePtrs, SaveBaseRefs),
+	move_base_ptrs(L, Pointer, save, Indent4,_, BasePtrs,_, SaveBaseRefs),
 	render(L, assignment, NewInstance=1, Indent4, MarkNew),
 	/* CheckEnd */
 	render(L, end(cond), 'Instance exists', Indent2, PruneEnd),
@@ -721,10 +725,10 @@ do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], GraphN,
 		       NewGraphCount, Preambles, [NewCurrent | Postambles],
 		       Used, LaterGraphs, Temps, Results).
 
-move_base_ptrs(_,_,_,_, [], [], []).
-move_base_ptrs(L, Pointer, Action, Indent, [Name | Names], [Ptr | BasePtrs],
-	       [Saver | SaveBaseRefs]) :-
-	length(BasePtrs, Count),
+move_base_ptrs(_,_,_,_, [],[],[],[]).
+move_base_ptrs(L, Pointer, Action, Indent,
+	       [Name | Names], [Ptr | Ptrs], [Type | Types], [Saver | Svrs]) :-
+	length(Ptrs, Count),
 	make_struct_reference(L, Pointer, baseptrs, SafeArray),
 	make_indexed_reference(L, SafeArray, [Count], Target),
 	(Action = save,
@@ -736,13 +740,13 @@ move_base_ptrs(L, Pointer, Action, Indent, [Name | Names], [Ptr | BasePtrs],
 	    right type -- the array in which the assoc model
 	    stores them is type (void *) */
 	    (L = c,
-	        sicstus_format_to_chars("(~atype *)~a", [Name, Target], CastTgtStr),
+		append_atoms(Name, 'type*', Type),
+	        sicstus_format_to_chars("(~a)~a", [Type, Target], CastTgtStr),
 		name(CastTgt, CastTgtStr);
 	    L = tcl,
 	        refer_value(L, Target, CastTgt)),
 	    render(L, assignment, Ptr=CastTgt, Indent, [Saver])),
-	move_base_ptrs(L, Pointer, Action, Indent, Names, BasePtrs,
-		       SaveBaseRefs).
+	move_base_ptrs(L, Pointer, Action, Indent, Names, Ptrs, Types, Svrs).
 
 make_section_cond(L, VMPtrs, PassTest) :-
 	refer_value(L, phase, PhaseRef),

@@ -30,9 +30,9 @@ itcl::class similescript::ModelWindow {
         if {![string match "" [itcl::find object similescript::RunControl]]} {
             delete object similescript::RunControl
         }
-        tk_messageBox -message "model win destructor"
-        
-        Exit
+        #tk_messageBox -message "model win destructor"
+        #Exit
+        MenuClose [GetModelWindow].canvas
     }
     
     public method Hide {} {
@@ -52,7 +52,9 @@ itcl::class similescript::ModelWindow {
     # File Menu
     public method New {} {
         MenuSelect [GetModelWindow].canvas file new
-        unset model
+        if {[info exists model]} {
+            unset model
+        }
     }
     
     public method FileOpenDlg {} {
@@ -76,11 +78,8 @@ itcl::class similescript::ModelWindow {
         MenuSelect PrintNow [GetModelWindow].canvas
     }
     
-    public method Exit {} {
-        # DOESN'T WORK
-        #byebye [GetModelWindow]
-        # prolog tk_finish; # generates existance error
-        prolog tk_kill_everything; # kill interp as well!!
+    public method Destroy {} {
+        itcl::delete object $this
     }
     
     private method RemoveRunControl {} {
@@ -138,6 +137,9 @@ itcl::class similescript::HelperController {
     
     public method Clear {} {
         $keyvalue::clear
+    }
+    public method Destroy {} {
+        itcl::delete object $this
     }
 }
 
