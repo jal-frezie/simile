@@ -707,8 +707,8 @@ checks_out_locally(Function) :-
 	(setof(Source, valid_input(Function, Source), Sources), !; Sources = []),
 	pair_off(Function, Sources, Pairs).
 
-pick_var(_, V, D, 0) :-
-	get_solo_list_depth(V, D).
+pick_var(_, V, _, 0) :-
+	get_solo_list_depth(V, _).
 
 /* pair_off is true if every variable in the expression represents a role of some link to the function, and every link to the function has at least one variable representing some role it has. Later we may keep the unit error and pop it up when the user mouses over to see why the node is red... */
 
@@ -724,10 +724,8 @@ pair_off(Function, [Source | Sources], Pairs) :-
 represents(Function, Source, Pairs, Var) :-
 	Source has_attribute role of UseList,
 	member(use(_,_, Var, SoughtUnit), UseList),
-	member(var_pair(Var, Dimty), Pairs),
+	member(var_pair(Var, _), Pairs),
 	get_link_source_data(Source, Function, _, FoundUnit, _,_,_,_,_),
-	analyze_array(FoundUnit, _, Dims),
-	length(Dims, Dimty),
 	check_unit(SoughtUnit, FoundUnit, 2, []).
 	
 line_dir_change_radius_is(8).

@@ -317,20 +317,19 @@ replace_subexps(Expr, TestModule, Test, Data, Dir, AllVarPairs, FinalExpr) :-
 	Expr = [_ | _], !,
 		replace_all_subexps(Expr, TestModule, Test, Data, Dir,
 				    VarPairs, NewExpr);
-	(Expr = (if Cond then Exp1 elseif SubExp2),
+/*	(Expr = (if Cond then Exp1 elseif SubExp2),
 			Exp2 = (if SubExp2);
 	Expr = (if Cond then Exp1 else Exp2)), !,
 		replace_all_subexps([Cond, Exp1, Exp2], TestModule, Test, Data,
 				Dir, VarPairs, [V1, V2, V3]),
 		NewExpr = (if V1 then V2 else V3);
-	Expr = (Lambda=SubExpr,Tail), !,
+*/	Expr = (Lambda=SubExpr,Tail), !,
 	    replace_all_subexps([Lambda, SubExpr, Tail], TestModule, Test,
 				Data, Dir, ParamPairs,
 				[NewLambda, NewSubExpr,NewTail]),
 		clobber_local_vars(ParamPairs, Lambda, VarPairs),
 		NewExpr = (NewLambda=NewSubExpr,NewTail);
 	Expr =.. [Op | Args],
-
 		replace_all_subexps(Args, TestModule, Test, Data, Dir,
 				    VarPairs, NewArgs),
 		NewExpr =.. [Op | NewArgs]),

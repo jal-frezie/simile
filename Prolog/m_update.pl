@@ -513,10 +513,11 @@ analyze_array(Array, Base_type, Dims) :-
 		Dims = [Dim | SubDims];
 	Base_type = Array, Dims = [].
 
-get_solo_list_depth(List,Depth) :-
-	atom(List), \+ List = '', Depth = 0;
-	(List = [Ellie]; List = {Ellie}),
-		get_solo_list_depth(Ellie, D), Depth is D+1.
+get_solo_list_depth(List,Dims) :-
+	atom(List), \+ List = '', Dims = _;
+	(List = [Ellie], Dims = array(D, _);
+	    List = {Ellie}, Dims = list(D)),
+		get_solo_list_depth(Ellie, D).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                                                                         %%%

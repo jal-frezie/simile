@@ -241,24 +241,7 @@ instance_of( function, Node, Path, [Instance], Refs) :-
 	     replace_subexps(FullExpr, instance, process_expr, TableList,
 			     top_down, Switched, FinalExpr),
 	     process_pairs(Switched, InputPairs, Refs),
-	     get_units(Node, Base, Units) /*;
-	 RType = flow,
-	     Function for a bowtie other than the one with the equation:
-	     copy value from section towards controlling one
-	     (m_update:continues_in(Result, Next),
-		 Next has_model_refinement link_equivalences of Links,
-		 member(Result-Source, Links),
-		 sequence(Result, Master);
-	     m_update:continues_from(Result, Last),
-		 Last has_model_refinement link_equivalences of Links,
-		 member(Source-Result, Links),
-		 sequence(Master, Result)),
-	     valid_tap(Master, _),
-	     NextLink is_connector from _ to Source,
-	     initiates(NextLink, SourceFn),
-	     is_instance(function, SourceFn, _, FinalVal, Base-Units, Ref),
-	     FinalExpr = in_hierarchy(FinalVal, none, Base-Units),
-	     Refs = [Ref] */ ),
+	     get_units(Node, Base, Units)),
 	 (member(RType, [compartment, creation]), !,
 	     FType = init_function;
 	 FType = function),
@@ -352,7 +335,7 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 	m_update:analyze_array(SourceUnits, FarUnits, FarDims),
 	get_actual_sizes(FarDims, UseDims),
 	m_update:analyze_array(ArcUnits, BaseUnits, _),
-	RelatedRef =.. [SourceLocation, RefExp, Relation, ArcUnits],
+	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, ImpType).
 
 get_cond_and_ref(input_pair(_, Node, _, Home, OutVar, UseRef),
@@ -369,7 +352,7 @@ get_cond_and_ref(input_pair(_, Node, _, Home, OutVar, UseRef),
 	    Refs = [TopRef, Ref],
 	    Top = [search_from(HomeRef, TopVar, _)];
 	Top = [],
-	    Cond = in_hierarchy(elt(_, externs_done, _), none,_),
+	    Cond = input(in_hierarchy, elt(_, externs_done, _), none,_),
 	    Refs = [Ref]).
 
 ref_for_arc(Entry, ArcIndex) :-
@@ -476,7 +459,9 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % are little lists not atoms now.
 
 process_expr(TableValues, Var, NewVar, Recurse) :-
-	m_update:get_solo_list_depth(Var, _), Recurse = 0;
+	m_update:get_solo_list_depth(Var, Dims),
+	    NewVar = input(_,_,_, Dims),
+	    Recurse = 0;
 	Var = size(_), Recurse = 0;
 	build_table_ref(TableValues, Var, NewVar), Recurse = 1.
 

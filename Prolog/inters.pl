@@ -1,5 +1,6 @@
 sicstus_module(inters, [final_assignment/10, make_intermediates/11,
-			expand_library/3, function/3, propagate_units/5,
+			expand_library/3, function/3,
+			promote_unit/2, propagate_units/5,
 			wait_for_submodels/2, get_dims_from_loops/3, loops/1,
 			make_inds_for/3, pointer_from/2, path_section_for/6]).
 
@@ -48,14 +49,16 @@ final_assignment(Expr, DestRef, Swaps, Step, Used,
 	add_extra_dependencies(Exited, FullExpr, NewArgs, Prerequisites).
 
 insert_paths(sub(DestRef, Swaps), Var, NewVar, Recurse) :-
-	var(Var), !,
-	    sicstus_write_to_chars(Var, Rep),
-	    name(NewVar, Rep),
-	    Recurse = 0;	  
 	(Var = elt(RealPathForm, Ref, Unit-Dims), !,
-	    /* from compartment expressions */
+	    /* from compartment expressions -- used? */
 	    [Location, Link]=[in_hierarchy, none];
-	Var =.. [Location, elt(RealPathForm, Ref, Unit-Dims), Link, _]),
+	Var = input(Location, PathExp, Link, DimExp),
+	    ([Location, Link, RealPathForm, Ref] =
+	    [exp_inter, none, [],           PathExp], !,
+		(nonvar(Ref), !;
+		sicstus_write_to_chars(Ref, Rep),
+		    name(Ref, Rep));
+	    PathExp = elt(RealPathForm, Ref, Unit-Dims))),
 	    (get_conversion(_, Unit, Unit, _), !,
 		Type = real;
 	    Type = Unit),
@@ -68,7 +71,9 @@ insert_paths(sub(DestRef, Swaps), Var, NewVar, Recurse) :-
 		copy_term(RealPathForm, RealPath)),
 	    
 	    pointer_from(RealPath, SmPtr),
-	    (Location = in_hierarchy,
+	    (Location = exp_inter,
+		BackSwap = exp_inter;
+	    Location = in_hierarchy,
 		Wait = true,
 		Path = RealPath;
 	    member(path_substitution(Base, Assoc, Link), Swaps),
@@ -225,14 +230,20 @@ make_intermediates(
 	/* zeroth case: we have already made an intermediate variable for
 	a subexpression that matches this one: need to save loops as well
 	as context!! Cannot do this with randoms, which should all be
-	different, except refs to explicit ones which must be the same. */
+	different. */
+	UseInter = instance(internal, inter(SourceContext, SourceRef, _),
+			    OrigSource, Name, _),
+	(Source = param(arr(_, Param, _), Units, SourceContext, TestSwap,_),
+	    TestSwap == exp_inter,
+	    OrigSource = make_inter(_, Param),
+	    merge_lists([UseInter], PrevInters, NewInters);
+	OrigSource = Source,
+	\+ contains_something(random, Source),
 	member(instance(internal, inter(SourceContext, SourceRef, _), Source,
 			Name, _), PrevInters),
-	(Source = make_inter(_);
-	 \+ contains_something(random, Source)), !,
+	    NewInters = PrevInters), !,
 	    Setups = [],
-	    Args = [Name],
-	    NewInters = PrevInters;
+	    Args = [Name];
 	  
 	/* first case: a reference to another variable. If we are referring to
 	a variable via a 'back swap' i.e., it comes from an associated model
@@ -245,7 +256,7 @@ make_intermediates(
 	    parameter info (in case it is a ref to final result) but not
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
-	    Source = param(_,_, OrigLoops, _,_),
+	    Source = param(_, Units, OrigLoops, _,_),
 	    get_dims_from_loops(OrigLoops, Dims, _),
 	    get_dims_from_loops(SourceLoops, Dims, _),
 	    
@@ -302,7 +313,7 @@ make_intermediates(
 	Source = all(Epsilon),
 	    InitVal = 1,
 	    IncrOp = ('&&');
-	member(Source, [make_inter(Epsilon), delay(Epsilon),
+	member(Source, [make_inter(Epsilon, _), delay(Epsilon),
 			last(Epsilon), exists(Epsilon)]),
 	    MadeDim = new_dim), !,
 
@@ -352,14 +363,15 @@ make_intermediates(
 	    Functor = count,
 	        IncrExpr = FillRef+1,
 	        (nonvar(SumLoop), SumLoop = set(_, loop(SourceRef)),
-		    Units = const_int;
+		    Units = const_int,
+		    UsingDim = true;
 		Units = int)), !,
 	    InitVal = 0,
 	    Preps = [];
 	(member(Functor, [make_inter, last, delay]), !,
 		InitVal = 0,
 		IncrExpr = IncrementRef,
-	        [RUnits | ArgTemplate] = [any, any];	
+	        ArgTemplate = [RUnits];	
 	    IncrExpr =.. [IncrOp, IncrementRef, FillRef],
 	        (member(Functor, [any, all]), !,
 		    [RUnits | ArgTemplate] = [boolean, boolean];	
@@ -374,7 +386,8 @@ make_intermediates(
 	Actually it is unsound taking the very end value as a bit of
 	arithmetic can push it over the edge, so these two ints are midrange
 	for their signs */
-	(Units = int, !,
+	(\+ member(Functor, [least, greatest]), !;
+	Units = int, !,
 	    [Wee, Muckle] = [-1073741823, 1073741823];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
@@ -395,14 +408,14 @@ make_intermediates(
 	    worry about accessing elements that haven't yet been set, and not
 	    using made_at(...) should prevent it being removed as an idler */
 	Args = [made_at(TotalName, SourceContext)]),
-	(Units = const_int;
+	(UsingDim == true;
 	    SourceRef = TotalRef),
 	append(SourceLoops, DestPath, SourceContext),
 	append([SourceLoops, NowBuilding, DestPath], ClearContextForm),
 	copy_term([ClearContextForm, TotalRef, DestPath],
 		  [ClearContext, ClearRef, ClearPath]),
 
-	(Units = const_int, !,
+	(UsingDim == true, !,
 	    Setups = [],
 	    NewInters = OldInters;
 	((Functor = delay; Functor = make_inter), !,
@@ -420,7 +433,7 @@ make_intermediates(
 	    /* we can update the saved value as soon as it has been used,
 	    but we need to wait for all the goals that might use it...started
 	    Setting = [make(increment(TotalName),
-			    [Target, increment(Target) | Depends],
+			    [Target, increment(Target) | Depends])],
 	    but now goes in update phase before compartments so only needs to
 	    check if another last(...) has been copied from it */
 	    Setting = [make(lastvalue(TotalName), [lastvalue(Target)],
@@ -436,8 +449,9 @@ make_intermediates(
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
 	copy_term(SourceContext, InterContext),
-	NewInters = [instance(internal, inter(InterContext, TotalRef, Target),
-			      Source, TotalName, Units-InterDims) | OldInters]);	  
+	merge_lists([instance(internal, inter(InterContext, TotalRef, Target),
+			      Source, TotalName, Units-InterDims)],
+		    OldInters, NewInters));	  
 
 	/* third case: a numerical value. Usable in any context.  */
 	get_actual_sizes([Source],[SourceRef]), !,
@@ -554,14 +568,16 @@ make_intermediates(
 	    /* 'catch' is in case we use an element that doesn't exist in the
 	    counterfactual arm of a conditional */
 	
-	Source = (Param=SubExp,Rest), !,
-	    replace_subexps(Rest, inters, swap_vars,
-			    switch(Param, make_inter(SubExp)), top_down, _,
-			    UseSource),
-	    make_intermediates(UseSource, Target, 
+	Source = (param(arr(_, Param, _), _,_,_,_)=SubExp,Rest), !,
+	    make_intermediates(make_inter(SubExp, Param), Target, 
 			DestPath, BackSwap, PrevInters, BuildingArrays, 
+			Step, Used, _Units, MidInters,
+			part_result(_, SubSetups, _,_)),
+	    make_intermediates(Rest, Target, 
+			DestPath, BackSwap, MidInters, BuildingArrays, 
 			Step, Used, Units, NewInters,
-			part_result(SourceContext, Setups, Args, SourceRef));
+			part_result(SourceContext, ExSetups, Args, SourceRef)),
+	    append(SubSetups, ExSetups, Setups);	  
 
 	\+ atom(Source),
 	    (individuates(_, Source, _, _), !,

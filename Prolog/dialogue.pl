@@ -380,42 +380,52 @@ process. */
 
 test_eqn(Equation, IndxCount, InterInputs, Type, Dims, ParamList, TestError) :-
 	list_of(_, IndxCount, DestInds),
-	RArray = array(array(array(array(any,_),_),_),_),
-	analyze_array(RArray, _, RDims),
-	/* 4 is probably the most we will need */
-	replace_subexps(Equation, dialogue, expand_params,
-			[input_link(_,_, '/dest/', _, RArray) | InterInputs],
+	append(InterInputs, ExpInters, AllInputs),
+	replace_subexps(Equation, dialogue, expand_params, AllInputs,
 			top_down, ParamSubs, FullExpr),
-	(member(var_pair(_, Param), ParamSubs),
-	 get_solo_list_depth(Param, _), !,
+	length(ExpInters, _), !, /* close list end */
+	(member(input_link(_,_, Param, _, PDims), ExpInters),
+	    \+ Param = '/dest/',
+	    var(PDims), !,
 	    sicstus_format_to_chars("Reference to undefined parameter ~w", 
 				    [Param], TestError);
 	on_exception(ParseException,
 		     make_intermediates(FullExpr, '/dest/',
-					[sm(_,_,_, fm_loop(DestInds))], 
-_, [],
-					[], 1, _, Type, _,
-					part_result(XContext, _,_,_)),
+					[sm(_,_,_, fm_loop(DestInds))], _, [],
+					[], 1, _, Type, Inters,
+					part_result(Context, _,_,_)),
 		     decode_error(ParseException, ParseError)),
 	(ParseError = [], !,
-	    /* check result dims match those needed for prev if used */
-	    get_dims_from_loops(XContext, XDims, _),
-	    (member(var_pair('/dest/', _), ParamSubs),
-		append(Dims, XSpares, XDims),
-		\+ (member(Var, XSpares), nonvar(Var)),
-		append(FixedRDims, RSpares, RDims),
-		\+ (member(Var, RSpares), nonvar(Var)), !,
-		(all(dialogue, check_dim_match,
-		     [build(Dims), build(FixedRDims)]), !,
-			TestError = [];
-		    format_to_chars("This equation is badly formed because it contains something that refers to its own value (for instance a prev(n) function) and that reference is used in a context where it needs to have dimensions ~w. However the equation as a whole produces a result with dimensions ~w, which do not match.", [RDims, XDims], TestError));
-	    Dims = XDims,
-		TestError = []),
+	    get_dims_from_loops(Context, XDims, _),
+	    Dest = instance(internal,_, make_inter(_, '/dest/'),_, Type-XDims),
+	    real_dims_only(XDims, Dims),
+	    match_param_dims(ExpInters, [Dest | Inters], TestError),
 	    all(dialogue, get1st, [build(ParamSubs), build(ParamList)]);
 	    /* Hack alert. The term representing the dest context has indices
 	    (so index(n) will work) but no loops, so we don't need to add it
 	    to the relative source contexts */
 	TestError = ParseError)).
+
+match_param_dims([], _, []).
+match_param_dims([input_link(_,_, Name, LType-LDims, _) | MoreLinks],
+		 Inters, Err) :-
+	select(I, Inters, MoreInters),
+	I = instance(internal, _, make_inter(_, Name), _, IType-IDims),
+	real_dims_only(IDims, Dims),
+	real_dims_only(LDims, FixedLDims),
+	((UseDims = Dims, prefix(UseLDims, FixedLDims);
+	UseLDims = FixedLDims, prefix(UseDims, Dims)),
+	all(dialogue, check_dim_match,
+	     [build(UseDims), build(UseLDims)]), !,
+	    (promote_unit(IType, LType), !,
+		match_param_dims(MoreLinks, MoreInters, Err);
+		format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [Name, LType, IType], Err));
+	format_to_chars("This equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have dimensions ~w. However the definition of this value produces a result with dimensions ~w, which do not match.", [Name, FixedLDims, Dims], Err)).
+/* also check name of exp inter for right brackets */
+
+real_dims_only(IDims, Dims) :-
+	append(Dims, ISpares, IDims),
+	\+ (member(Var, ISpares), nonvar(Var)), !.
 
 check_dim_match(P, Q) :- P=Q; Q=0.
 
@@ -423,17 +433,26 @@ get1st(var_pair(A, _), A).
 
 expand_params(InterInputs, Param, DoneExpr, Recurse) :-
 	get_solo_list_depth(Param, _),
-	    (member(input_link(_,_, Param, _, Units), InterInputs), !,
-		analyze_array(Units, Base, Dims),
-		(units:get_conversion(_, Base, Base, _), !,
-		    Type = real;
-		Type = Base),
+	/* when making dummy links for explicit intermediate results, check
+	the 1sr field (influence id) uis a free var, and if so, use the
+	4th field to hold the dims */
+	    member(input_link(Link, _, Param, IDims, Units), InterInputs), !,
+	        (nonvar(Link), !,
+		    analyze_array(Units, Base, Dims),
+                    (units:get_conversion(_, Base, Base, _), !,
+		        Type = real;
+		    Type = Base);
+		IDims = Type-Dims,
+		    length(Dims, 4)),
 		make_inds_for(Dims, Loops, Inds),
-		DoneExpr = param(arr(_,Param, Inds), Type, Loops, _, true);
-	    DoneExpr = Param), /* just puts it in list so we can 
-check later */
+		DoneExpr = param(arr(_,Param, Inds), Type, Loops, _, true),
 	    Recurse = 0;
-	expand_library('/dest/', Param, DoneExpr),
+	(Param = (ExpInt=_,_),
+	    member(input_link(_,_, ExpInt, _, Dims), InterInputs), !,
+	    var(Dims), /* only checked so we dont stick on the recursion */
+	    Dims = something,
+	    DoneExpr = Param;
+	expand_library('/dest/', Param, DoneExpr)),
 	    Recurse = 1.
 
 decode_error(ParseError, TestError) :-
