@@ -1080,51 +1080,58 @@ proc Save {smPath} {
 # pathname. And the only way to get that without a hack is to cd to it...
 
 proc Open {smPath} {
-    global paramState paramData widgetNames SimileProject
-    
-    set oldDir [pwd]
+    global SimileProject
     set metaFile [ChooseFile params.spf "Load parameters from:" 0]
     set SimileProject(fileparam,$smPath) $metaFile
     if {[llength $metaFile]} {
-        set pStr [open $metaFile r]
-        while {[gets $pStr savedValue] != -1} {
-            #ShowMessage debug info "Restoring $savedValue" ok
-            set IdAndValue [split $savedValue =]
-            set restoredComp [RestoreCrs $smPath/[lindex $IdAndValue 0]]
-	    set node [GetIdFromCaptionPath $restoredComp]
-	    set trans [GetFromProlog tk_get_info(dummy,$node,types)]
+	MergeParams $smPath $metaFile 1
+
+    }
+}
+}
+
+proc	MergeParams {smPath metaFile interactive} {
+    global paramState paramData widgetNames
+    
+    set oldDir [pwd]
+    set pStr [open $metaFile r]
+    while {[gets $pStr savedValue] != -1} {
+	#ShowMessage debug info "Restoring $savedValue" ok
+	set IdAndValue [split $savedValue =]
+	set restoredComp [RestoreCrs $smPath/[lindex $IdAndValue 0]]
+	set node [GetIdFromCaptionPath $restoredComp]
+	set trans [GetFromProlog tk_get_info(dummy,$node,types)]
             #ShowMessage debug info "Component is $restoredComp, looking in [winfo children .fpdialogue.sliderframe]" ok
-            if {[info exists paramData($restoredComp)]} {
-                set paramData($restoredComp) [lindex $IdAndValue 1]
+	if {[info exists paramData($restoredComp)]} {
+	    set paramData($restoredComp) [lindex $IdAndValue 1]
                 #ShowMessage debug info "Param data is $paramData($restoredComp)" ok
-                set FileOrVal [lindex $paramData($restoredComp) 0]
+	    set FileOrVal [lindex $paramData($restoredComp) 0]
                 
                 # OK here we go...try and follow this...first go to the starting point..
-                cd [file dirname $metaFile]
-                if {[file exists $FileOrVal]} {
+	    cd [file dirname $metaFile]
+	    if {[file exists $FileOrVal]} {
                     # Now use the saved relative path to move to the .csv file's directory
-                    cd [file dirname $FileOrVal]
+		cd [file dirname $FileOrVal]
                     # ...and stick the new absolute pathname into the spec! Easy!!
-                    set paramState($restoredComp) \
-                            [concat [list [pwd]/[file tail $FileOrVal]] \
-                            [lrange $paramData($restoredComp) 1 end]]
+		set paramState($restoredComp) \
+		    [concat [list [pwd]/[file tail $FileOrVal]] \
+			 [lrange $paramData($restoredComp) 1 end]]
                     # now just load up the data
                     #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
-                    set paramData($restoredComp) \
-                            [LoadTableData $paramState($restoredComp) 0]
-                } elseif {![SensibleValue $trans $FileOrVal]} {
-                    set paramData($restoredComp) {}
-                    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
-                }
-                FillIfSmall $widgetNames($restoredComp).e \
+		set paramData($restoredComp) \
+		    [LoadTableData $paramState($restoredComp) 0]
+	    } elseif {![SensibleValue $trans $FileOrVal]} {
+		set paramData($restoredComp) {}
+		ShowMessage "Error merging parameters" error "Parameterization file contained the entry $FileOrVal for component $restoredComp. This entry is not the name of an existing file, nor is it a sensible value for a Simile component." ok
+	    }
+	    if {$interactive} {
+		FillIfSmall $widgetNames($restoredComp).e \
 		    $paramData($restoredComp)
-            }
-        }
-        close $pStr
-        
+	    }
+	}
     }
+    close $pStr
     cd $oldDir
-}
 }
 
 # This tests for sensible model values.
