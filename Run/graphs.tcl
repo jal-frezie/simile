@@ -710,17 +710,14 @@ proc FileParamDialogue {mustShow parent} {
 }
 
 proc MakeFrames {windowId} {
-    frame $windowId.c
+    ScrolledWindow $windowId.c
     set canId $windowId.c.canvas
-    #    pack [frame $windowId.buttonframe] -side bottom
     ScrollableFrame $canId -yscrollincrement 1 \
             -yscrollcommand [list AdjustCanvas $windowId.c canvas y] \
-            -constrainedwidth true
-    scrollbar $windowId.c.yscroll -orient v -command [list $canId yview]
-    
-    pack $windowId.c.yscroll -side right -fill y
-    pack $canId -side left -fill both -expand true
+            -height 1 -constrainedwidth true
+    $windowId.c setwidget $canId
     pack $windowId.c -side top -fill both -expand true
+
     pack [frame $windowId.checkframe] -in [$canId getframe] -side top -expand true -fill x -padx 2 -pady 2
     pack [frame $windowId.sliderframe] -in [$canId getframe] -side top \
             -fill x -expand true -padx 2 -pady 2

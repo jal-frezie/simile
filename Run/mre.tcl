@@ -170,7 +170,7 @@ proc RunEnv::Create { ModelWin } {
         #set outputFrame \
         #        [frame [$explorerPane.notebook getframe "Output"].sliders -container true]
         pack $variableListFrame $sliderControlFrame -fill both -expand yes
-        $explorerPane.notebook raise Explorer
+        $explorerPane.notebook raise InputSliders
         
         NoteBook $runcontrolpane.notebook
         $runcontrolpane.notebook insert end "RunControl" -text "Run Control"

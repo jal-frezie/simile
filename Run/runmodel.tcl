@@ -683,10 +683,28 @@ proc RunDialog {canvas} {
     ${defHelper}::SetMode $helperId reset
     set runState(helperId) $helperId
 
-    MakeSlidersForInputs
+# remake notebook page for sliders if earlier deleted
+    if {[PrefValue custom(helperManager) helperManager]} {
+	set sliderBook ${::RunEnv::explorerPane}.notebook
+	if {![info exists ::RunEnv::sliderControlFrame]} {
+	    $sliderBook insert end "InputSliders" -text "Input sliders"
+	    pack [set ::RunEnv::sliderControlFrame [frame [$sliderBook getframe "InputSliders"].sliders]] -fill both -expand yes
+	    $sliderBook raise InputSliders
+	}
+    }
 
+    MakeSlidersForInputs
+    
     if {[PrefValue custom(helperManager) helperManager]} {
         CreateHelperWindow $helperTable(VariableList) "Variables"; # JMM
+	if {![winfo exists $helperTable(autosliders)]} {
+# No sliders in model, so depete notebook page
+	    $sliderBook delete InputSliders
+	    $sliderBook raise Explorer
+	    unset ::RunEnv::sliderControlFrame
+	}
+    } elseif {[winfo exists $helperTable(autosliders)]} {
+	$helperTable(autosliders).c.canvas configure -height 200
     }
 }
 
