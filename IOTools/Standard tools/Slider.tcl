@@ -60,8 +60,7 @@ proc InsertCheck {winId boxname node title} {
 	for {set index 1} {$count >= $index} {incr index} {
 	    pack [checkbutton $checkArr.elt$index \
 		    -variable checkStates($node,$index) \
-		    -borderwidth 1 -padx 0 -offvalue 0 -onvalue 1] \
-		    -side left
+		    -borderwidth 1 -padx 0 -offvalue 0 -onvalue 1]
 	    set checkStates($node,$index) $defArr($index)
 	    if {fmod($index,5)==0} {
 		$checkArr.elt$index configure -bg blue
@@ -86,21 +85,20 @@ proc InsertSlider {winId boxname node title} {
     }
     set count [SliderArray $node]
     if {$count == 0} {
-	scale $f.scale -length 200 \
-		-orient horizontal -showvalue false \
+	scale $f.scale -length 200 -orient horizontal -showvalue false \
 		-sliderlength 10 -from $min -to $max \
 		-tickinterval [expr $magnitude/5.0] \
 		-resolution $spacing \
 		-variable sliderVals($node)
 	$f.scale set $def
-	pack $f.scale -side right
+	pack $f.scale -side right -fill x -expand true
 	pack [label $f.caption -text [lindex $levels end]]
 	pack [entry $f.entry -textvariable sliderVals($node) -width 8]
     } else {
 	array set defArr $def
 	pack [label $f.caption -text [lindex $levels end]]
 	for {set elt 1} {$count >= $elt} {incr elt} {
-	    pack [frame $f.elt$elt]
+	    pack [frame $f.elt$elt] -fill x -expand true
 	    pack [message $f.elt$elt.id -text $elt] -side left
 	    pack [entry $f.elt$elt.val -textvariable sliderVals($node,$elt) \
 		      -width 8] -side left
@@ -111,7 +109,7 @@ proc InsertSlider {winId boxname node title} {
 		-resolution $spacing \
 		-variable sliderVals($node,$elt)
 	    $newScale set $defArr($elt)
-	    pack $newScale
+	    pack $newScale -fill x -expand true
 	}
 	$newScale configure -tickinterval [expr $magnitude/5.0]
 	# only put legend on bottom one
