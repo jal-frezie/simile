@@ -560,20 +560,6 @@ update_bowtie(Link, Route) :-
 	(   Link has_changed_graphical_attribute bowtie to Bowtie, !;
 	    Link has_new_graphical_attribute bowtie of Bowtie).
 
-get_source_hierarchy(Link, [Top | Rest]) :-
-	Link is_connector from TopNode to _,
-	get_host(TopNode, Top),
-	(Top has_class submodel,
-		Top has_model_refinement link_equivalences of Links,
-		member(Prev_link-Link, Links), !,
-/* next couple of lines finish this with the coordinates of the appropriate end of a pre-existing link, if we don't want to be dragging exidting links around. Comment them out if we do! 
-Same applies to next rule as well. */
-		(Prev_link has_graphical_attribute course of 
-				[[LastX, LastY] | _], !,
-			Rest = [[LastX, LastY]];
-		get_source_hierarchy(Prev_link, Rest));
-	Rest = []).
-
 get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
 	Link is_connector from TopStart to TopEnd,
 	member([TopNode, End, Equiv], [[TopStart, start, FarLink-Link],

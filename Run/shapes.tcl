@@ -1134,6 +1134,7 @@ proc Desystematize {colorSpec} {
 proc ApplyLooks {t type} {
     RememberLooks $type
     if {[string compare $type generic]} {
+	CopyLooks $t $type
         ExportLooks $t $type
     } else {
         foreach object {generic compartment channel function variable \

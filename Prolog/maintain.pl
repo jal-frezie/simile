@@ -381,8 +381,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    (Style = submodel, !,
 		get_colour(Comp, FillColour),
 		Draw_command =.. [submodel, Wid, Screen_list, Num,
-				  Fatness, FillColour, Colour_scheme,
-				  [Comp]];
+				  Fatness, FillColour, Colour_scheme, Comp];
 	    Draw_command =.. [Style, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]]),
 	    call(Draw_command),
