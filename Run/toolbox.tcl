@@ -1147,7 +1147,7 @@ proc CopyCanvasToWindowsClipboard {canvas} {
 }
 
 proc PrintNow {winId} {
-    global simtmpdir tcl_platform
+    global simtmpdir env tcl_platform
     
     if {[string match windows $tcl_platform(platform)]} {
         set oldDir [pwd] ;# apparently printing can change directory
