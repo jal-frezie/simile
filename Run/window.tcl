@@ -80,6 +80,7 @@ proc ClickObj { x y winId X Y action} {
     
     #puts "$action it!"
     
+    RemovePopup
     switch $action {
         ctrl {
             set action click
@@ -699,6 +700,7 @@ proc AddCanvasBindings { c topNode } {
     # (could use tag 'has_info' for this)
     $c bind has_info <Enter> [list QueuePopup AddEqnPopup $topNode \
             %x %y %W %X %Y]
+    $c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
     $c bind has_info <Leave> RemovePopup
 }
 
