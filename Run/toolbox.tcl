@@ -745,7 +745,7 @@ proc ControlDraw {prologVersion} {
 
     }
     
-    Pref_Init $custom(prefDir)/.prefs ../Run/sysprefs
+    Pref_Init $custom(prefDir)/.prefs
     Pref_Add {  {custom(initNavbar) initNavbar ON "Tool bar"} \
                 {custom(initToolbar) initToolbar ON "Component bar"} \
                 {custom(initEqnbar) initEqnbar ON "Equation bar"} \

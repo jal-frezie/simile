@@ -10,13 +10,13 @@ proc Status {burble} {
     ShowMessage "Error with preferences" error $burble ok
 }
     
-proc Pref_Init { userDefaults appDefaults } {
+proc Pref_Init { userDefaults } {
 	global pref
 
 	set pref(uid) 0	;# for a unique identifier for widgets
 	set pref(userDefaults) $userDefaults
-	set pref(appDefaults) $appDefaults
-	PrefReadFile $appDefaults startup
+#	set pref(appDefaults) $appDefaults
+#	PrefReadFile $appDefaults startup
 	if [file exists $userDefaults] {
 		PrefReadFile $userDefaults user
 	}
