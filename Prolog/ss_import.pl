@@ -47,16 +47,18 @@ make_cells([], _,_,_, []).
 
 make_cells([element(table-cell, Attrs, A3, A4) | RElts], N1, M2, Model,
 	   AllLinks) :-
-	M1 is N1+1,
 	(select(number-columns-repeated=RStr, Attrs, XAttrs), !,
 	    name(R, RStr),
-	    (R>2, !,
+	    (R>2, member(value=_V, XAttrs), !,
+		M1 is N1+1,
 		NR is R-1,
 		name(NR, NRStr),
 		ToDo = [element(table-cell, [number-columns-repeated=NRStr
 					| XAttrs], A3, A4) | RElts];
-	    ToDo = [element(table-cell, XAttrs, A3, A4) | RElts]);
+	    M1 is N1+R-1,
+		ToDo = [element(table-cell, XAttrs, A3, A4) | RElts]);
 	XAttrs = Attrs,
+	    M1 is N1+1,
 	    ToDo = RElts),
 	make_cells(ToDo, M1, M2, Model, MoreLinks),
 	(member(value=_V, XAttrs), !,
@@ -82,14 +84,20 @@ convert_to_alpha(N, Id) :-
 add_equation(NComp, Attrs, Links) :-
 	implicit_function(NComp, Fn),
 	(member(formula=[61 | FStr], Attrs), !,
-	    append(FStr, ".", ProperStr),
-	    sicstus_read_from_chars(ProperStr, OrigEqn),
-	    replace_subexps(OrigEqn, ss_import, convert_params, [], top_down,
-			    Pairs, NewEqn),
-	    Links = links(NComp, Fn, Pairs);
+	    get_term(FStr, OrigEqn, Err),
+	    (Err = [], !,
+		replace_subexps(OrigEqn, ss_import, convert_params, [],
+				top_down, Pairs, NewEqn);
+	    caption_for(NComp, Name),
+		sicstus_format_to_chars("Equation for cell ~a could not be translated: ~s", [Name, Err], Whine),
+		do_dialogue("Problem importing spreadsheet equation", warning,
+			    Whine, ok, _),
+		NewEqn = '',
+		Pairs = []);
 	member(value=VStr, Attrs),
 	    name(NewEqn, VStr),
-	    Links = links(NComp, Fn, [])),
+	    Pairs = []),
+	Links = links(NComp, Fn, Pairs),
 	member(value-type=OrigUnitStr, Attrs),
 	name(OrigUnits, OrigUnitStr),
 	(OrigUnits = float, !, Units = 1;
@@ -120,7 +128,12 @@ link_node(Model, links(NComp, Fn, Pairs)) :-
 add_link([Model, Dest, Fn], Source) :-
 	find_all_comps(Model, SrcVar),
 	appears(SrcVar),
-	get_av_pair(SrcVar, 0, name, Source),
-	event:draw_line_to(SrcVar, influence, Dest),
-	event:tie_ends(influence, SrcVar, Fn),
-	remove_old_incomplete.
+	get_av_pair(SrcVar, 0, name, Source), !,
+	    event:draw_line_to(SrcVar, influence, Dest),
+	    event:tie_ends(influence, SrcVar, Fn),
+	    remove_old_incomplete;
+	caption_for(Dest, DestCapt),
+	    sicstus_format_to_chars("Cell ~a has a reference to cell ~a, which does not have a numeric value", [DestCapt, Source], Whine),
+
+	    do_dialogue("Problem importing spreadsheet equation", warning,
+			    Whine, ok, _).

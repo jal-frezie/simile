@@ -744,7 +744,10 @@ make_intermediates(
 		SourceList = ArgList,
 		length(Arg_template, Arity),
 		length(ResultList, Arity),
-		ValRef =.. [Op | ResultList]),
+		name(Op, OpStr),
+		lower(OpStr, LopStr),
+		name(Lop, LopStr),
+		ValRef =.. [Lop | ResultList]),
 	    make_all_intermediates(SourceList, SubId, Target, DestPath,
 				   BackSwap, PrevInters, BuildingArrays, Step,
 				   Used, UnitList, NewInters, PartResultList),
@@ -787,14 +790,14 @@ make_intermediates(
 			SourceRef = ValRef);
 		 ValRef = sofar(SourceRef),
 		    UnitList = [Units];
-		 fn_or_op(Op, RUnits, Arg_template),
+		 fn_or_op(Lop, RUnits, Arg_template),
 		    /* first, check my units are right... */
 		    try_units(RUnits, Arg_template, UnitList, Units),
 		    SourceRef = ValRef;
-		 fn_or_op(Op, RUnits, Arg_template),
+		 fn_or_op(Lop, RUnits, Arg_template),
 		    raise_exception(mismatched_units(Source,
 						     UnitList, Arg_template));
-		 fn_or_op(Op, RUnits, WrongLen),
+		 fn_or_op(Lop, RUnits, WrongLen),
 		    length(WrongLen, FnArity),
 		    raise_exception(wrong_no_of_args(Source, Op,
 						     Arity, FnArity));

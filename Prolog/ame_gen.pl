@@ -24,9 +24,11 @@ sicstus_module(ame_gen,
 sicstus_use_module([library(lists), sp_only, m_class, utility, text]).
 
 /* Full syntax error text currently not displayed because it is too
-distressing to users. Not sure why I use open_chars_stream and read_term
-rather than read_from_chars...oh yes it's because there is no command
-that allows us to get the variable names directly from a string */
+distressing to users. Not sure why I use open_chars_stream and
+read_term rather than read_from_chars...oh yes it's because there is
+no command that allows us to get the variable names directly from a
+string (not that I need them any more, they will be enquoted by
+m_l_f_p) */
 
 get_term(String, Term, Error) :-
 	String = [], !,
@@ -34,14 +36,20 @@ get_term(String, Term, Error) :-
 		Error = [];
 	make_legible_for_prolog(String, ProcessedString),
 	append(ProcessedString, ".", Proper_string),
-/*	name(LooksLike, Proper_string), for debug */
+/*	name(LooksLike, Proper_string), for debug 
 	open_chars_stream(Proper_string, Stream),
 	on_exception(Bug, read_term(Stream, Term, [variable_names(Vs)]),
 		     make_nice_error_message(Bug, Error)),
 	(var(Vs), !,
 	    name(Term, String);
 	all(user, call, [build(Vs)]),
-	    Error = []).
+	    Error = []). */
+	
+	on_exception(Bug, sicstus_read_from_chars(Proper_string, Term),
+		     make_nice_error_message(Bug, Error)),
+	(nonvar(Error), !,
+	    name(Term, String);
+	 Error = []).
 
 /* make_nice_error_message: converts Prolog's syntax_error exception into
 something readable. Prolog itself can do this with the print_message function,
@@ -96,7 +104,7 @@ instance... */
 make_legible_for_prolog(String, NewString) :-
 	[BS, Sq, Dq, Sp, Pt, N0, Eu, El, Po, Pc, Xm, Eq] = "\\\'\" .0Ee()!=",
 	Nums = "0123456789",
-	append(Prefix, ToTweak, [start | String]),
+	append(Prefix, ToTweak, String),
 	/* Do not process anything in single quotes */
 	(ToTweak = [Sq | AfterQuote],
 	append(InQuotes, [Sq | Suffix], AfterQuote),
@@ -105,6 +113,15 @@ make_legible_for_prolog(String, NewString) :-
 	    into list format */
 	ToTweak = [BS | Suffix],
 	    Tweaked = [];
+	/* Put single quotes round things that look like Prolog atoms/vars
+	    (cos variable_names doesnt work on functors/operators) */
+	ToTweak = [StartsVar | Rest],
+	starter_only(StartsVar, prolog, StartsVar),
+	    append(MoreVar, Suffix, Rest),
+	    \+ (Suffix = [EndsVar | _],
+		continuer_only([EndsVar], prolog, [EndsVar])),
+	    continuer_only(MoreVar, prolog, MoreVar),
+	    append([Sq, StartsVar | MoreVar], [Sq], Tweaked);
 	/* Put single quotes round things in double quotes so they are read as
 	    atoms rather than lists of Ascii codes */
 	ToTweak = [Dq | AfterQuote],
@@ -119,15 +136,14 @@ make_legible_for_prolog(String, NewString) :-
 	member(M, "+-*/\\^<>=`~:.?@#$&"),	
 	member(N, "-"), /* 	    (not + cos we use ++) */
 	    Tweaked = [M, Sp, N];
-	/* Make sure scientific notation numbers contain point */
-	ToTweak = [N, E | Suffix],
-	member(N, Nums), member(E, [Eu, El]), /* must be an exponent */
-	suffix([NotN | Ns], Prefix),
-	\+ member(NotN, [Pt | Nums]),
-	\+ member(NotN, /* if last nondigit was alpha its part of an atom */
-		  "_QWERTYUIOPASDFGHJKLZXCVBNMqwertyuiopasdfghjklzxcvbnm"),
-	\+ (member(Num, Ns), \+ member(Num, Nums)),
-	    Tweaked = [N, Pt, N0, E];
+	/* Make sure scientific notation numbers contain point (and skip them
+	in any case so the e/E doesnt look like an atom/var) */
+	append(Ns, [E | Suffix], ToTweak),
+	    member(E, [Eu, El]), /* must be an exponent */
+	    (select(Pt, Ns, AllNums), Insert = [E];
+		AllNums = Ns, Insert = [Pt, N0, E]),
+	    \+ (member(NotN, AllNums), \+ member(NotN, Nums)),
+	    append(Ns, Insert, Tweaked);
 	/* If a function has no args, pop in an empty atom */
 	ToTweak = [Po, Pc | Suffix],
 	    Tweaked = [Po, Sq, Sq, Pc];
@@ -138,7 +154,7 @@ make_legible_for_prolog(String, NewString) :-
 	ToTweak = [Xm, Eq | Suffix],
 	    Tweaked = [Sp, Sq, Xm, Eq, Sq]), !,
 	make_legible_for_prolog(Suffix, NewSuffix),
-	append([Prefix, Tweaked, NewSuffix], [start | NewString]);	
+	append([Prefix, Tweaked, NewSuffix], NewString);	
 	NewString = String.
 
 number_follows(All, Number, Rest, Type) :-
@@ -616,11 +632,11 @@ list_of(Item, Length, Result) :-
 
 lower([], []).
 
-lower([L | R], [_l | _r]) :-
+lower([L | R], [Ll | Lr]) :-
 	(L > 64, L < 91, !,
-		_l is L + 32;
-	_l = L),
-	lower(R, _r).
+		Ll is L + 32;
+	Ll = L),
+	lower(R, Lr).
 
 upper([], []).
 

@@ -3,7 +3,7 @@
 *******************************************************************************/
 
 sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3,
-		      escape_curlies/2]).
+		      escape_curlies/2, starter_only/3, continuer_only/3]).
 
 sicstus_use_module( [library( lists ), utility, sp_only] ).
 
