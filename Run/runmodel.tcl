@@ -123,9 +123,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 #ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
     if {[pack propagate $topWin] &&
 		($wr-$wl >= $mw-8 || $wb-$wt >= $mh-8)} {
-	focus $c
-	update
-	maximize_fg_win 1
+	catch {winfo state $topWin zoomed}
     }
 #ShowMessage debug info "Just done [$c coords 1]" ok
 }
@@ -939,16 +937,24 @@ proc UpdateTimes { current left } {
 proc FixSize {c} {
     global custom
     update idletasks
-    maximize_fg_win 0 ;# seems necessary for console to hide
+    set win [winfo parent $c]
+    wm state $win normal
+# seems necessary for console to hide
     catch {console hide}	
     if {[file exists $custom(prefDir)/layout]} {
 	set stream [open $custom(prefDir)/layout r]
 	gets $stream whetherMaxed
 #ShowMessage debug info $whetherMaxed ok
-	maximize_fg_win $whetherMaxed
+	catch {
+	if {$whetherMaxed} {
+	    wm state $win zoomed
+	} else {
+	    gets $stream oldGeom
+	    wm geometry $win $oldGeom
+	}}
 	close $stream
     }
-    pack propagate [winfo parent $c] 0
+    pack propagate $win 0
 }
     
 proc DestroyHelpers {} {
@@ -1840,6 +1846,7 @@ proc build_c_stub {targetDir make_new_stub} {
 # it is running under Prolog. However it seems to work OK in WinNT.
 	if {$make_new_stub != 1} {
 	    exec g++ -c -o obj.o -I. -I$TCL/include ./ame_cmx.cpp
+
 	    exec dllwrap --dllname=$TARGET --def=stub.def --driver-name=g++ obj.o $tclLib
 
 # Method using command line calls to MSVC 4.0 or later -- works well
@@ -1892,6 +1899,7 @@ proc setup_graph_data {graph_data_pointer xlow xhigh xspan ylow yhigh yspan \
 proc release_graph_data {graph_data_pointer} {
 # no need to release in tcl
 }
+
 
 # this procedure takes the data describing a function entered as a graph, and a
 # point on the x axis, and returns the y axis point. It is called from the
@@ -2032,6 +2040,7 @@ proc compare_tcl_lists {count list1 list2} {
 proc init_pop_member {new_one index parent channel} {
     upvar 1 $new_one tail
     set tgt AME_model<>::$tail
+
     set ${tgt}::instanceid $index
     set ${tgt}::parentId $parent
     set ${tgt}::channelId $channel

@@ -57,28 +57,6 @@ FormatMessage(
 return (char*)lpMsgBuf;
 }
 
-extern "C" int maximizeWinCmd(
-	ClientData clientData,
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[]
-)
-{
-  int bool_arg;
-  HWND hWnd = GetForegroundWindow();
-  if (objc >= 2) {
-    Tcl_GetBooleanFromObj(interp, objv[1], &bool_arg);
-    if (bool_arg) {
-      ShowWindow(hWnd, SW_MAXIMIZE);
-    } else {
-      ShowWindow(hWnd, SW_RESTORE);
-    }
-  } else {
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(IsZoomed(hWnd)));
-  }
-  return TCL_OK;
-}
-
 #else
 
     #include <dlfcn.h>
@@ -92,17 +70,6 @@ extern "C" int maximizeWinCmd(
     #define FORUNIX 1
 HINSTANCE flopen(char* fileName) {
   return dlopen(fileName, RTLD_NOW);
-}
-
-extern "C" int maximizeWinCmd(
-	ClientData clientData,
-	Tcl_Interp *interp,
-	int objc,
-	Tcl_Obj *CONST objv[]
-)
-{
-  // Nothing, till I find out how...
-	return TCL_OK;
 }
 
 #endif
@@ -229,7 +196,10 @@ public:
     if ((*getversion)() < atof(simileVersion)-0.00001) {
       UNLOAD_DLL(handle);
       throw DllLossage("find current version of", fileName, WHAT_WENT_WRONG());
+
     }
+
+
 
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
@@ -766,6 +736,7 @@ void* advance_ptr(void* typeRef, void* topInstRef) {
 }
 
 void search_from(void* typeRef, int nodeIndx, void* instPtr) {
+
   connectData[((Model*)typeRef)->connLines[nodeIndx]].SearchBase = instPtr;
 }
 
@@ -1241,6 +1212,7 @@ extern "C" int extractCmd(ClientData clientData, Tcl_Interp *interp,
 		 int argc, Tcl_Obj *CONST argv[]) {
   Tcl_Obj *resultPtr, *newData;
   int iPosn, error;
+
   char spare[256];
   int dims[32], path[32];
   Model* mSpare;
@@ -1430,9 +1402,6 @@ int Ame_dll_Init(Tcl_Interp *interp) {
   int maj, min;
   char pkgName[16];
   globInterp = interp;
-  Tcl_CreateObjCommand(interp, "maximize_fg_win", maximizeWinCmd,
-			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-    
     Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 			(ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
     

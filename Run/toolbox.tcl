@@ -121,6 +121,9 @@ proc ControlDraw {prologVersion} {
             }
         }
     }
+    if {[llength $custom(hotlist)]} {
+	RecordPathChoice .sml [lindex $custom(hotlist) 0]
+    }
     
     Pref_Init $custom(prefDir)/prefs ../Run/sysprefs
     Pref_Add {{custom(initNavbar) initNavbar ON "Tool bar"} \
@@ -319,7 +322,8 @@ proc ZapWindow { fullName } {
         focus $target.canvas
         update
         set cacheStream [open $custom(prefDir)/layout w]
-        puts $cacheStream [maximize_fg_win]
+        puts $cacheStream [string match zoomed [wm state $target]]
+	puts $cacheStream [wm geometry $target]
         close $cacheStream
     }
     destroy ${target}top
@@ -952,7 +956,7 @@ proc PrepForExport {winId way} {
     } else {
         set textBoost 1
     }
-    set tlBorder 20
+    set ltBorder 20
     set textscale [expr $detail*$textBoost]
     if {[string match there $way]} {
 	set jiggles(sr) [$winId cget -scrollregion]
@@ -1290,6 +1294,7 @@ proc AddMainMenu { winid initWidth initDepths} {
     foreach mode {compartment variable flow influence separator1 submodel \
                 relation separator2 creation immigration reproduction loss condition} {
         if {[string match separator* $mode]} {
+
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
         } else  {
             set testImg [image create photo -file $buttonImages/${mode}.gif]
@@ -1379,6 +1384,7 @@ proc AddMainMenu { winid initWidth initDepths} {
             [PrefValue custom(initNavbar) initNavbar]]
     set custom(showeqnbar,$winid) [expr $initWidth>=$navWidth && \
             [PrefValue custom(initEqnbar) initEqnbar]]
+
     
     pack [Separator $winid.toolSlot.topseparator -orient horizontal] -fill x -side top 
     if {$custom(shownavbar,$winid)} {
