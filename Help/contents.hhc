@@ -1,0 +1,714 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<HTML>
+<HEAD>
+<meta name="GENERATOR" content="Microsoft&reg; HTML Help Workshop 4.1">
+<!-- Sitemap 1.0 -->
+</HEAD><BODY>
+<OBJECT type="text/site properties">
+	<param name="Window Styles" value="0x800225">
+</OBJECT>
+<UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Contents">
+		<param name="Local" value="index.htm">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Getting Started">
+		<param name="Local" value="start\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Simple bank account model">
+			<param name="Local" value="start\model.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 1">
+			<param name="Local" value="start\step1.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 2">
+			<param name="Local" value="start\step2.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 3">
+			<param name="Local" value="start\step3.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 4">
+			<param name="Local" value="start\step4.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 5">
+			<param name="Local" value="start\step5.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 6">
+			<param name="Local" value="start\step6.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 7">
+			<param name="Local" value="start\step7.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Step 8">
+			<param name="Local" value="start\step8.htm">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Model Diagram Elements">
+		<param name="Local" value="elements\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Compartment">
+			<param name="Local" value="elements\compartment.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Flow arrow">
+			<param name="Local" value="elements\flow.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Variable">
+			<param name="Local" value="elements\variable.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Influence">
+			<param name="Local" value="elements\influence.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Submodel">
+			<param name="Local" value="elements\submodel.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Initialisation">
+			<param name="Local" value="elements\initialiser.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Migration">
+			<param name="Local" value="elements\migrator.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Reproduction">
+			<param name="Local" value="elements\reproducer.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Extermination">
+			<param name="Local" value="elements\exterminator.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Role arrows">
+			<param name="Local" value="elements\role.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Single role arrow">
+				<param name="Local" value="elements\role\single.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Two role arrows, two submodels">
+				<param name="Local" value="elements\role\dual.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Two role arrows, one submodel">
+				<param name="Local" value="elements\role\double.htm">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Condition">
+			<param name="Local" value="elements\condition.htm">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Working with Model Diagrams">
+		<param name="Local" value="diagrams\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Adding node-type elements">
+			<param name="Local" value="diagrams\node.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Adding arrow-type elements">
+			<param name="Local" value="diagrams\arrow.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Adding submodels">
+			<param name="Local" value="diagrams\envelope.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Changing an element's label">
+			<param name="Local" value="diagrams\label.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Adding pictures">
+			<param name="Local" value="diagrams\pictures.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Adding text">
+			<param name="Local" value="diagrams\text.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Moving elements">
+			<param name="Local" value="diagrams\move\index.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Labels">
+				<param name="Local" value="diagrams\move\labels.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Flow valves">
+				<param name="Local" value="diagrams\move\flow.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Influence arrows">
+				<param name="Local" value="diagrams\move\influence.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Submodels">
+				<param name="Local" value="diagrams\move\submodels.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Role arrow">
+				<param name="Local" value="diagrams\move\role.htm">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Deleting elements">
+			<param name="Local" value="diagrams\delete.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Duplicating submodels">
+			<param name="Local" value="diagrams\duplicate.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Groups of elements">
+			<param name="Local" value="diagrams\groups.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Creating ghost elements">
+			<param name="Local" value="diagrams\ghosts.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Printing model diagrams">
+			<param name="Local" value="diagrams\print.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Undoing changes">
+			<param name="Local" value="diagrams\undo.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Zooming in and out">
+			<param name="Local" value="diagrams\zoom.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Searching for a particular variable">
+			<param name="Local" value="diagrams\search.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Rescaling symbol size">
+			<param name="Local" value="diagrams\rescale.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Controlling the detail displayed">
+			<param name="Local" value="diagrams\detail.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Preferences">
+			<param name="Local" value="diagrams\preferences\index.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Settings : View">
+				<param name="Local" value="diagrams\preferences\view.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Settings : Edit">
+				<param name="Local" value="diagrams\preferences\edit.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Settings : Build">
+				<param name="Local" value="diagrams\preferences\build.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Settings : Save">
+				<param name="Local" value="diagrams\preferences\save.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Settings : Run">
+				<param name="Local" value="diagrams\preferences\run.htm">
+				</OBJECT>
+		</UL>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Working with Equations">
+		<param name="Local" value="equations\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Introduction to equations">
+			<param name="Local" value="equations\introduction.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Equation bar">
+			<param name="Local" value="equations\bar.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Equation dialogue window">
+			<param name="Local" value="equations\dialogue.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Arrays and lists">
+			<param name="Local" value="equations\arrays.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Dimensions">
+			<param name="Local" value="equations\dimensions.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Physical units">
+			<param name="Local" value="equations\units.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Local names">
+			<param name="Local" value="equations\local.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Components of an equation">
+			<param name="Local" value="equations\components.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Conditional expressions">
+				<param name="Local" value="equations\conditions.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Boolean expressions">
+				<param name="Local" value="equations\boolean.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Functions">
+				<param name="Local" value="equations\functions.htm">
+				</OBJECT>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Built-in functions">
+					<param name="Local" value="equations\builtin.htm">
+					</OBJECT>
+				<UL>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="abs function">
+						<param name="Local" value="equations\functions\abs.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="all function">
+						<param name="Local" value="equations\functions\all.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="any function">
+						<param name="Local" value="equations\functions\any.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="ceil function">
+						<param name="Local" value="equations\functions\ceil.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="channel function">
+						<param name="Local" value="equations\functions\channel.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="count function">
+						<param name="Local" value="equations\functions\count.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="dt function">
+						<param name="Local" value="equations\functions\dt.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="element function">
+						<param name="Local" value="equations\functions\element.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="exp function">
+						<param name="Local" value="equations\functions\exp.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="floor function">
+						<param name="Local" value="equations\functions\floor.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="fmod function">
+						<param name="Local" value="equations\functions\fmod.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="greatest function">
+						<param name="Local" value="equations\functions\greatest.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="hypot function">
+						<param name="Local" value="equations\functions\hypot.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="index function">
+						<param name="Local" value="equations\functions\index.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="init_time function">
+						<param name="Local" value="equations\functions\init_time.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="int function">
+						<param name="Local" value="equations\functions\int.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="last function">
+						<param name="Local" value="equations\functions\last.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="least function">
+						<param name="Local" value="equations\functions\least.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="log function">
+						<param name="Local" value="equations\functions\log.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="log10 function">
+						<param name="Local" value="equations\functions\log10.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="makearray function">
+						<param name="Local" value="equations\functions\makearray.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="max function">
+						<param name="Local" value="equations\functions\max.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="min function">
+						<param name="Local" value="equations\functions\min.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="parent function">
+						<param name="Local" value="equations\functions\parent.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="place_in function">
+						<param name="Local" value="equations\functions\place_in.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="pow function">
+						<param name="Local" value="equations\functions\pow.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="prev function">
+						<param name="Local" value="equations\functions\prev.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="product function">
+						<param name="Local" value="equations\functions\product.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="rand_const function">
+						<param name="Local" value="equations\functions\rand_const.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="rand_var function">
+						<param name="Local" value="equations\functions\rand_var.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="size function">
+						<param name="Local" value="equations\functions\size.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="sofar function">
+						<param name="Local" value="equations\functions\sofar.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="sqrt function">
+						<param name="Local" value="equations\functions\sqrt.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="sum function">
+						<param name="Local" value="equations\functions\sum.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="time function">
+						<param name="Local" value="equations\functions\time.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="Trigonometric functions">
+						<param name="Local" value="equations\trig.htm">
+						</OBJECT>
+				</UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Graph function">
+					<param name="Local" value="equations\graph.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Table function">
+					<param name="Local" value="equations\table.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="User-supplied functions">
+					<param name="Local" value="equations\user.htm">
+					</OBJECT>
+				<UL>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="Macro definitions">
+						<param name="Local" value="equations\macro.htm">
+						</OBJECT>
+					<LI> <OBJECT type="text/sitemap">
+						<param name="Name" value="External procedural functions">
+						<param name="Local" value="equations\external.htm">
+						</OBJECT>
+				</UL>
+			</UL>
+		</UL>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Working with Submodels">
+		<param name="Local" value="submodels\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Submodel properties dialogue">
+			<param name="Local" value="submodels\dialogue.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Time step index">
+				<param name="Local" value="submodels\timestep.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Build submodel separately">
+				<param name="Local" value="submodels\separate.htm">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Using a submodel to move groups of elements">
+			<param name="Local" value="submodels\movegroups.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Opening a new window for a submodel">
+			<param name="Local" value="submodels\window.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Saving a submodel">
+			<param name="Local" value="submodels\save.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Loading a saved submodel as a stand-alone model">
+			<param name="Local" value="submodels\load.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Loading a saved stand-alone model as a submodel">
+			<param name="Local" value="submodels\import.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Multiple-instance submodels: fixed membership">
+			<param name="Local" value="submodels\multiple\fixed.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Multiple-instance submodels: population">
+			<param name="Local" value="submodels\multiple\population.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Plug-and-play modularity using submodels">
+			<param name="Local" value="submodels\plugplay\index.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Step 1">
+				<param name="Local" value="submodels\plugplay\plugplay1.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Step 2">
+				<param name="Local" value="submodels\plugplay\plugplay2.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Step 3">
+				<param name="Local" value="submodels\plugplay\plugplay3.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Step 4">
+				<param name="Local" value="submodels\plugplay\plugplay4.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Step 5">
+				<param name="Local" value="submodels\plugplay\plugplay5.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Step 6">
+				<param name="Local" value="submodels\plugplay\plugplay6.htm">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Conditional submodels">
+			<param name="Local" value="submodels\conditional.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Satellite submodels">
+			<param name="Local" value="submodels\satellite.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Association submodels">
+			<param name="Local" value="submodels\association\index.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Introduction to association submodels">
+				<param name="Local" value="submodels\association\introduction.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Worked example of association submodels">
+				<param name="Local" value="submodels\association\example.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Role arrow properties dialogue box">
+				<param name="Local" value="submodels\association\dialogue.htm">
+				</OBJECT>
+		</UL>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Running Models">
+		<param name="Local" value="run\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Building models">
+			<param name="Local" value="run\build.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Single-window run-time environment">
+			<param name="Local" value="run\single.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Multiple-window run-time environment">
+			<param name="Local" value="run\multiple.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Model explorer">
+			<param name="Local" value="run\tools\explorer.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Run control">
+			<param name="Local" value="run\control.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Sliders">
+			<param name="Local" value="run\sliders.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Working with helpers">
+			<param name="Local" value="run\tools\index.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Plotter helper">
+				<param name="Local" value="run\tools\plotter.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Data table helper">
+				<param name="Local" value="run\tools\table.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Helper configurations">
+				<param name="Local" value="run\tools\configurations.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Using other helpers">
+				<param name="Local" value="run\tools\others.htm">
+				</OBJECT>
+			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Plot value against time helper">
+					<param name="Local" value="run\tools\timeplot.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Lollipop diagram helper">
+					<param name="Local" value="run\tools\lollipop.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Spatial grid display helper">
+					<param name="Local" value="run\tools\grid.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="3d viewer helper">
+					<param name="Local" value="run\tools\3d.htm">
+					</OBJECT>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Time profiles helper">
+					<param name="Local" value="run\tools\profiles.htm">
+					</OBJECT>
+			</UL>
+		</UL>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Working with External Data">
+		<param name="Local" value="data\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Overview of the scenario file mechanism">
+			<param name="Local" value="data\overview.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Using the scenario file mechanism">
+			<param name="Local" value="data\scenario.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Case 1: providing a single value for a scalar variable">
+				<param name="Local" value="data\case1.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Case 2: providing a set of values for a variable inside a multiple-instance submodel: values stored in the scenario file">
+				<param name="Local" value="data\case2.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Case 3: providing a set of values for an array variable: values stored in the scenario file">
+				<param name="Local" value="data\case3.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Case 4: providing a set of values for a variable in a fixed-membership multiple-instance submodel: values stored in a separate file">
+				<param name="Local" value="data\case4.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Case 5: providing a set of values for an array variable: values stored in a separate file">
+				<param name="Local" value="data\case5.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Case 6: providing time-series data">
+				<param name="Local" value="data\case6.htm">
+				</OBJECT>
+		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Modifying scenario values during a session">
+			<param name="Local" value="data\modify.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Working with time series">
+			<param name="Local" value="data\time.htm">
+			</OBJECT>
+	</UL>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Example Models">
+		<param name="Local" value="examples\index.htm">
+		</OBJECT>
+	<UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Forest tree growth">
+			<param name="Local" value="examples\forest.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Process control">
+			<param name="Local" value="examples\control.htm">
+			</OBJECT>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Supply and demand">
+			<param name="Local" value="examples\supply.htm">
+			</OBJECT>
+	</UL>
+</UL>
+</BODY></HTML>
