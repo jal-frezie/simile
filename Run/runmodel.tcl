@@ -492,6 +492,7 @@ proc ScrubRun {node times} {
             if {[info exists instance_id($node)]} {
                 #ShowMessage debug info "Exiting $model_id $instance_id" ok
 		do_for_node $node namespace delete ::AME_model<>
+		do_for_node $node array unset nodedata
                 unset instance_id($node)
 	    }
         }
