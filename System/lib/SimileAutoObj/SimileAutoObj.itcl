@@ -54,9 +54,9 @@ if {![info exists window_info]} {
 
 if {[string match windows $tcl_platform(platform)]} {
     #tk_messageBox -message "ModelWin before registerfactory"
-    ::tcom::object registerfactory ::SimileAutoObj::ModelWindow {similescript::ModelWindow #auto} {delete object}
-    ::tcom::object registerfactory ::SimileAutoObj::RunControl {similescript::RunControl  #auto} {delete object}
-    ::tcom::object registerfactory ::SimileAutoObj::TableHelper {similescript::TableHelper  #auto} {delete object}
+    #::tcom::object registerfactory ::SimileAutoObj::ModelWindow {similescript::ModelWindow #auto} {delete object}
+    #::tcom::object registerfactory ::SimileAutoObj::RunControl {similescript::RunControl  #auto} {delete object}
+    #::tcom::object registerfactory ::SimileAutoObj::TableHelper {similescript::TableHelper  #auto} {delete object}
     #tk_messageBox -message "ModelWin after registerfactory"
 }
 
