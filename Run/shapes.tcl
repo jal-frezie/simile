@@ -1093,7 +1093,7 @@ proc GetTextAnchor {t} {
 proc ResetLooks {type} {
 	global looks
 
-	set looks($type,font) [AssembleFont Helvetica Bold R 120]
+	set looks($type,font) [AssembleFontXFLD Helvetica Bold R 120]
 	set looks($type,outline) black
 	set looks($type,fill) $looks(buttonColor)
 	set looks($type,text) black
