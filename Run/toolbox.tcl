@@ -1212,7 +1212,7 @@ proc OpenProjectFile {path} {
         # variable which will be read before opening the dialogue
         set baseDir [file dirname [lindex $loadingProject 1]]
         foreach {smPath spfRelPath} $SimileProject(spfList) {
-        do_in_node $topNode set ::projectParams($smPath) \
+        do_for_node $topNode set ::projectParams($smPath) \
             [file join $baseDir $spfRelPath]
         }
     }

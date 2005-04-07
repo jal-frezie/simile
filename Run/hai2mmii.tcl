@@ -78,7 +78,7 @@ proc old_do_model {node what args} {
 
 proc RunningInC {} {
     global model_id myNode
-    return 0
+#    return 0
     return $model_id($myNode) ;# it is ready
 } 
     

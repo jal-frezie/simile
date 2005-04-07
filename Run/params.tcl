@@ -523,8 +523,8 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 proc PlaceInArray {where what varData inC} {
     if {$inC} {
 	set map [split $where ,]
-	ShowMessage debug99 info "About to BUFF node [lindex $map 0] and \
-indices [lrange $map 1 end] with $what" ok
+#	ShowMessage debug99 info "About to BUFF node [lindex $map 0] and \
+#indices [lrange $map 1 end] with $what" ok
 	if {[catch {c_setparamelement 0 0 [lindex $map 0] \
 			[lrange $map 1 end] $what} urr]} {
 	    error [list $urr]
@@ -949,8 +949,9 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 	}
 
 	if {[info exists useTime]} {
+	    set inC [RunningInC]
 	    set tgtVar [InputVarFor $topNode $node]
-	    upvar \#0 $tgtVar inputSrc
+#	    upvar \#0 $tgtVar inputSrc
 #puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
 	    # do it the easy way if a scalar
 #puts "looking for paramData($node,$useTime)"
@@ -964,7 +965,8 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 				 [array names paramData $node,$useTime,*]] {
 #puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
 		set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
-		set inputSrc($tgtIndex) $paramData($tsValue)
+#		set inputSrc($tgtIndex) $paramData($tsValue)
+		PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
 		if {[string match comboChoices $tgtVar]} {
 		    set comboTypes($tgtIndex) \
 			[TransValue $trans $paramData($tsValue)]
