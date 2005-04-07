@@ -919,6 +919,7 @@ package require mime
 proc SaveFile {topNode tree tgt} {
     #ShowMessage debug info "SaveFile $tree $tgt" ok
     global errorInfo runState
+
     global SimileProjectDo
     
     if {[info exists SimileProjectDo]} {
@@ -1022,6 +1023,7 @@ proc GetParts {top tree} {
             set mimes [concat $mimes [GetParts $top $subtree]]
         } else {
             set ext [file tail $subtree]
+
             switch -glob $ext {
                 *.gif {
                     set PartType "image/gif"

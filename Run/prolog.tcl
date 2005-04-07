@@ -75,6 +75,7 @@ proc AddCurrentToPipe {stack} {
 }
 
 proc ShowStack {} {
+
     global plPipe
     ShowMessage "Stack is..." info [AddCurrentToPipe $plPipe(stack)] ok
 }

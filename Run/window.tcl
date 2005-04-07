@@ -170,6 +170,7 @@ proc ClickObj { x y winId X Y action} {
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node \
                 , $CD)]
+	update
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
             tk_popup [winfo parent $winId]top.edit $X $Y
@@ -694,6 +695,10 @@ proc DoingSelection {winName} {
 
 proc AddCanvasBindings { c topNode } {
     global tcl_platform
+
+
+
+
     bind $c <Button-1> {ClickObj %x %y %W %X %Y click}
 # Bindings are slightly different in the MacVersion because many users have
 # one button mice.  Thus ctrl-left click is used to simulate right click,

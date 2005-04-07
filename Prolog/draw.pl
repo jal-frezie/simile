@@ -61,9 +61,9 @@ reset_titles(Model) :-
 	    fail;
 	true).
 
-update_ability(Model, Un, Men, Itm, Re) :-
-	Win shows_model SubModel,
+update_ability(SubModel, Un, Men, Itm, Re) :-
 	contains(Model, SubModel),
+	Win shows_model Model,
 	tk_update_ability(Win, Un, Men, Itm, Re),
 	fail;
 	true.

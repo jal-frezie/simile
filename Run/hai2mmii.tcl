@@ -78,7 +78,7 @@ proc old_do_model {node what args} {
 
 proc RunningInC {} {
     global model_id myNode
-    return 0 ;# $model_id($myNode) when c++ array params stable enough to use
+    return $model_id($myNode)
 } 
     
 proc ExplainError {what dest mtime mstep whoopsie} {
