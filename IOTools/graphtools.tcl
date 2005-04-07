@@ -602,7 +602,7 @@ proc ::graphtools::AxisRound { dataMin dataMax xaxis axisMin axisMax interval nu
         set axis 1; # dealing with y axis
     }
     #puts "==================================="
-    #puts "dataMin $dataMin; dataMax $dataMax"
+#ShowMessage debug info "dataMin $dataMin; dataMax $dataMax" ok
     if {$dataMin==0} {set dataMin 0.0000000001}; # prevent div by zero errors
     
     # seperate min and max if they are equal

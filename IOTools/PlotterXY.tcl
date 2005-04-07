@@ -32,10 +32,12 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        
+        variable ynodes
+	variable xnodes
+
         namespace import -force ::graphtools::*
         
-        set plot($w,nodeCount) 0
+	set plot($w,nodeCount) 0
         
         set plot($w,xwindow_size) 0
         set plot($w,ywindow_size) 0
@@ -93,6 +95,8 @@ namespace eval ::$keyValue {
         set YYnew($w) {}
         set Told($w) {}
         set Tnew($w) {}
+        set ynodes($w) {}
+        set xnodes($w) {}
         
         SetState $w {}
         
@@ -108,6 +112,8 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
+        variable ynodes
+	variable xnodes
         
         set YYold($winId) {}
         set YYnew($winId) {}
@@ -117,7 +123,21 @@ namespace eval ::$keyValue {
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
 	InitPlatformDependentPlotVars $winId
-        #    ShowMessage debug info $restoreString ok
+#ShowMessage debug info "ys $plot($winId,Yvars) xs $plot($winId,Xvars)" ok
+        foreach path $plot($winId,Yvars) {
+	    set node [GetIdFromCaptionPath $path]
+	    if {[string equal nomatch $node]} {
+		set node $path
+	    }
+            lappend ynodes($winId) $node
+        }
+        foreach path $plot($winId,Xvars) {
+	    set node [GetIdFromCaptionPath $path]
+	    if {[string equal nomatch $node]} {
+		set node $path
+	    }
+            lappend xnodes($winId) $node
+        }
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
         display $winId [GetModelTime] 0 0
@@ -149,6 +169,8 @@ namespace eval ::$keyValue {
     proc click {w node caption} {
         #       tk_messageBox -message "Click node $caption $node" -type ok
         global ::graphtools::plot
+        variable ynodes
+	variable xnodes
         
         set newbox nodebox[incr plot($w,nodeCount)]
         set name [GetCaptionPathFromId $node]
@@ -157,7 +179,8 @@ namespace eval ::$keyValue {
         if {[string compare $testResult novalue]} {
             switch $plot($w,state) {
                 xcoord {
-                    set plot($w,Xvars) $node
+                    set plot($w,Xvars) $name
+		    set xnodes($w) $node
                     set plot($w,XaxisLabel) $caption
                     set plot($w,state) ycoord
                     
@@ -166,7 +189,8 @@ namespace eval ::$keyValue {
                     GrabClicks $w
                 }
                 ycoord {
-                    set plot($w,Yvars) $node
+                    set plot($w,Yvars) $name
+		    set ynodes($w) $node
                     lappend plot($w,Ylabels) $caption; # allow more than one pair of var
                     set useNodes($w,state) display
                     drawGraphpad $w
@@ -809,15 +833,15 @@ namespace eval ::$keyValue {
     # off at 0, then alternates 1 0 1 0 etc.
     
     proc get_Yvalues {w} {
-        global ::graphtools::plot
         global ::graphtools::YYold
         global ::graphtools::YYnew
+        variable ynodes
         
         set YYold($w) $YYnew($w)
         
         set YYnew($w) [list 1 2]
         set YYnew($w) [lreplace $YYnew($w) 0 end]
-        foreach node $plot($w,Yvars) {
+        foreach node $ynodes($w) {
             set values [GetModelValue $node]
             set values [lindex $values 0]
             lappend YYnew($w) [list $node $values]
@@ -826,14 +850,14 @@ namespace eval ::$keyValue {
     }
     
     proc get_Xvalues {w} {
-        global ::graphtools::plot
         global ::graphtools::Told
         global ::graphtools::Tnew
+	variable xnodes
         
         set Told($w) $Tnew($w)
         set Tnew($w) [list 1 2]
         set Tnew($w) [lreplace $Tnew($w) 0 end]
-        foreach node $plot($w,Xvars) {
+        foreach node $xnodes($w) {
             set values [GetModelValue $node]
             set values [lindex $values 0]
             lappend Tnew($w) [list $node $values]

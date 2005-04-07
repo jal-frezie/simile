@@ -91,6 +91,7 @@ double lts[8], ldts[8], steps[8];
 int last_op = 0;
 unsigned long int last_exit = 0, last_update = 0;
 unsigned long int took[]={0,0,0,0,0,0,0,0};
+BOOLEAN resetting;
 
 BOOLEAN check_gui(double model_time, int this_op) {
   unsigned long int flash, this_update;
@@ -702,19 +703,26 @@ public:
   }
 
   void extract_elt(void* tgt, int* indxs) {
-    int howFarDown;
-
+    int howFarDown, eltSize;
+    // do not do it if this is a variable parameter and we are initializing --
+    // array not yet set so let model keep default value...in fact, save it in
+    // the array for later
     howFarDown = serial(indxs);
     switch (nodeLine->datatype) {
     case REAL:
-      *(double*)tgt = *(double*)(dataPtr + sizeof(double)*howFarDown);
+      eltSize = sizeof(double);
       break;
     case FLAG:
-      *(BOOLEAN*)tgt = *(BOOLEAN*)(dataPtr + sizeof(BOOLEAN)*howFarDown);
+      eltSize = sizeof(BOOLEAN);
       break;
     default: // INTEGER or enumerated type
-      *(int*)tgt = *(int*)(dataPtr + sizeof(int)*howFarDown);
+      eltSize = sizeof(int);
       break;
+    }
+    if (nodeLine->eval==INPUT && resetting) {
+      memcpy(dataPtr + eltSize*howFarDown, tgt, eltSize);
+    } else {
+      memcpy(tgt, dataPtr + eltSize*howFarDown, eltSize);
     }
   }
 };   // end of listParamArray class
@@ -1017,7 +1025,7 @@ to drive the model...
 
 int reset(long int modelType, long int modelHandle, int top_phase) {
   int tweak_phase;
-
+  resetting=-top_phase;
   for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
     lts[tweak_phase]=0;
     setdt(0,-tweak_phase);
@@ -1029,6 +1037,7 @@ int reset(long int modelType, long int modelHandle, int top_phase) {
 
 int execute(long int modelType, long int modelHandle, int how_int,
 	 double starttime, double* endtime) {
+  resetting=FALSE;
   return ((Model*)modelType)->executemodel((void*)modelHandle, 
 					how_int, starttime, endtime);
 }
