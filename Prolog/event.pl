@@ -2047,10 +2047,9 @@ dissolve_component(Node) :-
 	    all(event, retitle_duplicate, [build(Orphans), unify(Used)]);
 	true),
 	    
-	/* First, strip the model's dimensions and check external vars --
-	should also do single-member conditionals, and seems not to work */
-	(get_node_size(Node, []), !;
-	add_parameter(Node, 0, multiplication_spec, [count=[]]),
+	/* First, strip the model's dimensions and check external vars */
+	(get_all_dims(Node, []), !;
+	add_parameter(Node, 0, assume_simple, 1),
 	    spread_colour(Node, yes)),
 	/* next, set its internal extent to its bounding box so I can snap its
 	    already-moved components to the parent's grid */

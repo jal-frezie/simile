@@ -517,8 +517,8 @@ get_node_size(Source, Size) :-
 
 get_node_size(Source, SizeN, Size, Units) :-
 	Source has_class_refinement multiplication_spec of Multi,
-	member(count=Dim, Multi),
-	get_actual_sizes(Source, Dim, SizeN, Size, Units), !,
+	member(count=Dim, Multi), !,
+	get_actual_sizes(Source, Dim, SizeN, Size, Units),
 	(\+ member(var, Size), !;
 	caption_for(Source, Capt),
 	    sicstus_format_to_chars("~a has a reference to a variable membership model in its dimensions.", [Capt], Wibble),
@@ -530,6 +530,8 @@ get_node_size(Source, SizeN, Size, Units) :-
 canonical order, i.e., those accessed by the highest index numbers first. */
 
 get_all_dims(Source, AllDims) :-
+	Source has_class_refinement assume_simple of 1, !,
+	    AllDims = [];
 	variable_size(Source), !,
 	    AllDims = [var];
 	get_node_size(Source, AllDims).
