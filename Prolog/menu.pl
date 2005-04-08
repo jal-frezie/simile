@@ -110,8 +110,9 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    is_toplevel(Parent),
 	    get_default_export_name(Parent, "", DefName),
 	    find_all_comps(Root, Parent),
-	    m_update:unique_name_for_new(Root, DefName, NodeName),
-	    add_parameter(Parent, 0, name, NodeName),
+	    event:list_captions(Root, Toplevels),
+	    add_parameter(Parent, 0, name, DefName),
+	    event:retitle_duplicate(Parent, Toplevels),
 	    fail);
 	use_temp_dir(LocalDir),
 	(event:list_captions(Parent, Used), !; true),
@@ -1174,7 +1175,7 @@ cutout(Parent) :-
 delete_tree(Target) :-
 	find_type(Target, submodel),
 	    caption_for(Target, Caption),
-	    sicstus_format_to_chars("Deleting submodel ~a", [Caption], Ms),
+	    sicstus_format_to_chars("Deleting submodel ~w", [Caption], Ms),
 	    clear_model_file(Target),
 	    reassure_user(Ms),
 	    fail;
@@ -1231,7 +1232,7 @@ kill_everything(Model) :-
 ok_to_delete(Win, Target) :-
 	get_default_export_name(Target, ".sml", Handle),
 	caption_for(Target, Title),
-	sicstus_format_to_chars("Component ~a (in ~a) has not been saved since it was last modified. Save it now?", [Handle, Title], Query),
+	sicstus_format_to_chars("Component ~a (in ~w) has not been saved since it was last modified. Save it now?", [Handle, Title], Query),
 	do_dialogue("Save changes", question, Query, yesnocancel, Reply),
 	(Reply = yes, do_save(Win, Target, false);
 	Reply = no).

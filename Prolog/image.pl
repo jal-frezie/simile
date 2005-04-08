@@ -633,7 +633,7 @@ make_header(Model, Header) :-
     dim_spec_for(Model, DimSpec),
     time_step_for(Model, default, Step),
 */
-    sicstus_format_to_chars("~a (Simile model: ~s)", [Title, FileNameChars],
+    sicstus_format_to_chars("~w (Simile model: ~s)", [Title, FileNameChars],
             HeaderChars),
     name(Header, HeaderChars).
 
