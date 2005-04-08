@@ -381,7 +381,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 		    set idAndSubs $tgt[string range $subs 4 end]
 		    set comboTypes($idAndSubs) $list
 		    EnumTypeToNumber [InputVarFor $topNode $tgt] $idAndSubs \
-			$list $thisTrans $useCppArray
+			$list $thisTrans [RunningInC]
 		    return 1
 		} else {
 		    EnumTypeToNumber paramData $tgt$subs \
