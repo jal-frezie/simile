@@ -325,7 +325,7 @@ namespace eval runcontrol33857 {
 	    }
 	if {abs($current + $exec - $runState($node,expected_end)) > abs($update/2.0) || ![info exists sendvars($node,run_length)]} {
 	    set sendvars($node,run_length) $exec
-	    set runState($node,expected_end) [expr $current + $exec]
+	    SetupBar $node $current [expr $current + $exec]
 	}
 	if {[string equal reset $sendvars($node,currentMode)]} {
 	    set current 0.0
