@@ -544,7 +544,8 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 		['RECORDS'] =  NewDims;
 	    is_population(Node), !,
 		['MEMBERS'] = NewDims;
-	    append(['START_VM' | Posn], ['END_VM'], NewDims));
+	    substitute(0, Posn, 'MEMBERS', VmBounds),
+		append(['START_VM' | VmBounds], ['END_VM'], NewDims));
 	append(Tree, [Level], DeepTree),
 	    Posn = NewDims),
 	generate_data_decls(L, Level, NewDims, DeepTree, Instance, ExtSets,
