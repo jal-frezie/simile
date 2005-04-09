@@ -671,6 +671,10 @@ proc MergeParams {topNode smPath oldPath interactive} {
     set pStr [NetOpen $metaFile r]
     while {[gets $pStr savedValue] != -1} {
 	#ShowMessage debug info "Restoring $savedValue" ok
+	# ignore blank lines
+	if {![llength $savedValue]} {
+	    continue
+	}
 	set IdAndValue [split $savedValue =]
 	set restoredComp [RestoreCrs $smPath[lindex $IdAndValue 0]]
 	if {$origVersion<4.0} {
