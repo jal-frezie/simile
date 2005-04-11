@@ -207,6 +207,274 @@ class DllLossage {
   }
 };
 
+/* listable class for data to be loaded at a time point */
+
+class listTimePoint {
+public:
+  double when;
+  BOOLEAN myArraySpace;
+  char* dataPtr;
+  listTimePoint* next;
+
+  listTimePoint() {
+    myArraySpace = FALSE;
+    dataPtr = NULL;
+    next = NULL;
+  }      
+
+  ~listTimePoint() {
+    if (dataPtr && myArraySpace) delete(dataPtr);
+    if (next) delete(next);
+  }
+
+  char* create_space(void* newDataPtr, int sizeIfNeeded) {
+    if (newDataPtr) {
+      if (myArraySpace) {
+	delete dataPtr;
+      }
+      myArraySpace = FALSE;
+      dataPtr = (char*)newDataPtr;
+    } else if (!myArraySpace) {
+      dataPtr = new char[sizeIfNeeded];
+      myArraySpace = TRUE;
+    }
+    return dataPtr;
+  }  
+
+  listTimePoint* find_last_pt(double time) {
+    if (next) {
+      //      sprintf(globMess, "seeking after %lf for %lf", when, time);
+      //      showMess(globMess);
+      if (next->when<=time) {
+	return next->find_last_pt(time);
+      }
+    }
+    return this;
+  }
+};
+  
+/* listable class for keeping track of arrays associated with parameters */
+
+class listParamArray {
+public:
+  char* nodeId;
+  node_data_line *nodeLine;
+  int fullDims[32];
+  BOOLEAN myArraySpace;
+  char* dataPtr;
+  listTimePoint* timePoints;
+  listTimePoint* nextTimePoint;
+  listParamArray* next;
+
+  void remove_vm_dims() {
+    int *src, *dest;
+    BOOLEAN cutting_bases = FALSE;
+
+    dest = src = fullDims;
+    do {
+      switch (*src) {
+      case MEMBERS:
+	continue;
+      case START_VM:
+	cutting_bases = TRUE;
+	continue;
+      case END_VM:
+	cutting_bases = FALSE;
+	continue;
+      default:
+	if (!cutting_bases) {
+	  *(dest++) = *src;
+	}
+      }
+    } while (*(src++));
+  }
+
+  listParamArray(char* newNodeId) {
+    int sparePath[32];
+    long int spareModel;
+    char spareCapt[255];
+    enum_type_data *spareTypes[32]; // might need for reading files
+
+    nodeId = strdup(newNodeId);
+    nodeLine = searchinfo(nodeId, &spareModel, spareCapt, fullDims, sparePath,
+			  spareTypes);
+    remove_vm_dims();
+    myArraySpace = FALSE;
+    dataPtr = NULL;
+    timePoints = NULL;
+    nextTimePoint = NULL;
+    next = NULL;
+  }      
+
+  ~listParamArray() {
+    delete(nodeId);
+    if (dataPtr && myArraySpace) delete(dataPtr);
+    if (next) delete(next);
+  }
+  
+  int array_size() {
+    int arraySz, *dimPtr;
+    switch (nodeLine->datatype) {
+    case REAL:
+      arraySz = sizeof(double);
+      break;
+    case FLAG:
+      arraySz = sizeof(BOOLEAN);
+      break;
+    default: // INTEGER or enumerated type
+      arraySz = sizeof(int);
+      break;
+    }
+    // will have to add stuff to get ptr to jump over vm dims -- or purge
+    for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
+      arraySz = *dimPtr*arraySz;
+    }
+    return arraySz;
+  }
+
+  char* create_space(void* newDataPtr) {
+    if (newDataPtr) {
+      if (myArraySpace) {
+	delete dataPtr;
+      }
+      myArraySpace = FALSE;
+      dataPtr = (char*)newDataPtr;
+    } else if (!myArraySpace) {
+      dataPtr = new char[array_size()];
+      myArraySpace = TRUE;
+    }
+    return dataPtr;
+  }  
+
+  char* create_time_point(double time, void* newDataPtr) {
+    listTimePoint *lastTimePt, *thisTimePt;
+    if (timePoints && timePoints->when<=time) {
+      lastTimePt = timePoints->find_last_pt(time);
+      if (lastTimePt->when==time) {
+	thisTimePt = lastTimePt;
+      } else {
+	thisTimePt = new listTimePoint;
+	thisTimePt->next = lastTimePt->next;
+	lastTimePt->next = thisTimePt;
+      }
+    } else {
+      thisTimePt = new listTimePoint;
+      thisTimePt->next = timePoints;
+      timePoints = thisTimePt;
+    }
+    thisTimePt->when = time;
+    return thisTimePt->create_space(newDataPtr, array_size());
+  }
+
+  int serial(int* indxs) {
+    int off, *dimPtr;
+    off = 0;
+    for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
+      off=*dimPtr*off+*indxs-1;
+      indxs+=1;
+    }
+    return(off);
+  }
+
+  int insert_to_array(char* useDataPtr, double val, int* indxs) {
+    int howFarDown;
+
+    howFarDown = serial(indxs);
+    switch (nodeLine->datatype) {
+    case REAL:
+      *(double*)(useDataPtr + sizeof(double)*howFarDown) = val;
+      break;
+    case FLAG:
+      *(BOOLEAN*)(useDataPtr + sizeof(BOOLEAN)*howFarDown) = (BOOLEAN)val;
+      break;
+    default: // INTEGER or enumerated type
+      *(int*)(useDataPtr + sizeof(int)*howFarDown) = (int)val;
+      break;
+    }
+    return 0;
+  }
+
+  int insert_elt(double val, int* indxs) {
+    return insert_to_array(dataPtr, val, indxs);
+  }
+
+  int insert_time_point_elt(double time, double val, int* indxs) {
+    listTimePoint* timePt;
+
+    if (timePoints) {
+      timePt = timePoints->find_last_pt(time);
+      if (timePt->when == time) {
+	return insert_to_array(timePt->dataPtr, val, indxs);
+      }
+    }
+    return 1;
+  }
+
+  void extract_elt(void* tgt, int* indxs) {
+    int howFarDown, eltSize;
+    // do not do it if this is a variable parameter and we are initializing --
+    // array not yet set so let model keep default value...in fact, save it in
+    // the array for later
+    howFarDown = serial(indxs);
+    switch (nodeLine->datatype) {
+    case REAL:
+      eltSize = sizeof(double);
+      break;
+    case FLAG:
+      eltSize = sizeof(BOOLEAN);
+      break;
+    default: // INTEGER or enumerated type
+      eltSize = sizeof(int);
+      break;
+    }
+    if (nodeLine->eval==INPUT && resetting) {
+      memcpy(dataPtr + eltSize*howFarDown, tgt, eltSize);
+    } else {
+      memcpy(tgt, dataPtr + eltSize*howFarDown, eltSize);
+    }
+  }
+
+  double update_from_points(double now, double horizon) {
+    listTimePoint* timePt;
+
+    if (nextTimePoint) {
+      if (nextTimePoint->when<=now) {
+	nextTimePoint = nextTimePoint->find_last_pt(now);
+	memcpy(dataPtr, nextTimePoint->dataPtr, array_size());
+	nextTimePoint = nextTimePoint->next;
+      }
+      if (nextTimePoint) {
+	return fmin(nextTimePoint->when,horizon);
+      }
+    }
+    return horizon;
+  }
+};   // end of listParamArray class
+
+listParamArray* param_array_base = NULL;
+
+double update_time_series(double now, double horizon) {
+  listParamArray* param_array_current;
+
+  param_array_current = param_array_base;
+  while (param_array_current) {
+    horizon = param_array_current->update_from_points(now, horizon);
+    param_array_current = param_array_current->next;
+  }
+  return horizon;
+}    
+  
+void reset_time_series() {
+  listParamArray* param_array_current;
+
+  param_array_current = param_array_base;
+  while (param_array_current) {
+    param_array_current->nextTimePoint = param_array_current->timePoints;
+    param_array_current->update_from_points(0,0);
+    param_array_current = param_array_current->next;
+  }
+}
+
 /* prototypical declarations for functions to be supplied by the model dll
  */
 
@@ -395,6 +663,7 @@ public:
 	}
 	break;
       }
+      update_time_series(xtime, xtime);
       if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
 	*end=xtime;
 	return err;
@@ -585,149 +854,7 @@ public:
       delete(next);
     }
   }
-};
-
-listable class for keeping track of arrays associated with parameters */
-
-class listParamArray {
-public:
-  char* nodeId;
-  node_data_line *nodeLine;
-  int fullDims[32];
-  BOOLEAN myArraySpace;
-  char* dataPtr;
-  listParamArray* next;
-
-  void remove_vm_dims() {
-    int *src, *dest;
-    BOOLEAN cutting_bases = FALSE;
-
-    dest = src = fullDims;
-    do {
-      switch (*src) {
-      case MEMBERS:
-	continue;
-      case START_VM:
-	cutting_bases = TRUE;
-	continue;
-      case END_VM:
-	cutting_bases = FALSE;
-	continue;
-      default:
-	if (!cutting_bases) {
-	  *(dest++) = *src;
-	}
-      }
-    } while (*(src++));
-  }
-
-  listParamArray(char* newNodeId) {
-    int sparePath[32];
-    long int spareModel;
-    char spareCapt[255];
-    enum_type_data *spareTypes[32]; // might need for reading files
-
-    nodeId = strdup(newNodeId);
-    nodeLine = searchinfo(nodeId, &spareModel, spareCapt, fullDims, sparePath,
-			  spareTypes);
-    remove_vm_dims();
-    myArraySpace = FALSE;
-    dataPtr = NULL;
-    next = NULL;
-  }      
-
-  ~listParamArray() {
-    delete(nodeId);
-    if (dataPtr && myArraySpace) delete(dataPtr);
-    if (next) delete(next);
-  }
-    
-  char* create_space(void* newDataPtr) {
-    int arraySz, *dimPtr;
-
-    if (newDataPtr) {
-      if (myArraySpace) {
-	delete dataPtr;
-      }
-      myArraySpace = FALSE;
-      dataPtr = (char*)newDataPtr;
-    } else if (!myArraySpace) {
-      switch (nodeLine->datatype) {
-      case REAL:
-	arraySz = sizeof(double);
-	break;
-      case FLAG:
-	arraySz = sizeof(BOOLEAN);
-	break;
-      default: // INTEGER or enumerated type
-	arraySz = sizeof(int);
-	break;
-      }
-      // will have to add stuff to get ptr to jump over vm dims -- or purge
-      for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
-        arraySz = *dimPtr*arraySz;
-      }
-      dataPtr = new char[arraySz];
-      myArraySpace = TRUE;
-    }
-    return dataPtr;
-  }  
-
-  int serial(int* indxs) {
-    int off, *dimPtr;
-    off = 0;
-    for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
-      off=*dimPtr*off+*indxs-1;
-      indxs+=1;
-    }
-    return(off);
-  }
-
-  int insert_elt(double val, int* indxs) {
-    int howFarDown;
-
-    howFarDown = serial(indxs);
-
-    switch (nodeLine->datatype) {
-    case REAL:
-      *(double*)(dataPtr + sizeof(double)*howFarDown) = val;
-      break;
-    case FLAG:
-      *(BOOLEAN*)(dataPtr + sizeof(BOOLEAN)*howFarDown) = (BOOLEAN)val;
-      break;
-    default: // INTEGER or enumerated type
-      *(int*)(dataPtr + sizeof(int)*howFarDown) = (int)val;
-      break;
-    }
-    return 0;
-  }
-
-  void extract_elt(void* tgt, int* indxs) {
-    int howFarDown, eltSize;
-    // do not do it if this is a variable parameter and we are initializing --
-    // array not yet set so let model keep default value...in fact, save it in
-    // the array for later
-    howFarDown = serial(indxs);
-    switch (nodeLine->datatype) {
-    case REAL:
-      eltSize = sizeof(double);
-      break;
-    case FLAG:
-      eltSize = sizeof(BOOLEAN);
-      break;
-    default: // INTEGER or enumerated type
-      eltSize = sizeof(int);
-      break;
-    }
-    if (nodeLine->eval==INPUT && resetting) {
-      memcpy(dataPtr + eltSize*howFarDown, tgt, eltSize);
-    } else {
-      memcpy(tgt, dataPtr + eltSize*howFarDown, eltSize);
-    }
-  }
-};   // end of listParamArray class
-
-listParamArray* param_array_base = NULL;
+  }; */
 
 listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
   if (!start) {
@@ -756,6 +883,28 @@ void* use_array_for_params(long int modelType, long int modelHandle,
   return arrSlot->create_space(dataSpace);
 }
 
+int clear_time_point_elts(long int modelType, long int modelHandle,
+			     char* nodeId) {
+  listParamArray* arrSlot;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    return 1; // no data structure for this elt
+  }
+  delete arrSlot->timePoints;
+  arrSlot->timePoints = NULL;
+  arrSlot->nextTimePoint = NULL;
+}
+
+void* create_time_point(long int modelType, long int modelHandle,
+			   char* nodeId, double time, void* dataSpace) {
+  listParamArray* arrSlot;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    return NULL; // no data structure for this elt
+  }
+  return arrSlot->create_time_point(time, dataSpace);
+}
+
 int set_param_array_elt(long int modelType, long int modelHandle,
 			 char* nodeId, double val, int* indxs) {
   listParamArray* arrLocn;
@@ -764,6 +913,17 @@ int set_param_array_elt(long int modelType, long int modelHandle,
     return(1);
   } else {
     return(arrLocn->insert_elt(val, indxs));
+  }
+}  
+
+int set_time_point_elt(long int modelType, long int modelHandle,
+			 char* nodeId, double time, double val, int* indxs) {
+  listParamArray* arrLocn;
+  arrLocn = param_array_item(param_array_base, nodeId);
+  if (!arrLocn) {
+    return(2);
+  } else {
+    return(arrLocn->insert_time_point_elt(time, val, indxs));
   }
 }  
 
@@ -1031,6 +1191,7 @@ int reset(long int modelType, long int modelHandle, int top_phase) {
     setdt(0,-tweak_phase);
     setdt(steps[tweak_phase],tweak_phase);
   }
+  reset_time_series();
   return ((Model*)modelType)->evalmodel((void*)modelHandle, 
 					0, top_phase, FALSE);
 }

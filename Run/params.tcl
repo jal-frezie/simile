@@ -289,7 +289,8 @@ proc AcceptData {winId topNode compName complain} {
 	# submodel it represents
 	set recordDims $paramDims($compName)
 	set afterTIME [string equal TIME [lindex $recordDims 0]]
-	set useCppArray [RunningInC]
+	set useCppArray [expr ([RunningInC]!=0)*($afterTIME+1)]
+	# 0 = no arrays, 1 = array for current only, 2 = arrays for time points
 #puts "node $compName has dims $recordDims"
 	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
 #puts "recordDims $recordDims recordDepth $recordDepth" 
@@ -317,8 +318,7 @@ proc AcceptData {winId topNode compName complain} {
 	    c_setparamarray 0 0 $node
 	}
 	if {[catch {ListToArray $topNode $node {} $trans $recordDims \
-			$paramData($compName) \
-			[expr {$useCppArray && !$afterTIME}]} result]} {
+			$paramData($compName) $useCppArray} result]} {
 # new bit for using it as an input tool: notify that we have values
 	    lappend paramData(needed) $compName
 	    if {$complain>-1} {
@@ -381,7 +381,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 		    set idAndSubs $tgt[string range $subs 4 end]
 		    set comboTypes($idAndSubs) $list
 		    EnumTypeToNumber [InputVarFor $topNode $tgt] $idAndSubs \
-			$list $thisTrans [RunningInC]
+			$list $thisTrans [expr $useCppArray/2]
 		    return 1
 		} else {
 		    EnumTypeToNumber paramData $tgt$subs \
@@ -442,7 +442,9 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 		}
 	    } elseif {![string is double $arrayPt]} {
 		error [list $arrayPt "Time point must be NOW or a number."]
-	    }
+	    } elseif {$useCppArray>1} {
+		c_settimepointarray 0 0 $tgt $arrayPt
+	    } 
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
 			    [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
 		error [concat $arrayPt $step]
@@ -497,8 +499,12 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 
     if {![llength $head]} {
 # empty head, signal to clear out old values
-	foreach oldEntry [array names $varData $tgt*] {
-	    unset ${varData}($oldEntry)
+	if {$useCppArray} {
+	    c_cleartimeseries 0 0 $tgt
+	} else {
+	    foreach oldEntry [array names $varData $tgt*] {
+		unset ${varData}($oldEntry)
+	    }
 	}
     } elseif {[string compare {} $trans]} {
 	set poss [lsearch $trans [lindex $head 0]]
@@ -521,17 +527,24 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 }
 
 proc PlaceInArray {where what varData inC} {
-    if {$inC} {
-	set map [split $where ,]
-#	ShowMessage debug99 info "About to BUFF node [lindex $map 0] and \
-#indices [lrange $map 1 end] with $what" ok
-	if {[catch {c_setparamelement 0 0 [lindex $map 0] \
-			[lrange $map 1 end] $what} urr]} {
-	    error [list $urr]
+    #ShowMessage debug99 info "PlaceInArray $where $what $varData $inC" ok
+    switch $inC {
+	1 {
+	    set map [split $where ,]
+	    if {[catch {c_setparamelement 0 0 [lindex $map 0] \
+			    [lrange $map 1 end] $what} urr]} {
+		error [list $urr]
+	    }
+	} 2 {
+	    set map [split $where ,]
+	    if {[catch {c_settimepointelement 0 0 [lindex $map 0] \
+			    [lrange $map 2 end] [lindex $map 1] $what} urr]} {
+		error [list $urr]
+	    }
+	} 0 {
+	    global $varData
+	    set ${varData}($where) $what
 	}
-    } else {
-	global $varData
-	set ${varData}($where) $what
     }
 }
 
@@ -891,93 +904,3 @@ proc GetFromTable {parent compName startLine} {
 	}
     }
 }
-
-# try to minimize effort at runtime -- list timepoints for each node...
-proc InitTimeSeries {topNode} {
-    global setFromSeries paramData
-    array unset setFromSeries
-    foreach node [GetCompProperty $topNode Objects] {
-	if {[string match INPUT [GetCompProperty $topNode Eval $node]]} {
-#puts "node $node timePts [array names paramData $node,*]"
-	    foreach timePt [array names paramData $node,*] {
-		set ${node}([lindex [split $timePt ,] 1]) 1
-	    }
-	    if {[array size $node]} {
-		set setFromSeries($topNode,$node,times) \
-		    [lsort -real [array names $node]]
-		set setFromSeries($topNode,$node,next) 0
-#puts "initted $setFromSeries($topNode,$node,times)"
-	    }
-	}
-    }
-}
-
-proc ResetTimeSeries {topNode} {
-    global setFromSeries
-    foreach pt [array names setFromSeries $topNode,*,next] {
-	set setFromSeries($pt) 0
-    }
-}
-
-# for each node we have a list of times in the time series, and a pointer to 
-# where we are in the list. If the time has gone past that pointed to, signal 
-# the data to be written and look at the next one...
-
-# extra feature now the execution loop is in the target language: we
-# pass 'horizon': the time we are going to execute until (usually next
-# display point). Procedure returns the time at which a value next
-# changes if it is before then, so we can update before executing further
-
-proc UpdateTimeSeries {topNode newTime horizon} {
-    global setFromSeries paramData comboTypes
-    foreach list [array names setFromSeries $topNode,*,times] {
-	set node [lindex [split $list ,] 1]
-#puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
-	set jumping 1
-	while {$jumping} {
-	    upvar 0 setFromSeries($topNode,$node,next) series
-	    if {[llength $setFromSeries($list)] > $series} {
-		set actTime [lindex $setFromSeries($list) $series]
-		if {$newTime >= $actTime} {
-		    set useTime $actTime
-		    incr series
-		} else {
-		    set jumping 0
-		    if {$actTime<$horizon} {
-			set horizon $actTime
-		    }
-		}
-	    } else {
-		set jumping 0
-	    }
-	}
-
-	if {[info exists useTime]} {
-	    set inC [RunningInC]
-	    set tgtVar [InputVarFor $topNode $node]
-#	    upvar \#0 $tgtVar inputSrc
-#puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
-	    # do it the easy way if a scalar
-#puts "looking for paramData($node,$useTime)"
-#	    if {[info exists paramData($node,$useTime)]} {
-#		set inputSrc($node) $paramData($node,$useTime)
-#puts "set inputSrc($useTime) $paramData($node,$useTime)"
-#		return
-#	    }
-	    set trans [lindex [GetTransTable $node] end]
-	    foreach tsValue [concat [array names paramData $node,$useTime] \
-				 [array names paramData $node,$useTime,*]] {
-#puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
-		set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
-#		set inputSrc($tgtIndex) $paramData($tsValue)
-		PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
-		if {[string match comboChoices $tgtVar]} {
-		    set comboTypes($tgtIndex) \
-			[TransValue $trans $paramData($tsValue)]
-		}
-	    }
-	}
-    }
-    return $horizon
-}
-

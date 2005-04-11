@@ -344,12 +344,14 @@ namespace eval runcontrol33857 {
 	if {[info exists redoPhase($node)]} {
 	    $widget.upper.bf.flag itemconfigure 1 -fill yellow
 	    update
-	    if {$redoPhase($node) == -1} {
-		InitTimeSeries $node
-	    } elseif {$redoPhase($node) == 0} {
-		ResetTimeSeries $node
+	    if {![RunningInC]} {
+		if {$redoPhase($node) == -1} {
+		    InitTimeSeries $node
+		} elseif {$redoPhase($node) == 0} {
+		    ResetTimeSeries $node
+		}
+		UpdateTimeSeries $node 0 0
 	    }
-	    UpdateTimeSeries $node 0 0
 	    if {[ResetModel $redoPhase($node)]} {
 		if {$runState($node,modelRunning)<3} {
 		    set runState($node,modelRunning) 3
@@ -366,11 +368,15 @@ namespace eval runcontrol33857 {
 	set lastDisp [expr int($current/$display)]
 	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
 	    set nextDisp [expr $display*[incr lastDisp]]
-	    set timeCheck [UpdateTimeSeries $node $current $nextDisp]
-	    if {$nextDisp>$timeCheck} {
-		set current $timeCheck
-	    } else {
+	    if {[RunningInC]} {
 		set current $nextDisp
+	    } else {
+		set timeCheck [UpdateTimeSeries $node $current $nextDisp]
+		if {$nextDisp>$timeCheck} {
+		    set current $timeCheck
+		} else {
+		    set current $nextDisp
+		}
 	    }
 	    if {$current>$finish} {
 		set current $finish

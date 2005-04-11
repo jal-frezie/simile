@@ -484,6 +484,63 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  clear_time_point_elts(modelType, modelHandle, 
+			Tcl_GetStringFromObj(argv[3], NULL));
+  return TCL_OK;
+}
+
+FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  double time;
+
+  if (argc != 5) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id time");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  error = Tcl_GetDoubleFromObj(interp, argv[4], &time);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  if (create_time_point(modelType, modelHandle, 
+		       Tcl_GetStringFromObj(argv[3], NULL), time, NULL)) {
+    return TCL_OK;
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
+    return TCL_ERROR;
+  }
+}
+
 /* This is a special dumbed-down command that allows Simile to stick a
    value into the parameter array for a node at a point specified by a
    list of indices without having to worry about where the array is,
@@ -538,6 +595,68 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
 			      Tcl_GetStringFromObj(argv[3], NULL), val, indxs)) {
   case 1:
     Tcl_SetObjResult(interp, Tcl_NewStringObj("No array has been created for this node", -1));
+    return TCL_ERROR;
+  case 0:
+  /* might want to return something here if array hasn't been defined */
+    return TCL_OK;
+  }
+}
+
+FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int i, count, error, indxs[32];
+  double time, val;
+  Tcl_Obj* elt;
+
+  if (argc != 7) {
+    Tcl_WrongNumArgs(interp, 1, argv, 
+		     "model_id instance_id node_id index_list time value");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  error = Tcl_GetDoubleFromObj(interp, argv[5], &time);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  error = Tcl_GetDoubleFromObj(interp, argv[6], &val);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  error = Tcl_ListObjLength(interp, argv[4], &count);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  for (i=0;i<count;i++) {
+    error = Tcl_ListObjIndex(interp, argv[4], i, &elt);
+    if (error != TCL_OK) {
+      return error;
+    }
+    error = Tcl_GetIntFromObj(interp, elt, indxs + i);
+    if (error != TCL_OK) {
+      return error;
+    }
+  }
+
+  switch (set_time_point_elt(modelType, modelHandle, 
+	      Tcl_GetStringFromObj(argv[3], NULL), time, val, indxs)) {
+  case 2:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("No array has been created for this node", -1));
+    return TCL_ERROR;
+  case 1:
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("No array exists for this time point", -1));
     return TCL_ERROR;
   case 0:
   /* might want to return something here if array hasn't been defined */
@@ -1419,7 +1538,16 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "c_setparamarray", setparamarrayCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
+  Tcl_CreateObjCommand(interp, "c_settimepointarray", settimepointarrayCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_cleartimeseries", cleartimeseriesCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
   Tcl_CreateObjCommand(interp, "c_setparamelement", setparamelementCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_settimepointelement", settimepointelementCmd,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_resetmodel", resetmodelCmd, 

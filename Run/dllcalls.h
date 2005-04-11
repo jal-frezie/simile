@@ -197,7 +197,10 @@ typedef void showMess_type(char*);
 /* Defined in the shank, used by the shim */
 EXTDEC char* load_model(char*, char*, long int*);
 EXTDEC void* use_array_for_params(long int, long int, char*, void*);
+EXTDEC int clear_time_point_elts(long int, long int, char*);
+EXTDEC void* create_time_point(long int, long int, char*, double, void*);
 EXTDEC int set_param_array_elt(long int, long int, char*, double, int*);
+EXTDEC int set_time_point_elt(long int, long int, char*, double, double, int*);
 EXTDEC get_value_pointer_type get_value_pointer;
 EXTDEC int get_node_count(long int);
 EXTDEC node_data_line* get_data_line(long int, int);

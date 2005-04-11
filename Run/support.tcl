@@ -307,6 +307,95 @@ proc AdvanceTime {phase fraction} {
     }
 }
 
+# try to minimize effort at runtime -- list timepoints for each node...
+proc InitTimeSeries {topNode} {
+    global setFromSeries paramData
+    array unset setFromSeries
+    foreach node [GetCompProperty $topNode Objects] {
+	if {[string match INPUT [GetCompProperty $topNode Eval $node]]} {
+#puts "node $node timePts [array names paramData $node,*]"
+	    foreach timePt [array names paramData $node,*] {
+		set ${node}([lindex [split $timePt ,] 1]) 1
+	    }
+	    if {[array size $node]} {
+		set setFromSeries($topNode,$node,times) \
+		    [lsort -real [array names $node]]
+		set setFromSeries($topNode,$node,next) 0
+#puts "initted $setFromSeries($topNode,$node,times)"
+	    }
+	}
+    }
+}
+
+proc ResetTimeSeries {topNode} {
+    global setFromSeries
+    foreach pt [array names setFromSeries $topNode,*,next] {
+	set setFromSeries($pt) 0
+    }
+}
+
+# for each node we have a list of times in the time series, and a pointer to 
+# where we are in the list. If the time has gone past that pointed to, signal 
+# the data to be written and look at the next one...
+
+# extra feature now the execution loop is in the target language: we
+# pass 'horizon': the time we are going to execute until (usually next
+# display point). Procedure returns the time at which a value next
+# changes if it is before then, so we can update before executing further
+
+proc UpdateTimeSeries {topNode newTime horizon} {
+    global setFromSeries paramData comboTypes
+   foreach list [array names setFromSeries $topNode,*,times] {
+	set node [lindex [split $list ,] 1]
+#puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
+	set jumping 1
+	while {$jumping} {
+	    upvar 0 setFromSeries($topNode,$node,next) series
+	    if {[llength $setFromSeries($list)] > $series} {
+		set actTime [lindex $setFromSeries($list) $series]
+		if {$newTime >= $actTime} {
+		    set useTime $actTime
+		    incr series
+		} else {
+		    set jumping 0
+		    if {$actTime<$horizon} {
+			set horizon $actTime
+		    }
+		}
+	    } else {
+		set jumping 0
+	    }
+	}
+
+	if {[info exists useTime]} {
+	    set inC [RunningInC]
+	    set tgtVar [InputVarFor $topNode $node]
+#	    upvar \#0 $tgtVar inputSrc
+#puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
+	    # do it the easy way if a scalar
+#puts "looking for paramData($node,$useTime)"
+#	    if {[info exists paramData($node,$useTime)]} {
+#		set inputSrc($node) $paramData($node,$useTime)
+#puts "set inputSrc($useTime) $paramData($node,$useTime)"
+#		return
+#	    }
+	    set trans [lindex [GetTransTable $node] end]
+	    foreach tsValue [concat [array names paramData $node,$useTime] \
+				 [array names paramData $node,$useTime,*]] {
+#puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
+		set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
+#		set inputSrc($tgtIndex) $paramData($tsValue)
+		PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
+		if {[string match comboChoices $tgtVar]} {
+		    set comboTypes($tgtIndex) \
+			[TransValue $trans $paramData($tsValue)]
+		}
+	    }
+	}
+    }
+    return $horizon
+}
+
 #proc at_time_step {} {
 #    return [expr [glob_element dts 0]<=1]
 #}
