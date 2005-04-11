@@ -504,8 +504,9 @@ proc PackItUp {t} {
     set parent [wm transient $t]
     destroy $t
 # The need for these lines was removed by a TkAqua patch applied 10 March 2005.
-#    if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
-#	focus -force [winfo toplevel $parent]
-#    }
+# But the lines are still here, for the benefit of the sketch graph window 
+    if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
+	focus -force [winfo toplevel $parent]
+    }
 }
 
