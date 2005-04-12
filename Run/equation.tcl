@@ -584,6 +584,7 @@ proc equationDoGraph {parent box} {
 proc equationGraph {parent} {
     global equation tcl_platform
     PutItThere .graph $parent
+    wm protocol .graph WM_DELETE_WINDOW {set graph(.graph,done) 0}
     # One way to set the window size is to do it explicitly: the other is to use a large initial graph pad size
     focus .graph
     grab .graph
