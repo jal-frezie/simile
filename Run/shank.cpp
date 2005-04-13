@@ -918,8 +918,7 @@ listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
   }
 }
   
-void* use_array_for_params(long int modelType, long int modelHandle,
-			   char* nodeId, void* dataSpace) {
+void* use_array_for_params(char* nodeId, void* dataSpace) {
   listParamArray* arrSlot;
 
   sprintf(globMess, "use_array_for_params node %s",
@@ -938,8 +937,7 @@ void* use_array_for_params(long int modelType, long int modelHandle,
   return arrSlot->create_space(dataSpace);
 }
 
-int clear_time_point_elts(long int modelType, long int modelHandle,
-			     char* nodeId) {
+int clear_time_point_elts(char* nodeId) {
   listParamArray* arrSlot;
 
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
@@ -950,8 +948,7 @@ int clear_time_point_elts(long int modelType, long int modelHandle,
   arrSlot->nextTimePoint = NULL;
 }
 
-void* create_time_point(long int modelType, long int modelHandle,
-			   char* nodeId, double time, void* dataSpace) {
+void* create_time_point(char* nodeId, double time, void* dataSpace) {
   listParamArray* arrSlot;
 
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
@@ -960,8 +957,7 @@ void* create_time_point(long int modelType, long int modelHandle,
   return arrSlot->create_time_point(time, dataSpace);
 }
 
-int set_record_list(long int modelType, long int modelHandle,
-			 char* nodeId, int* indxs, int length) {
+int set_record_list(char* nodeId, int* indxs, int length) {
   listParamArray* arrLocn;
 
   sprintf(globMess, "set_record_list node %s indx0 %d length %d",
@@ -975,8 +971,7 @@ int set_record_list(long int modelType, long int modelHandle,
   }
 }
 
-int set_param_array_elt(long int modelType, long int modelHandle,
-			 char* nodeId, double val, int* indxs) {
+int set_param_array_elt(char* nodeId, double val, int* indxs) {
   listParamArray* arrLocn;
 
   sprintf(globMess, "set_param_array_elt node %s indx0 %d val %lf",
@@ -990,8 +985,7 @@ int set_param_array_elt(long int modelType, long int modelHandle,
   }
 }  
 
-int set_time_point_elt(long int modelType, long int modelHandle,
-			 char* nodeId, double time, double val, int* indxs) {
+int set_time_point_elt(char* nodeId, double time, double val, int* indxs) {
   listParamArray* arrLocn;
   arrLocn = param_array_item(param_array_base, nodeId);
   if (!arrLocn) {
@@ -1035,7 +1029,7 @@ int get_node_count(long int type) {
 }
 
 node_data_line* get_data_line(long int type, int line) {
-  return &((Model*)type)->nodedata[line];
+  return &((Model*)type)->nodedata[line];
 }
 
 long int get_node_model_id(char* find) {

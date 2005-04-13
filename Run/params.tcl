@@ -307,7 +307,7 @@ proc AcceptData {winId topNode compName complain} {
 			set recordNode [GetCompProperty $topNode \
 					    IdFromCapt $recordId]
 			if {$useCppArray} {
-			    c_setparamarray 0 0 $recordNode
+			    c_setparamarray $recordNode
 			}
 			set outerDims [lrange [GetCompProperty $topNode Dims \
 						   $recordNode] 0 end-1]
@@ -324,7 +324,7 @@ proc AcceptData {winId topNode compName complain} {
 	}
 #puts "About to ListToArray $node {} $trans $recordDims $paramData($compName)"
 	if {$useCppArray} {
-	    c_setparamarray 0 0 $node
+	    c_setparamarray $node
 	}
 	if {[catch {ListToArray $topNode $node {} $trans $recordDims \
 			$paramData($compName) $useCppArray} result]} {
@@ -456,7 +456,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    } elseif {![string is double $arrayPt]} {
 		error [list $arrayPt "Time point must be NOW or a number."]
 	    } elseif {$useCppArray>1} {
-		c_settimepointarray 0 0 $tgt $arrayPt
+		c_settimepointarray $tgt $arrayPt
 	    } 
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
 			    [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
@@ -483,14 +483,14 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 #do_in_editor puts "Setting [lindex $nextDim 1]$subs to $last"
 	if {$useCppArray} {
 	    set outers [lrange [split $subs ,] 1 end]
-	    if {[catch {c_setrecordlist 0 0 $tgt $outers $last} \
+	    if {[catch {c_setrecordlist $tgt $outers $last} \
 			err]} {
 		error [list $err] wogglatron
 	    }
 	    foreach nested [lrange $dims 1 end] {
 		if {[llength $nested]==2 && \
 			[string match RECORDS [lindex $nested 0]]} {
-		    c_setrecordlist 0 0 [lindex $nested 1] $outers $last
+		    c_setrecordlist [lindex $nested 1] $outers $last
 		}
 	    }		    
 	}
@@ -526,7 +526,7 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
     if {![llength $head]} {
 # empty head, signal to clear out old values
 	if {$useCppArray} {
-	    c_cleartimeseries 0 0 $tgt
+	    c_cleartimeseries $tgt
 	} else {
 	    foreach oldEntry [array names $varData $tgt*] {
 		unset ${varData}($oldEntry)
@@ -557,13 +557,13 @@ proc PlaceInArray {where what varData inC} {
     switch $inC {
 	1 {
 	    set map [split $where ,]
-	    if {[catch {c_setparamelement 0 0 [lindex $map 0] \
+	    if {[catch {c_setparamelement [lindex $map 0] \
 			    [lrange $map 1 end] $what} urr]} {
 		error [list $urr]
 	    }
 	} 2 {
 	    set map [split $where ,]
-	    if {[catch {c_settimepointelement 0 0 [lindex $map 0] \
+	    if {[catch {c_settimepointelement [lindex $map 0] \
 			    [lrange $map 2 end] [lindex $map 1] $what} urr]} {
 		error [list $urr]
 	    }

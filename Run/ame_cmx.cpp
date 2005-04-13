@@ -460,23 +460,12 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
 
-  if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id");
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  if (use_array_for_params(modelType, modelHandle, 
-		       Tcl_GetStringFromObj(argv[3], NULL), NULL)) {
+  if (use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL), NULL)) {
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
@@ -487,23 +476,12 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  if (argc != 4) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id");
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  clear_time_point_elts(modelType, modelHandle, 
-			Tcl_GetStringFromObj(argv[3], NULL));
+  clear_time_point_elts(Tcl_GetStringFromObj(argv[1], NULL));
   return TCL_OK;
 }
 
@@ -512,28 +490,17 @@ FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
   int error;
   double time;
 
-  if (argc != 5) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id time");
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id time");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  error = Tcl_GetDoubleFromObj(interp, argv[2], &time);
   if (error != TCL_OK) {
     return error;
   }
 
-  error = Tcl_GetDoubleFromObj(interp, argv[4], &time);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  if (create_time_point(modelType, modelHandle, 
-		       Tcl_GetStringFromObj(argv[3], NULL), time, NULL)) {
+  if (create_time_point(Tcl_GetStringFromObj(argv[1], NULL), time, NULL)) {
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
@@ -546,28 +513,18 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
   int i, count, error, indxs[32];
   Tcl_Obj* elt;
 
-  if (argc != 6) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id index_list value");
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list value");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  error = Tcl_ListObjLength(interp, argv[4], &count);
+  error = Tcl_ListObjLength(interp, argv[2], &count);
   if (error != TCL_OK) {
     return error;
   }
 
   for (i=0;i<count;i++) {
-    error = Tcl_ListObjIndex(interp, argv[4], i, &elt);
+    error = Tcl_ListObjIndex(interp, argv[2], i, &elt);
     if (error != TCL_OK) {
       return error;
     }
@@ -578,12 +535,11 @@ FINDABLE int setrecordlistCmd(ClientData clientData, Tcl_Interp *interp,
   }
   *(indxs+i)=0;
 
-  error = Tcl_GetIntFromObj(interp, argv[5], &count);
+  error = Tcl_GetIntFromObj(interp, argv[3], &count);
   if (error != TCL_OK) {
     return error;
   }
-  switch (set_record_list(modelType, modelHandle, 
-			  Tcl_GetStringFromObj(argv[3], NULL), indxs, count)) {
+  switch (set_record_list(Tcl_GetStringFromObj(argv[1], NULL), indxs, count)) {
   case 1:
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_record_list: no array has been created for this node", -1));
     return TCL_ERROR;
@@ -610,33 +566,23 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
   double val;
   Tcl_Obj* elt;
 
-  if (argc != 6) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id node_id index_list value");
+  if (argc != 4) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list value");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  error = Tcl_GetDoubleFromObj(interp, argv[3], &val);
   if (error != TCL_OK) {
     return error;
   }
 
-  error = Tcl_GetDoubleFromObj(interp, argv[5], &val);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  error = Tcl_ListObjLength(interp, argv[4], &count);
+  error = Tcl_ListObjLength(interp, argv[2], &count);
   if (error != TCL_OK) {
     return error;
   }
 
   for (i=0;i<count;i++) {
-    error = Tcl_ListObjIndex(interp, argv[4], i, &elt);
+    error = Tcl_ListObjIndex(interp, argv[2], i, &elt);
     if (error != TCL_OK) {
       return error;
     }
@@ -646,15 +592,15 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     }
   }
 
-  switch (set_param_array_elt(modelType, modelHandle, 
-			      Tcl_GetStringFromObj(argv[3], NULL), val, indxs)) {
-  case 1:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("set_param_array_elt: no array has been created for this node", -1));
-    return TCL_ERROR;
-  case 0:
-  /* might want to return something here if array hasn't been defined */
-    return TCL_OK;
-  }
+  switch (set_param_array_elt(Tcl_GetStringFromObj(argv[1], NULL), val, indxs))
+    {
+    case 1:
+      Tcl_SetObjResult(interp, Tcl_NewStringObj("set_param_array_elt: no array has been created for this node", -1));
+      return TCL_ERROR;
+    case 0:
+      /* might want to return something here if array hasn't been defined */
+      return TCL_OK;
+    }
 }
 
 FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
@@ -663,39 +609,28 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
   double time, val;
   Tcl_Obj* elt;
 
-  if (argc != 7) {
-    Tcl_WrongNumArgs(interp, 1, argv, 
-		     "model_id instance_id node_id index_list time value");
+  if (argc != 5) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id index_list time value");
     return TCL_ERROR;
   }
   
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  
-  error = Tcl_GetLongFromObj(interp, argv[2], (long int *)&modelHandle);
+  error = Tcl_GetDoubleFromObj(interp, argv[3], &time);
   if (error != TCL_OK) {
     return error;
   }
 
-  error = Tcl_GetDoubleFromObj(interp, argv[5], &time);
+  error = Tcl_GetDoubleFromObj(interp, argv[4], &val);
   if (error != TCL_OK) {
     return error;
   }
 
-  error = Tcl_GetDoubleFromObj(interp, argv[6], &val);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  error = Tcl_ListObjLength(interp, argv[4], &count);
+  error = Tcl_ListObjLength(interp, argv[2], &count);
   if (error != TCL_OK) {
     return error;
   }
 
   for (i=0;i<count;i++) {
-    error = Tcl_ListObjIndex(interp, argv[4], i, &elt);
+    error = Tcl_ListObjIndex(interp, argv[2], i, &elt);
     if (error != TCL_OK) {
       return error;
     }
@@ -705,8 +640,8 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
     }
   }
 
-  switch (set_time_point_elt(modelType, modelHandle, 
-	      Tcl_GetStringFromObj(argv[3], NULL), time, val, indxs)) {
+  switch (set_time_point_elt(Tcl_GetStringFromObj(argv[1], NULL), time, 
+			     val, indxs)) {
   case 2:
     Tcl_SetObjResult(interp, Tcl_NewStringObj("set_time_point_elt: no array has been created for this node", -1));
     return TCL_ERROR;
