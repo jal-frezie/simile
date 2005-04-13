@@ -1220,7 +1220,7 @@ input_params_in(Vars, SmPath, SmStep,
 	make_inds_for(Dims, LocalPath, LocalInds),
 	append(LocalPath, SmPath, Path),
 	append(SmInds, LocalInds, Inds),
-	vars_only(Inds, VarInds),
+	vars_only(Inds, VarInds, ParamType),
 	(ParamType = 2,
 	    (Type = function, Step = -1, Wait = [];
 	    Type = init_function, Step = 0, Wait = [on_reset]);
@@ -1231,10 +1231,13 @@ input_params_in(Vars, SmPath, SmStep,
 	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
 		      | VarInds].
 
-vars_only(List, AllVar) :-
+/* vars_only: remove indices of vm models from those passed by 'collect'. Per-
+record models are treated as vm if the parameter is variable. */
+
+vars_only(List, AllVar, ParamType) :-
 	select(NonVar, List, Rest),
-	NonVar == none, !,
-	vars_only(Rest, AllVar);
+	(NonVar == none; ParamType = 1, NonVar = ind(_, pop)), !,
+	vars_only(Rest, AllVar, ParamType);
 	List = AllVar.
 
 /* sort_assignments: if a value makes no reference to time, and all

@@ -118,6 +118,9 @@ proc AddEntry {winId topNode node mustShow notInput} {
     set nodeDims [TransBounds $trans $nodeDims]
 
     set nodeDims [purge $nodeDims MEMBERS]
+    if {!$notInput} {
+	set nodeDims [purge $nodeDims RECORDS]
+    }
     while {[set hackOpen [lsearch $nodeDims START_VM]]!=-1} {
 	set nodeDims [lreplace $nodeDims $hackOpen [lsearch $nodeDims END_VM]]
     }
@@ -252,7 +255,7 @@ proc DoneParams {topNode} {
 }
 
 proc AcceptData {winId topNode compName complain} {
-    global paramDims paramData widgetNames runState inputHelper msgs
+    global paramDims paramData widgetNames runState msgs
 
     set node [GetCompProperty $topNode IdFromCapt $compName]
     if {$complain > -1} {
@@ -293,22 +296,28 @@ proc AcceptData {winId topNode compName complain} {
 	# 0 = no arrays, 1 = array for current only, 2 = arrays for time points
 #puts "node $compName has dims $recordDims"
 	while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
-#puts "recordDims $recordDims recordDepth $recordDepth" 
-	    set useCppArray 0
-	    foreach recordId [array names paramData] {
+	    if {$afterTIME} {
+		set recordDims [lset recordDims $recordDepth MEMBERS]
+	    } else {
+#do_in_editor puts "recordDims $recordDims recordDepth $recordDepth" 
+		foreach recordId [array names paramData] {
 #puts "recordId is $recordId"
-		if {[string first $recordId $compName]==0 && \
-		    ![string equal $recordId $compName]} {
-		    set recordNode [GetCompProperty $topNode \
-					IdFromCapt $recordId]
-		    set outerDims [lrange [GetCompProperty $topNode Dims \
-					       $recordNode] 0 end-1]
+		    if {[string first $recordId $compName]==0 && \
+			    ![string equal $recordId $compName]} {
+			set recordNode [GetCompProperty $topNode \
+					    IdFromCapt $recordId]
+			if {$useCppArray} {
+			    c_setparamarray 0 0 $recordNode
+			}
+			set outerDims [lrange [GetCompProperty $topNode Dims \
+						   $recordNode] 0 end-1]
 #puts "node $recordNode outer dims $outerDims"
-		    if {[string match $outerDims \
-			     [lrange $recordDims $afterTIME $recordDepth]]} {
-			set recordDims [lset recordDims $recordDepth \
-					    [list RECORDS $recordNode]]
-			break
+			if {[string match $outerDims \
+			       [lrange $recordDims $afterTIME $recordDepth]]} {
+			    set recordDims [lset recordDims $recordDepth \
+						[list RECORDS $recordNode]]
+			    break
+			}
 		    }
 		}
 	    }
@@ -357,20 +366,24 @@ proc rsearch {list tgt} {
 }
 
 proc ListToArray {topNode tgt subs trans dims list useCppArray} {
-#do_in_editor puts "Go! tgt $tgt trans $trans dims $dims list $list"
+# ShowMessage debug info  "Go! tgt $tgt trans $trans dims $dims list $list" ok
 # skip over any vm arrays, their indices will not appear
 # in calls for values, but keep the translation list in sync
 # ... string match stops cleanly at end of list
     global comboTypes
-    while {[string match MEMBERS [lindex $dims 0]]} {
-	set dims [lrange $dims 1 end]
-	set trans [lrange $trans 1 end]
+
+    while {[set specialId [lsearch {START_VM MEMBERS} [lindex $dims 0]]]!=-1} {
+	if {$specialId} {
+	    set dims [lrange $dims 1 end]
+	    set trans [lrange $trans 1 end]
+	} else {
+	    set endGap [lsearch $dims END_VM]
+	    set dims [lreplace $dims 0 $endGap]
+	    set trans [lrange $trans [expr $endGap-1] end]
+	}
     }
-    if {[string match START_VM [lindex $dims 0]]} {
-	set endGap [lsearch $dims END_VM]
-	set dims [lreplace $dims 0 $endGap]
-	set trans [lrange $trans [expr $endGap-1] end]
-    }
+    set nextDim [lindex $dims 0]
+
     set thisTrans [lindex $trans 0]
     if {![llength $dims]} {
 	switch [llength $list] {
@@ -406,7 +419,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 # was array set sub $list...above would allow us to check that all indices were
 # the right type if we could be bothered...OK then...
 	set role "Index value"
-	if {[string match TIME [lindex $dims 0]]} {
+	if {[string match TIME $nextDim]} {
 	    set role "Time point"
 	    if {!([string is double $indx] || [string equal NOW $indx])} {
 		error [list "$role $indx must be NOW or a number."]
@@ -426,7 +439,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     }
 
 #puts "dims remaining $dims"
-    if {[string match TIME [lindex $dims 0]]} {
+    if {[string match TIME $nextDim]} {
 # If time, we can have as many or as few vals as we want, and they can be
 # any positive number. If there are values other than NOW, do an init step
 
@@ -454,8 +467,8 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	}
 	return $redoStep
     } 
-    if {[llength [lindex $dims 0]]==2 && \
-	    [string match RECORDS [lindex [lindex $dims 0] 0]]} {
+    if {[llength $nextDim]==2 && \
+	    [string match RECORDS [lindex $nextDim 0]]} {
 # by-record submodel; check up to biggest. If new data here, only a reset
 # needed to set it
 
@@ -467,13 +480,26 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    error [list "Per-record submodel must have values for at least one member."]
 	}
 
-#do_in_editor puts "Setting [lindex [lindex $dims 0] 1]$subs to $last"
-	EnumTypeToNumber paramData [lindex [lindex $dims 0] 1]$subs $last {} \
-	     $useCppArray
+#do_in_editor puts "Setting [lindex $nextDim 1]$subs to $last"
+	if {$useCppArray} {
+	    set outers [lrange [split $subs ,] 1 end]
+	    if {[catch {c_setrecordlist 0 0 $tgt $outers $last} \
+			err]} {
+		error [list $err] wogglatron
+	    }
+	    foreach nested [lrange $dims 1 end] {
+		if {[llength $nested]==2 && \
+			[string match RECORDS [lindex $nested 0]]} {
+		    c_setrecordlist 0 0 [lindex $nested 1] $outers $last
+		}
+	    }		    
+	}
+	EnumTypeToNumber paramData [lindex $nextDim 1]$subs $last \
+	    {} $useCppArray
 # probably won't work anyway for time series
 	set requireStep 0
     } else {
-	set last [lindex $dims 0]
+	set last $nextDim
 	set requireStep -1
     }
     set redoStep 1

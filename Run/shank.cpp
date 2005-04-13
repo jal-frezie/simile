@@ -186,6 +186,17 @@ void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
   do { *(dest++)= *src; } while (*src++);
 }
   
+int size_for_type(int type) {
+  switch (type) {
+  case REAL:
+    return sizeof(double);
+  case FLAG:
+    return sizeof(BOOLEAN);
+  default: // submodel, INTEGER or enumerated type
+    return sizeof(int);
+  }
+}
+
 class DllLossage {
  public:
   char* action;
@@ -243,8 +254,8 @@ public:
 
   listTimePoint* find_last_pt(double time) {
     if (next) {
-      //      sprintf(globMess, "seeking after %lf for %lf", when, time);
-      //      showMess(globMess);
+      sprintf(globMess, "seeking after %lf for %lf", when, time);
+      /* showMess(globMess); */
       if (next->when<=time) {
 	return next->find_last_pt(time);
       }
@@ -253,6 +264,18 @@ public:
   }
 };
   
+class recordSet {
+public:
+  int count;
+  char* space;
+
+  recordSet() {
+  }
+
+  ~recordSet() {
+  }
+};
+
 /* listable class for keeping track of arrays associated with parameters */
 
 class listParamArray {
@@ -281,6 +304,15 @@ public:
       case END_VM:
 	cutting_bases = FALSE;
 	continue;
+      case RECORDS:
+	// If a variable param, treat RECORDS as vm and remove.
+	// If its a submodel and this is the last dimension then we
+        // are making a space to keep the record count so get rid of
+        // the RECORDS, otherwise drop through
+	if (nodeLine->eval== INPUT || 
+	    *(src+1)==0 && nodeLine->compclass==SUBMODEL) {
+	  continue;
+	}
       default:
 	if (!cutting_bases) {
 	  *(dest++) = *src;
@@ -312,24 +344,17 @@ public:
     if (next) delete(next);
   }
   
-  int array_size() {
-    int arraySz, *dimPtr;
-    switch (nodeLine->datatype) {
-    case REAL:
-      arraySz = sizeof(double);
-      break;
-    case FLAG:
-      arraySz = sizeof(BOOLEAN);
-      break;
-    default: // INTEGER or enumerated type
-      arraySz = sizeof(int);
-      break;
+  int array_size(int* startDim) {
+    sprintf(globMess, "doing array size, dim %d", *startDim);
+    /* showMess(globMess); */
+    switch (*startDim) {
+    case 0:
+      return size_for_type(nodeLine->datatype);
+    case RECORDS:
+      return sizeof(recordSet);
+    default:
+      return (*startDim*array_size(startDim + 1));
     }
-    // will have to add stuff to get ptr to jump over vm dims -- or purge
-    for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
-      arraySz = *dimPtr*arraySz;
-    }
-    return arraySz;
   }
 
   char* create_space(void* newDataPtr) {
@@ -340,7 +365,7 @@ public:
       myArraySpace = FALSE;
       dataPtr = (char*)newDataPtr;
     } else if (!myArraySpace) {
-      dataPtr = new char[array_size()];
+      dataPtr = new char[array_size(fullDims)];
       myArraySpace = TRUE;
     }
     return dataPtr;
@@ -363,32 +388,60 @@ public:
       timePoints = thisTimePt;
     }
     thisTimePt->when = time;
-    return thisTimePt->create_space(newDataPtr, array_size());
+    return thisTimePt->create_space(newDataPtr, array_size(fullDims));
   }
 
-  int serial(int* indxs) {
-    int off, *dimPtr;
-    off = 0;
-    for (dimPtr=fullDims; *dimPtr; dimPtr += 1) {
-      off=*dimPtr*off+*indxs-1;
-      indxs+=1;
+  void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
+    recordSet* newRecord;
+
+    sprintf(globMess, "locate_elt array %ld off %d dim %d indx %d",
+	    startPtr, off, *dimPtr, *indxs);
+	    /* showMess(globMess); */
+    if (*dimPtr==RECORDS) {
+      newRecord = (recordSet*)(startPtr + off*sizeof(recordSet));
+      if  (*indxs) { // more indices, use to get value from a record submodel
+	return locate_elt(newRecord->space, (*indxs)-1, dimPtr+1, indxs+1);
+      } else { // no more indices, we are looking for recordSet struct
+	return newRecord;
+      }
+    } else if (*dimPtr) {
+      return locate_elt(startPtr, *dimPtr*off+*indxs-1, dimPtr+1, indxs+1);
+    } else {
+      return startPtr + off*size_for_type(nodeLine->datatype);
     }
-    return(off);
+  }
+    
+  /* indxs should be only those of models containing the per-record submodel
+     followed by a 0 */
+  int create_record_list(int* indxs, int records) {
+    recordSet* newRecord;
+    int* subDims;
+
+    newRecord = (recordSet*)locate_elt(dataPtr, 0, fullDims, indxs);
+    newRecord->count = records;
+    subDims = fullDims;
+    while (*indxs) {
+      subDims += 1;
+      indxs += 1;
+    }
+    // at this point subDims points to the RECORDS element
+    newRecord->space = new char[records*array_size(subDims + 1)];
+    return 0;
   }
 
   int insert_to_array(char* useDataPtr, double val, int* indxs) {
-    int howFarDown;
-
-    howFarDown = serial(indxs);
+    void* insertionPt;
+    
+    insertionPt = locate_elt(useDataPtr, 0, fullDims, indxs);
     switch (nodeLine->datatype) {
     case REAL:
-      *(double*)(useDataPtr + sizeof(double)*howFarDown) = val;
+      *(double*)insertionPt = val;
       break;
     case FLAG:
-      *(BOOLEAN*)(useDataPtr + sizeof(BOOLEAN)*howFarDown) = (BOOLEAN)val;
+      *(BOOLEAN*)insertionPt = (BOOLEAN)val;
       break;
     default: // INTEGER or enumerated type
-      *(int*)(useDataPtr + sizeof(int)*howFarDown) = (int)val;
+      *(int*)insertionPt = (int)val;
       break;
     }
     return 0;
@@ -409,28 +462,27 @@ public:
     }
     return 1;
   }
+  
+  BOOLEAN time_point_exists (double time) {
+    if (timePoints) {
+      return (timePoints->find_last_pt(time)->when==time);
+    }
+    return FALSE;
+  }
 
   void extract_elt(void* tgt, int* indxs) {
-    int howFarDown, eltSize;
+    int eltSize;
     // do not do it if this is a variable parameter and we are initializing --
     // array not yet set so let model keep default value...in fact, save it in
     // the array for later
-    howFarDown = serial(indxs);
-    switch (nodeLine->datatype) {
-    case REAL:
-      eltSize = sizeof(double);
-      break;
-    case FLAG:
-      eltSize = sizeof(BOOLEAN);
-      break;
-    default: // INTEGER or enumerated type
-      eltSize = sizeof(int);
-      break;
-    }
-    if (nodeLine->eval==INPUT && resetting) {
-      memcpy(dataPtr + eltSize*howFarDown, tgt, eltSize);
+    void* insertionPt;
+    
+    insertionPt = locate_elt(dataPtr, 0, fullDims, indxs);
+    eltSize = size_for_type(nodeLine->datatype);
+    if (nodeLine->eval==INPUT && resetting && !(time_point_exists(0.0))) {
+      memcpy(insertionPt, tgt, eltSize);
     } else {
-      memcpy(tgt, dataPtr + eltSize*howFarDown, eltSize);
+      memcpy(tgt, insertionPt, eltSize);
     }
   }
 
@@ -440,7 +492,7 @@ public:
     if (nextTimePoint) {
       if (nextTimePoint->when<=now) {
 	nextTimePoint = nextTimePoint->find_last_pt(now);
-	memcpy(dataPtr, nextTimePoint->dataPtr, array_size());
+	memcpy(dataPtr, nextTimePoint->dataPtr, array_size(fullDims));
 	nextTimePoint = nextTimePoint->next;
       }
       if (nextTimePoint) {
@@ -534,8 +586,8 @@ public:
       UNLOAD_DLL(handle);
       throw DllLossage("find current version of", fileName, WHAT_WENT_WRONG());
     }
-//sprintf(globMess, "Loaded %ld", handle);
-//showMess(globMess);
+sprintf(globMess, "Loaded %ld", handle);
+/* showMess(globMess); */
 
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
@@ -870,6 +922,9 @@ void* use_array_for_params(long int modelType, long int modelHandle,
 			   char* nodeId, void* dataSpace) {
   listParamArray* arrSlot;
 
+  sprintf(globMess, "use_array_for_params node %s",
+	  nodeId);
+	  /* showMess(globMess); */
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
     arrSlot = new listParamArray(nodeId);
     if (!arrSlot->nodeLine) {
@@ -905,9 +960,28 @@ void* create_time_point(long int modelType, long int modelHandle,
   return arrSlot->create_time_point(time, dataSpace);
 }
 
+int set_record_list(long int modelType, long int modelHandle,
+			 char* nodeId, int* indxs, int length) {
+  listParamArray* arrLocn;
+
+  sprintf(globMess, "set_record_list node %s indx0 %d length %d",
+	  nodeId, *indxs, length);
+	  /* showMess(globMess); */
+  arrLocn = param_array_item(param_array_base, nodeId);
+  if (!arrLocn) {
+    return(1);
+  } else {
+    return(arrLocn->create_record_list(indxs, length));
+  }
+}
+
 int set_param_array_elt(long int modelType, long int modelHandle,
 			 char* nodeId, double val, int* indxs) {
   listParamArray* arrLocn;
+
+  sprintf(globMess, "set_param_array_elt node %s indx0 %d val %lf",
+	  nodeId, *indxs, val);
+	  /* showMess(globMess); */
   arrLocn = param_array_item(param_array_base, nodeId);
   if (!arrLocn) {
     return(1);
@@ -930,6 +1004,9 @@ int set_time_point_elt(long int modelType, long int modelHandle,
 void get_value_pointer(void* modelSlot, char* nodeId, int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
+  sprintf(globMess, "get_value_pointer node %s indx0 %d",
+	  nodeId, *indxs);
+	  /* showMess(globMess); */
   paramArrayItem = param_array_item(param_array_base, nodeId);
   if (paramArrayItem) {
     paramArrayItem->extract_elt(modelSlot, indxs);
@@ -958,7 +1035,7 @@ int get_node_count(long int type) {
 }
 
 node_data_line* get_data_line(long int type, int line) {
-  return &((Model*)type)->nodedata[line];
+  return &((Model*)type)->nodedata[line];
 }
 
 long int get_node_model_id(char* find) {
