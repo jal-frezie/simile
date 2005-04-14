@@ -182,7 +182,7 @@ proc click {winId node caption} {
                     -sliderlength 10 -from $min -to $max \
                     -tickinterval $gap -resolution $spacing \
                     -variable sliderVals($node) \
-		    -command [namespace code [list SetArrayIfUsed 0 0 $node {}]]
+		    -command [namespace code [list SetArrayIfUsed $node {}]]
 		    if {[llength $defVal]} {
 			$f.scale set $defVal
 		    }
@@ -257,7 +257,7 @@ proc click {winId node caption} {
                         -sliderlength 10 -from $min -to $max \
                         -resolution $spacing \
                         -variable sliderVals($node,$index) \
-			-command [namespace code [list SetArrayIfUsed 0 0 $node $index]]
+			-command [namespace code [list SetArrayIfUsed $node $index]]
 		    if {[llength $defVal]} {
 			$newScale set $defVal
 		    }
@@ -302,19 +302,19 @@ proc click {winId node caption} {
     proc CheckStateToC {node args} {
 	global checkStates
 	set sub [join [concat [list $node] $args] ,]
-	SetArrayIfUsed 0 0 $node $args $checkStates($sub)
+	SetArrayIfUsed $node $args $checkStates($sub)
     }
 
-    proc SetArrayIfUsed {model_id instance_id node indices value} {
+    proc SetArrayIfUsed {node indices value} {
     	if {[RunningInC]} {
-	    c_setparamelement $model_id $instance_id $node $indices $value
+	    c_setparamelement $node $indices $value
 	}
     }
 
     proc SetChoiceNumber {cbox node args} {
 	global comboChoices
 	if {[RunningInC]} {
-	    c_setparamelement 0 0 $node $args \
+	    c_setparamelement $node $args \
 		[expr [lsearch [$cbox cget -values] [$cbox cget -text]]+1]
 	} else {
 	    set sub [join [concat $node $args] ,]
