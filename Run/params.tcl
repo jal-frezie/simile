@@ -153,7 +153,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
     }
             #	    pack [entry $slot.e -textvariable paramData($compName)]
             # Using entries played merry hell with very long arrays -- texts work better
-    pack [entry $slot.e -width 30] -side left -fill x -expand on
+    pack [entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
     if {[info exists paramData($compName)]} {
