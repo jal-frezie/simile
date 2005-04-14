@@ -217,9 +217,12 @@ namespace eval runcontrol33857 {
 	    }
             if {[string match start $action] && \
                         [info exists runState($node,reloadParams)]} {
-                if {[string compare [ShowMessage "Parameters out of date" warning \
-                            "New file parameters will not take effect until the model is reset. Start anyway?" okcancel] ok]} {
-                    return
+                set paramChoice [ShowMessage "Parameters out of date" warning \
+				     "New file parameters will not take effect until the model is reset. Do you want to reset the model now before running it?" yesno]
+		if {[string equal yes $paramChoice]} {
+		    # reset the model
+		    set sendvars($node,currentMode) reset
+		    RollSimulation $winId
                 }
             }
             
