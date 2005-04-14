@@ -186,17 +186,6 @@ void append_ints_to_null(int* dest, int* src, int sep, int sep2) {
   do { *(dest++)= *src; } while (*src++);
 }
   
-int size_for_type(int type) {
-  switch (type) {
-  case REAL:
-    return sizeof(double);
-  case FLAG:
-    return sizeof(BOOLEAN);
-  default: // submodel, INTEGER or enumerated type
-    return sizeof(int);
-  }
-}
-
 class DllLossage {
  public:
   char* action;
@@ -270,6 +259,7 @@ public:
   char* space;
 
   recordSet() {
+    space = NULL;
   }
 
   ~recordSet() {
@@ -344,20 +334,32 @@ public:
     if (next) delete(next);
   }
   
-  int array_size(int* startDim) {
+  int size_for_type() {
+    switch (nodeLine->datatype) {
+    case REAL:
+      return sizeof(double);
+    case FLAG:
+      return sizeof(BOOLEAN);
+    default: // submodel, INTEGER or enumerated type
+      return sizeof(int);
+    }
+  }
+
+  int array_count(int* startDim) {
     sprintf(globMess, "doing array size, dim %d", *startDim);
     /* showMess(globMess); */
     switch (*startDim) {
     case 0:
-      return size_for_type(nodeLine->datatype);
+      return 1;
     case RECORDS:
-      return sizeof(recordSet);
+      return -1; // -ve result means count is of records
     default:
-      return (*startDim*array_size(startDim + 1));
+      return (*startDim*array_count(startDim + 1));
     }
   }
 
   char* create_space(void* newDataPtr) {
+    int count;
     if (newDataPtr) {
       if (myArraySpace) {
 	delete dataPtr;
@@ -365,7 +367,12 @@ public:
       myArraySpace = FALSE;
       dataPtr = (char*)newDataPtr;
     } else if (!myArraySpace) {
-      dataPtr = new char[array_size(fullDims)];
+      count = array_count(fullDims);
+      if (count>0) {
+	dataPtr = new char[size_for_type()*count];
+      } else {
+	dataPtr = (char*)new recordSet[-count];
+      }
       myArraySpace = TRUE;
     }
     return dataPtr;
@@ -388,7 +395,8 @@ public:
       timePoints = thisTimePt;
     }
     thisTimePt->when = time;
-    return thisTimePt->create_space(newDataPtr, array_size(fullDims));
+    return thisTimePt->create_space(newDataPtr, 
+				    array_count(fullDims)*size_for_type());
   }
 
   void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
@@ -407,7 +415,7 @@ public:
     } else if (*dimPtr) {
       return locate_elt(startPtr, *dimPtr*off+*indxs-1, dimPtr+1, indxs+1);
     } else {
-      return startPtr + off*size_for_type(nodeLine->datatype);
+      return startPtr + off*size_for_type();
     }
   }
     
@@ -416,16 +424,25 @@ public:
   int create_record_list(int* indxs, int records) {
     recordSet* newRecord;
     int* subDims;
+    int count;
 
     newRecord = (recordSet*)locate_elt(dataPtr, 0, fullDims, indxs);
     newRecord->count = records;
+    if (newRecord->space) {
+      delete newRecord->space;
+    }
     subDims = fullDims;
     while (*indxs) {
       subDims += 1;
       indxs += 1;
     }
     // at this point subDims points to the RECORDS element
-    newRecord->space = new char[records*array_size(subDims + 1)];
+    count = records*array_count(subDims + 1);
+    if (count>0) {
+      newRecord->space  = new char[size_for_type()*count];
+    } else {
+      newRecord->space = (char*)new recordSet[-count];
+    }
     return 0;
   }
 
@@ -471,18 +488,16 @@ public:
   }
 
   void extract_elt(void* tgt, int* indxs) {
-    int eltSize;
     // do not do it if this is a variable parameter and we are initializing --
     // array not yet set so let model keep default value...in fact, save it in
     // the array for later
     void* insertionPt;
     
     insertionPt = locate_elt(dataPtr, 0, fullDims, indxs);
-    eltSize = size_for_type(nodeLine->datatype);
     if (nodeLine->eval==INPUT && resetting && !(time_point_exists(0.0))) {
-      memcpy(insertionPt, tgt, eltSize);
+      memcpy(insertionPt, tgt, size_for_type());
     } else {
-      memcpy(tgt, insertionPt, eltSize);
+      memcpy(tgt, insertionPt, size_for_type());
     }
   }
 
@@ -492,7 +507,8 @@ public:
     if (nextTimePoint) {
       if (nextTimePoint->when<=now) {
 	nextTimePoint = nextTimePoint->find_last_pt(now);
-	memcpy(dataPtr, nextTimePoint->dataPtr, array_size(fullDims));
+	memcpy(dataPtr, nextTimePoint->dataPtr, 
+	       size_for_type()*array_count(fullDims));
 	nextTimePoint = nextTimePoint->next;
       }
       if (nextTimePoint) {
