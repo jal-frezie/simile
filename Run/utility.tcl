@@ -187,6 +187,27 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
     }
 }
 
+# Easy, teenage, New York version that works for any canvas rather than
+# being specialized for model diagrams
+
+proc PrintRandomCanvas {canvas} {
+    global tcl_platform simtmpdir env
+    
+    if {[string match windows $tcl_platform(platform)]} {
+        package require gdi
+        package require printer
+    }
+    if {[string match windows $tcl_platform(platform)]} {
+        printer::print_widget $winId 0
+    } else {    
+        set tempPSFile $simtmpdir/temp.ps
+	set strm [NetOpen $tempPSFile w]
+	puts $strm [$canvas postscript]
+	exec $env(PRINTCMD) [file nativename $tempPSFile]
+        file delete $tempPSFile
+    }
+}
+	
 # popup stuff -- here because both model windows and helpers use them
 
 proc BindPopup {widget keywd} {

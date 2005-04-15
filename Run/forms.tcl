@@ -1139,6 +1139,10 @@ proc ShowExpiryImminent {expTime} {
     destroy .expiry
 }
 
+proc TrackSize {canvas item} {
+    $canvas itemconfig $item -width [winfo width $canvas]
+    $canvas itemconfig $item -height [winfo height $canvas]
+}
 
 ############################################## Equation listing
 proc equationlisting_start {} {
@@ -1166,10 +1170,10 @@ proc equationlisting_start {} {
     $fm add command -label Save -command "EquationListingSave $w" \
             -accelerator "$accKey+S"
     $fm add separator
-    if {[string match windows $tcl_platform(platform)]} {
+#    if {[string match windows $tcl_platform(platform)]} {
         $fm add command -label Print -command "EquationListingPrint $w" \
                 -accelerator "$accKey+P"
-    }
+#    }
     $fm add separator
     $fm add command -label Close -command "destroy $w"
     
@@ -1187,14 +1191,19 @@ proc equationlisting_start {} {
     $w configure -menu $m
     
     frame $w.mainframe
+    pack $w.mainframe -fill both -expand true
+
+    set wrapper [canvas $w.mainframe.c]
     set equationlist(textbox) [text $w.mainframe.textbox \
-            -tabs {1c} -relief sunken -bd 2 -highlightthickness 0 -yscrollcommand [list $w.mainframe.scrl set]]
-    
+            -tabs {1c} -relief sunken -bd 2 -highlightthickness 0 \
+	    -yscrollcommand [list $w.mainframe.scrl set]]
     scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
     pack $w.mainframe.scrl -side right -fill y
-    pack $equationlist(textbox) -side right -fill both -expand true
+    pack $wrapper -side right -fill both -expand true
+    set ww [$wrapper create window 0 0 -anchor nw \
+		-window $equationlist(textbox)]
+    bind $wrapper <Configure> [list TrackSize $wrapper $ww]
     
-    pack $w.mainframe -fill both -expand true
     foreach imgType [list compartment flow variable creation \
              immigration loss reproduction condition alarm] {
     image create photo equationlist(${imgType}img)
@@ -1402,6 +1411,10 @@ proc EquationListingPrint {winId} {
         
         print_data [$equationlist(textbox) get 1.0 end]
         cd $oldDir
+    } else {
+	PrintRandomCanvas [winfo parent $equationlist(textbox)].c
+	# cant do this under Windows cos the prntcanv cmd doesnt support
+	# embedded windows
     }
 }
 

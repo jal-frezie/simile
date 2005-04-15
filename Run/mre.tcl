@@ -350,9 +350,7 @@ namespace eval RunEnv {
                 ::${CurrentHelperId}::Print $CurrentContainer.container
             } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
                 set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
-                namespace eval :: {
-                    PrintNow $canvasId
-                }
+                PrintRandomCanvas $canvasId
             } else {
                 ShowMessage Warning warning \
                         "[${CurrentHelperId}::identify] does not support printing." ok

@@ -818,16 +818,15 @@ continuation(Rerouters, Start, Rest, Remains) :-
 	
 display_submodels(_,[]).
 display_submodels(Isub,[Submodel|Submodels]):-
-	abs_path_name(Submodel, root, Abspath), 
+	abs_path_name(Submodel, root, AbsPath), 
 	% remove the model file name prefix from submodel paths
-	( sub_atom(Abspath,Before, 1, _AfterSlash, /), 
-	  atom_length(Abspath,Len),
-	  Tail is Len-Before,
-	  sub_atom(Abspath,Before, Tail, _, Path)
-	  ;  
-	  Path=Abspath 
+	( name(AbsPath, AbsStr),
+	    append("/", PathStr, After),
+	    suffix(After, AbsStr),
+	    name(Path, PathStr);
+	  Path=AbsPath 
 	),
-	sicstus_format_to_chars("Equations in ~a", [Path], HeaderStr),
+	sicstus_format_to_chars("Equations in ~w", [Path], HeaderStr),
 	name(Header, HeaderStr),
 	tk_equationlisting_addsubmodel(Isub,Header),
 	mysetof((Entry,MinMax,Description,Comment,InFlows,OutFlows),write_eqn_term(Submodel,Entry,MinMax,Description,Comment,InFlows,OutFlows),Entries),
