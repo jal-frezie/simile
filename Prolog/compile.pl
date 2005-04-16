@@ -202,7 +202,7 @@ check_level_for_reds(Submodel) :-
 
 defines_membership(SmByRec, Fp) :-
 	find_all_comps(SmByRec, Comp),
-	(is_parameter(Fp, 2), Fp = Comp;
+	(is_parameter(Comp, 2), Fp = Comp;
 	defines_membership(Comp, Fp)).
 
 % The code works by first giving names to the mathematical entities in the
