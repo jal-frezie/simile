@@ -52,6 +52,7 @@ namespace eval printer {
   }
 
   proc is_win {} {
+    global tk_patchLevel
     return [ info exist tk_patchLevel ]
   }
 
@@ -59,8 +60,9 @@ namespace eval printer {
     variable debug
     if $debug {
        if [ is_win ] {
-         if [! winfo exist .debug ] {
-           set tl [ toplevel .debug ]
+	 set tl .debug
+         if {! [winfo exist $tl ]} {
+           toplevel $tl
 	   frame $tl.buttons
 	   pack $tl.buttons -side bottom -fill x
 	   button $tl.buttons.ok -text OK -command "destroy .debug"
@@ -70,7 +72,7 @@ namespace eval printer {
 	   pack $tl.yscroll -side right -fill y -expand false
 	   pack $tl.text    -side left -fill both -expand true
          }
-	 $tl.text insert end $str
+	 $tl.text insert end $str\n
        } else {
          puts "Debug: $str"
 	 after 100
@@ -408,9 +410,11 @@ namespace eval printer {
     }
     if { $fill != "" } {
         set cmmd "$cmmd -fill $fill"
-    }
+    }
+
     
-    debug_puts "$cmmd"
+    debug_puts "$cmmd"
+
 
     eval $cmmd
   }

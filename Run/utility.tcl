@@ -192,17 +192,17 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 
 proc PrintRandomCanvas {canvas} {
     global tcl_platform simtmpdir env
-    
     if {[string match windows $tcl_platform(platform)]} {
-        package require gdi
+	package require gdi
         package require printer
     }
     if {[string match windows $tcl_platform(platform)]} {
-        printer::print_widget $winId 0
+        printer::print_widget $canvas 0
     } else {    
         set tempPSFile $simtmpdir/temp.ps
 	set strm [NetOpen $tempPSFile w]
 	puts $strm [$canvas postscript]
+	close $strm
 	exec $env(PRINTCMD) [file nativename $tempPSFile]
         file delete $tempPSFile
     }
@@ -331,6 +331,7 @@ proc AddPopupMessage {text colour args} {
 	set count 0
     }
     EndsOnly text $count $limit
+
 # note the model editor still processes events while waiting for the executable
 # so check window is still there
     if {[winfo exists .popup]} {
@@ -416,6 +417,7 @@ proc CountValues {text} {
 
 proc SquirtMime {args} {
     global mimeSquirter
+
 
     if {[string match end [lindex $args 0]]} {
         close $mimeSquirter

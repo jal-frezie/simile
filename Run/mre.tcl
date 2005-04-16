@@ -794,7 +794,7 @@ namespace eval RunEnv {
     # Return a list of all widgets in an input list of a certain widget class
 #    proc GetWidgetClass {widgetList widgetClass} {
 #        set classList []
-#        foreach widget $widgetList {
+#        foreach widget $widgetList {
 #            if {[string match [winfo class $widget] $widgetClass]} {
 #                lappend classList $widget
 #            }

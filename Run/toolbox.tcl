@@ -286,7 +286,7 @@ proc do_for_node {node args} {
             }
 	    set runState($node,queueSize) 0
 	}
-#	tickle $node
+	tickle $node
 	if {[info exists runState($node,runParams)]} {
 	    do_in_node $node SetRunParams $node $runState($node,runParams)
 	}
@@ -536,6 +536,7 @@ proc compile_c {workingDir} {
                 exec $TOOLS32/bin/cl.exe -Ox -c -W1 -nologo \
                         -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                         -I. -I$TOOLS32/include -I$TOOLDIR \
+
 
 
                         -Foobjtemp.o model.cpp
