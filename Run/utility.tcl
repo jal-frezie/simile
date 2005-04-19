@@ -314,7 +314,9 @@ proc RemovePopup {args} {
     #puts "Removing popup"
     if {[winfo exists .popup]} {
         destroy .popup
-	focus -force $popper(foc)
+	if {[string match aqua [tk windowingsystem]]} {
+	    focus -force $popper(foc)
+	}
     }
     if {[info exists popper(cmd)]} {
         after cancel $popper(cmd)
@@ -332,7 +334,7 @@ proc AddPopupMessage {text colour args} {
     }
     EndsOnly text $count $limit
 
-# note the model editor still processes events while waiting for the executable
+# note the model editor still processes events while waiting for the executable
 # so check window is still there
     if {[winfo exists .popup]} {
 	if {[string length $text]<20} {
@@ -417,7 +419,7 @@ proc CountValues {text} {
 
 proc SquirtMime {args} {
     global mimeSquirter
-
+
 
     if {[string match end [lindex $args 0]]} {
         close $mimeSquirter
