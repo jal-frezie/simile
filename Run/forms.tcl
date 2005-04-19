@@ -1462,9 +1462,8 @@ proc BuildProblem {Title errLevel msg key args} {
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     pack [scrollbar $labf1.yscroll -orient v \
-            -command [list AdjustScroll $labf1.lab2 yview]] -fill y -expand on
-    pack [text $labf1.lab2 -width 48 -height 10 -relief sunken -bd 2 -highlightthickness 0 -wrap word \
-            -yscrollcommand [list AdjustCanvas $labf1 lab1 y]] -fill both -expand on
+            -command [list $labf1.lab2 yview]] -side right -fill y
+    pack [text $labf1.lab2 -width 48 -height 10 -relief sunken -bd 2 -highlightthickness 0 -wrap word -yscrollcommand [list AdjustCanvas $labf1 lab1 y]] -fill both -expand on
     $labf1.lab2 insert 1.0 $msg
     $labf1.lab2 config -state disabled
     #    pack [label $labf1.lab2 -text $msg -wraplength 320 \
@@ -1485,12 +1484,13 @@ proc BuildProblem {Title errLevel msg key args} {
            -side left -padx 4 -pady 8
     pack $buttons
     
-    set height [winfo reqheight $ProbWin]
-    set width [winfo reqwidth $ProbWin]
-    set sheight [winfo screenheight $ProbWin]
-    set swidth [winfo screenwidth $ProbWin]
-    wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
-    update
+#    set height [winfo reqheight $ProbWin]
+#    set width [winfo reqwidth $ProbWin]
+#    set sheight [winfo screenheight $ProbWin]
+#    set swidth [winfo screenwidth $ProbWin]
+#    wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    LetItShow $ProbWin
+#    update
     focus $ProbWin
     grab $ProbWin
     tkwait variable ack

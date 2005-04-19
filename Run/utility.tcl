@@ -152,18 +152,29 @@ proc load_c_stub {} {
 }
 
 proc AdjustCanvas {winId pt dir args} {
+    global noScroll
     set tgt $winId.${dir}scroll
-    # hide scrollbar if full size
+# hide scrollbar if full size...even the most mundane procedure can act as
+# the trigger to unleash gibbering weirdness. Occasionally, a textbox will
+# send a non-full scrollbar move even when it isn't full, in which case adding
+# the scrollbar and thus shrinking its window will make it send another request
+# this time a full one, removing the scrollbar again and starting a loop. To
+# avoid this, do not display the scrollbar till two requests are received.
     if {[lindex $args 0]<0.01 && [lindex $args 1]>0.99} {
-        pack forget $tgt
+	set noScroll($winId) 1
+	pack forget $tgt
     } else {
-        if {[string match x $dir]} {
-            set placing {-side bottom -after $winId.$pt}
-        } else {
-            set placing {-side right -before $winId.$pt}
-        }
-        eval {pack $tgt} $placing {-fill $dir}
-        eval {$tgt set} $args
+	if {[info exists noScroll($winId)]} {
+	    unset noScroll($winId)
+	    return
+	}
+	if {[string match x $dir]} {
+	    set placing {-side bottom -after $winId.$pt}
+	} else {
+	    set placing {-side right -before $winId.$pt}
+	}
+	eval {pack $tgt} $placing {-fill $dir}
+	eval {$tgt set} $args
     }
 }
 
