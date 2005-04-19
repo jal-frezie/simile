@@ -55,11 +55,15 @@ if [string match Darwin $tcl_platform(os)] {
 
 if {[info exists env(OPEN_MODEL)]} {
     set remStartArgs [list after idle [list OpenTopLevel $env(OPEN_MODEL)]]
-
 } else {
     set remStartArgs NewTopLevel
 }
 
+if {[catch [concat $runHow(sendCmd) {$remStartArgs}]]} {
+#    tk_messageBox -message $errorInfo
+} else {
+    exit
+}
 
 # temporary to get wkng with local tcltk
 # lappend auto_path $SIMILE_PATH/System/lib
