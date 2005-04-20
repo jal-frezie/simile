@@ -1109,6 +1109,7 @@ proc ZoomImage {winId which factor {optFontor none}} {
 	    $winId itemconfigure $object -font \
 		[AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
 		     [lindex $fontData 2] $newTextSize]
+	    FixBackBox $winId $object
 	} line {
 	    $winId itemconfigure $object \
 		-width [AdjustWidth $winId $object $factor]
@@ -1819,7 +1820,8 @@ proc ApplyLooks {t topNode type} {
 	CopyLooks $t $topNode $type
         ExportLooks $t $topNode $type
     } else {
-        foreach object {generic compartment state channel function variable \
+# add state to next line
+        foreach object {generic compartment channel function variable \
 			    text submodel flow influence relation} {
             CopyLooks $t $topNode $object
             ExportLooks $t $topNode $object
