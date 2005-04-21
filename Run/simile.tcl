@@ -34,9 +34,9 @@ set env(SP_PATH) $SIMILE_PATH/System
 
 if {$argc && ![string match Darwin $tcl_platform(os)] } {
     if {[string match relative [file pathtype $argv]]} {
-	set env(OPEN_MODEL) [pwd]/$argv
+    set env(OPEN_MODEL) [pwd]/$argv
     } else {
-	set env(OPEN_MODEL) $argv
+    set env(OPEN_MODEL) $argv
     }
 } 
 if [string match Darwin $tcl_platform(os)] {
@@ -50,46 +50,49 @@ if [string match Darwin $tcl_platform(os)] {
     }
 }
 
-# If simile is already running, make a new window there and exit. Note that
-# on Macs the system takes care of this and we don't even get this far
+# If Simile is already running, make a new window there and exit. Note that
+# on Macs the OpenDocument takes care of this and we don't even get this far
+# OTOH, if Simile is not running already, need to skip the following on Macs.
 
-if {[info exists env(OPEN_MODEL)]} {
-    set remStartArgs [list after idle [list OpenTopLevel $env(OPEN_MODEL)]]
-} else {
-    set remStartArgs NewTopLevel
+if ![string match aqua [tk windowingsystem]] {
+    if {[info exists env(OPEN_MODEL)]} {
+        set remStartArgs [list after idle [list OpenTopLevel $env(OPEN_MODEL)]]
+    } else {
+        set remStartArgs NewTopLevel
+    }
+ 
+    if {[catch [concat $runHow(sendCmd) {$remStartArgs}]]} {
+# Simile not already running, so just continue
+    } else {
+# Simile already running, so quit this fresh start
+        exit
+    }   
 }
-
-if {[catch [concat $runHow(sendCmd) {$remStartArgs}]]} {
-#    tk_messageBox -message $errorInfo
-} else {
-    exit
-}
-
 # temporary to get wkng with local tcltk
 # lappend auto_path $SIMILE_PATH/System/lib
 
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
-	dde servername $oldProc
-	set env(TCL_LIBRARY) [info library]
+    dde servername $oldProc
+    set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
-	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
-	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
-	set graph(origin) 2
+    set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
+    set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
+    set graph(origin) 2
         set graph(font) [list helvetica 10]
     } unix {
-	tk appname $oldProc ;# in case starting it from SimileAutoObj
+    tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
-#	set env(LD_LIBRARY_PATH) \
-#		$env(SP_PATH)/library:[file dirname [info library]]
-	# the following can be edited for your configuration
-	set env(PRINTCMD) lpr
+#   set env(LD_LIBRARY_PATH) \
+#       $env(SP_PATH)/library:[file dirname [info library]]
+    # the following can be edited for your configuration
+    set env(PRINTCMD) lpr
         if [string match Darwin $tcl_platform(os)] {
             set graph(origin) 3
             set graph(font) [list helvetica 12]
         } else {
-	    set graph(origin) 1
+        set graph(origin) 1
             set graph(font) [list helvetica 10]
         }
     }
@@ -151,8 +154,8 @@ set prolog [lindex [split $prologId =] 1]
 set interface [lindex [split $interfaceId =] 1]
 
 # tk_messageBox -title debug -icon info \
-#	-message "TCL library is [info library]\n \
-#	Model is $env(OPEN_MODEL)" -type ok
+#   -message "TCL library is [info library]\n \
+#   Model is $env(OPEN_MODEL)" -type ok
 
 # this runs a program which starts AME from a saved state
 # -- must be concurrent because script causes Windows problems if
@@ -160,28 +163,28 @@ set interface [lindex [split $interfaceId =] 1]
 
 switch $prolog {
     gnu {
-	set tgt Run/xgsimile
+    set tgt Run/xgsimile
     } sicstus {
-	set tgt System/bin/sprt
+    set tgt System/bin/sprt
     }
 }
 
 switch $tcl_platform(platform) {
     windows {
-	set execExtn .exe
+    set execExtn .exe
     } unix {
-	set execExtn {}
+    set execExtn {}
 # Currently cannot distribute Sicstus for Unix so use GNU anyway
-	set tgt Run/xgsimile
+    set tgt Run/xgsimile
     }
 }
 
 switch $interface {
     pipe {
-	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
-	source ../Run/toolbox.tcl
-	source ../Run/prolog.tcl
+    set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
+    source ../Run/toolbox.tcl
+    source ../Run/prolog.tcl
     } dll {
-	exec $SIMILE_PATH/$tgt$execExtn &
+    exec $SIMILE_PATH/$tgt$execExtn &
     }
 }
