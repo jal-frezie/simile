@@ -185,7 +185,7 @@ check_level_for_reds(Submodel) :-
 	caption_for(VisEntity, RedText),
 	raise_exception(unspecified(OuterText, RedText));
 	Parent has_part Submodel,
-	Submodel has_model_refinement link_equivalences of Equivs,
+	remove_redundant_equivs(Submodel, Equivs),
 	member(Before-After, Equivs),
 	Before is_connector from S1 to F1,
 	After is_connector from S2 to F2,
@@ -200,6 +200,18 @@ check_level_for_reds(Submodel) :-
 	raise_exception(no_defining_param(OuterText));
 	fail.
 
+remove_redundant_equivs(Submodel, Equivs) :-
+	Submodel has_model_refinement link_equivalences of OldEquivs,
+	(select(Before-After, OldEquivs, MoreEquivs),
+	\+ (Before is_connector from _ to _,
+	    After is_connector from _ to _), !,
+	caption_for(Submodel, Capt),
+	sicstus_format_to_chars("Removing redundant link equivalence ~w from submodel ~w.", [Before-After, Capt], Shpiel),
+	do_dialogue("Correcting model inconsistency", warning, Shpiel, ok, _),
+	Submodel has_changed_model_refinement link_equivalences of MoreEquivs,
+	remove_redundant_equivs(Submodel, Equivs);
+	Equivs = OldEquivs).
+	
 defines_membership(SmByRec, Fp) :-
 	find_all_comps(SmByRec, Comp),
 	(is_parameter(Comp, 2), Fp = Comp;

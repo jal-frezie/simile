@@ -10,7 +10,7 @@ interface of the application. It responds by:
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/5, change_size/3,
-	off_window/1, kill_everything/1]).
+	off_window/2, kill_everything/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
 	state, backup, library, ame_gen, utility, ss_import,
@@ -1209,23 +1209,29 @@ change_size(TopNode, Type, New_size) :-
 
 change_size(_,_,_).
 
-off_window(Win) :-
+off_window(Win, ExitIfKilled) :-
 	Win shows_model Model,
 	(is_toplevel(Model), !,
 	    check_deletable(Win, Model),
-	    start_progress_dialogue(Win),
 	    remove_model(Win, Model),
-	    delete_tree(Model),
-	    finish_progress_dialogue;
+	    /* do not bother to delete model if closing down afterwards */
+	    (ExitIfKilled = 1,
+		exit_AME,
+		user:wind_up;
+	    start_progress_dialogue(Win),
+		delete_tree(Model),
+		finish_progress_dialogue);
 	delete_window(Win)).
 
 kill_everything(Model) :-
 	Win shows_model Model,
-	    is_toplevel(Model), !,
-	    off_window(Win),
-	    kill_everything(_);
-	exit_AME,
-	    user:wind_up.
+	is_toplevel(Model),
+	(_OtherWin shows_model OtherModel,
+	    \+ OtherModel = Model, !,
+	    ExitIfKilled = 0;
+	 ExitIfKilled = 1),
+	off_window(Win, ExitIfKilled),
+	kill_everything(_).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Win, Target) :-
