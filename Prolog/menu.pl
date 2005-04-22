@@ -1132,11 +1132,15 @@ check_deletable(Win, Parent) :-
 	    get_save_status(Win, safe), !;
 	    ok_to_delete(Win, Parent)).
 
+close_exec(Parent) :-
+	scrub_run(Parent, 1),
+	kill_helpers(Parent),
+	output:safe_tcl_eval(['KillInterpFor', Parent], _),
+	scrub_autosave(Parent).
+	
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
-	    scrub_run(Parent, 1),
-	    kill_helpers(Parent),
-	    output:safe_tcl_eval(['KillInterpFor', Parent], _),
+	    close_exec(Parent),
 	    forget_highlit_obj(_,_),
 	    superfast_delete(Parent),
 	    add_parameter(Parent, 0, step, ''),
@@ -1158,8 +1162,7 @@ remove_model(Win, Parent) :-
 	clear_model_file(Parent),
 	use_temp_dir(LocalDir),
 	abs_path_name(Parent, root, DeleteDir),
-	output:trim_tree(LocalDir, DeleteDir),
-	scrub_autosave(Parent).
+	output:trim_tree(LocalDir, DeleteDir).
 
 cutoff(Parent) :-
 	find_all_comps(Parent, Child),
@@ -1213,12 +1216,15 @@ off_window(Win, ExitIfKilled) :-
 	Win shows_model Model,
 	(is_toplevel(Model), !,
 	    check_deletable(Win, Model),
-	    remove_model(Win, Model),
-	    /* do not bother to delete model if closing down afterwards */
-	    (ExitIfKilled = 1,
+	    /* do not bother to delete model if closing down afterwards --
+	    just do the minimum to exit cleanly */
+	    (ExitIfKilled = 1, !,
+	    close_exec(Model),
+		delete_window(Win),
 		exit_AME,
 		user:wind_up;
 	    start_progress_dialogue(Win),
+		remove_model(Win, Model),
 		delete_tree(Model),
 		finish_progress_dialogue);
 	delete_window(Win)).
