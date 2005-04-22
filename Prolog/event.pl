@@ -1228,7 +1228,8 @@ normalize_deletes(Target) :-
 	    fail;
 	recursive_highlight(Target, on, seln);
 	recursive_highlight(Target, off, base);
-	ghost_link(_L, Base, Target),
+	find_base(Target, Base),
+	    \+ Base = Target,
 	    doomed(Base),
 	    highlight(Target, 2), fail;
 	keep_only_if_links_stay(Target, base), fail;
@@ -1321,6 +1322,7 @@ keep_only_if_links_stay(Damage, Where) :-
 match_delete_status(Ends, Way, Where) :-
 	Way = on;
 	member(End, Ends),
+	(Where = seln; \+ depends_on_links(End)),
 	\+ at_def_con(End, Where), !, Way = on;
 	Way = off.
 
