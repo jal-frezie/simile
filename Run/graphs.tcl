@@ -776,15 +776,19 @@ proc LoadTableData {tableSpec lineCount} {
     set headerList [TrimFields [split $headerLine ,]]
 #ShowMessage debug info "Headers are $headerList" ok
     
-    set indexCount 0
-    set maxIndices(0) {}
+    set headerCount 0
     foreach headerIndex [lrange $tableSpec 2 end] {
         lappend indexColumns [lsearch -exact $headerList $headerIndex]
-        set maxIndices($indexCount) {}
-        incr indexCount
+        set maxIndices($headerCount) {}
+        incr headerCount
+    }
+    if {!$headerCount} {
+	# use line number as index
+	set headerCount 1
+	set maxIndices(0) {}
     }
     set headerColumn [lsearch $headerList [lindex $tableSpec 1]]
-#ShowMessage debug info "Columns: header $headerColumn" ok
+#ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
     if {$headerColumn==-1} {
 	ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column." ok
 	return
@@ -816,7 +820,6 @@ proc LoadTableData {tableSpec lineCount} {
         } else {
 	    lappend maxIndices(0) $lineCount
             set arrayIndex $lineCount
-            set indexCount 1
             incr lineCount
         }
         
@@ -832,7 +835,7 @@ proc LoadTableData {tableSpec lineCount} {
 	}
     }
     
-    for {set idxIdx 0} {$idxIdx < $indexCount} {incr idxIdx} {
+    for {set idxIdx 0} {$idxIdx < $headerCount} {incr idxIdx} {
         lappend indexList $maxIndices($idxIdx)
     }
     

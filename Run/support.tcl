@@ -695,7 +695,7 @@ proc first {lo} {
 #set readPipe get_data
 
 # 'after idle' doesn't quite work in MacOS X
-proc start_in_editor {args} {
+proc start_in_editor {args} {
     eval do_in_editor after 1 $args
 }
 
@@ -773,7 +773,7 @@ proc remote {result} {
 	} send_async {
 	    eval $sender {after idle [list FeedModel $myNode [list $result]]}
 	} send_sync {
-	    eval $sender {FeedModel $myNode [list $result]}
+	    catch {eval $sender {FeedModel $myNode [list $result]}}
 	} pipe {
 	    puts [split $result \n]
 	}
