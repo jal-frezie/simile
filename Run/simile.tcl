@@ -184,6 +184,15 @@ switch $interface {
     set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
     source ../Run/toolbox.tcl
     source ../Run/prolog.tcl
+    set whatCalled [file rootname [file tail [info nameofexecutable]]]
+    if {[string equal SimileScript $whatCalled]} {
+	package require SimileAutoObj
+	foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}
+	console title SimileScript
+	console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}
+	console eval {puts -nonewline "Welcome to Simile Scripting\n% "}
+	console show
+    }
     } dll {
     exec $SIMILE_PATH/$tgt$execExtn &
     }

@@ -161,11 +161,11 @@ proc AdjustCanvas {winId pt dir args} {
 # this time a full one, removing the scrollbar again and starting a loop. To
 # avoid this, do not display the scrollbar till two requests are received.
     if {[lindex $args 0]<0.01 && [lindex $args 1]>0.99} {
-	set noScroll($winId) 1
+	set noScroll($winId,$dir) 1
 	pack forget $tgt
     } else {
-	if {[info exists noScroll($winId)]} {
-	    unset noScroll($winId)
+	if {[info exists noScroll($winId,$dir)]} {
+	    unset noScroll($winId,$dir)
 	    return
 	}
 	if {[string match x $dir]} {
@@ -345,7 +345,8 @@ proc AddPopupMessage {text colour args} {
     }
     EndsOnly text $count $limit
 
-# note the model editor still processes events while waiting for the executable
+# note the model editor still processes events while waiting for the executable
+
 # so check window is still there
     if {[winfo exists .popup]} {
 	if {[string length $text]<20} {
@@ -430,7 +431,8 @@ proc CountValues {text} {
 
 proc SquirtMime {args} {
     global mimeSquirter
-
+
+
 
     if {[string match end [lindex $args 0]]} {
         close $mimeSquirter

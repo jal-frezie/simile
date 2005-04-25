@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Simile.c,v 1.6 2003/01/16 17:12:37 jaspert Exp $
+ * RCS: @(#) $Id: Simile.c,v 1.7 2005/04/25 16:57:54 jaspert Exp $
  */
 
 #include <tk.h>
@@ -19,7 +19,7 @@
 #include <malloc.h>
 #include <locale.h>
 
-#include "tkInt.h"
+//#include "tkInt.h"
 
 /*
  * The following declarations refer to internal Tk routines.  These
@@ -38,7 +38,7 @@ static void		WishPanic _ANSI_ARGS_(TCL_VARARGS(CONST char *,format));
 extern int		Tktest_Init(Tcl_Interp *interp);
 #endif /* TK_TEST */
 
-static BOOL consoleRequired = FALSE; //TRUE;
+static BOOL consoleRequired = TRUE;
 
 /*
  * The following #if block allows you to change the AppInit
@@ -185,13 +185,11 @@ Tcl_AppInit(interp)
      * application.
      */
 
-/*
-	if (consoleRequired) {
+    if (consoleRequired) {
 	if (Tk_CreateConsoleWindow(interp) == TCL_ERROR) {
 	    goto error;
 	}
     }
-*/	
 
 #ifdef TK_TEST
     if (Tktest_Init(interp) == TCL_ERROR) {
@@ -396,6 +394,9 @@ setargv(argcPtr, argvPtr)
 		    || (!inquote && ((*p == ' ') || (*p == '\t')))) { /* INTL: ISO space. */
 		break;
 	    }
+
+
+
 	    if (copy != 0) {
 		*arg = *p;
 		arg++;
@@ -446,7 +447,7 @@ int main(int argc, char **argv)
      * called to attach the console to a text widget.
      */
 
-    consoleRequired = FALSE;
+    consoleRequired = TRUE;
 
     Tk_Main(argc, argv, Tcl_AppInit);
     return 0;

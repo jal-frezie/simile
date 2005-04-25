@@ -872,7 +872,7 @@ proc ArrayToList {topArray indexSoFar otherMaxes} {
         if {[info exists array($indexSoFar)]} {
 	    set result $array($indexSoFar)
         } else {
-#            set result 0
+            set result (empty)
         }
     }
     return $result

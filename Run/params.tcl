@@ -339,7 +339,7 @@ proc AcceptData {winId topNode compName complain} {
             } else {
             set where {}
             }
-            ShowMessage "Setting $compName" warning "While attempting to load the parameter value$where the following problem occurred: [lindex $result end]" ok
+            ShowMessage "Problem setting parameter value" warning "While attempting to load the parameter value \"$compName\"$where the following problem occurred: [lindex $result end]" ok
         }
         }
     } else {
