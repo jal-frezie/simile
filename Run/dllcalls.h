@@ -208,6 +208,7 @@ EXTDEC node_data_line* get_data_line(long int, int);
 EXTDEC long int get_node_model_id(char*);
 EXTDEC void release_graph_data(graph_data_type*);
 EXTDEC double graphpoint(double, graph_data_type*, int);
+EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(long int);
 EXTDEC node_data_line* searchinfo(char*, long int*, char*, 
 				  int*, int*, enum_type_data**);
@@ -222,7 +223,25 @@ EXTDEC char* myexit(long int, long int);
 EXTDEC void* get_ptr(long int, long int, int**, int**);
 EXTDEC char* getNodeId(long int, char*);
 
-EXTDEC void proc_pointers_for_shank(get_value_pointer_type*, ame_rand_type*,
+EXTDEC void proc_pointers_for_shank(get_value_pointer_type*,
 				    interact_gui_type*, showMess_type*, 
 				    char*, connectRecord***, int**);
 
+/* defined in the shank for use by other clients -- note we may later want
+to use regularData items to describe simple c++ arrays, which is why we 
+create them and then set them to a model item */
+
+class regularData {
+  BOOLEAN start_at_one;
+  int dimensionality;
+  int spacings[32];
+  int bounds[32];
+  char* top;
+  
+ public:
+  regularData();
+  ~regularData();
+  int set_to_model_value(long int model_id, long int instance_id,
+			  char* caption);
+  void* locate_element(int* indices);
+};

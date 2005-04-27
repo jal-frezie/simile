@@ -1164,18 +1164,6 @@ FINDABLE int randseedCmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-/* some built-in random generators are not very accurate. In this
-case we may use several random numbers to get a random double. */
-
-double rand_fract() {
-    double fraction = 0, precise = 1;
-    while (precise > 1e-16) {
-	precise = precise/(RAND_MAX+1.0);
-	fraction = fraction+precise*rand();
-    }
-    return fraction;
-}
-
 FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
     Tcl_Obj *resultPtr;
@@ -1187,14 +1175,6 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
     resultPtr = Tcl_GetObjResult(interp);
     Tcl_SetDoubleObj(resultPtr, rand_fract());
    return TCL_OK;
-}
-
-/* Above is used by Tcl models. c++ models can easily include calls to rand()
-themselves, but I want to test using the stub as a library, so let's have them
-call this... */
-
-double ame_rand(double lo, double hi) {
-    return  lo + (hi-lo)*rand_fract();
 }
 
 BOOLEAN interact_gui(double now) {
@@ -1633,7 +1613,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
   globInterp = interp;
-  proc_pointers_for_shank(get_tcl_value_pointer, ame_rand, 
+  proc_pointers_for_shank(get_tcl_value_pointer,
 			  interact_gui, showMess,
 			  simileVersion, &connectDataPtr, &connCountPtr);
   Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 

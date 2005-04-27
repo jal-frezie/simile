@@ -69,7 +69,6 @@ int max(int a, int b) {
 /* Definitions used in this code and the model code */
 #include <dllcalls.h>
 
-ame_rand_type* ame_rand;
 interact_gui_type* interact_gui;
 get_value_pointer_type* get_client_value_pointer;
 fetch_instance_type fetch_instance;
@@ -167,6 +166,22 @@ double graphpoint(double xval, graph_data_type* graphdata, int index) {
 
 void release_graph_data(graph_data_type *graph_data_pointer) {
    free(graph_data_pointer->points);
+}
+
+/* some built-in random generators are not very accurate. In this
+case we may use several random numbers to get a random double. */
+
+double rand_fract() {
+    double fraction = 0, precise = 1;
+    while (precise > 1e-16) {
+	precise = precise/(RAND_MAX+1.0);
+	fraction = fraction+precise*rand();
+    }
+    return fraction;
+}
+
+double ame_rand(double lo, double hi) {
+    return  lo + (hi-lo)*rand_fract();
 }
 
 int compare_instance_status (const int pointers[], const int ref_pointers[], 
@@ -1249,6 +1264,58 @@ void* get_ptr(long int modelType, long int level, int** id_meta,
   return ((Model*)modelType)->getpointer((void*)level, id_meta, dim_list);
 }
 
+/* definitions for regularData class */
+
+regularData::regularData() {
+}
+
+regularData::~regularData() {
+}
+
+int regularData::set_to_model_value(long int model_id, long int instance_id,
+			  char* caption) {
+  int count, *quickpath, *pathref, *testref;
+  char test[255];
+  enum_type_data* types[32];
+  int test_indices[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+			  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  for (count = 1; ((Model*)model_id)->nodecount>count; ++count) {
+    ((Model*)model_id)->make_full_caption(count, test, bounds, types);
+    if (!strcmp(caption, test)) {
+      dimensionality = 0;
+      while (*(bounds + dimensionality)) {
+	++dimensionality;
+      }
+      quickpath = ((Model*)model_id)->nodedata[count].path;
+      pathref = quickpath;
+      testref = test_indices;
+      top = (char*)get_ptr(model_id, instance_id, &pathref, &testref);
+      for (count = 0; count < dimensionality; ++count) {
+	test_indices[count] = 1;
+	pathref = quickpath;
+	testref = test_indices;
+	spacings[count] = (char*)get_ptr(model_id, instance_id, 
+				  &pathref, &testref) - top;
+	test_indices[count] = 0;
+      }
+      start_at_one = TRUE;
+      return 0;
+    }
+  }
+  return -1;
+}
+
+void* regularData::locate_element(int* indices) {
+  char* result;
+  int count;
+  
+    result = top;
+    for (count = 0; count < dimensionality; ++count) {
+      result += spacings[count]*indices[count];
+    }
+    return result;
+}
+
 void update(long int modelType, long int modelHandle, 
 	     double starttime, int phase) {
   ((Model*)modelType)->updatemodel((void*)modelHandle, starttime, phase);
@@ -1356,14 +1423,12 @@ int eval_submodel(char* nodeId, void* instanceId,
    to its callback procedures */
 
 void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
-			     ame_rand_type* ame_rand_ptr,
 			     interact_gui_type* interact_gui_ptr,
 			     showMess_type* showMess_ptr,
 			     char* simileVersionPtr,
 			     connectRecord*** connectDataPtr, 
 			     int** connCountPtr) {
   get_client_value_pointer = get_value_pointer_ptr;
-  ame_rand = ame_rand_ptr;
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
   xsimileVersion = simileVersionPtr;
