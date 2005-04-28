@@ -273,7 +273,7 @@ menu_handle(Win, reopen, Name) :-
 
 menu_handle(Win, insert, Name) :-
 	Win shows_model Parent,
-	select_all_in(Parent, off),
+	select_all_in(Parent, base),
 	stick_model_in(Win, Parent, Name, insert([0,0])).
 
 menu_handle(Win, file, save) :-
@@ -621,14 +621,14 @@ menu_handle(Win, edit, selall) :-
         start_progress_dialogue(Win),
 	reassure_user("Selecting whole model"),
 	get_edit_model(Win, Model, _),
-	select_all_in(Model, on),
+	select_all_in(Model, seln),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, unselall) :-
         start_progress_dialogue(Win),
 	reassure_user("Unselecting whole model"),
 	get_edit_model(Win, Model, _),
-	select_all_in(Model, off),
+	select_all_in(Model, base),
 	finish_progress_dialogue.
 	   
 menu_handle(Win, edit, invsel) :-
@@ -714,23 +714,21 @@ get_edit_model(Win, Comp, Pt) :-
 	Win shows_model Comp).
 
 select_all_in(Model, Way) :-
-	contains(Model, Comp),
-	(Way = off, normalize(Comp);
-	    Way = on, highlight(Comp, 0)),
-	fail;
-	event:set_selection_abilities(Model).
-/* was
+	Way = base, is_toplevel(Model), !,
+	    (event:new_selection(Model);
+		event:set_selection_abilities(Model));
 	contains(Model, Bit),
 	    Bit is_of_sort box,
 	    appears(Bit),
+	    \+ at_def_con(Bit, Way),
 	    \+ Bit = Model,
-	    (Way = on,
+	    (Way = seln,
 		event:do_colours(Bit, on);
-	    Way = off,
+	    Way = base,
 		get_highlit_obj(0, Bit),
 		event:do_colours(Bit, off)),
 	    fail;
-*/
+	event:set_selection_abilities(Model).
 
 invert_seln_in(Model) :-
 	(setof(Bit, 
@@ -1239,7 +1237,8 @@ kill_everything(Model) :-
 	Win shows_model Model,
 	is_toplevel(Model),
 	(_OtherWin shows_model OtherModel,
-	    \+ OtherModel = Model, !,
+	    \+ OtherModel = Model,
+	    is_toplevel(OtherModel), !,
 	    ExitIfKilled = 0;
 	 ExitIfKilled = 1),
 	off_window(Win, ExitIfKilled),
@@ -1276,7 +1275,7 @@ do_save(Win, Model, New_name) :-
 
 	/* Save canvas file -- remove selection cos graphics but not state
 	are saved */
-	select_all_in(Model, off),
+	select_all_in(Model, base),
 	check_save_canvas(SaveDir, CanvasModel, Date),
 
 
