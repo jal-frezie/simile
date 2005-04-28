@@ -271,13 +271,20 @@ click_in(Wid, _,_,_, Parent, CD) :-
 		\+ get_highlit_obj(0, Parent)),
 	    set_start_coords(Xtr, Ytr),
 	    (CD = 0,
-		normalize(_),
-		fail;
+		new_selection(Parent, off);
 	    add_incomplete([Xtr, Ytr, Xtr, Ytr]),
 		draw_rubberband(square),
 		advance_phase_to(rubberband));
 	    
 	click_on([Xtr, Ytr], Parent, CD)).
+
+new_selection(Parent, Way) :-
+	contains(Top, Parent),
+	is_toplevel(Top), !,
+	contains(Top, Comp),
+	(Way = off, normalize(Comp);
+	    Way = on, highlight(Comp, 0)),
+	fail.
 
 insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	Wid shows_model Top,
@@ -372,7 +379,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	/* Control not down: Object already selected */
 	deselectable(Moving_obj), !;
 	/* Object not selected; clear current, then select */    
-	(normalize(_), fail;
+	(new_selection(Moving_obj, off);
 	    \+ is_toplevel(Moving_obj),
 	    do_colours(Moving_obj, on))),
 	

@@ -714,6 +714,12 @@ get_edit_model(Win, Comp, Pt) :-
 	Win shows_model Comp).
 
 select_all_in(Model, Way) :-
+	contains(Model, Comp),
+	(Way = off, normalize(Comp);
+	    Way = on, highlight(Comp, 0)),
+	fail;
+	event:set_selection_abilities(Model).
+/* was
 	contains(Model, Bit),
 	    Bit is_of_sort box,
 	    appears(Bit),
@@ -724,8 +730,8 @@ select_all_in(Model, Way) :-
 		get_highlit_obj(0, Bit),
 		event:do_colours(Bit, off)),
 	    fail;
-	event:set_selection_abilities(Model).
-	
+*/
+
 invert_seln_in(Model) :-
 	(setof(Bit, 
 	      (contains(Model, Bit),
