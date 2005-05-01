@@ -181,10 +181,10 @@ switch $tcl_platform(platform) {
 
 switch $interface {
     pipe {
+    set whatCalled [file rootname [file tail [info nameofexecutable]]]
     set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
     source ../Run/toolbox.tcl
     source ../Run/prolog.tcl
-    set whatCalled [file rootname [file tail [info nameofexecutable]]]
     if {[string equal SimileScript $whatCalled]} {
 	package require SimileAutoObj
 	foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}

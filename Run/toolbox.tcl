@@ -884,7 +884,7 @@ proc CheckCompilerLocation {} {
 # may well sit it exactly on top of the previous one
 
 proc FixSize {c} {
-    global custom openModel
+    global custom openModel whatCalled
     update idletasks
     set win [winfo parent $c]
     wm state $win normal
@@ -907,7 +907,8 @@ proc FixSize {c} {
     update
 
     destroy .splash
-    if {[string match $openModel {}]} {
+    if {[string match $openModel {}] && \
+	    ![string equal SimileScript $whatCalled]} {
         DoRegDialog $win
     }
     
@@ -1024,7 +1025,7 @@ proc GetParts {top tree} {
     foreach subtree [glob -nocomplain ${tree}/*] {
         #ShowMessage debug info "GetParts subtree $subtree" ok
         if {[file isdirectory $subtree]} {
-            set mimes [concat $mimes [GetParts $top $subtree]]
+            set mimes [concat $mimes [GetParts $top $subtree]]
         } else {
             set ext [file tail $subtree]
 
