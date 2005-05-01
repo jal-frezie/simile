@@ -24,7 +24,6 @@ sicstus_use_module( [library(ordsets),library(lists),
 
 compile( Language, Parent, DestDir) :-
 	tk_scrub_run(Parent, 0),
-	output:safe_tcl_eval([do_for_node, Parent, expr, 33], _RV),
 	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),
