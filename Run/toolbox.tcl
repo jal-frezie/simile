@@ -202,7 +202,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
 set runHow(launch) open
 
 # set this to interactive or script, for how to do the initialization
-set runHow(init) script
+set runHow(init) interactive
 
 # set this to send or pipe, for the way to pass data to the exec
 # process send must be async because a sync send will not allow
@@ -226,7 +226,7 @@ if [string match Darwin $tcl_platform(os)] {
 # from stdin while waiting for the last one to finish. Also if init is
 # script it must be get_data because the process does not accept
 # commands from stdin after initializing from a script.
-set runHow(readpipe) get_data
+set runHow(readpipe) await_cmd
 
 # this is obsolete and must be 'parallel'
 set runHow(time) parallel
