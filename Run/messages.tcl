@@ -73,7 +73,7 @@ set msgs(gaussian) "gaussian(c mean sd): returns values from a gaussian distribu
         the value returned is constant until the model is rebuilt, if c is the function \
         rand_const(0,1) the value returned is constant during a run but varies  between \
         runs and if c varies every time step (e.g. the function time() ) a different value is
-        returned each time step"
+returned each time step"
 set msgs(sgn) "sgn(r): returns the sign of a r, -1 if negative or 1 if positive"
 
 
@@ -276,16 +276,30 @@ set url(examples/control.htm) {Process control}
 set url(examples/supply.htm) {Supply and demand}
 
 set oldDir [pwd]
-cd ../Functions/Help
 
-set MessageFiles [glob -nocomplain *.tcl]
-foreach file [glob -nocomplain *.tcl] {
-    if [catch {source $file} wibble] {
-        # done at startup -- make sure dialog is not concealed
-        tk_messageBox -title "Error loading user function help" -icon warning \
-                -message "help messages file [pwd]/$file had a $wibble" -type ok
+set InstallFuncHelp ../Functions/Help
+
+switch $tcl_platform(platform) {
+    windows {
+        set UserFuncHelp {~/My Documents/My Simile files/Functions/Help}
+    }
+    unix {
+        set UserFuncHelp {~/.simile/Functions/Help}
+    }
+    macosx {
+        set UserFuncHelp {~/Simile/Functions/Help}
     }
 }
+
+foreach dir [list $InstallFuncHelp $UserFuncHelp] {
+        cd $dir
+        foreach file [glob -nocomplain *.tcl] {
+        if [catch {source $file} wibble] {
+            # done at startup -- make sure dialog is not concealed
+            tk_messageBox -title "Error loading user function help" -icon warning \
+                    -message "help messages file [pwd]/$file had a $wibble" -type ok
+        }
+    }
+}
+
 cd $oldDir
-
-
