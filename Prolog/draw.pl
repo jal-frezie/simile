@@ -31,7 +31,7 @@ sicstus_module(draw,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, exit_AME/0,
-		tk_equationlisting_start/0,tk_equationlisting_addsubmodel/2,
+		tk_equationlisting_start/1,tk_equationlisting_addsubmodel/2,
 		tk_equationlisting_addvariable/11]).
 
 sicstus_use_module([library(lists), state, image, ame_gen, output]).
@@ -592,8 +592,8 @@ show_invisible_links(Links) :-
 
 % ############################################ Start Bob's changes
 
-tk_equationlisting_start :-
-	safe_tcl_eval(['equationlisting_start'], _).
+tk_equationlisting_start(DefaultName) :-
+	safe_tcl_eval(['equationlisting_start', br(write(DefaultName))], _).
 
 tk_equationlisting_addsubmodel(Isub,Submodel):-
 	safe_tcl_eval(['equationlisting_addsubmodel', 
@@ -632,5 +632,6 @@ tk_equationlisting_addvariable(Isub,Ivar,VarType,VarLabel,Expression,Where,
 
 
 % ############################################ End Bob's changes
+
 
 
