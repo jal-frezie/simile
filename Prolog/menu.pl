@@ -366,7 +366,8 @@ menu_handle(Win, file, RunCmd) :-
 %################################### Bob's changes (tcl/tk version): start (
 menu_handle(Win, file, list_eqns) :-
 	Win shows_model Model,
-	tk_equationlisting_start,
+	get_default_export_name(Model, ".txt", DefName),
+	tk_equationlisting_start(DefName),
 	mysetof(Component,(contains(Model,Component),find_type(Component,submodel),appears(Component)),Submodels),
 	display_submodels(1,Submodels).
 
