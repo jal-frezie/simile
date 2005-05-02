@@ -275,31 +275,3 @@ set url(examples/forest.htm) {Forest tree growth}
 set url(examples/control.htm) {Process control}
 set url(examples/supply.htm) {Supply and demand}
 
-set oldDir [pwd]
-
-set InstallFuncHelp ../Functions/Help
-
-switch $tcl_platform(platform) {
-    windows {
-        set UserFuncHelp {~/My Documents/My Simile files/Functions/Help}
-    }
-    unix {
-        set UserFuncHelp {~/.simile/Functions/Help}
-    }
-    macosx {
-        set UserFuncHelp {~/Simile/Functions/Help}
-    }
-}
-
-foreach dir [list $InstallFuncHelp $UserFuncHelp] {
-        cd $dir
-        foreach file [glob -nocomplain *.tcl] {
-        if [catch {source $file} wibble] {
-            # done at startup -- make sure dialog is not concealed
-            tk_messageBox -title "Error loading user function help" -icon warning \
-                    -message "help messages file [pwd]/$file had a $wibble" -type ok
-        }
-    }
-}
-
-cd $oldDir
