@@ -703,6 +703,10 @@ proc DoRegDialog {dtId} {
     if {[info exists SimileAutoObjLoaded]} {
         return
     }
+#    set whatCalled [file rootname [file tail [info nameofexecutable]]]
+#    if {[string equal SimileScript $whatCalled]} {
+#        return
+#    }
     
     if {$userinfo(Version)==$userinfo(oldVersion)} {
         if {$userinfo(done)} {
@@ -1145,8 +1149,9 @@ proc TrackSize {canvas item} {
 }
 
 ############################################## Equation listing
-proc equationlisting_start {} {
-    global equationlist tcl_platform
+proc equationlisting_start {DefEquationListingFileName} {
+    global equationlist tcl_platform DefaultEquationListingFileName
+    set DefaultEquationListingFileName $DefEquationListingFileName
     set w .equations
     catch {destroy $w}
     toplevel $w
@@ -1286,6 +1291,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     #puts "inflows $inflows outflows $outflows"
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
     global equationlist
+    #ShowMessage debug info "$expression" ok
     
     set widget $equationlist(textbox)
     $equationlist(textbox) configure  -state normal
@@ -1299,7 +1305,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     $widget insert end " " descrtag
     
     set tidy_varlabel [regsub -all "\n" $varlabel " "]
-    set tidy_expression [regsub -all "\n" $expression " "]
+    set tidy_expression $expression; #[regsub -all "\n" $expression " "] doesn't have any nl anyway
     set tidy_description [regsub -all {\n} $description { }]
     set tidy_comments [regsub -all "\n" $comments " "]
     set where [regsub -all "\n" $where " "]
@@ -1373,8 +1379,8 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
 }
 
 proc EquationListingSave {winId} {
-    global equationlist
-    
+    global equationlist DefaultEquationListingFileName
+        
     set types {
         {{Text Files} {.txt} }
         {{All Files} * }
@@ -1384,7 +1390,7 @@ proc EquationListingSave {winId} {
             -defaultextension .txt \
             -filetypes $types \
             -initialdir [GetPathChoice .sml] \
-            -initialfile equations.txt \
+            -initialfile $DefaultEquationListingFileName \
             -parent $winId ]
     if {![string match "" $fname]} {
         set f [open $fname w]
