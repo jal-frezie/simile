@@ -4,10 +4,8 @@
 #
 
 # customized by Jasper to load appropriate executable for OS
-if {[string equal .so [info sharedlibext]]} {
-    package ifneeded tile 0.6.2 \
-	[list load [file join $dir tile[info sharedlibext]]]
-} else {
+switch [info sharedlibext] {
+    .dll {
     if {![package vsatisfies [package provide Tcl] 8.4]} {return}
     set S {}
     if {[info exists ::tcl_platform(threaded)]} {append S t}
@@ -23,4 +21,11 @@ if {[string equal .so [info sharedlibext]]} {
        load \"[file join $dir tile06ns$S.dll]\""
     }
     unset S
+    } .so {
+    package ifneeded tile 0.6.2 \
+	[list load [file join $dir tile[info sharedlibext]]]
+    } .dylib {
+    package ifneeded tile 0.6.2 \
+	[list load [file join $dir libtile0.6[info sharedlibext]]]
+    }
 }
