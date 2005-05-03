@@ -292,7 +292,11 @@ if [string match Darwin $tcl_platform(os)] {
 # does not with interactive start, probably because the channel does not stop
 # being readable otherwise
 
-set runHow(readpipe) await_cmd
+if [string match Darwin $tcl_platform(os)] {
+    set runHow(readpipe) get_data
+} else {
+    set runHow(readpipe) await_cmd
+}
 
 # this is obsolete and must be 'parallel'
 set runHow(time) parallel

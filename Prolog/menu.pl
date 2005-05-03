@@ -1225,9 +1225,7 @@ off_window(Win, ExitIfKilled) :-
 	    just do the minimum to exit cleanly */
 	    (ExitIfKilled = 1, !,
 	    close_exec(Model),
-		delete_window(Win),
-		exit_AME,
-		user:wind_up;
+	     delete_window(Win);
 	    start_progress_dialogue(Win),
 		remove_model(Win, Model),
 		delete_tree(Model),
@@ -1239,11 +1237,13 @@ kill_everything(Model) :-
 	is_toplevel(Model),
 	(_OtherWin shows_model OtherModel,
 	    \+ OtherModel = Model,
-	    is_toplevel(OtherModel), !,
+	    is_toplevel(OtherModel),
 	    ExitIfKilled = 0;
-	 ExitIfKilled = 1),
+	 ExitIfKilled = 1), !,
 	off_window(Win, ExitIfKilled),
-	kill_everything(_).
+	 kill_everything(_);
+	 exit_AME,
+       user:wind_up.
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 ok_to_delete(Win, Target) :-
