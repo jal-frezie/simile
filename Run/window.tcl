@@ -1221,7 +1221,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     AddAccelerator $winid edit "Unselect all" "<$accSym-u>"
     $fm add command -label "Invert selection" \
             -command "MenuSelect $c edit invsel" -accelerator "$accKey+*"
-    AddAccelerator $winid edit "Invert selection" "<$accSym-Shift-8>"
+    AddAccelerator $winid edit "Invert selection" "<$accSym-asterisk>"
     
     AddFindMenu $winid $c $fm
     $fm add separator
@@ -1245,7 +1245,25 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -label "Grids" -variable custom(showgrids,$c)
     
     $fm add separator
-    AddZoomMenu $c $fm 1
+
+# zoom submenu
+    set fm2 [menu $fm.zoom -tearoff 0]
+    $fm add cascade -label Zoom -menu $fm2
+    $fm2 add command -label "In lots" -command "DoZoom \
+            $c 1.953125 1" -accelerator "$accKey+*"
+    AddAccelerator $winid view.zoom "In lots" "<$accSym-KP_Multiply>"
+    $fm2 add command -label "In a bit" -command "DoZoom \
+            $c 1.25 1" -accelerator "$accKey++"
+    AddAccelerator $winid view.zoom "In a bit" "<$accSym-KP_Add>"
+    $fm2 add command -label "To selection" -command "DisplayArea $c"
+    $fm2 add command -label "To fit" -command "DisplayAll $c"
+    $fm2 add command -label "Out a bit" -command "DoZoom \
+            $c 0.8 1" -accelerator "$accKey+-"
+    AddAccelerator $winid view.zoom "Out a bit" "<$accSym-KP_Subtract>"
+    $fm2 add command -label "Out lots" -command "DoZoom \
+            $c 0.512 1" -accelerator "$accKey+/"
+    AddAccelerator $winid view.zoom "Out lots" "<$accSym-KP_Divide>"
+    
     $fm add cascade -label "Show detail" -menu $fm.sub3
     set fm3 [menu $fm.sub3 -tearoff 0]
     AddDetailMenu $c $fm3 $initDepths
@@ -1591,22 +1609,6 @@ proc AddFindMenu {winid canvas menu} {
     $menu add command -label "Find next" -command "NextCaption $canvas" \
             -accelerator "F3"
     AddAccelerator $winid edit "Find next" "<F3>"
-}
-
-proc AddZoomMenu {canvas menu tellProlog} {
-    $menu add cascade -label Zoom -menu $menu.sub2
-    set fm2 [menu $menu.sub2 -tearoff 0]
-    $fm2 add command -label "In lots" -command "DoZoom \
-            $canvas 1.953125 $tellProlog"
-    $fm2 add command -label "In a bit" -command "DoZoom \
-            $canvas 1.25 $tellProlog"
-    $fm2 add command -label "To selection" -command "DisplayArea $canvas"
-    $fm2 add command -label "To fit" -command "DisplayAll $canvas"
-    $fm2 add command -label "Out a bit" -command "DoZoom \
-            $canvas 0.8 $tellProlog"
-    $fm2 add command -label "Out lots" -command "DoZoom \
-            $canvas 0.512 $tellProlog"
-    
 }
 
 proc ReconstituteMenu {newMenu mList tgtNode} {
