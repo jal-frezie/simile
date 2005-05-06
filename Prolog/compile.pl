@@ -179,6 +179,7 @@ build_sub_instances(Language, DestDir, Parent, Node,
 check_level_for_reds(Submodel) :-
 	find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
+	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
 	\+ image:draws_complete(VisEntity),
 	caption_for(Submodel, OuterText),

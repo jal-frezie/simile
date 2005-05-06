@@ -79,7 +79,7 @@ if $onUnix {
     # it is running under Prolog. However it seems to work OK in WinNT.
     if {[string match gnu $compiler_for_windows]} {
 	set batSt [open runmingw.bat w]
-	puts $batSt "set PATH=[file join [file join [file dirname [pwd]] System] bin]"
+	puts $batSt "set PATH=[file nativename [file join [file join [file dirname [pwd]] System] bin]]"
 #	puts $batSt "set PATH=c:/progra~1/mingw/bin"
 	puts $batSt "g++ -c -DSHARELIB -I. shank.cpp"
 	puts $batSt "dllwrap --output-lib=${TGTLIB}/lib5ddll.a --dllname=5d.dll --def=shank.def --driver-name=g++ shank.o"
@@ -91,7 +91,7 @@ if $onUnix {
 	puts $batSt "dllwrap --output-lib=${TGTLIB}/lib$mydll.a --dllname=$TARGET --def=stub.def --driver-name=g++ ame_cmx.o -L${TGTLIB} -l5ddll -l$dll"
 	# Do the install dll as well
 	puts $batSt "g++ -c -o obj.o $defns -I. -I$TCL/include ./install.cpp"
-	puts $batSt "dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o -L${TGTLIB} -lcrypto -lssl"
+	puts -nonewline $batSt "dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o -L${TGTLIB} -lcrypto -lssl"
 	
 	close $batSt
 	exec runmingw.bat

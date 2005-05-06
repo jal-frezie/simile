@@ -311,7 +311,7 @@ proc do_for_node {node args} {
 	    $runState($node,interp) eval set runHow $runHow(return)
 	    $runState($node,interp) eval source ../Run/support.tcl
 	} else {
-	    scan [info tclversion] {%d.%d} MAJ MIN
+#	    scan [info tclversion] {%d.%d} MAJ MIN
 	    if {[string equal windows $tcl_platform(platform)]} {
 		set sep {}
 	    } else {
@@ -321,7 +321,7 @@ proc do_for_node {node args} {
 		set makeExec ../../MacOS/Simile
 		#              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
             } else {
-		set makeExec ../System/bin/wish$MAJ$sep$MIN
+		set makeExec ../System/bin/wish
             }
             set srcLoc ../Run/runmodel.tcl          
 	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
