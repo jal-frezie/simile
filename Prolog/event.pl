@@ -1825,9 +1825,9 @@ when its time comes. */
 
 delete_net(Top) :-
 	tk_get_pref(deleteEndToEnd, FollowArcs),
-	setof(Tgt, N^(get_highlit_obj(N, Tgt), N<2,
-		      \+ Tgt = Top,
-		      deletable(Top, FollowArcs, Tgt)), Range),
+	setof(Tgt, (doomed(Tgt),
+		       \+ Tgt = Top,
+		       deletable(Top, FollowArcs, Tgt)), Range),
 	(member(Target, Range),
 	    find_type(Target, influence),
 	    (\+ is_top_arc(Target);
@@ -1868,7 +1868,8 @@ deletable(Top, FollowArcs, Tgt) :-
 
 kill_primitive(Target) :-
 	off(Target),
-	(setof(NewLook, presence_affects(Target, NewLook), ChangedLooks), !;
+	(setof(NewLook, (presence_affects(Target, NewLook),
+			    \+ doomed(NewLook)), ChangedLooks), !;
 	    ChangedLooks = []),
 	forget_highlit_obj(_, Target),
 	(tk_get_pref(deleteEndToEnd, 1), /* no messing about */

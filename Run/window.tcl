@@ -1881,10 +1881,8 @@ proc MenuClose {winId} {
 }
 
 proc byebye {winId} {
-    global window_info tcl_platform
-    set exitIfKilled [expr ![string match "Darwin" $tcl_platform(os)] && \
-			[llength [array names window_info *,is_top_level]]==1]
-    prolog [list tk_off_window( '$winId' , $exitIfKilled)]
+    set runOnEmpty [string equal aqua [tk windowingsystem]]
+    prolog [list tk_off_window( '$winId' , $runOnEmpty)]
 }
 
 proc exit_simile {} {

@@ -22,14 +22,14 @@ sicstus_use_module([library(lists), backup, event, menu]).
 tk_undo(Cur, Wids) :-
 	show_wait_cursor,
 	nth0(Cur, Wids, Wid),
-	finish_window_resize(Wid),
+	finish_window_resize,
 	undo_edit(Wid, Wids),
 	show_normal_cursor.
 
 tk_redo(Cur, Wids) :-
 	show_wait_cursor,
 	nth0(Cur, Wids, Wid),
-	finish_window_resize(Wid),
+	finish_window_resize,
 	redo_edit(Wid, Wids),
 	show_normal_cursor.
 
@@ -48,7 +48,7 @@ tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name, CD) :-
 /* Extra debugging data not put into save file while swapping to MDI
 	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)), */
 	prioritize_window(Wid),
-	finish_window_resize(Wid),
+	finish_window_resize,
 	(Action = click,
 		click_obj(Virt_X, Virt_Y, Name, CD);
 	Action = clicktext,
@@ -61,13 +61,13 @@ tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name, CD) :-
 tk_click(Wid, Virt_X, Virt_Y, CD) :-
 /*	into_save_file(tk_click(Wid, Virt_X, Virt_Y)), */
 	prioritize_window(Wid),
-	finish_window_resize(Wid),
+	finish_window_resize,
 	click(Virt_X, Virt_Y, CD).
 
-tk_doubleclick(Wid, Virt_X, Virt_Y, _CD) :-
+tk_doubleclick(_Wid, Virt_X, Virt_Y, _CD) :-
 /*	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)), */
 	show_wait_cursor,
-	finish_window_resize(Wid),
+	finish_window_resize,
 	asserta(log_interaction),
 	doubleclick(Virt_X, Virt_Y),
 	retract(log_interaction),
@@ -84,7 +84,7 @@ tk_menu(Window, Header, Item) :-
 /*	into_save_file(tk_menu(Window, Header, Item)), */
     show_wait_cursor,
     (Window = '.hi.canvas', !;
-     finish_window_resize(Window)),
+     finish_window_resize),
     finish_old_edit(none),
     (menu_handle(Window, Header, Item); true),
     show_normal_cursor.
@@ -113,10 +113,13 @@ tk_visible(Wid, L, T, R, B) :-
 	    asserta(resizing_windows(Wid))),
 	adjust_display_area(Wid, [L, T, R, B]).
 
-finish_window_resize(Wid) :-
-	\+ retract(resizing_windows(Wid)), !;
+finish_window_resize :-
+	retract(resizing_windows(Wid)),
 	state:Wid shows_model Model,
-	finish_move(Model, 0).
+	finish_move(Model, 0),
+	fail;
+	true.
+	       
 
 tk_embrace(Wid, Comp) :-
 	prioritize_window(Wid),
@@ -140,10 +143,12 @@ tk_change_size(TopNode, CType, New_size) :-
 tk_run_settings_tweaked(Node) :-
 	run_settings_tweaked(Node).
 
-tk_off_window(Wid, ExitIfKilled) :-
+tk_off_window(Wid, RunOnEmpty) :-
 %%	into_save_file(tk_off_window(Wid)),
 	finish_old_edit(none),
-	off_window(Wid, ExitIfKilled).
+	((not_last_toplevel(Wid); RunOnEmpty = 1), !,
+	    off_window(Wid, 0);
+	kill_everything(_)).
 
 tk_kill_everything(Wid) :-
 	kill_everything(Wid).

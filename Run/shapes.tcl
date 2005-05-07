@@ -260,7 +260,28 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     scan [GetPoints $mr -$cornerRad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
     scan [GetPoints $mb -$cornerRad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
     
-    set contents [$w find enclosed $ml $mt $mr $mb]
+# Now make sure submodel background is behind its contents. Old system
+# just assumed everything bagged by the model border was part of it;
+# now we are more strict. We find the top background component behind
+# the model, and put it just in front of that.
+
+    set tgts [$w find overlapping $ml $v6 $ml $v6] ;# any point on the border
+    foreach tgt $tgts {
+	if {[string match "*/background/*" [$w gettags $tgt]]} {
+	    set stackOn [ExtractPrologName $w $tgt]
+	}
+    }
+    if {![llength $stackOn]} {
+	$w addtag target_and_background withtag /base/
+    } else {
+# you cannot 'and' the submodel id tag with the background tag
+# so 'or' it with the inverse
+	$w addtag target_and_background withtag $stackOn
+	$w addtag not_background all
+	$w dtag /background/ not_background
+	$w dtag not_background target_and_background
+    }
+    
     if {[string equal clear $fillColour]} {
 	set fillColour {}
     }
@@ -272,9 +293,10 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
 		  -fill $fillColour -tag "$tagSet /background/"]
     # Now to stick it behind anything that might be drawn inside
-    if {[llength $contents]} {
-	$w lower $poly [lindex $contents 0]
-    }
+    $w raise $poly target_and_background
+    $w dtag target_and_background
+    set stackOn $poly
+
     if {![string equal none $fillImage]} {
         set poly [$w create image $ml $mt -anchor nw \
                 -tag "$tagSet /background/ source($fillImage) posn($layout)"]
@@ -287,9 +309,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
         
         FillSmImage $fillImage $layout $smbg $mw $mh $intRad
 	# Now to stick it behind anything that might be drawn inside
-	if {[llength $contents]} {
-	    $w lower $poly [lindex $contents 0]
-	}
+	$w raise $poly $stackOn
+	set stackOn $poly
     }
     set width [GetLineSize $w submodel $fatness]
     $w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
@@ -368,9 +389,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		set line [eval {$w create line} $linePts \
 			      {-width 0 -fill $gCol -tag $gTagSet}]
 		# Now to stick it behind anything that might be drawn inside
-		if {[llength $contents]} {
-		    $w lower $line [lindex $contents 0]
-		}
+		$w raise $line $stackOn
+		set stackOn $line
 	    }			    
 	for {set y [expr $origY+$interval*ceil(($t+1-$origY)/$interval)]} \
 	    {$y<$b} {set y [expr $y+$interval]} {
@@ -384,9 +404,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		set line [eval {$w create line} $linePts \
 			      {-width 0 -fill $gCol -tag $gTagSet}]
 		# Now to stick it behind anything that might be drawn inside
-		if {[llength $contents]} {
-		    $w lower $line [lindex $contents 0]
-		}
+		$w raise $line $stackOn
+		set stackOn $line
 	    }			    
     }
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
@@ -1185,6 +1204,27 @@ proc AdjustArrow {winId object factor} {
         lappend newArrow [expr $arrowVal*$factor]
     }
     $winId itemconfigure $object -arrowshape $newArrow
+}
+
+proc ZoomBitsIn {winId node factor invx invy} {
+#    ShowMessage debug info "ZBI $winId $node $factor $invx $invy" ok
+    foreach target [$winId find withtag $node] {
+	if {[string equal polygon [$winId type $target]] && \
+		[string match "*/background/*" [$winId gettags $target]]} {
+	    set reejun [$winId bbox $target]
+	}
+    }
+#ShowMessage debug info "Picked region $reejun" ok
+    eval {$winId addtag /squeeze/ enclosed} $reejun
+    $winId dtag $node /squeeze/
+# inefficient -- just for testing
+    set invx [Scale $winId $invx]
+    set invy [Scale $winId $invy]
+    if {$factor != 1.0} {
+	ZoomImage $winId /squeeze/ $factor
+    }
+    $winId move /squeeze/ $invx $invy
+    $winId dtag /squeeze/
 }
 
 # Move a window's display area to include all its contents

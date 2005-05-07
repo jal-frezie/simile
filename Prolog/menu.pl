@@ -10,7 +10,7 @@ interface of the application. It responds by:
 sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/5, change_size/3,
-	off_window/2, kill_everything/1]).
+	not_last_toplevel/1, off_window/2, kill_everything/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
 	state, backup, library, ame_gen, utility, ss_import,
@@ -60,8 +60,7 @@ redo_edit(Wid, Wids) :-
 check_exist(Wid) :-
 	Wid shows_model Mod,
 	(get_shape(Mod, internal_extent, Rect), !,
-	    output:tk_grow_canvas(Wid, Rect),
-	    redraw_window(Wid);
+	    output:tk_grow_canvas(Wid, Rect);
 	delete_window(Wid)).
 	
 menu_select(Seln) :-
@@ -721,7 +720,7 @@ select_all_in(Model, Way) :-
 	contains(Model, Bit),
 	    Bit is_of_sort box,
 	    appears(Bit),
-	    \+ at_def_con(Bit, Way),
+	    \+ event:at_def_con(Bit, Way),
 	    \+ Bit = Model,
 	    (Way = seln,
 		event:do_colours(Bit, on);
@@ -981,10 +980,10 @@ set_properties(Wid, Model) :-
 	     [Colour, Image, ImgPos, Nature],
 	      FatFactor = 1, UseCount = Count, NewHide = Hide), !;
 	    (\+ FatFactor = 1,
-		Win shows_model Model,
-		redraw_window(Win),
+		find_all_comps(Model, TopComp),
+		redisplay_border(TopComp),
 		fail;
-	    redisplay(Model))),
+	    redisplay_border(Model))),
 
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
@@ -1232,12 +1231,15 @@ off_window(Win, ExitIfKilled) :-
 		finish_progress_dialogue);
 	delete_window(Win)).
 
+not_last_toplevel(Win) :-
+	OtherWin shows_model Model,
+	\+ Win = OtherWin,
+	is_toplevel(Model).
+
 kill_everything(Model) :-
 	Win shows_model Model,
 	is_toplevel(Model),
-	(_OtherWin shows_model OtherModel,
-	    \+ OtherModel = Model,
-	    is_toplevel(OtherModel),
+	(not_last_toplevel(Win),
 	    ExitIfKilled = 0;
 	 ExitIfKilled = 1), !,
 	off_window(Win, ExitIfKilled),

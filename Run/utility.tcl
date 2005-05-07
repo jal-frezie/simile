@@ -152,7 +152,7 @@ proc load_c_stub {} {
 }
 
 proc AdjustCanvas {winId pt dir args} {
-    global noScroll
+#    global noScroll
     set tgt $winId.${dir}scroll
 # hide scrollbar if full size...even the most mundane procedure can act as
 # the trigger to unleash gibbering weirdness. Occasionally, a textbox will
@@ -160,14 +160,17 @@ proc AdjustCanvas {winId pt dir args} {
 # the scrollbar and thus shrinking its window will make it send another request
 # this time a full one, removing the scrollbar again and starting a loop. To
 # avoid this, do not display the scrollbar till two requests are received.
+
+# system disabled due to unlikelihood of using TclTk 8.5 before this is fixed
+
     if {[lindex $args 0]<0.01 && [lindex $args 1]>0.99} {
-	set noScroll($winId,$dir) 1
+#	set noScroll($winId,$dir) 1
 	pack forget $tgt
     } else {
-	if {[info exists noScroll($winId,$dir)]} {
-	    unset noScroll($winId,$dir)
-	    return
-	}
+#	if {[info exists noScroll($winId,$dir)]} {
+#	    unset noScroll($winId,$dir)
+#	    return
+#	}
 	if {[string match x $dir]} {
 	    set placing {-side bottom -after $winId.$pt}
 	} else {

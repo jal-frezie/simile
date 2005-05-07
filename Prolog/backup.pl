@@ -47,7 +47,12 @@ initialize_ring(Model) :-
 go_back(Model, Further) :-
 	retract(saved_state(Model, current, Current)),
 	wrap(Prev, Current),
+	internal_extent_jiggered(Model, Prev, LostExtents),
+	appearance_changes(Model, Prev, LostExtents, Redrawn),
+	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
 	reverse_changes(Model, Prev),
+	all(draw, adjust_submodel_internals, [build(LostExtents)]),
+	all(draw, redisplay_border, [build(Redrawn)]),
 	into_save_file(Model, undo),
 	assert(saved_state(Model, current, Prev)),
 	(saved_state(Model, first, Prev), !,
@@ -57,7 +62,12 @@ go_back(Model, Further) :-
 go_forward(Model, Further) :-
 	retract(saved_state(Model, current, Current)),
 	wrap(Current, Next),
+	internal_extent_jiggered(Model, Current, LostExtents),
+	appearance_changes(Model, Current, LostExtents, Redrawn),
+	all(draw, off, [build(Redrawn)]),
 	enact_changes(Model, Current),
+	all(draw, adjust_submodel_internals, [build(LostExtents)]),
+	all(draw, redisplay_border, [build(Redrawn)]),
 	into_save_file(Model, redo),
 	assert(saved_state(Model, current, Next)),
 	(saved_state(Model, last, Next), !,
@@ -294,6 +304,31 @@ enact_changes(Model, Slot) :-
 		database:assert(P),
 		fail;
 	true).
+
+appearance_changes(Model, Slot, Reshapes, Comps) :-
+	setof(Comp, Action^(saved_state(Model, Slot, Action),
+			    mentions_graphics(Action, Comp),
+			    \+ member(Comp-_, Reshapes)), Comps), !;
+	Comps = [].
+
+mentions_graphics(Action, Comp) :-
+	(Action = remove(Term);
+	    Action = add(Term)),
+	(Term = graphical_info(Comp, _Attr, _Val);
+	    Term = node_refinement(Comp, _Attr, _Val)).
+
+internal_extent_jiggered(Model, Slot, ExtChgs) :-
+	setof(Change, get_extent_change(Model, Slot, Change), ExtChgs), !;
+	ExtChgs = [].
+
+get_extent_change(Model, Slot, Comp-Was) :-
+	saved_state(Model, Slot, remove(graphical_info(Comp, What, _))),
+	saved_state(Model, Slot, add(graphical_info(Comp, What, _))),
+	member(What, [bounding_box, internal_extent]),
+	image:add_to_translation([0,0,1,1], Comp, Was).
+% world-class yuckiness -- if the border has been dragged, both attributes will
+% be changed so there will be two entries, but they will both be null
+% transforms so that's all right :-)
 
 clear_autosave(Model, Name) :-
 	(is_toplevel(Model),

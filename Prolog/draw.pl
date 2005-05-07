@@ -21,7 +21,7 @@ sicstus_module(draw,
 		update_color/1, shift_images/3,
 		give_focus/1, has_focus/1,
 		update_ability/5, scrub_run/2, kill_helpers/1,
-		display_mode/1, display_menu/1, off/1, off_all/1, 
+		display_mode/1, display_menu/1, off/1,
 		move_text/2, move_display/2, reroute_display/1,
 		redisplay/1, redisplay_border/1,
 		add_window/9, redraw_window/1, delete_window/1,
@@ -108,12 +108,6 @@ kill_recursive(Wid, Comp) :-
 	    kill_recursive(Wid, SubComp),
 	    fail;
 	kill_featured(Wid, Comp).
-
-off_all([]).
-
-off_all([Comp | Comps]) :-
-	off(Comp),
-	off_all(Comps).
 
 off(Comp) :-
 	find_relevant_windows(Comp, Wid, _, _),
@@ -379,9 +373,10 @@ expand_canvas(Parent, [NL, NT, NR, NB]) :-
 	    XT = NT, XB = NB,
 		grow_to_scale(NL, NR, BoxRatio/ModelRatio, XL, XR));
 	XL = NL, XR = NR, XT = NT, XB = NB),
+	add_to_translation([0,0,1,1], Parent, OldTrans),
 	change_shape(Parent, internal_extent, [XL, XT, XR, XB]),
 	adjust_toplevel_windows(Parent, [XL, XT, XR, XB]),
-	redisplay(Parent).
+	adjust_submodel_internals(Parent-OldTrans).
 
 grow_to_scale(OldLo, OldHi, Scale, NewLo, NewHi) :-
 	Middle is (OldHi + OldLo)/2,
@@ -394,6 +389,20 @@ adjust_toplevel_windows(Parent, NewRect) :-
 	fail;
 	true.
 
+adjust_submodel_internals(Model-OldTrans) :-
+/* imagine a component in the submodel that appears as a unit square. We work
+out what position that would have in the submodel coordinates, then work out
+where the same thing would appear after the boundary change, then tell TclTk
+to apply that transform to the submodel graphics...simple */
+	find_relevant_windows(Model, Win, _Depth, Trans),
+	translate([0,0,1,1], Trans, Step1),
+	translate(Step1, OldTrans, CoordsInSubmodel),
+	add_to_translation(Trans, Model, InTrans),
+	untranslate(CoordsInSubmodel, InTrans, [L, T, R, _B]),
+	FatChange is R-L,
+	zoom_bits_in(Win, Model, FatChange, [L, T]),
+	fail; redisplay_border(Model).
+	
 get_flash(Comp, Colour_scheme) :-
 	get_highlit_obj(Comp, Index), !,
 		member(Index-Colour_scheme, [0-select, 1-highlight, 2-target]);
