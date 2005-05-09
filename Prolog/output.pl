@@ -21,7 +21,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_component_from_gui/4, 
 	get_text/3, change_text_to/3, 
 	inject_graphics/2, translate_canvas_pl_names/2, save_canvas/4,
-	tk_grow_canvas/2, zoom_bits_in/4,
+	tk_grow_canvas/2, zoom_bits_in/5,
 			tk_display_area/1, tk_update_ability/5,  update_tk/0,
 	tk_display_mode/1, tk_display_menu/1,
 	tk_change_color/5, kill_featured/2, shift_images/3,
@@ -281,8 +281,8 @@ get_text(Wid, Comp, Text) :-
 tk_grow_canvas(Wid, [L, T, R, B]) :-
 	safe_tcl_eval(['ChangeRegion', Wid, L, T, R, B], _).
 
-zoom_bits_in(Win, Model, Scale, Trans) :-
-	safe_tcl_eval(['ZoomBitsIn', Win, Model, Scale | Trans], _).
+zoom_bits_in(Win, Model, Scale, [X, Y], Comps) :-
+	safe_tcl_eval(['ZoomBitsIn', Win, Model, Scale, X, Y | Comps], _).
 
 tk_display_area(Wid) :-
 	safe_tcl_eval(['DisplayArea', Wid], _).

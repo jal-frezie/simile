@@ -394,13 +394,15 @@ adjust_submodel_internals(Model-OldTrans) :-
 out what position that would have in the submodel coordinates, then work out
 where the same thing would appear after the boundary change, then tell TclTk
 to apply that transform to the submodel graphics...simple */
+        setof(Item, contains(Model, Item), ListPlus),
+	select(Model, ListPlus, InList),
 	find_relevant_windows(Model, Win, _Depth, Trans),
 	translate([0,0,1,1], Trans, Step1),
 	translate(Step1, OldTrans, CoordsInSubmodel),
 	add_to_translation(Trans, Model, InTrans),
 	untranslate(CoordsInSubmodel, InTrans, [L, T, R, _B]),
 	FatChange is R-L,
-	zoom_bits_in(Win, Model, FatChange, [L, T]),
+	zoom_bits_in(Win, Model, FatChange, [L, T], InList),
 	fail; redisplay_border(Model).
 	
 get_flash(Comp, Colour_scheme) :-

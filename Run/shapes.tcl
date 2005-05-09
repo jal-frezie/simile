@@ -1206,18 +1206,21 @@ proc AdjustArrow {winId object factor} {
     $winId itemconfigure $object -arrowshape $newArrow
 }
 
-proc ZoomBitsIn {winId node factor invx invy} {
+proc ZoomBitsIn {winId node factor invx invy args} {
+# Contents now passed from prolog, no need to look in region
 #    ShowMessage debug info "ZBI $winId $node $factor $invx $invy" ok
-    foreach target [$winId find withtag $node] {
-	if {[string equal polygon [$winId type $target]] && \
-		[string match "*/background/*" [$winId gettags $target]]} {
-	    set reejun [$winId bbox $target]
-	}
-    }
+#    foreach target [$winId find withtag $node] {
+#	if {[string equal polygon [$winId type $target]] && \
+#		[string match "*/background/*" [$winId gettags $target]]} {
+#	    set reejun [$winId bbox $target]
+#	}
+#    }
 #ShowMessage debug info "Picked region $reejun" ok
-    eval {$winId addtag /squeeze/ enclosed} $reejun
-    $winId dtag $node /squeeze/
-# inefficient -- just for testing
+#    eval {$winId addtag /squeeze/ enclosed} $reejun
+#    $winId dtag $node /squeeze/
+    foreach bit $args {
+	$winId addtag /squeeze/ withtag $bit
+    }
     set invx [Scale $winId $invx]
     set invy [Scale $winId $invy]
     if {$factor != 1.0} {
@@ -1382,7 +1385,7 @@ proc Customize {winId mode} {
     global looks done window_info custom
     
     set n $window_info($winId.canvas,top_node)
-    set looks(width) 200
+    set looks(width) 180
     
     set t [toplevel .customize -bd 4]
     wm transient $t $winId
@@ -1400,13 +1403,15 @@ proc Customize {winId mode} {
         }
     }
     
-    canvas $t.canvas -width [expr $looks(width) + 50] \
-            -height [expr $looks(width) + 50]
+    canvas $t.canvas -width [expr $looks(width) + 120] \
+            -height [expr $looks(width) + 60]
     set window_info($t.canvas,scale) 1
     set window_info($t.canvas,top_node) $n
-    set custom(showgrids,$t.canvas) 0
+    set custom(showgrids,$t.canvas) 1
     pack $t.canvas
-    
+    AddGrid $t.canvas [Gradient white -0.1 $t.canvas]  0 0 \
+	[expr $looks(width)+120] [expr $looks(width)+60]
+
     if {[string compare $object influence]} {
 	TitleFrame $t.text -text "Text: "
 	set text [$t.text getframe]
@@ -1544,7 +1549,8 @@ proc LoadLooks {t n target object} {
 	    -activebackground $looks($n,$object,text)
     }
     
-    set middle [expr $looks(width)/2 + 25]
+    set middlex [expr $looks(width)/2 + 60]
+    set middley [expr $looks(width)/2 + 30]
     
     if {[string compare $object text]} {
 	set g [$t.graphics getframe]
@@ -1557,10 +1563,10 @@ proc LoadLooks {t n target object} {
     
 	$g.objectsize.scale set $looks($n,$object,objectsize)
 	$g.lines.scale set $looks($n,$object,lines)
-	DoGraphics $t $target $middle $looks($n,$object,objectsize)
+	DoGraphics $t $target $middlex $middley $looks($n,$object,objectsize)
     } else {
 	$t.canvas delete sample
-        PutText $t.canvas [list $middle $middle] \
+        PutText $t.canvas [list $middlex $middley] \
                 text "sample" 100 normal "Sample text box"
     }
     $t.canvas configure -background $looks(windowColor)
@@ -1587,17 +1593,6 @@ proc ExtractFontData {font} {
 
 proc CopyLooks {t n object} {
     global looks
-    if {[string compare $object influence]} {
-        set looks($n,$object,font) [ResetFont $t]
-        if {[string compare $object text]} {
-	    UpdateOffsets $t $n $object
-	}
-        set looks($n,$object,textanchor) [GetTextAnchor $t]
-	set looks($n,$object,text) \
-	    [[$t.text getframe].backbox.col cget -activebackground]
-	set looks($n,$object,txtbd) $looks(txtbd)
-	set looks($n,$object,txtbg) $looks(txtbg)
-    }
     if {[string compare $object text]} {
 	set g [$t.graphics getframe]
 	foreach colour {outline fill incomplete} {
@@ -1612,82 +1607,96 @@ proc CopyLooks {t n object} {
 	set looks($n,$object,lines) [$g.lines.scale get]
 	set looks($n,compartment,lines) [$g.lines.scale get] ;# for generic sample
     }
+    if {[string compare $object influence]} {
+        set looks($n,$object,font) [ResetFont $t]
+        if {[string compare $object text]} {
+	    UpdateOffsets $t $n $object
+	}
+	set looks($n,$object,text) \
+	    [[$t.text getframe].backbox.col cget -activebackground]
+	set looks($n,$object,txtbd) $looks(txtbd)
+	set looks($n,$object,txtbg) $looks(txtbg)
+	if {[string equal flow $object]} {set object vflow}
+        set looks($n,$object,textanchor) [GetTextAnchor $t]
+    }
 }
 
-proc DoGraphics {box type middle size} {
+proc DoGraphics {box type middlex middley size} {
     global looks
     $box.canvas delete sample
 
     switch -regexp $type {
         compartment|generic {
-            set l [expr $middle - 2*$size/5]
-            set r [expr $middle + 2*$size/5]
-            set t [expr $middle - 3*$size/10]
-            set b [expr $middle + 3*$size/10]
+            set l [expr $middlex - 2*$size/5]
+            set r [expr $middlex + 2*$size/5]
+            set t [expr $middley - 3*$size/10]
+            set b [expr $middley + 3*$size/10]
 	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } state {
-            set l [expr $middle - 3*$size/5]
-            set r [expr $middle + 3*$size/5]
-            set t [expr $middle - 2*$size/10]
-            set b [expr $middle + 2*$size/10]
+            set l [expr $middlex - 3*$size/5]
+            set r [expr $middlex + 3*$size/5]
+            set t [expr $middley - 2*$size/10]
+            set b [expr $middley + 2*$size/10]
 	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } submodel {
-            set l [expr $middle - 80]
-            set r [expr $middle + 80]
-            set t [expr $middle - 60]
-            set b [expr $middle + 60]
+            set l [expr $middlex - 90]
+            set r [expr $middlex + 90]
+            set t [expr $middley - 60]
+            set b [expr $middley + 60]
 	    PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
 		none none 0 0 white 100 normal "sample"
 	} flow {
-            set l [expr $middle - $size/4]
-            set r [expr $middle + $size/4]
-            set t [expr $middle - $size/8]
-            set b [expr $middle + $size/8]
+            set l [expr $middlex - $size/4]
+            set r [expr $middlex + $size/4]
+            set t [expr $middley - $size/8]
+            set b [expr $middley + $size/8]
             PutBowTie $box.canvas $l $t $r $b 100 {} normal "sample"
-            PutFatArrow $box.canvas "25 [expr $middle-25] $middle \
-                    [expr $middle - 25] $middle [expr $middle + 25] \
-                    [expr 2*$middle - 25] [expr $middle + 25]" \
+            PutFatArrow $box.canvas "30 [expr $middley-30] $middlex \
+                    [expr $middley - 30] $middlex [expr $middley + 30] \
+                    [expr 2*$middlex - 30] [expr $middley + 30]" \
                     100 normal "sample"
         } variable {
-            set l [expr $middle - 3*$size/20]
-            set r [expr $middle + 3*$size/20]
-            set t [expr $middle - 3*$size/20]
-            set b [expr $middle + 3*$size/20]
+            set l [expr $middlex - 3*$size/20]
+            set r [expr $middlex + 3*$size/20]
+            set t [expr $middley - 3*$size/20]
+            set b [expr $middley + 3*$size/20]
 	    PutCrossedCirc $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } channel {
-            set l [expr $middle - 3*$size/10]
-            set r [expr $middle + 3*$size/10]
-            set t [expr $middle - 3*$size/10]
-            set b [expr $middle + 3*$size/10]
+            set l [expr $middlex - 3*$size/10]
+            set r [expr $middlex + 3*$size/10]
+            set t [expr $middley - 3*$size/10]
+            set b [expr $middley + 3*$size/10]
 	    PutShape $box.canvas $l $t $r $b condition 100 normal "sample"
-        } influence {PutThinArrow $box.canvas "25 $middle $middle \
-                    [expr $middle-25] [expr 2*$middle - 25] $middle" \
+        } influence {PutThinArrow $box.canvas "30 $middley $middlex \
+                    [expr $middley-30] [expr 2*$middlex - 30] $middley" \
                     100 {} normal "sample"
         } relation {
-	    set b $middle
-	    PutRelation $box.canvas "25 $middle $middle \
-                    [expr $middle-25] [expr 2*$middle - 25] $middle" \
+	    set b $middley
+	    PutRelation $box.canvas "30 $middley $middlex \
+                    [expr $middley-30] [expr 2*$middlex - 30] $middley" \
 		100 normal "sample"
         }
     }
 
     if {[string compare $type influence]} {
 # side to put caption on -- this is fixed for now
+	set capt "Sample $type"
 	switch $type {
 	    submodel {
 		set xbase $l
 		set ybase $t
 	    } flow {
 		set xbase $r
-		set ybase $middle
+		set ybase $middley
+		set type vflow ;# text offset as for bowtie on vertical section
 	    } default {
-		set xbase $middle
+		set xbase $middlex
 		set ybase $b
 	    }
 	}
 
         PutText $box.canvas [list $xbase $ybase] \
-                $type "sample movable" 100 normal "Sample $type"
+                $type "sample movable" 100 normal $capt
         set looks(cheat) [$box.canvas coords [GetCaptionItem $box.canvas sample]]
         $box.canvas bind movable <Button-1> {SampleMark %x %y %W}
         $box.canvas bind movable <B1-Motion> {SampleMove %x %y %W}
@@ -1779,7 +1788,8 @@ proc ZotObjectSize {t n type size} {
     global looks
     
 
-    set middle [expr $looks(width)/2 + 25]
+    set middlex [expr $looks(width)/2 + 60]
+    set middley [expr $looks(width)/2 + 30]
 #    if {[string match generic $type]} {
 #        set useLooks compartment
 #    } else {
@@ -1788,11 +1798,11 @@ proc ZotObjectSize {t n type size} {
     
     CopyLooks $t $n $useLooks
     if {[string compare text $type]} {
-	DoGraphics $t $useLooks $middle \
+	DoGraphics $t $useLooks $middlex $middley \
 	    [[$t.graphics getframe].objectsize.scale get]
     } else {
 	$t.canvas delete sample
-        PutText $t.canvas [list $middle $middle] \
+        PutText $t.canvas [list $middlex $middley] \
                 text "sample" 100 normal "Sample text box"
     }
 }
@@ -1800,6 +1810,7 @@ proc ZotObjectSize {t n type size} {
 proc UpdateOffsets {t n type} {
     global looks
     set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
+    if {[string equal flow $type]} {set type vflow}
     set looks($n,$type,xoffset) [expr $looks($n,$type,xoffset) + \
             [lindex $offsets 0] - [lindex $looks(cheat) 0]]
     set looks($n,$type,yoffset) [expr $looks($n,$type,yoffset) + \
