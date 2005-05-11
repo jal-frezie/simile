@@ -315,7 +315,8 @@ mentions_graphics(Action, Comp) :-
 	(Action = remove(Term);
 	    Action = add(Term)),
 	(Term = graphical_info(Comp, _Attr, _Val);
-	    Term = node_refinement(AuxComp, _Attr, _Val),
+	    (Term = node_refinement(AuxComp, _Attr, _Val);
+		Term = arc_info(AuxComp, complete, _Val)),
 	    get_host(AuxComp, Comp)).
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
