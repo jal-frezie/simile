@@ -184,6 +184,7 @@ check_level_for_reds(Submodel) :-
 	\+ image:draws_complete(VisEntity),
 	caption_for(Submodel, OuterText),
 	caption_for(VisEntity, RedText),
+	menu:select_all_in(Submodel, base), /* make sure the red shows */
 	raise_exception(unspecified(OuterText, RedText));
 	Parent has_part Submodel,
 	remove_redundant_equivs(Submodel, Equivs),
