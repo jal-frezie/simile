@@ -181,19 +181,21 @@ switch $tcl_platform(platform) {
 
 switch $interface {
     pipe {
-    set whatCalled [file rootname [file tail [info nameofexecutable]]]
-    set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
-    source ../Run/toolbox.tcl
-    source ../Run/prolog.tcl
-    if {[string equal SimileScript $whatCalled]} {
-	package require SimileAutoObj
-	foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}
-	console title SimileScript
-	console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}
-	console eval {puts -nonewline "Welcome to Simile Scripting\n% "}
-	console show
-    }
+	set whatCalled [file rootname [file tail [info nameofexecutable]]]
+	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
+	source ../Run/toolbox.tcl
+	source ../Run/prolog.tcl
+# next bit was to enable same file as simile.exe to use as script launcher
+# Abandoned because it didn't start the COM interface properly
+#    if {[string equal SimileScript $whatCalled]} {
+#	package require SimileAutoObj
+#	foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}
+#	console title SimileScript
+#	console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}
+#	console eval {puts -nonewline "Welcome to Simile Scripting\n% "}
+#	console show
+#    }
     } dll {
-    exec $SIMILE_PATH/$tgt$execExtn &
+	exec $SIMILE_PATH/$tgt$execExtn &
     }
 }
