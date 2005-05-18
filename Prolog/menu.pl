@@ -249,6 +249,7 @@ menu_handle(_Win, file, new_toplevel) :-
 
 menu_handle(_Win, open_toplevel, Name) :-
 	m_update:make_desktop(Parent, Win),
+	scrub_autosave(Parent),
 	stick_model_in(Win, Parent, Name, reopen).
 
 menu_handle(Win, file, open) :-
@@ -1223,11 +1224,12 @@ off_window(Win, ExitIfKilled) :-
 	    /* do not bother to delete model if closing down afterwards --
 	    just do the minimum to exit cleanly */
 	    (ExitIfKilled = 1, !,
-	    close_exec(Model),
-	     delete_window(Win);
-	    start_progress_dialogue(Win),
+		close_exec(Model),
+		delete_window(Win);
+	     start_progress_dialogue(Win),
 		remove_model(Win, Model),
 		delete_tree(Model),
+		scrap_move,
 		finish_progress_dialogue);
 	delete_window(Win)).
 

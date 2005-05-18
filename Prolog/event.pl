@@ -1674,8 +1674,8 @@ unclick_obj :-
 
 unclick_obj :- 
 	get_mode(select), /* was move */
+	get_moving_obj(Submodel),
 	(get_phase(moving_border(_)), !,
-	    get_moving_obj(Submodel),
 	    get_shape(Submodel, internal_extent, NewSize),
 	    adjust_toplevel_windows(Submodel, NewSize);
 	true),

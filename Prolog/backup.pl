@@ -4,7 +4,8 @@
 %%%                                                                         %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-sicstus_module(backup, [initialize_ring/1, finish_move/2, restart_move/0,
+sicstus_module(backup, [initialize_ring/1,
+			scrap_move/0, finish_move/2, restart_move/0,
 			get_save_status/2, set_save_status/2, save_allowed/2,
 			go_back/2, go_forward/2, make_auto_name/3,
 			new_autosave/2, clear_autosave/2, check_autosave/4,
@@ -29,6 +30,11 @@ backup_states(32).
 
 :- dynamic(saved_state/3).
 
+scrap_move :-
+	fetch_update(_),
+	    fail;
+	true.
+
 initialize_ring(Model) :-
 	retractall(saved_state(Model, _,_)),
 
@@ -38,11 +44,10 @@ initialize_ring(Model) :-
 		assert(saved_state(record_even, P)),
 		fail;
 */
-	(fetch_update(_),
-		fail;
+        scrap_move,
 	assert(saved_state(Model, first, 1)),
 	assert(saved_state(Model, last, 1)),
-	assert(saved_state(Model, current, 1))).
+	assert(saved_state(Model, current, 1)).
 
 go_back(Model, Further) :-
 	retract(saved_state(Model, current, Current)),
