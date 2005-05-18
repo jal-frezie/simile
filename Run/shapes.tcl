@@ -266,6 +266,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 # the model, and put it just in front of that.
 
     set tgts [$w find overlapping $ml $v6 $ml $v6] ;# any point on the border
+    set stackOn {}
     foreach tgt $tgts {
 	if {[string match "*/background/*" [$w gettags $tgt]]} {
 	    set stackOn [ExtractPrologName $w $tgt]

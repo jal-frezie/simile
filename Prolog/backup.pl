@@ -326,6 +326,8 @@ internal_extent_jiggered(Model, Slot, ExtChgs) :-
 get_extent_change(Model, Slot, Comp-Was) :-
 	saved_state(Model, Slot, remove(graphical_info(Comp, What, _))),
 	saved_state(Model, Slot, add(graphical_info(Comp, What, _))),
+% do not redraw contents if parent changed -- offset will be wrong
+	\+ saved_state(Model, Slot, add(subsystem(_, Comp))),
 	member(What, [bounding_box, internal_extent]),
 	image:add_to_translation([0,0,1,1], Comp, Was).
 % world-class yuckiness -- if the border has been dragged, both attributes will
