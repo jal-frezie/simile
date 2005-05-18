@@ -86,7 +86,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	FnsUsed = SubFnsUsed),
 	(/* model can go incomplete then complete again without change
 	 so check all */
-	     \+ check_level_for_reds(Parent),
+	     \+ check_level_for_reds(TopNode, Parent),
 	    Parent has_model_refinement c_new of 0,
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1,
@@ -176,13 +176,13 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(Node), unify(Step), unify(ChangeTop),
 	     merge_lists(LocalFnsUsed, []), unify(KeepDir)]).
 
-check_level_for_reds(Submodel) :-
+check_level_for_reds(TopNode, Submodel) :-
 	find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
 	\+ is_ghost(VisEntity),
 	\+ image:draws_complete(VisEntity),
-	caption_for(Submodel, OuterText),
+	abs_path_name(Submodel, TopNode, OuterText),
 	caption_for(VisEntity, RedText),
 	menu:select_all_in(Submodel, base), /* make sure the red shows */
 	raise_exception(unspecified(OuterText, RedText));
