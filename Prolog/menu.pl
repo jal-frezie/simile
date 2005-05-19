@@ -1324,7 +1324,7 @@ do_save(Win, Model, New_name) :-
 	clear_autosave(Model, Name),
 	update_ability(Model, save, file, 'Save', 0),
 	mark_model_danger(Model, safe)),
-        finish_progress_dialogue.
+        finish_progress_dialogue, !. /* do not finish progress box 2wice */
 
 too_big_for_edn(Model) :-
 	state:get_edition_and_limit(Edn, Limit),
@@ -1397,11 +1397,9 @@ save_isolated(Name, Model, Date, SelnOnly) :-
 	    Done = 1;
 	true),
 	all(event, do_colours, [build(TempSels), unify(off)]),
-	/* If not a toplevel model, restart_move will recreate any cross-border
-	links removed by cutout. Otherwise it is unnecessary and can mess
-	things up when exiting Simile. */
-	(is_toplevel(Model), !;
-	    restart_move),
+	/* restart_move will recreate any cross-border links removed by cutout.
+	If exiting, move will have been scrapped after old deletes */
+	restart_move,
 	retract(suspend_display),
 	nonvar(Done). /* fails if save failed */
 
