@@ -1556,7 +1556,11 @@ proc LoadLooks {t n target object} {
     if {[string compare $object text]} {
 	set g [$t.graphics getframe]
 	foreach flash {outline fill incomplete} {
-	    $g.setcolours.$flash configure -activebackground $looks($n,$object,$flash)
+	    set attack $looks($n,$object,$flash)
+	    if {![llength $attack]} {
+		set attack \#f2f2f2
+	    }
+	    $g.setcolours.$flash configure -activebackground $attack
 	}
 	foreach flash {select highlight target} {
 	    $g.flashcolours.$flash configure -activebackground $looks($n,$object,$flash)
@@ -1599,6 +1603,9 @@ proc CopyLooks {t n object} {
 	foreach colour {outline fill incomplete} {
 	    set looks($n,$object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
+	    if {[string match \#f2f2f2 $looks($n,$object,$colour)]} {
+		set looks($n,$object,$colour) {}
+	    }
 	}
 	foreach colour {select highlight target} {
 	    set looks($n,$object,$colour) \
@@ -1780,9 +1787,11 @@ proc ZotFont { t param } {
 proc ZotColor {t n role type} {
     set newColour [tk_chooseColor -initialcolor \
             [$role cget -activebackground]]
-    $role configure -activebackground $newColour
-    CopyLooks $t $n $type
-    ResetColours $t.canvas $type {} normal sample
+    if {[llength $newColour]} {
+	$role configure -activebackground $newColour
+	CopyLooks $t $n $type
+	ResetColours $t.canvas $type {} normal sample
+    }
 }
 
 proc ZotObjectSize {t n type size} {
