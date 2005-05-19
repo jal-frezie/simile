@@ -939,15 +939,16 @@ proc CanvasEditBind { c } {
 
 proc FixBackBox {c textItem} {
     set nid [ExtractPrologName $c $textItem]
-    scan [$c bbox $textItem] "%g %g %g %g" l t r b
-    foreach backBox [$c find withtag $nid] {
-    if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
-        if {[string equal line [$c type $backBox]]} {
-        $c coords $backBox $r $t $l $t $l $b $r $b $r $t
-        } else {
-        $c coords $backBox $l $t $r $b
-        }
-    }
+    if {[scan [$c bbox $textItem] "%g %g %g %g" l t r b]==4} {
+	foreach backBox [$c find withtag $nid] {
+	    if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
+		if {[string equal line [$c type $backBox]]} {
+		    $c coords $backBox $r $t $l $t $l $b $r $b $r $t
+		} else {
+		    $c coords $backBox $l $t $r $b
+		}
+	    }
+	}
     }
 }
 
