@@ -109,6 +109,7 @@ set msgs(zoomout) "Zoom out"
 
 set help(g\\+\\+) "run/index.htm"
 set help(top) "index.htm"
+set help(license) "index.htm"
 set help(execution) "run/index.htm"
 set help(fill_equation) "equations/dialogue.htm"
 set help(expiry) "coviewexpiry.htm"

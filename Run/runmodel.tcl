@@ -577,7 +577,8 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
     set custom(prefDir) [file dirname $nSimtmpdir]
 #    set env(LD_LIBRARY_PATH) [file dirname [info library]]
 #    ShowMessage debug info $env(LD_LIBRARY_PATH) ok
-    load_c_stub
+    load_c_stub_1
+    load_c_stub_2
 
     set runState($nMyNode,modelRunning) 0
     LoadIconImages

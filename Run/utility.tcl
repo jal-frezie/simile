@@ -126,10 +126,20 @@ proc NetOpen {name way} {
 # it's being debugged, once it's right we'll just load it. This component
 # itself loads dlls for the actual models as they are built.
 
-proc load_c_stub {} {
+proc load_c_stub_1 {} {
+    global env tcl_platform userinfo
+    scan [info tclversion] {%d.%d} MAJ MIN
+    set onUnix [string match unix $tcl_platform(platform)]
+    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
+    if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
+	error "Could not find a stub for Simile $userinfo(Version) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
+    }
+}
+
+proc load_c_stub_2 {} {
     package require Trf
 
-    global tcl_platform env userinfo ;# last needed in stub
+    global env userinfo ;# last needed in stub
     # On startup, check run count and offer registration if 0
     if [catch {set userinfo(name) $env(licensee_name)}] {
         set userinfo(name) " "
@@ -137,16 +147,9 @@ proc load_c_stub {} {
     if [catch {set userinfo(corp) $env(licensee_corp)}] {
         set userinfo(corp) " "
     }
-    set userinfo(Version) $env(SIMILE_VERSION)
     
     set userinfo(license_code) \
             [join [lrange [split $env(license_code) =] 1 end] =]
-    scan [info tclversion] {%d.%d} MAJ MIN
-    set onUnix [string match unix $tcl_platform(platform)]
-    set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
-    if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-	error "Could not find a stub for Simile $env(SIMILE_VERSION) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
-    }
     loadcommands
     randseed [clock scan now]
 }

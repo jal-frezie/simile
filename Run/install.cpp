@@ -47,31 +47,14 @@ FINDABLE EXPORT int __stdcall license_check(
 		const char* pInstallDir, char* pSupportDir,
 		char* pUser, char* pCompany, char* pSerial,
 		char* pAdditionsl) {
+	char destfile[256];
+	FILE *recept;
 #ifdef SIM_LICENSED
 	if (!right_license(pUser, pSerial)) {
         	MessageBox (NULL, "You have entered the wrong license code for your name, organization and Simile version. This installation will now terminate. Please try again, ensuring you have the correct license code.", "Feedback", MB_OK);
 		return(0);
 	}
 #endif
-	return(1);
-}
-
-// prototype, __stdcall seems to need one 
-FINDABLE EXPORT int __stdcall info_copy(
-		HWND, HWND, const char*, char*,
-		char*, char*, char*, char*);
-
-// This writes a wee file with the supplied user name and company, and our own version
-// number. It is called from the installation procedure.
-
-FINDABLE EXPORT int __stdcall info_copy(
-		HWND MainHandle, HWND DialogHandle,
-		const char* pInstallDir, char* pSupportDir,
-		char* pUser, char* pCompany, char* pSerial,
-		char* pAdditionsl) {
-	char destfile[256];
-	FILE *recept;
-
 	strcpy(destfile, pInstallDir);
 	strcat(destfile, "\\Run\\userinfo.txt");
 	recept = fopen(destfile, "w");
@@ -101,5 +84,22 @@ FINDABLE EXPORT int __stdcall info_copy(
 	fputs(SIMILE_VERSION, recept);
 	fputs("\n", recept);
 	fclose(recept);
+	return(1);
+}
+
+// prototype, __stdcall seems to need one 
+FINDABLE EXPORT int __stdcall info_copy(
+		HWND, HWND, const char*, char*,
+		char*, char*, char*, char*);
+
+// This writes a wee file with the supplied user name and company, and our own version
+// number. It is called from the installation procedure.
+
+FINDABLE EXPORT int __stdcall info_copy(
+		HWND MainHandle, HWND DialogHandle,
+		const char* pInstallDir, char* pSupportDir,
+		char* pUser, char* pCompany, char* pSerial,
+		char* pAdditionsl) {
+
 	return(1);
 }

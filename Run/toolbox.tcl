@@ -712,6 +712,7 @@ proc ControlDraw {prologVersion} {
         set env(license_code) default_license=fa4c55b7105171de89d44c78a33cdc28
     }
     
+    set userinfo(Version) $env(SIMILE_VERSION)
     set sendvars(simV) $env(SIMILE_VERSION)
     set sendvars(proV) $prologVersion
     
@@ -746,8 +747,8 @@ proc ControlDraw {prologVersion} {
     
     if {[file exists $custom(prefDir)/.version]} {
         set UserStream [NetOpen $custom(prefDir)/.version r]
-        gets $UserStream userinfo(oldname)
-        gets $UserStream userinfo(oldcorp)
+        gets $UserStream userinfo(name)
+        gets $UserStream userinfo(corp)
         gets $UserStream userinfo(oldVersion)
         gets $UserStream userinfo(done)
         close $UserStream
@@ -756,15 +757,42 @@ proc ControlDraw {prologVersion} {
         set userinfo(done) 0
     }
 
-    if {[string match Linux $tcl_platform(os)]} {
-    set shank ../System/lib/lib5d.so
-    if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-        exec g++ -c -O -fPIC -I. ./shank.cpp
-        exec g++ -shared -o $shank shank.o
+    load_c_stub_1
+    if {![string match Windows $tcl_platform(os)]} {
+# Windows installers can ask the user for a license code and stick it in the
+# userinfo.txt. On other platforms we have to DIY.
+	if {int($userinfo(Version))!=int($userinfo(oldVersion)) || \
+		[string equal {license=<insert license code here>} \
+		     $env(license_code)]} {
+	    if {![DoUserDialogue]} {
+		error "No license supplied"
+	    }
+	    set env(licensee_name) $userinfo(name)
+	    set env(licensee_corp) $userinfo(corp)
+	    set env(license_code) license=$userinfo(license_code)
+	    set installTime [clock seconds]
+	    set env(install_time) "installtime=$installTime :: [clock format $installTime -gmt true]"
+
+	    set UserStream [open ../Run/userinfo.txt w]
+	    puts $UserStream $env(prologId)
+	    puts $UserStream $env(interfaceId)
+	    puts $UserStream $env(install_time)
+	    puts $UserStream $env(license_code)
+	    puts $UserStream $userinfo(name)
+	    puts $UserStream $userinfo(corp)
+	    puts $UserStream $userinfo(Version)
+	    close $UserStream
+	}
     }
+    if {[string match Linux $tcl_platform(os)]} {
+	set shank ../System/lib/lib5d.so
+	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
+	    exec g++ -c -O -fPIC -I. ./shank.cpp
+	    exec g++ -shared -o $shank shank.o
+	}
     }
     # loading stub sets license entries
-    load_c_stub
+    load_c_stub_2
     
     # substitutes for license entries if we want to avoid loading stub
     #set userinfo(final_expiry) 0

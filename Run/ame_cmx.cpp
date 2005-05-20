@@ -1443,22 +1443,7 @@ FINDABLE int killmodelCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
-FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
-		int argc, Tcl_Obj *CONST argv[]) {
-  if (argc != 1) {
-    Tcl_WrongNumArgs(interp, 1, argv, "");
-    return TCL_ERROR;
-  }
-
-  /* Data about version etc held in dll for safety and convenience:
-     these will become globals because we are not in the scope of a
-     procedure */
-  Tcl_SetVar2(interp, "userinfo", "edn", edition, 0);
-  Tcl_SetVar2Ex(interp, "userinfo", "final_expiry", 
-		Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
-  Tcl_SetVar2Ex(interp, "userinfo", "days_after_install", 
-		Tcl_NewIntObj(SIM_DAYS_AFTER_INSTALL), 0);
-
+int licenseRight (Tcl_Interp *interp) {
   /* If this version requires a license then check we have the right
      one...
 
@@ -1475,11 +1460,11 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   if (dataCombo) {
     dataCombo = Tcl_DuplicateObj(dataCombo);
   } else {
-    return TCL_ERROR;
+    return -1;
   }
   Tcl_AppendStringsToObj(dataCombo, "%", edition, "^", secret, NULL);
   if (my_hash(interp, dataCombo) == TCL_ERROR) {
-    return TCL_ERROR;
+    return -1;
   }
 #else
   if (Tcl_VarEval(interp, "::md5::md5 $userinfo(name)%$userinfo(edn)^", 
@@ -1487,7 +1472,7 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
     /* raise another error so user doesnt see secret in trace */
     Tcl_VarEval(interp, "::md5::md5 $userinfo(name)%$userinfo(edn)^<secret>", 
 		NULL);
-    return TCL_ERROR;
+    return -1;
   }
 #endif
 
@@ -1496,9 +1481,33 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 	     Tcl_GetStringResult(interp))) {
 //    Tcl_AppendResult(interp, " is license code", (char *)NULL);
 //    return TCL_ERROR;
-    crash(interp, "program");
+    return 0;
   }
 #endif
+  return 1;
+}
+
+FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp, 
+		int argc, Tcl_Obj *CONST argv[]) {
+  if (argc != 1) {
+    Tcl_WrongNumArgs(interp, 1, argv, "");
+    return TCL_ERROR;
+  }
+
+  /* Data about version etc held in dll for safety and convenience:
+     these will become globals because we are not in the scope of a
+     procedure */
+  Tcl_SetVar2Ex(interp, "userinfo", "final_expiry", 
+		Tcl_NewLongObj(SIM_FINAL_EXPIRY), 0);
+  Tcl_SetVar2Ex(interp, "userinfo", "days_after_install", 
+		Tcl_NewIntObj(SIM_DAYS_AFTER_INSTALL), 0);
+  switch (licenseRight(interp)) {
+  case -1:
+    return TCL_ERROR;
+  case 0:
+    crash(interp, "program");
+  }
+
   Tcl_CreateObjCommand(interp, "loadmodel", loadmodelCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
@@ -1576,6 +1585,18 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
  
+FINDABLE int testlicenseCmd(ClientData clientData, Tcl_Interp *interp, 
+			    int argc, Tcl_Obj *CONST argv[]) {
+  int answer;
+  answer = licenseRight(interp);
+  if (answer == -1) {
+    return TCL_ERROR;
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(answer));
+    return TCL_OK;
+  }
+}
+
 /*
  * The following declarations refer to internal Tk routines.  These
  * interfaces are available for use, but are not supported.
@@ -1616,6 +1637,9 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   proc_pointers_for_shank(get_tcl_value_pointer,
 			  interact_gui, showMess,
 			  simileVersion, &connectDataPtr, &connCountPtr);
+  Tcl_SetVar2(interp, "userinfo", "edn", edition, 0);
+  Tcl_CreateObjCommand(interp, "c_testlicense", testlicenseCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   Tcl_CreateObjCommand(interp, "loadcommands", loadcmdsCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   

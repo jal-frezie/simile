@@ -98,11 +98,9 @@ switch $tcl_platform(platform) {
     }
 }
 
-
-
 set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-gets $UserStream prologId
-gets $UserStream interfaceId
+gets $UserStream env(prologId)
+gets $UserStream env(interfaceId)
 gets $UserStream env(install_time)
 gets $UserStream env(license_code)
 gets $UserStream env(licensee_name)
@@ -150,8 +148,8 @@ update
 # files in -- must be a subfolder of the installation folder
 cd $SIMILE_PATH/Run
 
-set prolog [lindex [split $prologId =] 1]
-set interface [lindex [split $interfaceId =] 1]
+set prolog [lindex [split $env(prologId) =] 1]
+set interface [lindex [split $env(interfaceId) =] 1]
 
 # tk_messageBox -title debug -icon info \
 #   -message "TCL library is [info library]\n \

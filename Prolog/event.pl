@@ -308,13 +308,15 @@ check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
 			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).
 	    
 adjust_edit_menu(Wid, Comp, Point) :-
-	retractall(menu_submodel_will_be(Wid, _,_)),
 	assert(menu_submodel_will_be(Wid, Comp, Point)).
 
 bar_edit_menu(Wid) :-
-	(menu_submodel_will_be(Wid, Comp, Point), !;
-	restore_edit_menu(Wid),
-	    menu_submodel_will_be(Wid, Comp, Point)),
+	(retract(menu_submodel_will_be(Wid, Comp, Point)), !;
+	Wid shows_model Comp,
+	    get_shape(Comp, internal_extent, [L,T,R,B]),
+	    X is (L+R)/2,
+	    Y is (T+B)/2,
+	    Point = [X,Y]),
 	retractall(menu_submodel_is(_, _)),
 	assert(menu_submodel_is(Comp, Point)),
 	(Comp = Point, !,
@@ -332,16 +334,6 @@ bar_edit_menu(Wid) :-
 	update_ability(Model, none, 'edit.add', '{Membership control}',
 		       CanAddNode),
 	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode).
-
-/* restore_edit_menu makes sure it will be appropriate for a menubar
-selection, i.e., top submodel and corner position */
-restore_edit_menu(Wid) :-
-	retractall(menu_submodel_will_be(Wid, _,_)),
-	Wid shows_model Model,
-	get_shape(Model, internal_extent, [L,T,R,B]),
-	X is (L+R)/2,
-	Y is (T+B)/2,
-	assert(menu_submodel_will_be(Wid, Model, [X,Y])).
 
 click_on([Xpt, Ypt], Poss_start, _CD) :-
 	get_mode(add),
@@ -1585,7 +1577,6 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
-	restore_edit_menu(Wid),
 	get_mode(select),
 	    find_current(Wid),
 	    get_phase(rubberband), !, /* used to call proc below */
@@ -1883,10 +1874,7 @@ kill_primitive(Target) :-
 	    fail.
 
 embrace(Wid, Obj) :-
-	restore_edit_menu(Wid),
-	menu_submodel_will_be(Wid, Comp, Point),
-	retractall(menu_submodel_is(_, _)),
-	assert(menu_submodel_is(Comp, Point)),
+	Wid shows_model Comp,
 	set_selection_abilities(Comp),
 	(Obj = 0, !;
 	give_focus(Obj) /* ,
