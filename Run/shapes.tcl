@@ -1475,6 +1475,9 @@ proc Customize {winId mode} {
 	    pack $graphics.setcolours.$flashType -side left
 	}
 	pack $graphics.setcolours
+	pack [frame $graphics.trwhite]
+	pack [checkbutton $graphics.trwhite.chk -variable looks(trwhite)] -side left
+	pack [label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
 	
 	frame $graphics.flashcolours
 	foreach flashType {select highlight target} {
@@ -1558,7 +1561,7 @@ proc LoadLooks {t n target object} {
 	foreach flash {outline fill incomplete} {
 	    set attack $looks($n,$object,$flash)
 	    if {![llength $attack]} {
-		set attack \#f2f2f2
+		set attack white
 	    }
 	    $g.setcolours.$flash configure -activebackground $attack
 	}
@@ -1603,7 +1606,8 @@ proc CopyLooks {t n object} {
 	foreach colour {outline fill incomplete} {
 	    set looks($n,$object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
-	    if {[string match \#f2f2f2 $looks($n,$object,$colour)]} {
+	    if {[string equal [Desystematize white] [Desystematize $looks($n,$object,$colour)]] && \
+		    $looks(trwhite)} {
 		set looks($n,$object,$colour) {}
 	    }
 	}
