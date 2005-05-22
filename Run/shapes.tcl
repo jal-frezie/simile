@@ -1476,7 +1476,7 @@ proc Customize {winId mode} {
 	}
 	pack $graphics.setcolours
 	pack [frame $graphics.trwhite]
-	pack [checkbutton $graphics.trwhite.chk -variable looks(trwhite)] -side left
+	pack [checkbutton $graphics.trwhite.chk -variable looks($n,$object,trwhite)] -side left
 	pack [label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
 	
 	frame $graphics.flashcolours
@@ -1607,7 +1607,7 @@ proc CopyLooks {t n object} {
 	    set looks($n,$object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
 	    if {[string equal [Desystematize white] [Desystematize $looks($n,$object,$colour)]] && \
-		    $looks(trwhite)} {
+		    $looks($n,$object,trwhite)} {
 		set looks($n,$object,$colour) {}
 	    }
 	}
