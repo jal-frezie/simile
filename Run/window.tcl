@@ -332,9 +332,12 @@ proc ReleaseObj {winId xco yco} {
 # edited, if focusing on the window causes a cursor to start flashing in one.
 
 proc EmbraceObj {winId} {
-    set nodeId [GetEdit $winId]
-    if {[llength $nodeId]} {
-    prolog [list tk_embrace( '$winId' , $nodeId )]
+    global window_info
+    if {![string equal $winId $window_info(current)]} {
+	set nodeId [GetEdit $winId]
+	if {[llength $nodeId]} {
+	    prolog [list tk_embrace( '$winId' , $nodeId )]
+	}
     }
 }
 
@@ -404,6 +407,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     #   [winfo screenheight $winName]
     
     AddMainMenu $winName $topNode [expr $wr-$wl] $isTopLevel $args
+    set window_info(current) $c
     AddCanvasBindings $c $topNode
 
     ####### Model window extensions
@@ -1851,7 +1855,7 @@ proc AddDetailMenu {winId fm3 initVals} {
             $lastmenu add radio -label "$depth levels" \
                     -variable rads($winId,$cat) -value $depth \
                     -command "WindowDetail $winId $cat $depth 1"
-            
+            
         }
         $lastmenu add radio -label "All" -variable rads($winId,$cat) \
                 -value 32 -command "WindowDetail $winId $cat 32 1"
