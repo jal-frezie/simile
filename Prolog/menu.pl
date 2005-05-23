@@ -13,7 +13,7 @@ sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
 	not_last_toplevel/1, off_window/2, kill_everything/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
-	state, backup, library, ame_gen, utility, ss_import,
+	state, backup, library, ame_gen, utility, ss_import, m_class,
 	library(lists), library(ordsets)]).
 
 :- dynamic(running/1).
@@ -368,7 +368,9 @@ menu_handle(Win, file, list_eqns) :-
 	Win shows_model Model,
 	get_default_export_name(Model, ".txt", DefName),
 	tk_equationlisting_start(DefName),
-	mysetof(Component,(contains(Model,Component),find_type(Component,submodel),appears(Component)),Submodels),
+        % changed from mysetof to findall to preserve the containment hierarchy 
+	findall(Component,(contains(Model,Component),find_type(Component,submodel),appears(Component)),Submodels),
+	%mysetof(Component,(contains(Model,Component),find_type(Component,submodel),appears(Component)),Submodels),
 	display_submodels(1,Submodels).
 
 % HTML stuff
@@ -820,7 +822,22 @@ continuation(Rerouters, Start, Rest, Remains) :-
 	Rest = [Next | More];
 	Rest = [],
 	Remains = Rerouters.
-	
+
+/*
+display(1,10,submodel,[S,Full_submodel_label],_):-
+   label(S,Label),
+   comment(S,Comment),
+   description(S,Descr),
+   submodel_type(S,Type),
+      nl,+'h2 class="submodel"',
+      write('<a name='),write(S),write('>'),
+      (  S=top,write('Top level');
+         write('Submodel '),write(Full_submodel_label)),
+      -a,-h2,
+      +'p class="submodeltype"', write_submodel_type(Label,Type),-p,
+      write_description(Descr),
+      write_comment(Comment).
+*/	
 display_submodels(_,[]).
 display_submodels(Isub,[Submodel|Submodels]):-
 	abs_path_name(Submodel, root, AbsPath), 
@@ -831,9 +848,14 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	    name(Path, PathStr);
 	  Path=AbsPath 
 	),
-	sicstus_format_to_chars("Equations in ~w", [Path], HeaderStr),
-	name(Header, HeaderStr),
-	tk_equationlisting_addsubmodel(Isub,Header),
+	(get_av_pair(Submodel, 0, comment, SubmodelComment)  ; 
+		\+ get_av_pair(Submodel, 0, comment, SubmodelComment), SubmodelComment = null),
+	(get_av_pair(Submodel, 0, step, TimeStepIndex)  ; 
+		\+ get_av_pair(Submodel, 0, step, TimeStepIndex), TimeStepIndex = null),
+	(get_av_pair(Submodel, 0, enum_types, EnumTypes)  ; 
+		\+ get_av_pair(Submodel, 0, enum_types, EnumTypes), EnumTypes = null),
+        submodel_type(Submodel,SMType),
+	tk_equationlisting_addsubmodel(Isub,Path,SubmodelComment,TimeStepIndex,EnumTypes,SMType),
 	mysetof((Entry,MinMax,Description,Comment,InFlows,OutFlows),write_eqn_term(Submodel,Entry,MinMax,Description,Comment,InFlows,OutFlows),Entries),
 	display_entries(Isub,1,Entries),
 	Isub1 is Isub+1,
@@ -845,15 +867,125 @@ display_entries(Isub,Ivar,[(where(VarType:VarLabel=Expression, WhereList),MinMax
 	Ivar1 is Ivar+1,
 	display_entries(Isub,Ivar1,Entries).
 
+submodelpath(SubmodelNode, Path) :-
+   	abs_path_name(SubmodelNode, root, AbsPath), 
+	% remove the model file name prefix from submodel paths
+	( name(AbsPath, AbsStr),
+	    append("/", PathStr, After),
+	    suffix(After, AbsStr),
+	    name(Path, PathStr);
+	  Path=AbsPath 
+	).
+
+submodel_type(Submodel,Type):-
+   connects(Link1, Submodel1, Submodel),
+   connects(Link2, Submodel2, Submodel),
+   Link1 has_type relation,
+   Link2 has_type relation,
+   Submodel1 \== Submodel2,
+   Link1 has_attribute name of Role1,
+   Link2 has_attribute name of Role2,
+   submodelpath(Submodel, Submodelpath),
+   submodelpath(Submodel1, Submodelpath1),
+   submodelpath(Submodel2, Submodelpath2),
+   sicstus_format_to_chars('Submodel  ~w is an association submodel between ~w (~w) and ~w (~w).', 
+      [Submodelpath, Submodelpath1,Role1,Submodelpath2,Role2], TypeStr),
+   name(Type, TypeStr),!.
+submodel_type(Submodel,Type):- 
+   connects(Link1, Submodel1, Submodel),
+   connects(Link2, Submodel1, Submodel),
+   Link1 has_type relation,
+   Link2 has_type relation,
+   Link1 has_attribute name of Role1,
+   Link2 has_attribute name of Role2,
+   Link1 \== Link2,
+   submodelpath(Submodel, Submodelpath),
+   submodelpath(Submodel1, Submodelpath1),
+   sicstus_format_to_chars(
+      'Submodel  ~w is an association submodel between ~w and itself with roles ~w and ~w.', 
+      [Submodelpath, Submodelpath1,Role1,Role2], TypeStr),
+   name(Type, TypeStr),!.
+submodel_type(Submodel,Type):-
+   connects(Link1, Submodel1, Submodel),
+   Link1 has_type relation,
+   Link1 has_attribute name of Role,
+   submodelpath(Submodel, Submodelpath),
+   submodelpath(Submodel1, Submodelpath1),
+   sicstus_format_to_chars(
+      'Submodel  ~w is a ~w satellite submodel of ~w.', 
+      [Submodelpath,Role, Submodelpath1], TypeStr),
+   name(Type, TypeStr),!.
+
+submodel_type(Submodel,Type):-
+   by_record(Submodel),
+   submodelpath(Submodel, Submodelpath),
+   sicstus_format_to_chars(
+      'Submodel  ~w is a membership by record submodel.', 
+      [Submodelpath], TypeStr),
+   name(Type, TypeStr),!.
+
+submodel_type(Submodel,Type):-
+   is_population(Submodel),
+   is_conditional(Submodel),
+   submodelpath(Submodel, Submodelpath),
+   sicstus_format_to_chars(
+      'Submodel  ~w is a conditional population submodel.', 
+      [Submodelpath], TypeStr),
+   name(Type, TypeStr),!.
+
+submodel_type(Submodel,Type):-
+   is_population(Submodel),
+   submodelpath(Submodel, Submodelpath),
+   sicstus_format_to_chars(
+      'Submodel  ~w is a population submodel.', 
+      [Submodelpath], TypeStr),
+   name(Type, TypeStr),!.
+
+submodel_type(Submodel,Type):-
+   is_conditional(Submodel),
+   get_node_size(Submodel, Dimensions),
+   submodelpath(Submodel, Submodelpath),
+   sicstus_format_to_chars(
+      'Submodel  ~w is a conditional fixed membership submodel of dimensions ~w.', 
+      [Submodelpath,Dimensions], TypeStr),
+   name(Type, TypeStr),!.
+
+submodel_type(Submodel,Type):-
+   is_conditional(Submodel),
+   get_node_size(Submodel, []),
+   submodelpath(Submodel, Submodelpath),
+   sicstus_format_to_chars(
+      'Submodel  ~w is a conditional submodel.', 
+      [Submodelpath], TypeStr),
+   name(Type, TypeStr),!.
+
+submodel_type(Submodel,''):-
+   get_all_dims(Submodel, '[]').
+
+submodel_type(Submodel,Type):-
+   get_all_dims(Submodel, Dimensions),
+   Dimensions \== [],
+   submodelpath(Submodel, Submodelpath),
+   sicstus_format_to_chars(
+      'Submodel  ~w is a fixed_membership submodel with dimensions ~w.', 
+      [Submodelpath,Dimensions], TypeStr),
+   name(Type, TypeStr),!.
+
+submodel_type(Submodel,Type):-
+   get_all_dims(Submodel, Type).
+%submodel_type(Submodel,simple_default).
+%submodel_type(Submodel,simple).
+
 mysetof(A,B,C):-
 	setof(A,B,C),!.
 mysetof(_,_,[]).
 
+% spec insead value?
 write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows) :-
 	find_all_comps(Submodel, Component),	
 	(find_type(Component, function),
 	    implicit_function(VisNode, Component),
-	    get_av_pair(Component, 0, value, Eqn);
+	    get_av_pair(Component, 0, spec, Eqn); 
 	find_type(Component, variable),
 	    VisNode = Component,
 	    (is_parameter(Component, 2), Eqn = 'Fixed parameter';
