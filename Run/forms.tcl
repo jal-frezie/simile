@@ -697,50 +697,6 @@ proc GetFindText {parent} {
     }
 }
 
-proc DoUserDialogue {} {
-    global env userinfo
-    set t [PutItThere .userdata .]
-    wm title $t "Enter your details"
-    pack [label $t.mess -text "Please enter your name, organization and license code if required."]
-    pack [frame $t.name] -fill x
-    pack [label $t.name.mess -text Name:] -side left
-    pack [entry $t.name.entry -width 40 -text userinfo(name)] -side right
-    pack [frame $t.corp] -fill x
-    pack [label $t.corp.mess -text Organization:] -side left
-    pack [entry $t.corp.entry -width 40 -text userinfo(corp)] -side right
-    pack [frame $t.code] -fill x
-    if {![string equal evaluation $userinfo(edn)]} {
-	pack [label $t.code.mess -text "License code:"] -side left
-	pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
-	    -side right
-    } else {
-	set userinfo(license_code) "<none needed>"
-    }
-    pack [frame $t.buttons] -fill x
-    pack [button $t.buttons.ok -text OK \
-	      -command "set userinfo(entrydone) 1"] -side left
-    pack [button $t.buttons.ex -text Exit \
-	      -command "set userinfo(entrydone) 0"] -side right
-    
-    LetItShow $t
-    grab $t
-    focus $t.name.entry
-    wm withdraw .splash
-    while {![info exists userinfo(entrydone)]} {
-	tkwait variable userinfo(entrydone)
-	if {$userinfo(entrydone)} {
-	    if {![c_testlicense]} {
-		BuildProblem "Wrong license code" warning "You have entered the wrong license code for your name, organization and Simile version. Please try again, ensuring you have the correct license code." license
-		unset userinfo(entrydone)
-	    }
-	}
-    }
-    wm deiconify .splash
-    grab release $t
-    PackItUp $t
-    return $userinfo(entrydone)
-}
-
 proc DoRegDialog {dtId} {
     global userinfo custom welcomeDone tcl_platform SimileAutoObjLoaded
     
@@ -1198,7 +1154,7 @@ proc equationlisting_start {DefEquationListingFileName} {
     set DefaultEquationListingFileName $DefEquationListingFileName
     set w .equations
     catch {destroy $w}
-    toplevel $w
+    toplevel $w -height 600 -width 800
     wm title $w "Equation listing"
     
     if [string match "Darwin" $tcl_platform(os)] {
@@ -1277,6 +1233,7 @@ proc equationlisting_start {DefEquationListingFileName} {
             -font {Helvetica 5}
     
     bind $w <Control-a>  {EquationListingSelectAll $equationlist(textbox)}
+    $w configure -height 600 -width 800
 }
 
 proc EquationListingFindPopup {winId} {
@@ -1316,15 +1273,50 @@ proc EquationListingSelectAll {winId} {
 }
 
 
-proc equationlisting_addsubmodel {isub submodel_label} {
+proc equationlisting_addsubmodel {isub submodel_label comments timestep enumtypes type} {
     global equationlist
     $equationlist(textbox) configure  -state normal
     
     set widget $equationlist(textbox)
     
-    $widget insert end "\n"
-    $widget insert end [regsub -all "\n" $submodel_label " "] bigtag
-    $widget insert end "\n"
+    # toplevel
+    if {$isub == 1} {
+        $widget insert end "\n"
+        $widget insert end "Model [regsub -all "\n" $submodel_label " "]" bigtag
+        $widget insert end "\n"
+        
+    } else  {
+        $widget insert end "\n"
+        $widget insert end "Submodel [regsub -all "\n" $submodel_label " "] " bigtag
+        $widget insert end "\n"
+    }
+    
+    # type of submodel and dimensions if approp
+    if {![string match "" $type]} {
+        $widget insert end "\t$type\n" cmttag
+    }
+    
+    # Comments
+    if {![string match null $comments]} {
+        $widget insert end "\t\t$comments \n" cmttag; # should be empty if comments null
+    }
+    
+    # time step index
+    if {![string match null $timestep]} {
+        $widget insert end "\tTime step index: $timestep\n" cmttag
+    }
+    
+    # enumerated types
+################################################################################
+#     if {[llength $enumtypes] > 0} {
+#         foreach {et} [lindex $enumtypes 0] {
+#             $widget insert end "\tEnumerated types: $et\n" cmttag
+#        }
+#     }
+################################################################################
+    if {![string match {[]} $enumtypes]} {
+        $widget insert end "\tEnumerated types: ${enumtypes}\n" cmttag
+    }
     $equationlist(textbox) configure  -state disabled
     update idletasks
 }
@@ -1335,7 +1327,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     #puts "inflows $inflows outflows $outflows"
     # tabs (\t) used as well as margins to provide some formatting to text copied and pasted to other apps
     global equationlist
-    #ShowMessage debug info "$expression" ok
+    #ShowMessage debug info "$comments" ok
     
     set widget $equationlist(textbox)
     $equationlist(textbox) configure  -state normal
@@ -1349,7 +1341,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     $widget insert end " " descrtag
     
     set tidy_varlabel [regsub -all "\n" $varlabel " "]
-    set tidy_expression $expression; #[regsub -all "\n" $expression " "] doesn't have any nl anyway
+    set tidy_expression [regsub -all "\n" $expression "\n\t\t\t"]
     set tidy_description [regsub -all {\n} $description { }]
     set tidy_comments [regsub -all "\n" $comments " "]
     set where [regsub -all "\n" $where " "]
@@ -1401,9 +1393,9 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         
     } else  {
         # Everything except compartments
-        $widget insert end "\t$tidy_varlabel = $tidy_expression \n" eqntag
+        $widget insert end "\t$tidy_varlabel = \t\t$tidy_expression \n" eqntag
+        #$widget insert end "\t$tidy_varlabel = $expression \n" eqntag
         
-        #add_text "$tidy_varlabel = $tidy_expression" {Helvetica 9} 20 0 black
         if ![string match {null} $where] {
             $widget insert end "\tWhere:\n\t\t$tidy_where \n" whrtag; # tidy where should be empty if where null
             #add_text "Where:\n$tidy_where" {Helvetica 9 italic} 20 0 #008800
