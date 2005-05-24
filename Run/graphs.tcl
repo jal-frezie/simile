@@ -548,6 +548,20 @@ proc equationDoTable {parent tgt startLine} {
     pack $lheads  -expand true -fill both
     pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
+    if {!$startLine} {
+	pack [set wrapf [frame $fidx.wrapf]] -expand true -fill x
+	pack [label $wrapf.m -text "Wraparound at:"] -side left
+	pack [entry $wrapf.e -width 1 -textvariable table_entry(wrapPt)] \
+	    -side right -expand true -fill x
+	if {[string equal restart [string tolower \
+				       [lindex $table_entry(values) end]]]} {
+	    set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
+	    set table_entry(wrapPt) $table_entry(oldWrapPt)
+	    set table_entry(values) [lrange $table_entry(values) 0 end-2]
+	} else {
+	    set table_entry(oldWrapPt) {}
+	}
+    }
     pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 2
     #
     # OK, Cancel and Help buttons
@@ -607,6 +621,7 @@ proc equationDoTable {parent tgt startLine} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
 	set table_entry(dataField) [lindex $table_entry(data) 1]
 	set table_entry(indices) [lrange $table_entry(data) 2 end]
+
 	set i 1
 	foreach idx $table_entry(indices) {
 	    $lidx insert end id$i -text $idx
@@ -634,6 +649,9 @@ proc equationDoTable {parent tgt startLine} {
     grab release $t
     PackItUp $t
     grab $parent
+    if {[info exists table_entry(wrapPt)] && [Numeric $table_entry(wrapPt)]} {
+	lappend table_entry(values) $table_entry(wrapPt) restart
+    }
     return $table_entry(done)
 }
 
@@ -650,6 +668,11 @@ proc EditTableData {lidx startLine} {
 proc DoneTableData {lidx startLine} {
     global table_entry
     AcquireTableData $lidx 0 $startLine
+    if {!$table_entry(source) && \
+	    [info exists table_entry(wrapPt)] && \
+	    ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)]} {
+	set table_entry(source) 0.5
+    }
     set table_entry(done) $table_entry(source)
 }
 
@@ -777,7 +800,13 @@ proc LoadTableData {tableSpec lineCount} {
 #ShowMessage debug info "Headers are $headerList" ok
     
     set headerCount 0
-    foreach headerIndex [lrange $tableSpec 2 end] {
+    if {[string match ,* [lindex $tableSpec 2]]} { ;# its a wraparound point
+	set wrapPt [string range [lindex $tableSpec 2] 6 end]
+	set indexStart 3
+    } else {
+	set indexStart 2
+    }
+    foreach headerIndex [lrange $tableSpec $indexStart end] {
         lappend indexColumns [lsearch -exact $headerList $headerIndex]
         set maxIndices($headerCount) {}
         incr headerCount
@@ -841,8 +870,13 @@ proc LoadTableData {tableSpec lineCount} {
     
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
-    return [ArrayToList paramArray top $indexList]
+    set result [ArrayToList paramArray top $indexList]
+    if {[info exists wrapPt]} {
+	lappend result $wrapPt restart
+    }
+    return $result
 }
+
 proc TrimFields {dataLine} {
     set entryList {}
     foreach entry $dataLine {
@@ -852,7 +886,7 @@ proc TrimFields {dataLine} {
 }
 
 proc EnquoteIfNonNumeric {item} {
-    if {[string is double $item]} {
+    if {[Numeric $item]} {
 	return $item
     } else {
 	return \"[string trim $item]\"

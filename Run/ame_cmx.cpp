@@ -485,6 +485,29 @@ FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  double time;
+
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id time");
+    return TCL_ERROR;
+  }
+  
+  error = Tcl_GetDoubleFromObj(interp, argv[2], &time);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  if (set_wrap(Tcl_GetStringFromObj(argv[1], NULL), time)) {
+    return TCL_OK;
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to set wraparound time for this node", -1));
+    return TCL_ERROR;
+  }
+}
+
 FINDABLE int settimepointarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
@@ -1527,6 +1550,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_setparamelement", setparamelementCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_setwraparoundtime", setwrapCmd,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_settimepointelement", settimepointelementCmd,

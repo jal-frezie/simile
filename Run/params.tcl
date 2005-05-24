@@ -342,7 +342,9 @@ proc AcceptData {winId topNode compName complain} {
             if {$complain>-1} {
                 $widgetNames($compName).l configure -fg red
                 if {$complain>0} {
-                    if {[llength $result]>1} {
+                    if {[catch {llength $result} rlen]} {
+			error $result ;# unplanned error
+		    } elseif {$rlen} {
                         set where " at indices [lrange $result 0 end-1]"
                     } else {
                         set where {}
@@ -430,7 +432,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         set role "Index value"
         if {[string match TIME $nextDim]} {
             set role "Time point"
-            if {!([string is double $indx] || [string equal NOW $indx])} {
+            if {!([Numeric $indx] || [string equal NOW $indx])} {
                 error [list "$role $indx must be NOW or a number."]
             }
         } elseif {[string compare {} $thisTrans]} {
@@ -457,17 +459,21 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         set redoStep 1
         # Next call removes old time series data from the system
         EnumTypeToNumber paramData $tgt {} {} $useCppArray
+	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
         foreach arrayPt [array names sub] {
             if {[string equal NOW $arrayPt]} {
                 if {[llength $subs]} {
                     error [list "NOW must be outermost index."]
                 }
-            } elseif {![string is double $arrayPt]} {
+            } elseif {![Numeric $arrayPt]} {
                 error [list $arrayPt "Time point must be NOW or a number."]
-            } elseif {$useCppArray>1} {
+            } elseif {[string equal restart [string tolower $sub($arrayPt)]]} {
+		SetWrapTime $tgt $arrayPt $useCppArray
+		continue
+	    } elseif {$useCppArray>1} {
                 c_settimepointarray $tgt $arrayPt
             }
-            if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
+	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
                             [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
                 error [concat $arrayPt $step]
             } elseif {$step<1} {
@@ -552,7 +558,7 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
         } else {
             PlaceInArray $tgt $poss $varData $useCppArray
         }
-    } elseif {![string is double $head]} {
+    } elseif {![Numeric $head]} {
         error [list "Data value $head is not a number."]
     } else {
         PlaceInArray $tgt $head $varData $useCppArray
@@ -580,6 +586,15 @@ proc PlaceInArray {where what varData inC} {
             global $varData
             set ${varData}($where) $what
         }
+    }
+}
+
+proc SetWrapTime {where when inC} {
+    global paramData
+    if {$inC>1} {
+	c_setwraparoundtime $where $when
+    } else {
+	set paramData(wrapAroundPoint,$where) $when
     }
 }
 
@@ -621,13 +636,11 @@ proc CancelParams {} {
 namespace eval fileparams {
     
     proc Clear {spare smPath} {
-        global paramState paramData widgetNames SimileProject msgs
+        global widgetNames SimileProject msgs
         foreach spfName [array names SimileProject fileparam,$smPath*] {
             unset SimileProject($spfName)
         }
         foreach compName [array names widgetNames $smPath*] {
-            #   array unset paramState $compName
-            #   array unset paramData $compName
             $widgetNames($compName).e configure -state normal
             $widgetNames($compName).e delete 0 end
             set msgs(param_source_$compName) Unsaved
@@ -844,22 +857,10 @@ proc ExistCheck {topNode restoredComp source} {
 # .csv file reference
 
 proc ReferenceWorks {compName} {
-    #    global paramState paramData widgetNames
     global msgs
     
-    #    if {[string equal normal [$widgetNames($compName).e cget -status]]} {
-    # if entry is editable, check match for table data
-    #   if {[info exists paramState($compName)]} {
-    #       return [string equal $paramData($compName) \
-    #           [LoadTableData $paramState($compName)]]
-    #   } else {
-    #       return 0
-    #   }
-    #    } else {
-    # if not, get its status from the popup info -- it will not have changed
     return [expr !([string match *(literal) $msgs(param_source_$compName)] \
             || [string equal Unsaved $msgs(param_source_$compName)])]
-    #    }
 }
 
 # This tests for sensible model values.
@@ -891,11 +892,11 @@ proc SensibleValue {trans list} {
 proc VarType {testVar types} {
     if {[string is integer $testVar]} {
         return 2
-    } elseif {[string is double $testVar]} {
+    } elseif {[Numeric $testVar]} {
         return 3
     } elseif {[lsearch $types $testVar]!=-1} {
         return 2
-    } elseif {[string equal NOW $testVar]} {
+    } elseif {[lsearch {now restart} [string tolower $testVar]]!=-1} {
         return 1
     } else {
         puts "No $testVar in $types"
@@ -921,6 +922,11 @@ proc GetFromTable {parent compName startLine} {
             set paramState($compName) [concat [list $table_entry(fileName) \
                     $table_entry(dataField)] \
                     $table_entry(indices)]
+	    if {[info exists table_entry(wrapPt)] && \
+		    [Numeric $table_entry(wrapPt)]} {
+		set paramState($compName) [linsert $paramState($compName) 2 \
+					       ,wrap:$table_entry(wrapPt)]
+	    }
         }
         set paramData($compName) $table_entry(values)
         FillIfSmall $widgetNames($compName).e $paramData($compName)

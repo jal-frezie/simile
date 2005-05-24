@@ -292,6 +292,8 @@ public:
   char* dataPtr;
   listTimePoint* timePoints;
   listTimePoint* nextTimePoint;
+  double wrapAroundPoint;
+  int wraps;
   listParamArray* next;
 
   void remove_vm_dims() {
@@ -518,16 +520,22 @@ public:
 
   double update_from_points(double now, double horizon) {
     listTimePoint* timePt;
+    double shifted;
 
     if (nextTimePoint) {
-      if (nextTimePoint->when<=now) {
-	nextTimePoint = nextTimePoint->find_last_pt(now);
+      shifted = now-wraps*wrapAroundPoint;
+      if (nextTimePoint->when<=shifted) {
+	nextTimePoint = nextTimePoint->find_last_pt(shifted);
 	memcpy(dataPtr, nextTimePoint->dataPtr, 
 	       size_for_type()*array_count(fullDims));
 	nextTimePoint = nextTimePoint->next;
+	if (wrapAroundPoint>0.0 && !nextTimePoint) {
+	  nextTimePoint = timePoints;
+	  wraps += 1;
+	}
       }
       if (nextTimePoint) {
-	return fmin(nextTimePoint->when,horizon);
+	return fmin(nextTimePoint->when+wraps*wrapAroundPoint,horizon);
       }
     }
     return horizon;
@@ -553,6 +561,7 @@ void reset_time_series() {
   param_array_current = param_array_base;
   while (param_array_current) {
     param_array_current->nextTimePoint = param_array_current->timePoints;
+    param_array_current->wraps = 0;
     param_array_current->update_from_points(0,0);
     param_array_current = param_array_current->next;
   }
@@ -977,6 +986,16 @@ int clear_time_point_elts(char* nodeId) {
   delete arrSlot->timePoints;
   arrSlot->timePoints = NULL;
   arrSlot->nextTimePoint = NULL;
+}
+
+int set_wrap(char* nodeId, double time) {
+  listParamArray* arrSlot;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    return 0; // no data structure for this elt
+  }
+  arrSlot->wrapAroundPoint = time;
+  return 1;
 }
 
 void* create_time_point(char* nodeId, double time, void* dataSpace) {

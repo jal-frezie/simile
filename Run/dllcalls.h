@@ -198,6 +198,7 @@ typedef void showMess_type(char*);
 EXTDEC char* load_model(char*, char*, long int*);
 EXTDEC void* use_array_for_params(char*, void*);
 EXTDEC int clear_time_point_elts(char*);
+EXTDEC int set_wrap(char*, double);
 EXTDEC void* create_time_point(char*, double, void*);
 EXTDEC int set_record_list(char*, int*, int);
 EXTDEC int set_param_array_elt(char*, double, int*);

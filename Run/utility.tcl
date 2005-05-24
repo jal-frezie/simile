@@ -488,6 +488,11 @@ proc max {first last} {
     return [expr $first>$last?$first:$last]
 }
 
+# "string is double" returns TRUE for {} so use this instead
+proc Numeric {str} {
+    return [expr {[string length $str]&&[string is double $str]}]
+}
+
 # This takes care of the ways of getting a good-looking transient
 # window on different platforms. Currently the extra MacOS command is
 # necessary to make sure dialogue boxes have titlebars, but if there

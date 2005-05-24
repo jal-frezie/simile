@@ -321,6 +321,7 @@ proc InitTimeSeries {topNode} {
 		set setFromSeries($topNode,$node,times) \
 		    [lsort -real [array names $node]]
 		set setFromSeries($topNode,$node,next) 0
+		set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
 #puts "initted $setFromSeries($topNode,$node,times)"
 	    }
 	}
@@ -331,6 +332,8 @@ proc ResetTimeSeries {topNode} {
     global setFromSeries
     foreach pt [array names setFromSeries $topNode,*,next] {
 	set setFromSeries($pt) 0
+	set node [lindex [split $pt ,] 1]
+	set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
     }
 }
 
@@ -345,16 +348,19 @@ proc ResetTimeSeries {topNode} {
 
 proc UpdateTimeSeries {topNode newTime horizon} {
     global setFromSeries paramData comboTypes
-   foreach list [array names setFromSeries $topNode,*,times] {
+    foreach list [array names setFromSeries $topNode,*,times] {
 	set node [lindex [split $list ,] 1]
-#puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
+	#puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
+	set loopOffset [expr $setFromSeries($topNode,$node,wraps) * \
+			    $paramData(wrapAroundPoint,$node)]
 	set jumping 1
 	while {$jumping} {
 	    upvar 0 setFromSeries($topNode,$node,next) series
 	    if {[llength $setFromSeries($list)] > $series} {
-		set actTime [lindex $setFromSeries($list) $series]
+		set actTime \
+		    [expr [lindex $setFromSeries($list) $series]+$loopOffset]
 		if {$newTime >= $actTime} {
-		    set useTime $actTime
+		    set useTime [lindex $setFromSeries($list) $series]
 		    incr series
 		} else {
 		    set jumping 0
@@ -362,29 +368,34 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 			set horizon $actTime
 		    }
 		}
+	    } elseif {$paramData(wrapAroundPoint,$node)} {
+		set series 0
+		incr setFromSeries($topNode,$node,wraps)
+		set loopOffset \
+		    [expr $loopOffset+$paramData(wrapAroundPoint,$node)]
 	    } else {
 		set jumping 0
 	    }
 	}
-
+	
 	if {[info exists useTime]} {
 	    set inC [RunningInC]
 	    set tgtVar [InputVarFor $topNode $node]
-#	    upvar \#0 $tgtVar inputSrc
-#puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
+	    #	    upvar \#0 $tgtVar inputSrc
+	    #puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
 	    # do it the easy way if a scalar
-#puts "looking for paramData($node,$useTime)"
-#	    if {[info exists paramData($node,$useTime)]} {
-#		set inputSrc($node) $paramData($node,$useTime)
-#puts "set inputSrc($useTime) $paramData($node,$useTime)"
-#		return
-#	    }
+	    #puts "looking for paramData($node,$useTime)"
+	    #	    if {[info exists paramData($node,$useTime)]} {
+	    #		set inputSrc($node) $paramData($node,$useTime)
+	    #puts "set inputSrc($useTime) $paramData($node,$useTime)"
+	    #		return
+	    #	    }
 	    set trans [lindex [GetTransTable $node] end]
 	    foreach tsValue [concat [array names paramData $node,$useTime] \
 				 [array names paramData $node,$useTime,*]] {
-#puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
+		#puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
 		set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
-#		set inputSrc($tgtIndex) $paramData($tsValue)
+		#		set inputSrc($tgtIndex) $paramData($tsValue)
 		PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
 		if {[string match comboChoices $tgtVar]} {
 		    set comboTypes($tgtIndex) \
