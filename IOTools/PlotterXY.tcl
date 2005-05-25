@@ -89,7 +89,8 @@ namespace eval ::$keyValue {
         set plot($w,grid) off
         set plot($w,DrawLines) 1
         set plot($w,DrawPoints) 0
-	InitPlatformDependentPlotVars $w
+        set plot($w,CurrentOnly) 0
+        InitPlatformDependentPlotVars $w
         
         set YYold($w) {}
         set YYnew($w) {}
@@ -255,6 +256,9 @@ namespace eval ::$keyValue {
         get_Yvalues $w
         get_Xvalues $w
         
+        if {$plot($w,CurrentOnly)} {
+            $w.canvas delete trace
+        }
         #redraw axis and graph if necessary; otherwise just extend plots
         if {$plot($w,redraw)} {
             bell
@@ -335,6 +339,7 @@ namespace eval ::$keyValue {
         # copy the values of the variables to be edited to temp, but namespace accessible, variables
         variable DrawLines $::graphtools::plot($w,DrawLines)
         variable DrawPoints $::graphtools::plot($w,DrawPoints)
+        variable CurrentOnly $::graphtools::plot($w,CurrentOnly)
         
         
         set dlg [Dialog .plotxyprop -parent $w -title "XY Plotter properties" \
@@ -348,6 +353,8 @@ namespace eval ::$keyValue {
         pack [checkbutton $chkF.drawlinesF.cbutton -variable [namespace current]::DrawLines] -side right
         pack [LabelFrame $chkF.drawpointsF -text "Draw points"] -fill x
         pack [checkbutton $chkF.drawpointsF.cbutton -variable [namespace current]::DrawPoints] -side right
+        pack [LabelFrame $chkF.currentOnlyF -text "Draw current points only"] -fill x
+        pack [checkbutton $chkF.currentOnlyF.cbutton -variable [namespace current]::CurrentOnly] -side right
         
         pack $chkF -padx 10
         
@@ -356,6 +363,7 @@ namespace eval ::$keyValue {
             # OK button was clicked
             set ::graphtools::plot($w,DrawLines) $DrawLines
             set ::graphtools::plot($w,DrawPoints) $DrawPoints
+            set ::graphtools::plot($w,CurrentOnly) $CurrentOnly
             UpdateState $w
         }
         #ShowMessage debug info "$::graphtools::plot($w,DrawLines) $::graphtools::plot($w,DrawPoints)" ok
@@ -687,12 +695,12 @@ namespace eval ::$keyValue {
         
         if $plot($w,DrawLines) {
             $w.canvas create line $x0 $y0 $x1 $y1 \
-                    -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
+                    -fill $Colour -tags {graph scalable xaxis_item yaxis_item trace}
             
         }
         if $plot($w,DrawPoints) {
             $w.canvas create text $x1 $y1 -text X \
-                    -fill $Colour -tags {graph scalable xaxis_item yaxis_item}
+                    -fill $Colour -tags {graph scalable xaxis_item yaxis_item trace}
             
         }
     }
