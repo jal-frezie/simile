@@ -308,6 +308,7 @@ check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
 			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).
 	    
 adjust_edit_menu(Wid, Comp, Point) :-
+	retractall(menu_submodel_will_be(Wid, _,_)),
 	assert(menu_submodel_will_be(Wid, Comp, Point)).
 
 bar_edit_menu(Wid) :-
