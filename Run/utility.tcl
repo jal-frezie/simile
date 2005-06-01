@@ -490,7 +490,7 @@ proc max {first last} {
 
 # "string is double" returns TRUE for {} so use this instead
 proc Numeric {str} {
-    return [expr {[string length $str]&&[string is double $str]}]
+    return [string is double -strict $str]
 }
 
 # This takes care of the ways of getting a good-looking transient

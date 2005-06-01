@@ -399,7 +399,7 @@ proc AddEnumTypePopup {lb y X Y} {
 
 proc CheckForETDuplicates {new} {
     global disaggregate enumTypeMPEntry
-    if {![llength $enumTypeMPEntry]} {
+    if {![info exists enumTypeMPEntry] || ![llength $enumTypeMPEntry]} {
         ShowMessage "No $new name" error \
                 "You must enter a name for the new $new in the box." ok
         return 0

@@ -79,15 +79,25 @@ build_instances(Language, DestDir, Parent, TopNode,
 	check_directory(CheckDir),
 	windowize(CheckDir, WCheckDir),
 	time_step_for(Parent, Step, MyStep),
-	build_sub_instances(Language, CheckDir, Parent, TopNode, MyStep,
+	on_exception(Ur, build_sub_instances(Language, CheckDir, Parent, TopNode, MyStep,
 			    ChangeTop, SubFnsUsed, KeepDir),
-	(setof(Fn, list_user_fns(Parent, Fn), LevelFnsUsed),
+	    (sicstus_format_to_chars("{Relaying exception ~w at level ~w}",
+		[Ur, CheckDir], ExcStr),
+	     name(Exc, ExcStr),
+	     output:safe_tcl_eval([set, log, Exc], _),
+	     safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _),
+	     raise_exception(Ur))),
+
+	(setof(Fn, list_user_fns(Parent, Fn), LevelFnsUsed), !,
 	    merge_lists(LevelFnsUsed, SubFnsUsed, FnsUsed);
 	FnsUsed = SubFnsUsed),
-	(/* model can go incomplete then complete again without change
+	/* model can go incomplete then complete again without change
 	 so check all */
-	     \+ check_level_for_reds(TopNode, Parent),
-	    Parent has_model_refinement c_new of 0,
+	(check_level_for_reds(TopNode, Parent, Wrinkle), !,
+	    safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _),
+	    raise_exception(Wrinkle),
+	    fail;
+	Parent has_model_refinement c_new of 0, !,
 	    Parent has_changed_model_refinement c_new of 1,
 	    ChangeTop = 1,
 	    LocalFnsUsed = [];
@@ -157,6 +167,7 @@ functions on an exception, so this only closes if it has to...*/
 reclose(Stream) :-
 	on_exception(_,close(Stream), true).
 
+
 /* delete_prog: if we are building a new program we will be marking the model
 as having it, so we don't want old ones in other languages (or old executables
 in other formats) hanging around. */
@@ -176,7 +187,7 @@ build_sub_instances(Language, DestDir, Parent, Node,
 	     unify(Node), unify(Step), unify(ChangeTop),
 	     merge_lists(LocalFnsUsed, []), unify(KeepDir)]).
 
-check_level_for_reds(TopNode, Submodel) :-
+check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	find_all_comps(Submodel, VisEntity),
 	appears(VisEntity),
 	\+ VisEntity is_of_sort captionless,
@@ -185,7 +196,8 @@ check_level_for_reds(TopNode, Submodel) :-
 	abs_path_name(Submodel, TopNode, OuterText),
 	caption_for(VisEntity, RedText),
 	menu:select_all_in(Submodel, base), /* make sure the red shows */
-	raise_exception(unspecified(OuterText, RedText));
+	output:safe_tcl_eval([set, log, entered_exception], _),
+	Wrinkle = unspecified(OuterText, RedText);
 	Parent has_part Submodel,
 	remove_redundant_equivs(Submodel, Equivs),
 	member(Before-After, Equivs),
@@ -195,12 +207,11 @@ check_level_for_reds(TopNode, Submodel) :-
 	       Submodel has_part S2, find_all_comps(Submodel, F2);
 	    find_all_comps(Parent, F2), S2 = Submodel,
 	       Submodel has_part F1, find_all_comps(Submodel, S1)),
-	raise_exception(link_inconsistency(Before-After));
+	Wrinkle = link_inconsistency(Before-After);
 	by_record(Submodel),
 	\+ defines_membership(Submodel, _Param),
 	caption_for(Submodel, OuterText),
-	raise_exception(no_defining_param(OuterText));
-	fail.
+	Wrinkle = no_defining_param(OuterText).
 
 remove_redundant_equivs(Submodel, Equivs) :-
 	Submodel has_model_refinement link_equivalences of OldEquivs,
@@ -482,6 +493,8 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 		    Used, Graphs, TypeDecls, PointerDecls,
 		    EnumBits, NodeData) :-
 	Instance = instance(submodel, SymbolicName, 
+
+
 			xrefs(Model, _, Bases, _), _, ModelType-_),
 	length(Tree, Depth),
 	Indent is 4*Depth,
@@ -531,6 +544,7 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 	append([ClassStart, SubTypeDecls, ClassEnd, Publics, Ext1, Ext2, Exts,
 		ExtM, ExtParanoia, ExtN, EndClass], TypeDecls),
 	append(LocalPtrs, SubPointerDecls, PointerDecls).
+
 	
 
 generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], [], []).
@@ -669,6 +683,9 @@ build_submodel_functions( Language, Phases, Inters,
 	reassure_user("Ordering model execution assignments"),
 
 	NotDone is Phases+1,
+
+
+
 	ExtBlocker = make(externs_done, [], [], NotDone, []),
 	/* rough and ready -- phase NotDone means it never gets scheduled */
 	order_all_assignments(Phases, [ExtBlocker | SortedForm],
@@ -1060,7 +1077,10 @@ levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
 	append(Level, Higher, Path).
 
 name_from_elt(FullRef, Cond) :-
+
 	(FullRef = IName*_Scale, !; FullRef = IName),
+
+
 	IName = input(in_hierarchy, elt(Path, Name, _), none, _),
 	wait_for_submodels(Path, Waits),
 	(Name = import(_,_,_,_,_, PhaseSet, Src, _), !,
@@ -1157,6 +1177,7 @@ connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
 	    LeftInters = AllInters,
 	    connect_params(ChangedInsts, Dest, LeftInters, Insts, Inters);
 	Insts = AllInsts,
+
 	    Inters = AllInters.
 
 /* (was) in a Geraint stylee -- may need speeding up */
@@ -1362,6 +1383,7 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 	       member(make(Cond, _, CPath,_,_), Left),
 	       remove_non_loopers(CPath, UCPath),
 	       suffix(Path, UCPath)).
+
 	
 order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 	(unfinished_submodels(Later, Phase, Path, Subs),
@@ -1455,6 +1477,7 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		append([Outer | UseLoops], [GenStep], FirstStep);
 		
 	    /* no: just use start_submodel -- or give up on this
+
 	    submodel if it was enumerated in a shorter time step than we
 	    are doing now, or we might end up failing to set some values
 	    in new ones */
@@ -1673,6 +1696,7 @@ order(make(Effect, _,_,_,_), make(_, Conds, Path, _,_)) :-
 member_either(X, A, B) :-
 	member(X, A);
 	member(X, B).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 remove_non_loopers(Path, LoopsOnly) :-

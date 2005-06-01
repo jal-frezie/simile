@@ -7,6 +7,8 @@
 #undef WIN32_LEAN_AND_MEAN
 #include <dllcalls.h>
 
+HKEY Key;
+
 int right_license(char* name, char* code) {
 	char buffer[256];
 	unsigned char md[MD5_DIGEST_LENGTH];
@@ -47,14 +49,43 @@ FINDABLE EXPORT int __stdcall license_check(
 		const char* pInstallDir, char* pSupportDir,
 		char* pUser, char* pCompany, char* pSerial,
 		char* pAdditionsl) {
-	char destfile[256];
-	FILE *recept;
 #ifdef SIM_LICENSED
 	if (!right_license(pUser, pSerial)) {
         	MessageBox (NULL, "You have entered the wrong license code for your name, organization and Simile version. This installation will now terminate. Please try again, ensuring you have the correct license code.", "Feedback", MB_OK);
 		return(0);
 	}
 #endif
+	if (RegCreateKeyEx(HKEY_LOCAL_MACHINE, 
+			   "Software\\Simulistics\\Simile", 0, NULL, 
+			   REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, 
+			   NULL, &Key, NULL)==0) {
+	    if (pUser != NULL) RegSetValueEx(Key, "licensee_name", 0, REG_SZ, (CONST BYTE*)pUser, strlen(pUser)+1);
+	    if (pCompany != NULL) RegSetValueEx(Key, "licensee_corp", 0, REG_SZ, (CONST BYTE*)pCompany, strlen(pCompany)+1);
+	    if (pSerial != NULL) RegSetValueEx(Key, "license_code", 0, REG_SZ, (CONST BYTE*)pSerial, strlen(pSerial)+1);
+	    RegCloseKey(Key);
+	    return(1);
+	} else {
+	    MessageBox (NULL, "The bloody thing has failed to get a key for writing the registry. You might as well go home...", "Feedback", MB_OK);
+	    return(0);
+	}
+}
+
+// prototype, __stdcall seems to need one 
+FINDABLE EXPORT int __stdcall info_copy(
+		HWND, HWND, const char*, char*,
+		char*, char*, char*, char*);
+
+// This writes a wee file with the supplied user name and company, and our own version
+// number. It is called from the installation procedure.
+
+FINDABLE EXPORT int __stdcall info_copy(
+		HWND MainHandle, HWND DialogHandle,
+		const char* pInstallDir, char* pSupportDir,
+		char* pUser, char* pCompany, char* pSerial,
+		char* pAdditionsl) {
+	char destfile[256];
+	FILE *recept;
+
 	strcpy(destfile, pInstallDir);
 	strcat(destfile, "\\Run\\userinfo.txt");
 	recept = fopen(destfile, "w");
@@ -84,22 +115,5 @@ FINDABLE EXPORT int __stdcall license_check(
 	fputs(SIMILE_VERSION, recept);
 	fputs("\n", recept);
 	fclose(recept);
-	return(1);
-}
-
-// prototype, __stdcall seems to need one 
-FINDABLE EXPORT int __stdcall info_copy(
-		HWND, HWND, const char*, char*,
-		char*, char*, char*, char*);
-
-// This writes a wee file with the supplied user name and company, and our own version
-// number. It is called from the installation procedure.
-
-FINDABLE EXPORT int __stdcall info_copy(
-		HWND MainHandle, HWND DialogHandle,
-		const char* pInstallDir, char* pSupportDir,
-		char* pUser, char* pCompany, char* pSerial,
-		char* pAdditionsl) {
-
 	return(1);
 }

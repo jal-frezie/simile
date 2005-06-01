@@ -176,9 +176,8 @@ proc AddEntry {winId topNode node mustShow notInput} {
                 -side right
         BindPopup $slot.cross "Revert to old values"
         pack [::ttk::button $slot.tick -style Toolbutton -image $iconImages(tick) -borderwidth 1 \
-                -command [namespace code [list AcceptData $winId $topNode \
-                $compName 1]]] \
-                -side right
+                -command [namespace code [list AcceptData $topNode \
+					      $compName 1]]] -side right
         BindPopup $slot.tick "Accept these values"
     }
     set widgetNames($compName) $slot
@@ -188,7 +187,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
             $slot.l configure -fg black
         }
     } else {
-        AcceptData $winId $topNode $compName 0
+        AcceptData $topNode $compName 0
     }
 }
 
@@ -246,7 +245,7 @@ proc ZapParams {topNode smPath metaFile} {
     MergeParams $topNode $smPath $metaFile 0
     
     foreach inputPath [array names whichParamsAffected] {
-        AcceptData winId $topNode $inputPath -1
+        AcceptData $topNode $inputPath -1
     }
 }
 
@@ -254,7 +253,7 @@ proc DoneParams {topNode} {
     global widgetNames paramData
     
     foreach compName [array names widgetNames] {
-        AcceptData winId $topNode $compName 1
+        AcceptData $topNode $compName 1
     }
     if {![llength $paramData(needed)]} {
         set paramData(done) 1
@@ -263,7 +262,7 @@ proc DoneParams {topNode} {
     }
 }
 
-proc AcceptData {winId topNode compName complain} {
+proc AcceptData {topNode compName complain} {
     global paramDims paramData widgetNames runState msgs
     
     set node [GetCompProperty $topNode IdFromCapt $compName]
@@ -610,7 +609,8 @@ proc RevertData {winId compName} {
     global paramData widgetNames
     $widgetNames($compName).e delete 0 end
     if {[info exists paramData($compName)]} {
-        $widgetNames($compName).e insert 0 $paramData($compName)
+        $widgetNames($compName).e insert 0 \
+	    [PrettifyValList $paramData($compName)]
     }
 }
 
@@ -647,10 +647,18 @@ namespace eval fileparams {
         }
     }
     
-    proc Save {spare smPath} {
+    proc Save {topNode smPath} {
         global paramState paramData widgetNames SimileProject simtmpdir env msgs
         #ShowMessage debug info "Save $smPath" ok
         
+# first, make sure all values to be saved are up-to-date and well-formed
+	foreach compName [array names widgetNames $smPath*] {
+	    AcceptData $topNode $compName 1
+	}
+	if {[lsearch $paramData(needed) $smPath*]!=-1} {
+	    return
+	}
+
         set metaFile [ChooseFile params.spf "Save parameters as:" 1]
         set SimileProject(fileparam,$smPath) $metaFile
         if {[llength $metaFile]} {
@@ -658,7 +666,7 @@ namespace eval fileparams {
             set pStr [NetOpen $part w]
             
             foreach compName [array names widgetNames $smPath*] {
-                set compTail [string range $compName [string length $smPath] end]
+		set compTail [string range $compName [string length $smPath] end]
                 set SubbedComp [StripCrs $compTail]
                 set newPopup  "Specified by $metaFile"
                 if {[ReferenceWorks $compName]} {

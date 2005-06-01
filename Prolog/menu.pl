@@ -337,8 +337,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	(get_av_pair(Model, 1, c_new, Serial), !; Serial = ''),
 	    caption_for(Model, Capt),
 	    append_atoms([CompDir, '/', Capt, '/model', Vers, Ident], Top),
-	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _)),
-	finish_progress_dialogue;
+	    output:safe_tcl_eval([file, copy, '-force', br(Top), br(Tgt)], _));
 	do_dialogue("Error exporting code", error, "This submodel does not have its own code.", ok, _)).
 
 menu_handle(Win, file, RunCmd) :-
@@ -349,14 +348,13 @@ menu_handle(Win, file, RunCmd) :-
 	use_temp_dir(Dir),
 	(rebuild_code(Lang, Node, Dir), !,
 	    /* no much point going for run */
-	    finish_progress_dialogue,
 	    on_exception(_Whoops,
 			 output:prepare_execution(Node, Lang),
 		     (do_dialogue("Compilation or startup error", error,
 				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
 			 scrub_run(Node, 0))),
 	    set_running_model(Node);
-	finish_progress_dialogue),
+	    true),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
 	    finish_move(Node, 0);
@@ -1158,9 +1156,11 @@ flip_innards(Node_name, Action) :-
 rebuild_code(Lang, Node, ProgFileDir) :-
 	(on_exception(Whoops, compile(Lang, Node, ProgFileDir), true), !;
 	    Whoops = compilation_failed),
+	finish_progress_dialogue,
+	output:safe_tcl_eval([set, log, exited_exception], _),
 	(Whoops = yes;
-	    show_error(Node, Whoops),
             scrub_run(Node, 0),
+	    show_error(Node, Whoops),
 	    fail).
 
 show_error(Model, Lossage) :-
@@ -1260,6 +1260,7 @@ not_runnable(Model) :-
 		sicstus_format_to_chars("Cannot run model ~w because one of the inputs \c
 				for ~w comes from ouside this model, therefore its value \c
 				cannot be calculated.", [OuterText, InnerText], Message),
+
 		do_dialogue("Cannot run model", error, Message, ok, _);
 		fail.
 */

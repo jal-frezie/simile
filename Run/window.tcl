@@ -334,6 +334,7 @@ proc ReleaseObj {winId xco yco} {
 proc EmbraceObj {winId} {
     global window_info
     if {![string equal $winId $window_info(current)]} {
+	set window_info(current) $winId
 	set nodeId [GetEdit $winId]
 	if {[llength $nodeId]} {
 	    prolog [list tk_embrace( '$winId' , $nodeId )]
@@ -677,7 +678,7 @@ proc AcceleratorState {winName menu item state} {
     #puts "AcceleratorState {winName menu item state cmd} $winName $menu $item $state $accelerator($menu,$item)"
         if {[string match normal $state]} {
             bind $winName $accelerator($menu,$item) \
-        [list if "\[DoingSelection $winName\]" \
+        [list if " \[DoingSelection $winName\]" \
                    [${winName}top.$menu entrycget $item -command]]
         } else  {
             bind $winName $accelerator($menu,$item) {}
@@ -1112,9 +1113,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add command -label New -command $newCmd -accelerator "$accKey+N"
     AddAccelerator $winid file New "<$accSym-n>"
 #    $fm add command -label "New top-level" -command "NewTopLevel"
-    $fm add command -label Open... -command "MenuSelect $c local open_all"\
+    $fm add command -label Open... -command "MenuSelect $c local open_all" \
             -accelerator "$accKey+O"
-    AddAccelerator $winid file Open... "<$accSym-o>"
+    AddAccelerator $winid file Open... "<$accSym-o>"
     $fm add cascade -label "Reopen" -menu .openrecent
     if {[string equal .hi $winid]} {
     return
@@ -1132,7 +1133,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     $fm add separator
     $fm add command -label "Print..." \
-            -command "PrintNow $c"\
+            -command "PrintNow $c" \
             -accelerator "$accKey+P"
     AddAccelerator $winid file "Print..." "<$accSym-p>"
     #$fm add cascade -label "Import" -menu $fm.sub0
@@ -1319,36 +1320,36 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     # the command procedure has to know what the old pushedbutton was
     # so it can unpress it, so they cannot use that
     
-    $fm1 add radiobutton -label Compartment -command "ItemSelect compartment"\
+    $fm1 add radiobutton -label Compartment -command "ItemSelect compartment" \
             -variable MIpushedbutton -value compartment
-#    $fm1 add radiobutton -label State -command "ItemSelect state"\
+#    $fm1 add radiobutton -label State -command "ItemSelect state" \
 #            -variable MIpushedbutton -value state
 # event and squirt needed too
-    $fm1 add radiobutton -label Variable -command "ItemSelect variable"\
+    $fm1 add radiobutton -label Variable -command "ItemSelect variable" \
             -variable MIpushedbutton -value variable
-    $fm1 add radiobutton -label Flow -command "ItemSelect flow"\
+    $fm1 add radiobutton -label Flow -command "ItemSelect flow" \
             -variable MIpushedbutton -value flow
-    $fm1 add radiobutton -label Influence -command "ItemSelect influence"\
+    $fm1 add radiobutton -label Influence -command "ItemSelect influence" \
             -variable MIpushedbutton -value influence
-    $fm1 add radiobutton -label Submodel -command "ItemSelect submodel"\
+    $fm1 add radiobutton -label Submodel -command "ItemSelect submodel" \
             -variable MIpushedbutton -value submodel
-    $fm1 add radiobutton -label Relation -command "ItemSelect relation"\
+    $fm1 add radiobutton -label Relation -command "ItemSelect relation" \
             -variable MIpushedbutton -value relation
     
     
-    $fm1 add radiobutton -label Creation -command "ItemSelect creation"\
+    $fm1 add radiobutton -label Creation -command "ItemSelect creation" \
             -variable MIpushedbutton -value creation
-    $fm1 add radiobutton -label Migration -command "ItemSelect immigration"\
+    $fm1 add radiobutton -label Migration -command "ItemSelect immigration" \
             -variable MIpushedbutton -value immigration
-    $fm1 add radiobutton -label Reproduction -command "ItemSelect reproduction"\
+    $fm1 add radiobutton -label Reproduction -command "ItemSelect reproduction" \
             -variable MIpushedbutton -value reproduction
-    $fm1 add radiobutton -label Extermination -command "ItemSelect loss"\
+    $fm1 add radiobutton -label Extermination -command "ItemSelect loss" \
             -variable MIpushedbutton -value loss
-    $fm1 add radiobutton -label Condition -command "ItemSelect condition"\
+    $fm1 add radiobutton -label Condition -command "ItemSelect condition" \
             -variable MIpushedbutton -value condition
-    $fm1 add radiobutton -label Alarm -command "ItemSelect alarm"\
+    $fm1 add radiobutton -label Alarm -command "ItemSelect alarm" \
             -variable MIpushedbutton -value alarm
-    $fm1 add radiobutton -label "Text box" -command "ItemSelect text"\
+    $fm1 add radiobutton -label "Text box" -command "ItemSelect text" \
             -variable MIpushedbutton -value text
     $fm add cascade -label Flip -menu $fm.sub2
     set fm2 [menu $fm.sub2 -tearoff 0]
@@ -1371,15 +1372,15 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -menu ${winid}top.tools
     $fm add radiobutton -label "Label/move elements" \
             -command "ModeSelect select" -variable MIpushedbutton -value select
-    #    $fm add radiobutton -label "Move elements" -command "ModeSelect move"\
+    #    $fm add radiobutton -label "Move elements" -command "ModeSelect move" \
     -variable MIpushedbutton -value move
-    #    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete"\
+    #    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete" \
     -variable MIpushedbutton -value delete
-    #    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy"\
+    #    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy" \
     -variable MIpushedbutton -value copy
-    $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost"\
+    $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost" \
             -variable MIpushedbutton -value ghost
-    $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap"\
+    $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap" \
             -variable MIpushedbutton -value snap -state disabled
     
     if {[HaveValues $topNode]} {
@@ -1855,7 +1856,8 @@ proc AddDetailMenu {winId fm3 initVals} {
             $lastmenu add radio -label "$depth levels" \
                     -variable rads($winId,$cat) -value $depth \
                     -command "WindowDetail $winId $cat $depth 1"
-            
+            
+
         }
         $lastmenu add radio -label "All" -variable rads($winId,$cat) \
                 -value 32 -command "WindowDetail $winId $cat 32 1"
