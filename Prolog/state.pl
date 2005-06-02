@@ -31,7 +31,7 @@ sicstus_module(state,
 sicstus_use_module(library(lists)).
 
 kickoff(Vnum) :-
-	user:tcl_eval(['ControlDraw', br(Vnum)], EnvVars),
+	output:safe_tcl_eval(['ControlDraw', br(Vnum)], EnvVars),
 	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
@@ -204,6 +204,7 @@ get_box_size(Parent, Box_type, Cur_box_size) :-
 	(member(Box_type-Scale, [compartment-0.6, state-0.8,
 				 function-0.3, variable-0.3,
 				cloud-0.5, channel-0.6]), !,
+
 	    Cur_box_size is Scale*Abs_box_size;
 	Cur_box_size = Abs_box_size).
 

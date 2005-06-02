@@ -44,7 +44,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
-	on_exception(_Fail, user:tcl_eval(Cmd, Result), Result = -1).
+	user:tcl_eval(Cmd, Result).
 /********safe_tcl_eval(Cmd, Result) :-
 	user:tcl_eval(['FilterErrors' | Cmd], Result),
 	(Result = "-1",
@@ -112,6 +112,7 @@ chop_list([], []).
 chop_list([123 | TclText], [Arg | Prolog_rest]) :-
 	append(Curly, TclRest, [123 | TclText]),
 	curly(Curly, Arg), !,
+
 	chop_list(TclRest, Prolog_rest).
 
 /* throw away inter-arg space 
