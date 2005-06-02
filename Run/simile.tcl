@@ -163,7 +163,7 @@ switch $prolog {
     gnu {
     set tgt Run/xgsimile
     } sicstus {
-    set tgt System/bin/sicstus
+    set tgt System/bin/sprt
     }
 }
 

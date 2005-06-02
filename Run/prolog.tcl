@@ -74,7 +74,7 @@ proc AddCurrentToPipe {stack} {
     return $stack
 }
 
-proc ShowStack {} {
+proc ShowStack {} {
 
     global plPipe
     ShowMessage "Stack is..." info [AddCurrentToPipe $plPipe(stack)] ok
@@ -131,12 +131,12 @@ set env(LOCALSZ) [expr $vm_usage/4]
 set env(TRAILSZ) [expr $vm_usage*3/16]
 
 set plPipe(err) [file join $env(HOME) .simile log]
-set plPipe(stream) [open |[list $PROLOG_CMD 2> $plPipe(err)] r+]
+set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
 fconfigure $plPipe(stream) -translation {auto lf}
 
-send_pl_cmd restore('../System/bin/main.sav').
-send_pl_cmd main.
+#send_pl_cmd restore('../System/bin/main.sav').
+#send_pl_cmd main.
 set spraf {}
 while {![string match ready $spraf]} {
     if {[gets $plPipe(stream) spraf]<0} {
