@@ -331,6 +331,8 @@ used when entering file parameters */
 */
 	render_all(Language, global_declaration,
 		   [[void, this, []] | Constants], 0, GlobalDeclText),
+	(setof(GraphSpec, get_graph_spec(GraphSpec), AllGraphs), !;
+	    AllGraphs = []),
 	build_submodel_functions(Language, Phases, Inters,
 				 StateForm, UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, FnList),
@@ -414,7 +416,16 @@ wot need them */
 
 put_in_proc(Decls, [H1,H2,H3,H4 | Proc], ProcWDecls) :-
 	append([H1,H2,H3,H4 | Decls], Proc, ProcWDecls).
-	
+
+get_graph_spec(GraphSpec) :-
+	NodeId has_class_refinement table_data of
+	[file='/graph/', data=[YLow, YHigh, YSpan],
+	 indices=[XLow, XHigh, XSpan, Range], current=PointList,
+	 units=_, _, dims=NumPts | _],
+	/* Keep tcl working till it uses c++ graph access */
+	GraphSpec = [NodeId, XLow, XHigh, XSpan,
+		  YLow, YHigh, YSpan, Range, NumPts | PointList].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* declare_structure/3: goes through submodels and starting with most deeply 
 nested, provides a name for each variable, and a name, type, tag and pointer
@@ -637,18 +648,16 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 		AllGraphs, Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
-	do_assign_list( Language, ActionForm, 1, [], [[]], 
-			Used, ModelGraphs, Temp1, FuncStatements),
-	all(compile, correct_graph_header,
-	    [build(ModelGraphs), unify(Inters), build(AllGraphs)]),
+	do_assign_list( Language, ActionForm, AllGraphs, [], [[]], 
+			Used, Temp1, FuncStatements),
 
 	render(Language, procedure_start,
 	       call(void, ProcName, [real, start_time], [int, phase]), 0,
 	       EvalProcDeclText),
 	render(Language, end(procedure), ProcName, 0, Proc_ending),
 /* following section used to be c only */
-	generate_graph_handlers(AllGraphs, GraphSetups),
-	(\+ GraphSetups = [], !,
+	generate_graph_handlers(0, AllGraphs, GraphSetups),
+	(ProcName = int_evalmodel, \+ GraphSetups = [], !,
 	    render_all(Language, procedure_call, GraphSetups,
 		       8, GraphSetupPass),
 	    refer_value(Language, phase, PhRef),
@@ -707,16 +716,7 @@ build_submodel_functions( Language, Phases, Inters,
 	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
 	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
 	     build([[],[], Inters, Inters]),
-	     unify(Used), build([_, _, IntGraphs, ExtGraphs]), build(Decls)]),
-/*	build_eval_proc(Language, updatemodel, OrdUpdates, Globals, [], Used,
-			_, _, UpDecls),
-	build_eval_proc(Language, advancemodel, OrdStates, Globals, [], Used,
-			_, _, AdvDecls),
-	build_eval_proc(Language, int_evalmodel, IntOrdered, Globals, Inters,
-			Used, IntGraphs, IntClearText, IntDecls),
-	build_eval_proc(Language, ext_evalmodel, ExtOrdered, Globals, Inters,
-			Used, ExtGraphs, ExtClearText, ExtDecls),
-*/	append(IntGraphs, ExtGraphs, AllGraphs).
+	     unify(Used), unify(AllGraphs), build(Decls)]).
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
@@ -1719,12 +1719,13 @@ open_separately(Level) :-
 	\+ I = glob(_,_);
 	    nonvar(Alarm)).
 
-generate_graph_handlers([], []).
+generate_graph_handlers(_, [], []).
 
-generate_graph_handlers([[_, _, PointerData | NumericalData] | AllGraphs],
-		[Setup | AllSetups]) :-
+generate_graph_handlers(N, [[_ | NumericalData] | AllGraphs],
+			[Setup | AllSetups]) :-
+	PointerData is N+1,
 	Setup =.. [setup_graph_data, PointerData | NumericalData],
-	generate_graph_handlers(AllGraphs, AllSetups).
+	generate_graph_handlers(PointerData, AllGraphs, AllSetups).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % name_components instantiates the unground parts of InstanceList which correspond

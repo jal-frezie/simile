@@ -553,7 +553,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 				   reproduction-'REPRODUCTION',
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS']),
-	    (member([Name, GraphPointer | _], GraphOwners), !;
+	    (nth(GraphPointer, GraphOwners, [BaseName | _]), !;
 	    GraphPointer = 0),
 
 	    (BaseName has_class_refinement min_val of Min, 
@@ -719,8 +719,9 @@ swap_squares_for_curlies(ListList, Strings) :-
 	split_lines(NestStr, Strings).
 
 split_lines(NestStr, [String | Strings]) :-
-	append(String, Rest, NestStr),
-		append(_, "},", String), !,
+	[Br, C] = "},",
+	append(Start, [Br, C | Rest], NestStr),
+		append(Start, [Br, C], String), !,
 		split_lines(Rest, Strings);
 	String = NestStr,
 		Strings = [].

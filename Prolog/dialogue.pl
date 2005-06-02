@@ -412,6 +412,7 @@ get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 		     zero_empties(Table, Sizes)), true).
 
 get_table_part(Function, Data, Table, Units, Dims, Sizes) :-
+	length(Data, Len), Len<255,
 	name(Num, Data),
 	enum_type_ref(Num, Function, Table, Units, _),
 	    Dims = [],

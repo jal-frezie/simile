@@ -985,7 +985,7 @@ proc CheckCompilerLocation {} {
 # may well sit it exactly on top of the previous one
 
 proc FixSize {c} {
-    global custom openModel whatCalled
+    global custom openModel
     update idletasks
     set win [winfo parent $c]
     wm state $win normal
@@ -1008,8 +1008,7 @@ proc FixSize {c} {
     update
 
     destroy .splash
-    if {[string match $openModel {}] && \
-	    ![string equal SimileScript $whatCalled]} {
+    if {[string match $openModel {}]} {
         DoRegDialog $win
     }
     
