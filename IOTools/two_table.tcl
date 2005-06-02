@@ -316,14 +316,14 @@ namespace eval $keyValue {
     
     proc GetTransVals {winId varId} {
         # this is not right, it should only get the trans table once
-        global userinfo
+#        global userinfo
         set value [lindex [GetModelValue $varId] 0]
-        if {$userinfo(Version) >= 4.0} {
+#        if {$userinfo(Version) >= 4.0} {
             set trans [GetTransTable $varId]
             return [TransEnums $trans $value]
-        } else {
-            return $value
-        }
+#        } else {
+#            return $value
+#        }
     }
     
     proc CopyToClipboard {winId} {
