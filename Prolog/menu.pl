@@ -137,10 +137,13 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		FileV > 4.05, !,
 		/* reject canvas files older than v4.1 because clear submodels
 		need backgrounds to get paths graphically */
-		Win shows_model Parent,
-		inject_graphics(Win, GraphFileName),
-		(Translated = copy;
-		translate_canvas_pl_names(Win, Translated));
+		(Win2 shows_model Parent,
+		    inject_graphics(Win2, GraphFileName),
+		    (Translated = copy;
+		    \+ Translated = copy,
+			translate_canvas_pl_names(Win2, Translated)),
+		    fail;
+		true);
 	    /* this should call Prolog back with the display detail vals */
 	    NeedsRedraw = 1),
 	    output:my_delete_file(GraphFileName);
@@ -167,6 +170,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		    fail;
 		 true)),
 	    update_captions(Parent),
+	    redisplay(Parent),
 	    output:run_if_package;
 	Mode = insert(Pt),
 	    (Translated = copy, !, /* paste into empty sole toplevel */
