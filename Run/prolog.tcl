@@ -133,7 +133,6 @@ set env(TRAILSZ) [expr $vm_usage*3/16]
 # Pop a backslash before chars that would break tcl lists
 regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
-set plPipe(err) [file join $env(HOME) .simile log]
 set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
 fconfigure $plPipe(stream) -translation {auto lf}

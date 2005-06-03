@@ -68,8 +68,6 @@ if ![string match aqua [tk windowingsystem]] {
         exit
     }   
 }
-# temporary to get wkng with local tcltk
-# lappend auto_path $SIMILE_PATH/System/lib
 
 switch $tcl_platform(platform) {
     windows {
@@ -98,19 +96,24 @@ switch $tcl_platform(platform) {
     }
 }
 
-set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-gets $UserStream env(prologId)
-gets $UserStream env(interfaceId)
-gets $UserStream env(install_time)
-gets $UserStream env(license_code)
-gets $UserStream env(licensee_name)
-gets $UserStream env(licensee_corp)
-gets $UserStream env(SIMILE_VERSION)
-close $UserStream
-
-# first put up the splash screen
-image create photo splash
-splash read $SIMILE_PATH/Images/splash.gif
+if {[string equal windows $tcl_platform(platform)]} {
+    package require registry
+    foreach regEntry {prologId interfaceId install_time license_code \
+			licensee_name licensee_corp SIMILE_VERSION} {
+	set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
+	set env($regEntry) [registry get $regKey $regEntry]
+    }
+} else {
+    set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
+    gets $UserStream env(prologId)
+    gets $UserStream env(interfaceId)
+    gets $UserStream env(install_time)
+    gets $UserStream env(license_code)
+    gets $UserStream env(licensee_name)
+    gets $UserStream env(licensee_corp)
+    gets $UserStream env(SIMILE_VERSION)
+    close $UserStream
+}
 
 # KDE launch feedback will fail unless root window is displayed briefly,
 # causing annoying eye candy to persist while program is running.
@@ -118,6 +121,10 @@ splash read $SIMILE_PATH/Images/splash.gif
 # launcher script to avoid this effect -- make sure the first line points to
 # <Simile>/System/bin/wish
 # This is also the reason why this file must have Unix style line ends
+
+# first put up the splash screen
+image create photo splash
+splash read $SIMILE_PATH/Images/splash.gif
 
 # Sadly we cannot use the root window for the splash screen because that
 # needs overrideredirect, which also stops launch feedback working. And do
@@ -144,12 +151,12 @@ wm geometry .splash $startGeom
 wm overrideredirect .splash 1
 update
 
+# temporary to get wkng with local tcltk
+# lappend auto_path $SIMILE_PATH/System/lib
+
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder
 cd $SIMILE_PATH/Run
-
-set prolog [lindex [split $env(prologId) =] 1]
-set interface [lindex [split $env(interfaceId) =] 1]
 
 # tk_messageBox -title debug -icon info \
 #   -message "TCL library is [info library]\n \
@@ -159,7 +166,7 @@ set interface [lindex [split $env(interfaceId) =] 1]
 # -- must be concurrent because script causes Windows problems if
 # not finished
 
-switch $prolog {
+switch $env(prologId) {
     gnu {
     set tgt Run/xgsimile
     } sicstus {
@@ -177,7 +184,7 @@ switch $tcl_platform(platform) {
     }
 }
 
-switch $interface {
+switch $env(interfaceID) {
     pipe {
 	set whatCalled [file rootname [file tail [info nameofexecutable]]]
 	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn

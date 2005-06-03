@@ -148,8 +148,7 @@ proc load_c_stub_2 {} {
         set userinfo(corp) " "
     }
     
-    set userinfo(license_code) \
-            [join [lrange [split $env(license_code) =] 1 end] =]
+    set userinfo(license_code) $env(license_code)
     loadcommands
     randseed [clock scan now]
 }

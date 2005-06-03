@@ -709,7 +709,7 @@ proc ControlDraw {prologVersion} {
         set env(SIMILE_VERSION) 4.3
         set env(licensee_name) "Support team"
         set env(licensee_corp) "Simulistics Ltd"
-        set env(license_code) default_license=fa4c55b7105171de89d44c78a33cdc28
+        set env(license_code) fa4c55b7105171de89d44c78a33cdc28
     }
     
     set userinfo(Version) $env(SIMILE_VERSION)
@@ -758,20 +758,20 @@ proc ControlDraw {prologVersion} {
     }
 
     load_c_stub_1
-    if {![string match Windows $tcl_platform(os)]} {
+    if {![string match windows $tcl_platform(platform)]} {
 # Windows installers can ask the user for a license code and stick it in the
-# userinfo.txt. On other platforms we have to DIY.
+# registry. On other platforms we have to DIY and put in userinfo.txt.
 	if {int($userinfo(Version))!=int($userinfo(oldVersion)) || \
-		[string equal {license=<insert license code here>} \
+		[string equal {<insert license code here>} \
 		     $env(license_code)]} {
 	    if {![DoUserDialogue]} {
 		error "No license supplied"
 	    }
 	    set env(licensee_name) $userinfo(name)
 	    set env(licensee_corp) $userinfo(corp)
-	    set env(license_code) license=$userinfo(license_code)
+	    set env(license_code) $userinfo(license_code)
 	    set installTime [clock seconds]
-	    set env(install_time) "installtime=$installTime :: [clock format $installTime -gmt true]"
+	    set env(install_time) "$installTime :: [clock format $installTime -gmt true]"
 
 	    set UserStream [open ../Run/userinfo.txt w]
 	    puts $UserStream $env(prologId)
@@ -807,7 +807,7 @@ proc ControlDraw {prologVersion} {
         set expTime $userinfo(final_expiry)
     }
     if {$userinfo(days_after_install)} {
-        set installTime [lindex [lindex [split $env(install_time) =] 1] 0]
+        set installTime [lindex $env(install_time) 0]
         set relExpTime [expr $installTime+$userinfo(days_after_install)*$day]
         if {$userinfo(final_expiry)} {
             set expTime [min $expTime $relExpTime]
