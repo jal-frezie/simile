@@ -1115,8 +1115,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 #    $fm add command -label "New top-level" -command "NewTopLevel"
     $fm add command -label Open... -command "MenuSelect $c local open_all" \
             -accelerator "$accKey+O"
-    AddAccelerator $winid file Open... "<$accSym-o>"
-    $fm add cascade -label "Reopen" -menu .openrecent
+    AddAccelerator $winid file Open... "<$accSym-o>"
+
+   $fm add cascade -label "Reopen" -menu .openrecent
     if {[string equal .hi $winid]} {
     return
     }
@@ -1936,3 +1937,4 @@ proc ClearWindow {winId} {
     $winId delete doomed
     ResetEqnBar [winfo parent $winId]
 }
+
