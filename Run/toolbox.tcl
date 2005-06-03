@@ -246,13 +246,7 @@ set runHow(launch) open
 
 # However it must be interactive for Windows because using script occasionally
 # causes a file selector dialogue in the execution process to freeze. Linux is
-# easy but I want to keep all X86 platforms similar
-
-if [string match Darwin $tcl_platform(os)] {
-    set runHow(init) script
-} else {
-    set runHow(init) interactive
-}
+# easy but I want to keep all Unix platforms similar
 
 # call
 # ----
@@ -268,13 +262,8 @@ set runHow(call) pipe
 # set return to send_sync, send_async or pipe, for the way to get data from
 # the exec process. Must be pipe for the Mac because there is no send cmd, but
 # Windows machines cannot raise one process's window in response to a command
-# from the other if it is pipe. Linux again is easy
-
-if [string match Darwin $tcl_platform(os)] {
-  set runHow(return) pipe
-} else {
-  set runHow(return) send_sync
-}
+# from the other if it is pipe. Linux again is easy -- but I get complaints
+# when running models over VNC if using send, so use pipe.
 
 # readpipe
 # --------
@@ -292,10 +281,14 @@ if [string match Darwin $tcl_platform(os)] {
 # does not with interactive start, probably because the channel does not stop
 # being readable otherwise
 
-if [string match Darwin $tcl_platform(os)] {
-    set runHow(readpipe) get_data
-} else {
+if [string match windows $tcl_platform(platform)] {
+    set runHow(init) interactive
+    set runHow(return) send_sync
     set runHow(readpipe) await_cmd
+} else {
+    set runHow(init) script
+    set runHow(return) pipe
+    set runHow(readpipe) get_data
 }
 
 # this is obsolete and must be 'parallel'

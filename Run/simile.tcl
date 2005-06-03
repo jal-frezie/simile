@@ -184,7 +184,7 @@ switch $tcl_platform(platform) {
     }
 }
 
-switch $env(interfaceID) {
+switch $env(interfaceId) {
     pipe {
 	set whatCalled [file rootname [file tail [info nameofexecutable]]]
 	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
