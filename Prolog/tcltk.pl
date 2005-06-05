@@ -3,15 +3,14 @@
 
 sicstus_use_module(sp_only).
 
-tcl_eval(Cmd, Result) :-
+pipe_tcl_eval(Cmd, Except, Result) :-
         decode_command(Cmd, BrokenString),
 	remove_crs(BrokenString, TtfnString),
 	all_ttfn_to_utf8(TtfnString, String),
 	append("send_tcl_cmd ", String, PlString),
-	name(TkCmd, PlString),
-	write(TkCmd), nl,
+	sicstus_write_chars(PlString), nl,
 	flush_output,
-	wait_for_tcl(Response),
+	wait_for_tcl(Except, Response),
 	Result = Response.
 
 read_codes(Result) :-
@@ -118,9 +117,9 @@ decode_command(_X, []).
 tk_main_loop :-
 	do_cmd("true."),
 /* main loop: execute commands from Tcl to the default stream */
-	wait_for_tcl(_).
+	wait_for_tcl(1, _).
 
-wait_for_tcl(Result) :-
+wait_for_tcl(Except, Result) :-
         repeat,
 	read_codes(JoinedTclStr),
 	all_utf8_to_ttfn(JoinedTclStr, Joined),
@@ -130,9 +129,11 @@ wait_for_tcl(Result) :-
 	    do_cmd(TermStr),
 	    fail;
 	append("result:", Result, TclStr);
-	append("error:", Result, TclStr),
-	    name(ResultAtom, Result),
-	    raise_exception(ResultAtom)), !.
+	append("error:", ResultBase, TclStr),
+	    name(ResultAtom, ResultBase),
+	    (Except = 1, !,
+		raise_exception(ResultAtom);
+	    Result = -1)), !.
 	
 	
 do_cmd(TermStr) :-

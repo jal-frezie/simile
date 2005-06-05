@@ -28,7 +28,7 @@ set_interpreter(Interp) :-
 unset_interpreter :-
 	retractall(is_interpreter(_)).
 
-tcl_eval(Cmd, Result) :-
+any_tcl_eval(Cmd, _Except, Result) :-
 	is_interpreter(Interp),
 	tcl_eval(Interp, Cmd, Result).
 
@@ -45,14 +45,14 @@ main :-
 	append(VnumStr, [32, 40 | _], FullVnumStr),
 	name(Vnum, VnumStr), !, /* remove first ' (' onwards */
         tk_new([], Interp),
+	set_interpreter(Interp),
 	on_exception(ErrorFunction, 
-		     tcl_eval(Interp, [source, '../Run/toolbox.tcl'], _),
+		     any_tcl_eval([source, '../Run/toolbox.tcl'], 1, _),
 		     /* rel path only needed in dev sys */
 		     (ErrorFunction =.. [_, _, String],
 			 name(Bug, String),
 			 write(Bug), nl,
 			 fail)),
-	set_interpreter(Interp),
 	on_exception(ErrorFunction, state:kickoff(Vnum), true),
         (nonvar(ErrorFunction),
 	    ame_gen:do_dialogue("Failed startup", error, "Simile has been unable to start up due to problems with this system.", ok, _);
@@ -65,4 +65,4 @@ main :-
 wind_up :-
 	backup:use_temp_dir(TempDir),
 	output:my_delete_file(TempDir),
-	tcl_eval([destroy, '.'], _).
+	any_tcl_eval([destroy, '.'], 0, _).

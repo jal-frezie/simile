@@ -44,7 +44,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
 
 safe_tcl_eval(Cmd, Result) :-
-	user:tcl_eval(Cmd, Result).
+	user:any_tcl_eval(Cmd, 0, Result).
 /********safe_tcl_eval(Cmd, Result) :-
 	user:tcl_eval(['FilterErrors' | Cmd], Result),
 	(Result = "-1",
@@ -87,9 +87,29 @@ new_chop_list(Left, Done, Depth, Args) :-
 	    raise_exception(Error);   
 	Args = [].
 
+full_chop_list([], 0, [], []).
+full_chop_list([92, C | More], N, [92, C | CurArg], MoreArgs) :-
+	full_chop_list(More, N, CurArg, MoreArgs).
+full_chop_list([Here | More], NewDepth, NewDone, Args) :-
+	full_chop_list(More, Depth, Done, MoreArgs),
+	(Here = 32, Depth = 0, !,
+	    NewDepth = 0,
+	    NewDone = [],
+	    (Done = [], !,
+		Args = MoreArgs;
+	    (append([123 | NewArg], [125], Done), !;
+		    NewArg = Done),
+		Args = [NewArg | MoreArgs]);
+	 (Here = 123, !,
+		NewDepth is Depth+1;
+	    Here = 125, !,
+		NewDepth is Depth-1;
+	    NewDepth = Depth),
+	    NewDone = [Here | Done],
+	    Args = MoreArgs).
+	 
 chop_list(String, Args) :-
-	append(String, [32], NeatStr),
-	new_chop_list(NeatStr, [], 0, Args).
+	full_chop_list([32 | String], 0, [], Args).
 
 /* curly(P, Text) :-
 	append([123 | Text], [125], P),

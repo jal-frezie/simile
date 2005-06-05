@@ -408,9 +408,9 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		(Dims = void, Counts = [''];
 		all(render, boost, [build(Dims), build(Counts)])),
 		make_indexed_reference(L, Name, Counts, ArrayName),
-		sicstus_format_to_chars("~*s~a ~a = ~s",
-				[Indent, " ", Type, ArrayName, FirstLine],
-				Chars1),
+		sicstus_format_to_chars("~*s~a ~a = ",
+				[Indent, " ", Type, ArrayName], Chars0),
+		append(Chars0, FirstLine, Chars1),
 		name(NewFirstLine, Chars1),
 		list_of(32, DeepIndent, TabIn),
 		prepend_spaces(LateLines, TabIn, NewLateLines),

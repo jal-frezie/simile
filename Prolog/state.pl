@@ -31,7 +31,7 @@ sicstus_module(state,
 sicstus_use_module(library(lists)).
 
 kickoff(Vnum) :-
-	output:safe_tcl_eval(['ControlDraw', br(Vnum)], EnvVars),
+	user:any_tcl_eval(['ControlDraw', br(Vnum)], 1, EnvVars),
 	output:chop_list(EnvVars, [VStr, TempStr, OpenStr, EStr]),
 	retractall(version_is(_)),
 	assert(version_is(VStr)),
@@ -59,7 +59,7 @@ kickoff(Vnum) :-
 	name(OpenModel, OpenStr),
 	    menu:stick_model_in(Canvas, Desktop, OpenModel, reopen);
 	true), !,
-	output:safe_tcl_eval(['FixSize', Canvas], _).
+	user:any_tcl_eval(['FixSize', Canvas], 1, _).
 
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).

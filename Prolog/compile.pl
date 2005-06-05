@@ -84,7 +84,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    (sicstus_format_to_chars("{Relaying exception ~w at level ~w}",
 		[Ur, CheckDir], ExcStr),
 	     name(Exc, ExcStr),
-	     output:safe_tcl_eval([set, log, Exc], _),
+	     safe_tcl_eval([set, log, Exc], _),
 	     safe_tcl_eval([file, delete, '-force', br(WCheckDir)], _),
 	     raise_exception(Ur))),
 
@@ -196,7 +196,7 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	abs_path_name(Submodel, TopNode, OuterText),
 	caption_for(VisEntity, RedText),
 	menu:select_all_in(Submodel, base), /* make sure the red shows */
-	output:safe_tcl_eval([set, log, entered_exception], _),
+	safe_tcl_eval([set, log, entered_exception], _),
 	Wrinkle = unspecified(OuterText, RedText);
 	Parent has_part Submodel,
 	remove_redundant_equivs(Submodel, Equivs),
@@ -364,7 +364,7 @@ wot need them */
 		VersionDec, PhaseDec, [Times, DTs]], Headers),
 	send_to_dest(Stream, Headers),
 
-	output:list_matching_files('../Functions/*.cpp', FnIncs),
+	list_matching_files('../Functions/*.cpp', FnIncs),
 	/* the /* in the above line does not start a comment */
 	append(FnIncs, LocalIncs, Incs),
 	all(utility, append_atoms,
