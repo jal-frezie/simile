@@ -20,7 +20,7 @@
 set keyValue "plotterXY1.0"
 
 namespace eval ::$keyValue {
-        
+    
     proc identify {} {
         return "XY Plotter"
     }
@@ -33,11 +33,28 @@ namespace eval ::$keyValue {
         global ::graphtools::Told
         global ::graphtools::Tnew
         variable ynodes
-	variable xnodes
-
+        variable xnodes
+        
         namespace import -force ::graphtools::*
         
-	set plot($w,nodeCount) 0
+        InitPlotVars $w
+        InitPlatformDependentPlotVars $w
+        
+        set YYold($w) {}
+        set YYnew($w) {}
+        set Told($w) {}
+        set Tnew($w) {}
+        set ynodes($w) {}
+        set xnodes($w) {}
+        
+        SetState $w {}
+        
+        ShowHelper $w
+    }
+    
+    proc InitPlotVars {w} {
+        global ::graphtools::plot
+        set plot($w,nodeCount) 0
         
         set plot($w,xwindow_size) 0
         set plot($w,ywindow_size) 0
@@ -90,18 +107,6 @@ namespace eval ::$keyValue {
         set plot($w,DrawLines) 1
         set plot($w,DrawPoints) 0
         set plot($w,CurrentOnly) 0
-        InitPlatformDependentPlotVars $w
-        
-        set YYold($w) {}
-        set YYnew($w) {}
-        set Told($w) {}
-        set Tnew($w) {}
-        set ynodes($w) {}
-        set xnodes($w) {}
-        
-        SetState $w {}
-        
-        ShowHelper $w
     }
     
     proc Restore {winId} {
@@ -114,8 +119,9 @@ namespace eval ::$keyValue {
         global ::graphtools::Told
         global ::graphtools::Tnew
         variable ynodes
-	variable xnodes
+        variable xnodes
         
+        InitPlotVars $winId
         set YYold($winId) {}
         set YYnew($winId) {}
         set Told($winId) {}
@@ -123,20 +129,20 @@ namespace eval ::$keyValue {
         
         regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set plot $restoreString
-	InitPlatformDependentPlotVars $winId
-#ShowMessage debug info "ys $plot($winId,Yvars) xs $plot($winId,Xvars)" ok
+        InitPlatformDependentPlotVars $winId
+        #ShowMessage debug info "ys $plot($winId,Yvars) xs $plot($winId,Xvars)" ok
         foreach path $plot($winId,Yvars) {
-	    set node [GetIdFromCaptionPath $path]
-	    if {[string equal nomatch $node]} {
-		set node $path
-	    }
+            set node [GetIdFromCaptionPath $path]
+            if {[string equal nomatch $node]} {
+                set node $path
+            }
             lappend ynodes($winId) $node
         }
         foreach path $plot($winId,Xvars) {
-	    set node [GetIdFromCaptionPath $path]
-	    if {[string equal nomatch $node]} {
-		set node $path
-	    }
+            set node [GetIdFromCaptionPath $path]
+            if {[string equal nomatch $node]} {
+                set node $path
+            }
             lappend xnodes($winId) $node
         }
         ShowHelper $winId
@@ -145,8 +151,8 @@ namespace eval ::$keyValue {
     }
     
     proc InitPlatformDependentPlotVars {w} {
-	global ::graphtools::plot tcl_platform
-	    
+        global ::graphtools::plot tcl_platform
+        
         if [string match Darwin $tcl_platform(os)] {
             set plot($w,y_Ylabels) 5
         } else {
@@ -162,7 +168,7 @@ namespace eval ::$keyValue {
             set plot($w,fontTitle) [list Helvetica 8 normal]
         }
     }
-
+    
     proc GetCanvas {winId} {
         return $winId.canvas
     }
@@ -171,7 +177,7 @@ namespace eval ::$keyValue {
         #       tk_messageBox -message "Click node $caption $node" -type ok
         global ::graphtools::plot
         variable ynodes
-	variable xnodes
+        variable xnodes
         
         set newbox nodebox[incr plot($w,nodeCount)]
         set name [GetCaptionPathFromId $node]
@@ -181,7 +187,7 @@ namespace eval ::$keyValue {
             switch $plot($w,state) {
                 xcoord {
                     set plot($w,Xvars) $name
-		    set xnodes($w) $node
+                    set xnodes($w) $node
                     set plot($w,XaxisLabel) $caption
                     set plot($w,state) ycoord
                     
@@ -191,13 +197,23 @@ namespace eval ::$keyValue {
                 }
                 ycoord {
                     set plot($w,Yvars) $name
-		    set ynodes($w) $node
+                    #ShowMessage debug info "x $xnodes($w) [GetModelDims $xnodes($w)]" ok
+                    #ShowMessage debug info "y $node [GetModelDims $node]" ok
+                    #############  GET DIMENSIONS
+                    set xdim  [GetModelDims $xnodes($w)]
+                    set ydim  [GetModelDims $node]
+                    if {$xdim != $ydim} {
+                        ShowMessage Error info \
+                        "x and y dimensions do not match lease choose another y variable." ok
+                        return
+                    }
+                    set ynodes($w) $node
                     lappend plot($w,Ylabels) $caption; # allow more than one pair of var
                     set useNodes($w,state) display
                     drawGraphpad $w
                     UpdateState $w
                     ReleaseClicks $w
-                    $w.mess config -text {}; # clear prompt       
+                    $w.mess config -text {}; # clear prompt
                     display $w [GetModelTime] 0 0
                     display $w [GetModelTime] 0 0
                     $w.bbframe.buttonBox itemconfigure 1 -state disable; #disable the add var button
@@ -235,24 +251,24 @@ namespace eval ::$keyValue {
         drawGraphpad $w;
         
     }
-
-	proc reset {winId} {
+    
+    proc reset {winId} {
         global ::graphtools::YYold
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
- 
-            set YYold($winId) {}
-            set YYnew($winId) {}
-            set Told($winId) {}
-            set Tnew($winId) {}
-	}
-
+        
+        set YYold($winId) {}
+        set YYnew($winId) {}
+        set Told($winId) {}
+        set Tnew($winId) {}
+    }
+    
     # Invoked at every time interval.
     proc display {w time step remainder} {
         global ::graphtools::plot
         #    global ::graphtools::Xvalues
-       
+        
         get_Yvalues $w
         get_Xvalues $w
         
@@ -292,11 +308,11 @@ namespace eval ::$keyValue {
                 [list property.gif " Properties " [namespace code "Settings $w"]]]
         #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
         #    [list " settings " [namespace code "settings $w"]] \
-        #    [list " redraw " [namespace code "resetGraph $w"]] 
+        #    [list " redraw " [namespace code "resetGraph $w"]]
         ::graphtools::MakeToolBar $w $toolbarItems
         
         pack [label $w.mess] ;# for instructions
-                
+        
         # create canvas for graph
         canvas $w.canvas \
                 -width [expr $plot($w,xborder_left)+$plot($w,xlength)+ \
@@ -313,11 +329,11 @@ namespace eval ::$keyValue {
         #set xm [expr $plot($winId,xborder_left)+60]
         #set ym [expr $plot($winId,yborder_top)+20]
         #$winId.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-                -text "Select the x axis variable by clicking on a variable in the Explorer window\
+        -text "Select the x axis variable by clicking on a variable in the Explorer window\
                 or a Model Diagram."
         $winId.mess config -text "Select x variable: click on a variable in \
-                        the Explorer window or a Model Diagram."
-                
+                the Explorer window or a Model Diagram."
+        
         set plot($winId,state) xcoord
         GrabClicks $winId
     }
@@ -415,9 +431,9 @@ namespace eval ::$keyValue {
                 [expr $y0+$plot($w,yborder_bottom)-5] \
                 -text $plot($w,XaxisLabel) -anchor s \
                 -tags {movable scalable xaxis_label markable toplevel}
-
+        
         # legend vars only not elements of arrays
-        set nYlabel [llength $plot($w,Ylabels)]        
+        set nYlabel [llength $plot($w,Ylabels)]
         set j 0
         set k 0
         for {set i 0} {$i<$nYlabel} {incr i} {
@@ -450,27 +466,27 @@ namespace eval ::$keyValue {
         
         ### Bindings
         #$w.canvas bind axis_line <Double-1> \
-                [namespace code "settings_axis $w"]
+        [namespace code "settings_axis $w"]
         $w.canvas bind all <Button-1> \
                 [namespace code "CanvasMark $w %x %y %W"]
         $w.canvas bind movable <B1-Motion> \
                 [namespace code "CanvasDrag %x %y %W"]
         #$w.canvas bind xaxis_movable <B1-Motion> \
-                [namespace code "Xstretch $w %W %x %y %w %h"]
+        [namespace code "Xstretch $w %W %x %y %w %h"]
         #$w.canvas bind xslidable <B1-Motion> \
-                [namespace code "Xslide $w %W %x %y; draw_Xaxis $w "]
+        [namespace code "Xslide $w %W %x %y; draw_Xaxis $w "]
         ##    $w.canvas bind all <B1-Motion> \
         ##            [namespace code "Ystretch $w %W %x %y %w %h"]
         #$w.canvas bind yaxis_movable <B1-Motion> \
-                [namespace code "Ystretch $w %W %x %y %w %h"]
+        [namespace code "Ystretch $w %W %x %y %w %h"]
         #$w.canvas bind yslidable <B1-Motion> \
-                [namespace code "Yslide $w %W %x %y; draw_Yaxis $w "]
+        [namespace code "Yslide $w %W %x %y; draw_Yaxis $w "]
         #    $w.canvas bind xslidable <ButtonRelease-1> \
         #                    [namespace code "Reset_Xaxis $w"]; # event gets lost
         #$w.canvas bind yaxis_movable <ButtonRelease-1> \
-                [namespace code "draw_Yaxis $w"]
+        [namespace code "draw_Yaxis $w"]
         #$w.canvas bind xaxis_movable <ButtonRelease-1> \
-                [namespace code "draw_Xaxis $w"]
+        [namespace code "draw_Xaxis $w"]
         
         for {set i 0} {$i<$nYlabel} {incr i} {
             set vartag {}
@@ -486,18 +502,18 @@ namespace eval ::$keyValue {
         bind $w <Configure> [namespace code "resize $w %W %x %y %w %h"]
         bind $w.canvas <Configure> [namespace code "resize $w %W %x %y %w %h"]
         
-################################################################################
-#         $w.canvas bind xslidable <Enter> \
-#                 [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
-#         $w.canvas bind yslidable <Enter> \
-#                 [namespace code "$w.canvas configure -cursor sb_v_double_arrow"]
-#         $w.canvas bind yaxis_movable <Enter> \
-#                 [namespace code "$w.canvas configure -cursor fleur"]
-#         $w.canvas bind xaxis_movable <Enter> \
-#                 [namespace code "$w.canvas configure -cursor fleur"]
-#         $w.canvas bind all <Leave> \
-#                 [namespace code "$w.canvas configure -cursor arrow"]
-################################################################################
+        ################################################################################
+        #         $w.canvas bind xslidable <Enter> \
+        #                 [namespace code "$w.canvas configure -cursor sb_h_double_arrow"]
+        #         $w.canvas bind yslidable <Enter> \
+        #                 [namespace code "$w.canvas configure -cursor sb_v_double_arrow"]
+        #         $w.canvas bind yaxis_movable <Enter> \
+        #                 [namespace code "$w.canvas configure -cursor fleur"]
+        #         $w.canvas bind xaxis_movable <Enter> \
+        #                 [namespace code "$w.canvas configure -cursor fleur"]
+        #         $w.canvas bind all <Leave> \
+        #                 [namespace code "$w.canvas configure -cursor arrow"]
+        ################################################################################
     }
     
     proc Reset_Xaxis {w} {
@@ -642,22 +658,31 @@ namespace eval ::$keyValue {
             set Xnew [lindex $Tnew($w) $i]
             set Xold [lindex $Told($w) $i]
             plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
-            incr iplot
         }
+        
 ################################################################################
-#         set iplot 0
-#         foreach Ynew $YYnew($w) {
-#             #puts "plot_YY Ynew $Ynew"
-#             set node [lindex $Ynew 0]
-#             foreach Yold $YYold($w) {
-#                 if {$node==[lindex $Yold 0]} {
-#                     plot_Y $w $iplot $Told($w) $Yold $Tnew($w) $Ynew
-#                     incr iplot; #each var gets an id NOT each element here
-#                 }
-#             }
+#             foreach {node Ynew} $YYnew($w) {node Yold} $YYold($w) \
+#                     {node Xnew} $Tnew($w) {node Xold} $Told($w) {
+#             plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
+#             incr iplot
 #         }
 ################################################################################
-    }
+################################################################################
+# set iplot 0
+# foreach Ynew $YYnew($w) {
+#     #puts "plot_YY Ynew $Ynew"
+#     set node [lindex $Ynew 0]
+#     foreach Yold $YYold($w) {
+#         if {$node==[lindex $Yold 0]} {
+#             plot_Y $w $iplot $Told($w) $Yold $Tnew($w) $Ynew
+#             incr iplot; #each var gets an id NOT each element here
+#         }
+#     }
+# }
+# ###############################################################################
+################################################################################
+}
+###############################################################################
     
     proc plot_Y {w iplot Told Yold Tnew Ynew} {
         global ::graphtools::plot
@@ -860,7 +885,7 @@ namespace eval ::$keyValue {
     proc get_Xvalues {w} {
         global ::graphtools::Told
         global ::graphtools::Tnew
-	variable xnodes
+        variable xnodes
         
         set Told($w) $Tnew($w)
         set Tnew($w) [list 1 2]
