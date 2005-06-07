@@ -3,7 +3,7 @@
 
 sicstus_use_module(sp_only).
 
-pipe_tcl_eval(Cmd, Except, Result) :-
+any_tcl_eval(Cmd, Except, Result) :-
         decode_command(Cmd, BrokenString),
 	remove_crs(BrokenString, TtfnString),
 	all_ttfn_to_utf8(TtfnString, String),
