@@ -1663,6 +1663,8 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   proc_pointers_for_shank(get_tcl_value_pointer,
 			  interact_gui, showMess,
 			  simileVersion, &connectDataPtr, &connCountPtr);
+  /* Use the Tcl Stubs mechanism */
+  Tcl_InitStubs(interp, "8.4", 0);
   Tcl_SetVar2(interp, "userinfo", "edn", edition, 0);
   Tcl_CreateObjCommand(interp, "c_testlicense", testlicenseCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);

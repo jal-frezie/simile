@@ -23,7 +23,7 @@ if {[llength $final_expiry]} {
     set expiry_ticks 0
 }
 
-set defns [list -DSIM_FINAL_EXPIRY=$expiry_ticks \
+set defns [list -DUSE_TCL_STUBS -DSIM_FINAL_EXPIRY=$expiry_ticks \
 	       -DSIM_DAYS_AFTER_INSTALL=$days_after_install]
 lappend defns -DSIM_[string toupper $edition]
 if {$needs_license} {
@@ -60,14 +60,14 @@ if $onUnix {
         exec g++ -c -O -fPIC -I. ./shank.cpp
         exec g++ -shared -o $SHANK shank.o
         eval {exec gcc -c -O -fPIC} $defns {-I. -I$TCL/include ./ame_cmx.cpp}
-        exec gcc -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltcl$MAJ.$MIN \
+        exec gcc -shared -o $TARGET ame_cmx.o -L$TCL/lib -ltclstub$MAJ.$MIN \
 	    -L$TGTLIB -l5d
     }
 } else {
     set TCL [file attributes $TCL -shortname]
     set mydll ame_dll$MAJ$MIN
     set TARGET ${STUBS}/$mydll.dll
-    set dll tcl${MAJ}${MIN}
+    set dll tclstub${MAJ}${MIN}
     
     # Older TclTks may have a special library for Visual C, which is also used by mingw
     set tclLib $TCL/lib/${dll}vc.lib

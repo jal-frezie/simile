@@ -697,6 +697,50 @@ proc GetFindText {parent} {
     }
 }
 
+proc DoUserDialogue {} {
+    global env userinfo
+    set t [PutItThere .userdata .]
+    wm title $t "Enter your details"
+    pack [label $t.mess -text "Please enter your name, organization and license code if required."]
+    pack [frame $t.name] -fill x
+    pack [label $t.name.mess -text Name:] -side left
+    pack [entry $t.name.entry -width 40 -text userinfo(name)] -side right
+    pack [frame $t.corp] -fill x
+    pack [label $t.corp.mess -text Organization:] -side left
+    pack [entry $t.corp.entry -width 40 -text userinfo(corp)] -side right
+    pack [frame $t.code] -fill x
+    if {![string equal evaluation $userinfo(edn)]} {
+	pack [label $t.code.mess -text "License code:"] -side left
+	pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
+	    -side right
+    } else {
+	set userinfo(license_code) "<none needed>"
+    }
+    pack [frame $t.buttons] -fill x
+    pack [button $t.buttons.ok -text OK \
+	      -command "set userinfo(entrydone) 1"] -side left
+    pack [button $t.buttons.ex -text Exit \
+	      -command "set userinfo(entrydone) 0"] -side right
+    
+    LetItShow $t
+    grab $t
+    focus $t.name.entry
+    wm withdraw .splash
+    while {![info exists userinfo(entrydone)]} {
+	tkwait variable userinfo(entrydone)
+	if {$userinfo(entrydone)} {
+	    if {![c_testlicense]} {
+		BuildProblem "Wrong license code" warning "You have entered the wrong license code for your name, organization and Simile version. Please try again, ensuring you have the correct license code." license
+		unset userinfo(entrydone)
+	    }
+	}
+    }
+    wm deiconify .splash
+    grab release $t
+    PackItUp $t
+    return $userinfo(entrydone)
+}
+
 proc DoRegDialog {dtId} {
     global userinfo custom welcomeDone tcl_platform SimileAutoObjLoaded
     
