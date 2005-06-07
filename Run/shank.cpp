@@ -1104,6 +1104,7 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   enum_type_data* types[32];
 
   for (count = 1; seekType->nodecount>count; ++count) {
+    if (seekType->nodedata[count].eval == GHOST) continue;
     seekType->make_full_caption(count, test, dims, types);
 	  
     if (!strcmp(seeknode, test)) {

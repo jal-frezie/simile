@@ -568,8 +568,11 @@ proc GetTclCompProperty {topNode prop args} {
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
 	} IdFromCapt {
 	    for {set record 1} {$nodecount>$record} {incr record} {
-		if {[string equal $node [GetFullCaption $nodedata($record)]]} {
-		    return [lindex $nodedata($record) 0]
+		if {![string equal GHOST [lindex $nodedata($record) 4]]} {
+		    if {[string equal $node \
+			     [GetFullCaption $nodedata($record)]]} {
+			return [lindex $nodedata($record) 0]
+		    }
 		}
 	    }
 	    return nomatch
