@@ -492,7 +492,7 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 	BareRef = 'NULL',
 	    Value = 0,
 	    Units = any;
-	(units:baseline(BareRef); units:unit_definition(BareRef, _)), !,
+	units:defined_as_unit(BareRef, _), !,
 	    Units = BareRef, Value = 1;
 	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)).
 

@@ -191,12 +191,10 @@ abs_path_name(RemoteNode, DestBox, RemoteName) :-
 	get_host(RemoteNode, VisibleNode),
 	find_all_comps(SourceBox, VisibleNode),
 	get_chain(SourceBox, DestBox, _, Downs, Ups),
-	list_downs(Downs, DownStr),
-	list_ups(Ups, UpStr),
+	list_downs(Downs, DownAll),
+	list_ups(Ups, UpAll),
 	caption_for(VisibleNode, LocalCaption),
-	name(LocalCaption, LocalCaptionStr),
-	append([UpStr, DownStr, LocalCaptionStr], RemoteNameStr),
-	name(RemoteName, RemoteNameStr).
+	append_atoms([UpAll, DownAll, LocalCaption], RemoteName).
 
 rel_path_name(RemoteNode, DestBox, Relation, SourceLocation, RemoteName) :-
 	abs_path_name(RemoteNode, DestBox, AbsName),
@@ -215,18 +213,18 @@ rel_path_name(RemoteNode, DestBox, Relation, SourceLocation, RemoteName) :-
 	sicstus_format_to_chars("~a (active channel?)", [AbsName], RemoteStr)),
 	name(RemoteName, RemoteStr)).
 
-list_downs([], []).
+list_downs([], '').
 
-list_downs([Node | Rest], Str) :-
+list_downs([Node | Rest], All) :-
 	caption_for(Node, This),
-	name(This, ThisStr),
 	list_downs(Rest, Others),
-	append([Others, ThisStr, "/"], Str).
+	append_atoms([Others, This, '/'], All).
 
-list_ups([], []).
+list_ups([], '').
 
-list_ups([_ | Rest], [46, 46, 47 | Str]) :-
-	list_ups(Rest, Str).
+list_ups([_ | Rest], All) :-
+	list_ups(Rest, End),
+	append_atoms('../', End, All).
 
 get_spec_units(Node, Unit) :-
 	Node has_class_refinement units of Unit, !;

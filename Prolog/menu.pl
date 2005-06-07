@@ -1550,7 +1550,7 @@ mark_model_danger(Model, Danger) :-
 get_default_export_name(Model, Extn, Export) :-
 	[Slash] = "/", [Dot] = ".",
 	(get_model_file(Model, Path), !; Path = untitled),
-	name(Path, PathStr),
+	sicstus_atom_chars(Path, PathStr),
 	(append(Dirs, File, PathStr),
 	    suffix([Slash], Dirs),
 	    \+ member(Slash, File), !;
@@ -1559,7 +1559,7 @@ get_default_export_name(Model, Extn, Export) :-
 	    \+ member(Dot, OldExtn), !;
 	Base = File),
 	append(Base, Extn, ExportStr),
-	name(Export, ExportStr).
+	sicstus_atom_chars(Export, ExportStr).
 	
 	
 /* style selection between eng and sd is largely redundant now... 

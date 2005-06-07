@@ -276,14 +276,15 @@ append( [], [] ).
 
 append( [H|T], Y ) :-
 	var(H),
-		raise_exception(['Very bad! Tried to concatenate list including free variable', [H|T]]);
+	raise_exception(['Very bad! Tried to concatenate list including free variable', [H|T]]);
 	append( T, Z ),
 	append( H, Z, Y ).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 append_atoms(A1, A2, A) :-
-	name(A1, S1), name(A2, S2), append(S1, S2, S), name(MA, S), A=MA.
+	name(A1, S1), name(A2, S2), append(S1, S2, S12), name(A12, S12),
+	A = A12.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % append_atoms/2 appends a list of atoms
@@ -395,7 +396,8 @@ generate_name(L, Atom, UnusedName, Used, Spares) :-
 
 ensure_unused(Name, NewName, Used, Spares) :-
 	nuke_if_grounded(NewName),
-	(Sig = ''; count_to(0, 100000, 1, N), append_atoms('_', N, Sig)),
+	(Sig = ''; count_to(0, 100000, 1, N),
+	    number_atom(N, NA), append_atoms('_', NA, Sig)),
 	append_atoms(Name, Sig, NewName),
 	all(utility, append_atoms,
 	    [unify(NewName), build(['' | Spares]), build(ToReserve)]),

@@ -34,3 +34,7 @@ than the Sicstus, like... */
 print_to_codes(TermStr, Term) :-
 	with_output_to_chars(write_term(Term, [portrayed(true)]),
 			     TermStr).
+
+number_atom(N, A) :-
+	number_chars(N, C),
+	atom_chars(A, C).

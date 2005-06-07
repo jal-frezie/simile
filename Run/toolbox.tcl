@@ -281,7 +281,7 @@ set runHow(call) pipe
 # does not with interactive start, probably because the channel does not stop
 # being readable otherwise
 
-if [string match windows $tcl_platform(platform)] {
+if {![string match Darwin $tcl_platform(platform)]} {
     set runHow(init) interactive
     set runHow(return) send_sync
     set runHow(readpipe) await_cmd

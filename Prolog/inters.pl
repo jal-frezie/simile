@@ -228,8 +228,9 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    name(FnEntry, FnChars)),
 	    read_funcs(File, Stream, IsBuiltIn, More),
 	    Done = [FnEntry | More];
-	Line = unit_definition(New, Old), !,
-	    add_unit_definition(New, Old),
+	member(Line, [baseline(_), unit_definition(_,_), longhand(_,_)]), !,
+	    % use asserta so user-supplied definitions override system ones
+	    units:asserta(Line),
 	    read_funcs(File, Stream, IsBuiltIn, Done);
 	sicstus_format_to_chars("The file ~a contained the line ~w which is in the wrong format for a macro, function or unit definition -- please refer to the documentation.", 
 	               [File, Line], Bug),
@@ -926,7 +927,7 @@ promote_unit(Lo, Hi) :-
 	promote_unit(Med, Hi).
 
 uses_as(any, Type) :-
-	member(Type, [boolean, cond_spec, a(_ET), n(_ET)]).
+	member(Type, [boolean, a(_ET), n(_ET)]).
 uses_as(boolean, cond_spec).
 /* above was commented out, but seems to belong
 -- probably so as not to allow cond_specs to use outside conditions

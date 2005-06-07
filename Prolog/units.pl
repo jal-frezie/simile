@@ -2,13 +2,14 @@
 replace a huge steaming pile of convoluted entrails spewed up by Geraint. */
 
 sicstus_module(units, [get_conversion/4, extract_units_root/4,
-		       default_tick_is/1, add_unit_definition/2,
-		       sort_units/3]).
+		       default_tick_is/1, sort_units/3, defined_as_unit/2]).
 
 default_tick_is(day).
 
 get_conversion(Source, Source_units, Dest_units, Converted_source) :-
-	add_conversion(Source_units/Dest_units, *, 1, 1, Mnum, Qnum),
+	standard_name(Source_units, SourceU),
+	standard_name(Dest_units, DestU),
+	add_conversion(SourceU/DestU, *, 1, 1, Mnum, Qnum),
 	(Mnum = Qnum, !,
 		Converted_source = Source;
 /* gcd with floats sometimes causes crashes in Linux
@@ -31,7 +32,7 @@ add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
 	    BaseOut = BaseIn,
 	    (Sign = (*), Mnum = Factor, Qnum = 1.0;
 		Sign = (/), Mnum = 1.0, Qnum = Factor);
-	unit_definition(Unit, Defn),
+	unit_expansion(Unit, Defn),
 		add_conversion(Defn, Sign, BaseIn, BaseOut, Mnum, Qnum);
 	break_product(Unit, Op, Top, Bottom),
 	    add_conversion(Top, Sign, BaseIn, BaseMid, M1, Q1),
@@ -115,7 +116,7 @@ get_n_times(Units, Depth, Factor, Sign, Left) :-
 	    More = Left;
 	 Deeper is Depth-1,
 	    get_n_times(More, Deeper, Factor, Sign, Left)).
-	
+
 combine_signs(*, *, *).
 combine_signs(*, /, /).
 combine_signs(/, *, /).
@@ -125,71 +126,51 @@ join_without_ones(Sign, P, Q, All) :-
 	Sign = (*), (P=1,All=Q; Q=1,All=P), !;
 	All =.. [Sign, P, Q].
 
-baseline(metre).
-baseline(kilogramme).
-baseline(second).
-baseline(kelvin).
-baseline(radian).
-
+:- dynamic(baseline/1).
 :- dynamic(unit_definition/2).
+:- dynamic(longhand/2).
 
-add_unit_definition(New, Old) :-
-	assert(unit_definition(New, Old)).
+%unit prefixes, most common first
+unit_prefixes(10, deca, da ).
+unit_prefixes(0.1, deci, d ).
+unit_prefixes(100, hecto, h ).
+unit_prefixes(0.01, centi, c ).
+unit_prefixes(1000, kilo, k ).
+unit_prefixes(0.001, milli, m ).
+unit_prefixes(1.0e6, mega, 'M' ).
+unit_prefixes(1.0e-6, micro, u ).    %%%%%%%%%%% 
+unit_prefixes(1.0e9, giga, 'G' ).
+unit_prefixes(1.0e-9, nano, n ).
+unit_prefixes(1.0e12, tera, 'T' ).
+unit_prefixes(1.0e-12, pico, p ).
+unit_prefixes(1.0e15, peta, 'P' ).
+unit_prefixes(1.0e-15, femto, f ).
+unit_prefixes(1.0e18, exa, 'E' ).
+unit_prefixes(1.0e-18, atto, a ).
+unit_prefixes(1.0e21, zetta, 'Z'). 
+unit_prefixes(1.0e-21, zepto, z ).
+unit_prefixes(1.0e24, yotta, 'Y').
+unit_prefixes(1.0e-24, yocto, y ).
 
-/* shorthands */
-unit_definition(mm, millimetre).
-unit_definition(cm, centimetre).
-unit_definition(m, metre).
-unit_definition(km, kilometre).
-unit_definition(ft, foot).
-unit_definition(g, gramme).
-unit_definition(w, watt).
-unit_definition(kg, kilogramme).
-unit_definition(kw, kilowatt).
-unit_definition(s, second).
-unit_definition(sec, second).
-unit_definition(lb, pound).
-unit_definition(ha, hectare).
+/* longhands are case insensitive */
+standard_name(Unit, AbbrevUnit) :-
+	(atom(Unit),
+	    name(Unit, UnitStr),
+	    ame_gen:lower(UnitStr, LowUnitStr),
+	    name(LowUnit, LowUnitStr),
+	    longhand(LowUnit, AbbrevUnit), !;
+	 AbbrevUnit = Unit).
 
-unit_definition(degree, radian*22/1260).
-unit_definition(litre,	metre*metre*metre/1000).
-unit_definition(pint,	gallon/8).
-unit_definition(gallon,	litre*454609/100000). /* not in USA */
+unit_expansion(Unit, Def) :-
+	atom(Unit),
+	(unit_definition(Unit, Def), !;
+	unit_prefixes(Multiplier, _Long, Pre),
+	    atom_concat(Pre, InnerUnit, Unit),
+	    unit_definition(InnerUnit, InnerDef),
+	    Def = Multiplier*InnerDef).
 
-unit_definition(minute,	second*60).
-unit_definition(hour,	minute*60).
-unit_definition(day,	hour*24).
-unit_definition(week,	day*7).
-unit_definition(month,	year/12).
-unit_definition(year,	day*365). /* not quite right */
-
-unit_definition(millimetre, metre/1000).
-unit_definition(centimetre, metre/100).
-unit_definition(kilometre, metre*1000).
-unit_definition(inch,	metre*254/10000).
-unit_definition(foot,	inch*12).
-unit_definition(yard,	foot*3).
-unit_definition(mile,   yard*1760).
-
-unit_definition(hectare, 10000*metre*metre).
-unit_definition(gramme,	kilogramme/1000).
-unit_definition(pound,	kilogramme*45359237/100000000). /* avoirdupois */
-unit_definition(ounce,	pound/16).
-unit_definition(stone,	pound*14).
-unit_definition(cwt,	stone*8).
-unit_definition(ton,	cwt*20).
-
-unit_definition(newton,	kilogramme*metre/second/second).
-unit_definition(dyne,	gramme*centimetre/second/second).
-unit_definition(gravity,	(metre/second/second)*(98/10)). 
-	/* Acceleration due to gravity */
-unit_definition(kgf,	kilogramme*gravity).
-unit_definition(lbf,	pound*gravity).
-
-unit_definition(joule,	newton*metre).
-unit_definition(kilocalorie,	calorie*1000).
-unit_definition(calorie,	joule*41868/10000).
-unit_definition(kwh,	kilowatt*hour). /* energy to power and back again, wtfn? */
-
-unit_definition(watt,	joule/second).
-unit_definition(kilowatt,	watt*1000).
+defined_as_unit(FullName, Def) :-
+	standard_name(FullName, Name),
+	(units:baseline(Name),
+	    Def = Name;
+	units:unit_expansion(Name, Def)).

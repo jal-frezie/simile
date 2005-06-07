@@ -85,9 +85,7 @@ get_info(_, Comp, comment) :-
 	callback(br(write(Pop))).
 
 get_info(_, Name, is_unit) :-
-	(units:baseline(Name), !,
-	    Def = baseline;
-	units:unit_definition(Name, Def), !;
+	(units:defined_as_unit(Name, Def), !;
 	Def = none),
 	callback(write(Def)).
 
