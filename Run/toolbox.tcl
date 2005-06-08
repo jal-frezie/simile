@@ -281,7 +281,7 @@ set runHow(call) pipe
 # does not with interactive start, probably because the channel does not stop
 # being readable otherwise
 
-if {![string match Darwin $tcl_platform(platform)]} {
+if {![string match Darwin $tcl_platform(os)]} {
     set runHow(init) interactive
     set runHow(return) send_sync
     set runHow(readpipe) await_cmd
@@ -754,8 +754,7 @@ proc ControlDraw {prologVersion} {
     if {![string match windows $tcl_platform(platform)]} {
 # Windows installers can ask the user for a license code and stick it in the
 # registry. On other platforms we have to DIY and put in userinfo.txt.
-	if {int($userinfo(Version))!=int($userinfo(oldVersion)) || \
-		[string equal {<insert license code here>} \
+	if {[string equal {<insert license code here>} \
 		     $env(license_code)]} {
 	    if {![DoUserDialogue]} {
 		error "No license supplied"

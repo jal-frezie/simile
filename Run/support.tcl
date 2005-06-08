@@ -707,7 +707,7 @@ proc first {lo} {
 
 # 'after idle' doesn't quite work in MacOS X
 proc start_in_editor {args} {
-    eval do_in_editor after 1 $args
+    do_in_editor after 1 $args
 }
 
 proc do_in_editor {args} {
