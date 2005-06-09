@@ -547,6 +547,9 @@ proc TellAllHelpers {node fun args} {
 	    eval {${helperId}::$fun $winId} $args
 	}
     }
+    if {[string equal display $fun]} {
+	eval WriteLogs $node $args
+    }
 }
 
 # this saves us deleting all the do_for_nodes in the part of the program 
@@ -657,7 +660,9 @@ proc snap {topNode node} {
 		 [list save.gif "Save to file" \
 		      [list SaveSnap $w $label]] \
 		 [list refresh.gif "Update" \
-		      [list UpdateSnap $w $label $submodels $topNode $node]]]
+		      [list UpdateSnap $w $label $submodels $topNode $node]] \
+		 [list reel.gif "Log to file" \
+		      [list LogSnap $w $label $submodels $topNode $node]]]
     ::graphtools::MakeToolBar $w $tbItems
     text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
             -xscrollcommand "$w.xscroll set" \
@@ -804,15 +809,78 @@ proc SaveSnap {w vname} {
     global runState
 
     set filename [ChooseFile snap.csv "Save snapshot data as.." 1]
-    if {[llength $filename]} {
-	set out [NetOpen $filename w]
-	for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
-	    puts -nonewline $out index${idx},
-	}
+    if {![llength $filename]} return
+    set out [NetOpen $filename w]
+    for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
+	puts -nonewline $out index${idx},
     }
     puts $out $vname
     SquirtLine $out {} $runState(val$w)
     close $out
+}
+
+proc LogSnap {w vname tree topNode node} {
+    global runState iconImages
+
+    if {[info exists runState(log$node)]} {
+	$w.bbframe.buttonBox itemconfigure 2 -image $iconImages(reel)
+	close [lindex $runState(log$node) 1]
+	unset runState(log$node)
+    } else {
+	$w.bbframe.buttonBox itemconfigure 2 -image $iconImages(noreel)
+	set filename [ChooseFile snap.csv "Log data for $vname as.." 1]
+	if {![llength $filename]} return
+	set out [NetOpen $filename w]
+	set lh time
+	for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
+	    puts -nonewline $out $lh
+	    set lh {}
+	    PutIndNo $out -$idx $runState(val$w)
+	    puts $out {}
+	}
+	set runState(log$node) [list $topNode $out]
+    }
+}
+
+proc WriteLogs {topNode time vname step} {
+    global runState
+    foreach logger [array names runState log*] {
+	if {[string equal $topNode [lindex $runState($logger) 0]]} {
+	    set curVals [GetCompProperty $topNode Value \
+			     [string range $logger 3 end]]
+	    set str [lindex $runState($logger) 1]
+	    puts -nonewline $str $time
+	    PutValsOnly $str [lindex $curVals 0]
+	    puts $str {}
+	}
+    }
+}
+
+proc PutValsOnly {str val} {
+    if {[llength $val]==1} {
+	puts -nonewline $str ,$val
+    } else {
+	foreach {idx sub} $val {
+	    PutValsOnly $str $sub
+	}
+    }
+}
+
+proc PutIndNo {str deep val} {
+    if {$deep<0} {
+	set deep [expr $deep+1]
+    }
+    set newDeep $deep
+    if {[llength $val]==1} {
+	puts -nonewline $str ,$deep
+    } else {
+	foreach {idx sub} $val {
+	    if {!$deep} {
+		set newDeep $idx
+	    }
+	    PutIndNo $str $newDeep $sub
+	}
+    }
 }
 
 proc SquirtLine {str idcs val} {
