@@ -126,11 +126,11 @@ if {[string equal windows $tcl_platform(platform)]} {
 # needs overrideredirect, which also stops launch feedback working. And do
 # not think we can turn off redirect after displaying it, that does not work.
 # So we do our best to hide the brief appearance of the root window by giving
-# it the same geometry as the splash screen...
+# it the same coordinates as the splash screen so it is hidden behind.
 
 set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
 if {[string equal Linux $tcl_platform(os)]} {
-    wm geometry . 400x316$startGeom
+    wm geometry . $startGeom
 } else {
     wm withdraw .
 }
