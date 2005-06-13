@@ -122,10 +122,6 @@ if {[string equal windows $tcl_platform(platform)]} {
 # <Simile>/System/bin/wish
 # This is also the reason why this file must have Unix style line ends
 
-# first put up the splash screen
-image create photo splash
-splash read $SIMILE_PATH/Images/splash.gif
-
 # Sadly we cannot use the root window for the splash screen because that
 # needs overrideredirect, which also stops launch feedback working. And do
 # not think we can turn off redirect after displaying it, that does not work.
@@ -134,10 +130,14 @@ splash read $SIMILE_PATH/Images/splash.gif
 
 set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
 if {[string equal Linux $tcl_platform(os)]} {
-    wm geometry . $startGeom
-    update
+    wm geometry . 400x316$startGeom
+} else {
+    wm withdraw .
 }
-wm withdraw .
+
+# first put up the splash screen
+image create photo splash
+splash read $SIMILE_PATH/Images/splash.gif
 
 toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
@@ -150,6 +150,8 @@ catch {append regInfo ", $env(licensee_corp)"}
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
 update
+
+wm withdraw . ;# already withdrawn if not Linux
 
 # temporary to get wkng with local tcltk
 # lappend auto_path $SIMILE_PATH/System/lib
