@@ -186,7 +186,7 @@ proc Pref_Dialog {} {
        }
        set pref(uid) 0
        foreach item $pref(items) {
-#            ShowMessage debug info "$item; [PrefRes $item]" ok
+            #ShowMessage debug info "$item; [PrefRes $item]" ok
             switch -glob -- [PrefRes $item] {
                 init* {set frame $displayF}
                 hackBreak {set frame $compF}
@@ -195,6 +195,7 @@ proc Pref_Dialog {} {
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
                 gridSnap {set frame $genericF}
+                myButton {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}
                 flowRouting {set frame $flowF}
                 defBackground {set frame $submodelF}
