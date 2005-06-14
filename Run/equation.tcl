@@ -6,8 +6,7 @@
 # This file contains procedures for the equation dialogue.
 #
 proc create_equation {parent boxtitle indices} {
-    global equation equationbar tcl_platform iconImages
-    
+    global equation equationbar tcl_platform iconImages   
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
@@ -93,25 +92,20 @@ proc create_equation {parent boxtitle indices} {
     TitleFrame $middleF.keypad -text "Keypad: "
     set keypadf [$middleF.keypad getframe]
     frame $keypadf.keys
-    set keys {< > ( ) \{ \} \[ \] = ^ , / and dummy if dummy 7 8 9 * or dummy then dummy \
+    set keys {< > ( ) \[ \] custom AC = ^ , / and dummy if dummy 7 8 9 * or dummy then dummy \
                 4 5 6 - not dummy elseif dummy 1 2 3 + xor dummy else dummy 0 .  <- -> DEL \
                 dummy SPACE dummy}
     for {set row 0} {$row < 6} {incr row} {
         pack [frame $keypadf.keys.row$row] -fill x
         for {set col 0} {$col < 8} {incr col} {
             set act [lindex $keys [expr 8*$row+$col]]
-            if {[string match {\[} $act]} {
-                pack [button $keypadf.keys.row$row.col$col \
-                        -width 2 \
-                        -text $act -command "HitKey $t \\$act"] \
-                        -side left -fill x -expand false
-            } else  {
-                pack [button $keypadf.keys.row$row.col$col \
-                        -width 2 \
-                        -text $act -command "HitKey $t \"$act\""] \
-                        -side left -fill x -expand false
-                
-            }
+	    if {[string match custom $act]} {
+		set act [PrefValue custom(myButton) myButton]
+	    }
+	    pack [button $keypadf.keys.row$row.col$col -width 2 \
+		      -text $act -command [list HitKey $t $act]] \
+		-side left -fill x -expand false
+	    
         }
     }
     # Make text buttons double width
@@ -670,20 +664,33 @@ proc equationDouble { lb boxname} {
 }
 
 proc HitKey { winId char } {
-    if {[string match DEL $char]} {
-        event generate $winId <Key-BackSpace>
-    } elseif {[string match -> $char]} {
-        event generate $winId <Key-Right>
-    } elseif {[string match <- $char]} {
-        event generate $winId <Key-Left>
-    } elseif {[string match SPACE $char]} {
-        event generate $winId <Key-space>
-    } elseif {[string match \{ $char]} {
-        event generate $winId <Key-braceleft>
-    } elseif {[string match \} $char]} {
-        event generate $winId <Key-braceright>
-    } else {
-        [focus] insert insert $char
+    global equation
+    switch -exact -- $char {
+	DEL {
+	    event generate $winId <Key-BackSpace>
+	} -> {
+	    event generate $winId <Key-Right>
+	} <- {
+	    event generate $winId <Key-Left>
+	} SPACE {
+	    event generate $winId <Key-space>
+	} \{ {
+	    event generate $winId <Key-braceleft>
+	} \} {
+	    event generate $winId <Key-braceright>
+	} default {
+	    set begin 1.0
+	    if {[string match *Entry [winfo class [focus]]]} {
+		set begin 0
+	    } else {
+		focus [$equation(main).main.main getframe].equation.textbox.text
+	    }
+	    if {[string match AC $char]} {	    
+		[focus] delete $begin end
+	    } else {
+		[focus] insert insert $char
+	    }
+	}
     }
 }
 

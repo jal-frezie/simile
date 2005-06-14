@@ -78,7 +78,7 @@ uppercase(L, H) :-
 
 lowercase(L, H) :-
 	"a" =< H, H =< "z";
-	\+ L = c, (223 =< H, H =< 246; 248=<H, H=<255).
+	\+ L = c, (H = 181; 223 =< H, H =< 246; 248=<H, H=<255).
 
 escape_curlies(Risky, Safe) :-
 	[BS] = "\\",

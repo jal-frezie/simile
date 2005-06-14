@@ -867,6 +867,7 @@ proc ControlDraw {prologVersion} {
                 {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
                 {custom(gridSnap) gridSnap OFF "Snap to grid"} \
+                {custom(myButton) myButton "µ" "Custom keypad button"} \
                 {custom(defBackground) defBackground {CHOICE White Clear} "Default background"} \
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
                 {custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"} \
@@ -1237,16 +1238,15 @@ proc ConvertSSxml {} {
 # Prolog may need some help recognizing Tcular number formats...
 
 proc EatNumber {str} {
-    if {[scan $str %g%n floatVal floatSize]} {
-    if {[scan $str %d%n intVal intSize]} {
-
-        if {$intSize == $floatSize} {
-        return [list $intVal $intSize]
-        }
+    if {[scan $str %g%n floatVal floatSize]>0} {
+	if {[scan $str %d%n intVal intSize]>0} {
+	    if {$intSize == $floatSize} {
+		return [list $intVal $intSize]
+	    }
+	}
+	return [list [format %\#.8g $floatVal] $floatSize]
     }
-    return [list [format %\#.8g $floatVal] $floatSize]
-    }
-}    
+}
 
 # Path names derived from Windows environment variables must be
 # 'brainwashed' i.e., stripped of their native culture and turned

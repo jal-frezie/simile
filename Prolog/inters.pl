@@ -549,7 +549,7 @@ make_intermediates(
 	    Args = [],
 	    NewInters = PrevInters;
 
-	(Source = table(1),
+	(Source = table_const(1),
 	    \+ Step = dummy,
 	    (m_class:SubId has_class_refinement table_data of TableData;
 		raise_exception(missing_graph_or_table_data(Source))),
@@ -741,9 +741,9 @@ make_intermediates(
 		Arg_template = [real],
 		ResultList = [RVal],
 		ValRef = graph(SubId, RVal);
-	    Source = table(SourceList),
+	    Source =.. [table | SourceList],
 	    Step = dummy,
-		\+ SourceList = '', /* let checker handle empty args */
+		\+ SourceList = [''], /* let checker handle empty args */
 	        (SourceList = [_|_], !;
 		raise_exception(only_works_on_array(Source))),
 		(dialogue:table_data_is(TableData);

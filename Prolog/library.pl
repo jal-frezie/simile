@@ -262,6 +262,9 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 4.0, !;
 	dialogue:reassure_user("Updating pre-Simile 4.0 model representation"),
 	    adjust_to_8),
+	(SimileV > 4.29, !;
+	dialogue:reassure_user("Updating pre-Simile 4.3 model representation"),
+	    adjust_to_8_3),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -384,6 +387,22 @@ adjust_to_8 :-
 	    Comp has_changed_attribute TclBound to TermInTtfn),
 	fail;
 	true.
+
+adjust_to_8_3 :-
+	Node has_class_refinement table_data of _, /* just reduces workload */
+	    Node has_class_refinement value of Expr,
+	    replace_subexps(Expr, library, separate_table_args,
+			    _, top_down, _, NewExpr),
+	    Node has_changed_class_refinement value of NewExpr,
+	    Node has_class_refinement spec of _,
+	    sicstus_write_to_chars(NewExpr, NewStr),
+	    sicstus_atom_chars(NewSpec, NewStr),
+	    Node has_changed_class_refinement spec of NewSpec,
+	    fail;
+	true.
+
+separate_table_args(_, table(Args), NewTableFn, 0) :-
+	NewTableFn =.. [table | Args].
 
 shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
 	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-

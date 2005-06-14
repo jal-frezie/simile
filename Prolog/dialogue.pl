@@ -319,15 +319,14 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	/* Now, is there a reference to a table or graph? If so, load the data 
 	for it. Otherwise ignore any data. This also lists user-defined
 	functions (macros and procedures) */
-	replace_subexps(Result, dialogue, table_ref, UserFnOpen,
-			top_down, AllMatch, _),
+	replace_subexps(Result, dialogue, table_ref, got(UserFnOpen, TabDat),
+			top_down, _,_),
 	(var(UserFnOpen), !,
 	    UserFnList = '';
 	get_ground_part(UserFnOpen, UserFnList)),
-	purge(AllMatch, [var_pair(table(_),_), var_pair(graph(_),_)], TGMatch),
-	(\+ TGMatch = AllMatch, /* some tables/graphs removed */
-	    table_data_is(TableAttr), !;
-	 TableAttr = ''),
+	(TabDat = 0, !, /* no tables/graphs found */
+	    TableAttr = '';
+	 table_data_is(TableAttr)),
 	/* table data is auto-generated so should be well formed */
 
 	(Complaint6 = [], \+ Eqn_st = [], !,
@@ -389,11 +388,12 @@ explain_brackets(Dims, Desc, Many, BaseName, RightBrs) :-
 	append([Pref, TypeStr, Plural, SubType], Desc).
 	    
 	
-table_ref(Datta, Ref, DumFn, Recurse) :-
-	member(Ref, [table(_), graph(_)]),
-	    Recurse = 0;	 
+table_ref(got(Datta, Tabs), Ref, DumFn, Recurse) :-
 	Ref =.. [Functor | Args],
-	    length(Args, Arity),
+	(member(Functor, [table, graph]),
+	    Tabs = 1,
+	    Recurse = 0;	 
+	length(Args, Arity),
 	    (function(Cat, Functor, _R, TptArgs);
 		macro_expansion(Cat, (Fn --> _Defn)),
 		Fn =.. [Functor | TptArgs]),
@@ -403,7 +403,7 @@ table_ref(Datta, Ref, DumFn, Recurse) :-
 		UseArity = Arity),
 	    DumFn =.. [userfnsubbedhere | Args],
 	    member(Functor/UseArity, Datta), !,
-	    Recurse = 1.
+	    Recurse = 1).
 
 get_table_data(Function, Data, Table, Units, Dims, Sizes, Complaint) :-
 	on_exception(Complaint,

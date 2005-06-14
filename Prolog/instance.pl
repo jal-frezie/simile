@@ -486,12 +486,13 @@ process_expr(sub(InputPairs, Refs), Var, NewVar, Recurse) :-
 		member(TopRef, Refs)), !;
 	NewVar = Var),
 	    Recurse = 0;
-	build_table_ref(table(1), Var, NewVar), Recurse = 1.
+	build_table_ref(table_const(1), Var, NewVar), Recurse = 1.
 
-build_table_ref(Table, table([]), Table).
+build_table_ref(Table, table, Table).
 
-build_table_ref(Table, table([Ind1 | IndN]), RefTable) :-
-	build_table_ref(element(Table,Ind1), table(IndN), RefTable).
+build_table_ref(Table, TableFn, RefTable) :-
+	TableFn =.. [table, Ind1 | IndN], ShortTableFn =.. [table | IndN],
+	build_table_ref(element(Table,Ind1), ShortTableFn, RefTable).
 		
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* because all taps have functions in the SD view, a valid one must also have
