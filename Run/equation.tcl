@@ -102,10 +102,16 @@ proc create_equation {parent boxtitle indices} {
 	    if {[string match custom $act]} {
 		set act [PrefValue custom(myButton) myButton]
 	    }
-	    pack [button $keypadf.keys.row$row.col$col -width 2 \
-		      -text $act -command [list HitKey $t $act]] \
-		-side left -fill x -expand false
-	    
+	    set bid [button $keypadf.keys.row$row.col$col -width 2 \
+		      -text $act -command [list HitKey $t $act]]
+	    pack $bid -side left -fill x -expand false
+	    if {[string first $act .0123456789]>-1} {
+		$bid configure -bg \#a0a0a0 -activebackground \#a0a0a0
+	    } elseif {[string match AC $act]} {
+		$bid configure -bg orange -activebackground orange
+	    } elseif {[lsearch -exact {<- -> SPACE DEL} $act]>-1} {
+		$bid configure -bg grey -activebackground grey
+	    }
         }
     }
     # Make text buttons double width
