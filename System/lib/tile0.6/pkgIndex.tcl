@@ -23,7 +23,7 @@ switch [info sharedlibext] {
     unset S
     } .so {
     package ifneeded tile 0.6.2 \
-	[list load [file join $dir tile[info sharedlibext]]]
+	[list load [file join $dir libtile0.6[info sharedlibext]]]
     } .dylib {
     package ifneeded tile 0.6.2 \
 	[list load [file join $dir libtile0.6[info sharedlibext]]]

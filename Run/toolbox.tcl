@@ -749,7 +749,13 @@ proc ControlDraw {prologVersion} {
         set userinfo(oldVersion) 0
         set userinfo(done) 0
     }
-
+    if {[string match Linux $tcl_platform(os)]} {
+	set shank ../System/lib/lib5d.so
+	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
+	    exec g++ -c -O -fPIC -I. ./shank.cpp
+	    exec g++ -shared -o $shank shank.o
+	}
+    }
     load_c_stub_1
     if {![string match windows $tcl_platform(platform)]} {
 # Windows installers can ask the user for a license code and stick it in the
@@ -776,13 +782,7 @@ proc ControlDraw {prologVersion} {
 	    close $UserStream
 	}
     }
-    if {[string match Linux $tcl_platform(os)]} {
-	set shank ../System/lib/lib5d.so
-	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-	    exec g++ -c -O -fPIC -I. ./shank.cpp
-	    exec g++ -shared -o $shank shank.o
-	}
-    }
+
     # loading stub sets license entries
     load_c_stub_2
     
