@@ -1,20 +1,20 @@
-baseline(m).
+baseline(m, length).
 longhand(metre, m).
 longhand(meter, m).
 
-baseline(g). /* kg is derived from this by multiplier */
+baseline(g, mass). /* kg is derived from this by multiplier */
 longhand(gramme, g).
 longhand(gram, g).
 longhand(kilogramme, kg).
 longhand(kilogram, kg).
 
-baseline(s).
+baseline(s, time).
 longhand(second, s).
 
-baseline(k).
+baseline(k, temperature).
 longhand(kelvin, k).
 
-baseline(rad).
+baseline(rad, angle).
 longhand(radian, rad).
 
 unit_definition(deg,rad*180/3.1415927).
@@ -41,7 +41,8 @@ longhand(millimetre, mm).
 longhand(centimetre, cm).
 longhand(kilometre, km).
 unit_definition(inch,	m*254/10000).
-unit_definition(foot,	inch*12).
+unit_definition(ft,	inch*12).
+longhand(foot, ft).
 unit_definition(yard,	foot*3).
 unit_definition(mile,   yard*1760).
 

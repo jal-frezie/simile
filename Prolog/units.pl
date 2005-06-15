@@ -7,16 +7,16 @@ sicstus_module(units, [get_conversion/4, extract_units_root/4,
 default_tick_is(day).
 
 get_conversion(Source, Source_units, Dest_units, Converted_source) :-
- standard_name(Source_units, SourceU),
- standard_name(Dest_units, DestU),
- add_conversion(SourceU/DestU, *, 1, 1, Mnum, Qnum),
- (Mnum = Qnum, !,
-  Converted_source = Source;
-/* gcd with floats sometimes causes crashes in Linux
- Common is gcd(Mnum, Qnum),
-  New_Mnum is Mnum/Common,
-  New_Qnum is Qnum/Common,
-*/  Converted_source = Source*(Mnum/Qnum)).
+	standard_name(Source_units, SourceU),
+	standard_name(Dest_units, DestU),
+	add_conversion(SourceU/DestU, *, 1, 1, Mnum, Qnum),
+	(Mnum = Qnum, !,
+	    Converted_source = Source;
+	    /* gcd with floats sometimes causes crashes in Linux
+	    Common is gcd(Mnum, Qnum),
+	    New_Mnum is Mnum/Common,
+	    New_Qnum is Qnum/Common, */
+	Converted_source = Source*(Mnum/Qnum)).
 
 /* add_conversion/6: This takes a unit and a combination of baseline units, and
 returns a new combination of baseline units and a multiplier and quotient, which
@@ -39,11 +39,11 @@ add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
 	    combine_signs(Sign, Op, Sign2),
 	    add_conversion(Bottom, Sign2, BaseMid, BaseOut, M2, Q2),
 	    Mnum is M1*M2, Qnum is Q1*Q2;
-	baseline(Unit),
+	baseline(Unit, Dimension),
 	    Mnum = 1.0, Qnum = 1.0,
 	    (combine_signs(Sign, '/', Sign2),
-		select_factor_from(BaseIn, Unit, Sign2, BaseOut), !;
-		join_without_ones(Sign, BaseIn, Unit, BaseOut)).
+		select_factor_from(BaseIn, Dimension, Sign2, BaseOut), !;
+		join_without_ones(Sign, BaseIn, Dimension, BaseOut)).
 
 
 break_product(Unit, Op, Top, Bottom) :-
@@ -126,7 +126,7 @@ join_without_ones(Sign, P, Q, All) :-
  Sign = (*), (P=1,All=Q; Q=1,All=P), !;
  All =.. [Sign, P, Q].
 
-:- dynamic(baseline/1).
+:- dynamic(baseline/2).
 :- dynamic(unit_definition/2).
 :- dynamic(longhand/2).
 
@@ -174,6 +174,6 @@ defined_as_unit(FullName, Def) :-
 	stands_for(Name, Def).
 
 stands_for(Unit, Def) :-
-	baseline(Unit), Def = Unit;
+	baseline(Unit, _Dim), Def = Unit;
 	unit_definition(Unit, Def).
 

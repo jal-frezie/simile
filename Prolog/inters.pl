@@ -228,7 +228,7 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 	    name(FnEntry, FnChars)),
 	    read_funcs(File, Stream, IsBuiltIn, More),
 	    Done = [FnEntry | More];
-	member(Line, [baseline(_), unit_definition(_,_), longhand(_,_)]), !,
+	member(Line, [baseline(_,_), unit_definition(_,_), longhand(_,_)]), !,
 	    % use asserta so user-supplied definitions override system ones
 	    units:asserta(Line),
 	    read_funcs(File, Stream, IsBuiltIn, Done);
