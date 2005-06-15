@@ -1,5 +1,4 @@
-/* units.pl --- yet another shiny, efficient new module written by Jasper to 
-replace a huge steaming pile of convoluted entrails spewed up by Geraint. */
+/* units.pl --- yet another shiny, efficient new module written by Jasper. */
 
 sicstus_module(units, [get_conversion/4, extract_units_root/4,
          default_tick_is/1, sort_units/3, defined_as_unit/2]).
@@ -176,4 +175,5 @@ defined_as_unit(FullName, Def) :-
 stands_for(Unit, Def) :-
 	baseline(Unit, _Dim), Def = Unit;
 	unit_definition(Unit, Def).
+
 
