@@ -867,7 +867,7 @@ proc ControlDraw {prologVersion} {
                 {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
                 {custom(gridSnap) gridSnap OFF "Snap to grid"} \
-                {custom(myButton) myButton "Âµ" "Custom keypad button"} \
+                {custom(myButton) myButton "µ" "Custom keypad button"} \
                 {custom(defBackground) defBackground {CHOICE White Clear} "Default background"} \
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
                 {custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"} \
@@ -1537,7 +1537,7 @@ proc FillReopen {winId} {
         }
     }
     update idletasks
-}
+}
 
 proc Rerun {winId go} {
     global runState window_info
