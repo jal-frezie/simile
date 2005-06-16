@@ -288,12 +288,12 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		 
 		NewUnits = ComboUnits,
 		UnitError = [];
-	    ((InterInputs = [], member(EqnBase, [const_int, const_ratio,
+	    ((InterInputs = [], member(EqnBase, [any, const_int, const_ratio,
 						 int, 1]);
 	      use_units_in(Function, 'No')),
 		CheckLevel = 1;
 	    CheckLevel = 2),
-		/* Allow numerical entries to have any physical units */
+	    /* Allow numerical or empty entries to have any physical units */
 	    check_unit(ComboUnits, Units, CheckLevel, UnitMatchError),
 		/* Result can be promoted/converted to given units -- ok */
 		NewUnits = Units,
