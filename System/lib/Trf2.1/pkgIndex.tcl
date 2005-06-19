@@ -1,6 +1,6 @@
-switch [info sharedlibextension] {
-    .so {set trfPkg libTrf2.1.so}
-    .dylib {set trfPkg libTrf2.1.dylib}
-    .dll {set trfPkg Trf21.dll}
-}
-package ifneeded Trf 2.1  [list load [file join $dir $trfPkg]]
+# On Macs with pre-installed Wish, a Trf2.1 is included which does things
+# differently to the one we supply. To avoid loading it by accident we load
+# ours as part of the dummy package MyTrf.
+
+set dir [file dirname [info script]]
+package ifneeded MyTrf 2.1  [list source [file join $dir myTrf.tcl]]

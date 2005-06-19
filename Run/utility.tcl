@@ -136,9 +136,9 @@ proc load_c_stub_1 {} {
     }
 }
 
-proc load_c_stub_2 {} {
-    package require Trf
+package require MyTrf ;# loads right version of Trf
 
+proc load_c_stub_2 {} {
     global env userinfo ;# last needed in stub
     # On startup, check run count and offer registration if 0
     if [catch {set userinfo(name) $env(licensee_name)}] {
