@@ -552,7 +552,7 @@ proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
     
     $lbf bindText <Enter> [list QueuePopup AddFnPopup %X %Y]
     $lbf bindText <Leave> RemovePopup
-    $lbf bindText <Double-1> [list functionClick $en]
+    $lbf bindText <Double-1> [list functionClick %W $en]
 
     set PopCmd [list QueuePopup AddIndexPopup %W %y %X %Y]
     bind $lbx <Enter> $PopCmd
@@ -700,9 +700,15 @@ proc HitKey { winId char } {
     }
 }
 
-proc functionClick {boxname fn} {
+proc functionClick {tree boxname fn} {
+    # work around smelly BWidget bug
+    set tree [winfo parent $tree]
     # Take the item the user clicked on
-    InsertFunction $boxname [lindex [split $fn .] end]
+    if {[llength [$tree nodes $fn]]} {
+	$tree toggle $fn
+    } else {
+	InsertFunction $boxname [lindex [split $fn .] end]
+    }
 }
 
 proc AddFnPopup {X Y fnName} {
