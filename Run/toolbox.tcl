@@ -867,7 +867,6 @@ proc ControlDraw {prologVersion} {
                 {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
                 {custom(gridSnap) gridSnap OFF "Snap to grid"} \
-                {custom(myButton) myButton "Âµ" "Custom keypad button"} \
                 {custom(defBackground) defBackground {CHOICE White Clear} "Default background"} \
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
                 {custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"} \
@@ -892,9 +891,13 @@ proc ControlDraw {prologVersion} {
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {  {custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
                         "Use which C++ compiler?"} \
-    }
-    file attributes $simtmpdir -hidden true
-    file attributes $custom(prefDir)/.version -hidden true
+                {custom(myButton) myButton ¦Ì "Custom keypad button"} \
+        }
+	file attributes $simtmpdir -hidden true
+	file attributes $custom(prefDir)/.version -hidden true
+    } else {
+        Pref_Add {  {custom(myButton) myButton Î¼ "Custom keypad button"} \
+	}
     }
     CheckCompilerLocation
 #    MakeHelperMenu
@@ -1475,6 +1478,7 @@ proc PrintNow {winId} {
         if {[catch "exec $env(PRINTCMD) {[file nativename $tempPSFile]}" result]} {
             ShowMessage "Print command result" warning \
                     "Printing seems to have failed. \
+
                     The result returned by the print command was:
             
             $result

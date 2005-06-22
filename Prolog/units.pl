@@ -137,7 +137,8 @@ unit_prefixes(0.01, centi, c ).
 unit_prefixes(1000, kilo, k ).
 unit_prefixes(0.001, milli, m ).
 unit_prefixes(1.0e6, mega, 'M' ).
-unit_prefixes(1.0e-6, micro, U ) :- name(U, [181]).    %%%%%%%%%%% 
+unit_prefixes(1.0e-6, micro, U ) :- name(U, [181]).    % Hi-8 ASCII mu
+unit_prefixes(1.0e-6, micro, 'XRx' ).    % ttfn for Unicode mu
 unit_prefixes(1.0e9, giga, 'G' ).
 unit_prefixes(1.0e-9, nano, n ).
 unit_prefixes(1.0e12, tera, 'T' ).
