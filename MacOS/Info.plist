@@ -37,8 +37,6 @@
     <string>Ssme</string>
     <key>CFBundleGetInfoString</key>
     <string>Simile v4.3</string>
-    <key>CFBundleHelpBookFolder</key>
-    <string>Help</string>
     <key>CFBundleIconFile</key>
     <string>simile.icns</string>
     <key>CFBundleIdentifier</key>

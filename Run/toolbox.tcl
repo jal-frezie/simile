@@ -875,19 +875,20 @@ proc ControlDraw {prologVersion} {
                 {custom(slidersPosition) slidersPosition "+0+0" "Position of sliders"} \
                 {custom(hackBreak) hackBreak OFF "Pause to edit C++ code?"} \
     }
-    if [string match Darwin $tcl_platform(os)] {
-        Pref_Add {  {custom(popupHelp) popupHelp OFF "Popup help text"} \
-                    {custom(compDescPop) compDescPop OFF "Equation"} \
-                    {custom(compValPop) compValPop OFF  "Value"} \
-                    {custom(compCmtPop) compCmtPop OFF  "Comment"} \
-        }
-    } else {
+# I think we should have popups enabled by default even on the Mac
+#    if [string match Darwin $tcl_platform(os)] {
+#        Pref_Add {  {custom(popupHelp) popupHelp OFF "Popup help text"} \
+#                    {custom(compDescPop) compDescPop OFF "Equation"} \
+#                    {custom(compValPop) compValPop OFF  "Value"} \
+#                    {custom(compCmtPop) compCmtPop OFF  "Comment"} \
+#        }
+#    } else {
         Pref_Add {  {custom(popupHelp) popupHelp ON "Popup help text"} \
                     {custom(compDescPop) compDescPop ON "Equation"} \
                     {custom(compValPop) compValPop ON  "Value"} \
                     {custom(compCmtPop) compCmtPop ON  "Comment"} \
         }
-    }
+#    }
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {  {custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
                         "Use which C++ compiler?"} \
