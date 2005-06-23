@@ -8,7 +8,6 @@ namespace eval DisplayFormat {
             Boolean
     
     package require calendar
-    namespace import ::calendar::GregorianCalendar::*
     
     proc General {val prec} {
         # was VarPrecRender

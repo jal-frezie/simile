@@ -891,12 +891,12 @@ proc ControlDraw {prologVersion} {
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {  {custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
                         "Use which C++ compiler?"} \
-                {custom(myButton) myButton �� "Custom keypad button"} \
+                {custom(myButton) myButton ¦Ì "Custom keypad button"} \
         }
 	file attributes $simtmpdir -hidden true
 	file attributes $custom(prefDir)/.version -hidden true
     } else {
-        Pref_Add {  {custom(myButton) myButton μ "Custom keypad button"} \
+        Pref_Add {  {custom(myButton) myButton Î¼ "Custom keypad button"} \
 	}
     }
     CheckCompilerLocation
@@ -1306,7 +1306,7 @@ proc OpenProjectFile {path} {
     if {[info exists SimileProject(modelRunning)]} {
     set topNode [lindex $loadingProject 0]
     set win [FindNodeTopWin $topNode].canvas
-#puts "win $win topNode Â£topNode"
+#puts "win $win topNode ÃÂ£topNode"
     if {[info exists SimileProject(spfList)]} {
         # file params cannot be loaded until model is ready, so set this
         # variable which will be read before opening the dialogue
@@ -1591,11 +1591,12 @@ proc ToggleIOToolMenu {node} {
             set winData $window_info($c,parent)
             set topMenu ${winData}top
 # MacOS defines the Help menu for the application, so there is one fewer menu
-            if [string match Darwin $tcl_platform(os)] {
-                set numberOfMenus 6
-            } else {
+# -- removed because it is so hard to use the MacOS-defined menu
+#            if [string match Darwin $tcl_platform(os)] {
+#                set numberOfMenus 6
+#            } else {
                 set numberOfMenus 7
-            }
+#            }
             if {[$topMenu index last]==$numberOfMenus} {
                 $topMenu delete "I/O tools"
             }
@@ -1610,13 +1611,14 @@ proc ToggleIOToolMenu {node} {
                         ReconstituteMenu $topMenu.helpers $menuSpec $node
                     }
 # Add menu at end if using MacOS, since Help menu is not defined by application
-                    if [string match Darwin $tcl_platform(os)] {
-                        $topMenu insert end cascade -label "I/O tools" \
-                                -underline 0 -menu $topMenu.helpers
-                    } else {
+# (oh yes it is)
+#                    if [string match Darwin $tcl_platform(os)] {
+#                        $topMenu insert end cascade -label "I/O tools" \
+#                                -underline 0 -menu $topMenu.helpers
+#                    } else {
                         $topMenu insert "Help" cascade -label "I/O tools" \
                                 -underline 0 -menu $topMenu.helpers
-                    }
+#                    }
                 }
             } else {
                 set newState disabled

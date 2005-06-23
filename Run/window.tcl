@@ -1389,13 +1389,13 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         -menu ${winid}top.helpers
         $fm entryconfigure "Inspect elements" -state normal
     }
-    if ![string match aqua [tk windowingsystem]] {
         set fm [menu ${winid}top.help -tearoff 0]
         ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
         $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
         AddAccelerator $winid help Contents "<F1>"
 #        $fm add command -label Huh? -command {ShowMessage debug info $errorInfo ok}
+    if ![string match aqua [tk windowingsystem]] {
         $fm add command -label About... -command [list ShowAbout $winid]
     }
     set nb [::ttk::frame $winid.toolSlot.navbar -class Toolbar]
