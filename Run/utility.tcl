@@ -148,7 +148,7 @@ proc load_c_stub_2 {} {
         set userinfo(corp) " "
     }
     
-    set userinfo(license_code) $env(license_code)
+    catch {set userinfo(license_code) $env(license_code)}
     loadcommands
     randseed [clock scan now]
 }
