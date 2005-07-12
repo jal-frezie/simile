@@ -694,7 +694,7 @@ proc LoadModelWindowExtensions {} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir
-    
+puts "Goll Prollll"
     LoadIconImages
     
     # Defaults to use if debugging
@@ -721,7 +721,7 @@ proc ControlDraw {prologVersion} {
         if {![file exists $custom(prefDir)]} {
             file mkdir $custom(prefDir)
             foreach sysB {layout prefs recent version} {
-            file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB
+		catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
             }
             foreach subD [glob $oldPrefs/*] {
             file rename $subD $custom(prefDir)/[file tail $subD]
