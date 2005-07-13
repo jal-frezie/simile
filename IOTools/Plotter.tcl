@@ -504,14 +504,15 @@ namespace eval ::$keyValue {
 	if {[llength $id]} {
 	    append caption \[[join $id ,]\]
 	}
-        if {[catch {lindex [GetModelValue $node] 0} lastval]} {
-	    set lastval unavaliable
-	} else {
+        if {[catch {
+	    set lastval [lindex [GetModelValue $node] 0]
 	    while {[llength $lastval]>1} {
 		array set valArray $lastval
 		set lastval $valArray([lindex $id 0])
 		set id [lrange $id 1 end]
 	    }
+	}]} {
+	    set lastval unavailable
 	}
         #::graphtools::get_datax {w Xc Xscale}
         #plot($w,Tscale)
