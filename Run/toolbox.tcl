@@ -694,7 +694,6 @@ proc LoadModelWindowExtensions {} {
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir
-puts "Goll Prollll"
     LoadIconImages
     
     # Defaults to use if debugging

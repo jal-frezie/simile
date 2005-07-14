@@ -1,4 +1,13 @@
-simile: Run/xgsimile System/lib/Stubs/libame_dll8.4.so System/lib/lib5d.so
+ifeq ($(shell uname),Darwin)
+	WISHCMD = ~/Desktop/CVS\ Simile.app/Contents/MacOS/Simile
+	SHAREDLIBEXTN = .dylib
+else
+	WISHCMD = ~/Simile/System/bin/wish
+	SHAREDLIBEXTN = .so
+endif
+
+simile: Run/xgsimile System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN) \
+	System/lib/lib5d$(SHAREDLIBEXTN)
 
 vpath %.pl Prolog
 
@@ -13,14 +22,8 @@ Run/xgsimile: ame_gen.pl backup.pl build.pl compile.pl database.pl \
 vpath 	%.cpp 	Run
 vpath 	%.h 	Run
 
-ifeq ($(shell uname),Darwin)
-	WISHCMD = ~/Desktop/CVS\ Simile/Contents/MacOS/Simile
-else
-	WISHCMD = ~/Simile/System/bin/wish
-endif
-
-System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h
+System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h
 	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 
-System/lib/lib5d.so: shank.cpp dllcalls.h
+System/lib/lib5d$(SHAREDLIBEXTN): shank.cpp dllcalls.h
 	cd Run;	$(WISHCMD) makedlls.tcl; cd ..
