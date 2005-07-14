@@ -11,7 +11,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
-	on_exception(Problem,
+	on_exception(Prob,
 		     (replace_subexps(Expr, inters, insert_paths,
 		sub(Sm, DestRef, Swaps, ExpInters), top_down, _, FullExp),
 		     length(ExpInters, _L), /* close end of list */
@@ -19,7 +19,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 		     make_intermediates(FullExp, Sm, Target, DestPath,
 		BackSwap, ExpInters, [], Step, Used, Units, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula))),
-		      raise_exception(conversion_failure(Target, Problem))),
+		      raise_exception(conversion_failure(Sm, Prob))),
 
 	get_model_and_loops(SourceContext, DestPath, _, SourceLoops, _),
 	append(SourceLoops, DestPath, BaseContext),

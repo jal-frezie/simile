@@ -1228,8 +1228,12 @@ show_error(Model, Lossage) :-
 	Lossage = preprocessor_failure(Target), !,
 	    sicstus_format_to_chars("Failed to substitute macro functions and references in ~a", [Target], text),
 	    Fault = system;
-	Lossage = conversion_failure(Target, Problem), !,
-	    sicstus_format_to_chars("Failed to convert ~a into a program instruction. This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this variable inconsistent, in which case editing this variable again will make the model runnable. ", [Target], Amble),
+	Lossage = conversion_failure(Comp, Problem), !,
+	    find_all_comps(Parent, Comp),
+	    abs_path_name(Parent, root, Capt),
+	    caption_for(Comp, Target),
+	    sicstus_format_to_chars("Failed to convert ~a (in submodel ~a) into a program instruction. This may be because Simile earlier failed to detect when a change elsewhere in the model made the equation for this variable inconsistent, in which case editing this variable again will make the model runnable. ",
+				    [Target, Capt], Amble),
 	    dialogue:decode_error(Problem, Explain),
 	    append([Amble, "The parser gave this message: ", Explain], Text),
 	    Fault = user;
