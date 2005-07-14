@@ -13,8 +13,14 @@ Run/xgsimile: ame_gen.pl backup.pl build.pl compile.pl database.pl \
 vpath 	%.cpp 	Run
 vpath 	%.h 	Run
 
+ifeq ($(shell uname),Darwin)
+	WISHCMD = ~/Desktop/CVS\ Simile/Contents/MacOS/Simile
+else
+	WISHCMD = ~/Simile/System/bin/wish
+endif
+
 System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h
-	cd Run;	../System/bin/wish makedlls.tcl; cd ..
+	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 
 System/lib/lib5d.so: shank.cpp dllcalls.h
-	cd Run;	../System/bin/wish makedlls.tcl; cd ..
+	cd Run;	$(WISHCMD) makedlls.tcl; cd ..
