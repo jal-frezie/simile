@@ -1291,7 +1291,7 @@ proc RunIfPackage {} {
 }
 
 proc OpenProjectFile {path} {
-    global SimileProject loadingProject window_info
+    global SimileProject loadingProject
     set pFile [file join $path model.spj]
     set projectF [NetOpen $pFile r]
     gets $projectF SimileProjectData
@@ -1593,9 +1593,9 @@ proc ToggleIOToolMenu {node} {
 # MacOS defines the Help menu for the application, so there is one fewer menu
 # -- removed because it is so hard to use the MacOS-defined menu
 #            if [string match Darwin $tcl_platform(os)] {
-#                set numberOfMenus 6
+#                set numberOfMenus 7
 #            } else {
-                set numberOfMenus 7
+                set numberOfMenus 8
 #            }
             if {[$topMenu index last]==$numberOfMenus} {
                 $topMenu delete "I/O tools"
@@ -1616,7 +1616,7 @@ proc ToggleIOToolMenu {node} {
 #                        $topMenu insert end cascade -label "I/O tools" \
 #                                -underline 0 -menu $topMenu.helpers
 #                    } else {
-                        $topMenu insert "Help" cascade -label "I/O tools" \
+                        $topMenu insert "Window" cascade -label "I/O tools" \
                                 -underline 0 -menu $topMenu.helpers
 #                    }
                 }

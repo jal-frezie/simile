@@ -9,7 +9,7 @@ user alone until values have been entered: the sort that sit quietly
 alongside
 the rest of the program are handled through gui_input. */
 
-sicstus_module(dialogue, [do_equation_dialog/2, 
+sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/2, 
 	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
@@ -51,6 +51,13 @@ make_arg_list([Arg | Args], Str) :-
 	make_arg_list(Args, Str2),
 	append(Str1, [44, 32 | Str2], Str).
 
+pick_equation(Part, Equation) :-
+	(get_av_pair(Part, 0, spec, Equation),
+	    atom(Equation), \+ Equation = [],
+	    /* do not use old string version */ !;
+	get_av_pair(Part, 0, value, Equation), !;
+		Equation = '').
+
 /* the equation dialogue will only exit when a coherent set of 
 inputs have been 
 entered; if they are not, then update_equation fill fail after 
@@ -84,11 +91,7 @@ BoxHeaderStr),
 	list_index_meanings(Part, ISpecs),
 	all(dialogue, index_names_and_sizes,
 	    [build(ISpecs), build(IndexList), build(IndxCount)]),
-	(get_av_pair(Part, 0, spec, Equation),
-	    atom(Equation), \+ Equation = [],
-	    /* do not use old string version */ !;
-	get_av_pair(Part, 0, value, Equation), !;
-		Equation = ''),
+	pick_equation(Part, Equation),
 	(get_av_pair(Part, 0, units, Units), !,
 	    analyze_array(Units, Base, Dims);
 	(var(TypeBase), !,

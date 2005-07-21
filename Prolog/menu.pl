@@ -982,12 +982,13 @@ mysetof(A,B,C):-
 	setof(A,B,C),!.
 mysetof(_,_,[]).
 
-% spec insead value?
+% spec insead value? Only if present and not a string
 write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows) :-
 	find_all_comps(Submodel, Component),	
 	(find_type(Component, function),
 	    implicit_function(VisNode, Component),
-	    get_av_pair(Component, 0, spec, Eqn); 
+	    pick_equation(Component, Eqn),
+	    \+ Eqn = ''; 
 	find_type(Component, variable),
 	    VisNode = Component,
 	    (is_parameter(Component, 2), Eqn = 'Fixed parameter';

@@ -49,8 +49,8 @@ FINDABLE EXPORT int __stdcall license_check(
 		const char* pInstallDir, char* pSupportDir,
 		char* pUser, char* pCompany, char* pSerial,
 		char* pAdditionsl) {
-#ifdef SIM_LICENSED
 	char buffer[256];
+#ifdef SIM_LICENSED
 	if (!right_license(pUser, pSerial)) {
         	MessageBox (NULL, "You have entered the wrong license code for your name, organization and Simile version. This installation will now terminate. Please try again, ensuring you have the correct license code.", "Feedback", MB_OK);
 		return(0);

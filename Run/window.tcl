@@ -1389,8 +1389,14 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         -menu ${winid}top.helpers
         $fm entryconfigure "Inspect elements" -state normal
     }
+
+    set fm [menu ${winid}top.window -tearoff 0]
+    $fm config -postcommand "ListWindows $fm"
+# Window menu not finished (needs to work in exec windows)
+    ${winid}top add cascade -label Window -underline 0 -menu $fm
+
         set fm [menu ${winid}top.help -tearoff 0]
-        ${winid}top add cascade -label Help -underline 0 -menu ${winid}top.help
+        ${winid}top add cascade -label Help -underline 0 -menu $fm
         $fm add command -label Contents -command "ContextSensitiveHelp $winid index.htm" \
                 -accelerator "F1"
         AddAccelerator $winid help Contents "<F1>"
@@ -1458,7 +1464,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             BindPopup $nb.$handle $handle
         }
     }
-    $nb.runenv state disabled
+    $nb.runenv configure -state disabled
     
     set tb [::ttk::frame $winid.toolSlot.toolbar -class Toolbar]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
@@ -1635,6 +1641,31 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
         $newMenu entryconfigure last -menu $subMenu
         }
     }
+    }
+}
+
+proc ListWindows {fm} {
+    global window_info
+    $fm delete 0 end
+    puts [array names window_info *,parent]
+    foreach desktop [array names window_info *,parent] {
+	set tgtWin $window_info($desktop)
+	$fm add radiobutton -variable window_info(current) \
+	    -value $tgtWin.canvas -label [wm title $tgtWin] \
+	    -command [list raise $tgtWin]
+	puts m:[$fm index end]
+	if {$window_info($tgtWin.canvas,is_top_level) && \
+		[string equal normal \
+		     [$tgtWin.toolSlot.navbar.runenv cget -state]]} {
+	    set topNode $window_info($tgtWin.canvas,top_node)
+	    set mreWin [do_for_node $topNode \
+			    set ::helperTable($topNode,whichRunEnv)]
+	    set mreTitle [do_for_node $topNode wm title $mreWin]
+	    $fm add radiobutton -variable window_info(current) \
+		-value $mreWin -label $mreTitle \
+		-command [list RaiseMREFor $tgtWin.canvas]
+	puts r:[$fm index end]
+	}
     }
 }
 
