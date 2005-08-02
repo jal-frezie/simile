@@ -190,6 +190,8 @@ proc click {winId node caption} {
 		pack [label $f.caption -text [lindex $levels end]]
 		pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
 		    -padx 1 -pady 1
+		bind $f.entry <KeyRelease> [namespace code \
+						[list SliderValsToC $node]]
 		}
 	    }
 	    return $defVal
@@ -251,6 +253,8 @@ proc click {winId node caption} {
 		    pack [entry $f.elt$index.val \
 			      -textvariable sliderVals($node,$index) \
 			      -width 8] -side left -padx 1 -pady 1
+		    bind $f.elt$index.val <KeyRelease> \
+			[namespace code [list SliderValsToC $node $index]]
 		    set newScale $f.elt$index.scale
 		    scale $newScale -length 180 \
                         -orient horizontal -showvalue false \
@@ -297,6 +301,12 @@ proc click {winId node caption} {
 	    }
 	    Prune $winId $up
 	}
+    }
+
+    proc SliderValsToC {node args} {
+	global sliderVals
+	set sub [join [concat [list $node] $args] ,]
+	SetArrayIfUsed $node $args $sliderVals($sub)
     }
 
     proc CheckStateToC {node args} {
