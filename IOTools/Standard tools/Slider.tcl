@@ -447,22 +447,42 @@ proc click {winId node caption} {
 
 # purpose of display proc here is only to stop compartment sliders
 # being altered while model is running, since they refer only to
-# initial values
+# initial values. Also we want to update other input tools to reflect
+# values from time series data
     
     proc display {winId time display remainder} {
-	global sliderVals
-	variable compList
-	foreach node [array names compList] {
-	    if {[llength $compList($node)]==1} {
-		set sliderVals($node) $compList($node)
-	    } else {
-		foreach {indx val} $compList($node) {
-		    set sliderVals($node,$indx) $val
+	foreach valGroup {sliderVals checkStates comboTypes} {
+	    upvar \#0 $valGroup valArray
+	
+	    foreach controlVal [array names valArray] {
+		set ids [split $controlVal ,]
+		set node [lindex $ids 0]
+		if {[info exists compList($node)]} {
+		    if {[llength $compList($node)]==1} {
+			set valArray($node) $compList($node)
+		    } else {
+			foreach {indx val} $compList($node) {
+			    set valArray($node,$indx) $val
+			}
+		    }		
+		    continue
 		}
-	    }		
+		set data [lindex [GetModelValue $node] 0]
+		set indx [lindex $ids 1]
+		if {[string length $indx]} {
+		    while {[string length [lindex $data 1]]!=1} {
+			set data [lindex $data 1]
+		    }
+		    set data [lindex $data $indx]
+		}
+		if {[string length $data]} {
+		    if {[string equal comboTypes $valGroup]} {
+			set data [lindex [lindex [GetTransTable $node] end] \
+				      $data]
+		    }
+		    set valArray($controlVal) $data
+		}
+	    }
 	}
     }
-    
 } ;# end of namespace
-
-
