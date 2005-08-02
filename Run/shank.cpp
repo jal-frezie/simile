@@ -482,7 +482,38 @@ public:
   }
 
   int insert_elt(double val, int* indxs) {
-    return insert_to_array(dataPtr, val, indxs);
+    // Because Simile input tools may not supply all the dimensions of the 
+    // parameter array, this has to work out how many dimensions are supplied
+    // and fill all the elements for which these are the innermost indices.
+    int count, haveDims, needDims, makeDims, useDims[32], done = 0;
+    for (count=31; count>=0; count--) {
+      if (!indxs[count]) {
+	haveDims = count;
+      }
+      if (!fullDims[count]) {
+	needDims = count;
+	haveDims = count; // avoid having too many
+      }
+    }
+    makeDims = needDims-haveDims;
+
+    for (count = 0; count<needDims; count++) {
+      if (count<makeDims) {
+	useDims[count] = 1;
+      } else {
+	useDims[count] = indxs[count-makeDims];
+      }
+    }
+
+    while (!done) {
+      insert_to_array(dataPtr, val, useDims);
+      for (count = 0; count<makeDims; count++) {
+	if (++useDims[count]<=fullDims[count]) break;
+	useDims[count] = 1;
+      }
+      done = count==makeDims;
+    }
+    return 0;
   }
 
   int insert_time_point_elt(double time, double val, int* indxs) {

@@ -614,6 +614,7 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
       return error;
     }
   }
+  indxs[count] = 0; /* mark end of indices */
 
   switch (set_param_array_elt(Tcl_GetStringFromObj(argv[1], NULL), val, indxs))
     {

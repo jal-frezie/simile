@@ -31,7 +31,6 @@ if {$needs_license} {
 }
 if {[string match Darwin $tcl_platform(os)]} {
      lappend defns -DSIM_OPSYS_Darwin
-     lappend defns -DUSE_TCL_STUBS
 }
 
 scan [info tclversion] {%d.%d} MAJ MIN
