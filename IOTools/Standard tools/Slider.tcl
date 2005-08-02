@@ -470,10 +470,10 @@ proc click {winId node caption} {
 		set data [lindex [GetModelValue $node] 0]
 		set indx [lindex $ids 1]
 		if {[string length $indx]} {
-		    while {[string length [lindex $data 1]]!=1} {
+		    while {[llength [lindex $data 1]]!=1} {
 			set data [lindex $data 1]
 		    }
-		    set data [lindex $data $indx]
+		    set data [lindex $data [expr {2*$indx-1}]]
 		}
 		if {[string length $data]} {
 		    if {[string equal comboTypes $valGroup]} {

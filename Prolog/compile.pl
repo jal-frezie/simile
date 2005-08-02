@@ -1270,8 +1270,8 @@ input_params_in(Vars, SmPath, SmStep,
 record models are treated as vm if the parameter is variable. */
 
 vars_only(List, AllVar, ParamType) :-
-	select(NonVar, List, Rest),
-	(NonVar == none; ParamType = 1, NonVar = ind(_, pop)), !,
+	select(NonVar, List, Rest), \+ var(NonVar),
+	(NonVar = none; ParamType = 1, NonVar = ind(_, pop)), !,
 	vars_only(Rest, AllVar, ParamType);
 	List = AllVar.
 
