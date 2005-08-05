@@ -129,6 +129,8 @@ proc Pref_Dialog {} {
         set notebook [::ttk::notebook $dlg.notebook]
         set vf [frame $notebook.view]
         $notebook add $vf -text View
+            set initWinTF [labelframe $vf.initWinTF -text "Initial window position:"]
+            set initWinF $initWinTF
             set displayTF [labelframe $vf.displayTF -text "In new windows, display:"]
             set displayF $displayTF
             set barTF [labelframe $vf.barTF -text "Tool bars:"]
@@ -162,7 +164,7 @@ proc Pref_Dialog {} {
             set oneWinTF [labelframe $rf.oneWinTF -text "Run time environment:"]
             set oneWinF $oneWinTF
        # $notebook select View
-        pack $displayTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $compTF \
+        pack $initWinTF $displayTF $popupTF $barTF $genericTF $linkTF $flowTF $submodelTF $oneWinTF $manyWinTF $compTF \
                 $canvasTF $recentTF $notebook -fill x -padx 4 -pady 4
         set bbox [frame $dlg.bbox] 
         pack [::ttk::button $bbox.bok -text OK -underline 0 -width 8  \
@@ -188,6 +190,7 @@ proc Pref_Dialog {} {
        foreach item $pref(items) {
             #ShowMessage debug info "$item; [PrefRes $item]" ok
             switch -glob -- [PrefRes $item] {
+                winPosn {set frame $initWinF}
                 init* {set frame $displayF}
                 hackBreak {set frame $compF}
                 compChoice {set frame $compF}

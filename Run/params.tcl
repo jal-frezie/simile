@@ -92,10 +92,17 @@ proc MakeFrames {windowId} {
 }
 
 proc AddEntry {winId topNode node mustShow notInput} {
-    global paramData paramDims widgetNames iconImages msgs
+    global paramDims widgetNames iconImages msgs
+    if {$notInput==-1} {
+	set dataLocn targetData
+    } else {
+	set dataLocn paramData
+    }
+    upvar \#0 $dataLocn suppliedData
+
     set compName [GetCompProperty $topNode Caption $node]
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
-        set paramData($compName) {}
+        set suppliedData($compName) {}
         return
     }
     set levels [split $compName /]
@@ -109,14 +116,12 @@ proc AddEntry {winId topNode node mustShow notInput} {
         set nodeDims [linsert $nodeDims 0 TIME]
         set trans [linsert $trans 0 {}]
     }
-    if {![info exists msgs(param_source_$compName)]} {
-        set msgs(param_source_$compName) Unsaved
-    }
-    set paramDims($compName) [lrange $nodeDims 0 end-1]
+    set paramDims($compName) $nodeDims
     
     #ShowMessage debug info "$node $trans $nodeDims" ok
     set nodeDims [TransBounds $trans $nodeDims]
     
+    set origDims [llength $nodeDims]
     set nodeDims [purge $nodeDims MEMBERS]
     if {!$notInput} {
         set nodeDims [purge $nodeDims RECORDS]
@@ -124,51 +129,42 @@ proc AddEntry {winId topNode node mustShow notInput} {
     while {[set hackOpen [lsearch $nodeDims START_VM]]!=-1} {
         set nodeDims [lreplace $nodeDims $hackOpen [lsearch $nodeDims END_VM]]
     }
-    set dimList [join [lrange $nodeDims 0 end-1] { x }]
-    set last [lindex $nodeDims end]
-    if {[string compare $last 0]} {
-        if {[string match false $last]} {
-            set last boolean
-        }
-    } else {
-        set last [GetCompProperty $topNode Type $node]
+    if {$notInput==-1 && [llength $nodeDims]<$origDims} {
+	return "This value has variable dimensions, and therefore cannot be optimized by parameter estimation."
     }
-    if {[llength $dimList]} {
-        append dimList " of $last"
-    } else {
-        set dimList "a $last"
-    }
-    
-    if {[string length $dimList]} {
-        set slotCaption "[lindex $levels end] ($dimList):"
-    } else {
-        set slotCaption [lindex $levels end]
-    }
+    set dimList [MakeDimsLegible $nodeDims \
+		     [GetCompProperty $topNode Type $node]]
     pack [set slot [frame [MakeSubFrames $topNode $winId.sliderframe $levels \
             fileparams 0]]] -fill x -expand on
-    pack [label $slot.l -text $slotCaption -fg red] -side left
+    pack [label $slot.l1 -text [lindex $levels end] -fg red] -side left
+    pack [label $slot.l2 -text ($dimList) -fg red] -side left
+    if {![info exists msgs(param_source_$compName)]} {
+        set msgs(param_source_$compName) Unsaved
+    }
     #Show description and comments
     # Look at the code that gets the information for the variable's
     # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
     # look for the calls to Prolog proc tk_get_info
     #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
     set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
-    BindPopup $slot.l "$comment"
+    BindPopup $slot.l1 "$comment"
+    BindPopup $slot.l2 "$comment"
             
-    if {$nodeDims>1} {
-        pack [::ttk::button $slot.b -style Toolbutton -image $iconImages(edit) \
-                -command [namespace code [list GetFromTable $winId $compName $notInput]]] -side right
-        BindPopup $slot.b "Get values from file"
+    ::ttk::button $slot.b -style Toolbutton -image $iconImages(edit) \
+       -command [namespace code [list GetFromTable $winId $compName $notInput]]
+    BindPopup $slot.b "Get values from file"
+    if {[llength $nodeDims]>1} {
+	pack $slot.b -side right
     }
     #       pack [entry $slot.e -textvariable paramData($compName)]
     # Using entries played merry hell with very long arrays -- texts work better
     pack [::ttk::entry $slot.e -width 1] -side left -fill x -expand on
     BindPopup $slot.e param_source_$compName
     bind $slot.e <Return> [list $slot.tick invoke]
-    if {[info exists paramData($compName)]} {
-        FillIfSmall $slot.e $paramData($compName)
+    if {[info exists suppliedData($compName)]} {
+        FillIfSmall $slot.e $suppliedData($compName)
     } else {
-        set paramData($compName) {}
+        set suppliedData($compName) {}
     }
     if {[string match normal [$slot.e cget -state]]} {
         pack [::ttk::button $slot.cross -style Toolbutton -image $iconImages(cross) -borderwidth 1 \
@@ -176,19 +172,42 @@ proc AddEntry {winId topNode node mustShow notInput} {
                 -side right
         BindPopup $slot.cross "Revert to old values"
         pack [::ttk::button $slot.tick -style Toolbutton -image $iconImages(tick) -borderwidth 1 \
-                -command [namespace code [list AcceptData $topNode \
-					      $compName 1]]] -side right
+                -command [namespace code [list AcceptData $topNode $compName \
+					      $dataLocn 1]]] -side right
         BindPopup $slot.tick "Accept these values"
     }
     set widgetNames($compName) $slot
     # note whether we need to enter a parameter here...
     if {$mustShow} {
-        if {[lsearch $paramData(needed) $compName]==-1} {
-            $slot.l configure -fg black
+        if {[lsearch $suppliedData(needed) $compName]==-1} {
+            ColourCaptions $slot black
         }
     } else {
-        AcceptData $topNode $compName 0
+        AcceptData $topNode $compName $dataLocn 0
     }
+}
+
+proc ColourCaptions {slot colour} {
+    $slot.l1 configure -fg $colour
+    $slot.l2 configure -fg $colour
+}
+
+proc MakeDimsLegible {nodeDims dataType} {
+    set dimList [join [lrange $nodeDims 0 end-1] { x }]
+    set last [lindex $nodeDims end]
+    if {[string compare $last 0]} {
+        if {[string match false $last]} {
+            set last boolean
+        }
+    } else {
+        set last $dataType
+    }
+    if {[llength $dimList]} {
+        append dimList " of $last"
+    } else {
+        set dimList "a $last"
+    }
+    return $dimList
 }
 
 # MakeSubFrames puts up a load and a save button for each submodel frame, and
@@ -245,7 +264,7 @@ proc ZapParams {topNode smPath metaFile} {
     MergeParams $topNode $smPath $metaFile 0
     
     foreach inputPath [array names whichParamsAffected] {
-        AcceptData $topNode $inputPath -1
+        AcceptData $topNode $inputPath paramData -1
     }
 }
 
@@ -253,7 +272,7 @@ proc DoneParams {topNode} {
     global widgetNames paramData
     
     foreach compName [array names widgetNames] {
-        AcceptData $topNode $compName 1
+        AcceptData $topNode $compName paramData 1
     }
     if {![llength $paramData(needed)]} {
         set paramData(done) 1
@@ -262,16 +281,17 @@ proc DoneParams {topNode} {
     }
 }
 
-proc AcceptData {topNode compName complain} {
-    global paramDims paramData widgetNames runState msgs
-    
+proc AcceptData {topNode compName dataLocn complain} {
+    global paramDims widgetNames runState msgs
+    upvar \#0 $dataLocn suppliedData
+
     set node [GetCompProperty $topNode IdFromCapt $compName]
     if {$complain > -1} {
         if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
             set newData [UglifyValList [$widgetNames($compName).e get]]
-            if {![string equal $newData $paramData($compName)]} {
+            if {![string equal $newData $suppliedData($compName)]} {
                 set msgs(param_source_$compName) Unsaved
-                set paramData($compName) $newData
+                set suppliedData($compName) $newData
             }
         }
     }
@@ -287,7 +307,7 @@ proc AcceptData {topNode compName complain} {
         set dataChanged 1
     } elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
         set dataChanged 1
-    } elseif {[string compare [lindex $oldVal 0] $paramData($compName)]} {
+    } elseif {[string compare [lindex $oldVal 0] $suppliedData($compName)]} {
         set dataChanged 1
     }
     # Make array form if data has changed
@@ -298,7 +318,7 @@ proc AcceptData {topNode compName complain} {
         
         # Now replace each -1 in the dims with the id of the by-record
         # submodel it represents
-        set recordDims $paramDims($compName)
+        set recordDims [lrange $paramDims($compName) 0 end-1]
         set afterTIME [string equal TIME [lindex $recordDims 0]]
         set useCppArray [expr ([RunningInC]!=0)*($afterTIME+1)]
         # 0 = no arrays, 1 = array for current only, 2 = arrays for time points
@@ -308,7 +328,7 @@ proc AcceptData {topNode compName complain} {
                 set recordDims [lset recordDims $recordDepth MEMBERS]
             } else {
                 #do_in_editor puts "recordDims $recordDims recordDepth $recordDepth"
-                foreach recordId [array names paramData] {
+                foreach recordId [array names suppliedData] {
                     #puts "recordId is $recordId"
                     if {[string first $recordId $compName]==0 && \
                                 ![string equal $recordId $compName]} {
@@ -331,15 +351,25 @@ proc AcceptData {topNode compName complain} {
             }
         }
         #puts "About to ListToArray $node {} $trans $recordDims $paramData($compName)"
-        if {$useCppArray} {
-            c_setparamarray $node
+        if {[string equal targetData $dataLocn]} {
+	    if {![llength $suppliedData($compName)]} {
+		ShowMessage "No target values given" warning "You must supply at least one target value for each selected output"  ok
+		return
+	    }
+	    set whatMaking target
+	    set useCppArray 0
+	} else {
+	    set whatMaking parameter
+	    if {$useCppArray} {
+		c_setparamarray $node
+	    }
         }
         if {[catch {ListToArray $topNode $node {} $trans $recordDims \
-                        $paramData($compName) $useCppArray} result]} {
+                        $suppliedData($compName) $useCppArray} result]} {
             # new bit for using it as an input tool: notify that we have values
-            lappend paramData(needed) $compName
+            lappend suppliedData(needed) $compName
             if {$complain>-1} {
-                $widgetNames($compName).l configure -fg red
+                ColourCaptions $widgetNames($compName) red
                 if {$complain>0} {
                     if {[catch {llength $result} rlen]} {
 			error $result ;# unplanned error
@@ -348,14 +378,14 @@ proc AcceptData {topNode compName complain} {
                     } else {
                         set where {}
                     }
-                    ShowMessage "Problem setting parameter value" warning "While attempting to load the parameter value \"$compName\"$where the following problem occurred: [lindex $result end]" ok
+                    ShowMessage "Problem setting $whatMaking value" warning "While attempting to load the $whatMaking value \"$compName\"$where the following problem occurred: [lindex $result end]" ok
                 }
             }
         } else {
             if {$complain>-1} {
-                $widgetNames($compName).l configure -fg black
+                ColourCaptions $widgetNames($compName) black
             }
-            set paramData(needed) [purge $paramData(needed) $compName]
+            set suppliedData(needed) [purge $suppliedData(needed) $compName]
             if {$result<1} {
                 set runState($topNode,reloadParams) $result
             }

@@ -858,7 +858,8 @@ proc ControlDraw {prologVersion} {
     }
     
     Pref_Init $custom(prefDir)/.prefs
-    Pref_Add {  {custom(initNavbar) initNavbar ON "Tool bar"} \
+    Pref_Add {  {custom(winPosn) winPosn {CHOICE {Where it was last time} {OS default position}} "Place initial window:"} \
+                {custom(initNavbar) initNavbar ON "Tool bar"} \
                 {custom(initToolbar) initToolbar ON "Component bar"} \
                 {custom(initEqnbar) initEqnbar ON "Equation bar"} \
                 {custom(initGrid) initGrid ON "Grid"} \
@@ -987,7 +988,9 @@ proc FixSize {c} {
     wm state $win normal
     # seems necessary for console to hide
     #    catch {console hide}
-    if {[file exists $custom(prefDir)/.layout]} {
+    if {[file exists $custom(prefDir)/.layout] && \
+	    [string equal {Where it was last time} \
+		 [PrefValue custom(winPosn) winPosn]]} {
         set stream [NetOpen $custom(prefDir)/.layout r]
         gets $stream whetherMaxed
         #ShowMessage debug info $whetherMaxed ok
@@ -1007,7 +1010,6 @@ proc FixSize {c} {
     if {[string match $openModel {}]} {
         DoRegDialog $win
     }
-    
 }
 
 proc AlterModel {topNode} {
