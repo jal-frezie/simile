@@ -683,7 +683,7 @@ namespace eval fileparams {
         
 # first, make sure all values to be saved are up-to-date and well-formed
 	foreach compName [array names widgetNames $smPath*] {
-	    AcceptData $topNode $compName 1
+	    AcceptData $topNode $compName paramData 1
 	}
 	if {[lsearch $paramData(needed) $smPath*]!=-1} {
 	    return
