@@ -254,6 +254,8 @@ namespace eval $keyValue {
 	foreach widjo [winfo children $f] {
 	    bind $widjo <Double-1> [namespace code \
 					[list DoInpDlg $node $f $title]]
+	    bind $widjo <Button-3> [namespace code \
+					[list DoInpDlg $node $f $title]]
 	}
 	return 1
     }
@@ -458,6 +460,7 @@ namespace eval $keyValue {
 # but neither of these need be done here.
 
 	global simtmpdir initialEstimate minForOpt maxForOpt paramDims
+	global tcl_platform
 	variable useNodes
 	variable clevers
 	variable usedHangers
@@ -610,6 +613,9 @@ namespace eval $keyValue {
 	close $control
 	
 	set activator [NetOpen [file join $simtmpdir pestrun.tcl] w]
+	if {[string match windows $tcl_platform(platform)]} {
+	    puts $activator "package require dde 1.2" ;# must be easier way
+	}
 	puts $activator "[do_in_editor set runHow(sendOp)] exec_for_$::myNode [namespace code pestificate]"
 	puts $activator exit
 	close $activator
@@ -621,12 +627,16 @@ namespace eval $keyValue {
 # the model call the editor process back to check for updates.
 
 	cd $simtmpdir
-	exec pest model.pst >& model.log &
+	if {[string match windows $tcl_platform(platform)]} {
+	    exec cmd /c start /min pest model.pst >& model.log &
+	} else {
+	    exec pest model.pst >& model.log &
+	}
 	cd $oldDir
     }
     
-    # Next bit will actually be executed by command supplied to PEST;
-    # it can stay here until I get that working, for testing purposes
+    # Next bit will actually be executed by command supplied to PEST
+
     proc pestificate {} {
 	global runState simtmpdir errorInfo
 	variable ptList
