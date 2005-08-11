@@ -83,7 +83,7 @@ namespace eval $keyValue {
 		  -command [namespace code [list Go $winId]]]
 	set inClevers1 {inctype absolute derinc 0.001 derinclb 0.001 \
 			   forcen switch derincmul 0.001 dermthd best_fit}
-	set inClevers2 {partrans none parchglim relative scale 1 offset 0}
+	set inClevers2 {partrans none parchglim factor scale 1 offset 0}
     }
 
     proc clear {winId} {
@@ -206,6 +206,8 @@ namespace eval $keyValue {
 	    } else {
 		pack [frame $f] -fill x -expand true
 		bind $f <Double-1> [namespace code \
+					[list DoInpDlg $node $f $title]]
+		bind $f <Button-3> [namespace code \
 					[list DoInpDlg $node $f $title]]
 	    }
 	} else {
@@ -491,10 +493,14 @@ namespace eval $keyValue {
 	    set nodeDims [GetModelDims $node]
 	    set defVal [$f.est get]
 	    puts -nonewline $template $eTitle=
-	    if {[winfo exists $f.int] && \
-		    [string equal normal [$f.int cget -state]]} {
+	    if {[winfo exists $f.int]} {
+		if {[string equal normal [$f.int cget -state]]} {
+		    set int [$f.int get]
+		} else {
+		    set int $runLength ;# only write at time 0
+		}
 		for {set setTime 0} {$setTime < $runLength} \
-		    {set setTime [expr {$setTime+[$f.int get]}]} {
+		    {set setTime [expr {$setTime+$int}]} {
 			puts -nonewline $template "$setTime "
 			AddHangers $node $template $nodeDims 1
 			puts -nonewline $template " "
@@ -608,11 +614,15 @@ namespace eval $keyValue {
 	puts $activator exit
 	close $activator
 
-        cd $simtmpdir
-        if {[catch {exec pest model.pst &} plop]} {
-            ShowMessage "PEST lost it" info $plop ok
-        }
-        cd $oldDir
+# ok, now we need to execute pest in immediate mode in order to get
+# any error messages back from it. However, while doing that we can't
+# run the model -- so get the editor process to call it when it has a
+# moment. Sadly that don't work either, since the commands to execute
+# the model call the editor process back to check for updates.
+
+	cd $simtmpdir
+	exec pest model.pst >& model.log &
+	cd $oldDir
     }
     
     # Next bit will actually be executed by command supplied to PEST;
@@ -626,7 +636,7 @@ namespace eval $keyValue {
 	set topNode $::myNode
 
 	# load the PEST-generated .spf file
-	    MergeParams $topNode {} [file join $simtmpdir model.inp] 0 0
+	ZapParams $topNode {} [file join $simtmpdir model.inp]
 
 	
 	set widget $runState($topNode,helperId).nb.rcf
