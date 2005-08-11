@@ -92,13 +92,16 @@ proc MakeFrames {windowId} {
 }
 
 proc AddEntry {winId topNode node mustShow notInput} {
-    global paramDims widgetNames iconImages msgs
+    global paramDims iconImages msgs
     if {$notInput==-1} {
 	set dataLocn targetData
+	set widgetLocn targetNames
     } else {
 	set dataLocn paramData
+	set widgetLocn widgetNames
     }
     upvar \#0 $dataLocn suppliedData
+    upvar \#0 $widgetLocn outNames
 
     set compName [GetCompProperty $topNode Caption $node]
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
@@ -122,13 +125,7 @@ proc AddEntry {winId topNode node mustShow notInput} {
     set nodeDims [TransBounds $trans $nodeDims]
     
     set origDims [llength $nodeDims]
-    set nodeDims [purge $nodeDims MEMBERS]
-    if {!$notInput} {
-        set nodeDims [purge $nodeDims RECORDS]
-    }
-    while {[set hackOpen [lsearch $nodeDims START_VM]]!=-1} {
-        set nodeDims [lreplace $nodeDims $hackOpen [lsearch $nodeDims END_VM]]
-    }
+    set nodeDims [RemoveVMLevels $nodeDims $notInput]
     if {$notInput==-1 && [llength $nodeDims]<$origDims} {
 	return "This value has variable dimensions, and therefore cannot be optimized by parameter estimation."
     }
@@ -173,18 +170,29 @@ proc AddEntry {winId topNode node mustShow notInput} {
         BindPopup $slot.cross "Revert to old values"
         pack [::ttk::button $slot.tick -style Toolbutton -image $iconImages(tick) -borderwidth 1 \
                 -command [namespace code [list AcceptData $topNode $compName \
-					      $dataLocn 1]]] -side right
+					      $notInput 1]]] -side right
         BindPopup $slot.tick "Accept these values"
     }
-    set widgetNames($compName) $slot
+    set outNames($compName) $slot
     # note whether we need to enter a parameter here...
     if {$mustShow} {
         if {[lsearch $suppliedData(needed) $compName]==-1} {
             ColourCaptions $slot black
         }
     } else {
-        AcceptData $topNode $compName $dataLocn 0
+        AcceptData $topNode $compName $notInput 0
     }
+}
+
+proc RemoveVMLevels {nodeDims notInput} {
+    set nodeDims [purge $nodeDims MEMBERS]
+    if {!$notInput} {
+        set nodeDims [purge $nodeDims RECORDS]
+    }
+    while {[set hackOpen [lsearch $nodeDims START_VM]]!=-1} {
+        set nodeDims [lreplace $nodeDims $hackOpen [lsearch $nodeDims END_VM]]
+    }
+    return $nodeDims
 }
 
 proc ColourCaptions {slot colour} {
@@ -227,12 +235,18 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
             pack [frame $nextLevel.head] -fill x -expand true
             set path [join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
-            pack [::ttk::button $nextLevel.head.save -style Toolbutton -image $iconImages(save) \
-                    -command [list ${ns}::Save $clientId $path]] -side right
-            BindPopup $nextLevel.head.save "Save values for this submodel"
-            pack [::ttk::button $nextLevel.head.open -style Toolbutton -image $iconImages(open) \
-                    -command [list ${ns}::Open $clientId $path]] -side right
-            BindPopup $nextLevel.head.open "Load values for this submodel"
+	    if {[llength $ns]} {
+		pack [::ttk::button $nextLevel.head.save -style Toolbutton \
+			  -image $iconImages(save) \
+			  -command [list ${ns}::Save $clientId $path]] \
+		    -side right
+		BindPopup $nextLevel.head.save "Save values for this submodel"
+		pack [::ttk::button $nextLevel.head.open -style Toolbutton \
+			  -image $iconImages(open) \
+			  -command [list ${ns}::Open $clientId $path]] \
+		    -side right
+		BindPopup $nextLevel.head.open "Load values for this submodel"
+	    }
             if {[string equal fileparams $ns]} {
                 pack [::ttk::button $nextLevel.head.clear -style Toolbutton -image $iconImages(new) \
                         -command [list ${ns}::Clear $clientId $path]] -side right
@@ -261,10 +275,10 @@ proc ZapParams {topNode smPath metaFile} {
     global whichParamsAffected
     
     array unset whichParamsAffected
-    MergeParams $topNode $smPath $metaFile 0
+    MergeParams $topNode $smPath $metaFile 0 0
     
     foreach inputPath [array names whichParamsAffected] {
-        AcceptData $topNode $inputPath paramData -1
+        AcceptData $topNode $inputPath 1 -1
     }
 }
 
@@ -272,7 +286,7 @@ proc DoneParams {topNode} {
     global widgetNames paramData
     
     foreach compName [array names widgetNames] {
-        AcceptData $topNode $compName paramData 1
+        AcceptData $topNode $compName 1 1
     }
     if {![llength $paramData(needed)]} {
         set paramData(done) 1
@@ -281,14 +295,22 @@ proc DoneParams {topNode} {
     }
 }
 
-proc AcceptData {topNode compName dataLocn complain} {
-    global paramDims widgetNames runState msgs
+proc AcceptData {topNode compName notInput complain} {
+    global paramDims runState msgs
+    if {$notInput==-1} {
+	set dataLocn targetData
+	set widgetLocn targetNames
+    } else {
+	set dataLocn paramData
+	set widgetLocn widgetNames
+    }
     upvar \#0 $dataLocn suppliedData
+    upvar \#0 $widgetLocn outNames
 
     set node [GetCompProperty $topNode IdFromCapt $compName]
     if {$complain > -1} {
-        if {![string equal disabled [$widgetNames($compName).e cget -state]]} {
-            set newData [UglifyValList [$widgetNames($compName).e get]]
+        if {![string equal disabled [$outNames($compName).e cget -state]]} {
+            set newData [UglifyValList [$outNames($compName).e get]]
             if {![string equal $newData $suppliedData($compName)]} {
                 set msgs(param_source_$compName) Unsaved
                 set suppliedData($compName) $newData
@@ -369,7 +391,7 @@ proc AcceptData {topNode compName dataLocn complain} {
             # new bit for using it as an input tool: notify that we have values
             lappend suppliedData(needed) $compName
             if {$complain>-1} {
-                ColourCaptions $widgetNames($compName) red
+                ColourCaptions $outNames($compName) red
                 if {$complain>0} {
                     if {[catch {llength $result} rlen]} {
 			error $result ;# unplanned error
@@ -383,7 +405,7 @@ proc AcceptData {topNode compName dataLocn complain} {
             }
         } else {
             if {$complain>-1} {
-                ColourCaptions $widgetNames($compName) black
+                ColourCaptions $outNames($compName) black
             }
             set suppliedData(needed) [purge $suppliedData(needed) $compName]
             if {$result<1} {
@@ -677,15 +699,26 @@ namespace eval fileparams {
         }
     }
     
-    proc Save {topNode smPath} {
-        global paramState paramData widgetNames SimileProject simtmpdir env msgs
+    proc Save {topNode smPath args} {
+        global paramState SimileProject simtmpdir env msgs
+	set notInput [expr -[llength $args]]
+	if {$notInput} {
+	    set dataLocn targetData
+	    set widgetLocn targetNames
+	} else {
+	    set dataLocn paramData
+	    set widgetLocn widgetNames
+	}
+	upvar \#0 $dataLocn suppliedData
+	upvar \#0 $widgetLocn outNames
+
         #ShowMessage debug info "Save $smPath" ok
         
 # first, make sure all values to be saved are up-to-date and well-formed
-	foreach compName [array names widgetNames $smPath*] {
-	    AcceptData $topNode $compName paramData 1
+	foreach compName [array names outNames $smPath*] {
+	    AcceptData $topNode $compName $notInput 1
 	}
-	if {[lsearch $paramData(needed) $smPath*]!=-1} {
+	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return
 	}
 
@@ -695,7 +728,7 @@ namespace eval fileparams {
             set part [file join $simtmpdir temp_out.spf]
             set pStr [NetOpen $part w]
             
-            foreach compName [array names widgetNames $smPath*] {
+            foreach compName [array names outNames $smPath*] {
 		set compTail [string range $compName [string length $smPath] end]
                 set SubbedComp [StripCrs $compTail]
                 set newPopup  "Specified by $metaFile"
@@ -707,7 +740,7 @@ namespace eval fileparams {
                     set msgs(param_source_$compName) [concat $newPopup \
                             (reference to $relName)]
                 } else {
-                    puts $pStr "$SubbedComp=literal=$paramData($compName)"
+                    puts $pStr "$SubbedComp=literal=$suppliedData($compName)"
                     set msgs(param_source_$compName) "$newPopup (literal)"
                 }
             }
@@ -737,21 +770,30 @@ namespace eval fileparams {
     # new relative pathnames and I can only generate these starting from the absolute
     # pathname. And the only way to get that without a hack is to cd to it...
     
-    proc Open {topNode smPath} {
+    proc Open {topNode smPath args} {
         global SimileProject
+	set notInput [expr -[llength $args]]
         set smName [file tail $smPath]
         set metaFile [ChooseFile params.spf "Load $smName parameters from:" 0]
         set SimileProject(fileparam,$smPath) $metaFile
         if {[llength $metaFile]} {
-            MergeParams $topNode $smPath $metaFile 1
+            MergeParams $topNode $smPath $metaFile $notInput 1
             
         }
     }
 }
 
-proc MergeParams {topNode smPath oldPath interactive} {
-    global paramState paramData widgetNames mimeSquirter simtmpdir \
-            whichParamsAffected msgs
+proc MergeParams {topNode smPath oldPath notInput interactive} {
+    global paramState mimeSquirter simtmpdir whichParamsAffected msgs
+    if {$notInput} {
+	set dataLocn targetData
+	set widgetLocn targetNames
+    } else {
+	set dataLocn paramData
+	set widgetLocn widgetNames
+    }
+    upvar \#0 $dataLocn suppliedData
+    upvar \#0 $widgetLocn outNames
     
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
     set oldDir [pwd]
@@ -790,17 +832,17 @@ proc MergeParams {topNode smPath oldPath interactive} {
         }
         set nType [GetCompProperty $topNode Eval $node]
         set startLine [lsearch {INPUT TABLE} $nType]
-        if {$startLine!=-1} {
+        if {($startLine!=-1)==($notInput!=-1)} {
             if {$origVersion>=4.0} {
-                set paramData($restoredComp) [lindex $IdAndValue 2]
+                set suppliedData($restoredComp) [lindex $IdAndValue 2]
                 set reference [string equal reference [lindex $IdAndValue 1]]
                 if {$reference} {
-                    set VFile [lindex $paramData($restoredComp) 0]
+                    set VFile [lindex $suppliedData($restoredComp) 0]
                 }
             } else {
-                set paramData($restoredComp) [TrimFields \
+                set suppliedData($restoredComp) [TrimFields \
                         [lindex $IdAndValue 1]]
-                set VFile [lindex $paramData($restoredComp) 0]
+                set VFile [lindex $suppliedData($restoredComp) 0]
                 set reference [file exists [file join [file dirname $oldPath] \
                         $VFile]]
             }
@@ -814,10 +856,10 @@ proc MergeParams {topNode smPath oldPath interactive} {
                 # ...and stick the new absolute pathname into the spec! Easy!!
                 set paramState($restoredComp) \
                         [concat [list [pwd]/[file tail $VFile]] \
-                        [lrange $paramData($restoredComp) 1 end]]
+                        [lrange $suppliedData($restoredComp) 1 end]]
                 # now just load up the data
                 #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
-                set paramData($restoredComp) \
+                set suppliedData($restoredComp) \
                         [LoadTableData $paramState($restoredComp) $startLine]
                 set whichParamsAffected($restoredComp) 1
                 set msgs(param_source_$restoredComp) [concat $newPopup \
@@ -827,18 +869,18 @@ proc MergeParams {topNode smPath oldPath interactive} {
                 if {[string equal INPUT $nType]} {
                     set trans [linsert $trans 0 {}] ;# dont translate times
                 }
-                if {[SensibleValue $trans $paramData($restoredComp)]>1} {
+                if {[SensibleValue $trans $suppliedData($restoredComp)]>1} {
                     set whichParamsAffected($restoredComp) 1
                     set msgs(param_source_$restoredComp) "$newPopup (literal)"
                 } else {
-                    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $paramData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
-                    set paramData($restoredComp) {}
+                    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $suppliedData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
+                    set suppliedData($restoredComp) {}
                 }
             }
             if {$interactive} {
                 #$widgetNames($restoredComp).e
-                FillIfSmall $widgetNames($restoredComp).e \
-                        $paramData($restoredComp)
+                FillIfSmall $outNames($restoredComp).e \
+                        $suppliedData($restoredComp)
             }
         }
     }
@@ -943,18 +985,30 @@ proc VarType {testVar types} {
 }
 
 proc GetFromTable {parent compName startLine} {
-    global paramState paramData widgetNames table_entry msgs
+    global paramState paramDims table_entry msgs
+    if {$startLine==-1} {
+	set dataLocn targetData
+	set widgetLocn targetNames
+	set startLine [string is double [lindex $paramDims($compName) 0]]
+    } else {
+	set dataLocn paramData
+	set widgetLocn widgetNames
+    }
+    upvar \#0 $dataLocn suppliedData
+    upvar \#0 $widgetLocn outNames
+    
     if {[info exists paramState($compName)]} {
         set table_entry(data) $paramState($compName)
     } else {
         set table_entry(data) {}
     }
-    if {[string match normal [$widgetNames($compName).e cget -state]]} {
-        set table_entry(values) [UglifyValList [$widgetNames($compName).e get]]
+    if {[string match normal [$outNames($compName).e cget -state]]} {
+        set table_entry(values) [UglifyValList [$outNames($compName).e get]]
     } else {
-        set table_entry(values) $paramData($compName)
+        set table_entry(values) $suppliedData($compName)
     }
-    set newSource [equationDoTable $parent $compName $startLine]
+    set newSource [equationDoTable [winfo toplevel $parent] \
+		       $compName $startLine]
     if {$newSource} {
         if {[llength $table_entry(dataField)]} {
             set paramState($compName) [concat [list $table_entry(fileName) \
@@ -966,8 +1020,8 @@ proc GetFromTable {parent compName startLine} {
 					       ,wrap:$table_entry(wrapPt)]
 	    }
         }
-        set paramData($compName) $table_entry(values)
-        FillIfSmall $widgetNames($compName).e $paramData($compName)
+        set suppliedData($compName) $table_entry(values)
+        FillIfSmall $outNames($compName).e $suppliedData($compName)
         switch $newSource {
             2 {
                 set msgs(param_source_$compName) \
