@@ -627,10 +627,14 @@ namespace eval $keyValue {
 # the model call the editor process back to check for updates.
 
 	cd $simtmpdir
-	if {[string match windows $tcl_platform(platform)]} {
-	    exec cmd /c start /min pest model.pst >& model.log &
-	} else {
-	    exec pest model.pst >& model.log &
+        switch $tcl_platform(os) {
+            {Windows NT} {
+		exec cmd /c start /min pest model.pst >& model.log
+	    } {Windows 95} {
+		exec start /m pest model.pst >& model.log
+	    } default {
+		exec pest model.pst >& model.log &
+	    }
 	}
 	cd $oldDir
     }
