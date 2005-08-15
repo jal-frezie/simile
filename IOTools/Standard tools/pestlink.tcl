@@ -45,11 +45,15 @@ namespace eval $keyValue {
 		 [list remove.gif "Remove a variable" \
 		      [namespace code "RemoveVariableOut $winId"]]]
 	::graphtools::MakeToolBar $outId $toolbarItems
+	
 	pack [message $inpId.intro -aspect 800] -fill x
 	pack [message $outId.intro -aspect 800] -fill x
 
         MakeFrames $inpId
         MakeFrames $outId
+
+	pack [button $outId.show -text "Show these on plots" -command \
+		  [namespace code ShowMeasurements]]
 
 	set frameNo 0
 	set clevers(list) {{rlambda1 5.0 rlamfac 2.0 phiratsuf 0.4 \
@@ -682,6 +686,39 @@ namespace eval $keyValue {
 	}
     }
 
+    proc ShowMeasurements {} {
+
+# This is to allow us to produce the 'killer graphic' of the field
+# measurements superposed on a plot of the corresponding
+# model-generated data. It runs the model up to the timepoints at
+# which measurements have been entered, then it saves the values of
+# the components corresponding to those measurements, inserts the
+# measurements, and calls the display tools, which then hopefully read
+# and display the measurement data. The model values are put back
+# before running the model further.
+
+# Sounds simple enough, but supposing we have different measurements
+# at different times? We can't selectively display them, or 'blank'
+# the model values we don't have measurements for...ideally we would
+# interpolate between measurements we do have...OK what about the
+# ends? X-trapolate nearest two points? Of course if we only have one
+# point we just use it...
+
+	global runState simtmpdir errorInfo
+	variable ptList
+	variable spitLists
+
+# Turn off interval display? Why bother; displaying at irregular
+# intervals will only mess up the other plots, and if we are
+# interpolating anyway, why not do so at every time point? Just so
+# long as we can scrog the values before the display tools get
+# them...(and put them back after)...do by putting specials at
+# beginning and end of helper list? Fine, except it's an array...
+
+	set widget $runState($topNode,helperId).nb.rcf
+	$widget.upper.topbuttons.reset invoke
+
+    }
 
     proc AddChoppers {node str data} {
 	variable usedHangers

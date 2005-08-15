@@ -359,18 +359,26 @@ namespace eval runcontrol33857 {
 		if {$runState($node,modelRunning)<3} {
 		    set runState($node,modelRunning) 3
 		}
-                if {$redoPhase($node) < 1} {
+                if {$redoPhase($node) < 1 && $display} {
                     TellAllHelpers $node reset
                 }
-                TellAllHelpers $node display $current $display $update
+                if {$display} {
+		    TellAllHelpers $node display $current $display $update
+		}
 	    } else {
 		set sendvars($node,currentMode) exit
 	    }
 	    unset redoPhase($node)
 	}
-	set lastDisp [expr int($current/$display)]
+	if {$display} {
+	    set lastDisp [expr int($current/$display)]
+	}
 	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
-	    set nextDisp [expr $display*[incr lastDisp]]
+	    if {$display} {
+		set nextDisp [expr $display*[incr lastDisp]]
+	    } else {
+		set nextDisp [expr 2*$finish-$current]
+	    }
 	    if {[RunningInC]} {
 		set current $nextDisp
 	    } else {
