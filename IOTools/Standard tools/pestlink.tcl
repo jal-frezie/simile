@@ -460,7 +460,7 @@ namespace eval $keyValue {
 # but neither of these need be done here.
 
 	global simtmpdir initialEstimate minForOpt maxForOpt paramDims
-	global tcl_platform
+	global tcl_platform sender
 	variable useNodes
 	variable clevers
 	variable usedHangers
@@ -572,6 +572,7 @@ namespace eval $keyValue {
 	    foreach {itm val} $inClevers1 {
 		puts -nonewline $control " $inGrpData($node,$itm)"
 	    }
+
 	    puts $control {}
 	}
 
@@ -616,7 +617,8 @@ namespace eval $keyValue {
 	if {[string match windows $tcl_platform(platform)]} {
 	    puts $activator "package require dde 1.2" ;# must be easier way
 	}
-	puts $activator "[do_in_editor set runHow(sendOp)] exec_for_$::myNode [namespace code pestificate]"
+#	puts $activator "[do_in_editor set runHow(sendOp)] exec_for_$::myNode [namespace code pestificate]"
+	puts $activator "eval $sender [list do_for_node $::myNode] [namespace code pestificate]"
 	puts $activator exit
 	close $activator
 
