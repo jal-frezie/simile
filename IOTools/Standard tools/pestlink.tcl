@@ -503,15 +503,16 @@ namespace eval $keyValue {
 	    if {[winfo exists $f.int]} {
 		if {[string equal normal [$f.int cget -state]]} {
 		    set int [$f.int get]
+		    for {set setTime 0} {$setTime < $runLength} \
+			{set setTime [expr {$setTime+$int}]} {
+			    puts -nonewline $template "$setTime "
+			    AddHangers $node $template $nodeDims 1
+			    puts -nonewline $template " "
+			}
 		} else {
-		    set int $runLength ;# only write at time 0
+		    puts -nonewline $template "NOW "
+		    AddHangers $node $template $nodeDims 1
 		}
-		for {set setTime 0} {$setTime < $runLength} \
-		    {set setTime [expr {$setTime+$int}]} {
-			puts -nonewline $template "$setTime "
-			AddHangers $node $template $nodeDims 1
-			puts -nonewline $template " "
-		    }
 	    } else {
 		AddHangers $node $template $nodeDims 0
 	    }

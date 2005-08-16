@@ -454,8 +454,11 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             } 1 {
                 if {![string last ,NOW $subs 3]} {
                     set idAndSubs $tgt[string range $subs 4 end]
-                    set comboTypes($idAndSubs) $list
-                    EnumTypeToNumber [InputVarFor $topNode $tgt] $idAndSubs \
+		    set tgtVar [InputVarFor $topNode $tgt]
+		    if {[string match comboChoices $tgtVar]} {
+			set comboTypes($idAndSubs) $list
+		    }
+                    EnumTypeToNumber $tgtVar $idAndSubs \
                             $list $thisTrans [expr $useCppArray/2]
                     return 1
                 } else {
