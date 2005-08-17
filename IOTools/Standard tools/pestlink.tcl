@@ -11,6 +11,7 @@ namespace eval $keyValue {
     }
     
     proc initialize {winId} {
+	global stopImg
 	variable useNodes
 	variable clevers
 	variable inClevers1
@@ -83,11 +84,33 @@ namespace eval $keyValue {
 	pack [frame $setId.rl]
 	pack [label $setId.rl.lab -text "Run length:"] -side left
 	pack [entry $setId.rl.ent] -side left
-	pack [button $setId.go -width 50 -text GO \
-		  -command [namespace code [list Go $winId]]]
+
+        ::ttk::button $setId.rl.reset -image $stopImg -width 32 \
+	    -command [namespace code [list Stop $winId]]
+	pack $setId.rl.reset -side left  -padx 1 -pady 2 -expand true -fill x
+        BindPopup $setId.rl.reset "Stop PEST process"
+        ::ttk::button $setId.rl.start -width 32
+        pack $setId.rl.start -side left  -padx 1 -pady 2 -expand true -fill x
+        BindPopup $setId.rl.start "Run or pause PEST process"
+	SetButtonAct $winId start
+
 	set inClevers1 {inctype absolute derinc 0.001 derinclb 0.001 \
 			   forcen switch derincmul 0.001 dermthd best_fit}
 	set inClevers2 {partrans none parchglim factor scale 1 offset 0}
+	set useNodes($winId,state) 1 ;# stopped, no data
+    }
+
+    proc SetButtonAct {winId what} {
+	global pauseImg playImg
+	variable useNodes
+	set btn $useNodes($winId,settings).rl.start
+	if {[string equal start $what]} {
+	    $btn configure -command [namespace code [list Go $winId]] \
+		-image $playImg
+	} else {
+	    $btn configure -command [namespace code [list Pause $winId]] \
+		-image $pauseImg
+	}
     }
 
     proc clear {winId} {
@@ -456,6 +479,17 @@ namespace eval $keyValue {
 
     }
 
+    proc Stop {winId} {
+	PokeStopFile $winId 2
+    }
+
+    proc Pause {winId} {
+	variable useNodes
+	set useNodes($winId,state) 3
+	PokeStopFile $winId 3
+	SetButtonAct $winId start
+    }
+
     proc Go {winId} {
 
 # Time to invoke PEST. First we must make a template file that allows
@@ -474,13 +508,20 @@ namespace eval $keyValue {
 	variable ptList
 	variable spitLists
 
+	PokeStopFile $winId 0
+	SetButtonAct $winId pause
+	if {$useNodes($winId,state)==3} { ;# it was paused
+	    set useNodes($winId,state) 0
+	    return
+	}
+
 	set usedHangers 0
 	set runLength [$useNodes($winId,settings).rl.ent get]
 
 	set control [NetOpen [file join $simtmpdir model.pst] w]
 	puts $control pcf
 	puts $control {* control data}
-	puts $control {norestart estimation}
+	puts $control {restart estimation}
 
 	set template [NetOpen [file join $simtmpdir model.tpl] w]
 	puts $template "ptf \\"
@@ -612,7 +653,7 @@ namespace eval $keyValue {
 
 	set oldDir [pwd]
 	puts $control {* model command line}
-	puts $control "[file join [file dirname $oldDir] System/bin/wish] pestrun.tcl"
+	puts $control "[file join [file dirname $oldDir] System bin wish] pestrun.tcl"
 	puts $control {* model input/output}
 	puts $control {model.tpl model.inp}
 	puts $control {model.ins model.out}
@@ -637,16 +678,42 @@ namespace eval $keyValue {
 	cd $simtmpdir
         switch $tcl_platform(os) {
             {Windows NT} {
-		exec cmd /c start /min pest model.pst >& model.log
+#		exec cmd /c start /min pest model.pst >& model.log
+		set spout [open {|cmd /c start /min pest model.pst} r]
 	    } {Windows 95} {
-		exec start /m pest model.pst >& model.log
+#		exec start /m pest model.pst >& model.log
+		set spout [open {|start /m pest model.pst} r]
 	    } default {
-		exec pest model.pst >& model.log &
+#		exec pest model.pst >& model.log &
+		set spout [open {|pest model.pst} r]
 	    }
 	}
 	cd $oldDir
+	set useNodes($winId,state) 0 ;# rolling
+
+	fconfigure $spout -blocking 0
+	fileevent $spout readable [namespace code [list GrabMsgs $winId $spout]]
     }
     
+    # for now, just use pipe to tell when PEST has finished
+    proc GrabMsgs {winId spout} {
+	variable useNodes
+	gets $spout bilge
+	if {[eof $spout]} {
+	    close $spout	    
+	    SetButtonAct $winId start
+	    set useNodes($winId,state) 2 ;# stopped, with data
+	}
+    }
+
+    proc PokeStopFile {winId n} {
+	global simtmpdir
+	variable useNodes
+	set stpipe [open [file join $simtmpdir pest.stp] w]
+	puts $stpipe $n
+	close $stpipe
+    }
+
     # Next bit will actually be executed by command supplied to PEST
 
     proc pestificate {} {
