@@ -510,7 +510,7 @@ namespace eval $keyValue {
 			    puts -nonewline $template " "
 			}
 		} else {
-		    puts -nonewline $template "0 "
+		    puts -nonewline $template "NOW "
 		    AddHangers $node $template $nodeDims 1
 		}
 	    } else {
@@ -665,6 +665,7 @@ namespace eval $keyValue {
 
 	# load the .spf file again as variable params may have been reset 
 	ZapParams $topNode {} [file join $simtmpdir model.inp]
+	array unset runState $topNode,reloadParams
 
 	set execLog [NetOpen [file join $simtmpdir model.out] w]
 	set current 0
