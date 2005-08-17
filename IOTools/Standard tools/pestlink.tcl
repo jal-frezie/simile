@@ -26,7 +26,8 @@ namespace eval $keyValue {
 	set useNodes($winId,output) $outId
 	$nb add [set setId [frame $nb.settings]] -text Settings:
 	set useNodes($winId,settings) $setId
-	$nb add [frame $nb.results] -text Results:
+	$nb add [set resId [frame $nb.results]] -text Results:
+	set useNodes($winId,results) $resId
 
 	menu $winId.slidervars -tearoff 0
 	menu $winId.drivervars -tearoff 0
@@ -93,6 +94,12 @@ namespace eval $keyValue {
         pack $setId.rl.start -side left  -padx 1 -pady 2 -expand true -fill x
         BindPopup $setId.rl.start "Run or pause PEST process"
 	SetButtonAct $winId start
+
+	ScrolledWindow $resId.c
+	set canId $resId.c.text
+	pack [text $canId] -fill both -expand true
+	$resId.c setwidget $canId
+	pack $resId.c -side top -fill both -expand true
 
 	set inClevers1 {inctype absolute derinc 0.001 derinclb 0.001 \
 			   forcen switch derincmul 0.001 dermthd best_fit}
@@ -517,6 +524,7 @@ namespace eval $keyValue {
 
 	set usedHangers 0
 	set runLength [$useNodes($winId,settings).rl.ent get]
+	$useNodes($winId,results).c.text delete 1.0 end
 
 	set control [NetOpen [file join $simtmpdir model.pst] w]
 	puts $control pcf
@@ -698,8 +706,9 @@ namespace eval $keyValue {
     # for now, just use pipe to tell when PEST has finished
     proc GrabMsgs {winId spout} {
 	variable useNodes
-	gets $spout bilge
-	if {[eof $spout]} {
+	if {[gets $spout bilge]>-1} {
+	    $useNodes($winId,results).c.text insert end "$bilge\n"
+	} elseif {[eof $spout]} {
 	    close $spout	    
 	    SetButtonAct $winId start
 	    set useNodes($winId,state) 2 ;# stopped, with data
