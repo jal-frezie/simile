@@ -510,7 +510,7 @@ namespace eval $keyValue {
 			    puts -nonewline $template " "
 			}
 		} else {
-		    puts -nonewline $template "NOW "
+		    puts -nonewline $template "0 "
 		    AddHangers $node $template $nodeDims 1
 		}
 	    } else {
@@ -554,7 +554,8 @@ namespace eval $keyValue {
 	foreach brkPt $ptList {
 	    foreach entry $spitLists($brkPt) {
 		set pair [split $entry =]
-		puts -nonewline $instruct "\\[lindex $pair 0] at $brkPt is\\ "
+		set node [lindex $pair 0]
+		puts -nonewline $instruct "\\$node at $brkPt is\\ "
 		AddChoppers $node $instruct [lindex $pair 1]
 		puts $instruct {}
 	    }
@@ -659,12 +660,13 @@ namespace eval $keyValue {
 	# load the PEST-generated .spf file
 	ZapParams $topNode {} [file join $simtmpdir model.inp]
 
-	
 	set widget $runState($topNode,helperId).nb.rcf
 	$widget.upper.topbuttons.reset invoke
 
-	set execLog [NetOpen [file join $simtmpdir model.out] w]
+	# load the .spf file again as variable params may have been reset 
+	ZapParams $topNode {} [file join $simtmpdir model.inp]
 
+	set execLog [NetOpen [file join $simtmpdir model.out] w]
 	set current 0
 	foreach breakPt $ptList {
 	    set runState($topNode,execTime) [expr $breakPt-$current]
@@ -723,7 +725,6 @@ namespace eval $keyValue {
 
     proc AddChoppers {node str data} {
 	variable usedHangers
-	variable inGrpData
 	variable outGrpData
 
 	if {[llength $data]!=1} {
@@ -741,7 +742,6 @@ namespace eval $keyValue {
     proc AddHangers {node str dms brs} {
 	variable usedHangers
 	variable inGrpData
-	variable outGrpData
 
 	if {[lindex $dms 0]>0} {
 	    if {$brs==1} {
