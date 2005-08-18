@@ -277,21 +277,23 @@ proc ZapParams {topNode smPath metaFile} {
     array unset whichParamsAffected
     MergeParams $topNode $smPath $metaFile 0 0
     
-    foreach inputPath [array names whichParamsAffected] {
-        AcceptData $topNode $inputPath 1 -1
-    }
+    AcceptAll $topNode [array names whichParamsAffected] 1 -1
 }
 
 proc DoneParams {topNode} {
     global widgetNames paramData
     
-    foreach compName [array names widgetNames] {
-        AcceptData $topNode $compName 1 1
-    }
+    AcceptAll $topNode [array names widgetNames] 1 1
     if {![llength $paramData(needed)]} {
         set paramData(done) 1
     } else {
         set paramData(complete) -1
+    }
+}
+
+proc AcceptAll {topNode compNames notInput complain} {
+    foreach compName $compNames {
+	AcceptData $topNode $compName $notInput $complain
     }
 }
 
@@ -718,9 +720,7 @@ namespace eval fileparams {
         #ShowMessage debug info "Save $smPath" ok
         
 # first, make sure all values to be saved are up-to-date and well-formed
-	foreach compName [array names outNames $smPath*] {
-	    AcceptData $topNode $compName $notInput 1
-	}
+	AcceptAll $topNode [array names outNames $smPath*] $notInput 1
 	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return
 	}
