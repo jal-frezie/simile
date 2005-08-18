@@ -972,7 +972,7 @@ proc StartRun {node} {
     }
     set runState($node,modelRunning) 1
     foreach {smPath spFile} [array get projectParams] {
-	MergeParams $node $smPath $spFile 0
+	MergeParams $node $smPath $spFile 0 0
 	unset projectParams($smPath)
     }
     if {[FileParamDialogue $node $fpParent 0]<1} {
