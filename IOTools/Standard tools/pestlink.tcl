@@ -739,10 +739,6 @@ namespace eval $keyValue {
 	set widget $runState($topNode,helperId).nb.rcf
 	$widget.upper.topbuttons.reset invoke
 
-	# load the .spf file again as variable params may have been reset 
-	ZapParams $topNode {} [file join $simtmpdir model.inp]
-	array unset runState $topNode,reloadParams
-
 	set execLog [NetOpen [file join $simtmpdir model.out] w]
 	set current 0
 	foreach breakPt $ptList {

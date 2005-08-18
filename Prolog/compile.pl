@@ -277,7 +277,7 @@ important...(or was, back when the A stood for Agroforestry)... */
 		      dtarget, btarget, instance, start_time, time_step,
 		      time, times, ts, dts,
 		      init_time, parentId, channelId, version,
-		      on_reset, externs_done, /* dummy conditions */
+		      on_reset, on_reload, externs_done, /* dummy conditions */
 		      use_param_state, /* indicates file parameter */
 		      id, dims, /* arguments to extractor proc */
 		      build0, build1, build2, build3 | _], /* makearray indices
@@ -490,7 +490,8 @@ check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
 	true),
-	UseCompartments = [make(on_reset, [], [], 0, []) | Comps],
+	UseCompartments = [make(on_reload, [], [], -1, []),
+			   make(on_reset, [], [], 0, []) | Comps],
 	    
 	reassure_user("Sorting assignments into correct time steps"),
 	sort_assignments(Functions, UseCompartments, Phases, Sorted, VMSPs).
@@ -661,7 +662,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 	    render_all(Language, procedure_call, GraphSetups,
 		       8, GraphSetupPass),
 	    refer_value(Language, phase, PhRef),
-	    combine(Language, ==, [PhRef, -1], InitExpr),
+	    combine(Language, ==, [PhRef, -2], InitExpr),
 	    render(Language, if_start, InitExpr, 4, [GraphSetupCond]),
 	    render(Language, end(cond), initializing, 4, GraphSetupEnd),
 	    append([GraphSetupCond | GraphSetupPass], GraphSetupEnd,
@@ -1257,7 +1258,7 @@ input_params_in(Vars, SmPath, SmStep,
 	append(SmInds, LocalInds, Inds),
 	vars_only(Inds, VarInds, ParamType),
 	(ParamType = 2,
-	    (Type = function, Step = -1, Wait = [];
+	    (Type = function, Step = -1, Wait = [on_reload];
 	    Type = init_function, Step = 0, Wait = [on_reset]);
 	ParamType = 1,
 	    (Type = function, Step = SmStep, Wait = [time];
@@ -1295,7 +1296,7 @@ sort_assignments(Instructions, Compartments, Phase, Left, VMSpecPairs) :-
 	NewInst = make(Efx, Conds, Path, Phase, Acts),
 	select(NextInst, Instructions, Rest),
 	DefP >= Phase,
-	(Phase = -1;
+	(Phase = -2;
 	(member(Cond, Conds);
 	    member(later(Cond), Conds); member(this_step(Cond), Conds)),
 	(Cond = time;
@@ -1489,7 +1490,7 @@ order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
 		LastStep = [FinishPass],
 		UseSubPasses = SubPasses),
 	    /* Now put new/timing conditions round higher-level passes */
-	    add_phase_conditions(UseSubPasses, -1, SmNew, CondPass),
+	    add_phase_conditions(UseSubPasses, -2, SmNew, CondPass),
 
 	    /* Now if I have done some submodel assignments, recurse at
 		the same level */
@@ -1584,13 +1585,13 @@ order_all_assignments(Phase, Undone, Done, Left) :-
 	    Left = NowLeft;
 	append(NowDone, [[]], NowDonePlusDummy),
 	    /* dummy makes sure all time steps get condition */
-	    add_phase_conditions(NowDonePlusDummy, -1, [], NowDoneForm),
+	    add_phase_conditions(NowDonePlusDummy, -2, [], NowDoneForm),
 	    order_all_assignments(Phase, NowLeft, ThenDone, Left),
 	    append(NowDoneForm, ThenDone, Done)).
 
 order_submodel_assignments(Phase, Path, RawAssign,
 			   OrderedPasses, Left, FoundTest) :-
-	Phase < -1, !,
+	Phase < -2, !,
 	    OrderedPasses = [],
 	    Left = RawAssign;
 	NextPhase is Phase-1,

@@ -466,7 +466,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                 } else {
                     EnumTypeToNumber paramData $tgt$subs \
                             $list $thisTrans $useCppArray
-                    return 0
+                    return -1 ;# should be 0 if a comp
                 }
             } default {
                 error [list "Array $list supplied instead of scalar"]

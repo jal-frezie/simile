@@ -218,7 +218,7 @@ namespace eval runcontrol33857 {
             if {[string match start $action] && \
                         [info exists runState($node,reloadParams)]} {
                 set paramChoice [ShowMessage "Parameters out of date" warning \
-				     "New file parameters will not take effect until the model is reset. Do you want to reset the model now before running it?" yesno]
+				     "New file parameters will not take effect until the model is reset (phase $runState($node,reloadParams)). Do you want to reset the model now before running it?" yesno]
 		if {[string equal yes $paramChoice]} {
 		    # reset the model
 		    set sendvars($node,currentMode) reset
@@ -335,7 +335,7 @@ namespace eval runcontrol33857 {
 	    set exec $sendvars($node,run_length)
 	    SetupBar $node 0 $exec
 	    if {[info exists runState($node,reloadParams)]} {
-		set redoPhase($node) -1
+		set redoPhase($node) $runState($node,reloadParams)
 		unset runState($node,reloadParams)
 	    } else {
 		set redoPhase($node) 0
@@ -348,7 +348,7 @@ namespace eval runcontrol33857 {
 	    $widget.upper.bf.flag itemconfigure 1 -fill yellow
 	    update
 	    if {![RunningInC]} {
-		if {$redoPhase($node) == -1} {
+		if {$redoPhase($node) <= -1} {
 		    InitTimeSeries $node
 		} elseif {$redoPhase($node) == 0} {
 		    ResetTimeSeries $node
@@ -494,7 +494,7 @@ namespace eval runcontrol33857 {
             if {[info exists redoPhase($node)]} {
                 $widget.upper.bf.flag itemconfigure 1 -fill yellow
                 update
-                if {$redoPhase($node) == -1} {
+                if {$redoPhase($node) == -2} {
                     InitTimeSeries $node
                 } elseif {$redoPhase($node) == 0} {
                     ResetTimeSeries $node

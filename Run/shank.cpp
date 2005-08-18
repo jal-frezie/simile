@@ -1390,7 +1390,7 @@ to drive the model...
 
 int reset(long int modelType, long int modelHandle, int top_phase) {
   int tweak_phase;
-  resetting=-top_phase;
+  resetting=(top_phase==-2);
   for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
     lts[tweak_phase]=0;
     setdt(0,-tweak_phase);

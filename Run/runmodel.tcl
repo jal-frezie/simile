@@ -1023,7 +1023,7 @@ proc StartRun {node} {
 #        $navBar.runenv configure -state active
 #        $window_info($winData)top.tools entryconfigure {Inspect elements} -state active
 #    }
-    set runState($node,reloadParams) 1
+    set runState($node,reloadParams) -2 ;# the initialize phase
     set runState($node,modelRunning) 2
 #    EnableTools Fix
 
