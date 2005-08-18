@@ -152,8 +152,7 @@ proc ExplainError {what dest mtime mstep whoopsie} {
     set mess "Simile ran into a problem trying to run this model. 
 While it was trying to $operation $target during $action of the model$timing, $problem."
     # do it after idle so this process is not hung till user responds
-    start_in_editor [list BuildProblem "Problem with model" \
-			 warning $mess execution]
+    start_in_editor BuildProblem "Problem with model" warning $mess execution
     do_in_editor RaiseModelWindow $myNode
 }
 
