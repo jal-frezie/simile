@@ -147,6 +147,9 @@ proc AddHelperSublist {fm title ct} {
                 if {[string match {Explorer} $action]} {
                     set helperTable(VariableList) $keyValue ;# for MRE
                 }
+                if {[string match {PEST interface} $action]} {
+                    set helperTable(pestInterface) $keyValue ;# for MRE
+                }
 #                if {[string match {Slider control} $action]} {
 #                    set helperTable(SliderControl) $keyValue
 #                }
@@ -540,6 +543,9 @@ proc LoseDTRef {statusLine} {
 proc TellAllHelpers {node fun args} {
     global helperTable
 
+    if {[string equal display $fun]} {
+	$helperTable(pestInterface)::ScrogOutputs
+    }
     foreach displayBox [array name helperTable *,whichHelper] {
         scan $displayBox {%[^,]} winId
 	if {[string equal $node $helperTable($winId,whichModel)]} {
@@ -548,6 +554,7 @@ proc TellAllHelpers {node fun args} {
 	}
     }
     if {[string equal display $fun]} {
+	$helperTable(pestInterface)::RestoreOutputs
 	eval WriteLogs $node $args
     }
 }

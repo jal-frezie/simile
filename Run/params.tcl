@@ -787,7 +787,7 @@ namespace eval fileparams {
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
-    global paramState mimeSquirter simtmpdir whichParamsAffected msgs
+    global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
     if {$notInput} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -869,8 +869,9 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                         (reference to $VFile)]
             } else {
                 set trans [GetTransTable $node]
-                if {[string equal INPUT $nType]} {
-                    set trans [linsert $trans 0 {}] ;# dont translate times
+                if {!$startLine || ($startLine==-1 && 
+				    $paramDims($restoredComp,readMany))} {
+                    set trans [linsert $trans 0 time] ;# dont translate times
                 }
                 if {[SensibleValue $trans $suppliedData($restoredComp)]>1} {
                     set whichParamsAffected($restoredComp) 1
@@ -969,18 +970,24 @@ proc SensibleValue {trans list} {
     }
 }
 
-# useful proc which returns 1 for an int, 2 for a float, 1 for a member of the
-# supplied list (used for enum types) and 0 for all else
+# useful proc which returns 1 for a valid string, 2 for a valid
+# numerical index, 3 for a numerical entry and 0 for all else
 
 proc VarType {testVar types} {
-    if {[string is integer $testVar]} {
+    if {[string equal time $types]} {
+	if {[lsearch {now restart} [string tolower $testVar]]!=-1} {
+	    return 1
+	} elseif {[Numeric $testVar]} {
+	    return 2
+	}
+    } elseif {[llength $types]} {
+	if {[lsearch $types $testVar]!=-1} {
+	    return 1
+	}
+    } elseif {[string is integer $testVar]} {
         return 2
     } elseif {[Numeric $testVar]} {
         return 3
-    } elseif {[lsearch $types $testVar]!=-1} {
-        return 2
-    } elseif {[lsearch {now restart} [string tolower $testVar]]!=-1} {
-        return 1
     } else {
         puts "No $testVar in $types"
         return 0

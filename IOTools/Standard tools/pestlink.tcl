@@ -54,8 +54,8 @@ namespace eval $keyValue {
         MakeFrames $inpId
         MakeFrames $outId
 
-	pack [button $outId.show -text "Show these on plots" -command \
-		  [namespace code ShowMeasurements]]
+	pack [checkbutton $outId.show -text "Show these on plots" \
+		  -variable ::[namespace current]::useNodes($winId,scrogging)]
 
 	set frameNo 0
 	set clevers(list) {{rlambda1 5.0 rlamfac 2.0 phiratsuf 0.4 \
@@ -507,12 +507,19 @@ namespace eval $keyValue {
     }
 
     proc reset {winId} {
+	variable useNodes
+
+	if {$useNodes($winId,scrogging)} {
+	    ShowMessage {Substituting measured values} warning \
+		"You have selected to display the measured values supplied to the PEST interface helper for the output components, rather than their actual values from the model." ok
+	}
     }
 
     proc display {winId time display remainder} {
 
-# Check if the model is being run by PEST, and if it is, write data for any
-# model outputs for which we have reached recording time points
+# Check if the model is being run by PEST, and if it is, write data
+# for any model outputs for which we have reached recording time
+# points...nah, we are only running it between recording points.
 
     }
 
@@ -826,6 +833,77 @@ namespace eval $keyValue {
 	set widget $runState($topNode,helperId).nb.rcf
 	$widget.upper.topbuttons.reset invoke
 
+    }
+
+    proc ScrogOutputs {} {
+	variable useNodes
+	variable ptList
+	variable spitLists
+
+	set subTime [GetModelTime]
+	foreach activeSub [array names useNodes *,scrogging] {
+	    if {$useNodes($activeSub)} {
+		set winId [string range $activeSub 0 end-10]
+
+	set numOutputs [CountMenuCmds $winId.drivervars]
+	for {set eNo 0} {$eNo < $numOutputs} {incr eNo} {
+	    set eTitle [$winId.drivervars entrycget $eNo -label]
+	    set node [GetIdFromCaptionPath $eTitle]
+
+	    set useNodes($node,modelVal) [lindex [GetModelValue $node] 0]
+	    foreach time $ptList {
+		set pt [lsearch $spitLists($time) $node=*]
+		if {$pt>-1} {
+		    set val [list $time [lindex [split \
+				    [lindex $spitLists($time) $pt] =] 1]]
+		    if {$time==$subTime} {
+			set hi $val
+			if {[info exists lo]} {unset lo}
+			break
+		    } else {
+			if {[info exists hi]} {
+			    set lo $hi
+			}
+			set hi $val
+		    }
+		    if {$time>$subTime && [info exists lo]} {
+			break
+		    }
+		}
+	    }
+	    if {[info exists lo]} {
+		set progFrack [expr ($subTime-[lindex $lo 0])/ \
+				  ([lindex $hi 0]-[lindex $lo 0])]
+		set mid [Interpo $progFrack [lindex $lo 1] [lindex $hi 1]]
+	    } else {
+		set mid [lindex $hi 1]
+	    }
+	    SetModelValue $node $mid
+	}
+
+	    }
+	}
+    }
+
+    proc Interpo {fract v1 v2} {
+	if {[llength $v1]==1} {
+	    return [expr (1-$fract)*$v1+$fract*$v2]
+	} else {
+	    foreach {idx1 val1} $v1 {idx2 val2} $v2 {
+		lappend result $idx1 [Interpo $fract $val1 $val2]
+	    }
+	    return $result
+	}
+    }
+
+    proc RestoreOutputs {} {
+	variable useNodes
+
+	foreach storedVal [array names useNodes *,modelVal] {
+	    set node [string range $storedVal 0 end-9]
+	    SetModelValue $node $useNodes($storedVal)
+	    array unset useNodes($storedVal)
+	}
     }
 
     proc AddChoppers {node str data} {
