@@ -101,6 +101,8 @@ namespace eval $keyValue {
 	$resId.c setwidget $canId
 	pack $resId.c -side top -fill both -expand true
 
+	pack [button $resId.b -text "Save a PEST file" -state disabled \
+		  -command [namespace code SaveResults]]
 	set inClevers1 {inctype absolute derinc 0.001 derinclb 0.001 \
 			   forcen switch derincmul 0.001 dermthd best_fit}
 	set inClevers2 {partrans none parchglim factor scale 1 offset 0}
@@ -117,6 +119,34 @@ namespace eval $keyValue {
 	} else {
 	    $btn configure -command [namespace code [list Pause $winId]] \
 		-image $pauseImg
+	}
+    }
+
+    proc SaveResults {} {
+	global simtmpdir
+
+	set typeList [list {{Run record} .rec} \
+			  {{Parameter Value File} .par} \
+			  {{Parameter Sensitivity File} .sen} \
+			  {{Observation Sensitivity File} .seo} \
+			  {{Residuals File} .res} \
+			  {{Interim Residuals File} .rei} \
+			  {{Matrix File} .mtt} \
+			  {{Condition Number File} .cnd}]
+	set ignoreTypes [list .inp .tpl .out .ins .pst .log]
+	foreach other [glob [file join $simtmpdir model.*]] {
+	    set extn [file extension $other]
+	    if {[lsearch $typeList *$extn]==-1 && \
+		    [lsearch $ignoreTypes $extn]==-1} {
+		lappend exes $extn
+	    }
+	}
+	lappend typeList [list {Other files} $exes]
+	set initDir [do_in_editor GetPathChoice .rec]
+	set tgt [tk_getSaveFile -title "Save PEST file" -initialdir $initDir \
+		     -defaultextension .rec -filetypes $typeList]
+	if {[llength $tgt]} {
+	    file copy [file join $simtmpdir model[file extension $tgt]] $tgt
 	}
     }
 
@@ -525,6 +555,7 @@ namespace eval $keyValue {
 	set usedHangers 0
 	set runLength [$useNodes($winId,settings).rl.ent get]
 	$useNodes($winId,results).c.text delete 1.0 end
+	$useNodes($winId,results).b configure -state disabled
 
 	set control [NetOpen [file join $simtmpdir model.pst] w]
 	puts $control pcf
@@ -712,6 +743,7 @@ namespace eval $keyValue {
 	    close $spout	    
 	    SetButtonAct $winId start
 	    set useNodes($winId,state) 2 ;# stopped, with data
+	    $useNodes($winId,results).b configure -state normal
 	}
     }
 
