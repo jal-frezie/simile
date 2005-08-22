@@ -304,7 +304,7 @@ namespace eval runcontrol33857 {
     proc RCInteractGUI {current} {
 	global myNode
 	variable sendvars
-	UpdateBar $myNode [expr $sendvars(unitLength)*$current]
+	UpdateBar $myNode [expr $current/$sendvars(unitLength)]
 	update
 	return [string compare start $sendvars($myNode,currentMode)]
     }
@@ -408,6 +408,7 @@ namespace eval runcontrol33857 {
             if {$current==$nextDisp && \
 		    [string match start $sendvars($node,currentMode)]} {
 		$widget.upper.bf.flag itemconfigure 1 -fill blue
+		UpdateBar $node $current ;# so GetModelTime does right
 		TellAllHelpers $node display $current $display 1
 	    }
 	    set scaled_current $scaled_next
