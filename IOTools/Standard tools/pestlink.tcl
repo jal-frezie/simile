@@ -835,12 +835,11 @@ namespace eval $keyValue {
 
     }
 
-    proc ScrogOutputs {} {
+    proc ScrogOutputs {subTime} {
 	variable useNodes
 	variable ptList
 	variable spitLists
 
-	set subTime [GetModelTime]
 	foreach activeSub [array names useNodes *,scrogging] {
 	    if {$useNodes($activeSub)} {
 		set winId [string range $activeSub 0 end-10]
@@ -875,10 +874,12 @@ namespace eval $keyValue {
 		set progFrack [expr ($subTime-[lindex $lo 0])/ \
 				  ([lindex $hi 0]-[lindex $lo 0])]
 		set mid [Interpo $progFrack [lindex $lo 1] [lindex $hi 1]]
+		unset lo
 	    } else {
 		set mid [lindex $hi 1]
 	    }
 	    SetModelValue $node $mid
+	    unset hi
 	}
 
 	    }
@@ -933,8 +934,8 @@ namespace eval $keyValue {
 	    for {set n 1} {$n <= [lindex $dms 0]} {incr n} {
 		puts -nonewline $str "$n "
 		AddHangers $node $str [lrange $dms 1 end] 1
+		puts -nonewline $str " "
 	    }
-	    puts -nonewline $str " "
 	    if {$brs==1} {
 		puts -nonewline $str \}
 	    }

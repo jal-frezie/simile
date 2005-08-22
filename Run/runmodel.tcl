@@ -544,7 +544,7 @@ proc TellAllHelpers {node fun args} {
     global helperTable
 
     if {[string equal display $fun]} {
-	$helperTable(pestInterface)::ScrogOutputs
+	$helperTable(pestInterface)::ScrogOutputs [lindex $args 0]
     }
     foreach displayBox [array name helperTable *,whichHelper] {
         scan $displayBox {%[^,]} winId
