@@ -871,7 +871,8 @@ namespace eval $keyValue {
 		}
 	    }
 	    if {[info exists lo]} {
-		set progFrack [expr ($subTime-[lindex $lo 0])/ \
+		#; 0.0 fixes bloody Tcl arithmetic that thinks 1/2 = 0
+		set progFrack [expr (0.0+$subTime-[lindex $lo 0])/ \
 				  ([lindex $hi 0]-[lindex $lo 0])]
 		set mid [Interpo $progFrack [lindex $lo 1] [lindex $hi 1]]
 		unset lo
