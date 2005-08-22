@@ -54,6 +54,9 @@ namespace eval $keyValue {
         MakeFrames $inpId
         MakeFrames $outId
 
+	pack [checkbutton $inpId.gather -text "Use current data as estimates" \
+		  -variable ::[namespace current]::useNodes($winId,gathering) \
+		  -command [namespace code [list AbleEstimateFields $winId]]]
 	pack [checkbutton $outId.show -text "Show these on plots" \
 		  -variable ::[namespace current]::useNodes($winId,scrogging)]
 
@@ -148,6 +151,12 @@ namespace eval $keyValue {
 	if {[llength $tgt]} {
 	    file copy [file join $simtmpdir model[file extension $tgt]] $tgt
 	}
+    }
+
+    proc AbleEstimateFields {winId} { 
+# later: use MakeSubFrames to find
+# and able all estimate entry boxes (not needed if using parameter
+# data)
     }
 
     proc clear {winId} {
@@ -542,7 +551,7 @@ namespace eval $keyValue {
 # but neither of these need be done here.
 
 	global simtmpdir initialEstimate minForOpt maxForOpt paramDims
-	global tcl_platform sender
+	global tcl_platform sender paramData
 	variable useNodes
 	variable clevers
 	variable usedHangers
@@ -585,23 +594,40 @@ namespace eval $keyValue {
 		       $levels [namespace current] 0]
 
 	    set nodeDims [GetModelDims $node]
+	    if {$useNodes($winId,gathering)} {
+		set defCons $paramData($eTitle)
+		if {![string length $defCons]} {
+		    set defCons [lindex [GetModelValue $node] 0]
+		    if {[winfo exists $f.int]} {
+			set defCons [list NOW $defCons]
+		    }
+		}
+	    } else {
+		set defCons $initialEstimate($node)
+	    }
 	    set defVal [$f.est get]
 	    puts -nonewline $template $eTitle=
 	    if {[winfo exists $f.int]} {
-		if {[string equal normal [$f.int cget -state]]} {
+		if {$useNodes($winId,gathering)} {
+		    foreach {timePt vList} $defCons {
+			puts -nonewline $template "$timePt "
+			AddHangers $node $template $vList $nodeDims 1
+			puts -nonewline $template " "
+		    }
+		} elseif {[string equal normal [$f.int cget -state]]} {
 		    set int [$f.int get]
 		    for {set setTime 0} {$setTime < $runLength} \
 			{set setTime [expr {$setTime+$int}]} {
 			    puts -nonewline $template "$setTime "
-			    AddHangers $node $template $nodeDims 1
+			    AddHangers $node $template $defCons $nodeDims 1
 			    puts -nonewline $template " "
 			}
 		} else {
 		    puts -nonewline $template "NOW "
-		    AddHangers $node $template $nodeDims 1
+		    AddHangers $node $template $defCons $nodeDims 1
 		}
 	    } else {
-		AddHangers $node $template $nodeDims 0
+		AddHangers $node $template $defCons $nodeDims 0
 	    }
 	    puts $template {}
 	}
@@ -672,12 +698,10 @@ namespace eval $keyValue {
 	puts $control {* parameter data}
 	foreach parmGrp [array names inGrpData *,mems] {
 	    set node [string range $parmGrp 0 end-5]
-	    foreach parmVal $inGrpData($parmGrp) {
+	    foreach {parmVal initEst} $inGrpData($parmGrp) {
 		puts $control [list $parmVal $inGrpData($node,partrans) \
-				   $inGrpData($node,parchglim) \
-				   $initialEstimate($node) \
-				   $minForOpt($node) \
-				   $maxForOpt($node) $node \
+				   $inGrpData($node,parchglim) $initEst \
+				   $minForOpt($node) $maxForOpt($node) $node \
 				   $inGrpData($node,scale) \
 				   $inGrpData($node,offset) 1]
 	    }
@@ -924,17 +948,23 @@ namespace eval $keyValue {
 	}
     }	
 
-    proc AddHangers {node str dms brs} {
+    proc AddHangers {node str est dms brs} {
 	variable usedHangers
 	variable inGrpData
 
 	if {[lindex $dms 0]>0} {
+	    if {[llength $est]>1} {
+		array set arrEst $est
+	    }
 	    if {$brs==1} {
 		puts -nonewline $str \{
 	    }
 	    for {set n 1} {$n <= [lindex $dms 0]} {incr n} {
 		puts -nonewline $str "$n "
-		AddHangers $node $str [lrange $dms 1 end] 1
+		if {[info exists arrEst]} {
+		    set est $arrEst($n)
+		}
+		AddHangers $node $str $est [lrange $dms 1 end] 1
 		puts -nonewline $str " "
 	    }
 	    if {$brs==1} {
@@ -942,7 +972,7 @@ namespace eval $keyValue {
 	    }
 	} else {
 	    puts -nonewline $str [format \\%10s\\ i[incr usedHangers]]
-	    lappend inGrpData($node,mems) i$usedHangers
+	    lappend inGrpData($node,mems) i$usedHangers $est
 	}
     }	
 
