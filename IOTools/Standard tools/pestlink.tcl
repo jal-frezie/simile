@@ -928,7 +928,8 @@ namespace eval $keyValue {
 	foreach storedVal [array names useNodes *,modelVal] {
 	    set node [string range $storedVal 0 end-9]
 	    SetModelValue $node $useNodes($storedVal)
-	    array unset useNodes($storedVal)
+	    unset useNodes($modelVal)
+	    # avoid 'array unset' where possible, it hides bugs!
 	}
     }
 
