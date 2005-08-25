@@ -11,7 +11,7 @@ namespace eval $keyValue {
     }
     
     proc initialize {winId} {
-	global stopImg
+	global stopImg runState myNode
 	variable useNodes
 	variable clevers
 	variable inClevers1
@@ -87,7 +87,8 @@ namespace eval $keyValue {
 
 	pack [frame $setId.rl]
 	pack [label $setId.rl.lab -text "Run length:"] -side left
-	pack [entry $setId.rl.ent] -side left
+	pack [entry $setId.rl.ent -width 10] -side left
+	$setId.rl.ent insert 0 $runState($myNode,execTime)
 
         ::ttk::button $setId.rl.reset -image $stopImg -width 32 \
 	    -command [namespace code [list Stop $winId]]
@@ -560,6 +561,7 @@ namespace eval $keyValue {
 	variable inClevers1
 	variable ptList
 	variable spitLists
+	variable rollCount
 
 	PokeStopFile $winId 0
 	SetButtonAct $winId pause
@@ -568,21 +570,55 @@ namespace eval $keyValue {
 	    return
 	}
 
-	set usedHangers 0
 	set runLength [$useNodes($winId,settings).rl.ent get]
 	$useNodes($winId,results).c.text delete 1.0 end
 	$useNodes($winId,results).b configure -state disabled
 
-	set control [NetOpen [file join $simtmpdir model.pst] w]
-	puts $control pcf
-	puts $control {* control data}
-	puts $control {restart estimation}
+	# First, look at the outputs required at times before the end
+	# of the run and create an array holding lists of nodes whose
+	# values will be written at each time...
+
+	global targetData
+	array unset spitLists
+	set usedHangers 0
+	array unset outGrpData *,mems
+
+# Descend hierarchically through the frames to get the data? No, use kill menu
+
+	set numOutputs [CountMenuCmds $winId.drivervars]
+	for {set eNo 0} {$eNo < $numOutputs} {incr eNo} {
+	    set eTitle [$winId.drivervars entrycget $eNo -label]
+	    set node [GetIdFromCaptionPath $eTitle]
+	    set levels [split $eTitle /]
+	    set outId $useNodes($winId,output)
+	    set f [MakeSubFrames {} $outId.sliderframe \
+		       $levels [namespace current] 0]
+	    if {$paramDims($eTitle,readMany)} {
+		foreach {time defSet} $targetData($eTitle) {
+		    lappend spitLists($time) $node=$defSet
+		}
+	    } else {
+		lappend spitLists($runLength) $node=$targetData($eTitle)
+		set useEndTime 1
+	    }
+	}
+	set ptList [lsort -real [array names spitLists]]
+
+	set lastPt [lindex $ptList end]
+	if {[info exists useEndTime]} {
+	    if {$runLength<$lastPt} {
+		ShowMessage "Run length too short" warning \
+		    "You have specified a run length of $runLength time units. This is not long enough to record all the model outputs, which are required at times up until $lastPt units." ok
+		return
+	    }
+	}
+	set ::runState($::myNode,execTime) $lastPt
+		
+	# Have a look at the inputs
 
 	set template [NetOpen [file join $simtmpdir model.tpl] w]
 	puts $template "ptf \\"
 	
-# Descend hierarchically through the frames to get the data? No, use kill menu
-
 	array unset inGrpData *,mems
 	set numInputs [CountMenuCmds $winId.slidervars]
 	for {set eNo 0} {$eNo < $numInputs} {incr eNo} {
@@ -616,7 +652,11 @@ namespace eval $keyValue {
 		    }
 		} elseif {[string equal normal [$f.int cget -state]]} {
 		    set int [$f.int get]
-		    for {set setTime 0} {$setTime < $runLength} \
+
+		    # Only try to calculate inputs up to and including the time
+		    # at which the last output is read
+
+		    for {set setTime 0} {$setTime <= $lastPt} \
 			{set setTime [expr {$setTime+$int}]} {
 			    puts -nonewline $template "$setTime "
 			    AddHangers $node $template $defCons $nodeDims 1
@@ -633,35 +673,15 @@ namespace eval $keyValue {
 	}
 	close $template
 
+	set control [NetOpen [file join $simtmpdir model.pst] w]
+	puts $control pcf
+	puts $control {* control data}
+	puts $control {restart estimation}
 	puts -nonewline $control $usedHangers
 
-	# next, look at the outputs required at times before the end
-	# of the run and create an array holding lists of nodes whose
-	# values will be written at each time...
-
-	global targetData
-	array unset spitLists
-	set usedHangers 0
-	array unset outGrpData *,mems
-	set numOutputs [CountMenuCmds $winId.drivervars]
-	for {set eNo 0} {$eNo < $numOutputs} {incr eNo} {
-	    set eTitle [$winId.drivervars entrycget $eNo -label]
-	    set node [GetIdFromCaptionPath $eTitle]
-	    set levels [split $eTitle /]
-	    set outId $useNodes($winId,output)
-	    set f [MakeSubFrames {} $outId.sliderframe \
-		       $levels [namespace current] 0]
-	    if {$paramDims($eTitle,readMany)} {
-		foreach {time defSet} $targetData($eTitle) {
-		    lappend spitLists($time) $node=$defSet
-		}
-	    } else {
-		lappend spitLists($runLength) $node=$targetData($eTitle)
-	    }
-	}
-	set ptList [lsort -real [array names spitLists]]
     # right, now to make the instruction file for reading the outputs
 
+	set usedHangers 0
 	set instruct [NetOpen [file join $simtmpdir model.ins] w]
 	puts $instruct "pif \\"
 	foreach brkPt $ptList {
@@ -676,7 +696,7 @@ namespace eval $keyValue {
 	close $instruct
 
 	puts $control " $usedHangers $numInputs 0 $numOutputs"
-	puts $control "1 1 single nopoint 1 0 0"
+	puts $control "1 1 single point 1 0 0"
 	foreach line $clevers(list) {
 	    foreach {val spare} $line {
 		puts -nonewline $control "$clevers($val) "
@@ -745,6 +765,7 @@ namespace eval $keyValue {
 # moment. Sadly that don't work either, since the commands to execute
 # the model call the editor process back to check for updates.
 
+	set rollCount 0
 	cd $simtmpdir
         switch $tcl_platform(os) {
             {Windows NT} {
@@ -792,6 +813,7 @@ namespace eval $keyValue {
 	global runState simtmpdir errorInfo
 	variable ptList
 	variable spitLists
+	variable rollCount
 
 	if {[catch {
 	set topNode $::myNode
@@ -805,7 +827,7 @@ namespace eval $keyValue {
 	set execLog [NetOpen [file join $simtmpdir model.out] w]
 	set current 0
 	foreach breakPt $ptList {
-	    set runState($topNode,execTime) [expr $breakPt-$current]
+	    set runState($topNode,pause) $breakPt
 	    $widget.upper.topbuttons.start invoke
 	    if {$runState($topNode,currentTime)<$breakPt} {
 		error "PEST tried to run this model up to time $breakPt but it was interrupted at time $runState($topNode,currentTime)"

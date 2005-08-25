@@ -373,11 +373,17 @@ namespace eval runcontrol33857 {
 	if {$display} {
 	    set lastDisp [expr int($current/$display)]
 	}
+	if {[info exists runState($node,pause)]} {
+	    set pause [min $finish $runState($node,pause)]
+	    unset runState($node,pause)
+	} else {
+	    set pause $finish
+	}
 	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
 	    if {$display} {
 		set nextDisp [expr $display*[incr lastDisp]]
 	    } else {
-		set nextDisp [expr 2*$finish-$current]
+		set nextDisp [expr 2*$pause-$current]
 	    }
 	    if {[RunningInC]} {
 		set current $nextDisp
@@ -389,10 +395,9 @@ namespace eval runcontrol33857 {
 		    set current $nextDisp
 		}
 	    }
-	    if {$current>$finish} {
-		set current $finish
+	    if {$current>$pause} {
+		set current $pause
 	    }
-	    set exec [expr $finish-$current]
 	    set scaled_next [expr {$current*$sendvars(unitLength)}]
 	    $widget.upper.bf.flag itemconfigure 1 -fill green
 	    switch -- [ExecuteModel $runState($node,intMethod) \
@@ -412,10 +417,14 @@ namespace eval runcontrol33857 {
 		TellAllHelpers $node display $current $display 1
 	    }
 	    set scaled_current $scaled_next
-	    if {$current>=$finish} {
-		set exec $sendvars($node,run_length)
-		SetupBar $node $finish [expr $finish+$exec]
+	    if {$current>=$pause} {
 		set sendvars($node,currentMode) stop
+		if {$current>=$finish} {
+		    set exec $sendvars($node,run_length)
+		    SetupBar $node $finish [expr $finish+$exec]
+		} else {
+		    UpdateBar $node $current
+		}
 	    }
 	}
 	if {[string equal exit $sendvars($node,currentMode)]} {
