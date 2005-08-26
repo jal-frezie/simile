@@ -99,6 +99,17 @@ namespace eval $keyValue {
         BindPopup $setId.rl.start "Run or pause PEST process"
 	SetButtonAct $winId start
 
+	pack [frame $resId.numeric]
+	pack [label $resId.numeric.iclab -text "Iteration number:"] -side left
+	pack [label $resId.numeric.icnum -textvariable \
+		  [namespace current]::runData($myNode,itCount)] -side left
+	pack [label $resId.numeric.mrlab -text "Model runs:"] -side left
+	pack [label $resId.numeric.mrnum -textvariable \
+		  [namespace current]::runData($myNode,rollCount)] -side left
+	pack [label $resId.numeric.cplab -text "Current PHI:"] -side left
+	pack [label $resId.numeric.cpnum -textvariable \
+		  [namespace current]::runData($myNode,curPhi)] -side left
+
 	ScrolledWindow $resId.c
 	set canId $resId.c.text
 	pack [text $canId] -fill both -expand true
@@ -335,6 +346,7 @@ namespace eval $keyValue {
     }
 
     proc DoInpDlg {node win title} {
+	global minForOpt maxForOpt
 	variable inGrpData
 	set t [PutItThere .pestinpdlg $win]
 	wm protocol .pestinpdlg  WM_DELETE_WINDOW [namespace code DoneInpDlg]
@@ -385,6 +397,10 @@ namespace eval $keyValue {
 		  -editable 0 -textvariable ${ns}::inGrpData($node,partrans)] \
 	    -side left
 
+# If the parameter can cross zero its change limit must default to relative
+	if {$minForOpt($node)*$maxForOpt($node)<0} {
+	    set inGrpData($node,parchglim) relative
+	}
 	pack [frame $f.parchglim]
 	pack [label $f.parchglim.l -text PARCHGLIM] -side left
 	pack [ComboBox $f.parchglim.c -values {relative factor} \
@@ -561,7 +577,7 @@ namespace eval $keyValue {
 	variable inClevers1
 	variable ptList
 	variable spitLists
-	variable rollCount
+	variable runData
 
 	PokeStopFile $winId 0
 	SetButtonAct $winId pause
@@ -765,7 +781,8 @@ namespace eval $keyValue {
 # moment. Sadly that don't work either, since the commands to execute
 # the model call the editor process back to check for updates.
 
-	set rollCount 0
+	set runData($::myNode,rollCount) 0
+	set runData($::myNode,recSize) 0
 	cd $simtmpdir
         switch $tcl_platform(os) {
             {Windows NT} {
@@ -788,7 +805,10 @@ namespace eval $keyValue {
     
     # for now, just use pipe to tell when PEST has finished
     proc GrabMsgs {winId spout} {
+	global simtmpdir myNode
 	variable useNodes
+	variable runData
+
 	if {[gets $spout bilge]>-1} {
 	    $useNodes($winId,results).c.text insert end "$bilge\n"
 	} elseif {[eof $spout]} {
@@ -796,6 +816,19 @@ namespace eval $keyValue {
 	    SetButtonAct $winId start
 	    set useNodes($winId,state) 2 ;# stopped, with data
 	    $useNodes($winId,results).b configure -state normal
+
+# now grab final PHI value from .rec
+	    set recFile [file join $simtmpdir model.rec]
+	    set recReader [NetOpen $recFile r]
+	    seek $recReader $runData($myNode,recSize)
+	    while {![eof $recReader]} {
+		gets $recReader recLin
+		if {[scan $recLin {   Sum of squared weighted residuals (ie phi)                = %f} curPhi]>0} {
+		    set runData($myNode,curPhi) $curPhi
+		    break
+		}
+	    }
+	    close $recReader
 	}
     }
 
@@ -813,10 +846,31 @@ namespace eval $keyValue {
 	global runState simtmpdir errorInfo
 	variable ptList
 	variable spitLists
-	variable rollCount
+	variable runData
+
+	set topNode $::myNode
+	set recFile [file join $simtmpdir model.rec]
+	set newSize [file size $recFile]
+	if {$newSize>$runData($topNode,recSize)} {
+	    set recReader [NetOpen $recFile r]
+	    seek $recReader $runData($topNode,recSize)
+	    set runData($topNode,recSize) $newSize
+	    while {![eof $recReader]} {
+		gets $recReader recLin
+		if {[scan $recLin { OPTIMISATION ITERATION NO.        : %d} \
+			 itCount]>0} {
+		    set runData($topNode,itCount) $itCount
+		}
+		if {[scan $recLin {    Starting phi for this iteration: %f} \
+			 curPhi]>0} {
+		    set runData($topNode,curPhi) $curPhi
+		    break
+		}
+	    }
+	    close $recReader
+	}
 
 	if {[catch {
-	set topNode $::myNode
 
 	# load the PEST-generated .spf file
 	ZapParams $topNode {} [file join $simtmpdir model.inp]
@@ -845,6 +899,9 @@ namespace eval $keyValue {
 	}]} {
 	    ShowMessage "Problem executing from PEST" warning $errorInfo ok
 	}
+	incr runData($topNode,rollCount)
+	set runData($topNode,recSize) [file size \
+					   [file join $simtmpdir model.rec]]
     }
 
     proc ShowMeasurements {} {
@@ -950,7 +1007,7 @@ namespace eval $keyValue {
 	foreach storedVal [array names useNodes *,modelVal] {
 	    set node [string range $storedVal 0 end-9]
 	    SetModelValue $node $useNodes($storedVal)
-	    unset useNodes($modelVal)
+	    unset useNodes($storedVal)
 	    # avoid 'array unset' where possible, it hides bugs!
 	}
     }
