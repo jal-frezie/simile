@@ -191,6 +191,74 @@ namespace eval $keyValue {
     }
 
     proc Restore {winId} {
+	global paramDims
+	variable inGrpData
+	variable useNodes
+	variable clevers
+
+	initialize $winId
+	foreach action [GetState $winId] {
+	    switch [lindex $action 0] {
+		input {
+		    set title [lindex $action 1]
+		    set node [GetIdFromCaptionPath $title]
+		    if {[string equal nomatch $node]} {
+			ShowMessage "Problem restoring PEST settings" warning \
+			    "Could not add $title to PEST inputs because there is no component with this caption in the model" ok
+			continue
+		    }
+		    set f [InsertSlider $winId $node $title 1]
+		    foreach {tgt val} [lrange $action 2 end] {
+			switch $tgt {
+			    est {
+				set ::initialEstimate($node) $val
+			    } min {
+				set ::minForOpt($node) $val
+			    } max {
+				set ::maxForOpt($node) $val
+			    } when {
+				set ::timeInfo($node) $val
+			    } period {
+				set ::regularInt($node) $val
+			    } default {
+				set inGrpData($node,$tgt) $val
+			    }
+			}
+		    }
+		    AbleTimeData $node $f
+		} inSource {
+		    set useNodes($winId,gathering) [lindex $action 1]
+		} output {
+		    set title [lindex $action 1]
+		    set node [GetIdFromCaptionPath $title]
+		    if {[string equal nomatch $node]} {
+			ShowMessage "Problem restoring PEST settings" warning \
+			    "Could not add $title to PEST outputs because there is no component with this caption in the model" ok
+			continue
+		    }
+		    set f [InsertDriver $winId $node $title 1]
+		    foreach {tgt val} [lrange $action 2 end] {
+			switch $tgt {
+			    weight {
+			    } sampled {
+				set paramDims($title,readMany) $val
+			    }
+			}
+		    }
+		    AbleTimeSampling $node $title $f
+		} outDest {
+		    set useNodes($winId,scrogging) [lindex $action 1]
+		} clevers {
+		    foreach {tgt val} [lrange $action 1 end] {
+			set clevers($tgt) $val
+		    }
+		} default {
+		    ShowMessage {Problem with PEST saved state} info \
+			"Could not use this line: $action" ok
+		}
+	    }
+	}
+	AbleEstimateFields $winId
     }
 
     proc AddVariable {winId} {
@@ -229,13 +297,13 @@ namespace eval $keyValue {
 		} else {
 		    set success [InsertSlider $winId $node $fullCapt 1]
 		}
-		if {$success} {
+		if {[llength $success]} {
 		    $useNodes($winId,input).intro configure -text {}
 		    ReleaseClicks $winId
 		}
 	    } adding_outputs {
 		set success [InsertDriver $winId $node $fullCapt 1]
-		if {$success} {
+		if {[llength $success]} {
 		    $useNodes($winId,output).intro configure -text {}
 		    ReleaseClicks $winId
 		}
@@ -251,7 +319,7 @@ namespace eval $keyValue {
 	    if {[string first $prefix $title]} {
 		continue
 	    }
-	    if {[InsertSlider $winId $node $title 1]} {
+	    if {[llength [InsertSlider $winId $node $title 1]]} {
 		set done 1
 	    }
 	}
@@ -274,12 +342,12 @@ namespace eval $keyValue {
 	set mode [GetModelEval $node]
 	if {[lsearch {TABLE INPUT} $mode]==-1} {
 	    $inpId.intro configure -text "This component cannot be set by PEST because it is not a fixed or variable parameter."
-	    return 0
+	    return {}
 	}
 	set datatype [GetModelType $node]
 	if {![string equal REAL $datatype]} {
 	    $inpId.intro configure -text "This component cannot be esimated by PEST because its datatype is $datatype. Only parameters of type REAL can be estimated."
-	    return 0
+	    return {}
 	}
 	set levels [split $title /]
 	if {$nest} {
@@ -287,7 +355,7 @@ namespace eval $keyValue {
 				    $levels [namespace current] 0]
 	    if {[winfo exists $f]} {
 		$inpId.c.canvas see $f
-		return 0
+		return $f
 	    } else {
 		pack [frame $f] -fill x -expand true
 		bind $f <Double-1> [namespace code \
@@ -342,7 +410,7 @@ namespace eval $keyValue {
 	    bind $widjo <Button-3> [namespace code \
 					[list DoInpDlg $node $f $title]]
 	}
-	return 1
+	return $f
     }
 
     proc DoInpDlg {node win title} {
@@ -439,12 +507,12 @@ namespace eval $keyValue {
 	set mode [GetModelEval $node]
 	if {[lsearch {TABLE INPUT} $mode]>-1} {
 	    $outId.intro configure -text "This component cannot be optimized by PEST because it is a fixed or variable parameter."
-	    return 0
+	    return {}
 	}
 	set datatype [GetModelType $node]
 	if {![string equal REAL $datatype]} {
 	    $outId.intro configure -text "This component cannot be optimized by PEST because its datatype is $datatype. Only parameters of type REAL can be optimized."
-	    return 0
+	    return {}
 	}
 
 	set f [MakeSubFrames $::myNode $outId.sliderframe \
@@ -457,14 +525,13 @@ namespace eval $keyValue {
 	    $winId.drivervars add command -label $title \
 		-command [namespace code [list RemoveOut $winId $title]]
 
-	    set ::readMany($node) 0
 	    pack [checkbutton $f.end -variable paramDims($title,readMany) \
 		      -command [namespace code \
 				    [list AbleTimeSampling $node $title $f]]] \
 		-side left
 	    BindPopup $f.end "Set values at time points"
 	}
-	return 1
+	return $f
     }
 
     proc AbleTimeData {node f} {
@@ -484,8 +551,8 @@ namespace eval $keyValue {
 	if {$paramDims($title,readMany)} {
 	    set paramDims($title) [linsert $paramDims($title) 0 TIME]
 	    set trans [linsert $trans 0 {}]
-	} else {
-	    set paramDims($title) [purge $paramDims($title) TIME]
+	} elseif {[string equal TIME [lindex $paramDims($title) 0]]} {
+	    set paramDims($title) [lrange $paramDims($title) 1 end]
 	}
 	set nodeDims [TransBounds $trans $paramDims($title)]
 	set dimList [MakeDimsLegible $nodeDims REAL]
@@ -1071,4 +1138,54 @@ namespace eval $keyValue {
     proc Open {topNode smPath} {
 	namespace eval ::fileparams [list Open $topNode $smPath -1]
     }
+
+    proc PrepareSaveString {winId} {
+# first list the inputs...
+	variable useNodes
+	variable clevers
+	variable inGrpData
+	variable inClevers1
+	variable inClevers2
+
+	set numInputs [CountMenuCmds $winId.slidervars]
+	for {set eNo 0} {$eNo < $numInputs} {incr eNo} {
+	    set eTitle [$winId.slidervars entrycget $eNo -label]
+	    set node [GetIdFromCaptionPath $eTitle]
+	    set line [list input $eTitle est $::initialEstimate($node) \
+			  min $::minForOpt($node) max $::maxForOpt($node)]
+	    if {[info exists ::timeInfo($node)]} {
+		lappend line when $::timeInfo($node) \
+		    period $::regularInt($node)
+	    }
+	    foreach {val def} $inClevers1 {
+		lappend line $val $inGrpData($node,$val)
+	    }
+	    foreach {val def} $inClevers2 {
+		lappend line $val $inGrpData($node,$val)
+	    }
+	
+	    lappend state $line
+	}
+	lappend state [list inSource $useNodes($winId,gathering)]
+# now the outputs	    
+	set numOutputs [CountMenuCmds $winId.drivervars]
+	for {set eNo 0} {$eNo < $numInputs} {incr eNo} {
+	    set eTitle [$winId.drivervars entrycget $eNo -label]
+	    set node [GetIdFromCaptionPath $eTitle]
+	    lappend state [list output $eTitle weight 1 \
+			       sampled $::paramDims($eTitle,readMany)]
+	}
+	lappend state [list outDest $useNodes($winId,scrogging)]
+	set line clevers
+	foreach group $clevers(list) {
+	    foreach {val def} $group {
+		lappend line $val $clevers($val)
+	    }
+	}
+	lappend state $line
+	
+# include data from last run...? doubtful
+    SetState $winId $state
+    }
+	
 } ;# end of namespace

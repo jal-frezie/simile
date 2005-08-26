@@ -405,6 +405,7 @@ proc SaveView {} {
                 puts $stream [wm title $winId]
                 puts $stream [wm geometry $winId]
                 set clickedPaths {}
+		catch {${helperId}::PrepareSaveString $winId}
                 if {[info exists helperTable($winId,status)]} {
                     puts $stream [StripCrs $helperTable($winId,status)]
                 } else {
