@@ -50,6 +50,7 @@ namespace eval $keyValue {
 	
 	pack [message $inpId.intro -aspect 800] -fill x
 	pack [message $outId.intro -aspect 800] -fill x
+	pack [message $setId.intro -aspect 800] -fill x
 
         MakeFrames $inpId
         MakeFrames $outId
@@ -68,8 +69,15 @@ namespace eval $keyValue {
 			       {noptmax 30 phiredstp 0.01 nphistp 3 \
 				    nphinored 3 nparstp 0.01 nrelpar 3} \
 			       {icov 1 icor 1 ieig 1}} 
+	set clevers(pred) {{pd0 0.0 pd1 0.0 pd2 0.0} \
+			       {abspredlam 0 relpredlam 0.005 initschfac 1.0 \
+				    mulschfac 2.0 nsearch 8} \
+			       {abspredswh 0 relpredswh 0.05} \
+			       {nprednored 4 abspredstp 0 relpredstp 0.005 \
+				    npredstp 4}} 
 	pack [set lf [labelframe $setId.lbf \
-		  -text {PEST control parameters -- see manual for details}]]
+		  -text {PEST control parameters -- see manual for details}]] \
+	    -fill x
 	foreach line $clevers(list) {
 	    pack [set curFr [frame $lf.f[incr frameNo]]]
 	    foreach {val def} $line {
@@ -85,10 +93,43 @@ namespace eval $keyValue {
 	    }
 	}
 
-	pack [frame $setId.rl]
+	pack [set pf [labelframe $setId.pbf \
+		  -text {Prediction specification:}]] -fill x
+	pack [frame $pf.pknobs] -fill x
+	pack [checkbutton $pf.pknobs.ck -text Predict \
+		  -command [namespace code [list AblePrediction $winId]] \
+		  -variable [namespace current]::useNodes($winId,preds)] \
+	    -side left
+	pack [ComboBox $pf.pknobs.mm -values {minimum maximum} -editable 0 \
+		  -textvariable [namespace current]::useNodes($winId,way) \
+		  -width 8] -side left
+	set useNodes($winId,way) maximum
+	pack [label $pf.pknobs.valof -text "value of"] -side left
+	pack [label $pf.pknobs.nm -text (none) \
+		  -textv [namespace current]::useNodes($winId,pred)] -side left
+	pack [label $pf.pknobs.at -text "at time:"] -side left
+	pack [entry $pf.pknobs.ti -width 8 \
+		  -textv [namespace current]::useNodes($winId,ptim)] -side left
+
+	pack [frame $setId.rl] -side bottom
 	pack [label $setId.rl.lab -text "Run length:"] -side left
 	pack [entry $setId.rl.ent -width 10] -side left
 	$setId.rl.ent insert 0 $runState($myNode,execTime)
+
+	foreach line $clevers(pred) {
+	    pack [set curFr [frame $pf.f[incr frameNo]]]
+	    foreach {val def} $line {
+		if {[llength [winfo children $curFr]]>=6} { ;# is frame full
+		    pack [set curFr [frame $pf.f[incr frameNo]]]
+		}
+		set clevers($val) $def
+		pack [label $curFr.l[incr frameNo] \
+			  -text [string toupper $val]] -side left
+		pack [entry $curFr.e$frameNo -width 8 \
+			  -textvar [namespace current]::clevers($val)] \
+		    -side left
+	    }
+	}
 
         ::ttk::button $setId.rl.reset -image $stopImg -width 32 \
 	    -command [namespace code [list Stop $winId]]
@@ -109,6 +150,9 @@ namespace eval $keyValue {
 	pack [label $resId.numeric.cplab -text "Current PHI:"] -side left
 	pack [label $resId.numeric.cpnum -textvariable \
 		  [namespace current]::runData($myNode,curPhi)] -side left
+	pack [label $resId.numeric.prlab -text "Prediction:"] -side left
+	pack [label $resId.numeric.prnum -textvariable \
+		  [namespace current]::runData($myNode,curPred)] -side left
 
 	ScrolledWindow $resId.c
 	set canId $resId.c.text
@@ -171,6 +215,17 @@ namespace eval $keyValue {
 # data)
     }
 
+    proc AblePrediction {winId} {
+	variable useNodes
+	if {$useNodes($winId,preds)} {
+	    SetState $winId adding_pred
+	    $useNodes($winId,settings).intro configure -text "Click on a model value to instruct PEST to generate predictions for it."
+	    GrabClicks $winId
+	} else {
+	    set useNodes($winId,pred) (none)
+	}
+    }
+    
     proc clear {winId} {
     }
 
@@ -307,6 +362,14 @@ namespace eval $keyValue {
 		    $useNodes($winId,output).intro configure -text {}
 		    ReleaseClicks $winId
 		}
+	    } adding_pred {
+		set useNodes($winId,npred) $node
+		set useNodes($winId,pred) $caption
+#		set success [SetPred $winId $node $fullCapt 1]
+#		if {[llength $success]} {
+		    $useNodes($winId,settings).intro configure -text {}
+		    ReleaseClicks $winId
+#		}
 	    }
 	}
     }
@@ -685,6 +748,15 @@ namespace eval $keyValue {
 		set useEndTime 1
 	    }
 	}
+	if {$useNodes($winId,preds)} {
+	    set mode prediction
+	    incr numOutputs
+	    lappend spitLists($useNodes($winId,ptim)) \
+				  $useNodes($winId,npred)=what	    
+	} else {
+	    set mode estimation
+	}
+	
 	set ptList [lsort -real [array names spitLists]]
 
 	set lastPt [lindex $ptList end]
@@ -759,7 +831,7 @@ namespace eval $keyValue {
 	set control [NetOpen [file join $simtmpdir model.pst] w]
 	puts $control pcf
 	puts $control {* control data}
-	puts $control {restart estimation}
+	puts $control [list restart $mode]
 	puts -nonewline $control $usedHangers
 
     # right, now to make the instruction file for reading the outputs
@@ -772,7 +844,11 @@ namespace eval $keyValue {
 		set pair [split $entry =]
 		set node [lindex $pair 0]
 		puts -nonewline $instruct "\\$node at $brkPt is\\ "
-		AddChoppers $node $instruct [lindex $pair 1]
+		if {[string equal what [lindex $pair 1]]} { ;# prediction
+		    AddChoppers predict $instruct 1.0
+		} else {
+		    AddChoppers $node $instruct [lindex $pair 1]
+		}
 		puts $instruct {}
 	    }
 	}
@@ -831,6 +907,16 @@ namespace eval $keyValue {
 	puts $control {model.tpl model.inp}
 	puts $control {model.ins model.out}
 
+	if {[string equal prediction $mode]} {
+	    puts $control {* predictive analysis}
+	    puts $control [string compare melge $useNodes($winId,way)]
+	    foreach line $clevers(pred) {
+		foreach {val spare} $line {
+		    puts -nonewline $control "$clevers($val) "
+		}
+		puts $control {}
+	    }
+	}	    
 	close $control
 	
 	set activator [NetOpen [file join $simtmpdir pestrun.tcl] w]
@@ -850,6 +936,7 @@ namespace eval $keyValue {
 
 	set runData($::myNode,rollCount) 0
 	set runData($::myNode,recSize) 0
+	set runData($::myNode,curPred) N/A
 	cd $simtmpdir
         switch $tcl_platform(os) {
             {Windows NT} {
@@ -875,6 +962,7 @@ namespace eval $keyValue {
 	global simtmpdir myNode
 	variable useNodes
 	variable runData
+	variable clevers
 
 	if {[gets $spout bilge]>-1} {
 	    $useNodes($winId,results).c.text insert end "$bilge\n"
@@ -892,6 +980,10 @@ namespace eval $keyValue {
 		gets $recReader recLin
 		if {[scan $recLin {   Sum of squared weighted residuals (ie phi)                = %f} curPhi]>0} {
 		    set runData($myNode,curPhi) $curPhi
+		    set closish [format %0.3g $curPhi]
+		    set clevers(pd0) [expr 1.2*$closish]
+		    set clevers(pd1) [expr 1.25*$closish]
+		    set clevers(pd2) [expr 2.5*$closish] 
 		    break
 		}
 	    }
@@ -928,10 +1020,12 @@ namespace eval $keyValue {
 			 itCount]>0} {
 		    set runData($topNode,itCount) $itCount
 		}
-		if {[scan $recLin {    Starting phi for this iteration: %f} \
+		if {[scan $recLin {    Starting phi for this iteration : %f} \
 			 curPhi]>0} {
 		    set runData($topNode,curPhi) $curPhi
-		    break
+		}
+		if {[scan $recLin {    M%*c%*cimum prediction so far for phi less than PD1 : %f} curPred]>0} {
+		    set runData($topNode,curPred) $curPred
 		}
 	    }
 	    close $recReader
@@ -1177,7 +1271,7 @@ namespace eval $keyValue {
 	}
 	lappend state [list outDest $useNodes($winId,scrogging)]
 	set line clevers
-	foreach group $clevers(list) {
+	foreach group [concat $clevers(list) $clevers(pred)] {
 	    foreach {val def} $group {
 		lappend line $val $clevers($val)
 	    }

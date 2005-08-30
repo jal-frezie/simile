@@ -646,7 +646,9 @@ proc ScrubRun {node times} {
 proc GetShortVals {topNode plName limit} {
     set text [lindex [GetCompProperty $topNode Value $plName] 0]
     set count [ShrinkValueList text $limit]
-    set text [PrettifyValList [TransEnums [GetTransTable $plName] $text]]
+    if {![string equal novalue $text]} {
+	set text [PrettifyValList [TransEnums [GetTransTable $plName] $text]]
+    }
     return [list $count $text]
 }
     
