@@ -533,7 +533,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                             [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
                 error [concat $arrayPt $step]
             } elseif {$step<1} {
-                set redoStep -1
+                set redoStep 0
             }
         }
         return $redoStep

@@ -77,7 +77,7 @@ namespace eval $keyValue {
 				    npredstp 4}} 
 	pack [set lf [labelframe $setId.lbf \
 		  -text {PEST control parameters -- see manual for details}]] \
-	    -fill x
+	    -fill x -padx 4 -pady 4
 	foreach line $clevers(list) {
 	    pack [set curFr [frame $lf.f[incr frameNo]]]
 	    foreach {val def} $line {
@@ -94,7 +94,7 @@ namespace eval $keyValue {
 	}
 
 	pack [set pf [labelframe $setId.pbf \
-		  -text {Prediction specification:}]] -fill x
+		  -text {Prediction specification:}]] -fill x -padx 4 -pady 4
 	pack [frame $pf.pknobs] -fill x
 	pack [checkbutton $pf.pknobs.ck -text Predict \
 		  -command [namespace code [list AblePrediction $winId]] \
@@ -483,7 +483,8 @@ namespace eval $keyValue {
 	wm protocol .pestinpdlg  WM_DELETE_WINDOW [namespace code DoneInpDlg]
 	wm title $t "Set properties for $title"
 
-	pack [set f [labelframe $t.grp -text "Group properties:"]]
+	pack [set f [labelframe $t.grp -text "Group properties:"]] \
+	    -padx 4 -pady 4
 	set ns [namespace current]
 	pack [frame $f.inctype]
 	pack [label $f.inctype.l -text INCTYPE] -side left
@@ -521,7 +522,8 @@ namespace eval $keyValue {
 		  -editable 0 -textvariable ${ns}::inGrpData($node,dermthd)] \
 	    -side left
 
-	pack [set f [labelframe $t.inp -text "Value transformations:"]]
+	pack [set f [labelframe $t.inp -text "Value transformations:"]] \
+	    -padx 4 -pady 4
 	pack [frame $f.partrans]
 	pack [label $f.partrans.l -text PARTRANS] -side left
 	pack [ComboBox $f.partrans.c -values {none log} \
@@ -734,6 +736,7 @@ namespace eval $keyValue {
 	set numOutputs [CountMenuCmds $winId.drivervars]
 	for {set eNo 0} {$eNo < $numOutputs} {incr eNo} {
 	    set eTitle [$winId.drivervars entrycget $eNo -label]
+	    AcceptData $::myNode $eTitle -1 1
 	    set node [GetIdFromCaptionPath $eTitle]
 	    set levels [split $eTitle /]
 	    set outId $useNodes($winId,output)
@@ -980,10 +983,12 @@ namespace eval $keyValue {
 		gets $recReader recLin
 		if {[scan $recLin {   Sum of squared weighted residuals (ie phi)                = %f} curPhi]>0} {
 		    set runData($myNode,curPhi) $curPhi
-		    set closish [format %0.3g $curPhi]
-		    set clevers(pd0) [expr 1.2*$closish]
-		    set clevers(pd1) [expr 1.25*$closish]
-		    set clevers(pd2) [expr 2.5*$closish] 
+		    if {!$useNodes($winId,preds)} {
+			set closish [format %0.3g $curPhi]
+			set clevers(pd0) [expr 1.2*$closish]
+			set clevers(pd1) [expr 1.25*$closish]
+			set clevers(pd2) [expr 2.5*$closish] 
+		    }
 		    break
 		}
 	    }
