@@ -11,9 +11,9 @@
 # JAT: this is very old, Windows vs Linux are decided by separate version
 # numbers rather than checking [info sharedlibextension]
 
-package ifneeded Ame_dll 8.4.4.3.0 [list load [file join $dir ame_dll84.dll]]
-package ifneeded Ame_dll 8.5.4.3.0 [list load [file join $dir ame_dll85.dll]]
-package ifneeded Ame_dll 8.4.4.3.1 \
+package ifneeded Ame_dll 8.4.4.4.0 [list load [file join $dir ame_dll84.dll]]
+package ifneeded Ame_dll 8.5.4.4.0 [list load [file join $dir ame_dll85.dll]]
+package ifneeded Ame_dll 8.4.4.4.1 \
     [list load [file join $dir libame_dll8.4[info sharedlibextension]]]
-package ifneeded Ame_dll 8.5.4.3.1 \
+package ifneeded Ame_dll 8.5.4.4.1 \
     [list load [file join $dir libame_dll8.5[info sharedlibextension]]]

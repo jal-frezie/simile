@@ -149,7 +149,7 @@ click_text(Xpt, Ypt, Name, CD) :-
 	    doomed(Name), !,
 	    finish_old_edit(Name),
 	    give_focus(Name);
-	click_obj(Xpt, Ypt, Name, 0),
+	click_obj(Xpt, Ypt, Name, CD),
 	/* we do not want the text of a text item to get separated from its
 	anchor so do not allow a caption move, just move the whole thing */
 	    (find_type(Name, text);

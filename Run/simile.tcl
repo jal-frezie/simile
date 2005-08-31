@@ -99,7 +99,7 @@ switch $tcl_platform(platform) {
 if {[string equal windows $tcl_platform(platform)]} {
     package require registry
     foreach regEntry {prologId interfaceId install_time license_code \
-			licensee_name licensee_corp SIMILE_VERSION} {
+			licensee_name licensee_corp} {
 	set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
 	set env($regEntry) [registry get $regKey $regEntry]
     }
@@ -111,10 +111,9 @@ if {[string equal windows $tcl_platform(platform)]} {
     gets $UserStream env(license_code)
     gets $UserStream env(licensee_name)
     gets $UserStream env(licensee_corp)
-    gets $UserStream env(SIMILE_VERSION)
     close $UserStream
 }
-
+set env(SIMILE_VERSION) 4.4
 # KDE launch feedback will fail unless root window is displayed briefly,
 # causing annoying eye candy to persist while program is running.
 # It may be necessary to have the launch icon execute this file rather than the

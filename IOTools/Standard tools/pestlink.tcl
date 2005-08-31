@@ -303,6 +303,19 @@ namespace eval $keyValue {
 		    AbleTimeSampling $node $title $f
 		} outDest {
 		    set useNodes($winId,scrogging) [lindex $action 1]
+		} predict {
+		    set useNodes($winId,preds) 1
+		    foreach {tgt val} [lrange $action 1 end] {
+			switch $tgt {
+			    way {
+				set useNodes($winId,way) $val 
+			    } item {
+				set useNodes($winId,pred) $val 
+			    } time {
+				set useNodes($winId,ptim) $val 
+			    }
+			}
+		    }
 		} clevers {
 		    foreach {tgt val} [lrange $action 1 end] {
 			set clevers($tgt) $val
@@ -1276,6 +1289,12 @@ namespace eval $keyValue {
 	}
 	lappend state [list outDest $useNodes($winId,scrogging)]
 	set line clevers
+# prediction
+	if {$useNodes($winId,preds} {
+	    lappend state [list predict way $useNodes($winId,way) \
+			       item $useNodes($winId,pred) \
+			       time $useNodes($winId,ptim)]
+	}
 	foreach group [concat $clevers(list) $clevers(pred)] {
 	    foreach {val def} $group {
 		lappend line $val $clevers($val)
