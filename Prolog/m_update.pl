@@ -1222,7 +1222,7 @@ finish_full(Type, Link) :-
 	connects_ghost_flow(Type, Link);
 	find_type(Link, Type),
 	\+ (initiates(Link, Node),
-	       (is_parameter(Node, 1);
+	       (is_parameter(Node, P), P>0;
 		   Node is_of_sort cloud);
 	    continues_from(Link, Node),
 		\+ (Node has_model_refinement link_equivalences of Equiv_list,

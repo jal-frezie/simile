@@ -701,7 +701,7 @@ proc ControlDraw {prologVersion} {
         set env(SIMILE_VERSION) 4.4
         set env(licensee_name) "Support team"
         set env(licensee_corp) "Simulistics Ltd"
-        set env(license_code) fa4c55b7105171de89d44c78a33cdc28
+        set env(license_code) 28d4d4e4fd34b1407995899c5e655ad5
     }
     
     set userinfo(Version) $env(SIMILE_VERSION)
