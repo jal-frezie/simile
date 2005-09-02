@@ -870,6 +870,8 @@ namespace eval $keyValue {
 	}
 	close $instruct
 
+
+
 	puts $control " $usedHangers $numInputs 0 $numOutputs"
 	puts $control "1 1 single point 1 0 0"
 	foreach line $clevers(list) {
@@ -917,8 +919,12 @@ namespace eval $keyValue {
 	}
 
 	set oldDir [pwd]
+	if {[string match windows $tcl_platform(platform)]} {
+	    set oldDir [file attributes $oldDir -shortname]
+	}
 	puts $control {* model command line}
-	puts $control "[file join [file dirname $oldDir] System bin wish] pestrun.tcl"
+	set ourWish [file join [file dirname $oldDir] System bin wish]
+	puts $control "$ourWish pestrun.tcl"
 	puts $control {* model input/output}
 	puts $control {model.tpl model.inp}
 	puts $control {model.ins model.out}
@@ -940,7 +946,7 @@ namespace eval $keyValue {
 	    puts $activator "package require dde 1.2" ;# must be easier way
 	}
 #	puts $activator "[do_in_editor set runHow(sendOp)] exec_for_$::myNode [namespace code pestificate]"
-	puts $activator "eval $sender [list do_for_node $::myNode] [namespace code pestificate]"
+	puts $activator "$sender [list do_for_node $::myNode] [namespace code pestificate]"
 	puts $activator exit
 	close $activator
 
