@@ -252,7 +252,7 @@ enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, [Act | Rest]) :-
 	    merge_id_swaps(IdSwaps, PrevIdSwaps, MidIdSwaps)),
 	enact_from_file(Model, Slot, MidIdSwaps, NewIdSwaps, Rest).
 
-merge_id_swaps([], [], []).
+merge_id_swaps(Swaps, [], Swaps).
 merge_id_swaps(AtoCs, [A-B | MoreAtoBs], [B-C | MoreBtoCs]) :-
 	select(A-C, AtoCs, MoreAtoCs),
 	merge_id_swaps(MoreAtoCs, MoreAtoBs, MoreBtoCs).
