@@ -1582,6 +1582,7 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
+	retractall(menu_submodel_will_be(_,_,_)),
 	get_mode(select),
 	    find_current(Wid),
 	    get_phase(rubberband), !, /* used to call proc below */
