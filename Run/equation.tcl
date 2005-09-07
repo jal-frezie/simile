@@ -179,7 +179,7 @@ proc create_equation {parent boxtitle indices} {
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 80 -relief sunken -bd 2 -highlightthickness 0 \
-            -yscrollcommand "$mainf.equation.textbox.scroll set"]
+            -yscrollcommand "$mainf.equation.textbox.scroll set"]
     scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
     pack $en -side right -expand true -fill both
@@ -515,7 +515,7 @@ proc fill_inputs { triples } {
     } else {
         set showLines [max 3 [min 8 $line]]
         $widget.lists.f configure -height \
-                [expr $showLines*[winfo reqheight $scroller.plist.p0]+4]
+                [expr $showLines*[winfo reqheight $p]+8]
         update
     }
 }
