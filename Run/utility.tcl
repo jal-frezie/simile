@@ -456,7 +456,7 @@ proc LoadIconImages {} {
         set iconImages($fn) \
 	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-    foreach fn {warning error} {
+    foreach fn {info warning error} {
         set iconImages($fn) \
 	    [image create photo -file "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
     }

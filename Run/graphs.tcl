@@ -816,10 +816,10 @@ proc LoadTableData {tableSpec lineCount} {
 	set headerCount 1
 	set maxIndices(0) {}
     }
-    set headerColumn [lsearch $headerList [lindex $tableSpec 1]]
+    set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
 #ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
     if {$headerColumn==-1} {
-	ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column." ok
+	ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column from this list: $headerList." ok
 	return
     }
     while {[gets $tStr entryLine] != -1} {

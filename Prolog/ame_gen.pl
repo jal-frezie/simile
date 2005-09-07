@@ -104,12 +104,14 @@ make_legible_for_prolog(String, NewString) :-
 	[BS, Sq, Dq, Sp, Pt, Po, Pc, Xm, Eq] = "\\\'\" .()!=",
 	Nums = "0123456789",
 	append(Prefix, ToTweak, String),
-	/* Do not process anything in single quotes */
+	/* Do not process anything in single quotes except backslashes
+	(for GNU) */
 	(ToTweak = [Sq | AfterQuote],
 	append(InQuotes, [Sq | Suffix], AfterQuote),
-	    append([Sq | InQuotes], [Sq], Tweaked);
-	/* Ignore backslashes that are sometimes added by Tcl to get things
-	    into list format */
+	    double_backslashes(InQuotes, SafeInQuotes),
+	    append([Sq | SafeInQuotes], [Sq], Tweaked);
+	/* Ignore other backslashes that are sometimes added by Tcl to get
+	    things into list format */
 	ToTweak = [BS | Suffix],
 	    Tweaked = [];
 	/* Put single quotes round things that look like Prolog atoms/vars
@@ -147,6 +149,12 @@ make_legible_for_prolog(String, NewString) :-
 	make_legible_for_prolog(Suffix, NewSuffix),
 	append([Prefix, Tweaked, NewSuffix], NewString);	
 	NewString = String.
+
+double_backslashes(Str, Dtr) :-
+	append(Free1, [92 | Raw], Str), !,
+	double_backslashes(Raw, Free2),
+	append(Free1, [92, 92 | Free2], Dtr);
+	Dtr = Str.
 
 bite_off_number(String, Num, Left) :-
 	(append(Safe, [Brace | _], String),

@@ -111,7 +111,8 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 		       \+ (SelOnly = yes,
 		       CRAttr=complete)),
 		   /* if only saving seln it may be incomplete */
-		   ClassRefinements ),
+		   RealClassRefinements ),
+	revert_table(RealClassRefinements, ClassRefinements),
 /*	any_setof( MRAttr=MRValue,
                    ( Node has_model_refinement MRAttr of MRValue,
 		     \+ MRAttr = link_equivalences ),
@@ -130,6 +131,17 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 		       go_with(Arc, SelOnly)),
 		   ArcsUsed ).
 
+% Keep table function format compatible with 4.2 till we get to 5
+revert_table(RealClassRefinements, ClassRefinements) :-
+	member(table_data=_, RealClassRefinements),
+	    (select(spec=_, RealClassRefinements, Trimmed);
+		Trimmed = RealClassRefinements), !,
+	    select(value=NewExpr, Trimmed, NotChanged),
+	    replace_subexps(NewExpr, library, join_table_args,
+			    _, top_down, _, Expr),
+	    ClassRefinements = [value=Expr | NotChanged];
+	ClassRefinements = RealClassRefinements.
+	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 go_with(Comp, SelOnly) :-
@@ -262,8 +274,8 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV >= 4.0, !;
 	dialogue:reassure_user("Updating pre-Simile 4.0 model representation"),
 	    adjust_to_8),
-	(SimileV > 4.29, !;
-	dialogue:reassure_user("Updating pre-Simile 4.3 model representation"),
+	(SimileV > 4.29, SimileV < 4.31, !;
+	dialogue:reassure_user("Updating non-Simile 4.3 model representation"),
 	    adjust_to_8_3),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
@@ -403,6 +415,9 @@ adjust_to_8_3 :-
 
 separate_table_args(_, table(Args), NewTableFn, 0) :-
 	NewTableFn =.. [table | Args].
+
+join_table_args(_, Style43, Style4x, 0) :-
+	separate_table_args(_, Style4x, Style43, 0).
 
 shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
 	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-
