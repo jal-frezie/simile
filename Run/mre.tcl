@@ -96,6 +96,8 @@ namespace eval RunEnv {
                     {separator}
                     {command "&Print..." {} "Print display"  \
                                 {} -command { ::RunEnv::PrintCurrentContainer } }
+                    {command "&Export PostScript..." {} "Export display as PostScript"  \
+                                {} -command { ::RunEnv::ExportCurrentContainer } }
                     {separator}
                     {command "Pa&rameters..." {} "Modify file parameters"  \
                                 {} -command { ::RunEnv::InvokeFPDialogue } }
@@ -157,7 +159,6 @@ namespace eval RunEnv {
             #from runmodel.tcl AddHelperSublist
             set mreMenu [winfo parent [$mainframe getmenu help]]
             $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
-            
             # Add a PanedWindow for the hierrachical/run control view and main display window
             set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
             set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
@@ -354,6 +355,24 @@ namespace eval RunEnv {
             } else {
                 ShowMessage Warning warning \
                         "[${CurrentHelperId}::identify] does not support printing." ok
+            }
+            
+        }
+    }
+    
+    proc ExportCurrentContainer {} {
+        global helperTable env tcl_platform
+        variable CurrentContainer
+        variable canvasId
+        
+        if {[winfo exists $CurrentContainer.container]} {
+            set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
+            if {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
+                set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
+                PostScrog $canvasId
+            } else {
+                ShowMessage Warning warning \
+                        "[${CurrentHelperId}::identify] does not support PostScript export." ok
             }
             
         }

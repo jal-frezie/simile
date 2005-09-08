@@ -127,6 +127,7 @@ namespace eval printer {
   			    ;# set ary(resy) 200
   			  }
                           }
+
       }
     }
   
@@ -164,6 +165,9 @@ namespace eval printer {
         }
     }
     if { [ info exist ary(resy) ] == 0 } { set ary(resy) $ary(resx) }
+# Hah, why not set a default value for resolution, since thats the only
+# one that actually gets used... --JAT
+    if { ![ info exist ary(resolution) ]} { set ary(resolution) $ary(resx) }
     if { [ info exist ary(tm) ] == 0 } { set ary(tm) 1000 }
     if { [ info exist ary(bm) ] == 0 } { set ary(bm) 1000 }
     if { [ info exist ary(lm) ] == 0 } { set ary(lm) 1000 }
@@ -410,7 +414,8 @@ namespace eval printer {
     }
     if { $fill != "" } {
         set cmmd "$cmmd -fill $fill"
-    }
+    }
+
 
     
     debug_puts "$cmmd"

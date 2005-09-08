@@ -211,8 +211,6 @@ proc PrintRandomCanvas {canvas} {
     if {[string match windows $tcl_platform(platform)]} {
 	package require gdi
         package require printer
-    }
-    if {[string match windows $tcl_platform(platform)]} {
         printer::print_widget $canvas 0
     } else {    
         set tempPSFile $simtmpdir/temp.ps
@@ -224,6 +222,30 @@ proc PrintRandomCanvas {canvas} {
     }
 }
 	
+# Export a postscript file from a window. Only the bit of the diagram showing in
+# the viewport is included, and the output is in landscape mode, sized so 100
+# pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
+
+proc PostScrog { winId } {
+    set psfile [ChooseFile image.ps "Name of postscript file" 1]
+    # check for cancel
+    if {![string match */ $psfile]} {
+        
+        # force .ps extension
+        if {[string compare [file extension $psfile] .ps]} {
+            set psfile [file root $psfile].ps
+        }
+
+	set useWidth [winfo width $winId]
+	set useHeight [winfo height $winId]
+    
+	$winId postscript -file $psfile -rotate true -pageanchor nw \
+            -pagex 0 -pagey 0 \
+            -width $useWidth -height $useHeight \
+            -pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
+    }
+}
+
 # popup stuff -- here because both model windows and helpers use them
 
 proc BindPopup {widget keywd} {
