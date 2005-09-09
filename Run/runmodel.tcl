@@ -543,8 +543,9 @@ proc LoseDTRef {statusLine} {
 
 proc TellAllHelpers {node fun args} {
     global helperTable
-
-    if {[string equal display $fun]} {
+    set doScrog [expr [string equal display $fun] && \
+		     [info exists $helperTable(pestInterface)]]
+    if {$doScrog} {
 	$helperTable(pestInterface)::ScrogOutputs [lindex $args 0]
     }
     foreach displayBox [array name helperTable *,whichHelper] {
@@ -554,7 +555,7 @@ proc TellAllHelpers {node fun args} {
 	    eval {${helperId}::$fun $winId} $args
 	}
     }
-    if {[string equal display $fun]} {
+    if {$doScrog} {
 	$helperTable(pestInterface)::RestoreOutputs
 	eval WriteLogs $node $args
     }
