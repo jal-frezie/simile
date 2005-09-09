@@ -328,14 +328,14 @@ bar_edit_menu(Wid) :-
 	set_selection_abilities(Comp),    
 	Wid shows_model Model,
 	(member(Header/LinkType, ['Flow'/flow, 'Influence'/influence,
-				  '{Role arrow}'/relation, 'Squirt'/squirt]),
+				  '{Role arrow}'/relation /*, 'Squirt'/squirt */]),
 	    (can_start(LinkType, Point) -> Allow = 1; Allow = 0),
 	    update_ability(Model, none, 'edit.add', Header, Allow),
 	    fail;
 	update_ability(Model, none, edit, '{Create new}', CanCreate),
 	update_ability(Model, none, 'edit.add', 'Compartment', CanAddNode),
 	update_ability(Model, none, 'edit.add', 'Variable', CanAddNode),
-	update_ability(Model, none, 'edit.add', 'Event', CanAddNode),
+	/* update_ability(Model, none, 'edit.add', 'Event', CanAddNode), */
 	update_ability(Model, none, 'edit.add', '{Membership control}',
 		       CanAddNode),
 	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode)).
