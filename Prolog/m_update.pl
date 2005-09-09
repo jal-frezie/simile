@@ -830,19 +830,17 @@ enters a submodel containing the start, or exits one not. */
 
 u_turn(LType, Box1, Box2) :-
 	Box1 has_type LType,
-	    Box1 is_connector from SourceBox to TargetBox,
-	    (contains(SourceBox, Box2);
-	    find_type(TargetBox, submodel), appears(TargetBox), !,
-		\+ contains(TargetBox, Box2);
-	    continues_in(Box1, ExitedModel),
-		contains(ExitedModel, Box2));
+	    continues_in(Box1, Border),
+	    (find_all_comps(Border, Box1),
+		contains(Border, Box2);
+	    \+ find_all_comps(Border, Box1),
+		\+ contains(Border, Box2));
 	Box2 has_type LType,
-	    Box2 is_connector from SourceBox to TargetBox,
-	    (contains(TargetBox, Box1);
-	    find_type(SourceBox, submodel), appears(SourceBox), !,
-		\+ contains(SourceBox, Box1);
-	    continues_from(Box2, EnteredModel),
-		contains(EnteredModel, Box1)).
+	    continues_in(Box2, Border),
+	    (find_all_comps(Border, Box2), !,
+		\+ contains(Border, Box1);
+		contains(Border, Box1)).
+
 
 /* This one is called when the system has to put a new node in itself, such as
 when a submodel requires nodes for generation/deletion etc, or when a display mode
