@@ -1649,13 +1649,13 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
 proc ListWindows {fm} {
     global window_info
     $fm delete 0 end
-    puts [array names window_info *,parent]
+#    puts [array names window_info *,parent]
     foreach desktop [array names window_info *,parent] {
 	set tgtWin $window_info($desktop)
 	$fm add radiobutton -variable window_info(current) \
 	    -value $tgtWin.canvas -label [wm title $tgtWin] \
 	    -command [list raise $tgtWin]
-	puts m:[$fm index end]
+#	puts m:[$fm index end]
 	if {$window_info($tgtWin.canvas,is_top_level) && \
 		[string equal normal \
 		     [$tgtWin.toolSlot.navbar.runenv cget -state]]} {
@@ -1666,7 +1666,7 @@ proc ListWindows {fm} {
 	    $fm add radiobutton -variable window_info(current) \
 		-value $mreWin -label $mreTitle \
 		-command [list RaiseMREFor $tgtWin.canvas]
-	puts r:[$fm index end]
+#	puts r:[$fm index end]
 	}
     }
 }

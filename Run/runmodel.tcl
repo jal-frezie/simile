@@ -544,7 +544,7 @@ proc LoseDTRef {statusLine} {
 proc TellAllHelpers {node fun args} {
     global helperTable
     set doScrog [expr [string equal display $fun] && \
-		     [info exists $helperTable(pestInterface)]]
+		     [info exists helperTable(pestInterface)]]
     if {$doScrog} {
 	$helperTable(pestInterface)::ScrogOutputs [lindex $args 0]
     }
