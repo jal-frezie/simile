@@ -1650,7 +1650,7 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
 # mid-execution, so make a primitive concurrency lockout
 
 proc ListWindows {fm} {
-    global window_info runState
+    global window_info
     if {[info exists window_info($fm,building)]} {
 	return
     } else {
@@ -1658,25 +1658,49 @@ proc ListWindows {fm} {
 
 	$fm delete 0 end
 #    puts [array names window_info *,parent]
-	foreach desktop [array names window_info *,parent] {
-	    set tgtWin $window_info($desktop)
+	foreach {proc id title} [MakeWinSpec] {
 	    $fm add radiobutton -variable window_info(current) \
-		-value $tgtWin.canvas -label [wm title $tgtWin] \
-		-command [list raise $tgtWin]
-#	puts m:[$fm index end]
-	    set topNode $window_info($tgtWin.canvas,top_node)
-	    if {$window_info($tgtWin.canvas,is_top_level) && \
-		    [info exists runState($topNode,interp)]} {
-		foreach {mreWin mreTitle} [do_for_node $topNode AllTitles] {
-		    $fm add radiobutton -variable window_info(current) \
-			-value $mreWin -label $mreTitle \
-			-command [list do_for_node $topNode MyRaise $mreWin]
-#	puts r:[$fm index end]
-		}
-	    }
+		-value $id.canvas -label $title \
+		-command [list RaiseAny $proc $id]
 	}
 	update
 	unset window_info($fm,building)
+    }
+}
+
+proc MakeWinSpec {} {
+    global window_info runState
+
+    foreach desktop [array names window_info *,parent] {
+	set tgtWin $window_info($desktop)
+	lappend menList editor $tgtWin [wm title $tgtWin]
+
+	set topNode $window_info($tgtWin.canvas,top_node)
+	if {$window_info($tgtWin.canvas,is_top_level) && \
+		[info exists runState($topNode,interp)]} {
+	    foreach {mreWin mreTitle} [do_for_node $topNode AllTitles] {
+		lappend menList $topNode $mreWin $mreTitle
+	    }
+	}
+    }
+    return $menList
+}
+
+proc FillWinMenu {node fm} {
+    do_for_node $node $fm delete 0 end
+    foreach {proc id title} [MakeWinSpec] {
+	    do_for_node $node $fm add radiobutton \
+		-variable window_info(current) \
+		-value $id.canvas -label $title \
+		-command [list start_in_editor RaiseAny $proc $id]
+	}
+}
+    
+proc RaiseAny {node win} {
+    if {[string equal editor $node]} {
+	raise $win
+    } else {
+	after idle do_for_node $node MyRaise $win
     }
 }
 
