@@ -1365,3 +1365,4 @@ proc ModelDirectory {} {
 if {[catch {eval KickOff $argv} err]} {
     ShowMessage {Simile obliterfried!} error $errorInfo ok
 }
+
