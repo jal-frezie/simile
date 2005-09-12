@@ -702,3 +702,4 @@ namespace eval printer {
   # Initialize all the variables once
   init_print_canvas
 }
+
