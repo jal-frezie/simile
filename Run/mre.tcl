@@ -80,9 +80,7 @@ namespace eval RunEnv {
             
             #tk_messageBox -message MakeMRE -type ok
             toplevel $mreId -width 200m -height 150m
-	    set mDesc [do_in_editor GetFromProlog tk_get_info({},$node,desc)]
-	    set modelCapt [string range $mDesc 0 [string first { : } $mDesc]]
-            wm title $mreId "[BlankCrs $modelCapt] execution - Simile"
+            wm title $mreId "[GetExecTitle $node] execution - Simile"
             set currentNode $node
             bind $mreId <FocusIn> [namespace code "InMreFor $node"]
             set descmenu {
@@ -1307,16 +1305,20 @@ proc NewMreHelperWindow {node helperId helperTitle} {
 }
 
 proc RaiseMREFor {node} {
-    global helperTable tcl_platform
+    global helperTable
 
-    set myMre $helperTable($node,whichRunEnv)
-    wm deiconify $myMre
-    raise $myMre
+    MyRaise $helperTable($node,whichRunEnv)
+}
+
+proc MyRaise {top} {
+    global tcl_platform
+
+    wm deiconify $top
+    raise $top
     if [string match Darwin $tcl_platform(os)] {
        tclAE::send -s misc actv
     }
 }
-
 # A top level window to contain the helpers
 # overrides mre.tcl Makemre
 proc Makemre { node } {

@@ -1050,7 +1050,8 @@ proc StartRun {node} {
 #                [array get helperTable] spare helperId]} {
 #       kill_helper_window $helperId
 #   }
-	set helperId [NewHelperWindow $node $defHelper "Default run control"]
+	set helperId [NewHelperWindow $node $defHelper \
+			  "Run control for [GetExecTitle $node]"]
 	${defHelper}::initialize $helperId
 	set runState($node,helperId) $helperId
     }
@@ -1124,6 +1125,22 @@ proc TellHelperItsGone {helperWin captionPath} {
 # delete it
 }
 
+proc GetExecTitle {node} {
+	set mDesc [do_in_editor GetFromProlog tk_get_info({},$node,desc)]
+	set modelCapt [string range $mDesc 0 [string first { : } $mDesc]]
+	return [BlankCrs $modelCapt]
+}
+
+proc AllTitles {} {
+    set result {}
+    foreach win [winfo children .] {
+	if {[string equal Toplevel [winfo class $win]]} {
+	    lappend result $win [wm title $win]
+	}
+    }
+    return $result
+}
+	
 #proc CheckFixedParamState {node} {
 #    global inputHelper runState
 #    if {$runState($node,modelRunning)==1 && \

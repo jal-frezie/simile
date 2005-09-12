@@ -294,12 +294,12 @@ namespace eval ::$keyValue {
         
         Menu $w
         
-        if {[PrefValue custom(helperManager) helperManager] } {
-            # not yet todo        .mre.menubar insert Help cascade -label Plotter -menu $w.menu
-        } else  {
+        if {[string match [winfo toplevel $w] $w] } {
             menu $w.menubar -tearoff 0
             $w.menubar add cascade -label Menu -menu $w.menu
             $w configure -menu $w.menubar
+        } else  {
+            # not yet todo        .mre.menubar insert Help cascade -label Plotter -menu $w.menu
         }
         
         set toolbarItems [list \
