@@ -1331,5 +1331,3 @@ proc MyRaise {top} {
 proc Makemre { node } {
     return [RunEnv::Create $node]
 }
-
-
