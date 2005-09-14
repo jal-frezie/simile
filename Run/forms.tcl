@@ -1136,13 +1136,18 @@ proc ShowAbout {winId} {
 # images must be global because if building a c++ program we may be in a different directory
 set bwVers [package require BWidget]
 
-proc ShowExpiryImminent {expTime} {
+proc ShowExpiryImminent {expTime left} {
     global iconImages
     
     toplevel .expiry
     #    wm transient .expiry $winId
-    wm title .expiry "Expiry Imminent"
+    if {$left<0} {
+	wm title .expiry "Expiry passed"
+    } else {
+	wm title .expiry "Expiry imminent"
+    }
     wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
+
     global tcl_platform
     switch [tk windowingsystem] {
         win32 {wm attributes .expiry -toolwindow true}
@@ -1152,7 +1157,12 @@ proc ShowExpiryImminent {expTime} {
     pack [label $labf1.img -image $iconImages(warning)] -side left
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
-    pack [label $labf1.lab2 -text "This product will shortly expire." \
+    if {$left<0} {
+	set predicament "has expired."
+    } else {
+	set predicament "will shortly expire."
+    }
+    pack [label $labf1.lab2 -text "This product $predicament" \
             -font {-family helvetica -size 10}] -side left
     pack $labf1 -padx 8 -pady 2
     
@@ -1161,9 +1171,12 @@ proc ShowExpiryImminent {expTime} {
     pack [set www [label $labf2.lab2 -text "www.simulistics.com" \
             -fg blue -cursor hand2 -font {-underline true -family helvetica -size 10}]] -side left
     bind $www <Button-1> {VisitUrl "http://www.simulistics.com/"}
+    if {$left<0} {
+    } else {
     pack [label $labf2.lab3 -text "before" -font {-family helvetica -size 10}] -side left
     pack [label $labf2.lab4 -text [clock format $expTime -format {%d %h %Y}] \
             -font {-family helvetica -size 10}] -side left
+    }
     pack [label $labf2.lab5 -text "to upgrade." -font {-family helvetica -size 10}] -side left
     pack $labf2 -padx 8 -pady 2
     
@@ -1181,6 +1194,7 @@ proc ShowExpiryImminent {expTime} {
     set sheight [winfo screenheight .expiry]
     set swidth [winfo screenwidth .expiry]
     wm geometry .expiry +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
+    wm withdraw .splash
     update
     
     tkwait variable ack
