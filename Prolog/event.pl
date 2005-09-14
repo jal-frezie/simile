@@ -265,8 +265,9 @@ click_in(Wid, _,_,_, Parent, CD) :-
 	
 	/* Background of unselected submodel: select a region */
 	(get_mode(select),
-	    (Wid shows_model Parent, !; /* no drag submodel in own window */
-		\+ get_highlit_obj(0, Parent)),
+	    (Wid shows_model Parent; /* no drag submodel in own window */
+		CD = 1; /* no drag if ctrl down */
+		\+ get_highlit_obj(0, Parent)), !,
 	    set_start_coords(Xtr, Ytr),
 	    (CD = 0,
 		new_selection(Parent);
