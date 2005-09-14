@@ -35,7 +35,7 @@ int right_license(char* name, char* code) {
 
 	for (i=0; i<MD5_DIGEST_LENGTH; i++)
 		sprintf(&(buf[i*2]),"%02x",md[i]);
-	return(!strcmp(buf, code));
+	return(!strncmp(buf, code, 10));
 }
 
 // prototype, __stdcall seems to need one 

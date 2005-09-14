@@ -1501,8 +1501,8 @@ int licenseRight (Tcl_Interp *interp) {
 #endif
 
   /* check it matches what we got before */
-  if (strcmp(Tcl_GetVar2(interp, "userinfo", "license_code", 0), 
-	     Tcl_GetStringResult(interp))) {
+  if (strncmp(Tcl_GetVar2(interp, "userinfo", "license_code", 0), 
+	      Tcl_GetStringResult(interp), 10)) {
 //    Tcl_AppendResult(interp, " is license code", (char *)NULL);
 //    return TCL_ERROR;
     return 0;
