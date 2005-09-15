@@ -179,8 +179,9 @@ proc create_equation {parent boxtitle indices} {
     radiobutton $mainf.equation.textbox.radio0 -text "$eqnRBtext = " -variable equation(isparam) -value 0
     
     set en [text $mainf.equation.textbox.text -height 4 -width 80 -relief sunken -bd 2 -highlightthickness 0 \
-            -yscrollcommand "$mainf.equation.textbox.scroll set"]
-    scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
+            -yscrollcommand "$mainf.equation.textbox.scroll set"]
+
+   scrollbar $mainf.equation.textbox.scroll -orient vert -command "$en yview"
     pack $mainf.equation.textbox.scroll -side right -fill y
     pack $en -side right -expand true -fill both
     pack $mainf.equation.textbox.radio0 -anchor nw
@@ -745,3 +746,4 @@ proc InsertFunction {boxname functor} {
     }
     focus $boxname
 }
+

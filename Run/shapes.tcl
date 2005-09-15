@@ -1998,3 +1998,4 @@ button .b
 set looks(buttonColor) [Desystematize [.b cget -bg]]
 set looks(windowColor) white
 destroy .b
+
