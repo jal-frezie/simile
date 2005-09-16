@@ -1046,7 +1046,7 @@ set_properties(Wid, Model) :-
 		      NewCount, NewStep, NewComment, NewFix,
 		      NewHide, NewSeparate, NewEnumSpecs],
 	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _Step,
-		      _Comment, _EnumSpecs, _Fix, Hide, _Separate],
+		      _Comment, _EnumSpecs, _Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1121,6 +1121,10 @@ set_properties(Wid, Model) :-
 		fail;
 	    redisplay_border(Model))),
 
+	    (Separate = NewSeparate, !;
+		find_all_comps(Parent, Model),
+		add_parameter(Parent, 0, c_new, 0)),
+	    
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
 		_Window shows_model Submodel,
