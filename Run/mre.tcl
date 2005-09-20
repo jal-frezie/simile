@@ -999,7 +999,7 @@ namespace eval RunEnv {
         # not a toplevel #puts $stream [wm geometry $winId]
 	
 # If helper includes a PrepareSaveString command, call it
-	${helperId}::PrepareSaveString $winId
+	catch {${helperId}::PrepareSaveString $winId}
         if {[info exists helperTable($winId,status)]} {
             puts $stream [StripCrs $helperTable($winId,status)]
         } else {
