@@ -139,10 +139,9 @@ double glob_element (double* arrptr, int phase) {
 template <class DestClass>
 void collect (DestClass* dest, char* node_id, int id_count, ...) {
   va_list argptr;
-  int *curIndices;
+  int curIndices[32];
   int length;
 
-  curIndices = new int[id_count];
   va_start(argptr, id_count);
   for (length=0; length<id_count; length++) {
     curIndices[length] = va_arg(argptr, int);
