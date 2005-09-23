@@ -1647,7 +1647,7 @@ unclick_obj :-
 				\+ member(TType, [submodel, cloud]), !;
 			    draw_line_to(Start_thing, New_obj, Terminator)),
 			    tie_ends(New_obj, Start_thing, Terminator),
-			    (\+ TType is_class_of_sort line, !;
+			    (TType is_class_of_sort box, !;
 				m_class:follows(Replacer, Terminator),
 				clear_shape(Replacer, course),
 				clear_shape(Terminator, course),
