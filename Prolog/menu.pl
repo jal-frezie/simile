@@ -127,10 +127,19 @@ stick_model_in(Win, Parent, Name, Mode) :-
 	    /* date not needed */
 	    output:my_delete_file(PrologData),
 
+	    /* If any nodes have actually been translated, scrap their
+	        submodel executables */
+	    (member(Old-New, Translated),
+		\+ Old = New,
+		find_all_comps(TweakedModel, New),
+		\+ get_av_pair(TweakedModel, 1, c_new, 0),
+		m_update:add_parameter(TweakedModel, 1, c_new, 0),
+		fail;
+		
 	    /* Now if the saved model has any images these will be in the top
 	    dir (fttb) so get them loaded */
-	    transfer_images(Parent, TargetDir, in),
-		  
+	    transfer_images(Parent, TargetDir, in)),
+
 	    append_atoms(TargetDir, '/model.cnv', GraphFileName),
 	/* If this exists, call tcl to skee-WIRT it into each parent window */
 	    (output:my_file_exists(GraphFileName),
@@ -1123,7 +1132,7 @@ set_properties(Wid, Model) :-
 
 	    (Separate = NewSeparate, !;
 		find_all_comps(Parent, Model),
-		add_parameter(Parent, 0, c_new, 0)),
+		add_parameter(Parent, 1, c_new, 0)),
 	    
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
