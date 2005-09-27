@@ -912,11 +912,11 @@ namespace eval RunEnv {
         variable dp0
         variable currentNode
         
-        set nameOfHelperStateFile \
+        set nameOfHelperStateFile($currentNode) \
                 [ChooseFile Displays.shf "Save display configuration" 1]
-        if {[llength $nameOfHelperStateFile]} {
+        if {[llength $nameOfHelperStateFile($currentNode)]} {
 	    do_in_editor AttackGlobalVariable nameOfHelperStateFile \
-		($currentNode) $nameOfHelperStateFile
+		($currentNode) $nameOfHelperStateFile($currentNode)
             set mainframe $helperTable($currentNode,whichRunEnv).mainframe
             set tempFile [file join $simtmpdir temp_out.shf]
             set stream [NetOpen $tempFile w]
@@ -930,7 +930,7 @@ namespace eval RunEnv {
             SaveNotebookConfig $dp0.notebook [string length $dp0.] $stream
             
             close $stream
-            MimifySHF $tempFile $nameOfHelperStateFile mre
+            MimifySHF $tempFile $nameOfHelperStateFile($currentNode) mre
         }
     }
     
@@ -1044,8 +1044,8 @@ namespace eval RunEnv {
             close $stream
         }
         
-        set nameOfHelperStateFile $oldPath
-        do_in_editor AttackGlobalVariable nameOfHelperStateFile \
+        set nameOfHelperStateFile($currentNode) $oldPath
+        do_in_editor AttackGlobalVariable nameOfHelperStateFile($currentNode) \
 	    ($currentNode) $oldPath
         set stream [NetOpen $metaFile r]
         
