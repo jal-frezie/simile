@@ -5,8 +5,10 @@
 #
 # This file contains procedures for reading and editing tables of data at run-time.
 #
-proc FileParamDialogue {topNode topWin mustShow} {
-    global paramData widgetNames
+proc FileParamDialogue {topWin mustShow} {
+    global paramData widgetNames myNode
+
+    set topNode $myNode
     set allNodes [GetCompProperty $topNode Objects]
     # do it now to shake out errors before opening window
     set t [PutItThere .fpdialogue $topWin]

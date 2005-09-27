@@ -220,8 +220,9 @@ namespace eval RunEnv {
         variable CurrentContainers
         variable dp0
         variable dp0s
-        
+
         set currentNode $node
+        SetNodeForHelper $node
 # Problem with $CurrentContainers(node) not set for first use: ignore potential error
 # ALD 28 Feb 2005 - not thoroughly tested; patching up MacVersion
         catch {set CurrentContainer $CurrentContainers($node)}

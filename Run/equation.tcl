@@ -426,12 +426,6 @@ proc RollAll {s l1 l2 l3 top bot} {
     $l3 yview moveto $top
 }
 
-# Allow table viewer to be used in this interp
-source ../IOTools/DisplayFormats.tcl 
-source ../IOTools/graphtools.tcl
-source ../IOTools/two_table.tcl
-set table_viewer(id) $keyValue
-
 proc GetTable {parent comp box} {
     global equation table_entry
     

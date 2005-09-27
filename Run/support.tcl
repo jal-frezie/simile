@@ -710,10 +710,11 @@ proc start_in_editor {args} {
     do_in_editor after 1 $args
 }
 
+if {![info exists runHow(where)]} { ;# we are not at home, so call
 proc do_in_editor {args} {
     global runHow sender fromEditor
 #    tk_messageBox -message "callback $args"
-    if {[string equal send_sync $runHow]} {
+    if {[string equal send_sync $runHow(return)]} {
 	return [eval $sender {$args}]
     }
     remote [list get $args]
@@ -740,15 +741,8 @@ proc do_in_editor {args} {
     }
 }
 
-proc res {value} {
-    global fromEditor
-    set fromEditor [list res $value]
-}
-
-proc err {value} {
-    global fromEditor
-    set fromEditor [list err $value]
-}
+# procedures that just call their namesakes in the editor -- not needed if we
+# have not left
 
 proc PrefValue {arrVal val} {
     return [do_in_editor PrefValue $arrVal $val]
@@ -758,6 +752,18 @@ proc ContextSensitiveHelp {xcontext page} {
     global myNode
     set context [do_in_editor FindNodeTopWin $myNode]
     return [do_in_editor ContextSensitiveHelp $context $page]
+}
+
+}
+
+proc res {value} {
+    global fromEditor
+    set fromEditor [list res $value]
+}
+
+proc err {value} {
+    global fromEditor
+    set fromEditor [list err $value]
 }
 
 proc exit_exec {} {
@@ -778,7 +784,7 @@ proc do {argList} {
 
 proc remote {result} {
     global runHow myNode sender
-    switch $runHow {
+    switch $runHow(return) {
 	interp {
 	    return $result
 	} send_async {

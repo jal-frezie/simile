@@ -47,7 +47,7 @@ if [string match "Darwin" $tcl_platform(os)] {
 }
 
 proc MakeHelperMenu {} {
-    global custom myNode tcl_platform
+    global custom tcl_platform
     set fm [menu .helpers -tearoff 0]
 
     $fm add command -label "Load" -command LoadView
@@ -55,7 +55,7 @@ proc MakeHelperMenu {} {
     $fm add command -label "Clear" -command ClearView
     $fm add command -label "Close" -command KillHelpers
     $fm add command -label "Parameters..." \
-	-command [list FileParamDialogue $myNode {} 1]
+	-command [list FileParamDialogue {} 1]
 
     set oldDir [pwd]
     cd ../IOTools
@@ -92,7 +92,7 @@ proc ListMenuContents {menu} {
 
 proc MessFileParams {topNode parent} {
     global runState
-    switch -exact -- [FileParamDialogue $topNode $parent 1] {
+    switch -exact -- [FileParamDialogue $parent 1] {
 	-1 {
 #	    StartNow $topNode stop
 	    set runState($topNode,modelRunning) 1
@@ -575,7 +575,7 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
     set myNode $nMyNode
     set simtmpdir $nSimtmpdir
     set sender $nSender
-    set runHow $nRunHow
+    set runHow(return) $nRunHow
 
     if {[string equal windows $tcl_platform(platform)]} {
 	source ../System/lib/Extras/prntcanv.tcl
@@ -986,7 +986,7 @@ proc StartRun {node} {
 	MergeParams $node $smPath $spFile 0 0
 	unset projectParams($smPath)
     }
-    if {[FileParamDialogue $node $fpParent 0]<1} {
+    if {[FileParamDialogue $fpParent 0]<1} {
 	if {[info exists runState($node,cnvs)]} {
 	    $runState($node,cnvs) itemconfigure 1 -fill [RestingColour $node]
 	}
@@ -1203,7 +1203,7 @@ proc update_executable {node lang} {
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
 # is always that most recently added (even if not recompiled)
 
-proc load_dll {topNode lang progDir id node incs} {
+proc ex_load_dll {topNode lang progDir id node incs} {
     #   phasecount and nodedata are set in generated code
     global model_id model_ids model_prog env
     if {[string match tcl $lang]} {
@@ -1362,7 +1362,18 @@ proc ModelDirectory {} {
     global custom
     return [file dirname [lindex $custom(hotlist) 0]]
 }
-if {[catch {eval KickOff $argv} err]} {
-    ShowMessage {Simile obliterfried!} error $errorInfo ok
+
+proc SetNodeForHelper {node} {
+    global runHow myNode
+
+    if {[info exists runHow(where)]} {
+	set myNode $node
+    }
+}
+
+if {![info exists runHow(where)]} { ;# we are not at home, so call
+    if {[catch {eval KickOff $argv} err]} {
+	ShowMessage {Simile obliterfried!} error $errorInfo ok
+    }
 }
 

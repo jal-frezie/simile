@@ -14,9 +14,6 @@ source ../Run/shapes.tcl
 source ../Run/forms.tcl
 source ../Run/equation.tcl
 source ../Run/prefs.tcl
-#source ../Run/runmodel.tcl
-source ../Run/graphs.tcl
-source ../Run/utility.tcl
 source ../Run/messages.tcl
 
 # load function help messages
@@ -228,8 +225,39 @@ proc CheckFnsFresh {L progDir id userFnList} {
     return [concat $stat $files]
 }
 
+# In the executable interpreter, do_in_editor means execute in this
+# interpreter. But there are some functions shared between the interps
+# that need to do this, so in this interp it just evaluates its
+# arguments. If exec uses same interp it will not load another...
+
+proc do_in_editor {args} {
+    global runState
+    return [eval $args]
+}
+
 # elements of runHow specify communication mode between editor and execution
 # processes
+
+# where 
+# ----- 
+# This is one of 'home', 'namespace', 'interp', 'thread' or 'process'
+# depending on what a model's execution gets to itself. Obviously most
+# of these are place holders; currently anything other than 'home'
+# will stick the execution into its own process.
+set runHow(where) process
+if {[string equal home $runHow(where)]} {
+# load the whole execution code rather than just the common bits
+    source ../Run/runmodel.tcl
+} else {
+    source ../Run/graphs.tcl
+    source ../Run/utility.tcl
+
+    # Allow table viewer to be used in this interp
+    source ../IOTools/DisplayFormats.tcl 
+    source ../IOTools/graphtools.tcl
+    source ../IOTools/two_table.tcl
+    set table_viewer(id) $keyValue
+}
 
 # launch
 # ------
@@ -298,7 +326,8 @@ set runHow(time) parallel
 proc do_for_node {node args} {
     global runState tcl_platform runHow simtmpdir
 
-    if {![info exists runState($node,interp)]} {
+    if {![string equal home $runHow(where)] && \
+	    ![info exists runState($node,interp)]} {
 	if {[string equal interp $runHow(call)]} {
 	    set runState($node,interp) [interp create]
 	    $runState($node,interp) eval set runHow $runHow(return)
@@ -378,34 +407,35 @@ proc tickle {node} {
 # started -- and finished -- before the first can use its result.
 
 proc do_in_node {node args} {
-    global runState runHow
+    global myNode runState runHow
+
+    if {[string equal home $runHow(where)]} {
+	if {[info exists myNode]} {
+	    set helpersNode $myNode
+	}
+	set myNode $node
+	set res [eval $args]
+	unset myNode
+	if {[info exists helpersNode]} {
+	    set myNode $helpersNode
+	}
+	return $res
+    }
 
     set command [list do $args]
     if {[string equal interp $runHow(call)]} {
     set result [$runState($node,interp) eval $command]
     } else {
-    if {[string equal parallel $runHow(time)]} {
-        while {!$runState($node,modelReady)} {
+	while {!$runState($node,modelReady)} {
 	    tkwait variable runState($node,modelReady)
-        }
-    }
+	}
     if {$runState($node,modelReady)==1} {
 	tell_runner $node $command
 	incr runState($node,queueSize)
 #puts "put: $command"
 	set runState($node,modelReady) 0
 	upvar \#0 runState($node,response$runState($node,queueSize)) result
-	if {[string equal parallel $runHow(time)]} {
-	    tkwait variable \
-		runState($node,response$runState($node,queueSize))
-	} else {
-	    fileevent $runState($node,interp) readable {}
-	    while {!$runState($node,modelReady)} {
-		FeedModel $node pipe
-	    }
-	    fileevent $runState($node,interp) readable \
-		[list FeedModel $node pipe]
-	}
+	tkwait variable runState($node,response$runState($node,queueSize))
 #puts "Got $result"
 	incr runState($node,queueSize) -1
     } else {
@@ -488,15 +518,6 @@ proc do_if_running {node args} {
     }
 }
 
-# In the executable interpreter, do_in_editor means execute in this
-# interpreter. But there are some functions shared between the interps
-# that need to do this, so in this interp it just evaluates its
-# arguments.
-
-proc do_in_editor {args} {
-    return [eval $args]
-}
-
 proc HaveValues {node} {
     set globRef \$::runState($node,modelRunning)
     return [do_if_running $node expr $globRef>2]
@@ -539,7 +560,7 @@ proc DestroyHelpers {node} {
 }
 
 proc load_dll {topNode lang progDir id node incs} {
-    do_for_node $topNode load_dll $topNode $lang $progDir $id $node $incs
+    do_for_node $topNode ex_load_dll $topNode $lang $progDir $id $node $incs
 }
 
 proc compile_c {workingDir} {
@@ -693,7 +714,7 @@ proc LoadModelWindowExtensions {} {
 }
 
 proc ControlDraw {prologVersion} {
-    global sendvars custom tcl_platform env userinfo openModel simtmpdir
+    global sendvars custom tcl_platform env userinfo openModel simtmpdir runHow
     LoadIconImages
     
     # Defaults to use if debugging
@@ -901,7 +922,9 @@ proc ControlDraw {prologVersion} {
 	}
     }
     CheckCompilerLocation
-#    MakeHelperMenu
+    if {[string equal home $runHow(where)]} {
+	MakeHelperMenu
+    }
     LoadModelWindowExtensions
     
     # Bogosity alert -- setting an env var to {} causes it to stay
