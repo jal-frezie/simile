@@ -355,13 +355,14 @@ proc Prettify {value} {
     }
 }
 
-proc DestroyHelpers {node} {
+proc ExDestroyHelpers {node} {
     global helperTable
     if {[info exists helperTable($node,whichRunEnv)]} {
         ::RunEnv::Destroy $node
     } else {
         KillHelpers $node
     }
+    set runState($node,modelRunning) 0
 }
 
 proc KillHelpers {node} {
@@ -608,7 +609,7 @@ proc EatInput {} {
     eval [join $blether \n]
 }
 
-proc ScrubRun {node times} {
+proc ExScrubRun {node times} {
     global runState model_id instance_id
     #    if {![string match ok [ShowMessage debug info Scrubbing okcancel]]} {
     #	error Bombed

@@ -1390,10 +1390,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
         $fm entryconfigure "Inspect elements" -state normal
     }
 
-    set fm [menu ${winid}top.window -tearoff 0]
-    $fm config -postcommand "ListWindows $fm"
 # Window menu not finished (needs to work in exec windows)
-    ${winid}top add cascade -label Window -underline 0 -menu $fm
+    ${winid}top add cascade -label Window -underline 0 -menu .windowchoice
 
         set fm [menu ${winid}top.help -tearoff 0]
         ${winid}top add cascade -label Help -underline 0 -menu $fm

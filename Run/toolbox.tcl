@@ -383,9 +383,6 @@ proc do_for_node {node args} {
 	    set runState($node,queueSize) 0
 	}
 	tickle $node
-	if {[info exists runState($node,runParams)]} {
-	    do_in_node $node SetRunParams $node $runState($node,runParams)
-	}
 	RaiseModelWindow $node
     }
     return [eval do_in_node $node $args]
@@ -509,12 +506,17 @@ proc tell_runner {node action} {
 }
 
 proc do_if_running {node args} {
-    global runState
+    global runState runHow
 
-    if {[info exists runState($node,interp)]} {
-    return [eval do_in_node $node $args]
+    if {[string equal home $runHow(where)]} {
+	set running [info exists runState($node,modelRunning)]
     } else {
-    return 0
+	set running [info exists runState($node,interp)]
+    }
+    if {$running} {
+	return [eval do_in_node $node $args]
+    } else {
+	return 0
     }
 }
 
@@ -526,7 +528,9 @@ proc HaveValues {node} {
 proc TryToKill {node} {
     global runState runHow
 #puts "Trying to kill $node"
-    if {[info exists runState($node,interp)]} {
+    if {![info exists runState($node,interp)]} {
+	return
+    } 
     if {[string equal open $runHow(launch)]} {
         c_killmodel [pid $runState($node,interp)]
         catch {close $runState($node,interp)}
@@ -534,7 +538,7 @@ proc TryToKill {node} {
         c_killmodel $runState($node,interp)
     }
     unset runState($node,interp)
-    }
+
 # now supply bogus result to interrupted model call
     set runState($node,response$runState($node,queueSize)) {res 0}
 #puts "get: model killed"
@@ -550,13 +554,13 @@ proc TryToKill {node} {
 # Pass on Prolog calls meant for model
 proc ScrubRun {node times} {
     set optKill [after 3000 TryToKill $node]
-    do_if_running $node ScrubRun $node $times
+    do_if_running $node ExScrubRun $node $times
     after cancel $optKill
     ToggleIOToolMenu $node
 }
 
 proc DestroyHelpers {node} {
-    do_if_running $node DestroyHelpers $node
+    do_if_running $node ExDestroyHelpers $node
 }
 
 proc load_dll {topNode lang progDir id node incs} {
@@ -672,6 +676,9 @@ proc LoadProgram {node lang} {
     set runState($node,updated) 0
     set runState($node,lang) $lang
     if {[do_for_node $node update_executable $node $lang]} {
+	if {[info exists runState($node,runParams)]} {
+	    do_in_node $node SetRunParams $node $runState($node,runParams)
+	}
         ToggleIOToolMenu $node
     }
 }
@@ -925,6 +932,7 @@ proc ControlDraw {prologVersion} {
     if {[string equal home $runHow(where)]} {
 	MakeHelperMenu
     }
+    menu .windowchoice -tearoff 0 -postcommand [list ListWindows .windowchoice]
     LoadModelWindowExtensions
     
     # Bogosity alert -- setting an env var to {} causes it to stay
