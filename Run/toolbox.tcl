@@ -675,10 +675,10 @@ proc LoadProgram {node lang} {
     global runState
     set runState($node,updated) 0
     set runState($node,lang) $lang
+    if {[info exists runState($node,runParams)]} {
+	do_for_node $node SetRunParams $node $runState($node,runParams)
+    }
     if {[do_for_node $node update_executable $node $lang]} {
-	if {[info exists runState($node,runParams)]} {
-	    do_in_node $node SetRunParams $node $runState($node,runParams)
-	}
         ToggleIOToolMenu $node
     }
 }

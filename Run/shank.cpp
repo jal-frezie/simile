@@ -1188,6 +1188,8 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
   int line, typeCount, typeIdx;
 
   while (searchPoint) {
+    //sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
+    //showMess(globMess);
     tryModel = searchPoint->model;
     if ((line=tryModel->getinfo(node))>-1) {
       bottomLine = tryModel->nodedata + line;
@@ -1217,6 +1219,26 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
       }
       localUsed[usedCount] = NULL;
 
+      if (!strcmp(node,searchPoint->node)) {
+	*dims = *path = 0;
+	*usedTypes = NULL;
+	bottomLine = NULL;
+      } else if (searchinfo(searchPoint->node, tgtModel, caption,
+			dims, path, usedTypes)) {
+	  append_ints_to_null(dims, localDims, SEPARATE, 0);
+	  append_ints_to_null(path, bottomLine->path, SEPARATE, 
+			      (int)searchPoint->model);
+	  append_ptrs_to_null(usedTypes, localUsed);
+	  strcpy(caption + strlen(caption), // was strrchr(caption, '/'),
+		 localCapt);
+      } else {
+	strcpy(caption, localCapt);
+	append_ints_to_null(dims, localDims, 0, 0);
+	append_ints_to_null(path, bottomLine->path, 0, 0);
+	append_ptrs_to_null(usedTypes, localUsed);
+      }
+
+      /* Old version with only one model hierarchy...
       if (searchPoint == nodeModelList) {
 	strcpy(caption, localCapt);
 	*dims = *path = 0;
@@ -1230,11 +1252,12 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
 	append_ptrs_to_null(usedTypes, localUsed);
-	strcpy(caption + strlen(caption), /* was strrchr(caption, '/'), */
+	strcpy(caption + strlen(caption), // was strrchr(caption, '/'),
 	       localCapt);
       } else {
 	bottomLine = NULL;
       }
+      */
       *tgtModel = (long int)tryModel;
       return(bottomLine);
     }
