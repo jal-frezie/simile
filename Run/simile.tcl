@@ -114,6 +114,7 @@ if {[string equal windows $tcl_platform(platform)]} {
     close $UserStream
 }
 set env(SIMILE_VERSION) 4.4
+set sendvars(simP) p1
 # KDE launch feedback will fail unless root window is displayed briefly,
 # causing annoying eye candy to persist while program is running.
 # It may be necessary to have the launch icon execute this file rather than the
@@ -141,7 +142,7 @@ splash read $SIMILE_PATH/Images/splash.gif
 toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash
-.splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)"
+.splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
 .splash.c create text 270.0 295.0 -font $graph(font) -fill #660066 -text "Registered to $regInfo"

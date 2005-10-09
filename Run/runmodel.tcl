@@ -29,7 +29,7 @@ source ../Run/mre.tcl
 # Alastair 31 Jan 2005
 #
 
-if [string match "Darwin" $tcl_platform(os)] {
+if {[string match "Darwin" $tcl_platform(os)] & ![info exists runHow(where)]} {
 #
 # The Quit command in the application menu ALWAYS calls exit, so we must quit 
 # by that route however it is invoked (keyboard shortcut or mouse click)
