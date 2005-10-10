@@ -782,22 +782,28 @@ FINDABLE int setstepCmd(ClientData clientData, Tcl_Interp *interp,
    int phase;
    int error;
 
-   if (argc != 3) {
-     Tcl_WrongNumArgs(interp, 1, argv, "interval/phase step_id");
+   if (argc != 4) {
+     Tcl_WrongNumArgs(interp, 1, argv, "model_id interval/phase step_id");
      return TCL_ERROR;
    }
 
-   error = Tcl_GetDoubleFromObj(interp, argv[1], &starttime);
+   error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
    if (error != TCL_OK) {
 	return error;
    }
 
-   error = Tcl_GetIntFromObj(interp, argv[2], &phase);
+   error = Tcl_GetDoubleFromObj(interp, argv[2], &starttime);
    if (error != TCL_OK) {
 	return error;
    }
 
-   Tcl_SetIntObj(Tcl_GetObjResult(interp), setstep(starttime, phase));
+   error = Tcl_GetIntFromObj(interp, argv[3], &phase);
+   if (error != TCL_OK) {
+	return error;
+   }
+
+   Tcl_SetIntObj(Tcl_GetObjResult(interp), 
+		 setstep(modelType, starttime, phase));
    return TCL_OK;
 }
 
@@ -1201,11 +1207,13 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-BOOLEAN interact_gui(double now) {
+BOOLEAN interact_gui(void* id, double now) {
   BOOLEAN response;
 
   Tcl_Obj* feedbackCmd;
   feedbackCmd = Tcl_NewStringObj("InteractGUI", -1);
+  Tcl_ListObjAppendElement(globInterp, feedbackCmd,
+			   Tcl_NewLongObj((long int)id));
   Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
   Tcl_EvalObjEx(globInterp, feedbackCmd, 0);
   Tcl_GetIntFromObj(globInterp, Tcl_GetObjResult(globInterp), &response);

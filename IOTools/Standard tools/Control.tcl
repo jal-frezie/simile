@@ -301,8 +301,7 @@ namespace eval runcontrol33857 {
 # notice that it is out of date. Returns nonzero if user has stopped
 # or reset execution
 
-    proc RCInteractGUI {current} {
-	global myNode
+    proc RCInteractGUI {myNode current} {
 	variable sendvars
 	UpdateBar $myNode [expr $current/$sendvars(unitLength)]
 	update

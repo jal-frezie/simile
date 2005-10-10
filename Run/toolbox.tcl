@@ -1293,7 +1293,7 @@ proc brainwash {ethnic} {
     return [file join [file dirname $ethnic] [file tail $ethnic]]
 }
 
-proc RaiseMREFor {win} {
+proc RaiseWinMRE {win} {
     global window_info
     
     set node $window_info($win,top_node)

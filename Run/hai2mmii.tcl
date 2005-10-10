@@ -199,7 +199,7 @@ proc SetStep {node time phase} {
     
     if {$model_id($node)} {
 #puts "setstep $time $phase"
-	c_setstepmodel $time $phase
+	c_setstepmodel $model_id($node) $time $phase
     } elseif {$phase>=0} { ;# lazy
 	set steps($phase) $time
 #    } else {
@@ -665,16 +665,20 @@ proc GetPhaseCount {topNode} {
 	return nomatch
     }	
     if {$model_id($topNode)} {
-	return [c_setstepmodel 0 0]
+	return [c_setstepmodel $model_id($topNode) 0 0]
     } else {
 	return $phasecount
     }
 }
 
 # this one is called from the model and handled by the client
-proc InteractGUI {modelTime} {
-    global helperTable
-    return [$helperTable(RunControl)::RCInteractGUI $modelTime]
+proc InteractGUI {handle modelTime} {
+    global helperTable instance_id
+    foreach {model h_id} [array get instance_id] {
+	if {$h_id==$handle} {
+	    return [$helperTable(RunControl)::RCInteractGUI $model $modelTime]
+	}
+    }
 }
 
 proc ResetModel {redo} {

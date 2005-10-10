@@ -48,7 +48,7 @@ move_components(Migrants, California) :-
 		\+ member(End, Migrants),
 		\+ member(Arc, Migrants),
 			(Arc has_type influence,
-			    \+ (Fix = sink, make_branch(Arc, California)),
+			    \+ make_branch(Arc, California),
 			    NewNodeType = variable;
 			Arc is_of_sort has_bowtie,
 			    NewNodeType = cloud;
@@ -61,12 +61,13 @@ move_components(Migrants, California) :-
 
 make_branch(Arc, California) :-
 	initiates(Arc, DeepSource),
-	CompleteArc is_connector from California to _,
-	CompleteArc has_type influence,
 	initiates(CompleteArc, DeepSource),
+	m_update:continues_from(CompleteArc, California),
+	CompleteArc has_type influence,
 	California has_model_refinement link_equivalences of Equivs,
 	member(InnerArc-CompleteArc, Equivs),
-	Arc has_changed_termination start from _OldStart to California,
+	CompleteArc is_connector from Junction to _,
+	Arc has_changed_termination start from _OldStart to Junction,
 	California has_changed_model_refinement link_equivalences of
 	        [InnerArc-Arc | Equivs].
 

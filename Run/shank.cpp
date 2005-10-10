@@ -84,7 +84,6 @@ int connCount;
 connectRecord* connectData;
 showMess_type* showMessLocal;
 char globMess[256];
-double lts[8], ldts[8], steps[8];
 
 /* values for keeping track of GUI interaction and execution times */
 int last_op = 0;
@@ -92,7 +91,7 @@ unsigned long int last_exit = 0, last_update = 0;
 unsigned long int took[]={0,0,0,0,0,0,0,0};
 BOOLEAN resetting;
 
-BOOLEAN check_gui(double model_time, int this_op) {
+BOOLEAN check_gui(void* id, double model_time, int this_op) {
   unsigned long int flash, this_update;
   BOOLEAN result;
   
@@ -103,7 +102,7 @@ BOOLEAN check_gui(double model_time, int this_op) {
   last_op = this_op;
   
   if ((this_update-last_update)>flash || took[this_op]>flash) {
-    result=interact_gui(model_time);
+    result=interact_gui(id, model_time);
     this_update=clock(); // GUI may have taken time
     last_update=this_update;
   } else {
@@ -586,7 +585,7 @@ double update_time_series(double now, double horizon) {
   return horizon;
 }    
   
-void reset_time_series() {
+void reset_time_series(long int id) {
   listParamArray* param_array_current;
 
   param_array_current = param_array_base;
@@ -597,6 +596,8 @@ void reset_time_series() {
     param_array_current = param_array_current->next;
   }
 }
+
+void setdt(double, int);
 
 /* prototypical declarations for functions to be supplied by the model dll
  */
@@ -636,6 +637,7 @@ public:
   exitmodel_type *exitmodel;
 
   int phases;
+  double lts[8], ldts[8], steps[8];
   graph_data_type* c_graphdata;
   int nodecount;
   node_data_line* nodedata;
@@ -760,6 +762,19 @@ sprintf(globMess, "Loaded %ld", handle);
   }
 */
 
+  int resetmodel(void* modelHandle, int top_phase) {
+    int tweak_phase;
+
+    resetting=(top_phase==-2);
+    for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
+      lts[tweak_phase]=0;
+      setdt(0, -tweak_phase);
+      setdt(steps[tweak_phase], tweak_phase);
+    }
+    reset_time_series((long int)this);
+    return evalmodel(modelHandle, 0, top_phase, FALSE);
+  }
+
   int executemodel(void* id, int how_int, double start, double* end) {
     double freq, xtime;
     int big_phase, err;
@@ -767,7 +782,7 @@ sprintf(globMess, "Loaded %ld", handle);
     freq = steps[phases];
     for (xtime=int(start/freq + 0.5)*freq; xtime<=*end-0.5*freq;) {
       big_phase = phase_for(xtime, freq, phases+1);
-      if (check_gui(xtime, big_phase)) {
+      if (check_gui(id, xtime, big_phase)) {
 	return -100; // should not conflict with os signal numbers
       }
       xtime+=freq;
@@ -792,7 +807,7 @@ sprintf(globMess, "Loaded %ld", handle);
 	return err;
       }
     }
-    check_gui(*end, 0);
+    check_gui(id, *end, 0);
     return 0;
   }
   
@@ -947,6 +962,19 @@ public:
     }
   }
 
+  listNodeModel* strip_out(Model* oldModelId) {
+    if (next) {
+      next = next->strip_out(oldModelId);
+    }
+    if (model == oldModelId) { // node belongs to model being removed
+      delete(node);
+      delete(model);
+      return next;
+    } else {
+      return this;
+    }
+  }
+      
   Model* nodeModel(char* seekNode) {
     if (!strcmp(node, seekNode)) {
 
@@ -1412,16 +1440,7 @@ to drive the model...
 */
 
 int reset(long int modelType, long int modelHandle, int top_phase) {
-  int tweak_phase;
-  resetting=(top_phase==-2);
-  for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-    lts[tweak_phase]=0;
-    setdt(0,-tweak_phase);
-    setdt(steps[tweak_phase],tweak_phase);
-  }
-  reset_time_series();
-  return ((Model*)modelType)->evalmodel((void*)modelHandle, 
-					0, top_phase, FALSE);
+  return ((Model*)modelType)->resetmodel((void*)modelHandle, top_phase);
 }
 
 int execute(long int modelType, long int modelHandle, int how_int,
@@ -1511,9 +1530,9 @@ void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
   *connCountPtr = &connCount;
 }
 
-int setstep(double starttime, int phase) {
-  steps[phase] = starttime;
-  return (nodeModelList->model)->phases;
+int setstep(long int modelId, double starttime, int phase) {
+  ((Model*)modelId)->steps[phase] = starttime;
+  return ((Model*)modelId)->phases;
 }
 
 void setdt(double starttime, int phase) {
@@ -1539,11 +1558,10 @@ char* myexit(long int modelType, long int modelHandle) {
   }
   if (nodeModelList) {
     try {
-      delete nodeModelList;
+      nodeModelList->strip_out((Model*)modelType);
     } catch(DllLossage prang) {
       return prang.tell();
     }
-    nodeModelList = NULL;
   }
   return NULL;
 }

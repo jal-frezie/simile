@@ -174,7 +174,7 @@ typedef struct connectRecord_t {
    method didn't work in win98) */
 
 typedef double ame_rand_type(double, double);
-typedef BOOLEAN interact_gui_type(double);
+typedef BOOLEAN interact_gui_type(void*, double);
 typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
@@ -217,8 +217,7 @@ EXTDEC long int fetch_top_instance(long int, char*);
 
 EXTDEC int reset(long int, long int, int);
 EXTDEC int execute(long int, long int, int, double, double*);
-EXTDEC int setstep(double, int);
-void setdt(double, int);
+EXTDEC int setstep(long int, double, int);
 EXTDEC char* myexit(long int, long int);
 
 EXTDEC void* get_ptr(long int, long int, int**, int**);

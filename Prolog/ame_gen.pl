@@ -229,8 +229,8 @@ is_ghost(Ghost) :-
 implicit-explicit link or part of an influence chain. */
 
 ghost_link(Link, Base, Ghost) :-
-	Link has_type influence,
 	connects(Link, Base, Ghost),
+	Link has_type influence,
 	influence_makes_ghost(Base),
 	influence_makes_ghost(Ghost),
 	\+ (terminates(Link, NonGhost),
@@ -267,7 +267,6 @@ find_ghosts(Base, Ghost) :-
       	    (sequence(Base, Ghost); sequence(Ghost, Base));
 	\+ sequence(_, Base),
 	sequence(Base, Ghost));
-	Link is_connector from Base to _,
 	ghost_link(Link, Base, Ghost).
 
 /* test for whether node is an input parameter, i.e., something

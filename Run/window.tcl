@@ -385,9 +385,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set c [ModelWindow $winName]
     set custom(showgrids,$c) [PrefValue custom(initGrid) initGrid]
     
-    wm protocol $winName WM_DELETE_WINDOW \
-            [list byebye $c]
-    
+    wm protocol $winName WM_DELETE_WINDOW [list byebye $c]
     set window_info($c,top_node) $topNode
     if {[set window_info($c,is_top_level) $isTopLevel]} {
     set window_info($c,topCapt) {}
@@ -1046,7 +1044,7 @@ proc DoLocalCmd {win item} {
         zoomout {DoZoom $win .707107 1}
         find {FindCaption $win}
         findnext {NextCaption $win}
-        raiseMRE {RaiseMREFor $win}
+        raiseMRE {RaiseWinMRE $win}
         open_all {OpenAll $win}
         save_all {SaveAll $win}
         insert {InsertModel $win}

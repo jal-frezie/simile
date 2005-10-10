@@ -24,8 +24,5 @@ vpath 	%.h 	Run
 vpath 	%.tcl 	Run
 
 System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
-		makedlls.tcl
+		shank.cpp makedlls.tcl
 	cd Run; $(WISHCMD) makedlls.tcl; cd ..
-
-System/lib/lib5d$(SHAREDLIBEXTN): shank.cpp dllcalls.h
-	cd Run;	$(WISHCMD) makedlls.tcl; cd ..
