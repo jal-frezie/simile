@@ -1444,8 +1444,10 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 		member(StartPoint, NearestFirst),
 		find_all_comps(StartPoint, Start),
 		get_possible_start(OrigStart, Start),
+% following lines stop influences and ghost links sharing sections
 		(ghost_link(Start, _,_) -> Ltype = ghost_link;
-		    Ltype = influence),
+		    true),
+%		    Ltype = influence),
 		appears(Start),
 		can_start(influence, Start),
 		can_finish(influence, Start, Target), !;
@@ -1649,8 +1651,6 @@ unclick_obj :-
 			    tie_ends(New_obj, Start_thing, Terminator),
 			    (TType is_class_of_sort box, !;
 				m_class:follows(Replacer, Terminator),
-				clear_shape(Replacer, course),
-				clear_shape(Terminator, course),
 				menu:reroute_sections([Replacer,
 						       Terminator])))),
 		    clear_incomplete,
@@ -1988,16 +1988,22 @@ attempt_new_component(Parent, Box) :-
 
 relate_graphics(Node_name, Node_trans) :-
 	move_boxes(Node_name, Node_trans),
+	setof(DoLink,
+	      Link^(find_all_links(Node_name, Link),
+		    (has_outer_equiv(DoLink, Node_name, Link); DoLink = Link)),
+	      MessedLinks),
+	menu:reroute_sections(MessedLinks),
+	remove_old_incomplete.
  /* re-route flows first so influences to re-routed bowties come out right.
- Note only cross border flows need rerouting. */
+ Note only cross border flows need rerouting. 
 	((find_all_links(Node_name, Link), find_type(Link, flow);
 	find_all_links(Node_name, Link), \+ find_type(Link, flow)),
-	    (DoLink = Link; has_outer_equiv(DoLink, Node_name, Link)),
+	    (has_outer_equiv(DoLink, Node_name, Link); DoLink = Link),
 	    update_link_route(DoLink, yes),
 	    redisplay(DoLink),
 	    make_links_follow(DoLink),
 	    fail;
-	true).
+	true). */
 
 move_boxes(Node_name, Node_trans) :-
 	find_all_comps(Node_name, Thing),

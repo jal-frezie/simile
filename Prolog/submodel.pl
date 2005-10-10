@@ -67,6 +67,11 @@ make_branch(Arc, California) :-
 	California has_model_refinement link_equivalences of Equivs,
 	member(InnerArc-CompleteArc, Equivs),
 	CompleteArc is_connector from Junction to _,
+	(m_update:continues_from(Arc, OldBorder), !,
+	    OldBorder has_model_refinement link_equivalences of OBEquivs,
+	    select(_-Arc, OBEquivs, OBRest),
+	    OldBorder has_changed_model_refinement link_equivalences of OBRest;
+	true),
 	Arc has_changed_termination start from _OldStart to Junction,
 	California has_changed_model_refinement link_equivalences of
 	        [InnerArc-Arc | Equivs].

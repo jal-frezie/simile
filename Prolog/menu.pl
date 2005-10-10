@@ -547,8 +547,7 @@ menu_handle(Win, edit, reroute) :-
 	/* Get selected links top-down, flows first */
 	(setof(Rerouter, (contains(Model, Rerouter),
 			    Rerouter is_of_sort line,
-			    event:doomed(Rerouter),
-			    clear_shape(Rerouter, course)), Rerouters), !,
+			    event:doomed(Rerouter)), Rerouters), !,
 	    reroute_sections(Rerouters);
 	true),
 	finish_move(Model, 0),
@@ -827,6 +826,7 @@ full_section(Rerouters, Type, [Start | Rest], Remains) :-
 	continuation(Left, Start, Rest, Remains).
 
 continuation(Rerouters, Start, Rest, Remains) :-
+	clear_shape(Start, course), fail;
 	m_class:follows(Start, Next),
 	select(Next, Rerouters, Left), !,
 	continuation(Left, Next, More, Remains),
