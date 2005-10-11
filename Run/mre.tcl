@@ -566,13 +566,12 @@ namespace eval RunEnv {
     proc SplitPage {containerId orientation} {
         set parentPath [FindParentpanedwindowOrNotebook $containerId]
         if {[string match notebook [winfo name $parentPath]]} {
-            #ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
+            ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
             Addpanedwindow $containerId $orientation
         } elseif {(![string match $orientation [$parentPath cget -orient]])} {
-            #ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
-            #parentPath $parentPath" ok;
+            ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
+            parentPath $parentPath" ok;
             Addpanedwindow $containerId $orientation
-            #ShowMessage debug info "newpw $newpw" ok
         } else  {
             # it's a pane to be split in the same orientation
             # add a new pane
@@ -702,7 +701,7 @@ namespace eval RunEnv {
     proc Addpanedwindow {containerId orientation} {
         set pwidth  [winfo width $containerId]
         set pheight [winfo height $containerId]
-        #ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
+        ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
         #        pwidth $pwidth; pheight $pheight" ok; ################
         panedwindow $containerId.panedwindow -orient $orientation
         pack $containerId.panedwindow -expand yes -fill both
@@ -721,7 +720,7 @@ namespace eval RunEnv {
                         must be  must vertical or horizontal" ok
             }
         }
-        #ShowMessage debug info "RunEnv::Addpanedwindow width $width; height $height" ok
+        ShowMessage debug info "RunEnv::Addpanedwindow width $width; height $height" ok
         frame $containerId.panedwindow.pane0 -highlightcolor black -highlightthickness 1
         frame $containerId.panedwindow.pane1 -highlightcolor black  -highlightthickness 1
         bind $containerId.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"
@@ -749,17 +748,18 @@ namespace eval RunEnv {
         set mreMenu [winfo parent [$mainframe getmenu help]]
         set pw [FindParentPanedwindow $win]
         #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
-        set tb1 [$mainframe gettoolbar 0]
+#        set tb1 [$mainframe gettoolbar 0]
+	set tb1 [$mainframe getframe].tbar
         if {[winfo exists $win.container]} {
             $mreMenu entryconfigure Add -state disable
             [$mainframe getmenu edit] entryconfigure Copy -state normal
             [$mainframe getmenu edit] entryconfigure Cut -state normal
             [$mainframe getmenu edit] entryconfigure Paste -state disable
-     #       $tb1.bbox1 itemconfigure 2 -state disabled; # paste button
-     #       $tb1.bbox3 itemconfigure 1 -state disabled; # Add Notebook button
-     #       $tb1.bbox4 itemconfigure 0 -state disabled; # add helper buttons
-     #       $tb1.bbox4 itemconfigure 1 -state disabled
-     #       $tb1.bbox4 itemconfigure 2 -state disabled
+            $tb1.b12 configure -state disabled; # paste button
+            $tb1.b31 configure -state disabled; # Add Notebook button
+            $tb1.b40 configure -state disabled; # add helper buttons
+            $tb1.b41 configure -state disabled
+            $tb1.b42 configure -state disabled
             
             .pageContextMenu entryconfigure 0 -state disabled
             .pageContextMenu entryconfigure 1 -state disabled
@@ -770,14 +770,14 @@ namespace eval RunEnv {
             
             if {[string match vertical [$pw cget -orient]]} {
                 #ShowMessage debug info "vert $tb1.bbox2" ok
-     #           $tb1.bbox2 itemconfigure 1 -state disabled
-     #           $tb1.bbox2 itemconfigure 0 -state normal
+                $tb1.b21 configure -state disabled
+                $tb1.b20 configure -state normal
                 .pageContextMenu entryconfigure 10 -state disabled
                 .pageContextMenu entryconfigure 9 -state normal
             } else  {
                 #ShowMessage debug info "horiz $tb1.bbox2" ok
-     #           $tb1.bbox2 itemconfigure 0 -state disabled
-     #           $tb1.bbox2 itemconfigure 1 -state normal
+                $tb1.b20 configure -state disabled
+                $tb1.b21 configure -state normal
                 .pageContextMenu entryconfigure 9 -state disabled
                 .pageContextMenu entryconfigure 10 -state normal
             }
@@ -786,13 +786,13 @@ namespace eval RunEnv {
             [$mainframe getmenu edit] entryconfigure Copy -state disable
             [$mainframe getmenu edit] entryconfigure Cut -state disable
             [$mainframe getmenu edit] entryconfigure Paste -state normal
-     #       $tb1.bbox1 itemconfigure 2 -state normal; # paste button
-     #       $tb1.bbox2 itemconfigure 1 -state normal
-     #       $tb1.bbox2 itemconfigure 0 -state normal
-     #       $tb1.bbox3 itemconfigure 1 -state normal; # Add Notebook button
-     #       $tb1.bbox4 itemconfigure 0 -state normal; # add helper buttons
-     #       $tb1.bbox4 itemconfigure 1 -state normal
-     #       $tb1.bbox4 itemconfigure 2 -state normal
+            $tb1.b12 configure -state normal; # paste button
+                $tb1.b20 configure -state normal
+                $tb1.b21 configure -state normal
+            $tb1.b31 configure -state normal; # Add Notebook button
+            $tb1.b40 configure -state normal; # add helper buttons
+            $tb1.b41 configure -state normal
+            $tb1.b42 configure -state normal
             
             .pageContextMenu entryconfigure 0 -state normal
             .pageContextMenu entryconfigure 1 -state normal
