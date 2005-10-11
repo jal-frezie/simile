@@ -332,7 +332,7 @@ namespace eval runcontrol33857 {
 	if {[string equal reset $sendvars($node,currentMode)]} {
 	    set current 0.0
 	    set exec $sendvars($node,run_length)
-	    SetupBar $node 0 $exec
+	    SetupBar $node $current [expr $current + $exec]
 	    if {[info exists runState($node,reloadParams)]} {
 		set redoPhase($node) $runState($node,reloadParams)
 		unset runState($node,reloadParams)
@@ -380,7 +380,7 @@ namespace eval runcontrol33857 {
 	}
 	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
 	    if {$display} {
-		set nextDisp [expr $display*[incr lastDisp]]
+		set nextDisp [expr 1.0*$display*[incr lastDisp]]
 	    } else {
 		set nextDisp [expr 2*$pause-$current]
 	    }
