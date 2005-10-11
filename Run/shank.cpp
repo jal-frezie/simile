@@ -1558,7 +1558,7 @@ char* myexit(long int modelType, long int modelHandle) {
   }
   if (nodeModelList) {
     try {
-      nodeModelList->strip_out((Model*)modelType);
+      nodeModelList = nodeModelList->strip_out((Model*)modelType);
     } catch(DllLossage prang) {
       return prang.tell();
     }

@@ -56,7 +56,7 @@ namespace eval runcontrol33857 {
         global playImg
         #	global runState
         
-        upvar 1 node node
+	upvar 1 node node
 	set myModel($t) $node
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
@@ -346,7 +346,7 @@ namespace eval runcontrol33857 {
 	if {[info exists redoPhase($node)]} {
 	    $widget.upper.bf.flag itemconfigure 1 -fill yellow
 	    update
-	    if {![RunningInC]} {
+	    if {![RunningInC $node]} {
 		if {$redoPhase($node) <= -1} {
 		    InitTimeSeries $node
 		} elseif {$redoPhase($node) == 0} {
@@ -354,7 +354,7 @@ namespace eval runcontrol33857 {
 		}
 		UpdateTimeSeries $node 0 0
 	    }
-	    if {[ResetModel $redoPhase($node)]} {
+	    if {[ResetModel $node $redoPhase($node)]} {
 		if {$runState($node,modelRunning)<3} {
 		    set runState($node,modelRunning) 3
 		}
@@ -384,7 +384,7 @@ namespace eval runcontrol33857 {
 	    } else {
 		set nextDisp [expr 2*$pause-$current]
 	    }
-	    if {[RunningInC]} {
+	    if {[RunningInC $node]} {
 		set current $nextDisp
 	    } else {
 		set timeCheck [UpdateTimeSeries $node $current $nextDisp]
@@ -399,7 +399,7 @@ namespace eval runcontrol33857 {
 	    }
 	    set scaled_next [expr {$current*$sendvars(unitLength)}]
 	    $widget.upper.bf.flag itemconfigure 1 -fill green
-	    switch -- [ExecuteModel $runState($node,intMethod) \
+	    switch -- [ExecuteModel $node $runState($node,intMethod) \
 			 $scaled_current $scaled_next] {
 			     -1 {
 				 set current $runState($node,currentTime)

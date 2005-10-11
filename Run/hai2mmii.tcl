@@ -76,8 +76,8 @@ proc old_do_model {node what args} {
     }
 }
 
-proc RunningInC {} {
-    global model_id myNode
+proc RunningInC {myNode} {
+    global model_id
 #    return 0
     return $model_id($myNode) ;# it is ready
 } 
@@ -681,8 +681,8 @@ proc InteractGUI {handle modelTime} {
     }
 }
 
-proc ResetModel {redo} {
-    global model_id instance_id myNode
+proc ResetModel {myNode redo} {
+    global model_id instance_id
     if {![info exists model_id($myNode)]} {
 	WarnNoProgram $myNode
 	return 0
@@ -701,8 +701,8 @@ proc ResetModel {redo} {
     }
 }
 
-proc ExecuteModel {howInt start finish} {
-    global model_id instance_id myNode
+proc ExecuteModel {myNode howInt start finish} {
+    global model_id instance_id
     if {[catch {
 	if {$model_id($myNode)} {
 	    c_executemodel $model_id($myNode) $instance_id($myNode) \
@@ -711,7 +711,7 @@ proc ExecuteModel {howInt start finish} {
 	    TclExecuteModel $howInt $start $finish
 	}
     } errList]} {
-	InteractGUI [lindex $errList 2]
+	InteractGUI $myNode [lindex $errList 2]
 	eval ExplainError $errList
 	return -1
     } else {
