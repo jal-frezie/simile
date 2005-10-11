@@ -543,7 +543,10 @@ proc LoseDTRef {statusLine} {
 }
 
 proc TellAllHelpers {node fun args} {
-    global helperTable
+    global helperTable myNode
+
+    set nodeForFocus $myNode
+    set myNode $node
     set doScrog [expr [string equal display $fun] && \
 		     [info exists helperTable(pestInterface)]]
     if {$doScrog} {
@@ -560,6 +563,7 @@ proc TellAllHelpers {node fun args} {
 	$helperTable(pestInterface)::RestoreOutputs
 	eval WriteLogs $node $args
     }
+    set myNode $nodeForFocus
 }
 
 # this saves us deleting all the do_for_nodes in the part of the program 
