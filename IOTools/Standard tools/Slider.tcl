@@ -316,14 +316,14 @@ proc click {winId node caption} {
     }
 
     proc SetArrayIfUsed {node indices value} {
-    	if {[RunningInC]} {
+    	if {[RunningInC $::myNode]} {
 	    c_setparamelement $node $indices $value
 	}
     }
 
     proc SetChoiceNumber {cbox node args} {
 	global comboChoices
-	if {[RunningInC]} {
+	if {[RunningInC $::myNode]} {
 	    c_setparamelement $node $args \
 		[expr [lsearch [$cbox cget -values] [$cbox cget -text]]+1]
 	} else {

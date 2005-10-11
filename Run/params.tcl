@@ -346,7 +346,7 @@ proc AcceptData {topNode compName notInput complain} {
         # submodel it represents
         set recordDims [lrange $paramDims($compName) 0 end-1]
         set afterTIME [string equal TIME [lindex $recordDims 0]]
-        set useCppArray [expr ([RunningInC]!=0)*($afterTIME+1)]
+        set useCppArray [expr ([RunningInC $topNode]!=0)*($afterTIME+1)]
         # 0 = no arrays, 1 = array for current only, 2 = arrays for time points
         #puts "node $compName has dims $recordDims"
         while {[set recordDepth [rsearch $recordDims RECORDS]] != -1} {
