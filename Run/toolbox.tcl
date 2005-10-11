@@ -563,6 +563,7 @@ proc DestroyHelpers {node} {
     do_if_running $node ExDestroyHelpers $node
 }
 
+
 proc load_dll {topNode lang progDir id node incs} {
     do_for_node $topNode ex_load_dll $topNode $lang $progDir $id $node $incs
 }
@@ -599,22 +600,28 @@ proc compile_c {workingDir} {
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
-        switch [PrefValue custom(compChoice) compChoice] {
-            GNU {
-                switch $tcl_platform(os) {
-                    {Windows NT} {
-                        exec cmd /c start /min g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-                        exec cmd /c start /min dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
-                    }
-                    {Windows 95} {
-                       exec start /m g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-                       exec start /m dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
-                   }
-        }
-            } Default {
+        set useComp [PrefValue custom(compChoice) compChoice]
+# use a script even when starting a properly installed GNU just in case
+# an error results
+#            GNU {
+#                switch $tcl_platform(os) {
+#                    {Windows NT} {
+#                        exec cmd /c start /min g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
+#                        exec cmd /c start /min dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+#                    }
+#                    {Windows 95} {
+#                       exec start /m g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
+#                       exec start /m dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
+#                   }
+#                }
+#            } 
+        switch -regexp -- $useComp {
+	GNU|Default {
         set batSt [open runmingw.bat w]
-        puts $batSt "set PATH=[file nativename [file join [file join \
+	if {[string equal Default $useComp]} {
+	    puts $batSt "set PATH=[file nativename [file join [file join \
                         [file dirname $TOOLDIR] System] bin]]"
+	}
         puts $batSt "g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp"
         puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
         close $batSt
@@ -977,6 +984,7 @@ proc CheckCompilerLocation {} {
     } else {
         set custom(compChoice) GNU
     }
+
     if {[string mat GNU [PrefValue custom(compChoice) compChoice]]} {
         set compiler g++
         set possDirs {{}}
