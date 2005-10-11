@@ -1174,7 +1174,8 @@ delete_obsolete_modes([use(N, Dir, Local, Units) | R1], DeadRef, NewList) :-
 /* Nodes whose completion status may be affected by a change in status
 of the given item */
 
-status_affects(Item, Affected) :-
+status_affects(Tgt, Affected) :-
+	find_base(Tgt, Item),
 	(Base = Item;
 	    find_ghosts(Item, Base)),
 	(Affected = Base;

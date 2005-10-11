@@ -683,7 +683,8 @@ dimensions too have changed. In any case, mark the submodel as in
 need of a rebuild as even if it doesn't change it will need to get the
 input values using the new units. */
 
-spread_dims(Node) :-
+spread_dims(Tgt) :-
+	find_base(Tgt, Node),
 	(implicit_function(Node, Obj),
 	find_all_comps(Sm, Obj),
 	add_parameter(Sm, 1, c_new, 0),
