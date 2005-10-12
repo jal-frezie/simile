@@ -62,7 +62,10 @@ FINDABLE EXPORT int __stdcall license_check(
 			   NULL, &Key, NULL)==0) {
 	    if (pUser != NULL) RegSetValueEx(Key, "licensee_name", 0, REG_SZ, (CONST BYTE*)pUser, strlen(pUser)+1);
 	    if (pCompany != NULL) RegSetValueEx(Key, "licensee_corp", 0, REG_SZ, (CONST BYTE*)pCompany, strlen(pCompany)+1);
-	    if (pSerial != NULL) RegSetValueEx(Key, "license_code", 0, REG_SZ, (CONST BYTE*)pSerial, strlen(pSerial)+1);
+	    if (pSerial == NULL) {
+		pSerial="none";
+	    } // prevents crashes due to non-existence
+	    RegSetValueEx(Key, "license_code", 0, REG_SZ, (CONST BYTE*)pSerial, strlen(pSerial)+1);
 
 	    struct tm unixdawn;
 	    time_t now;

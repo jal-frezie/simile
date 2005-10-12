@@ -854,7 +854,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
   if (error != TCL_OK) {
     return error;
-  }
+  }
   
   nodeId = getNodeId(modelType, Tcl_GetStringFromObj(argv[2], NULL));
   if (nodeId) {
@@ -1488,6 +1488,8 @@ int licenseRight (Tcl_Interp *interp) {
 #ifdef SIM_LICENSED
 #ifdef USE_MY_HMAC
   Tcl_Obj* dataCombo;
+  const char* offered;
+
   dataCombo = Tcl_GetVar2Ex(interp, "userinfo", "name", TCL_LEAVE_ERR_MSG);
   if (dataCombo) {
     dataCombo = Tcl_DuplicateObj(dataCombo);
@@ -1509,8 +1511,8 @@ int licenseRight (Tcl_Interp *interp) {
 #endif
 
   /* check it matches what we got before */
-  if (strncmp(Tcl_GetVar2(interp, "userinfo", "license_code", 0), 
-	      Tcl_GetStringResult(interp), 10)) {
+  offered = Tcl_GetVar2(interp, "userinfo", "license_code", 0);
+  if (!offered || strncmp(offered, Tcl_GetStringResult(interp), 10)) {
 //    Tcl_AppendResult(interp, " is license code", (char *)NULL);
 //    return TCL_ERROR;
     return 0;
