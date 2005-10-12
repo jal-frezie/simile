@@ -1247,20 +1247,9 @@ proc ex_load_dll {topNode lang progDir id node incs} {
     }
 }
 
-proc set_connections {connects} {
-    global model_id model_ids instance_id
-# Run is always scrubbed, this should not need to
-    # ShowMessage debug info "Trimming..." ok
-#    if {[info exists instance_id]} {
-#        c_exitmodel $model_id $instance_id
-#        unset instance_id
-#        unset model_ids
-#    }
-    #ShowMessage debug info "About to load: $connects" ok
-    set_connection_database $connects
-    #ShowMessage debug info "...loaded." ok
-    #   now...dont set running_c till instance made -- use model_id till then
-    #    set running_c 1
+proc set_connection_database {connects} {
+#    ShowMessage debug info "Setting $connects" ok
+    c_set_connection_database $connects
 }
 
 # FindPhase tells us when a node in a separate submodel will be

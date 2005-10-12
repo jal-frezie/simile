@@ -1216,8 +1216,8 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
   int line, typeCount, typeIdx;
 
   while (searchPoint) {
-    //sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
-    //showMess(globMess);
+    //    sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
+    //    showMess(globMess);
     tryModel = searchPoint->model;
     if ((line=tryModel->getinfo(node))>-1) {
       bottomLine = tryModel->nodedata + line;
@@ -1247,24 +1247,28 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
       }
       localUsed[usedCount] = NULL;
 
-      if (!strcmp(node,searchPoint->node)) {
-	*dims = *path = 0;
-	*usedTypes = NULL;
-	bottomLine = NULL;
-      } else if (searchinfo(searchPoint->node, tgtModel, caption,
-			dims, path, usedTypes)) {
-	  append_ints_to_null(dims, localDims, SEPARATE, 0);
-	  append_ints_to_null(path, bottomLine->path, SEPARATE, 
-			      (int)searchPoint->model);
-	  append_ptrs_to_null(usedTypes, localUsed);
-	  strcpy(caption + strlen(caption), // was strrchr(caption, '/'),
-		 localCapt);
+      if (strcmp(node,searchPoint->node)) {
+	if (!searchinfo(searchPoint->node, tgtModel, caption,
+		       dims, path, usedTypes)) {
+	  return NULL;
+	}
       } else {
-	strcpy(caption, localCapt);
+	*tgtModel = (long int)tryModel;
+      }
+
+      if (*tgtModel!=(long int)tryModel) {
+	append_ints_to_null(dims, localDims, SEPARATE, 0);
+	append_ints_to_null(path, bottomLine->path, SEPARATE, 
+			    (int)searchPoint->model);
+      } else {
+	*dims = *path = 0;
 	append_ints_to_null(dims, localDims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
-	append_ptrs_to_null(usedTypes, localUsed);
+	*usedTypes = NULL;
+	*caption = 0;
       }
+      strcpy(caption + strlen(caption), localCapt);
+      append_ptrs_to_null(usedTypes, localUsed);
 
       /* Old version with only one model hierarchy...
       if (searchPoint == nodeModelList) {
@@ -1313,7 +1317,7 @@ long int fetch_top_instance(long int modelType, char* spare) {
    for (count=0; connCount>count; count++) {
      currConnect = &connectData[count];
 
-     currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
+     //     currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
      if (searchinfo(currConnect->TopNode, &mSpare, spare, 
 		    dims, path, spareTypes)) {
        tree = new int[32];
@@ -1346,18 +1350,14 @@ long int fetch_top_instance(long int modelType, char* spare) {
 		 currConnect->TopNode);
        return 0;
      }
+     /*     sprintf(globMess, "Top node path %d %d %d %d %d %d, Source node path %d %d %d %d %d %d, count2 %d",
+	     *path, *(path+1), *(path+2), *(path+3), *(path+4), *(path+5),
+	     *tree, *(tree+1), *(tree+2), *(tree+3), *(tree+4), *(tree+5),
+	     count2);
+	     showMess(globMess); */
+     // now hopefully we won't be using the reference strings anymore, so...
    }     
-   /* debug
-   sprintf(spare, "Top node path %d %d %d %d %d %d, Source node path %d %d %d %d %d %d, count2 %d",
-	   *path, *(path+1), *(path+2), *(path+3), *(path+4), *(path+5),
-	   *tree, *(tree+1), *(tree+2), *(tree+3), *(tree+4), *(tree+5),
-	   count2);
-   interp->result = spare;
-   Tcl_SetStringObj(Tcl_GetObjResult(interp), spare, -1);
-   return TCL_ERROR;
-   */
-   // now hopefully we won't be using the reference strings anymore, so...
-
+   
    return (long int)((Model*)modelType)->create();
 }
 
@@ -1452,6 +1452,8 @@ int execute(long int modelType, long int modelHandle, int how_int,
 
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
   level = get_ptr((long int)type, (long int)level, id_meta, dims);
+  //  sprintf(globMess, "got ptr %ld", level);
+  //  showMess(globMess);
   if (*(*id_meta)++ == SEPARATE) {
     type = (Model*)*(*id_meta)++;
     return search_ptr(type, *(void**)level, id_meta, dims);
@@ -1460,8 +1462,6 @@ void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
   }
 }
 
-int g_r_v_bug;
-
 void* get_remote_value(void* typeRef, void* topInstRef, int level,
 			    int arcIndx, int* subList) {
   connectRecord* currentData;
@@ -1469,14 +1469,14 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
 
   currentData = &connectData[((Model*)typeRef)->connLines[arcIndx]];
   tree = currentData->UpTree;
+
   while (level-->0) {
     while (*tree++ != -1) {}
   }
   if (topInstRef) {
     currentData->SearchBase = topInstRef;
   }
-  g_r_v_bug = (int)(100*(*tree) + 10*(*(tree+1)) + *(tree+2));
-  //  return(&g_r_v_bug);
+
   return(search_ptr((Model*)typeRef, currentData->SearchBase, 
 		    &tree, &subList));
 }

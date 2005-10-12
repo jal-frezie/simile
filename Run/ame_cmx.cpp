@@ -854,7 +854,7 @@ FINDABLE int getnodeidCmd(ClientData clientData, Tcl_Interp *interp,
   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
   if (error != TCL_OK) {
     return error;
-  }
+  }
   
   nodeId = getNodeId(modelType, Tcl_GetStringFromObj(argv[2], NULL));
   if (nodeId) {
@@ -1605,7 +1605,7 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "set_connection_database", SetConnDBCmd, 
+  Tcl_CreateObjCommand(interp, "c_set_connection_database", SetConnDBCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
