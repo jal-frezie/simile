@@ -160,12 +160,9 @@ typedef struct node_data_line_t {
 typedef struct connectRecord_t {
   char* TopArc;
   char* TopNode;
-  void* TopModel; // should be Model* but one has to be declared first
   char* SourceNode;
   int DestCount;
   char** Dests;
-  void* SearchBase;
-  int* UpTree;
 } connectRecord;
 
 /* this is defined in the stub, which is loaded as a library...well it

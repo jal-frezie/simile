@@ -89,11 +89,13 @@ char globMess[256];
 int last_op = 0;
 unsigned long int last_exit = 0, last_update = 0;
 unsigned long int took[]={0,0,0,0,0,0,0,0};
+long int topType;
 BOOLEAN resetting;
 
 BOOLEAN check_gui(void* id, double model_time, int this_op) {
   unsigned long int flash, this_update;
-  BOOLEAN result;
+  long int while_running;
+  BOOLEAN result, while_resetting;
   
   flash=CLOCKS_PER_SEC/50; // 20ms
   // first record how much time the last op took
@@ -102,7 +104,11 @@ BOOLEAN check_gui(void* id, double model_time, int this_op) {
   last_op = this_op;
   
   if ((this_update-last_update)>flash || took[this_op]>flash) {
+    while_running = topType;
+    while_resetting = resetting;
     result=interact_gui(id, model_time);
+    topType = while_running;
+    resetting = while_resetting;
     this_update=clock(); // GUI may have taken time
     last_update=this_update;
   } else {
@@ -303,6 +309,7 @@ public:
     do {
       switch (*src) {
       case MEMBERS:
+      case SEPARATE:
 	continue;
       case START_VM:
 	cutting_bases = TRUE;
@@ -418,9 +425,9 @@ public:
   void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
     recordSet* newRecord;
 
-    sprintf(globMess, "locate_elt array %ld off %d dim %d indx %d",
-	    startPtr, off, *dimPtr, *indxs);
-	    /* showMess(globMess); */
+    //    sprintf(globMess, "locate_elt array %ld off %d d0 %d d1 %d d2 %d indx %d",
+    //	    startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
+    //    showMess(globMess);
     if (*dimPtr==RECORDS) {
       newRecord = (recordSet*)(startPtr + off*sizeof(recordSet));
       if  (*indxs) { // more indices, use to get value from a record submodel
@@ -544,6 +551,9 @@ public:
     if (nodeLine->eval==INPUT && resetting && !(time_point_exists(0.0))) {
       memcpy(insertionPt, tgt, size_for_type());
     } else {
+      //      sprintf(globMess, "Gonna copy %d from %ld to %ld", size_for_type(),
+      //	      insertionPt, tgt);
+      //      showMess(globMess);
       memcpy(tgt, insertionPt, size_for_type());
     }
   }
@@ -597,6 +607,11 @@ void reset_time_series(long int id) {
   }
 }
 
+typedef struct channelRecord_t {
+  void* SearchBase;
+  int* UpTree;
+} channelRecord;
+
 void setdt(double, int);
 
 /* prototypical declarations for functions to be supplied by the model dll
@@ -642,6 +657,7 @@ public:
   int nodecount;
   node_data_line* nodedata;
   int *connLines;
+  channelRecord* channelData; // only used in top model
   char erreur[256];
 
   Model(char* fileName) {
@@ -693,7 +709,7 @@ sprintf(globMess, "Loaded %ld", handle);
   	throw DllLossage("initialize", fileName, strdup(erreur)); */
 
 
-
+    channelData = NULL;
 
     connLines = new int[inArcCount];
     /* Create a local reference for each component to the global table */
@@ -722,6 +738,7 @@ sprintf(globMess, "Loaded %ld", handle);
     if (!UNLOAD_DLL(handle)) {
       throw DllLossage("unload", "", WHAT_WENT_WRONG());
     }
+    if (channelData) delete channelData;
   }
 
   /* Next bit is really boring...and possibly needles...but I feel I have to
@@ -765,7 +782,6 @@ sprintf(globMess, "Loaded %ld", handle);
   int resetmodel(void* modelHandle, int top_phase) {
     int tweak_phase;
 
-    resetting=(top_phase==-2);
     for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
       lts[tweak_phase]=0;
       setdt(0, -tweak_phase);
@@ -1107,15 +1123,18 @@ int set_time_point_elt(char* nodeId, double time, double val, int* indxs) {
 void get_value_pointer(void* modelSlot, char* nodeId, int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
-  sprintf(globMess, "get_value_pointer node %s indx0 %d",
-	  nodeId, *indxs);
-	  /* showMess(globMess); */
   paramArrayItem = param_array_item(param_array_base, nodeId);
+  //  sprintf(globMess, "get_value_pointer for %ld node %s indx0 %d item %ld",
+  //	  modelSlot, nodeId, *indxs, paramArrayItem);
+  //  showMess(globMess);
   if (paramArrayItem) {
     paramArrayItem->extract_elt(modelSlot, indxs);
   } else {
     get_client_value_pointer(modelSlot, nodeId, ic, indxs);
   }
+  //  sprintf(globMess, "Think we got %lf", *(double*)modelSlot);
+  //  showMess(globMess);
+
 }
 
 char* load_model(char* fileName, char* nodeName, long int* modelType) {
@@ -1307,6 +1326,7 @@ long int fetch_top_instance(long int modelType, char* spare) {
    int dims[32], path[32];
    int* tree;
    connectRecord* currConnect;
+   channelRecord* currChannel;
    long int mSpare;
    enum_type_data* spareTypes[32];
 
@@ -1314,8 +1334,10 @@ long int fetch_top_instance(long int modelType, char* spare) {
 
       model types must be loaded first */
 
+   ((Model*)modelType)->channelData = new channelRecord[connCount];
    for (count=0; connCount>count; count++) {
-     currConnect = &connectData[count];
+     currConnect = connectData + count;
+     currChannel = ((Model*)modelType)->channelData + count;
 
      //     currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
      if (searchinfo(currConnect->TopNode, &mSpare, spare, 
@@ -1337,7 +1359,7 @@ long int fetch_top_instance(long int modelType, char* spare) {
 	   count2++;
 	 }
 
-	 currConnect->UpTree = &(tree[count2]);
+	 currChannel->UpTree = &(tree[count2]);
 
        } else {
 	 sprintf(spare, "Found no path for source node %s",
@@ -1357,7 +1379,7 @@ long int fetch_top_instance(long int modelType, char* spare) {
 	     showMess(globMess); */
      // now hopefully we won't be using the reference strings anymore, so...
    }     
-   
+   delete connectData;
    return (long int)((Model*)modelType)->create();
 }
 
@@ -1440,13 +1462,16 @@ to drive the model...
 */
 
 int reset(long int modelType, long int modelHandle, int top_phase) {
-  return ((Model*)modelType)->resetmodel((void*)modelHandle, top_phase);
+  topType = modelType;
+  resetting=(top_phase==-2);
+  return ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
 }
 
 int execute(long int modelType, long int modelHandle, int how_int,
 	 double starttime, double* endtime) {
+  topType = modelType;
   resetting=FALSE;
-  return ((Model*)modelType)->executemodel((void*)modelHandle, 
+  return ((Model*)topType)->executemodel((void*)modelHandle, 
 					how_int, starttime, endtime);
 }
 
@@ -1464,10 +1489,12 @@ void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
 
 void* get_remote_value(void* typeRef, void* topInstRef, int level,
 			    int arcIndx, int* subList) {
-  connectRecord* currentData;
+  channelRecord* currentData;
   int* tree;
+  int recordNo;
 
-  currentData = &connectData[((Model*)typeRef)->connLines[arcIndx]];
+  recordNo = ((Model*)typeRef)->connLines[arcIndx];
+  currentData = ((Model*)topType)->channelData + recordNo;
   tree = currentData->UpTree;
 
   while (level-->0) {
@@ -1476,7 +1503,11 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
   if (topInstRef) {
     currentData->SearchBase = topInstRef;
   }
-
+  
+  //  sprintf(globMess, "get_remote: type %ld base %ld tree %d,%d,%d,%d,%d,%d",
+  //	  typeRef, currentData->SearchBase, 
+  //	  tree[0], tree[1], tree[2], tree[3], tree[4], tree[5]);
+  //  showMess(globMess);
   return(search_ptr((Model*)typeRef, currentData->SearchBase, 
 		    &tree, &subList));
 }
@@ -1488,8 +1519,9 @@ void* advance_ptr(void* typeRef, void* topInstRef) {
 }
 
 void search_from(void* typeRef, int nodeIndx, void* instPtr) {
-
-  connectData[((Model*)typeRef)->connLines[nodeIndx]].SearchBase = instPtr;
+  int recordNo;
+  recordNo = ((Model*)typeRef)->connLines[nodeIndx];
+  ((Model*)topType)->channelData[recordNo].SearchBase = instPtr;
 }
 
 void update_submodel(char* nodeId, void* instanceId,
@@ -1506,6 +1538,8 @@ void advance_submodel(char* nodeId, void* instanceId,
 
 int eval_submodel(char* nodeId, void* instanceId,
 		       double start_time, int phase, BOOLEAN exo) {
+  //  sprintf(globMess, "Entering submodel ph.%d ex.%d", phase, exo);
+  //  showMess(globMess);
   return eval((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId,
 
 	      start_time, phase, exo);

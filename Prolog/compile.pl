@@ -472,12 +472,11 @@ pick_state_vars([], [], [], []).
 
 pick_state_vars([One | All], Rate, State, Update) :-
 	pick_state_vars(All, MoreRate, MoreState, MoreUpdate),
-	(One = make(_,_,_,_, [Act]),
-	    member(Act, [assign(SV, SV+stage_incr(_,_,_)),
-			 update_submodel(_,_,_)]), !,
+	One = make(Tgt, _,_,_, Acts),
+	(member(Acts, [[assign(SV, SV+stage_incr(_,_,_))],
+		      [update_submodel(_,_,_)]]), !,
 	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
-	One = make(Tgt, _,_,_, Act),
-	    (member(Tgt, [lastvalue(_)]); Act = advance_submodel(_,_,_)), !,
+	(member(Tgt, [lastvalue(_)]); Acts = [advance_submodel(_,_,_)]), !,
 	    Rate = MoreRate, State = [One | MoreState], Update = MoreUpdate;
 	Rate = [One | MoreRate], State = MoreState, Update = MoreUpdate).
 

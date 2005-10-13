@@ -831,13 +831,12 @@ FINDABLE int exitmodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-    dllProblem = myexit(modelType, modelHandle);
-    if (dllProblem) {
-      Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
-      delete dllProblem;
-      return TCL_ERROR;
-    }
-    delete *connectDataPtr;
+  dllProblem = myexit(modelType, modelHandle);
+  if (dllProblem) {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
+    delete dllProblem;
+    return TCL_ERROR;
+  }
   return TCL_OK;
 }
 
