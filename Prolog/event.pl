@@ -1989,11 +1989,12 @@ attempt_new_component(Parent, Box) :-
 
 relate_graphics(Node_name, Node_trans) :-
 	move_boxes(Node_name, Node_trans),
-	setof(DoLink,
+	(setof(DoLink,
 	      Link^(find_all_links(Node_name, Link),
 		    (has_outer_equiv(DoLink, Node_name, Link); DoLink = Link)),
-	      MessedLinks),
-	menu:reroute_sections(MessedLinks),
+	      MessedLinks), !,
+	    menu:reroute_sections(MessedLinks);
+	true),
 	remove_old_incomplete.
  /* re-route flows first so influences to re-routed bowties come out right.
  Note only cross border flows need rerouting. 
