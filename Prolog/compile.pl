@@ -476,8 +476,8 @@ pick_state_vars([One | All], Rate, State, Update) :-
 	    member(Act, [assign(SV, SV+stage_incr(_,_,_)),
 			 update_submodel(_,_,_)]), !,
 	    Rate = MoreRate, State = MoreState, Update = [One | MoreUpdate];
-	One = make(Tgt, _,_,_,_),
-	    member(Tgt, [lastvalue(_)]), !,
+	One = make(Tgt, _,_,_, Act),
+	    (member(Tgt, [lastvalue(_)]); Act = advance_submodel(_,_,_)), !,
 	    Rate = MoreRate, State = [One | MoreState], Update = MoreUpdate;
 	Rate = [One | MoreRate], State = MoreState, Update = MoreUpdate).
 
@@ -1118,6 +1118,9 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 			   make(exts(Dest), [time | Conds], DestPath, _, Xvl),
 			   make(none, [time], DestPath, _,
 				[update_submodel(Node, arr(Ptr, Dest, []),
+						   BuiltWith)]),
+			   make(none, [time], DestPath, _,
+				[advance_submodel(Node, arr(Ptr, Dest, []),
 						   BuiltWith)])]);
 	    /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
