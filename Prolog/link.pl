@@ -44,6 +44,7 @@ Arc is_connector from Node1 to Node2 :-
 
 Arc is_new_connector from Source to Dest :-
 	unique_name( arc, Arc ),
+	\+ Arc is_connector _, !,
 	Arc is_also_connector from Source to Dest.
 
 Arc is_also_connector from Source to Dest :-

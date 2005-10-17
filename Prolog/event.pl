@@ -736,7 +736,7 @@ spread_colour(Node, NewDims) :-
 	fail; true.
 
 new_window_for(Submodel, TopNode, Canvas_name, InitDepths, IsTopLevel) :-
-	utility:unique_name('.mswindow', Topwin),
+	utility:unique_name('.mswindow', Topwin), !,
 	window_size_for(Submodel, Sub_extent, Scale),
 	get_window_colour(Submodel, Colour, Images),
 	add_window(Topwin, TopNode, Submodel, Sub_extent, Canvas_name, 
@@ -1439,11 +1439,16 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 		the same source if there is one handy */
 	member(Ltype, [influence, ghost_link]),
                 \+ find_type(OrigStart, submodel),
-		get_chain(OrigStart, Target, Top, Exits, Entries),
+		get_chain(OrigStart, Target, _Top, Exits, Entries),
 		reverse(Exits, BiggestFirst),
-		append(Entries, [Top | BiggestFirst], NearestFirst),
+/*		append(Entries, [Top | BiggestFirst], NearestFirst),
 		member(StartPoint, NearestFirst),
-		find_all_comps(StartPoint, Start),
+		Start draws_inside StartPoint,
+*/
+                (member(StartPoint, Entries),
+		    m_class:Start is_connector from _ to StartPoint;
+		member(StartPoint, BiggestFirst),
+		    m_class:Start is_connector from StartPoint to _),
 		get_possible_start(OrigStart, Start),
 % following lines stop influences and ghost links sharing sections
 		(ghost_link(Start, _,_) -> Ltype = ghost_link;

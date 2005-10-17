@@ -657,7 +657,9 @@ new_line(Type, Attributes, Start, Finish, Arc) :-
 	Arc is_new_connector from Start to Finish,
 	Arc has_new_type Type,
 	Arc draws_inside Parent,
-	unique_name_for_new(Parent, Type, Name),
+	unique_name_for_new(Type, Name),
+	\+ (Part has_attribute name of Name,
+	     Part draws_inside Parent), !,
 	add_line_attributes(Arc, [[name, Name] | Attributes]),
 	add_implicit_function(Arc, _).
 
@@ -673,7 +675,9 @@ asserted as part of the system initialization. Windows created later will have
 their own display parameter. */
 
 make_node(Parent, Type, Node) :-
-	unique_name_for_new(Parent, Type, Name),
+	unique_name_for_new(Type, Name),
+	\+ (Part has_class_refinement name of Name,
+	     Parent has_part Part), !,
 	Node is_new_part_of Parent,
 	Node has_new_class Type,
 	Node has_new_class_refinement name of Name.
@@ -1460,18 +1464,9 @@ add_new_line_between(Line_type, Start, Finish, Top_link) :-
 	Top_link = Forward_link,
 		Top_link = Backward_link).
 
-unique_name_for_new(Parent, Type, Name) :-
+unique_name_for_new(Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
-	repeat,
-	utility:unique_name(Abbrev, Name, _),
-/*	(Name = TestName;
-	count_to(0, 100000, 1, Sub),
-	    sicstus_format_to_chars("~a_~d", [TestName, Sub], NameStr),
-	    name(Name, NameStr)),
-*/	\+ (Part has_class_refinement name of Name,
-	     Parent has_part Part;	
-	Part has_attribute name of Name,
-	     Part draws_inside Parent), !.
+	utility:unique_name(Abbrev, Name, _).
 
 get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 			    Comment, EnumSpecs, Fix, Hide, Separate]) :-
@@ -1588,10 +1583,9 @@ get_action_point(Top, End, Point) :-
 
 make_desktop(Desktop, Canvas_name) :-
         m_class:Root is_root,
-        m_class:Desktop is_new_part_of Root,
-        m_class:Desktop has_new_class submodel,
-        unique_name_for_new(Root, 'Desktop', ModelName),
-        m_class:Desktop has_new_class_refinement name of ModelName,
+	make_node(Root, submodel, Desktop),
+	unique_name_for_new('Desktop', ModelName), !,
+	add_parameter(Desktop, 0, name, ModelName),
 	state:set_initial_box_sizes(Desktop),
         state:get_initial_window_size(X, Y),
         image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),

@@ -34,23 +34,20 @@ unique_name( Atom, Name, Size ) :-
 	(retract(genint(Atom, LastAnswer )), !;
 	    LastAnswer = 0),
 	FirstAnswer is LastAnswer+1,
-	count_to(FirstAnswer, 100000, 1, Integer),
-	(nonvar(Size); Size is truncate(log(max(Integer, 1))/log(10))//1 + 1),
+	count_to(FirstAnswer, 100000, 100, Integer), %fast forward if retrying
 	name( Atom, AtomChars ),
 	name( Integer, IntegerChars ),
-	length( IntegerChars, LIC ),
-	RealSize is min( max( LIC, Size ), 10 ),
-	append( "00000000000000000", IntegerChars, PaddedIntegerChars ),
-	length( TruncatedIntegerChars, RealSize ),
-	append( _, TruncatedIntegerChars, PaddedIntegerChars ),
+	(nonvar(Size),
+	    length( IntegerChars, LIC ),
+	    RealSize is min( max( LIC, Size ), 10 ),
+	    append( "00000000000000000", IntegerChars, PaddedIntegerChars ),
+	    length( TruncatedIntegerChars, RealSize ),
+	    append( _, TruncatedIntegerChars, PaddedIntegerChars );
+	var(Size),
+	    TruncatedIntegerChars = IntegerChars),
 	append( AtomChars, TruncatedIntegerChars, NameChars ),
 	name( Name, NameChars ),
-	\+ m_class:is_part_of(Name, _),
-	\+ m_class:is_connector(Name, _),
-	append(NameChars, ".canvas", CanvasNameChars),
-	name(CanvasName, CanvasNameChars),
-	\+ state:shows_model(CanvasName, _), !,
-	assert(genint(Atom, Integer)).
+	(assert(genint(Atom, Integer)); retract(genint(Atom, Integer)), fail).
 
 /* Things that are used in the eqn language but cause gnu prolog to not
 load properly if they have already been declared */

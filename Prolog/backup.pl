@@ -282,6 +282,8 @@ swap_args([Arg | Args], [Template | Templates], Swaps, NewSwaps,
 	 member(Arg-NewArg, Swaps)), !,
 	    MidSwaps = Swaps;
 	 unique_name(Template, NewArg),
+	    \+ m_class:is_part_of(NewArg, _),
+	    \+ m_class:is_connector(NewArg, _), !,
 	    MidSwaps = [Arg-NewArg | Swaps]),
 	swap_args(Args, Templates, MidSwaps, NewSwaps, NewArgs).
 

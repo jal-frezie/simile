@@ -50,9 +50,10 @@ root is_root.
 :- op(450, xf, is_new_model_class).
 
 Node is_new_model_class :-
-	\+ _ is_part_of _, !,
+	(\+ _ is_part_of _,
 	    Node = node00000;
-	unique_name( node, Node ).
+	unique_name( node, Node ),
+	    \+ Node is_part_of _), !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attach an existing node to a parent
