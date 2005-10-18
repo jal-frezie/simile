@@ -178,9 +178,23 @@ proc AddHelperSublist {fm title ct} {
     }
 }
 
+proc SystemHelperCall {type node act args} {
+    global myNode
+    if {[info exists myNode]} {
+	set nodeForFocus $myNode
+    }
+    set myNode $node
+    namespace eval $type $act $args
+    unset myNode
+    if {[info exists nodeForFocus]} {
+	set myNode $nodeForFocus
+    }
+}
+
 proc CreateHelperWindow {helperId helperTitle} {
-    set winId [NewHelperWindow [GetNodeFromFocus] $helperId $helperTitle]
-    ${helperId}::initialize $winId
+    set node [GetNodeFromFocus]
+    set winId [NewHelperWindow $node $helperId $helperTitle]
+    SystemHelperCall $helperId $node initialize $winId
     if {[PrefValue custom(helperManager) helperManager]} {
         ::RunEnv::ChildrenFocusParent $winId
     }
@@ -318,7 +332,7 @@ proc ProdObj {topNode nodeId caption} {
 		if {![llength $nodeId]} { ;# get from caption
 		    set nodeId [GetIdFromCaptionPath $caption]
 		}
-		${helperId}::click $target $nodeId \
+		SystemHelperCall $helperId $topNode click $target $nodeId \
 		    [lindex [split $caption /] end]
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
@@ -505,7 +519,7 @@ proc CreateView {node oldPath} {
 	    set oldStatus [LoseDTRef $oldStatus]
 	}
 	set helperTable($winId,status) [RestoreCrs $oldStatus]
-	if {[catch {${helperId}::Restore $winId}]} {
+	if {[catch {SystemHelperCall $helperId $node Restore $winId}]} {
 	    kill_helper_window $winId
 	    ShowMessage "Problem restoring helper" warning $errorInfo ok
 	}
@@ -517,14 +531,14 @@ proc LoadMREFormatView {node stream origVersion} {
     global helperTable
     while {[gets $stream helperId] >= 0} {
         if {[namespace exists $helperId]} {
-            set helperTitle [${helperId}::identify]
+            set helperTitle [SystemHelperCall $helperId $node identify]
             set winId [NewHelperWindow $node $helperId $helperTitle]
             gets $stream oldStatus
 	    if {$origVersion<4.0} {
 		set oldStatus [LoseDTRef $oldStatus]
 	    }
             set helperTable($winId,status) [RestoreCrs [LoseDTRef $oldStatus]]
-            ${helperId}::Restore $winId
+            SystemHelperCall $helperId $node Restore $winId
         }
     }
 }
@@ -1080,7 +1094,7 @@ proc StartRun {node} {
     if {[PrefValue custom(helperManager) helperManager]} {
 	set helperId $helperTable(VariableList)
 	set winId [NewHelperWindow $node $helperId "Variables"]
-	${helperId}::initialize $winId
+	SystemHelperCall $helperId $node initialize $winId
         ::RunEnv::ChildrenFocusParent $winId
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page

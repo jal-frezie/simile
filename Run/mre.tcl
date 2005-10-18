@@ -1077,7 +1077,8 @@ namespace eval RunEnv {
                     set oldStatus [LoseDTRef $oldStatus]
                 }
                 set helperTable($winId,status) [RestoreCrs $oldStatus]
-                if {[catch {${helperId}::Restore $winId}]} {
+                if {[catch {SystemHelperCall $helperId $currentNode \
+				Restore $winId}]} {
                     DeleteHelperCurrentContainer
                     ShowMessage "Problem restoring helper" warning $errorInfo \
                             ok
@@ -1116,7 +1117,7 @@ namespace eval RunEnv {
         while {[gets $stream line] >= 0} {
             switch [scan $line %s] {
                 container {
-                    LoadContainer $stream $line $origVersion
+                    LoadContainer $currentNode $stream $line $origVersion
                 }
                 panedwindow {
                     #%puts $stream "panedwindow $panedwindow [$panedwindow cget -orient]"
@@ -1215,7 +1216,7 @@ namespace eval RunEnv {
         }
     }
     
-    proc LoadContainer {stream line origVersion} {
+    proc LoadContainer {node stream line origVersion} {
         global helperTable
         variable dp0
         
@@ -1233,7 +1234,7 @@ namespace eval RunEnv {
             set oldStatus [LoseDTRef $oldStatus]
         }
         set helperTable($winId,status) [RestoreCrs $oldStatus]
-        ${helperId}::Restore $winId
+        SystemHelperCall $helperId $node Restore $winId
         #bind $winId <Destroy>  "kill_helper_window $winId"
         ChildrenFocusParent $winId
     }

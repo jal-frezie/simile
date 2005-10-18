@@ -947,7 +947,7 @@ sprintf(globMess, "Loaded %ld", handle);
   */
   int getinfo(char* node_id) {
     int count;
-    for (count=0;nodecount>count;++count) {
+    for (count=1;nodecount>count;++count) {
       if (!strcmp(node_id, nodedata[count].name)) { 
       return count;
       }
@@ -1238,7 +1238,9 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
     //    sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
     //    showMess(globMess);
     tryModel = searchPoint->model;
-    if ((line=tryModel->getinfo(node))>-1) {
+    if (!strcmp(node,searchPoint->node)) line=0;
+    else line=tryModel->getinfo(node);
+    if (line>-1) {
       bottomLine = tryModel->nodedata + line;
       typeCount = tryModel->make_full_caption(line, localCapt, 
 					      localDims, localTypes);
@@ -1266,7 +1268,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
       }
       localUsed[usedCount] = NULL;
 
-      if (strcmp(node,searchPoint->node)) {
+      if (line) {
 	if (!searchinfo(searchPoint->node, tgtModel, caption,
 		       dims, path, usedTypes)) {
 	  return NULL;
