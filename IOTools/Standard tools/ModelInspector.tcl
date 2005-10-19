@@ -171,7 +171,7 @@ namespace eval ::ModelInspector63654 {
 		set value [lindex $mVal 0]
 		#puts "trans $trans value $value"
 	    }
-	    AddPopupMessage novalue \#ffffc0 $node GetShortVals $node $plName
+	    AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
 	}
     }
     
