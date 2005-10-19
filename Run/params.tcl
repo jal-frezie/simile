@@ -24,7 +24,7 @@ proc FileParamDialogue {topWin mustShow} {
         set notInput [lsearch {INPUT TABLE} \
                 [GetCompProperty $topNode Eval $node]]
         if {$notInput != -1} {
-            AddEntry $t $topNode $topCapt $node $mustShow $notInput
+            AddEntry $t $topNode $node $mustShow $notInput $topCapt
         }
     }
     # now check for any parameter values that are no longer needed
@@ -94,7 +94,7 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
-proc AddEntry {winId topNode topCapt node mustShow notInput} {
+proc AddEntry {winId topNode node mustShow notInput args} {
     global paramDims iconImages msgs
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -106,14 +106,17 @@ proc AddEntry {winId topNode topCapt node mustShow notInput} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    set compName /$topCapt[GetCompProperty $topNode Caption $node]
+    set compName [GetCompProperty $topNode Caption $node]
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
         set suppliedData($compName) {}
         return
     }
     set nodeDims [GetCompProperty $topNode Dims $node]
-    set levels [split [string range $compName 1 end] /]
-    
+    set levels [concat [list $args] [split [string range $compName 1 end] /]]
+    if {[llength $args]} {
+	set compName /$args$compName
+    }
+
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
     # there will be null entries in the table for vm model levels.

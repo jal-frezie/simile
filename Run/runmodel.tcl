@@ -1367,10 +1367,11 @@ proc ModelDirectory {} {
 }
 
 proc SetNodeForHelper {node} {
-    global runHow myNode
+    global runHow myNode sender
 
     if {[info exists runHow(where)]} {
 	set myNode $node
+	set sender $runHow(sendCmd)
     }
 }
 
