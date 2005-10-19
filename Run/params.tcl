@@ -9,11 +9,12 @@ proc FileParamDialogue {topWin mustShow} {
     global paramData widgetNames myNode
 
     set topNode $myNode
+    set topCapt [GetExecTitle $topNode]
     set allNodes [GetCompProperty $topNode Objects]
     # do it now to shake out errors before opening window
     set t [PutItThere .fpdialogue $topWin]
     wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
-    wm title $t "Enter file parameters"
+    wm title $t "File parameters for $topCapt"
     if {!$mustShow} {
         set paramData(needed) {}
     }
@@ -23,14 +24,14 @@ proc FileParamDialogue {topWin mustShow} {
         set notInput [lsearch {INPUT TABLE} \
                 [GetCompProperty $topNode Eval $node]]
         if {$notInput != -1} {
-            AddEntry $t $topNode $node $mustShow $notInput
+            AddEntry $t $topNode $topCapt $node $mustShow $notInput
         }
     }
     # now check for any parameter values that are no longer needed
     set ::bermudaTriangle {}
-    foreach curVal [array names paramData /*] {
+    foreach curVal [array names paramData /$topCapt/*] {
         if {[llength $paramData($curVal)]} {
-            switch [ExistCheck $topNode $curVal {Current database}] {
+            switch [ExistCheck $topNode $curVal database] {
                 break {
                     CancelParams
                     break
@@ -93,7 +94,7 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
-proc AddEntry {winId topNode node mustShow notInput} {
+proc AddEntry {winId topNode topCapt node mustShow notInput} {
     global paramDims iconImages msgs
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -105,13 +106,13 @@ proc AddEntry {winId topNode node mustShow notInput} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    set compName [GetCompProperty $topNode Caption $node]
+    set compName /$topCapt[GetCompProperty $topNode Caption $node]
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
         set suppliedData($compName) {}
         return
     }
-    set levels [split $compName /]
     set nodeDims [GetCompProperty $topNode Dims $node]
+    set levels [split [string range $compName 1 end] /]
     
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
@@ -235,7 +236,7 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
         if {![winfo exists $nextLevel]} {
             pack [frame $nextLevel -bd 2 -relief sunken] -fill x -expand true -padx 2 -pady 2 -side bottom
             pack [frame $nextLevel.head] -fill x -expand true
-            set path [join [lrange $hierarchy 0 $pt] /]
+            set path /[join [lrange $hierarchy 0 $pt] /]
             # added setting of SimileProject element to store spf path
 	    if {[llength $ns]} {
 		pack [::ttk::button $nextLevel.head.save -style Toolbutton \
@@ -254,7 +255,7 @@ proc MakeSubFrames {clientId parent hierarchy ns pt} {
                         -command [list ${ns}::Clear $clientId $path]] -side right
                 BindPopup $nextLevel.head.clear "Clear values in this submodel"
             }
-            if {![string length $level]} {
+            if {!$pt} {
                 set level "TOP LEVEL"
             }
             pack [label $nextLevel.head.label -text $level:]
@@ -311,7 +312,7 @@ proc AcceptData {topNode compName notInput complain} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    set node [GetCompProperty $topNode IdFromCapt $compName]
+    set node [IdFromTail $topNode $compName]
     if {$complain > -1} {
         if {![string equal disabled [$outNames($compName).e cget -state]]} {
             set newData [UglifyValList [$outNames($compName).e get]]
@@ -358,8 +359,7 @@ proc AcceptData {topNode compName notInput complain} {
                     #puts "recordId is $recordId"
                     if {[string first $recordId $compName]==0 && \
                                 ![string equal $recordId $compName]} {
-                        set recordNode [GetCompProperty $topNode \
-                                IdFromCapt $recordId]
+                        set recordNode [IdFromTail $topNode $recordId]
                         if {$useCppArray} {
                             c_setparamarray $recordNode
                         }
@@ -830,7 +830,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             }
         }
         #ShowMessage debug info "Component is $restoredComp" ok
-        set node [ExistCheck $topNode $restoredComp {The file}]
+        set node [ExistCheck $topNode $restoredComp file]
         switch $node {
             break {break}
             continue {continue}
@@ -910,14 +910,14 @@ proc ExistCheck {topNode restoredComp source} {
         return continue
     }
     
-    set node [GetCompProperty $topNode IdFromCapt $restoredComp]
+    set node [IdFromTail $topNode $restoredComp]
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
         while {[string equal nomatch $node]} {
             set lostBit $nextLook
             set nextLook [join [lrange [split $lostBit /] 0 end-1] /]
             if {[llength $nextLook]} {
-                set node [GetCompProperty $topNode IdFromCapt $nextLook]
+                set node [IdFromTail $topNode $nextLook]
             } else {
                 set node $topNode
             }
@@ -927,7 +927,7 @@ proc ExistCheck {topNode restoredComp source} {
         } else {
             set lostType submodel
         }
-        set act [ShowMessage "Unused parameters" warning "$source contains parameter values for the $lostType $lostBit, which does not exist in the model. Do you want to ignore these values and continue reading the file?" okcancel]
+        set act [ShowMessage "Unused parameters" warning "The $source contains parameter values for the $lostType $lostBit, which does not exist in the model. Do you want to ignore these values and continue loading the $source?" okcancel]
         if {[string equal cancel $act]} {
             return break
         }
@@ -937,6 +937,11 @@ proc ExistCheck {topNode restoredComp source} {
         return continue
     }
     return $node
+}
+
+proc IdFromTail {topNode fullCapt} {
+    set shortCapt [string range $fullCapt [string first / $fullCapt 1] end]
+    return [GetCompProperty $topNode IdFromCapt $shortCapt]
 }
 
 # This checks whether a parameter really has the value specified by its

@@ -59,10 +59,10 @@ proc old_do_model {node what args} {
 #puts "picked line $mLine"
 	    close $mStream
 	    if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
-		set dest [do_for_node $node namespace eval AME_model<> \
+		set dest [namespace eval AME_model<> \
 			      "set spare $targetName"]
 		set targetList [DescribeComponent $dest]
-		if {[catch {do_for_node $node GetNodeIdFromRef $dest \
+		if {[catch {GetNodeIdFromRef $dest \
 				[lindex $targetList 1]} TargetId]} {
 		    set target [lindex $targetList 0]
 		    set whoopsie dest_missing
@@ -426,7 +426,7 @@ proc GetCCompProperty {topNode prop args} {
     # first do cases that don't need any other data
     switch -regexp $prop {
 	Objects {
-	    return [lrange [do_for_node $topNode listobjects \
+	    return [lrange [listobjects \
 				$model_id($topNode)] 1 end]
 	} Class|Type|Eval {
 	    array set propData [list Class,cIdx 11 Class,names \
@@ -467,7 +467,7 @@ proc GetCCompProperty {topNode prop args} {
 	} Caption {
 	    return [c_getvalue $topNode $node 5]
 	} IdFromCapt {
-	    if {[catch {do_for_node $topNode getnodeid $model_id($topNode) \
+	    if {[catch {getnodeid $model_id($topNode) \
 			    $node} match]} {
 		return nomatch
 	    }
@@ -482,10 +482,10 @@ proc GetCCompProperty {topNode prop args} {
 	    set newVs [lindex $set 0]
 	    # new version -- remove list wrapping sometime
 	    if {[string length $newVs]} {
-		return [list [do_for_node $topNode insert $model_id($topNode) \
+		return [list [insert $model_id($topNode) \
 				  $instance_id($topNode) $node $newVs]]
 	    } else {
-		set res [list [do_for_node $topNode extract \
+		set res [list [extract \
 				  $model_id($topNode) $instance_id($topNode) \
 				  $node]]
 		return $res
@@ -505,7 +505,7 @@ proc GetTclCompProperty {topNode prop args} {
     global nodecount nodedata
     set node [lindex $args 0]
     set set [lrange $args 1 end]
-#    set nodecount [do_for_node $topNode set nodecount]
+#    set nodecount [set nodecount]
     # first do cases that don't need any other data
     switch -regexp $prop {
 	Objects {
@@ -653,7 +653,7 @@ proc GetFullDims {line ETptrs} {
 }				      
 	    
 #proc getinfo {topNode node field} {
-#    do_for_node $topNode getinfo $node $field
+#    getinfo $node $field
 #}
 
 # this could be more efficient

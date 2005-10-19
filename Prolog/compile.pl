@@ -333,7 +333,7 @@ used when entering file parameters */
 		   [[void, this, []] | Constants], 0, GlobalDeclText),
 	(setof(GraphSpec, get_graph_spec(GraphSpec), AllGraphs), !;
 	    AllGraphs = []),
-	build_submodel_functions(Language, Phases, Inters,
+	build_submodel_functions(Language, Phases,
 				 StateForm, UpdateForm, SortedForm, Used,
 				 ExtSets, AllGraphs, FnList),
 
@@ -646,8 +646,7 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 		 Proc_ending,Blank], Decls).
 */
 
-build_eval_proc(Language, ProcName, OrderedForm, Inters, Used, 
-		AllGraphs, Decls) :-
+build_eval_proc(Language, ProcName, OrderedForm, Used, AllGraphs, Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
 	do_assign_list( Language, ActionForm, AllGraphs, [], [[]], 
@@ -688,8 +687,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Inters, Used,
 % the relevant language. Ratio is the multiplier to scale values in the inner
 % loop to the standard preferred unit
 
-build_submodel_functions( Language, Phases, Inters,
-			  StateForm, UpdateForm, SortedForm,
+build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
 			  Used, ExtUsers, AllGraphs, Decls) :-
 	reassure_user("Ordering model execution assignments"),
 
@@ -717,7 +715,6 @@ build_submodel_functions( Language, Phases, Inters,
 	    [unify(Language),
 	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
 	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
-	     build([[],[], Inters, Inters]),
 	     unify(Used), unify(AllGraphs), build(Decls)]).
 
 match_levels([], []).

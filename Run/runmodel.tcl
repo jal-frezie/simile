@@ -580,12 +580,6 @@ proc TellAllHelpers {node fun args} {
     set myNode $nodeForFocus
 }
 
-# this saves us deleting all the do_for_nodes in the part of the program 
-# that has been moved to the same executable as the model code
-proc do_for_node {dummyNode args} {
-    eval $args
-}
-
 # Other stuff related to reorganization
 proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
     global myNode ;# a stopgap, we shouldn't need it
@@ -643,18 +637,18 @@ proc ExScrubRun {node times} {
         if {$model_id($node)} {
             if {[info exists instance_id($node)]} {
                 #ShowMessage debug info "Exiting $model_id($node) $instance_id($node)" ok
-                do_for_node $node c_exitmodel $model_id($node) \
+                c_exitmodel $model_id($node) \
 		    $instance_id($node)
                 unset instance_id($node)
             } else {
                 #ShowMessage debug info "Exiting $model_id 0" ok
-                do_for_node $node c_exitmodel $model_id($node) 0
+                c_exitmodel $model_id($node) 0
             }
         } else {
             if {[info exists instance_id($node)]} {
                 #ShowMessage debug info "Exiting $model_id $instance_id" ok
-		do_for_node $node namespace delete ::AME_model<>
-		do_for_node $node array unset nodedata
+		namespace delete ::AME_model<>
+		array unset nodedata
                 unset instance_id($node)
 	    }
         }
@@ -1146,7 +1140,8 @@ proc TellHelperItsGone {helperWin captionPath} {
 
 proc GetExecTitle {node} {
 	set mDesc [do_in_editor GetFromProlog tk_get_info({},$node,desc)]
-	set modelCapt [string range $mDesc 0 [string first { : } $mDesc]]
+	set modelCapt [string range $mDesc 0 \
+			   [expr [string first { : } $mDesc]-1]]
 	return [BlankCrs $modelCapt]
 }
 
@@ -1208,7 +1203,7 @@ proc update_executable {node lang} {
     # better already be loaded
     switch $lang {
 	c {
-	    set instance_id($node) [do_for_node $node c_createmodel \
+	    set instance_id($node) [c_createmodel \
 					$model_id($node)]
 	} tcl {
     #    ShowMessage debug info "model instance $instance_id created" ok
@@ -1384,4 +1379,3 @@ if {![info exists runHow(where)]} { ;# we are not at home, so call
 	ShowMessage {Simile obliterfried!} error $errorInfo ok
     }
 }
-

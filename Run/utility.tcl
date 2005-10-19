@@ -364,7 +364,7 @@ proc RemovePopup {args} {
 proc AddPopupMessage {text colour args} {
     set limit 500
     if {[llength $args]} {
-	set combo [eval do_for_node $args $limit]
+	set combo [eval $args $limit]
 	set count [lindex $combo 0]
 	set text [lindex $combo 1]
     } else {
