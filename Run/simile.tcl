@@ -170,19 +170,17 @@ cd $SIMILE_PATH/Run
 
 switch $env(prologId) {
     gnu {
-    set tgt Run/xgsimile
+	set tgt Run/xgsimile
     } sicstus {
-    set tgt System/bin/sprt
+	set tgt System/bin/sprt
     }
 }
 
 switch $tcl_platform(platform) {
     windows {
-    set execExtn .exe
+	set execExtn .exe
     } unix {
-    set execExtn {}
-# Currently cannot distribute Sicstus for Unix so use GNU anyway
-    set tgt Run/xgsimile
+	set execExtn {}
     }
 }
 

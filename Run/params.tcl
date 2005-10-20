@@ -281,8 +281,7 @@ proc ZapParams {topNode smPath metaFile} {
     global whichParamsAffected
     
     array unset whichParamsAffected
-    MergeParams $topNode $smPath $metaFile 0 0
-    
+    MergeParams $topNode /[GetExecTitle $topNode]$smPath $metaFile 0 0
     AcceptAll $topNode [array names whichParamsAffected] 1 -1
 }
 

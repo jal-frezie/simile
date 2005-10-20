@@ -1058,7 +1058,7 @@ namespace eval $keyValue {
 	if {[catch {
 
 	# load the PEST-generated .spf file
-	    ZapParams $topNode /[GetExecTitle $topNode] \
+	    ZapParams $topNode {} \
 		[file join $simtmpdir model.inp]
 
 	set widget $runState($topNode,helperId).nb.rcf

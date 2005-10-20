@@ -1027,6 +1027,9 @@ proc MenuSelect { window button item } {
         DoLocalCmd $window $item
     } else {
         prolog tk_menu('$window',$button,'$item')
+# note this causes a problem with the dll interface as hi-8 chars in the item
+# get a representation in Prolog that then screws up when passed back via 
+# tcl_eval
     }
 }
 

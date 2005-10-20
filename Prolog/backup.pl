@@ -169,7 +169,7 @@ into_save_file(Model, ActList) :-
 	on_exception(Lossage, (open_native(File, append, Save),
 				  write_with_breaks(Save, FullList),
 				  close(Save)),
-		(sicstus_format_to_chars("Could not create an autosave file for this model. ~w. This may mean that the model was loaded from a read-only file system. No autosave data will be stored until the model is saved somewhere else.", [Lossage], Wibble),
+		(sicstus_format_to_chars("Could not create an autosave file called ~w for this model. The following message was produced: ~w. This may mean that the model was loaded from a read-only file system. No autosave data will be stored until the model is saved somewhere else.", [File, Lossage], Wibble),
 	do_dialogue("Autosave warning!", warning, Wibble, ok, _),
 	retract(autosave_file_is(Model, _)))); true.
 

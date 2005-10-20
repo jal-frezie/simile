@@ -256,8 +256,11 @@ do_reading([], _Str).
 need to change its own ttfn encoding to utf8 */
 
 open_native(FileTtfn, Mode, Stream) :-
-	user:deEncode(_, FileTtfn, FileUtf8, _),
-	open(FileUtf8, Mode, Stream).
+	output:safe_tcl_eval([get_system_chars, br(FileTtfn)], Bag),
+	output:chop_list(Bag, String),
+	all(user, name, [build(Chars), build(String)]),
+	name(FileNative, Chars),
+	open(FileNative, Mode, Stream).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 

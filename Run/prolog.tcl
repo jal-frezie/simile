@@ -11,12 +11,25 @@
 
 wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
 
-encoding system utf-8
 set plPipe(stack) {}
 set plPipe(debug) 0
 if $plPipe(debug) {
     set plPipe(debug_log) [file join $env(HOME) .simile log]
     set plPipe(debug_stream) [NetOpen $plPipe(debug_log) w]
+}
+
+proc get_system_chars {string} {
+    set sysbag [encoding convertto [encoding system] $string]
+    binary scan $sysbag c[string length $sysbag] list
+#ShowMessage debug info "Getting codes for $string got $list" ok
+    foreach char $list {
+	if {$char<0} {
+	    lappend ulist [expr $char+256]
+	} else {
+	    lappend ulist $char
+	}
+    }
+    return $ulist
 }
 
 proc KeepLooking {} {
@@ -135,7 +148,7 @@ regsub -all {([ ])} $PROLOG_CMD {\\\1} PROLOG_CMD
 
 set plPipe(stream) [open |$PROLOG_CMD r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
-fconfigure $plPipe(stream) -translation {auto lf}
+fconfigure $plPipe(stream) -encoding utf-8 -translation {auto lf}
 
 #send_pl_cmd restore('../System/bin/main.sav').
 #send_pl_cmd main.
