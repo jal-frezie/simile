@@ -868,7 +868,8 @@ namespace eval $keyValue {
 		puts $instruct {}
 	    }
 	}
-	close $instruct
+	close $instruct
+
 
 
 
@@ -923,8 +924,10 @@ namespace eval $keyValue {
 	    set oldDir [file attributes $oldDir -shortname]
 	}
 	puts $control {* model command line}
-	set ourWish [file join [file dirname $oldDir] System bin wish]
-	puts $control "$ourWish pestrun.tcl"
+#	set ourWish [file join [file dirname $oldDir] System bin wish]
+#	puts $control "$ourWish pestrun.tcl"
+	set ourWish [file join [file dirname $oldDir] System bin relay]
+	puts $control "$ourWish"
 	puts $control {* model input/output}
 	puts $control {model.tpl model.inp}
 	puts $control {model.ins model.out}
@@ -941,14 +944,21 @@ namespace eval $keyValue {
 	}	    
 	close $control
 	
-	set activator [NetOpen [file join $simtmpdir pestrun.tcl] w]
-	if {[string match windows $tcl_platform(platform)]} {
-	    puts $activator "package require dde 1.2" ;# must be easier way
-	}
-#	puts $activator "[do_in_editor set runHow(sendOp)] exec_for_$::myNode [namespace code pestificate]"
-	puts $activator "$sender [list do_for_node $::myNode] [namespace code pestificate]"
-	puts $activator exit
-	close $activator
+#	set activator [NetOpen [file join $simtmpdir pestrun.tcl] w]
+#	if {[string match windows $tcl_platform(platform)]} {
+#	    puts $activator "package require dde 1.2" ;# must be easier way
+#	}
+#	puts $activator "$sender [list do_for_node $::myNode] [namespace code pestificate]"
+#	puts $activator exit
+#	close $activator
+
+	# That was the old way of getting PEST to run the model. Now
+	# we just wait till it kills the relay process, then run it
+	# for it and start another.
+
+	cd $simtmpdir
+	set pip [open pidpod w]; puts $pip 0; close $pip
+	StartRelay $ourWish
 
 # ok, now we need to execute pest in immediate mode in order to get
 # any error messages back from it. However, while doing that we can't
@@ -959,36 +969,56 @@ namespace eval $keyValue {
 	set runData($::myNode,rollCount) 0
 	set runData($::myNode,recSize) 0
 	set runData($::myNode,curPred) N/A
-	cd $simtmpdir
-        switch $tcl_platform(os) {
-            {Windows NT} {
-#		exec cmd /c start /min pest model.pst >& model.log
-		set spout [open {|cmd /c start /min pest model.pst} r]
-	    } {Windows 95} {
-#		exec start /m pest model.pst >& model.log
-		set spout [open {|start /m pest model.pst} r]
-	    } default {
-#		exec pest model.pst >& model.log &
-		set spout [open {|pest model.pst} r]
-	    }
-	}
+	set spout [SilentRun "pest model.pst"]
 	cd $oldDir
 	set useNodes($winId,state) 0 ;# rolling
 
 	fconfigure $spout -blocking 0
 	fileevent $spout readable [namespace code [list GrabMsgs $winId $spout]]
     }
-    
+
+    proc StartRelay {cmd} {
+	global simtmpdir
+	variable relayProc
+
+	set oldDir [pwd]
+	cd $simtmpdir
+	set relayProc [SilentRun $cmd]
+#ShowMessage debug info "started $hanger" ok
+	fconfigure $relayProc -blocking 0
+	fileevent $relayProc readable [namespace code [list pestificate $cmd]]
+	cd $oldDir
+    }
+
+    proc SilentRun {cmd} {
+	global tcl_platform
+        switch $tcl_platform(os) {
+            {Windows NT} {
+#		exec cmd /c start /min pest model.pst >& model.log
+		set spout [open "|cmd /c start /min $cmd" r]
+	    } {Windows 95} {
+#		exec start /m pest model.pst >& model.log
+		set spout [open "|start /m $cmd" r]
+	    } default {
+#		exec pest model.pst >& model.log &
+		set spout [open "|$cmd" r]
+	    }
+	}
+	return $spout
+    }
+
     # for now, just use pipe to tell when PEST has finished
     proc GrabMsgs {winId spout} {
 	global simtmpdir myNode
 	variable useNodes
 	variable runData
 	variable clevers
+	variable relayProc
 
 	if {[gets $spout bilge]>-1} {
 	    $useNodes($winId,results).c.text insert end "$bilge\n"
 	} elseif {[eof $spout]} {
+	    close $relayProc
 	    close $spout	    
 	    SetButtonAct $winId start
 	    set useNodes($winId,state) 2 ;# stopped, with data
@@ -1025,15 +1055,18 @@ namespace eval $keyValue {
 
     # Next bit will actually be executed by command supplied to PEST
 
-    proc pestificate {} {
+    proc pestificate {cmd} {
 	global runState simtmpdir errorInfo
 	variable ptList
 	variable spitLists
 	variable runData
+	variable relayProc
 
+	close $relayProc
 	set topNode $::myNode
 	set recFile [file join $simtmpdir model.rec]
 	set newSize [file size $recFile]
+#	puts "old $runData($topNode,recSize) new $newSize"
 	if {$newSize>$runData($topNode,recSize)} {
 	    set recReader [NetOpen $recFile r]
 	    seek $recReader $runData($topNode,recSize)
@@ -1082,12 +1115,13 @@ namespace eval $keyValue {
 	    set current $breakPt
 	}
 	close $execLog
+	StartRelay $cmd
 	}]} {
 	    ShowMessage "Problem executing from PEST" warning $errorInfo ok
 	}
 	incr runData($topNode,rollCount)
-	set runData($topNode,recSize) [file size \
-					   [file join $simtmpdir model.rec]]
+#	set runData($topNode,recSize) [file size \
+#					   [file join $simtmpdir model.rec]]
     }
 
     proc ShowMeasurements {} {
@@ -1157,6 +1191,7 @@ namespace eval $keyValue {
 		    if {$time>$subTime && [info exists lo]} {
 			break
 		    }
+
 		}
 	    }
 	    if {[info exists lo]} {
@@ -1240,7 +1275,7 @@ namespace eval $keyValue {
 	    puts -nonewline $str [format \\%10s\\ i[incr usedHangers]]
 	    lappend inGrpData($node,mems) i$usedHangers $est
 	}
-    }	
+    }	
 
     proc CountMenuCmds {m} {
 	# if menu is tearoff first entry is 1
