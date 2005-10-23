@@ -61,7 +61,7 @@ proc ChooseFile { preferred title canbenew } {
     set switches [list -title $title -defaultextension $fileType \
 		      -filetypes $typeList \
 		      -initialdir [do_in_editor GetPathChoice $fileType]]
-    set active [focus]
+    set active [winfo toplevel [focus]]
     if {[llength $active]} {
 	lappend switches -parent $active
     }
