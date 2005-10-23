@@ -7,7 +7,7 @@ else
 endif
 
 simile: Run/xgsimile System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN) \
-	System/lib/lib5d$(SHAREDLIBEXTN)
+	System/lib/lib5d$(SHAREDLIBEXTN) System/bin/relay
 
 vpath %.pl Prolog
 
@@ -20,9 +20,13 @@ Run/xgsimile: ame_gen.pl backup.pl build.pl compile.pl database.pl \
 	cd Prolog; gplc --no-top-level -o ../Run/xgsimile gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
+vpath 	%.c 	Run
 vpath 	%.h 	Run
 vpath 	%.tcl 	Run
 
 System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
 		shank.cpp makedlls.tcl
 	cd Run; $(WISHCMD) makedlls.tcl; cd ..
+
+System/bin/relay: relay.c
+	cd Run; gcc -o ../System/lib/relay relay.c; cd ..

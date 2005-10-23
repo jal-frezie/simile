@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <stdlib.h>
 
 #ifdef WIN32
 #include <process.h>
@@ -26,10 +27,16 @@ void pause () {
 
 #endif
 
+static void exit_sighandler(int x) {
+  exit(EXIT_SUCCESS);
+}
+
 main() {
   char fname[] = "pidpod";
   FILE* pip;
   int oldpid;
+
+  signal(SIGTERM,exit_sighandler);
   pip = fopen(fname, "r");
   fscanf(pip, "%d", &oldpid);
   fclose(pip);
@@ -38,7 +45,7 @@ main() {
   fclose(pip);
 
   if (oldpid) {
-    kill(oldpid, 15);
+    kill(oldpid, SIGTERM);
   }
   pause();
 }

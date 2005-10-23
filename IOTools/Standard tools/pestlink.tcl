@@ -927,7 +927,7 @@ namespace eval $keyValue {
 #	set ourWish [file join [file dirname $oldDir] System bin wish]
 #	puts $control "$ourWish pestrun.tcl"
 	set ourWish [file join [file dirname $oldDir] System bin relay]
-	puts $control "$ourWish"
+	puts $control [file nativename $ourWish]
 	puts $control {* model input/output}
 	puts $control {model.tpl model.inp}
 	puts $control {model.ins model.out}
@@ -974,8 +974,7 @@ namespace eval $keyValue {
 	set useNodes($winId,state) 0 ;# rolling
 
 	fconfigure $spout -blocking 0
-	fileevent $spout readable [namespace code [list GrabMsgs $winId $spout]]
-    }
+	fileevent $spout readable [namespace code [list GrabMsgs $winId $spout]]    }
 
     proc StartRelay {cmd} {
 	global simtmpdir
@@ -983,7 +982,7 @@ namespace eval $keyValue {
 
 	set oldDir [pwd]
 	cd $simtmpdir
-	set relayProc [SilentRun $cmd]
+	set relayProc [open "|$cmd" r] ;# was [SilentRun $cmd]
 #ShowMessage debug info "started $hanger" ok
 	fconfigure $relayProc -blocking 0
 	fileevent $relayProc readable [namespace code [list pestificate $cmd]]
@@ -1018,8 +1017,12 @@ namespace eval $keyValue {
 	if {[gets $spout bilge]>-1} {
 	    $useNodes($winId,results).c.text insert end "$bilge\n"
 	} elseif {[eof $spout]} {
-	    close $relayProc
 	    close $spout	    
+	    set pip [open $simtmpdir/pidpod r]; gets $pip pidl; close $pip
+#ShowMessage debug info "Shrink...I wanna kill $pidl" ok
+	    c_killmodel $pidl
+	    close $relayProc
+	    unset relayProc
 	    SetButtonAct $winId start
 	    set useNodes($winId,state) 2 ;# stopped, with data
 	    $useNodes($winId,results).b configure -state normal
@@ -1062,10 +1065,17 @@ namespace eval $keyValue {
 	variable runData
 	variable relayProc
 
+	if {![info exists relayProc]} {
+	    return ;# we have finished the run
+	}
 	close $relayProc
 	set topNode $::myNode
-	set recFile [file join $simtmpdir model.rec]
-	set newSize [file size $recFile]
+	set recFile [file nativename [file join $simtmpdir model.rec]]
+#	if {[info exists $recFile]} {
+	    set newSize [file size $recFile]
+#	} else {
+#	    set newSize 0
+#	}
 #	puts "old $runData($topNode,recSize) new $newSize"
 	if {$newSize>$runData($topNode,recSize)} {
 	    set recReader [NetOpen $recFile r]
@@ -1092,12 +1102,12 @@ namespace eval $keyValue {
 
 	# load the PEST-generated .spf file
 	    ZapParams $topNode {} \
-		[file join $simtmpdir model.inp]
+		[file nativename [file join $simtmpdir model.inp]]
 
 	set widget $runState($topNode,helperId).nb.rcf
 	$widget.upper.topbuttons.reset invoke
 
-	set execLog [NetOpen [file join $simtmpdir model.out] w]
+	set execLog [NetOpen [file nativename [file join $simtmpdir model.out]] w]
 	set current 0
 	foreach breakPt $ptList {
 	    set runState($topNode,pause) $breakPt
