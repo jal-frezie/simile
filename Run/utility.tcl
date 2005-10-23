@@ -33,11 +33,11 @@ proc ChooseFile { preferred title canbenew } {
     global __tk_filedialog chosenPaths
 
     set fileType [file extension $preferred]
-    set __tk_filedialog(selectPath) [do_in_editor GetPathChoice $fileType]
+#    set __tk_filedialog(selectPath) [do_in_editor GetPathChoice $fileType]
 
 # __tk_etc should set starting directory, but just in case...
-    set prevDir [pwd]
-    cd $__tk_filedialog(selectPath)
+#    set prevDir [pwd]
+#    cd $__tk_filedialog(selectPath)
     switch $fileType {
 	.sml {
 	    set typeList [list .sml .sim .ame]
@@ -59,7 +59,8 @@ proc ChooseFile { preferred title canbenew } {
     }
     set typeList [list [list $desc $typeList]]
     set switches [list -title $title -defaultextension $fileType \
-		      -filetypes $typeList]
+		      -filetypes $typeList \
+		      -initialdir [do_in_editor GetPathChoice $fileType]]
     set active [focus]
     if {[llength $active]} {
 	lappend switches -parent $active
@@ -70,8 +71,9 @@ proc ChooseFile { preferred title canbenew } {
     } else {
         set cmd tk_getOpenFile
     }
+#ShowMessage debug info "will eval $cmd $switches" ok
     set chosenFile [eval $cmd $switches]
-    cd $prevDir
+#    cd $prevDir
     if {[string compare $chosenFile {}]} {
 	do_in_editor RecordPathChoice $fileType $chosenFile $recordEntry
     }

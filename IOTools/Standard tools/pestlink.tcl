@@ -802,13 +802,13 @@ namespace eval $keyValue {
 
 	    set nodeDims [GetModelDims $node]
 	    if {$useNodes($winId,gathering)} {
-		set defCons $paramData($eTitle)
-		if {![string length $defCons]} {
+#		set defCons $paramData($eTitle)
+#		if {![string length $defCons]} {
 		    set defCons [lindex [GetModelValue $node] 0]
 		    if {[winfo exists $f.int]} {
 			set defCons [list NOW $defCons]
 		    }
-		}
+#		}
 	    } else {
 		set defCons $initialEstimate($node)
 	    }
@@ -868,7 +868,7 @@ namespace eval $keyValue {
 		puts $instruct {}
 	    }
 	}
-	close $instruct
+	close $instruct
 
 
 
@@ -1275,7 +1275,7 @@ namespace eval $keyValue {
 	    puts -nonewline $str [format \\%10s\\ i[incr usedHangers]]
 	    lappend inGrpData($node,mems) i$usedHangers $est
 	}
-    }	
+    }	
 
     proc CountMenuCmds {m} {
 	# if menu is tearoff first entry is 1

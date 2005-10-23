@@ -31,7 +31,7 @@ proc FileParamDialogue {topWin mustShow} {
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topCapt/*] {
         if {[llength $paramData($curVal)]} {
-            switch [ExistCheck $topNode $curVal database] {
+            switch [ExistCheck $topNode $curVal $notInput database] {
                 break {
                     CancelParams
                     break
@@ -116,7 +116,7 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     if {[llength $args]} {
 	set compName /$args$compName
     }
-
+#ShowMessage debug info "Creating compname $compName" ok
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because
     # there will be null entries in the table for vm model levels.
@@ -314,7 +314,7 @@ proc AcceptData {topNode compName notInput complain} {
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
 
-    set node [IdFromTail $topNode $compName]
+    set node [IdFromTail $topNode $compName $notInput]
     if {$complain > -1} {
         if {![string equal disabled [$outNames($compName).e cget -state]]} {
             set newData [UglifyValList [$outNames($compName).e get]]
@@ -361,7 +361,7 @@ proc AcceptData {topNode compName notInput complain} {
                     #puts "recordId is $recordId"
                     if {[string first $recordId $compName]==0 && \
                                 ![string equal $recordId $compName]} {
-                        set recordNode [IdFromTail $topNode $recordId]
+                        set recordNode [IdFromTail $topNode $recordId $notInput]
                         if {$useCppArray} {
                             c_setparamarray $recordNode
                         }
@@ -714,6 +714,7 @@ namespace eval fileparams {
 	if {$notInput} {
 	    set dataLocn targetData
 	    set widgetLocn targetNames
+	    set smPath [string range $smPath 1 end]
 	} else {
 	    set dataLocn paramData
 	    set widgetLocn widgetNames
@@ -721,7 +722,7 @@ namespace eval fileparams {
 	upvar \#0 $dataLocn suppliedData
 	upvar \#0 $widgetLocn outNames
 
-        #ShowMessage debug info "Save $smPath" ok
+#ShowMessage debug info "Save $smPath" ok
         
 # first, make sure all values to be saved are up-to-date and well-formed
 	AcceptAll $topNode [array names outNames $smPath*] $notInput 1
@@ -792,9 +793,10 @@ namespace eval fileparams {
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
     global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
-    if {$notInput} {
+    if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
+	set smPath [string range $smPath 1 end]
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
@@ -832,7 +834,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             }
         }
         #ShowMessage debug info "Component is $restoredComp" ok
-        set node [ExistCheck $topNode $restoredComp file]
+        set node [ExistCheck $topNode $restoredComp $notInput file]
         switch $node {
             break {break}
             continue {continue}
@@ -899,7 +901,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     cd $oldDir
 }
 
-proc ExistCheck {topNode restoredComp source} {
+proc ExistCheck {topNode restoredComp notInput source} {
     global bermudaTriangle
     
     set lostAtSea 0
@@ -912,14 +914,14 @@ proc ExistCheck {topNode restoredComp source} {
         return continue
     }
     
-    set node [IdFromTail $topNode $restoredComp]
+    set node [IdFromTail $topNode $restoredComp $notInput]
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
         while {[string equal nomatch $node]} {
             set lostBit $nextLook
             set nextLook [join [lrange [split $lostBit /] 0 end-1] /]
             if {[llength $nextLook]} {
-                set node [IdFromTail $topNode $nextLook]
+                set node [IdFromTail $topNode $nextLook $notInput]
             } else {
                 set node $topNode
             }
@@ -941,9 +943,11 @@ proc ExistCheck {topNode restoredComp source} {
     return $node
 }
 
-proc IdFromTail {topNode fullCapt} {
-    set shortCapt [string range $fullCapt [string first / $fullCapt 1] end]
-    return [GetCompProperty $topNode IdFromCapt $shortCapt]
+proc IdFromTail {topNode fullCapt notInput} {
+    if {$notInput>-1} {
+	set fullCapt [string range $fullCapt [string first / $fullCapt 1] end]
+    }
+    return [GetCompProperty $topNode IdFromCapt $fullCapt]
 }
 
 # This checks whether a parameter really has the value specified by its
