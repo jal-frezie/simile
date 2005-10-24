@@ -244,7 +244,7 @@ proc do_in_editor {args} {
 # depending on what a model's execution gets to itself. Obviously most
 # of these are place holders; currently anything other than 'home'
 # will stick the execution into its own process.
-set runHow(where) process
+set runHow(where) home
 if {[string equal home $runHow(where)]} {
 # load the whole execution code rather than just the common bits
     source ../Run/runmodel.tcl
