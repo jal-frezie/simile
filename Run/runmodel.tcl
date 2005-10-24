@@ -1371,7 +1371,9 @@ proc SetNodeForHelper {node} {
 
     if {[info exists runHow(where)]} {
 	set myNode $node
-	set sender $runHow(sendCmd)
+# guess I would only need this for old-style PEST interface and it breaks
+# dll interface for debugging
+#	set sender $runHow(sendCmd)
     }
 }
 

@@ -1,7 +1,8 @@
 /* units.pl --- yet another shiny, efficient new module written by Jasper. */
 
 sicstus_module(units, [get_conversion/4, extract_units_root/4,
-         default_tick_is/1, sort_units/3, defined_as_unit/2]).
+		       default_tick_is/1, sort_units/3,
+		       check_and_report_units/2, defined_as_unit/2]).
 
 default_tick_is(day).
 
@@ -168,6 +169,10 @@ unit_expansion(Unit, Def) :-
 	    atom_concat(Pre, InnerUnit, Unit),
 	    stands_for(InnerUnit, InnerDef),
 	    Def = Multiplier*InnerDef).
+
+check_and_report_units(Target_base, TargetDims) :-
+	standard_name(Target_base, Target),
+	units:add_conversion(Target, *, 1, TargetDims, _,_).
 
 defined_as_unit(FullName, Def) :-
 	standard_name(FullName, Name),
