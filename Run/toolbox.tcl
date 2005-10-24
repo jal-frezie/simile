@@ -1294,6 +1294,22 @@ proc EatNumber {str} {
     }
 }
 
+# and with the OS character encoding...
+
+proc GetSystemChars {string} {
+    set sysbag [encoding convertto [encoding system] $string]
+    binary scan $sysbag c[string length $sysbag] list
+#ShowMessage debug info "Getting codes for $string got $list" ok
+    foreach char $list {
+	if {$char<0} {
+	    lappend ulist [expr $char+256]
+	} else {
+	    lappend ulist $char
+	}
+    }
+    return $ulist
+}
+
 # Path names derived from Windows environment variables must be
 # 'brainwashed' i.e., stripped of their native culture and turned
 # into blank-faced Unix-style forward-slash-separated automata.

@@ -330,18 +330,22 @@ bar_edit_menu(Wid) :-
 	Wid shows_model Model,
 	(member(Header/LinkType, ['Flow'/flow, 'Influence'/influence,
 				  '{Role arrow}'/relation /*, 'Squirt'/squirt */]),
-	    (can_start(LinkType, Point) -> Allow = 1; Allow = 0),
+	    ((LinkType = flow, CanAddNode = 1; can_start(LinkType, Point))
+	    -> Allow = 1; Allow = 0),
 	    update_ability(Model, none, 'edit.add', Header, Allow),
 	    fail;
 	update_ability(Model, none, edit, '{Create new}', CanCreate),
-	update_ability(Model, none, 'edit.add', 'Compartment', CanAddNode),
+	(find_type(Point, cloud), !,
+	    CanAddComp = 1;
+	CanAddComp = CanAddNode),
+	update_ability(Model, none, 'edit.add', 'Compartment', CanAddComp),
 	update_ability(Model, none, 'edit.add', 'Variable', CanAddNode),
 	/* update_ability(Model, none, 'edit.add', 'Event', CanAddNode), */
 	update_ability(Model, none, 'edit.add', '{Membership control}',
 		       CanAddNode),
 	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode)).
 
-click_on([Xpt, Ypt], Poss_start, _CD) :-
+click_on(_XY, Poss_start, _CD) :-
 	get_mode(add),
 	finish_old_edit(none),
 	get_adding_object(New_obj),
@@ -349,14 +353,8 @@ click_on([Xpt, Ypt], Poss_start, _CD) :-
 	    do_linear(New_obj, Poss_start);
 	Poss_start is_of_sort cloud,
 	    New_obj = compartment,
-	    find_all_comps(Parent, Poss_start),
-	    off(Poss_start),
-	    clear_shape(Poss_start, bounding_box),
-	    change_class(Poss_start, _, New_obj),
-	    add_implicit_function(Poss_start, _),
-	    /* use insert_variable to make sure it goes in */
-	    insert_variable(Parent, Xpt, Ypt, New_obj, Poss_start)).
-	    
+	    cloud_to_comp(Poss_start)).
+
 /* Move: drags object to new location; will decide later what it does with links and bowties. */
 
 click_on([Xpt, Ypt], Moving_obj, CD) :-
@@ -429,9 +427,20 @@ click_on(_,_,_) :-
 	advance_phase_to(delete_hunt),
 	(clicked_obj_is(Obj), !,
 	    highlight_deletes(Obj);
-	true).
+	true). */
 
-add_at_point: places a new 'box' type component in the model, fails if new_obj
+cloud_to_comp(Poss_start) :-
+	find_all_comps(Parent, Poss_start),
+	get_shape(Poss_start, bounding_box, OldBox),
+	middle(OldBox, [Xpt, Ypt]),
+	off(Poss_start),
+	clear_shape(Poss_start, bounding_box),
+	change_class(Poss_start, _, compartment),
+	add_implicit_function(Poss_start, _),
+	/* use insert_variable to make sure it goes in */
+	insert_variable(Parent, Xpt, Ypt, compartment, Poss_start).
+
+/* add_at_point: places a new 'box' type component in the model, fails if new_obj
 is not a box type, or if there is no room at the given position to put the object.
 */
 

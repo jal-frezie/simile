@@ -55,7 +55,8 @@ main :-
 			 fail)),
 	on_exception(ErrorFunction, state:kickoff(Vnum), true),
         (nonvar(ErrorFunction),
-	    ame_gen:do_dialogue("Failed startup", error, "Simile has been unable to start up due to problems with this system.", ok, _);
+	    sicstus_format_to_chars("Simile has been unable to start up due to problems with this system: ~w", [ErrorFunction], Mesg),
+	    ame_gen:do_dialogue("Failed startup", error, Mesg, ok, _);
 	tk_main_loop),
         tcl_delete(Interp),
 	unset_interpreter,

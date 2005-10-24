@@ -256,7 +256,7 @@ do_reading([], _Str).
 need to change its own ttfn encoding to utf8 */
 
 open_native(FileTtfn, Mode, Stream) :-
-	output:safe_tcl_eval([get_system_chars, br(FileTtfn)], Bag),
+	output:safe_tcl_eval(['GetSystemChars', br(FileTtfn)], Bag),
 	output:chop_list(Bag, String),
 	all(user, name, [build(Chars), build(String)]),
 	name(FileNative, Chars),

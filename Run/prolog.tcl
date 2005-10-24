@@ -18,20 +18,6 @@ if $plPipe(debug) {
     set plPipe(debug_stream) [NetOpen $plPipe(debug_log) w]
 }
 
-proc get_system_chars {string} {
-    set sysbag [encoding convertto [encoding system] $string]
-    binary scan $sysbag c[string length $sysbag] list
-#ShowMessage debug info "Getting codes for $string got $list" ok
-    foreach char $list {
-	if {$char<0} {
-	    lappend ulist [expr $char+256]
-	} else {
-	    lappend ulist $char
-	}
-    }
-    return $ulist
-}
-
 proc KeepLooking {} {
     global plPipe
     while {![info exists prologExit]} {

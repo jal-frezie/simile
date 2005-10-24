@@ -29,4 +29,4 @@ System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
 	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 
 System/bin/relay: relay.c
-	cd Run; gcc -o ../System/lib/relay relay.c; cd ..
+	cd Run; gcc -o ../System/bin/relay relay.c; cd ..
