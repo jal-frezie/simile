@@ -157,13 +157,10 @@ namespace eval RunEnv {
             #from runmodel.tcl AddHelperSublist
             set mreMenu [winfo parent [$mainframe getmenu help]]
             $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
-	    if {![info exists runHow(where)]} {
-		menu .windowchoice -tearoff 0 \
-			   -postcommand [list start_in_editor FillWinMenu \
-					     $node .windowchoice]
+	    if {[info exists runHow(where)]} {
+		$mreMenu insert 3 cascade -label "Window" -underline 0 \
+		    -menu .windowchoice
 	    }
-            $mreMenu insert 3 cascade -label "Window" -underline 0 \
-		-menu .windowchoice
             # Add a PanedWindow for the hierrachical/run control view and main display window
             set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
             set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist

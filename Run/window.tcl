@@ -1645,56 +1645,21 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
     }
 }
 
-# For some reason this can be called twice and overtake itself in 
-# mid-execution, so make a primitive concurrency lockout
-
 proc ListWindows {fm} {
     global window_info
-    if {[info exists window_info($fm,building)]} {
-	return
-    } else {
-	set window_info($fm,building) 1
 
-	$fm delete 0 end
-#    puts [array names window_info *,parent]
-	foreach {proc id title} [MakeWinSpec] {
-	    $fm add radiobutton -variable window_info(current) \
-		-value $id.canvas -label $title \
-		-command [list RaiseAny $proc $id]
-	}
-	update
-	unset window_info($fm,building)
-    }
-}
-
-proc MakeWinSpec {} {
-    global window_info runState
-
-    foreach desktop [array names window_info *,parent] {
-	set tgtWin $window_info($desktop)
-	lappend menList editor $tgtWin [wm title $tgtWin]
-
-	set topNode $window_info($tgtWin.canvas,top_node)
-	if {$window_info($tgtWin.canvas,is_top_level) && \
-		[info exists runState($topNode,interp)]} {
-	    foreach {mreWin mreTitle} [do_for_node $topNode AllTitles] {
-		lappend menList $topNode $mreWin $mreTitle
-	    }
+    set window_info(uppermost) [winfo toplevel [focus]]
+    $fm delete 0 end
+    foreach win [winfo children .] {
+	if {[string equal Toplevel [winfo class $win]]} {
+	    $fm add radiobutton -variable window_info(uppermost) \
+		-value $win -label [wm title $win] \
+		-command [list raise $win]
 	}
     }
-    return $menList
+    update
 }
 
-proc FillWinMenu {node fm} {
-    do_for_node $node $fm delete 0 end
-    foreach {proc id title} [MakeWinSpec] {
-	    do_for_node $node $fm add radiobutton \
-		-variable window_info(current) \
-		-value $id.canvas -label $title \
-		-command [list start_in_editor RaiseAny $proc $id]
-	}
-}
-    
 proc RaiseAny {node win} {
     if {[string equal editor $node]} {
 	raise $win
