@@ -1015,7 +1015,9 @@ namespace eval $keyValue {
 	variable relayProc
 
 	if {[gets $spout bilge]>-1} {
-	    $useNodes($winId,results).c.text insert end "$bilge\n"
+	    if {![string equal Bye $bilge]} { ;# from relay process
+		$useNodes($winId,results).c.text insert end "$bilge\n"
+	    }
 	} elseif {[eof $spout]} {
 	    close $spout	    
 	    set pip [open $simtmpdir/pidpod r]; gets $pip pidl; close $pip

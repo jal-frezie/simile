@@ -31,7 +31,7 @@ proc FileParamDialogue {topWin mustShow} {
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topCapt/*] {
         if {[llength $paramData($curVal)]} {
-            switch [ExistCheck $topNode $curVal $notInput database] {
+            switch [ExistCheck $topNode $curVal 0 database] {
                 break {
                     CancelParams
                     break

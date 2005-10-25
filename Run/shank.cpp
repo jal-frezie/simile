@@ -973,22 +973,6 @@ public:
   ~listNodeModel() {
     delete(node);
     delete(model);
-    if (next) {
-      delete(next);
-    }
-  }
-
-  listNodeModel* strip_out(Model* oldModelId) {
-    if (next) {
-      next = next->strip_out(oldModelId);
-    }
-    if (model == oldModelId) { // node belongs to model being removed
-      delete(node);
-      delete(model);
-      return next;
-    } else {
-      return this;
-    }
   }
       
   Model* nodeModel(char* seekNode) {
@@ -999,6 +983,26 @@ public:
       return(next->nodeModel(seekNode));
     } else {
       return NULL;
+    }
+  }
+
+  listNodeModel* strip_out(Model* oldModelId) {
+    int count;
+
+    if (next) {
+      next = next->strip_out(oldModelId);
+    }
+    if (model == oldModelId) { // node belongs to model being removed
+      // delete any separate submodels in here
+      for (count=0; count<model->nodecount;count++) {
+	if ((model->nodedata[count]).datatype==EXTERNAL) {
+	  strip_out(nodeModel((model->nodedata[count]).name));
+	}
+      }
+      delete(this);
+      return next;
+    } else {
+      return this;
     }
   }
 };

@@ -28,6 +28,7 @@ void pause () {
 #endif
 
 static void exit_sighandler(int x) {
+  puts("Bye");
   exit(EXIT_SUCCESS);
 }
 
