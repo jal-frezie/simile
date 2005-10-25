@@ -170,9 +170,11 @@ proc AddEntry {winId topNode node mustShow notInput args} {
         set suppliedData($compName) {}
     }
     if {[string match normal [$slot.e cget -state]]} {
-        pack [::ttk::button $slot.cross -style Toolbutton -image $iconImages(cross) -borderwidth 1 \
-                -command [namespace code [list RevertData $winId $compName]]] \
-                -side right
+        pack [::ttk::button $slot.cross -style Toolbutton -borderwidth 1 \
+		  -image $iconImages(cross) \
+		  -command [namespace code [list RevertData $winId \
+						$compName $notInput]]] \
+	    -side right
         BindPopup $slot.cross "Revert to old values"
         pack [::ttk::button $slot.tick -style Toolbutton -image $iconImages(tick) -borderwidth 1 \
                 -command [namespace code [list AcceptData $topNode $compName \
@@ -666,12 +668,21 @@ proc NumberToEnumType {idx trans} {
     }
 }
 
-proc RevertData {winId compName} {
-    global paramData widgetNames
-    $widgetNames($compName).e delete 0 end
-    if {[info exists paramData($compName)]} {
-        $widgetNames($compName).e insert 0 \
-	    [PrettifyValList $paramData($compName)]
+proc RevertData {winId compName notInput} {
+    if {$notInput==-1} {
+	set dataLocn targetData
+	set widgetLocn targetNames
+    } else {
+	set dataLocn paramData
+	set widgetLocn widgetNames
+    }
+    upvar \#0 $dataLocn suppliedData
+    upvar \#0 $widgetLocn outNames
+
+    $outNames($compName).e delete 0 end
+    if {[info exists suppliedData($compName)]} {
+        $outNames($compName).e insert 0 \
+	    [PrettifyValList $suppliedData($compName)]
     }
 }
 

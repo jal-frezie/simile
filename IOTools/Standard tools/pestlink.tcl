@@ -67,8 +67,7 @@ namespace eval $keyValue {
 			       {relparmax 3.0 facparmax 3.0 facorig 0.001} \
 			       {phiredswh 0.1} \
 			       {noptmax 30 phiredstp 0.01 nphistp 3 \
-				    nphinored 3 nparstp 0.01 nrelpar 3} \
-			       {icov 1 icor 1 ieig 1}} 
+				    nphinored 3 nparstp 0.01 nrelpar 3}} 
 	set clevers(pred) {{pd0 0.0 pd1 0.0 pd2 0.0} \
 			       {abspredlam 0 relpredlam 0.005 initschfac 1.0 \
 				    mulschfac 2.0 nsearch 8} \
@@ -76,7 +75,7 @@ namespace eval $keyValue {
 			       {nprednored 4 abspredstp 0 relpredstp 0.005 \
 				    npredstp 4}} 
 	pack [set lf [labelframe $setId.lbf \
-		  -text {PEST control parameters -- see manual for details}]] \
+		  -text {Parameter eatimation}]] \
 	    -fill x -padx 4 -pady 4
 	foreach line $clevers(list) {
 	    pack [set curFr [frame $lf.f[incr frameNo]]]
@@ -94,7 +93,7 @@ namespace eval $keyValue {
 	}
 
 	pack [set pf [labelframe $setId.pbf \
-		  -text {Prediction specification:}]] -fill x -padx 4 -pady 4
+		  -text {Predictive analysis:}]] -fill x -padx 4 -pady 4
 	pack [frame $pf.pknobs] -fill x
 	pack [checkbutton $pf.pknobs.ck -text Predict \
 		  -command [namespace code [list AblePrediction $winId]] \
@@ -580,6 +579,7 @@ namespace eval $keyValue {
     proc InsertDriver {winId node title nest} {
 	global targetData
 	variable useNodes
+	variable outGrpData
 	set outId $useNodes($winId,output)
 
 	set mode [GetModelEval $node]
@@ -593,6 +593,7 @@ namespace eval $keyValue {
 	    return {}
 	}
 
+	set outGrpData($node,weight) 1.0
 	set f [MakeSubFrames $::myNode $outId.sliderframe \
 		   [split $title /] [namespace current] 0]
 	if {[winfo exists $f]} { 
@@ -608,6 +609,12 @@ namespace eval $keyValue {
 				    [list AbleTimeSampling $node $title $f]]] \
 		-side left
 	    BindPopup $f.end "Set values at time points"
+	    foreach widjo [concat [list $f] [winfo children $f]] {
+		bind $widjo <Double-1> [namespace code \
+					[list DoOutDlg $node $f $title]]
+		bind $widjo <Button-3> [namespace code \
+					[list DoOutDlg $node $f $title]]
+	    }
 	}
 	return $f
     }
@@ -641,6 +648,33 @@ namespace eval $keyValue {
 	} else {
 	    pack forget $f.b
 	}  
+    }
+
+    proc DoOutDlg {node win title} {
+	global minForOpt maxForOpt
+	variable outGrpData
+	set t [PutItThere .pestoutdlg $win]
+	wm protocol .pestoutdlg  WM_DELETE_WINDOW [namespace code DoneOutDlg]
+	wm title $t "Set properties for $title"
+
+	pack [set f [labelframe $t.inp -text "Value interpretations:"]] \
+	    -padx 4 -pady 4
+	pack [frame $f.weight]
+	pack [label $f.weight.l -text WEIGHT] -side left
+	pack [entry $f.weight.e -width 8 \
+		  -textvar [namespace current]::outGrpData($node,weight)] \
+	    -side left
+	      
+	pack [button $t.done -text Done -command [namespace code DoneOutDlg]]
+        LetItShow $t
+        grab $t
+        tkwait variable [namespace current]::outGrpData(done)
+        grab release $t
+	PackItUp $t
+    }
+	
+    proc DoneOutDlg {} {
+	set [namespace current]::outGrpData(done) 1
     }
 
     proc Remove {winId title} {
@@ -881,6 +915,7 @@ namespace eval $keyValue {
 	    }
 	    puts $control {}
 	}
+	puts $control "0 0 0" ;# ICOV, ICOR, IEIG
 
 	puts $control {* parameter groups}
 	foreach parmGrp [array names inGrpData *,mems] {
@@ -915,7 +950,8 @@ namespace eval $keyValue {
 	foreach obsGrp [array names outGrpData *,mems] {
 	    set node [string range $obsGrp 0 end-5]
 	    foreach combo $outGrpData($obsGrp) {
-		puts $control [concat [split $combo =] [list 1.0 $node]]
+		puts $control [concat [split $combo =] \
+				   [list $outGrpData($node,weight) $node]]
 	    }
 	}
 
