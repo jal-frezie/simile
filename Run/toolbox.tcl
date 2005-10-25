@@ -681,7 +681,7 @@ proc compile_c {workingDir} {
 }
 
 proc LoadProgram {node lang} {
-    global runState
+    global runState runHow myNode
     set runState($node,updated) 0
     set runState($node,lang) $lang
     if {[info exists runState($node,runParams)]} {
@@ -689,6 +689,9 @@ proc LoadProgram {node lang} {
     }
     if {[do_for_node $node update_executable $node $lang]} {
         ToggleIOToolMenu $node
+	if {[string equal home $runHow(where)]} {
+	    set myNode $node ;# cos new MRE will have focus
+	}
     }
 }
 
