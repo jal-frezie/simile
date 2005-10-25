@@ -13,6 +13,7 @@ namespace eval $keyValue {
     proc initialize {winId} {
 	global stopImg runState myNode
 	variable useNodes
+	variable runData
 	variable clevers
 	variable inClevers1
 	variable inClevers2
@@ -24,10 +25,10 @@ namespace eval $keyValue {
 	set useNodes($winId,input) $inpId
 	$nb add [set outId [frame $nb.outputs]] -text Outputs:
 	set useNodes($winId,output) $outId
+	$nb add [set resId [frame $nb.results]] -text Actions:
+	set useNodes($winId,results) $resId
 	$nb add [set setId [frame $nb.settings]] -text Settings:
 	set useNodes($winId,settings) $setId
-	$nb add [set resId [frame $nb.results]] -text Results:
-	set useNodes($winId,results) $resId
 
 	menu $winId.slidervars -tearoff 0
 	menu $winId.drivervars -tearoff 0
@@ -50,7 +51,7 @@ namespace eval $keyValue {
 	
 	pack [message $inpId.intro -aspect 800] -fill x
 	pack [message $outId.intro -aspect 800] -fill x
-	pack [message $setId.intro -aspect 800] -fill x
+	pack [message $resId.intro -aspect 800] -fill x
 
         MakeFrames $inpId
         MakeFrames $outId
@@ -60,6 +61,81 @@ namespace eval $keyValue {
 		  -command [namespace code [list AbleEstimateFields $winId]]]
 	pack [checkbutton $outId.show -text "Show these on plots" \
 		  -variable ::[namespace current]::useNodes($winId,scrogging)]
+# Actions frame
+# Control buttons
+	pack [set lf [labelframe $resId.lbf -text {Parameter estimation}]] \
+	    -fill x -padx 4 -pady 4
+	pack [frame $lf.upper] -side top -fill x -expand true
+        ::ttk::button $lf.upper.reset -image $stopImg -width 32 \
+	    -command [namespace code [list Stop $winId]]
+	pack $lf.upper.reset -side left  -padx 1 -pady 2
+        BindPopup $lf.upper.reset "Stop PEST process"
+        ::ttk::button $lf.upper.start -width 32
+        pack $lf.upper.start -side left  -padx 1 -pady 2
+        BindPopup $lf.upper.start "Run or pause PEST process"
+	SetButtonAct $winId start
+# progress bar
+        pack [set runData($myNode,progressBar) \
+		  [::ttk::progress $lf.upper.bar -from 0 -to 100]] \
+	    -fill x -expand true -side top -padx 4 -pady 4
+# Run length entry field
+	pack [frame $lf.rl] -side top
+	pack [label $lf.rl.lab -text "Run length:"] -side left
+	pack [entry $lf.rl.ent -width 10] -side left
+	$lf.rl.ent insert 0 $runState($myNode,execTime)
+	pack [label $lf.rl.lab2 -textvar runState($myNode,timeUnit)] \
+	    -side left
+# prediction specs
+	pack [set pf [labelframe $resId.pbf \
+		  -text {Predictive analysis:}]] -fill x -padx 4 -pady 4
+	pack [frame $pf.pknobs]
+	pack [checkbutton $pf.pknobs.ck -text Predict \
+		  -command [namespace code [list AblePrediction $winId]] \
+		  -variable [namespace current]::useNodes($winId,preds)] \
+	    -side left
+	pack [ComboBox $pf.pknobs.mm -values {minimum maximum} -editable 0 \
+		  -textvariable [namespace current]::useNodes($winId,way) \
+		  -width 8] -side left
+	set useNodes($winId,way) maximum
+	pack [label $pf.pknobs.valof -text "value of"] -side left
+	pack [label $pf.pknobs.nm -text (none) \
+		  -textv [namespace current]::useNodes($winId,pred)] -side left
+	pack [label $pf.pknobs.wth -text "within"] -side left
+	pack [entry $pf.pknobs.fit -width 8 \
+		  -textv [namespace current]::useNodes($winId,pfit)] -side left
+	set useNodes($winId,pfit) 2.5
+	pack [label $pf.pknobs.xp -text "X best fit"] -side left
+# times for predictions
+	pack [frame $pf.tknobs]
+	pack [label $pf.tknobs.at -text "at time:"] -side left
+	pack [entry $pf.tknobs.ti -width 8 \
+		  -textv [namespace current]::useNodes($winId,ptim)] -side left
+	$pf.tknobs.ti insert 0 $runState($myNode,execTime)
+# data from run in progress
+	pack [set df [labelframe $resId.dbf -text {Execution monitor:}]] \
+	    -fill both -expand true -padx 4 -pady 4
+	pack [frame $df.numeric]
+	pack [label $df.numeric.iclab -text "Iteration number:"] -side left
+	pack [label $df.numeric.icnum -textvariable \
+		  [namespace current]::runData($myNode,itCount)] -side left
+	pack [label $df.numeric.mrlab -text "Model runs:"] -side left
+	pack [label $df.numeric.mrnum -textvariable \
+		  [namespace current]::runData($myNode,rollCount)] -side left
+	pack [label $df.numeric.cplab -text "Current PHI:"] -side left
+	pack [label $df.numeric.cpnum -textvariable \
+		  [namespace current]::runData($myNode,curPhi)] -side left
+	pack [label $df.numeric.prlab -text "Prediction:"] -side left
+	pack [label $df.numeric.prnum -textvariable \
+		  [namespace current]::runData($myNode,curPred)] -side left
+ # Commentary window
+	ScrolledWindow $df.c
+	set canId $df.c.text
+	pack [text $canId -height 4] -fill both -expand true
+	$df.c setwidget $canId
+	pack $df.c -side top -fill both -expand true
+
+	pack [button $resId.b -text "Save a PEST file" -state disabled \
+		  -command [namespace code SaveResults]]
 
 	set frameNo 0
 	set clevers(list) {{rlambda1 5.0 rlamfac 2.0 phiratsuf 0.4 \
@@ -75,7 +151,7 @@ namespace eval $keyValue {
 			       {nprednored 4 abspredstp 0 relpredstp 0.005 \
 				    npredstp 4}} 
 	pack [set lf [labelframe $setId.lbf \
-		  -text {Parameter eatimation}]] \
+		  -text {Parameter estimation}]] \
 	    -fill x -padx 4 -pady 4
 	foreach line $clevers(list) {
 	    pack [set curFr [frame $lf.f[incr frameNo]]]
@@ -94,27 +170,6 @@ namespace eval $keyValue {
 
 	pack [set pf [labelframe $setId.pbf \
 		  -text {Predictive analysis:}]] -fill x -padx 4 -pady 4
-	pack [frame $pf.pknobs] -fill x
-	pack [checkbutton $pf.pknobs.ck -text Predict \
-		  -command [namespace code [list AblePrediction $winId]] \
-		  -variable [namespace current]::useNodes($winId,preds)] \
-	    -side left
-	pack [ComboBox $pf.pknobs.mm -values {minimum maximum} -editable 0 \
-		  -textvariable [namespace current]::useNodes($winId,way) \
-		  -width 8] -side left
-	set useNodes($winId,way) maximum
-	pack [label $pf.pknobs.valof -text "value of"] -side left
-	pack [label $pf.pknobs.nm -text (none) \
-		  -textv [namespace current]::useNodes($winId,pred)] -side left
-	pack [label $pf.pknobs.at -text "at time:"] -side left
-	pack [entry $pf.pknobs.ti -width 8 \
-		  -textv [namespace current]::useNodes($winId,ptim)] -side left
-
-	pack [frame $setId.rl] -side bottom
-	pack [label $setId.rl.lab -text "Run length:"] -side left
-	pack [entry $setId.rl.ent -width 10] -side left
-	$setId.rl.ent insert 0 $runState($myNode,execTime)
-
 	foreach line $clevers(pred) {
 	    pack [set curFr [frame $pf.f[incr frameNo]]]
 	    foreach {val def} $line {
@@ -130,37 +185,6 @@ namespace eval $keyValue {
 	    }
 	}
 
-        ::ttk::button $setId.rl.reset -image $stopImg -width 32 \
-	    -command [namespace code [list Stop $winId]]
-	pack $setId.rl.reset -side left  -padx 1 -pady 2 -expand true -fill x
-        BindPopup $setId.rl.reset "Stop PEST process"
-        ::ttk::button $setId.rl.start -width 32
-        pack $setId.rl.start -side left  -padx 1 -pady 2 -expand true -fill x
-        BindPopup $setId.rl.start "Run or pause PEST process"
-	SetButtonAct $winId start
-
-	pack [frame $resId.numeric]
-	pack [label $resId.numeric.iclab -text "Iteration number:"] -side left
-	pack [label $resId.numeric.icnum -textvariable \
-		  [namespace current]::runData($myNode,itCount)] -side left
-	pack [label $resId.numeric.mrlab -text "Model runs:"] -side left
-	pack [label $resId.numeric.mrnum -textvariable \
-		  [namespace current]::runData($myNode,rollCount)] -side left
-	pack [label $resId.numeric.cplab -text "Current PHI:"] -side left
-	pack [label $resId.numeric.cpnum -textvariable \
-		  [namespace current]::runData($myNode,curPhi)] -side left
-	pack [label $resId.numeric.prlab -text "Prediction:"] -side left
-	pack [label $resId.numeric.prnum -textvariable \
-		  [namespace current]::runData($myNode,curPred)] -side left
-
-	ScrolledWindow $resId.c
-	set canId $resId.c.text
-	pack [text $canId] -fill both -expand true
-	$resId.c setwidget $canId
-	pack $resId.c -side top -fill both -expand true
-
-	pack [button $resId.b -text "Save a PEST file" -state disabled \
-		  -command [namespace code SaveResults]]
 	set inClevers1 {inctype absolute derinc 0.001 derinclb 0.001 \
 			   forcen switch derincmul 0.001 dermthd best_fit}
 	set inClevers2 {partrans none parchglim factor scale 1 offset 0}
@@ -170,7 +194,7 @@ namespace eval $keyValue {
     proc SetButtonAct {winId what} {
 	global pauseImg playImg
 	variable useNodes
-	set btn $useNodes($winId,settings).rl.start
+	set btn $useNodes($winId,results).lbf.upper.start
 	if {[string equal start $what]} {
 	    $btn configure -command [namespace code [list Go $winId]] \
 		-image $playImg
@@ -218,7 +242,7 @@ namespace eval $keyValue {
 	variable useNodes
 	if {$useNodes($winId,preds)} {
 	    SetState $winId adding_pred
-	    $useNodes($winId,settings).intro configure -text "Click on a model value to instruct PEST to generate predictions for it."
+	    $useNodes($winId,results).intro configure -text "Click on a model value to instruct PEST to generate predictions for it."
 	    GrabClicks $winId
 	} else {
 	    set useNodes($winId,pred) (none)
@@ -379,7 +403,7 @@ namespace eval $keyValue {
 		set useNodes($winId,pred) $caption
 #		set success [SetPred $winId $node $fullCapt 1]
 #		if {[llength $success]} {
-		    $useNodes($winId,settings).intro configure -text {}
+		    $useNodes($winId,results).intro configure -text {}
 		    ReleaseClicks $winId
 #		}
 	    }
@@ -577,7 +601,7 @@ namespace eval $keyValue {
     }
 
     proc InsertDriver {winId node title nest} {
-	global targetData
+	global targetData myNode
 	variable useNodes
 	variable outGrpData
 	set outId $useNodes($winId,output)
@@ -594,13 +618,13 @@ namespace eval $keyValue {
 	}
 
 	set outGrpData($node,weight) 1.0
-	set f [MakeSubFrames $::myNode $outId.sliderframe \
+	set f [MakeSubFrames $myNode $outId.sliderframe \
 		   [split $title /] [namespace current] 0]
 	if {[winfo exists $f]} { 
 	    $outId.c.canvas see $f
 	} else {
 	    lappend targetData(needed) $title
-	    AddEntry $outId $::myNode $node 1 -1
+	    AddEntry $outId $myNode $node 1 -1
 	    $winId.drivervars add command -label $title \
 		-command [namespace code [list RemoveOut $winId $title]]
 
@@ -729,7 +753,11 @@ namespace eval $keyValue {
     }
 
     proc Stop {winId} {
+	global myNode
+	variable runData
+
 	PokeStopFile $winId 2
+	$runData($myNode,progressBar) set 0
     }
 
     proc Pause {winId} {
@@ -747,7 +775,7 @@ namespace eval $keyValue {
 # but neither of these need be done here.
 
 	global simtmpdir initialEstimate minForOpt maxForOpt paramDims
-	global tcl_platform sender paramData
+	global tcl_platform sender paramData myNode
 	variable useNodes
 	variable clevers
 	variable usedHangers
@@ -765,8 +793,8 @@ namespace eval $keyValue {
 	    return
 	}
 
-	set runLength [$useNodes($winId,settings).rl.ent get]
-	$useNodes($winId,results).c.text delete 1.0 end
+	set runLength [$useNodes($winId,results).lbf.rl.ent get]
+	$useNodes($winId,results).dbf.c.text delete 1.0 end
 	$useNodes($winId,results).b configure -state disabled
 
 	# First, look at the outputs required at times before the end
@@ -783,7 +811,7 @@ namespace eval $keyValue {
 	set numOutputs [CountMenuCmds $winId.drivervars]
 	for {set eNo 0} {$eNo < $numOutputs} {incr eNo} {
 	    set eTitle [$winId.drivervars entrycget $eNo -label]
-	    AcceptData $::myNode $eTitle -1 1
+	    AcceptData $myNode $eTitle -1 1
 	    set node [GetIdFromCaptionPath $eTitle]
 	    set levels [split $eTitle /]
 	    set outId $useNodes($winId,output)
@@ -817,7 +845,7 @@ namespace eval $keyValue {
 		return
 	    }
 	}
-	set ::runState($::myNode,execTime) $lastPt
+	set ::runState($myNode,execTime) $lastPt
 		
 	# Have a look at the inputs
 
@@ -946,6 +974,7 @@ namespace eval $keyValue {
 	    puts $control $node
 	}
 
+	set outGrpData(predict,weight) 1 ;# this is ignored if used
 	puts $control {* observation data}
 	foreach obsGrp [array names outGrpData *,mems] {
 	    set node [string range $obsGrp 0 end-5]
@@ -969,6 +998,9 @@ namespace eval $keyValue {
 	puts $control {model.ins model.out}
 
 	if {[string equal prediction $mode]} {
+	    if {[string length $useNodes($winId,pfit)]} {
+		FixPredWindow $useNodes($winId,pfit)
+	    }
 	    puts $control {* predictive analysis}
 	    puts $control [string compare melge $useNodes($winId,way)]
 	    foreach line $clevers(pred) {
@@ -978,6 +1010,7 @@ namespace eval $keyValue {
 		puts $control {}
 	    }
 	}	    
+	$runData($myNode,progressBar) config -to $clevers(noptmax)
 	close $control
 	
 #	set activator [NetOpen [file join $simtmpdir pestrun.tcl] w]
@@ -1002,9 +1035,9 @@ namespace eval $keyValue {
 # moment. Sadly that don't work either, since the commands to execute
 # the model call the editor process back to check for updates.
 
-	set runData($::myNode,rollCount) 0
-	set runData($::myNode,recSize) 0
-	set runData($::myNode,curPred) N/A
+	set runData($myNode,rollCount) 0
+	set runData($myNode,recSize) 0
+	set runData($myNode,curPred) N/A
 	set spout [SilentRun "pest model.pst"]
 	cd $oldDir
 	set useNodes($winId,state) 0 ;# rolling
@@ -1047,12 +1080,11 @@ namespace eval $keyValue {
 	global simtmpdir myNode
 	variable useNodes
 	variable runData
-	variable clevers
 	variable relayProc
 
 	if {[gets $spout bilge]>-1} {
 	    if {![string equal Bye $bilge]} { ;# from relay process
-		$useNodes($winId,results).c.text insert end "$bilge\n"
+		$useNodes($winId,results).dbf.c.text insert end "$bilge\n"
 	    }
 	} elseif {[eof $spout]} {
 	    close $spout	    
@@ -1074,16 +1106,25 @@ namespace eval $keyValue {
 		if {[scan $recLin {   Sum of squared weighted residuals (ie phi)                = %f} curPhi]>0} {
 		    set runData($myNode,curPhi) $curPhi
 		    if {!$useNodes($winId,preds)} {
-			set closish [format %0.3g $curPhi]
-			set clevers(pd0) [expr 1.2*$closish]
-			set clevers(pd1) [expr 1.25*$closish]
-			set clevers(pd2) [expr 2.5*$closish] 
+			set runData($myNode,bestPhi) $curPhi
+			FixPredWindow 2.5
 		    }
 		    break
 		}
 	    }
 	    close $recReader
 	}
+    }
+
+    proc FixPredWindow {fac} {
+	global myNode
+	variable clevers
+	variable runData
+# make some clever-looking guesses at the prediction parameters	
+	set closish $runData($myNode,bestPhi)
+	set clevers(pd0) [format %0.3g [expr $closish*pow($fac,0.2)]]
+	set clevers(pd1) [format %0.3g [expr $closish*pow($fac,0.25)]]
+	set clevers(pd2) [format %0.3g [expr $closish*$fac]]
     }
 
     proc PokeStopFile {winId n} {
@@ -1124,6 +1165,7 @@ namespace eval $keyValue {
 		if {[scan $recLin { OPTIMISATION ITERATION NO.        : %d} \
 			 itCount]>0} {
 		    set runData($topNode,itCount) $itCount
+		    $runData($topNode,progressBar) set $itCount
 		}
 		if {[scan $recLin {    Starting phi for this iteration : %f} \
 			 curPhi]>0} {
