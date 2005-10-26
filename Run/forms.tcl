@@ -59,7 +59,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack [button $colourf.clear -text "Clear" -width 7 \
             -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
     pack [button $colourf.fixcolour -text "Colour..." \
-            -width 7 -command "UpdateColour $colourf"]  \
+            -width 7 -command "UpdateColour $t $colourf"]  \
             -padx 2 -pady 4 -side left
     $colourf.fixcolour configure -bg $disaggregate(colour)
     set disaggregate(defColour) $disaggregate(colour)
@@ -492,10 +492,10 @@ proc EnableTypeOps {fr} {
     }
 }
 
-proc UpdateColour {f} {
+proc UpdateColour {parent f} {
     global disaggregate
     
-    set new [tk_chooseColor \
+    set new [tk_chooseColor -parent $parent \
             -initialcolor $disaggregate(defColour)]
     if {[llength $new]} {
         set disaggregate(colour) $new
