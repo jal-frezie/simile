@@ -598,6 +598,7 @@ namespace eval ::$keyValue {
     
     proc resize {w win x y width height} {
         global ::graphtools::plot
+        global ::graphtools::YYnew
         
         if {[string match Canvas [winfo class $win]]} {
             set x0 $plot($w,xborder_left)
@@ -636,6 +637,10 @@ namespace eval ::$keyValue {
             set y0 [expr $plot($w,yborder_top)+$plot($w,ylength)]; #jmm
             set y2 [expr $y0+5]
             ##$w.canvas coords blanket_bottom 0 $y2 500 500
+
+# next bit for scaling popup info
+	    set YYnew($w) {}
+	    plot_YY $w
         }
     }
     
