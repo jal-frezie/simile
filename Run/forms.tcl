@@ -216,7 +216,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     #        -width 10 -state readonly
     ::ttk::menubutton $mathf.step.pulldown -width 10 -textvariable disaggregate(step)
     set m [menu $mathf.step.pulldown.menu] 
-    foreach item [list Default {Initialize only} {Reset only} 1 2 3 4 5 6 7] {
+    foreach item [list Default {Initialize only} {New params only} {Reset only} 1 2 3 4 5 6 7] {
       $m add command -label $item -command "set disaggregate(step) \"$item\""
     }
     $mathf.step.pulldown configure -menu $m
@@ -266,6 +266,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     if {$disaggregate(done)} {
         switch $disaggregate(step) {
             "Initialize only" {
+                set step -2
+            } "New params only" {
                 set step -1
             } "Reset only" {
                 set step 0

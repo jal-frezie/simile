@@ -107,25 +107,46 @@ namespace eval $keyValue {
 	pack [label $pf.pknobs.xp -text "X best fit"] -side left
 # times for predictions
 	pack [frame $pf.tknobs]
-	pack [label $pf.tknobs.at -text "at time:"] -side left
-	pack [entry $pf.tknobs.ti -width 8 \
-		  -textv [namespace current]::useNodes($winId,ptim)] -side left
-	$pf.tknobs.ti insert 0 $runState($myNode,execTime)
+	pack [label $pf.tknobs.ev -text "every"] -side left
+	pack [entry $pf.tknobs.tint -width 8 \
+		  -textv [namespace current]::useNodes($winId,predint)] \
+	    -side left
+	set useNodes($winId,predint) 1.0
+	pack [label $pf.tknobs.un -textvar runState($myNode,timeUnit)] \
+	    -side left
+	pack [label $pf.tknobs.fr -text "from"] -side left
+	pack [entry $pf.tknobs.tgo -width 8 \
+		  -textv [namespace current]::useNodes($winId,pgo)] -side left
+	set useNodes($winId,pgo) $runState($myNode,execTime)
+	pack [label $pf.tknobs.to -text "to"] -side left
+	pack [entry $pf.tknobs.tstp -width 8 \
+		  -textv [namespace current]::useNodes($winId,pstp)] -side left
+	set useNodes($winId,pstp) $runState($myNode,execTime)
+# prediction results
+	pack [frame $pf.rknobs] -fill x -expand true
+	pack [label $pf.rknobs.ev -text "Results:"] -side left
+	pack [entry $pf.rknobs.tstp -width 8 \
+		  -textv [namespace current]::useNodes($winId,predall)] \
+	    -fill x -expand true -side left
 # data from run in progress
 	pack [set df [labelframe $resId.dbf -text {Execution monitor:}]] \
 	    -fill both -expand true -padx 4 -pady 4
 	pack [frame $df.numeric]
+	pack [label $df.numeric.sqlab -text "PEST execution:"] -side left
+	pack [label $df.numeric.sqnum -textvariable \
+		  [namespace current]::useNodes($winId,rnum)] -side left
 	pack [label $df.numeric.iclab -text "Iteration number:"] -side left
 	pack [label $df.numeric.icnum -textvariable \
 		  [namespace current]::runData($myNode,itCount)] -side left
 	pack [label $df.numeric.mrlab -text "Model runs:"] -side left
 	pack [label $df.numeric.mrnum -textvariable \
 		  [namespace current]::runData($myNode,rollCount)] -side left
-	pack [label $df.numeric.cplab -text "Current PHI:"] -side left
-	pack [label $df.numeric.cpnum -textvariable \
+	pack [frame $df.outputs]
+	pack [label $df.outputs.cplab -text "Current PHI:"] -side left
+	pack [label $df.outputs.cpnum -textvariable \
 		  [namespace current]::runData($myNode,curPhi)] -side left
-	pack [label $df.numeric.prlab -text "Prediction:"] -side left
-	pack [label $df.numeric.prnum -textvariable \
+	pack [label $df.outputs.prlab -text "Prediction:"] -side left
+	pack [label $df.outputs.prnum -textvariable \
 		  [namespace current]::runData($myNode,curPred)] -side left
  # Commentary window
 	ScrolledWindow $df.c
@@ -768,6 +789,25 @@ namespace eval $keyValue {
     }
 
     proc Go {winId} {
+	variable useNodes
+	
+	if {$useNodes($winId,preds)} {
+	    set useNodes($winId,predall) {}
+	    set numRuns [expr int(($useNodes($winId,pstp) \
+					-$useNodes($winId,pgo)) \
+			     /$useNodes($winId,predint))+1]
+	    for {set rnum 0} {$rnum<$numRuns} {} {
+		set useNodes($winId,ptim) [expr $useNodes($winId,pgo) + \
+			  $rnum*$useNodes($winId,predint)]
+		set useNodes($winId,rnum) [incr rnum]
+		Optimize $winId
+	    }
+	} else {
+	    Optimize $winId
+	}
+    }
+
+    proc Optimize {winId} {
 
 # Time to invoke PEST. First we must make a template file that allows
 # PEST to create a .spf file that will parameterize the model. Usually
@@ -924,6 +964,7 @@ namespace eval $keyValue {
 		puts -nonewline $instruct "\\$node at $brkPt is\\ "
 		if {[string equal what [lindex $pair 1]]} { ;# prediction
 		    AddChoppers predict $instruct 1.0
+		    set runData($myNode,predictTag) o$usedHangers
 		} else {
 		    AddChoppers $node $instruct [lindex $pair 1]
 		}
@@ -1043,7 +1084,12 @@ namespace eval $keyValue {
 	set useNodes($winId,state) 0 ;# rolling
 
 	fconfigure $spout -blocking 0
-	fileevent $spout readable [namespace code [list GrabMsgs $winId $spout]]    }
+	fileevent $spout readable [namespace code [list GrabMsgs $winId $spout]]
+# Problem is, if we are doing lots of PEST runs at once, we do not want to
+# start one before the previous one is finished so wait here
+
+	tkwait variable [namespace current]::useNodes($winId,state)
+    }
 
     proc StartRelay {cmd} {
 	global simtmpdir
@@ -1103,6 +1149,15 @@ namespace eval $keyValue {
 	    seek $recReader $runData($myNode,recSize)
 	    while {![eof $recReader]} {
 		gets $recReader recLin
+# if there is a prediction, grab it (win98 cannot find it in console output)
+		if {$useNodes($winId,preds)} {
+		    if {[scan $recLin " $runData($myNode,predictTag) %f \
+                         predict" curPred]>0} {
+			set runData($myNode,curPred) curPred
+			lappend useNodes($winId,predall) \
+			    \#$useNodes($winId,ptim): $curPred
+		    }
+		}
 		if {[scan $recLin {   Sum of squared weighted residuals (ie phi)                = %f} curPhi]>0} {
 		    set runData($myNode,curPhi) $curPhi
 		    if {!$useNodes($winId,preds)} {
