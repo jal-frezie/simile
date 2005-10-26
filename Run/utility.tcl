@@ -61,9 +61,9 @@ proc ChooseFile { preferred title canbenew } {
     set switches [list -title $title -defaultextension $fileType \
 		      -filetypes $typeList \
 		      -initialdir [do_in_editor GetPathChoice $fileType]]
-    set active [winfo toplevel [focus]]
+    set active [focus]
     if {[llength $active]} {
-	lappend switches -parent $active
+	lappend switches -parent [winfo toplevel $active]
     }
     if {$canbenew} {
         set cmd tk_getSaveFile

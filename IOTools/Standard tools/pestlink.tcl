@@ -791,6 +791,7 @@ namespace eval $keyValue {
     proc Go {winId} {
 	variable useNodes
 	
+	set useNodes($winId,rnum) {}
 	if {$useNodes($winId,preds)} {
 	    set useNodes($winId,predall) {}
 	    set numRuns [expr int(($useNodes($winId,pstp) \
@@ -1153,7 +1154,7 @@ namespace eval $keyValue {
 		if {$useNodes($winId,preds)} {
 		    if {[scan $recLin " $runData($myNode,predictTag) %f \
                          predict" curPred]>0} {
-			set runData($myNode,curPred) curPred
+			set runData($myNode,curPred) $curPred
 			lappend useNodes($winId,predall) \
 			    \#$useNodes($winId,ptim): $curPred
 		    }
