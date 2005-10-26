@@ -8,7 +8,7 @@
 #
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
             comment enumLists eqnunit hide separate} {
-    global disaggregate tcl_platform
+    global disaggregate tcl_platform window_info
     foreach varName {colour image imgpos type fatness \
                 icount eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
@@ -178,6 +178,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     frame $appearancef.scale
     scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
             -resolution 0.01 -variable disaggregate(fatness)
+    if {$window_info($parent,is_top_level)} {
+	$appearancef.scale.value config -state disabled
+    }
     pack $appearancef.scale.value
     label $appearancef.scale.caption -text "Relative scale"
     pack $appearancef.scale.caption
