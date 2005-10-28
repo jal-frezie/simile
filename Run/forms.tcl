@@ -701,7 +701,7 @@ proc GetFindText {parent} {
 
 proc DoUserDialogue {} {
     global env userinfo
-    set t [PutItThere .userdata .]
+    set t [PutItThere .userdata {}]
     wm title $t "Enter your details"
     pack [label $t.mess -text "Please enter your name, organization and license code if required."]
     pack [frame $t.name] -fill x
@@ -1536,7 +1536,7 @@ proc BuildProblem {Title errLevel msg key args} {
     global iconImages help tcl_platform
 
     set ProbWin .bprob[clock clicks]
-    PutItThere $ProbWin [focus]
+    PutItThere $ProbWin {}
 
 #    switch $fault {
 #        user {

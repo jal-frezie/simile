@@ -527,11 +527,11 @@ proc PutItThere {t parent} {
     toplevel .$t -bd 4
     if {[winfo exists $parent] && [string compare . $parent]} {
 	wm transient $t $parent
-	if [string match Darwin $tcl_platform(os)] {
-	    ::tk::unsupported::MacWindowStyle style $t floatGrowProc
-	}
     } else {
 	wm transient $t
+    }
+    if [string match Darwin $tcl_platform(os)] {
+	::tk::unsupported::MacWindowStyle style $t floatGrowProc
     }
     wm geometry $t +0+[winfo screenheight $t]
     return $t
