@@ -526,7 +526,6 @@ proc ChooseImage {posRBs} {
                 if {![llength $readFlop]} {
                     set readFlop [string range [file extension $new] 1 end]
                 }
-                $newImage config -format $readFlop
                 set disaggregate(image) $newImage
                 PutSize $newImage
                 set choosing 0

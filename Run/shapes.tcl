@@ -863,7 +863,7 @@ proc WriteDesc {canvas canvasFile date args} {
 		set posn Tiled
 	    }
             set localImage [$canvas itemcget $object -image]
-            puts $stream [list MakeImage $sourceImage $localImage \
+            puts $stream [concat MakeImage \$c $sourceImage $localImage \
                     [$localImage cget -width] [$localImage cget -height] $posn]
         }
         # Do not write base objs they get re-created
@@ -892,10 +892,10 @@ proc WriteDesc {canvas canvasFile date args} {
     close $stream
 }
 
-proc MakeImage {base inst w h args} {
+proc MakeImage {c base inst w h args} {
     global looks window_info
     
-    set n $window_info($w,top_node)
+    set n $window_info($c,top_node)
     #    if {![info exists imageSources($base)]} {
     #	image create photo $base
     #	$base read $file -shrink
@@ -922,23 +922,26 @@ proc ShiftImages {topDir way args} {
             switch $way {
                 in {
                     image create photo $image
-                    foreach fmt {gif jpeg} {
+                    foreach fmt {gif jpeg none} {
                         if {![catch {$image read $imgFile.$fmt -shrink}]} {
-                            $image config -format $fmt
                             PutSize $image
                             file delete $imgFile
+			    break
                         }
                     }
                     # prevent crasho if reading fails
-		    if {[string match {} [$image cget -format]]} {
+		    if {[string match none $fmt]} {
 			$image read ../Images/splash.gif -shrink
-			$image config -format gif
 			PutSize $image
 		    }
                 } out {
-                    set fmt [$image cget -format]
-                    #ShowMessage debug info "Writing $imgFile.$fmt" ok
-                    $image write $imgFile.$fmt -format $fmt
+                    # try gif first, if too many colours try jpeg
+                    foreach fmt {gif jpeg} {
+                        if {![catch {$image write $imgFile.$fmt \
+					 -format $fmt}]} {
+			    break
+			}
+		    }
                 }
             }
         }

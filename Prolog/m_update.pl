@@ -1584,11 +1584,9 @@ get_action_point(Top, End, Point) :-
 
 make_desktop(Desktop, Canvas_name) :-
         m_class:Root is_root,
-	make_node(Root, submodel, Desktop),
-	unique_name_for_new('Desktop', ModelName),
-	\+ (Part has_class_refinement name of ModelName,
-	     Root has_part Part), !,
-	add_parameter(Desktop, 0, name, ModelName),
+	make_node(Root, 'Desktop', Desktop),
+	change_class(Desktop, _, submodel),
+	Desktop has_class_refinement name of ModelName,
 	state:set_initial_box_sizes(Desktop),
         state:get_initial_window_size(X, Y),
         image:set_shape(Desktop, internal_extent, [0, 0, X, Y]),
