@@ -50,6 +50,7 @@ initialize_ring(Model) :-
 	assert(saved_state(Model, current, 1)).
 
 go_back(Model, Further) :-
+	restart_move,
 	retract(saved_state(Model, current, Current)),
 	wrap(Prev, Current),
 	internal_extent_jiggered(Model, Prev, LostExtents),
@@ -65,6 +66,7 @@ go_back(Model, Further) :-
 	Further = 1).
 
 go_forward(Model, Further) :-
+	restart_move,
 	retract(saved_state(Model, current, Current)),
 	wrap(Current, Next),
 	internal_extent_jiggered(Model, Current, LostExtents),
@@ -321,10 +323,11 @@ appearance_changes(Model, Slot, Reshapes, Comps) :-
 mentions_graphics(Action, Comp) :-
 	(Action = remove(Term);
 	    Action = add(Term)),
-	(Term = graphical_info(Comp, _Attr, _Val);
+	(Term = graphical_info(Base, _Attr, _Val);
 	    (Term = node_refinement(AuxComp, _Attr, _Val);
 		Term = arc_info(AuxComp, complete, _Val)),
-	    get_host(AuxComp, Comp)).
+	    get_host(AuxComp, Base)),
+	    (Comp = Base; find_ghosts(Base, Comp)).
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
 	setof(Change, get_extent_change(Model, Slot, Change), ExtChgs), !;

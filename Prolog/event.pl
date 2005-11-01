@@ -729,11 +729,10 @@ spread_colour(Node, NewDims) :-
 	need_same_dims(Node, Flow),
 	    update_color(Flow),
 	    fail;
-	(setof(More, status_affects(Node, More), HitList), !,
-	    SpreadList = [Node | HitList];
-	SpreadList = [Node]),
-	(member(Hit, SpreadList), \+ find_type(Hit, influence);
-	member(Hit, SpreadList), find_type(Hit, influence)),
+	setof(More, (More = Node; status_affects(Node, More)), SpreadList),
+	(member(Hit, SpreadList), Hit = Node;
+	    member(Hit, SpreadList), \+ find_type(Hit, influence);
+	    member(Hit, SpreadList), find_type(Hit, influence)),
 	/* Do influences last cos they depend on others! */
 	(NewDims = no,
 	    update_color(Hit);
