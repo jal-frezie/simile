@@ -1127,11 +1127,13 @@ set_properties(Wid, Model) :-
 	    (([NewColour, NewImage, NewImgPos, NewNature] =
 	     [Colour, Image, ImgPos, Nature],
 	      FatFactor = 1, UseCount = Count, NewHide = Hide), !;
-	    (\+ FatFactor = 1,
-		find_all_comps(Model, TopComp),
-		redisplay_border(TopComp),
-		fail;
-	    redisplay_border(Model))),
+	    NewHide = Hide, !,
+		(\+ FatFactor = 1,
+		    find_all_comps(Model, TopComp),
+		    redisplay_border(TopComp),
+		    fail;
+		redisplay_border(Model));
+	    redisplay(Model)),
 
 	    (Separate = NewSeparate, !;
 		find_all_comps(Parent, Model),
