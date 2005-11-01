@@ -34,6 +34,12 @@ proc Unscale {winId can} {
     expr $can/$window_info($winId,scale)
 }
 
+proc ChangeScale {winId factor} {
+    global window_info
+
+    set window_info($winId,scale) [expr $window_info($winId,scale)/$factor]
+}
+
 # procedure called when Prolog wants to know what object is at a point
 
 proc FindObj { winId x y } {

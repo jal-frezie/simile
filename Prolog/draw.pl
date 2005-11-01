@@ -26,7 +26,8 @@ sicstus_module(draw,
 		redisplay/1, redisplay_border/1,
 		add_window/9, redraw_window/1, delete_window/1,
 		inject_graphics/2, translate_canvas_pl_names/2, display_area/1,
-		save_canvas/4, expand_canvas/2, adjust_toplevel_windows/2,
+		save_canvas/4, expand_canvas/2,
+		refatten_toplevels/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
@@ -382,6 +383,12 @@ grow_to_scale(OldLo, OldHi, Scale, NewLo, NewHi) :-
 	Middle is (OldHi + OldLo)/2,
 	NewLo is Middle - (Middle - OldLo)*Scale,
 	NewHi is Middle + (OldHi - Middle)*Scale.
+
+refatten_toplevels(Parent, DFat) :-
+	Window shows_model Parent,
+	tk_refatten(Window, DFat),
+	fail;
+	true.
 	
 adjust_toplevel_windows(Parent, NewRect) :-
 	Window shows_model Parent,
