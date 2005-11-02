@@ -786,7 +786,7 @@ proc ControlDraw {prologVersion} {
 	}
     }
     if {[info exists foldErr]} {
-	wm withdraw .splash
+	catch {wm withdraw .splash}
 	BuildProblem {File system problem} warning "HOME directory unusable -- $foldErr -- trying installation folder instead" top
         set custom(prefDir) [pwd]/../Prefs
     }

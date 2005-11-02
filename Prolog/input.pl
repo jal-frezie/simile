@@ -132,7 +132,7 @@ tk_abandon_eqn :-
 	abandon_eqn.
 
 check_use(TestFile) :-
-	open_native(TestFile, write, St),
+	utility:open_native(TestFile, write, St),
 	write(St, 'Testing'), nl(St),
 	close(St).
 

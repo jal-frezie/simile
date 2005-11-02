@@ -181,7 +181,7 @@ proc RaiseTclExecError {mproc mtime mstep} {
     error [list $mproc $dest $mtime $mstep $whoopsie] $errorInfo
 }
 
-proc CheckGUI {modelTime thisOp} {
+proc CheckGUI {node modelTime thisOp} {
     global GUILog
     
     set flash 20
@@ -202,7 +202,7 @@ proc CheckGUI {modelTime thisOp} {
     }
     
     if {$currentOld || $startingLong} {
-	set result [InteractGUI $modelTime]
+	set result [InteractGUI $node $modelTime]
 	set thisUpdate [clock clicks -milliseconds] ;# GUI may have taken time
 	set GUILog(lastUpdate) $thisUpdate
     } else {
@@ -223,7 +223,7 @@ proc TclResetModel {topPhase} {
     return 1
 }
 
-proc TclExecuteModel {howInt start end} {
+proc TclExecuteModel {node howInt start end} {
     global dts steps phasecount
 #    if {[string equal cancel [ShowMessage debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
@@ -232,7 +232,7 @@ proc TclExecuteModel {howInt start end} {
     for {set xtime [expr (floor($start/$freq+0.5))*$freq]} \
 	{$xtime<=$end-0.5*$freq} {} {
 	    set bigPhase [PhaseFor $xtime $freq [expr $phasecount+1]]
-	    if {[CheckGUI $xtime ph$bigPhase]} {
+	    if {[CheckGUI $node $xtime ph$bigPhase]} {
 		return 0
 	    }
 	    set xtime [expr $xtime+$freq]
@@ -251,7 +251,7 @@ proc TclExecuteModel {howInt start end} {
 	    }
 	    do_model int_evalmodel $xtime $bigPhase
 	}
-    CheckGUI $end ext
+    CheckGUI $node $end ext
     return 1
 }
 	    

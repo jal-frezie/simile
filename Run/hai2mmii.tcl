@@ -708,7 +708,7 @@ proc ExecuteModel {myNode howInt start finish} {
 	    c_executemodel $model_id($myNode) $instance_id($myNode) \
 		[expr [string equal "Runge-Kutta" $howInt]] $start $finish
 	} else {
-	    TclExecuteModel $howInt $start $finish
+	    TclExecuteModel $myNode $howInt $start $finish
 	}
     } errList]} {
 	InteractGUI $myNode [lindex $errList 2]

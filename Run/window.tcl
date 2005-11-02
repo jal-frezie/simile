@@ -813,14 +813,6 @@ proc AddEqnPopup {node x y winId X Y} {
 
 # Bindings for canvas Text items
 
-# when we paste we do not know whether the selection has been encoded as utf-8
-# or not, but Tcl knows and will do the right thing if pasting into an entry
-# box. So why struggle -- make an entry box where no-one can see it, and when
-# pasting into canvas text, paste into that then read the text from it.
-
-entry .hidden_e
-pack .hidden_e
-
 proc CanvasEditBind { c } {
     
     $c bind currently_editable <B1-Motion> {

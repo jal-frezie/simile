@@ -128,6 +128,19 @@ set sendvars(simP) p1
 # So we do our best to hide the brief appearance of the root window by giving
 # it the same coordinates as the splash screen so it is hidden behind.
 
+# Also, when we paste we do not know whether the selection has been
+# encoded as utf-8 or not, but Tcl knows and will do the right thing
+# if pasting into an entry box. So why struggle -- make an entry box
+# where no-one can see it, and when pasting into canvas text, paste
+# into that then read the text from it. However this does not work
+# under Linux unless the entry box has been displayed -- at least
+# briefly -- and my hopes that the problem would be fixed by not
+# changing the system encoding were groundless. So add the entrybox
+# here.
+
+entry .hidden_e
+pack .hidden_e
+
 set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
 if {[string equal Linux $tcl_platform(os)]} {
     wm geometry . $startGeom
