@@ -12,7 +12,7 @@ sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
 		       tk_resize_top_win/3, tk_visible/5,
 		       tk_embrace/2, tk_abandon/0,
-		       tk_abandon_eqn/0, compile_to_file/1,
+		       tk_abandon_eqn/0, check_use/1, compile_to_file/1,
 		       tk_run_settings_tweaked/1, tk_off_window/2,
 		       tk_kill_everything/1, tk_set_new_size/3,
 		       tk_change_size/3, tk_do_colours/2]).
@@ -130,6 +130,11 @@ tk_abandon :-
 
 tk_abandon_eqn :-
 	abandon_eqn.
+
+check_use(TestFile) :-
+	open_native(TestFile, write, St),
+	write(St, 'Testing'), nl(St),
+	close(St).
 
 tk_set_new_size(Node, CType, New_size) :-
 	set_box_size(Node, CType, New_size, 0,0).

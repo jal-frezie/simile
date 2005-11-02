@@ -773,7 +773,21 @@ proc ControlDraw {prologVersion} {
     } else {
         set custom(prefDir) $oldPrefs
     }
+    }
+
+    if {![info exists custom(prefDir)]} {
+	set foldErr "No HOME directory specified"
     } else {
+	set clipSpc [file join $custom(prefDir) clipboard.pl]
+	if {[catch {file mkdir $custom(prefDir); \
+			prolog check_use('$clipSpc'); \
+			file delete $clipSpc} pWibble]} {
+	    set foldErr $pWibble
+	}
+    }
+    if {[info exists foldErr]} {
+	wm withdraw .splash
+	BuildProblem {File system problem} warning "HOME directory unusable -- $foldErr -- trying installation folder instead" top
         set custom(prefDir) [pwd]/../Prefs
     }
     

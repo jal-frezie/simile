@@ -38,7 +38,7 @@ proc KeepLooking {} {
 	    } elseif {[string match send_tcl_cmd $cmd]} {
 		eval do_tail $line
 	    } else {
-		DebugMess $line
+		error $line
 		set prologExit 1
 	    }
 	}
