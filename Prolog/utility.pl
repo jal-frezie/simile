@@ -74,7 +74,7 @@ decimal places (thanks to Dan Diaz for making it work with print_to_chars)
 
 trim_float(F, Ns) :-
 	float(F),
-	sicstus_format_to_chars("~8g", [F], Fs),
+	sicstus_format_to_chars("~16g", [F], Fs),
 	/* now I can catch Sicstus bogeys without crashing GNU */
 	\+ member(Fs, ["Inf", "-Inf", "NaN"]),
 	/* mantissa must look like float so add .0 if it doesnt */

@@ -1303,11 +1303,17 @@ proc ConvertSSxml {} {
 proc EatNumber {str} {
     if {[scan $str %g%n floatVal floatSize]>0} {
 	if {[scan $str %d%n intVal intSize]>0} {
-	    if {$intSize == $floatSize} {
+	    if {$intSize == $floatSize && abs($intVal)<268435456} {
 		return [list $intVal $intSize]
 	    }
 	}
-	return [list [format %\#.8g $floatVal] $floatSize]
+# make sure it has float type -- cannot use # as prolog barfs if last char
+# is decimal point
+	set floatVal [format %.16g $floatVal]
+	if {[string is integer $floatVal]} {
+	    append floatVal .0
+	}
+	return [list $floatVal $floatSize]
     }
 }
 
