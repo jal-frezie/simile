@@ -115,18 +115,21 @@ if {[string equal windows $tcl_platform(platform)]} {
 }
 set env(SIMILE_VERSION) 4.4
 set sendvars(simP) p1
-# KDE launch feedback will fail unless root window is displayed briefly,
-# causing annoying eye candy to persist while program is running.
-# It may be necessary to have the launch icon execute this file rather than the
-# launcher script to avoid this effect -- make sure the first line points to
-# <Simile>/System/bin/wish
-# This is also the reason why this file must have Unix style line ends
 
-# Sadly we cannot use the root window for the splash screen because that
-# needs overrideredirect, which also stops launch feedback working. And do
-# not think we can turn off redirect after displaying it, that does not work.
-# So we do our best to hide the brief appearance of the root window by giving
-# it the same coordinates as the splash screen so it is hidden behind.
+# KDE launch feedback will fail unless root window is displayed
+# briefly, causing annoying eye candy to persist while program is
+# running.  It may be necessary to have the launch icon execute this
+# file rather than the launcher script to avoid this effect -- make
+# sure the first line points to <Simile>/System/bin/wish This is also
+# the reason why this file must have Unix style line ends
+
+# Sadly we cannot use the root window for the splash screen because
+# that needs overrideredirect, which also stops launch feedback
+# working. And do not think we can turn off redirect after displaying
+# it, that does not work.  So we do our best to hide the brief
+# appearance of the root window by giving it the same coordinates as
+# the splash screen so it is hidden behind. (This does not work in XP
+# so instead try putting it off the screen)
 
 # Also, when we paste we do not know whether the selection has been
 # encoded as utf-8 or not, but Tcl knows and will do the right thing
@@ -142,11 +145,12 @@ entry .hidden_e
 pack .hidden_e
 
 set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
-if {[string equal Linux $tcl_platform(os)]} {
-    wm geometry . $startGeom
-} else {
-    wm withdraw .
-}
+#if {[string equal Linux $tcl_platform(os)]} {
+#    wm geometry . $startGeom
+#} else {
+#    wm withdraw .
+#}
+wm geometry . +0+[winfo screenheight .]
 
 # first put up the splash screen
 image create photo splash
