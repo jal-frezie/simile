@@ -55,26 +55,19 @@ node(N, Cl, Ch, C, _, G, _, B, NB) :-
 	node(N, Cl, Ch, C, G, _, B, NB).
 
 node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
-				_, copy, copy) :-
-	(member(OldClass, [source, sink]), !, Class = cloud;
-	    Class = OldClass),                  % Remove obsolete types
-	Node has_new_class Class,		% add the info
-
-	foreach(Child, Children, Child is_also_part_of Node),
-	foreach( CAttribute=CValue, ClassRefinements,
-		Node has_new_class_refinement CAttribute of CValue ),
-/* no model refinements restored */
-	foreach( GAttribute=GValue, GraphicalInfo,    
-		Node has_new_graphical_attribute GAttribute of GValue ).
-
-node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 				_, Bindings, NewBindings ) :-
-	get_match(Node, Bindings, RealNode),	% the node must be already known
+	get_match(Node, Bindings, RealNode),
+	RealNode is_part_of _,	% the node must be already known
+	
 	(member(OldClass, [source, sink]), !, Class = cloud;
 	    Class = OldClass),                  % Remove obsolete types
 	RealNode has_new_class Class,		% add the info
+	(Bindings = copy, !,
+	    foreach(Child, Children, Child is_also_part_of Node),
+	    NewBindings = copy;
 	all(build, gen_equiv_nodes,
-	    [build(Children), unify(RealNode), build(MidBindings)]),
+	        [build(Children), unify(RealNode), build(MidBindings)]),
+	    append( MidBindings, Bindings, NewBindings )),
 /*	( setof( Child-RealChild, 
 			( member( Child, Children ),
 		 	  RealChild is_new_part_of RealNode ),
@@ -84,8 +77,7 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 		RealNode has_new_class_refinement CAttribute of CValue ),
 /* no model refinements restored */
 	foreach( GAttribute=GValue, GraphicalInfo,    
-		RealNode has_new_graphical_attribute GAttribute of GValue ),
-	append( MidBindings, Bindings, NewBindings ).
+		RealNode has_new_graphical_attribute GAttribute of GValue ).
 	
 gen_equiv_nodes(Node, Parent, Node-NewN) :-
 	Node is_part_of _, !,
