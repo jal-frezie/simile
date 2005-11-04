@@ -132,7 +132,7 @@ proc ExplainError {what dest mtime mstep whoopsie} {
 	    set problem "there was a math error: $whoopsie"
 	} default {
 	    # could not get cause of error, raise again as general problem
-	    error $whoopsie $errorInfo
+	    set problem "there was an $whoopsie"
 	}
     }
     
@@ -671,12 +671,21 @@ proc GetPhaseCount {topNode} {
     }
 }
 
-# this one is called from the model and handled by the client
+# these two are called from the model and handled by the client
 proc InteractGUI {handle modelTime} {
     global helperTable instance_id
     foreach {model h_id} [array get instance_id] {
 	if {$h_id==$handle} {
 	    return [$helperTable(RunControl)::RCInteractGUI $model $modelTime]
+	}
+    }
+}
+
+proc AbortCheck {handle} {
+    global helperTable instance_id
+    foreach {model h_id} [array get instance_id] {
+	if {$h_id==$handle} {
+	    return [$helperTable(RunControl)::RCAbortCheck $model]
 	}
     }
 }
@@ -695,10 +704,12 @@ proc ResetModel {myNode redo} {
 	}
     } errList]} {
 	eval ExplainError $errList
-	return 0
+	set done 0
     } else {
-	return 1
+	set done 1
     }
+    InteractGUI $instance_id($myNode) 0
+    return $done
 }
 
 proc ExecuteModel {myNode howInt start finish} {
@@ -711,7 +722,7 @@ proc ExecuteModel {myNode howInt start finish} {
 	    TclExecuteModel $myNode $howInt $start $finish
 	}
     } errList]} {
-	InteractGUI $myNode [lindex $errList 2]
+	InteractGUI $instance_id($myNode) [lindex $errList 2]
 	eval ExplainError $errList
 	return -1
     } else {

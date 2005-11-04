@@ -78,6 +78,7 @@ eval_submodel_type eval_submodel;
 search_from_type search_from;
 advance_ptr_type advance_ptr;
 get_remote_value_type get_remote_value;
+stat_check_type stat_check;
 
 char* xsimileVersion;
 int connCount;
@@ -87,17 +88,17 @@ char globMess[256];
 
 /* values for keeping track of GUI interaction and execution times */
 int last_op = 0;
-unsigned long int last_exit = 0, last_update = 0;
+unsigned long int last_exit = 0, last_update = 0, last_check = 0;
+unsigned long int flash=CLOCKS_PER_SEC/50; // 20ms
 unsigned long int took[]={0,0,0,0,0,0,0,0};
 long int topType;
 BOOLEAN resetting;
 
 BOOLEAN check_gui(void* id, double model_time, int this_op) {
-  unsigned long int flash, this_update;
+  unsigned long int this_update;
   long int while_running;
   BOOLEAN result, while_resetting;
   
-  flash=CLOCKS_PER_SEC/50; // 20ms
   // first record how much time the last op took
   this_update=clock();
   took[last_op]=this_update-last_exit;
@@ -106,15 +107,33 @@ BOOLEAN check_gui(void* id, double model_time, int this_op) {
   if ((this_update-last_update)>flash || took[this_op]>flash) {
     while_running = topType;
     while_resetting = resetting;
-    result=interact_gui(id, model_time);
+    result=interact_gui(id, 1, model_time);
     topType = while_running;
     resetting = while_resetting;
     this_update=clock(); // GUI may have taken time
-    last_update=this_update;
+    last_update=last_check=this_update;
   } else {
     result=FALSE;
   }
   last_exit=this_update;
+  return result;
+}
+
+// check for abort (and do non-intrusive gui action). Do not do this if the
+// time point borders are happening frequently.
+
+int stat_check(void* id) {
+  unsigned long int this_update;
+  BOOLEAN result;
+
+  this_update=clock();
+  if (this_update-last_check>flash && this_update-last_update>2*flash) {
+    result=interact_gui(id, 0, 0);
+    this_update=clock(); // GUI may have taken time
+    last_check=this_update;
+  } else {
+    result=FALSE;
+  }
   return result;
 }
 
@@ -619,7 +638,7 @@ void setdt(double, int);
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*, void*,
-			  int*, node_data_line**, int*, char***);
+			  void*, int*, node_data_line**, int*, char***);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
@@ -701,6 +720,7 @@ sprintf(globMess, "Loaded %ld", handle);
 			    (void*)search_from,
 			    (void*)advance_ptr,
 			    (void*)get_remote_value,
+			    (void*)stat_check,
 			    (void*)&c_graphdata,
 			    &phases, &nodedata, 
 			    &inArcCount, &inArcList);

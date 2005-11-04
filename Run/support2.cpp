@@ -122,20 +122,20 @@ FINDABLE void* burrow_to(void* level, int** id_meta, int** dim_list) {
 
 /* This is called only when we create the type, to return model constants */
 FINDABLE int get_count(void* useClassPtr, void* ame_rand_ptr, 
-		void* graphpoint_ptr, 
-		void* release_graph_data_ptr, 
-		void* compare_instance_status_ptr, 
-		void* get_value_pointer_ptr, 
-		void* fetch_instance_ptr,
-		void* update_submodel_ptr,
-		void* advance_submodel_ptr,
-		void* eval_submodel_ptr,
-		void* search_from_ptr,
-		void* advance_ptr_ptr,
-		void* get_remote_value_ptr, 
-		void* graph_ptr,
-		int* phases, node_data_line** data_ptr,
-		int* arc_count, char*** arc_id_list) {
+		       void* graphpoint_ptr, 
+		       void* release_graph_data_ptr, 
+		       void* compare_instance_status_ptr, 
+		       void* get_value_pointer_ptr, 
+		       void* fetch_instance_ptr,
+		       void* update_submodel_ptr,
+		       void* advance_submodel_ptr,
+		       void* eval_submodel_ptr,
+		       void* search_from_ptr,
+		       void* advance_ptr_ptr,
+		       void* get_remote_value_ptr, 
+		       void* stat_check_ptr,
+		       void* graph_ptr, int* phases, node_data_line** data_ptr,
+		       int* arc_count, char*** arc_id_list) {
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
@@ -153,6 +153,7 @@ FINDABLE int get_count(void* useClassPtr, void* ame_rand_ptr,
   search_from_ref = (search_from_type*)search_from_ptr;
   advance_ptr_ref = (advance_ptr_type*)advance_ptr_ptr;
   get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
+  stat_check = (stat_check_type*)stat_check_ptr;
   graph_data_pointer = (graph_data_type**)graph_ptr;
 
   /* ...and we are telling stub... */

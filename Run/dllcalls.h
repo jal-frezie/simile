@@ -171,7 +171,7 @@ typedef struct connectRecord_t {
    method didn't work in win98) */
 
 typedef double ame_rand_type(double, double);
-typedef BOOLEAN interact_gui_type(void*, double);
+typedef BOOLEAN interact_gui_type(void*, BOOLEAN, double);
 typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
@@ -183,6 +183,7 @@ typedef int eval_submodel_type(char*, void*, double, int, BOOLEAN);
 typedef void search_from_type(void*, int, void*);
 typedef void* advance_ptr_type(void*, void*);
 typedef void* get_remote_value_type(void*, void*, int, int, int*);
+typedef int stat_check_type(void*);
 
 typedef void showMess_type(char*);
 

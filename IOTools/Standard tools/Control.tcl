@@ -27,11 +27,10 @@ namespace eval runcontrol33857 {
         # does nothing
     }
     
-    proc SwapDistVar {win pt} {
+    proc SwapDistVar {node pt} {
         variable sendvars
-	variable myModel
-        set widget $win.nb.rsf
-	set node $myModel($win)
+	variable frames
+        set widget $frames($node,rsf)
 
         #set pt [$widget.edit.capt cget -text]
         $widget.edit.num configure -textvar runState($node,update[expr $pt])
@@ -41,7 +40,7 @@ namespace eval runcontrol33857 {
             lappend sendvars($node,captList) \
 		[list Time step \#$phase {(} $::runState($node,update$phase) {)}]
                 $widget.edit.capt.menu add command -label [list Time step \#$phase {(} $::runState($node,update$phase) {)}] \
-                      -command [list [namespace current]::SwapDistVar $win $phase]                
+                      -command [list [namespace current]::SwapDistVar $node $phase]                
         }
         $widget.edit.capt configure -text [list Time step $pt {(} $::runState($node,update$pt) {)}]
         focus $widget.edit.num
@@ -49,7 +48,7 @@ namespace eval runcontrol33857 {
     
     proc initialize {t} {
         variable sendvars
-	variable myModel
+	variable frames
         global runState
         global stopImg
         global pauseImg
@@ -57,7 +56,6 @@ namespace eval runcontrol33857 {
         #	global runState
         
 	upvar 1 node node
-	set myModel($t) $node
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
 	}
@@ -78,17 +76,18 @@ namespace eval runcontrol33857 {
         
         $t.nb add [frame $t.nb.rcf] -text "Run control"
         set rcf $t.nb.rcf
+	set frames($node,rcf) $rcf
         ttk::frame $rcf.upper -class Toolbar
         foreach mode {play pause stop} {
             set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
         }
         frame $rcf.upper.topbuttons
         ::ttk::button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
-                -command "[namespace current]::SetMode $t reset"
+                -command "[namespace current]::SetMode $node reset"
         pack $rcf.upper.topbuttons.reset -side left  -padx 1 -pady 2 -expand true -fill x
         BindPopup $rcf.upper.topbuttons.reset "Reset simulation"
         ::ttk::button $rcf.upper.topbuttons.start -image $playImg -width 32  \
-                -command "[namespace current]::SetMode $t start"
+                -command "[namespace current]::SetMode $node start"
         pack $rcf.upper.topbuttons.start -side left  -padx 1 -pady 2 -expand true -fill x
         BindPopup $rcf.upper.topbuttons.start "Run or pause simulation"
         pack $rcf.upper.topbuttons -side left
@@ -123,6 +122,7 @@ namespace eval runcontrol33857 {
         
         $t.nb add [frame $t.nb.rsf] -text "Run settings"
         set rsf $t.nb.rsf
+        set frames($node,rsf) $rsf
         pack [frame $rsf.unitselection] -pady 2 -fill x
         pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left -anchor nw
         ::ttk::menubutton $rsf.unitselection.pulldown
@@ -154,92 +154,107 @@ namespace eval runcontrol33857 {
         ::ttk::menubutton $rsf.edit.capt
         set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
         foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
-          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $t $index]
+          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
         }
         $rsf.edit.capt configure -menu $timeStepMenu -width 16
         pack $rsf.edit.capt -side left -anchor nw
         pack [label $rsf.edit.colon -text " "] -side left
         pack [::ttk::entry $rsf.edit.num -width 8] -side left -expand on -fill x -anchor nw
-        SwapDistVar $t 1
+        SwapDistVar $node 1
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit
         set runState($node,expected_end) 0
-        SendData $t
+        SendData $node
         set sendvars($node,prevDisplay) 0.0
         set sendvars($node,currentMode) stop
+	set sendvars($node,busy) 0
     }
     
-    proc SetMode { winId action } {
+    proc SetMode { node action } {
 	global runState
         variable sendvars
-	variable myModel
         
-	set node $myModel($winId)
-        if {[string match stop $sendvars($node,currentMode)] && \
-		    $runState($node,modelRunning) || \
-                [string match reset $action]} {
-            set widget $winId.nb.rcf
+# Do not allow button actions if merely checking for abort
+#	while {$sendvars($node,busy)} {
+#	    tkwait variable sendvars($node,busy)
+#	}
 
-	    if {[do_in_editor set runState($node,updated)]} {
-		set updateChoice [ShowMessage "Model out of date" warning \
-				      "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
-		switch $updateChoice {
-		    yes {
-			start_in_editor UpdateExecution $node $action
-			return
-		    } no {
-			if {$runState($node,modelRunning)==3} {
-			    set runState($node,modelRunning) 4
-			}
-			do_in_editor set runState($node,updated) 0
-		    } cancel {
-			return
+	if {[info exists sendvars($node,waitFrom)]} {
+	    set sendvars($node,checkOn) 1
+	} else {
+	    if {[string match stop $sendvars($node,currentMode)]} {
+		switchMode $node $action
+	    } else {
+		if {[string match reset $sendvars($node,currentMode)]} {
+		    set sendvars($node,currentMode) stop
+		} else {
+		    set sendvars($node,currentMode) $action
+		}
+		set sendvars($node,waitFrom) [clock clicks -milliseconds]
+		set sendvars($node,checkOn) 0
+	    } 
+	}
+    }
+
+    proc switchMode {node action} {
+	global runState
+        variable sendvars
+
+	if {[do_in_editor set runState($node,updated)]} {
+	    set updateChoice [ShowMessage "Model out of date" warning \
+				  "The model has been altered since the curent runnable version was built. Rebuild it now?" yesnocancel]
+	    switch $updateChoice {
+		yes {
+		    start_in_editor UpdateExecution $node $action
+		    return
+		} no {
+		    if {$runState($node,modelRunning)==3} {
+			set runState($node,modelRunning) 4
 		    }
+		    do_in_editor set runState($node,updated) 0
+		} cancel {
+		    return
 		}
 	    }
-            switch $runState($node,modelRunning) {
-		0 {
-		    ShowMessage "Cannot run model" warning \
-                        "The current model could not be built, or it failed to initialize, or it has been aborted." ok
+	}
+	switch $runState($node,modelRunning) {
+	    0 {
+		ShowMessage "Cannot run model" warning \
+		    "The current model could not be built, or it failed to initialize, or it has been aborted." ok
+		return
+	    } 1 {
+		ShowMessage "Fixed parameters not loaded" warning \
+		    "The model cannot be run because it contains fixed input parameters for which no source is defined." ok
+		return
+	    } 2 {
+		if {[string match start $action]} {
+		    ShowMessage "Model has exited" warning \
+			"The model has run into a problem during execution and needs to be reset before it can run again." ok
 		    return
-		} 1 {
-		    ShowMessage "Fixed parameters not loaded" warning \
-                        "The model cannot be run because it contains fixed input parameters for which no source is defined." ok
-		    return
-		} 2 {
-		    if {[string match start $action]} {
-			ShowMessage "Model has exited" warning \
-			    "The model has run into a problem during execution and needs to be reset before it can run again." ok
-			return
-		    }
 		}
 	    }
-            if {[string match start $action] && \
-                        [info exists runState($node,reloadParams)]} {
-                set paramChoice [ShowMessage "Parameters out of date" warning \
-				     "New file parameters will not take effect until the model is reset. Do you want to reset the model now before running it?" yesno]
-		if {[string equal yes $paramChoice]} {
-		    # reset the model
-		    set sendvars($node,currentMode) reset
-		    RollSimulation $winId
-                }
-            }
-            
-            SendData $winId
-            set sendvars($node,currentMode) $action
-            RollSimulation $winId
-        } elseif {[string equal start $sendvars($node,currentMode)]} {
-	    set sendvars($node,currentMode) $action
-        }
+	}
+	if {[string match start $action] && \
+		[info exists runState($node,reloadParams)]} {
+	    set paramChoice [ShowMessage "Parameters out of date" warning \
+				 "New file parameters will not take effect until the model is reset. Do you want to reset the model now before running it?" yesno]
+	    if {[string equal yes $paramChoice]} {
+		# reset the model
+		set sendvars($node,currentMode) reset
+		RollSimulation $node
+	    }
+	}
+	
+	SendData $node
+	set sendvars($node,currentMode) $action
+	RollSimulation $node
     }
     
-    proc SendData { winId } {
+    proc SendData { node } {
         global runState redoPhase
         variable sendvars
-	variable myModel
         
-	set node $myModel($winId)        
         set phases [GetPhaseCount $node]
 	set sendvars($node,newData) {}
 	foreach entered [list displayInt update$phases currentTime execTime] {
@@ -277,7 +292,7 @@ namespace eval runcontrol33857 {
 	    do_in_editor RecordRunParams $node [GetRunParams $node]
         }
         SetStep $node 0 0
-        SetState $winId $sendvars($node,newData)
+#        SetState $winId $sendvars($node,newData)
     }
     
     proc SetupBar {node start finish} {
@@ -304,22 +319,54 @@ namespace eval runcontrol33857 {
     proc RCInteractGUI {myNode current} {
 	variable sendvars
 	UpdateBar $myNode [expr $current/$sendvars(unitLength)]
+	set sendvars($myNode,busy) 0
 	update
-	return [string compare start $sendvars($myNode,currentMode)]
+	set sendvars($myNode,busy) 1
+	if {[info exists sendvars($myNode,waitFrom)]} {
+	    unset sendvars($myNode,waitFrom)
+	    if {[string compare stop $sendvars($myNode,currentMode)]} {
+		switchMode $myNode $sendvars($myNode,currentMode)
+	    }
+	    return 1
+	}
+	return 0
     }
 
-    proc RollSimulation { winId } {
+# This is similar but is called if a model step is taking a long time, to check
+# if the run has been aborted.
+
+    proc RCAbortCheck {myNode} {
+	variable sendvars
+	update
+	if {[info exists sendvars($myNode,waitFrom)] && \
+		[info exists sendvars($myNode,checkOn)]} {
+	    set now [clock clicks -milliseconds]
+	    if {$sendvars($myNode,checkOn) || \
+		    $now-$sendvars($myNode,waitFrom)>3000} {
+		set scrog [string equal yes [ShowMessage "Model stuck" info \
+			 "This model appears to have got stuck with an endless or very long operation. Do you want to exit it now?" yesno]]
+		if {$scrog} {
+		    unset sendvars($myNode,waitFrom)
+		}
+		unset sendvars($myNode,checkOn)
+		return $scrog
+	    }
+	}
+	return 0
+    }
+
+    proc RollSimulation { node } {
         variable sendvars
         global errorInfo redoPhase runState
 	global pauseImg playImg
-	variable myModel
-        
-	set node $myModel($winId)        
+        variable frames
+
+	set widget $frames($node,rcf)
         set phases [GetPhaseCount $node]
-        set widget $winId.nb.rcf
 	$widget.upper.topbuttons.start configure -image $pauseImg
 	$widget.upper.topbuttons.start configure -command \
-	    "[namespace current]::SetMode $winId stop"
+	    "[namespace current]::SetMode $node stop"
+	set sendvars($node,busy) 1
 
 	foreach {idx param} \
 	    {0 display 1 update 2 current 3 exec} {
@@ -339,10 +386,10 @@ namespace eval runcontrol33857 {
 	    } else {
 		set redoPhase($node) 0
 	    }
-	    set sendvars($node,currentMode) stop
 	}
 	set scaled_current [expr {$current*$sendvars(unitLength)}]
 	set finish [expr {$current+$exec}]
+
 	if {[info exists redoPhase($node)]} {
 	    $widget.upper.bf.flag itemconfigure 1 -fill yellow
 	    update
@@ -364,6 +411,7 @@ namespace eval runcontrol33857 {
                 if {$display} {
 		    TellAllHelpers $node display $current $display $update
 		}
+		set sendvars($node,currentMode) stop
 	    } else {
 		set sendvars($node,currentMode) exit
 	    }
@@ -435,11 +483,13 @@ namespace eval runcontrol33857 {
 	}
 	$widget.upper.topbuttons.start configure -image $playImg
 	$widget.upper.topbuttons.start configure -command \
-	    "[namespace current]::SetMode $winId start"
+	    "[namespace current]::SetMode $node start"
 	$widget.upper.bf.flag itemconfigure 1 -fill [RestingColour $node]
 	set sendvars($node,currentMode) stop
+	set sendvars($node,busy) 0
     }
 	    
+# This now only used in debug mode; c++ has its own interaction regulator
     proc CondUpdate {node thisOp} {
         global runState
         

@@ -9,10 +9,6 @@
 void* myClassPtr;
 
     
-int stop(int code) {
-  throw code;
-}
-
 graph_data_type** graph_data_pointer;
 
 /* Pointers to functions in the stub: */
@@ -28,6 +24,21 @@ eval_submodel_type* eval_submodel_ref;
 search_from_type* search_from_ref;
 advance_ptr_type* advance_ptr_ref;
 get_remote_value_type* get_remote_value;
+stat_check_type* stat_check;
+
+int stop(int code) {
+  throw code;
+}
+
+int lazy = 1024;
+int abort_check (void* instId) {
+  if (!lazy--) {
+    lazy=1024;
+    if (stat_check(instId)) {
+      throw -101;
+    }
+  }
+}
 
 /* Pass on calls to stub functions made directly by built model */
 

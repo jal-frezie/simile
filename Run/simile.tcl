@@ -145,12 +145,11 @@ entry .hidden_e
 pack .hidden_e
 
 set startGeom +[expr [winfo screenwidth .]/2-200]+[expr [winfo screenheight .]/2-158]
-#if {[string equal Linux $tcl_platform(os)]} {
-#    wm geometry . $startGeom
-#} else {
-#    wm withdraw .
-#}
-wm geometry . +0+[winfo screenheight .]
+if {[string equal Linux $tcl_platform(os)]} {
+    wm geometry . $startGeom
+} else {
+    wm geometry . +0+[winfo screenheight .]
+}
 
 # first put up the splash screen
 image create photo splash

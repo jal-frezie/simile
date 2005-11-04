@@ -678,6 +678,16 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
   }
 }
 
+void get_string_for_error(char* spare, int error) {
+  if (error == -101) {
+    sprintf(spare, "abort request from the user");
+  } else if (error < 0) {
+    sprintf(spare, "Illegal operation signal %d", -error);
+  } else {
+    sprintf(spare, "User-defined interruption code %d", error);
+  }
+}
+
 FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
@@ -705,11 +715,8 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
   }
   
   error = reset(modelType, modelHandle, phase);
-  if (error < 0) {
-    sprintf(spare, "Illegal operation signal %d", -error);
-  } else if (error > 0) {
-    sprintf(spare, "User-defined interruption code %d", error);
-  }
+  get_string_for_error(spare, error);
+
   if (error) {
     Tcl_SetObjResult(interp, make_exec_error(interp, "int_evalmodel", "none", 
 					     0, phase, spare));
@@ -762,12 +769,8 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
     return TCL_OK;
   }
+  get_string_for_error(spare, error);
   if (error) {
-    if (error < 0) {
-      sprintf(spare, "Illegal operation signal %d", -error);
-    } else {
-      sprintf(spare, "User-defined interruption code %d", error);
-    }
     Tcl_SetObjResult(interp, make_exec_error(interp, "int_evalmodel", "none", 
 					     endtime, 1, spare));
     return TCL_ERROR;
@@ -1206,14 +1209,20 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-BOOLEAN interact_gui(void* id, double now) {
+BOOLEAN interact_gui(void* id, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
 
   Tcl_Obj* feedbackCmd;
-  feedbackCmd = Tcl_NewStringObj("InteractGUI", -1);
-  Tcl_ListObjAppendElement(globInterp, feedbackCmd,
-			   Tcl_NewLongObj((long int)id));
-  Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
+  if (stop_chk) {
+    feedbackCmd = Tcl_NewStringObj("InteractGUI", -1);
+    Tcl_ListObjAppendElement(globInterp, feedbackCmd,
+			     Tcl_NewLongObj((long int)id));
+    Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
+  } else {
+    feedbackCmd = Tcl_NewStringObj("AbortCheck", -1);
+    Tcl_ListObjAppendElement(globInterp, feedbackCmd,
+			     Tcl_NewLongObj((long int)id));
+  }
   Tcl_EvalObjEx(globInterp, feedbackCmd, 0);
   Tcl_GetIntFromObj(globInterp, Tcl_GetObjResult(globInterp), &response);
   return response;

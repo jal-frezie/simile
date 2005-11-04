@@ -247,13 +247,12 @@ render( L, for_start, [Name,Start,End,Step], Indent, [For_Start]) :-
 	name( For_Start, StartChars ).
 
 /* start of a while loop */
-render( c, while_start, Expr, Indent, [While_Start]) :- 
-	sicstus_format_to_chars( "~*swhile ( ~w ) {", [Indent," ", Expr],
-			StartChars ),
-	name( While_Start, StartChars ).
-render( tcl, while_start, Expr, Indent, [While_Start]) :- 
-	sicstus_format_to_chars( "~*swhile {~w} {", [Indent," ",Expr],
-			StartChars ),
+render( L, while_start, Expr, Indent, [While_Start | AbChk]) :-
+	(L = c, Fmt = "~*swhile ( ~w ) {";
+	    L = tcl, Fmt =  "~*swhile {~w} {"),
+	sicstus_format_to_chars(Fmt, [Indent," ", Expr], StartChars),
+	ContDent is Indent+4,
+	render(L, procedure_call, abort_check(this), ContDent, AbChk),
 	name( While_Start, StartChars ).
 
 /* start of a procedure */
