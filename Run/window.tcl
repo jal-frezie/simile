@@ -1090,15 +1090,16 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set c $winid.canvas
     
     if [string match "Darwin" $tcl_platform(os)] {
-      set accKey Cmd
-      set accSym Command
-      set fm [menu ${winid}top.apple -tearoff 0]
-      $fm delete 0 7
-      $fm add command -label "About Simile..." -command "ShowAbout $winid"
-      ${winid}top add cascade -menu $fm
+	set accKey Cmd
+	set accSym Command
+	set fm [menu ${winid}top.apple -tearoff 0]
+	$fm delete 0 7
+	$fm add command -label "About Simile..." -command "ShowAbout $winid"
+	$fm add separator
+	${winid}top add cascade -menu $fm
     } else {
-      set accKey Ctrl
-      set accSym Control
+	set accKey Ctrl
+	set accSym Control
     }
     
     set fm [menu ${winid}top.file -tearoff 0 \

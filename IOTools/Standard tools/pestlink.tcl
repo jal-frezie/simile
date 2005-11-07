@@ -1098,7 +1098,7 @@ namespace eval $keyValue {
 
 	set oldDir [pwd]
 	cd $simtmpdir
-	set relayProc [open "|$cmd" r] ;# was [SilentRun $cmd]
+	set relayProc [eval open [list |$cmd] r] ;# was [SilentRun $cmd]
 #ShowMessage debug info "started $hanger" ok
 	fconfigure $relayProc -blocking 0
 	fileevent $relayProc readable [namespace code [list pestificate $cmd]]
