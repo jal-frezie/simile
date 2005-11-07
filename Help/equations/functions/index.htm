@@ -1,15 +1,14 @@
-<html xmlns:o="urn:schemas-microsoft-com:office:office"
-xmlns:w="urn:schemas-microsoft-com:office:word"
-xmlns="http://www.w3.org/TR/REC-html40">
-
-<head>
-<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
-<meta name=ProgId content=Word.Document>
-<meta name=Generator content="Microsoft Word 10">
-<meta name=Originator content="Microsoft Word 10">
-<link rel=File-List href="index_files/filelist.xml">
-<title>Built-in functions : index function</title>
-<!--[if gte mso 9]><xml>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE>Built-in functions : index function</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.3  (Linux)">
+	<META NAME="CREATED" CONTENT="20051107;11570400">
+	<META NAME="CHANGED" CONTENT="20051107;12175700">
+	<META NAME="ProgId" CONTENT="Word.Document">
+	<META NAME="Originator" CONTENT="Microsoft Word 10">
+	<!--[if gte mso 9]><xml>
  <o:DocumentProperties>
   <o:Author>Alastair Davies</o:Author>
   <o:LastAuthor>Alastair Davies</o:LastAuthor>
@@ -26,7 +25,8 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <o:CharactersWithSpaces>1089</o:CharactersWithSpaces>
   <o:Version>10.4219</o:Version>
  </o:DocumentProperties>
-</xml><![endif]--><!--[if gte mso 9]><xml>
+</xml><![endif]-->
+	<!--[if gte mso 9]><xml>
  <w:WordDocument>
   <w:DisplayHorizontalDrawingGridEvery>0</w:DisplayHorizontalDrawingGridEvery>
   <w:DisplayVerticalDrawingGridEvery>0</w:DisplayVerticalDrawingGridEvery>
@@ -44,115 +44,7 @@ xmlns="http://www.w3.org/TR/REC-html40">
   <w:DoNotOptimizeForBrowser/>
  </w:WordDocument>
 </xml><![endif]-->
-<style>
-<!--
- /* Font Definitions */
- @font-face
-	{font-family:Tahoma;
-	panose-1:2 11 6 4 3 5 4 4 2 4;
-	mso-font-charset:0;
-	mso-generic-font-family:swiss;
-	mso-font-pitch:variable;
-	mso-font-signature:1627421319 -2147483648 8 0 66047 0;}
- /* Style Definitions */
- p.MsoNormal, li.MsoNormal, div.MsoNormal
-	{mso-style-parent:"";
-	margin:0cm;
-	margin-bottom:.0001pt;
-	line-height:15.0pt;
-	mso-pagination:widow-orphan;
-	font-size:10.0pt;
-	font-family:Tahoma;
-	mso-fareast-font-family:"Times New Roman";
-	mso-bidi-font-family:"Times New Roman";}
-h1
-	{mso-style-next:Normal;
-	margin-top:12.0pt;
-	margin-right:0cm;
-	margin-bottom:12.0pt;
-	margin-left:0cm;
-	text-align:center;
-	mso-pagination:widow-orphan;
-	page-break-after:avoid;
-	mso-outline-level:1;
-	font-size:14.0pt;
-	mso-bidi-font-size:10.0pt;
-	font-family:Tahoma;
-	mso-bidi-font-family:"Times New Roman";
-	mso-font-kerning:14.0pt;
-	mso-bidi-font-weight:normal;}
-h2
-	{mso-style-next:Normal;
-	margin-top:12.0pt;
-	margin-right:0cm;
-	margin-bottom:12.0pt;
-	margin-left:0cm;
-	mso-pagination:widow-orphan;
-	page-break-after:avoid;
-	mso-outline-level:2;
-	font-size:12.0pt;
-	mso-bidi-font-size:10.0pt;
-	font-family:Tahoma;
-	mso-bidi-font-family:"Times New Roman";
-	mso-bidi-font-weight:normal;}
-h3
-	{mso-style-next:Normal;
-	margin-top:12.0pt;
-	margin-right:0cm;
-	margin-bottom:3.0pt;
-	margin-left:0cm;
-	mso-pagination:widow-orphan;
-	page-break-after:avoid;
-	mso-outline-level:3;
-	font-size:10.0pt;
-	font-family:Tahoma;
-	mso-bidi-font-family:"Times New Roman";
-	mso-bidi-font-weight:normal;}
-p.MsoToc1, li.MsoToc1, div.MsoToc1
-	{mso-style-update:auto;
-	mso-style-noshow:yes;
-	mso-style-next:Normal;
-	margin:0cm;
-	margin-bottom:.0001pt;
-	line-height:15.0pt;
-	mso-pagination:widow-orphan;
-	font-size:10.0pt;
-	font-family:Tahoma;
-	mso-fareast-font-family:"Times New Roman";
-	mso-bidi-font-family:"Times New Roman";}
-p.MsoFootnoteText, li.MsoFootnoteText, div.MsoFootnoteText
-	{mso-style-noshow:yes;
-	margin:0cm;
-	margin-bottom:.0001pt;
-	line-height:15.0pt;
-	mso-pagination:widow-orphan;
-	font-size:8.0pt;
-	mso-bidi-font-size:10.0pt;
-	font-family:Tahoma;
-	mso-fareast-font-family:"Times New Roman";
-	mso-bidi-font-family:"Times New Roman";}
-a:link, span.MsoHyperlink
-	{color:blue;
-	mso-text-animation:none;
-	text-decoration:none;
-	text-underline:none;
-	text-decoration:none;
-	text-line-through:none;}
-a:visited, span.MsoHyperlinkFollowed
-	{color:purple;
-	text-decoration:underline;
-	text-underline:single;}
-@page Section1
-	{size:595.3pt 841.9pt;
-	margin:72.0pt 90.0pt 72.0pt 90.0pt;
-	mso-header-margin:36.0pt;
-	mso-footer-margin:36.0pt;
-	mso-paper-source:0;}
-div.Section1
-	{page:Section1;}
--->
-</style>
-<!--[if gte mso 10]>
+	<!--[if gte mso 10]>
 <style>
  /* Style Definitions */
  table.MsoNormalTable
@@ -169,70 +61,69 @@ div.Section1
 	font-family:"Times New Roman";}
 </style>
 <![endif]-->
-</head>
-
-<body lang=EN-US link=blue vlink=purple style='tab-interval:36.0pt'>
-
-<div class=Section1>
-
-<p class=MsoNormal><a name=indexfunction><b style='mso-bidi-font-weight:normal'><span
-lang=EN-GB style='mso-ansi-language:EN-GB'>index</span></b></a><span
-style='mso-bookmark:indexfunction'><span lang=EN-GB style='mso-ansi-language:
-EN-GB'> function</span></span><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
-style='mso-ansi-language:EN-GB'>index(I)<o:p></o:p></span></b></p>
-
-<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>Returns the
-index (instance number) of a member of a fixed membership or population
-submodel, for the level of submodel nesting specified by the argument.<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal style='tab-stops:63.8pt'><b style='mso-bidi-font-weight:
-normal'><span lang=EN-GB style='mso-ansi-language:EN-GB'>Input</span></b><span
-lang=EN-GB style='mso-ansi-language:EN-GB'>:<span style='mso-tab-count:1'>           </span>numeric<o:p></o:p></span></p>
-
-<p class=MsoNormal style='tab-stops:63.8pt'><b style='mso-bidi-font-weight:
-normal'><span lang=EN-GB style='mso-ansi-language:EN-GB'>Result</span></b><span
-lang=EN-GB style='mso-ansi-language:EN-GB'>:<span style='mso-tab-count:1'>          </span>numeric<o:p></o:p></span></p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
-style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></b></p>
-
-<p class=MsoNormal><b style='mso-bidi-font-weight:normal'><span lang=EN-GB
-style='mso-ansi-language:EN-GB'>Comment:<o:p></o:p></span></b></p>
-
-<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>The index function
-is frequently used in conjunction with the <a href="element.htm">element
-function</a> when working with multiple-instance submodels: both
-fixed-membership and population submodels. <o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'>For
-fixed-membership submodels, the function returns an integer value between 1 and
-n, where n is the number of instances for the submodel.<span
-style='mso-spacerun:yes'>   </span>For population submodels, it returns an
-integer between -1 and -n, where n is the total number of instances of the
-population that have ever existed during this simulation run.<span
-style='mso-spacerun:yes'>  </span>This is not necessarily the same as the
-number in existence at any point in time, since some instances might have been
-killed off.<o:p></o:p></span></p>
-
-<p class=MsoNormal><span lang=EN-GB style='mso-ansi-language:EN-GB'><o:p>&nbsp;</o:p></span></p>
-
-<p class=MsoNormal>In: <u><a href="../../index.htm" target="_top"><u>Contents</u></a></u>
-&gt;&gt; <u><a href="../index.htm"><u>Working with equations</u></a></u>
-&gt;&gt; <u><a href="../functions.htm"><u>Functions</u></a></u> &gt;&gt; <u><a
-href="../builtin.htm"><u>Built-in functions</u></a></u></p>
-
-<p class=MsoNormal><o:p>&nbsp;</o:p></p>
-
-</div>
-
-</body>
-
-</html>
+	<STYLE>
+	<!--
+		P { color: #000000 }
+		A:link { color: #0000ff }
+		A:visited { color: #800080 }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" TEXT="#000000" LINK="#0000ff" VLINK="#800080" DIR="LTR">
+<P CLASS="msonormal"><A NAME="indexfunction"></A><B><SPAN LANG="en-GB">index</SPAN></B>
+<SPAN LANG="en-GB">function</SPAN></P>
+<P CLASS="msonormal">&nbsp;</P>
+<P LANG="en-GB" CLASS="msonormal"><B>index(I)</B></P>
+<P LANG="en-GB" CLASS="msonormal">Returns the index (instance number)
+of a member of a fixed membership or population submodel, for the
+level of submodel nesting specified by the argument.</P>
+<P CLASS="msonormal">&nbsp;</P>
+<P CLASS="msonormal"><SPAN LANG="en-GB"><B>Input</B>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+numeric</SPAN></P>
+<P CLASS="msonormal"><SPAN LANG="en-GB"><B>Result</B>:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+numeric</SPAN></P>
+<P CLASS="msonormal">&nbsp;</P>
+<P LANG="en-GB" CLASS="msonormal"><B>Comment:</B></P>
+<P CLASS="msonormal"><SPAN LANG="en-GB">The index function is
+frequently used in conjunction with the <A HREF="element.htm">element
+function</A> when working with multiple-instance submodels: both
+fixed-membership and population submodels. </SPAN>
+</P>
+<P CLASS="msonormal">The argument specifies which index is to be
+returned. You can see summary information about the meanings of the
+different indices in the listbox headed â€œIndices:â€ in the
+<A HREF="../dialogue.htm"><SPAN LANG="en-GB">equation dialogue.</SPAN></A>
+The argument is an integer between 1 and the maximum number of
+indices available. index(1) corresponds to the 'innermost' index,
+i.e., if you have one multiple-instance model inside another, the
+result of index(1) will be the index of the inner submodel instance,
+and the result of index(2) will be that of the outer submodel
+instance. Similarly, if a submodel has two dimensions, then index(1)
+and index(2) will be valid in that submodel, giving an instance's
+position along the inner and outer dimension respectively.</P>
+<P CLASS="msonormal">Relation submodels do not usually have indices
+of their own, but you can get the indices of their base submodel
+instances using the index() function. If one of the roles in a
+relation has been specified to 'allow base instance lookup', then the
+base submodel for this role will be 'innermost' and and the index of
+the instance in this role will be the result of calling 'index(1)' in
+the relation submodel. 
+</P>
+<P LANG="en-GB" CLASS="msonormal">For fixed-membership submodels, the
+function returns an integer value between 1 and n, where n is the
+number of instances for the submodel.&nbsp;&nbsp; For
+variable-membership submodels, it returns an integer between 1 and n,
+where n is the maximum possible index. For a population submodel this
+would be the total number of instances of the population that have
+ever existed during this simulation run.&nbsp;For a conditional
+submodel the maximum will be the size given in the submodel
+dimensions. For either of these, an instance with a particular index
+number may or may not exist.</P>
+<P CLASS="msonormal">&nbsp;</P>
+<P CLASS="msonormal">In: <A HREF="../../index.htm" TARGET="_top"><U>Contents</U></A>
+&gt;&gt; <A HREF="../index.htm"><U>Working with equations</U></A> &gt;&gt;
+<A HREF="../functions.htm"><U>Functions</U></A> &gt;&gt; <A HREF="../builtin.htm"><U>Built-in
+functions</U></A></P>
+<P CLASS="msonormal">&nbsp;</P>
+</BODY>
+</HTML>
