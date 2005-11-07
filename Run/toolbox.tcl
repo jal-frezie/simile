@@ -1385,34 +1385,35 @@ proc OpenProjectFile {path} {
     
     # if params it should load the spfs
     # MergeParams {smPath metaFile interactive}
-    if {[info exists SimileProject(modelRunning)]} {
     set topNode [lindex $loadingProject 0]
-    set win [FindNodeTopWin $topNode].canvas
+    set baseDir [file dirname [lindex $loadingProject 1]]
+    # unset it before doing anything clever in case it goes wrong
+    unset loadingProject
+    if {[info exists SimileProject(modelRunning)]} {
+	set win [FindNodeTopWin $topNode].canvas
 #puts "win $win topNode ÃÂ£topNode"
-    if {[info exists SimileProject(spfList)]} {
+	if {[info exists SimileProject(spfList)]} {
         # file params cannot be loaded until model is ready, so set this
         # variable which will be read before opening the dialogue
-        set baseDir [file dirname [lindex $loadingProject 1]]
-        foreach {smPath spfRelPath} $SimileProject(spfList) {
-        do_for_node $topNode set ::projectParams($smPath) \
-            [file join $baseDir $spfRelPath]
-        }
-    }
+	    foreach {smPath spfRelPath} $SimileProject(spfList) {
+		do_for_node $topNode set ::projectParams($smPath) \
+		    [file join $baseDir $spfRelPath]
+	    }
+	}
         if {$SimileProject(running_c)} {
             MenuSelect $win file run_c
         } else  {
             MenuSelect $win file run_tcl
         }
-    update
+	update
         if {[info exists SimileProject(nameOfHelperStateFile)]} {
             set command [ChooseText \
-                    [PrefValue custom(helperManager) helperManager] \
-                    ::RunEnv::LoadSHF CreateView]
+			     [PrefValue custom(helperManager) helperManager] \
+			     ::RunEnv::LoadSHF CreateView]
             do_in_node $topNode $command $topNode \
-                    ${path}/$SimileProject(nameOfHelperStateFile)
+		${path}/$SimileProject(nameOfHelperStateFile)
         }
     }
-    unset loadingProject
 }
 
 proc SaveAll {win} {
