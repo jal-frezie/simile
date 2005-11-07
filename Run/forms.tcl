@@ -1592,7 +1592,7 @@ proc BuildProblem {Title errLevel msg key args} {
 #    wm geometry $ProbWin +[expr ($swidth-$width)/2]+[expr ($sheight-$height)/2]
     LetItShow $ProbWin
 #    update
-    focus $ProbWin
+    focus $ProbWin.labf1.lab2
     grab $ProbWin
     tkwait variable ack
     grab release $ProbWin
