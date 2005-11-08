@@ -607,10 +607,10 @@ add_implicit_function(Exp_node, Node_name) :-
 		find_all_comps(Parent, Exp_node),
 		make_node(Parent, function, Node_name),
 		new_line(influence, [], Node_name, Exp_node, _),
-		(Exp_node is_of_sort cond_value, !,
-		    Node_name has_new_class_refinement units of cond_spec;
-		 Exp_node is_of_sort boolean_value, !,
-		    Node_name has_new_class_refinement units of boolean;
+		(member(Sort-Units, [level-1, rate-int, cond_value-cond_spec,
+				     boolean_value-boolean]),
+		    Exp_node is_of_sort Sort, !,
+		    Node_name has_new_class_refinement units of Units;
 		 true);
 	Exp_node has_class submodel,
 	Parent has_part Exp_node,

@@ -776,7 +776,7 @@ Obj is_class_of_sort Class :-
 		state-[rectangle, tall_box, box, has_function, can_be_input,
 		       init_eval, discrete],
 		submodel-[rounded_rect, elongated_box, box],
-		flow-[line, has_function, has_bowtie],
+		flow-[line, has_function, has_bowtie, rate],
 		squirt-[line, has_function, has_bowtie, discrete],
 		influence-[line, curved, captionless],
 		relation-[line, curved],
