@@ -71,17 +71,10 @@ values. */
 do_equation_dialog(Win, Part) :-
 	caption_for(Part, Caption),
 	get_host(Part, ClickedObj),
-	(ClickedObj is_of_sort cond_value, !,
-	    TypeBase = cond_spec,
-	    TitleForm = 'Condition/Specifiation';
-	ClickedObj is_of_sort boolean_value, !,
-	    TypeBase = boolean,
-	    TitleForm = 'Condition';
-	(\+ ClickedObj is_of_sort level, !; /* other than the above */
-	    TypeBase = real),
+	(default_units(ClickedObj, TypeBase); true),
 	(ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
-	TitleForm = 'Equation')),
+	TitleForm = 'Equation'),
 	(ClickedObj is_of_sort channel, !,
 	    TypeDims = [];
 	true),

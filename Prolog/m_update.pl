@@ -19,8 +19,8 @@ sicstus_module(m_update,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
 		update_destination/2, build_array/3, analyze_array/3, 
 		get_solo_list_depth/2, delete_implicit_node/1, 
-		add_implicit_function/2, get_exogenous_node/2, 
-		find_all_links/2, find_all_links/3,
+		add_implicit_function/2, default_units/2,
+		get_exogenous_node/2, find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
 		presence_affects/2, status_affects/2,
 		can_start/2, can_finish/3, continues_in/2, continues_from/2,
@@ -607,9 +607,7 @@ add_implicit_function(Exp_node, Node_name) :-
 		find_all_comps(Parent, Exp_node),
 		make_node(Parent, function, Node_name),
 		new_line(influence, [], Node_name, Exp_node, _),
-		(member(Sort-Units, [level-1, rate-int, cond_value-cond_spec,
-				     boolean_value-boolean]),
-		    Exp_node is_of_sort Sort, !,
+		(default_units(Exp_node, Units),
 		    Node_name has_new_class_refinement units of Units;
 		 true);
 	Exp_node has_class submodel,
@@ -618,6 +616,11 @@ add_implicit_function(Exp_node, Node_name) :-
 	    convert_refs(ParentRefs, 0, ChildRefs),
 	    Exp_node has_new_model_refinement references of ChildRefs;
 	true.
+
+default_units(Node, Units) :-
+	member(Sort-Units, [level-1, rate-int, cond_value-cond_spec,
+			    boolean_value-boolean]),
+	Node is_of_sort Sort, !.
 
 convert_refs([], _, []).
 
