@@ -674,11 +674,15 @@ proc GetPhaseCount {topNode} {
 # these two are called from the model and handled by the client
 proc InteractGUI {handle modelTime} {
     global helperTable instance_id
-    foreach {model h_id} [array get instance_id] {
-	if {$h_id==$handle} {
-	    return [$helperTable(RunControl)::RCInteractGUI $model $modelTime]
+    if {[string is integer $handle]} {
+	foreach {model h_id} [array get instance_id] {
+	    if {$h_id==$handle} {
+		set handle $model
+		break
+	    }
 	}
     }
+    return [$helperTable(RunControl)::RCInteractGUI $handle $modelTime]
 }
 
 proc AbortCheck {handle} {

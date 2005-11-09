@@ -324,6 +324,11 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     $widget.equation.textbox.radio0 configure -state $paramMenuState
     $widget.slider.radio1 configure -state $paramMenuState
     $widget.file.radio2 configure -state $paramMenuState
+    if {[string first Initial \
+	     [wm title [winfo toplevel $equation(main)]]]==0} {
+# do not allow variable parameter for initial values...derrr
+	$widget.slider.radio1 configure -state disabled
+    }
     set equation(min) $min
     set equation(max) $max
 }

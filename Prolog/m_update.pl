@@ -618,7 +618,7 @@ add_implicit_function(Exp_node, Node_name) :-
 	true.
 
 default_units(Node, Units) :-
-	member(Sort-Units, [level-1, rate-int, cond_value-cond_spec,
+	member(Sort-Units, [level-1, rate-1, cond_value-cond_spec,
 			    boolean_value-boolean]),
 	Node is_of_sort Sort, !.
 

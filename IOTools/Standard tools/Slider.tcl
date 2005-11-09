@@ -11,10 +11,10 @@ namespace eval slide139 {
     }
     
     proc initialize {winId} {
-	variable compList
-	if {[info exists compList]} {
-	    unset compList
-	}
+#	variable compList
+#	if {[info exists compList]} {
+#	    unset compList
+#	}
 
 	menu $winId.slidervars -tearoff 0
 
@@ -67,41 +67,44 @@ namespace eval slide139 {
 	    [winfo pointerx $winId] [winfo pointery $winId]
     }
 
-proc click {winId node caption} {
+    proc click {winId node caption} {
 	variable useNodes
 	
 	set fullCapt [GetCaptionPathFromId $node]
 	if {[string equal SUBMODEL [GetModelClass $node]]} {
 	    AddAllVariables $winId $fullCapt
+	} elseif {[llength [InsertSlider $winId $node $fullCapt 1]]} {
+	    $winId.intro configure -text {}
+	    ReleaseClicks $winId
 	} else {
-	    InsertSlider $winId $node $fullCapt 1
+	    $winId.intro configure -text "This value cannot be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on derived values, constants or multidimensional parameters."
 	}
-	$winId.intro configure -text {}
-	ReleaseClicks $winId
     }
 
     proc AddAllVariables {winId prefix} {
         foreach node [GetObjectList] {
 	    set title [GetCaptionPathFromId $node]
-	    if {[string first $prefix $title]} {
+	    if {[string first $prefix $title] || \
+		    ![string equal INPUT [GetModelEval $node]]} {
 		continue
 	    }
 	    set initVal [InsertSlider $winId $node $title 1]
 	    if {[llength $initVal]} {
 		set done 1
-		if {[string match COMPARTMENT \
-			 [GetModelClass $node]]} {
-		    set compList($node) $initVal
-		}
+#		if {[string match COMPARTMENT \
+#			 [GetModelClass $node]]} {
+#	            set compList($node) $initVal
+#		}
 	    }
 	}
         if {![info exists done]} {
-            $winId.intro configure -text "There are no variable parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."
+            $winId.intro configure -text "There are no more parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."
         }
     }
     proc InsertSlider {winId node title nest} {
 	global checkStates comboChoices
-	if {![string match INPUT [GetModelEval $node]]} {
+	set parmType [GetModelEval $node]
+	if {[lsearch {INPUT TABLE} $parmType]==-1} {
 	    return {}
 	}
         set initVal [lindex [GetModelValue $node] 0]
@@ -182,7 +185,8 @@ proc click {winId node caption} {
                     -sliderlength 10 -from $min -to $max \
                     -tickinterval $gap -resolution $spacing \
                     -variable sliderVals($node) \
-		    -command [namespace code [list SetArrayIfUsed $node {}]]
+		    -command [namespace code \
+				  [list SetArrayIfUsed $node {}]]
 		    if {[llength $defVal]} {
 			$f.scale set $defVal
 		    }
@@ -261,7 +265,8 @@ proc click {winId node caption} {
                         -sliderlength 10 -from $min -to $max \
                         -resolution $spacing \
                         -variable sliderVals($node,$index) \
-			-command [namespace code [list SetArrayIfUsed $node $index]]
+			-command [namespace code \
+				      [list SetArrayIfUsed $node $index]]
 		    if {[llength $defVal]} {
 			$newScale set $defVal
 		    }
@@ -429,20 +434,20 @@ proc click {winId node caption} {
 # back there while model is running (see below)
 
     proc reset {winId} {
-	global sliderVals
-	variable compList
-	foreach node [array names compList] {
-	    if {[info exists sliderVals($node)]} {
-		# it's a single compartment
-		set compList($node) $sliderVals($node)
-	    } else {
-		unset compList($node)
-		foreach {indxSub val} [array get sliderVals $node,*] {
-		    set indx [lindex [split $indxSub ,] 0]
-		    lappend compList($node) $indx $val
-		}
-	    }
-	}
+#	global sliderVals
+#	variable compList
+#	foreach node [array names compList] {
+#	    if {[info exists sliderVals($node)]} {
+#		# it's a single compartment
+#		set compList($node) $sliderVals($node)
+#	    } else {
+#		unset compList($node)
+#		foreach {indxSub val} [array get sliderVals $node,*] {
+#		    set indx [lindex [split $indxSub ,] 0]
+#		    lappend compList($node) $indx $val
+#		}
+#	    }
+#	}
     }
 
 # purpose of display proc here is only to stop compartment sliders
@@ -457,16 +462,16 @@ proc click {winId node caption} {
 	    foreach controlVal [array names valArray] {
 		set ids [split $controlVal ,]
 		set node [lindex $ids 0]
-		if {[info exists compList($node)]} {
-		    if {[llength $compList($node)]==1} {
-			set valArray($node) $compList($node)
-		    } else {
-			foreach {indx val} $compList($node) {
-			    set valArray($node,$indx) $val
-			}
-		    }		
-		    continue
-		}
+#		if {[info exists compList($node)]} {
+#		    if {[llength $compList($node)]==1} {
+#			set valArray($node) $compList($node)
+#		    } else {
+#			foreach {indx val} $compList($node) {
+#			    set valArray($node,$indx) $val
+#			}
+#		    }		
+#		    continue
+#		}
 		set data [lindex [GetModelValue $node] 0]
 		set indx [lindex $ids 1]
 		if {[string length $indx]} {
