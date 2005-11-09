@@ -212,6 +212,12 @@ proc CheckGUI {node modelTime thisOp} {
     return $result
 }
     
+proc abort_check {args} {
+    if {[AbortCheck $::myNode]} {
+	error "abort request from the user."
+    }
+}
+
 proc TclResetModel {topPhase} {
     global ts steps phasecount
     for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {

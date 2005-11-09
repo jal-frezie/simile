@@ -673,25 +673,24 @@ proc GetPhaseCount {topNode} {
 
 # these two are called from the model and handled by the client
 proc InteractGUI {handle modelTime} {
-    global helperTable instance_id
-    if {[string is integer $handle]} {
-	foreach {model h_id} [array get instance_id] {
-	    if {$h_id==$handle} {
-		set handle $model
-		break
-	    }
-	}
-    }
-    return [$helperTable(RunControl)::RCInteractGUI $handle $modelTime]
+    global helperTable
+    return [$helperTable(RunControl)::RCInteractGUI [DecodeInstance $handle] \
+		$modelTime]
 }
 
 proc AbortCheck {handle} {
-    global helperTable instance_id
+    global helperTable
+    return [$helperTable(RunControl)::RCAbortCheck [DecodeInstance $handle]]
+}
+
+proc DecodeInstance {handle} {
+    global instance_id
     foreach {model h_id} [array get instance_id] {
 	if {$h_id==$handle} {
-	    return [$helperTable(RunControl)::RCAbortCheck $model]
+	    return $model
 	}
     }
+    return $handle
 }
 
 proc ResetModel {myNode redo} {

@@ -252,7 +252,8 @@ render( L, while_start, Expr, Indent, [While_Start | AbChk]) :-
 	    L = tcl, Fmt =  "~*swhile {~w} {"),
 	sicstus_format_to_chars(Fmt, [Indent," ", Expr], StartChars),
 	ContDent is Indent+4,
-	render(L, procedure_call, abort_check(this), ContDent, AbChk),
+	refer_value(L, this, ThisRef),
+	render(L, procedure_call, abort_check(ThisRef), ContDent, AbChk),
 	name( While_Start, StartChars ).
 
 /* start of a procedure */
