@@ -104,7 +104,8 @@ namespace eval slide139 {
     proc InsertSlider {winId node title nest} {
 	global checkStates comboChoices
 	set parmType [GetModelEval $node]
-	if {[lsearch {INPUT TABLE} $parmType]==-1} {
+	set fixed [lsearch {INPUT TABLE} $parmType]
+	if {$fixed==-1} {
 	    return {}
 	}
         set initVal [lindex [GetModelValue $node] 0]
@@ -186,7 +187,7 @@ namespace eval slide139 {
                     -tickinterval $gap -resolution $spacing \
                     -variable sliderVals($node) \
 		    -command [namespace code \
-				  [list SetArrayIfUsed $node {}]]
+				  [list SetArrayIfUsed $node $fixed {}]]
 		    if {[llength $defVal]} {
 			$f.scale set $defVal
 		    }
@@ -194,8 +195,8 @@ namespace eval slide139 {
 		pack [label $f.caption -text [lindex $levels end]]
 		pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
 		    -padx 1 -pady 1
-		bind $f.entry <KeyRelease> [namespace code \
-						[list SliderValsToC $node]]
+		bind $f.entry <KeyRelease> \
+		    [namespace code [list SliderValsToC $node $fixed]]
 		}
 	    }
 	    return $defVal
@@ -258,7 +259,7 @@ namespace eval slide139 {
 			      -textvariable sliderVals($node,$index) \
 			      -width 8] -side left -padx 1 -pady 1
 		    bind $f.elt$index.val <KeyRelease> \
-			[namespace code [list SliderValsToC $node $index]]
+		      [namespace code [list SliderValsToC $node $fixed $index]]
 		    set newScale $f.elt$index.scale
 		    scale $newScale -length 180 \
                         -orient horizontal -showvalue false \
@@ -266,7 +267,7 @@ namespace eval slide139 {
                         -resolution $spacing \
                         -variable sliderVals($node,$index) \
 			-command [namespace code \
-				      [list SetArrayIfUsed $node $index]]
+				     [list SetArrayIfUsed $node $fixed $index]]
 		    if {[llength $defVal]} {
 			$newScale set $defVal
 		    }
@@ -308,21 +309,28 @@ namespace eval slide139 {
 	}
     }
 
-    proc SliderValsToC {node args} {
+    proc SliderValsToC {node fixed args} {
 	global sliderVals
 	set sub [join [concat [list $node] $args] ,]
-	SetArrayIfUsed $node $args $sliderVals($sub)
+	SetArrayIfUsed $node $fixed $args $sliderVals($sub)
     }
 
     proc CheckStateToC {node args} {
 	global checkStates
 	set sub [join [concat [list $node] $args] ,]
-	SetArrayIfUsed $node $args $checkStates($sub)
+	SetArrayIfUsed $node 0 $args $checkStates($sub)
     }
 
-    proc SetArrayIfUsed {node indices value} {
-    	if {[RunningInC $::myNode]} {
+    proc SetArrayIfUsed {node fixed indices value} {
+	global paramData runState myNode
+    	if {[RunningInC $myNode]} {
 	    c_setparamelement $node $indices $value
+	}
+	if {$fixed} {
+	    if {![RunningInC $myNode]} {
+		set paramData([join [concat $node $indices] ,]) $value
+	    }
+	    set runState($myNode,reloadParams) 0
 	}
     }
 
