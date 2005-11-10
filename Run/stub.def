@@ -1,3 +1,3 @@
-; dlltool --base-file M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01528.base --output-exp ../System/lib/Stubs/ame_dll84.exp --dllname ../System/lib/Stubs/ame_dll84.dll --output-def=stub.def --exclude-symbol=DllMainCRTStartup@12 --def M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01528.def --output-lib ../System/lib/libame_dll84.a
+; dlltool --base-file C:\DOCUME~1\JMM~1.KON\LOCALS~1\Temp/cca02456.base --output-exp ../System/lib/Stubs/ame_dll84.exp --dllname ../System/lib/Stubs/ame_dll84.dll --output-def=stub.def --exclude-symbol=DllMainCRTStartup@12 --def C:\DOCUME~1\JMM~1.KON\LOCALS~1\Temp/cca02456.def --output-lib ../System/lib/libame_dll84.a
 EXPORTS
 	Ame_dll_Init @ 1 ; 

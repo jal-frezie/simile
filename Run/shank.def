@@ -1,4 +1,4 @@
-; dlltool --base-file M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01228.base --output-exp 5d.exp --dllname 5d.dll --output-def=shank.def --exclude-symbol=DllMainCRTStartup@12 --def M:\DOCUME~1\JASPER~1\LOCALS~1\Temp/cca01228.def --output-lib ../System/lib/lib5ddll.a
+; dlltool --base-file C:\DOCUME~1\JMM~1.KON\LOCALS~1\Temp/cca03376.base --output-exp 5d.exp --dllname 5d.dll --output-def=shank.def --exclude-symbol=DllMainCRTStartup@12 --def C:\DOCUME~1\JMM~1.KON\LOCALS~1\Temp/cca03376.def --output-lib ../System/lib/lib5ddll.a
 EXPORTS
 	_Z10graphpointdP17graph_data_type_ti @ 1 ; graphpoint(double, graph_data_type_t*, int)
 	_Z10load_modelPcS_Pl @ 2 ; load_model(char*, char*, long*)
@@ -17,7 +17,7 @@ EXPORTS
 	_Z19set_param_array_eltPcdPi @ 15 ; set_param_array_elt(char*, double, int*)
 	_Z20use_array_for_paramsPcPv @ 16 ; use_array_for_params(char*, void*)
 	_Z21clear_time_point_eltsPc @ 17 ; clear_time_point_elts(char*)
-	_Z23proc_pointers_for_shankPFvPvPciPiEPFiS_dEPFvS0_ES0_PPP15connectRecord_tPS1_ @ 18 ; proc_pointers_for_shank(void (*)(void*, char*, int, int*), int (*)(void*, double), void (*)(char*), char*, connectRecord_t***, int**)
+	_Z23proc_pointers_for_shankPFvPvPciPiEPFiS_idEPFvS0_ES0_PPP15connectRecord_tPS1_ @ 18 ; proc_pointers_for_shank(void (*)(void*, char*, int, int*), int (*)(void*, int, double), void (*)(char*), char*, connectRecord_t***, int**)
 	_Z5resetlli @ 19 ; reset(long, long, int)
 	_Z6myexitll @ 20 ; myexit(long, long)
 	_Z7executellidPd @ 21 ; execute(long, long, int, double, double*)
