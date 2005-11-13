@@ -582,3 +582,9 @@ proc PackItUp {t} {
     }
 }
 
+proc ShellFileRef {spaced} {
+# Pop a backslash before chars that would break tcl lists
+    regsub -all {([ ])} $spaced {\\\1} straight
+    return $straight
+}
+
