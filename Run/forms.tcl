@@ -1072,8 +1072,8 @@ proc ShowAbout {winId} {
             set fSize 8; set fsSize 8
         }
     }
-    pack [label .about.fr.lab1 -text "Simile v$sendvars(simV) $userinfo(edn)" \
-            -font "-family helvetica -size $fSize"]
+    pack [label .about.fr.lab1 -font "-family helvetica -size $fSize" \
+	      -text "Simile v$sendvars(simV)$sendvars(simP) $userinfo(edn)"]
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica -size $fsSize"] -side left

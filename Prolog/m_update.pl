@@ -1190,8 +1190,8 @@ status_affects(Tgt, Affected) :-
 	initiates(Affected, Base),
 	    find_type(Affected, influence)),
 	\+ Affected = Item;
-	find_type(Item, relation), /* for parameter name updates */
-	    connects(Item, Base, Assoc),
+	find_type(Tgt, relation), /* for parameter name updates */
+	    connects(Tgt, Base, Assoc),
 	    (Start=Base, Finish=Assoc; Start=Assoc, Finish=Base),
 	    Link1 is_connector from Start to _,
 	    (Link1 = Link2; sequence(Link1, Link2)),
