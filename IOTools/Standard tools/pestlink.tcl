@@ -1034,7 +1034,7 @@ namespace eval $keyValue {
 #	set ourWish [file join [file dirname $oldDir] System bin wish]
 #	puts $control "$ourWish pestrun.tcl"
 	set ourWish [file join [file dirname $oldDir] System bin relay]
-	puts $control [file nativename $ourWish]
+	puts $control [set ourWish [file nativename [ShellFileRef $ourWish]]]
 	puts $control {* model input/output}
 	puts $control {model.tpl model.inp}
 	puts $control {model.ins model.out}
@@ -1098,7 +1098,7 @@ namespace eval $keyValue {
 
 	set oldDir [pwd]
 	cd $simtmpdir
-	set relayProc [open |[ShellFileRef $cmd] r] 
+	set relayProc [open |$cmd r] 
 # was [SilentRun $cmd]
 #ShowMessage debug info "started $hanger" ok
 	fconfigure $relayProc -blocking 0
