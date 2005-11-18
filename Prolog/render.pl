@@ -134,11 +134,15 @@ render(tcl, assign_space, Dest=[Top, Struct, Indices], Indent, Result) :-
 	append_atoms(Struct, maker, ProcName),
 	make_struct_reference(tcl, Top, ProcName, CurrentName),
 	make_indexed_namespace(tcl, Struct, Indices, Target),
-	Call =.. [CurrentName, Target],
+	make_procedure_call_chars(tcl, [CurrentName, Target], MakerStr),
+	name(Maker, MakerStr),
+	render(tcl, assignment, Dest = Maker, Indent, Result).
+/*	Call =.. [CurrentName, Target],
 	render(tcl, procedure_call, Call, Indent, Line1),
 	render(tcl, enter_context, Dest = [Top, Struct, Indices],
 			Indent, Line2),
-	append(Line1, Line2, Result).
+	append(Line1, Line2, Result),
+*/
 
 /* comment */
 render( c, comment, Comment, Indent, [Atom]) :-
@@ -364,15 +368,21 @@ render(tcl, class_declaration,
 		append_atoms(Name, maker, ProcName),
 		render(tcl, procedure_start,
 		       call(_, ProcName, [_, instance]), Indent, Opens),
-		render(tcl, end(procedure), ProcName, Indent, Closes),
+		render(tcl, end(procedure), ProcName, Indent, ProcCloses),
 		NewIndent is Indent + 4,
+		sicstus_format_to_chars("~*sreturn [namespace current]",
+					[NewIndent, " "], ExitMakerStr),
+		name(ExitMaker, ExitMakerStr),
+		Closes = [ExitMaker, CloseNS | ProcCloses],
 		refer_value(tcl, instance, Target);
 	    get_node_size(SymbolicName, What, _,_),
 		make_array_assignment(tcl, Indent, What, _,
-				      NewIndent, _, Indices, Opens, Closes),
+				      NewIndent, _, Indices, Opens, ArrCloses),
+		Closes = [CloseNS | ArrCloses],
 		make_indexed_namespace(tcl, Name, Indices, Target)),
 	    declare_namespace(Target, Indent, ClassDecl),
-	    append([Opens, ClassDecl, Closes], Decl);
+	    append(FillNS, [CloseNS], ClassDecl),
+	    append([Opens, FillNS, Closes], Decl);
 	Decl = [].
 
 render(tcl, global_declaration, [_, Name | _], _Indent, [Result]) :-

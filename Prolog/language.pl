@@ -420,19 +420,54 @@ do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graphs,
 		       Graphs, NewPres, NewPosts,
 		       Used, Temps, Results).
 
+/* Initial membership of populations was handled by the new_member
+clause up until Simile 4.5, but now it is done like initializing a VM
+model, so individuals can persist across a reset. This means their
+associations can too, and makes resetting faster. */
+
+
+do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
+	      Graphs, Preambles, [Current | Postambles],
+	      Used, Temps, Results) :-
+	length(Preambles, Nesting),
+	Indent is Nesting*4,
+
+	append_atoms(Name, count, Count),
+	append_atoms(Name, 'type*', Type),
+	append_atoms(Name, pointer, Pointer),
+	append_atoms(Name, meta, MetaPointer),
+	resolve_pointer(L, MetaPointer, MPTarget),
+	refer_value(L, MPTarget, MPTargetRef),
+	make_struct_reference(L, ParentPtr, Name, StartPtr), 
+	make_struct_reference(L, ParentPtr, Count, Index), 
+
+	render(L, assignment, Index=0, Indent, ZeroCount),
+	render(L, make_reference, MetaPointer=StartPtr, Indent, Reset),
+	       
+	make_pointer(L, MetaPointer, MMPtr),
+	all(language, make_create_proc,
+	    [unify([L, ParentPtr, MMPtr, Index, Name, Indent, Used]),
+	     build(InitVars), append(InitPopCalls, [])]),
+	append([ZeroCount, Reset, InitPopCalls], Starters),
+	
+	render(L, procedure_call, delete_list(MPTargetRef), Indent, ChopTail),
+	render(L, assignment, MPTarget=0, Indent, EndLoop),
+	append(ChopTail, EndLoop, Finishers),
+
+	/* Get init from procedures and put in continuation of this loop; do not
+	remove them from the list I will need them again for update */
+	Continuation = [finish_level | Clauses], 
+
+	do_assign_list(L, Continuation, Graphs, [Current | Preambles],
+			[Starters, Finishers | Postambles],
+			Used, Temps0, Results),
+	merge_lists([[Type, Pointer, []]], Temps0, Temps).
+
 /* This one should be easy too. When I extract the procedures for initializing
 submodel instances where these can't always be done at init time, I leave an
 'init_population' node. For population submodels, which do also need to be
 initialized when their parents are, this causes the tests to be done and the
-inits to be included.
-
-Atrocious hack alert: For loops have to go from low to high, so people using rollover
-models get array values generated in the expected order. Interaction submodels
-created within for loops therefore have instance ids running from low to high along
-the list. All variable-membership submodels must have instance ids running the same
-way, to check for instances associated with dead ones. New population members are
-added at the beginning of the list, this is quicker than going to the end. 
-Therefore instance ids count downwards and are negative. */
+inits to be included. */
 
 do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	      Graphs, Preambles, [Current | Postambles],
@@ -763,6 +798,23 @@ get_term_refs(L, Pointer, LossNodes, DeadRef) :-
 	member(LossVal, LossNodes),
 	make_struct_reference(L, Pointer, LossVal, IsDead),
 	refer_value(L, IsDead, DeadRef).
+
+make_create_proc([L, ParentPtr, MMPtr, Index, Name, Indent, Used],
+	    InitVar, InitPopCall) :-
+	make_struct_reference(L, ParentPtr, InitVar, CompVal),
+	refer_value(L, CompVal, CompValRef),
+	refer_value(L, Index, RefIndex),
+	nth(ChannelN, Used, InitVar), !,
+	BaseArgs = [init_pop, MMPtr, CompValRef, RefIndex, ChannelN],
+	/* no function templates in tcl so pass class id explicitly */
+	(L = tcl, !,
+	    append_atoms(Name, maker, ProcName),
+	    make_struct_reference(tcl, ParentPtr, ProcName, CurrentName),
+	    append(BaseArgs, [CurrentName], AllArgs);
+	AllArgs = BaseArgs),
+	make_procedure_call_chars(L, AllArgs, CallInitStr),
+	name(CallInit, CallInitStr),
+	render(L, assignment, Index=CallInit, Indent, InitPopCall).
 
 /* special clause for use from membership setter, which passes its list match
 test instead of a list of local cond nodes...*/

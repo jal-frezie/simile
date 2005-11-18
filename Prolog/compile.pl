@@ -900,7 +900,7 @@ instruction because they will not require individual initialization routines. */
 		CFn =.. [collect, arr(Ptr, NMade, []), SmName, IdxN | UseInds],
 		CreateRules = [make(culled(Name), [on_reset], Path, 0, [CFn]),
 			       make(created(Name), [culled(Name)], Path, Step,
-				    [new_member(Ptr, Name, create(NMade))])],
+				    [init_mems(Ptr, Name, create([NMade]))])],
 		Losses = [], ReproRules = [], ImmigRules = [];
 	    SmInters = [instance(internal, inter(LocalPath, _,_), _, parentId,
 				 int-[]),
@@ -914,7 +914,13 @@ instruction because they will not require individual initialization routines. */
 	    end of the instance list and the others expect to find it there.
 	    So creation is done in the local time step although there are only
 	    individuals to be created right after reset. Really, all of them
-	    should be done in the same instruction. */
+	    should be done in the same instruction.
+
+Changes for Simile4.5: The population is no longer emptied on
+reset. Instead the creation nodes are examined and the population
+adjusted to fit them. This takes one instruction for all creation
+nodes.
+	    
 	    (setof(make(created(Name), [culled(Name), InitSpec], Path, Step,
 		[new_member(Ptr, Name, create(InitSpec))]),
 		   InitName^X^U^(SmName has_part InitName,
@@ -922,11 +928,25 @@ instruction because they will not require individual initialization routines. */
 					elt(_, InitSpec, _), U), ParentFns)),
 		   CreateRules), !; 
 	    CreateRules = []),
+*/
+	    (setof(CreateBox, InitName^X^U^(SmName has_part InitName,
+			member(instance(creation, InitName, X,
+					elt(_, CreateBox, _), U),
+				   ParentFns)), Creators), !;
+	    Creators = []),
 
 	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
 						  elt(_, LossBox, _), U),
 				   Functions), Losses), !;
 	    Losses = []),
+
+	    CreateRules = [make(culled(Name),
+				[init_list(Name), pop_startable(Name),
+				 time | BasesEnumerated], Path, Step,
+				[lose(Step, Ptr, Name, Losses)]),
+			   make(created(Name),
+				[culled(Name), on_reset | Creators], Path, 0,
+				[init_mems(Ptr, Name, create(Creators))])],
 
 	    (setof(make(bred(Name), [culled(Name), time], Path, Step,
 			[reproduce(Ptr, Name, InitSpec)]),
@@ -952,14 +972,8 @@ instruction because they will not require individual initialization routines. */
 		    make(enumerate(Name), [can_enter(Name)],
 			 LocalPath, Step, []),
 		    make(init_list(Name), [], Path, Step,
-			 [assign(arr(Ptr, Name, []), 0)]),
-		    make(pop_startable(Name), [init_list(Name), on_reset],
-			 Path, Step, [reset_list(Ptr, Name),
-			     assign(arr(Ptr, Count, []), 0)]),
-		    make(culled(Name), [pop_startable(Name),
-					time | BasesEnumerated], Path, Step,
-			 [lose(Step, Ptr, Name, Losses)]) | CreateRules],
-		    ImmigRules, ReproRules], Specials);  
+			 [assign(arr(Ptr, Name, []), 0)])],
+		    CreateRules, ImmigRules, ReproRules], Specials);  
 
 	/* For variable-membership submodels we must not run the generate step
 	    before the bases are enumerated because running it prevents the

@@ -435,6 +435,12 @@ proc loses {prob phase} {
 proc delete_list {list_id} {
 }
 
+# makes things that look like pointers for tcl
+set ptrCount 0
+proc HexPtr {} {
+    return [format ptr%08x [incr ::ptrCount]]
+}
+
 # When there are multiple models, prune will be called with some reference
 # to the source namespace. For now we add that inside the proc...
 
@@ -449,6 +455,33 @@ proc prune {target metaTxt idCount} {
         namespace delete $submodelptr
     }
     return [expr !$status]
+}
+
+proc init_pop {metaTxt crNode ptCount channelId maker} {
+    upvar 1 $metaTxt meta
+    set lastIndx [expr $ptCount+int([max 0 $crNode])]
+    while {$ptCount<$lastIndx} {
+	incr ptCount
+	if {[prune $ptCount meta 1]} {
+	    set submodelptr [set $meta]
+	    set ${submodelptr}::new_instance 0
+	    set $meta [set ${submodelptr}::next]
+	} else { ;# Instance exists
+#	    ${byrecspointer}::submodel1maker submodel1<$loop>
+#	    set submodel1pointer ${byrecspointer}::submodel1<$loop>
+	    # fantasy cmd replacing above:
+	    set submodelptr [eval [list $maker] [HexPtr]]
+	    set ${submodelptr}::instanceid $ptCount
+	    set ${submodelptr}::new_instance 1
+	} ;# end(cond,Instance exists)
+	set ${submodelptr}::parentId 0
+	set ${submodelptr}::channelId $channelId
+
+	set ${submodelptr}::next [set $meta]
+	set $meta $submodelptr
+	set meta ${submodelptr}::next
+    }
+    return $lastIndx
 }
 
 proc compare_instance_status {testInstName refInst num} {

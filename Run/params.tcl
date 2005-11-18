@@ -107,15 +107,15 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     upvar \#0 $widgetLocn outNames
 
     set compName [GetCompProperty $topNode Caption $node]
+    set levels [concat [list $args] [split [string range $compName 1 end] /]]
+    if {[llength $args]} {
+	set compName /$args$compName
+    }
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
         set suppliedData($compName) {}
         return
     }
     set nodeDims [GetCompProperty $topNode Dims $node]
-    set levels [concat [list $args] [split [string range $compName 1 end] /]]
-    if {[llength $args]} {
-	set compName /$args$compName
-    }
 #ShowMessage debug info "Creating compname $compName" ok
     # bit of voodoo...get table relating numerical indices of node to enumerated
     # types (from model) and use to translate array bounds. Do this first because

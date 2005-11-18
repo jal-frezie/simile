@@ -188,6 +188,35 @@ BOOLEAN prune (SMClass **metaptr, int id_count, ...) {
 }
 
 template <class SMClass>
+int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
+  SMClass* submodelptr;
+  int lastIndx;
+
+  lastIndx = ptCount + max(0,(int)crNode);
+  while (ptCount<lastIndx) {
+    ++ptCount;
+    if (prune(*meta, 1, ptCount)) { 
+      // from cond construct -- note new indx
+      submodelptr = **meta;
+      submodelptr->new_instance = 0;
+      **meta = submodelptr->next;
+    } else { /* Instance exists */
+      submodelptr = new SMClass;
+      submodelptr->instanceid[0] = ptCount;
+      submodelptr->instanceid[1] = 0;
+      submodelptr->new_instance = 1;
+    }; /* end(cond,Instance exists) */
+    submodelptr->parentId = 0; // all new
+    submodelptr->channelId = channelId; // (val from i_p_m)
+    // from cond construct
+    submodelptr->next = **meta;
+    **meta = submodelptr;
+    *meta = &(submodelptr->next);
+  }; /* end(while,loop) */
+  return lastIndx;
+}
+  
+template <class SMClass>
 void init_pop_member (SMClass *new_one, int index, int parent, int channel) {
   new_one->instanceid[0] = index;
   new_one->instanceid[1] = 0;

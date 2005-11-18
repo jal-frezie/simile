@@ -572,7 +572,7 @@ make_intermediates(
 	individual. Arg must be converted to numerical id of channel, and
 	source context is dest path because channel_is "individuates". */
 
-	(Source = parent(_), !,
+	((Source = parent(_), !,
 	    pointer_from(DestPath, ChannelPtr),
 	    SourceRef = arr(ChannelPtr, parentId, []),
 	    Units = int;
@@ -583,8 +583,11 @@ make_intermediates(
 	    suffix(ChanPath, DestPath),
 	    pointer_from(ChanPath, ChannelPtr),
 	    SourceRef = (arr(ChannelPtr, channelId, [])==ChannelNum),
-	    Units = boolean;
-	Source =.. [TRef, N],
+	    Units = boolean),
+	    /* re-use of population data structures means values can change
+	    if creation counts do */
+	    Args = [on_reset];
+	(Source =.. [TRef, N],
 	    member(TRef, [time, dt, ind_time]),
 	    ((N=0; N = ''), SourceRef =.. [TRef, Step];
 	    integer(N), SourceRef = Source;
@@ -613,9 +616,9 @@ make_intermediates(
 	    (nonvar(SourceRef), !;
 		/* generate_name(c, loop, LoopName, Used), */
 		SourceRef = glob(_LoopName, _))),
+	    Args = []),
 	SourceContext = DestPath,
 	Setups = [],
-	Args = [],
 	NewInters = PrevInters;    
 
 	/* fifth case: a function. Here, we recurse for all the arguments, then
