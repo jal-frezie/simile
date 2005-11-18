@@ -38,3 +38,14 @@ print_to_codes(TermStr, Term) :-
 number_atom(N, A) :-
 	number_chars(N, C),
 	atom_chars(A, C).
+
+/* Things that are used in the eqn language but cause gnu prolog to not
+load properly if they have already been declared. Fortunately, 'portray' is not called when something is actually used as an operator... */
+
+wrap_fixes(Op) :-
+	atom(Op),
+	(Fted =.. [Op, a]; Fted =.. [Op, b, c]),
+	write_to_chars(Fted, Cncl),
+	\+ suffix(")", Cncl), !,
+	write('('), write(Op), write(')').
+

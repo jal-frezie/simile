@@ -49,8 +49,8 @@ unique_name( Atom, Name, Size ) :-
 	name( Name, NameChars ),
 	(assert(genint(Atom, Integer)); retract(genint(Atom, Integer)), fail).
 
-/* Things that are used in the eqn language but cause gnu prolog to not
-load properly if they have already been declared */
+portray(F) :-
+	wrap_fixes(F).
 
 /* Things to ignore temporarily */
 
