@@ -128,10 +128,10 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    drag_to(NewXpt, NewYpt, Name);
 	(CD < 2, click_on([NewXpt, NewYpt], Name, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
+	set_selection_abilities(Parent),
 	(get_phase(moving),
 	    /* highlight(Name, 2), */
 	    find_type(Name, submodel), !,
-	    set_selection_abilities(Parent),
 	    get_closest_edge(Name, [NewXpt, NewYpt], Edge),
 	    advance_phase_to(moving_border(Edge)) /* ,
 	    retractall(min_size_is(_)),
@@ -1211,15 +1211,8 @@ light green: changes status */
 do_colours(Obj, Way) :-
 	(Way = on,
 	    highlight_deletes(Obj);
-	Way = off),
-/*	m_class:Obj is_connector from A to B,	    
-	    trail(A, Obj, Way);
-	Obj is_of_sort box,
-	    (Way = on, highlight(Obj, 0); Way = off, highlight(Obj, 2)),
-	    fail, trail(Obj, _, Way);
-*/	(Way = off,
-	    normalize_deletes(Obj);
-	Way = on).
+	Way = off,
+	    normalize_deletes(Obj)).
 
 /* highlight_deletes: this highlights all the objects which will be zapped if a particular delete selection is made. The target itself highlights at defcon 0 and any colateral damage at defcon 1. */
 
