@@ -253,8 +253,8 @@ menu_handle(Win, file, new) :-
 	remove_model(Win, Parent),
 	finish_move(Parent, 0),
 	set_save_status(Win, safe),
-	caption_for(Parent, Name),
-	new_autosave(Parent, Name),
+%	caption_for(Parent, Name),
+%	new_autosave(Parent, Name),
 	update_captions(Parent).
 
 menu_handle(_Win, file, new_toplevel) :-
@@ -1306,7 +1306,6 @@ close_exec(Parent) :-
 remove_model(Win, Parent) :-
 	(is_toplevel(Parent), !,
 	    close_exec(Parent),
-	    forget_highlit_obj(_,_),
 	    superfast_delete(Parent),
 	    add_parameter(Parent, 0, step, ''),
 	    add_parameter(Parent, 0, multiplication_spec, ''),
@@ -1543,15 +1542,14 @@ try_save_files(Name) :-
 	try_save_files(Name)).
 
 save_isolated(Name, Model, Date, SelnOnly) :-
-	assert(suspend_display),
 	(SelnOnly = yes, !,
 	    setof(Seln, (contains(Model, Seln),
 			    \+ Seln = Model,
-			    Seln is_of_sort box,
-			    event:doomed(Seln)), SelnList),
+			    get_highlit_obj(0, Seln)), SelnList),
 	    find_innermost_selection_holder(SelnList, Part, TempSels);
 	Part = Model,
 	    TempSels = []),
+	assert(suspend_display),
 	(cutout(Part);
 	ame_save(Name, Part, Date, SelnOnly),
 	    Done = 1;

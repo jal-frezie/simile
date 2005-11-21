@@ -1282,7 +1282,7 @@ superfast_delete(Dead) :-
 	    state:shows_model(Win, AlsoDead),
 	    draw:delete_window(Win),
 	    fail;
-	true.
+	state:forget_highlit_obj(_, Dead).
 
 do_delete(Kill_obj) :-
 	delete_implicit_node(Kill_obj),

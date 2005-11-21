@@ -1623,6 +1623,8 @@ proc FillReopen {winId} {
             lappend posted $hottie
         }
     }
+# Also need to check selection because of "Save seln..."
+    prolog tk_bar_edit_menu('$winId.canvas')
     update idletasks
 }
 

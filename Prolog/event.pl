@@ -1911,12 +1911,11 @@ embrace(Wid, Obj) :-
 
 set_selection_abilities(Comp) :-
 	(contains(Comp, Lit), \+ Lit = Comp,
-	    get_highlit_obj(N, Lit),
-	    N<2, !,
+	    get_highlit_obj(0, Lit), !,
 	    Cuttable = 1,
 	    Dellable = 1;
 	contains(Comp, Lit), \+ Lit = Comp,
-	    get_highlit_obj(2, Lit), !,
+	    get_highlit_obj(1, Lit), !,
 	    Cuttable = 0,
 	    Dellable = 1;
 	Cuttable = 0,
@@ -1926,6 +1925,7 @@ set_selection_abilities(Comp) :-
 	(output:my_file_exists(CopyFile), !,
 	    Pastable = 1;
 	Pastable = 0),
+	update_ability(Comp, none, file, '{Save selection as...}', Cuttable),
 	update_ability(Comp, none, edit, 'Cut', Cuttable),
 	update_ability(Comp, none, edit, 'Copy', Cuttable),
 	update_ability(Comp, none, edit, 'Paste', Pastable),

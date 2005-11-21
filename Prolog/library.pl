@@ -156,12 +156,14 @@ go_with(Comp, SelOnly) :-
 	 Use is_connector from _ to Comp),
 	go_with(Use, SelOnly), !.
 
+% Not sure why this needs to be tested -- arcs are only blue if both ends are!
 connects_leaver(Arc) :-
 	Arc is_connector from Start to Mid,
 	get_host(Mid, Finish),
 	member(Use, [Start, Finish]),
 	appears(Use),
 	\+ go_with(Use, yes).
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_arcs - write out data structures representing arcs; don't do the same
 % one twice because the input list is a set.
