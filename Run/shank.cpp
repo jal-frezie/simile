@@ -1518,6 +1518,7 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
   channelRecord* currentData;
   int* tree;
   int recordNo;
+  void* useInstRef;
 
   recordNo = ((Model*)typeRef)->connLines[arcIndx];
   currentData = ((Model*)topType)->channelData + recordNo;
@@ -1527,15 +1528,15 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
     while (*tree++ != -1) {}
   }
   if (topInstRef) {
-    currentData->SearchBase = topInstRef;
+    useInstRef = topInstRef;
+  } else {
+    useInstRef = currentData->SearchBase;
   }
-  
   //  sprintf(globMess, "get_remote: type %ld base %ld tree %d,%d,%d,%d,%d,%d",
   //	  typeRef, currentData->SearchBase, 
   //	  tree[0], tree[1], tree[2], tree[3], tree[4], tree[5]);
   //  showMess(globMess);
-  return(search_ptr((Model*)typeRef, currentData->SearchBase, 
-		    &tree, &subList));
+  return(search_ptr((Model*)typeRef, useInstRef, &tree, &subList));
 }
 
 void* advance_ptr(void* typeRef, void* topInstRef) {
