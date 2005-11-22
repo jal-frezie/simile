@@ -136,12 +136,14 @@ namespace eval ::$keyValue {
         set rootLabel [file tail $path]
         set plot($w,Yvars) [lreplace $plot($w,Yvars) $index $index]
         set ynodes($w) [lreplace $ynodes($w) $index $index]
-        set plot($w,Ylabels) [lreplace $plot($w,Ylabels) $index $index]
-        while {[set index [lsearch -glob $plot($w,Ylabels) ${rootLabel}* ]]>-1} {
-            set plot($w,Ylabels) [lreplace $plot($w,Ylabels) $index $index]
-        }
+# keep labels, otherwise colours change
+#        set plot($w,Ylabels) [lreplace $plot($w,Ylabels) $index $index]
+#        while {[set index [lsearch -glob $plot($w,Ylabels) ${rootLabel}* ]]>-1} {
+#            set plot($w,Ylabels) [lreplace $plot($w,Ylabels) $index $index]
+#        }
         UpdateState $w
-        drawGraphpad $w
+# so may as well keep plots too
+#        drawGraphpad $w
     }
     
     proc Restore {winId} {
@@ -192,9 +194,9 @@ namespace eval ::$keyValue {
         set testResult [GetModelValue $node]
         #ShowMessage debug info "testResult $testResult" ok
         if {[string compare $testResult novalue]} {
-            if {![lsearch $plot($w,Yvars) $path]>-1} {
+            if {[lsearch $plot($w,Yvars) $path]==-1} {
                 set plot(caption,$node) $caption
-                lappend plot($w,Yvars)   $path
+                lappend plot($w,Yvars) $path
                 lappend ynodes($w) $node
                 
                 UpdateState $w
@@ -211,17 +213,12 @@ namespace eval ::$keyValue {
     # Called at start up only
     proc ShowHelper {w} {
         #tk_messageBox -message "ShowHelper winid $w" -type ok
-        global ::graphtools::plot
-        global ::graphtools::YYold
-        global ::graphtools::YYnew
-        global ::graphtools::Told
-        global ::graphtools::Tnew
-        
         constructControlPanel $w
         drawGraphpad $w;
     }
     
     proc reset {winId} {
+puts reset
         variable runCount
         global ::graphtools::plot
         global ::graphtools::YYnew
@@ -237,8 +234,6 @@ namespace eval ::$keyValue {
     proc display {w time step remainder} {
         # remainder isn't time remaining to run (seems to be usually 1) use $runState(execTime)
         global ::graphtools::plot
-        global ::graphtools::YYold
-        global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
         global runState
@@ -639,8 +634,13 @@ namespace eval ::$keyValue {
             ##$w.canvas coords blanket_bottom 0 $y2 500 500
 
 # next bit for scaling popup info
-	    set YYnew($w) {}
-	    plot_YY $w
+#	    set YYnew($w) {}
+#	    plot_YY $w
+        set Trange [expr {1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)}]
+        set Yrange [expr {1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)}]
+        set plot($w,Tscale) [expr {$Trange/$plot($w,xlength)}]
+        set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
+        
         }
     }
     
@@ -715,11 +715,6 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         global ::graphtools::Told
         global ::graphtools::Tnew
-        
-        set Trange [expr {1.0*$plot($w,Xmax_axis)-$plot($w,Xmin_axis)}]
-        set Yrange [expr {1.0*$plot($w,Ymax_axis)-$plot($w,Ymin_axis)}]
-        set plot($w,Tscale) [expr {$Trange/$plot($w,xlength)}]
-        set plot($w,Yscale) [expr {$Yrange/$plot($w,ylength)}]
         
 	array set Yold_array $YYold($w)
         foreach {node Ynew} $YYnew($w) {
@@ -829,7 +824,7 @@ namespace eval ::$keyValue {
     proc drawPoint { w X0 Y0 X1 Y1 Colour node id} {
         global ::graphtools::plot
         #ShowMessage debug info "draw $node.$id" ok
-        
+#puts "Drawing from $X0 $Y0 to $X1 $Y1"
         set x0 [get_x $w $X0 $plot($w,Tscale)]
         set x1 [get_x $w $X1 $plot($w,Tscale)]
         set y0 [get_y $w $Y0 $plot($w,Yscale)]
@@ -1004,7 +999,6 @@ namespace eval ::$keyValue {
             if {[llength $values]} {
                 lappend YYnew($w) $node $values
             }
-            #        ShowMessage debug info "$YYnew($w)" ok
         }
     }
     
