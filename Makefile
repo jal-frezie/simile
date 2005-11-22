@@ -6,9 +6,18 @@ else
 		WISHCMD = "$(shell pwd)/System/bin/wish"
 		SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
 		SHAREDLIBEXTN = .dll
+		GCCCMD = gcc
 	else
-		WISHCMD = ~/Simile/System/bin/wish
-		SHAREDLIBEXTN = .so
+		ifeq ($(shell uname),CYGWIN_NT-5.0)
+			WISHCMD = "$(shell pwd)/System/bin/wish"
+			SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
+			SHAREDLIBEXTN = .dll
+			GCCCMD = ../System/bin/g++ 
+		else
+			WISHCMD = ~/Simile/System/bin/wish
+			SHAREDLIBEXTN = .so
+			GCCCMD = gcc
+		endif
 	endif
 endif
 
@@ -16,6 +25,10 @@ ifeq ($(shell uname),CYGWIN_NT-5.1)
 simile: System/bin/main.sav System/lib/Stubs/ame_dll8.4$(SHAREDLIBEXTN) \
 	System/bin/5d$(SHAREDLIBEXTN) System/bin/relay
 else
+ifeq ($(shell uname),CYGWIN_NT-5.0)
+simile: System/bin/main.sav System/lib/Stubs/ame_dll8.4$(SHAREDLIBEXTN) \
+	System/bin/5d$(SHAREDLIBEXTN) System/bin/relay
+endif
 simile: Run/xgsimile System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN) \
 	System/lib/lib5d$(SHAREDLIBEXTN) System/bin/relay
 endif
@@ -62,4 +75,4 @@ System/bin/5d(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
 
 
 System/bin/relay: relay.c
-	cd Run; gcc -o ../System/bin/relay relay.c; cd ..
+	cd Run; $(GCCCMD) -o ../System/bin/relay relay.c; cd ..
