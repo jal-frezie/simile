@@ -574,7 +574,8 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	    Max = Muckle),
 
 	    /* Now do what needs with the enumerated types */
-	    (BaseName has_class_refinement enum_types of TypeList, !;
+	    (InstType = submodel, /* do not include types for externals */
+		BaseName has_class_refinement enum_types of TypeList, !;
 		TypeList = []),
 	    length(TypeList, ETCount),
 	    (ETCount = 0, !,

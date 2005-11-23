@@ -1287,7 +1287,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
 					 -ENUM_BASE-1];
       } else if (bottomLine->datatype == FLAG) {
 	localUsed[usedCount++] = &boolType;
-      } else if (bottomLine->datatype != SUBMODEL) {
+      } else if (bottomLine->compclass != SUBMODEL) {
 	localUsed[usedCount++] = &noType;
       }
       localUsed[usedCount] = NULL;
