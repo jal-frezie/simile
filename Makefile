@@ -1,34 +1,42 @@
-ifeq ($(shell uname),Darwin)
+# set the following as required for your system,
+# some execs may be on the path
+# Updating with a clean copy from CVS will overwrite!
+# Normal updating (merging) from the CVS will conserve the
+# customisation - though conflicts may, of course, occur.
+# could require execs to be in PATH, sicstus, gplc, gcc/g++
+SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
+GCCCMD = gcc
+
+UNAME = $(shell uname)
+ifeq ($(shell uname),CYGWIN_NT-5.1)
+	UNAME = CYGWIN_NT
+endif 
+ifeq ($(shell uname),CYGWIN_NT-5.0)
+	UNAME = CYGWIN_NT
+endif 
+
+# default *nix variables overwritten in special cases
+WISHCMD = ~/Simile/System/bin/wish
+GCCCMD = gcc
+SHAREDLIBEXTN = .so
+# SICSTUSCMD not used, for Linux release
+# but is for Windows, set in the CYGWIN_NT section
+
+ifeq ($(UNAME),Darwin)
 	WISHCMD = ~/Desktop/CVS\ Simile.app/Contents/MacOS/Simile
 	SHAREDLIBEXTN = .dylib
-else
-	ifeq ($(shell uname),CYGWIN_NT-5.1)
-		WISHCMD = "$(shell pwd)/System/bin/wish"
-		SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
-		SHAREDLIBEXTN = .dll
-		GCCCMD = gcc
-	else
-		ifeq ($(shell uname),CYGWIN_NT-5.0)
-			WISHCMD = "$(shell pwd)/System/bin/wish"
-			SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
-			SHAREDLIBEXTN = .dll
-			GCCCMD = ../System/bin/g++ 
-		else
-			WISHCMD = ~/Simile/System/bin/wish
-			SHAREDLIBEXTN = .so
-			GCCCMD = gcc
-		endif
-	endif
+endif 
+ifeq ($(UNAME),CYGWIN_NT)
+	WISHCMD = "$(shell pwd)/System/bin/wish"
+	GCCCMD = ../System/bin/g++ 
+	SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
+	SHAREDLIBEXTN = .dll
 endif
-
-ifeq ($(shell uname),CYGWIN_NT-5.1)
+	
+ifeq ($(UNAME),CYGWIN_NT)
 simile: System/bin/main.sav System/lib/Stubs/ame_dll8.4$(SHAREDLIBEXTN) \
 	System/bin/5d$(SHAREDLIBEXTN) System/bin/relay
 else
-ifeq ($(shell uname),CYGWIN_NT-5.0)
-simile: System/bin/main.sav System/lib/Stubs/ame_dll8.4$(SHAREDLIBEXTN) \
-	System/bin/5d$(SHAREDLIBEXTN) System/bin/relay
-endif
 simile: Run/xgsimile System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN) \
 	System/lib/lib5d$(SHAREDLIBEXTN) System/bin/relay
 endif
