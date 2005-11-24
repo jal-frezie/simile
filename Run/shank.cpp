@@ -929,12 +929,15 @@ sprintf(globMess, "Loaded %ld", handle);
        any particular order -- and returns the whole caption */
     int parent, typesSoFar, count;
 
+    for (count=0; count<nodedata[line].enum_type_count; ++count) {
+      types[count]=&(nodedata[line].enum_type_ptrs[count]);
+    }
     if ((parent = parent_line(line)) >= 0) {
-      typesSoFar = make_full_caption(parent, result, dims, types);
+      typesSoFar = count+make_full_caption(parent, result, dims, types+count);
     } else {
       *result = (char)NULL;
       *dims = 0;
-      typesSoFar = 0;
+      typesSoFar = count;
     }
     // correct earlier enum type references to take account of this level
     count = 0;
@@ -950,10 +953,10 @@ sprintf(globMess, "Loaded %ld", handle);
       strcat(result, nodedata[line].caption);
     }
     append_ints_to_null(dims, nodedata[line].dims, 0, 0);
-    // add this levels type data -- reverse order cos outer models start list
+    /* add this levels type data -- reverse order cos outer models start list
     for (count=nodedata[line].enum_type_count-1;count>=0;--count) {
       types[typesSoFar++]=&(nodedata[line].enum_type_ptrs[count]);
-    }
+      } ...not any more */
     return typesSoFar;
   }
   
@@ -1227,15 +1230,6 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
   return -1;
 }
 
-char* trueTxt = "true";
-enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
-
-void* append_ptrs_to_null(enum_type_data** dest, enum_type_data** src) {
-  while (*dest) {dest += 1; }
-  while (*src) {*dest = *src; dest += 1; src += 1; }
-  *dest = NULL;
-}
-
 /* global version of getinfo, uses the list defined above to search through all
    current models to find given node, and combine their extraction data
 
@@ -1248,53 +1242,28 @@ void* append_ptrs_to_null(enum_type_data** dest, enum_type_data** src) {
    result arrays to make_full_caption. Well that's stepwise refinement...
 */
 
-node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
+node_data_line* search_intnl(char* node, long int* tgtModel, char* caption, 
 			   int* dims, int* path, enum_type_data** usedTypes) {
   listNodeModel* searchPoint = nodeModelList;
   Model* tryModel;
   node_data_line *bottomLine;
   char localCapt[256];
-  int localDims[32], dimCount, usedCount;
-  enum_type_data *thisType, *localTypes[32], *localUsed[32];
+  int localDims[32], dimCount;
   int line, typeCount, typeIdx;
 
   while (searchPoint) {
-    //    sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
-    //    showMess(globMess);
+//    sprintf(globMess, "seeking %s in %s", node, searchPoint->node);
+//    showMess(globMess);
     tryModel = searchPoint->model;
     if (!strcmp(node,searchPoint->node)) line=0;
     else line=tryModel->getinfo(node);
     if (line>-1) {
       bottomLine = tryModel->nodedata + line;
       typeCount = tryModel->make_full_caption(line, localCapt, 
-					      localDims, localTypes);
-      dimCount = 0;
-      usedCount = 0;
-      while (localDims[dimCount]) {
-	if (localDims[dimCount] <= ENUM_BASE) {
-	  thisType = localTypes[typeCount+localDims[dimCount]-ENUM_BASE-1];
-	  localUsed[usedCount++] = thisType;
-	  localDims[dimCount] = thisType->count;
-	} else if (localDims[dimCount]==START_VM || 
-		  localDims[dimCount]==END_VM) {
-	} else {
-	  localUsed[usedCount++] = &noType;
-	}
-	++dimCount;
-      }
-      if (bottomLine->datatype <= ENUM_BASE) {
-	localUsed[usedCount++] = localTypes[typeCount+bottomLine->datatype
-					 -ENUM_BASE-1];
-      } else if (bottomLine->datatype == FLAG) {
-	localUsed[usedCount++] = &boolType;
-      } else if (bottomLine->compclass != SUBMODEL) {
-	localUsed[usedCount++] = &noType;
-      }
-      localUsed[usedCount] = NULL;
-
+					      localDims, usedTypes);
       if (line) {
-	if (!searchinfo(searchPoint->node, tgtModel, caption,
-		       dims, path, usedTypes)) {
+	if (!search_intnl(searchPoint->node, tgtModel, caption,
+		       dims, path, usedTypes + typeCount)) {
 	  return NULL;
 	}
       } else {
@@ -1302,6 +1271,15 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
       }
 
       if (*tgtModel!=(long int)tryModel) {
+	// correct higher ET references for those added at this level
+	dimCount = 0;
+	while (dims[dimCount]) {
+	  if (dims[dimCount] <= ENUM_BASE) {
+	    dims[dimCount] = dims[dimCount]-typeCount;
+	  }
+	  ++dimCount;
+	}
+
 	append_ints_to_null(dims, localDims, SEPARATE, 0);
 	append_ints_to_null(path, bottomLine->path, SEPARATE, 
 			    (int)searchPoint->model);
@@ -1309,11 +1287,9 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
 	*dims = *path = 0;
 	append_ints_to_null(dims, localDims, 0, 0);
 	append_ints_to_null(path, bottomLine->path, 0, 0);
-	*usedTypes = NULL;
 	*caption = 0;
       }
       strcpy(caption + strlen(caption), localCapt);
-      append_ptrs_to_null(usedTypes, localUsed);
 
       /* Old version with only one model hierarchy...
       if (searchPoint == nodeModelList) {
@@ -1341,6 +1317,54 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
     searchPoint = searchPoint->next;
   }
   return(NULL);
+}
+
+char* trueTxt = "true";
+enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
+
+node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
+			   int* dims, int* path, enum_type_data** usedTypes) {
+  node_data_line *bottomLine;
+  enum_type_data *thisType, *localTypes[128];
+  int dimCount = 0, usedCount = 0;
+
+  /* botch: when getting info on a new separate submodel, we don't
+     want references to enumerated types in parent models to crash it,
+     so fill the array with null types */
+  for (usedCount=0; usedCount<128; ++usedCount) {
+    localTypes[usedCount]=&noType;
+  }
+  usedCount=0;
+	
+  bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
+  while (dims[dimCount]) {
+//    sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
+//    showMess(globMess);
+    if (dims[dimCount] <= ENUM_BASE) {
+      thisType = localTypes[ENUM_BASE-dims[dimCount]];
+      usedTypes[usedCount++] = thisType;
+      dims[dimCount] = thisType->count;
+    } else if (dims[dimCount]==SEPARATE || 
+	       dims[dimCount]==START_VM || 
+	       dims[dimCount]==END_VM) {
+    } else {
+      usedTypes[usedCount++] = &noType;
+    }
+    ++dimCount;
+  }
+  if (bottomLine->datatype <= ENUM_BASE) {
+    thisType = localTypes[ENUM_BASE-bottomLine->datatype];
+//    sprintf(globMess, "type is %d, setting result %d to %s", 
+//        datatype, usedCount, thisType->name);
+//    showMess(globMess);
+    usedTypes[usedCount++] = thisType;
+  } else if (bottomLine->datatype == FLAG) {
+    usedTypes[usedCount++] = &boolType;
+  } else {
+    usedTypes[usedCount++] = &noType;
+  }
+  usedTypes[usedCount] = NULL;
+  return bottomLine;
 }
 
 void* fetch_instance(char* nodeId) {
