@@ -4,8 +4,12 @@
 # Normal updating (merging) from the CVS will conserve the
 # customisation - though conflicts may, of course, occur.
 # could require execs to be in PATH, sicstus, gplc, gcc/g++
-SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
+# default *nix variables overwritten in special cases
+WISHCMD = ~/Simile/System/bin/wish
 GCCCMD = gcc
+SHAREDLIBEXTN = .so
+# SICSTUSCMD not used, for Linux release
+# but is for Windows, set in the CYGWIN_NT section
 
 UNAME = $(shell uname)
 ifeq ($(shell uname),CYGWIN_NT-5.1)
@@ -15,12 +19,6 @@ ifeq ($(shell uname),CYGWIN_NT-5.0)
 	UNAME = CYGWIN_NT
 endif 
 
-# default *nix variables overwritten in special cases
-WISHCMD = ~/Simile/System/bin/wish
-GCCCMD = gcc
-SHAREDLIBEXTN = .so
-# SICSTUSCMD not used, for Linux release
-# but is for Windows, set in the CYGWIN_NT section
 
 ifeq ($(UNAME),Darwin)
 	WISHCMD = ~/Desktop/CVS\ Simile.app/Contents/MacOS/Simile
@@ -28,7 +26,7 @@ ifeq ($(UNAME),Darwin)
 endif 
 ifeq ($(UNAME),CYGWIN_NT)
 	WISHCMD = "$(shell pwd)/System/bin/wish"
-	GCCCMD = ../System/bin/g++ 
+	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
 	SHAREDLIBEXTN = .dll
 endif
