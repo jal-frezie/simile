@@ -804,7 +804,7 @@ can_connect(Arc, Node1, Node2) :-
 	   [[state, cloud], [state, cloud]]]],
 	 [influence,
 	  [[[compartment, state, variable, flow,
-	     alarm, creation, immigration, reproduction],
+	     alarm, creation, immigration, reproduction, loss],
 	    [variable, flow, compartment, state, event, squirt,
 	     alarm, condition, creation, immigration, reproduction, loss]],
 	   [[event, squirt],

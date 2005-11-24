@@ -944,8 +944,10 @@ make_scalar(L, Param, Graphs, FullLocalExpr) :-
 	make_evaluation_routine_all(L, Inds, Graphs, ITerms),
 	all(render, make_expr, [unify(L), build(ITerms),
 				build(IExprs)]),
-	(Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex), !,
-	    append_atoms('import_', Type, ImportCmd),
+	(Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),
+	    (Type = a(_ET),
+		ImportCmd = import_int;
+	    append_atoms('import_', Type, ImportCmd)), !,
 	    length(IExprs, IndCount),
 	    make_procedure_call_chars(L, [arrange_indices, IndCount | IExprs],
 				      AIStr),

@@ -1277,6 +1277,7 @@ proc FindPhase {node submodel} {
 
     set model_id($myNode) $model_ids($submodel)
     foreach subnode [listobjects $model_id($myNode)] {
+	if {[string equal $subnode $submodel]} continue
         set subtype [lindex {EXOGENOUS DERIVED TABLE INPUT SPLIT GHOST} \
 			 [getvalue $model_id($myNode) $subnode 2]]
         if {[string match $node $subnode]} {

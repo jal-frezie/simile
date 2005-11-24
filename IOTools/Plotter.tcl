@@ -218,7 +218,6 @@ namespace eval ::$keyValue {
     }
     
     proc reset {winId} {
-puts reset
         variable runCount
         global ::graphtools::plot
         global ::graphtools::YYnew
