@@ -207,7 +207,7 @@ rel_path_name(RemoteNode, DestBox, Relation, SourceLocation, RemoteName) :-
 	    caption_for(Relation, RelCaption),
 	    initiates(Relation, BaseBox),
 	    caption_for(BaseBox, BaseBoxCaption),
-	    sicstus_format_to_chars("~a (~a ~a in ~a)",
+	    sicstus_format_to_chars("~a (~a \"~a\" in \"~a\")",
 			    [AbsName, Dir, BaseBoxCaption, RelCaption],
 			    RemoteStr);
 	sicstus_format_to_chars("~a (active channel?)", [AbsName], RemoteStr)),
@@ -242,7 +242,8 @@ list_index_meanings(Submodel, Meanings) :-
 	append(Group1, Group2, Meanings).
 
 list_local_index_meanings(Submodel, Meanings) :-
-	caption_for(Submodel, Caption),
+	caption_for(Submodel, BareCaption),
+	append_atoms(['"', BareCaption, '"'], Caption),
 	(is_population(Submodel), !,
 		LocalDims = [pop];
 	get_node_size(Submodel, LocalDims)),
@@ -262,7 +263,7 @@ list_link_index_meanings(DestCapt, [exits(Link, [Start | SRest]) | LRest],
 			 Meanings) :-
 	list_local_index_meanings(Start, BaseMeanings),
 	caption_for(Link, LinkCapt),
-	sicstus_format_to_chars(" in ~a for ~a", [LinkCapt, DestCapt], RoleCaptStr),
+	sicstus_format_to_chars(" in role \"~a\" for ~a", [LinkCapt, DestCapt], RoleCaptStr),
 	all(m_update, append_base_role,
 	    [build(BaseMeanings), unify(RoleCaptStr), build(First)]),
 	list_link_index_meanings(DestCapt, [exits(Link, SRest) | LRest],

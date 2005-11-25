@@ -372,14 +372,15 @@ generate_name(L, Atom, UnusedName, Used, Spares) :-
 	(L = c; L = tcl; L = prolog),
 	    (L = prolog, !,
 		[SlashNo] = "/", /* ends pathname */
-	        [Space, Paren1, Paren2] = " ()", /* begins comment */
+	        [Space, DQ, Paren1, Paren2] = " \"()", /* begins comment */
 	        [I, N] = "in", /* precedes role */
 	        name(Atom, AtomStr),
 		(LocalStr = AtomStr; append(_, [SlashNo | LocalStr], AtomStr)),
 		    \+ member(SlashNo, LocalStr),
 		    (append(NameStr, [Space, Paren1 | CmtStr], LocalStr),
-			(suffix([Space, I, N, Space | RoleCBStr], CmtStr),
-			    append(RoleStr, [Paren2], RoleCBStr),
+			(suffix([DQ, Space, I, N, Space, DQ | RoleCBStr],
+				CmtStr),
+			    append(RoleStr, [DQ, Paren2], RoleCBStr),
 			    append([NameStr, "_", RoleStr], SeedStr);
 			 SeedStr = NameStr), !;
 		     SeedStr = LocalStr),
