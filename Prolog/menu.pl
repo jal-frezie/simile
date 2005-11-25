@@ -626,10 +626,9 @@ menu_handle(Win, edit, CutOrCopy) :-
 
 menu_handle(Win, edit, paste) :-
 	get_edit_model(Win, Model, Pt),
-	event:snap_to_grid(Pt, GPt),
 	use_pref_dir(Dir),
 	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	stick_model_in(Win, Model, CopyFile, insert(GPt)),
+	stick_model_in(Win, Model, CopyFile, insert(Pt)),
 	event:set_selection_abilities(Model).
 	
 menu_handle(Win, edit, selall) :-
@@ -784,23 +783,41 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	MaxOffX is MR - R,
 	MaxOffY is MB - B,
 
-	/* These two are the offset to get it to nearest feasible posn */
+	/* These two are the offset to get it to nearest feasible posn...
+	cant believe this has to be so complicated */
+	(event:grid_pitch_is(Spcs), !,
+	    MinGridX is ceiling(MinOffX/Spcs),
+	    MaxGridX is floor(MaxOffX/Spcs),
+	    MaxGridX >= MinGridX,
+	    BestX is Spcs*max(MinGridX, min(MaxGridX,
+					    round((DX-(L+R)/2)/Spcs))),
+	    MinGridY is ceiling(MinOffY/Spcs),
+	    MaxGridY is floor(MaxOffY/Spcs),
+	    MaxGridY >= MinGridY,
+	    BestY is Spcs*max(MinGridY, min(MaxGridY,
+					    round((DY-(T+B)/2)/Spcs)));
 	BestX is max(MinOffX, min(MaxOffX, DX-(L+R)/2)),
-	BestY is max(MinOffY, min(MaxOffY, DY-(T+B)/2)),
+	    BestY is max(MinOffY, min(MaxOffY, DY-(T+B)/2))),
 
-	HDispMax is (MR-ML)-(R-L),
-	VDispMax is (MB-MT)-(B-T),
+	MinXTrim is BestX-MinOffX,
+	MaxXTrim is MaxOffX-BestX,
+	MinYTrim is BestY-MinOffY,
+	MaxYTrim is MaxOffY-BestY,
+	HDispMax is max(MinXTrim,MaxXTrim),
+	VDispMax is max(MinYTrim,MaxYTrim),
 	MaxDist is max(HDispMax, VDispMax),
-	count_to(0, MaxDist, 10, Distance),
-	count_to(0, Distance, 10, Range),
-	((TargetX is BestX-Distance, TargetX > MinOffX;
-	  TargetX is BestX+Distance, TargetX < MaxOffX),
-	(TargetY is BestY-Range, TargetY > MinOffY;
-	    TargetY is BestY+Range, TargetY < MaxOffY);
-	(TargetY is BestY-Distance, TargetY > MinOffY;
-	    TargetY is BestY+Distance, TargetY < MaxOffY),
-	(TargetX is BestX-Range, TargetX > MinOffX;
-	    TargetX is BestX+Range, TargetX < MaxOffX)),
+	
+	(event:grid_pitch_is(Spcs), !; Spcs = 10),
+	count_to(0, MaxDist, Spcs, Distance),
+	count_to(0, Distance, Spcs, Range),
+	((Distance<MinXTrim, TargetX is BestX-Distance;
+	  Distance<MaxXTrim, TargetX is BestX+Distance),
+	(Range<MinYTrim, TargetY is BestY-Range;
+	    Range<MaxYTrim, TargetY is BestY+Range);
+	(Distance<MinYTrim, TargetY is BestY-Distance;
+	    Distance<MaxYTrim, TargetY is BestY+Distance),
+	(Range<MinXTrim, TargetX is BestX-Range;
+	    Range<MaxXTrim, TargetX is BestX+Range)),
 
 	/* These make sure the rectangle fits in the model so now we only need
 	to check for interference */
