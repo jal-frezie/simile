@@ -201,9 +201,9 @@ proc ClickObj { x y winId X Y action} {
             #   ModeSelect select
         }
         if {[string match $equationbar(current_action) click]} {
-        SafeEqnBarEdit $winid
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
+		SafeEqnBarEdit $winid
                 set label [file tail [BlankCrs $context]]\ =
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
