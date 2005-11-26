@@ -97,24 +97,32 @@ BOOLEAN resetting;
 BOOLEAN check_gui(void* id, double model_time, int this_op) {
   unsigned long int this_update;
   long int while_running;
-  BOOLEAN result, while_resetting;
+  BOOLEAN result = FALSE, while_resetting;
   
   // first record how much time the last op took
   this_update=clock();
   took[last_op]=this_update-last_exit;
-  last_op = this_op;
   
-  if ((this_update-last_update)>flash || took[this_op]>flash) {
+  if ((this_update-last_update)>flash) {
     while_running = topType;
     while_resetting = resetting;
-    result=interact_gui(id, 1, model_time);
+    result=interact_gui(id, 1+!last_op, model_time);
     topType = while_running;
     resetting = while_resetting;
     this_update=clock(); // GUI may have taken time
     last_update=last_check=this_update;
-  } else {
-    result=FALSE;
   }
+  if (took[this_op]>flash) {
+    while_running = topType;
+    while_resetting = resetting;
+    result=result||interact_gui(id, 1+!this_op, model_time);
+    topType = while_running;
+    resetting = while_resetting;
+    this_update=clock(); // GUI may have taken time
+    last_update=last_check=this_update;
+  }
+
+  last_op = this_op;
   last_exit=this_update;
   return result;
 }
@@ -807,6 +815,7 @@ sprintf(globMess, "Loaded %ld", handle);
       setdt(0, -tweak_phase);
       setdt(steps[tweak_phase], tweak_phase);
     }
+    setdt(-1, 0);
     reset_time_series((long int)this);
     return evalmodel(modelHandle, 0, top_phase, FALSE);
   }
@@ -1337,31 +1346,33 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
   usedCount=0;
 	
   bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
-  while (dims[dimCount]) {
-//    sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
-//    showMess(globMess);
-    if (dims[dimCount] <= ENUM_BASE) {
-      thisType = localTypes[ENUM_BASE-dims[dimCount]];
+  if (bottomLine) {
+    while (dims[dimCount]) {
+      //    sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
+      //    showMess(globMess);
+      if (dims[dimCount] <= ENUM_BASE) {
+	thisType = localTypes[ENUM_BASE-dims[dimCount]];
+	usedTypes[usedCount++] = thisType;
+	dims[dimCount] = thisType->count;
+      } else if (dims[dimCount]==SEPARATE || 
+		 dims[dimCount]==START_VM || 
+		 dims[dimCount]==END_VM) {
+      } else {
+	usedTypes[usedCount++] = &noType;
+      }
+      ++dimCount;
+    }
+    if (bottomLine->datatype <= ENUM_BASE) {
+      thisType = localTypes[ENUM_BASE-bottomLine->datatype];
+      //    sprintf(globMess, "type is %d, setting result %d to %s", 
+      //        datatype, usedCount, thisType->name);
+      //    showMess(globMess);
       usedTypes[usedCount++] = thisType;
-      dims[dimCount] = thisType->count;
-    } else if (dims[dimCount]==SEPARATE || 
-	       dims[dimCount]==START_VM || 
-	       dims[dimCount]==END_VM) {
+    } else if (bottomLine->datatype == FLAG) {
+      usedTypes[usedCount++] = &boolType;
     } else {
       usedTypes[usedCount++] = &noType;
     }
-    ++dimCount;
-  }
-  if (bottomLine->datatype <= ENUM_BASE) {
-    thisType = localTypes[ENUM_BASE-bottomLine->datatype];
-//    sprintf(globMess, "type is %d, setting result %d to %s", 
-//        datatype, usedCount, thisType->name);
-//    showMess(globMess);
-    usedTypes[usedCount++] = thisType;
-  } else if (bottomLine->datatype == FLAG) {
-    usedTypes[usedCount++] = &boolType;
-  } else {
-    usedTypes[usedCount++] = &noType;
   }
   usedTypes[usedCount] = NULL;
   return bottomLine;

@@ -1218,6 +1218,7 @@ BOOLEAN interact_gui(void* id, BOOLEAN stop_chk, double now) {
     Tcl_ListObjAppendElement(globInterp, feedbackCmd,
 			     Tcl_NewLongObj((long int)id));
     Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewDoubleObj(now));
+    Tcl_ListObjAppendElement(globInterp, feedbackCmd, Tcl_NewIntObj(stop_chk));
   } else {
     feedbackCmd = Tcl_NewStringObj("AbortCheck", -1);
     Tcl_ListObjAppendElement(globInterp, feedbackCmd,

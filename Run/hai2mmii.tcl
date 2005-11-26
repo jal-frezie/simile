@@ -673,10 +673,10 @@ proc GetPhaseCount {topNode} {
 }
 
 # these two are called from the model and handled by the client
-proc InteractGUI {handle modelTime} {
+proc InteractGUI {handle modelTime flCol} {
     global helperTable
     return [$helperTable(RunControl)::RCInteractGUI [DecodeInstance $handle] \
-		$modelTime]
+		$modelTime [lindex {{} green blue} $flCol]]
 }
 
 proc AbortCheck {handle} {
@@ -712,7 +712,7 @@ proc ResetModel {myNode redo} {
     } else {
 	set done 1
     }
-    InteractGUI $instance_id($myNode) 0
+    InteractGUI $instance_id($myNode) 0 2
     return $done
 }
 
@@ -726,7 +726,7 @@ proc ExecuteModel {myNode howInt start finish} {
 	    TclExecuteModel $myNode $howInt $start $finish
 	}
     } errList]} {
-	InteractGUI $instance_id($myNode) [lindex $errList 2]
+	InteractGUI $instance_id($myNode) [lindex $errList 2] 2
 	eval ExplainError $errList
 	return -1
     } else {

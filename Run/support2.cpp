@@ -76,7 +76,9 @@ FINDABLE int do_setstep(double time, int phase) {
 //
 int loses (double prob, int phase) {
   int kills_per_step;
-  if (prob>1) {
+  if (prob<=0 || glob_element(dts,0)<0) {
+    return 0;
+  } else if (prob>=1) {
     return 1;
   } else {
     kills_per_step=glob_element(dts,0)?4:1;

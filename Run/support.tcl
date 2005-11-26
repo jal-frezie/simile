@@ -202,7 +202,12 @@ proc CheckGUI {node modelTime thisOp} {
     }
     
     if {$currentOld || $startingLong} {
-	set result [InteractGUI $node $modelTime]
+	if {[string equal ext $thisOp]} {
+	    set col 2
+	} else {
+	    set col 1
+	}
+	set result [InteractGUI $node $modelTime $col]
 	set thisUpdate [clock clicks -milliseconds] ;# GUI may have taken time
 	set GUILog(lastUpdate) $thisUpdate
     } else {
@@ -219,10 +224,11 @@ proc abort_check {args} {
 }
 
 proc TclResetModel {topPhase} {
-    global ts steps phasecount
+    global ts dts steps phasecount
     for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
 	set ts($tweakPhase) [expr -$steps($tweakPhase)]
     }
+    set dts(0) -1
     SetDTs 1 0
     AdvanceTime 1 1
     do_model int_evalmodel 0 $topPhase
@@ -418,12 +424,15 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 #}
 #
 proc loses {prob phase} {
-    if {$prob >= 1} {
+    global dts
+    if {$prob <= 0 || $dts(0)==-1} {
+	return 0
+    } elseif {$prob >= 1} {
 	return 1
     } else {
-	set kills_per_step [expr [glob_element dts 0]?4:1]
+	set kills_per_step [expr $dts(0)?4:1]
 	return [expr [ame_rand 0 1] > \
-		    pow(1-$prob, [glob_element dts $phase]/$kills_per_step)]
+		    pow(1-$prob, $dts($phase)/$kills_per_step)]
     }
 }
 

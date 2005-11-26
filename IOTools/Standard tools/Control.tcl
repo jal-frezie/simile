@@ -299,14 +299,14 @@ namespace eval runcontrol33857 {
 	global runState
 	$runState($node,progressBar) config -from $start -to $finish
 	set runState($node,expected_end) $finish
-	UpdateBar $node $start
     }
 
-    proc UpdateBar {node now} {
+    proc UpdateBar {node now col} {
 	global runState
         set runState($node,currentTime) $now
 	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
 	$runState($node,progressBar) set $now
+	$runState($node,cnvs) itemconfigure 1 -fill $col
     }
 
 # This is called back from the model execution process whenever
@@ -316,9 +316,9 @@ namespace eval runcontrol33857 {
 # notice that it is out of date. Returns nonzero if user has stopped
 # or reset execution
 
-    proc RCInteractGUI {myNode current} {
+    proc RCInteractGUI {myNode current col} {
 	variable sendvars
-	UpdateBar $myNode [expr $current/$sendvars(unitLength)]
+	UpdateBar $myNode [expr $current/$sendvars(unitLength)] $col
 	set sendvars($myNode,busy) 0
 	update
 	set sendvars($myNode,busy) 1
@@ -391,8 +391,7 @@ namespace eval runcontrol33857 {
 	set finish [expr {$current+$exec}]
 
 	if {[info exists redoPhase($node)]} {
-	    $widget.upper.bf.flag itemconfigure 1 -fill yellow
-	    update
+	    UpdateBar $node $current yellow
 	    if {![RunningInC $node]} {
 		if {$redoPhase($node) <= -1} {
 		    InitTimeSeries $node
@@ -446,7 +445,6 @@ namespace eval runcontrol33857 {
 		set current $pause
 	    }
 	    set scaled_next [expr {$current*$sendvars(unitLength)}]
-	    $widget.upper.bf.flag itemconfigure 1 -fill green
 	    switch -- [ExecuteModel $node $runState($node,intMethod) \
 			 $scaled_current $scaled_next] {
 			     -1 {
@@ -459,8 +457,7 @@ namespace eval runcontrol33857 {
 			 } ;# default: keep going
             if {$current==$nextDisp && \
 		    [string match start $sendvars($node,currentMode)]} {
-		$widget.upper.bf.flag itemconfigure 1 -fill blue
-		UpdateBar $node $current ;# so GetModelTime does right
+		UpdateBar $node $current blue ;# so GetModelTime does right
 		TellAllHelpers $node display $current $display 1
 	    }
 	    set scaled_current $scaled_next
@@ -470,7 +467,7 @@ namespace eval runcontrol33857 {
 		    set exec $sendvars($node,run_length)
 		    SetupBar $node $finish [expr $finish+$exec]
 		} else {
-		    UpdateBar $node $current
+		    UpdateBar $node $current green
 		}
 	    }
 	}
@@ -484,7 +481,7 @@ namespace eval runcontrol33857 {
 	$widget.upper.topbuttons.start configure -image $playImg
 	$widget.upper.topbuttons.start configure -command \
 	    "[namespace current]::SetMode $node start"
-	$widget.upper.bf.flag itemconfigure 1 -fill [RestingColour $node]
+	UpdateBar $node $current [RestingColour $node]
 	set sendvars($node,currentMode) stop
 	set sendvars($node,busy) 0
     }
