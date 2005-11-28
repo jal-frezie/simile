@@ -515,7 +515,7 @@ resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
 		Units=n(TypeRef)),
 	    ETSpec is -10-Posn, !;
 	(Tgt = Model; Model = st(Tgt)),
-	m_class:Parent has_part Tgt,
+	find_all_comps(Parent, Tgt),
 	    resolve_enum_type(Ref, Parent, Value, Units, InnerSpec),
 	    length(TypeList, Skipped),
 	    ETSpec is InnerSpec - Skipped).

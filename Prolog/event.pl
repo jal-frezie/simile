@@ -731,7 +731,8 @@ spread_colour(Node, NewDims) :-
 	    fail;
 	setof(More, (More = Node; status_affects(Node, More)), SpreadList),
 	(member(Hit, SpreadList), Hit = Node;
-	    member(Hit, SpreadList), \+ find_type(Hit, influence);
+	    member(Hit, SpreadList), \+ Hit = Node,
+	        \+ find_type(Hit, influence);
 	    member(Hit, SpreadList), find_type(Hit, influence)),
 	/* Do influences last cos they depend on others! */
 	(NewDims = no,
