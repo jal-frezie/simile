@@ -158,16 +158,19 @@ make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 	select(Start-Finish, Equivs, Others),
 		Dead = [Start, Finish]),
 
-	Start is_connector from Origin to _,
-	Finish is_connector from _ to Destination,
-	Link is_new_connector from Origin to Destination,
-	copy_local_attributes(Finish, Link),
-	copy_start_equivalences(Start, Link),
-	copy_finish_equivalences(Finish, Link),
-	change_references(Origin, Start, Link),
-	change_references(Destination, Finish, Link),
-
-	(member(OldLink, Dead),
+	(Start is_connector from Origin to _,
+	    Finish is_connector from _ to Destination, !,
+	    Link is_new_connector from Origin to Destination,
+	    copy_local_attributes(Finish, Link),
+	    copy_start_equivalences(Start, Link),
+	    copy_finish_equivalences(Finish, Link),
+	    change_references(Origin, Start, Link),
+	    change_references(Destination, Finish, Link),
+	    Gone = Dead;
+	/* keep going if there is a bad equivalence */
+	Gone = []),
+	
+	(member(OldLink, Gone),
 	/* Don't kill link if it has other equivalences */
 	    \+ member(OldLink-_, Others),
 	    (_ has_changed_termination _ from OldLink to Link,

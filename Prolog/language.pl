@@ -630,7 +630,6 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	/* Conditional to avoid offing new individuals  -- they have
 	not been initialized yet */
 	make_struct_reference(L, Pointer, new_instance, NewInstance),
-	make_new_check(L, Pointer, NoInitDone),
 	
 	/* Next remove shagged-out individuals, node is a variable, and move
 		on to next instance */
@@ -641,10 +640,7 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	render(L, make_reference, MetaPointer=OnPointer, Indent2, EndLoop9),
 	render(L, end(while), MPTargetRef, Indent, EndLoop12),
 
-	render(L, if_start, NoInitDone, Indent1, CheckSet),
-	render(L, else_clause, NoInitDone, Indent1, NotSet),
-	render(L, assignment, NewInstance=0, Indent2, SetLoserOld),
-	render(L, end(cond), NoInitDone, Indent1, SetCheckDone),
+	render(L, assignment, NewInstance=0, Indent1, SetLoserOld),
 	(setof(LossTerm, LossVal^(get_term_refs(L, Pointer, LossNodes, LossVal),
 			test_probs(L, LossVal, Step, LossTerm)), LossTerms), !,
 	    build_disjunction(L, LossTerms, IsDead),
@@ -657,13 +653,11 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	    render(L, end(cond), IsDead, Indent1, EndLoop10),
 
 	    append([Current, Loop0, Loop1, Loop2,
-		    CheckSet, SetLoserOld, EndLoop9,
-		    NotSet, EndLoop5, EndLoop6,
+		    SetLoserOld,
+		    EndLoop5, EndLoop6,
 		    EndLoop7, EndLoop8, EndLoop9, EndLoop10, 
-		    SetCheckDone,
 		    EndLoop12], NewCurrent);
-	append([Current, Loop0, Loop1, Loop2, CheckSet, SetLoserOld, NotSet,
-		SetCheckDone,
+	append([Current, Loop0, Loop1, Loop2, SetLoserOld,
 		EndLoop9, EndLoop12], NewCurrent)),    
 	do_assign_list(L, Clauses,
 			Graphs, Preambles, [NewCurrent | Postambles],
