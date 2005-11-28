@@ -2027,10 +2027,15 @@ resnap(Node, SelOnly) :-
 	get_shape(Bit, bounding_box, BB),
 	(add_to_translation([0,0,1,1], Bit, Trans), % bit is submodel
 	    snap_to_grid(BB, NBB),
+/* old version moved everything in box to align top-left of internal grid with
+   external: too destructive and no point since bottom right still unmatched
 	    translate(NBB, Trans, [L, T, R, B]),
 	    IW is R-L, IH is B-T,
 	    change_shape(Bit, internal_extent, [0, 0, IW, IH]),
-	    move_boxes(Bit, [L, T, 1,1]),
+	    move_boxes(Bit, [L, T, 1,1]), */
+	    translate(NBB, Trans, NIX),
+	    change_shape(Bit, internal_extent, NIX),
+	    
 	    change_shape(Bit, bounding_box, NBB),
 	    (SelOnly = 0; SelOnly = 1, resnap(Bit, 1)),
 	    redisplay_border(Bit);
