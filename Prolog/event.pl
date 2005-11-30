@@ -125,6 +125,7 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
+	    menu:show_normal_cursor,
 	    drag_to(NewXpt, NewYpt, Name);
 	(CD < 2, click_on([NewXpt, NewYpt], Name, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
@@ -162,12 +163,13 @@ click(Xpt, Ypt, CD) :-
 	check_snap,
 	find_current(Wid),
 	Wid shows_model Parent,
-	save_params([0,0,1,1], 0, Parent),
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
+	    menu:show_normal_cursor,
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
+	    save_params([0,0,1,1], 0, Parent),
 	    set_original_click(Xpt, Ypt),
 	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent, CD)).
 
@@ -235,17 +237,17 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 
 click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
 	finish_old_edit(none),
-	get_mode(add),
+	doing_add(New_obj),
 	snap_to_grid(ActPt, [Xpt, Ypt]),
 	set_start_coords(Xpt, Ypt),
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
-	get_adding_object(New_obj),
 	Wid shows_model Top,
 	contains(Top, Parent, Ladder),
 	check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
 	(New_obj is_class_of_sort box, !,
 	    (New_obj is_class_of_sort rounded_rect, !,
+		set_line_start_obj(Parent),
 		advance_phase_to(action_choice);
 	    insert(Wid, Parent, [Xpt, Ypt], New_obj));
 	make_terminator(New_obj, Parent, DropNode),
@@ -285,10 +287,6 @@ new_selection(Parent) :-
 	fail.
 
 insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
-	Wid shows_model Top,
-	contains(Top, Parent, Ladder),
-	length(Ladder, Depth),
-	check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
 	add_at_point(Xpt, Ypt, New_obj, Parent, NewNode),
 	redisplay(NewNode),
 	give_focus(NewNode),
@@ -346,9 +344,8 @@ bar_edit_menu(Wid) :-
 	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode)).
 
 click_on(_XY, Poss_start, _CD) :-
-	get_mode(add),
+	doing_add(New_obj),
 	finish_old_edit(none),
-	get_adding_object(New_obj),
 	(New_obj is_class_of_sort line,
 	    do_linear(New_obj, Poss_start);
 	Poss_start is_of_sort cloud,
@@ -910,9 +907,7 @@ drag_to(Xpt, Ypt, _Comp) :-
 	draw_rubberband(square).
 
 drag_to(Xpt, Ypt, Comp) :-
-	(instant_link(Ltype), !;
-	get_mode(add),
-	    get_adding_object(Ltype)),
+	doing_add(Ltype),
 	get_phase(dragging),
 	(Ltype is_class_of_sort line,
 	    sort_for_finish(Comp, Ltype, Xpt, Ypt);
@@ -1195,9 +1190,7 @@ multi_object_mode :-
 components makes sense */
 
 multi_level_mode :-
-	(instant_link(Type);
-	 get_mode(add),
-	    get_adding_object(Type)),
+	doing_add(Type),
 	Type is_class_of_sort line;
 	get_mode(ghost).
 
@@ -1612,7 +1605,8 @@ unclick :-
 	    remove_old_rubberband),
 	    initialize_phase;
 	get_phase(action_choice), !,
-		advance_phase_to(targetting);
+	    menu:set_cursor_to(crosshair),
+	    advance_phase_to(targetting);
 	unclick_obj.
 
 select_bagged(Rect, Model) :-
@@ -1637,9 +1631,8 @@ zoom_to_area :-
 	remove_old_rubberband.
 */
 unclick_obj :-
-	(retract(instant_link(New_obj));
-	 get_mode(add),
-	    get_adding_object(New_obj)),
+	doing_add(New_obj),
+	retractall(instant_link(_)),
 	get_current_node(Parent), 
 	(New_obj is_class_of_sort line,
 		(get_phase(dragging),
@@ -1738,6 +1731,11 @@ unclick_obj :-
 	(get_phase(barge); get_phase(moving); get_phase(moving_text);
 			get_phase(moving_start); get_phase(moving_finish)),
 	initialize_phase.
+
+doing_add(Comp) :-
+	instant_link(Comp);
+	get_mode(add),
+	get_adding_object(Comp).
 
 tie_ends(New_obj, Start_thing, Terminator) :-
 	link_ends(New_obj, Start_thing, Terminator, LastArc),
@@ -2001,7 +1999,8 @@ relate_graphics(Node_name, Node_trans) :-
 	      Link^(find_all_links(Node_name, Link),
 		    (has_outer_equiv(DoLink, Node_name, Link); DoLink = Link)),
 	      MessedLinks), !,
-	    menu:reroute_sections(MessedLinks);
+	    menu:reroute_sections(MessedLinks),
+	    all(event, make_links_follow, [build(MessedLinks)]);
 	true),
 	remove_old_incomplete.
  /* re-route flows first so influences to re-routed bowties come out right.

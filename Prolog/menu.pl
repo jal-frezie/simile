@@ -27,12 +27,16 @@ show_wait_cursor :-
 	true.
 
 show_normal_cursor :-
+	(get_phase(targetting), !,
+	    Cursor = crosshair;
+	 cursor_is(Cursor), !;
+	 Cursor = arrow),
+	set_cursor_to(Cursor).
+
+set_cursor_to(Cursor) :-
 	Win shows_model _,
-	(cursor_is(Special), 
-	    cursor_in(Win, Special);
-	\+ cursor_is(Special),
-	    cursor_in(Win, arrow)),
-	fail;
+	    cursor_in(Win, Cursor),
+	    fail;
 	true.
 
 undo_edit(Wid, Wids) :-
@@ -90,14 +94,14 @@ update_mode(NewMode) :-
 		fail;
 	NewMode = add, !,
 	    assert(cursor_is(target));
-	NewMode = move, !,
+/*	NewMode = move, !,
 	    assert(cursor_is(fleur));
 	NewMode = copy, !,
 	    assert(cursor_is(exchange));
-	NewMode = ghost, !,
-	    assert(cursor_is(sqb('GetGhostCursor')));
 	NewMode = delete, !,
 	    assert(cursor_is(pirate));
+*/	NewMode = ghost, !,
+	    assert(cursor_is(sqb('GetGhostCursor')));
 	NewMode = snap, !,
 	    assert(cursor_is(question_arrow));
 	assert(cursor_is(arrow))).
@@ -525,6 +529,19 @@ menu_handle(Win, file, export_prolog) :-
         finish_progress_dialogue.
 
 menu_handle(Win, edit, Component) :-
+	(Component is_class_of_sort box; Component is_class_of_sort line),
+	get_edit_model(Win, _Model, Node),
+	event:assert(instant_link(Component)),
+	(Node = [_,_], !,
+	    get_original_click(Xpt, Ypt),
+	    event:click(Xpt, Ypt, 0);
+	 event:click_on(_, Node, 0)),
+	event:unclick,
+	(Component is_primitive,
+	    Component is_class_of_sort box, !;
+	 event:assert(instant_link(Component))).
+/*
+menu_handle(Win, edit, Component) :-
 	get_edit_model(Win, Model, Tgt),
 	((Component = compartment, find_type(Tgt, cloud), !,
 	        event:cloud_to_comp(Tgt);
@@ -534,8 +551,6 @@ menu_handle(Win, edit, Component) :-
 	    finish_move(Model, 1);
 	(Component = submodel,
 	    Tgt = [Xpt, Ypt], !,
-	    set_line_start_obj(Model),
-	    set_start_coords(Xpt, Ypt),
 	    advance_phase_to(action_choice);
 	    (Tgt = [Xpt, Ypt], !,
 	        set_current_coords(Xpt, Ypt),
@@ -546,7 +561,7 @@ menu_handle(Win, edit, Component) :-
 	    advance_phase_to(targetting),
 	    event:assert(instant_link(Component))).
 
-/* Delete the selection */
+Delete the selection */
 menu_handle(Win, edit, reroute) :-
         start_progress_dialogue(Win),
 	reassure_user("Reroute in progress"),
