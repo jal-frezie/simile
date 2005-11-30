@@ -241,12 +241,12 @@ click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
 	set_current_coords(Xpt, Ypt),
 	save_params(Trans, Depth, Parent),
 	get_adding_object(New_obj),
+	Wid shows_model Top,
+	contains(Top, Parent, Ladder),
+	check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
 	(New_obj is_class_of_sort box, !,
 	    (New_obj is_class_of_sort rounded_rect, !,
-		Wid shows_model Top,
-		contains(Top, Parent, Ladder),
-		check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
-		advance_phase_to(rubberband);
+		advance_phase_to(action_choice);
 	    insert(Wid, Parent, [Xpt, Ypt], New_obj));
 	make_terminator(New_obj, Parent, DropNode),
 	    (var(DropNode), !;
@@ -797,7 +797,7 @@ sift_and_set(_, _) :-
 	abs(Xpt-OrigX) + abs(Ypt-OrigY) > 2,
 	*/
 	(get_phase(action_choice), !,
-		advance_phase_to(dragging);
+	    advance_phase_to(dragging);
 	true).
 
 /* rather than just using Prolog
@@ -913,16 +913,15 @@ drag_to(Xpt, Ypt, Comp) :-
 	(instant_link(Ltype), !;
 	get_mode(add),
 	    get_adding_object(Ltype)),
-	get_phase(Phase),
-	(Ltype is_class_of_sort line, Phase = dragging,
-		sort_for_finish(Comp, Ltype, Xpt, Ypt);
-	Ltype is_class_of_sort rounded_rect, Phase = rubberband,
-		get_start_coords(OldX, OldY),
-	        clear_incomplete,
-		add_incomplete([OldX, OldY, Xpt, Ypt]),
-		remove_old_rubberband,
-		draw_rubberband(round);
-	true).
+	get_phase(dragging),
+	(Ltype is_class_of_sort line,
+	    sort_for_finish(Comp, Ltype, Xpt, Ypt);
+	Ltype is_class_of_sort rounded_rect,
+	    get_start_coords(OldX, OldY),
+	    clear_incomplete,
+	    add_incomplete([OldX, OldY, Xpt, Ypt]),
+	    remove_old_rubberband,
+	    draw_rubberband(round)).
 
 drag_to(Xpt, Ypt, Moving_obj) :-
 	get_mode(select), /* was move */
@@ -1672,7 +1671,7 @@ unclick_obj :-
 		    initialize_phase;
 		
 	New_obj is_class_of_sort rounded_rect,
-	    get_phase(rubberband),
+	    get_phase(dragging),
 	    initialize_phase,
 	    get_incomplete([OldX, OldY, NewX, NewY]),
 	    clear_incomplete,

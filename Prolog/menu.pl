@@ -525,19 +525,24 @@ menu_handle(Win, file, export_prolog) :-
         finish_progress_dialogue.
 
 menu_handle(Win, edit, Component) :-
-	Component is_primitive,
 	get_edit_model(Win, Model, Tgt),
 	((Component = compartment, find_type(Tgt, cloud), !,
 	        event:cloud_to_comp(Tgt);
-	    Component is_class_of_sort box, !,
+	  Component is_primitive,
+	  Component is_class_of_sort box, !,
 	        event:insert(Win, Model, Tgt, Component)),
 	    finish_move(Model, 1);
-	(Tgt = [Xpt, Ypt], !,
+	(Component = submodel,
+	    Tgt = [Xpt, Ypt], !,
+	    set_line_start_obj(Model),
+	    set_start_coords(Xpt, Ypt),
+	    advance_phase_to(action_choice);
+	    (Tgt = [Xpt, Ypt], !,
 	        set_current_coords(Xpt, Ypt),
 	        event:make_terminator(Component, Model, StartPt),
 	        nonvar(StartPt);
 	    StartPt = Tgt),
-	    event:do_linear(Component, StartPt),
+	    event:do_linear(Component, StartPt)),
 	    advance_phase_to(targetting),
 	    event:assert(instant_link(Component))).
 
