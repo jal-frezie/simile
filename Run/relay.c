@@ -20,6 +20,7 @@ int kill (int pid, int sig) {
 }
  
 void pause () {
+//	 puts("pause");
   while (1) {
     Sleep(30000);
   }
@@ -36,15 +37,21 @@ main() {
   char fname[] = "pidpod";
   FILE* pip;
   int oldpid;
-
   signal(SIGTERM,exit_sighandler);
   pip = fopen(fname, "r");
+  if (pip == NULL) {
+	  puts("Error opening file for reading");
+	  return 1;
+  }
   fscanf(pip, "%d", &oldpid);
   fclose(pip);
   pip = fopen(fname, "w");
+  if (pip == NULL) {
+	  puts("Error opening file for writing");
+	  return 1;
+  }
   fprintf(pip, "%d", (int)getpid());
   fclose(pip);
-
   if (oldpid) {
     kill(oldpid, SIGTERM);
   }
