@@ -1038,7 +1038,6 @@ namespace eval $keyValue {
         puts $control {model.tpl model.inp}
         puts $control {model.ins model.out}
         
-        ShowMessage debug info "ourWish $ourWish" ok
         if {[string equal prediction $mode]} {
             if {[string length $useNodes($winId,pfit)]} {
                 FixPredWindow $useNodes($winId,pfit)
@@ -1097,11 +1096,8 @@ namespace eval $keyValue {
         variable relayProc
         
         set oldDir [pwd]
-        ShowMessage debug info "$simtmpdir pwd [pwd]" ok
-        #cd [file nativename $simtmpdir]
         cd $simtmpdir
-        #set cmd ""
-        ShowMessage debug info "cmd $cmd" ok
+
         set relayProc [open |$cmd r]
         # was [SilentRun $cmd]
         #ShowMessage debug info "started $hanger" ok
