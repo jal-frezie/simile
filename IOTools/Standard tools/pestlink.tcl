@@ -1031,9 +1031,8 @@ namespace eval $keyValue {
             set oldDir [file attributes $oldDir -shortname]
         }
         puts $control {* model command line}
-        set ourWish [file join [file dirname $oldDir] System bin relay]
-        puts $control $ourWish
-        # My Windows XP doesn't like this JMM puts $control [set ourWish [file nativename [ShellFileRef $ourWish]]]
+        set ourWish [ShellFileRef [file join [file dirname $oldDir] System bin relay]]
+        puts $control [file nativename $ourWish]
         puts $control {* model input/output}
         puts $control {model.tpl model.inp}
         puts $control {model.ins model.out}
@@ -1496,4 +1495,3 @@ namespace eval $keyValue {
     }
     
 } ;# end of namespace
-

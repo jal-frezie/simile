@@ -18,6 +18,12 @@ endif
 ifeq ($(shell uname),CYGWIN_NT-5.0)
 	UNAME = CYGWIN_NT
 endif 
+ifeq ($(shell uname),MINGW32_NT-5.1)
+	UNAME = CYGWIN_NT
+endif 
+ifeq ($(shell uname),MINGW32_NT-5.0)
+	UNAME = CYGWIN_NT
+endif 
 
 
 ifeq ($(UNAME),Darwin)
