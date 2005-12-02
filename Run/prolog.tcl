@@ -116,7 +116,7 @@ proc ClosePipe {} {
         destroy .splash ;# banner will hide error mesg if not yet withdrawn
 	error $spew
     }
-    if {[catch {file delete $simtmpdir}]} {
+    if {[catch {file delete -force $simtmpdir}]} {
 	ShowMessage debug warning "Simile could not delete its temporary directory $simtmpdir. This probably means that it failed to unload a model executable. Any saved models will not be affected, and you can delete the temporary directory after Simile has exited." ok
     }
     if {$plPipe(debug)} {
