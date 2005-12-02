@@ -40,6 +40,34 @@ int abort_check (void* instId) {
   }
 }
 
+/*
+ * Unix version: does not have min & max defined
+ */
+int min(int a, int b) {
+  return a<b?a:b;
+}
+double min(int a, double b) {
+  return a<b?a:b;
+}
+double min(double a, int b) {
+  return a<b?a:b;
+}
+double min(double a, double b) {
+  return a<b?a:b;
+}
+int max(int a, int b) {
+  return a>b?a:b;
+}
+double max(int a, double b) {
+  return a>b?a:b;
+}
+double max(double a, int b) {
+  return a>b?a:b;
+}
+double max(double a, double b) {
+  return a>b?a:b;
+}
+
 /* Pass on calls to stub functions made directly by built model */
 
 double ame_rand(double lo, double hi) {
@@ -382,34 +410,6 @@ void setup_enum_type_data(
 
    *enum_data_pointer = new enum_data_type(host, name, mem_count, array_data, 
 					   *enum_data_pointer);
-}
-
-/*
- * Unix version: does not have min & max defined
- */
-int min(int a, int b) {
-  return a<b?a:b;
-}
-double min(int a, double b) {
-  return a<b?a:b;
-}
-double min(double a, int b) {
-  return a<b?a:b;
-}
-double min(double a, double b) {
-  return a<b?a:b;
-}
-int max(int a, int b) {
-  return a>b?a:b;
-}
-double max(int a, double b) {
-  return a>b?a:b;
-}
-double max(double a, int b) {
-  return a>b?a:b;
-}
-double max(double a, double b) {
-  return a>b?a:b;
 }
 
 /* Some c++ do not allow either abs to be overloaded with doubles, or fabs

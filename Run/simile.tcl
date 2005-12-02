@@ -220,4 +220,3 @@ switch $env(interfaceId) {
 	exec $SIMILE_PATH/$tgt$execExtn &
     }
 }
-
