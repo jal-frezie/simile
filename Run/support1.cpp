@@ -31,7 +31,7 @@ int stop(int code) {
 }
 
 int lazy = 1024;
-int abort_check (void* instId) {
+void abort_check (void* instId) {
   if (!lazy--) {
     lazy=1024;
     if (stat_check(instId)) {
@@ -77,11 +77,11 @@ double ame_rand(double lo, double hi) {
 double graphpoint(double xval, int indx) {
   return (*graphpoint_ref)(xval, *graph_data_pointer, indx);
 }
-
+/*
 void release_graph_data(graph_data_type* graph) {
   (*release_graph_data_ref)(graph);
 }
-
+*/
 void* fetch_instance(char* inst) {
   return (*fetch_instance_ref)(inst);
 }

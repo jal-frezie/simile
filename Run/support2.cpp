@@ -1,18 +1,18 @@
 /* version needs its own special procedure because any other might change
    and cause a crash before version mismatch is detected */
-FINDABLE double get_version() {
+FINDABLE EXPORT double get_version() {
   return(simile_version);
 }
 
-FINDABLE void* do_createmodel(void) {
+FINDABLE EXPORT void* do_createmodel(void) {
   return (void*)new AME_model;
 }
 
-FINDABLE void do_updatemodel(void* handle, double time, int phase) {
+FINDABLE EXPORT void do_updatemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->updatemodel(time, phase);
 }
 
-FINDABLE void do_advancemodel(void* handle, double time, int phase) {
+FINDABLE EXPORT void do_advancemodel(void* handle, double time, int phase) {
   ((AME_model *)handle)->advancemodel(time, phase);
 }
 
@@ -22,7 +22,7 @@ static void exit_sighandler(int x){
   longjmp(env, x);
 }
 
-FINDABLE int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
+FINDABLE EXPORT int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
   int error;
 
   /* Dont want a crash while running model to terminate Simile, so add 
@@ -57,11 +57,11 @@ the integration step being done: 0 for Euler, 1-4 for the four stages of RK
 
 Also uses to get phase count */
 
-FINDABLE void do_exitmodel(void* handle) {
+FINDABLE EXPORT void do_exitmodel(void* handle) {
   ((AME_model *)handle)->do_exitmodel();
 }
 
-FINDABLE int do_setstep(double time, int phase) {
+FINDABLE EXPORT int do_setstep(double time, int phase) {
   if (phase<0) { /* lazy */
     ts[-phase] = time;
   } else {
@@ -114,7 +114,7 @@ double stage_incr (diffs *extras, int step, double v) {
   };
 };
 
-FINDABLE void* burrow_to(void* level, int** id_meta, int** dim_list) {
+FINDABLE EXPORT void* burrow_to(void* level, int** id_meta, int** dim_list) {
   while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
 -2 means nested separate-dll submodel */
     level = ((submodeltype*)level)->get_pointer(step_list(id_meta,1),dim_list);
@@ -123,7 +123,7 @@ FINDABLE void* burrow_to(void* level, int** id_meta, int** dim_list) {
 };
 
 /* This is called only when we create the type, to return model constants */
-FINDABLE int get_count(void* useClassPtr, void* ame_rand_ptr, 
+FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr, 
 		       void* graphpoint_ptr, 
 		       void* release_graph_data_ptr, 
 		       void* compare_instance_status_ptr, 
