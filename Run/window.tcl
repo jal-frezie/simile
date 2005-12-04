@@ -681,9 +681,13 @@ proc AcceleratorState {winName menu item state} {
     if {[info exists accelerator($menu,$item)]} {
     #puts "AcceleratorState {winName menu item state cmd} $winName $menu $item $state $accelerator($menu,$item)"
         if {[string match normal $state]} {
-            bind $winName $accelerator($menu,$item) \
-        [list if " \[DoingSelection $winName\]" \
-                   [${winName}top.$menu entrycget $item -command]]
+	    set action [${winName}top.$menu entrycget $item -command]
+	    if {[lsearch {Cut Copy Paste Delete} $item]>-1} {
+# if action is applicable to text, check text edit not in progress before
+# applying it to diagram
+		set action [list if "\[NotEditingText $winName\]" $action]
+	    }
+            bind $winName $accelerator($menu,$item) $action
         } else  {
             bind $winName $accelerator($menu,$item) {}
         }
@@ -697,16 +701,15 @@ proc AddAccelerator {winName menu item event} {
     AcceleratorState $winName $menu $item [${winName}top.$menu entrycget $item -state]
 }
 
-proc DoingSelection {winName} {
-    return [expr ![llength [$winName.canvas focus]] \
+proc NotEditingText {winName} {
+    set editingCapt [expr [llength [$winName.canvas focus]] \
             && [string match [focus] $winName.canvas]]
+    set editingEqn [string match [focus] $winName.toolSlot.eqnbar.equation]
+    return [expr !$editingCapt && !$editingEqn]
 }
 
 proc AddCanvasBindings { c topNode } {
     global tcl_platform
-
-
-
 
     bind $c <Button-1> {ClickObj %x %y %W %X %Y click}
 # Bindings are slightly different in the MacVersion because many users have
