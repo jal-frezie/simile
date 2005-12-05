@@ -626,7 +626,8 @@ proc compile_c {workingDir} {
                         [file dirname $TOOLDIR] System] bin]]"
 	}
         puts $batSt "g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp"
-        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
+#        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
+        puts $batSt "g++ -shared -o $TARGET objtemp.o"
         close $batSt
         exec runmingw.bat
         file delete runmingw.bat
