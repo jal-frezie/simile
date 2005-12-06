@@ -876,10 +876,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 # ...and stick the new absolute pathname into the spec! Easy!!
 		if {![file exists [file tail $VFile]]} {
 		    set act [ShowMessage "Missing data file" warning "The file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp, which does not exist in this folder. Do you want to skip these values and continue loading the file?" okcancel]
-		}
-		switch $act {
-		    cancel {break}
-		    ok {continue}
+		    switch $act {
+			cancel {break}
+			ok {continue}
+		    }
 		}
                 set paramState($restoredComp) \
                         [concat [list [pwd]/[file tail $VFile]] \
