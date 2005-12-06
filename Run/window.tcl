@@ -422,7 +422,10 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     foreach extClass $modelWindowExtensions {
         #ShowMessage debug info "$extClass " ok
         set extn [$extClass $winName.#auto $winName]; # create an extension object for the new model window
-        $extn MergeMenu
+        if {[catch {$extn MergeMenu} wibble] } {
+            ShowMessage debug info "Extension $extn failed to merge its menu items.\n\
+                   Details: $wibble" ok
+        }
     }
     ################
     
