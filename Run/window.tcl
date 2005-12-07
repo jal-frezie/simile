@@ -1653,7 +1653,6 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
 proc ListWindows {fm} {
     global window_info
 
-    set window_info(uppermost) [winfo toplevel [focus]]
     $fm delete 0 end
     foreach win [winfo children .] {
 	if {[string equal Toplevel [winfo class $win]]} {
@@ -1663,6 +1662,8 @@ proc ListWindows {fm} {
 	}
     }
     update
+# now window whose menu was clicked has focus even in Windows...
+    set window_info(uppermost) [winfo toplevel [focus]]
 }
 
 proc RaiseAny {node win} {
