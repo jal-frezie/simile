@@ -1672,7 +1672,9 @@ proc CopyLooks {t n object} {
 	}
 	set looks($n,$object,objectsize) [$g.objectsize.scale get]
 	set looks($n,$object,lines) [$g.lines.scale get]
-	set looks($n,compartment,lines) [$g.lines.scale get] ;# for generic sample
+	if {[string equal generic $object]} {
+	    set looks($n,compartment,lines) [$g.lines.scale get] ;# for sample
+	}
     }
     if {[string compare $object influence]} {
         set looks($n,$object,font) [ResetFont $t]

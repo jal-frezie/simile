@@ -1408,7 +1408,7 @@ change_size(TopNode, Type, New_size) :-
 		change_shape(Obj, bounding_box, New_box),
 		event:make_links_follow(Obj);
 	    get_shape(Obj, centre, _))),
-	redisplay(Obj),
+	redisplay_border(Obj),
 	fail.
 
 change_size(_,_,_).
