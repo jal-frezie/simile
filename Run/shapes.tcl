@@ -242,23 +242,39 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     } else {
         set cornerDiam [expr $looks($window_info($w,top_node),submodel,objectsize)*$shortSide/200]
     }
-    set cornerRad [expr 0.5*$cornerDiam]
+    set cornerRad [expr $cornerDiam/2]
+    set h6 [expr $ml+$cornerRad-1] ;# bit of spread for $€AM£€$$ poly/arc join
+    set v6 [expr $mt+$cornerRad-1]
+    set h7 [expr $mr-$cornerRad+1] 
+    set v7 [expr $mb-$cornerRad+1]
+    set il [expr $ml+$cornerDiam]
+    set it [expr $mt+$cornerDiam]
+    set ir [expr $mr-$cornerDiam] 
+    set ib [expr $mb-$cornerDiam]
     # This is the diameter of the rounded corner as fraction of the box width
     
+    set width [GetLineSize $w submodel $fatness]
     set dots [expr !$stack]
     set pile [expr $stack==-1]
     if {$dots} {
         set stack 4
     }
     if {$pile} {
-        set stack 1
+        set stack 2
+	set back 2
+	set stackSpacing [expr 4*$width]
+	set backSpacing [expr -2*$width]
+    } else {
+	set back 1
+	set stackSpacing [expr 2*$width]
+	set backSpacing 0
     }
     
     # second approximation to fill
-    scan [GetPoints $ml $cornerRad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
-    scan [GetPoints $mt $cornerRad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
-    scan [GetPoints $mr -$cornerRad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
-    scan [GetPoints $mb -$cornerRad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
+#    scan [GetPoints $ml $cornerRad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+#    scan [GetPoints $mt $cornerRad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+#    scan [GetPoints $mr -$cornerRad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+#    scan [GetPoints $mb -$cornerRad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
     
 # Now make sure submodel background is behind its contents. Old system
 # just assumed everything bagged by the model border was part of it;
@@ -286,17 +302,31 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     if {[string equal clear $fillColour]} {
 	set fillColour {}
     }
-    set poly [$w create polygon \
-		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 \
-		  $h6 $mt $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 \
-		  $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
-		  $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
-		  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
-		  -fill $fillColour -tag "$tagSet /background/"]
+#    set poly [$w create polygon \
+#		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 \
+#		  $h6 $mt $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 \
+#		  $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
+#		  $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
+#		  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
+#		  -fill $fillColour -tag "$tagSet /background/"]
+    $w create polygon $ml $v6 $h6 $v6 $h6 $mt $h7 $mt $h7 $v6 $mr $v6 \
+	$mr $v7 $h7 $v7 $h7 $mb $h6 $mb $h6 $v7 $ml $v7 \
+	-outline {} -fill $fillColour -tag /new_poly/
+    $w create arc $ir $mt $mr $it -start 0 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_poly/
+    $w create arc $ml $mt $il $it -start 90 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_poly/
+    $w create arc $ml $ib $il $mb -start 180 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_poly/
+    $w create arc $ir $ib $mr $mb -start 270 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_poly/
+    foreach tag [concat $tagSet /background/] {
+	$w addtag $tag withtag /new_poly/
+    }
     # Now to stick it behind anything that might be drawn inside
-    $w raise $poly target_and_background
+    $w raise /new_poly/ target_and_background
     $w dtag target_and_background
-    set stackOn $poly
+    set stackOn /new_poly/
 
     if {![string equal none $fillImage]} {
         set poly [$w create image $ml $mt -anchor nw \
@@ -313,16 +343,22 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	$w raise $poly $stackOn
 	set stackOn $poly
     }
-    set width [GetLineSize $w submodel $fatness]
-    $w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
-            $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-            $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 -width $width \
-	-tag "$tagSet size_on_this realwidth($width) has_info"
-    
+
     set tabs 0
-    set stackSpacing [expr 2*$width]
+    while {$tabs < $back} {
+	$w move /new_bd/ $backSpacing $backSpacing
+	$w create arc $ml $ib $il $mb -start 180 -extent 45 -style arc \
+	    -width $width -tag /new_bd/
+	$w create line $ml $v7 $ml $v6 -width $width -tag /new_bd/
+	$w create arc $ml $mt $il $it -start 90 -extent 90 -style arc \
+	    -width $width -tag /new_bd/
+	$w create line $h6 $mt $h7 $mt -width $width -tag /new_bd/
+	$w create arc $ir $mt $mr $it -start 45 -extent 45 -style arc \
+	    -width $width -tag /new_bd/
+        incr tabs
+    }
+    set tabs 0
     while {$tabs < $stack} {
-        
         if {$dots && $tabs} {
             $w create line $mr [expr $mt + $cornerRad] \
                     [expr $mr + $width] [expr $mt + $cornerRad + $width] \
@@ -341,30 +377,33 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
             set mr [expr $mr + $stackSpacing]
             set mb [expr $mb + $stackSpacing]
         } else {
-            set stackDistance [expr $tabs*$stackSpacing]
-            set lower [$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
-                $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \
-                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
-		       -tag "$tagSet size_on_this realwidth($width) has_info"]
-            $w move $lower $stackDistance $stackDistance
+	    $w move /new_br/ $stackSpacing $stackSpacing
+	    $w create arc $ml $ib $il $mb -start 225 -extent 45 -style arc \
+		-width $width -tag /new_br/
+	    $w create line $mr $v7 $mr $v6 -width $width -tag /new_br/
+	    $w create arc $mr $mb $ir $ib -start 270 -extent 90 -style arc \
+		-width $width -tag /new_br/
+	    $w create line $h6 $mb $h7 $mb -width $width -tag /new_br/
+	    $w create arc $ir $mt $mr $it -start 0 -extent 45 -style arc \
+		-width $width -tag /new_br/
         }
         incr tabs
     }
     
-    if {$pile} {
-        set stackDistance [expr -$stackSpacing]
-        set upper [$w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
-                $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-                $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 -width $width \
-		       -tag "$tagSet size_on_this realwidth($width) has_info"]
-        $w move $upper $stackDistance $stackDistance
-        set stackDistance [expr 3*$stackSpacing]
-        set lower [$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
-                $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \
-                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
-		       -tag "$tagSet size_on_this realwidth($width) has_info"]
-        $w move $lower $stackDistance $stackDistance
-    }
+#    if {$pile} {
+#        set stackDistance [expr -$stackSpacing]
+#        set upper [$w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
+#                $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
+#                $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 -width $width \
+#		       -tag "$tagSet size_on_this realwidth($width) has_info"]
+#        $w move $upper $stackDistance $stackDistance
+#        set stackDistance [expr 3*$stackSpacing]
+#        set lower [$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
+#                $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \#
+#                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
+#		       -tag "$tagSet size_on_this realwidth($width) has_info"]
+#        $w move $lower $stackDistance $stackDistance
+#    }
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
     if {![string equal incomplete $colourScheme] && $inFat} {
@@ -408,6 +447,14 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		$w raise $line $stackOn
 		set stackOn $line
 	    }			    
+    }
+    $w dtag /new_poly/
+    set fullLoad [concat $tagSet "size_on_this realwidth($width) has_info"]
+    foreach marker {/new_bd/ /new_br/} {
+	foreach tag $fullLoad {
+	    $w addtag $tag withtag $marker
+	}
+	$w dtag $marker
     }
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
@@ -773,9 +820,14 @@ proc FlashSymbol {w name outlineColor textColor} {
 		} elseif {![string match */background/* [$w gettags $object]]} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
-            } oval|arc {
+            } oval {
                 $w itemconfigure $object -outline $outlineColor
-            }
+            } arc {
+		if {[string equal arc [$w itemcget $object -style]] && \
+			![string match */background/* [$w gettags $object]]} {
+		    $w itemconfigure $object -outline $outlineColor
+		}
+	    }
         }
     }
 }
