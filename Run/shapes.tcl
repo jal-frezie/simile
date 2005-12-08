@@ -243,10 +243,10 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
         set cornerDiam [expr $looks($window_info($w,top_node),submodel,objectsize)*$shortSide/200]
     }
     set cornerRad [expr $cornerDiam/2]
-    set h6 [expr $ml+$cornerRad-1] ;# bit of spread for $€AM£€$$ poly/arc join
-    set v6 [expr $mt+$cornerRad-1]
-    set h7 [expr $mr-$cornerRad+1] 
-    set v7 [expr $mb-$cornerRad+1]
+    set h6 [expr $ml+$cornerRad]
+    set v6 [expr $mt+$cornerRad]
+    set h7 [expr $mr-$cornerRad] 
+    set v7 [expr $mb-$cornerRad]
     set il [expr $ml+$cornerDiam]
     set it [expr $mt+$cornerDiam]
     set ir [expr $mr-$cornerDiam] 
@@ -309,8 +309,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #		  $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
 #		  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
 #		  -fill $fillColour -tag "$tagSet /background/"]
-    $w create polygon $ml $v6 $h6 $v6 $h6 $mt $h7 $mt $h7 $v6 $mr $v6 \
-	$mr $v7 $h7 $v7 $h7 $mb $h6 $mb $h6 $v7 $ml $v7 \
+    $w create polygon $ml $v6 $h6 $mt $h7 $mt $mr $v6 \
+	$mr $v7 $h7 $mb $h6 $mb $ml $v7 \
 	-outline {} -fill $fillColour -tag /new_poly/
     $w create arc $ir $mt $mr $it -start 0 -extent 90 -style pieslice \
 	-outline {} -fill $fillColour -tag /new_poly/
