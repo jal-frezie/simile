@@ -90,6 +90,7 @@ namespace eval ::polygon375 {
 	regsub -all /WIN/ [GetState $winId] $winId restoreString
         array set useNodes $restoreString
 	CaptionsToNodeIds $winId
+	SetColourMap useNodes $winId $useNodes($winId,color)
         
         if {[string compare $useNodes($winId,sourcefile) model]==0} then {
 	    DrawPolys $winId $useNodes($winId,xcoord) \
