@@ -458,7 +458,9 @@ namespace eval runcontrol33857 {
             if {$current==$nextDisp && \
 		    [string match start $sendvars($node,currentMode)]} {
 		UpdateBar $node $current blue ;# so GetModelTime does right
-		TellAllHelpers $node display $current $display 1
+		if {![TellAllHelpers $node display $current $display 1]} {
+		    set sendvars($node,currentMode) stop
+		}
 	    }
 	    set scaled_current $scaled_next
 	    if {$current>=$pause} {

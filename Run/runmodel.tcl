@@ -561,6 +561,7 @@ proc TellAllHelpers {node fun args} {
 
     set nodeForFocus $myNode
     set myNode $node
+    set success 1
     set doScrog [expr [string equal display $fun] && \
 		     [info exists helperTable(pestInterface)]]
     if {$doScrog} {
@@ -570,7 +571,12 @@ proc TellAllHelpers {node fun args} {
         scan $displayBox {%[^,]} winId
 	if {[string equal $node $helperTable($winId,whichModel)]} {
 	    set helperId $helperTable($displayBox)
-	    eval {${helperId}::$fun $winId} $args
+	    if {[catch {eval {${helperId}::$fun $winId} $args} HelpErr]} {
+		start_in_editor BuildProblem "Error running I/O tool" warning \
+                    "I/O tool \"[${helperId}::identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
+		    helpers none none
+		set success 0
+	    }
 	}
     }
     if {$doScrog} {
@@ -578,6 +584,7 @@ proc TellAllHelpers {node fun args} {
 	eval WriteLogs $node $args
     }
     set myNode $nodeForFocus
+    return $success
 }
 
 # Other stuff related to reorganization
