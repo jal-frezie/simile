@@ -721,7 +721,7 @@ proc ExecuteModel {myNode howInt start finish} {
     if {[catch {
 	if {$model_id($myNode)} {
 	    c_executemodel $model_id($myNode) $instance_id($myNode) \
-		[expr [string equal "Runge-Kutta" $howInt]] $start $finish
+		[expr ![string equal Euler $howInt]] $start $finish
 	} else {
 	    TclExecuteModel $myNode $howInt $start $finish
 	}

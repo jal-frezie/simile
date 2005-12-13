@@ -250,16 +250,12 @@ proc TclExecuteModel {node howInt start end} {
 	    set xtime [expr $xtime+$freq]
 	    SetDTs $bigPhase $xtime
 	    do_model advancemodel $xtime $bigPhase
-	    switch -exact -- $howInt {
-		Euler {
+	    if {[string equal Euler $howInt]} {
 		    AdvanceTime $bigPhase 1
 		    set dts(0) 0
 		    do_model updatemodel $xtime $bigPhase
-		} {Runge-Kutta} {
-		    RKUpdate $xtime $bigPhase
-		} default {
-		    ShowMessage "Execution problem" error "Integration method $howInt not supported" ok
-		}
+	    } else {
+		RKUpdate $xtime $bigPhase
 	    }
 	    do_model int_evalmodel $xtime $bigPhase
 	}
