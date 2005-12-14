@@ -777,7 +777,7 @@ invert_seln_in(Model) :-
 	    event:do_colours(Node, on),
 	    fail;
 	event:set_selection_abilities(Model)).
-
+/*
 find_innermost_selection_holder([Comp | Rest], Innermost, TempSels) :-
 	find_all_comps(Model, Comp),
 	(Rest = [], !,
@@ -792,7 +792,7 @@ find_innermost_selection_holder([Comp | Rest], Innermost, TempSels) :-
 		all(draw, set_highlit_obj, [unify(0), build(NewSels)]),
 		merge_lists(NewSels, MoreTempSels, TempSels);
 	    TempSels = MoreTempSels)).
-
+*/
 find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	get_shape(Model, internal_extent, [ML, MT, MR, MB]),
 	(nonvar(DefPt), !; DX is (L+R)/2, DY is (T+B)/2),
@@ -1578,20 +1578,20 @@ try_save_files(Name) :-
 	(Name = TestName;
 	try_save_files(Name)).
 
-save_isolated(Name, Model, Date, SelnOnly) :-
-	(SelnOnly = yes, !,
+save_isolated(Name, Part, Date, SelnOnly) :-
+/*	(SelnOnly = yes, !,
 	    setof(Seln, (contains(Model, Seln),
 			    \+ Seln = Model,
 			    get_highlit_obj(0, Seln)), SelnList),
 	    find_innermost_selection_holder(SelnList, Part, TempSels);
 	Part = Model,
 	    TempSels = []),
-	assert(suspend_display),
+*/	assert(suspend_display),
 	(cutout(Part);
 	ame_save(Name, Part, Date, SelnOnly),
 	    Done = 1;
 	true),
-	all(event, do_colours, [build(TempSels), unify(off)]),
+%	all(event, do_colours, [build(TempSels), unify(off)]),
 	/* restart_move will recreate any cross-border links removed by cutout.
 	If exiting, move will have been scrapped after old deletes */
 	restart_move,

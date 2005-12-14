@@ -18,8 +18,11 @@ sicstus_use_module( [library(lists),
 ame_save( File, Model, Date, SelOnly ) :-
 	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
-	(SelOnly = no,
-	    setof(A-V, Model has_class_refinement A of V, Props); Props = []),
+	(Models = [UseAsParent], \+ draw:get_highlit_obj(0, UseAsParent), !,
+	    ame_save(File, UseAsParent, Date, SelOnly);
+	(backup:is_toplevel(Model),
+	    setof(A-V, Model has_class_refinement A of V, Props);
+	 Props = []),
 	\+ ( member( Node, Models ),
 	     \+ Node is_model_class ),
 	output:windowize(File, WFile),
@@ -43,7 +46,7 @@ ame_save( File, Model, Date, SelOnly ) :-
 	dialogue:reassure_user("Writing arc information"),
 	save_arcs( ArcsUsed, Stream),
 	close( Stream ), !;
-	fail).
+	fail)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_stream - does the work of ame_save/[12]. Arg [34] are "done" lists for
@@ -146,8 +149,10 @@ revert_table(RealClassRefinements, ClassRefinements) :-
 
 go_with(Comp, SelOnly) :-
 	SelOnly = no, !;
+	Comp has_part Inner,
+	    go_with(Inner, SelOnly), !;
 	draw:get_highlit_obj(0, Comp),
-	\+ connects_leaver(Comp), !;
+	    \+ connects_leaver(Comp), !;
 	\+ appears(Comp),
 	(Comp is_connector from Start to Finish,
 	    member(Use, [Start, Finish]),
