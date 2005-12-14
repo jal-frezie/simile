@@ -31,7 +31,8 @@ proc FileParamDialogue {topWin mustShow} {
     set ::bermudaTriangle {}
     foreach curVal [array names paramData /$topCapt/*] {
         if {[llength $paramData($curVal)]} {
-            switch [ExistCheck $topNode $curVal 0 database] {
+	    set shortVal [TrimDTFromPath $curVal]
+            switch [ExistCheck $topNode $shortVal /$topCapt 0 database] {
                 break {
                     CancelParams
                     break
@@ -837,7 +838,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             continue
         }
         set IdAndValue [split $savedValue =]
-        set restoredComp [RestoreCrs $smPath[lindex $IdAndValue 0]]
+        set restoredComp [RestoreCrs [lindex $IdAndValue 0]]
         if {$origVersion<4.0} {
             # pre-multiple desktop -- trim outermost model
             if {[string equal /Desktop/ [string range $restoredComp 0 8]]} {
@@ -845,7 +846,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             }
         }
         #ShowMessage debug info "Component is $restoredComp" ok
-        set node [ExistCheck $topNode $restoredComp $notInput file]
+        set node [ExistCheck $topNode $restoredComp $smPath $notInput file]
         switch $node {
             break {break}
             continue {continue}
@@ -853,6 +854,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
         set nType [GetCompProperty $topNode Eval $node]
         set startLine [lsearch {INPUT TABLE} $nType]
         if {($startLine!=-1)==($notInput!=-1)} {
+	    set restoredComp $smPath$restoredComp
             if {$origVersion>=4.0} {
                 set suppliedData($restoredComp) [lindex $IdAndValue 2]
                 set reference [string equal reference [lindex $IdAndValue 1]]
@@ -919,7 +921,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     cd $oldDir
 }
 
-proc ExistCheck {topNode restoredComp notInput source} {
+proc ExistCheck {topNode restoredComp tgtCap notInput source} {
     global bermudaTriangle
     
     set lostAtSea 0
@@ -932,14 +934,18 @@ proc ExistCheck {topNode restoredComp notInput source} {
         return continue
     }
     
-    set node [IdFromTail $topNode $restoredComp $notInput]
+    if {$notInput>-1} {
+	set tgtCap [TrimDTFromPath $tgtCap]
+    }
+#puts "checking $tgtCap$restoredComp"
+    set node [GetCompProperty $topNode IdFromCapt $tgtCap$restoredComp]
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
         while {[string equal nomatch $node]} {
             set lostBit $nextLook
             set nextLook [join [lrange [split $lostBit /] 0 end-1] /]
             if {[llength $nextLook]} {
-                set node [IdFromTail $topNode $nextLook $notInput]
+                set node [GetCompProperty $topNode IdFromCapt $tgtCap$nextLook]
             } else {
                 set node $topNode
             }
@@ -949,7 +955,7 @@ proc ExistCheck {topNode restoredComp notInput source} {
         } else {
             set lostType submodel
         }
-        set act [ShowMessage "Unused parameters" warning "The $source contains parameter values for the $lostType $lostBit, which does not exist in the model. Do you want to ignore these values and continue loading the $source?" okcancel]
+        set act [ShowMessage "Unused parameters" warning "The $source contains parameter values for the $lostType $lostBit, which does not exist in the target model $tgtCap. Do you want to ignore these values and continue loading the $source?" okcancel]
         if {[string equal cancel $act]} {
             return break
         }
@@ -963,9 +969,13 @@ proc ExistCheck {topNode restoredComp notInput source} {
 
 proc IdFromTail {topNode fullCapt notInput} {
     if {$notInput>-1} {
-	set fullCapt [string range $fullCapt [string first / $fullCapt 1] end]
+	set fullCapt [TrimDTFromPath $fullCapt]
     }
     return [GetCompProperty $topNode IdFromCapt $fullCapt]
+}
+
+proc TrimDTFromPath {fullCapt} {
+    return [string range $fullCapt [string first / $fullCapt/ 1] end]
 }
 
 # This checks whether a parameter really has the value specified by its
