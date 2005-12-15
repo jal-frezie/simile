@@ -325,6 +325,8 @@ generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
 	m_update:get_all_links(Node, ids(SourceID, Relation, Home, Entry),
 			       input_link(id(Link,_, SourceLocation), _,
 					  ArcName, SourceUnits, ArcUnits)),
+	/* just in case we have extra inputs... */
+	(nonvar(ArcName); ArcName = '/unused/'),
         (var(Entry),
 	    NodeID = SourceID,
 	    RefExp = Ref;
