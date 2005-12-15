@@ -229,9 +229,9 @@ is_ghost(Ghost) :-
 implicit-explicit link or part of an influence chain. */
 
 ghost_link(Link, Base, Ghost) :-
-	influence_makes_ghost(Base),
 	connects(Link, Base, Ghost),
 	Link has_type influence,
+	influence_makes_ghost(Base),
 	influence_makes_ghost(Ghost),
 	\+ (terminates(Link, NonGhost),
 	       \+ influence_makes_ghost(NonGhost)).
