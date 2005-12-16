@@ -111,7 +111,8 @@ main() {
   			// This process can now block itself by waiting for the semaphore.
 	   	}	   	
 	}  
-    WaitForSingleObject(g_hSemaphore,30000);  
+    WaitForSingleObject(g_hSemaphore,30000);
+    puts("Bye");
 #else
   char fname[] = "pidpod";
   FILE* pip;

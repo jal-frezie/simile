@@ -28,22 +28,26 @@ endif
 ifeq ($(UNAME),Darwin)
 	WISHCMD = ~/Desktop/CVS\ Simile.app/Contents/MacOS/Simile
 	SHAREDLIBEXTN = .dylib
+	EXECEXTN =
 endif 
 ifeq ($(UNAME),Linux)
 	SHAREDLIBEXTN = .so
+	EXECEXTN =
 else
 	WISHCMD = "$(shell pwd)/System/bin/wish"
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
 	SHAREDLIBEXTN = .dll
+	EXECEXTN = .exe
 endif
 
 ifeq ($(UNAME),Linux)
 simile: Run/xgsimile System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN) \
-	System/lib/lib5d$(SHAREDLIBEXTN) System/bin/relay
+	System/lib/lib5d$(SHAREDLIBEXTN) System/bin/relay$(EXECEXTN)
 else
 simile: System/bin/main.sav System/lib/Stubs/ame_dll84$(SHAREDLIBEXTN) \
-	System/bin/5d$(SHAREDLIBEXTN) System/bin/relay Run/install.dll
+	System/bin/5d$(SHAREDLIBEXTN) System/bin/relay$(EXECEXTN) \
+	Run/install.dll
 endif
 
 vpath %.pl Prolog
@@ -76,14 +80,14 @@ ifeq ($(UNAME),MINGW32_NT)
 DEFNS=-DUSE_TCL_STUBS -DSIM_FINAL_EXPIRY=0 -DSIM_DAYS_AFTER_INSTALL=0 \
 -DSIM_STANDARD -DSIM_LICENSED
 
+System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
+	cd Run; g++ -c $(DEFNS) -I. -I../System/include ame_cmx.cpp; g++ -shared -o ../System/lib/Stubs/ame_dll84.dll ame_cmx.o ../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
+
 System/bin/5d.dll: shank.cpp dllcalls.h
 	cd Run; g++ -c -DSHARELIB -I. shank.cpp; g++ -shared -o 5d.dll -Wl,--out-implib,lib5ddll.a shank.o; mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
 
-System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h
-	cd Run; g++ -c $(DEFNS) -I. -I../System/include ame_cmx.cpp; dllwrap --dllname=../System/lib/Stubs/ame_dll84.dll --def=stub.def --driver-name=g++ ame_cmx.o -L../System/lib -l5ddll -ltclstub84; cd ..
-
 Run/install.dll: install.cpp
-	cd Run; g++ -c $(DEFNS) -I. -I../System/include install.cpp; dllwrap --dllname=install.dll --def=install.def --driver-name=g++ obj.o -L../System/lib -lcrypto -lssl
+	cd Run; g++ -c $(DEFNS) -I. -I../System/include install.cpp; g++ -shared -o install.dll install.o -L../System/lib -lcrypto -lssl; cd ..
 
 else
 
@@ -99,5 +103,5 @@ System/bin/5d(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
 	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 endif
 
-System/bin/relay: relay.c
-	cd Run; $(GCCCMD) -o ../System/bin/relay relay.c; cd ..
+System/bin/relay$(EXECEXTN): Run/relay.c
+	cd Run; $(GCCCMD) -o ../System/bin/relay$(EXECEXTN) relay.c; cd ..

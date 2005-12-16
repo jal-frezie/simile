@@ -408,7 +408,7 @@ namespace eval printer {
     set extent  [ $cw itemcget $id -extent ]
     set fill    [ $cw itemcget $id -fill ]
     
-    set cmmd  "gdi arc $hdc $coords -outline $color -style $style -start $start -extent $extent"
+      set cmmd  [concat [list gdi arc $hdc] $coords [list -outline $color -style $style -start $start -extent $extent]]
     if { $wdth > 1 } {
         set cmmd "$cmmd -width $wdth"
     }
