@@ -311,22 +311,18 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #		  -fill $fillColour -tag "$tagSet /background/"]
     $w create polygon $ml $v6 $h6 $mt $h7 $mt $mr $v6 \
 	$mr $v7 $h7 $mb $h6 $mb $ml $v7 \
-	-outline {} -fill $fillColour -tag /new_poly/
-    $w create arc $ir $mt $mr $it -start 0 -extent 90 -style pieslice \
-	-outline {} -fill $fillColour -tag /new_poly/
-    $w create arc $ml $mt $il $it -start 90 -extent 90 -style pieslice \
-	-outline {} -fill $fillColour -tag /new_poly/
-    $w create arc $ml $ib $il $mb -start 180 -extent 90 -style pieslice \
-	-outline {} -fill $fillColour -tag /new_poly/
-    $w create arc $ir $ib $mr $mb -start 270 -extent 90 -style pieslice \
-	-outline {} -fill $fillColour -tag /new_poly/
+	-outline {} -fill $fillColour -tag /new_bg/
+    $w create oval $ir $mt $mr $it -outline {} -fill $fillColour -tag /new_bg/
+    $w create oval $ml $mt $il $it -outline {} -fill $fillColour -tag /new_bg/
+    $w create oval $ml $ib $il $mb -outline {} -fill $fillColour -tag /new_bg/
+    $w create oval $ir $ib $mr $mb -outline {} -fill $fillColour -tag /new_bg/
     foreach tag [concat $tagSet /background/] {
-	$w addtag $tag withtag /new_poly/
+	$w addtag $tag withtag /new_bg/
     }
     # Now to stick it behind anything that might be drawn inside
-    $w raise /new_poly/ target_and_background
+    $w raise /new_bg/ target_and_background
     $w dtag target_and_background
-    set stackOn /new_poly/
+    set stackOn /new_bg/
 
     if {![string equal none $fillImage]} {
         set poly [$w create image $ml $mt -anchor nw \
@@ -448,7 +444,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 		set stackOn $line
 	    }			    
     }
-    $w dtag /new_poly/
+    $w dtag /new_bg/
     set fullLoad [concat $tagSet "size_on_this realwidth($width) has_info"]
     foreach marker {/new_bd/ /new_br/} {
 	foreach tag $fullLoad {
@@ -821,7 +817,9 @@ proc FlashSymbol {w name outlineColor textColor} {
 		    $w itemconfigure $object -fill $outlineColor
 		}
             } oval {
-                $w itemconfigure $object -outline $outlineColor
+                if {![string match */background/* [$w gettags $object]]} {
+		    $w itemconfigure $object -outline $outlineColor
+		}
             } arc {
 		if {[string equal arc [$w itemcget $object -style]] && \
 			![string match */background/* [$w gettags $object]]} {
@@ -838,7 +836,7 @@ proc StippleSymbol {w name density selected} {
             line {
                 $w itemconfigure $object -stipple $density
             }
-            rectangle|oval|arc|polygon {
+            rectangle|arc|polygon {
                 $w itemconfigure $object -outlinestipple $density \
 		    -stipple $density
             }
