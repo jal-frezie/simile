@@ -18,7 +18,9 @@ sicstus_use_module( [library(lists),
 ame_save( File, Model, Date, SelOnly ) :-
 	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
-	(Models = [UseAsParent], \+ draw:get_highlit_obj(0, UseAsParent), !,
+	(SelOnly = yes,
+	    Models = [UseAsParent],
+	    \+ draw:get_highlit_obj(0, UseAsParent), !,
 	    ame_save(File, UseAsParent, Date, SelOnly);
 	(backup:is_toplevel(Model),
 	    setof(A-V, Model has_class_refinement A of V, Props);
