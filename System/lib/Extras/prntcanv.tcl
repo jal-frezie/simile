@@ -373,7 +373,7 @@ namespace eval printer {
     
     set cmmd  "gdi line $hdc $coords -fill $color -smooth $smth -splinesteps $splnstp -arrow $arrow -arrowshape [list $arwshp]"
     
-    if { $wdth > 1 } {
+    if { $wdth > 0 } {
         set cmmd "$cmmd -width $wdth"
     }
     
@@ -409,7 +409,7 @@ namespace eval printer {
     set fill    [ $cw itemcget $id -fill ]
     
       set cmmd  [concat [list gdi arc $hdc] $coords [list -outline $color -style $style -start $start -extent $extent]]
-    if { $wdth > 1 } {
+    if { $wdth > 0 } {
         set cmmd "$cmmd -width $wdth"
     }
     if { $fill != "" } {

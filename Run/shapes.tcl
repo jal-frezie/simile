@@ -312,10 +312,14 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     $w create polygon $ml $v6 $h6 $mt $h7 $mt $mr $v6 \
 	$mr $v7 $h7 $mb $h6 $mb $ml $v7 \
 	-outline {} -fill $fillColour -tag /new_bg/
-    $w create oval $ir $mt $mr $it -outline {} -fill $fillColour -tag /new_bg/
-    $w create oval $ml $mt $il $it -outline {} -fill $fillColour -tag /new_bg/
-    $w create oval $ml $ib $il $mb -outline {} -fill $fillColour -tag /new_bg/
-    $w create oval $ir $ib $mr $mb -outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ir $mt $mr $it -start 0 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ml $mt $il $it -start 90 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ml $ib $il $mb -start 180 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_bg/
+    $w create arc $ir $ib $mr $mb -start 270 -extent 90 -style pieslice \
+	-outline {} -fill $fillColour -tag /new_bg/
     foreach tag [concat $tagSet /background/] {
 	$w addtag $tag withtag /new_bg/
     }
