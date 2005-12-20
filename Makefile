@@ -36,7 +36,7 @@ ifeq ($(UNAME),Linux)
 else
 	WISHCMD = "$(shell pwd)/System/bin/wish"
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
-	SICSTUSCMD = "/cygdrive/c/Program Files/SICStus Prolog 3.10.1/bin/sicstus"
+	SICSTUSCMD = "sicstus" # add path to environment variables
 	SHAREDLIBEXTN = .dll
 	EXECEXTN = .exe
 endif
