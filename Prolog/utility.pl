@@ -177,6 +177,7 @@ split_args(Module, [Arg | Args], [First | Firsts], [Rest | Rests]) :-
 
 join_args(_, [], [], []).
 
+/*
 join_args(Module, [First | Firsts], [Rest | Rests], [Arg | Args]) :-
 	(Arg = build([First | Remains]), Rest = build(Remains);
 	Arg = unify(First), Rest=Arg;
@@ -187,6 +188,14 @@ join_args(Module, [First | Firsts], [Rest | Rests], [Arg | Args]) :-
 	    call(Module:DoJoin),
 	    Arg =.. [UserFunc, Next, Base]),
 	join_args(Module, Firsts, Rests, Args).
+*/
+join_args(Module, [First | Firsts], [Rest | Rests], [Arg | Args]) :-
+	join_args(Module, Firsts, Rests, Args),
+	(Arg =.. [UserFunc, Next, Base], !,
+	    Rest =.. [UserFunc, SoFar, Base],
+	    DoJoin =.. [UserFunc, First, SoFar, Next],
+	    call(Module:DoJoin);
+	true).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % unify_all unifies its first arg with each member of the list in its second
