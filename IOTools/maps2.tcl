@@ -18,11 +18,16 @@ namespace eval ::maptools2 {
 	set useNodes($winId,allETs) [GetTransTable $node]
 	set useNodes($winId,dataETs) [lindex $useNodes($winId,allETs) end]
 	set useNodes($winId,ETCount) [llength $useNodes($winId,dataETs)]
-	if {$useNodes($winId,ETCount)} {
+	if {$useNodes($winId,ETCount)>2} {
 	    set useNodes($winId,min) 1
 	    set useNodes($winId,max) [expr $useNodes($winId,ETCount)-1]
 	    set useNodes($winId,range) [expr $useNodes($winId,max)-1]
 	    set useNodes($winId,nswatches) $useNodes($winId,range)
+	} elseif {$useNodes($winId,ETCount)} { ;# a boolean
+	    set useNodes($winId,min) 0
+	    set useNodes($winId,max) 1
+	    set useNodes($winId,range) 1
+	    set useNodes($winId,nswatches) 1
 	} else {
 	    set useNodes($winId,integer) \
 		[string match INTEGER [GetModelType $node]]
@@ -61,16 +66,19 @@ namespace eval ::maptools2 {
         #    ShowMessage debug info "proc SetColours" ok
         upvar 1 $winData useNodes
         
-	if {$useNodes($winId,ETCount)} {
+	if {$useNodes($winId,ETCount)>2} {
 	    set defCols {blue orange green brown purple red black DeepSkyBlue \
                     HotPink ForestGreen}
 	    for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
 		if {$icolour<[llength $defCols]} {
 		    set useNodes($winId,c$icolour) [lindex $defCols $icolour]
 		} else {
-		    set useNodes($winId,c$icolour) gray4
+		    set useNodes($winId,c$icolour) gray44
 		}
 	    }
+	} elseif {$useNodes($winId,ETCount)} {
+	    set useNodes($winId,c0) gray20
+	    set useNodes($winId,c1) gray80
 	} else {
 	    scan [winfo rgb $winId $useNodes($winId,cbot)] "%d %d %d" botr botg botb
 	    scan [winfo rgb $winId $useNodes($winId,cmid)] "%d %d %d" midr midg midb
