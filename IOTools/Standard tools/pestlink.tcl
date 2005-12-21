@@ -30,8 +30,10 @@ namespace eval $keyValue {
         $nb add [set setId [frame $nb.settings]] -text Settings:
         set useNodes($winId,settings) $setId
         
-        menu $winId.slidervars -tearoff 0
-        menu $winId.drivervars -tearoff 0
+        menu $winId.slidervars -tearoff 0 -postcommand \
+	    [namespace code [list AddVarsToSliderMenu $winId]]
+        menu $winId.drivervars -tearoff 0 -postcommand \
+	    [namespace code [list AddVarsToDriverMenu $winId]]
         set toolbarItems \
                 [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
                 [list add.gif "Add variables" \
@@ -225,6 +227,26 @@ namespace eval $keyValue {
         }
     }
     
+    proc AddVarsToSliderMenu {winId} {
+	variable useNodes
+
+        $winId.slidervars delete 0 end
+        foreach var $useNodes($winId,sliders) {
+	    $winId.slidervars add command -label $var \
+		-command [namespace code [list Remove $winId $var]]
+        }
+    }
+
+    proc AddVarsToDriverMenu {winId} {
+	variable useNodes
+
+        $winId.drivervars delete 0 end
+        foreach var $useNodes($winId,drivers) {
+	    $winId.drivervars add command -label $var \
+		-command [namespace code [list RemoveOut $winId $var]]
+        }
+    }
+
     proc SaveResults {} {
         global simtmpdir
         
@@ -278,7 +300,7 @@ namespace eval $keyValue {
         foreach current [winfo children $useNodes($winId,input).sliderframe] {
             destroy $current
         }
-        $winId.slidervars delete 0 end
+	set useNodes($winId,sliders) {}
     }
     
     proc ClearOut {winId} {
@@ -286,7 +308,7 @@ namespace eval $keyValue {
         foreach current [winfo children $useNodes($winId,output).sliderframe] {
             destroy $current
         }
-        $winId.drivervars delete 0 end
+	set useNodes($winId,drivers) {}
     }
     
     proc Restore {winId} {
@@ -486,8 +508,7 @@ namespace eval $keyValue {
         } else {
             set f $inpId
         }
-        $winId.slidervars add command -label $title \
-                -command [namespace code [list Remove $winId $title]]
+	lappend useNodes($winId,sliders) $title
         foreach {val def} $inClevers1 {
             set inGrpData($node,$val) $def
         }
@@ -646,8 +667,7 @@ namespace eval $keyValue {
         } else {
             lappend targetData(needed) $title
             AddEntry $outId $myNode $node 1 -1
-            $winId.drivervars add command -label $title \
-                    -command [namespace code [list RemoveOut $winId $title]]
+	    lappend useNodes($winId,drivers) $title
             
             pack [checkbutton $f.end -variable paramDims($title,readMany) \
                     -command [namespace code \
@@ -729,7 +749,9 @@ namespace eval $keyValue {
         set f [MakeSubFrames {} $inpId.sliderframe \
                 $levels [namespace current] 0]
         Prune $inpId $f
-        $winId.slidervars delete $title
+	set index [lsearch $useNodes($winId,sliders) $title]
+	set useNodes($winId,sliders) \
+	    [lreplace $useNodes($winId,sliders) $index $index]
     }
     
     proc RemoveOut {winId title} {
@@ -739,7 +761,9 @@ namespace eval $keyValue {
         set f [MakeSubFrames {} $outId.sliderframe \
                 $levels [namespace current] 0]
         Prune $outId $f
-        $winId.drivervars delete $title
+	set index [lsearch $useNodes($winId,drivers) $title]
+	set useNodes($winId,drivers) \
+	    [lreplace $useNodes($winId,drivers) $index $index]
     }
     
     proc Prune {winId tree} {
@@ -849,9 +873,7 @@ namespace eval $keyValue {
         
         # Descend hierarchically through the frames to get the data? No, use kill menu
         
-        set numOutputs [CountMenuCmds $winId.drivervars]
-        for {set eNo 0} {$eNo < $numOutputs} {incr eNo} {
-            set eTitle [$winId.drivervars entrycget $eNo -label]
+	foreach eTitle $useNodes($winId,drivers) {
             AcceptData $myNode $eTitle -1 1
             set node [GetIdFromCaptionPath $eTitle]
             set levels [split $eTitle /]
@@ -867,6 +889,7 @@ namespace eval $keyValue {
                 set useEndTime 1
             }
         }
+	set numOutputs [llength $useNodes($winId,drivers)]
         if {$useNodes($winId,preds)} {
             set mode prediction
             incr numOutputs
@@ -894,9 +917,7 @@ namespace eval $keyValue {
         puts $template "ptf \\"
         
         array unset inGrpData *,mems
-        set numInputs [CountMenuCmds $winId.slidervars]
-        for {set eNo 0} {$eNo < $numInputs} {incr eNo} {
-            set eTitle [$winId.slidervars entrycget $eNo -label]
+	foreach eTitle $useNodes($winId,sliders) {
             set node [GetIdFromCaptionPath $eTitle]
             set levels [split $eTitle /]
             set inpId $useNodes($winId,input)
@@ -977,7 +998,8 @@ namespace eval $keyValue {
         
         
         
-        puts $control " $usedHangers $numInputs 0 $numOutputs"
+        puts $control " $usedHangers [llength $useNodes($winId,sliders)] 0 \
+$numOutputs"
         puts $control "1 1 single point 1 0 0"
         foreach line $clevers(list) {
             foreach {val spare} $line {
@@ -1313,9 +1335,7 @@ namespace eval $keyValue {
             if {$useNodes($activeSub)} {
                 set winId [string range $activeSub 0 end-10]
                 
-                set numOutputs [CountMenuCmds $winId.drivervars]
-                for {set eNo 0} {$eNo < $numOutputs} {incr eNo} {
-                    set eTitle [$winId.drivervars entrycget $eNo -label]
+		foreach eTitle $useNodes($winId,drivers) {
                     set node [GetIdFromCaptionPath $eTitle]
                     
                     set useNodes($node,modelVal) [lindex [GetModelValue $node] 0]
@@ -1468,9 +1488,7 @@ namespace eval $keyValue {
         }
         lappend state [list inSource $useNodes($winId,gathering)]
         # now the outputs
-        set numOutputs [CountMenuCmds $winId.drivervars]
-        for {set eNo 0} {$eNo < $numInputs} {incr eNo} {
-            set eTitle [$winId.drivervars entrycget $eNo -label]
+	foreach eTitle $useNodes($winId,drivers) {
             set node [GetIdFromCaptionPath $eTitle]
             lappend state [list output $eTitle weight 1 \
                     sampled $::paramDims($eTitle,readMany)]
