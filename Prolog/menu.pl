@@ -94,6 +94,8 @@ update_mode(NewMode) :-
 		fail;
 	NewMode = add, !,
 	    assert(cursor_is(target));
+	NewMode = move, !,
+	    assert(cursor_is(hand2));
 /*	NewMode = move, !,
 	    assert(cursor_is(fleur));
 	NewMode = copy, !,

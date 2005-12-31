@@ -54,7 +54,7 @@ proc create_equation {parent boxtitle indices} {
     set lbf [Tree $fnFrame.table -showlines yes]
     $fnFrame setwidget $lbf
     pack $fnFrame -expand yes -fill both
-    
+
     foreach funk $equation(fnDefs) {
         set box root
         foreach level [split [join [lindex $funk 0] /] /] {

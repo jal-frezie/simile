@@ -96,6 +96,8 @@ proc ClickObj { x y winId X Y action} {
     #puts "$action it!"
     
     RemovePopup
+    set window_info($winId,lastx) [expr $x/10]
+    set window_info($winId,lasty) [expr $y/10]
     switch $action {
         ctrl {
             set action click
@@ -282,9 +284,17 @@ proc ResizeDesktop {winId cl ct cr cb} {
 # of the window to follow the mouse.
 
 proc DragObj {winId xco yco} {
-    global window_info looks
+    global window_info looks pushedbutton
     global clicktime
     
+    if {[string equal move $pushedbutton]} {
+	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/10)] units
+	$winId yview scroll [expr ($window_info($winId,lasty)-$yco/10)] units
+	set window_info($winId,lastx) [expr $xco/10]
+	set window_info($winId,lasty) [expr $yco/10]
+	return
+    }
+
     set dragtime [clock clicks -milliseconds]
     if {$dragtime>$clicktime && $dragtime-$clicktime<100} {
         return
@@ -453,7 +463,7 @@ proc ModelWindow {winName} {
     set c [canvas $winName.canvas -bg white -confine 1 \
             -xscrollcommand "AdjustCanvas $winName toolSlot x" \
             -yscrollcommand "AdjustCanvas $winName canvas y" \
-            -xscrollincrement 1 -yscrollincrement 1]
+            -xscrollincrement 10 -yscrollincrement 10]
     # scrollincrements set the only way we can get precise scrolling...
     
     # this rectangle will be resized to fill the scrollable area and coloured to
@@ -742,7 +752,8 @@ proc AddCanvasBindings { c topNode } {
     }
     bind $c <FocusIn> {EmbraceObj %W}
     bind $c <FocusOut> {AbandonObj}
-    
+    BindMouseWheel $c
+
     # text/clipboard action from Welch example
     # commented because we can now cut/copy parts of a model
     #    bind $c <<Cut>> {CanvasTextCopy %W; CanvasDelete %W}
@@ -813,6 +824,30 @@ proc AddEqnPopup {node x y winId X Y} {
         }
     }
     }
+}
+
+# BWidget::bindMouseWheel --
+#
+#	Bind mouse wheel actions to a given widget.
+#
+# Arguments:
+#	widget - The widget to bind.
+#
+# Results:
+#	None.
+#
+# Simile-specific version, with fewer bugs
+#
+proc BindMouseWheel { widget } {
+    bind $widget <MouseWheel>         {%W yview scroll [expr {-%D/24}]  units}
+    bind $widget <Shift-MouseWheel>   {%W xview scroll [expr {-%D/24}] units}
+
+    bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
+    bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
+    bind $widget <Shift-Button-4> {event generate %W <Shift-MouseWheel> -delta  120}
+    bind $widget <Shift-Button-5> {event generate %W <Shift-MouseWheel> -delta -120}
+    bind $widget <Control-Button-4> {event generate %W <Control-MouseWheel> -delta  120}
+    bind $widget <Control-Button-5> {event generate %W <Control-MouseWheel> -delta -120}
 }
 
 # Canvas chapter (of Welch)
@@ -1385,6 +1420,8 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     -variable MIpushedbutton -value delete
     #    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy" \
     -variable MIpushedbutton -value copy
+    $fm add radiobutton -label "Move canvas"  -command "ModeSelect move" \
+            -variable MIpushedbutton -value move
     $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost" \
             -variable MIpushedbutton -value ghost
     $fm add radiobutton -label "Inspect elements"  -command "ModeSelect snap" \
@@ -1491,7 +1528,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     }
     pack [Separator $tb.spacer -orient vertical] -fill y -side left
     
-    foreach mode {select ghost snap} {
+    foreach mode {select move ghost snap} {
         set testImg [image create photo -file $buttonImages/${mode}.gif]
         pack [::ttk::button $tb.$mode -image $testImg -command "ModeSelect $mode" -style Toolbutton] \
             -side left -padx 2 -pady 2
