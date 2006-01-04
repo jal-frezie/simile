@@ -1,0 +1,89 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=utf-8">
+	<TITLE>Predictive analysis</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.3  (Linux)">
+	<META NAME="CREATED" CONTENT="20060104;11204400">
+	<META NAME="CHANGED" CONTENT="20060104;19113900">
+	<META NAME="ProgId" CONTENT="Word.Document">
+	<META NAME="Originator" CONTENT="Microsoft Word 10">
+	<STYLE>
+	<!--
+		H1 { color: #000000 }
+		P { color: #000000 }
+		A:link { color: #0000ff }
+		A:visited { color: #800080 }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" TEXT="#000000" LINK="#0000ff" VLINK="#800080" DIR="LTR">
+<H1><SPAN LANG="en-GB">Predictive analysis</SPAN></H1>
+<P><SPAN LANG="en-GB">When you first run PEST, it runs in parameter
+estimation mode. This selects values for the input parameters which
+cause the outputs to most closely follow the measured values,
+according to the least-squares rule. The quality of fit is given by
+PHI – the lower this value is, the better the fit.</SPAN></P>
+<P LANG="en-GB">The purpose of predictive analysis is to determine
+the range over which a model output can vary while still being
+consistent with the measured values supplied. To get maximum and
+minimum predictions, PEST allows the PHI value to be larger than the
+minimum value found during parameter estimation. 
+</P>
+<P LANG="en-GB">To do a predictive analysis on a Simile model, check
+the checkbox in the predictive analysis frame on the Actions tab, and
+select a model value for which to make a prediction. This can be any
+non-parameter value in the model, not including those in
+variable-membership submodels. It can be a value which you are
+already using for comparison with measured data – for instance, if
+you are using data measured up to a certain point in time to
+calibrate the model but then want to predict how the same value will
+behave at later times on the basis of this calibration, or even use
+prediction to fill in a gap in your measured data. 
+</P>
+<P LANG="en-GB">You can also make the following selections:</P>
+<UL>
+	<LI><P LANG="en-GB">Whether to predict maximum or minimum values</P>
+	<LI><P LANG="en-GB">What multiple of the original PHI to allow for
+	the predictions</P>
+	<LI><P LANG="en-GB">At what time(s) the prediction will apply.</P>
+</UL>
+<P LANG="en-GB">There are some values on the Settings tab which
+affect PEST's behaviour during predictive analysis; these are
+explained in the PEST manual. Simile supplies default values for
+these, based on the results obtained when running PEST in parameter
+estimation mode.</P>
+<P LANG="en-GB">If the value being predicted is an array, or if the
+frequency and duration you set for prediction times are such that a
+prediction will be made at more than one time, then a complete run of
+PEST must be done for each prediction, because PEST itself can only
+predict one value at a time. Since each PEST run includes multiple
+model runs, predicting large numbers of values can take a very long
+time.  The following steps might speed things up:</P>
+<UL>
+	<LI><P LANG="en-GB">Set display interval to 0, so display tools do
+	not take up time</P>
+	<LI><P LANG="en-GB">Select 'use current values as estimates' on the
+	Inputs tab after the parameter estimation run, so each prediction
+	run starts with good parameter estimates. 
+	</P>
+</UL>
+<P LANG="en-GB">During a prediction run, the progress bar shows how
+many of the prediction runs have been completed. Predicted values
+will be inserted into the results field, and can be displayed in
+tabular form and saved as a .csv file using the View button.</P>
+<P LANG="en-GB">It is worth noting that each prediction is arrived at
+independently. So, if using predictive analysis to create 'error
+bands' around a graph of model outputs, it might be the case that
+although each individual value might vary as far as the predicted
+limits, it would be impossible for the graph line to actually follow
+the minimum or maximum limits, since multiple predicted values on the
+limit might be incompatible with each other. Remember, however clever
+PEST might appear, it's still only a computer program.</P>
+<P><SPAN LANG="en-GB">In: <A HREF="../../index.htm" TARGET="_top"><U>Contents</U></A></SPAN>
+&gt;&gt;  <A HREF="../index.htm" TARGET="_top"><SPAN LANG="en-GB">Running
+models</SPAN></A> &gt;&gt;  <A HREF="index.htm" TARGET="_top"><SPAN LANG="en-GB">PEST</SPAN></A></P>
+<P CLASS="msonormal"><BR><BR>
+</P>
+</BODY>
+</HTML>
