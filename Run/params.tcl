@@ -1040,7 +1040,7 @@ proc GetFromTable {parent compName startLine} {
     if {$startLine==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
-	set startLine [string is double [lindex $paramDims($compName) 0]]
+	set notSeries [string is double [lindex $paramDims($compName) 0]]
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
@@ -1059,7 +1059,11 @@ proc GetFromTable {parent compName startLine} {
         set table_entry(values) $suppliedData($compName)
     }
     set newSource [equationDoTable [winfo toplevel $parent] \
-		       $compName $startLine]
+		       $compName $notSeries]
+# If loading data for PEST there is no parent dialogue so do not keep grab
+    if {$startLine==-1} {
+	grab release [winfo toplevel $parent]
+    }
     if {$newSource} {
         if {[llength $table_entry(dataField)]} {
             set paramState($compName) [concat [list $table_entry(fileName) \

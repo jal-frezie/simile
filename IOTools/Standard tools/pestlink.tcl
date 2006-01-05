@@ -130,6 +130,8 @@ namespace eval $keyValue {
         pack [entry $pf.rknobs.tstp -width 8 \
                 -textv [namespace current]::useNodes($winId,predall)] \
                 -fill x -expand true -side left
+        pack [button $pf.rknobs.btn -text View... \
+		  -command [namespace code [list TabPreds $winId]]] -side left
         # data from run in progress
         pack [set df [labelframe $resId.dbf -text {Execution monitor:}]] \
                 -fill both -expand true -padx 4 -pady 4
@@ -213,7 +215,14 @@ namespace eval $keyValue {
         set inClevers2 {partrans none parchglim factor scale 1 offset 0}
         set useNodes($winId,state) 1 ;# stopped, no data
     }
-    
+
+    proc TabPreds {winId} {
+	variable useNodes
+
+	set tabData [UglifyValList $useNodes($winId,predall)]
+	EditListAsTable $winId tabData
+    }
+
     proc SetButtonAct {winId what} {
         global pauseImg playImg
         variable useNodes
@@ -815,21 +824,28 @@ namespace eval $keyValue {
     proc Go {winId} {
         variable useNodes
         
-        set useNodes($winId,rnum) {}
+        PokeStopFile $winId 0
+        if {$useNodes($winId,state)==3} { ;# it was paused
+	    SetButtonAct $winId pause
+            set useNodes($winId,state) 0
+	    WaitTillDone $winId
+	    return
+        }        
+        set useNodes($winId,rnum) 1
         if {$useNodes($winId,preds)} {
+	    if {![info exists useNodes($winId,npred)]} {
+		ShowMessage "No value to predict" warning "Predictive analysis selected, but no model value chosen for prediction!" ok
+		return
+	    }
             set useNodes($winId,predall) {}
-            set numRuns [expr int(($useNodes($winId,pstp) \
+            set useNodes($winId,numRuns) [expr int(($useNodes($winId,pstp) \
                     -$useNodes($winId,pgo)) \
                     /$useNodes($winId,predint))+1]
-            for {set rnum 0} {$rnum<$numRuns} {} {
-                set useNodes($winId,ptim) [expr $useNodes($winId,pgo) + \
-                        $rnum*$useNodes($winId,predint)]
-                set useNodes($winId,rnum) [incr rnum]
-                Optimize $winId
-            }
+	    set useNodes($winId,ptim) $useNodes($winId,pgo)
         } else {
-            Optimize $winId
-        }
+	    set useNodes($winId,numRuns) 1
+	}
+	Optimize $winId
     }
     
     proc Optimize {winId} {
@@ -850,13 +866,6 @@ namespace eval $keyValue {
         variable ptList
         variable spitLists
         variable runData
-        
-        PokeStopFile $winId 0
-        SetButtonAct $winId pause
-        if {$useNodes($winId,state)==3} { ;# it was paused
-            set useNodes($winId,state) 0
-            return
-        }
         
         set runLength [$useNodes($winId,results).lbf.rl.ent get]
         $useNodes($winId,results).dbf.c.text delete 1.0 end
@@ -910,6 +919,8 @@ namespace eval $keyValue {
             }
         }
         set ::runState($myNode,execTime) $lastPt
+	set ::runState($myNode,progressToDate) \
+	    [expr ($useNodes($winId,rnum)-1)*$clevers(noptmax)]
         
         # Have a look at the inputs
         
@@ -1072,7 +1083,8 @@ $numOutputs"
                 puts $control {}
             }
         }
-        $runData($myNode,progressBar) config -to $clevers(noptmax)
+        $runData($myNode,progressBar) config -to \
+	    [expr $useNodes($winId,numRuns)*$clevers(noptmax)]
         close $control
         
         #	set activator [NetOpen [file join $simtmpdir pestrun.tcl] w]
@@ -1087,6 +1099,7 @@ $numOutputs"
         # we just wait till it kills the relay process, then run it
         # for it and start another.
         
+        SetButtonAct $winId pause
         cd $simtmpdir
         set pip [open pidpod w]; puts $pip 0; close $pip
         StartRelay $ourWish
@@ -1109,7 +1122,23 @@ $numOutputs"
         # Problem is, if we are doing lots of PEST runs at once, we do not want to
         # start one before the previous one is finished so wait here
         
+	WaitTillDone $winId
+    }
+
+    proc WaitTillDone {winId} {
+	variable useNodes
+
         tkwait variable [namespace current]::useNodes($winId,state)
+
+	if {$useNodes($winId,preds) && $useNodes($winId,state)==2} {
+	    set useNodes($winId,ptim) \
+		[expr $useNodes($winId,pgo) + \
+		     $useNodes($winId,rnum)*$useNodes($winId,predint)]
+	    incr useNodes($winId,rnum)
+	    if {$useNodes($winId,rnum)<=$useNodes($winId,numRuns)} {
+		Optimize $winId
+	    }
+	}
     }
     
     proc StartRelay {cmd} {
@@ -1243,7 +1272,8 @@ $numOutputs"
                 if {[scan $recLin { OPTIMISATION ITERATION NO.        : %d} \
                             itCount]>0} {
                     set runData($topNode,itCount) $itCount
-                    $runData($topNode,progressBar) set $itCount
+                    $runData($topNode,progressBar) set \
+			[expr $runState($topNode,progressToDate)+$itCount]
                 }
                 if {[scan $recLin {    Starting phi for this iteration : %f} \
                             curPhi]>0} {
