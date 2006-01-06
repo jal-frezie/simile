@@ -68,7 +68,7 @@ itcl::class similescript::ModelWindow {
     
     public method Open {modelFile} {
         if {[info exists model]} {
-            $this FileNew"
+            $this FileNew\"
         }
         Reopen [GetModelWindow].canvas $modelFile reopen
         set model $modelFile
@@ -168,19 +168,19 @@ itcl::class similescript::RunControl {
     constructor {} {
         set modelWindow [itcl::find object * -isa ::similescript::ModelWindow]
         set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
-        set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
+	set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
         Hide
     }
     
     public method Start {} {
         # returns the time to complete (to run the simulation)
-        set timestr [time [list do_for_node $modelNode ${keyvalue}::SetMode $winId start]]
+        set timestr [time [list do_for_node $modelNode ${keyvalue}::SetMode $modelNode start]]
         set musec [lindex $timestr 0]
         return "[expr {$musec/1e6}] sec"
     }
     
     public method Reset {} {
-        do_for_node $modelNode ${keyvalue}::SetMode $winId reset
+        do_for_node $modelNode ${keyvalue}::SetMode $modelNode reset
     }
     
     public method MergeParams {filepath {smPath {}}} {
@@ -258,7 +258,6 @@ itcl::class similescript::RunControl {
     }
     
     public method GetValue {path} {
-        set winId [do_for_node $modelNode set ::runState($modelNode,helperId)]
         return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
@@ -266,6 +265,9 @@ itcl::class similescript::RunControl {
         set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
         switch -- [$this GetModelEval $path] {
             INPUT {
+		if {[RunningInC $modelNode]} {
+		    c_setparamelement $nodeId {} $value
+		}
                 switch -glob -- [$this GetModelType $path] {
                     FLAG {
                         do_for_node $modelNode set ::checkStates($nodeId) $value
@@ -280,13 +282,16 @@ itcl::class similescript::RunControl {
                 }
             }
             TABLE {
-                do_for_node $modelNode set ::paramData($nodeId) $value
-                do_for_node $modelNode set ::runState($modelNode,reloadParams) 1
+		if {[RunningInC $modelNode]} {
+		    c_setparamelement $nodeId {} $value
+		}
+		do_for_node $modelNode set ::paramData(/[GetExecTitle $modelNode]$path) $value
+                do_for_node $modelNode set ::runState($modelNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
                 Reset
             }
             default {
                 if {[string match [$this GetModelClass $path]  COMPARTMENT]} {
-                    do_for_node $modelNode SetModelValue $nodeId
+                    do_for_node $modelNode SetModelValue $nodeId $value
                 } else  {
                     puts "$path is not a parameter (variable or fixed) or compartment so it's value cannot be changed."
                 }
@@ -297,7 +302,6 @@ itcl::class similescript::RunControl {
     
     public method GetMinValue {path} {
         global runState
-        set winId [do_for_node $modelNode set ::runState($modelNode,helperId)]
         return [do_for_node $modelNode GetMinValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
