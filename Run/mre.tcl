@@ -410,6 +410,12 @@ namespace eval RunEnv {
                             "[${CurrentHelperId}::identify] does not support copying" ok
                 }
                 set copyfile $simtmpdir/mrecopy.txts
+# If helper includes a PrepareSaveString command, call it
+		namespace eval ::$CurrentHelperId {
+		    if {[llength [info procs PrepareSaveString]]} {
+			PrepareSaveString $winId
+		    }
+		}
                 set stream [NetOpen $copyfile w]
                 catch {puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]}
                 close $stream
@@ -997,8 +1003,14 @@ namespace eval RunEnv {
         # not a toplevel #puts $stream [StripCrs [wm title $winId]]
         # not a toplevel #puts $stream [wm geometry $winId]
 	
-# If helper includes a PrepareSaveString command, call it
-	catch {${helperId}::PrepareSaveString $winId}
+# If helper includes a PrepareSaveString command, call it. 1st arg is 
+# expanded before executing helper namespace so window Id is copied from local 
+# variable.
+	namespace eval ::$helperId set winId $winId {;
+	    if {[llength [info procs PrepareSaveString]]} {
+		PrepareSaveString $winId
+	    }
+	}
         if {[info exists helperTable($winId,status)]} {
             puts $stream [StripCrs $helperTable($winId,status)]
         } else {

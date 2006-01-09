@@ -1473,14 +1473,6 @@ $numOutputs"
         }
     }
     
-    proc CountMenuCmds {m} {
-        # if menu is tearoff first entry is 1
-        # if not last entry is n-1 (we expect this)
-        set r [$m index end]
-        if {[string equal none $r]} {set r 0} else {incr r}
-        return $r
-    }
-    
     proc Save {topNode smPath} {
         namespace eval ::fileparams [list Save $topNode $smPath -1]
     }
@@ -1497,9 +1489,7 @@ $numOutputs"
         variable inClevers1
         variable inClevers2
         
-        set numInputs [CountMenuCmds $winId.slidervars]
-        for {set eNo 0} {$eNo < $numInputs} {incr eNo} {
-            set eTitle [$winId.slidervars entrycget $eNo -label]
+	foreach eTitle $useNodes($winId,sliders) {
             set node [GetIdFromCaptionPath $eTitle]
             set line [list input $eTitle est $::initialEstimate($node) \
                     min $::minForOpt($node) max $::maxForOpt($node)]
@@ -1526,7 +1516,7 @@ $numOutputs"
         lappend state [list outDest $useNodes($winId,scrogging)]
         set line clevers
         # prediction
-        if {$useNodes($winId,preds} {
+        if {$useNodes($winId,preds)} {
             lappend state [list predict way $useNodes($winId,way) \
                     item $useNodes($winId,pred) \
                     time $useNodes($winId,ptim)]
