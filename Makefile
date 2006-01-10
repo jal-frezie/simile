@@ -7,8 +7,6 @@
 # default *nix variables overwritten in special cases
 WISHCMD = ~/Simile/System/bin/wish
 GCCCMD = gcc
-# SICSTUSCMD not used, for Linux release
-# but is for Windows, set in the CYGWIN_NT section
 
 UNAME = $(shell uname)
 ifeq ($(shell uname),CYGWIN_NT-5.1)
@@ -25,30 +23,39 @@ ifeq ($(shell uname),MINGW32_NT-5.0)
 endif 
 
 
-ifeq ($(UNAME),Darwin)
-	WISHCMD = ~/Desktop/CVS\ Simile.app/Contents/MacOS/Simile
-	SHAREDLIBEXTN = .dylib
-	EXECEXTN =
-endif 
-ifeq ($(UNAME),Linux)
-	SHAREDLIBEXTN = .so
-	EXECEXTN =
-else
+# Default case: any Windows, any toolchain
+	PROLOGSTATE = System/bin/main.sav
 	WISHCMD = "$(shell pwd)/System/bin/wish"
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
-	SICSTUSCMD = "sicstus" # add path to environment variables
+	SLDIR = bin
+	SHAREDLIBPREFX = 
+	VERS = 84
 	SHAREDLIBEXTN = .dll
 	EXECEXTN = .exe
+	INSTLIB = Run/install.dll
+ifeq ($(UNAME),Darwin)
+	PROLOGSTATE = Run/xgsimile
+	WISHCMD = ~/Desktop/CVS\ Simile.app/Contents/MacOS/Simile
+	SLDIR = lib
+	SHAREDLIBPREFX = lib
+	VERS = 8.4
+	SHAREDLIBEXTN = .dylib
+	EXECEXTN =
+	INSTLIB = 
+endif 
+ifeq ($(UNAME),Linux)
+	PROLOGSTATE = Run/xgsimile
+	SLDIR = lib
+	SHAREDLIBPREFX = lib
+	VERS = 8.4
+	SHAREDLIBEXTN = .so
+	EXECEXTN =
+	INSTLIB = 
 endif
 
-ifeq ($(UNAME),Linux)
-simile: Run/xgsimile System/lib/Stubs/libame_dll8.4$(SHAREDLIBEXTN) \
-	System/lib/lib5d$(SHAREDLIBEXTN) System/bin/relay$(EXECEXTN)
-else
-simile: System/bin/main.sav System/lib/Stubs/ame_dll84$(SHAREDLIBEXTN) \
-	System/bin/5d$(SHAREDLIBEXTN) System/bin/relay$(EXECEXTN) \
-	Run/install.dll
-endif
+simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
+	System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN) \
+	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB)
 
 vpath %.pl Prolog
 
@@ -59,7 +66,7 @@ System/bin/main.sav: ame_gen.pl backup.pl build.pl compile.pl database.pl \
 		main.pl m_class.pl menu.pl m_struct.pl m_update.pl node.pl \
 		output.pl render.pl smain.pl sp_only.pl ss_import.pl state.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
-	cd Prolog; $(SICSTUSCMD) -l buildmainsav.pl; cd ..
+	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
 
 Run/xgsimile: ame_gen.pl backup.pl build.pl compile.pl database.pl \
@@ -91,14 +98,14 @@ Run/install.dll: install.cpp
 
 else
 
-# Windows 
-System/lib/Stubs/ame_dll84$(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
-		shank.cpp makedlls.tcl
+# CYGWIN and non-Windows
+System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN): \
+	ame_cmx.cpp dllcalls.h shank.cpp makedlls.tcl
 	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 
 # Is there a rule for System/lib/lib5d$(SHAREDLIBEXTN)
 # I guess that would be System/bin/5d.dll for Windows 
-System/bin/5d(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
+System/$(SLDIR)/$(SHAREDLIBPREFX)5d(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
 		shank.cpp makedlls.tcl
 	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 endif
