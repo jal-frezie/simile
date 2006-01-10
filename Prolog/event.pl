@@ -661,7 +661,7 @@ doubleclick_on(Edit_thing) :-
 		    fail;
 		finish_move(Parent, 1));
 	    OKd == 0);
-	\+ member(Edit_type, [cloud, influence]), !,
+	Edit_type is_class_of_sort has_function, !,
 	    find_node_with_data(Edit_thing, Base, Control_thing),
 	    is_parameter(Control_thing, WasP),
 	    (get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
