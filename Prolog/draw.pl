@@ -32,7 +32,7 @@ sicstus_module(draw,
 		remove_old_incomplete/0, draw_rubberband/1,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, exit_AME/0,
-		tk_equationlisting_start/1,tk_equationlisting_addsubmodel/6,
+		tk_equationlisting_start/1,tk_equationlisting_addsubmodel/7,
 		tk_equationlisting_addvariable/11]).
 
 sicstus_use_module([library(lists), state, image, ame_gen, output]).
@@ -613,12 +613,13 @@ show_invisible_links(Links) :-
 tk_equationlisting_start(DefaultName) :-
 	safe_tcl_eval(['equationlisting_start', br(write(DefaultName))], _).
 
-tk_equationlisting_addsubmodel(Isub,Submodel,Comment,Description,EnumTypes,Type):-
+tk_equationlisting_addsubmodel(Isub,Submodel,Description,Comment,TimeStep,EnumTypes,Type):-
 	safe_tcl_eval(['equationlisting_addsubmodel', 
 		br(write(Isub)),
 		br(write(Submodel)),
-		br(write(Comment)),
 		br(write(Description)),
+		br(write(Comment)),
+		br(write(TimeStep)),
 		br(write(EnumTypes)),
 		br(write(Type))], _).
 

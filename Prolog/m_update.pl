@@ -1474,7 +1474,7 @@ unique_name_for_new(Type, Name) :-
 	utility:unique_name(Abbrev, Name, _).
 
 get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
-			    Comment, EnumSpecs, Fix, Hide, Separate]) :-
+			    Desc, Comment, EnumSpecs, Fix, Hide, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour, !;
 	    Colour = white),
 	(Submodel has_class_refinement fill_image of Image, !;
@@ -1488,6 +1488,8 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	    member(type=Nature, Multi), !;
 	Nature = generated),
 	time_step_for(Submodel, 'Default', Step),
+	(Submodel has_class_refinement desc of Desc, !;
+	Desc = ''),
 	(Submodel has_class_refinement comment of Comment, !;
 	Comment = ''),
 	(Submodel has_class_refinement enum_types of EnumTypes,

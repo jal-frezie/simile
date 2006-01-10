@@ -7,7 +7,7 @@
 # preferences and customise dialogues.
 #
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
-            comment enumLists eqnunit hide separate} {
+            desc comment enumLists eqnunit hide separate} {
     global disaggregate tcl_platform
     foreach varName {colour image imgpos type fatness \
                 icount eqnunit hide separate} {
@@ -51,9 +51,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
     pack $countf.value -side left -anchor s -pady 4
-    pack $t.simple.left.count -expand 0;# -fill both
+    pack $t.simple.left.count -anchor w -pady 4 -fill both -expand true
     
-    TitleFrame $t.simple.left.colour -text "Background shade"
+    TitleFrame $t.simple.left.colour -text "Background shade:"
     set colourf [$t.simple.left.colour getframe]
     set posRBs [frame $colourf.imageposns]
     pack [button $colourf.clear -text "Clear" -width 7 \
@@ -93,16 +93,26 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $t.simple -anchor nw -fill both; # -expand 1 -fill both
     
     
-    label $t.commentlabel -text Comments:
-    pack $t.commentlabel -padx 2 -pady 4 -anchor w
+    TitleFrame $t.notes -text "Notes:"
+    set notesf [$t.notes getframe]
+    set descf [frame $notesf.desc]
+    label $descf.desclabel -text "Description:"
+    entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
+    pack $descf.desclabel -side left -padx 2 -pady 2
+    pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
+    $descf.text insert 0 $desc
+    pack $descf -side top  -fill x -expand off
+    label $notesf.commentlabel -text Comments:
+    pack $notesf.commentlabel -padx 2 -pady 4 -anchor w
     # ScrolledWindow causes crash under Linux so replaced with ordinary frame
     #    frame $t.commentsSW
-    ScrolledWindow $t.commentsSW
-    text $t.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
-    $t.commentsSW setwidget $t.commentsSW.comment
-    $t.commentsSW.comment insert 1.0 $comment
-    pack $t.commentsSW -anchor nw -fill both -expand true
-    
+    ScrolledWindow $notesf.commentsSW
+    text $notesf.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
+    $notesf.commentsSW setwidget $notesf.commentsSW.comment
+    $notesf.commentsSW.comment insert 1.0 $comment
+    pack $notesf.commentsSW -anchor nw -fill both -expand true
+    pack $t.notes -anchor s -pady 4 -fill both -expand true
+
     frame $t.complex
     
     TitleFrame $t.complex.enumtypes -text "Enumerated types"
@@ -248,7 +258,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     grab $t
     tkwait variable disaggregate(done)
     grab release $t
-    set disaggregate(comment) [string trimright [$t.commentsSW.comment get 1.0 end]]
+    set disaggregate(desc) [string trimright [$notesf.desc.text get]]
+    set disaggregate(comment) [string trimright \
+				   [$notesf.commentsSW.comment get 1.0 end]]
     PackItUp $t
 
     set icount {}
@@ -283,7 +295,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
         set result [list $disaggregate(colour) $disaggregate(image) \
                 $disaggregate(imgpos) $disaggregate(type) \
                 $disaggregate(fatness) $icount \
-                $step $disaggregate(comment) \
+                $step $disaggregate(desc) $disaggregate(comment) \
                 $disaggregate(eqnunit) $disaggregate(hide) \
                 $disaggregate(separate) $enumTypes]
     } else {
@@ -1332,7 +1344,7 @@ proc EquationListingSelectAll {winId} {
 }
 
 
-proc equationlisting_addsubmodel {isub submodel_label comments timestep enumtypes type} {
+proc equationlisting_addsubmodel {isub submodel_label description comments timestep enumtypes type} {
     global equationlist
     $equationlist(textbox) configure  -state normal
     
@@ -1342,13 +1354,17 @@ proc equationlisting_addsubmodel {isub submodel_label comments timestep enumtype
     if {$isub == 1} {
         $widget insert end "\n"
         $widget insert end "Model [regsub -all "\n" $submodel_label " "]" bigtag
-        $widget insert end "\n"
-        
     } else  {
         $widget insert end "\n"
         $widget insert end "Submodel [regsub -all "\n" $submodel_label " "] " bigtag
-        $widget insert end "\n"
     }
+    
+    # Label and Description, if any
+    if [string match null $description] {
+    } else  {
+        $widget insert end " : ${description}\n" descrtag
+    }
+    $widget insert end "\n"
     
     # type of submodel and dimensions if approp
     if {![string match "" $type]} {

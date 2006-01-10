@@ -900,6 +900,8 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	    name(Path, PathStr);
 	  Path=AbsPath 
 	),
+	(get_av_pair(Submodel, 0, desc, SubmodelDesc)  ; 
+		\+ get_av_pair(Submodel, 0, desc, SubmodelDesc), SubmodelDesc = null),
 	(get_av_pair(Submodel, 0, comment, SubmodelComment)  ; 
 		\+ get_av_pair(Submodel, 0, comment, SubmodelComment), SubmodelComment = null),
 	(get_av_pair(Submodel, 0, step, TimeStepIndex)  ; 
@@ -907,7 +909,7 @@ display_submodels(Isub,[Submodel|Submodels]):-
 	(get_av_pair(Submodel, 0, enum_types, EnumTypes)  ; 
 		\+ get_av_pair(Submodel, 0, enum_types, EnumTypes), EnumTypes = null),
         submodel_type(Submodel,SMType),
-	tk_equationlisting_addsubmodel(Isub,Path,SubmodelComment,TimeStepIndex,EnumTypes,SMType),
+	tk_equationlisting_addsubmodel(Isub,Path,SubmodelDesc,SubmodelComment,TimeStepIndex,EnumTypes,SMType),
 	mysetof((Entry,MinMax,Description,Comment,InFlows,OutFlows),write_eqn_term(Submodel,Entry,MinMax,Description,Comment,InFlows,OutFlows),Entries),
 	display_entries(Isub,1,Entries),
 	Isub1 is Isub+1,
@@ -1093,10 +1095,10 @@ set_properties(Wid, Model) :-
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
 	(New_P_list = [], !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
-		      NewCount, NewStep, NewComment, NewFix,
+		      NewCount, NewStep, NewDesc, NewComment, NewFix,
 		      NewHide, NewSeparate, NewEnumSpecs],
 	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _Step,
-		      _Comment, _EnumSpecs, _Fix, Hide, Separate],
+		      _Desc, _Comment, _EnumSpecs, _Fix, Hide, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1107,6 +1109,7 @@ set_properties(Wid, Model) :-
 	    (NewStep = 'Default', !,
 		add_parameter(Model, 0, step, '');
 	    add_parameter(Model, 0, step, NewStep)),
+	    add_parameter(Model, 0, desc, NewDesc),
 	    add_parameter(Model, 0, comment, NewComment),
 	    (NewFix = 'Default', !,
 		add_parameter(Model, 0, eqn_units, '');

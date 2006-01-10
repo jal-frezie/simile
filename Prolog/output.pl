@@ -471,11 +471,11 @@ tk_update_sim_display(Win, Current, Left) :-
 	
 tk_do_disag_dialog(Win, Caption,
 		   [Colour, Image, ImgPos, Type, Fatness, CountList, Step,
-		    Comment, EnumSpecs | Choices], ResultList) :-
+		    Desc, Comment, EnumSpecs | Choices], ResultList) :-
 	all(utility, wrap, [build(CountList), unify(write), build(Count)]),
 	bracketize(EnumSpecs, EnumLists),
 	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)), Colour, Image,
-		       ImgPos, Type, Fatness, br(Count), Step,
+		       ImgPos, Type, Fatness, br(Count), Step, br(write(Desc)),
 		       br(write(Comment)), EnumLists | Choices], New_P_string),
 	chop_list(New_P_string, ResultListN),
 	(append(ResultList0, [EnumTypeList], ResultListN), !,
