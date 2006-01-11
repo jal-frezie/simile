@@ -114,7 +114,7 @@ System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so
 	cd Run; gcc -c -O -fPIC $(DEFNS) -I. -I../System/include ./ame_cmx.cpp; gcc -shared -o ../System/lib/Stubs/libame_dll8.4.so ame_cmx.o -L../System/lib -ltclstub8.4 -l5d; cd ..
 
 System/lib/Stubs/libame_dll8.4.dylib: ame_cmx.cpp dllcalls.h System/lib/lib5d.dylib
-	cd Run; g++ -c -O -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers ./ame_cmx.cpp; gcc -dynamiclib -o ../System/lib/Stubs/libame_dll8.4.dylib ame_cmx.o -F../../Frameworks -framework Tcl -L../System/lib -ldl -l5d; cd ..
+	cd Run; g++ -c -O -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers ame_cmx.cpp; g++ -dynamiclib -o ../System/lib/Stubs/libame_dll8.4.dylib ame_cmx.o -F../../Frameworks -framework Tcl -L../System/lib -ldl -l5d; cd ..
 
 System/bin/5d.dll: shank.cpp dllcalls.h
 	cd Run; g++ -c -DSHARELIB -I. shank.cpp; g++ -shared -o 5d.dll -Wl,--out-implib,lib5ddll.a shank.o; mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
@@ -134,10 +134,16 @@ Run/install.dll: install.cpp
 
 # Is there a rule for System/lib/lib5d$(SHAREDLIBEXTN)
 # I guess that would be System/bin/5d.dll for Windows 
-#System/$(SLDIR)/$(SHAREDLIBPREFX)5d(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
+#System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN): ame_cmx.cpp dllcalls.h \
 #		shank.cpp makedlls.tcl
 #	cd Run; $(WISHCMD) makedlls.tcl; cd ..
 #endif
 
 System/bin/relay$(EXECEXTN): Run/relay.c
 	cd Run; $(GCCCMD) -o ../System/bin/relay$(EXECEXTN) relay.c; cd ..
+
+# call clean after changing license info in this file
+clean:
+	rm System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN) \
+		System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) \
+		Run/install.dll
