@@ -9,8 +9,9 @@
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 
+#ifdef USE_SEMAPHORE
 HANDLE g_hSemaphore;
-/*
+else
 int kill (int pid, int sig) {
   HANDLE procHandle;
   BOOL outcome;
@@ -26,7 +27,7 @@ void pause () {
     Sleep(30000);
   }
 }
-*/
+#endif
 #endif
 
 static void exit_sighandler(int x) {
@@ -35,7 +36,7 @@ static void exit_sighandler(int x) {
 }
 
 main() {
-  #ifdef WIN32
+#ifdef USE_SEMAPHORE
 	/*
 	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/createsemaphore.asp
 	The state of a semaphore is signaled when its count is greater than zero and nonsignaled when it 
