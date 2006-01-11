@@ -81,22 +81,19 @@ simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
 
 vpath %.pl Prolog
 
-# Windows release, Prolog is Sicstus
-System/bin/main.sav: ame_gen.pl backup.pl build.pl compile.pl database.pl \
-		dialogue.pl draw.pl event.pl smain.pl graphics.pl image.pl \
+PROLOG_FILES = ame_gen.pl backup.pl build.pl compile.pl database.pl \
+		dialogue.pl draw.pl event.pl graphics.pl image.pl \
 		input.pl instance.pl inters.pl language.pl library.pl link.pl \
-		main.pl m_class.pl menu.pl m_struct.pl m_update.pl node.pl \
-		output.pl render.pl smain.pl sp_only.pl ss_import.pl state.pl \
+		m_class.pl menu.pl m_struct.pl m_update.pl node.pl \
+		output.pl render.pl ss_import.pl state.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
+
+# Windows release, Prolog is Sicstus
+System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl
 	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
 
-Run/xgsimile: ame_gen.pl backup.pl build.pl compile.pl database.pl \
-		dialogue.pl draw.pl event.pl gmain.pl graphics.pl image.pl \
-		input.pl instance.pl inters.pl language.pl library.pl link.pl \
-		main.pl m_class.pl menu.pl m_struct.pl m_update.pl node.pl \
-		output.pl render.pl smain.pl sp_only.pl ss_import.pl state.pl \
-		submodel.pl tcltk.pl text.pl units.pl utility.pl
+Run/xgsimile: $(PROLOG_FILES) gmain.pl
 	cd Prolog; gplc --no-top-level -o ../Run/xgsimile gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
@@ -151,3 +148,4 @@ clean:
 	rm System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN) \
 		System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) \
 		Run/install.dll
+
