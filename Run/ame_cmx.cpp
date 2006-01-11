@@ -5,7 +5,7 @@ libraries corresponding to compiled model programs, and allow
 them to be executed etc by Tcl commands. */
 
 #include <signal.h> /* for killing stuck model execution */
-#include <tcl.h>
+#include "../System/include/tcl.h"
 
 #define	GETDIMS		0
 #define	GETTYPE		1

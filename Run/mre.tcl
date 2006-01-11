@@ -411,7 +411,7 @@ namespace eval RunEnv {
                 }
                 set copyfile $simtmpdir/mrecopy.txts
 # If helper includes a PrepareSaveString command, call it
-		namespace eval ::$CurrentHelperId {
+		namespace eval ::$CurrentHelperId  set winId $winId {;
 		    if {[llength [info procs PrepareSaveString]]} {
 			PrepareSaveString $winId
 		    }
