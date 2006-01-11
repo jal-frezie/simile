@@ -118,7 +118,11 @@ System/lib/Stubs/libame_dll8.4.dylib: ame_cmx.cpp dllcalls.h System/lib/lib5d.dy
 
 System/bin/5d.dll: shank.cpp dllcalls.h
 	cd Run; g++ -c -DSHARELIB -I. shank.cpp; g++ -shared -o 5d.dll -Wl,--out-implib,lib5ddll.a shank.o; mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
+
 # not needed for Linux; Simile builds it when first run
+System/lib/lib5d.so: shank.cpp dllcalls.h
+	cd Run; g++ -c -O -fPIC -I. shank.cpp; g++ -shared -o ../System/lib/lib5d.so shank.o; cd ..
+
 System/lib/lib5d.dylib: shank.cpp dllcalls.h
 	cd Run; g++ -c -O -fPIC -DSIM_OPSYS_Darwin -I. shank.cpp; g++ -dynamiclib -o ../System/lib/lib5d.dylib shank.o -L../System/lib -ldl; cd ..
 

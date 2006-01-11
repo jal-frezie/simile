@@ -10,7 +10,7 @@ similescript::ModelWindow modelWin
 # We will are not going to use any helper anyway here.
 # We then load the model and build it using C++
 modelWin UseMRE false
-modelWin Open "../Examples/forestV4FP.sml"
+modelWin Open "../Examples/forestv4FP.sml"
 
 # In order to run a model with file parameters you execute: 
 # modelWin LoadParams <ParamFile> <SubmodelPath> before running the model. 
@@ -30,7 +30,7 @@ runControl GetValue "/r"
 # NB the parameter will not be read until the model is reset
 # NB if this file does not set all required parameters 
 # the parameters missing from this file will retain the original values
-runControl MergeParams "../Examples/forestV4FP.spf"
+runControl MergeParams "../Examples/forestV4FPb.spf"
 runControl Reset
 
 # Get the value of model variable r which was set by the parameter file 
