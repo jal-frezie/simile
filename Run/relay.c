@@ -11,7 +11,7 @@
 
 #ifdef USE_SEMAPHORE
 HANDLE g_hSemaphore;
-else
+#else
 int kill (int pid, int sig) {
   HANDLE procHandle;
   BOOL outcome;
