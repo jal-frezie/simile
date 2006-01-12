@@ -854,6 +854,9 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
         set nType [GetCompProperty $topNode Eval $node]
         set startLine [lsearch {INPUT TABLE} $nType]
         if {($startLine!=-1)==($notInput!=-1)} {
+	    # change back now in case .spf filename is relative (possible
+	    # if merging params from script)
+	    cd $oldDir
 	    set restoredComp $smPath$restoredComp
             if {$origVersion>=4.0} {
                 set suppliedData($restoredComp) [lindex $IdAndValue 2]
@@ -915,10 +918,10 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
         }
     }
     close $pStr
+    cd $oldDir
     if {$origVersion>=4.0} {
         file delete $metaFile
     }
-    cd $oldDir
 }
 
 proc ExistCheck {topNode restoredComp tgtCap notInput source} {
