@@ -755,6 +755,28 @@
 					</OBJECT>
 			</UL>
 		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Parameter estimation">
+			<param name="Local" value="run\PEST\index.htm">
+			</OBJECT>
+		<UL>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Installing PEST">
+				<param name="Local" value="run\PEST\install.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Setting up PEST interaction">
+				<param name="Local" value="run\PEST\setup.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Running PEST">
+				<param name="Local" value="run\PEST\running.htm">
+				</OBJECT>
+			<LI> <OBJECT type="text/sitemap">
+				<param name="Name" value="Predictive analysis">
+				<param name="Local" value="run\PEST\predict.htm">
+				</OBJECT>
+		</UL>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Working with External Data">

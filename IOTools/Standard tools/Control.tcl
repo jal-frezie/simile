@@ -455,6 +455,9 @@ namespace eval runcontrol33857 {
 				 set sendvars($node,currentMode) stop
 			     }
 			 } ;# default: keep going
+	    if {![info exists runState($node,cnvs)]} {
+		return
+	    }
             if {$current==$nextDisp && \
 		    [string match start $sendvars($node,currentMode)]} {
 		UpdateBar $node $current blue ;# so GetModelTime does right
