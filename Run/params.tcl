@@ -1047,6 +1047,7 @@ proc GetFromTable {parent compName startLine} {
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
+	set notSeries $startLine
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames

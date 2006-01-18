@@ -110,8 +110,7 @@ update_mode(NewMode) :-
 
 stick_model_in(Win, Parent, Name, Mode) :-
 	Mode = reopen,
-	(check_if_already_open(Name), !;
-	 set_model_file(Parent, Name),
+	(set_model_file(Parent, Name),
 	    is_toplevel(Parent),
 	    get_default_export_name(Parent, "", DefName),
 	    find_all_comps(Root, Parent),
@@ -267,6 +266,7 @@ menu_handle(_Win, file, new_toplevel) :-
 	m_update:make_desktop(_,_).
 
 menu_handle(_Win, open_toplevel, Name) :-
+	check_if_already_open(Name), !;
 	m_update:make_desktop(Parent, Win),
 	scrub_autosave(Parent),
 	stick_model_in(Win, Parent, Name, reopen).
@@ -277,7 +277,6 @@ menu_handle(Win, file, open) :-
 	menu_handle(Win, reopen, Name)).
 
 menu_handle(Win, reopen, Name) :-
-	check_if_already_open(Name), !;
 	Win = '.hi.canvas', !,
 	    menu_handle(Win, open_toplevel, Name);
 	Win shows_model Parent,
@@ -285,6 +284,7 @@ menu_handle(Win, reopen, Name) :-
 	    find_all_comps(Parent, _), !,
 	    menu_handle(Win, open_toplevel, Name);
 	(is_toplevel(Parent), !,
+	    \+ check_if_already_open(Name),
 	    scrub_autosave(Parent);   
 	 check_deletable(Win, Parent),
 	    remove_model(Win, Parent)),
