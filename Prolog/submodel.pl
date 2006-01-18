@@ -153,10 +153,10 @@ make_link_spec(_, [], []).
 make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 
 	(select(Start-Mid, Equivs, Inter_equivs), 
-	select(Mid-Finish, Inter_equivs, Others), !,
+	select(Mid-Finish, Inter_equivs, Others),
 		Dead = [Start, Mid, Finish];
 	select(Start-Finish, Equivs, Others),
-		Dead = [Start, Finish]),
+		Dead = [Start, Finish]), !,
 
 	(Start is_connector from Origin to _,
 	    Finish is_connector from _ to Destination, !,

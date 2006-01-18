@@ -1352,8 +1352,8 @@ proc DisplayArea {winId} {
 
     # Now scroll it so what should be in the middle of the display is there
 
-    $winId xview scroll [expr round($centre_x - $CurrentX)] units
-    $winId yview scroll [expr round($centre_y - $CurrentY)] units
+    $winId xview scroll [expr round(($centre_x - $CurrentX)/10)] units
+    $winId yview scroll [expr round(($centre_y - $CurrentY)/10)] units
 }
 
 set adds none
