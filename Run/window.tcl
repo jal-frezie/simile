@@ -96,8 +96,8 @@ proc ClickObj { x y winId X Y action} {
     #puts "$action it!"
     
     RemovePopup
-    set window_info($winId,lastx) [expr $x/10]
-    set window_info($winId,lasty) [expr $y/10]
+    set window_info($winId,lastx) [expr $x/$looks(scrollIncr)]
+    set window_info($winId,lasty) [expr $y/$looks(scrollIncr)]
     switch $action {
         ctrl {
             set action click
@@ -288,10 +288,10 @@ proc DragObj {winId xco yco} {
     global clicktime
     
     if {[string equal move $pushedbutton]} {
-	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/10)] units
-	$winId yview scroll [expr ($window_info($winId,lasty)-$yco/10)] units
-	set window_info($winId,lastx) [expr $xco/10]
-	set window_info($winId,lasty) [expr $yco/10]
+	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
+	$winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
+	set window_info($winId,lastx) [expr $xco/$looks(scrollIncr)]
+	set window_info($winId,lasty) [expr $yco/$looks(scrollIncr)]
 	return
     }
 
@@ -451,7 +451,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
 }
 
 proc ModelWindow {winName} {
-    global tcl_platform
+    global tcl_platform looks
     menu ${winName}top
     toplevel $winName -menu ${winName}top
 
@@ -461,9 +461,10 @@ proc ModelWindow {winName} {
     }
     # Create a scrollable canvas
     set c [canvas $winName.canvas -bg white -confine 1 \
-            -xscrollcommand "AdjustCanvas $winName toolSlot x" \
-            -yscrollcommand "AdjustCanvas $winName canvas y" \
-            -xscrollincrement 10 -yscrollincrement 10]
+	       -xscrollcommand "AdjustCanvas $winName toolSlot x" \
+	       -yscrollcommand "AdjustCanvas $winName canvas y" \
+	       -xscrollincrement $looks(scrollIncr) \
+	       -yscrollincrement $looks(scrollIncr)]
     # scrollincrements set the only way we can get precise scrolling...
     
     # this rectangle will be resized to fill the scrollable area and coloured to
@@ -581,6 +582,7 @@ proc ChangeParentTitle {wc title bg} {
 }
 
 set looks(gridPitch) 15.0
+set looks(scrollIncr) 10
 
 proc AddGrid {c onCol wl wt wr wb} {
     global looks window_info custom

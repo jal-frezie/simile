@@ -1098,7 +1098,7 @@ proc ChangeObjectTitle { w name title} {
 # sometimes due to rounding errors.
 
 proc DoZoom { winId factor toProlog} {
-    global window_info
+    global window_info looks
 
     # First, find canvas point at centre of display
     set centre_x [expr $window_info($winId,width)/2]
@@ -1138,8 +1138,8 @@ proc DoZoom { winId factor toProlog} {
 
     # Now scroll it so what was previously in the middle of the display is still there
 
-    $winId xview scroll [expr round($target_x - $currentX)] units
-    $winId yview scroll [expr round($target_y - $currentY)] units
+    $winId xview scroll [expr round(($target_x - $currentX)/$looks(scrollIncr))] units
+    $winId yview scroll [expr round(($target_y - $currentY)/$looks(scrollIncr))] units
 }
 
 # ZoomImage: Scale the graphical stuff in the window, and explicitly
@@ -1321,7 +1321,7 @@ proc DisplayAll { winId } {
 }
 
 proc DisplayArea {winId} {
-    global window_info
+    global window_info looks
     if {[scan [$winId bbox selected] "%d %d %d %d" bl bt br bb] < 4} {
         return
     }
@@ -1352,8 +1352,8 @@ proc DisplayArea {winId} {
 
     # Now scroll it so what should be in the middle of the display is there
 
-    $winId xview scroll [expr round(($centre_x - $CurrentX)/10)] units
-    $winId yview scroll [expr round(($centre_y - $CurrentY)/10)] units
+    $winId xview scroll [expr round(($centre_x - $CurrentX)/$looks(scrollIncr))] units
+    $winId yview scroll [expr round(($centre_y - $CurrentY)/$looks(scrollIncr))] units
 }
 
 set adds none
