@@ -104,13 +104,13 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
+System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll Makefile
 	cd Run; g++ -c $(DEFNS) -I. -I../System/include/tcl ame_cmx.cpp; g++ -shared -o ../System/lib/Stubs/ame_dll84.dll ame_cmx.o ../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
 
-System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so
+System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so Makefile
 	cd Run; gcc -c -O -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; gcc -shared -o ../System/lib/Stubs/libame_dll8.4.so ame_cmx.o -L../System/lib -ltclstub8.4 -l5d; cd ..
 
-System/lib/Stubs/libame_dll8.4.dylib: ame_cmx.cpp dllcalls.h System/lib/lib5d.dylib
+System/lib/Stubs/libame_dll8.4.dylib: ame_cmx.cpp dllcalls.h System/lib/lib5d.dylib Makefile
 	cd Run; g++ -c -O -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers ame_cmx.cpp; g++ -dynamiclib -o ../System/lib/Stubs/libame_dll8.4.dylib ame_cmx.o -F../../Frameworks -framework Tcl -L../System/lib -ldl -l5d; cd ..
 
 System/bin/5d.dll: shank.cpp dllcalls.h
@@ -123,7 +123,7 @@ System/lib/lib5d.so: shank.cpp dllcalls.h
 System/lib/lib5d.dylib: shank.cpp dllcalls.h
 	cd Run; g++ -c -O -fPIC -DSIM_OPSYS_Darwin -I. shank.cpp; g++ -dynamiclib -o ../System/lib/lib5d.dylib shank.o -L../System/lib -ldl; cd ..
 
-Run/install.dll: install.cpp
+Run/install.dll: install.cpp Makefile
 	cd Run; g++ -c $(DEFNS) -I. -I../System/include install.cpp; g++ -shared -o install.dll install.o -L../System/lib -lcrypto -lssl; cd ..
 
 #else
