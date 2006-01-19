@@ -62,11 +62,9 @@ FINDABLE EXPORT int __stdcall license_check(
 			   NULL, &Key, NULL)==0) {
 	    if (pUser != NULL) RegSetValueEx(Key, "licensee_name", 0, REG_SZ, (CONST BYTE*)pUser, strlen(pUser)+1);
 	    if (pCompany != NULL) RegSetValueEx(Key, "licensee_corp", 0, REG_SZ, (CONST BYTE*)pCompany, strlen(pCompany)+1);
-	    if (pSerial == NULL) {
-		pSerial="none";
-	    } // prevents crashes due to non-existence
+#ifdef SIM_LICENSED
 	    RegSetValueEx(Key, "license_code", 0, REG_SZ, (CONST BYTE*)pSerial, strlen(pSerial)+1);
-
+#endif
 	    struct tm unixdawn;
 	    time_t now;
 	    unixdawn.tm_year=1970-1900;
@@ -79,7 +77,7 @@ FINDABLE EXPORT int __stdcall license_check(
 	    now=time(NULL);
 	    sprintf(buffer, "%ld :: %s", 
 		(long)difftime(now,mktime(&unixdawn)), ctime(&now));
-	    RegSetValueEx(Key, "install_time", 0, REG_SZ, (CONST BYTE*)buffer, strlen(pSerial)+1);
+	    RegSetValueEx(Key, "install_time", 0, REG_SZ, (CONST BYTE*)buffer, strlen(buffer)+1);
 	    RegCloseKey(Key);
 	    return(1);
 	} else {
