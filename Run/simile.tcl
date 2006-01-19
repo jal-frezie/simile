@@ -41,6 +41,7 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
 } 
 if [string match Darwin $tcl_platform(os)] {
     lappend auto_path $SIMILE_PATH/System/lib
+    package require tclAE
     proc ::tk::mac::OpenDocument {args} {
         global env
 # only opens the first of a group of files dropped or double-clicked,
@@ -48,6 +49,17 @@ if [string match Darwin $tcl_platform(os)] {
         set env(OPEN_MODEL) [lindex $args 0]
         OpenTopLevel [lindex $args 0]
     }
+#    proc handleOpenApp {foo bar} {
+#	tk_messageBox -message "open foo $foo bar $bar"
+#    }
+#    tclAE::installEventHandler aevt oapp handleOpenApp
+    proc handleReopenApp {foo bar} {
+	global window_info
+	if {![llength [array names window_info *,parent]]} {
+	    NewTopLevel
+	}
+    }
+    tclAE::installEventHandler aevt rapp handleReopenApp
 }
 
 # If Simile is already running, make a new window there and exit. Note that

@@ -1781,8 +1781,7 @@ proc RaiseModelWindow {node} {
     wm deiconify $win
     raise $win
     if {[string equal Darwin $tcl_platform(os)]} {
-    package require tclAE
-    tclAE::send -s misc actv
+	tclAE::send -s misc actv
     }
    # carbon::processHICommand bfrt $win
 }
