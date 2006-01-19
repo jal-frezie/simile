@@ -846,7 +846,7 @@ proc StippleSymbol {w name density selected} {
             }
         }
 	switch -regexp $selected {
-	    highlight|target {
+	    highlight {
 		$w dtag $object tocopy
 		$w itemconfigure $object -tag \
 		    [concat selected [$w gettags $object]]
