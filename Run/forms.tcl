@@ -585,23 +585,32 @@ proc SetHighlights {t} {
     }
 }
 
+set progressBoxCount 0
 proc OpenProgressBox {winId} {
-    PutItThere .progress $winId
-    wm title .progress "Progress with current operation"
-    pack [frame .progress.filler -width 400 -height 100]
-    if {[LetItShow .progress]} {
-    grab .progress
+    global progressBoxCount
+
+    if {[incr progressBoxCount]==1} {
+	PutItThere .progress $winId
+	wm title .progress "Progress with current operation"
+	pack [frame .progress.filler -width 400 -height 100]
+	if {[LetItShow .progress]} {
+	    grab .progress
+	}
+	destroy .progress.filler
+	wm geometry .progress 400x100
+	message .progress.message -aspect 400 -text "Please wait"
+	pack .progress.message -fill both -expand true
+	update
     }
-    destroy .progress.filler
-    wm geometry .progress 400x100
-    message .progress.message -aspect 400 -text "Please wait"
-    pack .progress.message -fill both -expand true
-    update
 }
 
 proc CloseProgressBox {} {
-    grab release .progress
-    PackItUp .progress
+    global progressBoxCount
+
+    if {![incr progressBoxCount -1]} {
+	grab release .progress
+	PackItUp .progress
+    }
 }
 
 proc RelationCheck {parent title type state init_comment} {
