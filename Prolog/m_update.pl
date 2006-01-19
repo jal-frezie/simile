@@ -1475,7 +1475,8 @@ unique_name_for_new(Type, Name) :-
 
 get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 			    Desc, Comment, EnumSpecs, Fix, Hide, Separate]) :-
-	(Submodel has_class_refinement fill_colour of Colour, !;
+	(Submodel has_class_refinement fill_colour of Colour,
+	    \+ Colour = clear, !;
 	    Colour = white),
 	(Submodel has_class_refinement fill_image of Image, !;
 	    Image = none),

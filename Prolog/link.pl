@@ -93,15 +93,10 @@ Arc no_longer_has_attribute Attribute :-
 % delete an arc connection
 
 :- op( 450, xf, is_no_longer_connector).
+:- op( 450, xf, no_longer_has_connections).
 
 Arc is_no_longer_connector :-
-	any_setof( Influence-Source-Dest,
-		   ((Arc = Source; Arc = Dest),
-			Influence is_connector from Source to Dest),
-		   BadArcs),
-	foreach( Influence-Source-Dest, BadArcs,
-			Influence is_no_longer_connector),
-
+	Arc no_longer_has_connections,
 	try( Arc no_longer_has_type _Type ),
 	any_setof( Attribute-Value,
 		   Arc has_attribute Attribute of Value,
@@ -236,13 +231,10 @@ follows(Link2, Link1) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Node is_no_longer_has_connections succeeds if Node's connecting arcs have
 % been deleted from the tree
-% NB more work to do here once connectors are installed
 
-:- op(450, xf, no_longer_has_connections).
-
-Node no_longer_has_connections:-
-	findall( Connector, Connector is_connector from Node to _, Outs ),
-	foreach( Out, Outs, Out is_no_longer_connector ),
-	findall( Connector, Connector is_connector from _ to Node, Ins ),
-	foreach( In, Ins, In is_no_longer_connector ).
+Node no_longer_has_connections :-
+	(Source = Node; Dest = Node),
+	Connector is_connector from Source to Dest,
+	Connector is_no_longer_connector,
+	fail; true.
 
