@@ -256,7 +256,7 @@ proc PrettifyValList {ugly args} {
 
 proc UglifyValList {pretty} {
 #puts "pretty $pretty"
-    set midlin [regsub -all {: ([^\#\{\}]+)( \#|\})} $pretty \
+    set midlin [regsub -all {: ([^\#\{\}]+)( \#|\}|$)} $pretty \
 		    {: {"\1"}\2}]
 #puts "midlin $midlin"
     set ugly [regsub -all {\#([^:]+):} $midlin {{\1}}]

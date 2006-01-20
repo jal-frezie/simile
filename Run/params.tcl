@@ -1036,7 +1036,6 @@ proc VarType {testVar types} {
     } elseif {[Numeric $testVar]} {
         return 3
     } else {
-        puts "No $testVar in $types"
         return 0
     }
 }
