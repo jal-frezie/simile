@@ -398,7 +398,7 @@ click_on([Xpt, Ypt], Moving_obj, _CD) :-
 	find_type(Moving_obj,TargetSort),
 	get_mode(ghost),
 	\+ is_ghost(Moving_obj),
-	member(TargetSort, [compartment, variable]),
+	TargetSort is_class_of_sort can_be_ghost,
 	advance_phase_to(action_choice),
 		
 	highlight(Moving_obj, 1),
@@ -1029,11 +1029,12 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 drag_to(Xpt, Ypt, Target) :-
 	get_phase(dragging),
 	get_mode(ghost),
+	find_type(Target, Type),
 	(get_highlit_obj(2, OldTarget),
 	    normalize(OldTarget),
 	    fail;
-	 find_type(Target, submodel), !;
-	    ghost_type(Start, _, _),
+	 Type = submodel, !;
+	    ghost_type(Start, Type, _),
 	    \+ Target = Start,
 	    \+ find_ghosts(Target, _),
 	    /* find_type(Target, Type), Allow target''s type to differ */ 
