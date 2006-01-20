@@ -902,11 +902,14 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 				    $paramDims($restoredComp,readMany))} {
                     set trans [linsert $trans 0 time] ;# dont translate times
                 }
-                if {[SensibleValue $trans $suppliedData($restoredComp)]>1} {
+                if {[SensibleValue $trans $suppliedData($restoredComp)]>0} {
                     set whichParamsAffected($restoredComp) 1
                     set msgs(param_source_$restoredComp) "$newPopup (literal)"
                 } else {
-                    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $suppliedData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it a numerical value, boolean, or one of the enumerated types defined for this component, which are $trans." ok
+		    if {![llength $trans]} {
+			set trans numerical
+		    }
+                    ShowMessage "Error merging parameters" error "Parameterization file contained the entry $suppliedData($restoredComp) for component $restoredComp. This entry does not start with the name of an existing file, nor is it an allowed value for this component, which are $trans." ok
                     set suppliedData($restoredComp) {}
                 }
             }
