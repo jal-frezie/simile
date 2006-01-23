@@ -23,10 +23,11 @@ portrayed -- we need to do this here so numbers can be formatted
 *and* spaced to avoid operator/negation clashes like x--2 */
 
 make_assignment(L, Dest, Source, AssignStr) :-
-	(L = tcl, Template = "set ~a ~s";
-	L = c, Template = "~a = ~s"),
+	(L = tcl, Template = "set ~a ~a";
+	L = c, Template = "~a = ~a"),
 	print_to_codes(SourceStr, Source),
-	sicstus_format_to_chars(Template, [Dest, SourceStr], AssignStr).
+	sicstus_atom_chars(SourceAtm, SourceStr),
+	sicstus_format_to_chars(Template, [Dest, SourceAtm], AssignStr).
 
 /* assignment of context */
 make_pointer(c, Var, Ptr) :-
@@ -854,8 +855,9 @@ make_procedure_call(tcl, List, Result) :-
 	make_arg_string(tcl, List, Result).
 
 make_procedure_call(c, [Proc | Args], Result) :-
-	make_arg_string(c, Args, Contents),
-	sicstus_format_to_chars("~w(~s)", [Proc, Contents], Result).
+	make_arg_string(c, Args, ContentsStr),
+	sicstus_atom_chars(Contents, ContentsStr),
+	sicstus_format_to_chars("~w(~a)", [Proc, Contents], Result).
 
 get_element_ref(L, Array, Index, Result) :-
 	Index = pop, !,
@@ -909,7 +911,8 @@ make_indexed_reference(L, Struct, Indices, Result) :-
 	    make_indexed_reference(L, Mid, Rest, Result);
 	L = tcl,
 	    comma_separate(Indices, IndListStr),
-	    sicstus_format_to_chars("~w(~s)", [Struct, IndListStr], ResultString),
+	    sicstus_atom_chars(IndList, IndListStr),
+	    sicstus_format_to_chars("~w(~a)", [Struct, IndList], ResultString),
 	    name(Result, ResultString).
 
 comma_separate([Solo], Str) :-
