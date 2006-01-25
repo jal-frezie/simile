@@ -1029,6 +1029,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 drag_to(Xpt, Ypt, Target) :-
 	get_phase(dragging),
 	get_mode(ghost),
+	clear_incomplete,
+	find_type(Target, Type),
 	find_type(Target, Type),
 	(get_highlit_obj(2, OldTarget),
 	    normalize(OldTarget),
@@ -1037,14 +1039,12 @@ drag_to(Xpt, Ypt, Target) :-
 	    ghost_type(Start, Type, _),
 	    \+ Target = Start,
 	    \+ find_ghosts(Target, _),
-	    /* find_type(Target, Type), Allow target''s type to differ */ 
 	    highlight(Target, 2)),
 	get_border_offsets(Loff,Toff,Roff,Boff),
 	L is Xpt-Loff,
 	T is Ypt-Toff,
 	R is Xpt+Roff,
 	B is Ypt+Boff,
-	clear_incomplete,
 	add_incomplete([L,T,R,B]),
 	remove_old_rubberband,
 	draw_rubberband(round).
@@ -1700,11 +1700,11 @@ unclick_obj :-
 	get_phase(dragging),
 	initialize_phase,
 	get_current_node(Parent),
-	get_incomplete(Box),
+	normalize(Start),
+	(get_incomplete(Box),
 	remove_old_rubberband,
 	ghost_type(Start, GhostType, Base),
-	normalize(Start),
-	((get_highlit_obj(2, Component_name);
+	(get_highlit_obj(2, Component_name);
 	attempt_addition(GhostType, Parent, Box, Component_name, no, yes), !,
 	        redisplay(Component_name)),
 	    get_nearest_equivalent_link(ghost_link, Base,

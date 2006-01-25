@@ -113,7 +113,7 @@ if {[string equal windows $tcl_platform(platform)]} {
     foreach regEntry {prologId interfaceId install_time license_code \
 			licensee_name licensee_corp} {
 	set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
-	set env($regEntry) [registry get $regKey $regEntry]
+	catch {set env($regEntry) [registry get $regKey $regEntry]}
     }
 } else {
     set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
