@@ -9,3 +9,11 @@ delay(val,steps) -->
 			   last(element([array],place_in(1))),
 			1000),
 	element([array],ptr).
+
+const_delay(val,steps) -->
+	[array] = makearray(if place_in(1)==1 then
+			   last(val)
+		  else
+			   last(element([array],place_in(1)-1)),
+			steps),
+	element([array],steps).
