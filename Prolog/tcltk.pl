@@ -166,11 +166,11 @@ utf8_to_unicode([H | String], Char) :-
 	    TopVal is 128+(H /\ (63 >> Spares)),
 	    base64([TopVal | String], Char).
 
-base64([Last], Val):-
-	Val is Last-128.
+base64([], 0).
 
 base64(String, All) :-
 	append(Rest, [Last], String),
+	Last>=128,
 	base64(Rest, Tail),
 	All is 64*Tail + (Last-128).
 
@@ -245,6 +245,8 @@ deEncode(_, TtfnAtom, Utf8Atom, 0) :-
 reEncode(_, Utf8Atom, TtfnAtom, 0) :-
 	atom(Utf8Atom),
 	name(Utf8Atom, Utf8Str),
-	user:all_utf8_to_ttfn(Utf8Str, TtfnStr),
+	(user:all_utf8_to_ttfn(Utf8Str, TtfnStr), !;
+	all(tcltk, unicode_to_ttfn, [build(Utf8Str), append(TtfnStr, [])])),
+	/* if cannot convert from utf8, was probably Unicode (Hi8) already */
 	name(TtfnAtom, TtfnStr).
 
