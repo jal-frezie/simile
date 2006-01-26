@@ -202,7 +202,7 @@ proc CreateHelperWindow {helperId helperTitle} {
 }
 
 proc NewHelperWindow {node helperId helperTitle} {
-    global helperTable tcl_platform
+    global helperTable tcl_platform SimileAutoObjLoaded
 
     # ShowMessage debug info "Making $helperId $helperTitle" ok
     if {[PrefValue custom(helperManager) helperManager]} {
@@ -210,6 +210,9 @@ proc NewHelperWindow {node helperId helperTitle} {
     } else {
         set winId .helper[newInt]
         toplevel $winId
+	if {[info exists SimileAutoObjLoaded]} {
+	    wm state $winId withdrawn
+	}
         wm title $winId [BlankCrs $helperTitle]
         if {![string match windows $tcl_platform(platform)]} {
             wm iconbitmap $winId @../Images/weegraph.xbm

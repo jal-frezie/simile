@@ -431,7 +431,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     #        $modelWindowExtensions" ok
     foreach extClass $modelWindowExtensions {
         #ShowMessage debug info "$extClass " ok
-        set extn [$extClass $winName.#auto $winName]; # create an extension object for the new model window
+        set extn [$extClass $winName.\#auto $winName]; # create an extension object for the new model window
         if {[catch {$extn MergeMenu} wibble] } {
             ShowMessage debug info "Extension $extn failed to merge its menu items.\n\
                    Details: $wibble" ok
@@ -444,16 +444,18 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     set window_info($c,parent) $winName
     
     InterpMenu $c off
-    focus $c
     #    ShowMessage debug info "Messing with [wm frame $winName]" ok
     #    maximize_fg_win
     return $c
 }
 
 proc ModelWindow {winName} {
-    global tcl_platform looks
+    global tcl_platform looks SimileAutoObjLoaded
     menu ${winName}top
     toplevel $winName -menu ${winName}top
+    if {[info exists SimileAutoObjLoaded]} {
+	wm state $winName withdrawn
+    }
 
     switch $tcl_platform(platform) {
         windows { wm iconbitmap $winName -default ../Run/simile16.ico }

@@ -153,6 +153,8 @@ set sendvars(simP) {p2}
 # changing the system encoding were groundless. So add the entrybox
 # here.
 
+# of course, none of these apply if using the scripting interface.
+
 entry .hidden_e
 pack .hidden_e
 
@@ -177,7 +179,11 @@ catch {append regInfo ", $env(licensee_corp)"}
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
-update
+if {[info exists SimileAutoObjLoaded]} {
+    wm withdraw .splash
+} else {
+    update
+}
 
 wm withdraw . ;# already withdrawn if not Linux
 

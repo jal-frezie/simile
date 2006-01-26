@@ -1039,10 +1039,14 @@ proc CheckCompilerLocation {} {
 # may well sit it exactly on top of the previous one
 
 proc FixSize {c} {
-    global custom openModel
+    global custom openModel SimileAutoObjLoaded
     update idletasks
     set win [winfo parent $c]
-    wm state $win normal
+    if {[info exists SimileAutoObjLoaded]} {
+	wm state $win withdrawn
+    } else {
+	wm state $win normal
+    }
     # seems necessary for console to hide
     #    catch {console hide}
     if {[file exists $custom(prefDir)/.layout] && \
