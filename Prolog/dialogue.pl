@@ -320,7 +320,7 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	(var(UserFnOpen), !,
 	    UserFnList = '';
 	get_ground_part(UserFnOpen, UserFnList)),
-	(TabDat > 0, table_data_is(TableAttr), !;
+	(\+ TabDat = 0, table_data_is(TableAttr), !;
 	    TableAttr = ''), /* no tables/graphs found */
 	/* table data is auto-generated so should be well formed.
 	Missing table will already have been picked up by parser */
