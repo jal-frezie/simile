@@ -716,19 +716,23 @@ proc ResetModel {myNode redo} {
     return $done
 }
 
-proc ExecuteModel {myNode howInt start finish} {
+proc ExecuteModel {myNode howInt start finish errLim} {
     global model_id instance_id
     if {[catch {
 	if {$model_id($myNode)} {
 	    c_executemodel $model_id($myNode) $instance_id($myNode) \
-		[expr ![string equal Euler $howInt]] $start $finish
+		[expr ![string equal Euler $howInt]] $start $finish $errLim
 	} else {
-	    TclExecuteModel $myNode $howInt $start $finish
+	    TclExecuteModel $myNode $howInt $start $finish $errLim
 	}
     } errList]} {
 	InteractGUI $instance_id($myNode) [lindex $errList 2] 2
 	eval ExplainError $errList
 	return -1
+    } elseif {$errList==-1} {
+	start_in_editor BuildProblem "Execution notice" info "Model execution has been paused at a discontinuity which could not be dealt with by adaptive step size control." execution
+	do_in_editor RaiseModelWindow $myNode
+	return 0
     } else {
 	return $errList
     }

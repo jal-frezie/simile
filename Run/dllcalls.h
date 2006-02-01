@@ -214,7 +214,7 @@ EXTDEC node_data_line* searchinfo(char*, long int*, char*,
 EXTDEC long int fetch_top_instance(long int, char*);
 
 EXTDEC int reset(long int, long int, int);
-EXTDEC int execute(long int, long int, int, double, double*);
+EXTDEC int execute(long int, long int, int, double, double*, double);
 EXTDEC int setstep(long int, double, int);
 EXTDEC char* myexit(long int, long int);
 

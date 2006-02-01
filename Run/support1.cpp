@@ -127,10 +127,11 @@ public:
   diffs () {
     current_offset = 0;
     cumulative_value = 0;
+    predicted_change = 0;
   }
   ~diffs () {
   }
-  double current_offset, cumulative_value;
+  double current_offset, cumulative_value, predicted_change;
 };
 
 double stage_incr (diffs*, int, double);

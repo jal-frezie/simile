@@ -681,6 +681,8 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 void get_string_for_error(char* spare, int error) {
   if (error == -101) {
     sprintf(spare, "abort request from the user");
+  } else if (error == -102) {
+    sprintf(spare, "interruption to adaptive step size control, caused by a discontinuity in a model function");
   } else if (error < 0) {
     sprintf(spare, "Illegal operation signal %d", -error);
   } else {
@@ -729,11 +731,11 @@ FINDABLE int resetmodelCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   char spare[256];
-  double starttime, endtime;
+  double starttime, endtime, errlim;
   int phase, error;
 
-  if (argc != 6) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase start_time end_time");
+  if (argc != 7) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id phase start_time end_time error_limit");
     return TCL_ERROR;
   }
   
@@ -764,9 +766,17 @@ FINDABLE int executemodelCmd(ClientData clientData, Tcl_Interp *interp,
     return error;
   }
   
-  error = execute(modelType, modelHandle, phase, starttime, &endtime);
+  error = Tcl_GetDoubleFromObj(interp, argv[6], &errlim);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = execute(modelType, modelHandle, phase, starttime, &endtime, errlim);
   if (error == -100) {
     Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+    return TCL_OK;
+  } else if (error == -99) {
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(-1));
     return TCL_OK;
   }
   get_string_for_error(spare, error);

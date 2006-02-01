@@ -90,13 +90,18 @@ double step_incr (int step, double v) {
   return v*glob_element(dts, step);
 }
 
+double maxerr;
+
 double stage_incr (diffs *extras, int step, double v) {
-  double dv, old_offset;
+  double dv, old_offset, errMagn;
 
   dv = step_incr(step, v);
   switch (int(glob_element(dts, 0))) {
+  case 0: // Euler
+    return (extras->cumulative_value = (extras->predicted_change = dv));
   case 1:
     extras->cumulative_value = dv/6;
+    extras->predicted_change = -dv/3;
     return (extras->current_offset = dv/2);
   case 2:
     extras->cumulative_value += dv/3;
@@ -104,13 +109,23 @@ double stage_incr (diffs *extras, int step, double v) {
     return (extras->current_offset = dv/2) - old_offset;
   case 3:
     extras->cumulative_value += dv/3;
+    extras->predicted_change += 2*dv/3;
     old_offset = extras->current_offset;
     return (extras->current_offset = dv) - old_offset;
   case 4:
     extras->cumulative_value += dv/6;
-    return extras->cumulative_value - extras->current_offset;
-  default:
-    return dv;
+    extras->predicted_change += 2*dv/3;
+    old_offset = extras->current_offset;
+    extras->current_offset = dv; // for checking 3rd order motion
+    return extras->cumulative_value - old_offset;
+  case -1: // undoes previous change
+    return -extras->cumulative_value;
+  case 10: // does not change compartment, just checks for errors
+    if (dv) {
+      errMagn = fabs(1-extras->predicted_change/dv);
+      maxerr = max(errMagn, maxerr);
+    }
+    return 0;
   };
 };
 
@@ -137,7 +152,8 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* get_remote_value_ptr, 
 		       void* stat_check_ptr,
 		       void* graph_ptr, int* phases, node_data_line** data_ptr,
-		       int* arc_count, char*** arc_id_list) {
+		       int* arc_count, char*** arc_id_list,
+		       double** adapt_maxerr) {
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
@@ -163,6 +179,7 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
   *data_ptr = nodedata;
   *arc_count = (sizeof inputArcs)/sizeof(char*)-1; /* don't include filler */
   *arc_id_list = inputArcs;
+  *adapt_maxerr = &maxerr;
   return((sizeof nodedata)/sizeof(node_data_line));
 }
 

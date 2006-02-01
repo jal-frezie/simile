@@ -161,6 +161,15 @@ namespace eval runcontrol33857 {
         pack [label $rsf.edit.colon -text " "] -side left
         pack [::ttk::entry $rsf.edit.num -width 8] -side left -expand on -fill x -anchor nw
         SwapDistVar $node 1
+
+        pack [frame $rsf.stepsize] -pady 2 -expand on -fill both
+	pack [checkbutton $rsf.stepsize.adapt -variable runState($node,adapt) \
+		  -text Adaptive\;] -side left
+	set runState($node,errLimit) 1e-6
+	pack [::ttk::entry $rsf.stepsize.maxerr \
+		  -textvariable runState($node,errLimit) -width 8] \
+	    -side right -expand on -fill x
+        pack [label $rsf.stepsize.caption -text "Error limit:"] -side right
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
         #        set sendvars($node,timeUnit) unit
@@ -357,7 +366,7 @@ namespace eval runcontrol33857 {
 
     proc RollSimulation { node } {
         variable sendvars
-        global errorInfo redoPhase runState
+        global errorInfo redoPhase runState adapt
 	global pauseImg playImg
         variable frames
 
@@ -425,6 +434,7 @@ namespace eval runcontrol33857 {
 	} else {
 	    set pause $finish
 	}
+	set adapt(doublings) 0
 	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
 	    if {$display} {
 		set nextDisp [expr 1.0*$display*[incr lastDisp]]
@@ -445,8 +455,13 @@ namespace eval runcontrol33857 {
 		set current $pause
 	    }
 	    set scaled_next [expr {$current*$sendvars(unitLength)}]
+	    if {$runState($node,adapt)} {
+		set limit $runState($node,errLimit)
+	    } else {
+		set limit 0
+	    }
 	    switch -- [ExecuteModel $node $runState($node,intMethod) \
-			 $scaled_current $scaled_next] {
+			 $scaled_current $scaled_next $limit] {
 			     -1 {
 				 set current $runState($node,currentTime)
 				 set sendvars($node,currentMode) exit

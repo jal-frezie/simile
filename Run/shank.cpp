@@ -646,7 +646,8 @@ void setdt(double, int);
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*, void*,
-			  void*, int*, node_data_line**, int*, char***);
+			  void*, int*, node_data_line**, int*, char***,
+			  double**);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
@@ -686,6 +687,7 @@ public:
   int *connLines;
   channelRecord* channelData; // only used in top model
   char erreur[256];
+  double* adapt_maxerr;
 
   Model(char* fileName) {
     handle = LOAD_DLL(fileName);
@@ -731,7 +733,7 @@ sprintf(globMess, "Loaded %ld", handle);
 			    (void*)stat_check,
 			    (void*)&c_graphdata,
 			    &phases, &nodedata, 
-			    &inArcCount, &inArcList);
+			    &inArcCount, &inArcList, &adapt_maxerr);
     /*	sprintf(erreur, "finding %d (%s) of %d connections, first has top %s and %d dests.", 
 	inArcCount, inArcList[0], connCount, connectData[0].TopArc, connectData[0].DestCount);
   	throw DllLossage("initialize", fileName, strdup(erreur)); */
@@ -806,9 +808,10 @@ sprintf(globMess, "Loaded %ld", handle);
     (*exitmodel)(id);
   }
 */
+  int adapt_doublings;
 
   int resetmodel(void* modelHandle, int top_phase) {
-    int tweak_phase;
+    int tweak_phase, adapt_doublings;
 
     for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
       lts[tweak_phase]=0;
@@ -817,40 +820,90 @@ sprintf(globMess, "Loaded %ld", handle);
     }
     setdt(-1, 0);
     reset_time_series((long int)this);
+    adapt_doublings = 0;
     return evalmodel(modelHandle, 0, top_phase, FALSE);
   }
 
-  int executemodel(void* id, int how_int, double start, double* end) {
+  int executemodel(void* id, int how_int, \
+		   double start, double* end, double errlim) {
     double freq, xtime;
     int big_phase, err;
+    BOOLEAN made_step;
 
-    freq = steps[phases];
-    for (xtime=int(start/freq + 0.5)*freq; xtime<=*end-0.5*freq;) {
-      big_phase = phase_for(xtime, freq, phases+1);
+    freq = steps[phases]*pow(2,-adapt_doublings);
+    xtime = start;
+    while (xtime<*end) {
+      made_step = 0;
+      big_phase = phase_for(xtime, freq, phases);
+      // that is the biggest phase we will try to run, we may not succeed
       if (check_gui(id, xtime, big_phase)) {
 	return -100; // should not conflict with os signal numbers
       }
-      xtime+=freq;
-      set_dts(big_phase, xtime);
-      (*advancemodel)(id, xtime, big_phase);
-      switch (how_int) {
-      case EULER:
-	advance_time(big_phase, 1);
-	setdt(0,0);
-	(*updatemodel)(id, xtime, big_phase);
-	break;
-      case RUNGE_KUTTA:
-	if (err=rk_update(id, xtime, big_phase, phases)) {
+      while(!made_step) {
+	// stretch interval to hit end if necssary
+	if (xtime+1.0625*freq>*end) {
+	  freq = *end-xtime;
+	  xtime = *end;
+	} else {
+	  xtime+=freq;
+	}
+	set_dts(big_phase, xtime);
+
+	switch (how_int) {
+	case EULER:
+	  advance_time(big_phase, 1);
+	  setdt(0,0);
+	  (*updatemodel)(id, xtime, big_phase);
+	  break;
+	case RUNGE_KUTTA:
+	  if (err=rk_update(id, xtime, big_phase)) {
+	    *end=xtime;
+	    return err;
+	  }
+	  break;
+	}
+	update_time_series(xtime, xtime); // oops
+	if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
 	  *end=xtime;
 	  return err;
 	}
-	break;
-      }
-      update_time_series(xtime, xtime);
-      if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
-	*end=xtime;
-	return err;
-      }
+	if (!errlim) {
+	  made_step = 1;
+	} else {
+	  // get the model to generate its error estimate
+	  *adapt_maxerr = 0;
+	  setdt(10, 0);
+	  (*updatemodel)(id, xtime, big_phase);
+	  if (*adapt_maxerr>errlim) {
+	    // error too great; put comps back and try shorter
+	    if (adapt_doublings<31) {
+	      advance_time(big_phase, -1);
+	      setdt(-1, 0);
+	      (*updatemodel)(id, xtime, big_phase);
+	      xtime-=freq;
+	      adapt_doublings++;
+	      freq = steps[phases]*pow(2,-adapt_doublings);
+	      big_phase = phase_for(xtime, freq, phases);
+	      if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
+		*end=xtime;
+		return err;
+	      }
+	    } else {
+	      // signal problem
+	      check_gui(id, xtime, 0);
+	      return -99;
+	    }
+	  } else {
+	    made_step = 1;
+	    if (adapt_doublings && *adapt_maxerr<errlim/16) {
+	      // low error; try longer next time if poss
+	      adapt_doublings--;
+	      freq = steps[phases]*pow(2,-adapt_doublings);
+	    } // lengthen time step
+	  } // timestep too short or not
+	} // error limit exists
+      } // made progress
+      (*advancemodel)(id, xtime, big_phase);
     }
     check_gui(id, *end, 0);
     return 0;
@@ -876,7 +929,7 @@ sprintf(globMess, "Loaded %ld", handle);
     }
   }
 
-  int rk_update(void* id, double xtime, int big_phase, int phases) {
+  int rk_update(void* id, double xtime, int big_phase) {
     int err;
     setdt(1, 0);
     (*updatemodel)(id, xtime, big_phase);
@@ -1529,11 +1582,11 @@ int reset(long int modelType, long int modelHandle, int top_phase) {
 }
 
 int execute(long int modelType, long int modelHandle, int how_int,
-	 double starttime, double* endtime) {
+	 double starttime, double* endtime, double errlim) {
   topType = modelType;
   resetting=FALSE;
   return ((Model*)topType)->executemodel((void*)modelHandle, 
-					how_int, starttime, endtime);
+					how_int, starttime, endtime, errlim);
 }
 
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
