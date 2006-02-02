@@ -395,6 +395,9 @@ namespace eval runcontrol33857 {
 	    if {[info exists runState($node,reloadParams)]} {
 		set redoPhase($node) $runState($node,reloadParams)
 		unset runState($node,reloadParams)
+		if {![RunningInC $node]} {
+		    InitTimeSeries $node
+		}
 	    } else {
 		set redoPhase($node) 0
 	    }
@@ -405,9 +408,7 @@ namespace eval runcontrol33857 {
 	if {[info exists redoPhase($node)]} {
 	    UpdateBar $node $current yellow
 	    if {![RunningInC $node]} {
-		if {$redoPhase($node) <= -1} {
-		    InitTimeSeries $node
-		} elseif {$redoPhase($node) == 0} {
+		if {$redoPhase($node) == 0} {
 		    ResetTimeSeries $node
 		}
 		UpdateTimeSeries $node 0 0

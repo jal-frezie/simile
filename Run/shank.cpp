@@ -811,7 +811,7 @@ sprintf(globMess, "Loaded %ld", handle);
   int adapt_doublings;
 
   int resetmodel(void* modelHandle, int top_phase) {
-    int tweak_phase, adapt_doublings;
+    int tweak_phase;
 
     for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
       lts[tweak_phase]=0;

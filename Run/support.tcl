@@ -458,7 +458,7 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 	}
 	
 	if {[info exists useTime]} {
-	    set inC [RunningInC]
+	    set inC [RunningInC $topNode]
 	    set tgtVar [InputVarFor $topNode $node]
 	    #	    upvar \#0 $tgtVar inputSrc
 	    #puts "inputSrc stands for [do_for_node $topNode InputVarFor $node]"
