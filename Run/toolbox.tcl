@@ -1095,6 +1095,10 @@ proc SaveFile {topNode tree tgt} {
     if {[catch {
 	set parts [GetParts $tree $tree]
 	#ShowMessage debug info "SaveFile GetParts $tree" ok
+	set curParams [do_for_node $topNode GetRunParams $topNode]
+	if {[llength $curParams]} {
+	    set runState($topNode,runParams) $curParams
+	}
 	if {[info exists runState($topNode,runParams)]} {
 	    lappend parts [mime::initialize -canonical text/plain \
 			   -header [list "Content-Description" "Run Status"] \
@@ -1273,9 +1277,8 @@ proc GetParts {top tree} {
     return $mimes
 }
 
-proc RecordRunParams {node paramList} {
+proc RecordRunParams {node} {
     global runState
-    set runState($node,runParams) $paramList
     prolog tk_run_settings_tweaked($node)
 }
 

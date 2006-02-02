@@ -59,10 +59,8 @@ namespace eval runcontrol33857 {
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
 	}
-	set runState($node,oldIntMethod) $runState($node,intMethod)
 	set runState($node,timeUnit) unit
         set runState($node,oldUnit) $runState($node,timeUnit)
-        set runState($node,oldDispInt) $runState($node,displayInt)
 
         if {[string match $t [winfo toplevel $t]]} {
 #            wm title $t "Run control"; # $t isn't a toplevel under MRE
@@ -113,6 +111,7 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name.capt -side left -anchor nw
             ::ttk::entry $rcf.editBoxes.$name.num -relief sunken \
                     -textvar runState($node,$var) -width 8
+	    bind $rcf.editBoxes.$name.num <Key> "set runState($node,tweaked) 1"
             pack $rcf.editBoxes.$name.num -side left -expand on -fill x -anchor nw
             label $rcf.editBoxes.$name.unit -textvar runState($node,timeUnit)
             pack $rcf.editBoxes.$name.unit -side left
@@ -137,9 +136,11 @@ namespace eval runcontrol33857 {
         pack [frame $rsf.integration] -pady 2 -fill x
         pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left -anchor nw
         ::ttk::menubutton $rsf.integration.pulldown
-        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
+        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0 \
+			      -postcommand "set runState($node,tweaked) 1"]
         foreach method {Euler {Runge-Kutta}} {
-          $intMethodMenu add command -label $method -command "set runState($node,intMethod) {$method}"
+	    $intMethodMenu add command -label $method -command \
+		"set runState($node,intMethod) {$method}"
         }
         $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
               -textvariable runState($node,intMethod)
@@ -164,11 +165,15 @@ namespace eval runcontrol33857 {
 
         pack [frame $rsf.stepsize] -pady 2 -expand on -fill both
 	pack [checkbutton $rsf.stepsize.adapt -variable runState($node,adapt) \
-		  -text Adaptive\;] -side left
-	set runState($node,errLimit) 1e-6
+		  -text Adaptive\; -command "set runState($node,tweaked) 1"] \
+	    -side left
+	if {![info exists runState($node,errLimit)]} {
+	    set runState($node,errLimit) 1e-6
+	}
 	pack [::ttk::entry $rsf.stepsize.maxerr \
 		  -textvariable runState($node,errLimit) -width 8] \
 	    -side right -expand on -fill x
+	bind $rsf.stepsize.maxerr <Key> "set runState($node,tweaked) 1"
         pack [label $rsf.stepsize.caption -text "Error limit:"] -side right
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
         
@@ -279,12 +284,9 @@ namespace eval runcontrol33857 {
         # This loop sets the array of dts in the model
         set sendvars(unitLength) \
 	    [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
-        set tweaked [expr ![string equal $runState($node,displayInt) \
-				$runState($node,oldDispInt)]]
         set newBalls [expr ![string equal $runState($node,timeUnit) \
                       $runState($node,oldUnit)]]
         set runState($node,oldUnit) $runState($node,timeUnit)
-        set runState($node,oldDispInt) $runState($node,displayInt)
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
             set tick $runState($node,update$setPhase)
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
@@ -292,14 +294,15 @@ namespace eval runcontrol33857 {
                 set runState($node,prev_update$setPhase) $tick
                 SetStep $node [expr $tick*$sendvars(unitLength)] $setPhase
                 set redoPhase($node) $setPhase
-                set tweaked 1
                 #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
+		set runState($node,tweaked) 1
             }
         }
 	# allow model to be saved if run settings are changed
-        if {$tweaked || ![string match $runState($node,oldIntMethod) $runState($node,intMethod)]} {
-	    do_in_editor RecordRunParams $node [GetRunParams $node]
-        }
+	if {[info exists runState($node,tweaked)]} {
+	    do_in_editor RecordRunParams $node
+	    unset runState($node,tweaked)
+	}
         SetStep $node 0 0
 #        SetState $winId $sendvars($node,newData)
     }
