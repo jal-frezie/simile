@@ -108,9 +108,11 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     upvar \#0 $widgetLocn outNames
 
     set compName [GetCompProperty $topNode Caption $node]
-    set levels [concat [list $args] [split [string range $compName 1 end] /]]
+    set levels [concat $args [split [string range $compName 1 end] /]]
     if {[llength $args]} {
 	set compName /[lindex $args 0]$compName
+    } else {
+	set levels [concat [list {}] $levels]
     }
     if {[string match SUBMODEL [GetCompProperty $topNode Class $node]]} {
         set suppliedData($compName) {}
