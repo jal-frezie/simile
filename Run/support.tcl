@@ -248,12 +248,14 @@ proc abort_check {args} {
 
 proc TclResetModel {topPhase} {
     global ts dts steps phasecount
-    for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
-	set ts($tweakPhase) [expr -$steps($tweakPhase)]
+    if {$topPhase <= 0} {
+	for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
+	    set ts($tweakPhase) [expr -$steps($tweakPhase)]
+	}
+	set dts(0) -1
+	SetDTs 1 0
+	AdvanceTime 1 1
     }
-    set dts(0) -1
-    SetDTs 1 0
-    AdvanceTime 1 1
     do_model int_evalmodel 0 $topPhase
     return 1
 }
@@ -289,6 +291,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	    } else {
 		RKUpdate $xtime $bigPhase
 	    }
+	    UpdateTimeSeries $node [expr $xtime+0.5*$freq] $xtime
 	    do_model int_evalmodel $xtime $bigPhase
 
 	    if {!$errLim} {

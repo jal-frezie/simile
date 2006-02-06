@@ -373,7 +373,7 @@ namespace eval runcontrol33857 {
 	global pauseImg playImg
         variable frames
 
-	set widget $frames($node,rcf)
+ 	set widget $frames($node,rcf)
         set phases [GetPhaseCount $node]
 	$widget.upper.topbuttons.start configure -image $pauseImg
 	$widget.upper.topbuttons.start configure -command \
@@ -419,11 +419,11 @@ namespace eval runcontrol33857 {
 		}
                 if {$redoPhase($node) < 1 && $display} {
                     TellAllHelpers $node reset
+		    set sendvars($node,currentMode) stop
                 }
                 if {$display} {
 		    TellAllHelpers $node display $current $display $update
 		}
-		set sendvars($node,currentMode) stop
 	    } else {
 		set sendvars($node,currentMode) exit
 	    }
@@ -445,16 +445,16 @@ namespace eval runcontrol33857 {
 	    } else {
 		set nextDisp [expr 2*$pause-$current]
 	    }
-	    if {[RunningInC $node]} {
+#	    if {[RunningInC $node]} {
 		set current $nextDisp
-	    } else {
-		set timeCheck [UpdateTimeSeries $node $current $nextDisp]
-		if {$nextDisp>$timeCheck} {
-		    set current $timeCheck
-		} else {
-		    set current $nextDisp
-		}
-	    }
+#	    } else {
+#		set timeCheck [UpdateTimeSeries $node $current $nextDisp]
+#		if {$nextDisp>$timeCheck} {
+#		    set current $timeCheck
+#		} else {
+#		    set current $nextDisp
+#		}
+#	    }
 	    if {$current>$pause} {
 		set current $pause
 	    }

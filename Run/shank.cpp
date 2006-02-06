@@ -813,14 +813,16 @@ sprintf(globMess, "Loaded %ld", handle);
   int resetmodel(void* modelHandle, int top_phase) {
     int tweak_phase;
 
-    for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-      lts[tweak_phase]=0;
-      setdt(0, -tweak_phase);
-      setdt(steps[tweak_phase], tweak_phase);
+    if (top_phase<=0) {
+      for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
+	lts[tweak_phase]=0;
+	setdt(0, -tweak_phase);
+	setdt(steps[tweak_phase], tweak_phase);
+      }
+      setdt(-1, 0);
+      reset_time_series((long int)this);
+      adapt_doublings = 0;
     }
-    setdt(-1, 0);
-    reset_time_series((long int)this);
-    adapt_doublings = 0;
     return evalmodel(modelHandle, 0, top_phase, FALSE);
   }
 
@@ -862,7 +864,7 @@ sprintf(globMess, "Loaded %ld", handle);
 	  }
 	  break;
 	}
-	update_time_series(xtime, xtime); // oops
+	update_time_series(xtime+freq/2, xtime); // oops
 	if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
 	  *end=xtime;
 	  return err;
