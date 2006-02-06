@@ -684,7 +684,7 @@ proc LoadProgram {node lang} {
     set runState($node,updated) 0
     set runState($node,lang) $lang
     if {[info exists runState($node,runParams)] && \
-	    ![info exists runState($node,currentTime)]}} {
+	    ![info exists runState($node,currentTime)]} {
 	do_for_node $node SetRunParams $node $runState($node,runParams)
     }
     if {[do_for_node $node update_executable $node $lang]} {
