@@ -624,7 +624,9 @@ proc equationDoTable {parent tgt startLine} {
 
 	set i 1
 	foreach idx $table_entry(indices) {
-	    $lidx insert end id$i -text $idx
+	    if {![string match ,* $idx]} { ;# this is wrap info
+		$lidx insert end id$i -text $idx
+	    }
 	    incr i
 	}
 #	if {![LoadDataFile]} {

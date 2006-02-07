@@ -277,7 +277,8 @@ proc NormalizeQuotes {table} {
 }
 
 proc DequoteNumeric {val} {
-    if {[llength $val]==1 && [string is double [lindex $val 0]]} {
+    if {[llength $val]==1 && ([string is double [lindex $val 0]] || \
+				  [string equal restart [lindex $val 0]])} {
 	return [lindex $val 0]
     } else {
 	return $val
