@@ -267,7 +267,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 #    }
     set freq [expr $steps($phasecount)*pow(2,-$adapt(doublings))]
     set xtime $start
-    while {$xtime<$end} {
+    while {$freq*($end-$xtime)>0} {
 	set madeStep 0
 	set bigPhase [PhaseFor $xtime $freq $phasecount]
 # that is the biggest phase we will try to run, we may not succeed
@@ -276,7 +276,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	}
 	while {!$madeStep} {
 	    # stretch interval to hit end if necssary
-	    if {$xtime+1.0625*$freq>$end} {
+	    if {$xtime/$freq+1.0625>$end/$freq} {
 		set freq [expr $end-$xtime]
 		set xtime $end
 	    } else {
@@ -408,6 +408,7 @@ proc InitTimeSeries {topNode} {
 	    }
 	}
     }
+    set setFromSeries($topNode,current) 0
 }
 
 proc ResetTimeSeries {topNode} {
@@ -417,6 +418,7 @@ proc ResetTimeSeries {topNode} {
 	set node [lindex [split $pt ,] 1]
 	set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
     }
+    set setFromSeries($topNode,current) 0
 }
 
 # for each node we have a list of times in the time series, and a pointer to 
@@ -438,27 +440,52 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 	set jumping 1
 	while {$jumping} {
 	    upvar 0 setFromSeries($topNode,$node,next) series
-	    if {[llength $setFromSeries($list)] > $series} {
-		set actTime \
-		    [expr [lindex $setFromSeries($list) $series]+$loopOffset]
-		if {$newTime >= $actTime} {
-		    set useTime [lindex $setFromSeries($list) $series]
-		    incr series
+	    set ptCount [llength $setFromSeries($list)]
+	    if {$newTime>$setFromSeries($topNode,current)} {
+		if {$ptCount > $series} {
+		    set mkTime [lindex $setFromSeries($list) $series]
+		    set actTime [expr $mkTime+$loopOffset]
+		    if {$newTime >= $actTime} {
+			set useTime $mkTime
+			incr series
+		    } else {
+			set jumping 0
+			if {$actTime<$horizon} {
+			    set horizon $actTime
+			}
+		    }
+		} elseif {$paramData(wrapAroundPoint,$node)} {
+		    set series 0
+		    incr setFromSeries($topNode,$node,wraps)
+		    set loopOffset \
+			[expr $loopOffset+$paramData(wrapAroundPoint,$node)]
 		} else {
 		    set jumping 0
-		    if {$actTime<$horizon} {
-			set horizon $actTime
-		    }
 		}
-	    } elseif {$paramData(wrapAroundPoint,$node)} {
-		set series 0
-		incr setFromSeries($topNode,$node,wraps)
-		set loopOffset \
-		    [expr $loopOffset+$paramData(wrapAroundPoint,$node)]
 	    } else {
-		set jumping 0
+		if {$series > 0} {
+		    set mkTime [lindex $setFromSeries($list) [expr $series-1]]
+		    set actTime [expr $mkTime+$loopOffset]
+		    if {$newTime < $actTime} {
+			set useTime $mkTime
+			incr series -1
+		    } else {
+			set jumping 0
+			if {$actTime>$horizon} {
+			    set horizon $actTime
+			}
+		    }
+		} elseif {$paramData(wrapAroundPoint,$node)} {
+		    set series $ptCount
+		    incr setFromSeries($topNode,$node,wraps) -1
+		    set loopOffset \
+			[expr $loopOffset-$paramData(wrapAroundPoint,$node)]
+		} else {
+		    set jumping 0
+		}
 	    }
 	}
+	set setFromSeries($topNode,current) $newTime
 	
 	if {[info exists useTime]} {
 	    set inC [RunningInC $topNode]

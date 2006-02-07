@@ -280,6 +280,11 @@ namespace eval runcontrol33857 {
 	    }
 	    lappend sendvars($node,newData) $runState($node,$entered)
 	}
+	if {$runState($node,execTime)<0} {
+	    set phaseFlip -1
+	} else {
+	    set phaseFlip 1
+	}
 
         # This loop sets the array of dts in the model
         set sendvars(unitLength) \
@@ -288,7 +293,7 @@ namespace eval runcontrol33857 {
                       $runState($node,oldUnit)]]
         set runState($node,oldUnit) $runState($node,timeUnit)
         for {set setPhase $phases} {$setPhase > 0} {incr setPhase -1} {
-            set tick $runState($node,update$setPhase)
+            set tick [expr $runState($node,update$setPhase)*$phaseFlip]
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
             if {$newBalls || ($runState($node,prev_update$setPhase)!=$tick)} {
                 set runState($node,prev_update$setPhase) $tick
@@ -309,7 +314,12 @@ namespace eval runcontrol33857 {
     
     proc SetupBar {node start finish} {
 	global runState
-	$runState($node,progressBar) config -from $start -to $finish
+	if ($start>$finish) {
+	    $runState($node,progressBar) config -from [expr -$start] \
+		-to [expr -$finish]
+	} else {
+	    $runState($node,progressBar) config -from $start -to $finish
+	}
 	set runState($node,expected_end) $finish
     }
 
@@ -317,7 +327,11 @@ namespace eval runcontrol33857 {
 	global runState
         set runState($node,currentTime) $now
 	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
-	$runState($node,progressBar) set $now
+	if {$runState($node,execTime)<0} {
+	    $runState($node,progressBar) set [expr -$now]
+	} else {
+	    $runState($node,progressBar) set $now
+	}
 	$runState($node,cnvs) itemconfigure 1 -fill $col
     }
 
@@ -384,6 +398,7 @@ namespace eval runcontrol33857 {
 	    {0 display 1 update 2 current 3 exec} {
 		set $param [lindex $sendvars($node,newData) $idx]
 	    }
+	set forward [expr $exec>0]
 	if {abs($current + $exec - $runState($node,expected_end)) > abs($update/2.0) || ![info exists sendvars($node,run_length)]} {
 	    set sendvars($node,run_length) $exec
 	    SetupBar $node $current [expr $current + $exec]
@@ -432,16 +447,18 @@ namespace eval runcontrol33857 {
 	if {$display} {
 	    set lastDisp [expr int($current/$display)]
 	}
+	set pause $finish
 	if {[info exists runState($node,pause)]} {
-	    set pause [min $finish $runState($node,pause)]
+	    if {($runState($node,pause)<$finish) == $forward} {
+		set pause $runState($node,pause)
+	    }
 	    unset runState($node,pause)
-	} else {
-	    set pause $finish
 	}
 	set adapt(doublings) 0
 	while {[lsearch {exit stop} $sendvars($node,currentMode)]==-1} {
 	    if {$display} {
-		set nextDisp [expr 1.0*$display*[incr lastDisp]]
+		set nextDisp [expr 1.0*$display*[incr lastDisp \
+						     [expr $forward*2-1]]]
 	    } else {
 		set nextDisp [expr 2*$pause-$current]
 	    }
@@ -455,7 +472,7 @@ namespace eval runcontrol33857 {
 #		    set current $nextDisp
 #		}
 #	    }
-	    if {$current>$pause} {
+	    if {($current>$pause) == $forward} {
 		set current $pause
 	    }
 	    set scaled_next [expr {$current*$sendvars(unitLength)}]
@@ -485,7 +502,7 @@ namespace eval runcontrol33857 {
 		}
 	    }
 	    set scaled_current $scaled_next
-	    if {$current>=$pause} {
+	    if {$current==$pause} {
 		set sendvars($node,currentMode) stop
 		if {$current>=$finish} {
 		    set exec $sendvars($node,run_length)

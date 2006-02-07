@@ -834,7 +834,7 @@ sprintf(globMess, "Loaded %ld", handle);
 
     freq = steps[phases]*pow(2,-adapt_doublings);
     xtime = start;
-    while (xtime<*end) {
+    while (freq*(*end-xtime)>0) {
       made_step = 0;
       big_phase = phase_for(xtime, freq, phases);
       // that is the biggest phase we will try to run, we may not succeed
@@ -843,7 +843,7 @@ sprintf(globMess, "Loaded %ld", handle);
       }
       while(!made_step) {
 	// stretch interval to hit end if necssary
-	if (xtime+1.0625*freq>*end) {
+	if (xtime/freq+1.0625>*end/freq) {
 	  freq = *end-xtime;
 	  xtime = *end;
 	} else {
