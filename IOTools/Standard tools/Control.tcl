@@ -249,6 +249,7 @@ namespace eval runcontrol33857 {
 		}
 	    }
 	}
+	SendData $node
 	if {[string match start $action] && \
 		[info exists runState($node,reloadParams)]} {
 	    set paramChoice [ShowMessage "Parameters out of date" warning \
@@ -259,9 +260,7 @@ namespace eval runcontrol33857 {
 		RollSimulation $node
 	    }
 	}
-	
-	SendData $node
-	set sendvars($node,currentMode) $action
+       	set sendvars($node,currentMode) $action
 	RollSimulation $node
     }
     
