@@ -467,8 +467,17 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 		    set mkTime [lindex $setFromSeries($list) [expr $series-1]]
 		    set actTime [expr $mkTime+$loopOffset]
 		    if {$newTime < $actTime} {
-			set useTime $mkTime
 			incr series -1
+			if {$series==0 && $paramData(wrapAroundPoint,$node)} {
+			    set series $ptCount
+			    incr setFromSeries($topNode,$node,wraps) -1
+			    set loopOffset \
+				[expr $loopOffset-$paramData(wrapAroundPoint,$node)]
+			}
+			if {$series > 0} {
+			    set useTime [lindex $setFromSeries($list) \
+					     [expr $series-1]]
+			}
 		    } else {
 			set jumping 0
 			if {$actTime>$horizon} {
