@@ -261,7 +261,7 @@ proc TclResetModel {topPhase} {
 }
 
 proc TclExecuteModel {node howInt start end errLim} {
-    global dts steps phasecount adapt
+    global dts steps phasecount adapt setFromSeries
 #    if {[string equal cancel [ShowMessage debug info "XM from $start to $end" okcancel]]} {
 #	error cancelled
 #    }
@@ -292,6 +292,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 		RKUpdate $xtime $bigPhase
 	    }
 	    UpdateTimeSeries $node [expr $xtime+0.5*$freq] $xtime
+	    set setFromSeries($topNode,current) $newTime
 	    do_model int_evalmodel $xtime $bigPhase
 
 	    if {!$errLim} {
@@ -494,7 +495,6 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 		}
 	    }
 	}
-	set setFromSeries($topNode,current) $newTime
 	
 	if {[info exists useTime]} {
 	    set inC [RunningInC $topNode]

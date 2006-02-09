@@ -254,19 +254,20 @@ class DllLossage {
   }
 };
 
-/* listable class for data to be loaded at a time point */
+/* listable class for data to be loaded at a time point. Has to be
+   double-linked so we can move backwards through it */
 
 class listTimePoint {
 public:
   double when;
   BOOLEAN myArraySpace;
   char* dataPtr;
-  listTimePoint* next;
+  listTimePoint *last, *next;
 
   listTimePoint() {
     myArraySpace = FALSE;
     dataPtr = NULL;
-    next = NULL;
+    last = next = NULL;
   }      
 
   ~listTimePoint() {
@@ -319,10 +320,12 @@ class listParamArray {
 public:
   char* nodeId;
   node_data_line *nodeLine;
+  long int spareModel;
   int fullDims[32];
   BOOLEAN myArraySpace;
   char* dataPtr;
   listTimePoint* timePoints;
+  listTimePoint* finalTimePoint;
   listTimePoint* nextTimePoint;
   double wrapAroundPoint;
   int wraps;
@@ -363,7 +366,6 @@ public:
 
   listParamArray(char* newNodeId) {
     int sparePath[32];
-    long int spareModel;
     char spareCapt[255];
     enum_type_data *spareTypes[32]; // might need for reading files
 
@@ -374,6 +376,7 @@ public:
     myArraySpace = FALSE;
     dataPtr = NULL;
     timePoints = NULL;
+    finalTimePoint = NULL;
     nextTimePoint = NULL;
     next = NULL;
   }      
@@ -381,9 +384,22 @@ public:
   ~listParamArray() {
     delete(nodeId);
     if (dataPtr && myArraySpace) delete(dataPtr);
-    if (next) delete(next);
   }
   
+  listParamArray* strip_out(long int oldModelId) {
+    int count;
+
+    if (next) {
+      next = next->strip_out(oldModelId);
+    }
+    if (spareModel == oldModelId) { // node belongs to model being removed
+      delete(this);
+      return next;
+    } else {
+      return this;
+    }
+  }
+
   int size_for_type() {
     switch (nodeLine->datatype) {
     case REAL:
@@ -429,19 +445,32 @@ public:
   }  
 
   char* create_time_point(double time, void* newDataPtr) {
-    listTimePoint *lastTimePt, *thisTimePt;
+    listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
     if (timePoints && timePoints->when<=time) {
       lastTimePt = timePoints->find_last_pt(time);
       if (lastTimePt->when==time) {
 	thisTimePt = lastTimePt;
-      } else {
+      } else { // lastTimePt is earlier than new one
+	nextTimePt = lastTimePt->next;
 	thisTimePt = new listTimePoint;
-	thisTimePt->next = lastTimePt->next;
+	thisTimePt->next = nextTimePt;
 	lastTimePt->next = thisTimePt;
+	thisTimePt->last = lastTimePt;
+	if (nextTimePt) {
+	  nextTimePt->last = thisTimePt;
+	} else {
+	  finalTimePoint  = thisTimePt;
+	}
       }
     } else {
       thisTimePt = new listTimePoint;
       thisTimePt->next = timePoints;
+      if (timePoints) {
+	timePoints->last = thisTimePt;
+      } else {
+	finalTimePoint  = thisTimePt;
+      }
+      thisTimePt->last = NULL;
       timePoints = thisTimePt;
     }
     thisTimePt->when = time;
@@ -585,54 +614,53 @@ public:
     }
   }
 
-  double update_from_points(double now, double horizon) {
+  double update_from_points(BOOLEAN dir, double now) {
     listTimePoint* timePt;
     double shifted;
+    char* newPtr = NULL;
 
-    if (nextTimePoint) {
-      shifted = now-wraps*wrapAroundPoint;
-      if (nextTimePoint->when<=shifted) {
-	nextTimePoint = nextTimePoint->find_last_pt(shifted);
-	memcpy(dataPtr, nextTimePoint->dataPtr, 
-	       size_for_type()*array_count(fullDims));
+    if (dir) {
+      while (nextTimePoint && now>=nextTimePoint->when+wraps*wrapAroundPoint) {
+	newPtr = nextTimePoint->dataPtr;
 	nextTimePoint = nextTimePoint->next;
 	if (wrapAroundPoint>0.0 && !nextTimePoint) {
 	  nextTimePoint = timePoints;
 	  wraps += 1;
 	}
       }
+    } else {
       if (nextTimePoint) {
-	return fmin(nextTimePoint->when+wraps*wrapAroundPoint,horizon);
+	timePt = nextTimePoint->last;
+      } else {
+	timePt = finalTimePoint;
       }
+      if (wrapAroundPoint>0.0 && !timePt) {
+	timePt = finalTimePoint;
+	wraps -= 1;
+      }
+      while (timePt && now<timePt->when+wraps*wrapAroundPoint) {
+	nextTimePoint = timePt;
+	timePt = timePt->last;
+	if (wrapAroundPoint>0.0 && !timePt) {
+	  timePt = finalTimePoint;
+	  wraps -= 1;
+	}
+	if (timePt) {
+	  newPtr = timePt->dataPtr;
+	}
+      }
+    }      
+    if (newPtr) {
+      memcpy(dataPtr, newPtr, size_for_type()*array_count(fullDims));
     }
-    return horizon;
   }
 };   // end of listParamArray class
 
 listParamArray* param_array_base = NULL;
 
-double update_time_series(double now, double horizon) {
-  listParamArray* param_array_current;
-
-  param_array_current = param_array_base;
-  while (param_array_current) {
-    horizon = param_array_current->update_from_points(now, horizon);
-    param_array_current = param_array_current->next;
-  }
-  return horizon;
-}    
+void update_time_series(long int client, double now);
   
-void reset_time_series(long int id) {
-  listParamArray* param_array_current;
-
-  param_array_current = param_array_base;
-  while (param_array_current) {
-    param_array_current->nextTimePoint = param_array_current->timePoints;
-    param_array_current->wraps = 0;
-    param_array_current->update_from_points(0,0);
-    param_array_current = param_array_current->next;
-  }
-}
+void reset_time_series(long int client);
 
 typedef struct channelRecord_t {
   void* SearchBase;
@@ -680,7 +708,7 @@ public:
   exitmodel_type *exitmodel;
 
   int phases;
-  double lts[8], ldts[8], steps[8];
+  double lts[8], ldts[8], steps[8], thisTsPosn;
   graph_data_type* c_graphdata;
   int nodecount;
   node_data_line* nodedata;
@@ -864,7 +892,7 @@ sprintf(globMess, "Loaded %ld", handle);
 	  }
 	  break;
 	}
-	update_time_series(xtime+freq/2, xtime); // oops
+	update_time_series((long int)this, xtime+freq/2); // oops
 	if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
 	  *end=xtime;
 	  return err;
@@ -1113,6 +1141,36 @@ public:
     }
   }
   }; */
+
+void update_time_series(long int client, double now) {
+  listParamArray* param_array_current;
+  BOOLEAN forward;
+
+  param_array_current = param_array_base; // base will go in model class
+  forward = (now > ((Model*)client)->thisTsPosn);
+  ((Model*)client)->thisTsPosn = now;
+  while (param_array_current) {
+    if (param_array_current->spareModel == client) {
+      param_array_current->update_from_points(forward, now);
+    }
+    param_array_current = param_array_current->next;
+  }
+}    
+  
+void reset_time_series(long int client) {
+  listParamArray* param_array_current;
+
+  param_array_current = param_array_base;
+  ((Model*)client)->thisTsPosn = 0;
+  while (param_array_current) {
+    if (param_array_current->spareModel == client) {
+      param_array_current->nextTimePoint = param_array_current->timePoints;
+      param_array_current->wraps = 0;
+      param_array_current->update_from_points(TRUE, 0);
+    }
+    param_array_current = param_array_current->next;
+  }
+}
 
 listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
   if (!start) {
@@ -1704,8 +1762,7 @@ char* myexit(long int modelType, long int modelHandle) {
     ((Model*)modelType)->exitmodel((void*)modelHandle);
   }
   if (param_array_base) {
-    delete param_array_base;
-    param_array_base = NULL;
+    param_array_base = param_array_base->strip_out(modelType);
   }
   if (nodeModelList) {
     try {
