@@ -59,6 +59,7 @@ Also uses to get phase count */
 
 FINDABLE EXPORT void do_exitmodel(void* handle) {
   ((AME_model *)handle)->do_exitmodel();
+  delete (AME_model *)handle;
 }
 
 FINDABLE EXPORT int do_setstep(double time, int phase) {

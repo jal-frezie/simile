@@ -681,8 +681,8 @@ proc InteractGUI {handle modelTime flCol} {
 }
 
 proc AbortCheck {handle} {
-    global helperTable
-    return [$helperTable(RunControl)::RCAbortCheck [DecodeInstance $handle]]
+    global helperTable model_id
+    return [$helperTable(RunControl)::RCAbortCheck $model_id(running)]
 }
 
 proc DecodeInstance {handle} {
@@ -703,6 +703,7 @@ proc ResetModel {myNode redo} {
     }	
     if {[catch {
 	if {$model_id($myNode)} {
+	    set model_id(running) $myNode
 	    c_resetmodel $model_id($myNode) $instance_id($myNode) $redo
 	} else {
 	    TclResetModel $redo
@@ -721,6 +722,7 @@ proc ExecuteModel {myNode howInt start finish errLim} {
     global model_id instance_id
     if {[catch {
 	if {$model_id($myNode)} {
+	    set model_id(running) $myNode
 	    c_executemodel $model_id($myNode) $instance_id($myNode) \
 		[expr ![string equal Euler $howInt]] $start $finish $errLim
 	} else {

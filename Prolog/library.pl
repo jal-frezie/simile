@@ -282,10 +282,10 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	    adjust_to_6([])),
 	(SimileV >= 4.0, !;
 	dialogue:reassure_user("Updating pre-Simile 4.0 model representation"),
-	    adjust_to_8),
+	    adjust_to_8(Translated)),
 	(SimileV > 4.29, SimileV < 4.31, !;
 	dialogue:reassure_user("Updating non-Simile 4.3 model representation"),
-	    adjust_to_8_3),
+	    adjust_to_8_3(Translated)),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -369,7 +369,8 @@ adjust_to_6(Done) :-
 
 adjust_to_6(_).
 
-adjust_to_8 :-
+adjust_to_8(Trans) :-
+	(Trans = copy; member(_-Node, Trans)),
 	(Node has_class_refinement fix_math_args of V,
 	    Node no_longer_has_class_refinement fix_math_args of V;
 	    
@@ -392,9 +393,10 @@ adjust_to_8 :-
 	    output:safe_tcl_eval(['ColourExists', Image], "0"),
 	    Node no_longer_has_class_refinement fill_colour of Image,
 	    Node has_new_class_refinement fill_image of Image),	    
-	adjust_to_8.
+	adjust_to_8(Trans).
 
-adjust_to_8 :-
+adjust_to_8(Trans) :-
+	(Trans = copy; member(_-Comp, Trans)),
 	(Fixing = node,
 	    Comp has_class_refinement TclBound of TermInUtf8;
 	 Fixing = arc,
@@ -409,8 +411,9 @@ adjust_to_8 :-
 	fail;
 	true.
 
-adjust_to_8_3 :-
-	Node has_class_refinement table_data of _, /* just reduces workload */
+adjust_to_8_3(Trans) :-
+	(Trans = copy; member(_-Node, Trans)),
+	 Node has_class_refinement table_data of _, /* just reduces workload */
 	    Node has_class_refinement value of Expr,
 	    replace_subexps(Expr, library, separate_table_args,
 			    _, top_down, _, NewExpr),

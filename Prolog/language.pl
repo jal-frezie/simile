@@ -232,6 +232,8 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 
 	make_struct_reference(L, Pointer, new_instance, NewInstance),
 
+	refer_value(L, this, ThisRef),
+	render(L, procedure_call, abort_check(ThisRef), Indent, AbChk),
 	(RefIndices = [], !,
 	    ptr_compare(L, MPTargetRef, 0, CallPrune);
 	length(RefIndices, NumIndices),
@@ -285,7 +287,7 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	render(L, end(cond), 'Instance exists', Indent2, PruneEnd),
 	/* IfChecking */
 	
-	append([MakeMemberCheck, DoPrune, OpenExisting, MarkOld,
+	append([AbChk, MakeMemberCheck, DoPrune, OpenExisting, MarkOld,
 		IfChecking, Snip, CheckElse, StepOver, CheckEnd, ElsePrune,
 		IfChecking, MakeNew, FillInstanceId, SaveBaseRefs,
 		MarkNew, CheckEnd, PruneEnd, IfChecking], Starters),

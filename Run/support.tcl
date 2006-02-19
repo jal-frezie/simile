@@ -99,7 +99,11 @@ proc collect {tgt node count args} {
     set val [BringParameter $inputSrc $node $args]
     if {[llength $val]} {
 # Check that input source exists, it will not if model is being initialized
-	set $tgt $val
+       if {[string equal REAL [getinfo $node 0]]} {
+           set $tgt $val
+       } else {
+           set $tgt [expr int($val)]
+       }
     }
 }
 

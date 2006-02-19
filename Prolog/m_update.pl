@@ -422,7 +422,8 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 			(Severity = 2, !;
 			1 is Scale, !;
 			sicstus_format_to_chars("The specified unit expression ~w has physical quantity ~w, which requires a conversion factor to map onto the quantity it represents, specified as ~w.", [Target_name, Target_base, Unit_base], Complaint));
-		    check_and_report_units(Unit_base, UnitDims),
+		    (check_and_report_units(Unit_base, UnitDims), !;
+			UnitDims = Unit_base),
 			sicstus_format_to_chars("The specified unit expression ~w has physical dimensions ~w, which are incompatible with the quantity it represents, whose units ~w have dimensions ~w. Please do one of the following:\n* specify units with the same dimensions as the value\n* change the source of the value to have the units you wish, or\n* clear the units specification entry to get the default units for this value.", [Target_name, TargetDims, Unit_base, UnitDims], Complaint));
 
 		sicstus_format_to_chars("You are not allowed to convert implicitly from a \"~w\" value to a \"~w\" value because of the possibility for confusion or loss of information.", [Unit_base, Target_type], Complaint));

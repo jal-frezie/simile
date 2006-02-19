@@ -803,6 +803,7 @@ make_intermediates(
 		 ValRef = sqrt(Log),
 		        UnitList = [Base],
 		        Exp = 1/2),
+		    \+ Base = 1,
 		    get_conversion(1, Base, Base, _),
 		    (Exp = N/D, !,
 			raise_units(Base, N, Mid),

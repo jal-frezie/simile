@@ -286,7 +286,7 @@ namespace eval runcontrol33857 {
 	}
 
         # This loop sets the array of dts in the model
-        set sendvars(unitLength) \
+        set sendvars($node,unitLength) \
 	    [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         set newBalls [expr ![string equal $runState($node,timeUnit) \
                       $runState($node,oldUnit)]]
@@ -296,7 +296,8 @@ namespace eval runcontrol33857 {
             #puts "Checking $tick is $runState($node,prev_update$setPhase) and $runState($node,currentTime) is $runState($node,timeAtEval)"
             if {$newBalls || ($runState($node,prev_update$setPhase)!=$tick)} {
                 set runState($node,prev_update$setPhase) $tick
-                SetStep $node [expr $tick*$sendvars(unitLength)] $setPhase
+                SetStep $node [expr $tick*$sendvars($node,unitLength)] \
+		    $setPhase
                 set redoPhase($node) $setPhase
                 #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
 		set runState($node,tweaked) 1
@@ -343,7 +344,7 @@ namespace eval runcontrol33857 {
 
     proc RCInteractGUI {myNode current col} {
 	variable sendvars
-	UpdateBar $myNode [expr $current/$sendvars(unitLength)] $col
+	UpdateBar $myNode [expr $current/$sendvars($myNode,unitLength)] $col
 	set sendvars($myNode,busy) 0
 	update
 	set sendvars($myNode,busy) 1
@@ -416,7 +417,7 @@ namespace eval runcontrol33857 {
 		set redoPhase($node) 0
 	    }
 	}
-	set scaled_current [expr {$current*$sendvars(unitLength)}]
+	set scaled_current [expr {$current*$sendvars($node,unitLength)}]
 	set finish [expr {$current+$exec}]
 
 	if {[info exists redoPhase($node)]} {
@@ -431,8 +432,10 @@ namespace eval runcontrol33857 {
 		if {$runState($node,modelRunning)<3} {
 		    set runState($node,modelRunning) 3
 		}
-                if {$redoPhase($node) < 1 && $display} {
-                    TellAllHelpers $node reset
+                if {$redoPhase($node) < 1} {
+		    if {$display} {
+			TellAllHelpers $node reset
+		    }
 		    set sendvars($node,currentMode) stop
                 }
                 if {$display} {
@@ -474,7 +477,7 @@ namespace eval runcontrol33857 {
 	    if {($current>$pause) == $forward} {
 		set current $pause
 	    }
-	    set scaled_next [expr {$current*$sendvars(unitLength)}]
+	    set scaled_next [expr {$current*$sendvars($node,unitLength)}]
 	    if {$runState($node,adapt)} {
 		set limit $runState($node,errLimit)
 	    } else {

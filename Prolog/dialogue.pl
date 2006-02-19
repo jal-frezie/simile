@@ -127,8 +127,12 @@ BoxHeaderStr),
 	retractall(input_list_is(_)),
 	assert(input_list_is(Input_list)),
 	repeat,
+	( \+ input_list_is(_), /* failed to assert list -- something broke */
+	    do_dialogue("Problem with equation parser", error,
+			"Simile was unable to make sense of the contents of the equation dialogue box. Please report this problem to your supplier.", ok, _),
+	    Updated_list = Input_list;
+	retract(input_list_is(Updated_list))),
 	interact_equation(Result_list),
-	retract(input_list_is(Updated_list)),
 	(Result_list = [], !, destroy_equation, fail; 
 	update_equation(Part, IndxCount, Updated_list, TypeBase-TypeDims,
 			Result_list)),
