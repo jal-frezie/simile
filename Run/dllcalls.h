@@ -171,7 +171,7 @@ typedef struct connectRecord_t {
    method didn't work in win98) */
 
 typedef double ame_rand_type(double, double);
-typedef BOOLEAN interact_gui_type(void*, BOOLEAN, double);
+typedef BOOLEAN interact_gui_type(void*, int, double);
 typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
@@ -218,7 +218,8 @@ EXTDEC int execute(long int, long int, int, double, double*, double);
 EXTDEC int setstep(long int, double, int);
 EXTDEC char* myexit(long int, long int);
 
-EXTDEC void* get_ptr(long int, long int, int**, int**);
+EXTDEC void* instance_ptr_from_id(long int);
+EXTDEC void* get_ptr(long int, void*, int**, int**);
 EXTDEC char* getNodeId(long int, char*);
 
 EXTDEC void proc_pointers_for_shank(get_value_pointer_type*,

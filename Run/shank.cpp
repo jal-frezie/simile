@@ -320,7 +320,7 @@ class listParamArray {
 public:
   char* nodeId;
   node_data_line *nodeLine;
-  long int spareModel;
+  void* spareModel;
   int fullDims[32];
   BOOLEAN myArraySpace;
   char* dataPtr;
@@ -370,8 +370,8 @@ public:
     enum_type_data *spareTypes[32]; // might need for reading files
 
     nodeId = strdup(newNodeId);
-    nodeLine = searchinfo(nodeId, &spareModel, spareCapt, fullDims, sparePath,
-			  spareTypes);
+    nodeLine = searchinfo(nodeId, (long int*)&spareModel, spareCapt, fullDims,
+			  sparePath, spareTypes);
     remove_vm_dims();
     myArraySpace = FALSE;
     dataPtr = NULL;
@@ -386,7 +386,7 @@ public:
     if (dataPtr && myArraySpace) delete(dataPtr);
   }
   
-  listParamArray* strip_out(long int oldModelId) {
+  listParamArray* strip_out(void* oldModelId) {
     int count;
 
     if (next) {
@@ -658,9 +658,9 @@ public:
 
 listParamArray* param_array_base = NULL;
 
-void update_time_series(long int client, double now);
+void update_time_series(void* client, double now);
   
-void reset_time_series(long int client);
+void reset_time_series(void* client);
 
 typedef struct channelRecord_t {
   void* SearchBase;
@@ -668,6 +668,22 @@ typedef struct channelRecord_t {
 } channelRecord;
 
 void setdt(double, int);
+
+/* A member of this class exists for each model instance */
+
+class Instance {
+public:
+  void* id;
+  double its[8];
+  Instance* next;
+  
+  Instance(void* newId, Instance* oldList) {
+    id = newId;
+    next = oldList;
+  }
+};
+
+Instance* instance_base = NULL;
 
 /* prototypical declarations for functions to be supplied by the model dll
  */
@@ -708,7 +724,11 @@ public:
   exitmodel_type *exitmodel;
 
   int phases;
-  double lts[8], ldts[8], steps[8], thisTsPosn;
+  /* Time series info exists only for each model class, so thisTsPosn
+     remembers for what time the series have been set up, so we know
+     what to do when setting them up for a different instance which
+     may be at a different time */
+  double ldts[8], steps[8], thisTsPosn;
   graph_data_type* c_graphdata;
   int nodecount;
   node_data_line* nodedata;
@@ -838,35 +858,38 @@ sprintf(globMess, "Loaded %ld", handle);
 */
   int adapt_doublings;
 
-  int resetmodel(void* modelHandle, int top_phase) {
+  int resetmodel(Instance* modelHandle, int top_phase) {
     int tweak_phase;
 
     if (top_phase<=0) {
       for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-	lts[tweak_phase]=0;
+	modelHandle->its[tweak_phase]=0;
 	setdt(0, -tweak_phase);
 	setdt(steps[tweak_phase], tweak_phase);
       }
       setdt(-1, 0);
-      reset_time_series((long int)this);
+      reset_time_series(this);
       adapt_doublings = 0;
     }
-    return evalmodel(modelHandle, 0, top_phase, FALSE);
+    return evalmodel(modelHandle->id, 0, top_phase, FALSE);
   }
 
-  int executemodel(void* id, int how_int, \
+  int executemodel(Instance* modelHandle, int how_int, \
 		   double start, double* end, double errlim) {
     double freq, xtime;
     int big_phase, err;
-    BOOLEAN made_step;
+    BOOLEAN made_step, first_pass;
+    void* id;
 
     freq = steps[phases]*pow(2,-adapt_doublings);
     xtime = start;
-    while (freq*(*end-xtime)>0) {
+    id = modelHandle->id;
+    while (freq*(*end-xtime)>0) { // freq only affects sign
       made_step = 0;
+      first_pass = 1;
       big_phase = phase_for(xtime, freq, phases);
       // that is the biggest phase we will try to run, we may not succeed
-      if (check_gui(id, xtime, big_phase)) {
+      if (check_gui(modelHandle, xtime, big_phase)) {
 	return -100; // should not conflict with os signal numbers
       }
       while(!made_step) {
@@ -877,50 +900,54 @@ sprintf(globMess, "Loaded %ld", handle);
 	} else {
 	  xtime+=freq;
 	}
-	set_dts(big_phase, xtime);
+	set_dts(modelHandle, big_phase, xtime);
 
 	switch (how_int) {
 	case EULER:
-	  advance_time(big_phase, 1);
-	  setdt(0,0);
+	  if (first_pass) {
+	    setdt(0,0);
+	  } else {
+	    setdt(-1,0);
+	  }
+	  advance_time(this, modelHandle, big_phase, 1);
 	  (*updatemodel)(id, xtime, big_phase);
 	  break;
 	case RUNGE_KUTTA:
-	  if (err=rk_update(id, xtime, big_phase)) {
+	  if (first_pass) {
+	    setdt(1,0);
+	  } else {
+	    setdt(-2,0);
+	  }
+	  (*updatemodel)(id, xtime, big_phase);
+	  if (err=rk_update(this, modelHandle, xtime, big_phase)) {
 	    *end=xtime;
 	    return err;
 	  }
 	  break;
 	}
-	update_time_series((long int)this, xtime+freq/2); // oops
-	if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
-	  *end=xtime;
-	  return err;
-	}
+	first_pass = 0;
 	if (!errlim) {
 	  made_step = 1;
 	} else {
 	  // get the model to generate its error estimate
+	  if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
+	    *end=xtime;
+	    return err;
+	  }
 	  *adapt_maxerr = 0;
 	  setdt(10, 0);
 	  (*updatemodel)(id, xtime, big_phase);
 	  if (*adapt_maxerr>errlim) {
 	    // error too great; put comps back and try shorter
 	    if (adapt_doublings<31) {
-	      advance_time(big_phase, -1);
-	      setdt(-1, 0);
-	      (*updatemodel)(id, xtime, big_phase);
+	      advance_time(this, modelHandle, big_phase, -1); // back to start
 	      xtime-=freq;
 	      adapt_doublings++;
 	      freq = steps[phases]*pow(2,-adapt_doublings);
 	      big_phase = phase_for(xtime, freq, phases);
-	      if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
-		*end=xtime;
-		return err;
-	      }
 	    } else {
 	      // signal problem
-	      check_gui(id, xtime, 0);
+	      check_gui(modelHandle, xtime, 0);
 	      return -99;
 	    }
 	  } else {
@@ -934,8 +961,12 @@ sprintf(globMess, "Loaded %ld", handle);
 	} // error limit exists
       } // made progress
       (*advancemodel)(id, xtime, big_phase);
+      if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
+	*end=xtime;
+	return err;
+      }
     }
-    check_gui(id, *end, 0);
+    check_gui(modelHandle, *end, 0);
     return 0;
   }
   
@@ -959,18 +990,20 @@ sprintf(globMess, "Loaded %ld", handle);
     }
   }
 
-  int rk_update(void* id, double xtime, int big_phase) {
+  int rk_update(Model* client, Instance* modelHandle, 
+		double xtime, int big_phase) {
     int err;
-    setdt(1, 0);
-    (*updatemodel)(id, xtime, big_phase);
-    advance_time(big_phase, 0.5);
+    void* id;
+    
+    id = modelHandle->id;
+    advance_time(client, modelHandle, big_phase, 0.5);
     setdt(2, 0);
     if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
     (*updatemodel)(id, xtime, big_phase);
     setdt(3, 0);
     if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
     (*updatemodel)(id, xtime, big_phase);
-    advance_time(big_phase, 0.5);
+    advance_time(client, modelHandle, big_phase, 0.5);
     setdt(4, 0);
     if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
     (*updatemodel)(id, xtime, big_phase);
@@ -978,22 +1011,27 @@ sprintf(globMess, "Loaded %ld", handle);
     return 0;
   }
 
-  void set_dts (int phase, double current) {
+  void set_dts (Instance* id, int phase, double current) {
     int tweak_phase;
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
-      ldts[tweak_phase]=current-lts[tweak_phase];
+      ldts[tweak_phase]= current - id->its[tweak_phase];
       setdt(ldts[tweak_phase],tweak_phase); 
       // dts should only be global but im lazy
     }
   }
   
-  void advance_time (int phase, double fraction) {
+  void advance_time (Model* client, Instance* id, int phase, double fraction) {
     int tweak_phase;
+    double series_pt, *lts;
+    lts = id->its;
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
       lts[tweak_phase]=lts[tweak_phase]+ldts[tweak_phase]*fraction;
       setdt(lts[tweak_phase],-tweak_phase); 
       // ts should only be global but im lazy
     }
+    series_pt = lts[phases]+ldts[phases]*fraction/2;
+    update_time_series(client, series_pt);
+    client->thisTsPosn = series_pt;
   }
   
   int parent_line (int line) {
@@ -1142,7 +1180,7 @@ public:
   }
   }; */
 
-void update_time_series(long int client, double now) {
+void update_time_series(void* client, double now) {
   listParamArray* param_array_current;
   BOOLEAN forward;
 
@@ -1157,7 +1195,7 @@ void update_time_series(long int client, double now) {
   }
 }    
   
-void reset_time_series(long int client) {
+void reset_time_series(void* client) {
   listParamArray* param_array_current;
 
   param_array_current = param_array_base;
@@ -1554,12 +1592,17 @@ long int fetch_top_instance(long int modelType, char* spare) {
      // now hopefully we won't be using the reference strings anymore, so...
    }     
    delete connectData;
-   return (long int)((Model*)modelType)->create();
+   instance_base = new Instance(((Model*)modelType)->create(), instance_base);
+   return (long int)instance_base;
 }
 
-void* get_ptr(long int modelType, long int level, int** id_meta, 
+void* instance_ptr_from_id(long int level) {
+  return ((Instance*)level)->id;
+}
+
+void* get_ptr(long int modelType, void* level, int** id_meta, 
 	      int** dim_list) {
-  return ((Model*)modelType)->getpointer((void*)level, id_meta, dim_list);
+  return ((Model*)modelType)->getpointer(level, id_meta, dim_list);
 }
 
 /* definitions for regularData class */
@@ -1577,6 +1620,7 @@ int regularData::set_to_model_value(long int model_id, long int instance_id,
   enum_type_data* types[32];
   int test_indices[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 			  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  void* id;
   for (count = 1; ((Model*)model_id)->nodecount>count; ++count) {
     ((Model*)model_id)->make_full_caption(count, test, bounds, types);
     if (!strcmp(caption, test)) {
@@ -1584,16 +1628,16 @@ int regularData::set_to_model_value(long int model_id, long int instance_id,
       while (*(bounds + dimensionality)) {
 	++dimensionality;
       }
+      id = ((Instance*)instance_id)->id;
       quickpath = ((Model*)model_id)->nodedata[count].path;
       pathref = quickpath;
       testref = test_indices;
-      top = (char*)get_ptr(model_id, instance_id, &pathref, &testref);
+      top = (char*)get_ptr(model_id, id, &pathref, &testref);
       for (count = 0; count < dimensionality; ++count) {
 	test_indices[count] = 1;
 	pathref = quickpath;
 	testref = test_indices;
-	spacings[count] = (char*)get_ptr(model_id, instance_id, 
-				  &pathref, &testref) - top;
+	spacings[count] = (char*)get_ptr(model_id, id, &pathref, &testref)-top;
 	test_indices[count] = 0;
       }
       start_at_one = TRUE;
@@ -1638,19 +1682,19 @@ to drive the model...
 int reset(long int modelType, long int modelHandle, int top_phase) {
   topType = modelType;
   resetting=(top_phase==-2);
-  return ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
+  return ((Model*)topType)->resetmodel((Instance*)modelHandle, top_phase);
 }
 
 int execute(long int modelType, long int modelHandle, int how_int,
 	 double starttime, double* endtime, double errlim) {
   topType = modelType;
   resetting=FALSE;
-  return ((Model*)topType)->executemodel((void*)modelHandle, 
+  return ((Model*)topType)->executemodel((Instance*)modelHandle,
 					how_int, starttime, endtime, errlim);
 }
 
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
-  level = get_ptr((long int)type, (long int)level, id_meta, dims);
+  level = type->getpointer((Instance*)level, id_meta, dims);
   //  sprintf(globMess, "got ptr %ld", level);
   //  showMess(globMess);
   if (*(*id_meta)++ == SEPARATE) {
@@ -1689,8 +1733,8 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
 
 void* advance_ptr(void* typeRef, void* topInstRef) {
   int next_handle[] = {1,0}, *tree = next_handle;
-  return *(void**)get_ptr((long int)typeRef, (long int)topInstRef, &tree, 
-			  NULL);
+  return *(void**)(((Model*)typeRef)->getpointer((Instance*)topInstRef, 
+						 &tree, NULL));
 }
 
 void search_from(void* typeRef, int nodeIndx, void* instPtr) {
@@ -1762,7 +1806,7 @@ char* myexit(long int modelType, long int modelHandle) {
     ((Model*)modelType)->exitmodel((void*)modelHandle);
   }
   if (param_array_base) {
-    param_array_base = param_array_base->strip_out(modelType);
+    param_array_base = param_array_base->strip_out((Model*)modelType);
   }
   if (nodeModelList) {
     try {

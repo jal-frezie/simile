@@ -99,11 +99,11 @@ proc collect {tgt node count args} {
     set val [BringParameter $inputSrc $node $args]
     if {[llength $val]} {
 # Check that input source exists, it will not if model is being initialized
-       if {[string equal REAL [getinfo $node 0]]} {
-           set $tgt $val
-       } else {
-           set $tgt [expr int($val)]
-       }
+	if {[string equal REAL [getinfo $node 0]]} {
+	    set $tgt $val
+	} else {
+	    set $tgt [expr int($val)]
+	}
     }
 }
 
@@ -124,19 +124,25 @@ proc step_incr {step v} {
     return [expr $v*[glob_element dts $step]]
 }
 
-proc stage_incr {ns_extras step v} {
+proc old_stage_incr {ns_extras step v} {
     global adapt
     upvar \#0 $ns_extras extras
     if {![info exists extras]} {
 	array set extras \
-	    [list cum_value 0 current_offset 0 pred_change 0]
+	    [list init_rate 0 cum_value 0 current_offset 0 pred_change 0]
     }
 
-    set dv [step_incr $step $v]
+    if {[glob_element dts 0]<0} {
+	set dv [step_incr $step $extras(init_rate)]
+    } else {
+	set dv [step_incr $step $v]
+    }
     switch -- [expr int([glob_element dts 0])] {
 	0 { ;# Euler
+	    set extras(init_rate) $v
 	    return [set extras(cum_value) [set extras(pred_change) $dv]]
 	} 1 { ;# these 4 are R-K
+	    set extras(init_rate) $v
 	    set extras(cum_value) [expr $dv/6.0]
 	    set extras(pred_change) [expr -$dv/3.0]
 #puts "p1 dv $dv curr_off [expr $dv/2.0]"
@@ -160,9 +166,17 @@ proc stage_incr {ns_extras step v} {
 	    set extras(current_offset) $dv; # for checking 3rd order motion
 #puts "p4 dv $dv cum_value $extras(cum_value) pred_change $extras(pred_change)"
 	    return [expr $extras(cum_value)-$old_offset]
-	} -1 { ;# undoes previous change
-#puts "p-1 undoing $extras(cum_value)"
-	    return [expr -$extras(cum_value)]
+	} -1 { ;# undoes previous change Euler
+	    set old_offset $extras(cum_value)
+	    return [expr [set extras(cum_value) \
+			  [set extras(pred_change) $dv]]-$old_offset]
+	} -2 { ;# undoes previous change R-K
+#puts "p-2 undoing $extras(cum_value)"
+	    set old_offset $extras(cum_value)
+	    set extras(cum_value) [expr $dv/6.0]
+	    set extras(pred_change) [expr -$dv/3.0]
+	    return [expr [set extras(current_offset) [expr $dv/2.0]] \
+			      -$old_offset]
 	} 10 { ;# does not change compartment, just checks for errors
 	    if {$dv} {
 		set errMagn [expr abs(1-($extras(pred_change)/$dv))]
@@ -171,6 +185,61 @@ proc stage_incr {ns_extras step v} {
 		    set adapt(maxErr) $errMagn
 		}
 	    }
+	    return 0
+	}
+    }
+}
+
+
+proc stage_incr {ns_extras step v} {
+    global adapt
+    upvar \#0 $ns_extras extras
+    if {![info exists extras]} {
+	array set extras [list t1 0 t2 0 t3 0]
+    }
+# In this version, the three intermediate increments are kept in t1-t3 while
+# building the full R-K increment. After this is complete they are assigned:
+# t1 = initial rate of change (used when redoing step with different dt)
+# t2 = last increment (used to undo step)
+# t3 = estimate of next initial increment
+    if {[glob_element dts 0]<0} {
+	set dv [step_incr $step $extras(t1)]
+    } else {
+	set dv [step_incr $step $v]
+    }
+    switch -- [expr int([glob_element dts 0])] {
+	0 { ;# Euler
+	    set extras(t1) $v
+	    set extras(t2) $dv
+	    set extras(t3) $dv
+	    return $dv
+	} 1 { ;# these 4 are R-K
+	    return [expr [set extras(t1) $dv]/2.0]
+	} 2 {
+	    return [expr ([set extras(t2) $dv]-$extras(t1))/2.0]
+	} 3 {
+	    return [expr [set extras(t3) $dv]-$extras(t2)/2.0]
+	} 4 {
+	    set extras(t2) [expr $extras(t1)/6 + $extras(t2)/3 + \
+				$extras(t3)/3 + $dv/6]
+	    set result [expr $extras(t2) - $extras(t3)]
+	    set extras(t3) [expr (-$extras(t1) + 2*$extras(t3) + 2*$dv)/3]
+	    set extras(t1) $extras(t1)/[glob_element dts $step]
+	    return $result
+	} -1 { ;# undoes previous change Euler
+	    set last_incr $extras(t2)
+	    set extras(t3) $dv
+	    return [expr [set extras(t2) $dv]-$last_incr]
+	} -2 { ;# undoes previous change R-K
+	    return [expr [expr [set extras(t1) $dv]/2.0]-$extras(t2)]
+	} 10 { ;# does not change compartment, just checks for errors
+#	    if {$dv} {
+		set errMagn [expr abs($dv-$extras(t3))]
+#puts "p10 pred_change $extras(pred_change) dv $dv errMagn $errMagn"
+		if {$errMagn > $adapt(maxErr)} {
+		    set adapt(maxErr) $errMagn
+		}
+#	    }
 	    return 0
 	}
     }
@@ -245,7 +314,8 @@ proc CheckGUI {node modelTime thisOp} {
 }
     
 proc abort_check {args} {
-    if {[AbortCheck $::myNode]} {
+    global helperTable myNode
+    if {[$helperTable(RunControl)::RCAbortCheck $myNode]} {
 	error "abort request from the user."
     }
 }
@@ -254,11 +324,9 @@ proc TclResetModel {topPhase} {
     global ts dts steps phasecount
     if {$topPhase <= 0} {
 	for {set tweakPhase 1} {$tweakPhase <= $phasecount} {incr tweakPhase} {
-	    set ts($tweakPhase) [expr -$steps($tweakPhase)]
+	    set ts($tweakPhase) 0
+	    set dts($tweakPhase) [expr $steps($tweakPhase)]
 	}
-	set dts(0) -1
-	SetDTs 1 0
-	AdvanceTime 1 1
     }
     do_model int_evalmodel 0 $topPhase
     return 1
@@ -271,8 +339,9 @@ proc TclExecuteModel {node howInt start end errLim} {
 #    }
     set freq [expr $steps($phasecount)*pow(2,-$adapt(doublings))]
     set xtime $start
-    while {$freq*($end-$xtime)>0} {
+    while {($end-$xtime)*$freq>0} { ;# freq only affects sign
 	set madeStep 0
+	set firstPass 1
 	set bigPhase [PhaseFor $xtime $freq $phasecount]
 # that is the biggest phase we will try to run, we may not succeed
 	if {[CheckGUI $node $xtime ph$bigPhase]} {
@@ -289,20 +358,28 @@ proc TclExecuteModel {node howInt start end errLim} {
 	    SetDTs $bigPhase $xtime
 
 	    if {[string equal Euler $howInt]} {
-		AdvanceTime $bigPhase 1
-		set dts(0) 0
+		if {$firstPass} {
+		    set dts(0) 0
+		} else {
+		    set dts(0) -1
+		}
+		AdvanceTime $node $bigPhase 1
 		do_model updatemodel $xtime $bigPhase
 	    } else {
-		RKUpdate $xtime $bigPhase
+		if {$firstPass} {
+		    set dts(0) 1
+		} else {
+		    set dts(0) -2
+		}
+		do_model updatemodel $xtime $bigPhase
+		RKUpdate $node $xtime $bigPhase
 	    }
-	    UpdateTimeSeries $node [expr $xtime+0.5*$freq] $xtime
-	    set setFromSeries($topNode,current) $newTime
-	    do_model int_evalmodel $xtime $bigPhase
-
+	    set firstPass 0
 	    if {!$errLim} {
 		set madeStep 1
 	    } else {
 		# get the model to generate its error estimate
+		do_model int_evalmodel $xtime $bigPhase
 		set adapt(maxErr) 0
 		set dts(0) 10
 		do_model updatemodel $xtime $bigPhase
@@ -310,15 +387,12 @@ proc TclExecuteModel {node howInt start end errLim} {
 		if {$adapt(maxErr)>$errLim} {
 		# error too great; put comps back and try shorter
 		    if {$adapt(doublings)<31} {
-			AdvanceTime $bigPhase -1
-			set dts(0) -1
-			do_model updatemodel $xtime $bigPhase
+			AdvanceTime $node $bigPhase -1 ;# back to the start
 			set xtime [expr $xtime-$freq]
 			incr adapt(doublings)
 			set freq [expr $steps($phasecount) * \
 				      pow(2,-$adapt(doublings))]
 			set bigPhase [PhaseFor $xtime $freq $phasecount]
-			do_model int_evalmodel $xtime $bigPhase
 		    } else {
 			# signal problem
 			return -1
@@ -335,6 +409,7 @@ proc TclExecuteModel {node howInt start end errLim} {
 	    } ;# error limit exists
 	} ;# made progress
 	do_model advancemodel $xtime $bigPhase
+	do_model int_evalmodel $xtime $bigPhase
     }
     CheckGUI $node $end ext
     return 1
@@ -360,18 +435,16 @@ proc PhaseFor {current step soFar} {
     }
 }
 
-proc RKUpdate {current phase} {
+proc RKUpdate {node current phase} {
     global dts
-    set dts(0) 1
-    do_model updatemodel $current $phase
-    AdvanceTime $phase 0.5
+    AdvanceTime $node $phase 0.5
     set dts(0) 2
     do_model int_evalmodel $current $phase
     do_model updatemodel $current $phase
     set dts(0) 3
     do_model int_evalmodel $current $phase
     do_model updatemodel $current $phase
-    AdvanceTime $phase 0.5
+    AdvanceTime $node $phase 0.5
     set dts(0) 4
     do_model int_evalmodel $current $phase
     do_model updatemodel $current $phase
@@ -385,12 +458,15 @@ proc SetDTs {phase current} {
     }
 }
 
-proc AdvanceTime {phase fraction} {
-    global ts dts phasecount
+proc AdvanceTime {node phase fract} {
+    global ts dts phasecount setFromSeries
 #puts -nonewline "Time was $ts($phase)..."
     for {set tweakPhase $phase} {$tweakPhase<=$phasecount} {incr tweakPhase} {
-	set ts($tweakPhase) [expr $ts($tweakPhase)+$dts($tweakPhase)*$fraction]
+	set ts($tweakPhase) [expr $ts($tweakPhase)+$dts($tweakPhase)*$fract]
     }
+    set seriesPt [expr $ts($phasecount)+$dts($phasecount)*$fract/2]
+    UpdateTimeSeries $node $seriesPt
+    set setFromSeries($node,current) $seriesPt
 #puts "is now $ts($phase)"
 }
 
@@ -435,7 +511,7 @@ proc ResetTimeSeries {topNode} {
 # display point). Procedure returns the time at which a value next
 # changes if it is before then, so we can update before executing further
 
-proc UpdateTimeSeries {topNode newTime horizon} {
+proc UpdateTimeSeries {topNode newTime} {
     global setFromSeries paramData comboTypes
     foreach list [array names setFromSeries $topNode,*,times] {
 	set node [lindex [split $list ,] 1]
@@ -455,9 +531,6 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 			incr series
 		    } else {
 			set jumping 0
-			if {$actTime<$horizon} {
-			    set horizon $actTime
-			}
 		    }
 		} elseif {$paramData(wrapAroundPoint,$node)} {
 		    set series 0
@@ -485,9 +558,6 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 			}
 		    } else {
 			set jumping 0
-			if {$actTime>$horizon} {
-			    set horizon $actTime
-			}
 		    }
 		} elseif {$paramData(wrapAroundPoint,$node)} {
 		    set series $ptCount
@@ -526,7 +596,6 @@ proc UpdateTimeSeries {topNode newTime horizon} {
 	    }
 	}
     }
-    return $horizon
 }
 
 #proc at_time_step {} {

@@ -387,7 +387,7 @@ namespace eval runcontrol33857 {
 	global pauseImg playImg
         variable frames
 
- 	set widget $frames($node,rcf)
+	set widget $frames($node,rcf)
         set phases [GetPhaseCount $node]
 	$widget.upper.topbuttons.start configure -image $pauseImg
 	$widget.upper.topbuttons.start configure -command \
@@ -426,7 +426,7 @@ namespace eval runcontrol33857 {
 		if {$redoPhase($node) == 0} {
 		    ResetTimeSeries $node
 		}
-		UpdateTimeSeries $node 0 0
+		UpdateTimeSeries $node 0
 	    }
 	    if {[ResetModel $node $redoPhase($node)]} {
 		if {$runState($node,modelRunning)<3} {
@@ -558,20 +558,6 @@ namespace eval runcontrol33857 {
         }
     }
     
-    proc SecondsInA {time} {
-        switch $time {
-            second {return 1.0}
-            minute {return 60.0}
-            hour {return 3600.0}
-            day {return 86400.0}
-            unit {return 86400.0}
-            week {return 604800.0}
-            month {return 2628000.0}
-            year {return 31536000.0}
-            Ma {return 31536000000000.0}
-        }
-    }
-    
     # No need to do anything for update, because it updates itself
     proc reset {winId} {
     }
@@ -579,5 +565,18 @@ namespace eval runcontrol33857 {
     proc display {args} {
     }
     
+    proc SecondsInA {time} {
+	switch $time {
+	    second {return 1.0}
+	    minute {return 60.0}
+	    hour {return 3600.0}
+	    day {return 86400.0}
+	    unit {return 86400.0}
+	    week {return 604800.0}
+	    month {return 2628000.0}
+	    year {return 31536000.0}
+	    Ma {return 31536000000000.0}
+	}
+    }
 } ;# end of namespace
 

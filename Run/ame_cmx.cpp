@@ -977,7 +977,7 @@ that list, and returns, let us say, the first unused model index if the integers
 indices as far as the pointer, 0 if that is all the indices, and -1 if there
 is a mismatch before the pointer */
 
-int match_type(long int localType, long int smHandle, int dims[], 
+int match_type(long int localType, void* smHandle, int dims[], 
 	       int* dim_place) {
   int id_handle[] = {2,0}, *cur_place, *short_tree, *id_ptr, id_val, id_count;
   short_tree = id_handle;
@@ -997,10 +997,10 @@ int match_type(long int localType, long int smHandle, int dims[],
   return *(int *)(get_ptr(localType, smHandle, &short_tree, &id_ptr));
 }
 /* next two call one another so one needs to be declared in advance */
-Tcl_Obj* fill_value(long int, long int, int[], int, int*, int[], int*, 
+Tcl_Obj* fill_value(long int, void*, int[], int, int*, int[], int*, 
 		    Tcl_Obj*);
 
-Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[], 
+Tcl_Obj* fill_list_value(long int localType, void** smHandle, int tree[], 
 			 int type, int* use_dims, int dims[], int* dim_place) {
   Tcl_Obj *localObj, *localSubObj;
   int next_handle[] = {1,0}, match, arrayOut, *short_tree;
@@ -1011,8 +1011,7 @@ Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[],
       localObj = fill_value(localType, *smHandle, tree, type, use_dims, 
 			    dim_place+1, dim_place+1, NULL);
       short_tree = next_handle;
-      *smHandle = *(long int*)(get_ptr(localType, *smHandle, &short_tree, 
-						  NULL));
+      *smHandle = *(void**)get_ptr(localType, *smHandle, &short_tree, NULL);
     } else {
       *dim_place=match;
       localSubObj = fill_list_value(localType, smHandle, tree, type,
@@ -1034,7 +1033,7 @@ for the indices in the arrays we are getting values from, and dim_place is the
 pointer into this array where we can add more values as we go through the loops
 up to the sizes specified in use_dims. */
 
-Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[], 
+Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[], 
 		    int type, int* use_dims, int dims[], int* dim_place, 
 		    Tcl_Obj* nVs) {
   Tcl_Obj *localObj, *indObj, *localSubObj, **arrayVals, *eltVals;
@@ -1050,7 +1049,7 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
     new_tree = tree;
     while (*new_tree++ != SEPARATE) {}
 
-    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
+    smHandle = *(void**)get_ptr(localType, smHandle, &tree, &dims);
     localType = *(new_tree++);
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
@@ -1061,7 +1060,7 @@ Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[],
     new_tree = tree;
     while (*new_tree++ != -1) {}
 
-    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
+    smHandle = *(void**)get_ptr(localType, smHandle, &tree, &dims);
     localObj = fill_list_value(localType, &smHandle, new_tree, type, 
 			       use_dims+1, dim_place+1, dim_place+1);
     break;
@@ -1160,8 +1159,9 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
 			     &mSpare, spare, dims, path, usedTypes))) {
     resultPtr = Tcl_NewStringObj("novalue", -1);
   } else {
-    resultPtr = fill_value(modelType, modelHandle, path, data_line->datatype, 
-			   dims+count, current_dims, current_dims+count,
+    resultPtr = fill_value(modelType, instance_ptr_from_id(modelHandle), path,
+			   data_line->datatype, dims+count, 
+			   current_dims, current_dims+count,
 			   newData);
     /*
     for (count=0; 4>count; ++count) {
@@ -1219,7 +1219,7 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-BOOLEAN interact_gui(void* id, BOOLEAN stop_chk, double now) {
+BOOLEAN interact_gui(void* id, int stop_chk, double now) {
   BOOLEAN response;
 
   Tcl_Obj* feedbackCmd;

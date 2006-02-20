@@ -94,38 +94,46 @@ double step_incr (int step, double v) {
 double maxerr;
 
 double stage_incr (diffs *extras, int step, double v) {
-  double dv, old_offset, errMagn;
+  double dv, result, errMagn;
 
-  dv = step_incr(step, v);
+  /*
+In this version, the three intermediate increments are kept in t1-t3 while
+building the full R-K increment. After this is complete they are assigned:
+t1 = initial rate of change (used when redoing step with different dt)
+t2 = last increment (used to undo step)
+t3 = estimate of next initial increment
+  */
+  if (glob_element(dts, 0)<0) {
+    dv = step_incr(step, extras->t1);
+  } else {
+    dv = step_incr(step, v);
+  }
   switch (int(glob_element(dts, 0))) {
   case 0: // Euler
-    return (extras->cumulative_value = (extras->predicted_change = dv));
-  case 1:
-    extras->cumulative_value = dv/6;
-    extras->predicted_change = -dv/3;
-    return (extras->current_offset = dv/2);
+    extras->t1 = v;
+    extras->t2 = dv;
+    return (extras->t3 = dv);
+  case 1: // these 4 are R-K
+    return (extras->t1 = dv)/2;
   case 2:
-    extras->cumulative_value += dv/3;
-    old_offset = extras->current_offset;
-    return (extras->current_offset = dv/2) - old_offset;
+    return ((extras->t2 = dv) - extras->t1)/2;
   case 3:
-    extras->cumulative_value += dv/3;
-    extras->predicted_change += 2*dv/3;
-    old_offset = extras->current_offset;
-    return (extras->current_offset = dv) - old_offset;
+    return (extras->t3 = dv) - extras->t2/2;
   case 4:
-    extras->cumulative_value += dv/6;
-    extras->predicted_change += 2*dv/3;
-    old_offset = extras->current_offset;
-    extras->current_offset = dv; // for checking 3rd order motion
-    return extras->cumulative_value - old_offset;
-  case -1: // undoes previous change
-    return -extras->cumulative_value;
+    extras->t2 = (extras->t1 + 2*extras->t2 + 2*extras->t3 + dv)/6;
+    result = extras->t2 - extras->t3;
+    extras->t3 = (-extras->t1 + 2*extras->t3 + 2*dv)/3;
+    extras->t1 = extras->t1/glob_element(dts, step);
+    return result;
+  case -1: // undoes previous change Euler
+    result = extras->t2;
+    extras->t3 = dv;
+    return (extras->t2 = dv)-result;
+  case -2: // undoes previous change R-K
+    return (extras->t1 = dv)/2 - extras->t2;
   case 10: // does not change compartment, just checks for errors
-    if (dv) {
-      errMagn = fabs(1-extras->predicted_change/dv);
-      maxerr = max(errMagn, maxerr);
-    }
+    errMagn = fabs(dv-extras->t3);
+    maxerr = max(errMagn, maxerr);
     return 0;
   };
 };

@@ -125,13 +125,13 @@ void* advance_ptr(void* mType, void* mInst) {
 class diffs {
 public:
   diffs () {
-    current_offset = 0;
-    cumulative_value = 0;
-    predicted_change = 0;
+    t1 = 0;
+    t2 = 0;
+    t3 = 0;
   }
   ~diffs () {
   }
-  double current_offset, cumulative_value, predicted_change;
+  double t1, t2, t3;
 };
 
 double stage_incr (diffs*, int, double);
