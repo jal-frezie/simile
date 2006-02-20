@@ -314,13 +314,15 @@ public:
   }
 };
 
+class Model;
+
 /* listable class for keeping track of arrays associated with parameters */
 
 class listParamArray {
 public:
   char* nodeId;
   node_data_line *nodeLine;
-  void* spareModel;
+  Model* spareModel;
   int fullDims[32];
   BOOLEAN myArraySpace;
   char* dataPtr;
@@ -386,7 +388,7 @@ public:
     if (dataPtr && myArraySpace) delete(dataPtr);
   }
   
-  listParamArray* strip_out(void* oldModelId) {
+  listParamArray* strip_out(Model* oldModelId) {
     int count;
 
     if (next) {
@@ -658,9 +660,9 @@ public:
 
 listParamArray* param_array_base = NULL;
 
-void update_time_series(void* client, double now);
+void update_time_series(Model* client, double now);
   
-void reset_time_series(void* client);
+void reset_time_series(Model* client);
 
 typedef struct channelRecord_t {
   void* SearchBase;
@@ -1180,13 +1182,13 @@ public:
   }
   }; */
 
-void update_time_series(void* client, double now) {
+void update_time_series(Model* client, double now) {
   listParamArray* param_array_current;
   BOOLEAN forward;
 
   param_array_current = param_array_base; // base will go in model class
-  forward = (now > ((Model*)client)->thisTsPosn);
-  ((Model*)client)->thisTsPosn = now;
+  forward = (now > client->thisTsPosn);
+  client->thisTsPosn = now;
   while (param_array_current) {
     if (param_array_current->spareModel == client) {
       param_array_current->update_from_points(forward, now);
@@ -1195,11 +1197,11 @@ void update_time_series(void* client, double now) {
   }
 }    
   
-void reset_time_series(void* client) {
+void reset_time_series(Model* client) {
   listParamArray* param_array_current;
 
   param_array_current = param_array_base;
-  ((Model*)client)->thisTsPosn = 0;
+  client->thisTsPosn = 0;
   while (param_array_current) {
     if (param_array_current->spareModel == client) {
       param_array_current->nextTimePoint = param_array_current->timePoints;
@@ -1803,7 +1805,7 @@ void setdt(double starttime, int phase) {
 
 char* myexit(long int modelType, long int modelHandle) {  
   if (modelHandle) { 
-    ((Model*)modelType)->exitmodel((void*)modelHandle);
+    ((Model*)modelType)->exitmodel(((Instance*)modelHandle)->id);
   }
   if (param_array_base) {
     param_array_base = param_array_base->strip_out((Model*)modelType);
