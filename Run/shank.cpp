@@ -291,8 +291,8 @@ public:
 
   listTimePoint* find_last_pt(double time) {
     if (next) {
-      sprintf(globMess, "seeking after %lf for %lf", when, time);
-      /* showMess(globMess); */
+      /* sprintf(globMess, "seeking after %lf for %lf", when, time);
+      showMess(globMess); */
       if (next->when<=time) {
 	return next->find_last_pt(time);
       }
@@ -414,8 +414,8 @@ public:
   }
 
   int array_count(int* startDim) {
-    sprintf(globMess, "doing array size, dim %d", *startDim);
-    /* showMess(globMess); */
+    /* sprintf(globMess, "doing array size, dim %d", *startDim);
+    showMess(globMess); */
     switch (*startDim) {
     case 0:
       return 1;
@@ -754,8 +754,8 @@ public:
       UNLOAD_DLL(handle);
       throw DllLossage("find current version of", fileName, WHAT_WENT_WRONG());
     }
-sprintf(globMess, "Loaded %ld", handle);
-/* showMess(globMess); */
+/* sprintf(globMess, "Loaded %ld", handle);
+showMess(globMess); */
 
     getcount = (getcount_type *)FIND_FUNCTION(handle, "get_count");
     createmodel = (createmodel_type *)FIND_FUNCTION(handle, "do_createmodel");
@@ -1187,7 +1187,7 @@ void update_time_series(Model* client, double now) {
   BOOLEAN forward;
 
   param_array_current = param_array_base; // base will go in model class
-  forward = (now > client->thisTsPosn);
+  forward = (now >= client->thisTsPosn);
   client->thisTsPosn = now;
   while (param_array_current) {
     if (param_array_current->spareModel == client) {
@@ -1225,9 +1225,9 @@ listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
 void* use_array_for_params(char* nodeId, void* dataSpace) {
   listParamArray* arrSlot;
 
-  sprintf(globMess, "use_array_for_params node %s",
+  /* sprintf(globMess, "use_array_for_params node %s",
 	  nodeId);
-	  /* showMess(globMess); */
+	  showMess(globMess); */
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
     arrSlot = new listParamArray(nodeId);
     if (!arrSlot->nodeLine) {
@@ -1274,9 +1274,9 @@ void* create_time_point(char* nodeId, double time, void* dataSpace) {
 int set_record_list(char* nodeId, int* indxs, int length) {
   listParamArray* arrLocn;
 
-  sprintf(globMess, "set_record_list node %s indx0 %d length %d",
+  /* sprintf(globMess, "set_record_list node %s indx0 %d length %d",
 	  nodeId, *indxs, length);
-	  /* showMess(globMess); */
+	  showMess(globMess); */
   arrLocn = param_array_item(param_array_base, nodeId);
   if (!arrLocn) {
     return(1);
@@ -1288,9 +1288,9 @@ int set_record_list(char* nodeId, int* indxs, int length) {
 int set_param_array_elt(char* nodeId, double val, int* indxs) {
   listParamArray* arrLocn;
 
-  sprintf(globMess, "set_param_array_elt node %s indx0 %d val %lf",
+  /* sprintf(globMess, "set_param_array_elt node %s indx0 %d val %lf",
 	  nodeId, *indxs, val);
-	  /* showMess(globMess); */
+	  showMess(globMess); */
   arrLocn = param_array_item(param_array_base, nodeId);
   if (!arrLocn) {
     return(1);

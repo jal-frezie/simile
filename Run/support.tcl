@@ -522,7 +522,7 @@ proc UpdateTimeSeries {topNode newTime} {
 	while {$jumping} {
 	    upvar 0 setFromSeries($topNode,$node,next) series
 	    set ptCount [llength $setFromSeries($list)]
-	    if {$newTime>$setFromSeries($topNode,current)} {
+	    if {$newTime>=$setFromSeries($topNode,current)} {
 		if {$ptCount > $series} {
 		    set mkTime [lindex $setFromSeries($list) $series]
 		    set actTime [expr $mkTime+$loopOffset]
