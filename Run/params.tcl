@@ -729,9 +729,11 @@ namespace eval fileparams {
 	    set dataLocn targetData
 	    set widgetLocn targetNames
 	    set smPath [string range $smPath 1 end]
+	    set defFile measures.spf
 	} else {
 	    set dataLocn paramData
 	    set widgetLocn widgetNames
+	    set defFile params.spf
 	}
 	upvar \#0 $dataLocn suppliedData
 	upvar \#0 $widgetLocn outNames
@@ -744,7 +746,7 @@ namespace eval fileparams {
 	    return
 	}
 
-        set metaFile [ChooseFile params.spf "Save parameters as:" 1]
+        set metaFile [ChooseFile $defFile "Save parameters as:" 1]
         set SimileProject(fileparam,$smPath) $metaFile
         if {[llength $metaFile]} {
             set part [file join $simtmpdir temp_out.spf]

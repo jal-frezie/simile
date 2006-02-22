@@ -901,6 +901,9 @@ namespace eval $keyValue {
                 set useEndTime 1
             }
         }
+	if {[llength $targetData(needed)]} {
+	    return
+	}
 	set numOutputs [llength $useNodes($winId,drivers)]
         if {$useNodes($winId,preds)} {
             set mode prediction
