@@ -320,29 +320,27 @@ proc AcceptData {topNode compName notInput complain} {
     upvar \#0 $widgetLocn outNames
 
     set node [IdFromTail $topNode $compName $notInput]
+    set dataChanged 0
     if {$complain > -1} {
         if {![string equal disabled [$outNames($compName).e cget -state]]} {
             set newData [UglifyValList [$outNames($compName).e get]]
             if {![string equal $newData $suppliedData($compName)]} {
                 set msgs(param_source_$compName) Unsaved
                 set suppliedData($compName) $newData
+		set dataChanged 1
             }
         }
     }
-    
-    set dataChanged 0
+    if {[info exists paramDims($compName,reloaded)]} {
+	unset paramDims($compName,reloaded)
+	set dataChanged 1
+    }
     # for each constant value, check whether it has been changed, and if so,
     # flag a complete model rebuild. Do same if running_c lost due to crash
     # or model not yet started
     
-    # refinement needed: changes to compartments or time series only need a reset
-    
     if {$runState($topNode,modelRunning)<=2} {
-        set dataChanged 1
-    } elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
-        set dataChanged 1
-    } elseif {[string compare [lindex $oldVal 0] $suppliedData($compName)]} {
-        set dataChanged 1
+        set result -1
     }
     # Make array form if data has changed
     if {$dataChanged} {
@@ -1085,6 +1083,7 @@ proc GetFromTable {parent compName startLine} {
 					       ,wrap:$table_entry(wrapPt)]
 	    }
         }
+	set paramDims($compName,reloaded) $newSource
         set suppliedData($compName) $table_entry(values)
         FillIfSmall $outNames($compName).e $suppliedData($compName)
         switch $newSource {
