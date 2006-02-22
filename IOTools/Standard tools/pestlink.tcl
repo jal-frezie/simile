@@ -323,6 +323,7 @@ namespace eval $keyValue {
     proc Restore {winId} {
         global paramDims
         variable inGrpData
+        variable outGrpData
         variable useNodes
         variable clevers
         
@@ -366,16 +367,16 @@ namespace eval $keyValue {
                                 "Could not add $title to PEST outputs because there is no component with this caption in the model" ok
                         continue
                     }
-                    set f [InsertDriver $winId $node $title 1]
                     foreach {tgt val} [lrange $action 2 end] {
                         switch $tgt {
                             weight {
-                            } sampled {
+				set outGrpData($node,weight) $val
+			    } sampled {
                                 set paramDims($title,readMany) $val
                             }
                         }
                     }
-                    AbleTimeSampling $node $title $f
+                    set f [InsertDriver $winId $node $title 1]
                 } outDest {
                     set useNodes($winId,scrogging) [lindex $action 1]
                 } predict {
@@ -683,7 +684,9 @@ namespace eval $keyValue {
                     [list AbleTimeSampling $node $title $f]]] \
                     -side left
             BindPopup $f.end "Set values at time points"
-            foreach widjo [concat [list $f] [winfo children $f]] {
+# do command now in case it was selected last time
+            AbleTimeSampling $node $title $f
+	    foreach widjo [concat [list $f] [winfo children $f]] {
                 bind $widjo <Double-1> [namespace code \
                         [list DoOutDlg $node $f $title]]
                 bind $widjo <Button-3> [namespace code \
