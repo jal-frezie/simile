@@ -1160,17 +1160,36 @@ $numOutputs"
         global tcl_platform
         switch $tcl_platform(os) {
             {Windows NT} {
-                #		exec cmd /c start /min pest model.pst >& model.log
-                set spout [open "|cmd /c start /min $cmd" r]
+                # previous versions
+
+		# exec cmd /c start /min pest model.pst >& model.log
+
+                # set spout [open "|cmd /c start /min $cmd" r]
+
+		set batSt [open runpest.bat w]
+		puts $batSt $cmd
+		close $batSt
+                set spout [open |runpest.bat r]
             } {Windows 95} {
-                #		exec start /m pest model.pst >& model.log
+                # exec start /m pest model.pst >& model.log
+
                 set spout [open "|start /m $cmd" r]
             } default {
-                #		exec pest model.pst >& model.log &
+                # exec pest model.pst >& model.log &
                 set spout [open "|$cmd" r]
             }
         }
-        return $spout
+         switch $tcl_platform(platform) {
+            windows {
+		set batSt [open runpest.bat w]
+		puts $batSt $cmd
+		close $batSt
+                set spout [open |runpest.bat r]
+            } unix {
+#                set spout [open "|$cmd" r]
+            }
+        }
+	return $spout
     }
     
     # for now, just use pipe to tell when PEST has finished
