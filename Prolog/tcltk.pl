@@ -249,4 +249,3 @@ reEncode(_, Utf8Atom, TtfnAtom, 0) :-
 	all(user, unicode_to_ttfn, [build(Utf8Str), append(TtfnStr, [])])),
 	/* if cannot convert from utf8, was probably Unicode (Hi8) already */
 	name(TtfnAtom, TtfnStr).
-
