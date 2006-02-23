@@ -385,6 +385,7 @@ public:
 
   ~listParamArray() {
     delete(nodeId);
+    if(timePoints) delete(timePoints);
     if (dataPtr && myArraySpace) delete(dataPtr);
   }
   
@@ -1249,6 +1250,7 @@ int clear_time_point_elts(char* nodeId) {
   }
   delete arrSlot->timePoints;
   arrSlot->timePoints = NULL;
+  arrSlot->finalTimePoint = NULL;
   arrSlot->nextTimePoint = NULL;
 }
 
