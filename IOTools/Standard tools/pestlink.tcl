@@ -548,8 +548,9 @@ namespace eval $keyValue {
             pack [entry $f.max -textvariable maxForOpt($node) -width 8] \
                     -side left
         }
-        set ::minForOpt($node) [GetMinValue $node]
-        set ::maxForOpt($node) [GetMaxValue $node]
+# min and max limits restricted cos pest is single precision
+        set ::minForOpt($node) [max [GetMinValue $node] -1e10]
+        set ::maxForOpt($node) [min [GetMaxValue $node] 1e10]
         set ::initialEstimate($node) \
                 [expr ($::minForOpt($node)+$::maxForOpt($node))/2]
         pack [entry $f.est -textvariable initialEstimate($node) -width 8] \
@@ -934,6 +935,8 @@ namespace eval $keyValue {
         puts $template "ptf \\"
         
         array unset inGrpData *,mems
+	$useNodes($winId,results).dbf.c.text insert end \
+	    "PEST indentifiers for Simile model input values:\n"
 	foreach eTitle $useNodes($winId,sliders) {
             set node [GetIdFromCaptionPath $eTitle]
             set levels [split $eTitle /]
@@ -954,6 +957,7 @@ namespace eval $keyValue {
                 set defCons $initialEstimate($node)
             }
             set defVal [$f.est get]
+	    set startHanger [expr $usedHangers+1]
             puts -nonewline $template $eTitle=
             if {[winfo exists $f.int]} {
                 if {$useNodes($winId,gathering)} {
@@ -982,6 +986,13 @@ namespace eval $keyValue {
                 AddHangers $node $template $defCons $nodeDims 0
             }
             puts $template {}
+	    if {$usedHangers==$startHanger} {
+		set hangerRange "is i$usedHangers"
+	    } else {
+		set hangerRange "from $startHanger to $usedHangers"
+	    }
+	    $useNodes($winId,results).dbf.c.text insert end \
+		"$eTitle $hangerRange\n"
         }
         close $template
         
