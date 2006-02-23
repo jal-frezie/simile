@@ -257,6 +257,7 @@ menu_handle(Win, file, new) :-
 	check_deletable(Win, Parent),
 	remove_model(Win, Parent),
 	finish_move(Parent, 0),
+	clear_model_file(Parent),
 	set_save_status(Win, safe),
 %	caption_for(Parent, Name),
 %	new_autosave(Parent, Name),
