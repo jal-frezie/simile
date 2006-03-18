@@ -52,7 +52,7 @@
 #define EULER           0
 #define RUNGE_KUTTA     1
 
-#define SIMILE_VERSION	"4.6"
+#define SIMILE_VERSION	"4.9"
 
 #ifdef WIN32
     #ifdef SHARELIB

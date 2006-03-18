@@ -231,10 +231,11 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    ParamWibble = "but parameter default values are not allowed to have input variables themselves.";
 	ParamWibble = "which is not referred to by any of its parameter names in the equation."),
 	get_term(Unit_st, Units, UnitFormError),
+	check_exp(Eqn_st, "Equation", Function, InterInputs, EqnBase, EqnDims,
+		  EqnNeeded, IndxCount, ParamList, Result, ParseError),
 	(ParamsAllowed = 0, \+ InterInputs = [], !,
 	    EqnError = "You cannot have influences going to a component representing a file or input parameter.";
-	check_exp(Eqn_st, "Equation", Function, InterInputs, EqnBase, EqnDims,
-		  EqnNeeded, IndxCount, ParamList, Result, EqnError)),
+	 EqnError = ParseError),
 	(Is_P = 1, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
@@ -846,7 +847,8 @@ get_save_file(FileName) :-
 	get_file_name('untitled.sml', 'Save as:', 1, FileName).
 
 get_import_file(Preferred, FileName) :-
-	get_file_name(Preferred, 'Import from:', 0, FileName).
+	get_file_name(Preferred, 'Import from:', 0, FileName),
+        \+ FileName = ''.
 
 get_program_file(Preferred, FileName) :-
 	get_file_name(Preferred, 'Export to:', 1, FileName),

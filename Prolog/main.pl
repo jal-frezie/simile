@@ -47,7 +47,8 @@ main :-
         tk_new([], Interp),
 	set_interpreter(Interp),
 	on_exception(ErrorFunction, 
-		     any_tcl_eval([source, '../Run/toolbox.tcl'], 1, _),
+		     (any_tcl_eval([set, prolog_in_console, 1], 1, _),
+		     any_tcl_eval([source, '../Run/simile.tcl'], 1, _)),
 		     /* rel path only needed in dev sys */
 		     (ErrorFunction =.. [_, _, String],
 			 name(Bug, String),

@@ -1394,11 +1394,11 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 	append(ThisPhase, DeepAssign, OrderedAssign),
 	/* Now check if we picked any instructions at this level with 'later'
 	conditions that we couldn't resolve: if so, redo order_phase. */
-	\+ (member(make(_, Conds, _,_,_), OrderedAssign),
+	\+ (member(make(_, Conds, _,_,_), ThisPhase),
 	       member(later(Cond), Conds),
-	       member(make(Cond, _, CPath,_,_), Left),
+	       member(make(Cond, _, _CPath,_,_), Left) /* ,
 	       remove_non_loopers(CPath, UCPath),
-	       suffix(Path, UCPath)).
+	       suffix(Path, UCPath) */ ).
 
 	
 order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-
@@ -1586,7 +1586,7 @@ insert_enum_phases(vm_spec_pair(Name, Phase),
 /* This one just inserts the shortest time step into any undecided phases */
 set_free_phases([], _).
 set_free_phases([make(_,_,_, Ph, _) | Insts], Phases) :-
-	(nonvar(Ph); Ph = Phases),
+	(nonvar(Ph), \+ Ph = Phases; Ph = Phases),
 	set_free_phases(Insts, Phases).
 
 made_in(Feature, sm(Submodel, _,_,_), Pass) :-

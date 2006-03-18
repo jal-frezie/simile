@@ -125,8 +125,15 @@ if {[string equal windows $tcl_platform(platform)]} {
     gets $UserStream env(licensee_corp)
     close $UserStream
 }
-set env(SIMILE_VERSION) 4.6
-set sendvars(simP) {a1}
+
+if {[info exists prolog_in_console]} {
+    set env(interfaceId) console
+# this will simply let the script run out after loading the rest of the Tcl
+# so control goes back to Prolog
+}
+
+set env(SIMILE_VERSION) 4.9
+set sendvars(simP) {}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -236,5 +243,7 @@ switch $env(interfaceId) {
 #    }
     } dll {
 	exec $SIMILE_PATH/$tgt$execExtn &
+    } console {
+	source ../Run/toolbox.tcl
     }
 }
