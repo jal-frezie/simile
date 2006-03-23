@@ -61,9 +61,6 @@ substitute(E, [G | T1], F, [H | T2]) :-
 
 /* Things that are done differently in sicstus */
 
-get0(Stream, Char) :-
-	get_code(Stream, Char).
-
 sicstus_read_from_chars(Term, Result) :-
         read_from_codes(Term, Result).
 

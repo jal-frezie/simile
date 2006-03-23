@@ -125,7 +125,8 @@ stick_model_in(Win, Parent, Name, Mode) :-
         start_progress_dialogue(Win),
         reassure_user("Decoding MIME-format saved file"),
 	output:load_file(Parent, TargetDir, Name, CheckedStr),
-	name(Checked, CheckedStr),
+	substitute(0, CheckedStr, 95, SafeCheckedStr),
+	name(Checked, SafeCheckedStr),
 	(member(Checked, [no, yes]), !, 
 	    append_atoms(TargetDir, '/model.pl', PrologData),
 	    ame_merge(Parent, PrologData, FileV, Checked, Translated),
@@ -1276,6 +1277,12 @@ show_error(Model, Lossage) :-
 	    sicstus_format_to_chars("This model cannot be executed because it contains the following circular set(s) of function evaluations: ~w",
 				   [CircSet], Text),
 	    Fault = user;
+	Lossage = mixed_phase_loop(DefCon, LoopMem, DefPh, MemPh), !,
+	    sicstus_format_to_chars("This model contains the target ~w, which depends on its own values from previous iterations of a program loop. However ~w must be calculated in phase ~d, but the cycle of evaluations includes target ~w, which must be calculated in phase ~d and therefore cannot be put in the same program loop.", [DefCon, DefCon, DefPh, LoopMem, MemPh], Text),
+	    Fault = user;
+	Lossage = condition_outside_loop(LoopStart, Xefct), !,
+	    sicstus_format_to_chars("This model contains the target ~w which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target ~w, which must be calculated outside the innermost program loop containing ~w", [LoopStart, Xefct, LoopStart], Text),
+	    Fault = user;
 	Lossage = ordering_failure(Awkward), !,
 	    sicstus_format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Awkward], Text),
 	    Fault = system;
@@ -1311,8 +1318,9 @@ show_error(Model, Lossage) :-
 	    Fault = user;
 	sicstus_format_to_chars("An exception occurred while building this model. It generated this message: ~w.", [Lossage], Text),
 	    Fault = system),
+	text:escape_curlies(Text, SafeText),
 	ProbDesc = ['BuildProblem', br('Problem with model'),
-		    warning, br(chars(Text)), execution],
+		    warning, br(chars(SafeText)), execution],
 	(Fault = user, !, FullProb = ProbDesc;
 	(get_model_file(Model, Name), !; Name = unsaved),
 	    (backup:autosave_file_is(Model, AutoName), !; AutoName = none),

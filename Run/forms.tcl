@@ -1560,7 +1560,7 @@ proc BuildProblem {Title errLevel msg key args} {
     global iconImages help tcl_platform
 
     set ProbWin .bprob[clock clicks]
-    PutItThere $ProbWin {}
+    PutItThere $ProbWin [focus]
 
 #    switch $fault {
 #        user {

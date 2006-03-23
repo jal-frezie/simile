@@ -755,7 +755,7 @@ proc AddCanvasBindings { c topNode } {
         bind $c <ButtonRelease-3> {ReleaseObj %W %x %y}
     }
     bind $c <FocusIn> {EmbraceObj %W}
-    bind $c <FocusOut> {AbandonObj}
+    bind $c <Leave> {AbandonObj}
     BindMouseWheel $c
 
     # text/clipboard action from Welch example

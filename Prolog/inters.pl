@@ -370,6 +370,8 @@ make_intermediates(
 		Ph = 1, !,
 		    Args = [exts(Var)];
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
+	        /* note that for the time being the made_at condition is thrown
+	           away */
 	    (TermSwap = BackSwap, !;
 	    raise_exception(cannot_make_context(Target, TermSwap, BackSwap))),
 	    Setups = [],
@@ -875,7 +877,7 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	name(MxOp, MxOpStr),
 	lower(MxOpStr, OpStr).
 
-dissociate(SubArgs, [later(Arg) | UseArgs]) :- 
+dissociate(SubArgs, [in_loop(Arg) | UseArgs]) :- 
 	select(made_at(Arg, _), SubArgs, Rest), !,
 	dissociate(Rest, UseArgs).
 dissociate(Args, Args).

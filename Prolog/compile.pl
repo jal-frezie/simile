@@ -167,7 +167,6 @@ functions on an exception, so this only closes if it has to...*/
 reclose(Stream) :-
 	on_exception(_,close(Stream), true).
 
-
 /* delete_prog: if we are building a new program we will be marking the model
 as having it, so we don't want old ones in other languages (or old executables
 in other formats) hanging around. */
@@ -487,15 +486,30 @@ pick_state_vars([One | All], Rate, State, Update) :-
 check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	reassure_user("Checking for circularity in model assignment order"),
 	(dummy_order(Functions, [Start | Core]),
-	get_circle_from(Core, [Start], Loop),
+	    get_circle_from(Core, [Start], Loop),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
 	true),
 	UseCompartments = [make(on_reload, [], [], -1, []),
 			   make(on_reset, [], [], 0, []) | Comps],
-	    
 	reassure_user("Sorting assignments into correct time steps"),
-	sort_assignments(Functions, UseCompartments, Phases, Sorted, VMSPs).
+	sort_assignments(Functions, UseCompartments, Phases, Sorted, VMSPs),
+	/* Check all same-time-step circles can be done in one program loop */
+	reassure_user("Checking consistency of same-time-step loops"),
+	(member(Start, Sorted),
+	    Start = make(_, Conds, Path, Phase, _), 
+	    member(later(LoopEnd), Conds),
+	    remove_non_loopers(Path, PurePath),
+	    select(Loop2nd, Sorted, More),
+	    Loop2nd = make(LoopEnd, _,_,_,_),
+	    find_antecedent_outside_loop(Loop2nd, PurePath, Phase, More, Out),
+	    chain(Out, Start, Sorted),
+	    Out = make(Xefct, _, APath, APhase, _),
+	    (remove_non_loopers(APath, PureAPath),
+		\+ suffix(PurePath, PureAPath),
+		raise_exception(condition_outside_loop(LoopEnd, Xefct));
+	    raise_exception(mixed_phase_loop(LoopEnd, Xefct, Phase, APhase)));
+	true).
 
 /* generate_main_decls does all the declarations except the ones for
 temporary variables used when expanding expressions.
@@ -506,8 +520,6 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 		    Used, Graphs, TypeDecls, PointerDecls,
 		    EnumBits, NodeData) :-
 	Instance = instance(submodel, SymbolicName, 
-
-
 			xrefs(Model, _, Bases, _), _, ModelType-_),
 	length(Tree, Depth),
 	Indent is 4*Depth,
@@ -692,9 +704,6 @@ build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
 	reassure_user("Ordering model execution assignments"),
 
 	NotDone is Phases+1,
-
-
-
 	ExtBlocker = make(externs_done, [], [], NotDone, []),
 	/* rough and ready -- phase NotDone means it never gets scheduled */
 	order_all_assignments(Phases, [ExtBlocker | SortedForm],
@@ -748,7 +757,6 @@ get_circle_from(Steps, [First | Linked], Circle) :-
 make_exit_proc(Language, Instances, Dest) :-
 	render(Language, procedure_start,
 	       call(void, do_exitmodel), 0, FinalProcDeclText),
-
 
 	render_all(Language, clear_memory, Instances, 4, Finalisers),
 
@@ -1092,8 +1100,6 @@ levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
 name_from_elt(FullRef, Cond) :-
 
 	(FullRef = IName*_Scale, !; FullRef = IName),
-
-
 	IName = input(in_hierarchy, elt(Path, Name, _), none, _),
 	wait_for_submodels(Path, Waits),
 	(Name = import(_,_,_,_,_, PhaseSet, Src, _), !,
@@ -1162,7 +1168,14 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	/* input parameters are set to their default values on model
 	    initialization only */
 	connect_params([make(Dest, UseList, Path, UseStep, Expr) | Setups],
-		      Dest, AllInters, Assignments, Inters);
+		      Dest, AllInters, PreAssignments, Inters),
+	(get_host(Node, ValNode),
+	    DelayInf is_connector from ValNode to _,
+	    find_name_host(DelayInf, DelayInfEnd),
+	    DelayInfEnd has_attribute use_sofar of 1, !,
+	    Assignments = [make(in_loop(Dest), [later(Dest)],
+				Path, UseStep, []) | PreAssignments];
+	Assignments = PreAssignments);
 	Assignments = [],
 	    Inters = []).
 
@@ -1171,7 +1184,15 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 loops that build the variable before accessing a value with a
 different index at that level, so as to make sure they are all
 made. This checks which indices are different, and makes 'made_at'
-(renamed 'made_for') at that level. */
+(renamed 'made_for') at that level.
+
+This has been disabled, because it occasionally stopped iterative
+constructs being built in loops over relation submodels. I should
+really put it back, since a workaround is needed to build those
+constructs anyway, but the system seems to work just fine without it
+-- I'm guessing the ordering code is not allowing references to
+different parts of an array to go in the same loop. Uncomment path
+match to get it going again. */
 
 connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
@@ -1183,7 +1204,7 @@ connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
 	    MatchPath == CommonPath,
 	    suffix(CommonPathPlus, OrigPathPlus),
 	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    (CommonPath = OrigPath, !,
+	    ( /* CommonPath = OrigPath, */ !,
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
 	    ChangedInsts = [make(Tgt, [made_for(Tgt, Param) | MoreConds],
@@ -1193,7 +1214,6 @@ connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
 	    LeftInters = AllInters,
 	    connect_params(ChangedInsts, Dest, LeftInters, Insts, Inters);
 	Insts = AllInsts,
-
 	    Inters = AllInters.
 
 /* (was) in a Geraint stylee -- may need speeding up */
@@ -1704,6 +1724,21 @@ select_for(Path, Priority, Next, Assignments, Deferred) :-
 	    suffix(Path, GenPath),
 	    select_for(Path, Needed, Next, Assignments, Deferred).
 
+find_antecedent_outside_loop(Inst, PurePath, Phase, Functions, Out) :-
+	Inst = make(_,_, Path, NPhase, _),
+	(\+ NPhase == Phase;
+	    remove_non_loopers(Path, ShortPath),
+	    \+ suffix(PurePath, ShortPath)), !,
+	Out = Inst;
+	select(Mid, Functions, More),
+	order(Mid, Inst),
+	find_antecedent_outside_loop(Mid, PurePath, Phase, More, Out).
+
+chain(End, Start, List) :-
+	select(Mid, List, More),
+	order(Mid, End),
+	(Start = Mid; chain(Mid, Start, More)).
+
 order(make(Effect, _,_,_,_), make(_, Conds, Path, _,_)) :-
 	member(Effect, Conds);
 	Effect = can_enter(Model),
@@ -1712,7 +1747,6 @@ order(make(Effect, _,_,_,_), make(_, Conds, Path, _,_)) :-
 member_either(X, A, B) :-
 	member(X, A);
 	member(X, B).
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 remove_non_loopers(Path, LoopsOnly) :-
