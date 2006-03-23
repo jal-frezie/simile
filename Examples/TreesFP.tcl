@@ -10,7 +10,7 @@ similescript::ModelWindow modelWin
 # We will are not going to use any helper anyway here.
 # We then load the model and build it using C++
 modelWin UseMRE false
-modelWin Open "../Examples/forestv4FP.sml"
+modelWin Open "../Examples/forestV4FP.sml"
 
 # In order to run a model with file parameters you execute: 
 # modelWin LoadParams <ParamFile> <SubmodelPath> before running the model. 
