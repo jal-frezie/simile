@@ -349,7 +349,7 @@ namespace eval $keyValue {
         SaveToNamedFile $winId $filename
     }
     
-    proc SaveToNamedFile {winId filename} {
+    proc SaveToNamedFile {winId filename args} {
         global custom
         set rsep [$winId.t cget -rowseparator]
         set csep [$winId.t cget -colseparator]
@@ -362,7 +362,12 @@ namespace eval $keyValue {
         event generate $winId.t <<Copy>>
         set data [selection get -displayof $winId.t -selection CLIPBOARD]
         if {$filename != ""} {
-            set fileid [open $filename w]
+	    if {[llength $args]} {
+		set fileid [open $filename a]
+		puts $fileid [lindex $args 0]
+	    } else {
+		set fileid [open $filename w]
+	    }
             puts $fileid $data
             close $fileid
         }

@@ -135,9 +135,6 @@ itcl::class similescript::HelperController {
         do_for_node $modelNode wm withdraw $winId
     }
     
-    public method Clear {} {
-        $keyvalue::clear
-    }
     public method Destroy {} {
         itcl::delete object $this
     }
@@ -158,6 +155,10 @@ itcl::class similescript::Helper {
     # All derived classes must reimplement with correct keyvalue
     public method KeyValue {} {
         return abstractHelper
+    }
+
+    public method Clear {} {
+        [KeyValue]::clear $winId
     }
 }
 
@@ -393,6 +394,22 @@ itcl::class similescript::TableHelper {
         return  [do_for_node $modelNode set [KeyValue]::displayUpdate($winId)]
     }
     
+    public method SetShowingRowsForTimes {value} {
+        # value 0 or 1
+	if {$value} {
+	    set timeHdr rows
+	} else {
+	    set timeHdr none
+	}
+        do_for_node $modelNode lset [KeyValue]::orientList($winId) 0 $timeHdr
+	do_for_node $modelNode [KeyValue]::Reconbobulate $winId	
+    }
+    
+    public method GetShowingRowsForTimes {} {
+        return [string equal rows [lindex \
+	    [do_for_node $modelNode set [KeyValue]::orientList($winId)] 0]]
+    }
+    
     public method Update {} {
         do_for_node $modelNode [KeyValue]::Update $winId
     }
@@ -400,6 +417,12 @@ itcl::class similescript::TableHelper {
     public method SaveToFile {filename} {
         Update
         do_for_node $modelNode [KeyValue]::SaveToNamedFile $winId $filename
+    }
+    
+    public method AppendToFile {filename sectionId} {
+        Update
+        do_for_node $modelNode [KeyValue]::SaveToNamedFile \
+	    $winId $filename $sectionId
     }
     
 }

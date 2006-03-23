@@ -1080,6 +1080,39 @@ padding:1.0pt 4.0pt 1.0pt 4.0pt'>
 
 <p class=MsoNormal style='border:none;mso-border-alt:solid windowtext .5pt;
 padding:0cm;mso-padding-alt:1.0pt 4.0pt 1.0pt 4.0pt'><i style='mso-bidi-font-style:
+normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB>
+SetShowingRowsForTimes <i style='mso-bidi-font-style:normal'>value</i></span></p>
+
+</div>
+
+<p class=MsoNormal><span lang=EN-GB>If <i style='mso-bidi-font-style:normal'>value</i>
+is “true” the table keeps a set of values for each time at which the contents are updated. This can create a large table which takes a significant
+time to update. If <i style='mso-bidi-font-style:
+normal'>value</i> is “false”, the table will contain only the set of values from when it was last updated. Use <i style='mso-bidi-font-style:normal'>objectName</i>
+AppendToFile to write these to file so they are gathered throughout the simulation.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<div style='border:solid windowtext 1.0pt;mso-border-alt:solid windowtext .5pt;
+padding:1.0pt 4.0pt 1.0pt 4.0pt'>
+
+<p class=MsoNormal style='border:none;mso-border-alt:solid windowtext .5pt;
+padding:0cm;mso-padding-alt:1.0pt 4.0pt 1.0pt 4.0pt'><i style='mso-bidi-font-style:
+normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB>
+GetShowingRowsForTimes</span></p>
+
+</div>
+
+<p class=MsoNormal><span lang=EN-GB>Return “true” or 1 if the table is set to keep values for each time at which the contents are updated, or “false” or 0 if the table is set to show only current values. If “false” use <i style='mso-bidi-font-style:normal'>objectName</i>
+AppendToFile to save the contents to file without overwriting previous values.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<div style='border:solid windowtext 1.0pt;mso-border-alt:solid windowtext .5pt;
+padding:1.0pt 4.0pt 1.0pt 4.0pt'>
+
+<p class=MsoNormal style='border:none;mso-border-alt:solid windowtext .5pt;
+padding:0cm;mso-padding-alt:1.0pt 4.0pt 1.0pt 4.0pt'><i style='mso-bidi-font-style:
 normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB> Clear</span></p>
 
 </div>
@@ -1099,7 +1132,25 @@ style='mso-bidi-font-style:normal'>filename</i></span></p>
 </div>
 
 <p class=MsoNormal><span lang=EN-GB>Save the table contents to a comma
-separated values (CVS) file named <i style='mso-bidi-font-style:normal'>filename</i>.
+separated values (CSV) file named <i style='mso-bidi-font-style:normal'>filename</i>.
+Remember to call <i style='mso-bidi-font-style:normal'>objectName</i> Update if
+<i style='mso-bidi-font-style:normal'>objectName</i> SetUpdateAtDisplayInterval
+was set to “false”.</span></p>
+
+<p class=MsoNormal><span lang=EN-GB><o:p>&nbsp;</o:p></span></p>
+
+<div style='border:solid windowtext 1.0pt;mso-border-alt:solid windowtext .5pt;
+padding:1.0pt 4.0pt 1.0pt 4.0pt'>
+
+<p class=MsoNormal style='border:none;mso-border-alt:solid windowtext .5pt;
+padding:0cm;mso-padding-alt:1.0pt 4.0pt 1.0pt 4.0pt'><i style='mso-bidi-font-style:
+normal'><span lang=EN-GB>objectName</span></i><span lang=EN-GB> AppendToFile <i
+style='mso-bidi-font-style:normal'>filename section_id</i></span></p>
+
+</div>
+
+<p class=MsoNormal><span lang=EN-GB>Append the table contents, preceeded by a line containing <i style='mso-bidi-font-style:normal'>section_id,</i> to a comma
+separated values (CSV) file named <i style='mso-bidi-font-style:normal'>filename</i>. The file will be created if it does not already exist.
 Remember to call <i style='mso-bidi-font-style:normal'>objectName</i> Update if
 <i style='mso-bidi-font-style:normal'>objectName</i> SetUpdateAtDisplayInterval
 was set to “false”.</span></p>
