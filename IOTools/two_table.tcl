@@ -16,7 +16,7 @@ global tcl_platform
 namespace eval $keyValue {
     package require BWidget
     namespace import ::DisplayFormat::*
-    
+
     variable displayFormat; # array of list $formatName $decimalplaces $ShowNegInRed
     # Lists of format names stored in the format array - array names are categories
     # PropertiesDlg uses these categorised lists to fill the list boxes
@@ -898,7 +898,13 @@ namespace eval $keyValue {
         #                 -side left -padx 2 -pady 4
         ################################################################################
         
-        grab $t
+# One of life's little mysteries. Unless you do the next three lines,
+# it is impossible to switch between tabs on the Mac -- even though
+# the same thing works fine in the equation dialogue.
+        $nb select 1
+	update
+        $nb select 0
+	grab $t
         tkwait variable ${t}done
         
         if {[set ::${t}done]} {
