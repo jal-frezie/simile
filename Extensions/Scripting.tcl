@@ -68,7 +68,7 @@ itcl::class similescript::ModelWindow {
     
     public method Open {modelFile} {
         if {[info exists model]} {
-            $this FileNew\"
+            $this New
         }
         Reopen [GetModelWindow].canvas $modelFile reopen
         set model $modelFile
@@ -77,7 +77,25 @@ itcl::class similescript::ModelWindow {
     public method Print {} {
         MenuSelect PrintNow [GetModelWindow].canvas
     }
-    
+
+################################################################################
+# These all cause a file selection dialog to appear
+#     public method ExportProlog {} {
+#         # filedlg: not batch compatible
+#         MenuSelect [GetModelWindow].canvas file export_prolog
+#     }
+#     
+#     public method ExportCompiledBinary {} {
+#         # filedlg: not batch compatible
+#         MenuSelect [GetModelWindow].canvas file compile_c
+#     }
+#     
+#     public method ExportPostScriptGraphics {} {
+#         # filedlg: not batch compatible
+#         ExportPostscript [GetModelWindow].canvas
+#     }
+#     
+################################################################################
     public method Destroy {} {
         itcl::delete object $this
     }
@@ -169,7 +187,7 @@ itcl::class similescript::RunControl {
     constructor {} {
         set modelWindow [itcl::find object * -isa ::similescript::ModelWindow]
         set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
-	set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
+	    set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
         Hide
     }
     
