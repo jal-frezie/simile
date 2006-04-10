@@ -23,6 +23,9 @@ runControl GetValue "/r"
 # Set the value of model variable r to 15
 runControl SetValue "/r" 15
 
+# Get the value of model variable r, check it has been Set
+runControl GetValue "/r"
+
 # Make the run control visible for this demonstration
 runControl Show
 
@@ -80,5 +83,5 @@ close $file
 
 # wait 10 seconds (10000 ms) and then close Simile and the Tcl console
 after 10000
-exit
+#exit
 
