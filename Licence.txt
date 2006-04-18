@@ -1,0 +1,90 @@
+BEFORE YOU CLICK ON THE "ACCEPT" BUTTON AT THE END OF THIS DOCUMENT AND DOWNLOAD OR INSTALL THE SOFTWARE, CAREFULLY READ THE TERMS AND CONDITIONS OF THIS LICENCE ("LICENCE").  BY CLICKING ON THE "ACCEPT" BUTTON AND BY DOWNLOADING THE SOFTWARE YOU ARE CONSENTING TO BE BOUND BY AND ARE BECOMING THE LICENSEE UNDER THIS LICENCE.  IF YOU DO NOT AGREE TO ALL OF THE TERMS OF THIS LICENCE, CLICK THE "DO NOT ACCEPT" BUTTON AND DO NOT DOWNLOAD OR USE THE SOFTWARE.
+
+IF YOU OPT TO HAVE THE SOFTWARE DELIVERED TO YOU ON A CD PLEASE NOTE THAT THESE LICENCE TERMS APPLY.  BY CLICKING ON "I ACCEPT" AND ORDERING AND INSTALLING THE SOFTWARE, YOU ARE CONSENTING TO BE BOUND BY AND ARE BECOMING THE LICENSEE UNDER THIS LICENCE.  IF YOU DO NOT AGREE TO ALL OF THE TERMS OF THIS LICENCE CLICK THE "DO NOT ACCEPT" BUTTON AND DO NOT PROCEED TO ORDER DELIVERY OF THE SOFTWARE.
+
+1.	Conditions of Use
+
+When you "click" the "Accept" button, you hereby acknowledge that the software package called Simile , the software media, the user manual and any other associated documentation as well as any and all derivatives thereof (the "Software") is supplied under licence from Simulistics Limited of 11 Tantallon Place, Edinburgh, EH9 1NZ, United Kingdom,  ("Simulistics") upon the following terms which you will be deemed to have accepted upon clicking the "Accept" button.
+
+All rights, title and interest, including copyrights and other intellectual property rights of any nature created, developed, subsisting or used in or in connection with  the Software are owned absolutely and exclusively by Simulistics or its licensors and you acquire no title or interest in the Software other than the right to use it as detailed in this Licence.  To avoid any doubt you may not load the Software onto a computer or use the Software in any manner without a licence from Simulistics.
+
+2.	Grant of Licence
+
+2.1	In consideration of and subject to full payment by you of all applicable Fees (as defined in Clause 4.1) you are granted a non-exclusive, non-transferable licence to install and use the Software on the maximum number of personal computers for which you have fully paid up licences although you may switch the Software from one personal computers to another subject to such maximum.  This licence applies to the Version and Edition of the Software ordered.
+
+2.2	Notwithstanding the generality of Clause 2.1 you are granted the Licence for your internal business purposes only and for no other purposes whatsoever.
+
+2.3	You acknowledge and agree that you shall be solely responsible for obtaining any and all licences or other permissions that may be required in respect of any software, hardware or other computer or telecommunications equipment other than the Software, notwithstanding that any of same may be used by you in conjunction with the Software.
+
+3.	Restrictions on Use	
+
+YOU MAY NOT:-
+
+(a)	use the Software or any part thereof on equipment of a type, category or for an additional number of users other than that for which the Licence is granted and paid;
+
+(b)	make copies of the Software except one (1) copy of the Software (with exception of the user manual and associated documentation) for security and back-up purposes provided that you reproduce all copyright notices, trade marks, legends and logos on the back-up copy and maintain an accurate record of the location of the backup copy;
+
+(c)	modify, alter, loan, distribute, rent, assign, sub-license, transfer or otherwise provide, (whether electronically or otherwise) the Software or any copy or part of it to anyone else or make the Software available for use by others in any time sharing, service bureau or similar arrangement or otherwise;
+
+(d)	except as permitted by applicable law, reverse engineer, disassemble, reverse translate or in any way decode the Software or any copy or part of it in order to derive any source code. You agree that the Software contains valuable trade secrets and confidential information owned by Simulistics or its licensors including but not limited to the functionality, appearance and content of the Software screens, the method and pattern of user interaction with the Software and the content of the Software's documentation. The Software source code and such valuable trade secrets and confidential information are not licensed to you under this Licence. 
+
+4.	Licence Fee
+	
+4.1		In consideration of the licence granted under this Licence, and depending on the number of users we have agreed that the licence covers, you shall pay Simulistics a licence fee (the "Fee").  The current licence Fees shall be detailed on the Simulistics web site (currently at http://www.simulistics.com (the "Web Site").  The Fee is due on acceptance of these Licence terms].  
+4.2	Until the relevant Fee has been paid the Software has not been licensed to you. 
+4.3	Any and all sums due hereunder are exclusive of value added tax and/or equivalent or similar sales taxes which shall be payable in addition, where applicable, at the relevant rate.
+
+4.4	Any and all sums due hereunder by you to Simulistics not paid in full by the relevant Due Date shall bear interest at the rate of 4% above the base rate from time to time of the Bank of Scotland from the date payment was due until the actual date of payment in full.  This is without prejudice to Simulistics' other rights under this Licence and/or in law.  
+5.	Support Services
+
+5.1	Simulistics shall provide technical support for 30 days from the payment of the Fee to assist with installation of the latest released version of the Software. Simulistics shall be under no obligation to provide support for any other purpose whatsoever.
+
+5.2	Simulistics, at its sole discretion, may provide information on use of the Software on its Web Site or otherwise. 
+
+6.	Limited 30 day Warranty
+		
+	We warrant that the media on which the Software is contained on delivery will be free from defects for a period of 30 days from receipt by you of the Software and we will replace copies which do not comply with this warranty provided these are returned to us post-marked within such 30 day period.
+
+	THIS 30 DAY WARRANTY SHALL NOT APPLY IF THE SOFTWARE MEDIA IS LOST OR STOLEN OR HAS BEEN DAMAGED BY ACCIDENT, MISUSE, NEGLECT OR UNAUTHORISED USE OR MODIFICATION. TO AVOID ANY DOUBT UNAUTHORISED USE SHALL INCLUDE USE PRIOR TO PAYMENT OF THE FEE.
+
+7.	Errors and Malware
+		
+7.1	Without prejudice to the other provisions of this Licence Agreement, you acknowledge that the Software may not be error free and agree that the existence of any such errors shall not constitute a breach of this Licence Agreement.
+7.2	It is your responsibility to test each copy of the Software supplied for malware and you agree that you shall not hold Simulistics responsible for any damage caused from any such malware.
+7.3		You agree that you will remain responsible for your own data, notwithstanding that such data may be used in conjunction with the Software.
+
+8.	Liability
+
+8.1	EXCEPT AS EXPRESSLY PROVIDED ABOVE SIMULISTICS MAKE NO REPRESENTATIONS OR WARRANTIES WHETHER EXPRESS OR IMPLIED (BY STATUTE OR OTHERWISE) RELATING TO THE PERFORMANCE, QUALITY MERCHANTABILITY OR FITNESS FOR A PARTICULAR PURPOSE OF THE SOFTWARE OR OTHERWISE AND ALL SUCH REPRESENTATIONS AND/OR WARRANTIES ARE HEREBY SPECIFICALLY DISCLAIMED AND EXCLUDED.
+
+8.2	YOU ALONE ARE ABLE TO DETERMINE WHETHER THE SOFTWARE WILL MEET YOUR REQUIREMENTS AND THE ENTIRE RISK AS TO ITS PERFORMANCE IS WITH YOU AND, EXCEPT TO THE EXTENT PROVIDED IN CLAUSE 8 ABOVE, SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ALONE MUST ASSUME THE ENTIRE COST OF ALL NECESSARY SERVICING, REPAIR OR CORRECTION AND ANY INCIDENTAL OR CONSEQUENTIAL DAMAGES.  IN NO EVENT WILL SIMULISTICS BE LIABLE FOR (1) DIRECT, (2) INDIRECT, (3) SPECIAL, (4) INCIDENTAL (5) LOSS OF PROFITS, DATA OR BUSINESS OR (6) CONSEQUENTIAL DAMAGES RESULTING FROM ANY DEFECT AND/OR USE OF THE SOFTWARE, EVEN IF SIMULISTICS HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGE, WHETHER DUE TO SIMULISTICS OR ANY OTHER ENTITY'S NEGLIGENCE, BREACH OF CONTRACT, MISREPRESENTATION OR OTHERWISE.
+
+8.3	WITHOUT PREJUDICE TO THE FOREGOING SIMULISTICS SHALL BE IN NO WAY LIABLE IN RESPECT OF ANY COSTS, CLAIMS, LOSSES, LIABILITIES, DAMAGES AND EXPENSES INCURRED DIRECTLY OR INDIRECTLY IN RESPECT OF THE SOFTWARE OR BY REASON OF THE LICENSING OR USE OF THE SOFTWARE OR OTHERWISE.
+
+8.4	YOU SHALL INDEMNIFY SIMULISTICS AGAINST ALL CLAIMS BY THIRD PARTIES (OTHER THAN CLAIMS ALLEGING BREACH BY THE SOFTWARE, AS SUPPLIED, OF A THIRD PARTY'S COPYRIGHT, PATENT OR OTHER INTELLECTUAL PROPERTY RIGHT) ARISING FROM POSSESSION OR USE OF THE SOFTWARE BY YOU OR BY ANYONE USING IT WITH YOUR CONSENT.
+
+8.5	NOTWITHSTANDING THE FOREGOING SIMULISTICS SHALL BE HELD IN NO WAY LIABLE FOR ANY USE OF THE SOFTWARE IN AN ILLEGAL MANNER.
+
+8.6	THE PROVISIONS OF THIS CLAUSE 10 SHALL APPLY EXCEPT TO THE EXTENT THAT LIABILITY CANNOT BE EXCLUDED OR LIMITED BY LAW.  WITHOUT PREJUDICE TO THE FOREGOING, SIMULISTICS' AGGREGATE LIABILITY UNDER THIS AGREEMENT FOR ALL CLAIMS ARISING UNDER IT SHALL BE LIMITED TO AGGREGATE FEES PAID BY YOU TO THE DATE OF CLAIM.
+
+8.7	YOU AGREE THE PROVISIONS OF THIS CLAUSE 10 ARE FAIR AND REASONABLE IN ALL THE CIRCUMSTANCES OF THE LICENCE.
+
+9.	Update Policy 
+
+	Simulistics may at their sole discretion advise you of and license you use of Software updates and new releases. Updates of the Software will be available on the Web Site as and when Simulistics make these available. It will be your responsibility to download updates for your use. To avoid any doubt use of any updates shall be subject to the terms and conditions of this Licence.
+
+10.	General
+
+10.1	This Licence is governed by and interpreted in accordance with the laws of Scotland and you agree to submit to the non-exclusive jurisdiction of the Scottish courts.
+
+10.2	You acknowledge that you have read this Licence, agree to be bound by its terms and conditions and agree that it is the complete and exclusive statement of the agreement between you and Simulistics and that this supersedes any other previous proposal or agreement whether oral or written, relating to the subject matter of this Licence.
+
+10.3	Any representations, modification or amendments to this Licence shall be of no force unless contained in a written memorandum signed by an authorised officer of Simulistics.
+
+10.4	Either party's failure or delay in enforcing any provision hereof will not waive that party's rights.
+
+10.5	If any provision of this Licence is found to be invalid or unenforceable pursuant to any judicial decree or otherwise, the remainder of this Licence shall remain valid and enforceable according to its terms.
+
+10.6	Simulistics may assign or transfer its rights and obligations under this Licence.  You may not transfer to another party your rights under this Agreement, without prior written authority from Simulistics.
+
+
