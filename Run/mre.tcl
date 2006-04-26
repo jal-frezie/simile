@@ -70,6 +70,7 @@ namespace eval RunEnv {
         variable width
         variable height
         variable currentNode
+	variable CurrentContainers
         
         if {[info exists helperTable($node,whichRunEnv)]} {
             return $helperTable($node,whichRunEnv)
@@ -189,7 +190,7 @@ namespace eval RunEnv {
             set runControlFrame($node) [frame $runcontrolpane.variables]
             pack $runControlFrame($node) -fill both -expand yes
             
-            AddNotebook $dp0
+            set CurrentContainers($node) [AddNotebook $dp0]
             
             pack $mainframe -fill both -expand yes
             pack $mainpw -fill both -expand yes
@@ -223,7 +224,8 @@ namespace eval RunEnv {
         SetNodeForHelper $node
 # Problem with $CurrentContainers(node) not set for first use: ignore potential error
 # ALD 28 Feb 2005 - not thoroughly tested; patching up MacVersion
-        catch {set CurrentContainer $CurrentContainers($node)}
+# JAT 25 Apr 2006 - patch caused nasty in Tile 0.7.5 (and probably Mac too, check) - reversed to enable find of real bug
+        set CurrentContainer $CurrentContainers($node)
         set dp0 $dp0s($node)
     }
 
@@ -248,7 +250,7 @@ namespace eval RunEnv {
 	    [list ::RunEnv::PageRaiseCmd $containerId.notebook]
         
         for  {set i 1} {$i<=4} {incr i} {
-	    AddNotebookPage $containerId.notebook
+	    set pane$i [AddNotebookPage $containerId.notebook]
         }
         
         bind $containerId.notebook <Double-1> "::RunEnv::EditTabLabel %W"
@@ -256,6 +258,7 @@ namespace eval RunEnv {
         
         $containerId.notebook select [lindex [$containerId.notebook tabs] 0]
         pack $containerId.notebook -fill both -expand yes
+	return $pane1
     }
     
     proc EditTabLabel { notebook } {
