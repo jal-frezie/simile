@@ -11,6 +11,7 @@ the rest of the program are handled through gui_input. */
 
 sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/2, 
 	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
+			  check_param_usage/5,
 	get_load_file/1, get_save_file/1,
 	get_program_file/2, get_import_file/2, 
         start_progress_dialogue/1,
@@ -71,7 +72,9 @@ values. */
 do_equation_dialog(Win, Part) :-
 	caption_for(Part, Caption),
 	get_host(Part, ClickedObj),
-	(default_units(ClickedObj, TypeBase); true),
+	(default_units(ClickedObj, ITypeBase),
+	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
+	true),
 	(ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
@@ -88,8 +91,8 @@ BoxHeaderStr),
 	(get_av_pair(Part, 0, units, Units), !,
 	    analyze_array(Units, Base, Dims);
 	(var(TypeBase), !,
-	    Base = '';
-	Base = 1),
+	        Base = '';
+	    Base = 1), /* hard to make happen */
 	    Dims = []),
 	retractall(table_data_is(_)),
 	(get_av_pair(Part, 0, table_data, TableSpec),
@@ -310,7 +313,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 				   [Dim], Complaint6);
 		    \+ TypeDims = MultInts, !,
 		    Complaint6 = "This type of component cannot be an array.");
-		check_flow_ends(Function, NewUnits, Complaint6));   
+		build_array(NewUnits, EqnDims, NewArraySpec),
+		    check_flow_ends(Function, NewArraySpec, Complaint6));
 	    Complaint6 = UnitError);
 	get_term(Unit_st, NewUnits, _),
 	    Complaint6 = Complaint5),
@@ -331,8 +335,8 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	Missing table will already have been picked up by parser */
 
 	(Complaint6 = [], \+ Eqn_st = [], !,
-	    check_param_usage(Function, InterInputs, ParamWibble,
-				  ParamList, New_inputs, FinalComplaint);
+	    check_param_usage(InterInputs, ParamWibble,
+			      ParamList, New_inputs, FinalComplaint);
 	New_inputs = InterInputs,
 	    FinalComplaint = Complaint6),
 
@@ -343,17 +347,16 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 
 	(FinalComplaint = [], !,
 	    update_parameterhood(Function, Is_P, AffectedNode),
-	    build_array(NewUnits, EqnDims, NewArraySpec),
-		add_parameter(AffectedNode, 0, value, Result),
-		add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
-		add_parameter(AffectedNode, 0, spec, OldEqn),
-		add_parameter(AffectedNode, 0, units, NewArraySpec),
-		add_parameter(AffectedNode, 0, description, Desc),
-		add_parameter(AffectedNode, 0, comment, Comment),
-	        add_parameter(AffectedNode, 0, table_data, TableAttr),
-		add_parameter(AffectedNode, 0, min_val, MinVal),
-		add_parameter(AffectedNode, 0, max_val, MaxVal),
-		update_links_and_vars(New_inputs);
+	    add_parameter(AffectedNode, 0, value, Result),
+	    add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
+	    add_parameter(AffectedNode, 0, spec, OldEqn),
+	    add_parameter(AffectedNode, 0, units, NewArraySpec),
+	    add_parameter(AffectedNode, 0, description, Desc),
+	    add_parameter(AffectedNode, 0, comment, Comment),
+	    add_parameter(AffectedNode, 0, table_data, TableAttr),
+	    add_parameter(AffectedNode, 0, min_val, MinVal),
+	    add_parameter(AffectedNode, 0, max_val, MaxVal),
+	    update_links_and_vars(New_inputs);
 %	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),
 	    assert(input_list_is(New_inputs)),
@@ -753,7 +756,7 @@ decode_error(ParseError, TestError) :-
 
 collapse_params(_, param(arr(_, Param, _), _,_,_,_), Param, 0).
 
-check_param_usage(Node, Current, WhyNoLinks, Used, Left, Challenge) :-
+check_param_usage(Current, WhyNoLinks, Used, Left, Challenge) :-
 	member(input_link(id(LinkName, _,_), 
 			SourceCaption,_,_,_), Current),
 	/* Really we only need one reference to each link, but since Bob
@@ -762,19 +765,18 @@ check_param_usage(Node, Current, WhyNoLinks, Used, Left, Challenge) :-
 	sort_for_link(Current, LinkName, FromThat, FromOthers),
 	\+ (member(SpareParam, Used), 
 	       member(input_link(_,_, SpareParam, _,_), FromThat)), !,
-		sicstus_format_to_chars("This node has a link from ~w, ~s Remove this link?",
-				[SourceCaption, WhyNoLinks], Wibble),
-		do_dialogue("Too many inputs", question, Wibble,
+	    \+ WhyNoLinks = [], /* do not try removing them, just fail */
+	    sicstus_format_to_chars("This node has a link from ~w, ~s Remove this link?",
+				    [SourceCaption, WhyNoLinks], Wibble),
+	    do_dialogue("Too many inputs", question, Wibble,
 			okcancel, Choice),
-		(Choice = ok,
-			event:off(LinkName),
-			event:delete_by_dlg(LinkName),
-			check_param_usage(Node, FromOthers, 
-WhyNoLinks, Used, 
-					Left, Challenge);
-		Choice = cancel,
-			Left = Current,
-			Challenge = continue);
+	    (Choice = ok,
+		event:off(LinkName),
+		event:delete_by_dlg(LinkName),
+		check_param_usage(FromOthers, WhyNoLinks, Used, Left, Challenge);
+	     Choice = cancel,
+		Left = Current,
+		Challenge = continue);
 	Left = Current,
 		Challenge = [].
 

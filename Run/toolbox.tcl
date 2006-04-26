@@ -1,6 +1,6 @@
 # Simile source code file: Run/toolbox.tcl
 #
-# (c) Simulistics Ltd. 2001-2005
+# (c) Simulistics Ltd. 2001-2006
 # (c) University of Edinburgh 1995-2001
 #
 # This file loads all procedures, and sets up the model building environment.
@@ -597,8 +597,8 @@ proc compile_c {workingDir} {
                 exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
                 exec g++ -bundle -o $TARGET objtemp.o
             } else {
-                exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
-                exec g++ -shared -o $TARGET objtemp.o
+                exec g++ -m32 -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
+                exec g++ -m32 -shared -o $TARGET objtemp.o
             }
         }
         windows {
@@ -737,12 +737,12 @@ proc ControlDraw {prologVersion} {
     LoadIconImages
     
     # Defaults to use if debugging
-    if {![info exists env(SIMILE_VERSION)]} {
-        set env(SIMILE_VERSION) 4.9
-        set env(licensee_name) "Support team"
-        set env(licensee_corp) "Simulistics Ltd"
-        set env(license_code) 28d4d4e4fd34b1407995899c5e655ad5
-    }
+#    if {![info exists env(SIMILE_VERSION)]} {
+#        set env(SIMILE_VERSION) 4.6
+#        set env(licensee_name) "Support team"
+#        set env(licensee_corp) "Simulistics Ltd"
+#        set env(license_code) 28d4d4e4fd34b1407995899c5e655ad5
+#    }
     
     set userinfo(Version) $env(SIMILE_VERSION)
     set sendvars(simV) $env(SIMILE_VERSION)
@@ -805,8 +805,8 @@ proc ControlDraw {prologVersion} {
     if {[string match Linux $tcl_platform(os)]} {
 	set shank ../System/lib/lib5d.so
 	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-	    exec g++ -c -O -fPIC -I. ./shank.cpp
-	    exec g++ -shared -o $shank shank.o
+	    exec g++ -m32 -c -O -fPIC -I. ./shank.cpp
+	    exec g++ -m32 -shared -o $shank shank.o
 	}
     }
     load_c_stub_1
@@ -946,7 +946,7 @@ proc ControlDraw {prologVersion} {
     if {[string match windows $tcl_platform(platform)]} {
         Pref_Add {  {custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
                         "Use which C++ compiler?"} \
-                {custom(myButton) myButton ¦Ì "Custom keypad button"} \
+                {custom(myButton) myButton � "Custom keypad button"} \
         }
 	file attributes $simtmpdir -hidden true
 	file attributes $custom(prefDir)/.version -hidden true

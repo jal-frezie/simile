@@ -17,7 +17,7 @@ sicstus_module(m_update,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
-		update_destination/2, build_array/3, analyze_array/3, 
+		build_array/3, analyze_array/3, 
 		get_solo_list_depth/2, delete_implicit_node/1, 
 		add_implicit_function/2, default_units/2,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
@@ -397,7 +397,10 @@ as follows:
 0: Succeeds for any pair of units that can be matched
 1: Allows assignment to convert from 'int' to 'real' but not back
 2: Checks for convertibility between physical units
-3: Types must be identical or physically convertible */
+3: Types must be identical or physically convertible
+
+Note that the 2nd argument, Target_unit, is the one the user has somehow
+provided...*/
 
 check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	analyze_array(Unit_term, Unit_base, DimExprs),
@@ -430,7 +433,7 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 		
 	    sicstus_format_to_chars("Unit expression ~w is not recognized as a valid unit. ", [Target_base], Complaint));
 	    
-	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Unit_term, DimExprs, TargetExprs], Complaint)),
+	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Target_unit, TargetExprs, DimExprs], Complaint)),
 	(nonvar(Complaint); Complaint = []).
 
 /* decide_param_names fills in the 'local name' slot in these data structures; first
@@ -441,19 +444,32 @@ need_same_dims(Item, Affected) :-
 	(initiates(Affected, Item); terminates(Affected, Item)),
 	    find_type(Affected, flow).
 
+end_with_units(Flow, EndUnits) :-
+	need_same_dims(Comp, Flow),
+	implicit_function(Comp, Fn),
+	Fn has_class_refinement units of EndUnits.
+
+/* How do compartments constrain their flows' units? They must be
+convertible, except if math checking is off and both are
+dimensionless. Array dimensions must always match. */
+
 check_flow_ends(Function, Units, Error) :-
-	use_units_in(Function, 'No'),
-	    member(Units, [int, 1]), !,
-	    Error = [];
-	units:default_tick_is(Tick),
-	    get_host(Function, ScreenObj),
-	    need_same_dims(CStart, ScreenObj),
-	    implicit_function(CStart, FStart),
-	    FStart has_class_refinement units of UStart,
-	    check_unit(UStart/Tick, Units, 2, AnError),
-	    \+ AnError = [], !, Error = AnError;
-	Error = [].
+	analyze_array(Units, FBase, _FDims),
+	(use_units_in(Function, 'No'),
+	    FBase = 1, !,
+	    FlowTgt = SubBase;
+	 default_tick_is(Tick),
+	    FlowTgt = SubBase/Tick),
 	
+	get_host(Function, Flow),
+	(end_with_units(Flow, EndUnits),
+	    analyze_array(EndUnits, CBase, CDims),
+	    standard_name(CBase, SubBase),
+	    build_array(FlowTgt, CDims, CUnits),
+	    check_unit(CUnits, Units, 2, AnError),
+	    \+ AnError = [], !, Error = AnError;
+	 Error = []).
+
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
 	generate_new_names(InputList, Used).
@@ -560,19 +576,6 @@ roll_match(Old, Shift, Size, New) :-
 	    New =.. [Fn, M | Rest];
 	New = Old.
 	
-/* This predicate is also failioric. */
-
-update_destination(Start, Units) :-
-	Start has_new_class_refinement units of Units,
-	Link is_connector from Start to _,
-	terminates(Link, Dest),
-	(update_destination(Dest, Units);
-	connects(Dest, Start_box, Finish_box),
-		units:default_tick_is(Tick),
-		(update_destination(Start_box, Units*Tick);
-		update_destination(Finish_box, Units*Tick))),
-	fail.
-
 build_array(Base_type, Dims, Array) :-
 	Dims = [], Base_type = Array;
 	Dims = [Dim | SubDims],

@@ -497,11 +497,11 @@ check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	/* Check all same-time-step circles can be done in one program loop */
 	reassure_user("Checking consistency of same-time-step loops"),
 	(member(Start, Sorted),
-	    Start = make(_, Conds, Path, Phase, _), 
+	    Start = make(_, Conds, _,_,_), 
 	    member(later(LoopEnd), Conds),
-	    remove_non_loopers(Path, PurePath),
 	    select(Loop2nd, Sorted, More),
-	    Loop2nd = make(LoopEnd, _,_,_,_),
+	    Loop2nd = make(LoopEnd, _, Path, Phase, _),
+	    remove_non_loopers(Path, PurePath),
 	    find_antecedent_outside_loop(Loop2nd, PurePath, Phase, More, Out),
 	    chain(Out, Start, Sorted),
 	    Out = make(Xefct, _, APath, APhase, _),
@@ -1168,14 +1168,7 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	/* input parameters are set to their default values on model
 	    initialization only */
 	connect_params([make(Dest, UseList, Path, UseStep, Expr) | Setups],
-		      Dest, AllInters, PreAssignments, Inters),
-	(get_host(Node, ValNode),
-	    DelayInf is_connector from ValNode to _,
-	    find_name_host(DelayInf, DelayInfEnd),
-	    DelayInfEnd has_attribute use_sofar of 1, !,
-	    Assignments = [make(in_loop(Dest), [later(Dest)],
-				Path, UseStep, []) | PreAssignments];
-	Assignments = PreAssignments);
+		       Dest, AllInters, Assignments, Inters);
 	Assignments = [],
 	    Inters = []).
 
@@ -1192,7 +1185,11 @@ really put it back, since a workaround is needed to build those
 constructs anyway, but the system seems to work just fine without it
 -- I'm guessing the ordering code is not allowing references to
 different parts of an array to go in the same loop. Uncomment path
-match to get it going again. */
+match to get it going again.
+
+Actually I found an example where it didn't work fine (gridspread) so
+have put it back for now. Inheritance workaround is to do all the
+peocessing in the relation model. */
 
 connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
 	select(make(Tgt, Conds, PathPlus, Step, Acts), AllInsts, LeftInsts),
@@ -1204,7 +1201,7 @@ connect_params(AllInsts, Dest, AllInters, Insts, Inters) :-
 	    MatchPath == CommonPath,
 	    suffix(CommonPathPlus, OrigPathPlus),
 	    remove_non_loopers(CommonPathPlus, CommonPath), !,
-	    ( /* CommonPath = OrigPath, */ !,
+	    (CommonPath = OrigPath, /* comment out to disable */ !,
 		ChangedInsts = [make(Tgt, [Param | MoreConds], PathPlus, Step,
 				     Acts) | LeftInsts];
 	    ChangedInsts = [make(Tgt, [made_for(Tgt, Param) | MoreConds],
@@ -1414,11 +1411,11 @@ order_assignments(Phase, Path, RawAssign, OrderedAssign, Left) :-
 	append(ThisPhase, DeepAssign, OrderedAssign),
 	/* Now check if we picked any instructions at this level with 'later'
 	conditions that we couldn't resolve: if so, redo order_phase. */
-	\+ (member(make(_, Conds, _,_,_), ThisPhase),
+	\+ (member(make(_, Conds, _,_,_), OrderedAssign),
 	       member(later(Cond), Conds),
-	       member(make(Cond, _, _CPath,_,_), Left) /* ,
+	       member(make(Cond, _, CPath,_,_), Left),
 	       remove_non_loopers(CPath, UCPath),
-	       suffix(Path, UCPath) */ ).
+	       suffix(Path, UCPath)).
 
 	
 order_deeper_assignments(Phase, Path, Later, OrderedAssign, Left) :-

@@ -179,6 +179,8 @@ splash read $SIMILE_PATH/Images/splash.gif
 toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash
+.splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
+    -text "Simulistics Ltd. 2001-2006"
 .splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}

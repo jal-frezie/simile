@@ -834,7 +834,7 @@ make_intermediates(
 		    raise_exception(lost_user_defined_fn(Source, Op, Arity));
 		 raise_exception(no_such_function(Source, Op))),
 	    (Source = sofar(_), !,
-		dissociate(SubArgs, UseArgs);
+		all(inters, dissociate, [build(SubArgs), build(UseArgs)]);
 	    UseArgs = SubArgs);
 	raise_exception(undecipherable_operand(Source, SubId)).
 
@@ -852,7 +852,7 @@ remove_physical_units_if_disabled(SubId, SrcUnits, Units) :-
 	    nonvar(SrcUnits),
 	    get_conversion(_, SrcUnits, SrcUnits, _), !,
 	    Units = 1;
-	Units = SrcUnits).
+	standard_name(SrcUnits, Units)).
 
 unmake_enum_units(SrcUnits, Units) :-
 	SrcUnits = n(_),
@@ -877,10 +877,7 @@ fn_or_op(Op, MxOp, RUnits, AUnits) :-
 	name(MxOp, MxOpStr),
 	lower(MxOpStr, OpStr).
 
-dissociate(SubArgs, [in_loop(Arg) | UseArgs]) :- 
-	select(made_at(Arg, _), SubArgs, Rest), !,
-	dissociate(Rest, UseArgs).
-dissociate(Args, Args).
+dissociate(made_at(Arg, _), later(Arg)).
 	
 refer_inter(instance(internal, inter(Context, _, ParamLoops), Source, Name,
 		     Units-Dims),
@@ -1009,6 +1006,7 @@ builtin('Arithmetic', log10, 1, [1]).
 builtin('Arithmetic', exp, 1, [1]).
 builtin('Arithmetic', abs, numeric, [numeric]).
 builtin('Arithmetic', int, int, [real]).
+builtin('Arithmetic', round, int, [real]).
 builtin('Arithmetic', ceil, int, [real]).
 builtin('Arithmetic', floor, int, [real]).
 

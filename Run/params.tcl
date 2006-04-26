@@ -173,13 +173,13 @@ proc AddEntry {winId topNode node mustShow notInput args} {
         set suppliedData($compName) {}
     }
     if {[string match normal [$slot.e cget -state]]} {
-        pack [::ttk::button $slot.cross -style Toolbutton -borderwidth 1 \
+        pack [::ttk::button $slot.cross -style Toolbutton \
 		  -image $iconImages(cross) \
 		  -command [namespace code [list RevertData $winId \
 						$compName $notInput]]] \
 	    -side right
         BindPopup $slot.cross "Revert to old values"
-        pack [::ttk::button $slot.tick -style Toolbutton -image $iconImages(tick) -borderwidth 1 \
+        pack [::ttk::button $slot.tick -style Toolbutton -image $iconImages(tick) \
                 -command [namespace code [list AcceptData $topNode $compName \
 					      $notInput 1]]] -side right
         BindPopup $slot.tick "Accept these values"

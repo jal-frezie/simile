@@ -699,7 +699,8 @@ spread_dims(Tgt) :-
 	get_input_info(Obj, IList),
 	
 	(length(Inds, 32),
-	    test_eqn(Equation, Node, Inds, IList, Type, FoundArray, _, Err),
+	    test_eqn(Equation, Node, Inds, IList, Type, FoundArray, Xs, Err),
+	    check_param_usage(IList, [], Xs, IList, []),
 	    Err = [],
 	    analyze_array(GivenUnits, GivenBase, GivenArray),
 	    (get_actual_sizes(Node, FoundArray, _, Array, _),
@@ -708,7 +709,10 @@ spread_dims(Tgt) :-
 		UseArray = FoundArray,
 		UnitsChanged = yes),
 	    (Type = real, !, Base = 1; Base = Type),
-	    (check_unit(Base, GivenBase, 2, []), !,
+	    (use_units_in(Obj, 'No'),
+		CheckLevel = 1;
+	    CheckLevel = 2),
+	    (check_unit(Base, GivenBase, CheckLevel, []), !,
 		UseBase = GivenBase;
 	    UseBase = Base,
 		UnitsChanged = yes),

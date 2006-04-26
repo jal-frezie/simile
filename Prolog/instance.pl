@@ -446,10 +446,15 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 	caption_for(Node, BadComp),
 	caption_for(Arc, BadArc),
 	(member(Multi, Entries),
-	    get_all_dims(Multi, BadDims),
-	    \+ BadDims = [], !,
-	    caption_for(Multi, BadModel),
-	    raise_exception(flow_splits_at_border(BadArc, BadComp, BadModel));
+	    (get_all_dims(Multi, BadDims),
+		\+ BadDims = [], !,
+		caption_for(Multi, BadModel),
+		raise_exception(flow_splits_at_border(BadArc, BadComp,
+						      BadModel));
+	     Multi has_class_refinement separate of 1, !,
+		caption_for(Multi, BadModel),
+		raise_exception(flow_crosses_dll_boundary(BadArc, BadComp,
+							  BadModel)));
 	implicit_function(General_arc, Controller),
 	get_units(Controller, ArcUnits, ArcDims),
 	all(ame_gen, get_all_dims, [build(Exits), append(AllDims, ArcDims)]),
@@ -459,7 +464,8 @@ bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
 						  AllDims, NodeDims)))),
 	is_instance(_, Controller, _, BaseVar, _, Ref),
 	default_tick_is(Tick),
-	try_conversion(Var, ArcUnits, NodeBase/Tick, Term, _ImpType).
+	standard_name(NodeBase, TrimBase),
+	try_conversion(Var, ArcUnits, TrimBase/Tick, Term, _ImpType).
 
 bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
 	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),

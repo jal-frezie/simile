@@ -78,7 +78,7 @@ namespace eval $keyValue {
         SetButtonAct $winId start
         # progress bar
         pack [set runData($myNode,progressBar) \
-                [::ttk::progress $lf.upper.bar -from 0 -to 100]] \
+                [::ttk::progressbar $lf.upper.bar -maximum 100]] \
                 -fill x -expand true -side top -padx 4 -pady 4
         # Run length entry field
         pack [frame $lf.rl] -side top
@@ -1100,7 +1100,7 @@ $numOutputs"
                 puts $control {}
             }
         }
-        $runData($myNode,progressBar) config -to \
+        $runData($myNode,progressBar) config -maximum \
 	    [expr $useNodes($winId,numRuns)*$clevers(noptmax)]
         close $control
         
@@ -1308,7 +1308,7 @@ $numOutputs"
                 if {[scan $recLin { OPTIMISATION ITERATION NO.        : %d} \
                             itCount]>0} {
                     set runData($topNode,itCount) $itCount
-                    $runData($topNode,progressBar) set \
+                    $runData($topNode,progressBar) configure -value \
 			[expr $runState($topNode,progressToDate)+$itCount]
                 }
                 if {[scan $recLin {    Starting phi for this iteration : %f} \

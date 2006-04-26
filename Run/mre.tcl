@@ -568,11 +568,11 @@ namespace eval RunEnv {
     proc SplitPage {containerId orientation} {
         set parentPath [FindParentpanedwindowOrNotebook $containerId]
         if {[string match notebook [winfo name $parentPath]]} {
-            ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
+#ShowMessage debug info "SplitPage Addpanedwindow $containerId $orientation" ok;
             Addpanedwindow $containerId $orientation
         } elseif {(![string match $orientation [$parentPath cget -orient]])} {
-            ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
-            parentPath $parentPath" ok;
+#ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
+#parentPath $parentPath" ok;
             Addpanedwindow $containerId $orientation
         } else  {
             # it's a pane to be split in the same orientation
@@ -703,7 +703,7 @@ namespace eval RunEnv {
     proc Addpanedwindow {containerId orientation} {
         set pwidth  [winfo width $containerId]
         set pheight [winfo height $containerId]
-        ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
+#ShowMessage debug info "RunEnv::Addpanedwindow $containerId $orientation\n \
         #        pwidth $pwidth; pheight $pheight" ok; ################
         panedwindow $containerId.panedwindow -orient $orientation
         pack $containerId.panedwindow -expand yes -fill both
@@ -722,7 +722,7 @@ namespace eval RunEnv {
                         must be  must vertical or horizontal" ok
             }
         }
-        ShowMessage debug info "RunEnv::Addpanedwindow width $width; height $height" ok
+#ShowMessage debug info "RunEnv::Addpanedwindow width $width; height $height" ok
         frame $containerId.panedwindow.pane0 -highlightcolor black -highlightthickness 1
         frame $containerId.panedwindow.pane1 -highlightcolor black  -highlightthickness 1
         bind $containerId.panedwindow.pane0 <Button-1> "+::RunEnv::SetCurrentContainer %W"

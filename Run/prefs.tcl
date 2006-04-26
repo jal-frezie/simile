@@ -1,6 +1,6 @@
 # Simile source code file: Run/prefs.tcl
 #
-# (c) Simulistics Ltd. 2001-2005
+# (c) Simulistics Ltd. 2001-2006
 # (c) University of Edinburgh 1995-2001
 #
 # This file contains procedures to set user preferences and the Preferences dialogue.
@@ -60,25 +60,35 @@ proc Pref_Add { prefs } {
 		set varName [PrefVar $item]
 		set resName [PrefRes $item]
 		set value [PrefValue $varName $resName]
-		if {$value == {}} {
+#		if {$value == {}} {
 			# Set variables that are still not set
 			set default [PrefDefault $item]
 			switch -regexp -- $default {
 				^CHOICE {
+				    if {[lsearch $default $value]<1} {
 					PrefValueSet $varName [lindex $default 1]
+				    }
 				}
 				^OFF {
+				    if {$value!=1} {
 					PrefValueSet $varName 0
+				    }
 				}
 				^ON {
+				    if {$value!=0} {
 					PrefValueSet $varName 1
+				    }
 				}
 				default {
+				    if {$value=={} || \
+					    ([string is double -strict $default] && \
+						 ![string is double $value])} {
 					# This is a string or numeric
 					PrefValueSet $varName $default
+				    }
 				}
 			}
-		}
+#		}
 	}
 }
 

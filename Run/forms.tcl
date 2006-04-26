@@ -738,10 +738,19 @@ proc DoUserDialogue {} {
     } else {
 	set userinfo(license_code) "<none needed>"
     }
+    pack [message $t.mess2 -aspect 1000 -text "Now carefully read the following End User License Agreement, and click 'ACCEPT' to indicate that you have read and understood it and that you agree to the terms set out in it. Note that this version of the Agreement is new to Simile v4.6."]
+    pack [frame $t.agree -bd 4 -relief groove] -fill x
+    pack [scrollbar $t.agree.y -orient v -command "$t.agree.t yview"] \
+	-side right -fill y
+    pack [text $t.agree.t -wrap word -yscrollcommand "$t.agree.y set"] -fill x
+    set licStr [NetOpen ../Licence.txt r]
+    $t.agree.t insert end [read $licStr]
+    close $licStr
+    $t.agree.t config -state disabled
     pack [frame $t.buttons] -fill x
-    pack [button $t.buttons.ok -text OK \
+    pack [button $t.buttons.ok -text ACCEPT \
 	      -command "set userinfo(entrydone) 1"] -side left
-    pack [button $t.buttons.ex -text Exit \
+    pack [button $t.buttons.ex -text "DO NOT ACCEPT" \
 	      -command "set userinfo(entrydone) 0"] -side right
     
     LetItShow $t

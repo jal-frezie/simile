@@ -97,7 +97,7 @@ namespace eval runcontrol33857 {
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
         pack [set runState($node,progressBar) \
-		  [::ttk::progress $rcf.upper.bf.bar -from 0 -to 100]] \
+		  [::ttk::progressbar $rcf.upper.bf.bar -maximum 100]] \
 	    -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
         pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
@@ -314,12 +314,7 @@ namespace eval runcontrol33857 {
     
     proc SetupBar {node start finish} {
 	global runState
-	if ($start>$finish) {
-	    $runState($node,progressBar) config -from [expr -$start] \
-		-to [expr -$finish]
-	} else {
-	    $runState($node,progressBar) config -from $start -to $finish
-	}
+	set runState($node,remembered_start) $start
 	set runState($node,expected_end) $finish
     }
 
@@ -327,11 +322,8 @@ namespace eval runcontrol33857 {
 	global runState
         set runState($node,currentTime) $now
 	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
-	if {$runState($node,execTime)<0} {
-	    $runState($node,progressBar) set [expr -$now]
-	} else {
-	    $runState($node,progressBar) set $now
-	}
+	$runState($node,progressBar) configure -value \
+	    [expr 100*($now-$runState($node,remembered_start))/($runState($node,expected_end)-$runState($node,remembered_start))]
 	$runState($node,cnvs) itemconfigure 1 -fill $col
     }
 
@@ -564,19 +556,6 @@ namespace eval runcontrol33857 {
     
     proc display {args} {
     }
-    
-    proc SecondsInA {time} {
-	switch $time {
-	    second {return 1.0}
-	    minute {return 60.0}
-	    hour {return 3600.0}
-	    day {return 86400.0}
-	    unit {return 86400.0}
-	    week {return 604800.0}
-	    month {return 2628000.0}
-	    year {return 31536000.0}
-	    Ma {return 31536000000000.0}
-	}
     }
 } ;# end of namespace
 

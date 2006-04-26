@@ -414,7 +414,7 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 	Init = [InitialValues],
 	    (L = c,
 		DeepIndent is Indent + 4,
-		swap_squares_for_curlies(InitialValues, InitString),
+		swap_squares_for_curlies(L, InitialValues, InitString),
 		InitString = [FirstLine | LateLines],
 		(Dims = void, Counts = [''];
 		all(render, boost, [build(Dims), build(Counts)])),
@@ -427,7 +427,7 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		prepend_spaces(LateLines, TabIn, NewLateLines),
 		append(EarlyLines, [LastLine], [NewFirstLine | NewLateLines]),
 		sicstus_format_to_chars("~a;", [LastLine], Chars2),
-		name(NewLastLine, Chars2),
+		name(NewLastLine, Chars2), /* one is forgivable, but... */
 		append(EarlyLines, [NewLastLine], Result);
 	    L = tcl,
 		sicstus_format_to_chars( "~*svariable ~a",
@@ -702,41 +702,58 @@ and returns a set of assignments to initialize the variables (6).
 The list of init vals is in list-of-lists format to match the way initialization
 works in c, though this is untested for multidimensionals. */
 
-assign_initial_values(Var, Val, _,_, Indent, [Result]) :-
+assign_initial_values(Var, Val, _,_, Indent, Result) :-
 	atomic(Val), !,
-	    render(tcl, assignment, Var=Val, Indent, [Result]);
-	make_tcl_array_set([], [], Val, List),
+	    render(tcl, assignment, Var=Val, Indent, Result);
+	make_tcl_array_set([], Val, List),
 	    name(Var, VarStr),
-	    make_arg_string(tcl, List, ListStr),
-	    append(["array set ", VarStr, " {", ListStr, "}"], ResultStr),
-	    name(Result, ResultStr).
+	    swap_squares_for_curlies(tcl, List, [ConstStr1 | ConstStrs]),
+	    append(["array set ", VarStr, " ", ConstStr1], ResultStr),
+	    all(user, name, [build(Result), build([ResultStr | ConstStrs])]).
 	
-make_tcl_array_set(SoFar, Inds, Val, Done) :-
+make_tcl_array_set(Inds, Val, Done) :-
 	atomic(Val), !,
 	    comma_separate(Inds, IndCsvStr),
 	    name(IndCsv, IndCsvStr),
-	    append(SoFar, [IndCsv, Val], Done);
-	make_tcl_array_elts(SoFar, Inds, 0, Val, Done).
+	    Done = [IndCsv, Val];
+	make_tcl_array_elts(Inds, 0, Val, Done).
 
-make_tcl_array_elts(A, _,_, [], A).
-make_tcl_array_elts(SoFar, Inds, N, [Val | Rest], Done) :-
+make_tcl_array_elts(_,_, [], []).
+make_tcl_array_elts(Inds, N, [Val | Rest], Done) :-
 	append(Inds, [N], MoreInds),
-	make_tcl_array_set(SoFar, MoreInds, Val, Mid),
+	make_tcl_array_set(MoreInds, Val, SetVal),
 	M is N+1,
-	make_tcl_array_elts(Mid, Inds, M, Rest, Done).
+	make_tcl_array_elts(Inds, M, Rest, SetRest),
+	append(SetVal, SetRest, Done).
 
-swap_squares_for_curlies(ListList, Strings) :-
-	(make_list_chars(c, ListList, NestStr), !;
-	sicstus_write_to_chars(ListList, NestStr)),
-	split_lines(NestStr, Strings).
+swap_squares_for_curlies(L, ListList, Strings) :-
+	make_arg_string(L, [ListList], NestStr),
+	split_lines(L, NestStr, Strings).
 
-split_lines(NestStr, [String | Strings]) :-
+/* split_lines(NestStr, [String | Strings]) :-
 	[Br, C] = "},",
 	append(Start, [Br, C | Rest], NestStr),
 		append(Start, [Br, C], String), !,
 		split_lines(Rest, Strings);
 	String = NestStr,
 		Strings = [].
+*/
+
+split_lines(L, NestStr, [String | Strings]) :-
+	(L = c, [Br, C] = "},";
+	    L = tcl, [Br, C] = "} "),
+	append(Start, Rest, NestStr),
+	length(Start, Len),
+	(append(String, "\n", Start);
+	 (Len > 30,
+	     suffix([Br, C], Start);
+	  Len > 300,
+	     suffix([C], Start)),
+	 (L = c, String = Start;
+	     L = tcl, append(Start, "\\", String))), !,
+		 split_lines(L, Rest, Strings);
+	String = NestStr,
+	    Strings = [].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % render_all applies render to a list of items of a given type
@@ -1086,7 +1103,7 @@ the next few lines in place, and math_protect asserted, AME will do the same.
 	Op = (//), !,
 	    VArgs = [Nom, Div],
 	    Atom = int(Nom)/int(Div);
-	member(Op, [floor, ceil]), !,
+	member(Op, [round, floor, ceil]), !,
 	    Expr =.. [Op | VArgs],
 	    combine(L, int, [Expr], Atom);
 

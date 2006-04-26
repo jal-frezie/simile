@@ -24,13 +24,14 @@ unit_definition(l, m*m*m/1000).
 longhand(litre, l).
 longhand(liter, l).
 
-unit_definition(gal, litre*454609/100000). /* not in USA */
+unit_definition(gal, l*454609/100000). /* not in USA */
 longhand(gallon, gal).
 
 unit_definition(pint,	gal/8).
 
-unit_definition(minute,	s*60).
-unit_definition(h,	minute*60).
+unit_definition(min,	s*60).
+longhand(minute, min).
+unit_definition(h,	min*60).
 longhand(hour, h).
 unit_definition(day,	h*24).
 unit_definition(week,	day*7).
@@ -43,7 +44,7 @@ longhand(kilometre, km).
 unit_definition(inch,	m*254/10000).
 unit_definition(ft,	inch*12).
 longhand(foot, ft).
-unit_definition(yard,	foot*3).
+unit_definition(yard,	ft*3).
 unit_definition(mile,   yard*1760).
 
 unit_definition(a, 10000*m*m).
@@ -81,5 +82,5 @@ longhand(kilowatt, kW).
 
 unit_definition(bar, kgf/cm/cm).
 unit_definition(psi, lbf/inch/inch).
-unit_definition('Pa', newton/metre/metre).
+unit_definition('Pa', 'N'/m/m).
 unit_definition(percent, 0.01).

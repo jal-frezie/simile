@@ -1254,6 +1254,10 @@ show_error(Model, Lossage) :-
 	    sicstus_format_to_chars("Flow ~a cannot connect to compartment ~a because its value would be split where it crosses the border of submodel ~a",
 				    [BadArc, BadComp, BadModel], Text),
 	    Fault = user;
+	Lossage = flow_crosses_dll_boundary(BadArc, BadComp, BadModel), !,
+	    sicstus_format_to_chars("Flow ~a cannot connect to compartment ~a because it crosses the border of submodel ~a, which is built as a separate executable module. A flow's bowtie must currently be in the same executable module as the compartments to which the flow connects.",
+				    [BadArc, BadComp, BadModel], Text),
+	    Fault = user;
 	Lossage = flow_comp_dims_mismatch(BadArc, BadComp, AllDims, NodeDims), !,
 	    sicstus_format_to_chars("Flow ~a cannot be connected to compartment ~a because the flow has dimensions ~w which cannot be matched with those of the compartment, which are ~w", [BadArc, BadComp, AllDims, NodeDims], Text),
 	    Fault = user;

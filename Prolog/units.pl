@@ -1,7 +1,7 @@
 /* units.pl --- yet another shiny, efficient new module written by Jasper. */
 
 sicstus_module(units, [get_conversion/4, extract_units_root/4,
-		       default_tick_is/1, sort_units/3,
+		       default_tick_is/1, sort_units/3, standard_name/2,
 		       check_and_report_units/2, defined_as_unit/2]).
 
 default_tick_is(day).
@@ -38,7 +38,7 @@ add_conversion(Unit, Sign, BaseIn, BaseOut, Mnum, Qnum) :-
 	    add_conversion(Top, Sign, BaseIn, BaseMid, M1, Q1),
 	    combine_signs(Sign, Op, Sign2),
 	    add_conversion(Bottom, Sign2, BaseMid, BaseOut, M2, Q2),
-	    Mnum is M1*M2, Qnum is Q1*Q2;
+	    Mnum is M1*M2, Qnum is Q1*Q2, !; /* not sure why the cut helps */
 	baseline(Unit, Dimension),
 	    Mnum = 1.0, Qnum = 1.0,
 	    (combine_signs(Sign, '/', Sign2),

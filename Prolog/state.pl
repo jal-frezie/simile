@@ -50,16 +50,17 @@ kickoff(Vnum) :-
 	initialize_phase,
 
 	(OpenStr = [];
-	append(Base, ".smx", OpenStr),
-	    append(Base, ".sml", OpenFiloidStr),
-	    name(OpenModel, OpenFiloidStr),
-	    backup:check_autosave(Desktop, OpenModel, copy, Done),
-	    (Done = 0;
-		draw:redraw_window(Canvas));
+	append(Base, ".smx", OpenStr);
 	name(OpenModel, OpenStr),
 	    menu:stick_model_in(Canvas, Desktop, OpenModel, reopen);
 	true), !,
-	user:any_tcl_eval(['FixSize', Canvas], 1, _).
+	user:any_tcl_eval(['FixSize', Canvas], 1, _),
+	(var(Base), !;
+        append(Base, ".sml", OpenFiloidStr),
+	    name(OpenModel, OpenFiloidStr),
+	    backup:check_autosave(Desktop, OpenModel, copy, Done),
+	    (Done = 0;
+	     draw:redraw_window(Canvas))).
 
 :- dynamic(model_in/2).
 :- dynamic(model_file/2).

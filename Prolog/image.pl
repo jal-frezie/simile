@@ -737,8 +737,7 @@ checks_out_locally(Func) :-
               section 
     instance:apply_minmax(Func, Expr, FullExpr), */
     Func has_class_refinement units of Units,
-    analyze_array(Units, Base, _),
-    check_flow_ends(Func, Base, []),
+    check_flow_ends(Func, Units, []),
     replace_subexps(Expr, image, pick_var, Func, top_down, Pairs, _),
     (setof(Source, valid_input(Func, Source), Sources), !; Sources = []),
     pair_off(Func, Sources, Pairs).

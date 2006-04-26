@@ -617,7 +617,9 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
 
     set runState($nMyNode,modelRunning) 0
     LoadIconImages
-    MakeHelperMenu
+    if {![info exists runHow(where)]} {
+	MakeHelperMenu
+    }
     wm withdraw .
 
     if {[string equal get_data $readPipe]} {
@@ -965,6 +967,8 @@ proc SetRunParams {node runParams} {
     set runState($node,currentTime) 0.0
     #ShowMessage debug info set ok
     if {[string match execTime [lindex $runParams 0]]} {
+	# some old ones omitted timeUnit so set default
+	set runState($node,timeUnit) unit
 	# no longer as simple as "array set runState $runParams"
 	foreach {feature value} $runParams {
 	    set runState($node,$feature) $value
@@ -1021,17 +1025,20 @@ proc StartRun {node} {
     if {[info exists runState($node,currentTime)]} {
 #        if {$runState($node,execTime) != $runState($node,currentTime)} {
 #            set runState($node,execTime) [expr $runState($node,execTime) + \
-					      $runState($node,currentTime)]
+#					      $runState($node,currentTime)]
 
 
 #        }
 # above is done by reset phase
+	set sendvars($node,unitLength) \
+	    [expr [SecondsInA $runState($node,timeUnit)]/[SecondsInA day]]
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             if {![info exists runState($node,prev_update$phase)]} {
                 set runState($node,update$phase) 0.1
                 set runState($node,prev_update$phase) 0.1
             }
-            SetStep $node $runState($node,prev_update$phase) $phase
+            SetStep $node [expr $runState($node,prev_update$phase) * \
+			       $sendvars($node,unitLength)] $phase
         }
     } else {
 	set runState($node,currentTime) 0.0
@@ -1146,6 +1153,20 @@ proc StartNow {node action} {
     $widget.upper.topbuttons.$action invoke
 }
 
+proc SecondsInA {time} {
+    switch $time {
+	second {return 1.0}
+	minute {return 60.0}
+	hour {return 3600.0}
+	day {return 86400.0}
+	unit {return 86400.0}
+	week {return 604800.0}
+	month {return 2628000.0}
+	year {return 31536000.0}
+	Ma {return 31536000000000.0}
+    }
+}
+    
 proc TellHelperItsGone {helperWin captionPath} {
 # for compatibility, call a helper proc and if the helper doesn't have it
 # delete it

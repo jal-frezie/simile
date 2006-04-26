@@ -182,7 +182,7 @@ double graphpoint(double xval, graph_data_type* graphdata, int index) {
 	*/
 	if (use_graph_pointer->range > 3) {
 	  intersection = *(use_graph_pointer->points + 
-			   max(0,min(spaces,(int)(interval+0.5))));
+			   max(0,min(spaces,(int)round(interval))));
 	} else {
 	  lower = max(0,min(spaces-1,(int)(interval)));
 	  interval -= lower;
@@ -390,14 +390,15 @@ public:
   }
   
   listParamArray* strip_out(Model* oldModelId) {
-    int count;
+    listParamArray* current;
 
     if (next) {
       next = next->strip_out(oldModelId);
     }
     if (spareModel == oldModelId) { // node belongs to model being removed
+      current = next;
       delete(this);
-      return next;
+      return current;
     } else {
       return this;
     }
@@ -1144,6 +1145,7 @@ public:
 
   listNodeModel* strip_out(Model* oldModelId) {
     int count;
+    listNodeModel* current;
 
     if (next) {
       next = next->strip_out(oldModelId);
@@ -1155,8 +1157,9 @@ public:
 	  strip_out(nodeModel((model->nodedata[count]).name));
 	}
       }
+      current = next;
       delete(this);
-      return next;
+      return current;
     } else {
       return this;
     }
