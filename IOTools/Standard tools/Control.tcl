@@ -109,7 +109,7 @@ namespace eval runcontrol33857 {
             frame $rcf.editBoxes.$name
             label $rcf.editBoxes.$name.capt -text $capt -width $captWidth -anchor w
             pack $rcf.editBoxes.$name.capt -side left -anchor nw
-            ::ttk::entry $rcf.editBoxes.$name.num -relief sunken \
+            ::ttk::entry $rcf.editBoxes.$name.num \
                     -textvar runState($node,$var) -width 8
 	    bind $rcf.editBoxes.$name.num <Key> "set runState($node,tweaked) 1"
             pack $rcf.editBoxes.$name.num -side left -expand on -fill x -anchor nw
@@ -556,6 +556,4 @@ namespace eval runcontrol33857 {
     
     proc display {args} {
     }
-    }
 } ;# end of namespace
-
