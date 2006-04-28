@@ -2,6 +2,10 @@
 # storing the values of "Number of Trees" in the table "display" which is then
 # used to store those values in a csv file
 
+# Only needed when running from Wish shell in Unix; package must be put in
+# auto_path if not using shell distributed with Simile
+package require SimileAutoObj
+
 # Create a Tcl object/command (modelWin) with which to control that instance of Simile
 similescript::ModelWindow modelWin
 #modelWin Show 

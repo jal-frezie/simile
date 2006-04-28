@@ -560,23 +560,6 @@ proc get_Yvalues {w} {
 	}
 }
 
-######################################################################
-# proc get_x
-# proc get_y
-#
-# Scales data X and Y values to canvas coordinates (pixels)
-
-proc get_x {w X Xscale} {
-    global ::graphtools::plot
-    expr {$plot($w,xborder_left)+($X-$plot($w,Xmin_axis))/$Xscale}
-}
-
-proc get_y {w Y Yscale} {
-    global ::graphtools::plot
-    expr {$plot($w,yborder_top)+$plot($w,ylength) \
-                -($Y-$plot($w,Ymin_axis))/$Yscale}
-}
-
 # end of namespace
 } ;
 

@@ -31,10 +31,13 @@ YOU MAY NOT:-
 4.	Licence Fee
 	
 4.1		In consideration of the licence granted under this Licence, and depending on the number of users we have agreed that the licence covers, you shall pay Simulistics a licence fee (the "Fee").  The current licence Fees shall be detailed on the Simulistics web site (currently at http://www.simulistics.com (the "Web Site").  The Fee is due on acceptance of these Licence terms].  
+
 4.2	Until the relevant Fee has been paid the Software has not been licensed to you. 
+
 4.3	Any and all sums due hereunder are exclusive of value added tax and/or equivalent or similar sales taxes which shall be payable in addition, where applicable, at the relevant rate.
 
 4.4	Any and all sums due hereunder by you to Simulistics not paid in full by the relevant Due Date shall bear interest at the rate of 4% above the base rate from time to time of the Bank of Scotland from the date payment was due until the actual date of payment in full.  This is without prejudice to Simulistics' other rights under this Licence and/or in law.  
+
 5.	Support Services
 
 5.1	Simulistics shall provide technical support for 30 days from the payment of the Fee to assist with installation of the latest released version of the Software. Simulistics shall be under no obligation to provide support for any other purpose whatsoever.
@@ -50,8 +53,10 @@ YOU MAY NOT:-
 7.	Errors and Malware
 		
 7.1	Without prejudice to the other provisions of this Licence Agreement, you acknowledge that the Software may not be error free and agree that the existence of any such errors shall not constitute a breach of this Licence Agreement.
+
 7.2	It is your responsibility to test each copy of the Software supplied for malware and you agree that you shall not hold Simulistics responsible for any damage caused from any such malware.
-7.3		You agree that you will remain responsible for your own data, notwithstanding that such data may be used in conjunction with the Software.
+
+7.3	You agree that you will remain responsible for your own data, notwithstanding that such data may be used in conjunction with the Software.
 
 8.	Liability
 
@@ -86,5 +91,3 @@ YOU MAY NOT:-
 10.5	If any provision of this Licence is found to be invalid or unenforceable pursuant to any judicial decree or otherwise, the remainder of this Licence shall remain valid and enforceable according to its terms.
 
 10.6	Simulistics may assign or transfer its rights and obligations under this Licence.  You may not transfer to another party your rights under this Agreement, without prior written authority from Simulistics.
-
-

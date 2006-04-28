@@ -2,6 +2,10 @@
 # storing the values of "Number of Trees" in the table "display" which is then
 # used to store those values in a csv file
 
+# Only needed when running from Wish shell in Unix; package must be put in
+# auto_path if not using shell distributed with Simile
+package require SimileAutoObj
+
 # Create a Tcl object/command (modelWin) with which to control that instance of Simile
 similescript::ModelWindow modelWin
 
@@ -22,9 +26,6 @@ runControl GetValue "/r"
 
 # Set the value of model variable r to 15
 runControl SetValue "/r" 15
-
-# Get the value of model variable r, check it has been Set
-runControl GetValue "/r"
 
 # Make the run control visible for this demonstration
 runControl Show
@@ -83,5 +84,5 @@ close $file
 
 # wait 10 seconds (10000 ms) and then close Simile and the Tcl console
 after 10000
-#exit
+exit
 

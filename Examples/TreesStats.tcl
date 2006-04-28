@@ -8,6 +8,9 @@
 # statistics for, during a simulation run. 
 # The math::statistics package is part of tcllib http://www.tcl.tk/software/tcllib/
 
+# Only needed when running from Wish shell in Unix; package must be put in
+# auto_path if not using shell distributed with Simile
+package require SimileAutoObj
 
 # Create a Tcl object/command (modelWin) with which to control that instance of Simile
 similescript::ModelWindow modelWin

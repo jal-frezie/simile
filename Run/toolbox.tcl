@@ -1315,11 +1315,14 @@ proc EatNumber {str} {
 	    }
 	}
 # make sure it has float type -- cannot use # as prolog barfs if last char
-# is decimal point
-	set floatVal [format %.16g $floatVal]
-	if {[string is integer $floatVal]} {
-	    append floatVal .0
-	}
+# is decimal point. But not using it can leave out point altogether, which
+# also screws it, so use e instead of g -- after all, the user never sees this
+# format -- it only exists to get the value into Prolog.
+	set floatVal [format %.16e $floatVal]
+# this never happens now
+#	if {[string is integer $floatVal]} {
+#	    append floatVal .0
+#	}
 	return [list $floatVal $floatSize]
     }
 }

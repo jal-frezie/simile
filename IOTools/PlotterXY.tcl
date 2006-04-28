@@ -653,11 +653,14 @@ namespace eval ::$keyValue {
         
         set iplot 0
         for  {set i 0} {$i < [llength $YYnew($w)]} {incr i} {
-            set Ynew [lindex $YYnew($w) $i]
-            set Yold [lindex $YYold($w) $i]
-            set Xnew [lindex $Tnew($w) $i]
-            set Xold [lindex $Told($w) $i]
-            plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
+	    if {[llength [lindex $YYold($w) $i]]} {
+		set Ynew [lindex [lindex $YYnew($w) $i] 1]
+		set Yold [lindex [lindex $YYold($w) $i] 1]
+		set Xnew [lindex [lindex $Tnew($w) $i] 1]
+		set Xold [lindex [lindex $Told($w) $i] 1]
+		plot_Y $w $iplot $Xold $Yold $Xnew $Ynew
+	    }
+	    incr iplot
         }
         
 ################################################################################
@@ -687,26 +690,28 @@ namespace eval ::$keyValue {
     proc plot_Y {w iplot Told Yold Tnew Ynew} {
         global ::graphtools::plot
         
-        #    ShowMessage debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
+#ShowMessage debug info "plt_Y_in Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
         if {[llength $Ynew]==1} then {
             set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,9))}]]
             adjustLimits $w $Tnew $Ynew
-            #        ShowMessage debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
+#ShowMessage debug info "drawPoint Told $Told Yold $Yold Tnew $Tnew Ynew $Ynew" ok
             drawPoint $w $Told $Yold $Tnew $Ynew $colour
         } else {
-            for  {set i 1} {$i < [llength $Ynew] } {incr i 2} {
-                set YnewV [lindex $Ynew $i]
-                set YoldV [lindex $Yold $i]
-                set TnewV [lindex $Tnew $i]
-                set ToldV [lindex $Told $i]
-                if {![string match "" $ToldV]} {
-                    plot_Y $w $iplot $ToldV $YoldV $TnewV $YnewV
-                }
-                incr iplot
-            }
+	    array set allYOld $Yold
+	    array set allTOld $Told
+	    array set allYNew $Ynew
+	    array set allTNew $Tnew
+	    foreach {i YnewV} $Ynew {
+		set TnewV $allTNew($i)
+		if {[info exists allYOld($i)]} {
+		    set YoldV $allYOld($i)
+		    set ToldV $allTOld($i)
+		    plot_Y $w [expr $iplot+$i] $ToldV $YoldV $TnewV $YnewV
+		}
+	    }
         }
     }
-    
+	
     
     
     # Connect two points on the graph
@@ -872,8 +877,7 @@ namespace eval ::$keyValue {
         
         set YYold($w) $YYnew($w)
         
-        set YYnew($w) [list 1 2]
-        set YYnew($w) [lreplace $YYnew($w) 0 end]
+        set YYnew($w) {}
         foreach node $ynodes($w) {
             set values [GetModelValue $node]
             set values [lindex $values 0]
@@ -888,8 +892,7 @@ namespace eval ::$keyValue {
         variable xnodes
         
         set Told($w) $Tnew($w)
-        set Tnew($w) [list 1 2]
-        set Tnew($w) [lreplace $Tnew($w) 0 end]
+        set Tnew($w) {}
         foreach node $xnodes($w) {
             set values [GetModelValue $node]
             set values [lindex $values 0]
@@ -897,23 +900,6 @@ namespace eval ::$keyValue {
             #        ShowMessage debug info "$YYnew($w)" ok
         }
         
-    }
-    
-    ######################################################################
-    # proc get_x
-    # proc get_y
-    #
-    # Scales data X and Y values to canvas coordinates (pixels)
-    
-    proc get_x {w X Xscale} {
-        global ::graphtools::plot
-        expr {$plot($w,xborder_left)+($X-$plot($w,Xmin_axis))/$Xscale}
-    }
-    
-    proc get_y {w Y Yscale} {
-        global ::graphtools::plot
-        expr {$plot($w,yborder_top)+$plot($w,ylength) \
-                    -($Y-$plot($w,Ymin_axis))/$Yscale}
     }
     
     # end of namespace

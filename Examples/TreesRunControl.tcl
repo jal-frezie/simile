@@ -1,3 +1,7 @@
+# Only needed when running from Wish shell in Unix; package must be put in
+# auto_path if not using shell distributed with Simile
+package require SimileAutoObj
+
 similescript::ModelWindow modelWin
 modelWin UseMRE false
 modelWin Show

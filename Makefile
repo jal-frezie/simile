@@ -104,14 +104,14 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-System/lib/Stubs/ame_dll$(VERS).dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll Makefile
-	cd Run; g++ -c $(DEFNS) -I. -I../System/include/tcl ame_cmx.cpp; g++ -shared -o ../System/lib/Stubs/ame_dll$(VERS).dll ame_cmx.o ../System/lib/tclstub$(VERS).lib -L../System/lib -l5ddll; cd ..
+System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll Makefile
+	cd Run; g++ -c $(DEFNS) -I. -I../System/include/tcl ame_cmx.cpp; g++ -shared -o ../System/lib/Stubs/ame_dll84.dll ame_cmx.o ../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
 
-System/lib/Stubs/libame_dll$(VERS).so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so Makefile
-	cd Run; gcc -m32 -c -O -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; gcc -m32 -shared -o ../System/lib/Stubs/libame_dll$(VERS).so ame_cmx.o -L../System/lib -ltclstub$(VERS) -l5d; cd ..
+System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so Makefile
+	cd Run; gcc -m32 -c -O -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; gcc -m32 -shared -o ../System/lib/Stubs/libame_dll8.4.so ame_cmx.o -L../System/lib -ltclstub8.4 -l5d; cd ..
 
-System/lib/Stubs/libame_dll$(VERS).dylib: ame_cmx.cpp dllcalls.h System/lib/lib5d.dylib Makefile
-	cd Run; g++ -c -O -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers ame_cmx.cpp; g++ -dynamiclib -o ../System/lib/Stubs/libame_dll$(VERS).dylib ame_cmx.o -F../../Frameworks -framework Tcl -L../System/lib -ldl -l5d; cd ..
+System/lib/Stubs/libame_dll8.4.dylib: ame_cmx.cpp dllcalls.h System/lib/lib5d.dylib Makefile
+	cd Run; g++ -c -O -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers ame_cmx.cpp; g++ -dynamiclib -o ../System/lib/Stubs/libame_dll8.4.dylib ame_cmx.o -F../../Frameworks -framework Tcl -L../System/lib -ldl -l5d; cd ..
 
 System/bin/5d.dll: shank.cpp dllcalls.h
 	cd Run; g++ -c -DSHARELIB -I. shank.cpp; g++ -shared -o 5d.dll -Wl,--out-implib,lib5ddll.a shank.o; mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
