@@ -976,7 +976,8 @@ proc ShiftImages {topDir way args} {
             switch $way {
                 in {
                     image create photo $image
-                    foreach fmt {gif jpeg none} {
+		    # others than .png are for legacy
+                    foreach fmt {png gif jpeg none} {
                         if {![catch {$image read $imgFile.$fmt -shrink}]} {
                             PutSize $image
                             file delete $imgFile
@@ -990,10 +991,13 @@ proc ShiftImages {topDir way args} {
 		    }
                 } out {
                     # try gif first, if too many colours try jpeg
-                    foreach fmt {gif jpeg} {
+		    # --as of 2/5/06 only try .png
+                    foreach fmt {png} {
                         if {![catch {$image write $imgFile.$fmt \
 					 -format $fmt}]} {
 			    break
+			} else {
+			    puts "Failed to write $imgFile.$fmt -- $err"
 			}
 		    }
                 }

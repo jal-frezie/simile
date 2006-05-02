@@ -1194,12 +1194,17 @@ proc GetParts {top tree} {
             set ext [file tail $subtree]
 
             switch -glob $ext {
-                *.gif {
+                *.png {
+                    set PartType "image/png"
+                    set Description "Image"
+                    set style inline
+                }
+                *.gif { ;# legacy
                     set PartType "image/gif"
                     set Description "Image"
                     set style inline
                 }
-                *.jpeg {
+                *.jpeg { ;# legacy
                     set PartType "image/jpeg"
                     set Description "Image"
                     set style inline

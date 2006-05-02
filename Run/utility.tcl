@@ -44,7 +44,7 @@ proc ChooseFile { preferred title canbenew } {
 	    set desc Models
 	    set recordEntry 1
 	} .gif {
-	    set typeList [list .gif .jpg .jpeg]
+	    set typeList [list .gif .jpg .jpeg .png]
 	    set desc Images
 	    set recordEntry 0
 	} {} {
