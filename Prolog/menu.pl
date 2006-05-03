@@ -1098,9 +1098,9 @@ set_properties(Wid, Model) :-
 	(New_P_list = [], !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
 		      NewCount, NewStep, NewDesc, NewComment, NewFix,
-		      NewHide, NewSeparate, NewEnumSpecs],
-	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _Step,
-		      _Desc, _Comment, _EnumSpecs, _Fix, Hide, Separate],
+		      NewHideB, NewHideC, NewSeparate, NewEnumSpecs],
+	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count,
+		      _,_,_,_,_, HideB, HideC, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1122,8 +1122,10 @@ set_properties(Wid, Model) :-
 	    all(menu, separate_type_from_mems,
 		[build(NewEnumSpecs), build(NewEnumTypes)])),
 	    add_parameter(Model, 0, enum_types, NewEnumTypes),
-	    (change_shape(Model, hide_contents, NewHide);
-		set_shape(Model, hide_contents, NewHide)),
+	    (change_shape(Model, hide_border, NewHideB);
+		set_shape(Model, hide_border, NewHideB)),
+	    (change_shape(Model, hide_contents, NewHideC);
+		set_shape(Model, hide_contents, NewHideC)),
 	    (NewNature = generated,
 		name(NewCount, CountStr),
 		append([91 | CountStr], [93], ListStr),
@@ -1168,11 +1170,12 @@ set_properties(Wid, Model) :-
 	    /* Changes in fatness require redrawing submodel's
 	    toplevel windows; this plus nature, count and visibility require
 	    redrawing it in other windows */
-	    (([NewColour, NewImage, NewImgPos, NewNature] =
-	     [Colour, Image, ImgPos, Nature],
-	      FatFactor = 1, UseCount = Count, NewHide = Hide), !;
-	    NewHide = Hide, !,
+	    (([NewColour, NewImage, NewImgPos, NewNature, NewHideB, NewHideC] =
+	     [Colour, Image, ImgPos, Nature, HideB, HideC],
+	      FatFactor = 1, UseCount = Count), !;
+	    NewHideC = HideC, !,
 		(\+ FatFactor = 1,
+		    NewHideB = HideB,
 		    find_all_comps(Model, TopComp),
 		    redisplay_border(TopComp),
 		    fail;

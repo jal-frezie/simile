@@ -81,7 +81,7 @@ clear_shape(Component, Shape_field) :-
 submodels, relying on the GUI to signal events in other types of component. */
 
 targets(Wid, Parent, Point, Depth, Comp) :-
-    \+ get_shape(Parent, hide_contents, 1),
+    (Wid shows_model Parent; \+ get_shape(Parent, hide_contents, 1)), !,
     Parent has_part Comp,
     find_type(Comp, submodel),
     draws_at(Wid, submodel, Depth),
@@ -458,10 +458,12 @@ of random pile. */
 
 multiple_draw(VComp, Num) :-
     find_base(VComp, Comp),
-    (is_population(Comp), !,
-        Num = -1;
+    (get_shape(Comp, hide_border, 1), !,
+	Num = 0;
+     is_population(Comp), !,
+        Num = -2;
     is_conditional(Comp), !,
-        Num = 0;
+        Num = -1;
     (get_node_size(Comp, [Val | _]);
     (implicit_function(Comp, CompFn); CompFn=Comp),
         CompFn has_class_refinement units of array(_, Val)),

@@ -1477,8 +1477,9 @@ unique_name_for_new(Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
 	utility:unique_name(Abbrev, Name, _).
 
-get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
-			    Desc, Comment, EnumSpecs, Fix, Hide, Separate]) :-
+get_disag_params(Submodel, 
+		 [Colour, Image, ImgPos, Nature, Fat, Count, Step, Desc, 
+		  Comment, EnumSpecs, Fix, HideB, HideC, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour,
 	    \+ Colour = clear, !;
 	    Colour = white),
@@ -1503,8 +1504,10 @@ get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
 	EnumSpecs = []),
 	(Submodel has_class_refinement eqn_units of Fix, !;
 	Fix = 'Default'),
-	(Submodel has_graphical_attribute hide_contents of Hide, !;
-	Hide = 0),
+	(Submodel has_graphical_attribute hide_border of HideB, !;
+	HideB = 0),
+	(Submodel has_graphical_attribute hide_contents of HideC, !;
+	HideC = 0),
 	(Submodel has_class_refinement separate of Separate, !;
 	Separate = 0),
 	Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],

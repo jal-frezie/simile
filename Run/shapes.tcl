@@ -254,8 +254,8 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     # This is the diameter of the rounded corner as fraction of the box width
     
     set width [GetLineSize $w submodel $fatness]
-    set dots [expr !$stack]
-    set pile [expr $stack==-1]
+    set dots [expr $stack==-1]
+    set pile [expr $stack==-2]
     if {$dots} {
         set stack 4
     }
@@ -264,10 +264,12 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 	set back 2
 	set stackSpacing [expr 4*$width]
 	set backSpacing [expr -2*$width]
-    } else {
+    } elseif {$stack} {
 	set back 1
 	set stackSpacing [expr 2*$width]
 	set backSpacing 0
+    } else {
+	set back 0
     }
     
     # second approximation to fill

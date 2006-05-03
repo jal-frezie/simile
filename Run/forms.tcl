@@ -7,10 +7,10 @@
 # preferences and customise dialogues.
 #
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
-            desc comment enumLists eqnunit hide separate} {
+            desc comment enumLists eqnunit hide_b hide_c separate} {
     global disaggregate tcl_platform
     foreach varName {colour image imgpos type fatness \
-                icount eqnunit hide separate} {
+                icount eqnunit hide_b hide_c separate} {
         set disaggregate($varName) [set $varName]
     }
     if [llength $icount]>0 {
@@ -182,9 +182,12 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     TitleFrame $t.complex.appearance -text Appearance
     set appearancef [$t.complex.appearance getframe]
-    checkbutton $appearancef.hide -text "Hide contents" \
-            -variable disaggregate(hide)
-    pack $appearancef.hide -anchor w
+    checkbutton $appearancef.hide_b -text "Hide border" \
+            -variable disaggregate(hide_b)
+    pack $appearancef.hide_b -anchor w
+    checkbutton $appearancef.hide_c -text "Hide contents" \
+            -variable disaggregate(hide_c)
+    pack $appearancef.hide_c -anchor w
     frame $appearancef.scale
     scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
             -resolution 0.01 -variable disaggregate(fatness)
@@ -238,17 +241,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     # unless, conditional expressions indicate that one of the complex attributes does not have its default
     # value
     #    pack $t.complex -anchor w
-    if (![string match $disaggregate(step) Default]) {
-        ShowComplexity $t
-    } elseif (![string match $disaggregate(eqnunit) Default]) {
-        ShowComplexity $t
-    } elseif ($disaggregate(separate)) {
-        ShowComplexity $t
-    } elseif ($disaggregate(fatness)!=1.0) {
-        ShowComplexity $t
-    } elseif ($disaggregate(hide)) {
-        ShowComplexity $t
-    } elseif [info exists enumList] {
+    if {![string match $disaggregate(step) Default] || \
+	    ![string match $disaggregate(eqnunit) Default] || \
+	    $disaggregate(separate) || $disaggregate(fatness)!=1.0 || \
+	    $disaggregate(hide_b) || $disaggregate(hide_c) || \
+	    [info exists enumList]} {
         ShowComplexity $t
     }
     
@@ -296,8 +293,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
                 $disaggregate(imgpos) $disaggregate(type) \
                 $disaggregate(fatness) $icount \
                 $step $disaggregate(desc) $disaggregate(comment) \
-                $disaggregate(eqnunit) $disaggregate(hide) \
-                $disaggregate(separate) $enumTypes]
+                $disaggregate(eqnunit) $disaggregate(hide_b) \
+                $disaggregate(hide_c) $disaggregate(separate) $enumTypes]
     } else {
         set result {}
     }
