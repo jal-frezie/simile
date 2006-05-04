@@ -33,28 +33,30 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     wm protocol $t WM_DELETE_WINDOW {set disaggregate(done) 0}
     wm title $t "Properties of [BlankCrs $title]"
     
-    frame $t.simple
-    frame $t.simple.left
-    
-    TitleFrame $t.simple.left.count -text "Control of number of instances:"
-    set countf [$t.simple.left.count getframe]
+    set notebook [::ttk::notebook $t.notebook]
+    $notebook add [frame $notebook.number] -text Number
+
+    TitleFrame $notebook.number.count -text "Control of number of instances:"
+    set countf [$notebook.number.count getframe]
     
     frame $countf.radio
-    foreach rbutton {{population "Using population symbols"} {records "Using number of data records in file"} {generated "Using specified dimensions:"}} {
-        radiobutton $countf.radio.$rbutton -text [lindex $rbutton 1] \
-                -value [lindex $rbutton 0] \
-                -variable disaggregate(type) \
-                -command "SetHighlights $countf"
-        pack $countf.radio.$rbutton -anchor w
+    foreach {rbutton rcaption} {population "Using population symbols" records "Using number of data records in file" generated "Using specified dimensions:"} {
+	set line [frame $countf.radio.$rbutton]
+        pack [radiobutton $line.rb -text $rcaption \
+		  -value $rbutton \
+		  -variable disaggregate(type) \
+		  -command "SetHighlights $countf"] -side left
+        pack $line -anchor w
     }
     pack $countf.radio -anchor w -side left
     
-    ::ttk::entry $countf.value -textvariable disaggregate(icount) -width 10
-    pack $countf.value -side left -anchor s -pady 4
-    pack $t.simple.left.count -anchor w -pady 4 -fill both -expand true
+    ::ttk::entry $line.value -textvariable disaggregate(icount) -width 10
+    pack $line.value
+    pack $notebook.number.count -anchor w -pady 4 -fill both -expand true
     
-    TitleFrame $t.simple.left.colour -text "Background shade:"
-    set colourf [$t.simple.left.colour getframe]
+    $notebook add [frame $notebook.graphics] -text Graphics
+    TitleFrame $notebook.graphics.colour -text "Background shade:"
+    set colourf [$notebook.graphics.colour getframe]
     set posRBs [frame $colourf.imageposns]
     pack [button $colourf.clear -text "Clear" -width 7 \
             -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
@@ -73,28 +75,23 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
         pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
                 -value $rbutton -variable disaggregate(imgpos)] -anchor w
     }
-    pack $t.simple.left.colour -anchor w -pady 4 -fill both -expand true
-    pack $t.simple.left -side left; # -expand 1 -fill both
+    pack $notebook.graphics.colour -anchor w -pady 4 -fill both -expand true
     
-    frame $t.simple.right
-    button $t.simple.right.ok -text "OK" -width 10 -default active \
+    frame $t.buttons
+    button $t.buttons.ok -text "OK" -width 10 -default active \
             -command {set disaggregate(done) 1}
-    pack $t.simple.right.ok  -padx 2 -pady 4
-    button $t.simple.right.cancel -text "Cancel" -width 10 \
+    button $t.buttons.cancel -text "Cancel" -width 10 \
             -command {set disaggregate(done) 0}
-    pack $t.simple.right.cancel -padx 2 -pady 4
-    button $t.simple.right.help -text "Help" -width 10 \
+    button $t.buttons.help -text "Help" -width 10 \
             -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
-    pack $t.simple.right.help -padx 2 -pady 4
-    button $t.simple.right.more -text "More" -width 10 -command "ShowComplexity $t"
-    pack $t.simple.right.more -padx 2 -pady 4
-    pack $t.simple.right -anchor ne -padx 4 -pady 4
+    pack $t.buttons.help -side right -padx 2 -pady 4
+    pack $t.buttons.cancel -side right -padx 2 -pady 4
+    pack $t.buttons.ok -side right -padx 2 -pady 4 
+    pack $t.buttons -anchor nw -fill x -side bottom
     
-    pack $t.simple -anchor nw -fill both; # -expand 1 -fill both
-    
-    
-    TitleFrame $t.notes -text "Notes:"
-    set notesf [$t.notes getframe]
+    $notebook add [frame $notebook.notes] -text Notes
+    TitleFrame $notebook.notes.notes -text "Notes:"
+    set notesf [$notebook.notes.notes getframe]
     set descf [frame $notesf.desc]
     label $descf.desclabel -text "Description:"
     entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
@@ -111,12 +108,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     $notesf.commentsSW setwidget $notesf.commentsSW.comment
     $notesf.commentsSW.comment insert 1.0 $comment
     pack $notesf.commentsSW -anchor nw -fill both -expand true
-    pack $t.notes -anchor s -pady 4 -fill both -expand true
+    pack $notebook.notes.notes -anchor s -pady 4 -fill both -expand true
 
-    frame $t.complex
-    
-    TitleFrame $t.complex.enumtypes -text "Enumerated types"
-    set enumtypef [$t.complex.enumtypes getframe]
+    $notebook add [frame $notebook.enumtypes] -text "Enumerated types"
+    TitleFrame $notebook.enumtypes.enumtypes -text "Enumerated types"
+    set enumtypef [$notebook.enumtypes.enumtypes getframe]
     pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
             -expand true
     #    pack [frame $windowId.buttonframe] -side bottom
@@ -178,10 +174,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             -padx 2 -pady 4 -fill x
     pack [button $btnId.getmem -text "Get from file" -state disabled -command "GetEnumMems $enumtypef"] \
             -padx 2 -pady 4 -fill x
-    pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
+    pack $notebook.enumtypes.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
     
-    TitleFrame $t.complex.appearance -text Appearance
-    set appearancef [$t.complex.appearance getframe]
+    $notebook add [frame $notebook.appearance] -text "Appearance"
+    TitleFrame $notebook.appearance.appearance -text Appearance
+    set appearancef [$notebook.appearance.appearance getframe]
     checkbutton $appearancef.hide_b -text "Hide border" \
             -variable disaggregate(hide_b)
     pack $appearancef.hide_b -anchor w
@@ -195,10 +192,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     label $appearancef.scale.caption -text "Relative scale"
     pack $appearancef.scale.caption
     pack $appearancef.scale -anchor w
-    pack $t.complex.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
+    pack $notebook.appearance.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
     
-    TitleFrame $t.complex.math -text Calculation
-    set mathf [$t.complex.math getframe]
+    $notebook add [frame $notebook.calculation] -text "Calculation"
+    TitleFrame $notebook.calculation.math -text Calculation
+    set mathf [$notebook.calculation.math getframe]
     checkbutton $mathf.separate -text "Build submodel in separate dll" \
             -variable disaggregate(separate)
     pack $mathf.separate -anchor w
@@ -235,21 +233,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     $mathf.step.pulldown configure -menu $m
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
-    pack $t.complex.math -side left -padx 4 -pady 4 -fill both -expand true
-    
-    # The above "complex" frame has been constructed, but is not packed until the "More" button is pressed
-    # unless, conditional expressions indicate that one of the complex attributes does not have its default
-    # value
-    #    pack $t.complex -anchor w
-    if {![string match $disaggregate(step) Default] || \
-	    ![string match $disaggregate(eqnunit) Default] || \
-	    $disaggregate(separate) || $disaggregate(fatness)!=1.0 || \
-	    $disaggregate(hide_b) || $disaggregate(hide_c) || \
-	    [info exists enumList]} {
-        ShowComplexity $t
-    }
+    pack $notebook.calculation.math -side left -padx 4 -pady 4 -fill both -expand true
     
     SetHighlights $countf
+    $notebook select 0
+    pack $notebook -fill both -expand true
     
     LetItShow $t
     grab $t
@@ -574,10 +562,10 @@ proc SetHighlights {t} {
     
     switch -regexp $disaggregate(type) {
         none|population {
-            $t.value configure -state disabled
+            $t.radio.generated.value configure -state disabled
         }
         simple|generated {
-            $t.value configure -state normal
+            $t.radio.generated.value configure -state normal
         }
     }
 }
