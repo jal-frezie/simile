@@ -7,7 +7,7 @@
 # preferences and customise dialogues.
 #
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
-            desc comment enumLists eqnunit hide_b hide_c separate} {
+            desc comment enumLists connects eqnunit hide_b hide_c separate} {
     global disaggregate tcl_platform
     foreach varName {colour image imgpos type fatness \
                 icount eqnunit hide_b hide_c separate} {
@@ -211,7 +211,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     #        -values [list Default Yes No] \
     #        -width 10 -state readonly
     ::ttk::menubutton $mathf.eqnunit.pulldown -width 10 -textvariable disaggregate(eqnunit)
-    set m [menu $mathf.eqnunit.pulldown.menu]
+    set m [menu $mathf.eqnunit.pulldown.menu -tearoff 0]
     foreach item [list Default Yes No] {
       $m add command -label $item -command "set disaggregate(eqnunit) $item"
     }
@@ -226,7 +226,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     #        -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
     #        -width 10 -state readonly
     ::ttk::menubutton $mathf.step.pulldown -width 10 -textvariable disaggregate(step)
-    set m [menu $mathf.step.pulldown.menu] 
+    set m [menu $mathf.step.pulldown.menu -tearoff 0] 
     foreach item [list Default {Initialize only} {New params only} {Reset only} 1 2 3 4 5 6 7] {
       $m add command -label $item -command "set disaggregate(step) \"$item\""
     }
@@ -234,6 +234,33 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $mathf.step.pulldown
     pack $mathf.step -anchor w -padx 4 -pady 6
     pack $notebook.calculation.math -side left -padx 4 -pady 4 -fill both -expand true
+    
+    $notebook add [frame $notebook.connect] -text "Connect"
+    TitleFrame $notebook.connect.tf -text "Automatic submodel connections"
+    set connectf [$notebook.connect.tf getframe]
+    set textx [list "Incoming influences set value of: " \
+		   "Outgoing influences take value of: " \
+		   "Incoming flows connect to: " \
+		   "Outgoing flows connect from: "]
+#    pack [frame 
+    for {set i 0} {$i < 4} {incr i} {
+	frame $connectf.fr$i
+	pack [label $connectf.fr$i.l -text [lindex $textx $i]] \
+	    -side left
+	::ttk::menubutton $connectf.fr$i.pulldown -width 10 -textvariable disaggregate(cn$i)
+	set m [menu $connectf.fr$i.pulldown.menu -tearoff 0]
+	set mOpts [concat <none> [lrange [lindex $connects $i] 1 end]]
+	set disaggregate(cn$i) [lindex $mOpts [lindex [lindex $connects $i] 0]]
+	foreach item $mOpts {
+	    $m add command -label $item \
+		-command [list set disaggregate(cn$i) $item]
+	}
+	$connectf.fr$i.pulldown configure -menu $m
+	pack $connectf.fr$i.pulldown -side right
+	pack $connectf.fr$i -fill x -expand true
+    }
+
+    pack $notebook.connect.tf -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
     
     SetHighlights $countf
     $notebook select 0
@@ -246,6 +273,11 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set disaggregate(desc) [string trimright [$notesf.desc.text get]]
     set disaggregate(comment) [string trimright \
 				   [$notesf.commentsSW.comment get 1.0 end]]
+    set connectInds {}
+    for {set i 0} {$i < 4} {incr i} {
+	set m [$connectf.fr$i.pulldown cget -menu]
+	lappend connectInds [$m index $disaggregate(cn$i)]
+    }
     PackItUp $t
 
     set icount {}
@@ -282,7 +314,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
                 $disaggregate(fatness) $icount \
                 $step $disaggregate(desc) $disaggregate(comment) \
                 $disaggregate(eqnunit) $disaggregate(hide_b) \
-                $disaggregate(hide_c) $disaggregate(separate) $enumTypes]
+                $disaggregate(hide_c) $disaggregate(separate) \
+		$enumTypes $connectInds]
     } else {
         set result {}
     }
