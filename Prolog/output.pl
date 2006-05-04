@@ -471,18 +471,22 @@ tk_update_sim_display(Win, Current, Left) :-
 	
 tk_do_disag_dialog(Win, Caption,
 		   [Colour, Image, ImgPos, Type, Fatness, CountList, Step,
-		    Desc, Comment, EnumSpecs | Choices], ResultList) :-
+		    Desc, Comment, EnumSpecs, Connect | Choices], 
+		   ResultList) :-
 	all(utility, wrap, [build(CountList), unify(write), build(Count)]),
 	bracketize(EnumSpecs, EnumLists),
+	bracketize(Connect, ConnectLists),
 	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)), Colour, Image,
 		       ImgPos, Type, Fatness, br(Count), Step, br(write(Desc)),
-		       br(write(Comment)), EnumLists | Choices], New_P_string),
+		       br(write(Comment)), EnumLists, ConnectLists | Choices], 
+		      New_P_string),
 	chop_list(New_P_string, ResultListN),
-	(append(ResultList0, [EnumTypeList], ResultListN), !,
+	(append(ResultList0, [EnumTypeList, NewConnects], ResultListN), !,
 	    chop_list(EnumTypeList, EnumTypeSpecLists),
 	    all(output, chop_list,
 		[build(EnumTypeSpecLists), build(EnumTypes)]),
-	    append(ResultList0, [EnumTypes], ResultList);
+	    chop_list(NewConnects, NewConnectList),
+	    append(ResultList0, [EnumTypes, NewConnectList], ResultList);
 	ResultList = []).
 
 tk_do_relation_dialog(Win, Caption, Type, State, OldComment,

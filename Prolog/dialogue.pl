@@ -822,15 +822,28 @@ do_relation_dialog(Win, Relation, Type, State, OldComment,
 	strings_to_atoms([OKdStr, NewCommentStr | NewStr],
 			 [OKd, NewComment | NewStat]).
 
+/*
+Version that did not work on singly-nested lists
 strings_to_atoms([],[]).
 
 strings_to_atoms([S | SR], [A | AR]) :-
 	(\+ S = [],
 	    all(dialogue, strings_to_atoms, [build(S), build(A)]), !;
-	/* If tcl has put it in curlies remove them */
 	(append([123 | InS], [125], S), !; InS = S),
 	name(A, InS)),
 	strings_to_atoms(SR, AR).
+*/
+strings_to_atoms([], '').
+
+strings_to_atoms(StNest, ANest) :-
+        StNest = [St | Sts],
+        (member(St, [[], [_|_]]), !, /* nested */
+            all(dialogue, strings_to_atoms, [build(StNest), build(ANest)]);
+        (St = 123,
+	/* If tcl has put it in curlies remove them */
+	    append(InS, [125], Sts), !;
+	 InS = StNest),
+            name(ANest, InS)).
 
 integer_between(Lo, Hi, Int) :-
 	Lo < Hi,

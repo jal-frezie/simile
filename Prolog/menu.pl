@@ -1095,12 +1095,12 @@ get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 set_properties(Wid, Model) :-
 	get_disag_params(Model, P_list),
 	do_disag_dialog(Wid, Model, P_list, New_P_list),
-	(New_P_list = [], !; /* dialogue was cancelled */
+	(New_P_list = '', !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
 		      NewCount, NewStep, NewDesc, NewComment, NewFix,
-		      NewHideB, NewHideC, NewSeparate, NewEnumSpecs],
+		      NewHideB, NewHideC, NewSeparate, NewEnumSpecs, NewConns],
 	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count,
-		      _,_,_,_,_, HideB, HideC, Separate],
+		      _,_,_,_, Connect, _, HideB, HideC, Separate],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1185,7 +1185,9 @@ set_properties(Wid, Model) :-
 	    (Separate = NewSeparate, !;
 		find_all_comps(Parent, Model),
 		add_parameter(Parent, 1, c_new, 0)),
-	    
+
+	    update_connect_marks(Model, Connect, NewConns), 
+
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
 		_Window shows_model Submodel,
@@ -1194,6 +1196,20 @@ set_properties(Wid, Model) :-
 	    NewNature = Nature, UseCount = Count, !;
 		event:spread_colour(Model, yes)),
 	    finish_move(Model, 1)).
+
+update_connect_marks(Model, Connects, NewConns) :-
+	 /* avoid if no change */
+	 all(user, nth, [unify(1), build(Connects), build(NewConns)]), !;
+	 find_all_comps(Model, Part),
+	 caption_for(Part, PCap),
+	 (clear_av_pair(Part, 0, autoconnect), fail;
+	 nth(P, Connects, [_OC | CaptList]),
+	  nth(P, NewConns, Chosen),
+	  nth(Chosen, CaptList, PCap),
+	  nth(P, [inf_in, inf_out, flow_in, flow_out], AutoType),
+	  add_parameter(Part, 0, autoconnect, AutoType),
+	  fail);
+	 true.
 
 separate_type_from_mems([H | T], H-T).
 

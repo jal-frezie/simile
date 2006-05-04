@@ -1479,7 +1479,7 @@ unique_name_for_new(Type, Name) :-
 
 get_disag_params(Submodel, 
 		 [Colour, Image, ImgPos, Nature, Fat, Count, Step, Desc, 
-		  Comment, EnumSpecs, Fix, HideB, HideC, Separate]) :-
+		  Comment, EnumSpecs, Connect, Fix, HideB, HideC, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour,
 	    \+ Colour = clear, !;
 	    Colour = white),
@@ -1512,7 +1512,52 @@ get_disag_params(Submodel,
 	Separate = 0),
 	Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
 	Submodel has_graphical_attribute internal_extent of [LI, _, RI, _],
-	Fat is 1.0*(RB-LB)/(RI-LI).
+	Fat is 1.0*(RB-LB)/(RI-LI),
+/* Now what about auto-connection information. Dialogue needs to know
+which, if any, possible connection is being used, so send 4 lists
+(fttb), 1st elt of each being posn of current selection or 0 if
+none. */
+        (setof(VParCapt,
+	      VPar^(Submodel has_part VPar,
+	       is_parameter(VPar, 1),
+	       caption_for(VPar, VParCapt)),
+	       AutoInfIns), !;
+	 AutoInfIns = []),
+        (setof(VParCapt,
+	      VPar^(find_all_comps(Submodel, VPar),
+	       VPar is_of_sort has_function,
+	       caption_for(VPar, VParCapt)),
+	       AutoInfOuts), !;
+	 AutoInfOuts = []),
+        (setof(VParCapt,
+	      VPar^A^B^(find_all_comps(Submodel, VPar),
+			VPar is_connector from A to B,
+			find_type(A, cloud),
+			caption_for(VPar, VParCapt)),
+	       AutoFlowIns), !;
+	 AutoFlowIns = []),
+        (setof(VParCapt,
+	      VPar^A^B^(find_all_comps(Submodel, VPar),
+			VPar is_connector from A to B,
+			find_type(B, cloud),
+			\+ find_type(A, cloud),
+			caption_for(VPar, VParCapt)),
+	       AutoFlowOuts), !;
+	 AutoFlowOuts = []),
+
+         all(m_update, find_cur_posn,
+	     [unify(Submodel), 
+	      build([AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts]),
+	      build([inf_in, inf_out, flow_in, flow_out]), build(Connect)]).
+
+
+find_cur_posn(Model, Capts, AutoType, [CurPosn | Capts]) :-
+         find_all_comps(Model, CurVPar),
+         get_av_pair(CurVPar, 0, autoconnect, AutoType),
+         caption_for(CurVPar, CurVParCapt),
+         nth(CurPosn, Capts, CurVParCapt), !;
+         CurPosn = 0.
+
 
 time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
