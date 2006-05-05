@@ -416,7 +416,7 @@ namespace eval grid005 {
         for {set row 1} {$row<=$nrow} {incr row} {
             set rowData($row) {}
             for {set col 1} {$col<=$ncol} {incr col} {
-                set cell [expr ($row-1)*$ncol+$col-1]
+                set cell [expr {($row-1)*$ncol+$col-1}]
                 set celval [lindex [lindex $values $cell] 1]
                 set length [llength $celval]
                 
