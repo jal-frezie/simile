@@ -127,6 +127,9 @@ if {[string equal windows $tcl_platform(platform)]} {
 }
 
 if {[info exists prolog_in_console]} {
+    lappend auto_path $SIMILE_PATH/System/lib
+# temporary to get wkng with local tcltk
+
     set env(interfaceId) console
 # this will simply let the script run out after loading the rest of the Tcl
 # so control goes back to Prolog
@@ -195,9 +198,6 @@ if {[info exists SimileAutoObjLoaded]} {
 }
 
 wm withdraw . ;# already withdrawn if not Linux
-
-# temporary to get wkng with local tcltk
-# lappend auto_path $SIMILE_PATH/System/lib
 
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder
