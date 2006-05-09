@@ -235,24 +235,25 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 	snap_to_grid(Point, GPoint),
 	adjust_edit_menu(Wid, Parent, GPoint).
 
-click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
+click_in(Wid, ActPt, Trans, Depth, Parent, CD) :-
 	finish_old_edit(none),
 	doing_add(New_obj),
-	snap_to_grid(ActPt, [Xpt, Ypt]),
-	set_start_coords(Xpt, Ypt),
-	set_current_coords(Xpt, Ypt),
-	save_params(Trans, Depth, Parent),
-	Wid shows_model Top,
-	contains(Top, Parent, Ladder),
-	check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
-	(New_obj is_class_of_sort box, !,
-	    (New_obj is_class_of_sort rounded_rect, !,
-		set_line_start_obj(Parent),
-		advance_phase_to(action_choice);
-	    insert(Wid, Parent, [Xpt, Ypt], New_obj));
-	make_terminator(New_obj, Parent, DropNode),
-	    (var(DropNode), !;
-		do_linear(New_obj, DropNode))).
+	(\+ get_shape(Parent, hide_contents, 1),
+	 use_style_for(New_obj, NewStyle),
+	 draws_at(Wid, NewStyle, Depth), !,
+	    snap_to_grid(ActPt, [Xpt, Ypt]),
+	    set_start_coords(Xpt, Ypt),
+	    set_current_coords(Xpt, Ypt),
+	    save_params(Trans, Depth, Parent),
+	    (New_obj is_class_of_sort box, !,
+		(New_obj is_class_of_sort rounded_rect, !,
+		    set_line_start_obj(Parent),
+		    advance_phase_to(action_choice);
+		    insert(Wid, Parent, [Xpt, Ypt], New_obj));
+		make_terminator(New_obj, Parent, DropNode),
+		(var(DropNode), !;
+		    do_linear(New_obj, DropNode)));
+	click_on(ActPt, Parent, CD)).
 
 click_in(Wid, _,_,_, Parent, CD) :-
 	/* get_mode(select), !,
@@ -296,14 +297,6 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	    NewLooks = []),
 	all(event, spread_colour, [build(NewLooks), unify(yes)]).
 
-check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
-	(\+ (member(Hider, Levels),
-		get_shape(Hider, hide_contents, 1)),
-	    use_style_for(New_obj, NewStyle),
-	    draws_at(Wid, NewStyle, Depth), !;
-	    do_dialogue("Failed to add component", warning,
-			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).
-	    
 adjust_edit_menu(Wid, Comp, Point) :-
 	retractall(menu_submodel_will_be(Wid, _,_)),
 	assert(menu_submodel_will_be(Wid, Comp, Point)).
@@ -809,27 +802,9 @@ be consulted if in multi-object mode. */
 drag(Xpt, Ypt) :-
 	sift_and_set(Xpt, Ypt),
 	find_current(Wid),
-	(multi_object_mode,
-	    remove_old_incomplete,
-	    remove_old_rubberband,
-	    get_component_from_gui(Wid, Xpt, Ypt, Comp), !,
-		(multi_level_mode, !,
-			find_relevant_windows(Comp, Wid, New_depth, BorderTrans),
-			(find_type(Comp, submodel), !,
-				add_to_translation(BorderTrans, Comp, Trans),
-				New_parent = Comp;
-			find_all_comps(New_parent, Comp),
-				Trans = BorderTrans),
-			save_params(Trans, New_depth, New_parent);
-		get_current_node(Parent),
-			find_all_comps(Parent, Comp),
-			get_translation(Trans)),
-		translate([Xpt, Ypt], Trans, RelPt);
-	/* do not delete a submodel by unclicking inside it 
-	get_mode(delete), !,
-	    remove_highlights,
-	    fail; */
-	update_context(Wid, [Xpt, Ypt], RelPt, Comp)),
+	remove_old_incomplete,
+	remove_old_rubberband,
+	update_context(Wid, [Xpt, Ypt], RelPt, Comp),
 	(get_phase(moving_text), !,
 	    RelPt = [NewXpt, NewYpt];
 	snap_to_grid(RelPt, [NewXpt, NewYpt])),
@@ -847,51 +822,40 @@ than one component boundary at once (this always happened but is more common now
 drag can be signalled by click-to-start, click-to-finish) and (2) It's no longer
 much more complicated than the rest of the code. */
 
-update_context(Wid, Pair, NewPair, Comp) :-
+update_context(Wid, [Xpt, Ypt], NewPair, Comp) :-
 	get_translation(Trans),
+	get_current_depth(Depth),
 	get_current_node(Parent),
-	(multi_object_mode, !,
-		check_exits(Wid, Parent, Trans, Pair, InterParent, InterTrans),
-		check_entries(InterParent, InterTrans, Pair, NewPair, Comp);
-	/* Not multi-object mode -- just use previous object if there is one */
-	(get_moving_obj(Comp), !; Comp = none),
-		translate(Pair, Trans, NewPair)).
+	(multi_level_mode, !,
+	    (get_component_from_gui(Wid, Xpt, Ypt, Comp), !; Comp = none),
+	    check_crossings(Wid, Parent, Depth, Trans, [Xpt, Ypt], NewPair);
+	 get_moving_obj(Comp),
+	    translate([Xpt, Ypt], Trans, NewPair)).
 
-check_exits(Wid, Parent, Trans, Pair, InterParent, InterTrans) :-
+check_crossings(Wid, Parent, Depth, Trans, Pair, NewPair) :-
 	translate(Pair, Trans, [RelXpt, RelYpt]),
 	get_shape(Parent, internal_extent, [L, T, R, B]),
 	((RelXpt < L; RelXpt > R; RelYpt < T; RelYpt > B), !,
 	/* Dragged outside previous parent... */
-		multi_level_mode, 
-		\+ Wid shows_model Parent,
-		/* Multilevel enavles and component does not fill window, 
-		so can leave it, otherwise fail */ 
-			subtract_from_translation(Trans, Parent, Prev_trans),
-			find_all_comps(Grandma, Parent),
-			check_exits(Wid, Grandma, Prev_trans, Pair, 
-					InterParent, InterTrans);
-	InterParent = Parent,
-		InterTrans = Trans).
+	    \+ Wid shows_model Parent,
+	    subtract_from_translation(Trans, Parent, Prev_trans),
+	    find_all_comps(Grandma, Parent),
+	    NewDepth is Depth - 1,
+	    check_crossings(Wid, Grandma, NewDepth, Prev_trans, Pair, NewPair);
+	 check_entries(Parent, Depth, Trans, Pair, NewPair)).
 
 /* Look for what we are pointing at within the current model. This version ignores
 active display depths so allows pointing to invisible details. */
 
-check_entries(InterParent, Trans, Pair, NewPair, Comp) :-
+check_entries(InterParent, Depth, Trans, Pair, NewPair) :-
 	translate(Pair, Trans, InterPair),
 	(targets(_, InterParent, InterPair, 0, New_obj), !,
-		(multi_level_mode,
-		find_type(New_obj,  submodel), !,
-			add_to_translation(Trans, New_obj, DeepTrans),
-			check_entries(New_obj, DeepTrans, Pair, NewPair, Comp);
-		/* else select this component */
-			save_params(Trans, 0, New_obj),
-			NewPair = InterPair,
-			Comp = New_obj);
+	    add_to_translation(Trans, New_obj, DeepTrans),
+	    NewDepth is Depth + 1,
+	    check_entries(New_obj, NewDepth, DeepTrans, Pair, NewPair);
 	/* in previous component but targets nothing */
-		save_params(Trans, 0, InterParent),
-		NewPair = InterPair,
-		Comp = InterParent).
-
+	save_params(Trans, Depth, InterParent),
+	    NewPair = InterPair).
 
 :- dynamic(moved_something/0).
 :- dynamic(instant_link/1).
@@ -1185,12 +1149,6 @@ tweak_middle([[X1, Y1]], [Xt, Yt], [[X2, Y2]]) :-
 	X2 is X1+Xt,
 	Y2 is Y1+Yt.
 
-/* multi_object_mode: system is in a state in which dragging from one object to
-another makes sense (one day this but not the next might be true) */
-
-multi_object_mode :-
-	multi_level_mode.
-	
 /* multi_level_mode: system is in a state in which dragging in and out of
 components makes sense */
 
@@ -1403,21 +1361,29 @@ finishable, otherwise do as for primitive.
 Alteration to allow drags of links into space to produce new components; always
 hunt if on a submodel. Further alteration: only make this alteration for flows */
 
-sort_for_finish(Target, Ltype, Xpt, Ypt) :-
+sort_for_finish(Hit, Ltype, Xpt, Ypt) :-
 	(get_highlit_obj(_, Old_target),
 		normalize(Old_target), fail; true),
-
+	    
 	get_line_start_obj(OrigStart),
-        get_nearest_equivalent_link(Ltype, OrigStart, Target, Start),
-	(find_type(Target, submodel),
+	get_current_node(Location),
+        get_nearest_equivalent_link(Ltype, OrigStart, Location, Start),
+
+	(Hit = none, !,
+	    Target = Location;
+	 Target = Hit),
+	(Hit = none, 
+	    \+ get_shape(Location, hide_contents, 1),
 	/* This requirement dropped for flows, see above */
-		(find_all_comps(Target, Baby),
-			can_finish(Ltype, Start, Baby),
-			\+ contains(Baby, Start), !;
-		member(Ltype, [flow, squirt])),
-		set_current_coords(Xpt, Ypt), /* for new terminator if dropped here */
-		extend_line_to(Start, Ltype, Target, [Xpt, Ypt]);
-	Drawn = false),
+	    (find_all_comps(Location, Baby),
+		can_finish(Ltype, Start, Baby),
+		\+ contains(Baby, Start);
+	     member(Ltype, [flow, squirt])), !,
+	    set_current_coords(Xpt, Ypt),
+	    /* for new terminator if dropped here */
+	    extend_line_to(Start, Ltype, Location, [Xpt, Ypt]);
+	state:retractall(current_coords_are(_,_)),
+	    Drawn = false),
 
 	(can_finish(Ltype, Start, Target), !,
 	    set_line_finish_obj(Target),
