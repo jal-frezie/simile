@@ -561,7 +561,7 @@ make_role_first(Role) :-
 	    all(m_update, roll_match, [build(LRoles), unify(Shift),
 				       unify(Size), build(NewLRoles)]),
 	    Link has_changed_attribute role to NewLRoles),
-	fail; true.
+	fail.
 
 roll_ref(N, Shift, Size, NewN) :-
 	MidN is N+Shift,
