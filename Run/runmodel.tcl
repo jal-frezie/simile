@@ -939,11 +939,15 @@ proc GetRunParams {node} {
 	} else {
 	    set runState($node,execDur) $runState($node,execTime)
 	}
+	if {![info exists runState($node,adapt)]} {
+# Model had run settings from earlier version and has not been run
+	    set runState($node,adapt) 0
+	    set runState($node,errLimit) 1e-6
+	}
 	set runParams [list execTime $runState($node,execDur) \
 			   timeUnit $runState($node,timeUnit) \
 			   displayInt $runState($node,displayInt) \
-			   intMethod [set runState($node,oldIntMethod) \
-					  $runState($node,intMethod)] \
+			   intMethod $runState($node,intMethod) \
 			   adapt $runState($node,adapt) \
 			   errLimit $runState($node,errLimit)]
 # Keep all available phase info, we may have edited the model without runing it
@@ -981,7 +985,6 @@ proc SetRunParams {node runParams} {
 		set runState($node,prev_update$runState($node,phases)) $phase
 	    }
 	}
-	set runState($node,oldIntMethod) $runState($node,intMethod)
     } else {
 	set runState($node,execTime) [lindex $runParams 0]
 	set runState($node,displayInt) [lindex $runParams 1]

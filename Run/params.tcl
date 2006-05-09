@@ -406,8 +406,10 @@ proc AcceptData {topNode compName notInput complain} {
                 if {$complain>0} {
                     if {[catch {llength $result} rlen]} {
 			error $result ;# unplanned error
-		    } elseif {$rlen} {
+		    } elseif {$rlen>2} {
                         set where " at indices [lrange $result 0 end-1]"
+		    } elseif {$rlen>1} {
+                        set where " at index [lindex $result 0]"
                     } else {
                         set where {}
                     }
