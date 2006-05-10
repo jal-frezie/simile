@@ -999,7 +999,6 @@ drag_to(Xpt, Ypt, Target) :-
 	get_mode(ghost),
 	clear_incomplete,
 	find_type(Target, Type),
-	find_type(Target, Type),
 	(get_highlit_obj(2, OldTarget),
 	    normalize(OldTarget),
 	    fail;
