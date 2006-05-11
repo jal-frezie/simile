@@ -829,7 +829,7 @@ update_context(Wid, [Xpt, Ypt], NewPair, Comp) :-
 	(multi_level_mode, !,
 	    (get_component_from_gui(Wid, Xpt, Ypt, Comp), !; Comp = none),
 	    check_crossings(Wid, Parent, Depth, Trans, [Xpt, Ypt], NewPair);
-	 get_moving_obj(Comp),
+	 (get_moving_obj(Comp), !; Comp = none),
 	    translate([Xpt, Ypt], Trans, NewPair)).
 
 check_crossings(Wid, Parent, Depth, Trans, Pair, NewPair) :-
@@ -998,11 +998,11 @@ drag_to(Xpt, Ypt, Target) :-
 	get_phase(dragging),
 	get_mode(ghost),
 	clear_incomplete,
-	find_type(Target, Type),
 	(get_highlit_obj(2, OldTarget),
 	    normalize(OldTarget),
 	    fail;
-	 Type = submodel, !;
+	 Target = none, !;
+	 find_type(Target, Type),
 	    ghost_type(Start, Type, _),
 	    \+ Target = Start,
 	    \+ find_ghosts(Target, _),
