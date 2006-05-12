@@ -1198,18 +1198,18 @@ set_properties(Wid, Model) :-
 	    finish_move(Model, 1)).
 
 update_connect_marks(Model, Connects, NewConns) :-
-	 /* avoid if no change */
-	 all(user, nth, [unify(1), build(Connects), build(NewConns)]), !;
-	 find_all_comps(Model, Part),
-	 caption_for(Part, PCap),
-	 (clear_av_pair(Part, 0, autoconnect), fail;
-	 nth(P, Connects, [_OC | CaptList]),
-	  nth(P, NewConns, Chosen),
-	  nth(Chosen, CaptList, PCap),
-	  nth(P, [inf_in, inf_out, flow_in, flow_out], AutoType),
-	  add_parameter(Part, 0, autoconnect, AutoType),
-	  fail);
-	 true.
+	/* avoid if no change */
+	all(user, nth, [unify(1), build(Connects), build(NewConns)]), !;
+	find_all_comps(Model, Part),
+	(m_update:clear_av_pair(Part, 2, autoconnect),
+	 nth(P, [inf_in, inf_out, flow_in, flow_out], AutoType),
+	    autoconnect_reference_for(Model, Part, AutoType, PCap),
+	    nth(P, Connects, [_OC | CaptList]),
+	    nth(P, NewConns, Chosen),
+	    nth(Chosen, CaptList, PCap),
+	    add_parameter(Part, 2, autoconnect, AutoType),
+	    fail);
+	true.
 
 separate_type_from_mems([H | T], H-T).
 

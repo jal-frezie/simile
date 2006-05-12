@@ -238,7 +238,7 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 click_in(Wid, ActPt, Trans, Depth, Parent, CD) :-
 	finish_old_edit(none),
 	doing_add(New_obj),
-	(\+ get_shape(Parent, hide_contents, 1),
+	(\+ (get_shape(Parent, hide_contents, 1), \+ Wid shows_model Parent),
 	 use_style_for(New_obj, NewStyle),
 	 draws_at(Wid, NewStyle, Depth), !,
 	    snap_to_grid(ActPt, [Xpt, Ypt]),
@@ -1708,7 +1708,19 @@ doing_add(Comp) :-
 	get_adding_object(Comp).
 
 tie_ends(New_obj, Start_thing, Terminator) :-
-	link_ends(New_obj, Start_thing, Terminator, LastArc),
+	(get_shape(Start_thing, hide_contents, 1),
+	    /* contents hidden -- look for default output info */
+	    member(New_obj-DefMark, [flow-flow_out, influence-inf_out]),
+	    find_all_comps(Start_thing, DefStart),
+	    get_av_pair(DefStart, 2, autoconnect, DefMark), !;
+	DefStart = Start_thing),    
+	(get_shape(Terminator, hide_contents, 1),
+	    /* contents hidden -- look for default input info */
+	    member(New_obj-EndMark, [flow-flow_in, influence-inf_in]),
+	    find_all_comps(Terminator, DefEnd),
+	    get_av_pair(DefEnd, 2, autoconnect, EndMark), !;
+	DefEnd = Terminator),    
+	link_ends(New_obj, DefStart, DefEnd, LastArc),
 	reuse_route(New_obj, LastArc).
 
 	/* 

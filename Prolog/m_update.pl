@@ -28,7 +28,7 @@ sicstus_module(m_update,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
 		add_new_line_between/4, change_class/3, get_disag_params/2,
-		time_step_for/3, use_units_in/2,
+		autoconnect_reference_for/4, time_step_for/3, use_units_in/2,
 		make_ghost/3, get_possible_start/2]).
 
 sicstus_use_module([library(lists),
@@ -436,10 +436,6 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Target_unit, TargetExprs, DimExprs], Complaint)),
 	(nonvar(Complaint); Complaint = []).
 
-/* decide_param_names fills in the 'local name' slot in these data structures; first
-it lists all those which already have names, then generates new ones which differ
-from these for those which havent. */
-
 need_same_dims(Item, Affected) :-
 	(initiates(Affected, Item); terminates(Affected, Item)),
 	    find_type(Affected, flow).
@@ -469,6 +465,10 @@ check_flow_ends(Function, Units, Error) :-
 	    check_unit(CUnits, Units, 2, AnError),
 	    \+ AnError = [], !, Error = AnError;
 	 Error = []).
+
+/* decide_param_names fills in the 'local name' slot in these data structures; first
+it lists all those which already have names, then generates new ones which differ
+from these for those which havent. */
 
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
@@ -1518,15 +1518,17 @@ which, if any, possible connection is being used, so send 4 lists
 (fttb), 1st elt of each being posn of current selection or 0 if
 none. */
         (setof(VParCapt,
-	      VPar^(Submodel has_part VPar,
-	       is_parameter(VPar, 1),
-	       caption_for(VPar, VParCapt)),
+	       VPar^(find_all_comps(Submodel, VPar),
+		      find_type(VPar, influence),
+		      continues_from(VPar, Submodel),
+		      autoconnect_reference_for(Submodel, VPar, inf_in, VParCapt)),
 	       AutoInfIns), !;
 	 AutoInfIns = []),
         (setof(VParCapt,
-	      VPar^(find_all_comps(Submodel, VPar),
-	       VPar is_of_sort has_function,
-	       caption_for(VPar, VParCapt)),
+	       VPar^(find_all_comps(Submodel, VPar),
+		      find_type(VPar, influence),
+		      continues_in(VPar, Submodel),
+		      autoconnect_reference_for(Submodel, VPar, inf_out, VParCapt)),
 	       AutoInfOuts), !;
 	 AutoInfOuts = []),
         (setof(VParCapt,
@@ -1548,16 +1550,34 @@ none. */
          all(m_update, find_cur_posn,
 	     [unify(Submodel), 
 	      build([AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts]),
-	      build([inf_in, inf_out, flow_in, flow_out]), build(Connect)]).
-
+	      build([inf_in, inf_out, flow_in, flow_out]),
+	      build(Connect)]).
 
 find_cur_posn(Model, Capts, AutoType, [CurPosn | Capts]) :-
          find_all_comps(Model, CurVPar),
-         get_av_pair(CurVPar, 0, autoconnect, AutoType),
-         caption_for(CurVPar, CurVParCapt),
+         get_av_pair(CurVPar, 2, autoconnect, AutoType),
+         autoconnect_reference_for(Model, CurVPar, AutoType, CurVParCapt),
          nth(CurPosn, Capts, CurVParCapt), !;
          CurPosn = 0.
 
+autoconnect_reference_for(Submodel, CurVPar, AutoType, CurVParCapt) :-
+	find_all_comps(Submodel, CurVPar),
+	(AutoType = inf_in, !,
+	    find_type(CurVPar, influence),
+	    continues_from(CurVPar, Submodel),
+	    CurVPar is_connector from _ to CaptFn,
+	    implicit_function(CaptNode, CaptFn),
+	    get_input_info(CaptFn, InputList),
+	    member(input_link(id(CurVPar, none, _), _, Name, _,_), InputList),
+	    caption_for(CaptNode, CaptStart),
+	    sicstus_format_to_chars("~a (as ~a)", [CaptStart, Name], CaptStr),
+	    name(CurVParCapt, CaptStr);
+	(AutoType = inf_out, !,
+	    find_type(CurVPar, influence),
+	    continues_in(CurVPar, Submodel),
+	    CurVPar is_connector from CaptNode to _;
+	CaptNode = CurVPar),
+	caption_for(CaptNode, CurVParCapt)).
 
 time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
