@@ -238,8 +238,8 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     $notebook add [frame $notebook.connect] -text "Connect"
     TitleFrame $notebook.connect.tf -text "Automatic submodel connections"
     set connectf [$notebook.connect.tf getframe]
-    set textx [list "Incoming influences set value of: " \
-		   "Outgoing influences take value of: " \
+    set textx [list "Incoming influences connect to: " \
+		   "Outgoing influences connect from: " \
 		   "Incoming flows connect to: " \
 		   "Outgoing flows connect from: "]
 #    pack [frame 
@@ -247,7 +247,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 	frame $connectf.fr$i
 	pack [label $connectf.fr$i.l -text [lindex $textx $i]] \
 	    -side left
-	::ttk::menubutton $connectf.fr$i.pulldown -width 10 -textvariable disaggregate(cn$i)
+	::ttk::menubutton $connectf.fr$i.pulldown -width 20 -textvariable disaggregate(cn$i)
 	set m [menu $connectf.fr$i.pulldown.menu -tearoff 0]
 	set mOpts [concat <none> [lrange [lindex $connects $i] 1 end]]
 	set disaggregate(cn$i) [lindex $mOpts [lindex [lindex $connects $i] 0]]
