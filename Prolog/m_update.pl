@@ -1570,7 +1570,7 @@ autoconnect_reference_for(Submodel, CurVPar, AutoType, CurVParCapt) :-
 	    get_input_info(CaptFn, InputList),
 	    member(input_link(id(CurVPar, none, _), _, Name, _,_), InputList),
 	    caption_for(CaptNode, CaptStart),
-	    sicstus_format_to_chars("~a (as ~a)", [CaptStart, Name], CaptStr),
+	    sicstus_format_to_chars("~a (as ~w)", [CaptStart, Name], CaptStr),
 	    name(CurVParCapt, CaptStr);
 	(AutoType = inf_out, !,
 	    find_type(CurVPar, influence),
