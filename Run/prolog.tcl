@@ -33,16 +33,19 @@ proc KeepLooking {} {
 	    if {[catch {set cmd [lindex $line 0]} mess]} {
 		DebugMess "Could not parse $line : $mess"
 		send_pl_cmd result:-1
-	    } elseif {[string match get_tcl_cmd $cmd]} {
+	    } elseif {[string match exit $cmd]} {
 		set prologExit 1
+	    } elseif {[string match fail $cmd]} {
+		set prologExit 0
 	    } elseif {[string match send_tcl_cmd $cmd]} {
 		eval do_tail $line
 	    } else {
 		error $line
-		set prologExit 1
+		set prologExit -1
 	    }
 	}
     }
+    return $prologExit
 }
 
 set debugBoxes 1
@@ -60,10 +63,14 @@ proc prolog {plCmd} {
     set oldStack $plPipe(stack)
     set plPipe(stack) [AddCurrentToPipe $oldStack]
 #puts "Prolog starting $plCmd"
-    send_pl_cmd command:$plCmd
-    KeepLooking
+    send_pl_cmd call:$plCmd
+    set plOutcome [KeepLooking]
 #puts "Prolog finished $plCmd"
     set plPipe(stack) $oldStack
+    if {$plOutcome != 1} {
+	ResetProgressBox
+    }
+    return $plOutcome
 }
 
 proc AddCurrentToPipe {stack} {

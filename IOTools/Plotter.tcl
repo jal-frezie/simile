@@ -781,7 +781,7 @@ namespace eval ::$keyValue {
 		}
 	    } else { ;# will plot next time so add binding for it
 		$w.canvas bind $node.$ident <Button-1> \
-			 [namespace code "TraceHighlight $w $node $ident"]
+			 [namespace code [list TraceHighlight $w $node $ident]]
 		$w.canvas bind $node.$ident <Enter> \
 			 [namespace code [list TracePopup $w $node $id %X %Y \
 					      %x %y]]

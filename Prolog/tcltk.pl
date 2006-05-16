@@ -124,7 +124,7 @@ wait_for_tcl(Except, Result) :-
 	read_codes(JoinedTclStr),
 	all_utf8_to_ttfn(JoinedTclStr, Joined),
 	restore_crs(TclStr, Joined),
-	(append("command:", CmdStr, TclStr),
+	(append("call:", CmdStr, TclStr),
 	    append(CmdStr, ".", TermStr),
 	    do_cmd(TermStr),
 	    fail;
@@ -139,8 +139,9 @@ wait_for_tcl(Except, Result) :-
 do_cmd(TermStr) :-
 	on_exception(PlError,
 	(sicstus_read_from_chars(TermStr, Cmd),
-	(call(Cmd); true), /* dont care if it fails */
-	write(get_tcl_cmd)),
+	(call(Cmd),
+	    write(exit);
+	write(fail))),
 	format("~w calling ~s", [PlError, TermStr])), !,
 	nl, flush_output.
 

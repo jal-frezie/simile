@@ -610,6 +610,8 @@ proc OpenProgressBox {winId} {
     if {[incr progressBoxCount]==1} {
 	PutItThere .progress $winId
 	wm title .progress "Progress with current operation"
+	wm protocol .progress WM_DELETE_WINDOW {set done 1}
+	# do not allow delete
 	pack [frame .progress.filler -width 400 -height 100]
 	if {[LetItShow .progress]} {
 	    grab .progress
@@ -628,6 +630,15 @@ proc CloseProgressBox {} {
     if {![incr progressBoxCount -1]} {
 	grab release .progress
 	PackItUp .progress
+    }
+}
+
+proc ResetProgressBox {} {
+    global progressBoxCount
+
+    if {$progressBoxCount} {
+	set progressBoxCount 1
+	CloseProgressBox
     }
 }
 

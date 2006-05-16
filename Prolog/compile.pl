@@ -496,14 +496,16 @@ check_functions(Functions, Comps, Phases, VMSPs, Sorted) :-
 	sort_assignments(Functions, UseCompartments, Phases, Sorted, VMSPs),
 	/* Check all same-time-step circles can be done in one program loop */
 	reassure_user("Checking consistency of same-time-step loops"),
-	(member(Start, Sorted),
+	(select(Start, Sorted, NotStart),
 	    Start = make(_, Conds, _,_,_), 
 	    member(later(LoopEnd), Conds),
-	    select(Loop2nd, Sorted, More),
-	    Loop2nd = make(LoopEnd, _, Path, Phase, _),
+	    select(Loop2, NotStart, More),
+	    Loop2 = make(LoopEnd, _, Path, Phase, _),
 	    remove_non_loopers(Path, PurePath),
-	    find_antecedent_outside_loop(Loop2nd, PurePath, Phase, More, Out),
-	    chain(Out, Start, Sorted),
+	    find_antecedent(More, [Loop2], outside_loop, PurePath-Phase, Out),
+	    /* would be better to get setof these and trace them all back at
+	    once but that needs too_many_variables */
+	    find_antecedent(Sorted, [Out], =, Start, _),
 	    Out = make(Xefct, _, APath, APhase, _),
 	    (remove_non_loopers(APath, PureAPath),
 		\+ suffix(PurePath, PureAPath),
@@ -733,10 +735,9 @@ match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
 	    Levels = MoreLevels;
 	Levels = [Path | MoreLevels]).
 
-/* get_circle_from/3: Takes a lot of instructions that contain a circularity,
-and a bunch of same that have already been linked up, and returns a set
-taken from both lists that constitute a circle. Should be obvious how it
-works. */
+/* dummy_order/2: a miniature version of the ordering process. Removes steps
+that have no antecedent from the list; if any are left when it can no longer
+do this, these must contain a dependency loop. */
 
 dummy_order(Steps, Core) :-
 	select(Step, Steps, Rest),
@@ -744,6 +745,12 @@ dummy_order(Steps, Core) :-
 	       member(Prev, Rest)), !,
 	    dummy_order(Rest, Core);
 	Core = Steps.
+
+/* get_circle_from/3: Takes a lot of instructions that contain a circularity,
+and a bunch of same that have already been linked up, and returns a set
+taken from both lists that constitute a circle. Should be obvious how it
+works. Clue: since we have already removed any instruction without
+antecedents in the list, chaining bacwards will always find a circle. */
 
 get_circle_from(Steps, [First | Linked], Circle) :-
 	order(Last, First),
@@ -1721,21 +1728,28 @@ select_for(Path, Priority, Next, Assignments, Deferred) :-
 	    suffix(Path, GenPath),
 	    select_for(Path, Needed, Next, Assignments, Deferred).
 
-find_antecedent_outside_loop(Inst, PurePath, Phase, Functions, Out) :-
-	Inst = make(_,_, Path, NPhase, _),
-	(\+ NPhase == Phase;
-	    remove_non_loopers(Path, ShortPath),
-	    \+ suffix(PurePath, ShortPath)), !,
-	Out = Inst;
-	select(Mid, Functions, More),
-	order(Mid, Inst),
-	find_antecedent_outside_loop(Mid, PurePath, Phase, More, Out).
+find_antecedent(Insts, Chain, TestFn, TestData, Found) :-
+	member(Head, Chain),
+	order(Prev, Head),
+	select(Prev, Insts, Left), !,
+	/* above cut is important -- we do not want to retry selection. If this
+	one gets us nowhere we will call the procedure again with it removed
+	from the list, which avoids searching the same bit of tree again.
 
-chain(End, Start, List) :-
-	select(Mid, List, More),
-	order(Mid, End),
-	(Start = Mid; chain(Mid, Start, More)).
+	Next bit means if this rule is retried we do not look for antecedents
+	of something that satisfied the condition. */
 
+	TestCall =.. [TestFn, Prev, TestData],
+	(call(compile:TestCall), !,
+	    (Found = Prev;
+	    find_antecedent(Left, Chain, TestFn, TestData, Found));
+	find_antecedent(Left, [Prev | Chain], TestFn, TestData, Found)).
+
+outside_loop(make(_,_, Path, NPhase, _), LoopedPath-Phase) :-
+	\+ NPhase == Phase, !;
+	remove_non_loopers(Path, ShortPath),
+	\+ suffix(LoopedPath, ShortPath).
+	
 order(make(Effect, _,_,_,_), make(_, Conds, Path, _,_)) :-
 	member(Effect, Conds);
 	Effect = can_enter(Model),

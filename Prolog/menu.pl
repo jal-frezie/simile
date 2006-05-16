@@ -1304,7 +1304,7 @@ show_error(Model, Lossage) :-
 	    sicstus_format_to_chars("This model contains the target ~w, which depends on its own values from previous iterations of a program loop. However ~w must be calculated in phase ~d, but the cycle of evaluations includes target ~w, which must be calculated in phase ~d and therefore cannot be put in the same program loop.", [DefCon, DefCon, DefPh, LoopMem, MemPh], Text),
 	    Fault = user;
 	Lossage = condition_outside_loop(LoopStart, Xefct), !,
-	    sicstus_format_to_chars("This model contains the target ~w which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target ~w, which must be calculated outside the innermost program loop containing ~w", [LoopStart, Xefct, LoopStart], Text),
+	    sicstus_format_to_chars("This model contains the target ~w which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target ~w, which must be calculated outside the innermost program loop containing target ~w", [LoopStart, Xefct, LoopStart],Text),
 	    Fault = user;
 	Lossage = ordering_failure(Awkward), !,
 	    sicstus_format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Awkward], Text),
