@@ -245,12 +245,17 @@ influence_makes_ghost(Component) :-
 
 find_base(Ghost, Base) :-
 	Ghost is_of_sort has_bowtie, !,
-	((sequence(Base, Ghost); Base = Ghost; sequence(Ghost, Base)),
+	setof(Equiv,
+	(sequence(Equiv, Ghost); Equiv = Ghost; sequence(Ghost, Equiv)),
+	    Equivs),
+	(member(Base, Equivs),
 	    implicit_function(Base, FlowFn),
 	    (FlowFn has_class_refinement value of _Val;
 		_Incoming is_connector from _Source to FlowFn), !;
-	(sequence(Base, Ghost); Base = Ghost),
-	\+ sequence(_, Base));
+	member(Base, Equivs),
+	    leaves_primitive(Base),
+	    \+ (sequence(Base, Better),
+		   leaves_primitive(Better)));
 /*	find_name_host(Ghost, Base); */
 	Ghost is_of_sort has_function,
 	Link is_connector from NextUp to Ghost,
@@ -259,6 +264,12 @@ find_base(Ghost, Base) :-
 	initiates(Link, NextBase), !,
 	   find_base(NextBase, Base);
 	Base = Ghost.
+
+leaves_primitive(Link) :-
+	Link is_connector from Go to _,
+	appears(Go),
+	(\+ find_type(Go, submodel);
+	    get_shape(Go, hide_contents, 1)).
 
 find_ghosts(Base, Ghost) :-
 	Base has_type flow, !,
