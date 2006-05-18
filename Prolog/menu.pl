@@ -1098,9 +1098,10 @@ set_properties(Wid, Model) :-
 	(New_P_list = '', !; /* dialogue was cancelled */
 	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
 		      NewCount, NewStep, NewDesc, NewComment, NewFix,
-		      NewHideB, NewHideC, NewSeparate, NewEnumSpecs, NewConns],
-	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count,
-		      _,_,_,_, Connect, _, HideB, HideC, Separate],
+		      NewHideB, NewHideC, NewSeparate, NewShare, NewModName,
+		      NewEnumSpecs, NewConns],
+	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _,_,_,
+		      ModName, _, Connect, _, HideB, HideC, Separate, Share],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;

@@ -84,25 +84,25 @@ if ![string match aqua [tk windowingsystem]] {
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
-    dde servername $oldProc
-    set env(TCL_LIBRARY) [info library]
+	dde servername $oldProc
+	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
-    set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
-    set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
-    set graph(origin) 2
-        set graph(font) [list helvetica 10]
+	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
+	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
+	set graph(origin) 2
+        set graph(font) [list helvetica 8]
     } unix {
-    tk appname $oldProc ;# in case starting it from SimileAutoObj
+	tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
 #   set env(LD_LIBRARY_PATH) \
 #       $env(SP_PATH)/library:[file dirname [info library]]
     # the following can be edited for your configuration
-    set env(PRINTCMD) lpr
+	set env(PRINTCMD) lpr
         if [string match Darwin $tcl_platform(os)] {
             set graph(origin) 3
             set graph(font) [list helvetica 12]
         } else {
-        set graph(origin) 1
+	    set graph(origin) 1
             set graph(font) [list helvetica 10]
         }
     }

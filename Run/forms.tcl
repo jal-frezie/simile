@@ -7,10 +7,11 @@
 # preferences and customise dialogues.
 #
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
-            desc comment enumLists connects eqnunit hide_b hide_c separate} {
+            desc comment modname enumLists connects eqnunit hide_b hide_c \
+	    separate shared} {
     global disaggregate tcl_platform
     foreach varName {colour image imgpos type fatness \
-                icount eqnunit hide_b hide_c separate} {
+                icount eqnunit hide_b hide_c separate shared modname} {
         set disaggregate($varName) [set $varName]
     }
     if [llength $icount]>0 {
@@ -236,6 +237,17 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $notebook.calculation.math -side left -padx 4 -pady 4 -fill both -expand true
     
     $notebook add [frame $notebook.connect] -text "Connect"
+    TitleFrame $notebook.connect.share -text "Module sharing"
+    set sharef [$notebook.connect.share getframe]
+    checkbutton $sharef.instance -variable disaggregate(shared) \
+	-text "This is an instance of a shared module, called:" \
+	-command [list ToggleModNameEntry $sharef]
+    pack $sharef.instance -side left
+    entry $sharef.modname -textvariable disaggregate(modname)
+    pack $sharef.modname -side right
+    ToggleModNameEntry $sharef
+    pack $notebook.connect.share -side top -padx 4 -pady 4 -fill both
+
     TitleFrame $notebook.connect.tf -text "Automatic submodel connections"
     set connectf [$notebook.connect.tf getframe]
     set textx [list "Incoming influences connect to: " \
@@ -315,6 +327,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
                 $step $disaggregate(desc) $disaggregate(comment) \
                 $disaggregate(eqnunit) $disaggregate(hide_b) \
                 $disaggregate(hide_c) $disaggregate(separate) \
+		$disaggregate(shared) $disaggregate(modname) \
 		$enumTypes $connectInds]
     } else {
         set result {}
@@ -323,15 +336,14 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     return $result
 }
 
-proc ShowComplexity {t} {
-    if {[string match [$t.simple.right.more cget -text] More]} {
-        pack $t.complex -anchor sw -side bottom
-        wm geometry $t {}; # resize to size requested internally by its widgets
-        $t.simple.right.more configure -text Less
-    } else  {
-        pack forget $t.complex
-        $t.simple.right.more configure -text More
+proc ToggleModNameEntry {sharef} {
+    global disaggregate
+    if {$disaggregate(shared)} {
+	set state normal
+    } else {
+	set state disabled
     }
+    $sharef.modname configure -state $state
 }
 
 proc ClearBG {posRBs} {

@@ -1479,7 +1479,7 @@ unique_name_for_new(Type, Name) :-
 
 get_disag_params(Submodel, 
 		 [Colour, Image, ImgPos, Nature, Fat, Count, Step, Desc, 
-		  Comment, EnumSpecs, Connect, Fix, HideB, HideC, Separate]) :-
+		  Comment, 'Awaiting implementation', EnumSpecs, Connect, Fix, HideB, HideC, Separate, 0]) :-
 	(Submodel has_class_refinement fill_colour of Colour,
 	    \+ Colour = clear, !;
 	    Colour = white),
