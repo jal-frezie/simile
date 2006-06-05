@@ -18,6 +18,9 @@ sicstus_use_module( [library(lists),
 ame_save( File, Model, Date, SelOnly ) :-
 	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
+	(setof(Lib, Mod^(contains(Model, Mod), go_with(Mod, SelOnly),
+			 Mod has_model_refinement instance of Lib), Libs), !;
+	       Libs = []),
 	(SelOnly = yes,
 	    Models = [UseAsParent],
 	    \+ draw:get_highlit_obj(0, UseAsParent), !,
@@ -40,7 +43,15 @@ ame_save( File, Model, Date, SelOnly ) :-
 	nl(Stream),
 	write_with_breaks( Stream, roots( Models )),
 	nl(Stream),
+	write_with_breaks( Stream, library( Libs )),
+	nl(Stream),
 	write_with_breaks( Stream, properties(Props)),
+	nl(Stream),
+	dialogue:reassure_user("Writing library node information"),
+	save_nodes( Libs, Stream, no, LibArcsUsed ),
+	nl(Stream),
+	dialogue:reassure_user("Writing library arc information"),
+	save_arcs( LibArcsUsed, Stream),
 	nl(Stream),
 	dialogue:reassure_user("Writing node information"),
 	save_nodes( Models, Stream, SelOnly, ArcsUsed ),
@@ -59,6 +70,7 @@ save_nodes( [], _,_, [] ).
 save_nodes( [Node|Nodes], Stream, SelOnly, AllArcsUsed ) :-
 	save_node( Node, Stream, SelOnly, NewArcsUsed ),
 	save_links( Node, Stream, SelOnly ),
+	save_instancehood( Node, Stream ),
 	save_refs( Node, Stream, SelOnly ),
 	any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
@@ -77,6 +89,12 @@ save_links( Node, Stream, SelOnly ) :-
 	      Links), !,
 	write_with_breaks( Stream, links( Node, Links ));
 	true.
+
+save_instancehood( Node, Stream ) :-
+	Node has_model_refinement instance of Module, !,
+	write_with_breaks( Stream, instance( Node, Module ));
+	true.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_refs - write out a data structure representing references in a module
@@ -286,6 +304,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV > 4.29, SimileV < 4.31, !;
 	dialogue:reassure_user("Updating non-Simile 4.3 model representation"),
 	    adjust_to_8_3(Translated)),
+	remove_duplicate_libraries(Translated),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -455,7 +474,21 @@ inds_to_places(var_pair(Expr, NewExpr), Depth) :-
 
 arr_ind(_, Found, _, 0) :-
 	member(Found, [index(_), makearray(_,_)]).
-	
+
+remove_duplicate_libraries(Trans) :-
+	Lib is_library,
+	member(_-NewLib, Trans),
+	Lib has_part NewLib,
+	NewLib has_class_refinement name of LibName,
+	Lib has_part OldLib,
+	\+ OldLib = NewLib,
+	OldLib has_class_refinement name of LibName,
+	(_Inst has_changed_model_refinement instance from NewLib to OldLib,
+	    fail;
+	 m_update:superfast_delete(NewLib)),
+	fail;
+	true.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % store_term does the various things necessary to translate the loaded model(s)
 % into the internal representation. Arg3 is a list of bindings - pairs of

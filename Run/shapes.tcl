@@ -685,9 +685,13 @@ proc MoveText {w id ptz} {
     FixBackBox $w $textItem
 }
 
-proc MoveObj {w id ptz} {
+proc MoveObj {w ids ptz} {
     set mptz [ScaleList $w $ptz]
-    eval {$w move $id} $mptz
+    foreach id $ids {
+	$w addtag /moving/ withtag $id
+    }
+    eval {$w move /moving/} $mptz
+    $w dtag /moving/
 }
 
 proc MoveLine {w id ptz} {

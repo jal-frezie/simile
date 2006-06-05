@@ -29,7 +29,7 @@ sicstus_module(m_update,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
 		add_new_line_between/4, change_class/3, get_disag_params/2,
 		autoconnect_reference_for/4, time_step_for/3, use_units_in/2,
-		make_ghost/3, get_possible_start/2]).
+		make_module_of/3, make_ghost/3, get_possible_start/2]).
 
 sicstus_use_module([library(lists),
 		sp_only, units, utility, ame_gen, m_class, text]).
@@ -179,11 +179,10 @@ origin_and_entrypoint(Link, Origin, Home, Entry) :-
 	(appears(Start), !,
 	    Home = Link;
 	Home = Home1).
-	
 
-find_node_with_data(Edit_thing, Real_edit_thing, 
-		Control_thing) :-
-	find_base(Edit_thing, Real_edit_thing),
+find_node_with_data(Edit_thing, Real_edit_thing, Control_thing) :-
+	(get_bowtie_section(Edit_thing, Real_edit_thing), !;
+	    find_base(Edit_thing, Real_edit_thing)),
 	(implicit_function(Real_edit_thing, Control_thing), !;
 		Real_edit_thing = Control_thing).
 
@@ -233,7 +232,9 @@ get_spec_units(Node, Unit) :-
 
 /* list_index_meanings: creates a list of atoms that are descriptions of the meanings of the 'index(n)' function with all its possible values. */
 
-list_index_meanings(root, []).
+list_index_meanings(Comp, []) :-
+	Comp is_root;
+	Comp is_library.
 
 list_index_meanings(Submodel, Meanings) :-
 	list_local_index_meanings(Submodel, Group1),
@@ -750,7 +751,7 @@ the end of the link */
 
 can_finish(Ltype, Box1, Box2) :-
 	(appears(Box2), !; contains(Box2, Box1)),
-	different(Box1, Box2),
+	\+ (find_base(Box1, Id), find_base(Box2, Id)),
 	\+ u_turn(Ltype, Box1, Box2),
 	find_type(Box1, Type1),
 	find_type(Box2, Type2),
@@ -788,10 +789,6 @@ membership_depends(Ind, Dep) :-
 	    Inf has_type relation,
 	    connects(Inf, Con, Dep)),
 	(Ind = Con; membership_depends(Ind, Con)).
-
-different(Box1, Box2) :-
-   find_base(Box1, Base),
-   \+ find_base(Box2, Base).
 
 /* Table of what type of link can connect what types of object. Does not include
 submodels, which are taken always to be connectable. Currently allows influences
@@ -895,7 +892,7 @@ get_submodel_interface(Model, flow, Dir, Link,
 	    sequence(Link, Tap);
 	 ControlDir = in,
 	    Tap = Link),
-	\+ is_ghost(Tap),
+	has_bowtie(Tap),
 	implicit_function(Tap, Valve),
 	get_spec_units(Valve, FlowUnits),
 	/* cannot use caption_for because we want this links name, not that
@@ -1190,7 +1187,9 @@ of the given item */
 status_affects(Tgt, Affected) :-
 	find_base(Tgt, Item),
 	(Base = Item;
-	    find_ghosts(Item, Base)),
+	    find_ghosts(Item, Base);
+	    has_bowtie(Item),
+	    (sequence(Base, Item); sequence(Item, Base))),
 	(Affected = Base;
 	initiates(Affected, Base),
 	    find_type(Affected, influence)),
@@ -1248,7 +1247,7 @@ old_cloud(Link) :-
 connects_ghost_flow(Type, Link) :-
 	Type = influence,
 	find_type(Link, flow),
-	is_ghost(Link).
+	\+ has_bowtie(Link).
 
 remove_equivs(Submodel, DeadPair) :-
 	Submodel no_longer_has_model_refinement link_equivalences of Equivs,
@@ -1579,6 +1578,31 @@ autoconnect_reference_for(Submodel, CurVPar, AutoType, CurVParCapt) :-
 	CaptNode = CurVPar),
 	caption_for(CaptNode, CurVParCapt)).
 
+make_module_of(Component, Name, Instance) :-
+	Parent has_part Component,
+	Component is_no_longer_part_of Parent,
+	Library is_library,
+	Component is_also_part_of Library,
+	Instance is_new_part_of Parent,
+	Instance has_new_model_refinement instance of Component,
+	(Component no_longer_has_model_refinement A of V,
+	    Instance has_new_model_refinement A of V,
+	    fail;
+	Component has_graphical_attribute A of V,
+	    member(A, [bounding_box, caption_offset]),
+	    Component no_longer_has_graphical_attribute A of V,
+	    Instance has_new_graphical_attribute A of V,
+	    fail;
+	member(End-Component, [start-Start, finish-Finish]),
+	    Link is_connector from Start to Finish,
+	    Link has_changed_termination End from Component to Instance,
+	    fail;
+	Component no_longer_has_class submodel,
+	    Component has_new_class module,
+	    Component has_changed_class_refinement name from Caption to Name,
+	    Instance has_new_class submodel,
+	    Instance has_new_class_refinement name of Caption).
+	
 time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
 	Step = TopStep.

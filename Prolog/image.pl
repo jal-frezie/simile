@@ -144,8 +144,7 @@ get_overlaps(Parent, Target, Part) :-
 %    find_all_comps(Parent, Part), speed hacked
     Parent has_part Node,
     (Part is_connector from Node to _,
-	find_type(Part, flow),
-	\+ is_ghost(Part);
+	has_bowtie(Part);
     Part = Node),
     appears(Part),
     /* ignore invisibles like ghost bowties -- included in hack
@@ -224,7 +223,8 @@ make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
 
 density_for(Comp, Density) :-
     (Comp has_type relation;
-        find_base(Comp, Base), \+ Base = Comp), !,
+        find_base(Comp, Base), \+ Base = Comp;
+	Comp is_of_sort has_bowtie, \+ has_bowtie(Comp)), !,
     Density = gray50;
     Density = '{}'.
 
@@ -239,7 +239,8 @@ use_style_for(Obj, channel) :-
     Obj is_class_of_sort channel, !.
 
 use_style_for(Type, Shape) :-
-    member(Type-Shape, [event-variable, squirt-flow]),
+    member(Type-Shape, [event-variable, squirt-flow, module-submodel]),
+    % modules are never drawn, last item just prevents lookup errors
     !.
 
 use_style_for(Style, Style).
@@ -714,7 +715,7 @@ complete(Item) :-
 of a non-visible node. */
 
 draws_complete(Item) :-
-    find_base(Item, BaseItem),
+    (get_bowtie_section(Item, BaseItem), !; find_base(Item, BaseItem)),
     complete(BaseItem), !,
     \+ (implicit_function(BaseItem, Extra), \+ complete(Extra)).
 
@@ -821,16 +822,19 @@ get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
     (Dir = in, Link is_connector from Obj to _;
     Dir = out, Link is_connector from _ to Obj),
         find_all_comps(Parent, Obj),
-        has_outer_equiv(Link, Parent, Big_link),
-        (Dir = in, Big_link is_connector from _ to Parent,
-            get_shape(Big_link, course, [InnerCentre | _]);
-        Dir = out, Big_link is_connector from Parent to _,
-            get_shape(Big_link, course, Route),
-            last(Route, InnerCentre)),
-        add_to_translation([0, 0, 1, 1], Parent, End_trans),
-        blobify(InnerCentre, InnerArea),
-        translate(InnerArea, End_trans, Area),
-        translate(InnerCentre, End_trans, Centre),
+        (has_outer_equiv(Link, Parent, Big_link),
+	    (Dir = in, Big_link is_connector from _ to Parent,
+		get_shape(Big_link, course, [InnerCentre | _]);
+	     Dir = out, Big_link is_connector from Parent to _,
+		get_shape(Big_link, course, Route),
+		last(Route, InnerCentre)),
+	    add_to_translation([0, 0, 1, 1], Parent, End_trans),
+	    translate(InnerCentre, End_trans, Centre);
+	% Link terminates on submodel boundary; use old coords
+	    get_shape(Link, course, Route),
+	    (Dir = in, last(Route, Centre);
+		Dir = out, Route = [Centre | _])),
+	blobify(Centre, Area),
         Link has_type CompType.
 
 constrain_inside([X1, Y1], [L, T, R, B], [X2, Y2]) :-

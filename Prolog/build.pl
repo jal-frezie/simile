@@ -38,6 +38,11 @@ roots( [Node|Nodes], Root, Bindings, NewBindings ) :-
 	gen_equiv_nodes(Node, Root, Trn),  % make it so, in the right place
 	roots( Nodes, Root, [Trn | Bindings], NewBindings ).
 
+/* do not check for duplication for the time being... */
+library(Nodes, _, Bindings, NewBindings) :-
+	Library is_library,
+	roots(Nodes, Library, Bindings, NewBindings).
+
 properties([],_,B,B).
 
 properties([A-V | Rest], Root, B, B) :-
@@ -130,6 +135,12 @@ links( Node, Links, _, Bindings, Bindings ) :-
 	\+ member(Missing-_, Bindings),
 	assert(missing(Missing)),
 	fail.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+instance(Node, Module, _, Bindings, Bindings ) :-
+	get_match(Node, Bindings, NewNode),
+	get_match(Module, Bindings, NewModule),
+	NewNode has_new_model_refinement instance of NewModule.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % references takes a node name and a list of references and renames them to

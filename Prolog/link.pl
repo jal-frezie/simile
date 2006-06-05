@@ -4,14 +4,14 @@
 *******************************************************************************/
 
 sicstus_module(link, [is_connector/2, is_new_connector/2,
-		 is_also_connector/2,
-		 is_no_longer_connector/1,
-		 has_type/2, has_new_type/2, no_longer_has_type/2,
-		 has_changed_type/2, has_attribute/2, has_new_attribute/2,
-		 no_longer_has_attribute/2, has_changed_attribute/2, 
-		 has_changed_termination/2, 
-	connects/3, initiates/2, terminates/2, equivalent_arcs/2,
-	sequence/2, follows/2, no_longer_has_connections/1] ).
+		      is_also_connector/2, is_no_longer_connector/1,
+		      has_type/2, has_new_type/2, no_longer_has_type/2,
+		      has_changed_type/2, has_attribute/2, has_new_attribute/2,
+		      no_longer_has_attribute/2, has_changed_attribute/2, 
+		      has_changed_termination/2, 
+		      connects/3, initiates/2, terminates/2, equivalent_arcs/2,
+		      sequence/2, follows/2, logical_follows/2,
+		      no_longer_has_connections/1] ).
 
 sicstus_use_module( [database,utility,node,graphics,m_struct,library(lists)] ).
 
@@ -219,12 +219,26 @@ sequence(Link2, Link1) :-
 	    follows(Link2, Link3),
 	    (sequence(Link3, Link1); Link3 = Link1).
 
+% Never follow across instance border
 follows(Link2, Link1) :-
 	(nonvar(Link1),
 	    Link1 is_connector from Edge to _;
 	var(Link1),
 	    Link2 is_connector from _ to Edge),
-	(Node = Edge; Node has_part Edge),
+	(\+ Edge has_model_refinement instance of _, Node = Edge;
+	    Node has_part Edge),
+	Node has_model_refinement link_equivalences of Links,
+	member(Link2-Link1, Links).
+
+% Always follow across instance border
+logical_follows(Link2, Link1) :-
+	(nonvar(Link1),
+	    Link1 is_connector from Edge to _;
+	var(Link1),
+	    Link2 is_connector from _ to Edge),
+	(Node = Edge;
+	    Module has_part Edge,
+	    (Node = Module; Node has_model_refinement instance of Module)),
 	Node has_model_refinement link_equivalences of Links,
 	member(Link2-Link1, Links).
 

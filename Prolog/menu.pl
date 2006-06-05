@@ -1101,7 +1101,7 @@ set_properties(Wid, Model) :-
 		      NewHideB, NewHideC, NewSeparate, NewShare, NewModName,
 		      NewEnumSpecs, NewConns],
 	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _,_,_,
-		      ModName, _, Connect, _, HideB, HideC, Separate, Share],
+		      _ModName, _, Connect, _, HideB, HideC, Separate, Share],
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1181,6 +1181,10 @@ set_properties(Wid, Model) :-
 		    redisplay_border(TopComp),
 		    fail;
 		redisplay_border(Model));
+	    ReBowtied is_connector from Model to _,
+		find_type(ReBowtied, flow),
+		redisplay(ReBowtied),
+		fail;
 	    redisplay(Model)),
 
 	    (Separate = NewSeparate, !;
@@ -1188,15 +1192,17 @@ set_properties(Wid, Model) :-
 		add_parameter(Parent, 1, c_new, 0)),
 
 	    update_connect_marks(Model, Connect, NewConns), 
-
+	    (Share = 0, NewShare = 1, !,
+		make_module_of(Model, NewModName, NewComp);
+	    NewComp = Model),
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
 		_Window shows_model Submodel,
 		update_captions(Submodel),
 		fail;
 	    NewNature = Nature, UseCount = Count, !;
-		event:spread_colour(Model, yes)),
-	    finish_move(Model, 1)).
+		event:spread_colour(NewComp, yes)),
+	    finish_move(NewComp, 1)).
 
 update_connect_marks(Model, Connects, NewConns) :-
 	/* avoid if no change */

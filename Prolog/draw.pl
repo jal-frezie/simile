@@ -133,18 +133,14 @@ everything answering to the description of obj. */
 
 move_display(Obj, [Xoff, Yoff]) :-
 	find_relevant_windows(Obj, Wid, _, [_, _, Xscale, Yscale]),
-		Xmotion is Xoff/Xscale,
-		Ymotion is Yoff/Yscale,
-		shift_model(Wid, Obj, [Xmotion, Ymotion]);
-	true.
-
-/* this ultimately fails. */
+	Xmotion is Xoff/Xscale,
+	Ymotion is Yoff/Yscale,
+	shift_model(Wid, Obj, [Xmotion, Ymotion]).
 
 shift_model(Wid, Obj, Vect) :-
-	shift_obj(Wid, Obj, Vect),
-	find_all_comps(Obj, Child),
-	shift_model(Wid, Child, Vect).
-
+	Vect = [0.0, 0.0], !;
+	setof(Bit, contains(Obj, Bit), Bits),
+	shift_obj(Wid, Bits, Vect).
 
 /* reroute_display/1 is also to make it go faster; used when something changes
 shape as well as position. New shape is calculputed from graphical info. */
@@ -441,8 +437,8 @@ display_in(Wid, Comp, Depth, Trans) :-
 /* if no contents displayed, set scheme to incomplete to avoid drawing grid */
 	        (\+ get_shape(Comp, hide_contents, 1),
 		    New_depth is Depth + 1,
-		    draws_at(Wid, submodel, New_depth), !,
-		    add_to_translation(Trans, Comp, InTrans),
+		    draws_at(Wid, submodel, New_depth),
+		    add_to_translation(Trans, Comp, InTrans), !,
 		    find_fatness(InTrans, InFat),
 		    untranslate([0,0], InTrans, [Ox, Oy]);
 		[InFat, Ox, Oy] = [0,0,0]),

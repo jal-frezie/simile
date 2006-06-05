@@ -249,8 +249,8 @@ text(Wid, Coords, Type, Features, Fatness, Colour_scheme, Content) :-
 shift_text(Wid, Obj, Vector) :-
 	safe_tcl_eval(['MoveText', Wid, Obj, br(Vector)], _).
 
-shift_obj(Wid, Obj, Vector) :-
-	safe_tcl_eval(['MoveObj', Wid, Obj, br(Vector)], _).
+shift_obj(Wid, Objs, Vector) :-
+	safe_tcl_eval(['MoveObj', Wid, br(Objs), br(Vector)], _).
 
 zap_route(Wid, Obj, Coords) :-
 	unscramble_coords(Coords, [], Singleton_list),

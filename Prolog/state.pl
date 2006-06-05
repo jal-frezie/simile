@@ -200,9 +200,9 @@ for top level model */
 
 get_box_size(Parent, Box_type, Cur_box_size) :-
 	ame_gen:contains(Top, Parent),
-	backup:is_toplevel(Top),
+	(backup:is_toplevel(Top); backup:is_module(Top)),
 	box_size_is(Top, Box_type, Abs_box_size,_,_),
-	(member(Box_type-Scale, [compartment-0.6, state-0.8,
+        (member(Box_type-Scale, [compartment-0.6, state-0.8,
 				 function-0.3, variable-0.3,
 				cloud-0.5, channel-0.6]), !,
 

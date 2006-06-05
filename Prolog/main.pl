@@ -40,6 +40,9 @@ main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
+	state:clear_model_file(_),
+	m_update:superfast_delete(library),
+	m_update:superfast_delete(root),
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
 	append(VnumStr, [32, 40 | _], FullVnumStr),

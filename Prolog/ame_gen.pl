@@ -9,7 +9,7 @@ sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
-		find_reference/3,
+		has_bowtie/1, get_bowtie_section/2, find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
 		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
 		get_node_size/2, get_node_size/4,
@@ -19,9 +19,14 @@ sicstus_module(ame_gen,
 		purge/3, generates/2, upper/2, lower/2, mybagof/3,
 		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
 		find_type/2, find_all_comps/2, draws_inside/2,
-		is_primitive/1, is_of_sort/2, is_class_of_sort/2, sp_is/2]).
+		is_primitive/1, is_of_sort/2, is_class_of_sort/2,
+		is_instance_of/2, sp_is/2]).
 
 sicstus_use_module([library(lists), sp_only, m_class, utility, text]).
+
+:- op(500, xfy, is_instance_of).
+
+:- op(450, xf, is_primitive).
 
 /* Full syntax error text currently not displayed because it is too
 distressing to users. Not sure why I use open_chars_stream and
@@ -244,19 +249,6 @@ influence_makes_ghost(Component) :-
 	appears(Component).
 
 find_base(Ghost, Base) :-
-	Ghost is_of_sort has_bowtie, !,
-	setof(Equiv,
-	(sequence(Equiv, Ghost); Equiv = Ghost; sequence(Ghost, Equiv)),
-	    Equivs),
-	(member(Base, Equivs),
-	    implicit_function(Base, FlowFn),
-	    (FlowFn has_class_refinement value of _Val;
-		_Incoming is_connector from _Source to FlowFn), !;
-	member(Base, Equivs),
-	    leaves_primitive(Base),
-	    \+ (sequence(Base, Better),
-		   leaves_primitive(Better)));
-/*	find_name_host(Ghost, Base); */
 	Ghost is_of_sort has_function,
 	Link is_connector from NextUp to Ghost,
 	Link has_type influence,
@@ -265,19 +257,56 @@ find_base(Ghost, Base) :-
 	   find_base(NextBase, Base);
 	Base = Ghost.
 
+needs_bowtie(Flow) :-
+	implicit_function(Flow, FlowFn),
+	(FlowFn has_class_refinement value of _Val;
+	    _Incoming is_connector from _Source to FlowFn), !.
+
+has_bowtie(Flow) :-
+	Flow is_of_sort has_bowtie,
+	(needs_bowtie(Flow), !;
+	gets_default_bowtie(Flow),
+	\+ (any_equiv(Flow, Other),
+	       needs_bowtie(Other))).
+
+gets_default_bowtie(Flow) :-
+	Flow is_connector from BlackBox to _Wherever,
+	no_see_inside(BlackBox),
+	\+ (logical_after(Flow, LeadsOut),
+	       LeadsOut is_connector from BlackBag to _MoreVisible,
+	       no_see_inside(BlackBag)).
+
+any_equiv(Flow, Linked) :-
+	logical_before(Flow, Linked);
+	logical_after(Flow, Linked).
+
+logical_before(Flow, Linked) :-
+	logical_follows(Last, Flow),
+	(Linked = Last; logical_before(Last, Linked)).
+	
+logical_after(Flow, Linked) :-
+	logical_follows(Flow, Next),
+	(Linked = Next; logical_after(Next, Linked)).
+	
+no_see_inside(Box) :-
+	appears(Box),
+	\+ Box is_of_sort contains_parts;
+	Box has_graphical_attribute hide_contents of 1.
+
+get_bowtie_section(Flow, Sect) :-
+	Flow is_of_sort has_bowtie,
+	(Flow = Sect; sequence(Sect, Flow); sequence(Flow, Sect)),
+	has_bowtie(Sect). % feel free to add efficiency tweaks
+
+/*
 leaves_primitive(Link) :-
 	Link is_connector from Go to _,
 	appears(Go),
 	(\+ find_type(Go, submodel);
-	    get_shape(Go, hide_contents, 1)).
+	    Go has_graphical_attribute hide_contents of 1).
+*/
 
 find_ghosts(Base, Ghost) :-
-	Base has_type flow, !,
-	(implicit_function(Base, FlowFn),
-	    FlowFn has_class_refinement value of _Val, !,
-      	    (sequence(Base, Ghost); sequence(Ghost, Base));
-	\+ sequence(_, Base),
-	sequence(Base, Ghost));
 	ghost_link(_Link, Base, Ghost).
 
 /* test for whether node is an input parameter, i.e., something
@@ -711,7 +740,8 @@ the highest-level model */
 
 caption_for(Comp, ID) :-
 	image:get_host(Comp, CompVisDest),
-	find_base(CompVisDest, CompVisSrc),
+	(get_bowtie_section(CompVisDest, CompVisSrc);
+	    find_base(CompVisDest, CompVisSrc)),
 
 	(CompVisSrc has_class_refinement name of ID, !;
 	(CompVisSrc has_type relation, !,
@@ -767,8 +797,6 @@ find_all_comps(Parent, Comp) :-
 	Parent has_part Comp;
 	Comp draws_inside Parent.
 
-:- op(450, xf, is_primitive).
-
 Type is_primitive :-
 	member(Type, [compartment, state, function, variable, event, cloud,
 		      flow, squirt, influence, relation, alarm, text,
@@ -789,7 +817,8 @@ Obj is_class_of_sort Class :-
 			     can_be_input, init_eval, level, can_be_ghost],
 		state-[rectangle, tall_box, box, has_function, can_be_input,
 		       init_eval, discrete, can_be_ghost],
-		submodel-[rounded_rect, elongated_box, box],
+		submodel-[rounded_rect, elongated_box, box, contains_parts],
+		module-[contains_parts],
 		flow-[line, has_function, has_bowtie, rate],
 		squirt-[line, has_function, has_bowtie, discrete],
 		influence-[line, curved, captionless],
@@ -812,6 +841,9 @@ Obj is_class_of_sort Class :-
 Obj is_of_sort Sort :-
 	find_type(Obj, Type),
 	Type is_class_of_sort Sort.
+
+Submodel is_instance_of Template :-
+	Submodel has_model_refinement instance of Template.
 
 :- op(700, yfx, sp_is).
 

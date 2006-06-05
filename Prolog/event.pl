@@ -56,12 +56,13 @@ get_info(Wid, Comp, desc) :-
 	name(LType, Middle)), !,
 
 	(Wid shows_model Context,
-	    setof(DestLoc, Dest^(m_update:connects(Comp, Source, Dest),
+	    setof(DestLoc, Dest^(selectable_finish(Comp, Dest),
 				 abs_path_name(Dest, Context, DestLoc)),
 		  DestList),
 	    (DestList = [Dests]; Dests = DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
+	    selectable_start(Comp, Source),
 	    abs_path_name(Source, Context, SourceLoc),
 	    sicstus_format_to_chars(" (from ~a to ~w)", [SourceLoc, Dests], 
 	        Suffix);
@@ -190,12 +191,16 @@ save_params(Trans, Depth, Parent) :-
 
 click_on_sub(Wid, _, Trans, Parent, Depth, Comp, CD) :-
 	save_params(Trans, Depth, Parent),
-	find_type(Comp, submodel), !,
-	add_to_translation(Trans, Comp, New_trans),
-	New_depth is Depth + 1,
-	get_original_click(Orig_X, Orig_Y),
-	translate([Orig_X, Orig_Y], New_trans, New_point),
+	find_type(Comp, submodel),
+	(add_to_translation(Trans, Comp, New_trans), !,
+	    New_depth is Depth + 1,
+	    get_original_click(Orig_X, Orig_Y),
+	    translate([Orig_X, Orig_Y], New_trans, New_point);
+	New_point = none,
+	    New_depth = 0,
+	    New_trans = none),
 	click_in(Wid, New_point, New_trans, New_depth, Comp, CD).
+	 
 
 /* This allows a 'click' call from Tk to connect to a component. Try doing without
 it as clicking on a component should always generate a 'click_obj' call.
@@ -388,7 +393,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	advance_phase_to(moving)).
 
 click_on([Xpt, Ypt], Moving_obj, _CD) :-
-	find_type(Moving_obj,TargetSort),
+	find_type(Moving_obj, TargetSort),
 	get_mode(ghost),
 	\+ is_ghost(Moving_obj),
 	TargetSort is_class_of_sort can_be_ghost,
@@ -618,13 +623,21 @@ doubleclick_on(Edit_thing) :-
 	find_current(Wid),
 	(Edit_type = submodel, !,
 	    finish_old_edit(none), /* because leaving the window */
-	all(event, get_display_depth,
-	    [unify(Wid),
-	    build([ghost_link, influence, variable, flow, compartment, 
-		   submodel, caption, text, sections]), build(Depths)]),
+	    all(event, get_display_depth,
+		[unify(Wid),
+		 build([ghost_link, influence, variable, flow, compartment, 
+			submodel, caption, text, sections]), build(Depths)]),
+	    (Edit_thing is_instance_of ShowThing, !,
+		TopNode = ShowThing,
+		state:set_initial_box_sizes(ShowThing),
+		% stopgap: they should be set when loading or declaring --
+		% fix this when saving customization with Prolog decls
+		IsTop = 1;
 	    contains(TopNode, Edit_thing),
-	    is_toplevel(TopNode),
-	    new_window_for(Edit_thing, TopNode, NewWin, Depths, 0),
+		is_toplevel(TopNode),
+		ShowThing = Edit_thing,
+		IsTop = 0),
+	    new_window_for(ShowThing, TopNode, NewWin, Depths, IsTop),
 	    all(state, set_display_depth,
 		[unify(NewWin),
 		build([ghost_link, influence, variable, flow, compartment,
@@ -1045,6 +1058,9 @@ adjust_display_area(Wid, Visible) :-
 
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	find_all_comps(Box, Obj),
+	((\+ find_type(Obj, submodel); Obj is_instance_of _),
+	    Trans = none;
+	add_to_translation([0,0,1,1], Obj, Trans)),
 	find_all_links(Obj, Link, Where),
 	\+ (Side = c, moves_with_seln(Box, Link)),
 	/* do not tweak if part of move */
@@ -1055,16 +1071,16 @@ tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	    (member(Side, [nw, n, ne]),  NewY is Ypt + YOff*(B-Ypt)/(B-T);
 		member(Side, [sw, s, se]), NewY is Ypt + YOff*(Ypt-T)/(B-T);
 		member(Side, [w, e]), NewY = Ypt),
-	    add_to_translation([0,0,1,1], Obj, Trans),
-	    (has_outer_equiv(Inner, Obj, Link),
+	    (\+ Trans = none,
+		has_outer_equiv(Inner, Obj, Link),
 		select(Where, [start, finish], [Other]),
 		translate([NewX, NewY], Trans, Peri),
 		tweak_endpoint(Inner, Other, Peri);
-	    \+ has_outer_equiv(Inner, Obj, Link));
+	    tweak_endpoint(Link, Where, [NewX, NewY]));
 	Side = c,
 	    NewX is Xpt + XOff,
-	    NewY is Ypt + YOff),
-	tweak_endpoint(Link, Where, [NewX, NewY]),
+	    NewY is Ypt + YOff,
+	    tweak_endpoint(Link, Where, [NewX, NewY])),
 	fail; true.
 
 /* find_space handles pairs of values indicating ranges. The
@@ -1092,10 +1108,9 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 	get_shape(Moving_obj, course, [Finish | Rest]),
 	append(Middle, [Start], Rest),
 	local_ends(Moving_obj, Source, Dest),
-	member([End, Way, Comp],
-	       [[start, out, Dest], [finish, in, Source]]),
+	member([End, Way, Comp], [[start, out, Dest], [finish, in, Source]]),
 	(Type is_class_of_sort has_bowtie,
-	    route_part_link(Type, Way, [Comp], NewPt, FwRoute),
+	    route_part_link(Type, Way, [Comp], NewPt, FwRoute), 
 	    reverse(FwRoute, Route),
 /*		(End = start,
 			shape_route(Type, NewPt, Finish, Route);
@@ -1203,8 +1218,8 @@ recursive_highlight(Target, Way, Where) :-
 	    change_delete_status(Target, Way, Where),
 	    Also = Target;
 	tk_get_pref(deleteEndToEnd, 1),
-	    m_class:connects(Target, Start, Mid),
-	    get_host(Mid, Finish),
+	    selectable_start(Target, Start),
+	    selectable_finish(Target, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
 	    (Also = Target;
@@ -1218,10 +1233,13 @@ recursive_highlight(Target, Way, Where) :-
 	    bring_dependents_into_line([Start, Finish], Where),
 	    Also = Target),
 	find_all_links(Also, Linked),
-	    \+ has_outer_equiv(_, Also, Linked),
+	    \+ (\+ Also is_instance_of _,
+		   has_outer_equiv(_, Also, Linked)),
 	    recursive_highlight(Linked, Way, Where).
 
 adjust_link_backwards(Target, Way, Also, Where) :-
+	\+ (m_class:Target is_connector from Inst to _,
+	       Inst is_instance_of _),
 	m_class:follows(Prev, Target),
 	(Way = off,
 	    change_delete_status(Prev, off, Where);
@@ -1232,6 +1250,8 @@ adjust_link_backwards(Target, Way, Also, Where) :-
 	 (Also = Prev; adjust_link_backwards(Prev, Way, Also, Where)).
 	
 adjust_link_forwards(Target, Way, Also, Where) :-
+	\+ (m_class:Target is_connector from _ to Inst,
+	       Inst is_instance_of _),
 	m_class:follows(Target, Next),
 	(Way = on,
 	    change_delete_status(Next, on, Where);
@@ -1289,6 +1309,22 @@ match_delete_status(Ends, Way, Where) :-
 	\+ at_def_con(End, Where), !, Way = on;
 	Way = off.
 
+selectable_start(Link, Start) :-
+	m_class:Link is_connector from Node to _Mid,
+	(\+ Node is_instance_of _,
+	    m_class:Node has_model_refinement link_equivalences of Equivs,
+	    member(Prev-Link, Equivs), !,
+	    selectable_start(Prev, Start);
+	Start = Node).
+	    
+selectable_finish(Link, Finish) :-
+	m_class:Link is_connector from _Mid to Node,
+	(\+ Node is_instance_of _,
+	    m_class:Node has_model_refinement link_equivalences of Equivs,
+	    member(Link-Next, Equivs), !,
+	    selectable_finish(Next, Finish);
+	get_host(Node, Finish)).
+	
 local_ends(Link, Start, Finish) :-
 	m_class:Link is_connector from Start to Mid,
 	get_host(Mid, Finish).
@@ -1507,18 +1543,19 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	fits_inside(NewBox, ParentShape),
 	\+ (get_overlaps(Parent, NewBox, Obstacle), \+ Obstacle = Submodel),
 	
+	(Submodel is_instance_of _, !;
 	add_to_translation([0,0,1,1], Submodel, ModelTrans),
-	translate(NewBox, ModelTrans, NewExtent),
-	/* Check that everything that was in the model is still in it */
-	\+ (find_all_comps(Submodel, Inside),
-	       get_shape(Inside, bounding_box, InBox),
-	       \+ fits_inside(InBox, NewExtent)),
+	    translate(NewBox, ModelTrans, NewExtent),
+	    /* Check that everything that was in the model is still in it */
+	    \+ (find_all_comps(Submodel, Inside),
+		   get_shape(Inside, bounding_box, InBox),
+		   \+ fits_inside(InBox, NewExtent)),
+	    change_shape(Submodel, internal_extent, NewExtent)),
 	map([OldL, OldT, OldR, OldB], CapEdge, _,_, OBX, OBY),
 	map(NewBox, CapEdge, _,_, NBX, NBY),
 	NXT is OldCapX+NBX-OBX-NewL,
 	NYT is OldCapY+NBY-OBY-NewT,
 	change_shape(Submodel, caption_offset, [NXT, NYT]),
-	change_shape(Submodel, internal_extent, NewExtent),
 	change_shape(Submodel, bounding_box, NewBox),
 	/* make_links_follow(Submodel), */
 	tweak_link_connections(Submodel, [XOff, YOff], Edge,
@@ -1651,7 +1688,8 @@ unclick_obj :-
 unclick_obj :- 
 	get_mode(select), /* was move */
 	get_moving_obj(Submodel),
-	(get_phase(moving_border(_)), !,
+	(get_phase(moving_border(_)),
+	    \+ Submodel is_instance_of _, !,
 	    get_shape(Submodel, internal_extent, NewSize),
 	    adjust_toplevel_windows(Submodel, NewSize);
 	true),
@@ -1733,7 +1771,6 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
 reuse_route(New_obj, LastArc) :-
         find_current(Wid),
 	Wid shows_model Parent,
-	find_base(LastArc, BowtieArc),
         ((NewArc = LastArc; m_class:sequence(NewArc, LastArc)),
 	    find_all_comps(Node, NewArc),
 	    get_incomplete([Node | ScreenRoute]),
@@ -1746,7 +1783,7 @@ reuse_route(New_obj, LastArc) :-
 	    (New_obj = relation,
 		get_boundary_end(NewArc, true);
 	    New_obj is_class_of_sort has_bowtie,
-		NewArc = BowtieArc),
+		find_base(LastArc, NewArc)),
 	    give_focus(NewArc),
 	    do_colours(NewArc, on),
 	    select_text(Wid, NewArc),
@@ -1799,7 +1836,7 @@ the middle of nowhere; only clouds on flows for now.
 It also directs a connection to a node's 'implicit function', creating this if the node previously had none. */
 
 make_terminator(LineType, FinishZone, Terminator) :-
-	find_type(FinishZone, submodel),
+	FinishZone is_of_sort contains_parts,
 	    member(LineType, [flow, squirt]), TermType = cloud,
 	    /* set influence/variable as alternative if required */
 	    get_current_coords(FinalX, FinalY), !,
@@ -2047,9 +2084,10 @@ adjust_posn(Thing, Trans) :-
 	fail; true.
 
 dissolve_component(Node) :-
-	find_all_comps(Parent, Node),
+	Node is_instance_of _, !;
 	subtract_from_translation([0,0,1,1], Node, Node_trans),
-	(move_boxes(Node, Node_trans),
+	find_all_comps(Parent, Node),
+	move_boxes(Node, Node_trans),
 	(setof(Part, m_class:Node has_part Part, Orphan_nodes), !;
 	    Orphan_nodes = []),
 	(setof(IntLink, 
@@ -2087,14 +2125,14 @@ dissolve_component(Node) :-
 	member(OrphanLink, OrphanLinks),
 	    redisplay(OrphanLink), /* also need to change endpoints */
 	    fail;
-	true)).
+	true).	
 
 list_captions(Parent, Used) :-
 	setof(UsedCaption,
 	      Part^(find_all_comps(Parent, Part),
 		    appears(Part),
-		    \+ is_ghost(Part),
-		    caption_for(Part, UsedCaption)),
+		    (m_class:part has_class_refinement name of UsedCaption;
+		    m_class:part has_attribute name of UsedCaption)),
 	      UsedNow), !,
 	append(UsedNow, _, Used).
 

@@ -9,9 +9,8 @@ sicstus_module(backup, [initialize_ring/1,
 			get_save_status/2, set_save_status/2, save_allowed/2,
 			go_back/2, go_forward/2, make_auto_name/3,
 			new_autosave/2, clear_autosave/2, check_autosave/4,
-			scrub_autosave/1,
-			is_toplevel/1, use_temp_dir/1, use_pref_dir/1,
-			into_save_file/2]).
+			scrub_autosave/1, is_toplevel/1, is_module/1,
+			use_temp_dir/1, use_pref_dir/1, into_save_file/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, database, utility]).
 
@@ -403,6 +402,9 @@ scrub_autosave(Model) :-
 
 is_toplevel(Model) :-
 	m_class:has_part(root, Model).
+
+is_module(Model) :-
+	m_class:has_part(library, Model).
 
 /* This is one place where you have to take account of the fact that you
 cannot rely on Windows to give you the file name extension in any particular

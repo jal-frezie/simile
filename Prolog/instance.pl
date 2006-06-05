@@ -140,7 +140,7 @@ instantiate_node(Node, Class, Instances, Path, Old_instances, New_instances) :-
 instance_of(_, Node, _,
 		[instance(variable, Node, _, Value, Dims)],
 		[instance(_, RealNode, _, Value, Dims)]) :-
-	find_base(Node, RealNode),
+	(get_bowtie_section(Node, RealNode); find_base(Node, RealNode)),
 	\+ Node = RealNode, !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -441,7 +441,7 @@ intrinsically have same units as compartment, so we go back to their control nod
 to get unit conversion factor */
 
 bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
-	find_base(Arc, General_arc),
+	get_bowtie_section(Arc, General_arc),
 	get_chain(General_arc, Node, _, Exits, Entries),
 	caption_for(Node, BadComp),
 	caption_for(Arc, BadArc),

@@ -321,6 +321,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
             lappend enumTypes [concat [list [string range $typename 9 end]] \
                     $members]
         }
+	if {$disaggregate(shared)} {
+	    set disaggregate(hide_c) 1
+	}
         set result [list $disaggregate(colour) $disaggregate(image) \
                 $disaggregate(imgpos) $disaggregate(type) \
                 $disaggregate(fatness) $icount \
