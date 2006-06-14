@@ -137,8 +137,8 @@ BoxHeaderStr),
 	retract(input_list_is(Updated_list))),
 	interact_equation(Result_list),
 	(Result_list = [], !, destroy_equation, fail; 
-	update_equation(Part, IndxCount, Updated_list, TypeBase-TypeDims,
-			Result_list)),
+	on_exception(_, update_equation(Part, IndxCount, Updated_list,
+			TypeBase-TypeDims, Result_list), fail)),
 		/* fails if action does not complete edit */
 	!, destroy_equation.
 	/* last cut necessary because otherwise a retry will cause 

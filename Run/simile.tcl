@@ -81,6 +81,11 @@ if ![string match aqua [tk windowingsystem]] {
     }   
 }
 
+# Scaling affects some metrics but not all, so squash it FTTB
+# to ensure consistency
+tk scaling 1.0
+set graph(font) [list helvetica 10]
+
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
@@ -90,7 +95,6 @@ switch $tcl_platform(platform) {
 	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
-        set graph(font) [list helvetica 8]
     } unix {
 	tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
@@ -100,10 +104,8 @@ switch $tcl_platform(platform) {
 	set env(PRINTCMD) lpr
         if [string match Darwin $tcl_platform(os)] {
             set graph(origin) 3
-            set graph(font) [list helvetica 12]
         } else {
 	    set graph(origin) 1
-            set graph(font) [list helvetica 10]
         }
     }
 }

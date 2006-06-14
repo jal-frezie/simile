@@ -97,6 +97,8 @@ errtranslate_token(string(X), Y, 1) :- !,
 	purge(X, [0,125], NiceX),
 	name(Y, NiceX).
 errtranslate_token(X-_, Y, Z) :- !, errtranslate_token(X, Y, Z).
+% next case I have only seen due to a bug in the sicstus parser
+errtranslate_token(_:X, Y, Z) :- !, errtranslate_token(X, Y, Z).
 errtranslate_token(X, X, 0).
 
 /*This function was previously called
