@@ -1,4 +1,6 @@
 package require Itcl
+package require dde
+dde servername Simile
 
 itcl::class similescript::ModelWindow {
     
