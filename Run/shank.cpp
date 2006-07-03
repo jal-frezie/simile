@@ -366,14 +366,16 @@ public:
     } while (*(src++));
   }
 
-  listParamArray(char* newNodeId) {
+  // Added top model id as name is now caption not node id and hence not unique
+  // TODO: add this to other paramarray functions, and use it.
+
+  listParamArray(char* newNodeId, long int topModel) {
     int sparePath[32];
-    char spareCapt[255];
     enum_type_data *spareTypes[32]; // might need for reading files
 
     nodeId = strdup(newNodeId);
-    nodeLine = searchinfo(nodeId, (long int*)&spareModel, spareCapt, fullDims,
-			  sparePath, spareTypes);
+    spareModel = (Model*)topModel;
+    nodeLine = searchinfo(nodeId, topModel, sparePath, fullDims, spareTypes);
     remove_vm_dims();
     myArraySpace = FALSE;
     dataPtr = NULL;
@@ -1118,17 +1120,21 @@ showMess(globMess); */
 class listNodeModel {
 public:
   char* node;
+  char* caption;
   Model* model;
   listNodeModel* next;
 
-  listNodeModel(char* newNode, Model* newModel, listNodeModel* prev) {
+  listNodeModel(char* newNode, char* newCapt, 
+		Model* newModel, listNodeModel* prev) {
     node = strdup(newNode);
+    caption = strdup(newCapt);
     model = newModel;
     next = prev;
   }
 
   ~listNodeModel() {
     delete(node);
+    delete(caption);
     delete(model);
   }
       
@@ -1226,14 +1232,14 @@ listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
   }
 }
   
-void* use_array_for_params(char* nodeId, void* dataSpace) {
+void* use_array_for_params(char* nodeId, long int topModel, void* dataSpace) {
   listParamArray* arrSlot;
 
   /* sprintf(globMess, "use_array_for_params node %s",
 	  nodeId);
 	  showMess(globMess); */
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    arrSlot = new listParamArray(nodeId);
+    arrSlot = new listParamArray(nodeId, topModel);
     if (!arrSlot->nodeLine) {
       delete arrSlot;
       return NULL;
@@ -1314,7 +1320,8 @@ int set_time_point_elt(char* nodeId, double time, double val, int* indxs) {
   }
 }  
 
-void get_value_pointer(void* modelSlot, char* nodeId, int ic, int* indxs) {
+void get_value_pointer(void* modelId, void* modelSlot, char* nodeId, 
+		       int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
   paramArrayItem = param_array_item(param_array_base, nodeId);
@@ -1324,21 +1331,23 @@ void get_value_pointer(void* modelSlot, char* nodeId, int ic, int* indxs) {
   if (paramArrayItem) {
     paramArrayItem->extract_elt(modelSlot, indxs);
   } else {
-    get_client_value_pointer(modelSlot, nodeId, ic, indxs);
+    get_client_value_pointer(modelId, modelSlot, nodeId, ic, indxs);
   }
   //  sprintf(globMess, "Think we got %lf", *(double*)modelSlot);
   //  showMess(globMess);
 
 }
 
-char* load_model(char* fileName, char* nodeName, long int* modelType) {
+char* load_model(char* fileName, char* nodeName, char* nodeCapt, 
+		 long int* modelType) {
   Model* newModel;
   try {
     newModel = new Model(fileName);
   } catch(DllLossage prang) {
     return prang.tell();
   }
-  nodeModelList = new listNodeModel(nodeName, newModel, nodeModelList);
+  nodeModelList = new listNodeModel(nodeName, nodeCapt, newModel, 
+				    nodeModelList);
 
   *modelType = (long int)newModel;
   return NULL;
@@ -1489,7 +1498,43 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
 char* trueTxt = "true";
 enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
 
-node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
+/* Big changes for v5. We cannot use node ids in execution because of
+   duplication between module instances, and we are dropping separate
+   dlls in favour of separate c++ blocks, so we need a new version of
+   searchinfo driven by captions that does not jump submodels, and which
+therefore accepts the id of the model it is looking in...*/
+
+node_data_line* model_capt_info(char* caption, long int tgtModelNo,
+			int* dims, int* path, enum_type_data** usedTypes) {
+  int line, typeCount;
+  Model* tgtModel = (Model*)tgtModelNo;
+  node_data_line* bottomLine;
+  char test[255];
+  int localDims[32];
+
+  for (line=1; tgtModel->nodecount>line; line++) {
+    typeCount = tgtModel->make_full_caption(line, test, localDims, usedTypes);
+    if (!strcmp(caption, test)) {
+      bottomLine = tgtModel->nodedata + line;
+      *dims = *path = 0;
+      append_ints_to_null(dims, localDims, 0, 0);
+      append_ints_to_null(path, bottomLine->path, 0, 0);
+      *(usedTypes + typeCount) = &noType;
+      return bottomLine;
+    }
+  }
+  return NULL;
+}
+//...can it be that simple? Nope. TODO: recurse for separate dlls
+// using part caption match
+
+void easy_capt(long int tgtModelNo, int line, char* capt) {
+  int dims[32];
+  enum_type_data* types[32];
+  ((Model*)tgtModelNo)->make_full_caption(line, capt, dims, types);
+}
+
+node_data_line* searchinfo(char* node, long int tgtModel,
 			   int* dims, int* path, enum_type_data** usedTypes) {
   node_data_line *bottomLine;
   enum_type_data *thisType, *localTypes[128];
@@ -1503,7 +1548,7 @@ node_data_line* searchinfo(char* node, long int* tgtModel, char* caption,
   }
   usedCount=0;
 	
-  bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
+  bottomLine = model_capt_info(node, tgtModel, dims, path, localTypes);
   if (bottomLine) {
     while (dims[dimCount]) {
       //    sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
@@ -1546,7 +1591,6 @@ long int fetch_top_instance(long int modelType, char* spare) {
    int* tree;
    connectRecord* currConnect;
    channelRecord* currChannel;
-   long int mSpare;
    enum_type_data* spareTypes[32];
 
    /* this section sets up the connection database -- done here because all
@@ -1559,10 +1603,10 @@ long int fetch_top_instance(long int modelType, char* spare) {
      currChannel = ((Model*)modelType)->channelData + count;
 
      //     currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
-     if (searchinfo(currConnect->TopNode, &mSpare, spare, 
+     if (searchinfo(currConnect->TopNode, modelType,
 		    dims, path, spareTypes)) {
        tree = new int[32];
-       if (searchinfo(currConnect->SourceNode, &mSpare, spare, 
+       if (searchinfo(currConnect->SourceNode, modelType,
 		      dims, tree, spareTypes)) {
 	 count2=0;
 	 while (path[count2]) {

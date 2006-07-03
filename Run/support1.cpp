@@ -188,7 +188,7 @@ void collect (DestClass* dest, char* node_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  (*get_value_pointer_ref)(dest, node_id, id_count, curIndices);
+  (*get_value_pointer_ref)(myClassPtr, dest, node_id, id_count, curIndices);
 }
    
 template <class SMClass>

@@ -38,7 +38,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/2,
 	check_directory/1, windowize/2,
-	compile_c_program/2, check_exec_fns_fresh/5, load_executable/6,
+	compile_c_program/2, check_exec_fns_fresh/5, load_executable/7,
 			find_phase/4, tk_kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
@@ -563,8 +563,9 @@ shift_dll(Point, Top, Loc, Repl) :-
 	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), br(Repl)],_).
 
 /* Only works for an all-in-one model for now...*/
-prepare_execution(Node, Lang) :-
-	safe_tcl_eval(['LoadProgram', Node, Lang], _).
+prepare_execution(Node, Lang, Spill) :-
+	on_exception(_R, safe_tcl_eval(['LoadProgram', Node, Lang], _),
+		     safe_tcl_eval([set, '::errorInfo'], Spill)).
 
 build_interconnects(TopNode, FinderList) :-
 	bracketize(FinderList, FinderTclList),
@@ -582,11 +583,11 @@ check_exec_fns_fresh(L, ModelPath, Id, Fns, Stat) :-
 	safe_tcl_eval(['CheckFnsFresh',  L, br(WModelPath), Id, BrFns], RVal),
 	chop_list(RVal, Stat).
 
-load_executable(L, ModelPath, Id, Node, TopNode, Incs) :-
+load_executable(L, ModelPath, Id, Node, Name, TopNode, Incs) :-
 	windowize(ModelPath, WModelPath),
 	bracketize(Incs, BrIncs),
-	safe_tcl_eval([load_dll, TopNode, L, br(WModelPath), Id, Node, BrIncs],
-		      MStr),
+	safe_tcl_eval([load_dll, TopNode, L, br(WModelPath), Id, Node,
+		       br(Name), BrIncs], MStr),
 	\+ MStr = "0".
 					
 load_tcl_program(List, Response) :-

@@ -33,7 +33,8 @@ instantiate_all(Parent, Model) :-
 	TopFns = []),
 	Model = model(TopFns, [Instance]).
 	    
-instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
+instantiate(Holder, model(ModelInstance, Submodels ), Path, FullSet) :-
+	module_for(Holder, Parent),
 	(setof( Primitive, contents(Parent, Primitive), TopNodes ), !; 
 		TopNodes = []),
 	(setof( Submodel, (Parent has_part Submodel,
@@ -42,7 +43,7 @@ instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 			      appears(Submodel)), LowerNodes ), !; 
 		LowerNodes = []),
 	instantiate_trees(LowerNodes, Submodels, Path, TreeRefs),
-	caption_for(Parent, PCapt),
+	caption_for(Holder, PCapt),
 	sicstus_format_to_chars("Instantiating expressions from node values -- currently doing ~a", [PCapt], InfoString),
 	dialogue:reassure_user(InfoString),
 	instantiate_nodes(TopNodes, ModelInstance, Path, TreeRefs, FullSet),
@@ -51,7 +52,7 @@ instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 /* contents does the trick whereby immigration and creation channel nodes are placed outside their submodels. */
 
 contents(Parent, Component) :-
-	find_all_comps(Parent, Component),
+	(find_all_comps(Parent, Component),
 	    (Component is_of_sort has_function; Component has_class function;
 		Component has_class_refinement separate of 1),
 	    \+ counts_as_outside(Component);
@@ -59,7 +60,7 @@ contents(Parent, Component) :-
 	    is_population(Submodel),
 	    \+ Submodel has_class_refinement separate of 1,
 	    find_all_comps(Submodel, Component),
-	    counts_as_outside(Component).
+	    counts_as_outside(Component)).
 
 counts_as_outside(Node) :-
 	get_host(Node, VisNode),
@@ -83,6 +84,8 @@ instantiate_trees([], [], _, []).
 instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
 	get_node_size(Node, Multiple),
 	pointer_from(Path, HiPtr),
+	caption_for(Node, Name), /* placeholder for deterministic unique
+	c++-format name. TODO: it properly */
 	path_section_for(Node, Name, Multiple, NewBit, HiPtr, _),
 	append(NewBit, Path, NewPath),
 	instantiate(Node, Submodel, NewPath, Results),
@@ -112,6 +115,10 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
 
 instantiate_trees(_, _, _, _) :-
 	raise_exception('Lost it for some unknown reason during instantiation.').
+
+module_for(Parent, Class) :-
+	(Parent is_instance_of Class;
+	    \+ Parent is_instance_of _Cl, Class = Parent).
 
 /* This substitutes the link used to refer to a relation (the one connected
 to the model containing the destination) with the one used by the program

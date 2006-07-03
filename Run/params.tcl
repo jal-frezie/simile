@@ -368,7 +368,7 @@ proc AcceptData {topNode compName notInput complain} {
                                 ![string equal $recordId $compName]} {
                         set recordNode [IdFromTail $topNode $recordId $notInput]
                         if {$useCppArray} {
-                            c_setparamarray $recordNode
+                            c_setparamarray $::model_id($topNode) $recordNode
                         }
                         set outerDims [lrange [GetCompProperty $topNode Dims \
                                 $recordNode] 0 end-1]
@@ -394,7 +394,7 @@ proc AcceptData {topNode compName notInput complain} {
 	} else {
 	    set whatMaking parameter
 	    if {$useCppArray} {
-		c_setparamarray $node
+		c_setparamarray $::model_id($topNode) $node
 	    }
         }
         if {[catch {ListToArray $topNode $node {} $trans $recordDims \

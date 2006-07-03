@@ -1,6 +1,8 @@
 #include <stdio.h>
+#include <string.h>
 #include <sys/types.h>
 #include <signal.h>
+#include <setjmp.h>
 #include <stdlib.h>
 
 #ifdef WIN32
@@ -15,11 +17,21 @@ HANDLE g_hSemaphore;
 int kill (int pid, int sig) {
   HANDLE procHandle;
   BOOL outcome;
+  DWORD       dwExitCode;
   
   procHandle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid);
-  outcome = TerminateProcess(procHandle, sig);
-  CloseHandle(procHandle);
-  return(outcome);
+  if (sig) {
+    outcome = TerminateProcess(procHandle, sig);
+    CloseHandle(procHandle);
+    return(outcome);
+  } else {
+    GetExitCodeProcess( procHandle, &dwExitCode );
+    if (!pid || dwExitCode == STILL_ACTIVE) {
+      return(0);
+    } else {
+      return(-1);
+    }
+  }
 }
  
 void pause () {
@@ -29,13 +41,19 @@ void pause () {
 }
 #endif
 #endif
+FILE* pip;
+char fname[256];
+char mess[256];
+
+jmp_buf env;
 
 static void exit_sighandler(int x) {
-  puts("Bye");
-  exit(EXIT_SUCCESS);
+  puts("Reached first base\n");
+  fflush(stdout);  
+  longjmp(env, x);
 }
 
-main() {
+main(int argc, char* argv[]) {
 #ifdef USE_SEMAPHORE
 	/*
 	http://msdn.microsoft.com/library/default.asp?url=/library/en-us/dllproc/base/createsemaphore.asp
@@ -115,29 +133,67 @@ main() {
     WaitForSingleObject(g_hSemaphore,30000);
     puts("Bye");
 #else
-  char fname[] = "pidpod";
-  FILE* pip;
-  int oldpid;
+  int oldpid, error;
+  char eof_string[80];
 
-  signal(SIGTERM,exit_sighandler);
+  if (argc > 1) {
+    strcpy(fname, argv[1]);
+  } else {
+    strcpy(fname, "pestmsgs.txt");
+  }    
+
+  signal(SIGINT,exit_sighandler);
+
+  error = setjmp(env);
+  puts("Hwulp\n");
+  fflush(stdout);  
+  if (error) {
+    pip = fopen(fname, "r");
+    fgets(mess, 250, pip);
+    fgets(mess, 250, pip);
+    fclose(pip);
+    puts(mess);
+    //    exit(EXIT_SUCCESS);
+    return 0;
+  }
+
   pip = fopen(fname, "r");
     if (pip == NULL) {
-	  puts("Error opening file for reading");
+	  printf("Error opening file %s for reading", fname);
 	  return 1;
   }
   fscanf(pip, "%d", &oldpid);
   fclose(pip);
+  if (kill(oldpid,0)==-1) {
+    puts("Sender process is already dead");
+    return 1;
+  }
+
+  if (argc > 2 && !strcmp(argv[2], "done")) {
+    if (oldpid) {
+      kill(oldpid, SIGINT);
+    }
+    return 0;
+  }
+    
   pip = fopen(fname, "w");
   if (pip == NULL) {
 	  puts("Error opening file for writing");
 	  return 1;
   }
-  fprintf(pip, "%d", (int)getpid());
+  fprintf(pip, "%d\n", (int)getpid());
+  if (argc > 2) {
+    fputs(argv[2], pip);
+  } else {
+    fputs("Go", pip);
+  }    
   fclose(pip);
 
   if (oldpid) {
-    kill(oldpid, SIGTERM);
+    kill(oldpid, SIGINT);
   }
   pause();
+  // waiting on console input makes it stop when calling process dies
+  // fgets(eof_string, 80, stdin);
 #endif
 }

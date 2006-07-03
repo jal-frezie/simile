@@ -323,7 +323,7 @@ proc SetState {winId newState} {
     set helperTable($winId,status) $newState
 }
 
-proc ProdObj {topNode nodeId caption} {
+proc ProdObj {topNode caption} {
     global helperTable
     if {[info exists helperTable($topNode,current)]} {
 # allow all components to be clicked as helpers might want other info
@@ -332,10 +332,10 @@ proc ProdObj {topNode nodeId caption} {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
 		set target $helperTable($topNode,current)
 		set helperId $helperTable($target,whichHelper)
-		if {![llength $nodeId]} { ;# get from caption
-		    set nodeId [GetIdFromCaptionPath $caption]
-		}
-		SystemHelperCall $helperId $topNode click $target $nodeId \
+#		if {![llength $nodeId]} { ;# get from caption
+#		    set nodeId [GetIdFromCaptionPath $caption]
+#		}
+		SystemHelperCall $helperId $topNode click $target $caption \
 		    [lindex [split $caption /] end]
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
@@ -670,11 +670,15 @@ proc ExScrubRun {node times} {
 }
 
 proc GetShortVals {topNode plName limit} {
+#ShowMessage debug info "Getting shorts from $plName in $topNode" ok
     set text [lindex [GetCompProperty $topNode Value $plName] 0]
+#ShowMessage debug info "Got $text" ok
     set count [ShrinkValueList text $limit]
+#ShowMessage debug info "Shrunk to $text" ok
     if {![string equal novalue $text]} {
 	set text [PrettifyValList [TransEnums [GetTransTable $plName] $text]]
     }
+#ShowMessage debug info "Primped to $text" ok
     return [list $count $text]
 }
     
@@ -1254,7 +1258,7 @@ proc update_executable {node lang} {
 # load_dll adds a dll to the system. Trees are added bottom up, so model_id
 # is always that most recently added (even if not recompiled)
 
-proc ex_load_dll {topNode lang progDir id node incs} {
+proc ex_load_dll {topNode lang progDir id node name incs} {
     #   phasecount and nodedata are set in generated code
     global model_id model_ids model_prog env
     if {[string match tcl $lang]} {
@@ -1280,7 +1284,7 @@ proc ex_load_dll {topNode lang progDir id node incs} {
 	if {![file exists $progFile]} {
 	    return 0
 	}
-        if {[catch {loadmodel $progFile $node} new_model_id]} {
+        if {[catch {loadmodel $progFile $node $name} new_model_id]} {
 	    if {[PrefValue custom(hackBreak) hackBreak]} {
 		ShowMessage {Loading model dll} info "Failed to load the compiled model program. The operating system returned the following message: $new_model_id -- the program will attempt to build another one." ok
 	    }

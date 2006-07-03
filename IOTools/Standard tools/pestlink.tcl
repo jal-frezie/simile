@@ -1165,7 +1165,9 @@ $numOutputs"
         set oldDir [pwd]
         cd $simtmpdir
 
-        set relayProc [open |$cmd r]
+# relay waits on stdin so it exits when Simile does, so must open it r+
+# otherwise it tries to use console stdin, hanging simile
+        set relayProc [open |$cmd r+]
         # was [SilentRun $cmd]
         #ShowMessage debug info "started $hanger" ok
         fconfigure $relayProc -blocking 0

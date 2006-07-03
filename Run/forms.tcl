@@ -53,43 +53,18 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     ::ttk::entry $line.value -textvariable disaggregate(icount) -width 10
     pack $line.value
-    pack $notebook.number.count -anchor w -pady 4 -fill both -expand true
-    
-    $notebook add [frame $notebook.graphics] -text Graphics
-    TitleFrame $notebook.graphics.colour -text "Background shade:"
-    set colourf [$notebook.graphics.colour getframe]
-    set posRBs [frame $colourf.imageposns]
-    pack [button $colourf.clear -text "Clear" -width 7 \
-            -command "ClearBG $posRBs"] -padx 2 -pady 4 -side left
-    pack [button $colourf.fixcolour -text "Colour..." \
-            -width 7 -command "UpdateColour $t $colourf"]  \
-            -padx 2 -pady 4 -side left
-    $colourf.fixcolour configure -bg $disaggregate(colour)
-    set disaggregate(defColour) $disaggregate(colour)
-    pack [button $colourf.setimage -text "Image..." \
-            -width 7 -command "ChooseImage $posRBs"] \
-            -padx 2 -pady 4 -side left
-    pack $posRBs -padx 2 -pady 4 -side left
-    set rbState [ChooseText [string equal $disaggregate(image) none] \
-            disabled normal]
-    foreach rbutton {Tiled Centred Scaled} {
-        pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
-                -value $rbutton -variable disaggregate(imgpos)] -anchor w
-    }
-    pack $notebook.graphics.colour -anchor w -pady 4 -fill both -expand true
-    
-    frame $t.buttons
-    button $t.buttons.ok -text "OK" -width 10 -default active \
-            -command {set disaggregate(done) 1}
-    button $t.buttons.cancel -text "Cancel" -width 10 \
-            -command {set disaggregate(done) 0}
-    button $t.buttons.help -text "Help" -width 10 \
-            -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
-    pack $t.buttons.help -side right -padx 2 -pady 4
-    pack $t.buttons.cancel -side right -padx 2 -pady 4
-    pack $t.buttons.ok -side right -padx 2 -pady 4 
-    pack $t.buttons -anchor nw -fill x -side bottom
-    
+    pack $notebook.number.count -anchor w -pady 4 -fill both -expand true 
+    TitleFrame $notebook.number.share -text "Module sharing"
+    set sharef [$notebook.number.share getframe]
+    checkbutton $sharef.instance -variable disaggregate(shared) \
+	-text "These are instances of a shared module, called:" \
+	-command [list ToggleModNameEntry $sharef]
+    pack $sharef.instance -side left
+    entry $sharef.modname -textvariable disaggregate(modname)
+    pack $sharef.modname -side right
+    ToggleModNameEntry $sharef
+    pack $notebook.number.share -side top -padx 4 -pady 4 -fill both
+   
     $notebook add [frame $notebook.notes] -text Notes
     TitleFrame $notebook.notes.notes -text "Notes:"
     set notesf [$notebook.notes.notes getframe]
@@ -178,22 +153,54 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $notebook.enumtypes.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
     
     $notebook add [frame $notebook.appearance] -text "Appearance"
-    TitleFrame $notebook.appearance.appearance -text Appearance
-    set appearancef [$notebook.appearance.appearance getframe]
-    checkbutton $appearancef.hide_b -text "Hide border" \
-            -variable disaggregate(hide_b)
-    pack $appearancef.hide_b -anchor w
-    checkbutton $appearancef.hide_c -text "Hide contents" \
-            -variable disaggregate(hide_c)
-    pack $appearancef.hide_c -anchor w
-    frame $appearancef.scale
-    scale $appearancef.scale.value -from .01 -to 1 -length 150 -orient horizontal \
+    TitleFrame $notebook.appearance.border -text "Border"
+    pack [checkbutton [$notebook.appearance.border getframe].show_b \
+		-text "Show border" \
+		-variable disaggregate(hide_b) -offval 1 -onval 0] -anchor w
+    pack $notebook.appearance.border -anchor nw -padx 4 -pady 4 \
+	-fill both -expand true
+    TitleFrame $notebook.appearance.bgshade -text "Background shade"
+    set bg_shade_f [$notebook.appearance.bgshade getframe]
+    set disaggregate(useColour) \
+	[expr ![string equal clear $disaggregate(colour)]]
+    pack [checkbutton $bg_shade_f.do -text "Shaded background" \
+		-variable disaggregate(useColour)] -side left
+    pack [button $bg_shade_f.fixcolour -text "Colour..." \
+            -width 7 -command "UpdateColour $t $bg_shade_f"]  \
+            -padx 2 -pady 4 -side left
+    if {$disaggregate(useColour)} {
+	$bg_shade_f.fixcolour configure -bg $disaggregate(colour)
+    }
+    pack $notebook.appearance.bgshade -anchor nw -padx 4 -pady 4 \
+	-fill both -expand true
+    TitleFrame $notebook.appearance.image -text "Image"
+    set image_f [$notebook.appearance.image getframe]
+    set posRBs [frame $image_f.posns]
+    set disaggregate(useImage) [expr ![string equal none $disaggregate(image)]]
+    pack [checkbutton $image_f.do -text "Use image" \
+		-variable disaggregate(useImage)] -side left
+    pack [button $image_f.setimage -text "Image..." \
+            -width 7 -command "ChooseImage $posRBs"] \
+            -padx 2 -pady 4 -side left
+    set rbState [ChooseText $disaggregate(useImage) normal disabled]
+    foreach rbutton {Tiled Centred Scaled} {
+        pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
+                -value $rbutton -variable disaggregate(imgpos)] -side left
+    }
+    pack $posRBs -side right
+    pack $notebook.appearance.image -anchor nw -padx 4 -pady 4 \
+	-fill both -expand true
+    TitleFrame $notebook.appearance.contents -text "Contents"
+    set contents_f [$notebook.appearance.contents getframe]
+    pack [checkbutton $contents_f.show_c -text "Show contents" \
+		-variable disaggregate(hide_c) -offval 1 -onval 0] -side left
+    scale $contents_f.scale -from .01 -to 1 -length 150 -orient horizontal \
             -resolution 0.01 -variable disaggregate(fatness)
-    pack $appearancef.scale.value
-    label $appearancef.scale.caption -text "Relative scale"
-    pack $appearancef.scale.caption
-    pack $appearancef.scale -anchor w
-    pack $notebook.appearance.appearance -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
+    pack $contents_f.scale -side right
+    label $contents_f.scalecaption -text "Relative scale:"
+    pack $contents_f.scalecaption -side right
+    pack $notebook.appearance.contents -anchor nw -padx 4 -pady 4 \
+	-fill both -expand true
     
     $notebook add [frame $notebook.calculation] -text "Calculation"
     TitleFrame $notebook.calculation.math -text Calculation
@@ -237,17 +244,6 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $notebook.calculation.math -side left -padx 4 -pady 4 -fill both -expand true
     
     $notebook add [frame $notebook.connect] -text "Connect"
-    TitleFrame $notebook.connect.share -text "Module sharing"
-    set sharef [$notebook.connect.share getframe]
-    checkbutton $sharef.instance -variable disaggregate(shared) \
-	-text "This is an instance of a shared module, called:" \
-	-command [list ToggleModNameEntry $sharef]
-    pack $sharef.instance -side left
-    entry $sharef.modname -textvariable disaggregate(modname)
-    pack $sharef.modname -side right
-    ToggleModNameEntry $sharef
-    pack $notebook.connect.share -side top -padx 4 -pady 4 -fill both
-
     TitleFrame $notebook.connect.tf -text "Automatic submodel connections"
     set connectf [$notebook.connect.tf getframe]
     set textx [list "Incoming influences connect to: " \
@@ -272,8 +268,21 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 	pack $connectf.fr$i -fill x -expand true
     }
 
-    pack $notebook.connect.tf -anchor nw -side left -padx 4 -pady 4 -fill both -expand true
+    pack $notebook.connect.tf -anchor nw -side left -padx 4 -pady 4 \
+	-fill both -expand true
     
+    frame $t.buttons
+    button $t.buttons.ok -text "OK" -width 10 -default active \
+            -command {set disaggregate(done) 1}
+    button $t.buttons.cancel -text "Cancel" -width 10 \
+            -command {set disaggregate(done) 0}
+    button $t.buttons.help -text "Help" -width 10 \
+            -command {ContextSensitiveHelp .disaggregation submodels/dialogue.htm}
+    pack $t.buttons.help -side right -padx 2 -pady 4
+    pack $t.buttons.cancel -side right -padx 2 -pady 4
+    pack $t.buttons.ok -side right -padx 2 -pady 4 
+    pack $t.buttons -anchor nw -fill x -side bottom
+
     SetHighlights $countf
     $notebook select 0
     pack $notebook -fill both -expand true
@@ -324,6 +333,12 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
 	if {$disaggregate(shared)} {
 	    set disaggregate(hide_c) 1
 	}
+	if {!$disaggregate(useColour)} {
+	    set disaggregate(colour) clear
+	}
+	if {!$disaggregate(useImage)} {
+	    set disaggregate(image) none
+	}
         set result [list $disaggregate(colour) $disaggregate(image) \
                 $disaggregate(imgpos) $disaggregate(type) \
                 $disaggregate(fatness) $icount \
@@ -347,16 +362,6 @@ proc ToggleModNameEntry {sharef} {
 	set state disabled
     }
     $sharef.modname configure -state $state
-}
-
-proc ClearBG {posRBs} {
-    global disaggregate
-    set disaggregate(colour) {}
-    set disaggregate(image) {}
-    set disaggregate(imgpos) none
-    foreach button [winfo children $posRBs] {
-        $button configure -state disabled
-    }
 }
 
 proc OldAddEnumType {fr} {
@@ -543,10 +548,9 @@ proc UpdateColour {parent f} {
     global disaggregate
     
     set new [tk_chooseColor -parent $parent \
-            -initialcolor $disaggregate(defColour)]
+		 -initialcolor [$f.fixcolour cget -bg]]
     if {[llength $new]} {
         set disaggregate(colour) $new
-        set disaggregate(defColour) $new
         $f.fixcolour configure -bg $new
     }
 }

@@ -13,15 +13,44 @@
 # a buggy implementation of file pathtype so hope that simile.exe always
 # gets us an absolute path...
 #
+# Now I am trying to use the relay system to pass messages between new and 
+# existing Simile processes. This means I need to know where my temporary
+# files are...
+
+if {[file exists $env(HOME)]} {
+# 4.1 moved SimileUserDirectory for Windows -- check in old position and update
+    set oldPrefs [file join $env(HOME) .simile]
+    if {[string equal windows $tcl_platform(platform)]} {
+        set custom(prefDir) [file join $env(HOME) "My Documents" \
+				 "My Simile files"]
+        if {[file exists $oldPrefs]} {
+	    if {![file exists $custom(prefDir)]} {
+		file mkdir $custom(prefDir)
+		foreach sysB {layout prefs recent version} {
+		    catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
+		}
+		foreach subD [glob $oldPrefs/*] {
+		    file rename $subD $custom(prefDir)/[file tail $subD]
+		}
+		file delete $oldPrefs
+	    }
+        }
+    } elseif [string match Darwin $tcl_platform(os)] {
+        set custom(prefDir) [file join $env(HOME) "Simile"]
+    } else {
+        set custom(prefDir) $oldPrefs
+    }
+}
+
 if {[string match windows $tcl_platform(platform)]} {
-    package require dde 1.2
-    set runHow(sendOp) {dde eval}
+#    package require dde 1.2
+#    set runHow(sendOp) {dde eval}
     set argv [lindex $argv 0]
 } else {
-    set runHow(sendOp) send
+#    set runHow(sendOp) send
 }
-set oldProc Simile
-set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
+#set oldProc Simile
+#set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
 
 # replace /./ in path with / to avoid confusing file dirname
 regsub -all /\\./ [info script] / scriptCmd
@@ -60,43 +89,130 @@ if [string match Darwin $tcl_platform(os)] {
 	}
     }
     tclAE::installEventHandler aevt rapp handleReopenApp
-}
+} else {
 
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
 # OTOH, if Simile is not running already, need to skip the following on Macs.
 
-if ![string match aqua [tk windowingsystem]] {
-    if {[info exists env(OPEN_MODEL)]} {
-        set remStartArgs [list after idle [list OpenTopLevel $env(OPEN_MODEL)]]
-    } else {
-        set remStartArgs NewTopLevel
+    proc HandOver {relayProc} {
+	global relay checkFor startAnew env
+	gets $relayProc action
+	close $relayProc
+puts "New instance read string $action"
+	if {[string equal "Sender process is already dead" $action]} {
+	    set startAnew 1
+	} else {
+	    if {[info exists env(OPEN_MODEL)]} {
+		set remStartArgs [list OpenTopLevel $env(OPEN_MODEL)]
+	    } else {
+		set remStartArgs NewTopLevel
+	    }
+	    set cmd "\"$relay\" \"$checkFor\" \"$remStartArgs\""
+	    open |$cmd r+
+	    exit
+	}
     }
- 
-    if {[catch [concat $runHow(sendCmd) {$remStartArgs}]]} {
-# Simile not already running, so just continue
-    } else {
-# Simile already running, so quit this fresh start
-        exit
-    }   
+
+    proc FailedHandoverQuery {hungProc} {
+	global relay checkFor
+	
+	set act [tk_messageBox -title "Simile is not responding" -icon info \
+		     -message "Simile is already running, but is currently not responding. Do you want to kill it and start again?" -type okcancel]
+	if {[string equal ok $act]} {
+# There is an unresponsive instance: how to kill it? make a dummy file
+# so it looks like a relay proc then call relay with "done" so it does
+# not start anew
+	    set strm [open $checkFor w]
+	    puts $strm $hungProc
+	    close $strm
+# if this fails, I hope it means the old Simile is already dead
+	    catch {exec $relay $checkFor done}
+	} else {
+# Action cancelled. If I am still waiting for a response I now write
+# OhNeverMind, to tell any new procs the old one is hung. If I had a response,
+# do nothing. Because I turned off own query (if it was my own) I can only
+# check for response by reading the file again...
+	    set strm [open $checkFor r]
+	    set tellProc [gets $strm]
+	    set tellProc [gets $strm] ;# second line is last command passed
+	    close $strm
+puts "Cancelling: 2nd line is $tellProc"
+	    if {[string equal AreYouThere [lindex $tellProc 0]]} {
+# yep, still waiting...
+		set strm [open $checkFor w]
+		puts $strm 0
+		puts $strm "OhNeverMind $hungProc"
+		close $strm
+	    }
+	    exit
+	}
+    }
+	    
+# ok, is anybody out there?
+
+    set checkFor [file join $SIMILE_PATH Examples handover.txt]
+    if {![file exists $checkFor] && [info exists custom(prefDir)]} {
+	set checkFor [file join $custom(prefDir) handover.txt]
+    } 
+    if {[file exists $checkFor]} {
+	set strm [open $checkFor r]
+	set tellProc [gets $strm]
+	set tellProc [gets $strm] ;# second line is last command passed
+	close $strm
+puts "Starting up: 2nd line is $tellProc"
+# ping to see if old proc there
+	set relay [file join $SIMILE_PATH System bin relay]
+	switch -regexp [lindex $tellProc 0] {
+	    OhNeverMind {
+# we already did the hung instance dialogue and chose to cancel. No resolution
+# since, so do it again.
+		FailedHandoverQuery [lindex $tellProc 1]
+	    } AreYouThere {
+# One instance is waiting for another, probably hung, instance to respond, or
+# displaying the dialogue box. Don't confuse issues by starting a third.
+		exit
+	    } Ready {
+# Another instance appears ready and waiting, ask it to take over...we have to check it is running first as we cannot take back a command that we abandon cos the wait is too long
+		set remStartArgs "AreYouThere"
+		set cmd "\"$relay\" \"$checkFor\" \"$remStartArgs\""
+# relay waits on stdin so it exits when Simile does, so must open it r+ or it
+# tries to use console stdin, hanging simile
+		set relayProc [open |$cmd r+]
+		fconfigure $relayProc -blocking 0
+		fileevent $relayProc readable "HandOver $relayProc"
+# but be ready in case it fails to do so
+		set escapeDlg [after 3000 set startAnew 0]
+		tkwait variable startAnew
+		if {$startAnew} {
+		    after cancel $escapeDlg ;# process was dead
+		} else { ;# process unresponsive
+		    fileevent $relayProc readable {} ;# no longer want to know
+		    close $relayProc
+		    FailedHandoverQuery [lindex $tellProc 1]
+		}
+		unset startAnew
+	    }
+	}
+    }
 }
 
 # Scaling affects some metrics but not all, so squash it FTTB
 # to ensure consistency
-tk scaling 1.0
-set graph(font) [list helvetica 10]
+tk scaling 1.5
+set graph(font) [list helvetica 8]
 
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
-	dde servername $oldProc
+#	dde servername $oldProc
 	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
 	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
 	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
 	set graph(origin) 2
     } unix {
-	tk appname $oldProc ;# in case starting it from SimileAutoObj
+#	tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
 #   set env(LD_LIBRARY_PATH) \
 #       $env(SP_PATH)/library:[file dirname [info library]]
@@ -198,7 +314,7 @@ if {[info exists SimileAutoObjLoaded]} {
 } else {
     update
 }
-
+#after 3000 ;# uncomment to give time to see splash screen
 wm withdraw . ;# already withdrawn if not Linux
 
 # This is the folder that AME should start looking for model

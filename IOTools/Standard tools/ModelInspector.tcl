@@ -151,8 +151,8 @@ namespace eval ::ModelInspector63654 {
     }
 
     proc OnElementClick { winId node } {
-	set caption [$winId.tableframe.table itemcget $node -text]
-	ProdFromHelper $winId $node $caption
+#	set caption [$winId.tableframe.table itemcget $node -text]
+	ProdFromHelper $winId $node
     }
     
     proc DoInspPopup {winId X Y plName} {
@@ -162,15 +162,15 @@ namespace eval ::ModelInspector63654 {
 	if {$runState($node,modelRunning)>2} {
 	    PostPopup $X $Y
 #	    set trans [GetTransTable $plName]
-	    if {[catch {GetModelValue $plName} mVal]} {
+#	    if {[catch {GetModelValue $plName} mVal]} {
 #		set missing [lindex [split $mVal \"] 1]
 #		set value \
 #		    "Missing value: [lindex [DescribeComponent $missing] 0]"
-		set value no_value
-	    } else {
-		set value [lindex $mVal 0]
+#		set value no_value
+#	    } else {
+#		set value [lindex $mVal 0]
 		#puts "trans $trans value $value"
-	    }
+#	    }
 	    AddPopupMessage novalue \#ffffc0 GetShortVals $node $plName
 	}
     }

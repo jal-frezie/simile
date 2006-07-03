@@ -544,13 +544,12 @@ finish_old_edit(NextEdit) :-
 because this is speed-critical. */
 
 cannot_call_in(Prev_highlight, Parent, Name) :-
-	(m_class:Impostor has_class_refinement name of Name;
-		m_class:Impostor has_attribute name of Name),
-	get_host(Impostor, InSameModel),
-	caption_for(InSameModel, Name),
 	find_all_comps(Parent, InSameModel),
-	\+ (InSameModel = Prev_highlight; 
-		is_ghost(InSameModel)).
+	appears(InSameModel),
+	(\+ InSameModel is_of_sort captionless; find_type(InSameModel, cloud)),
+	\+ InSameModel = Prev_highlight,
+	(m_class:InSameModel has_class_refinement name of Name;
+	caption_for(InSameModel, Name)).
 
 change_name(RenamedNode, Name) :-
 	(add_parameter(RenamedNode, 0, name, Name);
@@ -2128,12 +2127,7 @@ dissolve_component(Node) :-
 	true).	
 
 list_captions(Parent, Used) :-
-	setof(UsedCaption,
-	      Part^(find_all_comps(Parent, Part),
-		    appears(Part),
-		    (m_class:part has_class_refinement name of UsedCaption;
-		    m_class:part has_attribute name of UsedCaption)),
-	      UsedNow), !,
+	setof(UsedCapt, cannot_call_in(none, Parent, UsedCapt), UsedNow), !,
 	append(UsedNow, _, Used).
 
 retitle_duplicate(Node, Used) :-

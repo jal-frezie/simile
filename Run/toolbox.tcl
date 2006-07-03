@@ -563,12 +563,9 @@ proc DestroyHelpers {node} {
     do_if_running $node ExDestroyHelpers $node
 }
 
-
-
-
-proc load_dll {topNode lang progDir id node incs} {
+proc load_dll {topNode lang progDir id node name incs} {
     return [do_for_node $topNode \
-		ex_load_dll $topNode $lang $progDir $id $node $incs]
+		ex_load_dll $topNode $lang $progDir $id $node name $incs]
 }
 
 proc compile_c {workingDir} {
@@ -732,6 +729,51 @@ proc LoadModelWindowExtensions {} {
     cd $origDir
 }
 
+proc Respond {relayProc} {
+    gets $relayProc action
+    close $relayProc
+puts "Responding to: $action"
+    switch -regexp [lindex $action 0] {
+	AreYouThere {
+# another instance checking I am responding -- do so
+	    StartComms 0
+	} OhNeverMind|Sender { ;# process is already dead
+# response to above -- it gave up waiting. Nothing to reply to.
+	    StartComms 1
+	} default {
+# an actual command. Caller will trustingly quit so do not reply
+	    StartComms 1
+	    eval $action
+	}
+    }
+}
+    
+proc StartComms {firstTime} {
+    global custom
+
+    set relay [file join [file dirname [pwd]] System bin relay]
+    set commFile [file join $custom(prefDir) handover.txt]
+    switch -- $firstTime {
+	1 {
+# initializing -- set old proc to 0
+	    set dump [NetOpen $commFile w]
+	    puts $dump 0
+	    close $dump
+	} -1 {
+# terminating -- send 'done' and do not wait for answer
+	    exec $relay $commFile done
+	    file delete $commFile
+	    return
+	}
+    }
+    set outgoing "Ready [pid]"
+    set cmd "\"$relay\" \"$commFile\" \"$outgoing\""
+puts "Opening: $cmd"
+    set relayProc [open |$cmd r+]
+    fconfigure $relayProc -blocking 0
+    fileevent $relayProc readable [list Respond $relayProc]
+}
+
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir runHow
     LoadIconImages
@@ -750,31 +792,6 @@ proc ControlDraw {prologVersion} {
     
     # no longer have a separate floating toolbar
     
-    if {[file exists $env(HOME)]} {
-# 4.1 moved SimileUserDirectory for Windows -- check in old position and update
-        set oldPrefs [file join $env(HOME) .simile]
-    if {[string equal windows $tcl_platform(platform)]} {
-        set custom(prefDir) [file join $env(HOME) "My Documents" \
-                     "My Simile files"]
-        if {[file exists $oldPrefs]} {
-        if {![file exists $custom(prefDir)]} {
-            file mkdir $custom(prefDir)
-            foreach sysB {layout prefs recent version} {
-		catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
-            }
-            foreach subD [glob $oldPrefs/*] {
-            file rename $subD $custom(prefDir)/[file tail $subD]
-            }
-            file delete $oldPrefs
-        }
-        }
-    } elseif [string match Darwin $tcl_platform(os)] {
-        set custom(prefDir) [file join $env(HOME) "Simile"]
-    } else {
-        set custom(prefDir) $oldPrefs
-    }
-    }
-
     if {![info exists custom(prefDir)]} {
 	set foldErr "No HOME directory specified"
     } else {
@@ -786,9 +803,8 @@ proc ControlDraw {prologVersion} {
 	}
     }
     if {[info exists foldErr]} {
-	catch {wm withdraw .splash}
-	BuildProblem {File system problem} warning "HOME directory unusable -- $foldErr -- trying installation folder instead" top
-        set custom(prefDir) [pwd]/../Prefs
+	tk_messageBox -title {File system problem} -icon warning -message "HOME directory unusable -- $foldErr -- trying installation folder instead" -type ok
+	set custom(prefDir) [pwd]/../Examples
     }
     
     if {[file exists $custom(prefDir)/.version]} {
@@ -895,6 +911,10 @@ proc ControlDraw {prologVersion} {
     
     set sendvars(running) 0
     
+# that's startup complete now -- set up the process that communicates with
+# other instances of Simile
+    StartComms 1
+
     set custom(hotlist) {}
     if {[file exists $custom(prefDir)/.recent]} {
         set cacheStream [NetOpen $custom(prefDir)/.recent r]

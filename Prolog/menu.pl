@@ -369,12 +369,11 @@ menu_handle(Win, file, RunCmd) :-
 	use_temp_dir(Dir),
 	(rebuild_code(Lang, Node, Dir), !,
 	    /* no much point going for run */
-	    on_exception(_Whoops,
-			 output:prepare_execution(Node, Lang),
-		     (do_dialogue("Compilation or startup error", error,
-				  "Select \"I/O Tools -> Add tool -> Standard tools -> TclTk error info\" to view error messages", ok, _),
-			 scrub_run(Node, 0))),
-	    set_running_model(Node);
+	    output:prepare_execution(Node, Lang, Spill),
+	    (var(Spill), !,
+		set_running_model(Node);
+	    do_dialogue("Compilation or startup error", error, Spill, ok, _),
+		scrub_run(Node, 0)),
 	    true),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
@@ -1138,7 +1137,7 @@ set_properties(Wid, Model) :-
 			     get_actual_sizes(Model, UseCount, Sizes, _,_),
 			     name(WibbleAtom, Wibble)),
 		    (nonvar(Wibble);
-		    member(Dodgy, Sizes),
+		     member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),
 			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
 		    Spec = [count=UseCount]);
@@ -1168,33 +1167,40 @@ set_properties(Wid, Model) :-
 		redisplay(Linkage),
 		fail; true)),
 
-	    /* Changes in fatness require redrawing submodel's
-	    toplevel windows; this plus nature, count and visibility require
-	    redrawing it in other windows */
-	    (([NewColour, NewImage, NewImgPos, NewNature, NewHideB, NewHideC] =
-	     [Colour, Image, ImgPos, Nature, HideB, HideC],
-	      FatFactor = 1, UseCount = Count), !;
-	    NewHideC = HideC, !,
-		(\+ FatFactor = 1,
-		    NewHideB = HideB,
-		    find_all_comps(Model, TopComp),
+	    update_connect_marks(Model, Connect, NewConns), 
+	    (Share = 0, NewShare = 1, !,
+		% full redraw needed cos id of displayed comp changed
+		DrawContents = 1,
+		make_module_of(Model, NewModName, NewComp);
+	    NewComp = Model),
+
+	    /* This works out how complete a redraw needs to be done */
+	    (NewHideC = HideC, !;
+		DrawContents = 1),
+	    (FatFactor = 1, !;
+		DrawBorder = 1,
+		DrawMembers = 1),
+	    ([NewColour, NewImage, NewImgPos, NewNature, UseCount, NewHideB] =
+	     [Colour, Image, ImgPos, Nature, Count, HideB], !;
+	    DrawBorder = 1),
+
+	    /* This does a redraw of the appropriate completeness */
+	    (var(DrawContents), !,
+		(nonvar(DrawMembers),
+		    find_all_comps(NewComp, TopComp),
 		    redisplay_border(TopComp),
 		    fail;
-		redisplay_border(Model));
-	    ReBowtied is_connector from Model to _,
+		 (var(DrawBorder), !; redisplay_border(NewComp)));
+	    ReBowtied is_connector from NewComp to _,
 		find_type(ReBowtied, flow),
 		redisplay(ReBowtied),
 		fail;
-	    redisplay(Model)),
-
+	    draw:redisplay(Model, NewComp)),
+		    
 	    (Separate = NewSeparate, !;
-		find_all_comps(Parent, Model),
+		find_all_comps(Parent, NewComp),
 		add_parameter(Parent, 1, c_new, 0)),
 
-	    update_connect_marks(Model, Connect, NewConns), 
-	    (Share = 0, NewShare = 1, !,
-		make_module_of(Model, NewModName, NewComp);
-	    NewComp = Model),
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
 		_Window shows_model Submodel,

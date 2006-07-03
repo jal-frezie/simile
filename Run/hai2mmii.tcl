@@ -388,9 +388,9 @@ proc GetTransTable { node } {
 #    return [do_in_editor GetTransTable $node]
 }
 
-proc ProdFromHelper {winId node caption} {
+proc ProdFromHelper {winId caption} {
     global helperTable
-    ProdObj $helperTable($winId,whichModel) $node $caption
+    ProdObj $helperTable($winId,whichModel) $caption
 }
 
 proc GetCompProperty {topNode prop args} {

@@ -122,7 +122,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 		     build(['.tcl', '.cpp', '.dll', '.so', '.dylib'])]);
 	      \+ (Stat = 0,
 		     load_executable(Language, CheckDir, OldTgt, Parent,
-				     TopNode, Includes))),
+				     Name, TopNode, Includes))),
 	     retractall(entry_arcs_are(_)),
 	     assert(entry_arcs_are([])),
 	     instantiate_all(Parent, Model),
@@ -145,8 +145,8 @@ build_instances(Language, DestDir, Parent, TopNode,
 		  (Parent has_changed_model_refinement c_new of Tgt;
 		      Parent has_new_model_refinement c_new of Tgt)),
 		 assert(new_exec_for(Parent))),
-		load_executable(Language, CheckDir, Tgt, Parent, TopNode,
-			       Includes);
+		load_executable(Language, CheckDir, Tgt, Parent, Name,
+				TopNode, Includes);
 	 true),
 	KeepDir = 1;
 	ChangeNext = ChangeTop),
@@ -439,11 +439,12 @@ declare_structure(Language, model(Vars, Submodels), Used) :-
 declare_submodel_structures(_, [], _).
 
 declare_submodel_structures(Language, [Instance | Instances], Used) :-
-	Instance = instance(submodel, Node, xrefs(Model, _, Bases, _), 
+	Instance = instance(submodel, _Node, xrefs(Model, _, Bases, _), 
 		Name, Type-_),
+/* Name choice now done during instantiation
 	caption_for(Node, Capt),
 	generate_name(Language, Capt, Name, Used, [type]),
-	append_atoms(Name, type, Type),
+*/	append_atoms(Name, type, Type),
 	make_assoc_loop_names(Language, Instance, Used, Bases),
 	declare_structure(Language, Model, Used),
 	declare_submodel_structures(Language, Instances, Used).
@@ -569,7 +570,8 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 	append(MainClass, [proc_decls | EndClass], ThisDecl),
 	append(ClassStart, [submodel_decls | ClassEnd], MainClass),
 	append([ClassStart, SubTypeDecls, ClassEnd, Publics, Ext1, Ext2, Exts,
-		ExtM, ExtParanoia, ExtN, EndClass], TypeDecls),
+		ExtM, ExtParanoia, ExtN, EndClass],
+	       TypeDecls),
 	append(LocalPtrs, SubPointerDecls, PointerDecls).
 
 	

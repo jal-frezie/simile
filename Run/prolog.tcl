@@ -40,7 +40,7 @@ proc KeepLooking {} {
 	    } elseif {[string match send_tcl_cmd $cmd]} {
 		eval do_tail $line
 	    } else {
-		error $line
+		DebugMess $line
 		set prologExit -1
 	    }
 	}
@@ -65,7 +65,7 @@ proc prolog {plCmd} {
 #puts "Prolog starting $plCmd"
     send_pl_cmd call:$plCmd
     set plOutcome [KeepLooking]
-#puts "Prolog finished $plCmd"
+#puts "Prolog finished $plCmd outcome $plOutcome"
     set plPipe(stack) $oldStack
     if {$plOutcome != 1} {
 	ResetProgressBox
@@ -133,7 +133,7 @@ proc ClosePipe {} {
 }
 
 # These allow GNU prolog to use a decent amount of memory
-set vm_usage 131072
+set vm_usage 262144
 set env(GLOBALSZ) [expr $vm_usage/2]
 set env(LOCALSZ) [expr $vm_usage/4]
 set env(TRAILSZ) [expr $vm_usage*3/16]

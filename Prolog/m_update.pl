@@ -1478,10 +1478,9 @@ unique_name_for_new(Type, Name) :-
 
 get_disag_params(Submodel, 
 		 [Colour, Image, ImgPos, Nature, Fat, Count, Step, Desc, 
-		  Comment, 'Awaiting implementation', EnumSpecs, Connect, Fix, HideB, HideC, Separate, 0]) :-
-	(Submodel has_class_refinement fill_colour of Colour,
-	    \+ Colour = clear, !;
-	    Colour = white),
+		  Comment, ModName, EnumSpecs, Connect, Fix, HideB, HideC, Separate, Share]) :-
+	(Submodel has_class_refinement fill_colour of Colour, !;
+	    Colour = clear),
 	(Submodel has_class_refinement fill_image of Image, !;
 	    Image = none),
 	(Submodel has_class_refinement image_posn of ImgPos, !;
@@ -1512,6 +1511,13 @@ get_disag_params(Submodel,
 	Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
 	Submodel has_graphical_attribute internal_extent of [LI, _, RI, _],
 	Fat is 1.0*(RB-LB)/(RI-LI),
+
+	(Submodel is_instance_of Module, !,
+	    Module has_class_refinement name of ModName,
+	    Share = 1;
+	ModName = '',
+	    Share = 0),
+	
 /* Now what about auto-connection information. Dialogue needs to know
 which, if any, possible connection is being used, so send 4 lists
 (fttb), 1st elt of each being posn of current selection or 0 if

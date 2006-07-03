@@ -175,7 +175,7 @@ typedef BOOLEAN interact_gui_type(void*, int, double);
 typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
-typedef void get_value_pointer_type(void*, char*, int, int*);
+typedef void get_value_pointer_type(void*, void*, char*, int, int*);
 typedef void* fetch_instance_type(char*);
 typedef void update_submodel_type(char*, void*, double, int);
 typedef void advance_submodel_type(char*, void*, double, int);
@@ -193,8 +193,8 @@ typedef void showMess_type(char*);
 // (its same as above)
 
 /* Defined in the shank, used by the shim */
-EXTDEC char* load_model(char*, char*, long int*);
-EXTDEC void* use_array_for_params(char*, void*);
+EXTDEC char* load_model(char*, char*, char*, long int*);
+EXTDEC void* use_array_for_params(char*, long int, void*);
 EXTDEC int clear_time_point_elts(char*);
 EXTDEC int set_wrap(char*, double);
 EXTDEC void* create_time_point(char*, double, void*);
@@ -209,7 +209,8 @@ EXTDEC void release_graph_data(graph_data_type*);
 EXTDEC double graphpoint(double, graph_data_type*, int);
 EXTDEC double rand_fract();
 EXTDEC graph_data_type** get_graph_base(long int);
-EXTDEC node_data_line* searchinfo(char*, long int*, char*, 
+EXTDEC void easy_capt(long int, int, char*);
+EXTDEC node_data_line* searchinfo(char*, long int,
 				  int*, int*, enum_type_data**);
 EXTDEC long int fetch_top_instance(long int, char*);
 

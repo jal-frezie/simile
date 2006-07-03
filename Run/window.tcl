@@ -145,11 +145,16 @@ proc ClickObj { x y winId X Y action} {
         return
     }
     # if we have loaded an already built model, its node names may not match
-    # the ones given it in Prolog, so get them from the canvas
+    # the ones given it in Prolog, so get them from the canvas...
+
+# this is no longer an issue as the canvas node names are also
+# translated, but the executable will now want a model id and caption
+# path...
+
     set node [ExtractPrologName $winId $target]
     set context [GetClickCapt $winId $canx $cany $node]
     set topNode $window_info($winId,top_node)
-    if {[do_if_running $topNode ProdObj $topNode {} $context]} {
+    if {[do_if_running $topNode ProdObj $topNode $context]} {
     return
     }
     # IO tool took the click, so do no more
@@ -820,12 +825,12 @@ proc AddEqnPopup {node x y winId X Y} {
         }
         if {$doVal} {
         set cptPath [GetClickCapt $winId $canx $cany $plName]
-        set execName [do_for_node $node GetIdFromCaptionPath $cptPath]
-        if {[string equal nomatch $execName]} {
-            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $plName
-        } else {
-            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $execName
-        }
+#        set execName [do_for_node $node GetIdFromCaptionPath $cptPath]
+#        if {[string equal nomatch $execName]} {
+#            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $plName
+#        } else {
+            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $cptPath
+#        }
     }
     }
 }
@@ -1979,8 +1984,9 @@ proc exit_simile {} {
     }
     close $cacheStream
     if {[string equal windows $tcl_platform(platform)]} {
-    file attributes $custom(prefDir)/.recent -hidden true
+	file attributes $custom(prefDir)/.recent -hidden true
     }
+    StartComms -1
 }
 
 proc ZapWindow { fullName } {

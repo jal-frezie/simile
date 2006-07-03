@@ -69,6 +69,9 @@ int serviceError;
 graph_data_type* tcl_graphdata;
 char globMess[255];
 
+long int modelType;
+long int modelHandle;
+
 void showMess (char* mess) {
   Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
 	      NULL);
@@ -80,19 +83,20 @@ appear in the object table. */
 int list(long int listType, Tcl_Interp *interp) {
 
   Tcl_Obj *resultPtr;
-  char* find;
   int line, nodecount;
   node_data_line* node_data;
+  char captionSpace[256];
 
   resultPtr = Tcl_GetObjResult(interp);
   nodecount = get_node_count(listType);
   for (line=0; line<nodecount; line++) {
     node_data = get_data_line(listType, line);
-    if (node_data->datatype == EXTERNAL) {
+    if (node_data->datatype == EXTERNAL) { // obso
       list(get_node_model_id(node_data->name), interp);
     } else {
+      easy_capt(listType, line, captionSpace);
       Tcl_ListObjAppendElement(interp, resultPtr, 
-			       Tcl_NewStringObj(node_data->name, -1));
+			       Tcl_NewStringObj(captionSpace, -1));
     }
   }
   return TCL_OK;
@@ -212,7 +216,6 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
   Tcl_Obj *resultPtr, *oneType;
   int error, action, count;
   node_data_line *data_line;
-  long int tgtModel;
   enum_type_data *usedTypes[32], **usedTypePtr;
 
   error = Tcl_GetIntFromObj(interp, argv[2], &action);
@@ -220,8 +223,8 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     return error;
   } /* if(error) */
 
-  if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[1], NULL), &tgtModel,
-			     current, dims, path, usedTypes))) {
+  if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[1], NULL), 
+				  modelType, dims, path, usedTypes))) {
     sprintf(current, "noitem");
     resultPtr = Tcl_NewStringObj(current, -1);
     Tcl_SetObjResult(interp, resultPtr);
@@ -279,11 +282,11 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
       return TCL_ERROR;
     }
     action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
-    return do_graph(get_graph_base(tgtModel), interp, action, data_line->graph,
-		    argc, argv);
+    return do_graph(get_graph_base(modelType), interp, action, 
+		    data_line->graph, argc, argv);
 
   case GETCAPTION:
-    resultPtr = Tcl_NewStringObj(current, -1);
+    resultPtr = argv[1];
     break;
 
   case GETTRANS:
@@ -318,7 +321,8 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 /* Now for procedures that are called from the dll and therefore have to be
    global even though they may refer to stuff by model type and instance */
 
-void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
+void get_tcl_value_pointer(void* modelPtr, void* tgt, char* id, 
+			   int count, int* inds) {
   node_data_line* data_line;
   char caption[255];
   char* varName;
@@ -329,8 +333,8 @@ void get_tcl_value_pointer(void* tgt, char* id, int count, int* inds) {
   double makeInt;
   enum_type_data* usedTypes[32];
 
-  data_line = searchinfo(id, &mSpare, caption, dims, path, usedTypes);
-  strcpy(caption, data_line->name);
+  data_line = searchinfo(id, (long int)modelPtr, dims, path, usedTypes);
+  strcpy(caption, id);
   strcpy(caption + strlen(caption), " { ");
   for (stepIndex = 0; count>stepIndex; ++stepIndex) {
     sprintf(caption + strlen(caption), "%d ", inds[stepIndex]); 
@@ -392,9 +396,6 @@ as Tcl commands so the dialog box can call them as if it were a Tcl simulation.
 unloads the model. Since the model dll now merely defines the model class, this
 also causes an instance of it to be created. */
 
-long int modelType;
-long int modelHandle;
-
 connectRecord** connectDataPtr;
 int* connCountPtr;
 
@@ -402,13 +403,15 @@ FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
 			    int argc, Tcl_Obj *CONST argv[]) {
   char* fileName;
   char* nodeName;
+  char* nodeCapt;
   char* dllProblem;
 
   switch (argc) {
-  case 3:
+  case 4:
     fileName = Tcl_GetStringFromObj(argv[1], NULL);
     nodeName = Tcl_GetStringFromObj(argv[2], NULL);
-    dllProblem = load_model(fileName, nodeName, &modelType);
+    nodeCapt = Tcl_GetStringFromObj(argv[3], NULL);
+    dllProblem = load_model(fileName, nodeName, nodeCapt, &modelType);
     if (dllProblem) {
       Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
       delete dllProblem;
@@ -418,7 +421,7 @@ FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
     break;
     
   default:
-    Tcl_WrongNumArgs(interp, 1, argv, "filename node_id");
+    Tcl_WrongNumArgs(interp, 1, argv, "filename node_id caption");
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -460,12 +463,16 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
 
-  if (argc != 2) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "model_id node_id");
     return TCL_ERROR;
   }
-  
-  if (use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL), NULL)) {
+  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  if (use_array_for_params(Tcl_GetStringFromObj(argv[2], NULL), 
+			   modelType, NULL)) {
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
@@ -1126,7 +1133,6 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
 
   char spare[256];
   int dims[32], path[32];
-  long int mSpare;
   enum_type_data* usedTypes[32];
 
   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
@@ -1156,7 +1162,7 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   resultPtr = Tcl_NewObj();
 
   if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[3], NULL), 
-			     &mSpare, spare, dims, path, usedTypes))) {
+			     modelType, dims, path, usedTypes))) {
     resultPtr = Tcl_NewStringObj("novalue", -1);
   } else {
     resultPtr = fill_value(modelType, instance_ptr_from_id(modelHandle), path,
