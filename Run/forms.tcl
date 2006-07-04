@@ -163,8 +163,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     set bg_shade_f [$notebook.appearance.bgshade getframe]
     set disaggregate(useColour) \
 	[expr ![string equal clear $disaggregate(colour)]]
+    set cbCmd "AbleDescendents $bg_shade_f \$disaggregate(useColour)"
     pack [checkbutton $bg_shade_f.do -text "Shaded background" \
-		-variable disaggregate(useColour)] -side left
+	  -command $cbCmd -variable disaggregate(useColour)] -side left
     pack [button $bg_shade_f.fixcolour -text "Colour..." \
             -width 7 -command "UpdateColour $t $bg_shade_f"]  \
             -padx 2 -pady 4 -side left
@@ -173,12 +174,14 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     }
     pack $notebook.appearance.bgshade -anchor nw -padx 4 -pady 4 \
 	-fill both -expand true
+    eval $cbCmd
     TitleFrame $notebook.appearance.image -text "Image"
     set image_f [$notebook.appearance.image getframe]
     set posRBs [frame $image_f.posns]
     set disaggregate(useImage) [expr ![string equal none $disaggregate(image)]]
+    set cbCmd "AbleDescendents $image_f \$disaggregate(useImage)"
     pack [checkbutton $image_f.do -text "Use image" \
-		-variable disaggregate(useImage)] -side left
+	      -command $cbCmd -variable disaggregate(useImage)] -side left
     pack [button $image_f.setimage -text "Image..." \
             -width 7 -command "ChooseImage $posRBs"] \
             -padx 2 -pady 4 -side left
@@ -190,10 +193,12 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $posRBs -side right
     pack $notebook.appearance.image -anchor nw -padx 4 -pady 4 \
 	-fill both -expand true
+    eval $cbCmd
     TitleFrame $notebook.appearance.contents -text "Contents"
     set contents_f [$notebook.appearance.contents getframe]
-    pack [checkbutton $contents_f.show_c -text "Show contents" \
-		-variable disaggregate(hide_c) -offval 1 -onval 0] -side left
+    set cbCmd "AbleDescendents $contents_f !\$disaggregate(hide_c)"
+    pack [checkbutton $contents_f.showc -text "Show contents" -command $cbCmd \
+	      -variable disaggregate(hide_c) -offval 1 -onval 0] -side left
     scale $contents_f.scale -from .01 -to 1 -length 150 -orient horizontal \
             -resolution 0.01 -variable disaggregate(fatness)
     pack $contents_f.scale -side right
@@ -201,6 +206,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack $contents_f.scalecaption -side right
     pack $notebook.appearance.contents -anchor nw -padx 4 -pady 4 \
 	-fill both -expand true
+    eval $cbCmd
     
     $notebook add [frame $notebook.calculation] -text "Calculation"
     TitleFrame $notebook.calculation.math -text Calculation
@@ -354,6 +360,28 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     return $result
 }
 
+proc AbleDescendents {widg whether} {
+    global disaggregate ;# will be used in whether expr
+    if {[expr $whether]} {
+	set state normal
+    } else {
+	set state disabled
+    }
+    RecursiveAble $widg $state
+}
+	
+proc RecursiveAble {widg state} {
+    foreach subWidg [winfo children $widg] {
+	switch -regexp [winfo class $subWidg] {
+	    Button|Radiobutton|Scale|Entry {
+		$subWidg configure -state $state
+	    } Frame {
+		RecursiveAble $subWidg $state
+	    }
+	}
+    }
+}
+		
 proc ToggleModNameEntry {sharef} {
     global disaggregate
     if {$disaggregate(shared)} {
