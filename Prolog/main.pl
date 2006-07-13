@@ -41,7 +41,6 @@ main :-
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
 	state:clear_model_file(_),
-	m_update:superfast_delete(library),
 	m_update:superfast_delete(root),
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),

@@ -25,7 +25,7 @@ sicstus_module(image,
        draws_complete/1, check_complete/1, test_complete/1,
        get_inclusions/3, get_overlaps/3, draws_at/3, right_section/2,
         find_new_box/5, line_dir_change_radius_is/1,
-       multiple_draw/2, update_bowtie/2,
+       multiple_draw/3, update_bowtie/2,
        adjust_bowtie/2, adjust_spline/2,
        get_caption_anchor/2, end_coords/3,
        update_text_position/3, make_header/2, set_completion/2,
@@ -223,6 +223,7 @@ make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
 
 density_for(Comp, Density) :-
     (Comp has_type relation;
+	ghost_link(Comp, _Base, _Ghost);
         find_base(Comp, Base), \+ Base = Comp;
 	Comp is_of_sort has_bowtie, \+ has_bowtie(Comp)), !,
     Density = gray50;
@@ -457,9 +458,8 @@ trailing away from each corner.
 -1 is population submodel; these don't even have an important order, so draw a sort
 of random pile. */
 
-multiple_draw(VComp, Num) :-
-    find_base(VComp, Comp),
-    (get_shape(Comp, hide_border, 1), !,
+multiple_draw(Comp, Module, Num) :-
+    (get_shape(Module, hide_border, 1), !,
 	Num = 0;
      is_population(Comp), !,
         Num = -2;
@@ -716,8 +716,16 @@ of a non-visible node. */
 
 draws_complete(Item) :-
     (get_bowtie_section(Item, BaseItem), !; find_base(Item, BaseItem)),
-    complete(BaseItem), !,
-    \+ (implicit_function(BaseItem, Extra), \+ complete(Extra)).
+    complete(BaseItem),
+    \+ (implicit_function(BaseItem, Extra), \+ complete(Extra));
+    Item is_of_sort has_bowtie, % but rate is set in/out side a module
+        connects(Item, Start, End),
+	member(FlowBound, [Start, End]),
+	( \+ appears(FlowBound),
+	    RateSetter has_part FlowBound,
+	    RateSetter has_class module;
+	 appears(FlowBound),
+	    FlowBound is_instance_of RateSetter).
 
 /* check_complete removes the cache attribute forcing another test
 next time its completeness value is required. */
@@ -764,7 +772,7 @@ represents(Function, Source, Pairs, Var) :-
     member(use(_,_, Ref, SoughtUnit), UseList),
     (Ref = Var; Ref = usr(Var)),
     member(var_pair(Var, _), Pairs),
-    get_link_source_data(Source, Function, _, FoundUnit, _,_,_,_,_),
+    get_link_source_data(Source, _, Function, _, FoundUnit, _,_,_,_,_),
     check_unit(FoundUnit, SoughtUnit, 2, []).
     
 line_dir_change_radius_is(8).

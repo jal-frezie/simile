@@ -730,8 +730,15 @@ proc LoadModelWindowExtensions {} {
 }
 
 proc Respond {relayProc} {
+    global checkFor
+
     gets $relayProc action
     close $relayProc
+
+    set strm [open $checkFor r]
+    set action [gets $strm]
+    set action [gets $strm] ;# second line is last command passed
+    close $strm
 puts "Responding to: $action"
     switch -regexp [lindex $action 0] {
 	AreYouThere {
@@ -749,25 +756,24 @@ puts "Responding to: $action"
 }
     
 proc StartComms {firstTime} {
-    global custom
+    global custom checkFor
 
     set relay [file join [file dirname [pwd]] System bin relay]
-    set commFile [file join $custom(prefDir) handover.txt]
     switch -- $firstTime {
 	1 {
 # initializing -- set old proc to 0
-	    set dump [NetOpen $commFile w]
+	    set dump [NetOpen $checkFor w]
 	    puts $dump 0
 	    close $dump
 	} -1 {
 # terminating -- send 'done' and do not wait for answer
-	    exec $relay $commFile done
-	    file delete $commFile
+	    exec $relay $checkFor done
+	    file delete $checkFor
 	    return
 	}
     }
     set outgoing "Ready [pid]"
-    set cmd "\"$relay\" \"$commFile\" \"$outgoing\""
+    set cmd "\"$relay\" \"$checkFor\" \"$outgoing\""
 puts "Opening: $cmd"
     set relayProc [open |$cmd r+]
     fconfigure $relayProc -blocking 0

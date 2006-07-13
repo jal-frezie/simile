@@ -225,7 +225,7 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
 }
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
-			  origX origY bgColour inFat colourScheme tagSet} {
+			  origX origY inFat colourScheme tagSet} {
     global looks window_info custom
     #puts "drawing submodel with fill $fillColour"
     #    previously had min width of 1 to ensure stack visibility
@@ -408,10 +408,11 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #    }
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
-    if {![string equal incomplete $colourScheme] && $inFat} {
+    if {![string equal incomplete $colourScheme] && $inFat && \
+	    [llength $fillColour]} {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
 	set interval [expr $looks(gridPitch)*$inFat/100.0]
-	set nCol [Gradient $bgColour -0.1 $w]
+	set nCol [Gradient $fillColour -0.1 $w]
 	set gTagSet "$tagSet realcolour($nCol) /background/ /grid/"
 	if {$custom(showgrids,$w)} {
 	    set gCol $nCol
@@ -1725,7 +1726,7 @@ proc DoGraphics {box type middlex middley size} {
             set t [expr $middley - 60]
             set b [expr $middley + 60]
 	    PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
-		none none 0 0 white 100 normal "sample"
+		none none 0 0 100 normal "sample"
 	} flow {
             set l [expr $middlex - $size/4]
             set r [expr $middlex + $size/4]

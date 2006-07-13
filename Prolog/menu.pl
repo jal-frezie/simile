@@ -233,6 +233,9 @@ merge_box([L1, T1, R1, B1]) :-
 	
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
+	raise_window_on(Model).
+
+raise_window_on(Model) :-
 	Win shows_model Model,
 	output:safe_tcl_eval([wm, deiconify, sqb([winfo, toplevel, Win])], _),
 	output:safe_tcl_eval([raise, sqb([winfo, toplevel, Win])], _).
@@ -1092,40 +1095,38 @@ get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 	Terms = [Param = Source | R2]).
 
 set_properties(Wid, Model) :-
-	get_disag_params(Model, P_list),
-	do_disag_dialog(Wid, Model, P_list, New_P_list),
-	(New_P_list = '', !; /* dialogue was cancelled */
-	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
-		      NewCount, NewStep, NewDesc, NewComment, NewFix,
-		      NewHideB, NewHideC, NewSeparate, NewShare, NewModName,
-		      NewEnumSpecs, NewConns],
-	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _,_,_,
-		      _ModName, _, Connect, _, HideB, HideC, Separate, Share],
-	    (NewColour = clear, !,
-		add_parameter(Model, 0, fill_colour, '');
-	    NewColour = Colour, !;
-	    add_parameter(Model, 0, fill_colour, NewColour)),
-	    (NewImage = Image, !;
-	    add_parameter(Model, 0, fill_image, NewImage)),
-	    add_parameter(Model, 0, image_posn, NewImgPos),
-	    (NewStep = 'Default', !,
-		add_parameter(Model, 0, step, '');
-	    add_parameter(Model, 0, step, NewStep)),
-	    add_parameter(Model, 0, desc, NewDesc),
-	    add_parameter(Model, 0, comment, NewComment),
-	    (NewFix = 'Default', !,
-		add_parameter(Model, 0, eqn_units, '');
-	    add_parameter(Model, 0, eqn_units, NewFix)),	
-	    add_parameter(Model, 0, separate, NewSeparate),
-	    (NewEnumSpecs = '', !,
-	        NewEnumTypes = [];
-	    all(menu, separate_type_from_mems,
-		[build(NewEnumSpecs), build(NewEnumTypes)])),
-	    add_parameter(Model, 0, enum_types, NewEnumTypes),
-	    (change_shape(Model, hide_border, NewHideB);
-		set_shape(Model, hide_border, NewHideB)),
-	    (change_shape(Model, hide_contents, NewHideC);
-		set_shape(Model, hide_contents, NewHideC)),
+/*	get_disag_params(Model, P_list),
+	P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, Step,
+		  Desc, Comment, ModName, Enums, Connect, UCheck,
+		  HideB, HideC, Separate, Share],
+*/	(find_type(Model, module), !,
+	    get_module_disag_params(Model, 
+			[Colour, Image, ImgPos, Fatness, Step, Desc, Comment,
+			 EnumSpecs, Connect, Fix, HideB, HideC, Separate]),
+	    P_lists = [[appear, Colour, Image, ImgPos, Fatness, HideB, HideC],
+		       [calc, Step, Fix, Separate], [ets, EnumSpecs],
+		       [connect, Connect], [notes, Desc, Comment]];
+	 Model is_instance_of _Template, !,
+	    get_occurrence_disag_params(Model, [Nature, Count, ModName,
+						   Desc, Comment]),
+	    P_lists = [[number, Nature, Count, ModName],
+		       [notes, Comment]];
+	 /* self-contained submodel */
+	    get_module_disag_params(Model, 
+			[Colour, Image, ImgPos, Fatness, Step, _MD, _MC,
+			 EnumSpecs, Connect, Fix, HideB, HideC, Separate]),
+	    get_occurrence_disag_params(Model, [Nature, Count, ModName,
+						   Desc, Comment]),
+	    P_lists = [[number, Nature, Count, ModName],
+			[appear, Colour, Image, ImgPos, Fatness, HideB, HideC],
+			[calc, Step, Fix, Separate], [ets, EnumSpecs],
+			[notes, Desc, Comment]]),
+	
+	do_disag_dialog(Wid, Model, P_lists, New_P_lists),
+	(New_P_lists = '', !; /* dialogue was cancelled */
+
+	(nth(PosN, P_lists, [number | _]),
+	 nth(PosN, New_P_lists, [NewNature, NewCount, NewModName]), !,
 	    (NewNature = generated,
 		name(NewCount, CountStr),
 		append([91 | CountStr], [93], ListStr),
@@ -1147,7 +1148,29 @@ set_properties(Wid, Model) :-
 	    (nonvar(Spec),
 		add_parameter(Model, 0, multiplication_spec, Spec);
 	    do_dialogue("Problem with dimensions", error, Wibble, ok, _)),
+	    (ModName = '', \+ NewModName = '', !,
+		DrawContents = 1,
+		make_module_of(Model, NewModName, NewComp);
+	    NewComp = Model),
+	    ([NewNature, UseCount] = [Nature, Count], !;
+		event:spread_colour(NewComp, yes),
+		DrawBorder = 1);
+	NewComp = Model),
 	    
+	(nth(PosA, P_lists, [appear | _]),
+	 nth(PosA, New_P_lists, [NewColour, NewImage, NewImgPos,
+				 NewFatness, NewHideB, NewHideC]), !,
+	    (NewColour = clear, !,
+		add_parameter(Model, 0, fill_colour, '');
+	    NewColour = Colour, !;
+	    add_parameter(Model, 0, fill_colour, NewColour)),
+	    (NewImage = Image, !;
+	    add_parameter(Model, 0, fill_image, NewImage)),
+	    add_parameter(Model, 0, image_posn, NewImgPos),
+	    (change_shape(Model, hide_border, NewHideB);
+		set_shape(Model, hide_border, NewHideB)),
+	    (change_shape(Model, hide_contents, NewHideC);
+		set_shape(Model, hide_contents, NewHideC)),
 	    ((abs(NewFatness - Fatness) =< 0.005;
 	      Fatness > 1, NewFatness > 0.995), !;
 	    FatFactor is Fatness/NewFatness,
@@ -1166,49 +1189,73 @@ set_properties(Wid, Model) :-
 		update_link_route(Linkage, no),
 		redisplay(Linkage),
 		fail; true)),
-
-	    update_connect_marks(Model, Connect, NewConns), 
-	    (Share = 0, NewShare = 1, !,
-		% full redraw needed cos id of displayed comp changed
-		DrawContents = 1,
-		make_module_of(Model, NewModName, NewComp);
-	    NewComp = Model),
-
 	    /* This works out how complete a redraw needs to be done */
 	    (NewHideC = HideC, !;
 		DrawContents = 1),
 	    (FatFactor = 1, !;
 		DrawBorder = 1,
 		DrawMembers = 1),
-	    ([NewColour, NewImage, NewImgPos, NewNature, UseCount, NewHideB] =
-	     [Colour, Image, ImgPos, Nature, Count, HideB], !;
-	    DrawBorder = 1),
+	    ([NewColour, NewImage, NewImgPos, NewHideB] =
+	     [Colour, Image, ImgPos, HideB], !;
+	    DrawBorder = 1);
+	true),
+	    
+	(nth(PosM, P_lists, [calc | _]),
+	 nth(PosM, New_P_lists, [NewStep, NewFix, NewSeparate]), !,
+	    (NewStep = 'Default', !,
+		add_parameter(Model, 0, step, '');
+	    add_parameter(Model, 0, step, NewStep)),
+	    (NewFix = 'Default', !,
+		add_parameter(Model, 0, eqn_units, '');
+	    add_parameter(Model, 0, eqn_units, NewFix)),	
+	    add_parameter(Model, 0, separate, NewSeparate);
+	    (Separate = NewSeparate, !;
+	     find_all_comps(Parent, NewComp),
+		add_parameter(Parent, 1, c_new, 0)),
+	true),
 
+	(nth(PosE, P_lists, [ets | _]),
+	 nth(PosE, New_P_lists, NewEnumSpecs), !,
+	    (NewEnumSpecs = '', !,
+	        NewEnumTypes = [];
+	    all(menu, separate_type_from_mems,
+		[build(NewEnumSpecs), build(NewEnumTypes)])),
+	    add_parameter(Model, 0, enum_types, NewEnumTypes);
+	true),
+	    
+	(nth(PosC, P_lists, [connect | _]),
+	 nth(PosC, New_P_lists, NewConns), !,
+	    update_connect_marks(Model, Connect, NewConns);
+	true), 
+	    
+	(nth(PosW, P_lists, [notes | _]),
+	 nth(PosW, New_P_lists, [NewDesc, NewComment]), !,
+	    add_parameter(Model, 0, desc, NewDesc),
+	    add_parameter(Model, 0, comment, NewComment),
+	true), 
+	    
 	    /* This does a redraw of the appropriate completeness */
 	    (var(DrawContents), !,
 		(nonvar(DrawMembers),
 		    find_all_comps(NewComp, TopComp),
 		    redisplay_border(TopComp),
 		    fail;
-		 (var(DrawBorder), !; redisplay_border(NewComp)));
+		 (var(DrawBorder), !;
+		  Floater is_instance_of Model,
+		     redisplay_border(Floater), fail;
+		 redisplay_border(NewComp)));
 	    ReBowtied is_connector from NewComp to _,
 		find_type(ReBowtied, flow),
 		redisplay(ReBowtied),
 		fail;
 	    draw:redisplay(Model, NewComp)),
 		    
-	    (Separate = NewSeparate, !;
-		find_all_comps(Parent, NewComp),
-		add_parameter(Parent, 1, c_new, 0)),
-
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
 		_Window shows_model Submodel,
 		update_captions(Submodel),
 		fail;
-	    NewNature = Nature, UseCount = Count, !;
-		event:spread_colour(NewComp, yes)),
-	    finish_move(NewComp, 1)).
+	    finish_move(Model, 1))).
 
 update_connect_marks(Model, Connects, NewConns) :-
 	/* avoid if no change */
@@ -1580,12 +1627,15 @@ too_big_for_edn(Model) :-
 	do_dialogue("Error saving model", error, Annoy, ok, _).
 
 transfer_images(Model, TopDir, Way) :-
-	setof(ImageSpec,
-	      Submodel^(contains(Model, Submodel),
-			get_av_pair(Submodel, 0, fill_image, ImageSpec)),
-	      Fillers), !,
+	setof(ImageSpec, uses_image(Model, ImageSpec), Fillers), !,
 	shift_images(TopDir, Fillers, Way);
 	true.
+
+uses_image(Model, ImageSpec) :-
+	contains(Model, Submodel),
+	(Submodel is_instance_of Module;
+	    \+ Submodel is_instance_of _, Module = Submodel),
+	get_av_pair(Module, 0, fill_image, ImageSpec).
 
 	/* Save canvas file */
 check_save_canvas(SaveDir, Model, Date) :-

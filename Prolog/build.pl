@@ -38,10 +38,12 @@ roots( [Node|Nodes], Root, Bindings, NewBindings ) :-
 	gen_equiv_nodes(Node, Root, Trn),  % make it so, in the right place
 	roots( Nodes, Root, [Trn | Bindings], NewBindings ).
 
-/* do not check for duplication for the time being... */
-library(Nodes, _, Bindings, NewBindings) :-
-	Library is_library,
-	roots(Nodes, Library, Bindings, NewBindings).
+/* do not check for duplication for the time being...TODO: need to update
+references etc, so if adding a library that's already there, just create a
+translation for each node, then when adding those nodes, create more
+translations...*/
+library(Nodes, Root, Bindings, NewBindings) :-
+	roots(Nodes, Root, Bindings, NewBindings).
 
 properties([],_,B,B).
 

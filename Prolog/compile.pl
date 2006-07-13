@@ -177,9 +177,10 @@ delete_prog(Base, Extn) :-
 	
 build_sub_instances(Language, DestDir, Parent, Node,
 		    Step, ChangeTop, LocalFnsUsed, KeepDir) :-
-	(setof( Submodel, (Parent has_part Submodel,
-			      Submodel has_class submodel,
-			      appears(Submodel)), Submodels), !; 
+	(setof( Submodel, Box^(Parent has_part Box,
+			      Box has_class submodel,
+			      appears(Box),
+			      module_for(Box, Submodel)), Submodels), !; 
 	    Submodels = []),
 	all(compile, build_instances, 
 	    [unify(Language), unify(DestDir), build(Submodels),
@@ -198,14 +199,15 @@ check_level_for_reds(TopNode, Submodel, Wrinkle) :-
 	safe_tcl_eval([set, log, entered_exception], _),
 	Wrinkle = unspecified(OuterText, RedText);
 	Parent has_part Submodel,
+	module_for(Submodel, CompHolder),
 	remove_redundant_equivs(Submodel, Equivs),
 	member(Before-After, Equivs),
 	Before is_connector from S1 to F1,
 	After is_connector from S2 to F2,
 	\+ (find_all_comps(Parent, S1), F1 = Submodel,
-	       Submodel has_part S2, find_all_comps(Submodel, F2);
+	       CompHolder has_part S2, find_all_comps(CompHolder, F2);
 	    find_all_comps(Parent, F2), S2 = Submodel,
-	       Submodel has_part F1, find_all_comps(Submodel, S1)),
+	       CompHolder has_part F1, find_all_comps(CompHolder, S1)),
 	Wrinkle = link_inconsistency(Before-After);
 	by_record(Submodel),
 	\+ defines_membership(Submodel, _Param),
@@ -830,7 +832,7 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 		    Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
-	(member(instance(alarm,_,_,elt(_, Al,_),_),
+	(member(instance(alarm,_,_,elt(_,_, Al,_),_),
 		Functions), !,
 	    Path = [sm(_,_,_, fm_loop(_, Al))|_];
 	    true),
@@ -948,12 +950,12 @@ nodes.
 */
 	    (setof(CreateBox, InitName^X^U^(SmName has_part InitName,
 			member(instance(creation, InitName, X,
-					elt(_, CreateBox, _), U),
+					elt(_,_, CreateBox, _), U),
 				   ParentFns)), Creators), !;
 	    Creators = []),
 
 	    (setof(LossBox, S^X^U^member(instance(loss, S,X,
-						  elt(_, LossBox, _), U),
+						  elt(_,_, LossBox, _), U),
 				   Functions), Losses), !;
 	    Losses = []),
 
@@ -968,7 +970,7 @@ nodes.
 	    (setof(make(bred(Name), [culled(Name), time], Path, Step,
 			[reproduce(Ptr, Name, InitSpec)]),
 		   S^X^U^member(instance(reproduction, S,X,
-					 elt(_, InitSpec, _), U),
+					 elt(_,_, InitSpec, _), U),
 			  Functions),
 		   ReproRules), !; 
 	    ReproRules = []),
@@ -977,7 +979,7 @@ nodes.
 		[new_member(Ptr, Name, immigrate(InitSpec))]),
 		   InitName^X^U^(SmName has_part InitName,
 		   member(instance(immigration, InitName, X,
-				   elt(_, InitSpec, _), U),
+				   elt(_,_, InitSpec, _), U),
 			  ParentFns)),
 		   ImmigRules), !; 
 	    ImmigRules = [])),
@@ -1007,11 +1009,11 @@ nodes.
 					 build(Sizes), build(_), build(_)]),
 	    Level = [sm(_,_,_, vm_loop(_IndCount, Sizes, BaseSides, _))],
 	    (setof(CondBox, member(instance(condition,_, function,
-			elt(_, CondBox, _),_), Functions), Conds), !,
+			elt(_,_, CondBox, _),_), Functions), Conds), !,
 		TestExpr = Conds;
 	    /* dummy generator node for other variable membership submodels */
 	    member(instance(condition,_, id_function,
-			elt(_, CondBox, _),_), Functions), !,
+			elt(_,_, CondBox, _),_), Functions), !,
 		Conds = [CondBox], TestExpr = Conds;
 	    Conds = [], TestExpr = 1),
 	    all(compile, convert_base_specs,
@@ -1109,7 +1111,7 @@ levels_to_path([instance(submodel, SmName, _, Name, _-SmDims) | MoreLevels],
 name_from_elt(FullRef, Cond) :-
 
 	(FullRef = IName*_Scale, !; FullRef = IName),
-	IName = input(in_hierarchy, elt(Path, Name, _), none, _),
+	IName = input(in_hierarchy, elt(_, Path, Name, _), none, _),
 	wait_for_submodels(Path, Waits),
 	(Name = import(_,_,_,_,_, PhaseSet, Src, _), !,
 	(PhaseSet = 0, !,
@@ -1132,7 +1134,7 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    Source = for_extern(CondElts, Tops),
 	    all(compile, insert_ptr, [unify(DestPath), build(Tops)]),
 	    all(compile, name_from_elt, [build(CondElts), append(Conds, [])]),
-	    DestRef = elt(_, Dest, _),    
+	    DestRef = elt(_,_, Dest, _),    
 	    pointer_from(DestPath, Ptr),
 	    ptr_to_last_vm(DestPath, BuiltWith),
 	    append(Tops, [ext_eval_submodel(Node, arr(Ptr, Dest, []),
@@ -1161,10 +1163,9 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	member(AssignType, [compartment, immigration, reproduction]),
 	    UseStep = Step,
 	    Source = incr(Step, SourceEqn)), !,
-	DestRef = elt(_, Dest, X),    
-	final_assignment(SourceEqn, Node, elt(DestPath, Dest, X), Swaps, Step,
-			 Used, Expr, Setups, Path, RefList,
-			 AllInters),
+	DestRef = elt(_,_, Dest, X),    
+	final_assignment(SourceEqn, Node, elt(_, DestPath, Dest, X), Swaps,
+			 Step, Used, Expr, Setups, Path, RefList, AllInters),
 
 	/* on_reset is a special condition that makes sure compartment
 	    initializations are done in step 0 rather than -1 */
@@ -1286,7 +1287,7 @@ for values from the execution environment. */
 
 input_params_in(Vars, SmPath, SmStep,
 		make(Val, Wait, Path, Step, [CollectFn])) :-
-	member(instance(Type, Param, _, elt(_, Val, _), _-DimTypes), Vars),
+	member(instance(Type, Param, _, elt(_,_, Val, _), _-DimTypes), Vars),
 	member(Type, [function, init_function]),
 	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param),
 				     build(Dims), build(_), build(_)]),
@@ -1797,7 +1798,7 @@ generate_graph_handlers(N, [[_ | NumericalData] | AllGraphs],
 
 name_components( _, [], _).
 
-name_components(Language, [instance(Type, Node, _, elt(_, Var, _), _)
+name_components(Language, [instance(Type, Node, _, elt(_,_, Var, _), _)
 			  | Compartments], Used) :-
 	(\+ member(Type, [function, init_function,
 			  id_function, internal, external]),

@@ -9,15 +9,15 @@ itself is only addressed from within the database module.
 
 sicstus_module(m_update,
 	       [get_av_pair/4, add_parameter/4, list_index_meanings/2,
-		list_local_index_meanings/2, get_input_info/2,
-		get_link_source_data/9, find_node_with_data/3,
+		get_all_links/4, list_local_index_meanings/2, get_input_info/2,
+		get_link_source_data/10, find_node_with_data/3,
 		valid_input/2, check_unit/4,
 		need_same_dims/2, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
-		build_array/3, analyze_array/3, 
+		build_array/3, analyze_array/3,  module_for/2,
 		get_solo_list_depth/2, delete_implicit_node/1, 
 		add_implicit_function/2, default_units/2,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
@@ -27,7 +27,8 @@ sicstus_module(m_update,
 		add_equivalence/3, is_no_longer_model_class/1,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
-		add_new_line_between/4, change_class/3, get_disag_params/2,
+		add_new_line_between/4, change_class/3,
+		get_module_disag_params/2, get_occurrence_disag_params/2,
 		autoconnect_reference_for/4, time_step_for/3, use_units_in/2,
 		make_module_of/3, make_ghost/3, get_possible_start/2]).
 
@@ -104,34 +105,34 @@ dealing with multiple instances. */
 
 get_input_info(Function, Input_list) :-
 	(setof(Link_entry,
-	      IDs^get_all_links(Function, IDs, Link_entry),
+	      IDs^get_all_links(Function, _, IDs, Link_entry),
 	      Input_list),
 	    decide_param_names(Input_list), !;
 	Input_list = []),
 	retractall(input_links_were(_)),
 	assert(input_links_were(Input_list)).
 
-get_all_links(Function, ids(RemoteNode, Relation, Home, Entry),
+get_all_links(Function, CaptPath, ids(RemoteNode, Relation, Home, Entry),
               input_link(id(Link, Index, SourceLocation),
 			RemoteName, LocalName, 
 			RemoteUnit, Local_unit)) :- 
+	find_all_comps(DestBox, Function), % TODO: efficiency
 	/* this should be cut free */
 	(valid_input(Function, Link);
 	    Function has_class submodel,
 	    Link is_connector from _ to Function),
 	Link has_type influence,
-	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
+	get_link_source_data(Link, CaptPath, Function, RemoteNode, RemoteUnit,
 		Relation, Home, Entry, Index, SourceLocation),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	use_destination(Link, RemoteUnit, 
 			Index, LocalName, Local_unit),
-	find_all_comps(DestBox, Function),
 	rel_path_name(RemoteNode, DestBox, Relation, SourceLocation,
 		      RemoteName).
 
-get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
+get_link_source_data(Link, CaptPath, Function, RemoteNode, RemoteUnit,
 		Relation, Home, Entry, Index, SourceLocation) :-
-	origin_and_entrypoint(Link, InitNode, Home, Entry),
+	origin_and_entrypoint(Link, CaptPath, InitNode, Home, Entry),
 	find_node_with_data(InitNode, RemoteNode, ValueSource),
 	get_spec_units(ValueSource, ActualUnits),
 	get_unit_conversion(ValueSource, Function, Subs, 
@@ -154,7 +155,7 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
         do_dialogue("Inconsistent type definitions", warning, ErrStr, ok, not);
 	true).
 
-/* origin_and_entrypoint/4: For any Link, this works out the Origin
+/* origin_and_entrypoint/5: For any Link, this works out the Origin
 (Id of node where it starts), Home (id of top level link section if in
 same dll) and Entry (id of influence bringing node's value into
 current dll). Last two are var if not found.
@@ -163,22 +164,53 @@ This has now been altered to continue back from a ghost node all the
 way to its base. As we come out of the recursion, following the links
 forward from the origin, we may cross the same dll boundary twice, in
 which case we forget about the bit between them and go straight on from the
-link going in. */
+link going in.
 
-origin_and_entrypoint(Link, Origin, Home, Entry) :-
+Modified for v5 so it additionally converts the destination's caption path to
+one for the source */
+
+origin_and_entrypoint(Link, capts(Dest, Src), Origin, Home, Entry) :-
 	Link is_connector from Start to _,
+	(continues_from(Link, Model),
+	    (Model = Start, !, % link exits model
+		caption_for(Model, Capt),
+		NewDest = [Capt | Dest],
+		EquivHanger = Model,
+		Home = Link;
+	    (Model has_class module, nonvar(Dest),
+		EquivHanger is_instance_of Model;
+	     \+ Model has_class module, EquivHanger = Model),
+		Dest = [Capt | NewDest],
+		caption_for(EquivHanger, Capt), !,
+		Home = Home1),
+	    EquivHanger has_model_refinement link_equivalences of Equivs,
+	    member(LastLink-Link, Equivs),
+	    origin_and_entrypoint(LastLink, capts(NewDest, Src),
+				  Origin, Home0, Entry0),
+	    (Model has_class_refinement separate of 1, !,
+		Entry = Link; /* Home = var */
+	    Entry = Entry0,
+		Home1 = Home0);
+	Src = Dest,
+	    Origin = Start,
+	    Home = Link).
+/* old version:	    
 	((Node = Start; Node has_part Start),
 	Node has_model_refinement link_equivalences of Links,
 	member(Link0-Link, Links), !,
 	    origin_and_entrypoint(Link0, Origin, Home0, Entry0),
 	    (Node has_class_refinement separate of 1, !,
-		Entry = Link; /* Home = var */
+		Entry = Link; % Home = var
 	    Entry = Entry0,
 		Home1 = Home0);
 	Origin = Start),
 	(appears(Start), !,
 	    Home = Link;
-	Home = Home1).
+	Home = Home1). */
+
+module_for(Parent, Class) :-
+	(Parent is_instance_of Class;
+	    \+ Parent is_instance_of _Cl, Class = Parent).
 
 find_node_with_data(Edit_thing, Real_edit_thing, Control_thing) :-
 	(get_bowtie_section(Edit_thing, Real_edit_thing), !;
@@ -233,8 +265,7 @@ get_spec_units(Node, Unit) :-
 /* list_index_meanings: creates a list of atoms that are descriptions of the meanings of the 'index(n)' function with all its possible values. */
 
 list_index_meanings(Comp, []) :-
-	Comp is_root;
-	Comp is_library.
+	Comp is_root.
 
 list_index_meanings(Submodel, Meanings) :-
 	list_local_index_meanings(Submodel, Group1),
@@ -800,12 +831,12 @@ can_connect(Arc, Node1, Node2) :-
 	(state:get_style(sd), !,
 	    ConnectTable =
 	[[flow,
-	  [[[compartment, cloud, submodel], [compartment, cloud]]]],
+	  [[[compartment, cloud, submodel, module], [compartment, cloud]]]],
 	 [squirt,
-	  [[[compartment, cloud, submodel], [compartment, cloud]],
+	  [[[compartment, cloud, submodel, module], [compartment, cloud]],
 	   [[state, cloud], [state, cloud]]]],
 	 [influence,
-	  [[[compartment, state, variable, flow, submodel,
+	  [[[compartment, state, variable, flow, submodel, module,
 	     alarm, creation, immigration, reproduction, loss],
 	    [variable, flow, compartment, state, event, squirt,
 	     alarm, condition, creation, immigration, reproduction, loss]],
@@ -1191,7 +1222,7 @@ status_affects(Tgt, Affected) :-
 	    has_bowtie(Item),
 	    (sequence(Base, Item); sequence(Item, Base))),
 	(Affected = Base;
-	initiates(Affected, Base),
+	initiates_in_module(Affected, Base),
 	    find_type(Affected, influence)),
 	\+ Affected = Item;
 	find_type(Tgt, relation), /* for parameter name updates */
@@ -1204,6 +1235,12 @@ status_affects(Tgt, Affected) :-
 	    sequence(Link2, Affected),
 	    Affected is_connector from _ to Target.
 
+/* Work from a start in a module to find affected influences */
+initiates_in_module(Inf, Start) :-
+	Inf0 is_connector from Start to _,
+	(Inf = Inf0;
+	logical_after(Inf0, Inf, _)).
+	
 /* OK, now here's the easy, teenage, New York version...
 
 status_affects(Item, Affected) :-
@@ -1476,21 +1513,31 @@ unique_name_for_new(Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
 	utility:unique_name(Abbrev, Name, _).
 
-get_disag_params(Submodel, 
-		 [Colour, Image, ImgPos, Nature, Fat, Count, Step, Desc, 
-		  Comment, ModName, EnumSpecs, Connect, Fix, HideB, HideC, Separate, Share]) :-
-	(Submodel has_class_refinement fill_colour of Colour, !;
-	    Colour = clear),
-	(Submodel has_class_refinement fill_image of Image, !;
-	    Image = none),
-	(Submodel has_class_refinement image_posn of ImgPos, !;
-	    ImgPos = none),
+get_occurrence_disag_params(Submodel,
+			    [Nature, Count, ModName, Desc, Comment]) :-
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(count=Count, Multi), !;
 	Count=[]),
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(type=Nature, Multi), !;
 	Nature = generated),
+	(Submodel is_instance_of Module, !,
+	    Module has_class_refinement name of ModName;
+	ModName = ''),
+	(Submodel has_class_refinement desc of Desc, !;
+	Desc = ''),
+	(Submodel has_class_refinement comment of Comment, !;
+	Comment = '').
+
+get_module_disag_params(Submodel, 
+			[Colour, Image, ImgPos, Fat, Step, Desc, Comment,
+			 EnumSpecs, Connect, Fix, HideB, HideC, Separate]) :-
+	(Submodel has_class_refinement fill_colour of Colour, !;
+	    Colour = clear),
+	(Submodel has_class_refinement fill_image of Image, !;
+	    Image = none),
+	(Submodel has_class_refinement image_posn of ImgPos, !;
+	    ImgPos = none),
 	time_step_for(Submodel, 'Default', Step),
 	(Submodel has_class_refinement desc of Desc, !;
 	Desc = ''),
@@ -1504,20 +1551,19 @@ get_disag_params(Submodel,
 	Fix = 'Default'),
 	(Submodel has_graphical_attribute hide_border of HideB, !;
 	HideB = 0),
-	(Submodel has_graphical_attribute hide_contents of HideC, !;
-	HideC = 0),
 	(Submodel has_class_refinement separate of Separate, !;
 	Separate = 0),
-	Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
-	Submodel has_graphical_attribute internal_extent of [LI, _, RI, _],
-	Fat is 1.0*(RB-LB)/(RI-LI),
+	(Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
+	 Submodel has_graphical_attribute internal_extent of [LI, _, RI, _], !,
+	    Fat is 1.0*(RB-LB)/(RI-LI),
+	    (Submodel has_graphical_attribute hide_contents of HideC, !;
+		HideC = 0);
+	/* No bounding box means it's a top level window, no internal extent
+	    means a module instance -- in either case do not allow
+	    show contents or set fatness */
+	Fat = 1.0,
+	    HideC = 2),
 
-	(Submodel is_instance_of Module, !,
-	    Module has_class_refinement name of ModName,
-	    Share = 1;
-	ModName = '',
-	    Share = 0),
-	
 /* Now what about auto-connection information. Dialogue needs to know
 which, if any, possible connection is being used, so send 4 lists
 (fttb), 1st elt of each being posn of current selection or 0 if
@@ -1587,8 +1633,9 @@ autoconnect_reference_for(Submodel, CurVPar, AutoType, CurVParCapt) :-
 make_module_of(Component, Name, Instance) :-
 	Parent has_part Component,
 	Component is_no_longer_part_of Parent,
-	Library is_library,
-	Component is_also_part_of Library,
+	contains(Top, Parent),
+	backup:is_toplevel(Top),
+	Component is_also_part_of Top,
 	Instance is_new_part_of Parent,
 	Instance has_new_model_refinement instance of Component,
 	(Component no_longer_has_model_refinement A of V,

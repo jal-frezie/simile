@@ -2,7 +2,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include <signal.h>
-#include <setjmp.h>
 #include <stdlib.h>
 
 #ifdef WIN32
@@ -44,14 +43,6 @@ void pause () {
 FILE* pip;
 char fname[256];
 char mess[256];
-
-jmp_buf env;
-
-static void exit_sighandler(int x) {
-  puts("Reached first base\n");
-  fflush(stdout);  
-  longjmp(env, x);
-}
 
 main(int argc, char* argv[]) {
 #ifdef USE_SEMAPHORE
@@ -141,21 +132,6 @@ main(int argc, char* argv[]) {
   } else {
     strcpy(fname, "pestmsgs.txt");
   }    
-
-  signal(SIGINT,exit_sighandler);
-
-  error = setjmp(env);
-  puts("Hwulp\n");
-  fflush(stdout);  
-  if (error) {
-    pip = fopen(fname, "r");
-    fgets(mess, 250, pip);
-    fgets(mess, 250, pip);
-    fclose(pip);
-    puts(mess);
-    //    exit(EXIT_SUCCESS);
-    return 0;
-  }
 
   pip = fopen(fname, "r");
     if (pip == NULL) {

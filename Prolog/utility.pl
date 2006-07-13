@@ -143,7 +143,7 @@ wrap(Arg, Functor, Function) :-
 % Standard format for recursion: all.
 
 all(_, _, ArgList) :-
-    all_done(ArgList).
+    all_done(ArgList), !.
 
 all(Module, Pred, ArgList) :-
     split_args(Module, ArgList, FirstList, RestList),

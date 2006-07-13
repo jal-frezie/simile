@@ -83,7 +83,7 @@ make_cons_dest(instance(Type, Sym, _, Nm, _), ConLine, DeLine) :-
 	    render(c, assignment, Name=0, 8, ConLine),
 	    render(c, procedure_call, delete_list(Name), 8, DeLine);
 	Type = external, !,
-	    Nm = elt(_, Name, _),
+	    Nm = elt(_,_, Name, _),
 	    make_constant_string(c, Sym, SymC),
 	    make_procedure_call_chars(c, [fetch_instance, SymC], FetchStr),
 	    name(Fetch, FetchStr),
@@ -350,7 +350,7 @@ render(L, data_declaration,
 		UseDims = [];
 	    Name = NameBase,
 		/* get_node_size(SymbolicName, UseDims) */ UseDims = Dims);
-	    (NameIn = elt(_, Name, _), !;
+	    (NameIn = elt(_,_, Name, _), !;
 		Name = NameIn),
 	    UseDims = Dims),
 	all(ame_gen, enum_type_ref, [build(UseDims), unify(SymbolicName),
@@ -481,7 +481,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-LocalDims),
 	render(L, case_start, Match, 8, [Ext1]),
 
-	(NameIn = elt(_, Name, _), !;
+	(NameIn = elt(_,_, Name, _), !;
 	    Name = NameIn),
 	((variable_size(BaseName); L = tcl, Name = instanceid), !,
 	    Item = Name;

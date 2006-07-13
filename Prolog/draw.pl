@@ -426,8 +426,9 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    untranslate(BBox, Trans, Screen_list),
 	    find_fatness(Trans, Fatness),
 	    get_flash(Comp, Colour_scheme),
-	    multiple_draw(Comp, MNum),
 	    find_base(Comp, BComp),
+	    (BComp is_instance_of Module, !; Module = BComp),
+	    multiple_draw(BComp, Module, MNum),
 	    is_parameter(BComp, P),
 	    DNum is MNum+10*max(0, P),
 	    (Comp is_of_sort discrete, !,
@@ -435,8 +436,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    Num=DNum),
 	    
 	    (Style = submodel, !,
-		get_colour(Comp, FillColour, FillImage, ImgPos),
-		get_window_colour(Comp, BgColour, _),
+		get_colour(Module, FillColour, FillImage, ImgPos),
 /* if no contents displayed, set scheme to incomplete to avoid drawing grid */
 	        (\+ get_shape(Comp, hide_contents, 1),
 		    New_depth is Depth + 1,
@@ -447,7 +447,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 		[InFat, Ox, Oy] = [0,0,0]),
 	        submodel(Wid, Screen_list, Num, Fatness,
 				  FillColour, FillImage, ImgPos, Ox, Oy,
-				  BgColour, InFat, Colour_scheme, Comp);
+				  InFat, Colour_scheme, Comp);
 	    (Style=state, !,
 	       DCmd = compartment;
 	    DCmd = Style),
@@ -527,7 +527,7 @@ draw_rubberband(Style) :-
 	(Style = square, !,
 	    Fatness = 0;
 	find_fatness(Trans, Fatness)),
-	submodel(Window_id, Draw_box, 1, Fatness, clear, none,none, 0,0, white,
+	submodel(Window_id, Draw_box, 1, Fatness, clear, none,none, 0,0,
 		 100, incomplete, [unfinished_component, '/background/']).
 
 remove_old_rubberband :-

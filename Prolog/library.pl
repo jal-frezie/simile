@@ -16,10 +16,11 @@ sicstus_use_module( [library(lists),
 % thus keeping the abstract syntax away from the user.
 
 ame_save( File, Model, Date, SelOnly ) :-
-	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
+	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly),
+			\+ Sub has_class module), Models), !;
 	       Models = []),
 	(setof(Lib, Mod^(contains(Model, Mod), go_with(Mod, SelOnly),
-			 Mod has_model_refinement instance of Lib), Libs), !;
+			 Mod is_instance_of Lib), Libs), !;
 	       Libs = []),
 	(SelOnly = yes,
 	    Models = [UseAsParent],
@@ -304,7 +305,7 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV > 4.29, SimileV < 4.31, !;
 	dialogue:reassure_user("Updating non-Simile 4.3 model representation"),
 	    adjust_to_8_3(Translated)),
-	remove_duplicate_libraries(Translated),
+	remove_duplicate_libraries(Parent, Translated),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -475,20 +476,35 @@ inds_to_places(var_pair(Expr, NewExpr), Depth) :-
 arr_ind(_, Found, _, 0) :-
 	member(Found, [index(_), makearray(_,_)]).
 
-remove_duplicate_libraries(Trans) :-
-	Lib is_library,
+remove_duplicate_libraries(Parent, Trans) :-
 	member(_-NewLib, Trans),
-	Lib has_part NewLib,
-	NewLib has_class_refinement name of LibName,
-	Lib has_part OldLib,
+	Parent has_part NewLib,
+	NewLib has_class module,
+	Parent has_part OldLib,
+	OldLib has_class module,
 	\+ OldLib = NewLib,
+	NewLib has_class_refinement name of LibName,
 	OldLib has_class_refinement name of LibName,
-	(_Inst has_changed_model_refinement instance from NewLib to OldLib,
+	(Instance has_changed_model_refinement instance from NewLib to OldLib,
+	    Instance has_model_refinement link_equivalences of LinkEqs,
+	    all(library, switch_instance_eq,
+		[unify([Instance, OldLib]), build(LinkEqs),
+		 build(NewEqs)]),
+	    Instance has_changed_model_refinement link_equivalences of NewEqs,
 	    fail;
 	 m_update:superfast_delete(NewLib)),
 	fail;
 	true.
 
+switch_instance_eq([Inst, ToLib], OldSrc-OldDest, NewSrc-NewDest) :-
+	OldSrc is_connector from _N1 to N2,
+	OldDest is_connector from N3 to _N4,
+	member(Inst-NewSrc-NewDest-Released,
+	       [N2-OldSrc-Engaged-OldDest, N3-Engaged-OldDest-OldSrc]),
+	Released has_attribute name of Name,
+	find_all_comps(ToLib, Engaged),
+	Engaged has_attribute name of Name.
+				    
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % store_term does the various things necessary to translate the loaded model(s)
 % into the internal representation. Arg3 is a list of bindings - pairs of

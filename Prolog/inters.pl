@@ -8,7 +8,7 @@ sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
 final_assignment(Expr, Sm, DestRef, Swaps, Step, Used, 
                  NewFormula, Setups, Context, Prerequisites, NewInters) :-
-	DestRef = elt(DestPathForm, Target, XUnits-Dims),
+	DestRef = elt(_, DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
 	on_exception(Prob,
@@ -54,7 +54,7 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
-	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
+	PathExp = elt(_, RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(_), build(_)]),
 	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
@@ -97,7 +97,8 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
 		   InterInputs),
 	    Recurse = 0;
-	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link, _)),
+	Var = channel_is(input(Location, elt(_, RealPathForm, Ref, _),
+			       Link, _)),
 	/* Outrageous hack -- for channel nodes of an ancestor
 submodel, the link parameter is set to 'outside' if they count as
 outside, so in this case we add the submodel level for their submodel,

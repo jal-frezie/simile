@@ -9,6 +9,7 @@ sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
+		logical_before/3, logical_after/3, any_equiv/3,
 		has_bowtie/1, get_bowtie_section/2, find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
 		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
@@ -268,27 +269,27 @@ has_bowtie(Flow) :-
 	Flow is_of_sort has_bowtie,
 	(needs_bowtie(Flow), !;
 	gets_default_bowtie(Flow),
-	\+ (any_equiv(Flow, Other),
+	\+ (any_equiv(Flow, Other, _),
 	       needs_bowtie(Other))).
 
 gets_default_bowtie(Flow) :-
 	Flow is_connector from BlackBox to _Wherever,
 	no_see_inside(BlackBox),
-	\+ (logical_after(Flow, LeadsOut),
+	\+ (logical_after(Flow, LeadsOut, _),
 	       LeadsOut is_connector from BlackBag to _MoreVisible,
 	       no_see_inside(BlackBag)).
 
-any_equiv(Flow, Linked) :-
-	logical_before(Flow, Linked);
-	logical_after(Flow, Linked).
+any_equiv(Flow, Linked, Capts) :-
+	logical_before(Flow, Linked, Capts);
+	logical_after(Flow, Linked, Capts).
 
-logical_before(Flow, Linked) :-
-	logical_follows(Last, Flow),
-	(Linked = Last; logical_before(Last, Linked)).
+logical_before(Flow, Linked, capts(F, L)) :-
+	logical_follows(Prev, Flow, capts(P, F)),
+	([Linked, L]=[Prev, P]; logical_before(Prev, Linked, capts(P, L))).
 	
-logical_after(Flow, Linked) :-
-	logical_follows(Flow, Next),
-	(Linked = Next; logical_after(Next, Linked)).
+logical_after(Flow, Linked, capts(F, L)) :-
+	logical_follows(Flow, Next, capts(F, N)),
+	([Linked, L] = [Next, N]; logical_after(Next, Linked, capts(N, L))).
 	
 no_see_inside(Box) :-
 	appears(Box),

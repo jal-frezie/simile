@@ -88,7 +88,7 @@ finish_move(EditedModel, ChangeExec) :-
 	 ChangeExec = 1,
 	    m_update:add_parameter(EditedModel, 1, c_new, 0)),
 	/* Only proceed for toplevel window containing model */
-	is_toplevel(Model),
+	(is_toplevel(Model); is_module(Model)),
 	(ChangeExec = 0;
 	 ChangeExec = 1,
 	    output:tk_alter_model(Model)),

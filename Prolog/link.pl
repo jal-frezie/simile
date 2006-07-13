@@ -10,7 +10,7 @@ sicstus_module(link, [is_connector/2, is_new_connector/2,
 		      no_longer_has_attribute/2, has_changed_attribute/2, 
 		      has_changed_termination/2, 
 		      connects/3, initiates/2, terminates/2, equivalent_arcs/2,
-		      sequence/2, follows/2, logical_follows/2,
+		      sequence/2, follows/2, logical_follows/3,
 		      no_longer_has_connections/1] ).
 
 sicstus_use_module( [database,utility,node,graphics,m_struct,library(lists)] ).
@@ -230,16 +230,24 @@ follows(Link2, Link1) :-
 	Node has_model_refinement link_equivalences of Links,
 	member(Link2-Link1, Links).
 
-% Always follow across instance border
-logical_follows(Link2, Link1) :-
+/* Always follow across instance border --
+odd-looking stuff is to see which side's path gets the caption */
+logical_follows(Link2, Link1, Capts) :-
 	(nonvar(Link1),
+	    Go = up,
 	    Link1 is_connector from Edge to _;
 	var(Link1),
+	    Go = down,
 	    Link2 is_connector from _ to Edge),
-	(Node = Edge;
-	    Module has_part Edge,
+	(Node = Edge,
+	    Way = Go;
+	 Module has_part Edge,
+	    select(Go, [up, down], [Way]),
 	    (Node = Module; Node has_model_refinement instance of Module)),
 	Node has_model_refinement link_equivalences of Links,
+	Node has_class_refinement name of Name,
+	member(Way-Capts, [up-capts(Inner,Outer), down-capts(Outer,Inner)]),
+	Inner = [Name | Outer],
 	member(Link2-Link1, Links).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

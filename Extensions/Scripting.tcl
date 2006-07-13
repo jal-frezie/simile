@@ -1,5 +1,5 @@
 package require Itcl
-if {[string equal windows $tcl_platform(platform)]} {
+if {[string equal windows $::tcl_platform(platform)]} {
     package require dde
     dde servername Simile
 }

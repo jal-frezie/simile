@@ -9,7 +9,7 @@
 sicstus_module( m_struct,
 		[is_new_part_of/2, is_part_of/2, has_part/2, has_parts/2,
 		 have_part/2, is_new_model_class/1, is_also_part_of/2,
-		 is_root/1, is_library/1, is_no_longer_part_of/2,
+		 is_root/1, is_no_longer_part_of/2,
 		 is_model_class/1
 		] ).
 
@@ -39,15 +39,11 @@ Parent has_part Child :-
 % Predicates for building and destroying the basic network
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% define the syntax of the root and library node names.
+% define the syntax of the root node name.
 
 :- op(450, xf, is_root).
 
 root is_root.
-
-:- op(450, xf, is_library).
-
-library is_library.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Make a new node name (only allow node00000 if database is empty)
@@ -86,8 +82,7 @@ Node is_no_longer_part_of Parent :-
 :- op( 450, xf, is_model_class).
 
 Class is_model_class :-
-	Class is_root;
-	Class is_library.
+	Class is_root.
 Class1 is_model_class :-
 	Class1 is_part_of Class2,
 	Class2 is_model_class.

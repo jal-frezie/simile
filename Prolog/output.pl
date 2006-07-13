@@ -14,7 +14,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_file_name/4, list_matching_files/2, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
-	submodel/13, bowtie/6, flow/5, influence/5, broken_influence/5,
+	submodel/12, bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
@@ -58,10 +58,10 @@ tk_cursor_in(Win, Cursor) :-
 
 tk_callback(Data) :-
 	safe_tcl_eval(['AttackGlobalVariable fromProlog {}', Data], _).
-
+/*
 new_chop_list(Left, Done, Depth, Args) :-
 	Left = [Here | More], !,
-	    (Here = 92, /* backslash: next char escaped */
+	    (Here = 92, % backslash: next char escaped
 	        More = [Escd | YetMore], !,
 		append(Done, [Here, Escd], NewDone),
 		new_chop_list(YetMore, NewDone, Depth, Args);
@@ -86,7 +86,7 @@ new_chop_list(Left, Done, Depth, Args) :-
 	    name(Error, ErrorStr),
 	    raise_exception(Error);   
 	Args = [].
-
+*/
 full_chop_list([], 0, [], []).
 full_chop_list([92, C | More], N, [92, C | CurArg], MoreArgs) :-
 	full_chop_list(More, N, CurArg, MoreArgs).
@@ -111,6 +111,12 @@ full_chop_list([Here | More], NewDepth, NewDone, Args) :-
 chop_list(String, Args) :-
 	full_chop_list([32 | String], 0, [], Args).
 
+chop_list_recursive(String, Args) :-
+	chop_list(String, SubLists),
+	(SubLists = [String], !, % Value was not a Tcl list -- exit
+	    Args = String;
+	 all(output, chop_list_recursive, [build(SubLists), build(Args)])).
+	
 /* curly(P, Text) :-
 	append([123 | Text], [125], P),
 	curly_text(Text).
@@ -208,9 +214,9 @@ cloud(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 			Colour_scheme, br(Features)], _).
 
 submodel(Wid, [L, T, R, B], Stack, Fatness, FillColour, FillImage, Posn,
-	 OrigX, OrigY, BgColour, InFat, Colour_scheme, Features) :-
+	 OrigX, OrigY, InFat, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutRoundedRect', Wid, L, T, R, B, Stack, Fatness,
-		       FillColour, FillImage, Posn, OrigX, OrigY, BgColour,
+		       FillColour, FillImage, Posn, OrigX, OrigY,
 		       InFat, Colour_scheme, br(Features)], _).
 
 bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
@@ -469,7 +475,7 @@ handle_tk_events :- repeat, \+ tk_do_one_event, !.
 tk_update_sim_display(Win, Current, Left) :-
 	safe_tcl_eval(['UpdateTimes', Win, Current, Left], _).
 	
-tk_do_disag_dialog(Win, Caption,
+/* tk_do_disag_dialog(Win, Caption,
 		   [Colour, Image, ImgPos, Type, Fatness, CountList, Step,
 		    Desc, Comment, ModName, EnumSpecs, Connect | Choices], 
 		   ResultList) :-
@@ -488,7 +494,24 @@ tk_do_disag_dialog(Win, Caption,
 		[build(EnumTypeSpecLists), build(EnumTypes)]),
 	    chop_list(NewConnects, NewConnectList),
 	    append(ResultList0, [EnumTypes, NewConnectList], ResultList);
-	ResultList = []).
+	ResultList = []). */
+
+tk_do_disag_dialog(Win, Caption, PList, Results) :-
+	sub_bracketize(PList, TclPLists),
+	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)) | TclPLists],
+		      New_P_string), 
+	chop_list(New_P_string, ResultList),
+	all(output, denest_disag_result, [build(ResultList), build(Results)]).
+
+denest_disag_result(TabStrings, NeatResult) :-
+	chop_list(TabStrings, [Tab, First | Rest]),
+	(Tab = "ets", !,
+	    chop_list(First, EnumTypeSpecLists),
+	    all(output, chop_list,
+		[build(EnumTypeSpecLists), build(NeatResult)]);
+	Tab = "connect", !, 
+	    chop_list(First, NeatResult);
+	chop_list([First | Rest], [NeatResult])).
 
 tk_do_relation_dialog(Win, Caption, Type, State, OldComment,
 		      OKd, NewState, NewComment) :-

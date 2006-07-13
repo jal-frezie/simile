@@ -243,7 +243,8 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 click_in(Wid, ActPt, Trans, Depth, Parent, CD) :-
 	finish_old_edit(none),
 	doing_add(New_obj),
-	(\+ (get_shape(Parent, hide_contents, 1), \+ Wid shows_model Parent),
+	(\+ (get_shape(Parent, hide_contents, N), N>2,
+		\+ Wid shows_model Parent),
 	 use_style_for(New_obj, NewStyle),
 	 draws_at(Wid, NewStyle, Depth), !,
 	    snap_to_grid(ActPt, [Xpt, Ypt]),
@@ -561,9 +562,9 @@ change_name(RenamedNode, Name) :-
 	    update_captions(OtherGhost),
 	    presence_affects(OtherGhost, Reference),
 	    implicit_function(Reference, DownFunc),
-	    setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
+	    setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^P7^
 		  (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
-		      m_update:get_all_links(DownFunc, P0, InputSpec)),
+		      get_all_links(DownFunc, P0, P7, InputSpec)),
 		   InputSpecs),
 	    get_av_pair(OtherGhost, 2, role, Roles),
 	    get_av_pair(DownFunc, 0, value, Eqn),
@@ -604,9 +605,9 @@ doubleclick(Xpt, Ypt) :-
 	doubleclick_in(Wid, Parent, [Xpt, Ypt], [0,0,1,1], 0).
 
 doubleclick_in(Wid, Parent, AbsPoint, Trans, Depth) :-
-	translate(AbsPoint, Trans, Rel_point),
-	(targets(Wid, Parent, Rel_point, Depth, Target), !,
-	    add_to_translation(Trans, Target, NewTrans),
+	(translate(AbsPoint, Trans, Rel_point),
+	targets(Wid, Parent, Rel_point, Depth, Target), !,
+	    (add_to_translation(Trans, Target, NewTrans), !; NewTrans = none),
 	    NewDepth is Depth + 1,
 	    doubleclick_in(Wid, Target, AbsPoint, NewTrans, NewDepth);
 	menu:set_properties(Wid, Parent)).
@@ -636,12 +637,13 @@ doubleclick_on(Edit_thing) :-
 		is_toplevel(TopNode),
 		ShowThing = Edit_thing,
 		IsTop = 0),
+	    (menu:raise_window_on(ShowThing), !;
 	    new_window_for(ShowThing, TopNode, NewWin, Depths, IsTop),
 	    all(state, set_display_depth,
 		[unify(NewWin),
 		build([ghost_link, influence, variable, flow, compartment,
 		       submodel, caption, text, sections]), build(Depths)]),
-	    redraw_window(NewWin);
+	    redraw_window(NewWin));
 	(Edit_type = relation, Attrs = [exclusive, can_lookup];
 	    Edit_type = influence, Attrs = [use_sofar]), !,
 	    find_name_host(Edit_thing, ControlThing),
@@ -1745,20 +1747,27 @@ doing_add(Comp) :-
 	get_adding_object(Comp).
 
 tie_ends(New_obj, Start_thing, Terminator) :-
-	(get_shape(Start_thing, hide_contents, 1),
+	link_ends(New_obj, Start_thing, Terminator, LastArc),
+	reuse_route(New_obj, LastArc),    
+	((Terminator is_instance_of EndModule, !;
+	  get_shape(Terminator, hide_contents, HF), HF > 0,
+	  EndModule = Terminator),
+	    member(New_obj-EndMark, [flow-flow_in, influence-inf_in]),
+	    find_all_comps(EndModule, DefEnd),
+	    get_av_pair(DefEnd, 2, autoconnect, EndMark), !,
+	    add_equivalence(Terminator, LastArc, DefEnd);
+	 true),
+	((Start_thing is_instance_of StartModule, !;
+	  get_shape(Start_thing, hide_contents, HS), HS > 0,
+	  StartModule = Start_thing),
 	    /* contents hidden -- look for default output info */
 	    member(New_obj-DefMark, [flow-flow_out, influence-inf_out]),
-	    find_all_comps(Start_thing, DefStart),
-	    get_av_pair(DefStart, 2, autoconnect, DefMark), !;
-	DefStart = Start_thing),    
-	(get_shape(Terminator, hide_contents, 1),
-	    /* contents hidden -- look for default input info */
-	    member(New_obj-EndMark, [flow-flow_in, influence-inf_in]),
-	    find_all_comps(Terminator, DefEnd),
-	    get_av_pair(DefEnd, 2, autoconnect, EndMark), !;
-	DefEnd = Terminator),    
-	link_ends(New_obj, DefStart, DefEnd, LastArc),
-	reuse_route(New_obj, LastArc).
+	    find_all_comps(StartModule, DefStart),
+	    get_av_pair(DefStart, 2, autoconnect, DefMark),
+	    (LastArc = FirstArc; m_class:sequence(FirstArc, LastArc)),
+	    m_class:FirstArc is_connector from Start_thing to _, !,
+	    add_equivalence(Start_thing, DefStart, FirstArc);
+	 true).
 
 	/* 
 	(find_all_comps(TopBox, Top_arc),
