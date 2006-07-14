@@ -941,7 +941,7 @@ get_submodel_interface(Model, influence, Dir, Link,
 
 get_param_entry(LastLink, Dest,
 		entry(RemoteUnit, RelationCapt, SourceLocation)) :-
-	get_link_source_data(LastLink, Dest, _, RemoteUnit,
+	get_link_source_data(LastLink, _, Dest, _, RemoteUnit,
 			     Relation, _,_,_, SourceLocation),
 	(var(Relation), RelationCapt = none;
 	nonvar(Relation),
@@ -1336,7 +1336,7 @@ sever_links(Kill_obj, End) :-
 	(continues_in(Kill_obj, End),
 	    caption_for(Start, NewCapt),
 	    min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
-	    get_link_source_data(Kill_obj, End, _, SUnit, none, _,_,_,_),
+	    get_link_source_data(Kill_obj, _, End, _, SUnit, none, _,_,_,_),
 	    (make_new_end_node(End, Kill_obj, start,
 			       NewCapt, SUnit, SMinVal, SDefVal, SMaxVal);
 	    remove_equivs(End, Kill_obj-_));
