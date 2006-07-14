@@ -152,7 +152,8 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     # popup in the model window -- it's in window.tcl, procedure AddEqnPopup --
     # look for the calls to Prolog proc tk_get_info
     #set desc [do_in_editor GetFromProlog tk_get_info('$winId',$node,desc)]
-    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
+    set comment [do_in_editor GetFromProlog \
+		     tk_get_info('$winId','$node',comment)]
     BindPopup $slot.l1 "$comment"
     BindPopup $slot.l2 "$comment"
             
@@ -983,7 +984,9 @@ proc IdFromTail {topNode fullCapt notInput} {
     if {$notInput>-1} {
 	set fullCapt [TrimDTFromPath $fullCapt]
     }
-    return [GetCompProperty $topNode IdFromCapt $fullCapt]
+#    set id [GetCompProperty $topNode IdFromCapt $fullCapt]
+#    puts "IdFromTail got $id from $fullCapt"
+    return $fullCapt
 }
 
 proc TrimDTFromPath {fullCapt} {

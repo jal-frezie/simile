@@ -1287,7 +1287,8 @@ for values from the execution environment. */
 
 input_params_in(Vars, SmPath, SmStep,
 		make(Val, Wait, Path, Step, [CollectFn])) :-
-	member(instance(Type, Param, _, elt(_,_, Val, _), _-DimTypes), Vars),
+	member(instance(Type, Param, _, elt(CPath, _, Val, _), _-DimTypes),
+	       Vars),
 	member(Type, [function, init_function]),
 	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param),
 				     build(Dims), build(_), build(_)]),
@@ -1306,8 +1307,17 @@ input_params_in(Vars, SmPath, SmStep,
 	    (Type = function, Step = SmStep, Wait = [time];
 	    Type = init_function, Step = 0, Wait = [on_reset])),
 	length(VarInds, Count),
-	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
+	comma_link([Val], CSPath),
+	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), CSPath, Count
 		      | VarInds].
+
+/* This takes a list of submodel captions, innermost first, and converts it to
+a forward-slash-separated path, outermost first, with leading slash. */
+comma_link(CPath, CSPath) :-
+	CPath = [], CSPath = '';
+	CPath = [Inner | Rest],
+	comma_link(Rest, PPath),
+	append_atoms([PPath, '/', Inner], CSPath).
 
 /* vars_only: remove indices of vm models from those passed by 'collect'. Per-
 record models are treated as vm if the parameter is variable. */

@@ -375,7 +375,7 @@ public:
 
     nodeId = strdup(newNodeId);
     spareModel = (Model*)topModel;
-    nodeLine = searchinfo(nodeId, topModel, sparePath, fullDims, spareTypes);
+    nodeLine = searchinfo(nodeId, topModel, fullDims, sparePath, spareTypes);
     remove_vm_dims();
     myArraySpace = FALSE;
     dataPtr = NULL;
