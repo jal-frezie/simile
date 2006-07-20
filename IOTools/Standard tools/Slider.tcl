@@ -32,7 +32,7 @@ namespace eval slide139 {
 
         MakeFrames $winId
 	SetState $winId {}
-	set geom [PrefValue custom(slidersPosition) slidersPosition]
+#	set geom [PrefValue custom(slidersPosition) slidersPosition]
 #        catch {wm geometry $winId $geom}
     }
 

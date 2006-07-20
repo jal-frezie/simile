@@ -984,9 +984,9 @@ proc IdFromTail {topNode fullCapt notInput} {
     if {$notInput>-1} {
 	set fullCapt [TrimDTFromPath $fullCapt]
     }
-#    set id [GetCompProperty $topNode IdFromCapt $fullCapt]
+    set id [GetCompProperty $topNode IdFromCapt $fullCapt]
 #    puts "IdFromTail got $id from $fullCapt"
-    return $fullCapt
+#    return $fullCapt
 }
 
 proc TrimDTFromPath {fullCapt} {
