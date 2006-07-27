@@ -46,7 +46,21 @@ proc FindObj { winId x y } {
     set canx [Scale $winId $x]
     set cany [Scale $winId $y]
     
-    return [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 6]]
+    set tgt [GetClickedObj $winId $canx $cany 6]
+
+    set prlgNm [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 6]]
+    return [AddTabId $winId $tgt $prlgNm]
+}
+
+proc AddTabId {winId tgt prlgNm} {
+# now check if object is a tab on an ic-view module and add its component id
+    set tags [$winId gettags $tgt]
+#puts "$tgt has tags $tags"
+    if {[set point [string first tab\( $tags]]>-1} {
+	set close [string first \) $tags $point]
+	return [string range $tags $point $close]
+    }
+    return $prlgNm
 }
 
 # canvasTLDistance returns the offset of a canvas coordinate from its top
@@ -155,13 +169,13 @@ proc ClickObj { x y winId X Y action} {
     set context [GetClickCapt $winId $canx $cany $node]
     set topNode $window_info($winId,top_node)
     if {[do_if_running $topNode ProdObj $topNode $context]} {
-    return
+	return
     }
     # IO tool took the click, so do no more
     if {[string compare $pushedbutton snap]==0} then {
         do_in_node $topNode snap $topNode $node
     } else {
-    set window_info(lastClickCapt) $context
+	set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
             set obj [GetCaptionItem $winId $node]
             
@@ -181,8 +195,8 @@ proc ClickObj { x y winId X Y action} {
                 }
             }
         }
-        prolog [list tk_click_obj('$winId',  $action , $xco , $yco , $node \
-                , $CD)]
+        prolog [list tk_click_obj('$winId',  $action , $xco , $yco , \
+				      [AddTabId $winId $target $node] , $CD)]
 	update
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {

@@ -9,7 +9,7 @@ sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
-		logical_before/3, logical_after/3, any_equiv/3,
+		logical_before/3, logical_after/3, any_equiv/3, hide_innards/1,
 		has_bowtie/1, get_bowtie_section/2, find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
 		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
@@ -290,11 +290,14 @@ logical_before(Flow, Linked, capts(F, L)) :-
 logical_after(Flow, Linked, capts(F, L)) :-
 	logical_follows(Flow, Next, capts(F, N)),
 	([Linked, L] = [Next, N]; logical_after(Next, Linked, capts(N, L))).
-	
+
+hide_innards(Box) :-
+	Box has_graphical_attribute contents_view of V, \+ V=full.
+
 no_see_inside(Box) :-
 	appears(Box),
 	\+ Box is_of_sort contains_parts;
-	Box has_graphical_attribute hide_contents of 1.
+	hide_innards(Box).
 
 get_bowtie_section(Flow, Sect) :-
 	Flow is_of_sort has_bowtie,

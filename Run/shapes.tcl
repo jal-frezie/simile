@@ -462,6 +462,23 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
 
+proc PutInfPin {w x y type dir fatness colourScheme tagSet} {
+    set width [GetLineSize $w influence $fatness]
+    set features [GetObjectSize $w influence $fatness]
+    set mptz [ScaleList $w [list $x $y]]
+    if {[string equal w $dir]} {
+	set r [expr {[lindex $mptz 0]+$features/2}]
+    } else {
+	set r [expr {[lindex $mptz 0]-$features/2}]
+    }
+    set t [expr {[lindex $mptz 1]-$features/4}]
+    set b [expr {$t+$features/2}]
+
+    $w create line $r [lindex $mptz 1] [lindex $mptz 0] $b [lindex $mptz 0] \
+	$t $r [lindex $mptz 1] -width $width \
+                -tag "$tagSet realwidth($width) has_info"
+}
+
 proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
     set width [GetLineSize $w influence $fatness]
@@ -763,6 +780,19 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
 	$w create line 0 0 1 1 -fill $textColor -tag [$w gettags $backBox]
     }
     set ankh $looks($n,$ptype,textanchor)
+    set anchsp [string first realanchor\( $tagSet]
+    if {$anchsp != -1} {
+	set anchltr [expr {$anchsp+11}]
+	set ankh [string range $tagSet $anchltr $anchltr]
+	set depth [GetObjectSize $w influence $fatness]
+	switch $ankh {
+	    e {
+		set textX [expr {$textX-$depth/2}]
+	    } w {
+		set textX [expr {$textX+$depth/2}]
+	    }
+	}
+    }
     if {[string match *e $ankh]} {
 	set tjust right
     } elseif {[string match *w $ankh]} {

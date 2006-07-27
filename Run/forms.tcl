@@ -62,7 +62,7 @@ proc Disaggregate {parent title args} {
 
     if {[string equal appear [lindex [lindex $args 0] 0]]} {
 	foreach {i varName} {1 colour 2 image 3 imgpos 4 fatness \
-				 5 hide_b 6 hide_c} {
+				 5 hide_b 6 cview} {
 	    set disaggregate($varName) [lindex [lindex $args 0] $i]
 	}
 	set args [lrange $args 1 end]
@@ -110,14 +110,22 @@ proc Disaggregate {parent title args} {
     eval $cbCmd
     TitleFrame $notebook.appearance.contents -text "Contents"
     set contents_f [$notebook.appearance.contents getframe]
-    set cbCmd "AbleDescendents $contents_f 1-\$disaggregate(hide_c)"
-    pack [checkbutton $contents_f.showc -text "Show contents" -command $cbCmd \
-	      -variable disaggregate(hide_c) -offval 1 -onval 0] -side left
-    scale $contents_f.scale -from .01 -to 1 -length 150 -orient horizontal \
+
+    frame $contents_f.radio
+    foreach {rbutton rcaption} {none "Hide" ic "Show IC view" full "Show full view"} {
+	set line [frame $contents_f.radio.$rbutton]
+        pack [radiobutton $line.rb -text $rcaption \
+		  -value $rbutton \
+		  -variable disaggregate(cview)] -side left
+        pack $line -anchor w
+    }
+    pack $contents_f.radio -anchor w -side left
+
+    scale $line.scale -from .01 -to 1 -length 150 -orient horizontal \
             -resolution 0.01 -variable disaggregate(fatness)
-    pack $contents_f.scale -side right
-    label $contents_f.scalecaption -text "Relative scale:"
-    pack $contents_f.scalecaption -side right
+    pack $line.scale -side right
+    label $line.scalecaption -text "Relative scale:"
+    pack $line.scalecaption -side right
     pack $notebook.appearance.contents -anchor nw -padx 4 -pady 4 \
 	-fill both -expand true
     eval $cbCmd
@@ -358,7 +366,7 @@ proc Disaggregate {parent title args} {
 	    lappend result \
 		[list appear $disaggregate(colour) $disaggregate(image) \
 		     $disaggregate(imgpos) $disaggregate(fatness) \
-		     $disaggregate(hide_b) $disaggregate(hide_c)]
+		     $disaggregate(hide_b) $disaggregate(cview)]
 	}
 
 	if {[winfo exists $notebook.calculation]} {
@@ -402,30 +410,24 @@ proc Disaggregate {parent title args} {
 
 proc AbleDescendents {widg whether} {
     global disaggregate ;# will be used in whether expr
-puts "widg $widg whether  [expr $whether]"
+#puts "widg $widg whether  [expr $whether]"
     set doCheck 0
     set state disabled
     switch -- [expr $whether] {
 	1 {
 	    set state normal
-	} -1 {
-	    set doCheck 1
 	}
     }
-    RecursiveAble $widg $state $doCheck
+    RecursiveAble $widg $state
 }
 	
-proc RecursiveAble {widg state doCheck} {
+proc RecursiveAble {widg state} {
     foreach subWidg [winfo children $widg] {
 	switch -regexp [winfo class $subWidg] {
 	    Button|Radiobutton|Scale|Entry {
 		$subWidg configure -state $state
-	    } Checkbutton {
-		if {$doCheck} {
-		    $subWidg configure -state $state
-		}
 	    } Frame {
-		RecursiveAble $subWidg $state $doCheck
+		RecursiveAble $subWidg $state
 	    }
 	}
     }
@@ -439,7 +441,7 @@ proc ToggleModNameEntry {sharef} {
 	set state disabled
 	$sharef.modname delete 0 end
     }
-    RecursiveAble $sharef $state 0
+    RecursiveAble $sharef $state
 #puts "name $disaggregate(modname) shared $disaggregate(shared)"
 }
 

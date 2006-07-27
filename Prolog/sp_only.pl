@@ -1,6 +1,6 @@
 /* :- module(sp_only, [sicstus_read_from_chars/2, sicstus_write_to_chars/2,
 		    sicstus_format_to_chars/3, sicstus_write_chars/1,
-		    sicstus_writeq/2]).
+		    sicstus_writeq/2, round/2]).
 
 ...and here is the first component of this port! GNU has no modules, so use
 term_expansion to make something which it can treat as a predicate and ignore,
@@ -49,3 +49,5 @@ wrap_fixes(Op) :-
 	\+ suffix(")", Cncl), !,
 	write('('), write(Op), write(')').
 
+round(F, I) :-
+	I is integer(round(F)).

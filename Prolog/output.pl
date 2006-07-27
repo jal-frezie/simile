@@ -14,11 +14,12 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
 	get_file_name/4, list_matching_files/2, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
-	submodel/12, bowtie/6, flow/5, influence/5, broken_influence/5,
+	submodel/12, inf_pin/8,
+			bowtie/6, flow/5, influence/5, broken_influence/5,
 			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
-	get_component_from_gui/4, 
+	get_component_from_gui/3, 
 	get_text/3, change_text_to/3, 
 	inject_graphics/2, translate_canvas_pl_names/2, save_canvas/4,
 	tk_grow_canvas/2, tk_refatten/2, zoom_bits_in/5,
@@ -219,6 +220,10 @@ submodel(Wid, [L, T, R, B], Stack, Fatness, FillColour, FillImage, Posn,
 		       FillColour, FillImage, Posn, OrigX, OrigY,
 		       InFat, Colour_scheme, br(Features)], _).
 
+inf_pin(Wid, X, Y, Type, Orient, SmFat, Flash, Tags) :-
+	safe_tcl_eval(['PutInfPin', Wid, X, Y, Type, Orient, SmFat, Flash,
+		       br(Tags)], _).
+		       
 bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
 	safe_tcl_eval(['PutBowTie', Wid, L, T, R, B, Fatness, Density,
 		 Colour_scheme, br(Features)], _).
@@ -283,7 +288,7 @@ current_edit(Wid, Comp) :-
 force_edit(Wid, Comp) :-
 	safe_tcl_eval(['GoEdit', Wid, Comp], _).
  
-/* get_component_from_gui/4: This invokes a Tcl command which looks
+/* get_component_from_gui/3: This invokes a Tcl command which looks
 under the point referred to to see what component is there. It is
 merely a shortcut as the information should all be kept in Prolog;
 unfortunately Tk is idiosyncratic about where it draws e.g., splines,
@@ -291,10 +296,11 @@ so Prolog cannot find them. Note that this routine cannot replace
 Prolog finds, as some components e.g., rounded rectangles, include
 space that is empty in Tk. */
 
-get_component_from_gui(Wid, Xpt, Ypt, Comp) :-
+get_component_from_gui(Wid, [Xpt, Ypt], Comp) :-
 	safe_tcl_eval(['FindObj', Wid, Xpt, Ypt], ObjString),
 	\+ ObjString = [], /* fail if nothing at target */
-	name(Comp, ObjString).
+	append(ObjString, ".", Readable),
+	sicstus_read_from_chars(Readable, Comp).
 
 /* get_text retrieves the current value of the bit of text that goes
 with the component in the specified window. The 'itemcget' command is
@@ -355,7 +361,8 @@ tk_display_menu(New_shape) :-
 	safe_tcl_eval(['AttackGlobalVariable adds {}', New_shape], _).
 
 tk_change_color(Wid, Obj, Type, Density, Value) :-
-	safe_tcl_eval(['ColorSymbol', Wid, Obj, Type, Density, Value], _).
+	safe_tcl_eval(['ColorSymbol', Wid, write(Obj), Type, Density, Value],
+		      _).
 
 shift_images(TopDir, Fillers, Way) :-
 	windowize(TopDir, WTopDir),

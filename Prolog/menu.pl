@@ -1098,12 +1098,12 @@ set_properties(Wid, Model) :-
 /*	get_disag_params(Model, P_list),
 	P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, Step,
 		  Desc, Comment, ModName, Enums, Connect, UCheck,
-		  HideB, HideC, Separate, Share],
+		  HideB, ViewC, Separate, Share],
 */	(find_type(Model, module), !,
 	    get_module_disag_params(Model, 
 			[Colour, Image, ImgPos, Fatness, Step, Desc, Comment,
-			 EnumSpecs, Connect, Fix, HideB, HideC, Separate]),
-	    P_lists = [[appear, Colour, Image, ImgPos, Fatness, HideB, HideC],
+			 EnumSpecs, Connect, Fix, HideB, ViewC, Separate]),
+	    P_lists = [[appear, Colour, Image, ImgPos, Fatness, HideB, ViewC],
 		       [calc, Step, Fix, Separate], [ets, EnumSpecs],
 		       [connect, Connect], [notes, Desc, Comment]];
 	 Model is_instance_of _Template, !,
@@ -1114,11 +1114,11 @@ set_properties(Wid, Model) :-
 	 /* self-contained submodel */
 	    get_module_disag_params(Model, 
 			[Colour, Image, ImgPos, Fatness, Step, _MD, _MC,
-			 EnumSpecs, Connect, Fix, HideB, HideC, Separate]),
+			 EnumSpecs, Connect, Fix, HideB, ViewC, Separate]),
 	    get_occurrence_disag_params(Model, [Nature, Count, ModName,
 						   Desc, Comment]),
 	    P_lists = [[number, Nature, Count, ModName],
-			[appear, Colour, Image, ImgPos, Fatness, HideB, HideC],
+			[appear, Colour, Image, ImgPos, Fatness, HideB, ViewC],
 			[calc, Step, Fix, Separate], [ets, EnumSpecs],
 			[notes, Desc, Comment]]),
 	
@@ -1159,7 +1159,7 @@ set_properties(Wid, Model) :-
 	    
 	(nth(PosA, P_lists, [appear | _]),
 	 nth(PosA, New_P_lists, [NewColour, NewImage, NewImgPos,
-				 NewFatness, NewHideB, NewHideC]), !,
+				 NewFatness, NewHideB, NewViewC]), !,
 	    (NewColour = clear, !,
 		add_parameter(Model, 0, fill_colour, '');
 	    NewColour = Colour, !;
@@ -1169,8 +1169,8 @@ set_properties(Wid, Model) :-
 	    add_parameter(Model, 0, image_posn, NewImgPos),
 	    (change_shape(Model, hide_border, NewHideB);
 		set_shape(Model, hide_border, NewHideB)),
-	    (change_shape(Model, hide_contents, NewHideC);
-		set_shape(Model, hide_contents, NewHideC)),
+	    (change_shape(Model, contents_view, NewViewC);
+		set_shape(Model, contents_view, NewViewC)),
 	    ((abs(NewFatness - Fatness) =< 0.005;
 	      Fatness > 1, NewFatness > 0.995), !;
 	    FatFactor is Fatness/NewFatness,
@@ -1190,7 +1190,7 @@ set_properties(Wid, Model) :-
 		redisplay(Linkage),
 		fail; true)),
 	    /* This works out how complete a redraw needs to be done */
-	    (NewHideC = HideC, !;
+	    (NewViewC = ViewC, !;
 		DrawContents = 1),
 	    (FatFactor = 1, !;
 		DrawBorder = 1,

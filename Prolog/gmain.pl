@@ -118,6 +118,9 @@ all_ground([H | T]) :-
 wrap_fixes(_) :-
 	fail.
 
+round(F, I) :-
+	I is round(F).
+
 /* If we rely on writeq to put non-readable atoms in quotes it will
 also convert wide characters into sets of hex codes enclosed in
 backslashes, which other Prologs cannot read. So we do it by hand

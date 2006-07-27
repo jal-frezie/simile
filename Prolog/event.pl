@@ -113,9 +113,11 @@ get_params(_, Comp) :-
 :- dynamic(max_size_is/1).
 :- dynamic(clicked_obj_is/1).
 
-click_obj(Xpt, Ypt, Name, CD) :-
+click_obj(Xpt, Ypt, DiagInfo, CD) :-
 	check_snap,
-	assert(clicked_obj_is(Name)),
+	assert(clicked_obj_is(DiagInfo)),
+	(DiagInfo = tab(Name, Link, HX, HY), !;
+	    Name = DiagInfo),
 	find_current(Wid),
 	find_relevant_windows(Name, Wid, Depth, Trans),
 	translate([Xpt, Ypt], Trans, ActNewPt),
@@ -127,8 +129,8 @@ click_obj(Xpt, Ypt, Name, CD) :-
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    menu:show_normal_cursor,
-	    drag_to(NewXpt, NewYpt, Name);
-	(CD < 2, click_on([NewXpt, NewYpt], Name, CD), !; true),
+	    drag_to(NewXpt, NewYpt, DiagInfo);
+	(CD < 2, click_on([NewXpt, NewYpt], DiagInfo, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
 	set_selection_abilities(Parent),
 	(get_phase(moving),
@@ -177,7 +179,8 @@ click(Xpt, Ypt, CD) :-
 /* check we are in same model we started in */
 check_same_desktop(Parent) :-
 	get_line_start_obj(StartNode),
-	    contains(Top, StartNode),
+	    (StartNode = tab(StartPt, _,_,_), !; StartPt = StartNode),
+	    contains(Top, StartPt),
 	    is_toplevel(Top),
 	    contains(Top, Parent);
 	normalize(StartNode),
@@ -243,7 +246,7 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 click_in(Wid, ActPt, Trans, Depth, Parent, CD) :-
 	finish_old_edit(none),
 	doing_add(New_obj),
-	(\+ (get_shape(Parent, hide_contents, N), N>2,
+	(\+ (hide_innards(Parent),
 		\+ Wid shows_model Parent),
 	 use_style_for(New_obj, NewStyle),
 	 draws_at(Wid, NewStyle, Depth), !,
@@ -836,15 +839,29 @@ than one component boundary at once (this always happened but is more common now
 drag can be signalled by click-to-start, click-to-finish) and (2) It's no longer
 much more complicated than the rest of the code. */
 
-update_context(Wid, [Xpt, Ypt], NewPair, Comp) :-
+update_context(Wid, Pt, NewPair, Comp) :-
 	get_translation(Trans),
 	get_current_depth(Depth),
 	get_current_node(Parent),
 	(multi_level_mode, !,
-	    (get_component_from_gui(Wid, Xpt, Ypt, Comp), !; Comp = none),
-	    check_crossings(Wid, Parent, Depth, Trans, [Xpt, Ypt], NewPair);
+	    (get_component_from_gui(Wid, Pt, Comp), !,
+		(Comp = tab(Host, _,_,_), !; Host=Comp),
+		find_all_comps(NewCurrent, Host),
+		(NewCurrent = Parent, !,
+		    NewPair = Pt;
+		contains(Parent, NewCurrent, [NewCurrent | Levels]),
+/* TODO: change arg order in a_t_t so this recursion works,
+and add bit for exits */
+		all(image, =, [build(Levels),
+			       add_to_translation(NewTrans, Trans)]),
+		length(Levels, Entries),
+		NewDepth is Depth+Entries,
+		translate(Pt, NewTrans, NewPair),
+		save_params(NewTrans, NewDepth, NewCurrent));
+	    Comp = none,
+		check_crossings(Wid, Parent, Depth, Trans, Pt, NewPair));
 	 (get_moving_obj(Comp), !; Comp = none),
-	    translate([Xpt, Ypt], Trans, NewPair)).
+	    translate(Pt, Trans, NewPair)).
 
 check_crossings(Wid, Parent, Depth, Trans, Pair, NewPair) :-
 	translate(Pair, Trans, [RelXpt, RelYpt]),
@@ -1409,10 +1426,10 @@ sort_for_finish(Hit, Ltype, Xpt, Ypt) :-
 	    Target = Location;
 	 Target = Hit),
 	(Hit = none, 
-	    \+ get_shape(Location, hide_contents, 1),
+	    \+ hide_innards(Location),
 	/* This requirement dropped for flows, see above */
 	    (find_all_comps(Location, Baby),
-		can_finish(Ltype, Start, Baby),
+		can_finish(Ltype, Baby),
 		\+ contains(Baby, Start);
 	     member(Ltype, [flow, squirt])), !,
 	    set_current_coords(Xpt, Ypt),
@@ -1421,7 +1438,7 @@ sort_for_finish(Hit, Ltype, Xpt, Ypt) :-
 	state:retractall(current_coords_are(_,_)),
 	    Drawn = false),
 
-	(can_finish(Ltype, Start, Target), !,
+	(can_finish(Ltype, Target), !,
 	    set_line_finish_obj(Target),
 	    highlight(OrigStart, 1),
 	    highlight(Target, 2),
@@ -1459,7 +1476,7 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 %		    Ltype = influence),
 		appears(Start),
 		can_start(influence, Start),
-		can_finish(influence, Start, Target), !;
+		can_finish(influence, Target), !;
 	Start = OrigStart.
 
 extend_line_to(Start, Type, Target, Point) :-
@@ -1480,14 +1497,16 @@ at which they enter or leave the components at the end of the
 chain. */
 
 make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
-	(find_type(Start, Type),
+	(Start = tab(Start_box, _, XS, YS);
+	find_type(Start, Type),
 	    (continues_in(Start, Start_box);
 	    find_all_comps(StartPoint, Start),
 		(contains(StartPoint, Target, Dests),
 		    suffix([Start_box], Dests);
 		Start_box = StartPoint)), !;
 	Start_box = Start),
-	(find_type(Target, Type),
+	(Target = tab(Finish_box, _, XF, YF);
+	find_type(Target, Type),
 	    (continues_from(Target, Finish_box);
 	    find_all_comps(FinishPoint, Target),
 		(contains(FinishPoint, Start, Srcs),
@@ -1507,6 +1526,12 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 			Rest = []),
 		translate(End, Trans, Rel_end),
 		Up_list = [Rel_end | Rest];
+	Start = tab(Start_box, _, XS, YS),
+	    get_shape(Start_box, bounding_box, [L, T, _,_]),
+	    XE is L + XS,
+	    YE is T + YS,
+	    Full_ups = [Start_box | Rest],
+	    Up_list = [[XE, YE] | Rest];
 	Up_list = Full_ups),
 
 	(find_type(Target, Type), !,
@@ -1520,6 +1545,12 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 			Rest2 = []),
 		translate(End2, Trans2, Rel_end2),
 		Down_list = [Rel_end2 | Rest2];
+	Target = tab(Finish_box, _, XF, YF),
+	    get_shape(Finish_box, bounding_box, [L, T, _,_]),
+	    XG is L + XF,
+	    YG is T + YF,
+	    Full_downs = [Finish_box | Rest2],
+	    Down_list = [[XG, YG] | Rest2];
 	Down_list = Full_downs).
 
 update_object_boundary(Submodel, Edge, XOff, YOff) :-
@@ -1746,24 +1777,30 @@ doing_add(Comp) :-
 	get_mode(add),
 	get_adding_object(Comp).
 
-tie_ends(New_obj, Start_thing, Terminator) :-
+tie_ends(New_obj, StartSpec, EndSpec) :-
+	(StartSpec = tab(Start_thing, DefStart, _,_), !;
+	    Start_thing = StartSpec),
+	(EndSpec = tab(Terminator, DefEnd, _,_), !;
+	    Terminator = EndSpec),
 	link_ends(New_obj, Start_thing, Terminator, LastArc),
 	reuse_route(New_obj, LastArc),    
 	((Terminator is_instance_of EndModule, !;
-	  get_shape(Terminator, hide_contents, HF), HF > 0,
+	  hide_innards(Terminator),
 	  EndModule = Terminator),
+	    (nonvar(DefEnd);
 	    member(New_obj-EndMark, [flow-flow_in, influence-inf_in]),
 	    find_all_comps(EndModule, DefEnd),
-	    get_av_pair(DefEnd, 2, autoconnect, EndMark), !,
+	    get_av_pair(DefEnd, 2, autoconnect, EndMark)), !,
 	    add_equivalence(Terminator, LastArc, DefEnd);
 	 true),
 	((Start_thing is_instance_of StartModule, !;
-	  get_shape(Start_thing, hide_contents, HS), HS > 0,
+	  hide_innards(Start_thing),
 	  StartModule = Start_thing),
 	    /* contents hidden -- look for default output info */
+	    (nonvar(DefStart);
 	    member(New_obj-DefMark, [flow-flow_out, influence-inf_out]),
 	    find_all_comps(StartModule, DefStart),
-	    get_av_pair(DefStart, 2, autoconnect, DefMark),
+	    get_av_pair(DefStart, 2, autoconnect, DefMark)),
 	    (LastArc = FirstArc; m_class:sequence(FirstArc, LastArc)),
 	    m_class:FirstArc is_connector from Start_thing to _, !,
 	    add_equivalence(Start_thing, DefStart, FirstArc);

@@ -23,7 +23,7 @@ sicstus_module(m_update,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
 		presence_affects/2, status_affects/2,
-		can_start/2, can_finish/3, continues_in/2, continues_from/2,
+		can_start/2, can_finish/2, continues_in/2, continues_from/2,
 		add_equivalence/3, is_no_longer_model_class/1,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
@@ -210,7 +210,7 @@ origin_and_entrypoint(Link, capts(Dest, Src), Origin, Home, Entry) :-
 
 module_for(Parent, Class) :-
 	(Parent is_instance_of Class;
-	    \+ Parent is_instance_of _Cl, Class = Parent).
+	    Parent = Class, \+ Parent is_instance_of _Cl).
 
 find_node_with_data(Edit_thing, Real_edit_thing, Control_thing) :-
 	(get_bowtie_section(Edit_thing, Real_edit_thing), !;
@@ -772,24 +772,41 @@ return_relevant(End, Mid, Link, VisLink) :-
 /* can_start/2: This takes a linear type (flow, influence) and a point at which it might start. If there is a box object at that point which might constitute a start for that linear, returns it, otherwise fails.  */
 
 can_start(Ltype, Box) :-
+	(Box = tab(Comp, Link, _,_),
+	    find_type(Link, Ltype); % must continue link
 	find_type(Box, Type),
-	(Ltype = Type;
-	can_connect(Ltype, Type, _), !),
-	\+ start_full(Ltype, Box).
+	    Link = Box,
+	    (Ltype = Type;
+	    can_connect(Ltype, Type, _), !)),
+	\+ start_full(Ltype, Link, Comp).
 
 /* finish in a submodel is still allowed, we will attempt to draw a new component at
 the end of the link */
 
-can_finish(Ltype, Box1, Box2) :-
+can_finish(Ltype, Box) :-
+	(Box = tab(Comp, Link, _,_),
+	    find_type(Link, Ltype); % must continue link
+	find_type(Box, Type),
+	    Link = Box,
+	    (Ltype = Type;
+	    can_connect(Ltype, _, Type), !)),
+	\+ finish_full(Ltype, Link, Comp).
+
+/* This version included tests for things like role arrow loops.
+TODO: put these in a new separate check */
+old_can_finish(Ltype, Box1, Box2) :-
 	(appears(Box2), !; contains(Box2, Box1)),
 	\+ (find_base(Box1, Id), find_base(Box2, Id)),
 	\+ u_turn(Ltype, Box1, Box2),
+	(Box1 = tab(Node1, L, _,_),
+	    find_type(L, Type1),
+	    Ltype = Type1;
 	find_type(Box1, Type1),
-	find_type(Box2, Type2),
 	(Type1 = Ltype, !,
 		Box1 is_connector from Node1 to _;
-	Node1 = Box1),
+	Node1 = Box1)),
 	find_type(Node1, Start_type),
+	find_type(Box2, Type2),
 	( \+ Type2 is_primitive, !;
 	Type2 = Ltype, !,
 		Box2 is_connector from Node2 to _,
@@ -1252,11 +1269,12 @@ status_affects(Item, Affected) :-
 */
 	
 /* Do not start on links already continued or uncontinuable */
-start_full(Type, Link) :-
+start_full(Type, Link, Node) :-
 	old_cloud(Link);
 	connects_ghost_flow(Type, Link);
 	find_type(Link, Type),
-	\+ (continues_in(Link, Node),
+	\+ (continues_in(Link, Module),
+	       module_for(Node, Module),
 		\+ (Node has_model_refinement link_equivalences of Equiv_list,
 		member(Link-_, Equiv_list),
 		\+ Type = influence) /*
@@ -1265,14 +1283,15 @@ start_full(Type, Link) :-
 	       appears(Floater),
 	       Floater is_of_sort cloud ).
 
-finish_full(Type, Link) :-
+finish_full(Type, Link, Node) :-
 	old_cloud(Link);
 	connects_ghost_flow(Type, Link);
 	find_type(Link, Type),
 	\+ (initiates(Link, Node),
 	       (is_parameter(Node, P), P>0;
 		   Node is_of_sort cloud);
-	    continues_from(Link, Node),
+	    continues_from(Link, Module),
+	       module_for(Node, Module),
 		\+ (Node has_model_refinement link_equivalences of Equiv_list,
 		member(_-Link, Equiv_list))).
 
@@ -1531,7 +1550,7 @@ get_occurrence_disag_params(Submodel,
 
 get_module_disag_params(Submodel, 
 			[Colour, Image, ImgPos, Fat, Step, Desc, Comment,
-			 EnumSpecs, Connect, Fix, HideB, HideC, Separate]) :-
+			 EnumSpecs, Connect, Fix, HideB, ViewC, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour, !;
 	    Colour = clear),
 	(Submodel has_class_refinement fill_image of Image, !;
@@ -1553,56 +1572,60 @@ get_module_disag_params(Submodel,
 	HideB = 0),
 	(Submodel has_class_refinement separate of Separate, !;
 	Separate = 0),
+	(Submodel has_graphical_attribute contents_view of ViewC, !;
+	    ViewC = full),
 	(Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
 	 Submodel has_graphical_attribute internal_extent of [LI, _, RI, _], !,
-	    Fat is 1.0*(RB-LB)/(RI-LI),
-	    (Submodel has_graphical_attribute hide_contents of HideC, !;
-		HideC = 0);
+	    Fat is 1.0*(RB-LB)/(RI-LI);
 	/* No bounding box means it's a top level window, no internal extent
 	    means a module instance -- in either case do not allow
-	    show contents or set fatness */
-	Fat = 1.0,
-	    HideC = 2),
+	    set fatness */
+	Fat = 1.0),
+
+	border_links(Submodel, AutoInfIns, AutoInfOuts,
+		     AutoFlowIns, AutoFlowOuts),
+
+	all(m_update, find_cur_posn,
+	     [unify(Submodel), 
+	      build([AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts]),
+	      build([inf_in, inf_out, flow_in, flow_out]),
+	      build(Connect)]).
 
 /* Now what about auto-connection information. Dialogue needs to know
 which, if any, possible connection is being used, so send 4 lists
 (fttb), 1st elt of each being posn of current selection or 0 if
 none. */
-        (setof(VParCapt,
-	       VPar^(find_all_comps(Submodel, VPar),
+
+border_links(Submodel, AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts) :-
+        (setof(VPar-VParCapt,
+	       (find_all_comps(Submodel, VPar),
 		      find_type(VPar, influence),
 		      continues_from(VPar, Submodel),
 		      autoconnect_reference_for(Submodel, VPar, inf_in, VParCapt)),
 	       AutoInfIns), !;
 	 AutoInfIns = []),
-        (setof(VParCapt,
-	       VPar^(find_all_comps(Submodel, VPar),
+        (setof(VPar-VParCapt,
+	       (find_all_comps(Submodel, VPar),
 		      find_type(VPar, influence),
 		      continues_in(VPar, Submodel),
 		      autoconnect_reference_for(Submodel, VPar, inf_out, VParCapt)),
 	       AutoInfOuts), !;
 	 AutoInfOuts = []),
-        (setof(VParCapt,
-	      VPar^A^B^(find_all_comps(Submodel, VPar),
+        (setof(VPar-VParCapt,
+	      A^B^(find_all_comps(Submodel, VPar),
 			VPar is_connector from A to B,
 			find_type(A, cloud),
 			caption_for(VPar, VParCapt)),
 	       AutoFlowIns), !;
 	 AutoFlowIns = []),
-        (setof(VParCapt,
-	      VPar^A^B^(find_all_comps(Submodel, VPar),
+        (setof(VPar-VParCapt,
+	      A^B^(find_all_comps(Submodel, VPar),
 			VPar is_connector from A to B,
 			find_type(B, cloud),
 			\+ find_type(A, cloud),
 			caption_for(VPar, VParCapt)),
 	       AutoFlowOuts), !;
-	 AutoFlowOuts = []),
-
-         all(m_update, find_cur_posn,
-	     [unify(Submodel), 
-	      build([AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts]),
-	      build([inf_in, inf_out, flow_in, flow_out]),
-	      build(Connect)]).
+	 AutoFlowOuts = []).
 
 find_cur_posn(Model, Capts, AutoType, [CurPosn | Capts]) :-
          find_all_comps(Model, CurVPar),
@@ -1621,7 +1644,7 @@ autoconnect_reference_for(Submodel, CurVPar, AutoType, CurVParCapt) :-
 	    get_input_info(CaptFn, InputList),
 	    member(input_link(id(CurVPar, none, _), _, Name, _,_), InputList),
 	    caption_for(CaptNode, CaptStart),
-	    sicstus_format_to_chars("~a (as ~w)", [CaptStart, Name], CaptStr),
+	    sicstus_format_to_chars("~w (for ~a)", [Name, CaptStart], CaptStr),
 	    name(CurVParCapt, CaptStr);
 	(AutoType = inf_out, !,
 	    find_type(CurVPar, influence),

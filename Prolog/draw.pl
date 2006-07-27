@@ -16,7 +16,7 @@ on while I change the spec to reflect that.
 sicstus_module(draw,
 	       [cursor_in/2, callback/1,
 		enable_text_editing_in/1, disable_text_editing_in/1,
-		select_text/2, get_component_from_gui/4, get_text/3,
+		select_text/2, get_component_from_gui/3, get_text/3,
 		find_relevant_windows/4, update_captions/1, reset_titles/1,
 		update_color/1, shift_images/3,
 		give_focus/1, has_focus/1,
@@ -35,7 +35,8 @@ sicstus_module(draw,
 		tk_equationlisting_start/1,tk_equationlisting_addsubmodel/7,
 		tk_equationlisting_addvariable/11]).
 
-sicstus_use_module([library(lists), state, image, ame_gen, output]).
+sicstus_use_module([library(lists), state, image, ame_gen, output, utility,
+		    sp_only]).
 
 cursor_in(Win, Cursor) :-
 	tk_cursor_in(Win, Cursor).
@@ -172,7 +173,7 @@ redisplay(OldName, Comp) :-
 	contains(Top, Comp, Levels),
 	\+ (member(Hider, Levels),
 	       \+ Hider = Comp,
-	       get_shape(Hider, hide_contents, 1)),
+	       hide_innards(Hider)),
 	kill_recursive(Window_id, OldName),
 	display(Window_id, Comp, Depth, Trans, 1),
 	fail;
@@ -194,23 +195,64 @@ display(Window_id, Comp, Depth, Trans, Recurse) :-
 	    add_caption(Window_id, Comp, [X,Y,X,Y], Trans, Fatness, Lit);
 	Comp is_of_sort box,
 	display_in(Window_id, Comp, Depth, Trans),
-	(Recurse = 1,
-	find_type(Comp, submodel),
-	\+ get_shape(Comp, hide_contents, 1),
-	New_depth is Depth + 1,
-	draws_at(Window_id, submodel, New_depth), !,
-	    add_to_translation(Trans, Comp, Subtrans),
-	    (find_all_comps(Comp, Subcomp),
-		display(Window_id, Subcomp, New_depth, Subtrans,
-			Recurse),
-		fail;
-	    update_tk);
-	true);
+	(find_type(Comp, submodel),
+	    (display_pinout(Window_id, Comp, Trans);
+	    Recurse = 1,
+		\+ hide_innards(Comp),
+		New_depth is Depth + 1,
+		draws_at(Window_id, submodel, New_depth), !,
+		add_to_translation(Trans, Comp, Subtrans),
+		(find_all_comps(Comp, Subcomp),
+		    display(Window_id, Subcomp, New_depth, Subtrans,
+			    Recurse),
+		    fail;
+		    update_tk);
+	    true));
 	Comp is_of_sort line,
 	    display_link_in(Window_id, Comp, Depth, Trans)),
 	(get_highlit_obj(N, Comp), !,
 	    highlight(Comp, N);
 	true).
+
+display_pinout(Wid, Comp, Trans) :-
+	m_update:module_for(Comp, Works),
+	get_shape(Works, contents_view, ic),
+	get_shape(Comp, bounding_box, [L,T,R,B]),
+	m_update:border_links(Works, InfIn, InfOut, FloIn, FloOut),
+
+	find_fatness(Trans, Fatness),
+	get_flash(Comp, Flash),
+
+	(member(List-Way, [InfIn-w, InfOut-e, FloIn-n, FloOut-s]),
+	    \+ List = [],
+	    (Way = e, X1=R; \+ Way = e, X1=L),
+	    (Way = s, Y1=B; \+ Way = s, Y1=T),
+	    length(List, InfIns),
+	    (member(Way, [n,s]), 
+		    Xinc is (R-L)/InfIns, Yinc = 0;
+	    member(Way, [e,w]), 
+		    Yinc is (B-T)/InfIns, Xinc = 0),
+	    translate([L, T, X1, Y1], Trans, [Lm, Tm, X1m, Y1m]),
+	    rel_translate([Xinc, Yinc, Derrr], Trans, [Xm, Ym, Derrr]),
+	    all(draw, add_l_pins,
+		[unify([Wid, Comp, Fatness, Lm, Tm, X1m, Y1m, Xm, Ym,
+			Way, Flash]), build(List), inc(0)]),
+	    fail;
+	    true).
+
+add_l_pins([Wid, SmId, SmFat, L, T, X1, Y1, Xinc, Yinc, Side, Flash],
+	   Id-Name, Count) :-
+	X is X1+(Count+0.5)*Xinc,
+	Y is Y1+(Count+0.5)*Yinc,
+	round(X-L, Xoff),
+	round(Y-T, Yoff),
+	sicstus_write_to_chars(tab(SmId, Id, Xoff, Yoff), IdTagStr),
+	sicstus_atom_chars(IdTag, IdTagStr),
+	inf_pin(Wid, X, Y, 3, Side, SmFat, Flash, [SmId, IdTag]),
+	append_atoms(['realanchor(', Side, ')'], AnchTag),
+	text(Wid, [X,Y], submodel, [SmId, IdTag, AnchTag], SmFat, Flash, Name).
+
+inc(P, Q) :- Q is P+1.
 
 /* highlight not only redraws the component in any of a number of styles, it also
 records its id in the GUI state database so it can be manipulated independently of
@@ -226,10 +268,11 @@ highlight(Obj, Defcon) :-
 		[0-select, 1-highlight, 2-target, 3-affect]),
 	change_color(Obj, Color).
 
-normal_colour_for(Obj, Colour) :-
-	draws_complete(Obj), !,
+normal_colour_for(Spec, Colour) :-
+	(Spec = tab(Obj, _,_,_), !; Obj = Spec),
+	(draws_complete(Obj), !,
 		Colour = normal;
-	Colour = incomplete.
+	Colour = incomplete).
 
 normalize(Obj) :-
 	get_highlit_obj(Defcon, Obj),
@@ -251,8 +294,7 @@ change_color(Obj, Color) :-
 	\+ suspend_display,
 	/* find_relevant_windows(Obj, Wid, _, _), */
 	draw_style_for(Obj, Type),
-	(Type = flow, Density = {};
-	\+ Type = flow, density_for(Obj, Density)),
+	density_for(Obj, Density),
 	Wid shows_model _,
 	tk_change_color(Wid, Obj, Type, Density, Color), fail.
 
@@ -438,7 +480,7 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    (Style = submodel, !,
 		get_colour(Module, FillColour, FillImage, ImgPos),
 /* if no contents displayed, set scheme to incomplete to avoid drawing grid */
-	        (\+ get_shape(Comp, hide_contents, 1),
+	        (\+ hide_innards(Comp),
 		    New_depth is Depth + 1,
 		    draws_at(Wid, submodel, New_depth),
 		    add_to_translation(Trans, Comp, InTrans), !,

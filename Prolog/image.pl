@@ -81,7 +81,7 @@ clear_shape(Component, Shape_field) :-
 submodels, relying on the GUI to signal events in other types of component. */
 
 targets(Wid, Parent, Point, Depth, Comp) :-
-    (Wid shows_model Parent; \+ get_shape(Parent, hide_contents, 1)), !,
+    (Wid shows_model Parent; \+ hide_innards(Parent)), !,
     Parent has_part Comp,
     find_type(Comp, submodel),
     draws_at(Wid, submodel, Depth),
@@ -224,8 +224,7 @@ make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
 density_for(Comp, Density) :-
     (Comp has_type relation;
 	ghost_link(Comp, _Base, _Ghost);
-        find_base(Comp, Base), \+ Base = Comp;
-	Comp is_of_sort has_bowtie, \+ has_bowtie(Comp)), !,
+        find_base(Comp, Base), \+ Base = Comp), !,
     Density = gray50;
     Density = '{}'.
 
@@ -235,6 +234,8 @@ draw_style_for(Link, ghost_link) :-
 draw_style_for(Obj, Style) :-
     (Obj has_class Type; Obj has_type Type),
     use_style_for(Type, Style).
+
+draw_style_for(tab(_,_,_,_), submodel).
 
 use_style_for(Obj, channel) :-
     Obj is_class_of_sort channel, !.
@@ -1054,7 +1055,7 @@ check_translation(Submodel) :-
 translate_between(Model, Model, 0, [0,0,1,1]).
 
 translate_between(HiModel, LoModel, Depth, Trans) :-
-    \+ get_shape(LoModel, hide_contents, 1),
+    \+ hide_innards(LoModel),
     find_all_comps(Parent, LoModel),
     translate_between(HiModel, Parent, HiDepth, HiTrans),
     Depth is HiDepth + 1,
