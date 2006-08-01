@@ -8,6 +8,8 @@
 package require BWidget
 catch {namespace import BWidget::*}
 package require tile
+package require MyTrf ;# loads right version of Trf
+
 
 source ../Run/window.tcl
 source ../Run/shapes.tcl

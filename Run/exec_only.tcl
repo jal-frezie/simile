@@ -1,8 +1,11 @@
 #!/usr/bin/wish
 
 # replace /./ in path with / to avoid confusing file dirname
-regsub -all /\\./ [info script] / scriptCmd
 
+if {[info exists embed_args]} {
+    set custom(prefDir) {}
+} else {
+regsub -all /\\./ [file join [pwd] [info script]] / scriptCmd
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 cd $SIMILE_PATH/Run
 
@@ -24,13 +27,13 @@ if {[file exists $env(HOME)]} {
 		file delete $oldPrefs
 	    }
         }
-    } elseif [string match Darwin $tcl_platform(os)] {
+    } elseif {[string match Darwin $tcl_platform(os)]} {
         set custom(prefDir) [file join $env(HOME) "Simile"]
     } else {
         set custom(prefDir) $oldPrefs
     }
 }
-
+}
 set runHow(where) home
 source runmodel.tcl
 

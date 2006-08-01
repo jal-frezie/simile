@@ -12,7 +12,9 @@ if [string match "Darwin" $tcl_platform(os)] {
     lappend auto_path $SIMILE_PATH/System/lib
 }
 package require BWidget
-package require tile
+if {![info exists embed_args]} {
+    package require tile
+}
 
 source ../Run/graphs.tcl
 source ../Run/utility.tcl
@@ -436,7 +438,9 @@ proc SaveView {} {
     }
 }
 
+if {![info exists embed_args]} {
 package require mime
+}
 
 proc MimifySHF {inFile outFile origin} {
     global env

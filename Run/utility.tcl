@@ -138,8 +138,6 @@ proc load_c_stub_1 {} {
     }
 }
 
-package require MyTrf ;# loads right version of Trf
-
 proc load_c_stub_2 {} {
     global env userinfo ;# last needed in stub
     # On startup, check run count and offer registration if 0
@@ -473,18 +471,26 @@ proc SquirtMime {args} {
 proc LoadIconImages {} {
     global iconImages
     foreach fn {tick cross function} {
-	set iconImages($fn) \
-	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
+	set iconImages($fn) [NewPhoto "../Images/Eqnbar/${fn}.gif"]
     }
     foreach fn {graph table new open save edit reel noreel} {
-        set iconImages($fn) \
-	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
+        set iconImages($fn) [NewPhoto "../Images/Toolbar/${fn}.gif"]
     }
     foreach fn {info warning error} {
-        set iconImages($fn) \
-	    [image create photo -file "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
+        set iconImages($fn) [NewPhoto "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
     }
 }
+
+proc NewPhoto {file} {
+    global embed_args
+
+    if {[info exists embed_args]} {
+	return [image create photo -data [ReadFile $file]]
+    } else {
+	return [image create photo -file $file]
+    }
+}
+
 
 proc BlankCrs {withCrs} {
     regsub -all \n $withCrs { } noCrs
