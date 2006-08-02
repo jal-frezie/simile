@@ -35,19 +35,27 @@ namespace eval ::ModelInspector63654 {
     proc initialize {winId} {
         global tcl_platform
         variable tableframe
-        set im(submodel) [image create photo submodel_im -file "../Images/Toolbar/submodel.gif"]
-        set im(compartment) [image create photo  -file "../Images/Toolbar/compartment.gif"]
-        set im(flow) [image create photo  -file "../Images/Toolbar/flow.gif"]
-        set im(variable) [image create photo  -file "../Images/Toolbar/variable.gif"]
-        set im(condition) [image create photo  -file "../Images/Toolbar/condition.gif"]
-        set im(creation) [image create photo  -file "../Images/Toolbar/creation.gif"]
-        set im(reproduction) [image create photo  -file "../Images/Toolbar/reproduction.gif"]
-        set im(immigration) [image create photo  -file "../Images/Toolbar/immigration.gif"]
-        set im(loss) [image create photo  -file "../Images/Toolbar/loss.gif"]
-        
+        set im(submodel) [NewPhoto "../Images/Toolbar/submodel.gif"]
+        set im(compartment) [NewPhoto "../Images/Toolbar/compartment.gif"]
+        set im(flow) [NewPhoto "../Images/Toolbar/flow.gif"]
+        set im(variable) [NewPhoto "../Images/Toolbar/variable.gif"]
+        set im(condition) [NewPhoto "../Images/Toolbar/condition.gif"]
+        set im(creation) [NewPhoto "../Images/Toolbar/creation.gif"]
+        set im(reproduction) [NewPhoto "../Images/Toolbar/reproduction.gif"]
+        set im(immigration) [NewPhoto "../Images/Toolbar/immigration.gif"]
+        set im(loss) [NewPhoto "../Images/Toolbar/loss.gif"]
+
         set tableframe $winId.tableframe
         ScrolledWindow $tableframe
-        Tree $tableframe.table -showlines yes
+	if {[InPlugin]} {
+	    set widbits "../System/lib/bwidget1.7/images"
+	    image create bitmap weecross -data [ReadFile $widbits/plus.xbm]
+	    image create bitmap weedash -data [ReadFile $widbits/minus.xbm]
+	    Tree $tableframe.table -showlines yes -crossopenimage weecross \
+		-crosscloseimage weedash
+	} else {        
+	    Tree $tableframe.table -showlines yes
+	}
         $tableframe setwidget $tableframe.table
         pack $tableframe -expand yes -fill both
         

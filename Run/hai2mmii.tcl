@@ -701,19 +701,19 @@ proc ResetModel {myNode redo} {
 	WarnNoProgram $myNode
 	return 0
     }	
-    if {[catch {
+#    if {[catch {
 	if {$model_id($myNode)} {
 	    set model_id(running) $myNode
 	    c_resetmodel $model_id($myNode) $instance_id($myNode) $redo
 	} else {
 	    TclResetModel $redo
 	}
-    } errList]} {
-	eval ExplainError $errList
-	set done 0
-    } else {
+#    } errList]} {
+#	eval ExplainError $errList
+#	set done 0
+#    } else {
 	set done 1
-    }
+#    }
     InteractGUI $instance_id($myNode) 0 2
     return $done
 }

@@ -14,6 +14,27 @@ if [string match "Darwin" $tcl_platform(os)] {
 package require BWidget
 if {![info exists embed_args]} {
     package require tile
+} else {
+    namespace eval ttk {
+	proc notebook {args} {
+	    eval ::NoteBook $args
+	}
+	proc frame {args} {
+	    eval ::frame $args
+	}
+	proc button {args} {
+	    if {[set st [lsearch $args -style]]>-1} {
+		set args [lreplace $args $st [expr {$st+1}]]
+	    }
+	    eval ::button $args
+	}
+	proc progressbar {args} {
+	    eval ::ProgressBar $args
+	}
+	proc entry {args} {
+	    eval ::entry $args
+	}
+    }
 }
 
 source ../Run/graphs.tcl
@@ -1158,10 +1179,9 @@ proc StartRun {node} {
 }
 
 proc StartNow {node action} {
-    global runState
+    global helperTable
 
-    set widget $runState($node,helperId).nb.rcf
-    $widget.upper.topbuttons.$action invoke
+    ::$helperTable(RunControl)::HitButton $node $action
 }
 
 proc SecondsInA {time} {

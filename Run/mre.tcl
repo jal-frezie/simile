@@ -75,15 +75,16 @@ namespace eval RunEnv {
         if {[info exists helperTable($node,whichRunEnv)]} {
             return $helperTable($node,whichRunEnv)
         } else {
-            set mreId .mre[newInt]
-            set helperTable($node,whichRunEnv) $mreId
-            CreateDisplayPageContextMenu
+	    if {[InPlugin]} {
+		set mreId {}
+		set descmenu {}
+	    } else {
+		set mreId .mre[newInt]
+		CreateDisplayPageContextMenu
             
-            #tk_messageBox -message MakeMRE -type ok
-            toplevel $mreId -width 200m -height 150m
-            wm title $mreId "[GetExecTitle $node] execution - Simile"
-            set currentNode $node
-            bind $mreId <FocusIn> [namespace code "InMreFor $node"]
+		#tk_messageBox -message MakeMRE -type ok
+		toplevel $mreId -width 200m -height 150m
+		wm title $mreId "[GetExecTitle $node] execution - Simile"
             set descmenu {
                 "&File" all file 0 {
                     {command "&New configuration"    {} "Remove all display configuration" {} -command {::RunEnv::KillDisplays} }
@@ -119,6 +120,11 @@ namespace eval RunEnv {
                     {command "&Contents..." {} "View the help file contents" {} -command ::RunEnv::ShowMreHelp}
                 }
             }
+
+	    }
+	    set helperTable($node,whichRunEnv) $mreId
+            set currentNode $node
+            bind $mreId <FocusIn> [namespace code "InMreFor $node"]
             
             set mainframe [MainFrame $mreId.mainframe -width 200m -height 150m \
 			       -menu         $descmenu \
@@ -142,7 +148,7 @@ namespace eval RunEnv {
                     set gif [lindex $item 0]
                     set helptext [lindex $item 1]
                     set command [lindex $item 2]
-                    set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [image create photo  -file "../Images/Toolbar/$gif"] \
+                    set newButton [::ttk::button $tb1.b$tbnum$i -style Toolbutton -image [NewPhoto "../Images/Toolbar/$gif"] \
                             -command $command]
                     pack $newButton -padx 1 -pady 1  -side left -anchor w
                     BindPopup $newButton $helptext
@@ -154,14 +160,19 @@ namespace eval RunEnv {
             }
             
             #from runmodel.tcl AddHelperSublist
-            set mreMenu [winfo parent [$mainframe getmenu help]]
-            $mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
-	    if {[info exists runHow(where)]} {
-		$mreMenu insert 3 cascade -label "Window" -underline 0 \
-		    -menu .windowchoice
-	    }
+	    if {[InPlugin]} {
+		set pain .mainpw
+	    } else {
+		set mreMenu [winfo parent [$mainframe getmenu help]]
+		$mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
+		if {[info exists runHow(where)]} {
+		    $mreMenu insert 3 cascade -label "Window" -underline 0 \
+			-menu .windowchoice
+		}
+		set pain [$mainframe getframe].mainpw
+	    } 
             # Add a PanedWindow for the hierrachical/run control view and main display window
-            set mainpw [panedwindow [$mainframe getframe].mainpw  -orient horizontal]
+            set mainpw [panedwindow $pain -orient horizontal]
             set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
             set dp0 [frame $mainpw.mainDisplayPane]
             set dp0s($node) $dp0
@@ -200,13 +211,16 @@ namespace eval RunEnv {
             # Model variable explorer is created automatically elsewhere
             # run control is automatically created when model is run
             # input slider helper is automatically created if needed when model is run
-            
-            wm geometry $mreId ${width}x${height}
-            if {[string match unix $tcl_platform(platform)]} {
-                wm iconbitmap $mreId @../Images/dribble.xbm
-            }; # on Windows uses default icon set in Runmodel.tcl
-            wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::Destroy
-            return $mreId
+	    if {[InPlugin]} {            
+		return .
+	    } else {
+		wm geometry $mreId ${width}x${height}
+		if {[string match unix $tcl_platform(platform)]} {
+		    wm iconbitmap $mreId @../Images/dribble.xbm
+		}; # on Windows uses default icon set in Runmodel.tcl
+		wm protocol $mreId WM_DELETE_WINDOW ::RunEnv::Destroy
+		return $mreId
+	    }
         } ; # if .mre exists
     }
 
@@ -255,12 +269,19 @@ namespace eval RunEnv {
         
         bind $containerId.notebook <Double-1> "::RunEnv::EditTabLabel %W"
         bind $containerId.notebook <Button-3> "::RunEnv::EditTabLabel %W"
-        
-        $containerId.notebook select [lindex [$containerId.notebook tabs] 0]
+        RaisePageZero $containerId.notebook
         pack $containerId.notebook -fill both -expand yes
 	return $pane1
     }
     
+    proc RaisePageZero {nb} {
+	if {[InPlugin]} {
+	    $nb raise [lindex [$nb pages] 0]
+	} else {
+	    $nb select [lindex [$nb tabs] 0]
+	}
+    }
+
     proc EditTabLabel { notebook } {
 	global helperTable
         variable TabEditText
@@ -285,7 +306,11 @@ namespace eval RunEnv {
     }
     
     proc PageRaiseCmd {notebook} {
-	set pageF [lindex [$notebook tabs] [$notebook index current]]
+	if {[InPlugin]} {
+	    set pageF [$notebook getframe [$notebook raise]]
+	} else {
+	    set pageF [lindex [$notebook tabs] [$notebook index current]]
+	}
         if {[winfo exists $pageF.panedwindow]} {
 	    set firstPane [lindex [$pageF.panedwindow panes] 0]
 	    #     ShowMessage debug info "PageRaiseCmd firstPane $firstPane" ok
@@ -306,10 +331,22 @@ namespace eval RunEnv {
         }
         #ShowMessage debug info "containerId $containerId\nParentContainer $ParentContainer" ok
         if {[string match notebook [winfo name $ParentContainer]]} {
-            set pageId [UniqueId $ParentContainer.fpage [$ParentContainer tabs]]
-            set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
-            set newContainer [frame $pageId]
-            $ParentContainer add $newContainer -text "Page $pageIndex"
+	    if {[InPlugin]} {
+		set pageList [$ParentContainer pages]
+		set pageId [UniqueId page $pageList]
+		set pageIndex [expr {[llength $pageList]+1}]
+		$ParentContainer insert end $pageId -text "Page $pageIndex" \
+		    -raisecmd "::RunEnv::PageRaiseCmd $ParentContainer"
+		set newContainer [$ParentContainer getframe $pageId]
+		$ParentContainer raise $pageId
+	    } else {
+		set pageList [$ParentContainer tabs]
+		set pageId [UniqueId $ParentContainer.fpage $pageList]
+		set pageIndex [expr {[llength $pageList]+1}]
+		set newContainer [frame $pageId]
+		$ParentContainer add $newContainer -text "Page $pageIndex"
+		$ParentContainer select $newContainer
+	    }
             panedwindow $newContainer.panedwindow -orient vertical
             pack $newContainer.panedwindow -expand yes -fill both
             frame $newContainer.panedwindow.pane0 -highlightcolor black -highlightthickness 1
@@ -317,7 +354,6 @@ namespace eval RunEnv {
             bind $newContainer.panedwindow.pane0 <Button-3> \
                     "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
             $newContainer.panedwindow add $newContainer.panedwindow.pane0 -sticky nesw
-	    $ParentContainer select $newContainer
             return $newContainer.panedwindow.pane0
         } else  {
             return [AddNotebookPage $ParentContainer]
@@ -450,7 +486,7 @@ namespace eval RunEnv {
         }
     }
     
-    proc DeleteHelperContainer {containerId page} {
+    proc DeleteHelperContainer {containerId} {
         global helperTable
         # container is the frame a helper would be displayed in
         # a parent is the notebook or panedwindow the container belongs to
@@ -469,7 +505,7 @@ namespace eval RunEnv {
             kill_helper_window $containerId.container
         } else {
             switch $parentType {
-                notebook {DeleteNotebookPage $parentPath $page}
+                notebook {DeleteNotebookPage $parentPath}
                 panedwindow {DeletePane $parentPath $containerId}
             }
         }
@@ -478,13 +514,23 @@ namespace eval RunEnv {
     
     proc DeleteHelperCurrentContainer {} {
         variable CurrentContainer
-        DeleteHelperContainer $CurrentContainer {}
+        DeleteHelperContainer $CurrentContainer
     }
     
-    proc DeleteNotebookPage {notebook page} {
-        set pages [$notebook tabs]
-        set page [$notebook index current]
-        set n [llength $pages]
+    proc DeleteNotebookPage {notebook} {
+        if {[InPlugin]} {
+	    set pages [$notebook pages]
+    #puts "$notebook has pages $pages"
+	    set n [llength $pages]
+	    set page [$notebook raise]
+	    set index [lsearch $pages $page]
+	    set killCmd [list $notebook delete $page 1]
+	} else {
+	    set pages [$notebook tabs]
+	    set index [$notebook index current]
+	    set n [llength $pages]
+	    set killCmd [list destroy [lindex $pages $index]]
+	}
         #puts "DeleteNotebookPage  $notebook; $page\n \
         #            page $page; n pages: $n; \n \
         #            parent [winfo parent $notebook]"
@@ -496,10 +542,10 @@ namespace eval RunEnv {
             }
         }
 #        $notebook forget $page
-	destroy [lindex $pages $page]
+	eval $killCmd
+	set pages [lreplace $pages $index $index]
+	incr n -1
 	update
-        set pages [$notebook tabs]
-        set n [llength $pages]
         #ShowMessage debug info "DeleteNotebookPage after delete page pages $n" ok; #########
         if {$n==0} {
             set containerId [winfo parent $notebook]
@@ -523,14 +569,16 @@ namespace eval RunEnv {
 #                }
 #                incr i
 #            }
-	    set pages [$notebook tabs]
-	    set n [llength $pages]
             if {$page >= $n} {
 		set newSeln [expr {$n-1}]
 	    } else {
 		set newSeln $page
 	    }
-	    $notebook select $newSeln
+	    if {[InPlugin]} {
+		$notebook raise [lindex $pages $newSeln]
+	    } else {
+		$notebook select [lindex $pages $newSeln]
+	    }
 	    PageRaiseCmd $notebook
         }
     }
@@ -541,8 +589,15 @@ namespace eval RunEnv {
         #        panes [$parentPath panes]" ok;
         set greatgrandparent [winfo parent [winfo parent $parentPath]]
         #puts "DeletePane greatgrandparent $greatgrandparent; class [winfo class $greatgrandparent]"
-        if {[string match TNotebook [winfo class $greatgrandparent]]} {
-            if {([llength [$greatgrandparent tabs]] ==1) && ([llength [$parentPath panes]] == 1)} {
+	if {[InPlugin]} {
+	    set nbClass NoteBook
+	    set nbLister pages
+	} else {
+	    set nbClass TNotebook
+	    set nbLister tabs
+	}
+        if {[string match $nbClass [winfo class $greatgrandparent]]} {
+            if {([llength [$greatgrandparent $nbLister]] ==1) && ([llength [$parentPath panes]] == 1)} {
                 if {[string match mainDisplayPane [winfo name [winfo parent $greatgrandparent]]]} {
                     ShowMessage Information info "Cannot delete this page. The main notebook must have at least one page." ok
                     return
@@ -562,8 +617,8 @@ namespace eval RunEnv {
             #                pages [$parentNoteBook tabs]\n \
             #                current page [$parentNoteBook tab current]" ok;
             destroy $parentPath
-            if {[string match TNotebook [winfo class $parentNoteBook]]} {
-                DeleteNotebookPage $parentNoteBook [$parentNoteBook tab current]; #current page
+            if {[string match $nbClass [winfo class $parentNoteBook]]} {
+                DeleteNotebookPage $parentNoteBook
             }
         }
     }
@@ -750,28 +805,31 @@ namespace eval RunEnv {
             return
         }
         set mainframe $helperTable($currentNode,whichRunEnv).mainframe
-        set mreMenu [winfo parent [$mainframe getmenu help]]
         set pw [FindParentPanedwindow $win]
         #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
 #        set tb1 [$mainframe gettoolbar 0]
 	set tb1 [$mainframe getframe].tbar
         if {[winfo exists $win.container]} {
-            $mreMenu entryconfigure Add -state disable
-            [$mainframe getmenu edit] entryconfigure Copy -state normal
-            [$mainframe getmenu edit] entryconfigure Cut -state normal
-            [$mainframe getmenu edit] entryconfigure Paste -state disable
+	    if {![InPlugin]} {
+		set mreMenu [winfo parent [$mainframe getmenu help]]
+		$mreMenu entryconfigure Add -state disable
+		[$mainframe getmenu edit] entryconfigure Copy -state normal
+		[$mainframe getmenu edit] entryconfigure Cut -state normal
+		[$mainframe getmenu edit] entryconfigure Paste -state disable
+
+		.pageContextMenu entryconfigure 0 -state disabled
+		.pageContextMenu entryconfigure 1 -state disabled
+		.pageContextMenu entryconfigure 3 -state disabled
+		.pageContextMenu entryconfigure 7 -state disabled
+		.pageContextMenu entryconfigure 12 -state disabled; # add notebook
+		#.pageContextMenu entryconfigure 13 -state disabled; # add notebook p0age
+	    }
+
             $tb1.b12 configure -state disabled; # paste button
             $tb1.b31 configure -state disabled; # Add Notebook button
             $tb1.b40 configure -state disabled; # add helper buttons
             $tb1.b41 configure -state disabled
             $tb1.b42 configure -state disabled
-            
-            .pageContextMenu entryconfigure 0 -state disabled
-            .pageContextMenu entryconfigure 1 -state disabled
-            .pageContextMenu entryconfigure 3 -state disabled
-            .pageContextMenu entryconfigure 7 -state disabled
-            .pageContextMenu entryconfigure 12 -state disabled; # add notebook
-            #.pageContextMenu entryconfigure 13 -state disabled; # add notebook p0age
             
             if {[string match vertical [$pw cget -orient]]} {
                 #ShowMessage debug info "vert $tb1.bbox2" ok
@@ -787,26 +845,31 @@ namespace eval RunEnv {
                 .pageContextMenu entryconfigure 10 -state normal
             }
         } else  {
-            $mreMenu entryconfigure Add -state normal
-            [$mainframe getmenu edit] entryconfigure Copy -state disable
-            [$mainframe getmenu edit] entryconfigure Cut -state disable
-            [$mainframe getmenu edit] entryconfigure Paste -state normal
-            $tb1.b12 configure -state normal; # paste button
-                $tb1.b20 configure -state normal
-                $tb1.b21 configure -state normal
+	    if {![InPlugin]} {
+		set mreMenu [winfo parent [$mainframe getmenu help]]
+		$mreMenu entryconfigure Add -state normal
+		[$mainframe getmenu edit] entryconfigure Copy -state disable
+		[$mainframe getmenu edit] entryconfigure Cut -state disable
+		[$mainframe getmenu edit] entryconfigure Paste -state normal
+
+		.pageContextMenu entryconfigure 0 -state normal
+		.pageContextMenu entryconfigure 1 -state normal
+		.pageContextMenu entryconfigure 3 -state normal
+		.pageContextMenu entryconfigure 7 -state normal
+		.pageContextMenu entryconfigure 10 -state normal
+		.pageContextMenu entryconfigure 9 -state normal
+		.pageContextMenu entryconfigure 12 -state normal
+            #.pageContextMenu entryconfigure 13 -state normal
+	    }
+
+	    $tb1.b12 configure -state normal; # paste button
+	    $tb1.b20 configure -state normal
+	    $tb1.b21 configure -state normal
             $tb1.b31 configure -state normal; # Add Notebook button
             $tb1.b40 configure -state normal; # add helper buttons
             $tb1.b41 configure -state normal
             $tb1.b42 configure -state normal
             
-            .pageContextMenu entryconfigure 0 -state normal
-            .pageContextMenu entryconfigure 1 -state normal
-            .pageContextMenu entryconfigure 3 -state normal
-            .pageContextMenu entryconfigure 7 -state normal
-            .pageContextMenu entryconfigure 10 -state normal
-            .pageContextMenu entryconfigure 9 -state normal
-            .pageContextMenu entryconfigure 12 -state normal
-            #.pageContextMenu entryconfigure 13 -state normal
         }
         focus $win
         set CurrentContainers($currentNode) $win
@@ -849,7 +912,7 @@ namespace eval RunEnv {
 #    }
     
     proc CreateDisplayPageContextMenu {} {
-        if  {![winfo exists .pageContextMenu]} {
+        if  {![InPlugin] && ![winfo exists .pageContextMenu]} {
             set m [menu .pageContextMenu -tearoff 0]
             .helpers.sub2 clone .pageContextMenu.sub2
             $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
@@ -942,6 +1005,7 @@ namespace eval RunEnv {
         }
     }
     
+# not plugin-enabled as so far no way to save a file
     proc SaveNotebookConfig {notebook loss stream} {
         set nb [string range $notebook $loss end]
         puts $stream "notebook $nb"
@@ -1216,7 +1280,7 @@ namespace eval RunEnv {
                 }
             }
         }
-        $dp0.notebook select [lindex [$dp0.notebook tabs] 0]
+        RaisePageZero $dp0.notebook
     }
     
     proc LoseTLRef {path} {

@@ -13,8 +13,8 @@ proc FileParamDialogue {topWin mustShow} {
     set allNodes [GetCompProperty $topNode Objects]
     # do it now to shake out errors before opening window
     set t [PutItThere .fpdialogue $topWin]
-    wm protocol .fpdialogue WM_DELETE_WINDOW CancelParams
-    wm title $t "File parameters for $topCapt"
+    OnDelete .fpdialogue CancelParams
+    AddTitle $t "File parameters for $topCapt"
     if {!$mustShow} {
         set paramData(needed) {}
     }

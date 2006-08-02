@@ -4,6 +4,7 @@
 
 if {[info exists embed_args]} {
     set custom(prefDir) {}
+    set fnFiles [list ../Functions/procs.tcl ../stubreplace.tcl]
 } else {
 regsub -all /\\./ [file join [pwd] [info script]] / scriptCmd
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
@@ -33,6 +34,7 @@ if {[file exists $env(HOME)]} {
         set custom(prefDir) $oldPrefs
     }
 }
+MakeHelperMenu
 }
 set runHow(where) home
 source runmodel.tcl
@@ -54,16 +56,34 @@ proc PrefValue {long short} {
 }
 
 LoadIconImages
-MakeHelperMenu
-
-set modelProg [tk_getOpenFile -filetypes [list [list "Tcl model files" .tcl]]]
-if {![llength $modelProg]} {
-    exit
+# now load the required helpers explicitly, as we cannot get directory listings
+set helperList [list DisplayFormats.tcl Standard/Control.tcl Standard/ModelInspector.tcl Standard/Slider.tcl Plotter.tcl two_table.tcl]
+foreach helperApp [lsort $helperList] {
+    source [file join ../IOTools $helperApp]
+    if {[info exists keyValue]} {
+	set action [${keyValue}::identify]
+	if {[string match {Run control} $action]} {
+	    set helperTable(RunControl) $keyValue
+	}
+	if {[string match {Explorer} $action]} {
+	    set helperTable(VariableList) $keyValue ;# for MRE
+	}
+	if {[string match {Data table} $action]} {
+	    set table_viewer(id) $keyValue
+	}
+    }
 }
+
+#set modelProg [tk_getOpenFile -filetypes [list [list "Tcl model files" .tcl]]]
+#if {![llength $modelProg]} {
+#    exit
+#}
+set modelProg ../Examples/forest.tcl
 
 # from ex_load_dll
 # This won't catch defns in subdirectories
-foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
+
+foreach fnFile $fnFiles {
     source $fnFile
 }
 

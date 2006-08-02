@@ -27,6 +27,28 @@ namespace eval runcontrol33857 {
         # does nothing
     }
     
+    proc RelistTimeSteps {node} {
+	variable frames
+        set widget $frames($node,rsf)
+
+        set captList {}
+        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+            lappend captList [list Time step \#$phase \
+				  {(} $::runState($node,update$phase) {)}]
+	}
+	if {[InPlugin]} {
+	    $widget.edit.capt configure -values $captList
+	} else {
+	    $widget.edit.capt.menu delete 0 end
+	    set index 0
+	    foreach timeStep $captList {
+		incr index
+		$widget.edit.capt.menu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
+	    }
+	    
+	}
+    }
+
     proc SwapDistVar {node pt} {
         variable sendvars
 	variable frames
@@ -34,15 +56,9 @@ namespace eval runcontrol33857 {
 
         #set pt [$widget.edit.capt cget -text]
         $widget.edit.num configure -textvar runState($node,update[expr $pt])
-        $widget.edit.capt.menu delete 0 end
         set sendvars($node,captList) {}
-        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
-            lappend sendvars($node,captList) \
-		[list Time step \#$phase {(} $::runState($node,update$phase) {)}]
-                $widget.edit.capt.menu add command -label [list Time step \#$phase {(} $::runState($node,update$phase) {)}] \
-                      -command [list [namespace current]::SwapDistVar $node $phase]                
-        }
-        $widget.edit.capt configure -text [list Time step $pt {(} $::runState($node,update$pt) {)}]
+        RelistTimeSteps $node
+	$widget.edit.capt configure -text [list Time step $pt {(} $::runState($node,update$pt) {)}]
         focus $widget.edit.num
     }
     
@@ -72,12 +88,17 @@ namespace eval runcontrol33857 {
         
         ::ttk::notebook $t.nb
         
-        $t.nb add [frame $t.nb.rcf] -text "Run control"
-        set rcf $t.nb.rcf
+        if {[InPlugin]} {
+	    $t.nb insert end player -text "Run control"
+	    set rcf [$t.nb getframe player]
+	} else {
+	    set rcf $t.nb.rcf
+	    $t.nb add [frame $rcf] -text "Run control"
+	}
 	set frames($node,rcf) $rcf
         ttk::frame $rcf.upper -class Toolbar
         foreach mode {play pause stop} {
-            set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
+            set ${mode}Img [NewPhoto ../Images/Control/${mode}.gif]
         }
         frame $rcf.upper.topbuttons
         ::ttk::button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
@@ -96,8 +117,8 @@ namespace eval runcontrol33857 {
         $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
-        pack [set runState($node,progressBar) \
-		  [::ttk::progressbar $rcf.upper.bf.bar -maximum 100]] \
+        pack [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
+		  -variable runState($node,progress)] \
 	    -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
         pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
@@ -119,45 +140,55 @@ namespace eval runcontrol33857 {
         }
         pack $rcf.editBoxes -side bottom -pady 2 -expand on -fill both
         
-        $t.nb add [frame $t.nb.rsf] -text "Run settings"
-        set rsf $t.nb.rsf
+        if {[InPlugin]} {
+	    $t.nb insert end setup -text "Run settings"
+	    set rsf [$t.nb getframe setup]
+	} else {
+	    set rsf $t.nb.rsf
+	    $t.nb add [frame $rsf] -text "Run settings"
+	}
         set frames($node,rsf) $rsf
         pack [frame $rsf.unitselection] -pady 2 -fill x
         pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left -anchor nw
-        ::ttk::menubutton $rsf.unitselection.pulldown
-        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
-        foreach unit {unit second minute hour day week month year Ma} {
-          $timeUnitMenu add command -label $unit -command "set runState($node,timeUnit) $unit"
-        }
-        $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
-              -textvariable runState($node,timeUnit)
-        pack $rsf.unitselection.pulldown -side left -anchor nw
-        
         pack [frame $rsf.integration] -pady 2 -fill x
         pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left -anchor nw
-        ::ttk::menubutton $rsf.integration.pulldown
-        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0 \
-			      -postcommand "set runState($node,tweaked) 1"]
-        foreach method {Euler {Runge-Kutta}} {
-	    $intMethodMenu add command -label $method -command \
-		"set runState($node,intMethod) {$method}"
-        }
-        $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
-              -textvariable runState($node,intMethod)
-        pack $rsf.integration.pulldown -side left -anchor nw
-        
         set sendvars($node,captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             lappend sendvars($node,captList) \
                     [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
         }
         pack [frame $rsf.edit] -pady 2 -expand on -fill both
-        ::ttk::menubutton $rsf.edit.capt
-        set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
-        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
-          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
-        }
-        $rsf.edit.capt configure -menu $timeStepMenu -width 16
+	if {[InPlugin]} {
+	    ComboBox $rsf.unitselection.pulldown -values {unit second minute hour day week month year Ma} -textvariable runState($node,timeUnit)
+	    ComboBox $rsf.integration.pulldown -values {Euler {Runge-Kutta}} \
+		-textvariable runState($node,intMethod)
+	    ComboBox $rsf.edit.capt -modifycmd [namespace current]::NewTimeUnitEdit ;# TODO: add (using SwapDistVar)
+	} else {
+	    ::ttk::menubutton $rsf.unitselection.pulldown
+	    set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
+	    foreach unit {unit second minute hour day week month year Ma} {
+		$timeUnitMenu add command -label $unit -command "set runState($node,timeUnit) $unit"
+	    }
+	    $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
+		-textvariable runState($node,timeUnit)
+
+	    ::ttk::menubutton $rsf.integration.pulldown
+	    set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0 \
+				   -postcommand "set runState($node,tweaked) 1"]
+	    foreach method {Euler {Runge-Kutta}} {
+						  $intMethodMenu add command -label $method -command \
+						      "set runState($node,intMethod) {$method}"
+					      }
+	    $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
+		-textvariable runState($node,intMethod)
+
+	    ::ttk::menubutton $rsf.edit.capt
+	    set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
+	    $rsf.edit.capt configure -menu $timeStepMenu -width 16
+	}
+        pack $rsf.unitselection.pulldown -side left -anchor nw
+        pack $rsf.integration.pulldown -side left -anchor nw
+        
         pack $rsf.edit.capt -side left -anchor nw
         pack [label $rsf.edit.colon -text " "] -side left
         pack [::ttk::entry $rsf.edit.num -width 8] -side left -expand on -fill x -anchor nw
@@ -184,7 +215,13 @@ namespace eval runcontrol33857 {
         set sendvars($node,currentMode) stop
 	set sendvars($node,busy) 0
     }
-    
+
+    proc HitButton {node action} {
+	variable frames
+
+	$frames($node,rcf).upper.topbuttons.$action invoke
+    }
+
     proc SetMode { node action } {
 	global runState
         variable sendvars
@@ -322,8 +359,7 @@ namespace eval runcontrol33857 {
 	global runState
         set runState($node,currentTime) $now
 	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
-	$runState($node,progressBar) configure -value \
-	    [expr 100*($now-$runState($node,remembered_start))/($runState($node,expected_end)-$runState($node,remembered_start))]
+	set runState($node,progress) [expr 100*($now-$runState($node,remembered_start))/($runState($node,expected_end)-$runState($node,remembered_start))]
 	$runState($node,cnvs) itemconfigure 1 -fill $col
     }
 

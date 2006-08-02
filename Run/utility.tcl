@@ -482,9 +482,7 @@ proc LoadIconImages {} {
 }
 
 proc NewPhoto {file} {
-    global embed_args
-
-    if {[info exists embed_args]} {
+    if {[InPlugin]} {
 	return [image create photo -data [ReadFile $file]]
     } else {
 	return [image create photo -file $file]
@@ -522,6 +520,25 @@ proc Numeric {str} {
     return [string is double -strict $str]
 }
 
+proc InPlugin {} {
+    global embed_args
+    return [info exists embed_args]
+}
+
+proc OnDelete {win action} {
+    if {![InPlugin]}  {
+	wm protocol $win WM_DELETE_WINDOW $action
+    }
+}
+
+proc AddTitle {win title} {
+    if {[InPlugin]} {
+	$win.title config -text $title
+    } else {
+	wm title $win $title
+    }
+}
+
 # This takes care of the ways of getting a good-looking transient
 # window on different platforms. Currently the extra MacOS command is
 # necessary to make sure dialogue boxes have titlebars, but if there
@@ -530,16 +547,22 @@ proc Numeric {str} {
 
 proc PutItThere {t parent} {
     global tcl_platform
-    toplevel .$t -bd 4
-    if {[winfo exists $parent] && [string compare . $parent]} {
-	wm transient $t $parent
+    if {[InPlugin]} {
+	frame $t
+	pack [label $t.title -bg beige] -fill x
+	place $t -x 0 -y 0 -anchor sw
     } else {
-	wm transient $t
+	toplevel .$t -bd 4
+	if {[winfo exists $parent] && [string compare . $parent]} {
+	    wm transient $t $parent
+	} else {
+	    wm transient $t
+	}
+	if [string match Darwin $tcl_platform(os)] {
+	    ::tk::unsupported::MacWindowStyle style $t floatGrowProc
+	}
+	wm geometry $t +0+[winfo screenheight $t]
     }
-    if [string match Darwin $tcl_platform(os)] {
-	::tk::unsupported::MacWindowStyle style $t floatGrowProc
-    }
-    wm geometry $t +0+[winfo screenheight $t]
     return $t
 }
 
@@ -557,28 +580,38 @@ proc LetItShow {t} {
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
 	tkwait visibility $t
     }
-    set scw [winfo screenwidth $t]
-    set sch [winfo screenheight $t]
-    set wotParent [wm transient $t]
-#puts "Parent of $t is $wotParent"
-    if {[llength $wotParent]} {
-	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
-	    tgtw tgth tgtx tgty
+    if {[InPlugin]} {
+	set topw [winfo screenwidth .]
+	set toph [winfo screenheight .]
+	place config $t -x [expr {$topw/2}] -y [expr {$toph/2}] -anchor c
     } else {
-	set tgtx 0; set tgty 0
-	set tgtw $scw
-	set tgth $sch
+	set scw [winfo screenwidth $t]
+	set sch [winfo screenheight $t]
+	set wotParent [wm transient $t]
+#puts "Parent of $t is $wotParent"
+	if {[llength $wotParent]} {
+	    scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
+		tgtw tgth tgtx tgty
+	} else {
+	    set tgtx 0; set tgty 0
+	    set tgtw $scw
+	    set tgth $sch
+	}
+	set fillw [winfo reqwidth $t]
+	set fillh [winfo reqheight $t]
+	set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
+	set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
+	wm geometry $t +$left+$top
     }
-    set fillw [winfo reqwidth $t]
-    set fillh [winfo reqheight $t]
-    set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
-    set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
-    wm geometry $t +$left+$top
     return [winfo viewable $t]
 }
 
 proc PackItUp {t} {
     global tcl_platform
+    if {[InPlugin]} {
+	destroy $t
+	return
+    }
     set parent [wm transient $t]
     destroy $t
 # The need for these lines was removed by a TkAqua patch applied 10 March 2005.

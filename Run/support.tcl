@@ -246,9 +246,9 @@ proc stage_incr {ns_extras step v} {
 }
 
 proc do_model {what mtime mstep} {
-    if {[catch {eval ::AME_model<>::${what} $mtime $mstep}]} {
-	RaiseTclExecError $what $mtime $mstep
-    }
+#    if {[catch {
+	eval ::AME_model<>::${what} $mtime $mstep
+#    }]} {RaiseTclExecError $what $mtime $mstep}
 }
 
 proc RaiseTclExecError {mproc mtime mstep} {
