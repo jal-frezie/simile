@@ -520,21 +520,22 @@ namespace eval ::$keyValue {
 			    $plot($winId,Yscale)]
         set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
 			     $plot($winId,Tscale)]
-        if {![winfo exists .popup]} {
-            toplevel .popup -width 1 -height 1 -bd 2 -relief raised
-            wm overrideredirect .popup 1
-            pack [message .popup.message -aspect 400 -bg \#ffffc0] \
-                    -fill x -expand true
-            raise .popup
-        }
-        .popup.message config -text "$caption \n\
+	PostPopup $winId $X $Y
+#        if {![winfo exists .popup]} {
+#            toplevel .popup -width 1 -height 1 -bd 2 -relief raised
+#            wm overrideredirect .popup 1
+#            pack [message .popup.message -aspect 400 -bg \#ffffc0] \
+#                    -fill x -expand true
+#           raise .popup
+#        }
+        AddPopupMessage "$caption \n\
                 x     : $nearesttime\n\
                 y     : $nearestval\n\
-                last y: $lastval"
-        set xpoint [expr $X+15]
-        set ypoint [expr $Y+43]
-        wm geometry .popup +$xpoint+$ypoint
-        update
+                last y: $lastval" \#ffffc0
+ #       set xpoint [expr $X+15]
+ #       set ypoint [expr $Y+43]
+ #       wm geometry .popup +$xpoint+$ypoint
+ #       update
     }
     
     proc drawLegend {w} {
@@ -785,7 +786,7 @@ namespace eval ::$keyValue {
 		$w.canvas bind $node.$ident <Enter> \
 			 [namespace code [list TracePopup $w $node $id %X %Y \
 					      %x %y]]
-		$w.canvas bind $node.$ident <Leave> {destroy .popup}
+		$w.canvas bind $node.$ident <Leave> RemovePopup
 	    }
         } else {
             array set Ynew_array $Ynew

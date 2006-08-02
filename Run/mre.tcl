@@ -7,8 +7,6 @@
 
 namespace eval RunEnv {
     
-    package require BWidget
-    
     variable status
     variable prgtext
     variable prgindic

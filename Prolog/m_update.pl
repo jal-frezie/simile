@@ -789,6 +789,7 @@ can_finish(Ltype, Box) :-
 	find_type(Box, Type),
 	    Link = Box,
 	    (Ltype = Type;
+	    \+ Type is_primitive;
 	    can_connect(Ltype, _, Type), !)),
 	\+ finish_full(Ltype, Link, Comp).
 
@@ -1320,7 +1321,7 @@ is_top_arc(TopArc) :-
 terminated and so forth when it is deleted. For bulk deletions these are
 probably all doomed anyway, so just call fast_delete instead. As a slight
 concession to usability, fast_delete removes its equivalence entry from its
-start point, allowing it to be used for end-to-end deletes. */
+start and end points, allowing it to be used for end-to-end deletes. */
 
 fast_delete(Dead) :-
 	delete_implicit_node(Dead),
@@ -1331,6 +1332,8 @@ fast_delete(Dead) :-
 	Dead is_connector from In to Out,
 	    ((Start = In; Start has_part In),
 		remove_equivs(Start, _-Dead);
+	    (End = Out; End has_part Out),
+		remove_equivs(End, Dead-_);
 	    Dead is_no_longer_connector,
 		remove_invisible_floater(In),
 		remove_invisible_floater(Out)).

@@ -482,7 +482,7 @@ proc fill_inputs { triples } {
         set p [entry $scroller.plist.p$line -bd 0 -relief flat \
                 -textvariable "equation(entry$line)"]
         bind $p <Enter> [list QueuePopup AddWidgetPopup \
-                "Value(s) of [lindex $vpiTriple 0]" %X %Y]
+                $t "Value(s) of [lindex $vpiTriple 0]" %X %Y]
         bind $p <Double-1> "equationDouble %W $en; focus $en"
         bind $p <FocusOut> "ListEditDone $line"
         bind $p <Return> "ListEditDone $line"
@@ -550,7 +550,7 @@ proc equationBindings { t en eu lbp lbi lbd lbf lbx gr ta ok can} {
     # can - Cancel button
     
     
-    $lbf bindText <Enter> [list QueuePopup AddFnPopup %X %Y]
+    $lbf bindText <Enter> [list QueuePopup AddFnPopup %W %X %Y]
     $lbf bindText <Leave> RemovePopup
     $lbf bindText <Double-1> [list functionClick %W $en]
 
@@ -711,14 +711,14 @@ proc functionClick {tree boxname fn} {
     }
 }
 
-proc AddFnPopup {X Y fnName} {
-    AddWidgetPopup [lindex [split $fnName .] end] $X $Y
+proc AddFnPopup {win X Y fnName} {
+    AddWidgetPopup $win [lindex [split $fnName .] end] $X $Y
 }
 
 proc AddIndexPopup {lb y X Y} {
     global equation
     set line [$lb nearest $y]
-    AddWidgetPopup "Index [expr $line+1] is [$lb get $line]" $X $Y
+    AddWidgetPopup $lb "Index [expr $line+1] is [$lb get $line]" $X $Y
 }
 
 proc indexClick { lb y boxname} {

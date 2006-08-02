@@ -11,6 +11,8 @@ package require tile
 package require MyTrf ;# loads right version of Trf
 
 
+package require MyTrf ;# loads right version of Trf
+
 source ../Run/window.tcl
 source ../Run/shapes.tcl
 source ../Run/forms.tcl

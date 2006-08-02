@@ -44,6 +44,17 @@ proc ScaleRect {w l t r b} {
     return [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
 }
 
+proc RotateList {angle coords} {
+    global pi
+
+    set ortho [expr {cos($angle*$pi/180)}]
+    set meta [expr {sin($angle*$pi/180)}]
+    foreach {x y} $coords {
+	lappend out [expr {$ortho*$x+$meta*$y}] [expr {$ortho*$y-$meta*$x}] 
+    }
+    return $out
+}
+
 proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
@@ -466,17 +477,22 @@ proc PutInfPin {w x y type dir fatness colourScheme tagSet} {
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w [list $x $y]]
-    if {[string equal w $dir]} {
-	set r [expr {[lindex $mptz 0]+$features/2}]
-    } else {
-	set r [expr {[lindex $mptz 0]-$features/2}]
+    set diam [expr {$features/2}]
+    set rad [expr {$diam/2}]
+    switch $type {
+	3 {
+	    set coords [list 0 $rad $diam 0 0 -$rad]
+	} 4 {
+	    set coords [list 0 $rad $diam $rad $diam -$rad  0 -$rad]
+	}
     }
-    set t [expr {[lindex $mptz 1]-$features/4}]
-    set b [expr {$t+$features/2}]
+    set screw [expr {90*[lsearch {w s e n} $dir]}]
+    set twisted [RotateList $screw $coords]
 
-    $w create line $r [lindex $mptz 1] [lindex $mptz 0] $b [lindex $mptz 0] \
-	$t $r [lindex $mptz 1] -width $width \
-                -tag "$tagSet realwidth($width) has_info"
+    eval {$w create poly} $twisted \
+	{-width $width -tag "$tagSet realwidth($width) has_info /not_placed/"}
+    eval {$w move /not_placed/} $mptz
+    $w dtag /not_placed/
 }
 
 proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
@@ -790,6 +806,10 @@ proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
 		set textX [expr {$textX-$depth/2}]
 	    } w {
 		set textX [expr {$textX+$depth/2}]
+	    } s {
+		set textY [expr {$textY-$depth/2}]
+	    } n {
+		set textY [expr {$textY+$depth/2}]
 	    }
 	}
     }

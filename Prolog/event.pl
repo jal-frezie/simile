@@ -1527,9 +1527,9 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 		translate(End, Trans, Rel_end),
 		Up_list = [Rel_end | Rest];
 	Start = tab(Start_box, _, XS, YS),
-	    get_shape(Start_box, bounding_box, [L, T, _,_]),
-	    XE is L + XS,
-	    YE is T + YS,
+	    get_shape(Start_box, bounding_box, [LS, TS, _,_]),
+	    XE is LS + XS,
+	    YE is TS + YS,
 	    Full_ups = [Start_box | Rest],
 	    Up_list = [[XE, YE] | Rest];
 	Up_list = Full_ups),
@@ -1546,9 +1546,9 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 		translate(End2, Trans2, Rel_end2),
 		Down_list = [Rel_end2 | Rest2];
 	Target = tab(Finish_box, _, XF, YF),
-	    get_shape(Finish_box, bounding_box, [L, T, _,_]),
-	    XG is L + XF,
-	    YG is T + YF,
+	    get_shape(Finish_box, bounding_box, [LF, TF, _,_]),
+	    XG is LF + XF,
+	    YG is TF + YF,
 	    Full_downs = [Finish_box | Rest2],
 	    Down_list = [[XG, YG] | Rest2];
 	Down_list = Full_downs).

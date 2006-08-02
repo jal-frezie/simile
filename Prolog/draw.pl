@@ -223,7 +223,7 @@ display_pinout(Wid, Comp, Trans) :-
 	find_fatness(Trans, Fatness),
 	get_flash(Comp, Flash),
 
-	(member(List-Way, [InfIn-w, InfOut-e, FloIn-n, FloOut-s]),
+	(member(List-Way-Style, [InfIn-w-3, InfOut-e-3, FloIn-n-4, FloOut-s-4]),
 	    \+ List = [],
 	    (Way = e, X1=R; \+ Way = e, X1=L),
 	    (Way = s, Y1=B; \+ Way = s, Y1=T),
@@ -236,11 +236,11 @@ display_pinout(Wid, Comp, Trans) :-
 	    rel_translate([Xinc, Yinc, Derrr], Trans, [Xm, Ym, Derrr]),
 	    all(draw, add_l_pins,
 		[unify([Wid, Comp, Fatness, Lm, Tm, X1m, Y1m, Xm, Ym,
-			Way, Flash]), build(List), inc(0)]),
+			Way, Style, Flash]), build(List), inc(0)]),
 	    fail;
 	    true).
 
-add_l_pins([Wid, SmId, SmFat, L, T, X1, Y1, Xinc, Yinc, Side, Flash],
+add_l_pins([Wid, SmId, SmFat, L, T, X1, Y1, Xinc, Yinc, Side, Style, Flash],
 	   Id-Name, Count) :-
 	X is X1+(Count+0.5)*Xinc,
 	Y is Y1+(Count+0.5)*Yinc,
@@ -248,7 +248,7 @@ add_l_pins([Wid, SmId, SmFat, L, T, X1, Y1, Xinc, Yinc, Side, Flash],
 	round(Y-T, Yoff),
 	sicstus_write_to_chars(tab(SmId, Id, Xoff, Yoff), IdTagStr),
 	sicstus_atom_chars(IdTag, IdTagStr),
-	inf_pin(Wid, X, Y, 3, Side, SmFat, Flash, [SmId, IdTag]),
+	inf_pin(Wid, X, Y, Style, Side, SmFat, Flash, [SmId, IdTag]),
 	append_atoms(['realanchor(', Side, ')'], AnchTag),
 	text(Wid, [X,Y], submodel, [SmId, IdTag, AnchTag], SmFat, Flash, Name).
 
@@ -525,14 +525,13 @@ display_link_in(Wid, Link, Depth, Trans) :-
 			RelFatness, Colour_scheme, [Link]],
 	call(Draw_command),
 	((get_drawing_form(Link, LType, Bowtie),
-	  density_for(Link, Density),
-	  Density = {},
+	  has_bowtie(Link),
 	        untranslate(Bowtie, Trans, Screen_bowtie),
 		(LType = flow, !,
 		    bowtie(Wid, Screen_bowtie, RelFatness,
-		       Density, Colour_scheme, [Link]);
+		       {}, Colour_scheme, [Link]);
 		event(Wid, Screen_bowtie, 0, RelFatness,
-		       Density, Colour_scheme, [Link, bowtie]));
+		       {}, Colour_scheme, [Link, bowtie]));
 	  Type = relation,
 	  	get_boundary_end(Link, true),
 	        get_caption_anchor(Coord_list, Bowtie)), !,

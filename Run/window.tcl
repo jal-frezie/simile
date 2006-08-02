@@ -822,7 +822,7 @@ proc AddEqnPopup {node x y winId X Y} {
  #               set value "Missing value: $missing"
  #           }
  #       }
-        PostPopup $X $Y
+        PostPopup $winId $X $Y
         if {$doDesc} {
             set desc [GetFromProlog tk_get_info('$winId',$plName,desc)]
             

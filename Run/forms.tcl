@@ -526,7 +526,7 @@ proc AddEnumTypePopup {lb y X Y} {
     set popLine [$lb get [$lb nearest $y]]
     set memList disaggregate(enumtype,$popLine)
     if {[info exists $memList]} {
-        AddWidgetPopup "members: [set $memList]" $X $Y
+        AddWidgetPopup $lb "members: [set $memList]" $X $Y
     }
 }
 

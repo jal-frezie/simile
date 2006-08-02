@@ -95,6 +95,8 @@ proc MakeHelperMenu {} {
     cd $oldDir
 }
 
+# this is called to duplicate the helper menu in the model editor window
+# when not using the MRE, so is irrelevant to exec_only
 proc ListMenuContents {menu} {
     set mList {}
     for {set item 0} {$item <= [$menu index last]} {incr item} {
@@ -373,7 +375,8 @@ proc ProdObj {topNode caption} {
 
 # This is used for items on IO tool canvases -- model components have eqnpopups
 proc CanvasBindPopup {canvas widget keywd} {
-    $canvas bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
+    $canvas bind $widget <Enter> [list QueuePopup AddWidgetPopup \
+				      $canvas $keywd %X %Y]
     $canvas bind $widget <Leave> RemovePopup
 }
 
@@ -457,10 +460,6 @@ proc SaveView {} {
         close $stream
 	MimifySHF $tempFile $nameOfHelperStateFile($topNode) many_windows
     }
-}
-
-if {![info exists embed_args]} {
-package require mime
 }
 
 proc MimifySHF {inFile outFile origin} {

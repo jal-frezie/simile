@@ -523,13 +523,14 @@ namespace eval grid005 {
         set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
         set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
-            if {![winfo exists .popup]} {
-                toplevel .popup -width 1 -height 1 -bd 2 -relief raised
-                wm overrideredirect .popup 1
-                pack [message .popup.message -aspect 400 -bg \#ffffc0] \
-                        -fill x -expand true
-                raise .popup
-            }
+	    PostPopup $winId $X $Y
+#            if {![winfo exists .popup]} {
+#                toplevel .popup -width 1 -height 1 -bd 2 -relief raised
+#                wm overrideredirect .popup 1
+#                pack [message .popup.message -aspect 400 -bg \#ffffc0] \
+#                        -fill x -expand true
+#               raise .popup
+#            }
             set cell [expr ($row-1)*$ncol+$col-1]
 	    set vLine [lindex $useNodes($winId,values) $cell]
             set value [TransValue $useNodes($winId,dataETs) \
@@ -537,11 +538,13 @@ namespace eval grid005 {
 	    set index [join [TransEnums $useNodes($winId,allETs) \
 				 [lindex $vLine 0]] ,]
             
-            .popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
-            set xpoint [expr $X+15]
-            set ypoint [expr $Y+43]
-            wm geometry .popup +$xpoint+$ypoint
-            update
+	    AddPopupMessage "Index=$index\nCol,row=($col,$row)\nValue=$value" \
+		\#ffffc0
+#            .popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
+#            set xpoint [expr $X+15]
+#            set ypoint [expr $Y+43]
+#            wm geometry .popup +$xpoint+$ypoint
+#            update
         }
     }
     
