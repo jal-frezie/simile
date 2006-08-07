@@ -35,8 +35,10 @@ namespace eval ::ModelDiagram20060804 {
         set diagFile [ChooseFile model.cnv "Display model diagram file:" 0]
 	source $diagFile
 
+	bind $c <Button-1> [list [namespace code OnElementClick] %W %x %y]
+
 	$c bind has_info <Enter> \
-	    [list QueuePopup [namespace code DoInspPopup] $c %x %y %X %Y]
+	    [list QueuePopup [namespace code DoInspPopup] %W %x %y %X %Y]
 	$c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
 	$c bind has_info <Leave> RemovePopup
 
@@ -46,20 +48,30 @@ namespace eval ::ModelDiagram20060804 {
         return $winId.c
     }
 
-    proc OnElementClick { winId node } {
+    proc CaptPathFromPoint { winId x y } {
+	set canx [$winId canvasx $x]
+	set cany [$winId canvasy $y]
+	set target [GetClickedObj $winId $canx $cany 6]
+	set node [ExtractPrologName $winId $target]
+	return [GetClickCapt $winId $canx $cany $node]
+    }
+
+    proc OnElementClick { winId x y } {
 #	set caption [$winId.tableframe.table itemcget $node -text]
-	ProdFromHelper $winId $node
+	set canx [$winId canvasx $x]
+	set cany [$winId canvasy $y]
+	set target [GetClickedObj $winId $canx $cany 6]
+	set node [ExtractPrologName $winId $target]
+	set context [GetClickCapt $winId $canx $cany $node]
+
+	ProdFromHelper [winfo parent $winId] [CaptPathFromPoint $winId $x $y]
     }
     
     proc DoInspPopup {winId x y X Y} {
 	#	    ShowMessage debug info $args ok
 	global helperTable runState
 
-	set canx [$winId canvasx $x]
-	set cany [$winId canvasy $y]
-	set target [GetClickedObj $winId $canx $cany 6]
-	set node [ExtractPrologName $winId $target]
-	set context [GetClickCapt $winId $canx $cany $node]
+	set context [CaptPathFromPoint $winId $x $y]
 
 	set topNode $helperTable([winfo parent $winId],whichModel)
 	if {$runState($topNode,modelRunning)>2} {
