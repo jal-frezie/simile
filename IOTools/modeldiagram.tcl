@@ -27,12 +27,17 @@ namespace eval ::ModelDiagram20060804 {
     }
 
     proc initialize {winId} {
+        set diagFile [ChooseFile model.cnv "Display model diagram file:" 0]
+	SetState $winId $diagFile
+	AddDiagram $winId $diagFile
+    }
+
+    proc AddDiagram {winId diagFile} {
 	global window_info
 
 	pack [ScrolledWindow $winId.s] -fill both -expand 1
 	$winId.s setwidget [set c [canvas $winId.c]]
 	set window_info($c,topCapt) {} ;# must be top-level diagram!
-        set diagFile [ChooseFile model.cnv "Display model diagram file:" 0]
 	source $diagFile
 
 	bind $c <Button-1> [list [namespace code OnElementClick] %W %x %y]
@@ -91,7 +96,7 @@ namespace eval ::ModelDiagram20060804 {
     }
     
     proc Restore {winId} {
-	initialize $winId
+	AddDiagram $winId [GetState $winId]
     }
     
 # override Simile procs in this namespace
