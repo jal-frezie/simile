@@ -977,9 +977,10 @@ proc WriteDesc {canvas canvasFile date args} {
             puts $stream [concat MakeImage \$c $sourceImage $localImage \
                     [$localImage cget -width] [$localImage cget -height] $posn]
         }
-        # Do not write base objs they get re-created
-        if {[string match */base/* [$canvas gettags $object]]} {
-        } else {
+        # Do not write base objs they get re-created...actually do, so I can 
+	# use diag in helper. Kill after reloading.
+#        if {[string match */base/* [$canvas gettags $object]]} {
+#        } else {
             set config ""
             foreach conf [$canvas itemconfigure $object] {
                 set default [lindex $conf 3]
@@ -998,7 +999,7 @@ proc WriteDesc {canvas canvasFile date args} {
             }
 	    puts $stream [concat \$c create [$canvas type $object] \
 			      [$canvas coords $object] $config]
-	}
+#	}
     }
     close $stream
 }
@@ -1093,6 +1094,7 @@ proc InjectGraphics {c canvasFile} {
     # its previous size which we saved. The xview and yview cmds here work around
     # a tcl bug that if the scrollregion is smaller than the window it may not all
     # be displayed.
+    $c delete withtag /base/ ;# these will be re-created
     update idletasks
     $c xview moveto 0
     $c yview moveto 0
