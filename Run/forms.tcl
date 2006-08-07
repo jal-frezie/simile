@@ -581,7 +581,7 @@ proc RemoveEnumMem {fr} {
 
 proc GetEnumMems {fr} {
     global table_entry
-    set togo [$fr.listpair.scrf get [$fr.listpair.scrf curselection]]
+    set togo [$fr.listpair.typef.scrf get [$fr.listpair.typef.scrf curselection]]
     upvar \#0 disaggregate(enumtype,$togo) memList
     set table_entry(data) {} ;# dont try to keep file origins
     set table_entry(values) {}

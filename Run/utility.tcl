@@ -9,6 +9,8 @@
 # Thanks to tk_abandon, I sometimes put several dialogues up at once, which,
 # thanks to a bug in tcltk, gets the wrong results for the lower ones...
 
+source ../Run/diagram.tcl
+
 proc ShowMessage { title icon string resps {parent {}}} {
     set mBoxCmd [list tk_messageBox -title $title -icon $icon \
 		     -message $string -type $resps]

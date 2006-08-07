@@ -1,0 +1,95 @@
+# ModelInspector.tcl
+
+# Based on SaveState.tcl
+# Added Treeview of sub-models and table view of variables  Jonathan Massheder 22/4/01
+
+# SaveState.tcl Jasper Taylor, 28/5/99
+# AME Helper app to record or retrieve the state of a model. This is
+# to be used both as a general modelling tool, and in conjunction with
+# the GCLMI interface or other interface requiring creation and
+# initialization of multiple instances of the model.
+
+set keyValue ModelDiagram20060804
+
+namespace eval ::ModelDiagram20060804 {
+    
+    proc identify {} {
+        return "Model diagram"
+    }
+    
+    proc display {args} {
+    }
+    
+    proc clear {winId} {
+    }
+    
+    proc reset {winId} {
+    }
+
+    proc initialize {winId} {
+	global window_info
+
+	pack [ScrolledWindow $winId.s] -fill both -expand 1
+	$winId.s setwidget [set c [canvas $winId.c]]
+	set window_info($c,topCapt) {} ;# must be top-level diagram!
+        set diagFile [ChooseFile model.cnv "Display model diagram file:" 0]
+	source $diagFile
+
+	$c bind has_info <Enter> \
+	    [list QueuePopup [namespace code DoInspPopup] $c %x %y %X %Y]
+	$c bind has_info <B1-Enter> RemovePopup ;# make sure it does nothing
+	$c bind has_info <Leave> RemovePopup
+
+    }
+    
+    proc GetCanvas {winId} {
+        return $winId.c
+    }
+
+    proc OnElementClick { winId node } {
+#	set caption [$winId.tableframe.table itemcget $node -text]
+	ProdFromHelper $winId $node
+    }
+    
+    proc DoInspPopup {winId x y X Y} {
+	#	    ShowMessage debug info $args ok
+	global helperTable runState
+
+	set canx [$winId canvasx $x]
+	set cany [$winId canvasy $y]
+	set target [GetClickedObj $winId $canx $cany 6]
+	set node [ExtractPrologName $winId $target]
+	set context [GetClickCapt $winId $canx $cany $node]
+
+	set topNode $helperTable([winfo parent $winId],whichModel)
+	if {$runState($topNode,modelRunning)>2} {
+	    PostPopup $winId $X $Y
+#	    set trans [GetTransTable $plName]
+#	    if {[catch {GetModelValue $plName} mVal]} {
+#		set missing [lindex [split $mVal \"] 1]
+#		set value \
+#		    "Missing value: [lindex [DescribeComponent $missing] 0]"
+#		set value no_value
+#	    } else {
+#		set value [lindex $mVal 0]
+		#puts "trans $trans value $value"
+#	    }
+	    AddPopupMessage novalue \#ffffc0 GetShortVals $topNode $context
+	}
+    }
+    
+    proc Restore {winId} {
+	initialize $winId
+    }
+    
+# override Simile procs in this namespace
+    proc ResizeDesktop {can l t r b} {
+	$can configure -scrollregion [list $l $t $r $b]
+    }
+    proc TweakWindow {args} {
+    }
+    proc LoadModelLooks {args} {
+    }
+
+}; # end namespace
+
