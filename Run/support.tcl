@@ -14,14 +14,18 @@ set this ::AME_model<>
 # searching through records like this is not the best way -- try and change
 # the tcl model code so the node id is the index
 
+# ...actually as of v5 it is the only way, since the 'node' is now the 
+# caption path
+
 proc findRecord {node} {
     global nodedata
 
     foreach record [array names nodedata] {
-	if {[string equal $node [lindex $nodedata($record) 0]]} {
+	if {[string equal $node [GetFullCaption $nodedata($record)]]} {
 	    return $nodedata($record)
 	}
     }
+    return {}
 }
 
 proc getinfo {node field} {
@@ -55,16 +59,15 @@ proc setup_enum_type_data {args} {
 proc tcl_insert {node newVs} {
     global nodedata
 
-    foreach record [array names nodedata] {
-	if {[string equal $node [lindex $nodedata($record) 0]]} {
-	    set tree [lindex $nodedata($record) 6]
-	    set type [lindex $nodedata($record) 1]
-	    set dims [GetTclCompProperty dummy Dims $node]
-	    return [list [FillValue ::AME_model<> $tree $type $dims \
-			      {} 0 $newVs]]
-	}
+    if {[string length [set record [findRecord $node]]]} {
+	set tree [lindex $record 6]
+	set type [lindex $record 1]
+	set dims [GetTclCompProperty dummy Dims $node] ;# wasteful
+	return [list [FillValue ::AME_model<> $tree $type $dims \
+			  {} 0 $newVs]]
+    } else {
+	return novalue
     }
-    return novalue
 }
 
 # right now to get the node id

@@ -87,10 +87,11 @@ instantiate_trees([], [], _, _, []).
 instantiate_trees([Node|Nodes], [Instance|Instances], Path, Loops, ResultOut) :-
 	get_node_size(Node, Multiple),
 	pointer_from(Loops, HiPtr),
-	name_for_comp(Node, Name),
+	caption_for(Node, Capt),
+	make_code_name(c, Capt, Name),
 	path_section_for(Node, Name, Multiple, NewBit, HiPtr, _),
 	append(NewBit, Loops, NewLoops),
-	instantiate(Node, Submodel, [Name | Path], NewLoops, Results),
+	instantiate(Node, Submodel, [Capt | Path], NewLoops, Results),
 	list_links(Node, Links),
 	make_base_refs(Node, Links, BaseRefs),
 	/* I don't think the assoc_refs need to be in any special order... */
@@ -370,12 +371,13 @@ generate_input_pair(Node, DestPath,
 	\+ get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = ConvertedRef).
 
+/*
 level_from_link(TopLink, Level) :-
 	continues_from(TopLink, TopModel), !,
-	name_for_comp(TopModel, Name),
-	path_section_for(TopModel, Name, _, Level, _,_);
+	caption_for(TopModel, Capt),
+	path_section_for(TopModel, Capt, _, Level, _,_);
 	Level = [].
-
+*/
 get_cond_and_ref(input_pair(_, Node, _, [Home | _], OutVar, UseRef, SubRefs),
 		 Cond, Top, Refs) :-
 	is_instance(_, Node, _, OutVar, _, Ref),
@@ -531,9 +533,6 @@ valid_tap(Flow, Controller) :-
 		 \+ Control has_class_refinement units of boolean),
 	      [Controller]).
 */
-name_for_comp(SmName, Context) :-
-	caption_for(SmName, Context). /* placeholder for deterministic unique
-	c++-format name. TODO: it properly */
 
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
 	(variable_size(SmName), !,

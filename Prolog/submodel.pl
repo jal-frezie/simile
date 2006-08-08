@@ -86,8 +86,9 @@ hack) */
 add_null_value_if_needed(Arc) :-
 	get_bowtie_section(Arc, Base),
 	implicit_function(Base, BaseFn),
-	(BaseFn has_class_refinement value of _Val, !;
-	    BaseFn has_new_class_refinement value of '').
+	(BaseFn has_class_refinement value of _Val;
+	    BaseFn has_new_class_refinement value of ''), !;
+	true.
 	
 add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	add_null_value_if_needed(Flow),

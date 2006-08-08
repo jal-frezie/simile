@@ -917,6 +917,7 @@ instruction because they will not require individual initialization routines. */
 		get_dims_from_loops(Path, _, UseInds),
 		length(UseInds, IdxN),
 		CFn =.. [collect, arr(Ptr, NMade, []), SmName, IdxN | UseInds],
+		/* TODO: replace SmName above with caption path */
 		CreateRules = [make(culled(Name), [on_reset], Path, 0, [CFn]),
 			       make(created(Name), [culled(Name)], Path, Step,
 				    [init_mems(Ptr, Name, create([NMade]))])],
@@ -1307,14 +1308,15 @@ input_params_in(Vars, SmPath, SmStep,
 	    (Type = function, Step = SmStep, Wait = [time];
 	    Type = init_function, Step = 0, Wait = [on_reset])),
 	length(VarInds, Count),
-	comma_link([Val], CSPath),
+	caption_for(Param, Tail),
+	comma_link([Tail | CPath], CSPath),
 	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), CSPath, Count
 		      | VarInds].
 
 /* This takes a list of submodel captions, innermost first, and converts it to
 a forward-slash-separated path, outermost first, with leading slash. */
 comma_link(CPath, CSPath) :-
-	CPath = [], CSPath = '';
+	CPath = [_DT], !, CSPath = '';
 	CPath = [Inner | Rest],
 	comma_link(Rest, PPath),
 	append_atoms([PPath, '/', Inner], CSPath).

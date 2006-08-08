@@ -367,9 +367,11 @@ proc GetCaptionPathFromId { node } {
     return [GetCompProperty $myNode Caption $node]
 }
 
+# redundant
 proc GetIdFromCaptionPath { caption } {
-    global myNode
-    return [GetCompProperty $myNode IdFromCapt $caption]
+#    global myNode
+#    return [GetCompProperty $myNode IdFromCapt $caption]
+    return $caption
 }
 
 proc GetMinValue { node } {
@@ -513,7 +515,7 @@ proc GetTclCompProperty {topNode prop args} {
 	Objects {
 	    set result {}
 	    for {set record 1} {$nodecount>$record} {incr record} {
-		lappend result [lindex $nodedata($record) 0]
+		lappend result [GetFullCaption $nodedata($record)]
 	    }
 	    return $result
 	} Class|Type|Eval {

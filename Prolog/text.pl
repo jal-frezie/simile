@@ -3,7 +3,8 @@
 *******************************************************************************/
 
 sicstus_module(text, [split_path_chars/4, replace_char/4, alphanumeric_only/3,
-		      escape_curlies/2, starter_only/3, continuer_only/3]).
+		      escape_curlies/2, starter_only/3, continuer_only/3,
+		      good_starter/2, good_continuer/2]).
 
 sicstus_use_module( [library( lists ), utility, sp_only] ).
 
@@ -57,21 +58,27 @@ prints(Char) :-
 	Char > 32.
 	
 starter_only(H, L, C) :-
-	(uppercase(L, H);
-	    lowercase(L, H)), !,
+	good_starter(L, H), !,
 	    C = H; /* used to add 32 to make all start with lowercase */
 	C is "_".
 
+good_starter(L, H) :-
+	uppercase(L, H);
+	lowercase(L, H).
+
 continuer_only( [], _L, [] ).
 continuer_only( [H|T1], L, [H|T2] ) :-
-	(uppercase(L, H);
-	    lowercase(L, H);
-	    "0" =< H, H =< "9"),
+	good_continuer(L, H),
 	!,
 	continuer_only( T1, L, T2 ).
+
 continuer_only( [_|T1], L, [95 | T2] ) :- /* replace with underscore */
 	continuer_only( T1, L, T2 ).
 
+good_continuer(L, H) :-
+	good_starter(L, H);
+	"0" =< H, H =< "9".
+	
 uppercase(L, H) :-
 	"A" =< H, H =< "Z";
 	\+ L = c, (192=< H,H =< 214;216=<H, H=<222).

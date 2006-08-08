@@ -14,7 +14,7 @@ sicstus_module( utility, [wake/0, genint/2, portray/1, trim_float/2,
 			  try/1,equate/2,
 			  merge_lists/2, merge_lists/3, split_lists/3,
 			  get_ground_part/2, generate_name/4, generate_name/5,
-			  ensure_unused/4, count_to/4] ).
+			  make_code_name/3, ensure_unused/4, count_to/4] ).
 
 sicstus_use_module([database, text, sp_only,
 		    library(lists), library(ordsets)]).
@@ -366,6 +366,27 @@ home_on_prec(Op, Prec1, Prec2, Prec) :-
 	(precedence_lower_than(Op, Mid), !,
 		home_on_prec(Op, Prec1, Mid, Prec);
 	home_on_prec(Op, Mid, Prec2, Prec)).
+
+/* As of v5 we want to create program names that have a one-to-one
+correspondence with model captions, so they are unique and
+reversible. This is done as follows: characters that cannot appear in
+code are replaced by a pair of underscores separating their ACSII
+index in hex. */
+
+make_code_name(Lang, MName, Code) :-
+	sicstus_atom_chars(MName, [M1 | Mn]),
+	(good_starter(Lang, M1), !,
+	    C1 = [M1];
+	 sicstus_format_to_chars("_~16r_", [M1], C1)),
+	all(utility, fix_continuer,
+	    [unify(Lang), build(Mn), append(Cn, [])]),
+	append(C1, Cn, CodeStr),
+	sicstus_atom_chars(Code, CodeStr).
+
+fix_continuer(Lang, M, C) :-
+	good_continuer(Lang, M), !,
+	    C = [M];
+	sicstus_format_to_chars("_~16r_", [M], C).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
