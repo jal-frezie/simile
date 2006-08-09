@@ -168,7 +168,8 @@ proc ClickObj { x y winId X Y action} {
     set node [ExtractPrologName $winId $target]
     set context [GetClickCapt $winId $canx $cany $node]
     set topNode $window_info($winId,top_node)
-    if {[do_if_running $topNode ProdObj $topNode $context]} {
+    if {[do_if_running $topNode ProdObj $topNode $context \
+	     [GetText $winId $node]]} {
 	return
     }
     # IO tool took the click, so do no more

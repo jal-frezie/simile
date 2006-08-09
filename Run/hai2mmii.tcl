@@ -392,7 +392,8 @@ proc GetTransTable { node } {
 
 proc ProdFromHelper {winId caption} {
     global helperTable
-    ProdObj $helperTable($winId,whichModel) $caption
+    ProdObj $helperTable($winId,whichModel) $caption \
+	[lindex [split $caption /] end]
 }
 
 proc GetCompProperty {topNode prop args} {

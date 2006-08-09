@@ -348,20 +348,19 @@ proc SetState {winId newState} {
     set helperTable($winId,status) $newState
 }
 
-proc ProdObj {topNode caption} {
+proc ProdObj {topNode tree caption} {
     global helperTable
     if {[info exists helperTable($topNode,current)]} {
 # allow all components to be clicked as helpers might want other info
 # than just values
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
-		set target $helperTable($topNode,current)
-		set helperId $helperTable($target,whichHelper)
+	set target $helperTable($topNode,current)
+	set helperId $helperTable($target,whichHelper)
 #		if {![llength $nodeId]} { ;# get from caption
 #		    set nodeId [GetIdFromCaptionPath $caption]
 #		}
-		SystemHelperCall $helperId $topNode click $target $caption \
-		    [lindex [split $caption /] end]
+	SystemHelperCall $helperId $topNode click $target $tree $caption
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
 #                    "This component cannot be selected for an I/O tool because it has no associated value." ok

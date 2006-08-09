@@ -26,6 +26,15 @@ proc GetCaptionItem {w name} {
 proc GetText { w name } {
     set nameItem [GetCaptionItem $w $name]
     if {[string compare $nameItem {}]} {
+        return [$w itemcget $nameItem -text]
+    } else {
+        return /no_caption/
+    }
+}
+
+proc GetPathSect { w name } {
+    set nameItem [GetCaptionItem $w $name]
+    if {[string compare $nameItem {}]} {
         set txt [$w itemcget $nameItem -text]
 # If it's a module occurrence we want the text of the component whose value is
 # to be displayed
@@ -66,7 +75,7 @@ proc GetClickCapt { winId canx cany node} {
         set thisNod [ExtractPrologName $winId $tgt]
         if {![string equal $thisNod $lastNod]} {
         set lastNod $thisNod
-        set newText [GetText $winId $thisNod]
+        set newText [GetPathSect $winId $thisNod]
         append result /$newText
         if {[string equal $node $thisNod]} {
             return $result
@@ -74,7 +83,7 @@ proc GetClickCapt { winId canx cany node} {
         }
     }
     }
-    append result /[GetText $winId $node]
+    append result /[GetPathSect $winId $node]
     return $result
 }    
 
