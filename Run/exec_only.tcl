@@ -10,7 +10,9 @@ regsub -all /\\./ [file join [pwd] [info script]] / scriptCmd
 set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 cd $SIMILE_PATH/Run
 
-if {[file exists $env(HOME)]} {
+if {[info exists embed_args]} {
+    set custom(prefDir) {}
+} elseif {[file exists $env(HOME)]} {
 # 4.1 moved SimileUserDirectory for Windows -- check in old position and update
     set oldPrefs [file join $env(HOME) .simile]
     if {[string equal windows $tcl_platform(platform)]} {
