@@ -1261,13 +1261,14 @@ update_connect_marks(Model, Connects, NewConns) :-
 	/* avoid if no change */
 	all(user, nth, [unify(1), build(Connects), build(NewConns)]), !;
 	find_all_comps(Model, Part),
-	(m_update:clear_av_pair(Part, 2, autoconnect),
-	 nth(P, [inf_in, inf_out, flow_in, flow_out], AutoType),
+	(clear_autoconnect(Part),
+	 nth(P, [inf_in, inf_out, flow_in, flow_out, show_val, edit_eqn],
+	     AutoType),
 	    autoconnect_reference_for(Model, Part, AutoType, PCap),
 	    nth(P, Connects, [_OC | CaptList]),
 	    nth(P, NewConns, Chosen),
 	    nth(Chosen, CaptList, PCap),
-	    add_parameter(Part, 2, autoconnect, AutoType),
+	    set_autoconnect(Part, AutoType),
 	    fail);
 	true.
 

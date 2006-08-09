@@ -259,13 +259,19 @@ proc Disaggregate {parent title args} {
 	set args [lrange $args 1 end]
     $notebook add [frame $notebook.connect] -text "Connect"
     TitleFrame $notebook.connect.tf -text "Automatic submodel connections"
+    TitleFrame $notebook.connect.ef -text "Display/edit submodel values"
     set connectf [$notebook.connect.tf getframe]
     set textx [list "Incoming influences connect to: " \
 		   "Outgoing influences connect from: " \
 		   "Incoming flows connect to: " \
-		   "Outgoing flows connect from: "]
+		   "Outgoing flows connect from: " \
+		   "Display value of: " \
+		   "Edit equation of: "]
 #    pack [frame 
-    for {set i 0} {$i < 4} {incr i} {
+    for {set i 0} {$i < 6} {incr i} {
+	if {$i==4} {
+	    set connectf [$notebook.connect.ef getframe]
+	}
 	frame $connectf.fr$i
 	pack [label $connectf.fr$i.l -text [lindex $textx $i]] \
 	    -side left
@@ -282,7 +288,9 @@ proc Disaggregate {parent title args} {
 	pack $connectf.fr$i -fill x -expand true
     }
 
-    pack $notebook.connect.tf -anchor nw -side left -padx 4 -pady 4 \
+    pack $notebook.connect.tf -anchor nw -padx 4 -pady 4 \
+	-fill both -expand true
+    pack $notebook.connect.ef -anchor nw -padx 4 -pady 4 \
 	-fill both -expand true
     }
 
@@ -390,7 +398,11 @@ proc Disaggregate {parent title args} {
 
 	if {[winfo exists $notebook.connect]} {
 	    set connectInds {}
-	    for {set i 0} {$i < 4} {incr i} {
+	    set connectf [$notebook.connect.tf getframe]
+	    for {set i 0} {$i < 6} {incr i} {
+		if {$i==4} {
+		    set connectf [$notebook.connect.ef getframe]
+		}
 		set m [$connectf.fr$i.pulldown cget -menu]
 		lappend connectInds [$m index $disaggregate(cn$i)]
 	    }

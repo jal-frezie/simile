@@ -30,7 +30,8 @@ sicstus_module(m_update,
 		add_new_line_between/4, change_class/3,
 		get_module_disag_params/2, get_occurrence_disag_params/2,
 		autoconnect_reference_for/4, time_step_for/3, use_units_in/2,
-		make_module_of/3, make_ghost/3, get_possible_start/2]).
+		make_module_of/3, make_ghost/3, get_possible_start/2,
+		clear_autoconnect/1, set_autoconnect/2]).
 
 sicstus_use_module([library(lists),
 		sp_only, units, utility, ame_gen, m_class, text]).
@@ -1553,7 +1554,7 @@ get_occurrence_disag_params(Submodel,
 
 get_module_disag_params(Submodel, 
 			[Colour, Image, ImgPos, Fat, Step, Desc, Comment,
-			 EnumSpecs, Connect, Fix, HideB, ViewC, Separate]) :-
+			 EnumSpecs, Custom, Fix, HideB, ViewC, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour, !;
 	    Colour = clear),
 	(Submodel has_class_refinement fill_image of Image, !;
@@ -1588,11 +1589,16 @@ get_module_disag_params(Submodel,
 	border_links(Submodel, AutoInfIns, AutoInfOuts,
 		     AutoFlowIns, AutoFlowOuts),
 
+	setof(HasEqn, WithEqn^(find_all_comps(Submodel, WithEqn),
+			       WithEqn is_of_sort has_function,
+			       caption_for(WithEqn, HasEqn)), FncComps),
+
 	all(m_update, find_cur_posn,
 	     [unify(Submodel), 
-	      build([AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts]),
-	      build([inf_in, inf_out, flow_in, flow_out]),
-	      build(Connect)]).
+	      build([AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts,
+		     FncComps, FncComps]),
+	      build([inf_in, inf_out, flow_in, flow_out, show_val, edit_eqn]),
+	      build(Custom)]).
 
 /* Now what about auto-connection information. Dialogue needs to know
 which, if any, possible connection is being used, so send 4 lists
@@ -1632,10 +1638,23 @@ border_links(Submodel, AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts) :-
 
 find_cur_posn(Model, Capts, AutoType, [CurPosn | Capts]) :-
          find_all_comps(Model, CurVPar),
-         get_av_pair(CurVPar, 2, autoconnect, AutoType),
+         has_autoconnect(CurVPar, AutoType),
          autoconnect_reference_for(Model, CurVPar, AutoType, CurVParCapt),
          nth(CurPosn, Capts, CurVParCapt), !;
          CurPosn = 0.
+
+has_autoconnect(Comp, AutoType) :-
+	get_av_pair(Comp, 2, autoconnect, AutoType);
+	get_av_pair(Comp, 0, autoconnect, AutoType).
+
+clear_autoconnect(Comp) :-
+	clear_av_pair(Comp, 2, autoconnect),
+	clear_av_pair(Comp, 0, autoconnect).
+
+set_autoconnect(Comp, AutoType) :-
+	Comp is_of_sort line, !,
+	    add_parameter(Comp, 2, autoconnect, AutoType);
+	add_parameter(Comp, 0, autoconnect, AutoType).
 
 autoconnect_reference_for(Submodel, CurVPar, AutoType, CurVParCapt) :-
 	find_all_comps(Submodel, CurVPar),
