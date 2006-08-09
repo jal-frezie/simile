@@ -26,7 +26,14 @@ proc GetCaptionItem {w name} {
 proc GetText { w name } {
     set nameItem [GetCaptionItem $w $name]
     if {[string compare $nameItem {}]} {
-        return [$w itemcget $nameItem -text]
+        set txt [$w itemcget $nameItem -text]
+# If it's a module occurrence we want the text of the component whose value is
+# to be displayed
+	if {[regexp {valuepath\(([^\)]+)\)} [$w gettags $nameItem] \
+		 tag pathExtra]} {
+	    append txt $pathExtra
+	}
+	return $txt
     } else {
         return /no_caption/
     }

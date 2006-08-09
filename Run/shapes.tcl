@@ -1115,15 +1115,6 @@ proc GetCaptionItem {w name} {
     }
 }
 
-proc GetText { w name } {
-    set nameItem [GetCaptionItem $w $name]
-    if {[string compare $nameItem {}]} {
-        return [$w itemcget $nameItem -text]
-    } else {
-        return /no_caption/
-    }
-}
-
 # GetEdit returns the node ID of the canvas item with input focus
 
 proc GetEdit { w } {

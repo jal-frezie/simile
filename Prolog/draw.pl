@@ -368,8 +368,16 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	get_mode(select), !,
 		EditState = [editable, currently_editable];
 	EditState = [editable]),
+	(Id is_instance_of Module,
+	    contains(Module, DefValledComp, Levels),
+	    m_update:has_autoconnect(DefValledComp, show_val), !,
+	    all(ame_gen, caption_for, [build(Levels), build(Capts)]),
+	    compile:comma_link(Capts, CaptPath),
+	    append_atoms(['valuepath(', CaptPath, ')'], ValueTag),
+	    Tags = [ValueTag | EditState];
+	Tags = EditState),
 /* currently added to last choice to test alternative edit prevention */
-	text(Wid, ScreenPoint, PosStyle, [Id, fillable | EditState],
+	text(Wid, ScreenPoint, PosStyle, [Id, fillable | Tags],
 			Fatness, Colour_scheme, Caption).
 
 /* redraw_window/1: Well it is simple to describe what this does; it redraws the contents of the window. But I won't know how it works till I've written it.

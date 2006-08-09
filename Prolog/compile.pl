@@ -1309,14 +1309,15 @@ input_params_in(Vars, SmPath, SmStep,
 	    Type = init_function, Step = 0, Wait = [on_reset])),
 	length(VarInds, Count),
 	caption_for(Param, Tail),
-	comma_link([Tail | CPath], CSPath),
+	append(Required, [_], [Tail | CPath]),
+	comma_link(Required, CSPath),
 	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), CSPath, Count
 		      | VarInds].
 
 /* This takes a list of submodel captions, innermost first, and converts it to
 a forward-slash-separated path, outermost first, with leading slash. */
 comma_link(CPath, CSPath) :-
-	CPath = [_DT], !, CSPath = '';
+	CPath = [], CSPath = '';
 	CPath = [Inner | Rest],
 	comma_link(Rest, PPath),
 	append_atoms([PPath, '/', Inner], CSPath).
