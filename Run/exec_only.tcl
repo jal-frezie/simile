@@ -57,7 +57,8 @@ proc PrefValue {long short} {
 
 LoadIconImages
 # now load the required helpers explicitly, as we cannot get directory listings
-set helperList [list DisplayFormats.tcl Standard/Control.tcl Standard/ModelInspector.tcl Standard/Slider.tcl Plotter.tcl two_table.tcl]
+set helperList [list DisplayFormats.tcl graphtools.tcl Standard/Control.tcl Standard/ModelInspector.tcl Standard/Slider.tcl Plotter.tcl two_table.tcl maps2.tcl Lollipop.tcl modeldiagram.tcl]
+
 foreach helperApp [lsort $helperList] {
     source [file join ../IOTools $helperApp]
     if {[info exists keyValue]} {

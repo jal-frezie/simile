@@ -207,6 +207,7 @@ namespace eval runcontrol33857 {
 	bind $rsf.stepsize.maxerr <Key> "set runState($node,tweaked) 1"
         pack [label $rsf.stepsize.caption -text "Error limit:"] -side right
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
+	RaisePageZero $t.nb
         
         #        set sendvars($node,timeUnit) unit
         set runState($node,expected_end) 0

@@ -332,7 +332,11 @@ proc PostPopup {win X Y} {
 #        wm overrideredirect .popup 1
 #    }
     set surround [winfo toplevel $win]
-    set popper(win) $surround.popup
+    if {[string equal . $surround]} {
+	set popper(win) .popup
+    } else {
+	set popper(win) $surround.popup
+    }
     if {[winfo exists $popper(win)]} {
         destroy $popper(win)
     }
@@ -506,6 +510,13 @@ proc NewPhoto {file} {
     }
 }
 
+proc RaisePageZero {nb} {
+    if {[InPlugin]} {
+	$nb raise [lindex [$nb pages] 0]
+    } else {
+	$nb select [lindex [$nb tabs] 0]
+    }
+}
 
 proc BlankCrs {withCrs} {
     regsub -all \n $withCrs { } noCrs

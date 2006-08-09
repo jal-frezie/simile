@@ -10,6 +10,28 @@
 # small, so we gradually increase it until we find a non-background thing or
 # we reach the edge of our search radius.
 
+proc GetCaptionItem {w name} {
+    if {[winfo exists $w]} {
+	foreach object [$w find withtag $name] {
+	    if {[string compare [$w type $object] text] == 0} {
+		set taglist [$w gettags $object]
+		if {[string match *is_caption* $taglist]} {
+		    return $object
+		}
+	    }
+        }
+    }
+}
+
+proc GetText { w name } {
+    set nameItem [GetCaptionItem $w $name]
+    if {[string compare $nameItem {}]} {
+        return [$w itemcget $nameItem -text]
+    } else {
+        return /no_caption/
+    }
+}
+
 proc GetClickedObj { winId canx cany range} {
     for {set halo 1} {$halo < $range} {incr halo 2} {
         set target [$winId find closest $canx $cany $halo]

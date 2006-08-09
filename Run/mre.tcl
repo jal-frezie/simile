@@ -159,7 +159,6 @@ namespace eval RunEnv {
             
             #from runmodel.tcl AddHelperSublist
 	    if {[InPlugin]} {
-		set pain .mainpw
 	    } else {
 		set mreMenu [winfo parent [$mainframe getmenu help]]
 		$mreMenu insert 2 cascade -label "Add" -underline 0 -menu .helpers.sub2
@@ -167,10 +166,9 @@ namespace eval RunEnv {
 		    $mreMenu insert 3 cascade -label "Window" -underline 0 \
 			-menu .windowchoice
 		}
-		set pain [$mainframe getframe].mainpw
 	    } 
             # Add a PanedWindow for the hierrachical/run control view and main display window
-            set mainpw [panedwindow $pain -orient horizontal]
+            set mainpw [panedwindow [$mainframe getframe].mainpw -orient horizontal]
             set controlPane [frame $mainpw.controlPane]; # made by runmodel.tcl AddHelperSublist
             set dp0 [frame $mainpw.mainDisplayPane]
             set dp0s($node) $dp0
@@ -181,7 +179,7 @@ namespace eval RunEnv {
             set hiercontrolpw [panedwindow $controlPane.panedwindow -orient vertical]
             set runcontrolpane [frame $hiercontrolpw.runcontrolPane]
             set explorerPane [frame $hiercontrolpw.explorerPane]
-            $hiercontrolpw add $runcontrolpane $explorerPane ;# -height 240
+            $hiercontrolpw add $runcontrolpane $explorerPane -height 240
             
             # Add notebook for controls, explorer etc
             set variableListFrame($node) [frame $explorerPane.variables]
@@ -272,14 +270,6 @@ namespace eval RunEnv {
 	return $pane1
     }
     
-    proc RaisePageZero {nb} {
-	if {[InPlugin]} {
-	    $nb raise [lindex [$nb pages] 0]
-	} else {
-	    $nb select [lindex [$nb tabs] 0]
-	}
-    }
-
     proc EditTabLabel { notebook } {
 	global helperTable
         variable TabEditText
@@ -821,6 +811,15 @@ namespace eval RunEnv {
 		.pageContextMenu entryconfigure 7 -state disabled
 		.pageContextMenu entryconfigure 12 -state disabled; # add notebook
 		#.pageContextMenu entryconfigure 13 -state disabled; # add notebook p0age
+		if {[string match vertical [$pw cget -orient]]} {
+		    #ShowMessage debug info "vert $tb1.bbox2" ok
+		    .pageContextMenu entryconfigure 10 -state disabled
+		    .pageContextMenu entryconfigure 9 -state normal
+		} else  {
+		    #ShowMessage debug info "horiz $tb1.bbox2" ok
+		    .pageContextMenu entryconfigure 9 -state disabled
+		    .pageContextMenu entryconfigure 10 -state normal
+		}
 	    }
 
             $tb1.b12 configure -state disabled; # paste button
@@ -833,14 +832,10 @@ namespace eval RunEnv {
                 #ShowMessage debug info "vert $tb1.bbox2" ok
                 $tb1.b21 configure -state disabled
                 $tb1.b20 configure -state normal
-                .pageContextMenu entryconfigure 10 -state disabled
-                .pageContextMenu entryconfigure 9 -state normal
             } else  {
                 #ShowMessage debug info "horiz $tb1.bbox2" ok
                 $tb1.b20 configure -state disabled
                 $tb1.b21 configure -state normal
-                .pageContextMenu entryconfigure 9 -state disabled
-                .pageContextMenu entryconfigure 10 -state normal
             }
         } else  {
 	    if {![InPlugin]} {
@@ -1166,7 +1161,27 @@ namespace eval RunEnv {
         }
         close $stream
     }
-    
+
+# 'pick' provides compatibility with the plugin which cannot open streams. 
+# Instead it takes a line from a file that has been copied to a global 
+# variable, and puts that in the supplied variable, returning its length or 
+# -1 if all gone.
+
+    proc pick {heap dest} {
+	variable $heap
+
+	upvar 1 $dest subdest
+	if {[InPlugin]} {
+	    set mound [set $heap]
+	    set break [string first \n $mound]
+	    set subdest [string range $mound 0 [expr {$break-1}]]
+	    set $heap [string range $mound [expr {$break+1}] end]
+	    return $break
+	} else {
+	    return [gets $heap subdest]
+	}
+    }
+
     proc LoadViewFile {currentNode stream origVersion} {
         global helperTable
         variable dp0
@@ -1174,20 +1189,22 @@ namespace eval RunEnv {
         destroy $dp0.notebook
         set mainframe $helperTable($currentNode,whichRunEnv).mainframe
         # read and set .mre position and size
-        gets $stream line
+        pick $stream line
         scan $line "%i %i %i %i" x y width height
-        wm geometry $helperTable($currentNode,whichRunEnv) \
+	if {![InPlugin]} {
+	    wm geometry $helperTable($currentNode,whichRunEnv) \
                 ${width}x${height}+${x}+${y}
+	}
         
-        gets $stream line
+        pick $stream line
         scan $line "%i %i" x y;
         [$mainframe getframe].mainpw sash place  0 $x $y
         
-        gets $stream line
+        pick $stream line
         scan $line "%i %i" x y
         [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
         
-        while {[gets $stream line] >= 0} {
+        while {[pick $stream line] >= 0} {
             switch [scan $line %s] {
                 container {
                     LoadContainer $currentNode $stream $line $origVersion
@@ -1227,7 +1244,13 @@ namespace eval RunEnv {
                     # the page this pane is in must be raised and update called!
                     # or $panedwindow sash place won't work
                     set pageId [FindParentNotebookPage $panedwindow]
-                    [winfo parent $pageId] select $pageId
+                    if {[InPlugin]} {
+			# pane name empirically determined from path
+			[winfo parent $pageId] raise \
+			    [string range [winfo name $pageId] 1 end]
+		    } else {
+			[winfo parent $pageId] select $pageId
+		    }
                     update
                     #ShowMessage debug info "$panedwindow sash place $index $sashx $sashy \n\
                     #        page [$notebook pages]\n\
@@ -1262,9 +1285,14 @@ namespace eval RunEnv {
                     regsub -all _ $noSpcpagecaption " " pagecaption
                     
                     #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
-		    set newFr [frame $notebook.f$pageId]
-                    $notebook add $newFr -text $pagecaption \
-			;#-raisecmd [list ::RunEnv::PageRaiseCmd $containerId.notebook $pageId]
+		    if {[InPlugin]} {
+			$notebook insert end $pageId -text $pagecaption
+			set newFr [$notebook getframe $pageId]
+		    } else {
+			set newFr [frame $pageId]
+			$notebook add $newFr -text $pagecaption
+		    }
+
                     # page raised below before any panes so that must be moved todo                 -raisecmd [list ::RunEnv::PageRaiseCmd $notebook $pageId]
                     bind $newFr <Button-1> "+::RunEnv::SetCurrentContainer %W"
                     bind $newFr <Button-3> \
@@ -1299,10 +1327,10 @@ namespace eval RunEnv {
             set containerId [LoseTLRef $containerId]
         }
         
-        gets $stream helperId
+        pick $stream helperId
         #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
         set winId [NewHelperInWindow $dp0.$containerId $helperId ""]
-        gets $stream oldStatus
+        pick $stream oldStatus
         if {$origVersion<4.0} {
             set oldStatus [LoseDTRef $oldStatus]
         }

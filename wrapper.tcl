@@ -9,6 +9,8 @@ proc pwd {} {
     return $workingDir
 }
 
+proc menu {args} {}
+
 proc ReadFile {file} {
     global workingDir
 
@@ -43,3 +45,6 @@ proc cd {newDir} {
 }
 
 source exec_only.tcl
+set ::RunEnv::helperData [ReadFile ../Examples/forestpp.shf]
+::RunEnv::LoadViewFile $myNode helperData 4.9
+
