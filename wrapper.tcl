@@ -12,7 +12,7 @@ proc pwd {} {
 proc menu {args} {}
 
 proc ReadFile {file} {
-    global workingDir
+    global workingDir fileCount
 
     set fullFile [file join $workingDir $file]
     ::browser::status "Loading $fullFile"
@@ -20,6 +20,21 @@ proc ReadFile {file} {
     ::browser::status "Done"
 }
 
+set graph(font) [list helvetica 8]
+
+# Put splash screen up
+frame .splash
+place .splash -x [expr {[winfo width .]/2}] \
+    -y [expr {[winfo height .]/2}] -anchor c
+image create photo splash -data [ReadFile ../Images/splash.gif]
+pack [canvas .splash.c -width 400 -height 316 -bd 2] -padx 0 -pady 0
+.splash.c create image 200 158 -image splash
+.splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
+    -text "Simulistics Ltd. 2001-2006"
+.splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Model Web Interface"
+set regInfo "Web Users"
+catch {append regInfo ", Everywhere"}
+.splash.c create text 270.0 295.0 -font $graph(font) -fill #660066 -text "Registered to $regInfo"
 rename source oldsource
 
 proc source {file} {
