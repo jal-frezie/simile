@@ -639,7 +639,6 @@ proc KickOff {nMyNode nSimtmpdir nSender nRunHow readPipe} {
     load_c_stub_2
 
     set runState($nMyNode,modelRunning) 0
-    LoadIconImages
     if {![info exists runHow(where)]} {
 	MakeHelperMenu
     }

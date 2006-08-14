@@ -34,6 +34,8 @@ namespace eval $keyValue {
         return "Data table"
     }
     
+    LoadIconImages Toolbar {clear add remove save property refresh}
+
     proc initialize {winId} {
         variable orientList
         set orientList($winId) {rows cols cols cols}
@@ -52,14 +54,14 @@ namespace eval $keyValue {
                 [namespace code [list AddVars $winId]]
         
         set toolbarItems [list \
-                [list clear.gif "Clear" [namespace code "clear $winId"] ] \
-                [list add.gif "Add a variable" \
-                [namespace code "AddVariable $winId"]] \
-                [list remove.gif "Remove a variable" \
-                [namespace code "RemoveVariable $winId"]] \
-                [list save.gif "Save to file" [namespace code "Save $winId"] ] \
-                [list property.gif "Properties" [namespace code "PropertiesDlg $winId"] ] \
-                [list refresh.gif Update [namespace code "Update $winId"]]]
+                [list clear "Clear" [namespace code "clear $winId"] ] \
+                [list add "Add a variable" \
+		     [namespace code "AddVariable $winId"]] \
+                [list remove "Remove a variable" \
+		     [namespace code "RemoveVariable $winId"]] \
+                [list save "Save to file" [namespace code "Save $winId"] ] \
+                [list property "Properties" [namespace code "PropertiesDlg $winId"] ] \
+                [list refresh Update [namespace code "Update $winId"]]]
         
         if {![string match .viewer $winId]} {
             ::graphtools::MakeToolBar $winId $toolbarItems

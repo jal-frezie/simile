@@ -489,16 +489,26 @@ proc SquirtMime {args} {
     }
 }
 
-proc LoadIconImages {} {
+#proc LoadIconImages {} {
+#    global iconImages
+#    foreach fn {tick cross function} {
+#	set iconImages($fn) [NewPhoto "../Images/Eqnbar/${fn}.gif"]
+#    }
+#    foreach fn {graph table new open save edit reel noreel} {
+#        set iconImages($fn) [NewPhoto "../Images/Toolbar/${fn}.gif"]
+#    }
+#    foreach fn {info warning error} {
+#        set iconImages($fn) [NewPhoto "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
+#    }
+#}
+
+proc LoadIconImages {imageSubDir imageFiles} {
     global iconImages
-    foreach fn {tick cross function} {
-	set iconImages($fn) [NewPhoto "../Images/Eqnbar/${fn}.gif"]
-    }
-    foreach fn {graph table new open save edit reel noreel} {
-        set iconImages($fn) [NewPhoto "../Images/Toolbar/${fn}.gif"]
-    }
-    foreach fn {info warning error} {
-        set iconImages($fn) [NewPhoto "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
+    foreach fn $imageFiles {
+	if {![info exists iconImages($fn)]} {
+	    set iconImages($fn) \
+		[NewPhoto [file join .. Images $imageSubDir ${fn}.gif]]
+	}
     }
 }
 

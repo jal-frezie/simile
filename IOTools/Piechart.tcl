@@ -242,6 +242,8 @@ proc display {w time step remainder} {
 	}
 }
 	
+LoadIconImages Toolbar {new add}
+
 # Draw panel containing controls and canvas for the graph.
 proc constructControlPanel {w} {
 #tk_messageBox -message "constructControlPanel winid $w" -type ok
@@ -259,8 +261,8 @@ proc constructControlPanel {w} {
     }
     
     set toolbarItems [list \
-            [list new.gif "Clear" [namespace code "clear $w"] ] \
-            [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]]
+            [list new "Clear" [namespace code "clear $w"] ] \
+            [list add "Add a variable"   [namespace code "AddVariable $w"]]]
 #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
             #    [list " settings " [namespace code "settings $w"]] \
             #    [list " redraw " [namespace code "resetGraph $w"]] \

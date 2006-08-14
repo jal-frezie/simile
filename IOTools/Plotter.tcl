@@ -250,6 +250,8 @@ namespace eval ::$keyValue {
             plot_YY $w
         }
     }
+
+    LoadIconImages Toolbar {clear add remove property}
     
     # Draw panel (window) containing controls and canvas for the graph.
     proc constructControlPanel {w} {
@@ -264,10 +266,10 @@ namespace eval ::$keyValue {
                 [namespace code [list AddVarsToVarMenu $w]]
         
         set toolbarItems [list \
-                [list clear.gif "Clear" [namespace code "clear $w"] ] \
-                [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]\
-                [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]\
-                [list property.gif " Properties " [namespace code "Settings $w"]]]
+                [list clear "Clear" [namespace code "clear $w"] ] \
+                [list add "Add a variable"   [namespace code "AddVariable $w"]]\
+                [list remove "Remove variable" [namespace code "RemoveVariable $w" ]]\
+                [list property " Properties " [namespace code "Settings $w"]]]
         #    [list " redraw " [namespace code "resetGraph $w"]]
         ::graphtools::MakeToolBar $w $toolbarItems
         

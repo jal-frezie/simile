@@ -9,15 +9,17 @@ proc identify {} {
 	return "Lollipop diagram"
 }
 
+LoadIconImages Toolbar {new add}
+
 proc initialize {winId} {
     variable useNodes
     variable trunks
     variable base
     namespace import -force ::maptools2::*
     set toolbarItems [list \
-			  [list new.gif "Clear" \
+			  [list new "Clear" \
 			       [namespace code "clear $winId"]] \
-			  [list add.gif "Add a variable" \
+			  [list add "Add a variable" \
 			       [namespace code "AddVariable $winId"]]]
     
     ::graphtools::MakeToolBar $winId $toolbarItems

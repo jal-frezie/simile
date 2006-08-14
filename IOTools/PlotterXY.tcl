@@ -286,6 +286,8 @@ namespace eval ::$keyValue {
         }
     }
     
+LoadIconImages Toolbar {clear add property}
+
     # Draw panel containing controls and canvas for the graph.
     proc constructControlPanel {w} {
         #tk_messageBox -message "constructControlPanel winid $w" -type ok

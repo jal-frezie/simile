@@ -786,7 +786,6 @@ puts "Opening: $cmd"
 
 proc ControlDraw {prologVersion} {
     global sendvars custom tcl_platform env userinfo openModel simtmpdir runHow
-    LoadIconImages
     
     # Defaults to use if debugging
 #    if {![info exists env(SIMILE_VERSION)]} {

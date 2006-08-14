@@ -43,7 +43,12 @@ namespace eval ::graphtools {
     
 }; # end namespace
 
+# JT, 2006-08-13: changed this to accept images rather than image files. This
+# makes it reuse the same images in each instance, saving memory (and bandwidth
+# in the tclet)
+
 proc ::graphtools::MakeToolBar {w toolbarItems} {
+    global iconImages
     pack [Separator $w.abovebbox -orient horizontal] -fill x -side top
     set f [frame $w.bbframe  -relief raised]
     set bbox [ButtonBox $f.buttonBox -spacing 0 -padx 1 -pady 1]
@@ -52,9 +57,9 @@ proc ::graphtools::MakeToolBar {w toolbarItems} {
         set gif [lindex $item 0 ]
         set helptext [lindex $item 1]
         set command [lindex $item 2]
-        set newButton [$bbox add -image [NewPhoto "../Images/Toolbar/$gif"] \
-                -highlightthickness 0 -takefocus 0 -relief link -borderwidth 1 -padx 1 -pady 1 \
-                -command $command]
+        set newButton [$bbox add -image $iconImages($gif) -takefocus 0 \
+			   -highlightthickness 0 -relief link -borderwidth 1 \
+			   -padx 1 -pady 1 -command $command]
         BindPopup $newButton $helptext
     }
     pack $f -side top -fill x

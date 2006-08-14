@@ -43,17 +43,19 @@ namespace eval ::polygon375 {
         }
     }
     
+LoadIconImages Toolbar {add zoomin zoomout zoomfit property refresh}
+
     proc AddToolBar {winId} {
         variable displayUpdate
 	set displayUpdate($winId) 1
         set toolbarItems [list \
-                [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
-                [list zoomin.gif "Zoom in" [namespace code "Zoom $winId 2 2"] ]\
-                [list zoomout.gif "Zoom out" [namespace code "Zoom $winId 0.5 0.5"] ]\
-                [list zoomfit.gif "Zoom to fit" [namespace code "Fit $winId"] ]\
-	            [list property.gif " Properties " [namespace code "Settings $winId"] ]\
+                [list add "Add a variable"   [namespace code "AddVariable $winId"]]\
+                [list zoomin "Zoom in" [namespace code "Zoom $winId 2 2"] ]\
+                [list zoomout "Zoom out" [namespace code "Zoom $winId 0.5 0.5"] ]\
+                [list zoomfit "Zoom to fit" [namespace code "Fit $winId"] ]\
+	            [list property " Properties " [namespace code "Settings $winId"] ]\
 			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
-                [list refresh.gif Update [namespace code "Update $winId"]]]
+                [list refresh Update [namespace code "Update $winId"]]]
 
         ::graphtools::MakeToolBar $winId $toolbarItems
     }
