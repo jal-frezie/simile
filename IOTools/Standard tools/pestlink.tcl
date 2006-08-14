@@ -35,19 +35,19 @@ namespace eval $keyValue {
         menu $winId.drivervars -tearoff 0 -postcommand \
 	    [namespace code [list AddVarsToDriverMenu $winId]]
         set toolbarItems \
-                [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
-                [list add.gif "Add variables" \
+                [list [list new "Clear" [namespace code "Clear $winId"]] \
+                [list add "Add variables" \
                 [namespace code "AddVariable $winId"]] \
-                [list remove.gif "Remove a variable" \
+                [list remove "Remove a variable" \
                 [namespace code "RemoveVariable $winId"]] \
-                [list slider.gif "Add all variables" \
+                [list slider "Add all variables" \
                 [namespace code "AddAllVariables $winId /"]]]
         ::graphtools::MakeToolBar $inpId $toolbarItems
         set toolbarItems \
-                [list [list new.gif "Clear" [namespace code "ClearOut $winId"]] \
-                [list add.gif "Add variables" \
+                [list [list new "Clear" [namespace code "ClearOut $winId"]] \
+                [list add "Add variables" \
                 [namespace code "AddVariableOut $winId"]] \
-                [list remove.gif "Remove a variable" \
+                [list remove "Remove a variable" \
                 [namespace code "RemoveVariableOut $winId"]]]
         ::graphtools::MakeToolBar $outId $toolbarItems
         

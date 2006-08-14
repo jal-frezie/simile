@@ -10,8 +10,29 @@ catch {namespace import BWidget::*}
 package require tile
 package require MyTrf ;# loads right version of Trf
 
+# elements of runHow specify communication mode between editor and execution
+# processes
 
-package require MyTrf ;# loads right version of Trf
+# where 
+# ----- 
+# This is one of 'home', 'namespace', 'interp', 'thread' or 'process'
+# depending on what a model's execution gets to itself. Obviously most
+# of these are place holders; currently anything other than 'home'
+# will stick the execution into its own process.
+set runHow(where) home
+if {[string equal home $runHow(where)]} {
+# load the whole execution code rather than just the common bits
+    source ../Run/runmodel.tcl
+} else {
+    source ../Run/graphs.tcl
+    source ../Run/utility.tcl
+
+    # Allow table viewer to be used in this interp
+    source ../IOTools/DisplayFormats.tcl 
+    source ../IOTools/graphtools.tcl
+    source ../IOTools/two_table.tcl
+    set table_viewer(id) $keyValue
+}
 
 source ../Run/window.tcl
 source ../Run/shapes.tcl
@@ -237,30 +258,6 @@ proc CheckFnsFresh {L progDir id userFnList} {
 proc do_in_editor {args} {
     global runState
     return [eval $args]
-}
-
-# elements of runHow specify communication mode between editor and execution
-# processes
-
-# where 
-# ----- 
-# This is one of 'home', 'namespace', 'interp', 'thread' or 'process'
-# depending on what a model's execution gets to itself. Obviously most
-# of these are place holders; currently anything other than 'home'
-# will stick the execution into its own process.
-set runHow(where) home
-if {[string equal home $runHow(where)]} {
-# load the whole execution code rather than just the common bits
-    source ../Run/runmodel.tcl
-} else {
-    source ../Run/graphs.tcl
-    source ../Run/utility.tcl
-
-    # Allow table viewer to be used in this interp
-    source ../IOTools/DisplayFormats.tcl 
-    source ../IOTools/graphtools.tcl
-    source ../IOTools/two_table.tcl
-    set table_viewer(id) $keyValue
 }
 
 # launch
@@ -1861,7 +1858,7 @@ proc accept_equation {winId text} {
 #    $text configure -values [AddIfAbsent $equationbar(equation) \
                  [$text cget -values]]
     set node $equationbar($winId,node)
-    prolog [list tk_click_obj('$winId.canvas',  doubleclick, 0 , 0 , $node, 0)]
+    prolog [list tk_edit_equation('$winId.canvas', $node)]
     set equationbar($winId,initText) $equationbar(equation)
     focus $winId.canvas
 }

@@ -34,7 +34,8 @@ namespace eval $keyValue {
         return "Data table"
     }
     
-    LoadIconImages Toolbar {clear add remove save property refresh}
+    LoadIconImages Toolbar {clear add remove save property refresh slider}
+# 'slider' is for standard tools which cannot access image directory
 
     proc initialize {winId} {
         variable orientList

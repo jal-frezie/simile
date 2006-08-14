@@ -1289,7 +1289,7 @@ namespace eval RunEnv {
 			$notebook insert end $pageId -text $pagecaption
 			set newFr [$notebook getframe $pageId]
 		    } else {
-			set newFr [frame $pageId]
+			set newFr [frame $notebook.f$pageId]
 			$notebook add $newFr -text $pagecaption
 		    }
 

@@ -31,7 +31,7 @@ sicstus_module(m_update,
 		get_module_disag_params/2, get_occurrence_disag_params/2,
 		autoconnect_reference_for/4, time_step_for/3, use_units_in/2,
 		make_module_of/3, make_ghost/3, get_possible_start/2,
-		clear_autoconnect/1, set_autoconnect/2]).
+		has_autoconnect/2, clear_autoconnect/1, set_autoconnect/2]).
 
 sicstus_use_module([library(lists),
 		sp_only, units, utility, ame_gen, m_class, text]).
@@ -1589,9 +1589,7 @@ get_module_disag_params(Submodel,
 	border_links(Submodel, AutoInfIns, AutoInfOuts,
 		     AutoFlowIns, AutoFlowOuts),
 
-	setof(HasEqn, WithEqn^(find_all_comps(Submodel, WithEqn),
-			       WithEqn is_of_sort has_function,
-			       caption_for(WithEqn, HasEqn)), FncComps),
+	setof(HasEqn, can_use_equation(Submodel, HasEqn), FncComps),
 
 	all(m_update, find_cur_posn,
 	     [unify(Submodel), 
@@ -1635,6 +1633,13 @@ border_links(Submodel, AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts) :-
 			caption_for(VPar, VParCapt)),
 	       AutoFlowOuts), !;
 	 AutoFlowOuts = []).
+
+can_use_equation(Model, HasEqn) :-
+	find_all_comps(Model, Comp),
+	Comp is_of_sort has_function,
+	\+ is_ghost(Comp),
+	\+ (Comp is_of_sort has_bowtie, \+ has_bowtie(Comp)),
+	caption_for(Comp, HasEqn).
 
 find_cur_posn(Model, Capts, AutoType, [CurPosn | Capts]) :-
          find_all_comps(Model, CurVPar),

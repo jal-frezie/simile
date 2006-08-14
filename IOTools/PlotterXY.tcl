@@ -305,9 +305,9 @@ LoadIconImages Toolbar {clear add property}
         }
         
         set toolbarItems [list \
-                [list clear.gif "Clear" [namespace code "clear $w"] ] \
-                [list add.gif "Add a variable"   [namespace code "AddVariable $w"]] \
-                [list property.gif " Properties " [namespace code "Settings $w"]]]
+                [list clear "Clear" [namespace code "clear $w"] ] \
+                [list add "Add a variable"   [namespace code "AddVariable $w"]] \
+                [list property " Properties " [namespace code "Settings $w"]]]
         #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
         #    [list " settings " [namespace code "settings $w"]] \
         #    [list " redraw " [namespace code "resetGraph $w"]]

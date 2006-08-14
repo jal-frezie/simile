@@ -94,11 +94,11 @@ proc GetFromProlog {prologCmd} {
 # for aliasing into the execution interpreters. It's a stopgap, as the
 # translation table should really be in the model code.
 
-proc GetTransTable {node} {
-    global fromProlog
-    prolog tk_get_info({},$node,types)
-    return $fromProlog
-}
+#proc GetTransTable {node} {
+#    global fromProlog
+#    prolog tk_get_info({},$node,types)
+#    return $fromProlog
+#}
 
 # Procedure for when Tcl recognizes what object is clicked but being a
 # maleficent pile of junk refuses to pass on this information so we have
@@ -167,9 +167,9 @@ proc ClickObj { x y winId X Y action} {
 
     set node [ExtractPrologName $winId $target]
     set context [GetClickCapt $winId $canx $cany $node]
+    set caption [GetText $winId $node]
     set topNode $window_info($winId,top_node)
-    if {[do_if_running $topNode ProdObj $topNode $context \
-	     [GetText $winId $node]]} {
+    if {[do_if_running $topNode ProdObj $topNode $context $caption]} {
 	return
     }
     # IO tool took the click, so do no more
@@ -226,7 +226,7 @@ proc ClickObj { x y winId X Y action} {
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
 		SafeEqnBarEdit $winid
-                set label [file tail [BlankCrs $context]]\ =
+                set label [BlankCrs $caption]\ =
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
                 set equationbar($winid,initText) [BlankCrs $oldEqn]
@@ -1149,6 +1149,8 @@ if {[string match "Darwin" $tcl_platform(os)]} {
 #
 }
 
+LoadIconImages Eqnbar {tick cross inputs function}
+
 proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     global custom pushedbutton tcl_platform runState iconImages
     
@@ -1601,8 +1603,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     frame $eb.padding2 -width 3
     pack $eb.padding2 -side left
     
-    set image [image create photo -file "../Images/Eqnbar/inputs.gif"]
-    ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $image
+    ::ttk::menubutton $eb.inputs -state disabled -menu $eb.inputs.menu -image $iconImages(inputs)
     pack $eb.inputs -side left
     set m [menu $eb.inputs.menu -tearoff 0 \
             -postcommand [list AddInputs $winid $eb]]

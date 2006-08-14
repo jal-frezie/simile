@@ -10,7 +10,7 @@ interface of the application. It responds by:
 sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
 		       click_obj/4, click_text/4, click/3, do_colours/2,
 		       insert_variable/5,
-	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
+	finish_old_edit/1, doubleclick_obj/3, doubleclick/2, edit_equation/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 		       resize_top_win/3, adjust_display_area/2,
 		       prioritize_window/1, run_settings_tweaked/1]).
@@ -34,8 +34,9 @@ units_for(Comp, UnitStr) :-
 	sicstus_write_to_chars(Base, UnitStr)).
 
 get_info(_Wid, Comp, eqn) :-
-	(Comp is_of_sort has_function,
-	    (eqn_for(Comp, Eqn), !;
+	with_eqn_to_edit(Comp, UseComp),
+	(UseComp is_of_sort has_function,
+	    (eqn_for(UseComp, Eqn), !;
 		Eqn = "");
 	 Eqn = "<none>"),
 	callback(br(chars(Eqn))).
@@ -103,11 +104,18 @@ insert_mem_list(Bound, Model, Trans) :-
 	Trans = []), !.
 
 get_params(_, Comp) :-
-	find_node_with_data(Comp, _, Func),
+	with_eqn_to_edit(Comp, DefEqn),
+	find_node_with_data(DefEqn, Func),
 	get_input_info(Func, Params),
 	output:get_from_list(Params, Table),
 	output:bracketize(Table, BrTable),
 	callback(BrTable).
+
+with_eqn_to_edit(Comp, DefEqn) :-
+	Comp is_instance_of Module,
+	    find_all_comps(Module, DefEqn),
+	    has_autoconnect(DefEqn, edit_eqn), !;
+	DefEqn = Comp.
 
 :- dynamic(min_size_is/1).
 :- dynamic(max_size_is/1).
@@ -672,21 +680,24 @@ doubleclick_on(Edit_thing) :-
 		finish_move(Parent, 1));
 	    OKd == 0);
 	Edit_type is_class_of_sort has_function, !,
-	    find_node_with_data(Edit_thing, Base, Control_thing),
-	    is_parameter(Control_thing, WasP),
-	    (get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
-	    do_equation_dialog(Wid, Control_thing),
-	    /* above fails if cancelled; if dialogue OK, then object is
-	    complete. check here that the dims have changed */
-	    find_node_with_data(Edit_thing, Base, NewControlThing),
-	    (is_parameter(NewControlThing, WasP), !;
-		redisplay_border(Edit_thing)),
-	    (get_av_pair(NewControlThing, 0, units, OldUnits), !,
-		NewDims = no;
-	    NewDims = yes),
-	    spread_colour(Base, NewDims),
-	    find_all_comps(Parent, Base),
-	    update_runnable(Parent)).
+	    edit_equation(Wid, Edit_thing)).
+
+edit_equation(Wid, Edit_thing) :-
+	find_node_with_data(Edit_thing, Base, Control_thing),
+	is_parameter(Control_thing, WasP),
+	(get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
+	do_equation_dialog(Wid, Base),
+	/* above fails if cancelled; if dialogue OK, then object is
+	complete. check here that the dims have changed */
+	find_node_with_data(Edit_thing, Base, NewControlThing),
+	(is_parameter(NewControlThing, WasP), !;
+	    redisplay_border(Edit_thing)),
+	(get_av_pair(NewControlThing, 0, units, OldUnits), !,
+	    NewDims = no;
+	  NewDims = yes),
+	spread_colour(Base, NewDims),
+	find_all_comps(Parent, Base),
+	update_runnable(Parent).
 	
 get_refinement_or_0(ControlThing, Attr, OldExc) :-
 	get_av_pair(ControlThing, 2, Attr, OldExc), !;

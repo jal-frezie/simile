@@ -9,6 +9,7 @@ use goals that start with "tk_" to make the diffreence clear.
 sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
 		       tk_get_params/2, tk_bar_edit_menu/1, tk_click_obj/6,
 		       tk_click/4, tk_doubleclick/4, tk_unclick/2, tk_drag/2,
+		       tk_edit_equation/2,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
 		       tk_resize_top_win/3, tk_visible/5,
 		       tk_embrace/2, tk_abandon/0,
@@ -79,6 +80,9 @@ tk_unclick(_X, _Y) :-
 
 tk_drag(Virt_X, Virt_Y) :-
 	drag(Virt_X, Virt_Y).
+
+tk_edit_equation(Window, Node) :-
+	edit_equation(Window, Node).
 
 tk_menu(Window, Header, Item) :-
 /*	into_save_file(tk_menu(Window, Header, Item)), */

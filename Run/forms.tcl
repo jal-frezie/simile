@@ -1701,10 +1701,15 @@ proc add_text {text font across down colour} {
             -anchor nw -font $font -tags {textitem} -width 500 -fill $colour
 }
 
+
 ############################################## End equation listing
 
 # general error handling -- note that only user errors will be raised from
 # execution interps, so the reporting stuff can be kept in the editor interp
+
+foreach fn {info warning error} {
+    set iconImages($fn) [NewPhoto "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
+}
 
 proc BuildProblem {Title errLevel msg key args} {
     global iconImages help tcl_platform

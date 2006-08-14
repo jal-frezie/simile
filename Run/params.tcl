@@ -95,6 +95,9 @@ proc MakeFrames {windowId} {
     #    $canId create window 0 0 -anchor nw -window [frame $windowId.sliderframe]
 }
 
+LoadIconImages Eqnbar {tick cross}
+LoadIconImages Toolbar {edit}
+
 proc AddEntry {winId topNode node mustShow notInput args} {
     global paramDims iconImages msgs
     if {$notInput==-1} {
@@ -233,6 +236,8 @@ proc MakeDimsLegible {nodeDims dataType} {
 # MakeSubFrames puts up a load and a save button for each submodel frame, and
 # gives them the Load and Save commands in a given namespace. So we must put
 # the commands in a matching one...
+
+LoadIconImages Toolbar {new open save}
 
 proc MakeSubFrames {clientId parent hierarchy ns pt} {
     global iconImages

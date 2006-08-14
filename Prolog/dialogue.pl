@@ -69,9 +69,9 @@ values. */
 
 :- dynamic(table_data_is/1).
 
-do_equation_dialog(Win, Part) :-
-	caption_for(Part, Caption),
-	get_host(Part, ClickedObj),
+do_equation_dialog(Win, ClickedObj) :-
+	caption_for(ClickedObj, Caption),
+	implicit_function(ClickedObj, Part),
 	(default_units(ClickedObj, ITypeBase),
 	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
 	true),
