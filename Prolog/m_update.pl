@@ -1589,7 +1589,8 @@ get_module_disag_params(Submodel,
 	border_links(Submodel, AutoInfIns, AutoInfOuts,
 		     AutoFlowIns, AutoFlowOuts),
 
-	setof(HasEqn, can_use_equation(Submodel, HasEqn), FncComps),
+	(setof(HasEqn, can_use_equation(Submodel, HasEqn), FncComps), !;
+	    FncComps = []),
 
 	all(m_update, find_cur_posn,
 	     [unify(Submodel), 

@@ -112,13 +112,16 @@ proc Disaggregate {parent title args} {
     set contents_f [$notebook.appearance.contents getframe]
 
     frame $contents_f.radio
-    foreach {rbutton rcaption} {none "Hide" ic "Show IC view" full "Show full view"} {
-	set line [frame $contents_f.radio.$rbutton]
-        pack [radiobutton $line.rb -text $rcaption \
-		  -value $rbutton \
-		  -variable disaggregate(cview)] -side left
-        pack $line -anchor w
-    }
+    set line [frame $contents_f.radio.none_ic]
+    pack [radiobutton $line.rb1 -text "Hide" -value none \
+	      -variable disaggregate(cview)] -side left
+    pack [radiobutton $line.rb2 -text "Show IC view" -value ic \
+	      -variable disaggregate(cview)] -side left
+    pack $line -anchor w
+    set line [frame $contents_f.radio.full]
+    pack [radiobutton $line.rb -text "Show full view" -value full \
+	      -variable disaggregate(cview)] -side left
+    pack $line -anchor w
     pack $contents_f.radio -anchor w -side left
 
     scale $line.scale -from .01 -to 1 -length 150 -orient horizontal \

@@ -5,6 +5,10 @@
 #
 # This file contains procedures for the equation dialogue.
 #
+
+LoadIconImages Eqnbar function
+LoadIconImages Toolbar {open graph table}
+
 proc create_equation {parent boxtitle indices} {
     global equation equationbar tcl_platform iconImages   
     ### Formula bar section
@@ -342,13 +346,7 @@ proc interact_equation {} {
     }
     if {[string compare $equationbar(current_action) tick]==0} then {
         set equationbar(current_action) click
-        return [list $equationbar(equation) \
-                $equationbar(units) \
-                $equationbar(isParam) \
-                $equationbar(desc) \
-                $equationbar(comment) \
-                $equationbar(min) \
-                $equationbar(max)]
+        return [list $equationbar(equation)]
     }
     ### End formula bar section
 

@@ -85,9 +85,11 @@ save_nodes( [Node|Nodes], Stream, SelOnly, AllArcsUsed ) :-
 
 save_links( Node, Stream, SelOnly ) :-
 	Node has_model_refinement link_equivalences of AllLinks,
-	setof(From-To, (member(From-To, AllLinks),
-			   go_with(From, SelOnly), go_with(To, SelOnly)),
-	      Links), !,
+	(Node is_instance_of _,
+	    Links = AllLinks;
+	 setof(From-To, (member(From-To, AllLinks),
+			    go_with(From, SelOnly), go_with(To, SelOnly)),
+	      Links)), !,
 	write_with_breaks( Stream, links( Node, Links ));
 	true.
 

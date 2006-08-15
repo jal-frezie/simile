@@ -46,9 +46,23 @@ instantiate(Holder, model(ModelInstance, Submodels ), Path, Loops, FullSet) :-
 	caption_for(Holder, PCapt),
 	sicstus_format_to_chars("Instantiating expressions from node values -- currently doing ~a", [PCapt], InfoString),
 	dialogue:reassure_user(InfoString),
+/* Dirty hack -- if we have local equations for any of the module member
+functions, substitute their values here, and put the originals back afterwards.
+*/
+        (get_av_pair(Holder, 0, fn_overrides, Swaps), !; Swaps = []),
+        all(instance, switch_function,
+	    [unify(Parent), build(Swaps), build(Back)]),
 	instantiate_nodes(TopNodes, ModelInstance, Path, Loops,
 			  TreeRefs, FullSet),
+        all(instance, switch_function,
+	    [unify(Parent), build(Back), build(Swaps)]),
 	!.
+
+switch_function(Parent, Vis-Eqn-_, Vis-Old-_) :-
+	find_all_comps(Parent, Vis),
+	implicit_function(Vis, Fn),
+	get_av_pair(Fn, 0, value, Old),
+	add_parameter(Fn, 0, value, Eqn).
 
 /* contents does the trick whereby immigration and creation channel nodes are placed outside their submodels. */
 
@@ -244,7 +258,12 @@ instance_of( function, Node, Path, Loops, [Instance], Refs) :-
 	_ is_connector from Node to Result,
 	\+ is_ghost(Result),
 	find_type(Result, RType),
-	Node has_class_refinement value of GroundExpr,
+	(Path = [Inst | _],
+	    Inst is_instance_of _,
+	    get_av_pair(Inst,  0, fn_overrides, OverRides),
+	    get_host(Node, UseComp),
+	    member(UseComp-GroundExpr-_, OverRides), !;
+	Node has_class_refinement value of GroundExpr),
 	(member(RType, [creation, compartment]), !,
 	    UseExpr = GroundExpr,
 	    FType = init_function;

@@ -9,7 +9,7 @@ user alone until values have been entered: the sort that sit quietly
 alongside
 the rest of the program are handled through gui_input. */
 
-sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/2, 
+sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/3, 
 	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
 			  check_param_usage/5,
 	get_load_file/1, get_save_file/1,
@@ -69,8 +69,8 @@ values. */
 
 :- dynamic(table_data_is/1).
 
-do_equation_dialog(Win, ClickedObj) :-
-	caption_for(ClickedObj, Caption),
+do_equation_dialog(Win, Box, ClickedObj) :-
+	caption_for(Box, Caption),
 	implicit_function(ClickedObj, Part),
 	(default_units(ClickedObj, ITypeBase),
 	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
@@ -137,7 +137,7 @@ BoxHeaderStr),
 	retract(input_list_is(Updated_list))),
 	interact_equation(Result_list),
 	(Result_list = [], !, destroy_equation, fail; 
-	on_exception(_, update_equation(Part, IndxCount, Updated_list,
+	on_exception(_, update_equation(Box, Part, IndxCount, Updated_list,
 			TypeBase-TypeDims, Result_list), fail)),
 		/* fails if action does not complete edit */
 	!, destroy_equation.
@@ -157,7 +157,7 @@ get_default_lower_limit(_, '').
 
 get_default_upper_limit(_, '').
 
-/* update_equation/5: This makes sure that if the user has entered a
+/* update_equation/6: This makes sure that if the user has entered a
 new destination name or units for an existing variable they are added
 to the model; it also adds them to the triples and checks that the
 function makes sense. If it does not, it pops up a message in a
@@ -166,9 +166,48 @@ updates the actual values and removes the box. Cancel (signalled by
 all args being empty) escapes from here.
 
 Note that interact_equation should return strings for all these
-things. */
+things.
 
-update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
+Last arg is list returned by TclTk interaction; its length indicates
+how the dialogue was ended. New for v5: one member means it was the
+equation bar. This is mostly a subset of the full 7-member case but
+also checks if the equation was a customization of a module instance,
+rather than a primitive component's. */
+
+update_equation(Box, Function, IndxCount, InList, Base-Dims, [Eqn_st]) :-
+	check_exp(Eqn_st, "Equation", Function, InList, EqnBase, EqnDims,
+		  0, IndxCount, ParamList, Result, ParseError),
+	(ParseError = [], !,
+	    purge(Eqn_st, "\\", OrigSt),
+	    sicstus_atom_chars(OldEqn, OrigSt),
+	    replace_subexps(Result, dialogue, table_ref, got(UserFnOpen, _),
+			    top_down, _,_),
+	    (var(UserFnOpen), !,
+		UserFnList = '';
+	    get_ground_part(UserFnOpen, UserFnList)),
+	    member(TypeBase, [any, a(_), int, boolean, real]),
+	    promote_arg(EqnBase, TypeBase, ComboUnits),
+		/* fix this if boolean to cond_spec promotion removed */
+	    (nonvar(ComboUnits); ComboUnits = TypeBase), !,
+	    build_array(ComboUnits, EqnDims, ArraySpec),
+
+	    (Box is_instance_of _Module,
+		get_host(Function, Marked),
+		(get_av_pair(Box, 0, fn_overrides, OverRides);
+		    OverRides = []),
+		(select(Marked-_-_, OverRides, Rest);
+		    Rest = OverRides), !,
+		add_parameter(Box, 0, fn_overrides,
+			      [Marked-Result-OldEqn | Rest]);
+	    add_parameter(Function, 0, value, Result),
+		add_parameter(Function, 0, units, ArraySpec),
+		add_parameter(Function, 0, uses_local_fns, UserFnList),
+		add_parameter(Function, 0, spec, OldEqn),
+		update_links_and_vars(InList));
+	 do_dialogue("Problem with equation", warning, ParseError, ok, _),
+	    !, /* green */ fail).	 
+	    
+update_equation(_, Function,_, InList,_, [Table_st, Data_st]) :-
 	assert(input_list_is(InList)),
 	get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
@@ -193,7 +232,7 @@ update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 			      units=Units, bounds=Bounds, dims=Dims])),
 	fail.
 
-update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
+update_equation(_,_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
 	(name(New_var, Node_st),
 	    append(EarlyInputs,
 		   [input_link(Link, New_var, _, Current_unit, _) | 
@@ -225,7 +264,7 @@ LateInputs],
 	    assert(input_list_is(Input_list))),
 	fail.
 
-update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
+update_equation(_, Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
 	member([Is_P, ParamsAllowed, EqnNeeded],

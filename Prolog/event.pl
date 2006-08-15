@@ -35,7 +35,11 @@ units_for(Comp, UnitStr) :-
 
 get_info(_Wid, Comp, eqn) :-
 	with_eqn_to_edit(Comp, UseComp),
-	(UseComp is_of_sort has_function,
+	(Comp is_instance_of _Module,
+	    get_av_pair(Comp,  0, fn_overrides, OverRides),
+	    member(UseComp-_-EqnName, OverRides), !,
+	    name(EqnName, Eqn);
+	  UseComp is_of_sort has_function,
 	    (eqn_for(UseComp, Eqn), !;
 		Eqn = "");
 	 Eqn = "<none>"),
@@ -105,7 +109,7 @@ insert_mem_list(Bound, Model, Trans) :-
 
 get_params(_, Comp) :-
 	with_eqn_to_edit(Comp, DefEqn),
-	find_node_with_data(DefEqn, Func),
+	find_node_with_data(DefEqn, _, Func),
 	get_input_info(Func, Params),
 	output:get_from_list(Params, Table),
 	output:bracketize(Table, BrTable),
@@ -683,13 +687,14 @@ doubleclick_on(Edit_thing) :-
 	    edit_equation(Wid, Edit_thing)).
 
 edit_equation(Wid, Edit_thing) :-
-	find_node_with_data(Edit_thing, Base, Control_thing),
+	with_eqn_to_edit(Edit_thing, NotionalThing),
+	find_node_with_data(NotionalThing, Base, Control_thing),
 	is_parameter(Control_thing, WasP),
 	(get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
-	do_equation_dialog(Wid, Base),
+	do_equation_dialog(Wid, Edit_thing, Base),
 	/* above fails if cancelled; if dialogue OK, then object is
 	complete. check here that the dims have changed */
-	find_node_with_data(Edit_thing, Base, NewControlThing),
+	find_node_with_data(NotionalThing, Base, NewControlThing),
 	(is_parameter(NewControlThing, WasP), !;
 	    redisplay_border(Edit_thing)),
 	(get_av_pair(NewControlThing, 0, units, OldUnits), !,
