@@ -506,9 +506,9 @@ bind_and_build_term(Node, [Arc], Dest, NodeBase, NodeDims, Term, [Ref]) :-
 	standard_name(NodeBase, TrimBase),
 	try_conversion(Var, ArcUnits, TrimBase/Tick, Term, _ImpType).
 
-bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
-	bind_and_build_term(Node, Arcs, Base, Dims, MidTerm, MidRefs),
-	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),
+bind_and_build_term(Node, [Arc|Arcs], Dest, Base, Dims, NewTerm, Refs) :-
+	bind_and_build_term(Node, Arcs, Dest, Base, Dims, MidTerm, MidRefs),
+	bind_and_build_term(Node, [Arc], Dest, Base, Dims, Term1, [Ref]),
 	merge_lists([Ref], MidRefs, Refs),
 	NewTerm =.. ['++',Term1,MidTerm].
 	

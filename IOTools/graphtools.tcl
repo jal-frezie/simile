@@ -738,3 +738,10 @@ proc ::graphtools::get_datay {w Yc Yscale} {
     expr {($plot($w,yborder_top)+$plot($w,ylength)-$Yc)*$Yscale +$plot($w,Ymin_axis)}
 }
 
+proc ::graphtools::myAssembleFont {family weight style textsize} {
+	set font [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
+			$family $weight $style $textsize]
+	#tk_messageBox -message "font $font"
+	return $font
+}
+

@@ -804,22 +804,22 @@ namespace eval RunEnv {
 		[$mainframe getmenu edit] entryconfigure Copy -state normal
 		[$mainframe getmenu edit] entryconfigure Cut -state normal
 		[$mainframe getmenu edit] entryconfigure Paste -state disable
-
-		.pageContextMenu entryconfigure 0 -state disabled
-		.pageContextMenu entryconfigure 1 -state disabled
-		.pageContextMenu entryconfigure 3 -state disabled
-		.pageContextMenu entryconfigure 7 -state disabled
-		.pageContextMenu entryconfigure 12 -state disabled; # add notebook
+# No need to re-able .pageContextMenu, it cannot display in full pane
+#		.pageContextMenu entryconfigure 0 -state disabled
+#		.pageContextMenu entryconfigure 1 -state disabled
+#		.pageContextMenu entryconfigure 3 -state disabled
+#		.pageContextMenu entryconfigure 7 -state disabled
+#		.pageContextMenu entryconfigure 12 -state disabled; # add notebook
 		#.pageContextMenu entryconfigure 13 -state disabled; # add notebook p0age
-		if {[string match vertical [$pw cget -orient]]} {
-		    #ShowMessage debug info "vert $tb1.bbox2" ok
-		    .pageContextMenu entryconfigure 10 -state disabled
-		    .pageContextMenu entryconfigure 9 -state normal
-		} else  {
-		    #ShowMessage debug info "horiz $tb1.bbox2" ok
-		    .pageContextMenu entryconfigure 9 -state disabled
-		    .pageContextMenu entryconfigure 10 -state normal
-		}
+#		if {[string match vertical [$pw cget -orient]]} {
+#		    #ShowMessage debug info "vert $tb1.bbox2" ok
+#		    .pageContextMenu entryconfigure 10 -state disabled
+#		    .pageContextMenu entryconfigure 9 -state normal
+#		} else  {
+#		    #ShowMessage debug info "horiz $tb1.bbox2" ok
+#		    .pageContextMenu entryconfigure 9 -state disabled
+#		    .pageContextMenu entryconfigure 10 -state normal
+#		}
 	    }
 
             $tb1.b12 configure -state disabled; # paste button
@@ -827,6 +827,7 @@ namespace eval RunEnv {
             $tb1.b40 configure -state disabled; # add helper buttons
             $tb1.b41 configure -state disabled
             $tb1.b42 configure -state disabled
+            $tb1.b43 configure -state disabled
             
             if {[string match vertical [$pw cget -orient]]} {
                 #ShowMessage debug info "vert $tb1.bbox2" ok
@@ -845,14 +846,15 @@ namespace eval RunEnv {
 		[$mainframe getmenu edit] entryconfigure Cut -state disable
 		[$mainframe getmenu edit] entryconfigure Paste -state normal
 
-		.pageContextMenu entryconfigure 0 -state normal
-		.pageContextMenu entryconfigure 1 -state normal
-		.pageContextMenu entryconfigure 3 -state normal
-		.pageContextMenu entryconfigure 7 -state normal
-		.pageContextMenu entryconfigure 10 -state normal
-		.pageContextMenu entryconfigure 9 -state normal
-		.pageContextMenu entryconfigure 12 -state normal
-            #.pageContextMenu entryconfigure 13 -state normal
+# No need to re-able .pageContextMenu, it cannot display in full pane
+#		.pageContextMenu entryconfigure 0 -state normal
+#		.pageContextMenu entryconfigure 1 -state normal
+#		.pageContextMenu entryconfigure 3 -state normal
+#		.pageContextMenu entryconfigure 7 -state normal
+#		.pageContextMenu entryconfigure 10 -state normal
+#		.pageContextMenu entryconfigure 9 -state normal
+#		.pageContextMenu entryconfigure 12 -state normal
+#            #.pageContextMenu entryconfigure 13 -state normal
 	    }
 
 	    $tb1.b12 configure -state normal; # paste button
@@ -862,6 +864,7 @@ namespace eval RunEnv {
             $tb1.b40 configure -state normal; # add helper buttons
             $tb1.b41 configure -state normal
             $tb1.b42 configure -state normal
+            $tb1.b43 configure -state normal
             
         }
         focus $win

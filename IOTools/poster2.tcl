@@ -13,11 +13,13 @@ proc identify {} {
 }
 
 proc initialize {w} {
-	#ConstructPosterPanel $w
-	destroy $w
-	set w1 .poster
-	toplevel $w1
-	ConstructPosterPanel $w1
+    namespace import -force ::graphtools::*; # todo make graphtools common
+    
+    #ConstructPosterPanel $w
+    destroy $w
+    set w1 .poster
+    toplevel $w1
+    ConstructPosterPanel $w1
 }
 
 
@@ -992,13 +994,6 @@ proc myExtractFontData {font} {
 	scan $font {-Adobe-%[^-]-%[^-]-%[^-]-Normal--*-%d-*-*-*-*-*-*} \
 		family weight style textsize
 	return [list $family $weight $style $textsize]
-}
-
-proc myAssembleFont {family weight style textsize} {
-	set font [format "-Adobe-%s-%s-%1s-Normal--*-%d-*-*-*-*-*-*" \
-			$family $weight $style $textsize]
-	#tk_messageBox -message "font $font"
-	return $font
 }
 
 

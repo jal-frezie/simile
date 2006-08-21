@@ -144,7 +144,7 @@ proc click {w node caption} {
     global ::graphtools::plot
     set ithlist [list 1st 2nd 3rd 4th 5th 6th 7th 8th 9th 10th]
     set ms $w.intro
-    set testResult [GetModelValue]
+    set testResult [GetModelValue $node]
     if {[string compare $testResult novalue]} {
         incr plot($w,i)
         set ith [lindex $ithlist $plot($w,i)]
@@ -783,7 +783,7 @@ proc get_Yvalues {w} {
     set YYnew($w) [list 1 2]
     set YYnew($w) [lreplace $YYnew($w) 0 end]
     foreach node $plot($w,Yvars) {
-        set values [GetModelValue]
+        set values [GetModelValue $node]
         set values [lindex $values 0]
         lappend YYnew($w) [list $node $values]
     }

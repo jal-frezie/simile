@@ -174,7 +174,7 @@ equation bar. This is mostly a subset of the full 7-member case but
 also checks if the equation was a customization of a module instance,
 rather than a primitive component's. */
 
-update_equation(Box, Function, IndxCount, InList, Base-Dims, [Eqn_st]) :-
+update_equation(Box, Function, IndxCount, InList, TypeBase-Dims, [Eqn_st]) :-
 	check_exp(Eqn_st, "Equation", Function, InList, EqnBase, EqnDims,
 		  0, IndxCount, ParamList, Result, ParseError),
 	(ParseError = [], !,
