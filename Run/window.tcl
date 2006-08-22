@@ -429,7 +429,6 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     foreach nodeType {normal generic compartment channel text \
                   variable function submodel flow influence \
                   ghost_link relation} {
-# add event squirt state to above
         ResetLooks $topNode $nodeType
     }
     CustomizeLooks $topNode
@@ -1236,8 +1235,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     $fm add cascade -label "Create new" -menu $fm.add
     set em1 [menu $fm.add -tearoff 0]
-# add state, event and squirt
-    foreach type {Compartment Variable Flow Influence} {
+    foreach type {Compartment State Variable Event Flow Influence Squirt} {
         $em1 add command -label $type -command \
                 "MenuSelect $c edit [string tolower $type]"
     }
@@ -1390,13 +1388,16 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     $fm1 add radiobutton -label Compartment -command "ItemSelect compartment" \
             -variable MIpushedbutton -value compartment
-#    $fm1 add radiobutton -label State -command "ItemSelect state" \
-#            -variable MIpushedbutton -value state
-# event and squirt needed too
+    $fm1 add radiobutton -label State -command "ItemSelect state" \
+            -variable MIpushedbutton -value state
     $fm1 add radiobutton -label Variable -command "ItemSelect variable" \
             -variable MIpushedbutton -value variable
+    $fm1 add radiobutton -label Event -command "ItemSelect event" \
+            -variable MIpushedbutton -value event
     $fm1 add radiobutton -label Flow -command "ItemSelect flow" \
             -variable MIpushedbutton -value flow
+    $fm1 add radiobutton -label Squirt -command "ItemSelect squirt" \
+            -variable MIpushedbutton -value squirt
     $fm1 add radiobutton -label Influence -command "ItemSelect influence" \
             -variable MIpushedbutton -value influence
     $fm1 add radiobutton -label Submodel -command "ItemSelect submodel" \
@@ -1535,9 +1536,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     set tb [::ttk::frame $winid.toolSlot.toolbar -class Toolbar]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
-# add state event squirt separator3 before creation for v5
     foreach mode {compartment variable flow influence separator1 \
 		      submodel relation separator2 \
+		       state event squirt separator3 \
 		      creation immigration reproduction loss condition alarm \
 		      separator4 text} {
         if {[string match separator* $mode]} {
