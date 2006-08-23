@@ -30,14 +30,26 @@ proc GetPoints {lo rad} {
     return $result
 }
 
+proc CustomAs {type} {
+    global borrowLooksFor
+    foreach {is use} $borrowLooksFor {
+	if {[string equal $is $type]} {
+	    return $use
+	}
+    }
+    return $type
+}
+
 proc GetObjectSize {w type fatness} {
     global looks window_info
-    return [expr [Scale $w $looks($window_info($w,top_node),$type,objectsize)]*$fatness/100.0]
+    set typeScale $looks($window_info($w,top_node),[CustomAs $type],objectsize)
+    return [expr $typeScale*$fatness/100.0]
 }
 
 proc GetLineSize {w type fatness} {
     global looks window_info
-    return [expr [Scale $w $looks($window_info($w,top_node),$type,lines)]*$fatness/100.0]
+    set typeScale $looks($window_info($w,top_node),[CustomAs $type],lines)
+    return [expr $typeScale*$fatness/100.0]
 }
 
 proc ScaleRect {w l t r b} {
@@ -77,7 +89,12 @@ proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
                 -tag "$tagSet size_on_this realwidth($width)"
         incr stackDepth
     }
-    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
+    if {$b-$t>$r-$l} {
+	set type state
+    } else {
+	set type compartment
+    }
+    ResetColours $w $type $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutShape {c l t r b file fatness colourScheme title} {
@@ -126,7 +143,7 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     eval {$w create poly} $bounds {-tag "$tagSet bowtie has_info"}
     eval {$w create line} $bounds {-width $width \
                 -tag "$tagSet bowtie realwidth($width)"}
-    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
+    ResetColours $w variable $density $colourScheme [lindex $tagSet 0]
 }
 
 # Circles are drawn as many-hedrons until the bug that stops ovals
@@ -160,6 +177,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 
     if {$style} {
+	set type event
 	set outer [expr 3*($rad+$width/2)/5+$width/2]
 	set ol [expr $hm-$outer]
 	set ot [expr $vm-$outer]
@@ -174,6 +192,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
 #	eval {$w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
 	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
     } else {
+	set type variable
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
 	eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
@@ -216,7 +235,7 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
         }
         incr stackDepth
     }
-    ResetColours $w variable $density $colourScheme [lindex $tagSet 0]
+    ResetColours $w $type $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
@@ -232,7 +251,7 @@ proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
             [expr (2*$mb + $mt)/3] -width $width \
             -tag "$tagSet size_on_this realwidth($width)"
-    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
+    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
 }
 
 proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
@@ -757,10 +776,10 @@ proc DrawBlob {w startX startY size tags} {
 proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     global looks window_info
     
-    if {[string equal vflow $ptype]} {
-	set type flow
+    if {[lsearch {vflow hflow} $ptype]>-1} {
+	set type [CustomAs flow]
     } else {
-	set type $ptype
+	set type [CustomAs $ptype]
     }
     set n $window_info($w,top_node)
     if {[string compare $colourScheme normal]} {
@@ -848,13 +867,12 @@ proc SelectText {w node} {
 # either filling or outlining them depending on the method appropriate to their
 # type.
 
+set borrowLooksFor {cloud compartment flow variable squirt event}
 proc ColorSymbol { w name type density colorSpec } {
     global looks window_info
     
     set n $window_info($w,top_node)
-    if {[string match cloud $type]} {
-        set type flow
-    }
+    set type [CustomAs $type]
     if {[string compare $colorSpec normal]} {
         set outlineColor $looks($n,$type,$colorSpec)
         set textColor $outlineColor
@@ -934,7 +952,7 @@ proc ResetColours { w type density colourScheme name } {
     
     set n $window_info($w,top_node)
     ColorSymbol $w $name $type $density $colourScheme
-    set fillColor $looks($n,$type,fill)
+    set fillColor $looks($n,[CustomAs $type],fill)
     FillSymbol $w $name $fillColor
 }
 
@@ -1734,9 +1752,9 @@ proc CopyLooks {t n object} {
     }
     if {[string compare $object influence]} {
         set looks($n,$object,font) [ResetFont $t]
-        if {[string compare $object text]} {
-	    UpdateOffsets $t $n $object
-	}
+#        if {[string compare $object text]} {
+#	    UpdateOffsets $t $n $object
+#	}
 	set looks($n,$object,text) \
 	    [[$t.text getframe].backbox.col cget -activebackground]
 	set looks($n,$object,txtbd) $looks(txtbd)
@@ -1758,10 +1776,10 @@ proc DoGraphics {box type middlex middley size} {
             set b [expr $middley + 3*$size/10]
 	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } state {
-            set l [expr $middlex - 3*$size/5]
-            set r [expr $middlex + 3*$size/5]
-            set t [expr $middley - 2*$size/10]
-            set b [expr $middley + 2*$size/10]
+            set l [expr $middlex - 3*$size/10]
+            set r [expr $middlex + 3*$size/10]
+            set t [expr $middley - 2*$size/5]
+            set b [expr $middley + 2*$size/5]
 	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } submodel {
             set l [expr $middlex - 90]
@@ -1780,12 +1798,17 @@ proc DoGraphics {box type middlex middley size} {
                     [expr $middley - 30] $middlex [expr $middley + 30] \
                     [expr 2*$middlex - 30] [expr $middley + 30]" \
                     100 normal "sample"
-        } variable {
+        } variable|event {
             set l [expr $middlex - 3*$size/20]
             set r [expr $middlex + 3*$size/20]
             set t [expr $middley - 3*$size/20]
             set b [expr $middley + 3*$size/20]
-	    PutCrossedCirc $box.canvas $l $t $r $b 1 100 {} normal "sample"
+	    if {[string equal event $type]} {
+		set sty 101
+	    } else {
+		set sty 1
+	    }
+	    PutCrossedCirc $box.canvas $l $t $r $b $sty 100 {} normal "sample"
         } channel {
             set l [expr $middlex - 3*$size/10]
             set r [expr $middlex + 3*$size/10]
@@ -1934,17 +1957,18 @@ proc ZotObjectSize {t n type size} {
     }
 }
 
-proc UpdateOffsets {t n type} {
-    global looks
-    set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
-    if {[string equal flow $type]} {set type vflow}
-    set looks($n,$type,xoffset) [expr $looks($n,$type,xoffset) + \
-            [lindex $offsets 0] - [lindex $looks(cheat) 0]]
-    set looks($n,$type,yoffset) [expr $looks($n,$type,yoffset) + \
-            [lindex $offsets 1] - [lindex $looks(cheat) 1]]
-    set looks(cheat) $offsets
-}
-
+# not used, flows and squirts not customized separately and squirts need fixing
+#proc UpdateOffsets {t n type} {
+#    global looks
+#    set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
+#    if {[string equal flow $type]} {set type vflow}
+#    set looks($n,$type,xoffset) [expr $looks($n,$type,xoffset) + \
+#            [lindex $offsets 0] - [lindex $looks(cheat) 0]]
+#    set looks($n,$type,yoffset) [expr $looks($n,$type,yoffset) + \
+#            [lindex $offsets 1] - [lindex $looks(cheat) 1]]
+#    set looks(cheat) $offsets
+#}
+#
 proc GetTextAnchor {t} {
     $t.canvas itemcget [GetCaptionItem $t.canvas sample] -anchor
 }
@@ -1979,6 +2003,9 @@ proc CustomizeLooks {c} {
     #    prolog tk_set_new_size(function,15,0,0)
     #    prolog tk_set_new_size(cloud,25,0,0)
     #    prolog tk_set_new_size(channel,30,0,0)
+    set looks($c,hflow,xoffset) 0
+    set looks($c,hflow,yoffset) 2
+    set looks($c,hflow,textanchor) n
     set looks($c,vflow,xoffset) 2
     set looks($c,vflow,yoffset) 0
     set looks($c,vflow,textanchor) w
@@ -1999,8 +2026,8 @@ proc ApplyLooks {t topNode type} {
         ExportLooks $t $topNode $type
     } else {
 # add state to next line
-        foreach object {generic compartment channel function variable \
-			    text submodel flow influence relation} {
+        foreach object {generic compartment state channel function variable \
+			event text submodel flow squirt influence relation} {
             CopyLooks $t $topNode $object
             ExportLooks $t $topNode $object
         }
@@ -2013,11 +2040,14 @@ proc RememberLooks {n} {
 }
 
 proc ExportLooks {t topNode type} {
-    global looks window_info
+    global looks window_info borrowLooksFor
     
     prolog [format "tk_change_size(%s,%s,%d)" $topNode $type $looks($topNode,$type,objectsize)]
-    if {[string match flow $type]} {
-        prolog [format "tk_change_size(%s,%s,%d)" $topNode cloud $looks($topNode,$type,objectsize)]
+    foreach {is use} $borrowLooksFor {
+	if {[string equal $use $type]} {
+	    prolog [format "tk_change_size(%s,%s,%d)" $topNode \
+				$is $looks($topNode,$type,objectsize)]
+	}
     }
     #	foreach windae [array name window_info *,parent] {
     #		set canvas [string trimright $windae ,parent]
@@ -2066,9 +2096,7 @@ proc ExportLooks {t topNode type} {
 proc MakeLooksSaver {n} {
     global looks
 # add state to next line
-    set objects {normal generic compartment channel text \
-		     variable function submodel flow influence \
-		     ghost_link relation}
+    set objects $looks(customSet)
     set aspects {font txtbd txtbg outline fill text select highlight target \
 		     incomplete objectsize lines xoffset yoffset textanchor}
     for {set obj 0} {$obj < [llength $objects]} {incr obj} {

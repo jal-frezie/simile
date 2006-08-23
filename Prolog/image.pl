@@ -207,8 +207,8 @@ get_closest_edge(Node, [X,Y], Edge) :-
 make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
     ((New_obj is_class_of_sort regular_box; New_obj = channel;
       New_obj = squirt),
-        L is Xpt - Cur_size/2,
-        R is Xpt + Cur_size/2;
+        L is Xpt - Cur_size/2.02, % slightly oversquare so captions on squirts
+        R is Xpt + Cur_size/2.02; % appear with correct offset for direction
     New_obj is_class_of_sort elongated_box,
         L is Xpt - 2*Cur_size/3,
         R is Xpt + 2*Cur_size/3;
@@ -241,7 +241,7 @@ use_style_for(Obj, channel) :-
     Obj is_class_of_sort channel, !.
 
 use_style_for(Type, Shape) :-
-    member(Type-Shape, [event-variable, squirt-flow, module-submodel]),
+    member(Type-Shape, [module-submodel]),
     % modules are never drawn, last item just prevents lookup errors
     !.
 

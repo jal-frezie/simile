@@ -101,8 +101,8 @@ display depth variable */
 
 depth_list_is([[submodel, relation],
 	       [compartment, state], 
-	       [flow, cloud],
-	       [variable, function, channel],
+	       [flow, squirt, cloud],
+	       [variable, event, function, channel],
 	       [influence],
 	       [ghost_link]]).
 
@@ -203,7 +203,7 @@ get_box_size(Parent, Box_type, Cur_box_size) :-
 	(backup:is_toplevel(Top); backup:is_module(Top)),
 	box_size_is(Top, Box_type, Abs_box_size,_,_),
         (member(Box_type-Scale, [compartment-0.6, state-0.8,
-				 function-0.3, variable-0.3,
+				 function-0.3, variable-0.3, event-0.3,
 				cloud-0.5, channel-0.6]), !,
 
 	    Cur_box_size is Scale*Abs_box_size;
@@ -368,6 +368,7 @@ set_initial_box_sizes(TopNode) :-
 	assert(box_size_is(TopNode, state, 50, 0, 0)),
 	assert(box_size_is(TopNode, function, 50, 0, 0)),
 	assert(box_size_is(TopNode, variable, 50, 0, 0)),
+	assert(box_size_is(TopNode, event, 50, 0, 0)),
 	assert(box_size_is(TopNode, cloud, 50, 0, 0)),
 	assert(box_size_is(TopNode, submodel, 50, 0, 0)),
 	assert(box_size_is(TopNode, channel, 50, 0, 0)),
@@ -375,4 +376,3 @@ set_initial_box_sizes(TopNode) :-
 	assert(box_size_is(TopNode, influence, 50, 0, 0)),
 	assert(box_size_is(TopNode, ghost_link, 50, 0, 0)),
 	assert(box_size_is(TopNode, relation, 50, 0, 0)).
-

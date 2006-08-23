@@ -414,6 +414,9 @@ proc ChangeRegion {w l t r b} {
 # MainWindowDraw: puts a new model window on the screeen              #
 #                                                                     #
 #######################################################################
+set looks(customSet) {normal generic compartment channel text \
+                  variable function submodel influence \
+                  ghost_link relation state event}
 
 proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
             colour initialScale isTopLevel args} {
@@ -426,9 +429,7 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     if {[set window_info($c,is_top_level) $isTopLevel]} {
     set window_info($c,topCapt) {}
 
-    foreach nodeType {normal generic compartment channel text \
-                  variable function submodel flow influence \
-                  ghost_link relation} {
+    foreach nodeType $looks(customSet) {
         ResetLooks $topNode $nodeType
     }
     CustomizeLooks $topNode
@@ -1341,16 +1342,17 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     AddDetailMenu $c $fm3 $initDepths
     menu $fm.sub4 -tearoff 0
     $fm add cascade -label "Customize" -menu $fm.sub4
-    foreach category { \
-                {compartment "Compartments..."} \
-                {variable "Variables..."} \
-                {flow "Flows, bowties and clouds..."} \
-        {influence "Influences..."} \
-                {submodel "Submodels..."} \
-                {relation "Relations..."} \
-                {condition "Channels..."}
-                {text "Text boxes..."}
-                {select "All components..."}} {
+    foreach category {
+	{compartment "Compartments and clouds..."}
+	{state "States..."}
+	{variable "Variables and flows..."}
+	{event "Events and squirts..."}
+	{influence "Influences..."}
+	{submodel "Submodels..."}
+	{relation "Relations..."}
+	{condition "Channels..."} 
+	{text "Text boxes..."}
+	{select "All components..."}} {
     $fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
         -label [lindex $category 1]
     }

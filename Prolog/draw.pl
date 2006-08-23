@@ -337,19 +337,19 @@ Powersim does this. Still, we must simply call a textual output device, and when
 
 add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	caption_for(Id, Caption),
-	draw_style_for(Id, ExactStyle),
-	(ExactStyle=state, !,
-	    Style = compartment;
-	Style = ExactStyle),
+	draw_style_for(Id, Style),
 
 	(Style = submodel, !,
 	    DefAnchor = nw;
-	Style = flow,
+	member(Style, [flow, squirt]),
 	Box = [L, T, R, B],
-	R-L>B-T, !,
+	(R-L>B-T,
 	    DefAnchor = e,
 	    PosStyle = vflow;
-	member(Style, [compartment, channel, variable, flow]), !,
+	DefAnchor = s,
+	    PosStyle = hflow), !;
+	member(Style, [compartment, state, channel,
+		       variable, event, flow, squirt]), !,
 	    DefAnchor = s;
 	DefAnchor = c),
 	(nonvar(PosStyle), !;
@@ -500,6 +500,8 @@ display_in(Wid, Comp, Depth, Trans) :-
 				  InFat, Colour_scheme, Comp);
 	    (Style=state, !,
 	       DCmd = compartment;
+	    Style=event, !,
+		DCmd = variable;
 	    DCmd = Style),
 	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
@@ -528,6 +530,8 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    find_name_host(Link, ControlThing),
 	    m_class:ControlThing has_attribute use_sofar of 1, !,
 	    UseType = broken_influence;
+	Type = squirt, !,
+	    UseType = flow;
 	UseType = Type),
 	Draw_command =.. [UseType, Wid, Screen_coords, 
 			RelFatness, Colour_scheme, [Link]],
@@ -554,11 +558,12 @@ find_fatness([_,_,FatX,FatY], Fatness) :-
 	Fatness is 100/sqrt(FatX*FatY).
 
 draw_incomplete(Line_type) :-
+	(Line_type = squirt, Draw_type = flow;
+	    \+ Line_type = squirt, Draw_type = Line_type),
 	get_incomplete([_Parent | Draw_coords]),
 	find_current(Window_id),
 	get_translation(Trans),
 	find_fatness(Trans, Fatness),
-	use_style_for(Line_type, Draw_type),
 	Draw_command =.. [Draw_type, Window_id, Draw_coords, Fatness, incomplete, [unfinished_line]],
 	call(Draw_command),
 	fail;

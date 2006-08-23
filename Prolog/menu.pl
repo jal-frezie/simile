@@ -1493,7 +1493,7 @@ change_size(TopNode, Type, New_size) :-
 	contains(TopNode, Obj),
 	draw_style_for(Obj, Type),
 	(Type = submodel; Type = influence; Type = relation;
-	Type = flow,
+	Type is_class_of_sort has_bowtie,
 	    get_shape(Obj, bowtie, [L, T, R, B]),
 	    Xpt is (L+R)/2,
 	    Ypt is (T+B)/2,
