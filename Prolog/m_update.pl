@@ -23,7 +23,7 @@ sicstus_module(m_update,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
 		presence_affects/2, status_affects/2,
-		can_start/2, can_finish/2, continues_in/2, continues_from/2,
+		can_start/2, can_finish/3, continues_in/2, continues_from/2,
 		add_equivalence/3, is_no_longer_model_class/1,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
@@ -781,8 +781,8 @@ can_start(Ltype, Box) :-
 	    can_connect(Ltype, Type, _), !)),
 	\+ start_full(Ltype, Link, Comp).
 
-/* finish in a submodel is still allowed, we will attempt to draw a new component at
-the end of the link */
+/* New version with support for IC tabs -- removed because it did not allow variable/event separation. Finish in a submodel is still allowed, we will attempt to draw a new component at
+the end of the link 
 
 can_finish(Ltype, Box) :-
 	(Box = tab(Comp, Link, _,_),
@@ -791,12 +791,14 @@ can_finish(Ltype, Box) :-
 	    Link = Box,
 	    (Ltype = Type;
 	    \+ Type is_primitive;
-	    can_connect(Ltype, _, Type), !)),
+		can_connect(Ltype, _, Type), !)),
 	\+ finish_full(Ltype, Link, Comp).
 
-/* This version included tests for things like role arrow loops.
-TODO: put these in a new separate check */
-old_can_finish(Ltype, Box1, Box2) :-
+This version includes tests for things like role arrow loops.
+TODO: add IC tab support as per above. Must get type at end of tab --
+can_start need not do so (yet). */
+
+can_finish(Ltype, Box1, Box2) :-
 	(appears(Box2), !; contains(Box2, Box1)),
 	\+ (find_base(Box1, Id), find_base(Box2, Id)),
 	\+ u_turn(Ltype, Box1, Box2),
@@ -1285,7 +1287,7 @@ start_full(Type, Link, Node) :-
 	       appears(Floater),
 	       Floater is_of_sort cloud ).
 
-finish_full(Type, Link, Node) :-
+finish_full(Type, Link) :-
 	old_cloud(Link);
 	connects_ghost_flow(Type, Link);
 	find_type(Link, Type),

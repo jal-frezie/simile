@@ -284,7 +284,7 @@ crossing_point([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
     Yoff is Y2-Y1,
     (member(Class, [flow, compartment, channel, state]), !,
         Exit = [Xx, Yx];
-    Class = variable, !,
+    Class is_class_of_sort round, !,
         /* assume line starts at centre */
         Rad is X1 - L,
         get_circle_crossings([X1, Y1], Rad, [X1, Y1], Xoff, Yoff, _, Exit);
@@ -680,8 +680,9 @@ test_complete(Item) :-
             member(Base, [boolean, a(_)]);
         Item has_class_refinement min_val of _Min,
             Item has_class_refinement max_val of _Max;
+	Item is_of_sort discrete;
         Item has_class_refinement param_type of file);
-    Item has_type flow, /* in addition to the above disjunct */
+    Item is_of_sort has_bowtie, /* in addition to the above disjunct */
         (sequence(Control, Item);
             sequence(Item, Control)),
         _ is_connector from _ to Control;

@@ -75,7 +75,9 @@ do_equation_dialog(Win, Box, ClickedObj) :-
 	(default_units(ClickedObj, ITypeBase),
 	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
 	true),
-	(ClickedObj is_of_sort init_eval, !,
+	(ClickedObj is_of_sort discrete, !,
+	    TitleForm = 'Trigger/value';
+	ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
 	(ClickedObj is_of_sort channel, !,
@@ -278,7 +280,8 @@ update_equation(_, Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	(ParamsAllowed = 0, \+ InterInputs = [], !,
 	    EqnError = "You cannot have influences going to a component representing a file or input parameter.";
 	 EqnError = ParseError),
-	(Is_P = 1, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
+	get_host(Function, Node),
+	(Is_P = 1, \+ Node is_of_sort discrete, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
 

@@ -814,10 +814,10 @@ Type is_primitive :-
 
 Obj is_class_of_sort Class :-
 	member(Obj-SortList,
-		[variable-[regular_box, box, has_function, can_be_input,
+		[variable-[round, regular_box, box, has_function, can_be_input,
 			   can_be_ghost],
-		event-[regular_box, box, has_function, can_be_input, discrete,
-			   can_be_ghost],
+		event-[round, regular_box, box, has_function, can_be_input,
+		       discrete, can_be_ghost],
 		function-[regular_box, box, can_be_input],
 		compartment-[rectangle, elongated_box, box, has_function,
 			     can_be_input, init_eval, level, can_be_ghost],

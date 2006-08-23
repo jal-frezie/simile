@@ -1445,7 +1445,7 @@ sort_for_finish(Hit, Ltype, Xpt, Ypt) :-
 	    \+ hide_innards(Location),
 	/* This requirement dropped for flows, see above */
 	    (find_all_comps(Location, Baby),
-		can_finish(Ltype, Baby),
+		can_finish(Ltype, OrigStart, Baby),
 		\+ contains(Baby, Start);
 	     member(Ltype, [flow, squirt])), !,
 	    set_current_coords(Xpt, Ypt),
@@ -1454,7 +1454,7 @@ sort_for_finish(Hit, Ltype, Xpt, Ypt) :-
 	state:retractall(current_coords_are(_,_)),
 	    Drawn = false),
 
-	(can_finish(Ltype, Target), !,
+	(can_finish(Ltype, OrigStart, Target), !,
 	    set_line_finish_obj(Target),
 	    highlight(OrigStart, 1),
 	    highlight(Target, 2),
@@ -1492,7 +1492,7 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 %		    Ltype = influence),
 		appears(Start),
 		can_start(influence, Start),
-		can_finish(influence, Target), !;
+		can_finish(influence, Start, Target), !;
 	Start = OrigStart.
 
 extend_line_to(Start, Type, Target, Point) :-

@@ -332,6 +332,10 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
 	     [wm title [winfo toplevel $equation(main)]]]==0} {
 # do not allow variable parameter for initial values...derrr
 	$widget.slider.radio1 configure -state disabled
+    } elseif {[string first Trigger \
+	     [wm title [winfo toplevel $equation(main)]]]==0} {
+# do not allow fixed parameter for events...derrrrrr
+	$widget.file.radio2 configure -state disabled
     }
     set equation(min) $min
     set equation(max) $max
