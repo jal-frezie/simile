@@ -1958,6 +1958,7 @@ proc ZotObjectSize {t n type size} {
 }
 
 # not used, flows and squirts not customized separately and squirts need fixing
+# best would be to include in sample box with variable/event and own caption
 #proc UpdateOffsets {t n type} {
 #    global looks
 #    set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]

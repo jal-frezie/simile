@@ -397,7 +397,7 @@ get_drawing_form(Comp, Style, BBox) :-
     (get_shape(Comp, bowtie, [BL, BT, BR, BB]), !,
         Xpt is (BR+BL)/2,
         Ypt is (BB+BT)/2,
-        get_bowtie_size(Comp, Cur_size),
+        get_bowtie_size(Comp, Type, Cur_size),
         (BR-BL<BB-BT, !,
         make_bounding_box(Type, Xpt, Ypt, Cur_size, [NL, NT, NR, NB]);
         make_bounding_box(Type, Ypt, Xpt, Cur_size, [NT, NL, NB, NR])),
@@ -473,16 +473,16 @@ multiple_draw(Comp, Module, Num) :-
         Num is min(RealVal, 4);
     Num = 1).
 
-get_bowtie_size(Link, Bowtie) :-
+get_bowtie_size(Link, Type, Bowtie) :-
     Link is_connector from Comp to _,
-    get_box_size(Comp, flow, Box),
+    get_box_size(Comp, Type, Box),
     Bowtie is Box/2.
 
 adjust_bowtie(Comp, Point) :-
     find_type(Comp, Type),
     Type is_class_of_sort has_bowtie,
     get_shape(Comp, course, Point_list),
-    get_bowtie_size(Comp, Bowtie_size),
+    get_bowtie_size(Comp, Type, Bowtie_size),
     closest_centre(Point, Point_list, Miss, [XMid, YMid], Orient),
     line_dir_change_radius_is(Dither),
     Miss < Dither,
@@ -600,7 +600,7 @@ update_link_route(Link, Recurse) :-
 update_bowtie(Link, Route) :-
     find_type(Link, LType),
     (\+ LType is_class_of_sort has_bowtie, !;
-    get_bowtie_size(Link, Bowtie_size),
+    get_bowtie_size(Link, LType, Bowtie_size),
     get_middle_segment(LType, Route, Bowtie_size, Bowtie),
     (   Link has_changed_graphical_attribute bowtie to Bowtie, !;
         Link has_new_graphical_attribute bowtie of Bowtie)).
