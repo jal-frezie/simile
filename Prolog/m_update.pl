@@ -9,7 +9,8 @@ itself is only addressed from within the database module.
 
 sicstus_module(m_update,
 	       [get_av_pair/4, add_parameter/4, list_index_meanings/2,
-		get_all_links/4, list_local_index_meanings/2, get_input_info/2,
+		get_all_links/4, summarize_links/2,
+		list_local_index_meanings/2, get_input_info/2,
 		get_link_source_data/10, find_node_with_data/3,
 		valid_input/2, check_unit/4,
 		need_same_dims/2, check_flow_ends/3,
@@ -106,12 +107,15 @@ dealing with multiple instances. */
 
 get_input_info(Function, Input_list) :-
 	(setof(Link_entry,
-	      IDs^get_all_links(Function, _, IDs, Link_entry),
+	      summarize_links(Function, Link_entry),
 	      Input_list),
 	    decide_param_names(Input_list), !;
 	Input_list = []),
 	retractall(input_links_were(_)),
 	assert(input_links_were(Input_list)).
+
+summarize_links(Fn, LinkEntry) :-
+	get_all_links(Fn, _,_, LinkEntry).
 
 get_all_links(Function, CaptPath, ids(RemoteNode, Relation, Home, Entry),
               input_link(id(Link, Index, SourceLocation),

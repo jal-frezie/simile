@@ -577,9 +577,9 @@ change_name(RenamedNode, Name) :-
 	    update_captions(OtherGhost),
 	    presence_affects(OtherGhost, Reference),
 	    implicit_function(Reference, DownFunc),
-	    setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^P7^
+	    setof(InputSpec, P1^P2^P3^P4^P5^P6^
 		  (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
-		      get_all_links(DownFunc, P0, P7, InputSpec)),
+		      summarize_links(DownFunc, InputSpec)),
 		   InputSpecs),
 	    get_av_pair(OtherGhost, 2, role, Roles),
 	    get_av_pair(DownFunc, 0, value, Eqn),

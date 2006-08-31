@@ -325,11 +325,13 @@ make_intermediates(
 	associated or base models. BackSwap keeps track of this constraint.*/
 
 	copy_term(Source,
-		  param(SourceRef, SrcUnits, SourceLoops, TermSwap, Wait)), !,
+		  param(UseRef, SrcUnits, SourceLoops, TermSwap, Wait)), !,
 	    /* very selective unification needed to feed back right dims to
 	    parameter info (in case it is a ref to final result) but not
 	    indices (because they may differ between references) or var names
 	    (so they get instantiated and declared in each procedure) */
+	    (TermSwap = BackSwap, !,
+		SourceRef = UseRef,
 	    Source = param(_, SrcUnits, OrigLoops, _,_),
 	    remove_physical_units_if_disabled(SubId, SrcUnits, OrigUnits),
 	    (Step = dummy, !,
@@ -373,10 +375,13 @@ make_intermediates(
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
 	           away */
-	    (TermSwap = BackSwap, !;
-	    raise_exception(cannot_make_context(Target, TermSwap, BackSwap))),
 	    Setups = [],
 	    NewInters = PrevInters;
+    /* Unable to merge this parameter's execution loop with what went before.
+		Make an intermediate variable for it instead. */
+	make_intermediates(make_inter(Source, 'n/a'), SubId, Target, DestPath,
+	    BackSwap, PrevInters, BuildingArrays, Step, Used, Units, NewInters,
+	    part_result(SourceContext, Setups, Args, SourceRef)));
 	
 	/* second case: a cumulative function. For the cases count and exists.
 	where the result does not depend on the actual values being checked,

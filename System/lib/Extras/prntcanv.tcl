@@ -130,10 +130,11 @@ namespace eval printer {
 
       }
     }
-  
-    if { ( [ info exist ary(hDC) ] == 0 ) || ($ary(hDC) == 0x0) } {
-      error "Can't get printer attributes"
-    }
+
+# don't see why it should give up so commented this out for Simile 4.7  
+#    if { ( [ info exist ary(hDC) ] == 0 ) || ($ary(hDC) == 0x0) } {
+#      error "Can't get printer attributes"
+#    }
   
     # Now, set "reasonable" defaults if some values were unavailable
     # Resolution is the hardest. Uses "resolution" first, if it was numeric.
@@ -142,7 +143,8 @@ namespace eval printer {
     # Uses 200 as a last resort.
     if { [ info exist ary(resx) ] == 0 } { 
         set ppi "pixels per inch"
-        if { [ info exist ary($ppi) ] == 0 } {
+# Aaargh! Following 'if' test wrong way round 'til 4.7! 
+       if { [ info exist ary($ppi) ] } {
             if { [ scan $ary($ppi) "%d%d" tmp1 tmp2 ] > 0 } {
                 set ary(resx) $tmp1
                 if { $tmp2 > 0 } {
