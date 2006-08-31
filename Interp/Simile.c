@@ -9,7 +9,7 @@
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: Simile.c,v 1.7 2005/04/25 16:57:54 jaspert Exp $
+ * RCS: @(#) $Id: Simile.c,v 1.8 2006/08/31 10:54:09 jmm Exp $
  */
 
 #include <tk.h>
@@ -147,7 +147,6 @@ WinMain(hInstance, hPrevInstance, lpszCmdLine, nCmdShow)
     return 1;
 }
 
-
 /*
  *----------------------------------------------------------------------
  *
@@ -212,7 +211,7 @@ error:
     /* we won't reach this, but we need the return */
     return TCL_ERROR;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -411,7 +410,7 @@ setargv(argcPtr, argvPtr)
     *argcPtr = argc;
     *argvPtr = argv;
 }
-
+
 #if !defined(__GNUC__) || defined(TK_TEST)
 /*
  *----------------------------------------------------------------------
@@ -453,3 +452,4 @@ int main(int argc, char **argv)
     return 0;
 }
 #endif /* !__GNUC__ || TK_TEST */
+
