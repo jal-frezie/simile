@@ -71,7 +71,7 @@ values. */
 
 do_equation_dialog(Win, Box, ClickedObj) :-
 	caption_for(Box, Caption),
-	implicit_function(ClickedObj, Part),
+	(implicit_function(ClickedObj, Part), !; Part = ClickedObj),
 	(default_units(ClickedObj, ITypeBase),
 	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
 	true),
