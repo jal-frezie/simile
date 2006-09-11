@@ -68,7 +68,11 @@ if {$argc && ![string match Darwin $tcl_platform(os)] } {
     set env(OPEN_MODEL) $argv
     }
 } 
-if [string match Darwin $tcl_platform(os)] {
+
+if {[string match Darwin $tcl_platform(os)]} {
+    tk scaling 1.0
+    set graph(font) [list helvetica 12]
+
     lappend auto_path $SIMILE_PATH/System/lib
     package require tclAE
     proc ::tk::mac::OpenDocument {args} {
@@ -90,6 +94,11 @@ if [string match Darwin $tcl_platform(os)] {
     }
     tclAE::installEventHandler aevt rapp handleReopenApp
 } else {
+
+# Scaling affects some metrics but not all, so squash it FTTB
+# to ensure consistency
+    tk scaling 1.5
+    set graph(font) [list helvetica 8]
 
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
@@ -196,11 +205,6 @@ puts "Starting up: 2nd line is $tellProc"
 	}
     }
 }
-
-# Scaling affects some metrics but not all, so squash it FTTB
-# to ensure consistency
-tk scaling 1.5
-set graph(font) [list helvetica 8]
 
 switch $tcl_platform(platform) {
     windows {

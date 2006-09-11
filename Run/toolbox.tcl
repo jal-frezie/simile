@@ -1466,7 +1466,6 @@ proc SaveAll {win} {
 
 proc SaveProjectFile {topNode path tgt} {
     global custom runState nameOfHelperStateFile
-    global SimileProject model_id
 #puts [array get nameOfHelperStateFile]
     #ShowMessage debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
@@ -1494,13 +1493,17 @@ proc SaveProjectFile {topNode path tgt} {
     #            $path/[file tail $nameOfHelperStateFile($topNode)]" ok
     set spfList [do_in_node $topNode array get ::SimileProject fileparam,*]
     foreach {varName spfPath} $spfList {
-    lappend SimileProject(spfList) [string range $varName 10 end] \
+    lappend SimileProject(spfList) [Submodelize $varName] \
         [Relativize $tgt $spfPath]
     }
     set projectF [NetOpen $ProjectFile w]
     set statLine [array get SimileProject]
     puts $projectF $statLine
     close $projectF
+}
+
+proc Submodelize {path} {
+    return [join [concat [list {}] [lrange [split $path /] 2 end]] /]
 }
 
 proc UnOrReDo {curWin fwd} {

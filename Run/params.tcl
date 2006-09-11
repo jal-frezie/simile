@@ -803,11 +803,9 @@ namespace eval fileparams {
     # pathname. And the only way to get that without a hack is to cd to it...
     
     proc Open {topNode smPath args} {
-        global SimileProject
 	set notInput [expr -[llength $args]]
         set smName [file tail $smPath]
         set metaFile [ChooseFile params.spf "Load $smName parameters from:" 0]
-        set SimileProject(fileparam,$smPath) $metaFile
         if {[llength $metaFile]} {
             MergeParams $topNode $smPath $metaFile $notInput 1
             
@@ -817,6 +815,7 @@ namespace eval fileparams {
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
     global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
+    global SimileProject
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -824,6 +823,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     } else {
 	set dataLocn paramData
 	set widgetLocn widgetNames
+        set SimileProject(fileparam,$smPath) $oldPath
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
