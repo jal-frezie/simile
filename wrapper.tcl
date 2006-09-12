@@ -26,12 +26,35 @@ proc ReadFile {file} {
     ::browser::status "Done"
 }
 
+proc toplevel {win args} {
+    eval {frame $win} $args
+    place $win -x [expr {[winfo width .]/2}] \
+	-y [expr {[winfo height .]/2}] -anchor c
+}
+
+proc grab {args} {
+}
+
+rename wm oldWm
+
+proc wm {act win args} {
+    switch -regexp -- $act {
+	withdraw {
+#	    eval {place forget $win} $args
+	} overrideredirect|transient|deiconify {
+	    raise $win
+	} geometry {
+# Once I have ascertained this will work, put something here to position it
+	} default {
+	    return [eval {oldWm $act $win} $args]
+	}
+    }
+}
+
 set graph(font) [list helvetica 8]
 
 # Put splash screen up
-frame .splash
-place .splash -x [expr {[winfo width .]/2}] \
-    -y [expr {[winfo height .]/2}] -anchor c
+toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd 2] -padx 0 -pady 0
 .splash.c create rect 2 59 2 79 -outline \#99cc99 -fill \#99cc99 ;# item 1
 image create photo splash -data [ReadFile ../Images/splash.gif]
@@ -67,6 +90,7 @@ proc cd {newDir} {
     set workingDir [file join $workingDir $newDir]
 }
 
+source mymenu.tcl
 source exec_only.tcl
 set ::RunEnv::helperData [ReadFile ../Examples/forestpp.shf]
 ::RunEnv::LoadViewFile $myNode helperData 4.9

@@ -49,6 +49,7 @@ proc mymenu {w args} {
     set mymenuCmds($w) [randchild [winfo toplevel $w]]
     frame $mymenuCmds($w) -bd 2 -relief raised -class Mymenu
     proc $w {args} [subst {return \[eval mymenuCmd $mymenuCmds($w) \$args\]}]
+    return $w
 }
 
 proc randchild {base} {
@@ -62,7 +63,7 @@ proc randchild {base} {
 proc ResolveIndex {myw spec} {
     if {[string is integer -strict $spec]} {
 	return [lindex [pack slaves $myw] $spec]
-    } elseif {[string equal last $spec]} {
+    } elseif {[string equal last $spec]||[string equal end $spec]} {
 	return [lindex [pack slaves $myw] end]
     } elseif {[string equal active $spec]} {
 	foreach entry [pack slaves $myw] {
@@ -84,7 +85,17 @@ proc ResolveIndex {myw spec} {
 	error "bad menu entry index \"$spec\""
     }
 }
-   
+
+proc EnumIndex {myw spec} {
+    if {[string is integer -strict $spec]} {
+	return $spec
+    } elseif {[string equal last $spec]||[string equal end $spec]} {
+	return [expr {[llength [pack slaves $myw]]-1}]
+    } else {
+	return [lsearch [pack slaves $myw] [ResolveIndex $myw $spec]]
+    }
+}
+
 proc mymenuCmd {myw act args} {
 #    puts [concat $act $args]
     switch $act {
@@ -124,16 +135,22 @@ proc mymenuCmd {myw act args} {
 	    }
 	} configure {
 	    return [eval {$myw $act} $args]
+	} delete {
+	    set startDel [EnumIndex $myw [lindex $args 0]]
+	    if {[llength $args]>1} {
+		set endDel [EnumIndex $myw [lindex $args 1]]
+	    } else {
+		set endDel startDel
+	    }
+	    set entries [pack slaves $myw]
+	    for {set zap $startDel} {$zap<=$endDel} {incr zap} {
+		destroy [lindex $entries $zap]
+	    }
 	} entrycget {
 	    set child [ResolveIndex $myw [lindex $args 0]]
 	    return [eval {$child cget} [lrange $args 1 end]]
 	} index {
-	    set tgt [ResolveIndex $myw [lindex $args 0]]
-	    if {[string equal none $tgt]} {
-		return none
-	    } else {
-		return [lsearch [pack slaves $myw] $tgt]
-	    }
+	    return [EnumIndex $myw [lindex $args 0]]
 	} insert {
 	    set goesAfter [ResolveIndex $myw [lindex $args 0]]
 	    eval {mymenuCmd $myw add} [lrange $args 1 end]
@@ -182,7 +199,7 @@ proc DoCommand {win} {
     global mymenuCmds
     set entry [ResolveIndex $win active]
     if {[info exists mymenuCmds($entry)]} {
-	eval $mymenuCmds($entry)
+	uplevel \#0 $mymenuCmds($entry)
     }
     place forget $win
 }
@@ -198,12 +215,26 @@ proc mybutton {w args} {
     bind $w <Button> [list PostMenuFor $w]
     bind $w <Motion> [list MybuttonMotion %W %X %Y]
     bind $w <ButtonRelease> [list MybuttonRelease %W %x %y]
+    rename $w ${w}cmd
+    proc $w {args} [subst {return \[eval mybuttonCmd $w \$args\]}]
+    return $w
+}
+
+proc mybuttonCmd {w act args} {
+    switch $act {
+	configure {
+	    set labOpts [checkAddOpts $w button $args]
+	    eval {${w}cmd configure} $labOpts
+	} default {
+	    eval {${w}cmd configure $act} $args
+	}
+    }
 }
 
 proc PostMenuFor {w} {
     global mymenuCmds
 
-    set overCursor [::tk::MenuFindName $mymenuCmds($w) [$w cget -text]]
+    set overCursor [::tk::MenuFindName $mymenuCmds($w) [${w}cmd cget -text]]
 # more clever stuff later
     set boxLeft [winfo rootx $w]
     if {[string is integer -strict $overCursor]} {
@@ -231,18 +262,3 @@ proc GetButtonMenu {b} {
 
     return $mymenuCmds($mymenuCmds($b))
 }
-
-# example menus
-menubutton .b1 -text Real -menu .b1.m
-#pack .b1
-menu .b1.m
-.b1.m add command -label ESWDXRCFTvgybhu -command "puts blah"
-.b1.m add command -label IMJNUBHGYVtfcrd
-
-#package require tile
-mybutton .b2 -text Fake -menu .b2.n
-#pack .b2 -side left
-mymenu .b2.n
-.b2.n add command -label ESWDXRCFTvgybhu -command "puts blah"
-.b2.n add command -label IMJNUBHGYVtfcrd
-

@@ -36,9 +36,9 @@ namespace eval runcontrol33857 {
             lappend captList [list Time step \#$phase \
 				  {(} $::runState($node,update$phase) {)}]
 	}
-	if {[InPlugin]} {
-	    $widget.edit.capt configure -values $captList
-	} else {
+#	if {[InPlugin]} {
+#	    $widget.edit.capt configure -values $captList
+#	} else {
 	    $widget.edit.capt.menu delete 0 end
 	    set index 0
 	    foreach timeStep $captList {
@@ -46,7 +46,7 @@ namespace eval runcontrol33857 {
 		$widget.edit.capt.menu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
 	    }
 	    
-	}
+#	}
     }
 
     proc SwapDistVar {node pt} {
@@ -159,33 +159,33 @@ namespace eval runcontrol33857 {
         }
         pack [frame $rsf.edit] -pady 2 -expand on -fill both
 	if {[InPlugin]} {
-	    ComboBox $rsf.unitselection.pulldown -values {unit second minute hour day week month year Ma} -textvariable runState($node,timeUnit)
-	    ComboBox $rsf.integration.pulldown -values {Euler {Runge-Kutta}} \
-		-textvariable runState($node,intMethod)
-	    ComboBox $rsf.edit.capt -modifycmd [namespace current]::NewTimeUnitEdit ;# TODO: add (using SwapDistVar)
+	    set useMenu mymenu
+	    set useButton mybutton
 	} else {
-	    ::ttk::menubutton $rsf.unitselection.pulldown
-	    set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
-	    foreach unit {unit second minute hour day week month year Ma} {
-		$timeUnitMenu add command -label $unit -command "set runState($node,timeUnit) $unit"
-	    }
-	    $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
-		-textvariable runState($node,timeUnit)
-
-	    ::ttk::menubutton $rsf.integration.pulldown
-	    set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0 \
-				   -postcommand "set runState($node,tweaked) 1"]
-	    foreach method {Euler {Runge-Kutta}} {
-						  $intMethodMenu add command -label $method -command \
-						      "set runState($node,intMethod) {$method}"
-					      }
-	    $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
-		-textvariable runState($node,intMethod)
-
-	    ::ttk::menubutton $rsf.edit.capt
-	    set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
-	    $rsf.edit.capt configure -menu $timeStepMenu -width 16
+	    set useMenu menu
+	    set useButton ::ttk::menubutton
 	}
+	$useButton $rsf.unitselection.pulldown
+	set timeUnitMenu [$useMenu $rsf.unitselection.pulldown.menu -tearoff 0]
+	foreach unit {unit second minute hour day week month year Ma} {
+	    $timeUnitMenu add command -label $unit -command "set runState($node,timeUnit) $unit"
+	}
+	$rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
+	    -textvariable runState($node,timeUnit)
+
+	$useButton $rsf.integration.pulldown
+	set intMethodMenu [$useMenu $rsf.integration.pulldown.menu -tearoff 0 \
+			       -postcommand "set runState($node,tweaked) 1"]
+	foreach method {Euler {Runge-Kutta}} {
+					      $intMethodMenu add command -label $method -command \
+						  "set runState($node,intMethod) {$method}"
+					  }
+	$rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
+	    -textvariable runState($node,intMethod)
+
+	$useButton $rsf.edit.capt
+	set timeStepMenu [$useMenu $rsf.edit.capt.menu -tearoff 0]
+	$rsf.edit.capt configure -menu $timeStepMenu -width 16
         pack $rsf.unitselection.pulldown -side left -anchor nw
         pack $rsf.integration.pulldown -side left -anchor nw
         
