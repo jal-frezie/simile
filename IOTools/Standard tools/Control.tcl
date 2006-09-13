@@ -168,7 +168,8 @@ namespace eval runcontrol33857 {
 	$useButton $rsf.unitselection.pulldown
 	set timeUnitMenu [$useMenu $rsf.unitselection.pulldown.menu -tearoff 0]
 	foreach unit {unit second minute hour day week month year Ma} {
-	    $timeUnitMenu add command -label $unit -command "set runState($node,timeUnit) $unit"
+	    $timeUnitMenu add command -label $unit \
+		-command [namespace code [list AlterUnit $node $unit]]
 	}
 	$rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
 	    -textvariable runState($node,timeUnit)
@@ -215,6 +216,16 @@ namespace eval runcontrol33857 {
         set sendvars($node,prevDisplay) 0.0
         set sendvars($node,currentMode) stop
 	set sendvars($node,busy) 0
+    }
+
+    proc AlterUnit {node newUnit} {
+	global runState
+	set timeFactor [expr {[SecondsInA $runState($node,timeUnit)]/ \
+				  [SecondsInA $newUnit]}]
+	set runState($node,timeUnit) $newUnit
+	foreach var {currentTime execTime expected_end} {
+	    set runState($node,$var) [expr {$runState($node,$var)*$timeFactor}]
+	}
     }
 
     proc HitButton {node action} {
