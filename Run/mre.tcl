@@ -136,7 +136,6 @@ namespace eval RunEnv {
 		$fm add separator
 		$dummy add cascade -menu $fm
 	    }
-	    
             set tb1  [::ttk::frame [$mainframe getframe].tbar -class Toolbar]
             # build the toolbar  from the toolbarItems list
             set tbnum 0
@@ -1289,14 +1288,15 @@ namespace eval RunEnv {
                     
                     #ShowMessage debug info "$widget $notebook $pageId $pagecaption" ok
 		    if {[InPlugin]} {
-			$notebook insert end $pageId -text $pagecaption
+			$notebook insert end $pageId -text $pagecaption \
+			    -raisecmd [list ::RunEnv::PageRaiseCmd $notebook]
 			set newFr [$notebook getframe $pageId]
 		    } else {
 			set newFr [frame $notebook.f$pageId]
 			$notebook add $newFr -text $pagecaption
 		    }
 
-                    # page raised below before any panes so that must be moved todo                 -raisecmd [list ::RunEnv::PageRaiseCmd $notebook $pageId]
+                    # page raised below before any panes so that must be moved todo
                     bind $newFr <Button-1> "+::RunEnv::SetCurrentContainer %W"
                     bind $newFr <Button-3> \
                             "+::RunEnv::SetCurrentContainer %W; tk_popup .pageContextMenu %X %Y"
