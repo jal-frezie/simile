@@ -61,14 +61,18 @@ proc randchild {base} {
 }
 
 proc ResolveIndex {myw spec} {
+    global mymenuCmds
+
     if {[string is integer -strict $spec]} {
 	return [lindex [pack slaves $myw] $spec]
     } elseif {[string equal last $spec]||[string equal end $spec]} {
 	return [lindex [pack slaves $myw] end]
     } elseif {[string equal active $spec]} {
 	foreach entry [pack slaves $myw] {
-	    if {[string equal active [$entry cget -state]]} {
-		return $entry
+	    if {![string equal separator $mymenuCmds($entry,type)]} {
+		if {[string equal active [$entry cget -state]]} {
+		    return $entry
+		}
 	    }
 	}
 	return none
@@ -97,6 +101,7 @@ proc EnumIndex {myw spec} {
 }
 
 proc mymenuCmd {myw act args} {
+    global mymenuCmds
 #    puts [concat $act $args]
     switch $act {
 	activate {
@@ -106,25 +111,30 @@ proc mymenuCmd {myw act args} {
 		set subWin [ResolveIndex $myw [lindex $args 0]]
 	    }
 	    foreach entry [pack slaves $myw] {
-		if {[string equal $subWin $entry]} {
-		    $entry configure -state active -relief raised
-		} else {
-		    $entry configure -state normal -relief flat
+		if {![string equal separator $mymenuCmds($entry,type)]} {
+		    if {[string equal $subWin $entry]} {
+			$entry configure -state active -relief raised
+		    } else {
+			$entry configure -state normal -relief flat
+		    }
 		}
 	    }
 	} add {
-	    switch [lindex $args 0] {
-		command {
+	    switch -regexp [lindex $args 0] {
+		command|cascade {
 		    pack [set new [label [randchild $myw] -anchor w]] -fill x
-		    bind $new <Motion> [list MymenuMotion $myw %X %Y]
-		    bind $new <Leave> [list mymenuCmd $myw activate none]
-		    bind $new <ButtonRelease> [list DoCommand $myw]
-		    set opts [checkAddOpts $new command [lrange $args 1 end]]
-		    eval {$new config} $opts
+		} separator {
+		    pack [set new [frame [randchild $myw] -height 2 -bd 1 \
+				       -relief sunken]] -fill x
 		} default {
-		    error "bad menu entry type \"[lindex $args 0]\": must be command"
+		    error "bad menu entry type \"[lindex $args 0]\": must be cascade, command or separator"
 		}
 	    }
+	    bind $new <Motion> [list MymenuMotion $myw %X %Y]
+	    bind $new <Leave> [list mymenuCmd $myw activate none]
+	    bind $new <ButtonRelease> [list DoCommand $myw]
+	    set opts [checkAddOpts $new [lindex $args 0] [lrange $args 1 end]]
+	    eval {$new config} $opts
 	} cget {
 	    switch -- [lindex $args 0] {
 		-type {
@@ -164,7 +174,7 @@ proc mymenuCmd {myw act args} {
 	    place $myw -x $x -y $y -anchor nw
 	    raise $myw
 	} type {
-	    return command
+	    return $mymenuCmds([ResolveIndex $myw [lindex $args 0]],type)
 	} unpost {
 	    place forget $myw
 	} yposition {
@@ -192,13 +202,15 @@ proc checkAddOpts {lab type argList} {
 	    }
 	}
     }
+    set mymenuCmds($lab,type) $type
     return $res
 }
 
 proc DoCommand {win} {
     global mymenuCmds
     set entry [ResolveIndex $win active]
-    if {[info exists mymenuCmds($entry)]} {
+    if {[string equal command $mymenuCmds($entry,type)] && \
+	    [info exists mymenuCmds($entry)]} {
 	uplevel \#0 $mymenuCmds($entry)
     }
     place forget $win

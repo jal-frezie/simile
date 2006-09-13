@@ -73,12 +73,12 @@ namespace eval RunEnv {
         if {[info exists helperTable($node,whichRunEnv)]} {
             return $helperTable($node,whichRunEnv)
         } else {
+	    CreateDisplayPageContextMenu
 	    if {[InPlugin]} {
 		set mreId {}
 		set descmenu {}
 	    } else {
 		set mreId .mre[newInt]
-		CreateDisplayPageContextMenu
             
 		#tk_messageBox -message MakeMRE -type ok
 		toplevel $mreId -width 200m -height 150m
@@ -907,13 +907,21 @@ namespace eval RunEnv {
 #    }
     
     proc CreateDisplayPageContextMenu {} {
-        if  {![InPlugin] && ![winfo exists .pageContextMenu]} {
-            set m [menu .pageContextMenu -tearoff 0]
-            .helpers.sub2 clone .pageContextMenu.sub2
+        if {![winfo exists .pageContextMenu]} {
+	    if {[InPlugin]} {
+		set menuCmd mymenu
+# try to avoid cloning process, my menus may not need it
+		set helps .helpers.sub2
+	    } else {
+		set menuCmd menu
+		set helps .pageContextMenu.sub2
+		.helpers.sub2 clone $helps
+	    }
+            set m [$menuCmd .pageContextMenu -tearoff 0]
             $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
             $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {Table}"
             $m add command -label "Create input sliders" -command "CreateHelperWindow slide139 {Sliders}"
-            $m add cascade -label "Choose display to create ..." -menu .pageContextMenu.sub2
+            $m add cascade -label "Choose display to create ..." -menu $helps
             $m add separator
             $m add command -label "Copy display" -command ::RunEnv::CopyHelper
             $m add command -label "Cut display" -command ::RunEnv::CutHelper
