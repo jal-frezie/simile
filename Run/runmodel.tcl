@@ -83,14 +83,16 @@ proc MakeHelperMenu {} {
     set oldDir [pwd]
     cd ../IOTools
     AddHelperSublist $fm "Add tool" 2
-    set ioDir [file join $custom(prefDir) IOTools]
+    if {![InPlugin]} {
+	set ioDir [file join $custom(prefDir) IOTools]
 #do_in_editor puts "locals in $ioDir"
 # test for version file tells us if user dir is same as installation dir --
 # cannot compare strings as different strings may mean same dir.
 # If it is, do not load IO tools again as redefinition errors will arise
-    if {[file exists $ioDir] && ![file exists ../version]} {
-        cd $ioDir
-        AddHelperSublist $fm.sub2 "Local" l
+	if {[file exists $ioDir] && ![file exists ../version]} {
+	    cd $ioDir
+	    AddHelperSublist $fm.sub2 "Local" l
+	}
     }
     cd $oldDir
 }
@@ -155,45 +157,49 @@ proc AddHelperSublist {fm title ct} {
     set nct 0
     set helperList [glob -nocomplain *.tcl]
     foreach helperApp [lsort $helperList] {
-        if [catch {source $helperApp} wibble] {
-            # done at startup -- make sure dialog is not concealed
-            wm withdraw .
-# do it after idle so this process is not hung till user responds
-            start_in_editor BuildProblem "Error loading I/O tool" warning \
-                    "I/O tool [pwd]/$helperApp had a $::errorInfo" \
-            helpers none none
-        } else {
-            if {[info exists keyValue]} {
-                set action [${keyValue}::identify]
-                if {[string match {Run control} $action]} {
-                    set helperTable(RunControl) $keyValue
-                }
-                if {[string match {Explorer} $action]} {
-                    set helperTable(VariableList) $keyValue ;# for MRE
-                }
-                if {[string match {PEST interface} $action]} {
-                    set helperTable(pestInterface) $keyValue ;# for MRE
-                }
-#                if {[string match {Slider control} $action]} {
-#                    set helperTable(SliderControl) $keyValue
-#                }
-                if {[string match {Data table} $action]} {
-
-                    set table_viewer(id) $keyValue
-                }
-                $m add command -label $action \
-                        -command [list CreateHelperWindow $keyValue $action]
-                unset keyValue
-            }
+	if {[catch {source $helperApp} wibble]} {
+	    if {[InPlugin]} {
+		error "$wibble in $helperApp"
+	    } else {
+		# done at startup -- make sure dialog is not concealed
+		wm withdraw .
+	    # do it after idle so this process is not hung till user responds
+		start_in_editor BuildProblem "Error loading I/O tool" warning \
+		    "I/O tool [pwd]/$helperApp had a $::errorInfo" \
+		    helpers none none
+	    }
+	    continue
+	}
+	if {[info exists keyValue]} {
+	    set action [${keyValue}::identify]
+	    if {[string match {Run control} $action]} {
+		set helperTable(RunControl) $keyValue
+	    }
+	    if {[string match {Explorer} $action]} {
+		set helperTable(VariableList) $keyValue ;# for MRE
+	    }
+	    if {[string match {PEST interface} $action]} {
+		set helperTable(pestInterface) $keyValue ;# for MRE
+	    }
+	    #                if {[string match {Slider control} $action]} {
+	    #                    set helperTable(SliderControl) $keyValue
+	    #                }
+	    if {[string match {Data table} $action]} {
+		
+		set table_viewer(id) $keyValue
+	    }
+	    $m add command -label $action \
+		-command [list CreateHelperWindow $keyValue $action]
+	    unset keyValue
         }
     }
-    foreach subDir [glob -nocomplain *] {
-        if [file isdirectory $subDir] {
+    foreach subDir [glob -nocomplain */] {
+#        if [file isdirectory $subDir] {
             cd $subDir
             AddHelperSublist $m $subDir $nct
             cd ..
             incr nct
-        }
+#        }
     }
     if {[string equal none [$m index 0]]} {
         destroy $m

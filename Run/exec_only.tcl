@@ -10,6 +10,7 @@ proc random01 {} {
 if {[info exists embed_args]} {
     set custom(prefDir) {}
 } else {
+    package require MyTrf ;# use md5 for plugin
     set initDir [pwd]
     regsub -all /\\./ [file join $initDir [info script]] / scriptCmd
     set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
@@ -40,6 +41,7 @@ if {[info exists embed_args]} {
     }
 }
 }
+package require mime
 set runHow(where) home
 source runmodel.tcl
 MakeHelperMenu
@@ -91,18 +93,20 @@ proc GetPathChoice {args} {
 proc RecordPathChoice {args} {
 }
 
-package require MyTrf ;# use md5 for plugin
-package require mime
 if {[InPlugin]} {
     set initMenu .initButt.models
 # list directories into menus, choose with button and load contents into mime
     pack [mybutton .initButt -text "Choose model to execute" -menu $initMenu]
     mymenu $initMenu
-    foreach package [glob ../Examples/*.sml] {
-	$initMenu add command -label [file tail $package] \
-	    -command "set tgt $package"
+    set egPath ../Examples/Plugin
+    cd $egPath
+    foreach package [glob *.sml] {
+	$initMenu add command -label [file tail $package] -command "set tgt $package"
     }
     tkwait variable tgt
+    pack forget .initButt
+    set goodieBag  [mime::initialize -string [ReadFile $tgt]]
+    cd /Run
 } else {
     if {[llength $argv]} {
 	set tgt [file join $initDir [lindex $argv 0]]
@@ -114,6 +118,7 @@ if {[InPlugin]} {
 
 foreach bit [mime::getproperty $goodieBag parts] {
     catch {mime::getheader $bit Content-Disposition} Disposition
+    lappend disps $Disposition
     if {![regexp \"(.*)\" $Disposition all oldPath]} {
 	set oldPath [lindex [lindex $Disposition 0] 1]
     }

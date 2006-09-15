@@ -209,9 +209,11 @@ proc checkAddOpts {lab type argList} {
 proc DoCommand {win} {
     global mymenuCmds
     set entry [ResolveIndex $win active]
-    if {[string equal command $mymenuCmds($entry,type)] && \
-	    [info exists mymenuCmds($entry)]} {
-	uplevel \#0 $mymenuCmds($entry)
+    if {![string equal none $entry]} {
+	if {[string equal command $mymenuCmds($entry,type)] && \
+		[info exists mymenuCmds($entry)]} {
+	    uplevel \#0 $mymenuCmds($entry)
+	}
     }
     place forget $win
 }
