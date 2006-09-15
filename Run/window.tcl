@@ -57,8 +57,8 @@ proc AddTabId {winId tgt prlgNm} {
     set tags [$winId gettags $tgt]
 #puts "$tgt has tags $tags"
     if {[set point [string first tab\( $tags]]>-1} {
-	set close [string first \) $tags $point]
-	return [string range $tags $point $close]
+    set close [string first \) $tags $point]
+    return [string range $tags $point $close]
     }
     return $prlgNm
 }
@@ -170,13 +170,13 @@ proc ClickObj { x y winId X Y action} {
     set caption [GetText $winId $node]
     set topNode $window_info($winId,top_node)
     if {[do_if_running $topNode ProdObj $topNode $context $caption]} {
-	return
+    return
     }
     # IO tool took the click, so do no more
     if {[string compare $pushedbutton snap]==0} then {
         do_in_node $topNode snap $topNode $node
     } else {
-	set window_info(lastClickCapt) $context
+    set window_info(lastClickCapt) $context
         if {[string equal click $action]} {
             set obj [GetCaptionItem $winId $node]
             
@@ -197,8 +197,8 @@ proc ClickObj { x y winId X Y action} {
             }
         }
         prolog [list tk_click_obj('$winId',  $action , $xco , $yco , \
-				      [AddTabId $winId $target $node] , $CD)]
-	update
+                      [AddTabId $winId $target $node] , $CD)]
+    update
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
             tk_popup [winfo parent $winId]top.edit $X $Y
@@ -225,7 +225,7 @@ proc ClickObj { x y winId X Y action} {
         if {[string match $equationbar(current_action) click]} {
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
-		SafeEqnBarEdit $winid
+        SafeEqnBarEdit $winid
                 set label [BlankCrs $caption]\ =
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
@@ -308,11 +308,11 @@ proc DragObj {winId xco yco} {
     global clicktime
     
     if {[string equal move $pushedbutton]} {
-	$winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
-	$winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
-	set window_info($winId,lastx) [expr $xco/$looks(scrollIncr)]
-	set window_info($winId,lasty) [expr $yco/$looks(scrollIncr)]
-	return
+    $winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
+    $winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
+    set window_info($winId,lastx) [expr $xco/$looks(scrollIncr)]
+    set window_info($winId,lasty) [expr $yco/$looks(scrollIncr)]
+    return
     }
 
     set dragtime [clock clicks -milliseconds]
@@ -370,11 +370,11 @@ proc ReleaseObj {winId xco yco} {
 proc EmbraceObj {winId} {
     global window_info
     if {![string equal $winId $window_info(current)]} {
-	set window_info(current) $winId
-	set nodeId [GetEdit $winId]
-	if {[llength $nodeId]} {
-	    prolog [list tk_embrace( '$winId' , $nodeId )]
-	}
+    set window_info(current) $winId
+    set nodeId [GetEdit $winId]
+    if {[llength $nodeId]} {
+        prolog [list tk_embrace( '$winId' , $nodeId )]
+    }
     }
 }
 
@@ -474,7 +474,7 @@ proc ModelWindow {winName} {
     menu ${winName}top
     toplevel $winName -menu ${winName}top
     if {[info exists SimileAutoObjLoaded]} {
-	wm state $winName withdrawn
+    wm state $winName withdrawn
     }
 
     switch $tcl_platform(platform) {
@@ -483,10 +483,10 @@ proc ModelWindow {winName} {
     }
     # Create a scrollable canvas
     set c [canvas $winName.canvas -bg white -confine 1 \
-	       -xscrollcommand "AdjustCanvas $winName toolSlot x" \
-	       -yscrollcommand "AdjustCanvas $winName canvas y" \
-	       -xscrollincrement $looks(scrollIncr) \
-	       -yscrollincrement $looks(scrollIncr)]
+           -xscrollcommand "AdjustCanvas $winName toolSlot x" \
+           -yscrollcommand "AdjustCanvas $winName canvas y" \
+           -xscrollincrement $looks(scrollIncr) \
+           -yscrollincrement $looks(scrollIncr)]
     # scrollincrements set the only way we can get precise scrolling...
     
     # this rectangle will be resized to fill the scrollable area and coloured to
@@ -718,12 +718,12 @@ proc AcceleratorState {winName menu item state} {
     if {[info exists accelerator($menu,$item)]} {
     #puts "AcceleratorState {winName menu item state cmd} $winName $menu $item $state $accelerator($menu,$item)"
         if {[string match normal $state]} {
-	    set action [${winName}top.$menu entrycget $item -command]
-	    if {[lsearch {Cut Copy Paste Delete} $item]>-1} {
+        set action [${winName}top.$menu entrycget $item -command]
+        if {[lsearch {Cut Copy Paste Delete} $item]>-1} {
 # if action is applicable to text, check text edit not in progress before
 # applying it to diagram
-		set action [list if "\[NotEditingText $winName\]" $action]
-	    }
+        set action [list if "\[NotEditingText $winName\]" $action]
+        }
             bind $winName $accelerator($menu,$item) $action
         } else  {
             bind $winName $accelerator($menu,$item) {}
@@ -852,13 +852,13 @@ proc AddEqnPopup {node x y winId X Y} {
 
 # BWidget::bindMouseWheel --
 #
-#	Bind mouse wheel actions to a given widget.
+#   Bind mouse wheel actions to a given widget.
 #
 # Arguments:
-#	widget - The widget to bind.
+#   widget - The widget to bind.
 #
 # Results:
-#	None.
+#   None.
 #
 # Simile-specific version, with fewer bugs
 #
@@ -1006,15 +1006,15 @@ proc CanvasEditBind { c } {
 proc FixBackBox {c textItem} {
     set nid [ExtractPrologName $c $textItem]
     if {[scan [$c bbox $textItem] "%g %g %g %g" l t r b]==4} {
-	foreach backBox [$c find withtag $nid] {
-	    if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
-		if {[string equal line [$c type $backBox]]} {
-		    $c coords $backBox $r $t $l $t $l $b $r $b $r $t
-		} else {
-		    $c coords $backBox $l $t $r $b
-		}
-	    }
-	}
+    foreach backBox [$c find withtag $nid] {
+        if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
+        if {[string equal line [$c type $backBox]]} {
+            $c coords $backBox $r $t $l $t $l $b $r $b $r $t
+        } else {
+            $c coords $backBox $l $t $r $b
+        }
+        }
+    }
     }
 }
 
@@ -1157,16 +1157,16 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set c $winid.canvas
     
     if [string match "Darwin" $tcl_platform(os)] {
-	set accKey Cmd
-	set accSym Command
-	set fm [menu ${winid}top.apple -tearoff 0]
-	$fm delete 0 7
-	$fm add command -label "About Simile..." -command "ShowAbout $winid"
-	$fm add separator
-	${winid}top add cascade -menu $fm
+    set accKey Cmd
+    set accSym Command
+    set fm [menu ${winid}top.apple -tearoff 0]
+    $fm delete 0 7
+    $fm add command -label "About Simile..." -command "ShowAbout $winid"
+    $fm add separator
+    ${winid}top add cascade -menu $fm
     } else {
-	set accKey Ctrl
-	set accSym Control
+    set accKey Ctrl
+    set accSym Control
     }
     
     set fm [menu ${winid}top.file -tearoff 0 \
@@ -1319,6 +1319,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     $fm add separator
 
+    $fm add command -label "Script console" \
+            -command "source ../Run/console.tcl"
+            
+    $fm add separator
+    
 # zoom submenu
     set fm2 [menu $fm.zoom -tearoff 0]
     $fm add cascade -label Zoom -menu $fm2
@@ -1343,16 +1348,16 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     menu $fm.sub4 -tearoff 0
     $fm add cascade -label "Customize" -menu $fm.sub4
     foreach category {
-	{compartment "Compartments and clouds..."}
-	{state "States..."}
-	{variable "Variables and flows..."}
-	{event "Events and squirts..."}
-	{influence "Influences..."}
-	{submodel "Submodels..."}
-	{relation "Relations..."}
-	{condition "Channels..."} 
-	{text "Text boxes..."}
-	{select "All components..."}} {
+    {compartment "Compartments and clouds..."}
+    {state "States..."}
+    {variable "Variables and flows..."}
+    {event "Events and squirts..."}
+    {influence "Influences..."}
+    {submodel "Submodels..."}
+    {relation "Relations..."}
+    {condition "Channels..."} 
+    {text "Text boxes..."}
+    {select "All components..."}} {
     $fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
         -label [lindex $category 1]
     }
@@ -1539,10 +1544,10 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set tb [::ttk::frame $winid.toolSlot.toolbar -class Toolbar]
     pack [Separator $tb.afterSeparator -orient horizontal] -fill x -side bottom
     foreach mode {compartment variable flow influence separator1 \
-		      submodel relation separator2 \
-		       state event squirt separator3 \
-		      creation immigration reproduction loss condition alarm \
-		      separator4 text} {
+              submodel relation separator2 \
+               state event squirt separator3 \
+              creation immigration reproduction loss condition alarm \
+              separator4 text} {
         if {[string match separator* $mode]} {
             
             pack [Separator $tb.$mode -orient vertical] -fill y -side left
@@ -1720,11 +1725,11 @@ proc ListWindows {fm} {
 
     $fm delete 0 end
     foreach win [winfo children .] {
-	if {[string equal Toplevel [winfo class $win]]} {
-	    $fm add radiobutton -variable window_info(uppermost) \
-		-value $win -label [wm title $win] \
-		-command [list raise $win]
-	}
+    if {[string equal Toplevel [winfo class $win]]} {
+        $fm add radiobutton -variable window_info(uppermost) \
+        -value $win -label [wm title $win] \
+        -command [list raise $win]
+    }
     }
     update
 # now window whose menu was clicked has focus even in Windows...
@@ -1733,9 +1738,9 @@ proc ListWindows {fm} {
 
 proc RaiseAny {node win} {
     if {[string equal editor $node]} {
-	raise $win
+    raise $win
     } else {
-	after idle do_for_node $node MyRaise $win
+    after idle do_for_node $node MyRaise $win
     }
 }
 
@@ -1958,7 +1963,7 @@ proc exit_simile {} {
     }
     close $cacheStream
     if {[string equal windows $tcl_platform(platform)]} {
-	file attributes $custom(prefDir)/.recent -hidden true
+    file attributes $custom(prefDir)/.recent -hidden true
     }
     StartComms -1
 }
