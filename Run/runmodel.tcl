@@ -1284,7 +1284,6 @@ proc ex_load_dll {topNode lang progDir id node name incs} {
     #   phasecount and nodedata are set in generated code
     global model_id model_ids model_prog env
     if {[string match tcl $lang]} {
-<<<<<<< runmodel.tcl
     if {![file exists $progDir/model.tcl]} {
         return 0
     }
@@ -1292,15 +1291,6 @@ proc ex_load_dll {topNode lang progDir id node name incs} {
         foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
             source $fnFile
         }
-=======
-	if {![file exists $progDir/model.tcl]} {
-	    return 0
-	}
-	# This won't catch defns in subdirectories, TODO once and properly
-#        foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
-#            source $fnFile
-#        }
->>>>>>> 1.273
         foreach fnFile $incs {
             source $fnFile
         }
