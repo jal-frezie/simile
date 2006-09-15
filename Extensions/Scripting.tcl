@@ -191,7 +191,7 @@ itcl::class similescript::RunControl {
     constructor {} {
         set modelWindow [itcl::find object * -isa ::similescript::ModelWindow]
         set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
-	    set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
+        set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
         Hide
     }
     
@@ -256,6 +256,12 @@ itcl::class similescript::RunControl {
         return [do_for_node $modelNode set ::runState($modelNode,displayInt)]
     }
     
+    public method DefineDisplayCallback {script} {
+        global helperTable
+        set helperTable(callbackScript) $script
+        return
+    }
+    
     public method GetNumberOfTimeSteps {} {
         return [do_for_node $modelNode GetPhaseCount $modelNode]
     }
@@ -288,9 +294,9 @@ itcl::class similescript::RunControl {
         set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
         switch -- [$this GetModelEval $path] {
             INPUT {
-		if {[RunningInC $modelNode]} {
-		    c_setparamelement $nodeId {} $value
-		}
+        if {[RunningInC $modelNode]} {
+            c_setparamelement $nodeId {} $value
+        }
                 switch -glob -- [$this GetModelType $path] {
                     FLAG {
                         do_for_node $modelNode set ::checkStates($nodeId) $value
@@ -305,10 +311,10 @@ itcl::class similescript::RunControl {
                 }
             }
             TABLE {
-		if {[RunningInC $modelNode]} {
-		    c_setparamelement $nodeId {} $value
-		}
-		do_for_node $modelNode set ::paramData(/[GetExecTitle $modelNode]$path) $value
+        if {[RunningInC $modelNode]} {
+            c_setparamelement $nodeId {} $value
+        }
+        do_for_node $modelNode set ::paramData(/[GetExecTitle $modelNode]$path) $value
                 do_for_node $modelNode set ::runState($modelNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
                 Reset
             }
@@ -418,18 +424,18 @@ itcl::class similescript::TableHelper {
     
     public method SetShowingRowsForTimes {value} {
         # value 0 or 1
-	if {$value} {
-	    set timeHdr rows
-	} else {
-	    set timeHdr none
-	}
+    if {$value} {
+        set timeHdr rows
+    } else {
+        set timeHdr none
+    }
         do_for_node $modelNode lset [KeyValue]::orientList($winId) 0 $timeHdr
-	do_for_node $modelNode [KeyValue]::Reconbobulate $winId	
+    do_for_node $modelNode [KeyValue]::Reconbobulate $winId 
     }
     
     public method GetShowingRowsForTimes {} {
         return [string equal rows [lindex \
-	    [do_for_node $modelNode set [KeyValue]::orientList($winId)] 0]]
+        [do_for_node $modelNode set [KeyValue]::orientList($winId)] 0]]
     }
     
     public method Update {} {
@@ -444,7 +450,7 @@ itcl::class similescript::TableHelper {
     public method AppendToFile {filename sectionId} {
         Update
         do_for_node $modelNode [KeyValue]::SaveToNamedFile \
-	    $winId $filename $sectionId
+        $winId $filename $sectionId
     }
     
 }
