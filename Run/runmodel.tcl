@@ -1287,10 +1287,10 @@ proc ex_load_dll {topNode lang progDir id node name incs} {
     if {![file exists $progDir/model.tcl]} {
         return 0
     }
-    # This won't catch defns in subdirectories
-        foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
-            source $fnFile
-        }
+    # This won't catch defns in subdirectories TODO once and properly
+        #foreach fnFile [glob -nocomplain "../Functions/*.tcl"] {
+        #    source $fnFile
+        #}
         foreach fnFile $incs {
             source $fnFile
         }
