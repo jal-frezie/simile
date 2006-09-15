@@ -1,21 +1,50 @@
 policy home
-set workingDir Run
-set fileCount 0
-set env(HOME) {}
-set tcl_platform(os) plugin
-set auto_path [list ../System/lib/bwidget1.7 ../System/lib/calendar]
+set workingDir /
+
+proc fileSeek {fore aft} {
+    if {[string equal relative [file pathtype $aft]]} {
+	foreach bit [file split $aft] {
+	    switch -exact $bit {
+		.. {
+		    set fore [file dirname $fore]
+		    if {[string equal . $fore]} {
+			set fore {}
+		    }
+		} . {
+		} default {
+		    set fore [file join $fore $bit]
+		}
+	    }
+	}
+	return $fore
+    } else {
+	return $aft
+    }
+}
+
+proc cd {newDir} {
+    global workingDir
+    set workingDir [fileSeek $workingDir $newDir]
+}
 
 proc pwd {} {
     global workingDir
     return $workingDir
 }
 
-proc menu {args} {}
+proc checkLikelihood {name} {
+    set levels [file split $name]
+    if {[string equal tclIndex [lindex $levels end]] || \
+	    [string equal Run [lindex $levels 0]] && \
+	    [string equal pkgIndex.tcl [lindex $levels end]]} {
+	error "Unlikely filename $name"
+    }
+}
 
 proc ReadFile {file} {
     global workingDir fileCount
-    if {[string equal tclIndex [file tail $file]]} {error}
-    set fullFile [file join $workingDir $file]
+    set fullFile [string range [fileSeek $workingDir $file] 1 end]
+    checkLikelihood $fullFile
     ::browser::status "Loading $fullFile"
     incr fileCount
     .splash.c coords 1 [list 2 59 [expr {int(4*$fileCount)}] 79]
@@ -54,28 +83,41 @@ proc wm {act win args} {
 rename glob oldGlob
 
 proc glob {args} {
+    global fileCount
+
+#error "unexpectedly globbed $args"
     set tpt [lindex $args end]
-    set dir [file join [pwd] [file dirname $tpt]]
-    set pat [file tail $tpt]
+    set dir [string range [pwd] 1 end]
+    set pat $tpt
     
     ::browser::status "Listing $dir"
-    set rawData [::browser::getURL $dir 10000]
+    incr fileCount
+    .splash.c coords 1 [list 2 59 [expr {int(4*$fileCount)}] 79]
+#    .splash.c itemconfig 4 -text $fileCount
+    raise .splash
+    update idletasks
+    set rawData [::browser::getURL $dir/? 10000]
     ::browser::status "Done"
 
     set results {}
     set file 0
     while {[set file [string first "<a href=\"" $rawData $file]]>-1} {
-	set refStart [expr $file+10]
+	set refStart [expr $file+9]
 	set file [string first "\">" $rawData $refStart]
 	set refEnd [expr $file-1]
 	set file [expr [string first "</a>" $rawData $file]+4]
 	set ref [string range $rawData $refStart $refEnd]
-	if {[string match $pat $ref]} {
+	if {[string first ? $ref] && [string match $pat $ref] && \
+		[string match relative [file pathtype $ref]]} {
 	    lappend results $ref
 	}
     }
     return $results
 }
+
+set fileCount 0
+set env(HOME) {}
+set tcl_platform(os) plugin
 
 set graph(font) [list helvetica 8]
 
@@ -83,7 +125,7 @@ set graph(font) [list helvetica 8]
 toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd 2] -padx 0 -pady 0
 .splash.c create rect 2 59 2 79 -outline \#99cc99 -fill \#99cc99 ;# item 1
-image create photo splash -data [ReadFile ../Images/splash.gif]
+image create photo splash -data [ReadFile Images/splash.gif]
 .splash.c create image 200 158 -image splash
 .splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
     -text "Simulistics Ltd. 2001-2006"
@@ -93,6 +135,12 @@ catch {append regInfo ", Everywhere"}
 .splash.c create text 270.0 295.0 -font $graph(font) -fill \#660066 -text "Registered to $regInfo"
 .splash.c raise 1
 rename source oldsource
+
+cd /System/lib
+foreach libDir [glob */] {
+    lappend auto_path [file join /System lib $libDir]
+}
+cd /Run
 
 proc source {file} {
     uplevel 1 [ReadFile $file]
@@ -111,12 +159,11 @@ proc option {args} {
     }
 }
 
-proc cd {newDir} {
-    global workingDir
-    set workingDir [file join $workingDir $newDir]
+source mymenu.tcl
+proc menu {args} {
+    eval mymenu $args
 }
 
-source mymenu.tcl
 source exec_only.tcl
 
 destroy .splash
