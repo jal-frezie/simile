@@ -51,6 +51,32 @@ proc wm {act win args} {
     }
 }
 
+rename glob oldGlob
+
+proc glob {args} {
+    set tpt [lindex $args end]
+    set dir [file join [pwd] [file dirname $tpt]]
+    set pat [file tail $tpt]
+    
+    ::browser::status "Listing $dir"
+    set rawData [::browser::getURL $dir 10000]
+    ::browser::status "Done"
+
+    set results {}
+    set file 0
+    while {[set file [string first "<a href=\"" $rawData $file]]>-1} {
+	set refStart [expr $file+10]
+	set file [string first "\">" $rawData $refStart]
+	set refEnd [expr $file-1]
+	set file [expr [string first "</a>" $rawData $file]+4]
+	set ref [string range $rawData $refStart $refEnd]
+	if {[string match $pat $ref]} {
+	    lappend results $ref
+	}
+    }
+    return $results
+}
+
 set graph(font) [list helvetica 8]
 
 # Put splash screen up
@@ -92,7 +118,5 @@ proc cd {newDir} {
 
 source mymenu.tcl
 source exec_only.tcl
-set ::RunEnv::helperData [ReadFile ../Examples/forestpp.shf]
-::RunEnv::LoadViewFile $myNode helperData 4.9
 
 destroy .splash

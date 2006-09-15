@@ -909,15 +909,14 @@ namespace eval RunEnv {
     proc CreateDisplayPageContextMenu {} {
         if {![winfo exists .pageContextMenu]} {
 	    if {[InPlugin]} {
-		set menuCmd mymenu
+		set m [mymenu .pageContextMenu -tearoff 0]
 # try to avoid cloning process, my menus may not need it
 		set helps .helpers.sub2
 	    } else {
-		set menuCmd menu
+		set m [menu .pageContextMenu -tearoff 0]
 		set helps .pageContextMenu.sub2
 		.helpers.sub2 clone $helps
 	    }
-            set m [$menuCmd .pageContextMenu -tearoff 0]
             $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
             $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {Table}"
             $m add command -label "Create input sliders" -command "CreateHelperWindow slide139 {Sliders}"
@@ -1177,16 +1176,23 @@ namespace eval RunEnv {
 # variable, and puts that in the supplied variable, returning its length or 
 # -1 if all gone.
 
+    proc lift {heap dest} {
+	variable $heap
+
+	upvar 1 $dest subdest
+	set mound [set $heap]
+	set break [string first \n $mound]
+	set subdest [string range $mound 0 [expr {$break-1}]]
+	set $heap [string range $mound [expr {$break+1}] end]
+	return $break
+    }
+
     proc pick {heap dest} {
 	variable $heap
 
 	upvar 1 $dest subdest
 	if {[InPlugin]} {
-	    set mound [set $heap]
-	    set break [string first \n $mound]
-	    set subdest [string range $mound 0 [expr {$break-1}]]
-	    set $heap [string range $mound [expr {$break+1}] end]
-	    return $break
+	    return [lift $heap subdest]
 	} else {
 	    return [gets $heap subdest]
 	}
@@ -1199,22 +1205,22 @@ namespace eval RunEnv {
         destroy $dp0.notebook
         set mainframe $helperTable($currentNode,whichRunEnv).mainframe
         # read and set .mre position and size
-        pick $stream line
+        lift $stream line
         scan $line "%i %i %i %i" x y width height
 	if {![InPlugin]} {
 	    wm geometry $helperTable($currentNode,whichRunEnv) \
                 ${width}x${height}+${x}+${y}
 	}
         
-        pick $stream line
+        lift $stream line
         scan $line "%i %i" x y;
         [$mainframe getframe].mainpw sash place  0 $x $y
         
-        pick $stream line
+        lift $stream line
         scan $line "%i %i" x y
         [$mainframe getframe].mainpw.controlPane.panedwindow sash place  0 $x $y
         
-        while {[pick $stream line] >= 0} {
+        while {[lift $stream line] >= 0} {
             switch [scan $line %s] {
                 container {
                     LoadContainer $currentNode $stream $line $origVersion
@@ -1338,10 +1344,10 @@ namespace eval RunEnv {
             set containerId [LoseTLRef $containerId]
         }
         
-        pick $stream helperId
+        lift $stream helperId
         #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
         set winId [NewHelperInWindow $dp0.$containerId $helperId ""]
-        pick $stream oldStatus
+        lift $stream oldStatus
         if {$origVersion<4.0} {
             set oldStatus [LoseDTRef $oldStatus]
         }
