@@ -196,7 +196,7 @@ proc AddHelperSublist {fm title ct} {
     foreach subDir [glob -nocomplain */] {
 #        if [file isdirectory $subDir] {
             cd $subDir
-            AddHelperSublist $m $subDir $nct
+            AddHelperSublist $m [string range $subDir 0 end-1] $nct
             cd ..
             incr nct
 #        }

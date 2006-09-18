@@ -41,17 +41,25 @@ proc checkLikelihood {name} {
     }
 }
 
+proc myURL {url} {
+    if {[catch {::browser::getURL [MessURL $url] 10000} loss]} {
+	error "Experienced $loss getting $url"
+    } else {
+	return $loss
+    }
+}
+
 proc ReadFile {file} {
     global workingDir fileCount
     set fullFile [string range [fileSeek $workingDir $file] 1 end]
     checkLikelihood $fullFile
     ::browser::status "Loading $fullFile"
     incr fileCount
-    .splash.c coords 1 [list 2 59 [expr {int(4*$fileCount)}] 79]
+    .splash.c coords 1 [list 2 59 [expr {int(3*$fileCount)}] 79]
 #    .splash.c itemconfig 4 -text $fileCount
     raise .splash
     update idletasks
-    return [::browser::getURL $fullFile 10000]
+    return [myURL $fullFile]
     ::browser::status "Done"
 }
 
@@ -80,23 +88,49 @@ proc wm {act win args} {
     }
 }
 
+proc TidyURL {name} {
+    while {[set special [string first % $name]]!=-1} {
+	set end [expr {$special+2}]
+	if {[scan [string range $name $special $end] "%%%x" num]>0} {
+	    set name [string replace $name $special $end [format %c $num]]
+	} else {
+	    error $name
+	}
+    }
+    return $name
+}
+		     
+proc MessURL {name} {
+    while {[set spec [string first { } $name]]!=-1} {
+	if {[scan [string range $name $spec $spec] "%c" num]>0} {
+	    set name [string replace $name $spec $spec [format %%%x $num]]
+	} else {
+	    error $name
+	}
+    }
+    return $name
+}
+		     
 rename glob oldGlob
 
 proc glob {args} {
     global fileCount
 
-#error "unexpectedly globbed $args"
     set tpt [lindex $args end]
     set dir [string range [pwd] 1 end]
     set pat $tpt
     
+    if {[string equal Run $dir]} {
+	error "unexpectedly globbed $args"
+    }
+
     ::browser::status "Listing $dir"
     incr fileCount
-    .splash.c coords 1 [list 2 59 [expr {int(4*$fileCount)}] 79]
+    .splash.c coords 1 [list 2 59 [expr {int(3*$fileCount)}] 79]
 #    .splash.c itemconfig 4 -text $fileCount
     raise .splash
     update idletasks
-    set rawData [::browser::getURL $dir/? 10000]
+    set rawData [myURL $dir/?]
     ::browser::status "Done"
 
     set results {}
@@ -109,7 +143,7 @@ proc glob {args} {
 	set ref [string range $rawData $refStart $refEnd]
 	if {[string first ? $ref] && [string match $pat $ref] && \
 		[string match relative [file pathtype $ref]]} {
-	    lappend results $ref
+	    lappend results [TidyURL $ref]
 	}
     }
     return $results

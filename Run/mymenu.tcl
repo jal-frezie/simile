@@ -192,6 +192,7 @@ proc mymenuCmd {myw act args} {
 	    set y [expr {[lindex $args 1]-[winfo rooty $surround]}]
 	    place $myw -x $x -y $y -anchor nw
 	    raise $myw
+	    grab $myw
 	} type {
 	    return $mymenuCmds([ResolveIndex $myw [lindex $args 0]],type)
 	} unpost {

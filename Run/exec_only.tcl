@@ -117,19 +117,31 @@ if {[InPlugin]} {
 }
 
 foreach bit [mime::getproperty $goodieBag parts] {
-    catch {mime::getheader $bit Content-Disposition} Disposition
-    lappend disps $Disposition
-    if {![regexp \"(.*)\" $Disposition all oldPath]} {
-	set oldPath [lindex [lindex $Disposition 0] 1]
-    }
-    switch [file extension $oldPath] {
-	.tcl {
-	    uplevel 0 [mime::getbody $bit]
-	} .shf {
-	    set shfBag [mime::initialize -string [mime::getbody $bit]]
-	    set ::RunEnv::helperData [mime::getbody $shfBag]
-#	} .cnv {
-#	    set ::RunEnv::diagSpec [mime::getbody $bit]
+    set Desc [mime::getheader $bit Content-Description]
+    #ShowMessage debug info $Desc ok
+    switch [lindex $Desc 0] {
+	"Run Status" {
+	    set RunStats $bit
+# do next bit when starting exec proc
+#                        do_for_node $topNode SetRunParams $topNode $runParams
+	} "Authentication Code" {
+#	    set AuthCode [string trimright [mime::getbody $bit]]
+	} default {
+	    set Disposition [mime::getheader $bit Content-Disposition]
+	    lappend disps $Disposition
+	    if {![regexp \"(.*)\" $Disposition all oldPath]} {
+		set oldPath [lindex [lindex $Disposition 0] 1]
+	    }
+	    switch [file extension $oldPath] {
+		.tcl {
+		    uplevel 0 [mime::getbody $bit]
+		} .shf {
+		    set shfBag [mime::initialize -string [mime::getbody $bit]]
+		    set ::RunEnv::helperData [mime::getbody $shfBag]
+		    #	} .cnv {
+		    #	    set ::RunEnv::diagSpec [mime::getbody $bit]
+		}
+	    }
 	}
     }
 }
@@ -138,6 +150,9 @@ foreach bit [mime::getproperty $goodieBag parts] {
 # This won't catch defns in subdirectories
 
 set myNode [lindex $nodedata(0) 0]
+if {[info exists RunStats]} {
+    SetRunParams $myNode [mime::getbody $RunStats]
+}
 set model_id($myNode) 0
 set instance_id($myNode) 0
 set runState($myNode,updated) 0
