@@ -31,13 +31,22 @@ proc HitWidget {win x y} {
 }
 
 proc MymenuMotion {win X Y} {
+    global mymenuCmds
+
 #puts "mmm $win $X $Y"
     set x [expr {$X-[winfo rootx $win]}]
     set y [expr {$Y-[winfo rooty $win]}]
     if {[HitWidget $win $x $y]} {
 	mymenuCmd $win activate @$x,$y
     } else {
-	mymenuCmd $win activate none
+	set nowActive [ResolveIndex $win active]
+	if {[string equal none $nowActive]} {
+	    mymenuCmd $win activate none
+	} elseif {[string equal cascade $mymenuCmds($nowActive,type)]} {
+	    MymenuMotion [GetButtonMenu $nowActive] $X $Y
+	} else {
+	    mymenuCmd $win activate none
+	}
     }
 }
 
@@ -117,6 +126,14 @@ proc mymenuCmd {myw act args} {
 		    } else {
 			$entry configure -state normal -relief flat
 		    }
+
+		    if {[string equal cascade $mymenuCmds($entry,type)]} {
+			if {[string equal $subWin $entry]} {
+			    PostCascadeFor $entry
+			} else {
+			    $mymenuCmds($entry) unpost
+			}
+		    }
 		}
 	    }
 	} add {
@@ -131,7 +148,9 @@ proc mymenuCmd {myw act args} {
 		}
 	    }
 	    bind $new <Motion> [list MymenuMotion $myw %X %Y]
-	    bind $new <Leave> [list mymenuCmd $myw activate none]
+	    if {[string equal command [lindex $args 0]]} {
+		bind $new <Leave> [list mymenuCmd $myw activate none]
+	    }
 	    bind $new <ButtonRelease> [list DoCommand $myw]
 	    set opts [checkAddOpts $new [lindex $args 0] [lrange $args 1 end]]
 	    eval {$new config} $opts
@@ -210,9 +229,14 @@ proc DoCommand {win} {
     global mymenuCmds
     set entry [ResolveIndex $win active]
     if {![string equal none $entry]} {
-	if {[string equal command $mymenuCmds($entry,type)] && \
-		[info exists mymenuCmds($entry)]} {
-	    uplevel \#0 $mymenuCmds($entry)
+	switch $mymenuCmds($entry,type) {
+	    command {
+		if {[info exists mymenuCmds($entry)]} {
+		    uplevel \#0 $mymenuCmds($entry)
+		}
+	    } cascade {
+		DoCommand [GetButtonMenu $entry]
+	    }
 	}
     }
     place forget $win
@@ -261,6 +285,15 @@ proc PostMenuFor {w} {
     tk_popup $mymenuCmds($w) $boxLeft $boxTop
 }
 
+proc PostCascadeFor {w} {
+    global mymenuCmds
+
+# more clever stuff later
+    set boxLeft [expr {[winfo rootx $w]+[winfo width $w]}]
+    set boxTop [winfo rooty $w]
+    tk_popup $mymenuCmds($w) $boxLeft $boxTop
+}
+
 proc MybuttonMotion {w x y} {
     MymenuMotion [GetButtonMenu $w] $x $y
 }
@@ -276,3 +309,19 @@ proc GetButtonMenu {b} {
 
     return $mymenuCmds($mymenuCmds($b))
 }
+
+# testing stuff
+
+#mybutton .b -text "Cascading test" -menu .b.top
+#mymenu .b.top
+#.b.top add command -label Boring -command "puts boring"
+#.b.top add cascade -label Interesting -menu .b.top.next
+#.b.top add command -label Monotonous -command "puts yawn"
+#.b.top add command -label Tedious -command "puts stretch"
+
+#mymenu .b.top.next
+#.b.top.next add command -label "Popty ping" -command "puts ping"
+#.b.top.next add command -label "Popty pong" -command "puts pong"
+
+#pack .b -fill x -anchor w
+#pack [canvas .c -bg \#c0c0ff]

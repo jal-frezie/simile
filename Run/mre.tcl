@@ -1100,15 +1100,16 @@ namespace eval RunEnv {
     proc LoadSHF {currentNode oldPath} {
         global mimeSquirter simtmpdir
         global helperTable nameOfHelperStateFile errorInfo
-        variable dp0 
+        variable dp0
+	variable shfString
         if {[catch {
                 set multiT [mime::initialize -file $oldPath]
                 set origVersion [mime::getheader $multiT Simile-Version]
                 set origin [mime::getheader $multiT Simile-Origin]
-                set metaFile [file join $simtmpdir temp_in.shf]
-                set mimeSquirter [NetOpen $metaFile w]
-                fconfigure $mimeSquirter -translation binary
-                mime::getbody $multiT -command SquirtMime -blocksize 256
+#                set metaFile [file join $simtmpdir temp_in.shf]
+#                set mimeSquirter [NetOpen $metaFile w]
+#                fconfigure $mimeSquirter -translation binary
+#                mime::getbody $multiT -command SquirtMime -blocksize 256
 	} syndrome]} {
 #do_in_editor puts "MIME open failed: $syndrome"
             set metaFile $oldPath
@@ -1127,10 +1128,11 @@ namespace eval RunEnv {
         set nameOfHelperStateFile($currentNode) $oldPath
         do_in_editor AttackGlobalVariable nameOfHelperStateFile($currentNode) \
 	    ($currentNode) $oldPath
-        set stream [NetOpen $metaFile r]
+#        set stream [NetOpen $metaFile r]
+        set shfString [mime::getbody $multiT]
         
         if {[string equal mre $origin]} {
-            LoadViewFile $currentNode $stream $origVersion
+            LoadViewFile $currentNode shfString $origVersion
         } elseif {[string equal many_windows $origin]}  {
             # assume that it is an shf made by the multiple window run env
             destroy $dp0.notebook; #what if there is an error in the file delete MRE, rebuild
@@ -1168,7 +1170,7 @@ namespace eval RunEnv {
         } else  {
             ShowMessage Error error "Unknown display configuration file format $origin" ok
         }
-        close $stream
+#        close $stream
     }
 
 # 'pick' provides compatibility with the plugin which cannot open streams. 
