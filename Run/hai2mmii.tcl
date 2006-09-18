@@ -769,9 +769,11 @@ proc BringParameter {array node inds} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
     for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
-	set sub [join [concat $node [lrange $inds $ind1 end]] ,]
+	set sub [join [concat [list $node] [lrange $inds $ind1 end]] ,]
 	if {[info exists inputSrc($sub)]} {
 	    return $inputSrc($sub)
+	} else {
+	    puts "No $sub in [array names inputSrc]"
 	}
     }
 }

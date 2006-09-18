@@ -61,13 +61,12 @@ get_info(Wid, Comp, desc) :-
 	name(LType, Middle)), !,
 
 	(Wid shows_model Context,
-	    setof(DestLoc, Dest^(selectable_finish(Comp, Dest),
+	    setof(DestLoc, Dest^(m_update:connects(Comp, Source, Dest),
 				 abs_path_name(Dest, Context, DestLoc)),
 		  DestList),
 	    (DestList = [Dests]; Dests = DestList), !,
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
-	    selectable_start(Comp, Source),
 	    abs_path_name(Source, Context, SourceLoc),
 	    sicstus_format_to_chars(" (from ~a to ~w)", [SourceLoc, Dests], 
 	        Suffix);
@@ -1252,8 +1251,8 @@ recursive_highlight(Target, Way, Where) :-
 	    change_delete_status(Target, Way, Where),
 	    Also = Target;
 	tk_get_pref(deleteEndToEnd, 1),
-	    selectable_start(Target, Start),
-	    selectable_finish(Target, Finish),
+	    m_class:connects(Target, Start, Mid),
+	    get_host(Mid, Finish),
 	    match_delete_status([Start, Finish], Way, Where),
 	    change_delete_status(Target, Way, Where),
 	    (Also = Target;
@@ -1343,22 +1342,6 @@ match_delete_status(Ends, Way, Where) :-
 	\+ at_def_con(End, Where), !, Way = on;
 	Way = off.
 
-selectable_start(Link, Start) :-
-	m_class:Link is_connector from Node to _Mid,
-	(\+ Node is_instance_of _,
-	    m_class:Node has_model_refinement link_equivalences of Equivs,
-	    member(Prev-Link, Equivs), !,
-	    selectable_start(Prev, Start);
-	Start = Node).
-	    
-selectable_finish(Link, Finish) :-
-	m_class:Link is_connector from _Mid to Node,
-	(\+ Node is_instance_of _,
-	    m_class:Node has_model_refinement link_equivalences of Equivs,
-	    member(Link-Next, Equivs), !,
-	    selectable_finish(Next, Finish);
-	get_host(Node, Finish)).
-	
 local_ends(Link, Start, Finish) :-
 	m_class:Link is_connector from Start to Mid,
 	get_host(Mid, Finish).
