@@ -599,10 +599,6 @@ namespace eval RunEnv {
             # all panedwindows are in a notebook parent
             set parentPage [winfo parent $parentPath]
             set parentNoteBook [winfo parent $parentPage]
-            #ShowMessage debug info "DeletePane page\n parentPath $parentPath\n \
-            #                parentPage $parentPage; parentNoteBook $parentNoteBook\n \
-            #                pages [$parentNoteBook tabs]\n \
-            #                current page [$parentNoteBook tab current]" ok;
             destroy $parentPath
             if {[string match $nbClass [winfo class $parentNoteBook]]} {
                 DeleteNotebookPage $parentNoteBook
@@ -905,7 +901,7 @@ namespace eval RunEnv {
 #        }
 #        return $nameList
 #    }
-    
+
     proc CreateDisplayPageContextMenu {} {
         if {![winfo exists .pageContextMenu]} {
 	    if {[InPlugin]} {
@@ -935,7 +931,7 @@ namespace eval RunEnv {
             $m add command -label "Delete" -command "::RunEnv::DeleteHelperCurrentContainer"
         }
     }
-    
+
     proc KillDisplays {} {
         global helperTable
         variable dp0
@@ -1447,7 +1443,7 @@ proc MyRaise {top} {
 
     wm deiconify $top
     raise $top
-    if [string match Darwin $tcl_platform(os)] {
+    if {[string match Darwin $tcl_platform(os)]} {
        tclAE::send -s misc actv
     }
 }
