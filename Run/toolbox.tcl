@@ -168,8 +168,7 @@ proc ShiftDll {Point Top Loc Rep} {
     if {[llength $Rep]} {
         set prefx $base/model
         if {$Rep && [file exists ${prefx}${Rep}[info sharedlibextension]]} {
-            file copy -force ${prefx}${Rep}[info sharedlibextension] \
-                    ${prefx}[info sharedlibextension]
+            file copy -force ${prefx}${Rep}[info sharedlibextension] ${prefx}[info sharedlibextension]
         } else {
             file delete -force ${prefx}[info sharedlibextension]
             file delete -force ${prefx}.tcl
@@ -219,8 +218,7 @@ proc CheckFnsFresh {L progDir id userFnList} {
         set functor [lindex [split $func /] 0] ;# remove arity
         set posn [lsearch $equation(fnDefs) "{Macros *} $functor"]
         if {$posn == -1} {
-            set posn [lsearch $equation(fnDefs) \
-                    "{Procedures *} $functor * returns *"]
+            set posn [lsearch $equation(fnDefs) "{Procedures *} $functor * returns *"]
         }
         if {$posn == -1} {
             return [list 4 $func <unknown>] ;# missing function declaration
@@ -327,64 +325,59 @@ set runHow(time) parallel
 proc do_for_node {node args} {
     global runState tcl_platform runHow simtmpdir
 
-    if {![string equal home $runHow(where)] && \
-	    ![info exists runState($node,interp)]} {
-	if {[string equal interp $runHow(call)]} {
-	    set runState($node,interp) [interp create]
-	    $runState($node,interp) eval set runHow $runHow(return)
-	    $runState($node,interp) eval source ../Run/support.tcl
-	} else {
-#	    scan [info tclversion] {%d.%d} MAJ MIN
-	    if {[string equal windows $tcl_platform(platform)]} {
-		set sep {}
-	    } else {
-		set sep .
-	    }
-            if [string match Darwin $tcl_platform(os)] {
-		set makeExec ../../MacOS/Simile
-		#              catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
+    if {![string equal home $runHow(where)] && ![info exists runState($node,interp)]} {
+        if {[string equal interp $runHow(call)]} {
+            set runState($node,interp) [interp create]
+            $runState($node,interp) eval set runHow $runHow(return)
+            $runState($node,interp) eval source ../Run/support.tcl
+        } else {
+#           scan [info tclversion] {%d.%d} MAJ MIN
+            if {[string equal windows $tcl_platform(platform)]} {
+                set sep {}
             } else {
-		set makeExec ../System/bin/wish
+                set sep .
+            }
+            if [string match Darwin $tcl_platform(os)] {
+                set makeExec ../../MacOS/Simile
+#               catch {file rename ../Scripts/AppMain.tcl ../Scripts/AppMain.hide}
+            } else {
+                set makeExec ../System/bin/wish
             }
             set srcLoc ../Run/runmodel.tcl          
-	    if {![info exists runHow(sendCmd)]} { ;# fix debug env
-		set runHow(sendCmd) [list send [tk appname]]
-	    }
-	    set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return) \
-			    $runHow(readpipe)]
-	    set runHow(loaded) 0
-	    if {[string equal script $runHow(init)]} {
-		set launchArgs [concat $srcLoc $scArgs]
-		set runHow(loaded) 1
-	    } else {
-		set launchArgs {}
-	    }
-	    if {[string equal open $runHow(launch)]} {
-		set runState($node,interp) \
-		    [open [concat |$makeExec $launchArgs] r+]
-	    } else {
-		set runState($node,interp) \
-		    [eval exec $makeExec $launchArgs &]
-	    }
-	    if {[string equal pipe $runHow(return)]} {
-		fileevent $runState($node,interp) readable \
-		    [list FeedModel $node pipe]
-	    }
-	    if {[string equal interactive $runHow(init)]} {
-		tell_runner $node [list set argv $scArgs]
-		tell_runner $node [list source $srcLoc]
-		set runHow(loaded) 1
-	    }
-	    tkwait variable runState($node,modelReady)
-	    #tk_messageBox -message "Go! mr is '$runState($node,modelReady)'"
-            if [string match Darwin $tcl_platform(os)] {
-		#              catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
-		#      carbon::processHICommand hide {}
+            if {![info exists runHow(sendCmd)]} { ;# fix debug env
+                set runHow(sendCmd) [list send [tk appname]]
             }
-	    set runState($node,queueSize) 0
-	}
-	tickle $node
-	RaiseModelWindow $node
+            set scArgs [list $node $simtmpdir $runHow(sendCmd) $runHow(return) $runHow(readpipe)]
+            set runHow(loaded) 0
+            if {[string equal script $runHow(init)]} {
+                set launchArgs [concat $srcLoc $scArgs]
+                set runHow(loaded) 1
+            } else {
+                set launchArgs {}
+            }
+            if {[string equal open $runHow(launch)]} {
+                set runState($node,interp) [open [concat |$makeExec $launchArgs] r+]
+            } else {
+                set runState($node,interp) [eval exec $makeExec $launchArgs &]
+            }
+            if {[string equal pipe $runHow(return)]} {
+                fileevent $runState($node,interp) readable [list FeedModel $node pipe]
+            }
+            if {[string equal interactive $runHow(init)]} {
+                tell_runner $node [list set argv $scArgs]
+                tell_runner $node [list source $srcLoc]
+                set runHow(loaded) 1
+            }
+            tkwait variable runState($node,modelReady)
+            #tk_messageBox -message "Go! mr is '$runState($node,modelReady)'"
+            if [string match Darwin $tcl_platform(os)] {
+#               catch {file rename ../Scripts/AppMain.hide ../Scripts/AppMain.tcl}
+#               carbon::processHICommand hide {}
+            }
+            set runState($node,queueSize) 0
+        }
+        tickle $node
+        RaiseModelWindow $node
     }
     return [eval do_in_node $node $args]
 }
@@ -395,7 +388,7 @@ proc do_for_node {node args} {
 proc tickle {node} {
     global runState
     if {![catch {do_in_node $node expr 1}]} {
-    after 1000 tickle $node
+        after 1000 tickle $node
     }
 }
 
@@ -408,46 +401,43 @@ proc do_in_node {node args} {
     global myNode runState runHow
 
     if {[string equal home $runHow(where)]} {
-	if {[info exists myNode]} {
-	    set helpersNode $myNode
-	}
-	set myNode $node
-	set res [eval $args]
-	unset myNode
-	if {[info exists helpersNode]} {
-	    set myNode $helpersNode
-	}
-	return $res
+        if {[info exists myNode]} {
+            set helpersNode $myNode
+        }
+        set myNode $node
+        set res [eval $args]
+        unset myNode
+        if {[info exists helpersNode]} {
+            set myNode $helpersNode
+        }
+        return $res
     }
 
     set command [list do $args]
     if {[string equal interp $runHow(call)]} {
-    set result [$runState($node,interp) eval $command]
+        set result [$runState($node,interp) eval $command]
     } else {
-	while {!$runState($node,modelReady)} {
-	    tkwait variable runState($node,modelReady)
-	}
-    if {$runState($node,modelReady)==1} {
-	tell_runner $node $command
-	incr runState($node,queueSize)
+        while {!$runState($node,modelReady)} {
+            tkwait variable runState($node,modelReady)
+        }
+        if {$runState($node,modelReady)==1} {
+            tell_runner $node $command
+            incr runState($node,queueSize)
 #puts "put: $command"
-	set runState($node,modelReady) 0
-	upvar \#0 runState($node,response$runState($node,queueSize)) result
-	tkwait variable runState($node,response$runState($node,queueSize))
+            set runState($node,modelReady) 0
+            upvar \#0 runState($node,response$runState($node,queueSize)) result
+            tkwait variable runState($node,response$runState($node,queueSize))
 #puts "Got $result"
-	incr runState($node,queueSize) -1
-    } else {
-        set result {res 0}
+            incr runState($node,queueSize) -1
+        } else {
+            set result {res 0}
 #puts "$command: model dead"
         }
     }
     set info [lindex $result 1]
     switch [lindex $result 0] {
-	err {
-	    error [lindex $info 0] [join $info \n]
-	} res {
-	    return $info
-	}
+        err {error [lindex $info 0] [join $info \n]} 
+        res {return $info}
     }
 }
 
@@ -455,39 +445,39 @@ proc FeedModel {node incoming} {
     global runState errorInfo
 
     if {[string equal pipe $incoming]} {
-	gets $runState($node,interp) incoming_lines
+        gets $runState($node,interp) incoming_lines
         set incoming [join $incoming_lines \n]
     }
 #puts "Received \"$incoming\" from $node exec"
     if {[string equal get [lindex $incoming 0]]} {
-	if {[catch [lindex $incoming 1] response]} {
-	    set result [list err [split $errorInfo \n]]
-	} else {
-	    set result [list res $response]
-	}
-	tell_runner $node $result
+        if {[catch [lindex $incoming 1] response]} {
+            set result [list err [split $errorInfo \n]]
+        } else {
+            set result [list res $response]
+        }
+        tell_runner $node $result
 #   eval $runHow(sendOp) exec_for_$node {$result}
     } else {
-	set runState($node,modelReady) 1
-	set runState($node,response$runState($node,queueSize)) $incoming
+        set runState($node,modelReady) 1
+        set runState($node,response$runState($node,queueSize)) $incoming
     }
 }
 
 proc KillInterpFor {node} {
     global runState runHow
     if {[info exists runState($node,interp)]} {
-    if {[string equal interp $runHow(call)]} {
-        interp delete $runState($node,interp)
-    } else {
-#       tell_runner $node {wm deiconify .}
-#       do_in_node $node exit_exec    
-#       tell_runner $node exit
-        TryToKill $node
-        if {[string equal pipe $runHow(call)]} {
-#       gets $runState($node,interp)
-#       close $runState($node,interp)
+        if {[string equal interp $runHow(call)]} {
+            interp delete $runState($node,interp)
+        } else {
+#           tell_runner $node {wm deiconify .}
+#           do_in_node $node exit_exec    
+#           tell_runner $node exit
+            TryToKill $node
+            if {[string equal pipe $runHow(call)]} {
+#               gets $runState($node,interp)
+#               close $runState($node,interp)
+            }
         }
-    }
 #       unset runState($node,interp)
     }
 }
@@ -496,13 +486,13 @@ proc tell_runner {node action} {
     global runState runHow
 #puts "Sending \"$action\" to $node exec"
     if {[string equal pipe $runHow(call)]} {
-	if {[string equal get_data $runHow(readpipe)] && $runHow(loaded)} {
-	    set action [split $action \n] ;# command must be on one line
-	}
-	puts $runState($node,interp) $action
-	flush $runState($node,interp)
+        if {[string equal get_data $runHow(readpipe)] && $runHow(loaded)} {
+            set action [split $action \n] ;# command must be on one line
+        }
+        puts $runState($node,interp) $action
+        flush $runState($node,interp)
     } else {
-	eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
+        eval $runHow(sendOp) -async exec_for_$node {after idle [list $action]}
     }
 }
 
@@ -510,14 +500,14 @@ proc do_if_running {node args} {
     global runState runHow
 
     if {[string equal home $runHow(where)]} {
-	set running [info exists runState($node,modelRunning)]
+        set running [info exists runState($node,modelRunning)]
     } else {
-	set running [info exists runState($node,interp)]
+        set running [info exists runState($node,interp)]
     }
     if {$running} {
-	return [eval do_in_node $node $args]
+        return [eval do_in_node $node $args]
     } else {
-	return 0
+        return 0
     }
 }
 
@@ -530,7 +520,7 @@ proc TryToKill {node} {
     global runState runHow
 #puts "Trying to kill $node"
     if {![info exists runState($node,interp)]} {
-	return
+        return
     } 
     if {[string equal open $runHow(launch)]} {
         c_killmodel [pid $runState($node,interp)]
@@ -565,8 +555,7 @@ proc DestroyHelpers {node} {
 }
 
 proc load_dll {topNode lang progDir id node name incs} {
-    return [do_for_node $topNode \
-		ex_load_dll $topNode $lang $progDir $id $node name $incs]
+    return [do_for_node $topNode ex_load_dll $topNode $lang $progDir $id $node name $incs]
 }
 
 proc compile_c {workingDir} {
@@ -583,8 +572,8 @@ proc compile_c {workingDir} {
     set serial [newInt]
     set TARGET model${serial}[info sharedlibextension]
     while {[file exists $TARGET]} {
-    set serial [newInt]
-    set TARGET model${serial}[info sharedlibextension]
+        set serial [newInt]
+        set TARGET model${serial}[info sharedlibextension]
     }
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
@@ -601,76 +590,46 @@ proc compile_c {workingDir} {
         }
         windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
-        set useComp [PrefValue custom(compChoice) compChoice]
-# use a script even when starting a properly installed GNU just in case
-# an error results
-#            GNU {
-#                switch $tcl_platform(os) {
-#                    {Windows NT} {
-#                        exec cmd /c start /min g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-#                        exec cmd /c start /min dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
-#                    }
-#                    {Windows 95} {
-#                       exec start /m g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp
-#                       exec start /m dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o
-#                   }
-#                }
-#            } 
-        switch -regexp -- $useComp {
-	GNU|Default {
-        set batSt [open runmingw.bat w]
-	if {[string equal Default $useComp]} {
-	    puts $batSt "set PATH=[file nativename [file join [file join \
-                        [file dirname $TOOLDIR] System] bin]]"
-	}
-        puts $batSt "g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp"
-#        puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
-        puts $batSt "g++ -shared -o $TARGET objtemp.o"
-        close $batSt
-        exec runmingw.bat
-        file delete runmingw.bat
-                file delete exptemp.exp
+            set useComp [PrefValue custom(compChoice) compChoice]
+            switch -regexp -- $useComp {
+                GNU|Default {
+                    set batSt [open runmingw.bat w]
+                    if {[string equal Default $useComp]} {
+                        puts $batSt "set PATH=[file nativename [file join [file join \
+                                [file dirname $TOOLDIR] System] bin]]"
+                    }
+                    puts $batSt "g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp"
+#                   puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
+                    puts $batSt "g++ -shared -o $TARGET objtemp.o"
+                    close $batSt
+                    exec runmingw.bat
+                    file delete runmingw.bat
+                    file delete exptemp.exp
 
                 # Method using command line calls to MSVC 4.0 or later -- works well
-            } Microsoft {
-                set TOOLS32 [file dirname $env(MSVCDIR)/bin]
-                exec $TOOLS32/bin/cl.exe -GX -Ox -c -W1 -nologo \
-                        -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
-                        -I. -I$TOOLS32/include -I$TOOLDIR \
-                        -Foobjtemp.o model.cpp
+                } Microsoft {
+                    set TOOLS32 [file dirname $env(MSVCDIR)/bin]
+                    exec $TOOLS32/bin/cl.exe -GX -Ox -c -W1 -nologo \
+                            -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
+                            -I. -I$TOOLS32/include -I$TOOLDIR \
+                            -Foobjtemp.o model.cpp
 
-                exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
-                        -align:0x1000 /MACHINE:IX86 \
-                        -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
-                        $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
-                        $TOOLS32/lib/oldnames.lib objtemp.o
-        }}
-            # Method using command line calls to Borland C++ 4.0 or later -- not finished
-
-            #   set TOOLS32 "c:/program files/borland/cbuilder4"
-            #   exec $TOOLS32/bin/bcc32.exe -Ox -c -nologo -o$object \
-            #       -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 -DMODELCODE="$c_prog" \
-            #       -I. -I$TOOLS32/include -I$TCL/include $TOOLDIR/support.cpp
-
-
-
-            #   exec $TOOLS32/bin/ilink32.exe -Tpd $object $TARGET $TCL/lib/tcl${MAJ}${MIN}.lib
-            # Method using MSVC's auto-generated Make file -- hangs for some
-            # reason
-
-            #   exec $TOOLS32/bin/nmake $TOOLDIR/amemodel/amemodel.mak
-            #   file rename $TOOLDIR/amemodel/debug/amemodel.dll $TARGET
-
+                    exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
+                            -align:0x1000 /MACHINE:IX86 \
+                            -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
+                            $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
+                            $TOOLS32/lib/oldnames.lib objtemp.o
+            }}
         }
     }} chuckup]} {
-      set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
-      cd $oldDir; #Change back to Run directory in order to access Help file for subsequent dialogue
-      BuildProblem "Problem during compilation" warning $badCompile execution
-      cd $workingDir
-      set serial -1
+        set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
+        cd $oldDir; #Change back to Run directory in order to access Help file for subsequent dialogue
+        BuildProblem "Problem during compilation" warning $badCompile execution
+        cd $workingDir
+        set serial -1
     } else {
     #    file delete $c_prog
-      file delete objtemp.o
+        file delete objtemp.o
     }
     # do not allow an old dcf to be saved with a new model
     cd $oldDir
@@ -681,15 +640,14 @@ proc LoadProgram {node lang} {
     global runState runHow myNode
     set runState($node,updated) 0
     set runState($node,lang) $lang
-    if {[info exists runState($node,runParams)] && \
-	    ![info exists runState($node,currentTime)]} {
-	do_for_node $node SetRunParams $node $runState($node,runParams)
+    if {[info exists runState($node,runParams)] && ![info exists runState($node,currentTime)]} {
+        do_for_node $node SetRunParams $node $runState($node,runParams)
     }
-    if {[do_for_node $node update_executable $node $lang]} {
-        ToggleIOToolMenu $node
-	if {[string equal home $runHow(where)]} {
-	    set myNode $node ;# cos new MRE will have focus
-	}
+        if {[do_for_node $node update_executable $node $lang]} {
+            ToggleIOToolMenu $node
+        if {[string equal home $runHow(where)]} {
+            set myNode $node ;# cos new MRE will have focus
+        }
     }
 }
 
@@ -740,19 +698,19 @@ proc Respond {relayProc} {
     set action [gets $strm]
     set action [gets $strm] ;# second line is last command passed
     close $strm
-puts "Responding to: $action"
+    puts "Responding to: $action"
     switch -regexp [lindex $action 0] {
-	AreYouThere {
+        AreYouThere {
 # another instance checking I am responding -- do so
-	    StartComms 0
-	} OhNeverMind|Sender { ;# process is already dead
+            StartComms 0
+        } OhNeverMind|Sender { ;# process is already dead
 # response to above -- it gave up waiting. Nothing to reply to.
-	    StartComms 1
-	} default {
+            StartComms 1
+        } default {
 # an actual command. Caller will trustingly quit so do not reply
-	    StartComms 1
-	    eval $action
-	}
+            StartComms 1
+            eval $action
+        }
     }
 }
     
@@ -761,21 +719,21 @@ proc StartComms {firstTime} {
 
     set relay [file join [file dirname [pwd]] System bin relay]
     switch -- $firstTime {
-	1 {
+        1 {
 # initializing -- set old proc to 0
-	    set dump [NetOpen $checkFor w]
-	    puts $dump 0
-	    close $dump
-	} -1 {
+            set dump [NetOpen $checkFor w]
+            puts $dump 0
+            close $dump
+        } -1 {
 # terminating -- send 'done' and do not wait for answer
-	    exec $relay $checkFor done
-	    file delete $checkFor
-	    return
-	}
+            exec $relay $checkFor done
+            file delete $checkFor
+            return
+        }
     }
     set outgoing "Ready [pid]"
     set cmd "\"$relay\" \"$checkFor\" \"$outgoing\""
-puts "Opening: $cmd"
+    puts "Opening: $cmd"
     set relayProc [open |$cmd r+]
     fconfigure $relayProc -blocking 0
     fileevent $relayProc readable [list Respond $relayProc]
@@ -799,18 +757,18 @@ proc ControlDraw {prologVersion} {
     # no longer have a separate floating toolbar
     
     if {![info exists custom(prefDir)]} {
-	set foldErr "No HOME directory specified"
+        set foldErr "No HOME directory specified"
     } else {
-	set clipSpc [file join $custom(prefDir) clipboard.pl]
-	if {[catch {file mkdir $custom(prefDir); \
-			prolog check_use('$clipSpc'); \
-			file delete $clipSpc} pWibble]} {
-	    set foldErr $pWibble
-	}
+        set clipSpc [file join $custom(prefDir) clipboard.pl]
+        if {[catch {file mkdir $custom(prefDir); \
+            prolog check_use('$clipSpc'); \
+            file delete $clipSpc} pWibble]} {
+            set foldErr $pWibble
+        }
     }
     if {[info exists foldErr]} {
-	tk_messageBox -title {File system problem} -icon warning -message "HOME directory unusable -- $foldErr -- trying installation folder instead" -type ok
-	set custom(prefDir) [pwd]/../Examples
+        tk_messageBox -title {File system problem} -icon warning -message "HOME directory unusable -- $foldErr -- trying installation folder instead" -type ok
+        set custom(prefDir) [pwd]/../Examples
     }
     
     if {[file exists $custom(prefDir)/.version]} {
@@ -825,37 +783,36 @@ proc ControlDraw {prologVersion} {
         set userinfo(done) 0
     }
     if {[string match Linux $tcl_platform(os)]} {
-	set shank ../System/lib/lib5d.so
-	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-	    exec g++ -m32 -c -O -fPIC -I. ./shank.cpp
-	    exec g++ -m32 -shared -o $shank shank.o
-	}
+        set shank ../System/lib/lib5d.so
+        if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
+            exec g++ -m32 -c -O -fPIC -I. ./shank.cpp
+            exec g++ -m32 -shared -o $shank shank.o
+        }
     }
     load_c_stub_1
     if {![string match windows $tcl_platform(platform)]} {
 # Windows installers can ask the user for a license code and stick it in the
 # registry. On other platforms we have to DIY and put in userinfo.txt.
-	if {[string equal {<insert license code here>} \
-		     $env(license_code)]} {
-	    if {![DoUserDialogue]} {
-		error "No license supplied"
-	    }
-	    set env(licensee_name) $userinfo(name)
-	    set env(licensee_corp) $userinfo(corp)
-	    set env(license_code) $userinfo(license_code)
-	    set installTime [clock seconds]
-	    set env(install_time) "$installTime :: [clock format $installTime -gmt true]"
+        if {[string equal {<insert license code here>} $env(license_code)]} {
+            if {![DoUserDialogue]} {
+                error "No license supplied"
+            }
+            set env(licensee_name) $userinfo(name)
+            set env(licensee_corp) $userinfo(corp)
+            set env(license_code) $userinfo(license_code)
+            set installTime [clock seconds]
+            set env(install_time) "$installTime :: [clock format $installTime -gmt true]"
 
-	    set UserStream [open ../Run/userinfo.txt w]
-	    puts $UserStream $env(prologId)
-	    puts $UserStream $env(interfaceId)
-	    puts $UserStream $env(install_time)
-	    puts $UserStream $env(license_code)
-	    puts $UserStream $userinfo(name)
-	    puts $UserStream $userinfo(corp)
-	    puts $UserStream $userinfo(Version)
-	    close $UserStream
-	}
+            set UserStream [open ../Run/userinfo.txt w]
+            puts $UserStream $env(prologId)
+            puts $UserStream $env(interfaceId)
+            puts $UserStream $env(install_time)
+            puts $UserStream $env(license_code)
+            puts $UserStream $userinfo(name)
+            puts $UserStream $userinfo(corp)
+            puts $UserStream $userinfo(Version)
+            close $UserStream
+        }
     }
 
     # loading stub sets license entries
@@ -885,15 +842,14 @@ proc ControlDraw {prologVersion} {
     if {[info exists expTime]} {
         set userinfo(exp_time) $expTime
         set toGo [expr $expTime-[clock seconds]]
-
-	if {$toGo<7*$day} {
+        if {$toGo<7*$day} {
             #       ShowMessage "Expiry imminent" warning "This version of Simile will expire on [clock format $expTime]. Please contact www.simulistics.com for an update." ok
             ShowExpiryImminent $expTime $toGo
         }
-	if {$toGo<0} {
-	    send_pl_cmd {error:Product has expired} ;# arrange graceful exit
-	    exit
-	}
+        if {$toGo<0} {
+            send_pl_cmd {error:Product has expired} ;# arrange graceful exit
+            exit
+        }
     }
     
     set simtmpdir $custom(prefDir)/sim
@@ -925,8 +881,7 @@ proc ControlDraw {prologVersion} {
     if {[file exists $custom(prefDir)/.recent]} {
         set cacheStream [NetOpen $custom(prefDir)/.recent r]
         while {[gets $cacheStream oldFile]>0} {
-            if {[file exists $oldFile] && \
-                        [lsearch $custom(hotlist) $oldFile]==-1} {
+            if {[file exists $oldFile] && [lsearch $custom(hotlist) $oldFile]==-1} {
                 lappend custom(hotlist) $oldFile
             }
         }
@@ -934,7 +889,6 @@ proc ControlDraw {prologVersion} {
     }
     if {[llength $custom(hotlist)]} {
         RecordPathChoice .sml [lindex $custom(hotlist) 0] 0
-
     }
     
     Pref_Init $custom(prefDir)/.prefs
@@ -970,19 +924,18 @@ proc ControlDraw {prologVersion} {
         }
 #    }
     if {[string match windows $tcl_platform(platform)]} {
-        Pref_Add {  {custom(compChoice) compChoice {CHOICE Default Microsoft GNU} \
-                        "Use which C++ compiler?"} \
-                {custom(myButton) myButton � "Custom keypad button"} \
+        Pref_Add {  {custom(compChoice) compChoice {CHOICE Default Microsoft GNU} "Use which C++ compiler?"} \
+                    {custom(myButton) myButton � "Custom keypad button"} \
         }
-	file attributes $simtmpdir -hidden true
-	file attributes $custom(prefDir)/.version -hidden true
+    file attributes $simtmpdir -hidden true
+    file attributes $custom(prefDir)/.version -hidden true
     } else {
         Pref_Add {  {custom(myButton) myButton Î¼ "Custom keypad button"} \
-	}
+        }
     }
     CheckCompilerLocation
     if {[string equal home $runHow(where)]} {
-	MakeHelperMenu
+        MakeHelperMenu
     }
     menu .windowchoice -tearoff 0 -postcommand [list ListWindows .windowchoice]
     LoadModelWindowExtensions
@@ -1004,12 +957,11 @@ proc ControlDraw {prologVersion} {
     # Base window has menu to display on Mac when no model windows open
     menu .hitop
     frame .hi
-    . config -menu .hitop	
+    . config -menu .hitop   
     AddMainMenu .hi _ 0 1 {}
 
     # Take the opportunity to pass the temp directory name etc to Prolog
-    return [list $sendvars(simV) [brainwash $simtmpdir] \
-            $openModel $userinfo(edn)]
+    return [list $sendvars(simV) [brainwash $simtmpdir] $openModel $userinfo(edn)]
 }
 
 proc CheckCompilerLocation {} {
@@ -1070,15 +1022,14 @@ proc FixSize {c} {
     update idletasks
     set win [winfo parent $c]
     if {[info exists SimileAutoObjLoaded]} {
-	wm state $win withdrawn
+        wm state $win withdrawn
     } else {
-	wm state $win normal
+        wm state $win normal
     }
     # seems necessary for console to hide
     #    catch {console hide}
     if {[file exists $custom(prefDir)/.layout] && \
-	    [string equal {Where it was last time} \
-		 [PrefValue custom(winPosn) winPosn]]} {
+            [string equal "Where it was last time" [PrefValue custom(winPosn) winPosn]]} {
         set stream [NetOpen $custom(prefDir)/.layout r]
         gets $stream whetherMaxed
         #ShowMessage debug info $whetherMaxed ok
@@ -1088,7 +1039,8 @@ proc FixSize {c} {
             } else {
                 gets $stream oldGeom
                 wm geometry $win $oldGeom
-            }}
+            }
+        }
         close $stream
     }
     pack propagate $win 0
@@ -1110,7 +1062,6 @@ package require mime
 proc SaveFile {topNode tree tgt} {
     #ShowMessage debug info "SaveFile $tree $tgt" ok
     global errorInfo runState
-
     global SimileProjectDo
     
     if {[info exists SimileProjectDo]} {
@@ -1120,25 +1071,24 @@ proc SaveFile {topNode tree tgt} {
         unset SimileProjectDo
     }
     if {[catch {
-	set parts [GetParts $tree $tree]
-	#ShowMessage debug info "SaveFile GetParts $tree" ok
-	set curParams [do_for_node $topNode GetRunParams $topNode]
-	if {[llength $curParams]} {
-	    set runState($topNode,runParams) $curParams
-	}
-	if {[info exists runState($topNode,runParams)]} {
-	    lappend parts [mime::initialize -canonical text/plain \
-			   -header [list "Content-Description" "Run Status"] \
-			   -string $runState($topNode,runParams)]
-	}
-	set multiT [mime::initialize -canonical multipart/mixed \
-			-parts $parts]
-	set stream [NetOpen $tgt w]
-	fconfigure $stream -translation binary
-	mime::copymessage $multiT $stream
-	# clean everything up
-	close $stream
-	mime::finalize $multiT -subordinates all
+        set parts [GetParts $tree $tree]
+        #ShowMessage debug info "SaveFile GetParts $tree" ok
+        set curParams [do_for_node $topNode GetRunParams $topNode]
+        if {[llength $curParams]} {
+            set runState($topNode,runParams) $curParams
+        }
+        if {[info exists runState($topNode,runParams)]} {
+            lappend parts [mime::initialize -canonical text/plain \
+                    -header [list "Content-Description" "Run Status"] \
+                    -string $runState($topNode,runParams)]
+        }
+        set multiT [mime::initialize -canonical multipart/mixed -parts $parts]
+        set stream [NetOpen $tgt w]
+        fconfigure $stream -translation binary
+        mime::copymessage $multiT $stream
+        # clean everything up
+        close $stream
+        mime::finalize $multiT -subordinates all
     } Lossage]} {
         return $errorInfo
     } else {
@@ -1181,8 +1131,7 @@ proc LoadFile {topNode tree tgt} {
                         set mimeSquirter [NetOpen $newPath w]
                         fconfigure $mimeSquirter -translation binary
                         mime::getbody $bit -command SquirtMime -blocksize 256
-                        if {![catch {mime::getheader $bit Date-Modified} \
-                                    Date]} {
+                        if {![catch {mime::getheader $bit Date-Modified} Date]} {
                             file mtime $newPath [clock scan [lindex $Date 0]]
                         }
                     }
@@ -1272,7 +1221,7 @@ proc GetParts {top tree} {
                 set relPath [string range $subtree [string length $top] end]
                 set Disposition "${style}; filename=\"$relPath\""
                 set Date [clock format [file mtime $subtree] \
-                  -format "%Y-%m-%d %T %Z" -gmt true]
+                        -format "%Y-%m-%d %T %Z" -gmt true]
                 set newMime [mime::initialize -canonical $PartType \
                         -header [list "Content-Disposition" \
                         $Disposition] \
@@ -1324,7 +1273,7 @@ proc ConvertSSxml {} {
     set XML [mime::getbody $mm1]
     set source_doc [::dom::libxml2::parse $XML]
     set mm2 [mime::initialize -canonical application/x-xml \
-         -file ../Run/xml2pl01.xsl]
+            -file ../Run/xml2pl01.xsl]
     set XSLstylesheet [mime::getbody $mm2]
     set ssheet_doc [::dom::libxml2::parse $XSLstylesheet]
     set ssheet [::xslt::compile $ssheet_doc]
@@ -1340,21 +1289,21 @@ proc ConvertSSxml {} {
 
 proc EatNumber {str} {
     if {[scan $str %g%n floatVal floatSize]>0} {
-	if {[scan $str %d%n intVal intSize]>0} {
-	    if {$intSize == $floatSize && abs($intVal)<268435456} {
-		return [list $intVal $intSize]
-	    }
-	}
+        if {[scan $str %d%n intVal intSize]>0} {
+            if {$intSize == $floatSize && abs($intVal)<268435456} {
+                return [list $intVal $intSize]
+            }
+        }
 # make sure it has float type -- cannot use # as prolog barfs if last char
 # is decimal point. But not using it can leave out point altogether, which
 # also screws it, so use e instead of g -- after all, the user never sees this
 # format -- it only exists to get the value into Prolog.
-	set floatVal [format %.16e $floatVal]
+        set floatVal [format %.16e $floatVal]
 # this never happens now
-#	if {[string is integer $floatVal]} {
-#	    append floatVal .0
-#	}
-	return [list $floatVal $floatSize]
+#   if {[string is integer $floatVal]} {
+#       append floatVal .0
+#   }
+        return [list $floatVal $floatSize]
     }
 }
 
@@ -1365,11 +1314,11 @@ proc GetSystemChars {string} {
     binary scan $sysbag c[string length $sysbag] list
 #ShowMessage debug info "Getting codes for $string got $list" ok
     foreach char $list {
-	if {$char<0} {
-	    lappend ulist [expr $char+256]
-	} else {
-	    lappend ulist $char
-	}
+        if {$char<0} {
+            lappend ulist [expr $char+256]
+        } else {
+            lappend ulist $char
+        }
     }
     return $ulist
 }
@@ -1431,28 +1380,28 @@ proc OpenProjectFile {path} {
     # unset it before doing anything clever in case it goes wrong
     unset loadingProject
     if {[info exists SimileProject(modelRunning)]} {
-	set win [FindNodeTopWin $topNode].canvas
+        set win [FindNodeTopWin $topNode].canvas
 #puts "win $win topNode ÃÂ£topNode"
-	if {[info exists SimileProject(spfList)]} {
+        if {[info exists SimileProject(spfList)]} {
         # file params cannot be loaded until model is ready, so set this
         # variable which will be read before opening the dialogue
-	    foreach {smPath spfRelPath} $SimileProject(spfList) {
-		do_for_node $topNode set ::projectParams($smPath) \
-		    [file join $baseDir $spfRelPath]
-	    }
-	}
+            foreach {smPath spfRelPath} $SimileProject(spfList) {
+                do_for_node $topNode set ::projectParams($smPath) \
+                        [file join $baseDir $spfRelPath]
+            }
+        }
         if {$SimileProject(running_c)} {
             MenuSelect $win file run_c
         } else  {
             MenuSelect $win file run_tcl
         }
-	update
+        update
         if {[info exists SimileProject(nameOfHelperStateFile)]} {
             set command [ChooseText \
-			     [PrefValue custom(helperManager) helperManager] \
-			     ::RunEnv::LoadSHF CreateView]
+                    [PrefValue custom(helperManager) helperManager] \
+                    ::RunEnv::LoadSHF CreateView]
             do_in_node $topNode $command $topNode \
-		${path}/$SimileProject(nameOfHelperStateFile)
+                    ${path}/$SimileProject(nameOfHelperStateFile)
         }
     }
 }
@@ -1466,7 +1415,7 @@ proc SaveAll {win} {
 
 proc SaveProjectFile {topNode path tgt} {
     global custom runState nameOfHelperStateFile
-#puts [array get nameOfHelperStateFile]
+    #puts [array get nameOfHelperStateFile]
     #ShowMessage debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
     # save any shf files names
@@ -1477,13 +1426,13 @@ proc SaveProjectFile {topNode path tgt} {
     # is it builtC|builtTcl|notbuilt
     if {[HaveValues $topNode]} {
         set SimileProject(modelRunning) 1
-    set SimileProject(running_c) [string equal c $runState($topNode,lang)]
+        set SimileProject(running_c) [string equal c $runState($topNode,lang)]
     }
     if {[info exists nameOfHelperStateFile($topNode)]} {
-    if {![string equal $path \
-          [file dirname $nameOfHelperStateFile($topNode)]]} {
-        file copy -force $nameOfHelperStateFile($topNode) $path
-    }
+        if {![string equal $path \
+                [file dirname $nameOfHelperStateFile($topNode)]]} {
+            file copy -force $nameOfHelperStateFile($topNode) $path
+        }
         set SimileProject(nameOfHelperStateFile) \
                 [file tail $nameOfHelperStateFile($topNode)]
     }
@@ -1493,8 +1442,7 @@ proc SaveProjectFile {topNode path tgt} {
     #            $path/[file tail $nameOfHelperStateFile($topNode)]" ok
     set spfList [do_in_node $topNode array get ::SimileProject fileparam,*]
     foreach {varName spfPath} $spfList {
-    lappend SimileProject(spfList) [Submodelize $varName] \
-        [Relativize $tgt $spfPath]
+        lappend SimileProject(spfList) [Submodelize $varName] [Relativize $tgt $spfPath]
     }
     set projectF [NetOpen $ProjectFile w]
     set statLine [array get SimileProject]
@@ -1510,10 +1458,10 @@ proc UnOrReDo {curWin fwd} {
     global window_info
     foreach win [array names window_info *,parent] {
         set spareWin [lindex [split $win ,] 0]
-    if {[string equal $window_info($spareWin,top_node) \
-         $window_info($curWin,top_node)]} {
-        lappend canList '$spareWin'
-    }
+        if {[string equal $window_info($spareWin,top_node) \
+                $window_info($curWin,top_node)]} {
+            lappend canList '$spareWin'
+        }
     }
     set curPos [lsearch $canList '$curWin']
     set canArgs [join $canList ,]
@@ -1631,7 +1579,6 @@ proc SpitPS {winId psfile} {
 proc InsertModel {winId} {
     set insertion [ChooseFile model.sml "Model file to insert" 0]
     if {![string match */ $insertion]} {
-
         Reopen $winId $insertion insert
     }
 }
@@ -1676,8 +1623,7 @@ proc Rerun {winId go} {
     global runState window_info
     
     set node $window_info($winId,top_node)
-    if {![HaveValues $node] || \
-                $runState($node,updated) == 1} {
+    if {![HaveValues $node] || $runState($node,updated) == 1} {
         if {[info exists runState($node,lang)]} {
             set runType run_$runState($node,lang)
         } else {
@@ -1800,7 +1746,7 @@ proc UpdateToolbars {newAction} {
         $toolBar.$newAction state selected
         #$toolBar.$pushedbutton configure -relief flat
         #$toolBar.$newAction configure -relief sunken
-    SafeEqnBarEdit $window_info($winData)
+        SafeEqnBarEdit $window_info($winData)
         ResetEqnBar $window_info($winData)
     }
 }
@@ -1826,7 +1772,7 @@ proc RaiseModelWindow {node} {
     wm deiconify $win
     raise $win
     if {[string equal Darwin $tcl_platform(os)]} {
-	tclAE::send -s misc actv
+        tclAE::send -s misc actv
     }
    # carbon::processHICommand bfrt $win
 }
@@ -1846,9 +1792,9 @@ proc FindNodeTopWin {node} {
 proc AddIfAbsent {entry list} {
     set oldPlace [lsearch $list $entry]
     if {$oldPlace==-1} {
-    return [lrange [concat [list $entry] $list] 0 9]
+        return [lrange [concat [list $entry] $list] 0 9]
     } else {
-    return [concat [list $entry] [lreplace $list $oldPlace $oldPlace]]
+        return [concat [list $entry] [lreplace $list $oldPlace $oldPlace]]
     }
 }
 
@@ -1859,7 +1805,7 @@ proc accept_equation {winId text} {
     set equationbar(equation) [string trimright [$text get]]
 # do if a combobox -- not now cos no cursor insert
 #    $text configure -values [AddIfAbsent $equationbar(equation) \
-                 [$text cget -values]]
+#                 [$text cget -values]]
     set node $equationbar($winId,node)
     prolog [list tk_edit_equation('$winId.canvas', $node)]
     set equationbar($winId,initText) $equationbar(equation)
@@ -1897,10 +1843,9 @@ proc restore_equation {winId bar} {
 
 proc RecordPathChoice {fileType chosenFile recordEntry} {
     global chosenPaths custom
-    set chosenPaths($fileType) \
-        [set chosenPaths(latest) [file dirname $chosenFile]]
+    set chosenPaths($fileType) [set chosenPaths(latest) [file dirname $chosenFile]]
     if {$recordEntry} {
-    set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
+        set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
     }
 }
 
@@ -1908,17 +1853,17 @@ proc GetPathChoice {fileType} {
     global chosenPaths custom
     set egDir $custom(prefDir)/Examples
     if {[info exists chosenPaths($fileType)]} {
-    set ch $chosenPaths($fileType)
+        set ch $chosenPaths($fileType)
     } elseif {[info exists chosenPaths(latest)]} {
-    set ch $chosenPaths(latest)
+        set ch $chosenPaths(latest)
     } elseif {[file exists $egDir]} {
-    set ch $egDir
+        set ch $egDir
     } else {
-    set ch [pwd]
+        set ch [pwd]
     }
 # make sure it existsss
     while {![file exists $ch]} {
-    set ch [file dirname $ch]
+        set ch [file dirname $ch]
     }
     return $ch
 }
