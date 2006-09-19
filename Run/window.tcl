@@ -57,8 +57,8 @@ proc AddTabId {winId tgt prlgNm} {
     set tags [$winId gettags $tgt]
 #puts "$tgt has tags $tags"
     if {[set point [string first tab\( $tags]]>-1} {
-    set close [string first \) $tags $point]
-    return [string range $tags $point $close]
+        set close [string first \) $tags $point]
+        return [string range $tags $point $close]
     }
     return $prlgNm
 }
@@ -212,10 +212,9 @@ proc ClickObj { x y winId X Y action} {
     set winid [winfo parent $winId]
         set bar $winid.toolSlot.eqnbar
         if {[info exists equationbar(special)]} {
-        unset equationbar(special)
+            unset equationbar(special)
             set equationbar(current_action) null
-    } elseif {[catch {pack info $bar}] || \
-              [string compare $pushedbutton select]} {
+        } elseif {[catch {pack info $bar}] || [string compare $pushedbutton select]} {
             set equationbar(current_action) null
         } else {
         set equationbar(current_action) $action
@@ -225,7 +224,7 @@ proc ClickObj { x y winId X Y action} {
         if {[string match $equationbar(current_action) click]} {
             set oldEqn [GetFromProlog tk_get_info('$winId',$node,eqn)]
             if {![string match <none> $oldEqn]} {
-        SafeEqnBarEdit $winid
+                SafeEqnBarEdit $winid
                 set label [BlankCrs $caption]\ =
                 $bar.label configure -text $label
                 set equationbar($winid,node) $node
@@ -308,11 +307,11 @@ proc DragObj {winId xco yco} {
     global clicktime
     
     if {[string equal move $pushedbutton]} {
-    $winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
-    $winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
-    set window_info($winId,lastx) [expr $xco/$looks(scrollIncr)]
-    set window_info($winId,lasty) [expr $yco/$looks(scrollIncr)]
-    return
+        $winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
+        $winId yview scroll [expr ($window_info($winId,lasty)-$yco/$looks(scrollIncr))] units
+        set window_info($winId,lastx) [expr $xco/$looks(scrollIncr)]
+        set window_info($winId,lasty) [expr $yco/$looks(scrollIncr)]
+        return
     }
 
     set dragtime [clock clicks -milliseconds]
@@ -370,11 +369,11 @@ proc ReleaseObj {winId xco yco} {
 proc EmbraceObj {winId} {
     global window_info
     if {![string equal $winId $window_info(current)]} {
-    set window_info(current) $winId
-    set nodeId [GetEdit $winId]
-    if {[llength $nodeId]} {
-        prolog [list tk_embrace( '$winId' , $nodeId )]
-    }
+        set window_info(current) $winId
+        set nodeId [GetEdit $winId]
+        if {[llength $nodeId]} {
+            prolog [list tk_embrace( '$winId' , $nodeId )]
+        }
     }
 }
 
@@ -427,14 +426,14 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     wm protocol $winName WM_DELETE_WINDOW [list byebye $c]
     set window_info($c,top_node) $topNode
     if {[set window_info($c,is_top_level) $isTopLevel]} {
-    set window_info($c,topCapt) {}
+        set window_info($c,topCapt) {}
 
-    foreach nodeType $looks(customSet) {
-        ResetLooks $topNode $nodeType
-    }
-    CustomizeLooks $topNode
+        foreach nodeType $looks(customSet) {
+            ResetLooks $topNode $nodeType
+        }
+        CustomizeLooks $topNode
     } else {
-    set window_info($c,topCapt) $window_info(lastClickCapt)
+        set window_info($c,topCapt) $window_info(lastClickCapt)
     }
     
     TweakWindow $c $winTitle $initialScale $wl $wt $wr $wb $colour
@@ -474,7 +473,7 @@ proc ModelWindow {winName} {
     menu ${winName}top
     toplevel $winName -menu ${winName}top
     if {[info exists SimileAutoObjLoaded]} {
-    wm state $winName withdrawn
+        wm state $winName withdrawn
     }
 
     switch $tcl_platform(platform) {
@@ -568,8 +567,7 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
     set topWin [winfo parent $c]
     scan [wm maxsize $topWin] "%d %d" mw mh
     #ShowMessage debug info "$wl $wt $wr $wb <> $mw $mh" ok
-    if {[pack propagate $topWin] &&
-        ($wr-$wl >= $mw-8 || $wb-$wt >= $mh-8)} {
+    if {[pack propagate $topWin] && ($wr-$wl >= $mw-8 || $wb-$wt >= $mh-8)} {
         catch {winfo state $topWin zoomed}
     }
     #ShowMessage debug info "Just done [$c coords 1]" ok
@@ -592,6 +590,7 @@ proc ChangeParentTitle {wc title bg} {
         }
         set tag "/base/ /background/"
         if {[string equal clear $colour]} {
+            #
         } elseif {[catch {image type $colour}]} {
             $wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
                     -tag $tag
@@ -609,107 +608,109 @@ set looks(scrollIncr) 10
 proc AddGrid {c onCol wl wt wr wb} {
     global looks window_info custom
     if {$custom(showgrids,$c)} {
-    set col $onCol
+        set col $onCol
     } else {
-    set col {}
+        set col {}
     }
     set interval [expr $looks(gridPitch)*$window_info($c,scale)]
     for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
-    {set x [expr $x+$interval]} {
-    set nearx [expr int($x)]
-    $c create line $nearx $wt $nearx $wb -fill $col \
-        -tag "realcolour($onCol) /background/ /base/ /grid/"
+            {set x [expr $x+$interval]} {
+        set nearx [expr int($x)]
+        $c create line $nearx $wt $nearx $wb -fill $col \
+                -tag "realcolour($onCol) /background/ /base/ /grid/"
     }
     for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
-    {set y [expr $y+$interval]} {
-    set neary [expr int($y)]
-    $c create line $wl $neary $wr $neary -fill $col \
-        -tag "realcolour($onCol) /background/ /base/ /grid/"
+            {set y [expr $y+$interval]} {
+        set neary [expr int($y)]
+        $c create line $wl $neary $wr $neary -fill $col \
+                -tag "realcolour($onCol) /background/ /base/ /grid/"
     }
 }
 
 # following is pulled from tclers wiki
-    proc Gradient {rgb factor {window .}} {
+proc Gradient {rgb factor {window .}} {
 
-        foreach {r g b} [winfo rgb $window $rgb] {break}
+    foreach {r g b} [winfo rgb $window $rgb] {break}
 
-        ### Figure out color depth and number of bytes to use in
-        ### the final result.
-        if {($r > 255) || ($g > 255) || ($b > 255)} {
-            set max 65535
-            set len 4
-        } else {
-            set max 255
-            set len 2
-        }
-
-        ### Compute new red value by incrementing the existing
-        ### value by a value that gets it closer to either 0 (black)
-        ### or $max (white)
-        set range [expr {$factor >= 0.0 ? $max - $r : $r}]
-        set increment [expr {int($range * $factor)}]
-        incr r $increment
-
-        ### Compute a new green value in a similar fashion
-        set range [expr {$factor >= 0.0 ? $max - $g : $g}]
-        set increment [expr {int($range * $factor)}]
-        incr g $increment
-
-        ### Compute a new blue value in a similar fashion
-        set range [expr {$factor >= 0.0 ? $max - $b : $b}]
-        set increment [expr {int($range * $factor)}]
-        incr b $increment
-
-        ### Format the new rgb string
-        set rgb \
-            [format "#%.${len}X%.${len}X%.${len}X" \
-                 [expr {($r>$max)?$max:(($r<0)?0:$r)}] \
-                 [expr {($g>$max)?$max:(($g<0)?0:$g)}] \
-                 [expr {($b>$max)?$max:(($b<0)?0:$b)}]]
-
-        ### Return the new rgb string
-        return $rgb
+    ### Figure out color depth and number of bytes to use in
+    ### the final result.
+    if {($r > 255) || ($g > 255) || ($b > 255)} {
+        set max 65535
+        set len 4
+    } else {
+        set max 255
+        set len 2
     }
+
+    ### Compute new red value by incrementing the existing
+    ### value by a value that gets it closer to either 0 (black)
+    ### or $max (white)
+    set range [expr {$factor >= 0.0 ? $max - $r : $r}]
+    set increment [expr {int($range * $factor)}]
+    incr r $increment
+
+    ### Compute a new green value in a similar fashion
+    set range [expr {$factor >= 0.0 ? $max - $g : $g}]
+    set increment [expr {int($range * $factor)}]
+    incr g $increment
+
+    ### Compute a new blue value in a similar fashion
+    set range [expr {$factor >= 0.0 ? $max - $b : $b}]
+    set increment [expr {int($range * $factor)}]
+    incr b $increment
+
+    ### Format the new rgb string
+    set rgb \
+            [format "#%.${len}X%.${len}X%.${len}X" \
+            [expr {($r>$max)?$max:(($r<0)?0:$r)}] \
+            [expr {($g>$max)?$max:(($g<0)?0:$g)}] \
+            [expr {($b>$max)?$max:(($b<0)?0:$b)}]]
+
+    ### Return the new rgb string
+    return $rgb
+}
 
 proc ResizeBackgnd {wc l t r b} {
     global window_info looks
     set baseColor $looks(windowColor)
     foreach baseItem [$wc find withtag /base/] {
-    switch [$wc type $baseItem] {
-        image {
-        set baseImg [$wc itemcget $baseItem -image]
-        #       set oldW [base$wc cget -width]
-        #       set oldH [base$wc cget -height]
-        $wc coords $baseItem $l $t
-        set w [expr int($r-$l)]
-        set h [expr int($b-$t)]
-        $baseImg configure -width $w -height $h
-        set tags [$wc gettags $baseItem]
-        regexp {source\(([^\)]+)\)} $tags all sourceImage
-        if {[regexp {posn\(([^\)]+)\)} $tags all sourcePosn]} {
-            if {[string equal Scaled $sourcePosn]} {
-            set sourceImage [GrowImage $sourceImage $w $h]
-            set usingTemp 1
+        switch [$wc type $baseItem] {
+            image {
+                set baseImg [$wc itemcget $baseItem -image]
+                #set oldW [base$wc cget -width]
+                #set oldH [base$wc cget -height]
+                $wc coords $baseItem $l $t
+                set w [expr int($r-$l)]
+                set h [expr int($b-$t)]
+                $baseImg configure -width $w -height $h
+                set tags [$wc gettags $baseItem]
+                regexp {source\(([^\)]+)\)} $tags all sourceImage
+                if {[regexp {posn\(([^\)]+)\)} $tags all sourcePosn]} {
+                    if {[string equal Scaled $sourcePosn]} {
+                        set sourceImage [GrowImage $sourceImage $w $h]
+                        set usingTemp 1
+                    }
+                }
+                $baseImg blank
+                $baseImg copy $sourceImage -to 0 0 $w $h ;# clever stuff later
+                if {[info exists usingSpare]} {
+                    image delete $sourceImage
+                }
+            } 
+            rectangle {
+                $wc coords $baseItem $l $t $r $b
+                set baseColor [$wc itemcget $baseItem -fill]
+            } 
+            line {
+                $wc delete $baseItem
             }
-        }
-        $baseImg blank
-        $baseImg copy $sourceImage -to 0 0 $w $h ;# clever stuff later
-        if {[info exists usingSpare]} {
-            image delete $sourceImage
-        }
-        } rectangle {
-        $wc coords $baseItem $l $t $r $b
-        set baseColor [$wc itemcget $baseItem -fill]
-        } line {
-        $wc delete $baseItem
-        }
         }
     }
     AddGrid $wc [Gradient $baseColor -0.1 $wc] $l $t $r $b
     $wc lower /base/ ;# should keep them in order
     global window_info
     if {$window_info($wc,is_top_level)} {
-    prolog tk_resize_top_win('$wc',[expr $r-$l],[expr $b-$t])
+        prolog tk_resize_top_win('$wc',[expr $r-$l],[expr $b-$t])
     }
 }
 
@@ -718,12 +719,12 @@ proc AcceleratorState {winName menu item state} {
     if {[info exists accelerator($menu,$item)]} {
     #puts "AcceleratorState {winName menu item state cmd} $winName $menu $item $state $accelerator($menu,$item)"
         if {[string match normal $state]} {
-        set action [${winName}top.$menu entrycget $item -command]
-        if {[lsearch {Cut Copy Paste Delete} $item]>-1} {
+            set action [${winName}top.$menu entrycget $item -command]
+            if {[lsearch {Cut Copy Paste Delete} $item]>-1} {
 # if action is applicable to text, check text edit not in progress before
 # applying it to diagram
-        set action [list if "\[NotEditingText $winName\]" $action]
-        }
+                set action [list if "\[NotEditingText $winName\]" $action]
+            }
             bind $winName $accelerator($menu,$item) $action
         } else  {
             bind $winName $accelerator($menu,$item) {}
@@ -839,14 +840,14 @@ proc AddEqnPopup {node x y winId X Y} {
             AddPopupMessage $fromProlog \#ffe0c0
         }
         if {$doVal} {
-        set cptPath [GetClickCapt $winId $canx $cany $plName]
-#        set execName [do_for_node $node GetIdFromCaptionPath $cptPath]
-#        if {[string equal nomatch $execName]} {
-#            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $plName
-#        } else {
-            AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $cptPath
-#        }
-    }
+            set cptPath [GetClickCapt $winId $canx $cany $plName]
+#           set execName [do_for_node $node GetIdFromCaptionPath $cptPath]
+#           if {[string equal nomatch $execName]} {
+#               AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $plName
+#           } else {
+                AddPopupMessage novalue \#ffffc0 do_for_node $node GetShortVals $node $cptPath
+#           }
+        }
     }
 }
 
@@ -891,12 +892,12 @@ proc CanvasEditBind { c } {
         if {![CanvasDelSeln %W]} {
             %W dchars [%W focus] insert
         }
-    FixBackBox %W [%W focus]
+        FixBackBox %W [%W focus]
     }
     $c bind currently_editable <Control-d> {
         if {[%W focus] != {}} {
             %W dchars [%W focus] insert
-        FixBackBox %W [%W focus]
+            FixBackBox %W [%W focus]
         }
     }
     $c bind currently_editable <Control-h> {
@@ -914,11 +915,11 @@ proc CanvasEditBind { c } {
     
     $c bind currently_editable <Control-Delete> {
         %W delete [%W focus]
-    FixBackBox %W [%W focus]
+        FixBackBox %W [%W focus]
     }
     $c bind currently_editable <Return> {
         %W insert [%W focus] insert \n
-    FixBackBox %W [%W focus]
+        FixBackBox %W [%W focus]
     }
     $c bind currently_editable <Any-Key> {
         # do not allow control chars other than the above mentioned
@@ -926,15 +927,15 @@ proc CanvasEditBind { c } {
             CanvasDelSeln %W
             %W insert [%W focus] insert %A
         }
-    FixBackBox %W [%W focus]
-    }
-    bind $c <<PasteSelection>> {
-    .hidden_e delete 0 end
-    event generate .hidden_e <<PasteSelection>>
-    if {[%W focus] != {}} {
-        %W insert [%W focus] insert [.hidden_e get]
         FixBackBox %W [%W focus]
     }
+    bind $c <<PasteSelection>> {
+        .hidden_e delete 0 end
+        event generate .hidden_e <<PasteSelection>>
+        if {[%W focus] != {}} {
+            %W insert [%W focus] insert [.hidden_e get]
+            FixBackBox %W [%W focus]
+        }
     }
     $c bind currently_editable <Key-Right> {
         %W select clear
@@ -988,33 +989,37 @@ proc CanvasEditBind { c } {
     $c bind currently_editable <Control-e> \
             [$c bind currently_editable <Key-End>]
     
-    $c bind currently_editable <<Cut>> {CanvasTextCopy %W; CanvasDelete %W
-    FixBackBox %W [%W focus]
-    }
-    $c bind currently_editable <<Copy>> {CanvasTextCopy %W}
-    $c bind currently_editable <<Paste>> {
-    .hidden_e delete 0 end
-    event generate .hidden_e <<Paste>>
-    CanvasDelSeln %W
-    if {[%W focus] != {}} {
-        %W insert [%W focus] insert [.hidden_e get]
+    $c bind currently_editable <<Cut>> {
+        CanvasTextCopy %W
+        CanvasDelete %W
         FixBackBox %W [%W focus]
     }
+    $c bind currently_editable <<Copy>> {
+        CanvasTextCopy %W
+    }
+    $c bind currently_editable <<Paste>> {
+        .hidden_e delete 0 end
+        event generate .hidden_e <<Paste>>
+        CanvasDelSeln %W
+        if {[%W focus] != {}} {
+            %W insert [%W focus] insert [.hidden_e get]
+            FixBackBox %W [%W focus]
+        }
     }
 }
 
 proc FixBackBox {c textItem} {
     set nid [ExtractPrologName $c $textItem]
     if {[scan [$c bbox $textItem] "%g %g %g %g" l t r b]==4} {
-    foreach backBox [$c find withtag $nid] {
-        if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
-        if {[string equal line [$c type $backBox]]} {
-            $c coords $backBox $r $t $l $t $l $b $r $b $r $t
-        } else {
-            $c coords $backBox $l $t $r $b
+        foreach backBox [$c find withtag $nid] {
+            if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
+                if {[string equal line [$c type $backBox]]} {
+                    $c coords $backBox $r $t $l $t $l $b $r $b $r $t
+                } else {
+                    $c coords $backBox $l $t $r $b
+                }
+            }
         }
-        }
-    }
     }
 }
 
@@ -1103,7 +1108,7 @@ proc DoLocalCmd {win item} {
         redo {UnOrReDo $win 1}
         print {PrintNow $win}
         rerun {Rerun $win 1}
-    tog_grid {ToggleGrid $win}
+        tog_grid {ToggleGrid $win}
         zoomin {DoZoom $win 1.414214 1}
         tosel {DisplayArea $win}
         tofit {DisplayAll $win}
@@ -1131,8 +1136,7 @@ if {[string match "Darwin" $tcl_platform(os)]} {
   proc exit {} {
       global window_info
       set currentDesk _
-      catch {set currentDesk \
-         $window_info([winfo toplevel [focus]].canvas,top_node)}
+      catch {set currentDesk $window_info([winfo toplevel [focus]].canvas,top_node)}
       prolog tk_kill_everything($currentDesk)
   }
   bind all <Command-q> exit
@@ -1157,25 +1161,25 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     set c $winid.canvas
     
     if [string match "Darwin" $tcl_platform(os)] {
-    set accKey Cmd
-    set accSym Command
-    set fm [menu ${winid}top.apple -tearoff 0]
-    $fm delete 0 7
-    $fm add command -label "About Simile..." -command "ShowAbout $winid"
-    $fm add separator
-    ${winid}top add cascade -menu $fm
+        set accKey Cmd
+        set accSym Command
+        set fm [menu ${winid}top.apple -tearoff 0]
+        $fm delete 0 7
+        $fm add command -label "About Simile..." -command "ShowAbout $winid"
+        $fm add separator
+        ${winid}top add cascade -menu $fm
     } else {
-    set accKey Ctrl
-    set accSym Control
+        set accKey Ctrl
+        set accSym Control
     }
     
     set fm [menu ${winid}top.file -tearoff 0 \
             -postcommand "FillReopen $winid"]
     ${winid}top add cascade -label File -underline 0 -menu ${winid}top.file
     if {$isTopLevel} {
-    set newCmd NewTopLevel
+        set newCmd NewTopLevel
     } else {
-    set newCmd "MenuSelect $c file new"
+        set newCmd "MenuSelect $c file new"
     }
     $fm add command -label New -command $newCmd -accelerator "$accKey+N"
     AddAccelerator $winid file New "<$accSym-n>"
@@ -1186,46 +1190,35 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 
    $fm add cascade -label "Reopen" -menu .openrecent
     if {[string equal .hi $winid]} {
-    return
+        return
     }
     $fm add command -label Save -command "MenuSelect $c file save" \
             -accelerator "$accKey+S"
     AddAccelerator $winid file Save "<$accSym-s>"
     
-    $fm add command -label "Save as..." \
-            -command "MenuSelect $c file save_as"
-    $fm add command -label "Save selection as..." \
-            -command "MenuSelect $c file save_seln_as"
-    $fm add command -label "Save package" \
-            -command "MenuSelect $c local save_all"
+    $fm add command -label "Save as..." -command "MenuSelect $c file save_as"
+    $fm add command -label "Save selection as..." -command "MenuSelect $c file save_seln_as"
+    $fm add command -label "Save package" -command "MenuSelect $c local save_all"
     
     $fm add separator
-    $fm add command -label "Print..." \
-            -command "PrintNow $c" \
-            -accelerator "$accKey+P"
+    $fm add command -label "Print..." -command "PrintNow $c" -accelerator "$accKey+P"
     AddAccelerator $winid file "Print..." "<$accSym-p>"
-    #$fm add cascade -label "Import" -menu $fm.sub0
-    #set fm1 [menu $fm.sub0 -tearoff 0]
-#    $fm1 add command -label "Spreadsheet..." \
-#            -command "MenuSelect $c file import_ss"
+#    $fm add cascade -label "Import" -menu $fm.sub0
+#    set fm1 [menu $fm.sub0 -tearoff 0]
+#    $fm1 add command -label "Spreadsheet..." -command "MenuSelect $c file import_ss"
     $fm add cascade -label "Export" -menu $fm.sub1
     set fm2 [menu $fm.sub1 -tearoff 0]
-    $fm2 add command -label "Model declarations" \
-            -command "MenuSelect $c file export_prolog"
-    $fm2 add command -label "C++ code" \
-            -command "MenuSelect $c file build_c"
-            $fm2 add command -label "Compiled binary" \
-            -command "MenuSelect $c file compile_c"
-    $fm2 add command -label "PostScript graphics" \
-            -command "ExportPostscript $c"
+    $fm2 add command -label "Model declarations" -command "MenuSelect $c file export_prolog"
+    $fm2 add command -label "C++ code" -command "MenuSelect $c file build_c"
+    $fm2 add command -label "Compiled binary" -command "MenuSelect $c file compile_c"
+    $fm2 add command -label "PostScript graphics" -command "ExportPostscript $c"
     $fm add separator
     
     $fm add command -label Close -command "MenuClose $c" \
             -accelerator "Alt+x"
     AddAccelerator $winid file Close "<Alt-x>"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label Exit \
-      -command "prolog tk_kill_everything($topNode)"
+        $fm add command -label Exit -command "prolog tk_kill_everything($topNode)"
     }
     
     # edit menu: purpose of postcommand is to enable/disable cut/copy/paste items
@@ -1237,23 +1230,17 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add cascade -label "Create new" -menu $fm.add
     set em1 [menu $fm.add -tearoff 0]
     foreach type {Compartment State Variable Event Flow Influence Squirt} {
-        $em1 add command -label $type -command \
-                "MenuSelect $c edit [string tolower $type]"
+        $em1 add command -label $type -command "MenuSelect $c edit [string tolower $type]"
     }
-    $em1 add command -label "Role arrow" -command \
-            "MenuSelect $c edit relation"
+    $em1 add command -label "Role arrow" -command "MenuSelect $c edit relation"
     $em1 add cascade -label "Membership control" -menu $em1.sub
-    $em1 add command -label "Text box" -command \
-            "MenuSelect $c edit text"
+    $em1 add command -label "Text box" -command "MenuSelect $c edit text"
     set em2 [menu $em1.sub -tearoff 0]
     foreach type {Creation Immigration Reproduction Loss} {
-        $em2 add command -label $type -command \
-                "MenuSelect $c edit [string tolower $type]"
+        $em2 add command -label $type -command "MenuSelect $c edit [string tolower $type]"
     }
-    $em2 add command -label "Existence condition" -command \
-            "MenuSelect $c edit condition"
-    $em2 add command -label "Iteration condition" -command \
-            "MenuSelect $c edit alarm"
+    $em2 add command -label "Existence condition" -command "MenuSelect $c edit condition"
+    $em2 add command -label "Iteration condition" -command "MenuSelect $c edit alarm"
     $fm add separator
     
     $fm add command -label Undo -command "UnOrReDo $c 0" \
@@ -1301,7 +1288,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm add command -label "Properties..." \
             -command "MenuSelect $c edit properties"
     if ![string match "Darwin" $tcl_platform(os)] {
-      $fm add command -label Preferences... -command Pref_Dialog
+        $fm add command -label Preferences... -command Pref_Dialog
     }
     
     
@@ -1348,18 +1335,18 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     menu $fm.sub4 -tearoff 0
     $fm add cascade -label "Customize" -menu $fm.sub4
     foreach category {
-    {compartment "Compartments and clouds..."}
-    {state "States..."}
-    {variable "Variables and flows..."}
-    {event "Events and squirts..."}
-    {influence "Influences..."}
-    {submodel "Submodels..."}
-    {relation "Relations..."}
-    {condition "Channels..."} 
-    {text "Text boxes..."}
-    {select "All components..."}} {
-    $fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
-        -label [lindex $category 1]
+        {compartment "Compartments and clouds..."}
+        {state "States..."}
+        {variable "Variables and flows..."}
+        {event "Events and squirts..."}
+        {influence "Influences..."}
+        {submodel "Submodels..."}
+        {relation "Relations..."}
+        {condition "Channels..."} 
+        {text "Text boxes..."}
+        {select "All components..."}} {
+        $fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
+                -label [lindex $category 1]
     }
 
     set fm [menu ${winid}top.model -tearoff 0 -postcommand "AbleComp $winid"]
@@ -1371,15 +1358,15 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     ${winid}top add cascade -label Model -underline 0 \
             -menu ${winid}top.model
     $fm add command -label "Run" -state $execEntryState \
-                    -command "MenuSelect $c file run_c" \
-                    -accelerator "$accKey+R"
+            -command "MenuSelect $c file run_c" \
+            -accelerator "$accKey+R"
     AddAccelerator $winid model "Run" "<$accSym-r>"
     $fm add command -label "Debug" -state $execEntryState \
-                    -command "MenuSelect $c file run_tcl" \
-                    -accelerator "$accKey+D"
+            -command "MenuSelect $c file run_tcl" \
+            -accelerator "$accKey+D"
     AddAccelerator $winid model "Debug" "<$accSym-d>"
     $fm add command -label "Abort execution" -state $execEntryState \
-                    -command "FinishExec $c"
+            -command "FinishExec $c"
     $fm add separator
     $fm add command -label "List equations" \
             -command "MenuSelect $c file list_eqns" \
@@ -1448,12 +1435,12 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
             -menu ${winid}top.tools
     $fm add radiobutton -label "Label/move elements" \
             -command "ModeSelect select" -variable MIpushedbutton -value select
-    #    $fm add radiobutton -label "Move elements" -command "ModeSelect move" \
-    -variable MIpushedbutton -value move
-    #    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete" \
-    -variable MIpushedbutton -value delete
-    #    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy" \
-    -variable MIpushedbutton -value copy
+#    $fm add radiobutton -label "Move elements" -command "ModeSelect move" \
+#            -variable MIpushedbutton -value move
+#    $fm add radiobutton -label "Delete elements" -command "ModeSelect delete" \
+#            -variable MIpushedbutton -value delete
+#    $fm add radiobutton -label "Duplicate submodels" -command "ModeSelect copy" \
+#            -variable MIpushedbutton -value copy
     $fm add radiobutton -label "Move canvas"  -command "ModeSelect move" \
             -variable MIpushedbutton -value move
     $fm add radiobutton -label "Create ghost nodes"  -command "ModeSelect ghost" \
@@ -1463,7 +1450,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     
     if {[HaveValues $topNode]} {
         ${winid}top add  cascade -label "I/O tools" -underline 0 \
-        -menu ${winid}top.helpers
+                -menu ${winid}top.helpers
         $fm entryconfigure "Inspect elements" -state normal
     }
 
@@ -1509,7 +1496,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
            -command [concat "MenuSelect $c" {local tog_grid}]] \
            -side left -padx 2 -pady 2
     if {[PrefValue custom(initGrid) initGrid]} {
-      $nb.tog_grid state selected
+        $nb.tog_grid state selected
     }
     
     foreach navCmd {{rerun {local rerun}} {separator6} \
@@ -1615,9 +1602,9 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     pack $eb.inputs -side left
     set m [menu $eb.inputs.menu -tearoff 0 \
             -postcommand [list AddInputs $winid $eb]]
-    #    $m add command -label biomass -command bell
-    #    $m add command -label k -command bell
-    #BindPopup $m foobar
+#    $m add command -label biomass -command bell
+#    $m add command -label k -command bell
+#    BindPopup $m foobar
     
     ::ttk::menubutton $eb.function -state disabled -menu $eb.function.menu -image $iconImages(function)
     pack $eb.function -side left
@@ -1638,22 +1625,22 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 set component [lindex $funk 1]
                 if {[catch {$box index $component\(\)}]} {
                     $box add command -label $component\(\) \
-                    -command [list InsertFunction $eb.equation $component]
+                            -command [list InsertFunction $eb.equation $component]
                 }
             }
     
     
-    #    set useFunctions [lrange $equation(fnDefs) 0 9]
-    #    foreach defn $useFunctions {
-    #        set cmd [lindex $defn 1]
-    #        $m add command -label $cmd\(\) \
-    -command [list InsertFunction $eb.equation $cmd]
-    #    }
-    #    $m add command -label "All functions..." -command bell
-    
-    #   set image [image create photo -file "../Images/eqnbar/props.gif"]
-    #   pack [button $eb.properties -state disabled -image $image -borderwidth 1] \
-    #           -side left
+#    set useFunctions [lrange $equation(fnDefs) 0 9]
+#    foreach defn $useFunctions {
+#        set cmd [lindex $defn 1]
+#        $m add command -label $cmd\(\) \
+#                 -command [list InsertFunction $eb.equation $cmd]
+#    }
+#    $m add command -label "All functions..." -command bell
+ 
+#   set image [image create photo -file "../Images/eqnbar/props.gif"]
+#   pack [button $eb.properties -state disabled -image $image -borderwidth 1] \
+#           -side left
     
     ### End of formula bar section
     
@@ -1685,11 +1672,11 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
 proc AddFindMenu {winid canvas menu} {
     global tcl_platform
     if [string match "Darwin" $tcl_platform(os)] {
-      set accKey Cmd
-      set accSym Command
+        set accKey Cmd
+        set accSym Command
     } else {
-      set accKey Ctrl
-      set accSym Control
+        set accKey Ctrl
+        set accSym Control
     }
     $menu add separator
     $menu add command -label Find... -command "FindCaption $canvas" \
@@ -1704,19 +1691,20 @@ proc ReconstituteMenu {newMenu mList tgtNode} {
     menu $newMenu -tearoff 0
     set subs 0
     foreach entrySpec $mList {
-    set type [lindex $entrySpec 0]
-    $newMenu add $type -label [lindex $entrySpec 1]
-    switch $type {
-        command {
-        $newMenu entryconfigure last -command \
-            [concat do_in_node $tgtNode [lindex $entrySpec 2]]
-        } cascade {
-        set subMenu $newMenu.sub$subs
-        incr subs
-        ReconstituteMenu $subMenu [lindex $entrySpec 2] $tgtNode
-        $newMenu entryconfigure last -menu $subMenu
+        set type [lindex $entrySpec 0]
+        $newMenu add $type -label [lindex $entrySpec 1]
+        switch $type {
+            command {
+                $newMenu entryconfigure last -command \
+                         [concat do_in_node $tgtNode [lindex $entrySpec 2]]
+            } 
+            cascade {
+                set subMenu $newMenu.sub$subs
+                incr subs
+                ReconstituteMenu $subMenu [lindex $entrySpec 2] $tgtNode
+                $newMenu entryconfigure last -menu $subMenu
+            }
         }
-    }
     }
 }
 
@@ -1725,11 +1713,11 @@ proc ListWindows {fm} {
 
     $fm delete 0 end
     foreach win [winfo children .] {
-    if {[string equal Toplevel [winfo class $win]]} {
-        $fm add radiobutton -variable window_info(uppermost) \
-        -value $win -label [wm title $win] \
-        -command [list raise $win]
-    }
+        if {[string equal Toplevel [winfo class $win]]} {
+            $fm add radiobutton -variable window_info(uppermost) \
+                    -value $win -label [wm title $win] \
+                    -command [list raise $win]
+        }
     }
     update
 # now window whose menu was clicked has focus even in Windows...
@@ -1738,9 +1726,9 @@ proc ListWindows {fm} {
 
 proc RaiseAny {node win} {
     if {[string equal editor $node]} {
-    raise $win
+        raise $win
     } else {
-    after idle do_for_node $node MyRaise $win
+        after idle do_for_node $node MyRaise $win
     }
 }
 
@@ -1773,14 +1761,14 @@ proc RaiseAny {node win} {
 proc DragComponentIn {winId button x y} {
     global looks equationbar
     set whatToAdd [winfo name $button]
-    #    set top [winfo parent $winId]
-    #puts $x,$y
-    #    foreach level [list $top $winId] {
-    #   scan [winfo geometry $level] %dx%d+%d+%d w h ox oy
-    #puts $level,$ox,$oy
-    #   incr x [expr -$ox]
-    #   incr y [expr -$oy]
-    #    }
+#    set top [winfo parent $winId]
+#puts $x,$y
+#    foreach level [list $top $winId] {
+#        scan [winfo geometry $level] %dx%d+%d+%d w h ox oy
+#puts $level,$ox,$oy
+#        incr x [expr -$ox]
+#        incr y [expr -$oy]
+#    }
     set x [expr $x-[winfo rootx $winId]]
     set y [expr $y-[winfo rooty $winId]]
     
@@ -1794,8 +1782,8 @@ proc DragComponentIn {winId button x y} {
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
 #    if {$looks(gridPitch)} {
-#   set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
-#   set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
+#        set xco [expr $looks(gridPitch)*round($xco/$looks(gridPitch))]
+#        set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
 #    }
     focus $winId
     set target [GetClickedObj $winId $canx $cany 6]
@@ -1812,31 +1800,31 @@ proc DragComponentIn {winId button x y} {
     prolog [list tk_unclick( $xco , $yco )]
     MenuSelect $winId edit $whatToAdd
     if {[lsearch {flow influence relation} $whatToAdd]>-1} {
-    set equationbar(special) 1
+        set equationbar(special) 1
     }
 }
 
 proc AbleComp {winid} {
     global custom
-    # Not done now because compiler choice not given in Unix, and we need to load
-    # pre-built executables even if we have no compiler ourselves
+# Not done now because compiler choice not given in Unix, and we need to load
+# pre-built executables even if we have no compiler ourselves
     
-    #    if {[string match $winid $custom(first_up)]} {
-    #   if {[string match None [PrefValue custom(compChoice) compChoice]]} {
-    #       set cCompOption disabled
-    #   } else {
-    #       set cCompOption normal
-    #   }
-    #   ${winid}top.model entryconfigure "Build In C++" -state $cCompOption
-    #    }
+#    if {[string match $winid $custom(first_up)]} {
+#        if {[string match None [PrefValue custom(compChoice) compChoice]]} {
+#           set cCompOption disabled
+#        } else {
+#           set cCompOption normal
+#        }
+#        ${winid}top.model entryconfigure "Build In C++" -state $cCompOption
+#    }
 }
 
 proc EmbraceEqn {winId} {
     global equationbar
     if {[info exists equationbar($winId,node)]} {
-    if {[llength $equationbar($winId,node)]} {
-        prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
-    }
+        if {[llength $equationbar($winId,node)]} {
+            prolog tk_embrace('$winId.canvas',$equationbar($winId,node))
+        }
     }
 }
 
@@ -1882,13 +1870,13 @@ proc UpdateGrid {winId} {
     }
     
     foreach gridLine [$winId find withtag /grid/] {
-    if {$custom(showgrids,$winId)} {
-        regexp {realcolour\(([^\)]+)\)} [$winId gettags $gridLine] \
-                tag oldColour
-    } else {
-        set oldColour {}
-    }
-    $winId itemconfigure $gridLine -fill $oldColour
+        if {$custom(showgrids,$winId)} {
+            regexp {realcolour\(([^\)]+)\)} [$winId gettags $gridLine] \
+                    tag oldColour
+        } else {
+            set oldColour {}
+        }
+        $winId itemconfigure $gridLine -fill $oldColour
     }
 }
 
@@ -1918,8 +1906,6 @@ proc AddDetailMenu {winId fm3 initVals} {
             $lastmenu add radio -label "$depth levels" \
                     -variable rads($winId,$cat) -value $depth \
                     -command "WindowDetail $winId $cat $depth 1"
-            
-
         }
         $lastmenu add radio -label "All" -variable rads($winId,$cat) \
                 -value 32 -command "WindowDetail $winId $cat 32 1"
@@ -1937,14 +1923,14 @@ proc AddDetailMenu {winId fm3 initVals} {
 proc MenuClose {winId} {
 #    global window_info
 #    foreach tlItem [array names window_info *,is_top_level] {
-#   if {$window_info($tlItem) && [string last $winId $tlItem]} {
-#       set notLastTl 1
-#   }
+#       if {$window_info($tlItem) && [string last $winId $tlItem]} {
+#           set notLastTl 1
+#       }
 #    }
 #    if {[info exists notLastTl]} {
     byebye $winId
 #    } else {
-#   MenuSelect $winId file new
+#        MenuSelect $winId file new
 #    }
 # if it is tl we should kill its submodel windows too
 }
@@ -1963,7 +1949,7 @@ proc exit_simile {} {
     }
     close $cacheStream
     if {[string equal windows $tcl_platform(platform)]} {
-    file attributes $custom(prefDir)/.recent -hidden true
+        file attributes $custom(prefDir)/.recent -hidden true
     }
     StartComms -1
 }
@@ -1980,12 +1966,11 @@ proc ZapWindow { fullName } {
         puts $cacheStream [string match zoomed [wm state $target]]
         puts $cacheStream [wm geometry $target]
         close $cacheStream
-    if {[string equal windows $tcl_platform(platform)]} {
-        file attributes $custom(prefDir)/.layout -hidden true
-    }
+        if {[string equal windows $tcl_platform(platform)]} {
+            file attributes $custom(prefDir)/.layout -hidden true
+        }
     }
     destroy ${target}top
-    
     destroy $target
     foreach oldData [array names window_info $fullName,*] {
         unset window_info($oldData)
@@ -1999,4 +1984,3 @@ proc ClearWindow {winId} {
     $winId delete doomed
     ResetEqnBar [winfo parent $winId]
 }
-
