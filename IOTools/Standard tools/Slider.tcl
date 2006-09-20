@@ -131,23 +131,7 @@ namespace eval slide139 {
 	    }
 	}
 	set nodeDims [GetModelDims $node]
-	set outerDims 0
-	while {$outerDims<[llength $nodeDims]} {
-	    set latestDim [lindex $nodeDims $outerDims]
-	    if {[string equal START_VM $latestDim]} {
-		set outerDims [lsearch -start $outerDims $nodeDims END_VM]
-	    }
-	    if {[string is integer $latestDim] && $latestDim>0} {
-#		if {[info exists useDim]} {
-		    # Cannot display sliders, too many dimensions
-# even if too many dims, innermost array is copied over others
-#		    return {}
-#		} else {
-		    set useDim $outerDims
-#		}
-	    }
-	    incr outerDims
-	}
+	set useDim [FindUseDim $nodeDims]
 	if {$nest} {
 	    set f [MakeSubFrames $winId $winId.sliderframe \
 				    $levels [namespace current] 0]
@@ -164,7 +148,7 @@ namespace eval slide139 {
 	}
 	$winId.slidervars add command -label $title \
 	    -command [namespace code [list Remove $winId $title]]
-        if {![info exists useDim]} {
+        if {$useDim==-1} {
 	    set defVal [GetDefVal $initVal -1 0]
 	    switch -glob $type {
 		FLAG {
@@ -282,6 +266,28 @@ namespace eval slide139 {
 	    }
 	    return $allVals
         }
+    }
+
+    proc FindUseDim {nodeDims} {
+	set useDim -1
+	set outerDims 0
+	while {$outerDims<[llength $nodeDims]} {
+	    set latestDim [lindex $nodeDims $outerDims]
+	    if {[string equal START_VM $latestDim]} {
+		set outerDims [lsearch -start $outerDims $nodeDims END_VM]
+	    }
+	    if {[string is integer $latestDim] && $latestDim>0} {
+#		if {[info exists useDim]} {
+		    # Cannot display sliders, too many dimensions
+# even if too many dims, innermost array is copied over others
+#		    return {}
+#		} else {
+		    set useDim $outerDims
+#		}
+	    }
+	    incr outerDims
+	}
+	return $useDim
     }
 
     proc Remove {winId title} {
@@ -458,15 +464,64 @@ namespace eval slide139 {
 #	}
     }
 
+    proc ShowNthChoice {combi numbi} {
+	$combi configure -text [lindex [$combi cget -values] [expr {$numbi-1}]]
+    }
+
 # purpose of display proc here is only to stop compartment sliders
 # being altered while model is running, since they refer only to
-# initial values. Also we want to update other input tools to reflect
-# values from time series data
-    
+# initial values. That is no longer necessary; compartments cannot be
+# variable parameters. But also we want to update other input tools to
+# reflect values from time series data
+
+# this might be tidied by saving some data in a namespace variable
+
     proc display {winId time display remainder} {
+	global helperTable
+	foreach currentCaption [GetState $winId] {
+	    set title [RestoreCrs $currentCaption]
+	    set node [GetIdFromCaptionPath $title]
+	    set valGroup [InputVarFor $helperTable($winId,whichModel) $node]
+	    upvar \#0 $valGroup valArray
+	    if {[string equal comboChoices $valGroup]} {
+		# will need widget address to update it!
+		set f [MakeSubFrames $winId $winId.sliderframe \
+			   [split $title /] [namespace current] 0]
+	    } else {
+		set f {}
+	    }
+	    set data [lindex [GetModelValue $node] 0]
+	    set useDim [FindUseDim [set nodeDims [GetModelDims $node]]]
+	    if {$useDim==-1} {
+		set valArray($node) [GetDefVal $data -1 0]
+		if {[llength $f]} {
+		    ShowNthChoice $f.combo $valArray($node)
+		}
+	    } else {
+		set count [lindex $nodeDims $useDim]
+		# bodge it to work with record submodels
+		if {[string equal RECORDS $count]} {
+		    set count [expr {[llength $data]/2}]
+		}
+		for {set index 1} {$count >= $index} {incr index} {
+		    set valArray($node,$index) \
+			[GetDefVal $data $useDim $index]
+		    if {[llength $f]} {
+			ShowNthChoice $f.elt$index.c $valArray($node,$index)
+		    }
+		}
+	    }
+	}
+    }
+
+# old version too lazy to check if it is its own slider. What the hell
+# is it doing? getting the whole data list for each element and using
+# only the appropriate value? Who wrote this crap?? Oh, it was
+# me. Never mind...
+
+    proc olddisplay {winId time display remainder} {
 	foreach valGroup {sliderVals checkStates comboTypes} {
 	    upvar \#0 $valGroup valArray
-	
 	    foreach controlVal [array names valArray] {
 		set ids [split $controlVal ,]
 		set node [lindex $ids 0]
