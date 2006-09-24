@@ -101,6 +101,10 @@ itcl::class script::Model {
 #        set model $modelFile
     }
     
+    public method Close {} {
+        itcl::delete object $this
+    }
+    
     public method Print {} {
         MenuSelect PrintNow $modelWindowCanvas
     }
@@ -158,7 +162,11 @@ itcl::class script::Model {
         global runState
         wm deiconify $runState($modelNode,helperId)
     }
-    public method Start {} {
+    public method Start {{script ""}} {
+        global helperTable
+        if {([string length $script] != 0) && [info complete $script]} {
+            set helperTable($modelNode,callbackScript) $script
+        }
         do_for_node $modelNode ${runControlKeyValue}::SetMode $modelNode start
     }
     
