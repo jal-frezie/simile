@@ -18,28 +18,27 @@ if {[info exists embed_args]} {
     
     if {[file exists $env(HOME)]} {
 # 4.1 moved SimileUserDirectory for Windows -- check in old position and update
-    set oldPrefs [file join $env(HOME) .simile]
-    if {[string equal windows $tcl_platform(platform)]} {
-        set custom(prefDir) [file join $env(HOME) "My Documents" \
-				 "My Simile files"]
-        if {[file exists $oldPrefs]} {
-	    if {![file exists $custom(prefDir)]} {
-		file mkdir $custom(prefDir)
-		foreach sysB {layout prefs recent version} {
-		    catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
-		}
-		foreach subD [glob $oldPrefs/*] {
-		    file rename $subD $custom(prefDir)/[file tail $subD]
-		}
-		file delete $oldPrefs
-	    }
+        set oldPrefs [file join $env(HOME) .simile]
+        if {[string equal windows $tcl_platform(platform)]} {
+            set custom(prefDir) [file join $env(HOME) "My Documents" "My Simile files"]
+            if {[file exists $oldPrefs]} {
+                if {![file exists $custom(prefDir)]} {
+                    file mkdir $custom(prefDir)
+                    foreach sysB {layout prefs recent version} {
+                        catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
+                    }
+                    foreach subD [glob $oldPrefs/*] {
+                        file rename $subD $custom(prefDir)/[file tail $subD]
+                    }
+                    file delete $oldPrefs
+                }
+            }
+        } elseif {[string match Darwin $tcl_platform(os)]} {
+            set custom(prefDir) [file join $env(HOME) "Simile"]
+        } else {
+            set custom(prefDir) $oldPrefs
         }
-    } elseif {[string match Darwin $tcl_platform(os)]} {
-        set custom(prefDir) [file join $env(HOME) "Simile"]
-    } else {
-        set custom(prefDir) $oldPrefs
     }
-}
 }
 package require mime
 set runHow(where) home
@@ -54,11 +53,11 @@ proc RecordRunParams {args} {}
 
 proc PrefValue {long short} {
     switch -regexp $short {
-	popupHelp|helperManager|compValPop {
-	    return 1
-	} default {
-	    error "No preference suplied in exec_only for $short"
-	}
+        popupHelp|helperManager|compValPop {
+            return 1
+        } default {
+            error "No preference suplied in exec_only for $short"
+        }
     }
 }
 
@@ -68,16 +67,16 @@ proc PrefValue {long short} {
 #foreach helperApp [lsort $helperList] {
 #    source [file join ../IOTools $helperApp]
 #    if {[info exists keyValue]} {
-#	set action [${keyValue}::identify]
-#	if {[string match {Run control} $action]} {
-#	    set helperTable(RunControl) $keyValue
-#	}
-#	if {[string match {Explorer} $action]} {
-#	    set helperTable(VariableList) $keyValue ;# for MRE
-#	}
-#	if {[string match {Data table} $action]} {
-#	    set table_viewer(id) $keyValue
-#	}
+#        set action [${keyValue}::identify]
+#        if {[string match {Run control} $action]} {
+#            set helperTable(RunControl) $keyValue
+#        }
+#        if {[string match {Explorer} $action]} {
+#            set helperTable(VariableList) $keyValue ;# for MRE
+#        }
+#        if {[string match {Data table} $action]} {
+#            set table_viewer(id) $keyValue
+#        }
 #    }
 #}
 
@@ -101,7 +100,7 @@ if {[InPlugin]} {
     set egPath ../Examples/Plugin
     cd $egPath
     foreach package [glob *.sml] {
-	$initMenu add command -label [file tail $package] -command "set tgt $package"
+        $initMenu add command -label [file tail $package] -command "set tgt $package"
     }
     tkwait variable tgt
     pack forget .initButt
@@ -109,9 +108,9 @@ if {[InPlugin]} {
     cd /Run
 } else {
     if {[llength $argv]} {
-	set tgt [file join $initDir [lindex $argv 0]]
+        set tgt [file join $initDir [lindex $argv 0]]
     } else {
-	set tgt [ChooseFile "../Examples/forest.sml" "Model to execute" 0]
+        set tgt [ChooseFile "../Examples/forest.sml" "Model to execute" 0]
     }
     set goodieBag  [mime::initialize -file $tgt]
 }
@@ -120,29 +119,29 @@ foreach bit [mime::getproperty $goodieBag parts] {
     set Desc [mime::getheader $bit Content-Description]
     #ShowMessage debug info $Desc ok
     switch [lindex $Desc 0] {
-	"Run Status" {
-	    set RunStats $bit
+        "Run Status" {
+            set RunStats $bit
 # do next bit when starting exec proc
 #                        do_for_node $topNode SetRunParams $topNode $runParams
-	} "Authentication Code" {
-#	    set AuthCode [string trimright [mime::getbody $bit]]
-	} default {
-	    set Disposition [mime::getheader $bit Content-Disposition]
-	    lappend disps $Disposition
-	    if {![regexp \"(.*)\" $Disposition all oldPath]} {
-		set oldPath [lindex [lindex $Disposition 0] 1]
-	    }
-	    switch [file extension $oldPath] {
-		.tcl {
-		    uplevel 0 [mime::getbody $bit]
-		} .shf {
-		    set shfBag [mime::initialize -string [mime::getbody $bit]]
-		    set ::RunEnv::helperData [mime::getbody $shfBag]
-		    #	} .cnv {
-		    #	    set ::RunEnv::diagSpec [mime::getbody $bit]
-		}
-	    }
-	}
+        } "Authentication Code" {
+#            set AuthCode [string trimright [mime::getbody $bit]]
+        } default {
+            set Disposition [mime::getheader $bit Content-Disposition]
+            lappend disps $Disposition
+            if {![regexp \"(.*)\" $Disposition all oldPath]} {
+                set oldPath [lindex [lindex $Disposition 0] 1]
+            }
+            switch [file extension $oldPath] {
+                .tcl {
+                    uplevel 0 [mime::getbody $bit]
+                } .shf {
+                    set shfBag [mime::initialize -string [mime::getbody $bit]]
+                    set ::RunEnv::helperData [mime::getbody $shfBag]
+                    #        } .cnv {
+                    #            set ::RunEnv::diagSpec [mime::getbody $bit]
+                }
+            }
+        }
     }
 }
 
