@@ -12,13 +12,13 @@
 
 proc GetCaptionItem {w name} {
     if {[winfo exists $w]} {
-	foreach object [$w find withtag $name] {
-	    if {[string compare [$w type $object] text] == 0} {
-		set taglist [$w gettags $object]
-		if {[string match *is_caption* $taglist]} {
-		    return $object
-		}
-	    }
+        foreach object [$w find withtag $name] {
+            if {[string compare [$w type $object] text] == 0} {
+                set taglist [$w gettags $object]
+                if {[string match *is_caption* $taglist]} {
+                    return $object
+                }
+            }
         }
     }
 }
@@ -38,11 +38,11 @@ proc GetPathSect { w name } {
         set txt [$w itemcget $nameItem -text]
 # If it's a module occurrence we want the text of the component whose value is
 # to be displayed
-	if {[regexp {valuepath\(([^\)]+)\)} [$w gettags $nameItem] \
-		 tag pathExtra]} {
-	    append txt $pathExtra
-	}
-	return $txt
+        if {[regexp {valuepath\(([^\)]+)\)} [$w gettags $nameItem] \
+                 tag pathExtra]} {
+            append txt $pathExtra
+        }
+        return $txt
     } else {
         return /no_caption/
     }
@@ -70,20 +70,19 @@ proc GetClickCapt { winId canx cany node} {
     set tgts [$winId find overlapping $canx $cany $canx $cany]
     set lastNod none
     foreach tgt $tgts {
-    if {[string match "*/background/*" [$winId gettags $tgt]] && \
-        ![string match "*/base/*" [$winId gettags $tgt]]} {
-        set thisNod [ExtractPrologName $winId $tgt]
-        if {![string equal $thisNod $lastNod]} {
-        set lastNod $thisNod
-        set newText [GetPathSect $winId $thisNod]
-        append result /$newText
-        if {[string equal $node $thisNod]} {
-            return $result
+        if {[string match "*/background/*" [$winId gettags $tgt]] && \
+                ![string match "*/base/*" [$winId gettags $tgt]]} {
+            set thisNod [ExtractPrologName $winId $tgt]
+            if {![string equal $thisNod $lastNod]} {
+                set lastNod $thisNod
+                set newText [GetPathSect $winId $thisNod]
+                append result /$newText
+                if {[string equal $node $thisNod]} {
+                    return $result
+                }
+            }
         }
-        }
-    }
     }
     append result /[GetPathSect $winId $node]
     return $result
-}    
-
+}

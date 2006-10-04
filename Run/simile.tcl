@@ -22,18 +22,18 @@ if {[file exists $env(HOME)]} {
     set oldPrefs [file join $env(HOME) .simile]
     if {[string equal windows $tcl_platform(platform)]} {
         set custom(prefDir) [file join $env(HOME) "My Documents" \
-				 "My Simile files"]
+                                 "My Simile files"]
         if {[file exists $oldPrefs]} {
-	    if {![file exists $custom(prefDir)]} {
-		file mkdir $custom(prefDir)
-		foreach sysB {layout prefs recent version} {
-		    catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
-		}
-		foreach subD [glob $oldPrefs/*] {
-		    file rename $subD $custom(prefDir)/[file tail $subD]
-		}
-		file delete $oldPrefs
-	    }
+            if {![file exists $custom(prefDir)]} {
+                file mkdir $custom(prefDir)
+                foreach sysB {layout prefs recent version} {
+                    catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
+                }
+                foreach subD [glob $oldPrefs/*] {
+                    file rename $subD $custom(prefDir)/[file tail $subD]
+                }
+                file delete $oldPrefs
+            }
         }
     } elseif [string match Darwin $tcl_platform(os)] {
         set custom(prefDir) [file join $env(HOME) "Simile"]
@@ -63,9 +63,9 @@ set env(SP_PATH) $SIMILE_PATH/System
 
 if {$argc && ![string match Darwin $tcl_platform(os)] } {
     if {[string match relative [file pathtype $argv]]} {
-    set env(OPEN_MODEL) [pwd]/$argv
+        set env(OPEN_MODEL) [pwd]/$argv
     } else {
-    set env(OPEN_MODEL) $argv
+        set env(OPEN_MODEL) $argv
     }
 } 
 
@@ -83,14 +83,14 @@ if {[string match Darwin $tcl_platform(os)]} {
         OpenTopLevel [lindex $args 0]
     }
 #    proc handleOpenApp {foo bar} {
-#	tk_messageBox -message "open foo $foo bar $bar"
+#        tk_messageBox -message "open foo $foo bar $bar"
 #    }
 #    tclAE::installEventHandler aevt oapp handleOpenApp
     proc handleReopenApp {foo bar} {
-	global window_info
-	if {![llength [array names window_info *,parent]]} {
-	    NewTopLevel
-	}
+        global window_info
+        if {![llength [array names window_info *,parent]]} {
+            NewTopLevel
+        }
     }
     tclAE::installEventHandler aevt rapp handleReopenApp
 } else {
@@ -105,127 +105,127 @@ if {[string match Darwin $tcl_platform(os)]} {
 # OTOH, if Simile is not running already, need to skip the following on Macs.
 
     proc HandOver {relayProc} {
-	global relay checkFor startAnew env
-	gets $relayProc action
-	close $relayProc
+        global relay checkFor startAnew env
+        gets $relayProc action
+        close $relayProc
 puts "New instance read string $action"
-	if {[string equal "Sender process is already dead" $action]} {
-	    set startAnew 1
-	} else {
-	    if {[info exists env(OPEN_MODEL)]} {
-		set remStartArgs [list OpenTopLevel $env(OPEN_MODEL)]
-	    } else {
-		set remStartArgs NewTopLevel
-	    }
-	    set cmd "\"$relay\" \"$checkFor\" \"$remStartArgs\""
-	    open |$cmd r+
-	    exit
-	}
+        if {[string equal "Sender process is already dead" $action]} {
+            set startAnew 1
+        } else {
+            if {[info exists env(OPEN_MODEL)]} {
+                set remStartArgs [list OpenTopLevel $env(OPEN_MODEL)]
+            } else {
+                set remStartArgs NewTopLevel
+            }
+            set cmd "\"$relay\" \"$checkFor\" \"$remStartArgs\""
+            open |$cmd r+
+            exit
+        }
     }
 
     proc FailedHandoverQuery {hungProc} {
-	global relay checkFor
-	
-	set act [tk_messageBox -title "Simile is not responding" -icon info \
-		     -message "Simile is already running, but is currently not responding. Do you want to kill it and start again?" -type okcancel]
-	if {[string equal ok $act]} {
+        global relay checkFor
+        
+        set act [tk_messageBox -title "Simile is not responding" -icon info \
+                     -message "Simile is already running, but is currently not responding. Do you want to kill it and start again?" -type okcancel]
+        if {[string equal ok $act]} {
 # There is an unresponsive instance: how to kill it? make a dummy file
 # so it looks like a relay proc then call relay with "done" so it does
 # not start anew
-	    set strm [open $checkFor w]
-	    puts $strm $hungProc
-	    close $strm
+            set strm [open $checkFor w]
+            puts $strm $hungProc
+            close $strm
 # if this fails, I hope it means the old Simile is already dead
-	    catch {exec $relay $checkFor done}
-	} else {
+            catch {exec $relay $checkFor done}
+        } else {
 # Action cancelled. If I am still waiting for a response I now write
 # OhNeverMind, to tell any new procs the old one is hung. If I had a response,
 # do nothing. Because I turned off own query (if it was my own) I can only
 # check for response by reading the file again...
-	    set strm [open $checkFor r]
-	    set tellProc [gets $strm]
-	    set tellProc [gets $strm] ;# second line is last command passed
-	    close $strm
+            set strm [open $checkFor r]
+            set tellProc [gets $strm]
+            set tellProc [gets $strm] ;# second line is last command passed
+            close $strm
 puts "Cancelling: 2nd line is $tellProc"
-	    if {[string equal AreYouThere [lindex $tellProc 0]]} {
+            if {[string equal AreYouThere [lindex $tellProc 0]]} {
 # yep, still waiting...
-		set strm [open $checkFor w]
-		puts $strm 0
-		puts $strm "OhNeverMind $hungProc"
-		close $strm
-	    }
-	    exit
-	}
+                set strm [open $checkFor w]
+                puts $strm 0
+                puts $strm "OhNeverMind $hungProc"
+                close $strm
+            }
+            exit
+        }
     }
-	    
+            
 # ok, is anybody out there?
 
     set checkFor [file join $SIMILE_PATH Examples handover.txt]
     if {![file exists $checkFor] && [info exists custom(prefDir)]} {
-	set checkFor [file join $custom(prefDir) handover.txt]
+        set checkFor [file join $custom(prefDir) handover.txt]
     } 
     if {[file exists $checkFor]} {
-	set strm [open $checkFor r]
-	set tellProc [gets $strm]
-	set tellProc [gets $strm] ;# second line is last command passed
-	close $strm
+        set strm [open $checkFor r]
+        set tellProc [gets $strm]
+        set tellProc [gets $strm] ;# second line is last command passed
+        close $strm
 puts "Starting up: 2nd line is $tellProc"
 # ping to see if old proc there
-	set relay [file join $SIMILE_PATH System bin relay]
-	switch -regexp [lindex $tellProc 0] {
-	    OhNeverMind {
+        set relay [file join $SIMILE_PATH System bin relay]
+        switch -regexp [lindex $tellProc 0] {
+            OhNeverMind {
 # we already did the hung instance dialogue and chose to cancel. No resolution
 # since, so do it again.
-		FailedHandoverQuery [lindex $tellProc 1]
-	    } AreYouThere {
+                FailedHandoverQuery [lindex $tellProc 1]
+            } AreYouThere {
 # One instance is waiting for another, probably hung, instance to respond, or
 # displaying the dialogue box. Don't confuse issues by starting a third.
-		exit
-	    } Ready {
+                exit
+            } Ready {
 # Another instance appears ready and waiting, ask it to take over...we have to check it is running first as we cannot take back a command that we abandon cos the wait is too long
-		set remStartArgs "AreYouThere"
-		set cmd "\"$relay\" \"$checkFor\" \"$remStartArgs\""
+                set remStartArgs "AreYouThere"
+                set cmd "\"$relay\" \"$checkFor\" \"$remStartArgs\""
 # relay waits on stdin so it exits when Simile does, so must open it r+ or it
 # tries to use console stdin, hanging simile
-		set relayProc [open |$cmd r+]
-		fconfigure $relayProc -blocking 0
-		fileevent $relayProc readable "HandOver $relayProc"
+                set relayProc [open |$cmd r+]
+                fconfigure $relayProc -blocking 0
+                fileevent $relayProc readable "HandOver $relayProc"
 # but be ready in case it fails to do so
-		set escapeDlg [after 3000 set startAnew 0]
-		tkwait variable startAnew
-		if {$startAnew} {
-		    after cancel $escapeDlg ;# process was dead
-		} else { ;# process unresponsive
-		    fileevent $relayProc readable {} ;# no longer want to know
-		    close $relayProc
-		    FailedHandoverQuery [lindex $tellProc 1]
-		}
-		unset startAnew
-	    }
-	}
+                set escapeDlg [after 3000 set startAnew 0]
+                tkwait variable startAnew
+                if {$startAnew} {
+                    after cancel $escapeDlg ;# process was dead
+                } else { ;# process unresponsive
+                    fileevent $relayProc readable {} ;# no longer want to know
+                    close $relayProc
+                    FailedHandoverQuery [lindex $tellProc 1]
+                }
+                unset startAnew
+            }
+        }
     }
 }
 
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
-#	dde servername $oldProc
-	set env(TCL_LIBRARY) [info library]
+#        dde servername $oldProc
+        set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
-	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
-	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
-	set graph(origin) 2
+        set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
+        set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
+        set graph(origin) 2
     } unix {
-#	tk appname $oldProc ;# in case starting it from SimileAutoObj
+#        tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
 #   set env(LD_LIBRARY_PATH) \
 #       $env(SP_PATH)/library:[file dirname [info library]]
     # the following can be edited for your configuration
-	set env(PRINTCMD) lpr
+        set env(PRINTCMD) lpr
         if [string match Darwin $tcl_platform(os)] {
             set graph(origin) 3
         } else {
-	    set graph(origin) 1
+            set graph(origin) 1
         }
     }
 }
@@ -233,9 +233,9 @@ switch $tcl_platform(platform) {
 if {[string equal windows $tcl_platform(platform)]} {
     package require registry
     foreach regEntry {prologId interfaceId install_time license_code \
-			licensee_name licensee_corp} {
-	set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
-	catch {set env($regEntry) [registry get $regKey $regEntry]}
+                        licensee_name licensee_corp} {
+        set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
+        catch {set env($regEntry) [registry get $regKey $regEntry]}
     }
 } else {
     set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
@@ -305,11 +305,13 @@ toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
 .splash.c create image 200 158 -image splash
 .splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
-    -text "Simulistics Ltd. 2001-2006"
-.splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
+        -text "Simulistics Ltd. 2001-2006"
+.splash.c create text 270.0 275.0 -font $graph(font) -fill \#660066 \
+        -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
-.splash.c create text 270.0 295.0 -font $graph(font) -fill #660066 -text "Registered to $regInfo"
+.splash.c create text 270.0 295.0 -font $graph(font) -fill \#660066 \
+        -text "Registered to $regInfo"
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
@@ -335,39 +337,39 @@ cd $SIMILE_PATH/Run
 
 switch $env(prologId) {
     gnu {
-	set tgt Run/xgsimile
+        set tgt Run/xgsimile
     } sicstus {
-	set tgt System/bin/sprt
+        set tgt System/bin/sprt
     }
 }
 
 switch $tcl_platform(platform) {
     windows {
-	set execExtn .exe
+        set execExtn .exe
     } unix {
-	set execExtn {}
+        set execExtn {}
     }
 }
 
 switch $env(interfaceId) {
     pipe {
-	set whatCalled [file rootname [file tail [info nameofexecutable]]]
-	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
-	source ../Run/toolbox.tcl
-	source ../Run/prolog.tcl
+        set whatCalled [file rootname [file tail [info nameofexecutable]]]
+        set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
+        source ../Run/toolbox.tcl
+        source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
 # Abandoned because it didn't start the COM interface properly
 #    if {[string equal SimileScript $whatCalled]} {
-#	package require SimileAutoObj
-#	foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}
-#	console title SimileScript
-#	console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}
-#	console eval {puts -nonewline "Welcome to Simile Scripting\n% "}
-#	console show
+#        package require SimileAutoObj
+#        foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}
+#        console title SimileScript
+#        console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}
+#        console eval {puts -nonewline "Welcome to Simile Scripting\n% "}
+#        console show
 #    }
     } dll {
-	exec $SIMILE_PATH/$tgt$execExtn &
+        exec $SIMILE_PATH/$tgt$execExtn &
     } console {
-	source ../Run/toolbox.tcl
+        source ../Run/toolbox.tcl
     }
 }

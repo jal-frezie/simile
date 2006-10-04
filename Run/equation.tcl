@@ -103,19 +103,19 @@ proc create_equation {parent boxtitle indices} {
         pack [frame $keypadf.keys.row$row] -fill x
         for {set col 0} {$col < 8} {incr col} {
             set act [lindex $keys [expr 8*$row+$col]]
-	    if {[string match custom $act]} {
-		set act [PrefValue custom(myButton) myButton]
-	    }
-	    set bid [button $keypadf.keys.row$row.col$col -width 2 \
-		      -text $act -command [list HitKey $t $act]]
-	    pack $bid -side left -fill x -expand false
-	    if {[string first $act .0123456789]>-1} {
-		$bid configure -bg \#a0a0a0 -activebackground \#a0a0a0
-	    } elseif {[string match AC $act]} {
-		$bid configure -bg orange -activebackground orange
-	    } elseif {[lsearch -exact {<- -> SPACE DEL} $act]>-1} {
-		$bid configure -bg grey -activebackground grey
-	    }
+            if {[string match custom $act]} {
+                set act [PrefValue custom(myButton) myButton]
+            }
+            set bid [button $keypadf.keys.row$row.col$col -width 2 \
+                      -text $act -command [list HitKey $t $act]]
+            pack $bid -side left -fill x -expand false
+            if {[string first $act .0123456789]>-1} {
+                $bid configure -bg \#a0a0a0 -activebackground \#a0a0a0
+            } elseif {[string match AC $act]} {
+                $bid configure -bg orange -activebackground orange
+            } elseif {[lsearch -exact {<- -> SPACE DEL} $act]>-1} {
+                $bid configure -bg grey -activebackground grey
+            }
         }
     }
     # Make text buttons double width
@@ -329,13 +329,13 @@ proc fill_equation {current_equation units mult isParam desc comment min max} {
     $widget.slider.radio1 configure -state $paramMenuState
     $widget.file.radio2 configure -state $paramMenuState
     if {[string first Initial \
-	     [wm title [winfo toplevel $equation(main)]]]==0} {
+             [wm title [winfo toplevel $equation(main)]]]==0} {
 # do not allow variable parameter for initial values...derrr
-	$widget.slider.radio1 configure -state disabled
+        $widget.slider.radio1 configure -state disabled
     } elseif {[string first Trigger \
-	     [wm title [winfo toplevel $equation(main)]]]==0} {
+             [wm title [winfo toplevel $equation(main)]]]==0} {
 # do not allow fixed parameter for events...derrrrrr
-	$widget.file.radio2 configure -state disabled
+        $widget.file.radio2 configure -state disabled
     }
     set equation(min) $min
     set equation(max) $max
@@ -446,7 +446,7 @@ proc GetTable {parent comp box} {
         }
         set equation(table_values) $table_entry(values)
         if {![string match *table(*)* [$box get 1.0 end]]} {
-	    InsertFunction $box table
+            InsertFunction $box table
         }
         set equation(done) 3
     }
@@ -593,13 +593,13 @@ proc equationGraph {parent} {
     # set default values for new graph
     set graphArgs {0 100 400 100 0 400 0 21 200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200,200}
     if {[info exists equation(table_data)]} {
-	if {[string equal /graph/ [lindex $equation(table_data) 0]]} {
-	    set graphArgs [concat [lrange $equation(table_data) 5 7] \
-			       [lrange $equation(table_data) 1 3] \
-			       [lindex $equation(table_data) 8] \
-			       [lindex $equation(table_data) 4] \
-			       [join $equation(table_values) ,]]
-	}
+        if {[string equal /graph/ [lindex $equation(table_data) 0]]} {
+            set graphArgs [concat [lrange $equation(table_data) 5 7] \
+                               [lrange $equation(table_data) 1 3] \
+                               [lindex $equation(table_data) 8] \
+                               [lindex $equation(table_data) 4] \
+                               [join $equation(table_values) ,]]
+        }
     }
     set done [eval {GraphEntry .graph} $graphArgs]
     grab release .graph
@@ -674,31 +674,31 @@ proc equationDouble { lb boxname} {
 proc HitKey { winId char } {
     global equation
     switch -exact -- $char {
-	DEL {
-	    event generate $winId <Key-BackSpace>
-	} -> {
-	    event generate $winId <Key-Right>
-	} <- {
-	    event generate $winId <Key-Left>
-	} SPACE {
-	    event generate $winId <Key-space>
-	} \{ {
-	    event generate $winId <Key-braceleft>
-	} \} {
-	    event generate $winId <Key-braceright>
-	} default {
-	    set begin 1.0
-	    if {[string match *Entry [winfo class [focus]]]} {
-		set begin 0
-	    } else {
-		focus [$equation(main).main.main getframe].equation.textbox.text
-	    }
-	    if {[string match AC $char]} {	    
-		[focus] delete $begin end
-	    } else {
-		[focus] insert insert $char
-	    }
-	}
+        DEL {
+            event generate $winId <Key-BackSpace>
+        } -> {
+            event generate $winId <Key-Right>
+        } <- {
+            event generate $winId <Key-Left>
+        } SPACE {
+            event generate $winId <Key-space>
+        } \{ {
+            event generate $winId <Key-braceleft>
+        } \} {
+            event generate $winId <Key-braceright>
+        } default {
+            set begin 1.0
+            if {[string match *Entry [winfo class [focus]]]} {
+                set begin 0
+            } else {
+                focus [$equation(main).main.main getframe].equation.textbox.text
+            }
+            if {[string match AC $char]} {            
+                [focus] delete $begin end
+            } else {
+                [focus] insert insert $char
+            }
+        }
     }
 }
 
@@ -707,9 +707,9 @@ proc functionClick {tree boxname fn} {
     set tree [winfo parent $tree]
     # Take the item the user clicked on
     if {[llength [$tree nodes $fn]]} {
-	$tree toggle $fn
+        $tree toggle $fn
     } else {
-	InsertFunction $boxname [lindex [split $fn .] end]
+        InsertFunction $boxname [lindex [split $fn .] end]
     }
 }
 

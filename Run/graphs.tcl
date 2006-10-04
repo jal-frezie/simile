@@ -12,7 +12,7 @@
 # the graph data is inserted or appended to the equation.
 
 # graph function is graph(param, xlow, xhigh, xspan,
-#	ylow, yhigh, yspan, [pt1, pt2 ... ptn])
+#        ylow, yhigh, yspan, [pt1, pt2 ... ptn])
 
 proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
             {target {}}} {
@@ -84,7 +84,7 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     button $buttons.cancel -text Cancel -width 10
     pack $buttons.cancel -padx 4 -pady 4 -anchor e
     button $buttons.edit -text "Edit as table" -width 10 \
-	-command [list EditAsTable $t $grid]
+        -command [list EditAsTable $t $grid]
     pack $buttons.edit -padx 4 -pady 4 -anchor e
     button $buttons.help -text Help -width 10 -command {ContextSensitiveHelp .graph equations/graph.htm}
     pack $buttons.help -padx 4 -pady 4 -anchor e
@@ -92,14 +92,14 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     set looks(darkerColor) [$buttons.enter cget -disabledforeground]
 
     if {[llength $target]} {
-	$buttons.enter configure -command \
-	    [namespace code [list UpdateGraph $t $target]]
-	$buttons.cancel configure -command \
-	    [namespace code [list RestoreSketch $t $target]]
+        $buttons.enter configure -command \
+            [namespace code [list UpdateGraph $t $target]]
+        $buttons.cancel configure -command \
+            [namespace code [list RestoreSketch $t $target]]
     } else {
-	$buttons.enter configure -command [list set graph($t,done) 1]
-	$buttons.cancel configure -command [list set graph($t,done) 0]
-	bind $t <Destroy> "set graph($t,done) -1"
+        $buttons.enter configure -command [list set graph($t,done) 1]
+        $buttons.cancel configure -command [list set graph($t,done) 0]
+        bind $t <Destroy> "set graph($t,done) -1"
     }
 
     TitleFrame $t.right.current -text "Current Position: "
@@ -138,15 +138,15 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
 #    pack $mb
 
 #    pack [ComboBox $between.rangeopts -values "Interpolate Round" -editable 0 \
-#	      -modifycmd "Reshape $t" -width 12]
+#              -modifycmd "Reshape $t" -width 12]
     ::ttk::menubutton $between.rangeopts
     set betweenMenu [menu $between.rangeopts.menu -tearoff 0]
     foreach unit {Interpolate Round} {
-	$betweenMenu add command -label $unit \
-	    -command "set graph($t,betweenOpt) $unit;Reshape $t"
+        $betweenMenu add command -label $unit \
+            -command "set graph($t,betweenOpt) $unit;Reshape $t"
     }
     $between.rangeopts configure -menu $betweenMenu -width 11 \
-	-textvariable graph($t,betweenOpt)
+        -textvariable graph($t,betweenOpt)
     pack $between.rangeopts -side left -anchor nw
 
     pack $between -pady 8 -padx 4
@@ -154,14 +154,14 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     label $out.outrange -text "Out of range:"
     pack $out.outrange
 #    pack [ComboBox $out.rangeopts -values "Truncate Extrapolate Wraparound" \
-#	      -editable 0 -width 12]
+#              -editable 0 -width 12]
     ::ttk::menubutton $out.rangeopts
     set outMenu [menu $out.rangeopts.menu -tearoff 0]
     foreach unit {Truncate Extrapolate Wraparound} {
-	$outMenu add command -label $unit -command "set graph($t,outOpt) $unit"
+        $outMenu add command -label $unit -command "set graph($t,outOpt) $unit"
     }
     $out.rangeopts configure -menu $outMenu -width 11 \
-	-textvariable graph($t,outOpt)
+            -textvariable graph($t,outOpt)
     pack $out.rangeopts -side left -anchor nw
 
     pack $out -pady 8 -padx 4
@@ -197,24 +197,24 @@ proc GraphEntry { t xlow xhigh xspan ylow yhigh yspan range size points \
     RedrawGrid $grid $graph($t,width) $graph($t,height) $graph($t,increment)
     
     if {![llength $target]} {
-	while {1} {
-	    LetItShow $t
-	    tkwait variable graph($t,done)
-	    if {$graph($t,done)==1} {
-		if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
-			 $graph($t,lowx) $graph($t,highx)]} {
-		    set graph($t,range) [SetCombos $t]
-		    set graph($t,size) [llength $graph($t,points)]
-		    # regsub -all " " $graph($t,points) , graph($t,pts)
+        while {1} {
+            LetItShow $t
+            tkwait variable graph($t,done)
+            if {$graph($t,done)==1} {
+                if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
+                         $graph($t,lowx) $graph($t,highx)]} {
+                    set graph($t,range) [SetCombos $t]
+                    set graph($t,size) [llength $graph($t,points)]
+                    # regsub -all " " $graph($t,points) , graph($t,pts)
 
                     SetDefaultGraph $graph($t,lowx) $graph($t,highx) $graph($t,width) \
-			$graph($t,lowy) $graph($t,highy) $graph($t,height) \
-			$graph($t,range) $graph($t,size) $graph($t,points)
+                        $graph($t,lowy) $graph($t,highy) $graph($t,height) \
+                        $graph($t,range) $graph($t,size) $graph($t,points)
                     return 1
                 }
             } else {
-		return 0
-	    }
+                return 0
+            }
         }
     }
 }
@@ -223,17 +223,17 @@ proc UpdateGraph {t node} {
     global graph
 
     if {[CheckFloaty $graph($t,lowy) $graph($t,highy) \
-	     $graph($t,lowx) $graph($t,highx)]} {
-	# tk_messageBox -message "$rangeChoices $graph($t,rangeact)"
-	set graph($t,range) [SetCombos $t]
-	set graph($t,size) [llength $graph($t,points)]
-	# regsub -all " " $graph($t,points) , graph($t,pts)
-	# Target is set to variable id if editing sketch at run time
-	eval {SetModelGraph $node $graph($t,lowx) \
-		  $graph($t,highx) $graph($t,width) \
-		  $graph($t,lowy) $graph($t,highy) \
-		  $graph($t,height) $graph($t,range) \
-		  $graph($t,size)} $graph($t,points)
+             $graph($t,lowx) $graph($t,highx)]} {
+        # tk_messageBox -message "$rangeChoices $graph($t,rangeact)"
+        set graph($t,range) [SetCombos $t]
+        set graph($t,size) [llength $graph($t,points)]
+        # regsub -all " " $graph($t,points) , graph($t,pts)
+        # Target is set to variable id if editing sketch at run time
+        eval {SetModelGraph $node $graph($t,lowx) \
+                  $graph($t,highx) $graph($t,width) \
+                  $graph($t,lowy) $graph($t,highy) \
+                  $graph($t,height) $graph($t,range) \
+                  $graph($t,size)} $graph($t,points)
     }
 }
 
@@ -242,13 +242,13 @@ proc RestoreSketch {t node} {
 
     set lastSaved [GetModelGraph $node]
     scan $lastSaved "%g %g %d %g %g %d %d" graph($t,lowx) \
-	graph($t,highx) graph($t,width) \
-	graph($t,lowy) graph($t,highy) \
-	graph($t,height) range
+        graph($t,highx) graph($t,width) \
+        graph($t,lowy) graph($t,highy) \
+        graph($t,height) range
     SetCombos $t $range
     set graph($t,points) [lrange $lastSaved 8 end]
     set graph($t,increment) \
-	[expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
+        [expr $graph($t,width)/([llength $graph($t,points)] - 1.0)]
 # above must be set so AttackShape gets current one right
     set grid [$t.gph getframe].gridf.canvas
     AttackShape $grid [winfo width $grid] [winfo height $grid]
@@ -260,44 +260,44 @@ proc SetCombos {t args} {
     set bCombo $right.between.rangeopts
     set rCombo $right.out.rangeopts
     if {[llength $args]} {
-	set between [expr $args/4]
-#	$bCombo configure -text [lindex [$bCombo cget -values] $between]
-	set graph($t,betweenOpt) [${bCombo}.menu entrycget $between -label]
-#	$rCombo configure -text [lindex [$rCombo cget -values] \
-#				  [expr $args-4*$between]]
-	set graph($t,outOpt) [${rCombo}.menu entrycget \
-				  [expr $args-4*$between] -label]
+        set between [expr $args/4]
+#        $bCombo configure -text [lindex [$bCombo cget -values] $between]
+        set graph($t,betweenOpt) [${bCombo}.menu entrycget $between -label]
+#        $rCombo configure -text [lindex [$rCombo cget -values] \
+#                                  [expr $args-4*$between]]
+        set graph($t,outOpt) [${rCombo}.menu entrycget \
+                                  [expr $args-4*$between] -label]
     } else {
-#	set between [lsearch [$bCombo cget -values] [$bCombo cget -text]]
-	set between [${bCombo}.menu index $graph($t,betweenOpt)]
+#        set between [lsearch [$bCombo cget -values] [$bCombo cget -text]]
+        set between [${bCombo}.menu index $graph($t,betweenOpt)]
     }
     set graph($t,between) $between
 #    return [expr 4*$between+[lsearch [$rCombo cget -values] \
-#				[$rCombo cget -text]]]
+#                                [$rCombo cget -text]]]
     return [expr 4*$between+[${rCombo}.menu index $graph($t,outOpt)]]
 }
-				  
+                                  
 proc EditAsTable {t canvas} {
     global graph
     set size [llength $graph($t,points)]
     set range [expr $graph($t,highx)-$graph($t,lowx)]
     for {set index 0} {$index < $size} {incr index} {
-	lappend table \
-	    [expr $graph($t,lowx)+$range*$index/($size-1.0)] \
-	    [PointToYValue $t [lindex $graph($t,points) $index]]
+        lappend table \
+            [expr $graph($t,lowx)+$range*$index/($size-1.0)] \
+            [PointToYValue $t [lindex $graph($t,points) $index]]
     }
     if {[EditListAsTable $t table]} {
-	foreach {index y} $table {
-	    set zone [expr round(($size-1.0)*$index/$range)]
-	    GStick $canvas $zone [YValueToPoint $t $y]
-	}
+        foreach {index y} $table {
+            set zone [expr round(($size-1.0)*$index/$range)]
+            GStick $canvas $zone [YValueToPoint $t $y]
+        }
     }
 }
 
 proc SetDefaultGraph {xlow xhigh xspan ylow yhigh yspan range size points} {
     global equation
     set equation(table_data) [list /graph/ $ylow $yhigh $yspan $size \
-				  $xlow $xhigh $xspan $range]
+                                  $xlow $xhigh $xspan $range]
     set equation(table_values) $points
 }
 
@@ -323,17 +323,17 @@ proc AddLine {c section} {
     
     $c delete section$section
     if {$graph($t,between)} {
-	$c create line [expr round($graph($t,increment)*($section-1))+$miss] \
+        $c create line [expr round($graph($t,increment)*($section-1))+$miss] \
             [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
-	    [expr round($graph($t,increment)*($section-0.5))+$miss] \
+            [expr round($graph($t,increment)*($section-0.5))+$miss] \
             [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
-	    [expr round($graph($t,increment)*($section-0.5))+$miss] \
+            [expr round($graph($t,increment)*($section-0.5))+$miss] \
             [expr [lindex $graph($t,points) $section]+$miss] \
             [expr round($graph($t,increment)*$section)+$miss] \
             [expr [lindex $graph($t,points) $section]+$miss] \
             -tags "graph section$section"
     } else {
-	$c create line [expr round($graph($t,increment)*($section-1))+$miss] \
+        $c create line [expr round($graph($t,increment)*($section-1))+$miss] \
             [expr [lindex $graph($t,points) [expr $section - 1]]+$miss] \
             [expr round($graph($t,increment)*$section)+$miss] \
             [expr [lindex $graph($t,points) $section]+$miss] \
@@ -370,7 +370,7 @@ proc YEntry {c} {
 proc YValueToPoint {t yvalue} {
     global graph
     return [expr round($graph($t,height)*\
-	       ($yvalue-$graph($t,lowy))/($graph($t,highy)-$graph($t,lowy)))]
+               ($yvalue-$graph($t,lowy))/($graph($t,highy)-$graph($t,lowy)))]
 }
 
 proc GDrag {c ox oy} {
@@ -549,31 +549,31 @@ proc equationDoTable {parent tgt startLine} {
     pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
     if {!$startLine} {
-	pack [set wrapf [frame $fidx.wrapf]] -expand true -fill x
-	pack [label $wrapf.m -text "Wraparound at:"] -side left
-	pack [entry $wrapf.e -width 1 -textvariable table_entry(wrapPt)] \
-	    -side right -expand true -fill x
-	if {[string equal restart [string tolower \
-				       [lindex $table_entry(values) end]]]} {
-	    set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
-	    set table_entry(wrapPt) $table_entry(oldWrapPt)
-	    set table_entry(values) [lrange $table_entry(values) 0 end-2]
-	} else {
-	    set table_entry(oldWrapPt) {}
-	}
+        pack [set wrapf [frame $fidx.wrapf]] -expand true -fill x
+        pack [label $wrapf.m -text "Wraparound at:"] -side left
+        pack [entry $wrapf.e -width 1 -textvariable table_entry(wrapPt)] \
+            -side right -expand true -fill x
+        if {[string equal restart [string tolower \
+                                       [lindex $table_entry(values) end]]]} {
+            set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
+            set table_entry(wrapPt) $table_entry(oldWrapPt)
+            set table_entry(values) [lrange $table_entry(values) 0 end-2]
+        } else {
+            set table_entry(oldWrapPt) {}
+        }
     }
     pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 2
     #
     # OK, Cancel and Help buttons
     frame .table.top.fbuttons
     button .table.top.fbuttons.edit -text View/Edit -width 10 \
-	-command [list EditTableData $lidx $startLine]
+        -command [list EditTableData $lidx $startLine]
     button .table.top.fbuttons.ok -text OK -width 10 \
-	-command [list DoneTableData $lidx $startLine]
+        -command [list DoneTableData $lidx $startLine]
     button .table.top.fbuttons.cancel -text Cancel -width 10 \
-	-command "set table_entry(done) 0"
+        -command "set table_entry(done) 0"
     button .table.top.fbuttons.help -text Help -width 10 \
-	-command {ContextSensitiveHelp .table equations/table.htm}
+        -command {ContextSensitiveHelp .table equations/table.htm}
     pack .table.top.fbuttons.edit -side top -padx 4 -pady 4
     pack .table.top.fbuttons.ok -side top -padx 4 -pady 4
     pack .table.top.fbuttons.cancel -side top -padx 4 -pady 4
@@ -600,7 +600,7 @@ proc equationDoTable {parent tgt startLine} {
     pack $fdata.captions.dheadlabel -side top -anchor w -fill y -expand true
     pack $dhead -side top -expand true -fill x
     button $fdata.buttons.load -text Load -width 10 \
-	-command [list AcquireTableData $lidx 1 $startLine]
+        -command [list AcquireTableData $lidx 1 $startLine]
     pack $fdata.buttons.load -side top -padx 4 -pady 4
     label $fdata.captions.dfilelabel -text "Data file:"
     set dfile [Entry $fdata.entries.dfile \
@@ -609,7 +609,7 @@ proc equationDoTable {parent tgt startLine} {
     pack $fdata.captions.dfilelabel -side bottom -anchor w -fill y -expand true
     pack $dfile -side bottom -expand true -fill x
     button $fdata.buttons.new -compound left -image $iconImages(open) \
-	-text Browse -command {GetDataFile "Select new data file";LoadDataFile}
+        -text Browse -command {GetDataFile "Select new data file";LoadDataFile}
     pack $fdata.buttons.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack .table.bottom.fdata -fill x
@@ -619,20 +619,20 @@ proc equationDoTable {parent tgt startLine} {
     LetItShow .table
     if {[llength $table_entry(data)]} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
-	set table_entry(dataField) [lindex $table_entry(data) 1]
-	set table_entry(indices) [lrange $table_entry(data) 2 end]
+        set table_entry(dataField) [lindex $table_entry(data) 1]
+        set table_entry(indices) [lrange $table_entry(data) 2 end]
 
-	set i 1
-	foreach idx $table_entry(indices) {
-	    if {![string match ,* $idx]} { ;# this is wrap info
-		$lidx insert end id$i -text $idx
-	    }
-	    incr i
-	}
-#	if {![LoadDataFile]} {
-#	    destroy $t
-#	    return 0
-#	}
+        set i 1
+        foreach idx $table_entry(indices) {
+            if {![string match ,* $idx]} { ;# this is wrap info
+                $lidx insert end id$i -text $idx
+            }
+            incr i
+        }
+#        if {![LoadDataFile]} {
+#            destroy $t
+#            return 0
+#        }
     } else {
 #        if {![string compare \
 #                    [GetDataFile "No data file yet specified"] {}]} {
@@ -652,7 +652,7 @@ proc equationDoTable {parent tgt startLine} {
     PackItUp $t
     grab $parent
     if {[info exists table_entry(wrapPt)] && [Numeric $table_entry(wrapPt)]} {
-	lappend table_entry(values) $table_entry(wrapPt) restart
+        lappend table_entry(values) $table_entry(wrapPt) restart
     }
     return $table_entry(done)
 }
@@ -661,9 +661,9 @@ proc EditTableData {lidx startLine} {
     global table_entry
     AcquireTableData $lidx 0 $startLine
     if {[llength $table_entry(values)]} {
-	if {[EditListAsTable .table table_entry(values)]} {
-	    set table_entry(source) 1
-	}
+        if {[EditListAsTable .table table_entry(values)]} {
+            set table_entry(source) 1
+        }
     }
 }
 
@@ -671,9 +671,9 @@ proc DoneTableData {lidx startLine} {
     global table_entry
     AcquireTableData $lidx 0 $startLine
     if {!$table_entry(source) && \
-	    [info exists table_entry(wrapPt)] && \
-	    ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)]} {
-	set table_entry(source) 0.5
+            [info exists table_entry(wrapPt)] && \
+            ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)]} {
+        set table_entry(source) 0.5
     }
     set table_entry(done) $table_entry(source)
 }
@@ -682,7 +682,7 @@ proc AcquireTableData {lidx redo startLine} {
     global table_entry
 
     if {![llength $table_entry(dataField)]} {
-	return
+        return
     }
     set idcs {}
     foreach itm [$lidx items] {
@@ -690,12 +690,12 @@ proc AcquireTableData {lidx redo startLine} {
     }
     set table_entry(indices) $idcs
     set tableSpec [concat [list $table_entry(fileName) \
-			       $table_entry(dataField)] $table_entry(indices)]
+                               $table_entry(dataField)] $table_entry(indices)]
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
 #do_in_editor puts "Loading with $tableSpec not $table_entry(data)"
-	set table_entry(values) [LoadTableData $tableSpec $startLine]
-	set table_entry(source) 2
-	set table_entry(data) $tableSpec
+        set table_entry(values) [LoadTableData $tableSpec $startLine]
+        set table_entry(source) 2
+        set table_entry(data) $tableSpec
     }
 }
 
@@ -712,9 +712,9 @@ proc EditListAsTable {parent valueArray} {
 # button frame packed first so it is not squeeeezed if window dragged smaller
     pack [frame $t] -fill x -expand true
     pack [button $b.ok -text OK \
-	      -command "set table_viewer(done) 1" -width 10] -padx 2 -pady 2 -side left
+              -command "set table_viewer(done) 1" -width 10] -padx 2 -pady 2 -side left
     pack [button $b.cancel -text Cancel \
-	      -command "set table_viewer(done) 0" -width 10] -padx 2 -pady 2 -side left
+              -command "set table_viewer(done) 0" -width 10] -padx 2 -pady 2 -side left
     
     set viewerId $table_viewer(id)
     set ::${viewerId}::editMode($t) 1
@@ -735,7 +735,7 @@ proc EditListAsTable {parent valueArray} {
     PackItUp .table_edit
 # extract step at end so window still gone if it fails
     if {$table_viewer(done)} {
-	set values [${viewerId}::ExtractEdits $t]
+        set values [${viewerId}::ExtractEdits $t]
     }
     return $table_viewer(done)
 }
@@ -754,7 +754,7 @@ proc LoadDataFile {} {
     
     while {[catch {open $table_entry(fileName) r} stream]} {
         if {![string compare \
-		 [GetDataFile "Cannot read file $table_entry(fileName)"] {}]} {
+                 [GetDataFile "Cannot read file $table_entry(fileName)"] {}]} {
             return 0
         }
     }
@@ -803,10 +803,10 @@ proc LoadTableData {tableSpec lineCount} {
     
     set headerCount 0
     if {[string match ,* [lindex $tableSpec 2]]} { ;# its a wraparound point
-	set wrapPt [string range [lindex $tableSpec 2] 6 end]
-	set indexStart 3
+        set wrapPt [string range [lindex $tableSpec 2] 6 end]
+        set indexStart 3
     } else {
-	set indexStart 2
+        set indexStart 2
     }
     foreach headerIndex [lrange $tableSpec $indexStart end] {
         lappend indexColumns [lsearch -exact $headerList $headerIndex]
@@ -814,56 +814,56 @@ proc LoadTableData {tableSpec lineCount} {
         incr headerCount
     }
     if {!$headerCount} {
-	# use line number as index
-	set headerCount 1
-	set maxIndices(0) {}
+        # use line number as index
+        set headerCount 1
+        set maxIndices(0) {}
     }
     set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
 #ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
     if {$headerColumn==-1} {
-	ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column from this list: $headerList." ok
-	return
+        ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column from this list: $headerList." ok
+        return
     }
     while {[gets $tStr entryLine] != -1} {
-	set entryList [TrimFields [split $entryLine ,]]
+        set entryList [TrimFields [split $entryLine ,]]
 #ShowMessage debug info "Data line is $entryList" ok
         if {![llength $entryList]} {
-	    continue ;# ignore blank lines anywhere
-	}
+            continue ;# ignore blank lines anywhere
+        }
         if {[info exists indexColumns]} {
             set arrayIndex {}
             set indexCount 0
             foreach column $indexColumns {
                 set newIndex [lindex $entryList $column]
-		# enquote the above if indices of llength 1 are needed
-		if {[llength $newIndex]} {
-		    lappend arrayIndex $newIndex
-		    if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
-			lappend maxIndices($indexCount) $newIndex
-		    }
-		    incr indexCount
-		} else {
-		    # if there is an empty index field ignore the line
-		    set badIndex 1
-		    break
-		}
+                # enquote the above if indices of llength 1 are needed
+                if {[llength $newIndex]} {
+                    lappend arrayIndex $newIndex
+                    if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
+                        lappend maxIndices($indexCount) $newIndex
+                    }
+                    incr indexCount
+                } else {
+                    # if there is an empty index field ignore the line
+                    set badIndex 1
+                    break
+                }
             }
         } else {
-	    lappend maxIndices(0) $lineCount
+            lappend maxIndices(0) $lineCount
             set arrayIndex $lineCount
             incr lineCount
         }
         
         # ignore empty entries
-	if {[info exists badIndex]} {
-	    unset badIndex
-	} else {
-	    set potEntry [lindex $entryList $headerColumn]
-	    if {[llength $potEntry]} {
-		set paramArray(top,[join $arrayIndex ,]) \
-		    [EnquoteIfNonNumeric $potEntry]
-	    }
-	}
+        if {[info exists badIndex]} {
+            unset badIndex
+        } else {
+            set potEntry [lindex $entryList $headerColumn]
+            if {[llength $potEntry]} {
+                set paramArray(top,[join $arrayIndex ,]) \
+                    [EnquoteIfNonNumeric $potEntry]
+            }
+        }
     }
     
     for {set idxIdx 0} {$idxIdx < $headerCount} {incr idxIdx} {
@@ -874,7 +874,7 @@ proc LoadTableData {tableSpec lineCount} {
     close $tStr
     set result [ArrayToList paramArray top $indexList]
     if {[info exists wrapPt]} {
-	lappend result $wrapPt restart
+        lappend result $wrapPt restart
     }
     return $result
 }
@@ -882,16 +882,16 @@ proc LoadTableData {tableSpec lineCount} {
 proc TrimFields {dataLine} {
     set entryList {}
     foreach entry $dataLine {
-	lappend entryList [string trim $entry]
+        lappend entryList [string trim $entry]
     }
     return $entryList
 }
 
 proc EnquoteIfNonNumeric {item} {
     if {[Numeric $item]} {
-	return $item
+        return $item
     } else {
-	return \"[string trim $item]\"
+        return \"[string trim $item]\"
     }
 }
 
@@ -901,12 +901,12 @@ proc ArrayToList {topArray indexSoFar otherMaxes} {
     if {[llength $otherMaxes]} {
         foreach pt [lindex $otherMaxes 0] {
             lappend result $pt [ArrayToList array $indexSoFar,$pt \
-				    [lrange $otherMaxes 1 end]]
+                                    [lrange $otherMaxes 1 end]]
         }
     } else {
 # See if we can get away without setting missing values to 0
         if {[info exists array($indexSoFar)]} {
-	    set result $array($indexSoFar)
+            set result $array($indexSoFar)
         } else {
             set result (empty)
         }

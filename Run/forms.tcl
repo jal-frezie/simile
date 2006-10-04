@@ -18,310 +18,307 @@ proc Disaggregate {parent title args} {
     set notebook [::ttk::notebook $t.notebook]
 
     if {[string equal number [lindex [lindex $args 0] 0]]} {
-	foreach {i varName} {1 type 2 icount 3 modname} {
-	    set disaggregate($varName) [lindex [lindex $args 0] $i]
-	}
-	set args [lrange $args 1 end]
-    $notebook add [frame $notebook.number] -text Number
-    TitleFrame $notebook.number.count -text "Control of number of instances:"
-    set countf [$notebook.number.count getframe]
+        foreach {i varName} {1 type 2 icount 3 modname} {
+            set disaggregate($varName) [lindex [lindex $args 0] $i]
+        }
+        set args [lrange $args 1 end]
+        $notebook add [frame $notebook.number] -text Number
+        TitleFrame $notebook.number.count -text "Control of number of instances:"
+        set countf [$notebook.number.count getframe]
     
-    frame $countf.radio
-    foreach {rbutton rcaption} {population "Using population symbols" records "Using number of data records in file" generated "Using specified dimensions:"} {
-	set line [frame $countf.radio.$rbutton]
-        pack [radiobutton $line.rb -text $rcaption \
-		  -value $rbutton \
-		  -variable disaggregate(type) \
-		  -command "SetHighlights $countf"] -side left
-        pack $line -anchor w
-    }
-    pack $countf.radio -anchor w -side left
+        frame $countf.radio
+        foreach {rbutton rcaption} {population "Using population symbols" records "Using number of data records in file" generated "Using specified dimensions:"} {
+            set line [frame $countf.radio.$rbutton]
+            pack [radiobutton $line.rb -text $rcaption \
+                      -value $rbutton \
+                      -variable disaggregate(type) \
+                      -command "SetHighlights $countf"] -side left
+            pack $line -anchor w
+        }
+        pack $countf.radio -anchor w -side left
     
-    if [llength $disaggregate(icount)]>0 {
-        set disaggregate(icount) [join $disaggregate(icount) ,]
-    } else  {
-        set disaggregate(icount) 1
-    }
-    #puts $disaggregate(icount)
-    ::ttk::entry $line.value -textvariable disaggregate(icount) -width 10
-    pack $line.value
-    pack $notebook.number.count -anchor w -pady 4 -fill both -expand true 
-    SetHighlights $countf
-    TitleFrame $notebook.number.share -text "Module sharing"
-    set sharef [$notebook.number.share getframe]
-	set disaggregate(shared) [expr [llength $disaggregate(modname)]>0]
-    checkbutton $sharef.instance -variable disaggregate(shared) \
-	-text "These are instances of a shared module, called:" \
-	-command [list ToggleModNameEntry $sharef]
-    pack $sharef.instance -side left
-    entry $sharef.modname -textvariable disaggregate(modname)
-    pack $sharef.modname -side right
-    ToggleModNameEntry $sharef
-    pack $notebook.number.share -side top -padx 4 -pady 4 -fill both
+        if [llength $disaggregate(icount)]>0 {
+            set disaggregate(icount) [join $disaggregate(icount) ,]
+        } else  {
+            set disaggregate(icount) 1
+        }
+#        puts $disaggregate(icount)
+        ::ttk::entry $line.value -textvariable disaggregate(icount) -width 10
+        pack $line.value
+        pack $notebook.number.count -anchor w -pady 4 -fill both -expand true 
+        SetHighlights $countf
+        TitleFrame $notebook.number.share -text "Module sharing"
+        set sharef [$notebook.number.share getframe]
+        set disaggregate(shared) [expr [llength $disaggregate(modname)]>0]
+        checkbutton $sharef.instance -variable disaggregate(shared) \
+                -text "These are instances of a shared module, called:" \
+                -command [list ToggleModNameEntry $sharef]
+        pack $sharef.instance -side left
+        entry $sharef.modname -textvariable disaggregate(modname)
+        pack $sharef.modname -side right
+        ToggleModNameEntry $sharef
+        pack $notebook.number.share -side top -padx 4 -pady 4 -fill both
     }
 
     if {[string equal appear [lindex [lindex $args 0] 0]]} {
-	foreach {i varName} {1 colour 2 image 3 imgpos 4 fatness \
-				 5 hide_b 6 cview} {
-	    set disaggregate($varName) [lindex [lindex $args 0] $i]
-	}
-	set args [lrange $args 1 end]
-    $notebook add [frame $notebook.appearance] -text "Appearance"
-    TitleFrame $notebook.appearance.border -text "Border"
-    pack [checkbutton [$notebook.appearance.border getframe].show_b \
-		-text "Show border" \
-		-variable disaggregate(hide_b) -offval 1 -onval 0] -anchor w
-    pack $notebook.appearance.border -anchor nw -padx 4 -pady 4 \
-	-fill both -expand true
-    TitleFrame $notebook.appearance.bgshade -text "Background shade"
-    set bg_shade_f [$notebook.appearance.bgshade getframe]
-    set disaggregate(useColour) \
-	[expr ![string equal clear $disaggregate(colour)]]
-    set cbCmd "AbleDescendents $bg_shade_f \$disaggregate(useColour)"
-    pack [checkbutton $bg_shade_f.do -text "Shaded background" \
-	  -command $cbCmd -variable disaggregate(useColour)] -side left
-    pack [button $bg_shade_f.fixcolour -text "Colour..." \
-            -width 7 -command "UpdateColour $t $bg_shade_f"]  \
-            -padx 2 -pady 4 -side left
-    if {$disaggregate(useColour)} {
-	$bg_shade_f.fixcolour configure -bg $disaggregate(colour)
-    }
-    pack $notebook.appearance.bgshade -anchor nw -padx 4 -pady 4 \
-	-fill both -expand true
-    eval $cbCmd
-    TitleFrame $notebook.appearance.image -text "Image"
-    set image_f [$notebook.appearance.image getframe]
-    set posRBs [frame $image_f.posns]
-    set disaggregate(useImage) [expr ![string equal none $disaggregate(image)]]
-    set cbCmd "AbleDescendents $image_f \$disaggregate(useImage)"
-    pack [checkbutton $image_f.do -text "Use image" \
-	      -command $cbCmd -variable disaggregate(useImage)] -side left
-    pack [button $image_f.setimage -text "Image..." \
-            -width 7 -command "ChooseImage $posRBs"] \
-            -padx 2 -pady 4 -side left
-    set rbState [ChooseText $disaggregate(useImage) normal disabled]
-    foreach rbutton {Tiled Centred Scaled} {
-        pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
-                -value $rbutton -variable disaggregate(imgpos)] -side left
-    }
-    pack $posRBs -side right
-    pack $notebook.appearance.image -anchor nw -padx 4 -pady 4 \
-	-fill both -expand true
-    eval $cbCmd
-    TitleFrame $notebook.appearance.contents -text "Contents"
-    set contents_f [$notebook.appearance.contents getframe]
+        foreach {i varName} {1 colour 2 image 3 imgpos 4 fatness 5 hide_b 6 cview} {
+            set disaggregate($varName) [lindex [lindex $args 0] $i]
+        }
+        set args [lrange $args 1 end]
+        $notebook add [frame $notebook.appearance] -text "Appearance"
+        TitleFrame $notebook.appearance.border -text "Border"
+        pack [checkbutton [$notebook.appearance.border getframe].show_b \
+                -text "Show border" \
+                -variable disaggregate(hide_b) -offval 1 -onval 0] -anchor w
+        pack $notebook.appearance.border -anchor nw -padx 4 -pady 4 \
+                -fill both -expand true
+        TitleFrame $notebook.appearance.bgshade -text "Background shade"
+        set bg_shade_f [$notebook.appearance.bgshade getframe]
+        set disaggregate(useColour) [expr ![string equal clear $disaggregate(colour)]]
+        set cbCmd "AbleDescendents $bg_shade_f \$disaggregate(useColour)"
+        pack [checkbutton $bg_shade_f.do -text "Shaded background" \
+                -command $cbCmd -variable disaggregate(useColour)] -side left
+        pack [button $bg_shade_f.fixcolour -text "Colour..." \
+                -width 7 -command "UpdateColour $t $bg_shade_f"]  \
+                -padx 2 -pady 4 -side left
+        if {$disaggregate(useColour)} {
+            $bg_shade_f.fixcolour configure -bg $disaggregate(colour)
+        }
+        pack $notebook.appearance.bgshade -anchor nw -padx 4 -pady 4 \
+                 -fill both -expand true
+        eval $cbCmd
+        TitleFrame $notebook.appearance.image -text "Image"
+        set image_f [$notebook.appearance.image getframe]
+        set posRBs [frame $image_f.posns]
+        set disaggregate(useImage) [expr ![string equal none $disaggregate(image)]]
+        set cbCmd "AbleDescendents $image_f \$disaggregate(useImage)"
+        pack [checkbutton $image_f.do -text "Use image" \
+                -command $cbCmd -variable disaggregate(useImage)] -side left
+        pack [button $image_f.setimage -text "Image..." \
+                -width 7 -command "ChooseImage $posRBs"] \
+                -padx 2 -pady 4 -side left
+        set rbState [ChooseText $disaggregate(useImage) normal disabled]
+        foreach rbutton {Tiled Centred Scaled} {
+            pack [radiobutton $posRBs.ip$rbutton -text $rbutton -state $rbState \
+                    -value $rbutton -variable disaggregate(imgpos)] -side left
+        }
+        pack $posRBs -side right
+        pack $notebook.appearance.image -anchor nw -padx 4 -pady 4 \
+                -fill both -expand true
+        eval $cbCmd
+        TitleFrame $notebook.appearance.contents -text "Contents"
+        set contents_f [$notebook.appearance.contents getframe]
 
-    frame $contents_f.radio
-    set line [frame $contents_f.radio.none_ic]
-    pack [radiobutton $line.rb1 -text "Hide" -value none \
-	      -variable disaggregate(cview)] -side left
-    pack [radiobutton $line.rb2 -text "Show IC view" -value ic \
-	      -variable disaggregate(cview)] -side left
-    pack $line -anchor w
-    set line [frame $contents_f.radio.full]
-    pack [radiobutton $line.rb -text "Show full view" -value full \
-	      -variable disaggregate(cview)] -side left
-    pack $line -anchor w
-    pack $contents_f.radio -anchor w -side left
+        frame $contents_f.radio
+        set line [frame $contents_f.radio.none_ic]
+        pack [radiobutton $line.rb1 -text "Hide" -value none \
+                -variable disaggregate(cview)] -side left
+        pack [radiobutton $line.rb2 -text "Show IC view" -value ic \
+                -variable disaggregate(cview)] -side left
+        pack $line -anchor w
+        set line [frame $contents_f.radio.full]
+        pack [radiobutton $line.rb -text "Show full view" -value full \
+                -variable disaggregate(cview)] -side left
+        pack $line -anchor w
+        pack $contents_f.radio -anchor w -side left
 
-    scale $line.scale -from .01 -to 1 -length 150 -orient horizontal \
-            -resolution 0.01 -variable disaggregate(fatness)
-    pack $line.scale -side right
-    label $line.scalecaption -text "Relative scale:"
-    pack $line.scalecaption -side right
-    pack $notebook.appearance.contents -anchor nw -padx 4 -pady 4 \
-	-fill both -expand true
-    eval $cbCmd
+        scale $line.scale -from .01 -to 1 -length 150 -orient horizontal \
+                -resolution 0.01 -variable disaggregate(fatness)
+        pack $line.scale -side right
+        label $line.scalecaption -text "Relative scale:"
+        pack $line.scalecaption -side right
+        pack $notebook.appearance.contents -anchor nw -padx 4 -pady 4 \
+                -fill both -expand true
+        eval $cbCmd
     }
     
     if {[string equal calc [lindex [lindex $args 0] 0]]} {
-	foreach {i varName} {1 step 2 eqnunit 3 separate} {
-	    set disaggregate($varName) [lindex [lindex $args 0] $i]
-	}
-	set args [lrange $args 1 end]
-	set stepNames [list {Initialize only} {New params only} {Reset only} \
-			   1st 2nd 3rd 4th 5th 6th 7th]
-	if {[string is integer -strict $disaggregate(step)]} {
-	    set disaggregate(step) \
-		[lindex $stepNames [expr $disaggregate(step)-2]]
-	}
-    $notebook add [frame $notebook.calculation] -text "Calculation"
-    TitleFrame $notebook.calculation.math -text Calculation
-    set mathf [$notebook.calculation.math getframe]
-    checkbutton $mathf.separate -text "Build submodel in separate dll" \
-            -variable disaggregate(separate)
-    pack $mathf.separate -anchor w
-    #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
-    #            -variable disaggregate(matherror)
-    #    pack $mathf.matherror -anchor w
-    frame $mathf.eqnunit
-    label $mathf.eqnunit.caption -text "Use units in math:"
-    pack $mathf.eqnunit.caption -side left
-    #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
-    #::ttk::combobox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
-    #        -values [list Default Yes No] \
-    #        -width 10 -state readonly
-    ::ttk::menubutton $mathf.eqnunit.pulldown -width 10 -textvariable disaggregate(eqnunit)
-    set m [menu $mathf.eqnunit.pulldown.menu -tearoff 0]
-    foreach item [list Default Yes No] {
-      $m add command -label $item -command "set disaggregate(eqnunit) $item"
-    }
-    $mathf.eqnunit.pulldown configure -menu $m
-    pack $mathf.eqnunit.pulldown
-    pack $mathf.eqnunit -anchor w -padx 4 -pady 6
-    frame $mathf.step
-    label $mathf.step.caption -text "Time step index:"
-    pack $mathf.step.caption -side left
-    #tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
-    #ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
-    #        -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
-    #        -width 10 -state readonly
-    ::ttk::menubutton $mathf.step.pulldown -width 10 -textvariable disaggregate(step)
-    set m [menu $mathf.step.pulldown.menu -tearoff 0] 
-	foreach item [concat Default $stepNames] {
-      $m add command -label $item -command "set disaggregate(step) \"$item\""
-    }
-    $mathf.step.pulldown configure -menu $m
-    pack $mathf.step.pulldown
-    pack $mathf.step -anchor w -padx 4 -pady 6
-    pack $notebook.calculation.math -side left -padx 4 -pady 4 -fill both -expand true
+        foreach {i varName} {1 step 2 eqnunit 3 separate} {
+            set disaggregate($varName) [lindex [lindex $args 0] $i]
+        }
+        set args [lrange $args 1 end]
+        set stepNames [list {Initialize only} {New params only} {Reset only} \
+                           1st 2nd 3rd 4th 5th 6th 7th]
+        if {[string is integer -strict $disaggregate(step)]} {
+            set disaggregate(step) \
+                [lindex $stepNames [expr $disaggregate(step)-2]]
+        }
+        $notebook add [frame $notebook.calculation] -text "Calculation"
+        TitleFrame $notebook.calculation.math -text Calculation
+        set mathf [$notebook.calculation.math getframe]
+        checkbutton $mathf.separate -text "Build submodel in separate dll" \
+                -variable disaggregate(separate)
+        pack $mathf.separate -anchor w
+#        checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
+#                -variable disaggregate(matherror)
+#        pack $mathf.matherror -anchor w
+        frame $mathf.eqnunit
+        label $mathf.eqnunit.caption -text "Use units in math:"
+        pack $mathf.eqnunit.caption -side left
+#        tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
+#        ::ttk::combobox $mathf.eqnunit.pulldown -textvariable disaggregate(eqnunit) \
+#                -values [list Default Yes No] \
+#                -width 10 -state readonly
+        ::ttk::menubutton $mathf.eqnunit.pulldown -width 10 -textvariable disaggregate(eqnunit)
+        set m [menu $mathf.eqnunit.pulldown.menu -tearoff 0]
+        foreach item [list Default Yes No] {
+            $m add command -label $item -command "set disaggregate(eqnunit) $item"
+        }
+        $mathf.eqnunit.pulldown configure -menu $m
+        pack $mathf.eqnunit.pulldown
+        pack $mathf.eqnunit -anchor w -padx 4 -pady 6
+        frame $mathf.step
+        label $mathf.step.caption -text "Time step index:"
+        pack $mathf.step.caption -side left
+#        tk_optionMenu $mathf.step.pulldown disaggregate(step) Default -1 0 1 2 3 4 5 6 7
+#        ComboBox $mathf.step.pulldown -textvariable disaggregate(step) \
+#                -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
+#                -width 10 -state readonly
+        ::ttk::menubutton $mathf.step.pulldown -width 10 -textvariable disaggregate(step)
+        set m [menu $mathf.step.pulldown.menu -tearoff 0] 
+        foreach item [concat Default $stepNames] {
+            $m add command -label $item -command "set disaggregate(step) \"$item\""
+        }
+        $mathf.step.pulldown configure -menu $m
+        pack $mathf.step.pulldown
+        pack $mathf.step -anchor w -padx 4 -pady 6
+        pack $notebook.calculation.math -side left -padx 4 -pady 4 -fill both -expand true
     }
 
     if {[string equal ets [lindex [lindex $args 0] 0]]} {
-	set enumLists [lindex [lindex $args 0] 1]
-	set args [lrange $args 1 end]
-    $notebook add [frame $notebook.enumtypes] -text "Enumerated types"
-    TitleFrame $notebook.enumtypes.enumtypes -text "Enumerated types"
-    set enumtypef [$notebook.enumtypes.enumtypes getframe]
-    pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
-            -expand true
-    #    pack [frame $windowId.buttonframe] -side bottom
-    # types (list box to keep selection highlighted when lost focus, -exportselection 0)
-    set typef [frame $canId.typef]
-    label $typef.lbl -text "Types" -anchor w
-    listbox $typef.scrf -yscrollcommand [list AdjustCanvas $typef scrf y] \
-            -exportselection 0
+        set enumLists [lindex [lindex $args 0] 1]
+        set args [lrange $args 1 end]
+        $notebook add [frame $notebook.enumtypes] -text "Enumerated types"
+        TitleFrame $notebook.enumtypes.enumtypes -text "Enumerated types"
+        set enumtypef [$notebook.enumtypes.enumtypes getframe]
+        pack [set canId [frame $enumtypef.listpair]] -side left -fill both \
+                -expand true
+#        pack [frame $windowId.buttonframe] -side bottom
+        # types (list box to keep selection highlighted when lost focus, -exportselection 0)
+        set typef [frame $canId.typef]
+        label $typef.lbl -text "Types" -anchor w
+        listbox $typef.scrf -yscrollcommand [list AdjustCanvas $typef scrf y] \
+                -exportselection 0
                 
-    foreach enumList $enumLists {
-        set newType [lindex $enumList 0]
-        set disaggregate(enumtype,$newType) [lrange $enumList 1 end]
-        $typef.scrf insert end $newType
-    }                
-    # members (list box to keep selection highlighted when lost focus)
-    set memf [frame $canId.memf]
-    label $memf.lbl -text "Members" -anchor w
-    listbox $memf.mem -exportselection 0 \
-            -yscrollcommand [list AdjustCanvas $memf mem y]
-    scrollbar $memf.yscroll -orient v -command [list $memf.mem yview]
+        foreach enumList $enumLists {
+            set newType [lindex $enumList 0]
+            set disaggregate(enumtype,$newType) [lrange $enumList 1 end]
+            $typef.scrf insert end $newType
+        }                
+        # members (list box to keep selection highlighted when lost focus)
+        set memf [frame $canId.memf]
+        label $memf.lbl -text "Members" -anchor w
+        listbox $memf.mem -exportselection 0 \
+                -yscrollcommand [list AdjustCanvas $memf mem y]
+        scrollbar $memf.yscroll -orient v -command [list $memf.mem yview]
     
-    # select first type in the list
-    $typef.scrf selection set 0
-    set togo [$typef.scrf get 0]
-    if {$togo ne {} } {
-        $memf.mem configure -listvariable disaggregate(enumtype,$togo)
-    }
+        # select first type in the list
+        $typef.scrf selection set 0
+        set togo [$typef.scrf get 0]
+        if {$togo ne {} } {
+            $memf.mem configure -listvariable disaggregate(enumtype,$togo)
+        }
     
-    bind $typef.scrf <ButtonRelease-1> "EnableTypeOps $enumtypef"
-    set PopCmd [list QueuePopup AddEnumTypePopup %W %y %X %Y]
-    bind $typef.scrf <Enter> $PopCmd
-    bind $typef.scrf <Motion> "RemovePopup;$PopCmd"
-    bind $typef.scrf <Leave> RemovePopup
-    scrollbar $typef.yscroll -orient v -command [list $typef.scrf yview]
-    menu $enumtypef.curmembers -tearoff 0 \
-            -postcommand [list AddEnumTypeMems $enumtypef]
+        bind $typef.scrf <ButtonRelease-1> "EnableTypeOps $enumtypef"
+        set PopCmd [list QueuePopup AddEnumTypePopup %W %y %X %Y]
+        bind $typef.scrf <Enter> $PopCmd
+        bind $typef.scrf <Motion> "RemovePopup;$PopCmd"
+        bind $typef.scrf <Leave> RemovePopup
+        scrollbar $typef.yscroll -orient v -command [list $typef.scrf yview]
+        menu $enumtypef.curmembers -tearoff 0 \
+                -postcommand [list AddEnumTypeMems $enumtypef]
     
-    pack $typef -side left -fill both -expand true   
-    pack $typef.yscroll -side right -fill y
-    pack $typef.lbl 
-    pack $typef.scrf -side left -fill both -expand true
-    # members
-    pack $memf -side right -fill both -expand true
-    pack $memf.lbl -side top
-    pack $memf.mem -fill both -expand true
-    #pack $canId.memyscroll -side right -fill y
-    #pack $canId.mem -side left -fill both -expand true
+        pack $typef -side left -fill both -expand true   
+        pack $typef.yscroll -side right -fill y
+        pack $typef.lbl 
+        pack $typef.scrf -side left -fill both -expand true
+        # members
+        pack $memf -side right -fill both -expand true
+        pack $memf.lbl -side top
+        pack $memf.mem -fill both -expand true
+#        pack $canId.memyscroll -side right -fill y
+#        pack $canId.mem -side left -fill both -expand true
     
-    pack [set btnId [frame $enumtypef.btns]] -side left
-    pack [::ttk::entry $btnId.e -textvariable enumTypeMPEntry] -padx 2
-    bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
-    pack [button $btnId.addtype -text "Add type" -command "AddEnumType $canId"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.remtype -text "Remove type" -state disabled -command "RemoveEnumType $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.addmems -text "Add member" -state disabled -command "AddEnumMem $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.remmem -text "Remove member" -state disabled -command "RemoveEnumMem $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.getmem -text "Get from file" -state disabled -command "GetEnumMems $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack $notebook.enumtypes.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
+        pack [set btnId [frame $enumtypef.btns]] -side left
+        pack [::ttk::entry $btnId.e -textvariable enumTypeMPEntry] -padx 2
+        bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
+        pack [button $btnId.addtype -text "Add type" -command "AddEnumType $canId"] \
+                -padx 2 -pady 4 -fill x
+        pack [button $btnId.remtype -text "Remove type" -state disabled -command "RemoveEnumType $enumtypef"] \
+                -padx 2 -pady 4 -fill x
+        pack [button $btnId.addmems -text "Add member" -state disabled -command "AddEnumMem $enumtypef"] \
+                -padx 2 -pady 4 -fill x
+        pack [button $btnId.remmem -text "Remove member" -state disabled -command "RemoveEnumMem $enumtypef"] \
+                -padx 2 -pady 4 -fill x
+        pack [button $btnId.getmem -text "Get from file" -state disabled -command "GetEnumMems $enumtypef"] \
+                -padx 2 -pady 4 -fill x
+        pack $notebook.enumtypes.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
     }
 
     if {[string equal connect [lindex [lindex $args 0] 0]]} {
-	set connects [lindex [lindex $args 0] 1]
-	set args [lrange $args 1 end]
-    $notebook add [frame $notebook.connect] -text "Connect"
-    TitleFrame $notebook.connect.tf -text "Automatic submodel connections"
-    TitleFrame $notebook.connect.ef -text "Display/edit submodel values"
-    set connectf [$notebook.connect.tf getframe]
-    set textx [list "Incoming influences connect to: " \
-		   "Outgoing influences connect from: " \
-		   "Incoming flows connect to: " \
-		   "Outgoing flows connect from: " \
-		   "Display value of: " \
-		   "Edit equation of: "]
+        set connects [lindex [lindex $args 0] 1]
+        set args [lrange $args 1 end]
+        $notebook add [frame $notebook.connect] -text "Connect"
+        TitleFrame $notebook.connect.tf -text "Automatic submodel connections"
+        TitleFrame $notebook.connect.ef -text "Display/edit submodel values"
+        set connectf [$notebook.connect.tf getframe]
+        set textx [list "Incoming influences connect to: " \
+                   "Outgoing influences connect from: " \
+                   "Incoming flows connect to: " \
+                   "Outgoing flows connect from: " \
+                   "Display value of: " \
+                   "Edit equation of: "]
 #    pack [frame 
-    for {set i 0} {$i < 6} {incr i} {
-	if {$i==4} {
-	    set connectf [$notebook.connect.ef getframe]
-	}
-	frame $connectf.fr$i
-	pack [label $connectf.fr$i.l -text [lindex $textx $i]] \
-	    -side left
-	::ttk::menubutton $connectf.fr$i.pulldown -width 20 -textvariable disaggregate(cn$i)
-	set m [menu $connectf.fr$i.pulldown.menu -tearoff 0]
-	set mOpts [concat <none> [lrange [lindex $connects $i] 1 end]]
-	set disaggregate(cn$i) [lindex $mOpts [lindex [lindex $connects $i] 0]]
-	foreach item $mOpts {
-	    $m add command -label $item \
-		-command [list set disaggregate(cn$i) $item]
-	}
-	$connectf.fr$i.pulldown configure -menu $m
-	pack $connectf.fr$i.pulldown -side right
-	pack $connectf.fr$i -fill x -expand true
-    }
+        for {set i 0} {$i < 6} {incr i} {
+            if {$i==4} {
+                set connectf [$notebook.connect.ef getframe]
+            }
+            frame $connectf.fr$i
+            pack [label $connectf.fr$i.l -text [lindex $textx $i]] -side left
+            ::ttk::menubutton $connectf.fr$i.pulldown -width 20 -textvariable disaggregate(cn$i)
+            set m [menu $connectf.fr$i.pulldown.menu -tearoff 0]
+            set mOpts [concat <none> [lrange [lindex $connects $i] 1 end]]
+            set disaggregate(cn$i) [lindex $mOpts [lindex [lindex $connects $i] 0]]
+            foreach item $mOpts {
+                $m add command -label $item \
+                        -command [list set disaggregate(cn$i) $item]
+            }
+            $connectf.fr$i.pulldown configure -menu $m
+            pack $connectf.fr$i.pulldown -side right
+            pack $connectf.fr$i -fill x -expand true
+        }
 
-    pack $notebook.connect.tf -anchor nw -padx 4 -pady 4 \
-	-fill both -expand true
-    pack $notebook.connect.ef -anchor nw -padx 4 -pady 4 \
-	-fill both -expand true
+        pack $notebook.connect.tf -anchor nw -padx 4 -pady 4 \
+                -fill both -expand true
+        pack $notebook.connect.ef -anchor nw -padx 4 -pady 4 \
+                -fill both -expand true
     }
 
     if {[string equal notes [lindex [lindex $args 0] 0]]} {
-	foreach {i varName} {1 desc 2 comment} {
-	    set disaggregate($varName) [lindex [lindex $args 0] $i]
-	}
-	set args [lrange $args 1 end]
-    $notebook add [frame $notebook.notes] -text Notes
-    TitleFrame $notebook.notes.notes -text "Notes:"
-    set notesf [$notebook.notes.notes getframe]
-    set descf [frame $notesf.desc]
-    label $descf.desclabel -text "Description:"
-    entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
-    pack $descf.desclabel -side left -padx 2 -pady 2
-    pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
-    $descf.text insert 0 $disaggregate(desc)
-    pack $descf -side top  -fill x -expand off
-    label $notesf.commentlabel -text Comments:
-    pack $notesf.commentlabel -padx 2 -pady 4 -anchor w
-    # ScrolledWindow causes crash under Linux so replaced with ordinary frame
-    #    frame $t.commentsSW
-    ScrolledWindow $notesf.commentsSW
-    text $notesf.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
-    $notesf.commentsSW setwidget $notesf.commentsSW.comment
-    $notesf.commentsSW.comment insert 1.0 $disaggregate(comment)
-    pack $notesf.commentsSW -anchor nw -fill both -expand true
-    pack $notebook.notes.notes -anchor s -pady 4 -fill both -expand true
+        foreach {i varName} {1 desc 2 comment} {
+            set disaggregate($varName) [lindex [lindex $args 0] $i]
+        }
+        set args [lrange $args 1 end]
+        $notebook add [frame $notebook.notes] -text Notes
+        TitleFrame $notebook.notes.notes -text "Notes:"
+        set notesf [$notebook.notes.notes getframe]
+        set descf [frame $notesf.desc]
+        label $descf.desclabel -text "Description:"
+        entry $descf.text -width 20 -relief sunken -bd 2 -highlightthickness 0
+        pack $descf.desclabel -side left -padx 2 -pady 2
+        pack $descf.text -side left  -fill x -expand true -padx 2 -pady 2
+        $descf.text insert 0 $disaggregate(desc)
+        pack $descf -side top  -fill x -expand off
+        label $notesf.commentlabel -text Comments:
+        pack $notesf.commentlabel -padx 2 -pady 4 -anchor w
+        # ScrolledWindow causes crash under Linux so replaced with ordinary frame
+#        frame $t.commentsSW
+        ScrolledWindow $notesf.commentsSW
+        text $notesf.commentsSW.comment -height 4 -width 40 -relief sunken -bd 2 -highlightthickness 0 -wrap word
+        $notesf.commentsSW setwidget $notesf.commentsSW.comment
+        $notesf.commentsSW.comment insert 1.0 $disaggregate(comment)
+        pack $notesf.commentsSW -anchor nw -fill both -expand true
+        pack $notebook.notes.notes -anchor s -pady 4 -fill both -expand true
     }
 
     frame $t.buttons
@@ -346,77 +343,77 @@ proc Disaggregate {parent title args} {
 
     set result {}
     if {$disaggregate(done)} {
-	if {[winfo exists $notebook.number]} {
-	    set icount {}
-	    if [string compare $disaggregate(icount) 1] {
-		foreach newIndex [split $disaggregate(icount) ,] {
-		    if {[string is double $newIndex] || \
-			    [string match size(*) $newIndex]} {
-			lappend icount $newIndex
-		    } else {
-			lappend icount \"$newIndex\"
-		    }
-		}
-		set icount [join $icount ,]
-	    }
-	    lappend result [list number $disaggregate(type) $icount \
-				$disaggregate(modname)]
-	    # currently we cannot show contents of modules on their occurrences
-#	    if {[string length $disaggregate(modname)]} {
-#		set disaggregate(hide_c) 1
-#	    }
-	}
+        if {[winfo exists $notebook.number]} {
+            set icount {}
+            if [string compare $disaggregate(icount) 1] {
+                foreach newIndex [split $disaggregate(icount) ,] {
+                    if {[string is double $newIndex] || \
+                            [string match size(*) $newIndex]} {
+                        lappend icount $newIndex
+                    } else {
+                        lappend icount \"$newIndex\"
+                    }
+                }
+                set icount [join $icount ,]
+            }
+            lappend result [list number $disaggregate(type) $icount \
+                                $disaggregate(modname)]
+            # currently we cannot show contents of modules on their occurrences
+#            if {[string length $disaggregate(modname)]} {
+#                set disaggregate(hide_c) 1
+#            }
+        }
 
-	if {[winfo exists $notebook.appearance]} {
-	    if {!$disaggregate(useColour)} {
-		set disaggregate(colour) clear
-	    }
-	    if {!$disaggregate(useImage)} {
-		set disaggregate(image) none
-	    }
-	    lappend result \
-		[list appear $disaggregate(colour) $disaggregate(image) \
-		     $disaggregate(imgpos) $disaggregate(fatness) \
-		     $disaggregate(hide_b) $disaggregate(cview)]
-	}
+        if {[winfo exists $notebook.appearance]} {
+            if {!$disaggregate(useColour)} {
+                set disaggregate(colour) clear
+            }
+            if {!$disaggregate(useImage)} {
+                set disaggregate(image) none
+            }
+            lappend result \
+                [list appear $disaggregate(colour) $disaggregate(image) \
+                     $disaggregate(imgpos) $disaggregate(fatness) \
+                     $disaggregate(hide_b) $disaggregate(cview)]
+        }
 
-	if {[winfo exists $notebook.calculation]} {
-	    set stepPosn [lsearch $stepNames $disaggregate(step)]
-	    if {$stepPosn > -1} {
-		set disaggregate(step) [expr $stepPosn-2]
-	    }
-	    lappend result [list calc $disaggregate(eqnunit) \
-				$disaggregate(step) $disaggregate(separate)]
+        if {[winfo exists $notebook.calculation]} {
+            set stepPosn [lsearch $stepNames $disaggregate(step)]
+            if {$stepPosn > -1} {
+                set disaggregate(step) [expr $stepPosn-2]
+            }
+            lappend result [list calc $disaggregate(eqnunit) \
+                                $disaggregate(step) $disaggregate(separate)]
 
-	}
+        }
 
-	if {[winfo exists $notebook.enumtypes]} {
-	    set enumTypes {}
-	    foreach {typename members} [array get disaggregate enumtype,*] {
-		lappend enumTypes \
-		    [concat [list [string range $typename 9 end]] $members]
-	    }
-	    lappend result [list ets $enumTypes]
-	}
+        if {[winfo exists $notebook.enumtypes]} {
+            set enumTypes {}
+            foreach {typename members} [array get disaggregate enumtype,*] {
+                lappend enumTypes \
+                    [concat [list [string range $typename 9 end]] $members]
+            }
+            lappend result [list ets $enumTypes]
+        }
 
-	if {[winfo exists $notebook.connect]} {
-	    set connectInds {}
-	    set connectf [$notebook.connect.tf getframe]
-	    for {set i 0} {$i < 6} {incr i} {
-		if {$i==4} {
-		    set connectf [$notebook.connect.ef getframe]
-		}
-		set m [$connectf.fr$i.pulldown cget -menu]
-		lappend connectInds [$m index $disaggregate(cn$i)]
-	    }
-	    lappend result [list connect $connectInds]
-	}
+        if {[winfo exists $notebook.connect]} {
+            set connectInds {}
+            set connectf [$notebook.connect.tf getframe]
+            for {set i 0} {$i < 6} {incr i} {
+                if {$i==4} {
+                    set connectf [$notebook.connect.ef getframe]
+                }
+                set m [$connectf.fr$i.pulldown cget -menu]
+                lappend connectInds [$m index $disaggregate(cn$i)]
+            }
+            lappend result [list connect $connectInds]
+        }
 
-	if {[winfo exists $notebook.notes]} {
-	    lappend result [list notes \
-		[string trimright [$notesf.desc.text get]] \
-		[string trimright [$notesf.commentsSW.comment get 1.0 end]]]
-	}
+        if {[winfo exists $notebook.notes]} {
+            lappend result [list notes \
+                [string trimright [$notesf.desc.text get]] \
+                [string trimright [$notesf.commentsSW.comment get 1.0 end]]]
+        }
     }
     PackItUp $t
     unset disaggregate
@@ -429,32 +426,32 @@ proc AbleDescendents {widg whether} {
     set doCheck 0
     set state disabled
     switch -- [expr $whether] {
-	1 {
-	    set state normal
-	}
+        1 {
+            set state normal
+        }
     }
     RecursiveAble $widg $state
 }
-	
+        
 proc RecursiveAble {widg state} {
     foreach subWidg [winfo children $widg] {
-	switch -regexp [winfo class $subWidg] {
-	    Button|Radiobutton|Scale|Entry {
-		$subWidg configure -state $state
-	    } Frame {
-		RecursiveAble $subWidg $state
-	    }
-	}
+        switch -regexp [winfo class $subWidg] {
+            Button|Radiobutton|Scale|Entry {
+                $subWidg configure -state $state
+            } Frame {
+                RecursiveAble $subWidg $state
+            }
+        }
     }
 }
-		
+                
 proc ToggleModNameEntry {sharef} {
     global disaggregate
     if {$disaggregate(shared)} {
-	set state normal
+        set state normal
     } else {
-	set state disabled
-	$sharef.modname delete 0 end
+        set state disabled
+        $sharef.modname delete 0 end
     }
     RecursiveAble $sharef $state
 #puts "name $disaggregate(modname) shared $disaggregate(shared)"
@@ -644,7 +641,7 @@ proc UpdateColour {parent f} {
     global disaggregate
     
     set new [tk_chooseColor -parent $parent \
-		 -initialcolor [$f.fixcolour cget -bg]]
+                 -initialcolor [$f.fixcolour cget -bg]]
     if {[llength $new]} {
         set disaggregate(colour) $new
         $f.fixcolour configure -bg $new
@@ -723,19 +720,19 @@ proc OpenProgressBox {winId} {
     global progressBoxCount
 
     if {[incr progressBoxCount]==1} {
-	PutItThere .progress $winId
-	wm title .progress "Progress with current operation"
-	wm protocol .progress WM_DELETE_WINDOW {set done 1}
-	# do not allow delete
-	pack [frame .progress.filler -width 400 -height 100]
-	if {[LetItShow .progress]} {
-	    grab .progress
-	}
-	destroy .progress.filler
-	wm geometry .progress 400x100
-	message .progress.message -aspect 400 -text "Please wait"
-	pack .progress.message -fill both -expand true
-	update
+        PutItThere .progress $winId
+        wm title .progress "Progress with current operation"
+        wm protocol .progress WM_DELETE_WINDOW {set done 1}
+        # do not allow delete
+        pack [frame .progress.filler -width 400 -height 100]
+        if {[LetItShow .progress]} {
+            grab .progress
+        }
+        destroy .progress.filler
+        wm geometry .progress 400x100
+        message .progress.message -aspect 400 -text "Please wait"
+        pack .progress.message -fill both -expand true
+        update
     }
 }
 
@@ -743,8 +740,8 @@ proc CloseProgressBox {} {
     global progressBoxCount
 
     if {![incr progressBoxCount -1]} {
-	grab release .progress
-	PackItUp .progress
+        grab release .progress
+        PackItUp .progress
     }
 }
 
@@ -752,8 +749,8 @@ proc ResetProgressBox {} {
     global progressBoxCount
 
     if {$progressBoxCount} {
-	set progressBoxCount 1
-	CloseProgressBox
+        set progressBoxCount 1
+        CloseProgressBox
     }
 }
 
@@ -876,16 +873,16 @@ proc DoUserDialogue {} {
     pack [entry $t.corp.entry -width 40 -text userinfo(corp)] -side right
     pack [frame $t.code] -fill x
     if {![string equal evaluation $userinfo(edn)]} {
-	pack [label $t.code.mess -text "License code:"] -side left
-	pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
-	    -side right
+        pack [label $t.code.mess -text "License code:"] -side left
+        pack [entry $t.code.entry -width 40 -text userinfo(license_code)] \
+            -side right
     } else {
-	set userinfo(license_code) "<none needed>"
+        set userinfo(license_code) "<none needed>"
     }
     pack [message $t.mess2 -aspect 1000 -text "Now carefully read the following End User License Agreement, and click 'ACCEPT' to indicate that you have read and understood it and that you agree to the terms set out in it. Note that this version of the Agreement is new to Simile v4.6."]
     pack [frame $t.agree -bd 4 -relief groove] -fill x
     pack [scrollbar $t.agree.y -orient v -command "$t.agree.t yview"] \
-	-side right -fill y
+        -side right -fill y
     pack [text $t.agree.t -wrap word -yscrollcommand "$t.agree.y set"] -fill x
     set licStr [NetOpen ../Licence.txt r]
     $t.agree.t insert end [read $licStr]
@@ -893,22 +890,22 @@ proc DoUserDialogue {} {
     $t.agree.t config -state disabled
     pack [frame $t.buttons] -fill x
     pack [button $t.buttons.ok -text ACCEPT \
-	      -command "set userinfo(entrydone) 1"] -side left
+              -command "set userinfo(entrydone) 1"] -side left
     pack [button $t.buttons.ex -text "DO NOT ACCEPT" \
-	      -command "set userinfo(entrydone) 0"] -side right
+              -command "set userinfo(entrydone) 0"] -side right
     
     LetItShow $t
     grab $t
     focus $t.name.entry
     wm withdraw .splash
     while {![info exists userinfo(entrydone)]} {
-	tkwait variable userinfo(entrydone)
-	if {$userinfo(entrydone)} {
-	    if {![c_testlicense]} {
-		BuildProblem "Wrong license code" warning "You have entered the wrong license code for your name, organization and Simile version. Please try again, ensuring you have the correct license code." license
-		unset userinfo(entrydone)
-	    }
-	}
+        tkwait variable userinfo(entrydone)
+        if {$userinfo(entrydone)} {
+            if {![c_testlicense]} {
+                BuildProblem "Wrong license code" warning "You have entered the wrong license code for your name, organization and Simile version. Please try again, ensuring you have the correct license code." license
+                unset userinfo(entrydone)
+            }
+        }
     }
     wm deiconify .splash
     grab release $t
@@ -1057,12 +1054,12 @@ proc DoRegDialog {dtId} {
     pack [checkbutton .register.checkframe.cb -variable welcomeDone] -side left
     pack [label .register.checkframe.l -text "Do not show this welcome screen again"] \
             -side left
-    #    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
+#    pack [button .register.ok -text OK -width 10 -default active -command {set userinfo(done) $welcomeDone}]
     LetItShow .register
     
     grab .register
     bind $www1 <Button-1> {ContextSensitiveHelp .register start/index.htm}
-# Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
+    # Removed ALD 25Feb2005 - non-functional at present due to missing Help pages
 #    bind $www2 <Button-1> {ContextSensitiveHelp .register examples/index.htm}
     
     # now put it in the middle of the desktop
@@ -1247,7 +1244,7 @@ proc ShowAbout {winId} {
         }
     }
     pack [label .about.fr.lab1 -font "-family helvetica -size $fSize" \
-	      -text "Simile v$sendvars(simV)$sendvars(simP) $userinfo(edn)"]
+              -text "Simile v$sendvars(simV)$sendvars(simP) $userinfo(edn)"]
     set platform [frame .about.fr.platform]
     pack [label $platform.prolog -text "Prolog: $sendvars(proV)" \
             -font "-family helvetica -size $fsSize"] -side left
@@ -1317,9 +1314,9 @@ proc ShowExpiryImminent {expTime left} {
     toplevel .expiry
     #    wm transient .expiry $winId
     if {$left<0} {
-	wm title .expiry "Expiry passed"
+        wm title .expiry "Expiry passed"
     } else {
-	wm title .expiry "Expiry imminent"
+        wm title .expiry "Expiry imminent"
     }
     wm protocol .expiry WM_DELETE_WINDOW {set ack 1}
 
@@ -1333,9 +1330,9 @@ proc ShowExpiryImminent {expTime left} {
     pack [label $labf1.lab1 -text "Warning:" \
             -font {-weight bold -family helvetica -size 10}] -side left
     if {$left<0} {
-	set predicament "has expired."
+        set predicament "has expired."
     } else {
-	set predicament "will shortly expire."
+        set predicament "will shortly expire."
     }
     pack [label $labf1.lab2 -text "This product $predicament" \
             -font {-family helvetica -size 10}] -side left
@@ -1422,9 +1419,9 @@ proc equationlisting_start {DefEquationListingFileName} {
             -accelerator "$accKey+A"
     $fm add command -label Copy -command {tk_textCopy $equationlist(textbox)} \
             -accelerator "$accKey+C"
-    #        $fm add command -label "Find" \
-    #                -command "EquationListingFindPopup $w" \
-    #        -accelerator "$accKey+F"
+#    $fm add command -label "Find" \
+#            -command "EquationListingFindPopup $w" \
+#            -accelerator "$accKey+F"
     
     $w configure -menu $m
     
@@ -1434,18 +1431,18 @@ proc equationlisting_start {DefEquationListingFileName} {
     set wrapper [canvas $w.mainframe.c]
     set equationlist(textbox) [text $w.mainframe.textbox \
             -tabs {1c} -relief sunken -bd 2 -highlightthickness 0 \
-	    -yscrollcommand [list $w.mainframe.scrl set]]
+            -yscrollcommand [list $w.mainframe.scrl set]]
     scrollbar $w.mainframe.scrl -command [list $equationlist(textbox) yview]
     pack $w.mainframe.scrl -side right -fill y
     pack $wrapper -side right -fill both -expand true
     set ww [$wrapper create window 0 0 -anchor nw \
-		-window $equationlist(textbox)]
+                -window $equationlist(textbox)]
     bind $wrapper <Configure> [list TrackSize $wrapper $ww]
     
     foreach imgType [list compartment flow variable creation \
              immigration loss reproduction condition alarm] {
-    image create photo equationlist(${imgType}img)
-    equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
+        image create photo equationlist(${imgType}img)
+        equationlist(${imgType}img) read "../Images/Toolbar/${imgType}.gif"
     }
     
     $equationlist(textbox) tag configure bigtag \
@@ -1639,7 +1636,7 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
         }
         if {![string match {null} $minmax]} {
             $widget insert end "\t$minmax\n"
-    }
+        }
     }
     
     # Comments
@@ -1691,9 +1688,9 @@ proc EquationListingPrint {winId} {
         print_data [$equationlist(textbox) get 1.0 end]
         cd $oldDir
     } else {
-	PrintRandomCanvas [winfo parent $equationlist(textbox)].c
-	# cant do this under Windows cos the prntcanv cmd doesnt support
-	# embedded windows
+        PrintRandomCanvas [winfo parent $equationlist(textbox)].c
+        # cant do this under Windows cos the prntcanv cmd doesnt support
+        # embedded windows
     }
 }
 
@@ -1760,7 +1757,7 @@ proc BuildProblem {Title errLevel msg key args} {
             -side left -padx 4 -pady 4
     if {[llength $args]==2} {
         pack [button $buttons.report -text {Send bug report} -width 20 \
-          -command [concat ReportProblem $args [list $msg]]] \
+                -command [concat ReportProblem $args [list $msg]]] \
                 -side left -padx 4 -pady 4
     }
     pack [button $buttons.help -text Help -width 10 \
@@ -1830,7 +1827,7 @@ proc NotifyOverLimit {edn limit} {
     wm protocol .notify WM_DELETE_WINDOW {set ack 1}
     global tcl_platform
     switch [tk windowingsystem] {
-    win32 {wm attributes .notify -toolwindow true}
+        win32 {wm attributes .notify -toolwindow true}
     }
     
     set labf1 [frame .notify.labf1]
