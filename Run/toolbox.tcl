@@ -1059,6 +1059,19 @@ proc AlterModel {topNode} {
 
 package require mime
 
+proc PathFromDispo {bit} {
+    set Disposition [mime::getheader $bit Content-Disposition]
+    if {![regexp \"(.*)\" $Disposition all oldPath]} {
+	set oldPath [lindex [lindex $Disposition 0] 1]
+    }
+    return $oldPath
+}
+
+proc IsRunnableModel {fileName} {
+    return [expr {[lsearch {.tcl .dll .so .dylib} \
+		       [file extension $fileName]]!=-1}]
+}
+
 proc SaveFile {topNode tree tgt} {
     #ShowMessage debug info "SaveFile $tree $tgt" ok
     global errorInfo runState
@@ -1096,8 +1109,28 @@ proc SaveFile {topNode tree tgt} {
     }
 }
 
+proc SaveMimeBit {bit newPath} {
+    global mimeSquirter 
+
+    file mkdir [file dirname $newPath]
+    set mimeSquirter [NetOpen $newPath w]
+    fconfigure $mimeSquirter -translation binary
+    mime::getbody $bit -command SquirtMime -blocksize 256
+    if {![catch {mime::getheader $bit Date-Modified} Date]} {
+	file mtime $newPath [clock scan [lindex $Date 0]]
+    }
+}
+
+proc OurEdition {text} {
+    global userinfo
+
+    set ednMarker [expr {[string first edition= $text]+8}]
+    set ednEnd [expr {[string first , $text $ednMarker]-1}]
+    string equal $userinfo(edn) [string range $text $ednMarker $ednEnd]
+}
+
 proc LoadFile {topNode tree tgt} {
-    global mimeSquirter errorInfo runState
+    global errorInfo runState
     global loadingProject mimedir
     #ShowMessage debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
@@ -1109,32 +1142,38 @@ proc LoadFile {topNode tree tgt} {
             foreach bit [mime::getproperty $multiT parts] {
                 set Desc [mime::getheader $bit Content-Description]
                 #ShowMessage debug info $Desc ok
+		if {[catch {PathFromDispo $bit} oldPath]} {
+		    set oldPath /none/
+		}
                 switch [lindex $Desc 0] {
                     "Run Status" {
                         set runState($topNode,runParams) [mime::getbody $bit]
 # do next bit when starting exec proc
 #                        do_for_node $topNode SetRunParams $topNode $runParams
-                    } "Authentication Code" {
-                        set AuthCode [string trimright [mime::getbody $bit]]
+                    } "Authentication Code" { ;# old method: separate part
+                        set codes [mime::getbody $bit]
+		    } "Simile model" {
+			catch {set codes [mime::getheader $bit \
+					      Authentication-Code]}
+			if {[info exists codes]} {
+			    set AuthCode [string trimright $codes]
+			    check_auth_code $bit
+			    set CodeChecked yes
+                        }
+			SaveMimeBit $bit $tree$oldPath
                     } default {
-                        if {[string match "Simile model" [lindex $Desc 0]] && \
-                                    [info exists AuthCode]} {
-                            check_auth_code $bit
-                            set CodeChecked yes
-                        }
-                        set Disposition [mime::getheader $bit Content-Disposition]
-                        if {![regexp \"(.*)\" $Disposition all oldPath]} {
-                            set oldPath [lindex [lindex $Disposition 0] 1]
-                        }
-                        set newPath $tree$oldPath
-                        file mkdir [file dirname $newPath]
-                        set mimeSquirter [NetOpen $newPath w]
-                        fconfigure $mimeSquirter -translation binary
-                        mime::getbody $bit -command SquirtMime -blocksize 256
-                        if {![catch {mime::getheader $bit Date-Modified} Date]} {
-                            file mtime $newPath [clock scan [lindex $Date 0]]
-                        }
-                    }
+			# If no auth code, do not keep executable, but
+			# dont crash either -- could be innocent
+			if {[IsRunnableModel [file tail $oldPath]]} {
+			    if {[catch {string trimright [mime::getheader \
+				    $bit Authentication-Code]} AuthCode]} {
+				continue
+			    } else {
+				check_auth_code $bit
+			    }
+			}
+			SaveMimeBit $bit $tree$oldPath
+		    }
                 }
             }
             #ShowMessage debug info "LoadFile after unpack\n[glob $tree/*]" ok
@@ -1222,22 +1261,21 @@ proc GetParts {top tree} {
                 set Disposition "${style}; filename=\"$relPath\""
                 set Date [clock format [file mtime $subtree] \
                         -format "%Y-%m-%d %T %Z" -gmt true]
-                set newMime [mime::initialize -canonical $PartType \
-                        -header [list "Content-Disposition" \
-                        $Disposition] \
-                        -header [list "Content-Description" \
-                        $Description] \
-                        -header [list "Date-Modified" $Date] \
-                        -file $subtree]
-                if {[string match "Simile model" $Description]} {
-                    set HmacCode [get_auth_code $newMime]
-                    set codeT [mime::initialize -canonical text/plain \
-                            -header [list "Content-Description" \
-                            "Authentication Code"] \
-                            -string $HmacCode]
-                    lappend mimes $codeT
-                }
-                lappend mimes $newMime
+                set newM [mime::initialize -canonical $PartType -file $subtree]
+		set headers [list "Content-Disposition" $Disposition \
+				 "Content-Description" $Description \
+				 "Date-Modified" $Date]
+                if {[string match "Simile model" $Description] || \
+			[IsRunnableModel $ext]} {
+		    if {![OurEdition [mime::getbody $newM]]} {
+			continue
+		    }
+		    lappend headers "Authentication-Code" [get_auth_code $newM]
+		}
+		foreach {key val} $headers {
+		    ::mime::setheader $newM $key $val
+		}
+                lappend mimes $newM
             }
             # cannot delete the component files yet, they will be accessed when the
             # main file is written

@@ -1,6 +1,8 @@
 /* version needs its own special procedure because any other might change
    and cause a crash before version mismatch is detected */
 FINDABLE EXPORT double get_version() {
+  double simile_version;
+  sscanf(strstr(simile_identifier,"version="), "version=%lf", &simile_version);
   return(simile_version);
 }
 

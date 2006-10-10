@@ -236,7 +236,7 @@ defines_membership(SmByRec, Fp) :-
 
 :- dynamic(entry_arcs_are/1).
 protected_build(Language, Stream, TopStep, FullModel, EntryArcs, LocalIncs) :-
-	FullModel = model(_Channels, [instance(submodel, _, xrefs(_,
+	FullModel = model(_Channels, [instance(submodel, Top, xrefs(_,
 	    instance(submodel, _, xrefs(FullModel, top, [], []),
 		     'AME_model', top-[]), _,_), _,_)]), 
 	/* Parent of top level model is not specified, so set it empty */
@@ -315,9 +315,12 @@ used when entering file parameters */
 	all(compile, insert_enum_phases, [build(VMSPs), unify(SortedForm)]),
 
 	state:version_is(VStr),
-	name(V, VStr),
+	state:edition_is(Edition),
+	library:count_functions(Top, FnCount),
+	sicstus_format_to_chars("\"program='AME',version=~s,edition=~a,date=unused,size=~d\"", [VStr, Edition, FnCount], IdentStr),
+	sicstus_atom_chars(IdentAtom, IdentStr),
 	render(Language, variable_declaration,
-	       [real, simile_version, [], V], 0, VersionDec),
+	       [char, simile_identifier, void, IdentAtom], 0, IdentDec),
 	render(Language, variable_declaration,
 	       [int, phasecount, [], Phases], 0, PhaseDec),
 	render(Language, variable_declaration,
@@ -362,7 +365,7 @@ wot need them */
 	render( Language, comment, 'GLOBAL DECLARATIONS', 0,
 		[GlobalDeclComment]),
 	append([['#include <support1.cpp>',GlobalDeclComment | GlobalDeclText],
-		VersionDec, PhaseDec, [Times, DTs]], Headers),
+		IdentDec, PhaseDec, [Times, DTs]], Headers),
 	send_to_dest(Stream, Headers),
 
 	list_matching_files('../Functions/*.cpp', FnIncs),
