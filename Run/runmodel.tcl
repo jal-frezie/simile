@@ -1295,7 +1295,7 @@ proc ex_load_dll {topNode lang progDir id node name incs} {
         }
         set model_prog($topNode) $progDir/model.tcl
         source $model_prog($topNode)
-        if {![catch {set simile_version} buildV]} {
+	if {![catch {IdentField $simile_identifier version} buildV]} {
              return [expr $buildV==$env(SIMILE_VERSION)]
         } else {
             return 0

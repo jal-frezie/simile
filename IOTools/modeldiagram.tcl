@@ -28,8 +28,12 @@ namespace eval ::ModelDiagram20060804 {
 
     proc initialize {winId} {
         set diagFile [ChooseFile model.cnv "Display model diagram file:" 0]
-	SetState $winId $diagFile
-	AddDiagram $winId $diagFile
+	if {[string length $diagFile]} {
+	    set quikStr [NetOpen $diagFile r]
+	    SetState $winId [read $quikStr] ;# transcribe file into contents
+	    close $quikStr
+	    AddDiagram $winId [GetState $winId]
+	}
     }
 
     proc AddDiagram {winId diagFile} {
@@ -38,7 +42,7 @@ namespace eval ::ModelDiagram20060804 {
 	pack [ScrolledWindow $winId.s] -fill both -expand 1
 	$winId.s setwidget [set c [canvas $winId.c]]
 	set window_info($c,topCapt) {} ;# must be top-level diagram!
-	source $diagFile
+	eval $diagFile
 
 	bind $c <Button-1> [list [namespace code OnElementClick] %W %x %y]
 

@@ -125,6 +125,14 @@ proc NetOpen {name way} {
     return $stream
 }
 
+proc IdentField {text field} {
+    global userinfo
+
+    set field0 [expr {[string first ${field}= $text]+[string length $field]+1}]
+    set fieldEnd [expr {[string first , $text $field0]-1}]
+    string range $text $field0 $fieldEnd
+}
+
 # This makes the extra bit that goes onto Tcl to run C programs. We don't
 # really need to build it every time we run the program, that's just while
 # it's being debugged, once it's right we'll just load it. This component

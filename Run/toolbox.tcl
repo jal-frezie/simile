@@ -1124,9 +1124,7 @@ proc SaveMimeBit {bit newPath} {
 proc OurEdition {text} {
     global userinfo
 
-    set ednMarker [expr {[string first edition= $text]+8}]
-    set ednEnd [expr {[string first , $text $ednMarker]-1}]
-    string equal $userinfo(edn) [string range $text $ednMarker $ednEnd]
+    string equal $userinfo(edn) [IdentField $text edition]
 }
 
 proc LoadFile {topNode tree tgt} {

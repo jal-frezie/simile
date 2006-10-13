@@ -1335,13 +1335,12 @@ namespace eval RunEnv {
     proc LoadContainer {node stream line origVersion} {
         global helperTable
         variable dp0
-        
         #ShowMessage debug info "LoadContainer: stream $stream, line $line" ok
         scan $line "%s %s" item containerId
         if {$origVersion<4.0} {
             set containerId [LoseTLRef $containerId]
         }
-        
+
         lift $stream helperId
         #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
         set winId [NewHelperInWindow $dp0.$containerId $helperId ""]
