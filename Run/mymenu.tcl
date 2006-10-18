@@ -177,7 +177,15 @@ proc mymenuCmd {myw act args} {
             }
         } entrycget {
             set child [ResolveIndex $myw [lindex $args 0]]
-            return [eval {$child cget} [lrange $args 1 end]]
+	    switch -- [lindex $args 1] {
+		-label {
+		    return [$child cget -text]
+		} -command {
+		    whatever
+		} -default {
+		    return [$child cget [lindex $args 1]]
+		}
+	    }
         } index {
             return [EnumIndex $myw [lindex $args 0]]
         } insert {

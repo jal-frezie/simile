@@ -7,6 +7,57 @@ proc random01 {} {
     return [expr rand()]
 }
 
+proc graph_table {action indx args} {
+    global graph_lists
+
+    switch $action {
+	21 {
+	    return $graph_lists($indx)
+	} 22 {
+	    set graph_lists($indx) $args
+	} 23 {
+	    set xval [lindex $args 0]
+	    for {set i 0} {$i<8} {incr i} {
+		set gpt [lindex $graph_lists($indx) $i]
+		set [lindex {xlow xhigh xspan ylow yhigh yspan range xsize} $i] $gpt
+	    }
+	    set spaces [expr {$xsize-1}]
+	# Interval is distance from left of graph in point units
+	    set interval [expr {$spaces*($xval-$xlow)/($xhigh-$xlow)}]
+	    switch -regexp $range {
+		0|4|5 { ;# truncate to fit on graph
+		    set interval [expr {$interval<0?0:($interval>$spaces?$spaces:$interval)}]
+		} 2|6 { ;# wrap around graph range */
+		    set interval [expr {$spaces*($interval/$spaces - floor($interval/$spaces))}]
+		    #case 1: extrapolate end sections of graph
+		}
+	    }
+#	/* right = use_graph_pointer->points;
+#	interval++;
+#
+#	for (length=spaces;length;length--) {
+#		left = right;
+#		right++;
+#		if (--interval <= 1) break;
+#	}
+#	*/
+	    if {$range > 3} {
+		set lower [max 0 [min $spaces [expr {round($interval)}]]]
+		set intersection [lindex $graph_lists($indx) [expr {8+$lower}]]
+	    } else {
+		set lower [max 0 [min [expr {$spaces-1}] [expr {int($interval)}]]]
+		set interval [expr {$interval-$lower}]
+		set left [lindex $graph_lists($indx) [expr {8+$lower}]]
+		set right [lindex $graph_lists($indx) [expr {9+$lower}]]
+		set intersection [expr {$interval*$right+(1-$interval)*$left}]
+	    }
+	    return [expr {$ylow + ($yhigh - $ylow)*$intersection/$yspan}]
+	} default {
+	    error "No action $action for graph $indx withdata $args"
+	}
+    }
+}
+
 if {[info exists embed_args]} {
     set custom(prefDir) {}
 } else {
@@ -133,13 +184,16 @@ foreach bit [mime::getproperty $goodieBag parts] {
             }
             switch [file extension $oldPath] {
                 .tcl {
-                    uplevel 0 [mime::getbody $bit]
+                    eval [mime::getbody $bit]
                 } .shf {
                     set shfBag [mime::initialize -string [mime::getbody $bit]]
                     set ::RunEnv::helperData [mime::getbody $shfBag]
                     #        } .cnv {
                     #            set ::RunEnv::diagSpec [mime::getbody $bit]
-                }
+                } .spj {
+		    set spjBag [mime::initialize -string [mime::getbody $bit]]
+		    OpenProject [mime::getbody $shfBag]
+		}
             }
         }
     }

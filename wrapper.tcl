@@ -55,9 +55,11 @@ proc ReadFile {file} {
     checkLikelihood $fullFile
     ::browser::status "Loading $fullFile"
     incr fileCount
-    .splash.c coords 1 [list 2 59 [expr {int(3*$fileCount)}] 79]
-#    .splash.c itemconfig 4 -text $fileCount
-    raise .splash
+    if {[winfo exists .splash.c]} {
+	.splash.c coords 1 [list 2 59 [expr {int(2.5*$fileCount)}] 79]
+	#    .splash.c itemconfig 4 -text $fileCount
+	raise .splash
+    }
     update idletasks
     return [myURL $fullFile]
     ::browser::status "Done"
@@ -126,7 +128,7 @@ proc glob {args} {
 
     ::browser::status "Listing $dir"
     incr fileCount
-    .splash.c coords 1 [list 2 59 [expr {int(3*$fileCount)}] 79]
+    .splash.c coords 1 [list 2 59 [expr {int(2.5*$fileCount)}] 79]
 #    .splash.c itemconfig 4 -text $fileCount
     raise .splash
     update idletasks

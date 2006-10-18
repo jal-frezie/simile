@@ -1399,12 +1399,17 @@ proc RunIfPackage {} {
 }
 
 proc OpenProjectFile {path} {
-    global SimileProject loadingProject
     set pFile [file join $path model.spj]
     set projectF [NetOpen $pFile r]
     gets $projectF SimileProjectData
     close $projectF
     file delete $pFile
+    OpenProject $SimileProjectData
+}
+
+proc OpenProject {SimileProjectData} {
+    global SimileProject loadingProject
+
     #ShowMessage debug info "open_all win $win; $SimileProjectData" ok
     array set SimileProject $SimileProjectData
     #ShowMessage debug info "open_all SimileProject(ModelFile) $SimileProject(ModelFile)" ok

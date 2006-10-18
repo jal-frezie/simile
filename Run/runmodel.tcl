@@ -31,6 +31,9 @@ if {![info exists embed_args]} {
         proc progressbar {args} {
             eval ::ProgressBar $args
         }
+        proc menubutton {args} {
+            eval ::mybutton $args
+        }
         proc entry {args} {
             eval ::entry $args
         }
@@ -155,6 +158,14 @@ proc AddHelperSublist {fm title ct} {
 #puts "Adding helpers in [pwd]"
     set m [menu $fm.sub$ct -tearoff 0]
     set nct 0
+    foreach subDir [glob -nocomplain */] {
+#        if [file isdirectory $subDir] {
+            cd $subDir
+            AddHelperSublist $m [string range $subDir 0 end-1] $nct
+            cd ..
+            incr nct
+#        }
+    }
     set helperList [glob -nocomplain *.tcl]
     foreach helperApp [lsort $helperList] {
     if {[catch {source $helperApp} wibble]} {
@@ -191,14 +202,6 @@ proc AddHelperSublist {fm title ct} {
                 -command [list CreateHelperWindow $keyValue $action]
         unset keyValue
         }
-    }
-    foreach subDir [glob -nocomplain */] {
-#        if [file isdirectory $subDir] {
-            cd $subDir
-            AddHelperSublist $m [string range $subDir 0 end-1] $nct
-            cd ..
-            incr nct
-#        }
     }
     if {[string equal none [$m index 0]]} {
         destroy $m

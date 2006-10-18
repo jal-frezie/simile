@@ -82,9 +82,18 @@ proc RunningInC {myNode} {
     return $model_id($myNode) ;# it is ready
 } 
     
-proc ExplainError {what dest mtime mstep whoopsie} {
+proc ExplainError {errList} {
     global myNode
     set origError $::errorInfo
+    if {![string match tcl_model_err* $errList]} {
+	error "Unexpected problem in Tcl model execution" $origError
+    }
+    set what [lindex $errList 1]
+    set dest [lindex $errList 2]
+    set mtime [lindex $errList 3]
+    set mstep [lindex $errList 4]
+    set whoopsie [lindex $errList 5]
+    InteractGUI $instance_id($myNode) $mtime 2
     switch $what {
         int_evalmodel {set operation "calculate the value of"}
         updatemodel {set operation "update the state"}
@@ -339,7 +348,7 @@ proc GetModelGraph {node} {
 
 proc SetModelGraph {node args} {
     global myNode
-    return [eval GetCompProperty $myNode Graph $node $args]
+    return [eval [list GetCompProperty $myNode Graph $node] $args]
 }
 
 proc GetModelType { node } {
@@ -732,8 +741,7 @@ proc ExecuteModel {myNode howInt start finish errLim} {
             TclExecuteModel $myNode $howInt $start $finish $errLim
         }
     } errList]} {
-        InteractGUI $instance_id($myNode) [lindex $errList 2] 2
-        eval ExplainError $errList
+        ExplainError $errList
         return -1
     } elseif {$errList==-1} {
         start_in_editor BuildProblem "Execution notice" info "Model execution has been paused at a discontinuity which could not be dealt with by adaptive step size control." execution
@@ -769,12 +777,12 @@ proc BringParameter {array node inds} {
 #puts "looking for $array\($sub\)"
     upvar \#0 $array inputSrc
     for {set ind1 0} {$ind1<=[llength $inds]} {incr ind1} {
-        set sub [join [concat [list $node] [lrange $inds $ind1 end]] ,]
-        if {[info exists inputSrc($sub)]} {
-            return $inputSrc($sub)
-        } else {
-            puts "No $sub in [array names inputSrc]"
-        }
+	set sub [join [concat [list $node] [lrange $inds $ind1 end]] ,]
+	if {[info exists inputSrc($sub)]} {
+	    return $inputSrc($sub)
+	} else {
+#	    puts "No $sub in [array names inputSrc]"
+	}
     }
 }
 

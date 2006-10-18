@@ -160,12 +160,10 @@ namespace eval runcontrol33857 {
         pack [frame $rsf.edit] -pady 2 -expand on -fill both
 	if {[InPlugin]} {
 	    set useMenu mymenu
-	    set useButton mybutton
 	} else {
 	    set useMenu menu
-	    set useButton ::ttk::menubutton
 	}
-	$useButton $rsf.unitselection.pulldown
+	::ttk::menubutton $rsf.unitselection.pulldown
 	set timeUnitMenu [$useMenu $rsf.unitselection.pulldown.menu -tearoff 0]
 	foreach unit {unit second minute hour day week month year Ma} {
 	    $timeUnitMenu add command -label $unit \
@@ -174,7 +172,7 @@ namespace eval runcontrol33857 {
 	$rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
 	    -textvariable runState($node,timeUnit)
 
-	$useButton $rsf.integration.pulldown
+	::ttk::menubutton $rsf.integration.pulldown
 	set intMethodMenu [$useMenu $rsf.integration.pulldown.menu -tearoff 0 \
 			       -postcommand "set runState($node,tweaked) 1"]
 	foreach method {Euler {Runge-Kutta}} {
@@ -184,7 +182,7 @@ namespace eval runcontrol33857 {
 	$rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
 	    -textvariable runState($node,intMethod)
 
-	$useButton $rsf.edit.capt
+	::ttk::menubutton $rsf.edit.capt
 	set timeStepMenu [$useMenu $rsf.edit.capt.menu -tearoff 0]
 	$rsf.edit.capt configure -menu $timeStepMenu -width 16
         pack $rsf.unitselection.pulldown -side left -anchor nw

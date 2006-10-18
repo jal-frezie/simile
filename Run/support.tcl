@@ -277,7 +277,7 @@ proc RaiseTclExecError {mproc mtime mstep} {
     } else {
         set dest none
     }
-    error [list $mproc $dest $mtime $mstep $whoopsie] $errorInfo
+    error [list tcl_model_err $mproc $dest $mtime $mstep $whoopsie] $errorInfo
 }
 
 proc CheckGUI {node modelTime thisOp} {
