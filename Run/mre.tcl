@@ -1342,6 +1342,7 @@ namespace eval RunEnv {
         }
 
         lift $stream helperId
+	set helperId [string trimright $helperId]
         #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
         set winId [NewHelperInWindow $dp0.$containerId $helperId ""]
         lift $stream oldStatus

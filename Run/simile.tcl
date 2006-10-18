@@ -355,6 +355,7 @@ switch $env(interfaceId) {
     pipe {
         set whatCalled [file rootname [file tail [info nameofexecutable]]]
         set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
+        source ../Run/window.tcl
         source ../Run/toolbox.tcl
         source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
@@ -370,6 +371,47 @@ switch $env(interfaceId) {
     } dll {
         exec $SIMILE_PATH/$tgt$execExtn &
     } console {
+        source ../Run/window.tcl
         source ../Run/toolbox.tcl
+	rename prolog innerProlog
+	proc prolog {args} {
+	    ShowWatchWhileDoing [concat innerProlog $args]
+	}
+    } none {
+	source ../Run/toolbox.tcl
+# now we must replace some procedure definitions that don't work without Prolog
+	proc prolog {plCmd} {
+	    global fromProlog
+	    switch -glob $plCmd {
+		tk_get_info(*,*,*) {
+		    set fromProlog "Model declarations unavailable"
+		} check_use(*) {
+		} tk_run_settings_tweaked(*) {
+		} tk_menu(*,*,run_*) {
+		    set lPtr [expr {[string last _ $plCmd]+1}]
+		    set lang [string range $plCmd $lPtr end-1]
+		    load_dll $::dummyNode $lang $::myDir {} {} Model {}
+		    LoadProgram $::dummyNode $lang
+		} default {
+		    error "Unhandled Prolog command $plCmd"
+		}
+	    }
+	}
+#	proc GetExecTitle {node} {return $node}
+	proc RunEnv::Destroy {args} {
+	    StartComms -1
+	    exit
+	}
+# Cheekily try initializing the whole works
+	set dummyNode none
+	ControlDraw $dummyNode
+# now open up
+	set myDir [file join $::simtmpdir exec]
+	destroy .splash
+	if {![info exists env(OPEN_MODEL)]} {
+	    set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0]
+	}
+	LoadFile $dummyNode $myDir $env(OPEN_MODEL)
+	OpenProjectFile $myDir
     }
 }

@@ -11,6 +11,10 @@
 # 'round' because some floating point values caused trouble, but later Tcls do
 # not seem to mind them, and they help when things are made very small then zoomed.
 
+source ../Run/shapes.tcl
+source ../Run/equation.tcl
+source ../Run/forms.tcl
+
 proc Scale {winId can} {
     global window_info
     expr $can*$window_info($winId,scale)
@@ -73,21 +77,6 @@ proc canvasTLDistance {winId x y} {
     } else {
         return [list $x $y]
     }
-}
-
-# This is used when Tcl wants to get a result from Prolog, e.g., for the
-# equation bar. The prolog procedure has to set fromProlog. It should stop
-# the thread until it returns, but something is wrong -- occasionally
-# fromProlog doesn't get set. Answer: set it first. Or fix the actual
-# bug -- it seems 'update idletasks' somehow interferes with this,
-# resulting in the variable not getting set, or something. Bug seems fixed now
-# by new pipe interface technology -- might still do funnies if the Prolog
-# command calls Tcl back though...
-
-proc GetFromProlog {prologCmd} {
-    global fromProlog
-    prolog $prologCmd
-    return $fromProlog
 }
 
 # This does similar to the above but gets the translation table, specially
@@ -1087,10 +1076,6 @@ proc WindowDetail {window category level redraw} {
 # feedback window allowing progress reports on long activities.
 
 proc MenuSelect { window button item } {
-    global exports
-    if {[lsearch "run_c run_tcl load_exec" $item] != -1} {
-        set exports(running_window) $window
-    }
     if [string match local $button] {
         DoLocalCmd $window $item
     } else {
@@ -1938,20 +1923,6 @@ proc MenuClose {winId} {
 proc byebye {winId} {
     set runOnEmpty [string equal aqua [tk windowingsystem]]
     prolog [list tk_off_window( '$winId' , $runOnEmpty)]
-}
-
-proc exit_simile {} {
-    global custom tcl_platform
-    
-    set cacheStream [NetOpen $custom(prefDir)/.recent w]
-    foreach oldFile $custom(hotlist) {
-        puts $cacheStream $oldFile
-    }
-    close $cacheStream
-    if {[string equal windows $tcl_platform(platform)]} {
-        file attributes $custom(prefDir)/.recent -hidden true
-    }
-    StartComms -1
 }
 
 proc ZapWindow { fullName } {

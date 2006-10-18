@@ -34,10 +34,6 @@ if {[string equal home $runHow(where)]} {
     set table_viewer(id) $keyValue
 }
 
-source ../Run/window.tcl
-source ../Run/shapes.tcl
-source ../Run/forms.tcl
-source ../Run/equation.tcl
 source ../Run/prefs.tcl
 source ../Run/messages.tcl
 
@@ -107,6 +103,21 @@ if {[string match windows $tcl_platform(platform)]} {
 }
 
 set equationbar(current_action) null
+
+# This is used when Tcl wants to get a result from Prolog, e.g., for the
+# equation bar. The prolog procedure has to set fromProlog. It should stop
+# the thread until it returns, but something is wrong -- occasionally
+# fromProlog doesn't get set. Answer: set it first. Or fix the actual
+# bug -- it seems 'update idletasks' somehow interferes with this,
+# resulting in the variable not getting set, or something. Bug seems fixed now
+# by new pipe interface technology -- might still do funnies if the Prolog
+# command calls Tcl back though...
+
+proc GetFromProlog {prologCmd} {
+    global fromProlog
+    prolog $prologCmd
+    return $fromProlog
+}
 
 proc NewTopLevel {} {
     MenuSelect dummy file new_toplevel
@@ -898,7 +909,7 @@ proc ControlDraw {prologVersion} {
                 {custom(initEqnbar) initEqnbar ON "Equation bar"} \
                 {custom(initGrid) initGrid ON "Grid"} \
                 {custom(bigButtons) bigButtons OFF "Use large buttons"} \
-                {custom(saveExtras) saveExtras {CHOICE {Model file only} {Canvas file}} "Save models as..."} \
+                {custom(saveExtras) saveExtras {CHOICE {Canvas file} {Model file only}} "Save models as..."} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
                 {custom(gridSnap) gridSnap OFF "Snap to grid"} \
                 {custom(defBackground) defBackground {CHOICE White Clear} "Default background"} \
@@ -955,10 +966,12 @@ proc ControlDraw {prologVersion} {
     }
     
     # Base window has menu to display on Mac when no model windows open
-    menu .hitop
-    frame .hi
-    . config -menu .hitop   
-    AddMainMenu .hi _ 0 1 {}
+    if {[string match aqua [tk windowingsystem]]} {
+	menu .hitop
+	frame .hi
+	. config -menu .hitop   
+	AddMainMenu .hi _ 0 1 {}
+    }
 
     # Take the opportunity to pass the temp directory name etc to Prolog
     return [list $sendvars(simV) [brainwash $simtmpdir] $openModel $userinfo(edn)]
@@ -1404,10 +1417,10 @@ proc OpenProjectFile {path} {
     gets $projectF SimileProjectData
     close $projectF
     file delete $pFile
-    OpenProject $SimileProjectData
+    OpenProject $SimileProjectData $path
 }
 
-proc OpenProject {SimileProjectData} {
+proc OpenProject {SimileProjectData path} {
     global SimileProject loadingProject
 
     #ShowMessage debug info "open_all win $win; $SimileProjectData" ok
@@ -1432,9 +1445,9 @@ proc OpenProject {SimileProjectData} {
             }
         }
         if {$SimileProject(running_c)} {
-            MenuSelect $win file run_c
+	    prolog tk_menu('$win',file,run_c)
         } else  {
-            MenuSelect $win file run_tcl
+	    prolog tk_menu('$win',file,run_tcl)
         }
         update
         if {[info exists SimileProject(nameOfHelperStateFile)]} {
@@ -1775,6 +1788,29 @@ proc ItemSelect {newItem} {
     prolog [list tk_menu_select( $newItem , from_box)]
 }
 
+proc UpdateCursors {newCurs} {
+    global window_info
+    foreach {can win} [array get window_info *,parent] {
+	$win.canvas config -cursor $newCurs
+    }
+}
+
+set window_info(defCurs) arrow
+proc ShowWatchWhileDoing {cmd} {
+    global window_info
+
+    if {[info exists window_info(oldCurs)]} { ;# watch already shows so just do
+	uplevel \#0 $cmd
+    } else {
+	set window_info(oldCurs) arrow ;# value irrelevant
+	UpdateCursors watch
+	update idletasks
+	uplevel \#0 $cmd
+	UpdateCursors $window_info(defCurs)
+	unset window_info(oldCurs)
+    }
+}
+
 # Change indentation of toolbar buttons. Apply in all desktop windows
 # ie. those not in helper list
 
@@ -1907,4 +1943,18 @@ proc GetPathChoice {fileType} {
         set ch [file dirname $ch]
     }
     return $ch
+}
+
+proc exit_simile {} {
+    global custom tcl_platform
+    
+    set cacheStream [NetOpen $custom(prefDir)/.recent w]
+    foreach oldFile $custom(hotlist) {
+        puts $cacheStream $oldFile
+    }
+    close $cacheStream
+    if {[string equal windows $tcl_platform(platform)]} {
+        file attributes $custom(prefDir)/.recent -hidden true
+    }
+    StartComms -1
 }
