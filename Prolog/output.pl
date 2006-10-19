@@ -10,7 +10,7 @@ screen; if it is, the draw is cancelled. Changes to an object are not
 normally possible so the Tk change features are not used; objects are
 changed only by deleting and redrawing them.  */
 
-sicstus_module(output, [safe_tcl_eval/2, tk_cursor_in/2, tk_callback/1,
+sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	get_file_name/4, list_matching_files/2, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
@@ -54,8 +54,9 @@ safe_tcl_eval(Cmd, Result) :-
 	(\+ input:log_interaction, !;
 	    backup:into_save_file(safe_tcl_eval(Cmd, Result))). */
 
-tk_cursor_in(Win, Cursor) :-
-	safe_tcl_eval([Win, 'config -cursor', Cursor], _).
+tk_cursor_is(Cursor) :-
+	safe_tcl_eval(['AttackGlobalVariable window_info (defCurs)', Cursor],
+		      _).
 
 tk_callback(Data) :-
 	safe_tcl_eval(['AttackGlobalVariable fromProlog {}', Data], _).

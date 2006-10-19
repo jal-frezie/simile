@@ -21,18 +21,14 @@ sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
 sicstus_use_module([library(lists), backup, event, menu]).
 
 tk_undo(Cur, Wids) :-
-	show_wait_cursor,
 	nth0(Cur, Wids, Wid),
 	finish_window_resize,
-	undo_edit(Wid, Wids),
-	show_normal_cursor.
+	undo_edit(Wid, Wids).
 
 tk_redo(Cur, Wids) :-
-	show_wait_cursor,
 	nth0(Cur, Wids, Wid),
 	finish_window_resize,
-	redo_edit(Wid, Wids),
-	show_normal_cursor.
+	redo_edit(Wid, Wids).
 
 tk_get_info(Wid, Comp, What) :-
 	get_info(Wid, Comp, What).
@@ -67,12 +63,10 @@ tk_click(Wid, Virt_X, Virt_Y, CD) :-
 
 tk_doubleclick(_Wid, Virt_X, Virt_Y, _CD) :-
 /*	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)), */
-	show_wait_cursor,
 	finish_window_resize,
 	asserta(log_interaction),
 	doubleclick(Virt_X, Virt_Y),
-	retract(log_interaction),
-	show_normal_cursor.
+	retract(log_interaction).
 
 tk_unclick(_X, _Y) :- 
 /*	into_save_file(tk_unclick(X, Y)), */
@@ -86,26 +80,20 @@ tk_edit_equation(Window, Node) :-
 
 tk_menu(Window, Header, Item) :-
 /*	into_save_file(tk_menu(Window, Header, Item)), */
-    show_wait_cursor,
     (Window = '.hi.canvas', !;
      finish_window_resize),
     finish_old_edit(none),
-    (menu_handle(Window, Header, Item); true),
-    show_normal_cursor.
+    (menu_handle(Window, Header, Item); true).
 
 tk_menu_select(Obj_type, from_box) :-
 /*	into_save_file(tk_menu_select(Obj_type, from_box) ), */
-	show_wait_cursor,
 	finish_old_edit(none),
-	menu_select(Obj_type),
-	show_normal_cursor.
+	menu_select(Obj_type).
 
 tk_mode_select(Mode) :-
 %%	into_save_file(tk_mode_select(Mode)),
-	show_wait_cursor,
 	finish_old_edit(none),
-	mode_select(Mode),
-	show_normal_cursor.
+	mode_select(Mode).
 
 tk_resize_top_win(Wid, W, H) :-
 	resize_top_win(Wid, W, H).
@@ -144,10 +132,8 @@ tk_set_new_size(Node, CType, New_size) :-
 	set_box_size(Node, CType, New_size, 0,0).
 
 tk_change_size(TopNode, CType, New_size) :-
-	show_wait_cursor,
 	set_box_size(TopNode, CType, New_size, 0,0),
-	change_size(TopNode, CType, New_size),
-	show_normal_cursor.
+	change_size(TopNode, CType, New_size).
 
 tk_run_settings_tweaked(Node) :-
 	run_settings_tweaked(Node).

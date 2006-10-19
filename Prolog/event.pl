@@ -139,7 +139,7 @@ click_obj(Xpt, Ypt, DiagInfo, CD) :-
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
-	    menu:show_normal_cursor,
+	    cursor_is(arrow),
 	    drag_to(NewXpt, NewYpt, DiagInfo);
 	(CD < 2, click_on([NewXpt, NewYpt], DiagInfo, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
@@ -180,7 +180,7 @@ click(Xpt, Ypt, CD) :-
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
-	    menu:show_normal_cursor,
+	    cursor_is(arrow),
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
 	    save_params([0,0,1,1], 0, Parent),
@@ -256,6 +256,7 @@ click_in(Wid, Point, Trans, Depth, Parent, CD) :-
 
 click_in(Wid, ActPt, Trans, Depth, Parent, CD) :-
 	finish_old_edit(none),
+	save_params(Trans, Depth, Parent),
 	doing_add(New_obj),
 	(\+ (hide_innards(Parent),
 		\+ Wid shows_model Parent),
@@ -264,7 +265,6 @@ click_in(Wid, ActPt, Trans, Depth, Parent, CD) :-
 	    snap_to_grid(ActPt, [Xpt, Ypt]),
 	    set_start_coords(Xpt, Ypt),
 	    set_current_coords(Xpt, Ypt),
-	    save_params(Trans, Depth, Parent),
 	    (New_obj is_class_of_sort box, !,
 		(New_obj is_class_of_sort rounded_rect, !,
 		    set_line_start_obj(Parent),
@@ -957,11 +957,8 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 			( \+ fits_inside(BadPosn, ParentShape);
 			    get_overlaps(Parent, BadPosn, Crashed),
 			    \+ member(Crashed, Movers))),
-		     all(event, adjust_posn,
-			 [build(Movers), unify([-Xoffset, -Yoffset, 1, 1])]),
-		     all(event, tweak_link_connections,
-			 [build(Movers), unify([Xoffset, Yoffset]),
-			  unify(c), build(_)]),
+		     all(event, reposition,
+			 [build(Movers), unify([Xoffset, Yoffset])]),
 		     all(draw, move_display,
 			 [build(Movers), unify([Xoffset, Yoffset])]));
 /*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
@@ -1061,6 +1058,10 @@ drag_to(Xpt, Ypt, Target) :-
 	add_incomplete([L,T,R,B]),
 	remove_old_rubberband,
 	draw_rubberband(round).
+
+reposition(Mover, [XOff, YOff]) :-
+	adjust_posn(Mover, [-XOff, -YOff, 1,1]),
+	tweak_link_connections(Mover, [XOff, YOff], c, _).
 
 moves_with_seln(Parent, Obj) :-
 	find_all_comps(Parent, Obj),
@@ -1629,16 +1630,16 @@ unclick :-
 	get_mode(select),
 	    find_current(Wid),
 	    get_phase(rubberband), !, /* used to call proc below */
-	    get_incomplete(Box),
-	    get_translation(Trans),
-	    untranslate(Box, Trans, [OldX, OldY, NewX, NewY]),
+	    get_incomplete([OldX, OldY, NewX, NewY]),
 	    clear_incomplete,
 	    L is min(OldX, NewX),
 	    T is min(OldY, NewY),
 	    R is max(OldX, NewX),
 	    B is max(OldY, NewY),
-	    Wid shows_model Model,
-	    (select_bagged([L, T, R, B], Model);
+	    ((R-L)+(B-T)>2, % less than this is a wobbly click not a drag
+		Wid shows_model Model,
+		get_current_node(Parent),
+		select_bagged([L, T, R, B], Parent, none);
 	    set_selection_abilities(Model),
 	    remove_old_rubberband),
 	    initialize_phase;
@@ -1647,17 +1648,25 @@ unclick :-
 	    advance_phase_to(targetting);
 	unclick_obj.
 
-select_bagged(Rect, Model) :-
+select_bagged(Rect, Model, Last) :-
 	get_overlaps(Model, Rect, Caught),
 	(find_type(Caught, submodel),
+	    \+ Caught = Last,
 	    add_to_translation([0,0,1,1], Caught, Trans),
 	    translate(Rect, Trans, NewRect),
-	    select_bagged(NewRect, Caught);
-	 \+ (get_shape(Caught, bounding_box, Outer),
-		fits_inside(Rect, Outer)),
+	    select_bagged(NewRect, Caught, up);
+%	 \+ (get_shape(Caught, bounding_box, Outer),
+%		fits_inside(Rect, Outer)),
 	    \+ deselectable(Caught),
 	    do_colours(Caught, on),
-	    fail).
+	    fail);
+	\+ Last = up,
+	    get_shape(Model, internal_extent, Inner),
+	    \+ fits_inside(Rect, Inner),
+	    add_to_translation([0,0,1,1], Model, Trans),
+	    untranslate(Rect, Trans, NewRect),
+	    find_all_comps(Parent, Model),
+	    select_bagged(NewRect, Parent, Model).
 /*
 zoom_to_area :-
 	get_incomplete([OldX, OldY, NewX, NewY]),

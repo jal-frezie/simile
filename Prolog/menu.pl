@@ -7,8 +7,7 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-sicstus_module(menu, [show_wait_cursor/0, show_normal_cursor/0,
-	undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
+sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
 	menu_handle/3, set_box_size/5, change_size/3,
 	not_last_toplevel/1, off_window/2, kill_everything/1]).
 	
@@ -17,27 +16,6 @@ sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw,
 	library(lists), library(ordsets)]).
 
 :- dynamic(running/1).
-:- dynamic(cursor_is/1).
-cursor_is(arrow).
-
-show_wait_cursor :-
-	Win shows_model _,
-	cursor_in(Win, watch),
-	fail;
-	true.
-
-show_normal_cursor :-
-	(get_phase(targetting), !,
-	    Cursor = crosshair;
-	 cursor_is(Cursor), !;
-	 Cursor = arrow),
-	set_cursor_to(Cursor).
-
-set_cursor_to(Cursor) :-
-	Win shows_model _,
-	    cursor_in(Win, Cursor),
-	    fail;
-	true.
 
 undo_edit(Wid, Wids) :-
 	Wid shows_model ClickedModel,
@@ -85,7 +63,6 @@ update_mode(NewMode) :-
 	give_focus('{}'),
 	OldMode = NewMode), !;
 	set_mode(NewMode),
-	retract(cursor_is(_)),
 	(Win shows_model _,
 		(NewMode = select,
 			enable_text_editing_in(Win);
@@ -93,9 +70,9 @@ update_mode(NewMode) :-
 			disable_text_editing_in(Win)),
 		fail;
 	NewMode = add, !,
-	    assert(cursor_is(target));
+	    cursor_is(target);
 	NewMode = move, !,
-	    assert(cursor_is(hand2));
+	    cursor_is(hand2);
 /*	NewMode = move, !,
 	    assert(cursor_is(fleur));
 	NewMode = copy, !,
@@ -103,10 +80,10 @@ update_mode(NewMode) :-
 	NewMode = delete, !,
 	    assert(cursor_is(pirate));
 */	NewMode = ghost, !,
-	    assert(cursor_is(sqb('GetGhostCursor')));
+	    cursor_is(sqb('GetGhostCursor'));
 	NewMode = snap, !,
-	    assert(cursor_is(question_arrow));
-	assert(cursor_is(arrow))).
+	    cursor_is(question_arrow);
+	cursor_is(arrow)).
 
 stick_model_in(Win, Parent, Name, Mode) :-
 	Mode = reopen,
@@ -381,8 +358,7 @@ menu_handle(Win, file, RunCmd) :-
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
 	    finish_move(Node, 0);
-	restart_move),
-	show_normal_cursor.
+	restart_move).
 
 %################################### Bob's changes (tcl/tk version): start (
 menu_handle(Win, file, list_eqns) :-
