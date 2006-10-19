@@ -355,8 +355,8 @@ switch $env(interfaceId) {
     pipe {
         set whatCalled [file rootname [file tail [info nameofexecutable]]]
         set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
-        source ../Run/window.tcl
         source ../Run/toolbox.tcl
+        source ../Run/window.tcl
         source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
 # Abandoned because it didn't start the COM interface properly
@@ -371,8 +371,8 @@ switch $env(interfaceId) {
     } dll {
         exec $SIMILE_PATH/$tgt$execExtn &
     } console {
-        source ../Run/window.tcl
         source ../Run/toolbox.tcl
+        source ../Run/window.tcl
 	rename prolog innerProlog
 	proc prolog {args} {
 	    ShowWatchWhileDoing [concat innerProlog $args]
