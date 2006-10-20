@@ -1517,8 +1517,7 @@ proc Customize {winId mode} {
     set n $window_info($winId.canvas,top_node)
     set looks(width) 180
     
-    set t [toplevel .customize -bd 4]
-    wm transient $t $winId
+    set t [PutItThere .customize $winId]
     
     switch -regexp $mode {
         condition|creation|immigration|reproduction|loss {
@@ -1656,7 +1655,8 @@ proc Customize {winId mode} {
     pack $t.actions
     LoadLooks $t $n $object $object
     RememberLooks $n
-    
+    LetItShow $t
+
     grab $t
     tkwait variable done
     grab release $t
@@ -1666,7 +1666,7 @@ proc Customize {winId mode} {
         UseLooksSaver $n $looks(safe)
     }
     unset window_info($t.canvas,top_node)
-    destroy $t
+    PackItUp $t
 }
 
 proc LoadLooks {t n target object} {

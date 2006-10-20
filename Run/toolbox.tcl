@@ -726,8 +726,11 @@ proc Respond {relayProc} {
 }
     
 proc StartComms {firstTime} {
-    global custom checkFor
+    global custom checkFor tcl_platform
 
+    if {[string equal Darwin $tcl_platform(os)]} {
+	return ;# MocOS takes care of this stuff -- well?
+    }
     set relay [file join [file dirname [pwd]] System bin relay]
     switch -- $firstTime {
         1 {
