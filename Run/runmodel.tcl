@@ -1284,9 +1284,10 @@ proc update_executable {node lang} {
 
 proc ex_load_dll {topNode lang progDir id node name incs} {
     #   phasecount and nodedata are set in generated code
-    global model_id model_ids model_prog env
+    global model_id model_ids model_prog env simtmpFiles
+
     if {[string match tcl $lang]} {
-        if {![file exists $progDir/model.tcl]} {
+        if {![DataExists $progDir/model.tcl]} {
             return 0
         }
 # This won't catch defns in subdirectories TODO once and properly
@@ -1297,7 +1298,11 @@ proc ex_load_dll {topNode lang progDir id node name incs} {
             source $fnFile
         }
         set model_prog($topNode) $progDir/model.tcl
-        source $model_prog($topNode)
+        if {[InPlugin]} {
+	    uplevel \#0 $simtmpFiles($model_prog($topNode))
+	} else {
+	    source $model_prog($topNode)
+	}
 	if {![catch {IdentField $simile_identifier version} buildV]} {
              return [expr $buildV==$env(SIMILE_VERSION)]
         } else {

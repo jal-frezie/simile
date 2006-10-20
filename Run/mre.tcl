@@ -1094,19 +1094,24 @@ namespace eval RunEnv {
     }
     
     proc LoadSHF {currentNode oldPath} {
-        global mimeSquirter simtmpdir
+        global mimeSquirter simtmpdir simtmpFiles
         global helperTable nameOfHelperStateFile errorInfo
         variable dp0
         variable shfString
         if {[catch {
-                set multiT [mime::initialize -file $oldPath]
-                set origVersion [mime::getheader $multiT Simile-Version]
-                set origin [mime::getheader $multiT Simile-Origin]
+	    if {[InPlugin]} {
+		set multiT [mime::initialize -string $simtmpFiles($oldPath)]
+	    } else {
+		set multiT [mime::initialize -file $oldPath]
+	    }
+	    set origVersion [mime::getheader $multiT Simile-Version]
+	    set origin [mime::getheader $multiT Simile-Origin]
 #                set metaFile [file join $simtmpdir temp_in.shf]
 #                set mimeSquirter [NetOpen $metaFile w]
 #                fconfigure $mimeSquirter -translation binary
 #                mime::getbody $multiT -command SquirtMime -blocksize 256
         } syndrome]} {
+	    error "MIME open failed: $syndrome"
 #do_in_editor puts "MIME open failed: $syndrome"
             set metaFile $oldPath
             set origVersion 0.0

@@ -815,7 +815,7 @@ namespace eval fileparams {
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
     global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
-    global SimileProject
+    global SimileProject simtmpFiles
     if {$notInput==-1} {
         set dataLocn targetData
         set widgetLocn targetNames
@@ -830,20 +830,25 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
     set oldDir [pwd]
-    if {[catch {
+    if {[InPlugin]} {
+	set multiT [mime::initialize -string $simtmpFiles($oldPath)]
+	set pstr [mime::getbody $multiT]
+    } else {
+	if {[catch {
             set multiT [mime::initialize -file $oldPath]
             set origVersion [mime::getheader $multiT Simile-Version]
             set metaFile [file join $simtmpdir temp_in.spf]
             set mimeSquirter [NetOpen $metaFile w]
             fconfigure $mimeSquirter -translation binary
             mime::getbody $multiT -command SquirtMime -blocksize 256}]
-    } {
-        set metaFile $oldPath
-        set origVersion 0.0
+	} {
+	    set metaFile $oldPath
+	    set origVersion 0.0
+	}
+	set pStr [NetOpen $metaFile r]
     }
     set ::bermudaTriangle {}
-    set pStr [NetOpen $metaFile r]
-    while {[gets $pStr savedValue] != -1} {
+    while {[pick $pStr savedValue] != -1} {
         #ShowMessage debug info "Restoring $savedValue" ok
         # ignore blank lines
         if {![llength $savedValue]} {
@@ -932,7 +937,9 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             }
         }
     }
-    close $pStr
+    if {![InPlugin]} {
+	close $pStr
+    }
     cd $oldDir
     if {$origVersion>=4.0} {
         file delete $metaFile
@@ -956,14 +963,15 @@ proc ExistCheck {topNode restoredComp tgtCap notInput source} {
         set tgtCap [TrimDTFromPath $tgtCap]
     }
 #puts "checking $tgtCap$restoredComp"
-    set node [GetCompProperty $topNode IdFromCapt $tgtCap$restoredComp]
+# wee bit dodgy as GetIdFrom... now succeeds for any arg
+    set node [GetIdFromCaptionPath $tgtCap$restoredComp]
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
         while {[string equal nomatch $node]} {
             set lostBit $nextLook
             set nextLook [join [lrange [split $lostBit /] 0 end-1] /]
             if {[llength $nextLook]} {
-                set node [GetCompProperty $topNode IdFromCapt $tgtCap$nextLook]
+                set node [GetIdFromCaptionPath $tgtCap$nextLook]
             } else {
                 set node $topNode
             }

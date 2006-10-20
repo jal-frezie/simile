@@ -17,29 +17,35 @@
 # existing Simile processes. This means I need to know where my temporary
 # files are...
 
+if {[info exists embed_args]} {
+    set custom(prefDir) {}
+} else {
 if {[file exists $env(HOME)]} {
 # 4.1 moved SimileUserDirectory for Windows -- check in old position and update
     set oldPrefs [file join $env(HOME) .simile]
     if {[string equal windows $tcl_platform(platform)]} {
-        set custom(prefDir) [file join $env(HOME) "My Documents" \
-                                 "My Simile files"]
-        if {[file exists $oldPrefs]} {
-            if {![file exists $custom(prefDir)]} {
-                file mkdir $custom(prefDir)
-                foreach sysB {layout prefs recent version} {
-                    catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
-                }
-                foreach subD [glob $oldPrefs/*] {
-                    file rename $subD $custom(prefDir)/[file tail $subD]
-                }
-                file delete $oldPrefs
-            }
-        }
+	set custom(prefDir) [file join $env(HOME) "My Documents" \
+				 "My Simile files"]
+	if {[file exists $oldPrefs]} {
+	    if {![file exists $custom(prefDir)]} {
+		file mkdir $custom(prefDir)
+		foreach sysB {layout prefs recent version} {
+		    catch {file rename $oldPrefs/$sysB $custom(prefDir)/.$sysB}
+		}
+		foreach subD [glob $oldPrefs/*] {
+		    file rename $subD $custom(prefDir)/[file tail $subD]
+		}
+		file delete $oldPrefs
+	    }
+	}
     } elseif [string match Darwin $tcl_platform(os)] {
-        set custom(prefDir) [file join $env(HOME) "Simile"]
+	set custom(prefDir) [file join $env(HOME) "Simile"]
     } else {
-        set custom(prefDir) $oldPrefs
+	set custom(prefDir) $oldPrefs
     }
+}
+tk scaling 1.5
+set graph(font) [list helvetica 8]
 }
 
 if {[string match windows $tcl_platform(platform)]} {
@@ -93,12 +99,10 @@ if {[string match Darwin $tcl_platform(os)]} {
         }
     }
     tclAE::installEventHandler aevt rapp handleReopenApp
-} else {
+} elseif {![info exists embed_args]} {
 
 # Scaling affects some metrics but not all, so squash it FTTB
 # to ensure consistency
-    tk scaling 1.5
-    set graph(font) [list helvetica 8]
 
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
@@ -212,8 +216,8 @@ switch $tcl_platform(platform) {
 #        dde servername $oldProc
         set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
-        set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
-        set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
+#        set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
+#        set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
         set graph(origin) 2
     } unix {
 #        tk appname $oldProc ;# in case starting it from SimileAutoObj
@@ -230,21 +234,25 @@ switch $tcl_platform(platform) {
     }
 }
 
-if {[string equal windows $tcl_platform(platform)]} {
+set authorities {prologId interfaceId install_time license_code \
+                        licensee_name licensee_corp}
+if {[info exists embed_args]} {
+    set fileStr [split [ReadFile /Run/userinfo.txt] \n]
+    foreach regEntry $authorities {
+	set env($regEntry) [string trimright [lindex $fileStr 0]]
+	set fileStr [lrange $fileStr 1 end]
+    }
+} elseif {[string equal windows $tcl_platform(platform)]} {
     package require registry
-    foreach regEntry {prologId interfaceId install_time license_code \
-                        licensee_name licensee_corp} {
+    foreach regEntry $authorities {
         set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
         catch {set env($regEntry) [registry get $regKey $regEntry]}
     }
 } else {
     set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-    gets $UserStream env(prologId)
-    gets $UserStream env(interfaceId)
-    gets $UserStream env(install_time)
-    gets $UserStream env(license_code)
-    gets $UserStream env(licensee_name)
-    gets $UserStream env(licensee_corp)
+    foreach regEntry $authorities {
+	gets $UserStream env($regEntry)
+    }
     close $UserStream
 }
 
@@ -298,11 +306,15 @@ if {[string equal Linux $tcl_platform(os)]} {
 }
 
 # first put up the splash screen
-image create photo splash
-splash read $SIMILE_PATH/Images/splash.gif
-
 toplevel .splash
+image create photo splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
+if {[info exists embed_args]} {
+    .splash.c create rect 2 59 2 79 -outline \#99cc99 -fill \#99cc99 ;# item 1
+    splash put [ReadFile /Images/splash.gif]
+} else {
+    splash read $SIMILE_PATH/Images/splash.gif
+}
 .splash.c create image 200 158 -image splash
 .splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
         -text "Simulistics Ltd. 2001-2006"
@@ -378,7 +390,7 @@ switch $env(interfaceId) {
 	    ShowWatchWhileDoing [concat innerProlog $args]
 	}
     } none {
-	source ../Run/toolbox.tcl
+	source toolbox.tcl
 # now we must replace some procedure definitions that don't work without Prolog
 	proc prolog {plCmd} {
 	    global fromProlog
@@ -399,19 +411,56 @@ switch $env(interfaceId) {
 	}
 #	proc GetExecTitle {node} {return $node}
 	proc RunEnv::Destroy {args} {
-	    StartComms -1
+	    if {![InPlugin]} {
+		StartComms -1
+	    }
 	    exit
 	}
 # Cheekily try initializing the whole works
 	set dummyNode none
-	ControlDraw $dummyNode
-# now open up
-	set myDir [file join $::simtmpdir exec]
-	destroy .splash
-	if {![info exists env(OPEN_MODEL)]} {
-	    set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0]
+	if {[InPlugin]} {
+	    proc PrefValue {long short} {
+		switch -regexp $short {
+		    popupHelp|helperManager|compValPop {
+			return 1
+		    } default {
+			error "No preference suplied in plugin mode for $short"
+		    }
+		}
+	    }
+	    proc check_auth_code {args} {return 1} ;# needs server-side proc
+	    set myDir memory
+	    MakeHelperMenu
+	} else {
+	    ControlDraw $dummyNode
+	    set myDir [file join $::simtmpdir exec]
 	}
-	LoadFile $dummyNode $myDir $env(OPEN_MODEL)
+# now open up
+	destroy .splash
+	set oldDir [pwd]
+	if {![info exists env(OPEN_MODEL)]} {
+	    if {[InPlugin]} {
+		set initMenu .initButt.models
+		# list directories into menus, choose with button and load contents into mime
+		pack [mybutton .initButt -text "Choose model to execute" -menu $initMenu]
+		mymenu $initMenu
+		set egPath ../Examples/Plugin
+		cd $egPath
+		foreach package [glob *.sml] {
+		    $initMenu add command -label [file tail $package] -command "set tgt $package"
+		}
+		tkwait variable tgt
+		set env(OPEN_MODEL) $tgt
+		pack forget .initButt
+	    } else {
+		set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0]
+	    }
+	}
+	set pick [LoadFile $dummyNode $myDir $env(OPEN_MODEL)]
+	cd $oldDir
+	if {[lsearch {no yes} $pick]==-1} {
+	    error {Load failure} $errorInfo
+	}
 	OpenProjectFile $myDir
     }
 }

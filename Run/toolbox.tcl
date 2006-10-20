@@ -5,11 +5,6 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
-package require BWidget
-catch {namespace import BWidget::*}
-package require tile
-package require MyTrf ;# loads right version of Trf
-
 # elements of runHow specify communication mode between editor and execution
 # processes
 
@@ -36,6 +31,13 @@ if {[string equal home $runHow(where)]} {
 
 source ../Run/prefs.tcl
 source ../Run/messages.tcl
+
+package require BWidget
+catch {namespace import BWidget::*}
+if {![InPlugin]} {
+    package require tile
+    package require MyTrf ;# loads right version of Trf
+}
 
 # load function help messages
 set oldDir [pwd]
@@ -84,7 +86,7 @@ cd $oldDir
 #}
 
 # Test new Windows printing technology -- see file for credits/licence
-if {[string match windows $tcl_platform(platform)]} {
+if {[string match windows $tcl_platform(platform)] && ![InPlugin]} {
     #    set tempDir [file attributes $tempDir -shortname]
     #    set tempDir [file join [file dirname $tempDir] [file tail $tempDir]]
     
@@ -677,11 +679,13 @@ proc UpdateExecution {node action} {
 if [string match Darwin $tcl_platform(os)] {
   set env(ITCL_LIBRARY) [pwd]/../System/lib/itcl3.3
 }
-package require Itcl
-itcl::class ModelWindowExtn {
-    variable winId
-    constructor {awinId} {
-        set winId $awinId
+if {![InPlugin]} {
+    package require Itcl
+    itcl::class ModelWindowExtn {
+	variable winId
+	constructor {awinId} {
+	    set winId $awinId
+	}
     }
 }
 
@@ -1126,14 +1130,18 @@ proc SaveFile {topNode tree tgt} {
 }
 
 proc SaveMimeBit {bit newPath} {
-    global mimeSquirter 
+    global mimeSquirter simtmpFiles
 
-    file mkdir [file dirname $newPath]
-    set mimeSquirter [NetOpen $newPath w]
-    fconfigure $mimeSquirter -translation binary
-    mime::getbody $bit -command SquirtMime -blocksize 256
-    if {![catch {mime::getheader $bit Date-Modified} Date]} {
-	file mtime $newPath [clock scan [lindex $Date 0]]
+    if {[InPlugin]} {
+	set simtmpFiles($newPath) [mime::getbody $bit]
+    } else {
+	file mkdir [file dirname $newPath]
+	set mimeSquirter [NetOpen $newPath w]
+	fconfigure $mimeSquirter -translation binary
+	mime::getbody $bit -command SquirtMime -blocksize 256
+	if {![catch {mime::getheader $bit Date-Modified} Date]} {
+	    file mtime $newPath [clock scan [lindex $Date 0]]
+	}
     }
 }
 
@@ -1149,8 +1157,12 @@ proc LoadFile {topNode tree tgt} {
     #ShowMessage debug info "LoadFile $tree $tgt" ok
     set CodeChecked no
     if {[catch {
-            set multiT [mime::initialize -file $tgt]
-            if {[catch {set intent [mime::getheader $multiT Readability]}]} {
+	if {[InPlugin]} {
+	    set multiT [mime::initialize -string [ReadFile $tgt]]
+	} else {
+	    set multiT [mime::initialize -file $tgt]
+	}
+	if {[catch {set intent [mime::getheader $multiT Readability]}]} {
                 set intent standard
             }
             foreach bit [mime::getproperty $multiT parts] {
@@ -1192,7 +1204,7 @@ proc LoadFile {topNode tree tgt} {
             }
             #ShowMessage debug info "LoadFile after unpack\n[glob $tree/*]" ok
             # if there is a project file
-            if {[file exists $tree/model.spj]} {
+            if {[DataExists $tree/model.spj]} {
                 #ShowMessage debug info "LoadFile file is package" ok
                 set loadingProject [list $topNode $tgt]
                 set mimedir $tree
@@ -1211,6 +1223,14 @@ proc LoadFile {topNode tree tgt} {
 #                    set Description "Simile project file"
 #                    set style attachment
 #               }
+proc DataExists {path} {
+    global simtmpFiles
+    if {[InPlugin]} {
+	return [info exists simtmpFiles($path)]
+    } else {
+	return [file exists $path]
+    }
+}
 
 proc GetParts {top tree} {
     set mimes {}
@@ -1415,11 +1435,18 @@ proc RunIfPackage {} {
 }
 
 proc OpenProjectFile {path} {
+    global simtmpFiles
+
     set pFile [file join $path model.spj]
-    set projectF [NetOpen $pFile r]
-    gets $projectF SimileProjectData
-    close $projectF
-    file delete $pFile
+    if {[InPlugin]} {
+	set SimileProjectData $simtmpFiles($pFile)
+	unset simtmpFiles($pFile)
+    } else {
+	set projectF [NetOpen $pFile r]
+	gets $projectF SimileProjectData
+	close $projectF
+	file delete $pFile
+    }
     OpenProject $SimileProjectData $path
 }
 
