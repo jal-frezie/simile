@@ -49,18 +49,25 @@ proc myURL {url} {
     }
 }
 
+proc makeProgress {} {
+    global fileCount
+
+    if {[winfo exists .splash.c]} {
+	incr fileCount
+	.splash.c coords 1 [list 2 59 [expr {int(2.5*$fileCount)}] 79]
+	#    .splash.c itemconfig 4 -text $fileCount
+	.splash.c raise 1
+	raise .splash
+	update idletasks
+    }
+}
+
 proc ReadFile {file} {
-    global workingDir fileCount
+    global workingDir
     set fullFile [string range [fileSeek $workingDir $file] 1 end]
     checkLikelihood $fullFile
     ::browser::status "Loading $fullFile"
-    incr fileCount
-    if {[winfo exists .splash.c]} {
-	.splash.c coords 1 [list 2 59 [expr {int(2.5*$fileCount)}] 79]
-	#    .splash.c itemconfig 4 -text $fileCount
-	raise .splash
-    }
-    update idletasks
+    makeProgress
     return [myURL $fullFile]
     ::browser::status "Done"
 }
@@ -116,8 +123,6 @@ proc MessURL {name} {
 rename glob oldGlob
 
 proc glob {args} {
-    global fileCount
-
     set tpt [lindex $args end]
     set dir [string range [pwd] 1 end]
     set pat $tpt
@@ -127,11 +132,7 @@ proc glob {args} {
     }
 
     ::browser::status "Listing $dir"
-    incr fileCount
-    .splash.c coords 1 [list 2 59 [expr {int(2.5*$fileCount)}] 79]
-#    .splash.c itemconfig 4 -text $fileCount
-    raise .splash
-    update idletasks
+    makeProgress
     set rawData [myURL $dir/?]
     ::browser::status "Done"
 
@@ -157,26 +158,13 @@ set tcl_platform(os) plugin
 
 set graph(font) [list helvetica 8]
 
-# Put splash screen up
-toplevel .splash
-pack [canvas .splash.c -width 400 -height 316 -bd 2] -padx 0 -pady 0
-.splash.c create rect 2 59 2 79 -outline \#99cc99 -fill \#99cc99 ;# item 1
-image create photo splash -data [ReadFile Images/splash.gif]
-.splash.c create image 200 158 -image splash
-.splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
-    -text "Simulistics Ltd. 2001-2006"
-.splash.c create text 270.0 275.0 -font $graph(font) -fill \#660066 -text "Model Web Interface"
-set regInfo "Web Users"
-catch {append regInfo ", Everywhere"}
-.splash.c create text 270.0 295.0 -font $graph(font) -fill \#660066 -text "Registered to $regInfo"
-.splash.c raise 1
 rename source oldsource
 
 cd /System/lib
 foreach libDir [glob */] {
     lappend auto_path [file join /System lib $libDir]
 }
-cd /Run
+cd /
 
 proc source {file} {
     uplevel 1 [ReadFile $file]
@@ -195,11 +183,65 @@ proc option {args} {
     }
 }
 
-source mymenu.tcl
+source Run/mymenu.tcl
 proc menu {args} {
     eval mymenu $args
 }
 
-source exec_only.tcl
+# non-tclet should use c stub, but license is tricky
+proc random01 {} {
+    return [expr rand()]
+}
 
-destroy .splash
+proc graph_table {action indx args} {
+    global graph_lists
+
+    switch $action {
+	21 {
+	    return $graph_lists($indx)
+	} 22 {
+	    set graph_lists($indx) $args
+	} 23 {
+	    set xval [lindex $args 0]
+	    for {set i 0} {$i<8} {incr i} {
+		set gpt [lindex $graph_lists($indx) $i]
+		set [lindex {xlow xhigh xspan ylow yhigh yspan range xsize} $i] $gpt
+	    }
+	    set spaces [expr {$xsize-1}]
+	# Interval is distance from left of graph in point units
+	    set interval [expr {$spaces*($xval-$xlow)/($xhigh-$xlow)}]
+	    switch -regexp $range {
+		0|4|5 { ;# truncate to fit on graph
+		    set interval [expr {$interval<0?0:($interval>$spaces?$spaces:$interval)}]
+		} 2|6 { ;# wrap around graph range */
+		    set interval [expr {$spaces*($interval/$spaces - floor($interval/$spaces))}]
+		    #case 1: extrapolate end sections of graph
+		}
+	    }
+#	/* right = use_graph_pointer->points;
+#	interval++;
+#
+#	for (length=spaces;length;length--) {
+#		left = right;
+#		right++;
+#		if (--interval <= 1) break;
+#	}
+#	*/
+	    if {$range > 3} {
+		set lower [max 0 [min $spaces [expr {round($interval)}]]]
+		set intersection [lindex $graph_lists($indx) [expr {8+$lower}]]
+	    } else {
+		set lower [max 0 [min [expr {$spaces-1}] [expr {int($interval)}]]]
+		set interval [expr {$interval-$lower}]
+		set left [lindex $graph_lists($indx) [expr {8+$lower}]]
+		set right [lindex $graph_lists($indx) [expr {9+$lower}]]
+		set intersection [expr {$interval*$right+(1-$interval)*$left}]
+	    }
+	    return [expr {$ylow + ($yhigh - $ylow)*$intersection/$yspan}]
+	} default {
+	    error "No action $action for graph $indx withdata $args"
+	}
+    }
+}
+
+source Run/simile.tcl
