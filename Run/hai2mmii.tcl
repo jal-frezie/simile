@@ -762,7 +762,6 @@ proc WarnNoData {node} {
 }
 
 proc InputVarFor {topNode node} {
-puts "InputVarFor $topNode $node"
     switch -glob [GetCompProperty $topNode Type $node] {
         FLAG {
             return checkStates

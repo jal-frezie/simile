@@ -645,7 +645,6 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 }
 
 proc PlaceInArray {where what varData inC} {
-puts "PlaceInArray $where $what $varData $inC"
     #ShowMessage debug99 info "PlaceInArray $where $what $varData $inC" ok
     switch $inC {
         1 {

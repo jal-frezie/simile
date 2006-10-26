@@ -83,8 +83,6 @@ proc GetNodeIdFromRef {dest indices} {
 
 proc collect {tgt index count args} {
     global paramLocns
-    puts [list set $tgt BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
-		  $args]
     set val [BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
 		  $args]
     if {[llength $val]} {
