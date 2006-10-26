@@ -762,13 +762,18 @@ proc WarnNoData {node} {
 }
 
 proc InputVarFor {topNode node} {
+puts "InputVarFor $topNode $node"
     switch -glob [GetCompProperty $topNode Type $node] {
         FLAG {
             return checkStates
         } ENUM(*) {
             return comboChoices
         } default {
-            return sliderVals
+	    if {[string equal TABLE [GetCompProperty $topNode Eval $node]]} {
+		return paramData
+	    } else {
+		return sliderVals
+	    }
         }
     }
 }

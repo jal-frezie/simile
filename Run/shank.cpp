@@ -1232,6 +1232,18 @@ listParamArray* param_array_item(listParamArray* start, char* seekNodeId) {
   }
 }
   
+listParamArray* param_item_from_id(listParamArray* start, void* modelId,
+				   int paramId) {
+  if (!start) {
+    return NULL;
+  } else if (start->spareModel==(Model*)modelId && 
+	     (start->nodeLine)->graph==paramId) {
+    return start;
+  } else {
+    return param_item_from_id(start->next, modelId, paramId);
+  }
+}
+  
 void* use_array_for_params(char* nodeId, long int topModel, void* dataSpace) {
   listParamArray* arrSlot;
 
@@ -1320,18 +1332,18 @@ int set_time_point_elt(char* nodeId, double time, double val, int* indxs) {
   }
 }  
 
-void get_value_pointer(void* modelId, void* modelSlot, char* nodeId, 
+void get_value_pointer(void* modelId, void* modelSlot, int paramId, 
 		       int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
-  paramArrayItem = param_array_item(param_array_base, nodeId);
+  paramArrayItem = param_item_from_id(param_array_base, modelId, paramId);
   //  sprintf(globMess, "get_value_pointer for %ld node %s indx0 %d item %ld",
   //	  modelSlot, nodeId, *indxs, paramArrayItem);
   //  showMess(globMess);
   if (paramArrayItem) {
     paramArrayItem->extract_elt(modelSlot, indxs);
   } else {
-    get_client_value_pointer(modelId, modelSlot, nodeId, ic, indxs);
+    get_client_value_pointer(modelId, modelSlot, paramId, ic, indxs);
   }
   //  sprintf(globMess, "Think we got %lf", *(double*)modelSlot);
   //  showMess(globMess);

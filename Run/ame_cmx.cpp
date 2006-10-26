@@ -321,7 +321,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
 /* Now for procedures that are called from the dll and therefore have to be
    global even though they may refer to stuff by model type and instance */
 
-void get_tcl_value_pointer(void* modelPtr, void* tgt, char* id, 
+void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId, 
 			   int count, int* inds) {
   node_data_line* data_line;
   char caption[255];
@@ -332,6 +332,7 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, char* id,
   long int mSpare;
   double makeInt;
   enum_type_data* usedTypes[32];
+  char id[] = "dummy";
 
   data_line = searchinfo(id, (long int)modelPtr, dims, path, usedTypes);
   strcpy(caption, id);

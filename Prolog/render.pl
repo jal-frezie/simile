@@ -13,7 +13,7 @@ sicstus_module( render, [render/5, make_assignment/4, render_all/5,
 		make_pointer/3, resolve_pointer/3, 
 		make_constant_list/3, get_element_ref/4,
 		make_integer/3, command_substitute/3,
-		generate_data_decls/12, make_procedure_call_chars/3] ).
+		generate_data_decls/13, make_procedure_call_chars/3] ).
 
 sicstus_use_module( [sp_only, m_class, utility, ame_gen, units, text, utility,
 		library(lists)] ).
@@ -476,7 +476,7 @@ do_loop_pointers(L, SmName, Type, Name, Late) :-
 	Late = []).
 
 generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
-		    Decl, Exts, EnumBits, NodeData) :-
+		    Collects, Decl, Exts, EnumBits, NodeData) :-
 	render(L, data_declaration, Inst, 4, Decl),
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-LocalDims),
 	render(L, case_start, Match, 8, [Ext1]),
@@ -565,6 +565,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS']),
 	    (nth(GraphPointer, GraphOwners, [BaseName | _]), !;
+		nth(GraphPointer, Collects, BaseName), !;
 	    GraphPointer = 0),
 
 	    (BaseName has_class_refinement min_val of Min, 

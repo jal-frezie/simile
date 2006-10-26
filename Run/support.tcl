@@ -81,7 +81,19 @@ proc GetNodeIdFromRef {dest indices} {
     }
 }
 
-proc collect {tgt node count args} {
+proc collect {tgt index count args} {
+    global paramLocns
+    puts [list set $tgt BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
+		  $args]
+    set val [BringParameter $paramLocns($index,arr) $paramLocns($index,nod) \
+		  $args]
+    if {[llength $val]} {
+# Check that input source exists, it will not if model is being initialized
+	set $tgt $val
+    }
+}
+    
+proc oldcollect {tgt node count args} {
     global myNode
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
     if {[string match TABLE [getinfo $node 3]]} {

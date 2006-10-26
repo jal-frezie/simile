@@ -339,7 +339,10 @@ used when entering file parameters */
 	    AllGraphs = []),
 	build_submodel_functions(Language, Phases,
 				 StateForm, UpdateForm, SortedForm, Used,
-				 ExtSets, AllGraphs, FnList),
+				 ExtSets, AllGraphs, Collects, FnList),
+	length(Collects, ParamCount),
+	render(Language, variable_declaration,
+	       [int, paramcount, [], ParamCount], 0, ParamDec),
 
 	append(EntryArcs, [end], EntryList), /* because msvc++ barfs
 	                                        at empty lists */
@@ -355,8 +358,8 @@ wot need them */
 	RootInstance = instance(submodel, root, xrefs(AugmentedModel, _,[],_),
 				'AME_model', 'AME_model'-[]),
 	generate_main_decls(Language, RootInstance, [], 1,
-			    ExtSets, Used, AllGraphs, TypeDecls, PointerDecls,
-			    EnumBits, NodeData),
+			    ExtSets, Used, AllGraphs, Collects,
+			    TypeDecls, PointerDecls, EnumBits, NodeData),
 	append(InitTypes, [EndTopType], TypeDecls),
 	render( Language, comment, 'STRUCTURE TYPE DECLARATIONS', 0,
 							StructTypeComment),
@@ -365,7 +368,7 @@ wot need them */
 	render( Language, comment, 'GLOBAL DECLARATIONS', 0,
 		[GlobalDeclComment]),
 	append([['#include <support1.cpp>',GlobalDeclComment | GlobalDeclText],
-		IdentDec, PhaseDec, [Times, DTs]], Headers),
+		IdentDec, PhaseDec, ParamDec, [Times, DTs]], Headers),
 	send_to_dest(Stream, Headers),
 
 	list_matching_files('../Functions/*.cpp', FnIncs),
@@ -525,7 +528,7 @@ temporary variables used when expanding expressions.
 the model node data table and the extractor case statements */
 
 generate_main_decls(L, Instance, Tree, Level, ExtSets,
-		    Used, Graphs, TypeDecls, PointerDecls,
+		    Used, Graphs, Collects, TypeDecls, PointerDecls,
 		    EnumBits, NodeData) :-
 	Instance = instance(submodel, SymbolicName, 
 			xrefs(Model, _, Bases, _), _, ModelType-_),
@@ -568,8 +571,8 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 	render(L, procedure_call, return('NULL'), 4, ExtParanoia),
 	render(L, end(procedure), get_pointer, 0, ExtN),
 % Dims in next line replaced by [] for local dims only
-	generate_local_decls(L, SubInstances, Tree, Level,
-			     ExtSets, Used, Graphs, Publics, SubTypeDecls,
+	generate_local_decls(L, SubInstances, Tree, Level, ExtSets, Used,
+			     Graphs, Collects, Publics, SubTypeDecls,
 			     SubPointerDecls, Exts, EnumBits, NodeData),
 
 	append(MainClass, [proc_decls | EndClass], ThisDecl),
@@ -581,9 +584,9 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 
 	
 
-generate_local_decls(_, [], _,_,_,_,_, [], [], [], [], [], []).
+generate_local_decls(_, [], _,_,_,_,_,_, [], [], [], [], [], []).
 generate_local_decls(L, [Instance | Instances], Tree, Level,
-		     ExtSets, Used, Graphs,
+		     ExtSets, Used, Graphs, Collects,
 		     PublicDecls, TypeDecls, PointerDecls, Exts,
 		     EnumBits, NodeData) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
@@ -611,10 +614,10 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 	append(Tree, [Level], DeepTree),
 	    Posn = NewDims),
 	generate_data_decls(L, Level, NewDims, DeepTree, Instance, ExtSets,
-			    Used, Graphs, LocalPublicDecls,
+			    Used, Graphs, Collects, LocalPublicDecls,
 			    LocalExts, LocalEnumBits, LocalNodeData),
 	(generate_main_decls(L, Instance, DeepTree, 1,
-			     ExtSets, Used, Graphs,
+			     ExtSets, Used, Graphs, Collects,
 			     DeepTypeDecls, DeepPointerDecls,
 			     DeepEnumBits, DeepNodeData), !;
 	 /* Not a submodel */
@@ -622,7 +625,7 @@ generate_local_decls(L, [Instance | Instances], Tree, Level,
 	    [[],            [],               [],           []]),
 	NewLevel is Level + 1,
 	generate_local_decls(L, Instances, Tree, NewLevel,
-			     ExtSets, Used, Graphs,
+			     ExtSets, Used, Graphs, Collects,
 			     MorePublicDecls, MoreTypeDecls, MorePointerDecls,
 			     MoreExts, MoreEnumBits, MoreNodeData),
 	append(LocalPublicDecls, MorePublicDecls, PublicDecls), 
@@ -667,12 +670,13 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 		 Proc_ending,Blank], Decls).
 */
 
-build_eval_proc(Language, ProcName, OrderedForm, Used, AllGraphs, Decls) :-
+build_eval_proc(Language, ProcName, OrderedForm, Used, AllGraphs, Collects,
+		Decls) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
-	do_assign_list( Language, ActionForm, AllGraphs, [], [[]], 
+	do_assign_list( Language, ActionForm, AllGraphs, RCollects, [], [[]], 
 			Used, Temp1, FuncStatements),
-
+	reverse(RCollects, Collects),
 	render(Language, procedure_start,
 	       call(void, ProcName, [real, start_time], [int, phase]), 0,
 	       EvalProcDeclText),
@@ -709,7 +713,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Used, AllGraphs, Decls) :-
 % loop to the standard preferred unit
 
 build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
-			  Used, ExtUsers, AllGraphs, Decls) :-
+			  Used, ExtUsers, AllGraphs, Ccts, Decls) :-
 	reassure_user("Ordering model execution assignments"),
 
 	NotDone is Phases+1,
@@ -733,7 +737,8 @@ build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
 	    [unify(Language),
 	     build([updatemodel, advancemodel, int_evalmodel, ext_evalmodel]),
 	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
-	     unify(Used), unify(AllGraphs), build(Decls)]).
+	     unify(Used), unify(AllGraphs), build([[], [], Ccts, []]),
+	     build(Decls)]).
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
@@ -1291,7 +1296,7 @@ for values from the execution environment. */
 
 input_params_in(Vars, SmPath, SmStep,
 		make(Val, Wait, Path, Step, [CollectFn])) :-
-	member(instance(Type, Param, _, elt(CPath, _, Val, _), _-DimTypes),
+	member(instance(Type, Param, _, elt(_CPath, _, Val, _), _-DimTypes),
 	       Vars),
 	member(Type, [function, init_function]),
 	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Param),
@@ -1311,21 +1316,21 @@ input_params_in(Vars, SmPath, SmStep,
 	    (Type = function, Step = SmStep, Wait = [time];
 	    Type = init_function, Step = 0, Wait = [on_reset])),
 	length(VarInds, Count),
-	caption_for(Param, Tail),
-	append(Required, [_], [Tail | CPath]),
-	comma_link(Required, CSPath),
-	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), CSPath, Count
+%	caption_for(Param, Tail),
+%	append(Required, [_], [Tail | CPath]),
+%	comma_link(Required, CSPath),
+	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
 		      | VarInds].
 
 /* This takes a list of submodel captions, innermost first, and converts it to
-a forward-slash-separated path, outermost first, with leading slash. */
+a forward-slash-separated path, outermost first, with leading slash.
 comma_link(CPath, CSPath) :-
 	CPath = [], CSPath = '';
 	CPath = [Inner | Rest],
 	comma_link(Rest, PPath),
 	append_atoms([PPath, '/', Inner], CSPath).
 
-/* vars_only: remove indices of vm models from those passed by 'collect'. Per-
+vars_only: remove indices of vm models from those passed by 'collect'. Per-
 record models are treated as vm if the parameter is variable. */
 
 vars_only(List, AllVar, ParamType) :-

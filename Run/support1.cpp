@@ -177,7 +177,7 @@ double glob_element (double* arrptr, int phase) {
 }
 
 template <class DestClass>
-void collect (DestClass* dest, char* node_id, int id_count, ...) {
+void collect (DestClass* dest, int record_id, int id_count, ...) {
   va_list argptr;
   int curIndices[32];
   int length;
@@ -188,7 +188,7 @@ void collect (DestClass* dest, char* node_id, int id_count, ...) {
   }
   va_end(argptr);
 
-  (*get_value_pointer_ref)(myClassPtr, dest, node_id, id_count, curIndices);
+  (*get_value_pointer_ref)(myClassPtr, dest, record_id, id_count, curIndices);
 }
    
 template <class SMClass>

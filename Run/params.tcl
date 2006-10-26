@@ -314,7 +314,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 }
 
 proc AcceptData {topNode compName notInput complain} {
-    global paramDims runState msgs
+    global paramDims runState msgs paramLocns
     if {$notInput==-1} {
         set dataLocn targetData
         set widgetLocn targetNames
@@ -401,7 +401,11 @@ proc AcceptData {topNode compName notInput complain} {
             set whatMaking parameter
             if {$useCppArray} {
                 c_setparamarray $::model_id($topNode) $node
-            }
+            } else {
+		set paramIdx [getinfo $node 6]
+		set paramLocns($paramIdx,nod) $node
+		set paramLocns($paramIdx,arr) [InputVarFor $topNode $node]
+	    }
         }
         if {[catch {ListToArray $topNode $node {} $trans $recordDims \
                         $suppliedData($compName) $useCppArray} result]} {
@@ -641,6 +645,7 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 }
 
 proc PlaceInArray {where what varData inC} {
+puts "PlaceInArray $where $what $varData $inC"
     #ShowMessage debug99 info "PlaceInArray $where $what $varData $inC" ok
     switch $inC {
         1 {

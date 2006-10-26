@@ -4,7 +4,7 @@
 **** being the starting point.                                              ****
 *******************************************************************************/
 
-sicstus_module( language, [do_assign_list/8] ).
+sicstus_module( language, [do_assign_list/9] ).
 
 sicstus_use_module( [sp_only, render,m_class,utility,
 		ame_gen,units,text,library(lists)] ).
@@ -39,7 +39,7 @@ fill_instance_ids(tcl, _, Pointer, RefIndices,
 		render(tcl, assignment, Target=NewRef, Indent, FillLater).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-/* do_assign_list/8: This takes a list of assignments interspersed with
+/* do_assign_list/9: This takes a list of assignments interspersed with
 start_submodel and end_submodel statements, the start containing the
 submodel name, the pointer used inside to refer to it, and the number of
 instances. Args have become rather many; they are as follows:
@@ -59,6 +59,7 @@ Used: Open-ended list of used variable names, needed when generating new index v
 
 Returned:
 ---------
+Collects: list of ids of parameters in order of their references
 Temps: Names of temporary variables created to hold intermediate results.
 Results: The generated code.
 
@@ -66,22 +67,22 @@ The actual procedures have been renamed do_assignment, so I can put in
 an exception if one of them fails, to assist debugging. */
 
 do_assign_list(L, [Clause | Clauses],
-		Graphs, Preambles, Postambles,
+		Graphs, Collects, Preambles, Postambles,
 		Used, Temps, Results) :-
 	/* write_to_chars(Clause, ClauseMess),
 	dialogue:reassure_user(ClauseMess), test only */
 	do_assignment(L, [Clause | Clauses],
-		      Graphs, Preambles, Postambles,
+		      Graphs, Collects, Preambles, Postambles,
 			Used, Temps, Results);
 	raise_exception(cannot_convert_to_code(Clause)).
 
-do_assign_list(_, [], _, [], [Result], _, [], Result).
+do_assign_list(_, [], _, [], [], [Result], _, [], Result).
 
 /* This makes a loop for a fixed membership submodel.
 Should really be done with make_array_assignment. */
 
 do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
-                GraphCount, Preambles, 
+                GraphCount, Collects, Preambles, 
                 [Current | Postambles],
                 Used, Temps, Results) :-
         length(Postambles, Nesting),
@@ -92,7 +93,7 @@ do_assignment(L, [open_index(glob(Loop, Inds), loop(Bound)) | Clauses],
         render(L, end(for), Count, Indent, Close),
 
         do_assign_list(L, Clauses,
-                       GraphCount, [Current | Preambles],
+                       GraphCount, Collects, [Current | Preambles],
                        [Open, Close | Postambles],
                        Used, Temps1, Results),
 	merge_lists(Temps1, Temps0, Temps).
@@ -102,7 +103,7 @@ explicitly (using element(...)), so it can contain any expression, even a
 graph. */
 
 do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
-		 | Clauses], Graphs, Preambles, 
+		 | Clauses], Graphs, Collects, Preambles, 
 	      [Current | Postambles],
 	      Used, Temps, Results) :-
 
@@ -133,7 +134,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, fm_loop(IndExprs, Alarm))
 	Starters = Entry,
 	    Finishers = []),
 
-	do_assign_list(L, Clauses, Graphs, [Current | Preambles],
+	do_assign_list(L, Clauses, Graphs, Collects, [Current | Preambles],
 			[Starters, Finishers | Postambles],
 			Used, Temps1, Results),
 	merge_lists(Temps1, Temps0, Temps).
@@ -145,7 +146,7 @@ variable length, otherwise add the loops to explicitly
 hunt through them */
 
 do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
-		 | Clauses], Graphs, Preambles, 
+		 | Clauses], Graphs, Collects, Preambles, 
 	      [Current | Postambles],
 	      Used, Temps, Results) :-
 
@@ -199,7 +200,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	append([PreStart, Starts, LoadBaseRefs], Starters),
 	append([PreFinish, Finish], Finishers),
 
-	do_assign_list(L, Clauses, Graphs, [Current | Preambles],
+	do_assign_list(L, Clauses, Graphs, Collects, [Current | Preambles],
 			[Starters, Finishers | Postambles],
 			Used, Temps2, Results),
 	merge_lists(Temps2, Temps1, Temps).
@@ -209,7 +210,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 
 do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 			   BasePtrs) | Clauses],
-	      Graphs, Preambles, 
+	      Graphs, Collects, Preambles, 
 	      [Current | Postambles], Used, Temps, Results) :-
 
 	length(Preambles, Nesting),
@@ -295,14 +296,14 @@ do_assignment(L, [generate(Name, Top, Pointer, Phase, VMPtrs, LocalIndices,
 	/* That should make some good code */
 
 	do_assign_list(L, Clauses,
-			Graphs, [Current | Preambles],
+			Graphs, Collects, [Current | Preambles],
 			[Starters, Finishers | Postambles],
 			Used, Temps2, Results),
 	merge_lists(Temps1, Temps2, Temps3),
 	merge_lists(Temps0, Temps3, Temps).
 
 do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
-	      Graphs, Preambles, 
+	      Graphs, Collects, Preambles, 
 	      [Current | Postambles], Used, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is 4*Nesting,
@@ -318,7 +319,7 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
 	append(ChopTail, EndLoop, Finishers),
 
 	do_assign_list(L, Clauses,
-			Graphs, [Current | Preambles],
+			Graphs, Collects, [Current | Preambles],
 			[Starters, Finishers | Postambles],
 			Used, Temps, Results).
 
@@ -326,7 +327,7 @@ do_assignment(L, [bound_gen_loop(Top, Name) | Clauses],
 program. So it needs its own clause... */
 
 do_assignment(L, [reset_list(Ptr, Name) | Clauses],
-		Graphs, 
+		Graphs, Collects, 
 		Preambles, [Current | Postambles],
 		Used, Temps, Results) :-
 	length(Preambles, Nesting),
@@ -340,7 +341,7 @@ do_assignment(L, [reset_list(Ptr, Name) | Clauses],
 	render(L, assignment, Ref=0, Indent, L2),
 	append(Current, DelCode, NewCurrent),
 	do_assign_list(L, Clauses,
-			Graphs, Preambles, [NewCurrent | Postambles],
+			Graphs, Collects, Preambles, [NewCurrent | Postambles],
 			Used, Temps, Results).
 
 /* Clause to handle end of a submodel loop does not actually generate any code (this
@@ -348,12 +349,12 @@ is all done at start submodel time) but rearranges the preambles and postambles 
 subsequent stuff is put outside the loop.
 */
 
-do_assignment(L, [finish_level | Clauses], Graph_count,
+do_assignment(L, [finish_level | Clauses], Graph_count, Collects, 
 		[LastCurrent | Preambles], [Current, NextCurrent | Postambles],
 		Used, Temps, Results) :-
 
 	append([LastCurrent, Current, NextCurrent, ['']], NewCurrent),
-	do_assign_list(L, Clauses, Graph_count,
+	do_assign_list(L, Clauses, Graph_count, Collects,
 		Preambles, [NewCurrent | Postambles],
 		Used, Temps, Results).
 
@@ -365,28 +366,29 @@ unnecessary if the thing were designed so it could call itself on parts of the
 program. I blame Geraint....*/
 
 do_assignment(L, [verbatim(CodeLine) | Clauses],
-		Graphs, 
+		Graphs, Collects, 
 		Preambles, [Current | Postambles],
 		Used, Temps, Results) :-
 	append(Current, CodeLine, NewCurrent),
 	do_assign_list(L, Clauses,
-			Graphs, Preambles, [NewCurrent | Postambles],
+			Graphs, Collects, Preambles, [NewCurrent | Postambles],
 			Used, Temps, Results).
 
 do_assignment(L, [SpecialOp | Clauses],
-		Graphs, 
+		Graphs, NewCollects,
 		Preambles, [Current | Postambles],
 		Used, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is Nesting*4,
 
-	(SpecialOp =.. [collect, DestSpec | Args],
+	(SpecialOp =.. [collect, DestSpec, TgtRef | Args],
+	    NewCollects = [TgtRef | Collects],
 	    make_scalar(L, DestSpec, [], Dest),
-	    make_evaluation_routine_all(L, Args, [], [NodeId | Inds]),
 	    refer(L, Dest, DestRef),
-	    render:make_constant_string(L, NodeId, Node),
-	    CallSpec =.. [collect, DestRef, Node | Inds];
+	    make_evaluation_routine_all(L, Args, [], Inds),
+	    CallSpec =.. [collect, DestRef, CollectId | Inds];
 	SpecialOp =.. [SubCall, NodeId, InstHandle, NewCond],
+	    NewCollects = Collects,
 	    member(SubCall,
 		   [update_submodel, advance_submodel,
 		    int_eval_submodel, ext_eval_submodel]),
@@ -396,17 +398,20 @@ do_assignment(L, [SpecialOp | Clauses],
 	    refer_value(L, InstPtr, InstHandleRef),
 	    CallSpec =.. [SubCall, Node, InstHandleRef, start_time, PassTest];
 	SpecialOp = search_from(ArcInd, _, TopRef),
-	    CallSpec = search_from(myClassPtr, ArcInd, TopRef)), 
-	render(L, procedure_call, CallSpec, Indent, CodeLine),
-	append(Current, CodeLine, NewCurrent),
-	do_assign_list(L, Clauses,
-			Graphs, Preambles, [NewCurrent | Postambles],
-			Used, Temps, Results).
+	    NewCollects = Collects,
+	    CallSpec = search_from(myClassPtr, ArcInd, TopRef)),
+	append(Current, [CodeLine], NewCurrent),
+	do_assign_list(L, Clauses, Graphs, Collects,
+		       Preambles, [NewCurrent | Postambles],
+			Used, Temps, Results),
+	length(NewCollects, CollectId), 
+	render(L, procedure_call, CallSpec, Indent, [CodeLine]).
+% have to render after instantiating CollectId
 
 /* This one starts a conditional execution sequence dependent on the
 given submodel */
 
-do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graphs, 
+do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graphs, Collects, 
 	      Preambles, [Current | Postambles],
 	      Used, Temps, Results) :-
 	length(Preambles, Nesting),
@@ -419,7 +424,7 @@ do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graphs,
 	NewPres = [Current | Preambles],
 	NewPosts = [Test, Finishers | Postambles],
 	do_assign_list(L, Clauses,
-		       Graphs, NewPres, NewPosts,
+		       Graphs, Collects, NewPres, NewPosts,
 		       Used, Temps, Results).
 
 /* Initial membership of populations was handled by the new_member
@@ -429,7 +434,7 @@ associations can too, and makes resetting faster. */
 
 
 do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
-	      Graphs, Preambles, [Current | Postambles],
+	      Graphs, Collects, Preambles, [Current | Postambles],
 	      Used, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is Nesting*4,
@@ -460,9 +465,10 @@ do_assignment(L, [init_mems(ParentPtr, Name, create(InitVars)) | Clauses],
 	remove them from the list I will need them again for update */
 	Continuation = [finish_level | Clauses], 
 
-	do_assign_list(L, Continuation, Graphs, [Current | Preambles],
-			[Starters, Finishers | Postambles],
-			Used, Temps0, Results),
+	do_assign_list(L, Continuation, Graphs, Collects,
+		       [Current | Preambles],
+		       [Starters, Finishers | Postambles],
+		       Used, Temps0, Results),
 	merge_lists([[Type, Pointer, []]], Temps0, Temps).
 
 /* This one should be easy too. When I extract the procedures for initializing
@@ -472,7 +478,7 @@ initialized when their parents are, this causes the tests to be done and the
 inits to be included. */
 
 do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
-	      Graphs, Preambles, [Current | Postambles],
+	      Graphs, Collects, Preambles, [Current | Postambles],
 	      Used, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is Nesting*4,
@@ -516,9 +522,10 @@ do_assignment(L, [new_member(ParentPtr, Name, NewSpec) | Clauses],
 	remove them from the list I will need them again for update */
 	Continuation = [finish_level | Clauses], 
 
-	do_assign_list(L, Continuation, Graphs, [Current | Preambles],
-			[Starters, Finishers | Postambles],
-			Used, Temps0, Results),
+	do_assign_list(L, Continuation, Graphs, Collects,
+		       [Current | Preambles],
+		       [Starters, Finishers | Postambles],
+		       Used, Temps0, Results),
 	merge_lists([[Type, Pointer, []]], Temps0, Temps).
 
 /* This is similar to the last one, but handles reproduction. Owing to the
@@ -528,7 +535,7 @@ it in a local variable, but this way is conceptually simpler, which is everythin
 */
 
 do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
-	      Graphs, Preambles, [Current | Postambles],
+	      Graphs, Collects, Preambles, [Current | Postambles],
 	      Used, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is Nesting*4,
@@ -598,7 +605,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 	remove them from the list I will need them again for update */
 	Continuation = [finish_level | Clauses], 
 
-	do_assign_list(L, Continuation, Graphs, [Current | Preambles],
+	do_assign_list(L, Continuation, Graphs, Collects,
+		       [Current | Preambles],
 			[Starters, Finishers | Postambles],
 			Used, Temps0, Results),
 	merge_lists([[Type, Pointer, []]], Temps0, Temps).
@@ -607,7 +615,7 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 be one of these loops; the instruction has a list of the appropriate nodes. */
 
 do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
-	      Graphs, Preambles, [Current | Postambles],
+	      Graphs, Collects, Preambles, [Current | Postambles],
 	      Used, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is Nesting*4,
@@ -662,7 +670,7 @@ do_assignment(L, [lose(Step, ParentPtr, Name, LossNodes) | Clauses],
 	append([Current, Loop0, Loop1, Loop2, SetLoserOld,
 		EndLoop9, EndLoop12], NewCurrent)),    
 	do_assign_list(L, Clauses,
-			Graphs, Preambles, [NewCurrent | Postambles],
+			Graphs, Collects, Preambles, [NewCurrent | Postambles],
 			Used, Temps0, Results),
 	merge_lists([[Type, Pointer, []]], Temps0, Temps).
 
@@ -672,7 +680,7 @@ so the end of the last if clause is left on the postambles. Should be less
 horrible now it no longer includes the evaluation of the test! */
 
 do_assignment(L, [test(Name, Pointer, Source) | Clauses],
-		Graphs, Preambles, Postambles0,
+		Graphs, Collects, Preambles, Postambles0,
 		Used, Temps, Results) :-
 	length(Preambles, TotalNesting),
 	
@@ -720,14 +728,14 @@ we only make the three lines that insert the submodel instance into its linked l
 	append(Current, Ongoing, NewCurrent),
 	append(Finishers, Next, NewNext),
 	
-	do_assign_list(L, Clauses, Graphs, Preambles,
+	do_assign_list(L, Clauses, Graphs, Collects, Preambles,
 			[NewCurrent, NewNext | Postambles],
 			Used, Temps, Results).
 
 /* Right, this is the one with the meat in it; the actual integration of new code
 that evaluates an expression in the model */
 
-do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Graphs, 
+do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Graphs, Collects,
 		Preambles, [Current | Postambles],
 		Used, Temps, Results) :-
 
@@ -740,7 +748,7 @@ do_assignment(L, [assign(arr(P, Val, Is), Source) | Clauses], Graphs,
 
 	append(Current, Action, NewCurrent),
 	do_assign_list(L, Clauses,
-		       Graphs, Preambles, [NewCurrent | Postambles],
+		       Graphs, Collects, Preambles, [NewCurrent | Postambles],
 		       Used, Temps, Results).
 
 move_base_ptrs(_,_,_,_, [],[],[],[]).

@@ -162,9 +162,9 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* advance_ptr_ptr,
 		       void* get_remote_value_ptr, 
 		       void* stat_check_ptr,
-		       void* graph_ptr, int* phases, node_data_line** data_ptr,
-		       int* arc_count, char*** arc_id_list,
-		       double** adapt_maxerr) {
+		       void* graph_ptr, int* phases,
+		       node_data_line** data_ptr, int* arc_count, 
+		       char*** arc_id_list, double** adapt_maxerr) {
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
