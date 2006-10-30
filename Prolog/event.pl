@@ -1644,7 +1644,7 @@ unclick :-
 	    remove_old_rubberband),
 	    initialize_phase;
 	get_phase(action_choice), !,
-	    menu:set_cursor_to(crosshair),
+	    cursor_is(crosshair),
 	    advance_phase_to(targetting);
 	unclick_obj.
 

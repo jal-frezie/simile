@@ -189,7 +189,7 @@ update_equation(Box, Function, IndxCount, InList, TypeBase-Dims, [Eqn_st]) :-
 	    (var(UserFnOpen), !,
 		UserFnList = '';
 	    get_ground_part(UserFnOpen, UserFnList)),
-	    member(TypeBase, [any, a(_), int, boolean, real]),
+	    member(TypeBase, [any, a(_), int, boolean, cond_spec, real]),
 	    promote_arg(EqnBase, TypeBase, ComboUnits),
 		/* fix this if boolean to cond_spec promotion removed */
 	    (nonvar(ComboUnits); ComboUnits = TypeBase), !,

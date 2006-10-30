@@ -154,7 +154,7 @@ typedef struct node_data_line_t {
   double min;
   double max;
   int compclass;
-  char caption[256];
+  char* strings[4];
 } node_data_line; /* end(class,node_data_line) */
 
 typedef struct connectRecord_t {

@@ -620,7 +620,7 @@ proc GetFullCaption {line} {
         return {}
     } else {
         set parentCapt [GetFullCaption [ParentLine $line]]
-        append parentCapt / [lindex $line 11]
+        append parentCapt / [set ::[lindex [lindex $line 11] 1]]
         return $parentCapt
     }
 }                                      

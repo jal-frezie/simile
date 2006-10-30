@@ -476,7 +476,7 @@ do_loop_pointers(L, SmName, Type, Name, Late) :-
 	Late = []).
 
 generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
-		    Collects, Decl, Exts, EnumBits, NodeData) :-
+		    Collects, Decl, Exts, StringDecls, NodeData) :-
 	render(L, data_declaration, Inst, 4, Decl),
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-LocalDims),
 	render(L, case_start, Match, 8, [Ext1]),
@@ -545,7 +545,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	find_type(VisName, VisType),
 	\+ (InstType = init_function,
 	       member(VisType, [immigration, reproduction])),
-	    caption_for(VisName, CaptionTail),
+/*	    caption_for(VisName, CaptionTail),
 	    (VisName is_of_sort value_outside, !,
 		Pop has_part VisName,
 		caption_for(Pop, CaptionHead),
@@ -554,7 +554,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	    name(Caption, CaptionTtfnStr),
 	    user:all_ttfn_to_utf8(CaptionTtfnStr, CaptionUtf8Str),
 	    name(UseCaption, CaptionUtf8Str),
-	    member(VisType-Class, [submodel-'SUBMODEL',
+*/	    member(VisType-Class, [submodel-'SUBMODEL',
 				   variable-'VARIABLE',
 				   compartment-'COMPARTMENT',
 				   flow-'FLOW',
@@ -590,10 +590,18 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 		generate_name(L, ETPtrName, MetaPtr, Used),
 		render(L, variable_declaration, ['enum_type_data', MetaPtr,
 					     [ETCount], ETPtrs], 0, MetaDecl)),
+	    /* do something similar for any strings that need including */
+	    make_runtime_strings([L, BaseName, Name, Used], spec,
+				 SpecStrId, SpecDecl),
+	    all(render, make_runtime_strings,
+		[unify([L, VisName, Name, Used]),
+		 build([name, description, comment]),
+		 build(StringIds), append(CommentDecls, EnumBits)]),
+	    append(SpecDecl, CommentDecls, StringDecls),
 		/* make a value lookup entry for each node with this value */
 	    setof([NodeName, Type, ETCount, MetaPtr, PutEval,
 		   CappedDims, NewPath, GraphPointer,
-		   UseCaption, Min, Max, Class, Name],
+		   [SpecStrId | StringIds], Min, Max, Class, Name],
 			
 		     (NodeName = VisName,
 			 PutEval = Eval;
@@ -601,7 +609,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 			 PutEval = 'GHOST'),
 		      NodeData);
 	/* No need to handle ghosts and link terminators */
-	    EnumBits = [],
+	    StringDecls = [],
 	        NodeData = []).
 
 make_runtime_enum_data(L, Name-Mems, Used, ItemDecls,
@@ -621,7 +629,27 @@ make_runtime_enum_data(L, Name-Mems, Used, ItemDecls,
 
 templatify(Elt, Ptr, [char, Ptr, void, QElt]) :-
 	append_atoms(['"', Elt, '"'], QElt).
-				     
+
+make_runtime_strings([L, Node, Name, Used], Field, Ptr, Decl) :-
+	(Field = name, !,
+	    caption_for(Node, LocalStr),
+	    (Node is_of_sort value_outside, !,
+		Pop has_part Node,
+		caption_for(Pop, CaptionHead),
+		append_atoms([CaptionHead, '/', LocalStr], FullStr);
+	    FullStr = LocalStr);
+	 Node has_class_refinement Field of FullStr,
+	    atomic(FullStr)),
+	    name(FullStr, TtfnStr),
+	    user:all_ttfn_to_utf8(TtfnStr, Utf8Str),
+	    name(Utf8Atom, Utf8Str),
+	    make_constant_string(L, Utf8Atom, StrV),
+	    append_atoms([Name, '_', Field], PtrTag),
+	    generate_name(L, PtrTag, Ptr, Used),
+	    render(L, variable_declaration, [char, Ptr, void, StrV], 0, Decl);
+	 Ptr = 'NULL',
+	    Decl = [].
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* make_array_assignment/9: all subscripts other than those for submodel loops and
 those used for referring to individual array elements are generated and put in
@@ -801,14 +829,16 @@ make_arg_string(L, [Arg | Rest], Arg_string) :-
 		append(String, [32 | Tail], Arg_string)), !. /* green */
 
 build_constant(Language, [String, Type, ETCount, ETArrPtr, Eval, Dims, Array,
-			  GraphPtr, Caption, Min, Max, Class, _Comment],
+			  GraphPtr, Captions, Min, Max, Class, _Comment],
 	       Chars) :-
 	make_list_chars(Language, Dims, DimsString),
 	make_list_chars(Language, Array, ArrayString),
 	make_constant_string(Language, String, Arg1),
-	make_constant_string(Language, Caption, Arg5),
+%	make_constant_string(Language, Caption, Arg5),
+	make_list_chars(Language, Captions, PtrString),
 	name(Arg2, DimsString),
 	name(Arg3, ArrayString),
+	name(Arg5, PtrString),
 	make_list_chars(Language, [Arg1, Type, ETCount, ETArrPtr, Eval,
 				   Arg2,Arg3, GraphPtr, Min, Max, Class, Arg5],
 			Chars).
@@ -827,19 +857,17 @@ make_constant_list(L, [Const | Rest], [Line | Lines]) :-
 make_constant_string(L, String, Atom) :-
 	name(String, Chars),
 	(L = tcl,
-		((member(32, Chars); member(10, Chars)), !,
+		((member(Naughty, [10,32,34]); member(Naughty, Chars)), !,
 			append([123 | Chars], [125], Const);
 		Const = Chars);
 	L = c,
-		mark_crs(Chars, StraightChars),
+		all(render, escape_string_breaks,
+		    [build(Chars), append(StraightChars, [])]),
 		append([34 | StraightChars], [34], Const)),
 	name(Atom, Const).
 
-mark_crs(With, Without) :-
-	append(L1, [10 | L2], With), !,
-	append(L1, [92, 110 | L2], WithFewer),
-	mark_crs(WithFewer, Without);
-	With = Without.
+escape_string_breaks(With, Without) :-
+	member(With-Without, [10-[92,110], 34-[92,34], C-[C]]), !.
 
 make_param_string(_, [], []).
 
