@@ -1097,13 +1097,13 @@ proc SaveFile {topNode tree tgt} {
     global errorInfo runState
     global SimileProjectDo projectInfo
     
+    set projectInfo {}
     if {[info exists SimileProjectDo]} {
         SaveProjectFile $topNode $tree $tgt
         # shfs to $tree
         # spfs to $tree
     }
     if {[catch {
-        set projectInfo {}
 	set parts [GetParts $tree $tree]
         #ShowMessage debug info "SaveFile GetParts $tree" ok
         set curParams [do_for_node $topNode GetRunParams $topNode]
@@ -1528,7 +1528,7 @@ proc SaveAll {win} {
 }
 
 proc SaveProjectFile {topNode path tgt} {
-    global custom runState nameOfHelperStateFile
+    global custom runState nameOfHelperStateFile projectInfo
     #puts [array get nameOfHelperStateFile]
     #ShowMessage debug info "SaveProjectFile $path" ok
     # save any current spf names to the spj file
@@ -1556,7 +1556,14 @@ proc SaveProjectFile {topNode path tgt} {
     #            $path/[file tail $nameOfHelperStateFile($topNode)]" ok
     set spfList [do_in_node $topNode array get ::SimileProject fileparam,*]
     foreach {varName spfPath} $spfList {
-        lappend SimileProject(spfList) [Submodelize $varName] [Relativize $tgt $spfPath]
+	set smPart [Submodelize $varName]
+	set relPath [Relativize $tgt $spfPath]
+	set pmData "Reference to parameter metafile $relPath"
+	if {[llength $smPart]} {
+	    append pmData " for [string range $smPart 1 end]"
+	}
+	lappend projectInfo $pmData
+	lappend SimileProject(spfList) $smPart $relPath
     }
     set projectF [NetOpen $ProjectFile w]
     set statLine [array get SimileProject]
