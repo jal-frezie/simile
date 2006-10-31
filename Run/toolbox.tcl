@@ -1095,33 +1095,45 @@ proc IsRunnableModel {fileName} {
 proc SaveFile {topNode tree tgt} {
     #ShowMessage debug info "SaveFile $tree $tgt" ok
     global errorInfo runState
-    global SimileProjectDo
+    global SimileProjectDo projectInfo
     
     if {[info exists SimileProjectDo]} {
         SaveProjectFile $topNode $tree $tgt
         # shfs to $tree
         # spfs to $tree
-        unset SimileProjectDo
     }
     if {[catch {
-        set parts [GetParts $tree $tree]
+        set projectInfo {}
+	set parts [GetParts $tree $tree]
         #ShowMessage debug info "SaveFile GetParts $tree" ok
         set curParams [do_for_node $topNode GetRunParams $topNode]
         if {[llength $curParams]} {
             set runState($topNode,runParams) $curParams
         }
-        if {[info exists runState($topNode,runParams)]} {
+        lappend projectInfo "Model execution parameters"
+	if {[info exists runState($topNode,runParams)]} {
             lappend parts [mime::initialize -canonical text/plain \
                     -header [list "Content-Description" "Run Status"] \
                     -string $runState($topNode,runParams)]
         }
-        set multiT [mime::initialize -canonical multipart/mixed -parts $parts]
-        set stream [NetOpen $tgt w]
-        fconfigure $stream -translation binary
-        mime::copymessage $multiT $stream
-        # clean everything up
-        close $stream
-        mime::finalize $multiT -subordinates all
+	if {[info exists SimileProjectDo]} {
+	    unset SimileProjectDo
+	    set resp [ShowMessage "Saving project file" info \
+			  "This project file will contain the following information:\n[join $projectInfo \n]" okcancel]
+	    if {![string equal ok $resp]} {
+		set cancelled 1
+	    }
+	}
+	if {![info exists cancelled]} {
+	    set multiT [mime::initialize -canonical multipart/mixed \
+			    -parts $parts]
+	    set stream [NetOpen $tgt w]
+	    fconfigure $stream -translation binary
+	    mime::copymessage $multiT $stream
+	    # clean everything up
+	    close $stream
+	    mime::finalize $multiT -subordinates all
+	}
     } Lossage]} {
         return $errorInfo
     } else {
@@ -1233,6 +1245,8 @@ proc DataExists {path} {
 }
 
 proc GetParts {top tree} {
+    global projectInfo
+
     set mimes {}
     foreach subtree [glob -nocomplain ${tree}/*] {
         #ShowMessage debug info "GetParts subtree $subtree" ok
@@ -1272,10 +1286,15 @@ proc GetParts {top tree} {
                     set Description "Simile helper configuration file"
                     set style attachment
                 }
-                *.spf {
-
+# .spfs contain relative paths so are referenced, not moved into the tree
+#                *.spf {
+#                    set PartType "application/x-simile"
+#                    set Description "Simile parameter file"
+#                    set style attachment
+#                }
+                *.spj {
                     set PartType "application/x-simile"
-                    set Description "Simile parameter file"
+                    set Description "Simile package description"
                     set style attachment
                 }
                 model.* {
@@ -1295,6 +1314,17 @@ proc GetParts {top tree} {
                 set Disposition "${style}; filename=\"$relPath\""
                 set Date [clock format [file mtime $subtree] \
                         -format "%Y-%m-%d %T %Z" -gmt true]
+		if {[string equal Data $Description]} {
+		    set OS [lindex {Linux MacOS Windows Tcl c++} \
+				[lsearch {.so .dylib .dll .tcl .cpp} [file extension $ext]]]
+		    set Description "$OS executable"
+		}
+		if {[llength $relPath]>1} {
+		    set smTree [join / [lrange $relPath 0 end-1]]
+		    append Description " for $smTree"
+		}
+		lappend projectInfo $Description
+
                 set newM [mime::initialize -canonical $PartType -file $subtree]
 		set headers [list "Content-Disposition" $Disposition \
 				 "Content-Description" $Description \
