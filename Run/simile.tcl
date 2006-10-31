@@ -437,27 +437,27 @@ switch $env(interfaceId) {
 	}
 # now open up
 	destroy .splash
-	set oldDir [pwd]
 	if {![info exists env(OPEN_MODEL)]} {
 	    if {[InPlugin]} {
 		set initMenu .initButt.models
 		# list directories into menus, choose with button and load contents into mime
 		pack [mybutton .initButt -text "Choose model to execute" -menu $initMenu]
 		mymenu $initMenu
+		set oldDir [pwd]
 		set egPath ../Examples/Plugin
 		cd $egPath
 		foreach package [glob *.sml] {
 		    $initMenu add command -label [file tail $package] -command "set tgt $package"
 		}
+		cd $oldDir
 		tkwait variable tgt
-		set env(OPEN_MODEL) $tgt
+		set env(OPEN_MODEL) [file join $egPath $tgt]
 		pack forget .initButt
 	    } else {
 		set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0]
 	    }
 	}
 	set pick [LoadFile $dummyNode $myDir $env(OPEN_MODEL)]
-	cd $oldDir
 	if {[lsearch {no yes} $pick]==-1} {
 	    error {Load failure} $errorInfo
 	}

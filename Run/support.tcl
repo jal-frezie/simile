@@ -21,7 +21,8 @@ proc findRecord {node} {
     global nodedata
 
     foreach record [array names nodedata] {
-        if {[string equal $node [GetFullCaption $nodedata($record)]]} {
+	set name [GetFullCaption $nodedata($record)]
+        if {[string equal $node $name]} {
             return $nodedata($record)
         }
     }

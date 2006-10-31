@@ -819,7 +819,7 @@ namespace eval fileparams {
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
     global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
-    global SimileProject simtmpFiles
+    global SimileProject
     if {$notInput==-1} {
         set dataLocn targetData
         set widgetLocn targetNames
@@ -835,24 +835,26 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
     set oldDir [pwd]
     if {[InPlugin]} {
-	set multiT [mime::initialize -string $simtmpFiles($oldPath)]
-	set pstr [mime::getbody $multiT]
+	set multiT [mime::initialize -string [ReadFile $oldPath]]
+	set pStr [mime::getbody $multiT]
+	set origVersion [mime::getheader $multiT Simile-Version]
     } else {
 	if {[catch {
             set multiT [mime::initialize -file $oldPath]
+	    set pStr [mime::getbody $multiT]
             set origVersion [mime::getheader $multiT Simile-Version]
-            set metaFile [file join $simtmpdir temp_in.spf]
-            set mimeSquirter [NetOpen $metaFile w]
-            fconfigure $mimeSquirter -translation binary
-            mime::getbody $multiT -command SquirtMime -blocksize 256}]
-	} {
-	    set metaFile $oldPath
+	}]} {
+	    # very legacy
+	    set fileFoo [NetOpen $oldPath r]
+	    set pStr [read $fileFoo]
+	    close $fileFoo
 	    set origVersion 0.0
 	}
-	set pStr [NetOpen $metaFile r]
     }
     set ::bermudaTriangle {}
-    while {[pick $pStr savedValue] != -1} {
+# OK now loop over hoovered right-trimmed lines
+    foreach instruct [split $pStr \n] {
+	set savedValue [string trimright $instruct]
         #ShowMessage debug info "Restoring $savedValue" ok
         # ignore blank lines
         if {![llength $savedValue]} {
@@ -945,9 +947,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 	close $pStr
     }
     cd $oldDir
-    if {$origVersion>=4.0} {
-        file delete $metaFile
-    }
 }
 
 proc ExistCheck {topNode restoredComp tgtCap notInput source} {
