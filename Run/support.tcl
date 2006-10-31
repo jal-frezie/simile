@@ -204,12 +204,16 @@ proc old_stage_incr {ns_extras step v} {
     }
 }
 
+# extras must be a list rather than an array because it is already an array
+# element if the compartment is an array
 
 proc stage_incr {ns_extras step v} {
     global adapt
     upvar \#0 $ns_extras extras
-    if {![info exists extras]} {
-        array set extras [list t1 0 t2 0 t3 0]
+    if {[info exists extras]} {
+	scan $extras "%f %f %f" t1 t2 t3
+    } else {
+	set t1 [set t2 [set t3 0]]
     }
 # In this version, the three intermediate increments are kept in t1-t3 while
 # building the full R-K increment. After this is complete they are assigned:
@@ -217,46 +221,48 @@ proc stage_incr {ns_extras step v} {
 # t2 = last increment (used to undo step)
 # t3 = estimate of next initial increment
     if {[glob_element dts 0]<0} {
-        set dv [step_incr $step $extras(t1)]
+        set dv [step_incr $step $t1]
     } else {
         set dv [step_incr $step $v]
     }
     switch -- [expr int([glob_element dts 0])] {
         0 { ;# Euler
-            set extras(t1) $v
-            set extras(t2) $dv
-            set extras(t3) $dv
-            return $dv
+            set t1 $v
+            set t2 $dv
+            set t3 $dv
+            set result $dv
         } 1 { ;# these 4 are R-K
-            return [expr [set extras(t1) $dv]/2.0]
+            set result [expr [set t1 $dv]/2.0]
         } 2 {
-            return [expr ([set extras(t2) $dv]-$extras(t1))/2.0]
+            set result [expr ([set t2 $dv]-$t1)/2.0]
         } 3 {
-            return [expr [set extras(t3) $dv]-$extras(t2)/2.0]
+            set result [expr [set t3 $dv]-$t2/2.0]
         } 4 {
-            set extras(t2) [expr $extras(t1)/6 + $extras(t2)/3 + \
-                                $extras(t3)/3 + $dv/6]
-            set result [expr $extras(t2) - $extras(t3)]
-            set extras(t3) [expr (-$extras(t1) + 2*$extras(t3) + 2*$dv)/3]
-            set extras(t1) $extras(t1)/[glob_element dts $step]
-            return $result
+            set t2 [expr $t1/6 + $t2/3 + \
+                                $t3/3 + $dv/6]
+            set mid [expr $t2 - $t3]
+            set t3 [expr (-$t1 + 2*$t3 + 2*$dv)/3]
+            set t1 [expr $t1/[glob_element dts $step]]
+            set result $mid
         } -1 { ;# undoes previous change Euler
-            set last_incr $extras(t2)
-            set extras(t3) $dv
-            return [expr [set extras(t2) $dv]-$last_incr]
+            set last_incr $t2
+            set t3 $dv
+            set result [expr [set t2 $dv]-$last_incr]
         } -2 { ;# undoes previous change R-K
-            return [expr [expr [set extras(t1) $dv]/2.0]-$extras(t2)]
+            set result [expr [expr [set t1 $dv]/2.0]-$t2]
         } 10 { ;# does not change compartment, just checks for errors
 #            if {$dv} {
-                set errMagn [expr abs($dv-$extras(t3))]
+	        set errMagn [expr abs($dv-$t3)]
 #puts "p10 pred_change $extras(pred_change) dv $dv errMagn $errMagn"
-                if {$errMagn > $adapt(maxErr)} {
-                    set adapt(maxErr) $errMagn
-                }
+	        if {$errMagn > $adapt(maxErr)} {
+		    set adapt(maxErr) $errMagn
+	        }
 #            }
-            return 0
+            set result 0
         }
     }
+    set extras [list $t1 $t2 $t3]
+    return $result
 }
 
 proc do_model {what mtime mstep} {
