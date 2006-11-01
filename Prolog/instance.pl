@@ -348,7 +348,9 @@ flows(Dir, Comp, Flow) :-
 /* generate_input_pair is used in setof so should be cut free */
 generate_input_pair(Node, DestPath,
              input_pair(ArcName, NodeID, Away, Home, Ref, ExprRef)) :-
-	get_all_links(Node, capts(DestPath, SrcPath),
+	(counts_as_outside(Node), UsePath = [_ | DestPath];
+	    \+ counts_as_outside(Node), UsePath = DestPath),
+	get_all_links(Node, capts(UsePath, SrcPath),
 		      ids(SourceID, Relation, Home, Entry),
 		      input_link(id(Link,_, SourceLocation), _,
 				 ArcName, SourceUnits, ArcUnits)),
