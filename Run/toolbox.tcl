@@ -1117,9 +1117,9 @@ proc SaveFile {topNode tree tgt} {
                     -string $runState($topNode,runParams)]
         }
 	if {[info exists SimileProjectDo]} {
-	    unset SimileProjectDo
 	    set resp [ShowMessage "Saving project file" info \
-			  "This project file will contain the following information:\n[join $projectInfo \n]" okcancel]
+			  "This project file will contain the following information:\n[join $projectInfo \n]" okcancel $SimileProjectDo]
+	    unset SimileProjectDo
 	    if {![string equal ok $resp]} {
 		set cancelled 1
 	    }
@@ -1523,7 +1523,7 @@ proc OpenProject {SimileProjectData path} {
 proc SaveAll {win} {
     global SimileProjectDo
     #ShowMessage debug info "SaveAll win $win" ok
-    set SimileProjectDo 1
+    set SimileProjectDo $win
     MenuSelect $win file save_as
 }
 

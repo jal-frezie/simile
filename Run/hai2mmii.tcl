@@ -438,7 +438,8 @@ proc GetCCompProperty {topNode prop args} {
     set node [lindex $args 0]
     set set [lrange $args 1 end]
     # first do cases that don't need any other data
-    switch -regexp $prop {
+    set numberWangs Caption|MinVal|MaxVal|Trans|Spec|Desc|Comment
+    switch -regexp $prop [list \
         Objects {
             return [lrange [listobjects \
                                 $model_id($topNode)] 1 end]
@@ -478,8 +479,10 @@ proc GetCCompProperty {topNode prop args} {
             } else {
                 return [c_getvalue $topNode $node 3]
             }
-        } Caption {
-            return [c_getvalue $topNode $node 5]
+	} $numberWangs {
+	    set dataWang [lindex {5 6 8 12 13 14 15} \
+			      [lsearch [split $numberWangs |] $prop]]
+	    return [c_getvalue $topNode $node $dataWang]
         } IdFromCapt {
             if {[catch {getnodeid $model_id($topNode) \
                             $node} match]} {
@@ -505,7 +508,7 @@ proc GetCCompProperty {topNode prop args} {
                 return $res
             }
         }
-    }
+			  ]
 }
 
 # wraps c++ defined version in different interp
@@ -579,6 +582,12 @@ proc GetTclCompProperty {topNode prop args} {
         } Caption {
             return [GetFullCaption [findRecord $node]]
 #ShowMessage debug info "node $node data [array get nodedata] npath $numericPath" ok
+	} Spec|Desc|Comment {
+	    set which [lsearch {Name Spec Desc Comment} $prop]
+	    set targetVar [lindex [getinfo $node 10] $which]
+	    if {![string equal NULL $targetVar]} {
+		return [set ::$targetVar]
+	    }
         } IdFromCapt {
             for {set record 1} {$nodecount>$record} {incr record} {
                 if {![string equal GHOST [lindex $nodedata($record) 4]]} {
@@ -620,7 +629,7 @@ proc GetFullCaption {line} {
         return {}
     } else {
         set parentCapt [GetFullCaption [ParentLine $line]]
-        append parentCapt / [set ::[lindex [lindex $line 11] 1]]
+        append parentCapt / [set ::[lindex [lindex $line 11] 0]]
         return $parentCapt
     }
 }                                      

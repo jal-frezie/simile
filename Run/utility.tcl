@@ -18,7 +18,9 @@ proc ShowMessage { title icon string resps {parent {}}} {
         destroy .splash ;# ensure mess is not obscured by splash screen
     }
     set active [focus]
-    if {[string length $active]>1} { ;# window . is hidden so must not parent
+    if {[string length $parent]>0} { ;# window . is hidden so must not parent
+        lappend mBoxCmd -parent $parent
+    } elseif {[string length $active]>1} { ;# window . is hidden so must not
         lappend mBoxCmd -parent $active
     }
     set act [eval $mBoxCmd]

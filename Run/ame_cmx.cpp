@@ -18,6 +18,9 @@ them to be executed etc by Tcl commands. */
 #define GETPATH        10
 #define GETCLASS       11
 #define GETTRANS       12
+#define GETSPEC        13
+#define GETDESC        14
+#define GETCOMMENT     15
 #define	TEST	       99
 
 #define READGRAPH      21
@@ -289,6 +292,18 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     resultPtr = argv[1];
     break;
 
+  case GETSPEC:
+    resultPtr = Tcl_NewStringObj(data_line->strings[1], -1);
+    break;
+    
+  case GETDESC:
+    resultPtr = Tcl_NewStringObj(data_line->strings[2], -1);
+    break;
+    
+  case GETCOMMENT:
+    resultPtr = Tcl_NewStringObj(data_line->strings[3], -1);
+    break;
+    
   case GETTRANS:
     resultPtr = Tcl_NewListObj(0, NULL);
     usedTypePtr = usedTypes;

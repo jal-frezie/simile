@@ -1086,7 +1086,7 @@ showMess(globMess); */
     // add this levels caption unless it is top
     if (parent>=0) {
       strcat(result, "/");
-      strcat(result, nodedata[line].strings[1]);
+      strcat(result, nodedata[line].strings[0]);
     }
     append_ints_to_null(dims, nodedata[line].dims, 0, 0);
     /* add this levels type data -- reverse order cos outer models start list
