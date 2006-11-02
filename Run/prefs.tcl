@@ -213,6 +213,7 @@ proc Pref_Dialog {} {
                 bigButtons {set frame $barF}
                 popupHelp {set frame $barF}
                 gridSnap {set frame $genericF}
+                quickDrag {set frame $genericF}
                 myButton {set frame $genericF}
                 deleteEndToEnd {set frame $linkF}
                 flowRouting {set frame $flowF}

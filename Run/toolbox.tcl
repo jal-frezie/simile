@@ -919,6 +919,7 @@ proc ControlDraw {prologVersion} {
                 {custom(saveExtras) saveExtras {CHOICE {Canvas file} {Model file only}} "Save models as..."} \
                 {custom(recentCount) recentCount 10 "Entries on recently used file list"} \
                 {custom(gridSnap) gridSnap OFF "Snap to grid"} \
+		{custom(quickDrag) quickDrag OFF "Quick drag"} \
                 {custom(defBackground) defBackground {CHOICE White Clear} "Default background"} \
                 {custom(flowRouting) flowRouting ON "Rectilinear flow routing"} \
                 {custom(deleteEndToEnd) deleteEndToEnd ON "Select links end-to-end"} \

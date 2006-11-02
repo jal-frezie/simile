@@ -405,7 +405,10 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 		        fail;
 		    highlight(Root, 2));
 		highlight(Moving_obj, 2)) */ ;
-	advance_phase_to(moving)).
+	    (tk_get_pref(quickDrag, 0), !;
+		retractall(ghostly_move(_,_)),
+		assert(ghostly_move(Xpt, Ypt))),
+	    advance_phase_to(moving)).
 
 click_on([Xpt, Ypt], Moving_obj, _CD) :-
 	find_type(Moving_obj, TargetSort),
@@ -906,6 +909,8 @@ check_entries(InterParent, Depth, Trans, Pair, NewPair) :-
 :- dynamic(moved_something/0).
 :- dynamic(instant_link/1).
 
+:- dynamic(ghostly_move/2).
+
 move_something :-
 	moved_something, !;
 	assert(moved_something).
@@ -952,13 +957,14 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     find_all_comps(Parent, Moving_obj),
 		     get_shape(Parent, internal_extent, ParentShape),
 		     setof(Mover, moves_with_seln(Parent, Mover), Movers),
+		     (ghostly_move(_,_), !;
 		     \+ (member(Crasher, Movers),
 			find_new_box(Crasher, Xoffset, Yoffset, _, BadPosn),
 			( \+ fits_inside(BadPosn, ParentShape);
 			    get_overlaps(Parent, BadPosn, Crashed),
 			    \+ member(Crashed, Movers))),
 		     all(event, reposition,
-			 [build(Movers), unify([Xoffset, Yoffset])]),
+			 [build(Movers), unify([Xoffset, Yoffset])])),
 		     all(draw, move_display,
 			 [build(Movers), unify([Xoffset, Yoffset])]));
 /*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
@@ -1570,6 +1576,8 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_box_size(Submodel, submodel, Standard),
 	NewR-NewL > Standard//2,
 	NewB-NewT > Standard//2,
+	(ghostly_move(_,_), !,
+	    change_shape(Submodel, bounding_box, NewBox);
 	find_all_comps(Parent, Submodel),
 	get_shape(Parent, internal_extent, ParentShape),
 	fits_inside(NewBox, ParentShape),
@@ -1591,7 +1599,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	change_shape(Submodel, bounding_box, NewBox),
 	/* make_links_follow(Submodel), */
 	tweak_link_connections(Submodel, [XOff, YOff], Edge,
-			       [OldL, OldT, OldR, OldB]).
+			       [OldL, OldT, OldR, OldB])).
 
 /* anything this complex has got to be wrong */
 
@@ -1728,6 +1736,14 @@ unclick_obj :-
 unclick_obj :- 
 	get_mode(select), /* was move */
 	get_moving_obj(Submodel),
+	(ghostly_move(OldX, OldY),
+	    get_start_coords(Xpt, Ypt), % last drag finished here
+	    drag_to(OldX, OldY, Submodel), % put graphics back to start
+	    retract(ghostly_move(_,_)),
+	    (drag_to(Xpt, Ypt, Submodel); % do it for real
+		do_dialogue("Failed to drag selection", warning,
+			    "Cannot drag selection here due to overlaps", ok, _)), !,
+	true),
 	(get_phase(moving_border(_)),
 	    \+ Submodel is_instance_of _, !,
 	    get_shape(Submodel, internal_extent, NewSize),
