@@ -32,6 +32,7 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	(ScaledF = Formula,
 	    Formula = arr(_, Idle, SourceInds),
 	    Args = [made_at(Idle, _)],
+	    \+ assigned_in_vm_subloop(Formula, FContext, AllSetups),
 	    select(instance(internal, _,_, Idle, _-Dims),
 		   AllInters, NewInters), !,
 	    replace_subexps(AllSetups, inters, swap_vars,
@@ -47,6 +48,12 @@ final_assignment(Expr, Sm, DestRef, Swaps, Step, Used,
 	(setof(Model, has_extras(Context, DestPath, Model), Exited), !;
 	    Exited = []),
 	add_extra_dependencies(Exited, Formula, Args, Prerequisites)).
+
+assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
+	member(make(_,_, MoreLoops, _, Acts), AllSetups),
+	member(assign(Formula, _), Acts),
+	append(ExtraLoops, FContext, MoreLoops),
+	member(sm(_,_,_, vm_loop(_,_,_,_)), ExtraLoops).
 
 insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),

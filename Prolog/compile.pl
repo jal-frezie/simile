@@ -1174,7 +1174,8 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 	    Source = incr(Step, SourceEqn)), !,
 	DestRef = elt(_,_, Dest, X),    
 	final_assignment(SourceEqn, Node, elt(_, DestPath, Dest, X), Swaps,
-			 Step, Used, Expr, Setups, Path, RefList, AllInters),
+			 UseStep, Used, Expr, Setups, Path, RefList,
+			 AllInters),
 
 	/* on_reset is a special condition that makes sure compartment
 	    initializations are done in step 0 rather than -1 */
