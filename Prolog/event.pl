@@ -960,11 +960,13 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     (ghostly_move(_,_), !;
 		     \+ setof(NewPosn,
 			      Crasher^P1^(member(Crasher, Movers),
-			find_new_box(Crasher, Xoffset, Yoffset, P1, BadPosns),
-			(member(BadPosn, BadPosns),
-			    \+ fits_inside(BadPosn, ParentShape);
-			    get_overlaps(Parent, BadPosns, Crashed),
-			    \+ member(Crashed, Movers))),
+					  find_new_box(Crasher, Xoffset,
+						       Yoffset, P1, NewPosn)),
+			      BadPosns),
+			 (member(BadPosn, BadPosns),
+			     \+ fits_inside(BadPosn, ParentShape);
+			  get_overlaps(Parent, BadPosns, Crashed),
+			     \+ member(Crashed, Movers)),
 		     all(event, reposition,
 			 [build(Movers), unify([Xoffset, Yoffset])])),
 		     all(draw, move_display,
