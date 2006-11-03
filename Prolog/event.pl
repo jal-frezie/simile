@@ -958,15 +958,15 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     get_shape(Parent, internal_extent, ParentShape),
 		     setof(Mover, moves_with_seln(Parent, Mover), Movers),
 		     (ghostly_move(_,_), !;
-		     \+ setof(NewPosn,
+		     \+ (setof(NewPosn,
 			      Crasher^P1^(member(Crasher, Movers),
 					  find_new_box(Crasher, Xoffset,
 						       Yoffset, P1, NewPosn)),
 			      BadPosns),
-			 (member(BadPosn, BadPosns),
-			     \+ fits_inside(BadPosn, ParentShape);
-			  get_overlaps(Parent, BadPosns, Crashed),
-			     \+ member(Crashed, Movers)),
+			    (member(BadPosn, BadPosns),
+				\+ fits_inside(BadPosn, ParentShape);
+			     get_overlaps(Parent, BadPosns, Crashed),
+				\+ member(Crashed, Movers))),
 		     all(event, reposition,
 			 [build(Movers), unify([Xoffset, Yoffset])])),
 		     all(draw, move_display,
