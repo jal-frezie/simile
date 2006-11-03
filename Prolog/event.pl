@@ -958,10 +958,12 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     get_shape(Parent, internal_extent, ParentShape),
 		     setof(Mover, moves_with_seln(Parent, Mover), Movers),
 		     (ghostly_move(_,_), !;
-		     \+ (member(Crasher, Movers),
-			find_new_box(Crasher, Xoffset, Yoffset, _, BadPosn),
-			( \+ fits_inside(BadPosn, ParentShape);
-			    get_overlaps(Parent, BadPosn, Crashed),
+		     \+ setof(NewPosn,
+			      Crasher^P1^(member(Crasher, Movers),
+			find_new_box(Crasher, Xoffset, Yoffset, P1, BadPosns),
+			(member(BadPosn, BadPosns),
+			    \+ fits_inside(BadPosn, ParentShape);
+			    get_overlaps(Parent, BadPosns, Crashed),
 			    \+ member(Crashed, Movers))),
 		     all(event, reposition,
 			 [build(Movers), unify([Xoffset, Yoffset])])),
@@ -1070,9 +1072,9 @@ reposition(Mover, [XOff, YOff]) :-
 	tweak_link_connections(Mover, [XOff, YOff], c, _).
 
 moves_with_seln(Parent, Obj) :-
+	get_highlit_obj(0, Obj),
 	find_all_comps(Parent, Obj),
-	(Obj is_of_sort box,
-	    get_highlit_obj(0, Obj);
+	(Obj is_of_sort box;
 	local_ends(Obj, P1, P2),
 	    moves_with_seln(Parent, P1),
 	    moves_with_seln(Parent, P2)).
@@ -1581,7 +1583,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	find_all_comps(Parent, Submodel),
 	get_shape(Parent, internal_extent, ParentShape),
 	fits_inside(NewBox, ParentShape),
-	\+ (get_overlaps(Parent, NewBox, Obstacle), \+ Obstacle = Submodel),
+	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel),
 	
 	(Submodel is_instance_of _, !;
 	add_to_translation([0,0,1,1], Submodel, ModelTrans),
@@ -1657,7 +1659,7 @@ unclick :-
 	unclick_obj.
 
 select_bagged(Rect, Model, Last) :-
-	get_overlaps(Model, Rect, Caught),
+	get_overlaps(Model, [Rect], Caught),
 	(find_type(Caught, submodel),
 	    \+ Caught = Last,
 	    add_to_translation([0,0,1,1], Caught, Trans),
@@ -2029,7 +2031,7 @@ attempt_addition(Type, Parent, Box, Node_name, CanBag, Verbal) :-
 	fits_inside(Box, Parent_size),
 
 	/* If CanBag is 'yes' the new box can be put around existing ones */
-	\+ (get_overlaps(Parent, Box, Other),
+	\+ (get_overlaps(Parent, [Box], Other),
 	       (CanBag = no;
 		   get_shape(Other, bounding_box, WeeBox),
 		   \+ fits_inside(WeeBox, Box))),

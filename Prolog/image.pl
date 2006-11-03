@@ -140,16 +140,17 @@ get_inclusions(Parent, Box, Included) :-
     setof(Component, in_box(Parent, Component, Box), Included), !;
     Included = [].
 
-get_overlaps(Parent, Target, Part) :-
+get_overlaps(Parent, Targets, Part) :-
 %    find_all_comps(Parent, Part), speed hacked
-    Parent has_part Node,
-    (Part is_connector from Node to _,
-	has_bowtie(Part);
-    Part = Node),
+    Parent has_part Part,
+%    (Part is_connector from Node to _,
+%	has_bowtie(Part);
+%    Part = Node),
     appears(Part),
     /* ignore invisibles like ghost bowties -- included in hack
     \+ (find_type(Part, flow), is_ghost(Part)), */
     get_drawing_form(Part, _, Box),
+    member(Target, Targets),
     interferes(Target, Box).
 
 get_inner_bound(Parent, Edge, Bound) :-

@@ -825,7 +825,7 @@ find_space_for([L, T, R, B], Model, Including, DefPt, [TargetX, TargetY]) :-
 	to check for interference */
 	NewL is L+TargetX, NewT is T+TargetY,
 	NewR is R+TargetX, NewB is B+TargetY,
-	\+ (get_overlaps(Model, [NewL, NewT, NewR, NewB], Obstacle),
+	\+ (get_overlaps(Model, [[NewL, NewT, NewR, NewB]], Obstacle),
 	       \+ member(Obstacle, Including)).
 	
 reroute_sections(Rerouters) :-
