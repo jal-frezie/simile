@@ -560,7 +560,7 @@ find_fatness([_,_,FatX,FatY], Fatness) :-
 draw_incomplete(Line_type) :-
 	(Line_type = squirt, Draw_type = flow;
 	    \+ Line_type = squirt, Draw_type = Line_type),
-	get_incomplete([_Parent | Draw_coords]),
+	get_incomplete(_Parent-Draw_coords),
 	find_current(Window_id),
 	get_translation(Trans),
 	find_fatness(Trans, Fatness),
@@ -619,7 +619,7 @@ draw_links(Type, Top, Up_list, Down_list) :-
 	translate_between(Backgnd, Top, _D, Trans),
 /*	remove_old_incomplete, (done on drag now to avoid cluttering target */
 	untranslate(Route, Trans, Screen_route),
-	add_incomplete([Top | Screen_route]),
+	add_incomplete(Top-Screen_route),
 	(var(Rest), !; 
 		last(Screen_route, In), 
 		draw_up_links(Type, Rest, out, Trans, Last, In)),
@@ -638,7 +638,7 @@ draw_up_links(Type, [Node | Rest], Dir, Trans, Prev, Point) :-
 	(Dir = in, shape_route(Type, Border_point, Node, Route);
 	Dir = out, shape_route(Type, Node, Border_point, Route))),
 	untranslate(Route, New_trans, Screen_route),
-	add_incomplete([Prev | Screen_route]),
+	add_incomplete(Prev-Screen_route),
 	(Dir = in, Screen_route = [Next | _];
 	Dir = out, last(Screen_route, Next)),
 	draw_up_links(Type, Rest, Dir, New_trans, Node, Next).
@@ -655,7 +655,7 @@ show_invisible_links(Links) :-
 	    translate_between(Backgnd, Daddy, _D, Trans),
 	    get_shape(Link, course, Route),
 	    untranslate(Route, Trans, ScreenRoute),
-	    add_incomplete([Daddy | ScreenRoute]),
+	    add_incomplete(Daddy-ScreenRoute),
 	    fail;
 	draw_incomplete(Type).
 

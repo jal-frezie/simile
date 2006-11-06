@@ -1705,8 +1705,12 @@ proc ListWindows {fm} {
         }
     }
     update
-# now window whose menu was clicked has focus even in Windows...
-    set window_info(uppermost) [winfo toplevel [focus]]
+# now window whose menu was clicked has focus even in Windows......but somehow
+# Windows can invoke this from right click on toolbar button even with welcome
+# dialogue displayed, so verify...
+    if {[winfo exists [focus]]} {
+	set window_info(uppermost) [winfo toplevel [focus]]
+    }
 }
 
 proc RaiseAny {node win} {

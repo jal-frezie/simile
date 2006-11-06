@@ -1619,6 +1619,9 @@ check_save_canvas(SaveDir, Model, Date) :-
 	append_atoms(SaveDir, '/model.cnv', CanvasName),
 	(tk_get_pref(saveExtras, 'Canvas file'),
 	is_toplevel(Model), !,
+	/* might still be useful if not, but would have to do something
+	about border nodes which have graphical attributes but aren't on
+	the canvas... */
 	 reassure_user("Saving canvas description"),
 	    Win shows_model Model,
 	    all(state, get_display_depth, [unify(Win),

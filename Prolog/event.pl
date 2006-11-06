@@ -357,13 +357,16 @@ bar_edit_menu(Wid) :-
 	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode)).
 
 click_on(_XY, Poss_start, _CD) :-
-	doing_add(New_obj),
+	doing_add(New_obj) !,
+	retractall(instant_link(_)),,
 	finish_old_edit(none),
 	(New_obj is_class_of_sort line,
 	    do_linear(New_obj, Poss_start);
 	Poss_start is_of_sort cloud,
 	    New_obj = compartment,
 	    cloud_to_comp(Poss_start)).
+/* add extra disjunct here to implement splitting of flows/influences by new
+compartments/variables */
 
 /* Move: drags object to new location; will decide later what it does with links and bowties. */
 
@@ -1846,7 +1849,7 @@ reuse_route(New_obj, LastArc) :-
 	Wid shows_model Parent,
         ((NewArc = LastArc; m_class:sequence(NewArc, LastArc)),
 	    find_all_comps(Node, NewArc),
-	    get_incomplete([Node | ScreenRoute]),
+	    get_incomplete(Node-ScreenRoute),
 	    translate_between(Parent, Node, _D, Trans),
 	    translate(ScreenRoute, Trans, Route),
 	    set_shape(NewArc, course, Route),

@@ -748,8 +748,7 @@ proc CloseProgressBox {} {
 proc ResetProgressBox {} {
     global progressBoxCount
 
-    if {$progressBoxCount} {
-        set progressBoxCount 1
+    while {$progressBoxCount>0} {
         CloseProgressBox
     }
 }

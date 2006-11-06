@@ -67,7 +67,7 @@ proc prolog {plCmd} {
     set plOutcome [KeepLooking]
 #puts "Prolog finished $plCmd outcome $plOutcome"
     set plPipe(stack) $oldStack
-    if {$plOutcome != 1} {
+    if {![string length $plPipe(stack)]} {
         ResetProgressBox
     }
     return $plOutcome

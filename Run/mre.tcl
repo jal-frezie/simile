@@ -219,9 +219,6 @@ namespace eval RunEnv {
         } ; # if .mre exists
     }
 
-    proc ListWindows {fm} {
-    }
-
     proc InMreFor {node} {
         variable currentNode
         variable CurrentContainer

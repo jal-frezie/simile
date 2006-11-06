@@ -1059,9 +1059,13 @@ proc FixSize {c} {
                 wm state $win zoomed
             } else {
                 gets $stream oldGeom
-                wm geometry $win $oldGeom
-            }
-        }
+		scan $oldGeom "%dx%d+%d+%d" w h l t
+		if {$l>=0 && $l+$w<[winfo screenwidth $win] && \
+			$t>=0 && $t+$h<[winfo screenheight $win]} {
+		    wm geometry $win $oldGeom
+		}
+	    }
+	}
         close $stream
     }
     pack propagate $win 0

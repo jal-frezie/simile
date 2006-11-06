@@ -254,7 +254,7 @@ PassStruct->min =nodedata[n].min;
 /* PassStruct->def =nodedata[n].def; */
 PassStruct->max =nodedata[n].max;
 PassStruct->compclass =nodedata[n].compclass;
-strcpy(PassStruct->caption ,nodedata[n].caption);
+strcpy(PassStruct->caption ,nodedata[n].strings[0]);
 return n;
 }
 #endif
