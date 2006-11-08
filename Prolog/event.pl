@@ -357,8 +357,8 @@ bar_edit_menu(Wid) :-
 	update_ability(Model, none, 'edit.add', '{Text box}', CanAddNode)).
 
 click_on(_XY, Poss_start, _CD) :-
-	doing_add(New_obj) !,
-	retractall(instant_link(_)),,
+	doing_add(New_obj), !,
+	retractall(instant_link(_)),
 	finish_old_edit(none),
 	(New_obj is_class_of_sort line,
 	    do_linear(New_obj, Poss_start);
