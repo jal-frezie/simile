@@ -1182,6 +1182,10 @@ namespace eval RunEnv {
         upvar 1 $dest subdest
         set mound [set $heap]
         set break [string first \n $mound]
+	if {$break==-1 && [string length $mound]>0} { ;# no lf at end
+	    set break [string length $mound]
+	    append mound \n
+	}
         set subdest [string range $mound 0 [expr {$break-1}]]
         set $heap [string range $mound [expr {$break+1}] end]
         return $break
