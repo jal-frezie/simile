@@ -2,8 +2,8 @@
  #
  #       Provides a console window.
  #
- # Last modified on: $Date: 2006/09/15 13:09:11 $
- # Last modified by: $Author: alastair $
+ # Last modified on: $Date: 2006/11/11 20:37:14 $
+ # Last modified by: $Author: jmm $
  #
  # This file is evaluated to provide a console window interface to the
  # root Tcl interpreter of an OOMMF application.  It calls on a script
