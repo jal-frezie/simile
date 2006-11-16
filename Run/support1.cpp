@@ -25,6 +25,7 @@ search_from_type* search_from_ref;
 advance_ptr_type* advance_ptr_ref;
 get_remote_value_type* get_remote_value;
 stat_check_type* stat_check;
+showMess_type* showMess;
 
 int stop(int code) {
   throw code;
@@ -232,7 +233,6 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
     } else { /* Instance exists */
       submodelptr = new SMClass;
       submodelptr->instanceid[0] = ptCount;
-      submodelptr->instanceid[1] = 0;
       submodelptr->new_instance = 1;
     }; /* end(cond,Instance exists) */
     submodelptr->parentId = 0; // all new
@@ -248,7 +248,6 @@ int init_pop (SMClass*** meta, double crNode, int ptCount, int channelId) {
 template <class SMClass>
 void init_pop_member (SMClass *new_one, int index, int parent, int channel) {
   new_one->instanceid[0] = index;
-  new_one->instanceid[1] = 0;
   new_one->parentId = parent;
   new_one->channelId = channel;
   new_one->new_instance = 1;

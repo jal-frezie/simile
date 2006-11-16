@@ -1930,8 +1930,7 @@ proc FindNodeTopWin {node} {
     global window_info
     foreach {key win} [array get window_info *,parent] {
         set c [string range $key 0 end-7]
-        if {[string equal $node $window_info($c,top_node)] && \
-                    [info exists window_info($c,is_top_level)]} {
+        if {[string equal $node $window_info($c,node)]} {
             return $win
         }
     }

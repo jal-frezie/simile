@@ -8,9 +8,9 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
-		       click_obj/4, click_text/4, click/3, do_colours/2,
+		       click_obj/5, click_text/5, click/4, do_colours/2,
 		       insert_variable/5,
-	finish_old_edit/1, doubleclick_obj/3, doubleclick/2, edit_equation/2,
+	finish_old_edit/1, doubleclick_obj/5, doubleclick/4, edit_equation/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 		       resize_top_win/3, adjust_display_area/2,
 		       prioritize_window/1, run_settings_tweaked/1]).
@@ -124,14 +124,15 @@ with_eqn_to_edit(Comp, DefEqn) :-
 :- dynamic(max_size_is/1).
 :- dynamic(clicked_obj_is/1).
 
-click_obj(Xpt, Ypt, DiagInfo, CD) :-
+click_obj( Parent,Xpt, Ypt, DiagInfo, CD) :-
 	check_snap,
 	assert(clicked_obj_is(DiagInfo)),
 	(DiagInfo = tab(Name, Link, HX, HY), !;
 	    Name = DiagInfo),
 	find_current(Wid),
 	find_relevant_windows(Name, Wid, Depth, Trans),
-	translate([Xpt, Ypt], Trans, ActNewPt),
+%	translate([Xpt, Ypt], Trans, ActNewPt),
+	ActNewPt = [Xpt, Ypt],
 	snap_to_grid(ActNewPt, [NewXpt, NewYpt]),
 	set_original_click(Xpt, Ypt),
 	find_all_comps(Parent, Name),
@@ -158,13 +159,13 @@ click_obj(Xpt, Ypt, DiagInfo, CD) :-
 	    assert(max_size_is(CompSpace)) */ ;
 	true)).
 
-click_text(Xpt, Ypt, Name, CD) :-
+click_text(Parent,Xpt, Ypt, Name, CD) :-
 	get_mode(select),
 	    CD = 0,
 	    doomed(Name), !,
 	    finish_old_edit(Name),
 	    give_focus(Name);
-	click_obj(Xpt, Ypt, Name, CD),
+	click_obj(Parent,Xpt, Ypt, Name, CD),
 	/* we do not want the text of a text item to get separated from its
 	anchor so do not allow a caption move, just move the whole thing */
 	    (find_type(Name, text);
@@ -173,14 +174,15 @@ click_text(Xpt, Ypt, Name, CD) :-
 /*
 click: Handles mouse clicks in a model window.
 */
-click(Xpt, Ypt, CD) :-
+click(Parent,Xpt, Ypt, CD) :-
 	check_snap,
 	find_current(Wid),
-	Wid shows_model Parent,
+	Wid shows_model Top,
 	(get_phase(targetting),
-	    check_same_desktop(Parent), !,
+	    check_same_desktop(Top), !,
 	    advance_phase_to(dragging),
 	    cursor_is(arrow),
+	    /* translate pinnt to coords of 1st model clicked */
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
 	    save_params([0,0,1,1], 0, Parent),
@@ -248,7 +250,8 @@ snap_to_grid([Pair | Rest], [NewPair | NewRest]) :-
 
 
 click_in(Wid, Point, Trans, Depth, Parent, CD) :-
-	targets(Wid, Parent, Point, Depth, Child), !, 
+	targets(Wid, Parent, Point, Depth, Child), !,
+	/* this should never happen */
 	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD);
 	CD = 2,
 	snap_to_grid(Point, GPoint),
@@ -617,20 +620,10 @@ swap_def_params([Roles, NewRoles], OldParam, NewParam, 0) :-
 
 :- dynamic(doing_double_at/2).
 
-doubleclick(Xpt, Ypt) :-
+doubleclick(Wid, Parent, Xpt, Ypt) :-
 	retract(doing_double_at(Xpt,Ypt)), !;
 	\+ get_mode(select), !;
-	find_current(Wid),
-	Wid shows_model Parent,
-	doubleclick_in(Wid, Parent, [Xpt, Ypt], [0,0,1,1], 0).
-
-doubleclick_in(Wid, Parent, AbsPoint, Trans, Depth) :-
-	(translate(AbsPoint, Trans, Rel_point),
-	targets(Wid, Parent, Rel_point, Depth, Target), !,
-	    (add_to_translation(Trans, Target, NewTrans), !; NewTrans = none),
-	    NewDepth is Depth + 1,
-	    doubleclick_in(Wid, Target, AbsPoint, NewTrans, NewDepth);
-	menu:set_properties(Wid, Parent)).
+	menu:set_properties(Wid, Parent).
 
 doubleclick_obj(Xpt, Ypt, Name) :-
 	retractall(doing_double_at(_,_)),
@@ -1749,7 +1742,7 @@ unclick_obj :-
 	    retract(ghostly_move(_,_)),
 	    (drag_to(Xpt, Ypt, Submodel); % do it for real
 		do_dialogue("Failed to drag selection", warning,
-			    "Cannot drag selection here due to overlaps", ok, _)), !,
+		    "Cannot drag selection here due to overlaps", ok, _)), !;
 	true),
 	(get_phase(moving_border(_)),
 	    \+ Submodel is_instance_of _, !,
@@ -1800,7 +1793,7 @@ unclick_obj :-
 */
 unclick_obj :-
 	(get_phase(barge); get_phase(moving); get_phase(moving_text);
-			get_phase(moving_start); get_phase(moving_finish)),
+	    get_phase(moving_start); get_phase(moving_finish)),
 	initialize_phase.
 
 doing_add(Comp) :-
@@ -2082,7 +2075,9 @@ attempt_new_component(Parent, Box) :-
 	set_shape(Node_name, internal_extent, [0,0,W,H]),
 	add_to_translation([0, 0, 1, 1], Node_name, Node_trans),
 	relate_graphics(Node_name, Node_trans),
-	redisplay_border(Node_name),
+	/* new submodel must 'redisplay' so it gets a group item; need to
+	reparent the old innards after this if keeping them */
+	redisplay(Node_name),
 	find_current(Wid),
 	give_focus(Node_name),
 	do_colours(Node_name, on),

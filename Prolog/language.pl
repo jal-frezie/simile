@@ -17,10 +17,7 @@ make_new_check(L, Pointer, NewTest) :-
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-fill_instance_ids(c, N, Pointer, [], Indent, Terminator) :-
-		make_indexed_reference(c, instanceid, [N], IArray),
-		make_struct_reference(c, Pointer, IArray, ISlot),
-		render(c, assignment, ISlot=0, Indent, Terminator).
+fill_instance_ids(c, _N, _Pointer, [], _Indent, []).
 
 fill_instance_ids(c, N, Pointer, [RefIndex | RefIndices],
 			Indent, [FillNow | FillLater]) :-
@@ -946,7 +943,8 @@ make_scalar(L, Param, Graphs, FullLocalExpr) :-
 	Param = glob(LocalExpr, Inds),
 	    Var = ''), !,
 	make_evaluation_routine_all(L, Inds, Graphs, ITerms),
-	all(render, make_expr, [unify(L), build(ITerms),
+	all(language, aim_at_array, [unify(L), build(ITerms), build(ATerms)]),
+	all(render, make_expr, [unify(L), build(ATerms),
 				build(IExprs)]),
 	(Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),
 	    (Type = a(_ET),
@@ -960,3 +958,6 @@ make_scalar(L, Param, Graphs, FullLocalExpr) :-
 					  ArcIndex, ArrInds], LXStr),
 	    name(FullLocalExpr, LXStr);
 	make_indexed_reference(L, LocalExpr, IExprs, FullLocalExpr)).
+
+aim_at_array(c, Index, Index-1) :- !.
+aim_at_array(_, Index, Index).

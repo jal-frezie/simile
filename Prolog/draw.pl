@@ -136,7 +136,7 @@ move_display(Obj, [Xoff, Yoff]) :-
 	find_relevant_windows(Obj, Wid, _, [_, _, Xscale, Yscale]),
 	Xmotion is Xoff/Xscale,
 	Ymotion is Yoff/Yscale,
-	shift_model(Wid, Obj, [Xmotion, Ymotion]).
+	shift_obj(Wid, Obj, [Xmotion, Ymotion]).
 
 shift_model(Wid, Obj, Vect) :-
 	Vect = [0.0, 0.0], !;
@@ -168,59 +168,62 @@ redisplay(Comp) :-
 	redisplay(Comp, Comp).
 
 redisplay(OldName, Comp) :-
-	find_relevant_windows(Comp, Window_id, Depth, Trans),
+	find_relevant_windows(Comp, Window_id, Depth, _Trans),
 	Window_id shows_model Top,
 	contains(Top, Comp, Levels),
 	\+ (member(Hider, Levels),
 	       \+ Hider = Comp,
 	       hide_innards(Hider)),
-	kill_recursive(Window_id, OldName),
-	display(Window_id, Comp, Depth, Trans, 1),
+%	kill_recursive(Window_id, OldName),
+	kill_submodel_group(Window_id, OldName),
+	find_all_comps(Parent, Comp),
+	display(Window_id, Parent, Comp, Depth, 1),
 	fail;
 	true.
 
 redisplay_border(Comp) :-
-	find_relevant_windows(Comp, Window_id, Depth, Trans),
+	find_relevant_windows(Comp, Window_id, Depth, _Trans),
 	kill_featured(Window_id, Comp),
-	display(Window_id, Comp, Depth, Trans, 0),
+	find_all_comps(Parent, Comp),
+	display(Window_id, Parent, Comp, Depth, 0),
 	fail;
 	true.
 
-display(Window_id, Comp, Depth, Trans, Recurse) :-
+display(Window_id, Parent, Comp, Depth, Recurse) :-
 	(find_type(Comp, text), !,
 	    draws_at(Window_id, text, Depth),
 	    get_shape(Comp, centre, [X,Y]),
-	    find_fatness(Trans, Fatness),
 	    get_flash(Comp, Lit),
-	    add_caption(Window_id, Comp, [X,Y,X,Y], Trans, Fatness, Lit);
+	    add_caption(Window_id, Parent, Comp, [X,Y,X,Y], Lit);
 	Comp is_of_sort box,
-	display_in(Window_id, Comp, Depth, Trans),
-	(find_type(Comp, submodel),
-	    (display_pinout(Window_id, Comp, Trans);
-	    Recurse = 1,
-		\+ hide_innards(Comp),
-		New_depth is Depth + 1,
-		draws_at(Window_id, submodel, New_depth), !,
-		add_to_translation(Trans, Comp, Subtrans),
-		(find_all_comps(Comp, Subcomp),
-		    display(Window_id, Subcomp, New_depth, Subtrans,
-			    Recurse),
+	display_in(Window_id, Parent, Comp, Depth),
+	find_type(Comp, submodel),
+	    (display_pinout(Window_id, Comp);
+		(Recurse = 1,
+		    \+ hide_innards(Comp),
+		    New_depth is Depth + 1,
+		    draws_at(Window_id, submodel, New_depth),
+		    add_to_translation([0,0,1,1], Comp, ThisTrans),
+		    add_submodel_group(Window_id, Parent, Comp, ThisTrans),
+		    find_all_comps(Comp, Subcomp),
+		    display(Window_id, Comp, Subcomp, New_depth, Recurse),
 		    fail;
-		    update_tk);
-	    true));
+		get_window_colour(Comp, BaseColour, _),
+		    get_shape(Comp, internal_extent, Bounds),
+		    draw_submodel_grid(Window_id, Comp, Bounds, BaseColour),
+		    update_tk));
 	Comp is_of_sort line,
-	    display_link_in(Window_id, Comp, Depth, Trans)),
+	    display_link_in(Window_id, Parent, Comp, Depth)),
 	(get_highlit_obj(N, Comp), !,
 	    highlight(Comp, N);
 	true).
 
-display_pinout(Wid, Comp, Trans) :-
+display_pinout(Wid, Comp) :-
 	m_update:module_for(Comp, Works),
 	get_shape(Works, contents_view, ic),
 	get_shape(Comp, bounding_box, [L,T,R,B]),
 	m_update:border_links(Works, InfIn, InfOut, FloIn, FloOut),
 
-	find_fatness(Trans, Fatness),
 	get_flash(Comp, Flash),
 
 	(member(List-Way-Style, [InfIn-w-3, InfOut-e-3, FloIn-n-4, FloOut-s-4]),
@@ -232,10 +235,8 @@ display_pinout(Wid, Comp, Trans) :-
 		    Xinc is (R-L)/InfIns, Yinc = 0;
 	    member(Way, [e,w]), 
 		    Yinc is (B-T)/InfIns, Xinc = 0),
-	    translate([L, T, X1, Y1], Trans, [Lm, Tm, X1m, Y1m]),
-	    rel_translate([Xinc, Yinc, Derrr], Trans, [Xm, Ym, Derrr]),
 	    all(draw, add_l_pins,
-		[unify([Wid, Comp, Fatness, Lm, Tm, X1m, Y1m, Xm, Ym,
+		[unify([Wid, Comp, L, T, X1, Y1, Xinc, Yinc,
 			Way, Style, Flash]), build(List), inc(0)]),
 	    fail;
 	    true).
@@ -335,7 +336,7 @@ add_caption: This is somewhat tricky as most of our GUI languages support the us
 Powersim does this. Still, we must simply call a textual output device, and when the user changes the name of the component we will end up coming through here, where a pre-draw check will (in the tk case) show us that the name has already changed, thus not needing further interference. 
 */
 
-add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
+add_caption(Wid, Parent, Id, Box, Colour_scheme) :-
 	caption_for(Id, Caption),
 	draw_style_for(Id, Style),
 
@@ -362,7 +363,6 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	image:map(Box, DefAnchor, _,_, TextX, TextY),
 	VirtX is TextX + XOff,
 	VirtY is TextY + YOff,
-	untranslate([VirtX, VirtY], Trans, ScreenPoint),
 	(is_ghost(Id), !,
 		EditState = [];
 	get_mode(select), !,
@@ -377,23 +377,26 @@ add_caption(Wid, Id, Box, Trans, Fatness, Colour_scheme) :-
 	    Tags = [ValueTag | EditState];
 	Tags = EditState),
 /* currently added to last choice to test alternative edit prevention */
-	text(Wid, ScreenPoint, PosStyle, [Id, fillable | Tags],
-			Fatness, Colour_scheme, Caption).
+	text(Wid, Parent, [VirtX, VirtY], PosStyle, [Id, fillable | Tags],
+			100, Colour_scheme, Caption).
 
 /* redraw_window/1: Well it is simple to describe what this does; it redraws the contents of the window. But I won't know how it works till I've written it.
-*/
 
-add_window(Wid, TopNode, Model, Area, Cname, Colour, Scale, InitDs, IsTL) :-
+
+OK, Zinc needs to know the id of the submodel, so it can figure itself whether
+it is toplevel */
+
+add_window(Wid, TopNode, Model, Area, Cname, Colour, Scale, InitDs, _IsTop) :-
 	make_header(Model, Header),
-	tk_add_window(Wid, TopNode, Header, Area, Cname, Colour, Scale, InitDs,
-		      IsTL).
+	tk_add_window(Wid, TopNode, Model, Header, Area, Cname, Colour, Scale,
+		      InitDs).
 
 redraw_window(Wid) :-
 	Wid shows_model Model,
 	clear_display(Wid),
 	update_tk,
 	find_all_comps(Model, Component),
-	display(Wid, Component, 0, [0, 0, 1, 1], 1),
+	display(Wid, Model, Component, 0, [0, 0, 1, 1], 1),
 	fail.
 
 /* Having drawn the components, succeed and don't come back...*/
@@ -466,15 +469,13 @@ get_flash(Comp, Colour_scheme) :-
 		member(Index-Colour_scheme, [0-select, 1-highlight, 2-target]);
 	normal_colour_for(Comp, Colour_scheme).
 
-display_in(Wid, Comp, Depth, Trans) :-
+display_in(Wid, Parent, Comp, Depth) :-
 	(appears(Comp),
 	get_drawing_form(Comp, Style, BBox),
 	draws_at(Wid, Style, Depth), !,
 	    (Style = channel, !,
 		find_type(Comp, Density);
 	    density_for(Comp, Density)),
-	    untranslate(BBox, Trans, Screen_list),
-	    find_fatness(Trans, Fatness),
 	    get_flash(Comp, Colour_scheme),
 	    find_base(Comp, BComp),
 	    (BComp is_instance_of Module, !; Module = BComp),
@@ -488,30 +489,22 @@ display_in(Wid, Comp, Depth, Trans) :-
 	    (Style = submodel, !,
 		get_colour(Module, FillColour, FillImage, ImgPos),
 /* if no contents displayed, set scheme to incomplete to avoid drawing grid */
-	        (\+ hide_innards(Comp),
-		    New_depth is Depth + 1,
-		    draws_at(Wid, submodel, New_depth),
-		    add_to_translation(Trans, Comp, InTrans), !,
-		    find_fatness(InTrans, InFat),
-		    untranslate([0,0], InTrans, [Ox, Oy]);
-		[InFat, Ox, Oy] = [0,0,0]),
-	        submodel(Wid, Screen_list, Num, Fatness,
-				  FillColour, FillImage, ImgPos, Ox, Oy,
-				  InFat, Colour_scheme, Comp);
+	        submodel(Wid, Parent, BBox, Num, 100, FillColour, FillImage,
+			 ImgPos, Colour_scheme, Comp);
 	    (Style=state, !,
 	       DCmd = compartment;
 	    Style=event, !,
 		DCmd = variable;
 	    DCmd = Style),
-	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
+	    Draw_command =.. [DCmd, Wid, Parent, BBox, Num, 100,
 				  Density, Colour_scheme, [Comp]],
 		call(Draw_command)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 		((Style = cloud; \+ appears(Comp); Caption_detail =< Depth), !;
-		add_caption(Wid, Comp, BBox, Trans, Fatness, Colour_scheme)));
+		add_caption(Wid, Parent, Comp, BBox, Colour_scheme)));
 	true).
 
-display_link_in(Wid, Link, Depth, Trans) :-
+display_link_in(Wid, Parent, Link, Depth) :-
 	appears(Link),
 	/* speed hack: do not check influence type if not drawing it anyway */
 	find_type(Link, LType),
@@ -522,9 +515,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    draws_at(Wid, ghost_link, Depth))), !,
 	draw_style_for(Link, Type),
 	draws_at(Wid, Type, Depth),
-	get_shape(Link, course, Coord_list),
-	untranslate(Coord_list, Trans, Screen_coords),
-	find_fatness(Trans, RelFatness),
+	get_shape(Link, course, Coords),
 	get_flash(Link, Colour_scheme),
 	(Type = influence,
 	    find_name_host(Link, ControlThing),
@@ -533,38 +524,30 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	Type = squirt, !,
 	    UseType = flow;
 	UseType = Type),
-	Draw_command =.. [UseType, Wid, Screen_coords, 
-			RelFatness, Colour_scheme, [Link]],
+	Draw_command =.. [UseType, Wid, Parent, Coords, 100, Colour_scheme,
+			  [Link]],
 	call(Draw_command),
 	((get_drawing_form(Link, LType, Bowtie),
 	  has_bowtie(Link),
-	        untranslate(Bowtie, Trans, Screen_bowtie),
 		(LType = flow, !,
-		    bowtie(Wid, Screen_bowtie, RelFatness,
-		       {}, Colour_scheme, [Link]);
-		event(Wid, Screen_bowtie, 0, RelFatness,
-		       {}, Colour_scheme, [Link, bowtie]));
+		    bowtie(Wid, Parent, Bowtie, 100, {}, Colour_scheme, [Link]);
+		event(Wid, Parent, Bowtie, 100, {}, Colour_scheme, [Link, bowtie]));
 	  Type = relation,
 	  	get_boundary_end(Link, true),
-	        get_caption_anchor(Coord_list, Bowtie)), !,
+	        get_caption_anchor(Coords, Bowtie)), !,
 	    /* bowtied links (flows) and top sections of
 	    relations have captions */
 	    (get_display_depth(Wid, caption, Caption_detail),
 		Caption_detail =< Depth, !;
-	    add_caption(Wid, Link, Bowtie, Trans, RelFatness, Colour_scheme));
+	    add_caption(Wid, Parent, Link, Bowtie, Colour_scheme));
 	true).
-
-find_fatness([_,_,FatX,FatY], Fatness) :-
-	Fatness is 100/sqrt(FatX*FatY).
 
 draw_incomplete(Line_type) :-
 	(Line_type = squirt, Draw_type = flow;
 	    \+ Line_type = squirt, Draw_type = Line_type),
 	get_incomplete(_Parent-Draw_coords),
 	find_current(Window_id),
-	get_translation(Trans),
-	find_fatness(Trans, Fatness),
-	Draw_command =.. [Draw_type, Window_id, Draw_coords, Fatness, incomplete, [unfinished_line]],
+	Draw_command =.. [Draw_type, Window_id, 1, Draw_coords, 100, incomplete, [unfinished_line]],
 	call(Draw_command),
 	fail;
 	true.
@@ -576,13 +559,11 @@ remove_old_incomplete :-
 draw_rubberband(Style) :-
 	get_incomplete(Box),
 	find_current(Window_id),
-	get_translation(Trans),
-	untranslate(Box, Trans, Draw_box),
 	(Style = square, !,
 	    Fatness = 0;
-	find_fatness(Trans, Fatness)),
-	submodel(Window_id, Draw_box, 1, Fatness, clear, none,none, 0,0,
-		 100, incomplete, [unfinished_component, '/background/']).
+	Fatness = 100),
+	submodel(Window_id, 1, Box, 1, Fatness, clear, none,none,
+		 incomplete, [unfinished_component, '/background/']).
 
 remove_old_rubberband :-
 	find_current(Window_id),

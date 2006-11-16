@@ -4,12 +4,6 @@
 # be available in both the editor and execution contexts. They go
 # here.
 
-# GetClickedObj: returns the object at the target position. We want to return
-# the closest object within a certain number of pixels. Since there is always
-# something in the background we will get that if our search radius is too
-# small, so we gradually increase it until we find a non-background thing or
-# we reach the edge of our search radius.
-
 proc GetCaptionItem {w name} {
     if {[winfo exists $w]} {
         foreach object [$w find withtag $name] {
@@ -20,6 +14,22 @@ proc GetCaptionItem {w name} {
                 }
             }
         }
+    }
+}
+
+proc GetGroupItem {w name} {
+    global window_info
+
+    if {[winfo exists $w]} {
+	if {[string equal $name $window_info($w,node)]} {
+	    return 1
+	}
+        foreach object [$w find withtag $name] {
+            if {[string compare [$w type $object] group] == 0} {
+		return $object
+            }
+        }
+	error "No group object for node $name"
     }
 }
 
@@ -48,6 +58,12 @@ proc GetPathSect { w name } {
     }
 }
 
+# GetClickedObj: returns the object at the target position. We want to return
+# the closest object within a certain number of pixels. Since there is always
+# something in the background we will get that if our search radius is too
+# small, so we gradually increase it until we find a non-background thing or
+# we reach the edge of our search radius.
+
 proc GetClickedObj { winId canx cany range} {
     for {set halo 1} {$halo < $range} {incr halo 2} {
         set target [$winId find closest $canx $cany $halo]
@@ -62,6 +78,20 @@ proc ExtractPrologName { winId target } {
     set tagList [$winId gettags $target]
     set objNamePosn [lsearch -regexp $tagList {((node)|(arc)[0-9]*)|(sample)}]
     return [lindex $tagList $objNamePosn]
+}
+
+proc GetGroupName { winId canx cany } {
+    global window_info
+
+    set tgts [$winId find overlapping $canx $cany $canx $cany]
+    foreach tgt $tgts { ;# right order?
+	if {[string match "*/base/*" [$winId gettags $tgt]]} {
+	    return $window_info($winId,node)
+	}
+	if {[string match "*/background/*" [$winId gettags $tgt]]} {
+	    return [ExtractPrologName $winId $tgt]
+	}
+    }
 }
 
 proc GetClickCapt { winId canx cany node} {

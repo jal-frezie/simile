@@ -13,10 +13,11 @@ changed only by deleting and redrawing them.  */
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	get_file_name/4, list_matching_files/2, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
-	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
-	submodel/12, inf_pin/8,
-			bowtie/6, flow/5, influence/5, broken_influence/5,
-			ghost_link/5, relation/5, text/7,
+	compartment/8, channel/8, function/8, variable/8, event/8, cloud/8, 
+	submodel/10,
+	kill_submodel_group/2, add_submodel_group/4, draw_submodel_grid/4,
+	inf_pin/9, bowtie/7, flow/6, influence/6, broken_influence/6,
+	ghost_link/6, relation/6, text/8,
 	shift_text/3, shift_obj/3, zap_route/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
 	get_component_from_gui/3, 
@@ -190,72 +191,81 @@ disable_text_editing_in(Wid) :-
 select_text(Wid, Node) :-
 	safe_tcl_eval(['SelectText', Wid, Node], _).
 
-compartment(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutRectangle', Wid, L, T, R, B, Num, Fatness, Density, 
+compartment(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutRectangle', Wid, Parent, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
-channel(Wid, [L, T, R, B], _, Fatness, Decor, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutShape', Wid, L, T, R, B, Decor, Fatness, 
+channel(Wid, Parent, [L, T, R, B], _, Fatness, Decor, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutShape', Wid, Parent, L, T, R, B, Decor, Fatness, 
 			Colour_scheme, br(Features)], _).
 
-function(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutHexagon', Wid, L, T, R, B, Num, Fatness, Density, 
+function(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutHexagon', Wid, Parent, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
-variable(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutCrossedCirc', Wid, L, T, R, B, Num,
+variable(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutCrossedCirc', Wid, Parent, L, T, R, B, Num,
 		       Fatness, Density, Colour_scheme, br(Features)], _).
 
-event(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+event(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 	FullNum is Num+100,
-	safe_tcl_eval(['PutCrossedCirc', Wid, L, T, R, B, FullNum,
+	safe_tcl_eval(['PutCrossedCirc', Wid, Parent, L, T, R, B, FullNum,
 		       Fatness, Density, Colour_scheme, br(Features)], _).
 
-cloud(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutCloud', Wid, L, T, R, B, Num, Fatness, Density, 
+cloud(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutCloud', Wid, Parent, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
-submodel(Wid, [L, T, R, B], Stack, Fatness, FillColour, FillImage, Posn,
-	 OrigX, OrigY, InFat, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutRoundedRect', Wid, L, T, R, B, Stack, Fatness,
-		       FillColour, FillImage, Posn, OrigX, OrigY,
-		       InFat, Colour_scheme, br(Features)], _).
+submodel(Wid, Parent, [L, T, R, B], Stack, Fat, FillColour, FillImage, Posn,
+	 Colour_scheme, Features) :-
+	safe_tcl_eval(['PutRoundedRect', Wid, Parent, L, T, R, B, Stack, Fat,
+		       FillColour, FillImage, Posn,
+		       Colour_scheme, br(Features)], _).
 
-inf_pin(Wid, X, Y, Type, Orient, SmFat, Flash, Tags) :-
-	safe_tcl_eval(['PutInfPin', Wid, X, Y, Type, Orient, SmFat, Flash,
+kill_submodel_group(Wid, Comp) :-
+	safe_tcl_eval(['KillGroup', Wid, Comp], _).
+
+add_submodel_group(Wid, Parent, Comp, [X,Y,F1,F2]) :-
+	safe_tcl_eval(['PutGroup', Wid, Parent, Comp, X, Y, F1, F2], _).
+
+draw_submodel_grid(Wid, Comp, [L, T, R, B], Base) :-
+	safe_tcl_eval(['MakeSubmodelGrid', Wid, Comp, L, T, R, B, Base], _).
+
+inf_pin(Wid, Parent, X, Y, Type, Orient, SmFat, Flash, Tags) :-
+	safe_tcl_eval(['PutInfPin', Wid, Parent, X, Y, Type, Orient, SmFat, Flash,
 		       br(Tags)], _).
 		       
-bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutBowTie', Wid, L, T, R, B, Fatness, Density,
+bowtie(Wid, Parent, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutBowTie', Parent, Wid, L, T, R, B, Fatness, Density,
 		 Colour_scheme, br(Features)], _).
 
-flow(Wid, Coords, Fatness, Colour_scheme, Features) :-
+flow(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutFatArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutFatArrow', Wid, Parent, br(Singleton_list),
 		      Fatness, Colour_scheme, br(Features)], _).
 
-influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
+influence(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, Parent, br(Singleton_list),
 		       Fatness, {}, Colour_scheme, br(Features)], _).
 
-broken_influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
+broken_influence(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, Parent, br(Singleton_list),
 		       Fatness, dashed, Colour_scheme, br(Features)], _).
 
-ghost_link(Wid, Coords, Fatness, Colour_scheme, Features) :-
+ghost_link(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, Parent, br(Singleton_list),
 		       Fatness, gray50, Colour_scheme, br(Features)], _).
 
-relation(Wid, Coords, Fatness, Colour_scheme, Features) :-
+relation(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutRelation', Wid, br(Singleton_list),
+	safe_tcl_eval(['PutRelation', Wid, Parent, br(Singleton_list),
 		       Fatness, Colour_scheme, br(Features)], _).
 
-text(Wid, Coords, Type, Features, Fatness, Colour_scheme, Content) :-
-	safe_tcl_eval(['PutText', Wid, br(Coords), br(Type), br(Features),
+text(Wid, Parent, Coords, Type, Features, Fatness, Colour_scheme, Content) :-
+	safe_tcl_eval(['PutText', Wid, Parent, br(Coords), br(Type), br(Features),
 		       Fatness, Colour_scheme, br(write(Content))], _).
 
 shift_text(Wid, Obj, Vector) :-
@@ -268,11 +278,11 @@ zap_route(Wid, Obj, Coords) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['MoveLine', Wid, Obj, br(Singleton_list)], _).
 		
-tk_add_window(Wid, TopNode, Title, [L, T, R, B], Cname, BG, Scale, InitDepths,
-	      IsTL) :-
+tk_add_window(Wid, TopNode, Node, Title, [L, T, R, B], Cname, BG, Scale,
+	      InitDepths) :-
 	bracketize(BG, BGList),
-	safe_tcl_eval(['MainWindowDraw', TopNode, Wid, br(write(Title)), 
-			L, T, R, B, BGList, Scale, IsTL | InitDepths],
+	safe_tcl_eval(['MainWindowDraw', TopNode, Node, Wid, br(write(Title)), 
+			L, T, R, B, BGList, Scale | InitDepths],
 		      CanvasString),
 	name(Cname, CanvasString).
 
@@ -370,7 +380,7 @@ shift_images(TopDir, Fillers, Way) :-
 	safe_tcl_eval(['ShiftImages', WTopDir, Way | Fillers], _).
 
 kill_featured(Wid, Victim_id) :-
-	safe_tcl_eval([Wid, delete, Victim_id], _).
+	safe_tcl_eval(['RemoveGraphics', Wid, Victim_id], _).
 
 clear_display(Wid) :-
 	safe_tcl_eval(['ClearWindow', Wid], _).

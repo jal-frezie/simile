@@ -509,7 +509,8 @@ get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 			Sizes = [UseSize]);
 		    sicstus_format_to_chars("Cannot resolve reference to size of ~a. There are multiple submodels of this name.", [ModName], Err));
 		sicstus_format_to_chars("Cannot resolve reference to size of ~w. There is no submodel of this name.", [ModName], Err));
-	atom(Sub),
+	dequote(Sub, BareSub), % enquoted: syntax error if not unit or e_t
+            \+ BareSub = Sub,
 	    caption_for(Node, Capt),
 	    sicstus_format_to_chars("Cannot resolve reference to size of ~a at node ~a. There is no local enumerated type of this name.", [Sub, Capt], Err)),
 	(var(Err), !;
@@ -535,11 +536,7 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 	    Units = 1), !,
 	    Value = Ref,
 	    ETSpec = Ref;	
-	atom(Ref),
-	(name(Ref, RefStr),
-	    append([34 | BareRefStr], [34], RefStr),
-	    name(BareRef, BareRefStr);
-	 BareRef = Ref), !,
+	dequote(Ref, BareRef),
 	(nth0(Value, [false, true], BareRef), !,
 	    Units = boolean;
 	BareRef = 'NULL',

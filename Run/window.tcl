@@ -17,7 +17,8 @@ source ../Run/forms.tcl
 
 proc Scale {winId can} {
     global window_info
-    expr $can*$window_info($winId,scale)
+#    expr $can*$window_info($winId,scale)
+    set can
 }
 
 proc ScaleList {winId clist} {
@@ -35,7 +36,8 @@ proc ScaleList {winId clist} {
 
 proc Unscale {winId can} {
     global window_info
-    expr $can/$window_info($winId,scale)
+#    expr $can/$window_info($winId,scale)
+    set can
 }
 
 proc ChangeScale {winId factor} {
@@ -50,9 +52,9 @@ proc FindObj { winId x y } {
     set canx [Scale $winId $x]
     set cany [Scale $winId $y]
     
-    set tgt [GetClickedObj $winId $canx $cany 6]
+    set tgt [GetClickedObj $winId $x $y 6]
 
-    set prlgNm [ExtractPrologName $winId [GetClickedObj $winId $canx $cany 6]]
+    set prlgNm [ExtractPrologName $winId $tgt]
     return [AddTabId $winId $tgt $prlgNm]
 }
 
@@ -71,7 +73,9 @@ proc AddTabId {winId tgt prlgNm} {
 # left corner. If you are going to use @x,y to refer to a point in a canvas
 # text item, these are the values you need (this is a bug in TclTk)
 
-proc canvasTLDistance {winId x y} {
+# For Zinc, we are not.
+
+proc notcanvasTLDistance {winId x y} {
     if {[scan [$winId cget -scrollregion] "%g %g" cl ct]==2} {
         return [list [expr $x-$cl] [expr $y-$ct]]
     } else {
@@ -121,8 +125,9 @@ proc ClickObj { x y winId X Y action} {
     }
     
     set clicktime [clock clicks -milliseconds]
-    set canx [$winId canvasx $x]
-    set cany [$winId canvasy $y]
+    set grpName [GetGroupName $winId $x $y]
+    scan [$winId transform [GetGroupItem $winId $grpName] "$x $y"] "%f %f" \
+	canx cany
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
 #    if {$looks(gridPitch)} {
@@ -133,7 +138,7 @@ proc ClickObj { x y winId X Y action} {
 #    }
     
     focus $winId
-    set target [GetClickedObj $winId $canx $cany 6]
+    set target [GetClickedObj $winId $x $y 6]
     if {!$target} {
         # a background click
         $winId select clear
@@ -143,7 +148,7 @@ proc ClickObj { x y winId X Y action} {
             tk_popup [winfo parent $winId]top.edit $X $Y
             prolog [list tk_unclick( $xco , $yco )]
         } else {
-            prolog [list tk_${action}('$winId', $xco , $yco , $CD)]
+            prolog [list tk_${action}('$winId', $grpName , $xco , $yco , $CD)]
         }
         return
     }
@@ -166,26 +171,26 @@ proc ClickObj { x y winId X Y action} {
         do_in_node $topNode snap $topNode $node
     } else {
     set window_info(lastClickCapt) $context
-        if {[string equal click $action]} {
-            set obj [GetCaptionItem $winId $node]
-            
-            # This bit used to start a drag selecting some caption text
-            if {[string compare $obj {}]} {
-                set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
-                $winId icursor $obj $realPlace
-                $winId select clear
-                if {[lsearch [$winId gettags $obj] selected] != -1} {
-                    $winId select from $obj $realPlace
-                }
-                if {[lsearch [$winId gettags $obj] backbox_is($target)]!=-1} {
-                    set CD -1
-                }
-                if {!$RB && ([string equal $target $obj] || $CD==-1)} {
-                    set action clicktext
-                }
-            }
-        }
-        prolog [list tk_click_obj('$winId',  $action , $xco , $yco , \
+#        if {[string equal click $action]} {
+#            set obj [GetCaptionItem $winId $node]
+#            
+#            # This bit used to start a drag selecting some caption text
+#            if {[string compare $obj {}]} {
+#                set realPlace @[join [canvasTLDistance $winId $canx $cany] ,]
+#                $winId icursor $obj $realPlace
+#                $winId select clear
+#                if {[lsearch [$winId gettags $obj] selected] != -1} {
+#                    $winId select from $obj $realPlace
+#                }
+#                if {[lsearch [$winId gettags $obj] backbox_is($target)]!=-1} {
+#                    set CD -1
+#                }
+#                if {!$RB && ([string equal $target $obj] || $CD==-1)} {
+#                    set action clicktext
+#                }
+#            }
+#        }
+        prolog [list tk_click_obj('$winId', $grpName, $action, $xco, $yco, \
                       [AddTabId $winId $target $node] , $CD)]
     update
         # Right button puts up context menu.
@@ -247,28 +252,30 @@ proc SafeEqnBarEdit {winId} {
 # coordinates of the current area. l, t, r, b are relative to window.
 
 proc RollBack { winId toProlog l t r b } {
+    global window_info
+
     set newSpace 0
-    scan [$winId cget -scrollregion] "%g %g %g %g" cl ct cr cb
+    scan $window_info($winId,scrollregion) "%g %g %g %g" cl ct cr cb
     #    puts "debug info Rolling from $cl $ct $cr $cb to $l $t $r $b ok"
-    set pt [$winId canvasx $l]
+    set pt $l
     if {$pt < $cl-2} {
         set cl $pt
         set newSpace 1
     }
     
-    set pt [$winId canvasx $r]
+    set pt $r
     if {$pt > $cr+2} {
         set cr $pt
         set newSpace 1
     }
     
-    set pt [$winId canvasy $t]
+    set pt $t
     if {$pt < $ct-2} {
         set ct $pt
         set newSpace 1
     }
     
-    set pt [$winId canvasy $b]
+    set pt $b
     if {$pt > $cb+2} {
         set cb $pt
         set newSpace 1
@@ -276,6 +283,9 @@ proc RollBack { winId toProlog l t r b } {
     
     if {$newSpace && $toProlog} {
         ResizeDesktop $winId $cl $ct $cr $cb
+    } else {
+# not gonna get resize from Prolog so do locally
+	FixBars $winId
     }
 }
 
@@ -308,8 +318,7 @@ proc DragObj {winId xco yco} {
         return
     }
     
-    set canx [$winId canvasx $xco]
-    set cany [$winId canvasy $yco]
+    scan [$winId transform 1 "$xco $yco"] "%f %f" canx cany
     set virtx [Unscale $winId $canx]
     set virty [Unscale $winId $cany]
 #    if {$looks(gridPitch)} {
@@ -347,8 +356,7 @@ proc DragObj {winId xco yco} {
 }
 
 proc ReleaseObj {winId xco yco} {
-    set canx [Unscale $winId [$winId canvasx $xco]]
-    set cany [Unscale $winId [$winId canvasy $yco]]
+    scan [$winId transform 1 "$xco $yco"] "%f %f" canx cany
     prolog [list tk_unclick( $canx , $cany )]
 }
 
@@ -382,13 +390,14 @@ proc AbandonObj {} {
 
 proc ChangeRegion {w l t r b} {
     global window_info
-    
+
     set allowScrollBar [winfo reqwidth [winfo parent $w].yscroll]
     set hcomp [expr [Unscale $w [expr $window_info($w,width)-$allowScrollBar]]/($r - $l)]
     set vcomp [expr [Unscale $w [expr $window_info($w,height)-$allowScrollBar]]/($b - $t)]
     set comp [expr $hcomp>$vcomp?$hcomp:$vcomp]
     set newReg [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
-    $w configure -scrollregion $newReg
+    set window_info($w,scrollregion) $newReg
+    FixBars $w
     eval {ResizeBackgnd $w} $newReg
     #ShowMessage debug info "Just done [$w coords 1]" ok
     #    puts $comp
@@ -406,15 +415,16 @@ set looks(customSet) {normal generic compartment channel text \
                   variable function submodel influence \
                   ghost_link relation state event}
 
-proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
-            colour initialScale isTopLevel args} {
+proc MainWindowDraw {topNode node winName winTitle wl wt wr wb \
+            colour initialScale args} {
     global window_info looks env custom
     set c [ModelWindow $winName]
     set custom(showgrids,$c) [PrefValue custom(initGrid) initGrid]
     
     wm protocol $winName WM_DELETE_WINDOW [list byebye $c]
     set window_info($c,top_node) $topNode
-    if {[set window_info($c,is_top_level) $isTopLevel]} {
+    set window_info($c,node) $node
+    if {[set isTopLevel [string equal $node $topNode]]} {
         set window_info($c,topCapt) {}
 
         foreach nodeType $looks(customSet) {
@@ -457,38 +467,35 @@ proc MainWindowDraw {topNode winName winTitle wl wt wr wb \
     return $c
 }
 
-proc ModelWindow {winName} {
+package require Tkzinc
+
+proc ModelWindow {win} {
     global tcl_platform looks SimileAutoObjLoaded
-    menu ${winName}top
-    toplevel $winName -menu ${winName}top
+    menu ${win}top
+    toplevel $win -menu ${win}top
     if {[info exists SimileAutoObjLoaded]} {
-        wm state $winName withdrawn
+        wm state $win withdrawn
     }
 
     switch $tcl_platform(platform) {
-        windows { wm iconbitmap $winName -default ../Run/simile16.ico }
-        unix { wm iconbitmap $winName @../Images/dribble.xbm}
+        windows { wm iconbitmap $win -default ../Run/simile16.ico }
+        unix { wm iconbitmap $win @../Images/dribble.xbm}
     }
-    # Create a scrollable canvas
-    set c [canvas $winName.canvas -bg white -confine 1 \
-           -xscrollcommand "AdjustCanvas $winName toolSlot x" \
-           -yscrollcommand "AdjustCanvas $winName canvas y" \
-           -xscrollincrement $looks(scrollIncr) \
-           -yscrollincrement $looks(scrollIncr)]
-    # scrollincrements set the only way we can get precise scrolling...
-    
-    # this rectangle will be resized to fill the scrollable area and coloured to
-    # show the background
-    # $c create rect 0 0 100 100 -outline {} -tag {/base/ /background/}
-    
     # space for toolbar
-    frame $winName.toolSlot
-    pack $winName.toolSlot -fill x
+    frame $win.toolSlot
+    pack $win.toolSlot -fill x
     
-    scrollbar $winName.xscroll -orient horizontal \
-            -command [list AdjustScroll $c xview]
-    scrollbar $winName.yscroll -orient vertical \
-            -command [list AdjustScroll $c yview]
+    pack [scrollbar $win.xscroll -orient horizontal \
+	      -command [list AdjustScroll $win.canvas x]] -side bottom -fill x
+    pack [scrollbar $win.yscroll -orient vertical \
+	      -command [list AdjustScroll $win.canvas y]] -side right -fill y
+    # Create a scrollable canvas
+    set c [zinc $win.canvas -backcolor white -confine 1 \
+           -xscrollcommand "AdjustCanvas $win.canvas toolSlot x" \
+           -yscrollcommand "AdjustCanvas $win.canvas canvas y" \
+	       -render 1]
+    # scrollincrements set the only way we can get precise scrolling...
+    # ...but are buggy in zinc
     
     pack $c -fill both -expand true
     
@@ -496,13 +503,74 @@ proc ModelWindow {winName} {
     return $c
 }
 
-proc AdjustScroll {canvas dir args} {
-    if {[string compare [lindex $args 2] units] == 0} {
-        set jump [expr 10*[lindex $args 1]]
-        $canvas $dir [lindex $args 0] $jump units
-    } else {
-        eval {$canvas $dir} $args
+# all new for Zinc -- we don't actually use a scrollregion so we move
+# the diagram to where it should be, then 
+
+proc AdjustScroll {w dir args} {
+    global window_info
+
+    scan [$w transform 1 device $window_info($w,scrollregion)] \
+	"%f %f %f %f" sl st sr sb
+
+    set xmove 0
+    set ymove 0
+    switch $dir {
+	x {
+	    set xmove [GetJump $sl $sr $window_info($w,width) $args]
+	} y {
+	    set ymove [GetJump $st $sb $window_info($w,height) $args]
+	}
     }
+    $w translate 1 $xmove $ymove
+    FixBars $w
+}
+
+proc GetJump {slo shi sz arglist} {
+    set min [expr $sz-$shi]
+    set max [expr -$slo]
+    switch [lindex $arglist 0] {
+	moveto {
+	    set actmove [expr -($slo+[lindex $arglist 1]*($shi-$slo))]
+	} scroll {
+	    switch [lindex $arglist 2] {
+		units {
+		    set actmove [expr -10*[lindex $arglist 1]]
+		} pages {
+		    set actmove [expr -$sz*[lindex $arglist 1]]
+		} default {
+		    error "Don't understand scroll unit [lindex $arglist 2]"
+		}
+	    }
+	} default {
+	    error "Don't understand scroll command [lindex $arglist 0]"
+	}
+    }
+#puts "min $min max $max move $actmove"
+    if {$actmove<$min} {set actmove $min}
+    if {$actmove>$max} {set actmove $max}
+    return $actmove
+}
+
+proc FixBars {w} {
+    global window_info
+
+#puts "setting $win $args"
+#    if {[llength $args]} {
+#	set window_info($w,width) [lindex $args 0]
+#	set window_info($w,height) [lindex $args 1]
+#    }
+
+    scan [$w transform 1 device $window_info($w,scrollregion)] \
+	"%f %f %f %f" sl st sr sb
+    set fr [winfo parent $w]
+    $fr.xscroll set [FractOf $sl $sr 0] \
+	[FractOf $sl $sr $window_info($w,width)]
+    $fr.yscroll set [FractOf $st $sb 0] \
+	[FractOf $st $sb $window_info($w,height)]
+}
+
+proc FractOf {lo hi pt} {
+    return [expr ($pt-$lo)*1.0/($hi-$lo)]
 }
 
 # SetSpace: this command is called when the canvas is 'configured' by attacking
@@ -510,9 +578,15 @@ proc AdjustScroll {canvas dir args} {
 # canvas (This is Tk 4.0 which is too dumb to do it itself) and informs Prolog
 # of the visible area of the scrollregion. We don't get any information about
 # which way the window was grown so the diagram is kept in the middle.
+# Important: changes to scrollregion, toolbars, happen by Prolog callback
 
 proc SetSpace {c w h} {
     global window_info
+    if {![info exists window_info($c,width)]} {
+	set window_info($c,width) 0
+	set window_info($c,height) 0
+	set window_info($c,scrollregion) {0 0 0 0}
+    }
     set cx $window_info($c,width)
     set cy $window_info($c,height)
     set window_info($c,width) [expr $w - 4]
@@ -543,9 +617,8 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
                 [lindex $args $depthParam] 0
     }
     
-    $c configure -width 1 -height 1
-    $c configure -scrollregion "$wl $wt $wr $wb" \
-            -width [expr $wr-$wl] -height [expr $wb-$wt]
+    set window_info($c,scrollregion) "$wl $wt $wr $wb"
+    $c configure -width [expr $wr-$wl] -height [expr $wb-$wt]
     set window_info($c,width) [expr $wr - $wl]
     set window_info($c,height) [expr $wb - $wt]
     set window_info($c,scale) $scale
@@ -563,12 +636,14 @@ proc TweakWindow {c winTitle scale wl wt wr wb bg args} {
 }
 
 proc ChangeParentTitle {wc title bg} {
+    global window_info
+
     wm title [winfo parent $wc] [BlankCrs $title]
     if {[string match clear $bg]} {
         set bg {}
     }
-    $wc delete /base/
-    scan [$wc cget -scrollregion] "%g %g %g %g" bl bt br bb
+    $wc remove /base/
+    scan $window_info($wc,scrollregion) "%g %g %g %g" bl bt br bb
     
     foreach colour $bg {
         if {[llength $colour]>1} {
@@ -581,11 +656,11 @@ proc ChangeParentTitle {wc title bg} {
         if {[string equal clear $colour]} {
             #
         } elseif {[catch {image type $colour}]} {
-            $wc create rectangle $bl $bt $br $bb -outline {} -fill $colour \
-                    -tag $tag
+            $wc add rectangle 1 "$bl $bt $br $bb" -linewidth 0 -filled 1 \
+		-fillcolor $colour -tags $tag
         } else {
-            $wc create image $bl $bt -anchor nw -image [image create photo] \
-                    -tag [concat $tag "source($colour) posn($posn)"]
+            $wc add image 1 "$bl $bt" -anchor nw -image [image create photo] \
+                    -tags [concat $tag "source($colour) posn($posn)"]
         }
     }
     ResizeBackgnd $wc $bl $bt $br $bb
@@ -603,16 +678,18 @@ proc AddGrid {c onCol wl wt wr wb} {
     }
     set interval [expr $looks(gridPitch)*$window_info($c,scale)]
     for {set x [expr $interval*ceil($wl/$interval)]} {$x<$wr} \
-            {set x [expr $x+$interval]} {
-        set nearx [expr int($x)]
-        $c create line $nearx $wt $nearx $wb -fill $col \
-                -tag "realcolour($onCol) /background/ /base/ /grid/"
+	{set x [expr $x+$interval]} {
+	    set nearx [expr int($x)]
+	    $c add curve 1 [list [list $nearx $wt] [list $nearx $wb]] \
+		-linecolor $col \
+                -tags "realcolour($onCol) /background/ /base/ /grid/"
     }
     for {set y [expr $interval*ceil($wt/$interval)]} {$y<$wb} \
-            {set y [expr $y+$interval]} {
-        set neary [expr int($y)]
-        $c create line $wl $neary $wr $neary -fill $col \
-                -tag "realcolour($onCol) /background/ /base/ /grid/"
+	{set y [expr $y+$interval]} {
+	    set neary [expr int($y)]
+	    $c add curve 1 [list [list $wl $neary] [list $wr $neary]] \
+		-linecolor $col \
+                -tags "realcolour($onCol) /background/ /base/ /grid/"
     }
 }
 
@@ -668,7 +745,7 @@ proc ResizeBackgnd {wc l t r b} {
                 set baseImg [$wc itemcget $baseItem -image]
                 #set oldW [base$wc cget -width]
                 #set oldH [base$wc cget -height]
-                $wc coords $baseItem $l $t
+                $wc coords $baseItem "$l $t"
                 set w [expr int($r-$l)]
                 set h [expr int($b-$t)]
                 $baseImg configure -width $w -height $h
@@ -687,18 +764,17 @@ proc ResizeBackgnd {wc l t r b} {
                 }
             } 
             rectangle {
-                $wc coords $baseItem $l $t $r $b
-                set baseColor [$wc itemcget $baseItem -fill]
+                $wc coords $baseItem "$l $t $r $b"
+                set baseColor [$wc itemcget $baseItem -fillcolor]
             } 
             line {
-                $wc delete $baseItem
+                $wc remove $baseItem
             }
         }
     }
     AddGrid $wc [Gradient $baseColor -0.1 $wc] $l $t $r $b
     $wc lower /base/ ;# should keep them in order
-    global window_info
-    if {$window_info($wc,is_top_level)} {
+    if {[string equal $window_info($wc,node) $window_info($wc,top_node)]} {
         prolog tk_resize_top_win('$wc',[expr $r-$l],[expr $b-$t])
     }
 }
@@ -779,7 +855,8 @@ proc AddCanvasBindings { c topNode } {
     
     $c configure -highlightcolor white
     # now confer editability on the editable text items on this canvas
-    CanvasEditBind $c
+#    CanvasEditBind $c
+# there is a new way of doing this in tkzinc
     
     # Stuff to put a popup help window on a canvas item
     # (could use tag 'has_info' for this)
@@ -799,9 +876,9 @@ proc AddEqnPopup {node x y winId X Y} {
                 !$doDesc && !$doVal && !$doCmt} {
         return
     }
-    set canx [$winId canvasx $x]
-    set cany [$winId canvasy $y]
-    set target [GetClickedObj $winId $canx $cany 2]
+    set canx $x
+    set cany $y
+    set target [GetClickedObj $winId $x $y 2]
     #puts "Adding for $target"
     #    set target [$winId find closest $canx $cany 1]
     #puts "targeting $target"
@@ -873,7 +950,7 @@ proc CanvasEditBind { c } {
     $c bind currently_editable <B1-Motion> {
         if {[lsearch [%W gettags [%W focus]] selected] != -1} {
             %W select to current \
-                    @[join [canvasTLDistance %W [%W canvasx %x] \
+                    @[join [canvasTLDistance %W %x \
                     [%W canvasy %y]] ,]
         }
     }
@@ -903,7 +980,7 @@ proc CanvasEditBind { c } {
             [$c bind currently_editable <Control-h>]
     
     $c bind currently_editable <Control-Delete> {
-        %W delete [%W focus]
+        %W remove [%W focus]
         FixBackBox %W [%W focus]
     }
     $c bind currently_editable <Return> {
@@ -1002,10 +1079,11 @@ proc FixBackBox {c textItem} {
     if {[scan [$c bbox $textItem] "%g %g %g %g" l t r b]==4} {
         foreach backBox [$c find withtag $nid] {
             if {[regexp {/[^ ]*_text/} [$c gettags $backBox] spare]} {
-                if {[string equal line [$c type $backBox]]} {
-                    $c coords $backBox $r $t $l $t $l $b $r $b $r $t
+                if {[string equal curve [$c type $backBox]]} {
+                    $c coords $backBox [list "$r $t" "$l $t" \
+					    "$l $b" "$r $b" "$r $t"]
                 } else {
-                    $c coords $backBox $l $t $r $b
+                    $c coords $backBox "$l $t $r $b"
                 }
             }
         }
@@ -1766,8 +1844,8 @@ proc DragComponentIn {winId button x y} {
         return
     }
     
-    set canx [$winId canvasx $x]
-    set cany [$winId canvasy $y]
+    set canx $x
+    set cany $y
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
 #    if {$looks(gridPitch)} {
@@ -1775,7 +1853,7 @@ proc DragComponentIn {winId button x y} {
 #        set yco [expr $looks(gridPitch)*round($yco/$looks(gridPitch))]
 #    }
     focus $winId
-    set target [GetClickedObj $winId $canx $cany 6]
+    set target [GetClickedObj $winId $x $y 6]
 
     # Now simulate what Prolog would get from an add component menu selection
     if {$target} {
@@ -1934,7 +2012,8 @@ proc ZapWindow { fullName } {
     
     upvar 0 window_info($fullName,parent) target
     #ShowMessage debug info "$winId $custom(first_up)" ok
-    if {$window_info($fullName,is_top_level)} {
+    if {[string equal $window_info($fullName,node) \
+	     $window_info($fullName,top_node)]} {
         focus $target.canvas
         update
         set cacheStream [NetOpen $custom(prefDir)/.layout w]
@@ -1952,10 +2031,18 @@ proc ZapWindow { fullName } {
     }
 }
 
+proc RemoveGraphics {winId obj} {
+    foreach graphic [$winId find withtag $obj] {
+	if {![string equal group [$winId type $graphic]]} {
+	    $winId remove $graphic
+	}
+    }
+}
+
 proc ClearWindow {winId} {
     # Bit of tricky manoovering to delete all but window background
-    $winId addtag doomed all
+    $winId addtag doomed withtag all
     $winId dtag /base/ doomed
-    $winId delete doomed
+    $winId remove doomed
     ResetEqnBar [winfo parent $winId]
 }

@@ -998,7 +998,10 @@ Tcl_Obj* pick_elt_vals(Tcl_Obj** arrayVals, int arrayLength,
 /* This takes a model type and instance, list of integers and pointer into
 that list, and returns, let us say, the first unused model index if the integers match the model's 
 indices as far as the pointer, 0 if that is all the indices, and -1 if there
-is a mismatch before the pointer */
+is a mismatch before the pointer
+
+Change for 4.8: we put a 0 at the end of the dims so we do not need one at the
+end of each model instance's ids  */
 
 int match_type(long int localType, void* smHandle, int dims[], 
 	       int* dim_place) {
@@ -1017,7 +1020,10 @@ int match_type(long int localType, void* smHandle, int dims[],
     id_ptr = &id_count;
     short_tree = id_handle;
   }
-  return *(int *)(get_ptr(localType, smHandle, &short_tree, &id_ptr));
+  if (*cur_place) {
+    return *(int *)(get_ptr(localType, smHandle, &short_tree, &id_ptr));
+  }
+  return 0;
 }
 /* next two call one another so one needs to be declared in advance */
 Tcl_Obj* fill_value(long int, void*, int[], int, int*, int[], int*, 
@@ -1065,6 +1071,9 @@ Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[],
   int arrayLength, arrayPosn, arrayOut;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
 
+  // dimension count for pops/records: overwritten for vm, unused for fm/sep
+  *(dim_place+1)=1;
+  new_tree = dim_place+2;
 
   switch (*use_dims) {
   case SEPARATE:
@@ -1077,9 +1086,13 @@ Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[],
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
   case START_VM:
-    while (*++use_dims != END_VM) {}
+    new_tree = dim_place+1;
+    while (*++use_dims != END_VM) {
+      *(new_tree++)=1;
+    }
   case MEMBERS:
   case RECORDS:
+    *new_tree = 0; // end expected dimensions for vm instances
     new_tree = tree;
     while (*new_tree++ != -1) {}
 
@@ -1124,8 +1137,8 @@ Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[],
     } else {
       eltVals = NULL;
     }
-    for (*dim_place = 1; *use_dims >= *dim_place; ++*dim_place) {
-      indObj = Tcl_NewIntObj(*dim_place);
+    for (*dim_place = 0; *use_dims > *dim_place; ++*dim_place) {
+      indObj = Tcl_NewIntObj(*dim_place+1);
       if (nVs) {
 	eltVals = pick_elt_vals(arrayVals, arrayLength, indObj, &arrayPosn);
       }

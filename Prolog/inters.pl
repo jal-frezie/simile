@@ -1130,28 +1130,23 @@ use_tcl_proc_for(first).
 /* add_zeros has the mind-numbingly monotonous task of shifting
 all the array elements along one so that wooly-minded treehuggers can address
 the first element as index 1. To relieve the tedium it also checks that
-the list contains only numbers, and returns its (ORIGINAL) dimensions. */
+the list contains only numbers, and returns its (ORIGINAL) dimensions.
 
-zero_copy([], []) :- !.
+Change for 4.8: Don't move the array, just subtract 1 from the indices before
+using them. This because people want to integrate their own c++ programs with
+Simile's code, so they want arrays starting at 0. */
 
-zero_copy([H | T], [ZH | ZT]) :-
-	zero_copy(H, ZH),
-	zero_copy(T, ZT), !.
-
-zero_copy(_, 0).
-
-add_zeros(L, SubId, Step, [Zeros | NL], N, U) :-
-	add_zeros_all(L, SubId, Step, NL, Zeros, N, U), !.
+add_zeros(L, SubId, Step, NL, N, U) :-
+	add_zeros_all(L, SubId, Step, NL, N, U), !.
 
 add_zeros(N, SubId, Step, RN, [], U) :-
 	decode_number(N, SubId, Step, RN, U).
 
-add_zeros_all([], _,_, [], _, [0 | _], any).
+add_zeros_all([], _,_, [], [0 | _], any).
 
-add_zeros_all([H | T], SubId, Step, [NH | NT], Zeros, [N | R], U) :-
+add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	add_zeros(H, SubId, Step, NH, R, U1),
-	zero_copy(NH, Zeros),
-	add_zeros_all(T, SubId, Step, NT, Zeros, [M | R], UN),
+	add_zeros_all(T, SubId, Step, NT, [M | R], UN),
 	propagate_units(list_parts(H,T), any, [any, any], [U1, UN], U),
 	N is M+1.
 

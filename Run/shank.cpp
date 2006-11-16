@@ -301,19 +301,6 @@ public:
   }
 };
   
-class recordSet {
-public:
-  int count;
-  char* space;
-
-  recordSet() {
-    space = NULL;
-  }
-
-  ~recordSet() {
-  }
-};
-
 class Model;
 
 /* listable class for keeping track of arrays associated with parameters */
@@ -386,9 +373,27 @@ public:
   }      
 
   ~listParamArray() {
+    int size, count;
+    char* innerSp;
+
     delete(nodeId);
     if(timePoints) delete(timePoints);
-    if (dataPtr && myArraySpace) delete(dataPtr);
+    size=array_count(fullDims);
+    if (dataPtr && myArraySpace) {
+      if (size<0) {
+	for (count=0;count<-size;++count) {
+	  innerSp = ((char**)dataPtr)[count];
+	  /* sprintf(globMess, "lose %lx", innerSp);
+	     showMess(globMess); */
+	  if (innerSp) {
+	    delete(innerSp);
+	  }
+	}
+      }
+      /*  sprintf(globMess, "freeing %lx fd0 %d", dataPtr,size);
+	  showMess(globMess); */
+      delete(dataPtr);
+    }
   }
   
   listParamArray* strip_out(Model* oldModelId) {
@@ -430,6 +435,23 @@ public:
     }
   }
 
+  char* generate_local_space(int size_code) {
+    char** ptrToNew;
+    int count;
+    
+    if (size_code>0) {
+      ptrToNew = (char**)(new char[size_for_type()*size_code]);
+    } else {
+      ptrToNew = new char*[-size_code];
+      for (count=0; count<-size_code; ++count) {
+	ptrToNew[count] = NULL;
+      }
+    }
+    /* sprintf(globMess, "g_l_s created %lx size %d", ptrToNew, size_code);
+       showMess(globMess); */
+    return (char*)ptrToNew;
+  }
+  
   char* create_space(void* newDataPtr) {
     int count;
     if (newDataPtr) {
@@ -439,12 +461,7 @@ public:
       myArraySpace = FALSE;
       dataPtr = (char*)newDataPtr;
     } else if (!myArraySpace) {
-      count = array_count(fullDims);
-      if (count>0) {
-	dataPtr = new char[size_for_type()*count];
-      } else {
-	dataPtr = (char*)new recordSet[-count];
-      }
+      dataPtr = generate_local_space(array_count(fullDims));
       myArraySpace = TRUE;
     }
     return dataPtr;
@@ -485,15 +502,15 @@ public:
   }
 
   void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
-    recordSet* newRecord;
+    char** newRecord;
 
     //    sprintf(globMess, "locate_elt array %ld off %d d0 %d d1 %d d2 %d indx %d",
     //	    startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
     //    showMess(globMess);
     if (*dimPtr==RECORDS) {
-      newRecord = (recordSet*)(startPtr + off*sizeof(recordSet));
+      newRecord = (char**)(startPtr + off);
       if  (*indxs) { // more indices, use to get value from a record submodel
-	return locate_elt(newRecord->space, (*indxs)-1, dimPtr+1, indxs+1);
+	return locate_elt(*newRecord, (*indxs)-1, dimPtr+1, indxs+1);
       } else { // no more indices, we are looking for recordSet struct
 	return newRecord;
       }
@@ -507,14 +524,15 @@ public:
   /* indxs should be only those of models containing the per-record submodel
      followed by a 0 */
   int create_record_list(int* indxs, int records) {
-    recordSet* newRecord;
+    char** newRecord;
     int* subDims;
     int count;
 
-    newRecord = (recordSet*)locate_elt(dataPtr, 0, fullDims, indxs);
-    newRecord->count = records;
-    if (newRecord->space) {
-      delete newRecord->space;
+    newRecord = (char**)locate_elt(dataPtr, 0, fullDims, indxs);
+    if (*newRecord) {
+      /* sprintf(globMess, "c_r_l freeing %lx", *newRecord);
+	 showMess(globMess); */
+      delete *newRecord;
     }
     subDims = fullDims;
     while (*indxs) {
@@ -522,12 +540,7 @@ public:
       indxs += 1;
     }
     // at this point subDims points to the RECORDS element
-    count = records*array_count(subDims + 1);
-    if (count>0) {
-      newRecord->space  = new char[size_for_type()*count];
-    } else {
-      newRecord->space = (char*)new recordSet[-count];
-    }
+    *newRecord = generate_local_space(records*array_count(subDims + 1));
     return 0;
   }
 
@@ -696,7 +709,7 @@ Instance* instance_base = NULL;
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*, void*,
-			  void*, int*, node_data_line**, int*, char***,
+			  void*, void*, int*, node_data_line**, int*, char***,
 			  double**);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
@@ -785,6 +798,7 @@ showMess(globMess); */
 			    (void*)advance_ptr,
 			    (void*)get_remote_value,
 			    (void*)stat_check,
+			    (void*)showMess,
 			    (void*)&c_graphdata,
 			    &phases, &nodedata, 
 			    &inArcCount, &inArcList, &adapt_maxerr);

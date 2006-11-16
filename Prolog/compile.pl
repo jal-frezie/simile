@@ -323,10 +323,11 @@ used when entering file parameters */
 	       [char, simile_identifier, void, IdentAtom], 0, IdentDec),
 	render(Language, variable_declaration,
 	       [int, phasecount, [], Phases], 0, PhaseDec),
+	BoostPhases is Phases+1,
 	render(Language, variable_declaration,
-	       [real, ts, [Phases]], 0, [Times]),
+	       [real, ts, [BoostPhases]], 0, [Times]),
 	render(Language, variable_declaration,
-	       [real, dts, [Phases]], 0, [DTs]),
+	       [real, dts, [BoostPhases]], 0, [DTs]),
 
 /* eval/update procedures are built here because they provide graph info
 	for later declaration builder

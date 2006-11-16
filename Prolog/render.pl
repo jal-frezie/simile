@@ -116,7 +116,8 @@ render(L, enter_context, NewPointer=[CurrentPointer, Struct, Indices],
 	(CurrentPointer = '', !,
 	    Base = Struct;
 	make_struct_reference(L, CurrentPointer, Struct, Base)),
-	make_indexed_namespace(L, Base, Indices, Target),
+	all(language, aim_at_array, [unify(L), build(Indices), build(Offs)]),
+	make_indexed_namespace(L, Base, Offs, Target),
 	render(L, make_reference, NewPointer=Target, Indent, Result).
 
 /* this creates a reference to a value in a deep context. */
@@ -401,7 +402,8 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 	Init = [], !,
 	    (L = c,
 		(Dims = void, Counts = [''];
-		all(render, boost, [build(Dims), build(Counts)])),
+%		all(render, boost, [build(Dims), build(Counts)])),
+		Counts = Dims,
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
 					       ArrayName], Chars);
@@ -417,7 +419,8 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		swap_squares_for_curlies(L, InitialValues, InitString),
 		InitString = [FirstLine | LateLines],
 		(Dims = void, Counts = [''];
-		all(render, boost, [build(Dims), build(Counts)])),
+%		all(render, boost, [build(Dims), build(Counts)])),
+		Counts = Dims,
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		sicstus_format_to_chars("~*s~a ~a = ",
 				[Indent, " ", Type, ArrayName], Chars0),
@@ -704,7 +707,7 @@ pick_types(All, Types, Picked) :-
 	Picked = Rest),
 	pick_types(More, Types, Rest).
 
-boost(P, Q) :- Q is P+1.
+%boost(P, Q) :- Q is P+1.
 
 /* prepend_spaces puts indent blanks on strings and turns them to atoms */
 
