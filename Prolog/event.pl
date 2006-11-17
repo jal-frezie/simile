@@ -625,7 +625,7 @@ doubleclick(Wid, Parent, Xpt, Ypt) :-
 	\+ get_mode(select), !;
 	menu:set_properties(Wid, Parent).
 
-doubleclick_obj(Xpt, Ypt, Name) :-
+doubleclick_obj(_Wid, _Parent, Xpt, Ypt, Name) :-
 	retractall(doing_double_at(_,_)),
 	assert(doing_double_at(Xpt, Ypt)),
 	doubleclick_on(Name).

@@ -249,9 +249,9 @@ add_l_pins([Wid, SmId, SmFat, L, T, X1, Y1, Xinc, Yinc, Side, Style, Flash],
 	round(Y-T, Yoff),
 	sicstus_write_to_chars(tab(SmId, Id, Xoff, Yoff), IdTagStr),
 	sicstus_atom_chars(IdTag, IdTagStr),
-	inf_pin(Wid, X, Y, Style, Side, SmFat, Flash, [SmId, IdTag]),
+	inf_pin(Wid, SmId, X, Y, Style, Side, SmFat, Flash, [SmId, IdTag]),
 	append_atoms(['realanchor(', Side, ')'], AnchTag),
-	text(Wid, [X,Y], submodel, [SmId, IdTag, AnchTag], SmFat, Flash, Name).
+	text(Wid, SmId, [X,Y], submodel, [SmId, IdTag, AnchTag], SmFat, Flash, Name).
 
 inc(P, Q) :- Q is P+1.
 
@@ -396,7 +396,7 @@ redraw_window(Wid) :-
 	clear_display(Wid),
 	update_tk,
 	find_all_comps(Model, Component),
-	display(Wid, Model, Component, 0, [0, 0, 1, 1], 1),
+	display(Wid, Model, Component, 0, 1),
 	fail.
 
 /* Having drawn the components, succeed and don't come back...*/
@@ -531,7 +531,7 @@ display_link_in(Wid, Parent, Link, Depth) :-
 	  has_bowtie(Link),
 		(LType = flow, !,
 		    bowtie(Wid, Parent, Bowtie, 100, {}, Colour_scheme, [Link]);
-		event(Wid, Parent, Bowtie, 100, {}, Colour_scheme, [Link, bowtie]));
+		event(Wid, Parent, Bowtie, 1, 100, {}, Colour_scheme, [Link, bowtie]));
 	  Type = relation,
 	  	get_boundary_end(Link, true),
 	        get_caption_anchor(Coords, Bowtie)), !,

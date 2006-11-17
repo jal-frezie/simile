@@ -546,6 +546,13 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 	    Units = BareRef, Value = 1;
 	resolve_enum_type(BareRef, Model, Value, Units, ETSpec)).
 
+ dequote(Ref, BareRef) :-
+       atom(Ref),
+       (name(Ref, RefStr),
+           append([34 | BareRefStr], [34], RefStr), !,
+           name(BareRef, BareRefStr);
+        BareRef = Ref).
+
 resolve_enum_type(Ref, Model, Value, Units, ETSpec) :-
 	(m_class:Model has_class_refinement enum_types of TypeList, !;
 	    TypeList = []),

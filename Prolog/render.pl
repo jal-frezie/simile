@@ -403,7 +403,7 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 	    (L = c,
 		(Dims = void, Counts = [''];
 %		all(render, boost, [build(Dims), build(Counts)])),
-		Counts = Dims,
+		Counts = Dims),
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
 					       ArrayName], Chars);
@@ -420,7 +420,7 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		InitString = [FirstLine | LateLines],
 		(Dims = void, Counts = [''];
 %		all(render, boost, [build(Dims), build(Counts)])),
-		Counts = Dims,
+		Counts = Dims),
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		sicstus_format_to_chars("~*s~a ~a = ",
 				[Indent, " ", Type, ArrayName], Chars0),
