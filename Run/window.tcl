@@ -98,7 +98,7 @@ proc notcanvasTLDistance {winId x y} {
 # to interrogate it to find what is closest to the click point
 
 proc ClickObj { x y winId X Y action} {
-    global clicktime equationbar pushedbutton window_info looks
+    global clickinfo equationbar pushedbutton window_info looks
     
     #puts "$action it!"
     
@@ -124,9 +124,10 @@ proc ClickObj { x y winId X Y action} {
         }
     }
     
-    set clicktime [clock clicks -milliseconds]
+    set clickinfo(time) [clock clicks -milliseconds]
     set grpName [GetGroupName $winId $x $y]
-    scan [$winId transform [GetGroupItem $winId $grpName] "$x $y"] "%f %f" \
+    set clickinfo(group) [GetGroupItem $winId $grpName]
+    scan [$winId transform $clickinfo(group) "$x $y"] "%f %f" \
 	canx cany
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
@@ -144,7 +145,7 @@ proc ClickObj { x y winId X Y action} {
         $winId select clear
         $winId focus {}
         if {$RB && [string equal select $pushedbutton]} {
-            prolog [list tk_${action}('$winId', $xco , $yco , 2)]
+            prolog [list tk_${action}('$winId', $grpName , $xco , $yco , 2)]
             tk_popup [winfo parent $winId]top.edit $X $Y
             prolog [list tk_unclick( $xco , $yco )]
         } else {
@@ -303,7 +304,7 @@ proc ResizeDesktop {winId cl ct cr cb} {
 
 proc DragObj {winId xco yco} {
     global window_info looks pushedbutton
-    global clicktime
+    global clickinfo
     
     if {[string equal move $pushedbutton]} {
         $winId xview scroll [expr ($window_info($winId,lastx)-$xco/$looks(scrollIncr))] units
@@ -314,11 +315,11 @@ proc DragObj {winId xco yco} {
     }
 
     set dragtime [clock clicks -milliseconds]
-    if {$dragtime>$clicktime && $dragtime-$clicktime<100} {
+    if {$dragtime>$clickinfo(time) && $dragtime-$clickinfo(time)<100} {
         return
     }
     
-    scan [$winId transform 1 "$xco $yco"] "%f %f" canx cany
+    scan [$winId transform $clickinfo(group) "$xco $yco"] "%f %f" canx cany
     set virtx [Unscale $winId $canx]
     set virty [Unscale $winId $cany]
 #    if {$looks(gridPitch)} {
@@ -356,7 +357,9 @@ proc DragObj {winId xco yco} {
 }
 
 proc ReleaseObj {winId xco yco} {
-    scan [$winId transform 1 "$xco $yco"] "%f %f" canx cany
+    global clickinfo
+
+    scan [$winId transform $clickinfo(group) "$xco $yco"] "%f %f" canx cany
     prolog [list tk_unclick( $canx , $cany )]
 }
 

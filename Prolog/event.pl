@@ -141,7 +141,7 @@ click_obj( Parent,Xpt, Ypt, DiagInfo, CD) :-
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    cursor_is(arrow),
-	    drag_to(NewXpt, NewYpt, DiagInfo);
+	    drag_to(Parent, NewXpt, NewYpt, DiagInfo);
 	(CD < 2, click_on([NewXpt, NewYpt], DiagInfo, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
 	set_selection_abilities(Parent),
@@ -298,7 +298,7 @@ click_in(Wid, _,_,_, Parent, CD) :-
 	    (CD = 0,
 		new_selection(Parent);
 	    add_incomplete([Xtr, Ytr, Xtr, Ytr]),
-		draw_rubberband(square),
+		draw_rubberband(Parent, square),
 		advance_phase_to(rubberband));
 	    
 	click_on([Xtr, Ytr], Parent, CD)).
@@ -835,11 +835,11 @@ drag(Xpt, Ypt) :-
 	find_current(Wid),
 	remove_old_incomplete,
 	remove_old_rubberband,
-	update_context(Wid, [Xpt, Ypt], RelPt, Comp),
+	update_context(Wid, [Xpt, Ypt], RelPt, Parent, Comp),
 	(get_phase(moving_text), !,
 	    RelPt = [NewXpt, NewYpt];
 	snap_to_grid(RelPt, [NewXpt, NewYpt])),
-	drag_to(NewXpt, NewYpt, Comp).
+	drag_to(Parent, NewXpt, NewYpt, Comp).
 
 /* This is a hideously complex procedure for working out what component I have
 effectively dragged to. The indentation should get a level deeper after an
@@ -853,7 +853,7 @@ than one component boundary at once (this always happened but is more common now
 drag can be signalled by click-to-start, click-to-finish) and (2) It's no longer
 much more complicated than the rest of the code. */
 
-update_context(Wid, Pt, NewPair, Comp) :-
+update_context(Wid, Pt, NewPair, Parent, Comp) :-
 	get_translation(Trans),
 	get_current_depth(Depth),
 	get_current_node(Parent),
@@ -875,7 +875,7 @@ and add bit for exits */
 	    Comp = none,
 		check_crossings(Wid, Parent, Depth, Trans, Pt, NewPair));
 	 (get_moving_obj(Comp), !; Comp = none),
-	    translate(Pt, Trans, NewPair)).
+	    NewPair = Pt).
 
 check_crossings(Wid, Parent, Depth, Trans, Pair, NewPair) :-
 	translate(Pair, Trans, [RelXpt, RelYpt]),
@@ -911,7 +911,7 @@ move_something :-
 	moved_something, !;
 	assert(moved_something).
 
-drag_to(Xpt, Ypt, _Comp) :-
+drag_to(Parent, Xpt, Ypt, _Comp) :-
 	get_mode(select),
 	\+ instant_link(_),
 	get_phase(rubberband),
@@ -919,9 +919,9 @@ drag_to(Xpt, Ypt, _Comp) :-
 	clear_incomplete,
 	add_incomplete([OldX, OldY, Xpt, Ypt]),
 	remove_old_rubberband,
-	draw_rubberband(square).
+	draw_rubberband(Parent, square).
 
-drag_to(Xpt, Ypt, Comp) :-
+drag_to(Parent, Xpt, Ypt, Comp) :-
 	doing_add(Ltype),
 	get_phase(dragging),
 	(Ltype is_class_of_sort line,
@@ -931,9 +931,9 @@ drag_to(Xpt, Ypt, Comp) :-
 	    clear_incomplete,
 	    add_incomplete([OldX, OldY, Xpt, Ypt]),
 	    remove_old_rubberband,
-	    draw_rubberband(round)).
+	    draw_rubberband(Parent, round)).
 
-drag_to(Xpt, Ypt, Moving_obj) :-
+drag_to(Parent, Xpt, Ypt, Moving_obj) :-
 	get_mode(select), /* was move */
 	get_start_coords(OldX, OldY),
 	Xoffset is Xpt - OldX,
@@ -950,7 +950,6 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		     move_text(Moving_obj, [Xoffset, Yoffset]);
 		 get_highlit_obj(0, Moving_obj),
 		     \+ Moving_obj is_of_sort line,
-		     find_all_comps(Parent, Moving_obj),
 		     get_shape(Parent, internal_extent, ParentShape),
 		     setof(Mover, moves_with_seln(Parent, Mover), Movers),
 		     (ghostly_move(_,_), !;
@@ -994,7 +993,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	move_something,
 	set_start_coords(Xpt, Ypt).
 
-drag_to(Xpt, Ypt, Moving_obj) :-
+drag_to(Parent, Xpt, Ypt, Moving_obj) :-
 	get_mode(select), /* was move */
 	get_phase(Phase),
 	(Phase = moving_start, Inner_move = start,
@@ -1005,7 +1004,6 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		local_ends(Moving_obj, _, Box))),
 	find_type(Box, EType),
 	/* find drag point in parent model */
-	find_all_comps(Parent, Moving_obj),
 
 	(Parent = Box, !,
 	    get_shape(Parent, internal_extent, ParentBox),
@@ -1043,7 +1041,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)),
 	move_something.
 
-drag_to(Xpt, Ypt, Target) :-
+drag_to(Parent, Xpt, Ypt, Target) :-
 	get_phase(dragging),
 	get_mode(ghost),
 	clear_incomplete,
@@ -1063,7 +1061,7 @@ drag_to(Xpt, Ypt, Target) :-
 	B is Ypt+Boff,
 	add_incomplete([L,T,R,B]),
 	remove_old_rubberband,
-	draw_rubberband(round).
+	draw_rubberband(Parent, round).
 
 reposition(Mover, [XOff, YOff]) :-
 	adjust_posn(Mover, [-XOff, -YOff, 1,1]),
@@ -1737,10 +1735,11 @@ unclick_obj :-
 	get_mode(select), /* was move */
 	get_moving_obj(Submodel),
 	(ghostly_move(OldX, OldY),
+	    get_current_node(Parent),
 	    get_start_coords(Xpt, Ypt), % last drag finished here
-	    drag_to(OldX, OldY, Submodel), % put graphics back to start
+	    drag_to(Parent, OldX, OldY, Submodel), % put graphics back to start
 	    retract(ghostly_move(_,_)),
-	    (drag_to(Xpt, Ypt, Submodel); % do it for real
+	    (drag_to(Parent, Xpt, Ypt, Submodel); % do it for real
 		do_dialogue("Failed to drag selection", warning,
 		    "Cannot drag selection here due to overlaps", ok, _)), !;
 	true),

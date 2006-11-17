@@ -29,7 +29,7 @@ sicstus_module(draw,
 		save_canvas/4, expand_canvas/2,
 		refatten_toplevels/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2,
-		remove_old_incomplete/0, draw_rubberband/1,
+		remove_old_incomplete/0, draw_rubberband/2,
 		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
 		tk_get_pref/2, exit_AME/0,
 		tk_equationlisting_start/1,tk_equationlisting_addsubmodel/7,
@@ -556,13 +556,13 @@ remove_old_incomplete :-
 	find_current(Window_id),
 	kill_featured(Window_id, unfinished_line).
 
-draw_rubberband(Style) :-
+draw_rubberband(Parent, Style) :-
 	get_incomplete(Box),
 	find_current(Window_id),
 	(Style = square, !,
 	    Fatness = 0;
 	Fatness = 100),
-	submodel(Window_id, 1, Box, 1, Fatness, clear, none,none,
+	submodel(Window_id, Parent, Box, 1, Fatness, clear, none,none,
 		 incomplete, [unfinished_component, '/background/']).
 
 remove_old_rubberband :-
