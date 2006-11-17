@@ -88,7 +88,8 @@ proc GetGroupName { winId canx cany } {
 	if {[string match "*/base/*" [$winId gettags $tgt]]} {
 	    return $window_info($winId,node)
 	}
-	if {[string match "*/background/*" [$winId gettags $tgt]]} {
+	if {[string match "*/background/*" [$winId gettags $tgt]] && 
+	    ![string match "*/grid/*" [$winId gettags $tgt]]} {
 	    return [ExtractPrologName $winId $tgt]
 	}
     }

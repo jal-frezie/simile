@@ -1574,20 +1574,20 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_box_size(Submodel, submodel, Standard),
 	NewR-NewL > Standard//2,
 	NewB-NewT > Standard//2,
-	(ghostly_move(_,_), !,
-	    change_shape(Submodel, bounding_box, NewBox);
+	(ghostly_move(_,_), !;
 	find_all_comps(Parent, Submodel),
 	get_shape(Parent, internal_extent, ParentShape),
 	fits_inside(NewBox, ParentShape),
-	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel),
+	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel)),
 	
 	(Submodel is_instance_of _, !;
 	add_to_translation([0,0,1,1], Submodel, ModelTrans),
 	    translate(NewBox, ModelTrans, NewExtent),
+	    (ghostly_move(_,_), !;
 	    /* Check that everything that was in the model is still in it */
 	    \+ (find_all_comps(Submodel, Inside),
 		   get_shape(Inside, bounding_box, InBox),
-		   \+ fits_inside(InBox, NewExtent)),
+		   \+ fits_inside(InBox, NewExtent))),
 	    change_shape(Submodel, internal_extent, NewExtent)),
 	map([OldL, OldT, OldR, OldB], CapEdge, _,_, OBX, OBY),
 	map(NewBox, CapEdge, _,_, NBX, NBY),
@@ -1596,6 +1596,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	change_shape(Submodel, caption_offset, [NXT, NYT]),
 	change_shape(Submodel, bounding_box, NewBox),
 	/* make_links_follow(Submodel), */
+	(ghostly_move(_,_), !;
 	tweak_link_connections(Submodel, [XOff, YOff], Edge,
 			       [OldL, OldT, OldR, OldB])).
 

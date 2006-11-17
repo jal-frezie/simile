@@ -1847,8 +1847,9 @@ proc DragComponentIn {winId button x y} {
         return
     }
     
-    set canx $x
-    set cany $y
+    set grpName [GetGroupName $winId $x $y]
+    set clickinfo(group) [GetGroupItem $winId $grpName]
+    scan [$winId transform $clickinfo(group) "$x $y"] "%f %f" canx cany
     set xco [Unscale $winId $canx]
     set yco [Unscale $winId $cany]
 #    if {$looks(gridPitch)} {
@@ -1861,10 +1862,11 @@ proc DragComponentIn {winId button x y} {
     # Now simulate what Prolog would get from an add component menu selection
     if {$target} {
         set node [ExtractPrologName $winId $target]
-        prolog [list tk_click_obj('$winId', click , $xco , $yco , $node , 2)]
+        prolog [list tk_click_obj('$winId', $grpName, click , $xco , $yco , 
+				  $node , 2)]
     } else {
         # a background drop
-        prolog [list tk_click('$winId', $xco , $yco , 2)]
+        prolog [list tk_click('$winId',  $grpName, $xco , $yco , 2)]
     }
     prolog tk_bar_edit_menu('$winId')
     prolog [list tk_unclick( $xco , $yco )]

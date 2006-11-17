@@ -489,7 +489,7 @@ proc MakeSubmodelGrid {w id l t r b fillColour} {
     set pitch [expr $looks(gridPitch)]
 
     set nCol [Gradient $fillColour -0.1 $w]
-    set gTagSet "$id realcolour($nCol) /background/ /grid/"
+    set gTagSet "realcolour($nCol) /background/ /grid/"
     if {$custom(showgrids,$w)} {
 	set gCol $nCol
     } else {

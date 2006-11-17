@@ -516,7 +516,8 @@ menu_handle(Win, edit, Component) :-
 	event:assert(instant_link(Component)),
 	(Node = [_,_], !,
 	    get_original_click(Xpt, Ypt),
-	    event:click(Xpt, Ypt, 0);
+	    get_current_node(Parent),
+	    event:click(Parent, Xpt, Ypt, 0);
 	 event:click_on(_, Node, 0)),
 	event:unclick,
 	(Component is_primitive,
