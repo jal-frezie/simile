@@ -48,11 +48,11 @@ substitute(E, [G | T1], F, [H | T2]) :-
 
 /* files to run the GUI */
 
-:- include('backup.pl').
 :- include('submodel.pl').
 :- include('dialogue.pl').
 :- include('output.pl').
 :- include('state.pl').
+:- include('backup.pl').
 :- include('image.pl').
 :- include('draw.pl').
 :- include('event.pl').

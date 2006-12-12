@@ -353,6 +353,7 @@ update_equation(_, Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		    (Dim = var, !,
 			Complaint6 = "This equation evaluates to a list or an array of lists. Model components are not allowed to have list values.";
 		    \+ (integer(Dim), Dim > 1), !,
+		    % should never happen, parser now checks subexps for this
 		    sicstus_format_to_chars("This equation evaluates to a data structure which includes an array of size ~w, which is not a valid dimension for a model component -- they must be integers greater than 1.",
 				   [Dim], Complaint6);
 		    \+ TypeDims = MultInts, !,
@@ -623,6 +624,8 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 member(input_link(_, DimP, Param, _, PDims), ExpInters),
 	    (var(PDims), !,
 		decode_error(undefined_parameter(Param), ParseError);
+	    PDims = param_history(_Defn, 0), !,
+		decode_error(unused_parameter(Param), ParseError);
 	    get_ground_part(DimP, DimG),
 		build_array(1, DimG, Array),
 		check_param_brackets("explicit intermediate result",
@@ -643,11 +646,12 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 			     inters:get_model_and_loops(Context, DummyDest, _,
 							Loops, _)),
 	    decode_error(ParseException, ParseError))),
+	(nonvar(ParseError), !;
 	(member(input_link(_,_, Param, _-PLoops, _), ExpInters),
 	    nth(N, PLoops, set(_, loop(Bound))),
 	    var(Bound),
 	    sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
-	get_dims_from_loops(Loops, Dims, _)).
+	get_dims_from_loops(Loops, Dims, _))).
 	/* real_dims_only(XDims, Dims).
 	Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it
@@ -671,15 +675,19 @@ expand_params(dim_data(DimL, PsUsed, AllInputs), Param, DoneExpr, Recurse) :-
 		    length(GRefs, L);
 		m_update:build_array(any, Dims, Depth),
 	        make_inds_for(Dims, PLoops, Inds)),
-		    Type-PLoops = Loops),
+		    Type-PLoops = Loops,
+	            Units = param_history(_Defn, 1)),
 	    /* pass dims up the recursion loop */
 	    length(Dims, L),
 	    list_of(x, L, DimB),
 	    append(DimB, _, DimL),
 	    DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, true);
 	Param = (ExpInt=Defn,Use),
-	    member(input_link(_,SubL, ExpInt, Type-Loops, something),
+	    member(input_link(_,SubL, ExpInt, OldType, PrevDims),
 		   AllInputs), !,
+             (PrevDims = param_history(Defn, _Used), !,
+		 OldType = Type-Loops;
+		 raise_exception(parameter_name_reused(ExpInt))),
 	    replace_subexps(Use, dialogue, expand_params,
 			     dim_data(DimL, PsUsed, AllInputs), top_down, _,
 			     UseExpr),
@@ -743,7 +751,7 @@ decode_error(ParseError, TestError) :-
 			   [SimpleError], TestError);
 	Type = bad_index_number, !,
 	    More = [Functor],
-	    sicstus_format_to_chars("The function \"~a\" sets or accesses some property of the model, and needs a non-negative integer constant as an argument to allow the right code to be built into the model to do this. \"~w\" does not fit.", [Functor, SimpleError], TestError);
+	    sicstus_format_to_chars("The function \"~a\" sets or accesses some property of the model, and needs a non-negative scalar integer constant as an argument to allow the right code to be built into the model to do this. \"~w\" does not fit.", [Functor, SimpleError], TestError);
 	Type = index_number_out_of_range, !,
 	    More = [Avail],
 	    sicstus_format_to_chars("You have used the index number ~d, but it must be between 1 and the number of available indices, which is ~d.", [SimpleError, Avail], TestError);
@@ -752,6 +760,9 @@ decode_error(ParseError, TestError) :-
 	    More = [TypeNeeded, TypeGiven],
 	    sicstus_format_to_chars("The function \"~a\", when applied to the array \"~w\", needs a value of type ~w for its second argument. \"~w\" does not fit -- it has a value of type ~w, which cannot be converted to a value of the required type.",
 		[Functor, Arr, TypeNeeded, Ind, TypeGiven], TestError);
+	Type = bad_array_size, !,
+	    More = [BadSize],
+	    sicstus_format_to_chars("Your equation includes the expression \"~w\", which evaluates to an array of size ~d. Only arrays of size greater than 1 are allowed.", [SimpleError, BadSize], TestError);
 	Type = got_list_for_array, !,
 	    SimpleError =.. [Functor, Arr | _],
 	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a variable membership list.", [Functor, Arr], TestError);
@@ -790,6 +801,10 @@ decode_error(ParseError, TestError) :-
 	Type = wrong_param_units, !,
 	    More = [UseType, DefType],
 	    sicstus_format_to_chars("The equation is badly formed because it contains the explicit intermediate result ~w which is used in a context where it needs to have type ~w. However the definition of this value produces a result with type ~w, which cannot be used in this context.", [SimpleError, UseType, DefType], TestError);
+	Type = unused_parameter, !,
+	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w, which is not subsequently used.", [SimpleError], TestError);
+	Type = parameter_name_reused, !,
+	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w, which is also the name of an input parameter or an earlier explicit intermediate result.", [SimpleError], TestError);
 	Type = undecipherable_operand, !,
 	    More = [Var],
 	    find_all_comps(Sm, Var),

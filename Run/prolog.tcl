@@ -11,7 +11,6 @@
 
 wm protocol . WM_DELETE_WINDOW {close $plPipe(stream); destroy .}
 
-set plPipe(stack) {}
 set plPipe(debug) 0
 if $plPipe(debug) {
     set plPipe(debug_log) [file join $env(HOME) .simile log]
@@ -150,4 +149,6 @@ while {![string match ready $spraf]} {
         ClosePipe
     }
 }
+set plPipe(stack) [list "Prolog initialization"]
 KeepLooking
+set plPipe(stack) {}

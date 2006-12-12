@@ -519,6 +519,8 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             }
         } elseif {![string is integer $indx]} {
             error [list "$role $indx is not an integer."]
+        } elseif {$indx<=0} {
+            error [list "$role is zero or negative."]
         }
         if {[info exists sub($indx)]} {
             error [list "$role $indx appears more than once."]

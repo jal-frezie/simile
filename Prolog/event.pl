@@ -140,7 +140,8 @@ click_obj( Parent,Xpt, Ypt, DiagInfo, CD) :-
 	(get_phase(targetting),
 	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
-	    cursor_is(arrow),
+	    get_mode(Mode),
+	    menu:set_cursor_for(Mode),
 	    drag_to(Parent, NewXpt, NewYpt, DiagInfo);
 	(CD < 2, click_on([NewXpt, NewYpt], DiagInfo, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
@@ -181,7 +182,8 @@ click(Parent,Xpt, Ypt, CD) :-
 	(get_phase(targetting),
 	    check_same_desktop(Top), !,
 	    advance_phase_to(dragging),
-	    cursor_is(arrow),
+	    get_mode(Mode),
+	    menu:set_cursor_for(Mode),
 	    /* translate pinnt to coords of 1st model clicked */
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
@@ -814,13 +816,13 @@ drag_obj(Xpt, Ypt, Name) :-
 The easy bit: ignore initial drags of one unit or less, and for larger ones
 register the user's choice of a drag rather than a click-start click-end. */
 
-sift_and_set(_, _) :-
+sift_and_set(Xpt, Ypt) :-
 	/* Next few lines stopped drag from starting until a certain
 	distance had been covered. Latest versions have faster graphics
-	so this should not be necessary...
+	so this should not be necessary...much...*/
+
 	get_original_click(OrigX, OrigY),
 	abs(Xpt-OrigX) + abs(Ypt-OrigY) > 2,
-	*/
 	(get_phase(action_choice), !,
 	    advance_phase_to(dragging);
 	true).
@@ -1574,29 +1576,28 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_box_size(Submodel, submodel, Standard),
 	NewR-NewL > Standard//2,
 	NewB-NewT > Standard//2,
-	(ghostly_move(_,_), !;
+	add_to_translation([0,0,1,1], Submodel, ModelTrans),
+	translate(NewBox, ModelTrans, NewExtent),
+	(ghostly_move(_,_), !; % no bounds checking if in fast edit mode 
 	find_all_comps(Parent, Submodel),
 	get_shape(Parent, internal_extent, ParentShape),
 	fits_inside(NewBox, ParentShape),
-	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel)),
+	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel),
 	
 	(Submodel is_instance_of _, !;
-	add_to_translation([0,0,1,1], Submodel, ModelTrans),
-	    translate(NewBox, ModelTrans, NewExtent),
-	    (ghostly_move(_,_), !;
-	    /* Check that everything that was in the model is still in it */
-	    \+ (find_all_comps(Submodel, Inside),
-		   get_shape(Inside, bounding_box, InBox),
-		   \+ fits_inside(InBox, NewExtent))),
-	    change_shape(Submodel, internal_extent, NewExtent)),
+	/* Check that everything that was in the model is still in it */
+	\+ (find_all_comps(Submodel, Inside),
+	       get_shape(Inside, bounding_box, InBox),
+	       \+ fits_inside(InBox, NewExtent)))),
 	map([OldL, OldT, OldR, OldB], CapEdge, _,_, OBX, OBY),
 	map(NewBox, CapEdge, _,_, NBX, NBY),
 	NXT is OldCapX+NBX-OBX-NewL,
 	NYT is OldCapY+NBY-OBY-NewT,
 	change_shape(Submodel, caption_offset, [NXT, NYT]),
+	change_shape(Submodel, internal_extent, NewExtent),
 	change_shape(Submodel, bounding_box, NewBox),
 	/* make_links_follow(Submodel), */
-	(ghostly_move(_,_), !;
+	(ghostly_move(_,_), !; % no link dragging if in fast edit mode 
 	tweak_link_connections(Submodel, [XOff, YOff], Edge,
 			       [OldL, OldT, OldR, OldB])).
 
@@ -1652,6 +1653,9 @@ unclick :-
 	    initialize_phase;
 	get_phase(action_choice), !,
 	    cursor_is(crosshair),
+	    update_ability(Model, save, file, 'Save', 0), % no save halfway
+	    update_ability(Model, undo, edit, 'Undo', 1),
+	    update_ability(Model, redo, edit, 'Redo', 0),
 	    advance_phase_to(targetting);
 	unclick_obj.
 

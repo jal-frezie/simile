@@ -70,11 +70,13 @@ portray(xrefs(Model, _, _, _)) :-
 
 Improved system for outputting floating-point numbers -- max of 
 decimal places (thanks to Dan Diaz for making it work with print_to_chars)
--- previously unusable due to weird bug in gprolog. */
+-- previously unusable due to weird bug in gprolog.
+
+14-digit precision is max possible without triggering crazy number bug */
 
 trim_float(F, Ns) :-
 	float(F),
-	sicstus_format_to_chars("~16g", [F], Fs),
+	sicstus_format_to_chars("~14g", [F], Fs),
 	/* now I can catch Sicstus bogeys without crashing GNU */
 	\+ member(Fs, ["Inf", "-Inf", "NaN"]),
 	/* mantissa must look like float so add .0 if it doesnt */

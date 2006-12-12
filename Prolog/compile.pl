@@ -134,12 +134,12 @@ build_instances(Language, DestDir, Parent, TopNode,
 	     open_native(WProgName, write, Stream),
 	     on_exception(Puke,
 		protected_build(Language, Stream, MyStep, 
-		Model, EntryArcs, Includes),
+		Model, EntryArcs, Includes, ExtLibs),
 		(reclose(Stream), raise_exception(Puke))),
 	     close(Stream),
 	     (Language = tcl, !,
 		 Tgt = 'model.tcl';
-	     compile_c_program(CheckDir, Tgt),
+	     compile_c_program(CheckDir, ExtLibs, Tgt),
 		 (Tgt = -1, !,
 		     raise_exception(compilation_failed);
 		  (Parent has_changed_model_refinement c_new of Tgt;
@@ -235,7 +235,8 @@ defines_membership(SmByRec, Fp) :-
 % model, and then working out bit by bit what the program has to be.
 
 :- dynamic(entry_arcs_are/1).
-protected_build(Language, Stream, TopStep, FullModel, EntryArcs, LocalIncs) :-
+protected_build(Language, Stream, TopStep, FullModel, EntryArcs, LocalIncs,
+		ExtLibs) :-
 	FullModel = model(_Channels, [instance(submodel, Top, xrefs(_,
 	    instance(submodel, _, xrefs(FullModel, top, [], []),
 		     'AME_model', top-[]), _,_), _,_)]), 
@@ -296,7 +297,7 @@ bits and pieces */
 	set_free_phases(Deltas, Phases), */
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
-			    Inters, ReevaluateForm),
+			    ExtIncs, ExtLibs, Inters, ReevaluateForm),
 	/* EnumTypeSpecs will eventually go in a procedure outside
 the model class which will be called from getcount to initialize a
 list of them as soon as the model is loaded, thus allowing them to be
@@ -345,13 +346,15 @@ used when entering file parameters */
 	render(Language, variable_declaration,
 	       [int, paramcount, [], ParamCount], 0, ParamDec),
 
-	append(EntryArcs, [end], EntryList), /* because msvc++ barfs
+	(Language=c, !,
+	    append(EntryArcs, [end], EntryList), /* because msvc++ barfs
 	                                        at empty lists */
 	all(render, make_constant_string,
 	    [unify(Language), build(EntryList), build(ArcChars)]),
-	render(Language, variable_declaration,
-	       ['char*', inputArcs, void, ArcChars], 0,
-	       ArcDeclText),
+	    render(Language, variable_declaration,
+		   ['char*', inputArcs, void, ArcChars], 0,
+		   ArcDeclText);
+	    ArcDeclText = []),
 
 /* This generates the declarations in languages such as C and Tcl8.0
 wot need them */
@@ -374,7 +377,7 @@ wot need them */
 
 	list_matching_files('../Functions/*.cpp', FnIncs),
 	/* the /* in the above line does not start a comment */
-	append(FnIncs, LocalIncs, Incs),
+	append([FnIncs, LocalIncs, ExtIncs], Incs),
 	all(utility, append_atoms,
 	    [unify('#include "'), build(Incs), build(PartIncs)]),
 	/* the " in the above line does not start a quoted string */
@@ -541,9 +544,9 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 	    list_local_index_meanings(SymbolicName, Bounds),
 	    append_atoms(ModelType, '*', PtrType),
 	    (is_population(SymbolicName), !,
-		DummyCompDims = [1],
+		DummyCompDims = [2],
 		MoreExtras = [];
-	    length(Bounds, IdCount),
+	    length([0 | Bounds], IdCount),
 		DummyCompDims = [IdCount],
 		(render:count_base_ptrs(Bases, PtrCount),
 		    PtrCount > 0, !,
@@ -838,7 +841,7 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
-		    Inters, AssignList) :-
+		    ExtIncs, ExtLibs, Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
 	(member(instance(alarm,_,_,elt(_,_, Al,_),_),
@@ -861,6 +864,7 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
+	     merge_lists(ExtIncs, []), merge_lists(ExtLibs, []),
 	     append(Inters, Inters0),
 	     append(AssignList, AssignList0)]).
 
@@ -881,7 +885,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
 			    Path, Swaps, TopStep, MaxStep, Used,
-			    Inters, AssignList) :-
+			    ExtIncludes, ExtLibs, Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
 			    Name, _-Dims),
@@ -1048,9 +1052,48 @@ nodes.
 	    [BaseSides, SmInters, Specials] = [[], [], []]),
 
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps,
-			    Used, FnInters, AssignList0),
-	append(FnInters, SmInters, Inters),
-	append(Specials, AssignList0, AssignList).
+	        Used, SubIncludes, SubLibs, FnInters, AssignList0),
+ /* Now add an extra instruction if this needs an external proc */
+	(SmName has_class_refinement external_code of ExtCode,
+	member(include=Inc, ExtCode),
+	\+ Inc = none, !,
+	   merge_lists([Inc], SubIncludes, ExtIncludes),
+           member(libraries=Libs, ExtCode),
+           merge_lists(Libs, SubLibs, ExtLibs),
+           member(procedure=Proc, ExtCode),
+           list_params_from("input", 1, AssignList0, ParamsIn),
+           list_params_from("output", 1, AssignList0, DirParamsOut),
+           delay_params_out_made(DirParamsOut, AssignList0,
+                                 AssignList1, Goals, ParamsOut),
+           append(ParamsIn, Goals, AllConds),
+           append(ParamsIn, ParamsOut, ArgCodes),
+           ExtInst = make(ext_done_for(Name), AllConds, LocalPath, Step,
+                         [call_ext_code(Proc, NewPtr, ArgCodes)]),
+           append(Specials, [ExtInst | AssignList1], AssignList);
+       [ExtIncludes, ExtLibs] = [SubIncludes, SubLibs],
+           append(Specials, AssignList0, AssignList)),
+       append(FnInters, SmInters, Inters).
+
+ list_params_from(BaseStr, N, Assigns, List) :-
+       sicstus_write_to_chars(N, NStr),
+       append(BaseStr, NStr, HeaderStr),
+       member(make(Tgt, _,Path,_,_), Assigns),
+       name(Tgt, TgtStr),
+       append(HeaderStr, TailStr, TgtStr),
+       \+ (TailStr = [Next | _], \+ [Next] = "_"), !,
+       M is N+1,
+       list_params_from(BaseStr, M, Assigns, More),
+       List = [Tgt | More];
+       List = [].
+
+ delay_params_out_made([], A, A, [], []).
+ delay_params_out_made([Out | Mo], A, [make(def_set(Out), R1,R2,R3,R4) | APlus],
+                     [def_set(Out) | MoDefs], [ScPtrOut | ScPtrMo]) :-
+       select(make(Out, R1, R2, R3, R4), A, AMinus),
+       delay_params_out_made(Mo, AMinus, APlus, MoDefs, ScPtrMo),
+       (R2  = [sm(_,_,_,_) | _], !,
+          ScPtrOut = ptr(Out); % scalar output -- pass pointer for it
+       ScPtrOut = Out).
 
 name_loop_vars(glob(LVar, _), Used) :-
 	generate_name(c, fill, LVar, Used).

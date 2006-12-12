@@ -415,8 +415,14 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 
 	Init = [InitialValues],
 	    (L = c,
-		DeepIndent is Indent + 4,
-		swap_squares_for_curlies(L, InitialValues, InitString),
+ /* if var is a char string, it will not be nested so no curlies will be added,
+ and the rules for breaking lines are like tcl's (need a \ at end) so... */
+	       (Unit = char, !,
+		   PrepStyle = tcl,
+		   DeepIndent = 0;
+		PrepStyle = L,
+		   DeepIndent is Indent + 4),
+		swap_squares_for_curlies(PrepStyle, InitialValues, InitString),
 		InitString = [FirstLine | LateLines],
 		(Dims = void, Counts = [''];
 %		all(render, boost, [build(Dims), build(Counts)])),
@@ -440,8 +446,7 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 		    length(InitialValues, InitDim),
 		    InitDims = [InitDim];
 		    InitDims = Dims),
-		assign_initial_values(Name, InitialValues, 0, InitDims,
-				      Indent, Assignment),
+		assign_initial_values(Name, InitialValues, Indent, Assignment),
 		Result = [Decl | Assignment])).
 
 render(L, break, _, I, [Result]) :-
@@ -734,7 +739,7 @@ and returns a set of assignments to initialize the variables (6).
 The list of init vals is in list-of-lists format to match the way initialization
 works in c, though this is untested for multidimensionals. */
 
-assign_initial_values(Var, Val, _,_, Indent, Result) :-
+assign_initial_values(Var, Val, Indent, Result) :-
 	atomic(Val), !,
 	    render(tcl, assignment, Var=Val, Indent, Result);
 	make_tcl_array_set([], Val, List),
@@ -748,7 +753,7 @@ make_tcl_array_set(Inds, Val, Done) :-
 	    comma_separate(Inds, IndCsvStr),
 	    name(IndCsv, IndCsvStr),
 	    Done = [IndCsv, Val];
-	make_tcl_array_elts(Inds, 0, Val, Done).
+	make_tcl_array_elts(Inds, 1, Val, Done).
 
 make_tcl_array_elts(_,_, [], []).
 make_tcl_array_elts(Inds, N, [Val | Rest], Done) :-
@@ -870,7 +875,7 @@ make_constant_string(L, String, Atom) :-
 	name(Atom, Const).
 
 escape_string_breaks(With, Without) :-
-	member(With-Without, [10-[92,110], 34-[92,34], C-[C]]), !.
+	member(With-Without, [10-[92,110,92,10], 34-[92,34], C-[C]]), !.
 
 make_param_string(_, [], []).
 
@@ -945,6 +950,13 @@ make_struct_reference(tcl, Struct, Var, Result) :-
 	sicstus_format_to_chars(Format, [Struct, Var], ResultStr),
 	    name(Result, ResultStr).
 
+% this variant makes pointers to members if name is ptr(x) --
+% used for building arg lists for external procedures
+msr_with_ptrs(L, Struct, Var, Result) :-
+	Var = ptr(RealVar), !,
+	    make_struct_reference(L, Struct, RealVar, OrigResult),
+	    refer(L, OrigResult, Result);
+	make_struct_reference(L, Struct, Var, Result).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* make_indexed_reference/4: Takes a language, array variable and subscript
 term, and makes a reference to an array element. This is the same as the last one

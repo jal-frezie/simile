@@ -1,3 +1,5 @@
+# see procs.cpp for c++ equivalents and documemtation
+
 global have_spare
 set have_spare 0
 proc gaussian {random mean sd} {
@@ -19,3 +21,10 @@ proc gaussian {random mean sd} {
     return [expr $mean+$sd*$norm]
 }
 
+proc wrapped {lo hi here} {
+    return [expr {($hi<$lo)==($hi<$here)==($lo<$here)}]
+}
+
+proc simile_mod {point span} {
+    return [expr $point-$span*floor($point/$span)]
+}

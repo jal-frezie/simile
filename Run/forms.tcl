@@ -133,7 +133,8 @@ proc Disaggregate {parent title args} {
     }
     
     if {[string equal calc [lindex [lindex $args 0] 0]]} {
-        foreach {i varName} {1 step 2 eqnunit 3 separate} {
+        foreach {i varName} {1 step 2 eqnunit 3 separate 
+	    4 xproc 5 xinc 6 xlibs} {
             set disaggregate($varName) [lindex [lindex $args 0] $i]
         }
         set args [lrange $args 1 end]
@@ -152,6 +153,13 @@ proc Disaggregate {parent title args} {
 #        checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
 #                -variable disaggregate(matherror)
 #        pack $mathf.matherror -anchor w
+	pack [frame $mathf.extcode] -anchor w -pady 6
+	set disaggregate(useOwnCode) [expr {![string eq none $disaggregate(xinc)]}]
+	pack [checkbutton $mathf.extcode.whether -text "Use own code" \
+		  -variable disaggregate(useOwnCode) -command "AbleSetup $mathf"] \
+	    -side left -anchor w
+	pack [button $mathf.extcode.how -text Setup -command ExtCodeSetup]
+	AbleSetup $mathf
         frame $mathf.eqnunit
         label $mathf.eqnunit.caption -text "Use units in math:"
         pack $mathf.eqnunit.caption -side left
@@ -382,9 +390,15 @@ proc Disaggregate {parent title args} {
             if {$stepPosn > -1} {
                 set disaggregate(step) [expr $stepPosn-2]
             }
-            lappend result [list calc $disaggregate(eqnunit) \
-                                $disaggregate(step) $disaggregate(separate)]
-
+	    if {!$disaggregate(useOwnCode)} {
+		set disaggregate(xproc) none
+		set disaggregate(xinc) none
+		set disaggregate(xlibs) {}
+	    }
+            lappend result [list calc \
+				$disaggregate(eqnunit) $disaggregate(step) \
+				$disaggregate(separate) disaggregate(xproc) \
+				disaggregate(xinc) disaggregate(xlibs)]
         }
 
         if {[winfo exists $notebook.enumtypes]} {
@@ -418,6 +432,91 @@ proc Disaggregate {parent title args} {
     PackItUp $t
     unset disaggregate
     return $result
+}
+
+proc AbleSetup {mathf} {
+    global disaggregate
+    
+    $mathf.extcode.how configure -state \
+	[ChooseText $disaggregate(useOwnCode) normal disabled]
+}
+
+proc ExtCodeSetup {} {
+    global disaggregate
+
+    set t [PutItThere .extcodesetup .disaggregation]
+    wm title $t "External code interaction"
+    pack [TitleFrame $t.procnamfr -text "Procedure name:"] \
+	-padx 4 -pady 4 -fill x
+    pack [entry [$t.procnamfr getframe].ent] -fill x
+    [$t.procnamfr getframe].ent insert 0 $disaggregate(xproc)
+
+    pack [TitleFrame $t.incfilefr -text "Include file:"] \
+	-padx 4 -pady 4 -fill x
+    set incFileTxt [$t.incfilefr getframe].txt
+    pack [text $incFileTxt -width 32 -height 1] \
+	-side left -fill x
+    $incFileTxt insert 1.0 $disaggregate(xinc)
+    $incFileTxt configure -state disabled
+    pack [button [$t.incfilefr getframe].btn -text "Browse" \
+	      -command "ChangeIncFile $incFileTxt"] -anchor e -side right
+
+    pack [TitleFrame $t.liblistfr -text "Library files:"] \
+	-padx 4 -pady 4 -fill x
+    set LibListFr [$t.liblistfr getframe]
+    pack [listbox ${LibListFr}.box] -side left -fill x -expand true
+    foreach libFile $disaggregate(xlibs) {
+	${LibListFr}.box insert end $libFile
+    }
+    pack [button ${LibListFr}.badd -text Add -command "AddLibF $LibListFr"] \
+	-anchor w -side top
+    pack [button ${LibListFr}.bdel -text Delete\
+	     -command "RemoveLibF $LibListFr"] -anchor w -side top
+
+    pack [frame $t.btnfr]
+    pack [button $t.btnfr.ok -text OK -command "set disaggregate(xdone) 1"] \
+	-side right
+    pack [button $t.btnfr.cancel -text Cancel \
+	      -command "set disaggregate(xdone) 0"] -side right
+    LetItShow $t
+    grab $t
+    tkwait variable disaggregate(xdone)
+    grab release $t
+    if {$disaggregate(xdone)} {
+# transfer data back to variables
+	set disaggregate(xproc) [[$t.procnamfr getframe].ent get]
+	set disaggregate(xinc) [string trimright [$incFileTxt get 1.0 end]]
+	set disaggregate(xlibs) [${LibListFr}.box get 0 end]
+    }
+    PackItUp $t
+}    
+
+proc ChangeIncFile {incFileTxt} {
+    set newFile [ChooseFile external.cpp "External source/header file:" 0]
+    if {[string length $newFile]} {
+	$incFileTxt configure -state normal
+	$incFileTxt delete 1.0 end
+	$incFileTxt insert 1.0 $newFile
+	$incFileTxt configure -state disabled
+    }
+}
+
+proc AddLibF {LibListFr} {
+    set newFile [ChooseFile library[info sharedlibextension] \
+		     "External library file:" 0]
+    if {[string length $newFile]} {
+	if {![string match lib* $newFile]} {
+	    ${LibListFr}.box insert end $newFile
+	} else {
+	    ShowMessage "Dodgy filename" warning "The compiler will only recognize shared library names that begin with \"lib...\"" ok
+	}
+    }
+}
+
+proc RemoveLibF {LibListFr} {
+    if {[set togo [${LibListFr}.box curselection]] ne {} } {
+	${LibListFr}.box delete $togo
+    }
 }
 
 proc AbleDescendents {widg whether} {
@@ -734,6 +833,7 @@ proc OpenProgressBox {winId} {
         pack .progress.message -fill both -expand true
         update
     }
+    return $progressBoxCount
 }
 
 proc CloseProgressBox {} {
@@ -743,6 +843,7 @@ proc CloseProgressBox {} {
         grab release .progress
         PackItUp .progress
     }
+    return $progressBoxCount
 }
 
 proc ResetProgressBox {} {

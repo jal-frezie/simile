@@ -142,11 +142,11 @@ expand_library(DestRef, Var, NewVar) :-
 	    N < 1,
 		NewVar = DestRef;
 	    M is N-1,
-		NewVar = last(prev(M))), !;	  
-	do_once(_, Var, ToDo, _),
-	    NewVar = keep_from_reset(ToDo).
+		NewVar = last(prev(M))), !.
 	/* These have just been moved to macro_expansions so if statements can
 	    be used in other macros
+	do_once(_, Var, ToDo, _),
+	    NewVar = keep_from_reset(ToDo).
 	Var = (if Bool then IfCl), !,
 	    NewVar = (Bool?IfCl);
 	Var = (ThenCl else ElseCl), !,
@@ -414,7 +414,7 @@ make_intermediates(
 	Source = all(Epsilon),
 	    InitVal = 1,
 	    IncrOp = ('&&');
-	member(Source, [make_inter(Epsilon, Ref), keep_from_reset(Epsilon),
+	member(Source, [make_inter(Epsilon, Ref), at_init(Epsilon),
 			last(Epsilon), exists(Epsilon)]),
 	    MadeDim = new_dim), !,
 
@@ -474,7 +474,7 @@ make_intermediates(
 	    Units = int,
 		append(NowBuilding, DestPath, ReadyContext)), !,
 	    InitVal = 0;
-	member(Functor, [make_inter, last, keep_from_reset]), !,
+	member(Functor, [make_inter, last, at_init]), !,
 	    InitVal = 0,
 	    IncrExpr = IncrementRef,
 	    Units = ArgUnits,
@@ -519,7 +519,7 @@ make_intermediates(
 	have made inters that we will use elsewhere */
 	    Args = [],
 	    NewInters = OldInters;
-	((Functor = keep_from_reset; Functor = make_inter), !,
+	((Functor = at_init; Functor = make_inter), !,
 	    Clearing = [];
 	Functor = last, !,
             Clearing = [make(cleared(TotalName), [on_reset], ClearContext,
@@ -541,13 +541,16 @@ make_intermediates(
 			    ClearContext, Step, [])];
 	    /* If keep_from_reseting, we can remove time from the increment expression's
 	    conditions since we need only do it once even though it changes */
-	(Functor = keep_from_reset, !,
+	(Functor = at_init, !,
 	    SetTime=0, purge(Depends, [time], KeepDeps);
 	SetTime = Step, KeepDeps = Depends),
-        Setting = [make(increment(TotalName), [cleared(TotalName) | KeepDeps],
-                       WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
-                  make(TotalName, [increment(TotalName)],
-                       ReadyContext, SetTime, [])]),
+	(Functor = make_inter, !,
+	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
+			    [assign(FillRef, IncrExpr)])];
+	Setting = [make(increment(TotalName), [cleared(TotalName) | KeepDeps],
+			WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
+		   make(TotalName, [increment(TotalName)],
+			ReadyContext, SetTime, [])])),
 	append([OldSetups, Clearing, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
@@ -642,11 +645,13 @@ make_intermediates(
 	results of all subexpressions not accessible in the destination
 	context. */
 
-	(Source = makearray(Element, Dim),
+	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
+	    ((on_exception(_, DimVal is Dim, fail),
+	      integer(DimVal);	% it is integer now
 	        make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
-				   part_result([], DimSetups,_, DimVal)),
-	        (promote_unit(Dun, const_int);
+				   part_result([], [], _, DimVal)),
+	      (promote_unit(Dun, const_int))), !; % will be integer later
 		  raise_exception(bad_index_number(Dim, makearray))), !,
 	        NowBuilding = [LocalLoop | BuildingArrays],
 	        length(BuildingArrays, BDept),
@@ -655,14 +660,16 @@ make_intermediates(
 	        LocalInd = glob(BuildName, _);
 	    make_choose_form(Source, keep(LocalInd), 1, Element),
 	        length(Source, DimVal),
-	        DimSetups = [],
-	        MidInters = PrevInters,
+%	        DimSetups = [],
+%	        MidInters = PrevInters,
 	        NowBuilding = BuildingArrays), !,
+	    ((\+ number(DimVal); DimVal > 1; Source = soloarr(_)), !;
+		raise_exception(bad_array_size(Source, DimVal))),
 	    LocalLoop = set(LocalInd, loop(DimVal)),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
 			MidInters, NowBuilding, Step, Used, Units, NewInters,
-			part_result(EltContext, EltSetups, Args, SourceRef)),
-	    append(DimSetups, EltSetups, Setups),
+			part_result(EltContext, Setups, Args, SourceRef)),
+%	    append(DimSetups, EltSetups, Setups),
 	    get_model_and_loops(EltContext, DestPath, _, EltLoops, EltBase),
 	    append(EltLoops, [LocalLoop | EltBase], SourceContext);
 
@@ -900,7 +907,7 @@ refer_inter(instance(internal, inter(Context, _, ParamLoops), Source, Name,
 	    we use the total from the previous time step we don't need to
 	    worry about accessing elements that haven't yet been set, and not
 	    using made_at(...) should prevent it being removed as an idler */
-	    Args = [made_at(Name, Context)]),
+	    Args = [made_at(Name, SourceContext)]),
 	    pointer_from(DestPath, SourcePtr),
 	    make_inds_for(Dims, IntLoops, IntInds),
 	    copy_term(ParamLoops, SourceLoops),
@@ -991,12 +998,13 @@ builtin('List handling', all, boolean, [array_or_list_of_boolean]).
 builtin('Model properties', channel_is, boolean, [channel]).
 builtin('Model properties', dt, real, [const_int]).
 builtin('Model properties', time, real, []).
-builtin('Model properties', init_time, real, []).
+builtin('Model properties', at_init, any, [any]).
+%builtin('Model properties', init_time, real, []).
 builtin('Model properties', parent, int, []).
 builtin('Model properties', stop, int, [int]).
 /* legacy versions from before we had empty arg lists */
 builtin('Model properties', time, real, [const_int]).
-builtin('Model properties', init_time, real, [const_int]).
+%builtin('Model properties', init_time, real, [const_int]).
 builtin('Model properties', parent, int, [dummy_int]).
 
 builtin('Model properties', last, any, [any]).
@@ -1035,7 +1043,7 @@ builtin('Trigonometry', acos, 1, [1]).
 builtin('Trigonometry', atan, 1, [1]).
 builtin('Trigonometry', arctan, 1, [1]).
 
-builtin('Arithmetic', rand_const, real, [real, real]).
+%builtin('Arithmetic', rand_const, real, [real, real]).
 builtin('Arithmetic', rand_var, real, [real, real]).
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
 builtin('Arithmetic', fmod, 1, [1, 1]).
@@ -1136,8 +1144,10 @@ Change for 4.8: Don't move the array, just subtract 1 from the indices before
 using them. This because people want to integrate their own c++ programs with
 Simile's code, so they want arrays starting at 0. */
 
-add_zeros(L, SubId, Step, NL, N, U) :-
-	add_zeros_all(L, SubId, Step, NL, N, U), !.
+add_zeros(L, SubId, Step, NL, [Outer | Dims], U) :-
+	add_zeros_all(L, SubId, Step, NL, [Outer | Dims], U),
+	(Outer > 1, !; % others already checked
+	    raise_exception(bad_array_size(L, Outer))).
 
 add_zeros(N, SubId, Step, RN, [], U) :-
 	decode_number(N, SubId, Step, RN, U).
@@ -1146,7 +1156,9 @@ add_zeros_all([], _,_, [], [0 | _], any).
 
 add_zeros_all([H | T], SubId, Step, [NH | NT], [N | R], U) :-
 	add_zeros(H, SubId, Step, NH, R, U1),
-	add_zeros_all(T, SubId, Step, NT, [M | R], UN),
+	add_zeros_all(T, SubId, Step, NT, [M | RR], UN),
+	(R = RR, !;
+	    raise_exception(cannot_combine_argument_dimensions([H | T]))),
 	propagate_units(list_parts(H,T), any, [any, any], [U1, UN], U),
 	N is M+1.
 
@@ -1307,12 +1319,12 @@ changeable(_, Subexp, _, 0) :-
 /* do_once is the opposite: value must stay the same even if the args change,
 though the modeller has probably erred if they do -- except for init_time,
 which is actually the same function as time but this makes sure it is only
-evaluated when the model is created. */
+evaluated when the model is created.
 
 do_once(_, rand_const(Lo, Hi), rand_var(Lo, Hi), 0).
 do_once(_, init_time(N), ind_time(N), 0).
 
-/* individuates refers to a function such as rand_const or index, which gives
+individuates refers to a function such as rand_const or index, which gives
 a different value for each submodel instance in which it is called, and
 hence must be called in the destination context. Ind_time(_) is here cos
 in a variable membership submodel, instances are initialized at different
@@ -1328,7 +1340,7 @@ individuates(_, Subexp, _, 0) :-
 
 random(_, Subexp, _, 0) :-
 	nonvar(Subexp),
-	member(Subexp, [rand(_,_), rand_const(_,_), rand_var(_,_)]).
+	member(Subexp, [rand(_,_), rand_var(_,_)]).
 
 /* wait_for_submodels/2
 This adds the given property of any submodels from which we take values

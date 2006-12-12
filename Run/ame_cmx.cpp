@@ -1208,6 +1208,178 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   return TCL_OK;
 }
 
+double scaleIntProc(void* access) {
+  return (double)(*(int*)access);
+}
+
+double scaleDoubleProc(void* access) {
+  return (*(double*)access);
+}
+
+void addDSorted(int* discCount, double** dPtrDiscList, double newVal) {
+  double *spareArr;
+  int count, exp, bigexp;
+
+  spareArr = *dPtrDiscList;
+  // straight search could be replaced by binary if more speed needed
+  for (count=0; count<*discCount; ++count) {
+    if (newVal==spareArr[count]) {
+      return;
+    } else if (newVal<spareArr[count]) {
+      break;
+    }
+  }
+  if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
+    *dPtrDiscList = new double[(int)(ldexp(1,bigexp))];
+    memmove(*dPtrDiscList, spareArr, count*sizeof(double));
+  }
+  memmove(*dPtrDiscList+count+1, spareArr+count, 
+	  (*discCount-count)*sizeof(double));
+  (*dPtrDiscList)[count] = newVal;
+  ++(*discCount);
+  if (*dPtrDiscList!=spareArr) delete(spareArr);
+}
+      
+void addISorted(int* discCount, int** dPtrDiscList, int newVal) {
+  int *spareArr;
+  int count, exp, bigexp;
+
+  spareArr = *dPtrDiscList;
+  // straight search could be replaced by binary if more speed needed
+  for (count=0; count<*discCount; ++count) {
+    if (newVal==spareArr[count]) {
+      return;
+    } else if (newVal<spareArr[count]) {
+      break;
+    }
+  }
+  if (*discCount>=16 && frexp(*discCount,&bigexp)<frexp((*discCount)-1,&exp)) {
+    *dPtrDiscList = new int[(int)(ldexp(1,bigexp))];
+    memmove(*dPtrDiscList, spareArr, count*sizeof(int));
+  }
+  memmove(*dPtrDiscList+count+1, spareArr+count, 
+	  (*discCount-count)*sizeof(int));
+  (*dPtrDiscList)[count] = newVal;
+  ++(*discCount);
+  if (*dPtrDiscList!=spareArr) delete(spareArr);
+}
+      
+FINDABLE int extractBinCmd(ClientData clientData, Tcl_Interp *interp,
+		 int argc, Tcl_Obj *CONST argv[]) {
+  int error;
+  double (*scaleProc) (void*);
+  double valfor0, valfor255, valspan, dval;
+  long int accessTool;
+  unsigned char* tgt;
+  int* progress;
+  int cursor, count, size;
+  Tcl_Obj *resultPtr, *spareObjPtr;
+  void* valAccessed;
+
+  double *dDiscList;
+  int discCount, *iDiscList;
+
+  if (clientData) {
+    // listing discrete vals
+    if (argc != 4) {
+      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption");
+      return TCL_ERROR;
+    }
+  } else {
+    if (argc != 6) {
+      Tcl_WrongNumArgs(interp, 1, argv, "model_id instance_id caption lower_limit upper_limit");
+      return TCL_ERROR;
+    }
+
+    error = Tcl_GetDoubleFromObj(interp, argv[4], &valfor0);
+    if (error != TCL_OK) {
+      return error;
+    }
+    
+    error = Tcl_GetDoubleFromObj(interp, argv[5], &valfor255);
+    if (error != TCL_OK) {
+      return error;
+    }
+  }
+
+  error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
+  if (error != TCL_OK) {
+    return error;
+  }
+  
+  error = Tcl_GetLongFromObj(interp, argv[2], &modelHandle);
+  if (error != TCL_OK) {
+    return error;
+  }
+
+  accessTool = createRegularData();
+  if (rdSetToNodeValue(accessTool, modelType, modelHandle,
+				     Tcl_GetStringFromObj(argv[3], NULL))) {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to attach access tool to this component.", -1));
+    return TCL_ERROR;
+  }
+
+  valspan=valfor255-valfor0; // set to span
+  cursor = rdDimensionality(accessTool);
+  if (rdDatatype(accessTool)==REAL) {
+    scaleProc = scaleDoubleProc;
+  } else {
+    scaleProc = scaleIntProc;
+  }
+  progress = new int[cursor];
+  size = 1;
+  for (count=cursor-1;count>=0;--count) {
+    size=size*rdBound(accessTool,count);
+    progress[count]=0;
+  }
+  resultPtr = Tcl_NewObj();
+  if (!clientData) {
+    Tcl_SetByteArrayLength(resultPtr, size);
+    tgt = Tcl_GetByteArrayFromObj(resultPtr, NULL);
+  } else {
+    dDiscList = new double[16];
+    iDiscList = new int[16];
+  }
+
+  progress[cursor-1]=-1; /* carefully avoid overrun at end */
+  discCount=0;
+  for (count=0; count<size;++count) {
+    cursor=rdDimensionality(accessTool)-1;
+    while (++progress[cursor]==rdBound(accessTool,cursor)) {
+      progress[cursor--]=0;
+    }
+    valAccessed = rdLocateElement(accessTool,progress);
+    if (clientData) {
+      if (rdDatatype(accessTool)==REAL) {
+	addDSorted(&discCount, &dDiscList, *(double *)valAccessed);
+      } else {
+	addISorted(&discCount, &iDiscList, *(int*)valAccessed);
+      }
+    } else {
+      dval=(*scaleProc)(valAccessed);
+      tgt[count] = (unsigned char)(dval<valfor0?0:(dval>=valfor255?255:
+					   (255*(dval-valfor0)/valspan)));
+    }
+  }
+  // if doing discrete, make tcl array of results and free space
+  if (clientData) {
+    for (count=0; count<discCount; ++count) {
+      if (rdDatatype(accessTool)==REAL) {
+	spareObjPtr = Tcl_NewDoubleObj(dDiscList[count]);
+      } else {
+	spareObjPtr = Tcl_NewIntObj(iDiscList[count]);
+      }
+      Tcl_ListObjAppendElement(interp, resultPtr, spareObjPtr);
+    }
+    delete dDiscList;
+    delete iDiscList;
+  }
+  Tcl_SetObjResult(interp, resultPtr);
+  deleteRegularData(accessTool);
+  /* might want to keep some of these if doing this every time step */
+  return TCL_OK;
+}
+
 FINDABLE int listobjCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
    int error;
@@ -1646,6 +1818,12 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   
   Tcl_CreateObjCommand(interp, "insert", extractCmd, (ClientData)1,
 		       (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd,
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "discrete_values", extractBinCmd,
+		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
 		       (Tcl_CmdDeleteProc *)NULL);

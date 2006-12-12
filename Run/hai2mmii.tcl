@@ -346,6 +346,16 @@ proc GetModelGraph {node} {
     SetModelGraph $node
 }
 
+proc GetBinaryModelValue { node args } {
+    global myNode
+    return [eval GetCompProperty $myNode Binary $node $args]
+}
+
+proc ListDiscreteModelValues { node } {
+    global myNode
+    return [eval GetCompProperty $myNode Discrete $node]
+}
+
 proc SetModelGraph {node args} {
     global myNode
     return [eval [list GetCompProperty $myNode Graph $node] $args]
@@ -506,9 +516,15 @@ proc GetCCompProperty {topNode prop args} {
                                   $model_id($topNode) $instance_id($topNode) \
                                   $node]]
                 return $res
-            }
-        }
-			  ]
+	    }
+	} Binary {
+	    return [eval extract_binary [list $model_id($topNode) \
+		$instance_id($topNode) [c_getvalue $topNode $node 5]] $set]
+	} Discrete {
+	    return [discrete_values $model_id($topNode) \
+			$instance_id($topNode) [c_getvalue $topNode $node 5]]
+	}
+			 ]
 }
 
 # wraps c++ defined version in different interp
@@ -519,7 +535,7 @@ proc c_getvalue {topNode node action} {
 }
             
 proc GetTclCompProperty {topNode prop args} {
-    global nodecount nodedata
+    global nodedata
     set node [lindex $args 0]
     set set [lrange $args 1 end]
 #    set nodecount [set nodecount]
@@ -527,8 +543,11 @@ proc GetTclCompProperty {topNode prop args} {
     switch -regexp $prop {
         Objects {
             set result {}
-            for {set record 1} {$nodecount>$record} {incr record} {
-                lappend result [GetFullCaption $nodedata($record)]
+	    foreach record [array names nodedata] {
+		set object [lindex $nodedata($record) 0]
+		if {![string equal $object $topNode]} {
+		    lappend result $object
+		}
             }
             return $result
         } Class|Type|Eval {
@@ -589,7 +608,7 @@ proc GetTclCompProperty {topNode prop args} {
 		return [set ::$targetVar]
 	    }
         } IdFromCapt {
-            for {set record 1} {$nodecount>$record} {incr record} {
+	    foreach record [array names nodedata] {
                 if {![string equal GHOST [lindex $nodedata($record) 4]]} {
                     if {[string equal $node \
                              [GetFullCaption $nodedata($record)]]} {
@@ -604,6 +623,8 @@ proc GetTclCompProperty {topNode prop args} {
             getinfo $node 8
         } Value {
             return [tcl_insert $node [lindex $set 0]]
+	} default {
+	    error "Property $prop not available in debug mode"
         }
     }
 }
@@ -616,15 +637,14 @@ proc ParentLine {line} {
     } else {
         set ptHand [lreplace $handle end-1 end 0]
     }
-    foreach {n ptLine} [array get nodedata] {
-        if {[ListSameNumbers [lindex $ptLine 6] $ptHand]} {
-            return $ptLine
+    foreach record [array names nodedata] {
+	if {[ListSameNumbers [lindex $nodedata($record) 6] $ptHand]} {
+	    return $nodedata($record)
         }
     }
 }    
 
 proc GetFullCaption {line} {
-    global nodedata
     if {[llength [lindex $line 6]] < 3} {
         return {}
     } else {

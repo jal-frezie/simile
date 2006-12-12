@@ -269,7 +269,7 @@ instance_of( function, Node, Path, Loops, [Instance], Refs) :-
 	    FType = init_function;
 	RType = condition,
 	    (GroundExpr = (index(1) is UseId),
-		UseExpr = [UseId+0];
+		UseExpr = soloarr(UseId); % cheat to allow single-element arr
 	    GroundExpr = any(index(1) is UseExpr)), !,
 	    /* Try alternative way of enumerating instances */
 	    FType = id_function;
@@ -330,12 +330,22 @@ instance_of(flow, Arc, _,_, [instance(flow, Arc, _, Value, Units)],
 are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
-instance_of(Type, Node, _,_, [instance(Type, Node, FnType, Value, Dims)],
-		[instance(FnType, F, _, Value, Dims)]) :-
+instance_of(Type, Node, _, Inst, Ref) :-
 	member(Type, [variable, condition, creation, loss, alarm]),
-	member(Node, [B, A]),
-	Arc is_connector from A to B, !,
-		initiates(Arc, F).
+	(member(Node, [B, A]),
+	    Arc is_connector from A to B, !,
+	    initiates(Arc, F),
+	    Inst = [instance(Type, Node, FnType, Value, Dims)],
+	    Ref = [instance(FnType, F, _, Value, Dims)];
+	/* Could not generate code for part with no connections, so kill it */
+	caption_for(Node, Capt),
+	    Node no_longer_has_refinements,
+	    Node no_longer_has_connections,
+	    Node no_longer_has_graphical_attributes,
+	    Node is_no_longer_part_of Parent,
+	    caption_for(Parent, PCapt),
+	    sicstus_format_to_chars("Removing node ~w from submodel ~w.", [Capt, PCapt], Shpiel),
+	    do_dialogue("Correcting model inconsistency", warning, Shpiel, ok, _)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 flows(Dir, Comp, Flow) :-

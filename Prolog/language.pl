@@ -384,6 +384,10 @@ do_assignment(L, [SpecialOp | Clauses],
 	    refer(L, Dest, DestRef),
 	    make_evaluation_routine_all(L, Args, [], Inds),
 	    CallSpec =.. [collect, DestRef, CollectId | Inds];
+	SpecialOp =.. [call_ext_code, ProcName, CurSmPtr, ArgCodes],
+	    all(render, msr_with_ptrs,
+		[unify(L), unify(CurSmPtr), build(ArgCodes), build(XArgs)]),
+	    CallSpec =.. [ProcName | XArgs];
 	SpecialOp =.. [SubCall, NodeId, InstHandle, NewCond],
 	    NewCollects = Collects,
 	    member(SubCall,

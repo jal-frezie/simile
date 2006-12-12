@@ -12,7 +12,8 @@ Jasper Taylor, 15/3/98
 
 sicstus_module(database, [
 	/* manipulation routines */
-		assert_model/1, retract_model/1, retractall_model/1, fetch_update/1,
+		assert_model/1, retract_model/1, retractall_model/1,
+			  anything_done/0, fetch_update/1,
 	/* for link */
 		connection/3, arc_type/2, arc_info/3,
 	/* for m_struct */
@@ -72,6 +73,13 @@ retractall_model(P) :-
 	retract_model(P),
 		fail;
 	true.
+
+:- dynamic(update_remove/1).
+:- dynamic(update_add/1).
+
+anything_done :-
+	update_remove(P);
+	update_add(P).
 
 fetch_update(DP) :-
 	retract(update_remove(P)),

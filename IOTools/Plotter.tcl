@@ -97,6 +97,7 @@ namespace eval ::$keyValue {
         set plot($w,AutoAxisScaling) 1; #use ints "true" doesn't  to work with check button
         set plot($w,DrawLegend) 1
         set plot($w,highlittrace) {}
+	set plot($w,usedLegend) 0
     }
     
     proc InitPlatformDependentPlotVars {w} {
@@ -223,7 +224,10 @@ namespace eval ::$keyValue {
         global ::graphtools::YYnew
         
         if {!$plot($winId,IdArrayElements)} {
-            incr runCount($winId)
+	    if {$plot($winId,usedLegend)} {
+		incr runCount($winId)
+		set plot($winId,usedLegend) 0
+	    }
         }
         # prevent flyback
         set YYnew($winId) {}
@@ -839,6 +843,7 @@ namespace eval ::$keyValue {
         } else  {
             set width 1
         }
+	set plot($w,usedLegend) 1
         $w.canvas create line $x0 $y0 $x1 $y1 \
                 -fill $Colour -width $width\
                 -tags "graph scalable xaxis_item yaxis_item $node.$id"
@@ -867,6 +872,7 @@ namespace eval ::$keyValue {
             set plot($w,Yminorstep) [expr {$plot($w,Xmajorstep)/2.0}]
             set plot($w,Xprecision) 0
             set plot($w,Yprecision) 0
+            set plot($w,usedLegend) 0
         }
         set YYold($w) {}
         set YYnew($w) {}

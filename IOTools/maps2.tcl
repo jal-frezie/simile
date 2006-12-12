@@ -120,7 +120,8 @@ namespace eval ::maptools2 {
         set bottomSc [$cnv canvasy [winfo height $cnv]]
         set topSc [expr $bottomSc-40]
         set midSc [expr $bottomSc-20]
-        
+	set useNodes($winId,range) [expr $useNodes($winId,max)-$useNodes($winId,min)]
+
         # blank over bottom of display
         $cnv create rect $leftSc $topSc $rightSc $bottomSc \
 	    -outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}

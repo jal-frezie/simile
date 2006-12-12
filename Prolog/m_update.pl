@@ -1560,7 +1560,7 @@ get_occurrence_disag_params(Submodel,
 
 get_module_disag_params(Submodel, 
 			[Colour, Image, ImgPos, Fat, Step, Desc, Comment,
-			 EnumSpecs, Custom, Fix, HideB, ViewC, Separate]) :-
+			 EnumSpecs, Proc, Inc, Libs, Custom, Fix, HideB, ViewC, Separate]) :-
 	(Submodel has_class_refinement fill_colour of Colour, !;
 	    Colour = clear),
 	(Submodel has_class_refinement fill_image of Image, !;
@@ -1576,6 +1576,11 @@ get_module_disag_params(Submodel,
 	    all(menu, separate_type_from_mems,
 		[build(EnumSpecs), build(EnumTypes)]), !;
 	EnumSpecs = []),
+	(Submodel has_class_refinement external_code of ExternCode, !,
+	    member(procedure=Proc, ExternCode),
+	    member(include=Inc, ExternCode),
+	    member(libraries=Libs, ExternCode);
+	Proc = none, Inc = none, Libs = []),
 	(Submodel has_class_refinement eqn_units of Fix, !;
 	Fix = 'Default'),
 	(Submodel has_graphical_attribute hide_border of HideB, !;

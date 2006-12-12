@@ -571,7 +571,7 @@ proc load_dll {topNode lang progDir id node name incs} {
     return [do_for_node $topNode ex_load_dll $topNode $lang $progDir $id $node name $incs]
 }
 
-proc compile_c {workingDir} {
+proc compile_c {workingDir extLibs} {
     global tcl_platform env
 
     CheckCompilerLocation
@@ -579,14 +579,28 @@ proc compile_c {workingDir} {
         ShowMessage {Code editing opportunity} info \
                 "About to compile model.cpp in $workingDir" ok
     }
+    set shLibExt [info sharedlibextension]
+    set lDirs {}
+    set lFiles {}
+    foreach lPath $extLibs {
+	if {[string equal $shLibExt [file extension $lPath]]} {
+	    set newLib -L[file dirname $lPath]
+	    if {[lsearch $lDirs $newLib]==-1} {
+		lappend lDirs $newLib
+	    }
+	    lappend lFiles -l[string range [file rootname [file tail $lPath]] \
+				  3 end] ;# trim off "lib..."
+	}
+    }
+    
     set oldDir [pwd]
     cd $workingDir
 # get a so far unused file name
     set serial [newInt]
-    set TARGET model${serial}[info sharedlibextension]
+    set TARGET model${serial}$shLibExt
     while {[file exists $TARGET]} {
         set serial [newInt]
-        set TARGET model${serial}[info sharedlibextension]
+        set TARGET model${serial}$shLibExt
     }
     set TOOLDIR $oldDir/../Run
     set TCL [file dirname [file dirname [info library]]]
@@ -594,14 +608,14 @@ proc compile_c {workingDir} {
     if {[catch {switch $tcl_platform(platform) {
         unix {
             if {[string match Darwin $tcl_platform(os)]} {
-                exec g++ -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
-                exec g++ -bundle -o $TARGET objtemp.o
+                exec g++ -arch ppc -fPIC -c -O -I$TOOLDIR -o objtmp.o model.cpp
+                set linkCmd [list exec g++ -arch ppc -bundle -o $TARGET objtmp.o]
             } else {
-                exec g++ -m32 -fPIC -c -O -I$TOOLDIR -o objtemp.o model.cpp
-                exec g++ -m32 -shared -o $TARGET objtemp.o
+                exec g++ -m32 -fPIC -c -O -I$TOOLDIR -o objtmp.o model.cpp
+                set linkCmd [list exec g++ -m32 -shared -o $TARGET objtmp.o]
             }
-        }
-        windows {
+	    eval $linkCmd $lDirs $lFiles
+        } windows {
             set TOOLDIR [file attributes $TOOLDIR -shortname]
             set useComp [PrefValue custom(compChoice) compChoice]
             switch -regexp -- $useComp {
@@ -611,9 +625,10 @@ proc compile_c {workingDir} {
                         puts $batSt "set PATH=[file nativename [file join [file join \
                                 [file dirname $TOOLDIR] System] bin]]"
                     }
-                    puts $batSt "g++ -c -o objtemp.o -I$TOOLDIR -I. model.cpp"
-#                   puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtemp.o"
-                    puts $batSt "g++ -shared -o $TARGET objtemp.o"
+                    puts $batSt "g++ -c -o objtmp.o -I$TOOLDIR -I. model.cpp"
+#                   puts $batSt "dllwrap --dllname=$TARGET --def=$TOOLDIR/model.def --driver-name=g++ objtmp.o"
+                    puts $batSt [concat [list g++ -shared -o $TARGET objtmp.o] \
+				    $lDirs $lFiles]
                     close $batSt
                     exec runmingw.bat
                     file delete runmingw.bat
@@ -625,13 +640,13 @@ proc compile_c {workingDir} {
                     exec $TOOLS32/bin/cl.exe -GX -Ox -c -W1 -nologo \
                             -DWIN32 -D_WIN32 -D_DLL -D_X86_=1 \
                             -I. -I$TOOLS32/include -I$TOOLDIR \
-                            -Foobjtemp.o model.cpp
+                            -Foobjtmp.o model.cpp
 
                     exec $TOOLS32/bin/link.exe /RELEASE /NODEFAULTLIB /NOLOGO \
                             -align:0x1000 /MACHINE:IX86 \
                             -entry:_DllMainCRTStartup@12 -dll -out:$TARGET \
                             $TOOLS32/lib/msvcrt.lib $TOOLS32/lib/kernel32.lib \
-                            $TOOLS32/lib/oldnames.lib objtemp.o
+                            $TOOLS32/lib/oldnames.lib objtmp.o
             }}
         }
     }} chuckup]} {
@@ -642,7 +657,7 @@ proc compile_c {workingDir} {
         set serial -1
     } else {
     #    file delete $c_prog
-        file delete objtemp.o
+        file delete objtmp.o
     }
     # do not allow an old dcf to be saved with a new model
     cd $oldDir

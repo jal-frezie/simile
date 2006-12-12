@@ -227,21 +227,11 @@ EXTDEC void proc_pointers_for_shank(get_value_pointer_type*,
 				    interact_gui_type*, showMess_type*, 
 				    char*, connectRecord***, int**);
 
-/* defined in the shank for use by other clients -- note we may later want
-to use regularData items to describe simple c++ arrays, which is why we 
-create them and then set them to a model item */
-
-class regularData {
-  BOOLEAN start_at_one;
-  int dimensionality;
-  int spacings[32];
-  int bounds[32];
-  char* top;
-  
- public:
-  regularData();
-  ~regularData();
-  int set_to_model_value(long int model_id, long int instance_id,
-			  char* caption);
-  void* locate_element(int* indices);
-};
+// use of regularData class
+EXTDEC long int createRegularData (void);
+EXTDEC void deleteRegularData (long int);
+EXTDEC int rdSetToNodeValue(long int, long int, long int, char*);
+EXTDEC int rdDimensionality(long int);
+EXTDEC int rdDatatype(long int);
+EXTDEC int rdBound(long int, int);
+EXTDEC void* rdLocateElement(long int old, int* indices);

@@ -7,12 +7,13 @@
 sicstus_module(backup, [initialize_ring/1,
 			scrap_move/0, finish_move/2, restart_move/0,
 			get_save_status/2, set_save_status/2, save_allowed/2,
-			go_back/2, go_forward/2, make_auto_name/3,
+			go_back/1, go_forward/1, make_auto_name/3,
 			new_autosave/2, clear_autosave/2, check_autosave/4,
 			scrub_autosave/1, is_toplevel/1, is_module/1,
 			use_temp_dir/1, use_pref_dir/1, into_save_file/2]).
 
-sicstus_use_module([library(lists), sp_only, ame_gen, database, utility]).
+sicstus_use_module([library(lists), sp_only, ame_gen, database,
+		    utility, state]).
 
 :- dynamic(autosave_file_is/2).
 
@@ -48,7 +49,19 @@ initialize_ring(Model) :-
 	assert(saved_state(Model, last, 1)),
 	assert(saved_state(Model, current, 1)).
 
-go_back(Model, Further) :-
+exit_two_click_op :-
+	get_phase(targetting),
+	/* halfway through two-click link addition -- tidy up. */
+	event:retractall(instant_link(_)),
+	advance_phase_to(peruse),
+	get_line_start_obj(New),
+	New is_of_sort cloud,
+	draw:off(New).
+
+go_back(Model) :-
+	(exit_two_click_op, !;
+	    /* If removing floater, end operation as user did not intend
+	    going back further */
 	restart_move,
 	retract(saved_state(Model, current, Current)),
 	wrap(Prev, Current),
@@ -59,12 +72,11 @@ go_back(Model, Further) :-
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
 	all(draw, redisplay_border, [build(Redrawn)]),
 	into_save_file(Model, undo),
-	assert(saved_state(Model, current, Prev)),
-	(saved_state(Model, first, Prev), !,
-		Further = 0;
-	Further = 1).
+	assert(saved_state(Model, current, Prev))),
+	set_edit_abilities(Model).
 
-go_forward(Model, Further) :-
+go_forward(Model) :-
+	exit_two_click_op, fail; % should never happen
 	restart_move,
 	retract(saved_state(Model, current, Current)),
 	wrap(Current, Next),
@@ -76,13 +88,12 @@ go_forward(Model, Further) :-
 	all(draw, redisplay_border, [build(Redrawn)]),
 	into_save_file(Model, redo),
 	assert(saved_state(Model, current, Next)),
-	(saved_state(Model, last, Next), !,
-		Further = 0;
-	Further = 1).
+	set_edit_abilities(Model).
 
 finish_move(EditedModel, ChangeExec) :-
+       \+ anything_done, !;
 	m_update:contains(Model, EditedModel),
-	state:shows_model(Win, Model),
+	Win shows_model Model,
 	set_save_status(Win, risky),
 	(ChangeExec = 0;
 	 ChangeExec = 1,
@@ -92,10 +103,6 @@ finish_move(EditedModel, ChangeExec) :-
 	(ChangeExec = 0;
 	 ChangeExec = 1,
 	    output:tk_alter_model(Model)),
-	draw:update_ability(Model, undo, edit, 'Undo', 1),
-	draw:update_ability(Model, redo, edit, 'Redo', 0),
-	save_allowed(Model, CanSave),
-	draw:update_ability(Model, save, file, 'Save', CanSave),
 	retract(saved_state(Model, first, First)),
 	retract(saved_state(Model, last, _)),
 	retract(saved_state(Model, current, Current)),
@@ -107,7 +114,8 @@ finish_move(EditedModel, ChangeExec) :-
 		assert(saved_state(Model, first, Following));
 	assert(saved_state(Model, first, First))),
 	assert(saved_state(Model, last, Next)),
-	assert(saved_state(Model, current, Next)).
+	assert(saved_state(Model, current, Next)),
+	set_edit_abilities(Model).
 
 /* This undoes anything that has happened since the last finish_move; needed
 after putting up restore dialog, to be sure we are restoring from the same
@@ -126,7 +134,7 @@ restart_move :-
 counted_fns(0).
 
 save_allowed(Model, OK) :-
-	state:get_edition_and_limit(Edn, Limit), !,
+	get_edition_and_limit(Edn, Limit), !,
 	retract(counted_fns(OldTot)),
 	assert(counted_fns(0)),
 	(contains(Model, Fun),
@@ -174,16 +182,9 @@ into_save_file(Model, ActList) :-
 	do_dialogue("Autosave warning!", warning, Wibble, ok, _),
 	retract(autosave_file_is(Model, _)))); true.
 
-restore_save_file(Model, Load, IdSwaps, UndoOn, RedoOn) :-
+restore_save_file(Model, Load, IdSwaps) :-
 	read(Load, ActSpec),
 	(ActSpec = end_of_file,
-		saved_state(Model, current, Here),
-		(saved_state(Model, first, Here), !,
-			UndoOn = 0;
-		UndoOn = 1),
-		(saved_state(Model, last, Here), !,
-			RedoOn = 0;
-		RedoOn = 1),
 		close(Load),
 	        assert(translation_info(Model, [translated(IdSwaps)]));
 		/* now load the mirror of the current state so I can continue to
@@ -195,7 +196,20 @@ restore_save_file(Model, Load, IdSwaps, UndoOn, RedoOn) :-
 			fail;
 		true); */
 	repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps),
-		restore_save_file(Model, Load, NewIdSwaps, UndoOn, RedoOn)).
+		restore_save_file(Model, Load, NewIdSwaps)).
+
+set_edit_abilities(Model) :-
+	save_allowed(Model, CanSave),
+	draw:update_ability(Model, save, file, 'Save', CanSave),
+	saved_state(Model, current, Here),
+	(saved_state(Model, first, Here), !,
+	    UndoOn = 0;
+	    UndoOn = 1),
+	(saved_state(Model, last, Here), !,
+	    RedoOn = 0;
+	    RedoOn = 1),
+	draw:update_ability(Model, undo, edit, 'Undo', UndoOn),
+	draw:update_ability(Model, redo, edit, 'Redo', RedoOn).
 
 repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 	ActSpec = undo,
@@ -360,7 +374,7 @@ new_autosave(Desktop, ModelName) :-
         assert(translation_info(Desktop, [top_level_is(Desktop)])).
 	
 check_autosave(Model, Name, IdSwaps, Tweaked) :-
-	state:shows_model(Win, Model),
+	Win shows_model Model,
 	set_save_status(Win, safe),
 	draw:update_ability(Model, undo, edit, 'Undo', 0),
 	draw:update_ability(Model, redo, edit, 'Redo', 0),
@@ -377,12 +391,9 @@ check_autosave(Model, Name, IdSwaps, Tweaked) :-
 		(IdSwaps = copy, !,
 		    setof(Comp-Comp, contains(Model, Comp), UseIdSwaps);
 		 UseIdSwaps = [Model-Model | IdSwaps]),
-		restore_save_file(Model, Load, UseIdSwaps, UState, RState),
+		restore_save_file(Model, Load, UseIdSwaps),
 		Tweaked = 1,
-		draw:update_ability(Model, undo, edit, 'Undo', UState),
-		draw:update_ability(Model, redo, edit, 'Redo', RState),
-		save_allowed(Model, CanSave),
-		draw:update_ability(Model, save, file, 'Save', CanSave),
+		set_edit_abilities(Model),
 		set_save_status(Win, risky);
 	     output:my_delete_file(AutoName),
 	     (IdSwaps = copy, !,

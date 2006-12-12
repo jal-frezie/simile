@@ -139,7 +139,8 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name  -anchor nw -pady 2 -fill x
         }
         pack $rcf.editBoxes -side bottom -pady 2 -expand on -fill both
-        
+	set runState($node,timeReached) $runState($node,currentTime)
+      
         if {[InPlugin]} {
 	    $t.nb insert end setup -text "Run settings"
 	    set rsf [$t.nb getframe setup]
@@ -317,10 +318,13 @@ namespace eval runcontrol33857 {
         
         set phases [GetPhaseCount $node]
 	set sendvars($node,newData) {}
+	if {$runState($node,currentTime)==0 && \
+		$runState($node,timeReached)!=0} {
+	    ShowMessage "Model not reset" warning "You have manually edited the value for Current Time, setting it to zero. This action will not reset the model's state variables. Editing the current time causes to model to jump to the new time in a single execution step, which can lead to poor accuracy and zigzag traces on time plots. To reset the model and create new plot traces, click on the 'Reset simulation' button in the run control." ok
+	}
 	foreach entered [list displayInt update$phases currentTime execTime] {
 # for some reason tcl thinks an empty string is a number
-	    if {![llength $runState($node,$entered)] || \
-		    ![string is double $runState($node,$entered)]} {
+	    if {![string is double -strict $runState($node,$entered)]} {
 		ShowMessage "Bad run parameter" warning "Non-numeric value \"$runState($node,$entered)\" entered for run parameter $entered -- replacing with 1" ok
 		set runState($node,$entered) 1
 	    }
@@ -371,6 +375,7 @@ namespace eval runcontrol33857 {
 	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
 	set runState($node,progress) [expr 100*($now-$runState($node,remembered_start))/($runState($node,expected_end)-$runState($node,remembered_start))]
 	$runState($node,cnvs) itemconfigure 1 -fill $col
+        set runState($node,timeReached) $now ;# so I can check if entry edited
     }
 
 # This is called back from the model execution process whenever

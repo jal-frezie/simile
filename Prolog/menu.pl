@@ -21,23 +21,15 @@ undo_edit(Wid, Wids) :-
 	Wid shows_model ClickedModel,
 	contains(Model, ClickedModel),
 	is_toplevel(Model),
-	go_back(Model, Further),
-	all(menu, check_exist, [build(Wids)]),
-	update_ability(Model, undo, edit, 'Undo', Further),
-	update_ability(Model, redo, edit, 'Redo', 1),
-	save_allowed(Model, CanSave),
-	update_ability(Model, save, file, 'Save', CanSave).
+	go_back(Model),
+	all(menu, check_exist, [build(Wids)]).
 
 redo_edit(Wid, Wids) :-
 	Wid shows_model ClickedModel,
 	contains(Model, ClickedModel),
 	is_toplevel(Model),
-	go_forward(Model, Further),
-	all(menu, check_exist, [build(Wids)]),
-	update_ability(Model, undo, edit, 'Undo', 1),
-	update_ability(Model, redo, edit, 'Redo', Further),
-	save_allowed(Model, CanSave),
-	update_ability(Model, save, file, 'Save', CanSave).
+	go_forward(Model),
+	all(menu, check_exist, [build(Wids)]).
 
 check_exist(Wid) :-
 	Wid shows_model Mod,
@@ -69,6 +61,9 @@ update_mode(NewMode) :-
 		\+ NewMode = select,
 			disable_text_editing_in(Win)),
 		fail;
+	    set_cursor_for(NewMode)).
+
+set_cursor_for(NewMode) :-
 	NewMode = add, !,
 	    cursor_is(target);
 	NewMode = move, !,
@@ -83,7 +78,7 @@ update_mode(NewMode) :-
 	    cursor_is(sqb('GetGhostCursor'));
 	NewMode = snap, !,
 	    cursor_is(question_arrow);
-	cursor_is(arrow)).
+	cursor_is(arrow).
 
 stick_model_in(Win, Parent, Name, Mode) :-
 	Mode = reopen,
@@ -1178,7 +1173,8 @@ set_properties(Wid, Model) :-
 	true),
 	    
 	(nth(PosM, P_lists, [calc | _]),
-	 nth(PosM, New_P_lists, [NewStep, NewFix, NewSeparate]), !,
+	 nth(PosM, New_P_lists, [NewStep, NewFix, NewSeparate,
+				 NewProc, NewInc, NewLibs]), !,
 	    (NewStep = 'Default', !,
 		add_parameter(Model, 0, step, '');
 	    add_parameter(Model, 0, step, NewStep)),
@@ -1186,6 +1182,10 @@ set_properties(Wid, Model) :-
 		add_parameter(Model, 0, eqn_units, '');
 	    add_parameter(Model, 0, eqn_units, NewFix)),	
 	    add_parameter(Model, 0, separate, NewSeparate);
+	    /* fix quirk in new strings_to_atoms */
+	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
+	    add_parameter(Model, 0, external_code,
+		[procedure=NewProc,include=NewInc,libraries=RealNewLibs]),
 	    (Separate = NewSeparate, !;
 	     find_all_comps(Parent, NewComp),
 		add_parameter(Parent, 1, c_new, 0)),

@@ -1682,59 +1682,102 @@ void* get_ptr(long int modelType, void* level, int** id_meta,
   return ((Model*)modelType)->getpointer(level, id_meta, dim_list);
 }
 
-/* definitions for regularData class */
+/* definitions for regularData class -- note we may later want
+   to use regularData items to describe simple c++ arrays, which is why we
+   create them and then set them to a model item */
 
-regularData::regularData() {
-}
+class regularData {
+  int spacings[32];
+  char* top;
+public:
+  int datatype;
+  int dimensionality;
+  int bounds[32];
+  
+  regularData() {
+  }
+  
+  ~regularData() {
+  }
 
-regularData::~regularData() {
-}
-
-int regularData::set_to_model_value(long int model_id, long int instance_id,
+  int set_to_model_value(long int model_id, long int instance_id,
 			  char* caption) {
-  int count, *quickpath, *pathref, *testref;
-  char test[255];
-  enum_type_data* types[32];
-  int test_indices[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+    int count, *quickpath, *pathref, *testref;
+    char test[255];
+    enum_type_data* types[32];
+    int test_indices[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 			  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-  void* id;
-  for (count = 1; ((Model*)model_id)->nodecount>count; ++count) {
-    ((Model*)model_id)->make_full_caption(count, test, bounds, types);
-    if (!strcmp(caption, test)) {
-      dimensionality = 0;
-      while (*(bounds + dimensionality)) {
-	++dimensionality;
-      }
-      id = ((Instance*)instance_id)->id;
-      quickpath = ((Model*)model_id)->nodedata[count].path;
-      pathref = quickpath;
-      testref = test_indices;
-      top = (char*)get_ptr(model_id, id, &pathref, &testref);
-      for (count = 0; count < dimensionality; ++count) {
-	test_indices[count] = 1;
+    void* id;
+    for (count = 1; ((Model*)model_id)->nodecount>count; ++count) {
+      ((Model*)model_id)->make_full_caption(count, test, bounds, types);
+      if (!strcmp(caption, test)) {
+	dimensionality = 0;
+	while (*(bounds + dimensionality)) {
+	  ++dimensionality;
+	}
+	id = ((Instance*)instance_id)->id;
+	quickpath = ((Model*)model_id)->nodedata[count].path;
 	pathref = quickpath;
 	testref = test_indices;
-	spacings[count] = (char*)get_ptr(model_id, id, &pathref, &testref)-top;
-	test_indices[count] = 0;
+	top = (char*)get_ptr(model_id, id, &pathref, &testref);
+	for (count = 0; count < dimensionality; ++count) {
+	  test_indices[count] = 1;
+	  pathref = quickpath;
+	  testref = test_indices;
+	  spacings[count] = (char*)get_ptr(model_id, id, &pathref, &testref)-top;
+	  test_indices[count] = 0;
+	}
+	start_at_one = TRUE;
+	return 0;
       }
-      start_at_one = TRUE;
-      return 0;
     }
+    return -1;
   }
-  return -1;
-}
-
-void* regularData::locate_element(int* indices) {
-  char* result;
-  int count;
   
+  void* locate_element(int* indices) {
+    char* result;
+    int count;
+    
     result = top;
     for (count = 0; count < dimensionality; ++count) {
       result += spacings[count]*indices[count];
     }
     return result;
+  }
+};
+// need non-class versions of these for 5-d interface!
+
+long int createRegularData () {
+  return (long int) new regularData;
 }
 
+void deleteRegularData (long int old) {
+  delete (regularData*)old;
+}
+
+int rdSetToNodeValue(long int old, long int mid, long int iid, char* caption)
+{
+  return ((regularData*)old)->set_to_model_value(mid, iid, caption);
+}
+
+int rdDimensionality(long int old) {
+  return ((regularData*)old)->dimensionality;
+}
+
+int rdDatatype(long int old) {
+  return ((regularData*)old)->datatype;
+}
+
+int rdBound(long int old, int idx) {
+  return ((regularData*)old)->bounds[idx];
+}
+
+void* rdLocateElement(long int old, int* indices) {
+  return ((regularData*)old)->locate_element(indices);
+}
+
+/* model execution */
+ 
 void update(long int modelType, long int modelHandle, 
 	     double starttime, int phase) {
   ((Model*)modelType)->updatemodel((void*)modelHandle, starttime, phase);

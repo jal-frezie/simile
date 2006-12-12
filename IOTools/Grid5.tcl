@@ -109,7 +109,7 @@ namespace eval grid005 {
         SetColourMap useNodes $winId $useNodes($winId,color)
         AddToolbar $winId
         $winId.bbframe.buttonBox itemconfigure 0 -state disable
-	NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
+	NumDistinct $winId $useNodes($winId,colvals)
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
         InitialiseGrid $winId $useNodes($winId,color)
@@ -124,12 +124,12 @@ namespace eval grid005 {
         variable useNodes
         
         set ms $winId.msg
-        set testResult [GetModelValue $node]
-        if {[string compare $testResult novalue]} {
+        set testResult [GetModelType $node]
+        if {[string compare $testResult VALUELESS]} {
             set state [GetState $winId]
             switch $state {
                 display0 {
-                    NumDistinct $winId $testResult
+                    NumDistinct $winId $node
 		    set useNodes($winId,colvals) $node
 		    $ms configure -text "Grid currently has $useNodes($winId,ncol) columns and $useNodes($winId,nrow) rows. Now click on the variable to be displayed."
                     SetState $winId display1
@@ -159,19 +159,25 @@ namespace eval grid005 {
         }
     }
     
-    proc NumDistinct {winId testResult} {
+    proc NumDistinct {winId testNode} {
 	variable useNodes
 
-	set columns [Flatten [lindex $testResult 0]]
-	foreach col $columns {
-	    set colvals([lindex $col 1]) 1
+	if {![catch {ListDiscreteModelValues $testNode} vList]} {
+	    set useNodes($winId,ncol) [llength $vList]
+	    set useNodes($winId,nrow) \
+		[expr [string length [GetBinaryModelValue $testNode 0 255]]/$useNodes($winId,ncol)]
+	} else {
+	    set columns [Flatten [lindex [GetModelValues $testNode] 0]]
+	    foreach col $columns {
+		set colvals([lindex $col 1]) 1
+	    }
+	    if {[info exists colvals()]} {
+		unset colvals()
+	    }
+	    set useNodes($winId,ncol) [array size colvals]
+	    set useNodes($winId,nrow) \
+		[expr {[llength $columns]/$useNodes($winId,ncol)}]
 	}
-	if {[info exists colvals()]} {
-	    unset colvals()
-	}
-	set useNodes($winId,ncol) [array size colvals]
-	set useNodes($winId,nrow) \
-	    [expr {[llength $columns]/$useNodes($winId,ncol)}]
     }
 
     proc UpdateState {winId} {
@@ -190,10 +196,10 @@ namespace eval grid005 {
         variable useNodes
         if {[string match [lindex [GetState $winId] 0] displaying] && \
                     !$useNodes($winId,freeze)} then {
-	    if {!$time} {
-		NumDistinct $winId [GetModelValue $useNodes($winId,colvals)]
+	    if {!$time} { ;# wrong, should only be done on reset
+		NumDistinct $winId $useNodes($winId,colvals)
 	    }
-            DrawGrid5 $winId $useNodes($winId,color)
+            DrawGrid6 $winId $useNodes($winId,color)
             FillCanvas $winId
             UpdateCaption useNodes $winId
         }
@@ -203,7 +209,7 @@ namespace eval grid005 {
         variable useNodes
         
         set useNodes($winId,hiddenMap) [image create photo]
-        DrawGrid5 $winId $display1
+        DrawGrid6 $winId $display1
 # This must now be done before we create the canvas because otherwise the
 # canvas might try to redraw while this is waiting for data from the model
         frame $winId.f
@@ -238,7 +244,7 @@ namespace eval grid005 {
 	}
 	if {$mult<2} {
 	    set mult 1
-	    $winId.bbframe.buttonBox itemconfigure 2 -state disable
+	    $winId.bbframe.buttonBox itemconfigure 3 -state disable
 	}
         set useNodes($winId,mult) $mult
         set xwidth [expr {$mult*$useNodes($winId,ncol)}]
@@ -347,7 +353,7 @@ namespace eval grid005 {
         variable useNodes
         variable min
         variable max
-        
+
         # copy the values from the temp values to those to be edited if OK clicked
         set useNodes($winId,ctop) [$coloursF.topcolourF.colF cget -bg]
         set useNodes($winId,cmid) [$coloursF.midcolourF.colF cget -bg]
@@ -392,8 +398,43 @@ namespace eval grid005 {
         $c create text 250 230 -text "xx $this_colour xx"
     }
     
-    
-    
+    proc DrawGrid6 {winId node} {
+	variable useNodes
+
+	if {[catch {GetBinaryModelValue $node $useNodes($winId,min) \
+			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
+	    DrawGrid5 $winId $node
+	    return
+	}
+	set rows $useNodes($winId,nrow)
+	set cols $useNodes($winId,ncol)
+	set bitCols [expr 4*int(($cols+3)/4)]
+	set fullSize [expr 1078+$bitCols*$rows]
+	set bmpData [binary format a2is2iiiissiiiiii \
+			 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
+	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
+	    set colourIndex [expr $rgbQuad*($useNodes($winId,nswatches)+1)/256]
+	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
+	    append bmpData [binary format H2H2H2c \
+				[string range $colourStr 9 12] \
+				[string range $colourStr 5 8] \
+				[string range $colourStr 1 4] 0]
+	}
+	set filling [string repeat 0 [expr $bitCols-$cols]]
+	if {[string length $filling]} {
+	    for {set row 0} {$row<$rows} {incr row} {
+		append bmpData [string range $useNodes($winId,rawBinary) \
+			[expr $row*$cols] [expr $row*$cols+$cols-1]] $filling
+	    }
+	} else {
+	    append bmpData $useNodes($winId,rawBinary)
+	}
+	set str [open debunk.bmp w]
+	fconfigure $str -translation binary
+	puts $str $bmpData
+	close $str
+	$useNodes($winId,hiddenMap) configure -data $bmpData
+    }
     
     proc DrawGrid5 {winId node} {
         variable useNodes
@@ -472,10 +513,10 @@ namespace eval grid005 {
             set useNodes($winId,mult) $next
         }
         if {$useNodes($winId,mult)==1} {
-            $winId.bbframe.buttonBox itemconfigure 2 -state disable
+            $winId.bbframe.buttonBox itemconfigure 3 -state disable
             # disable zoom out button
         } else {
-            $winId.bbframe.buttonBox itemconfigure 2 -state normal
+            $winId.bbframe.buttonBox itemconfigure 3 -state normal
         }
         
         $winId.c configure -scroll "0 0 \
@@ -535,19 +576,26 @@ namespace eval grid005 {
 #               raise .popup
 #            }
             set cell [expr ($row-1)*$ncol+$col-1]
-	    set vLine [lindex $useNodes($winId,values) $cell]
-            set value [TransValue $useNodes($winId,dataETs) \
-			   [lindex $vLine 1]]
-	    set index [join [TransEnums $useNodes($winId,allETs) \
-				 [lindex $vLine 0]] ,]
-            
-	    AddPopupMessage "Index=$index\nCol,row=($col,$row)\nValue=$value" \
-		\#ffffc0
+	    if {[info exists useNodes($winId,values)]} {
+		set vLine [lindex $useNodes($winId,values) $cell]
+		set value [TransValue $useNodes($winId,dataETs) \
+			       [lindex $vLine 1]]
+		set index [join [TransEnums $useNodes($winId,allETs) \
+				     [lindex $vLine 0]] ,]
+		set popText "Index=$index\nCol,row=($col,$row)\nValue=$value"
 #            .popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
 #            set xpoint [expr $X+15]
 #            set ypoint [expr $Y+43]
 #            wm geometry .popup +$xpoint+$ypoint
 #            update
+	    } else { # get approx value from raw data
+		binary scan $useNodes($winId,rawBinary) x${cell}H2 hexo
+		set numValue [expr $useNodes($winId,min)+0x$hexo*(1+$useNodes($winId,range))/256]
+		set value [TransValue $useNodes($winId,dataETs) $numValue]
+ #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
+		set popText "Col,row=($col,$row)\nValue=$value"
+             }
+	    AddPopupMessage $popText \#ffffc0
         }
     }
     
@@ -563,7 +611,7 @@ namespace eval grid005 {
 	    set vLine [lindex $useNodes($winId,values) $cell]
 	    PokeValue $useNodes($winId,color) [lindex $vLine 0] $newVal
 	}
-	DrawGrid5 $winId $useNodes($winId,color)
+	DrawGrid6 $winId $useNodes($winId,color)
 	FillCanvas $winId
     }
     
@@ -580,15 +628,9 @@ namespace eval grid005 {
     proc SaveAsFile {winId} {
         variable useNodes
         # should have dialog to set for options
-        set filename [ tk_getSaveFile -defaultextension .gif \
-                -filetypes {{{GIF Files} {.gif} }}\
-                -initialdir {} \
-                -initialfile "" \
-                -parent $winId \
-                -title "Save Grid Display to image file"\
-        ]
+	set filename [ChooseFile image.gif "Save image as:" 1]
         $useNodes($winId,visibleMap) write $filename \
-                -format gif
+                -format [string range [file extension $filename] 1 end]
                 #-from x1 y1 x2 y2\
                 #-grayscale
                 #-background {}

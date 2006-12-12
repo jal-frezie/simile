@@ -146,7 +146,12 @@ proc ClickObj { x y winId X Y action} {
         $winId focus {}
         if {$RB && [string equal select $pushedbutton]} {
             prolog [list tk_${action}('$winId', $grpName , $xco , $yco , 2)]
-            tk_popup [winfo parent $winId]top.edit $X $Y
+	    if {[string equal windows $tcl_platform(platform)] && \
+		    $Y>[winfo screenheight $winId]/2} {
+		tk_popup [winfo parent $winId]top.edit $X $Y 99
+	    } else {
+		tk_popup [winfo parent $winId]top.edit $X $Y
+	    }
             prolog [list tk_unclick( $xco , $yco )]
         } else {
             prolog [list tk_${action}('$winId', $grpName , $xco , $yco , $CD)]
@@ -193,10 +198,15 @@ proc ClickObj { x y winId X Y action} {
 #        }
         prolog [list tk_click_obj('$winId', $grpName, $action, $xco, $yco, \
                       [AddTabId $winId $target $node] , $CD)]
-    update
+	update
         # Right button puts up context menu.
         if {$RB && [string equal select $pushedbutton]} {
-            tk_popup [winfo parent $winId]top.edit $X $Y
+	    if {[string equal windows $tcl_platform(platform)] && \
+		    $Y>[winfo screenheight $winId]/2} {
+		tk_popup [winfo parent $winId]top.edit $X $Y 99
+	    } else {
+		tk_popup [winfo parent $winId]top.edit $X $Y
+	    }
             prolog [list tk_unclick( $xco , $yco )]
         }
         
@@ -936,10 +946,16 @@ proc BindMouseWheel { widget } {
     bind $widget <MouseWheel>         {%W yview scroll [expr {-%D/24}]  units}
     bind $widget <Shift-MouseWheel>   {%W xview scroll [expr {-%D/24}] units}
 
-    bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
-    bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
-    bind $widget <Shift-Button-4> {event generate %W <Shift-MouseWheel> -delta  120}
-    bind $widget <Shift-Button-5> {event generate %W <Shift-MouseWheel> -delta -120}
+#    bind $widget <Button-4> {event generate %W <MouseWheel> -delta  120}
+#    bind $widget <Button-5> {event generate %W <MouseWheel> -delta -120}
+#    bind $widget <Shift-Button-4> {event generate %W <Shift-MouseWheel> -delta  120}
+#    bind $widget <Shift-Button-5> {event generate %W <Shift-MouseWheel> -delta -120}
+# event generate mw seems to have stopped working on Linux so go directly to...
+    bind $widget <Button-4> {%W yview scroll -5 units}
+    bind $widget <Button-5> {%W yview scroll 5 units}
+    bind $widget <Shift-Button-4> {%W xview scroll -5 units}
+    bind $widget <Shift-Button-5> {%W xview scroll 5 units}
+    
     bind $widget <Control-Button-4> {event generate %W <Control-MouseWheel> -delta  120}
     bind $widget <Control-Button-5> {event generate %W <Control-MouseWheel> -delta -120}
 }

@@ -73,8 +73,8 @@ proc tcl_insert {node newVs} {
 
 # right now to get the node id
 proc GetNodeIdFromRef {dest indices} {
-    global nodedata nodecount
-    for {set record 0} {$nodecount>$record} {incr record} {
+    global nodedata
+    foreach record [array names nodedata] {
         if {[string equal $dest [burrow_to ::AME_model<> \
                                     [lindex $nodedata($record) 6] $indices]]} {
             return [lindex $nodedata($record) 0]

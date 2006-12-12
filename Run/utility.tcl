@@ -51,6 +51,10 @@ proc ChooseFile { preferred title canbenew } {
             set typeList [list .gif .jpg .jpeg .png]
             set desc Images
             set recordEntry 0
+	} .cpp {
+	    set typeList [list .cpp .c .h]
+	    set desc "Source or header files"
+	    set recordEntry 0
         } {} {
             set typeList {}
             set desc Directories
