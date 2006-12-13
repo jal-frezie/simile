@@ -34,6 +34,7 @@ FINDABLE EXPORT int do_evalmodel(void* handle, double time, int phase, BOOLEAN e
     signal(SIGSEGV,exit_sighandler);
   }
 
+  dts[0] = phase; // so external code can access it
   error = setjmp(env);
   if (error) {
     return -error;
@@ -52,23 +53,23 @@ FINDABLE EXPORT int do_evalmodel(void* handle, double time, int phase, BOOLEAN e
   }
 }
 
-/* setstep: the model class instances contain an array of doubles called
-dts representing the time steps at the various phases. This function reaches
-in and sets one of them. Returns phase count. Node that dts[0] is set to
-the integration step being done: 0 for Euler, 1-4 for the four stages of RK
-
-Also uses to get phase count */
-
 FINDABLE EXPORT void do_exitmodel(void* handle) {
   ((AME_model *)handle)->do_exitmodel();
   delete (AME_model *)handle;
 }
 
+/* setstep: the model class instances contain an array of doubles called
+dts representing the time steps at the various phases. This function reaches
+in and sets one of them. Returns phase count. Node that ts[0] is set to
+the integration step being done: 0 for Euler, 1-4 for the four stages of RK
+
+Also uses to get phase count */
+
 FINDABLE EXPORT int do_setstep(double time, int phase) {
-  if (phase<0) { /* lazy */
-    ts[-phase] = time;
-  } else {
+  if (phase>0) { /* lazy */
     dts[phase] = time;
+  } else {
+    ts[-phase] = time;
   }
   return(phasecount);
 }
@@ -79,13 +80,13 @@ FINDABLE EXPORT int do_setstep(double time, int phase) {
 //
 int loses (double prob, int phase) {
   int kills_per_step;
-  if (prob<=0 || glob_element(dts,0)<0) {
+  if (prob<=0 || glob_element(ts,0)<0) {
     return 0;
   } else if (prob>=1) {
     return 1;
   } else {
-    kills_per_step=glob_element(dts,0)?4:1;
-    return ame_rand(0,1)>pow(1-prob,glob_element(dts,1)/kills_per_step);
+    kills_per_step=glob_element(ts,0)?4:1;
+    return ame_rand(0,1)>pow(1-prob,glob_element(dts,phase)/kills_per_step);
   }
 }
 
@@ -105,12 +106,12 @@ t1 = initial rate of change (used when redoing step with different dt)
 t2 = last increment (used to undo step)
 t3 = estimate of next initial increment
   */
-  if (glob_element(dts, 0)<0) {
+  if (glob_element(ts, 0)<0) {
     dv = step_incr(step, extras->t1);
   } else {
     dv = step_incr(step, v);
   }
-  switch (int(glob_element(dts, 0))) {
+  switch (int(glob_element(ts, 0))) {
   case 0: // Euler
     extras->t1 = v;
     extras->t2 = dv;

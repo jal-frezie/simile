@@ -1727,7 +1727,6 @@ public:
 	  spacings[count] = (char*)get_ptr(model_id, id, &pathref, &testref)-top;
 	  test_indices[count] = 0;
 	}
-	start_at_one = TRUE;
 	return 0;
       }
     }
