@@ -1072,27 +1072,28 @@ set_properties(Wid, Model) :-
 		  Desc, Comment, ModName, Enums, Connect, UCheck,
 		  HideB, ViewC, Separate, Share],
 */	(find_type(Model, module), !,
-	    get_module_disag_params(Model, 
-			[Colour, Image, ImgPos, Fatness, Step, Desc, Comment,
-			 EnumSpecs, Connect, Fix, HideB, ViewC, Separate]),
+	    get_module_disag_params(Model, [Colour, Image, ImgPos, Fatness,
+		Step, Desc, Comment, EnumSpecs, Proc, Inc, Libs, Connect, Fix,
+		HideB, ViewC, Separate]),
 	    P_lists = [[appear, Colour, Image, ImgPos, Fatness, HideB, ViewC],
-		       [calc, Step, Fix, Separate], [ets, EnumSpecs],
-		       [connect, Connect], [notes, Desc, Comment]];
+		       [calc, Step, Fix, Separate, Proc, Inc, Libs],
+		       [ets, EnumSpecs], [connect, Connect],
+		       [notes, Desc, Comment]];
 	 Model is_instance_of _Template, !,
 	    get_occurrence_disag_params(Model, [Nature, Count, ModName,
 						   Desc, Comment]),
 	    P_lists = [[number, Nature, Count, ModName],
 		       [notes, Comment]];
 	 /* self-contained submodel */
-	    get_module_disag_params(Model, 
-			[Colour, Image, ImgPos, Fatness, Step, _MD, _MC,
-			 EnumSpecs, Connect, Fix, HideB, ViewC, Separate]),
+	    get_module_disag_params(Model, [Colour, Image, ImgPos, Fatness,
+		Step, _MD, _MC, EnumSpecs, Proc, Inc, Libs, Connect, Fix,
+		HideB, ViewC, Separate]),
 	    get_occurrence_disag_params(Model, [Nature, Count, ModName,
 						   Desc, Comment]),
 	    P_lists = [[number, Nature, Count, ModName],
-			[appear, Colour, Image, ImgPos, Fatness, HideB, ViewC],
-			[calc, Step, Fix, Separate], [ets, EnumSpecs],
-			[notes, Desc, Comment]]),
+		       [appear, Colour, Image, ImgPos, Fatness, HideB, ViewC],
+		       [calc, Step, Fix, Separate, Proc, Inc, Libs],
+		       [ets, EnumSpecs], [notes, Desc, Comment]]),
 	
 	do_disag_dialog(Wid, Model, P_lists, New_P_lists),
 	(New_P_lists = '', !; /* dialogue was cancelled */
@@ -1181,14 +1182,14 @@ set_properties(Wid, Model) :-
 	    (NewFix = 'Default', !,
 		add_parameter(Model, 0, eqn_units, '');
 	    add_parameter(Model, 0, eqn_units, NewFix)),	
-	    add_parameter(Model, 0, separate, NewSeparate);
+	    add_parameter(Model, 0, separate, NewSeparate),
 	    /* fix quirk in new strings_to_atoms */
 	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
 	    add_parameter(Model, 0, external_code,
 		[procedure=NewProc,include=NewInc,libraries=RealNewLibs]),
 	    (Separate = NewSeparate, !;
 	     find_all_comps(Parent, NewComp),
-		add_parameter(Parent, 1, c_new, 0)),
+		add_parameter(Parent, 1, c_new, 0));
 	true),
 
 	(nth(PosE, P_lists, [ets | _]),

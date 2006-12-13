@@ -529,6 +529,10 @@ denest_disag_result(TabStrings, NeatResult) :-
 		[build(EnumTypeSpecLists), build(NeatResult)]);
 	Tab = "connect", !, 
 	    chop_list(First, NeatResult);
+	Tab = "calc", !,
+	    append(Flat, [Nest], Rest),
+	    chop_list(Nest, RList),
+	    append([First | Flat], [RList], NeatResult);
 	chop_list([First | Rest], [NeatResult])).
 
 tk_do_relation_dialog(Win, Caption, Type, State, OldComment,

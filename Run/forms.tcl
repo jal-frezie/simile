@@ -397,8 +397,8 @@ proc Disaggregate {parent title args} {
 	    }
             lappend result [list calc \
 				$disaggregate(eqnunit) $disaggregate(step) \
-				$disaggregate(separate) disaggregate(xproc) \
-				disaggregate(xinc) disaggregate(xlibs)]
+				$disaggregate(separate) $disaggregate(xproc) \
+				$disaggregate(xinc) $disaggregate(xlibs)]
         }
 
         if {[winfo exists $notebook.enumtypes]} {

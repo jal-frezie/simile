@@ -98,7 +98,7 @@ proc notcanvasTLDistance {winId x y} {
 # to interrogate it to find what is closest to the click point
 
 proc ClickObj { x y winId X Y action} {
-    global clickinfo equationbar pushedbutton window_info looks
+    global clickinfo equationbar pushedbutton window_info looks tcl_platform
     
     #puts "$action it!"
     
