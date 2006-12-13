@@ -583,7 +583,7 @@ proc compile_c {workingDir extLibs} {
     set lDirs {}
     set lFiles {}
     foreach lPath $extLibs {
-	if {[string equal $shLibExt [file extension $lPath]]} {
+	if {[string equal [linkableExt $shLibExt] [file extension $lPath]]} {
 	    set newLib -L[file dirname $lPath]
 	    if {[lsearch $lDirs $newLib]==-1} {
 		lappend lDirs $newLib

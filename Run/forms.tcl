@@ -502,7 +502,7 @@ proc ChangeIncFile {incFileTxt} {
 }
 
 proc AddLibF {LibListFr} {
-    set newFile [ChooseFile library[info sharedlibextension] \
+    set newFile [ChooseFile library[linkableExt [info sharedlibextension]] \
 		     "External library file:" 0]
     if {[string length $newFile]} {
 	if {![string match lib* $newFile]} {

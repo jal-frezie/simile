@@ -88,6 +88,13 @@ proc ChooseFile { preferred title canbenew } {
     return $chosenFile
 }
 
+proc linkableExt {defLib} {
+    if {[string equal .dll $defLib]} {
+	set defLib .a
+    }
+    return $defLib
+}
+
 # utility procedure to fill in some holes in Tcl8.0
 
 
