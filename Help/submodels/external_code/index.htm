@@ -5,7 +5,7 @@
 	<TITLE>Working with submodels : Association submodels</TITLE>
 	<META NAME="GENERATOR" CONTENT="OpenOffice.org 2.0  (Unix)">
 	<META NAME="CREATED" CONTENT="20061213;15172900">
-	<META NAME="CHANGED" CONTENT="20061213;17282900">
+	<META NAME="CHANGED" CONTENT="20061213;18480300">
 	<META NAME="ProgId" CONTENT="Word.Document">
 	<META NAME="Originator" CONTENT="Microsoft Word 10">
 	<!--[if gte mso 9]><xml>
@@ -65,8 +65,9 @@
  </o:shapelayout></xml><![endif]-->
 	<STYLE>
 	<!--
-		H1 { color: #000000 }
+		@page { size: 8.5in 11in }
 		P { color: #000000 }
+		H1 { color: #000000 }
 		A:link { color: #0000ff }
 		A:visited { color: #800080 }
 	-->
@@ -74,32 +75,30 @@
 </HEAD>
 <BODY LANG="en-US" TEXT="#000000" LINK="#0000ff" VLINK="#800080" DIR="LTR">
 <H1 LANG="en-GB">Using externally-supplied procedures</H1>
-<P CLASS="msonormal" ALIGN=LEFT>As of version 4.8, submodels in
-Simile can be used to embody operations specified by procedures
-supplied separately, either as c or c++ code, or by shared libraries.
-You can also include your own code in a simile model using the
-<A HREF="../../equations/external.htm">external procedural functions</A>
-mechanism, but using a submodel offers a number of advantages,
-namely:</P>
+<P ALIGN=LEFT>As of version 4.8, submodels in Simile can be used to
+embody operations specified by procedures supplied separately, either
+as c or c++ code, or by shared libraries. You can also include your
+own code in a simile model using the <A HREF="../../equations/external.htm">external
+procedural functions</A> mechanism, but using a submodel offers a
+number of advantages, namely:</P>
 <OL>
-	<LI><P CLASS="msonormal" ALIGN=LEFT>The external procedure can
-	accept arrays as inputs, and write arrays as outputs</P>
-	<LI><P CLASS="msonormal" ALIGN=LEFT>Many outputs can be written by
-	the procedure</P>
-	<LI><P CLASS="msonormal" ALIGN=LEFT>A procedure embodied by a
-	submodel can have its own internal state.</P>
+	<LI><P ALIGN=LEFT>The external procedure can accept arrays as
+	inputs, and write arrays as outputs</P>
+	<LI><P ALIGN=LEFT>Many outputs can be written by the procedure</P>
+	<LI><P ALIGN=LEFT>A procedure embodied by a submodel can have its
+	own internal state.</P>
 </OL>
-<P CLASS="msonormal" ALIGN=LEFT>A submodel that embodies an external
-procedure can also contain components whose values will be calculated
-by the normal Simile mechanism. It can be any of the types of
-submodel used by Simile. 
+<P ALIGN=LEFT>A submodel that embodies an external procedure can also
+contain components whose values will be calculated by the normal
+Simile mechanism. It can be any of the types of submodel used by
+Simile. 
 </P>
-<P CLASS="msonormal" ALIGN=LEFT>Incorporating external code requires
-that we have variables in the submodel which hold the values going in
-and out of it. It is important that the datatypes of these variables,
-and their dimensions if they are arrays, match up to those that the
-external code is expecting. But most importantly of all, they must be
-passed in the right order. 
+<P ALIGN=LEFT>Incorporating external code requires that we have
+variables in the submodel which hold the values going in and out of
+it. It is important that the datatypes of these variables, and their
+dimensions if they are arrays, match up to those that the external
+code is expecting. But most importantly of all, they must be passed
+in the right order. 
 </P>
 <P STYLE="margin-top: 0.17in; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Datatypes
 and dimensions</FONT></FONT></P>
@@ -132,110 +131,115 @@ equation <FONT FACE="Courier, monospace">makearray(makearray(0,3),5).
 </FONT><FONT FACE="Nimbus Roman No9 L, serif">If you put 0.0 instead
 of 0, you will get a 5x3 array of double-precisions. </FONT>
 </P>
-<P STYLE="margin-top: 0.17in; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Parameter
-order</FONT></FONT></P>
-<P CLASS="msonormal">The order is specified by the names of the
-variables. Values to be passed to the procedure must be given
-captions beginning with input&lt;n&gt;, where n is the position in
-which that input is passed. When choosing this position, characters
-in the caption from the first non-alphanumeric character (e.g.,
-space, underscore, parentheses) are ignored, and can be used to make
-the model diagram more readable, so for instance a variable called
-“input3 (volume of porridge)” will still be passed as the third
-input.</P>
-<P CLASS="msonormal">A similar scheme applies for outputs – their
-captions begin with output&lt;n&gt;, where n is the position in the
-outputs in which that output appears. The external procedure gets as
-arguments all the inputs in order, followed by all the outputs in
-order. An output variable's default value may or may not be
-overwritten by the procedure, but there are two differences between
-the handling of inputs and outputs:</P>
+<P><FONT FACE="Nimbus Roman No9 L, serif">Simile's arrays of size n
+use elements 0 through n-1 of a c++ array. In earlier versions of
+Simile, the arrays were actually made one element too big, and
+elements 1 through n were used, with element 0 being unused. This has
+changed, in order to make it easier to integrate other c++ procedures
+which typically use element 0 as the first element of an array.
+However, the equation language functions that deal with array
+elements, i.e., index(n), element(m,n) and place_in(n), still use 1
+as the index for the first value, so old Simile models will run
+unchanged (and use less memory!)</FONT></P>
+<P><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Parameter order</FONT></FONT></P>
+<P>The order is specified by the names of the variables. Values to be
+passed to the procedure must be given captions beginning with
+input&lt;n&gt;, where n is the position in which that input is
+passed. When choosing this position, characters in the caption from
+the first non-alphanumeric character (e.g., space, underscore,
+parentheses) are ignored, and can be used to make the model diagram
+more readable, so for instance a variable called “input3 (volume of
+porridge)” will still be passed as the third input.</P>
+<P>A similar scheme applies for outputs – their captions begin with
+output&lt;n&gt;, where n is the position in the outputs in which that
+output appears. The external procedure gets as arguments all the
+inputs in order, followed by all the outputs in order. An output
+variable's default value may or may not be overwritten by the
+procedure, but there are two differences between the handling of
+inputs and outputs:</P>
 <UL>
-	<LI><P CLASS="msonormal">The procedure will not run in each time
-	step until the input values and default output values have all been
-	set in the model, but the input values can be used to calculate
-	values of other Simile variables before or after the procedure has
-	run, while output values will only be used elsewhere after the
-	procedure has run,</P>
-	<LI><P CLASS="msonormal">Scalar (non-array) inputs are passed to the
-	procedure as their actual values, while scalar outputs are passed by
-	reference – the procedure gets a pointer to a memory location
-	where it can read the default value and write its result.</P>
+	<LI><P>The procedure will not run in each time step until the input
+	values and default output values have all been set in the model, but
+	the input values can be used to calculate values of other Simile
+	variables before or after the procedure has run, while output values
+	will only be used elsewhere after the procedure has run,</P>
+	<LI><P>Scalar (non-array) inputs are passed to the procedure as
+	their actual values, while scalar outputs are passed by reference –
+	the procedure gets a pointer to a memory location where it can read
+	the default value and write its result.</P>
 </UL>
-<P CLASS="msonormal">The return value of the procedure is not used by
-the model – it just indicates to Simile whether an error has
-occurred in the procedure. 
+<P>The return value of the procedure is not used by the model – it
+just indicates to Simile whether an error has occurred in the
+procedure. 
 </P>
 <P STYLE="margin-top: 0.17in; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>How
 often to run</FONT></FONT></P>
-<P CLASS="msonormal">Simile assumes that if the inputs and default
-outputs to a procedure do not change over time, then neither will its
-actual outputs, so the procedure will only be called at
-initialization or reset of the model. If you know the procedure's
-outputs change over time by themselves, make sure it runs every time
-step by setting an unused default output value to something you know
-changes over time, e.g., time().</P>
+<P>Simile assumes that if the inputs and default outputs to a
+procedure do not change over time, then neither will its actual
+outputs, so the procedure will only be called at initialization or
+reset of the model. If you know the procedure's outputs change over
+time by themselves, make sure it runs every time step by setting an
+unused default output value to something you know changes over time,
+e.g., time().</P>
 <P STYLE="margin-top: 0.17in; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>Specifying
 the procedure</FONT></FONT></P>
-<P CLASS="msonormal">Now the submodel's contents specify how the
-procedure is to be called. But we still need to tell Simile the
-external procedure's name, and where to find it. Open the submodel
-properties dialogue, and look in the calculation panel. There is a
-checkbutton labelled 'Use own code'. After checking this you can hit
-the 'setup' button to get a subdialogue in which you specify the
-procedure. This has three sections:</P>
+<P>Now the submodel's contents specify how the procedure is to be
+called. But we still need to tell Simile the external procedure's
+name, and where to find it. Open the submodel properties dialogue,
+and look in the calculation panel. There is a checkbutton labelled
+'Use own code'. After checking this you can hit the 'setup' button to
+get a subdialogue in which you specify the procedure. This has three
+sections:</P>
 <OL>
-	<LI><P CLASS="msonormal">The procedure name section. Enter just the
-	name of the procedure, not its parameters – these are all
-	specified by the model contents.</P>
-	<LI><P CLASS="msonormal">The name of a file to be included when
-	building the model. This can either be a c or c++ (.c or .cpp)
-	source code file containing the whole procedure definition, or a
-	header file (.h) containing the declaration of the procedure in a
-	precompiled library file.</P>
-	<LI><P CLASS="msonormal">A list of library files. You do not need
-	any library files, but they must be readable by the compiler Simile
-	is using. For Unix systems the shared objects (.so or .dylib) work
-	fine, but for Windows using the included compiler you need an
-	archive (.a) file. Gnu MINGW includes utilities for creating this if
-	all you have is a dynamic-linked library (.dll).</P>
+	<LI><P>The procedure name section. Enter just the name of the
+	procedure, not its parameters – these are all specified by the
+	model contents.</P>
+	<LI><P>The name of a file to be included when building the model.
+	This can either be a c or c++ (.c or .cpp) source code file
+	containing the whole procedure definition, or a header file (.h)
+	containing the declaration of the procedure in a precompiled library
+	file.</P>
+	<LI><P>A list of library files. You do not need any library files,
+	but they must be readable by the compiler Simile is using. For Unix
+	systems the shared objects (.so or .dylib) work fine, but for
+	Windows using the included compiler you need an archive (.a) file.
+	Gnu MINGW includes utilities for creating this if all you have is a
+	dynamic-linked library (.dll).</P>
 </OL>
-<P CLASS="msonormal" ALIGN=LEFT>If your model is to run on multiple
-platforms, include libraries for all of them; Simile will only use
-the appropriate ones on each platform.</P>
+<P ALIGN=LEFT>If your model is to run on multiple platforms, include
+libraries for all of them; Simile will only use the appropriate ones
+on each platform.</P>
 <P STYLE="margin-top: 0.17in; page-break-after: avoid"><FONT FACE="Albany, sans-serif"><FONT SIZE=4>State
 for external code</FONT></FONT></P>
-<P CLASS="msonormal">One reason for using an externally written
-procedure is if you have a “legacy” model, written in FORTRAN or
-similar, which you would rather include in a Simile model as is than
-re-implement in Simile. These models are likely to include state
-variables of their own, allowing them to have dynamic behaviour.
-There are two issues here; firstly, we need to know when to reset
-these values and when to update them. An external procedure can tell
-what Simile is doing, by accessing the time and dt global arrays of
-doubles. These have a value at index 0 plus a value for each time
-step size in the Simile model. The values for the time steps give you
-the time of last evaluation and the step size respectively for each
-different step size, but the index 0 values are especially useful.
-time[0] gives the current integration method and which pass is being
-done if it is Runge-Kutta, while dt[0] indicates whether the model is
-being initialized (negative), reset (0) or updated (appropriate time
-step number). This can be used to select the action for an external
-model.</P>
-<P CLASS="msonormal">If an external procedure is only ever going to
-be called once per time step, then it can simply keep its state in
-locally declared variables. However, if you call the same external
-procedure in two different submodels, or in a multiple instance
-submodel, then each one must have its own instance of the state.
-Simplest way to do this is to make an array of the appropriate size
-in Simile and pass it to the procedure as an output. If the default
-values are constants, Simile will not write them once it has
-initialized, and the external procedure can use the space as a
-scratch pad unique to each instance. 
+<P>One reason for using an externally written procedure is if you
+have a “legacy” model, written in FORTRAN or similar, which you
+would rather include in a Simile model as is than re-implement in
+Simile. These models are likely to include state variables of their
+own, allowing them to have dynamic behaviour. There are two issues
+here; firstly, we need to know when to reset these values and when to
+update them. An external procedure can tell what Simile is doing, by
+accessing the time and dt global arrays of doubles. These have a
+value at index 0 plus a value for each time step size in the Simile
+model. The values for the time steps give you the time of last
+evaluation and the step size respectively for each different step
+size, but the index 0 values are especially useful. time[0] gives the
+current integration method and which pass is being done if it is
+Runge-Kutta, while dt[0] indicates whether the model is being
+initialized (negative), reset (0) or updated (appropriate time step
+number). This can be used to select the action for an external model.</P>
+<P>If an external procedure is only ever going to be called once per
+time step, then it can simply keep its state in locally declared
+variables. However, if you call the same external procedure in two
+different submodels, or in a multiple instance submodel, then each
+one must have its own instance of the state. Simplest way to do this
+is to make an array of the appropriate size in Simile and pass it to
+the procedure as an output. If the default values are constants,
+Simile will not write them once it has initialized, and the external
+procedure can use the space as a scratch pad unique to each instance.
 </P>
-<P CLASS="msonormal"><SPAN LANG="en-GB">In: <A HREF="../../index.htm" TARGET="_top"><U>Contents</U></A>
+<P><SPAN LANG="en-GB">In: <A HREF="../../index.htm" TARGET="_top"><U>Contents</U></A>
 &gt;&gt; <A HREF="../index.htm"><U>Working with submodels</U></A></SPAN></P>
-<P CLASS="msonormal"><BR><BR>
+<P><BR><BR>
 </P>
 </BODY>
 </HTML>
