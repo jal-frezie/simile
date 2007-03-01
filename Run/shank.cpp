@@ -1442,7 +1442,6 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
    top node, and otherwise call itself recursively before getting the local
    data, thus allowing it to pass pointers to current positions along the
    result arrays to make_full_caption. Well that's stepwise refinement...
-*/
 
 node_data_line* search_intnl(char* node, long int* tgtModel, char* caption, 
 			   int* dims, int* path, enum_type_data** usedTypes) {
@@ -1493,26 +1492,6 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
       }
       strcpy(caption + strlen(caption), localCapt);
 
-      /* Old version with only one model hierarchy...
-      if (searchPoint == nodeModelList) {
-	strcpy(caption, localCapt);
-	*dims = *path = 0;
-	*usedTypes = NULL;
-	append_ints_to_null(dims, localDims, 0, 0);
-	append_ints_to_null(path, bottomLine->path, 0, 0);
-	append_ptrs_to_null(usedTypes, localUsed);
-      } else if (searchinfo(searchPoint->node, tgtModel, caption,
-			    dims, path, usedTypes)) {
-	append_ints_to_null(dims, localDims, SEPARATE, 0);
-	append_ints_to_null(path, bottomLine->path, SEPARATE, 
-			    (int)searchPoint->model);
-	append_ptrs_to_null(usedTypes, localUsed);
-	strcpy(caption + strlen(caption), // was strrchr(caption, '/'),
-	       localCapt);
-      } else {
-	bottomLine = NULL;
-      }
-      */
       *tgtModel = (long int)tryModel;
       return(bottomLine);
     }
@@ -1520,6 +1499,7 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
   }
   return(NULL);
 }
+*/
 
 char* trueTxt = "true";
 enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};

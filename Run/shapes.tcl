@@ -158,20 +158,20 @@ proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
 # it never gets stippled, e.g., if you stipple an arc only the radial
 # outline sections will be stippled. Let's hope 8.5 is better.
 
-proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
+proc PutCrossedCirc { w id l t r b extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w variable $fatness]
+    set g [GetGroupItem $w $id]
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
 
-    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
+    set p1 [DrawBlob $w $g $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
 
     set style [expr $extras/100]
     set extras [expr $extras-100*$style]
-    set generic [list -width $width \
-                     -tag "$tagSet realwidth($width) has_info"]
+    set generic [list -tag "$tagSet realwidth($width) has_info"]
     # second approximation to fill
     scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
     scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
@@ -185,14 +185,17 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
         set ot [expr $vm-$outer]
         set or [expr $hm+$outer]
         set ob [expr $vm+$outer]
-        eval {$w create oval $ol $ot $or $ob} $generic
+	$w add arc $g "$ol $ot $or $ob" -extent 359 -linewidth 0 -filled 1 \
+	    -tags "$tagSet has_info"
+	
+#	DrawBlob $w $g $hm $vm [expr 3*($rad+$width/2)/5+$width/2] "$tagSet has_info"
 #        scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #        scan [GetPoints $ot $outer] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
 #        scan [GetPoints $or (-$outer)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
 #        scan [GetPoints $ob (-$outer)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
         
 #        eval {$w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
-        DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
+        DrawBlob $w $g $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
     } else {
         set type variable
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
@@ -223,16 +226,15 @@ proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
             eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
         }
     }
-            
+
     set stackDepth 0
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
-        set stackSide [eval {$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
-                $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 \
-                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10} $generic]
+        set stackSide [$w add arc $g "$ml $mt $mr $mb" -startangle -45 -extent 180 \
+			  -filled 0 -linewidth $width -tags "$tagSet has_info"]
          if {$stackDepth} {
             $w lower $stackSide $p1
-            $w move $stackSide $stackDistance $stackDistance
+            $w translate $stackSide $stackDistance $stackDistance
             set p1 $stackSide
         }
         incr stackDepth
@@ -798,9 +800,24 @@ proc MoveLine {w id ptz} {
     }
 }
 
-proc DrawBlob {w startX startY size tags} {
-     $w create line $startX $startY $startX $startY -width $size \
-            -capstyle round -tag "$tags realwidth($size)"
+proc DrawBlob {w g startX startY size tags} {
+#     $w create line $startX $startY $startX $startY -width $size \
+#            -capstyle round -tag $tags
+# Hold on...bigger news than that...
+    set rad [expr $size/2]
+    set ol [expr $startX-$rad]
+    set ot [expr $startY-$rad]
+    set or [expr $startX+$rad]
+    set ob [expr $startY+$rad]
+    set cmd [list $w add arc $g "$ol $ot $or $ob" -extent 359 \
+		 -linewidth 0 -filled 1 -tags [lappend tags /flashes/]]
+    puts $cmd
+    eval $cmd
+#    scan [GetPoints $ol $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+#    scan [GetPoints $ot $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+#    scan [GetPoints $or -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+#    scan [GetPoints $ob -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
+#    $w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {} -tags [lappend tags /flashes/]
 }
 
 # This puts random bits of normally non-editable text on the screen...
@@ -933,7 +950,9 @@ proc FlashSymbol {w name outlineColor textColor} {
                     $w itemconfigure $object -linecolor $outlineColor
                 }
             } arc {
-                if {![$w itemcget $object -filled] && \
+                if {[string match */flashes/* [$w gettags $object]]} {
+		    $w itemconfigure $object -fillcolor $outlineColor
+		} elseif {![$w itemcget $object -filled] && \
                         ![string match */background/* [$w gettags $object]]} {
                     $w itemconfigure $object -linecolor $outlineColor
                 }
@@ -972,9 +991,10 @@ proc StippleSymbol {w name density selected} {
 proc FillSymbol { w name color } {
     foreach object [$w find withtag $name] {
         set tags [$w gettags $object]
-        if {[lsearch "rectangle oval polygon" [$w type $object]]!=-1 && \
+        if {[lsearch "rectangle arc" [$w type $object]]!=-1 && \
                 ![string match *_text/* $tags] && \
-                ![string match */background/* $tags]} {
+                ![string match */background/* $tags] && \
+                ![string match */flashes/* $tags]} {
             $w itemconfigure $object -fillcolor $color
         }
     }
@@ -1550,8 +1570,8 @@ proc Customize {winId mode} {
         }
     }
     
-    canvas $t.canvas -width [expr $looks(width) + 120] \
-            -height [expr $looks(width) + 60]
+    zinc $t.canvas -width [expr $looks(width) + 120] \
+            -height [expr $looks(width) + 60] -render 1
     set window_info($t.canvas,scale) 1
     set window_info($t.canvas,top_node) $n
     set custom(showgrids,$t.canvas) 1
@@ -1720,11 +1740,11 @@ proc LoadLooks {t n target object} {
         $g.lines.scale set $looks($n,$object,lines)
         DoGraphics $t $target $middlex $middley $looks($n,$object,objectsize)
     } else {
-        $t.canvas delete sample
-        PutText $t.canvas [list $middlex $middley] \
+        $t.canvas remove sample
+        PutText $t.canvas sample [list $middlex $middley] \
                 text "sample" 100 normal "Sample text box"
     }
-    $t.canvas configure -background $looks(windowColor)
+    $t.canvas configure -backcolor $looks(windowColor)
     #        TweakObject $t target
 }
 
@@ -1784,7 +1804,7 @@ proc CopyLooks {t n object} {
 
 proc DoGraphics {box type middlex middley size} {
     global looks
-    $box.canvas delete sample
+    $box.canvas remove sample
 
     switch -regexp $type {
         compartment|generic {
@@ -1792,19 +1812,19 @@ proc DoGraphics {box type middlex middley size} {
             set r [expr $middlex + 2*$size/5]
             set t [expr $middley - 3*$size/10]
             set b [expr $middley + 3*$size/10]
-            PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
+            PutRectangle $box.canvas sample $l $t $r $b 1 100 {} normal "sample"
         } state {
             set l [expr $middlex - 3*$size/10]
             set r [expr $middlex + 3*$size/10]
             set t [expr $middley - 2*$size/5]
             set b [expr $middley + 2*$size/5]
-            PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
+            PutRectangle $box.canvas sample $l $t $r $b 1 100 {} normal "sample"
         } submodel {
             set l [expr $middlex - 90]
             set r [expr $middlex + 90]
             set t [expr $middley - 60]
             set b [expr $middley + 60]
-            PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
+            PutRoundedRect $box.canvas sample $l $t $r $b 3 100 clear \
                 none none 0 0 100 normal "sample"
         } flow {
             set l [expr $middlex - $size/4]
@@ -1826,7 +1846,7 @@ proc DoGraphics {box type middlex middley size} {
             } else {
                 set sty 1
             }
-            PutCrossedCirc $box.canvas $l $t $r $b $sty 100 {} normal "sample"
+            PutCrossedCirc $box.canvas sample $l $t $r $b $sty 100 {} normal "sample"
         } channel {
             set l [expr $middlex - 3*$size/10]
             set r [expr $middlex + 3*$size/10]
@@ -1861,7 +1881,7 @@ proc DoGraphics {box type middlex middley size} {
             }
         }
 
-        PutText $box.canvas [list $xbase $ybase] \
+        PutText $box.canvas sample [list $xbase $ybase] \
                 $type "sample movable" 100 normal $capt
         set looks(cheat) [$box.canvas coords [GetCaptionItem $box.canvas sample]]
         $box.canvas bind movable <Button-1> {SampleMark %x %y %W}
@@ -1970,7 +1990,7 @@ proc ZotObjectSize {t n type size} {
             [[$t.graphics getframe].objectsize.scale get]
     } else {
         $t.canvas delete sample
-        PutText $t.canvas [list $middlex $middley] \
+        PutText $t.canvas sample [list $middlex $middley] \
                 text "sample" 100 normal "Sample text box"
     }
 }

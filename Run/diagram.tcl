@@ -20,6 +20,9 @@ proc GetCaptionItem {w name} {
 proc GetGroupItem {w name} {
     global window_info
 
+    if {[string equal sample $name]} { ;# in customize dialogue
+	return 1
+    }
     if {[winfo exists $w]} {
 	if {[string equal $name $window_info($w,node)]} {
 	    return 1

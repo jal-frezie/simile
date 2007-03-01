@@ -36,7 +36,7 @@ package require BWidget
 catch {namespace import BWidget::*}
 if {![InPlugin]} {
     package require tile
-    package require MyTrf ;# loads right version of Trf
+    package require Trf ;# loads wrong version of Trf on ppc mac
 }
 
 # load function help messages
@@ -611,8 +611,8 @@ proc compile_c {workingDir extLibs} {
                 exec g++ -arch ppc -fPIC -c -O -I$TOOLDIR -o objtmp.o model.cpp
                 set linkCmd [list exec g++ -arch ppc -bundle -o $TARGET objtmp.o]
             } else {
-                exec g++ -m32 -fPIC -c -O -I$TOOLDIR -o objtmp.o model.cpp
-                set linkCmd [list exec g++ -m32 -shared -o $TARGET objtmp.o]
+                exec g++ -fPIC -c -O -I$TOOLDIR -o objtmp.o model.cpp
+                set linkCmd [list exec g++ -shared -o $TARGET objtmp.o]
             }
 	    eval $linkCmd $lDirs $lFiles
         } windows {
@@ -818,8 +818,8 @@ proc ControlDraw {prologVersion} {
     if {[string match Linux $tcl_platform(os)]} {
         set shank ../System/lib/lib5d.so
         if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-            exec g++ -m32 -c -O -fPIC -I. ./shank.cpp
-            exec g++ -m32 -shared -o $shank shank.o
+            exec g++ -c -O -fPIC -I. ./shank.cpp
+            exec g++ -shared -o $shank shank.o
         }
     }
     load_c_stub_1
