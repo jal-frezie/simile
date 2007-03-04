@@ -200,11 +200,19 @@ proc PutCrossedCirc { w id l t r b extras fatness density colourScheme tagSet} {
         set type variable
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
-        eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
-        eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
-        eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
+#        eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
+#        eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
+#        eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
                   $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
                   $h8 $v1 $h9 $v2 $h10 $v3} $generic
+        
+        $w add arc $g "$ml $mt $mr $mb" -startangle 45 -extent 90 -pieslice 1 \
+	    -linewidth 0 -filled 1 -tags "$tagSet has_info"    
+        $w add arc $g "$ml $mt $mr $mb" -startangle 225 -extent 90 \
+	    -pieslice 1 -linewidth 0 -filled 1 -tags "$tagSet has_info"    
+        set stackSide [$w add arc $g "$ml $mt $mr $mb" -startangle -45 \
+			   -extent 359 -filled 0 -linewidth $width \
+			   -tags "$tagSet has_info"]
     }
     set decor [expr $extras/10]
     set stack [expr $extras-10*$decor]
@@ -216,14 +224,19 @@ proc PutCrossedCirc { w id l t r b extras fatness density colourScheme tagSet} {
             set st [expr $mt+$rad/2]
             set sb [expr $mb-$rad/2]
 
-            eval {$w create line $sl $st $sl $sb} $generic
-            eval {$w create line $sl $vm $ml $vm} $generic
-            eval {$w create line $mr $vm $sr $vm} $generic
-            eval {$w create line $sr $st $sr $sb} $generic
+            $w add curve $g [list "$sl $st" "$sl $sb"] -linewidth $width \
+		-tags "$tagSet has_info"
+            $w add curve $g [list "$sl $vm" "$ml $vm"] -linewidth $width \
+		-tags "$tagSet has_info"
+            $w add curve $g [list "$mr $vm" "$sr $vm"] -linewidth $width \
+		-tags "$tagSet has_info"
+            $w add curve $g [list "$sr $st" "$sr $sb"] -linewidth $width \
+		-tags "$tagSet has_info"
         } 2 {
             set st [expr $mt-2*$rad]
-            eval {$w create poly $ml $st $hm $st $ml $vm} $generic
-            eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
+            $w add curve $g [list "$ml $st" "$hm $st" "$ml $vm"] -closed 1 \
+		-filled 1 -linewidth $width -tags "$tagSet has_info"	    
+#            eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
         }
     }
 
@@ -548,8 +561,9 @@ proc PutInfPin {w x y type dir fatness colourScheme tagSet} {
     $w dtag /not_placed/
 }
 
-proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
+proc PutThinArrow { w n ptz fatness density colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
+    set g [GetGroupItem $w $n]
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
     set mptz [ScaleList $w $ptz]
@@ -559,31 +573,33 @@ proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
     } else {
         set dashClause {}
     }
-    eval {$w create line} $mptz $dashClause {-arrow last \
-                -arrowshape [list [expr $features/6] [expr $features/5] \
-                [expr $features/16]] -smooth true -width $width \
-                -tag "$tagSet realwidth($width) has_info"}
+    $w add curve $g [list [lrange $mptz 0 1] [concat [lrange $mptz 2 3] c] \
+			 [lrange $mptz 4 5]] \
+	-lastend [list [expr $features/6] [expr $features/5] \
+		      [expr $features/16]] -linewidth $width \
+	-tags "$tagSet has_info"
     
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
-    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
+    DrawBlob $w $g [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
             "$tagSet startblob"
     ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutRelation { w ptz fatness colourScheme tagSet} {
+proc PutRelation { w n ptz fatness colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
+    set g [GetGroupItem $w $n]
     set width [expr 5*[GetLineSize $w relation $fatness]]
     set arrowRad [expr [GetObjectSize $w relation $fatness]/10]
     
     set mptz [ScaleList $w $ptz]
-    eval {$w create line} $mptz {-arrow last \
-                -arrowshape [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
-                -smooth true -width $width \
-                                     -tag "$tagSet realwidth($width) has_info"}
-    # next few lines put blob with diameter equal to width of arrowhead at start of
+    $w add curve $g [list [lrange $mptz 0 1] [concat [lrange $mptz 2 3] c] \
+			 [lrange $mptz 4 5]] \
+	-lastend [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -linewidth $width \
+	-tags "$tagSet has_info"
+     # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
-    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
+    DrawBlob $w $g [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
             "$tagSet startblob"
     ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
@@ -768,7 +784,7 @@ proc ChooseIntegerRatio {fraction} {
 proc MoveText {w id ptz} {
     set mptz [ScaleList $w $ptz]
     set textItem [GetCaptionItem $w $id]
-    eval {$w move $textItem} $mptz
+    eval {$w translate $textItem} $mptz
     FixBackBox $w $textItem
 }
 
@@ -788,11 +804,13 @@ proc MoveLine {w id ptz} {
         if {[string match *startblob* $taglist]} {
             set x1 [lindex $mptz 0]
             set y1 [lindex $mptz 1]
-            $w coords $item $x1 $y1 $x1 $y1
+            $w coords $item [list [expr $x1-1] [expr $y1-1] \
+				 [expr $x1+1] [expr $y1+1]]
         } elseif {[string match *endblob* $taglist]} {
-            set xn [lindex $mptz [expr [llength $mptz] - 2]]
-            set yn [lindex $mptz end]
-            $w coords $item $xn $yn $xn $yn
+            set x1 [lindex $mptz [expr [llength $mptz] - 2]]
+            set y1 [lindex $mptz end]
+            $w coords $item [list [expr $x1-1] [expr $y1-1] \
+				 [expr $x1+1] [expr $y1+1]]
         } elseif {[string match line [$w type $item]] && \
                     ![string match *bowtie* $taglist]} {
             eval "$w coords $item" $mptz
@@ -809,10 +827,8 @@ proc DrawBlob {w g startX startY size tags} {
     set ot [expr $startY-$rad]
     set or [expr $startX+$rad]
     set ob [expr $startY+$rad]
-    set cmd [list $w add arc $g "$ol $ot $or $ob" -extent 359 \
-		 -linewidth 0 -filled 1 -tags [lappend tags /flashes/]]
-    puts $cmd
-    eval $cmd
+    $w add arc $g "$ol $ot $or $ob" -extent 359 \
+	-linewidth 0 -filled 1 -tags [lappend tags /flashes/]
 #    scan [GetPoints $ol $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
 #    scan [GetPoints $ot $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
 #    scan [GetPoints $or -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
@@ -991,7 +1007,7 @@ proc StippleSymbol {w name density selected} {
 proc FillSymbol { w name color } {
     foreach object [$w find withtag $name] {
         set tags [$w gettags $object]
-        if {[lsearch "rectangle arc" [$w type $object]]!=-1 && \
+        if {[lsearch "rectangle arc curve" [$w type $object]]!=-1 && \
                 ![string match *_text/* $tags] && \
                 ![string match */background/* $tags] && \
                 ![string match */flashes/* $tags]} {
@@ -1858,7 +1874,7 @@ proc DoGraphics {box type middlex middley size} {
                     100 {} normal "sample"
         } relation {
             set b $middley
-            PutRelation $box.canvas "30 $middley $middlex \
+            PutRelation $box.canvas sample "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
                 100 normal "sample"
         }

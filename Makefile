@@ -27,27 +27,30 @@ endif
 # customisation - though conflicts may, of course, occur.
 # could require execs to be in PATH, sicstus, gplc, gcc/g++
 # default *nix variables overwritten in special cases
-WISHCMD = ~/Simile/System/bin/wish
-GCCCMD = gcc
+GCCCMD = gcc -O3
+GPPCMD = g++ -O3
 
 UNAME = $(shell uname)
-ifeq ($(shell uname),CYGWIN_NT-5.1)
+ifeq ($(UNAME),CYGWIN_NT-5.1)
 	UNAME = CYGWIN_NT
 endif 
-ifeq ($(shell uname),CYGWIN_NT-5.0)
+ifeq ($(UNAME),CYGWIN_NT-5.0)
 	UNAME = CYGWIN_NT
 endif 
-ifeq ($(shell uname),MINGW32_NT-5.1)
+ifeq ($(UNAME),MINGW32_NT-5.1)
 	UNAME = MINGW32_NT
 endif 
-ifeq ($(shell uname),MINGW32_NT-5.0)
+ifeq ($(UNAME),MINGW32_NT-5.0)
 	UNAME = MINGW32_NT
 endif 
 
+ARCH = $(shell uname -m)
+ifeq ($(ARCH),Power Macintosh)
+	ARCH = ppc
+endif
 
 # Default case: any Windows, any toolchain
 	PROLOGSTATE = System/bin/main.sav
-	WISHCMD = "$(shell pwd)/System/bin/wish"
 	# GCCCMD = "$(shell pwd)/System/bin/g++" # can't find process.h
 	SLDIR = bin
 	SHAREDLIBPREFX = 
@@ -55,15 +58,16 @@ endif
 	SHAREDLIBEXTN = .dll
 	EXECEXTN = .exe
 	INSTLIB = Run/install.dll
+	MAIN = System/bin/Simile.exe
 ifeq ($(UNAME),Darwin)
-	PROLOGSTATE = Run/xgsimile
-	WISHCMD = ~/Desktop/CVS\ Simile.app/Contents/MacOS/Simile
+	PROLOGSTATE = Run/xgsimile_$(ARCH)
 	SLDIR = lib
 	SHAREDLIBPREFX = lib
 	VERS = 8.4
-	SHAREDLIBEXTN = .dylib
-	EXECEXTN =
+	SHAREDLIBEXTN = _$(ARCH).dylib
+	EXECEXTN = _$(ARCH)
 	INSTLIB = 
+	MAIN = 
 endif 
 ifeq ($(UNAME),Linux)
 	PROLOGSTATE = Run/xgsimile
@@ -73,11 +77,27 @@ ifeq ($(UNAME),Linux)
 	SHAREDLIBEXTN = .so
 	EXECEXTN =
 	INSTLIB = 
+	MAIN = 
 endif
+SHIM = System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN)
 
-simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) \
-	System/lib/Stubs/$(SHAREDLIBPREFX)ame_dll$(VERS)$(SHAREDLIBEXTN) \
-	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB)
+simile: $(PROLOGSTATE) System/bin/relay$(EXECEXTN) $(SHIM) \
+	System/$(SLDIR)/$(SHAREDLIBPREFX)5d$(SHAREDLIBEXTN) $(INSTLIB) $(MAIN)
+
+ifeq ($(ARCH),i386)
+# this saves going on the ppc mac to make the stub for each edition
+PPCSHIM = System/lib/Stubs/libame_dll$(VERS)_ppc.dylib
+ppcshim: $(PPCSHIM)
+$(PPCSHIM): ame_cmx.cpp dllcalls.h System/lib/lib5d_ppc.dylib Makefile
+	cd Run; \
+	$(GPPCMD) -arch ppc -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
+		-dynamiclib -o ../$(PPCSHIM) ame_cmx.cpp -F../../Frameworks \
+		-framework Tcl -L../System/lib -l5d_ppc; cd ..; \
+	install_name_tool -change \
+		/Library/Frameworks/Tcl.framework/Versions/8.4/Tcl \
+		@executable_path/../Frameworks/Tcl.framework/Tcl $(PPCSHIM)
+
+endif
 
 vpath %.pl Prolog
 
@@ -93,8 +113,8 @@ System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl
 	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
 
-Run/xgsimile: $(PROLOG_FILES) gmain.pl
-	cd Prolog; gplc --no-top-level -o ../Run/xgsimile gmain.pl; cd ..
+Run/xgsimile$(EXECEXTN): $(PROLOG_FILES) gmain.pl
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
 vpath 	%.c 	Run
@@ -104,27 +124,42 @@ vpath 	%.tcl 	Run
 #ifeq ($(UNAME),MINGW32_NT)
 # MSYS cannot execute Wish: libraries? Try compiler direct
 
-System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll Makefile
-	cd Run; g++ -c $(DEFNS) -I. -I../System/include/tcl ame_cmx.cpp; g++ -shared -o ../System/lib/Stubs/ame_dll84.dll ame_cmx.o ../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
+System/lib/Stubs/ame_dll84.dll: ame_cmx.cpp dllcalls.h System/bin/5d.dll
+	cd Run; $(GPPCMD) -c $(DEFNS) -I. -I../System/include/tcl ame_cmx.cpp; $(GPPCMD) -shared -o ../$(SHIM) ame_cmx.o ../System/lib/tclstub84.lib -L../System/lib -l5ddll; cd ..
 
-System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so Makefile
-	cd Run; $(GCCCMD) -m32 -g -c -O -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; $(GCCCMD) -m32 -g -shared -o ../System/lib/Stubs/libame_dll8.4.so ame_cmx.o -L../System/lib -ltclstub8.4 -l5d; cd ..
+System/lib/Stubs/libame_dll8.4.so: ame_cmx.cpp dllcalls.h System/lib/lib5d.so
+	cd Run; $(GCCCMD) -c -fPIC $(DEFNS) -I. -I../System/include/tcl ./ame_cmx.cpp; $(GCCCMD) -shared -o ../$(SHIM) ame_cmx.o -L../System/lib -ltclstub8.4 -l5d; cd ..
 
-System/lib/Stubs/libame_dll8.4.dylib: ame_cmx.cpp dllcalls.h System/lib/lib5d.dylib Makefile
-	cd Run; g++ -arch ppc -c -O -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers ame_cmx.cpp; g++ -arch ppc -dynamiclib -o ../System/lib/Stubs/libame_dll8.4.dylib ame_cmx.o -F../../Frameworks -framework Tcl -L../System/lib -ldl -l5d; cd ..
+# 'before' arg of install_name_tool should be some gung-ho sed regexp on output
+# of otool but it did not work (why was this not needed for ppc?)
+System/lib/Stubs/libame_dll8.4_$(ARCH).dylib: \
+		ame_cmx.cpp dllcalls.h System/lib/lib5d_$(ARCH).dylib
+	cd Run; \
+	$(GPPCMD) -fPIC $(DEFNS) -I. -I../../Frameworks/Tcl.framework/Headers \
+		-dynamiclib -o ../$(SHIM) ame_cmx.cpp -F../../Frameworks \
+		-framework Tcl -L../System/lib -l5d_$(ARCH); cd ..; \
+	install_name_tool -change \
+		/Library/Frameworks/Tcl.framework/Versions/8.4/Tcl \
+		@executable_path/../Frameworks/Tcl.framework/Tcl $(SHIM)
 
-System/bin/5d.dll: shank.cpp dllcalls.h
-	cd Run; g++ -c -DSHARELIB -I. shank.cpp; g++ -shared -o 5d.dll -Wl,--out-implib,lib5ddll.a shank.o; mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
+System/bin/5d.dll: shank.cpp dllcalls.h Makefile
+	cd Run; $(GPPCMD) -c -DSHARELIB -I. shank.cpp; $(GPPCMD) -shared -o 5d.dll -Wl,--out-implib,lib5ddll.a shank.o; mv 5d.dll ../System/bin; mv lib5ddll.a ../System/lib; cd ..
 
 # not needed for Linux; Simile builds it when first run
-System/lib/lib5d.so: shank.cpp dllcalls.h
-	cd Run; g++ -m32 -g -c -O -fPIC -I. shank.cpp; g++ -m32 -g -shared -o ../System/lib/lib5d.so shank.o; cd ..
+System/lib/lib5d.so: shank.cpp dllcalls.h Makefile
+	cd Run; $(GPPCMD) -c -fPIC -I. shank.cpp; $(GPPCMD) -shared -o ../System/lib/lib5d.so shank.o; cd ..
 
-System/lib/lib5d.dylib: shank.cpp dllcalls.h
-	cd Run; g++ -arch ppc -c -O -fPIC -DSIM_OPSYS_Darwin -I. shank.cpp; g++ -arch ppc -dynamiclib -o ../System/lib/lib5d.dylib shank.o -L../System/lib -ldl; cd ..
+# gcc cannot build universal binary libraries for loading via ld
+# directly; build separately and lipo them together
+
+System/lib/lib5d_$(ARCH).dylib: shank.cpp dllcalls.h Makefile
+	cd Run; $(GPPCMD) -O -fPIC -I. -dynamiclib -o ../System/lib/lib5d$(SHAREDLIBEXTN) shank.cpp; cd ..
 
 Run/install.dll: install.cpp Makefile
-	cd Run; g++ -c $(DEFNS) -I. -I../System/include install.cpp; g++ -shared -o install.dll install.o -L../System/lib -lcrypto -lssl; cd ..
+	cd Run; $(GPPCMD) -c $(DEFNS) -I. -I../System/include install.cpp; $(GPPCMD) -shared -o install.dll install.o -L../System/lib -lcrypto -lssl; cd ..
+
+System/bin/Simile.exe: Interp/Simile.c Interp/Simile.rc Makefile
+	cd Interp; windres -I../System/include/tcl -o rc.o Simile.rc; $(GCCCMD) -c -I../System/include/tcl Simile.c; $(GCCCMD) -o ../System/bin/Simile.exe Simile.o rc.o ../System/lib/tcl84.lib ../System/lib/tk84.lib -mwindows; cd ..
 
 #else
 

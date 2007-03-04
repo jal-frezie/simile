@@ -122,11 +122,12 @@ off(_) :- !.
 text of obj. */
 
 move_text(Obj, [Xoff, Yoff]) :-
+	\+ Obj is_of_sort captionless,
 	find_relevant_windows(Obj, Wid, _, [_, _, Xscale, Yscale]),
-		Xmotion is Xoff/Xscale,
-		Ymotion is Yoff/Yscale,
-		shift_text(Wid, Obj, [Xmotion, Ymotion]),
-		fail;
+	Xmotion is Xoff/Xscale,
+	Ymotion is Yoff/Yscale,
+	shift_text(Wid, Obj, [Xmotion, Ymotion]),
+	fail;
 	true.
 
 /* move_display/2 is to make it go faster; just translates the vector and shifts

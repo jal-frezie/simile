@@ -53,7 +53,9 @@ proc FindObj { winId x y } {
     set cany [Scale $winId $y]
     
     set tgt [GetClickedObj $winId $x $y 6]
-
+    if {!$tgt} {
+	return {}
+    }
     set prlgNm [ExtractPrologName $winId $tgt]
     return [AddTabId $winId $tgt $prlgNm]
 }
