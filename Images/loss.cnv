@@ -1,9 +1,9 @@
 # box
-$c create rect -15 -15 15 15 -outline {} -tag unscaled
-$c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
-	-tag "unscaled size_on_this realwidth(1.0)"
+$c add rectangle $g "-15 -15 15 15" -filled 1 -linewidth 0 -tags unscaled
+$c add curve $g [list "-15 -15" "-15 15" "15 15" "15 -15"] -closed true \
+	-tags "unscaled size_on_this"
 
-$c create line 13 -9 13 2 2 2 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 13 -8 6 -8 6 -11 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 3 2 3 -5 0 -5 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 8 -13 -13 8 -capstyle round -tag "unscaled realwidth(2.5)"
+$c add curve $g [list "13 -9" "13 2 c" "2 2"] -linewidth 2.5 -tags "unscaled"
+$c add curve $g [list "13 -8" "6 -8 c" "6 -11"] -linewidth 2.5 -tags "unscaled"
+$c add curve $g [list "3 2" "3 -5 c" "0 -5"] -linewidth 2.5 -tags "unscaled"
+$c add curve $g [list "8 -13" "-13 8"] -linewidth 2.5 -tags "unscaled"

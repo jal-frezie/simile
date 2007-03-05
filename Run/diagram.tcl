@@ -78,10 +78,6 @@ proc GetClickedObj { winId canx cany range} {
 }
 
 proc ExtractPrologName { winId target } {
-    if {!$target} {
-	return {}
-    }
-    puts $target
     set tagList [$winId gettags $target]
     set objNamePosn [lsearch -regexp $tagList {((node)|(arc)[0-9]*)|(sample)}]
     return [lindex $tagList $objNamePosn]

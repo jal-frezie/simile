@@ -99,18 +99,16 @@ proc PutRectangle { w id l t r b extras fatness density colourScheme tagSet} {
     ResetColours $w $type $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutShape {c l t r b file fatness colourScheme title} {
+proc PutShape {c id l t r b file fatness colourScheme title} {
     global window_info
+    set g [GetGroupItem $c $id]
     set nameList {condition cond creation creation \
                 immigration immig reproduction repro loss loss alarm alarm}
     set point [expr [lsearch $nameList $file] + 1]
     set fileName [lindex $nameList $point]
     
     source "../Images/$fileName.cnv"
-    set growth [expr ($r-$l)/30.0]
-    ZoomImage $c unscaled $growth
-    $c move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
-    ZoomImage $c unscaled $window_info($c,scale)
+    $c translate unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
     $c addtag $title withtag unscaled
     $c addtag has_info withtag unscaled
     $c dtag unscaled
@@ -128,23 +126,23 @@ proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
     
     set width [GetLineSize $w function $fatness]
     $w create poly $mr $my $m75 $mt $m25 $mt $ml $my $m25 $mb $m75 $mb \
-            -width $width -tag "$tagSet size_on_this realwidth($width)"
+            -width $width -tags "$tagSet size_on_this realwidth($width)"
     ResetColours $w function $density $colourScheme [lindex $tagSet 0]
 }
 
 
-proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
+proc PutBowTie { w n l t r b fatness density colourScheme tagSet} {
+    set g [GetGroupItem $w $n]
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set width [GetLineSize $w flow $fatness]
     
     if {($mb - $mt) > ($mr - $ml)} {
-        set bounds "$ml $mt $mr $mt $ml $mb $mr $mb $ml $mt"
+        set bounds [list "$ml $mt" "$mr $mt" "$ml $mb" "$mr $mb" "$ml $mt"]
     } else {
-        set bounds "$ml $mt $ml $mb $mr $mt $mr $mb $ml $mt"
+        set bounds [list "$ml $mt" "$ml $mb" "$mr $mt" "$mr $mb" "$ml $mt"]
     }
-    eval {$w create poly} $bounds {-tag "$tagSet bowtie has_info"}
-    eval {$w create line} $bounds {-width $width \
-                -tag "$tagSet bowtie realwidth($width)"}
+    $w add curve $g $bounds -linewidth $width -filled 1 \
+	    -tags "$tagSet bowtie has_info"
     ResetColours $w variable $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -171,7 +169,6 @@ proc PutCrossedCirc { w id l t r b extras fatness density colourScheme tagSet} {
 
     set style [expr $extras/100]
     set extras [expr $extras-100*$style]
-    set generic [list -tag "$tagSet realwidth($width) has_info"]
     # second approximation to fill
     scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
     scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
@@ -255,19 +252,22 @@ proc PutCrossedCirc { w id l t r b extras fatness density colourScheme tagSet} {
     ResetColours $w $type $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
+proc PutCloud { w id l t r b stack fatness density colourScheme tagSet} {
+    set g [GetGroupItem $w $id]
     set width [GetLineSize $w flow $fatness]
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     set mtb13 [expr ($mb + 2*$mt)/3]
-    $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
-            -tag "$tagSet size_on_this realwidth($width)"
-    $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
-            -tag "$tagSet size_on_this realwidth($width)"
-    $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
-            [expr (2*$mb + $mt)/3] -width $width \
-            -tag "$tagSet size_on_this realwidth($width)"
+    $w add arc $g [list $ml $mtb13 [expr (2*$mr + $ml)/3] $mb] \
+	-extent 359 -linewidth $width -filled 1 \
+	-tags "$tagSet size_on_this"
+    $w add arc $g [list [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb] \
+	-extent 359 -linewidth $width -filled 1 \
+	-tags "$tagSet size_on_this"
+    $w add arc $g [list [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
+            [expr (2*$mb + $mt)/3]] -extent 359 -linewidth $width -filled 1 \
+	-tags "$tagSet size_on_this"
     ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -363,7 +363,7 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
 #                  $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
 #                  $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
 #                  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
-#                  -fill $fillColour -tag "$tagSet /background/"]
+#                  -fill $fillColour -tags "$tagSet /background/"]
     set g [GetGroupItem $w $n]
     $w add curve $g [list "$ml $v6" "$h6 $mt" "$h7 $mt" "$mr $v6" \
 			"$mr $v7" "$h7 $mb" "$h6 $mb" "$ml $v7"] -closed 1 \
@@ -389,7 +389,7 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
 
     if {![string equal none $fillImage]} {
         set poly [$w create image $ml $mt -anchor nw \
-                -tag "$tagSet /background/ source($fillImage) posn($layout)"]
+                -tags "$tagSet /background/ source($fillImage) posn($layout)"]
         set mw [expr int($mr-$ml)]
         set mh [expr int($mb-$mt)]
         set smbg sm$poly$w
@@ -456,13 +456,13 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
 #        set upper [$w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
 #                $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #                $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 -width $width \
-#                       -tag "$tagSet size_on_this realwidth($width) has_info"]
+#                       -tags "$tagSet size_on_this realwidth($width) has_info"]
 #        $w move $upper $stackDistance $stackDistance
 #        set stackDistance [expr 3*$stackSpacing]
 #        set lower [$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
 #                $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \#
 #                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
-#                       -tag "$tagSet size_on_this realwidth($width) has_info"]
+#                       -tags "$tagSet size_on_this realwidth($width) has_info"]
 #        $w move $lower $stackDistance $stackDistance
 #    }
 
@@ -556,9 +556,22 @@ proc PutInfPin {w x y type dir fatness colourScheme tagSet} {
     set twisted [RotateList $screw $coords]
 
     eval {$w create poly} $twisted \
-        {-width $width -tag "$tagSet realwidth($width) has_info /not_placed/"}
+        {-width $width -tags "$tagSet realwidth($width) has_info /not_placed/"}
     eval {$w move /not_placed/} $mptz
     $w dtag /not_placed/
+}
+
+proc ScaleList {winId clist bend} {
+    set output {}
+    foreach {eltx elty} $clist {
+	set elt [list $eltx $elty]
+	if {[llength $output]>0 && [llength $output]<[llength $clist]/2-1 && \
+		$bend} {
+	    lappend elt c
+	}
+        lappend output $elt
+    }
+    return $output
 }
 
 proc PutThinArrow { w n ptz fatness density colourScheme tagSet} {
@@ -566,22 +579,21 @@ proc PutThinArrow { w n ptz fatness density colourScheme tagSet} {
     set g [GetGroupItem $w $n]
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
-    set mptz [ScaleList $w $ptz]
+    set mptz [ScaleList $w $ptz 1]
     if {[string equal dashed $density]} {
         set density {}
         set dashClause "-dash -"
     } else {
         set dashClause {}
     }
-    $w add curve $g [list [lrange $mptz 0 1] [concat [lrange $mptz 2 3] c] \
-			 [lrange $mptz 4 5]] \
+    $w add curve $g $mptz \
 	-lastend [list [expr $features/6] [expr $features/5] \
 		      [expr $features/16]] -linewidth $width \
-	-tags "$tagSet has_info"
+	-tags "$tagSet has_info curvy"
     
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
-    DrawBlob $w $g [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
+    DrawBlob $w $g [lindex $ptz 0] [lindex $ptz 1] [expr $features/10] \
             "$tagSet startblob"
     ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
 }
@@ -592,28 +604,28 @@ proc PutRelation { w n ptz fatness colourScheme tagSet} {
     set width [expr 5*[GetLineSize $w relation $fatness]]
     set arrowRad [expr [GetObjectSize $w relation $fatness]/10]
     
-    set mptz [ScaleList $w $ptz]
-    $w add curve $g [list [lrange $mptz 0 1] [concat [lrange $mptz 2 3] c] \
-			 [lrange $mptz 4 5]] \
+    set mptz [ScaleList $w $ptz 1]
+    $w add curve $g $mptz \
 	-lastend [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -linewidth $width \
-	-tags "$tagSet has_info"
+	-tags "$tagSet has_info curvy"
      # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
-    DrawBlob $w $g [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
+    DrawBlob $w $g [lindex $ptz 0] [lindex $ptz 1] [expr 2*$arrowRad] \
             "$tagSet startblob"
     ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
 
-proc PutFatArrow { w ptz fatness colourScheme tagSet} {
+proc PutFatArrow { w n ptz fatness colourScheme tagSet} {
+    set g [GetGroupItem $w $n]
     set width [expr 5*[GetLineSize $w flow $fatness]]
     set features [GetObjectSize $w flow $fatness]
     #    set width [Scale $w [expr $fatness/10.0]]
-    set mptz [ScaleList $w $ptz]
+    set mptz [ScaleList $w $ptz 0]
     set arrowRad [expr $features/10]
-    eval {$w create line} $mptz {-arrow last -arrowshape \
-                [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -smooth false \
-                      -width $width -tag "$tagSet realwidth($width) has_info"}
-    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
+    $w add curve $g $mptz -lastend \
+                [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
+                      -linewidth $width -tags "$tagSet has_info"
+    DrawBlob $w $g [lindex $ptz 0] [lindex $ptz 1] [expr 2*$arrowRad] \
             "$tagSet startblob"
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
@@ -782,37 +794,35 @@ proc ChooseIntegerRatio {fraction} {
 }
         
 proc MoveText {w id ptz} {
-    set mptz [ScaleList $w $ptz]
     set textItem [GetCaptionItem $w $id]
-    eval {$w translate $textItem} $mptz
+    eval {$w translate $textItem} $ptz
     FixBackBox $w $textItem
 }
 
 proc MoveObj {w ids ptz} {
-    set mptz [ScaleList $w $ptz]
     foreach id $ids {
         $w addtag /moving/ withtag $id
     }
-    eval {$w translate /moving/} $mptz
+    eval {$w translate /moving/} $ptz
     $w dtag /moving/
 }
 
 proc MoveLine {w id ptz} {
-    set mptz [ScaleList $w $ptz]
     foreach item [$w find withtag $id] {
         set taglist [$w gettags $item]
         if {[string match *startblob* $taglist]} {
-            set x1 [lindex $mptz 0]
-            set y1 [lindex $mptz 1]
+            set x1 [lindex $ptz 0]
+            set y1 [lindex $ptz 1]
             $w coords $item [list [expr $x1-1] [expr $y1-1] \
 				 [expr $x1+1] [expr $y1+1]]
         } elseif {[string match *endblob* $taglist]} {
-            set x1 [lindex $mptz [expr [llength $mptz] - 2]]
-            set y1 [lindex $mptz end]
+            set x1 [lindex $ptz [expr [llength $mptz] - 2]]
+            set y1 [lindex $ptz end]
             $w coords $item [list [expr $x1-1] [expr $y1-1] \
 				 [expr $x1+1] [expr $y1+1]]
         } elseif {[string match line [$w type $item]] && \
                     ![string match *bowtie* $taglist]} {
+	    set mptz [ScaleList $w $ptz [string match *curvy* $taglist]]
             eval "$w coords $item" $mptz
         }
     }
@@ -820,7 +830,7 @@ proc MoveLine {w id ptz} {
 
 proc DrawBlob {w g startX startY size tags} {
 #     $w create line $startX $startY $startX $startY -width $size \
-#            -capstyle round -tag $tags
+#            -capstyle round -tags $tags
 # Hold on...bigger news than that...
     set rad [expr $size/2]
     set ol [expr $startX-$rad]

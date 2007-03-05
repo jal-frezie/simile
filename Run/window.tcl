@@ -21,14 +21,6 @@ proc Scale {winId can} {
     set can
 }
 
-proc ScaleList {winId clist} {
-    set output {}
-    foreach elt $clist {
-        lappend output [Scale $winId $elt]
-    }
-    return $output
-}
-
 # Reverse of scale -- still contains round(...) cos is used to send
 # stuff to Prolog.does not contain round(...) either because the
 # latest Prologs (well at least the Linux ones) seem immune to

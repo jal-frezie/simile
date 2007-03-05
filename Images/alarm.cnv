@@ -1,24 +1,24 @@
 # box
-$c create rect -15 -15 15 15 -outline {} -tag unscaled
-$c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
-	-tag "unscaled size_on_this realwidth(1.0)"
+$c add rectangle $g "-15 -15 15 15" -filled 1 -linewidth 0 -tags unscaled
+$c add curve $g [list "-15 -15" "-15 15" "15 15" "15 -15"] -closed true \
+	-tags "unscaled size_on_this"
 
-$c create oval -12 -12 12 12 -tag "unscaled realwidth(2.0)"
+$c add arc $g [list -12 -12 12 12] -extent 359 -linewidth 2.5 -tags "unscaled"
 # clock face
-$c create line -6 10 -8 14 -tag "unscaled realwidth(2.0)"
-$c create line 6 10 8 14 -tag "unscaled realwidth(2.0)"
+$c add curve $g [list "-6 10" "-8 14"] -linewidth 2 -tags "unscaled"
+$c add curve $g [list "6 10" "8 14"] -linewidth 2 -tags "unscaled"
 # legs
-$c create line 0 0 0 -10 -tag "unscaled realwidth(2.0)"
+$c add curve $g [list "0 0" "0 -10"] -linewidth 2 -tags "unscaled"
 # big hand
-$c create line 0 0 -8 4 -tag "unscaled realwidth(3.0)"
+$c add curve $g [list "0 0" "-8 4"] -linewidth 2 -tags "unscaled"
 # little hand
-$c create line 12 -4 4 -12 -tag "unscaled realwidth(2.0)"
+$c add curve $g [list "12 -4" "4 -12"] -linewidth 2 -tags "unscaled"
 # base of left bell
-$c create line 12 -4 14 -8 8 -14 4 -12 -smooth true -tag "unscaled realwidth(2.0)"
+$c add curve $g [list "12 -4" "14 -8 c" "8 -14 c" "4 -12"] -linewidth 2 -tags "unscaled"
 # top of left bell
-$c create line -12 -4 -4 -12 -tag "unscaled realwidth(2.0)"
+$c add curve $g [list "-12 -4" "-4 -12"] -linewidth 2 -tags "unscaled"
 # base of right bell
-$c create line -12 -4 -14 -8 -8 -14 -4 -12 -smooth true -tag "unscaled realwidth(2.0)"
+$c add curve $g [list "-12 -4" "-14 -8 c" "-8 -14 c" "-4 -12"] -linewidth 2 -tags "unscaled"
 # top of right bell
-$c create line 0 0 0 0 -capstyle round -tag "unscaled realwidth(4.0)"
+$c add curve $g [list "0 1" "1 0 c" "0 -1 c" "-1 0"] -linewidth 2 -tags "unscaled"
 # hub for hands

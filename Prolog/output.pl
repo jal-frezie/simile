@@ -236,7 +236,7 @@ inf_pin(Wid, Parent, X, Y, Type, Orient, SmFat, Flash, Tags) :-
 		       br(Tags)], _).
 		       
 bowtie(Wid, Parent, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutBowTie', Parent, Wid, L, T, R, B, Fatness, Density,
+	safe_tcl_eval(['PutBowTie', Wid, Parent, L, T, R, B, Fatness, Density,
 		 Colour_scheme, br(Features)], _).
 
 flow(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-

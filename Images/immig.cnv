@@ -1,7 +1,7 @@
 # box
-$c create rect -15 -15 15 15 -outline {} -tag unscaled
-$c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
-	-tag "unscaled size_on_this realwidth(1.0)"
+$c add rectangle $g "-15 -15 15 15" -filled 1 -linewidth 0 -tags unscaled
+$c add curve $g [list "-15 -15" "-15 15" "15 15" "15 -15"] -closed true \
+	-tags "unscaled size_on_this"
 
-$c create line -10 0 -5 -5 0 0 -smooth true -tag "unscaled realwidth(2.5)"
-$c create line 10 0 5 -5 0 0 -smooth true -tag "unscaled realwidth(2.5)"
+$c add curve $g [list "-10 0" "-5 -5 c" "0 0"] -linewidth 2.5 -tags "unscaled"
+$c add curve $g [list "10 0" "5 -5 c" "0 0"] -linewidth 2.5 -tags "unscaled"
