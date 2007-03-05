@@ -498,7 +498,6 @@ proc MakeSubmodelGrid {w id l t r b fillColour} {
 
     set g [GetGroupItem $w $id]
     $w remove *${g}./grid/ ;# remove old grid using pathtag
-    set stackOn $g
     set shortSide [expr ($r - $l)<($b - $t) ? ($r - $l) : ($b - $t)]
     set plRad [expr $looks($window_info($w,top_node),submodel,objectsize)*$shortSide/400]
     set pitch [expr $looks(gridPitch)]
@@ -521,8 +520,7 @@ proc MakeSubmodelGrid {w id l t r b fillColour} {
 	set line [$w add curve $g [list "$x [expr $t+$inStep]" "$x [expr $b-$inStep]"] \
 		      -linecolor $gCol -tags $gTagSet]
 	# Now to stick it behind anything that might be drawn inside
-	$w raise $line $stackOn
-	set stackOn $line
+	$w lower $line
     }                            
     for {set y [expr $pitch*floor($t/$pitch+1)]} {$y<$b} {set y [expr $y+$pitch]} {
 	set fromEdge [max [expr $t+$plRad-$y] [expr $y+$plRad-$b]]
@@ -534,8 +532,7 @@ proc MakeSubmodelGrid {w id l t r b fillColour} {
 	set line [$w add curve $g [list "[expr $l+$inStep] $y" "[expr $r-$inStep] $y"] \
 		      -linecolor $gCol -tags $gTagSet]
 	# Now to stick it behind anything that might be drawn inside
-	$w raise $line $stackOn
-	set stackOn $line
+	$w lower $line
     }                            
 }
 
