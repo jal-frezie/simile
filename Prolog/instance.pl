@@ -330,7 +330,7 @@ instance_of(flow, Arc, _,_, [instance(flow, Arc, _, Value, Units)],
 are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
-instance_of(Type, Node, _, Inst, Ref) :-
+instance_of(Type, Node, _,_, Inst, Ref) :-
 	member(Type, [variable, condition, creation, loss, alarm]),
 	(member(Node, [B, A]),
 	    Arc is_connector from A to B, !,

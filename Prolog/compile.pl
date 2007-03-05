@@ -586,9 +586,8 @@ generate_main_decls(L, Instance, Tree, Level, ExtSets,
 	       TypeDecls),
 	append(LocalPtrs, SubPointerDecls, PointerDecls).
 
-	
-
 generate_local_decls(_, [], _,_,_,_,_,_, [], [], [], [], [], []).
+
 generate_local_decls(L, [Instance | Instances], Tree, Level,
 		     ExtSets, Used, Graphs, Collects,
 		     PublicDecls, TypeDecls, PointerDecls, Exts,

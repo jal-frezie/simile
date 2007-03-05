@@ -2,4 +2,4 @@
 # differently to the one we supply. To avoid loading it by accident we load
 # ours as part of the dummy package MyTrf.
 
-package ifneeded MyTrf 2.1  [list source [file join $dir myTrf.tcl]]
+package ifneeded Trf 2.1  [list source [file join $dir myTrf.tcl]]
