@@ -36,7 +36,7 @@ package require BWidget
 catch {namespace import BWidget::*}
 if {![InPlugin]} {
     package require tile
-    package require Trf ;# loads wrong version of Trf on ppc mac
+    package require MyTrf ;# loads right version of Trf on ppc mac
 }
 
 # load function help messages
