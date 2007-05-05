@@ -9,20 +9,10 @@ rankings(ExL) --> [L] = ExL,
 	count([L])),
     count([L]))).
 
-colin(List) --> 
-	[st0]=makearray(if first(place_in(1)) then 0 else
-		       element(sofar([st0])+List,preceding(place_in(1))),
-			count(List)),
-	legg=rand_var(0,element([st0]+List,count(List))),
-	[st]=makearray(if legg>element([st0],place_in(1)) then place_in(1)
-		      else element(sofar([st]),preceding(place_in(1))),
-		       count(List)),
-    element([st],count(List)).
-
 howmanytrue(BoolList) --> sum(if BoolList then 1 else 0).
 
 firsttrue(BoolArr) --> [st]=makearray(
-	if !(first(place_in(1)) or
+	if not (first(place_in(1)) or
 		element(sofar([st]),preceding(place_in(1))) == '"NULL"')
 	    then element(sofar([st]),preceding(place_in(1)))
 	elseif element(BoolArr,place_in(1)) then place_in(1)

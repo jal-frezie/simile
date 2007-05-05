@@ -11,7 +11,13 @@ sicstus_module( graphics,
 		 no_longer_has_graphical_attributes/1
 		] ).
 
-sicstus_use_module( [database,utility,library(lists)] ).
+sicstus_use_module( [database,utility,sp_only,library(lists)] ).
+
+round_graphics(Float, Int) :-
+	number(Float),
+	\+ member(Float, [+nan, -nan, +inf, -inf]),
+	    gnu_round(Float, Int);
+	all(graphics, round_graphics, [build(Float), build(Int)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ABSTRACTION BOUNDARY STARTS HERE
@@ -22,13 +28,16 @@ sicstus_use_module( [database,utility,library(lists)] ).
 :- op(500, xfy, [has_graphical_attribute]).
 
 Object has_graphical_attribute Attribute of Value :-
-	graphical_info( Object, Attribute, Value ).
+	query_model(graphical_info( Object, Attribute, Value )).
 
 :- op(500, xfy, [has_new_graphical_attribute]).
 
 Object has_new_graphical_attribute Attribute of Value :-
-	\+ graphical_info( Object, Attribute, _AnyValue ),
-	assert_model( graphical_info( Object, Attribute, Value )).
+	\+ query_model(graphical_info( Object, Attribute, _AnyValue )),
+	(round_graphics(Value, IntValue), !,
+	    assert_model( graphical_info( Object, Attribute, IntValue ));
+% some models seem to have nans in course -- refuse to add
+	    true).
 
 :- op(450, xf, [no_longer_has_graphical_attributes]).
 

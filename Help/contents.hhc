@@ -673,6 +673,10 @@
 				<param name="Local" value="submodels\association\onesided.htm">
 				</OBJECT>
 		</UL>
+		<LI> <OBJECT type="text/sitemap">
+			<param name="Name" value="Externally-supplied procedures">
+			<param name="Local" value="submodels\external_code.htm">
+			</OBJECT>
 	</UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Running Models">
@@ -729,6 +733,10 @@
 				<param name="Local" value="run\tools\others.htm">
 				</OBJECT>
 			<UL>
+				<LI> <OBJECT type="text/sitemap">
+					<param name="Name" value="Polygon diagram (map)">
+					<param name="Local" value="run\tools\polygon.htm">
+					</OBJECT>
 				<LI> <OBJECT type="text/sitemap">
 					<param name="Name" value="Plot value against time helper">
 					<param name="Local" value="run\tools\timeplot.htm">

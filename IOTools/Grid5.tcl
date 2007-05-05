@@ -49,20 +49,17 @@ namespace eval grid005 {
     proc reset {winId} {
     }
 
-    LoadIconImages Toolbar {add save zoomin zoomout property less greater \
-				pause}
-
     proc AddToolbar {winId} {
         set toolbarItems [list \
-                [list add "Add a variable"   [namespace code "AddVariable $winId"]]\
-                [list save "Save as GIF"   [namespace code "SaveAsFile $winId"]]\
-                [list zoomin "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
-                [list zoomout "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
-                [list property " Properties " [namespace code "Settings $winId"]]\
+                [list add.gif "Add a variable"   [namespace code "AddVariable $winId"]]\
+                [list save.gif "Save as GIF"   [namespace code "SaveAsFile $winId"]]\
+                [list zoomin.gif "Zoom in" [namespace code "zoomio $winId 1.25"] ]\
+                [list zoomout.gif "Zoom out" [namespace code "zoomio $winId 0.8"] ]\
+                [list property.gif " Properties " [namespace code "Settings $winId"]]\
 			      [list edit.gif "Enter edit mode " [namespace code "ChangeEditMode [namespace current] $winId"]] \
-                [list less "Decrease range" [namespace code "DecreaseRange $winId"] ]\
-                [list greater "Increase range" [namespace code "IncreaseRange $winId"] ]\
-                [list pause " Freeze " [namespace code "ToggleFreeze $winId"]]]
+                [list less.gif "Decrease range" [namespace code "DecreaseRange $winId"] ]\
+                [list greater.gif "Increase range" [namespace code "IncreaseRange $winId"] ]\
+                [list pause.gif " Freeze " [namespace code "ToggleFreeze $winId"]]]
         ::graphtools::MakeToolBar $winId $toolbarItems
     }
     
@@ -79,7 +76,9 @@ namespace eval grid005 {
     proc Recolour {winId whichCol exampleWidget} {
         variable useNodes
         set colour [tk_chooseColor -initialcolor $useNodes($winId,c$whichCol)]
-        $exampleWidget configure -bg $colour
+        if {[string length $colour]} {
+	    $exampleWidget configure -bg $colour
+	}
         return $colour
     }
     
@@ -92,13 +91,23 @@ namespace eval grid005 {
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
 	set useNodes($winId,color) [GetIdFromCaptionPath [lindex $state 1]]
 	set useNodes($winId,colvals) [GetIdFromCaptionPath [lindex $state 2]]
-	set colourBase [lsearch $state colourmap]
-	foreach colourPt {cbot cmid ctop} {
-	    set useNodes($winId,$colourPt) [lindex $state [incr colourBase]]
+	set mapBase [lsearch $state colourmap]
+	if {$mapBase > -1} {
+	    foreach colourPt {cbot cmid ctop} {
+		set useNodes($winId,$colourPt) [lindex $state [incr mapBase]]
+	    }
 	}
 	set rangeBase [lsearch $state aspect]
 	foreach rangePt {nswatches min max} {
 	    set useNodes($winId,$rangePt) [lindex $state [incr rangeBase]]
+	}
+	SetColourMap useNodes $winId $useNodes($winId,color)
+	set swatchBase [lsearch $state swatches]
+	if {$swatchBase > -1} {
+	    for {set col 0} {$col<=$useNodes($winId,nswatches)} {incr col} {
+		set useNodes($winId,c$col) [lindex $state [incr swatchBase]]
+	    }
+	    set useNodes($winId,colourMapTweaked) 1
 	}
 	set multBase [lsearch $state magnification]
 	if {$multBase != -1} {
@@ -106,7 +115,6 @@ namespace eval grid005 {
 	}
         set useNodes($winId,caption) [lindex $state 1]
         
-        SetColourMap useNodes $winId $useNodes($winId,color)
         AddToolbar $winId
         $winId.bbframe.buttonBox itemconfigure 0 -state disable
 	NumDistinct $winId $useNodes($winId,colvals)
@@ -150,6 +158,10 @@ namespace eval grid005 {
 				-state normal
 			}
 		    }
+		    if {![info exists useNodes($winId,values)]} {
+#disable the edit mode as we do not know the model indices
+			$winId.bbframe.buttonBox itemconfigure 5 -state disable
+		    }
                     raise $winId
                 }
             }
@@ -167,7 +179,7 @@ namespace eval grid005 {
 	    set useNodes($winId,nrow) \
 		[expr [string length [GetBinaryModelValue $testNode 0 255]]/$useNodes($winId,ncol)]
 	} else {
-	    set columns [Flatten [lindex [GetModelValues $testNode] 0]]
+	    set columns [Flatten [lindex [GetModelValue $testNode] 0]]
 	    foreach col $columns {
 		set colvals([lindex $col 1]) 1
 	    }
@@ -182,14 +194,23 @@ namespace eval grid005 {
 
     proc UpdateState {winId} {
         variable useNodes
-        SetState $winId [list displaying \
-                [GetCaptionPathFromId $useNodes($winId,color)] \
-		[GetCaptionPathFromId $useNodes($winId,colvals)] colourmap \
-                $useNodes($winId,cbot) $useNodes($winId,cmid) $useNodes($winId,ctop) \
-                aspect $useNodes($winId,nswatches)\
+	
+	set state [list displaying \
+		       [GetCaptionPathFromId $useNodes($winId,color)] \
+		       [GetCaptionPathFromId $useNodes($winId,colvals)]]
+	if {$useNodes($winId,colourMapTweaked)} {
+	    lappend state swatches
+	    for {set col 0} {$col<=$useNodes($winId,nswatches)} {incr col} {
+		lappend state $useNodes($winId,c$col)
+	    }
+	} else {
+	    lappend state colourmap $useNodes($winId,cbot) \
+		$useNodes($winId,cmid) $useNodes($winId,ctop)
+	}
+	lappend state aspect $useNodes($winId,nswatches) \
                 $useNodes($winId,min) $useNodes($winId,max) \
-		magnification $useNodes($winId,mult)]
-        
+		magnification $useNodes($winId,mult)
+	SetState $winId $state
     }
     
     proc display {winId time step remainder} {
@@ -252,7 +273,7 @@ namespace eval grid005 {
         set useNodes($winId,xwidth) $xwidth
         set useNodes($winId,yheight) $yheight
         $winId.c configure -width $xwidth -height $yheight
-        
+
         $winId.c bind all <Button-3> [namespace code "Settings $winId"]
         $winId.c bind all <B1-Motion> [namespace code "value_popup $winId %X %Y %x %y"]
         $winId.c bind all <ButtonPress-1> [namespace code "value_popup $winId %X %Y %x %y"]
@@ -353,7 +374,7 @@ namespace eval grid005 {
         variable useNodes
         variable min
         variable max
-
+        
         # copy the values from the temp values to those to be edited if OK clicked
         set useNodes($winId,ctop) [$coloursF.topcolourF.colF cget -bg]
         set useNodes($winId,cmid) [$coloursF.midcolourF.colF cget -bg]
@@ -398,43 +419,8 @@ namespace eval grid005 {
         $c create text 250 230 -text "xx $this_colour xx"
     }
     
-    proc DrawGrid6 {winId node} {
-	variable useNodes
-
-	if {[catch {GetBinaryModelValue $node $useNodes($winId,min) \
-			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
-	    DrawGrid5 $winId $node
-	    return
-	}
-	set rows $useNodes($winId,nrow)
-	set cols $useNodes($winId,ncol)
-	set bitCols [expr 4*int(($cols+3)/4)]
-	set fullSize [expr 1078+$bitCols*$rows]
-	set bmpData [binary format a2is2iiiissiiiiii \
-			 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
-	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
-	    set colourIndex [expr $rgbQuad*($useNodes($winId,nswatches)+1)/256]
-	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
-	    append bmpData [binary format H2H2H2c \
-				[string range $colourStr 9 12] \
-				[string range $colourStr 5 8] \
-				[string range $colourStr 1 4] 0]
-	}
-	set filling [string repeat 0 [expr $bitCols-$cols]]
-	if {[string length $filling]} {
-	    for {set row 0} {$row<$rows} {incr row} {
-		append bmpData [string range $useNodes($winId,rawBinary) \
-			[expr $row*$cols] [expr $row*$cols+$cols-1]] $filling
-	    }
-	} else {
-	    append bmpData $useNodes($winId,rawBinary)
-	}
-	set str [open debunk.bmp w]
-	fconfigure $str -translation binary
-	puts $str $bmpData
-	close $str
-	$useNodes($winId,hiddenMap) configure -data $bmpData
-    }
+# Old version -- actually extracted model data as Tcl numbers and stuck them
+# one by one into the photo. Crawled, of course.    
     
     proc DrawGrid5 {winId node} {
         variable useNodes
@@ -460,7 +446,7 @@ namespace eval grid005 {
         for {set row 1} {$row<=$nrow} {incr row} {
             set rowData($row) {}
             for {set col 1} {$col<=$ncol} {incr col} {
-                set cell [expr {($row-1)*$ncol+$col-1}]
+                set cell [expr ($row-1)*$ncol+$col-1]
                 set celval [lindex [lindex $values $cell] 1]
                 set length [llength $celval]
                 
@@ -495,7 +481,44 @@ namespace eval grid005 {
         $useNodes($winId,hiddenMap) put $allData
 	set useNodes($winId,range) $range
     }
-    
+
+    proc DrawGrid6 {winId node} {
+        variable useNodes
+
+
+# do not use image mode for inputs cos we will want to edit them
+	if {[string equal INPUT [GetModelEval $node]] ||
+	    [catch {GetBinaryModelValue $node $useNodes($winId,min) \
+			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
+	    DrawGrid5 $winId $node
+	    return
+	}
+	set rows $useNodes($winId,nrow)
+	set cols $useNodes($winId,ncol)
+	set bitCols [expr 4*int(($cols+3)/4)]
+	set fullSize [expr 1078+$bitCols*$rows]
+	set bmpData [binary format a2is2iiiissiiiiii \
+		 BM $fullSize {0 0} 1078 40 $cols $rows 1 8 0 0 0 0 0 0]
+	for {set rgbQuad 0} {$rgbQuad<256} {incr rgbQuad} {
+	    set colourIndex [expr $rgbQuad*($useNodes($winId,nswatches)+1)/256]
+	    set colourStr [Desystematize $useNodes($winId,c$colourIndex)]
+	    append bmpData [binary format H2H2H2c \
+				[string range $colourStr 9 12] \
+				[string range $colourStr 5 8] \
+				[string range $colourStr 1 4] 0]
+	}
+	set filling [string repeat 0 [expr $bitCols-$cols]]
+	if {[string length $filling]} {
+	    for {set row 0} {$row<$rows} {incr row} {
+		append bmpData [string range $useNodes($winId,rawBinary) \
+		        [expr $row*$cols] [expr $row*$cols+$cols-1]] $filling
+	    }
+	} else {
+	    append bmpData $useNodes($winId,rawBinary)
+	}
+	$useNodes($winId,hiddenMap) configure -data $bmpData
+    }
+
     proc zoomio {winId factor} {
         variable useNodes
         set view [$winId.c xview]
@@ -567,14 +590,13 @@ namespace eval grid005 {
         set col [expr int(1+([$winId.c canvasx $x])/$useNodes($winId,mult))]
         set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
-	    PostPopup $winId $X $Y
-#            if {![winfo exists .popup]} {
-#                toplevel .popup -width 1 -height 1 -bd 2 -relief raised
-#                wm overrideredirect .popup 1
-#                pack [message .popup.message -aspect 400 -bg \#ffffc0] \
-#                        -fill x -expand true
-#               raise .popup
-#            }
+            if {![winfo exists .popup]} {
+                toplevel .popup -width 1 -height 1 -bd 2 -relief raised
+                wm overrideredirect .popup 1
+                pack [message .popup.message -aspect 400 -bg \#ffffc0] \
+                        -fill x -expand true
+                raise .popup
+            }
             set cell [expr ($row-1)*$ncol+$col-1]
 	    if {[info exists useNodes($winId,values)]} {
 		set vLine [lindex $useNodes($winId,values) $cell]
@@ -582,20 +604,18 @@ namespace eval grid005 {
 			       [lindex $vLine 1]]
 		set index [join [TransEnums $useNodes($winId,allETs) \
 				     [lindex $vLine 0]] ,]
-		set popText "Index=$index\nCol,row=($col,$row)\nValue=$value"
-#            .popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
-#            set xpoint [expr $X+15]
-#            set ypoint [expr $Y+43]
-#            wm geometry .popup +$xpoint+$ypoint
-#            update
+		.popup.message config -text "Index=$index\nCol,row=($col,$row)\nValue=$value"
 	    } else { # get approx value from raw data
 		binary scan $useNodes($winId,rawBinary) x${cell}H2 hexo
 		set numValue [expr $useNodes($winId,min)+0x$hexo*(1+$useNodes($winId,range))/256]
 		set value [TransValue $useNodes($winId,dataETs) $numValue]
- #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
-		set popText "Col,row=($col,$row)\nValue=$value"
-             }
-	    AddPopupMessage $popText \#ffffc0
+#puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
+		.popup.message config -text "Col,row=($col,$row)\nValue=$value"
+            }
+            set xpoint [expr $X+15]
+            set ypoint [expr $Y+43]
+            wm geometry .popup +$xpoint+$ypoint
+            update
         }
     }
     
@@ -610,9 +630,11 @@ namespace eval grid005 {
             set cell [expr ($row-1)*$ncol+$col-1]
 	    set vLine [lindex $useNodes($winId,values) $cell]
 	    PokeValue $useNodes($winId,color) [lindex $vLine 0] $newVal
+#	DrawGrid6 $winId $useNodes($winId,color)
+	    $useNodes($winId,hiddenMap) put $useNodes($winId,paintColour) \
+		-to [expr $col-1] [expr $nrow-$row]
+	    FillCanvas $winId
 	}
-	DrawGrid6 $winId $useNodes($winId,color)
-	FillCanvas $winId
     }
     
     # need to recode for this legend
@@ -628,12 +650,11 @@ namespace eval grid005 {
     proc SaveAsFile {winId} {
         variable useNodes
         # should have dialog to set for options
-	set filename [ChooseFile image.gif "Save image as:" 1]
-        $useNodes($winId,visibleMap) write $filename \
-                -format [string range [file extension $filename] 1 end]
-                #-from x1 y1 x2 y2\
-                #-grayscale
-                #-background {}
+        set filename [ChooseFile image.gif "Save image as:" 1]
+        if {[string length $filename]} {
+	    $useNodes($winId,visibleMap) write $filename \
+		-format [string range [file extension $filename] 1 end]
+	}
     }
 } ;
 # end of namespace

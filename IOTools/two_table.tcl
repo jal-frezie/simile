@@ -34,9 +34,6 @@ namespace eval $keyValue {
         return "Data table"
     }
     
-    LoadIconImages Toolbar {clear add remove save property refresh slider}
-# 'slider' is for standard tools which cannot access image directory
-
     proc initialize {winId} {
         variable orientList
         set orientList($winId) {rows cols cols cols}
@@ -55,14 +52,14 @@ namespace eval $keyValue {
                 [namespace code [list AddVars $winId]]
         
         set toolbarItems [list \
-                [list clear "Clear" [namespace code "clear $winId"] ] \
-                [list add "Add a variable" \
-		     [namespace code "AddVariable $winId"]] \
-                [list remove "Remove a variable" \
-		     [namespace code "RemoveVariable $winId"]] \
-                [list save "Save to file" [namespace code "Save $winId"] ] \
-                [list property "Properties" [namespace code "PropertiesDlg $winId"] ] \
-                [list refresh Update [namespace code "Update $winId"]]]
+                [list clear.gif "Clear" [namespace code "clear $winId"] ] \
+                [list add.gif "Add a variable" \
+                [namespace code "AddVariable $winId"]] \
+                [list remove.gif "Remove a variable" \
+                [namespace code "RemoveVariable $winId"]] \
+                [list save.gif "Save to file" [namespace code "Save $winId"] ] \
+                [list property.gif "Properties" [namespace code "PropertiesDlg $winId"] ] \
+                [list refresh.gif Update [namespace code "Update $winId"]]]
         
         if {![string match .viewer $winId]} {
             ::graphtools::MakeToolBar $winId $toolbarItems
@@ -633,7 +630,9 @@ namespace eval $keyValue {
                     [lindex $cellFormat($value) 1]]
             if {[lindex $cellFormat($value) 2]==1 & $values($value)<0} {
                 $winId.t tag cell red $rowHead,$colHead
-            }
+            } else {
+                $winId.t tag cell {} $rowHead,$colHead
+	    }
         }
         #puts "Table values inserted"
         switch $timeSide {
@@ -846,8 +845,9 @@ namespace eval $keyValue {
         pack $varF -side top -fill x
         
         set varL [label $varF.label -text Variable]
-        set varCB [ComboBox $varF.comboBox -values $displayList($winId)]
-        $varCB setvalue first
+        set varCB [ttk::combobox $varF.comboBox -values $displayList($winId) \
+		       -state readonly]
+	$varCB current 0
         pack $varL $varCB -side left
         
         set formatF [frame $formatP.formatF]
@@ -880,7 +880,9 @@ namespace eval $keyValue {
         
         pack $catF $formF $optionsF -side left -padx 10 -fill y
         
-        $varCB configure -modifycmd [namespace code \
+#        $varCB configure -modifycmd [namespace code \
+                "SetFormatWidgets $winId $varCB $catF.listbox $formF.listbox $optionsF"]
+	bind $varCB <ButtonRelease-1> [namespace code \
                 "SetFormatWidgets $winId $varCB $catF.listbox $formF.listbox $optionsF"]
         bind $catF.listbox <ButtonRelease-1> +[namespace code \
                 [list OnCatListBoxClick $winId $varCB $catF.listbox $formF.listbox]]
@@ -964,8 +966,7 @@ namespace eval $keyValue {
     proc OnFormatListBoxClick {winId varCB formatListbox} {
         variable displayList
         variable displayFormat
-        set path [lindex $displayList($winId) [$varCB getvalue]]
-        set varIndex [lsearch $displayList($winId) $path]
+        set varIndex [lsearch $displayList($winId) [$varCB get]]
         lset displayFormat($winId,$varIndex) 0 \
                 [lindex [$formatListbox get 0 end] [$formatListbox curselection ]]
     }
@@ -973,9 +974,8 @@ namespace eval $keyValue {
     proc SetFormatWidgets {winId varCB catlistbox formlistbox optionsF} {
         variable displayList
         variable displayFormat
-        if {[$varCB getvalue]>=0} {
-            set path [lindex $displayList($winId) [$varCB getvalue]]
-            set varIndex [lsearch $displayList($winId) $path]
+        if {[llength [$varCB get]]} {
+            set varIndex [lsearch $displayList($winId) [$varCB get]]
             set formatSpec [lindex $displayFormat($winId,$varIndex) 0]
             SetCatListboxSelection $catlistbox $formatSpec
             FillFormatListBox $catlistbox $formlistbox

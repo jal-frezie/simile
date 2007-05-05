@@ -8,9 +8,9 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
-		       click_obj/5, click_text/5, click/4, do_colours/2,
+		       click_obj/4, click_text/4, click/3, do_colours/2,
 		       insert_variable/5,
-	finish_old_edit/1, doubleclick_obj/5, doubleclick/4, edit_equation/2,
+	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
 	unclick/0, embrace/2, abandon/0, abandon_eqn/0, drag/2,
 		       resize_top_win/3, adjust_display_area/2,
 		       prioritize_window/1, run_settings_tweaked/1]).
@@ -34,13 +34,8 @@ units_for(Comp, UnitStr) :-
 	sicstus_write_to_chars(Base, UnitStr)).
 
 get_info(_Wid, Comp, eqn) :-
-	with_eqn_to_edit(Comp, UseComp),
-	(Comp is_instance_of _Module,
-	    get_av_pair(Comp,  0, fn_overrides, OverRides),
-	    member(UseComp-_-EqnName, OverRides), !,
-	    name(EqnName, Eqn);
-	  UseComp is_of_sort has_function,
-	    (eqn_for(UseComp, Eqn), !;
+	(Comp is_of_sort has_function,
+	    (eqn_for(Comp, Eqn), !;
 		Eqn = "");
 	 Eqn = "<none>"),
 	callback(br(chars(Eqn))).
@@ -61,15 +56,25 @@ get_info(Wid, Comp, desc) :-
 	name(LType, Middle)), !,
 
 	(Wid shows_model Context,
-	    setof(DestLoc, Dest^(m_update:connects(Comp, Source, Dest),
-				 abs_path_name(Dest, Context, DestLoc)),
-		  DestList),
-	    (DestList = [Dests]; Dests = DestList), !,
+	    setof(Dest, m_update:connects(Comp, Source, Dest), DestList),
+	    (member(RealDest, DestList),
+		\+ find_type(RealDest, cloud),
+		all(event, abs_path_name,
+		    [build(DestList), unify(Context), build(LocList)]),
+		(LocList = [DestLocs]; DestLocs = LocList), !;
+	     true),
 	    /* note Source is an ordinary variable in the above, all dests will
 	    be found because it is always the same */
-	    abs_path_name(Source, Context, SourceLoc),
-	    sicstus_format_to_chars(" (from ~a to ~w)", [SourceLoc, Dests], 
-	        Suffix);
+	    (\+ find_type(Source, cloud), !,
+	        abs_path_name(Source, Context, SourceLoc), !;
+	     true),
+	    (nonvar(SourceLoc), nonvar(DestLocs), !,
+	        sicstus_format_to_chars(" (from ~a to ~w)",
+					[SourceLoc, DestLocs], Suffix);
+	     nonvar(SourceLoc), !,
+	        sicstus_format_to_chars(" (from ~a)", [SourceLoc], Suffix);
+	     nonvar(DestLocs), !,
+	        sicstus_format_to_chars(" (to ~w)", [DestLocs], Suffix));
 	units_for(Comp, Units), !,
 	    append([" (", Units, ")"], Suffix);
 	Suffix = ""),
@@ -107,32 +112,22 @@ insert_mem_list(Bound, Model, Trans) :-
 	Trans = []), !.
 
 get_params(_, Comp) :-
-	with_eqn_to_edit(Comp, DefEqn),
-	find_node_with_data(DefEqn, _, Func),
+	find_node_with_data(Comp, _, Func),
 	get_input_info(Func, Params),
 	output:get_from_list(Params, Table),
 	output:bracketize(Table, BrTable),
 	callback(BrTable).
 
-with_eqn_to_edit(Comp, DefEqn) :-
-	Comp is_instance_of Module,
-	    find_all_comps(Module, DefEqn),
-	    has_autoconnect(DefEqn, edit_eqn), !;
-	DefEqn = Comp.
-
 :- dynamic(min_size_is/1).
 :- dynamic(max_size_is/1).
 :- dynamic(clicked_obj_is/1).
 
-click_obj( Parent,Xpt, Ypt, DiagInfo, CD) :-
+click_obj(Xpt, Ypt, Name, CD) :-
 	check_snap,
-	assert(clicked_obj_is(DiagInfo)),
-	(DiagInfo = tab(Name, Link, HX, HY), !;
-	    Name = DiagInfo),
+	assert(clicked_obj_is(Name)),
 	find_current(Wid),
 	find_relevant_windows(Name, Wid, Depth, Trans),
-%	translate([Xpt, Ypt], Trans, ActNewPt),
-	ActNewPt = [Xpt, Ypt],
+	translate([Xpt, Ypt], Trans, ActNewPt),
 	snap_to_grid(ActNewPt, [NewXpt, NewYpt]),
 	set_original_click(Xpt, Ypt),
 	find_all_comps(Parent, Name),
@@ -142,8 +137,8 @@ click_obj( Parent,Xpt, Ypt, DiagInfo, CD) :-
 	    advance_phase_to(dragging),
 	    get_mode(Mode),
 	    menu:set_cursor_for(Mode),
-	    drag_to(Parent, NewXpt, NewYpt, DiagInfo);
-	(CD < 2, click_on([NewXpt, NewYpt], DiagInfo, CD), !; true),
+	    drag_to(NewXpt, NewYpt, Name);
+	(CD < 2, click_on([NewXpt, NewYpt], Name, CD), !; true),
 	adjust_edit_menu(Wid, Parent, Name),
 	set_selection_abilities(Parent),
 	(get_phase(moving),
@@ -160,13 +155,13 @@ click_obj( Parent,Xpt, Ypt, DiagInfo, CD) :-
 	    assert(max_size_is(CompSpace)) */ ;
 	true)).
 
-click_text(Parent,Xpt, Ypt, Name, CD) :-
+click_text(Xpt, Ypt, Name, CD) :-
 	get_mode(select),
 	    CD = 0,
 	    doomed(Name), !,
 	    finish_old_edit(Name),
 	    give_focus(Name);
-	click_obj(Parent,Xpt, Ypt, Name, CD),
+	click_obj(Xpt, Ypt, Name, CD),
 	/* we do not want the text of a text item to get separated from its
 	anchor so do not allow a caption move, just move the whole thing */
 	    (find_type(Name, text);
@@ -175,27 +170,25 @@ click_text(Parent,Xpt, Ypt, Name, CD) :-
 /*
 click: Handles mouse clicks in a model window.
 */
-click(Parent,Xpt, Ypt, CD) :-
+click(Xpt, Ypt, CD) :-
 	check_snap,
 	find_current(Wid),
-	Wid shows_model Top,
+	Wid shows_model Parent,
+	save_params([0,0,1,1], 0, Parent),
 	(get_phase(targetting),
-	    check_same_desktop(Top), !,
+	    check_same_desktop(Parent), !,
 	    advance_phase_to(dragging),
 	    get_mode(Mode),
 	    menu:set_cursor_for(Mode),
-	    /* translate pinnt to coords of 1st model clicked */
 	    drag(Xpt, Ypt);
 	get_phase(peruse),
-	    save_params([0,0,1,1], 0, Parent),
 	    set_original_click(Xpt, Ypt),
 	    click_in(Wid, [Xpt, Ypt], [0, 0, 1, 1], 0, Parent, CD)).
 
 /* check we are in same model we started in */
 check_same_desktop(Parent) :-
 	get_line_start_obj(StartNode),
-	    (StartNode = tab(StartPt, _,_,_), !; StartPt = StartNode),
-	    contains(Top, StartPt),
+	    contains(Top, StartNode),
 	    is_toplevel(Top),
 	    contains(Top, Parent);
 	normalize(StartNode),
@@ -209,16 +202,12 @@ save_params(Trans, Depth, Parent) :-
 
 click_on_sub(Wid, _, Trans, Parent, Depth, Comp, CD) :-
 	save_params(Trans, Depth, Parent),
-	find_type(Comp, submodel),
-	(add_to_translation(Trans, Comp, New_trans), !,
-	    New_depth is Depth + 1,
-	    get_original_click(Orig_X, Orig_Y),
-	    translate([Orig_X, Orig_Y], New_trans, New_point);
-	New_point = none,
-	    New_depth = 0,
-	    New_trans = none),
+	find_type(Comp, submodel), !,
+	add_to_translation(Trans, Comp, New_trans),
+	New_depth is Depth + 1,
+	get_original_click(Orig_X, Orig_Y),
+	translate([Orig_X, Orig_Y], New_trans, New_point),
 	click_in(Wid, New_point, New_trans, New_depth, Comp, CD).
-	 
 
 /* This allows a 'click' call from Tk to connect to a component. Try doing without
 it as clicking on a component should always generate a 'click_obj' call.
@@ -252,59 +241,61 @@ snap_to_grid([Pair | Rest], [NewPair | NewRest]) :-
 
 
 click_in(Wid, Point, Trans, Depth, Parent, CD) :-
-	targets(Wid, Parent, Point, Depth, Child), !,
-	/* this should never happen */
-	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD);
+	% click is inside a child submodel; pass it on 
+	targets(Wid, Parent, Point, Depth, Child), !, 
+	click_on_sub(Wid, Point, Trans, Parent, Depth, Child, CD).
+
+click_in(Wid, Point, _,_, Parent, CD) :-
+	% right click; get ready to post menu
 	CD = 2,
 	snap_to_grid(Point, GPoint),
 	adjust_edit_menu(Wid, Parent, GPoint).
 
-click_in(Wid, ActPt, Trans, Depth, Parent, CD) :-
+click_in(Wid, ActPt, Trans, Depth, Parent, _CD) :-
+	% Start adding a component to current submodel
 	finish_old_edit(none),
-	save_params(Trans, Depth, Parent),
 	doing_add(New_obj),
-	(\+ (hide_innards(Parent),
-		\+ Wid shows_model Parent),
-	 use_style_for(New_obj, NewStyle),
-	 draws_at(Wid, NewStyle, Depth), !,
-	    snap_to_grid(ActPt, [Xpt, Ypt]),
-	    set_start_coords(Xpt, Ypt),
-	    set_current_coords(Xpt, Ypt),
-	    (New_obj is_class_of_sort box, !,
-		(New_obj is_class_of_sort rounded_rect, !,
-		    set_line_start_obj(Parent),
-		    advance_phase_to(action_choice);
-		    insert(Wid, Parent, [Xpt, Ypt], New_obj));
-		make_terminator(New_obj, Parent, DropNode),
-		(var(DropNode), !;
-		    do_linear(New_obj, DropNode)));
-	click_on(ActPt, Parent, CD)).
+	save_params(Trans, Depth, Parent),
+	snap_to_grid(ActPt, [Xpt, Ypt]),
+	set_start_coords(Xpt, Ypt),
+	set_current_coords(Xpt, Ypt),
+	Wid shows_model Top,
+	contains(Top, Parent, Ladder),
+	check_drawing_at_depth(Wid, Ladder, New_obj, Depth),
+	(New_obj is_class_of_sort box, !,
+	    (New_obj is_class_of_sort rounded_rect, !,
+		set_line_start_obj(Parent),
+		advance_phase_to(action_choice);
+	    insert(Wid, Parent, [Xpt, Ypt], New_obj));
+	make_terminator(New_obj, Parent, DropNode),
+	    (var(DropNode), !;
+		do_linear(New_obj, DropNode))).
 
 click_in(Wid, _,_,_, Parent, CD) :-
-	/* get_mode(select), !,
-	    set_start_coords(Xpt, Ypt),
-	    save_params(Trans, Depth, Parent),
-	    finish_old_edit(none),
-	    give_focus('{}');   */
-	get_translation(Old_trans),
+	/* Drag a selected submodel by a point in its background */
+	get_mode(select),
+	get_highlit_obj(0, Parent),
+	\+ Wid shows_model Parent, /* no drag submodel in own window */
+	CD = 0, !, /* no drag if ctrl down */
 	get_original_click(Orig_X, Orig_Y),
-	translate([Orig_X, Orig_Y], Old_trans, ActOrig),
+	get_translation(BackTrans),
+	translate([Orig_X, Orig_Y], BackTrans, ActOrig),
 	snap_to_grid(ActOrig, [Xtr, Ytr]),
-	
-	/* Background of unselected submodel: select a region */
-	(get_mode(select),
-	    (Wid shows_model Parent; /* no drag submodel in own window */
-		CD = 1; /* no drag if ctrl down */
-		\+ get_highlit_obj(0, Parent)), !,
-	    set_start_coords(Xtr, Ytr),
-	    (CD = 0,
-		new_selection(Parent);
-	    add_incomplete([Xtr, Ytr, Xtr, Ytr]),
-		draw_rubberband(Parent, square),
-		advance_phase_to(rubberband));
-	    
-	click_on([Xtr, Ytr], Parent, CD)).
+	set_current_coords(Xtr, Ytr),
+	click_on([Xtr, Ytr], Parent, CD).
 
+click_in(_Wid, ActOrig, Trans, Depth, Parent, CD) :-
+	/* Background of unselected submodel, or ctrl down: select a region */
+	get_mode(select),
+	save_params(Trans, Depth, Parent),
+	snap_to_grid(ActOrig, [Xtr, Ytr]),
+	set_start_coords(Xtr, Ytr),
+	(CD = 0,
+	    new_selection(Parent);
+	 add_incomplete([Xtr, Ytr, Xtr, Ytr]),
+	    draw_rubberband(square),
+	    advance_phase_to(rubberband)).
+	    
 new_selection(Parent) :-
 	contains(Top, Parent),
 	is_toplevel(Top), !,
@@ -322,6 +313,14 @@ insert(Wid, Parent, [Xpt, Ypt], New_obj) :-
 	    NewLooks = []),
 	all(event, spread_colour, [build(NewLooks), unify(yes)]).
 
+check_drawing_at_depth(Wid, Levels, New_obj, Depth) :-
+	(\+ (member(Hider, Levels),
+		get_shape(Hider, hide_contents, 1)),
+	    use_style_for(New_obj, NewStyle),
+	    draws_at(Wid, NewStyle, Depth), !;
+	    do_dialogue("Failed to add component", warning,
+			"Cowardly refusing to add a component where it will not currently be displayed!", ok, not)).
+	    
 adjust_edit_menu(Wid, Comp, Point) :-
 	retractall(menu_submodel_will_be(Wid, _,_)),
 	assert(menu_submodel_will_be(Wid, Comp, Point)).
@@ -342,7 +341,13 @@ bar_edit_menu(Wid) :-
 	(Point = [_,_], !,
 	    CanAddNode = 1;
 	 CanAddNode = 0),
-	set_selection_abilities(Comp),    
+	use_pref_dir(Dir),
+	append_atoms(Dir, '/clipboard.pl', CopyFile),
+	(output:my_file_exists(CopyFile), !,
+	    Pastable = 1;
+	Pastable = 0),
+	(Wid shows_model Comp, !; %in window bg so they should already be right
+	    set_selection_abilities(Comp)),
 	Wid shows_model Model,
 	(member(Header/LinkType, ['Flow'/flow, 'Influence'/influence,
 				  '{Role arrow}'/relation /*, 'Squirt'/squirt */]),
@@ -351,6 +356,7 @@ bar_edit_menu(Wid) :-
 	    update_ability(Model, none, 'edit.add', Header, Allow),
 	    fail;
 	update_ability(Model, none, edit, '{Create new}', CanCreate),
+	update_ability(Comp, none, edit, 'Paste', Pastable),
 	(find_type(Point, cloud), !,
 	    CanAddComp = 1;
 	CanAddComp = CanAddNode),
@@ -413,13 +419,13 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 		        fail;
 		    highlight(Root, 2));
 		highlight(Moving_obj, 2)) */ ;
-	    (tk_get_pref(quickDrag, 0), !;
-		retractall(ghostly_move(_,_)),
-		assert(ghostly_move(Xpt, Ypt))),
+	(tk_get_pref(quickDrag, 0), !;
+	    retractall(ghostly_move(_,_)),
+	    assert(ghostly_move(Xpt, Ypt))),
 	    advance_phase_to(moving)).
 
 click_on([Xpt, Ypt], Moving_obj, _CD) :-
-	find_type(Moving_obj, TargetSort),
+	find_type(Moving_obj,TargetSort),
 	get_mode(ghost),
 	\+ is_ghost(Moving_obj),
 	TargetSort is_class_of_sort can_be_ghost,
@@ -587,9 +593,9 @@ change_name(RenamedNode, Name) :-
 	    update_captions(OtherGhost),
 	    presence_affects(OtherGhost, Reference),
 	    implicit_function(Reference, DownFunc),
-	    setof(InputSpec, P1^P2^P3^P4^P5^P6^
+	    setof(InputSpec, P0^P1^P2^P3^P4^P5^P6^
 		  (InputSpec = input_link(id(OtherGhost,P1,P2), P3,P4,P5,P6),
-		      summarize_links(DownFunc, InputSpec)),
+		      m_update:get_all_links(DownFunc, P0, InputSpec)),
 		   InputSpecs),
 	    get_av_pair(OtherGhost, 2, role, Roles),
 	    get_av_pair(DownFunc, 0, value, Eqn),
@@ -622,12 +628,22 @@ swap_def_params([Roles, NewRoles], OldParam, NewParam, 0) :-
 
 :- dynamic(doing_double_at/2).
 
-doubleclick(Wid, Parent, Xpt, Ypt) :-
+doubleclick(Xpt, Ypt) :-
 	retract(doing_double_at(Xpt,Ypt)), !;
 	\+ get_mode(select), !;
-	menu:set_properties(Wid, Parent).
+	find_current(Wid),
+	Wid shows_model Parent,
+	doubleclick_in(Wid, Parent, [Xpt, Ypt], [0,0,1,1], 0).
 
-doubleclick_obj(_Wid, _Parent, Xpt, Ypt, Name) :-
+doubleclick_in(Wid, Parent, AbsPoint, Trans, Depth) :-
+	translate(AbsPoint, Trans, Rel_point),
+	(targets(Wid, Parent, Rel_point, Depth, Target), !,
+	    add_to_translation(Trans, Target, NewTrans),
+	    NewDepth is Depth + 1,
+	    doubleclick_in(Wid, Target, AbsPoint, NewTrans, NewDepth);
+	menu:set_properties(Wid, Parent)).
+
+doubleclick_obj(Xpt, Ypt, Name) :-
 	retractall(doing_double_at(_,_)),
 	assert(doing_double_at(Xpt, Ypt)),
 	doubleclick_on(Name).
@@ -638,27 +654,18 @@ doubleclick_on(Edit_thing) :-
 	find_current(Wid),
 	(Edit_type = submodel, !,
 	    finish_old_edit(none), /* because leaving the window */
-	    all(event, get_display_depth,
-		[unify(Wid),
-		 build([ghost_link, influence, variable, flow, compartment, 
-			submodel, caption, text, sections]), build(Depths)]),
-	    (Edit_thing is_instance_of ShowThing, !,
-		TopNode = ShowThing,
-		state:set_initial_box_sizes(ShowThing),
-		% stopgap: they should be set when loading or declaring --
-		% fix this when saving customization with Prolog decls
-		IsTop = 1;
+	all(event, get_display_depth,
+	    [unify(Wid),
+	    build([ghost_link, influence, variable, flow, compartment, 
+		   submodel, caption, text, sections]), build(Depths)]),
 	    contains(TopNode, Edit_thing),
-		is_toplevel(TopNode),
-		ShowThing = Edit_thing,
-		IsTop = 0),
-	    (menu:raise_window_on(ShowThing), !;
-	    new_window_for(ShowThing, TopNode, NewWin, Depths, IsTop),
+	    is_toplevel(TopNode),
+	    new_window_for(Edit_thing, TopNode, NewWin, Depths, 0),
 	    all(state, set_display_depth,
 		[unify(NewWin),
 		build([ghost_link, influence, variable, flow, compartment,
 		       submodel, caption, text, sections]), build(Depths)]),
-	    redraw_window(NewWin));
+	    redraw_window(NewWin);
 	(Edit_type = relation, Attrs = [exclusive, can_lookup];
 	    Edit_type = influence, Attrs = [use_sofar]), !,
 	    find_name_host(Edit_thing, ControlThing),
@@ -684,25 +691,21 @@ doubleclick_on(Edit_thing) :-
 		finish_move(Parent, 1));
 	    OKd == 0);
 	Edit_type is_class_of_sort has_function, !,
-	    edit_equation(Wid, Edit_thing)).
-
-edit_equation(Wid, Edit_thing) :-
-	with_eqn_to_edit(Edit_thing, NotionalThing),
-	find_node_with_data(NotionalThing, Base, Control_thing),
-	is_parameter(Control_thing, WasP),
-	(get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
-	do_equation_dialog(Wid, Edit_thing, Base),
-	/* above fails if cancelled; if dialogue OK, then object is
-	complete. check here that the dims have changed */
-	find_node_with_data(NotionalThing, Base, NewControlThing),
-	(is_parameter(NewControlThing, WasP), !;
-	    redisplay_border(Edit_thing)),
-	(get_av_pair(NewControlThing, 0, units, OldUnits), !,
-	    NewDims = no;
-	  NewDims = yes),
-	spread_colour(Base, NewDims),
-	find_all_comps(Parent, Base),
-	update_runnable(Parent).
+	    find_node_with_data(Edit_thing, Base, Control_thing),
+	    is_parameter(Control_thing, WasP),
+	    (get_av_pair(Control_thing, 0, units, OldUnits), !; OldUnits = no),
+	    do_equation_dialog(Wid, Control_thing),
+	    /* above fails if cancelled; if dialogue OK, then object is
+	    complete. check here that the dims have changed */
+	    find_node_with_data(Edit_thing, Base, NewControlThing),
+	    (is_parameter(NewControlThing, WasP), !;
+		redisplay_border(Edit_thing)),
+	    (get_av_pair(NewControlThing, 0, units, OldUnits), !,
+		NewDims = no;
+	    NewDims = yes),
+	    spread_colour(Base, NewDims),
+	    find_all_comps(Parent, Base),
+	    update_runnable(Parent)).
 	
 get_refinement_or_0(ControlThing, Attr, OldExc) :-
 	get_av_pair(ControlThing, 2, Attr, OldExc), !;
@@ -715,8 +718,7 @@ dimensions too have changed. In any case, mark the submodel as in
 need of a rebuild as even if it doesn't change it will need to get the
 input values using the new units. */
 
-spread_dims(Tgt) :-
-	find_base(Tgt, Node),
+spread_dims(Node) :-
 	(implicit_function(Node, Obj),
 	find_all_comps(Sm, Obj),
 	add_parameter(Sm, 1, c_new, 0),
@@ -816,13 +818,13 @@ drag_obj(Xpt, Ypt, Name) :-
 The easy bit: ignore initial drags of one unit or less, and for larger ones
 register the user's choice of a drag rather than a click-start click-end. */
 
-sift_and_set(Xpt, Ypt) :-
+sift_and_set(_Xpt, _Ypt) :-
 	/* Next few lines stopped drag from starting until a certain
 	distance had been covered. Latest versions have faster graphics
-	so this should not be necessary...much...*/
-
-	get_original_click(OrigX, OrigY),
-	abs(Xpt-OrigX) + abs(Ypt-OrigY) > 2,
+	so this should not be necessary...much...but with v5 they are MUCH
+	faster, and showed up problems with this */
+%	get_original_click(OrigX, OrigY),
+%	abs(Xpt-OrigX) + abs(Ypt-OrigY) > 2,
 	(get_phase(action_choice), !,
 	    advance_phase_to(dragging);
 	true).
@@ -835,13 +837,31 @@ be consulted if in multi-object mode. */
 drag(Xpt, Ypt) :-
 	sift_and_set(Xpt, Ypt),
 	find_current(Wid),
-	remove_old_incomplete,
-	remove_old_rubberband,
-	update_context(Wid, [Xpt, Ypt], RelPt, Parent, Comp),
+	(multi_object_mode,
+	    remove_old_incomplete,
+	    remove_old_rubberband,
+	    get_component_from_gui(Wid, Xpt, Ypt, Comp), !,
+		(multi_level_mode, !,
+			find_relevant_windows(Comp, Wid, New_depth, BorderTrans),
+			(find_type(Comp, submodel), !,
+				add_to_translation(BorderTrans, Comp, Trans),
+				New_parent = Comp;
+			find_all_comps(New_parent, Comp),
+				Trans = BorderTrans),
+			save_params(Trans, New_depth, New_parent);
+		get_current_node(Parent),
+			find_all_comps(Parent, Comp),
+			get_translation(Trans)),
+		translate([Xpt, Ypt], Trans, RelPt);
+	/* do not delete a submodel by unclicking inside it 
+	get_mode(delete), !,
+	    remove_highlights,
+	    fail; */
+	update_context(Wid, [Xpt, Ypt], RelPt, Comp)),
 	(get_phase(moving_text), !,
 	    RelPt = [NewXpt, NewYpt];
 	snap_to_grid(RelPt, [NewXpt, NewYpt])),
-	drag_to(Parent, NewXpt, NewYpt, Comp).
+	drag_to(NewXpt, NewYpt, Comp).
 
 /* This is a hideously complex procedure for working out what component I have
 effectively dragged to. The indentation should get a level deeper after an
@@ -855,65 +875,62 @@ than one component boundary at once (this always happened but is more common now
 drag can be signalled by click-to-start, click-to-finish) and (2) It's no longer
 much more complicated than the rest of the code. */
 
-update_context(Wid, Pt, NewPair, Parent, Comp) :-
+update_context(Wid, Pair, NewPair, Comp) :-
 	get_translation(Trans),
-	get_current_depth(Depth),
 	get_current_node(Parent),
-	(multi_level_mode, !,
-	    (get_component_from_gui(Wid, Pt, Comp), !,
-		(Comp = tab(Host, _,_,_), !; Host=Comp),
-		find_all_comps(NewCurrent, Host),
-		(NewCurrent = Parent, !,
-		    NewPair = Pt;
-		contains(Parent, NewCurrent, [NewCurrent | Levels]),
-/* TODO: change arg order in a_t_t so this recursion works,
-and add bit for exits */
-		all(image, =, [build(Levels),
-			       add_to_translation(NewTrans, Trans)]),
-		length(Levels, Entries),
-		NewDepth is Depth+Entries,
-		translate(Pt, NewTrans, NewPair),
-		save_params(NewTrans, NewDepth, NewCurrent));
-	    Comp = none,
-		check_crossings(Wid, Parent, Depth, Trans, Pt, NewPair));
-	 (get_moving_obj(Comp), !; Comp = none),
-	    NewPair = Pt).
+	(multi_object_mode, !,
+		check_exits(Wid, Parent, Trans, Pair, InterParent, InterTrans),
+		check_entries(InterParent, InterTrans, Pair, NewPair, Comp);
+	/* Not multi-object mode -- just use previous object if there is one */
+	(get_moving_obj(Comp), !; Comp = none),
+		translate(Pair, Trans, NewPair)).
 
-check_crossings(Wid, Parent, Depth, Trans, Pair, NewPair) :-
+check_exits(Wid, Parent, Trans, Pair, InterParent, InterTrans) :-
 	translate(Pair, Trans, [RelXpt, RelYpt]),
 	get_shape(Parent, internal_extent, [L, T, R, B]),
 	((RelXpt < L; RelXpt > R; RelYpt < T; RelYpt > B), !,
 	/* Dragged outside previous parent... */
-	    \+ Wid shows_model Parent,
-	    subtract_from_translation(Trans, Parent, Prev_trans),
-	    find_all_comps(Grandma, Parent),
-	    NewDepth is Depth - 1,
-	    check_crossings(Wid, Grandma, NewDepth, Prev_trans, Pair, NewPair);
-	 check_entries(Parent, Depth, Trans, Pair, NewPair)).
+		multi_level_mode, 
+		\+ Wid shows_model Parent,
+		/* Multilevel enavles and component does not fill window, 
+		so can leave it, otherwise fail */ 
+			subtract_from_translation(Trans, Parent, Prev_trans),
+			find_all_comps(Grandma, Parent),
+			check_exits(Wid, Grandma, Prev_trans, Pair, 
+					InterParent, InterTrans);
+	InterParent = Parent,
+		InterTrans = Trans).
 
 /* Look for what we are pointing at within the current model. This version ignores
 active display depths so allows pointing to invisible details. */
 
-check_entries(InterParent, Depth, Trans, Pair, NewPair) :-
+check_entries(InterParent, Trans, Pair, NewPair, Comp) :-
 	translate(Pair, Trans, InterPair),
 	(targets(_, InterParent, InterPair, 0, New_obj), !,
-	    add_to_translation(Trans, New_obj, DeepTrans),
-	    NewDepth is Depth + 1,
-	    check_entries(New_obj, NewDepth, DeepTrans, Pair, NewPair);
+		(multi_level_mode,
+		find_type(New_obj,  submodel), !,
+			add_to_translation(Trans, New_obj, DeepTrans),
+			check_entries(New_obj, DeepTrans, Pair, NewPair, Comp);
+		/* else select this component */
+			save_params(Trans, 0, New_obj),
+			NewPair = InterPair,
+			Comp = New_obj);
 	/* in previous component but targets nothing */
-	save_params(Trans, Depth, InterParent),
-	    NewPair = InterPair).
+		save_params(Trans, 0, InterParent),
+		NewPair = InterPair,
+		Comp = InterParent).
+
 
 :- dynamic(moved_something/0).
 :- dynamic(instant_link/1).
-
-:- dynamic(ghostly_move/2).
 
 move_something :-
 	moved_something, !;
 	assert(moved_something).
 
-drag_to(Parent, Xpt, Ypt, _Comp) :-
+:- dynamic(ghostly_move/2).
+
+drag_to(Xpt, Ypt, _Comp) :-
 	get_mode(select),
 	\+ instant_link(_),
 	get_phase(rubberband),
@@ -921,9 +938,9 @@ drag_to(Parent, Xpt, Ypt, _Comp) :-
 	clear_incomplete,
 	add_incomplete([OldX, OldY, Xpt, Ypt]),
 	remove_old_rubberband,
-	draw_rubberband(Parent, square).
+	draw_rubberband(square).
 
-drag_to(Parent, Xpt, Ypt, Comp) :-
+drag_to(Xpt, Ypt, Comp) :-
 	doing_add(Ltype),
 	get_phase(dragging),
 	(Ltype is_class_of_sort line,
@@ -933,9 +950,9 @@ drag_to(Parent, Xpt, Ypt, Comp) :-
 	    clear_incomplete,
 	    add_incomplete([OldX, OldY, Xpt, Ypt]),
 	    remove_old_rubberband,
-	    draw_rubberband(Parent, round)).
+	    draw_rubberband(round)).
 
-drag_to(Parent, Xpt, Ypt, Moving_obj) :-
+drag_to(Xpt, Ypt, Moving_obj) :-
 	get_mode(select), /* was move */
 	get_start_coords(OldX, OldY),
 	Xoffset is Xpt - OldX,
@@ -952,6 +969,7 @@ drag_to(Parent, Xpt, Ypt, Moving_obj) :-
 		     move_text(Moving_obj, [Xoffset, Yoffset]);
 		 get_highlit_obj(0, Moving_obj),
 		     \+ Moving_obj is_of_sort line,
+		     find_all_comps(Parent, Moving_obj),
 		     get_shape(Parent, internal_extent, ParentShape),
 		     setof(Mover, moves_with_seln(Parent, Mover), Movers),
 		     (ghostly_move(_,_), !;
@@ -995,7 +1013,7 @@ drag_to(Parent, Xpt, Ypt, Moving_obj) :-
 	move_something,
 	set_start_coords(Xpt, Ypt).
 
-drag_to(Parent, Xpt, Ypt, Moving_obj) :-
+drag_to(Xpt, Ypt, Moving_obj) :-
 	get_mode(select), /* was move */
 	get_phase(Phase),
 	(Phase = moving_start, Inner_move = start,
@@ -1006,6 +1024,7 @@ drag_to(Parent, Xpt, Ypt, Moving_obj) :-
 		local_ends(Moving_obj, _, Box))),
 	find_type(Box, EType),
 	/* find drag point in parent model */
+	find_all_comps(Parent, Moving_obj),
 
 	(Parent = Box, !,
 	    get_shape(Parent, internal_extent, ParentBox),
@@ -1043,15 +1062,15 @@ drag_to(Parent, Xpt, Ypt, Moving_obj) :-
 	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)),
 	move_something.
 
-drag_to(Parent, Xpt, Ypt, Target) :-
+drag_to(Xpt, Ypt, Target) :-
 	get_phase(dragging),
 	get_mode(ghost),
 	clear_incomplete,
+	find_type(Target, Type),
 	(get_highlit_obj(2, OldTarget),
 	    normalize(OldTarget),
 	    fail;
-	 Target = none, !;
-	 find_type(Target, Type),
+	 Type = submodel, !;
 	    ghost_type(Start, Type, _),
 	    \+ Target = Start,
 	    \+ find_ghosts(Target, _),
@@ -1063,7 +1082,7 @@ drag_to(Parent, Xpt, Ypt, Target) :-
 	B is Ypt+Boff,
 	add_incomplete([L,T,R,B]),
 	remove_old_rubberband,
-	draw_rubberband(Parent, round).
+	draw_rubberband(round).
 
 reposition(Mover, [XOff, YOff]) :-
 	adjust_posn(Mover, [-XOff, -YOff, 1,1]),
@@ -1098,9 +1117,6 @@ adjust_display_area(Wid, Visible) :-
 
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	find_all_comps(Box, Obj),
-	((\+ find_type(Obj, submodel); Obj is_instance_of _),
-	    Trans = none;
-	add_to_translation([0,0,1,1], Obj, Trans)),
 	find_all_links(Obj, Link, Where),
 	\+ (Side = c, moves_with_seln(Box, Link)),
 	/* do not tweak if part of move */
@@ -1111,16 +1127,16 @@ tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	    (member(Side, [nw, n, ne]),  NewY is Ypt + YOff*(B-Ypt)/(B-T);
 		member(Side, [sw, s, se]), NewY is Ypt + YOff*(Ypt-T)/(B-T);
 		member(Side, [w, e]), NewY = Ypt),
-	    (\+ Trans = none,
-		has_outer_equiv(Inner, Obj, Link),
+	    add_to_translation([0,0,1,1], Obj, Trans),
+	    (has_outer_equiv(Inner, Obj, Link),
 		select(Where, [start, finish], [Other]),
 		translate([NewX, NewY], Trans, Peri),
 		tweak_endpoint(Inner, Other, Peri);
-	    tweak_endpoint(Link, Where, [NewX, NewY]));
+	    \+ has_outer_equiv(Inner, Obj, Link));
 	Side = c,
 	    NewX is Xpt + XOff,
-	    NewY is Ypt + YOff,
-	    tweak_endpoint(Link, Where, [NewX, NewY])),
+	    NewY is Ypt + YOff),
+	tweak_endpoint(Link, Where, [NewX, NewY]),
 	fail; true.
 
 /* find_space handles pairs of values indicating ranges. The
@@ -1148,9 +1164,10 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 	get_shape(Moving_obj, course, [Finish | Rest]),
 	append(Middle, [Start], Rest),
 	local_ends(Moving_obj, Source, Dest),
-	member([End, Way, Comp], [[start, out, Dest], [finish, in, Source]]),
+	member([End, Way, Comp],
+	       [[start, out, Dest], [finish, in, Source]]),
 	(Type is_class_of_sort has_bowtie,
-	    route_part_link(Type, Way, [Comp], NewPt, FwRoute), 
+	    route_part_link(Type, Way, [Comp], NewPt, FwRoute),
 	    reverse(FwRoute, Route),
 /*		(End = start,
 			shape_route(Type, NewPt, Finish, Route);
@@ -1167,6 +1184,7 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 		fail;
 	    true);
 	Type is_class_of_sort curved,
+            \+ (doomed(Comp), Comp is_of_sort has_bowtie),
 	    NewMiddle = [[NewMX,NewMY]],
 	    (End = start,
 		append([NewFinish | NewMiddle], [NewPt], Route),
@@ -1193,6 +1211,7 @@ the internal sections follow them too...
 	true),
 */
 	reroute_display(Moving_obj),
+% We have to m_l_f a bowtie cos it might change orientation.
 	make_links_follow(Moving_obj).
 
 scale_difference([X1, Y1], [X2, Y2], Sc, [X, Y]) :-
@@ -1203,6 +1222,12 @@ tweak_middle([[X1, Y1]], [Xt, Yt], [[X2, Y2]]) :-
 	X2 is X1+Xt,
 	Y2 is Y1+Yt.
 
+/* multi_object_mode: system is in a state in which dragging from one object to
+another makes sense (one day this but not the next might be true) */
+
+multi_object_mode :-
+	multi_level_mode.
+	
 /* multi_level_mode: system is in a state in which dragging in and out of
 components makes sense */
 
@@ -1273,26 +1298,21 @@ recursive_highlight(Target, Way, Where) :-
 	    bring_dependents_into_line([Start, Finish], Where),
 	    Also = Target),
 	find_all_links(Also, Linked),
-	    \+ (\+ Also is_instance_of _,
-		   has_outer_equiv(_, Also, Linked)),
+	    \+ has_outer_equiv(_, Also, Linked),
 	    recursive_highlight(Linked, Way, Where).
 
 adjust_link_backwards(Target, Way, Also, Where) :-
-	\+ (m_class:Target is_connector from Inst to _,
-	       Inst is_instance_of _),
-	m_class:follows(Prev, Target),
+	m_class:Target follows Prev,
 	(Way = off,
 	    change_delete_status(Prev, off, Where);
 	 Way = on,
-	    \+ (m_class:follows(Prev, Other),
+	    \+ (m_class:Other follows Prev,
 		   at_def_con(Other, Where)),
 	    change_delete_status(Prev, on, Where)),
 	 (Also = Prev; adjust_link_backwards(Prev, Way, Also, Where)).
 	
 adjust_link_forwards(Target, Way, Also, Where) :-
-	\+ (m_class:Target is_connector from _ to Inst,
-	       Inst is_instance_of _),
-	m_class:follows(Target, Next),
+	m_class:Next follows Target,
 	(Way = on,
 	    change_delete_status(Next, on, Where);
 	 Way = off,
@@ -1320,7 +1340,7 @@ bring_dependents_into_line(Followers, FromWhere) :-
 
 at_def_con(Tgt, FromWhere) :-
 	FromWhere = base,
-	    \+ get_highlit_obj(_, Tgt);
+	    \+ doomed(Tgt);
 	FromWhere = seln,
 	    get_highlit_obj(0, Tgt).
 
@@ -1420,31 +1440,23 @@ finishable, otherwise do as for primitive.
 Alteration to allow drags of links into space to produce new components; always
 hunt if on a submodel. Further alteration: only make this alteration for flows */
 
-sort_for_finish(Hit, Ltype, Xpt, Ypt) :-
+sort_for_finish(Target, Ltype, Xpt, Ypt) :-
 	(get_highlit_obj(_, Old_target),
 		normalize(Old_target), fail; true),
-	    
+
 	get_line_start_obj(OrigStart),
-	get_current_node(Location),
-        get_nearest_equivalent_link(Ltype, OrigStart, Location, Start),
-
-	(Hit = none, !,
-	    Target = Location;
-	 Target = Hit),
-	(Hit = none, 
-	    \+ hide_innards(Location),
+        get_nearest_equivalent_link(Ltype, OrigStart, Target, Start),
+	(find_type(Target, submodel),
 	/* This requirement dropped for flows, see above */
-	    (find_all_comps(Location, Baby),
-		can_finish(Ltype, OrigStart, Baby),
-		\+ contains(Baby, Start);
-	     member(Ltype, [flow, squirt])), !,
-	    set_current_coords(Xpt, Ypt),
-	    /* for new terminator if dropped here */
-	    extend_line_to(Start, Ltype, Location, [Xpt, Ypt]);
-	state:retractall(current_coords_are(_,_)),
-	    Drawn = false),
+		(find_all_comps(Target, Baby),
+			can_finish(Ltype, Start, Baby),
+			\+ contains(Baby, Start), !;
+		member(Ltype, [flow, squirt])),
+		set_current_coords(Xpt, Ypt), /* for new terminator if dropped here */
+		extend_line_to(Start, Ltype, Target, [Xpt, Ypt]);
+	Drawn = false),
 
-	(can_finish(Ltype, OrigStart, Target), !,
+	(can_finish(Ltype, Start, Target), !,
 	    set_line_finish_obj(Target),
 	    highlight(OrigStart, 1),
 	    highlight(Target, 2),
@@ -1477,9 +1489,8 @@ get_nearest_equivalent_link(Ltype, OrigStart, Target, Start) :-
 		    m_class:Start is_connector from StartPoint to _),
 		get_possible_start(OrigStart, Start),
 % following lines stop influences and ghost links sharing sections
-		(ghost_link(Start, _,_) -> Ltype = ghost_link;
-		    true),
-%		    Ltype = influence),
+		draw_style_for(Start, Btype),
+		Btype = Ltype, % d_s_f can agree wrongly to ground type
 		appears(Start),
 		can_start(influence, Start),
 		can_finish(influence, Start, Target), !;
@@ -1503,16 +1514,14 @@ at which they enter or leave the components at the end of the
 chain. */
 
 make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
-	(Start = tab(Start_box, _, XS, YS);
-	find_type(Start, Type),
+	(find_type(Start, Type),
 	    (continues_in(Start, Start_box);
 	    find_all_comps(StartPoint, Start),
 		(contains(StartPoint, Target, Dests),
 		    suffix([Start_box], Dests);
 		Start_box = StartPoint)), !;
 	Start_box = Start),
-	(Target = tab(Finish_box, _, XF, YF);
-	find_type(Target, Type),
+	(find_type(Target, Type),
 	    (continues_from(Target, Finish_box);
 	    find_all_comps(FinishPoint, Target),
 		(contains(FinishPoint, Start, Srcs),
@@ -1532,12 +1541,6 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 			Rest = []),
 		translate(End, Trans, Rel_end),
 		Up_list = [Rel_end | Rest];
-	Start = tab(Start_box, _, XS, YS),
-	    get_shape(Start_box, bounding_box, [LS, TS, _,_]),
-	    XE is LS + XS,
-	    YE is TS + YS,
-	    Full_ups = [Start_box | Rest],
-	    Up_list = [[XE, YE] | Rest];
 	Up_list = Full_ups),
 
 	(find_type(Target, Type), !,
@@ -1551,12 +1554,6 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 			Rest2 = []),
 		translate(End2, Trans2, Rel_end2),
 		Down_list = [Rel_end2 | Rest2];
-	Target = tab(Finish_box, _, XF, YF),
-	    get_shape(Finish_box, bounding_box, [LF, TF, _,_]),
-	    XG is LF + XF,
-	    YG is TF + YF,
-	    Full_downs = [Finish_box | Rest2],
-	    Down_list = [[XG, YG] | Rest2];
 	Down_list = Full_downs).
 
 update_object_boundary(Submodel, Edge, XOff, YOff) :-
@@ -1584,11 +1581,10 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	fits_inside(NewBox, ParentShape),
 	\+ (get_overlaps(Parent, [NewBox], Obstacle), \+ Obstacle = Submodel),
 	
-	(Submodel is_instance_of _, !;
 	/* Check that everything that was in the model is still in it */
 	\+ (find_all_comps(Submodel, Inside),
 	       get_shape(Inside, bounding_box, InBox),
-	       \+ fits_inside(InBox, NewExtent)))),
+	       \+ fits_inside(InBox, NewExtent))),
 	map([OldL, OldT, OldR, OldB], CapEdge, _,_, OBX, OBY),
 	map(NewBox, CapEdge, _,_, NBX, NBY),
 	NXT is OldCapX+NBX-OBX-NewL,
@@ -1635,17 +1631,20 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 unclick :-
 	retractall(clicked_obj_is(_Obj)),
 	retractall(menu_submodel_will_be(_,_,_)),
-	get_mode(select),
-	    find_current(Wid),
+	find_current(Wid),
+	Wid shows_model Model,
+	(get_mode(select),
 	    get_phase(rubberband), !, /* used to call proc below */
-	    get_incomplete([OldX, OldY, NewX, NewY]),
+	    get_incomplete(Box),
+%	    get_translation(Trans),
+%	    untranslate(Box, Trans, [OldX, OldY, NewX, NewY]),
+	    Box = [OldX, OldY, NewX, NewY],
 	    clear_incomplete,
 	    L is min(OldX, NewX),
 	    T is min(OldY, NewY),
 	    R is max(OldX, NewX),
 	    B is max(OldY, NewY),
 	    ((R-L)+(B-T)>2, % less than this is a wobbly click not a drag
-		Wid shows_model Model,
 		get_current_node(Parent),
 		select_bagged([L, T, R, B], Parent, none);
 	    set_selection_abilities(Model),
@@ -1656,7 +1655,7 @@ unclick :-
 	    update_ability(Model, save, file, 'Save', 0), % no save halfway
 	    update_ability(Model, undo, edit, 'Undo', 1),
 	    update_ability(Model, redo, edit, 'Redo', 0),
-	    advance_phase_to(targetting);
+	    advance_phase_to(targetting));
 	unclick_obj.
 
 select_bagged(Rect, Model, Last) :-
@@ -1710,7 +1709,7 @@ unclick_obj :-
 			    draw_line_to(Start_thing, New_obj, Terminator)),
 			    tie_ends(New_obj, Start_thing, Terminator),
 			    (TType is_class_of_sort box, !;
-				m_class:follows(Replacer, Terminator),
+				m_class:Terminator follows Replacer,
 				menu:reroute_sections([Replacer,
 						       Terminator])))),
 		    clear_incomplete,
@@ -1740,16 +1739,15 @@ unclick_obj :-
 	get_mode(select), /* was move */
 	get_moving_obj(Submodel),
 	(ghostly_move(OldX, OldY),
-	    get_current_node(Parent),
 	    get_start_coords(Xpt, Ypt), % last drag finished here
-	    drag_to(Parent, OldX, OldY, Submodel), % put graphics back to start
+	    drag_to(OldX, OldY, Submodel), % put graphics back to start
 	    retract(ghostly_move(_,_)),
-	    (drag_to(Parent, Xpt, Ypt, Submodel); % do it for real
+	    ([Xpt, Ypt]=[OldX, OldY];
+	      drag_to(Xpt, Ypt, Submodel); % do it for real
 		do_dialogue("Failed to drag selection", warning,
 		    "Cannot drag selection here due to overlaps", ok, _)), !;
 	true),
-	(get_phase(moving_border(_)),
-	    \+ Submodel is_instance_of _, !,
+	(get_phase(moving_border(_)), !,
 	    get_shape(Submodel, internal_extent, NewSize),
 	    adjust_toplevel_windows(Submodel, NewSize);
 	true),
@@ -1797,7 +1795,7 @@ unclick_obj :-
 */
 unclick_obj :-
 	(get_phase(barge); get_phase(moving); get_phase(moving_text);
-	    get_phase(moving_start); get_phase(moving_finish)),
+			get_phase(moving_start); get_phase(moving_finish)),
 	initialize_phase.
 
 doing_add(Comp) :-
@@ -1805,34 +1803,9 @@ doing_add(Comp) :-
 	get_mode(add),
 	get_adding_object(Comp).
 
-tie_ends(New_obj, StartSpec, EndSpec) :-
-	(StartSpec = tab(Start_thing, DefStart, _,_), !;
-	    Start_thing = StartSpec),
-	(EndSpec = tab(Terminator, DefEnd, _,_), !;
-	    Terminator = EndSpec),
+tie_ends(New_obj, Start_thing, Terminator) :-
 	link_ends(New_obj, Start_thing, Terminator, LastArc),
-	reuse_route(New_obj, LastArc),    
-	((Terminator is_instance_of EndModule, !;
-	  hide_innards(Terminator),
-	  EndModule = Terminator),
-	    (nonvar(DefEnd);
-	    member(New_obj-EndMark, [flow-flow_in, influence-inf_in]),
-	    find_all_comps(EndModule, DefEnd),
-	    get_av_pair(DefEnd, 2, autoconnect, EndMark)), !,
-	    add_equivalence(Terminator, LastArc, DefEnd);
-	 true),
-	((Start_thing is_instance_of StartModule, !;
-	  hide_innards(Start_thing),
-	  StartModule = Start_thing),
-	    /* contents hidden -- look for default output info */
-	    (nonvar(DefStart);
-	    member(New_obj-DefMark, [flow-flow_out, influence-inf_out]),
-	    find_all_comps(StartModule, DefStart),
-	    get_av_pair(DefStart, 2, autoconnect, DefMark)),
-	    (LastArc = FirstArc; m_class:sequence(FirstArc, LastArc)),
-	    m_class:FirstArc is_connector from Start_thing to _, !,
-	    add_equivalence(Start_thing, DefStart, FirstArc);
-	 true).
+	reuse_route(New_obj, LastArc).
 
 	/* 
 	(find_all_comps(TopBox, Top_arc),
@@ -1844,6 +1817,7 @@ Clever bit: reuse the route of the rubberband link for the newly added one */
 reuse_route(New_obj, LastArc) :-
         find_current(Wid),
 	Wid shows_model Parent,
+	find_base(LastArc, BowtieArc),
         ((NewArc = LastArc; m_class:sequence(NewArc, LastArc)),
 	    find_all_comps(Node, NewArc),
 	    get_incomplete(Node-ScreenRoute),
@@ -1856,7 +1830,7 @@ reuse_route(New_obj, LastArc) :-
 	    (New_obj = relation,
 		get_boundary_end(NewArc, true);
 	    New_obj is_class_of_sort has_bowtie,
-		find_base(LastArc, NewArc)),
+		NewArc = BowtieArc),
 	    give_focus(NewArc),
 	    do_colours(NewArc, on),
 	    select_text(Wid, NewArc),
@@ -1874,16 +1848,13 @@ node's current ghost state, if it is a ghost it unghosts it,
 undrawing any ghost links that were there, then ghosts it to the new base if there is one, displaying the links. */
 
 reghost(Ghost, Base) :-
-	ghost_link(Link, _, Ghost),
-		off(Link),
-		fail;
 	make_ghost(Ghost, Base, TopLink),
-		thread_link(TopLink),
-		change_ghosthood(Ghost).
+	thread_link(TopLink),
+	change_ghosthood(Ghost).
 
 change_ghosthood(Node) :-
 /*	make_links_follow(Node), */
-	spread_colour(Node, yes).
+	spread_colour(Node, yes).	    
 
 delete_by_dlg(Target) :-
 	remove_highlights,
@@ -1909,7 +1880,7 @@ the middle of nowhere; only clouds on flows for now.
 It also directs a connection to a node's 'implicit function', creating this if the node previously had none. */
 
 make_terminator(LineType, FinishZone, Terminator) :-
-	FinishZone is_of_sort contains_parts,
+	find_type(FinishZone, submodel),
 	    member(LineType, [flow, squirt]), TermType = cloud,
 	    /* set influence/variable as alternative if required */
 	    get_current_coords(FinalX, FinalY), !,
@@ -1931,7 +1902,11 @@ delete_net(Top) :-
 	setof(Tgt, (doomed(Tgt),
 		       \+ Tgt = Top,
 		       deletable(Top, FollowArcs, Tgt)), Range),
-	(member(Target, Range),
+	(setof(NewLook, Tgt2^(member(Tgt2, Range),
+			      presence_affects(Tgt2, NewLook),
+			    \+ member(NewLook, Range)), ChangedLooks), !;
+	    ChangedLooks = []),
+	((member(Target, Range),
 	    find_type(Target, influence),
 	    (\+ is_top_arc(Target);
 	    is_top_arc(Target),
@@ -1953,14 +1928,20 @@ delete_net(Top) :-
 	    dissolve_component(Target)),
 	    
 	kill_primitive(Target); 
-	/* now un-highlight and redisplay the ghosts of the dead node
-	*/
+	/* now un-highlight and redisplay the ghosts of the dead node; they may
+	be outside the submodel, and there may be other highlit ghosts. This is
+	now done by colour spreading
 	get_highlit_obj(2, ExGhost),
-	    contains(Top, ExGhost),
+	    \+ is_ghost(ExGhost),
 	    normalize(ExGhost),
 	    change_ghosthood(ExGhost),
+	    fail; */
+	member(NewVisLook, ChangedLooks),
+	    spread_colour(NewVisLook, yes), /* Only need to update dims
+					    if arc is a relation */
+	    update_captions(NewVisLook),
 	    fail;
-	set_selection_abilities(Top).
+	set_selection_abilities(Top)).
 
 deletable(Top, FollowArcs, Tgt) :-
 	contains(Top, Tgt), !;
@@ -1971,18 +1952,19 @@ deletable(Top, FollowArcs, Tgt) :-
 
 kill_primitive(Target) :-
 	off(Target),
-	(setof(NewLook, (presence_affects(Target, NewLook),
-			    \+ doomed(NewLook)), ChangedLooks), !;
-	    ChangedLooks = []),
+% updating of survivors' appearance now done by delete_net, which calls this
+%	(setof(NewLook, (presence_affects(Target, NewLook),
+%			    \+ doomed(NewLook)), ChangedLooks), !;
+%	    ChangedLooks = []),
 	forget_highlit_obj(_, Target),
 	(tk_get_pref(deleteEndToEnd, 1), /* no messing about */
 	    fast_delete(Target);
 	tk_get_pref(deleteEndToEnd, 0),
 	    do_delete(Target)),
-	member(NewVisLook, ChangedLooks),
-	    spread_colour(NewVisLook, yes), /* Only need to update dims
-					    if arc is a relation */
-	    update_captions(NewVisLook),
+%	member(NewVisLook, ChangedLooks),
+%	    spread_colour(NewVisLook, yes), /* Only need to update dims
+%					    if arc is a relation */
+%	    update_captions(NewVisLook),
 	    fail.
 
 embrace(Wid, Obj) :-
@@ -2003,15 +1985,9 @@ set_selection_abilities(Comp) :-
 	    Dellable = 1;
 	Cuttable = 0,
 	    Dellable = 0),
-	use_pref_dir(Dir),
-	append_atoms(Dir, '/clipboard.pl', CopyFile),
-	(output:my_file_exists(CopyFile), !,
-	    Pastable = 1;
-	Pastable = 0),
 	update_ability(Comp, none, file, '{Save selection as...}', Cuttable),
 	update_ability(Comp, none, edit, 'Cut', Cuttable),
 	update_ability(Comp, none, edit, 'Copy', Cuttable),
-	update_ability(Comp, none, edit, 'Paste', Pastable),
 	update_ability(Comp, none, edit, 'Delete', Dellable),
 	update_ability(Comp, none, edit, '{Reroute links}', Dellable),
 	update_ability(Comp, none, edit, '{Align to grid}', Dellable).
@@ -2079,9 +2055,7 @@ attempt_new_component(Parent, Box) :-
 	set_shape(Node_name, internal_extent, [0,0,W,H]),
 	add_to_translation([0, 0, 1, 1], Node_name, Node_trans),
 	relate_graphics(Node_name, Node_trans),
-	/* new submodel must 'redisplay' so it gets a group item; need to
-	reparent the old innards after this if keeping them */
-	redisplay(Node_name),
+	redisplay_border(Node_name),
 	find_current(Wid),
 	give_focus(Node_name),
 	do_colours(Node_name, on),
@@ -2159,10 +2133,9 @@ adjust_posn(Thing, Trans) :-
 	fail; true.
 
 dissolve_component(Node) :-
-	Node is_instance_of _, !;
-	subtract_from_translation([0,0,1,1], Node, Node_trans),
 	find_all_comps(Parent, Node),
-	move_boxes(Node, Node_trans),
+	subtract_from_translation([0,0,1,1], Node, Node_trans),
+	(move_boxes(Node, Node_trans),
 	(setof(Part, m_class:Node has_part Part, Orphan_nodes), !;
 	    Orphan_nodes = []),
 	(setof(IntLink, 
@@ -2200,10 +2173,15 @@ dissolve_component(Node) :-
 	member(OrphanLink, OrphanLinks),
 	    redisplay(OrphanLink), /* also need to change endpoints */
 	    fail;
-	true).	
+	true)).
 
 list_captions(Parent, Used) :-
-	setof(UsedCapt, cannot_call_in(none, Parent, UsedCapt), UsedNow), !,
+	setof(UsedCaption,
+	      Part^(find_all_comps(Parent, Part),
+		    appears(Part),
+		    \+ is_ghost(Part),
+		    caption_for(Part, UsedCaption)),
+	      UsedNow), !,
 	append(UsedNow, _, Used).
 
 retitle_duplicate(Node, Used) :-

@@ -9,7 +9,7 @@ user alone until values have been entered: the sort that sit quietly
 alongside
 the rest of the program are handled through gui_input. */
 
-sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/3, 
+sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/2, 
 	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
 			  check_param_usage/5,
 	get_load_file/1, get_save_file/1,
@@ -71,15 +71,13 @@ values. */
 
 :- dynamic(table_data_is/1).
 
-do_equation_dialog(Win, Box, ClickedObj) :-
-	caption_for(Box, Caption),
-	(implicit_function(ClickedObj, Part), !; Part = ClickedObj),
+do_equation_dialog(Win, Part) :-
+	caption_for(Part, Caption),
+	get_host(Part, ClickedObj),
 	(default_units(ClickedObj, ITypeBase),
 	    (ITypeBase = 1, TypeBase = real; TypeBase = ITypeBase), !;
 	true),
-	(ClickedObj is_of_sort discrete, !,
-	    TitleForm = 'Trigger/value';
-	ClickedObj is_of_sort init_eval, !,
+	(ClickedObj is_of_sort init_eval, !,
 	    TitleForm = 'Initial value';
 	TitleForm = 'Equation'),
 	(ClickedObj is_of_sort channel, !,
@@ -112,7 +110,7 @@ BoxHeaderStr),
 		append(Bounds, [TUnits], TableTypes), 
 		all(event, insert_mem_list,
 		    [build(TableTypes), unify(Visible), build(TableTrans)]),
-		reverse_engineer(Values, TableTrans, 0, TableVals, _));
+		reverse_engineer(Values, TableTrans, 1, TableVals));
 	TableList = '', TableTrans = '', TableVals = '{}'),
 	(get_av_pair(Part, 0, description, Desc), !;
 		Desc = ''),
@@ -141,7 +139,7 @@ BoxHeaderStr),
 	retract(input_list_is(Updated_list))),
 	interact_equation(Result_list),
 	(Result_list = [], !, destroy_equation, fail; 
-	on_exception(_, update_equation(Box, Part, IndxCount, Updated_list,
+	on_exception(_, update_equation(Part, IndxCount, Updated_list,
 			TypeBase-TypeDims, Result_list), fail)),
 		/* fails if action does not complete edit */
 	!, destroy_equation.
@@ -161,7 +159,7 @@ get_default_lower_limit(_, '').
 
 get_default_upper_limit(_, '').
 
-/* update_equation/6: This makes sure that if the user has entered a
+/* update_equation/5: This makes sure that if the user has entered a
 new destination name or units for an existing variable they are added
 to the model; it also adds them to the triples and checks that the
 function makes sense. If it does not, it pops up a message in a
@@ -170,48 +168,9 @@ updates the actual values and removes the box. Cancel (signalled by
 all args being empty) escapes from here.
 
 Note that interact_equation should return strings for all these
-things.
+things. */
 
-Last arg is list returned by TclTk interaction; its length indicates
-how the dialogue was ended. New for v5: one member means it was the
-equation bar. This is mostly a subset of the full 7-member case but
-also checks if the equation was a customization of a module instance,
-rather than a primitive component's. */
-
-update_equation(Box, Function, IndxCount, InList, TypeBase-Dims, [Eqn_st]) :-
-	check_exp(Eqn_st, "Equation", Function, InList, EqnBase, EqnDims,
-		  0, IndxCount, ParamList, Result, ParseError),
-	(ParseError = [], !,
-	    purge(Eqn_st, "\\", OrigSt),
-	    sicstus_atom_chars(OldEqn, OrigSt),
-	    replace_subexps(Result, dialogue, table_ref, got(UserFnOpen, _),
-			    top_down, _,_),
-	    (var(UserFnOpen), !,
-		UserFnList = '';
-	    get_ground_part(UserFnOpen, UserFnList)),
-	    member(TypeBase, [any, a(_), int, boolean, cond_spec, real]),
-	    promote_arg(EqnBase, TypeBase, ComboUnits),
-		/* fix this if boolean to cond_spec promotion removed */
-	    (nonvar(ComboUnits); ComboUnits = TypeBase), !,
-	    build_array(ComboUnits, EqnDims, ArraySpec),
-
-	    (Box is_instance_of _Module,
-		get_host(Function, Marked),
-		(get_av_pair(Box, 0, fn_overrides, OverRides);
-		    OverRides = []),
-		(select(Marked-_-_, OverRides, Rest);
-		    Rest = OverRides), !,
-		add_parameter(Box, 0, fn_overrides,
-			      [Marked-Result-OldEqn | Rest]);
-	    add_parameter(Function, 0, value, Result),
-		add_parameter(Function, 0, units, ArraySpec),
-		add_parameter(Function, 0, uses_local_fns, UserFnList),
-		add_parameter(Function, 0, spec, OldEqn),
-		update_links_and_vars(InList));
-	 do_dialogue("Problem with equation", warning, ParseError, ok, _),
-	    !, /* green */ fail).	 
-	    
-update_equation(_, Function,_, InList,_, [Table_st, Data_st]) :-
+update_equation(Function,_, InList,_, [Table_st, Data_st]) :-
 	assert(input_list_is(InList)),
 	get_term(Table_st, TableData, _),
 	/* should be no errors as it is auto generated */
@@ -236,7 +195,7 @@ update_equation(_, Function,_, InList,_, [Table_st, Data_st]) :-
 			      units=Units, bounds=Bounds, dims=Dims])),
 	fail.
 
-update_equation(_,_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
+update_equation(_,_, Input_list, _, [Node_st, Parm_st, New_unit_st]) :-
 	(name(New_var, Node_st),
 	    append(EarlyInputs,
 		   [input_link(Link, New_var, _, Current_unit, _) | 
@@ -268,7 +227,7 @@ LateInputs],
 	    assert(input_list_is(Input_list))),
 	fail.
 
-update_equation(_, Function, IndxCount, InterInputs, TypeBase-TypeDims,
+update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 		[Eqn_st, Unit_st, Is_P_st, Desc_st, Cmt_st, Min_st, Max_st]) :-
 	name(Is_P, Is_P_st),
 	member([Is_P, ParamsAllowed, EqnNeeded],
@@ -282,8 +241,7 @@ update_equation(_, Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	(ParamsAllowed = 0, \+ InterInputs = [], !,
 	    EqnError = "You cannot have influences going to a component representing a file or input parameter.";
 	 EqnError = ParseError),
-	get_host(Function, Node),
-	(Is_P = 1, \+ Node is_of_sort discrete, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
+	(Is_P = 1, \+ member(Units, [boolean, a(_)]), \+ member(EqnBase, [boolean, a(_)]), !,
 	    MinMaxNeeded = 1;
 	MinMaxNeeded = 0),
 
@@ -385,8 +343,8 @@ update_equation(_, Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	New_inputs = InterInputs,
 	    FinalComplaint = Complaint6),
 
-	name(Desc, Desc_st),
-	name(Comment, Cmt_st),
+	sicstus_atom_chars(Desc, Desc_st),
+	sicstus_atom_chars(Comment, Cmt_st),
 	purge(Eqn_st, "\\", OrigSt),
 	sicstus_atom_chars(OldEqn, OrigSt),
 
@@ -482,7 +440,7 @@ feed_items(Fn, [IndStr, ValStr | More], Table, Units, Dims, Sizes) :-
 	append(["Table contained the index item ", IndStr,
 		", which is not a recognizable constant."], Loss),
 	    raise_exception(Loss)),
-	nth0(Posn, Table, Line),
+	nth(Posn, Table, Line),
 	get_table_part(Fn, ValStr, Line, NUnit, HiDims, HiSizes),
 	(promote_arg(NUnit, DUnit, _), !,
 	    Units = DUnit;
@@ -507,31 +465,27 @@ max_all(A, B, X) :-
 
 zero_empties(Table, Dims) :-
 	Dims = [Top | Lower], !,
-	    NCount is Top+1,
-	    length(Table, NCount),
+	    length(Table, Top),
 	    all(dialogue, zero_empties, [build(Table), unify(Lower)]);
 	ground(Table), !;
 	Table = 0.
 
 /* clever stuff in here is to undo what zero_empties did, because the zeros
-mess up translation if using enumerated types */
+mess up translation if using enumerated types. As of 4.8, arrays start at 0
+so that bit is no longer needed. */
 
-reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep, NonZ) :-
+reverse_engineer(Table, [Trans | MoreTrans], Here, TclRep) :-
 	Table = [Val | Rest], !,
-	    reverse_engineer(Val, MoreTrans, 0, TclHead, SubZ),
+	    reverse_engineer(Val, MoreTrans, 1, TclHead),
 	    There is Here+1,
-	    reverse_engineer(Rest, [Trans | MoreTrans], There, TclTail, NonZ),
+	    reverse_engineer(Rest, [Trans | MoreTrans], There, TclTail),
 	    make_e_t(Here, Trans, HereTxt),
-	    TclInner = [HereTxt, TclHead | TclTail],
-	    (Here = 0,
-		(SubZ = no,
-		    TclRep = br(TclTail);
-		TclRep = br(TclInner)), !;
-	    TclRep = TclInner);
+	    (Here = 1, !,
+		TclRep = br([HereTxt, TclHead | TclTail]);
+	    TclRep = [HereTxt, TclHead | TclTail]);
 	member(Table, [0, []]), !,
 	    TclRep = Table;
-	make_e_t(Table, Trans, TclRep),
-	     NonZ = yes.
+	make_e_t(Table, Trans, TclRep).
 
 make_e_t(Table, Trans, TclRep) :-
 	Trans = [],
@@ -606,30 +560,21 @@ process. */
 test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	 ParamList, ParseError) :-
 	reverse(IndxCount, IndxSzs),
-	append(InterInputs, [input_link(_, DimL, '/dest/', _-DLoops,_)
-			    | ExpInters], AllInputs),
+	append(InterInputs, [input_link(_, DimL, '/dest/', _-DLoops,_)],
+	       AllInputs),
 	
 	on_exception(ParseException,
 		     replace_subexps(Equation, dialogue, expand_params,
-				     dim_data(DimL, ParamList, AllInputs),
+			     dim_data(DimL, ParamList, AllInputs, ExpInters),
 				     top_down, _ParamSubs, FullExpr),
 		     decode_error(ParseException, ParseError)),
-	length(ParamList, _LenP),
-	get_ground_part(DimL, DimDG),
-	length(DimDG, LenD),
-	length(DimDV, LenD),
-	make_inds_for(DimDV, DLoops, _),
-	length(ExpInters, _), !, /* close list end */
 	(nonvar(ParseError), !;
-	 member(input_link(_, DimP, Param, _, PDims), ExpInters),
-	    (var(PDims), !,
-		decode_error(undefined_parameter(Param), ParseError);
-	    PDims = param_history(_Defn, 0), !,
-		decode_error(unused_parameter(Param), ParseError);
-	    get_ground_part(DimP, DimG),
-		build_array(1, DimG, Array),
-		check_param_brackets("explicit intermediate result",
-					 Param, Array, ParseError)), !;
+	length(ParamList, _LenP),
+	    get_ground_part(DimL, DimDG),
+	    length(DimDG, LenD),
+	    length(DimDV, LenD),
+	    make_inds_for(DimDV, DLoops, _),
+	    length(ExpInters, _), !, /* close list end */
 
 	/* hack alert: We are using the parser to get the dimensions of the
 		result. Thses should include enumerated type references,
@@ -651,57 +596,79 @@ test_eqn(Equation, Fn, IndxCount, InterInputs, Type, Dims,
 	    nth(N, PLoops, set(_, loop(Bound))),
 	    var(Bound),
 	    sicstus_format_to_chars("Dimension ~d of explicit intermediate variable ~w cannot be determined from its definition", [N, Param], ParseError);
-	get_dims_from_loops(Loops, Dims, _))).
+	    get_dims_from_loops(Loops, Dims, _))).
 	/* real_dims_only(XDims, Dims).
 	Hack alert. The term representing the dest context has indices
 	(   so index(n) will work) but no loops, so we don't need to add it
 	to the relative source contexts */
 
-expand_params(dim_data(DimL, PsUsed, AllInputs), Param, DoneExpr, Recurse) :-
+expand_params(dim_data(DimL, PsUsed, AllInputs, ExpInters),
+	      Param, DoneExpr, Recurse) :-
 	(get_solo_list_depth(Param, Depth),
 	/* when making dummy links for explicit intermediate results, check
 	the 1st field (influence id) is a free var, and if so, use the
 	4th field to hold the dims */
-	member(input_link(Link, LRefs, Param, Loops, Units), AllInputs), !,
-	    (nonvar(Link), !,
-		member(Param, PsUsed),
-		analyze_array(Units, Type, Dims),
-/*		(units:get_conversion(_, Base, Base, _), !,
-		    Type = real;
-		Type = Base), */
-		make_inds_for(Dims, PLoops, Inds);
-	    (Param = '/dest/', !,
-		    get_ground_part(LRefs, GRefs),
-		    length(GRefs, L);
-		m_update:build_array(any, Dims, Depth),
-	        make_inds_for(Dims, PLoops, Inds)),
-		    Type-PLoops = Loops,
+	    (member(input_link(Link, LRefs, Param, Loops, Units), AllInputs),!,
+	        (nonvar(Link), !,
+		    member(Param, PsUsed),
+		    analyze_array(Units, Type, Dims),
+/*		    (units:get_conversion(_, Base, Base, _), !,
+		        Type = real;
+		    Type = Base), */
+		    make_inds_for(Dims, PLoops, Inds);
+	        (Param = '/dest/', !,
+		        get_ground_part(LRefs, GRefs),
+		        length(GRefs, L);
+		    m_update:analyze_array(Depth, any, Dims),
+	                make_inds_for(Dims, PLoops, Inds)),
+	            Type-PLoops = Loops,
 	            Units = param_history(_Defn, 1)),
-	    /* pass dims up the recursion loop */
-	    length(Dims, L),
-	    list_of(x, L, DimB),
-	    append(DimB, _, DimL),
-	    DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, true);
+	        /* pass dims up the recursion loop */
+	        length(Dims, L),
+	        list_of(x, L, DimB),
+	        append(DimB, _, DimL),
+	        DoneExpr = param(arr(_, Param, Inds), Type, PLoops, _, true);
+	    raise_exception(undefined_parameter(Param)));
 	Param = (ExpInt=Defn,Use),
-	    member(input_link(_,SubL, ExpInt, OldType, PrevDims),
-		   AllInputs), !,
-             (PrevDims = param_history(Defn, _Used), !,
-		 OldType = Type-Loops;
-		 raise_exception(parameter_name_reused(ExpInt))),
-	    replace_subexps(Use, dialogue, expand_params,
-			     dim_data(DimL, PsUsed, AllInputs), top_down, _,
-			     UseExpr),
+            NewLink = input_link(_,SubL, ExpInt, OldType, PrevDims),
+	    (member(NewLink, AllInputs),
+		(PrevDims = param_history(OldDefn, Used),
+		    (var(OldDefn), !,
+			NewInputs = AllInputs;
+		     raise_exception(parameter_name_recurs(ExpInt)));
+		raise_exception(parameter_name_reused(ExpInt)));
+	    NewInputs = [NewLink | AllInputs]),
+	    OldType=Type-Loops,
+	    PrevDims = param_history(Defn, Used),
+	    member(NewLink, ExpInters),
+	    (get_ground_part(NewInputs, OldInputs), !;
+		OldInputs = NewInputs), % in case already in a defn
+            append(OldInputs, _ForwardRefs, DefnInputs),
 	    replace_subexps(Defn, dialogue, expand_params,
-			     dim_data(SubL, PsUsed, AllInputs), top_down, _,
-			     DefnExpr),
+			    dim_data(SubL, PsUsed, DefnInputs, ExpInters),
+			    top_down, _, DefnExpr),
+            length(DefnInputs, _), !,
+	    replace_subexps(Use, dialogue, expand_params,
+			    dim_data(DimL, PsUsed, DefnInputs, ExpInters),
+			    top_down, _,  UseExpr),
+	    (get_ground_part(SubL, DimG),
+		build_array(1, DimG, Array),
+		check_param_brackets("explicit intermediate result",
+				     ExpInt, Array, ParseError), !,
+		raise_exception(ready_made(spare, ParseError));
+	    member(input_link(_,_, FPar, param_history(FDef, _)), DefnInputs),
+		var(FDef), !,
+		raise_exception(undefined_parameter(FPar));
+	    var(Used), !,
+		raise_exception(unused_parameter(ExpInt));
 	    DoneExpr = (param(arr(_,ExpInt,_), Type, Loops,_,_)=DefnExpr,
-			   UseExpr);
+			   UseExpr));
 	Param =.. [Cumulative, Item],
 	    member(Cumulative, [sum, product, least, greatest,
 				any, all, count]), !,
 	    replace_subexps(Item, dialogue, expand_params,
-			     dim_data(SubL, PsUsed, AllInputs), top_down, _,
-			     DDone),
+			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
+			    top_down, _, DDone),
 	    DoneExpr =.. [Cumulative, DDone],
 	    SubL = [x | DimL];
 	(length(Param, N), 
@@ -713,16 +680,16 @@ expand_params(dim_data(DimL, PsUsed, AllInputs), Param, DoneExpr, Recurse) :-
 	    DDone = do(EltExpr, CountExpr),
 	    DoneExpr = makearray(EltExpr, CountExpr)),
 	    replace_subexps(DParam, dialogue, expand_params,
-			    dim_data(SubL, PsUsed, AllInputs), top_down, _,
-			    DDone),
+			    dim_data(SubL, PsUsed, AllInputs, ExpInters),
+			    top_down, _, DDone),
 	    DimL = [x | SubL];
 	Param = element(List, Index),
 	    replace_subexps(List, dialogue, expand_params,
-			    dim_data(ListL, PsUsed, AllInputs), top_down, _,
-			    ListExpr),
+			    dim_data(ListL, PsUsed, AllInputs, ExpInters),
+			    top_down, _, ListExpr),
 	    replace_subexps(Index, dialogue, expand_params,
-			    dim_data(IndxL, PsUsed, AllInputs), top_down, _,
-			    IndXpr),
+			    dim_data(IndxL, PsUsed, AllInputs, ExpInters),
+			    top_down, _, IndXpr),
 	    DoneExpr = element(ListExpr, IndXpr),
 	    ListL = [x | DimL],
 	    suffix(Tail, DimL),
@@ -738,7 +705,9 @@ decode_error(ParseError, TestError) :-
 	    replace_subexps(Cause, dialogue, collapse_params, _, top_down,
 			    _, SimpleError);
 	SimpleError = 'consistency check'),
-	(Type = undefined_parameter, !,
+	(Type = ready_made, !,
+	    More = [TestError];
+	Type = undefined_parameter, !,
 	    sicstus_format_to_chars("This expression contains the term ~w, which appears to be used as a parameter, but it does not appear as a parameter name.", [SimpleError], TestError);
 	Type = needs_array_or_list, !,
 	    SimpleError =.. [Functor, SoleArg],
@@ -760,12 +729,12 @@ decode_error(ParseError, TestError) :-
 	    More = [TypeNeeded, TypeGiven],
 	    sicstus_format_to_chars("The function \"~a\", when applied to the array \"~w\", needs a value of type ~w for its second argument. \"~w\" does not fit -- it has a value of type ~w, which cannot be converted to a value of the required type.",
 		[Functor, Arr, TypeNeeded, Ind, TypeGiven], TestError);
-	Type = bad_array_size, !,
-	    More = [BadSize],
-	    sicstus_format_to_chars("Your equation includes the expression \"~w\", which evaluates to an array of size ~d. Only arrays of size greater than 1 are allowed.", [SimpleError, BadSize], TestError);
 	Type = got_list_for_array, !,
 	    SimpleError =.. [Functor, Arr | _],
 	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a variable membership list.", [Functor, Arr], TestError);
+	Type = bad_array_size, !,
+	    More = [BadSize],
+	    sicstus_format_to_chars("Your equation includes the expression \"~w\", which evaluates to an array of size ~d. Only arrays of size greater than 1 are allowed.", [SimpleError, BadSize], TestError);
 	Type = got_scalar_for_array, !,
 	    SimpleError =.. [Functor, Arr | _],
 	    sicstus_format_to_chars("The function \"~a\" needs a fixed membership array (of anything) for its first argument. \"~w\" does not fit -- it represents a single value.", [Functor, Arr], TestError);
@@ -804,7 +773,9 @@ decode_error(ParseError, TestError) :-
 	Type = unused_parameter, !,
 	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w, which is not subsequently used.", [SimpleError], TestError);
 	Type = parameter_name_reused, !,
-	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w, which is also the name of an input parameter or an earlier explicit intermediate result.", [SimpleError], TestError);
+	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w, which is also the name of an input parameter.", [SimpleError], TestError);
+	Type = parameter_name_recurs, !,
+	    sicstus_format_to_chars("The equation is badly formed because it creates the explicit intermediate result ~w in the scope of an earlier explicit intermediate result with the same name.", [SimpleError], TestError);
 	Type = undecipherable_operand, !,
 	    More = [Var],
 	    find_all_comps(Sm, Var),

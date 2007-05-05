@@ -4,14 +4,17 @@
 *******************************************************************************/
 
 sicstus_module(link, [is_connector/2, is_new_connector/2,
-		      is_also_connector/2, is_no_longer_connector/1,
-		      has_type/2, has_new_type/2, no_longer_has_type/2,
-		      has_changed_type/2, has_attribute/2, has_new_attribute/2,
-		      no_longer_has_attribute/2, has_changed_attribute/2, 
-		      has_changed_termination/2, 
-		      connects/3, initiates/2, terminates/2, equivalent_arcs/2,
-		      sequence/2, follows/2, logical_follows/3,
-		      no_longer_has_connections/1] ).
+		 is_also_connector/2,
+		 is_no_longer_connector/1,
+		 has_type/2, has_new_type/2, no_longer_has_type/2,
+		 has_changed_type/2, has_attribute/2, has_new_attribute/2,
+		 no_longer_has_attribute/2, has_changed_attribute/2, 
+		 has_changed_termination/2, 
+	now_follows/2, follows/2, no_longer_follows/2,
+	has_new_link_equivalences/2, has_link_equivalences/2,
+	has_changed_link_equivalences/2, no_longer_has_link_equivalences/2,
+	connects/3, initiates/2, terminates/2, equivalent_arcs/2,
+	sequence/2, follows/2, no_longer_has_connections/1] ).
 
 sicstus_use_module( [database,utility,node,graphics,m_struct,library(lists)] ).
 
@@ -34,7 +37,7 @@ is the one we usually start with when looking for links, so putting it in the
 :- op( 450, fy, [from, to]).
 
 Arc is_connector from Node1 to Node2 :-
-	connection( Node2, Node1, Arc ).
+	query_model(connection( Node2, Node1, Arc )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % given two nodes, make an arc between them
@@ -43,8 +46,10 @@ Arc is_connector from Node1 to Node2 :-
 :- op( 500, xfy, [is_new_connector, is_also_connector]).
 
 Arc is_new_connector from Source to Dest :-
+	(nonvar(Arc);
 	unique_name( arc, Arc ),
-	\+ Arc is_connector _, !,
+	    \+ Arc is_connector _), !,
+	assert_model(is_arc(Arc)),
 	Arc is_also_connector from Source to Dest.
 
 Arc is_also_connector from Source to Dest :-
@@ -58,10 +63,10 @@ Arc is_also_connector from Source to Dest :-
 :- op( 500, xfy, [has_type,no_longer_has_type,has_new_type]).
 
 Arc has_type Type :-
-	arc_type( Arc, Type ).
+	query_model(arc_type( Arc, Type )).
 
 Arc has_new_type Type :-
-	\+ arc_type( Arc, _AnyType ),
+	\+ query_model(arc_type( Arc, _AnyType )),
 	assert_model( arc_type( Arc, Type )).
 
 Arc no_longer_has_type Type :-
@@ -73,11 +78,11 @@ Arc no_longer_has_type Type :-
 :- op( 500, xfy, [has_attribute,has_new_attribute,no_longer_has_attribute]).
 
 Arc has_attribute Attribute of Value :-
-	arc_info( Arc, Attribute, Value ).
+	query_model(arc_info( Arc, Attribute, Value )).
 
 Arc has_new_attribute Attribute of Value :-
 	Arc is_connector from _ to _,
-	\+ arc_info( Arc, Attribute, _AnyValue ),
+	\+ query_model(arc_info( Arc, Attribute, _AnyValue )),
 	assert_model( arc_info( Arc, Attribute, Value )).
 
 Arc no_longer_has_attribute Attribute of Value :-
@@ -88,23 +93,6 @@ Arc no_longer_has_attribute Attribute of Value :-
 Arc no_longer_has_attribute Attribute :-
 	atomic( Attribute ),
 	Arc no_longer_has_attribute Attribute of _AnyValue.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% delete an arc connection
-
-:- op( 450, xf, is_no_longer_connector).
-:- op( 450, xf, no_longer_has_connections).
-
-Arc is_no_longer_connector :-
-	Arc no_longer_has_connections,
-	try( Arc no_longer_has_type _Type ),
-	any_setof( Attribute-Value,
-		   Arc has_attribute Attribute of Value,
-		   Pairs ),
-	foreach( Attribute-Value, Pairs,
-		 Arc no_longer_has_attribute Attribute of Value ),
-	Arc no_longer_has_graphical_attributes,
-	retract_model( connection( _Node2, _Node1, Arc )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Experimental facility to reroute a connection without disturbing it
@@ -145,6 +133,78 @@ Arc has_changed_attribute Attribute from OldValue to NewValue :-
 
 Arc has_changed_attribute Attribute to NewValue :-
 	Arc has_changed_attribute Attribute from _AnyOldValue to NewValue.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+:- op(500, xfy, now_follows).
+:- op(500, xfy, follows).
+:- op(500, xfy, no_longer_follows).
+
+After now_follows Before :-
+	assert_model(continues(Before, After)).
+
+After follows Before :-
+	query_model(continues(Before, After)).
+
+After no_longer_follows Before :-
+	retract_model(continues(Before, After)).
+
+% following are a bit legacy
+:- op(500, xfy, has_link_equivalences).
+
+Node has_link_equivalences Links :-
+	Node has_class submodel,
+	setof(Link, has_link_equivalence(Node, Link), Links).
+
+has_link_equivalence(Node, Prev-Subs) :-
+	(Subs is_connector from Node to Far, Inner = Prev;
+	    Prev is_connector from Far to Node, Inner = Subs),
+	Subs follows Prev,
+	Inner is_connector from _Start to End,
+	% works because cross-border link never finishes on link
+	End is_part_of Node.
+
+:- op(500, xfy, no_longer_has_link_equivalences).
+
+Node no_longer_has_link_equivalences Links :-
+	Node has_link_equivalences Links,
+	all(link, remove_connection, [build(Links)]).
+
+remove_connection(Prev-Subs) :-
+	Subs no_longer_follows Prev.
+
+:- op(500, xfy, has_new_link_equivalences).
+
+_Node has_new_link_equivalences Links :-
+	all(link, add_connection, [build(Links)]).
+
+add_connection(Prev-Subs) :-
+	Subs now_follows Prev.
+
+:- op(500, xfy, has_changed_link_equivalences).
+
+Node has_changed_link_equivalences Links :-
+	Node no_longer_has_link_equivalences _OldLinks,
+	Node has_new_link_equivalences Links.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% delete an arc connection
+
+:- op( 450, xf, is_no_longer_connector).
+:- op( 450, xf, no_longer_has_connections).
+
+Arc is_no_longer_connector :-
+	Arc no_longer_has_connections,
+	try( Arc no_longer_has_type _Type ),
+	any_setof( Attribute-Value,
+		   Arc has_attribute Attribute of Value,
+		   Pairs ),
+	foreach( Attribute-Value, Pairs,
+		 Arc no_longer_has_attribute Attribute of Value ),
+	Arc no_longer_has_graphical_attributes,
+	(_ no_longer_follows Arc, fail;
+	    Arc no_longer_follows _, fail;
+	retract_model( connection( _Node2, _Node1, Arc ))),
+	retract_model(is_arc(Arc)).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % connects( Arc, Node1, Node2 ) if Arc connects Node1 and Node2, factoring out
@@ -213,42 +273,12 @@ equivalent_arcs(Arc, General_arc) :-
 
 sequence(Link2, Link1) :-
 	nonvar(Link1),
-	    follows(Link3, Link1),
+	    Link1 follows Link3,
 	    (sequence(Link2, Link3); Link3 = Link2);
 	var(Link1),
-	    follows(Link2, Link3),
+	    Link3 follows Link2,
 	    (sequence(Link3, Link1); Link3 = Link1).
 
-% Never follow across instance border
-follows(Link2, Link1) :-
-	(nonvar(Link1),
-	    Link1 is_connector from Edge to _;
-	var(Link1),
-	    Link2 is_connector from _ to Edge),
-	(\+ Edge has_model_refinement instance of _, Node = Edge;
-	    Node has_part Edge),
-	Node has_model_refinement link_equivalences of Links,
-	member(Link2-Link1, Links).
-
-/* Always follow across instance border --
-odd-looking stuff is to see which side's path gets the caption */
-logical_follows(Link2, Link1, Capts) :-
-	(nonvar(Link1),
-	    Go = up,
-	    Link1 is_connector from Edge to _;
-	var(Link1),
-	    Go = down,
-	    Link2 is_connector from _ to Edge),
-	(Node = Edge,
-	    Way = Go;
-	 Module has_part Edge,
-	    select(Go, [up, down], [Way]),
-	    (Node = Module; Node has_model_refinement instance of Module)),
-	Node has_model_refinement link_equivalences of Links,
-	Node has_class_refinement name of Name,
-	member(Way-Capts, [up-capts(Inner,Outer), down-capts(Outer,Inner)]),
-	Inner = [Name | Outer],
-	member(Link2-Link1, Links).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Node is_no_longer_has_connections succeeds if Node's connecting arcs have

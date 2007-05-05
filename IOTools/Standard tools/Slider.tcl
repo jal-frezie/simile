@@ -11,546 +11,575 @@ namespace eval slide139 {
     }
     
     proc initialize {winId} {
-#	variable compList
-#	if {[info exists compList]} {
-#	    unset compList
-#	}
-
-	menu $winId.slidervars -tearoff 0
-
-	set toolbarItems \
-	    [list [list new "Clear" [namespace code "Clear $winId"]] \
-		 [list add "Add variables" \
-		      [namespace code "AddVariable $winId"]] \
-		 [list remove "Remove a variable" \
-		      [namespace code "RemoveVariable $winId"]] \
-		 [list slider "Add all variables" \
-		      [namespace code "AddAllVariables $winId /"]]]
-	
-	::graphtools::MakeToolBar $winId $toolbarItems
-	pack [message $winId.intro -aspect 800] -fill x
-
+        #	variable compList
+        #	if {[info exists compList]} {
+        #	    unset compList
+        #	}
+        
+        menu $winId.slidervars -tearoff 0
+        
+        set toolbarItems \
+                [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
+                [list add.gif "Add variables" \
+                [namespace code "AddVariable $winId"]] \
+                [list remove.gif "Remove a variable" \
+                [namespace code "RemoveVariable $winId"]] \
+                [list slider.gif "Add all variables" \
+                [namespace code "AddAllVariables $winId /"]]]
+        
+        ::graphtools::MakeToolBar $winId $toolbarItems
+        pack [message $winId.intro -aspect 800] -fill x
+        
         MakeFrames $winId
-	SetState $winId {}
-#	set geom [PrefValue custom(slidersPosition) slidersPosition]
-#        catch {wm geometry $winId $geom}
+        SetState $winId {}
+        set geom [PrefValue custom(slidersPosition) slidersPosition]
+        #        catch {wm geometry $winId $geom}
     }
-
-# Do not remove sliders when clearing data from displays
+    
+    # Do not remove sliders when clearing data from displays
     proc clear {winId} {
     }
-
+    
     proc Clear {winId} {
-	foreach current [winfo children $winId.sliderframe] {
-	    destroy $current
-	}
-	$winId.slidervars delete 0 end
-	SetState $winId {}
+        foreach current [winfo children $winId.sliderframe] {
+            destroy $current
+        }
+        $winId.slidervars delete 0 end
+        SetState $winId {}
     }
-
+    
     proc Restore {winId} {
-	set oldCapts [GetState $winId]
+        set oldCapts [GetState $winId]
         initialize $winId
-	foreach flatCapt $oldCapts {
-	    set oldCapt [RestoreCrs $flatCapt]
-	    InsertSlider $winId [GetIdFromCaptionPath $oldCapt] $oldCapt 1
-	}
+        foreach flatCapt $oldCapts {
+            set oldCapt [RestoreCrs $flatCapt]
+            InsertSlider $winId [GetIdFromCaptionPath $oldCapt] $oldCapt 1
+        }
     }
-
+    
     proc AddVariable {winId} {
-	$winId.intro configure -text "Click on an input variable to add a slider for it, or on a submodel to add sliders for all input variables inside it."
-	GrabClicks $winId
+        $winId.intro configure -text "Click on an input variable to add a slider for it, or on a submodel to add sliders for all input variables inside it."
+        GrabClicks $winId
     }
-
+    
     proc RemoveVariable { winId } {
         tk_popup $winId.slidervars \
-	    [winfo pointerx $winId] [winfo pointery $winId]
+                [winfo pointerx $winId] [winfo pointery $winId]
     }
-
+    
     proc click {winId node caption} {
-	variable useNodes
-	
-	set fullCapt [GetCaptionPathFromId $node]
-	if {[string equal SUBMODEL [GetModelClass $node]]} {
-	    AddAllVariables $winId $fullCapt
-	} elseif {[llength [InsertSlider $winId $node $fullCapt 1]]} {
-	    $winId.intro configure -text {}
-	    ReleaseClicks $winId
-	} else {
-	    $winId.intro configure -text "This value cannot be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on derived values, constants or multidimensional parameters."
-	}
+        set fullCapt [GetCaptionPathFromId $node]
+        if {[string equal SUBMODEL [GetModelClass $node]]} {
+            AddAllVariables $winId $fullCapt
+        } elseif {[llength [InsertSlider $winId $node $fullCapt 1]]} {
+            $winId.intro configure -text {}
+            ReleaseClicks $winId
+        } else {
+            $winId.intro configure -text "This value cannot be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on derived values, constants or multidimensional parameters."
+        }
     }
-
+    
     proc AddAllVariables {winId prefix} {
         foreach node [GetObjectList] {
-	    set title [GetCaptionPathFromId $node]
-	    if {[string first $prefix $title] || \
-		    ![string equal INPUT [GetModelEval $node]]} {
-		continue
-	    }
-	    set initVal [InsertSlider $winId $node $title 1]
-	    if {[llength $initVal]} {
-		set done 1
-#		if {[string match COMPARTMENT \
-#			 [GetModelClass $node]]} {
-#	            set compList($node) $initVal
-#		}
-	    }
-	}
+            set title [GetCaptionPathFromId $node]
+            if {[string first $prefix $title] || \
+                        ![string equal INPUT [GetModelEval $node]]} {
+                continue
+            }
+            set initVal [InsertSlider $winId $node $title 1]
+            if {[llength $initVal]} {
+                set done 1
+                #		if {[string match COMPARTMENT \
+                #			 [GetModelClass $node]]} {
+                #	            set compList($node) $initVal
+                #		}
+            }
+        }
         if {![info exists done]} {
             $winId.intro configure -text "There are no more parameters in this model which can be set by sliders, check boxes or pulldown lists. Note that these tools cannot be used on multidimensional parameters."
         }
     }
     proc InsertSlider {winId node title nest} {
-	global checkStates comboChoices
-	set parmType [GetModelEval $node]
-	set fixed [lsearch {INPUT TABLE} $parmType]
-	if {$fixed==-1} {
-	    return {}
-	}
+        global checkStates comboChoices
+        set parmType [GetModelEval $node]
+        set fixed [lsearch {INPUT TABLE} $parmType]
+        if {$fixed==-1} {
+            return {}
+        }
         set initVal [lindex [GetModelValue $node] 0]
         #ShowMessage debug info $def ok
-	set levels [split $title /]
-	set trans [GetTransTable $node]
-	set type [GetModelType $node] 
-	switch -glob $type {
-	    FLAG {
-	    } ENUM(*) {
-		set possVals [lrange [lindex $trans end] 1 end]
-	    } default {
-#		set min [GetMinValue $node]
-#		set max [GetMaxValue $node]
-#		set magnitude [expr $max - $min]
-		::graphtools::AxisRound [GetMinValue $node] \
-		    [GetMaxValue $node] 0 min max gap s1 s2 s3 s4
-		if {[string match INTEGER [GetModelType $node]]} {
-		    set spacing 1
-		} else {
-		    set spacing [expr $gap/100.0]
-		}
-	    }
-	}
-	set nodeDims [GetModelDims $node]
-	set useDim [FindUseDim $nodeDims]
-	if {$nest} {
-	    set f [MakeSubFrames $winId $winId.sliderframe \
-				    $levels [namespace current] 0]
-	    if {[winfo exists $f]} {
-		$winId.c.canvas see $f
-		return
-	    } else {
-		pack [frame $f] -fill x -expand true
-		SetState $winId [concat [GetState $winId] \
-				     [list [StripCrs $title]]]
-	    }
-	} else {
-	    set f $winId
-	}
-	$winId.slidervars add command -label $title \
-	    -command [namespace code [list Remove $winId $title]]
+        set levels [split $title /]
+        set trans [GetTransTable $node]
+        set type [GetModelType $node]
+        switch -glob $type {
+            FLAG {
+            } ENUM(*) {
+                set possVals [lrange [lindex $trans end] 1 end]
+            } default {
+                #		set min [GetMinValue $node]
+                #		set max [GetMaxValue $node]
+                #		set magnitude [expr $max - $min]
+                ::graphtools::AxisRound [GetMinValue $node] \
+                        [GetMaxValue $node] 0 min max gap s1 s2 s3 s4
+                if {[string match INTEGER [GetModelType $node]]} {
+                    set spacing 1
+                } else {
+                    set spacing [expr $gap/100.0]
+                }
+            }
+        }
+        set nodeDims [GetModelDims $node]
+        set useDim [FindUseDim $nodeDims]
+        if {$nest} {
+            set f [MakeSubFrames $winId $winId.sliderframe \
+                    $levels [namespace current] 0]
+            if {[winfo exists $f]} {
+                $winId.c.canvas see $f
+                return
+            } else {
+                pack [frame $f] -fill x -expand true
+                SetState $winId [concat [GetState $winId] \
+                        [list [StripCrs $title]]]
+            }
+        } else {
+            set f $winId
+        }
+        $winId.slidervars add command -label $title \
+                -command [namespace code [list Remove $winId $title]]
         if {$useDim==-1} {
-	    set defVal [GetDefVal $initVal -1 0]
-	    switch -glob $type {
-		FLAG {
-		pack [checkbutton $f.check -text [lindex $levels end] \
-			 -variable checkStates($node) \
-			 -command [namespace code [list CheckStateToC $node]] \
-			 -offvalue 0 -onvalue 1 -relief ridge]
-		set checkStates($node) $defVal
-		} ENUM(*) {
-		ComboBox $f.combo -values $possVals -editable 0 \
-		    -text [lindex $possVals [expr $defVal-1]] \
-		    -textvariable comboTypes($node) \
-		    -modifycmd [namespace code [list SetChoiceNumber $f.combo $node]]
-		pack $f.combo -side right -fill x -expand true
-		pack [label $f.caption -text [lindex $levels end]]
-		set comboChoices($node) $defVal
-		} default {
-		scale $f.scale -length 120 -orient h -showvalue false \
-                    -sliderlength 10 -from $min -to $max \
-                    -tickinterval $gap -resolution $spacing \
-                    -variable sliderVals($node) \
-		    -command [namespace code \
-				  [list SetArrayIfUsed $node $fixed {}]]
-		    if {[llength $defVal]} {
-			$f.scale set $defVal
-		    }
-		pack $f.scale -side right -fill x -expand true
-		pack [label $f.caption -text [lindex $levels end]]
-		pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
-		    -padx 1 -pady 1
-		bind $f.entry <KeyRelease> \
-		    [namespace code [list SliderValsToC $node $fixed]]
-		}
-	    }
-	    return $defVal
-	} else {
-#	    set useTrans [lindex $trans $useDim]
-	    pack [label $f.caption -text [lindex $levels end]]
-	    set count [lindex $nodeDims $useDim]
-	    # bodge it to work with record submodels
-	    if {[string equal RECORDS $count]} {
-		set count [expr [llength $initVal]/2]
-	    }
-	    for {set index 1} {$count >= $index} {incr index} {
-		set defVal [GetDefVal $initVal $useDim $index]
-		if {[llength [lindex $trans $useDim]]} {
-		    set slTitle [lindex [lindex $trans $useDim] $index]
-		} else {
-		    set slTitle $index
-		}
-		switch -glob $type {
-		    FLAG {
-		    set line [expr ($index+9)/10]
-		    set row $f.row$line
-		    if {![winfo exists $row]} {
-			pack [frame $row]
-			pack [label $row.low -text $index] -side left
-			pack [label $row.high -text [min 10*$line $count]] \
-				  -side right
-		    }
-		    pack [checkbutton $row.elt$index -borderwidth 1 \
-			      -variable checkStates($node,$index) \
-			      -command [namespace code [list CheckStateToC \
-							    $node $index]] \
-			      -padx 0 -offvalue 0 -onvalue 1] -side left
-		    set checkStates($node,$index) $defVal
-		    BindPopup $row.elt$index "For $slTitle"
-		    set newbg white
-		    if {fmod($line,2)==0} {
-			set newbg \#e0e0ff
-		    }
-		    if {fmod($index,2)==0} {
-			set newbg \#c0c0ff
-		    }
-		    $row.elt$index configure -bg $newbg
-		    } ENUM(*) {
-		    pack [frame $f.elt$index] -fill x -expand true
-		    ComboBox $f.elt$index.c -values $possVals -editable 0 \
-			-text [lindex $possVals [expr $defVal-1]] \
-			-textvariable comboTypes($node,$index) \
-			-modifycmd [namespace code [list SetChoiceNumber \
-							$f.elt$index.c $node $index]]
-		    pack $f.elt$index.c -side right -fill x -expand true
-		    pack [label $f.elt$index.id -text $slTitle -width 10] \
-			-side left
-		    set comboChoices($node,$index) $defVal
-		    } default {
-		    pack [frame $f.elt$index] -fill x -expand true
-		    pack [label $f.elt$index.id -text $slTitle -width 10] \
-			-side left
-		    pack [entry $f.elt$index.val \
-			      -textvariable sliderVals($node,$index) \
-			      -width 8] -side left -padx 1 -pady 1
-		    bind $f.elt$index.val <KeyRelease> \
-		      [namespace code [list SliderValsToC $node $fixed $index]]
-		    set newScale $f.elt$index.scale
-		    scale $newScale -length 180 \
-                        -orient horizontal -showvalue false \
-                        -sliderlength 10 -from $min -to $max \
-                        -resolution $spacing \
-                        -variable sliderVals($node,$index) \
-			-command [namespace code \
-				     [list SetArrayIfUsed $node $fixed $index]]
-		    if {[llength $defVal]} {
-			$newScale set $defVal
-		    }
-		    pack $newScale -fill x -expand true
-		    # only put legend on bottom one
-		    if {$count==$index} {
-			$newScale configure -tickinterval $gap
-		    }
-		    }
-		}
-		lappend allVals $index $defVal
-	    }
-	    return $allVals
+            set defVal [GetDefVal $initVal -1 0]
+            switch -glob $type {
+                FLAG {
+                    pack [checkbutton $f.check -text [lindex $levels end] \
+                            -variable checkStates($node) \
+                            -command [namespace code [list CheckStateToC $node]] \
+                            -offvalue 0 -onvalue 1 -relief ridge]
+                    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
+                    BindPopup $f.check "$comment"
+                    set checkStates($node) $defVal
+                } ENUM(*) {
+                    #		ComboBox $f.combo -values $possVals -editable 0 \
+                    -text [lindex $possVals [expr $defVal-1]] \
+                            -textvariable comboTypes($node) \
+                            -modifycmd [namespace code [list SetChoiceNumber $f.combo $node]]
+                    ::ttk::menubutton $f.combo
+                    set bxMenu [menu $f.combo.menu -tearoff 0]
+                    foreach choice $possVals {
+                        $bxMenu add command -label $choice -command \
+                                [namespace code [list SetChoiceNumber $f.combo \
+                                $node $choice]]
+                    }
+                    $f.combo configure -menu $bxMenu \
+                            -textvariable comboTypes($node)
+                    $bxMenu invoke [expr $defVal-1]
+                    pack $f.combo -side right -fill x -expand true
+                    pack [label $f.caption -text [lindex $levels end]]
+                    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
+                    BindPopup $f.caption "$comment"
+                    set comboChoices($node) $defVal
+                } default {
+                    scale $f.scale -length 120 -orient h -showvalue false \
+                            -sliderlength 10 -from $min -to $max \
+                            -tickinterval $gap -resolution $spacing \
+                            -variable sliderVals($node) \
+                            -command [namespace code \
+                            [list SetArrayIfUsed $node $fixed {}]]
+                    if {[llength $defVal]} {
+                        $f.scale set $defVal
+                    }
+                    pack $f.scale -side right -fill x -expand true
+                    pack [label $f.caption -text [lindex $levels end]]
+                    set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
+                    BindPopup $f.caption "$comment"
+                        
+                    pack [entry $f.entry -textvariable sliderVals($node) -width 8]\
+                            -padx 1 -pady 1
+                    bind $f.entry <KeyRelease> \
+                            [namespace code [list SliderValsToC $node $fixed]]
+                }
+            }
+            return $defVal
+        } else {
+            #	    set useTrans [lindex $trans $useDim]
+            pack [label $f.caption -text [lindex $levels end]]
+            set comment [do_in_editor GetFromProlog tk_get_info('$winId',$node,comment)]
+            BindPopup $f.caption "$comment"
+            set count [lindex $nodeDims $useDim]
+            # bodge it to work with record submodels
+            if {[string equal RECORDS $count]} {
+                set count [expr [llength $initVal]/2]
+            }
+            for {set index 1} {$count >= $index} {incr index} {
+                set defVal [GetDefVal $initVal $useDim $index]
+                if {[llength [lindex $trans $useDim]]} {
+                    set slTitle [lindex [lindex $trans $useDim] $index]
+                } else {
+                    set slTitle $index
+                }
+                switch -glob $type {
+                    FLAG {
+                        set line [expr ($index+9)/10]
+                        set row $f.row$line
+                        if {![winfo exists $row]} {
+                            pack [frame $row]
+                            pack [label $row.low -text $index] -side left
+                            pack [label $row.high -text [min 10*$line $count]] \
+                                    -side right
+                        }
+                        pack [checkbutton $row.elt$index -borderwidth 1 \
+                                -variable checkStates($node,$index) \
+                                -command [namespace code [list CheckStateToC \
+                                $node $index]] \
+                                -padx 0 -offvalue 0 -onvalue 1] -side left
+                        set checkStates($node,$index) $defVal
+                        BindPopup $row.elt$index "For $slTitle"
+                        set newbg white
+                        if {fmod($line,2)==0} {
+                            set newbg \#e0e0ff
+                        }
+                        if {fmod($index,2)==0} {
+                            set newbg \#c0c0ff
+                        }
+                        $row.elt$index configure -bg $newbg
+                    } ENUM(*) {
+                        pack [frame $f.elt$index] -fill x -expand true
+                        #		    ComboBox $f.elt$index.c -values $possVals -editable 0 \
+                        -text [lindex $possVals [expr $defVal-1]] \
+                                -textvariable comboTypes($node,$index) \
+                                -modifycmd [namespace code [list SetChoiceNumber \
+                                $f.elt$index.c $node $index]]
+                        ::ttk::menubutton $f.elt$index.c
+                        set bxMenu [menu $f.elt$index.c.menu -tearoff 0]
+                        foreach choice $possVals {
+                            $bxMenu add command -label $choice -command \
+                                    [namespace code [list SetChoiceNumber \
+                                    $f.elt$index.c $node \
+                                    $choice $index]]
+                            
+                        }
+                        $f.elt$index.c configure -menu $bxMenu \
+                                -textvariable comboTypes($node,$index)
+                        $bxMenu invoke [expr $defVal-1]
+                        pack $f.elt$index.c -side right -fill x -expand true
+                        pack [label $f.elt$index.id -text $slTitle -width 10] \
+                                -side left
+                        set comboChoices($node,$index) $defVal
+                    } default {
+                        pack [frame $f.elt$index] -fill x -expand true
+                        pack [label $f.elt$index.id -text $slTitle -width 10] \
+                                -side left
+                        pack [entry $f.elt$index.val \
+                                -textvariable sliderVals($node,$index) \
+                                -width 8] -side left -padx 1 -pady 1
+                        bind $f.elt$index.val <KeyRelease> \
+                                [namespace code [list SliderValsToC $node $fixed $index]]
+                        set newScale $f.elt$index.scale
+                        scale $newScale -length 180 \
+                                -orient horizontal -showvalue false \
+                                -sliderlength 10 -from $min -to $max \
+                                -resolution $spacing \
+                                -variable sliderVals($node,$index) \
+                                -command [namespace code \
+                                [list SetArrayIfUsed $node $fixed $index]]
+                        if {[llength $defVal]} {
+                            $newScale set $defVal
+                        }
+                        pack $newScale -fill x -expand true
+                        # only put legend on bottom one
+                        if {$count==$index} {
+                            $newScale configure -tickinterval $gap
+                        }
+                    }
+                }
+                lappend allVals $index $defVal
+            }
+            return $allVals
         }
     }
-
+    
     proc FindUseDim {nodeDims} {
-	set useDim -1
-	set outerDims 0
-	while {$outerDims<[llength $nodeDims]} {
-	    set latestDim [lindex $nodeDims $outerDims]
-	    if {[string equal START_VM $latestDim]} {
-		set outerDims [lsearch -start $outerDims $nodeDims END_VM]
-	    }
-	    if {[string is integer $latestDim] && $latestDim>0} {
-#		if {[info exists useDim]} {
-		    # Cannot display sliders, too many dimensions
-# even if too many dims, innermost array is copied over others
-#		    return {}
-#		} else {
-		    set useDim $outerDims
-#		}
-	    }
-	    incr outerDims
-	}
-	return $useDim
+        set useDim -1
+        set outerDims 0
+        while {$outerDims<[llength $nodeDims]} {
+            set latestDim [lindex $nodeDims $outerDims]
+            if {[string equal START_VM $latestDim]} {
+                set outerDims [lsearch -start $outerDims $nodeDims END_VM]
+            }
+            if {[string is integer $latestDim] && $latestDim>0} {
+                #		if {[info exists useDim]} {
+                # Cannot display sliders, too many dimensions
+                # even if too many dims, innermost array is copied over others
+                #		    return {}
+                #		} else {
+                set useDim $outerDims
+                #		}
+            }
+            incr outerDims
+        }
+        return $useDim
     }
-
+    
     proc Remove {winId title} {
         set levels [split $title /]
-	set f [MakeSubFrames $winId $winId.sliderframe \
-		   $levels [namespace current] 0]
-	Prune $winId $f
-	set oldState [GetState $winId]
-	set wipqosn [lsearch $oldState [StripCrs $title]]
-	SetState $winId [lreplace $oldState $wipqosn $wipqosn]
-	$winId.slidervars delete $title
+        set f [MakeSubFrames $winId $winId.sliderframe \
+                $levels [namespace current] 0]
+        Prune $winId $f
+        set oldState [GetState $winId]
+        set wipqosn [lsearch $oldState [StripCrs $title]]
+        SetState $winId [lreplace $oldState $wipqosn $wipqosn]
+        $winId.slidervars delete $title
     }
-
+    
     proc Prune {winId tree} {
-	set up [winfo parent $tree]
-	destroy $tree
-	if {![string equal ${winId}.sliderframe $up]} {
-	    foreach remain [winfo children $up] {
-		set box [winfo name $remain]
-		if {[string match box* $box] || [string match frame* $box]} {
-		    return
-		}
-	    }
-	    Prune $winId $up
-	}
+        set up [winfo parent $tree]
+        destroy $tree
+        if {![string equal ${winId}.sliderframe $up]} {
+            foreach remain [winfo children $up] {
+                set box [winfo name $remain]
+                if {[string match box* $box] || [string match frame* $box]} {
+                    return
+                }
+            }
+            Prune $winId $up
+        }
     }
-
+    
     proc SliderValsToC {node fixed args} {
-	global sliderVals
-	set sub [join [concat [list $node] $args] ,]
-	SetArrayIfUsed $node $fixed $args $sliderVals($sub)
+        global sliderVals
+        set sub [join [concat [list $node] $args] ,]
+        SetArrayIfUsed $node $fixed $args $sliderVals($sub)
     }
-
+    
     proc CheckStateToC {node args} {
-	global checkStates
-	set sub [join [concat [list $node] $args] ,]
-	SetArrayIfUsed $node 0 $args $checkStates($sub)
+        global checkStates
+        set sub [join [concat [list $node] $args] ,]
+        SetArrayIfUsed $node 0 $args $checkStates($sub)
     }
-
+    
     proc SetArrayIfUsed {node fixed indices value} {
-	global paramData runState myNode
-    	if {[RunningInC $myNode]} {
-	    c_setparamelement $node $indices $value
-	}
-	if {$fixed} {
-	    if {![RunningInC $myNode]} {
-		set paramData([join [concat $node $indices] ,]) $value
-	    }
-	    set runState($myNode,reloadParams) 0
-	}
+        global paramData runState myNode
+        if {[RunningInC $myNode]} {
+            c_setparamelement $node $indices $value
+        }
+        if {$fixed} {
+            if {![RunningInC $myNode]} {
+                set paramData([join [concat $node $indices] ,]) $value
+            }
+            set runState($myNode,reloadParams) 0
+        }
     }
-
-    proc SetChoiceNumber {cbox node args} {
-	global comboChoices
-	if {[RunningInC $::myNode]} {
-	    c_setparamelement $node $args \
-		[expr [lsearch [$cbox cget -values] [$cbox cget -text]]+1]
-	} else {
-	    set sub [join [concat $node $args] ,]
-	    set comboChoices($sub) [expr [lsearch [$cbox cget -values] \
-					      [$cbox cget -text]]+1]
-	}
+    
+    proc SetChoiceNumber {cbox node choice args} {
+        global comboTypes comboChoices
+        set sub [join [concat $node $args] ,]
+        set comboTypes($sub) $choice
+        if {[RunningInC $::myNode]} {
+            c_setparamelement $node $args \
+                    [expr [$cbox.menu index $choice]+1]
+        } else {
+            set comboChoices($sub) [expr [$cbox.menu index $choice]+1]
+        }
     }
-
-# If we load a file containing slider values, we only want to set the sliders
-# that are mentioned in that file. so MergeParams needs to make a list of them
-
+    
+    # If we load a file containing slider values, we only want to set the sliders
+    # that are mentioned in that file. so MergeParams needs to make a list of them
+    
     proc Open {winId smPath} {
-	global helperTable whichParamsAffected
-	set metaFile [ChooseFile params.spf "Load parameters from:" 0]
-	if {[llength $metaFile]} {
-	    set topNode $helperTable($winId,whichModel)
-	    ZapParams $topNode $smPath $metaFile
-	}
+        global helperTable whichParamsAffected
+        set metaFile [ChooseFile params.spf "Load parameters from:" 0]
+        if {[llength $metaFile]} {
+            set topNode $helperTable($winId,whichModel)
+            ZapParams $topNode $smPath $metaFile
+        }
     }
-
+    
     proc Save {winId smPath} {
-	global helperTable simtmpdir env
-#puts "Saving submodel $smPath inputs"
+        global helperTable simtmpdir env
+        #puts "Saving submodel $smPath inputs"
         set metaFile [ChooseFile inputs.spf "Save input values as:" 1]
         if {[llength $metaFile]} {
-	    set part [file join $simtmpdir temp_out.spf]
+            set part [file join $simtmpdir temp_out.spf]
             set iStr [open $part w]
-
-	    set topNode $helperTable($winId,whichModel)
-	    set snip [string length $smPath]
-	    foreach node [GetObjectList] {
-		set title [GetCaptionPathFromId $node]
-#puts "trimming $smPath from $title"
-		if {!($snip && [string last $smPath $title [expr $snip-1]])} {
-		    set titleTail [string range $title $snip end]
-		    set trans [GetTransTable $node]
-# Below should be reimplemented in this interpreter somehow
-		    upvar \#0 [InputVarFor $topNode $node] collectPt
-#puts "Available values: [array get collectPt]"
-		    
-		    foreach {elmt val} [array get collectPt $node*] {
-#puts "got pair $elmt $val"
-			set id [split $elmt ,]
-			if {[llength $id]==2} {
-			    lappend arr($node) [lindex $id 1] $val
-			} else {
-			    puts $iStr $titleTail=literal=[list NOW [TransEnums $trans $val]]
-			}
-		    }
-		    foreach {arrNode vList} [array get arr] {
-			puts $iStr $titleTail=literal=[list NOW [TransEnums $trans $vList]]
-		    }
-		    if {[info exists arr]} {unset arr}
-		}
-	    }
-	    close $iStr
-	    set PartType "application/x-simile"
-	    set Description "Simile parameter file"
-	    set style attachment
-	    set newMime [mime::initialize -canonical $PartType \
-			 -header [list "Content-Disposition" $style] \
-			 -header [list "Content-Description" $Description] \
-			 -header [list "Simile-Version" $env(SIMILE_VERSION)] \
-			 -header [list "Simile-Origin" input-param-tool] \
-			 -file $part]
-	    set stream [NetOpen $metaFile w]
-	    fconfigure $stream -translation binary
-	    mime::copymessage $newMime $stream
-        # clean everything up
-	    close $stream
-	    mime::finalize $newMime
-	    file delete $part
-	}
+            
+            set topNode $helperTable($winId,whichModel)
+            set snip [string length $smPath]
+            foreach node [GetObjectList] {
+                set title [GetCaptionPathFromId $node]
+                #puts "trimming $smPath from $title"
+                if {!($snip && [string last $smPath $title [expr $snip-1]])} {
+                    set titleTail [string range $title $snip end]
+                    set trans [GetTransTable $node]
+                    # Below should be reimplemented in this interpreter somehow
+                    upvar \#0 [InputVarFor $topNode $node] collectPt
+                    #puts "Available values: [array get collectPt]"
+                    
+                    foreach {elmt val} [array get collectPt $node*] {
+                        #puts "got pair $elmt $val"
+                        set id [split $elmt ,]
+                        if {[llength $id]==2} {
+                            lappend arr($node) [lindex $id 1] $val
+                        } else {
+                            puts $iStr $titleTail=literal=[list NOW [TransEnums $trans $val]]
+                        }
+                    }
+                    foreach {arrNode vList} [array get arr] {
+                        puts $iStr $titleTail=literal=[list NOW [TransEnums $trans $vList]]
+                    }
+                    if {[info exists arr]} {unset arr}
+                }
+            }
+            close $iStr
+            set PartType "application/x-simile"
+            set Description "Simile parameter file"
+            set style attachment
+            set newMime [mime::initialize -canonical $PartType \
+                    -header [list "Content-Disposition" $style] \
+                    -header [list "Content-Description" $Description] \
+                    -header [list "Simile-Version" $env(SIMILE_VERSION)] \
+                    -header [list "Simile-Origin" input-param-tool] \
+                    -file $part]
+            set stream [NetOpen $metaFile w]
+            fconfigure $stream -translation binary
+            mime::copymessage $newMime $stream
+            # clean everything up
+            close $stream
+            mime::finalize $newMime
+            file delete $part
+        }
     }
-
+    
     proc GetDefVal {vals levels index} {
-#ShowMessage debug info "GetDefVal $vals $levels $index" ok
-	if {[llength  $vals]==1} {
-	    return $vals
-	} elseif {$levels==0 && $index>0} {
-	    array set subvals $vals
-	    if {[info exists subvals($index)]} {
-		return [GetDefVal $subvals($index) 0 0]
-	    }
-	} else {
-	    incr levels -1
-	    foreach {indx val} $vals {
-		set subResult [GetDefVal $val $levels $index]
-		if {[llength $subResult]} {
-		    return $subResult
-		}
-	    }
-	}
-	return {}
+        #ShowMessage debug info "GetDefVal $vals $levels $index" ok
+        if {[llength  $vals]==1} {
+            return $vals
+        } elseif {$levels==0 && $index>0} {
+            array set subvals $vals
+            if {[info exists subvals($index)]} {
+                return [GetDefVal $subvals($index) 0 0]
+            }
+        } else {
+            incr levels -1
+            foreach {indx val} $vals {
+                set subResult [GetDefVal $val $levels $index]
+                if {[llength $subResult]} {
+                    return $subResult
+                }
+            }
+        }
+        return {}
     }
- 
-# No need to define click because we never request them   
-#    proc click {winId node caption} {
-#    }
-
-# after reset, record the positions of compartment sliders so they can be put 
-# back there while model is running (see below)
-
+    
+    # No need to define click because we never request them
+    #    proc click {winId node caption} {
+    #    }
+    
+    # after reset, record the positions of compartment sliders so they can be put
+    # back there while model is running (see below)
+    
     proc reset {winId} {
-#	global sliderVals
-#	variable compList
-#	foreach node [array names compList] {
-#	    if {[info exists sliderVals($node)]} {
-#		# it's a single compartment
-#		set compList($node) $sliderVals($node)
-#	    } else {
-#		unset compList($node)
-#		foreach {indxSub val} [array get sliderVals $node,*] {
-#		    set indx [lindex [split $indxSub ,] 0]
-#		    lappend compList($node) $indx $val
-#		}
-#	    }
-#	}
+        #	global sliderVals
+        #	variable compList
+        #	foreach node [array names compList] {
+        #	    if {[info exists sliderVals($node)]} {
+        #		# it's a single compartment
+        #		set compList($node) $sliderVals($node)
+        #	    } else {
+        #		unset compList($node)
+        #		foreach {indxSub val} [array get sliderVals $node,*] {
+        #		    set indx [lindex [split $indxSub ,] 0]
+        #		    lappend compList($node) $indx $val
+        #		}
+        #	    }
+        #	}
     }
-
+    
     proc ShowNthChoice {combi numbi} {
-	$combi configure -text [lindex [$combi cget -values] [expr {$numbi-1}]]
+        $combi.menu invoke [expr {$numbi-1}]
     }
-
-# purpose of display proc here is only to stop compartment sliders
-# being altered while model is running, since they refer only to
-# initial values. That is no longer necessary; compartments cannot be
-# variable parameters. But also we want to update other input tools to
-# reflect values from time series data
-
-# this might be tidied by saving some data in a namespace variable
-
+    
+    # purpose of display proc here is only to stop compartment sliders
+    # being altered while model is running, since they refer only to
+    # initial values. That is no longer necessary; compartments cannot be
+    # variable parameters. But also we want to update other input tools to
+    # reflect values from time series data
+    
+    # this might be tidied by saving some data in a namespace variable
+    
     proc display {winId time display remainder} {
-	global helperTable
-	foreach currentCaption [GetState $winId] {
-	    set title [RestoreCrs $currentCaption]
-	    set node [GetIdFromCaptionPath $title]
-	    set valGroup [InputVarFor $helperTable($winId,whichModel) $node]
-	    upvar \#0 $valGroup valArray
-	    if {[string equal comboChoices $valGroup]} {
-		# will need widget address to update it!
-		set f [MakeSubFrames $winId $winId.sliderframe \
-			   [split $title /] [namespace current] 0]
-	    } else {
-		set f {}
-	    }
-	    set data [lindex [GetModelValue $node] 0]
-	    set useDim [FindUseDim [set nodeDims [GetModelDims $node]]]
-	    if {$useDim==-1} {
-		set valArray($node) [GetDefVal $data -1 0]
-		if {[llength $f]} {
-		    ShowNthChoice $f.combo $valArray($node)
-		}
-	    } else {
-		set count [lindex $nodeDims $useDim]
-		# bodge it to work with record submodels
-		if {[string equal RECORDS $count]} {
-		    set count [expr {[llength $data]/2}]
-		}
-		for {set index 1} {$count >= $index} {incr index} {
-		    set valArray($node,$index) \
-			[GetDefVal $data $useDim $index]
-		    if {[llength $f]} {
-			ShowNthChoice $f.elt$index.c $valArray($node,$index)
-		    }
-		}
-	    }
-	}
+        global helperTable
+        foreach currentCaption [GetState $winId] {
+            set title [RestoreCrs $currentCaption]
+            set node [GetIdFromCaptionPath $title]
+            set valGroup [InputVarFor $helperTable($winId,whichModel) $node]
+            upvar \#0 $valGroup valArray
+            if {[string equal comboChoices $valGroup]} {
+                # will need widget address to update it!
+                set f [MakeSubFrames $winId $winId.sliderframe \
+                        [split $title /] [namespace current] 0]
+            } else {
+                set f {}
+            }
+            set data [lindex [GetModelValue $node] 0]
+            set useDim [FindUseDim [set nodeDims [GetModelDims $node]]]
+            if {$useDim==-1} {
+                set valArray($node) [GetDefVal $data -1 0]
+                if {[llength $f]} {
+                    ShowNthChoice $f.combo $valArray($node)
+                }
+            } else {
+                set count [lindex $nodeDims $useDim]
+                # bodge it to work with record submodels
+                if {[string equal RECORDS $count]} {
+                    set count [expr {[llength $data]/2}]
+                }
+                for {set index 1} {$count >= $index} {incr index} {
+                    set valArray($node,$index) \
+                            [GetDefVal $data $useDim $index]
+                    if {[llength $f]} {
+                        ShowNthChoice $f.elt$index.c $valArray($node,$index)
+                    }
+                }
+            }
+        }
     }
-
-# old version too lazy to check if it is its own slider. What the hell
-# is it doing? getting the whole data list for each element and using
-# only the appropriate value? Who wrote this crap?? Oh, it was
-# me. Never mind...
-
+    
+    # old version too lazy to check if it is its own slider. What the hell
+    # is it doing? getting the whole data list for each element and using
+    # only the appropriate value? Who wrote this crap?? Oh, it was
+    # me. Never mind...
+    
     proc olddisplay {winId time display remainder} {
-	foreach valGroup {sliderVals checkStates comboTypes} {
-	    upvar \#0 $valGroup valArray
-	    foreach controlVal [array names valArray] {
-		set ids [split $controlVal ,]
-		set node [lindex $ids 0]
-#		if {[info exists compList($node)]} {
-#		    if {[llength $compList($node)]==1} {
-#			set valArray($node) $compList($node)
-#		    } else {
-#			foreach {indx val} $compList($node) {
-#			    set valArray($node,$indx) $val
-#			}
-#		    }		
-#		    continue
-#		}
-		set data [lindex [GetModelValue $node] 0]
-		set indx [lindex $ids 1]
-		if {[string length $indx]} {
-		    while {[llength [lindex $data 1]]!=1} {
-			set data [lindex $data 1]
-		    }
-		    set data [lindex $data [expr {2*$indx-1}]]
-		}
-		if {[string length $data]} {
-		    if {[string equal comboTypes $valGroup]} {
-			set data [lindex [lindex [GetTransTable $node] end] \
-				      $data]
-		    }
-		    set valArray($controlVal) $data
-		}
-	    }
-	}
+        foreach valGroup {sliderVals checkStates comboTypes} {
+            upvar \#0 $valGroup valArray
+            foreach controlVal [array names valArray] {
+                set ids [split $controlVal ,]
+                set node [lindex $ids 0]
+                #		if {[info exists compList($node)]} {
+                #		    if {[llength $compList($node)]==1} {
+                #			set valArray($node) $compList($node)
+                #		    } else {
+                #			foreach {indx val} $compList($node) {
+                #			    set valArray($node,$indx) $val
+                #			}
+                #		    }
+                #		    continue
+                #		}
+                set data [lindex [GetModelValue $node] 0]
+                set indx [lindex $ids 1]
+                if {[string length $indx]} {
+                    while {[llength [lindex $data 1]]!=1} {
+                        set data [lindex $data 1]
+                    }
+                    set data [lindex $data [expr {2*$indx-1}]]
+                }
+                if {[string length $data]} {
+                    if {[string equal comboTypes $valGroup]} {
+                        set data [lindex [lindex [GetTransTable $node] end] \
+                                $data]
+                    }
+                    set valArray($controlVal) $data
+                }
+            }
+        }
     }
 } ;# end of namespace

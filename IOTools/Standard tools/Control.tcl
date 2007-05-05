@@ -27,28 +27,6 @@ namespace eval runcontrol33857 {
         # does nothing
     }
     
-    proc RelistTimeSteps {node} {
-	variable frames
-        set widget $frames($node,rsf)
-
-        set captList {}
-        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
-            lappend captList [list Time step \#$phase \
-				  {(} $::runState($node,update$phase) {)}]
-	}
-#	if {[InPlugin]} {
-#	    $widget.edit.capt configure -values $captList
-#	} else {
-	    $widget.edit.capt.menu delete 0 end
-	    set index 0
-	    foreach timeStep $captList {
-		incr index
-		$widget.edit.capt.menu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
-	    }
-	    
-#	}
-    }
-
     proc SwapDistVar {node pt} {
         variable sendvars
 	variable frames
@@ -56,9 +34,15 @@ namespace eval runcontrol33857 {
 
         #set pt [$widget.edit.capt cget -text]
         $widget.edit.num configure -textvar runState($node,update[expr $pt])
+        $widget.edit.capt.menu delete 0 end
         set sendvars($node,captList) {}
-        RelistTimeSteps $node
-	$widget.edit.capt configure -text [list Time step $pt {(} $::runState($node,update$pt) {)}]
+        for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
+            lappend sendvars($node,captList) \
+		[list Time step \#$phase {(} $::runState($node,update$phase) {)}]
+                $widget.edit.capt.menu add command -label [list Time step \#$phase {(} $::runState($node,update$phase) {)}] \
+                      -command [list [namespace current]::SwapDistVar $node $phase]                
+        }
+        $widget.edit.capt configure -text [list Time step $pt {(} $::runState($node,update$pt) {)}]
         focus $widget.edit.num
     }
     
@@ -75,9 +59,10 @@ namespace eval runcontrol33857 {
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
 	}
-	set runState($node,timeUnit) unit
+	if {![info exists runState($node,timeUnit)]} {
+	    set runState($node,timeUnit) unit
+	}
         set runState($node,oldUnit) $runState($node,timeUnit)
-
         if {[string match $t [winfo toplevel $t]]} {
 #            wm title $t "Run control"; # $t isn't a toplevel under MRE
             set geom [PrefValue custom(runControlPosition) runControlPosition]
@@ -88,17 +73,12 @@ namespace eval runcontrol33857 {
         
         ::ttk::notebook $t.nb
         
-        if {[InPlugin]} {
-	    $t.nb insert end player -text "Run control"
-	    set rcf [$t.nb getframe player]
-	} else {
-	    set rcf $t.nb.rcf
-	    $t.nb add [frame $rcf] -text "Run control"
-	}
+        $t.nb add [frame $t.nb.rcf] -text "Run control"
+        set rcf $t.nb.rcf
 	set frames($node,rcf) $rcf
         ttk::frame $rcf.upper -class Toolbar
         foreach mode {play pause stop} {
-            set ${mode}Img [NewPhoto ../Images/Control/${mode}.gif]
+            set ${mode}Img [image create photo -file ../Images/Control/${mode}.gif]
         }
         frame $rcf.upper.topbuttons
         ::ttk::button $rcf.upper.topbuttons.reset -image $stopImg -width 32 \
@@ -117,8 +97,9 @@ namespace eval runcontrol33857 {
         $runState($node,cnvs) create oval 6 6 12 12 -outline grey
         pack $runState($node,cnvs) -side right -anchor e
         after idle set runState($node,fractDone) 0
-        pack [::ttk::progressbar $rcf.upper.bf.bar -maximum 100 \
-		  -variable runState($node,progress)] \
+	set runState($node,progressBar) \
+	    [::ttk::progressbar $rcf.upper.bf.bar -maximum 100]
+	pack $runState($node,progressBar) \
 	    -fill x -expand true -side top -padx 4 -pady 4
         pack $rcf.upper.bf -side left -fill x -expand true
         pack $rcf.upper -side top -anchor n -fill x -padx 4 -pady 4
@@ -132,7 +113,6 @@ namespace eval runcontrol33857 {
             pack $rcf.editBoxes.$name.capt -side left -anchor nw
             ::ttk::entry $rcf.editBoxes.$name.num \
                     -textvar runState($node,$var) -width 8
-	    bind $rcf.editBoxes.$name.num <Key> "set runState($node,tweaked) 1"
             pack $rcf.editBoxes.$name.num -side left -expand on -fill x -anchor nw
             label $rcf.editBoxes.$name.unit -textvar runState($node,timeUnit)
             pack $rcf.editBoxes.$name.unit -side left
@@ -140,55 +120,45 @@ namespace eval runcontrol33857 {
         }
         pack $rcf.editBoxes -side bottom -pady 2 -expand on -fill both
 	set runState($node,timeReached) $runState($node,currentTime)
-      
-        if {[InPlugin]} {
-	    $t.nb insert end setup -text "Run settings"
-	    set rsf [$t.nb getframe setup]
-	} else {
-	    set rsf $t.nb.rsf
-	    $t.nb add [frame $rsf] -text "Run settings"
-	}
+        
+        $t.nb add [frame $t.nb.rsf] -text "Run settings"
+        set rsf $t.nb.rsf
         set frames($node,rsf) $rsf
         pack [frame $rsf.unitselection] -pady 2 -fill x
         pack [label $rsf.unitselection.caption -text "Time units:" -width $captWidth -anchor w] -side left -anchor nw
+        ::ttk::menubutton $rsf.unitselection.pulldown
+        set timeUnitMenu [menu $rsf.unitselection.pulldown.menu -tearoff 0]
+        foreach unit {unit second minute hour day week month year Ma} {
+	    $timeUnitMenu add command -label $unit \
+		-command [namespace code [list AlterUnit $node $unit]]
+        }
+        $rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
+              -textvariable runState($node,timeUnit)
+        pack $rsf.unitselection.pulldown -side left -anchor nw
+        
         pack [frame $rsf.integration] -pady 2 -fill x
         pack [label $rsf.integration.caption -text "Integration method:" -width $captWidth -anchor w] -side left -anchor nw
+        ::ttk::menubutton $rsf.integration.pulldown
+        set intMethodMenu [menu $rsf.integration.pulldown.menu -tearoff 0]
+        foreach method {Euler {Runge-Kutta}} {
+          $intMethodMenu add command -label $method -command "set runState($node,intMethod) {$method}"
+        }
+        $rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
+              -textvariable runState($node,intMethod)
+        pack $rsf.integration.pulldown -side left -anchor nw
+        
         set sendvars($node,captList) {}
         for {set phase 1} {$phase <= [GetPhaseCount $node]} {incr phase} {
             lappend sendvars($node,captList) \
                     [list Time step \#$phase {(} $::runState($node,update$phase) {)}]
         }
         pack [frame $rsf.edit] -pady 2 -expand on -fill both
-	if {[InPlugin]} {
-	    set useMenu mymenu
-	} else {
-	    set useMenu menu
-	}
-	::ttk::menubutton $rsf.unitselection.pulldown
-	set timeUnitMenu [$useMenu $rsf.unitselection.pulldown.menu -tearoff 0]
-	foreach unit {unit second minute hour day week month year Ma} {
-	    $timeUnitMenu add command -label $unit \
-		-command [namespace code [list AlterUnit $node $unit]]
-	}
-	$rsf.unitselection.pulldown configure -menu $timeUnitMenu -width 11 \
-	    -textvariable runState($node,timeUnit)
-
-	::ttk::menubutton $rsf.integration.pulldown
-	set intMethodMenu [$useMenu $rsf.integration.pulldown.menu -tearoff 0 \
-			       -postcommand "set runState($node,tweaked) 1"]
-	foreach method {Euler {Runge-Kutta}} {
-					      $intMethodMenu add command -label $method -command \
-						  "set runState($node,intMethod) {$method}"
-					  }
-	$rsf.integration.pulldown configure -menu $intMethodMenu -width 11 \
-	    -textvariable runState($node,intMethod)
-
-	::ttk::menubutton $rsf.edit.capt
-	set timeStepMenu [$useMenu $rsf.edit.capt.menu -tearoff 0]
-	$rsf.edit.capt configure -menu $timeStepMenu -width 16
-        pack $rsf.unitselection.pulldown -side left -anchor nw
-        pack $rsf.integration.pulldown -side left -anchor nw
-        
+        ::ttk::menubutton $rsf.edit.capt
+        set timeStepMenu [menu $rsf.edit.capt.menu -tearoff 0]
+        foreach timeStep $sendvars($node,captList) index {1 2 3 4 5 6 7 8 9} {
+          $timeStepMenu add command -label $timeStep -command [list [namespace current]::SwapDistVar $node $index]
+        }
+        $rsf.edit.capt configure -menu $timeStepMenu -width 16
         pack $rsf.edit.capt -side left -anchor nw
         pack [label $rsf.edit.colon -text " "] -side left
         pack [::ttk::entry $rsf.edit.num -width 8] -side left -expand on -fill x -anchor nw
@@ -207,7 +177,6 @@ namespace eval runcontrol33857 {
 	bind $rsf.stepsize.maxerr <Key> "set runState($node,tweaked) 1"
         pack [label $rsf.stepsize.caption -text "Error limit:"] -side right
         pack $t.nb -padx 2 -pady 2 -fill both -expand true
-	RaisePageZero $t.nb
         
         #        set sendvars($node,timeUnit) unit
         set runState($node,expected_end) 0
@@ -216,7 +185,7 @@ namespace eval runcontrol33857 {
         set sendvars($node,currentMode) stop
 	set sendvars($node,busy) 0
     }
-
+    
     proc AlterUnit {node newUnit} {
 	global runState
 	set timeFactor [expr {[SecondsInA $runState($node,timeUnit)]/ \
@@ -225,12 +194,6 @@ namespace eval runcontrol33857 {
 	foreach var {currentTime execTime expected_end} {
 	    set runState($node,$var) [expr {$runState($node,$var)*$timeFactor}]
 	}
-    }
-
-    proc HitButton {node action} {
-	variable frames
-
-	$frames($node,rcf).upper.topbuttons.$action invoke
     }
 
     proc SetMode { node action } {
@@ -297,7 +260,6 @@ namespace eval runcontrol33857 {
 		}
 	    }
 	}
-	SendData $node
 	if {[string match start $action] && \
 		[info exists runState($node,reloadParams)]} {
 	    set paramChoice [ShowMessage "Parameters out of date" warning \
@@ -308,7 +270,8 @@ namespace eval runcontrol33857 {
 		RollSimulation $node
 	    }
 	}
-       	set sendvars($node,currentMode) $action
+	SendData $node
+	set sendvars($node,currentMode) $action
 	RollSimulation $node
     }
     
@@ -316,12 +279,12 @@ namespace eval runcontrol33857 {
         global runState redoPhase
         variable sendvars
         
-        set phases [GetPhaseCount $node]
-	set sendvars($node,newData) {}
 	if {$runState($node,currentTime)==0 && \
 		$runState($node,timeReached)!=0} {
 	    ShowMessage "Model not reset" warning "You have manually edited the value for Current Time, setting it to zero. This action will not reset the model's state variables. Editing the current time causes to model to jump to the new time in a single execution step, which can lead to poor accuracy and zigzag traces on time plots. To reset the model and create new plot traces, click on the 'Reset simulation' button in the run control." ok
 	}
+        set phases [GetPhaseCount $node]
+	set sendvars($node,newData) {}
 	foreach entered [list displayInt update$phases currentTime execTime] {
 # for some reason tcl thinks an empty string is a number
 	    if {![string is double -strict $runState($node,$entered)]} {
@@ -351,14 +314,8 @@ namespace eval runcontrol33857 {
 		    $setPhase
                 set redoPhase($node) $setPhase
                 #	    ShowMessage debug info "Twiddling $redoPhase($node)" ok
-		set runState($node,tweaked) 1
             }
         }
-	# allow model to be saved if run settings are changed
-	if {[info exists runState($node,tweaked)]} {
-	    do_in_editor RecordRunParams $node
-	    unset runState($node,tweaked)
-	}
         SetStep $node 0 0
 #        SetState $winId $sendvars($node,newData)
     }
@@ -367,15 +324,20 @@ namespace eval runcontrol33857 {
 	global runState
 	set runState($node,remembered_start) $start
 	set runState($node,expected_end) $finish
+	set runState($node,run_length) [expr $finish-$start]
     }
 
     proc UpdateBar {node now col} {
 	global runState
         set runState($node,currentTime) $now
-	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
-	set runState($node,progress) [expr 100*($now-$runState($node,remembered_start))/($runState($node,expected_end)-$runState($node,remembered_start))]
-	$runState($node,cnvs) itemconfigure 1 -fill $col
         set runState($node,timeReached) $now ;# so I can check if entry edited
+	set runState($node,execTime) [expr $runState($node,expected_end)-$now]
+	if {$runState($node,run_length)} {
+	    $runState($node,progressBar) configure -value \
+		[expr 100*($now-$runState($node,remembered_start))/ \
+		     $runState($node,run_length)]
+	}
+	$runState($node,cnvs) itemconfigure 1 -fill $col
     }
 
 # This is called back from the model execution process whenever
@@ -437,18 +399,17 @@ namespace eval runcontrol33857 {
 	    "[namespace current]::SetMode $node stop"
 	set sendvars($node,busy) 1
 
-	foreach {idx param} \
-	    {0 display 1 update 2 current 3 exec} {
-		set $param [lindex $sendvars($node,newData) $idx]
-	    }
+	foreach {idx param} {0 display 1 update 2 current 3 exec} {
+	    set $param [lindex $sendvars($node,newData) $idx]
+	}
 	set forward [expr $exec>0]
-	if {abs($current + $exec - $runState($node,expected_end)) > abs($update/2.0) || ![info exists sendvars($node,run_length)]} {
-	    set sendvars($node,run_length) $exec
+	if {abs($current + $exec - $runState($node,expected_end)) > abs($update/2.0) || ![info exists runState($node,run_length)]} {
 	    SetupBar $node $current [expr $current + $exec]
 	}
+	do_in_editor RecordRunParams $node
 	if {[string equal reset $sendvars($node,currentMode)]} {
 	    set current 0.0
-	    set exec $sendvars($node,run_length)
+	    set exec $runState($node,run_length)
 	    SetupBar $node $current [expr $current + $exec]
 	    if {[info exists runState($node,reloadParams)]} {
 		set redoPhase($node) $runState($node,reloadParams)
@@ -550,7 +511,7 @@ namespace eval runcontrol33857 {
 	    if {$current==$pause} {
 		set sendvars($node,currentMode) stop
 		if {$current>=$finish} {
-		    set exec $sendvars($node,run_length)
+		    set exec $runState($node,run_length)
 		    SetupBar $node $finish [expr $finish+$exec]
 		} else {
 		    UpdateBar $node $current green
@@ -569,6 +530,9 @@ namespace eval runcontrol33857 {
 	    "[namespace current]::SetMode $node start"
 	UpdateBar $node $current [RestingColour $node]
 	set sendvars($node,currentMode) stop
+	if {[info exists sendvars($node,waitFrom)]} {
+	    unset sendvars($node,waitFrom)
+	}
 	set sendvars($node,busy) 0
     }
 	    
@@ -607,4 +571,6 @@ namespace eval runcontrol33857 {
     
     proc display {args} {
     }
+    
 } ;# end of namespace
+

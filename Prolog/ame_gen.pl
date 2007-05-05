@@ -9,8 +9,7 @@ sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
-		logical_before/3, logical_after/3, any_equiv/3, hide_innards/1,
-		has_bowtie/1, get_bowtie_section/2, find_reference/3,
+		find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
 		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
 		get_node_size/2, get_node_size/4,
@@ -20,14 +19,9 @@ sicstus_module(ame_gen,
 		purge/3, generates/2, upper/2, lower/2, mybagof/3,
 		list_of/3, abs_path_for/2, caption_for/2, find_name_host/2,
 		find_type/2, find_all_comps/2, draws_inside/2,
-		is_primitive/1, is_of_sort/2, is_class_of_sort/2,
-		is_instance_of/2, sp_is/2]).
+		is_primitive/1, is_of_sort/2, is_class_of_sort/2, sp_is/2]).
 
 sicstus_use_module([library(lists), sp_only, m_class, utility, text]).
-
-:- op(500, xfy, is_instance_of).
-
-:- op(450, xf, is_primitive).
 
 /* Full syntax error text currently not displayed because it is too
 distressing to users. Not sure why I use open_chars_stream and
@@ -153,7 +147,9 @@ make_legible_for_prolog(String, NewString) :-
 	causes an integer other than 1 or -1 followed by '! in a string to be
 	interpreted as end-of-file. Gnu doesn't like it either... */
 	ToTweak = [Xm, Eq | Suffix],
-	    Tweaked = [Sp, Sq, Xm, Eq, Sq]), !,
+	    Tweaked = " '!=' ";
+	ToTweak = [Xm | Suffix],
+	    Tweaked = "not "), !,
 	make_legible_for_prolog(Suffix, NewSuffix),
 	append([Prefix, Tweaked, NewSuffix], NewString);	
 	NewString = String.
@@ -230,8 +226,7 @@ of a given base node. (Ghost relationship only exists between an absolute base n
 :- op(500, xfy, is_of_sort).
 
 is_ghost(Ghost) :-
-	find_base(Ghost, Base),
-	\+ Ghost = Base.
+	made_ghost_by(Ghost, _Link).
 
 /* Now links can have multiple roles, a ghost link is one that is not an
 implicit-explicit link or part of an influence chain. */
@@ -252,67 +247,31 @@ influence_makes_ghost(Component) :-
 	appears(Component).
 
 find_base(Ghost, Base) :-
+	Ghost is_of_sort has_bowtie, !,
+	((sequence(Base, Ghost); Base = Ghost; sequence(Ghost, Base)),
+	    implicit_function(Base, FlowFn),
+	    (FlowFn has_class_refinement value of _Val;
+		_Incoming is_connector from _Source to FlowFn), !;
+	(sequence(Base, Ghost); Base = Ghost),
+	\+ sequence(_, Base));
+/*	find_name_host(Ghost, Base); */
+	made_ghost_by(Ghost, Link), !,
+	initiates(Link, Base);
+	Base = Ghost.
+
+made_ghost_by(Ghost, Link) :-
 	Ghost is_of_sort has_function,
 	Link is_connector from NextUp to Ghost,
 	Link has_type influence,
-	\+ NextUp has_class function,
-	initiates(Link, NextBase), !,
-	   find_base(NextBase, Base);
-	Base = Ghost.
-
-needs_bowtie(Flow) :-
-	implicit_function(Flow, FlowFn),
-	(FlowFn has_class_refinement value of _Val;
-	    _Incoming is_connector from _Source to FlowFn), !.
-
-has_bowtie(Flow) :-
-	Flow is_of_sort has_bowtie,
-	(needs_bowtie(Flow), !;
-	gets_default_bowtie(Flow),
-	\+ (any_equiv(Flow, Other, _),
-	       needs_bowtie(Other))).
-
-gets_default_bowtie(Flow) :-
-	Flow is_connector from BlackBox to _Wherever,
-	no_see_inside(BlackBox),
-	\+ (logical_after(Flow, LeadsOut, _),
-	       LeadsOut is_connector from BlackBag to _MoreVisible,
-	       no_see_inside(BlackBag)).
-
-any_equiv(Flow, Linked, Capts) :-
-	logical_before(Flow, Linked, Capts);
-	logical_after(Flow, Linked, Capts).
-
-logical_before(Flow, Linked, capts(F, L)) :-
-	logical_follows(Prev, Flow, capts(P, F)),
-	([Linked, L]=[Prev, P]; logical_before(Prev, Linked, capts(P, L))).
+	\+ NextUp has_class function.
 	
-logical_after(Flow, Linked, capts(F, L)) :-
-	logical_follows(Flow, Next, capts(F, N)),
-	([Linked, L] = [Next, N]; logical_after(Next, Linked, capts(N, L))).
-
-hide_innards(Box) :-
-	Box has_graphical_attribute contents_view of V, \+ V=full.
-
-no_see_inside(Box) :-
-	appears(Box),
-	\+ Box is_of_sort contains_parts;
-	hide_innards(Box).
-
-get_bowtie_section(Flow, Sect) :-
-	Flow is_of_sort has_bowtie,
-	(Flow = Sect; sequence(Sect, Flow); sequence(Flow, Sect)),
-	has_bowtie(Sect). % feel free to add efficiency tweaks
-
-/*
-leaves_primitive(Link) :-
-	Link is_connector from Go to _,
-	appears(Go),
-	(\+ find_type(Go, submodel);
-	    Go has_graphical_attribute hide_contents of 1).
-*/
-
 find_ghosts(Base, Ghost) :-
+	Base has_type flow, !,
+	(implicit_function(Base, FlowFn),
+	    FlowFn has_class_refinement value of _Val, !,
+      	    (sequence(Base, Ghost); sequence(Ghost, Base));
+	\+ sequence(_, Base),
+	sequence(Base, Ghost));
 	ghost_link(_Link, Base, Ghost).
 
 /* test for whether node is an input parameter, i.e., something
@@ -403,7 +362,7 @@ Works but buggers up GNU prolog (do after loading?) */
 
 :- op(700, yfx, ['<=']).
 
-:- op(700, yfx, ['=\\=', '!=', =:=]).
+:- op(700, yfx, ['=\\=', '!=', neq, =:=]).
 
 :- op(750, yfx, ['&&', and]).
 
@@ -509,8 +468,8 @@ get_actual_size(Node, Sub, Nums, Sizes, Units) :-
 			Sizes = [UseSize]);
 		    sicstus_format_to_chars("Cannot resolve reference to size of ~a. There are multiple submodels of this name.", [ModName], Err));
 		sicstus_format_to_chars("Cannot resolve reference to size of ~w. There is no submodel of this name.", [ModName], Err));
-	dequote(Sub, BareSub), % enquoted: syntax error if not unit or e_t
-            \+ BareSub = Sub,
+       dequote(Sub, BareSub), % enquoted: syntax error if not unit or e_t
+           \+ BareSub = Sub,
 	    caption_for(Node, Capt),
 	    sicstus_format_to_chars("Cannot resolve reference to size of ~a at node ~a. There is no local enumerated type of this name.", [Sub, Capt], Err)),
 	(var(Err), !;
@@ -535,7 +494,7 @@ enum_type_ref(Ref, Model, Value, Units, ETSpec) :-
 	number(Ref),
 	    Units = 1), !,
 	    Value = Ref,
-	    ETSpec = Ref;	
+	    ETSpec = Ref;
 	dequote(Ref, BareRef),
 	(nth0(Value, [false, true], BareRef), !,
 	    Units = boolean;
@@ -750,8 +709,7 @@ the highest-level model */
 
 caption_for(Comp, ID) :-
 	image:get_host(Comp, CompVisDest),
-	(get_bowtie_section(CompVisDest, CompVisSrc);
-	    find_base(CompVisDest, CompVisSrc)),
+	find_base(CompVisDest, CompVisSrc),
 
 	(CompVisSrc has_class_refinement name of ID, !;
 	(CompVisSrc has_type relation, !,
@@ -807,6 +765,8 @@ find_all_comps(Parent, Comp) :-
 	Parent has_part Comp;
 	Comp draws_inside Parent.
 
+:- op(450, xf, is_primitive).
+
 Type is_primitive :-
 	member(Type, [compartment, state, function, variable, event, cloud,
 		      flow, squirt, influence, relation, alarm, text,
@@ -818,17 +778,16 @@ Type is_primitive :-
 
 Obj is_class_of_sort Class :-
 	member(Obj-SortList,
-		[variable-[round, regular_box, box, has_function, can_be_input,
+		[variable-[regular_box, box, has_function, can_be_input,
 			   can_be_ghost],
-		event-[round, regular_box, box, has_function, can_be_input,
-		       discrete, can_be_ghost],
+		event-[regular_box, box, has_function, can_be_input, discrete,
+			   can_be_ghost],
 		function-[regular_box, box, can_be_input],
 		compartment-[rectangle, elongated_box, box, has_function,
 			     can_be_input, init_eval, level, can_be_ghost],
 		state-[rectangle, tall_box, box, has_function, can_be_input,
 		       init_eval, discrete, can_be_ghost],
-		submodel-[rounded_rect, elongated_box, box, contains_parts],
-		module-[contains_parts],
+		submodel-[rounded_rect, elongated_box, box],
 		flow-[line, has_function, has_bowtie, rate],
 		squirt-[line, has_function, has_bowtie, discrete],
 		influence-[line, curved, captionless],
@@ -851,9 +810,6 @@ Obj is_class_of_sort Class :-
 Obj is_of_sort Sort :-
 	find_type(Obj, Type),
 	Type is_class_of_sort Sort.
-
-Submodel is_instance_of Template :-
-	Submodel has_model_refinement instance of Template.
 
 :- op(700, yfx, sp_is).
 

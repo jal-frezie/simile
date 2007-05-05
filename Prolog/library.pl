@@ -16,17 +16,14 @@ sicstus_use_module( [library(lists),
 % thus keeping the abstract syntax away from the user.
 
 ame_save( File, Model, Date, SelOnly ) :-
-	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly),
-			\+ Sub has_class module), Models), !;
+	(setof(Sub, (Model has_part Sub, go_with(Sub, SelOnly)), Models), !;
 	       Models = []),
-	(setof(Lib, Mod^(contains(Model, Mod), go_with(Mod, SelOnly),
-			 Mod is_instance_of Lib), Libs), !;
-	       Libs = []),
 	(SelOnly = yes,
 	    Models = [UseAsParent],
 	    \+ draw:get_highlit_obj(0, UseAsParent), !,
 	    ame_save(File, UseAsParent, Date, SelOnly);
 	(backup:is_toplevel(Model),
+	    SelOnly = no,
 	    setof(A-V, Model has_class_refinement A of V, Props);
 	 Props = []),
 	\+ ( member( Node, Models ),
@@ -44,15 +41,7 @@ ame_save( File, Model, Date, SelOnly ) :-
 	nl(Stream),
 	write_with_breaks( Stream, roots( Models )),
 	nl(Stream),
-	write_with_breaks( Stream, library( Libs )),
-	nl(Stream),
 	write_with_breaks( Stream, properties(Props)),
-	nl(Stream),
-	dialogue:reassure_user("Writing library node information"),
-	save_nodes( Libs, Stream, no, LibArcsUsed ),
-	nl(Stream),
-	dialogue:reassure_user("Writing library arc information"),
-	save_arcs( LibArcsUsed, Stream),
 	nl(Stream),
 	dialogue:reassure_user("Writing node information"),
 	save_nodes( Models, Stream, SelOnly, ArcsUsed ),
@@ -71,7 +60,6 @@ save_nodes( [], _,_, [] ).
 save_nodes( [Node|Nodes], Stream, SelOnly, AllArcsUsed ) :-
 	save_node( Node, Stream, SelOnly, NewArcsUsed ),
 	save_links( Node, Stream, SelOnly ),
-	save_instancehood( Node, Stream ),
 	save_refs( Node, Stream, SelOnly ),
 	any_setof( Child,
 		   (Node has_part Child, go_with(Child, SelOnly)),
@@ -84,20 +72,12 @@ save_nodes( [Node|Nodes], Stream, SelOnly, AllArcsUsed ) :-
 % save_links - write out a data structure representing links in a module
 
 save_links( Node, Stream, SelOnly ) :-
-	Node has_model_refinement link_equivalences of AllLinks,
-	(Node is_instance_of _,
-	    Links = AllLinks;
-	 setof(From-To, (member(From-To, AllLinks),
-			    go_with(From, SelOnly), go_with(To, SelOnly)),
-	      Links)), !,
+	Node has_link_equivalences AllLinks,
+	setof(From-To, (member(From-To, AllLinks),
+			   go_with(From, SelOnly), go_with(To, SelOnly)),
+	      Links), !,
 	write_with_breaks( Stream, links( Node, Links ));
 	true.
-
-save_instancehood( Node, Stream ) :-
-	Node has_model_refinement instance of Module, !,
-	write_with_breaks( Stream, instance( Node, Module ));
-	true.
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % save_refs - write out a data structure representing references in a module
@@ -307,7 +287,9 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	(SimileV > 4.29, SimileV < 4.31, !;
 	dialogue:reassure_user("Updating non-Simile 4.3 model representation"),
 	    adjust_to_8_3(Translated)),
-	remove_duplicate_libraries(Parent, Translated),
+	(SimileV >= 4.8, !;
+	dialogue:reassure_user("Updating pre-Simile 4.8 model representation"),
+	    adjust_to_8_8(Translated)),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -447,6 +429,30 @@ adjust_to_8_3(Trans) :-
 	    fail;
 	true.
 
+adjust_to_8_8(Trans) :-
+	(Trans = copy; member(_-Node, Trans)),
+	    Node has_class_refinement value of Expr,
+	    replace_subexps(Expr, library, lose_excs, _, top_down, _, NewExpr),
+	    Node has_changed_class_refinement value of NewExpr,
+% spec does not need to change, m_l_f_p will do this
+	    Node has_class_refinement table_data of TabDat,
+	    \+ member(file='/graph/', TabDat),
+	    select(current=With0s, TabDat, MoreTabDat),
+	    trim_heads(With0s, Without0s),
+	    Node has_changed_class_refinement table_data
+	    of [current=Without0s | MoreTabDat],
+	    fail;
+	true.
+
+trim_heads(With0s, No0s) :-
+	With0s = [_H | T], !,
+	   all(library, trim_heads, [build(T), build(No0s)]);
+	No0s = With0s.
+
+lose_excs(_, WithExc, NoExc, 1) :-
+	WithExc =.. ['!', Arg],
+	    NoExc = not Arg.
+
 separate_table_args(_, table(Args), NewTableFn, 0) :-
 	NewTableFn =.. [table | Args].
 
@@ -477,36 +483,7 @@ inds_to_places(var_pair(Expr, NewExpr), Depth) :-
 
 arr_ind(_, Found, _, 0) :-
 	member(Found, [index(_), makearray(_,_)]).
-
-remove_duplicate_libraries(Parent, Trans) :-
-	member(_-NewLib, Trans),
-	Parent has_part NewLib,
-	NewLib has_class module,
-	Parent has_part OldLib,
-	OldLib has_class module,
-	\+ OldLib = NewLib,
-	NewLib has_class_refinement name of LibName,
-	OldLib has_class_refinement name of LibName,
-	(Instance has_changed_model_refinement instance from NewLib to OldLib,
-	    Instance has_model_refinement link_equivalences of LinkEqs,
-	    all(library, switch_instance_eq,
-		[unify([Instance, OldLib]), build(LinkEqs),
-		 build(NewEqs)]),
-	    Instance has_changed_model_refinement link_equivalences of NewEqs,
-	    fail;
-	 m_update:superfast_delete(NewLib)),
-	fail;
-	true.
-
-switch_instance_eq([Inst, ToLib], OldSrc-OldDest, NewSrc-NewDest) :-
-	OldSrc is_connector from _N1 to N2,
-	OldDest is_connector from N3 to _N4,
-	member(Inst-NewSrc-NewDest-Released,
-	       [N2-OldSrc-Engaged-OldDest, N3-Engaged-OldDest-OldSrc]),
-	Released has_attribute name of Name,
-	find_all_comps(ToLib, Engaged),
-	Engaged has_attribute name of Name.
-				    
+	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % store_term does the various things necessary to translate the loaded model(s)
 % into the internal representation. Arg3 is a list of bindings - pairs of

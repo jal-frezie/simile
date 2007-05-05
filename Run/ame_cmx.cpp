@@ -72,9 +72,6 @@ int serviceError;
 graph_data_type* tcl_graphdata;
 char globMess[255];
 
-long int modelType;
-long int modelHandle;
-
 void showMess (char* mess) {
   Tcl_VarEval(globInterp, "tk_messageBox -title {c++ debug} -icon info -message {", mess, "} -type ok",
 	      NULL);
@@ -86,20 +83,19 @@ appear in the object table. */
 int list(long int listType, Tcl_Interp *interp) {
 
   Tcl_Obj *resultPtr;
+  char* find;
   int line, nodecount;
   node_data_line* node_data;
-  char captionSpace[256];
 
   resultPtr = Tcl_GetObjResult(interp);
   nodecount = get_node_count(listType);
   for (line=0; line<nodecount; line++) {
     node_data = get_data_line(listType, line);
-    if (node_data->datatype == EXTERNAL) { // obso
+    if (node_data->datatype == EXTERNAL) {
       list(get_node_model_id(node_data->name), interp);
     } else {
-      easy_capt(listType, line, captionSpace);
       Tcl_ListObjAppendElement(interp, resultPtr, 
-			       Tcl_NewStringObj(captionSpace, -1));
+			       Tcl_NewStringObj(node_data->name, -1));
     }
   }
   return TCL_OK;
@@ -219,6 +215,7 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
   Tcl_Obj *resultPtr, *oneType;
   int error, action, count;
   node_data_line *data_line;
+  long int tgtModel;
   enum_type_data *usedTypes[32], **usedTypePtr;
 
   error = Tcl_GetIntFromObj(interp, argv[2], &action);
@@ -226,8 +223,8 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
     return error;
   } /* if(error) */
 
-  if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[1], NULL), 
-				  modelType, dims, path, usedTypes))) {
+  if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[1], NULL), &tgtModel,
+			     current, dims, path, usedTypes))) {
     sprintf(current, "noitem");
     resultPtr = Tcl_NewStringObj(current, -1);
     Tcl_SetObjResult(interp, resultPtr);
@@ -285,25 +282,25 @@ int do_interface(Tcl_Interp *interp, int argc, Tcl_Obj *CONST argv[])
       return TCL_ERROR;
     }
     action = action + READGRAPH - GETGRAPH; // SETGRAPH becomes WRITEGRAPH
-    return do_graph(get_graph_base(modelType), interp, action, 
-		    data_line->graph, argc, argv);
+    return do_graph(get_graph_base(tgtModel), interp, action, data_line->graph,
+		    argc, argv);
 
   case GETCAPTION:
-    resultPtr = argv[1];
+    resultPtr = Tcl_NewStringObj(current, -1);
     break;
 
   case GETSPEC:
     resultPtr = Tcl_NewStringObj(data_line->strings[1], -1);
     break;
-    
+
   case GETDESC:
     resultPtr = Tcl_NewStringObj(data_line->strings[2], -1);
     break;
-    
+
   case GETCOMMENT:
     resultPtr = Tcl_NewStringObj(data_line->strings[3], -1);
     break;
-    
+
   case GETTRANS:
     resultPtr = Tcl_NewListObj(0, NULL);
     usedTypePtr = usedTypes;
@@ -349,8 +346,8 @@ void get_tcl_value_pointer(void* modelPtr, void* tgt, int paramId,
   enum_type_data* usedTypes[32];
   char id[] = "dummy";
 
-  data_line = searchinfo(id, (long int)modelPtr, dims, path, usedTypes);
-  strcpy(caption, id);
+  data_line = searchinfo(id, &mSpare, caption, dims, path, usedTypes);
+  strcpy(caption, data_line->name);
   strcpy(caption + strlen(caption), " { ");
   for (stepIndex = 0; count>stepIndex; ++stepIndex) {
     sprintf(caption + strlen(caption), "%d ", inds[stepIndex]); 
@@ -396,6 +393,8 @@ Tcl_Obj* make_exec_error(Tcl_Interp* interp, char* phase, char* tgt,
   Tcl_Obj* errList;
 
   errList=Tcl_NewListObj(0, NULL);
+  Tcl_ListObjAppendElement(interp, errList, 
+			   Tcl_NewStringObj("tcl_model_err", -1));
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(phase, -1));
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewStringObj(tgt, -1));
   Tcl_ListObjAppendElement(interp, errList, Tcl_NewDoubleObj(time));
@@ -412,6 +411,9 @@ as Tcl commands so the dialog box can call them as if it were a Tcl simulation.
 unloads the model. Since the model dll now merely defines the model class, this
 also causes an instance of it to be created. */
 
+long int modelType;
+long int modelHandle;
+
 connectRecord** connectDataPtr;
 int* connCountPtr;
 
@@ -419,15 +421,13 @@ FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
 			    int argc, Tcl_Obj *CONST argv[]) {
   char* fileName;
   char* nodeName;
-  char* nodeCapt;
   char* dllProblem;
 
   switch (argc) {
-  case 4:
+  case 3:
     fileName = Tcl_GetStringFromObj(argv[1], NULL);
     nodeName = Tcl_GetStringFromObj(argv[2], NULL);
-    nodeCapt = Tcl_GetStringFromObj(argv[3], NULL);
-    dllProblem = load_model(fileName, nodeName, nodeCapt, &modelType);
+    dllProblem = load_model(fileName, nodeName, &modelType);
     if (dllProblem) {
       Tcl_SetObjResult(interp, Tcl_NewStringObj(dllProblem, -1));
       delete dllProblem;
@@ -437,7 +437,7 @@ FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp,
     break;
     
   default:
-    Tcl_WrongNumArgs(interp, 1, argv, "filename node_id caption");
+    Tcl_WrongNumArgs(interp, 1, argv, "filename node_id");
     return TCL_ERROR;
   }
   return TCL_OK;
@@ -479,16 +479,12 @@ FINDABLE int setparamarrayCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
 
-  if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "model_id node_id");
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
     return TCL_ERROR;
   }
-  error = Tcl_GetLongFromObj(interp, argv[1], (long int *)&modelType);
-  if (error != TCL_OK) {
-    return error;
-  }
-  if (use_array_for_params(Tcl_GetStringFromObj(argv[2], NULL), 
-			   modelType, NULL)) {
+  
+  if (use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL), NULL)) {
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
@@ -515,6 +511,7 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "node_id time");
+
     return TCL_ERROR;
   }
   
@@ -704,8 +701,6 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 void get_string_for_error(char* spare, int error) {
   if (error == -101) {
     sprintf(spare, "abort request from the user");
-  } else if (error == -102) {
-    sprintf(spare, "interruption to adaptive step size control, caused by a discontinuity in a model function");
   } else if (error < 0) {
     sprintf(spare, "Illegal operation signal %d", -error);
   } else {
@@ -1001,9 +996,9 @@ indices as far as the pointer, 0 if that is all the indices, and -1 if there
 is a mismatch before the pointer
 
 Change for 4.8: we put a 0 at the end of the dims so we do not need one at the
-end of each model instance's ids  */
+end of each model instance's ids */
 
-int match_type(long int localType, void* smHandle, int dims[], 
+int match_type(long int localType, long int smHandle, int dims[], 
 	       int* dim_place) {
   int id_handle[] = {2,0}, *cur_place, *short_tree, *id_ptr, id_val, id_count;
   short_tree = id_handle;
@@ -1025,11 +1020,12 @@ int match_type(long int localType, void* smHandle, int dims[],
   }
   return 0;
 }
+
 /* next two call one another so one needs to be declared in advance */
-Tcl_Obj* fill_value(long int, void*, int[], int, int*, int[], int*, 
+Tcl_Obj* fill_value(long int, long int, int[], int, int*, int[], int*, 
 		    Tcl_Obj*);
 
-Tcl_Obj* fill_list_value(long int localType, void** smHandle, int tree[], 
+Tcl_Obj* fill_list_value(long int localType, long int* smHandle, int tree[], 
 			 int type, int* use_dims, int dims[], int* dim_place) {
   Tcl_Obj *localObj, *localSubObj;
   int next_handle[] = {1,0}, match, arrayOut, *short_tree;
@@ -1040,7 +1036,8 @@ Tcl_Obj* fill_list_value(long int localType, void** smHandle, int tree[],
       localObj = fill_value(localType, *smHandle, tree, type, use_dims, 
 			    dim_place+1, dim_place+1, NULL);
       short_tree = next_handle;
-      *smHandle = *(void**)get_ptr(localType, *smHandle, &short_tree, NULL);
+      *smHandle = *(long int*)(get_ptr(localType, *smHandle, &short_tree, 
+						  NULL));
     } else {
       *dim_place=match;
       localSubObj = fill_list_value(localType, smHandle, tree, type,
@@ -1062,7 +1059,7 @@ for the indices in the arrays we are getting values from, and dim_place is the
 pointer into this array where we can add more values as we go through the loops
 up to the sizes specified in use_dims. */
 
-Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[], 
+Tcl_Obj* fill_value(long int localType, long int smHandle, int tree[], 
 		    int type, int* use_dims, int dims[], int* dim_place, 
 		    Tcl_Obj* nVs) {
   Tcl_Obj *localObj, *indObj, *localSubObj, **arrayVals, *eltVals;
@@ -1070,6 +1067,7 @@ Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[],
   int *new_tree;
   int arrayLength, arrayPosn, arrayOut;
   int next_handle[] = {1,0}, id_handle[] = {2,0};
+
 
   // dimension count for pops/records: overwritten for vm, unused for fm/sep
   *(dim_place+1)=1;
@@ -1081,7 +1079,7 @@ Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[],
     new_tree = tree;
     while (*new_tree++ != SEPARATE) {}
 
-    smHandle = *(void**)get_ptr(localType, smHandle, &tree, &dims);
+    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
     localType = *(new_tree++);
     return(fill_value(localType, smHandle, new_tree, type, 
 		      use_dims+1, dim_place, dim_place, nVs));
@@ -1096,7 +1094,7 @@ Tcl_Obj* fill_value(long int localType, void* smHandle, int tree[],
     new_tree = tree;
     while (*new_tree++ != -1) {}
 
-    smHandle = *(void**)get_ptr(localType, smHandle, &tree, &dims);
+    smHandle = *(long int*)(get_ptr(localType, smHandle, &tree, &dims));
     localObj = fill_list_value(localType, &smHandle, new_tree, type, 
 			       use_dims+1, dim_place+1, dim_place+1);
     break;
@@ -1162,6 +1160,7 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
 
   char spare[256];
   int dims[32], path[32];
+  long int mSpare;
   enum_type_data* usedTypes[32];
 
   error = Tcl_GetLongFromObj(interp, argv[1], &modelType);
@@ -1191,12 +1190,11 @@ FINDABLE int extractCmd(ClientData clientData, Tcl_Interp *interp,
   resultPtr = Tcl_NewObj();
 
   if (!(data_line=searchinfo(Tcl_GetStringFromObj(argv[3], NULL), 
-			     modelType, dims, path, usedTypes))) {
+			     &mSpare, spare, dims, path, usedTypes))) {
     resultPtr = Tcl_NewStringObj("novalue", -1);
   } else {
-    resultPtr = fill_value(modelType, instance_ptr_from_id(modelHandle), path,
-			   data_line->datatype, dims+count, 
-			   current_dims, current_dims+count,
+    resultPtr = fill_value(modelType, modelHandle, path, data_line->datatype, 
+			   dims+count, current_dims, current_dims+count,
 			   newData);
     /*
     for (count=0; 4>count; ++count) {
@@ -1426,7 +1424,7 @@ FINDABLE int random01Cmd(ClientData clientData, Tcl_Interp *interp,
    return TCL_OK;
 }
 
-BOOLEAN interact_gui(void* id, int stop_chk, double now) {
+BOOLEAN interact_gui(void* id, BOOLEAN stop_chk, double now) {
   BOOLEAN response;
 
   Tcl_Obj* feedbackCmd;
@@ -1555,9 +1553,7 @@ int my_md5(Tcl_Interp *interp, Tcl_Obj* text) {
 int my_hash(Tcl_Interp *interp, Tcl_Obj *textObj) {
   Tcl_Obj* md5Target;
 
-  if (my_md5(interp, textObj) == TCL_ERROR) {
-    return TCL_ERROR;
-  }
+  my_md5(interp, textObj);
   md5Target = Tcl_NewStringObj("::hex -mode encode -- ", -1);
   Tcl_ListObjAppendElement(interp, md5Target, Tcl_GetObjResult(interp));
   if (Tcl_EvalObjEx(interp, md5Target, 0) == TCL_ERROR) {
@@ -1742,7 +1738,7 @@ int licenseRight (Tcl_Interp *interp) {
   offered = Tcl_GetVar2(interp, "userinfo", "license_code", 0);
   if (!offered || strncmp(offered, Tcl_GetStringResult(interp), 10)) {
 //    Tcl_AppendResult(interp, " is license code", (char *)NULL);
-//    return -1;
+//    return TCL_ERROR;
     return 0;
   }
 #endif
@@ -1821,10 +1817,10 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "insert", extractCmd, (ClientData)1,
 		       (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd,
+  Tcl_CreateObjCommand(interp, "extract_binary", extractBinCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "discrete_values", extractBinCmd,
+  Tcl_CreateObjCommand(interp, "discrete_values", extractBinCmd, 
 		       (ClientData)1, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "getnodeid", getnodeidCmd, (ClientData)NULL,
@@ -1905,8 +1901,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
   globInterp = interp;
-  proc_pointers_for_shank(get_tcl_value_pointer,
-			  interact_gui, showMess,
+  proc_pointers_for_shank(interact_gui, showMess,
 			  simileVersion, &connectDataPtr, &connCountPtr);
   /* Use the Tcl Stubs mechanism */
   Tcl_InitStubs(interp, "8.4", 0);

@@ -64,34 +64,38 @@ make_branch(Arc, California) :-
 	initiates(CompleteArc, DeepSource),
 	m_update:continues_from(CompleteArc, California),
 	CompleteArc has_type influence,
-	California has_model_refinement link_equivalences of Equivs,
+	California has_link_equivalences Equivs,
 	member(InnerArc-CompleteArc, Equivs),
 	CompleteArc is_connector from Junction to _,
 	(m_update:continues_from(Arc, OldBorder), !,
-	    OldBorder has_model_refinement link_equivalences of OBEquivs,
+	    OldBorder has_link_equivalences OBEquivs,
 	    select(_-Arc, OBEquivs, OBRest),
-	    OldBorder has_changed_model_refinement link_equivalences of OBRest;
+	    OldBorder has_changed_link_equivalences OBRest;
 	true),
 	Arc has_changed_termination start from _OldStart to Junction,
-	California has_changed_model_refinement link_equivalences of
+	California has_changed_link_equivalences
 	        [InnerArc-Arc | Equivs].
 
-/* If a flow has multiple sections the bowtie is drawn on the one
-whose implicit function has a value, except if none have in which case
-it goes on the section at the source end. If dividing a flow with no
-values we need to add one to the section that currently has the bowtie
-in case that bowtie is not on the new source section (typical ghastly
-hack) */
-
 add_null_value_if_needed(Arc) :-
-	get_bowtie_section(Arc, Base),
+	find_base(Arc, Base),
 	implicit_function(Base, BaseFn),
-	(BaseFn has_class_refinement value of _Val;
-	    BaseFn has_new_class_refinement value of ''), !;
-	true.
+	(BaseFn has_class_refinement value of _Val, !;
+	    BaseFn has_new_class_refinement value of '').
 	
 add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
-	add_null_value_if_needed(Flow),
+	/* If a flow has multiple sections the bowtie is drawn on the one
+	whose implicit function has a value, except if none have in which case
+	it goes on the section at the source end. If dividing a flow with no
+	values we need to add one to the section that currently has the bowtie
+	in case that bowtie is not on the new source section
+	(typical ghastly hack) */
+	(Flow is_of_sort has_bowtie,
+	    find_base(Flow, Base),
+	    implicit_function(Base, BaseFn),
+	    \+ BaseFn has_class_refinement value of _Val, !,
+	    BaseFn has_new_class_refinement value of '';
+	true),
+
 	NewNode is_new_part_of California,
 	NewNode has_new_class NewClass,
 	((Direction = sink, Keep = out; Direction = source, Keep = in) ->
@@ -107,12 +111,12 @@ add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	Flow has_changed_termination EndToChange from OldEnd to ChangedEnd,
 
 	(EndToChange = finish ->
-		NewFlow is_new_connector from NewEnd to OldEnd,
-			substitute_finish_equivalences(Flow, NewFlow),
-			add_link_equivalence(California, Flow-NewFlow);
-		NewFlow is_new_connector from OldEnd to NewEnd,
-			substitute_start_equivalences(Flow, NewFlow),
-			add_link_equivalence(California, NewFlow-Flow)),
+	    NewFlow is_new_connector from NewEnd to OldEnd,
+	    switch_finish_equivalences(Flow, NewFlow),
+	    NewFlow now_follows Flow;
+	 NewFlow is_new_connector from OldEnd to NewEnd,
+	    switch_start_equivalences(Flow, NewFlow),
+	    Flow now_follows NewFlow),
 	copy_local_attributes(Flow, NewFlow),
 	change_references(OldEnd, Flow, NewFlow),
 	m_update:add_implicit_function(NewFlow, _NewFunc).
@@ -124,7 +128,7 @@ add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
 % and source/sink nodes are thrown away, even if they were visible.
 
 unencapsulate(Node, Contents, ToReroute) :-
-	(Node has_model_refinement link_equivalences of Equivs, !;
+	(Node has_link_equivalences Equivs, !;
 	    Equivs = []),
 	(setof(OutputLink, is_output_link(Node, Equivs, OutputLink),
 	      OutputLinks), !;
@@ -159,7 +163,7 @@ make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 	    Link is_new_connector from Origin to Destination,
 	    copy_local_attributes(Finish, Link),
 	    copy_start_equivalences(Start, Link),
-	    copy_finish_equivalences(Finish, Link),
+	    switch_finish_equivalences(Finish, Link),
 	    change_references(Origin, Start, Link),
 	    change_references(Destination, Finish, Link),
 	    Gone = Dead;
@@ -177,7 +181,7 @@ make_link_spec(Submodel, Equivs, [Link | NewLinks]) :-
 	    (	Cutoff = Post1; Cutoff = Post2),
 	    \+ member(Cutoff, [Origin, Submodel, Destination]),
 	    \+ _ is_connector from Cutoff to _,
-	    m_update:Cutoff is_no_longer_model_class,
+	    m_update:oblitterfry(Cutoff),
 	    fail;
 	make_link_spec(Submodel, Others, NewLinks),
 	    scrap_spare_functions(Link)).
@@ -195,7 +199,7 @@ scrap_spare_functions(Link) :-
 			\+ Chaff = Grain,
 			(_ has_changed_termination finish from Chaff to Grain,
 				fail;
-			m_update:Chaff is_no_longer_model_class,
+			m_update:oblitterfry(Chaff),
 				fail));
 	true.
 
@@ -225,8 +229,8 @@ all_same_parent( [Thing|Things], Parent, [Thing|Nodes], InclFlows, NewArcs ) :-
 	!, % green cut
 	Thing is_part_of Parent,
 	all_same_parent( Things, Parent, Nodes, InclFlows, Arcs ),
-	(setof( Arc, A^B^( Arc is_connector from A to B,
-			    member(Thing, [A,B]);
+	(setof( Arc, A^B^( member(Thing, [A,B]),
+			    Arc is_connector from A to B;
 			    member( Arc, Arcs )), NewArcs ), !; NewArcs = []).
 all_same_parent( [Thing|Things], Parent, Nodes, [Thing|InclFlows], Arcs ) :-
 	Thing is_connector from P1 to _,
@@ -237,40 +241,21 @@ all_same_parent( [Thing|Things], Parent, Nodes, [Thing|InclFlows], Arcs ) :-
 % add_link_equivalence convenient interface to the ADT to add equivalences
 
 add_link_equivalence( Node, From-To ) :-
-	\+ Node has_model_refinement link_equivalences of _Equivs,
+	\+ Node has_link_equivalences _Equivs,
 	!,
-	Node has_new_model_refinement link_equivalences of [From-To].
+	Node has_new_link_equivalences [From-To].
 add_link_equivalence( Node, From-To ) :-
-	Node has_model_refinement link_equivalences of Equivs,
+	Node has_link_equivalences Equivs,
 	member( From-To, Equivs ),
 	!.
 add_link_equivalence( Node, Pair ) :-
-	Node has_model_refinement link_equivalences of Equivs,
-	Node has_changed_model_refinement link_equivalences of [Pair|Equivs].
+	Node has_link_equivalences Equivs,
+	Node has_changed_link_equivalences [Pair|Equivs].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% delete_link_equivalence ditto for deleting
-
-delete_link_equivalence( Node, _ ) :-
-	\+ Node has_model_refinement link_equivalences of _Equivs,
-	!.
-delete_link_equivalence( Node, From-To ) :-
-	Node has_model_refinement link_equivalences of Equivs,
-	\+ member( From-To, Equivs ),
-	!.
-delete_link_equivalence( Node, From-To ) :-
-	Node has_model_refinement link_equivalences of Equivs,
-	delall( Equivs, From-To, NewEquivs ),
-	Node has_changed_model_refinement link_equivalences of NewEquivs,
-	!; true.
-
 kill_equivalences(Link) :-
-	Link is_connector from Start to Finish,
-	find_link_node(Start, SP),
-	delete_link_equivalence(SP, _-Link),
-	find_link_node(Finish, FP),
-	delete_link_equivalence(FP, Link-_).
-
+	(Link no_longer_follows _Any; _Any no_longer_follows Link),
+	fail; true.
 	
 copy_local_attributes(Arc, NewArc) :-
 	Arc has_type Type,
@@ -289,47 +274,26 @@ copy_local_attributes(Arc, NewArc) :-
 		 GAVPairs,
 		 NewArc has_new_graphical_attribute GAttribute of GValue).
 
+/* when deleting a boundary, a link ending on it may be replaced by multiple
+links, so keep the start equiv until all new ones are added */
 copy_start_equivalences(FromArc, NewArc) :-
-	NewArc is_connector from Start to _,
-	find_link_node(Start, Parent),
-	(Parent has_model_refinement link_equivalences of Equivs,
-	    setof(Far-NewArc, member(Far-FromArc, Equivs), NewEquivs),
-	    append(Equivs, NewEquivs, AllEquivs),
-	    Parent has_changed_model_refinement link_equivalences
-	        of AllEquivs, !;
-	true).
+	FromArc follows EarlierArc,
+	NewArc now_follows EarlierArc,
+	fail; true.
 
-copy_finish_equivalences(ToArc, NewArc) :-
-	NewArc is_connector from _ to Finish,
-	find_link_node(Finish, Parent),
-	(Parent has_model_refinement link_equivalences of Equivs,
-	    setof(NewArc-Far, member(ToArc-Far, Equivs), NewEquivs),
-	    append(Equivs, NewEquivs, AllEquivs),
-	    Parent has_changed_model_refinement link_equivalences
-	        of AllEquivs, !;
-	true).
+switch_start_equivalences(FromArc, NewArc) :-
+	FromArc  no_longer_follows EarlierArc,
+	NewArc now_follows EarlierArc,
+	fail; true.
 
-substitute_start_equivalences(FromArc, NewArc) :-
-	NewArc is_connector from Start to _,
-	find_link_node(Start, Parent),
-	change_equivalences(Parent, start, FromArc, NewArc).
-
-/* The same arc may have only one start equivalence but may finishes */
-substitute_finish_equivalences(ToArc, NewArc) :-
-	NewArc is_connector from _ to Finish,
-	find_link_node(Finish, Parent),
-	change_equivalences(Parent, finish, ToArc, NewArc).
+switch_finish_equivalences(ToArc, NewArc) :-
+	LaterArc no_longer_follows ToArc,
+	LaterArc now_follows NewArc,
+	fail; true.
 
 find_link_node(Node, Parent) :-
 	Node has_class submodel, appears(Node), !, Parent = Node;
 	find_all_comps(Parent, Node).
-
-change_equivalences(Node, End, OldLink, NewLink) :-
-	Node has_model_refinement link_equivalences of List, !,
-	swap_all(List, End, OldLink, NewLink, NewList),
-	Node has_changed_model_refinement link_equivalences 
-		of NewList;
-	true.
 
 swap_all(List, End, Old, New, NewList) :-
 	append(Early, [L1-L2 | Late], List),

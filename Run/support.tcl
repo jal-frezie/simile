@@ -14,19 +14,14 @@ set this ::AME_model<>
 # searching through records like this is not the best way -- try and change
 # the tcl model code so the node id is the index
 
-# ...actually as of v5 it is the only way, since the 'node' is now the 
-# caption path
-
 proc findRecord {node} {
     global nodedata
 
     foreach record [array names nodedata] {
-	set name [GetFullCaption $nodedata($record)]
-        if {[string equal $node $name]} {
-            return $nodedata($record)
-        }
+	if {[string equal $node [lindex $nodedata($record) 0]]} {
+	    return $nodedata($record)
+	}
     }
-    return {}
 }
 
 proc getinfo {node field} {
@@ -60,25 +55,26 @@ proc setup_enum_type_data {args} {
 proc tcl_insert {node newVs} {
     global nodedata
 
-    if {[string length [set record [findRecord $node]]]} {
-        set tree [lindex $record 6]
-        set type [lindex $record 1]
-        set dims [GetTclCompProperty dummy Dims $node] ;# wasteful
-        return [list [FillValue ::AME_model<> $tree $type $dims \
-                          {} 0 $newVs]]
-    } else {
-        return novalue
+    foreach record [array names nodedata] {
+	if {[string equal $node [lindex $nodedata($record) 0]]} {
+	    set tree [lindex $nodedata($record) 6]
+	    set type [lindex $nodedata($record) 1]
+	    set dims [GetTclCompProperty dummy Dims $node]
+	    return [list [FillValue ::AME_model<> $tree $type $dims \
+			      {} 0 $newVs]]
+	}
     }
+    return novalue
 }
 
 # right now to get the node id
 proc GetNodeIdFromRef {dest indices} {
     global nodedata
-    foreach record [array names nodedata] {
-        if {[string equal $dest [burrow_to ::AME_model<> \
-                                    [lindex $nodedata($record) 6] $indices]]} {
-            return [lindex $nodedata($record) 0]
-        }
+        foreach record [array names nodedata] {
+	if {[string equal $dest [burrow_to ::AME_model<> \
+				    [lindex $nodedata($record) 6] $indices]]} {
+	    return [lindex $nodedata($record) 0]
+	}
     }
 }
 
@@ -96,28 +92,28 @@ proc oldcollect {tgt node count args} {
     global myNode
 # ShowMessage debug info "Collecting...$tgt...$node...$count...$args" ok
     if {[string match TABLE [getinfo $node 3]]} {
-        set inputSrc paramData
+	set inputSrc paramData
     } else {
-        set inputSrc [InputVarFor $myNode $node]
-#        switch [getinfo $node 0] {
-#            FLAG {
-#                set inputSrc checkStates
-#            } ENUMERATED {
-#                set inputSrc comboChoices
-#            } default {
-#                set inputSrc sliderVals
-#            }
-#        }
+	set inputSrc [InputVarFor $myNode $node]
+#	switch [getinfo $node 0] {
+#	    FLAG {
+#		set inputSrc checkStates
+#	    } ENUMERATED {
+#		set inputSrc comboChoices
+#	    } default {
+#		set inputSrc sliderVals
+#	    }
+#	}
     }
 #    set sub [join [concat $node $args] ,]
     set val [BringParameter $inputSrc $node $args]
     if {[llength $val]} {
 # Check that input source exists, it will not if model is being initialized
-        if {[string equal REAL [getinfo $node 0]]} {
-            set $tgt $val
-        } else {
-            set $tgt [expr int($val)]
-        }
+	if {[string equal REAL [getinfo $node 0]]} {
+	    set $tgt $val
+	} else {
+	    set $tgt [expr int($val)]
+	}
     }
 }
 
@@ -139,73 +135,33 @@ proc step_incr {step v} {
 }
 
 proc old_stage_incr {ns_extras step v} {
-    global adapt
     upvar \#0 $ns_extras extras
     if {![info exists extras]} {
-        array set extras \
-            [list init_rate 0 cum_value 0 current_offset 0 pred_change 0]
+	set extras [list 0 0]
     }
 
-    if {[glob_element dts 0]<0} {
-        set dv [step_incr $step $extras(init_rate)]
-    } else {
-        set dv [step_incr $step $v]
-    }
-    switch -- [expr int([glob_element dts 0])] {
-        0 { ;# Euler
-            set extras(init_rate) $v
-            return [set extras(cum_value) [set extras(pred_change) $dv]]
-        } 1 { ;# these 4 are R-K
-            set extras(init_rate) $v
-            set extras(cum_value) [expr $dv/6.0]
-            set extras(pred_change) [expr -$dv/3.0]
-#puts "p1 dv $dv curr_off [expr $dv/2.0]"
-            return [set extras(current_offset) [expr $dv/2.0]]
-        } 2 {
-            set extras(cum_value) [expr $extras(cum_value)+$dv/3.0]
-            set old_offset $extras(current_offset)
-#puts "p2 dv $dv curr_off [expr $dv/2.0]"
-            return [expr [set extras(current_offset) [expr $dv/2.0]] \
-                              -$old_offset]
-        } 3 {
-            set extras(cum_value) [expr $extras(cum_value)+$dv/3.0]
-            set extras(pred_change) [expr $extras(pred_change)+2*$dv/3.0]
-            set old_offset $extras(current_offset)
-#puts "p3 dv $dv"
-            return [expr [set extras(current_offset) $dv]-$old_offset]
-        } 4 {
-            set extras(cum_value) [expr $extras(cum_value)+$dv/6.0]
-            set extras(pred_change) [expr $extras(pred_change)+2*$dv/3.0]
-            set old_offset $extras(current_offset)
-            set extras(current_offset) $dv; # for checking 3rd order motion
-#puts "p4 dv $dv cum_value $extras(cum_value) pred_change $extras(pred_change)"
-            return [expr $extras(cum_value)-$old_offset]
-        } -1 { ;# undoes previous change Euler
-            set old_offset $extras(cum_value)
-            return [expr [set extras(cum_value) \
-                          [set extras(pred_change) $dv]]-$old_offset]
-        } -2 { ;# undoes previous change R-K
-#puts "p-2 undoing $extras(cum_value)"
-            set old_offset $extras(cum_value)
-            set extras(cum_value) [expr $dv/6.0]
-            set extras(pred_change) [expr -$dv/3.0]
-            return [expr [set extras(current_offset) [expr $dv/2.0]] \
-                              -$old_offset]
-        } 10 { ;# does not change compartment, just checks for errors
-            if {$dv} {
-                set errMagn [expr abs(1-($extras(pred_change)/$dv))]
-#puts "p10 pred_change $extras(pred_change) dv $dv errMagn $errMagn"
-                if {$errMagn > $adapt(maxErr)} {
-                    set adapt(maxErr) $errMagn
-                }
-            }
-            return 0
-        }
+    set dv [step_incr $step $v]
+    switch [expr int([glob_element dts 0])] {
+	0 {
+	    return $dv
+	} 1 {
+	    set current_offset [expr $dv/2.0]
+	    set extras [list [expr $dv/6.0] $current_offset]
+	    return $current_offset
+	} 2 {
+	    set current_offset [expr $dv/2.0]
+	    set old_offset [lindex $extras 1]
+	    set extras [list [expr [lindex $extras 0]+$dv/3.0] $current_offset]
+	    return [expr $current_offset-$old_offset]
+	} 3 {
+	    set old_offset [lindex $extras 1]
+	    set extras [list [expr [lindex $extras 0]+$dv/3.0] $dv]
+	    return [expr $dv-$old_offset]
+	} 4 {
+	    return [expr [lindex $extras 0]+$dv/6.0-[lindex $extras 1]]
+	}
     }
 }
-
-# extras must be a list rather than an array because it is already an array
-# element if the compartment is an array
 
 proc stage_incr {ns_extras step v} {
     global adapt
@@ -266,9 +222,10 @@ proc stage_incr {ns_extras step v} {
 }
 
 proc do_model {what mtime mstep} {
-#    if {[catch {
-        eval ::AME_model<>::${what} $mtime $mstep
-#    }]} {RaiseTclExecError $what $mtime $mstep}
+#puts "do_model $what $mtime $mstep"
+    if {[catch {eval ::AME_model<>::${what} $mtime $mstep}]} {
+	RaiseTclExecError $what $mtime $mstep
+    }
 }
 
 proc RaiseTclExecError {mproc mtime mstep} {
@@ -281,18 +238,18 @@ proc RaiseTclExecError {mproc mtime mstep} {
     set mStream [open $model_prog($myNode) r]
     set mLine {}
     while {![string match "proc $mproc *" $mLine]} {
-        gets $mStream mLine
+	gets $mStream mLine
     }
 #puts "found proc $mLine"
     for {set procLine 1} {$procLine < $lineNo} {incr procLine} {
-        gets $mStream mLine
+	gets $mStream mLine
     }
 #puts "picked line $mLine"
     close $mStream
     if {[regexp {set ([^ ]*) .*} $mLine spare targetName]} {
-        set dest [namespace eval AME_model<> "set spare $targetName"]
+	set dest [namespace eval AME_model<> "set spare $targetName"]
     } else {
-        set dest none
+	set dest none
     }
     error [list tcl_model_err $mproc $dest $mtime $mstep $whoopsie] $errorInfo
 }
@@ -304,30 +261,30 @@ proc CheckGUI {node modelTime thisOp} {
     # first record how much time the last op took
     set thisUpdate [clock clicks -milliseconds]
     if {[info exists GUILog(lastExit)]} {
-        set GUILog($GUILog(lastOp),took) [expr $thisUpdate-$GUILog(lastExit)]
-        set currentOld [expr $thisUpdate-$GUILog(lastUpdate)>$flash]
+	set GUILog($GUILog(lastOp),took) [expr $thisUpdate-$GUILog(lastExit)]
+	set currentOld [expr $thisUpdate-$GUILog(lastUpdate)>$flash]
     } else {
-        set currentOld 1
+	set currentOld 1
     }
     set GUILog(lastOp) $thisOp
     
     if {[info exists GUILog($thisOp,took)]} {
-        set startingLong [expr $GUILog($thisOp,took)>$flash]
+	set startingLong [expr $GUILog($thisOp,took)>$flash]
     } else {
-        set startingLong 1
+	set startingLong 1
     }
     
     if {$currentOld || $startingLong} {
-        if {[string equal ext $thisOp]} {
-            set col 2
-        } else {
-            set col 1
-        }
-        set result [InteractGUI $node $modelTime $col]
-        set thisUpdate [clock clicks -milliseconds] ;# GUI may have taken time
-        set GUILog(lastUpdate) $thisUpdate
+	if {[string equal ext $thisOp]} {
+	    set col 2
+	} else {
+	    set col 1
+	}
+	set result [InteractGUI $node $modelTime $col]
+	set thisUpdate [clock clicks -milliseconds] ;# GUI may have taken time
+	set GUILog(lastUpdate) $thisUpdate
     } else {
-        set result 0
+	set result 0
     }
     set GUILog(lastExit) $thisUpdate
     return $result
@@ -336,7 +293,7 @@ proc CheckGUI {node modelTime thisOp} {
 proc abort_check {args} {
     global helperTable myNode
     if {[$helperTable(RunControl)::RCAbortCheck $myNode]} {
-        error "abort request from the user."
+	error "abort request from the user"
     }
 }
 
@@ -353,20 +310,20 @@ proc TclResetModel {topPhase} {
 }
 
 proc TclExecuteModel {node howInt start end errLim} {
-    global dts steps phasecount adapt setFromSeries
+    global dts steps phasecount adapt
 #    if {[string equal cancel [ShowMessage debug info "XM from $start to $end" okcancel]]} {
-#        error cancelled
+#	error cancelled
 #    }
     set freq [expr $steps($phasecount)*pow(2,-$adapt(doublings))]
     set xtime $start
     while {($end-$xtime)*$freq>0} { ;# freq only affects sign
-        set madeStep 0
-        set firstPass 1
-        set bigPhase [PhaseFor $xtime $freq $phasecount]
+	set madeStep 0
+	set firstPass 1
+	set bigPhase [PhaseFor $xtime $freq $phasecount]
 # that is the biggest phase we will try to run, we may not succeed
-        if {[CheckGUI $node $xtime ph$bigPhase]} {
-            return 0
-        }
+	if {[CheckGUI $node $xtime ph$bigPhase]} {
+	    return 0
+	}
         while {!$madeStep} {
             # stretch interval to hit end if necssary
             if {$xtime/$freq+1.0625>$end/$freq} {
@@ -375,25 +332,25 @@ proc TclExecuteModel {node howInt start end errLim} {
             } else {
                 set xtime [expr $xtime+$freq]
             }
-            SetDTs $bigPhase $xtime
+	    SetDTs $bigPhase $xtime
 
-            if {[string equal Euler $howInt]} {
+	    if {[string equal Euler $howInt]} {
                 if {$firstPass} {
-                    set dts(0) 0
+ 		    set dts(0) 0
                 } else {
                     set dts(0) -1
                 }
                 AdvanceTime $node $bigPhase 1
-                do_model updatemodel $xtime $bigPhase
-            } else {
+		do_model updatemodel $xtime $bigPhase
+	    } else {
                 if {$firstPass} {
                     set dts(0) 1
                 } else {
                     set dts(0) -2
                 }
                 do_model updatemodel $xtime $bigPhase
-                RKUpdate $node $xtime $bigPhase
-            }
+		RKUpdate $node $xtime $bigPhase
+	    }
             set firstPass 0
             if {!$errLim} {
                 set madeStep 1
@@ -403,10 +360,10 @@ proc TclExecuteModel {node howInt start end errLim} {
                 set adapt(maxErr) 0
                 set dts(0) 10
                 do_model updatemodel $xtime $bigPhase
-#puts "time $xtime max error $adapt(maxErr)"
+#puts "time $xtime max error $adapt(maxErr) doublings $adapt(doublings)"
                 if {$adapt(maxErr)>$errLim} {
                 # error too great; put comps back and try shorter
-                    if {$adapt(doublings)<31} {
+                    if {$adapt(doublings)<30} {
                         AdvanceTime $node $bigPhase -1 ;# back to the start
                         set xtime [expr $xtime-$freq]
                         incr adapt(doublings)
@@ -429,29 +386,32 @@ proc TclExecuteModel {node howInt start end errLim} {
             } ;# error limit exists
         } ;# made progress
         do_model advancemodel $xtime $bigPhase
-        do_model int_evalmodel $xtime $bigPhase
+	do_model int_evalmodel $xtime $bigPhase
     }
-    CheckGUI $node $end ext
+    if {[CheckGUI $node $end ext]} {
+	return 0
+    }
     return 1
 }
-            
+	    
 proc PhaseFor {current step soFar} {
-#ShowMessage debug info "PhaseFor $current $step $soFar" ok
     global steps
+
+#ShowMessage debug info "PhaseFor $current $step $soFar" ok
     if {$soFar == 1} {
-        return 1
+	return 1
     }
     set try [expr $soFar-1]
     set nextStep $steps($try)
-    set last [expr $current-($step/2.0)]
+    set last [expr $current+($step/2.0)]
     set next [expr $last+$step]
 
     set tryCurrent [expr $nextStep*floor($last/$nextStep)]
     set tryNext [expr $nextStep*floor($next/$nextStep)]
     if {$tryCurrent == $tryNext} {
-        return $soFar
+	return $soFar
     } else {
-        return [PhaseFor $tryNext $nextStep $try]
+	return [PhaseFor $tryCurrent $nextStep $try]
     }
 }
 
@@ -474,20 +434,18 @@ proc RKUpdate {node current phase} {
 proc SetDTs {phase current} {
     global ts dts phasecount
     for {set tweakPhase $phase} {$tweakPhase<=$phasecount} {incr tweakPhase} {
-        set dts($tweakPhase) [expr $current-$ts($tweakPhase)]
+	set dts($tweakPhase) [expr $current-$ts($tweakPhase)]
     }
 }
 
-proc AdvanceTime {node phase fract} {
+proc AdvanceTime {node phase fraction} {
     global ts dts phasecount setFromSeries
-#puts -nonewline "Time was $ts($phase)..."
     for {set tweakPhase $phase} {$tweakPhase<=$phasecount} {incr tweakPhase} {
-        set ts($tweakPhase) [expr $ts($tweakPhase)+$dts($tweakPhase)*$fract]
+	set ts($tweakPhase) [expr $ts($tweakPhase)+$dts($tweakPhase)*$fraction]
     }
-    set seriesPt [expr $ts($phasecount)+$dts($phasecount)*$fract/2]
+    set seriesPt [expr $ts($phasecount)+$dts($phasecount)*$fraction/2]
     UpdateTimeSeries $node $seriesPt
     set setFromSeries($node,current) $seriesPt
-#puts "is now $ts($phase)"
 }
 
 # try to minimize effort at runtime -- list timepoints for each node...
@@ -495,19 +453,19 @@ proc InitTimeSeries {topNode} {
     global setFromSeries paramData
     array unset setFromSeries
     foreach node [GetCompProperty $topNode Objects] {
-        if {[string match INPUT [GetCompProperty $topNode Eval $node]]} {
+	if {[string match INPUT [GetCompProperty $topNode Eval $node]]} {
 #puts "node $node timePts [array names paramData $node,*]"
-            foreach timePt [array names paramData $node,*] {
-                set ${node}([lindex [split $timePt ,] 1]) 1
-            }
-            if {[array size $node]} {
-                set setFromSeries($topNode,$node,times) \
-                    [lsort -real [array names $node]]
-                set setFromSeries($topNode,$node,next) 0
-                set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
+	    foreach timePt [array names paramData $node,*] {
+		set ${node}([lindex [split $timePt ,] 1]) 1
+	    }
+	    if {[array size $node]} {
+		set setFromSeries($topNode,$node,times) \
+		    [lsort -real [array names $node]]
+		set setFromSeries($topNode,$node,next) 0
+		set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
 #puts "initted $setFromSeries($topNode,$node,times)"
-            }
-        }
+	    }
+	}
     }
     set setFromSeries($topNode,current) 0
 }
@@ -515,9 +473,9 @@ proc InitTimeSeries {topNode} {
 proc ResetTimeSeries {topNode} {
     global setFromSeries
     foreach pt [array names setFromSeries $topNode,*,next] {
-        set setFromSeries($pt) 0
-        set node [lindex [split $pt ,] 1]
-        set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
+	set setFromSeries($pt) 0
+	set node [lindex [split $pt ,] 1]
+	set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
     }
     set setFromSeries($topNode,current) 0
 }
@@ -525,11 +483,6 @@ proc ResetTimeSeries {topNode} {
 # for each node we have a list of times in the time series, and a pointer to 
 # where we are in the list. If the time has gone past that pointed to, signal 
 # the data to be written and look at the next one...
-
-# extra feature now the execution loop is in the target language: we
-# pass 'horizon': the time we are going to execute until (usually next
-# display point). Procedure returns the time at which a value next
-# changes if it is before then, so we can update before executing further
 
 proc UpdateTimeSeries {topNode newTime} {
     global setFromSeries paramData comboTypes
@@ -625,13 +578,13 @@ proc UpdateTimeSeries {topNode newTime} {
 proc loses {prob phase} {
     global dts
     if {$prob <= 0 || $dts(0)==-1} {
-        return 0
+	return 0
     } elseif {$prob >= 1} {
-        return 1
+	return 1
     } else {
-        set kills_per_step [expr $dts(0)?4:1]
-        return [expr [ame_rand 0 1] > \
-                    pow(1-$prob, $dts($phase)/$kills_per_step)]
+	set kills_per_step [expr $dts(0)?4:1]
+	return [expr [ame_rand 0 1] > \
+		    pow(1-$prob, $dts($phase)/$kills_per_step)]
     }
 }
 
@@ -669,25 +622,25 @@ proc init_pop {metaTxt crNode ptCount channelId maker} {
     upvar 1 $metaTxt meta
     set lastIndx [expr $ptCount+int([max 0 $crNode])]
     while {$ptCount<$lastIndx} {
-        incr ptCount
-        if {[prune $ptCount meta 1]} {
-            set submodelptr [set $meta]
-            set ${submodelptr}::new_instance 0
-            set $meta [set ${submodelptr}::next]
-        } else { ;# Instance exists
-#            ${byrecspointer}::submodel1maker submodel1<$loop>
-#            set submodel1pointer ${byrecspointer}::submodel1<$loop>
-            # fantasy cmd replacing above:
-            set submodelptr [eval [list $maker] [HexPtr]]
-            set ${submodelptr}::instanceid $ptCount
-            set ${submodelptr}::new_instance 1
-        } ;# end(cond,Instance exists)
-        set ${submodelptr}::parentId 0
-        set ${submodelptr}::channelId $channelId
+	incr ptCount
+	if {[prune $ptCount meta 1]} {
+	    set submodelptr [set $meta]
+	    set ${submodelptr}::new_instance 0
+	    set $meta [set ${submodelptr}::next]
+	} else { ;# Instance exists
+#	    ${byrecspointer}::submodel1maker submodel1<$loop>
+#	    set submodel1pointer ${byrecspointer}::submodel1<$loop>
+	    # fantasy cmd replacing above:
+	    set submodelptr [eval [list $maker] [HexPtr]]
+	    set ${submodelptr}::instanceid $ptCount
+	    set ${submodelptr}::new_instance 1
+	} ;# end(cond,Instance exists)
+	set ${submodelptr}::parentId 0
+	set ${submodelptr}::channelId $channelId
 
-        set ${submodelptr}::next [set $meta]
-        set $meta $submodelptr
-        set meta ${submodelptr}::next
+	set ${submodelptr}::next [set $meta]
+	set $meta $submodelptr
+	set meta ${submodelptr}::next
     }
     return $lastIndx
 }
@@ -768,112 +721,112 @@ proc FillListValues {nextRefPtr newTree type innerDims listDims dimPlace} {
     set nextElt [set [burrow_to $smHandle {2 0} {}]]
     set newDimPlace [expr $dimPlace+1]
     while {[string match $listDims [lrange $nextElt 0 $dimPlace]]} {
-        if {[llength $nextElt] == $newDimPlace} {
-            set result [FillValue $smHandle $newTree $type $innerDims {} 0 {}]
-            set nextRef [set [burrow_to $smHandle {1 0} {}]]
-        } else {
-            set newIndex [lindex $nextElt $newDimPlace]
-            set subVals [FillListValues nextRef $newTree $type $innerDims \
-                                [concat $listDims $newIndex] $newDimPlace]
-            if {[llength $subVals]} {
-                lappend result $newIndex $subVals
-            }
-        }
-        if {[string compare $nextRef 0]} {
-            set smHandle $nextRef
-            set nextElt [set [burrow_to $smHandle {2 0} {}]]
-        } else {
-            break
-        }
+	if {[llength $nextElt] == $newDimPlace} {
+	    set result [FillValue $smHandle $newTree $type $innerDims {} 0 {}]
+	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
+	} else {
+	    set newIndex [lindex $nextElt $newDimPlace]
+	    set subVals [FillListValues nextRef $newTree $type $innerDims \
+				[concat $listDims $newIndex] $newDimPlace]
+	    if {[llength $subVals]} {
+		lappend result $newIndex $subVals
+	    }
+	}
+	if {[string compare $nextRef 0]} {
+	    set smHandle $nextRef
+	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
+	} else {
+	    break
+	}
     }
     return $result
 }
 
 proc FillValue {smHandle tree type useDims dims dimPlace newVals} {
 #do_in_editor puts \
-           "filling tree $tree bounds $useDims inds $dims place $dimPlace"
+	   "filling tree $tree bounds $useDims inds $dims place $dimPlace"
     set nextUseDim [lindex $useDims 0]
     if {[lsearch {RECORDS MEMBERS START_VM} $nextUseDim]!=-1} {
-        set breakPt [lsearch $tree -1]
-        set oldTree [lrange $tree 0 [expr $breakPt-1]]
-        set newTree [lrange $tree [expr $breakPt+1] end]
-        set nextRef [set [burrow_to $smHandle $oldTree $dims]]
-        set result {}
-        array set arrayVals $newVals
+	set breakPt [lsearch $tree -1]
+	set oldTree [lrange $tree 0 [expr $breakPt-1]]
+	set newTree [lrange $tree [expr $breakPt+1] end]
+	set nextRef [set [burrow_to $smHandle $oldTree $dims]]
+	set result {}
+	array set arrayVals $newVals
 
-        if {[string compare $nextRef 0]} {
-            if {[string equal START_VM $nextUseDim]} {
-                set cutDim [expr [lsearch $useDims END_VM]+1]
-            } else {
-                set cutDim 1
-            }
-            return [FillListValues nextRef $newTree $type \
-                        [lrange $useDims $cutDim end] {} -1]
-        } else {
-            return
-        }
+	if {[string compare $nextRef 0]} {
+	    if {[string equal START_VM $nextUseDim]} {
+		set cutDim [expr [lsearch $useDims END_VM]+1]
+	    } else {
+		set cutDim 1
+	    }
+	    return [FillListValues nextRef $newTree $type \
+			[lrange $useDims $cutDim end] {} -1]
+	} else {
+	    return
+	}
 
-#        while {[string compare $nextRef 0]} {
-#            set smHandle do_model $nextRef
-#            set nextElt [set [burrow_to $smHandle {2 0} {}]]
-#            lappend result $nextElt
-#            if {[info exists arrayVals($nextElt)]} {
-#                set eltVals $arrayVals($nextElt)
-#            } else {
-#                set eltVals {}
-#            }
-#            lappend result [FillValue $smHandle $newTree $type \
-#                    [lrange $useDims 1 end] {} 0 $eltVals]
-#            set nextRef [set [burrow_to $smHandle {1 0} {}]]
-#        }
-#        return $result            
+#	while {[string compare $nextRef 0]} {
+#	    set smHandle do_model $nextRef
+#	    set nextElt [set [burrow_to $smHandle {2 0} {}]]
+#	    lappend result $nextElt
+#	    if {[info exists arrayVals($nextElt)]} {
+#		set eltVals $arrayVals($nextElt)
+#	    } else {
+#		set eltVals {}
+#	    }
+#	    lappend result [FillValue $smHandle $newTree $type \
+#		    [lrange $useDims 1 end] {} 0 $eltVals]
+#	    set nextRef [set [burrow_to $smHandle {1 0} {}]]
+#	}
+#	return $result	    
     }  elseif {!$nextUseDim} {
-        if {[string match VALUELESS $type]} {
-            return sm
-        } else {
-            set tgtVar [burrow_to $smHandle $tree $dims]
-            set oldVal [set $tgtVar]
-            if {[llength $newVals]} {
-                set $tgtVar $newVals
-            }
-            return $oldVal
-        }
+	if {[string match VALUELESS $type]} {
+	    return sm
+	} else {
+	    set tgtVar [burrow_to $smHandle $tree $dims]
+	    set oldVal [set $tgtVar]
+	    if {[llength $newVals]} {
+		set $tgtVar $newVals
+	    }
+	    return $oldVal
+	}
     } else {
-        array set arrayVals $newVals
-        set result {}
-        for {set nextDim 1} {$nextUseDim>=$nextDim} \
-                {incr nextDim} {
-            if {[info exists arrayVals($nextDim)]} {
-                set eltVals $arrayVals($nextDim)
-            } else {
-                set eltVals {}
-            }
-            set subVals [FillValue $smHandle $tree $type \
-                    [lrange $useDims 1 end] \
-                    [concat $dims $nextDim] [expr $dimPlace+1] $eltVals]
-            if {[llength $subVals]} {
-                lappend result $nextDim $subVals
-            }
-                    
-        }
-        return $result
+	array set arrayVals $newVals
+	set result {}
+	for {set nextDim 1} {$nextUseDim>=$nextDim} \
+		{incr nextDim} {
+	    if {[info exists arrayVals($nextDim)]} {
+		set eltVals $arrayVals($nextDim)
+	    } else {
+		set eltVals {}
+	    }
+	    set subVals [FillValue $smHandle $tree $type \
+		    [lrange $useDims 1 end] \
+		    [concat $dims $nextDim] [expr $dimPlace+1] $eltVals]
+	    if {[llength $subVals]} {
+		lappend result $nextDim $subVals
+	    }
+		    
+	}
+	return $result
     }
 }
 
 proc burrow_to {level id_meta dim_list} {
     while {[lindex $id_meta 0]>0} {
-        append level ::[${level}::get_pointer [step_list id_meta 1] dim_list]
-        if {[lindex $id_meta 0]==-1} {
-            set inst1 [set ::$level]
-            set nInds [llength [set ${inst1}::instanceid]]
-            append level <[lrange $dim_list 0 [expr $nInds-1]]>
-            set dim_list [lrange $dim_list $nInds end]
-            set id_meta [lrange $id_meta 1 end]
-        }
+	append level ::[${level}::get_pointer [step_list id_meta 1] dim_list]
+	if {[lindex $id_meta 0]==-1} {
+	    set inst1 [set ::$level]
+	    set nInds [llength [set ${inst1}::instanceid]]
+	    append level <[lrange $dim_list 0 [expr $nInds-1]]>
+	    set dim_list [lrange $dim_list $nInds end]
+	    set id_meta [lrange $id_meta 1 end]
+	}
     }
     return $level
 }
-        
+	
 proc step_list {dimList climb} {    
     upvar $climb $dimList useList
     set head [lindex $useList 0]
@@ -916,22 +869,22 @@ proc first {lo} {
 #
 #    remote [list get $args]
 #    while (1) { ;# this loop onle ever once if dde/send
-#        if {[string equal pipe $runHow]} {
-#            set edResponse [gets stdin]
-#        } else {
-#            if {[info exists edResponse]} {unset edResponse}
-#            tkwait variable edResponse
-#        } 
-#        set info [lindex $edResponse 1]
-#        switch [lindex $edResponse 0] {
-#            do { ;# will not happen if dde/send
-#                do $info
-#            } err {
-#                error [lindex $info 0] [join $info \n]
-#            } res {
-#                return $info
-#            }
-#        }
+#	if {[string equal pipe $runHow]} {
+#	    set edResponse [gets stdin]
+#	} else {
+#	    if {[info exists edResponse]} {unset edResponse}
+#	    tkwait variable edResponse
+#	} 
+#	set info [lindex $edResponse 1]
+#	switch [lindex $edResponse 0] {
+#	    do { ;# will not happen if dde/send
+#		do $info
+#	    } err {
+#		error [lindex $info 0] [join $info \n]
+#	    } res {
+#		return $info
+#	    }
+#	}
 #    }
 #}
 #
@@ -962,29 +915,29 @@ proc do_in_editor {args} {
     global runHow sender fromEditor
 #    tk_messageBox -message "callback $args"
     if {[string equal send_sync $runHow(return)]} {
-        return [eval $sender {$args}]
+	return [eval $sender {$args}]
     }
     remote [list get $args]
 #    if {[string match get_data $readPipe]} {
-#        set gotResp 0
-#        while {!$gotResp} {
-#            set fromEditor [gets stdin]
-#            if {[string equal do [lindex $fromEditor 0]]} {
-#                eval $fromEditor
-#            } else {
-#                set gotResp 1
-#            }
-#        }
+#	set gotResp 0
+#	while {!$gotResp} {
+#	    set fromEditor [gets stdin]
+#	    if {[string equal do [lindex $fromEditor 0]]} {
+#		eval $fromEditor
+#	    } else {
+#		set gotResp 1
+#	    }
+#	}
 #    } else {
-        tkwait variable fromEditor
+	tkwait variable fromEditor
 #    }
     set info [lindex $fromEditor 1]
     switch [lindex $fromEditor 0] {
-        err {
-            error [lindex $info 0] [join $info \n]
-        } res {
-            return $info
-        }
+	err {
+	    error [lindex $info 0] [join $info \n]
+	} res {
+	    return $info
+	}
     }
 }
 
@@ -1014,17 +967,17 @@ proc err {value} {
 }
 
 proc exit_exec {} {
-        remote done
-        wm deiconify .
-        after idle exit
+	remote done
+	wm deiconify .
+	after idle exit
 }
 
 proc do {argList} {
     global errorInfo
     if {[catch $argList response]} {
-        set result [list err [split $errorInfo \n]]
+	set result [list err [split $errorInfo \n]]
     } else { 
-        set result [list res $response]
+	set result [list res $response]
     }
     return [remote $result]
 }
@@ -1032,15 +985,15 @@ proc do {argList} {
 proc remote {result} {
     global runHow myNode sender
     switch $runHow(return) {
-        interp {
-            return $result
-        } send_async {
-            eval $sender {after idle [list FeedModel $myNode [list $result]]}
-        } send_sync {
-            catch {eval $sender {FeedModel $myNode [list $result]}}
-        } pipe {
-            puts [split $result \n]
-        }
+	interp {
+	    return $result
+	} send_async {
+	    eval $sender {after idle [list FeedModel $myNode [list $result]]}
+	} send_sync {
+	    catch {eval $sender {FeedModel $myNode [list $result]}}
+	} pipe {
+	    puts [split $result \n]
+	}
     }
     return done
 }

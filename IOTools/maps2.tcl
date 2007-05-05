@@ -50,16 +50,15 @@ namespace eval ::maptools2 {
 		set useNodes($winId,nswatches) 32
 	    } else  {
 		set useNodes($winId,nswatches) \
-                    [expr int($useNodes($winId,range)+fmod($useNodes($winId,range),2))]
-		set useNodes($winId,max) \
-                    [expr $useNodes($winId,max)\
-			 +fmod($useNodes($winId,range),2)]
+		    [expr int($useNodes($winId,range))]
 	    }
         }
 #	ShowMessage debug info "min $useNodes($winId,min); \
 #                    max $useNodes($winId,max); dataETs $useNodes($winId,dataETs); $useNodes($winId,range); \
 #                    $useNodes($winId,nswatches)" ok
-	SetColours useNodes $winId
+	if {[info exists useNodes($winId,cbot)]} {
+	    SetColours useNodes $winId
+	}
     }
     
     proc SetColours {winData winId} {
@@ -86,22 +85,23 @@ namespace eval ::maptools2 {
         
 	    set max $useNodes($winId,nswatches); #[expr int($useNodes($winId,max))]
 	    set min 0; #[expr int($useNodes($winId,min))]
-	    set med [expr int(($useNodes($winId,nswatches))/2.0)]
+	    set med [expr $useNodes($winId,nswatches)/2.0]
         #    ShowMessage debug info "$min $max $med" ok
         # make the colour descriptions, this should improve speed
 	    for {set icolour 0} {$icolour <= $useNodes($winId,nswatches)} {incr icolour} {
 		if {$icolour<$med} {
-		    set red [expr ($icolour*$midr+($med-$icolour)*$botr)/$med]
-		    set green [expr ($icolour*$midg+($med-$icolour)*$botg)/$med]
-		    set blue [expr ($icolour*$midb+($med-$icolour)*$botb)/$med]
+		    set red [expr int(($icolour*$midr+($med-$icolour)*$botr)/$med)]
+		    set green [expr int(($icolour*$midg+($med-$icolour)*$botg)/$med)]
+		    set blue [expr int(($icolour*$midb+($med-$icolour)*$botb)/$med)]
 		} elseif {$icolour<=$max} {
-		    set red [expr (($icolour-$med)*$topr+($max-$icolour)*$midr)/$med]
-		    set green [expr (($icolour-$med)*$topg+($max-$icolour)*$midg)/$med]
-		    set blue [expr (($icolour-$med)*$topb+($max-$icolour)*$midb)/$med]
+		    set red [expr int((($icolour-$med)*$topr+($max-$icolour)*$midr)/$med)]
+		    set green [expr int((($icolour-$med)*$topg+($max-$icolour)*$midg)/$med)]
+		    set blue [expr int((($icolour-$med)*$topb+($max-$icolour)*$midb)/$med)]
 		}
 		set useNodes($winId,c$icolour) [format \#%04x%04x%04x $red $green $blue]
 	    }
 	}
+	set useNodes($winId,colourMapTweaked) 0
     }
     
     proc recolour_scale {parentSpc winId} {
@@ -120,8 +120,7 @@ namespace eval ::maptools2 {
         set bottomSc [$cnv canvasy [winfo height $cnv]]
         set topSc [expr $bottomSc-40]
         set midSc [expr $bottomSc-20]
-	set useNodes($winId,range) [expr $useNodes($winId,max)-$useNodes($winId,min)]
-
+        
         # blank over bottom of display
         $cnv create rect $leftSc $topSc $rightSc $bottomSc \
 	    -outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
@@ -132,7 +131,7 @@ namespace eval ::maptools2 {
                 -text $useNodes($winId,min) -anchor e -tag colour_scale
         $cnv create text [expr $rightSc-48] [expr $bottomSc-10] \
                 -text $useNodes($winId,max) -anchor w -tag colour_scale
-        
+        set useNodes($winId,range) [expr $useNodes($winId,max)-$useNodes($winId,min)]
         set xmin [expr $leftSc+50]
         set xmax [expr $rightSc-50]
         set xincr [expr {($xmax-$xmin)/($useNodes($winId,nswatches)+1)}]
@@ -158,12 +157,15 @@ namespace eval ::maptools2 {
     proc SetSwatchColour { parentSpc winId icolour } {
         variable ${parentSpc}::useNodes
 
-        set useNodes($winId,c$icolour) \
-	    [tk_chooseColor -initialcolor $useNodes($winId,c$icolour) \
-		 -title "Choose colour" -parent $winId]
-	recolour_scale $parentSpc $winId
-        ${parentSpc}::UpdateState $winId
-        ${parentSpc}::display $winId 0 0 0
+	set newCol [tk_chooseColor -initialcolor $useNodes($winId,c$icolour) \
+			-title "Choose colour" -parent $winId]
+	if {[string length $newCol]} {
+	    set useNodes($winId,c$icolour) $newCol
+	    recolour_scale $parentSpc $winId
+	    set useNodes($winId,colourMapTweaked) 1
+	    ${parentSpc}::UpdateState $winId
+	    ${parentSpc}::display $winId 0 0 0
+	}
     }
     
     proc reposn_scale {parentSpc winId} {
@@ -228,6 +230,7 @@ namespace eval ::maptools2 {
 	    set byng [$cnv find withtag COL$n]
 	    if {$byng==$zapped} {
 		$cnv itemconfig $byng -outline black
+		set useNodes($winId,paintColour) $useNodes($winId,c$n)
 		set newVal [expr {int($useNodes($winId,min) + 0.5 + \
 					  $n * $useNodes($winId,range) \
 					  / $useNodes($winId,nswatches))}]
@@ -350,7 +353,10 @@ namespace eval ::maptools2 {
     }
 
     proc PokeValue {node index newVal} {
-        if {[llength $index]>0} {
+	if {[RunningInC $::myNode] && 
+	    [string equal INPUT [GetModelEval $node]]} {
+	    c_setparamelement $node $index $newVal
+        } elseif {[llength $index]>0} {
             set vals [lindex [GetModelValue $node] 0]
 	    set oddList {}
 	    foreach idx $index {

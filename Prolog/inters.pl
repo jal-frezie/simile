@@ -8,16 +8,14 @@ sicstus_use_module([library(lists), sp_only, ame_gen, units, utility]).
 
 final_assignment(Expr, Sm, DestRef, Swaps, Step, Used, 
                  NewFormula, Setups, Context, Prerequisites, NewInters) :-
-	DestRef = elt(_, DestPathForm, Target, XUnits-Dims),
+	DestRef = elt(DestPathForm, Target, XUnits-Dims),
 	copy_term(DestPathForm, DestPath),
 	
 	on_exception(Prob,
 		     (replace_subexps(Expr, inters, insert_paths,
-		sub(Sm, DestRef, Swaps, ExpInters), top_down, _, FullExp),
-		     length(ExpInters, _L), /* close end of list */
-
+		sub(Sm, DestRef, Swaps), top_down, _, FullExp),
 		     make_intermediates(FullExp, Sm, Target, DestPath,
-		BackSwap, ExpInters, [], Step, Used, Units, AllInters,
+		BackSwap, [], [], Step, Used, Units, AllInters,
 		part_result(SourceContext, AllSetups, Args, Formula))),
 		      raise_exception(conversion_failure(Sm, Prob))),
 
@@ -55,13 +53,13 @@ assigned_in_vm_subloop(Formula, FContext, AllSetups) :-
 	append(ExtraLoops, FContext, MoreLoops),
 	member(sm(_,_,_, vm_loop(_,_,_,_)), ExtraLoops).
 
-insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
+insert_paths(sub(Sm, DestRef, Swaps), Var, NewVar, Recurse) :-
 	(Var = input(Location, PathExp, Link, Units),
 	    m_update:analyze_array(Units, Type, _);
 	Var = PathExp,
 	    /* from compartment expressions -- used? -- and dest ref */
 	    [Location, Link, Type]=[in_hierarchy, none, SourceType]),
-	PathExp = elt(_, RealPathForm, Ref, SourceType-DimTypes), !,
+	PathExp = elt(RealPathForm, Ref, SourceType-DimTypes), !,
 	    all(ame_gen, enum_type_ref, [build(DimTypes), unify(Sm),
 					 build(Dims), build(_), build(_)]),
 	    (Ref = import(_,_, LvlN, Ptr0, PtrN, _, _, ArcI),
@@ -96,16 +94,17 @@ insert_paths(sub(Sm, DestRef, Swaps, InterInputs), Var, NewVar, Recurse) :-
 	    append(LocalLoops, Path, Loops),
 	    NewVar = param(arr(SmPtr, Ref, Inds), Type, Loops, BackSwap, Wait),
 	    Recurse = 0;
-	m_update:get_solo_list_depth(Var, DimExp),
-	    m_update:build_array(any, Dims, DimExp),
-	    make_inds_for(Dims, Loops, _),
-	    NewVar = use_inter(Var),
-	    /* just to make sure same var is used for name each occurrence */
-	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
-		   InterInputs),
-	    Recurse = 0;
-	Var = channel_is(input(Location, elt(_, RealPathForm, Ref, _),
-			       Link, _)),
+%	m_update:get_solo_list_depth(Var, DimExp),
+%	    m_update:build_array(any, Dims, DimExp),
+%	    make_inds_for(Dims, Loops, _),
+%	    NewVar = use_inter(Var),
+	    /* just to make sure same var is used for name each occurrence...
+	    section removed because it should not be if there are separate
+	    uses of same explicit var, e.g., in multiple macro functions */
+%	    member(instance(internal, inter(_,_, Loops), NewVar,_, _),
+%		   InterInputs),
+%	    Recurse = 0;
+	Var = channel_is(input(Location, elt(RealPathForm, Ref, _), Link, _)),
 	/* Outrageous hack -- for channel nodes of an ancestor
 submodel, the link parameter is set to 'outside' if they count as
 outside, so in this case we add the submodel level for their submodel,
@@ -142,7 +141,7 @@ expand_library(DestRef, Var, NewVar) :-
 	    N < 1,
 		NewVar = DestRef;
 	    M is N-1,
-		NewVar = last(prev(M))), !.
+		NewVar = last(prev(M))), !.	  
 	/* These have just been moved to macro_expansions so if statements can
 	    be used in other macros
 	do_once(_, Var, ToDo, _),
@@ -163,8 +162,8 @@ read_library_funx(Done) :-
 			       choose(Bool, ThenCl, ElseCl)))),
 	assert(macro_expansion('Built-in', (if Bool then ThenCl elseif IfCl -->
 			       choose(Bool, ThenCl, if IfCl)))),
-	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
-					       (Bool?ThenCl:ElseCl)))),
+%	assert(macro_expansion('Built-in', (choose(Bool, ThenCl, ElseCl) -->
+%					       (Bool?ThenCl:ElseCl)))),
 	read_func_tree('../Functions/', '../Functions/', yes, BuiltIns),
 
 	backup:use_pref_dir(UserStuff),
@@ -225,7 +224,9 @@ read_funcs(File, Stream, IsBuiltIn, Done) :-
 		do_dialogue(ProbAct, warning, Bug, ok, _);
 	    assert(macro_expansion(Category, NewLine))),
 	    append_atoms(['{', Category, ' {', File, '}} ', Op], FnEntry);
-	Line = function(Functor, ReturnType, ArgTypes),
+	(Line = sample(Functor, ReturnType, ArgTypes),
+	        assert(sample(Functor));
+	 Line = function(Functor, ReturnType, ArgTypes)),
 	    WhereFound = 'Procedures',
 	    assert(function(Category, Functor, ReturnType, ArgTypes)),
 	    assert(use_tcl_proc_for(Functor)), !,
@@ -318,9 +319,10 @@ make_intermediates(
 	a subexpression that matches this one: need to save loops as well
 	as context!! Cannot do this with randoms (other than in explicit
 	inters), which should all be different. */
-	Inter = instance(internal,_, Source,_,_),
+	(Source = make_inter(Payload, Ref); Source = Payload),
+	Inter = instance(internal,_, Payload, Ref, _),
 	member(Inter, PrevInters),
-	\+ contains_something(random, Source), !,
+	\+ contains_something(random, Payload), !,
 	    NewInters = PrevInters,
 	    Setups = [],
 	    refer_inter(Inter, DestPath, BuildingArrays,
@@ -379,6 +381,8 @@ make_intermediates(
 		    Args = [externs_done, time]; 
 		Ph = 1, !,
 		    Args = [exts(Var)];
+		Var = Target, !,
+		    Args = []; % it cannot be a condition of itself
 		Args = [made_at(Var, ParamContext)])), /* Made in this dll */
 	        /* note that for the time being the made_at condition is thrown
 	           away */
@@ -430,7 +434,7 @@ make_intermediates(
 	
 	Source =.. [Functor | _],
 	(Functor = make_inter, !,
-	    UseSource = use_inter(Ref),
+	    UseSource = Ref,
 	    sicstus_format_to_chars("~w_for_~a", [Ref, Target], TotalNameStr);
 	UseSource = Source,
 	    sicstus_format_to_chars("~a_~a", [Target, Functor], TotalNameStr)),
@@ -500,7 +504,7 @@ make_intermediates(
 	    [Wee, Muckle] = [-268435455, 268435455];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
-	(\+ (member(VarDim, TotalDims), VarDim == var);
+	(\+ (member(VarDim, TotalDims), VarDim == var), !;
 	    raise_exception(avoid_var_size_inter(Epsilon, TotalDims))),
 	get_dims_from_loops(NowBuilding, BuildDims, BuildInds),
 	append(BuildDims, TotalDims, InterDims),
@@ -544,13 +548,13 @@ make_intermediates(
 	(Functor = at_init, !,
 	    SetTime=0, purge(Depends, [time], KeepDeps);
 	SetTime = Step, KeepDeps = Depends),
-	(Functor = make_inter, !,
+        (member(Functor, [make_inter, at_init]), !,
 	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
 			    [assign(FillRef, IncrExpr)])];
 	Setting = [make(increment(TotalName), [cleared(TotalName) | KeepDeps],
-			WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
-		   make(TotalName, [increment(TotalName)],
-			ReadyContext, SetTime, [])])),
+                       WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
+                  make(TotalName, [increment(TotalName)],
+                       ReadyContext, SetTime, [])])),
 	append([OldSetups, Clearing, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
@@ -606,7 +610,7 @@ make_intermediates(
 	    if creation counts do */
 	    Args = [on_reset];
 	(Source =.. [TRef, N],
-	    member(TRef, [time, dt, ind_time]),
+	    member(TRef, [time, dt]), % ind_time removed
 	    ((N=0; N = ''), SourceRef =.. [TRef, Step];
 	    integer(N), SourceRef = Source;
 	    raise_exception(bad_index_number(N, TRef))),
@@ -647,11 +651,11 @@ make_intermediates(
 
 	((Source = makearray(Element, Dim); Source = soloarr(Element), Dim=1),
 	    ((on_exception(_, DimVal is Dim, fail),
-	      integer(DimVal);	% it is integer now
+		integer(DimVal); % it is integer now
 	        make_intermediates(Dim, SubId, dum, DestPath,_, PrevInters,
 				   BuildingArrays, Step, Used, Dun, MidInters,
 				   part_result([], [], _, DimVal)),
-	      (promote_unit(Dun, const_int))), !; % will be integer later
+	        (promote_unit(Dun, const_int))), !; % will be integer later
 		  raise_exception(bad_index_number(Dim, makearray))), !,
 	        NowBuilding = [LocalLoop | BuildingArrays],
 	        length(BuildingArrays, BDept),
@@ -667,7 +671,7 @@ make_intermediates(
 		raise_exception(bad_array_size(Source, DimVal))),
 	    LocalLoop = set(LocalInd, loop(DimVal)),
 	    make_intermediates(Element, SubId, Target, DestPath, BackSwap,
-			MidInters, NowBuilding, Step, Used, Units, NewInters,
+			PrevInters, NowBuilding, Step, Used, Units, NewInters,
 			part_result(EltContext, Setups, Args, SourceRef)),
 %	    append(DimSetups, EltSetups, Setups),
 	    get_model_and_loops(EltContext, DestPath, _, EltLoops, EltBase),
@@ -709,15 +713,20 @@ make_intermediates(
 	    counterfactual arm of a conditional */
 	
 	Source = (Param=SubExp,Rest), !,
-	    (Param = param(arr(_, Ref, _), UseUnit, LoopSlot,_,_);
+	    (Param = param(arr(_, Ref, _), UseUnit, LoopSlot,_,_), !;
 		/* parsing */
-	    Param = use_inter(Ref),
-		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
-		       PrevInters),
+	    Param = Ref,
+%		member(instance(internal, inter(_,_, Loops), Param,_, _-Dims),
+%		       PrevInters),
+		m_update:get_solo_list_depth(Ref, DimExp),
+		m_update:analyze_array(DimExp, any, RefDims),
+		make_inds_for(RefDims, Loops, _),
 		append(Loops, BuildingArrays, Access),
 		get_dims_from_loops(Access, Dims, _)), /* building code */
+	    InitInters = [instance(internal, inter(_,_, Loops), Ref,_, _-Dims)
+			 | PrevInters],
 	    make_intermediates(make_inter(SubExp, Ref), SubId, Target, 
-			DestPath, BackSwap, PrevInters, BuildingArrays, 
+			DestPath, BackSwap, InitInters, BuildingArrays, 
 			Step, Used, DefUnit, MidInters,
 			part_result(XIContext, SubSetups, _,_)),
 	    get_model_and_loops(XIContext, DestPath,_, XILoops,_),
@@ -726,8 +735,11 @@ make_intermediates(
 	    (nonvar(UseUnit), !; UseUnit = DefUnit),
 	    make_intermediates(Rest, SubId, Target, 
 			DestPath, BackSwap, MidInters, BuildingArrays, 
-			Step, Used, Units, NewInters,
+			Step, Used, Units, MixedInters,
 			part_result(SourceContext, ExSetups, Args, SourceRef)),
+	    all(inters, prevent_inappropriate_reuse,
+		[unify(Param), build(MixedInters), build(NewInters)]),
+				% in case they use param
 	    (promote_arg(DefUnit, UseUnit,_FType);
 		raise_exception(wrong_param_units(Param, UseUnit, DefUnit))),!,
 	    append(SubSetups, ExSetups, Setups);	  
@@ -751,12 +763,12 @@ make_intermediates(
 		    /* need type for bool/int */
 		SourceList = Source,
 		ValRef = ResultList;
-	    Source = (Test?True:False), !,
-		SourceList = [Test, True, False],
-		RUnits = any,
-	        Arg_template = [boolean, RUnits, RUnits],
-		ResultList = [RTest, RTrue, RFalse],
-		ValRef = (RTest?RTrue:RFalse);
+%	    Source = (Test?True:False), !,
+%		SourceList = [Test, True, False],
+%		RUnits = any,
+%	        Arg_template = [boolean, RUnits, RUnits],
+%		ResultList = [RTest, RTrue, RFalse],
+%		ValRef = (RTest?RTrue:RFalse);
 	    Source = graph(Param), \+ Param = '',
 		(\+ Step = dummy;
 		dialogue:table_data_is(_);
@@ -916,7 +928,14 @@ refer_inter(instance(internal, inter(Context, _, ParamLoops), Source, Name,
 	    suffix(SpareLoops, BuildLoops),
 	    append(SourceLoops, DestPath, SourceContext),
 	    SourceRef = arr(SourcePtr, Name, IntInds).
-	  
+
+prevent_inappropriate_reuse(Explicit, instance(Type, I, Replaces, Name, Dims),
+			    instance(Type, I, NewReplaces, Name, Dims)) :-
+	replace_subexps(Replaces, inters, swap_vars, switch(Explicit, gone),
+			top_down, [_Swap1 | _], _), !,
+	NewReplaces = 'n/a';
+	NewReplaces = Replaces.
+
 swap_vars(switch(Take, Add), Tgt, Add, 0) :-
 	nonvar(Tgt), Tgt = Take.
 
@@ -931,14 +950,14 @@ swap_back(BaseContext, BackSwap, Context, MadeDim) :-
 		MadeDim = new_dim).
 
 propagate_units(Source, Lowest, Want, Get, Result) :-
-	try_units(Lowest, Want, Get, Result), !;
+	promote_unit(Lowest, In),
+	substitute(Lowest, Want, In, SettleFor),
+	try_units(In, SettleFor, Get, Result), !;
 	raise_exception(mismatched_units(Source, Get, Want)).
 	
 
-try_units(Lowest, Want, Get, Out) :-	
-	promote_unit(Lowest, Result),
-	substitute(Lowest, Want, Result, SettleFor),
-	all(inters, promote_arg, [build(Get), build(SettleFor), unify(In)]),
+try_units(Result, Want, Get, Out) :-	
+	all(inters, promote_arg, [build(Get), build(Want), unify(In)]),
 	(Result = real,
 	    (nonvar(In), Out = In;
 	    Out = 1), !;
@@ -957,7 +976,6 @@ uses_as(boolean, cond_spec).
 if taking out again fix spread_dims as well as eqn checking */
 uses_as(n(_ET), const_int).
 uses_as(const_int, int).
-uses_as(numeric, int).
 uses_as(const_int, const_ratio).
 uses_as(const_ratio, real).
 uses_as(int, real).
@@ -986,6 +1004,7 @@ put into the target program. */
 
 :- dynamic(function/4).
 :- dynamic(use_tcl_proc_for/1).
+:- dynamic(sample/1).
 
 /* These are implemented by the parser. Note the units are descriptive since
 they should never actually be used to parse anything. */
@@ -1025,11 +1044,11 @@ builtin('Arithmetic', sqrt, 1, [1]).
 builtin('Arithmetic', log, 1, [1]).
 builtin('Arithmetic', log10, 1, [1]).
 builtin('Arithmetic', exp, 1, [1]).
-builtin('Arithmetic', abs, numeric, [numeric]).
-builtin('Arithmetic', int, int, [real]).
-builtin('Arithmetic', round, int, [real]).
-builtin('Arithmetic', ceil, int, [real]).
-builtin('Arithmetic', floor, int, [real]).
+builtin('Arithmetic', abs, 1, [1]).
+builtin('Arithmetic', int, int, [1]).
+builtin('Arithmetic', round, int, [1]).
+builtin('Arithmetic', ceil, int, [1]).
+builtin('Arithmetic', floor, int, [1]).
 
 builtin('Trigonometry', sin, 1, [1]).
 builtin('Trigonometry', cos, 1, [1]).
@@ -1043,16 +1062,17 @@ builtin('Trigonometry', acos, 1, [1]).
 builtin('Trigonometry', atan, 1, [1]).
 builtin('Trigonometry', arctan, 1, [1]).
 
-%builtin('Arithmetic', rand_const, real, [real, real]).
-builtin('Arithmetic', rand_var, real, [real, real]).
+builtin('Statistics', rand_var, real, [real, real]).
 builtin('Arithmetic', pow, 1, [1, 1]). /* my c++ does not have int powers */
 builtin('Arithmetic', fmod, 1, [1, 1]).
 
 builtin('Trigonometry', hypot, real, [real, real]).
 builtin('Trigonometry', atan2, 1, [real, real]).
 
-builtin('Arithmetic', max, numeric, [numeric, numeric]).
-builtin('Arithmetic', min, numeric, [numeric, numeric]).
+builtin('Arithmetic', max, int, [int, int]).
+builtin('Arithmetic', max, real, [real, real]).
+builtin('Arithmetic', min, int, [int, int]).
+builtin('Arithmetic', min, real, [real, real]).
 
 builtin('List handling', following, a(T), [a(T)]).
 builtin('List handling', following, int, [int]).
@@ -1064,8 +1084,12 @@ builtin('List handling', first, boolean, [int]).
 /* These are recognized by the parser but is not part of the equation
 language -- they and the operators are hidden */
 
-operator(ind_time, real, [const_int]).
+%operator(ind_time, real, [const_int]).
 operator(stage_incr, real, [diffs, int, real]).
+operator(choose, int, [boolean, int, int]).
+operator(choose, a(T), [boolean, a(T), a(T)]).
+operator(choose, real, [boolean, real, real]).
+operator(choose, boolean, [boolean, boolean, boolean]).
 
 /* These are handled by the parser but have special buttons to include them so
 we do not want them in the function list -- they only appear here so the right
@@ -1074,20 +1098,24 @@ error comes up if they are used with the wrong number of args */
 operator(graph, real, [real]).
 operator(table, any, ['[index, ...]']).
 
-operator(!, boolean, [boolean]).
 operator(+, int, [int]).
+operator(+, real, [real]).
 /* operator(++, int, [int]). */
 operator(-, int, [int]).
+operator(-, real, [real]).
 
 operator(+, int, [int, int]).
+operator(+, real, [real, real]).
 operator(-, int, [int, int]).
+operator(-, real, [real, real]).
 operator(*, int, [int, int]).
+operator(*, 1, [1,1]).
 operator(//, int, [int, int]).
 operator(/, const_ratio, [const_int, const_int]).
 operator(/, 1, [1,1]).
 
 /* Comparison ops need int arg version to avoid unnecessarily constraining
-parameters to real */
+parameters to real (and because everything does) */
 operator(^, real, [real, real]).
 operator(==, boolean, [int, int]).
 operator(==, boolean, [real, real]).
@@ -1186,7 +1214,7 @@ type_ind(Ind, Type) :-
 	
 make_choose_form([LastElt], _,_, LastElt) :- !.
 
-make_choose_form([Elt | Elts], Ind, N, Ind==N?Elt:Later) :-
+make_choose_form([Elt | Elts], Ind, N, choose(Ind==N,Elt,Later)) :-
 	M is N+1,
 	make_choose_form(Elts, Ind, M, Later).
 
@@ -1314,7 +1342,9 @@ thereafter. */
 
 changeable(_, Subexp, _, 0) :-
 	nonvar(Subexp),
-	member(Subexp, [time(_), dt(_), rand_var(_,_), last(_)]).
+	Subexp =.. [Functor | _],
+	(member(Functor, [time, dt, rand_var, last]);
+		sample(Functor)).
 
 /* do_once is the opposite: value must stay the same even if the args change,
 though the modeller has probably erred if they do -- except for init_time,
@@ -1322,7 +1352,7 @@ which is actually the same function as time but this makes sure it is only
 evaluated when the model is created.
 
 do_once(_, rand_const(Lo, Hi), rand_var(Lo, Hi), 0).
-do_once(_, init_time(N), ind_time(N), 0).
+%do_once(_, init_time(N), ind_time(N), 0).
 
 individuates refers to a function such as rand_const or index, which gives
 a different value for each submodel instance in which it is called, and
@@ -1330,12 +1360,14 @@ hence must be called in the destination context. Ind_time(_) is here cos
 in a variable membership submodel, instances are initialized at different
 times. last(_) similarly? -- even if the args are the same the results are
 different if one is brand new and the other not! Some things like randoms
-and place_in will also individuate over makearray elements. */
+and place_in will also individuate over makearray elements. 
+
+I don't think we've done anything in contexts higher than dest for a while */
 
 individuates(_, Subexp, _, 0) :-
 	random(_, Subexp, _,_);
 	nonvar(Subexp),
-	member(Subexp, [channel_is(_), ind_time(_),
+	member(Subexp, [channel_is(_), %ind_time(_),
 			index(_), place_in(_), use_inter(_)]).
 
 random(_, Subexp, _, 0) :-
@@ -1351,7 +1383,7 @@ enumerate instructions.  */
 wait_for_submodels([], []).
 
 wait_for_submodels([Level | AlsoExited], Waits) :-
-	(Level = sm(Model, _,_,_), !,
+	(Level = sm(Model, _,_, vm_loop(_,_,_,_)), !,
 	    Waits = [enumerate(Model) | Others];
 	Waits = Others),
 	wait_for_submodels(AlsoExited, Others).

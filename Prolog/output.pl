@@ -13,14 +13,12 @@ changed only by deleting and redrawing them.  */
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	get_file_name/4, list_matching_files/2, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
-	compartment/8, channel/8, function/8, variable/8, event/8, cloud/8, 
-	submodel/10,
-	kill_submodel_group/2, add_submodel_group/4, draw_submodel_grid/4,
-	inf_pin/9, bowtie/7, flow/6, influence/6, broken_influence/6,
-	ghost_link/6, relation/6, text/8,
+	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
+	submodel/13, bowtie/6, flow/5, influence/5, broken_influence/5,
+			ghost_link/5, relation/5, text/7,
 	shift_text/3, shift_obj/3, zap_route/3,
 	tk_add_window/9, change_title_to/3, current_edit/2, force_edit/2,
-	get_component_from_gui/3, 
+	get_component_from_gui/4, tk_get_group_from_gui/3,
 	get_text/3, change_text_to/3, 
 	inject_graphics/2, translate_canvas_pl_names/2, save_canvas/4,
 	tk_grow_canvas/2, tk_refatten/2, zoom_bits_in/5,
@@ -40,7 +38,7 @@ sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
 	tk_do_disag_dialog/4, tk_do_relation_dialog/8, get_tcl_shpiel/1,
 	tk_get_pref/2, load_tcl_program/2, build_interconnects/2,
 	check_directory/1, windowize/2,
-	compile_c_program/3, check_exec_fns_fresh/5, load_executable/7,
+	compile_c_program/3, check_exec_fns_fresh/5, load_executable/6,
 			find_phase/4, tk_kill_window/1, exit_AME/0]).
 
 sicstus_use_module([library(lists), sp_only, state, text, utility]).
@@ -61,10 +59,10 @@ tk_cursor_is(Cursor) :-
 
 tk_callback(Data) :-
 	safe_tcl_eval(['AttackGlobalVariable fromProlog {}', Data], _).
-/*
+
 new_chop_list(Left, Done, Depth, Args) :-
 	Left = [Here | More], !,
-	    (Here = 92, % backslash: next char escaped
+	    (Here = 92, /* backslash: next char escaped */
 	        More = [Escd | YetMore], !,
 		append(Done, [Here, Escd], NewDone),
 		new_chop_list(YetMore, NewDone, Depth, Args);
@@ -89,7 +87,7 @@ new_chop_list(Left, Done, Depth, Args) :-
 	    name(Error, ErrorStr),
 	    raise_exception(Error);   
 	Args = [].
-*/
+
 full_chop_list([], 0, [], []).
 full_chop_list([92, C | More], N, [92, C | CurArg], MoreArgs) :-
 	full_chop_list(More, N, CurArg, MoreArgs).
@@ -114,12 +112,6 @@ full_chop_list([Here | More], NewDepth, NewDone, Args) :-
 chop_list(String, Args) :-
 	full_chop_list([32 | String], 0, [], Args).
 
-chop_list_recursive(String, Args) :-
-	chop_list(String, SubLists),
-	(SubLists = [String], !, % Value was not a Tcl list -- exit
-	    Args = String;
-	 all(output, chop_list_recursive, [build(SubLists), build(Args)])).
-	
 /* curly(P, Text) :-
 	append([123 | Text], [125], P),
 	curly_text(Text).
@@ -191,98 +183,85 @@ disable_text_editing_in(Wid) :-
 select_text(Wid, Node) :-
 	safe_tcl_eval(['SelectText', Wid, Node], _).
 
-compartment(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutRectangle', Wid, Parent, L, T, R, B, Num, Fatness, Density, 
+compartment(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutRectangle', Wid, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
-channel(Wid, Parent, [L, T, R, B], _, Fatness, Decor, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutShape', Wid, Parent, L, T, R, B, Decor, Fatness, 
+channel(Wid, [L, T, R, B], _, Fatness, Decor, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutShape', Wid, L, T, R, B, Decor, Fatness, 
 			Colour_scheme, br(Features)], _).
 
-function(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutHexagon', Wid, Parent, L, T, R, B, Num, Fatness, Density, 
+function(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutHexagon', Wid, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
-variable(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutCrossedCirc', Wid, Parent, L, T, R, B, Num,
+variable(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutCrossedCirc', Wid, L, T, R, B, Num,
 		       Fatness, Density, Colour_scheme, br(Features)], _).
 
-event(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+event(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
 	FullNum is Num+100,
-	safe_tcl_eval(['PutCrossedCirc', Wid, Parent, L, T, R, B, FullNum,
+	safe_tcl_eval(['PutCrossedCirc', Wid, L, T, R, B, FullNum,
 		       Fatness, Density, Colour_scheme, br(Features)], _).
 
-cloud(Wid, Parent, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutCloud', Wid, Parent, L, T, R, B, Num, Fatness, Density, 
+cloud(Wid, [L, T, R, B], Num, Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutCloud', Wid, L, T, R, B, Num, Fatness, Density, 
 			Colour_scheme, br(Features)], _).
 
-submodel(Wid, Parent, [L, T, R, B], Stack, Fat, FillColour, FillImage, Posn,
-	 Colour_scheme, Features) :-
-	safe_tcl_eval(['PutRoundedRect', Wid, Parent, L, T, R, B, Stack, Fat,
-		       FillColour, FillImage, Posn,
-		       Colour_scheme, br(Features)], _).
+submodel(Wid, [L, T, R, B], Stack, Fatness, FillColour, FillImage, Posn,
+	 OrigX, OrigY, BgColour, InFat, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutRoundedRect', Wid, L, T, R, B, Stack, Fatness,
+		       FillColour, FillImage, Posn, OrigX, OrigY, BgColour,
+		       InFat, Colour_scheme, br(Features)], _).
 
-kill_submodel_group(Wid, Comp) :-
-	safe_tcl_eval(['KillGroup', Wid, Comp], _).
-
-add_submodel_group(Wid, Parent, Comp, [X,Y,F1,F2]) :-
-	safe_tcl_eval(['PutGroup', Wid, Parent, Comp, X, Y, F1, F2], _).
-
-draw_submodel_grid(Wid, Comp, [L, T, R, B], Base) :-
-	safe_tcl_eval(['MakeSubmodelGrid', Wid, Comp, L, T, R, B, Base], _).
-
-inf_pin(Wid, Parent, X, Y, Type, Orient, SmFat, Flash, Tags) :-
-	safe_tcl_eval(['PutInfPin', Wid, Parent, X, Y, Type, Orient, SmFat, Flash,
-		       br(Tags)], _).
-		       
-bowtie(Wid, Parent, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
-	safe_tcl_eval(['PutBowTie', Wid, Parent, L, T, R, B, Fatness, Density,
+bowtie(Wid, [L, T, R, B], Fatness, Density, Colour_scheme, Features) :-
+	safe_tcl_eval(['PutBowTie', Wid, L, T, R, B, Fatness, Density,
 		 Colour_scheme, br(Features)], _).
 
-flow(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
+flow(Wid, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutFatArrow', Wid, Parent, br(Singleton_list),
+	safe_tcl_eval(['PutFatArrow', Wid, br(Singleton_list),
 		      Fatness, Colour_scheme, br(Features)], _).
 
-influence(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
+influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, Parent, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
 		       Fatness, {}, Colour_scheme, br(Features)], _).
 
-broken_influence(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
+broken_influence(Wid, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, Parent, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
 		       Fatness, dashed, Colour_scheme, br(Features)], _).
 
-ghost_link(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
+ghost_link(Wid, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutThinArrow', Wid, Parent, br(Singleton_list),
+	safe_tcl_eval(['PutThinArrow', Wid, br(Singleton_list),
 		       Fatness, gray50, Colour_scheme, br(Features)], _).
 
-relation(Wid, Parent, Coords, Fatness, Colour_scheme, Features) :-
+relation(Wid, Coords, Fatness, Colour_scheme, Features) :-
 	unscramble_coords(Coords, [], Singleton_list),
-	safe_tcl_eval(['PutRelation', Wid, Parent, br(Singleton_list),
+	safe_tcl_eval(['PutRelation', Wid, br(Singleton_list),
 		       Fatness, Colour_scheme, br(Features)], _).
 
-text(Wid, Parent, Coords, Type, Features, Fatness, Colour_scheme, Content) :-
-	safe_tcl_eval(['PutText', Wid, Parent, br(Coords), br(Type), br(Features),
+text(Wid, Coords, Type, Features, Fatness, Colour_scheme, Content) :-
+	safe_tcl_eval(['PutText', Wid, br(Coords), br(Type), br(Features),
 		       Fatness, Colour_scheme, br(write(Content))], _).
 
 shift_text(Wid, Obj, Vector) :-
 	safe_tcl_eval(['MoveText', Wid, Obj, br(Vector)], _).
 
-shift_obj(Wid, Objs, Vector) :-
-	safe_tcl_eval(['MoveObj', Wid, br(Objs), br(Vector)], _).
+shift_obj(Wid, Obj, Vector) :-
+	safe_tcl_eval(['MoveObj', Wid, Obj, br(Vector)], _).
 
 zap_route(Wid, Obj, Coords) :-
 	unscramble_coords(Coords, [], Singleton_list),
 	safe_tcl_eval(['MoveLine', Wid, Obj, br(Singleton_list)], _).
 		
-tk_add_window(Wid, TopNode, Node, Title, [L, T, R, B], Cname, BG, Scale,
-	      InitDepths) :-
+tk_add_window(Wid, TopNode, Title, [L, T, R, B], Cname, BG, Scale, InitDepths,
+	      IsTL) :-
 	bracketize(BG, BGList),
-	safe_tcl_eval(['MainWindowDraw', TopNode, Node, Wid, br(write(Title)), 
-			L, T, R, B, BGList, Scale | InitDepths],
+	safe_tcl_eval(['MainWindowDraw', TopNode, Wid, br(write(Title)), 
+			L, T, R, B, BGList, Scale, IsTL | InitDepths],
 		      CanvasString),
 	name(Cname, CanvasString).
 
@@ -299,7 +278,7 @@ current_edit(Wid, Comp) :-
 force_edit(Wid, Comp) :-
 	safe_tcl_eval(['GoEdit', Wid, Comp], _).
  
-/* get_component_from_gui/3: This invokes a Tcl command which looks
+/* get_component_from_gui/4: This invokes a Tcl command which looks
 under the point referred to to see what component is there. It is
 merely a shortcut as the information should all be kept in Prolog;
 unfortunately Tk is idiosyncratic about where it draws e.g., splines,
@@ -307,11 +286,16 @@ so Prolog cannot find them. Note that this routine cannot replace
 Prolog finds, as some components e.g., rounded rectangles, include
 space that is empty in Tk. */
 
-get_component_from_gui(Wid, [Xpt, Ypt], Comp) :-
+get_component_from_gui(Wid, Xpt, Ypt, Comp) :-
 	safe_tcl_eval(['FindObj', Wid, Xpt, Ypt], ObjString),
 	\+ ObjString = [], /* fail if nothing at target */
-	append(ObjString, ".", Readable),
-	sicstus_read_from_chars(Readable, Comp).
+	name(Comp, ObjString).
+
+/* same as above but lists all those overlapping an area */
+
+tk_get_group_from_gui(Wid, [L, T, R, B], CompList) :-
+	safe_tcl_eval(['FindAllObjs', Wid, L, T, R, B], Str),
+	chop_list(Str, CompList).
 
 /* get_text retrieves the current value of the bit of text that goes
 with the component in the specified window. The 'itemcget' command is
@@ -372,15 +356,14 @@ tk_display_menu(New_shape) :-
 	safe_tcl_eval(['AttackGlobalVariable adds {}', New_shape], _).
 
 tk_change_color(Wid, Obj, Type, Density, Value) :-
-	safe_tcl_eval(['ColorSymbol', Wid, write(Obj), Type, Density, Value],
-		      _).
+	safe_tcl_eval(['ColorSymbol', Wid, Obj, Type, Density, Value], _).
 
 shift_images(TopDir, Fillers, Way) :-
 	windowize(TopDir, WTopDir),
 	safe_tcl_eval(['ShiftImages', WTopDir, Way | Fillers], _).
 
 kill_featured(Wid, Victim_id) :-
-	safe_tcl_eval(['RemoveGraphics', Wid, Victim_id], _).
+	safe_tcl_eval([Wid, delete, Victim_id], _).
 
 clear_display(Wid) :-
 	safe_tcl_eval(['ClearWindow', Wid], _).
@@ -464,9 +447,7 @@ tk_start_progress_dialogue(Win) :-
 
 tk_update_infobox(String) :-
 	name(Text, String),
-	safe_tcl_eval(['.progress.message configure -text', 
-				br(write(Text))], _),
-	safe_tcl_eval([update], _).
+	safe_tcl_eval(['FillProgressBox', br(write(Text))], _).
 
 tk_finish_progress_dialogue :-
 	safe_tcl_eval(['CloseProgressBox'], _).
@@ -493,47 +474,27 @@ handle_tk_events :- repeat, \+ tk_do_one_event, !.
 tk_update_sim_display(Win, Current, Left) :-
 	safe_tcl_eval(['UpdateTimes', Win, Current, Left], _).
 	
-/* tk_do_disag_dialog(Win, Caption,
+tk_do_disag_dialog(Win, Caption,
 		   [Colour, Image, ImgPos, Type, Fatness, CountList, Step,
-		    Desc, Comment, ModName, EnumSpecs, Connect | Choices], 
+		    Desc, Comment, EnumSpecs, Proc, Inc, LibList | Choices],
 		   ResultList) :-
 	all(utility, wrap, [build(CountList), unify(write), build(Count)]),
+%	all(utility, wrap, [build(LibList), unify(write), build(Libs)]),
+	bracketize(LibList, Libs),
 	bracketize(EnumSpecs, EnumLists),
-	bracketize(Connect, ConnectLists),
 	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)), Colour, Image,
 		       ImgPos, Type, Fatness, br(Count), Step, br(write(Desc)),
-		       br(write(Comment)), br(write(ModName)), EnumLists,
-		       ConnectLists | Choices], 
+		       br(write(Comment)), EnumLists,
+		       br(write(Proc)), br(write(Inc)), Libs | Choices],
 		      New_P_string),
 	chop_list(New_P_string, ResultListN),
-	(append(ResultList0, [EnumTypeList, NewConnects], ResultListN), !,
+	(append(ResultList0, [LibFileStList, EnumTypeList], ResultListN), !,
+	    chop_list(LibFileStList, LibFileList),
 	    chop_list(EnumTypeList, EnumTypeSpecLists),
 	    all(output, chop_list,
 		[build(EnumTypeSpecLists), build(EnumTypes)]),
-	    chop_list(NewConnects, NewConnectList),
-	    append(ResultList0, [EnumTypes, NewConnectList], ResultList);
-	ResultList = []). */
-
-tk_do_disag_dialog(Win, Caption, PList, Results) :-
-	sub_bracketize(PList, TclPLists),
-	safe_tcl_eval(['Disaggregate', Win, br(write(Caption)) | TclPLists],
-		      New_P_string), 
-	chop_list(New_P_string, ResultList),
-	all(output, denest_disag_result, [build(ResultList), build(Results)]).
-
-denest_disag_result(TabStrings, NeatResult) :-
-	chop_list(TabStrings, [Tab, First | Rest]),
-	(Tab = "ets", !,
-	    chop_list(First, EnumTypeSpecLists),
-	    all(output, chop_list,
-		[build(EnumTypeSpecLists), build(NeatResult)]);
-	Tab = "connect", !, 
-	    chop_list(First, NeatResult);
-	Tab = "calc", !,
-	    append(Flat, [Nest], Rest),
-	    chop_list(Nest, RList),
-	    append([First | Flat], [RList], NeatResult);
-	chop_list([First | Rest], [NeatResult])).
+	    append(ResultList0, [LibFileList, EnumTypes], ResultList);
+	ResultList = []).
 
 tk_do_relation_dialog(Win, Caption, Type, State, OldComment,
 		      OKd, NewState, NewComment) :-
@@ -608,9 +569,8 @@ shift_dll(Point, Top, Loc, Repl) :-
 	safe_tcl_eval(['ShiftDll', br(WPoint), br(Top), br(WLoc), br(Repl)],_).
 
 /* Only works for an all-in-one model for now...*/
-prepare_execution(Node, Lang, Spill) :-
-	on_exception(_R, safe_tcl_eval(['LoadProgram', Node, Lang], _),
-		     safe_tcl_eval([set, '::errorInfo'], Spill)).
+prepare_execution(Node, Lang) :-
+	safe_tcl_eval(['LoadProgram', Node, Lang], _).
 
 build_interconnects(TopNode, FinderList) :-
 	bracketize(FinderList, FinderTclList),
@@ -630,11 +590,11 @@ check_exec_fns_fresh(L, ModelPath, Id, Fns, Stat) :-
 	safe_tcl_eval(['CheckFnsFresh',  L, br(WModelPath), Id, BrFns], RVal),
 	chop_list(RVal, Stat).
 
-load_executable(L, ModelPath, Id, Node, Name, TopNode, Incs) :-
+load_executable(L, ModelPath, Id, Node, TopNode, Incs) :-
 	windowize(ModelPath, WModelPath),
 	bracketize(Incs, BrIncs),
-	safe_tcl_eval([load_dll, TopNode, L, br(WModelPath), Id, Node,
-		       br(Name), BrIncs], MStr),
+	safe_tcl_eval([load_dll, TopNode, L, br(WModelPath), Id, Node, BrIncs],
+		      MStr),
 	\+ MStr = "0".
 					
 load_tcl_program(List, Response) :-

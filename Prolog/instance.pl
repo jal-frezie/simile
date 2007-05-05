@@ -6,7 +6,7 @@
 sicstus_module(instance, [instantiate_all/2, apply_minmax/3,
 			  path_section_for/6] ).
 
-sicstus_use_module([sp_only,m_class,inters,ame_gen,units,utility,m_update,
+sicstus_use_module([sp_only, m_class, inters, ame_gen, units, utility,
 	       library(lists),library(ordsets)]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -26,15 +26,14 @@ is_instance(Type, Node, Inputs, Value, Units, Instance) :-
 careful when looping through it. */
 
 instantiate_all(Parent, Model) :-
-	instantiate_trees([Parent], [Instance], [], [], TreeRefs),
+	instantiate_trees([Parent], [Instance], [], TreeRefs),
 	(setof(Channel, (find_all_comps(Parent, Channel),
 			      counts_as_outside(Channel)), Channels),
-	    instantiate_nodes(Channels, TopFns, [],[], TreeRefs, _Refs);
+	    instantiate_nodes(Channels, TopFns, [], TreeRefs, _Refs);
 	TopFns = []),
 	Model = model(TopFns, [Instance]).
 	    
-instantiate(Holder, model(ModelInstance, Submodels ), Path, Loops, FullSet) :-
-	module_for(Holder, Parent),
+instantiate(Parent, model(ModelInstance, Submodels ), Path, FullSet) :-
 	(setof( Primitive, contents(Parent, Primitive), TopNodes ), !; 
 		TopNodes = []),
 	(setof( Submodel, (Parent has_part Submodel,
@@ -42,32 +41,14 @@ instantiate(Holder, model(ModelInstance, Submodels ), Path, Loops, FullSet) :-
 			      \+ Submodel has_class_refinement separate of 1,
 			      appears(Submodel)), LowerNodes ), !; 
 		LowerNodes = []),
-	instantiate_trees(LowerNodes, Submodels, Path, Loops, TreeRefs),
-	caption_for(Holder, PCapt),
-	sicstus_format_to_chars("Instantiating expressions from node values -- currently doing ~a", [PCapt], InfoString),
-	dialogue:reassure_user(InfoString),
-/* Dirty hack -- if we have local equations for any of the module member
-functions, substitute their values here, and put the originals back afterwards.
-*/
-        (get_av_pair(Holder, 0, fn_overrides, Swaps), !; Swaps = []),
-        all(instance, switch_function,
-	    [unify(Parent), build(Swaps), build(Back)]),
-	instantiate_nodes(TopNodes, ModelInstance, Path, Loops,
-			  TreeRefs, FullSet),
-        all(instance, switch_function,
-	    [unify(Parent), build(Back), build(Swaps)]),
+	instantiate_trees(LowerNodes, Submodels, Path, TreeRefs),
+	instantiate_nodes(TopNodes, ModelInstance, Path, TreeRefs, FullSet),
 	!.
-
-switch_function(Parent, Vis-Eqn-_, Vis-Old-_) :-
-	find_all_comps(Parent, Vis),
-	implicit_function(Vis, Fn),
-	get_av_pair(Fn, 0, value, Old),
-	add_parameter(Fn, 0, value, Eqn).
 
 /* contents does the trick whereby immigration and creation channel nodes are placed outside their submodels. */
 
 contents(Parent, Component) :-
-	(find_all_comps(Parent, Component),
+	find_all_comps(Parent, Component),
 	    (Component is_of_sort has_function; Component has_class function;
 		Component has_class_refinement separate of 1),
 	    \+ counts_as_outside(Component);
@@ -75,37 +56,33 @@ contents(Parent, Component) :-
 	    is_population(Submodel),
 	    \+ Submodel has_class_refinement separate of 1,
 	    find_all_comps(Submodel, Component),
-	    counts_as_outside(Component)).
+	    counts_as_outside(Component).
 
 counts_as_outside(Node) :-
 	get_host(Node, VisNode),
 	VisNode is_of_sort value_outside.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-instantiate_nodes([], [], _,_, R, R).
+instantiate_nodes([], [], _, R, R).
 
-instantiate_nodes([Node|Nodes], New_instances, Path, Loops,
-		  ResultIn, ResultOut) :-
+instantiate_nodes([Node|Nodes], New_instances, Path, ResultIn, ResultOut) :-
 	(Node has_class Class; Node has_type Class),
 	
 	(Class = cloud, !,
 	    New_instances = OtherInstances,
 	    MidResult = ResultIn;
-	    instantiate_node(Node, Class, Instances, Path, Loops, ResultIn,
+	    instantiate_node(Node, Class, Instances, Path, ResultIn,
 			     MidResult),
 	    append(Instances, OtherInstances, New_instances)),
-	instantiate_nodes(Nodes, OtherInstances, Path, Loops,
-			  MidResult, ResultOut).
+	instantiate_nodes(Nodes, OtherInstances, Path, MidResult, ResultOut).
 
-instantiate_trees([], [], _, _, []).
+instantiate_trees([], [], _, []).
 
-instantiate_trees([Node|Nodes], [Instance|Instances], Path, Loops, ResultOut) :-
+instantiate_trees([Node|Nodes], [Instance|Instances], Path, ResultOut) :-
 	get_node_size(Node, Multiple),
-	pointer_from(Loops, HiPtr),
-	caption_for(Node, Capt),
-	make_code_name(c, Capt, Name),
+	pointer_from(Path, HiPtr),
 	path_section_for(Node, Name, Multiple, NewBit, HiPtr, _),
-	append(NewBit, Loops, NewLoops),
-	instantiate(Node, Submodel, [Capt | Path], NewLoops, Results),
+	append(NewBit, Path, NewPath),
+	instantiate(Node, Submodel, NewPath, Results),
 	list_links(Node, Links),
 	make_base_refs(Node, Links, BaseRefs),
 	/* I don't think the assoc_refs need to be in any special order... */
@@ -122,7 +99,7 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Path, Loops, ResultOut) :-
 	is_instance(submodel, Node, 
 			xrefs(Submodel, ParentRef, BaseRefs, AssocRefs), 
 			Name, _-Multiple, Instance),
-	instantiate_trees(Nodes, Instances, Path, Loops, ResultIn),
+	instantiate_trees(Nodes, Instances, Path, ResultIn),
 	split_base_refs(BaseRefs, BaseModelRefs),
 	split_base_refs(AssocRefs, AssocModelRefs),
 	append([[Instance, ParentRef | Results], 
@@ -130,7 +107,7 @@ instantiate_trees([Node|Nodes], [Instance|Instances], Path, Loops, ResultOut) :-
 			LocalRefs),
 	merge_lists(LocalRefs, ResultIn, ResultOut), !.
 
-instantiate_trees(_, _, _,_, _) :-
+instantiate_trees(_, _, _, _) :-
 	raise_exception('Lost it for some unknown reason during instantiation.').
 
 /* This substitutes the link used to refer to a relation (the one connected
@@ -148,9 +125,8 @@ split_base_refs([],[]).
 split_base_refs([base(M, _,_) | R1], [M | R2]) :-
 	split_base_refs(R1, R2).
 
-instantiate_node(Node, Class, Instances, Path, Loops,
-		 Old_instances, New_instances) :-
-	(instance_of( Class, Node, Path, Loops, Instances, Refs), !;
+instantiate_node(Node, Class, Instances, Path, Old_instances, New_instances) :-
+	(instance_of( Class, Node, Path, Instances, Refs), !;
 	raise_exception(instantiation_failure(Node))),
 	merge_lists(Instances, Old_instances, Mid_instances),
 	merge_lists(Refs, Mid_instances, New_instances).
@@ -158,29 +134,29 @@ instantiate_node(Node, Class, Instances, Path, Loops,
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* Ghosts are treated like variables, see later. */
 
-instance_of(_, Node, _,_,
+instance_of(_, Node, _,
 		[instance(variable, Node, _, Value, Dims)],
 		[instance(_, RealNode, _, Value, Dims)]) :-
-	(get_bowtie_section(Node, RealNode); find_base(Node, RealNode)),
+	find_base(Node, RealNode),
 	\+ Node = RealNode, !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* Nodes that have been specified as input parameters are set by a function
 call to the stub */
 
-instance_of(Type, Node, Path, Loops,
+instance_of(Type, Node, Path,
 	    [instance(function, Node, Default, Val, Base-Dims)], []) :-
 	\+ member(Type, [compartment, creation, immigration, reproduction]),
 	is_parameter(Node, PType),
 	PType > 0, !,
 	get_units(Node, Base, Dims),
-	Val = elt(Path, Loops, _, Base-Dims),
+	Val = elt(Path, _, Base-Dims),
 	choose_default_value(Node, Base, PType, Default).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* Compartment now refers to the same variable as the function which calculates its initial value. */
 
-instance_of( compartment, Node, Path, Loops, Instances, [FuncRef | Refs]) :-
+instance_of( compartment, Node, Path, Instances, [FuncRef | Refs]) :-
 	is_parameter(Node, PType),
 	(PType = 0, !,
 	    ArcFromF is_connector from _ to Node,
@@ -191,16 +167,16 @@ instance_of( compartment, Node, Path, Loops, Instances, [FuncRef | Refs]) :-
 	    Instances = [FuncRef | Local]),
 
 	get_units(F, Base, Units),
-	Home = elt(Path, Loops, _, Base-Units),
-	Diffs = elt(Path, Loops, _, diffs-Units),
+	Home = elt(Path, _, Base-Units),
+	Diffs = elt(Path, _, diffs-Units),
 	(\+ PType = 1, !;
 	    choose_default_value(Node, Base, PType, Default)),
 	FuncRef = instance(init_function, F, Default, Home, Base-Units),
 	((setof( Arc, flows(in, Node, Arc), InArcs),
-	  bind_and_build_term(Node, InArcs, Path, Base, Units, In, In_refs);
+	  bind_and_build_term(Node, InArcs, Base, Units, In, In_refs);
 	  In_refs = []),
 	(setof( Arc, flows(out, Node, Arc), OutArcs),
-	    bind_and_build_term(Node, OutArcs, Path, Base, Units, Out, Out_refs),
+	    bind_and_build_term(Node, OutArcs, Base, Units, Out, Out_refs),
 	    (In_refs = [], Change = -Out; Change = In++(-Out));
 	\+ In_refs = [], Change = In),
 	merge_lists(In_refs, Out_refs, Refs),
@@ -231,7 +207,7 @@ Oh well, why don't I just mega-ly botch it and have each primitive
 return a variable number of instances..."virtual" symbolic name means
 not in the original model. */
 
-instance_of(Type, Node, Path, Loops, 
+instance_of(Type, Node, Path,
 	    [instance(Type, Node,
 		      incr(Step, Home+stage_incr(Diffs, Step, Value)),
 		      Home, real-[]),
@@ -239,8 +215,8 @@ instance_of(Type, Node, Path, Loops,
 	     DiffStruct],
 	    [instance(function, Function, _, Value, _)]) :-
 	member(Type, [immigration, reproduction]),
-	Home = elt(Path, Loops, _, 1-[]),
-	Diffs = elt(Path, Loops, _, diffs-[]),
+	Home = elt(Path, _, 1-[]),
+	Diffs = elt(Path, _, diffs-[]),
 	is_instance(internal, st(Node), none, Diffs, diffs-[], DiffStruct),
 	Arc is_connector from _ to Node,
 	initiates(Arc, Function).
@@ -254,16 +230,11 @@ the specified output units. Painful, but imagine the pleasure of not allowing
 the user any numeric values except universal constants in MKS! 
 */
 
-instance_of( function, Node, Path, Loops, [Instance], Refs) :-
+instance_of( function, Node, Path, [Instance], Refs) :-
 	_ is_connector from Node to Result,
 	\+ is_ghost(Result),
 	find_type(Result, RType),
-	(Path = [Inst | _],
-	    Inst is_instance_of _,
-	    get_av_pair(Inst,  0, fn_overrides, OverRides),
-	    get_host(Node, UseComp),
-	    member(UseComp-GroundExpr-_, OverRides), !;
-	Node has_class_refinement value of GroundExpr),
+	Node has_class_refinement value of GroundExpr,
 	(member(RType, [creation, compartment]), !,
 	    UseExpr = GroundExpr,
 	    FType = init_function;
@@ -276,37 +247,37 @@ instance_of( function, Node, Path, Loops, [Instance], Refs) :-
 	FType = function,
 	    UseExpr = GroundExpr),
 	(setof(InputPair,
-	       generate_input_pair(Node, Path, InputPair),
+	       generate_input_pair(Node, InputPair),
 	       InputPairs ), !;
 	    InputPairs = []),
 	replace_subexps(UseExpr, instance, process_expr,
 			sub(InputPairs, Refs), top_down,
 			Switched, FinalExpr),
 	(member(var_pair(_, Sub), Switched),
-	    get_solo_list_depth(Sub, _),
+	    m_update:get_solo_list_depth(Sub, _),
 	    raise_exception(bad_parameter(Node, Sub));
 	length(Refs, _Fix)),
 	get_units(Node, Base, Units),
-	is_instance(FType, Node, FinalExpr, elt(Path, Loops, _, Base-Units),
+	is_instance(FType, Node, FinalExpr, elt(Path, _, Base-Units),
 		    Base-Units, Instance).
 	     
 /* Note if the function lacks a value it may not be the user's fault; it might be
 an unnecessary virtual function generated in the SD view. 
 So leave it out. */
 
-instance_of(function, _,_,_, [], []).
+instance_of(function, _, _, [], []).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* If a submodel comes up here, it is one that is built separately. The code
 has to call stub functions to create an instance of it when its parent model
 is created, and run it when its inputs have been set. */
 
-instance_of(submodel, Node, Path, Loops,
+instance_of(submodel, Node, Path,
 	    [instance(external, Node, for_extern(Conds, Tops),
-		      elt(Path, Loops, _, DSpec), DSpec)],
+		      elt(Path, _, DSpec), DSpec)],
 	    Refs) :-
 	(setof(InputPair,
-	       generate_input_pair(Node, Path, InputPair),
+	       generate_input_pair(Node, InputPair),
 	       InputPairs ), !;
 	    InputPairs = []),
 	all(instance, get_cond_and_ref,
@@ -320,7 +291,7 @@ that of the continuation flow in the direction of this node if not.
 
 Working out the continuation direction is now done when processing the function node, so just use this value. */
 
-instance_of(flow, Arc, _,_, [instance(flow, Arc, _, Value, Units)],
+instance_of(flow, Arc, _, [instance(flow, Arc, _, Value, Units)],
 	    [instance(function, Function, _, Value, Units)]) :-
 	FuncLink is_connector from _ to Arc,
 	initiates(FuncLink, Function).
@@ -330,7 +301,7 @@ instance_of(flow, Arc, _,_, [instance(flow, Arc, _, Value, Units)],
 are the same as the functions from which they are generated. This also goes for
 condition, creation and loss nodes. Type is as function. */
 
-instance_of(Type, Node, _,_, Inst, Ref) :-
+instance_of(Type, Node, _, Inst, Ref) :-
 	member(Type, [variable, condition, creation, loss, alarm]),
 	(member(Node, [B, A]),
 	    Arc is_connector from A to B, !,
@@ -346,6 +317,7 @@ instance_of(Type, Node, _,_, Inst, Ref) :-
 	    caption_for(Parent, PCapt),
 	    sicstus_format_to_chars("Removing node ~w from submodel ~w.", [Capt, PCapt], Shpiel),
 	    do_dialogue("Correcting model inconsistency", warning, Shpiel, ok, _)).
+	    
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 flows(Dir, Comp, Flow) :-
@@ -356,19 +328,15 @@ flows(Dir, Comp, Flow) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* generate_input_pair is used in setof so should be cut free */
-generate_input_pair(Node, DestPath,
-             input_pair(ArcName, NodeID, Away, Home, Ref, ExprRef)) :-
-	(counts_as_outside(Node), UsePath = [_ | DestPath];
-	    \+ counts_as_outside(Node), UsePath = DestPath),
-	get_all_links(Node, capts(UsePath, SrcPath),
-		      ids(SourceID, Relation, Home, Entry),
-		      input_link(id(Link,_, SourceLocation), _,
-				 ArcName, SourceUnits, ArcUnits)),
+generate_input_pair(Node, input_pair(ArcName, NodeID, Away, Home,
+				     Ref, ExprRef)) :-
+	m_update:get_all_links(Node, ids(SourceID, Relation, Home, Entry),
+			       input_link(id(Link,_, SourceLocation), _,
+					  ArcName, SourceUnits, ArcUnits)),
 	/* just in case we have extra inputs... */
 	(nonvar(ArcName); ArcName = '/unused/'),
         (var(Entry),
 	    NodeID = SourceID,
-	    Ref = elt(SrcPath, _,_,_),
 	    RefExp = Ref;
 	nonvar(Entry),
 	    (member(SourceLocation, [in_base, in_assoc]),
@@ -386,30 +354,22 @@ generate_input_pair(Node, DestPath,
 		contains(TopNode, Node),
 		backup:is_toplevel(TopNode),
 		output:find_phase(TopNode, SourceID, NodeID, PhaseSet),
-		Ref = elt(Path, Loops, Var, _)), /* match var to submodel */
-	    RefExp = elt(Path, Loops,
-			 import(ImpType, Away, _L, _P0, _P, PhaseSet,
+		Ref = elt(Path, Var, _)), /* match var to submodel */
+	    RefExp = elt(Path, import(ImpType, Away, _L, _P0, _P, PhaseSet,
 				    Var, ArcIndex), FarUnits-UseDims)),
 
-	analyze_array(SourceUnits, FarUnits, FarDims),
+	m_update:analyze_array(SourceUnits, FarUnits, FarDims),
 	get_actual_sizes(Node, FarDims, _, UseDims, _),
-	analyze_array(ArcUnits, BaseUnits, _),
+	m_update:analyze_array(ArcUnits, BaseUnits, _),
 	RelatedRef = input(SourceLocation, RefExp, Relation, ArcUnits),
 	try_conversion(RelatedRef, FarUnits, BaseUnits, ConvertedRef, ImpType),
 	find_name_host(Link, ControlLink),
-	(get_av_pair(ControlLink, 2, use_sofar, 1),
+	(m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = sofar(ConvertedRef);
-	\+ get_av_pair(ControlLink, 2, use_sofar, 1),
+	\+ m_update:get_av_pair(ControlLink, 2, use_sofar, 1),
 	    ExprRef = ConvertedRef).
 
-/*
-level_from_link(TopLink, Level) :-
-	continues_from(TopLink, TopModel), !,
-	caption_for(TopModel, Capt),
-	path_section_for(TopModel, Capt, _, Level, _,_);
-	Level = [].
-*/
-get_cond_and_ref(input_pair(_, Node, _, [Home | _], OutVar, UseRef, SubRefs),
+get_cond_and_ref(input_pair(_, Node, _, Home, OutVar, UseRef),
 		 Cond, Top, Refs) :-
 	is_instance(_, Node, _, OutVar, _, Ref),
 	(nonvar(Home), !,
@@ -420,11 +380,11 @@ get_cond_and_ref(input_pair(_, Node, _, [Home | _], OutVar, UseRef, SubRefs),
 	    find_all_comps(HomeSm, Home),
 	    is_instance(_, HomeSm, _, TopVar, _, TopRef),
 	    Cond = UseRef,
-	    Refs = [TopRef, Ref | SubRefs],
+	    Refs = [TopRef, Ref],
 	    Top = [search_from(HomeRef, TopVar, _)];
 	Top = [],
-	    Cond = input(in_hierarchy, elt(_,_, externs_done, _), none,_),
-	    Refs = [Ref | SubRefs]).
+	    Cond = input(in_hierarchy, elt(_, externs_done, _), none,_),
+	    Refs = [Ref]).
 
 ref_for_arc(Entry, ArcIndex) :-
 	compile:entry_arcs_are(ArcList),
@@ -480,7 +440,7 @@ language */
 
 get_units(Node, Type, Dims) :-
 	(Node has_class_refinement units of Unit, !; Unit = 1),
-	analyze_array(Unit, Type, Number),
+	m_update:analyze_array(Unit, Type, Number),
 	get_actual_sizes(Node, Number, _, Dims, _).
 	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -488,10 +448,8 @@ get_units(Node, Type, Dims) :-
 intrinsically have same units as compartment, so we go back to their control nodes
 to get unit conversion factor */
 
-bind_and_build_term(Node, [Arc], Dest, NodeBase, NodeDims, Term, [Ref]) :-
-	(General_arc = Arc, Dest = Src;
-	    any_equiv(Arc, General_arc, capts(Dest, Src))),
-	has_bowtie(General_arc),
+bind_and_build_term(Node, [Arc], NodeBase, NodeDims, Term, [Ref]) :-
+	find_base(Arc, General_arc),
 	get_chain(General_arc, Node, _, Exits, Entries),
 	caption_for(Node, BadComp),
 	caption_for(Arc, BadArc),
@@ -513,14 +471,13 @@ bind_and_build_term(Node, [Arc], Dest, NodeBase, NodeDims, Term, [Ref]) :-
 	    raise_exception(flow_comp_dims_mismatch(BadArc, BadComp,
 						  AllDims, NodeDims)))),
 	is_instance(_, Controller, _, BaseVar, _, Ref),
-	BaseVar = elt(Src, _,_,_),
 	default_tick_is(Tick),
 	standard_name(NodeBase, TrimBase),
 	try_conversion(Var, ArcUnits, TrimBase/Tick, Term, _ImpType).
 
-bind_and_build_term(Node, [Arc|Arcs], Dest, Base, Dims, NewTerm, Refs) :-
-	bind_and_build_term(Node, Arcs, Dest, Base, Dims, MidTerm, MidRefs),
-	bind_and_build_term(Node, [Arc], Dest, Base, Dims, Term1, [Ref]),
+bind_and_build_term(Node, [Arc|Arcs], Base, Dims, NewTerm, Refs) :-
+	bind_and_build_term(Node, [Arc], Base, Dims, Term1, [Ref]),
+	bind_and_build_term(Node, Arcs, Base, Dims, MidTerm, MidRefs),
 	merge_lists([Ref], MidRefs, Refs),
 	NewTerm =.. ['++',Term1,MidTerm].
 	
@@ -534,8 +491,9 @@ sum_dims([_ | Rest], Middle, sum(Full)) :-
 % are little lists not atoms now.
 
 process_expr(sub(InputPairs, Refs), Var, NewVar, Recurse) :-
-	get_solo_list_depth(Var, _),
-	(member(input_pair(Var, Node, Away, Home, OutVar, NewVar), InputPairs),
+	m_update:get_solo_list_depth(Var, _),
+	(member(input_pair(Var, Node, Away, Home, OutVar, NewVar),
+		   InputPairs),
 	    is_instance(_, Node, _, OutVar, _, Ref),
 	    member(Ref, Refs),
 	    (var(Home), !;
@@ -566,16 +524,16 @@ valid_tap(Flow, Controller) :-
 */
 
 path_section_for(SmName, Context, SmDims, Level, HiPtr, LoPtr) :-
-	(variable_size(SmName), !,
+	variable_size(SmName), !,
 	    (by_record(SmName), !,
 		SmSpec = vm_loop(rec, _,_,_);
 	    is_population(SmName), !,
 		SmSpec = vm_loop(pop, _,_,_);
-	    list_local_index_meanings(SmName, Bounds),
+	    m_update:list_local_index_meanings(SmName, Bounds),
 		length(Bounds, NumInds),
 		SmSpec = vm_loop(NumInds, _Bounds, _Loops, _)),
 	    Level = [sm(Context, HiPtr, LoPtr, SmSpec)];
 	all(ame_gen, enum_type_ref, [build(SmDims), unify(SmName),
 				     build(SmSizes), build(_), build(_)]),
 	    make_inds_for(SmSizes, SmPath, SmInds),
-	    Level = [sm(Context, HiPtr, LoPtr, fm_loop(SmInds, _)) | SmPath]).
+	    Level = [sm(Context, HiPtr, LoPtr, fm_loop(SmInds, _)) | SmPath].

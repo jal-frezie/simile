@@ -36,12 +36,26 @@ deEncode(_, A, A, 0) :- atom(A).
 reEncode(_, A, A, 0) :- atom(A).
 all_ttfn_to_utf8(S, S).
 
+portray(make(E, Conds, P, F, A)) :-
+	print(make(E)).
+
+portray(sm(Name, _,_,_)) :-
+	print(sm(Name)).
+
+portray(T) :-
+	rt_portray(T).
+
+trim_conds(Full, Short) :-
+	Full = make(Short, _,_,_,_), !;
+	Full =.. [Hdr, Cond], !,
+	trim_conds(Cond, StCond),
+	Short =.. [Hdr, StCond];
+	Short = Full.
+
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
 	state:retractall(model_in(_,_)),
-	state:clear_model_file(_),
-	m_update:superfast_delete(root),
 	prolog_flag(version, FullVnum),
 	name(FullVnum, FullVnumStr),
 	append(VnumStr, [32, 40 | _], FullVnumStr),

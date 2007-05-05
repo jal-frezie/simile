@@ -1,6 +1,6 @@
 # Simile source code file: Run/prolog.tcl
 #
-# (c) Simulistics Ltd. 2001-2005
+# (c) Simulistics Ltd. 2001-2007
 # (c) University of Edinburgh 1995-2001
 #
 # A completely compilation-free Prolog/Tcl interface that
@@ -20,61 +20,64 @@ if $plPipe(debug) {
 proc KeepLooking {} {
     global plPipe
     while {![info exists prologExit]} {
-        if {[eof $plPipe(stream)]} {
-            ClosePipe
-            set prologExit 1
-        } elseif {[gets $plPipe(stream) noCrs] >= 0} {
-            regsub -all \\\\n $noCrs \n line
-#            puts [concat < $line]
-            if {$plPipe(debug)} {
-                puts $plPipe(debug_stream) [concat < $line]
-            }
-            if {[catch {set cmd [lindex $line 0]} mess]} {
-                DebugMess "Could not parse $line : $mess"
-                send_pl_cmd result:-1
-            } elseif {[string match exit $cmd]} {
-                set prologExit 1
-            } elseif {[string match fail $cmd]} {
-                set prologExit 0
-            } elseif {[string match send_tcl_cmd $cmd]} {
-                eval do_tail $line
-            } else {
-                DebugMess $line
-                set prologExit -1
-            }
-        }
+	if {[eof $plPipe(stream)]} {
+	    ClosePipe
+	    set prologExit 1
+	} elseif {[gets $plPipe(stream) noCrs] >= 0} {
+	    regsub -all \\\\n $noCrs \n line
+#	    puts [concat < $line]
+	    if {$plPipe(debug)} {
+		puts $plPipe(debug_stream) [concat < $line]
+	    }
+	    if {[catch {set cmd [lindex $line 0]} mess]} {
+		DebugMess "Could not parse $line : $mess"
+		send_pl_cmd result:-1
+	    } elseif {[string match exit $cmd]} {
+		set prologExit 1
+	    } elseif {[string match fail $cmd]} {
+		set prologExit 0
+	    } elseif {[string match send_tcl_cmd $cmd]} {
+		eval do_tail $line
+	    } elseif {[lsearch "debug_c" $cmd]!=-1} {
+		DebugMess $line
+	    } else {
+		DebugMess $line
+		set prologExit -1
+	    }
+	}
     }
     return $prologExit
 }
 
-set debugBoxes 1
+set debugBoxes 0
 proc DebugMess {Mess} {
     global debugBoxes
     if {$debugBoxes} {
-        tk_messageBox -title debug -icon info -message $Mess -type ok
+	tk_messageBox -title debug -icon info -message $Mess -type ok
     } else {
-        puts [concat ! $Mess]
+	puts [concat ! $Mess]
     }
 }
 
-proc prolog {plCmd} {
-    global plPipe
+proc prolog {args} {
+    ShowWatchWhileDoing [concat innerProlog $args]
+}
+
+proc innerProlog {plCmd} {
+    global plPipe window_info
     set oldStack $plPipe(stack)
     set plPipe(stack) [AddCurrentToPipe $oldStack]
-#puts "Prolog starting $plCmd"
     send_pl_cmd call:$plCmd
     set plOutcome [KeepLooking]
-#puts "Prolog finished $plCmd outcome $plOutcome"
     set plPipe(stack) $oldStack
     if {![string length $plPipe(stack)]} {
-        ResetProgressBox
+	ResetProgressBox
     }
-    return $plOutcome
 }
 
 proc AddCurrentToPipe {stack} {
     for {set l 1} {$l < [info level]} {incr l} {
-        lappend stack [info level $l]
+	lappend stack [info level $l]
     }
     return $stack
 }
@@ -93,12 +96,12 @@ proc do_tail {header args} {
         set ans [ShowMessage "Simile error" error "Simile encountered an unexpected problem:\n $retVal \nDo you want to see more information?" yesno]
         if {[string match yes $ans]} {
             BuildProblem "User interface problem" error $errorInfo execution \
-                unsaved none
+		unsaved none
         }
         cd $oldDir
-        set response error:$retVal
+	set response error:$retVal
     } else {
-        set response result:$retVal
+	set response result:$retVal
     }
     send_pl_cmd $response
 }
@@ -108,11 +111,11 @@ proc send_pl_cmd {withCrs} {
     regsub -all \n $withCrs \\n plCmd
 #    puts [concat > $plCmd]
     if {$plPipe(debug)} {
-        puts $plPipe(debug_stream) [concat > $plCmd]
+	puts $plPipe(debug_stream) [concat > $plCmd]
     }
     if {![eof $plPipe(stream)]} {
-        puts $plPipe(stream) $plCmd
-        flush $plPipe(stream)
+	puts $plPipe(stream) $plCmd
+	flush $plPipe(stream)
     }
 }
 
@@ -120,33 +123,47 @@ proc ClosePipe {} {
     global plPipe simtmpdir
     if {[catch {close $plPipe(stream)} spew]} {
         destroy .splash ;# banner will hide error mesg if not yet withdrawn
-        error $spew
+	ShowMessage "Prolog process exited" error $spew ok
     }
     if {[catch {file delete -force $simtmpdir}]} {
-        ShowMessage debug warning "Simile could not delete its temporary directory $simtmpdir. This probably means that it failed to unload a model executable. Any saved models will not be affected, and you can delete the temporary directory after Simile has exited." ok
+	ShowMessage debug warning "Simile could not delete its temporary directory $simtmpdir. This probably means that it failed to unload a model executable. Any saved models will not be affected, and you can delete the temporary directory after Simile has exited." ok
     }
     if {$plPipe(debug)} {
-        close $plPipe(debug_stream)
+	close $plPipe(debug_stream)
     }
     destroy .
 }
 
-# These allow GNU prolog to use a decent amount of memory
-set vm_usage 262144
-set env(GLOBALSZ) [expr $vm_usage/2]
-set env(LOCALSZ) [expr $vm_usage/4]
-set env(TRAILSZ) [expr $vm_usage*3/16]
+# These allow GNU prolog to use a decent amount of memory -- 64bit OSes are
+# especially voracious and run on big machines so give them more
+set bitness 32
+if {[string equal x86_64 $tcl_platform(machine)]} {
+    set bitness 64
+}
+set vm_usage [expr $bitness*$bitness/4+16] ;# in megs
+set spraf {}
+while {![string match ready $spraf]} {
+    incr vm_usage -16
+    if {!$vm_usage} {
+	error $loss
+    }
 
-set plPipe(stream) [open |[ShellFileRef $PROLOG_CMD] r+]
+    set env(GLOBALSZ) [expr 512*$vm_usage]
+    set env(LOCALSZ) [expr 256*$vm_usage]
+    set env(TRAILSZ) [expr 192*$vm_usage]
+    set plPipe(stream) [open |[ShellFileRef $PROLOG_CMD] r+]
 #set plPipe [open "|m:/progra~1/GNU-Prolog/bin/gprolog.exe --init-goal load('../Run/gsimile.wbc') 2> $PROLOG_ERR" r+]
-fconfigure $plPipe(stream) -encoding utf-8 -translation {auto lf}
+    fconfigure $plPipe(stream) -encoding utf-8 -translation {auto lf}
 
 #send_pl_cmd restore('../System/bin/main.sav').
 #send_pl_cmd main.
-set spraf {}
-while {![string match ready $spraf]} {
-    if {[gets $plPipe(stream) spraf]<0} {
-        ClosePipe
+    while {![string match ready $spraf]} {
+	if {[gets $plPipe(stream) spraf]<0} {
+	    catch {close $plPipe(stream)} loss
+#puts "Tried with vm $vm_usage -- got $loss"
+	    # crash -- do not err, just try with less VM
+	    break
+	}
     }
 }
 set plPipe(stack) [list "Prolog initialization"]

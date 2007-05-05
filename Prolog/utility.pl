@@ -2,19 +2,19 @@
 **** Commonly used utility procedures for AME				    ****
 *******************************************************************************/
 
-sicstus_module( utility, [wake/0, genint/2, portray/1, trim_float/2,
+sicstus_module( utility, [wake/0, genint/2, rt_portray/1, trim_float/2,
 			  unique_name/2, unique_name/3,
 			  indent/1, delete_member/2,
 			  y_or_n/1, any_setof/3,foreach/3, wrap/3,
 			  all/3, unify_all/2, get_precedence/2,
 			  replace_in_list/4, write_with_breaks/2,
 			  writelist/1,writelisttofile/2,
-			  do_writing/2, open_native/3,
+			  do_writing/2, open_native/3, get_native/2,
 			  delall/3, append/2, append_atoms/2, append_atoms/3,
 			  try/1,equate/2,
 			  merge_lists/2, merge_lists/3, split_lists/3,
 			  get_ground_part/2, generate_name/4, generate_name/5,
-			  make_code_name/3, ensure_unused/4, count_to/4] ).
+			  ensure_unused/4, count_to/4] ).
 
 sicstus_use_module([database, text, sp_only,
 		    library(lists), library(ordsets)]).
@@ -29,6 +29,7 @@ wake.
 
 unique_name( Atom, Name ) :-
 	unique_name( Atom, Name, 5 ).
+
 
 unique_name( Atom, Name, Size ) :-
 	(retract(genint(Atom, LastAnswer )), !;
@@ -49,26 +50,16 @@ unique_name( Atom, Name, Size ) :-
 	name( Name, NameChars ),
 	(assert(genint(Atom, Integer)); retract(genint(Atom, Integer)), fail).
 
-portray(F) :-
+rt_portray(F) :-
 	wrap_fixes(F).
 
 /* Things to ignore temporarily */
 
-portray(F) :-
+rt_portray(F) :-
 	trim_float(F, NewF), !,
 	sicstus_write_chars(NewF).
 
-/* regular stuff : xrefs occurs inside a model structure and contains other
-model structures, making them circular. It must therefore be
-printed incompletely to avoid infinite loops... */
-
-portray(xrefs(Model, _, _, _)) :-
-	print(xrefs(Model,'Links')).
-
-/* portray(sm(Model, _,_,_)) :-
-	print(sm(Model)).
-
-Improved system for outputting floating-point numbers -- max of 
+/* Improved system for outputting floating-point numbers -- max of 
 decimal places (thanks to Dan Diaz for making it work with print_to_chars)
 -- previously unusable due to weird bug in gprolog.
 
@@ -145,12 +136,12 @@ wrap(Arg, Functor, Function) :-
 % Standard format for recursion: all.
 
 all(_, _, ArgList) :-
-    all_done(ArgList), !.
+    all_done(ArgList).
 
 all(Module, Pred, ArgList) :-
     split_args(Module, ArgList, FirstList, RestList),
     Step =.. [Pred | FirstList],
-    call(Module:Step),
+    call(Module:Step), !,
     all(Module, Pred, RestList),
     join_args(Module, FirstList, RestList, ArgList).
 	
@@ -267,11 +258,14 @@ do_reading([], _Str).
 need to change its own ttfn encoding to utf8 */
 
 open_native(FileTtfn, Mode, Stream) :-
+        get_native(FileTtfn, FileNative),
+	open(FileNative, Mode, Stream).
+
+get_native(FileTtfn, FileNative) :-
 	output:safe_tcl_eval(['GetSystemChars', br(FileTtfn)], Bag),
 	output:chop_list(Bag, String),
 	all(user, name, [build(Chars), build(String)]),
-	name(FileNative, Chars),
-	open(FileNative, Mode, Stream).
+	name(FileNative, Chars).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % delall deletes all occurrances of an element from a list 
@@ -368,27 +362,6 @@ home_on_prec(Op, Prec1, Prec2, Prec) :-
 	(precedence_lower_than(Op, Mid), !,
 		home_on_prec(Op, Prec1, Mid, Prec);
 	home_on_prec(Op, Mid, Prec2, Prec)).
-
-/* As of v5 we want to create program names that have a one-to-one
-correspondence with model captions, so they are unique and
-reversible. This is done as follows: characters that cannot appear in
-code are replaced by a pair of underscores separating their ACSII
-index in hex. */
-
-make_code_name(Lang, MName, Code) :-
-	sicstus_atom_chars(MName, [M1 | Mn]),
-	(good_starter(Lang, M1), !,
-	    C1 = [M1];
-	 sicstus_format_to_chars("_~16r_", [M1], C1)),
-	all(utility, fix_continuer,
-	    [unify(Lang), build(Mn), append(Cn, [])]),
-	append(C1, Cn, CodeStr),
-	sicstus_atom_chars(Code, CodeStr).
-
-fix_continuer(Lang, M, C) :-
-	good_continuer(Lang, M), !,
-	    C = [M];
-	sicstus_format_to_chars("_~16r_", [M], C).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

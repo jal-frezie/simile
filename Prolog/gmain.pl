@@ -67,6 +67,10 @@ sicstus_read_from_chars(Term, Result) :-
 sicstus_write_to_chars(Term, Result) :-
         print_to_codes(Result, Term).
 
+sicstus_writeq_to_chars(Term, Result) :-
+        write_term_to_codes(Result, Term, [quoted(true), numbervars(false),
+					   portrayed(true)]).
+
 sicstus_format_to_chars(Template, [V1 | Vars], Result) :-
         !, format_to_codes(Result, Template, [V1 | Vars]).
 
@@ -115,11 +119,12 @@ all_ground([H | T]) :-
 	ground(H),
 	all_ground(T).
 
+gnu_round(N, IN) :-
+	integer(N), !, IN = N;
+	IN is round(N).
+
 wrap_fixes(_) :-
 	fail.
-
-round(F, I) :-
-	I is round(F).
 
 /* If we rely on writeq to put non-readable atoms in quotes it will
 also convert wide characters into sets of hex codes enclosed in
@@ -154,9 +159,12 @@ runtime_entry(start) :-
 
 :- dynamic(version_is/1).
 
+portray(T) :-
+	rt_portray(T).
 main :-
 	/* first clear state from previous run (only matters in dev sys)
 	database:clear_database, or not as the case may be */
+	database:empty_tree,
 	state:retractall(model_in(_,_)),
 	current_prolog_flag(prolog_name, Vname),
 	current_prolog_flag(prolog_version, Vnum),

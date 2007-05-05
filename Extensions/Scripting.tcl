@@ -4,66 +4,15 @@ if {[string equal windows $::tcl_platform(platform)]} {
     dde servername Simile
 }
 
-itcl::class script::Model {
+itcl::class similescript::ModelWindow {
     
-    variable modelNode 
-    variable modelWindowCanvas
-    variable runControlKeyValue 
-#    variable model
-    
-    
-    constructor {{fname ""}} {
-        global window_info
-        NewTopLevel
-        set modelWindowCanvas $window_info(current)
-        set modelNode $window_info($modelWindowCanvas,top_node)
-        set runControlKeyValue [do_for_node $modelNode set ::helperTable(RunControl)]
-        if {[file exists $fname]} {
-            Open $fname
-        } 
-        UseMRE false
-    }
-    
-    destructor {
-        MenuClose $modelWindowCanvas
-    }
+    variable modelNode node00000
+    variable desktop /Desktop1
+    variable model
     
     private method GetModelWindow {} {
         global window_info
-        return $window_info($modelWindowCanvas,parent)
-    }
-    
-    private method GetRunState {} {
-        # modelRunning is a global variable that indicates the status of the model
-        # program: 0 = none, 1 = awaiting fixed params, 2 awaiting initialization,
-        # 3 = up to date, 4 = out of date
-        global runState
-        if {[info exists runState($modelNode,modelRunning)]} {
-            return $runState($modelNode,modelRunning)
-        } else {
-            return 0
-        }
-    }
-    
-    private method readyToGo {
-        if {[GetRunState]==3} {
-            return true
-        } else {
-            return false
-        }
-    }
-    
-    public method Hide {} {
-        wm withdraw [GetModelWindow]
-    }
-    
-    public method Show {} {
-        wm deiconify [GetModelWindow]
-    }
-    
-    public method GetModelNode {} {
-        # Returns top node of model, needed for helpers
-        return $modelNode
+        return $window_info([lindex [lsort [array name window_info *,parent]] 0])
     }
     
     public method CreateHelperWindow {helperId helperTitle} {
@@ -75,103 +24,168 @@ itcl::class script::Model {
         return $winId
     }
     
+    constructor {} {
+        #tk_messageBox -message "ModelWin constructor"
+        Hide
+        UseMRE false
+    }
+    
+    destructor {
+        if {![string match "" [itcl::find object similescript::RunControl]]} {
+            delete object similescript::RunControl
+        }
+        #tk_messageBox -message "model win destructor"
+        #Exit
+        MenuClose [GetModelWindow].canvas
+    }
+    
+    public method Hide {} {
+        wm withdraw [GetModelWindow]
+    }
+    
+    public method Show {} {
+        wm deiconify [GetModelWindow]
+    }
     
     public method UseMRE {bool} {
+        # IS THIS GOING TO HAVE A TYPE PROBLEM???
         global custom
         set custom(helperManager) $bool
     }
     
-    # File menu commands
+    # File Menu
     public method New {} {
-        MenuSelect $modelWindow file new
-#        if {[info exists model]} {
-#            unset model
-#        }
+        MenuSelect [GetModelWindow].canvas file new
+        if {[info exists model]} {
+            unset model
+        }
     }
     
     public method FileOpenDlg {} {
-        MenuSelect $modelWindow local open_all
+        #if {[info exists model]} {
+        #    $this FileNew"
+        #}
+        #$c local open_all
+        MenuSelect [GetModelWindow].canvas local open_all
+        #set model $modelFile
     }
     
     public method Open {modelFile} {
-#        if {[info exists model]} {
-#            $this New
-#        }
-        Reopen $modelWindowCanvas $modelFile reopen
-#        set model $modelFile
-    }
-    
-    public method Close {} {
-        itcl::delete object $this
+        if {[info exists model]} {
+            $this New
+        }
+        Reopen [GetModelWindow].canvas $modelFile reopen
+        set model $modelFile
     }
     
     public method Print {} {
-        MenuSelect PrintNow $modelWindowCanvas
+        MenuSelect PrintNow [GetModelWindow].canvas
     }
-
-# These all cause a file selection dialog to appear
-#     public method ExportProlog {} {
-#         MenuSelect [GetModelWindow].canvas file export_prolog
-#     }
-#     
-#     public method ExportCompiledBinary {} {
-#         MenuSelect [GetModelWindow].canvas file compile_c
-#     }
-#     
-#     public method ExportPostScriptGraphics {} {
-#         ExportPostscript [GetModelWindow].canvas
-#     }
-#     
-
+    
     public method Destroy {} {
         itcl::delete object $this
     }
     
-    
-    # Model menu commands
-    public method Build {{language "C++"}} {
-        switch $language {
-            "C++" {
-                MenuSelect $modelWindowCanvas file run_c
-            }
-            "Tcl" {
-                MenuSelect $modelWindowCanvas file run_tcl
-            }
+    private method RemoveRunControl {} {
+        if {[string match ::runControl [itcl::find object ::runControl]]} {
+            itcl::delete object ::runControl
         }
     }
     
+    # Model Menu
+    public method Run {} {
+        # builds the model with CPP and returns a run control command/object
+        #RemoveRunControl
+        MenuSelect [GetModelWindow].canvas file run_c
+        #set rc [similescript::RunControl ::runControl $this]
+        #return $rc
+    }
+    
     public method Debug {} {
-        MenuSelect $modelWindowCanvas file run_tcl
+        # builds the model with Tcl and returns a run control command/object
+        #RemoveRunControl
+        MenuSelect [GetModelWindow].canvas file run_tcl
+        #set rc [similescript::RunControl ::runControl $this]
+        #return $rc
     }
     
     public method ListEquations {} {
-        MenuSelect $modelWindowCanvas file list_eqns
+        MenuSelect [GetModelWindow].canvas file list_eqns
     }
     
     public method LoadParams {filepath {smPath {}}} {
         do_for_node $modelNode set ::projectParams($smPath) $filepath
     }
     
-    # Run control commands
-    public method HideRunControl {} {
-        global runState
-        wm withdraw $runState($modelNode,helperId)
+}
+
+itcl::class similescript::HelperController {
+    # Class providing basic control of existing helpers
+    # The constructor DOES NOT create a helper use class Helper
+    variable winId;    #Tk path to RunControl window
+    variable keyvalue; # RunControl namespace
+    variable modelNode node00000
+    
+    destructor {
+        destroy $winId
     }
     
-    public method ShowRunControl {} {
-        global runState
-        wm deiconify $runState($modelNode,helperId)
+    public method Show {} {
+        do_for_node $modelNode wm deiconify $winId
     }
-    public method Start {{script ""}} {
-        global helperTable
-        if {([string length $script] != 0) && [info complete $script]} {
-            set helperTable($modelNode,callbackScript) $script
-        }
-        do_for_node $modelNode ${runControlKeyValue}::SetMode $modelNode start
+    
+    public method Hide {} {
+        #puts "HelperController Hide $winId; $modelNode"
+        do_for_node $modelNode wm withdraw $winId
+    }
+    
+    public method Destroy {} {
+        itcl::delete object $this
+    }
+}
+
+itcl::class similescript::Helper {
+    
+    inherit HelperController
+    
+    constructor {modelWindow winTitle} {
+        #puts "Helper constr $modelWindow [KeyValue] $winTitle"
+        #do_for_node $modelNode
+        set winId [$modelWindow CreateHelperWindow [KeyValue] $winTitle]
+        #puts "Helper constr winId $winId"
+        Hide
+    }
+    
+    # All derived classes must reimplement with correct keyvalue
+    public method KeyValue {} {
+        return abstractHelper
+    }
+
+    public method Clear {} {
+        [KeyValue]::clear $winId
+    }
+}
+
+itcl::class similescript::RunControl {
+    
+    inherit HelperController
+    
+    constructor {} {
+        set modelWindow [itcl::find object * -isa ::similescript::ModelWindow]
+        set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
+	set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
+        Hide
+    }
+    
+    public method Start {} {
+        # returns the time to complete (to run the simulation)
+        set timestr [time [list do_for_node $modelNode ${keyvalue}::SetMode $modelNode start]]
+        set musec [lindex $timestr 0]
+        return "[expr {$musec/1e6}] sec"
     }
     
     public method Reset {} {
-        do_for_node $modelNode ${runControlKeyValue}::SetMode $modelNode reset
+        do_for_node $modelNode ${keyvalue}::SetMode $modelNode reset
     }
     
     public method MergeParams {filepath {smPath {}}} {
@@ -189,6 +203,7 @@ itcl::class script::Model {
     }
     
     public method GetIntegrationMethod {} {
+        #return $runState($modelNode,intMethod)
         return [do_for_node $modelNode set ::runState($modelNode,intMethod)]
     }
     public method SetIntegrationMethod {method} {
@@ -223,12 +238,6 @@ itcl::class script::Model {
         return [do_for_node $modelNode set ::runState($modelNode,displayInt)]
     }
     
-    public method DefineDisplayCallback {script} {
-        global helperTable
-        set helperTable($modelNode,callbackScript) $script
-        return
-    }
-    
     public method GetNumberOfTimeSteps {} {
         return [do_for_node $modelNode GetPhaseCount $modelNode]
     }
@@ -261,9 +270,9 @@ itcl::class script::Model {
         set nodeId [do_for_node $modelNode GetIdFromCaptionPath $path]
         switch -- [$this GetModelEval $path] {
             INPUT {
-        if {[RunningInC $modelNode]} {
-            c_setparamelement $nodeId {} $value
-        }
+		if {[RunningInC $modelNode]} {
+		    c_setparamelement $nodeId {} $value
+		}
                 switch -glob -- [$this GetModelType $path] {
                     FLAG {
                         do_for_node $modelNode set ::checkStates($nodeId) $value
@@ -278,10 +287,10 @@ itcl::class script::Model {
                 }
             }
             TABLE {
-        if {[RunningInC $modelNode]} {
-            c_setparamelement $nodeId {} $value
-        }
-        do_for_node $modelNode set ::paramData(/[GetExecTitle $modelNode]$path) $value
+		if {[RunningInC $modelNode]} {
+		    c_setparamelement $nodeId {} $value
+		}
+		do_for_node $modelNode set ::paramData(/[GetExecTitle $modelNode]$path) $value
                 do_for_node $modelNode set ::runState($modelNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
                 Reset
             }
@@ -306,6 +315,7 @@ itcl::class script::Model {
         return [do_for_node $modelNode GetMaxValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
+    #paths
     public method GetModelType {path} {
         return [do_for_node $modelNode GetModelType [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
@@ -322,11 +332,14 @@ itcl::class script::Model {
         return [do_for_node $modelNode GetModelClass [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
     
-# What would a scripter do with this?
-#    public method GetObjectList {} {
-#        return [do_for_node $modelNode GetObjectList $winId]
-#    }
+    ################################################################################
+    # # what would a scripter do with this?
+    #     public method GetObjectList {} {
+    #         return [do_for_node $modelNode GetObjectList $winId]
+    #     }
+    ################################################################################
     
+    # any use??
     public method GetPhaseCount {} {
         return [do_for_node $modelNode GetPhaseCount $modelNode]
     }
@@ -340,80 +353,30 @@ itcl::class script::Model {
         return $paths
     }
     
-#    proc GetModelGraph {node}
-#    proc SetModelGraph {node args}
-#    proc GetModelTime {}
-#    proc GetModelEndTime {}
-    
+    #proc GetModelGraph {node}
+    #proc SetModelGraph {node args}
+    #proc GetModelTime {}
+    #proc GetModelEndTime {}
 }
 
-# HELPERS
-
-itcl::class similescript::HelperController {
-    # Class providing basic control of existing helpers
-    # The constructor DOES NOT create a helper use class Helper
-
-    # Tk path to window
-    variable winId 
-    
-    # Top node of model window
-    variable modelNode
-    
-    destructor {
-        destroy $winId
-    }
-    
-    public method Show {} {
-        do_for_node $modelNode wm deiconify $winId
-    }
-    
-    public method Hide {} {
-        do_for_node $modelNode wm withdraw $winId
-    }
-    
-    public method Destroy {} {
-        itcl::delete object $this
-    }
-}
-
-itcl::class similescript::Helper {
-    
-    inherit HelperController
-    
-    constructor {modelWindowObj winTitle keyValue} {
-        set modelNode [$modelWindowObj GetModelNode]
-        set winId [do_for_node $modelNode NewHelperWindow $modelNode $keyValue $winTitle]
-        do_for_node $modelNode ${keyValue}::initialize $winId
-        if {[PrefValue custom(helperManager) helperManager]} {
-            ::RunEnv::ChildrenFocusParent $winId
-        }
-        return $winId
-    }
-    
-    # All derived classes must reimplement with correct keyvalue
-    public method KeyValue {} {
-        return abstractHelper
-    }
-
-    public method Clear {} {
-        [KeyValue]::clear $winId
-    }
-    
-}
+#set keyvalue tabular11510
+#set winId [$modelWindow CreateHelperWindow $keyvalue {Table}]
+#Hide
+#chain
+#SetUpdateAtDisplayInterval false
 
 itcl::class similescript::TableHelper {
     
     inherit Helper
     
-    constructor {modelWindowObj winTitle} {
-        similescript::Helper::constructor $modelWindowObj $winTitle "tabular11510"
+    constructor {modelWindow winTitle} {
+        similescript::Helper::constructor $modelWindow $winTitle
     } {
-        # This empty body is used only to indicate that the previous script is 
-        # an "init" script, which invokes the base constructor with arguments
+        #puts "TableHelperImpl constr: $modelWindow [KeyValue] $winTitle"
     }
     
     public method KeyValue {} {
-        return "tabular11510"
+        return tabular11510
     }
     
     public method AddVariable {path} {
@@ -437,18 +400,18 @@ itcl::class similescript::TableHelper {
     
     public method SetShowingRowsForTimes {value} {
         # value 0 or 1
-        if {$value} {
-            set timeHdr rows
-        } else {
-            set timeHdr none
-        }
+	if {$value} {
+	    set timeHdr rows
+	} else {
+	    set timeHdr none
+	}
         do_for_node $modelNode lset [KeyValue]::orientList($winId) 0 $timeHdr
-        do_for_node $modelNode [KeyValue]::Reconbobulate $winId 
+	do_for_node $modelNode [KeyValue]::Reconbobulate $winId	
     }
     
     public method GetShowingRowsForTimes {} {
         return [string equal rows [lindex \
-        [do_for_node $modelNode set [KeyValue]::orientList($winId)] 0]]
+	    [do_for_node $modelNode set [KeyValue]::orientList($winId)] 0]]
     }
     
     public method Update {} {
@@ -463,7 +426,7 @@ itcl::class similescript::TableHelper {
     public method AppendToFile {filename sectionId} {
         Update
         do_for_node $modelNode [KeyValue]::SaveToNamedFile \
-        $winId $filename $sectionId
+	    $winId $filename $sectionId
     }
     
 }

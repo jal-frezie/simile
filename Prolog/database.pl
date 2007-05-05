@@ -12,21 +12,28 @@ Jasper Taylor, 15/3/98
 
 sicstus_module(database, [
 	/* manipulation routines */
-		assert_model/1, retract_model/1, retractall_model/1,
-			  anything_done/0, fetch_update/1,
+			  my_assert/1, my_retract/1,
+			  assert_model/1, retract_model/1, retractall_model/1,
+			  query_model/1, anything_done/0, fetch_update/1,
+			  empty_tree/0,
 	/* for link */
-		connection/3, arc_type/2, arc_info/3,
+		is_arc/1, connection/3, arc_type/2, arc_info/3, continues/2,
 	/* for m_struct */
-		subsystem/2,
+		is_node/1, subsystem/2,
 	/* for node */
 		node_class/2, node_refinement/3, node_attribute/3,
 	/* for graphics */
 		graphical_info/3]).
 
+sicstus_use_module([library(lists), sp_only, utility, output]).
+
+:- dynamic(is_arc/1). 
 :- dynamic(connection/3).
 :- dynamic(arc_type/2).
 :- dynamic(arc_info/3).
+:- dynamic(continues/2).
 		
+:- dynamic(is_node/1). 
 :- dynamic(subsystem/2). 
 		
 :- dynamic(node_class/2). 
@@ -40,9 +47,9 @@ sicstus_module(database, [
 clear_database :-
 	clear_model([
 	/* for link */
-		connection/3, arc_type/2, arc_info/3,
+		connection/3, arc_type/2, arc_info/3, continues/2,
 	/* for m_struct */
-		subsystem/2,
+		is_node/1, subsystem/2,
 	/* for node */
 		node_class/2, node_refinement/3, node_attribute/3,
 	/* for graphics */
@@ -56,14 +63,149 @@ clear_model([Funt/Args | Rest]) :-
 	retractall(Template),
 	clear_model(Rest).
 
+%empty_tree.
+/* Stuff needed for c database  */
+sicstus_load_foreign_resource(struct_db).
+
+:- foreign(empty_tree).
+
 assert_model(P) :-
-	assert(P),
+	my_assert(P),
 	(retract(update_remove(P)), !;
 	assert(update_add(P))).
 
+my_assert(P) :-
+%	assert(P).
+%	tcl_assert(P).
+	c_assert(P).
+	
+tcl_assert(P) :-
+	P =.. [Funt | Args],
+	all(database, pack_term, [build(Args), build(FixArgs)]),
+	safe_tcl_eval(['PrologAssert', Funt | FixArgs], _), fail; true.
+
+:- foreign(create_node(+string)). 
+:- foreign(add_to_tree(+string, +string)). 
+:- foreign(set_class(+string, +atom)). 
+:- foreign(create_arc(+string)). 
+:- foreign(add_link(+string, +string, +string)). 
+:- foreign(set_type(+string, +atom)). 
+:- foreign(add_continuation(+string, +string)).
+:- foreign(add_to_course(+string, +integer, +integer)).
+:- foreign(add_bbox(+string, +integer, +integer, +integer, +integer)).
+:- foreign(add_iext(+string, +integer, +integer, +integer, +integer)).
+:- foreign(add_capt_off(+string, +integer, +integer)).
+:- foreign(add_centre(+string, +integer, +integer)).
+:- foreign(add_bowtie(+string, +integer, +integer, +integer, +integer)).
+:- foreign(set_hidden(+string, +integer)).
+c_assert(P) :-
+%	safe_tcl_eval([puts, br(write(assert(P)))], _),
+	P = is_node(Node), !,
+	create_node(Node);
+	P = subsystem(Parent, Child), !,
+	add_to_tree(Parent, Child);
+	P = node_class(Node, Class), !,
+	set_class(Node, Class);
+	P = is_arc(Node), !,
+	create_arc(Node);
+	P = connection(Dest, Source, Arc), !,
+	add_link(Dest, Source, Arc);
+	P = arc_type(Arc, Type), !,
+	set_type(Arc, Type);
+	P = continues(Arc1, Arc2), !,
+	add_continuation(Arc1, Arc2);
+	P = graphical_info(Obj, GAttr, Pts), !,
+	(GAttr = course,
+	    load_course(Obj, Pts);
+	 GAttr = bounding_box,
+	    Pts = [L,T,R,B],
+	    add_bbox(Obj, L, T, R, B);
+	 GAttr = internal_extent,
+	    Pts = [L,T,R,B],
+	    add_iext(Obj, L, T, R, B);
+	 GAttr = caption_offset,
+	    Pts = [OX,OY],
+	    add_capt_off(Obj, OX, OY);
+	 GAttr = bowtie,
+	    Pts = [L,T,R,B],
+	    add_bowtie(Obj, L, T, R, B);
+	 GAttr = centre,
+	    Pts = [CX, CY],
+	    add_centre(Obj, CX, CY);
+	 GAttr = hide_contents,
+	    (\+ Pts = 1, !; set_hidden(Obj, 1)));
+%	 safe_tcl_eval([puts, br(write(failed_assert(P)))], _)), !;
+	assert(P).
+
+load_course(Arc, Pts) :-
+	Pts = [];
+	Pts = [[XPt, YPt] | More],
+	load_course(Arc, More),
+	add_to_course(Arc, XPt, YPt).
+		     
 retract_model(P) :-
-	retract(P),
+	my_retract(P),
 	retract_from_current(P).
+
+my_retract(P) :-
+%	retract(P).
+%	tcl_retract(P).
+	c_retract(P).
+
+tcl_retract(P) :-
+	tcl_call(P, Funt, MatchStr),
+	safe_tcl_eval(['PrologRetract', Funt, chars(MatchStr)], _).
+
+:- foreign(delete_node(+string)). 
+:- foreign(remove_from_tree(+string, +string)). 
+:- foreign(unset_class(+string, +atom)). 
+:- foreign(delete_arc(+string)). 
+:- foreign(remove_link(+string, +string, +string)). 
+:- foreign(unset_type(+string, +atom)). 
+:- foreign(remove_continuation(+string, +string)).
+:- foreign(empty_course(+string)).
+:- foreign(remove_bbox(+string)).
+:- foreign(remove_iext(+string)).
+:- foreign(remove_capt_off(+string)).
+:- foreign(remove_centre(+string)).
+:- foreign(remove_bowtie(+string)).
+c_retract(P) :-
+%	safe_tcl_eval([puts, br(write(retract(P)))], _),
+	P = is_node(Node), !,
+	delete_node(Node);
+	P = subsystem(Parent, Child), !,
+	remove_from_tree(Parent, Child);
+	P = node_class(Node, Class), !,
+	c_call(P),
+	unset_class(Node, Class);
+	P = is_arc(Node), !,
+	delete_arc(Node);
+	P = connection(Dest, Source, Arc), !,
+	c_call(P),
+	remove_link(Dest, Source, Arc);
+	P = arc_type(Arc,Type), !,
+	c_call(P),
+	unset_type(Arc,Type);
+	P = continues(Arc1, Arc2), !,
+	c_call(P),
+	remove_continuation(Arc1, Arc2);
+	P = graphical_info(Obj, GAttr, _Pts), !,
+	    c_call(P),
+	    (GAttr = course,
+		empty_course(Obj);
+	    GAttr = bounding_box,
+		remove_bbox(Obj);
+	    GAttr = internal_extent,
+		remove_iext(Obj);
+	    GAttr = caption_offset,
+		remove_capt_off(Obj);
+	    GAttr = bowtie,
+		remove_bowtie(Obj);
+	    GAttr = centre,
+		remove_centre(Obj);
+	    GAttr = hide_contents,
+		set_hidden(Obj, 0));
+	retract(P).
 
 retract_from_current(P) :-
 	(retract(update_add(P)), !;
@@ -73,6 +215,142 @@ retractall_model(P) :-
 	retract_model(P),
 		fail;
 	true.
+
+query_model(P) :-
+%	call(P).
+%	tcl_call(P, _Funt, _Strs).
+	c_call(P).
+
+tcl_call(P, Funt, MatchStr) :-
+	P =.. [Funt | Args],
+	all(database, pack_term, [build(Args), build(FixArgs)]),
+	safe_tcl_eval(['PrologQuery', Funt | FixArgs], Str),
+	output:chop_list(Str, MatchStrs),
+	member(MatchStr, MatchStrs),
+	output:chop_list(MatchStr, ArgStrs),
+	all(database, unpack_term, [build(ArgStrs), build(InstArgs)]),
+	Args = InstArgs.
+
+:- foreign(find_parent(+string, -string)).
+:- foreign(get_child_list_pointer(+string, -integer)).
+:- foreign(get_class(+string, -atom)). 
+:- foreign(find_ends(+string, -string, -string)). 
+:- foreign(get_in_list_pointer(+string, -integer)).
+:- foreign(get_out_list_pointer(+string, -integer)).
+:- foreign(get_type(+string, -atom)).
+:- foreign(find_prev(+string, -string)).
+:- foreign(get_next_list_pointer(+string, -integer)).
+:- foreign(get_course_pointer(+string, -integer)).
+:- foreign(find_bbox(+string, -integer, -integer, -integer, -integer)).
+:- foreign(find_iext(+string, -integer, -integer, -integer, -integer)).
+:- foreign(find_capt_off(+string, -integer, -integer)).
+:- foreign(find_centre(+string, -integer, -integer)).
+:- foreign(is_hidden(+string)).
+:- foreign(find_bowtie(+string, -integer, -integer, -integer, -integer)).
+:- foreign(get_string_and_next_ptr(+integer, -string, -integer)).
+:- foreign(get_coords_and_next_ptr(+integer, -integer, -integer, -integer)).
+c_call(P) :-
+%	safe_tcl_eval([puts, br(write(call(P)))], _),
+	(P = subsystem(Parent, Child), !,
+	(var(Child), !,
+	    (var(Parent), !,
+	    	find_all_children(Parent, Child);
+	    find_child(Parent, Child));
+	find_parent(Child, Parent));
+	P = node_class(Node, Class), !,
+	(atom(Node), !;
+	    var(Node), descendent(root, Node)),
+	get_class(Node, Class);
+	P = connection(Dest, Source, Arc), !,
+	(nonvar(Arc), !;
+	    (var(Source), !,
+		atom(Dest),
+		find_arc_to(Dest, Arc);
+	    atom(Source),
+		find_arc_from(Source, Arc))),
+	find_ends(Arc, Source, Dest);
+	P = arc_type(Arc, Type), !,
+	atom(Arc),
+	get_type(Arc, Type);
+	P = continues(Arc1, Arc2), !,
+	(var(Arc2), !,
+	    find_next(Arc1, Arc2);
+	find_prev(Arc2, Arc1));
+	P = graphical_info(Obj, GAttr, Pts), !,
+	    (GAttr = course,
+		get_course_pointer(Obj, CoursePtr),
+		\+ CoursePtr = 0,
+		build_course(CoursePtr, Pts);
+	    GAttr = bounding_box,
+		find_bbox(Obj, L, T, R, B),
+		Pts = [L,T,R,B];
+	    GAttr = internal_extent,
+		find_iext(Obj, L, T, R, B),
+		Pts = [L,T,R,B];
+	    GAttr = caption_offset,
+		find_capt_off(Obj, OX, OY),
+		Pts = [OX, OY];
+	    GAttr = centre,
+		find_centre(Obj, CX, CY),
+		Pts = [CX, CY];
+	    GAttr = bowtie,
+		find_bowtie(Obj, L, T, R, B),
+		Pts = [L,T,R,B];
+	    GAttr = hide_contents,
+		is_hidden(Obj),
+		Pts = 1);
+	call(P)).
+%	safe_tcl_eval([puts, br(write(return(P)))], _).
+
+find_all_children(Parent, Child) :-
+	descendent(root, Child),
+	find_parent(Child, Parent).
+
+descendent(Node, Desc) :-
+	Desc = Node;
+	find_child(Node, Child),
+	descendent(Child, Desc).
+
+find_child(Parent, Child) :-
+	get_child_list_pointer(Parent, Ptr),
+	comps_from_pointer(Ptr, Child).
+
+find_arc_to(Dest, Arc) :-
+	get_in_list_pointer(Dest, Ptr),
+	comps_from_pointer(Ptr, Arc).
+
+find_arc_from(Dest, Arc) :-
+	get_out_list_pointer(Dest, Ptr),
+	comps_from_pointer(Ptr, Arc).
+
+find_next(PrevArc, SubsArc) :-
+	get_next_list_pointer(PrevArc, Ptr),
+	comps_from_pointer(Ptr, SubsArc).
+	
+comps_from_pointer(Ptr, Comp) :-
+	\+ Ptr = 0, % or whatever a NULL translates to
+	get_string_and_next_ptr(Ptr, First, NxtPtr),
+	(Comp = First; comps_from_pointer(NxtPtr, Comp)).
+
+build_course(Ptr, Points) :-
+	Ptr = 0, !, Points = [];
+	get_coords_and_next_ptr(Ptr, X, Y, NextPtr),
+	    build_course(NextPtr, MorePoints),
+	    Points = [[X,Y] | MorePoints].
+
+pack_term(Term, br(chars(Str))) :-
+	\+ ground(Term), !,
+	    Str = "*";
+	atomic(Term), !,
+	    name(Term, AtmStr),
+	    Str = [46 | AtmStr];
+	sicstus_writeq_to_chars(Term, Str).
+
+unpack_term(Str, Term) :-
+	Str = [46 | AtmStr], !,
+	    name(Term, AtmStr);
+	append(Str, ".", FussyStr),
+	    sicstus_read_from_chars(FussyStr, Term).
 
 :- dynamic(update_remove/1).
 :- dynamic(update_add/1).

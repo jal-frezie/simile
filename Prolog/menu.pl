@@ -15,8 +15,6 @@ sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw,
 	state, backup, library, ame_gen, utility, ss_import, m_class,
 	library(lists), library(ordsets)]).
 
-:- dynamic(running/1).
-
 undo_edit(Wid, Wids) :-
 	Wid shows_model ClickedModel,
 	contains(Model, ClickedModel),
@@ -50,17 +48,18 @@ mode_select(Seln) :-
 
 update_mode(NewMode) :-
 	get_mode(OldMode),
-	(normalize(_),
+	(\+ NewMode = move,
+	    normalize(_),
 	    fail;
 	give_focus('{}'),
 	OldMode = NewMode), !;
 	set_mode(NewMode),
 	(Win shows_model _,
-		(NewMode = select,
-			enable_text_editing_in(Win);
+	    (NewMode = select,
+		enable_text_editing_in(Win);
 		\+ NewMode = select,
-			disable_text_editing_in(Win)),
-		fail;
+		disable_text_editing_in(Win)),
+	    fail;
 	    set_cursor_for(NewMode)).
 
 set_cursor_for(NewMode) :-
@@ -128,6 +127,7 @@ stick_model_in(Win, Parent, Name, Mode) :-
 		    inject_graphics(Win2, GraphFileName),
 		    (Translated = copy;
 		    \+ Translated = copy,
+			dialogue:reassure_user("Translating internal IDs of canvas objects."),
 			translate_canvas_pl_names(Win2, Translated)),
 		    fail;
 		true);
@@ -205,9 +205,6 @@ merge_box([L1, T1, R1, B1]) :-
 	
 check_if_already_open(Name) :-
 	get_model_file(Model, Name),
-	raise_window_on(Model).
-
-raise_window_on(Model) :-
 	Win shows_model Model,
 	output:safe_tcl_eval([wm, deiconify, sqb([winfo, toplevel, Win])], _),
 	output:safe_tcl_eval([raise, sqb([winfo, toplevel, Win])], _).
@@ -308,7 +305,7 @@ menu_handle(Win, file, save_interface) :-
 	    fail;
 	close(Stream),
 	finish_progress_dialogue).
-	
+
 menu_handle(Win, file, CompOrBuild) :-
 	(CompOrBuild = compile_c,
 	    output:safe_tcl_eval([info, sharedlibextension], IdentStr),
@@ -344,11 +341,13 @@ menu_handle(Win, file, RunCmd) :-
 	use_temp_dir(Dir),
 	(rebuild_code(Lang, Node, Dir), !,
 	    /* no much point going for run */
-	    output:prepare_execution(Node, Lang, Spill),
-	    (var(Spill), !,
-		set_running_model(Node);
-	    do_dialogue("Compilation or startup error", error, Spill, ok, _),
-		scrub_run(Node, 0)),
+	    on_exception(Whoops,
+			 output:prepare_execution(Node, Lang),
+		     (sicstus_write_to_chars(Whoops, Squeak),
+		     do_dialogue("Compilation or startup error", error,
+				  Squeak, ok, _),
+			 scrub_run(Node, 0))),
+	    set_running_model(Node);
 	    true),
 	(retract(new_exec_for(_Any)), !,
 	    retractall(new_exec_for(_)),
@@ -511,8 +510,7 @@ menu_handle(Win, edit, Component) :-
 	event:assert(instant_link(Component)),
 	(Node = [_,_], !,
 	    get_original_click(Xpt, Ypt),
-	    get_current_node(Parent),
-	    event:click(Parent, Xpt, Ypt, 0);
+	    event:click(Xpt, Ypt, 0);
 	 event:click_on(_, Node, 0)),
 	event:unclick,
 	(Component is_primitive,
@@ -829,8 +827,8 @@ reroute_sections(Rerouters) :-
 	member(Type, [relation, flow, squirt, influence]),
 	full_section(Rerouters, Type, [Go | Rest], Remains),
 	suffix([Stop], [Go | Rest]),
-	(m_class:follows(Start, Go); m_class:Go is_connector from Start to _),
-	(m_class:follows(Stop, End); m_class:Stop is_connector from _ to Fn),
+	(m_class:Go follows Start; m_class:Go is_connector from Start to _),
+	(m_class:End follows Stop; m_class:Stop is_connector from _ to Fn),
 	get_host(Fn, End),
 	event:draw_line_to(Start, Type, End),
 	event:reuse_route(Type, Stop),
@@ -839,12 +837,12 @@ reroute_sections(Rerouters) :-
 full_section(Rerouters, Type, [Start | Rest], Remains) :-
 	select(Start, Rerouters, Left),
 	find_type(Start, Type),
-	\+ (m_class:follows(Before, Start), member(Before, Left)),
+	\+ (m_class:Start follows Before, member(Before, Left)),
 	continuation(Left, Start, Rest, Remains).
 
 continuation(Rerouters, Start, Rest, Remains) :-
 	clear_shape(Start, course), fail;
-	m_class:follows(Start, Next),
+	m_class:Next follows Start,
 	select(Next, Rerouters, Left), !,
 	continuation(Left, Next, More, Remains),
 	Rest = [Next | More];
@@ -1067,39 +1065,41 @@ get_ppairs([input_link(_, Source, Param, _, _) | R1], Terms) :-
 	Terms = [Param = Source | R2]).
 
 set_properties(Wid, Model) :-
-/*	get_disag_params(Model, P_list),
-	P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, Step,
-		  Desc, Comment, ModName, Enums, Connect, UCheck,
-		  HideB, ViewC, Separate, Share],
-*/	(find_type(Model, module), !,
-	    get_module_disag_params(Model, [Colour, Image, ImgPos, Fatness,
-		Step, Desc, Comment, EnumSpecs, Proc, Inc, Libs, Connect, Fix,
-		HideB, ViewC, Separate]),
-	    P_lists = [[appear, Colour, Image, ImgPos, Fatness, HideB, ViewC],
-		       [calc, Step, Fix, Separate, Proc, Inc, Libs],
-		       [ets, EnumSpecs], [connect, Connect],
-		       [notes, Desc, Comment]];
-	 Model is_instance_of _Template, !,
-	    get_occurrence_disag_params(Model, [Nature, Count, ModName,
-						   Desc, Comment]),
-	    P_lists = [[number, Nature, Count, ModName],
-		       [notes, Comment]];
-	 /* self-contained submodel */
-	    get_module_disag_params(Model, [Colour, Image, ImgPos, Fatness,
-		Step, _MD, _MC, EnumSpecs, Proc, Inc, Libs, Connect, Fix,
-		HideB, ViewC, Separate]),
-	    get_occurrence_disag_params(Model, [Nature, Count, ModName,
-						   Desc, Comment]),
-	    P_lists = [[number, Nature, Count, ModName],
-		       [appear, Colour, Image, ImgPos, Fatness, HideB, ViewC],
-		       [calc, Step, Fix, Separate, Proc, Inc, Libs],
-		       [ets, EnumSpecs], [notes, Desc, Comment]]),
-	
-	do_disag_dialog(Wid, Model, P_lists, New_P_lists),
-	(New_P_lists = '', !; /* dialogue was cancelled */
-
-	(nth(PosN, P_lists, [number | _]),
-	 nth(PosN, New_P_lists, [NewNature, NewCount, NewModName]), !,
+	get_disag_params(Model, P_list),
+	do_disag_dialog(Wid, Model, P_list, New_P_list),
+	(New_P_list = [], !; /* dialogue was cancelled */
+	New_P_list = [NewColour, NewImage, NewImgPos, NewNature, NewFatness,
+		      NewCount, NewStep, NewDesc, NewComment, NewFix, NewHide,
+		      NewSeparate, NewProc, NewInc, NewLibs, NewEnumSpecs],
+	    P_list = [Colour, Image, ImgPos, Nature, Fatness, Count, _Step,
+		      _D, _C, _E, _Proc, _Inc, _Libs, _Fix, Hide, Separate],
+	    (NewColour = clear, !,
+		add_parameter(Model, 0, fill_colour, '');
+	    NewColour = Colour, !;
+	    add_parameter(Model, 0, fill_colour, NewColour)),
+	    (NewImage = Image, !;
+	    add_parameter(Model, 0, fill_image, NewImage)),
+	    add_parameter(Model, 0, image_posn, NewImgPos),
+	    (NewStep = 'Default', !,
+		add_parameter(Model, 0, step, '');
+	    add_parameter(Model, 0, step, NewStep)),
+	    add_parameter(Model, 0, desc, NewDesc),
+	    add_parameter(Model, 0, comment, NewComment),
+	    (NewFix = 'Default', !,
+		add_parameter(Model, 0, eqn_units, '');
+	    add_parameter(Model, 0, eqn_units, NewFix)),	
+	    add_parameter(Model, 0, separate, NewSeparate),
+	    /* fix quirk in new strings_to_atoms */
+	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
+	    add_parameter(Model, 0, external_code,
+		  [procedure=NewProc,include=NewInc,libraries=RealNewLibs]),
+	    (NewEnumSpecs = '', !,
+	        NewEnumTypes = [];
+	    all(menu, separate_type_from_mems,
+		[build(NewEnumSpecs), build(NewEnumTypes)])),
+	    add_parameter(Model, 0, enum_types, NewEnumTypes),
+	    (Hide = 0, !; clear_shape(Model, hide_contents)),
+	    (NewHide = 0, !; set_shape(Model, hide_contents, NewHide)),
 	    (NewNature = generated,
 		name(NewCount, CountStr),
 		append([91 | CountStr], [93], ListStr),
@@ -1111,7 +1111,7 @@ set_properties(Wid, Model) :-
 			     get_actual_sizes(Model, UseCount, Sizes, _,_),
 			     name(WibbleAtom, Wibble)),
 		    (nonvar(Wibble);
-		     member(Dodgy, Sizes),
+		    member(Dodgy, Sizes),
 			\+ (integer(Dodgy), Dodgy > 1),
 			sicstus_format_to_chars("~w is not a valid dimension -- for a simple submodel, leave dimension field empty", [Dodgy], Wibble);
 		    Spec = [count=UseCount]);
@@ -1121,29 +1121,7 @@ set_properties(Wid, Model) :-
 	    (nonvar(Spec),
 		add_parameter(Model, 0, multiplication_spec, Spec);
 	    do_dialogue("Problem with dimensions", error, Wibble, ok, _)),
-	    (ModName = '', \+ NewModName = '', !,
-		DrawContents = 1,
-		make_module_of(Model, NewModName, NewComp);
-	    NewComp = Model),
-	    ([NewNature, UseCount] = [Nature, Count], !;
-		event:spread_colour(NewComp, yes),
-		DrawBorder = 1);
-	NewComp = Model),
 	    
-	(nth(PosA, P_lists, [appear | _]),
-	 nth(PosA, New_P_lists, [NewColour, NewImage, NewImgPos,
-				 NewFatness, NewHideB, NewViewC]), !,
-	    (NewColour = clear, !,
-		add_parameter(Model, 0, fill_colour, '');
-	    NewColour = Colour, !;
-	    add_parameter(Model, 0, fill_colour, NewColour)),
-	    (NewImage = Image, !;
-	    add_parameter(Model, 0, fill_image, NewImage)),
-	    add_parameter(Model, 0, image_posn, NewImgPos),
-	    (change_shape(Model, hide_border, NewHideB);
-		set_shape(Model, hide_border, NewHideB)),
-	    (change_shape(Model, contents_view, NewViewC);
-		set_shape(Model, contents_view, NewViewC)),
 	    ((abs(NewFatness - Fatness) =< 0.005;
 	      Fatness > 1, NewFatness > 0.995), !;
 	    FatFactor is Fatness/NewFatness,
@@ -1162,93 +1140,33 @@ set_properties(Wid, Model) :-
 		update_link_route(Linkage, no),
 		redisplay(Linkage),
 		fail; true)),
-	    /* This works out how complete a redraw needs to be done */
-	    (NewViewC = ViewC, !;
-		DrawContents = 1),
-	    (FatFactor = 1, !;
-		DrawBorder = 1,
-		DrawMembers = 1),
-	    ([NewColour, NewImage, NewImgPos, NewHideB] =
-	     [Colour, Image, ImgPos, HideB], !;
-	    DrawBorder = 1);
-	true),
-	    
-	(nth(PosM, P_lists, [calc | _]),
-	 nth(PosM, New_P_lists, [NewStep, NewFix, NewSeparate,
-				 NewProc, NewInc, NewLibs]), !,
-	    (NewStep = 'Default', !,
-		add_parameter(Model, 0, step, '');
-	    add_parameter(Model, 0, step, NewStep)),
-	    (NewFix = 'Default', !,
-		add_parameter(Model, 0, eqn_units, '');
-	    add_parameter(Model, 0, eqn_units, NewFix)),	
-	    add_parameter(Model, 0, separate, NewSeparate),
-	    /* fix quirk in new strings_to_atoms */
-	    (NewLibs = '', !, RealNewLibs = []; RealNewLibs= NewLibs),
-	    add_parameter(Model, 0, external_code,
-		[procedure=NewProc,include=NewInc,libraries=RealNewLibs]),
-	    (Separate = NewSeparate, !;
-	     find_all_comps(Parent, NewComp),
-		add_parameter(Parent, 1, c_new, 0));
-	true),
 
-	(nth(PosE, P_lists, [ets | _]),
-	 nth(PosE, New_P_lists, NewEnumSpecs), !,
-	    (NewEnumSpecs = '', !,
-	        NewEnumTypes = [];
-	    all(menu, separate_type_from_mems,
-		[build(NewEnumSpecs), build(NewEnumTypes)])),
-	    add_parameter(Model, 0, enum_types, NewEnumTypes);
-	true),
-	    
-	(nth(PosC, P_lists, [connect | _]),
-	 nth(PosC, New_P_lists, NewConns), !,
-	    update_connect_marks(Model, Connect, NewConns);
-	true), 
-	    
-	(nth(PosW, P_lists, [notes | _]),
-	 nth(PosW, New_P_lists, [NewDesc, NewComment]), !,
-	    add_parameter(Model, 0, desc, NewDesc),
-	    add_parameter(Model, 0, comment, NewComment),
-	true), 
-	    
-	    /* This does a redraw of the appropriate completeness */
-	    (var(DrawContents), !,
-		(nonvar(DrawMembers),
-		    find_all_comps(NewComp, TopComp),
+	    /* Changes in fatness require redrawing submodel's
+	    toplevel windows; this plus nature, count and visibility require
+	    redrawing it in other windows */
+	    (([NewColour, NewImage, NewImgPos, NewNature] =
+	     [Colour, Image, ImgPos, Nature],
+	      FatFactor = 1, UseCount = Count, NewHide = Hide), !;
+	    NewHide = Hide, !,
+		(\+ FatFactor = 1,
+		    find_all_comps(Model, TopComp),
 		    redisplay_border(TopComp),
 		    fail;
-		 (var(DrawBorder), !;
-		  Floater is_instance_of Model,
-		     redisplay_border(Floater), fail;
-		 redisplay_border(NewComp)));
-	    ReBowtied is_connector from NewComp to _,
-		find_type(ReBowtied, flow),
-		redisplay(ReBowtied),
-		fail;
-	    draw:redisplay(Model, NewComp)),
-		    
+		redisplay_border(Model));
+	    redisplay(Model)),
+
+	    (Separate = NewSeparate, !;
+		find_all_comps(Parent, Model),
+		add_parameter(Parent, 1, c_new, 0)),
+	    
 	    /* this is quick so do it anyway */
 	    (contains(Model, Submodel),
 		_Window shows_model Submodel,
 		update_captions(Submodel),
 		fail;
-	    finish_move(Model, 1))).
-
-update_connect_marks(Model, Connects, NewConns) :-
-	/* avoid if no change */
-	all(user, nth, [unify(1), build(Connects), build(NewConns)]), !;
-	find_all_comps(Model, Part),
-	(clear_autoconnect(Part),
-	 nth(P, [inf_in, inf_out, flow_in, flow_out, show_val, edit_eqn],
-	     AutoType),
-	    autoconnect_reference_for(Model, Part, AutoType, PCap),
-	    nth(P, Connects, [_OC | CaptList]),
-	    nth(P, NewConns, Chosen),
-	    nth(Chosen, CaptList, PCap),
-	    set_autoconnect(Part, AutoType),
-	    fail);
-	true.
+	    NewNature = Nature, UseCount = Count, !;
+		event:spread_colour(Model, yes)),
+	    finish_move(Model, 1)).
 
 separate_type_from_mems([H | T], H-T).
 
@@ -1343,9 +1261,9 @@ show_error(Model, Lossage) :-
 	    sicstus_format_to_chars("This model contains the target ~w, which depends on its own values from previous iterations of a program loop. However ~w must be calculated in phase ~d, but the cycle of evaluations includes target ~w, which must be calculated in phase ~d and therefore cannot be put in the same program loop.", [DefCon, DefCon, DefPh, LoopMem, MemPh], Text),
 	    Fault = user;
 	Lossage = condition_outside_loop(LoopStart, Xefct), !,
-	    sicstus_format_to_chars("This model contains the target ~w which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target ~w, which must be calculated outside the innermost program loop containing target ~w", [LoopStart, Xefct, LoopStart],Text),
+	    sicstus_format_to_chars("This model contains the target ~w which depends on its own values from previous iterations of a program loop. However the cycle of evaluations includes target ~w, which is calculated outside the innermost program loop containing target ~w", [LoopStart, Xefct, LoopStart], Text),
 	    Fault = user;
-	Lossage = ordering_failure(Awkward), !,
+	Lossage = ordering_failure(make(Awkward, _,_,_,_)), !,
 	    sicstus_format_to_chars("Failed to put this instruction into ordered sequence, despite it not seeming to depend on anything: ~w", [Awkward], Text),
 	    Fault = system;
 	Lossage = bad_role(Lost), !,
@@ -1446,8 +1364,9 @@ cutoff(Parent) :-
 	sever_links(Child, Parent),
 	fail.
 		
-cutout(Parent) :-
+cutout(Parent, SelnOnly) :-
 	find_all_links(Parent, Child),
+	\+ (SelnOnly = yes, \+ event:doomed(Child)),
 	sever_links(Child, Parent),
 	fail.
 		
@@ -1467,27 +1386,14 @@ delete_tree(Target) :-
 	off(Target),
 	    fast_delete(Target).
 
-change_size(TopNode, Type, New_size) :-
+change_size(TopNode, Type) :-
 	contains(TopNode, Obj),
 	draw_style_for(Obj, Type),
-	(Type = submodel; Type = influence; Type = relation;
-	Type is_class_of_sort has_bowtie,
-	    get_shape(Obj, bowtie, [L, T, R, B]),
-	    Xpt is (L+R)/2,
-	    Ypt is (T+B)/2,
-	    adjust_bowtie(Obj, [Xpt, Ypt]);
-	(Type = channel; Type is_primitive, Type is_class_of_sort box),
-	    (get_shape(Obj, bounding_box, [L, T, R, B]),
-		Xpt is (L+R)/2,
-		Ypt is (T+B)/2,	
-		make_bounding_box(Type, Xpt, Ypt, New_size, New_box),
-		change_shape(Obj, bounding_box, New_box),
-		event:make_links_follow(Obj);
-	    get_shape(Obj, centre, _))),
+	event:make_links_follow(Obj),
 	redisplay_border(Obj),
 	fail.
 
-change_size(_,_,_).
+change_size(_,_).
 
 off_window(Win, ExitIfKilled) :-
 	Win shows_model Model,
@@ -1606,15 +1512,12 @@ too_big_for_edn(Model) :-
 	do_dialogue("Error saving model", error, Annoy, ok, _).
 
 transfer_images(Model, TopDir, Way) :-
-	setof(ImageSpec, uses_image(Model, ImageSpec), Fillers), !,
+	setof(ImageSpec,
+	      Submodel^(contains(Model, Submodel),
+			get_av_pair(Submodel, 0, fill_image, ImageSpec)),
+	      Fillers), !,
 	shift_images(TopDir, Fillers, Way);
 	true.
-
-uses_image(Model, ImageSpec) :-
-	contains(Model, Submodel),
-	(Submodel is_instance_of Module;
-	    \+ Submodel is_instance_of _, Module = Submodel),
-	get_av_pair(Module, 0, fill_image, ImageSpec).
 
 	/* Save canvas file */
 check_save_canvas(SaveDir, Model, Date) :-
@@ -1669,7 +1572,7 @@ save_isolated(Name, Part, Date, SelnOnly) :-
 	Part = Model,
 	    TempSels = []),
 */	assert(suspend_display),
-	(cutout(Part);
+	(cutout(Part, SelnOnly);
 	ame_save(Name, Part, Date, SelnOnly),
 	    Done = 1;
 	true),

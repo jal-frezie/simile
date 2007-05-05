@@ -131,20 +131,22 @@ namespace eval ::$keyValue {
         array set plot $restoreString
         InitPlatformDependentPlotVars $winId
         #ShowMessage debug info "ys $plot($winId,Yvars) xs $plot($winId,Xvars)" ok
-        foreach path $plot($winId,Yvars) {
+# 'foreach' changed to 'set' -- only one node can be plotted so all it did was
+# cause errors if the names had spaces
+        set path $plot($winId,Yvars) ;# {
             set node [GetIdFromCaptionPath $path]
             if {[string equal nomatch $node]} {
                 set node $path
             }
             lappend ynodes($winId) $node
-        }
-        foreach path $plot($winId,Xvars) {
+#        }
+        set path $plot($winId,Xvars) ;# {
             set node [GetIdFromCaptionPath $path]
             if {[string equal nomatch $node]} {
                 set node $path
             }
             lappend xnodes($winId) $node
-        }
+#        }
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
         display $winId [GetModelTime] 0 0
@@ -286,8 +288,6 @@ namespace eval ::$keyValue {
         }
     }
     
-LoadIconImages Toolbar {clear add property}
-
     # Draw panel containing controls and canvas for the graph.
     proc constructControlPanel {w} {
         #tk_messageBox -message "constructControlPanel winid $w" -type ok
@@ -305,9 +305,9 @@ LoadIconImages Toolbar {clear add property}
         }
         
         set toolbarItems [list \
-                [list clear "Clear" [namespace code "clear $w"] ] \
-                [list add "Add a variable"   [namespace code "AddVariable $w"]] \
-                [list property " Properties " [namespace code "Settings $w"]]]
+                [list clear.gif "Clear" [namespace code "clear $w"] ] \
+                [list add.gif "Add a variable"   [namespace code "AddVariable $w"]] \
+                [list property.gif " Properties " [namespace code "Settings $w"]]]
         #            [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]]
         #    [list " settings " [namespace code "settings $w"]] \
         #    [list " redraw " [namespace code "resetGraph $w"]]

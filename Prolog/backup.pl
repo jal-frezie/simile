@@ -9,8 +9,9 @@ sicstus_module(backup, [initialize_ring/1,
 			get_save_status/2, set_save_status/2, save_allowed/2,
 			go_back/1, go_forward/1, make_auto_name/3,
 			new_autosave/2, clear_autosave/2, check_autosave/4,
-			scrub_autosave/1, is_toplevel/1, is_module/1,
-			use_temp_dir/1, use_pref_dir/1, into_save_file/2]).
+			scrub_autosave/1,
+			is_toplevel/1, use_temp_dir/1, use_pref_dir/1,
+			into_save_file/2]).
 
 sicstus_use_module([library(lists), sp_only, ame_gen, database,
 		    utility, state]).
@@ -57,7 +58,7 @@ exit_two_click_op :-
 	get_line_start_obj(New),
 	New is_of_sort cloud,
 	draw:off(New).
-
+	
 go_back(Model) :-
 	(exit_two_click_op, !;
 	    /* If removing floater, end operation as user did not intend
@@ -68,7 +69,7 @@ go_back(Model) :-
 	internal_extent_jiggered(Model, Prev, LostExtents),
 	appearance_changes(Model, Prev, LostExtents, Redrawn),
 	all(draw, off, [build(Redrawn)]), /* safe if they don't exist yet */
-	reverse_changes(Model, Prev),
+	enact_changes(Model, Prev, reverse),
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
 	all(draw, redisplay_border, [build(Redrawn)]),
 	into_save_file(Model, undo),
@@ -83,7 +84,7 @@ go_forward(Model) :-
 	internal_extent_jiggered(Model, Current, LostExtents),
 	appearance_changes(Model, Current, LostExtents, Redrawn),
 	all(draw, off, [build(Redrawn)]),
-	enact_changes(Model, Current),
+	enact_changes(Model, Current, forward),
 	all(draw, adjust_submodel_internals, [build(LostExtents)]),
 	all(draw, redisplay_border, [build(Redrawn)]),
 	into_save_file(Model, redo),
@@ -91,7 +92,7 @@ go_forward(Model) :-
 	set_edit_abilities(Model).
 
 finish_move(EditedModel, ChangeExec) :-
-       \+ anything_done, !;
+	\+ anything_done, !;
 	m_update:contains(Model, EditedModel),
 	Win shows_model Model,
 	set_save_status(Win, risky),
@@ -99,7 +100,7 @@ finish_move(EditedModel, ChangeExec) :-
 	 ChangeExec = 1,
 	    m_update:add_parameter(EditedModel, 1, c_new, 0)),
 	/* Only proceed for toplevel window containing model */
-	(is_toplevel(Model); is_module(Model)),
+	is_toplevel(Model),
 	(ChangeExec = 0;
 	 ChangeExec = 1,
 	    output:tk_alter_model(Model)),
@@ -124,9 +125,9 @@ state we saved from. */
 restart_move :-
 	fetch_update(DP),
 		(DP = remove(P),
-			database:assert(P);
+			my_assert(P);
 		DP = add(P),
-			database:retract(P)),
+			my_retract(P)),
 		fail;
 	true.
 
@@ -204,10 +205,10 @@ set_edit_abilities(Model) :-
 	saved_state(Model, current, Here),
 	(saved_state(Model, first, Here), !,
 	    UndoOn = 0;
-	    UndoOn = 1),
+	 UndoOn = 1),
 	(saved_state(Model, last, Here), !,
 	    RedoOn = 0;
-	    RedoOn = 1),
+	 RedoOn = 1),
 	draw:update_ability(Model, undo, edit, 'Undo', UndoOn),
 	draw:update_ability(Model, redo, edit, 'Redo', RedoOn).
 
@@ -216,24 +217,14 @@ repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 	        NewIdSwaps = IdSwaps,
 		retract(saved_state(Model, current, Current)),
 		wrap(Prev, Current), !,
-		(saved_state(Model, Prev, remove(P)),
-			database:assert(P),
-			fail;
-		saved_state(Model, Prev, add(P)),
-			database:retract(P),
-			fail;
-		assert(saved_state(Model, current, Prev)));
+		enact_changes(Model, Prev, reverse),
+		assert(saved_state(Model, current, Prev));
 	ActSpec = redo,
 	        NewIdSwaps = IdSwaps,
 		retract(saved_state(Model, current, Current)),
 		wrap(Current, Next), !,
-		(saved_state(Model, Current, add(P)),
-			database:assert(P),
-			fail;
-		saved_state(Model, Current, remove(P)),
-			database:retract(P),
-			fail;
-		assert(saved_state(Model, current, Next)));
+		enact_changes(Model, Current, forward),
+		assert(saved_state(Model, current, Next));
 	(ActSpec = []; ActSpec = [_|_]),
 	        retract(saved_state(Model, first, First)),
 		retract(saved_state(Model, last, _)),
@@ -250,13 +241,37 @@ repeat_action(Model, ActSpec, IdSwaps, NewIdSwaps) :-
 
 enact_from_file(_,_, I,I, []).
 
+enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, Acts) :-
+	(Acts = [top_level_is(OldModel) | More], !,
+	    append(SW1, [_-Model | SW2], IdSwaps),
+	    append(SW1, [OldModel-Model | SW2], MidIdSwaps);
+	More = Acts,
+	    MidIdSwaps = IdSwaps),
+	(More = [translated(PrevIdSwaps) | DBActs] , !,
+	    merge_id_swaps(MidIdSwaps, PrevIdSwaps, TransIdSwaps);
+	DBActs = More,
+	    TransIdSwaps = MidIdSwaps),
+	swap_all_ids(Model, Slot, DBActs, TransIdSwaps, NewIdSwaps, TransActs),
+	enact_list(TransActs, forward).
+
+swap_all_ids(_Model, _Slot, [], IdSwaps, IdSwaps, []).
+swap_all_ids(Model, Slot, [Act | MoreActs], IdSwaps, NewIdSwaps,
+	     [TransAct | MoreTransActs]) :-
+	Act =.. [Motion, OldTerm],
+	swap_ids(OldTerm, IdSwaps, MidIdSwaps, Term),
+	TransAct =.. [Motion, Term],
+	assert(saved_state(Model, Slot, TransAct)),
+	swap_all_ids(Model, Slot, MoreActs, MidIdSwaps, NewIdSwaps,
+	     MoreTransActs).
+
+/*
 enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, [Act | Rest]) :-
 	((Act = add(OldP),
 	    swap_ids(OldP, IdSwaps, MidIdSwaps, P),
-	    database:assert(P);
+	    my_assert(P);
 	Act = remove(OldP), 
 	    swap_ids(OldP, IdSwaps, MidIdSwaps, P),
-		(database:retract(P), !;
+		(my_retract(P), !;
 		sicstus_format_to_chars("The log file specified the removal from the database of the term ~w at a point where this term was not in the database. This is probably non-fatal, but it might be a good idea to save the restored file and reload it in a new program run.", [P], Mess), 
 		do_dialogue("Problem restoring state", warning, Mess, ok, _))),
 	assert(saved_state(Model, Slot, Act));
@@ -266,7 +281,7 @@ enact_from_file(Model, Slot, IdSwaps, NewIdSwaps, [Act | Rest]) :-
 	Act = translated(PrevIdSwaps),
 	    merge_id_swaps(IdSwaps, PrevIdSwaps, MidIdSwaps)),
 	enact_from_file(Model, Slot, MidIdSwaps, NewIdSwaps, Rest).
-
+*/
 merge_id_swaps(Swaps, [], Swaps).
 merge_id_swaps(AtoCs, [A-B | MoreAtoBs], [B-C | MoreBtoCs]) :-
 	select(A-C, AtoCs, MoreAtoCs),
@@ -275,9 +290,12 @@ merge_id_swaps(AtoCs, [A-B | MoreAtoBs], [B-C | MoreBtoCs]) :-
 swap_ids(OldTerm, Swaps, NewSwaps, NewTerm) :-
 	OldTerm =.. [Header | Args],
 	    member([Header | Template],
-		   [[connection, node, node, arc],
+		   [[is_arc, arc],
+		    [connection, node, node, arc],
 		    [arc_type, arc, var],
 		    [arc_info, arc, var, var],
+		    [continues, arc, arc],
+		    [is_node, node],
 		    [subsystem, node, node],
 		    [node_class, node, var],
 		    [node_refinement, node, var, var],
@@ -309,23 +327,26 @@ sub_all(Swaps, Old, New, 0) :-
 reflect the current state because this is probably quicker than copying the
 current state over again (removed because no longer needed!) */
 
-reverse_changes(Model, Slot) :-
-	(saved_state(Model, Slot, add(P)),
-		database:retract(P),
-		fail;
-	saved_state(Model, Slot, remove(P)),
-		database:assert(P),
-		fail;
+enact_changes(Model, Slot, Dir) :-
+	(setof(Act, saved_state(Model, Slot, Act), Acts), !,
+	    enact_list(Acts, Dir);
 	true).
 
-enact_changes(Model, Slot) :-
-	(saved_state(Model, Slot, remove(P)),
-		database:retract(P),
-		fail;
-	saved_state(Model, Slot, add(P)),
-		database:assert(P),
-		fail;
-	true).
+enact_list(Acts, Dir) :-
+	member(Dir-Template-Action,
+	       [forward-remove(P)-my_retract(P),
+		reverse-add(P)-my_retract(P),
+		forward-add(P)-my_assert(P),
+		reverse-remove(P)-my_assert(P)]),
+	member(Action-SeqCheck,
+	       [my_retract(P)-(\+ exist_pred(P)), my_retract(P)-exist_pred(P),
+		my_assert(P)-exist_pred(P), my_assert(P)-(\+ exist_pred(P))]),
+	member(Template, Acts),
+	call(SeqCheck),
+	call(Action),
+	fail; true.
+	       
+exist_pred(P) :- member(P, [is_node(_), is_arc(_)]).
 
 appearance_changes(Model, Slot, Reshapes, Comps) :-
 	setof(Comp, Action^(saved_state(Model, Slot, Action),
@@ -336,11 +357,9 @@ appearance_changes(Model, Slot, Reshapes, Comps) :-
 mentions_graphics(Action, Comp) :-
 	(Action = remove(Term);
 	    Action = add(Term)),
-	(Term = graphical_info(Base, _Attr, _Val);
-	    (Term = node_refinement(AuxComp, _Attr, _Val);
-		Term = arc_info(AuxComp, complete, _Val)),
-	    get_host(AuxComp, Base)),
-	    (Comp = Base; find_ghosts(Base, Comp)).
+	(Term = graphical_info(Comp, _Attr, _Val);
+	    Term = node_refinement(Comp, _Attr, _Val);
+	    Term = arc_info(Comp, complete, _Val)).
 
 internal_extent_jiggered(Model, Slot, ExtChgs) :-
 	setof(Change, get_extent_change(Model, Slot, Change), ExtChgs), !;
@@ -413,9 +432,6 @@ scrub_autosave(Model) :-
 
 is_toplevel(Model) :-
 	m_class:has_part(root, Model).
-
-is_module(Model) :-
-	m_class:has_part(library, Model).
 
 /* This is one place where you have to take account of the fact that you
 cannot rely on Windows to give you the file name extension in any particular

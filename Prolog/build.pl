@@ -29,21 +29,14 @@ roots( [Node|Nodes], Root, Bindings, NewBindings ) :-
 roots( [Node|Nodes], Root, Bindings, NewBindings ) :-
 	get_match( Node, Bindings, RealNode), % if we've already made a node,
 					   % and it's not connected to root
-	\+ RealNode is_part_of Root,	   
-	RealNode is_also_part_of Root,      % make it so
+	\+ RealNode is_part_of Root,
+	RealNode is_new_part_of Root,      % make it so
 	!,
 	roots( Nodes, Root, Bindings, NewBindings ).
 roots( [Node|Nodes], Root, Bindings, NewBindings ) :-
 	\+ get_match( Node, Bindings, _AnyNode), % if we haven't made a node,
 	gen_equiv_nodes(Node, Root, Trn),  % make it so, in the right place
 	roots( Nodes, Root, [Trn | Bindings], NewBindings ).
-
-/* do not check for duplication for the time being...TODO: need to update
-references etc, so if adding a library that's already there, just create a
-translation for each node, then when adding those nodes, create more
-translations...*/
-library(Nodes, Root, Bindings, NewBindings) :-
-	roots(Nodes, Root, Bindings, NewBindings).
 
 properties([],_,B,B).
 
@@ -70,7 +63,7 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 	    Class = OldClass),                  % Remove obsolete types
 	RealNode has_new_class Class,		% add the info
 	(Bindings = copy, !,
-	    foreach(Child, Children, Child is_also_part_of Node),
+	    foreach(Child, Children, Child is_new_part_of Node),
 	    NewBindings = copy;
 	all(build, gen_equiv_nodes,
 	        [build(Children), unify(RealNode), build(MidBindings)]),
@@ -87,10 +80,10 @@ node(  Node, OldClass, Children, ClassRefinements, GraphicalInfo,
 		RealNode has_new_graphical_attribute GAttribute of GValue ).
 	
 gen_equiv_nodes(Node, Parent, Node-NewN) :-
-	Node is_part_of _, !,
+	/* Node is_part_of _, */!,
 	    NewN is_new_part_of Parent;
 	NewN = Node,
-	    NewN is_also_part_of Parent.
+	    NewN is_new_part_of Parent.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % arc inserts a new arc and any info known about it. 
@@ -98,7 +91,7 @@ gen_equiv_nodes(Node, Parent, Node-NewN) :-
 arc( Arc, Start, End, Type, AttributeValuePairs,
 		GraphicalInfo, _, Bindings, NewBindings ) :-
 	(Bindings = copy, NewBindings = copy, Arc=RealArc,
-	    RealArc is_also_connector from Start to End;
+	    RealArc is_new_connector from Start to End;
 	\+ member( Arc-_AnyArc, Bindings ),
 	    member( Start-RealStart, Bindings ),
 	    member( End-RealEnd, Bindings ),
@@ -106,7 +99,7 @@ arc( Arc, Start, End, Type, AttributeValuePairs,
 	    (is_connector(Arc, _), !,
 		RealArc is_new_connector from RealStart to RealEnd;
 	    RealArc = Arc,
-	        RealArc is_also_connector from RealStart to RealEnd)),
+	        RealArc is_new_connector from RealStart to RealEnd)),
 	foreach( Attribute=Value, AttributeValuePairs,
 			RealArc has_new_attribute Attribute of Value ),
 	foreach( GAttribute=GValue, GraphicalInfo,
@@ -130,19 +123,16 @@ links( Node, Links, _, Bindings, Bindings ) :-
 		  get_match( OldIn, Bindings, NewIn ),
 		  get_match( OldOut, Bindings, NewOut )),
 		NewLinks ),
-	NewNode has_new_model_refinement link_equivalences of NewLinks, !;
+	\+ (member(In-Out, NewLinks),
+	       member(WaitFor, [In, Out]),
+	       \+ WaitFor is_connector _),
+	NewNode has_new_link_equivalences NewLinks, !;
 	retractall(missing(_)),
 	member(MissingIn-MissingOut, Links),
 	member(Missing, [MissingIn, MissingOut]),
 	\+ member(Missing-_, Bindings),
 	assert(missing(Missing)),
 	fail.
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-instance(Node, Module, _, Bindings, Bindings ) :-
-	get_match(Node, Bindings, NewNode),
-	get_match(Module, Bindings, NewModule),
-	NewNode has_new_model_refinement instance of NewModule.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % references takes a node name and a list of references and renames them to
@@ -185,7 +175,7 @@ translate_all([In | R1], Bindings, [Out | R2]) :-
 	get_match(In, Bindings, Out),
 	translate_all(R1, Bindings, R2).
 
-get_match(Component, copy, Component).
-
 get_match(Component, Bindings, Match) :-
+	Bindings = copy, !,
+	Match = Component;
 	member(Component-Match, Bindings).

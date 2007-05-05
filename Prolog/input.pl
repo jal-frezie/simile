@@ -7,9 +7,8 @@ use goals that start with "tk_" to make the diffreence clear.
 */
 
 sicstus_module(input, [tk_undo/2, tk_redo/2, tk_get_info/3,
-		       tk_get_params/2, tk_bar_edit_menu/1, tk_click_obj/7,
-		       tk_click/5, tk_doubleclick/5, tk_unclick/2, tk_drag/2,
-		       tk_edit_equation/2,
+		       tk_get_params/2, tk_bar_edit_menu/1, tk_click_obj/6,
+		       tk_click/4, tk_doubleclick/4, tk_unclick/2, tk_drag/2,
 		       tk_menu/3, tk_menu_select/2, tk_mode_select/1,
 		       tk_resize_top_win/3, tk_visible/5,
 		       tk_embrace/2, tk_abandon/0,
@@ -41,31 +40,31 @@ tk_get_params(Wid, Comp) :-
 tk_bar_edit_menu(Wid) :-
 	bar_edit_menu(Wid).
 
-tk_click_obj(Wid, Parent, Action, Virt_X, Virt_Y, Name, CD) :-
+tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name, CD) :-
 /* Extra debugging data not put into save file while swapping to MDI
 	into_save_file(tk_click_obj(Wid, Action, Virt_X, Virt_Y, Name)), */
 	prioritize_window(Wid),
 	finish_window_resize,
 	(Action = click,
-		click_obj( Parent,Virt_X, Virt_Y, Name, CD);
+		click_obj(Virt_X, Virt_Y, Name, CD);
 	Action = clicktext,
-		click_text( Parent,Virt_X, Virt_Y, Name, CD);
+		click_text(Virt_X, Virt_Y, Name, CD);
 	Action = doubleclick,
 	    asserta(log_interaction),
-	    doubleclick_obj(Wid, Parent,Virt_X, Virt_Y, Name),
+	    doubleclick_obj(Virt_X, Virt_Y, Name),
 	    retract(log_interaction)).
 
-tk_click(Wid, Parent, Virt_X, Virt_Y, CD) :-
+tk_click(Wid, Virt_X, Virt_Y, CD) :-
 /*	into_save_file(tk_click(Wid, Virt_X, Virt_Y)), */
 	prioritize_window(Wid),
 	finish_window_resize,
-	click( Parent,Virt_X, Virt_Y, CD).
+	click(Virt_X, Virt_Y, CD).
 
-tk_doubleclick(Wid, Parent, Virt_X, Virt_Y, _CD) :-
+tk_doubleclick(_Wid, Virt_X, Virt_Y, _CD) :-
 /*	into_save_file(tk_doubleclick(Wid, Virt_X, Virt_Y)), */
 	finish_window_resize,
 	asserta(log_interaction),
-	doubleclick(Wid, Parent,Virt_X, Virt_Y),
+	doubleclick(Virt_X, Virt_Y),
 	retract(log_interaction).
 
 tk_unclick(_X, _Y) :- 
@@ -74,9 +73,6 @@ tk_unclick(_X, _Y) :-
 
 tk_drag(Virt_X, Virt_Y) :-
 	drag(Virt_X, Virt_Y).
-
-tk_edit_equation(Window, Node) :-
-	edit_equation(Window, Node).
 
 tk_menu(Window, Header, Item) :-
 /*	into_save_file(tk_menu(Window, Header, Item)), */
@@ -132,8 +128,8 @@ tk_set_new_size(Node, CType, New_size) :-
 	set_box_size(Node, CType, New_size, 0,0).
 
 tk_change_size(TopNode, CType, New_size) :-
-	set_box_size(TopNode, CType, New_size, 0,0),
-	change_size(TopNode, CType, New_size).
+	tk_set_new_size(TopNode, CType, New_size),
+	change_size(TopNode, CType).
 
 tk_run_settings_tweaked(Node) :-
 	run_settings_tweaked(Node).

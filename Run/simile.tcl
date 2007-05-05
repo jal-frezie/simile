@@ -1,7 +1,7 @@
 #!/home/jaspert/Simile/System/bin/wish
 # Simile source code file: Run/simile.tcl
 #
-# (c) Simulistics Ltd. 2001-2005
+# (c) Simulistics Ltd. 2001-2007
 # (c) University of Edinburgh 1995-2001
 #
 # This file contains the code initially sourced into the Tcl interpreter and
@@ -19,13 +19,17 @@
 
 if {[info exists embed_args]} {
     set custom(prefDir) {}
-} else {
-if {[file exists $env(HOME)]} {
+} elseif {[file exists $env(HOME)]} {
 # 4.1 moved SimileUserDirectory for Windows -- check in old position and update
     set oldPrefs [file join $env(HOME) .simile]
     if {[string equal windows $tcl_platform(platform)]} {
-	set custom(prefDir) [file join $env(HOME) "My Documents" \
-				 "My Simile files"]
+	if {[string equal "Windows NT" $tcl_platform(os)] && 
+	    $tcl_platform(osVersion)>=6.0} {
+		set docsDir Documents
+	    } else {
+		set docsDir "My Documents"
+	    }
+        set custom(prefDir) [file join $env(HOME) $docsDir "My Simile files"]
 	if {[file exists $oldPrefs]} {
 	    if {![file exists $custom(prefDir)]} {
 		file mkdir $custom(prefDir)
@@ -44,19 +48,16 @@ if {[file exists $env(HOME)]} {
 	set custom(prefDir) $oldPrefs
     }
 }
-tk scaling 1.5
-set graph(font) [list helvetica 8]
-}
 
 if {[string match windows $tcl_platform(platform)]} {
-#    package require dde 1.2
-#    set runHow(sendOp) {dde eval}
+    package require dde 1.2
+    set runHow(sendOp) {dde eval}
     set argv [lindex $argv 0]
 } else {
-#    set runHow(sendOp) send
+    set runHow(sendOp) send
 }
-#set oldProc Simile
-#set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
+set oldProc Simile
+set runHow(sendCmd) [concat $runHow(sendOp) $oldProc]
 
 # replace /./ in path with / to avoid confusing file dirname
 regsub -all /\\./ [info script] / scriptCmd
@@ -66,20 +67,8 @@ set SIMILE_PATH [file dirname [file dirname $scriptCmd]]
 set env(SP_PATH) $SIMILE_PATH/System
 # Above seems unnecessary for sicstus 3.10
 
-
-if {$argc && ![string match Darwin $tcl_platform(os)] } {
-    if {[string match relative [file pathtype $argv]]} {
-        set env(OPEN_MODEL) [pwd]/$argv
-    } else {
-        set env(OPEN_MODEL) $argv
-    }
-} 
-
 if {[string match Darwin $tcl_platform(os)]} {
-    tk scaling 1.0
-    set graph(font) [list helvetica 12]
-
-    lappend auto_path $SIMILE_PATH/System/lib
+    set auto_path [list $SIMILE_PATH/../Frameworks/Tcl.framework/Resources/Scripts $SIMILE_PATH/../Frameworks/Tk.framework/Resources/Scripts $SIMILE_PATH/System/lib]
     package require tclAE
     proc ::tk::mac::OpenDocument {args} {
         global env
@@ -89,20 +78,19 @@ if {[string match Darwin $tcl_platform(os)]} {
         OpenTopLevel [lindex $args 0]
     }
 #    proc handleOpenApp {foo bar} {
-#        tk_messageBox -message "open foo $foo bar $bar"
+#	tk_messageBox -message "open foo $foo bar $bar"
 #    }
 #    tclAE::installEventHandler aevt oapp handleOpenApp
     proc handleReopenApp {foo bar} {
-        global window_info
-        if {![llength [array names window_info *,parent]]} {
-            NewTopLevel
-        }
+	global window_info
+	if {![llength [array names window_info *,parent]]} {
+	    NewTopLevel
+	}
     }
     tclAE::installEventHandler aevt rapp handleReopenApp
-} elseif {![info exists embed_args]} {
-
-# Scaling affects some metrics but not all, so squash it FTTB
-# to ensure consistency
+    tk scaling 1.0
+    set graph(font) [list helvetica 12]
+} else {
 
 # If Simile is already running, make a new window there and exit. Note that
 # on Macs the OpenDocument takes care of this and we don't even get this far
@@ -112,7 +100,7 @@ if {[string match Darwin $tcl_platform(os)]} {
         global relay checkFor startAnew env
         gets $relayProc action
         close $relayProc
-puts "New instance read string $action"
+#puts "New instance read string $action"
         if {[string equal "Sender process is already dead" $action]} {
             set startAnew 1
         } else {
@@ -121,9 +109,11 @@ puts "New instance read string $action"
             } else {
                 set remStartArgs NewTopLevel
             }
+# do not use execExtn -- its not defined yet, not needed for Windows,
+# null for Linux and we don't do this in MacOS
             set cmd "\"$relay\" \"$checkFor\" \"$remStartArgs\""
             open |$cmd r+
-            exit
+            set startAnew -1
         }
     }
 
@@ -150,7 +140,7 @@ puts "New instance read string $action"
             set tellProc [gets $strm]
             set tellProc [gets $strm] ;# second line is last command passed
             close $strm
-puts "Cancelling: 2nd line is $tellProc"
+#puts "Cancelling: 2nd line is $tellProc"
             if {[string equal AreYouThere [lindex $tellProc 0]]} {
 # yep, still waiting...
                 set strm [open $checkFor w]
@@ -162,6 +152,19 @@ puts "Cancelling: 2nd line is $tellProc"
         }
     }
             
+    if {$argc} {
+	if {[string match relative [file pathtype $argv]]} {
+	    set env(OPEN_MODEL) [pwd]/$argv
+	} else {
+	    set env(OPEN_MODEL) $argv
+	}
+    } 
+
+# Scaling affects some metrics but not all, so squash it FTTB
+# to ensure consistency (do now cos about to put up dialogues)
+    tk scaling 1.5
+    set graph(font) [list helvetica 8]
+
 # ok, is anybody out there?
 
     set checkFor [file join $SIMILE_PATH Examples handover.txt]
@@ -173,7 +176,7 @@ puts "Cancelling: 2nd line is $tellProc"
         set tellProc [gets $strm]
         set tellProc [gets $strm] ;# second line is last command passed
         close $strm
-puts "Starting up: 2nd line is $tellProc"
+#puts "Starting up: 2nd line is $tellProc"
 # ping to see if old proc there
         set relay [file join $SIMILE_PATH System bin relay]
         switch -regexp [lindex $tellProc 0] {
@@ -197,12 +200,16 @@ puts "Starting up: 2nd line is $tellProc"
 # but be ready in case it fails to do so
                 set escapeDlg [after 3000 set startAnew 0]
                 tkwait variable startAnew
-                if {$startAnew} {
-                    after cancel $escapeDlg ;# process was dead
-                } else { ;# process unresponsive
-                    fileevent $relayProc readable {} ;# no longer want to know
-                    close $relayProc
-                    FailedHandoverQuery [lindex $tellProc 1]
+                switch -- $startAnew {
+                    1 {
+			after cancel $escapeDlg ;# process was dead
+		    } 0 {
+			fileevent $relayProc readable {} ;# no longer care
+			close $relayProc
+			FailedHandoverQuery [lindex $tellProc 1]
+		    } -1 {
+			exit ;# handed over successfully
+		    }
                 }
                 unset startAnew
             }
@@ -213,46 +220,42 @@ puts "Starting up: 2nd line is $tellProc"
 switch $tcl_platform(platform) {
     windows {
 # This is needed for dll interface with tcl later than 8.0p2
-#        dde servername $oldProc
-        set env(TCL_LIBRARY) [info library]
+	dde servername $oldProc
+	set env(TCL_LIBRARY) [info library]
 # Now, win95 etc needs the tcltk binaries in the path
-#        set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
-#        set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
-        set graph(origin) 2
+	set env(PATH) "[file dirname [file dirname [info library]]]/bin;$env(PATH)"
+	set env(PRINTCMD) {{c:/program files/ghostgum/gsview/gsprint} -colour -query}
+	set graph(origin) 2
     } unix {
-#        tk appname $oldProc ;# in case starting it from SimileAutoObj
+	tk appname $oldProc ;# in case starting it from SimileAutoObj
 # library path now set in launcher script
 #   set env(LD_LIBRARY_PATH) \
 #       $env(SP_PATH)/library:[file dirname [info library]]
     # the following can be edited for your configuration
-        set env(PRINTCMD) lpr
+	set env(PRINTCMD) lpr
         if [string match Darwin $tcl_platform(os)] {
             set graph(origin) 3
         } else {
-            set graph(origin) 1
+	    set graph(origin) 1
         }
     }
 }
 
-set authorities {prologId interfaceId install_time license_code \
-                        licensee_name licensee_corp}
-if {[info exists embed_args]} {
-    set fileStr [split [ReadFile /Run/userinfo.txt] \n]
-    foreach regEntry $authorities {
-	set env($regEntry) [string trimright [lindex $fileStr 0]]
-	set fileStr [lrange $fileStr 1 end]
-    }
-} elseif {[string equal windows $tcl_platform(platform)]} {
+if {[string equal windows $tcl_platform(platform)]} {
     package require registry
-    foreach regEntry $authorities {
-        set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
-        catch {set env($regEntry) [registry get $regKey $regEntry]}
+    foreach regEntry {prologId interfaceId install_time license_code \
+			licensee_name licensee_corp} {
+	set regKey HKEY_LOCAL_MACHINE\\Software\\Simulistics\\Simile
+	catch {set env($regEntry) [registry get $regKey $regEntry]}
     }
 } else {
     set UserStream [open $SIMILE_PATH/Run/userinfo.txt r]
-    foreach regEntry $authorities {
-	gets $UserStream env($regEntry)
-    }
+    gets $UserStream env(prologId)
+    gets $UserStream env(interfaceId)
+    gets $UserStream env(install_time)
+    gets $UserStream env(license_code)
+    gets $UserStream env(licensee_name)
+    gets $UserStream env(licensee_corp)
     close $UserStream
 }
 
@@ -265,8 +268,8 @@ if {[info exists prolog_in_console]} {
 # so control goes back to Prolog
 }
 
-set env(SIMILE_VERSION) 4.9
-set sendvars(simP) {}
+set env(SIMILE_VERSION) 4.8
+set sendvars(simP) {p2}
 
 # KDE launch feedback will fail unless root window is displayed
 # briefly, causing annoying eye candy to persist while program is
@@ -306,24 +309,18 @@ if {[string equal Linux $tcl_platform(os)]} {
 }
 
 # first put up the splash screen
-toplevel .splash
 image create photo splash
+splash read $SIMILE_PATH/Images/splash.gif
+
+toplevel .splash
 pack [canvas .splash.c -width 400 -height 316 -bd -$graph(origin)] -padx 0 -pady 0
-if {[info exists embed_args]} {
-    .splash.c create rect 2 59 2 79 -outline \#99cc99 -fill \#99cc99 ;# item 1
-    splash put [ReadFile /Images/splash.gif]
-} else {
-    splash read $SIMILE_PATH/Images/splash.gif
-}
 .splash.c create image 200 158 -image splash
 .splash.c create text 245.0 50.0 -font $graph(font) -fill \#99cc99 -anchor w \
-        -text "Simulistics Ltd. 2001-2006"
-.splash.c create text 270.0 275.0 -font $graph(font) -fill \#660066 \
-        -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
+    -text "Simulistics Ltd. 2001-2007"
+.splash.c create text 270.0 275.0 -font $graph(font) -fill #660066 -text "Version $env(SIMILE_VERSION)$sendvars(simP)"
 set regInfo $env(licensee_name)
 catch {append regInfo ", $env(licensee_corp)"}
-.splash.c create text 270.0 295.0 -font $graph(font) -fill \#660066 \
-        -text "Registered to $regInfo"
+.splash.c create text 270.0 295.0 -font $graph(font) -fill #660066 -text "Registered to $regInfo"
     
 wm geometry .splash $startGeom
 wm overrideredirect .splash 1
@@ -332,7 +329,7 @@ if {[info exists SimileAutoObjLoaded]} {
 } else {
     update
 }
-#after 3000 ;# uncomment to give time to see splash screen
+
 wm withdraw . ;# already withdrawn if not Linux
 
 # This is the folder that AME should start looking for model
@@ -349,48 +346,53 @@ cd $SIMILE_PATH/Run
 
 switch $env(prologId) {
     gnu {
-        set tgt Run/xgsimile
+	set tgt Run/xgsimile
     } sicstus {
-        set tgt System/bin/sprt
+	set tgt System/bin/sprt
     }
 }
 
 switch $tcl_platform(platform) {
     windows {
-        set execExtn .exe
+	set execExtn .exe
     } unix {
-        set execExtn {}
+	if {[string equal Darwin $tcl_platform(os)]} {
+	    set execExtn _$tcl_platform(machine)
+	    if {[string equal "_Power Macintosh" $execExtn]} { ;# too long
+		set execExtn _ppc
+	    }
+	} else {
+	    set execExtn {}
+	}
     }
 }
 
 switch $env(interfaceId) {
     pipe {
-        set whatCalled [file rootname [file tail [info nameofexecutable]]]
-        set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
-        source ../Run/toolbox.tcl
-        source ../Run/window.tcl
-        source ../Run/prolog.tcl
+#	set whatCalled [file rootname [file tail [info nameofexecutable]]]
+	set PROLOG_CMD $SIMILE_PATH/$tgt$execExtn
+	source ../Run/toolbox.tcl
+	source ../Run/prolog.tcl
 # next bit was to enable same file as simile.exe to use as script launcher
 # Abandoned because it didn't start the COM interface properly
 #    if {[string equal SimileScript $whatCalled]} {
-#        package require SimileAutoObj
-#        foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}
-#        console title SimileScript
-#        console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}
-#        console eval {puts -nonewline "Welcome to Simile Scripting\n% "}
-#        console show
+#	package require SimileAutoObj
+#	foreach parent [array name window_info *,parent] {wm withdraw $window_info($parent)}
+#	console title SimileScript
+#	console eval {wm protocol . WM_DELETE_WINDOW {consoleinterp eval {prolog tk_kill_everything(_)}}}
+#	console eval {puts -nonewline "Welcome to Simile Scripting\n% "}
+#	console show
 #    }
     } dll {
-        exec $SIMILE_PATH/$tgt$execExtn &
+	exec $SIMILE_PATH/$tgt$execExtn &
     } console {
-        source ../Run/toolbox.tcl
-        source ../Run/window.tcl
+	source ../Run/toolbox.tcl
 	rename prolog innerProlog
 	proc prolog {args} {
 	    ShowWatchWhileDoing [concat innerProlog $args]
 	}
     } none {
-	source toolbox.tcl
+	source ../Run/toolbox.tcl
 # now we must replace some procedure definitions that don't work without Prolog
 	proc prolog {plCmd} {
 	    global fromProlog
@@ -399,10 +401,10 @@ switch $env(interfaceId) {
 		    set fromProlog "Model declarations unavailable"
 		} check_use(*) {
 		} tk_run_settings_tweaked(*) {
-		} tk_menu(*,*,run_*) {
+		} tk_menu(*,*,'run_*') {
 		    set lPtr [expr {[string last _ $plCmd]+1}]
-		    set lang [string range $plCmd $lPtr end-1]
-		    load_dll $::dummyNode $lang $::myDir {} {} Model {}
+		    set lang [string range $plCmd $lPtr end-2]
+		    load_dll $::dummyNode $lang $::myDir {} {} {}
 		    LoadProgram $::dummyNode $lang
 		} default {
 		    error "Unhandled Prolog command $plCmd"
@@ -411,56 +413,18 @@ switch $env(interfaceId) {
 	}
 #	proc GetExecTitle {node} {return $node}
 	proc RunEnv::Destroy {args} {
-	    if {![InPlugin]} {
-		StartComms -1
-	    }
 	    exit
 	}
 # Cheekily try initializing the whole works
 	set dummyNode none
-	if {[InPlugin]} {
-	    proc PrefValue {long short} {
-		switch -regexp $short {
-		    popupHelp|helperManager|compValPop {
-			return 1
-		    } default {
-			error "No preference suplied in plugin mode for $short"
-		    }
-		}
-	    }
-	    proc check_auth_code {args} {return 1} ;# needs server-side proc
-	    set myDir memory
-	    MakeHelperMenu
-	} else {
-	    ControlDraw $dummyNode
-	    set myDir [file join $::simtmpdir exec]
-	}
+	ControlDraw $dummyNode
 # now open up
+	set myDir [file join $::simtmpdir exec]
 	destroy .splash
 	if {![info exists env(OPEN_MODEL)]} {
-	    if {[InPlugin]} {
-		set initMenu .initButt.models
-		# list directories into menus, choose with button and load contents into mime
-		pack [mybutton .initButt -text "Choose model to execute" -menu $initMenu]
-		mymenu $initMenu
-		set oldDir [pwd]
-		set egPath ../Examples/Plugin
-		cd $egPath
-		foreach package [glob *.sml] {
-		    $initMenu add command -label [file tail $package] -command "set tgt $package"
-		}
-		cd $oldDir
-		tkwait variable tgt
-		set env(OPEN_MODEL) [file join $egPath $tgt]
-		pack forget .initButt
-	    } else {
-		set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0]
-	    }
+	    set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0]
 	}
-	set pick [LoadFile $dummyNode $myDir $env(OPEN_MODEL)]
-	if {[lsearch {no yes} $pick]==-1} {
-	    error {Load failure} $errorInfo
-	}
+	LoadFile $dummyNode $myDir $env(OPEN_MODEL)
 	OpenProjectFile $myDir
     }
 }

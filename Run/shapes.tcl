@@ -30,53 +30,28 @@ proc GetPoints {lo rad} {
     return $result
 }
 
-proc CustomAs {type} {
-    global borrowLooksFor
-    foreach {is use} $borrowLooksFor {
-        if {[string equal $is $type]} {
-            return $use
-        }
-    }
-    return $type
-}
-
 proc GetObjectSize {w type fatness} {
     global looks window_info
-    set typeScale $looks($window_info($w,top_node),[CustomAs $type],objectsize)
-    return [expr $typeScale*$fatness/100.0]
+    return [expr [Scale $w $looks($window_info($w,top_node),$type,objectsize)]*$fatness/100.0]
 }
 
 proc GetLineSize {w type fatness} {
     global looks window_info
-    set typeScale $looks($window_info($w,top_node),[CustomAs $type],lines)
-    return [expr $typeScale*$fatness/100.0]
+    return [expr [Scale $w $looks($window_info($w,top_node),$type,lines)]*$fatness/100.0]
 }
 
 proc ScaleRect {w l t r b} {
     return [list [Scale $w $l] [Scale $w $t] [Scale $w $r] [Scale $w $b]]
 }
 
-proc RotateList {angle coords} {
-    global pi
-
-    set ortho [expr {cos($angle*$pi/180)}]
-    set meta [expr {sin($angle*$pi/180)}]
-    foreach {x y} $coords {
-        lappend out [expr {$ortho*$x+$meta*$y}] [expr {$ortho*$y-$meta*$x}] 
-    }
-    return $out
-}
-
-proc PutRectangle { w id l t r b extras fatness density colourScheme tagSet} {
+proc PutRectangle { w l t r b extras fatness density colourScheme tagSet} {
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set width [GetLineSize $w compartment $fatness]
-    set g [GetGroupItem $w $id]
-    $w add rectangle $g "$ml $mt $mr $mb" -filled 1 -linewidth 0 \
-	-tags "$tagSet has_info"
+    $w create rect $ml $mt $mr $mb -outline {} -tag "$tagSet has_info"
     set stackDepth 0
-    $w add curve $g [list "$mr $mt" "$ml $mt" "$ml $mb"] -linewidth $width \
-            -tags "$tagSet size_on_this realwidth($width)"
+    $w create line $mr $mt $ml $mt $ml $mb -width $width \
+            -tag "$tagSet size_on_this realwidth($width)"
 
     set decor [expr $extras/10] ;# no decor yet for input param compartments
     set stack [expr $extras-10*$decor]
@@ -87,28 +62,27 @@ proc PutRectangle { w id l t r b extras fatness density colourScheme tagSet} {
         set st [expr $mt+$stackDistance]
         set sr [expr $mr+$stackDistance]
         set sb [expr $mb+$stackDistance]
-        $w add curve $g [list "$sr $st" "$sr $sb" "$sl $sb"] -linewidth $width \
-                -tags "$tagSet size_on_this realwidth($width)"
+        $w create line $sr $st $sr $sb $sl $sb -width $width \
+                -tag "$tagSet size_on_this realwidth($width)"
         incr stackDepth
     }
-    if {$b-$t>$r-$l} {
-        set type state
-    } else {
-        set type compartment
-    }
-    ResetColours $w $type $density $colourScheme [lindex $tagSet 0]
+    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutShape {c id l t r b file fatness colourScheme title} {
+proc PutShape {c l t r b file fatness colourScheme title} {
     global window_info
-    set g [GetGroupItem $c $id]
     set nameList {condition cond creation creation \
                 immigration immig reproduction repro loss loss alarm alarm}
     set point [expr [lsearch $nameList $file] + 1]
     set fileName [lindex $nameList $point]
     
     source "../Images/$fileName.cnv"
-    $c translate unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
+    set growth [max 0.001 [expr ($r-$l)/30.0]]
+# use Inner...we don't need hourglass and the refresh may allow customization
+# dialogue to get its threads in a twist
+    InnerZoomImage $c unscaled $growth
+    $c move unscaled [expr ($l+$r)/2] [expr ($t+$b)/2]
+    InnerZoomImage $c unscaled $window_info($c,scale)
     $c addtag $title withtag unscaled
     $c addtag has_info withtag unscaled
     $c dtag unscaled
@@ -126,24 +100,24 @@ proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
     
     set width [GetLineSize $w function $fatness]
     $w create poly $mr $my $m75 $mt $m25 $mt $ml $my $m25 $mb $m75 $mb \
-            -width $width -tags "$tagSet size_on_this realwidth($width)"
+            -width $width -tag "$tagSet size_on_this realwidth($width)"
     ResetColours $w function $density $colourScheme [lindex $tagSet 0]
 }
 
 
-proc PutBowTie { w n l t r b fatness density colourScheme tagSet} {
-    set g [GetGroupItem $w $n]
+proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set width [GetLineSize $w flow $fatness]
     
     if {($mb - $mt) > ($mr - $ml)} {
-        set bounds [list "$ml $mt" "$mr $mt" "$ml $mb" "$mr $mb" "$ml $mt"]
+        set bounds "$ml $mt $mr $mt $ml $mb $mr $mb $ml $mt"
     } else {
-        set bounds [list "$ml $mt" "$ml $mb" "$mr $mt" "$mr $mb" "$ml $mt"]
+        set bounds "$ml $mt $ml $mb $mr $mt $mr $mb $ml $mt"
     }
-    $w add curve $g $bounds -linewidth $width -filled 1 \
-	    -tags "$tagSet bowtie has_info"
-    ResetColours $w variable $density $colourScheme [lindex $tagSet 0]
+    eval {$w create poly} $bounds {-tag "$tagSet bowtie has_info"}
+    eval {$w create line} $bounds {-width $width \
+                -tag "$tagSet bowtie realwidth($width)"}
+    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
 # Circles are drawn as many-hedrons until the bug that stops ovals
@@ -156,19 +130,20 @@ proc PutBowTie { w n l t r b fatness density colourScheme tagSet} {
 # it never gets stippled, e.g., if you stipple an arc only the radial
 # outline sections will be stippled. Let's hope 8.5 is better.
 
-proc PutCrossedCirc { w id l t r b extras fatness density colourScheme tagSet} {
+proc PutCrossedCirc { w l t r b extras fatness density colourScheme tagSet} {
     set width [GetLineSize $w variable $fatness]
-    set g [GetGroupItem $w $id]
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set rad [expr ($mr-$ml)/2]
     set hm [expr $ml+$rad]
     set vm [expr $mt+$rad]
 
-    set p1 [DrawBlob $w $g $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
+    set p1 [DrawBlob $w $hm $vm [expr 2*$rad+$width] "$tagSet has_info"]
 
     set style [expr $extras/100]
     set extras [expr $extras-100*$style]
+    set generic [list -width $width \
+		     -tag "$tagSet realwidth($width) has_info"]
     # second approximation to fill
     scan [GetPoints $ml $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
     scan [GetPoints $mt $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
@@ -176,110 +151,89 @@ proc PutCrossedCirc { w id l t r b extras fatness density colourScheme tagSet} {
     scan [GetPoints $mb -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 
     if {$style} {
-        set type event
-        set outer [expr 3*($rad+$width/2)/5+$width/2]
-        set ol [expr $hm-$outer]
-        set ot [expr $vm-$outer]
-        set or [expr $hm+$outer]
-        set ob [expr $vm+$outer]
-	$w add arc $g "$ol $ot $or $ob" -extent 359 -linewidth 0 -filled 1 \
-	    -tags "$tagSet has_info"
+	set outer [expr 3*($rad+$width/2)/5+$width/2]
+	set ol [expr $hm-$outer]
+	set ot [expr $vm-$outer]
+	set or [expr $hm+$outer]
+	set ob [expr $vm+$outer]
+	eval {$w create oval $ol $ot $or $ob} $generic
+#	scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
+#	scan [GetPoints $ot $outer] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
+#	scan [GetPoints $or (-$outer)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
+#	scan [GetPoints $ob (-$outer)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
 	
-#	DrawBlob $w $g $hm $vm [expr 3*($rad+$width/2)/5+$width/2] "$tagSet has_info"
-#        scan [GetPoints $ol $outer] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
-#        scan [GetPoints $ot $outer] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
-#        scan [GetPoints $or (-$outer)] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
-#        scan [GetPoints $ob (-$outer)] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
-        
-#        eval {$w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
-        DrawBlob $w $g $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
+#	eval {$w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {}} $generic
+	DrawBlob $w $hm $vm [expr 2*($rad+$width/2)/5] "$tagSet has_info"
     } else {
-        set type variable
 #    set p1 [eval {$w create oval $ml $mt $mr $mb} $generic]
 
-#        eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
-#        eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
-#        eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
-                  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
-                  $h8 $v1 $h9 $v2 $h10 $v3} $generic
-        
-        $w add arc $g "$ml $mt $mr $mb" -startangle 45 -extent 90 -pieslice 1 \
-	    -linewidth 0 -filled 1 -tags "$tagSet has_info"    
-        $w add arc $g "$ml $mt $mr $mb" -startangle 225 -extent 90 \
-	    -pieslice 1 -linewidth 0 -filled 1 -tags "$tagSet has_info"    
-        set stackSide [$w add arc $g "$ml $mt $mr $mb" -startangle -45 \
-			   -extent 359 -filled 0 -linewidth $width \
-			   -tags "$tagSet has_info"]
+	eval {$w create poly $hm $vm $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt $h8 $v1 $h9 $v2 $h10 $v3 $hm $vm -outline {}} $generic
+	eval {$w create poly $hm $vm $h3 $v10 $h4 $v11 $h5 $v12 $h6 $mb $h8 $v12 $h9 $v11 $h10 $v10 $hm $vm -outline {}} $generic
+	eval {$w create line $h3 $v10 $h2 $v9 $h1 $v8 \
+		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
+		  $h8 $v1 $h9 $v2 $h10 $v3} $generic
     }
     set decor [expr $extras/10]
     set stack [expr $extras-10*$decor]
     
     switch $decor {
-        1 {
-            set sl [expr $ml-2*$rad]
-            set sr [expr $mr+2*$rad]
-            set st [expr $mt+$rad/2]
-            set sb [expr $mb-$rad/2]
+	1 {
+	    set sl [expr $ml-2*$rad]
+	    set sr [expr $mr+2*$rad]
+	    set st [expr $mt+$rad/2]
+	    set sb [expr $mb-$rad/2]
 
-            $w add curve $g [list "$sl $st" "$sl $sb"] -linewidth $width \
-		-tags "$tagSet has_info"
-            $w add curve $g [list "$sl $vm" "$ml $vm"] -linewidth $width \
-		-tags "$tagSet has_info"
-            $w add curve $g [list "$mr $vm" "$sr $vm"] -linewidth $width \
-		-tags "$tagSet has_info"
-            $w add curve $g [list "$sr $st" "$sr $sb"] -linewidth $width \
-		-tags "$tagSet has_info"
-        } 2 {
-            set st [expr $mt-2*$rad]
-            $w add curve $g [list "$ml $st" "$hm $st" "$ml $vm"] -closed 1 \
-		-filled 1 -linewidth $width -tags "$tagSet has_info"	    
-#            eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
-        }
+	    eval {$w create line $sl $st $sl $sb} $generic
+	    eval {$w create line $sl $vm $ml $vm} $generic
+	    eval {$w create line $mr $vm $sr $vm} $generic
+	    eval {$w create line $sr $st $sr $sb} $generic
+	} 2 {
+	    set st [expr $mt-2*$rad]
+	    eval {$w create poly $ml $st $hm $st $ml $vm} $generic
+	    eval {$w create line $ml $st $hm $st $ml $vm $ml $st} $generic
+	}
     }
-
+	    
     set stackDepth 0
     while {$stackDepth < $stack} {
         set stackDistance [expr $stackDepth*$width*2]
-        set stackSide [$w add arc $g "$ml $mt $mr $mb" -startangle -45 -extent 180 \
-			  -filled 0 -linewidth $width -tags "$tagSet has_info"]
+        set stackSide [eval {$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
+                $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 \
+                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10} $generic]
          if {$stackDepth} {
             $w lower $stackSide $p1
-            $w translate $stackSide $stackDistance $stackDistance
+            $w move $stackSide $stackDistance $stackDistance
             set p1 $stackSide
         }
         incr stackDepth
     }
-    ResetColours $w $type $density $colourScheme [lindex $tagSet 0]
+    ResetColours $w variable $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutCloud { w id l t r b stack fatness density colourScheme tagSet} {
-    set g [GetGroupItem $w $id]
+proc PutCloud { w l t r b stack fatness density colourScheme tagSet} {
     set width [GetLineSize $w flow $fatness]
     
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     set mtb13 [expr ($mb + 2*$mt)/3]
-    $w add arc $g [list $ml $mtb13 [expr (2*$mr + $ml)/3] $mb] \
-	-extent 359 -linewidth $width -filled 1 \
-	-tags "$tagSet size_on_this"
-    $w add arc $g [list [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb] \
-	-extent 359 -linewidth $width -filled 1 \
-	-tags "$tagSet size_on_this"
-    $w add arc $g [list [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
-            [expr (2*$mb + $mt)/3]] -extent 359 -linewidth $width -filled 1 \
-	-tags "$tagSet size_on_this"
-    ResetColours $w compartment $density $colourScheme [lindex $tagSet 0]
+    $w create oval $ml $mtb13 [expr (2*$mr + $ml)/3] $mb -width $width \
+            -tag "$tagSet size_on_this realwidth($width)"
+    $w create oval [expr ($mr + 2*$ml)/3] $mtb13 $mr $mb -width $width \
+            -tag "$tagSet size_on_this realwidth($width)"
+    $w create oval [expr ($mr + 5*$ml)/6] $mt [expr (5*$mr + $ml)/6] \
+            [expr (2*$mb + $mt)/3] -width $width \
+            -tag "$tagSet size_on_this realwidth($width)"
+    ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
-                          colourScheme tagSet} {
+
+proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
+			  origX origY bgColour inFat colourScheme tagSet} {
     global looks window_info custom
     #puts "drawing submodel with fill $fillColour"
     #    previously had min width of 1 to ensure stack visibility
     #    set width [expr $width0>1?$width0:1]
     
-# null dimensions cause crash so...
-    if {$l==$r || $t==$b} return
     scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     
     if {$mr < $ml} {set temp $mr ; set mr $ml ; set ml $temp}
@@ -288,7 +242,6 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
     set shortSide [expr ($mr - $ml)<($mb - $mt) ? ($mr - $ml) : ($mb - $mt)]
     if {$fatness == 0} {
         set cornerDiam 0
-	set fatness 1 ;# 0 means do not show
     } else {
         set cornerDiam [expr $looks($window_info($w,top_node),submodel,objectsize)*$shortSide/200]
     }
@@ -304,22 +257,20 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
     # This is the diameter of the rounded corner as fraction of the box width
     
     set width [GetLineSize $w submodel $fatness]
-    set dots [expr $stack==-1]
-    set pile [expr $stack==-2]
+    set dots [expr !$stack]
+    set pile [expr $stack==-1]
     if {$dots} {
         set stack 4
     }
     if {$pile} {
         set stack 2
-        set back 2
-        set stackSpacing [expr 4*$width]
-        set backSpacing [expr -2*$width]
-    } elseif {$stack} {
-        set back 1
-        set stackSpacing [expr 2*$width]
-        set backSpacing 0
+	set back 2
+	set stackSpacing [expr 4*$width]
+	set backSpacing [expr -2*$width]
     } else {
-        set back 0
+	set back 1
+	set stackSpacing [expr 2*$width]
+	set backSpacing 0
     }
     
     # second approximation to fill
@@ -336,60 +287,54 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
     set tgts [$w find overlapping $ml $v6 $ml $v6] ;# any point on the border
     set stackOn {}
     foreach tgt $tgts {
-        if {[string match "*/background/*" [$w gettags $tgt]]} {
-            set stackOn [ExtractPrologName $w $tgt]
-        }
+	if {[string match "*/background/*" [$w gettags $tgt]]} {
+	    set stackOn [ExtractPrologName $w $tgt]
+	}
     }
     if {![llength $stackOn]} {
-        $w addtag target_and_background withtag /base/
+	$w addtag target_and_background withtag /base/
     } else {
 # you cannot 'and' the submodel id tag with the background tag
 # so 'or' it with the inverse
-        $w addtag target_and_background withtag $stackOn
-        $w addtag not_background all
-        $w dtag /background/ not_background
-        $w dtag not_background target_and_background
+	$w addtag target_and_background withtag $stackOn
+	$w addtag not_background all
+	$w dtag /background/ not_background
+	$w dtag not_background target_and_background
     }
     
     if {[string equal clear $fillColour]} {
-        set fillColour white
-	set filled 0
-    } else {
-	set filled 1
+	set fillColour {}
     }
 #    set poly [$w create polygon \
-#                  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 \
-#                  $h6 $mt $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 \
-#                  $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
-#                  $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
-#                  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
-#                  -fill $fillColour -tags "$tagSet /background/"]
-    set g [GetGroupItem $w $n]
-    $w add curve $g [list "$ml $v6" "$h6 $mt" "$h7 $mt" "$mr $v6" \
-			"$mr $v7" "$h7 $mb" "$h6 $mb" "$ml $v7"] -closed 1 \
-	-linewidth 0 -filled $filled -fillcolor $fillColour -tags /new_bg/
-    $w add arc $g "$ir $mt $mr $it" -startangle 270 -extent 90 -closed true \
-        -linewidth 0 -filled $filled -fillcolor $fillColour -tags /new_bg/
-    $w add arc $g "$ml $mt $il $it" -startangle 180 -extent 90 -closed true \
-        -linewidth 0 -filled $filled -fillcolor $fillColour -tags /new_bg/
-    $w add arc $g "$ml $ib $il $mb" -startangle 90 -extent 90 -closed true \
-        -linewidth 0 -filled $filled -fillcolor $fillColour -tags /new_bg/
-    $w add arc $g "$ir $ib $mr $mb" -startangle 0 -extent 90 -closed true \
-        -linewidth 0 -filled $filled -fillcolor $fillColour -tags /new_bg/
+#		  $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 \
+#		  $h6 $mt $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 \
+#		  $h12 $v5 $mr $v6 $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 \
+#		  $h9 $v11 $h8 $v12 $h7 $mb $h6 $mb $h5 $v12 $h4 $v11 \
+#		  $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 -outline {} \
+#		  -fill $fillColour -tag "$tagSet /background/"]
+# These make up the fill shape
+    set i [$w create polygon $ml $v6 $h6 $mt $h7 $mt $mr $v6 \
+	       $mr $v7 $h7 $mb $h6 $mb $ml $v7 \
+	       -outline {} -fill $fillColour -tag /new_bg/]
+    lappend i [$w create arc $ir $mt $mr $it -start 0 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
+    lappend i [$w create arc $ml $mt $il $it -start 90 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
+    lappend i [$w create arc $ml $ib $il $mb -start 180 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
+    lappend i [$w create arc $ir $ib $mr $mb -start 270 -extent 90 \
+		   -style pieslice -outline {} -fill $fillColour -tag /new_bg/]
     foreach tag [concat $tagSet /background/] {
-        $w addtag $tag withtag /new_bg/
+	$w addtag $tag withtag /new_bg/
     }
-
     # Now to stick it behind anything that might be drawn inside
-# for some reason the raise command hangs it -- this will all be redone
-# once the hierarchy is used so leave it for now
-#    $w raise /new_bg/ target_and_background
-#    $w dtag target_and_background
+    $w raise /new_bg/ target_and_background
+    $w dtag target_and_background
     set stackOn /new_bg/
 
     if {![string equal none $fillImage]} {
         set poly [$w create image $ml $mt -anchor nw \
-                -tags "$tagSet /background/ source($fillImage) posn($layout)"]
+                -tag "$tagSet /background/ source($fillImage) posn($layout)"]
         set mw [expr int($mr-$ml)]
         set mh [expr int($mb-$mt)]
         set smbg sm$poly$w
@@ -398,55 +343,55 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
         set intRad [expr int($cornerRad)]
         
         FillSmImage $fillImage $layout $smbg $mw $mh $intRad
-        # Now to stick it behind anything that might be drawn inside
-        $w raise $poly $stackOn
-        set stackOn $poly
+	# Now to stick it behind anything that might be drawn inside
+	$w raise $poly $stackOn
+	set stackOn $poly
     }
 
     set tabs 0
     while {$tabs < $back} {
-        $w translate /new_bd/ $backSpacing $backSpacing
-        $w add arc $g "$ml $ib $il $mb" -startangle 135 -extent 45 \
-            -linewidth $width -tags /new_bd/
-        $w add curve $g [list "$ml $v7" "$ml $v6"] -linewidth $width -tags /new_bd/
-        $w add arc $g "$ml $mt $il $it" -startangle 180 -extent 90 \
-            -linewidth $width -tags /new_bd/
-        $w add curve $g [list "$h6 $mt" "$h7 $mt"] -linewidth $width -tags /new_bd/
-        $w add arc $g "$ir $mt $mr $it" -startangle 270 -extent 45 \
-            -linewidth $width -tags /new_bd/
+	if {$tabs} {$w move /new_bd/ $backSpacing $backSpacing}
+	lappend i [$w create arc $ml $ib $il $mb -start 180 -extent 45 \
+	    -style arc -width $width -tag /new_bd/]
+	lappend i [$w create line $ml $v7 $ml $v6 -width $width -tag /new_bd/]
+	lappend i [$w create arc $ml $mt $il $it -start 90 -extent 90 \
+	    -style arc -width $width -tag /new_bd/]
+	lappend i [$w create line $h6 $mt $h7 $mt -width $width -tag /new_bd/]
+	lappend i [$w create arc $ir $mt $mr $it -start 45 -extent 45 \
+	    -style arc -width $width -tag /new_bd/]
         incr tabs
     }
     set tabs 0
     while {$tabs < $stack} {
         if {$dots && $tabs} {
-            $w add curve $g [list "$mr [expr $mt + $cornerRad]" \
-		    "[expr $mr + $width] [expr $mt + $cornerRad + $width]"] \
-                    -linewidth $width -tags "$tagSet realwidth($width)"
-            $w add curve $g [list "$mr [expr $mb - $cornerRad]" \
-		    "[expr $mr + $width] [expr $mb - $cornerRad + $width]"] \
-                    -linewidth $width -tags "$tagSet realwidth($width)"
-            $w add curve $g [list "[expr $ml + $cornerRad] $mb" \
-		    "[expr $ml + $cornerRad + $width] [expr $mb + $width]"] \
-                    -linewidth $width -tags "$tagSet realwidth($width)"
-            $w add curve $g [list "[expr $mr - $cornerRad] $mb" \
-                    "[expr $mr - $cornerRad + $width] [expr $mb + $width]"] \
-                    -linewidth $width -tags "$tagSet realwidth($width)"
+            $w create line $mr [expr $mt + $cornerRad] \
+                    [expr $mr + $width] [expr $mt + $cornerRad + $width] \
+                    -width $width -tag "$tagSet realwidth($width)"
+            $w create line $mr [expr $mb - $cornerRad] \
+                    [expr $mr + $width] [expr $mb - $cornerRad + $width] \
+                    -width $width -tag "$tagSet realwidth($width)"
+            $w create line [expr $ml + $cornerRad] $mb \
+                    [expr $ml + $cornerRad + $width] [expr $mb + $width] \
+                    -width $width -tag "$tagSet realwidth($width)"
+            $w create line [expr $mr - $cornerRad] $mb \
+                    [expr $mr - $cornerRad + $width] [expr $mb + $width] \
+                    -width $width -tag "$tagSet realwidth($width)"
             set ml [expr $ml + $stackSpacing]
             set mt [expr $mt + $stackSpacing]
             set mr [expr $mr + $stackSpacing]
             set mb [expr $mb + $stackSpacing]
         } else {
-            $w translate /new_br/ $stackSpacing $stackSpacing
-            $w add arc $g "$ml $ib $il $mb" -startangle 90 -extent 45 \
-                -linewidth $width -tags /new_br/
-            $w add curve $g [list "$mr $v7" "$mr $v6"] -linewidth $width \
-		-tags /new_br/
-            $w add arc $g "$ir $ib $mr $mb" -startangle 0 -extent 90 \
-                -linewidth $width -tags /new_br/
-            $w add curve $g [list "$h6 $mb" "$h7 $mb"] -linewidth $width \
-		-tags /new_br/
-            $w add arc $g "$ir $mt $mr $it" -startangle 315 -extent 45 \
-                -linewidth $width -tags /new_br/
+	    if {$tabs} {$w move /new_br/ $stackSpacing $stackSpacing}
+	    lappend i [$w create arc $ml $ib $il $mb -start 225 -extent 45 \
+		-style arc -width $width -tag /new_br/]
+	    lappend i [$w create line $mr $v7 $mr $v6 -width $width \
+			   -tag /new_br/]
+	    lappend i [$w create arc $mr $mb $ir $ib -start 270 -extent 90 \
+		-style arc -width $width -tag /new_br/]
+	    lappend i [$w create line $h6 $mb $h7 $mb -width $width \
+			   -tag /new_br/]
+	    lappend i [$w create arc $ir $mt $mr $it -start 0 -extent 45 \
+		-style arc -width $width -tag /new_br/]
         }
         incr tabs
     }
@@ -456,174 +401,123 @@ proc PutRoundedRect {w n l t r b stack fatness fillColour fillImage layout \
 #        set upper [$w create line $h3 $v10 $h2 $v9 $h1 $v8 $ml $v7 \
 #                $ml $v6 $h1 $v5 $h2 $v4 $h3 $v3 $h4 $v2 $h5 $v1 $h6 $mt \
 #                $h7 $mt $h8 $v1 $h9 $v2 $h10 $v3 -width $width \
-#                       -tags "$tagSet size_on_this realwidth($width) has_info"]
+#		       -tag "$tagSet size_on_this realwidth($width) has_info"]
 #        $w move $upper $stackDistance $stackDistance
 #        set stackDistance [expr 3*$stackSpacing]
 #        set lower [$w create line $h10 $v3 $h11 $v4 $h12 $v5 $mr $v6 \
 #                $mr $v7 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h7 $mb \#
 #                $h6 $mb $h5 $v12 $h4 $v11 $h3 $v10 -width $width \
-#                       -tags "$tagSet size_on_this realwidth($width) has_info"]
+#		       -tag "$tagSet size_on_this realwidth($width) has_info"]
 #        $w move $lower $stackDistance $stackDistance
 #    }
 
-    set fullLoad [concat $tagSet "size_on_this realwidth($width) has_info"]
-    foreach marker {/new_bd/ /new_br/} {
-        foreach tag $fullLoad {
-            $w addtag $tag withtag $marker
-        }
-        $w dtag $marker
-    }
-# this will hold submodel contents -- must be above backgnd
-    if {![catch {GetGroupItem $w [lindex $tagSet 0]} subg]} {
-	$w raise $subg $stackOn
+#    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
+    if {[string equal incomplete $colourScheme] && $inFat} {
+	set window_info($w,temporary) $i
+    } else {
+	set plRad [expr $cornerRad/$window_info($w,scale)]
+	set interval [expr $looks(gridPitch)*$inFat/100.0]
+	set nCol [Gradient $bgColour -0.1 $w]
+	set gTagSet "$tagSet realcolour($nCol) /background/ /grid/"
+	if {$custom(showgrids,$w)} {
+	    set gCol $nCol
+	} else {
+	    set gCol {}
+	}
+
+	for {set x [expr $origX+$interval*ceil(($l+1-$origX)/$interval)]} \
+	    {$x<$r} {set x [expr $x+$interval]} {
+		set fromEdge [max [expr $l+$plRad-$x] [expr $x+$plRad-$r]]
+		if {$fromEdge>0} {
+		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]
+		} else {
+		    set inStep 0
+		}
+		set linePts [ScaleRect $w $x ($t+$inStep) $x ($b-$inStep)]
+		set line [eval {$w create line} $linePts \
+			      {-width 0 -fill $gCol -tag $gTagSet}]
+		# Now to stick it behind anything that might be drawn inside
+		$w raise $line $stackOn
+		set stackOn $line
+	    }			    
+	for {set y [expr $origY+$interval*ceil(($t+1-$origY)/$interval)]} \
+	    {$y<$b} {set y [expr $y+$interval]} {
+		set fromEdge [max [expr $t+$plRad-$y] [expr $y+$plRad-$b]]
+		if {$fromEdge>0} {
+		    set inStep [expr $plRad - sqrt($plRad*$plRad - $fromEdge*$fromEdge)]
+		} else {
+		    set inStep 0
+		}
+		set linePts [ScaleRect $w ($l+$inStep) $y ($r-$inStep) $y]
+		set line [eval {$w create line} $linePts \
+			      {-width 0 -fill $gCol -tag $gTagSet}]
+		# Now to stick it behind anything that might be drawn inside
+		$w raise $line $stackOn
+		set stackOn $line
+	    }			    
     }
     $w dtag /new_bg/
+    set fullLoad [concat $tagSet "size_on_this realwidth($width) has_info"]
+    foreach marker {/new_bd/ /new_br/} {
+	foreach tag $fullLoad {
+	    $w addtag $tag withtag $marker
+	}
+	$w dtag $marker
+    }
     ResetColours $w submodel {} $colourScheme [lindex $tagSet 0]
 }
 
-proc KillGroup {w id} {
-    if {![catch {GetGroupItem $w $id} g]} {
-	$w remove $g ;# tolerate error, it won't be there if submodel new
-    }
-}
-
-proc PutGroup {w n id x y f1 f2} {
-    set g [$w add group [GetGroupItem $w $n] -tags $id]
-    $w translate $g $x $y
-    $w scale $g $f1 $f2
-}
-
-proc MakeSubmodelGrid {w id l t r b fillColour} {
-    global looks window_info custom
-
-    set g [GetGroupItem $w $id]
-    $w remove *${g}./grid/ ;# remove old grid using pathtag
-    set shortSide [expr ($r - $l)<($b - $t) ? ($r - $l) : ($b - $t)]
-    set plRad [expr $looks($window_info($w,top_node),submodel,objectsize)*$shortSide/400]
-    set pitch [expr $looks(gridPitch)]
-
-    set nCol [Gradient $fillColour -0.1 $w]
-    set gTagSet "realcolour($nCol) /background/ /grid/"
-    if {$custom(showgrids,$w)} {
-	set gCol $nCol
-    } else {
-	set gCol {}
-    }
-    
-    for {set x [expr $pitch*floor($l/$pitch+1)]} {$x<$r} {set x [expr $x+$pitch]} {
-	set fromEdge [max [expr $l+$plRad-$x] [expr $x+$plRad-$r]]
-	if {$fromEdge>0} {
-	    set inStep [expr $plRad - sqrt($plRad*$plRad-$fromEdge*$fromEdge)]
-	} else {
-	    set inStep 0
-	}
-	set line [$w add curve $g [list "$x [expr $t+$inStep]" "$x [expr $b-$inStep]"] \
-		      -linecolor $gCol -tags $gTagSet]
-	# Now to stick it behind anything that might be drawn inside
-	$w lower $line
-    }                            
-    for {set y [expr $pitch*floor($t/$pitch+1)]} {$y<$b} {set y [expr $y+$pitch]} {
-	set fromEdge [max [expr $t+$plRad-$y] [expr $y+$plRad-$b]]
-	if {$fromEdge>0} {
-	    set inStep [expr $plRad - sqrt($plRad*$plRad-$fromEdge*$fromEdge)]
-	} else {
-	    set inStep 0
-	}
-	set line [$w add curve $g [list "[expr $l+$inStep] $y" "[expr $r-$inStep] $y"] \
-		      -linecolor $gCol -tags $gTagSet]
-	# Now to stick it behind anything that might be drawn inside
-	$w lower $line
-    }                            
-}
-
-proc PutInfPin {w x y type dir fatness colourScheme tagSet} {
-    set width [GetLineSize $w influence $fatness]
-    set features [GetObjectSize $w influence $fatness]
-    set mptz [ScaleList $w [list $x $y]]
-    set diam [expr {$features/2}]
-    set rad [expr {$diam/2}]
-    switch $type {
-        3 {
-            set coords [list 0 $rad $diam 0 0 -$rad]
-        } 4 {
-            set coords [list 0 $rad $diam $rad $diam -$rad  0 -$rad]
-        }
-    }
-    set screw [expr {90*[lsearch {w s e n} $dir]}]
-    set twisted [RotateList $screw $coords]
-
-    eval {$w create poly} $twisted \
-        {-width $width -tags "$tagSet realwidth($width) has_info /not_placed/"}
-    eval {$w move /not_placed/} $mptz
-    $w dtag /not_placed/
-}
-
-proc ScaleList {winId clist bend} {
-    set output {}
-    foreach {eltx elty} $clist {
-	set elt [list $eltx $elty]
-	if {[llength $output]>0 && [llength $output]<[llength $clist]/2-1 && \
-		$bend} {
-	    lappend elt c
-	}
-        lappend output $elt
-    }
-    return $output
-}
-
-proc PutThinArrow { w n ptz fatness density colourScheme tagSet} {
+proc PutThinArrow { w ptz fatness density colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
-    set g [GetGroupItem $w $n]
     set width [GetLineSize $w influence $fatness]
     set features [GetObjectSize $w influence $fatness]
-    set mptz [ScaleList $w $ptz 1]
+    set mptz [ScaleList $w $ptz]
     if {[string equal dashed $density]} {
-        set density {}
-        set dashClause "-dash -"
+	set density {}
+	set dashClause "-dash -"
     } else {
-        set dashClause {}
+	set dashClause {}
     }
-    $w add curve $g $mptz \
-	-lastend [list [expr $features/6] [expr $features/5] \
-		      [expr $features/16]] -linewidth $width \
-	-tags "$tagSet has_info curvy"
+    eval {$w create line} $mptz $dashClause {-arrow last \
+                -arrowshape [list [expr $features/6] [expr $features/5] \
+                [expr $features/16]] -smooth true -width $width \
+                -tag "$tagSet realwidth($width) has_info"}
     
     # next few lines put blob with diameter equal to width of
     # arrowhead at start of line
-    DrawBlob $w $g [lindex $ptz 0] [lindex $ptz 1] [expr $features/10] \
+    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr $features/10] \
             "$tagSet startblob"
     ResetColours $w influence $density $colourScheme [lindex $tagSet 0]
 }
 
-proc PutRelation { w n ptz fatness colourScheme tagSet} {
+proc PutRelation { w ptz fatness colourScheme tagSet} {
     # Have to use eval because points are packed in a list -- what a language
-    set g [GetGroupItem $w $n]
     set width [expr 5*[GetLineSize $w relation $fatness]]
     set arrowRad [expr [GetObjectSize $w relation $fatness]/10]
     
-    set mptz [ScaleList $w $ptz 1]
-    $w add curve $g $mptz \
-	-lastend [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -linewidth $width \
-	-tags "$tagSet has_info curvy"
-     # next few lines put blob with diameter equal to width of arrowhead at start of
+    set mptz [ScaleList $w $ptz]
+    eval {$w create line} $mptz {-arrow last \
+                -arrowshape [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
+                -smooth true -width $width \
+				     -tag "$tagSet realwidth($width) has_info"}
+    # next few lines put blob with diameter equal to width of arrowhead at start of
     # line
-    DrawBlob $w $g [lindex $ptz 0] [lindex $ptz 1] [expr 2*$arrowRad] \
+    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] [expr 2*$arrowRad] \
             "$tagSet startblob"
     ResetColours $w relation gray50 $colourScheme [lindex $tagSet 0]
 }
 
-proc PutFatArrow { w n ptz fatness colourScheme tagSet} {
-    set g [GetGroupItem $w $n]
+proc PutFatArrow { w ptz fatness colourScheme tagSet} {
     set width [expr 5*[GetLineSize $w flow $fatness]]
     set features [GetObjectSize $w flow $fatness]
     #    set width [Scale $w [expr $fatness/10.0]]
-    set mptz [ScaleList $w $ptz 0]
+    set mptz [ScaleList $w $ptz]
     set arrowRad [expr $features/10]
-    $w add curve $g $mptz -lastend \
-                [list $arrowRad [expr 1.5*$arrowRad] $arrowRad] \
-                      -linewidth $width -tags "$tagSet has_info"
-    DrawBlob $w $g [lindex $ptz 0] [lindex $ptz 1] [expr 2*$arrowRad] \
-            "$tagSet startblob"
+    eval {$w create line} $mptz {-arrow last -arrowshape \
+		[list $arrowRad [expr 1.5*$arrowRad] $arrowRad] -smooth false \
+		-width $width -tag "$tagSet realwidth($width) has_info"}
+    DrawBlob $w [lindex $mptz 0] [lindex $mptz 1] \
+		   [expr 2*$arrowRad] "$tagSet startblob"
     ResetColours $w flow {} $colourScheme [lindex $tagSet 0]
 }
 
@@ -634,9 +528,9 @@ proc PutFatArrow { w n ptz fatness colourScheme tagSet} {
 
 proc FillSmImage {fCol layout smbg mw mh intRad} {
     if {[string equal Scaled $layout]} {
-        set fCol [GrowImage $fCol $mw $mh]
-        set layout Centred
-        set usingSpare 1
+	set fCol [GrowImage $fCol $mw $mh]
+	set layout Centred
+	set usingSpare 1
     }
     set srcWidth [$fCol cget -width]
     set srcHeight [$fCol cget -height]
@@ -659,68 +553,68 @@ proc FillSmImage {fCol layout smbg mw mh intRad} {
         MyTile $smbg $layout $mw $mh $fl $ft $fr $fb $fCol $srcWidth $srcHeight
     }
     if {[info exists usingSpare]} {
-        image delete $fCol
+	image delete $fCol
     }
 }
 
 proc MyTile {dest pos dw dh l t r b src w h} {
     switch $pos {
-        Tiled {
-            for {set qt [expr ($t/$h)*$h]} {$qt < $b} {incr qt $h} {
-                if {$qt<$t} {
-                    set dt $t
-                    set st [expr $t-$qt]
-                } else {
-                    set dt $qt
-                    set st 0
-                }
-                if {$qt+$h>$b} {
-                    set sb [expr $b-$qt]
-                } else {
-                    set sb $h
-                }
-                for {set ql [expr ($l/$w)*$w]} {$ql < $r} {incr ql $w} {
-                    if {$ql<$l} {
-                        set dl $l
-                        set sl [expr $l-$ql]
-                    } else {
-                        set dl $ql
-                        set sl 0
-                    }
-                    if {$ql+$w>$r} {
-                        set sr [expr $r-$ql]
-                    } else {
-                        set sr $w
-                    }
-                    $dest copy $src -from $sl $st $sr $sb -to $dl $dt
-                }
-            }
-        } Centred {
-            set osl [expr ($dw-$w)/2] ;# left of source on dest
-            set ost [expr ($dh-$h)/2] ;# top of source on dest
-            
-            set sl [max 0 $l-$osl] ;# left of source area to copy
-            set st [max 0 $t-$ost]
-            set sr [min $w $r-$osl]
-            set sb [min $h $b-$ost]
+	Tiled {
+	    for {set qt [expr ($t/$h)*$h]} {$qt < $b} {incr qt $h} {
+		if {$qt<$t} {
+		    set dt $t
+		    set st [expr $t-$qt]
+		} else {
+		    set dt $qt
+		    set st 0
+		}
+		if {$qt+$h>$b} {
+		    set sb [expr $b-$qt]
+		} else {
+		    set sb $h
+		}
+		for {set ql [expr ($l/$w)*$w]} {$ql < $r} {incr ql $w} {
+		    if {$ql<$l} {
+			set dl $l
+			set sl [expr $l-$ql]
+		    } else {
+			set dl $ql
+			set sl 0
+		    }
+		    if {$ql+$w>$r} {
+			set sr [expr $r-$ql]
+		    } else {
+			set sr $w
+		    }
+		    $dest copy $src -from $sl $st $sr $sb -to $dl $dt
+		}
+	    }
+	} Centred {
+	    set osl [expr ($dw-$w)/2] ;# left of source on dest
+	    set ost [expr ($dh-$h)/2] ;# top of source on dest
+	    
+	    set sl [max 0 $l-$osl] ;# left of source area to copy
+	    set st [max 0 $t-$ost]
+	    set sr [min $w $r-$osl]
+	    set sb [min $h $b-$ost]
 
-            if {$sl<=$sr && $st<=$sb} {
-                set dl [max $l $osl]
-                set dt [max $t $ost]
-                $dest copy $src -from $sl $st $sr $sb -to $dl $dt
-            }
-        } Scaled {
-            # copy pixel by pixel -- not used, instead image is preprocessed
-            # with zoom/subsample, then displayed centred
-            for {set y $t} {$y<$b} {incr y} {
-                set sy [expr $y*$h/$dh]
-                for {set x $l} {$x<$r} {incr x} {
-                    set sx [expr $x*$w/$dw]
-                    $dest copy $src -from $sx $sy [incr sx] [expr $sy+1] \
-                        -to $x $y
-                }
-            }
-        }
+	    if {$sl<=$sr && $st<=$sb} {
+		set dl [max $l $osl]
+		set dt [max $t $ost]
+		$dest copy $src -from $sl $st $sr $sb -to $dl $dt
+	    }
+	} Scaled {
+	    # copy pixel by pixel -- not used, instead image is preprocessed
+	    # with zoom/subsample, then displayed centred
+	    for {set y $t} {$y<$b} {incr y} {
+		set sy [expr $y*$h/$dh]
+		for {set x $l} {$x<$r} {incr x} {
+		    set sx [expr $x*$w/$dw]
+		    $dest copy $src -from $sx $sy [incr sx] [expr $sy+1] \
+			-to $x $y
+		}
+	    }
+	}
     }
 }
 
@@ -728,50 +622,50 @@ proc GrowImage {fCol mw mh} {
     set srcWidth [$fCol cget -width]
     set srcHeight [$fCol cget -height]
 #    switch $layout {
-#        Scaled {
-            # Resize X and Y axes separately to avoid making too large an
-            # intermediate image
-            set xrat [ChooseIntegerRatio [expr 1.0*$mw/$srcWidth]]
-            image create photo spare1
-            spare1 copy $fCol -zoom [lindex $xrat 0] 1 -shrink
-            image create photo spare2
-            spare2 copy spare1 -subsample [lindex $xrat 1] 1 -shrink
-            
-            set yrat [ChooseIntegerRatio [expr 1.0*$mh/$srcHeight]]
-            spare1 blank
-            spare1 copy spare2 -zoom 1 [lindex $yrat 0] -shrink
-            spare2 blank
-            spare2 copy spare1 -subsample 1 [lindex $yrat 1] -shrink
-            
-            image delete spare1
-            # copying does not update image's size parameter -- do it by hand
-            set srcWidth [expr $srcWidth*[lindex $xrat 0]/[lindex $xrat 1]]
-            set srcHeight [expr $srcHeight*[lindex $yrat 0]/[lindex $yrat 1]]
-#        } Tiled {
-            # Using builtin tiling is slow when starting from a small image --
-            # This version was inspired by the opening titles of Dilbert
+#	Scaled {
+	    # Resize X and Y axes separately to avoid making too large an
+	    # intermediate image
+	    set xrat [ChooseIntegerRatio [expr 1.0*$mw/$srcWidth]]
+	    image create photo spare1
+	    spare1 copy $fCol -zoom [lindex $xrat 0] 1 -shrink
+	    image create photo spare2
+	    spare2 copy spare1 -subsample [lindex $xrat 1] 1 -shrink
+	    
+	    set yrat [ChooseIntegerRatio [expr 1.0*$mh/$srcHeight]]
+	    spare1 blank
+	    spare1 copy spare2 -zoom 1 [lindex $yrat 0] -shrink
+	    spare2 blank
+	    spare2 copy spare1 -subsample 1 [lindex $yrat 1] -shrink
+	    
+	    image delete spare1
+	    # copying does not update image's size parameter -- do it by hand
+	    set srcWidth [expr $srcWidth*[lindex $xrat 0]/[lindex $xrat 1]]
+	    set srcHeight [expr $srcHeight*[lindex $yrat 0]/[lindex $yrat 1]]
+#	} Tiled {
+	    # Using builtin tiling is slow when starting from a small image --
+	    # This version was inspired by the opening titles of Dilbert
 
     # note that actually tiling is slow because it creates images with
     # complicated transparent areas -- the Dilbert process just slows it
     # down more by adding overheads so has been removed
 
-#            image create photo spare2
-#            spare2 copy $fCol
-#            while {$srcWidth<$mw} {
-#                puts [list spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
-#                          -to $srcWidth 0]
-#                spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
-#                    -to $srcWidth 0 -compositingrule set
-#                set srcWidth [expr 2*$srcWidth]
-#            }
-#            while {$srcHeight<$mh} {
-#                puts [list spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
-#                          -to 0 $srcHeight]
-#                spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
-#                    -to 0 $srcHeight -compositingrule set
-#                set srcHeight [expr 2*$srcHeight]
-#            }
-#        }
+#	    image create photo spare2
+#	    spare2 copy $fCol
+#	    while {$srcWidth<$mw} {
+#		puts [list spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#			  -to $srcWidth 0]
+#		spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#		    -to $srcWidth 0 -compositingrule set
+#		set srcWidth [expr 2*$srcWidth]
+#	    }
+#	    while {$srcHeight<$mh} {
+#		puts [list spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#			  -to 0 $srcHeight]
+#		spare2 copy spare2 -from 0 0 $srcWidth $srcHeight \
+#		    -to 0 $srcHeight -compositingrule set
+#		set srcHeight [expr 2*$srcHeight]
+#	    }
+#	}
 #    }
     spare2 config -width $srcWidth
     spare2 config -height $srcHeight
@@ -781,86 +675,69 @@ proc GrowImage {fCol mw mh} {
 proc ChooseIntegerRatio {fraction} {
     set m 1
     while {1} {
-        set d [max round($m/$fraction) 1]
-        set close [expr $m/($fraction*$d)]
-        if {$close > 0.95 && $close < 1.05} {
-            return [list $m $d]
-        }
-        incr m
+	set d [max round($m/$fraction) 1]
+	set close [expr $m/($fraction*$d)]
+	if {$close > 0.95 && $close < 1.05} {
+	    return [list $m $d]
+	}
+	incr m
     }
 }
-        
+	
 proc MoveText {w id ptz} {
+    set mptz [ScaleList $w $ptz]
     set textItem [GetCaptionItem $w $id]
-    eval {$w translate $textItem} $ptz
+    eval {$w move $textItem} $mptz
     FixBackBox $w $textItem
 }
 
-proc MoveObj {w ids ptz} {
-    foreach id $ids {
-        $w addtag /moving/ withtag $id
-    }
-    eval {$w translate /moving/} $ptz
-    $w dtag /moving/
+proc MoveObj {w id ptz} {
+    set mptz [ScaleList $w $ptz]
+    eval {$w move $id} $mptz
 }
 
 proc MoveLine {w id ptz} {
+    set mptz [ScaleList $w $ptz]
     foreach item [$w find withtag $id] {
         set taglist [$w gettags $item]
         if {[string match *startblob* $taglist]} {
-            set x1 [lindex $ptz 0]
-            set y1 [lindex $ptz 1]
-            $w coords $item [list [expr $x1-1] [expr $y1-1] \
-				 [expr $x1+1] [expr $y1+1]]
+            set x1 [lindex $mptz 0]
+            set y1 [lindex $mptz 1]
+            $w coords $item $x1 $y1 $x1 $y1
         } elseif {[string match *endblob* $taglist]} {
-            set x1 [lindex $ptz [expr [llength $mptz] - 2]]
-            set y1 [lindex $ptz end]
-            $w coords $item [list [expr $x1-1] [expr $y1-1] \
-				 [expr $x1+1] [expr $y1+1]]
+            set xn [lindex $mptz [expr [llength $mptz] - 2]]
+            set yn [lindex $mptz end]
+            $w coords $item $xn $yn $xn $yn
         } elseif {[string match line [$w type $item]] && \
                     ![string match *bowtie* $taglist]} {
-	    set mptz [ScaleList $w $ptz [string match *curvy* $taglist]]
             eval "$w coords $item" $mptz
         }
     }
 }
 
-proc DrawBlob {w g startX startY size tags} {
-#     $w create line $startX $startY $startX $startY -width $size \
-#            -capstyle round -tags $tags
-# Hold on...bigger news than that...
-    set rad [expr $size/2]
-    set ol [expr $startX-$rad]
-    set ot [expr $startY-$rad]
-    set or [expr $startX+$rad]
-    set ob [expr $startY+$rad]
-    $w add arc $g "$ol $ot $or $ob" -extent 359 \
-	-linewidth 0 -filled 1 -tags [lappend tags /flashes/]
-#    scan [GetPoints $ol $rad] {%f %f %f %f %f %f} h1 h2 h3 h4 h5 h6
-#    scan [GetPoints $ot $rad] {%f %f %f %f %f %f} v1 v2 v3 v4 v5 v6
-#    scan [GetPoints $or -$rad] {%f %f %f %f %f %f} h12 h11 h10 h9 h8 h7
-#    scan [GetPoints $ob -$rad] {%f %f %f %f %f %f} v12 v11 v10 v9 v8 v7
-#    $w create poly $h3 $v3 $h4 $v2 $h5 $v1 $h6 $ot $h8 $v1 $h9 $v2 $h10 $v3 $h11 $v4 $h12 $v5 $or $v6 $h12 $v8 $h11 $v9 $h10 $v10 $h9 $v11 $h8 $v12 $h6 $ob $h5 $v12 $h4 $v11 $h3 $v10 $h2 $v9 $h1 $v8 $ol $v6 $h1 $v5 $h2 $v4 $h3 $v3 -outline {} -tags [lappend tags /flashes/]
+proc DrawBlob {w startX startY size tags} {
+     $w create line $startX $startY $startX $startY -width $size \
+            -capstyle round -tag "$tags realwidth($size)"
 }
 
 # This puts random bits of normally non-editable text on the screen...
 
-proc PutText { w n ptz ptype tagSet fatness colourScheme capt } {
+proc PutText { w ptz ptype tagSet fatness colourScheme capt } {
     global looks window_info
     
-    if {[lsearch {vflow hflow} $ptype]>-1} {
-        set type [CustomAs flow]
+    if {[string equal vflow $ptype]} {
+	set type flow
     } else {
-        set type [CustomAs $ptype]
+	set type $ptype
     }
-    set node $window_info($w,top_node)
+    set n $window_info($w,top_node)
     if {[string compare $colourScheme normal]} {
-        set textColor $looks($node,$type,$colourScheme)
+        set textColor $looks($n,$type,$colourScheme)
     } else {
-        set textColor $looks($node,$type,text)
+        set textColor $looks($n,$type,text)
     }
     
-    set fontData [ExtractFontData $looks($node,$type,font)]
+    set fontData [ExtractFontData $looks($n,$type,font)]
     set realFont [Scale $w [lindex $fontData 3]*$fatness/100]
 #    if {$realFont<10} {
 #        set closeFont 10
@@ -870,51 +747,33 @@ proc PutText { w n ptz ptype tagSet fatness colourScheme capt } {
     set useFont [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
             [lindex $fontData 2] $realFont]
     set textX [Scale $w [expr [lindex $ptz 0] \
-            + $looks($node,$ptype,xoffset)*$fatness/100]]
+            + $looks($n,$ptype,xoffset)*$fatness/100]]
     set textY [Scale $w [expr [lindex $ptz 1] \
-            + $looks($node,$ptype,yoffset)*$fatness/100]]
+            + $looks($n,$ptype,yoffset)*$fatness/100]]
 # experimental background box for text
-    set g [GetGroupItem $w $n]
-    set backBox [$w add rectangle $g {0 0 1 1} -linewidth 0 \
-		     -fillcolor \#ffffc0 -tags "$tagSet /${type}_text/"]
-    if {$looks($node,$type,txtbg)} {
-        $w itemconfig backBox -filled 1
+    if {$looks($n,$type,txtbg)} {
+	set txtbg \#ffffc0
+    } else {
+	set txtbg {}
     }
+    set backBox [$w create rect 0 0 1 1 -outline {} -fill $txtbg \
+		     -tag "$tagSet /${type}_text/"]
     $w dtag $backBox editable
     $w dtag $backBox currently_editable
-    if {$looks($node,$type,txtbd)} {
-        $w add curve $g {{0 0} {1 1}} -linecolor $textColor \
-	    -tags [$w gettags $backBox]
+    if {$looks($n,$type,txtbd)} {
+	$w create line 0 0 1 1 -fill $textColor -tag [$w gettags $backBox]
     }
-    set ankh $looks($node,$ptype,textanchor)
-    set anchsp [string first realanchor\( $tagSet]
-    if {$anchsp != -1} {
-        set anchltr [expr {$anchsp+11}]
-        set ankh [string range $tagSet $anchltr $anchltr]
-        set depth [GetObjectSize $w influence $fatness]
-        switch $ankh {
-            e {
-                set textX [expr {$textX-$depth/2}]
-            } w {
-                set textX [expr {$textX+$depth/2}]
-            } s {
-                set textY [expr {$textY-$depth/2}]
-            } n {
-                set textY [expr {$textY+$depth/2}]
-            }
-        }
-    }
+    set ankh $looks($n,$ptype,textanchor)
     if {[string match *e $ankh]} {
-        set tjust right
+	set tjust right
     } elseif {[string match *w $ankh]} {
-        set tjust left
+	set tjust left
     } else {
-        set tjust center ;# Blooaaargh! Spell it right dudes!
+	set tjust center ;# Blooaaargh! Spell it right dudes!
     }
-    set textItem [$w add text $g -position "$textX $textY" -text $capt \
-		      -color $textColor -composescale 1 \
-		      -font $useFont -anchor $ankh -alignment $tjust \
-		      -tags "$tagSet is_caption size_on_this has_info"]
+    set textItem [$w create text $textX $textY -text $capt -fill $textColor \
+	-font $useFont -anchor $ankh -justify $tjust \
+	-tag "$tagSet is_caption size_on_this realwidth($realFont) has_info"]
     FixBackBox $w $textItem
 }
 
@@ -927,8 +786,8 @@ proc SelectText {w node} {
     set new [GetCaptionItem $w $node]
     if {![llength $new]} {return} ;# item has no text
     if {![string equal select $pushedbutton]} {
-        $w dtag currently_editable
-        $w itemconfig $new -tags [concat currently_editable [$w gettags $new]]
+	$w dtag currently_editable
+	$w itemconfig $new -tag [concat currently_editable [$w gettags $new]]
     }
     $w focus $new
     $w select from $new 0
@@ -940,12 +799,16 @@ proc SelectText {w node} {
 # either filling or outlining them depending on the method appropriate to their
 # type.
 
-set borrowLooksFor {cloud compartment flow variable squirt event}
 proc ColorSymbol { w name type density colorSpec } {
     global looks window_info
     
     set n $window_info($w,top_node)
-    set type [CustomAs $type]
+    if {[string match cloud $type]} {
+        set type flow
+    }
+    if {[string equal influence $type] && [string equal gray50 $density]} {
+	set type ghost_link
+    }
     if {[string compare $colorSpec normal]} {
         set outlineColor $looks($n,$type,$colorSpec)
         set textColor $outlineColor
@@ -961,25 +824,23 @@ proc ColorSymbol { w name type density colorSpec } {
 proc FlashSymbol {w name outlineColor textColor} {
     foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
-            text {$w itemconfigure $object -color $textColor}
-            curve {
-                if {[string match */*_text/* [$w gettags $object]]} {
-                    $w itemconfigure $object -linecolor $textColor
-                } elseif {![string match */background/* [$w gettags $object]]} {
-                    $w itemconfigure $object -linecolor $outlineColor
-                }
+            text {$w itemconfigure $object -fill $textColor}
+            line {
+		if {[string match */*_text/* [$w gettags $object]]} {
+		    $w itemconfigure $object -fill $textColor
+		} elseif {![string match */background/* [$w gettags $object]]} {
+		    $w itemconfigure $object -fill $outlineColor
+		}
             } oval {
                 if {![string match */background/* [$w gettags $object]]} {
-                    $w itemconfigure $object -linecolor $outlineColor
-                }
+		    $w itemconfigure $object -outline $outlineColor
+		}
             } arc {
-                if {[string match */flashes/* [$w gettags $object]]} {
-		    $w itemconfigure $object -fillcolor $outlineColor
-		} elseif {![$w itemcget $object -filled] && \
-                        ![string match */background/* [$w gettags $object]]} {
-                    $w itemconfigure $object -linecolor $outlineColor
-                }
-            }
+		if {[string equal arc [$w itemcget $object -style]] && \
+			![string match */background/* [$w gettags $object]]} {
+		    $w itemconfigure $object -outline $outlineColor
+		}
+	    }
         }
     }
 }
@@ -988,37 +849,36 @@ proc StippleSymbol {w name density selected} {
     foreach object [$w find withtag $name] {
         switch -regexp [$w type $object] {
             line {
-                $w itemconfigure $object -linepattern $density
+                $w itemconfigure $object -stipple $density
             }
             rectangle|arc|polygon {
-                $w itemconfigure $object -linepattern $density \
-                    -fillpattern $density
+                $w itemconfigure $object -outlinestipple $density \
+		    -stipple $density
             }
         }
-        switch -regexp $selected {
-            highlight {
-                $w dtag $object tocopy
-                $w itemconfigure $object -tags \
-                    [concat selected [$w gettags $object]]
-            } select {
-                $w itemconfigure $object -tags \
-                    [concat tocopy selected [$w gettags $object]]
-            } default {
-                $w dtag $object selected
-                $w dtag $object tocopy
-            }
-        }
+	switch -regexp $selected {
+	    highlight {
+		$w dtag $object tocopy
+		$w itemconfigure $object -tag \
+		    [concat selected [$w gettags $object]]
+	    } select {
+		$w itemconfigure $object -tag \
+		    [concat tocopy selected [$w gettags $object]]
+	    } default {
+		$w dtag $object selected
+		$w dtag $object tocopy
+	    }
+	}
     }
 }
 
 proc FillSymbol { w name color } {
     foreach object [$w find withtag $name] {
-        set tags [$w gettags $object]
-        if {[lsearch "rectangle arc curve" [$w type $object]]!=-1 && \
-                ![string match *_text/* $tags] && \
-                ![string match */background/* $tags] && \
-                ![string match */flashes/* $tags]} {
-            $w itemconfigure $object -fillcolor $color
+	set tags [$w gettags $object]
+	if {[lsearch "rectangle oval polygon" [$w type $object]]!=-1 && \
+		![string match *_text/* $tags] && \
+		![string match */background/* $tags]} {
+	    $w itemconfigure $object -fill $color
         }
     }
 }
@@ -1028,15 +888,15 @@ proc ResetColours { w type density colourScheme name } {
     
     set n $window_info($w,top_node)
     ColorSymbol $w $name $type $density $colourScheme
-    set fillColor $looks($n,[CustomAs $type],fill)
+    set fillColor $looks($n,$type,fill)
     FillSymbol $w $name $fillColor
 }
 
 proc ColourExists {col} {
     if {[catch {winfo rgb . $col}]} {
-        return 0
+	return 0
     } else {
-        return 1
+	return 1
     }
 }
 
@@ -1051,7 +911,7 @@ proc WriteDesc {canvas canvasFile date args} {
 #    puts $stream [list array set looks [array get looks *,*]]
 # needs special to preserve top-level node name...like this
     puts $stream [concat LoadModelLooks \$c \
-                      [list [MakeLooksSaver $window_info($canvas,top_node)]]]
+		      [list [MakeLooksSaver $window_info($canvas,top_node)]]]
     puts $stream [concat TweakWindow \$c \{$title\} \
             $window_info($canvas,scale) \
             [$canvas cget -scrollregion] clear $args]
@@ -1062,17 +922,17 @@ proc WriteDesc {canvas canvasFile date args} {
     foreach object [$canvas find all] {
         # Insert special command to re-create any photos used
         if {[string match image [$canvas type $object]]} {
-            set tags [$canvas gettags $object]
+	    set tags [$canvas gettags $object]
             regexp {source\(([^\)]+)\)} $tags all sourceImage
             if {![regexp {posn\(([^\)]+)\)} $tags all posn]} {
-                set posn Tiled
-            }
+		set posn Tiled
+	    }
             set localImage [$canvas itemcget $object -image]
             puts $stream [concat MakeImage \$c $sourceImage $localImage \
                     [$localImage cget -width] [$localImage cget -height] $posn]
         }
-        # Do not write base objs they get re-created...actually do, so I can 
-        # use diag in helper. Kill after reloading.
+        # Do not write base objs they get re-created...actually do, so I can
+	# use diag in helper. Kill after reloading.
 #        if {[string match */base/* [$canvas gettags $object]]} {
 #        } else {
             set config ""
@@ -1091,9 +951,9 @@ proc WriteDesc {canvas canvasFile date args} {
                     append config [list [lindex $conf 0] $value] " "
                 }
             }
-            puts $stream [concat \$c create [$canvas type $object] \
-                              [$canvas coords $object] $config]
-#        }
+	    puts $stream [concat \$c create [$canvas type $object] \
+			      [$canvas coords $object] $config]
+#	}
     }
     close $stream
 }
@@ -1103,16 +963,16 @@ proc MakeImage {c base inst w h args} {
     
     set n $window_info($c,top_node)
     #    if {![info exists imageSources($base)]} {
-    #        image create photo $base
-    #        $base read $file -shrink
-    #        PutSize $base
-    #        set imageSources($base) $file
+    #	image create photo $base
+    #	$base read $file -shrink
+    #	PutSize $base
+    #	set imageSources($base) $file
     #    }
     image create photo $inst -width $w -height $h
     set shortSide [expr $w<$h?$w:$h]
     set intRad [expr int($looks($n,submodel,objectsize)*$shortSide/400)]
     if {![llength $args]} {
-        set args Tiled
+	set args Tiled
     }
     FillSmImage $base $args $inst $w $h $intRad
 }
@@ -1128,30 +988,28 @@ proc ShiftImages {topDir way args} {
             switch $way {
                 in {
                     image create photo $image
-                    # others than .png are for legacy
-                    foreach fmt {png gif jpeg none} {
+                    foreach fmt {gif jpeg none} {
                         if {![catch {$image read $imgFile.$fmt -shrink}]} {
                             PutSize $image
                             file delete $imgFile
-                            break
+			    break
                         }
                     }
                     # prevent crasho if reading fails
-                    if {[string match none $fmt]} {
-                        $image read ../Images/splash.gif -shrink
-                        PutSize $image
-                    }
+		    if {[string match none $fmt]} {
+			$image read ../Images/splash.gif -shrink
+			PutSize $image
+		    }
                 } out {
                     # try gif first, if too many colours try jpeg
-                    # --as of 2/5/06 only try .png
-                    foreach fmt {png} {
+                    foreach fmt {gif jpeg} {
                         if {![catch {$image write $imgFile.$fmt \
-                                         -format $fmt}]} {
-                            break
-                        } else {
-                            puts "Failed to write $imgFile.$fmt -- $err"
-                        }
-                    }
+					 -format $fmt} err]} {
+			    break
+			} else {
+			    puts "Failed to write $imgFile.$fmt -- $err"
+			}
+		    }
                 }
             }
         }
@@ -1161,9 +1019,9 @@ proc ShiftImages {topDir way args} {
 proc GetGhostCursor {} {
     global tcl_platform
     if {[string equal Linux $tcl_platform(os)]} {
-        return {@../Images/ghost.xbm ../Images/ghost.mask.xbm black white}
+	return {@../Images/ghost.xbm ../Images/ghost.mask.xbm black white}
     } else {
-        return gumby
+	return gumby
     }
 }
 
@@ -1178,7 +1036,7 @@ proc InjectGraphics {c canvasFile} {
 # not needed now cos we set system encoding, which source uses
 #    set stream [NetOpen $canvasFile r]
 #    while {[gets $stream line]>=0} {
-#        eval $line
+#	eval $line
 #    }
 #    close $stream
 
@@ -1198,14 +1056,23 @@ proc InjectGraphics {c canvasFile} {
 
 proc GetCaptionItem {w name} {
     if {[winfo exists $w]} {
-        foreach object [$w find withtag $name] {
-            if {[string compare [$w type $object] text] == 0} {
-                set taglist [$w gettags $object]
-                if {[string match *is_caption* $taglist]} {
-                    return $object
-                }
-            }
+	foreach object [$w find withtag $name] {
+	    if {[string compare [$w type $object] text] == 0} {
+		set taglist [$w gettags $object]
+		if {[string match *is_caption* $taglist]} {
+		    return $object
+		}
+	    }
         }
+    }
+}
+
+proc GetText { w name } {
+    set nameItem [GetCaptionItem $w $name]
+    if {[string compare $nameItem {}]} {
+        return [$w itemcget $nameItem -text]
+    } else {
+        return /no_caption/
     }
 }
 
@@ -1214,7 +1081,7 @@ proc GetCaptionItem {w name} {
 proc GetEdit { w } {
     set current [$w focus]
     if {[string compare $current {}]} {
-        return [ExtractPrologName $w [lindex $current 0]]
+        return [ExtractPrologName $w $current]
     } else {
         return 0
     }
@@ -1246,33 +1113,48 @@ proc ChangeObjectTitle { w name title} {
 # sometimes due to rounding errors.
 
 proc DoZoom { winId factor toProlog} {
-    
     global window_info looks
-
-# Right, hard bit is keeping the middle of the display in the middle
-# after the zoom. We need to find out where the middle is in space 1
-# (roughly equiv of canvasx canvasy) and what it is in space 2. Then
-# after moving, find out where the same poing in space 2 has gone in
-# space 1 and scroll it to its previous space 1 posn...simple
-# really...
-
-# This should be a bit simpler now...
 
     # First, find canvas point at centre of display
     set centre_x [expr $window_info($winId,width)/2]
     set centre_y [expr $window_info($winId,height)/2]
 
-#    RollBack $winId $toProlog [expr (1 - 1/$factor)*$centre_x] \
+    # Now work out where this should be in the image, so I can put it back in the
+    # centre afterwards
+
+    set target_x [expr [$winId canvasx $centre_x]*$factor]
+    set target_y [expr [$winId canvasy $centre_y]*$factor]
+
+    # next make sure that enough canvas exists for the outcome of the operation
+    RollBack $winId $toProlog [expr (1 - 1/$factor)*$centre_x] \
             [expr (1 - 1/$factor)*$centre_y] \
             [expr (1 + 1/$factor)*$centre_x] \
             [expr (1 + 1/$factor)*$centre_y]
 
-    # Now...aw, fuck it
-    $winId scale 1 $factor $factor $centre_x $centre_y
+    # Next, scale all the window objects (centre must be 0 because all canvas/desktop
+    # translation is done relative to 0)
 
-    # next make sure that enough canvas exists for the outcome of the operation
-    eval {RollBack $winId $toProlog} [$winId transform 1 "0 0
-$window_info($winId,width) $window_info($winId,height)"]
+    ZoomImage $winId all $factor
+
+    # Change the canvas area in accordance with the change in scale
+
+    set oldSize [$winId cget -scrollregion]
+    set newReg [list [expr [lindex $oldSize 0]*$factor] \
+            [expr [lindex $oldSize 1]*$factor] \
+            [expr [lindex $oldSize 2]*$factor] \
+            [expr [lindex $oldSize 3]*$factor]]
+    $winId configure -scrollregion $newReg
+    eval [list ResizeBackgnd $winId] $newReg
+
+    # Find what is in the middle now
+
+    set currentX [$winId canvasx $centre_x]
+    set currentY [$winId canvasy $centre_y]
+
+    # Now scroll it so what was previously in the middle of the display is still there
+
+    $winId xview scroll [expr round(($target_x - $currentX)/$looks(scrollIncr))] units
+    $winId yview scroll [expr round(($target_y - $currentY)/$looks(scrollIncr))] units
 }
 
 # ZoomImage: Scale the graphical stuff in the window, and explicitly
@@ -1281,10 +1163,22 @@ $window_info($winId,width) $window_info($winId,height)"]
 # when zooming). Font sizes have a separate parameter to enable them to come
 # out right when zooming prior to Postscript export.
 
-proc ZoomImage {winId which factor {optFontor none}} {
+proc ZoomImage {args} {
+    ShowWatchWhileDoing [concat InnerZoomImage $args]
+}
+
+proc InnerZoomImage {winId which factor {optFontor none}} {
     #ShowMessage debug info "ZoomImage $winId $which $factor $fontor" ok
     global window_info looks
-
+    switch [tk windowingsystem] {
+	x11 {
+	    set hideTinies 40
+	} win32 {
+	    set hideTinies 6
+	} aqua {
+	    set hideTinies 0
+	}
+    }
     set n $window_info($winId,top_node)
     $winId scale $which 0 0 $factor $factor
     if {[string compare $which all]} {
@@ -1294,13 +1188,13 @@ proc ZoomImage {winId which factor {optFontor none}} {
         catch {set window_info($winId,scale) \
                     [expr $window_info($winId,scale) * $factor]}
 
-        scan [$winId cget -scrollregion] "%g %g %g %g" bl bt br bb
+	scan [$winId cget -scrollregion] "%g %g %g %g" bl bt br bb
         set objList [$winId find all]
     }
     if {[string match none $optFontor]} {
-        set fontor $factor
+	set fontor $factor
     } else {
-        set fontor $optFontor
+	set fontor $optFontor
     }
     if {[string match none $optFontor]} {
         set fontor $factor
@@ -1308,60 +1202,74 @@ proc ZoomImage {winId which factor {optFontor none}} {
         set fontor $optFontor
     }
     foreach object $objList {
-        switch [$winId type $object] {
+	switch [$winId type $object] {
         text {
-            set fontData [ExtractFontData [$winId itemcget $object -font]]
-            set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
+	    set fontData [ExtractFontData [$winId itemcget $object -font]]
+	    set newTextSize [expr round([AdjustWidth $winId $object $fontor])]
 #puts "Caption [$winId itemcget $object -text] font $fontData newsize $newTextSize"
-            if {$newTextSize < 1} {
-                set newTextSize 1
-            }
-            $winId itemconfigure $object -font \
-                [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
-                     [lindex $fontData 2] $newTextSize]
-            FixBackBox $winId $object
-        } line {
-            $winId itemconfigure $object \
-                -width [AdjustWidth $winId $object $factor]
-            AdjustArrow $winId $object $factor
-        } image {
-            set tgtImage [$winId itemcget $object -image]
-            set newWidth [expr round($factor*[$tgtImage cget -width])]
-            set newHt [expr round($factor*[$tgtImage cget -height])]
-            scan [$winId coords $object] {%f %f} newX newY
-            
-            if {[string match "*/base/*" [$winId gettags $object]]} {
-            } elseif {[string compare none $optFontor]} {
+	    if {$newTextSize < $hideTinies} {
+		$winId itemconfigure $object -state hidden
+	    } else {
+		$winId itemconfigure $object -font \
+		    [AssembleFont [lindex $fontData 0] [lindex $fontData 1] \
+			 [lindex $fontData 2] $newTextSize]
+		$winId itemconfigure $object -state normal
+	    }
+	    FixBackBox $winId $object
+	} line {
+	    if {![string match "*/grid/*" [$winId gettags $object]]} {
+		set newWidth [AdjustWidth $winId $object $factor]
+		if {$hideTinies && $newWidth<0.1} {
+		    $winId itemconfigure $object -state hidden
+		} else {
+		    $winId itemconfigure $object -width $newWidth
+		    $winId itemconfigure $object -state normal
+		}
+		AdjustArrow $winId $object $factor
+	    }
+	} image {
+	    set tgtImage [$winId itemcget $object -image]
+	    set newWidth [expr round($factor*[$tgtImage cget -width])]
+	    set newHt [expr round($factor*[$tgtImage cget -height])]
+	    scan [$winId coords $object] {%f %f} newX newY
+	    
+	    if {[string match "*/base/*" [$winId gettags $object]]} {
+	    } elseif {[string compare none $optFontor]} {
 # Doing clever stuff with fonts, this zoom op is for a print
 # so scale image rather tha re-tiling it
-                if {$factor > 1} {
-                    image create photo temp
-                    temp copy $tgtImage
-                    $tgtImage config -width $newWidth -height $newHt
-                    $tgtImage copy temp -zoom [expr round($factor)]
-                } else {
-                    $tgtImage copy $tgtImage \
-                        -subsample [expr round(1.0/$factor)]
-                }
-            } else {
-                set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
-                set intRad [expr int($looks($n,submodel,objectsize)* \
-                                         $shortSide/400)]
-                $tgtImage config -width $newWidth -height $newHt
-                regexp {source\(([^\)]+)\)} [$winId gettags $object] \
-                    all sourceImage
-                if {![regexp {posn\(([^\)]+)\)} [$winId gettags $object] \
-                          all layout]} {
-                    set layout Tiled
-                }
-                FillSmImage $sourceImage $layout $tgtImage $newWidth $newHt \
-                    $intRad
-            }
-        } default {
-            $winId itemconfigure $object \
-                -width [AdjustWidth $winId $object $factor]
-        }
-        }
+		if {$factor > 1} {
+		    image create photo temp
+		    temp copy $tgtImage
+		    $tgtImage config -width $newWidth -height $newHt
+		    $tgtImage copy temp -zoom [expr round($factor)]
+		} else {
+		    $tgtImage copy $tgtImage \
+			-subsample [expr round(1.0/$factor)]
+		}
+	    } else {
+		set shortSide [expr $newWidth<$newHt?$newWidth:$newHt]
+		set intRad [expr int($looks($n,submodel,objectsize)* \
+					 $shortSide/400)]
+		$tgtImage config -width $newWidth -height $newHt
+		regexp {source\(([^\)]+)\)} [$winId gettags $object] \
+		    all sourceImage
+		if {![regexp {posn\(([^\)]+)\)} [$winId gettags $object] \
+			  all layout]} {
+		    set layout Tiled
+		}
+		FillSmImage $sourceImage $layout $tgtImage $newWidth $newHt \
+		    $intRad
+	    }
+	} arc {
+	    set newWidth [AdjustWidth $winId $object $factor]
+	    if {$hideTinies && $newWidth<0.1} {
+		$winId itemconfigure $object -state hidden
+	    } else {
+		$winId itemconfigure $object -width $newWidth
+		$winId itemconfigure $object -state normal
+	    }
+	}
+	}
     }
 }
 
@@ -1401,21 +1309,21 @@ proc ZoomBitsIn {winId node factor invx invy args} {
 # Contents now passed from prolog, no need to look in region
 #    ShowMessage debug info "ZBI $winId $node $factor $invx $invy" ok
 #    foreach target [$winId find withtag $node] {
-#        if {[string equal polygon [$winId type $target]] && \
-#                [string match "*/background/*" [$winId gettags $target]]} {
-#            set reejun [$winId bbox $target]
-#        }
+#	if {[string equal polygon [$winId type $target]] && \
+#		[string match "*/background/*" [$winId gettags $target]]} {
+#	    set reejun [$winId bbox $target]
+#	}
 #    }
 #ShowMessage debug info "Picked region $reejun" ok
 #    eval {$winId addtag /squeeze/ enclosed} $reejun
 #    $winId dtag $node /squeeze/
     foreach bit $args {
-        $winId addtag /squeeze/ withtag $bit
+	$winId addtag /squeeze/ withtag $bit
     }
     set invx [Scale $winId $invx]
     set invy [Scale $winId $invy]
     if {$factor != 1.0} {
-        ZoomImage $winId /squeeze/ $factor
+	ZoomImage $winId /squeeze/ $factor
     }
     $winId move /squeeze/ $invx $invy
     $winId dtag /squeeze/
@@ -1497,14 +1405,15 @@ proc FindCaption {canvas} {
     if {[string compare $findable {}]} {
         set find(List,$canvas) {}
         foreach caption [$canvas find withtag is_caption] {
-            if {[string match -nocase *$findable* \
-                     [BlankCrs [ForSearchType $canvas $caption]]]} {
+	    set toLookIn [BlankCrs [ForSearchType $canvas $caption]]
+            if {[string match -nocase *$findable* $toLookIn]} {
+#		puts "Found $findable in $toLookIn"
                 lappend find(List,$canvas) $caption
             }
         }
-        if {[info exists find(now,$canvas)]} {
-            unset find(now,$canvas)
-        }
+	if {[info exists find(now,$canvas)]} {
+	    unset find(now,$canvas)
+	}
         NextCaption $canvas
     }
 }
@@ -1530,14 +1439,14 @@ proc NextCaption {canvas} {
         return
     }
 #    if {[info exists find(now,$canvas)]} {
-#        prolog event:do_colours($find(now,$canvas),off)
+#	prolog event:do_colours($find(now,$canvas),off)
 #        FlashSymbol $canvas $find(now,$canvas) $looks(variable,outline) \
 #                $looks(variable,text)
 #    }
     if {[info exists find(now,$canvas)]} {
-        prolog event:do_colours($find(now,$canvas),off)
+	prolog event:do_colours($find(now,$canvas),off)
     } else {
-        MenuSelect $canvas edit unselall
+	MenuSelect $canvas edit unselall
     }
     if {![llength $find(List,$canvas)]} {
         ShowMessage "Caption finder" info \
@@ -1546,7 +1455,7 @@ proc NextCaption {canvas} {
     } else {
         set this [lindex $find(List,$canvas) 0]
         set find(List,$canvas) [lrange $find(List,$canvas) 1 end]
-        #        $canvas itemconfigure $this -fill blue
+        #	$canvas itemconfigure $this -fill blue
         # left in in case the thing fails to highlight, or is exec_only
 
         # Now to pervert the 'scan' command to make an ad-hoc 'see'...
@@ -1561,10 +1470,10 @@ proc NextCaption {canvas} {
         $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
 
         set find(now,$canvas) [ExtractPrologName $canvas $this]
-        prolog tk_do_colours($find(now,$canvas),on)
+	prolog tk_do_colours($find(now,$canvas),on)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
-        #        HandleObjClick $canvas $this clicktext $tgtX $tgtY
-        #        ReleaseObj $canvas $tgtX $tgtY
+        #	HandleObjClick $canvas $this clicktext $tgtX $tgtY
+        #	ReleaseObj $canvas $tgtX $tgtY
     }
 }
 
@@ -1584,7 +1493,7 @@ proc Customize {winId mode} {
         condition|creation|immigration|reproduction|loss {
             set object channel
             wm title $t "Customize conditions and channels"
-        } ghost|select|snap {
+        } select|snap {
             set object generic
             wm title $t "Customize all components"
         } default {
@@ -1593,21 +1502,21 @@ proc Customize {winId mode} {
         }
     }
     
-    zinc $t.canvas -width [expr $looks(width) + 120] \
-            -height [expr $looks(width) + 60] -render 1
+    canvas $t.canvas -width [expr $looks(width) + 120] \
+            -height [expr $looks(width) + 60]
     set window_info($t.canvas,scale) 1
     set window_info($t.canvas,top_node) $n
     set custom(showgrids,$t.canvas) 1
     pack $t.canvas
     AddGrid $t.canvas [Gradient white -0.1 $t.canvas]  0 0 \
-        [expr $looks(width)+120] [expr $looks(width)+60]
+	[expr $looks(width)+120] [expr $looks(width)+60]
 
     if {[string compare $object influence]} {
-        TitleFrame $t.text -text "Text: "
-        set text [$t.text getframe]
-        label $text.tell \
-            -text "Drag text by chosen anchor to set default position"
-        pack $text.tell
+	TitleFrame $t.text -text "Text: "
+	set text [$t.text getframe]
+	label $text.tell \
+	    -text "Drag text by chosen anchor to set default position"
+	pack $text.tell
         set ts [frame $text.size]
         label $ts.what -text "Text size: "
         pack $ts.what -side left
@@ -1634,90 +1543,90 @@ proc Customize {winId mode} {
         pack $tf.style -side left
         pack $tf
 
-        set tb [frame $text.backbox]
-        label $tb.bdwhat -text "Show border"
-        pack $tb.bdwhat -side left
-        set looks(txtbd) $looks($n,$object,txtbd)
-        checkbutton $tb.bd -variable looks(txtbd) \
-            -command "ZotObjectSize $t $n $object 0"
-        pack $tb.bd -side left
-        label $tb.bgwhat -text "Show background"
-        pack $tb.bgwhat -side left
-        set looks(txtbg) $looks($n,$object,txtbg)
-        checkbutton $tb.bg -variable looks(txtbg) \
-            -command "ZotObjectSize $t $n $object 0"
-        pack $tb.bg -side left
+	set tb [frame $text.backbox]
+	label $tb.bdwhat -text "Show border"
+	pack $tb.bdwhat -side left
+	set looks(txtbd) $looks($n,$object,txtbd)
+	checkbutton $tb.bd -variable looks(txtbd) \
+	    -command "ZotObjectSize $t $n $object 0"
+	pack $tb.bd -side left
+	label $tb.bgwhat -text "Show background"
+	pack $tb.bgwhat -side left
+	set looks(txtbg) $looks($n,$object,txtbg)
+	checkbutton $tb.bg -variable looks(txtbg) \
+	    -command "ZotObjectSize $t $n $object 0"
+	pack $tb.bg -side left
         button $tb.col -text "Set colour" \
                 -command "ZotColor $t $n $tb.col $object"
         pack $tb.col -side left
-        pack $tb
-        pack $t.text -fill x
+	pack $tb
+	pack $t.text -fill x
     }
     
     if {[string compare $object text]} {
-        TitleFrame $t.graphics -text "Graphics: "
-        set graphics [$t.graphics getframe]
-        frame $graphics.setcolours
-        foreach flashType {outline fill incomplete} {
-            button $graphics.setcolours.$flashType -text "Set $flashType" \
+	TitleFrame $t.graphics -text "Graphics: "
+	set graphics [$t.graphics getframe]
+	frame $graphics.setcolours
+	foreach flashType {outline fill incomplete} {
+	    button $graphics.setcolours.$flashType -text "Set $flashType" \
                 -command "ZotColor $t $n $graphics.setcolours.$flashType $object"
-            pack $graphics.setcolours.$flashType -side left
-        }
-        pack $graphics.setcolours
-        pack [frame $graphics.trwhite]
-        pack [checkbutton $graphics.trwhite.chk -variable looks($n,trwhite)] -side left
-        pack [label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
-        
-        frame $graphics.flashcolours
-        foreach flashType {select highlight target} {
-            button $graphics.flashcolours.$flashType -text "Set $flashType" \
+	    pack $graphics.setcolours.$flashType -side left
+	}
+	pack $graphics.setcolours
+	pack [frame $graphics.trwhite]
+	pack [checkbutton $graphics.trwhite.chk -variable looks($n,trwhite)] -side left
+	pack [label $graphics.trwhite.lbl -text "Show white as transparent"] -side left
+	
+	frame $graphics.flashcolours
+	foreach flashType {select highlight target} {
+	    button $graphics.flashcolours.$flashType -text "Set $flashType" \
                 -command "ZotColor $t $n $graphics.flashcolours.$flashType $object"
-            pack $graphics.flashcolours.$flashType -side left
-        }
-        pack $graphics.flashcolours
+	    pack $graphics.flashcolours.$flashType -side left
+	}
+	pack $graphics.flashcolours
     
-        frame $graphics.objectsize
-        label $graphics.objectsize.what -text "Relative size: "
-        pack $graphics.objectsize.what -side left
-        scale $graphics.objectsize.scale -from 0 -to $looks(width) \
+	frame $graphics.objectsize
+	label $graphics.objectsize.what -text "Relative size: "
+	pack $graphics.objectsize.what -side left
+	scale $graphics.objectsize.scale -from 0 -to $looks(width) \
             -length $looks(width) -orient horizontal -showvalue false \
             -resolution 1 -command "ZotObjectSize $t $n $object"
-        pack $graphics.objectsize.scale -side left
-        pack $graphics.objectsize
+	pack $graphics.objectsize.scale -side left
+	pack $graphics.objectsize
     
-        frame $graphics.lines
-        label $graphics.lines.what -text "Line thickness: "
-        pack $graphics.lines.what -side left
-        scale $graphics.lines.scale -from 0 -to 10 -length $looks(width) \
+	frame $graphics.lines
+	label $graphics.lines.what -text "Line thickness: "
+	pack $graphics.lines.what -side left
+	scale $graphics.lines.scale -from 0 -to 10 -length $looks(width) \
             -orient horizontal -showvalue false -resolution 0.05 \
             -command "ZotObjectSize $t $n $object"
-        pack $graphics.lines.scale -side left
-        pack $graphics.lines
-        pack $t.graphics -fill x
+	pack $graphics.lines.scale -side left
+	pack $graphics.lines
+	pack $t.graphics -fill x
     }
     
     frame $t.actions
 #    button $t.actions.load -text "Load" \
-#        -command "ReadLooks $t $n $object"
+#	-command "ReadLooks $t $n $object"
 #    pack $t.actions.load -side left
 #    button $t.actions.save -text "Save" \
-#        -command "SaveLooks $t $object"
+#	-command "SaveLooks $t $object"
 #    pack $t.actions.save -side left
     button $t.actions.normal -text "Normalize" \
-        -command "LoadLooks $t $n $object normal"
+	-command "LoadLooks $t $n $object normal"
     pack $t.actions.normal -side left
     button $t.actions.done -text "Done" -command "set done 1"
     pack $t.actions.done -side left
     button $t.actions.apply -text "Apply" \
-        -command "ApplyLooks $t $n $object"
+	-command "ApplyLooks $t $n $object"
     pack $t.actions.apply -side left
     button $t.actions.cancel -text "Cancel" -command "set done 0"
     pack $t.actions.cancel -side left
     pack $t.actions
     LoadLooks $t $n $object $object
     RememberLooks $n
+    
     LetItShow $t
-
     grab $t
     tkwait variable done
     grab release $t
@@ -1739,36 +1648,36 @@ proc LoadLooks {t n target object} {
                 looks($n,$target,family) looks($n,$target,weight) \
                 looks($n,$target,style) textsize
         [$t.text getframe].size.scale set $textsize
-        [$t.text getframe].backbox.col configure \
-            -activebackground $looks($n,$object,text)
+	[$t.text getframe].backbox.col configure \
+	    -activebackground $looks($n,$object,text)
     }
     
     set middlex [expr $looks(width)/2 + 60]
     set middley [expr $looks(width)/2 + 30]
     
     if {[string compare $object text]} {
-        set g [$t.graphics getframe]
-        foreach flash {outline fill incomplete} {
-            set attack $looks($n,$object,$flash)
-            if {![llength $attack]} {
-                set attack white
-            }
-            $g.setcolours.$flash configure -activebackground $attack
-        }
-        foreach flash {select highlight target} {
-            $g.flashcolours.$flash configure -activebackground $looks($n,$object,$flash)
-        }
+	set g [$t.graphics getframe]
+	foreach flash {outline fill incomplete} {
+	    set attack $looks($n,$object,$flash)
+	    if {![llength $attack]} {
+		set attack white
+	    }
+	    $g.setcolours.$flash configure -activebackground $attack
+	}
+	foreach flash {select highlight target} {
+	    $g.flashcolours.$flash configure -activebackground $looks($n,$object,$flash)
+	}
     
-        $g.objectsize.scale set $looks($n,$object,objectsize)
-        $g.lines.scale set $looks($n,$object,lines)
-        DoGraphics $t $target $middlex $middley $looks($n,$object,objectsize)
+	$g.objectsize.scale set $looks($n,$object,objectsize)
+	$g.lines.scale set $looks($n,$object,lines)
+	DoGraphics $t $target $middlex $middley $looks($n,$object,objectsize)
     } else {
-        $t.canvas remove sample
-        PutText $t.canvas sample [list $middlex $middley] \
+	$t.canvas delete sample
+        PutText $t.canvas [list $middlex $middley] \
                 text "sample" 100 normal "Sample text box"
     }
-    $t.canvas configure -backcolor $looks(windowColor)
-    #        TweakObject $t target
+    $t.canvas configure -background $looks(windowColor)
+    #	TweakObject $t target
 }
 
 # textsize is not used, we now keep track of it separately to avoid rounding
@@ -1792,42 +1701,42 @@ proc ExtractFontData {font} {
 proc CopyLooks {t n object} {
     global looks
     if {[string compare $object text]} {
-        set g [$t.graphics getframe]
-        foreach colour {outline fill incomplete} {
-            set looks($n,$object,$colour) \
+	set g [$t.graphics getframe]
+	foreach colour {outline fill incomplete} {
+	    set looks($n,$object,$colour) \
                 [$g.setcolours.$colour cget -activebackground]
-            if {[string equal [Desystematize white] [Desystematize $looks($n,$object,$colour)]] && \
-                    $looks($n,trwhite)} {
-                set looks($n,$object,$colour) {}
-            }
-        }
-        foreach colour {select highlight target} {
-            set looks($n,$object,$colour) \
+	    if {[string equal [Desystematize white] [Desystematize $looks($n,$object,$colour)]] && \
+		    $looks($n,trwhite)} {
+		set looks($n,$object,$colour) {}
+	    }
+	}
+	foreach colour {select highlight target} {
+	    set looks($n,$object,$colour) \
                 [$g.flashcolours.$colour cget -activebackground]
-        }
-        set looks($n,$object,objectsize) [$g.objectsize.scale get]
-        set looks($n,$object,lines) [$g.lines.scale get]
-        if {[string equal generic $object]} {
-            set looks($n,compartment,lines) [$g.lines.scale get] ;# for sample
-        }
+	}
+	set looks($n,$object,objectsize) [$g.objectsize.scale get]
+	set looks($n,$object,lines) [$g.lines.scale get]
+	if {[string equal generic $object]} {
+	    set looks($n,compartment,lines) [$g.lines.scale get] ;# for sample
+	}
     }
-    if {[string compare $object influence]} {
+    if {[lsearch {influence ghost_link} $object]==-1} {
         set looks($n,$object,font) [ResetFont $t]
-#        if {[string compare $object text]} {
-#            UpdateOffsets $t $n $object
-#        }
-        set looks($n,$object,text) \
-            [[$t.text getframe].backbox.col cget -activebackground]
-        set looks($n,$object,txtbd) $looks(txtbd)
-        set looks($n,$object,txtbg) $looks(txtbg)
-        if {[string equal flow $object]} {set object vflow}
+        if {[string compare $object text]} {
+	    UpdateOffsets $t $n $object
+	}
+	set looks($n,$object,text) \
+	    [[$t.text getframe].backbox.col cget -activebackground]
+	set looks($n,$object,txtbd) $looks(txtbd)
+	set looks($n,$object,txtbg) $looks(txtbg)
+	if {[string equal flow $object]} {set object vflow}
         set looks($n,$object,textanchor) [GetTextAnchor $t]
     }
 }
 
 proc DoGraphics {box type middlex middley size} {
     global looks
-    $box.canvas remove sample
+    $box.canvas delete sample
 
     switch -regexp $type {
         compartment|generic {
@@ -1835,21 +1744,21 @@ proc DoGraphics {box type middlex middley size} {
             set r [expr $middlex + 2*$size/5]
             set t [expr $middley - 3*$size/10]
             set b [expr $middley + 3*$size/10]
-            PutRectangle $box.canvas sample $l $t $r $b 1 100 {} normal "sample"
+	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } state {
-            set l [expr $middlex - 3*$size/10]
-            set r [expr $middlex + 3*$size/10]
-            set t [expr $middley - 2*$size/5]
-            set b [expr $middley + 2*$size/5]
-            PutRectangle $box.canvas sample $l $t $r $b 1 100 {} normal "sample"
+            set l [expr $middlex - 3*$size/5]
+            set r [expr $middlex + 3*$size/5]
+            set t [expr $middley - 2*$size/10]
+            set b [expr $middley + 2*$size/10]
+	    PutRectangle $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } submodel {
             set l [expr $middlex - 90]
             set r [expr $middlex + 90]
             set t [expr $middley - 60]
             set b [expr $middley + 60]
-            PutRoundedRect $box.canvas sample $l $t $r $b 3 100 clear \
-                none none 0 0 100 normal "sample"
-        } flow {
+	    PutRoundedRect $box.canvas $l $t $r $b 3 100 clear \
+		none none 0 0 white 100 normal "sample"
+	} flow {
             set l [expr $middlex - $size/4]
             set r [expr $middlex + $size/4]
             set t [expr $middley - $size/8]
@@ -1859,52 +1768,50 @@ proc DoGraphics {box type middlex middley size} {
                     [expr $middley - 30] $middlex [expr $middley + 30] \
                     [expr 2*$middlex - 30] [expr $middley + 30]" \
                     100 normal "sample"
-        } variable|event {
+        } variable {
             set l [expr $middlex - 3*$size/20]
             set r [expr $middlex + 3*$size/20]
             set t [expr $middley - 3*$size/20]
             set b [expr $middley + 3*$size/20]
-            if {[string equal event $type]} {
-                set sty 101
-            } else {
-                set sty 1
-            }
-            PutCrossedCirc $box.canvas sample $l $t $r $b $sty 100 {} normal "sample"
+	    PutCrossedCirc $box.canvas $l $t $r $b 1 100 {} normal "sample"
         } channel {
             set l [expr $middlex - 3*$size/10]
             set r [expr $middlex + 3*$size/10]
             set t [expr $middley - 3*$size/10]
             set b [expr $middley + 3*$size/10]
-            PutShape $box.canvas $l $t $r $b condition 100 normal "sample"
+	    PutShape $box.canvas $l $t $r $b condition 100 normal "sample"
         } influence {PutThinArrow $box.canvas "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
                     100 {} normal "sample"
-        } relation {
-            set b $middley
-            PutRelation $box.canvas sample "30 $middley $middlex \
+        } ghost_link {PutThinArrow $box.canvas "30 $middley $middlex \
                     [expr $middley-30] [expr 2*$middlex - 30] $middley" \
-                100 normal "sample"
+                    100 gray50 normal "sample"
+        } relation {
+	    set b $middley
+	    PutRelation $box.canvas "30 $middley $middlex \
+                    [expr $middley-30] [expr 2*$middlex - 30] $middley" \
+		100 normal "sample"
         }
     }
 
-    if {[string compare $type influence]} {
+    if {[info exists b]} {
 # side to put caption on -- this is fixed for now
-        set capt "Sample $type"
-        switch $type {
-            submodel {
-                set xbase $l
-                set ybase $t
-            } flow {
-                set xbase $r
-                set ybase $middley
-                set type vflow ;# text offset as for bowtie on vertical section
-            } default {
-                set xbase $middlex
-                set ybase $b
-            }
-        }
+	set capt "Sample $type"
+	switch $type {
+	    submodel {
+		set xbase $l
+		set ybase $t
+	    } flow {
+		set xbase $r
+		set ybase $middley
+		set type vflow ;# text offset as for bowtie on vertical section
+	    } default {
+		set xbase $middlex
+		set ybase $b
+	    }
+	}
 
-        PutText $box.canvas sample [list $xbase $ybase] \
+        PutText $box.canvas [list $xbase $ybase] \
                 $type "sample movable" 100 normal $capt
         set looks(cheat) [$box.canvas coords [GetCaptionItem $box.canvas sample]]
         $box.canvas bind movable <Button-1> {SampleMark %x %y %W}
@@ -1981,7 +1888,7 @@ proc AssembleFont {family weight style textsize} {
 proc ZotFont { t param } {
     set txt [GetCaptionItem $t.canvas sample]
     $t.canvas itemconfigure $txt \
-        -font [ResetFont $t]
+	-font [ResetFont $t]
     FixBackBox $t.canvas $txt
 }
 
@@ -1989,9 +1896,9 @@ proc ZotColor {t n role type} {
     set newColour [tk_chooseColor -initialcolor \
             [$role cget -activebackground]]
     if {[llength $newColour]} {
-        $role configure -activebackground $newColour
-        CopyLooks $t $n $type
-        ResetColours $t.canvas $type {} normal sample
+	$role configure -activebackground $newColour
+	CopyLooks $t $n $type
+	ResetColours $t.canvas $type {} normal sample
     }
 }
 
@@ -2009,28 +1916,26 @@ proc ZotObjectSize {t n type size} {
     
     CopyLooks $t $n $useLooks
     if {[string compare text $type]} {
-        DoGraphics $t $useLooks $middlex $middley \
-            [[$t.graphics getframe].objectsize.scale get]
+	DoGraphics $t $useLooks $middlex $middley \
+	    [[$t.graphics getframe].objectsize.scale get]
     } else {
-        $t.canvas delete sample
-        PutText $t.canvas sample [list $middlex $middley] \
+	$t.canvas delete sample
+        PutText $t.canvas [list $middlex $middley] \
                 text "sample" 100 normal "Sample text box"
     }
 }
 
-# not used, flows and squirts not customized separately and squirts need fixing
-# best would be to include in sample box with variable/event and own caption
-#proc UpdateOffsets {t n type} {
-#    global looks
-#    set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
-#    if {[string equal flow $type]} {set type vflow}
-#    set looks($n,$type,xoffset) [expr $looks($n,$type,xoffset) + \
-#            [lindex $offsets 0] - [lindex $looks(cheat) 0]]
-#    set looks($n,$type,yoffset) [expr $looks($n,$type,yoffset) + \
-#            [lindex $offsets 1] - [lindex $looks(cheat) 1]]
-#    set looks(cheat) $offsets
-#}
-#
+proc UpdateOffsets {t n type} {
+    global looks
+    set offsets [$t.canvas coords [GetCaptionItem $t.canvas sample]]
+    if {[string equal flow $type]} {set type vflow}
+    set looks($n,$type,xoffset) [expr $looks($n,$type,xoffset) + \
+            [lindex $offsets 0] - [lindex $looks(cheat) 0]]
+    set looks($n,$type,yoffset) [expr $looks($n,$type,yoffset) + \
+            [lindex $offsets 1] - [lindex $looks(cheat) 1]]
+    set looks(cheat) $offsets
+}
+
 proc GetTextAnchor {t} {
     $t.canvas itemcget [GetCaptionItem $t.canvas sample] -anchor
 }
@@ -2065,9 +1970,6 @@ proc CustomizeLooks {c} {
     #    prolog tk_set_new_size(function,15,0,0)
     #    prolog tk_set_new_size(cloud,25,0,0)
     #    prolog tk_set_new_size(channel,30,0,0)
-    set looks($c,hflow,xoffset) 0
-    set looks($c,hflow,yoffset) 2
-    set looks($c,hflow,textanchor) n
     set looks($c,vflow,xoffset) 2
     set looks($c,vflow,yoffset) 0
     set looks($c,vflow,textanchor) w
@@ -2084,12 +1986,12 @@ proc Desystematize {colorSpec} {
 proc ApplyLooks {t topNode type} {
     RememberLooks $topNode
     if {[string compare $type generic]} {
-        CopyLooks $t $topNode $type
+	CopyLooks $t $topNode $type
         ExportLooks $t $topNode $type
     } else {
 # add state to next line
-        foreach object {generic compartment state channel function variable \
-                        event text submodel flow squirt influence relation} {
+        foreach object {generic compartment channel function variable \
+			    ghost_link text submodel flow influence relation} {
             CopyLooks $t $topNode $object
             ExportLooks $t $topNode $object
         }
@@ -2102,18 +2004,15 @@ proc RememberLooks {n} {
 }
 
 proc ExportLooks {t topNode type} {
-    global looks window_info borrowLooksFor
+    global looks window_info
     
     prolog [format "tk_change_size(%s,%s,%d)" $topNode $type $looks($topNode,$type,objectsize)]
-    foreach {is use} $borrowLooksFor {
-        if {[string equal $use $type]} {
-            prolog [format "tk_change_size(%s,%s,%d)" $topNode \
-                                $is $looks($topNode,$type,objectsize)]
-        }
+    if {[string match flow $type]} {
+        prolog [format "tk_change_size(%s,%s,%d)" $topNode cloud $looks($topNode,$type,objectsize)]
     }
-    #        foreach windae [array name window_info *,parent] {
-    #                set canvas [string trimright $windae ,parent]
-    #        }
+    #	foreach windae [array name window_info *,parent] {
+    #		set canvas [string trimright $windae ,parent]
+    #	}
 }
 
 #proc ReadLooks {t n topNode type} {
@@ -2158,16 +2057,18 @@ proc ExportLooks {t topNode type} {
 proc MakeLooksSaver {n} {
     global looks
 # add state to next line
-    set objects $looks(customSet)
+    set objects {normal generic compartment channel text \
+		     variable function submodel flow influence \
+		     ghost_link relation}
     set aspects {font txtbd txtbg outline fill text select highlight target \
-                     incomplete objectsize lines xoffset yoffset textanchor}
+		     incomplete objectsize lines xoffset yoffset textanchor}
     for {set obj 0} {$obj < [llength $objects]} {incr obj} {
-        set sublist {}
-        for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
-            lappend sublist \
-                $looks($n,[lindex $objects $obj],[lindex $aspects $asp])
-        }
-        lappend result $sublist
+	set sublist {}
+	for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
+	    lappend sublist \
+		$looks($n,[lindex $objects $obj],[lindex $aspects $asp])
+	}
+	lappend result $sublist
     }
     return [list $objects $aspects $result]
 }
@@ -2178,11 +2079,11 @@ proc UseLooksSaver {n state} {
     set aspects [lindex $state 1]
     set values [lindex $state 2]
     for {set obj 0} {$obj < [llength $objects]} {incr obj} {
-        set sublist [lindex $values $obj]
-        for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
-            set looks($n,[lindex $objects $obj],[lindex $aspects $asp]) \
-                [lindex $sublist $asp]
-        }
+	set sublist [lindex $values $obj]
+	for {set asp 0} {$asp < [llength $aspects]} {incr asp} {
+	    set looks($n,[lindex $objects $obj],[lindex $aspects $asp]) \
+		[lindex $sublist $asp]
+	}
     }
 }
 
@@ -2192,8 +2093,8 @@ proc LoadModelLooks {w state} {
     UseLooksSaver $top $state
     foreach type [lindex $state 0] {
 # now tell Prolog what we got (but not to redraw)
-        prolog [format "tk_set_new_size(%s,%s,%d)" $top $type \
-                $looks($top,$type,objectsize)]
+	prolog [format "tk_set_new_size(%s,%s,%d)" $top $type \
+		$looks($top,$type,objectsize)]
     }
 }
 

@@ -76,6 +76,8 @@ ifeq ($(UNAME),Linux)
 	VERS = 8.4
 	SHAREDLIBEXTN = .so
 	EXECEXTN =
+	GCCCMD = gcc -O3 -m32
+	GPPCMD = g++ -O3 -m32
 	INSTLIB = 
 	MAIN = 
 endif
@@ -109,12 +111,16 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl compile.pl database.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
 
 # Windows release, Prolog is Sicstus
-System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl
+System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl Prolog/struct_db.dll
 	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
+Prolog/struct_db.dll: struct_db.pl Prolog/struct_db.c
+	cd Prolog; splfr struct_db.pl struct_db.c; cd ..
 
-Run/xgsimile$(EXECEXTN): $(PROLOG_FILES) gmain.pl
-	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) gmain.pl; cd ..
+Run/xgsimile$(EXECEXTN): Prolog/gmain$(EXECEXTN).o Prolog/struct_db.c
+	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C -D_GNU_PROLOG gmain$(EXECEXTN).o struct_db.c; cd ..
+Prolog/gmain$(EXECEXTN).o: $(PROLOG_FILES) gmain.pl
+	cd Prolog; gplc -o gmain$(EXECEXTN).o -c gmain.pl; cd ..
 
 vpath 	%.cpp 	Run
 vpath 	%.c 	Run

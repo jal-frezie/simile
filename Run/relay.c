@@ -169,7 +169,8 @@ main(int argc, char* argv[]) {
     kill(oldpid, SIGINT);
   }
   pause();
-  // waiting on console input makes it stop when calling process dies
+// waiting on console input makes it stop when calling process dies, but may
+// do odd things to the stuff that displays data from the PEST pipeline
   // fgets(eof_string, 80, stdin);
 #endif
 }

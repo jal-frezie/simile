@@ -254,8 +254,6 @@ namespace eval ::$keyValue {
             plot_YY $w
         }
     }
-
-    LoadIconImages Toolbar {clear add remove property}
     
     # Draw panel (window) containing controls and canvas for the graph.
     proc constructControlPanel {w} {
@@ -270,10 +268,10 @@ namespace eval ::$keyValue {
                 [namespace code [list AddVarsToVarMenu $w]]
         
         set toolbarItems [list \
-                [list clear "Clear" [namespace code "clear $w"] ] \
-                [list add "Add a variable"   [namespace code "AddVariable $w"]]\
-                [list remove "Remove variable" [namespace code "RemoveVariable $w" ]]\
-                [list property " Properties " [namespace code "Settings $w"]]]
+                [list clear.gif "Clear" [namespace code "clear $w"] ] \
+                [list add.gif "Add a variable"   [namespace code "AddVariable $w"]]\
+                [list remove.gif "Remove variable" [namespace code "RemoveVariable $w" ]]\
+                [list property.gif " Properties " [namespace code "Settings $w"]]]
         #    [list " redraw " [namespace code "resetGraph $w"]]
         ::graphtools::MakeToolBar $w $toolbarItems
         
@@ -526,22 +524,21 @@ namespace eval ::$keyValue {
 			    $plot($winId,Yscale)]
         set nearesttime [::graphtools::get_datax $winId [lindex $origin 0] \
 			     $plot($winId,Tscale)]
-	PostPopup $winId $X $Y
-#        if {![winfo exists .popup]} {
-#            toplevel .popup -width 1 -height 1 -bd 2 -relief raised
-#            wm overrideredirect .popup 1
-#            pack [message .popup.message -aspect 400 -bg \#ffffc0] \
-#                    -fill x -expand true
-#           raise .popup
-#        }
-        AddPopupMessage "$caption \n\
+        if {![winfo exists .popup]} {
+            toplevel .popup -width 1 -height 1 -bd 2 -relief raised
+            wm overrideredirect .popup 1
+            pack [message .popup.message -aspect 400 -bg \#ffffc0] \
+                    -fill x -expand true
+            raise .popup
+        }
+        .popup.message config -text "$caption \n\
                 x     : $nearesttime\n\
                 y     : $nearestval\n\
-                last y: $lastval" \#ffffc0
- #       set xpoint [expr $X+15]
- #       set ypoint [expr $Y+43]
- #       wm geometry .popup +$xpoint+$ypoint
- #       update
+                last y: $lastval"
+        set xpoint [expr $X+15]
+        set ypoint [expr $Y+43]
+        wm geometry .popup +$xpoint+$ypoint
+        update
     }
     
     proc drawLegend {w} {
@@ -767,32 +764,25 @@ namespace eval ::$keyValue {
             set colour [lindex $plot($w,YColours) [expr {int(fmod($iplot,$NColours))}]]
             #puts "plot_Y iplot $iplot; lindex $plot($w,YColours) $iplot [lindex $plot($w,YColours) $iplot]"
 	    set ident [join $id ,]
-	    if $plot($w,AutoAxisScaling) {
-		adjustLimits $w $Tnew $Ynew
-	    }
-	    if {[llength $Yold]} {
-		if {[catch {
-                    # Jasper does a quick'n'dirty -- if this is the first section of a new line
-                    # then the limits may not include the start point, so do an extra adjustLimits
-                    # to make sure it is on screen...also put drawPoint 1st to catch errors
-		    drawPoint $w $Told $Yold $Tnew $Ynew $colour $node $ident
-		} errMessage]} {
-		    if {![dodgyValue $Yold] && ![dodgyValue $Ynew]} {
-			error $errMessage $errorInfo
-		    } else  {
-			set xm [expr $plot($w,xborder_left)+60]
-			set ym [expr $plot($w,yborder_top)+60]
-			$w.canvas create text $xm $ym -tags prompt -width 100 -justify center\
-                            -text "Some values resulting from maths errors have not been plotted"
-		    }
+	    if {[dodgyValue $Ynew]} {
+		set xm [expr $plot($w,xborder_left)+60]
+		set ym [expr $plot($w,yborder_top)+60]
+		$w.canvas create text $xm $ym -tags prompt -width 100 \
+		    -justify center -text "Some values resulting from maths errors have not been plotted"
+	    } else {
+		if $plot($w,AutoAxisScaling) {
+		    adjustLimits $w $Tnew $Ynew
 		}
-	    } else { ;# will plot next time so add binding for it
-		$w.canvas bind $node.$ident <Button-1> \
+		if {![dodgyValue $Yold]} {
+		    drawPoint $w $Told $Yold $Tnew $Ynew $colour $node $ident
+		} else { ;# will plot next time so add binding for it
+		    $w.canvas bind $node.$ident <Button-1> \
 			 [namespace code [list TraceHighlight $w $node $ident]]
-		$w.canvas bind $node.$ident <Enter> \
+		    $w.canvas bind $node.$ident <Enter> \
 			 [namespace code [list TracePopup $w $node $id %X %Y \
 					      %x %y]]
-		$w.canvas bind $node.$ident <Leave> RemovePopup
+		    $w.canvas bind $node.$ident <Leave> {destroy .popup}
+		}
 	    }
         } else {
             array set Ynew_array $Ynew
@@ -822,7 +812,7 @@ namespace eval ::$keyValue {
     }
     
     proc dodgyValue {val} {
-        return [expr ![string is double $val] || \
+        return [expr ![string is double -strict $val] || \
                 [lsearch {inf nan +inf +nan -inf -nan} $val]>-1]
     }
     

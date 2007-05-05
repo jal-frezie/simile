@@ -35,10 +35,17 @@ return (char*)lpMsgBuf;
 
 #else
 
+    #include <signal.h>
+    #include <setjmp.h>
     #include <dlfcn.h>
 
     #define HINSTANCE void*
     #define LOAD_DLL flopen
+/* 'dummyunload' clause was used with macos because dlcompat didn't include
+ * unload, but using -bundle instead of -dynamiclib to build the model seems to
+ * make dlcompat, and dummyunload, unnecessary. Indeed it allows model
+ * crosstalk on Intel macs, so is now never used.
+ */
 #ifdef SIM_OPSYS_Darwin
 #define UNLOAD_DLL dummyunload
 int dummyunload(HINSTANCE unused) {
@@ -50,8 +57,23 @@ int dummyunload(HINSTANCE unused) {
 #endif
     #define WHAT_WENT_WRONG (char*)dlerror
     #define FIND_FUNCTION dlsym
+/* sig handler cos 64bit gcc code sigfpe's on 32bit machine */
+jmp_buf env;
+
+static void exit_sighandler(int x){
+  longjmp(env, x);
+}
+
 HINSTANCE flopen(char* fileName) {
-  return dlopen(fileName, RTLD_NOW);
+  int error;
+
+  signal(SIGFPE,exit_sighandler);
+  error = setjmp(env);
+  if (error) {
+    return 0;
+  } else {
+    return dlopen(fileName, RTLD_NOW);
+  }
 }
 
 /*
@@ -254,8 +276,7 @@ class DllLossage {
   }
 };
 
-/* listable class for data to be loaded at a time point. Has to be
-   double-linked so we can move backwards through it */
+/* listable class for data to be loaded at a time point */
 
 class listTimePoint {
 public:
@@ -301,7 +322,18 @@ public:
   }
 };
   
-class Model;
+class recordSet {
+public:
+  //  int count;
+  char* space;
+
+  recordSet() {
+    space = NULL;
+  }
+
+  ~recordSet() {
+  }
+};
 
 /* listable class for keeping track of arrays associated with parameters */
 
@@ -309,13 +341,13 @@ class listParamArray {
 public:
   char* nodeId;
   node_data_line *nodeLine;
-  Model* spareModel;
+  long int spareModel;
   int fullDims[32];
   BOOLEAN myArraySpace;
   char* dataPtr;
   listTimePoint* timePoints;
   listTimePoint* finalTimePoint;
-  listTimePoint* nextTimePoint;
+  listTimePoint* curTimePoint;
   double wrapAroundPoint;
   int wraps;
   listParamArray* next;
@@ -353,22 +385,20 @@ public:
     } while (*(src++));
   }
 
-  // Added top model id as name is now caption not node id and hence not unique
-  // TODO: add this to other paramarray functions, and use it.
-
-  listParamArray(char* newNodeId, long int topModel) {
+  listParamArray(char* newNodeId) {
     int sparePath[32];
+    char spareCapt[255];
     enum_type_data *spareTypes[32]; // might need for reading files
 
     nodeId = strdup(newNodeId);
-    spareModel = (Model*)topModel;
-    nodeLine = searchinfo(nodeId, topModel, fullDims, sparePath, spareTypes);
+    nodeLine = searchinfo(nodeId, &spareModel, spareCapt, fullDims, sparePath,
+			  spareTypes);
     remove_vm_dims();
     myArraySpace = FALSE;
     dataPtr = NULL;
     timePoints = NULL;
     finalTimePoint = NULL;
-    nextTimePoint = NULL;
+    curTimePoint = NULL;
     next = NULL;
   }      
 
@@ -379,7 +409,7 @@ public:
     delete(nodeId);
     if(timePoints) delete(timePoints);
     size=array_count(fullDims);
-    if (dataPtr && myArraySpace) {
+     if (dataPtr && myArraySpace) {
       if (size<0) {
 	for (count=0;count<-size;++count) {
 	  innerSp = ((char**)dataPtr)[count];
@@ -393,10 +423,10 @@ public:
       /*  sprintf(globMess, "freeing %lx fd0 %d", dataPtr,size);
 	  showMess(globMess); */
       delete(dataPtr);
-    }
+   }
   }
   
-  listParamArray* strip_out(Model* oldModelId) {
+  listParamArray* strip_out(long int oldModelId) {
     listParamArray* current;
 
     if (next) {
@@ -438,7 +468,7 @@ public:
   char* generate_local_space(int size_code) {
     char** ptrToNew;
     int count;
-    
+
     if (size_code>0) {
       ptrToNew = (char**)(new char[size_for_type()*size_code]);
     } else {
@@ -450,12 +480,14 @@ public:
     /* sprintf(globMess, "g_l_s created %lx size %d", ptrToNew, size_code);
        showMess(globMess); */
     return (char*)ptrToNew;
-  }
-  
+  }	
+
   char* create_space(void* newDataPtr) {
     int count;
     if (newDataPtr) {
       if (myArraySpace) {
+	/* sprintf(globMess, "c_s freeing %lx", dataPtr);
+	   showMess(globMess); */
 	delete dataPtr;
       }
       myArraySpace = FALSE;
@@ -476,7 +508,7 @@ public:
       } else { // lastTimePt is earlier than new one
 	nextTimePt = lastTimePt->next;
 	thisTimePt = new listTimePoint;
-	thisTimePt->next = nextTimePt;
+	thisTimePt->next = lastTimePt->next;
 	lastTimePt->next = thisTimePt;
 	thisTimePt->last = lastTimePt;
 	if (nextTimePt) {
@@ -504,18 +536,18 @@ public:
   void* locate_elt(char* startPtr, int off, int* dimPtr, int* indxs) {
     char** newRecord;
 
-    //    sprintf(globMess, "locate_elt array %ld off %d d0 %d d1 %d d2 %d indx %d",
-    //	    startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
-    //    showMess(globMess);
+    /* sprintf(globMess, "locate_elt array %lx off %d d0 %d d1 %d d2 %d indx %d",
+    	    startPtr, off, dimPtr[0], dimPtr[1], dimPtr[2], *indxs);
+	    showMess(globMess); */
     if (*dimPtr==RECORDS) {
-      newRecord = (char**)(startPtr + off);
+      newRecord = (char**)startPtr + off;
       if  (*indxs) { // more indices, use to get value from a record submodel
 	return locate_elt(*newRecord, (*indxs)-1, dimPtr+1, indxs+1);
       } else { // no more indices, we are looking for recordSet struct
 	return newRecord;
       }
     } else if (*dimPtr) {
-      return locate_elt(startPtr, *dimPtr*off+*indxs-1, dimPtr+1, indxs+1);
+      return locate_elt(startPtr, *dimPtr*off+(*indxs)-1, dimPtr+1, indxs+1);
     } else {
       return startPtr + off*size_for_type();
     }
@@ -529,6 +561,7 @@ public:
     int count;
 
     newRecord = (char**)locate_elt(dataPtr, 0, fullDims, indxs);
+    //    newRecord->count = records;
     if (*newRecord) {
       /* sprintf(globMess, "c_r_l freeing %lx", *newRecord);
 	 showMess(globMess); */
@@ -633,49 +666,59 @@ public:
     }
   }
 
-  double update_from_points(BOOLEAN dir, double now) {
-    listTimePoint* timePt;
-    double shifted;
-    char* newPtr = NULL;
+  void update_from_points(BOOLEAN dir, double now) {
+    listTimePoint *loBound, *hiBound;
+    int hiWraps;
 
     if (dir) {
-      while (nextTimePoint && now>=nextTimePoint->when+wraps*wrapAroundPoint) {
-	newPtr = nextTimePoint->dataPtr;
-	nextTimePoint = nextTimePoint->next;
-	if (wrapAroundPoint>0.0 && !nextTimePoint) {
-	  nextTimePoint = timePoints;
-	  wraps += 1;
+      hiWraps = wraps;
+      if (curTimePoint)
+	hiBound = curTimePoint;
+      else
+	hiBound = timePoints;
+      if (hiBound)
+	loBound = hiBound->last;
+      else 
+	loBound = NULL;
+      while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
+	loBound = hiBound;
+	wraps = hiWraps;
+	hiBound = hiBound->next;
+	if (wrapAroundPoint>0.0 && !hiBound) {
+	  ++hiWraps;
+	  hiBound = timePoints;
 	}
       }
     } else {
-      if (nextTimePoint) {
-	timePt = nextTimePoint->last;
-      } else {
-	timePt = finalTimePoint;
-      }
-      if (wrapAroundPoint>0.0 && !timePt) {
-	timePt = finalTimePoint;
-	wraps -= 1;
-      }
-      while (timePt && now<timePt->when+wraps*wrapAroundPoint) {
-	nextTimePoint = timePt;
-	timePt = timePt->last;
-	if (wrapAroundPoint>0.0 && !timePt) {
-	  timePt = finalTimePoint;
-	  wraps -= 1;
-	}
-	if (timePt) {
-	  newPtr = timePt->dataPtr;
+      if (curTimePoint)
+	loBound = curTimePoint;
+      else
+	loBound = NULL;
+      if (loBound)
+	hiBound = loBound->next;
+      else 
+	hiBound = NULL;
+      while (loBound && now<loBound->when+wraps*wrapAroundPoint) {
+	hiBound = loBound;
+	loBound = loBound->last;
+	if (wrapAroundPoint>0.0 && !loBound) {
+	  --wraps;
+	  loBound = finalTimePoint;
 	}
       }
-    }      
-    if (newPtr) {
-      memcpy(dataPtr, newPtr, size_for_type()*array_count(fullDims));
+    }
+    /* following adds data from point at or below current time; modify if other
+       rules for times between points are added */
+    if (loBound && loBound!=curTimePoint) {
+      curTimePoint = loBound;
+      memcpy(dataPtr, loBound->dataPtr, size_for_type()*array_count(fullDims));
     }
   }
 };   // end of listParamArray class
 
 listParamArray* param_array_base = NULL;
+
+class Model;
 
 void update_time_series(Model* client, double now);
   
@@ -687,22 +730,6 @@ typedef struct channelRecord_t {
 } channelRecord;
 
 void setdt(double, int);
-
-/* A member of this class exists for each model instance */
-
-class Instance {
-public:
-  void* id;
-  double its[8];
-  Instance* next;
-  
-  Instance(void* newId, Instance* oldList) {
-    id = newId;
-    next = oldList;
-  }
-};
-
-Instance* instance_base = NULL;
 
 /* prototypical declarations for functions to be supplied by the model dll
  */
@@ -747,14 +774,14 @@ public:
      remembers for what time the series have been set up, so we know
      what to do when setting them up for a different instance which
      may be at a different time */
-  double ldts[8], steps[8], thisTsPosn;
+  double lts[8], ldts[8], steps[8], thisTsPosn;
   graph_data_type* c_graphdata;
   int nodecount;
   node_data_line* nodedata;
   int *connLines;
   channelRecord* channelData; // only used in top model
-  char erreur[256];
   double* adapt_maxerr;
+  char erreur[256];
 
   Model(char* fileName) {
     handle = LOAD_DLL(fileName);
@@ -878,12 +905,12 @@ showMess(globMess); */
 */
   int adapt_doublings;
 
-  int resetmodel(Instance* modelHandle, int top_phase) {
+  int resetmodel(void* modelHandle, int top_phase) {
     int tweak_phase;
-
+    
     if (top_phase<=0) {
       for (tweak_phase=1; tweak_phase <= 7; tweak_phase++) {
-	modelHandle->its[tweak_phase]=0;
+	lts[tweak_phase]=0;
 	setdt(0, -tweak_phase);
 	setdt(steps[tweak_phase], tweak_phase);
       }
@@ -891,25 +918,24 @@ showMess(globMess); */
       reset_time_series(this);
       adapt_doublings = 0;
     }
-    return evalmodel(modelHandle->id, 0, top_phase, FALSE);
+    return evalmodel(modelHandle, 0, top_phase, FALSE);
   }
 
-  int executemodel(Instance* modelHandle, int how_int, \
+  int executemodel(void* id, int how_int, 
 		   double start, double* end, double errlim) {
     double freq, xtime;
     int big_phase, err;
     BOOLEAN made_step, first_pass;
-    void* id;
-
+    //    sprintf(globMess, "xm %lf-%lf at %lf", start, *end, errlim);
+    //    showMess(globMess);
     freq = steps[phases]*pow(2,-adapt_doublings);
     xtime = start;
-    id = modelHandle->id;
     while (freq*(*end-xtime)>0) { // freq only affects sign
       made_step = 0;
       first_pass = 1;
       big_phase = phase_for(xtime, freq, phases);
       // that is the biggest phase we will try to run, we may not succeed
-      if (check_gui(modelHandle, xtime, big_phase)) {
+      if (check_gui(id, xtime, big_phase)) {
 	return -100; // should not conflict with os signal numbers
       }
       while(!made_step) {
@@ -920,7 +946,7 @@ showMess(globMess); */
 	} else {
 	  xtime+=freq;
 	}
-	set_dts(modelHandle, big_phase, xtime);
+	set_dts(big_phase, xtime);
 
 	switch (how_int) {
 	case EULER:
@@ -929,7 +955,7 @@ showMess(globMess); */
 	  } else {
 	    setdt(-1,0);
 	  }
-	  advance_time(this, modelHandle, big_phase, 1);
+	  advance_time(this, big_phase, 1);
 	  (*updatemodel)(id, xtime, big_phase);
 	  break;
 	case RUNGE_KUTTA:
@@ -939,7 +965,7 @@ showMess(globMess); */
 	    setdt(-2,0);
 	  }
 	  (*updatemodel)(id, xtime, big_phase);
-	  if (err=rk_update(this, modelHandle, xtime, big_phase)) {
+	  if (err=rk_update(id, xtime, big_phase)) {
 	    *end=xtime;
 	    return err;
 	  }
@@ -960,14 +986,14 @@ showMess(globMess); */
 	  if (*adapt_maxerr>errlim) {
 	    // error too great; put comps back and try shorter
 	    if (adapt_doublings<31) {
-	      advance_time(this, modelHandle, big_phase, -1); // back to start
+	      advance_time(this, big_phase, -1); // back to start
 	      xtime-=freq;
 	      adapt_doublings++;
 	      freq = steps[phases]*pow(2,-adapt_doublings);
 	      big_phase = phase_for(xtime, freq, phases);
 	    } else {
 	      // signal problem
-	      check_gui(modelHandle, xtime, 0);
+	      check_gui(id, xtime, 0);
 	      return -99;
 	    }
 	  } else {
@@ -986,12 +1012,14 @@ showMess(globMess); */
 	return err;
       }
     }
-    check_gui(modelHandle, *end, 0);
+    if (check_gui(id, *end, 0)) {
+      return -100; // should not conflict with os signal numbers
+    }
     return 0;
   }
   
   int phase_for(double current, double step, int so_far) {
-    int try_now, try_next;
+    int try_now, try_current;
     double last, next, next_step;
 
     if (so_far==1) {
@@ -999,31 +1027,28 @@ showMess(globMess); */
     }
     try_now = so_far-1;
     next_step = steps[try_now];
-    last = current-step/2;
+    last = current+step/2;
     next = last+step;
 
-    try_next = (int)floor(next/next_step);
-    if (try_next == (int)floor(last/next_step)) {
+    try_current = (int)floor(last/next_step);
+    if (try_current == (int)floor(next/next_step)) {
       return so_far;
     } else {
-      return phase_for(next_step*try_next, next_step, try_now);
+      return phase_for(next_step*try_current, next_step, try_now);
     }
   }
 
-  int rk_update(Model* client, Instance* modelHandle, 
-		double xtime, int big_phase) {
+  int rk_update(void* id, double xtime, int big_phase) {
     int err;
-    void* id;
-    
-    id = modelHandle->id;
-    advance_time(client, modelHandle, big_phase, 0.5);
+
+    advance_time(this, big_phase, 0.5);
     setdt(2, 0);
     if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
     (*updatemodel)(id, xtime, big_phase);
     setdt(3, 0);
     if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
     (*updatemodel)(id, xtime, big_phase);
-    advance_time(client, modelHandle, big_phase, 0.5);
+    advance_time(this, big_phase, 0.5);
     setdt(4, 0);
     if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
     (*updatemodel)(id, xtime, big_phase);
@@ -1031,26 +1056,25 @@ showMess(globMess); */
     return 0;
   }
 
-  void set_dts (Instance* id, int phase, double current) {
+  void set_dts (int phase, double current) {
     int tweak_phase;
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
-      ldts[tweak_phase]= current - id->its[tweak_phase];
+      ldts[tweak_phase]=current-lts[tweak_phase];
       setdt(ldts[tweak_phase],tweak_phase); 
       // dts should only be global but im lazy
     }
   }
   
-  void advance_time (Model* client, Instance* id, int phase, double fraction) {
+  void advance_time (Model* client, int phase, double fraction) {
     int tweak_phase;
-    double series_pt, *lts;
-    lts = id->its;
+    double series_pt;
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
       lts[tweak_phase]=lts[tweak_phase]+ldts[tweak_phase]*fraction;
       setdt(lts[tweak_phase],-tweak_phase); 
       // ts should only be global but im lazy
     }
-    series_pt = lts[phases]+ldts[phases]*fraction/2;
-    update_time_series(client, series_pt);
+    series_pt = lts[phases]; // +ldts[phases]*fraction/2;
+    update_time_series(this, series_pt);
     client->thisTsPosn = series_pt;
   }
   
@@ -1134,21 +1158,17 @@ showMess(globMess); */
 class listNodeModel {
 public:
   char* node;
-  char* caption;
   Model* model;
   listNodeModel* next;
 
-  listNodeModel(char* newNode, char* newCapt, 
-		Model* newModel, listNodeModel* prev) {
+  listNodeModel(char* newNode, Model* newModel, listNodeModel* prev) {
     node = strdup(newNode);
-    caption = strdup(newCapt);
     model = newModel;
     next = prev;
   }
 
   ~listNodeModel() {
     delete(node);
-    delete(caption);
     delete(model);
   }
       
@@ -1184,7 +1204,7 @@ public:
       return this;
     }
   }
-};
+}; // end of class listNodeModel
 
 listNodeModel* nodeModelList = NULL;
 
@@ -1210,11 +1230,11 @@ void update_time_series(Model* client, double now) {
   listParamArray* param_array_current;
   BOOLEAN forward;
 
-  param_array_current = param_array_base; // base will go in model class
+  param_array_current = param_array_base;
   forward = (now >= client->thisTsPosn);
   client->thisTsPosn = now;
   while (param_array_current) {
-    if (param_array_current->spareModel == client) {
+    if (param_array_current->spareModel == (long int)client) {
       param_array_current->update_from_points(forward, now);
     }
     param_array_current = param_array_current->next;
@@ -1227,8 +1247,8 @@ void reset_time_series(Model* client) {
   param_array_current = param_array_base;
   client->thisTsPosn = 0;
   while (param_array_current) {
-    if (param_array_current->spareModel == client) {
-      param_array_current->nextTimePoint = param_array_current->timePoints;
+    if (param_array_current->spareModel == (long int)client) {
+      param_array_current->curTimePoint = NULL;
       param_array_current->wraps = 0;
       param_array_current->update_from_points(TRUE, 0);
     }
@@ -1250,22 +1270,22 @@ listParamArray* param_item_from_id(listParamArray* start, void* modelId,
 				   int paramId) {
   if (!start) {
     return NULL;
-  } else if (start->spareModel==(Model*)modelId && 
+  } else if (start->spareModel==(long int)modelId && 
 	     (start->nodeLine)->graph==paramId) {
     return start;
   } else {
     return param_item_from_id(start->next, modelId, paramId);
   }
 }
-  
-void* use_array_for_params(char* nodeId, long int topModel, void* dataSpace) {
+ 
+void* use_array_for_params(char* nodeId, void* dataSpace) {
   listParamArray* arrSlot;
 
   /* sprintf(globMess, "use_array_for_params node %s",
 	  nodeId);
 	  showMess(globMess); */
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    arrSlot = new listParamArray(nodeId, topModel);
+    arrSlot = new listParamArray(nodeId);
     if (!arrSlot->nodeLine) {
       delete arrSlot;
       return NULL;
@@ -1286,7 +1306,7 @@ int clear_time_point_elts(char* nodeId) {
   delete arrSlot->timePoints;
   arrSlot->timePoints = NULL;
   arrSlot->finalTimePoint = NULL;
-  arrSlot->nextTimePoint = NULL;
+  arrSlot->curTimePoint = NULL;
 }
 
 int set_wrap(char* nodeId, double time) {
@@ -1325,7 +1345,7 @@ int set_record_list(char* nodeId, int* indxs, int length) {
 int set_param_array_elt(char* nodeId, double val, int* indxs) {
   listParamArray* arrLocn;
 
-  /* sprintf(globMess, "set_param_array_elt node %s indx0 %d val %lf",
+  /*  sprintf(globMess, "set_param_array_elt node %s indx0 %d val %lf",
 	  nodeId, *indxs, val);
 	  showMess(globMess); */
   arrLocn = param_array_item(param_array_base, nodeId);
@@ -1346,7 +1366,7 @@ int set_time_point_elt(char* nodeId, double time, double val, int* indxs) {
   }
 }  
 
-void get_value_pointer(void* modelId, void* modelSlot, int paramId, 
+void get_value_pointer(void* modelId, void* modelSlot, int paramId,
 		       int ic, int* indxs) {
   listParamArray* paramArrayItem;
 
@@ -1364,16 +1384,14 @@ void get_value_pointer(void* modelId, void* modelSlot, int paramId,
 
 }
 
-char* load_model(char* fileName, char* nodeName, char* nodeCapt, 
-		 long int* modelType) {
+char* load_model(char* fileName, char* nodeName, long int* modelType) {
   Model* newModel;
   try {
     newModel = new Model(fileName);
   } catch(DllLossage prang) {
     return prang.tell();
   }
-  nodeModelList = new listNodeModel(nodeName, nodeCapt, newModel, 
-				    nodeModelList);
+  nodeModelList = new listNodeModel(nodeName, newModel, nodeModelList);
 
   *modelType = (long int)newModel;
   return NULL;
@@ -1442,6 +1460,7 @@ int nodeModelAndId(Model* seekType, char* seeknode, Model** tgtModel) {
    top node, and otherwise call itself recursively before getting the local
    data, thus allowing it to pass pointers to current positions along the
    result arrays to make_full_caption. Well that's stepwise refinement...
+*/
 
 node_data_line* search_intnl(char* node, long int* tgtModel, char* caption, 
 			   int* dims, int* path, enum_type_data** usedTypes) {
@@ -1492,6 +1511,26 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
       }
       strcpy(caption + strlen(caption), localCapt);
 
+      /* Old version with only one model hierarchy...
+      if (searchPoint == nodeModelList) {
+	strcpy(caption, localCapt);
+	*dims = *path = 0;
+	*usedTypes = NULL;
+	append_ints_to_null(dims, localDims, 0, 0);
+	append_ints_to_null(path, bottomLine->path, 0, 0);
+	append_ptrs_to_null(usedTypes, localUsed);
+      } else if (searchinfo(searchPoint->node, tgtModel, caption,
+			    dims, path, usedTypes)) {
+	append_ints_to_null(dims, localDims, SEPARATE, 0);
+	append_ints_to_null(path, bottomLine->path, SEPARATE, 
+			    (int)searchPoint->model);
+	append_ptrs_to_null(usedTypes, localUsed);
+	strcpy(caption + strlen(caption), // was strrchr(caption, '/'),
+	       localCapt);
+      } else {
+	bottomLine = NULL;
+      }
+      */
       *tgtModel = (long int)tryModel;
       return(bottomLine);
     }
@@ -1499,48 +1538,11 @@ node_data_line* search_intnl(char* node, long int* tgtModel, char* caption,
   }
   return(NULL);
 }
-*/
 
 char* trueTxt = "true";
 enum_type_data noType = {0, NULL, NULL}, boolType = {1, "false", &trueTxt};
 
-/* Big changes for v5. We cannot use node ids in execution because of
-   duplication between module instances, and we are dropping separate
-   dlls in favour of separate c++ blocks, so we need a new version of
-   searchinfo driven by captions that does not jump submodels, and which
-therefore accepts the id of the model it is looking in...*/
-
-node_data_line* model_capt_info(char* caption, long int tgtModelNo,
-			int* dims, int* path, enum_type_data** usedTypes) {
-  int line, typeCount;
-  Model* tgtModel = (Model*)tgtModelNo;
-  node_data_line* bottomLine;
-  char test[255];
-  int localDims[32];
-
-  for (line=1; tgtModel->nodecount>line; line++) {
-    typeCount = tgtModel->make_full_caption(line, test, localDims, usedTypes);
-    if (!strcmp(caption, test)) {
-      bottomLine = tgtModel->nodedata + line;
-      *dims = *path = 0;
-      append_ints_to_null(dims, localDims, 0, 0);
-      append_ints_to_null(path, bottomLine->path, 0, 0);
-      *(usedTypes + typeCount) = &noType;
-      return bottomLine;
-    }
-  }
-  return NULL;
-}
-//...can it be that simple? Nope. TODO: recurse for separate dlls
-// using part caption match
-
-void easy_capt(long int tgtModelNo, int line, char* capt) {
-  int dims[32];
-  enum_type_data* types[32];
-  ((Model*)tgtModelNo)->make_full_caption(line, capt, dims, types);
-}
-
-node_data_line* searchinfo(char* node, long int tgtModel,
+node_data_line* searchinfo(char* node, long int* tgtModel, char* caption, 
 			   int* dims, int* path, enum_type_data** usedTypes) {
   node_data_line *bottomLine;
   enum_type_data *thisType, *localTypes[128];
@@ -1554,7 +1556,7 @@ node_data_line* searchinfo(char* node, long int tgtModel,
   }
   usedCount=0;
 	
-  bottomLine = model_capt_info(node, tgtModel, dims, path, localTypes);
+  bottomLine = search_intnl(node, tgtModel, caption, dims, path, localTypes);
   if (bottomLine) {
     while (dims[dimCount]) {
       //    sprintf(globMess, "dim %d is %d", dimCount, dims[dimCount]);
@@ -1597,6 +1599,7 @@ long int fetch_top_instance(long int modelType, char* spare) {
    int* tree;
    connectRecord* currConnect;
    channelRecord* currChannel;
+   long int mSpare;
    enum_type_data* spareTypes[32];
 
    /* this section sets up the connection database -- done here because all
@@ -1609,10 +1612,10 @@ long int fetch_top_instance(long int modelType, char* spare) {
      currChannel = ((Model*)modelType)->channelData + count;
 
      //     currConnect->TopModel = nodeModelList->nodeModel(currConnect->TopNode);
-     if (searchinfo(currConnect->TopNode, modelType,
+     if (searchinfo(currConnect->TopNode, &mSpare, spare, 
 		    dims, path, spareTypes)) {
        tree = new int[32];
-       if (searchinfo(currConnect->SourceNode, modelType,
+       if (searchinfo(currConnect->SourceNode, &mSpare, spare, 
 		      dims, tree, spareTypes)) {
 	 count2=0;
 	 while (path[count2]) {
@@ -1649,22 +1652,17 @@ long int fetch_top_instance(long int modelType, char* spare) {
      // now hopefully we won't be using the reference strings anymore, so...
    }     
    delete connectData;
-   instance_base = new Instance(((Model*)modelType)->create(), instance_base);
-   return (long int)instance_base;
+   return (long int)((Model*)modelType)->create();
 }
 
-void* instance_ptr_from_id(long int level) {
-  return ((Instance*)level)->id;
-}
-
-void* get_ptr(long int modelType, void* level, int** id_meta, 
+void* get_ptr(long int modelType, long int level, int** id_meta, 
 	      int** dim_list) {
-  return ((Model*)modelType)->getpointer(level, id_meta, dim_list);
+  return ((Model*)modelType)->getpointer((void*)level, id_meta, dim_list);
 }
 
 /* definitions for regularData class -- note we may later want
-   to use regularData items to describe simple c++ arrays, which is why we
-   create them and then set them to a model item */
+to use regularData items to describe simple c++ arrays, which is why we 
+create them and then set them to a model item */
 
 class regularData {
   int spacings[32];
@@ -1676,18 +1674,17 @@ public:
   
   regularData() {
   }
-  
+
   ~regularData() {
   }
 
   int set_to_model_value(long int model_id, long int instance_id,
-			  char* caption) {
+			 char* caption) {
     int count, *quickpath, *pathref, *testref;
     char test[255];
     enum_type_data* types[32];
     int test_indices[] = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 			  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-    void* id;
     for (count = 1; ((Model*)model_id)->nodecount>count; ++count) {
       ((Model*)model_id)->make_full_caption(count, test, bounds, types);
       if (!strcmp(caption, test)) {
@@ -1695,16 +1692,17 @@ public:
 	while (*(bounds + dimensionality)) {
 	  ++dimensionality;
 	}
-	id = ((Instance*)instance_id)->id;
+	datatype = ((Model*)model_id)->nodedata[count].datatype;
 	quickpath = ((Model*)model_id)->nodedata[count].path;
 	pathref = quickpath;
 	testref = test_indices;
-	top = (char*)get_ptr(model_id, id, &pathref, &testref);
+	top = (char*)get_ptr(model_id, instance_id, &pathref, &testref);
 	for (count = 0; count < dimensionality; ++count) {
 	  test_indices[count] = 1;
 	  pathref = quickpath;
 	  testref = test_indices;
-	  spacings[count] = (char*)get_ptr(model_id, id, &pathref, &testref)-top;
+	  spacings[count] = (char*)get_ptr(model_id, instance_id, 
+					   &pathref, &testref) - top;
 	  test_indices[count] = 0;
 	}
 	return 0;
@@ -1712,7 +1710,7 @@ public:
     }
     return -1;
   }
-  
+
   void* locate_element(int* indices) {
     char* result;
     int count;
@@ -1724,6 +1722,7 @@ public:
     return result;
   }
 };
+
 // need non-class versions of these for 5-d interface!
 
 long int createRegularData () {
@@ -1734,8 +1733,7 @@ void deleteRegularData (long int old) {
   delete (regularData*)old;
 }
 
-int rdSetToNodeValue(long int old, long int mid, long int iid, char* caption)
-{
+int rdSetToNodeValue(long int old, long int mid, long int iid, char* caption) {
   return ((regularData*)old)->set_to_model_value(mid, iid, caption);
 }
 
@@ -1755,12 +1753,12 @@ void* rdLocateElement(long int old, int* indices) {
   return ((regularData*)old)->locate_element(indices);
 }
 
-/* model execution */
- 
 void update(long int modelType, long int modelHandle, 
 	     double starttime, int phase) {
   ((Model*)modelType)->updatemodel((void*)modelHandle, starttime, phase);
 }
+
+/* model execution */
 
 void advance(long int modelType, long int modelHandle, 
 	     double starttime, int phase) {
@@ -1781,19 +1779,19 @@ to drive the model...
 int reset(long int modelType, long int modelHandle, int top_phase) {
   topType = modelType;
   resetting=(top_phase==-2);
-  return ((Model*)topType)->resetmodel((Instance*)modelHandle, top_phase);
+  return ((Model*)topType)->resetmodel((void*)modelHandle, top_phase);
 }
 
 int execute(long int modelType, long int modelHandle, int how_int,
 	 double starttime, double* endtime, double errlim) {
   topType = modelType;
   resetting=FALSE;
-  return ((Model*)topType)->executemodel((Instance*)modelHandle,
+  return ((Model*)topType)->executemodel((void*)modelHandle, 
 					how_int, starttime, endtime, errlim);
 }
 
 void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
-  level = type->getpointer((Instance*)level, id_meta, dims);
+  level = get_ptr((long int)type, (long int)level, id_meta, dims);
   //  sprintf(globMess, "got ptr %ld", level);
   //  showMess(globMess);
   if (*(*id_meta)++ == SEPARATE) {
@@ -1832,8 +1830,8 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
 
 void* advance_ptr(void* typeRef, void* topInstRef) {
   int next_handle[] = {1,0}, *tree = next_handle;
-  return *(void**)(((Model*)typeRef)->getpointer((Instance*)topInstRef, 
-						 &tree, NULL));
+  return *(void**)get_ptr((long int)typeRef, (long int)topInstRef, &tree, 
+			  NULL);
 }
 
 void search_from(void* typeRef, int nodeIndx, void* instPtr) {
@@ -1867,13 +1865,12 @@ int eval_submodel(char* nodeId, void* instanceId,
 /* procedure that is called by shim when it is loaded to supply pointers
    to its callback procedures */
 
-void proc_pointers_for_shank(get_value_pointer_type* get_value_pointer_ptr,
-			     interact_gui_type* interact_gui_ptr,
+void proc_pointers_for_shank(interact_gui_type* interact_gui_ptr,
 			     showMess_type* showMess_ptr,
 			     char* simileVersionPtr,
 			     connectRecord*** connectDataPtr, 
 			     int** connCountPtr) {
-  get_client_value_pointer = get_value_pointer_ptr;
+  //  get_client_value_pointer = get_value_pointer_ptr;
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
   xsimileVersion = simileVersionPtr;
@@ -1902,10 +1899,10 @@ void setdt(double starttime, int phase) {
 
 char* myexit(long int modelType, long int modelHandle) {  
   if (modelHandle) { 
-    ((Model*)modelType)->exitmodel(((Instance*)modelHandle)->id);
+    ((Model*)modelType)->exitmodel((void*)modelHandle);
   }
   if (param_array_base) {
-    param_array_base = param_array_base->strip_out((Model*)modelType);
+    param_array_base = param_array_base->strip_out(modelType);
   }
   if (nodeModelList) {
     try {

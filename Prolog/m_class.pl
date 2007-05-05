@@ -4,7 +4,8 @@
 *******************************************************************************/
 sicstus_module(m_class, [is_new_part_of/2, is_part_of/2, has_part/2, 
 	has_parts/2, have_part/2, is_new_model_class/1, is_also_part_of/2,
-	is_root/1, is_no_longer_part_of/2, is_model_class/1,
+	is_root/1, is_no_longer_part_of/2,
+	is_model_class/1, is_no_longer_model_class/1,
 	has_class/2, has_class_refinement/2, has_model_refinement/2,
 	has_new_class/2, has_new_class_refinement/2,
 	has_new_model_refinement/2,
@@ -14,7 +15,10 @@ sicstus_module(m_class, [is_new_part_of/2, is_part_of/2, has_part/2,
 	has_type/2, has_new_type/2, no_longer_has_type/2,
 	has_changed_type/2, has_attribute/2, has_new_attribute/2,
 	no_longer_has_attribute/2, has_changed_attribute/2,
-	has_changed_termination/2, 
+	has_changed_termination/2,
+	now_follows/2, follows/2, no_longer_follows/2,
+	has_new_link_equivalences/2, has_link_equivalences/2,
+	has_changed_link_equivalences/2, no_longer_has_link_equivalences/2,
 	has_graphical_attribute/2, has_new_graphical_attribute/2,
 	no_longer_has_graphical_attribute/2, 
 	no_longer_has_graphical_attributes/1, 
@@ -26,8 +30,7 @@ sicstus_module(m_class, [is_new_part_of/2, is_part_of/2, has_part/2,
 	has_changed_class_refinement/2,
 	has_changed_model_refinement/2, 
 	connects/3, initiates/2, terminates/2, equivalent_arcs/2,
-	sequence/2, follows/2, logical_follows/3,
-	no_longer_has_connections/1] ).
+	sequence/2, no_longer_has_connections/1] ).
 
 sicstus_use_module([library(lists),link,m_struct,node,graphics,text,utility]).
 

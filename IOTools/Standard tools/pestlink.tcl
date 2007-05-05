@@ -35,19 +35,19 @@ namespace eval $keyValue {
         menu $winId.drivervars -tearoff 0 -postcommand \
 	    [namespace code [list AddVarsToDriverMenu $winId]]
         set toolbarItems \
-                [list [list new "Clear" [namespace code "Clear $winId"]] \
-                [list add "Add variables" \
+                [list [list new.gif "Clear" [namespace code "Clear $winId"]] \
+                [list add.gif "Add variables" \
                 [namespace code "AddVariable $winId"]] \
-                [list remove "Remove a variable" \
+                [list remove.gif "Remove a variable" \
                 [namespace code "RemoveVariable $winId"]] \
-                [list slider "Add all variables" \
+                [list slider.gif "Add all variables" \
                 [namespace code "AddAllVariables $winId /"]]]
         ::graphtools::MakeToolBar $inpId $toolbarItems
         set toolbarItems \
-                [list [list new "Clear" [namespace code "ClearOut $winId"]] \
-                [list add "Add variables" \
+                [list [list new.gif "Clear" [namespace code "ClearOut $winId"]] \
+                [list add.gif "Add variables" \
                 [namespace code "AddVariableOut $winId"]] \
-                [list remove "Remove a variable" \
+                [list remove.gif "Remove a variable" \
                 [namespace code "RemoveVariableOut $winId"]]]
         ::graphtools::MakeToolBar $outId $toolbarItems
         
@@ -95,7 +95,7 @@ namespace eval $keyValue {
                 -command [namespace code [list AblePrediction $winId]] \
                 -variable [namespace current]::useNodes($winId,preds)] \
                 -side left
-        pack [ComboBox $pf.pknobs.mm -values {minimum maximum} -editable 0 \
+        pack [ttk::combobox $pf.pknobs.mm -values {minimum maximum} -state readonly \
                 -textvariable [namespace current]::useNodes($winId,way) \
                 -width 8] -side left
         set useNodes($winId,way) maximum
@@ -577,8 +577,8 @@ namespace eval $keyValue {
         set ns [namespace current]
         pack [frame $f.inctype]
         pack [label $f.inctype.l -text INCTYPE] -side left
-        pack [ComboBox $f.inctype.c -values {relative absolute rel_to_max} \
-                -editable 0 -textvariable ${ns}::inGrpData($node,inctype)] \
+        pack [ttk::combobox $f.inctype.c -values {relative absolute rel_to_max} \
+                -state readonly -textvariable ${ns}::inGrpData($node,inctype)] \
                 -side left
         
         pack [frame $f.derinc]
@@ -595,8 +595,8 @@ namespace eval $keyValue {
         
         pack [frame $f.forcen]
         pack [label $f.forcen.l -text FORCEN] -side left
-        pack [ComboBox $f.forcen.c -values {always_2 always_3 switch} \
-                -editable 0 -textvariable ${ns}::inGrpData($node,forcen)] \
+        pack [ttk::combobox $f.forcen.c -values {always_2 always_3 switch} \
+                -state readonly -textvariable ${ns}::inGrpData($node,forcen)] \
                 -side left
         
         pack [frame $f.derincmul]
@@ -607,16 +607,16 @@ namespace eval $keyValue {
         
         pack [frame $f.dermthd]
         pack [label $f.dermthd.l -text DERMTHD] -side left
-        pack [ComboBox $f.dermthd.c -values {parabolic best_fit outside_pts} \
-                -editable 0 -textvariable ${ns}::inGrpData($node,dermthd)] \
+        pack [ttk::combobox $f.dermthd.c -values {parabolic best_fit outside_pts} \
+                -state readonly -textvariable ${ns}::inGrpData($node,dermthd)] \
                 -side left
         
         pack [set f [labelframe $t.inp -text "Value transformations:"]] \
                 -padx 4 -pady 4
         pack [frame $f.partrans]
         pack [label $f.partrans.l -text PARTRANS] -side left
-        pack [ComboBox $f.partrans.c -values {none log} \
-                -editable 0 -textvariable ${ns}::inGrpData($node,partrans)] \
+        pack [ttk::combobox $f.partrans.c -values {none log} \
+                -state readonly -textvariable ${ns}::inGrpData($node,partrans)] \
                 -side left
         
         # If the parameter can cross zero its change limit must default to relative
@@ -625,8 +625,8 @@ namespace eval $keyValue {
         }
         pack [frame $f.parchglim]
         pack [label $f.parchglim.l -text PARCHGLIM] -side left
-        pack [ComboBox $f.parchglim.c -values {relative factor} \
-                -editable 0 -textvariable ${ns}::inGrpData($node,parchglim)] \
+        pack [ttk::combobox $f.parchglim.c -values {relative factor} \
+                -state readonly -textvariable ${ns}::inGrpData($node,parchglim)] \
                 -side left
         
         pack [frame $f.scale]
@@ -860,7 +860,7 @@ namespace eval $keyValue {
         # but neither of these need be done here.
         
         global simtmpdir initialEstimate minForOpt maxForOpt paramDims
-        global tcl_platform sender paramData myNode
+        global tcl_platform sender paramData myNode execExtn
         variable useNodes
         variable clevers
         variable usedHangers
@@ -1081,7 +1081,7 @@ $numOutputs"
             set oldDir [file attributes $oldDir -shortname]
         }
         puts $control {* model command line}
-        set ourWish [ShellFileRef [file join [file dirname $oldDir] System bin relay]]
+        set ourWish [ShellFileRef [file join [file dirname $oldDir] System bin relay$execExtn]]
         puts $control [file nativename $ourWish]
         puts $control {* model input/output}
         puts $control {model.tpl model.inp}
@@ -1118,7 +1118,7 @@ $numOutputs"
         
         SetButtonAct $winId pause
         cd $simtmpdir
-        set pip [open pidpod w]; puts $pip 0; close $pip
+        set pip [open pestmsgs.txt w]; puts $pip 0; close $pip
         StartRelay $ourWish
         
         # ok, now we need to execute pest in immediate mode in order to get
@@ -1165,9 +1165,7 @@ $numOutputs"
         set oldDir [pwd]
         cd $simtmpdir
 
-# relay waits on stdin so it exits when Simile does, so must open it r+
-# otherwise it tries to use console stdin, hanging simile
-        set relayProc [open |$cmd r+]
+        set relayProc [open |$cmd r]
         # was [SilentRun $cmd]
         #ShowMessage debug info "started $hanger" ok
         fconfigure $relayProc -blocking 0
@@ -1186,6 +1184,7 @@ $numOutputs"
                 # set spout [open "|cmd /c start /min $cmd" r]
 
 		set batSt [open runpest.bat w]
+				puts $batSt "type model.pst"
 		puts $batSt $cmd
 		close $batSt
                 set spout [open |runpest.bat r]
@@ -1196,16 +1195,6 @@ $numOutputs"
             } default {
                 # exec pest model.pst >& model.log &
                 set spout [open "|$cmd" r]
-            }
-        }
-         switch $tcl_platform(platform) {
-            windows {
-		set batSt [open runpest.bat w]
-		puts $batSt $cmd
-		close $batSt
-                set spout [open |runpest.bat r]
-            } unix {
-#                set spout [open "|$cmd" r]
             }
         }
 	return $spout
@@ -1224,7 +1213,7 @@ $numOutputs"
             }
         } elseif {[eof $spout]} {
             close $spout
-            set pip [open $simtmpdir/pidpod r]; gets $pip pidl; close $pip
+            set pip [open $simtmpdir/pestmsgs.txt r]; gets $pip pidl; close $pip
             #ShowMessage debug info "Shrink...I wanna kill $pidl" ok
             c_killmodel $pidl
             close $relayProc

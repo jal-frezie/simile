@@ -83,7 +83,7 @@ make_cons_dest(instance(Type, Sym, _, Nm, _), ConLine, DeLine) :-
 	    render(c, assignment, Name=0, 8, ConLine),
 	    render(c, procedure_call, delete_list(Name), 8, DeLine);
 	Type = external, !,
-	    Nm = elt(_,_, Name, _),
+	    Nm = elt(_, Name, _),
 	    make_constant_string(c, Sym, SymC),
 	    make_procedure_call_chars(c, [fetch_instance, SymC], FetchStr),
 	    name(Fetch, FetchStr),
@@ -351,7 +351,7 @@ render(L, data_declaration,
 		UseDims = [];
 	    Name = NameBase,
 		/* get_node_size(SymbolicName, UseDims) */ UseDims = Dims);
-	    (NameIn = elt(_,_, Name, _), !;
+	    (NameIn = elt(_, Name, _), !;
 		Name = NameIn),
 	    UseDims = Dims),
 	all(ame_gen, enum_type_ref, [build(UseDims), unify(SymbolicName),
@@ -403,7 +403,7 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 	    (L = c,
 		(Dims = void, Counts = [''];
 %		all(render, boost, [build(Dims), build(Counts)])),
-		Counts = Dims),
+                Counts = Dims),
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		sicstus_format_to_chars( "~*s~a ~a;", [Indent, " ", Type, 
 					       ArrayName], Chars);
@@ -415,18 +415,18 @@ render(L, variable_declaration, [Unit, Name, Dims | Init], Indent, FgResult) :-
 
 	Init = [InitialValues],
 	    (L = c,
- /* if var is a char string, it will not be nested so no curlies will be added,
- and the rules for breaking lines are like tcl's (need a \ at end) so... */
-	       (Unit = char, !,
-		   PrepStyle = tcl,
-		   DeepIndent = 0;
+/* if var is a char string, it will not be nested so no curlies will be added,
+and the rules for breaking lines are like tcl's (need a \ at end) so... */
+	        (Unit = char, !,
+		    PrepStyle = tcl,
+		    DeepIndent = 0;
 		PrepStyle = L,
-		   DeepIndent is Indent + 4),
+		    DeepIndent is Indent + 4),    
 		swap_squares_for_curlies(PrepStyle, InitialValues, InitString),
 		InitString = [FirstLine | LateLines],
 		(Dims = void, Counts = [''];
 %		all(render, boost, [build(Dims), build(Counts)])),
-		Counts = Dims),
+                Counts = Dims),
 		make_indexed_reference(L, Name, Counts, ArrayName),
 		sicstus_format_to_chars("~*s~a ~a = ",
 				[Indent, " ", Type, ArrayName], Chars0),
@@ -489,9 +489,10 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-LocalDims),
 	render(L, case_start, Match, 8, [Ext1]),
 
-	(NameIn = elt(_,_, Name, _), !;
+	(NameIn = elt(_, Name, _), !;
 	    Name = NameIn),
-	((variable_size(BaseName); L = tcl, Name = instanceid), !,
+	((InstType = submodel, variable_size(BaseName);
+	  L = tcl, Name = instanceid), !,
 	    Item = Name;
 	length(LocalDims, DimCount),
 	refer_value(L, dims, DimsRef),
@@ -573,7 +574,7 @@ generate_data_decls(L, Match, Dims, Path, Inst, ExtSets, Used, GraphOwners,
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS']),
 	    (nth(GraphPointer, GraphOwners, [BaseName | _]), !;
-		nth(GraphPointer, Collects, BaseName), !;
+	    nth(GraphPointer, Collects, BaseName), !;
 	    GraphPointer = 0),
 
 	    (BaseName has_class_refinement min_val of Min, 
@@ -635,9 +636,6 @@ make_runtime_enum_data(L, Name-Mems, Used, ItemDecls,
 	append(VTemplates, [['char*', ETPtr, [ETCount], MemPtrs]], Templates),
 	render_all(L, variable_declaration, Templates, 0, ItemDecls).
 
-templatify(Elt, Ptr, [char, Ptr, void, QElt]) :-
-	append_atoms(['"', Elt, '"'], QElt).
-
 make_runtime_strings([L, Node, Name, Used], Field, Ptr, Decl) :-
 	(Field = name, !,
 	    caption_for(Node, LocalStr),
@@ -645,19 +643,22 @@ make_runtime_strings([L, Node, Name, Used], Field, Ptr, Decl) :-
 		Pop has_part Node,
 		caption_for(Pop, CaptionHead),
 		append_atoms([CaptionHead, '/', LocalStr], FullStr);
-	    FullStr = LocalStr);
-	 Node has_class_refinement Field of FullStr,
-	    atomic(FullStr)),
-	    name(FullStr, TtfnStr),
+		FullStr = LocalStr);
+	    Node has_class_refinement Field of FullStr,
+	        atomic(FullStr)),
+	name(FullStr, TtfnStr),
 	    user:all_ttfn_to_utf8(TtfnStr, Utf8Str),
 	    name(Utf8Atom, Utf8Str),
 	    make_constant_string(L, Utf8Atom, StrV),
 	    append_atoms([Name, '_', Field], PtrTag),
 	    generate_name(L, PtrTag, Ptr, Used),
 	    render(L, variable_declaration, [char, Ptr, void, StrV], 0, Decl);
-	 Ptr = 'NULL',
+	Ptr = 'NULL',
 	    Decl = [].
 
+templatify(Elt, Ptr, [char, Ptr, void, QElt]) :-
+	append_atoms(['"', Elt, '"'], QElt).
+				     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 /* make_array_assignment/9: all subscripts other than those for submodel loops and
 those used for referring to individual array elements are generated and put in
@@ -792,6 +793,31 @@ split_lines(L, NestStr, [String | Strings]) :-
 	String = NestStr,
 	    Strings = [].
 
+/*
+This was wrong on two counts; first, it was inefficient, secondly it picked the
+shortest line consistent with its rules.
+
+OK this should pick the line closest to the ideal length of about 60 chars, and
+do the biz really efficiently -- not finished yet
+
+split_lines(L, NestStr, [String | Strings]) :-
+	[Br, C, Sp, Nl, Sl] = "}, \n\\",
+	(L = tcl, member([Out, In, Min],
+			 [[[Nl | Rest], [], 0],
+			  [[Br, Sp | Rest], [Br, Sp, Sl], 30],
+			  [[Sp | Rest], [Sp, Sl], 300]]);
+	L = c, member([Out, In, Min],
+			 [[[Nl | Rest], [], 0],
+			  [[Br, C | Rest], [Br, C], 30],
+			  [[C | Rest], [C], 300]])),
+	append(Base, Out, NestStr),
+	length(Base, Len),
+	Len >= Min, !,
+	    append(Base, In, String),
+	    split_lines(L, Rest, Strings);
+	String = NestStr,
+	    Strings = [].
+*/
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % render_all applies render to a list of items of a given type
 /* should replace with all(render) */
@@ -869,8 +895,8 @@ make_constant_string(L, String, Atom) :-
 			append([123 | Chars], [125], Const);
 		Const = Chars);
 	L = c,
-		all(render, escape_string_breaks,
-		    [build(Chars), append(StraightChars, [])]),
+	    all(render, escape_string_breaks,
+		[build(Chars), append(StraightChars, [])]),
 		append([34 | StraightChars], [34], Const)),
 	name(Atom, Const).
 
@@ -1046,28 +1072,28 @@ make_expr_all(Language, [Expr0 | Expr], [Result0 | Result]) :-
 combine( L, Op, VArgs, Atom) :-
 	make_expr_all(L, VArgs, VArgExprs),
 	(
-	Op = (?), L = tcl, !,
+/*	Op = (?), L = tcl, !,
 	    VArgs = [VCond, VTrue:VFalse],
 	    sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
 			    [VCond, VTrue, VFalse], CharList);
 	    
-/* Yes, horrible, nasty, ugly, repugnant, grotesque Tcl has the a?b:c format but,
+Yes, horrible, nasty, ugly, repugnant, grotesque Tcl has the a?b:c format but,
 mindbogglingly stupidly, evaluates the non-chosen half, and, worse, complains
 about undefined array elements in it. Blooaaargh!! 
-
-What follows is even worse; it allows conditionals to be entered in the 
-if-then-elseif-else format, though I can't see why anyone would want to.
-
-Since this causes problems anyway (due to inters and contexts) it's all
-obsolete. A stopgap conversion to a?b:c format is in place, pending the
-incorporation of the actual conditionality into program generation
-
+*/
 	Op = choose, !,
 		(L = c,
 			sicstus_format_to_chars("(~w?~w:~w)", VArgs, CharList);
 		L = tcl,
 			sicstus_format_to_chars("[if {~w} {expr ~w} else {expr ~w}]",
 					VArgs, CharList));
+/*
+What follows is even worse; it allows conditionals to be entered in the 
+if-then-elseif-else format, though I can't see why anyone would want to.
+
+Since this causes problems anyway (due to inters and contexts) it's all
+obsolete. A stopgap conversion to a?b:c format is in place, pending the
+incorporation of the actual conditionality into program generation
 
 	Op = if,
 		(L = c,

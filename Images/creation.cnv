@@ -1,15 +1,14 @@
 # box
-$c add rectangle $g "-15 -15 15 15" -filled 1 -linewidth 0 -tags unscaled
-$c add curve $g [list "-15 -15" "-15 15" "15 15" "15 -15"] -closed true \
-	-tags "unscaled size_on_this"
+$c create rect -15 -15 15 15 -outline {} -tag unscaled
+$c create line -15 -15 -15 15 15 15 15 -15 -15 -15 \
+	-tag "unscaled size_on_this realwidth(1.0)"
 
-$c add curve $g [list "-13 5" "13 5"] -linewidth 2.5 -tags "unscaled"
+$c create line -13 5 13 5 -tag "unscaled realwidth(2.5)"
 
 # following replaced by smooth line cos arcs don't stipple
 # $c create arc -10 -2 10 18 -start 15 -extent 150 -style arc
-$c add curve $g [list "-10 5" "-4 -7 c" "4 -7 c" "10 5"] \
-	-linewidth 2.5 -tags "unscaled"
+$c create line -10 5 0 -7 10 5 -smooth true -tag "unscaled realwidth(2.5)"
 
-$c add curve $g [list "-8 -1" "-12 -5"] -linewidth 2.5 -tags "unscaled"
-$c add curve $g [list "-0 -4" "0 -10"] -linewidth 2.5 -tags "unscaled"
-$c add curve $g [list "8 -2" "12 -6"] -linewidth 2.5 -tags "unscaled"
+$c create line -8 -1 -12 -5 -tag "unscaled realwidth(2.5)"
+$c create line 0 -4 0 -10 -tag "unscaled realwidth(2.5)"
+$c create line 8 -2 12 -6 -tag "unscaled realwidth(2.5)"

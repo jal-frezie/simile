@@ -9,30 +9,27 @@ itself is only addressed from within the database module.
 
 sicstus_module(m_update,
 	       [get_av_pair/4, add_parameter/4, list_index_meanings/2,
-		get_all_links/4, summarize_links/2,
 		list_local_index_meanings/2, get_input_info/2,
-		get_link_source_data/10, find_node_with_data/3,
+		get_link_source_data/9, find_node_with_data/3,
 		valid_input/2, check_unit/4,
 		need_same_dims/2, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
 		load_references/2, save_references/2, link_ends/4,
 		moving_endpoint/3, update_links_and_vars/1,
 		sort_for_link/4, abs_path_name/3, rel_path_name/5,
-		build_array/3, analyze_array/3,  module_for/2,
+		build_array/3, analyze_array/3, 
 		get_solo_list_depth/2, delete_implicit_node/1, 
 		add_implicit_function/2, default_units/2,
 		get_exogenous_node/2, find_all_links/2, find_all_links/3,
 		make_node/3, one_end_in/2, new_line/5,
 		presence_affects/2, status_affects/2,
 		can_start/2, can_finish/3, continues_in/2, continues_from/2,
-		add_equivalence/3, is_no_longer_model_class/1,
+		add_equivalence/3, oblitterfry/1,
 		list_cross_border_specs/2, is_top_arc/1,
 		fast_delete/1, superfast_delete/1, do_delete/1, sever_links/2,
-		add_new_line_between/4, change_class/3,
-		get_module_disag_params/2, get_occurrence_disag_params/2,
-		autoconnect_reference_for/4, time_step_for/3, use_units_in/2,
-		make_module_of/3, make_ghost/3, get_possible_start/2,
-		has_autoconnect/2, clear_autoconnect/1, set_autoconnect/2]).
+		add_new_line_between/4, change_class/3, get_disag_params/2,
+		time_step_for/3, use_units_in/2,
+		make_ghost/3, get_possible_start/2]).
 
 sicstus_use_module([library(lists),
 		sp_only, units, utility, ame_gen, m_class, text]).
@@ -72,7 +69,7 @@ get_av_pair(Object, Class, Attribute, Value) :-
 access to the outside of the model */
 
 get_exogenous_node(Model, Node) :-
-	Model has_model_refinement link_equivalences of LinkList,
+	Model has_link_equivalences LinkList,
 	member(Out-In, LinkList),
 	Out is_connector from _ to Model,
 	In is_connector from _ to Node.
@@ -86,7 +83,7 @@ moving_endpoint(Obj, Termination, OtherLink) :-
 		Termination = moving_start;
 	continues_in(Obj, Submodel),
 		Termination = moving_finish),
-	Submodel has_model_refinement link_equivalences of Links,
+	Submodel has_link_equivalences Links,
 	member(Link, Links),
 	(Link = Obj-OtherLink; Link = OtherLink-Obj).
 
@@ -107,37 +104,34 @@ dealing with multiple instances. */
 
 get_input_info(Function, Input_list) :-
 	(setof(Link_entry,
-	      summarize_links(Function, Link_entry),
+	      IDs^get_all_links(Function, IDs, Link_entry),
 	      Input_list),
 	    decide_param_names(Input_list), !;
 	Input_list = []),
 	retractall(input_links_were(_)),
 	assert(input_links_were(Input_list)).
 
-summarize_links(Fn, LinkEntry) :-
-	get_all_links(Fn, _,_, LinkEntry).
-
-get_all_links(Function, CaptPath, ids(RemoteNode, Relation, Home, Entry),
+get_all_links(Function, ids(RemoteNode, Relation, Home, Entry),
               input_link(id(Link, Index, SourceLocation),
 			RemoteName, LocalName, 
 			RemoteUnit, Local_unit)) :- 
-	find_all_comps(DestBox, Function), % TODO: efficiency
 	/* this should be cut free */
 	(valid_input(Function, Link);
 	    Function has_class submodel,
 	    Link is_connector from _ to Function),
 	Link has_type influence,
-	get_link_source_data(Link, CaptPath, Function, RemoteNode, RemoteUnit,
+	get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Home, Entry, Index, SourceLocation),
 	check_ET_consistency(RemoteUnit, RemoteNode, Function),
 	use_destination(Link, RemoteUnit, 
 			Index, LocalName, Local_unit),
+	find_all_comps(DestBox, Function),
 	rel_path_name(RemoteNode, DestBox, Relation, SourceLocation,
 		      RemoteName).
 
-get_link_source_data(Link, CaptPath, Function, RemoteNode, RemoteUnit,
+get_link_source_data(Link, Function, RemoteNode, RemoteUnit,
 		Relation, Home, Entry, Index, SourceLocation) :-
-	origin_and_entrypoint(Link, CaptPath, InitNode, Home, Entry),
+	origin_and_entrypoint(Link, InitNode, Home, Entry),
 	find_node_with_data(InitNode, RemoteNode, ValueSource),
 	get_spec_units(ValueSource, ActualUnits),
 	get_unit_conversion(ValueSource, Function, Subs, 
@@ -160,7 +154,7 @@ check_ET_consistency(RemoteUnit, RemoteNode, Function) :-
         do_dialogue("Inconsistent type definitions", warning, ErrStr, ok, not);
 	true).
 
-/* origin_and_entrypoint/5: For any Link, this works out the Origin
+/* origin_and_entrypoint/4: For any Link, this works out the Origin
 (Id of node where it starts), Home (id of top level link section if in
 same dll) and Entry (id of influence bringing node's value into
 current dll). Last two are var if not found.
@@ -169,57 +163,26 @@ This has now been altered to continue back from a ghost node all the
 way to its base. As we come out of the recursion, following the links
 forward from the origin, we may cross the same dll boundary twice, in
 which case we forget about the bit between them and go straight on from the
-link going in.
+link going in. */
 
-Modified for v5 so it additionally converts the destination's caption path to
-one for the source */
-
-origin_and_entrypoint(Link, capts(Dest, Src), Origin, Home, Entry) :-
+origin_and_entrypoint(Link, Origin, Home, Entry) :-
 	Link is_connector from Start to _,
-	(continues_from(Link, Model),
-	    (Model = Start, !, % link exits model
-		caption_for(Model, Capt),
-		NewDest = [Capt | Dest],
-		EquivHanger = Model,
-		Home = Link;
-	    (Model has_class module, nonvar(Dest),
-		EquivHanger is_instance_of Model;
-	     \+ Model has_class module, EquivHanger = Model),
-		Dest = [Capt | NewDest],
-		caption_for(EquivHanger, Capt), !,
-		Home = Home1),
-	    EquivHanger has_model_refinement link_equivalences of Equivs,
-	    member(LastLink-Link, Equivs),
-	    origin_and_entrypoint(LastLink, capts(NewDest, Src),
-				  Origin, Home0, Entry0),
-	    (Model has_class_refinement separate of 1, !,
-		Entry = Link; /* Home = var */
-	    Entry = Entry0,
-		Home1 = Home0);
-	Src = Dest,
-	    Origin = Start,
-	    Home = Link).
-/* old version:	    
 	((Node = Start; Node has_part Start),
-	Node has_model_refinement link_equivalences of Links,
+	Node has_link_equivalences Links,
 	member(Link0-Link, Links), !,
 	    origin_and_entrypoint(Link0, Origin, Home0, Entry0),
 	    (Node has_class_refinement separate of 1, !,
-		Entry = Link; % Home = var
+		Entry = Link; /* Home = var */
 	    Entry = Entry0,
 		Home1 = Home0);
 	Origin = Start),
 	(appears(Start), !,
 	    Home = Link;
-	Home = Home1). */
-
-module_for(Parent, Class) :-
-	(Parent is_instance_of Class;
-	    Parent = Class, \+ Parent is_instance_of _Cl).
-
-find_node_with_data(Edit_thing, Real_edit_thing, Control_thing) :-
-	(get_bowtie_section(Edit_thing, Real_edit_thing), !;
-	    find_base(Edit_thing, Real_edit_thing)),
+	Home = Home1).
+	
+find_node_with_data(Edit_thing, Real_edit_thing, 
+		Control_thing) :-
+	find_base(Edit_thing, Real_edit_thing),
 	(implicit_function(Real_edit_thing, Control_thing), !;
 		Real_edit_thing = Control_thing).
 
@@ -269,8 +232,7 @@ get_spec_units(Node, Unit) :-
 
 /* list_index_meanings: creates a list of atoms that are descriptions of the meanings of the 'index(n)' function with all its possible values. */
 
-list_index_meanings(Comp, []) :-
-	Comp is_root.
+list_index_meanings(root, []).
 
 list_index_meanings(Submodel, Meanings) :-
 	list_local_index_meanings(Submodel, Group1),
@@ -473,6 +435,10 @@ check_unit(Unit_term, Target_unit, Severity, Complaint) :-
 	sicstus_format_to_chars("Unit expression ~w has array dimensions ~w, which are incompatible with the array it represents, whose dimensions are ~w.", [Target_unit, TargetExprs, DimExprs], Complaint)),
 	(nonvar(Complaint); Complaint = []).
 
+/* decide_param_names fills in the 'local name' slot in these data structures; first
+it lists all those which already have names, then generates new ones which differ
+from these for those which havent. */
+
 need_same_dims(Item, Affected) :-
 	(initiates(Affected, Item); terminates(Affected, Item)),
 	    find_type(Affected, flow).
@@ -502,10 +468,6 @@ check_flow_ends(Function, Units, Error) :-
 	    check_unit(CUnits, Units, 2, AnError),
 	    \+ AnError = [], !, Error = AnError;
 	 Error = []).
-
-/* decide_param_names fills in the 'local name' slot in these data structures; first
-it lists all those which already have names, then generates new ones which differ
-from these for those which havent. */
 
 decide_param_names(InputList) :-
 	already_used_in(InputList, Used),
@@ -622,6 +584,7 @@ build_array(Base_type, Dims, Array) :-
 		Array = array(Sub_type, Dim)).
 
 analyze_array(Array, Base_type, Dims) :-
+	nonvar(Array),
 	(Array = array(Sub_type, Dim); Array = list(Sub_type), Dim = var), !,
 		analyze_array(Sub_type, Base_type, SubDims),
 		Dims = [Dim | SubDims];
@@ -679,21 +642,20 @@ convert_refs([OldRef | R1], SoFar, [NewRef | R2]) :-
 % NB much more work to do here once connectors are installed; think about
 % connectors through the model class boundary, and about inherited values
 
-:- op(450, xf, is_no_longer_model_class).
-
-Node is_no_longer_model_class :-
+oblitterfry(Node) :-
 	Node is_part_of Parent,
 	\+ Node has_part _OtherNode,
 	!,
 	Node no_longer_has_refinements,
 	Node no_longer_has_connections,
 	Node no_longer_has_graphical_attributes,
-	Node is_no_longer_part_of Parent.
+	Node is_no_longer_part_of Parent,
+	Node is_no_longer_model_class.
 
 delete_implicit_node(Exp_node) :-
 	implicit_function(Exp_node, Imp_node),
 	unghost(Imp_node),
-	Imp_node is_no_longer_model_class, fail;
+	oblitterfry(Imp_node), fail;
 	true.
 
 /* new_line: This adds a line to the model, the arguments being (1) the class of line, (2) The list of coordinate pairs specifying its path, (3) and (4) the objects on which it starts and finishes. This always succeeds as the allowability of the operation is checked while dragging is in progress in order to highlight start and finish points correctly. Both arcs and nodes have their names initially set to their internal IDs.*/
@@ -777,44 +739,24 @@ return_relevant(End, Mid, Link, VisLink) :-
 /* can_start/2: This takes a linear type (flow, influence) and a point at which it might start. If there is a box object at that point which might constitute a start for that linear, returns it, otherwise fails.  */
 
 can_start(Ltype, Box) :-
-	(Box = tab(Comp, Link, _,_),
-	    find_type(Link, Ltype); % must continue link
 	find_type(Box, Type),
-	    Link = Box,
-	    (Ltype = Type;
-	    can_connect(Ltype, Type, _), !)),
-	\+ start_full(Ltype, Link, Comp).
+	(Ltype = Type;
+	can_connect(Ltype, Type, _), !),
+	\+ start_full(Ltype, Box).
 
-/* New version with support for IC tabs -- removed because it did not allow variable/event separation. Finish in a submodel is still allowed, we will attempt to draw a new component at
-the end of the link 
-
-can_finish(Ltype, Box) :-
-	(Box = tab(Comp, Link, _,_),
-	    find_type(Link, Ltype); % must continue link
-	find_type(Box, Type),
-	    Link = Box,
-	    (Ltype = Type;
-	    \+ Type is_primitive;
-		can_connect(Ltype, _, Type), !)),
-	\+ finish_full(Ltype, Link, Comp).
-
-This version includes tests for things like role arrow loops.
-TODO: add IC tab support as per above. Must get type at end of tab --
-can_start need not do so (yet). */
+/* finish in a submodel is still allowed, we will attempt to draw a new component at
+the end of the link */
 
 can_finish(Ltype, Box1, Box2) :-
 	(appears(Box2), !; contains(Box2, Box1)),
-	\+ (find_base(Box1, Id), find_base(Box2, Id)),
+	different(Box1, Box2),
 	\+ u_turn(Ltype, Box1, Box2),
-	(Box1 = tab(Node1, L, _,_),
-	    find_type(L, Type1),
-	    Ltype = Type1;
 	find_type(Box1, Type1),
+	find_type(Box2, Type2),
 	(Type1 = Ltype, !,
 		Box1 is_connector from Node1 to _;
-	Node1 = Box1)),
+	Node1 = Box1),
 	find_type(Node1, Start_type),
-	find_type(Box2, Type2),
 	( \+ Type2 is_primitive, !;
 	Type2 = Ltype, !,
 		Box2 is_connector from Node2 to _,
@@ -846,6 +788,10 @@ membership_depends(Ind, Dep) :-
 	    connects(Inf, Con, Dep)),
 	(Ind = Con; membership_depends(Ind, Con)).
 
+different(Box1, Box2) :-
+   find_base(Box1, Base),
+   \+ find_base(Box2, Base).
+
 /* Table of what type of link can connect what types of object. Does not include
 submodels, which are taken always to be connectable. Currently allows influences
 to terminate on compartments; hopefully this will allow variables to be used as
@@ -856,12 +802,12 @@ can_connect(Arc, Node1, Node2) :-
 	(state:get_style(sd), !,
 	    ConnectTable =
 	[[flow,
-	  [[[compartment, cloud, submodel, module], [compartment, cloud]]]],
+	  [[[compartment, cloud], [compartment, cloud]]]],
 	 [squirt,
-	  [[[compartment, cloud, submodel, module], [compartment, cloud]],
+	  [[[compartment, cloud], [compartment, cloud]],
 	   [[state, cloud], [state, cloud]]]],
 	 [influence,
-	  [[[compartment, state, variable, flow, submodel, module,
+	  [[[compartment, state, variable, flow,
 	     alarm, creation, immigration, reproduction, loss],
 	    [variable, flow, compartment, state, event, squirt,
 	     alarm, condition, creation, immigration, reproduction, loss]],
@@ -948,7 +894,7 @@ get_submodel_interface(Model, flow, Dir, Link,
 	    sequence(Link, Tap);
 	 ControlDir = in,
 	    Tap = Link),
-	has_bowtie(Tap),
+	\+ is_ghost(Tap),
 	implicit_function(Tap, Valve),
 	get_spec_units(Valve, FlowUnits),
 	/* cannot use caption_for because we want this links name, not that
@@ -966,7 +912,7 @@ get_submodel_interface(Model, influence, Dir, Link,
 
 get_param_entry(LastLink, Dest,
 		entry(RemoteUnit, RelationCapt, SourceLocation)) :-
-	get_link_source_data(LastLink, _, Dest, _, RemoteUnit,
+	get_link_source_data(LastLink, Dest, _, RemoteUnit,
 			     Relation, _,_,_, SourceLocation),
 	(var(Relation), RelationCapt = none;
 	nonvar(Relation),
@@ -974,7 +920,7 @@ get_param_entry(LastLink, Dest,
 
 get_connection(Model, Type, Dir, Link, SourceCapt, DestCapt,
 	       Dest, LastLink) :-
-	Model has_model_refinement link_equivalences of LinkPairs,
+	Model has_link_equivalences LinkPairs,
 	setof(Outer, member(Inner-Outer, LinkPairs), Outers),
 	(Dir = in,
 	    Link = Inner,
@@ -1148,13 +1094,13 @@ match_caption(Model, Do, Done) :-
 	match_caption(Parent, NextLevel, Done).
 
 add_equivalence(Parent, Start, Finish) :-
-	(Parent has_model_refinement link_equivalences of Pair_list, !,
-		Parent has_changed_model_refinement link_equivalences of
+	(Parent has_link_equivalences Pair_list, !,
+		Parent has_changed_link_equivalences
 			[Start-Finish | Pair_list];
-	Parent has_new_model_refinement link_equivalences of [Start-Finish]).
+	Parent has_new_link_equivalences [Start-Finish]).
 
 list_cross_border_specs(Parent, Link_specs) :-
-	Parent has_model_refinement link_equivalences of Link_list,
+	Parent has_link_equivalences Link_list,
 	setof(Link_spec, spec_from(Parent, Link_list, Link_spec), Link_specs), !;
 	Link_specs = [].
 
@@ -1178,7 +1124,7 @@ describe(Node, Near_end, Arc, Where) :-
 		caption_for(Node, Id);
 	find_all_comps(Parent, Node),
 	\+ Parent = Near_end,
-	Parent has_model_refinement link_equivalences of Pair_list,
+	Parent has_link_equivalences Pair_list,
 	(member(Arc-_, Pair_list); member(_-Arc, Pair_list)), !,
 		Preamble = "outside submodel",
 		caption_for(Parent, Id);
@@ -1204,8 +1150,8 @@ boundaries, and deleting a non-final arc creates a new input node,
 only destination nodes are affected by arc deletion. And none at all
 if they are flows. */
 
-presence_affects(Item, Affected) :-
-	status_affects(Item, Affected);
+presence_affects(Item, AffectedBase) :-
+	(status_affects(Item, Affected);
 	find_type(Item, influence),
 	    Item is_connector from _ to Fn,
 	    implicit_function(Affected, Fn);
@@ -1224,7 +1170,10 @@ presence_affects(Item, Affected) :-
 	    Item is_connector from _ to Affected,
 	    terminates(Item, Affected);
 	find_type(Item, condition),
-	    Affected has_part Item.
+	    Affected has_part Item),
+	find_base(Affected, AffectedBase);
+	ghost_link(Item, Base, Ghost),
+	    member(AffectedBase, [Base, Ghost]).
 
 delete_obsolete_modes([], _, []).
 
@@ -1238,20 +1187,18 @@ delete_obsolete_modes([use(N, Dir, Local, Units) | R1], DeadRef, NewList) :-
 	NewList = R2).
 
 /* Nodes whose completion status may be affected by a change in status
-of the given item */
+of the given item -- ghost should be converted to base before calling */
 
-status_affects(Tgt, Affected) :-
-	find_base(Tgt, Item),
+status_affects(Item, Affected) :-
+%	find_base(Tgt, Item),
 	(Base = Item;
-	    find_ghosts(Item, Base);
-	    has_bowtie(Item),
-	    (sequence(Base, Item); sequence(Item, Base))),
+	    find_ghosts(Item, Base)),
 	(Affected = Base;
-	initiates_in_module(Affected, Base),
+	initiates(Affected, Base),
 	    find_type(Affected, influence)),
 	\+ Affected = Item;
-	find_type(Tgt, relation), /* for parameter name updates */
-	    connects(Tgt, Base, Assoc),
+	find_type(Item, relation), /* for parameter name updates */
+	    connects(Item, Base, Assoc),
 	    (Start=Base, Finish=Assoc; Start=Assoc, Finish=Base),
 	    Link1 is_connector from Start to _,
 	    (Link1 = Link2; sequence(Link1, Link2)),
@@ -1260,12 +1207,6 @@ status_affects(Tgt, Affected) :-
 	    sequence(Link2, Affected),
 	    Affected is_connector from _ to Target.
 
-/* Work from a start in a module to find affected influences */
-initiates_in_module(Inf, Start) :-
-	Inf0 is_connector from Start to _,
-	(Inf = Inf0;
-	logical_after(Inf0, Inf, _)).
-	
 /* OK, now here's the easy, teenage, New York version...
 
 status_affects(Item, Affected) :-
@@ -1277,13 +1218,12 @@ status_affects(Item, Affected) :-
 */
 	
 /* Do not start on links already continued or uncontinuable */
-start_full(Type, Link, Node) :-
+start_full(Type, Link) :-
 	old_cloud(Link);
 	connects_ghost_flow(Type, Link);
 	find_type(Link, Type),
-	\+ (continues_in(Link, Module),
-	       module_for(Node, Module),
-		\+ (Node has_model_refinement link_equivalences of Equiv_list,
+	\+ (continues_in(Link, Node),
+		\+ (Node has_link_equivalences Equiv_list,
 		member(Link-_, Equiv_list),
 		\+ Type = influence) /*
 	   allow drags from cloud-terminated flows -- buggy, very buggy */ ;   
@@ -1298,9 +1238,8 @@ finish_full(Type, Link) :-
 	\+ (initiates(Link, Node),
 	       (is_parameter(Node, P), P>0;
 		   Node is_of_sort cloud);
-	    continues_from(Link, Module),
-	       module_for(Node, Module),
-		\+ (Node has_model_refinement link_equivalences of Equiv_list,
+	    continues_from(Link, Node),
+		\+ (Node has_link_equivalences Equiv_list,
 		member(_-Link, Equiv_list))).
 
 old_cloud(Link) :-
@@ -1311,13 +1250,10 @@ old_cloud(Link) :-
 connects_ghost_flow(Type, Link) :-
 	Type = influence,
 	find_type(Link, flow),
-	\+ has_bowtie(Link).
+	is_ghost(Link).
 
-remove_equivs(Submodel, DeadPair) :-
-	Submodel no_longer_has_model_refinement link_equivalences of Equivs,
-	setof(LivePair, (member(LivePair, Equivs), \+ LivePair = DeadPair),
-	      NewEquivs),
-	Submodel has_new_model_refinement link_equivalences of NewEquivs,
+remove_equivs(DeadPair) :-
+	link:remove_connection(DeadPair),
 	fail.
 
 is_top_arc(TopArc) :-
@@ -1328,19 +1264,16 @@ is_top_arc(TopArc) :-
 terminated and so forth when it is deleted. For bulk deletions these are
 probably all doomed anyway, so just call fast_delete instead. As a slight
 concession to usability, fast_delete removes its equivalence entry from its
-start and end points, allowing it to be used for end-to-end deletes. */
+start point, allowing it to be used for end-to-end deletes. */
 
 fast_delete(Dead) :-
 	delete_implicit_node(Dead),
 	state:shows_model(Win,Dead),
 	    draw:delete_window(Win),
 	    fail;
-	Dead is_no_longer_model_class;
+	oblitterfry(Dead);
 	Dead is_connector from In to Out,
-	    ((Start = In; Start has_part In),
-		remove_equivs(Start, _-Dead);
-	    (End = Out; End has_part Out),
-		remove_equivs(End, Dead-_);
+	    (remove_equivs(_-Dead);
 	    Dead is_no_longer_connector,
 		remove_invisible_floater(In),
 		remove_invisible_floater(Out)).
@@ -1348,7 +1281,7 @@ fast_delete(Dead) :-
 superfast_delete(Dead) :-
 	Dead has_part AlsoDead,
 	    superfast_delete(AlsoDead),
-	    AlsoDead is_no_longer_model_class,
+	    oblitterfry(AlsoDead),
 	    state:shows_model(Win, AlsoDead),
 	    draw:delete_window(Win),
 	    fail;
@@ -1365,16 +1298,16 @@ sever_links(Kill_obj, End) :-
 	(continues_in(Kill_obj, End),
 	    caption_for(Start, NewCapt),
 	    min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
-	    get_link_source_data(Kill_obj, _, End, _, SUnit, none, _,_,_,_),
+	    get_link_source_data(Kill_obj, End, _, SUnit, none, _,_,_,_),
 	    (make_new_end_node(End, Kill_obj, start,
 			       NewCapt, SUnit, SMinVal, SDefVal, SMaxVal);
-	    remove_equivs(End, Kill_obj-_));
+	    remove_equivs(Kill_obj-_));
 	continues_from(Kill_obj, End),
 	    caption_for(Finish, NewCapt),
 	    min_def_and_max_for(Finish, FMinVal, FDefVal, FMaxVal),
 	    (make_new_end_node(End, Kill_obj, finish,
 			       NewCapt, _, FMinVal, FDefVal, FMaxVal);
-	    remove_equivs(End, _-Kill_obj)));
+	    remove_equivs(_-Kill_obj)));
 	true.
 	    
 min_def_and_max_for(VisNode, MinVal, DefVal, MaxVal) :-
@@ -1393,7 +1326,7 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	       [go(influence, start, variable),
 		go(flow, start, cloud),
 		go(flow, finish, cloud)]),
-	Submodel has_model_refinement link_equivalences of Equivs,
+	Submodel has_link_equivalences Equivs,
 	(Dir = start,
 	    OuterFirst = Equivs,
 	    NodePosn = CourseStart,
@@ -1453,7 +1386,7 @@ remove_invisible_floater(Node) :-
 	_ is_connector from _ to Node;
 	Node has_graphical_attribute bounding_box of _;
 	Node has_graphical_attribute bowtie of _), !;
-	Node is_no_longer_model_class.
+	oblitterfry(Node).
 
 make_border_node(Line_type, Parent, Node_name) :-
 	member(Line_type-Node_type, [flow-cloud, squirt-cloud,
@@ -1542,31 +1475,22 @@ unique_name_for_new(Type, Name) :-
 	(get_abbrev(Type, Abbrev), !; Type = Abbrev),
 	utility:unique_name(Abbrev, Name, _).
 
-get_occurrence_disag_params(Submodel,
-			    [Nature, Count, ModName, Desc, Comment]) :-
+get_disag_params(Submodel, [Colour, Image, ImgPos, Nature, Fat, Count, Step,
+			    Desc, Comment, EnumSpecs, Proc, Inc, Libs,
+			    Fix, Hide, Separate]) :-
+	(Submodel has_class_refinement fill_colour of Colour,
+	    \+ Colour = clear, !;
+	    Colour = white),
+	(Submodel has_class_refinement fill_image of Image, !;
+	    Image = none),
+	(Submodel has_class_refinement image_posn of ImgPos, !;
+	    ImgPos = none),
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(count=Count, Multi), !;
 	Count=[]),
 	(Submodel has_class_refinement multiplication_spec of Multi,
 	    member(type=Nature, Multi), !;
 	Nature = generated),
-	(Submodel is_instance_of Module, !,
-	    Module has_class_refinement name of ModName;
-	ModName = ''),
-	(Submodel has_class_refinement desc of Desc, !;
-	Desc = ''),
-	(Submodel has_class_refinement comment of Comment, !;
-	Comment = '').
-
-get_module_disag_params(Submodel, 
-			[Colour, Image, ImgPos, Fat, Step, Desc, Comment,
-			 EnumSpecs, Proc, Inc, Libs, Custom, Fix, HideB, ViewC, Separate]) :-
-	(Submodel has_class_refinement fill_colour of Colour, !;
-	    Colour = clear),
-	(Submodel has_class_refinement fill_image of Image, !;
-	    Image = none),
-	(Submodel has_class_refinement image_posn of ImgPos, !;
-	    ImgPos = none),
 	time_step_for(Submodel, 'Default', Step),
 	(Submodel has_class_refinement desc of Desc, !;
 	Desc = ''),
@@ -1576,148 +1500,21 @@ get_module_disag_params(Submodel,
 	    all(menu, separate_type_from_mems,
 		[build(EnumSpecs), build(EnumTypes)]), !;
 	EnumSpecs = []),
+	(Submodel has_class_refinement eqn_units of Fix, !;
+	Fix = 'Default'),
+	(Submodel has_graphical_attribute hide_contents of Hide, !;
+	Hide = 0),
+	(Submodel has_class_refinement separate of Separate, !;
+	Separate = 0),
 	(Submodel has_class_refinement external_code of ExternCode, !,
 	    member(procedure=Proc, ExternCode),
 	    member(include=Inc, ExternCode),
 	    member(libraries=Libs, ExternCode);
 	Proc = none, Inc = none, Libs = []),
-	(Submodel has_class_refinement eqn_units of Fix, !;
-	Fix = 'Default'),
-	(Submodel has_graphical_attribute hide_border of HideB, !;
-	HideB = 0),
-	(Submodel has_class_refinement separate of Separate, !;
-	Separate = 0),
-	(Submodel has_graphical_attribute contents_view of ViewC, !;
-	    ViewC = full),
-	(Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
-	 Submodel has_graphical_attribute internal_extent of [LI, _, RI, _], !,
-	    Fat is 1.0*(RB-LB)/(RI-LI);
-	/* No bounding box means it's a top level window, no internal extent
-	    means a module instance -- in either case do not allow
-	    set fatness */
-	Fat = 1.0),
+	Submodel has_graphical_attribute bounding_box of [LB, _, RB, _],
+	Submodel has_graphical_attribute internal_extent of [LI, _, RI, _],
+	Fat is 1.0*(RB-LB)/(RI-LI).
 
-	border_links(Submodel, AutoInfIns, AutoInfOuts,
-		     AutoFlowIns, AutoFlowOuts),
-
-	(setof(HasEqn, can_use_equation(Submodel, HasEqn), FncComps), !;
-	    FncComps = []),
-
-	all(m_update, find_cur_posn,
-	     [unify(Submodel), 
-	      build([AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts,
-		     FncComps, FncComps]),
-	      build([inf_in, inf_out, flow_in, flow_out, show_val, edit_eqn]),
-	      build(Custom)]).
-
-/* Now what about auto-connection information. Dialogue needs to know
-which, if any, possible connection is being used, so send 4 lists
-(fttb), 1st elt of each being posn of current selection or 0 if
-none. */
-
-border_links(Submodel, AutoInfIns, AutoInfOuts, AutoFlowIns, AutoFlowOuts) :-
-        (setof(VPar-VParCapt,
-	       (find_all_comps(Submodel, VPar),
-		      find_type(VPar, influence),
-		      continues_from(VPar, Submodel),
-		      autoconnect_reference_for(Submodel, VPar, inf_in, VParCapt)),
-	       AutoInfIns), !;
-	 AutoInfIns = []),
-        (setof(VPar-VParCapt,
-	       (find_all_comps(Submodel, VPar),
-		      find_type(VPar, influence),
-		      continues_in(VPar, Submodel),
-		      autoconnect_reference_for(Submodel, VPar, inf_out, VParCapt)),
-	       AutoInfOuts), !;
-	 AutoInfOuts = []),
-        (setof(VPar-VParCapt,
-	      A^B^(find_all_comps(Submodel, VPar),
-			VPar is_connector from A to B,
-			find_type(A, cloud),
-			caption_for(VPar, VParCapt)),
-	       AutoFlowIns), !;
-	 AutoFlowIns = []),
-        (setof(VPar-VParCapt,
-	      A^B^(find_all_comps(Submodel, VPar),
-			VPar is_connector from A to B,
-			find_type(B, cloud),
-			\+ find_type(A, cloud),
-			caption_for(VPar, VParCapt)),
-	       AutoFlowOuts), !;
-	 AutoFlowOuts = []).
-
-can_use_equation(Model, HasEqn) :-
-	find_all_comps(Model, Comp),
-	Comp is_of_sort has_function,
-	\+ is_ghost(Comp),
-	\+ (Comp is_of_sort has_bowtie, \+ has_bowtie(Comp)),
-	caption_for(Comp, HasEqn).
-
-find_cur_posn(Model, Capts, AutoType, [CurPosn | Capts]) :-
-         find_all_comps(Model, CurVPar),
-         has_autoconnect(CurVPar, AutoType),
-         autoconnect_reference_for(Model, CurVPar, AutoType, CurVParCapt),
-         nth(CurPosn, Capts, CurVParCapt), !;
-         CurPosn = 0.
-
-has_autoconnect(Comp, AutoType) :-
-	get_av_pair(Comp, 2, autoconnect, AutoType);
-	get_av_pair(Comp, 0, autoconnect, AutoType).
-
-clear_autoconnect(Comp) :-
-	clear_av_pair(Comp, 2, autoconnect),
-	clear_av_pair(Comp, 0, autoconnect).
-
-set_autoconnect(Comp, AutoType) :-
-	Comp is_of_sort line, !,
-	    add_parameter(Comp, 2, autoconnect, AutoType);
-	add_parameter(Comp, 0, autoconnect, AutoType).
-
-autoconnect_reference_for(Submodel, CurVPar, AutoType, CurVParCapt) :-
-	find_all_comps(Submodel, CurVPar),
-	(AutoType = inf_in, !,
-	    find_type(CurVPar, influence),
-	    continues_from(CurVPar, Submodel),
-	    CurVPar is_connector from _ to CaptFn,
-	    implicit_function(CaptNode, CaptFn),
-	    get_input_info(CaptFn, InputList),
-	    member(input_link(id(CurVPar, none, _), _, Name, _,_), InputList),
-	    caption_for(CaptNode, CaptStart),
-	    sicstus_format_to_chars("~w (for ~a)", [Name, CaptStart], CaptStr),
-	    name(CurVParCapt, CaptStr);
-	(AutoType = inf_out, !,
-	    find_type(CurVPar, influence),
-	    continues_in(CurVPar, Submodel),
-	    CurVPar is_connector from CaptNode to _;
-	CaptNode = CurVPar),
-	caption_for(CaptNode, CurVParCapt)).
-
-make_module_of(Component, Name, Instance) :-
-	Parent has_part Component,
-	Component is_no_longer_part_of Parent,
-	contains(Top, Parent),
-	backup:is_toplevel(Top),
-	Component is_also_part_of Top,
-	Instance is_new_part_of Parent,
-	Instance has_new_model_refinement instance of Component,
-	(Component no_longer_has_model_refinement A of V,
-	    Instance has_new_model_refinement A of V,
-	    fail;
-	Component has_graphical_attribute A of V,
-	    member(A, [bounding_box, caption_offset]),
-	    Component no_longer_has_graphical_attribute A of V,
-	    Instance has_new_graphical_attribute A of V,
-	    fail;
-	member(End-Component, [start-Start, finish-Finish]),
-	    Link is_connector from Start to Finish,
-	    Link has_changed_termination End from Component to Instance,
-	    fail;
-	Component no_longer_has_class submodel,
-	    Component has_new_class module,
-	    Component has_changed_class_refinement name from Caption to Name,
-	    Instance has_new_class submodel,
-	    Instance has_new_class_refinement name of Caption).
-	
 time_step_for(Model, TopStep, Step) :-
 	Model has_class_refinement step of Step, !;
 	Step = TopStep.
@@ -1735,20 +1532,23 @@ Ghost ceases to be a ghost of anything it was previously a ghost of. */
 make_ghost(Ghost, Base, TopLink) :-
 	unmake_ghost(Ghost);
 	Base = '', !;
-   add_new_line_between(influence, Base, Ghost, TopLink).
+	add_new_line_between(influence, Base, Ghost, TopLink).
 
 unmake_ghost(Ghost) :-
 	find_base(Ghost, Base),
 	\+ Base = Ghost,
-	remove_connection(Base, Ghost).
+	remove_connection(Base, Ghost),
+	event:spread_colour(Base, no),
+	fail.
 
 remove_connection(Base, Ghost) :-
 	setof(GhostLink, exists_for(GhostLink, Base, Ghost), Links),
 	member(Link, Links),
-	(continues_in(Link, Model),
-	    remove_equivs(Model, Link-_);
-	fast_delete(Link),
-	    fail).
+	(remove_equivs(Link-_);
+	draw:off(Link),
+	    fast_delete(Link),
+	    fail);
+	true.
 
 exists_for(Link, Base, Ghost) :-
 	connects(Link, Base, Ghost),
@@ -1781,7 +1581,7 @@ get_possible_start(Base, Start) :-
 next_section_of(Source, Dest) :-
 /* works efficiently when source is defined */
 	(Source is_connector from _ to Box; Source draws_inside Box),
-	Box has_model_refinement link_equivalences of Pairs,
+	Box has_link_equivalences Pairs,
 	member(Source-Dest, Pairs).
 
 /* Following rules trace value-dependence in opposite

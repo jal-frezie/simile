@@ -346,7 +346,7 @@ is all done at start submodel time) but rearranges the preambles and postambles 
 subsequent stuff is put outside the loop.
 */
 
-do_assignment(L, [finish_level | Clauses], Graph_count, Collects, 
+do_assignment(L, [finish_level | Clauses], Graph_count, Collects,
 		[LastCurrent | Preambles], [Current, NextCurrent | Postambles],
 		Used, Temps, Results) :-
 
@@ -372,24 +372,24 @@ do_assignment(L, [verbatim(CodeLine) | Clauses],
 			Used, Temps, Results).
 
 do_assignment(L, [SpecialOp | Clauses],
-		Graphs, NewCollects,
+		Graphs, NewCollects, 
 		Preambles, [Current | Postambles],
 		Used, Temps, Results) :-
 	length(Preambles, Nesting),
 	Indent is Nesting*4,
 
 	(SpecialOp =.. [collect, DestSpec, TgtRef | Args],
-	    NewCollects = [TgtRef | Collects],
+ 	    NewCollects = [TgtRef | Collects],
 	    make_scalar(L, DestSpec, [], Dest),
 	    refer(L, Dest, DestRef),
-	    make_evaluation_routine_all(L, Args, [], Inds),
-	    CallSpec =.. [collect, DestRef, CollectId | Inds];
+ 	    make_evaluation_routine_all(L, Args, [], Inds),
+ 	    CallSpec =.. [collect, DestRef, CollectId | Inds];
 	SpecialOp =.. [call_ext_code, ProcName, CurSmPtr, ArgCodes],
 	    all(render, msr_with_ptrs,
 		[unify(L), unify(CurSmPtr), build(ArgCodes), build(XArgs)]),
 	    CallSpec =.. [ProcName | XArgs];
 	SpecialOp =.. [SubCall, NodeId, InstHandle, NewCond],
-	    NewCollects = Collects,
+ 	    NewCollects = Collects,
 	    member(SubCall,
 		   [update_submodel, advance_submodel,
 		    int_eval_submodel, ext_eval_submodel]),
@@ -399,8 +399,8 @@ do_assignment(L, [SpecialOp | Clauses],
 	    refer_value(L, InstPtr, InstHandleRef),
 	    CallSpec =.. [SubCall, Node, InstHandleRef, start_time, PassTest];
 	SpecialOp = search_from(ArcInd, _, TopRef),
-	    NewCollects = Collects,
-	    CallSpec = search_from(myClassPtr, ArcInd, TopRef)),
+ 	    NewCollects = Collects,
+	    CallSpec = search_from(myClassPtr, ArcInd, TopRef)), 
 	append(Current, [CodeLine], NewCurrent),
 	do_assign_list(L, Clauses, Graphs, Collects,
 		       Preambles, [NewCurrent | Postambles],
@@ -412,7 +412,7 @@ do_assignment(L, [SpecialOp | Clauses],
 /* This one starts a conditional execution sequence dependent on the
 given submodel */
 
-do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graphs, Collects, 
+do_assignment(L, [check_phase(Phase, VMPtrs) | Clauses], Graphs, Collects,
 	      Preambles, [Current | Postambles],
 	      Used, Temps, Results) :-
 	length(Preambles, Nesting),
@@ -608,8 +608,8 @@ do_assignment(L, [reproduce(ParentPtr, Name, ReproName) | Clauses],
 
 	do_assign_list(L, Continuation, Graphs, Collects,
 		       [Current | Preambles],
-			[Starters, Finishers | Postambles],
-			Used, Temps0, Results),
+		       [Starters, Finishers | Postambles],
+		       Used, Temps0, Results),
 	merge_lists([[Type, Pointer, []]], Temps0, Temps).
 
 /* OK, now for mortality. This will have to be called before immigration or reproduction because any new individuals might not yet have values for their loss nodes. It used to be done as part of the reproduction loop but had to be separated now there can be many reproduction channels. However, all loss channels are equivalent, so there only needs to

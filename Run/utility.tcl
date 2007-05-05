@@ -9,22 +9,23 @@
 # Thanks to tk_abandon, I sometimes put several dialogues up at once, which,
 # thanks to a bug in tcltk, gets the wrong results for the lower ones...
 
-source ../Run/diagram.tcl
-
 proc ShowMessage { title icon string resps {parent {}}} {
     set mBoxCmd [list tk_messageBox -title $title -icon $icon \
-                     -message $string -type $resps]
+		     -message $string -type $resps]
     if {[winfo exists .splash]} {
-        destroy .splash ;# ensure mess is not obscured by splash screen
+	destroy .splash ;# ensure mess is not obscured by splash screen
+    }
+    if {[winfo exists .popup]} {
+	destroy .popup ;# avoid weird hang under Aqua, or at least try
     }
     set active [focus]
-    if {[string length $parent]>0} { ;# window . is hidden so must not parent
-        lappend mBoxCmd -parent $parent
+    if {[string length $parent]>0} {
+	lappend mBoxCmd -parent $parent
     } elseif {[string length $active]>1} { ;# window . is hidden so must not
-        lappend mBoxCmd -parent $active
+	lappend mBoxCmd -parent [winfo toplevel $active]
     }
     set act [eval $mBoxCmd]
-    update
+    update idletasks
     return $act
 }
 
@@ -43,39 +44,39 @@ proc ChooseFile { preferred title canbenew } {
 #    set prevDir [pwd]
 #    cd $__tk_filedialog(selectPath)
     switch $fileType {
-        .sml {
-            set typeList [list .sml .sim .ame]
-            set desc Models
-            set recordEntry 1
-        } .gif {
-            set typeList [list .gif .jpg .jpeg .png]
-            set desc Images
-            set recordEntry 0
+	.sml {
+	    set typeList [list .sml .sim .ame]
+	    set desc Models
+	    set recordEntry 1
+	} .gif {
+	    set typeList [list .gif .jpg .jpeg .png]
+	    set desc Images
+	    set recordEntry 0
+	} {} {
+	    set typeList {}
+	    set desc Directories
+	    set recordEntry 0
 	} .cpp {
 	    set typeList [list .cpp .c .h]
 	    set desc "Source or header files"
 	    set recordEntry 0
-        } {} {
-            set typeList {}
-            set desc Directories
-            set recordEntry 0
-        } default {
-            set typeList [list $fileType]
-            set desc "$fileType files"
-            set recordEntry 0
-        }
+	} default {
+	    set typeList [list $fileType]
+	    set desc "$fileType files"
+	    set recordEntry 0
+	}
     }
     set typeList [list [list $desc $typeList]]
     set switches [list -title $title -defaultextension $fileType \
-                      -filetypes $typeList \
-                      -initialdir [do_in_editor GetPathChoice $fileType]]
+		      -filetypes $typeList \
+		      -initialdir [do_in_editor GetPathChoice $fileType]]
     set active [focus]
     if {[llength $active]} {
-        lappend switches -parent [winfo toplevel $active]
+	lappend switches -parent [winfo toplevel $active]
     }
     if {$canbenew} {
         set cmd tk_getSaveFile
-        lappend switches  -initialfile $preferred
+	lappend switches  -initialfile $preferred
     } else {
         set cmd tk_getOpenFile
     }
@@ -83,7 +84,7 @@ proc ChooseFile { preferred title canbenew } {
     set chosenFile [eval $cmd $switches]
 #    cd $prevDir
     if {[string compare $chosenFile {}]} {
-        do_in_editor RecordPathChoice $fileType $chosenFile $recordEntry
+	do_in_editor RecordPathChoice $fileType $chosenFile $recordEntry
     }
     return $chosenFile
 }
@@ -97,7 +98,6 @@ proc linkableExt {defLib} {
 
 # utility procedure to fill in some holes in Tcl8.0
 
-
 proc ChooseText {choice ifTrue ifFalse} {
     if {$choice} {
         return $ifTrue
@@ -108,7 +108,7 @@ proc ChooseText {choice ifTrue ifFalse} {
 
 # takes two file names and returns the second relative to the first
 proc Relativize {current remote} {
-    #        ShowMessage debug info "relativizing $current $remote" ok
+    #	ShowMessage debug info "relativizing $current $remote" ok
     set currentList [file split $current]
     set remoteList [file split $remote]
     set parted 0
@@ -130,10 +130,10 @@ proc Relativize {current remote} {
 
 proc NetOpen {name way} {
     if {[catch {open $name $way} stream]} {
-        set err $stream
-        if {[catch {open $name r+} stream]} {
-            error "Could not open $name $way or r/w -- $err"
-        }
+	set err $stream
+	if {[catch {open $name r+} stream]} {
+	    error "Could not open $name $way or r/w -- $err"
+	}
     }
     return $stream
 }
@@ -157,9 +157,11 @@ proc load_c_stub_1 {} {
     set onUnix [string match unix $tcl_platform(platform)]
     set stubPkg ${MAJ}.${MIN}.$env(SIMILE_VERSION).$onUnix
     if {[catch {package require -exact Ame_dll $stubPkg} dummy]} {
-        error "Could not find a stub for Simile $userinfo(Version) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
+	error "Could not find a stub for Simile $userinfo(Version) and TclTk ${MAJ}.${MIN} under $tcl_platform(platform) -- $dummy"
     }
 }
+
+package require MyTrf ;# loads right version of Trf
 
 proc load_c_stub_2 {} {
     global env userinfo ;# last needed in stub
@@ -189,20 +191,20 @@ proc AdjustCanvas {winId pt dir args} {
 # system disabled due to unlikelihood of using TclTk 8.5 before this is fixed
 
     if {[lindex $args 0]<0.01 && [lindex $args 1]>0.99} {
-#        set noScroll($winId,$dir) 1
-        pack forget $tgt
+#	set noScroll($winId,$dir) 1
+	pack forget $tgt
     } else {
-#        if {[info exists noScroll($winId,$dir)]} {
-#            unset noScroll($winId,$dir)
-#            return
-#        }
-        if {[string match x $dir]} {
-            set placing {-side bottom -after $winId.$pt}
-        } else {
-            set placing {-side right -before $winId.$pt}
-        }
-        eval {pack $tgt} $placing {-fill $dir}
-        eval {$tgt set} $args
+#	if {[info exists noScroll($winId,$dir)]} {
+#	    unset noScroll($winId,$dir)
+#	    return
+#	}
+	if {[string match x $dir]} {
+	    set placing {-side bottom -after $winId.$pt}
+	} else {
+	    set placing {-side right -before $winId.$pt}
+	}
+	eval {pack $tgt} $placing {-fill $dir}
+	eval {$tgt set} $args
     }
 }
 
@@ -217,10 +219,10 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 
         set hdc [wmf open]; #Opens a memory metafile
         if {$seln_only} {
-            ::printer::print_select $hdc $canvas withtag tocopy
-        } else {
-            ::printer::print_canvas $hdc $canvas
-        }
+	    ::printer::print_select $hdc $canvas withtag tocopy
+	} else {
+	    ::printer::print_canvas $hdc $canvas
+	}
         set wmfdc [ wmf close $hdc ]; # Turn the context into a metafile handle
         wmf copy $wmfdc; # Copy to the clipboard
     }
@@ -232,19 +234,19 @@ proc CopyCanvasToWindowsClipboard {canvas seln_only} {
 proc PrintRandomCanvas {canvas} {
     global tcl_platform simtmpdir env
     if {[string match windows $tcl_platform(platform)]} {
-        package require gdi
+	package require gdi
         package require printer
         printer::print_widget $canvas 0
     } else {    
         set tempPSFile $simtmpdir/temp.ps
-        set strm [NetOpen $tempPSFile w]
-        puts $strm [$canvas postscript]
-        close $strm
-        exec $env(PRINTCMD) [file nativename $tempPSFile]
+	set strm [NetOpen $tempPSFile w]
+	puts $strm [$canvas postscript]
+	close $strm
+	exec $env(PRINTCMD) [file nativename $tempPSFile]
         file delete $tempPSFile
     }
 }
-        
+	
 # Export a postscript file from a window. Only the bit of the diagram showing in
 # the viewport is included, and the output is in landscape mode, sized so 100
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
@@ -259,10 +261,10 @@ proc PostScrog { winId } {
             set psfile [file root $psfile].ps
         }
 
-        set useWidth [winfo width $winId]
-        set useHeight [winfo height $winId]
+	set useWidth [winfo width $winId]
+	set useHeight [winfo height $winId]
     
-        $winId postscript -file $psfile -rotate true -pageanchor nw \
+	$winId postscript -file $psfile -rotate true -pageanchor nw \
             -pagex 0 -pagey 0 \
             -width $useWidth -height $useHeight \
             -pagewidth [expr $useWidth/100.0]i -pageheight [expr $useHeight/100.0]i
@@ -272,130 +274,122 @@ proc PostScrog { winId } {
 # popup stuff -- here because both model windows and helpers use them
 
 proc BindPopup {widget keywd} {
-    bind $widget <Enter> [list QueuePopup AddWidgetPopup %W $keywd %X %Y]
+# any % will be subbed by binding process unless we double it
+    regsub -all % $keywd %% keywd
+    bind $widget <Enter> [list QueuePopup AddWidgetPopup $keywd %X %Y]
     bind $widget <Leave> RemovePopup
 }
 
 proc MenuBindPopup {widget keyList} {
+# any % will be subbed by binding process unless we double it
+    regsub -all % $keyList %% keyList
     bind $widget <Enter> [list QueuePopup \
             AddMenuPopup $widget $keyList %y %X %Y 1]
     bind $widget <Motion> [list AddMenuPopup $widget $keyList %y %X %Y 0]
     bind $widget <Leave> RemovePopup
 }
 
-set popper(win) .popup
 proc QueuePopup {args} {
     global popper
-    #puts "queueing $cmd"
     # Only allow one cmd in pipeline at a time -- two added if dragging an
     # incomplete obj which Prolog then deletes (Tk bug workaround - 10 points)
     if {[info exists popper(cmd)]} {
         after cancel $popper(cmd)
     }
     set popper(cmd) [after 500 $args]
-    if {![winfo exists $popper(win)]} {
-        set popper(foc) [focus]
+    bind all <Motion> "set latestmouse(X) %X; set latestmouse(Y) %Y"
+    if {![winfo exists .popup]} {
+	set popper(foc) [focus]
     }
 }
 
-proc AddWidgetPopup {win key X Y} {
-    global msgs popper
+proc AddWidgetPopup {key X Y} {
+    global msgs
     if {![PrefValue custom(popupHelp) popupHelp]} {
-        return
+	return
 
     }
-    PostPopup $win $X $Y
+    PostPopup $X $Y
     if {[info exists msgs($key)]} {
         set message $msgs($key)
     } else {
         set message $key
     }
-    pack [message $popper(win).message -aspect 400 \
+    pack [message .popup.message -aspect 400 \
             -text $message -bg \#ffffc0] -fill x -expand true
 }
 
 proc AddMenuPopup {widget list y X Y new} {
-    global msgs popper
+    global msgs
     if {$new} {
-        PostPopup $widget $X $Y
-        pack [message $popper(win).message -aspect 400 -bg \#ffffc0] \
+        PostPopup $X $Y
+        pack [message .popup.message -aspect 400 -bg \#ffffc0] \
                 -fill x -expand true
     }
     set entry [$widget index @$y]
-    if {[string match none $entry] || ![winfo exists $popper(win).message]} {
+    if {[string match none $entry] || ![winfo exists .popup.message]} {
         return
     }
     if {[llength $list]} {
-        set line [lindex $list $entry]
-        set message "[lindex $line 1]: [lindex $line 0]"
+	set line [lindex $list $entry]
+	set message "[lindex $line 1]: [lindex $line 0]"
     } else {
-        set key [$widget entrycget $entry -label]
-        if {[string equal command [$widget type $entry]]} {
-            set key [string range $key 0 end-2]
-        }
-        if {[info exists msgs($key)]} {
-            set message $msgs($key)
-        } else {
-            set message $key
-        }
+	set key [$widget entrycget $entry -label]
+	if {[string equal command [$widget type $entry]]} {
+	    set key [string range $key 0 end-2]
+	}
+	if {[info exists msgs($key)]} {
+	    set message $msgs($key)
+	} else {
+	    set message $key
+	}
     }
-    $popper(win).message configure -text $message
+    .popup.message configure -text $message
 }
 
-proc PostPopup {win X Y} {
-    global tcl_platform popper
-#    if [string match Darwin $tcl_platform(os)] {
-#        toplevel .popup -width 1 -height 1
-#        ::tk::unsupported::MacWindowStyle style .popup help none
-#    } else {
-#        toplevel .popup -width 1 -height 1 -bd 1 -bg black
-# leaves one pixel of black showing round edge of messages
-#        wm overrideredirect .popup 1
-#    }
-    set surround [winfo toplevel $win]
-    if {[string equal . $surround]} {
-        set popper(win) .popup
+proc PostPopup {X Y} {
+    global tcl_platform latestmouse
+    if {[winfo exists .popup]} {
+        destroy .popup
+    }
+    if [string match Darwin $tcl_platform(os)] {
+        toplevel .popup -width 1 -height 1
+        ::tk::unsupported::MacWindowStyle style .popup help none
     } else {
-        set popper(win) $surround.popup
-    }
-    if {[winfo exists $popper(win)]} {
-        destroy $popper(win)
-    }
-    frame $popper(win) -bd 1 -bg black
+        toplevel .popup -width 1 -height 1 -bd 1 -bg black
 # leaves one pixel of black showing round edge of messages
-
-    set x [expr {$X-[winfo rootx $surround]}]
-    set y [expr {$Y-[winfo rooty $surround]}]
+        wm overrideredirect .popup 1
+    }
 
     update idletasks
-    if {$x>[winfo width $surround]/2} {
-        set xpoint [expr {$x-10}]
-        set evsw e
-    } else {
-        set xpoint [expr {$x+10}]
-        set evsw w
+    bind all <Motion> {}
+    if {[info exists latestmouse(X)]} {
+	set X $latestmouse(X)
+	set Y $latestmouse(Y)
+	array unset latestmouse
     }
-    if {$y>[winfo height $surround]/2} {
-        set ypoint [expr {$y-10}]
-        set svsn s
+    if {$X>[winfo screenwidth .popup]/2} {
+        set xpoint -[expr [winfo screenwidth .popup]+10-$X]
     } else {
-        set ypoint [expr {$y+10}]
-        set svsn n
+        set xpoint +[expr $X+10]
     }
-#    wm geometry .popup ${xpoint}${ypoint}
-#    raise .popup
-#puts "Placing $popper(win) at $xpoint $ypoint"
-    place $popper(win) -x $xpoint -y $ypoint -anchor ${svsn}${evsw}
+    if {$Y>[winfo screenheight .popup]/2} {
+        set ypoint -[expr [winfo screenheight .popup]+10-$Y]
+    } else {
+        set ypoint +[expr $Y+10]
+    }
+    wm geometry .popup ${xpoint}${ypoint}
+    raise .popup
 }
 
 proc RemovePopup {args} {
     global popper
     #puts "Removing popup"
-    if {[winfo exists $popper(win)]} {
-        destroy $popper(win)
-        if {[string match aqua [tk windowingsystem]]} {
-            focus -force $popper(foc)
-        }
+    if {[winfo exists .popup]} {
+        destroy .popup
+	if {[string match aqua [tk windowingsystem]]} {
+	    focus -force $popper(foc)
+	}
     }
     if {[info exists popper(cmd)]} {
         after cancel $popper(cmd)
@@ -403,28 +397,27 @@ proc RemovePopup {args} {
 }
 
 proc AddPopupMessage {text colour args} {
-    global popper
     set limit 500
     if {[llength $args]} {
-        set combo [eval $args $limit]
-        set count [lindex $combo 0]
-        set text [lindex $combo 1]
+	set combo [eval $args $limit]
+	set count [lindex $combo 0]
+	set text [lindex $combo 1]
     } else {
-        set count 0
+	set count 0
     }
     EndsOnly text $count $limit
 
 # note the model editor still processes events while waiting for the executable
 
 # so check window is still there
-    if {[winfo exists $popper(win)]} {
-        if {[string length $text]<20} {
-            pack [label $popper(win).message$colour \
-                      -text $text -bg $colour] -fill x -expand true
-        } else {
-            pack [message $popper(win).message$colour -aspect 400 \
-                      -text $text -bg $colour] -fill x -expand true
-        }
+    if {[winfo exists .popup]} {
+	if {[string length $text]<20} {
+	    pack [label .popup.message$colour \
+		      -text $text -bg $colour] -fill x -expand true
+	} else {
+	    pack [message .popup.message$colour -aspect 400 \
+		      -text $text -bg $colour] -fill x -expand true
+	}
     }
 }
 
@@ -433,19 +426,19 @@ proc EndsOnly {outerText count leave} {
 
     set verbosity [string length $text] 
     if {$verbosity>$leave} {
-        set size [expr ($leave-20)/2]
-        
-        if {$count} {
-            set nvals " ($count values)"
-        } else {
-            set nvals " ($verbosity characters)"
-        }
-        set text [string range $text 0 $size].....[string range $text \
-                                                 [expr $verbosity-$size] end]
-        append text $nvals
-        return 1
+	set size [expr ($leave-20)/2]
+	
+	if {$count} {
+	    set nvals " ($count values)"
+	} else {
+	    set nvals " ($verbosity characters)"
+	}
+	set text [string range $text 0 $size].....[string range $text \
+						 [expr $verbosity-$size] end]
+	append text $nvals
+	return 1
     } else {
-        return 0
+	return 0
     }
 }
 
@@ -454,10 +447,10 @@ proc ShrinkValueList {outerList limit} {
     upvar 1 $outerList list
     set allVals [CountValues $list]
     if {$allVals>$manage} {
-        set range [expr $manage/2]
-        set startRange [GetNVals $list first $range]
-        set endRange [GetNVals $list last $range]
-        set list [concat $startRange $endRange]
+	set range [expr $manage/2]
+	set startRange [GetNVals $list first $range]
+	set endRange [GetNVals $list last $range]
+	set list [concat $startRange $endRange]
     }
     return $allVals
 }
@@ -466,25 +459,25 @@ proc GetNVals {list side need} {
     set subLength -1 ;# first value to try will be 1
     set got 0
     while {$got<$need} {
-        incr subLength 2
-        if {[string equal first $side]} {
-            set startList 0
-            set endList $subLength
-        } else {
-            set startList end-$subLength
-            set endList end
-        }
-        set subList [lrange $list $startList $endList]
-        set got [CountValues $subList]
+	incr subLength 2
+	if {[string equal first $side]} {
+	    set startList 0
+	    set endList $subLength
+	} else {
+	    set startList end-$subLength
+	    set endList end
+	}
+	set subList [lrange $list $startList $endList]
+	set got [CountValues $subList]
     }
     if {$subLength==1} {
-        return [list [lindex $list $startList] \
-                        [GetNVals [lindex $list $endList] $side $need]]
+	return [list [lindex $list $startList] \
+			[GetNVals [lindex $list $endList] $side $need]]
     } else {
-        return $subList
+	return $subList
     }
 }
-        
+	
 proc CountValues {text} {
     set len [llength $text]
     if {$len==1} {
@@ -510,42 +503,19 @@ proc SquirtMime {args} {
     }
 }
 
-#proc LoadIconImages {} {
-#    global iconImages
-#    foreach fn {tick cross function} {
-#        set iconImages($fn) [NewPhoto "../Images/Eqnbar/${fn}.gif"]
-#    }
-#    foreach fn {graph table new open save edit reel noreel} {
-#        set iconImages($fn) [NewPhoto "../Images/Toolbar/${fn}.gif"]
-#    }
-#    foreach fn {info warning error} {
-#        set iconImages($fn) [NewPhoto "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
-#    }
-#}
-
-proc LoadIconImages {imageSubDir imageFiles} {
+proc LoadIconImages {} {
     global iconImages
-    foreach fn $imageFiles {
-        if {![info exists iconImages($fn)]} {
-            set iconImages($fn) \
-                [NewPhoto [file join .. Images $imageSubDir ${fn}.gif]]
-        }
+    foreach fn {tick cross function} {
+	set iconImages($fn) \
+	    [image create photo -file "../Images/Eqnbar/${fn}.gif"]
     }
-}
-
-proc NewPhoto {file} {
-    if {[InPlugin]} {
-        return [image create photo -data [ReadFile $file]]
-    } else {
-        return [image create photo -file $file]
+    foreach fn {graph table new open save edit reel noreel} {
+        set iconImages($fn) \
+	    [image create photo -file "../Images/Toolbar/${fn}.gif"]
     }
-}
-
-proc RaisePageZero {nb} {
-    if {[InPlugin]} {
-        $nb raise [lindex [$nb pages] 0]
-    } else {
-        $nb select [lindex [$nb tabs] 0]
+    foreach fn {info warning error} {
+        set iconImages($fn) \
+	    [image create photo -file "${::BWIDGET::LIBRARY}/images/${fn}.gif"]
     }
 }
 
@@ -579,25 +549,6 @@ proc Numeric {str} {
     return [string is double -strict $str]
 }
 
-proc InPlugin {} {
-    global embed_args
-    return [info exists embed_args]
-}
-
-proc OnDelete {win action} {
-    if {![InPlugin]}  {
-        wm protocol $win WM_DELETE_WINDOW $action
-    }
-}
-
-proc AddTitle {win title} {
-    if {[InPlugin]} {
-        $win.title config -text $title
-    } else {
-        wm title $win $title
-    }
-}
-
 # This takes care of the ways of getting a good-looking transient
 # window on different platforms. Currently the extra MacOS command is
 # necessary to make sure dialogue boxes have titlebars, but if there
@@ -606,22 +557,16 @@ proc AddTitle {win title} {
 
 proc PutItThere {t parent} {
     global tcl_platform
-    if {[InPlugin]} {
-        frame $t
-        pack [label $t.title -bg beige] -fill x
-        place $t -x 0 -y 0 -anchor sw
+    toplevel .$t -bd 4
+    if {[winfo exists $parent] && [string compare . $parent]} {
+	wm transient $t $parent
+	if [string match Darwin $tcl_platform(os)] {
+	    ::tk::unsupported::MacWindowStyle style $t floatGrowProc
+	}
     } else {
-        toplevel .$t -bd 4
-        if {[winfo exists $parent] && [string compare . $parent]} {
-            wm transient $t $parent
-        } else {
-            wm transient $t
-        }
-        if [string match Darwin $tcl_platform(os)] {
-            ::tk::unsupported::MacWindowStyle style $t floatGrowProc
-        }
-        wm geometry $t +0+[winfo screenheight $t]
+	wm transient $t
     }
+    wm geometry $t +0+[winfo screenheight $t]
     return $t
 }
 
@@ -637,46 +582,36 @@ proc LetItShow {t} {
     update idletasks
 #puts "$t: viewable [winfo viewable $t]; state [wm state $t]"
     if {![winfo viewable $t] && ![string equal withdrawn [wm state $t]]} {
-        tkwait visibility $t
+	tkwait visibility $t
     }
-    if {[InPlugin]} {
-        set topw [winfo screenwidth .]
-        set toph [winfo screenheight .]
-        place config $t -x [expr {$topw/2}] -y [expr {$toph/2}] -anchor c
-    } else {
-        set scw [winfo screenwidth $t]
-        set sch [winfo screenheight $t]
-        set wotParent [wm transient $t]
+    set scw [winfo screenwidth $t]
+    set sch [winfo screenheight $t]
+    set wotParent [wm transient $t]
 #puts "Parent of $t is $wotParent"
-        if {[llength $wotParent]} {
-            scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
-                tgtw tgth tgtx tgty
-        } else {
-            set tgtx 0; set tgty 0
-            set tgtw $scw
-            set tgth $sch
-        }
-        set fillw [winfo reqwidth $t]
-        set fillh [winfo reqheight $t]
-        set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
-        set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
-        wm geometry $t +$left+$top
+    if {[llength $wotParent]} {
+	scan [wm geometry [winfo toplevel $wotParent]] {%dx%d+%d+%d} \
+	    tgtw tgth tgtx tgty
+    } else {
+	set tgtx 0; set tgty 0
+	set tgtw $scw
+	set tgth $sch
     }
+    set fillw [winfo reqwidth $t]
+    set fillh [winfo reqheight $t]
+    set left [max 0 [min [expr $scw-$fillw] [expr $tgtx+($tgtw-$fillw)/2]]]
+    set top [max 0 [min [expr $sch-$fillh] [expr $tgty+($tgth-$fillh)/2]]]
+    wm geometry $t +$left+$top
     return [winfo viewable $t]
 }
 
 proc PackItUp {t} {
     global tcl_platform
-    if {[InPlugin]} {
-        destroy $t
-        return
-    }
     set parent [wm transient $t]
     destroy $t
 # The need for these lines was removed by a TkAqua patch applied 10 March 2005.
 # But the lines are still here, for the benefit of the sketch graph window 
     if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
-        focus -force [winfo toplevel $parent]
+	focus -force [winfo toplevel $parent]
     }
 }
 

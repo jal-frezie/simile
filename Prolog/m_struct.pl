@@ -9,9 +9,8 @@
 sicstus_module( m_struct,
 		[is_new_part_of/2, is_part_of/2, has_part/2, has_parts/2,
 		 have_part/2, is_new_model_class/1, is_also_part_of/2,
-		 is_root/1, is_no_longer_part_of/2,
-		 is_model_class/1
-		] ).
+		 is_root/1, is_no_longer_part_of/2, is_model_class/1,
+		 is_no_longer_model_class/1] ).
 
 sicstus_use_module( [database,utility,library(lists)] ).
 
@@ -28,12 +27,12 @@ sicstus_use_module( [database,utility,library(lists)] ).
 :- op(500, xfy, is_part_of).
 
 Child is_part_of Parent :-
-	subsystem( Parent, Child ).
+	query_model(subsystem( Parent, Child )).
 
 :- op(500, xfy, has_part).
 
 Parent has_part Child :-
-	subsystem( Parent, Child ).
+	query_model(subsystem( Parent, Child )).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Predicates for building and destroying the basic network
@@ -51,10 +50,12 @@ root is_root.
 :- op(450, xf, is_new_model_class).
 
 Node is_new_model_class :-
-	(\+ _ is_part_of _,
+	(nonvar(Node);
+	\+ _ is_part_of _,
 	    Node = node00000;
 	unique_name( node, Node ),
-	    \+ Node is_part_of _), !.
+	    \+ Node is_part_of _),
+	assert_model(is_node(Node)), !.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Attach an existing node to a parent
@@ -108,3 +109,9 @@ Parent has_parts Children :-
 
 Parents have_part Child :-
 	bagof( Parent, Parent has_part Child, Parents ).
+
+
+:- op(450, xf, is_no_longer_model_class).
+
+Node is_no_longer_model_class :-
+	retract_model(is_node(Node)).

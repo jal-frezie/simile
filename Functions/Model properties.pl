@@ -1,6 +1,6 @@
 /* Next line shows how to write 0-ary macros (leave parentheses out) and
 macros calling 0-ary functions or macros (put empty atom in parentheses). */
-init_time --> at_init(ind_time('')).
+init_time --> at_init(time('')).
 /* same macro for unary case */
 init_time(Level) --> at_init(time(Level)).
 
@@ -15,15 +15,15 @@ delay(val,steps) -->
 			   last(element([array],place_in(1))),
 			1000),
 	element([array],ptr).
-
+	
 const_delay(val,time) -->
 	count_through = int(10*time(0)),
 	shift = count_through - last(count_through),
 	[array] = makearray(if place_in(1)<=shift then
 			   val
-			   else
-                          element(last([array]),place_in(1)-shift),
-			    10*time),
+		  else
+			   element(last([array]),place_in(1)-shift),
+			10*time),
 	element([array],10*time).
 
 var_delay(val,time) -->
@@ -32,5 +32,6 @@ var_delay(val,time) -->
 	[array] = makearray(if wrapped(last(ptw),ptw,place_in(1))
 			   then val
 			   else last(element([array],place_in(1))),
-			    1000),
+			1000),
 	element([array],ptr).
+

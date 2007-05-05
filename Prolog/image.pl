@@ -25,7 +25,7 @@ sicstus_module(image,
        draws_complete/1, check_complete/1, test_complete/1,
        get_inclusions/3, get_overlaps/3, draws_at/3, right_section/2,
         find_new_box/5, line_dir_change_radius_is/1,
-       multiple_draw/3, update_bowtie/2,
+       multiple_draw/2, update_bowtie/2,
        adjust_bowtie/2, adjust_spline/2,
        get_caption_anchor/2, end_coords/3,
        update_text_position/3, make_header/2, set_completion/2,
@@ -81,7 +81,7 @@ clear_shape(Component, Shape_field) :-
 submodels, relying on the GUI to signal events in other types of component. */
 
 targets(Wid, Parent, Point, Depth, Comp) :-
-    (Wid shows_model Parent; \+ hide_innards(Parent)), !,
+    (Wid shows_model Parent; \+ get_shape(Parent, hide_contents, 1)), !,
     Parent has_part Comp,
     find_type(Comp, submodel),
     draws_at(Wid, submodel, Depth),
@@ -144,7 +144,8 @@ get_overlaps(Parent, Targets, Part) :-
 %    find_all_comps(Parent, Part), speed hacked
     Parent has_part Part,
 %    (Part is_connector from Node to _,
-%	has_bowtie(Part);
+%	find_type(Part, flow),
+%	\+ is_ghost(Part);
 %    Part = Node),
     appears(Part),
     /* ignore invisibles like ghost bowties -- included in hack
@@ -208,8 +209,8 @@ get_closest_edge(Node, [X,Y], Edge) :-
 make_bounding_box(New_obj, Xpt, Ypt, Cur_size, [L, T, R, B]) :-
     ((New_obj is_class_of_sort regular_box; New_obj = channel;
       New_obj = squirt),
-        L is Xpt - Cur_size/2.02, % slightly oversquare so captions on squirts
-        R is Xpt + Cur_size/2.02; % appear with correct offset for direction
+        L is Xpt - Cur_size/2,
+        R is Xpt + Cur_size/2;
     New_obj is_class_of_sort elongated_box,
         L is Xpt - 2*Cur_size/3,
         R is Xpt + 2*Cur_size/3;
@@ -236,14 +237,11 @@ draw_style_for(Obj, Style) :-
     (Obj has_class Type; Obj has_type Type),
     use_style_for(Type, Style).
 
-draw_style_for(tab(_,_,_,_), submodel).
-
 use_style_for(Obj, channel) :-
     Obj is_class_of_sort channel, !.
 
 use_style_for(Type, Shape) :-
-    member(Type-Shape, [module-submodel]),
-    % modules are never drawn, last item just prevents lookup errors
+    member(Type-Shape, [event-variable, squirt-flow]),
     !.
 
 use_style_for(Style, Style).
@@ -259,7 +257,7 @@ with the node containing its equivalence, because Geraint's stuff require that t
 equivalences are listed in order of the direction of flow/influence */
 
 has_outer_equiv(Link, Model, Superlink) :-
-    Model has_model_refinement link_equivalences of Blah,
+    Model has_link_equivalences Blah,
     (member(Link-Superlink, Blah); member(Superlink-Link, Blah)),
     Superlink is_connector from A to B,
     (A = Model; B = Model).
@@ -285,7 +283,7 @@ crossing_point([X1, Y1], [X2, Y2], Class, [L, T, R, B], Exit) :-
     Yoff is Y2-Y1,
     (member(Class, [flow, compartment, channel, state]), !,
         Exit = [Xx, Yx];
-    Class is_class_of_sort round, !,
+    Class = variable, !,
         /* assume line starts at centre */
         Rad is X1 - L,
         get_circle_crossings([X1, Y1], Rad, [X1, Y1], Xoff, Yoff, _, Exit);
@@ -398,7 +396,7 @@ get_drawing_form(Comp, Style, BBox) :-
     (get_shape(Comp, bowtie, [BL, BT, BR, BB]), !,
         Xpt is (BR+BL)/2,
         Ypt is (BB+BT)/2,
-        get_bowtie_size(Comp, Type, Cur_size),
+        get_bowtie_size(Comp, Cur_size),
         (BR-BL<BB-BT, !,
         make_bounding_box(Type, Xpt, Ypt, Cur_size, [NL, NT, NR, NB]);
         make_bounding_box(Type, Ypt, Xpt, Cur_size, [NT, NL, NB, NR])),
@@ -460,13 +458,12 @@ trailing away from each corner.
 -1 is population submodel; these don't even have an important order, so draw a sort
 of random pile. */
 
-multiple_draw(Comp, Module, Num) :-
-    (get_shape(Module, hide_border, 1), !,
-	Num = 0;
-     is_population(Comp), !,
-        Num = -2;
-    is_conditional(Comp), !,
+multiple_draw(VComp, Num) :-
+    find_base(VComp, Comp),
+    (is_population(Comp), !,
         Num = -1;
+    is_conditional(Comp), !,
+        Num = 0;
     (get_node_size(Comp, [Val | _]);
     (implicit_function(Comp, CompFn); CompFn=Comp),
         CompFn has_class_refinement units of array(_, Val)),
@@ -474,16 +471,16 @@ multiple_draw(Comp, Module, Num) :-
         Num is min(RealVal, 4);
     Num = 1).
 
-get_bowtie_size(Link, Type, Bowtie) :-
+get_bowtie_size(Link, Bowtie) :-
     Link is_connector from Comp to _,
-    get_box_size(Comp, Type, Box),
+    get_box_size(Comp, flow, Box),
     Bowtie is Box/2.
 
 adjust_bowtie(Comp, Point) :-
     find_type(Comp, Type),
     Type is_class_of_sort has_bowtie,
     get_shape(Comp, course, Point_list),
-    get_bowtie_size(Comp, Type, Bowtie_size),
+    get_bowtie_size(Comp, Bowtie_size),
     closest_centre(Point, Point_list, Miss, [XMid, YMid], Orient),
     line_dir_change_radius_is(Dither),
     Miss < Dither,
@@ -601,7 +598,7 @@ update_link_route(Link, Recurse) :-
 update_bowtie(Link, Route) :-
     find_type(Link, LType),
     (\+ LType is_class_of_sort has_bowtie, !;
-    get_bowtie_size(Link, LType, Bowtie_size),
+    get_bowtie_size(Link, Bowtie_size),
     get_middle_segment(LType, Route, Bowtie_size, Bowtie),
     (   Link has_changed_graphical_attribute bowtie to Bowtie, !;
         Link has_new_graphical_attribute bowtie of Bowtie)).
@@ -616,7 +613,7 @@ get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
         end_coords(Link, End, Pt),
         Rest = [];
         Pt = Top,
-        Top has_model_refinement link_equivalences of Links,
+        Top has_link_equivalences Links,
         member(Equiv, Links),
         (select(End, [start, finish], [Other]),
             end_coords(FarLink, Other, FarPt),
@@ -681,16 +678,15 @@ test_complete(Item) :-
             member(Base, [boolean, a(_)]);
         Item has_class_refinement min_val of _Min,
             Item has_class_refinement max_val of _Max;
-	Item is_of_sort discrete;
         Item has_class_refinement param_type of file);
-    Item is_of_sort has_bowtie, /* in addition to the above disjunct */
+    Item has_type flow, /* in addition to the above disjunct */
         (sequence(Control, Item);
             sequence(Item, Control)),
         _ is_connector from _ to Control;
     (Item is_of_sort cloud; Item is_of_sort channel;
         find_type(Item, text));
     Item has_class submodel,
-        (Item has_model_refinement link_equivalences of Links, !; 
+        (Item has_link_equivalences Links, !; 
         Links = []),
         \+ (OutLink is_connector from Item to _,
                 \+ OutLink has_type relation,
@@ -718,17 +714,9 @@ complete(Item) :-
 of a non-visible node. */
 
 draws_complete(Item) :-
-    (get_bowtie_section(Item, BaseItem), !; find_base(Item, BaseItem)),
-    complete(BaseItem),
-    \+ (implicit_function(BaseItem, Extra), \+ complete(Extra));
-    Item is_of_sort has_bowtie, % but rate is set in/out side a module
-        connects(Item, Start, End),
-	member(FlowBound, [Start, End]),
-	( \+ appears(FlowBound),
-	    RateSetter has_part FlowBound,
-	    RateSetter has_class module;
-	 appears(FlowBound),
-	    FlowBound is_instance_of RateSetter).
+    find_base(Item, BaseItem),
+    complete(BaseItem), !,
+    \+ (implicit_function(BaseItem, Extra), \+ complete(Extra)).
 
 /* check_complete removes the cache attribute forcing another test
 next time its completeness value is required. */
@@ -775,7 +763,7 @@ represents(Function, Source, Pairs, Var) :-
     member(use(_,_, Ref, SoughtUnit), UseList),
     (Ref = Var; Ref = usr(Var)),
     member(var_pair(Var, _), Pairs),
-    get_link_source_data(Source, _, Function, _, FoundUnit, _,_,_,_,_),
+    get_link_source_data(Source, Function, _, FoundUnit, _,_,_,_,_),
     check_unit(FoundUnit, SoughtUnit, 2, []).
     
 line_dir_change_radius_is(8).
@@ -833,19 +821,16 @@ get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
     (Dir = in, Link is_connector from Obj to _;
     Dir = out, Link is_connector from _ to Obj),
         find_all_comps(Parent, Obj),
-        (has_outer_equiv(Link, Parent, Big_link),
-	    (Dir = in, Big_link is_connector from _ to Parent,
-		get_shape(Big_link, course, [InnerCentre | _]);
-	     Dir = out, Big_link is_connector from Parent to _,
-		get_shape(Big_link, course, Route),
-		last(Route, InnerCentre)),
-	    add_to_translation([0, 0, 1, 1], Parent, End_trans),
-	    translate(InnerCentre, End_trans, Centre);
-	% Link terminates on submodel boundary; use old coords
-	    get_shape(Link, course, Route),
-	    (Dir = in, last(Route, Centre);
-		Dir = out, Route = [Centre | _])),
-	blobify(Centre, Area),
+        has_outer_equiv(Link, Parent, Big_link),
+        (Dir = in, Big_link is_connector from _ to Parent,
+            get_shape(Big_link, course, [InnerCentre | _]);
+        Dir = out, Big_link is_connector from Parent to _,
+            get_shape(Big_link, course, Route),
+            last(Route, InnerCentre)),
+        add_to_translation([0, 0, 1, 1], Parent, End_trans),
+        blobify(InnerCentre, InnerArea),
+        translate(InnerArea, End_trans, Area),
+        translate(InnerCentre, End_trans, Centre),
         Link has_type CompType.
 
 constrain_inside([X1, Y1], [L, T, R, B], [X2, Y2]) :-
@@ -1057,7 +1042,7 @@ check_translation(Submodel) :-
 translate_between(Model, Model, 0, [0,0,1,1]).
 
 translate_between(HiModel, LoModel, Depth, Trans) :-
-    \+ hide_innards(LoModel),
+    \+ get_shape(LoModel, hide_contents, 1),
     find_all_comps(Parent, LoModel),
     translate_between(HiModel, Parent, HiDepth, HiTrans),
     Depth is HiDepth + 1,
