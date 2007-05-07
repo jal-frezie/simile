@@ -443,9 +443,9 @@ proc AdvanceTime {node phase fraction} {
     for {set tweakPhase $phase} {$tweakPhase<=$phasecount} {incr tweakPhase} {
 	set ts($tweakPhase) [expr $ts($tweakPhase)+$dts($tweakPhase)*$fraction]
     }
-    set seriesPt [expr $ts($phasecount)+$dts($phasecount)*$fraction/2]
-    UpdateTimeSeries $node $seriesPt
-    set setFromSeries($node,current) $seriesPt
+#    set seriesPt [expr $ts($phasecount)+$dts($phasecount)*$fraction/2]
+    UpdateTimeSeries $node $ts($phasecount)
+    set setFromSeries($node,current) $ts($phasecount)
 }
 
 # try to minimize effort at runtime -- list timepoints for each node...
