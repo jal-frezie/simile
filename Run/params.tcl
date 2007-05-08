@@ -477,7 +477,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             0 {
                 error [list "Missing value"]
             } 1 {
-                if {![string last ,NOW $subs 3]} {
+                if {![string last ,now [string tolower $subs] 3]} {
                     set idAndSubs $tgt[string range $subs 4 end]
 		    set tgtVar [InputVarFor $topNode $tgt]
 		    if {[string match comboChoices $tgtVar]} {
@@ -486,9 +486,19 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                     EnumTypeToNumber $tgtVar $idAndSubs \
                             $list $thisTrans [expr $useCppArray/2]
                     return 1
-                } else {
+		} elseif {![string last ,others [string tolower $subs] 6]} {
+		    # special value for how to treat intermediate times
+		    if {[lsearch {use_last use_next use_closest interpolate} \
+			     [string tolower $list]]>-1} {
+puts "value $list at indices $subs"
+			SetFillMethod $tgt $list $useCppArray
+			return 1
+		    } else {
+			error [list "Action $list is not USE_LAST, USE_NEXT, USE_CLOSEST or INTERPOLATE"]
+		    }
+		} else {
                     EnumTypeToNumber paramData $tgt$subs \
-                            $list $thisTrans $useCppArray
+			$list $thisTrans $useCppArray
                     return -1 ;# should be 0 if a comp
                 }
             } default {
@@ -511,8 +521,9 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         set role "Index value"
         if {[string match TIME $nextDim]} {
             set role "Time point"
-            if {!([Numeric $indx] || [string equal NOW $indx])} {
-                error [list "$role $indx must be NOW or a number."]
+            if {!([Numeric $indx] || \
+		      [lsearch {now others} [string tolower $indx]]>-1)} {
+                error [list "$role $indx must be NOW, OTHERS or a number."]
             }
         } elseif {[string compare {} $thisTrans]} {
             set poss [lsearch $thisTrans $indx]
@@ -542,15 +553,18 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         EnumTypeToNumber paramData $tgt {} {} $useCppArray
 	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
         foreach arrayPt [array names sub] {
-            if {[string equal NOW $arrayPt]} {
-                if {[llength $subs]} {
-                    error [list "NOW must be outermost index."]
-                }
+            if {[lsearch {now others} [string tolower $indx]]>-1} {
+		if {[llength $subs]} {
+		    error [list "NOW or OTHERS must be outermost index."]
+		}
             } elseif {![Numeric $arrayPt]} {
-                error [list $arrayPt "Time point must be NOW or a number."]
+                error [list $arrayPt "Time point must be NOW, OTHERS or a number."]
             } elseif {[string equal restart [string tolower $sub($arrayPt)]]} {
 		SetWrapTime $tgt $arrayPt $useCppArray
 		continue
+	    } elseif {[lsearch {use_last use_next use_closest interpolate} \
+		       [string tolower $sub($arrayPt)]]>-1} {
+		error [list $arrayPt "Fill method must be preceded by OTHERS."]
 	    } elseif {$useCppArray>1} {
                 c_settimepointarray $tgt $arrayPt
             }
@@ -676,6 +690,15 @@ proc SetWrapTime {where when inC} {
 	c_setwraparoundtime $where $when
     } else {
 	set paramData(wrapAroundPoint,$where) $when
+    }
+}
+
+proc SetFillMethod {where what inC} {
+    global paramData
+    if {$inC>1} {
+	c_setwraparoundtime $where $when ;# place holder
+    } else {
+	set paramData(fillMethod,$where) $what
     }
 }
 
@@ -1119,4 +1142,3 @@ proc GetFromTable {parent compName startLine} {
         }
     }
 }
-

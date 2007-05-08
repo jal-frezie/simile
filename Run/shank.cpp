@@ -1068,12 +1068,16 @@ showMess(globMess); */
   void advance_time (Model* client, int phase, double fraction) {
     int tweak_phase;
     double series_pt;
+
+    // series_pt = lts[phases]+ldts[phases]*fraction/2; 
+    // load values for middle of interval as they apply throughout it...no
     for (tweak_phase=phase; tweak_phase<=phases; tweak_phase++) {
       lts[tweak_phase]=lts[tweak_phase]+ldts[tweak_phase]*fraction;
       setdt(lts[tweak_phase],-tweak_phase); 
       // ts should only be global but im lazy
     }
-    series_pt = lts[phases]; // +ldts[phases]*fraction/2;
+    // time value is chosen to work with RK so series pt should do the same
+    series_pt = lts[phases];
     update_time_series(this, series_pt);
     client->thisTsPosn = series_pt;
   }

@@ -496,7 +496,7 @@ proc UpdateTimeSeries {topNode newTime} {
             upvar 0 setFromSeries($topNode,$node,next) series
             set ptCount [llength $setFromSeries($list)]
             if {$newTime>=$setFromSeries($topNode,current)} {
-                if {$ptCount > $series} {
+                if {$series < $ptCount} {
                     set mkTime [lindex $setFromSeries($list) $series]
                     set actTime [expr $mkTime+$loopOffset]
                     if {$newTime >= $actTime} {
@@ -559,6 +559,9 @@ proc UpdateTimeSeries {topNode newTime} {
             foreach tsValue [concat [array names paramData $node,$useTime] \
                                  [array names paramData $node,$useTime,*]] {
                 #puts "setting inputSrc([join [lreplace [split $tsValue ,] 1 1] ,])"
+
+# OK next job is to select right between-points action. useTime has the lower
+# time point, series the index of the higher one (but may be off end)
                 set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
                 #                set inputSrc($tgtIndex) $paramData($tsValue)
                 PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
