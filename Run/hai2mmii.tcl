@@ -285,8 +285,9 @@ proc NormalizeQuotes {table} {
 }
 
 proc DequoteNumeric {val} {
+    set paramKeys {restart use_last use_closest interpolate}
     if {[llength $val]==1 && ([string is double [lindex $val 0]] || \
-			      [string equal restart [lindex $val 0]])} {
+				  [lsearch $paramKeys [lindex $val 0]]>-1)} {
 	return [lindex $val 0]
     } else {
 	return $val

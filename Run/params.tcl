@@ -488,13 +488,20 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                     return 1
 		} elseif {![string last ,others [string tolower $subs] 6]} {
 		    # special value for how to treat intermediate times
-		    if {[lsearch {use_last use_next use_closest interpolate} \
-			     [string tolower $list]]>-1} {
 puts "value $list at indices $subs"
-			SetFillMethod $tgt $list $useCppArray
+		    if {[set mtd [lsearch {use_last use_closest interpolate} \
+				      [string tolower $list]]]>-1} {
+			if {$useCppArray>1} {
+			    c_setfillmethod $tgt $mtd
+			} else {
+			    set paramData(fillMethod,$tgt) \
+				[string tolower $list]
+			}
 			return 1
 		    } else {
-			error [list "Action $list is not USE_LAST, USE_NEXT, USE_CLOSEST or INTERPOLATE"]
+			puts "Did lsearch {use_last use_closest interpolate} \
+				      [string tolower $list], got $mtd"
+			error [list "Action $list is not USE_LAST, USE_CLOSEST or INTERPOLATE"]
 		    }
 		} else {
                     EnumTypeToNumber paramData $tgt$subs \
@@ -553,7 +560,7 @@ puts "value $list at indices $subs"
         EnumTypeToNumber paramData $tgt {} {} $useCppArray
 	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
         foreach arrayPt [array names sub] {
-            if {[lsearch {now others} [string tolower $indx]]>-1} {
+            if {[lsearch {now others} [string tolower $arrayPt]]>-1} {
 		if {[llength $subs]} {
 		    error [list "NOW or OTHERS must be outermost index."]
 		}
@@ -562,7 +569,7 @@ puts "value $list at indices $subs"
             } elseif {[string equal restart [string tolower $sub($arrayPt)]]} {
 		SetWrapTime $tgt $arrayPt $useCppArray
 		continue
-	    } elseif {[lsearch {use_last use_next use_closest interpolate} \
+	    } elseif {[lsearch {use_last use_closest interpolate} \
 		       [string tolower $sub($arrayPt)]]>-1} {
 		error [list $arrayPt "Fill method must be preceded by OTHERS."]
 	    } elseif {$useCppArray>1} {
@@ -663,7 +670,7 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 }
 
 proc PlaceInArray {where what varData inC} {
-    #ShowMessage debug99 info "PlaceInArray $where $what $varData $inC" ok
+    puts "PlaceInArray $where $what $varData $inC"
     switch $inC {
         1 {
             set map [split $where ,]
@@ -690,15 +697,6 @@ proc SetWrapTime {where when inC} {
 	c_setwraparoundtime $where $when
     } else {
 	set paramData(wrapAroundPoint,$where) $when
-    }
-}
-
-proc SetFillMethod {where what inC} {
-    global paramData
-    if {$inC>1} {
-	c_setwraparoundtime $where $when ;# place holder
-    } else {
-	set paramData(fillMethod,$where) $what
     }
 }
 
@@ -944,8 +942,11 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                 set trans [GetTransTable $node]
                 if {!$startLine || ($startLine==-1 && 
 				    $paramDims($restoredComp,readMany))} {
-                    set trans [linsert $trans 0 time] ;# dont translate times
-                }
+		    set trans [lreplace $trans 0 0 time \
+				   [linsert [lindex $trans 0] 0 timePt]]
+		    # allow special time points and values to be recognized
+		    puts "set trans to $trans"
+                 }
                 if {[SensibleValue $trans $suppliedData($restoredComp)]>0} {
                     set whichParamsAffected($restoredComp) 1
                     set msgs(param_source_$restoredComp) "$newPopup (literal)"
@@ -1066,10 +1067,17 @@ proc SensibleValue {trans list} {
 
 proc VarType {testVar types} {
     if {[string equal time $types]} {
-	if {[lsearch {now restart} [string tolower $testVar]]!=-1} {
+	if {[lsearch {now others} [string tolower $testVar]]!=-1} {
 	    return 1
 	} elseif {[Numeric $testVar]} {
 	    return 2
+	}
+    } elseif {[string equal timePt [lindex $types 0]]} {
+	if {[lsearch {restart use_last use_closest interpolate} \
+		 [string tolower $testVar]]!=-1} {
+	    return 2
+	} else {
+	    return [VarType $testVar [lrange types 1 end]]
 	}
     } elseif {[llength $types]} {
 	if {[lsearch $types $testVar]!=-1} {

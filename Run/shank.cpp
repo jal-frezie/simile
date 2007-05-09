@@ -350,6 +350,7 @@ public:
   listTimePoint* curTimePoint;
   double wrapAroundPoint;
   int wraps;
+  int fillMethod;
   listParamArray* next;
 
   void remove_vm_dims() {
@@ -399,6 +400,7 @@ public:
     timePoints = NULL;
     finalTimePoint = NULL;
     curTimePoint = NULL;
+    fillMethod = USE_LAST;
     next = NULL;
   }      
 
@@ -666,40 +668,37 @@ public:
     }
   }
 
+  listTimePoint *roll_forward(listTimePoint *bound, int *newWraps) {
+    bound = bound->next;
+    if (!bound && wrapAroundPoint>0.0) {
+      *newWraps = wraps+1;
+      bound = timePoints;
+    } else
+      *newWraps = wraps;
+    return bound;
+  }
+
   void update_from_points(BOOLEAN dir, double now) {
     listTimePoint *loBound, *hiBound;
-    int hiWraps;
+    int hiWraps = 0;
+    double interFract;
+
+    loBound = curTimePoint;
+    if (loBound)
+      hiBound = roll_forward(loBound, &hiWraps);
+    else
+      hiBound = timePoints; // first point
 
     if (dir) {
-      hiWraps = wraps;
-      if (curTimePoint)
-	hiBound = curTimePoint;
-      else
-	hiBound = timePoints;
-      if (hiBound)
-	loBound = hiBound->last;
-      else 
-	loBound = NULL;
       while (hiBound && now>=hiBound->when+hiWraps*wrapAroundPoint) {
 	loBound = hiBound;
 	wraps = hiWraps;
-	hiBound = hiBound->next;
-	if (wrapAroundPoint>0.0 && !hiBound) {
-	  ++hiWraps;
-	  hiBound = timePoints;
-	}
+	hiBound = roll_forward(loBound, &hiWraps);
       }
     } else {
-      if (curTimePoint)
-	loBound = curTimePoint;
-      else
-	loBound = NULL;
-      if (loBound)
-	hiBound = loBound->next;
-      else 
-	hiBound = NULL;
       while (loBound && now<loBound->when+wraps*wrapAroundPoint) {
 	hiBound = loBound;
+	hiWraps = wraps;
 	loBound = loBound->last;
 	if (wrapAroundPoint>0.0 && !loBound) {
 	  --wraps;
@@ -707,12 +706,40 @@ public:
 	}
       }
     }
-    /* following adds data from point at or below current time; modify if other
-       rules for times between points are added */
+
+    if (loBound && hiBound && fillMethod!=USE_LAST) {
+      interFract = (now-(loBound->when+wraps*wrapAroundPoint))/
+	(hiBound->when+(hiWraps-wraps)*wrapAroundPoint-loBound->when);
+            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
+		    loBound->when, hiBound->when, interFract);
+            showMess(globMess);
+      if (fillMethod==INTERPOLATE && nodeLine->datatype != FLAG) {
+	curTimePoint = loBound; // cos that's what wraps refers to
+	load_interpolated(loBound, hiBound, interFract);
+	return;
+      }
+      if (interFract>0.5) // fillMethod is USE_CLOSEST
+	loBound = hiBound;
+    }
     if (loBound && loBound!=curTimePoint) {
       curTimePoint = loBound;
       memcpy(dataPtr, loBound->dataPtr, size_for_type()*array_count(fullDims));
     }
+  }
+
+  void load_interpolated(listTimePoint *loBound, listTimePoint *hiBound,
+			 double interFract) {
+    int off;
+
+    if (nodeLine->datatype == REAL)
+      for (off=0; off<array_count(fullDims); ++off)
+	*((double*)dataPtr+off) = *((double*)hiBound->dataPtr+off)*interFract
+	  + *((double*)loBound->dataPtr+off)*(1-interFract);
+    else
+      for (off=0; off<array_count(fullDims); ++off)
+	*((int*)dataPtr+off) = (int)round(*((int*)hiBound->dataPtr+off)
+					  *interFract
+	  + *((int*)loBound->dataPtr+off)*(1-interFract));
   }
 };   // end of listParamArray class
 
@@ -1320,6 +1347,16 @@ int set_wrap(char* nodeId, double time) {
     return 0; // no data structure for this elt
   }
   arrSlot->wrapAroundPoint = time;
+  return 1;
+}
+
+int set_fill(char* nodeId, int method) {
+  listParamArray* arrSlot;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    return 0; // no data structure for this elt
+  }
+  arrSlot->fillMethod = method;
   return 1;
 }
 

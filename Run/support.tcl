@@ -487,14 +487,15 @@ proc ResetTimeSeries {topNode} {
 proc UpdateTimeSeries {topNode newTime} {
     global setFromSeries paramData comboTypes
     foreach list [array names setFromSeries $topNode,*,times] {
+	set ptCount [llength $setFromSeries($list)]
+	if {!$ptCount} continue ;# no time points so go to next param
         set node [lindex [split $list ,] 1]
         #puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
         set loopOffset [expr $setFromSeries($topNode,$node,wraps) * \
                             $paramData(wrapAroundPoint,$node)]
+	upvar 0 setFromSeries($topNode,$node,next) series
         set jumping 1
         while {$jumping} {
-            upvar 0 setFromSeries($topNode,$node,next) series
-            set ptCount [llength $setFromSeries($list)]
             if {$newTime>=$setFromSeries($topNode,current)} {
                 if {$series < $ptCount} {
                     set mkTime [lindex $setFromSeries($list) $series]
@@ -542,7 +543,7 @@ proc UpdateTimeSeries {topNode newTime} {
                 }
             }
         }
-        
+	    
         if {[info exists useTime]} {
             set inC [RunningInC $topNode]
             set tgtVar [InputVarFor $topNode $node]
