@@ -461,7 +461,7 @@ proc InitTimeSeries {topNode} {
 	    if {[array size $node]} {
 		set setFromSeries($topNode,$node,times) \
 		    [lsort -real [array names $node]]
-		set setFromSeries($topNode,$node,next) 0
+		set setFromSeries($topNode,$node,next) -1 ;# no data yet loaded
 		set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
 #puts "initted $setFromSeries($topNode,$node,times)"
 	    }
@@ -473,7 +473,7 @@ proc InitTimeSeries {topNode} {
 proc ResetTimeSeries {topNode} {
     global setFromSeries
     foreach pt [array names setFromSeries $topNode,*,next] {
-	set setFromSeries($pt) 0
+	set setFromSeries($pt) -1
 	set node [lindex [split $pt ,] 1]
 	set setFromSeries($topNode,$node,wraps) 0 ;# wraparound count
     }
@@ -482,7 +482,8 @@ proc ResetTimeSeries {topNode} {
 
 # for each node we have a list of times in the time series, and a pointer to 
 # where we are in the list. If the time has gone past that pointed to, signal 
-# the data to be written and look at the next one...
+# the data to be written and look at the next one...see update_from_points in
+# shank.cpp...
 
 proc UpdateTimeSeries {topNode newTime} {
     global setFromSeries paramData comboTypes
@@ -491,6 +492,105 @@ proc UpdateTimeSeries {topNode newTime} {
 	if {!$ptCount} continue ;# no time points so go to next param
         set node [lindex [split $list ,] 1]
         #puts "node $node times $setFromSeries($list) next $setFromSeries($topNode,$node,next) newTime $newTime"
+
+	set hiWraps $setFromSeries($topNode,$node,wraps)
+
+	set loBound $setFromSeries($topNode,$node,next)
+	if ($loBound>-1) {
+	    set hiBound [expr $loBound+1]
+	    if {$hiBound >= $ptCount} {
+		if {$paramData(wrapAroundPoint,$node)} {
+		    set hiBound 0
+		    incr hiWraps
+		} else {
+		    set hiBound -1
+		}
+	    }
+	} else {
+	    set hiBound 0 ;# first point
+	}
+
+	if {$newTime>=$setFromSeries($topNode,current)} {
+	    while {$hiBound>-1 && $newTime>=[lindex $setFromSeries($list) $hiBound]+$hiWraps*$paramData(wrapAroundPoint,$node)} {
+		set loBound $hiBound
+		set setFromSeries($topNode,$node,wraps) $hiWraps
+		incr hiBound
+		if {$hiBound >= $ptCount} {
+		    if {$paramData(wrapAroundPoint,$node)} {
+			set hiBound 0
+			incr hiWraps
+		    } else {
+			set hiBound -1
+		    }
+		}
+	    }
+	} else {
+	    while {$loBound>-1 && $newTime<[lindex $setFromSeries($list) $loBound]+$setFromSeries($topNode,$node,wraps)*$paramData(wrapAroundPoint,$node)} {
+		set hiBound $loBound
+		set hiWraps $setFromSeries($topNode,$node,wraps)
+		incr loBound -1
+		if {$paramData(wrapAroundPoint,$node) && $loBound==-1} {
+		    incr setFromSeries($topNode,$node,wraps) -1
+		    set loBound [expr $ptCount-1]
+		}
+	    }
+	}
+
+	if {$loBound>-1 && $hiBound>-1 && \
+		![string equal use_last $paramData(fillMethod,$node)]} {
+	    set interFract [expr ($newTime-$setFromSeries($topNode,$node,wraps)*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])/([lindex $setFromSeries($list) $hiBound]+($hiWraps-$setFromSeries($topNode,$node,wraps))*$paramData(wrapAroundPoint,$node)-[lindex $setFromSeries($list) $loBound])]
+	    if {[string equal interpolate $paramData(fillMethod,$node)]} {
+		set setFromSeries($topNode,$node,next) $loBound
+		# cos that's what wraps refers to...now do interpolation
+		set loTime [lindex $setFromSeries($list) $loBound]
+		set hiTime [lindex $setFromSeries($list) $hiBound]
+		set inC [RunningInC $topNode]
+		set tgtVar [InputVarFor $topNode $node]
+		set trans [lindex [GetTransTable $node] end]
+		foreach loValue [concat [array names paramData $node,$loTime] \
+				     [array names paramData $node,$loTime,*]] \
+			hiValue	[concat [array names paramData $node,$hiTime] \
+				     [array names paramData $node,$hiTime,*]] {
+		    set midValue [expr $paramData($hiValue)*$interFract + \
+				      $paramData($loValue)*(1-$interFract)]
+		    set tgtIndex [join [lreplace [split $loValue ,] 1 1] ,]
+		    if {[string equal comboChoices $tgtVar]} {
+			set midValue [expr round($midValue)]
+			set comboTypes($tgtIndex) [TransValue $trans $midValue]
+		    }
+		    PlaceInArray $tgtIndex $midValue $tgtVar $inC
+		}
+		return
+	    }
+	    if {$interFract>0.5} { ;# fillMethod is USE_CLOSEST
+		set loBound $hiBound
+		set setFromSeries($topNode,$node,wraps) $hiWraps
+	    }
+	}
+	if {$loBound>-1 && $loBound!=$setFromSeries($topNode,$node,next)} {
+	    set useTime [lindex $setFromSeries($list) $loBound]
+	    set setFromSeries($topNode,$node,next) $loBound
+            set inC [RunningInC $topNode]
+            set tgtVar [InputVarFor $topNode $node]
+            set trans [lindex [GetTransTable $node] end]
+            foreach tsValue [concat [array names paramData $node,$useTime] \
+                                 [array names paramData $node,$useTime,*]] {
+                set tgtIndex [join [lreplace [split $tsValue ,] 1 1] ,]
+                PlaceInArray $tgtIndex $paramData($tsValue) $tgtVar $inC
+                if {[string match comboChoices $tgtVar]} {
+                    set comboTypes($tgtIndex) \
+                        [TransValue $trans $paramData($tsValue)]
+                }
+            }
+	}
+    }
+}
+
+
+
+proc OldUpdateTimeSeries {topNode newTime} {
+    global setFromSeries paramData comboTypes
+    foreach list [array names setFromSeries $topNode,*,times] {
         set loopOffset [expr $setFromSeries($topNode,$node,wraps) * \
                             $paramData(wrapAroundPoint,$node)]
 	upvar 0 setFromSeries($topNode,$node,next) series

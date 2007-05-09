@@ -488,15 +488,9 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                     return 1
 		} elseif {![string last ,others [string tolower $subs] 6]} {
 		    # special value for how to treat intermediate times
-puts "value $list at indices $subs"
 		    if {[set mtd [lsearch {use_last use_closest interpolate} \
 				      [string tolower $list]]]>-1} {
-			if {$useCppArray>1} {
-			    c_setfillmethod $tgt $mtd
-			} else {
-			    set paramData(fillMethod,$tgt) \
-				[string tolower $list]
-			}
+			SetFillMethod $tgt $mtd $list $useCppArray
 			return 1
 		    } else {
 			puts "Did lsearch {use_last use_closest interpolate} \
@@ -559,6 +553,7 @@ puts "value $list at indices $subs"
         # Next call removes old time series data from the system
         EnumTypeToNumber paramData $tgt {} {} $useCppArray
 	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
+	SetFillMethod $tgt 0 use_last $useCppArray ;# and fill method
         foreach arrayPt [array names sub] {
             if {[lsearch {now others} [string tolower $arrayPt]]>-1} {
 		if {[llength $subs]} {
@@ -670,7 +665,7 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
 }
 
 proc PlaceInArray {where what varData inC} {
-    puts "PlaceInArray $where $what $varData $inC"
+    #puts "PlaceInArray $where $what $varData $inC"
     switch $inC {
         1 {
             set map [split $where ,]
@@ -697,6 +692,15 @@ proc SetWrapTime {where when inC} {
 	c_setwraparoundtime $where $when
     } else {
 	set paramData(wrapAroundPoint,$where) $when
+    }
+}
+
+proc SetFillMethod {where which what inC} {
+    global paramData
+    if {$inC>1} {
+	c_setfillmethod $where $which
+    } else {
+	set paramData(fillMethod,$where) [string tolower $what]
     }
 }
 
@@ -945,7 +949,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		    set trans [lreplace $trans 0 0 time \
 				   [linsert [lindex $trans 0] 0 timePt]]
 		    # allow special time points and values to be recognized
-		    puts "set trans to $trans"
                  }
                 if {[SensibleValue $trans $suppliedData($restoredComp)]>0} {
                     set whichParamsAffected($restoredComp) 1

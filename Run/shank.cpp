@@ -708,18 +708,20 @@ public:
     }
 
     if (loBound && hiBound && fillMethod!=USE_LAST) {
-      interFract = (now-(loBound->when+wraps*wrapAroundPoint))/
+      interFract = (now-wraps*wrapAroundPoint-loBound->when)/
 	(hiBound->when+(hiWraps-wraps)*wrapAroundPoint-loBound->when);
-            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
-		    loBound->when, hiBound->when, interFract);
-            showMess(globMess);
+      //            sprintf(globMess, "lotime %lf hitime %lf Fract %lf", 
+      //		    loBound->when, hiBound->when, interFract);
+      //      showMess(globMess);
       if (fillMethod==INTERPOLATE && nodeLine->datatype != FLAG) {
 	curTimePoint = loBound; // cos that's what wraps refers to
 	load_interpolated(loBound, hiBound, interFract);
 	return;
       }
-      if (interFract>0.5) // fillMethod is USE_CLOSEST
+      if (interFract>0.5) { // fillMethod is USE_CLOSEST
 	loBound = hiBound;
+	wraps = hiWraps;
+      }
     }
     if (loBound && loBound!=curTimePoint) {
       curTimePoint = loBound;
