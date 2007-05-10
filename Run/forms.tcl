@@ -214,7 +214,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     #        -values [list Default "Initialize only" "Reset only" 1 2 3 4 5 6 7] \
     #        -width 10 -state readonly
     ::ttk::combobox $mathf.step.pulldown -textvariable disaggregate(step) \
-	-width 10 -values [concat Default $stepNames]
+	-width 10 -values [concat Default $stepNames] -state readonly
     set m [menu $mathf.step.pulldown.menu] 
     foreach item [concat Default $stepNames] {
       $m add command -label $item -command "set disaggregate(step) \"$item\""
@@ -791,7 +791,8 @@ proc GetFindText {parent} {
     wm title $t "Find"
     wm resizable $t 0 0
     set ft [frame .findentry.ft]
-    pack [message $ft.m -text "Find text:" -width 300] -padx 4 -pady 6 -anchor nw -side left
+    pack [message $ft.m -text "Find text:" -width 300] \
+	-padx 4 -pady 6 -anchor nw -side left
     pack [ttk::combobox $ft.e -width 40 -values $find(prevs)] \
         -padx 4 -pady 6 -anchor nw -side left
 

@@ -486,17 +486,6 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                     EnumTypeToNumber $tgtVar $idAndSubs \
                             $list $thisTrans [expr $useCppArray/2]
                     return 1
-		} elseif {![string last ,others [string tolower $subs] 6]} {
-		    # special value for how to treat intermediate times
-		    if {[set mtd [lsearch {use_last use_closest interpolate} \
-				      [string tolower $list]]]>-1} {
-			SetFillMethod $tgt $mtd $list $useCppArray
-			return 1
-		    } else {
-			puts "Did lsearch {use_last use_closest interpolate} \
-				      [string tolower $list], got $mtd"
-			error [list "Action $list is not USE_LAST, USE_CLOSEST or INTERPOLATE"]
-		    }
 		} else {
                     EnumTypeToNumber paramData $tgt$subs \
 			$list $thisTrans $useCppArray
@@ -555,7 +544,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	SetWrapTime $tgt 0 $useCppArray ;# clear old wraparound point
 	SetFillMethod $tgt 0 use_last $useCppArray ;# and fill method
         foreach arrayPt [array names sub] {
-            if {[lsearch {now others} [string tolower $arrayPt]]>-1} {
+            if {[set pt [lsearch {now others} [string tolower $arrayPt]]]>-1} {
 		if {[llength $subs]} {
 		    error [list "NOW or OTHERS must be outermost index."]
 		}
@@ -564,12 +553,21 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             } elseif {[string equal restart [string tolower $sub($arrayPt)]]} {
 		SetWrapTime $tgt $arrayPt $useCppArray
 		continue
-	    } elseif {[lsearch {use_last use_closest interpolate} \
-		       [string tolower $sub($arrayPt)]]>-1} {
-		error [list $arrayPt "Fill method must be preceded by OTHERS."]
 	    } elseif {$useCppArray>1} {
                 c_settimepointarray $tgt $arrayPt
             }
+
+	    if {[set mtd [lsearch {use_last use_closest interpolate} \
+			      [string tolower $sub($arrayPt)]]]>-1} {
+		if {$pt==1} {
+		    SetFillMethod $tgt $mtd $arrayPt $useCppArray
+		    continue
+		}
+		error [list $arrayPt "Fill method must be preceded by OTHERS."]
+	    } elseif {$pt==1} {
+		error [list "Action $sub($arrayPt) is not USE_LAST, USE_CLOSEST or INTERPOLATE"]
+	    }
+
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
                             [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
                 error [concat $arrayPt $step]
@@ -1130,6 +1128,12 @@ proc GetFromTable {parent compName startLine} {
             set paramState($compName) [concat [list $table_entry(fileName) \
                     $table_entry(dataField)] \
                     $table_entry(indices)]
+	    if {[info exists table_entry(others)] && \
+		    [llength $table_entry(others)]} {
+		set paramState($compName) \
+		    [linsert $paramState($compName) 2 \
+			 ,others:[NameToTag $table_entry(others)]]
+	    }
 	    if {[info exists table_entry(wrapPt)] && \
 		    [Numeric $table_entry(wrapPt)]} {
 		set paramState($compName) [linsert $paramState($compName) 2 \

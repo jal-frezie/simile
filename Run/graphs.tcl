@@ -520,7 +520,6 @@ proc FineX { c } {
 #####################################################################
 # TABLE LOADING
 #####################################################################
-
 proc equationDoTable {parent tgt startLine} {
     global table_entry iconImages tcl_platform
     PutItThere .table $parent
@@ -549,6 +548,12 @@ proc equationDoTable {parent tgt startLine} {
     pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
     if {!$startLine} {
+	pack [set betweenf [frame $fidx.betweenf]] -expand true -fill x
+	pack [label $betweenf.m -text "Between points:"] -side left
+	pack [::ttk::combobox $betweenf.c -textvariable table_entry(others) \
+		  -width 10 -values {"Use last" "Use closest" Interpolate} \
+		  -state readonly]
+
 	pack [set wrapf [frame $fidx.wrapf]] -expand true -fill x
 	pack [label $wrapf.m -text "Wraparound at:"] -side left
 	pack [entry $wrapf.e -width 1 -textvariable table_entry(wrapPt)] \
@@ -561,6 +566,16 @@ proc equationDoTable {parent tgt startLine} {
 	} else {
 	    set table_entry(oldWrapPt) {}
 	}
+	if {[string equal others [string tolower \
+				      [lindex $table_entry(values) end-1]]]} {
+	    set table_entry(oldOthers) [TagToName \
+					    [lindex $table_entry(values) end]]
+	    set table_entry(others) $table_entry(oldOthers)
+	    set table_entry(values) [lrange $table_entry(values) 0 end-2]
+	} else {
+	    set table_entry(oldOthers) {}
+	}
+
     }
     pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 2
     #
@@ -651,10 +666,21 @@ proc equationDoTable {parent tgt startLine} {
     grab release $t
     PackItUp $t
     grab $parent
+    if {[info exists table_entry(others)] && [llength $table_entry(others)]} {
+	lappend table_entry(values) others [NameToTag $table_entry(others)]
+    }
     if {[info exists table_entry(wrapPt)] && [Numeric $table_entry(wrapPt)]} {
 	lappend table_entry(values) $table_entry(wrapPt) restart
     }
     return $table_entry(done)
+}
+
+proc TagToName {tag} {
+    string totitle [string map {_ { }} $tag]
+}
+
+proc NameToTag {name} {
+    string map {{ } _} [string tolower $name]
 }
 
 proc EditTableData {lidx startLine} {
@@ -802,11 +828,14 @@ proc LoadTableData {tableSpec lineCount} {
 #ShowMessage debug info "Headers are $headerList" ok
     
     set headerCount 0
-    if {[string match ,* [lindex $tableSpec 2]]} { ;# its a wraparound point
+    set indexStart 2
+    if {[string match ,wrap:* [lindex $tableSpec 2]]} { ;# its a special point
 	set wrapPt [string range [lindex $tableSpec 2] 6 end]
-	set indexStart 3
-    } else {
-	set indexStart 2
+	incr indexStart
+    }
+    if {[string match ,others:* [lindex $tableSpec $indexStart]]} {
+	set fillMtd [string range [lindex $tableSpec $indexStart] 8 end]
+	incr indexStart
     }
     foreach headerIndex [lrange $tableSpec $indexStart end] {
         lappend indexColumns [lsearch -exact $headerList $headerIndex]
@@ -873,6 +902,9 @@ proc LoadTableData {tableSpec lineCount} {
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     set result [ArrayToList paramArray top $indexList]
+    if {[info exists fillMtd]} {
+	lappend result others $fillMtd
+    }
     if {[info exists wrapPt]} {
 	lappend result $wrapPt restart
     }
