@@ -527,33 +527,39 @@ proc equationDoTable {parent tgt startLine} {
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
     set table_entry(source) 0
     
-    frame .table.top
-    label .table.top.instructions -text "Create table from file by dragging \
-            column headings to act as either indices or as data."
-    pack .table.top.instructions -side top -anchor w -padx 2 -pady 2
-    TitleFrame .table.top.fheads -text "Table column headings"
-    set fheads [.table.top.fheads getframe]
+    set t [::ttk::notebook .table.notebook]
+    $t add [set fc [frame $t.columns]] -text "Data in column"
+    # Data file and data column heading
+    label $fc.instructions -wrap 400 -text "Choose a data file, then create table from file by dragging column headings to act as either indices or as data."
+    pack $fc.instructions -side top -anchor w -padx 2 -pady 2
+    TitleFrame $fc.fdata -text "Data file "
+    set fdata [$fc.fdata getframe]
+    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    bind $dfile <Return> "LoadDataFile cols"
+    pack $dfile -side left -expand true -fill x
+    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+	-command {GetDataFile "Select new data file";LoadDataFile cols}
+    pack $fdata.new -side bottom -padx 4 -pady 4
+    pack $fdata -fill x
+    pack $fc.fdata -fill x
+    TitleFrame $fc.fheads -text "Table column headings"
+    set fheads [$fc.fheads getframe]
     set lheads [ListBox $fheads.lheads -dragenabled true -dropenabled true \
             -selectmode single -dropcmd DeleteIndex \
             -yscrollcommand [list AdjustCanvas $fheads lheads y]]
     scrollbar $fheads.yscroll -orient v -command [list $fheads.lheads yview]
     pack $fheads.yscroll -side right -fill y
     
-    TitleFrame .table.top.fidx -text "Use as indices"
-    set fidx [.table.top.fidx getframe]
+    frame $fc.select
+    TitleFrame $fc.select.idxs -text "Use as indices"
+    set fidx [$fc.select.idxs getframe]
     set lidx [ListBox $fidx.lidx -dragenabled true -dropenabled true \
             -selectmode single \
             -dropcmd AddIndex]
     pack $lheads  -expand true -fill both
-    pack .table.top.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
+    pack $fc.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
     if {!$startLine} {
-	pack [set betweenf [frame $fidx.betweenf]] -expand true -fill x
-	pack [label $betweenf.m -text "Between points:"] -side left
-	pack [::ttk::combobox $betweenf.c -textvariable table_entry(others) \
-		  -width 10 -values {"Use last" "Use closest" Interpolate} \
-		  -state readonly]
-
 	pack [set wrapf [frame $fidx.wrapf]] -expand true -fill x
 	pack [label $wrapf.m -text "Wraparound at:"] -side left
 	pack [entry $wrapf.e -width 1 -textvariable table_entry(wrapPt)] \
@@ -566,6 +572,24 @@ proc equationDoTable {parent tgt startLine} {
 	} else {
 	    set table_entry(oldWrapPt) {}
 	}
+    }
+    pack $fc.select.idxs -expand true -fill both -anchor w \
+	-padx 2 -pady 2
+
+    TitleFrame $fc.select.data -text "Use as data"
+    set didx [$fc.select.data getframe]
+    set dhead [Entry $didx.dhead \
+            -textvariable table_entry(dataField) \
+            -dropenabled true -droptypes LISTBOX_ITEM \
+            -dropcmd ChooseDataHeader]
+    pack $dhead -side top -expand true -fill x
+    if {!$startLine} {
+	pack [set betweenf [frame $didx.betweenf]] -expand true -fill x
+	pack [label $betweenf.m -text "Between points:"] -side left
+	pack [::ttk::combobox $betweenf.c -textvariable table_entry(others) \
+		  -width 10 -values {"Use last" "Use closest" Interpolate} \
+		  -state readonly]
+
 	if {[string equal others [string tolower \
 				      [lindex $table_entry(values) end-1]]]} {
 	    set table_entry(oldOthers) [TagToName \
@@ -577,58 +601,71 @@ proc equationDoTable {parent tgt startLine} {
 	}
 
     }
-    pack .table.top.fidx -side left -expand true -fill both -anchor w -padx 2 -pady 2
+    pack $fc.select.data -expand true -fill x -anchor w \
+	-padx 2 -pady 2
+    pack $fc.select -side left -expand true -fill both
+
+    $t add [set fg [frame $t.grid]] -text "Data in grid"
+    label $fg.instructions -wrap 400 -text "Choose a data file, then select row and column at which to start and finish loading data."
+    pack $fg.instructions -side top -anchor w -padx 2 -pady 2
+    TitleFrame $fg.fdata -text "Data file "
+    set fdata [$fg.fdata getframe]
+    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    bind $dfile <Return> "LoadDataFile grid"
+    pack $dfile -side left -expand true -fill x
+    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+	-command {GetDataFile "Select new grid file";LoadDataFile grid}
+    pack $fdata.new -side bottom -padx 4 -pady 4
+    pack $fdata -fill x
+    pack $fg.fdata -fill x
+    TitleFrame $fg.limits -text "Boundaries of area to load"
+    set flim [$fg.limits getframe]
+    pack [frame $flim.ycapt] -side left -fill both -expand true
+    pack [frame $flim.yval] -side left -fill both -expand true
+    pack [frame $flim.xcapt] -side left -fill both -expand true
+    pack [frame $flim.xval] -side left -fill both -expand true
+
+    pack [label $flim.ycapt.lo -text "Start at row:"] \
+	-expand true -fill x
+    pack [label $flim.ycapt.hi -text "Finish at row:"] \
+	-expand true -fill x
+    pack [label $flim.xcapt.lo -text "Start at column:"] \
+	-expand true -fill x
+    pack [label $flim.xcapt.hi -text "Finish at column:"] \
+	-expand true -fill x
+
+    pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
+	-expand true -fill x
+    pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
+	-expand true -fill x
+    pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
+	-expand true -fill x
+    pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
+	-expand true -fill x
+    pack $fg.limits -fill both -expand true
+
+    $t add [set fi [frame $t.image]] -text "Data from image"
     #
     # OK, Cancel and Help buttons
-    frame .table.top.fbuttons
-    button .table.top.fbuttons.edit -text View/Edit -width 10 \
-	-command [list EditTableData $lidx $startLine]
-    button .table.top.fbuttons.ok -text OK -width 10 \
-	-command [list DoneTableData $lidx $startLine]
-    button .table.top.fbuttons.cancel -text Cancel -width 10 \
+    frame .table.fbuttons
+    button .table.fbuttons.load -text Reload -width 10 \
+	-command [list AcquireTableData 1 $startLine]
+    button .table.fbuttons.edit -text View/Edit -width 10 \
+	-command [list EditTableData $startLine]
+    button .table.fbuttons.ok -text OK -width 10 \
+	-command [list DoneTableData $startLine]
+    button .table.fbuttons.cancel -text Cancel -width 10 \
 	-command "set table_entry(done) 0"
-    button .table.top.fbuttons.help -text Help -width 10 \
+    button .table.fbuttons.help -text Help -width 10 \
 	-command {ContextSensitiveHelp .table equations/table.htm}
-    pack .table.top.fbuttons.edit -side top -padx 4 -pady 4
-    pack .table.top.fbuttons.ok -side top -padx 4 -pady 4
-    pack .table.top.fbuttons.cancel -side top -padx 4 -pady 4
-    pack .table.top.fbuttons.help -side top -padx 4 -pady 4
-    pack .table.top.fbuttons -side left  -anchor e
-    pack .table.top -side top -expand true -fill both -anchor w
+    pack .table.fbuttons.load -side top -padx 4 -pady 4
+    pack .table.fbuttons.edit -side top -padx 4 -pady 4
+    pack .table.fbuttons.ok -side top -padx 4 -pady 4
+    pack .table.fbuttons.cancel -side top -padx 4 -pady 4
+    pack .table.fbuttons.help -side top -padx 4 -pady 4
+    pack .table.fbuttons -side right  -anchor e
+    pack $t -side left -expand true -fill both
     #
-    # Data file and data column heading
-    frame .table.bottom
-    TitleFrame .table.bottom.fdata -text "Data file and column heading "
-    set fdata [.table.bottom.fdata getframe]
-    frame $fdata.captions 
-    frame $fdata.entries
-    frame $fdata.buttons 
-    pack $fdata.captions -side left -fill y
-    pack $fdata.entries -side left -expand true -fill both
-    pack $fdata.buttons -side left -fill y
-
-    label $fdata.captions.dheadlabel -text "Use as data column:"
-    set dhead [Entry $fdata.entries.dhead \
-            -textvariable table_entry(dataField) \
-            -dropenabled true -droptypes LISTBOX_ITEM \
-            -dropcmd ChooseDataHeader]
-    pack $fdata.captions.dheadlabel -side top -anchor w -fill y -expand true
-    pack $dhead -side top -expand true -fill x
-    button $fdata.buttons.load -text Load -width 10 \
-	-command [list AcquireTableData $lidx 1 $startLine]
-    pack $fdata.buttons.load -side top -padx 4 -pady 4
-    label $fdata.captions.dfilelabel -text "Data file:"
-    set dfile [Entry $fdata.entries.dfile \
-            -textvariable table_entry(fileName)]
-    bind $dfile <Return> LoadDataFile
-    pack $fdata.captions.dfilelabel -side bottom -anchor w -fill y -expand true
-    pack $dfile -side bottom -expand true -fill x
-    button $fdata.buttons.new -compound left -image $iconImages(open) \
-	-text Browse -command {GetDataFile "Select new data file";LoadDataFile}
-    pack $fdata.buttons.new -side bottom -padx 4 -pady 4
-    pack $fdata -fill x
-    pack .table.bottom.fdata -fill x
-    pack .table.bottom -side top -fill x
     
     set t .table
     LetItShow .table
@@ -683,9 +720,9 @@ proc NameToTag {name} {
     string map {{ } _} [string tolower $name]
 }
 
-proc EditTableData {lidx startLine} {
+proc EditTableData {startLine} {
     global table_entry
-    AcquireTableData $lidx 0 $startLine
+    AcquireTableData 0 $startLine
     if {[llength $table_entry(values)]} {
 	if {[EditListAsTable .table table_entry(values)]} {
 	    set table_entry(source) 1
@@ -693,9 +730,9 @@ proc EditTableData {lidx startLine} {
     }
 }
 
-proc DoneTableData {lidx startLine} {
+proc DoneTableData {startLine} {
     global table_entry
-    AcquireTableData $lidx 0 $startLine
+    AcquireTableData 0 $startLine
     if {!$table_entry(source) && \
 	    [info exists table_entry(wrapPt)] && \
 	    ![string equal $table_entry(wrapPt) $table_entry(oldWrapPt)]} {
@@ -704,19 +741,28 @@ proc DoneTableData {lidx startLine} {
     set table_entry(done) $table_entry(source)
 }
 
-proc AcquireTableData {lidx redo startLine} {
+proc AcquireTableData {redo startLine} {
     global table_entry
 
-    if {![llength $table_entry(dataField)]} {
-	return
-    }
-    set idcs {}
-    foreach itm [$lidx items] {
-        lappend idcs [$lidx itemcget $itm -text]
-    }
-    set table_entry(indices) $idcs
-    set tableSpec [concat [list $table_entry(fileName) \
+    switch [set pane [.table.notebook select]] {
+	.table.notebook.columns {
+	    if {![llength $table_entry(dataField)]} {
+		return
+	    }
+	    set lidx [$pane.select.idxs getframe].lidx
+	    set idcs {}
+	    foreach itm [$lidx items] {
+		lappend idcs [$lidx itemcget $itm -text]
+	    }
+	    set table_entry(indices) $idcs
+	    set tableSpec [concat [list $table_entry(fileName) \
 			       $table_entry(dataField)] $table_entry(indices)]
+	} .table.notebook.grid {
+	    set tableSpec [list $table_entry(fileName) ,grid \
+			       $table_entry(row1) $table_entry(rown) \
+			       $table_entry(col1) $table_entry(coln)]
+	}
+    }
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
 #do_in_editor puts "Loading with $tableSpec not $table_entry(data)"
 	set table_entry(values) [LoadTableData $tableSpec $startLine]
@@ -771,11 +817,12 @@ proc GetDataFile {info} {
     set table_entry(fileName) [ChooseFile graph.csv $info 0]
 }
 
-proc LoadDataFile {} {
+proc LoadDataFile {mode} {
     global table_entry
     
 #    wm title .table "Create table from file $table_entry(fileName)"
-    set fheads [.table.top.fheads getframe]
+    set fc .table.notebook.columns
+    set fheads [$fc.fheads getframe]
     $fheads.lheads delete [$fheads.lheads items]
     
     while {[catch {open $table_entry(fileName) r} stream]} {
@@ -786,13 +833,25 @@ proc LoadDataFile {} {
     }
     gets $stream firstLine
     set table_entry(allHeads) [split $firstLine ,]
-    set i 1
-    foreach hd $table_entry(allHeads) {
-        $fheads.lheads insert end hd$i -text [string trim $hd]
-        incr i
+    switch $mode {
+	cols {
+	    set i 1
+	    foreach hd $table_entry(allHeads) {
+		$fheads.lheads insert end hd$i -text [string trim $hd]
+		incr i
+	    }
+	} grid {
+	    set table_entry(col1) 1
+	    set table_entry(coln) [llength $table_entry(allHeads)]
+	    set table_entry(row1) 1
+	    set table_entry(rown) 1
+	    while {[gets $stream firstLine]!=-1} {
+		incr table_entry(rown)
+	    }
+	}
     }
     close $stream
-    set fidx [.table.top.fidx getframe]
+    set fidx [$fc.select.idxs getframe]
     $fidx.lidx delete [$fidx.lidx items]
     return 1
 }
@@ -820,83 +879,106 @@ proc ChooseDataHeader {eb pth where op dtype data} {
 }
 
 proc LoadTableData {tableSpec lineCount} {
-    
-#ShowMessage debug info "Loading table with data $tableSpec" ok
     set tStr [NetOpen [lindex $tableSpec 0] r]
-    gets $tStr headerLine
-    set headerList [TrimFields [split $headerLine ,]]
-#ShowMessage debug info "Headers are $headerList" ok
-    
-    set headerCount 0
-    set indexStart 2
-    if {[string match ,wrap:* [lindex $tableSpec 2]]} { ;# its a special point
-	set wrapPt [string range [lindex $tableSpec 2] 6 end]
-	incr indexStart
-    }
-    if {[string match ,others:* [lindex $tableSpec $indexStart]]} {
-	set fillMtd [string range [lindex $tableSpec $indexStart] 8 end]
-	incr indexStart
-    }
-    foreach headerIndex [lrange $tableSpec $indexStart end] {
-        lappend indexColumns [lsearch -exact $headerList $headerIndex]
-        set maxIndices($headerCount) {}
-        incr headerCount
-    }
-    if {!$headerCount} {
-	# use line number as index
-	set headerCount 1
-	set maxIndices(0) {}
-    }
-    set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
-#ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
-    if {$headerColumn==-1} {
-	ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column from this list: $headerList." ok
-	return
-    }
-    while {[gets $tStr entryLine] != -1} {
-	set entryList [TrimFields [split $entryLine ,]]
-#ShowMessage debug info "Data line is $entryList" ok
-        if {![llength $entryList]} {
-	    continue ;# ignore blank lines anywhere
-	}
-        if {[info exists indexColumns]} {
-            set arrayIndex {}
-            set indexCount 0
-            foreach column $indexColumns {
-                set newIndex [lindex $entryList $column]
-		# enquote the above if indices of llength 1 are needed
-		if {[llength $newIndex]} {
-		    lappend arrayIndex $newIndex
-		    if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
-			lappend maxIndices($indexCount) $newIndex
+    if {[string equal ,grid [lindex $tableSpec 1]]} {
+	set rowList {}
+	set colList {}
+	for {set rowInd 1} {$rowInd <= [lindex $tableSpec 3]} {incr rowInd} {
+	    gets $tStr entryLine
+	    if {$rowInd >= [lindex $tableSpec 2]} {
+		set yInd [expr $lineCount+$rowInd-[lindex $tableSpec 2]]
+		lappend rowList $yInd
+		set usePts [TrimFields [split ,$entryLine ,]]
+		for {set colInd [lindex $tableSpec 4]} \
+		    {$colInd<=[lindex $tableSpec 5]} {incr colInd} {
+			set xInd [expr 1+$colInd-[lindex $tableSpec 4]]
+			if {$yInd==1} {
+			    lappend colList $xInd
+			}
+			set paramArray(top,$yInd,$xInd) \
+			    [EnquoteIfNonNumeric [lindex $usePts $colInd]]
 		    }
-		    incr indexCount
-		} else {
-		    # if there is an empty index field ignore the line
-		    set badIndex 1
-		    break
-		}
-            }
-        } else {
-	    lappend maxIndices(0) $lineCount
-            set arrayIndex $lineCount
-            incr lineCount
-        }
-        
-        # ignore empty entries
-	if {[info exists badIndex]} {
-	    unset badIndex
-	} else {
-	    set potEntry [lindex $entryList $headerColumn]
-	    if {[llength $potEntry]} {
-		set paramArray(top,[join $arrayIndex ,]) \
-		    [EnquoteIfNonNumeric $potEntry]
 	    }
 	}
-    }
+	set indexList [list $rowList $colList]
+    } else {
+#ShowMessage debug info "Loading table with data $tableSpec" ok
+	gets $tStr headerLine
+	set headerList [TrimFields [split $headerLine ,]]
+#ShowMessage debug info "Headers are $headerList" ok
     
-    for {set idxIdx 0} {$idxIdx < $headerCount} {incr idxIdx} {
-        lappend indexList $maxIndices($idxIdx)
+	set headerCount 0
+	set indexStart 2
+	if {[string match ,wrap:* [lindex $tableSpec 2]]} { 
+	    # its a special point
+	    set wrapPt [string range [lindex $tableSpec 2] 6 end]
+	    incr indexStart
+	}
+	if {[string match ,others:* [lindex $tableSpec $indexStart]]} {
+	    set fillMtd [string range [lindex $tableSpec $indexStart] 8 end]
+	    incr indexStart
+	}
+	foreach headerIndex [lrange $tableSpec $indexStart end] {
+	    lappend indexColumns [lsearch -exact $headerList $headerIndex]
+	    set maxIndices($headerCount) {}
+	    incr headerCount
+	}
+	if {!$headerCount} {
+	    # use line number as index
+	    set headerCount 1
+	    set maxIndices(0) {}
+	}
+	set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
+#ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
+	if {$headerColumn==-1} {
+	    ShowMessage "Data column not found" warning "The file \"[lindex $tableSpec 0]\" does not contain a column with \"[lindex $tableSpec 1]\" as a heading. Please supply a heading to identify the data column from this list: $headerList." ok
+	    return
+	}
+	while {[gets $tStr entryLine] != -1} {
+	    set entryList [TrimFields [split $entryLine ,]]
+#ShowMessage debug info "Data line is $entryList" ok
+	    if {![llength $entryList]} {
+		continue ;# ignore blank lines anywhere
+	    }
+	    if {[info exists indexColumns]} {
+		set arrayIndex {}
+		set indexCount 0
+		foreach column $indexColumns {
+		    set newIndex [lindex $entryList $column]
+		    # enquote the above if indices of llength 1 are needed
+		    if {[llength $newIndex]} {
+			lappend arrayIndex $newIndex
+			if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
+			    lappend maxIndices($indexCount) $newIndex
+			}
+			incr indexCount
+		    } else {
+			# if there is an empty index field ignore the line
+			set badIndex 1
+			break
+		    }
+		}
+	    } else {
+		lappend maxIndices(0) $lineCount
+		set arrayIndex $lineCount
+		incr lineCount
+	    }
+        
+	    # ignore empty entries
+	    if {[info exists badIndex]} {
+		unset badIndex
+	    } else {
+		set potEntry [lindex $entryList $headerColumn]
+		if {[llength $potEntry]} {
+		    set paramArray(top,[join $arrayIndex ,]) \
+			[EnquoteIfNonNumeric $potEntry]
+		}
+	    }
+	}
+	
+	for {set idxIdx 0} {$idxIdx < $headerCount} {incr idxIdx} {
+	    lappend indexList $maxIndices($idxIdx)
+	}
     }
     
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
