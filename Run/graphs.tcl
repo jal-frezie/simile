@@ -535,10 +535,10 @@ proc equationDoTable {parent tgt startLine} {
     TitleFrame $fc.fdata -text "Data file "
     set fdata [$fc.fdata getframe]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    bind $dfile <Return> "LoadDataFile cols"
+    bind $dfile <Return> "LoadDataFile columns 0"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {GetDataFile "Select new data file";LoadDataFile cols}
+	-command {LoadDataFile columns 1}
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fc.fdata -fill x
@@ -611,14 +611,14 @@ proc equationDoTable {parent tgt startLine} {
     TitleFrame $fg.fdata -text "Data file "
     set fdata [$fg.fdata getframe]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    bind $dfile <Return> "LoadDataFile grid"
+    bind $dfile <Return> "LoadDataFile grid 0"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {GetDataFile "Select new grid file";LoadDataFile grid}
+	-command {LoadDataFile grid 1}
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fg.fdata -fill x
-    TitleFrame $fg.limits -text "Boundaries of area to load"
+    TitleFrame $fg.limits -text "Boundaries of area to load "
     set flim [$fg.limits getframe]
     pack [frame $flim.ycapt] -side left -fill both -expand true
     pack [frame $flim.yval] -side left -fill both -expand true
@@ -645,6 +645,70 @@ proc equationDoTable {parent tgt startLine} {
     pack $fg.limits -fill both -expand true
 
     $t add [set fi [frame $t.image]] -text "Data from image"
+    label $fi.instructions -wrap 400 -text "Choose an image file, then select row and column at which to start and finish loading data, and method for interpreting colours."
+    pack $fi.instructions -side top -anchor w -padx 2 -pady 2
+    TitleFrame $fi.fdata -text "Image file "
+    set fdata [$fi.fdata getframe]
+    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    bind $dfile <Return> "LoadDataFile image 0"
+    pack $dfile -side left -expand true -fill x
+    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+	-command {LoadDataFile image 1}
+    pack $fdata.new -side bottom -padx 4 -pady 4
+    pack $fdata -fill x
+    pack $fi.fdata -fill x
+    TitleFrame $fi.limits -text "Boundaries of area to load "
+    set flim [$fi.limits getframe]
+    pack [frame $flim.ycapt] -side left -fill both -expand true
+    pack [frame $flim.yval] -side left -fill both -expand true
+    pack [frame $flim.xcapt] -side left -fill both -expand true
+    pack [frame $flim.xval] -side left -fill both -expand true
+
+    pack [label $flim.ycapt.lo -text "Start at Y position:"] \
+	-expand true -fill x
+    pack [label $flim.ycapt.hi -text "Finish at Y position:"] \
+	-expand true -fill x
+    pack [label $flim.xcapt.lo -text "Start at X position:"] \
+	-expand true -fill x
+    pack [label $flim.xcapt.hi -text "Finish at X position:"] \
+	-expand true -fill x
+
+    pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
+	-expand true -fill x
+    pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
+	-expand true -fill x
+    pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
+	-expand true -fill x
+    pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
+	-expand true -fill x
+    pack $fi.limits -fill both -expand true
+
+    TitleFrame $fi.interp -text "Values for colours: "
+    set fterp [$fi.interp getframe]
+    set fbounds [frame $fterp.bounds]
+    pack [label $fbounds.bklabel -text "Value for black:"] \
+	-side left -expand true -fill x
+    pack [Entry $fbounds.bkentry -textvariable table_entry(blkval)] \
+	-side left -expand true -fill x
+    pack [label $fbounds.wtlabel -text "Value for white:"] \
+	-side left -expand true -fill x
+    pack [Entry $fbounds.wtentry -textvariable table_entry(whtval)] \
+	-side left -expand true -fill x
+    pack $fbounds
+
+    set fcols [frame $fterp.cols]
+    pack [label $fcols.trlabel -text "Value for clear:"] \
+	-side left -expand true -fill x
+    pack [Entry $fcols.trentry -textvariable table_entry(trnval)] \
+	-side left -expand true -fill x
+    pack [label $fcols.clabel -text "For other colours:"] \
+	-side left -expand true -fill x
+    pack [::ttk::combobox $fcols.c -textvariable table_entry(othval) \
+	      -values {"Use luminosity" "Use red level" "Use green level" \
+			   "Use blue level" "Use 8-bit colourmap"} \
+	      -width 16 -state readonly]
+    pack $fcols
+    pack $fi.interp -fill x -expand true
     #
     # OK, Cancel and Help buttons
     frame .table.fbuttons
@@ -673,6 +737,14 @@ proc equationDoTable {parent tgt startLine} {
         set table_entry(fileName) [lindex $table_entry(data) 0]
 	set table_entry(dataField) [lindex $table_entry(data) 1]
 	set table_entry(indices) [lrange $table_entry(data) 2 end]
+#puts "df is $table_entry(dataField)"
+	switch $table_entry(dataField) {
+	    ,grid {
+		.table.notebook select .table.notebook.grid
+	    } ,image {
+		.table.notebook select .table.notebook.image
+	    }
+	}
 
 	set i 1
 	foreach idx $table_entry(indices) {
@@ -761,6 +833,13 @@ proc AcquireTableData {redo startLine} {
 	    set tableSpec [list $table_entry(fileName) ,grid \
 			       $table_entry(row1) $table_entry(rown) \
 			       $table_entry(col1) $table_entry(coln)]
+	} .table.notebook.image {
+	    set tableSpec [list $table_entry(fileName) ,image \
+			       $table_entry(row1) $table_entry(rown) \
+			       $table_entry(col1) $table_entry(coln) \
+			       $table_entry(blkval) $table_entry(whtval) \
+			       $table_entry(trnval) \
+			       [NameToTag $table_entry(othval)]]
 	}
     }
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
@@ -812,12 +891,7 @@ proc EditListAsTable {parent valueArray} {
     return $table_viewer(done)
 }
 
-proc GetDataFile {info} {
-    global table_entry
-    set table_entry(fileName) [ChooseFile graph.csv $info 0]
-}
-
-proc LoadDataFile {mode} {
+proc LoadDataFile {mode query} {
     global table_entry
     
 #    wm title .table "Create table from file $table_entry(fileName)"
@@ -825,29 +899,50 @@ proc LoadDataFile {mode} {
     set fheads [$fc.fheads getframe]
     $fheads.lheads delete [$fheads.lheads items]
     
-    while {[catch {open $table_entry(fileName) r} stream]} {
-        if {![string compare \
-		 [GetDataFile "Cannot read file $table_entry(fileName)"] {}]} {
-            return 0
-        }
+    if {[string equal image $mode]} {
+	set type .gif
+    } else {
+	set type .csv
     }
+
+    if {$query} {
+	set info "Select new $mode file"
+	if {![llength [set table_entry(fileName) \
+			   [ChooseFile data$type $info 0]]]} {
+	    return 0
+	}
+    }
+	
+    while {[catch {open $table_entry(fileName) r} stream]} {
+	set info "Cannot read $mode file $table_entry(fileName)"
+	if {![llength [set table_entry(fileName) \
+			   [ChooseFile data$type $info 0]]]} {
+	    return 0
+	}
+    }
+
     gets $stream firstLine
-    set table_entry(allHeads) [split $firstLine ,]
     switch $mode {
-	cols {
+	columns {
 	    set i 1
-	    foreach hd $table_entry(allHeads) {
+	    foreach hd [split $firstLine ,] {
 		$fheads.lheads insert end hd$i -text [string trim $hd]
 		incr i
 	    }
 	} grid {
 	    set table_entry(col1) 1
-	    set table_entry(coln) [llength $table_entry(allHeads)]
+	    set table_entry(coln) [split $firstLine ,]
 	    set table_entry(row1) 1
 	    set table_entry(rown) 1
 	    while {[gets $stream firstLine]!=-1} {
 		incr table_entry(rown)
 	    }
+	} image {
+	    image create photo tableImage -file $table_entry(fileName)
+	    set table_entry(col1) 1
+	    set table_entry(coln) [image width tableImage]
+	    set table_entry(row1) 1
+	    set table_entry(rown) [image height tableImage]
 	}
     }
     close $stream
@@ -900,6 +995,45 @@ proc LoadTableData {tableSpec lineCount} {
 		    }
 	    }
 	}
+	set indexList [list $rowList $colList]
+    } elseif {[string equal ,image [lindex $tableSpec 1]]} {
+	set rowList {}
+	set colList {}
+	for {set rowInd [expr [lindex $tableSpec 2]-1]} \
+	    {$rowInd<[lindex $tableSpec 3]} {incr rowInd} {
+		set yInd [expr 1+$lineCount+$rowInd-[lindex $tableSpec 2]]
+		lappend rowList $yInd
+		for {set colInd [expr [lindex $tableSpec 4]-1]} \
+		    {$colInd<[lindex $tableSpec 5]} {incr colInd} {
+			set xInd [expr 2+$colInd-[lindex $tableSpec 4]]
+			if {$yInd==1} {
+			    lappend colList $xInd
+			}
+			if {[tableImage transparency get $colInd $rowInd]} {
+			    set paramArray(top,$yInd,$xInd) \
+				[lindex $tableSpec 8]
+			    continue
+			}
+			set ptColours [tableImage get $colInd $rowInd]
+			switch [lindex $tableSpec 9] {
+			    use_red_level {
+				set fract [lindex $ptColours 0]
+			    } use_green_level {
+				set fract [lindex $ptColours 1]
+			    } use_blue_level {
+				set fract [lindex $ptColours 2]
+			    } use_luminosity {
+				set fract [expr ([lindex $ptColours 0]+\
+						     [lindex $ptColours 1]+\
+						     [lindex $ptColours 2])/3]
+			    } use_8-bit_colourmap {
+				set fract [expr 35*[lindex $ptColours 0]*7/256+5*[lindex $ptColours 1]*7/256+[lindex $ptColours 2]*5/256]
+			    }
+			}
+			set paramArray(top,$yInd,$xInd) \
+			    [expr [lindex $tableSpec 6]+$fract*([lindex $tableSpec 7]-[lindex $tableSpec 6])/255.0]
+		    }
+	    }
 	set indexList [list $rowList $colList]
     } else {
 #ShowMessage debug info "Loading table with data $tableSpec" ok
