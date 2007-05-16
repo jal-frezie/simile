@@ -935,6 +935,12 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
                         [lrange $suppliedData($restoredComp) 1 end]]
                 # now just load up the data
                 #ShowMessage debug info "Field spec set to $paramState($restoredComp)" ok
+		if {[string equal ,image \
+			 [lindex $suppliedData($restoredComp) 1]]} {
+		    catch {image delete tableImage}
+		    image create photo tableImage \
+			-file [lindex $paramState($restoredComp) 0]
+		}
                 set suppliedData($restoredComp) \
                         [LoadTableData $paramState($restoredComp) $startLine]
                 set whichParamsAffected($restoredComp) 1
@@ -1124,34 +1130,14 @@ proc GetFromTable {parent compName startLine} {
 	grab release [winfo toplevel $parent]
     }
     if {$newSource} {
-        if {[llength $table_entry(dataField)]} {
-            set paramState($compName) [concat [list $table_entry(fileName) \
-                    $table_entry(dataField)] \
-                    $table_entry(indices)]
-	    if {[info exists table_entry(others)] && \
-		    [llength $table_entry(others)]} {
-		set paramState($compName) \
-		    [linsert $paramState($compName) 2 \
-			 ,others:[NameToTag $table_entry(others)]]
-	    }
-	    if {[info exists table_entry(wrapPt)] && \
-		    [Numeric $table_entry(wrapPt)]} {
-		set paramState($compName) [linsert $paramState($compName) 2 \
-					       ,wrap:$table_entry(wrapPt)]
-	    }
-        }
         set suppliedData($compName) $table_entry(values)
         FillIfSmall $outNames($compName).e $suppliedData($compName)
         switch $newSource {
             2 {
+		set paramState($compName) $table_entry(data)
                 set msgs(param_source_$compName) \
-                        [list Loaded from $table_entry(fileName) \
-                        Column: $table_entry(dataField)]
-                if {[llength $table_entry(indices)]} {
-                    lappend msgs(param_source_$compName) \
-                            [concat \(index columns: $table_entry(indices)\)]
-                }
-            } 1 {
+		    "Loaded from $table_entry(fileName)"
+	    } 1 {
                 set msgs(param_source_$compName) Unsaved
             }
         }

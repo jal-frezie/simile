@@ -734,24 +734,37 @@ proc equationDoTable {parent tgt startLine} {
     set t .table
     LetItShow .table
     if {[llength $table_entry(data)]} {
-        set table_entry(fileName) [lindex $table_entry(data) 0]
-	set table_entry(dataField) [lindex $table_entry(data) 1]
-	set table_entry(indices) [lrange $table_entry(data) 2 end]
-#puts "df is $table_entry(dataField)"
-	switch $table_entry(dataField) {
+	set table_entry(fileName) [lindex $table_entry(data) 0]
+	switch [lindex $table_entry(data) 1] {
 	    ,grid {
 		.table.notebook select .table.notebook.grid
+		set table_entry(row1) [lindex $table_entry(data) 2]
+		set table_entry(rown) [lindex $table_entry(data) 3]
+		set table_entry(col1) [lindex $table_entry(data) 4]
+		set table_entry(coln) [lindex $table_entry(data) 5]
 	    } ,image {
 		.table.notebook select .table.notebook.image
+		set table_entry(row1) [lindex $table_entry(data) 2]
+		set table_entry(rown) [lindex $table_entry(data) 3]
+		set table_entry(col1) [lindex $table_entry(data) 4]
+		set table_entry(coln) [lindex $table_entry(data) 5]
+		set table_entry(blkval) [lindex $table_entry(data) 6]
+		set table_entry(whtval) [lindex $table_entry(data) 7]
+		set table_entry(trnval) [lindex $table_entry(data) 8]
+		set table_entry(othval) \
+		    [TagToName [lindex $table_entry(data) 9]]
+	    } default {
+		.table.notebook select .table.notebook.columns
+		set table_entry(dataField) [lindex $table_entry(data) 1]
+		set table_entry(indices) [lrange $table_entry(data) 2 end]
+		set i 1
+		foreach idx $table_entry(indices) {
+		    if {![string match ,* $idx]} { ;# this is wrap info
+			$lidx insert end id$i -text $idx
+		    }
+		    incr i
+		}
 	    }
-	}
-
-	set i 1
-	foreach idx $table_entry(indices) {
-	    if {![string match ,* $idx]} { ;# this is wrap info
-		$lidx insert end id$i -text $idx
-	    }
-	    incr i
 	}
 #	if {![LoadDataFile]} {
 #	    destroy $t
@@ -829,6 +842,15 @@ proc AcquireTableData {redo startLine} {
 	    set table_entry(indices) $idcs
 	    set tableSpec [concat [list $table_entry(fileName) \
 			       $table_entry(dataField)] $table_entry(indices)]
+	    if {[info exists table_entry(others)] && \
+		    [llength $table_entry(others)]} {
+		set tableSpec [linsert $tableSpec 2 \
+				   ,others:[NameToTag $table_entry(others)]]
+	    }
+	    if {[info exists table_entry(wrapPt)] && \
+		    [Numeric $table_entry(wrapPt)]} {
+		set tableSpec [linsert $tableSpec 2 ,wrap:$table_entry(wrapPt)]
+	    }
 	} .table.notebook.grid {
 	    set tableSpec [list $table_entry(fileName) ,grid \
 			       $table_entry(row1) $table_entry(rown) \
