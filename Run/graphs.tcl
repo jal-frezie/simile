@@ -931,13 +931,14 @@ proc LoadDataFile {mode query} {
 	    }
 	} grid {
 	    set table_entry(col1) 1
-	    set table_entry(coln) [split $firstLine ,]
+	    set table_entry(coln) [llength [split $firstLine ,]]
 	    set table_entry(row1) 1
 	    set table_entry(rown) 1
 	    while {[gets $stream firstLine]!=-1} {
 		incr table_entry(rown)
 	    }
 	} image {
+	    catch {image delete tableImage}
 	    image create photo tableImage -file $table_entry(fileName)
 	    set table_entry(col1) 1
 	    set table_entry(coln) [image width tableImage]
@@ -999,9 +1000,9 @@ proc LoadTableData {tableSpec lineCount} {
     } elseif {[string equal ,image [lindex $tableSpec 1]]} {
 	set rowList {}
 	set colList {}
-	for {set rowInd [expr [lindex $tableSpec 2]-1]} \
-	    {$rowInd<[lindex $tableSpec 3]} {incr rowInd} {
-		set yInd [expr 1+$lineCount+$rowInd-[lindex $tableSpec 2]]
+	for {set rowInd [expr [lindex $tableSpec 3]-1]} \
+	    {$rowInd>=[lindex $tableSpec 2]-1} {incr rowInd -1} {
+		set yInd [expr $lineCount+[lindex $tableSpec 3]-$rowInd-1]
 		lappend rowList $yInd
 		for {set colInd [expr [lindex $tableSpec 4]-1]} \
 		    {$colInd<[lindex $tableSpec 5]} {incr colInd} {
