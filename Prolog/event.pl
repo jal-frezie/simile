@@ -33,6 +33,26 @@ units_for(Comp, UnitStr) :-
 	(Base = 1, !, UnitStr = "real";
 	sicstus_write_to_chars(Base, UnitStr)).
 
+follow_seln_infs(Dir, End) :-
+	doomed(Comp),
+	Comp is_of_sort has_function,
+	find_base(Comp, Base),
+	(UseComp = Base; find_ghosts(Base, UseComp)),
+	(Dir = out,
+	    connects(Link, UseComp, Next),
+	    find_type(Next, function),
+	    get_host(Next, End);
+	 Dir = in,
+	    implicit_function(UseComp, Fn),
+	    connects(Link, End, Fn)),
+	find_type(Link, influence),
+	\+ doomed(End).
+
+		     
+get_info(_Wid, selection, Dir) :-
+	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = []),
+	callback(br(Ends)).
+	
 get_info(_Wid, Comp, eqn) :-
 	(Comp is_of_sort has_function,
 	    (eqn_for(Comp, Eqn), !;

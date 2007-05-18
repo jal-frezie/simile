@@ -790,6 +790,14 @@ proc GetFindText {parent} {
     wm protocol $t WM_DELETE_WINDOW {set find(done) 0}
     wm title $t "Find"
     wm resizable $t 0 0
+    TitleFrame .findentry.follow -text "Follow influences "
+    set follow [.findentry.follow getframe]
+    pack [button $follow.back -text "Components influencing\nselection" \
+	      -command "set find(done) 10"] -padx 2 -pady 4 -side left
+    pack [button $follow.forward -text "Components influenced\nby selection" \
+	      -command "set find(done) 11"] -padx 2 -pady 4 -side left
+    pack .findentry.follow -anchor nw -fill both
+
     set ft [frame .findentry.ft]
     pack [message $ft.m -text "Find text:" -width 300] \
 	-padx 4 -pady 6 -anchor nw -side left
@@ -798,7 +806,7 @@ proc GetFindText {parent} {
 
     bind $ft.e <Return> "set find(done) 1"
     pack .findentry.ft -anchor nw -fill both
-    TitleFrame .findentry.rbs -text "Search for text in"
+    TitleFrame .findentry.rbs -text "Search for text in "
     set rbs [.findentry.rbs getframe]
     set find(where) caption
     radiobutton $rbs.r1 -text "Captions" -variable find(where) -value caption
@@ -823,7 +831,7 @@ proc GetFindText {parent} {
     grab release .findentry
     set result [$ft.e get]
     PackItUp .findentry
-    if {$find(done)} {
+    if {$find(done)==1} {
     set find(prevs) [AddIfAbsent $result $find(prevs)]
         return $result
     }

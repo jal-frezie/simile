@@ -1402,8 +1402,19 @@ set adds none
 proc FindCaption {canvas} {
     global find
     set findable [GetFindText $canvas]
-    if {[string compare $findable {}]} {
-        set find(List,$canvas) {}
+    set find(List,$canvas) {}
+    if {$find(done)==10} {
+	#follow infs back
+	foreach name [GetFromProlog tk_get_info('$canvas',selection,in)] {
+	    lappend find(List,$canvas) [GetCaptionItem $canvas $name]
+	}	
+    } elseif {$find(done)==11} {
+	#follow infs on
+	#follow infs back
+	foreach name [GetFromProlog tk_get_info('$canvas',selection,out)] {
+	    lappend find(List,$canvas) [GetCaptionItem $canvas $name]
+	}	
+    } elseif {[string compare $findable {}]} {
         foreach caption [$canvas find withtag is_caption] {
 	    set toLookIn [BlankCrs [ForSearchType $canvas $caption]]
             if {[string match -nocase *$findable* $toLookIn]} {
@@ -1414,8 +1425,8 @@ proc FindCaption {canvas} {
 	if {[info exists find(now,$canvas)]} {
 	    unset find(now,$canvas)
 	}
-        NextCaption $canvas
     }
+    NextCaption $canvas
 }
 
 proc ForSearchType {winId item} {
