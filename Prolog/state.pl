@@ -10,7 +10,7 @@ sicstus_module(state,
 	       [kickoff/1, get_initial_window_size/2,
 		create_window/2, destroy_window/1, clear_model_file/1,
 		set_model_file/2, get_model_file/2, get_edition_and_limit/2,
-		kill_windows/0,
+		kill_windows/0, set_halo/3, get_halo/2,
 		shows_model/2, monitors_variable/2, depth_list_is/1,
 		set_display_depth/3, get_display_depth/3, set_current_depth/1,
 		get_current_depth/1, suspend_display/0, make_current/1,
@@ -138,6 +138,18 @@ set_display_depth(Model, Parameter, Stat) :-
 
 get_display_depth(Model, Parameter, Stat) :-
 	display_depth(Model, Parameter, Stat).
+
+:- dynamic(halo_is/2).
+
+halo_is(back, 0).
+halo_is(fwd, 0).
+
+set_halo(_Win, Way, Depth) :-
+	retractall(halo_is(Way, _)),
+	assertz(halo_is(Way, Depth)).
+
+get_halo(Way, Depth) :-
+	halo_is(Way, Depth).
 
 :- dynamic(current_depth_is/1).
 

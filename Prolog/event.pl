@@ -36,19 +36,28 @@ units_for(Comp, UnitStr) :-
 follow_seln_infs(Dir, End) :-
 	doomed(Comp),
 	Comp is_of_sort has_function,
-	find_base(Comp, Base),
+	value_propagates(Dir, Comp, End),
+	\+ doomed(End).
+
+value_propagates(Dir, From, To) :-
+	find_base(From, Base),
 	(UseComp = Base; find_ghosts(Base, UseComp)),
 	(Dir = out,
 	    connects(Link, UseComp, Next),
 	    find_type(Next, function),
-	    get_host(Next, End);
+	    get_host(Next, To);
 	 Dir = in,
 	    implicit_function(UseComp, Fn),
-	    connects(Link, End, Fn)),
-	find_type(Link, influence),
-	\+ doomed(End).
+	    connects(Link, To, Fn)),
+	find_type(Link, influence).
 
-		     
+multi_prop(Dir, From, To, Count) :-
+	To = From;
+	Count > 0,
+	   On is Count-1,
+	   value_propagates(Dir, From, Mid),
+	   multi_prop(Dir, Mid, To, On).
+
 get_info(_Wid, selection, Dir) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = []),
 	callback(br(Ends)).
@@ -1269,12 +1278,37 @@ do_colours(Obj, Way) :-
 	Way = off,
 	    normalize_deletes(Obj)).
 
+/* lit_by: As well as the selection, there are other highlit components
+in a certain relation to the selection. Traditionally these are ghosts of
+selected components, but we might add diferent options to allow more of the
+model structure to be illustrated */
+
+lit_by(Target, Ghost) :-
+	halo_is(fwd, GoFwd),
+	halo_is(back, GoBack),
+	(var(Ghost), !,
+	    [Hit, Halo, Up, Down] = [Target, Ghost, in, out];
+	    [Hit, Halo, Up, Down] = [Ghost, Target, out, in]),
+	(multi_prop(Up, Hit, Shift, GoBack);
+	multi_prop(Down, Hit, Shift, GoFwd)),
+	find_base(Shift, Base),
+	(Halo = Base; find_ghosts(Base, Halo)),
+	\+ Ghost = Target.
+	
+
+update_halo(_) :-
+	get_highlit_obj(2, OldHalo),
+	normalize(OldHalo), fail;
+	doomed(Base),
+	lit_by(Base, Halo),
+	\+ get_highlit_obj(_, Halo),
+	highlight(Halo, 2), fail;
+	true.
+
 /* highlight_deletes: this highlights all the objects which will be zapped if a particular delete selection is made. The target itself highlights at defcon 0 and any colateral damage at defcon 1. */
 
 highlight_deletes(Target) :-
-	(Base = Target; ghost_link(Target, Base, Ghost)),
-	m_class:initiates(Link, Base),
-	ghost_link(Link, Base, Ghost),
+	lit_by(Target, Ghost),
 	\+ get_highlit_obj(_, Ghost),
 	highlight(Ghost, 2),
 	fail; 
@@ -1283,16 +1317,13 @@ highlight_deletes(Target) :-
 	true.
 
 normalize_deletes(Target) :-
-	(Base = Target; ghost_link(Target, Base, Ghost)),
-	    m_class:initiates(Link, Base),
-	    ghost_link(Link, Base, Ghost),
+	lit_by(Target, Ghost),
 	    get_highlit_obj(2, Ghost),
 	    normalize(Ghost),
 	    fail;
 	recursive_highlight(Target, on, seln);
 	recursive_highlight(Target, off, base);
-	find_base(Target, Base),
-	    \+ Base = Target,
+	lit_by(Base, Target),
 	    doomed(Base),
 	    highlight(Target, 2), fail;
 	keep_only_if_links_stay(Target, base), fail;

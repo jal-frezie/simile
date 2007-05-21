@@ -713,9 +713,12 @@ menu_handle(Win, edit, set_interface) :-
 	 
 menu_handle(Win, window, NastyAtom) :-
 	name(NastyAtom, NastyStr),
-	get_term(NastyStr, detail(Parameter,Level,Redraw), []),
-	set_display_depth(Win, Parameter, Level),
-	(Redraw=0, !; redraw_window(Win)).
+	(get_term(NastyStr, detail(Parameter,Level,Redraw), []),
+	    set_display_depth(Win, Parameter, Level),
+	    (Redraw=0, !; redraw_window(Win));
+	 get_term(NastyStr, halo(Way,Depth), []),
+	    set_halo(Win, Way, Depth),
+	    update_halo(Win)).
 
 menu_handle(_, _, _).
 

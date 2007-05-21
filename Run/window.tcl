@@ -1376,7 +1376,7 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
                 {compartment "Compartments..."} \
                 {variable "Variables..."} \
                 {flow "Flows, bowties and clouds..."} \
-        {influence "Influences..."} \
+		{influence "Influences..."} \
                 {submodel "Submodels..."} \
                 {relation "Relations..."} \
                 {condition "Channels..."}
@@ -1386,13 +1386,32 @@ proc AddMainMenu { winid topNode initWidth isTopLevel initDepths} {
     $fm.sub4 add command -command "Customize $winid [lindex $category 0]" \
         -label [lindex $category 1]
     }
+    menu $fm.sub5 -tearoff 0
+    $fm add cascade -label "Highlight back" -menu $fm.sub5
+    $fm.sub5 add radio -command "SetHalo $c back 0" -label "Bases only" \
+	-variable rads(back) -value 0
+    $fm.sub5 add radio -command "SetHalo $c back 1" -label "One function" \
+	-variable rads(back) -value 1
+    $fm.sub5 add radio -command "SetHalo $c back 2" -label "Two functions" \
+	-variable rads(back) -value 2
+    menu $fm.sub6 -tearoff 0
+    $fm add cascade -label "Highlight forward" -menu $fm.sub6
+    $fm.sub6 add radio -command "SetHalo $c fwd 0" -label "Ghosts only" \
+	-variable rads(fwd) -value 0
+    $fm.sub6 add radio -command "SetHalo $c fwd 1" -label "One function" \
+	-variable rads(fwd) -value 1
+    $fm.sub6 add radio -command "SetHalo $c fwd 2" -label "Two functions" \
+	-variable rads(fwd) -value 2
 
-    set fm [menu $topm.model -tearoff 0 -postcommand "AbleComp $winid"]
     if {$isTopLevel} {
-        set execEntryState normal
+#	$fm.sub5 invoke "Bases only"
+#	$fm.sub6 invoke "Ghosts only"
+# didnt work, do in prolog
+	set execEntryState normal
     } else {
         set execEntryState disabled
     }
+    set fm [menu $topm.model -tearoff 0 -postcommand "AbleComp $winid"]
     $topm add cascade -label Model -underline 0 \
             -menu $topm.model
     $fm add command -label "Run" -state $execEntryState \
@@ -1969,6 +1988,13 @@ proc UpdateGrid {winId} {
     $winId itemconfigure $gridLine -fill $oldColour
     }
 }
+
+proc SetHalo {winId way level} {
+    MenuSelect $winId window halo($way,$level)
+}
+
+set rads(back) 0
+set rads(fwd) 0
 
 proc AddDetailMenu {winId fm3 initVals} {
     
