@@ -1284,8 +1284,8 @@ selected components, but we might add diferent options to allow more of the
 model structure to be illustrated */
 
 lit_by(Target, Ghost) :-
-	halo_is(fwd, GoFwd),
-	halo_is(back, GoBack),
+	get_halo(fwd, GoFwd),
+	get_halo(back, GoBack),
 	(var(Ghost), !,
 	    [Hit, Halo, Up, Down] = [Target, Ghost, in, out];
 	    [Hit, Halo, Up, Down] = [Ghost, Target, out, in]),
