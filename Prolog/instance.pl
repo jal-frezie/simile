@@ -310,10 +310,8 @@ instance_of(Type, Node, _, Inst, Ref) :-
 	    Ref = [instance(FnType, F, _, Value, Dims)];
 	/* Could not generate code for part with no connections, so kill it */
 	caption_for(Node, Capt),
-	    Node no_longer_has_refinements,
-	    Node no_longer_has_connections,
-	    Node no_longer_has_graphical_attributes,
-	    Node is_no_longer_part_of Parent,
+	    Node is_part_of Parent,
+	    m_update:oblitterfry(Node),
 	    caption_for(Parent, PCapt),
 	    sicstus_format_to_chars("Removing node ~w from submodel ~w.", [Capt, PCapt], Shpiel),
 	    do_dialogue("Correcting model inconsistency", warning, Shpiel, ok, _)).
