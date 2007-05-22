@@ -9,7 +9,6 @@ package require BWidget
 catch {namespace import BWidget::*}
 package require tile 0.7.8
 
-source ../Run/database.tcl
 source ../Run/window.tcl
 source ../Run/shapes.tcl
 source ../Run/forms.tcl
