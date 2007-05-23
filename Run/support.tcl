@@ -808,6 +808,24 @@ proc init_pop_member {new_one index parent channel} {
     set ${tgt}::next 0
 }
 
+proc assign_if_max {sample payload runner pick} {
+    upvar 1 $runner runnerV
+    if {$sample > $runnerV} {
+	upvar 1 $pick pickV
+	set runnerV $sample
+	set pickV $payload
+    }
+}
+
+proc assign_if_min {sample payload runner pick} {
+    upvar 1 $runner runnerV
+    if {$sample < $runnerV} {
+	upvar 1 $pick pickV
+	set runnerV $sample
+	set pickV $payload
+    }
+}
+
 proc ame_rand {lowBound highBound} {
     return [expr $lowBound +[random01]*($highBound - $lowBound)]
 }

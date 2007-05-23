@@ -411,6 +411,12 @@ make_intermediates(
 	Source = greatest(Epsilon),
 		InitVal = Wee,
 		IncrOp = max;
+	Source = with_least(Epsilon, Payload),
+		InitVal = Muckle,
+		IncrOp = min;
+	Source = with_greatest(Epsilon, Payload),
+		InitVal = Wee,
+		IncrOp = max;
 
 	Source = any(Epsilon),
 	    InitVal = 0,
@@ -441,10 +447,24 @@ make_intermediates(
 	name(TotalNameBase, TotalNameStr),
 	generate_name(c, TotalNameBase, TotalName, Used),
 	copy_term(DestPath, TotalPath),
-	make_intermediates(Epsilon, SubId, TotalName, TotalPath, SubSwap,
+	(var(Payload), !,
+	    IncrAct = assign(FillRef, IncrExpr),
+	    TXUnits = Units,
+	    make_intermediates(Epsilon, SubId, TotalName, TotalPath, SubSwap,
 			   PrevInters, NowBuilding, Step, Used, ArgUnits,
 			   OldInters, part_result(SubContext, OldSetups,
-						  OldArgs, IncrementRef)),
+						  OldArgs, IncrementRef));
+	 append_atoms(Target, '_payload', PayloadNameBase),
+	    generate_name(c, PayloadNameBase, PayloadName, Used),
+	    IncrAct = cond_assign(arr(TotalPtr, PayloadName, FillInds),
+				  IncrementRef, PayloadRef, IncrOp, FillRef),
+	    make_all_intermediates([Epsilon, Payload], SubId, TotalName,
+				   TotalPath, SubSwap, PrevInters, NowBuilding,
+				   Step, Used, [TXUnits, ArgUnits], OldInters,
+				   PLPartResults),
+	    combine_subexp_results(DestPath, PLPartResults, [],
+				   SubContext, OldSetups, OldArgs,
+				   [IncrementRef, PayloadRef])),
 	get_model_and_loops(SubContext, TotalPath, _, SubLoops, _),
 
 	/* choose a location for Total where it will be visible in the
@@ -499,8 +519,8 @@ make_intermediates(
 	Actually it is unsound taking the very end value as a bit of
 	arithmetic can push it over the edge, so these two ints are midrange
 	for their signs */
-	(\+ member(Functor, [least, greatest]), !;
-	Units = int, !,
+	(\+ member(Functor, [least, greatest, with_least, with_greatest]), !;
+	TXUnits = int, !,
 	    [Wee, Muckle] = [-268435455, 268435455];
 	[Wee, Muckle] = [-1.0e100, 1.0e100]), 
 
@@ -528,7 +548,7 @@ make_intermediates(
 	Functor = last, !,
             Clearing = [make(cleared(TotalName), [on_reset], ClearContext,
                              0, [assign(ClearRef, InitVal)])];
-        Clearing = [make(clearing(TotalName), [this_step(TotalName)],
+        Clearing = [make(clearing(TotalName), [this_step(WhatMade)],
 			 ClearContext, Step, [assign(ClearRef, InitVal)]),
 		    make(cleared(TotalName), [clearing(TotalName)],
 			 ReadyContext, Step, [])]),
@@ -540,7 +560,7 @@ make_intermediates(
 	    but now goes in update phase before compartments so only needs to
 	    check if another last(...) has been copied from it */
 	    Setting = [make(lastvalue(TotalName), [lastvalue(Target)],
-			    WriteContext, Step, [assign(FillRef, IncrExpr)]),
+			    WriteContext, Step, [IncrAct]),
 		       make(TotalName, [cleared(TotalName), time],
 			    ClearContext, Step, [])];
 	    /* If keep_from_reseting, we can remove time from the increment expression's
@@ -550,19 +570,28 @@ make_intermediates(
 	SetTime = Step, KeepDeps = Depends),
         (member(Functor, [make_inter, at_init]), !,
 	    Setting = [make(TotalName, KeepDeps, WriteContext, SetTime,
-			    [assign(FillRef, IncrExpr)])];
-	Setting = [make(increment(TotalName), [cleared(TotalName) | KeepDeps],
-                       WriteContext, SetTime, [assign(FillRef, IncrExpr)]),
-                  make(TotalName, [increment(TotalName)],
+			    [IncrAct])];
+	Setting = [make(increment(WhatMade), [cleared(TotalName) | KeepDeps],
+                       WriteContext, SetTime, [IncrAct]),
+                  make(WhatMade, [increment(WhatMade)],
                        ReadyContext, SetTime, [])])),
 	append([OldSetups, Clearing, Setting], Setups),
 	/* Hopefully the total cannot be used in the loop in which it is
 	created because of its different dimensions...be sure to try */
 	Inter = instance(internal, inter(InterContext, _, SourceLoops),
-			      UseSource, TotalName, Units-InterDims),
-	refer_inter(Inter, DestPath, BuildingArrays,
-		    Units, SourceContext, Args, SourceRef),
-	merge_lists([Inter], OldInters, NewInters));	  
+			      UseSource, TotalName, TXUnits-InterDims),
+	merge_lists([Inter], OldInters, MidInters),
+	(var(Payload), !,
+	    WhatMade = TotalName,
+	    NewInters = MidInters,
+	    FinalInter = Inter;
+	Outer = instance(internal, inter(InterContext, _, SourceLoops),
+			      UseSource, PayloadName, Units-InterDims),
+	    WhatMade = PayloadName,
+	    merge_lists([Outer], MidInters, NewInters),
+	    FinalInter = Outer),
+	refer_inter(FinalInter, DestPath, BuildingArrays,
+		    Units, SourceContext, Args, SourceRef));	  
 
 	/* third case: a numerical value. Usable in any context.  */
 	decode_number(Source, SubId, Step, SourceRef, Units), !,
@@ -1035,6 +1064,8 @@ builtin('Model properties', size, int, [submodel_name]).
 builtin('Model properties', size, int, [submodel_name, const_int]).
 builtin('List handling', least, numeric, [array_or_list_of_numerics]).
 builtin('List handling', greatest, numeric, [array_or_list_of_numerics]).
+builtin('List handling', with_least, any, [array_or_list_of_numerics, array_or_list_of_any]).
+builtin('List handling', with_greatest, any, [array_or_list_of_numerics, array_or_list_of_any]).
 
 /* These are the ones that are actually used by the parser, so the units have
 to be recognizable. Note that if something is down as returning an int for an

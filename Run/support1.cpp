@@ -68,6 +68,26 @@ double max(double a, int b) {
 double max(double a, double b) {
   return a>b?a:b;
 }
+/* Special functions for getting values from lists according to contents of
+   other lists */
+
+template <class ResultClass, class CompareClass>
+void assign_if_max(CompareClass sample, ResultClass payload,
+		   CompareClass* runner, ResultClass* pick) {
+  if (sample>*runner) {
+    *runner = sample;
+    *pick = payload;
+  }
+}
+
+template <class ResultClass, class CompareClass>
+void assign_if_min(CompareClass sample, ResultClass payload,
+		   CompareClass* runner, ResultClass* pick) {
+  if (sample<*runner) {
+    *runner = sample;
+    *pick = payload;
+  }
+}
 
 /* Pass on calls to stub functions made directly by built model */
 
