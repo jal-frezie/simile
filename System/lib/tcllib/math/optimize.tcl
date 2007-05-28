@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
-# RCS: @(#) $Id: optimize.tcl,v 1.1 2007/05/28 22:45:55 jmm Exp $
+# RCS: @(#) $Id: optimize.tcl,v 1.2 2007/05/28 22:57:13 jmm Exp $
 #
 #----------------------------------------------------------------------
 
@@ -640,7 +640,8 @@ proc ::math::optimize::nelderMead { f startx args } {
 	-ftol 1.e-7
 	-maxiter 500
 	-scale {}
-	-trace 0
+    -trace 0
+    -traceCommand {puts}
     }
 
     # Check arguments
@@ -659,7 +660,7 @@ proc ::math::optimize::nelderMead { f startx args } {
         }
         set params($key) $value
     }
-    
+    #tk_messageBox -message "array get params($key)"
     # Construct the initial simplex
 
     set vertices [list $startx]
@@ -695,7 +696,7 @@ proc ::math::optimize::nelderMead { f startx args } {
 	}
 	set y [uplevel 1 $cmd]
 	if {$params(-trace)} {
-	    puts "nelderMead: evaluating initial point: x=[list $x] y=$y"
+        $params(-traceCommand)  "nelderMead: evaluating initial point: x=[list $x] y=$y"
 	}
 	lappend yvec $y
     }
@@ -734,9 +735,13 @@ proc ::math::optimize::nelderMead { f startx args } {
 
 	# Return if the relative error is within an acceptable range
 
-	set rerror [expr { 2. * abs( $yTop - $yBot )
-			   / ( abs( $yTop ) + abs( $yBot ) ) }]
-	if { $rerror < $params(-ftol) } {
+        if {( abs( $yTop ) + abs( $yBot ) )==0} {
+            set rerror 0.0
+        } else  {
+            set rerror [expr { 2. * abs( $yTop - $yBot )
+                / ( abs( $yTop ) + abs( $yBot ) ) }]
+        }
+        if { $rerror < $params(-ftol) } {
 	    set status ok
 	    break
 	}
@@ -786,7 +791,7 @@ proc ::math::optimize::nelderMead { f startx args } {
 	} 
 	set yTrial [uplevel 1 $cmd]
 	if { $params(-trace) } {
-	    puts "nelderMead: trying reflection: x=[list $trial] y=$yTrial"
+        $params(-traceCommand) "nelderMead: trying reflection: x=[list $trial] y=$yTrial"
 	}
 
 	# If that reflection yields a new minimum, replace the high point,
@@ -802,8 +807,8 @@ proc ::math::optimize::nelderMead { f startx args } {
 		lappend cmd $xx
 	    }
 	    set yTrial2 [uplevel 1 $cmd]
-	    if { $params(-trace) } {
-		puts "nelderMead: trying dilated reflection:\
+        if { $params(-trace) } {
+            $params(-traceCommand) "nelderMead: trying dilated reflection:\
                       x=[list $trial2] y=$y"
 	    }
 	    if { $yTrial2 < $yBot } {
@@ -851,8 +856,8 @@ proc ::math::optimize::nelderMead { f startx args } {
 		lappend cmd $xx
 	    }
 	    set yTrial [uplevel 1 $cmd]
-	    if { $params(-trace) } {
-		puts "nelderMead: contracting from high point:\
+        if { $params(-trace) } {
+            $params(-traceCommand) "nelderMead: contracting from high point:\
                       x=[list $trial] y=$y"
 	    }
 	    if { $yTrial < $yTop } {
@@ -887,8 +892,8 @@ proc ::math::optimize::nelderMead { f startx args } {
 			    lappend cmd $xx
 			}
 			lappend newYvec [uplevel 1 $cmd]
-			if { $params(-trace) } {
-			    puts "nelderMead: contracting about low point:\
+            if { $params(-trace) } {
+                $params(-traceCommand) "nelderMead: contracting about low point:\
                                   x=[list $newv] y=$y"
 			}
 		    }
