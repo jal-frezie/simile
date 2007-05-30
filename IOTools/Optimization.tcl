@@ -1,7 +1,5 @@
 # Helper Optimize a model variable
 
-# TEMPORARY ADDITION REMOVE WHEN PROPERLY SET UP TODO
-#lappend auto_path {c:/program files/tcl/lib}; # where the extra libraries live
 package require math::optimize
 
 set keyValue nelderMead20070518
@@ -35,6 +33,11 @@ namespace eval $keyValue {
         set useNodes($winId,results) $resId
         $nb add [set setId [frame $nb.settings]] -text Settings:
         set useNodes($winId,settings) $setId
+        
+        pack [frame $winId.footer ] -side bottom -fill x
+        button $winId.footer.prevbtn -text "previous"
+        button $winId.footer.nextbtn -text "next"
+        pack $winId.footer.prevbtn $winId.footer.nextbtn -side left
         
         menu $winId.slidervars -tearoff 0 -postcommand \
                 [namespace code [list AddVarsToSliderMenu $winId]]
@@ -93,136 +96,23 @@ namespace eval $keyValue {
         $lf.rl.ent insert 0 $runState($myNode,execTime)
         pack [label $lf.rl.lab2 -textvar runState($myNode,timeUnit)] \
                 -side left
-        ################################################################################
-        #         # prediction specs
-        #         pack [set pf [labelframe $resId.pbf \
-        #                 -text {Predictive analysis:}]] -fill x -padx 4 -pady 4
-        #         pack [frame $pf.pknobs]
-        #         pack [checkbutton $pf.pknobs.ck -text Predict \
-        #                 -command [namespace code [list AblePrediction $winId]] \
-        #                 -variable [namespace current]::useNodes($winId,preds)] \
-        #                 -side left
-        #         pack [ttk::combobox $pf.pknobs.mm -values {minimum maximum} -state readonly \
-        #                 -textvariable [namespace current]::useNodes($winId,way) \
-        #                 -width 8] -side left
-        #         set useNodes($winId,way) maximum
-        #         pack [label $pf.pknobs.valof -text "value of"] -side left
-        #         pack [label $pf.pknobs.nm -text (none) \
-        #                 -textv [namespace current]::useNodes($winId,pred)] -side left
-        #         pack [label $pf.pknobs.wth -text "within"] -side left
-        #         pack [entry $pf.pknobs.fit -width 8 \
-        #                 -textv [namespace current]::useNodes($winId,pfit)] -side left
-        #         set useNodes($winId,pfit) 2.5
-        #         pack [label $pf.pknobs.xp -text "X best fit"] -side left
-        #         # times for predictions
-        #         pack [frame $pf.tknobs]
-        #         pack [label $pf.tknobs.ev -text "every"] -side left
-        #         pack [entry $pf.tknobs.tint -width 8 \
-        #                 -textv [namespace current]::useNodes($winId,predint)] \
-        #                 -side left
-        #         set useNodes($winId,predint) 1.0
-        #         pack [label $pf.tknobs.un -textvar runState($myNode,timeUnit)] \
-        #                 -side left
-        #         pack [label $pf.tknobs.fr -text "from"] -side left
-        #         pack [entry $pf.tknobs.tgo -width 8 \
-        #                 -textv [namespace current]::useNodes($winId,pgo)] -side left
-        #         set useNodes($winId,pgo) $runState($myNode,execTime)
-        #         pack [label $pf.tknobs.to -text "to"] -side left
-        #         pack [entry $pf.tknobs.tstp -width 8 \
-        #                 -textv [namespace current]::useNodes($winId,pstp)] -side left
-        #         set useNodes($winId,pstp) $runState($myNode,execTime)
-        #         # prediction results
-        #         pack [frame $pf.rknobs] -fill x -expand true
-        #         pack [label $pf.rknobs.ev -text "Results:"] -side left
-        #         pack [entry $pf.rknobs.tstp -width 8 \
-        #                 -textv [namespace current]::useNodes($winId,predall)] \
-        #                 -fill x -expand true -side left
-        #         pack [button $pf.rknobs.btn -text View... \
-        # 		  -command [namespace code [list TabPreds $winId]]] -side left
-        ################################################################################
         # data from run in progress
         pack [set df [labelframe $resId.dbf -text {Execution monitor:}]] \
                 -fill both -expand true -padx 4 -pady 4
         pack [frame $df.numeric]
-        pack [label $df.numeric.sqlab -text "PEST execution:"] -side left
-        pack [label $df.numeric.sqnum -textvariable \
-                [namespace current]::useNodes($winId,rnum)] -side left
-        pack [label $df.numeric.iclab -text "Iteration number:"] -side left
-        pack [label $df.numeric.icnum -textvariable \
-                [namespace current]::runData($myNode,itCount)] -side left
-        pack [label $df.numeric.mrlab -text "Model runs:"] -side left
-        pack [label $df.numeric.mrnum -textvariable \
-                [namespace current]::runData($myNode,rollCount)] -side left
-        pack [frame $df.outputs]
-        pack [label $df.outputs.cplab -text "Current PHI:"] -side left
-        pack [label $df.outputs.cpnum -textvariable \
-                [namespace current]::runData($myNode,curPhi)] -side left
-        pack [label $df.outputs.prlab -text "Prediction:"] -side left
-        pack [label $df.outputs.prnum -textvariable \
-                [namespace current]::runData($myNode,curPred)] -side left
         # Commentary window
         ScrolledWindow $df.c
         set canId $df.c.text
-        pack [text $canId -height 4] -fill both -expand true
+        pack [text $canId -height 4 -wrap none] -fill both -expand true
         $df.c setwidget $canId
         pack $df.c -side top -fill both -expand true
         
-        pack [button $resId.b -text "Save a PEST file" -state disabled \
-                -command [namespace code SaveResults]]
+################################################################################
+#         pack [button $resId.b -text "Save a PEST file" -state disabled \
+#                 -command [namespace code SaveResults]]
+################################################################################
         
-        set frameNo 0
-        set clevers(list) {{rlambda1 5.0 rlamfac 2.0 phiratsuf 0.4 \
-                        phiredlam 0.03 numlam 10} \
-                    {relparmax 3.0 facparmax 3.0 facorig 0.001} \
-                    {phiredswh 0.1} \
-                    {noptmax 30 phiredstp 0.01 nphistp 3 \
-                        nphinored 3 nparstp 0.01 nrelpar 3}}
-        set clevers(pred) {{pd0 0.0 pd1 0.0 pd2 0.0} \
-                    {abspredlam 0 relpredlam 0.005 initschfac 1.0 \
-                        mulschfac 2.0 nsearch 8} \
-                    {abspredswh 0 relpredswh 0.05} \
-                    {nprednored 4 abspredstp 0 relpredstp 0.005 \
-                        npredstp 4}}
-        pack [set lf [labelframe $setId.lbf \
-                -text {Parameter estimation}]] \
-                -fill x -padx 4 -pady 4
-        foreach line $clevers(list) {
-            pack [set curFr [frame $lf.f[incr frameNo]]]
-            foreach {val def} $line {
-                if {[llength [winfo children $curFr]]>=6} { ;# is frame full
-                    pack [set curFr [frame $lf.f[incr frameNo]]]
-                }
-                set clevers($val) $def
-                pack [label $curFr.l[incr frameNo] \
-                        -text [string toupper $val]] -side left
-                pack [entry $curFr.e$frameNo -width 8 \
-                        -textvar [namespace current]::clevers($val)] \
-                        -side left
-            }
-        }
         
-        ###############################################################################
-        pack [set pf [labelframe $setId.pbf \
-                -text {Predictive analysis:}]] -fill x -padx 4 -pady 4
-        foreach line $clevers(pred) {
-            pack [set curFr [frame $pf.f[incr frameNo]]]
-            foreach {val def} $line {
-                if {[llength [winfo children $curFr]]>=6} { ;# is frame full
-                    pack [set curFr [frame $pf.f[incr frameNo]]]
-                }
-                set clevers($val) $def
-                pack [label $curFr.l[incr frameNo] \
-                        -text [string toupper $val]] -side left
-                pack [entry $curFr.e$frameNo -width 8 \
-                        -textvar [namespace current]::clevers($val)] \
-                        -side left
-            }
-        }
-        
-        set inClevers1 {inctype absolute derinc 0.001 derinclb 0.001 \
-                    forcen switch derincmul 0.001 dermthd best_fit}
-        set inClevers2 {partrans none parchglim factor scale 1 offset 0}
-        ###############################################################################
         set useNodes($winId,state) 1 ;# stopped, no data
     }
     
@@ -484,8 +374,6 @@ namespace eval $keyValue {
     
     proc InsertSlider {winId node title nest} {
         variable useNodes
-        variable inClevers1
-        variable inClevers2
         variable inGrpData
         
         set inpId $useNodes($winId,input)
@@ -518,12 +406,6 @@ namespace eval $keyValue {
             set f $inpId
         }
         lappend useNodes($winId,sliders) $title
-        foreach {val def} $inClevers1 {
-            set inGrpData($node,$val) $def
-        }
-        foreach {val def} $inClevers2 {
-            set inGrpData($node,$val) $def
-        }
         
         set ::timeInfo($node) start
         if {[string equal INPUT $mode]} {
@@ -551,7 +433,7 @@ namespace eval $keyValue {
         set ::minForOpt($node) [max [GetMinValue $node] -1e10]
         set ::maxForOpt($node) [min [GetMaxValue $node] 1e10]
         set ::initialEstimate($node) [GetModelValue $node]
-               # [expr ($::minForOpt($node)+$::maxForOpt($node))/2]
+        # [expr ($::minForOpt($node)+$::maxForOpt($node))/2]
         pack [entry $f.est -textvariable initialEstimate($node) -width 8] \
                 -side right
         pack [label $f.estlbl -text Estimate:] -side right
@@ -860,35 +742,51 @@ namespace eval $keyValue {
         set a {}
         foreach {param} $useNodes($w,sliders) {val} $args {
             set node [GetIdFromCaptionPath $param]
-            SetModelValue $node $val
-            #ShowMessage debug info "$param = $val" ok
+            
+            #SetModelValue $node $val
+            c_setparamelement $node {} $val
+            do_for_node $myNode set ::runState($myNode,reloadParams) -1 ;# this makes sure the value is propagated in the model
+            do_for_node $myNode runcontrol33857::SetMode $myNode reset
+            #end SetModelValue $node $val
+            
+            #ShowMessage debug info "$param = $val\
+            #    GetModelEval  [GetModelEval $node]" ok
             lappend a [GetModelValue $node]
         }
-        ShowMessage debug info "args = $args; a $a" ok
-
+        #ShowMessage debug info "args = $args; a $a" ok
+        
         set resultNode [GetIdFromCaptionPath $useNodes($w,drivers)]
         
         # big values outside range!! todo
         
         #reset and then run the model (start the run, it will then run to SetExecuteFor time)
-        ShowMessage debug info "Before reset result = [GetModelValue $resultNode]" ok
-        ResetModel $myNode -2; # WRONG RESET, FIXED PARAMS NOT CHANGED http://twiki.simulistics.com/twiki/bin/view/Simile/ParametersNotUpdated
+        #ShowMessage debug info "Before reset result = [GetModelValue $resultNode]" ok
+        ##ResetModel $myNode -1; # WRONG RESET, FIXED PARAMS NOT CHANGED http://twiki.simulistics.com/twiki/bin/view/Simile/ParametersNotUpdated
         # -1 for a fixed parameter or 0 for a time series
         # no -1 no good -2?
         #do_for_node $myNode runcontrol33857::SetMode $myNode reset
         #runcontrol33857::SetMode $myNode reset; # no good
-        ShowMessage debug info "After reset result = [GetModelValue $resultNode]" ok
+        #ShowMessage debug info "After reset result = [GetModelValue $resultNode]" ok
         
         Run
-        ShowMessage debug info "After run result = [GetModelValue $resultNode]" ok
+        #ShowMessage debug info "After run result = [GetModelValue $resultNode]" ok
         
         #[GetCaptionPathFromId $node]
         # get the output value
         #ShowMessage debug info "node = $node" ok
         set y [GetModelValue $resultNode]
         #return [expr $y]; # +1.0
-        ShowMessage debug info "func: $useNodes($w,drivers) = $y" ok
+        #ShowMessage debug info "func: $useNodes($w,drivers) = $y" ok
         return $y; #[expr {$y}]
+    }
+    
+    proc TraceOut {winId msg} {
+        variable useNodes
+        #ShowMessage debug info "$winId \n$msg" ok
+        $useNodes($winId,results).dbf.c.text configure -state normal
+        $useNodes($winId,results).dbf.c.text insert end "${msg}\n"
+        $useNodes($winId,results).dbf.c.text yview moveto 1
+        $useNodes($winId,results).dbf.c.text configure -state disabled
     }
     
     proc Optimize {winId} {
@@ -897,12 +795,15 @@ namespace eval $keyValue {
         variable useNodes
         variable w
         set w $winId
+                        
+        $useNodes($winId,results).dbf.c.text delete 1.0 end
+        $useNodes($winId,results).dbf.c.text configure -state disabled
         
         #ShowMessage debug info "Var to optimise $useNodes($winId,drivers)" ok
         #ShowMessage debug info "Param? $useNodes($winId,sliders)" ok;
         #
         # # pred predictive ?
-        # 
+        #
         # redirect output
         
         #$minForOpt($node) $maxForOpt($node)
@@ -914,12 +815,66 @@ namespace eval $keyValue {
             set node [GetIdFromCaptionPath $param]
             lappend initialEstimates $initialEstimate($node)
         }
-        ShowMessage debug info "initialEstimates = $initialEstimates" ok                   
+        #ShowMessage debug info "initialEstimates = $initialEstimates" ok
+        
+################################################################################
+#         xScaleVector is an initial guess at the problem scale; the first function
+#         evaluations will be made by varying the co-ordinates in xVector by the
+#         amounts in xScaleVector. If xScaleVector is not supplied, the co-ordinates
+#         will be varied by a factor of 1.0001 (if the co-ordinate is non-zero) or
+#         by a constant 0.0001 (if the co-ordinate is zero).
+#         
+#         epsilon is the desired relative error in the value of the function evaluated
+#         at the minimum. The default is 1.0e-7, which usually gives three significant
+#         digits of accuracy in the values of the x's.
+#         
+#         pp count is a limit on the number of trips through the main loop of the
+#         optimizer. The number of function evaluations may be several times this
+#         number. If the optimizer fails to find a minimum to within ftol in maxiter
+#         iterations, it returns its current best guess and an error status. Default
+#         is to allow 500 iterations.
+#         
+#         flag is a flag that, if true, causes a line to be written to the standard
+#         output for each evaluation of the objective function, giving the arguments
+#         presented to the function and the value returned. Default is false.
+#         
+#         The nelderMead procedure returns a list of alternating keywords and values
+#         suitable for use with array set. The meaning of the keywords is:
+#         
+#         x is the approximate location of the minimum.
+#         
+#         y is the value of the function at x.
+#         
+#         yvec is a vector of the best N+1 function values achieved, where N is the
+#         dimension of x
+#         
+#         vertices is a list of vectors giving the function arguments corresponding
+#         to the values in yvec.
+#         
+#         nIter is the number of iterations required to achieve convergence or
+#         fail.
+#         
+#         status is 'ok' if the operation succeeded, or 'too-many-iterations' if the
+#         maximum iteration count was exceeded.
+#         
+#         nelderMead minimizes the given function using the downhill simplex method
+#         of Nelder and Mead. This method is quite slow - much faster methods for
+#         minimization are known - but has the advantage of being extremely robust
+#         in the face of problems where the minimum lies in a valley of complex
+#         topology.
+################################################################################
+        
+        # nelderMead options
+        # ?-scale xScaleVector? ?-ftol epsilon? ?-maxiter count? ??-trace? flag?
         
         array set results  \
                 [::math::optimize::nelderMead [namespace current]::func \
-                    $initialEstimates]; #  -trace on
-                    ShowMessage debug info "[namespace current]::func [array get results]" ok
+                $initialEstimates -trace on \
+                -traceCommand [namespace code "TraceOut $winId"]]
+        #ShowMessage debug info "[namespace current]::func [array get results]" ok
+        $useNodes($winId,results).dbf.c.text configure -state normal
+        $useNodes($winId,results).dbf.c.text insert end "[array get results]\n"
+        $useNodes($winId,results).dbf.c.text configure -state disabled
     }
     
     proc PESTOptimize {winId} {
