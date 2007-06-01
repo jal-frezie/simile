@@ -1350,10 +1350,12 @@ remove_model(Win, Parent) :-
 	start_progress_dialogue(Win),
 	reassure_user("Creating new inputs for values from deleted submodel"),
 	cutoff(Parent);
-	(find_all_comps(Parent, Child),
-	    delete_tree(Child),
+	(contains(Parent, Junk),
+	    \+ Junk = Parent,
+	    off(Junk),
 	    fail;
-	reassure_user("Updating screen representation of components affected by this delete"),
+	superfast_delete(Parent),
+	    reassure_user("Updating screen representation of components affected by this delete"),
 	    event:spread_colour(Parent, no),
 	    finish_progress_dialogue,
 	    redisplay(Parent))),
@@ -1373,22 +1375,6 @@ cutout(Parent, SelnOnly) :-
 	sever_links(Child, Parent),
 	fail.
 		
-delete_tree(Target) :-
-	find_type(Target, submodel),
-	    caption_for(Target, Caption),
-	    sicstus_format_to_chars("Deleting submodel ~w", [Caption], Ms),
-	    clear_model_file(Target),
-	    reassure_user(Ms),
-	    fail;
-	find_all_links(Target, Comp),
-	    delete_tree(Comp),
-	    fail;
-	find_all_comps(Target, Comp),
-	    delete_tree(Comp),
-	    fail;
-	off(Target),
-	    fast_delete(Target).
-
 change_size(TopNode, Type) :-
 	contains(TopNode, Obj),
 	draw_style_for(Obj, Type),
@@ -1409,7 +1395,7 @@ off_window(Win, ExitIfKilled) :-
 		delete_window(Win);
 	     start_progress_dialogue(Win),
 		remove_model(Win, Model),
-		delete_tree(Model),
+		superfast_delete(Model),
 		scrap_move,
 		finish_progress_dialogue);
 	delete_window(Win)).
