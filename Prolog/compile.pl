@@ -516,13 +516,13 @@ pick_state_vars([One | All], Rate, State, Update) :-
 % evaluation into the slowest time step in which it needs to be updated
 
 check_functions(Functions, Phases, VMSPs) :-
-	reassure_user("Checking for circularity in model assignment order"),
+/*	reassure_user("Checking for circularity in model assignment order"),
 	(\+ all(compile, reachable, [build(Functions), unify([])]),
 	    retract(heres_yer_loop(Loop)),
 	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
-	reassure_user("Sorting assignments into correct time steps"),
-	    sort_assignments(Functions, Phases, VMSPs)),
+*/	reassure_user("Sorting assignments into correct time steps"),
+        sort_assignments(Functions, Phases, VMSPs),
 	/* Check all same-time-step circles can be done in one program loop */
 	reassure_user("Checking consistency of same-time-step loops"),
 	(member(Start, Functions),
@@ -540,7 +540,7 @@ check_functions(Functions, Phases, VMSPs) :-
 		raise_exception(condition_outside_loop(LoopEnd, Xefct));
 	    raise_exception(mixed_phase_loop(LoopEnd, Xefct, Phase, APhase)));
 	true).
-
+/*
 reachable(P, Trail) :-
 	append(Rolled, [P | _], Trail),
 	asserta(heres_yer_loop([P | Rolled])),
@@ -549,7 +549,7 @@ reachable(P, Trail) :-
 	(Chkd == 1, !;
 	all(compile, reachable, [build(Qs), unify([P | Trail])]),
 	    Chkd = 1).
-
+*/
 put_in_phase(make(_,_,_, [P,P | _], _)).
 	    
 /* generate_main_decls does all the declarations except the ones for
@@ -754,6 +754,10 @@ build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
 	(member(Awkward, Lost),
 	    \+ (order(Holdup, Awkward), not_yet_ordered(Holdup)),
 	    raise_exception(ordering_failure(Awkward));
+	member(Forgotten, SortedForm),
+	    not_yet_ordered(Forgotten), !,
+	    find_circle([Forgotten], CircSet),
+	    raise_exception(circular_evaluation(CircSet));
 	true),
 	/* note state variables implemented by 'last' might refer to
 	compartment values, hence must go before them */
@@ -765,6 +769,13 @@ build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
 	     build([OrdUpdates, OrdStates, IntOrdered, ExtOrdered]),
 	     unify(Used), unify(AllGraphs),  build([[], [], Ccts, []]),
 	     build(Decls)]).
+
+find_circle([Head | Chain], Loop) :-
+	order(NewHead, Head),
+	not_yet_ordered(NewHead), !,
+	(append(Circle, [NewHead | _], [Head | Chain]),
+	    Loop = [NewHead | Circle];
+	 find_circle([NewHead, Head | Chain], Loop)).
 
 match_levels([], []).
 match_levels([make(_,_, Path, _,_) | Insts], Levels) :-
