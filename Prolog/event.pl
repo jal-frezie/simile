@@ -43,12 +43,12 @@ value_propagates(Dir, From, To) :-
 	find_base(From, Base),
 	(UseComp = Base; find_ghosts(Base, UseComp)),
 	(Dir = out,
-	    connects(Link, UseComp, Next),
+	    m_class:connects(Link, UseComp, Next),
 	    find_type(Next, function),
 	    get_host(Next, To);
 	 Dir = in,
 	    implicit_function(UseComp, Fn),
-	    connects(Link, To, Fn)),
+	    m_class:connects(Link, To, Fn)),
 	find_type(Link, influence).
 
 multi_prop(Dir, From, To, Count) :-

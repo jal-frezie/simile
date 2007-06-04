@@ -756,7 +756,8 @@ build_submodel_functions( Language, Phases, StateForm, UpdateForm, SortedForm,
 	    raise_exception(ordering_failure(Awkward));
 	member(Forgotten, SortedForm),
 	    not_yet_ordered(Forgotten), !,
-	    find_circle([Forgotten], CircSet),
+	    find_circle([Forgotten], Loop),
+	    all(compile, unfinished_in, [build(Loop), build(CircSet)]),
 	    raise_exception(circular_evaluation(CircSet));
 	true),
 	/* note state variables implemented by 'last' might refer to
