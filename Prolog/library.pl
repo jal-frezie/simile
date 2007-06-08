@@ -117,8 +117,7 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 		       \+ (SelOnly = yes,
 		       CRAttr=complete)),
 		   /* if only saving seln it may be incomplete */
-		   RealClassRefinements ),
-	revert_table(RealClassRefinements, ClassRefinements),
+		   ClassRefinements ),
 /*	any_setof( MRAttr=MRValue,
                    ( Node has_model_refinement MRAttr of MRValue,
 		     \+ MRAttr = link_equivalences ),
@@ -137,17 +136,6 @@ save_node( Node, Stream, SelOnly, ArcsUsed ) :-
 		       go_with(Arc, SelOnly)),
 		   ArcsUsed ).
 
-% Keep table function format compatible with 4.2 till we get to 5
-revert_table(RealClassRefinements, ClassRefinements) :-
-	member(table_data=_, RealClassRefinements),
-	    (select(spec=_, RealClassRefinements, Trimmed);
-		Trimmed = RealClassRefinements), !,
-	    select(value=NewExpr, Trimmed, NotChanged),
-	    replace_subexps(NewExpr, library, join_table_args,
-			    _, top_down, _, Expr),
-	    ClassRefinements = [value=Expr | NotChanged];
-	ClassRefinements = RealClassRefinements.
-	
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 go_with(Comp, SelOnly) :-
@@ -285,11 +273,15 @@ ame_merge( Parent, File, SimileV, HasCode, Translated ) :-
 	dialogue:reassure_user("Updating pre-Simile 4.0 model representation"),
 	    adjust_to_8(Translated)),
 	(SimileV > 4.29, SimileV < 4.31, !;
+	SimileV >= 5.0, !;
 	dialogue:reassure_user("Updating non-Simile 4.3 model representation"),
 	    adjust_to_8_3(Translated)),
 	(SimileV >= 4.8, !;
 	dialogue:reassure_user("Updating pre-Simile 4.8 model representation"),
 	    adjust_to_8_8(Translated)),
+	(SimileV >= 5.0, !;
+	dialogue:reassure_user("Updating pre-Simile 5.0 model representation"),
+	    adjust_to_9(Translated)),
 	state:version_is(MyVStr),
 	name(MyV, MyVStr),
 	(MyV >= floor(SimileV), !;
@@ -444,6 +436,57 @@ adjust_to_8_8(Trans) :-
 	    fail;
 	true.
 
+adjust_to_9(Trans) :-
+% Nodes other than submodels have their centres rather than bounding boxes
+	((Trans = copy; member(_-Obj, Trans)),
+	    Obj has_graphical_attribute bounding_box of BB,
+	    \+ find_type(Obj, submodel),
+	    Obj no_longer_has_graphical_attribute bounding_box of BB,
+	    image:middle(BB, Pt),
+	    Obj has_new_graphical_attribute centre of Pt;
+% Invisible terminators get points from link
+	(Trans = copy; member(_-Obj, Trans)),
+	    Obj no_longer_has_graphical_attribute course of Course,
+	    Course = [Pn, MPt | M],
+	    suffix([P0], [MPt | M]),
+	    Obj is_connector from Foo to Bar,
+	    (posn_if_needed(Foo, P0), fail; true),
+	    (posn_if_needed(Bar, Pn), fail; true),
+% Curved links get relative midpoints rather than course
+	    (Obj is_of_sort curved,
+		event:relativize_centre(P0, Pn, MPt, CPt),
+		Obj has_new_graphical_attribute curve of CPt;
+% Kinked links have kink location coded, others get default
+	    \+ Obj is_of_sort curved,
+		(Course = [[Xn, Yn], _, [X1, Y1], [X0, Y0]],
+		    (X1 = X0,
+			KinkPosn is 1000*(Y1-Y0)/(Yn-Y0);
+		     Y1 = Y0,
+			KinkPosn is 1000*(X1-X0)/(Xn-X0));
+		length(Course, 2),
+		    KinkPosn = 550),
+% Flows with bowties have fractional bowtie posn coded, others get default
+		find_base(Obj, BowtieArc),
+		(BowtieArc = Obj,
+		    Obj no_longer_has_graphical_attribute bowtie of BTBox,
+		    image:middle(BTBox, BTPt),
+		    image:closest_centre(BTPt, Course, _,_, BTPosn);
+		\+ BowtieArc = Obj,
+		    BTPosn = 450),
+		CPt = [KinkPosn, BTPosn]),
+	    Obj has_new_graphical_attribute curve of CPt),
+	fail;
+	true.
+	    
+posn_if_needed(Prim, Pt) :-
+	(find_type(Prim, submodel), !,
+	    \+ Prim has_graphical_attribute bounding_box of _,
+	    change_class(Prim, submodel, variable);
+	\+ find_type(Prim, function),
+	    \+ Prim has_graphical_attribute centre of _),
+	Prim has_new_graphical_attribute centre of Pt.
+
+	    
 trim_heads(With0s, No0s) :-
 	With0s = [_H | T], !,
 	   all(library, trim_heads, [build(T), build(No0s)]);
@@ -455,9 +498,6 @@ lose_excs(_, WithExc, NoExc, 1) :-
 
 separate_table_args(_, table(Args), NewTableFn, 0) :-
 	NewTableFn =.. [table | Args].
-
-join_table_args(_, Style43, Style4x, 0) :-
-	separate_table_args(_, Style4x, Style43, 0).
 
 shuffle_graph_args(_, graph(Var, A1, A2, A3, A4, A5, A6, Size, Points), 
 	graph(A1, A2, A3, A4, A5, A6, 1, Size, Points, Var), 1) :-

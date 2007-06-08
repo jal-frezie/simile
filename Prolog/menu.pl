@@ -8,7 +8,7 @@ interface of the application. It responds by:
 * Making calls to the screen drawing module (new image, or redraw)
 */
 sicstus_module(menu, [undo_edit/2, redo_edit/2, menu_select/1, mode_select/1,
-	menu_handle/3, set_box_size/5, change_size/3,
+	menu_handle/3, set_box_size/5, change_size/2,
 	not_last_toplevel/1, off_window/2, kill_everything/1]).
 	
 sicstus_use_module([sp_only, compile, dialogue, m_update, image, draw, 
@@ -1140,8 +1140,7 @@ set_properties(Wid, Model) :-
 		find_all_comps(Model, Linkage),
 		appears(Linkage),
 		find_type(Linkage, RerouteType),
-		update_link_route(Linkage, no),
-		redisplay(Linkage),
+		update_link_route(Linkage),
 		fail; true)),
 
 	    /* Changes in fatness require redrawing submodel's

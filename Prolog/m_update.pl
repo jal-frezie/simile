@@ -76,7 +76,7 @@ get_exogenous_node(Model, Node) :-
 
 /* moving_endpoint/2: succeeds if the obj is
 a line and one of the endpoints of that line correspond to an hierarchical
-interface (i.e., is not drawn); returns the identifier for which end it is */
+interface (i.e., is not drawn); returns the identifier for which end it is
 
 moving_endpoint(Obj, Termination, OtherLink) :-
 	(continues_from(Obj, Submodel),
@@ -85,7 +85,7 @@ moving_endpoint(Obj, Termination, OtherLink) :-
 		Termination = moving_finish),
 	Submodel has_link_equivalences Links,
 	member(Link, Links),
-	(Link = Obj-OtherLink; Link = OtherLink-Obj).
+	(Link = Obj-OtherLink; Link = OtherLink-Obj). */
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%                                                                         %%%
@@ -997,7 +997,8 @@ make_connection(Model, Type, Dir, ExternalSection,
 	    all(m_update, link_ends,
 		[unify(Type), unify(InputSection),
 		 build(AllOutputs), build(_TopArcs)]),
-	    event:thread_link(ExternalSection);
+	    menu:reroute_sections([InputSection, OutputSection]),
+		menu:remove_old_incomplete;
 	    sicstus_format_to_chars("Could not find a free ~a going ~a the model with destination caption ~a",
 			    [Type, Dir, DestCapt], Hassle));
 	sicstus_format_to_chars("Could not find a free ~a going ~a the model with source caption ~a", [Type, Dir, SourceCapt], Hassle)).
@@ -1389,16 +1390,17 @@ remove_invisible_floater(Node) :-
 	oblitterfry(Node).
 
 make_border_node(Line_type, Parent, Node_name) :-
-	member(Line_type-Node_type, [flow-cloud, squirt-cloud,
-				     influence-variable, relation-submodel]),
-	make_node(Parent, Node_type, Node_name).
-	
+        member(Line_type-Node_type, [flow-cloud, squirt-cloud,
+                                     influence-variable, relation-variable]),
+        make_node(Parent, Node_type, Node_name).
+
 remove_border_nodes(LineType, Finish, Start) :-
 	member([Other, Local, Far, InputNode],
 	       [[finish, Start, Finish, OldEnd],
 		[start, Finish, Start, OldStart]]),
 	find_type(Local, LineType),
 	Local is_connector from OldStart to OldEnd,
+	\+ border_node(InputNode),
 	stick_on_edge(Local, Far, Other, LineType, InputNode),
 	\+ _somethingElse is_connector from InputNode to _,
 	\+ _somethingElse is_connector from _ to InputNode,
@@ -1529,10 +1531,11 @@ use_units_in(Model, Do) :-
 /* make_ghost establishes a ghost relationship -- Ghost becomes a ghost of Base.
 Ghost ceases to be a ghost of anything it was previously a ghost of. */
 
-make_ghost(Ghost, Base, TopLink) :-
+make_ghost(Ghost, Base, LastLink) :-
 	unmake_ghost(Ghost);
 	Base = '', !;
-	add_new_line_between(influence, Base, Ghost, TopLink).
+	add_new_line_between(influence, Base, Ghost, TopLink),
+	get_action_point(TopLink, Ghost, LastLink).
 
 unmake_ghost(Ghost) :-
 	find_base(Ghost, Base),

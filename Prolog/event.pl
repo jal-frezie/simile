@@ -431,14 +431,15 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    \+ is_toplevel(Moving_obj),
 	    do_colours(Moving_obj, on))),
 	
-	(Moving_obj is_of_sort line,
-	    get_shape(Moving_obj, course, [End | Rest]),
+	(local_ends(Moving_obj, Start, Finish),
 	    (MovingEnd = moving_finish,
-		EndPoint = End;
+		EndBox = Finish;
 	    MovingEnd = moving_start,
-		last(Rest, EndPoint)),
+		EndBox = Start),
+	    border_node(EndBox),
+	    get_shape(EndBox, centre, EndPoint),
 	    near(EndPoint, [Xpt, Ypt, Xpt, Ypt]), !,
-		advance_phase_to(MovingEnd) /* ,
+	    advance_phase_to(MovingEnd) /* ,
 	        ((MovingEnd = moving_start,
 		        moving_endpoint(Moving_obj, moving_start, Root);
 		    MovingEnd = moving_finish,
@@ -462,7 +463,7 @@ click_on([Xpt, Ypt], Moving_obj, _CD) :-
 		
 	highlight(Moving_obj, 1),
 	set_line_start_obj(Moving_obj),
-	get_shape(Moving_obj, bounding_box, [L,T,R,B]), !,
+	get_drawing_form(Moving_obj, _, [L,T,R,B]), !,
 	Loff is Xpt-L,
 	Toff is Ypt-T,
 	Roff is R-Xpt,
@@ -504,17 +505,12 @@ add_at_point(Xpt, Ypt, New_obj, Parent, Comp_name) :-
 	New_obj = text, !,
 	    make_node(Parent, New_obj, Comp_name),
 	    set_shape(Comp_name, centre, [Xpt, Ypt]);
-	use_style_for(New_obj, NewObjStyle),
-	    get_box_size(Parent, NewObjStyle, Cur_size),
-	    make_bounding_box(New_obj, Xpt, Ypt, Cur_size, Box),
-	    attempt_addition(New_obj, Parent, Box, Comp_name, no, yes).
+	attempt_addition(New_obj, Parent, [Xpt, Ypt], Comp_name, no, yes).
 
 /* as above, but if there is no room it tries to add it nearby rather than failing and complaining */
 
 insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
 	check_translation(Submodel),
-	use_style_for(New_obj, NewObjStyle),
-	get_box_size(Submodel, NewObjStyle, Cur_size),
 	get_shape(Submodel, internal_extent, [L, T, R, B]),
 	MaxDist is max(max(BestX - L, R - BestX), max(BestY - T, B - BestY)),
 	snap_to_grid([10,10], [Step, _]),
@@ -524,8 +520,8 @@ insert_variable(Submodel, BestX, BestY, New_obj, Comp_name) :-
 	(TargetY is BestY-Range; TargetY is BestY+Range);
 	(TargetY is BestY-Distance; TargetY is BestY+Distance),
 	(TargetX is BestX-Range; TargetX is BestX+Range)),
-	make_bounding_box(New_obj, TargetX, TargetY, Cur_size, Box),
-	attempt_addition(New_obj, Submodel, Box, Comp_name, no, no),
+	attempt_addition(New_obj, Submodel, [TargetX, TargetY], Comp_name,
+			 no, no),
 	redisplay(Comp_name), !.	    
 
 deselectable(Obj) :-
@@ -1045,12 +1041,13 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 drag_to(Xpt, Ypt, Moving_obj) :-
 	get_mode(select), /* was move */
 	get_phase(Phase),
+	local_ends(Moving_obj, Start, Finish),
 	(Phase = moving_start, Inner_move = start,
 	    (continues_from(Moving_obj, Box), !;
-		m_update:Moving_obj is_connector from Box to _);
+		Box = Start);
 	Phase = moving_finish, Inner_move = finish,
 	    (continues_in(Moving_obj, Box), !;
-		local_ends(Moving_obj, _, Box))),
+		Box = Finish)),
 	find_type(Box, EType),
 	/* find drag point in parent model */
 	find_all_comps(Parent, Moving_obj),
@@ -1074,7 +1071,18 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	/* Snap to border */
 	crossing_point([Xc, Yc], [Xout, Yout], EType, ParentBox,
 			NewEndPt),
-
+	
+	(Phase = moving_start,
+	    change_shape(Start, centre, NewEndPt),
+	    m_class:Moving_obj follows Other;
+	Phase = moving_finish,
+	    change_shape(Finish, centre, NewEndPt),
+	    m_class:Other follows Moving_obj),
+	update_link_route(Moving_obj),
+	make_links_follow(Moving_obj),
+	update_link_route(Other),
+	make_links_follow(Other),
+/*	
 	(EType = submodel,
 	    (Phase = moving_start,
 	        moving_endpoint(Moving_obj, moving_start, Root),
@@ -1088,7 +1096,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 		tweak_endpoint(ExtraObj, start, ExtraEndPt),
 		fail;
 	    tweak_endpoint(Root, finish, RootEndPt));
-	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)),
+	tweak_endpoint(Moving_obj, Inner_move, NewEndPt)),*/
 	move_something.
 
 drag_to(Xpt, Ypt, Target) :-
@@ -1149,8 +1157,8 @@ tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	find_all_links(Obj, Link, Where),
 	\+ (Side = c, moves_with_seln(Box, Link)),
 	/* do not tweak if part of move */
-	end_coords(Link, Where, [Xpt, Ypt]),
-	((member(Side, [nw, w, sw]), NewX is Xpt + XOff*(R-Xpt)/(R-L);
+	(end_coords(Link, Where, [Xpt, Ypt]),
+	    (member(Side, [nw, w, sw]), NewX is Xpt + XOff*(R-Xpt)/(R-L);
 	        member(Side, [ne, e, se]), NewX is Xpt + XOff*(Xpt-L)/(R-L);
 	        member(Side, [n, s]), NewX = Xpt),
 	    (member(Side, [nw, n, ne]),  NewY is Ypt + YOff*(B-Ypt)/(B-T);
@@ -1162,11 +1170,26 @@ tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 		translate([NewX, NewY], Trans, Peri),
 		tweak_endpoint(Inner, Other, Peri);
 	    \+ has_outer_equiv(Inner, Obj, Link));
-	Side = c,
-	    NewX is Xpt + XOff,
-	    NewY is Ypt + YOff),
-	tweak_endpoint(Link, Where, [NewX, NewY]),
+	Side = c),
+	update_link_route(Link),
+	make_links_follow(Link),
 	fail; true.
+
+tweak_link_connections(Obj, OldInterns) :-
+	get_shape(Obj, internal_extent, NewInterns),
+	add_boxes_to_translation([0,0,1,1], OldInterns, NewInterns, UseTrans),
+	(find_all_comps(Obj, Comp),
+	    border_node(Comp),
+	    get_shape(Comp, centre, OldCtr),
+	    translate(OldCtr, UseTrans, NewCtr),
+	    change_shape(Comp, centre, NewCtr),
+	    fail;
+	find_all_links(Obj, Link),
+	    (Shove = Link; has_outer_equiv(Shove, Obj, Link)),
+	    update_link_route(Shove),
+	    make_links_follow(Shove),
+	    fail;
+	true).
 
 /* find_space handles pairs of values indicating ranges. The
 first gives the range which must be covered, the second the
@@ -1189,58 +1212,10 @@ find_space([TgtL, TgtH], [DoneL, DoneH], [NewL, NewH],
 resets middle as well if it is a flow, not otherwise! */
 
 tweak_endpoint(Moving_obj, End, NewPt) :-
-	find_type(Moving_obj, Type),
-	get_shape(Moving_obj, course, [Finish | Rest]),
-	append(Middle, [Start], Rest),
 	local_ends(Moving_obj, Source, Dest),
-	member([End, Way, Comp],
-	       [[start, out, Dest], [finish, in, Source]]),
-	(Type is_class_of_sort has_bowtie,
-	    route_part_link(Type, Way, [Comp], NewPt, FwRoute),
-	    reverse(FwRoute, Route),
-/*		(End = start,
-			shape_route(Type, NewPt, Finish, Route);
-		End = finish,
-			shape_route(Type, Start, NewPt, Route)),
-*/	    get_box_size(Source, flow, FlowBox),
-
-	    BowSize is FlowBox/2,
-	    get_middle_segment(Type, Route, BowSize, BowShape),
-	    change_shape(Moving_obj, bowtie, BowShape),
-	    redisplay(Moving_obj),
-            (has_outer_equiv(SubLink, Comp, Moving_obj),
-		move_link(SubLink),
-		fail;
-	    true);
-	Type is_class_of_sort curved,
-            \+ (doomed(Comp), Comp is_of_sort has_bowtie),
-	    NewMiddle = [[NewMX,NewMY]],
-	    (End = start,
-		append([NewFinish | NewMiddle], [NewPt], Route),
-		scale_difference(Start, NewPt, 2, TextMove),
-		(appears(Comp), \+ find_type(Comp, submodel), !;
-		    NewFinish = Finish);
-	    End = finish,
-		append([NewPt | NewMiddle], [NewStart], Route),
-		scale_difference(Finish, NewPt, 2, TextMove),
-		(appears(Comp), \+ find_type(Comp, submodel), !;
-		    NewStart = Start)),
-	    tweak_middle(Middle, TextMove, NewMiddle),
-            (ground(Route), !;
-		route_part_link(Type, Way, [Comp], [NewMX,NewMY], FwRoute),
-		append([NewStart | _], [NewFinish], FwRoute)),
-	    move_text(Moving_obj, TextMove)),
-	change_shape(Moving_obj, course, Route),
-/* If I enable border points following far end drags, make sure
-the internal sections follow them too...
-        (End = start,
-	    has_outer_equiv(SubLink, Comp, Moving_obj),
-	    move_link(SubLink),
-	    fail;
-	true),
-*/
-	reroute_display(Moving_obj),
-% We have to m_l_f a bowtie cos it might change orientation.
+	member([End, Comp], [[start, Source], [finish, Dest]]),
+	change_shape(Comp, centre, NewPt),
+	update_link_route(Moving_obj),
 	make_links_follow(Moving_obj).
 
 scale_difference([X1, Y1], [X2, Y2], Sc, [X, Y]) :-
@@ -1428,37 +1403,13 @@ doomed(End) :-
 	get_highlit_obj(L, End),
 	L<2.
 
-thread_link(Top_arc) :-
-	update_link_route(Top_arc, yes),
-	update_equivs(Top_arc),
-	(m_class:equivalent_arcs(Top_arc, NewArc),
-		redisplay(NewArc),
-		fail;
-	presence_affects(Top_arc, Other_arc),
-		get_host(Other_arc, NewImage),
-		update_color(NewImage),
-		update_captions(NewImage),
-		fail;
-	true).
-
 make_links_follow(Obj) :-
 	find_all_links(Obj, Link),
-	adjust_link(Link, no),
+	reroute_display(Link),
+	make_links_follow(Link),
 	fail; true.
 
-/* move_link: adjusts the route of a link, making a new connection point
-to any components it attaches to the outside of. If it continues inside one
-of those components this is recursively moved as well.
-
-Not used very much now: only when routing a ghost link, dragging one
-end of a flow or connecting a link due to reading an interface spec
-file (surely some mistake?) */
-
-move_link(Link) :-
-	adjust_link(Link, yes),
-	update_equivs(Link).
-
-adjust_link(Link, Recurse) :-
+/* adjust_link(Link, Recurse) :-
 	(get_shape(Link, course, OldCourse), !; true),
 	update_link_route(Link, Recurse),
 	get_shape(Link, course, NewCourse),
@@ -1475,13 +1426,7 @@ adjust_link(Link, Recurse) :-
 	true),
 	make_links_follow(Link).
 
-update_equivs(Link) :-
-	(continues_from(Link, Sm); continues_in(Link, Sm)),
-	has_outer_equiv(Sublink, Sm, Link),
-	move_link(Sublink),
-	fail; true.
-
-/* This is sort_for_finish. 
+This is sort_for_finish. 
 It gets a parent and a target, which may be the same. If the target can be finished 
 on, highlight it in green; if not, and it is primitive, light it red, otherwise no 
 light. If on a finishable primitive, draw the final route; if on a nonfinishable 
@@ -1583,32 +1528,32 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 	get_chain(Start_box, Finish_box, Top, Full_ups, Full_downs),
 
 	(find_type(Start, Type), !,
-		get_shape(Start, course, [End | _]),
-		(Start draws_inside Start_box, !,
-			subtract_from_translation([0,0,1,1], Start_box, Trans),
-			Full_ups = [Start_box | Rest];
+	    get_end_pt(Start, finish, _, End, _),
+	    (Start draws_inside Start_box, !,
+		subtract_from_translation([0,0,1,1], Start_box, Trans),
+		Full_ups = [Start_box | Rest];
 		/* Link is incoming */
-			add_to_translation([0,0,1,1], Start_box, Trans),
-			Rest = []),
-		translate(End, Trans, Rel_end),
-		Up_list = [Rel_end | Rest];
+	    add_to_translation([0,0,1,1], Start_box, Trans),
+		Rest = []),
+	    translate(End, Trans, Rel_end),
+	    Up_list = [Rel_end | Rest];
 	Up_list = Full_ups),
 
 	(find_type(Target, Type), !,
-		get_shape(Target, course, Outward),
-		last(Outward, End2),
-		(Target draws_inside Finish_box, !,
-			subtract_from_translation([0,0,1,1], Finish_box, Trans2),
-			Full_downs = [Finish_box | Rest2];
+	    get_end_pt(Target, start, _, End2, _),
+	    (Target draws_inside Finish_box, !,
+		subtract_from_translation([0,0,1,1], Finish_box, Trans2),
+		Full_downs = [Finish_box | Rest2];
 		/* Link is outgoing */
-			add_to_translation([0,0,1,1], Finish_box, Trans2),
-			Rest2 = []),
-		translate(End2, Trans2, Rel_end2),
-		Down_list = [Rel_end2 | Rest2];
+	    add_to_translation([0,0,1,1], Finish_box, Trans2),
+		Rest2 = []),
+	    translate(End2, Trans2, Rel_end2),
+	    Down_list = [Rel_end2 | Rest2];
 	Down_list = Full_downs).
 
 update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_shape(Submodel, bounding_box, [OldL, OldT, OldR, OldB]),
+	get_shape(Submodel, internal_extent, OldInterns),
 	/* work out what the caption was nearest to */
 	(get_shape(Submodel, caption_offset, [XT, YT]);
 	    get_shape(Submodel, caption_offset, [XT, YT, _Anchor])), !,
@@ -1645,8 +1590,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	change_shape(Submodel, bounding_box, NewBox),
 	/* make_links_follow(Submodel), */
 	(ghostly_move(_,_), !; % no link dragging if in fast edit mode 
-	tweak_link_connections(Submodel, [XOff, YOff], Edge,
-			       [OldL, OldT, OldR, OldB])).
+	tweak_link_connections(Submodel, OldInterns)).
 
 /* anything this complex has got to be wrong */
 
@@ -1759,10 +1703,16 @@ unclick_obj :-
 				\+ member(TType, [submodel, cloud]), !;
 			    draw_line_to(Start_thing, New_obj, Terminator)),
 			    tie_ends(New_obj, Start_thing, Terminator),
-			    (TType is_class_of_sort box, !;
+/* Now if replacing a visible terminator with a border node, reroute the links
+on either side (tests for this should be more explicit) */
+			    (\+ find_type(Terminator, New_obj), !;
 				m_class:Terminator follows Replacer,
-				menu:reroute_sections([Replacer,
-						       Terminator])))),
+				menu:reroute_sections([Replacer, Terminator])),
+			    (Replacer == Start_thing, !;
+				\+ find_type(Start_thing, New_obj), !;
+				\+ New_obj = flow;
+				m_class:Rep2 follows Start_thing,
+				menu:reroute_sections([Start_thing, Rep2])))),
 		    clear_incomplete,
 		    remove_old_incomplete;
 		get_phase(barge),
@@ -1821,7 +1771,8 @@ unclick_obj :-
 	remove_old_rubberband,
 	ghost_type(Start, GhostType, Base),
 	(get_highlit_obj(2, Component_name);
-	attempt_addition(GhostType, Parent, Box, Component_name, no, yes), !,
+	middle(Box, Pt),
+	attempt_addition(GhostType, Parent, Pt, Component_name, no, yes), !,
 	        redisplay(Component_name)),
 	    get_nearest_equivalent_link(ghost_link, Base,
 					Component_name, OutLink),
@@ -1858,13 +1809,7 @@ tie_ends(New_obj, Start_thing, Terminator) :-
 	link_ends(New_obj, Start_thing, Terminator, LastArc),
 	reuse_route(New_obj, LastArc).
 
-	/* 
-	(find_all_comps(TopBox, Top_arc),
-	    image:has_outer_equiv(Top_arc, TopBox, Join), !,
-	    event:thread_link(Join);
-	event:thread_link(Top_arc)).
-
-Clever bit: reuse the route of the rubberband link for the newly added one */
+/* Clever bit: reuse route of the rubberband link for the newly added one */
 reuse_route(New_obj, LastArc) :-
         find_current(Wid),
 	Wid shows_model Parent,
@@ -1874,8 +1819,30 @@ reuse_route(New_obj, LastArc) :-
 	    get_incomplete(Node-ScreenRoute),
 	    translate_between(Parent, Node, _D, Trans),
 	    translate(ScreenRoute, Trans, Route),
-	    set_shape(NewArc, course, Route),
-	    update_bowtie(NewArc, Route),
+	    m_class:NewArc is_connector from Start to Fn,
+	    get_host(Fn, Finish),
+	    Route = [LastPt, MidPt | Tail],
+	    suffix([FirstPt], [MidPt | Tail]),
+	    asserta(new_route_for(NewArc, MidPt)),
+	    (border_node(Start),
+		set_shape(Start, centre, FirstPt),
+		fail;
+	    border_node(Finish),
+		set_shape(Finish, centre, LastPt),
+		fail);
+        retract(new_route_for(NewArc, MPt)),
+	    /* Arcs need points at ends of other arcs to draw, so draw after */
+%	    set_shape(NewArc, course, Route),
+%	    update_bowtie(NewArc, Route),
+	    (New_obj = flow,
+		CPt = [550,450];
+		% First is posn of kink, 2nd is posn of bowtie /1000
+	    \+ New_obj = flow,
+		get_end_pt(NewArc, start, _, Spt, _),
+		get_end_pt(NewArc, finish, _, FPt, _),
+		relativize_centre(Spt, FPt, MPt, CPt)),
+	    (clear_shape(NewArc, curve), fail; % in case rerouting
+		set_shape(NewArc, curve, CPt)),
 	    redisplay(NewArc),
 
 	    (New_obj = relation,
@@ -1887,6 +1854,10 @@ reuse_route(New_obj, LastArc) :-
 	    select_text(Wid, NewArc),
 	    fail;
 	 true).
+	
+relativize_centre([SX, SY], [FX, FY], [MX, MY], [CX, CY]) :-
+		CX is MX-(SX+FX)/2,
+		CY is MY-(SY+FY)/2.
 
 ghost_type(Start, Type, Base) :-
 	get_line_start_obj(Start),
@@ -1900,8 +1871,11 @@ undrawing any ghost links that were there, then ghosts it to the new base if the
 
 reghost(Ghost, Base) :-
 	make_ghost(Ghost, Base, TopLink),
-	thread_link(TopLink),
-	change_ghosthood(Ghost).
+	draw_line_to(Base, influence, Ghost),
+	reuse_route(influence, TopLink),
+	change_ghosthood(Ghost),
+%	clear_incomplete,
+	remove_old_incomplete.
 
 change_ghosthood(Node) :-
 /*	make_links_follow(Node), */
@@ -2054,8 +2028,15 @@ arg is var, or move the given node there if it is not. Fails if it
 interferes with another component -- the test previously used picks,
 but now uses get_component_from_gui because it is quicker. */
 
-attempt_addition(Type, Parent, Box, Node_name, CanBag, Verbal) :-
+attempt_addition(Type, Parent, Posn, Node_name, CanBag, Verbal) :-
 	/* check it is inside its parent */
+	(Type = submodel, !,
+	    Box = Posn;
+	 use_style_for(Type, NewObjStyle),
+	    get_box_size(Parent, NewObjStyle, Cur_size),
+	    Posn = [Xpt, Ypt],
+	    make_bounding_box(Type, Xpt, Ypt, Cur_size, Box)),
+
 	get_shape(Parent, internal_extent, Parent_size),
 	fits_inside(Box, Parent_size),
 
@@ -2074,7 +2055,9 @@ attempt_addition(Type, Parent, Box, Node_name, CanBag, Verbal) :-
 	(nonvar(Node_name);
 	make_node(Parent, Type, Node_name),
 		add_implicit_function(Node_name, _)), !,
-	set_shape(Node_name, bounding_box, Box),
+	(Type = submodel, !,
+	    set_shape(Node_name, bounding_box, Box);
+	set_shape(Node_name, centre, Posn)),
 	make_links_follow(Node_name);
 	sicstus_format_to_chars("Cannot add a ~a here due to overlaps.",
 				[Type], Wibble),
@@ -2122,16 +2105,6 @@ relate_graphics(Node_name, Node_trans) :-
 	    all(event, make_links_follow, [build(MessedLinks)]);
 	true),
 	remove_old_incomplete.
- /* re-route flows first so influences to re-routed bowties come out right.
- Note only cross border flows need rerouting. 
-	((find_all_links(Node_name, Link), find_type(Link, flow);
-	find_all_links(Node_name, Link), \+ find_type(Link, flow)),
-	    (has_outer_equiv(DoLink, Node_name, Link); DoLink = Link),
-	    update_link_route(DoLink, yes),
-	    redisplay(DoLink),
-	    make_links_follow(DoLink),
-	    fail;
-	true). */
 
 move_boxes(Node_name, Node_trans) :-
 	find_all_comps(Node_name, Thing),
@@ -2217,11 +2190,12 @@ dissolve_component(Node) :-
 	    redisplay_border(OrphanNode),
 	    fail;
 	member(MovedLink, MovedLinks),
-	    update_link_route(MovedLink, yes),
+	    menu:reroute_sections([MovedLink]),
 	    redisplay(MovedLink),
 	    make_links_follow(MovedLink),
 	    fail;
-	member(OrphanLink, OrphanLinks),
+	remove_old_incomplete,
+	    member(OrphanLink, OrphanLinks),
 	    redisplay(OrphanLink), /* also need to change endpoints */
 	    fail;
 	true)).

@@ -24,14 +24,14 @@ sicstus_module(draw,
 		update_ability/5, scrub_run/2, kill_helpers/1,
 		display_mode/1, display_menu/1, off/1,
 		move_text/2, move_display/2, reroute_display/1,
-		redisplay/1, redisplay_border/1,
+		update_link_route/1, redisplay/1, redisplay_border/1,
 		add_window/9, redraw_window/1, delete_window/1,
 		inject_graphics/2, translate_canvas_pl_names/2, display_area/1,
 		save_canvas/4, expand_canvas/2,
 		refatten_toplevels/2, adjust_toplevel_windows/2,
 		highlight/2, normalize/1, current_edit/2,
 		remove_old_incomplete/0, draw_rubberband/1,
-		remove_old_rubberband/0, draw_links/4, show_invisible_links/1,
+		remove_old_rubberband/0, draw_links/4,
 		tk_get_pref/2, exit_AME/0,
 		tk_equationlisting_start/1,tk_equationlisting_addsubmodel/7,
 		tk_equationlisting_addvariable/11]).
@@ -146,16 +146,26 @@ shift_model(Wid, Obj, Vect) :-
 	find_all_comps(Obj, Child),
 	shift_model(Wid, Child, Vect).
 
+update_link_route(Link) :-
+	find_type(Link, Type),
+	(Type is_class_of_sort captionless;
+	 Type is_class_of_sort has_bowtie,
+	    find_base(Link, Base),
+	    \+ Base = Link;
+	 Type = relation,
+	    \+ get_boundary_end(Link, true)), !,
+	reroute_display(Link);
+	redisplay(Link).
 
 /* reroute_display/1 is also to make it go faster; used when something changes
 shape as well as position. New shape is calculputed from graphical info. */
 
 reroute_display(Obj) :-
-	get_shape(Obj, course, Course),
-	find_relevant_windows(Obj, Wid, _, Trans),
-		untranslate(Course, Trans, ScreenCourse),
-		zap_route(Wid, Obj, ScreenCourse),
-		fail;
+	get_link_route(Obj, Course),
+	    find_relevant_windows(Obj, Wid, _, Trans),
+	    untranslate(Course, Trans, ScreenCourse),
+	    zap_route(Wid, Obj, ScreenCourse),
+	    fail;
 	true.
 
 /*
@@ -475,7 +485,7 @@ display_link_in(Wid, Link, Depth, Trans) :-
 	    draws_at(Wid, ghost_link, Depth))), !,
 	draw_style_for(Link, Type),
 	draws_at(Wid, Type, Depth),
-	get_shape(Link, course, Coord_list),
+	get_link_route(Link, Coord_list),
 	untranslate(Coord_list, Trans, Screen_coords),
 	find_fatness(Trans, RelFatness),
 	get_flash(Link, Colour_scheme),
@@ -594,6 +604,7 @@ draw_up_links(Type, [Node | Rest], Dir, Trans, Prev, Point) :-
 	Dir = out, last(Screen_route, Next)),
 	draw_up_links(Type, Rest, Dir, New_trans, Node, Next).
 
+/*
 show_invisible_links(Links) :-
 	find_current(Wid),
 	    Wid shows_model Backgnd,
@@ -609,7 +620,7 @@ show_invisible_links(Links) :-
 	    add_incomplete(Daddy-ScreenRoute),
 	    fail;
 	draw_incomplete(Type).
-
+*/
 
 
 % ############################################ Start Bob's changes

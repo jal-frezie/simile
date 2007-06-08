@@ -75,9 +75,9 @@ assert_model(P) :-
 	assert(update_add(P))).
 
 my_assert(P) :-
-%	assert(P).
+	assert(P).
 %	tcl_assert(P).
-	c_assert(P).
+%	c_assert(P).
 	
 tcl_assert(P) :-
 	P =.. [Funt | Args],
@@ -148,9 +148,9 @@ retract_model(P) :-
 	retract_from_current(P).
 
 my_retract(P) :-
-%	retract(P).
+	retract(P).
 %	tcl_retract(P).
-	c_retract(P).
+%	c_retract(P).
 
 tcl_retract(P) :-
 	tcl_call(P, Funt, MatchStr),
@@ -217,9 +217,9 @@ retractall_model(P) :-
 	true.
 
 query_model(P) :-
-%	call(P).
+	call(P).
 %	tcl_call(P, _Funt, _Strs).
-	c_call(P).
+%	c_call(P).
 
 tcl_call(P, Funt, MatchStr) :-
 	P =.. [Funt | Args],

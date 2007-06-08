@@ -7,7 +7,7 @@ functions that are needed both in model_update and image. */
 
 sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
-		implicit_function/2, is_parameter/2,
+		implicit_function/2, border_node/1, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
@@ -209,9 +209,10 @@ get_host(Object, Visible) :-
 	implicit_function(Visible, Object).
 
 appears(Object) :-
-	(Drawable = bounding_box; Drawable = course; Drawable = centre),
+	(Drawable = bounding_box; Drawable = curve; Drawable = centre),
 	Object has_graphical_attribute Drawable of _,
 	\+ implicit_function(_, Object),
+	\+ border_node(Object),
 	\+ (Object is_connector from Node to Self,
 		implicit_function(Self, Node)).
 
@@ -219,6 +220,13 @@ implicit_function(Exp_node, Imp_node) :-
 	Arc is_connector from Imp_node to Exp_node,
 	Arc has_type influence,
 	Imp_node has_class function.
+
+border_node(Object) :-
+	\+ find_type(Object, submodel),
+	(Link is_connector from Object to _,
+	    Link follows _;
+	Link is_connector from _ to Object,
+	    _ follows Link), !.
 	
 /* interface for ghost property to rest of program. To test for ghosthood, use 'is_ghost' -- this returns the start and finish of a ghost link. To find the 'real' node for a given node, use find_base -- if the given node is real, it will be returned. Ghost_link can be used to determine the display status of links, and find_ghosts will return all the ghosts
 of a given base node. (Ghost relationship only exists between an absolute base node and its ghosts -- ghost-to-ghost links should be done away with!) */

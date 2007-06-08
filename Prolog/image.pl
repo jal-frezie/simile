@@ -17,7 +17,7 @@ sicstus_module(image,
       [get_colour/4, get_window_colour/3,
        get_closest_edge/3, map/6, get_inner_bound/3, get_outer_bound/4,
        change_shape/3, get_shape/3, set_shape/3, clear_shape/2,
-       targets/5, inside_shape/3, near/2, middle/2,
+       targets/5, inside_shape/3, near/2, get_middle/2, middle/2,
        crossing_point/5, make_bounding_box/5,
        density_for/2, draw_style_for/2, use_style_for/2,
        get_drawing_form/3, get_boundary_end/2,
@@ -25,15 +25,16 @@ sicstus_module(image,
        draws_complete/1, check_complete/1, test_complete/1,
        get_inclusions/3, get_overlaps/3, draws_at/3, right_section/2,
         find_new_box/5, line_dir_change_radius_is/1,
-       multiple_draw/2, update_bowtie/2,
+       multiple_draw/2, update_bowtie/2, get_bowtie/2, get_bowtie/3,
        adjust_bowtie/2, adjust_spline/2,
        get_caption_anchor/2, end_coords/3,
        update_text_position/3, make_header/2, set_completion/2,
-       update_link_route/2, shape_route/4, route_link/4,
+       get_end_pt/5, get_link_route/2, shape_route/4, route_link/4,
        route_interior_part_link/5, route_part_link/5,
-       route_parent_child_link/5, get_middle_segment/4, check_translation/1,
+       route_parent_child_link/5, check_translation/1,
        translate_between/4, translate/3, rel_translate/3,
-       untranslate/3, add_to_translation/3, subtract_from_translation/3]).
+       untranslate/3, add_to_translation/3, add_boxes_to_translation/4,
+       subtract_from_translation/3]).
 
 sicstus_use_module([library(lists),
             sp_only, ame_gen, state, text, m_class, m_update]).
@@ -94,7 +95,7 @@ inside([X, Y], Comp) :-
     inside_shape([X, Y], Class, Box).
 
 inside([X, Y], Comp) :-
-    get_shape(Comp, bowtie, [L, T, R, B]),
+    get_bowtie(Comp, [L, T, R, B]),
     X > L, X < R, Y > T, Y < B.
 
 inside_shape([X, Y], Class, [L, T, R, B]) :-
@@ -393,24 +394,18 @@ get_drawing_form(Comp, Style, BBox) :-
     find_base(Comp, Base),
     find_type(Base, Type),
     use_style_for(Type, Style),
-    (get_shape(Comp, bowtie, [BL, BT, BR, BB]), !,
-        Xpt is (BR+BL)/2,
-        Ypt is (BB+BT)/2,
-        get_bowtie_size(Comp, Cur_size),
-        (BR-BL<BB-BT, !,
-        make_bounding_box(Type, Xpt, Ypt, Cur_size, [NL, NT, NR, NB]);
-        make_bounding_box(Type, Ypt, Xpt, Cur_size, [NT, NL, NB, NR])),
-        BBox = [NL, NT, NR, NB];
+    (get_bowtie(Comp, BBox), !;
     Style = text, !,
         get_shape(Comp, centre, C),
         append(C, C, BBox);
-    get_shape(Comp, bounding_box, [BL, BT, BR, BB]),
-        (Style = submodel, !,
-        BBox = [BL, BT, BR, BB];
-        Xpt is (BR+BL)/2,
-        Ypt is (BB+BT)/2,
-        get_box_size(Comp, Style, Cur_size),
-        make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox))).
+    (Style = submodel, !,
+        get_shape(Comp, bounding_box, BBox);
+    get_shape(Comp, centre, [Xpt, Ypt]),
+	((Link is_connector from _ to Comp, Outer follows Link;
+	  Link is_connector from Comp to _, Link follows Outer), !,
+	    BBox = [Xpt, Ypt, Xpt, Ypt];
+	get_box_size(Comp, Style, Cur_size),
+	    make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox)))).
 
 /* draws_at/3: returns if a component or link can be drawn at a certain depth,
 i.e., if it has a deep enough display depth and so do others on which it
@@ -479,40 +474,21 @@ get_bowtie_size(Link, Bowtie) :-
 adjust_bowtie(Comp, Point) :-
     find_type(Comp, Type),
     Type is_class_of_sort has_bowtie,
-    get_shape(Comp, course, Point_list),
-    get_bowtie_size(Comp, Bowtie_size),
-    closest_centre(Point, Point_list, Miss, [XMid, YMid], Orient),
+    get_link_route(Comp, Point_list),
+    closest_centre(Point, Point_list, Miss, _ClosePt, Posn),
     line_dir_change_radius_is(Dither),
     Miss < Dither,
-    (Orient = h, !,
-        make_bounding_box(flow, XMid, YMid, Bowtie_size, New_bowtie);
-    make_bounding_box(flow, YMid, XMid, Bowtie_size, [NT, NL, NB, NR]),
-        New_bowtie = [NL, NT, NR, NB]),
-    change_shape(Comp, bowtie, New_bowtie).
+    get_shape(Comp, curve, [Kink, OldPosn]),
+%    abs(Posn-OldPosn)<100, save accidentally moving it by clicking on route
+    change_shape(Comp, curve, [Kink, Posn]).
 
 adjust_spline(Comp, [XOff, YOff]) :-
     find_type(Comp, Type),
     Type is_class_of_sort curved,
-    get_shape(Comp, course, [OP1, [OldMX, OldMY], OP3]),
+    get_shape(Comp, curve, [OldMX, OldMY]),
     NewMX is OldMX + 2*XOff,
     NewMY is OldMY + 2*YOff,
-    Comp is_connector from Source to DestFn,
-    get_host(DestFn, Dest),
-    (find_type(Source, submodel), !,
-        P3 = OP3;
-    route_part_link(Type, in, [Source], [NewMX,NewMY], [P3 | _])),
-    (find_type(Dest, submodel), !,
-        P1 = OP1;
-    route_part_link(Type, out, [Dest], [NewMX,NewMY], IRoute),
-        suffix([P1], IRoute)),
-    change_shape(Comp, course, [P1, [NewMX, NewMY], P3]).
-/* If I enable border points following middle section drags, make sure
-the internal sections follow them too...
-    (has_outer_equiv(SubLink, Dest, Comp),
-        event:move_link(SubLink),
-        fail;
-    true).
-*/
+    change_shape(Comp, curve, [NewMX, NewMY]).
 
 get_caption_anchor(Path, MidPt) :-
     Path = [[FX,FY], [MX,MY], [SX,SY] | _],
@@ -538,8 +514,8 @@ closest_centre(Pt, Line, Dist, ClosestPt, Orient) :-
     member(approach(Dist, ClosestPt, Orient), Approaches),
     \+ (member(approach(Closer, _,_), Approaches), Closer < Dist).
 
-any_distance([X, Y], Line, approach(D, [XC, YC], O)) :-
-    append(_, [[FX, FY], [SX, SY] | _], Line),
+any_distance([X, Y], Line, approach(D, [XC, YC], P)) :-
+    append(_, [[FX, FY], [SX, SY] | Tail], Line),
     XL is FX-SX,
     YL is FY-SY,
     H is sqrt(XL*XL + YL*YL),
@@ -548,11 +524,13 @@ any_distance([X, Y], Line, approach(D, [XC, YC], O)) :-
     YC is (Y+(Off*XL/H)),
     D is abs(Off),
     (YL*YL>=XL*XL,
-    YC >= min(SY, FY), max(SY, FY) >= YC,
-        O=v;
+	Fract is (YC-SY)/(FY-SY);
     YL*YL<XL*XL,
-    XC >= min(SX, FX), max(SX, FX) >= XC,
-        O=h).
+	Fract is (XC-SX)/(FX-SX)),
+    1>=Fract, Fract>=0,
+    length(Line, PtCount),
+    length(Tail, EarlySegs),
+    P is 1000*(EarlySegs + Fract)/(PtCount - 1).
 
 find_new_box(Obj, Xoffset, Yoffset, [L, T, R, B], 
             [L1, T1, R1, B1]) :-
@@ -586,27 +564,90 @@ slice(Posn, LowSide, HiSide, N) :-
     Posn < (LowSide+3*HiSide)/4, !, N=2;
     N=3.
 
-update_link_route(Link, Recurse) :-
-    get_hierarchy(Link, start, Source_stack, Recurse),
-    get_hierarchy(Link, finish, Dest_stack, Recurse),
-    Link has_type Type,
-    route_link(Type, Source_stack, Dest_stack, Route),
-    (Link has_changed_graphical_attribute course to Route, !;
-        Link has_new_graphical_attribute course of Route),
-    update_bowtie(Link, Route).
+/* This is having a few hiccups because we may try to draw outer sections before transferring the data for iner ones, so it cannot find their endpoints. So,
+* Do inner ones first?
+* Transfer all, then draw?
+* reuse actual graphics rather than route??? (new bowtie)
+*/
 
-update_bowtie(Link, Route) :-
+get_end_pt(Link, End, Type, Pt, Box) :-
+	Link is_connector from Start to Fn,
+	get_host(Fn, Finish),
+	(End = start,
+	    Node = Start,
+	    Check = (Link follows Other),
+	    PrevPt = PrevEnd;
+	 End = finish,
+	    Node = Finish,
+	    Check = (Other follows Link),
+	    PrevPt = PrevStart),
+	(call(Check),
+	    find_type(Node, submodel), !,
+	    add_to_translation([0,0,1,1], Node, Trans),
+	    Other is_connector from PrevStart to PrevEnd,
+	    get_shape(PrevPt, centre, InPt),
+	    untranslate(InPt, Trans, Pt),
+	    append(Pt, Pt, Box);
+	get_drawing_form(Node, Type, Box),
+	    middle(Box, Pt)).
+	
+get_link_route(Link, Route) :-
+	get_end_pt(Link, start, SType, [SX, SY], SBox),
+	get_end_pt(Link, finish, FType, [FX, FY], FBox),
+
+	(Link is_of_sort curved, !,
+	    get_shape(Link, curve, [CX, CY]),
+	    MX is CX + (SX+FX)/2,
+	    MY is CY + (SY+FY)/2,
+	    crossing_point([SX, SY], [MX, MY], SType, SBox, P0),
+	    crossing_point([FX, FY], [MX, MY], FType, FBox, Pn),
+	    Route = [Pn, [MX, MY], P0];
+	SBox = [SL, ST, SR, SB],
+	    FBox = [FL, FT, FR, FB],
+	    (draw:tk_get_pref(flowRouting, 0),
+		SPt = [SX, SY],
+		FPt = [FX, FY];
+	    parallel(ST, SB, FT, FB, PY),
+		SPt = [SX, PY],
+		FPt = [FX, PY];
+	    parallel(SL, SR, FL, FR, PX),
+		SPt = [PX, SY],
+		FPt = [PX, FY]), !,
+	    crossing_point(SPt, FPt, SType, SBox, P0),
+	    crossing_point(FPt, SPt, FType, FBox, Pn),
+	    Route = [Pn, P0];
+	crossing_point([SX, SY], [FX, FY], SType, SBox, [X0, Y0]),
+	crossing_point([FX, FY], [SX, SY], FType, FBox, [Xn, Yn]),
+	    get_shape(Link, curve, [Kink, _Bowtie]),
+	    (abs(Yn-Y0)>abs(Xn-X0), !, % kink is horizontal
+		Yk is Y0+Kink*(Yn-Y0)/1000,
+		Route = [[Xn, Yn], [Xn, Yk], [X0, Yk], [X0, Y0]];
+	    Xk is X0+Kink*(Xn-X0)/1000,
+	    		Route = [[Xn, Yn], [Xk, Yn], [Xk, Y0], [X0, Y0]])).
+
+parallel(S1, F1, S2, F2, M) :-
+	S1<F2, S2<F1,
+	M is (max(S1, S2)+min(F1, F2))/2.
+
+update_bowtie(_Link, _Route).
+
+get_bowtie(Link, Bowtie) :-
+    Link is_of_sort has_bowtie,
+    get_link_route(Link, Route),
+    get_bowtie(Link, Route, Bowtie).
+
+get_bowtie(Link, Route, Bowtie) :-
     find_type(Link, LType),
-    (\+ LType is_class_of_sort has_bowtie, !;
+    LType is_class_of_sort has_bowtie,
     get_bowtie_size(Link, Bowtie_size),
-    get_middle_segment(LType, Route, Bowtie_size, Bowtie),
-    (   Link has_changed_graphical_attribute bowtie to Bowtie, !;
-        Link has_new_graphical_attribute bowtie of Bowtie)).
+    get_shape(Link, curve, [_, TiePosn]),
+    get_middle_segment(LType, Route, Bowtie_size, TiePosn, Bowtie).
 
 get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
     Link is_connector from TopStart to TopEnd,
     member([TopNode, End, Equiv], [[TopStart, start, FarLink-Link],
-                   [TopEnd, finish, Link-FarLink]]),
+
+				   [TopEnd, finish, Link-FarLink]]),
     get_host(TopNode, Top),
     (Top has_class submodel,
         (Recurse = no, !,
@@ -622,10 +663,22 @@ get_hierarchy(Link, End, [Pt | Rest], Recurse) :-
     Pt = Top,
         Rest = []).
 
-end_coords(Link, Where, [Xpt, Ypt]) :-
+end_coords(Link, Where, Pt) :-
+	Link is_connector from Start to Finish,
+	member(Where-Which, [start-Start, finish-Finish]),
+	get_middle(Which, Pt).
+
+get_middle(Node, Pt) :-
+	get_shape(Node, centre, Pt);
+	(get_shape(Node, bounding_box, BB);
+	    get_bowtie(Node, BB)),
+	middle(BB, Pt).
+
+/* was:
     get_shape(Link, course, Course),
     (Where = finish, Course = [[Xpt, Ypt] | _];
     Where = start, suffix([[Xpt, Ypt]], Course)).
+*/
 
 /* make_header: generates the text to put in a window's title bar */
 
@@ -807,6 +860,7 @@ get_termination_zone([Obj | Rest], Dir, Area, CompType, Centre) :-
         CompType = point,
         Centre = [X, Y];
     get_drawing_form(Obj, DrawType, Area),
+
     (Obj has_type squirt, !,
         CompType = variable;
     CompType = DrawType),
@@ -1017,18 +1071,19 @@ curve_route([X1, Y1], [X3, Y3], [X2, Y2]) :-
 get_linear(Acw_pt, Cw_pt, Acw_gap, Front_gap, Cw_gap, Mid_pt) :-
     Mid_pt is (Acw_pt*(Front_gap - Cw_gap) + Cw_pt*(Front_gap - Acw_gap)) / (2*Front_gap - Cw_gap - Acw_gap).
 
-get_middle_segment(Type, List, Size, Bowtie) :-
+get_middle_segment(Type, List, Size, Posn, Bowtie) :-
     length(List, L),
-    Half_length is (L - 1)//2,
+    Half_length is (L - 1)*Posn//1000,
+    Fract is (L - 1)*Posn/1000 - Half_length,
     append(_, [St, Fi | Rest], List),
     length(Rest, Half_length), !,
-    tie_middle(Type, St, Fi, Size, Bowtie).
+    tie_middle(Type, St, Fi, Size, Fract, Bowtie).
 
 /* tie_middle puts bowtie on a section of flow, oriented crosswise to the axis along which the flow has greatest extent */
 
-tie_middle(Type, [X1, Y1], [X2, Y2], Len, [NL, NT, NR, NB]) :-
-    XMid is (X1+X2)/2,
-    YMid is (Y1+Y2)/2,
+tie_middle(Type, [X2, Y2], [X1, Y1], Len, Fract, [NL, NT, NR, NB]) :-
+    XMid is X1+Fract*(X2-X1),
+    YMid is Y1+Fract*(Y2-Y1),
     (abs(Y1-Y2) < abs(X1-X2), !,
         make_bounding_box(Type, XMid, YMid, Len, [NL, NT, NR, NB]);
     make_bounding_box(Type, YMid, XMid, Len, [NT, NL, NB, NR])).
@@ -1090,14 +1145,17 @@ gnumber(N) :-
     number(N);
     N = -(M), number(M).
 
-add_to_translation([Xoffset, Yoffset, Xscale, Yscale], Comp,
-        [NewXoffset, NewYoffset, NewXscale, NewYscale]) :-
+add_to_translation(OldTrans, Comp, NewTrans) :-
+    get_shape(Comp, bounding_box, Box1),
+    get_shape(Comp, internal_extent, Box2),
+    add_boxes_to_translation(OldTrans, Box1, Box2, NewTrans).
+
+add_boxes_to_translation([Xoffset, Yoffset, Xscale, Yscale],
+			 [L, T, R, B], [IntL, IntT, IntR, IntB],
+			 [NewXoffset, NewYoffset, NewXscale, NewYscale]) :-
     Border = 0,
-    get_shape(Comp, bounding_box, [L, T, R, B]),
-    get_shape(Comp, internal_extent, [IntL, IntT, IntR, IntB]),
-    NewXscale is max(Xscale*(IntR - IntL)/(R + 2*Border - L),
-        Yscale*(IntB - IntT)/(B + 2*Border - T)),
-    NewYscale = NewXscale,
+    NewXscale is Xscale*(IntR - IntL)/(R + 2*Border - L),
+    NewYscale = Yscale*(IntB - IntT)/(B + 2*Border - T),
     NewXoffset is Xoffset + ((L + R)/2 - Border)/Xscale 
         - (IntL + IntR)/2/NewXscale,
     NewYoffset is Yoffset + ((T + B)/2 - Border)/Yscale
