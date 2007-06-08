@@ -106,17 +106,12 @@ proc PutHexagon { w l t r b stack fatness density colourScheme tagSet} {
 
 
 proc PutBowTie { w l t r b fatness density colourScheme tagSet} {
-    scan [ScaleRect $w $l $t $r $b] {%f %f %f %f} ml mt mr mb
     set width [GetLineSize $w flow $fatness]
     
-    if {($mb - $mt) > ($mr - $ml)} {
-        set bounds "$ml $mt $mr $mt $ml $mb $mr $mb $ml $mt"
-    } else {
-        set bounds "$ml $mt $ml $mb $mr $mt $mr $mb $ml $mt"
-    }
-    eval {$w create poly} $bounds {-tag "$tagSet bowtie has_info"}
-    eval {$w create line} $bounds {-width $width \
-                -tag "$tagSet bowtie realwidth($width)"}
+    set poly [$w create poly 0 0 0 0 -tag "$tagSet bowtie has_info"]
+    set line [$w create line 0 0 0 0 -width $width \
+	       -tag "$tagSet bowtie realwidth($width)"]
+    PositionBowtie $w [list $l $t $r $b] [list $poly $line]
     ResetColours $w flow $density $colourScheme [lindex $tagSet 0]
 }
 
@@ -712,6 +707,30 @@ proc MoveLine {w id ptz} {
                     ![string match *bowtie* $taglist]} {
             eval "$w coords $item" $mptz
         }
+    }
+}
+
+proc MoveBowtie {w id ptz} {
+    foreach item [$w find withtag $id] {
+        set taglist [$w gettags $item]
+        if {[string match *bowtie* $taglist]} {
+            lappend bits $item
+	}
+    }
+    if {[info exists bits]} {
+	PositionBowtie $w $ptz $bits
+    }
+}
+
+proc PositionBowtie {w ptz items} {
+    scan [ScaleList $w $ptz] {%f %f %f %f} ml mt mr mb
+    if {($mb - $mt) > ($mr - $ml)} {
+        set bounds "$ml $mt $mr $mt $ml $mb $mr $mb $ml $mt"
+    } else {
+        set bounds "$ml $mt $ml $mb $mr $mt $mr $mb $ml $mt"
+    }
+    foreach item $items {
+	eval {$w coords $item} $bounds
     }
 }
 
