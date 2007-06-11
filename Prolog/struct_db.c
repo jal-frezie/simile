@@ -46,9 +46,10 @@ typedef struct arc_t {
   id_list *subs;
   id_list *arcs_to;
   id_list *arcs_from;
-  coord_list *course;
-  int bl,bt,br,bb;
+  coord_list *course; // to go
+  int bl,bt,br,bb; // to go
   int offx, offy;
+  int xk, yb;
 } arc;
     
 node* nodes[USHRT_MAX];
@@ -262,6 +263,15 @@ FORPROL add_bowtie(char* parent, long l, long t, long r, long b) {
   SUCCEED;
 }
 
+FORPROL add_curve(char* parent, long xk, long yb) {
+  arc *parentArc;
+
+  parentArc = arcs[get_arc_number(parent)];
+  parentArc->xk = (int)xk;
+  parentArc->yb = (int)yb;
+  SUCCEED;
+}
+
 FORPROL delete_node(char* oldcomp) {
   node** oldNode;
 
@@ -365,6 +375,11 @@ void empty_course(char* link) {
 
 FORPROL remove_bowtie(char* parent) {
   arcs[get_arc_number(parent)]->bb = INT_MIN;
+  SUCCEED;
+}
+  
+FORPROL remove_curve(char* parent) {
+  arcs[get_arc_number(parent)]->yb = INT_MIN;
   SUCCEED;
 }
   
@@ -476,6 +491,21 @@ FORPROL is_hidden(char* parent) {
     FAIL;
   if (!childNode->hide)
     FAIL;
+  SUCCEED;
+}
+
+FORPROL find_curve(char* child, long* xk, long* yb) {
+  arc* childArc;
+
+  if (!is_arc(child))
+    FAIL;
+  childArc = arcs[get_arc_number(child)];
+  if (!childArc) 
+    FAIL;
+  if (childArc->yb == INT_MIN)
+    FAIL;
+  *xk = (long)childArc->xk;
+  *yb = (long)childArc->yb;
   SUCCEED;
 }
 

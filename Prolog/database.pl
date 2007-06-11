@@ -75,9 +75,9 @@ assert_model(P) :-
 	assert(update_add(P))).
 
 my_assert(P) :-
-	assert(P).
+%	assert(P).
 %	tcl_assert(P).
-%	c_assert(P).
+	c_assert(P).
 	
 tcl_assert(P) :-
 	P =.. [Funt | Args],
@@ -92,6 +92,7 @@ tcl_assert(P) :-
 :- foreign(set_type(+string, +atom)). 
 :- foreign(add_continuation(+string, +string)).
 :- foreign(add_to_course(+string, +integer, +integer)).
+:- foreign(add_curve(+string, +integer, +integer)).
 :- foreign(add_bbox(+string, +integer, +integer, +integer, +integer)).
 :- foreign(add_iext(+string, +integer, +integer, +integer, +integer)).
 :- foreign(add_capt_off(+string, +integer, +integer)).
@@ -120,6 +121,9 @@ c_assert(P) :-
 	 GAttr = bounding_box,
 	    Pts = [L,T,R,B],
 	    add_bbox(Obj, L, T, R, B);
+	 GAttr = curve,
+	    Pts = [XK, YB],
+	    add_curve(Obj, XK, YB);
 	 GAttr = internal_extent,
 	    Pts = [L,T,R,B],
 	    add_iext(Obj, L, T, R, B);
@@ -148,9 +152,9 @@ retract_model(P) :-
 	retract_from_current(P).
 
 my_retract(P) :-
-	retract(P).
+%	retract(P).
 %	tcl_retract(P).
-%	c_retract(P).
+	c_retract(P).
 
 tcl_retract(P) :-
 	tcl_call(P, Funt, MatchStr),
@@ -164,6 +168,7 @@ tcl_retract(P) :-
 :- foreign(unset_type(+string, +atom)). 
 :- foreign(remove_continuation(+string, +string)).
 :- foreign(empty_course(+string)).
+:- foreign(remove_curve(+string)).
 :- foreign(remove_bbox(+string)).
 :- foreign(remove_iext(+string)).
 :- foreign(remove_capt_off(+string)).
@@ -193,6 +198,8 @@ c_retract(P) :-
 	    c_call(P),
 	    (GAttr = course,
 		empty_course(Obj);
+	    GAttr = curve,
+		remove_curve(Obj);
 	    GAttr = bounding_box,
 		remove_bbox(Obj);
 	    GAttr = internal_extent,
@@ -217,9 +224,9 @@ retractall_model(P) :-
 	true.
 
 query_model(P) :-
-	call(P).
+%	call(P).
 %	tcl_call(P, _Funt, _Strs).
-%	c_call(P).
+	c_call(P).
 
 tcl_call(P, Funt, MatchStr) :-
 	P =.. [Funt | Args],
@@ -241,6 +248,7 @@ tcl_call(P, Funt, MatchStr) :-
 :- foreign(find_prev(+string, -string)).
 :- foreign(get_next_list_pointer(+string, -integer)).
 :- foreign(get_course_pointer(+string, -integer)).
+:- foreign(find_curve(+string, -integer, -integer)).
 :- foreign(find_bbox(+string, -integer, -integer, -integer, -integer)).
 :- foreign(find_iext(+string, -integer, -integer, -integer, -integer)).
 :- foreign(find_capt_off(+string, -integer, -integer)).
@@ -281,6 +289,9 @@ c_call(P) :-
 		get_course_pointer(Obj, CoursePtr),
 		\+ CoursePtr = 0,
 		build_course(CoursePtr, Pts);
+	    GAttr = curve,
+		find_curve(Obj, XK, YB),
+		Pts = [XK, YB];
 	    GAttr = bounding_box,
 		find_bbox(Obj, L, T, R, B),
 		Pts = [L,T,R,B];
