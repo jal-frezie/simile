@@ -205,6 +205,7 @@ FORPROL create_arc(char* newlink) {
   newArc->arcs_to = NULL;
   newArc->arcs_from = NULL;
   newArc->course = NULL;
+  newArc->yb = INT_MIN;
   newArc->bb = INT_MIN;
   newArc->offy = INT_MIN;
   SUCCEED;
