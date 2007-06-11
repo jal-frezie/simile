@@ -285,8 +285,6 @@ c_call(P) :-
 	    find_next(Arc1, Arc2);
 	find_prev(Arc2, Arc1));
 	P = graphical_info(Obj, GAttr, Pts), !,
-	    (nonvar(Obj), !;
-		descendent(root, Obj)),
 	    (GAttr = course,
 		get_course_pointer(Obj, CoursePtr),
 		\+ CoursePtr = 0,

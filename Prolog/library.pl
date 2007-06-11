@@ -438,14 +438,15 @@ adjust_to_8_8(Trans) :-
 
 adjust_to_9(Trans) :-
 % Nodes other than submodels have their centres rather than bounding boxes
-	((Trans = copy; member(_-Obj, Trans)),
+	((Trans = copy, Obj is_model_class; member(_-Obj, Trans)),
 	    Obj has_graphical_attribute bounding_box of BB,
 	    \+ find_type(Obj, submodel),
 	    Obj no_longer_has_graphical_attribute bounding_box of BB,
 	    image:middle(BB, Pt),
 	    Obj has_new_graphical_attribute centre of Pt;
 % Invisible terminators get points from link
-	(Trans = copy; member(_-Obj, Trans)),
+	(Trans = copy, Node is_model_class, ame_gen:chain_from_node(Node, Obj);
+	    member(_-Obj, Trans)),
 	    Obj no_longer_has_graphical_attribute course of Course,
 	    Course = [Pn, MPt | M],
 	    suffix([P0], [MPt | M]),
