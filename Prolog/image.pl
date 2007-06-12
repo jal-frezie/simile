@@ -478,7 +478,19 @@ adjust_bowtie(Comp, Point) :-
     closest_centre(Point, Point_list, Miss, _ClosePt, Posn),
     line_dir_change_radius_is(Dither),
     Miss < Dither,
-    get_shape(Comp, curve, [Kink, OldPosn]),
+    get_shape(Comp, curve, [Kink, _OldPosn]),
+%    abs(Posn-OldPosn)<100, save accidentally moving it by clicking on route
+    change_shape(Comp, curve, [Kink, Posn]).
+
+adjust_kink(Comp, [X, Y]) :-
+    find_type(Comp, Type),
+    Type is_class_of_sort has_bowtie,
+    get_end_pt(Comp, start, _, [X0, Y0], _),
+    get_end_pt(Comp, finish, _, [Xn, Yn], _),
+    (abs(Xn-X0)>abs(Yn-Y0), !,
+	Kink is 100*(X-X0)/(Xn-X0);
+	Kink is 100*(Y-Y0)/(Yn-Y0)),
+    get_shape(Comp, curve, [_OldKink, Posn]),
 %    abs(Posn-OldPosn)<100, save accidentally moving it by clicking on route
     change_shape(Comp, curve, [Kink, Posn]).
 

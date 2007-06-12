@@ -431,7 +431,12 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    \+ is_toplevel(Moving_obj),
 	    do_colours(Moving_obj, on))),
 	
-	(local_ends(Moving_obj, Start, Finish),
+	(get_highlit_obj(Moving_obj, 0),
+	    (tk_get_pref(quickDrag, 0);
+		retractall(ghostly_move(_,_)),
+		assert(ghostly_move(Xpt, Ypt))), !,
+	    advance_phase_to(moving);
+	local_ends(Moving_obj, Start, Finish),
 	    (MovingEnd = moving_finish,
 		EndBox = Finish;
 	    MovingEnd = moving_start,
@@ -439,21 +444,20 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    border_node(EndBox),
 	    get_shape(EndBox, centre, EndPoint),
 	    near(EndPoint, [Xpt, Ypt, Xpt, Ypt]), !,
-	    advance_phase_to(MovingEnd) /* ,
-	        ((MovingEnd = moving_start,
-		        moving_endpoint(Moving_obj, moving_start, Root);
-		    MovingEnd = moving_finish,
-		        Root = Moving_obj),
-		    (moving_endpoint(Root, moving_finish, ExtraObj),
-		        highlight(ExtraObj, 2),
-		        fail;
-		    highlight(Root, 2));
-		highlight(Moving_obj, 2)) */ ;
-	(tk_get_pref(quickDrag, 0), !;
-	    retractall(ghostly_move(_,_)),
-	    assert(ghostly_move(Xpt, Ypt))),
-	    advance_phase_to(moving)).
-
+	    advance_phase_to(MovingEnd);
+	Moving_obj is_of_sort has_bowtie,
+	    get_link_route(Moving_obj, Point_list),
+	    closest_centre([Xpt, Ypt], Point_list, _Miss, _ClosePt, Posn),
+	    (get_shape(Moving_obj, curve, [_Kink, OldPosn]),
+		abs(Posn-OldPosn)<100, !,
+		advance_phase_to(moving_bowtie);
+	    % save accidentally moving it by clicking on route
+	    length(Point_list, 4),
+		abs(Posn-500)<167, !,
+		advance_phase_to(moving_kink));
+	    Moving_obj is_of_sort curved,
+		advance_phase_to(moving_spline)).
+	
 click_on([Xpt, Ypt], Moving_obj, _CD) :-
 	find_type(Moving_obj,TargetSort),
 	get_mode(ghost),
@@ -984,33 +988,33 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	Yoffset is Ypt - OldY,
 	find_current(Wid),
 	\+ Wid shows_model Moving_obj,
-	(get_phase(moving),
-		 (adjust_bowtie(Moving_obj, [Xpt, Ypt]), !,
-		     redisplay(Moving_obj),
-		     make_links_follow(Moving_obj) /* ,
-		     highlight(Moving_obj, 2) */;
-		 adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
-		     reroute_display(Moving_obj),
-		     move_text(Moving_obj, [Xoffset, Yoffset]);
-		 get_highlit_obj(0, Moving_obj),
-		     \+ Moving_obj is_of_sort line,
-		     find_all_comps(Parent, Moving_obj),
-		     get_shape(Parent, internal_extent, ParentShape),
-		     setof(Mover, moves_with_seln(Parent, Mover), Movers),
-		     (ghostly_move(_,_), !;
-		     \+ (setof(NewPosn,
-			      Crasher^P1^(member(Crasher, Movers),
-					  find_new_box(Crasher, Xoffset,
-						       Yoffset, P1, NewPosn)),
-			      BadPosns),
-			    (member(BadPosn, BadPosns),
-				\+ fits_inside(BadPosn, ParentShape);
-			     get_overlaps(Parent, BadPosns, Crashed),
-				\+ member(Crashed, Movers))),
-		     all(event, reposition,
-			 [build(Movers), unify([Xoffset, Yoffset])])),
-		     all(draw, move_display,
-			 [build(Movers), unify([Xoffset, Yoffset])]));
+	(get_phase(moving_bowtie),
+	    adjust_bowtie(Moving_obj, [Xpt, Ypt]), !,
+	    redisplay(Moving_obj),
+	    make_links_follow(Moving_obj) /* ,
+	    highlight(Moving_obj, 2) */;
+	get_phase(moving_spline),
+	    adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
+	    reroute_display(Moving_obj),
+	    move_text(Moving_obj, [Xoffset, Yoffset]);
+	get_phase(moving),
+	    find_all_comps(Parent, Moving_obj),
+	    get_shape(Parent, internal_extent, ParentShape),
+	    setof(Mover, moves_with_seln(Parent, Mover), Movers),
+	    (ghostly_move(_,_), !;
+		\+ (setof(NewPosn,
+			  Crasher^P1^(member(Crasher, Movers),
+				      find_new_box(Crasher, Xoffset,
+						   Yoffset, P1, NewPosn)),
+			  BadPosns),
+		       (member(BadPosn, BadPosns),
+			   \+ fits_inside(BadPosn, ParentShape);
+			   get_overlaps(Parent, BadPosns, Crashed),
+			   \+ member(Crashed, Movers))),
+		all(event, reposition,
+		    [build(Movers), unify([Xoffset, Yoffset])])),
+	    all(draw, move_display,
+		[build(Movers), unify([Xoffset, Yoffset])]);
 /*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
 		     find_all_comps(Parent, Moving_obj),
  Succeed if parent doesn't have an extent limit, otherwise check it 
