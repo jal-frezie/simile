@@ -130,7 +130,8 @@ c_assert(P) :-
 	    Pts = [CX, CY],
 	    add_centre(Obj, CX, CY);
 	 GAttr = hide_contents,
-	    (\+ Pts = 1, !; set_hidden(Obj, 1)));
+	    (\+ Pts = 1, !; set_hidden(Obj, 1));
+	    assert(P));
 %	 safe_tcl_eval([puts, br(write(failed_assert(P)))], _)), !;
 	assert(P).
 
@@ -192,7 +193,8 @@ c_retract(P) :-
 	    GAttr = centre,
 		remove_centre(Obj);
 	    GAttr = hide_contents,
-		set_hidden(Obj, 0));
+		set_hidden(Obj, 0);
+	    retract(P));
 	retract(P).
 
 retract_from_current(P) :-
@@ -280,7 +282,8 @@ c_call(P) :-
 		Pts = [CX, CY];
 	    GAttr = hide_contents,
 		is_hidden(Obj),
-		Pts = 1);
+		Pts = 1;
+	    call(P));
 	call(P)).
 %	safe_tcl_eval([puts, br(write(return(P)))], _).
 
