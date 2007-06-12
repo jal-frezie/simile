@@ -480,10 +480,11 @@ adjust_to_9(Trans) :-
 	true.
 	    
 posn_if_needed(Prim, Pt) :-
-	(find_type(Prim, submodel), !,
+	find_type(Prim, Type),
+	(Type = submodel, !,
 	    \+ Prim has_graphical_attribute bounding_box of _,
 	    change_class(Prim, submodel, variable);
-	\+ find_type(Prim, function),
+	member(Type, [variable, cloud]),
 	    \+ Prim has_graphical_attribute centre of _),
 	Prim has_new_graphical_attribute centre of Pt.
 
