@@ -993,6 +993,11 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	    redisplay(Moving_obj),
 	    make_links_follow(Moving_obj) /* ,
 	    highlight(Moving_obj, 2) */;
+	get_phase(moving_kink),
+	    adjust_kink(Moving_obj, [Xpt, Ypt]), !,
+	    redisplay(Moving_obj),
+	    make_links_follow(Moving_obj) /* ,
+	    highlight(Moving_obj, 2) */;
 	get_phase(moving_spline),
 	    adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
 	    reroute_display(Moving_obj),

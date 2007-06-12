@@ -26,7 +26,7 @@ sicstus_module(image,
        get_inclusions/3, get_overlaps/3, draws_at/3, right_section/2,
         find_new_box/5, line_dir_change_radius_is/1,
        multiple_draw/2, update_bowtie/2, get_bowtie/2, get_bowtie/3,
-       adjust_bowtie/2, adjust_spline/2,
+       adjust_bowtie/2, adjust_kink/2, adjust_spline/2,
        get_caption_anchor/2, end_coords/3,
        update_text_position/3, make_header/2, set_completion/2,
        get_end_pt/5, get_link_route/2, shape_route/4, route_link/4,
@@ -488,8 +488,8 @@ adjust_kink(Comp, [X, Y]) :-
     get_end_pt(Comp, start, _, [X0, Y0], _),
     get_end_pt(Comp, finish, _, [Xn, Yn], _),
     (abs(Xn-X0)>abs(Yn-Y0), !,
-	Kink is 100*(X-X0)/(Xn-X0);
-	Kink is 100*(Y-Y0)/(Yn-Y0)),
+	Kink is 1000*(X-X0)/(Xn-X0);
+	Kink is 1000*(Y-Y0)/(Yn-Y0)),
     get_shape(Comp, curve, [_OldKink, Posn]),
 %    abs(Posn-OldPosn)<100, save accidentally moving it by clicking on route
     change_shape(Comp, curve, [Kink, Posn]).
