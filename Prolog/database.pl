@@ -113,7 +113,7 @@ c_assert(P) :-
 	set_type(Arc, Type);
 	P = continues(Arc1, Arc2), !,
 	add_continuation(Arc1, Arc2);
-	P = graphical_info(Obj, GAttr, Pts), !,
+	P = graphical_info(Obj, GAttr, Pts), \+ legacy_graphic(GAttr), !,
 	(GAttr = bounding_box,
 	    Pts = [L,T,R,B],
 	    add_bbox(Obj, L, T, R, B);
@@ -130,8 +130,7 @@ c_assert(P) :-
 	    Pts = [CX, CY],
 	    add_centre(Obj, CX, CY);
 	 GAttr = hide_contents,
-	    (\+ Pts = 1, !; set_hidden(Obj, 1));
-	    assert(P));
+	    (\+ Pts = 1, !; set_hidden(Obj, 1)));
 %	 safe_tcl_eval([puts, br(write(failed_assert(P)))], _)), !;
 	assert(P).
 
@@ -180,7 +179,7 @@ c_retract(P) :-
 	P = continues(Arc1, Arc2), !,
 	c_call(P),
 	remove_continuation(Arc1, Arc2);
-	P = graphical_info(Obj, GAttr, _Pts), !,
+	P = graphical_info(Obj, GAttr, _Pts), \+ legacy_graphic(GAttr), !,
 	    c_call(P),
 	    (GAttr = curve,
 		remove_curve(Obj);
@@ -193,8 +192,7 @@ c_retract(P) :-
 	    GAttr = centre,
 		remove_centre(Obj);
 	    GAttr = hide_contents,
-		set_hidden(Obj, 0);
-	    retract(P));
+		set_hidden(Obj, 0));
 	retract(P).
 
 retract_from_current(P) :-
@@ -264,7 +262,7 @@ c_call(P) :-
 	(var(Arc2), !,
 	    find_next(Arc1, Arc2);
 	find_prev(Arc2, Arc1));
-	P = graphical_info(Obj, GAttr, Pts), !,
+	P = graphical_info(Obj, GAttr, Pts), \+ legacy_graphic(GAttr), !,
 	    (GAttr = curve,
 		find_curve(Obj, XK, YB),
 		Pts = [XK, YB];
@@ -282,8 +280,7 @@ c_call(P) :-
 		Pts = [CX, CY];
 	    GAttr = hide_contents,
 		is_hidden(Obj),
-		Pts = 1;
-	    call(P));
+		Pts = 1);
 	call(P)).
 %	safe_tcl_eval([puts, br(write(return(P)))], _).
 
@@ -316,6 +313,10 @@ comps_from_pointer(Ptr, Comp) :-
 	\+ Ptr = 0, % or whatever a NULL translates to
 	get_string_and_next_ptr(Ptr, First, NxtPtr),
 	(Comp = First; comps_from_pointer(NxtPtr, Comp)).
+
+legacy_graphic(Attr) :-
+	member(Old, [bowtie, course]),
+	Attr == Old.
 
 pack_term(Term, br(chars(Str))) :-
 	\+ ground(Term), !,
