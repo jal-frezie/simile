@@ -91,7 +91,6 @@ tcl_assert(P) :-
 :- foreign(add_link(+string, +string, +string)). 
 :- foreign(set_type(+string, +atom)). 
 :- foreign(add_continuation(+string, +string)).
-:- foreign(add_to_course(+string, +integer, +integer)).
 :- foreign(add_curve(+string, +integer, +integer)).
 :- foreign(add_bbox(+string, +integer, +integer, +integer, +integer)).
 :- foreign(add_iext(+string, +integer, +integer, +integer, +integer)).
@@ -116,9 +115,7 @@ c_assert(P) :-
 	P = continues(Arc1, Arc2), !,
 	add_continuation(Arc1, Arc2);
 	P = graphical_info(Obj, GAttr, Pts), !,
-	(GAttr = course,
-	    load_course(Obj, Pts);
-	 GAttr = bounding_box,
+	(GAttr = bounding_box,
 	    Pts = [L,T,R,B],
 	    add_bbox(Obj, L, T, R, B);
 	 GAttr = curve,
@@ -141,12 +138,6 @@ c_assert(P) :-
 %	 safe_tcl_eval([puts, br(write(failed_assert(P)))], _)), !;
 	assert(P).
 
-load_course(Arc, Pts) :-
-	Pts = [];
-	Pts = [[XPt, YPt] | More],
-	load_course(Arc, More),
-	add_to_course(Arc, XPt, YPt).
-		     
 retract_model(P) :-
 	my_retract(P),
 	retract_from_current(P).
@@ -167,7 +158,6 @@ tcl_retract(P) :-
 :- foreign(remove_link(+string, +string, +string)). 
 :- foreign(unset_type(+string, +atom)). 
 :- foreign(remove_continuation(+string, +string)).
-:- foreign(empty_course(+string)).
 :- foreign(remove_curve(+string)).
 :- foreign(remove_bbox(+string)).
 :- foreign(remove_iext(+string)).
@@ -196,9 +186,7 @@ c_retract(P) :-
 	remove_continuation(Arc1, Arc2);
 	P = graphical_info(Obj, GAttr, _Pts), !,
 	    c_call(P),
-	    (GAttr = course,
-		empty_course(Obj);
-	    GAttr = curve,
+	    (GAttr = curve,
 		remove_curve(Obj);
 	    GAttr = bounding_box,
 		remove_bbox(Obj);
@@ -247,7 +235,6 @@ tcl_call(P, Funt, MatchStr) :-
 :- foreign(get_type(+string, -atom)).
 :- foreign(find_prev(+string, -string)).
 :- foreign(get_next_list_pointer(+string, -integer)).
-:- foreign(get_course_pointer(+string, -integer)).
 :- foreign(find_curve(+string, -integer, -integer)).
 :- foreign(find_bbox(+string, -integer, -integer, -integer, -integer)).
 :- foreign(find_iext(+string, -integer, -integer, -integer, -integer)).
@@ -256,7 +243,6 @@ tcl_call(P, Funt, MatchStr) :-
 :- foreign(is_hidden(+string)).
 :- foreign(find_bowtie(+string, -integer, -integer, -integer, -integer)).
 :- foreign(get_string_and_next_ptr(+integer, -string, -integer)).
-:- foreign(get_coords_and_next_ptr(+integer, -integer, -integer, -integer)).
 c_call(P) :-
 %	safe_tcl_eval([puts, br(write(call(P)))], _),
 	(P = subsystem(Parent, Child), !,
@@ -285,11 +271,7 @@ c_call(P) :-
 	    find_next(Arc1, Arc2);
 	find_prev(Arc2, Arc1));
 	P = graphical_info(Obj, GAttr, Pts), !,
-	    (GAttr = course,
-		get_course_pointer(Obj, CoursePtr),
-		\+ CoursePtr = 0,
-		build_course(CoursePtr, Pts);
-	    GAttr = curve,
+	    (GAttr = curve,
 		find_curve(Obj, XK, YB),
 		Pts = [XK, YB];
 	    GAttr = bounding_box,
@@ -342,12 +324,6 @@ comps_from_pointer(Ptr, Comp) :-
 	\+ Ptr = 0, % or whatever a NULL translates to
 	get_string_and_next_ptr(Ptr, First, NxtPtr),
 	(Comp = First; comps_from_pointer(NxtPtr, Comp)).
-
-build_course(Ptr, Points) :-
-	Ptr = 0, !, Points = [];
-	get_coords_and_next_ptr(Ptr, X, Y, NextPtr),
-	    build_course(NextPtr, MorePoints),
-	    Points = [[X,Y] | MorePoints].
 
 pack_term(Term, br(chars(Str))) :-
 	\+ ground(Term), !,

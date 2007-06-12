@@ -7,8 +7,6 @@ foreign_resource(struct_db,
 		     find_prev,
 		     get_in_list_pointer, get_out_list_pointer, get_type,
 		     get_next_list_pointer, get_string_and_next_ptr,
-		     add_to_course, empty_course,
-		     get_course_pointer, get_coords_and_next_ptr,
 		     add_curve, remove_curve, find_curve,
 		     add_bbox, remove_bbox, find_bbox,
 		     add_iext, remove_iext, find_iext,
@@ -49,12 +47,6 @@ foreign(get_next_list_pointer, get_next_list_pointer(+string, -integer)).
 foreign(get_type, get_type(+string, -atom)).
 foreign(get_string_and_next_ptr,
 	get_string_and_next_ptr(+integer, -string, -integer)).
-
-foreign(add_to_course, add_to_course(+string, +integer, +integer)).
-foreign(empty_course, empty_course(+string)).
-foreign(get_course_pointer, get_course_pointer(+string, -integer)).
-foreign(get_coords_and_next_ptr,
-	get_coords_and_next_ptr(+integer, -integer, -integer, -integer)).
 
 foreign(add_curve, add_curve(+string, +integer, +integer)).
 foreign(remove_curve, remove_curve(+string)).

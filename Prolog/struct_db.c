@@ -19,11 +19,6 @@ typedef struct id_list_t {
   struct id_list_t *next;
 } id_list;
   
-typedef struct coord_list_t {
-  int xpt, ypt;
-  struct coord_list_t *next;
-} coord_list;
-  
 typedef struct node_t {
   char name[10];
   int nclass;
@@ -46,7 +41,6 @@ typedef struct arc_t {
   id_list *subs;
   id_list *arcs_to;
   id_list *arcs_from;
-  coord_list *course; // to go
   int bl,bt,br,bb; // to go
   int offx, offy;
   int xk, yb;
@@ -204,7 +198,6 @@ FORPROL create_arc(char* newlink) {
   newArc->subs = NULL;
   newArc->arcs_to = NULL;
   newArc->arcs_from = NULL;
-  newArc->course = NULL;
   newArc->yb = INT_MIN;
   newArc->bb = INT_MIN;
   newArc->offy = INT_MIN;
@@ -239,18 +232,6 @@ FORPROL add_continuation(char* before, char* after) {
   Arc = arcs[get_arc_number(before)];
   add_to_list(&(Arc->subs), after);
   SUCCEED;
-}
-
-void add_to_course(char* link, long xpt, long ypt) {
-  arc *Arc;
-  coord_list* pts;
-
-  Arc = arcs[get_arc_number(link)];
-  pts = safe_malloc(sizeof(coord_list));
-  pts->xpt = (int)xpt;
-  pts->ypt = (int)ypt;
-  pts->next = Arc->course;
-  Arc->course = pts;
 }
 
 FORPROL add_bowtie(char* parent, long l, long t, long r, long b) {
@@ -358,20 +339,6 @@ FORPROL remove_continuation(char* before, char* after) {
   }
   remove_from_list(&(Arc->subs), after);
   SUCCEED;
-}
-
-void empty_coord_list(coord_list* coords) {
-  if (!coords) return;
-  empty_coord_list(coords->next);
-  free(coords);
-}
-
-void empty_course(char* link) {
-  arc *Arc;
-
-  Arc = arcs[get_arc_number(link)];
-  empty_coord_list(Arc->course);
-  Arc->course = NULL;
 }
 
 FORPROL remove_bowtie(char* parent) {
@@ -584,14 +551,6 @@ FORPROL get_string_and_next_ptr(unsigned long oldptr, char** result,
   SUCCEED;
 }
 
-FORPROL get_coords_and_next_ptr(unsigned long oldptr, long* xpt, long* ypt, 
-			     unsigned long *newptr) {
-  *xpt = (long)((coord_list*)oldptr)->xpt;
-  *ypt = (long)((coord_list*)oldptr)->ypt;
-  *newptr = (unsigned long)((coord_list*)oldptr)->next;
-  SUCCEED;
-}
-
 FORPROL find_ends(char* link, char** source, char** dest) {
   arc* thisLink;
 
@@ -689,18 +648,6 @@ FORPROL get_next_list_pointer(char* link, unsigned long* ptr) {
     thisLink = arcs[get_arc_number(link)];
     if (thisLink) 
       *ptr = (unsigned long)thisLink->subs;
-  }
-  SUCCEED;
-}
-
-FORPROL get_course_pointer(char* link, unsigned long* ptr) {
-  arc* thisLink;
-
-  *ptr = (unsigned long)NULL;
-  if (is_arc(link)) {
-    thisLink = arcs[get_arc_number(link)];
-    if (thisLink) 
-      *ptr = (unsigned long)thisLink->course;
   }
   SUCCEED;
 }
