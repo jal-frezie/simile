@@ -234,17 +234,6 @@ FORPROL add_continuation(char* before, char* after) {
   SUCCEED;
 }
 
-FORPROL add_bowtie(char* parent, long l, long t, long r, long b) {
-  arc *parentArc;
-
-  parentArc = arcs[get_arc_number(parent)];
-  parentArc->bl = (int)l;
-  parentArc->bt = (int)t;
-  parentArc->br = (int)r;
-  parentArc->bb = (int)b;
-  SUCCEED;
-}
-
 FORPROL add_curve(char* parent, long xk, long yb) {
   arc *parentArc;
 
@@ -341,11 +330,6 @@ FORPROL remove_continuation(char* before, char* after) {
   SUCCEED;
 }
 
-FORPROL remove_bowtie(char* parent) {
-  arcs[get_arc_number(parent)]->bb = INT_MIN;
-  SUCCEED;
-}
-  
 FORPROL remove_curve(char* parent) {
   arcs[get_arc_number(parent)]->yb = INT_MIN;
   SUCCEED;
@@ -474,23 +458,6 @@ FORPROL find_curve(char* child, long* xk, long* yb) {
     FAIL;
   *xk = (long)childArc->xk;
   *yb = (long)childArc->yb;
-  SUCCEED;
-}
-
-FORPROL find_bowtie(char* child, long* l, long* t, long* r, long* b) {
-  arc* childArc;
-
-  if (!is_arc(child))
-    FAIL;
-  childArc = arcs[get_arc_number(child)];
-  if (!childArc) 
-    FAIL;
-  if (childArc->bb == INT_MIN)
-    FAIL;
-  *l = (long)childArc->bl;
-  *t = (long)childArc->bt;
-  *r = (long)childArc->br;
-  *b = (long)childArc->bb;
   SUCCEED;
 }
 /* 

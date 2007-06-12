@@ -96,7 +96,6 @@ tcl_assert(P) :-
 :- foreign(add_iext(+string, +integer, +integer, +integer, +integer)).
 :- foreign(add_capt_off(+string, +integer, +integer)).
 :- foreign(add_centre(+string, +integer, +integer)).
-:- foreign(add_bowtie(+string, +integer, +integer, +integer, +integer)).
 :- foreign(set_hidden(+string, +integer)).
 c_assert(P) :-
 %	safe_tcl_eval([puts, br(write(assert(P)))], _),
@@ -127,9 +126,6 @@ c_assert(P) :-
 	 GAttr = caption_offset,
 	    Pts = [OX,OY],
 	    add_capt_off(Obj, OX, OY);
-	 GAttr = bowtie,
-	    Pts = [L,T,R,B],
-	    add_bowtie(Obj, L, T, R, B);
 	 GAttr = centre,
 	    Pts = [CX, CY],
 	    add_centre(Obj, CX, CY);
@@ -163,7 +159,6 @@ tcl_retract(P) :-
 :- foreign(remove_iext(+string)).
 :- foreign(remove_capt_off(+string)).
 :- foreign(remove_centre(+string)).
-:- foreign(remove_bowtie(+string)).
 c_retract(P) :-
 %	safe_tcl_eval([puts, br(write(retract(P)))], _),
 	P = is_node(Node), !,
@@ -194,8 +189,6 @@ c_retract(P) :-
 		remove_iext(Obj);
 	    GAttr = caption_offset,
 		remove_capt_off(Obj);
-	    GAttr = bowtie,
-		remove_bowtie(Obj);
 	    GAttr = centre,
 		remove_centre(Obj);
 	    GAttr = hide_contents,
@@ -241,7 +234,6 @@ tcl_call(P, Funt, MatchStr) :-
 :- foreign(find_capt_off(+string, -integer, -integer)).
 :- foreign(find_centre(+string, -integer, -integer)).
 :- foreign(is_hidden(+string)).
-:- foreign(find_bowtie(+string, -integer, -integer, -integer, -integer)).
 :- foreign(get_string_and_next_ptr(+integer, -string, -integer)).
 c_call(P) :-
 %	safe_tcl_eval([puts, br(write(call(P)))], _),
@@ -286,9 +278,6 @@ c_call(P) :-
 	    GAttr = centre,
 		find_centre(Obj, CX, CY),
 		Pts = [CX, CY];
-	    GAttr = bowtie,
-		find_bowtie(Obj, L, T, R, B),
-		Pts = [L,T,R,B];
 	    GAttr = hide_contents,
 		is_hidden(Obj),
 		Pts = 1);
