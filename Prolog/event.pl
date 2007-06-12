@@ -431,7 +431,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    \+ is_toplevel(Moving_obj),
 	    do_colours(Moving_obj, on))),
 	
-	(get_highlit_obj(Moving_obj, 0),
+	(get_highlit_obj(0, Moving_obj),
 	    (tk_get_pref(quickDrag, 0);
 		retractall(ghostly_move(_,_)),
 		assert(ghostly_move(Xpt, Ypt))), !,
@@ -447,7 +447,7 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	    advance_phase_to(MovingEnd);
 	Moving_obj is_of_sort has_bowtie,
 	    get_link_route(Moving_obj, Point_list),
-	    closest_centre([Xpt, Ypt], Point_list, _Miss, _ClosePt, Posn),
+	    image:closest_centre([Xpt, Ypt], Point_list, _Miss, _CPt, Posn),
 	    (get_shape(Moving_obj, curve, [_Kink, OldPosn]),
 		abs(Posn-OldPosn)<100, !,
 		advance_phase_to(moving_bowtie);
