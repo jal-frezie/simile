@@ -9,7 +9,7 @@ sicstus_module(ame_gen,
 	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, border_node/1, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
-		find_reference/3,
+		bowtie_section/2, find_reference/3,
 		do_dialogue/5, substitute_in_expr/4, replace_subexps/7,
 		get_actual_size/5, get_actual_sizes/5, enum_type_ref/5,
 		get_node_size/2, get_node_size/4,
@@ -256,16 +256,20 @@ influence_makes_ghost(Component) :-
 
 find_base(Ghost, Base) :-
 	Ghost is_of_sort has_bowtie, !,
-	((sequence(Base, Ghost); Base = Ghost; sequence(Ghost, Base)),
-	    implicit_function(Base, FlowFn),
-	    (FlowFn has_class_refinement value of _Val;
-		_Incoming is_connector from _Source to FlowFn), !;
-	(sequence(Base, Ghost); Base = Ghost),
-	\+ sequence(_, Base));
+	bowtie_section(Ghost, Base);
 /*	find_name_host(Ghost, Base); */
 	made_ghost_by(Ghost, Link), !,
 	initiates(Link, Base);
 	Base = Ghost.
+
+bowtie_section(Sect, BowtieSect) :-
+	((sequence(Base, Sect); Base = Sect; sequence(Sect, Base)),
+	    implicit_function(Base, FlowFn),
+	    (FlowFn has_class_refinement value of _Val;
+		_Incoming is_connector from _Source to FlowFn), !;
+	(sequence(Base, Sect); Base = Sect),
+	\+ sequence(_, Base)),
+	BowtieSect = Base.
 
 made_ghost_by(Ghost, Link) :-
 	Ghost is_of_sort has_function,

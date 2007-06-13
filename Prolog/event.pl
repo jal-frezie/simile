@@ -194,7 +194,9 @@ click_text(Xpt, Ypt, Name, CD) :-
 	/* we do not want the text of a text item to get separated from its
 	anchor so do not allow a caption move, just move the whole thing */
 	    (find_type(Name, text);
-		(get_phase(moving); get_phase(moving_border(_))),
+		get_phase(Phase),
+		member(Phase, [moving, moving__kink,
+			       moving_bowtie, moving_spline]),
 		advance_phase_to(moving_text)).
 /*
 click: Handles mouse clicks in a model window.
@@ -448,7 +450,8 @@ click_on([Xpt, Ypt], Moving_obj, CD) :-
 	Moving_obj is_of_sort has_bowtie,
 	    get_link_route(Moving_obj, Point_list),
 	    image:closest_centre([Xpt, Ypt], Point_list, _Miss, _CPt, Posn),
-	    (get_shape(Moving_obj, curve, [_Kink, OldPosn]),
+	    (bowtie_section(Moving_obj, Moving_obj),
+		get_shape(Moving_obj, curve, [_Kink, OldPosn]),
 		abs(Posn-OldPosn)<100, !,
 		advance_phase_to(moving_bowtie);
 	    % save accidentally moving it by clicking on route
