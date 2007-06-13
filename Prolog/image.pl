@@ -401,8 +401,7 @@ get_drawing_form(Comp, Style, BBox) :-
     (Style = submodel, !,
         get_shape(Comp, bounding_box, BBox);
     get_shape(Comp, centre, [Xpt, Ypt]),
-	((Link is_connector from _ to Comp, Outer follows Link;
-	  Link is_connector from Comp to _, Link follows Outer), !,
+	(border_node(Comp), !,
 	    BBox = [Xpt, Ypt, Xpt, Ypt];
 	get_box_size(Comp, Style, Cur_size),
 	    make_bounding_box(Style, Xpt, Ypt, Cur_size, BBox)))).

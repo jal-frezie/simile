@@ -8,7 +8,7 @@
     #define FAIL return(FALSE)
     #define SUCCEED return(TRUE)
 #else
-    #include "../System/include/sicstus.h"
+    #include "/usr/local/include/sicstus/sicstus.h"
     #define FORPROL void
     #define FAIL {SP_fail();return;}
     #define SUCCEED return

@@ -1588,7 +1588,8 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	
 	/* Check that everything that was in the model is still in it */
 	\+ (find_all_comps(Submodel, Inside),
-	       get_shape(Inside, bounding_box, InBox),
+	       \+ border_node(Inside),
+	       get_drawing_form(Inside, _, InBox),
 	       \+ fits_inside(InBox, NewExtent))),
 	map([OldL, OldT, OldR, OldB], CapEdge, _,_, OBX, OBY),
 	map(NewBox, CapEdge, _,_, NBX, NBY),
