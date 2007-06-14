@@ -106,15 +106,14 @@ BoxHeaderStr),
 		TableTrans = [[], []],
 		TableVals = br(Values);
 	    TableList = [FilePath, DataField | Indices],
-		get_host(Part, Visible),
 		append(Bounds, [TUnits], TableTypes), 
 		all(event, insert_mem_list,
-		    [build(TableTypes), unify(Visible), build(TableTrans)]),
+		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),
 		reverse_engineer(Values, TableTrans, 1, TableVals));
 	TableList = '', TableTrans = '', TableVals = '{}'),
-	(get_av_pair(Part, 0, description, Desc), !;
+	(get_av_pair(ClickedObj, 0, description, Desc), !;
 		Desc = ''),
-	(get_av_pair(Part, 0, comment, Comment), !;
+	(get_av_pair(ClickedObj, 0, comment, Comment), !;
 		Comment = ''),
 	(get_av_pair(Part, 0, min_val, Min), !;
 		get_default_lower_limit(Part, Min)),
@@ -354,11 +353,13 @@ update_equation(Function, IndxCount, InterInputs, TypeBase-TypeDims,
 	    add_parameter(AffectedNode, 0, uses_local_fns, UserFnList),
 	    add_parameter(AffectedNode, 0, spec, OldEqn),
 	    add_parameter(AffectedNode, 0, units, NewArraySpec),
-	    add_parameter(AffectedNode, 0, description, Desc),
-	    add_parameter(AffectedNode, 0, comment, Comment),
 	    add_parameter(AffectedNode, 0, table_data, TableAttr),
 	    add_parameter(AffectedNode, 0, min_val, MinVal),
 	    add_parameter(AffectedNode, 0, max_val, MaxVal),
+	    get_host(AffectedNode, Visible),
+	    (Visible is_of_sort box, !, CAttrType = 0; CAttrType = 2),
+	    add_parameter(Visible, CAttrType, description, Desc),
+	    add_parameter(Visible, CAttrType, comment, Comment),
 	    update_links_and_vars(New_inputs);
 %	fill_equation(OldEqn, Units, EqnDims, Is_P, Desc, Comment, Min, Max),
 	    fill_inputs(New_inputs),

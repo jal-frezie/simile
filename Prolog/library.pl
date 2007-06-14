@@ -439,11 +439,21 @@ adjust_to_8_8(Trans) :-
 adjust_to_9(Trans) :-
 % Nodes other than submodels have their centres rather than bounding boxes
 	((Trans = copy, Obj is_model_class; member(_-Obj, Trans)),
+% move any descs and comments on functions to their hosts
+	    (Obj has_class function,
+		member(CmtField, [description, comment]),
+		Obj has_class_refinement CmtField of CmtValue,
+		m_update:get_host(Obj, VisObj),
+		(VisObj is_of_sort line,
+		    VisObj has_new_attribute CmtField of CmtValue;
+		VisObj is_of_sort box,
+		    VisObj has_new_class_refinement CmtField of CmtValue);
+% replace bounding boxes of primitives with centre points
 	    Obj has_graphical_attribute bounding_box of BB,
-	    \+ find_type(Obj, submodel),
-	    Obj no_longer_has_graphical_attribute bounding_box of BB,
-	    image:middle(BB, Pt),
-	    Obj has_new_graphical_attribute centre of Pt;
+		\+ find_type(Obj, submodel),
+		Obj no_longer_has_graphical_attribute bounding_box of BB,
+		image:middle(BB, Pt),
+		Obj has_new_graphical_attribute centre of Pt);
 % Invisible terminators get points from link
 	(Trans = copy, Node is_model_class, ame_gen:chain_from_node(Node, Obj);
 	    member(_-Obj, Trans)),
