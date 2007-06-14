@@ -111,10 +111,7 @@ BoxHeaderStr),
 		    [build(TableTypes), unify(ClickedObj), build(TableTrans)]),
 		reverse_engineer(Values, TableTrans, 1, TableVals));
 	TableList = '', TableTrans = '', TableVals = '{}'),
-	(get_av_pair(ClickedObj, 0, description, Desc), !;
-		Desc = ''),
-	(get_av_pair(ClickedObj, 0, comment, Comment), !;
-		Comment = ''),
+	get_desc_and_comment(ClickedObj, Desc, Comment, ''),
 	(get_av_pair(Part, 0, min_val, Min), !;
 		get_default_lower_limit(Part, Min)),
 	(get_av_pair(Part, 0, max_val, Max), !;

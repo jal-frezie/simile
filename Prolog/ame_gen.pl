@@ -6,7 +6,8 @@ about mathematical properties). To put it another way, it contains all the
 functions that are needed both in model_update and image. */
 
 sicstus_module(ame_gen,
-	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
+	       [get_term/3, get_desc_and_comment/4,
+		make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, border_node/1, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		bowtie_section/2, find_reference/3,
@@ -300,6 +301,18 @@ is_parameter(Node, Val) :-
 		Val = 2;
 	    Val = 1);
 	Val = 0.
+
+get_desc_and_comment(VisNode, Description, Comment, Default) :-
+	(VisNode is_of_sort box,
+	    CommentAttr = 0;
+	 VisNode is_of_sort line,
+	    CommentAttr = 2),
+	(get_av_pair(VisNode, CommentAttr, description, Description); 
+	    \+ get_av_pair(VisNode, CommentAttr, description, Description),
+	    Description = Default),
+	(get_av_pair(VisNode, CommentAttr, comment, Comment);
+	    \+ get_av_pair(VisNode, CommentAttr, comment, Comment),
+	    Comment = Default).
 
 /* New system for preserving relationships between model entities when they are saved and restored: references to other entities are saved in an attribute called References, which is adjusted when the model is re-read. Other attributes refer to remote entities only by their position in this list.
 

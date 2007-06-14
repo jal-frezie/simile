@@ -1022,10 +1022,7 @@ write_eqn_term(Submodel, Entry, MinMax, Description, Comment, InFlows, OutFlows)
 	    VisNode = Component,
 	    (is_parameter(Component, 2), Eqn = 'Fixed parameter';
 		is_parameter(Component, 1), Eqn = 'Variable parameter')),
-	(get_av_pair(Component, 0, description, Description); 
-		\+ get_av_pair(Component, 0, description, Description), Description = null),
-	(get_av_pair(Component, 0, comment, Comment);
-	    \+ get_av_pair(Component, 0, comment, Comment), Comment = null),
+	get_desc_and_comment(VisNode, Description, Comment, null),
 	find_type(VisNode, CompType),
 	caption_for(VisNode, Dest),
 	get_input_info(Component, Links),
