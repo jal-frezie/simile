@@ -1391,7 +1391,7 @@ off_window(Win, ExitIfKilled) :-
 		delete_window(Win);
 	     start_progress_dialogue(Win),
 		remove_model(Win, Model),
-		superfast_delete(Model),
+		fast_delete(Model),
 		scrap_move,
 		finish_progress_dialogue);
 	delete_window(Win)).
