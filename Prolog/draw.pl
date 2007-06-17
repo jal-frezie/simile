@@ -463,12 +463,16 @@ display_in(Wid, Comp, Depth, Trans) :-
 	        submodel(Wid, Screen_list, Num, Fatness,
 				  FillColour, FillImage, ImgPos, Ox, Oy,
 				  BgColour, InFat, Colour_scheme, Comp);
+	    (Style is_class_of_sort box; Style = channel), !,
 	    (Style=state, !,
 	       DCmd = compartment;
 	    DCmd = Style),
 	    Draw_command =.. [DCmd, Wid, Screen_list, Num, Fatness,
 				  Density, Colour_scheme, [Comp]],
-		call(Draw_command)),
+		call(Draw_command);
+	    output:safe_tcl_eval([puts, dq(['Failed to draw component',
+			Comp, 'as', Style, '...removing'])], _),
+		m_update:oblitterfry(Comp)),
 	    (get_display_depth(Wid, caption, Caption_detail),
 		((Style = cloud; \+ appears(Comp); Caption_detail =< Depth), !;
 		add_caption(Wid, Comp, BBox, Trans, Fatness, Colour_scheme)));
