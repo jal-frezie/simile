@@ -701,7 +701,7 @@ menu_handle(Win, edit, set_interface) :-
 	ReferenceLine = no_references),
 	(load_submodel_interface(Stream, Submodel, _, _),
 	    event:make_links_follow(Submodel),
-	    event:tweak_link_connections(Submodel, [0,0], l, [0,0,1,1]),
+%	    event:tweak_link_connections(Submodel, [0,0], l, [0,0,1,1]),
 	    finish_move(Submodel, 1);
 	close(Stream),
 	    restart_move,

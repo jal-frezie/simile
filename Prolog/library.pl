@@ -442,7 +442,7 @@ adjust_to_9(Trans) :-
 % move any descs and comments on functions to their hosts
 	    (Obj has_class function,
 		member(CmtField, [description, comment]),
-		Obj has_class_refinement CmtField of CmtValue,
+		Obj no_longer_has_class_refinement CmtField of CmtValue,
 		m_update:get_host(Obj, VisObj),
 		(VisObj is_of_sort line,
 		    VisObj has_new_attribute CmtField of CmtValue;

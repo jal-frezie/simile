@@ -1137,7 +1137,8 @@ drag_to(Xpt, Ypt, Target) :-
 
 reposition(Mover, [XOff, YOff]) :-
 	adjust_posn(Mover, [-XOff, -YOff, 1,1]),
-	tweak_link_connections(Mover, [XOff, YOff], c, _).
+	make_links_follow(Mover).
+%	tweak_link_connections(Mover, [XOff, YOff], c, _).
 
 moves_with_seln(Parent, Obj) :-
 	get_highlit_obj(0, Obj),
@@ -1163,14 +1164,15 @@ the internal portions of crossborder links so they still connect. */
 
 adjust_display_area(Wid, Visible) :-
 	Wid shows_model Parent,
+	get_shape(Parent, internal_extent, OldInt),
 	expand_canvas(Parent, Visible),
-	tweak_link_connections(Parent, [0,0], nw, [0,0,1,1]).
-
+	tweak_link_connections(Parent, OldInt).
+/*
 tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	find_all_comps(Box, Obj),
 	find_all_links(Obj, Link, Where),
 	\+ (Side = c, moves_with_seln(Box, Link)),
-	/* do not tweak if part of move */
+	% do not tweak if part of move
 	(end_coords(Link, Where, [Xpt, Ypt]),
 	    (member(Side, [nw, w, sw]), NewX is Xpt + XOff*(R-Xpt)/(R-L);
 	        member(Side, [ne, e, se]), NewX is Xpt + XOff*(Xpt-L)/(R-L);
@@ -1188,7 +1190,7 @@ tweak_link_connections(Obj, [XOff, YOff], Side, [L, T, R, B]) :-
 	update_link_route(Link),
 	make_links_follow(Link),
 	fail; true.
-
+*/
 tweak_link_connections(Obj, OldInterns) :-
 	get_shape(Obj, internal_extent, NewInterns),
 	add_boxes_to_translation([0,0,1,1], OldInterns, NewInterns, UseTrans),
@@ -1607,7 +1609,7 @@ update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	(ghostly_move(_,_), !; % no link dragging if in fast edit mode 
 	tweak_link_connections(Submodel, OldInterns)).
 
-/* anything this complex has got to be wrong */
+/* anything this complex has got to be wrong
 
 old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 	get_shape(Submodel, bounding_box, [OldL, OldT, OldR, OldB]),
@@ -1631,10 +1633,10 @@ old_update_object_boundary(Submodel, Edge, XOff, YOff) :-
 
 	change_shape(Submodel, internal_extent, NewExtent),
 	change_shape(Submodel, bounding_box, NewBox),
-	/* make_links_follow(Submodel), */
+	% make_links_follow(Submodel),
 	tweak_link_connections(Submodel, [XOff, YOff], Edge,
 			       [OldL, OldT, OldR, OldB]).
-	/* External links must be adjusted first because their endpoints
+	External links must be adjusted first because their endpoints
 	are used to calculate those of internal links
         adjust_border_links(Submodel). */
 
