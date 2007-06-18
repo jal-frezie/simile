@@ -256,7 +256,8 @@ middle of nowhere; i could also do variables for influences. */
 
 check_snap :-
 	retractall(grid_pitch_is(_)),
-	(tk_get_pref(gridSnap, 0), !;
+	(tk_get_pref(gridSnap, 0), !,
+	    assert(grid_pitch_is(1));
 	    assert(grid_pitch_is(15))).
 	
 snap_to_grid([], []).
@@ -1137,7 +1138,10 @@ drag_to(Xpt, Ypt, Target) :-
 
 reposition(Mover, [XOff, YOff]) :-
 	adjust_posn(Mover, [-XOff, -YOff, 1,1]),
-	make_links_follow(Mover).
+	find_all_links(Mover, Link),
+	update_link_route(Link),
+	make_links_follow(Link),
+	fail; true.
 %	tweak_link_connections(Mover, [XOff, YOff], c, _).
 
 moves_with_seln(Parent, Obj) :-
@@ -1422,7 +1426,6 @@ doomed(End) :-
 make_links_follow(Obj) :-
 	find_all_links(Obj, Link),
 	reroute_display(Link),
-	make_links_follow(Link),
 	fail; true.
 
 /* adjust_link(Link, Recurse) :-
