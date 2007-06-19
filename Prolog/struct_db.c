@@ -620,6 +620,7 @@ FORPROL get_next_list_pointer(char* link, unsigned long* ptr) {
 }
 
 FORPROL set_class(char* cNode, int cClass) {
+  //  printf("debug_c Set class of %s to %d\n", cNode, cClass);
   nodes[get_number(cNode)]->nclass = cClass;
   SUCCEED;
 }

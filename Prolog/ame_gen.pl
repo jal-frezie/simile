@@ -6,8 +6,7 @@ about mathematical properties). To put it another way, it contains all the
 functions that are needed both in model_update and image. */
 
 sicstus_module(ame_gen,
-	       [get_term/3, get_desc_and_comment/4,
-		make_nice_error_message/2, get_host/2, appears/1, 
+	       [get_term/3, make_nice_error_message/2, get_host/2, appears/1, 
 		implicit_function/2, border_node/1, is_parameter/2,
 		is_ghost/1, ghost_link/3, find_base/2, find_ghosts/2,
 		bowtie_section/2, find_reference/3,
@@ -223,13 +222,14 @@ implicit_function(Exp_node, Imp_node) :-
 	Imp_node has_class function.
 
 border_node(Object) :-
-	\+ find_type(Object, submodel),
+	Object has_class border.
+/*	\+ find_type(Object, submodel),
 	(Link is_connector from Object to _,
 	    Link follows _;
 	Link is_connector from _ to Object,
 	    _ follows Link), !.
 	
-/* interface for ghost property to rest of program. To test for ghosthood, use 'is_ghost' -- this returns the start and finish of a ghost link. To find the 'real' node for a given node, use find_base -- if the given node is real, it will be returned. Ghost_link can be used to determine the display status of links, and find_ghosts will return all the ghosts
+interface for ghost property to rest of program. To test for ghosthood, use 'is_ghost' -- this returns the start and finish of a ghost link. To find the 'real' node for a given node, use find_base -- if the given node is real, it will be returned. Ghost_link can be used to determine the display status of links, and find_ghosts will return all the ghosts
 of a given base node. (Ghost relationship only exists between an absolute base node and its ghosts -- ghost-to-ghost links should be done away with!) */
 
 :- op(500, xfy, is_of_sort).
@@ -301,18 +301,6 @@ is_parameter(Node, Val) :-
 		Val = 2;
 	    Val = 1);
 	Val = 0.
-
-get_desc_and_comment(VisNode, Description, Comment, Default) :-
-	(VisNode is_of_sort box,
-	    CommentAttr = 0;
-	 VisNode is_of_sort line,
-	    CommentAttr = 2),
-	(get_av_pair(VisNode, CommentAttr, description, Description); 
-	    \+ get_av_pair(VisNode, CommentAttr, description, Description),
-	    Description = Default),
-	(get_av_pair(VisNode, CommentAttr, comment, Comment);
-	    \+ get_av_pair(VisNode, CommentAttr, comment, Comment),
-	    Comment = Default).
 
 /* New system for preserving relationships between model entities when they are saved and restored: references to other entities are saved in an attribute called References, which is adjusted when the model is re-read. Other attributes refer to remote entities only by their position in this list.
 

@@ -197,7 +197,7 @@ click_text(Xpt, Ypt, Name, CD) :-
 	anchor so do not allow a caption move, just move the whole thing */
 	    (find_type(Name, text);
 		get_phase(Phase),
-		member(Phase, [moving, moving__kink,
+		member(Phase, [moving, moving_kink,
 			       moving_bowtie, moving_spline]),
 		advance_phase_to(moving_text)).
 /*
@@ -996,13 +996,11 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	\+ Wid shows_model Moving_obj,
 	(get_phase(moving_bowtie),
 	    adjust_bowtie(Moving_obj, [Xpt, Ypt]), !,
-	    redisplay(Moving_obj),
-	    make_links_follow(Moving_obj) /* ,
+	    move_link(Moving_obj) /* ,
 	    highlight(Moving_obj, 2) */;
 	get_phase(moving_kink),
 	    adjust_kink(Moving_obj, [Xpt, Ypt]), !,
-	    redisplay(Moving_obj),
-	    make_links_follow(Moving_obj) /* ,
+	    move_link(Moving_obj) /* ,
 	    highlight(Moving_obj, 2) */;
 	get_phase(moving_spline),
 	    adjust_spline(Moving_obj, [Xoffset, Yoffset]), !,
@@ -1023,7 +1021,7 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 			   get_overlaps(Parent, BadPosns, Crashed),
 			   \+ member(Crashed, Movers))),
 		all(event, reposition,
-		    [build(Movers), unify([Xoffset, Yoffset])])),
+		    [unify(Parent), build(Movers), unify([Xoffset, Yoffset])])),
 	    all(draw, move_display,
 		[build(Movers), unify([Xoffset, Yoffset])]);
 /*		find_new_box(Moving_obj, Xoffset, Yoffset, _, NewPosn),
@@ -1089,14 +1087,14 @@ drag_to(Xpt, Ypt, Moving_obj) :-
 	
 	(Phase = moving_start,
 	    change_shape(Start, centre, NewEndPt),
-	    m_class:Moving_obj follows Other;
+	    m_class:Moving_obj follows Prev;
 	Phase = moving_finish,
 	    change_shape(Finish, centre, NewEndPt),
-	    m_class:Other follows Moving_obj),
-	update_link_route(Moving_obj),
-	make_links_follow(Moving_obj),
-	update_link_route(Other),
-	make_links_follow(Other),
+	    Prev = Moving_obj),
+	(m_class:Other follows Prev,
+	    move_link(Other),
+	    fail;
+	move_link(Prev)),
 /*	
 	(EType = submodel,
 	    (Phase = moving_start,
@@ -1136,11 +1134,11 @@ drag_to(Xpt, Ypt, Target) :-
 	remove_old_rubberband,
 	draw_rubberband(round).
 
-reposition(Mover, [XOff, YOff]) :-
+reposition(Parent, Mover, [XOff, YOff]) :-
 	adjust_posn(Mover, [-XOff, -YOff, 1,1]),
 	find_all_links(Mover, Link),
-	update_link_route(Link),
-	make_links_follow(Link),
+	\+ moves_with_seln(Parent, Link),
+	move_link(Link),
 	fail; true.
 %	tweak_link_connections(Mover, [XOff, YOff], c, _).
 
@@ -1206,8 +1204,7 @@ tweak_link_connections(Obj, OldInterns) :-
 	    fail;
 	find_all_links(Obj, Link),
 	    (Shove = Link; has_outer_equiv(Shove, Obj, Link)),
-	    update_link_route(Shove),
-	    make_links_follow(Shove),
+	    move_link(Shove),
 	    fail;
 	true).
 
@@ -1235,8 +1232,7 @@ tweak_endpoint(Moving_obj, End, NewPt) :-
 	local_ends(Moving_obj, Source, Dest),
 	member([End, Comp], [[start, Source], [finish, Dest]]),
 	change_shape(Comp, centre, NewPt),
-	update_link_route(Moving_obj),
-	make_links_follow(Moving_obj).
+	move_link(Moving_obj).
 
 scale_difference([X1, Y1], [X2, Y2], Sc, [X, Y]) :-
 	X is (X2 - X1)/Sc,
@@ -1422,6 +1418,10 @@ local_ends(Link, Start, Finish) :-
 doomed(End) :-
 	get_highlit_obj(L, End),
 	L<2.
+
+move_link(Obj) :-
+	update_link_route(Obj),
+	make_links_follow(Obj).
 
 make_links_follow(Obj) :-
 	find_all_links(Obj, Link),
@@ -1972,7 +1972,7 @@ delete_net(Top) :-
 	    true),
 	    dissolve_component(Target)),
 	    
-	kill_primitive(Target); 
+	kill_primitive(Target, FollowArcs); 
 	/* now un-highlight and redisplay the ghosts of the dead node; they may
 	be outside the submodel, and there may be other highlit ghosts. This is
 	now done by colour spreading
@@ -1995,16 +1995,16 @@ deletable(Top, FollowArcs, Tgt) :-
 	    get_highlit_obj(M, InTgt), M<3,
 	    contains(Top, InTgt).
 
-kill_primitive(Target) :-
+kill_primitive(Target, FollowArcs) :-
 	off(Target),
 % updating of survivors' appearance now done by delete_net, which calls this
 %	(setof(NewLook, (presence_affects(Target, NewLook),
 %			    \+ doomed(NewLook)), ChangedLooks), !;
 %	    ChangedLooks = []),
 	forget_highlit_obj(_, Target),
-	(tk_get_pref(deleteEndToEnd, 1), /* no messing about */
+	(FollowArcs = 1, /* no messing about */
 	    fast_delete(Target);
-	tk_get_pref(deleteEndToEnd, 0),
+	FollowArcs = 0,
 	    do_delete(Target)),
 %	member(NewVisLook, ChangedLooks),
 %	    spread_colour(NewVisLook, yes), /* Only need to update dims
@@ -2079,9 +2079,9 @@ attempt_addition(Type, Parent, Posn, Node_name, CanBag, Verbal) :-
 	    set_shape(Node_name, bounding_box, Box);
 	set_shape(Node_name, centre, Posn)),
 	make_links_follow(Node_name);
+	Verbal = yes,
 	sicstus_format_to_chars("Cannot add a ~a here due to overlaps.",
 				[Type], Wibble),
-	Verbal = yes,
 	do_dialogue("Failed to add component", warning, Wibble, ok, _),
 	fail.
 
@@ -2211,8 +2211,7 @@ dissolve_component(Node) :-
 	    fail;
 	member(MovedLink, MovedLinks),
 	    menu:reroute_sections([MovedLink]),
-	    redisplay(MovedLink),
-	    make_links_follow(MovedLink),
+	    move_link(MovedLink),
 	    fail;
 	remove_old_incomplete,
 	    member(OrphanLink, OrphanLinks),

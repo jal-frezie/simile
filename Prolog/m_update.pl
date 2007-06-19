@@ -8,9 +8,9 @@ itself is only addressed from within the database module.
 */
 
 sicstus_module(m_update,
-	       [get_av_pair/4, add_parameter/4, list_index_meanings/2,
-		list_local_index_meanings/2, get_input_info/2,
-		get_link_source_data/9, find_node_with_data/3,
+	       [get_av_pair/4, add_parameter/4, get_desc_and_comment/4,
+		list_index_meanings/2, list_local_index_meanings/2,
+		get_input_info/2,get_link_source_data/9, find_node_with_data/3,
 		valid_input/2, check_unit/4,
 		need_same_dims/2, check_flow_ends/3,
 		get_submodel_interface/5, load_submodel_interface/4,
@@ -64,6 +64,18 @@ get_av_pair(Object, Class, Attribute, Value) :-
 	Class = 0, Object has_class_refinement Attribute of Value;
 	Class = 1, Object has_model_refinement Attribute of Value;
 	Class = 2, Object has_attribute Attribute of Value.
+
+get_desc_and_comment(VisNode, Description, Comment, Default) :-
+	(VisNode is_of_sort box,
+	    CommentAttr = 0;
+	 VisNode is_of_sort line,
+	    CommentAttr = 2),
+	(get_av_pair(VisNode, CommentAttr, description, Description); 
+	    \+ get_av_pair(VisNode, CommentAttr, description, Description),
+	    Description = Default),
+	(get_av_pair(VisNode, CommentAttr, comment, Comment);
+	    \+ get_av_pair(VisNode, CommentAttr, comment, Comment),
+	    Comment = Default).
 
 /* get_exogenous_node: finds a node in a model that cannot be calculated without
 access to the outside of the model */
@@ -1054,8 +1066,57 @@ check_output(Type, Dir, Model, SourceCapt, Properties, InputSection,
 		Dest = Model,
 		caption_for(BorderSection, Properties))).	
 
+add_new_line_between(Type, Start, Finish, TopLink) :-
+	contains(Top, Start, Out),
+	contains(Top, Finish, In),
+	append(Up, [StartBox], Out),
+	append(Down, [FinishBox], In),
+	(StartBox has_type Type, !,
+	    TopLink = StartBox,
+	    TopLink has_changed_termination finish from Old to FinishBox,
+	    remove_floater(Old),
+	    link_forwards(FinishBox, StartBox, Type, Down);
+	 FinishBox has_type Type, !,
+	    TopLink = FinishBox,
+	    TopLink has_changed_termination start from Old to StartBox,
+	    remove_floater(Old),
+	    link_backwards(StartBox, FinishBox, Type, Up);
+	 new_line(Type, [], StartBox, FinishBox, TopLink),
+	    link_forwards(FinishBox, TopLink, Type, Down), 
+	    link_backwards(StartBox, TopLink, Type, Up)).
+
+link_backwards(Top, TopLink, Type, Chain) :-
+	append(More, [Next], Chain), !,
+	(Next has_type Type, !,
+	    OnLink = Next,
+	    OnLink is_connector from _ to Old,
+	    (find_type(Old, border), !,
+		Bdr = Old;
+	    make_border_node(Type, Top, Bdr),
+		OnLink has_changed_termination finish from Old to Bdr,
+		remove_floater(Old));
+	 make_border_node(Type, Top, Bdr),
+	    new_line(Type, [], Next, Bdr, OnLink),
+	    link_backwards(Next, OnLink, Type, More)),
+	 add_equivalence(Top, OnLink, TopLink);
+	 true.
+	     
+link_forwards(Top, TopLink, Type, Chain) :-
+	append(More, [Next], Chain), !,
+	 (OldLink follows TopLink, !,
+	     OldLink is_connector from Bdr to _;
+	 make_border_node(Type, Top, Bdr)),
+	(Next has_type Type, !,
+	    OnLink = Next,
+	    OnLink has_changed_termination start from Old to Bdr,
+	    remove_floater(Old);
+	 new_line(Type, [], Bdr, Next, OnLink),
+	    link_forwards(Next, OnLink, Type, More)),
+	 add_equivalence(Top, TopLink, OnLink);
+	 true.
+
 link_ends(New_obj, Start_thing, Terminator, Last_new_arc) :-
-	remove_border_nodes(New_obj, Terminator, Start_thing);
+%	remove_border_nodes(New_obj, Terminator, Start_thing);
 	add_new_line_between(New_obj, Start_thing, Terminator, Top_arc),
 	get_action_point(Top_arc, Terminator, Last_new_arc),
         event:spread_colour(Last_new_arc, yes).
@@ -1276,8 +1337,8 @@ fast_delete(Dead) :-
 	Dead is_connector from In to Out,
 	    (remove_equivs(_-Dead);
 	    Dead is_no_longer_connector,
-		remove_invisible_floater(In),
-		remove_invisible_floater(Out)).
+		remove_floater(In),
+		remove_floater(Out)).
 
 superfast_delete(Dead) :-
 	Dead has_part AlsoDead,
@@ -1295,21 +1356,22 @@ do_delete(Kill_obj) :-
 	fast_delete(Kill_obj).
 
 sever_links(Kill_obj, End) :-
-	connects(Kill_obj, Start, Finish),
-	(continues_in(Kill_obj, End),
-	    caption_for(Start, NewCapt),
-	    min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
-	    get_link_source_data(Kill_obj, End, _, SUnit, none, _,_,_,_),
-	    (make_new_end_node(End, Kill_obj, start,
-			       NewCapt, SUnit, SMinVal, SDefVal, SMaxVal);
+	initiates(Kill_obj, Start),
+	(continues_in(Kill_obj, End), NewEnd = start;
+	    continues_from(Kill_obj, End), NewEnd = finish),
+	caption_for(Start, NewCapt),
+	min_def_and_max_for(Start, SMinVal, SDefVal, SMaxVal),
+	get_link_source_data(Kill_obj, End, _, SUnit, none, _,_,_,_),
+	(make_new_end_node(End, Kill_obj, NewEnd,
+			   NewCapt, SUnit, SMinVal, SDefVal, SMaxVal);
 	    remove_equivs(Kill_obj-_));
-	continues_from(Kill_obj, End),
-	    caption_for(Finish, NewCapt),
-	    min_def_and_max_for(Finish, FMinVal, FDefVal, FMaxVal),
+/*	continues_from(Kill_obj, End),
+	    caption_for(Start, NewCapt),
+	    min_def_and_max_for(Start, FMinVal, FDefVal, FMaxVal),
 	    (make_new_end_node(End, Kill_obj, finish,
 			       NewCapt, _, FMinVal, FDefVal, FMaxVal);
 	    remove_equivs(_-Kill_obj)));
-	true.
+*/	true.
 	    
 min_def_and_max_for(VisNode, MinVal, DefVal, MaxVal) :-
 	find_node_with_data(VisNode, _, Node),
@@ -1319,6 +1381,7 @@ min_def_and_max_for(VisNode, MinVal, DefVal, MaxVal) :-
 	    number(DefVal), !; true),
 	(get_av_pair(Node, 0, max_val, MaxVal),
 	    number(MaxVal), !; true).
+
 
 make_new_end_node(Submodel, DeadLink, Dir,
 		  NewInputName, NewUnit, NewMinVal, NewDefVal, NewMaxVal) :-
@@ -1341,10 +1404,13 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	setof(NextBit, member(DeadLink-NextBit, OuterFirst), Others),
 	Others = [TestBit | _],
 	TestBit is_connector from NextStart to NextFinish,
+	image:get_link_route(TestBit, Course),
+	append([EndPair | _], [StartPair], Course),
 	find_all_comps(Model, OldEnd),
 	(find_type(OldEnd, submodel),
 	    make_node(Model, NodeType, NewEnd);
-	find_type(OldEnd, NodeType),
+	image:clear_shape(OldEnd, centre),
+	    change_class(OldEnd, border, NodeType),
 	    NewEnd = OldEnd),
 	/* make sure its name is unique to the submodel -- currently not done,
 	if I put it in make sure I don't rename things just because of their
@@ -1361,8 +1427,6 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	    add_parameter(NewEnd, 0, value, NewDefVal)),
 	(var(NewMaxVal), !;
 	    add_parameter(NewEnd, 0, max_val, NewMaxVal)),
-	TestBit has_graphical_attribute course of Course,
-	append([EndPair | _], [StartPair], Course),
 	event:insert_variable(Model, X, Y, NodeType, NewEnd),
 
 	/* Next bit is continually retried to delete all spare nodes */
@@ -1371,10 +1435,7 @@ make_new_end_node(Submodel, DeadLink, Dir,
 	MoveBit has_changed_termination Dir from NodePosn to NewEnd,
 	event:move_link(MoveBit),
 	    /* Now delete old terminator if it is redundant */
-	find_type(NodePosn, NodeType),
-	\+ (_ is_connector from NodePosn to _;
-	        _ is_connector from _ to NodePosn),
-	fast_delete(NodePosn),
+	remove_floater(NodePosn),
 	fail.
 
 swap_pairs([], []).
@@ -1382,16 +1443,18 @@ swap_pairs([], []).
 swap_pairs([M1-M2 | R1], [M2-M1 | R2]) :-
 	swap_pairs(R1, R2).
 
-remove_invisible_floater(Node) :-
+remove_floater(Node) :-
 	(_ is_connector from Node to _;
 	_ is_connector from _ to Node;
-	Node has_graphical_attribute bounding_box of _;
-	Node has_graphical_attribute bowtie of _), !;
+	Node has_class C,
+	    \+ member(C, [variable, cloud]);
+	Node has_class_refinement min_val of _), !;
+	draw:off(Node),
 	oblitterfry(Node).
 
 make_border_node(Line_type, Parent, Node_name) :-
-        member(Line_type-Node_type, [flow-cloud, squirt-cloud,
-                                     influence-variable, relation-variable]),
+        member(Line_type-Node_type, [flow-border, squirt-border,
+                                     influence-border, relation-border]),
         make_node(Parent, Node_type, Node_name).
 
 remove_border_nodes(LineType, Finish, Start) :-
@@ -1436,7 +1499,7 @@ chain_hierarchy(Line_type, Dir, Link_in, To_go, Node_out, Link_out) :-
 		(To_go = [Node_out], !;
 		true).
 
-add_new_line_between(Line_type, Start, Finish, Top_link) :-
+oldd_new_line_between(Line_type, Start, Finish, Top_link) :-
 	(Start has_type Line_type, !, 
 		continues_in(Start, Start_node),
 		Chain_start = Start;

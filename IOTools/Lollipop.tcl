@@ -16,7 +16,7 @@ proc initialize {winId} {
     namespace import -force ::maptools2::*
     set toolbarItems [list \
 			  [list new.gif "Clear" \
-			       [namespace code "clear $winId"]] \
+			       [namespace code "detach $winId"]] \
 			  [list add.gif "Add a variable" \
 			       [namespace code "AddVariable $winId"]]]
     
@@ -85,6 +85,9 @@ proc GetCanvas {winId} {
 }
 
 proc clear {winId} {
+}
+
+proc detach {winId} {
     variable useNodes
     set useNodes($winId,selected) {}
     set useNodes($winId,captions) {}

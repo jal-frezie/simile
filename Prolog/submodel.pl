@@ -89,15 +89,15 @@ add_section(California, NewClass, Direction, Keep, Flow, NearEnd, FarEnd) :-
 	values we need to add one to the section that currently has the bowtie
 	in case that bowtie is not on the new source section
 	(typical ghastly hack) */
-	(Flow is_of_sort has_bowtie,
+	find_type(Flow, Type),
+	(Type is_class_of_sort has_bowtie,
 	    find_base(Flow, Base),
 	    implicit_function(Base, BaseFn),
 	    \+ BaseFn has_class_refinement value of _Val, !,
 	    BaseFn has_new_class_refinement value of '';
 	true),
 
-	NewNode is_new_part_of California,
-	NewNode has_new_class NewClass,
+	m_update:make_border_node(Type, California, NewNode),
 	((Direction = sink, Keep = out; Direction = source, Keep = in) ->
 		EndToChange = start;
 		EndToChange = finish),

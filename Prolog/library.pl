@@ -492,11 +492,11 @@ adjust_to_9(Trans) :-
 posn_if_needed(Prim, Pt) :-
 	find_type(Prim, Type),
 	(Type = submodel, !,
-	    \+ Prim has_graphical_attribute bounding_box of _,
-	    change_class(Prim, submodel, variable);
+	    \+ Prim has_graphical_attribute bounding_box of _;
 	member(Type, [variable, cloud]),
 	    \+ Prim has_graphical_attribute centre of _),
-	Prim has_new_graphical_attribute centre of Pt.
+	Prim has_new_graphical_attribute centre of Pt,
+	change_class(Prim, Type, border).
 
 	    
 trim_heads(With0s, No0s) :-
