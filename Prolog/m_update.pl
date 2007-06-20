@@ -788,10 +788,15 @@ can_finish(Ltype, Box1, Box2) :-
 	       membership_depends(Box2, Box1)),
 	/* last and very final problematic case -- a duplicate influence */
 	\+ (Ltype = influence,
-	       implicit_function(Box2, Terminus),
+	       (implicit_function(Box2, Terminus);
+		find_type(Box2, submodel),
+		   (Terminus = Box2;
+		   find_all_comps(Box2, Terminus),
+		       border_node(Terminus))),
 	       (terminates(Box1, Terminus);
-		   connects(Dup, Box1, Terminus),
-		   find_type(Dup, influence))).
+		(Dup is_connector from _ to Terminus,
+		    initiates(Dup, Box1),
+		    find_type(Dup, influence)))).
 
 membership_depends(Ind, Dep) :-
 	(find_all_comps(Con, Dep);
@@ -856,14 +861,14 @@ u_turn(LType, Box1, Box2) :-
 	Box1 has_type LType,
 	    continues_in(Box1, Border),
 	    (find_all_comps(Border, Box1),
-		contains(Border, Box2);
+		contains(Border, Box2, [_|_]); %last arg means not same
 	    \+ find_all_comps(Border, Box1),
-		\+ contains(Border, Box2));
+		\+ contains(Border, Box2, [_|_]));
 	Box2 has_type LType,
 	    continues_in(Box2, Border),
 	    (find_all_comps(Border, Box2), !,
-		\+ contains(Border, Box1);
-		contains(Border, Box1)).
+		\+ contains(Border, Box1, [_|_]);
+		contains(Border, Box1, [_|_])).
 
 
 /* This one is called when the system has to put a new node in itself, such as
