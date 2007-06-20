@@ -1547,7 +1547,7 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 	get_chain(Start_box, Finish_box, Top, Full_ups, Full_downs),
 
 	(find_type(Start, Type), !,
-	    get_end_pt(Start, finish, _, End, _),
+	    get_link_route(Start, [End | _]),
 	    (Start draws_inside Start_box, !,
 		subtract_from_translation([0,0,1,1], Start_box, Trans),
 		Full_ups = [Start_box | Rest];
@@ -1559,7 +1559,8 @@ make_chain(Type, Start, Target, Top, Up_list, Down_list) :-
 	Up_list = Full_ups),
 
 	(find_type(Target, Type), !,
-	    get_end_pt(Target, start, _, End2, _),
+	    get_link_route(Target, Route),
+	    suffix([End2], Route),
 	    (Target draws_inside Finish_box, !,
 		subtract_from_translation([0,0,1,1], Finish_box, Trans2),
 		Full_downs = [Finish_box | Rest2];
@@ -1839,16 +1840,17 @@ reuse_route(New_obj, LastArc) :-
 	    get_incomplete(Node-ScreenRoute),
 	    translate_between(Parent, Node, _D, Trans),
 	    translate(ScreenRoute, Trans, Route),
-	    m_class:NewArc is_connector from Start to Fn,
-	    get_host(Fn, Finish),
+	    local_ends(NewArc, Start, Finish),	    
 	    Route = [LastPt, MidPt | Tail],
 	    suffix([FirstPt], [MidPt | Tail]),
 	    asserta(new_route_for(NewArc, MidPt)),
 	    (border_node(Start),
-		set_shape(Start, centre, FirstPt),
+		(clear_shape(Start, centre), fail; % in case rerouting
+		    set_shape(Start, centre, FirstPt)),
 		fail;
 	    border_node(Finish),
-		set_shape(Finish, centre, LastPt),
+		(clear_shape(Finish, centre), fail; % in case rerouting
+		    set_shape(Finish, centre, LastPt)),
 		fail);
         retract(new_route_for(NewArc, MPt)),
 	    /* Arcs need points at ends of other arcs to draw, so draw after */
