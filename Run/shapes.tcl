@@ -1296,9 +1296,9 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 # the user's intended target
 proc Visible {winId obj} {
     if {[string equal hidden [$winId itemcget $obj -state]]} {return 0}
-    if {[string length [$winId itemcget $obj -fill]]} {return 1}
-    if {[string length [$winId itemcget $obj -outline]]} {return 1}
-    return 0
+    catch {set mark [$winId itemcget $obj -outline]}
+    append mark [$winId itemcget $obj -fill]
+    return [string length $mark]
 }
 
 # This updates the width of a canvas object when it is zoomed. The actual width
