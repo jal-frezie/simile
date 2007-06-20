@@ -1292,6 +1292,15 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
     }
 }
 
+# Used to check that a clicked obj actually shows, and therefore might have been
+# the user's intended target
+proc Visible {winId obj} {
+    if {[string equal hidden [$winId itemcget $obj -state]]} {return 0}
+    if {[string length [$winId itemcget $obj -fill]]} {return 1}
+    if {[string length [$winId itemcget $obj -outline]]} {return 1}
+    return 0
+}
+
 # This updates the width of a canvas object when it is zoomed. The actual width
 # is rounded internally to an integer, so we store the full value in a tag called
 # realwidth(...) which is also updated by this procedure.

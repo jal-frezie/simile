@@ -1883,7 +1883,7 @@ proc GetClickedObj { winId canx cany range} {
     for {set halo 1} {$halo < $range} {incr halo 2} {
         set target [$winId find closest $canx $cany $halo]
         if {![string match "*/background/*" [$winId gettags $target]] && \
-		[string length [$winId itemcget $target -fill]]} {
+		[Visible $winId $target]} {
             return $target
         }
     }
