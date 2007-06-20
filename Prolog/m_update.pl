@@ -1312,7 +1312,7 @@ old_cloud(Link) :-
 connects_ghost_flow(Type, Link) :-
 	Type = influence,
 	find_type(Link, flow),
-	is_ghost(Link).
+	\+ bowtie_section(Link, Link).
 
 remove_equivs(DeadPair) :-
 	link:remove_connection(DeadPair),
