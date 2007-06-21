@@ -36,10 +36,10 @@ units_for(Comp, UnitStr) :-
 follow_seln_infs(Dir, End) :-
 	doomed(Comp),
 	Comp is_of_sort has_function,
-	value_propagates(Dir, Comp, End),
+	value_propagates(Dir, Comp, End, _Link),
 	\+ doomed(End).
 
-value_propagates(Dir, From, To) :-
+value_propagates(Dir, From, To, Link) :-
 	find_base(From, Base),
 	(UseComp = Base; find_ghosts(Base, UseComp)),
 	(Dir = out,
@@ -55,8 +55,9 @@ multi_prop(Dir, From, To, Count) :-
 	To = From;
 	Count > 0,
 	   On is Count-1,
-	   value_propagates(Dir, From, Mid),
-	   multi_prop(Dir, Mid, To, On).
+	   value_propagates(Dir, From, Mid, Link),
+	   (To = Link;
+	   multi_prop(Dir, Mid, To, On)).
 
 get_info(_Wid, selection, Dir) :-
 	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = []),
