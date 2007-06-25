@@ -672,6 +672,7 @@ namespace eval RunEnv {
         variable runControlWindId
         variable currentNode
         
+
         if {[llength $args]} {
             set node $args
         } else {
@@ -684,6 +685,8 @@ namespace eval RunEnv {
         #        ::${ControlSpace}::Terminate $rcw
         #    }
         
+	set mreId $helperTable($node,whichRunEnv)
+	KillTransients $mreId
         destroy .helpPopup
         KillHelpers $node
         foreach winData [array names window_info *,parent] {
@@ -695,7 +698,7 @@ namespace eval RunEnv {
                 }
             }
         }
-        destroy $helperTable($node,whichRunEnv)
+        destroy $mreId
         unset helperTable($node,whichRunEnv)
 	start_in_editor TryToKill $node
     }

@@ -2053,7 +2053,32 @@ proc MenuClose {winId} {
 # if it is tl we should kill its submodel windows too
 }
 
+proc GetTransients {win} {
+    set trannies {}
+    foreach subWin [winfo children .] {
+	if {[string equal $subWin [winfo toplevel $subWin]]} {
+	    if {[string equal $win [wm transient $subWin]]} {
+		eval {lappend trannies} [GetTransients $subWin] {$subWin}
+	    }
+	} 
+    }
+    return $trannies
+}
+
+proc KillTransients {winId} {
+    foreach tranny [GetTransients [winfo toplevel $winId]] {
+	set customKiller [wm protocol $tranny WM_DELETE_WINDOW]
+	if {[llength $customKiller]} {
+	    uplevel #0 $customKiller
+	} else {
+	    destroy $tranny
+	}
+	update
+    }
+}
+
 proc byebye {winId} {
+    KillTransients $winId
     set runOnEmpty [string equal aqua [tk windowingsystem]]
     prolog [list tk_off_window( '$winId' , $runOnEmpty)]
 }

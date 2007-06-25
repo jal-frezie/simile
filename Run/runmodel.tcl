@@ -992,8 +992,8 @@ proc StartRun {node} {
     if {[info exists helperTable($node,whichRunEnv)]} {
 	set fpParent $helperTable($node,whichRunEnv)
     } else {
-#	set fpParent [FindNodeTopWin $node]
-	set fpParent {}
+	set fpParent [FindNodeTopWin $node]
+#	set fpParent {}
     }
     set runState($node,modelRunning) 1
     foreach {smPath spFile} [array get projectParams] {

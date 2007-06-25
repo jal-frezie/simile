@@ -921,10 +921,19 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             # OK here we go...try and follow this...first go to the starting point..
             if {$reference} {
                 # Now use the saved relative path to move to the .csv file's directory
+		set seekDir [file join [file dirname $oldPath] \
+				 [file dirname $VFile]]
+		if {[catch {cd $seekDir}]} {
+		    set act [ShowMessage "Missing data directory" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp. This reference specifies the file path \"[file dirname $VFile]\" relative to the location of the parameterization file itself, so the file is being sought in the directory \"[file normalize $seekDir]\", which does not exist on this computer. Do you want to skip the values for this component and continue loading the parameterization file?" okcancel]
+		    switch $act {
+			cancel {break}
+			ok {continue}
+		    }
+		}
                 cd [file join [file dirname $oldPath] [file dirname $VFile]]
                 # ...and stick the new absolute pathname into the spec! Easy!!
 		if {![file exists [file tail $VFile]]} {
-		    set act [ShowMessage "Missing data file" warning "The file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp, which does not exist in this folder. Do you want to skip these values and continue loading the file?" okcancel]
+		    set act [ShowMessage "Missing data file" warning "The parameterization file contains a reference to data file \"[file tail $VFile]\" for the parameter values for the component $restoredComp, which does not exist in this folder. Do you want to skip the values for this component and continue loading the parameterization file?" okcancel]
 		    switch $act {
 			cancel {break}
 			ok {continue}
