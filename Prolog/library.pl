@@ -496,7 +496,7 @@ posn_if_needed(Prim, Pt) :-
 	member(Type, [variable, cloud]),
 	    \+ Prim has_graphical_attribute centre of _),
 	Prim has_new_graphical_attribute centre of Pt,
-	change_class(Prim, Type, border).
+	m_update:change_class(Prim, Type, border).
 
 	    
 trim_heads(With0s, No0s) :-
