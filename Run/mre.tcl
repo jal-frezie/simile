@@ -1112,13 +1112,18 @@ namespace eval RunEnv {
         variable dp0
         
         destroy $dp0.notebook
-        set mainframe $helperTable($currentNode,whichRunEnv).mainframe
+        set win $helperTable($currentNode,whichRunEnv)
+	set mainframe $win.mainframe
         # read and set .mre position and size
         gets $stream line
         scan $line "%i %i %i %i" x y width height
-        wm geometry $helperTable($currentNode,whichRunEnv) \
-                ${width}x${height}+${x}+${y}
-        
+	if {$x>=0 && $x+$width<[winfo screenwidth $win] && \
+		$y>=0 && $y+$height<[winfo screenheight $win]} {
+	    wm geometry $win ${width}x${height}+${x}+${y}
+        } else {
+	    wm geometry $win ${width}x${height}
+	}
+
         gets $stream line
         scan $line "%i %i" x y;
         [$mainframe getframe].mainpw sash place  0 $x $y

@@ -365,7 +365,7 @@ proc PrefReset {} {
     # Re-read user defaults
     # This isn't quite right...
 	option clear
-	PrefReadFile $pref(appDefaults) startup
+#	PrefReadFile $pref(appDefaults) startup
 #	PrefReadFile $pref(userDefaults) user
 	# Clear variables
 	set items $pref(items)

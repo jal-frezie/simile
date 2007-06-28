@@ -153,11 +153,12 @@ if {[string match Darwin $tcl_platform(os)]} {
     }
             
     if {$argc} {
-	if {[string match relative [file pathtype $argv]]} {
-	    set env(OPEN_MODEL) [pwd]/$argv
-	} else {
-	    set env(OPEN_MODEL) $argv
-	}
+#	if {[string match relative [file pathtype $argv]]} {
+#	    set env(OPEN_MODEL) [pwd]/$argv
+#	} else {
+#	    set env(OPEN_MODEL) $argv
+#	}
+	set env(OPEN_MODEL) [file normalize $argv]
     } 
 
 # Scaling affects some metrics but not all, so squash it FTTB
