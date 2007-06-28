@@ -638,11 +638,15 @@ make_intermediates(
 	    /* re-use of population data structures means values can change
 	    if creation counts do */
 	    Args = [on_reset];
-	(Source =.. [TRef, N],
+	(Source =.. [Op, N],
+	    name(Op, OpStr),
+	    lower(OpStr, LopStr),
+	    name(TRef, LopStr),
 	    member(TRef, [time, dt]), % ind_time removed
-	    ((N=0; N = ''), SourceRef =.. [TRef, Step];
-	    integer(N), SourceRef = Source;
-	    raise_exception(bad_index_number(N, TRef))),
+	    ((N=0; N = ''), TArg = Step;
+		integer(N), N>=0, TArg = N;
+		raise_exception(bad_index_number(N, Op))),
+	    SourceRef =.. [TRef, TArg],
 	    default_tick_is(OrigUnits),
 	    remove_physical_units_if_disabled(SubId, OrigUnits, Units), !;
 	Source = keep(SourceRef), !;
@@ -1044,14 +1048,14 @@ builtin('List handling', count, int, [array_or_list_of_any]).
 builtin('List handling', any, boolean, [array_or_list_of_boolean]).
 builtin('List handling', all, boolean, [array_or_list_of_boolean]).
 builtin('Model properties', channel_is, boolean, [channel]).
-builtin('Model properties', dt, real, [const_int]).
-builtin('Model properties', time, real, []).
+builtin('Model properties', dt, real, [const_int_or_none]).
+builtin('Model properties', time, real, [const_int_or_none]).
 builtin('Model properties', at_init, any, [any]).
 %builtin('Model properties', init_time, real, []).
 builtin('Model properties', parent, int, []).
 builtin('Model properties', stop, int, [int]).
 /* legacy versions from before we had empty arg lists */
-builtin('Model properties', time, real, [const_int]).
+%builtin('Model properties', time, real, [const_int]).
 %builtin('Model properties', init_time, real, [const_int]).
 builtin('Model properties', parent, int, [dummy_int]).
 
