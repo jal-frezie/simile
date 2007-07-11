@@ -4,16 +4,14 @@
 
 # To do
 # controls for user to rotate the model
-# adjust light to show the surface - it looks flat at now
+# adjust light to show the surface - it looks flat at now NEEDS normals
 # controls to accommodate different sized grids - zoom or move to and from
+# missing data
+# antialiasing?
+# ::xdist, ::?Rotate making helper instance specific
 
 lappend ::auto_path "C:/Program Files/Tcl/lib"; # todo remove sort installation
 package require tcl3d 0.3
-
-# proc bgerror { msg } {
-# tk_messageBox -icon error -type ok -message "Error: $msg"
-# exit
-# }
 
 set keyValue surfacegridTcl3d070701
 namespace eval $keyValue {
@@ -23,10 +21,14 @@ namespace eval $keyValue {
     variable old_icolour
     variable min; # edit var for entry widget
     variable max; # edit var for entry widget
+    variable nx; # normals for opengls polygons
+    variable ny
+    variable nz
     
     # todo
     #set ::texImgWidth  256
     #set ::texImgHeight 256
+    variable Vertices {}
     
     
     proc identify {} {
@@ -38,18 +40,115 @@ namespace eval $keyValue {
         exit
     }
     
+    proc HandleRot {x y win} {
+        set cx $::surfacegridTcl3d070701::useNodes($win,cx)
+        set cy $::surfacegridTcl3d070701::useNodes($win,cy)
+        
+        
+        RotY $win [expr {180 * (double($x - $cx) / [winfo width $win])}]
+        RotX $win [expr {180 * (double($y - $cy) / [winfo height $win])}]
+        
+        set ::surfacegridTcl3d070701::useNodes($win,cx) $x
+        set ::surfacegridTcl3d070701::useNodes($win,cy) $y
+    }
+    
+    proc HandleTrans {axis x y win} {
+        set cx $::surfacegridTcl3d070701::useNodes($win,cx)
+        set cy $::surfacegridTcl3d070701::useNodes($win,cy)
+        
+        if { $axis != "Z" } {
+            set ::xdist [expr {$::xdist + 0.1 * double($x - $cx)}]
+            set ::ydist [expr {$::ydist - 0.1 * double($y - $cy)}]
+        } else {
+            set ::zdist [expr {$::zdist + 0.1 * (double($x - $cx))}]
+        }
+        
+        set ::surfacegridTcl3d070701::useNodes($win,cx) $x
+        set ::surfacegridTcl3d070701::useNodes($win,cy) $y
+        
+        $win postredisplay
+    }
+    
+    proc RotX { w angle } {
+        set ::xRotate [expr {$::xRotate + $angle}]
+        $w postredisplay
+    }
+    
+    proc RotY { w angle } {
+        set ::yRotate [expr {$::yRotate + $angle}]
+        $w postredisplay
+    }
+    
+    proc RotZ { w angle } {
+        set ::zRotate [expr {$::zRotate + $angle}]
+        $w postredisplay
+    }
+    
+    # normal(); - finds a normal vector and normalizes it
+    proc normal { x1 y1 z1  x2 y2 z2 x3 y3 z3 } {
+        variable nx
+        variable ny
+        variable nz
+        # x1,y1,z1 - the points of the current vertex
+        # x2,y2,z2 - the points of the vertex to the right
+        # x3,y3,z3 - the points of the vertex to the left
+        #
+        # calculate the vectors A and B
+        # note that v[3] is defined with counterclockwise winding in mind
+        
+        #double d; d will hold the distance of each vector normal
+        
+        #get the length of the vector to the right
+        set abx [expr {$x2 - $x1}]
+        set aby [expr {$y2 - $y1}]
+        set abz [expr {$z2 - $z1}]
+        
+        #get the length of the vector to the left
+        set acx [expr {$x3 - $x1}]
+        set acy [expr {$y3 - $y1}]
+        set acz [expr {$z3 - $z1}]
+        
+        # here we do our dot product
+        # this is something you learn about when going
+        # over vectors. a dot product is equal to 0, and
+        # is therefore perpendicular to the current vector.
+        set nx [expr {($aby * $acz) - ($abz * $acy)}];
+        set ny [expr {($abz * $acx) - ($abx * $acz)}];
+        set nz [expr {($abx * $acy) - ($aby * $acx)}];
+        
+        # here we get the distance of our normal vector
+        set d [expr {sqrt(($nx*$nx) + ($ny*$ny) + ($nz*$nz))}];
+        
+        # then we normalize it by dividing the current
+        # vector by its distance.
+        set nx [expr {$nx / $d}]
+        set ny [expr {$ny / $d}]
+        set nz [expr {$nz / $d}]
+    }
+    # normalize
+    # return $normal
+    
     proc tclCreateFunc { toglwin } {
+        set winId [winfo parent $toglwin]
         glClearColor 1.0 1.0 1.0 0.0            ; # White Background
         glClearDepth 1.0                        ; # Depth Buffer Setup
         glDepthFunc GL_LEQUAL                   ; # The Type Of Depth Testing To Do
         glEnable GL_DEPTH_TEST                  ; # Enables Depth Testing
-        #glShadeModel GL_FLAT
-        glShadeModel GL_SMOOTH                  ; # Select smooth Shading
+        glShadeModel GL_FLAT
+        #glShadeModel GL_SMOOTH                  ; # Select smooth Shading
         glHint GL_PERSPECTIVE_CORRECTION_HINT GL_NICEST
-        #glEnable GL_LIGHT0                      ; # Enable Default Light
-        #glEnable GL_LIGHTING                    ; # Enable Lighting
+        glEnable GL_LIGHT0                      ; # Enable Default Light
+        glEnable GL_LIGHTING                    ; # Enable Lighting
         
-        #glEnable GL_COLOR_MATERIAL              ; # Enable Color Material
+        glEnable GL_COLOR_MATERIAL              ; # Enable Color Material
+        
+        #glEnableClientState GL_VERTEX_ARRAY; # GL_NORMAL_ARRAY
+        # pass the vertex pointer:
+        # 3 components per vertex (x,y,z)
+        #glVertexPointer  3 GL_FLOAT sizeof(SVertex) Vertices
+        
+        glPolygonMode GL_BACK $::surfacegridTcl3d070701::useNodes($winId,PolygonModeBack)
+        glPolygonMode GL_FRONT $::surfacegridTcl3d070701::useNodes($winId,PolygonModeFront)
     }
     
     proc tclDisplayFunc { toglwin } {
@@ -57,12 +156,21 @@ namespace eval $keyValue {
         set winId [winfo parent $toglwin]
         
         glClear [expr $::GL_COLOR_BUFFER_BIT | $::GL_DEPTH_BUFFER_BIT]
-
+        
+        glPushMatrix
+        glTranslatef $::xdist $::ydist [expr {-1.0 * $::zdist}]
+        glRotatef $::xRotate 1.0 0.0 0.0
+        glRotatef $::yRotate 0.0 1.0 0.0
+        glRotatef $::zRotate 0.0 0.0 1.0
+        
         glColor4f 0.1 0.5 0.1 0.1
+        
         
         if {[info exists ::surfacegridTcl3d070701::useNodes($winId,color)]} {
             Triangulate $winId $::surfacegridTcl3d070701::useNodes($winId,color)
         }
+        
+        glPopMatrix
         
         glFlush
         $toglwin swapbuffers
@@ -88,64 +196,6 @@ namespace eval $keyValue {
         gluLookAt -50.0 50.0 100.0 10.0 10.0 0.0 0.0 1.0 0.0
     }
     
-################################################################################
-#     proc Method { toglwin num } {
-#         glClear [expr $::GL_COLOR_BUFFER_BIT | $::GL_DEPTH_BUFFER_BIT]
-#         glFlush
-#         
-#         if { [info exists ::texImg] } {
-#             $::texImg delete
-#         }
-#         set measure [time {
-#             set texSize [expr $::texImgHeight*$::texImgWidth * 3]
-#             set ::texType $::GL_RGB
-#             
-#             set template [binary format ccc 1 0 0]
-#             for { set j 1 } { $j < $::texImgWidth } { incr j } {
-#                 append template [binary format ccc $j 0 0]
-#             }
-#             set row $template
-#             for { set i 0 } { $i < $::texImgHeight } { incr i } {
-#                 append img $row
-#                 set row [string map [list [binary format c 0] [binary format c $i]] \
-#                         $template]
-#             }
-#             set ::texImg [tcl3dVectorFromByteArray GLubyte $img]
-#         } ]
-#         #PrintTimeInfo $measure
-#         #PrintTitle "Test $num"
-#         
-#         glPixelStorei GL_UNPACK_ALIGNMENT 1
-#         
-#         set ::texName [tcl3dVector GLuint 1]
-#         glGenTextures 1 $::texName
-#         glBindTexture GL_TEXTURE_2D [$::texName get 0]
-#         
-#         # bytearray.tcl
-#         # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S $::GL_REPEAT
-#         # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T $::GL_REPEAT
-#         # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER $::GL_NEAREST
-#         # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER $::GL_NEAREST
-#         #
-#         # glTexImage2D GL_TEXTURE_2D 0 $::GL_RGBA \
-#         # $::texImgWidth $::texImgHeight \
-#         # 0 $::texType GL_UNSIGNED_BYTE $::texImg
-#         
-#         # imgViewer
-#         glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S $::GL_CLAMP
-#         glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T $::GL_CLAMP
-#         glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER $::GL_LINEAR
-#         glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER $::GL_LINEAR
-#         # glTexImage2D GL_TEXTURE_2D 0 4 \
-#         # $sqr $sqr \
-#         # 0 GL_RGBA GL_UNSIGNED_BYTE $::vecImg
-#         glTexImage2D GL_TEXTURE_2D 0 $::GL_RGBA \
-#                 $::texImgWidth $::texImgHeight \
-#                 0 $::texType GL_UNSIGNED_BYTE $::texImg
-#         
-#         $toglwin postredisplay
-#     }
-################################################################################
     
     proc initialize {winId} {
         variable useNodes
@@ -161,6 +211,19 @@ namespace eval $keyValue {
         set useNodes($winId,max) 100
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
+        
+        # todo make instance specific
+        set ::xdist 0
+        set ::ydist 0
+        set ::zdist 5
+        set ::xRotate 0.0
+        set ::yRotate 0.0
+        set ::zRotate 0.0
+        
+        
+        set useNodes($winId,PolygonModeFront) GL_FILL; # GL_POINT|GL_LINE|GL_FILL
+        set useNodes($winId,PolygonModeBack) GL_LINE; # GL_POINT|GL_LINE|GL_FILL
+        
         SetState $winId {}
         message	$winId.msg -aspect 1000
         AddToolbar $winId
@@ -349,9 +412,9 @@ namespace eval $keyValue {
                     !$useNodes($winId,freeze)} then {
             if {!$time} { ;# wrong, should only be done on reset
                 NumDistinct $winId $useNodes($winId,colvals)
-            }
-            
+            }            
             #ShowMessage debug info "display: $useNodes($winId,color)" ok
+#Triangulate $winId $::surfacegridTcl3d070701::useNodes($winId,color)
             $winId.c postredisplay
         }
     }
@@ -363,7 +426,7 @@ namespace eval $keyValue {
         glFlush
         
         # if { [info exists ::texImg] } {
-            # $::texImg delete
+        # $::texImg delete
         # }
         
         
@@ -404,6 +467,7 @@ namespace eval $keyValue {
             set n $useNodes($winId,ncol)
         }
         
+        
         if {[info exists useNodes($winId,mult)]} {
             set mult $useNodes($winId,mult)
         } else {
@@ -419,47 +483,20 @@ namespace eval $keyValue {
         set useNodes($winId,xwidth) $xwidth
         set useNodes($winId,yheight) $yheight
         $winId.c configure -width $xwidth -height $yheight
-        #
-        # $winId.c bind all <Button-3> [namespace code "Settings $winId"]
-        # $winId.c bind all <B1-Motion> [namespace code "value_popup $winId %X %Y %x %y"]
-        # $winId.c bind all <ButtonPress-1> [namespace code "value_popup $winId %X %Y %x %y"]
-        # $winId.c bind all <B1-ButtonRelease> RemovePopup
-        #
-        # set useNodes($winId,visibleMap) [image create photo]
-        # $winId.c create image 0 0 -image $useNodes($winId,visibleMap) \
-        # -anchor nw -tag map
-        # recolour_scale [namespace current] $winId ;# do here for scrollers
-        # bind $winId.c <Configure> \
-        # [namespace code "recolour_scale [namespace current] $winId"]
-        # #        $winId.c configure -scrollregion [$winId.c bbox all]
         
-        #Method $winId.c 5
+        bind $winId.c <1> [namespace code {
+            set useNodes(%W,cx) %x
+            set useNodes(%W,cy) %y}]
+        bind $winId.c <2> [namespace code {
+            set useNodes(%W,cx) %x
+            set useNodes(%W,cy) %y}]
+        bind $winId.c <3> [namespace code {
+            set useNodes(%W,cx) %x
+            set useNodes(%W,cy) %y}]
         
-        # set ::texType $::GL_LUMINANCE
-        # 
-        # glPixelStorei GL_UNPACK_ALIGNMENT 1
-        # 
-        # set ::texName [tcl3dVector GLuint 1]
-        # glGenTextures 1 $::texName
-        # glBindTexture GL_TEXTURE_2D [$::texName get 0]
-        # 
-        # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_S $::GL_REPEAT
-        # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_WRAP_T $::GL_REPEAT
-        # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MAG_FILTER $::GL_NEAREST
-        # glTexParameteri GL_TEXTURE_2D GL_TEXTURE_MIN_FILTER $::GL_NEAREST
-        
-        # glTexImage2D GL_TEXTURE_2D 0 $::GL_RGBA \
-        # $::texImgWidth $::texImgHeight \
-        # 0 $::texType GL_UNSIGNED_BYTE $::texImg
-        
-        #glPixelTransferi GL_RED_SCALE 1
-        #glPixelTransferi GL_RED_BIAS 0
-        
-################################################################################
-#         glTexImage2D GL_TEXTURE_2D 0 $::GL_RGBA \
-#                 $::texImgWidth $::texImgHeight \
-#                 0 $::texType GL_UNSIGNED_BYTE $::texImg
-################################################################################
+        bind $winId.c <B1-Motion> [namespace code {HandleRot %x %y %W}]
+        bind $winId.c <B2-Motion> [namespace code {HandleTrans X %x %y %W}]
+        bind $winId.c <B3-Motion> [namespace code {HandleTrans Z %x %y %W}]
         
         $winId.c postredisplay
         
@@ -508,6 +545,7 @@ namespace eval $keyValue {
         set min($winId) $useNodes($winId,min)
         set max($winId) $useNodes($winId,max)
         
+        #set nb [ttk::notebook [$dlg getframe].notebook]
         #create widgets
         set coloursF [labelframe [$dlg getframe].colours -text "Colour scale"]
         pack [LabelFrame $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
@@ -596,10 +634,65 @@ namespace eval $keyValue {
         $c create text 250 230 -text "xx $this_colour xx"
     }
     
+    proc printString { str font } {
+        glListBase $font
+        set len [string length $str]
+        set sa [tcl3dVectorFromString GLubyte $str]
+        glCallLists $len GL_UNSIGNED_BYTE $sa
+        $sa delete
+    }
+    
+    proc DefineTriangles { col row ncol nrow values } {
+        variable Vertices; #todo make helper instance safe
+        # find the vertices of the two triangles to the upper right of the point
+        #find z values from model
+        set cell1 [expr {($row-1)*$ncol+$col-1}]
+        set cell2 [expr {($row)*$ncol+$col-1}]
+        set cell3 [expr {($row)*$ncol+$col}]
+        set cell4 [expr {($row-1)*$ncol+$col}]
+        set cellval1 [lindex [lindex $values $cell1] 1]
+        set cellval2 [lindex [lindex $values $cell2] 1]
+        set cellval3 [lindex [lindex $values $cell3] 1]
+        set cellval4 [lindex [lindex $values $cell4] 1]
+        
+        # work out vertices of the two triangles above and to the right
+        set a1x [expr {1.0*$col}]
+        set a1y [expr {1.0*$row}]
+        set a1z [expr {1.0*$cellval1}]
+        set a2x [expr {1.0*$col+1.0}]
+        set a2y [expr {1.0*$row}]
+        set a2z [expr {1.0*$cellval4}]
+        set a3x [expr {1.0*$col+1.0}]
+        set a3y [expr {1.0*$row+1.0}]
+        set a3z [expr {1.0*$cellval3}]
+        
+        set b1x [expr {1.0*$col}]
+        set b1y [expr {1.0*$row}]
+        set b1z [expr {1.0*$cellval1}]
+        set b2x [expr {1.0*$col+1.0}]
+        set b2y [expr {1.0*$row+1.0}]
+        set b2z [expr {1.0*$cellval3}]
+        set b3x [expr {1.0*$col}]
+        set b3y [expr {1.0*$row+1.0}]
+        set b3z [expr {1.0*$cellval2}]
+        
+        lappend Vertices [list $a1x $a1y $a1z]
+        lappend Vertices [list $a2x $a2y $a2z]
+        lappend Vertices [list $a3x $a3y $a3z]
+        
+        lappend Vertices [list $b1x $b1y $b1z]
+        lappend Vertices [list $b2x $b2y $b2z]
+        lappend Vertices [list $b3x $b3y $b3z]
+        
+    }
+    
     proc Triangulate {winId node} {
         # from DrawGrid5
         # create triangle strips from the DEM
         variable useNodes
+        variable nx
+        variable ny
+        variable nz
         
         set rows $useNodes($winId,nrow)
         set cols $useNodes($winId,ncol)
@@ -624,54 +717,158 @@ namespace eval $keyValue {
         set nrow $useNodes($winId,nrow)
         set nswatches $useNodes($winId,nswatches)
         
-        glBegin GL_TRIANGLES                        ; # Drawing Using Triangles
         for {set row 1} {$row<$nrow} {incr row} {
-            set rowData($row) {}
             for {set col 1} {$col<$ncol} {incr col} {
                 set cell1 [expr {($row-1)*$ncol+$col-1}]
-                set cell2 [expr {($row)*$ncol+$col-1}]
-                set cell3 [expr {($row)*$ncol+$col}]
-                set cell4 [expr {($row-1)*$ncol+$col}]
+                set cell2 [expr {($row-1)*$ncol+$col}]
+                set cell3 [expr {($row)*$ncol+$col-1}]
+                set cell4 [expr {($row)*$ncol+$col}]
                 set cellval1 [lindex [lindex $values $cell1] 1]
                 set cellval2 [lindex [lindex $values $cell2] 1]
                 set cellval3 [lindex [lindex $values $cell3] 1]
                 set cellval4 [lindex [lindex $values $cell4] 1]
-                set length [llength $cellval1]
                 
-                if {$length} {
-                    # todo
-                    if {$length>1} {set cellval1 [lindex $cellval1 1]}
-                    if {$cellval1<$useNodes($winId,dataMin)} {
-                        set useNodes($winId,dataMin) $cellval1
-                    }
-                    if {$cellval1>$useNodes($winId,dataMax)} {
-                        set useNodes($winId,dataMax) $cellval1
-                    }
-                    # if [catch {set icolour [expr {int($nswatches*($celval-$min)/$range)}]}] {
-                        # return
-                    # }
-                    # 
-                    # if {$icolour < 0} {
-                        # set icolour 0
-                    # } elseif {$icolour > $nswatches} {
-                        # set icolour $nswatches
-                    # }
-                    #lappend rowData($row) $useNodes($winId,c$icolour)   
-                    glVertex3f [expr {1.0*$col}]  [expr {1.0*$row}] [expr {1.0*$cellval1}]
-                    glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval3}]
-                    glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row}] [expr {1.0*$cellval4}]
-                    
-                    glVertex3f [expr {1.0*$col}]  [expr {1.0*$row}] [expr {1.0*$cellval1}]
-                    glVertex3f [expr {1.0*$col}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval2}]
-                    glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval3}]
-                } else  {
-                    #lappend rowData($row) grey
-                }
+ 
+    #glRasterPos2i 2 0
+    #set fontBase [$winId.c loadbitmapfont]
+    #printString "glNormal3f $nx $ny $nz" $fontBase
+                glBegin GL_TRIANGLE_STRIP
                 
+                normal  [expr {1.0*$col}] [expr {1.0*$row}] [expr {1.0*$cellval1}] \
+                        [expr {1.0*$col+1.0}] [expr {1.0*$row}] $cellval3 \
+                        [expr {1.0*$col}] [expr {1.0*$row+1.0}] $cellval2
+                glNormal3f $nx $ny $nz
+                glVertex3f [expr {1.0*$col}]  [expr {1.0*$row}] [expr {1.0*$cellval1}]
+                
+                normal [expr {1.0*$col+1.0}] [expr {1.0*$row+1.0}] $cellval2 \
+                        [expr {1.0*$col}] [expr {1.0*$row}] $cellval1 \
+                        [expr {1.0*$col+1.0}] [expr {1.0*$row+1.0}] $cellval4
+                glNormal3f $nx $ny $nz
+                glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row}] [expr {1.0*$cellval2}]
+                
+                normal [expr {1.0*$col+1.0}] [expr {1.0*$row}]  $cellval3 \
+                        [expr {1.0*$col+1.0}] [expr {1.0*$row+1.0 }] $cellval4 \
+                        [expr {1.0*$col}] [expr {1.0*$row}] $cellval1
+                glNormal3f $nx $ny $nz
+                glVertex3f [expr {1.0*$col}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval3}]
+                
+                normal [expr {1.0*$col+1.0}] [expr {1.0*$row+1.0}] $cellval4 \
+                        [expr {1.0*$col}] [expr {1.0*$row+1.0}] $cellval2 \
+                        [expr {1.0*$col+1.0}] [expr {1.0*$row}] $cellval3
+                glNormal3f $nx $ny $nz
+                glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval4}]
+                
+                glEnd
             }
         }
-        glEnd   ; # Finished Drawing The Triangl
-
+        # do bottom left
+        ################################################################################
+        #         set col 1
+        #         set row 1
+        #         DefineTriangles $col $row $ncol $nrow $values
+        #
+        #         glBegin GL_TRIANGLES                        ; # Drawing Using Triangles
+        #
+        ################################################################################
+        #find the normals of the two triangles
+        
+        
+        # glVertex3f $a1x $a1y $a1z
+        # glVertex3f $a2x $a2y $a2z
+        # glVertex3f $a3x $a3y $a3z
+        #
+        # glVertex3f $b1x $b1y $b1z
+        # glVertex3f $b2x $b2y $b2z
+        # glVertex3f $b3x $b3y $b3z
+        #
+        
+        
+        # for {set row 1} {$row<$nrow} {incr row} {
+        # for {set col 1} {$col<$ncol} {incr col} {
+        # set cell1 [expr {($row-1)*$ncol+$col-1}]
+        # set cell2 [expr {($row)*$ncol+$col-1}]
+        # set cell3 [expr {($row)*$ncol+$col}]
+        # set cell4 [expr {($row-1)*$ncol+$col}]
+        # set cellval1 [lindex [lindex $values $cell1] 1]
+        # set cellval2 [lindex [lindex $values $cell2] 1]
+        # set cellval3 [lindex [lindex $values $cell3] 1]
+        # set cellval4 [lindex [lindex $values $cell4] 1]
+        # set length [llength $cellval1]
+        #
+        # if {$length} {
+        # # todo
+        # if {$length>1} {set cellval1 [lindex $cellval1 1]}
+        # if {$cellval1<$useNodes($winId,dataMin)} {
+        # set useNodes($winId,dataMin) $cellval1
+        # }
+        # if {$cellval1>$useNodes($winId,dataMax)} {
+        # set useNodes($winId,dataMax) $cellval1
+        # }
+        #
+        # glVertex3f [expr {1.0*$col}]  [expr {1.0*$row}] [expr {1.0*$cellval1}]
+        # glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row}] [expr {1.0*$cellval4}]
+        # glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval3}]
+        #
+        # glVertex3f [expr {1.0*$col}]  [expr {1.0*$row}] [expr {1.0*$cellval1}]
+        # glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval3}]
+        # glVertex3f [expr {1.0*$col}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval2}]
+        # } else  {
+        # #lappend rowData($row) grey
+        # }
+        #
+        # }
+        # }
+        #glEnd   ; # Finished Drawing The Triangl
+        
+        ################################################################################
+        #         glBegin GL_TRIANGLES                        ; # Drawing Using Triangles
+        #         for {set row 1} {$row<$nrow} {incr row} {
+        #             for {set col 1} {$col<$ncol} {incr col} {
+        #                 set cell1 [expr {($row-1)*$ncol+$col-1}]
+        #                 set cell2 [expr {($row)*$ncol+$col-1}]
+        #                 set cell3 [expr {($row)*$ncol+$col}]
+        #                 set cell4 [expr {($row-1)*$ncol+$col}]
+        #                 set cellval1 [lindex [lindex $values $cell1] 1]
+        #                 set cellval2 [lindex [lindex $values $cell2] 1]
+        #                 set cellval3 [lindex [lindex $values $cell3] 1]
+        #                 set cellval4 [lindex [lindex $values $cell4] 1]
+        #                 set length [llength $cellval1]
+        #
+        #                 if {$length} {
+        #                     # todo
+        #                     if {$length>1} {set cellval1 [lindex $cellval1 1]}
+        #                     if {$cellval1<$useNodes($winId,dataMin)} {
+        #                         set useNodes($winId,dataMin) $cellval1
+        #                     }
+        #                     if {$cellval1>$useNodes($winId,dataMax)} {
+        #                         set useNodes($winId,dataMax) $cellval1
+        #                     }
+        #                     # if [catch {set icolour [expr {int($nswatches*($celval-$min)/$range)}]}] {
+        #                     # return
+        #                     # }
+        #                     #
+        #                     # if {$icolour < 0} {
+        #                     # set icolour 0
+        #                     # } elseif {$icolour > $nswatches} {
+        #                     # set icolour $nswatches
+        #                     # }
+        #                     #lappend rowData($row) $useNodes($winId,c$icolour)
+        #                     glVertex3f [expr {1.0*$col}]  [expr {1.0*$row}] [expr {1.0*$cellval1}]
+        #                     glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row}] [expr {1.0*$cellval4}]
+        #                     glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval3}]
+        #
+        #                     glVertex3f [expr {1.0*$col}]  [expr {1.0*$row}] [expr {1.0*$cellval1}]
+        #                     glVertex3f [expr {1.0*$col+1.0}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval3}]
+        #                     glVertex3f [expr {1.0*$col}]  [expr {1.0*$row+1.0}] [expr {1.0*$cellval2}]
+        #                 } else  {
+        #                     #lappend rowData($row) grey
+        #                 }
+        #
+        #             }
+        #         }
+        #         glEnd   ; # Finished Drawing The Triangl
+        #
+        ################################################################################
         # for {set row $nrow} {$row>=1} {incr row -1} {
         # lappend allData $rowData($row)
         # }
