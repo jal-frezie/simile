@@ -1077,13 +1077,13 @@ proc LoadTableData {tableSpec lineCount} {
 	}
 	foreach headerIndex [lrange $tableSpec $indexStart end] {
 	    lappend indexColumns [lsearch -exact $headerList $headerIndex]
-	    set maxIndices($headerCount) {}
+#	    set maxIndices($headerCount) {}
 	    incr headerCount
 	}
 	if {!$headerCount} {
 	    # use line number as index
 	    set headerCount 1
-	    set maxIndices(0) {}
+#	    set maxIndices(0) {}
 	}
 	set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
 #ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
@@ -1105,9 +1105,11 @@ proc LoadTableData {tableSpec lineCount} {
 		    # enquote the above if indices of llength 1 are needed
 		    if {[llength $newIndex]} {
 			lappend arrayIndex $newIndex
-			if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
-			    lappend maxIndices($indexCount) $newIndex
-			}
+#			if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
+#			    lappend maxIndices($indexCount) $newIndex
+#			}
+			set dummyArray maxIndices$indexCount
+			set ${dummyArray}($newIndex) 1
 			incr indexCount
 		    } else {
 			# if there is an empty index field ignore the line
@@ -1116,7 +1118,8 @@ proc LoadTableData {tableSpec lineCount} {
 		    }
 		}
 	    } else {
-		lappend maxIndices(0) $lineCount
+#		lappend maxIndices(0) $lineCount
+		set maxIndices0($lineCount) 1
 		set arrayIndex $lineCount
 		incr lineCount
 	    }
@@ -1134,7 +1137,7 @@ proc LoadTableData {tableSpec lineCount} {
 	}
 	
 	for {set idxIdx 0} {$idxIdx < $headerCount} {incr idxIdx} {
-	    lappend indexList $maxIndices($idxIdx)
+	    lappend indexList [lsort -real [array names maxIndices$idxIdx]]
 	}
     }
     

@@ -24,6 +24,11 @@ itcl::class similescript::ModelWindow {
         return $winId
     }
     
+    public method CreateSnapWindow {path} {
+        set winId [do_for_node $modelNode snap $modelNode [do_for_node $modelNode GetIdFromCaptionPath $path]]
+        return $winId
+    }
+    
     constructor {} {
         #tk_messageBox -message "ModelWin constructor"
         Hide
@@ -144,6 +149,37 @@ itcl::class similescript::HelperController {
     }
 }
 
+itcl::class similescript::Snap {
+    
+    inherit HelperController
+    
+    variable myNode
+    constructor {modelWindow path} {
+        set winId [$modelWindow CreateSnapWindow $path]
+	set myNode $path
+        Hide
+    }
+
+    public method SaveCurrent {filename} {
+	do_for_node $modelNode SaveSnapToFile $winId $myNode $filename
+    }
+
+    public method Update {} {
+	set updateCmd [$winId.bbframe.buttonBox itemcget 1 -command]
+	uplevel #0 $updateCmd
+    }
+
+    public method StartLogging {filename} {
+	set myId [do_for_node $modelNode GetIdFromCaptionPath $myNode]
+	do_for_node $modelNode StartLogging $winId $modelNode $myId $filename
+    }
+
+    public method StopLogging {} {
+	set myId [do_for_node $modelNode GetIdFromCaptionPath $myNode]
+	do_for_node $modelNode StopLogging $winId $modelNode $myId
+    }
+}
+    
 itcl::class similescript::Helper {
     
     inherit HelperController

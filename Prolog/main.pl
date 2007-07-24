@@ -37,7 +37,7 @@ reEncode(_, A, A, 0) :- atom(A).
 all_ttfn_to_utf8(S, S).
 
 portray(make(E, Conds, P, F, A)) :-
-	print(make(E)).
+	print(make(E, F)).
 
 portray(sm(Name, _,_,_)) :-
 	print(sm(Name)).

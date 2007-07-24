@@ -712,6 +712,7 @@ proc snap {topNode node} {
     pack $w.text -expand yes -fill both
     
     UpdateSnap $w $label $submodels $topNode $node
+    return $w ;# for scripting
 }
 
 proc UpdateSnap {w label submodels topNode node} {
@@ -837,10 +838,13 @@ proc snap_down3 {w values} {
 }
 
 proc SaveSnap {w vname} {
-    global runState
-
     set filename [ChooseFile snap.csv "Save snapshot data as.." 1]
     if {![llength $filename]} return
+    SaveSnapToFile $w $vname $filename
+}
+
+proc SaveSnapToFile {w vname filename} {
+    global runState
     set out [NetOpen $filename w]
     for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
 	puts -nonewline $out index${idx},
@@ -851,26 +855,38 @@ proc SaveSnap {w vname} {
 }
 
 proc LogSnap {w vname tree topNode node} {
-    global runState iconImages
+    global runState
 
     if {[info exists runState(log$node)]} {
-	$w.bbframe.buttonBox itemconfigure 2 -image $iconImages(reel)
-	close [lindex $runState(log$node) 1]
-	unset runState(log$node)
+	StopLogging $w $topNode $node
     } else {
-	$w.bbframe.buttonBox itemconfigure 2 -image $iconImages(noreel)
 	set filename [ChooseFile snap.csv "Log data for $vname as.." 1]
 	if {![llength $filename]} return
-	set out [NetOpen $filename w]
-	set lh time
-	for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
-	    puts -nonewline $out $lh
-	    set lh {}
-	    PutIndNo $out -$idx $runState(val$w)
-	    puts $out {}
-	}
-	set runState(log$node) [list $topNode $out]
+	StartLogging $w $topNode $node $filename
     }
+}
+
+proc StopLogging {w topNode node} {
+    global runState iconImages
+
+    $w.bbframe.buttonBox itemconfigure 2 -image $iconImages(reel)
+    close [lindex $runState(log$node) 1]
+    unset runState(log$node)
+}
+
+proc StartLogging {w topNode node filename} {
+    global runState iconImages
+
+    $w.bbframe.buttonBox itemconfigure 2 -image $iconImages(noreel)
+    set out [NetOpen $filename w]
+    set lh time
+    for {set idx 1} {$idx<=$runState(nst$w)} {incr idx} {
+	puts -nonewline $out $lh
+	set lh {}
+	PutIndNo $out -$idx $runState(val$w)
+	puts $out {}
+    }
+    set runState(log$node) [list $topNode $out]
 }
 
 proc WriteLogs {topNode time vname step} {

@@ -562,6 +562,7 @@ proc PutItThere {t parent} {
 	wm transient $t $parent
 	if [string match Darwin $tcl_platform(os)] {
 	    ::tk::unsupported::MacWindowStyle style $t floatGrowProc
+#	    ::tk::unsupported::MacWindowStyle style $t moveableModal {}
 	}
     } else {
 	wm transient $t

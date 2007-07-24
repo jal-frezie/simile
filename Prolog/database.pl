@@ -64,8 +64,8 @@ clear_model([Funt/Args | Rest]) :-
 	clear_model(Rest).
 
 %empty_tree.
-/* Stuff needed for c database  */
-sicstus_load_foreign_resource(struct_db).
+/* Stuff needed for c database
+sicstus_load_foreign_resource(struct_db). */
 
 :- foreign(empty_tree).
 

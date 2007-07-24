@@ -407,7 +407,7 @@ proc PutRoundedRect {w l t r b stack fatness fillColour fillImage layout \
 #    }
 
 #    MakeSubmodelGrid $w $l $t $r $b $fatness $origX $origY $bgColour
-    if {[string equal incomplete $colourScheme] && $inFat} {
+    if {[string equal incomplete $colourScheme] || !$inFat} {
 	set window_info($w,temporary) $i
     } else {
 	set plRad [expr $cornerRad/$window_info($w,scale)]
@@ -1195,7 +1195,7 @@ proc InnerZoomImage {winId which factor {optFontor none}} {
 	} win32 {
 	    set hideTinies 6
 	} aqua {
-	    set hideTinies 0
+	    set hideTinies 6
 	}
     }
     set n $window_info($winId,top_node)
