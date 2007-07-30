@@ -449,7 +449,31 @@ namespace eval $keyValue {
         }
         
         #puts "Data transferred to 2-d table mirror array"
-        
+#	ShowMessage debug info "Table has [llength [array names rowNames]] rows and [llength [array names colNames]] columns" ok
+	set lineMax 10000
+	set boxMax 1000000
+	if {[llength [array names rowNames]]>$lineMax} {
+	    set scaryFact tooManyRows
+        }
+	if {[llength [array names colNames]]>$lineMax} {
+	    set scaryFact tooManyColumns
+        }
+	if {[llength [array names colNames]]*[llength [array names rowNames]]>$boxMax} {
+	    set scaryFact tooManyCells
+	    set lineMax $boxMax
+        }
+	if {[info exists scaryFact]} {
+	    $winId.t configure -state normal
+	    $winId.t set 0,0 "$::msgs(tableWimpOut)\n$::msgs($scaryFact) $lineMax"
+	    $winId.t width 0 48
+	    $winId.t height 0 2
+	    $winId.t tag cell red 0,0
+	    if {![info exists editMode($winId)]} {
+		$winId.t configure -state disabled
+	    }
+	    return
+	}
+
         set curHeaderRows 0
         set colList [lsort -command [namespace code ReComp] \
                 [array names colNames]]
@@ -479,6 +503,9 @@ namespace eval $keyValue {
         foreach {span old} [$winId.t spans] {
             $winId.t spans $span 0,0
         }
+# Following is faster but flickers too much
+#	destroy $winId.t
+#	CreateTable $winId
         $winId.t config -rows $curHeaderRows -cols $curHeaderCols \
                 -titlerows $curHeaderRows -titlecols $curHeaderCols
         set rowsTop 0
@@ -847,7 +874,9 @@ namespace eval $keyValue {
         set varL [label $varF.label -text Variable]
         set varCB [ttk::combobox $varF.comboBox -values $displayList($winId) \
 		       -state readonly]
-	$varCB current 0
+	if {[llength $displayList($winId)]} {
+	    $varCB current 0
+	}
         pack $varL $varCB -side left
         
         set formatF [frame $formatP.formatF]

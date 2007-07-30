@@ -674,6 +674,19 @@ proc GetShortVals {topNode plName limit} {
 }
     
 ############################## snap: start ###################################
+proc MakeSnapText {w} {
+    text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
+            -xscrollcommand "$w.xscroll set" \
+            -width 30 -height 20 -wrap none\
+            -tabs {5c right 6.8c right 8.6c right 10.4c right}
+    $w.text tag configure colour1 -background #ff9090 -foreground black
+    $w.text tag configure colour2 -background #ffffff -foreground blue \
+            -font {arial 10 bold}
+    $w.text tag configure colour3 -font {arial 9 bold}
+    $w.text tag configure colour4 -background #ffffff -foreground red \
+            -font {arial 10 bold}
+}
+
 proc snap {topNode node} {
     global runState
     
@@ -695,16 +708,7 @@ proc snap {topNode node} {
 		 [list reel.gif "Log to file" \
 		      [list LogSnap $w $label $submodels $topNode $node]]]
     ::graphtools::MakeToolBar $w $tbItems
-    text $w.text -yscrollcommand "$w.yscroll set" -setgrid true \
-            -xscrollcommand "$w.xscroll set" \
-            -width 30 -height 20 -wrap none\
-            -tabs {5c right 6.8c right 8.6c right 10.4c right}
-    $w.text tag configure colour1 -background #ff9090 -foreground black
-    $w.text tag configure colour2 -background #ffffff -foreground blue \
-            -font {arial 10 bold}
-    $w.text tag configure colour3 -font {arial 9 bold}
-    $w.text tag configure colour4 -background #ffffff -foreground red \
-            -font {arial 10 bold}
+    MakeSnapText $w
     scrollbar $w.yscroll -command "$w.text yview"
     pack $w.yscroll -side right -fill y
     scrollbar $w.xscroll -orient horiz -command "$w.text xview"
@@ -718,7 +722,12 @@ proc snap {topNode node} {
 proc UpdateSnap {w label submodels topNode node} {
     global runState
 
-    $w.text delete 1.0 end
+#    $w.text delete 1.0 end
+# very slow for some reason! try deleting and making anew...
+    destroy $w.text
+    MakeSnapText $w
+    pack $w.text -expand yes -fill both
+
     set v1 [set runState(val$w) [TransEnums [GetTransTable $node] \
 		     [lindex [GetCompProperty $topNode Value $node] 0]]]
     set runState(nst$w) 0

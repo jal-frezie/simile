@@ -64,10 +64,10 @@ clear_model([Funt/Args | Rest]) :-
 	clear_model(Rest).
 
 /* Stuff needed for c database */
-empty_tree.
 sicstus_load_foreign_resource(struct_db).
-
 :- foreign(empty_tree).
+/* Stuff needed for prolog database
+empty_tree. */
 
 assert_model(P) :-
 	my_assert(P),

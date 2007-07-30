@@ -883,18 +883,18 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 		Functions), !,
 	    Path = [sm(_,_,_, fm_loop(_, Al))|_];
 	    true),
-	(setof(ParamUpdate,
+/*	(setof(ParamUpdate,
 	       input_params_in(Functions, Path, Step, ParamUpdate),
 	       ParamUpdates), !;
 	ParamUpdates = []),
-	(Id has_class_refinement enum_types of ETS, !,
+*/	(Id has_class_refinement enum_types of ETS, !,
 	    all(compile, make_et_spec, [unify(Id), build(ETS), build(ETS0)]);
 	    ETS0 = []),
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
 	     unify(Used), append(Inters0, []),
-	     append(AssignList0, ParamUpdates)]),
+	     append(AssignList0, [])]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
@@ -1215,9 +1215,9 @@ things that need to be evaluated in the model and turns them into a
 list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
-get_assignment(instance(AssignType, Node, Source, DestRef, _),
-	       DestPath, Step, Swaps, Used, Inters, Assignments) :-
-	AssignType = external, !,
+get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
+	       DestPath, SmStep, Swaps, Used, Inters, Assignments) :-
+	Type = external, !,
 	    (Inters = [],
 	    Source = for_extern(CondElts, Tops),
 	    all(compile, insert_ptr, [unify(DestPath), build(Tops)]),
@@ -1239,48 +1239,66 @@ get_assignment(instance(AssignType, Node, Source, DestRef, _),
 						   BuiltWith)])]);
 	    /* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
-	    from outside*/
-	(is_parameter(Node, Is_P),
-	(member(AssignType, [function, id_function, init_function]),
-	    (Is_P < 1,
-		(AssignType = init_function, !,
-		    Made = init(Dest),
-		    Linker = [make(Dest, [Made, update(Dest)], Path, Step,[])],
-		    UseStep = 0;
-		Made = Dest,
-		    Linker = [],
-		    UseStep = Step),
-		SourceEqn = Source;
-	     Is_P = 1,
-		Made = init(Dest),
-		Linker = [make(Dest, [Made, update(Dest)], Path, Step, [])],
-		UseStep = -2,
-		apply_minmax(Node, Source, SourceEqn));
-	member(AssignType, [compartment, immigration, reproduction]),
-	    Made = update(Dest),
-	    Linker = [],
-	    UseStep = Step,
-	    Source = incr(Step, SourceEqn)), !,
+	    from outside */
+	is_parameter(Node, Is_P),
 	DestRef = elt(_, Dest, X),    
+	((Is_P = 2,
+	    (Type = function, Tgt = Dest, Step = -1, Wait = [on_reload];
+	    Type = init_function, Tgt = init(Dest),
+		Step = 0, Wait = [on_reset]);
+	 Is_P = 1,
+	    Tgt = update(Dest),
+	    (Type = function, Step = SmStep, Wait = [init(Dest), time];
+	    Type = init_function, Step = 0, Wait = [on_reset])), !,
+	all(ame_gen, enum_type_ref, [build(DimTypes), unify(Node),
+				     build(Dims), build(_), build(_)]),
+	    pointer_from(DestPath, DestPtr),
+	    get_dims_from_loops(DestPath, _, SmInds),
+	    make_inds_for(Dims, LocalPath, LocalInds),
+	    append(LocalPath, DestPath, Path),
+	    append(SmInds, LocalInds, Inds),
+	    vars_only(Inds, VarInds, Is_P),
+	    length(VarInds, Count),
+	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Node, Count
+			  | VarInds],
+	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
+	Collects = []),
+	((Is_P < 1,
+	    (Type = init_function, !,
+		UseList = [on_reset | RefList],
+		Made = init(Dest),
+		UseStep = 0;
+	    (Type = id_function,
+		UseList = [can_find_id(Node) | RefList];
+	    Type = function,
+		UseList = RefList), !,
+		Made = Dest,
+		UseStep = SmStep),
+	    SourceEqn = Source;
+	Is_P = 1,
+	    Type = function,
+	    UseList = RefList, 
+	    Made = init(Dest),
+	    UseStep = -2,
+	    apply_minmax(Node, Source, SourceEqn);
+	member(Type, [compartment, immigration, reproduction]),
+	    UseList = RefList, 
+	    Made = update(Dest),
+	    UseStep = SmStep,
+	    Source = incr(SmStep, SourceEqn)), !,
 	final_assignment(SourceEqn, Node, elt(DestPath, Dest, X), Swaps,
 			 UseStep, Used, Expr, Setups, Path, RefList,
 			 AllInters),
-
-	/* on_reset is a special condition that makes sure compartment
-	    initializations are done in step 0 rather than -1 */
-	(AssignType = init_function, !,
-	    UseList = [on_reset | RefList];
-	/* can_find_id is a marker, not used as a condition */
-	AssignType = id_function, !,
-	    UseList = [can_find_id(Node) | RefList];
-	UseList = RefList),
-	/* input parameters are set to their default values on model
-	    initialization only */
 	connect_params([make(Made, UseList, Path, UseStep, Expr) | Setups],
-		       AllInters, Preps, Inters),
-	append(Preps, Linker, Assignments);
-	Assignments = [],
-	    Inters = []).
+		       AllInters, Actions, Inters);
+	Actions = [],
+	Inters = []),
+	((member(Type, [compartment, creation, immigration, reproduction]);
+	        Is_P = 1;
+	        Is_P = 2, Type = init_function), !,
+	    Linkers = [make(Dest, [init(Dest), update(Dest)], DestPath, SmStep, [])];
+	Linkers = []),
+	append([Collects, Actions, Linkers], Assignments).
 
 /* Now...when using a variable in the equation I have been putting
 'made_at' in the conditions, the idea being that I have to exit any
@@ -1383,7 +1401,7 @@ extract_submodel_updates([], _,_, 0, []).
 /* input_params_in: This previously just made dummy assignments to input
 parameters so things using them could be put in the right timestep. However
 with version 2.34 it also makes the 'collect' functions whereby parameters ask
-for values from the execution environment. */
+for values from the execution environment.
 
 input_params_in(Vars, SmPath, SmStep,
 		make(Tgt, Wait, Path, Step, [CollectFn])) :-
@@ -1411,7 +1429,7 @@ input_params_in(Vars, SmPath, SmStep,
 	CollectFn =.. [collect, arr(DestPtr, Val, LocalInds), Param, Count
 		      | VarInds].
 
-/* vars_only: remove indices of vm models from those passed by 'collect'. Per-
+vars_only: remove indices of vm models from those passed by 'collect'. Per-
 record models are treated as vm if the parameter is variable. */
 
 vars_only(List, AllVar, ParamType) :-

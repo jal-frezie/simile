@@ -188,7 +188,20 @@ if {[string match Darwin $tcl_platform(os)]} {
             } AreYouThere {
 # One instance is waiting for another, probably hung, instance to respond, or
 # displaying the dialogue box. Don't confuse issues by starting a third.
-                exit
+#                exit
+# Actually something more sinister may have happened, e.g. both instances were
+# killed while the dilaogue box was up, so wait 5, then check again, and if
+# no change, assume the worst.
+		after 5000
+                set strm [open $checkFor r]
+                set tellProc [gets $strm]
+                set tellProc [gets $strm] ;# second line is last command passed
+                close $strm
+		if {[string equal AreYouThere [lindex $tellProc 0]]} {
+		    FailedHandoverQuery 0
+		} else {
+		    exit
+		}
             } Ready {
 # Another instance appears ready and waiting, ask it to take over...we have to check it is running first as we cannot take back a command that we abandon cos the wait is too long
                 set remStartArgs "AreYouThere"
