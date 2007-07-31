@@ -49,7 +49,7 @@ proc ChooseFile { preferred title canbenew } {
 	    set desc Models
 	    set recordEntry 1
 	} .gif {
-	    set typeList [list .gif .jpg .jpeg .png]
+	    set typeList [list .gif .jpg .jpeg .png .tif .tiff]
 	    set desc Images
 	    set recordEntry 0
 	} {} {
@@ -563,6 +563,7 @@ proc PutItThere {t parent} {
 	if [string match Darwin $tcl_platform(os)] {
 	    ::tk::unsupported::MacWindowStyle style $t floatGrowProc
 #	    ::tk::unsupported::MacWindowStyle style $t moveableModal {}
+	    AbleAllEntries $parent disabled
 	}
     } else {
 	wm transient $t
@@ -613,6 +614,7 @@ proc PackItUp {t} {
 # But the lines are still here, for the benefit of the sketch graph window 
     if {[winfo exists $parent] && [string match Darwin $tcl_platform(os)]} {
 	focus -force [winfo toplevel $parent]
+	AbleAllEntries $parent normal
     }
 }
 
@@ -622,3 +624,12 @@ proc ShellFileRef {spaced} {
     return $straight
 }
 
+proc AbleAllEntries {parent newState} {
+    set menu [[winfo toplevel $parent] cget -menu]
+    if {[winfo exists $menu]} {
+	set lastId [$menu index last]
+	for {set id 0} {$id <= $lastId} {incr id} {
+	    $menu entryconfigure $id -state $newState
+	}
+    }
+}
