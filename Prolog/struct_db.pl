@@ -6,7 +6,7 @@ foreign_resource(struct_db,
 		     find_parent, get_child_list_pointer, get_class, find_ends,
 		     find_prev,
 		     get_in_list_pointer, get_out_list_pointer, get_type,
-		     get_next_list_pointer, get_string_and_next_ptr,
+		     get_next_list_pointer, get_id_and_next_ptr,
 		     add_curve, remove_curve, find_curve,
 		     add_bbox, remove_bbox, find_bbox,
 		     add_iext, remove_iext, find_iext,
@@ -14,7 +14,7 @@ foreign_resource(struct_db,
 		     add_centre, remove_centre, find_centre,
 		     set_hidden, is_hidden]).
 
-foreign(empty_tree, empty_tree).
+foreign(empty_tree, empty_tree(-integer)).
 
 foreign(create_node, create_node(+string)). 
 foreign(add_to_tree, add_to_tree(+string, +string)). 
@@ -34,7 +34,7 @@ foreign(remove_link, remove_link(+string, +string, +string)).
 foreign(unset_type, unset_type(+string, +atom)). 
 foreign(remove_continuation, remove_continuation(+string, +string)).
 
-foreign(find_parent, find_parent(+string, -string)).
+foreign(find_parent, find_parent(+string, -integer)).
 foreign(get_child_list_pointer, get_child_list_pointer(+string, -integer)).
 foreign(get_class, get_class(+string, -atom)). 
 foreign(find_ends, find_ends(+string, -string, -string)).
@@ -44,8 +44,8 @@ foreign(get_in_list_pointer, get_in_list_pointer(+string, -integer)).
 foreign(get_out_list_pointer, get_out_list_pointer(+string, -integer)).
 foreign(get_next_list_pointer, get_next_list_pointer(+string, -integer)).
 foreign(get_type, get_type(+string, -atom)).
-foreign(get_string_and_next_ptr,
-	get_string_and_next_ptr(+integer, -string, -integer)).
+foreign(get_id_and_next_ptr,
+	get_id_and_next_ptr(+integer, -integer, -integer)).
 
 foreign(add_curve, add_curve(+string, +integer, +integer)).
 foreign(remove_curve, remove_curve(+string)).

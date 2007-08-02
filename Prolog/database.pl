@@ -65,7 +65,12 @@ clear_model([Funt/Args | Rest]) :-
 
 /* Stuff needed for c database */
 sicstus_load_foreign_resource(struct_db).
-:- foreign(empty_tree).
+:- foreign(empty_tree(-integer)).
+:- dynamic(node_id_for_root_is/1).
+empty_tree :-
+	empty_tree(Ushrtmx),
+	asserta(node_id_for_root_is(Ushrtmx)).
+
 /* Stuff needed for prolog database
 empty_tree. */
 
@@ -219,14 +224,14 @@ tcl_call(P, Funt, MatchStr) :-
 	all(database, unpack_term, [build(ArgStrs), build(InstArgs)]),
 	Args = InstArgs.
 
-:- foreign(find_parent(+string, -string)).
+:- foreign(find_parent(+string, -integer)).
 :- foreign(get_child_list_pointer(+string, -integer)).
 :- foreign(get_class(+string, -atom)). 
 :- foreign(find_ends(+string, -string, -string)). 
 :- foreign(get_in_list_pointer(+string, -integer)).
 :- foreign(get_out_list_pointer(+string, -integer)).
 :- foreign(get_type(+string, -atom)).
-:- foreign(find_prev(+string, -string)).
+:- foreign(find_prev(+string, -integer)).
 :- foreign(get_next_list_pointer(+string, -integer)).
 :- foreign(find_curve(+string, -integer, -integer)).
 :- foreign(find_bbox(+string, -integer, -integer, -integer, -integer)).
@@ -234,7 +239,7 @@ tcl_call(P, Funt, MatchStr) :-
 :- foreign(find_capt_off(+string, -integer, -integer)).
 :- foreign(find_centre(+string, -integer, -integer)).
 :- foreign(is_hidden(+string)).
-:- foreign(get_string_and_next_ptr(+integer, -string, -integer)).
+:- foreign(get_id_and_next_ptr(+integer, -integer, -integer)).
 c_call(P) :-
 %	safe_tcl_eval([puts, br(write(call(P)))], _),
 	(P = subsystem(Parent, Child), !,
@@ -242,7 +247,8 @@ c_call(P) :-
 	    (var(Parent), !,
 	    	find_all_children(Parent, Child);
 	    find_child(Parent, Child));
-	find_parent(Child, Parent));
+	find_parent(Child, ParentId),
+	    make_node_atom(ParentId, Parent));
 	P = node_class(Node, Class), !,
 	(atom(Node), !;
 	    var(Node), descendent(root, Node)),
@@ -261,7 +267,8 @@ c_call(P) :-
 	P = continues(Arc1, Arc2), !,
 	(var(Arc2), !,
 	    find_next(Arc1, Arc2);
-	find_prev(Arc2, Arc1));
+	find_prev(Arc2, ArcId),
+	    make_arc_atom(ArcId, Arc1));
 	P = graphical_info(Obj, GAttr, Pts), \+ legacy_graphic(GAttr), !,
 	    (GAttr = curve,
 		find_curve(Obj, XK, YB),
@@ -286,7 +293,16 @@ c_call(P) :-
 
 find_all_children(Parent, Child) :-
 	descendent(root, Child),
-	find_parent(Child, Parent).
+	find_parent(Child, ParentId),
+	make_node_atom(ParentId, Parent).
+
+make_node_atom(ParentId, Parent) :-
+	node_id_for_root_is(ParentId), !,
+	    Parent = root;
+	utility:build_name('node', ParentId, 5, Parent).
+
+make_arc_atom(ArcId, Arc) :-
+	utility:build_name('arc', ArcId, 5, Arc).
 
 descendent(Node, Desc) :-
 	Desc = Node;
@@ -299,20 +315,25 @@ find_child(Parent, Child) :-
 
 find_arc_to(Dest, Arc) :-
 	get_in_list_pointer(Dest, Ptr),
-	comps_from_pointer(Ptr, Arc).
+	links_from_pointer(Ptr, Arc).
 
 find_arc_from(Dest, Arc) :-
 	get_out_list_pointer(Dest, Ptr),
-	comps_from_pointer(Ptr, Arc).
+	links_from_pointer(Ptr, Arc).
 
 find_next(PrevArc, SubsArc) :-
 	get_next_list_pointer(PrevArc, Ptr),
-	comps_from_pointer(Ptr, SubsArc).
+	links_from_pointer(Ptr, SubsArc).
 	
 comps_from_pointer(Ptr, Comp) :-
 	\+ Ptr = 0, % or whatever a NULL translates to
-	get_string_and_next_ptr(Ptr, First, NxtPtr),
-	(Comp = First; comps_from_pointer(NxtPtr, Comp)).
+	get_id_and_next_ptr(Ptr, First, NxtPtr),
+	(make_node_atom(First, Comp); comps_from_pointer(NxtPtr, Comp)).
+
+links_from_pointer(Ptr, Comp) :-
+	\+ Ptr = 0, % or whatever a NULL translates to
+	get_id_and_next_ptr(Ptr, First, NxtPtr),
+	(make_arc_atom(First, Comp); links_from_pointer(NxtPtr, Comp)).
 
 legacy_graphic(Attr) :-
 	member(Old, [bowtie, course]),

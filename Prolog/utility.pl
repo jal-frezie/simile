@@ -36,6 +36,10 @@ unique_name( Atom, Name, Size ) :-
 	    LastAnswer = 0),
 	FirstAnswer is LastAnswer+1,
 	count_to(FirstAnswer, 100000, 100, Integer), %fast forward if retrying
+	build_name(Atom, Integer, Size, Name),
+	(assert(genint(Atom, Integer)); retract(genint(Atom, Integer)), fail).
+
+build_name(Atom, Integer, Size, Name) :-
 	name( Atom, AtomChars ),
 	name( Integer, IntegerChars ),
 	(nonvar(Size),
@@ -47,9 +51,8 @@ unique_name( Atom, Name, Size ) :-
 	var(Size),
 	    TruncatedIntegerChars = IntegerChars),
 	append( AtomChars, TruncatedIntegerChars, NameChars ),
-	name( Name, NameChars ),
-	(assert(genint(Atom, Integer)); retract(genint(Atom, Integer)), fail).
-
+	name( Name, NameChars ).
+	
 rt_portray(F) :-
 	wrap_fixes(F).
 
