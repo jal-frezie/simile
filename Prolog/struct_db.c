@@ -52,7 +52,7 @@ typedef struct arc_t {
     
 node nodes[USHRT_MAX];
 arc arcs[USHRT_MAX];
-id_list* roots = NULL;
+id_list* roots;
 
 long usedBits = 0;
 void* safe_malloc(count) {
@@ -75,6 +75,7 @@ FORPROL empty_tree(long* ushrtmx) {
   for (count=0; count<4*USHRT_MAX; ++count) {
     id_lists[count].me = USHRT_MAX;
   }
+  roots = NULL;
   *ushrtmx = USHRT_MAX;
   SUCCEED;
 }
@@ -94,7 +95,7 @@ unsigned short get_number(char* nodeId) {
   return atoi(nodeId+4);
 }
 
-unsigned int get_arc_number(char* nodeId) {
+unsigned short get_arc_number(char* nodeId) {
   return atoi(nodeId+3);
 }
 

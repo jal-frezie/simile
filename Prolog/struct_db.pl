@@ -38,7 +38,7 @@ foreign(find_parent, find_parent(+string, -integer)).
 foreign(get_child_list_pointer, get_child_list_pointer(+string, -integer)).
 foreign(get_class, get_class(+string, -atom)). 
 foreign(find_ends, find_ends(+string, -string, -string)).
-foreign(find_prev, find_prev(+string, -string)).
+foreign(find_prev, find_prev(+string, -integer)).
 
 foreign(get_in_list_pointer, get_in_list_pointer(+string, -integer)).
 foreign(get_out_list_pointer, get_out_list_pointer(+string, -integer)).

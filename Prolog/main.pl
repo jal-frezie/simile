@@ -54,7 +54,8 @@ trim_conds(Full, Short) :-
 
 main :-
 	/* first clear state from previous run (only matters in dev sys)
-	database:clear_database, or not as the case may be */
+	or not as the case may be */
+	database:clear_database,
 	database:empty_tree,
 	state:retractall(model_in(_,_)),
 	prolog_flag(version, FullVnum),

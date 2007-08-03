@@ -831,7 +831,7 @@ reroute_sections(Rerouters) :-
 	full_section(Rerouters, Type, [Go | Rest], Remains),
 	suffix([Stop], [Go | Rest]),
 	(m_class:Go follows Start; m_class:Go is_connector from Start to _),
-	(m_class:End follows Stop; local_ends(Stop, _, End)),
+	(m_class:End follows Stop; event:local_ends(Stop, _, End)),
 	event:draw_line_to(Start, Type, End),
 	event:reuse_route(Type, Stop),
 	reroute_sections(Remains).
