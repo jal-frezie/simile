@@ -709,6 +709,46 @@ proc equationDoTable {parent tgt startLine} {
 	      -width 16 -state readonly]
     pack $fcols
     pack $fi.interp -fill x -expand true
+
+    $t add [set ft [frame $t.gdal]] -text "Data from GeoTIFF etc."
+    label $ft.instructions -wrap 400 -text "Choose a georeferenced data file, then select row and column at which to start and finish loading data."
+    pack $ft.instructions -side top -anchor w -padx 2 -pady 2
+    TitleFrame $ft.fdata -text "Data file "
+    set fdata [$ft.fdata getframe]
+    set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
+    bind $dfile <Return> "LoadDataFile gdal 0"
+    pack $dfile -side left -expand true -fill x
+    button $fdata.new -compound left -image $iconImages(open) -text Browse \
+	-command {LoadDataFile gdal 1}
+    pack $fdata.new -side bottom -padx 4 -pady 4
+    pack $fdata -fill x
+    pack $ft.fdata -fill x
+    TitleFrame $ft.limits -text "Boundaries of area to load "
+    set flim [$ft.limits getframe]
+    pack [frame $flim.ycapt] -side left -fill both -expand true
+    pack [frame $flim.yval] -side left -fill both -expand true
+    pack [frame $flim.xcapt] -side left -fill both -expand true
+    pack [frame $flim.xval] -side left -fill both -expand true
+
+    pack [label $flim.ycapt.lo -text "Start at row:"] \
+	-expand true -fill x
+    pack [label $flim.ycapt.hi -text "Finish at row:"] \
+	-expand true -fill x
+    pack [label $flim.xcapt.lo -text "Start at column:"] \
+	-expand true -fill x
+    pack [label $flim.xcapt.hi -text "Finish at column:"] \
+	-expand true -fill x
+
+    pack [Entry $flim.yval.lo -textvariable table_entry(row1)] \
+	-expand true -fill x
+    pack [Entry $flim.yval.hi -textvariable table_entry(rown)] \
+	-expand true -fill x
+    pack [Entry $flim.xval.lo -textvariable table_entry(col1)] \
+	-expand true -fill x
+    pack [Entry $flim.xval.hi -textvariable table_entry(coln)] \
+	-expand true -fill x
+    pack $ft.limits -fill both -expand true
+
     #
     # OK, Cancel and Help buttons
     frame .table.fbuttons
@@ -753,6 +793,12 @@ proc equationDoTable {parent tgt startLine} {
 		set table_entry(trnval) [lindex $table_entry(data) 8]
 		set table_entry(othval) \
 		    [TagToName [lindex $table_entry(data) 9]]
+	    } ,gdal {
+		.table.notebook select .table.notebook.gdal
+		set table_entry(row1) [lindex $table_entry(data) 2]
+		set table_entry(rown) [lindex $table_entry(data) 3]
+		set table_entry(col1) [lindex $table_entry(data) 4]
+		set table_entry(coln) [lindex $table_entry(data) 5]
 	    } default {
 		.table.notebook select .table.notebook.columns
 		set table_entry(dataField) [lindex $table_entry(data) 1]
@@ -862,6 +908,10 @@ proc AcquireTableData {redo startLine} {
 			       $table_entry(blkval) $table_entry(whtval) \
 			       $table_entry(trnval) \
 			       [NameToTag $table_entry(othval)]]
+	} .table.notebook.gdal {
+	    set tableSpec [list $table_entry(fileName) ,gdal \
+			       $table_entry(row1) $table_entry(rown) \
+			       $table_entry(col1) $table_entry(coln)]
 	}
     }
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
@@ -923,6 +973,8 @@ proc LoadDataFile {mode query} {
     
     if {[string equal image $mode]} {
 	set type .gif
+    } elseif {[string equal gdal $mode]} {
+	set type .tif
     } else {
 	set type .csv
     }
@@ -943,32 +995,43 @@ proc LoadDataFile {mode query} {
 	}
     }
 
-    gets $stream firstLine
-    switch $mode {
-	columns {
-	    set i 1
-	    foreach hd [split $firstLine ,] {
-		$fheads.lheads insert end hd$i -text [string trim $hd]
-		incr i
+    if {[string equal gdal $mode]} {
+	close $stream
+	package require gdal
+	set hdl [gdal_open_read_only $table_entry(fileName)]
+	set table_entry(col1) 1
+	set table_entry(coln) [gdal_get_x_size $hdl]
+	set table_entry(row1) 1
+	set table_entry(rown) [gdal_get_y_size $hdl]
+	gdal_close $hdl
+    } else {
+	gets $stream firstLine
+	switch $mode {
+	    columns {
+		set i 1
+		foreach hd [split $firstLine ,] {
+		    $fheads.lheads insert end hd$i -text [string trim $hd]
+		    incr i
+		}
+	    } grid {
+		set table_entry(col1) 1
+		set table_entry(coln) [llength [split $firstLine ,]]
+		set table_entry(row1) 1
+		set table_entry(rown) 1
+		while {[gets $stream firstLine]!=-1} {
+		    incr table_entry(rown)
+		}
+	    } image {
+		catch {image delete tableImage}
+		image create photo tableImage -file $table_entry(fileName)
+		set table_entry(col1) 1
+		set table_entry(coln) [image width tableImage]
+		set table_entry(row1) 1
+		set table_entry(rown) [image height tableImage]
 	    }
-	} grid {
-	    set table_entry(col1) 1
-	    set table_entry(coln) [llength [split $firstLine ,]]
-	    set table_entry(row1) 1
-	    set table_entry(rown) 1
-	    while {[gets $stream firstLine]!=-1} {
-		incr table_entry(rown)
-	    }
-	} image {
-	    catch {image delete tableImage}
-	    image create photo tableImage -file $table_entry(fileName)
-	    set table_entry(col1) 1
-	    set table_entry(coln) [image width tableImage]
-	    set table_entry(row1) 1
-	    set table_entry(rown) [image height tableImage]
 	}
+	close $stream
     }
-    close $stream
     set fidx [$fc.select.idxs getframe]
     $fidx.lidx delete [$fidx.lidx items]
     return 1
@@ -1057,6 +1120,32 @@ proc LoadTableData {tableSpec lineCount} {
 			    [expr [lindex $tableSpec 6]+$fract*([lindex $tableSpec 7]-[lindex $tableSpec 6])/255.0]
 		    }
 	    }
+	set indexList [list $rowList $colList]
+    } elseif {[string equal ,gdal [lindex $tableSpec 1]]} {
+	set rowList {}
+	set colList {}
+	package require gdal
+	set hg [gdal_open_read_only [lindex $tableSpec 0]]
+	set hdl [gdal_get_raster_band $hg 1]
+	set nValues [gdal_get_raster_data $hdl \
+			 [expr [lindex $tableSpec 4]-1] \
+			 [expr [lindex $tableSpec 2]-1] \
+			 [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]] \
+			 [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]]
+	gdal_close $hg
+	set yInd 1
+	foreach nLine $nValues {
+	    lappend rowList $yInd
+	    set xInd 1
+	    foreach nPt $nLine {
+		if {$yInd==1} {
+		    lappend colList $xInd
+		}
+		set paramArray(top,$yInd,$xInd) $nPt
+		incr xInd
+	    }
+	    incr yInd
+	}
 	set indexList [list $rowList $colList]
     } else {
 #ShowMessage debug info "Loading table with data $tableSpec" ok
