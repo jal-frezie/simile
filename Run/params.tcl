@@ -283,11 +283,8 @@ proc purge {list toGo} {
 }
 
 proc ZapParams {topNode smPath metaFile} {
-    global whichParamsAffected
-    
-    array unset whichParamsAffected
     MergeParams $topNode /[GetExecTitle $topNode]$smPath $metaFile 0 0
-    AcceptAll $topNode [array names whichParamsAffected] 1 -1
+#    AcceptAll $topNode [array names whichParamsAffected] 1 -1
 }
 
 proc DoneParams {topNode} {
@@ -308,7 +305,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 }
 
 proc AcceptData {topNode compName notInput complain} {
-    global paramDims runState msgs paramLocns
+    global paramDims runState msgs paramLocns whichParamsAffected
     if {$notInput==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -318,32 +315,33 @@ proc AcceptData {topNode compName notInput complain} {
     }
     upvar \#0 $dataLocn suppliedData
     upvar \#0 $widgetLocn outNames
-
     set node [IdFromTail $topNode $compName $notInput]
-    if {$complain > -1} {
-        if {![string equal disabled [$outNames($compName).e cget -state]]} {
-            set newData [UglifyValList [$outNames($compName).e get]]
-            if {![string equal $newData $suppliedData($compName)]} {
-                set msgs(param_source_$compName) Unsaved
-                set suppliedData($compName) $newData
-            }
-        }
-    }
-    
+
     set dataChanged 0
     # for each constant value, check whether it has been changed, and if so,
-    # flag a complete model rebuild. Do same if running_c lost due to crash
-    # or model not yet started
-    
-    # refinement needed: changes to compartments or time series only need a reset
-    
-    if {$runState($topNode,modelRunning)<=2} {
-        set dataChanged 1
-    } elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
-        set dataChanged 1
-    } elseif {[string compare [lindex $oldVal 0] $suppliedData($compName)]} {
-        set dataChanged 1
+    # flag a level 1 model rebuild. Do same if running_c lost due to crash
+    # or model not yet started. refinement needed: changes to compartments 
+    #or time series only need a reset
+    if {[string equal disabled [$outNames($compName).e cget -state]]} {
+	if {[info exists whichParamsAffected($compName)]} {
+	    unset whichParamsAffected($compName)
+	    set dataChanged 1
+	}	
+    } else {
+	set newData [UglifyValList [$outNames($compName).e get]]
+	if {![string equal $newData $suppliedData($compName)]} {
+	    set msgs(param_source_$compName) Unsaved
+	    set suppliedData($compName) $newData
+	}
+	if {$runState($topNode,modelRunning)<=2} {
+	    set dataChanged 1
+	} elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
+	    set dataChanged 1
+	} elseif {![string equal [lindex $oldVal 0] $suppliedData($compName)]} {
+	    set dataChanged 1
+	}	    
     }
+    
     # Make array form if data has changed
     if {$dataChanged} {
         #   set msgs(param_source_$compName) Unsaved
@@ -410,23 +408,19 @@ proc AcceptData {topNode compName notInput complain} {
                         $suppliedData($compName) $useCppArray} result]} {
             # new bit for using it as an input tool: notify that we have values
             lappend suppliedData(needed) $compName
-            if {$complain>-1} {
-                ColourCaptions $outNames($compName) red
-                if {$complain>0} {
-                    if {[catch {llength $result} rlen]} {
-			error $result ;# unplanned error
-		    } elseif {$rlen} {
-                        set where " at indices [lrange $result 0 end-1]"
-                    } else {
-                        set where {}
-                    }
-                    ShowMessage "Problem setting $whatMaking value" warning "While attempting to load the $whatMaking value \"$compName\"$where the following problem occurred: [lindex $result end]" ok
-                }
+	    ColourCaptions $outNames($compName) red
+	    if {$complain>0} {
+		if {[catch {llength $result} rlen]} {
+		    error $result ;# unplanned error
+		} elseif {$rlen} {
+		    set where " at indices [lrange $result 0 end-1]"
+		} else {
+		    set where {}
+		}
+		ShowMessage "Problem setting $whatMaking value" warning "While attempting to load the $whatMaking value \"$compName\"$where the following problem occurred: [lindex $result end]" ok
             }
         } else {
-            if {$complain>-1} {
-                ColourCaptions $outNames($compName) black
-            }
+	    ColourCaptions $outNames($compName) black
             set suppliedData(needed) [purge $suppliedData(needed) $compName]
 	    if {[info exists runState($topNode,reloadParams)]} {
 		if {$result<$runState($topNode,reloadParams)} {
@@ -438,8 +432,12 @@ proc AcceptData {topNode compName notInput complain} {
             }
             # currently this always causes an init, which may be unnecessary
         }
-    }
-    #puts "paramData now [array get paramData]"
+    } else {
+# it might be we decided not to try an update because user reversed a change 
+# that broke it and now data is same as what we already had, in which case...
+	set suppliedData(needed) [purge $suppliedData(needed) $compName]
+    }    
+#puts "paramData now [array get paramData]"
 }
 
 # rsearch gives index of last value
@@ -846,7 +844,7 @@ namespace eval fileparams {
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
-    global paramDims paramState mimeSquirter simtmpdir whichParamsAffected msgs
+    global paramDims paramState mimeSquirter simtmpdir msgs whichParamsAffected
     global SimileProject
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -952,7 +950,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		}
                 set suppliedData($restoredComp) \
                         [LoadTableData $paramState($restoredComp) $startLine]
-                set whichParamsAffected($restoredComp) 1
+		set whichParamsAffected($restoredComp) 1
                 set msgs(param_source_$restoredComp) [concat $newPopup \
                         (reference to $VFile)]
             } else {
@@ -964,7 +962,6 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 		    # allow special time points and values to be recognized
                  }
                 if {[SensibleValue $trans $suppliedData($restoredComp)]>0} {
-                    set whichParamsAffected($restoredComp) 1
                     set msgs(param_source_$restoredComp) "$newPopup (literal)"
                 } else {
 		    if {![llength $trans]} {
@@ -1109,7 +1106,7 @@ proc VarType {testVar types} {
 }
 
 proc GetFromTable {parent compName startLine} {
-    global paramState paramDims table_entry msgs
+    global paramState paramDims table_entry msgs whichParamsAffected
     if {$startLine==-1} {
 	set dataLocn targetData
 	set widgetLocn targetNames
@@ -1140,6 +1137,7 @@ proc GetFromTable {parent compName startLine} {
     }
     if {$newSource} {
         set suppliedData($compName) $table_entry(values)
+	set whichParamsAffected($compName) 1
         FillIfSmall $outNames($compName).e $suppliedData($compName)
         switch $newSource {
             2 {

@@ -711,17 +711,18 @@ namespace eval $keyValue {
             foreach colEntry [array names colIds $winId,*] {
                 set colsHeaders [lindex [split $colEntry ,] 1]
                 set subscript [eval {concat} $subscriptTemplate]
+# puts "$subscriptTemplate evalled to $subscript"
                 set src ::data${winId}($rowIds($rowEntry),$colIds($colEntry))
                 if {[info exists $src]} {
                     set values($subscript) [EnquoteIfNonNumeric [set $src]]
                 }
             }
         }
-        #puts "values: [array get values]"
+# puts "values: [array get values]"
         
         # Now copy array values into lists with one less index
         # Any with fewer indices than rest will get ignoredddd
-        while {[llength [set vlist [array get values ?*]]]} {
+        while {[llength [set vlist [ArrayGetSorted values]]]} {
             unset values
             foreach {indcol val} $vlist {
                 set shortcol [lrange $indcol 0 end-1]
@@ -732,6 +733,17 @@ namespace eval $keyValue {
         return [lindex $values() 1]
     }
     
+    proc ArrayGetSorted {arrayPtr} {
+	set result {}
+	upvar 1 $arrayPtr arrayName
+	set nameList [array names arrayName ?*]
+# puts "About to sort $nameList"
+	foreach name [lsort -real -index end $nameList] {
+	    lappend result $name $arrayName($name)
+	}
+	return $result
+    }
+
     proc ReComp {l1 l2} {
         if {[string match $l1 $l2]} {
             return 0
