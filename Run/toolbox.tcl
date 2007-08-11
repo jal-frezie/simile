@@ -975,10 +975,6 @@ proc ControlDraw {prologVersion} {
         }
         close $cacheStream
     }
-    if {[llength $custom(hotlist)]} {
-        RecordPathChoice .sml [lindex $custom(hotlist) 0] 0
-
-    }
     
     Pref_Init $custom(prefDir)/.prefs
     Pref_Add {  {custom(winPosn) winPosn {CHOICE {Where it was last time} {OS default position}} "Place initial window:"} \
@@ -1041,9 +1037,7 @@ proc ControlDraw {prologVersion} {
     if {[info exists env(OPEN_MODEL)]} {
         set openModel [brainwash $env(OPEN_MODEL)]
         # Add to path and recently opened files data
-
-
-        RecordPathChoice .sml $openModel 1
+        RecordPathChoice .sml $openModel {}
     } else {
         set openModel [lindex [glob -nocomplain $custom(prefDir)/*.smx] 0]
 # if there are any logfiles from unsaved models, pick one
@@ -1432,12 +1426,13 @@ proc GetParts {top tree} {
     return $mimes
 }
 
-proc ConvertSSxml {} {
+proc ConvertSSxml {node} {
     global simtmpdir
     package require xslt
     package require mime
 
-    set importSrc [ChooseFile spreadsheet.xml "Import spreadsheet from:" 0]
+    set importSrc [ChooseFile spreadsheet.xml "Import spreadsheet from:" 0 \
+		      $node]
     set mm1 [mime::initialize -canonical application/x-xml 
 	     -encoding base64 -file $importSrc]
     set XML [mime::getbody $mm1]
@@ -1655,7 +1650,10 @@ proc UnOrReDo {curWin fwd} {
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
 
 proc ExportPostscript { winId } {
-    set psfile [ChooseFile image.ps "Name of postscript file" 1]
+    global window_info
+
+    set psfile [ChooseFile image.ps "Name of postscript file" 1 \
+		   $window_info($winId,top_node)]
     # check for cancel
     if {![string match */ $psfile]} {
         
@@ -1755,7 +1753,7 @@ proc SpitPS {winId psfile} {
 }
 
 proc InsertModel {winId} {
-    set insertion [ChooseFile model.sml "Model file to insert" 0]
+    set insertion [ChooseFile model.sml "Model file to insert" 0 {}]
     if {![string match */ $insertion]} {
 
         Reopen $winId $insertion insert
@@ -1771,7 +1769,7 @@ proc Reopen {canvas oldFile op} {
         set userinfo(done) $welcomeDone
     }
     
-    RecordPathChoice .sml $oldFile 1
+    RecordPathChoice .sml $oldFile {}
     set custom(hotlist) [linsert $custom(hotlist) 0 $oldFile]
     MenuSelect $canvas $op $oldFile
     RunIfPackage
@@ -2046,30 +2044,40 @@ proc restore_equation {winId bar} {
 
 ##############################    Formula bar    #############################
 
-proc RecordPathChoice {fileType chosenFile recordEntry} {
+proc RecordPathChoice {fileType chosenFile context} {
     global chosenPaths custom
-    set chosenPaths($fileType) \
-        [set chosenPaths(latest) [file dirname $chosenFile]]
-    if {$recordEntry} {
-    set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
+    if {[llength $context]} {
+	set chosenPaths($fileType,$context) \
+	    [set chosenPaths(latest,$context) [file dirname $chosenFile]]
+    } else { ;# it's a model file
+	set custom(hotlist) [linsert $custom(hotlist) 0 $chosenFile]
     }
 }
 
-proc GetPathChoice {fileType} {
+proc GetPathChoice {fileType context} {
     global chosenPaths custom
-    set egDir $custom(prefDir)/Examples
-    if {[info exists chosenPaths($fileType)]} {
-    set ch $chosenPaths($fileType)
-    } elseif {[info exists chosenPaths(latest)]} {
-    set ch $chosenPaths(latest)
-    } elseif {[file exists $egDir]} {
-    set ch $egDir
-    } else {
-    set ch [pwd]
+
+# defaults in ascending order of preference -- pick best that exists
+    set ch [pwd] ;# current directory
+    if {[file exists [set test $custom(prefDir)/Examples]]} {
+	 set ch $test
+    } ;# examples directory
+    foreach prevChoice $custom(hotlist) {
+	if {[file exists $prevChoice]} {
+	    set ch [file dirname $prevChoice]
+	    break
+	}
+    } ;# previous model choices, most recent best
+    if {[llength $context]} {
+	if {[info exists chosenPaths($fileType,$context)]} {
+	    set ch $chosenPaths($fileType,$context) ;# last file same type
+	} elseif {[info exists chosenPaths(latest,$context)]} {
+	    set ch $chosenPaths(latest,$context) ;# last file any type
+	}
     }
 # make sure it existsss
     while {![file exists $ch]} {
-    set ch [file dirname $ch]
+	set ch [file dirname $ch]
     }
     return $ch
 }

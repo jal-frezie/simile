@@ -403,7 +403,7 @@ proc SaveView {} {
 
     set topNode [GetNodeFromFocus]
     set nameOfHelperStateFile($topNode) \
-	[ChooseFile iotools.shf "Save view specification file" 1]
+	[ChooseFile iotools.shf "Save view specification file" 1 $topNode]
     if {[llength $nameOfHelperStateFile($topNode)]} {
 	set tempFile [file join $simtmpdir temp_out.shf]
         set stream [NetOpen $tempFile w]
@@ -455,7 +455,7 @@ proc LoadView {} {
     global helperTable nameOfHelperStateFile errorInfo
     set topNode [GetNodeFromFocus]
     set nameOfHelperStateFile($topNode) \
-	[ChooseFile iotools.shf "Open view specification file" 0]
+	[ChooseFile iotools.shf "Open view specification file" 0 $topNode]
     if {[llength $nameOfHelperStateFile($topNode)]} {
 	CreateView $topNode $nameOfHelperStateFile($topNode)
     }
@@ -702,7 +702,7 @@ proc snap {topNode node} {
     wm title $w "[BlankCrs $label] at time $runState($topNode,currentTime)"
     set tbItems [list \
 		 [list save.gif "Save to file" \
-		      [list SaveSnap $w $label]] \
+		      [list SaveSnap $w $label $topNode]] \
 		 [list refresh.gif "Update" \
 		      [list UpdateSnap $w $label $submodels $topNode $node]] \
 		 [list reel.gif "Log to file" \
@@ -846,8 +846,8 @@ proc snap_down3 {w values} {
     }
 }
 
-proc SaveSnap {w vname} {
-    set filename [ChooseFile snap.csv "Save snapshot data as.." 1]
+proc SaveSnap {w vname topNode} {
+    set filename [ChooseFile snap.csv "Save snapshot data as.." 1 $topNode]
     if {![llength $filename]} return
     SaveSnapToFile $w $vname $filename
 }
@@ -869,7 +869,7 @@ proc LogSnap {w vname tree topNode node} {
     if {[info exists runState(log$node)]} {
 	StopLogging $w $topNode $node
     } else {
-	set filename [ChooseFile snap.csv "Log data for $vname as.." 1]
+	set filename [ChooseFile snap.csv "Log data for $vname as.." 1 $topNode]
 	if {![llength $filename]} return
 	StartLogging $w $topNode $node $filename
     }

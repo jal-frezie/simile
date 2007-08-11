@@ -8,7 +8,9 @@
 #
 proc Disaggregate {parent title colour image imgpos type fatness icount step \
             desc comment enumLists xproc xinc xlibs eqnunit hide separate} {
-    global disaggregate tcl_platform
+    global disaggregate tcl_platform window_info
+
+    set mdl $window_info($parent,top_node)
     foreach varName {colour image imgpos type fatness \
                 icount xproc xinc xlibs eqnunit hide separate} {
         set disaggregate($varName) [set $varName]
@@ -84,7 +86,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     $colourf.fixcolour configure -bg $disaggregate(colour)
     set disaggregate(defColour) $disaggregate(colour)
     pack [button $colourf.setimage -text "Image..." \
-            -width 7 -command "ChooseImage $posRBs"] \
+            -width 7 -command "ChooseImage $posRBs $mdl"] \
             -padx 2 -pady 4 -side left
     pack $posRBs -padx 2 -pady 4 -side left
     set rbState [ChooseText [string equal $disaggregate(image) none] \
@@ -186,7 +188,7 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     pack [checkbutton $mathf.extcode.whether -text "Use own code" \
 	      -variable disaggregate(useOwnCode) -command "AbleSetup $mathf"] \
 	-side left -anchor w
-    pack [button $mathf.extcode.how -text Setup -command ExtCodeSetup]
+    pack [button $mathf.extcode.how -text Setup -command "ExtCodeSetup $mdl"]
     AbleSetup $mathf
     #    checkbutton $mathf.matherror -text "Ignore math errors during calculation" \
     #            -variable disaggregate(matherror)
@@ -317,7 +319,7 @@ proc AbleSetup {mathf} {
 	[ChooseText $disaggregate(useOwnCode) normal disabled]
 }
 
-proc ExtCodeSetup {} {
+proc ExtCodeSetup {mdl} {
     global disaggregate
 
     set t [PutItThere .extcodesetup .disaggregation]
@@ -335,7 +337,7 @@ proc ExtCodeSetup {} {
     $incFileTxt insert 1.0 $disaggregate(xinc)
     $incFileTxt configure -state disabled
     pack [button [$t.incfilefr getframe].btn -text "Browse" \
-	      -command "ChangeIncFile $incFileTxt"] -anchor e -side right
+	      -command "ChangeIncFile $incFileTxt $mdl"] -anchor e -side right
 
     pack [TitleFrame $t.liblistfr -text "Library files:"] \
 	-padx 4 -pady 4 -fill x
@@ -344,8 +346,8 @@ proc ExtCodeSetup {} {
     foreach libFile $disaggregate(xlibs) {
 	${LibListFr}.box insert end $libFile
     }
-    pack [button ${LibListFr}.badd -text Add -command "AddLibF $LibListFr"] \
-	-anchor w -side top
+    pack [button ${LibListFr}.badd -text Add \
+	      -command "AddLibF $LibListFr $mdl"] -anchor w -side top
     pack [button ${LibListFr}.bdel -text Delete\
 	     -command "RemoveLibF $LibListFr"] -anchor w -side top
 
@@ -367,8 +369,8 @@ proc ExtCodeSetup {} {
     PackItUp $t
 }    
 
-proc ChangeIncFile {incFileTxt} {
-    set newFile [ChooseFile external.cpp "External source/header file:" 0]
+proc ChangeIncFile {incFileTxt mdl} {
+    set newFile [ChooseFile external.cpp "External source/header file:" 0 $mdl]
     if {[string length $newFile]} {
 	$incFileTxt configure -state normal
 	$incFileTxt delete 1.0 end
@@ -377,9 +379,9 @@ proc ChangeIncFile {incFileTxt} {
     }
 }
 
-proc AddLibF {LibListFr} {
+proc AddLibF {LibListFr mdl} {
     set newFile [ChooseFile library[linkableExt [info sharedlibextension]] \
-		     "External library file:" 0]
+		     "External library file:" 0 $mdl]
     if {[string length $newFile]} {
 	if {![string match lib* $newFile]} {
 	    ${LibListFr}.box insert end $newFile
@@ -610,7 +612,7 @@ proc UpdateColour {parent f} {
 
 package require Img
 
-proc ChooseImage {posRBs} {
+proc ChooseImage {posRBs mdl} {
     global disaggregate
     
     set uid 0
@@ -622,7 +624,7 @@ proc ChooseImage {posRBs} {
     image create photo $newImage
     set choosing 1
     while {$choosing} {
-        set new [ChooseFile image.gif {Image for model background} 0]
+        set new [ChooseFile image.gif {Image for model background} 0 $mdl]
         if {[llength $new]} {
             if {![catch {$newImage read $new -shrink} readFlop]} {
                 if {![llength $readFlop]} {
@@ -1356,7 +1358,7 @@ proc TrackSize {canvas item} {
 }
 
 ############################################## Equation listing
-proc equationlisting_start {DefEquationListingFileName} {
+proc equationlisting_start {DefEquationListingFileName topNode} {
     global equationlist tcl_platform DefaultEquationListingFileName
     set DefaultEquationListingFileName $DefEquationListingFileName
     set w .equations
@@ -1379,7 +1381,7 @@ proc equationlisting_start {DefEquationListingFileName} {
     
     set fm [menu $w.fileMenu -tearoff 0]
     $m add cascade -label File -underline 0 -menu $fm
-    $fm add command -label Save -command "EquationListingSave $w" \
+    $fm add command -label Save -command "EquationListingSave $w $topNode" \
             -accelerator "$accKey+S"
     $fm add separator
 #    if {[string match windows $tcl_platform(platform)]} {
@@ -1625,20 +1627,11 @@ proc equationlisting_addvariable {isub ivar vartype varlabel expression where mi
     
 }
 
-proc EquationListingSave {winId} {
+proc EquationListingSave {winId topNode} {
     global equationlist DefaultEquationListingFileName
-        
-    set types {
-        {{Text Files} {.txt} }
-        {{All Files} * }
-    }
-    
-    set fname [tk_getSaveFile\
-            -defaultextension .txt \
-            -filetypes $types \
-            -initialdir [GetPathChoice .sml] \
-            -initialfile $DefaultEquationListingFileName \
-            -parent $winId ]
+
+    set fname [ChooseFile $DefaultEquationListingFileName \
+		   "Save equation listing as:" 1 $topNode]
     if {![string match "" $fname]} {
         set f [open $fname w]
         puts $f [$equationlist(textbox) get 1.0 end]

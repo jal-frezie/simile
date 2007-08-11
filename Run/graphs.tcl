@@ -521,7 +521,9 @@ proc FineX { c } {
 # TABLE LOADING
 #####################################################################
 proc equationDoTable {parent tgt startLine} {
-    global table_entry iconImages tcl_platform
+    global table_entry iconImages tcl_platform window_info
+
+    set mdl $window_info($parent,top_node)
     PutItThere .table $parent
     wm title .table "Table data for [BlankCrs $tgt]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
@@ -535,10 +537,10 @@ proc equationDoTable {parent tgt startLine} {
     TitleFrame $fc.fdata -text "Data file "
     set fdata [$fc.fdata getframe]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    bind $dfile <Return> "LoadDataFile columns 0"
+    bind $dfile <Return> "LoadDataFile columns 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile columns 1}
+	-command {LoadDataFile columns 1 $mdl}
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fc.fdata -fill x
@@ -611,10 +613,10 @@ proc equationDoTable {parent tgt startLine} {
     TitleFrame $fg.fdata -text "Data file "
     set fdata [$fg.fdata getframe]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    bind $dfile <Return> "LoadDataFile grid 0"
+    bind $dfile <Return> "LoadDataFile grid 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile grid 1}
+	-command {LoadDataFile grid 1 $mdl}
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fg.fdata -fill x
@@ -650,10 +652,10 @@ proc equationDoTable {parent tgt startLine} {
     TitleFrame $fi.fdata -text "Image file "
     set fdata [$fi.fdata getframe]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    bind $dfile <Return> "LoadDataFile image 0"
+    bind $dfile <Return> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile image 1}
+	-command {LoadDataFile image 1 $mdl}
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fi.fdata -fill x
@@ -716,10 +718,10 @@ proc equationDoTable {parent tgt startLine} {
     TitleFrame $ft.fdata -text "Data file "
     set fdata [$ft.fdata getframe]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
-    bind $dfile <Return> "LoadDataFile gdal 0"
+    bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile gdal 1}
+	-command {LoadDataFile gdal 1 $mdl}
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $ft.fdata -fill x
@@ -963,7 +965,7 @@ proc EditListAsTable {parent valueArray} {
     return $table_viewer(done)
 }
 
-proc LoadDataFile {mode query} {
+proc LoadDataFile {mode query mdl} {
     global table_entry
     
 #    wm title .table "Create table from file $table_entry(fileName)"
@@ -982,7 +984,7 @@ proc LoadDataFile {mode query} {
     if {$query} {
 	set info "Select new $mode file"
 	if {![llength [set table_entry(fileName) \
-			   [ChooseFile data$type $info 0]]]} {
+			   [ChooseFile data$type $info 0 $mdl]]]} {
 	    return 0
 	}
     }
@@ -990,7 +992,7 @@ proc LoadDataFile {mode query} {
     while {[catch {open $table_entry(fileName) r} stream]} {
 	set info "Cannot read $mode file $table_entry(fileName)"
 	if {![llength [set table_entry(fileName) \
-			   [ChooseFile data$type $info 0]]]} {
+			   [ChooseFile data$type $info 0 $mdl]]]} {
 	    return 0
 	}
     }

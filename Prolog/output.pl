@@ -11,7 +11,7 @@ normally possible so the Tk change features are not used; objects are
 changed only by deleting and redrawing them.  */
 
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
-	get_file_name/4, list_matching_files/2, enable_text_editing_in/1,
+	get_file_name/5, list_matching_files/2, enable_text_editing_in/1,
 	disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
 	submodel/13, bowtie/6, flow/5, influence/5, broken_influence/5,
@@ -162,10 +162,10 @@ sub_bracketize([H | T], [SuH | SuT]) :-
 	bracketize(H, SuH),
 	sub_bracketize(T, SuT).
 
-get_file_name(Preferred, Action, CanBeNew, FileName) :-
+get_file_name(Preferred, Action, CanBeNew, Model, FileName) :-
 	safe_tcl_eval(['ChooseFile',
 			  br(write(Preferred)), br(write(Action)),
-			  CanBeNew], RetVal),
+			  CanBeNew, Model], RetVal),
 	name(FileName, RetVal).
 
 list_matching_files(Template, Matches) :-

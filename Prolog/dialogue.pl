@@ -13,7 +13,7 @@ sicstus_module(dialogue, [pick_equation/2, do_equation_dialog/2,
 	do_disag_dialog/4, do_relation_dialog/8, test_eqn/8,
 			  check_param_usage/5,
 	get_load_file/1, get_save_file/1,
-	get_program_file/2, get_import_file/2, 
+	get_program_file/3, get_import_file/3, 
         start_progress_dialogue/1,
 	finish_progress_dialogue/0, reassure_user/1]).
 
@@ -884,17 +884,17 @@ get_array_nesting(Current_unit, Depth) :-
 	length(Dims, Depth).
 
 get_load_file(FileName) :-
-	get_file_name('untitled.sml', 'Open file:', 0, FileName).
+	get_file_name('untitled.sml', 'Open file:', 0, '{}', FileName).
 
 get_save_file(FileName) :-
-	get_file_name('untitled.sml', 'Save as:', 1, FileName).
+	get_file_name('untitled.sml', 'Save as:', 1, '{}', FileName).
 
-get_import_file(Preferred, FileName) :-
-	get_file_name(Preferred, 'Import from:', 0, FileName),
+get_import_file(Preferred, Model, FileName) :-
+	get_file_name(Preferred, 'Import from:', 0, Model, FileName),
         \+ FileName = ''.
 
-get_program_file(Preferred, FileName) :-
-	get_file_name(Preferred, 'Export to:', 1, FileName),
+get_program_file(Preferred, Model, FileName) :-
+	get_file_name(Preferred, 'Export to:', 1, Model, FileName),
         \+ FileName = ''.
 
 start_progress_dialogue(Win) :-

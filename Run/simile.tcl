@@ -437,7 +437,7 @@ switch $env(interfaceId) {
 	set myDir [file join $::simtmpdir exec]
 	destroy .splash
 	if {![info exists env(OPEN_MODEL)]} {
-	    set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0]
+	    set env(OPEN_MODEL) [ChooseFile any.sml "Model to execute:" 0 {}]
 	}
 	LoadFile $dummyNode $myDir $env(OPEN_MODEL)
 	OpenProjectFile $myDir

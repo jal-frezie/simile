@@ -283,13 +283,16 @@ menu_handle(Win, file, save_seln_as) :-
 
 menu_handle(Win, file, save_interface) :-
 	Win shows_model Model,
+	contains(TopModel, Model),
+	is_toplevel(TopModel),
+	
 	caption_for(Model, MCaption),
 	(is_population(Model), !,
 	    Bounds=population;
 	get_node_size(Model, Bounds)),
 	
 	get_default_export_name(Model, ".isf", DefName),
-	get_program_file(DefName, FileName),
+	get_program_file(DefName, TopModel, FileName),
 	start_progress_dialogue(Win),
 	open_native(FileName, write, Stream),
 	write_with_breaks(Stream, interface_spec_for(MCaption, Bounds)),
@@ -318,7 +321,7 @@ menu_handle(Win, file, CompOrBuild) :-
 	    get_av_pair(Model, 0, separate, 1)), !,
 	name(Ident, IdentStr),
 	get_default_export_name(Model, IdentStr, DefN),
-	get_program_file(DefN, Tgt),
+	get_program_file(DefN, Model, Tgt),
 	start_progress_dialogue(Win),
 	use_temp_dir(Temp),
 	find_all_comps(Base, Model),
@@ -358,7 +361,7 @@ menu_handle(Win, file, RunCmd) :-
 menu_handle(Win, file, list_eqns) :-
 	Win shows_model Model,
 	get_default_export_name(Model, ".txt", DefName),
-	tk_equationlisting_start(DefName),
+	tk_equationlisting_start(DefName, Model),
         % changed from mysetof to findall to preserve the containment hierarchy 
 	findall(Component,(contains(Model,Component),find_type(Component,submodel),appears(Component)),Submodels),
 	%mysetof(Component,(contains(Model,Component),find_type(Component,submodel),appears(Component)),Submodels),
@@ -497,8 +500,10 @@ menu_handle(_Win, file, import_ss) :-
 menu_handle(Win, file, export_prolog) :-
 	Win shows_model Model,
 	\+ too_big_for_edn(Model),
+	contains(TopModel, Model),
+	is_toplevel(TopModel),
 	get_default_export_name(Model, ".pl", DefName),
-	get_program_file(DefName, FileName),
+	get_program_file(DefName, TopModel, FileName),
 	output:date_is(Date),
         start_progress_dialogue(Win),
 	save_isolated(FileName, Model, Date, no),
@@ -682,10 +687,12 @@ menu_handle(Win, edit, Action) :-
 	finish_move(Node_name, 0).
 
 menu_handle(Win, edit, set_interface) :-
-	get_import_file('plugplay.isf', SpecFile),
+	Win shows_model Submodel,
+	contains(Model, Submodel),
+	is_toplevel(Model),
+	get_import_file('plugplay.isf', Model, SpecFile),
 	open_native(SpecFile, read, Stream),
 	read(Stream, interface_spec_for(SubmodelName, _)),
-	Win shows_model Submodel,
 	caption_for(Submodel, OldName),
 	(OldName = SubmodelName, !;
 	sicstus_format_to_chars("The interface specification you have chosen is for a submodel named ~a, whereas the current submodel is named ~a. Do you want the submodel renamed?", [SubmodelName, OldName], WrongNameStr),

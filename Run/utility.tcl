@@ -34,7 +34,7 @@ proc ShowMessage { title icon string resps {parent {}}} {
 # -initialdir switch under Linux causes horrible misbehaviour if the
 # filename has spaces in it.
 
-proc ChooseFile { preferred title canbenew } {
+proc ChooseFile { preferred title canbenew context} {
     global __tk_filedialog chosenPaths
 
     set fileType [file extension $preferred]
@@ -47,29 +47,29 @@ proc ChooseFile { preferred title canbenew } {
 	.sml {
 	    set typeList [list .sml .sim .ame]
 	    set desc Models
-	    set recordEntry 1
 	} .gif {
 	    set typeList [list .gif .jpg .jpeg .png .tif .tiff]
 	    set desc Images
-	    set recordEntry 0
 	} {} {
 	    set typeList {}
 	    set desc Directories
-	    set recordEntry 0
 	} .cpp {
 	    set typeList [list .cpp .c .h]
 	    set desc "Source or header files"
-	    set recordEntry 0
+	} .txt {
+	    set typeList [list .txt]
+	    set desc "Text files"
 	} default {
 	    set typeList [list $fileType]
 	    set desc "$fileType files"
-	    set recordEntry 0
 	}
     }
-    set typeList [list [list $desc $typeList]]
+    set typeList [list [list $desc $typeList] [list {All files} *]]
+    set currentDir [do_in_editor GetPathChoice $fileType $context]
+#puts "Got path for $context"
     set switches [list -title $title -defaultextension $fileType \
 		      -filetypes $typeList \
-		      -initialdir [do_in_editor GetPathChoice $fileType]]
+		      -initialdir $currentDir]
     set active [focus]
     if {[llength $active]} {
 	lappend switches -parent [winfo toplevel $active]
@@ -83,8 +83,9 @@ proc ChooseFile { preferred title canbenew } {
 #ShowMessage debug info "will eval $cmd $switches" ok
     set chosenFile [eval $cmd $switches]
 #    cd $prevDir
+#puts "Recording path for $context"
     if {[string compare $chosenFile {}]} {
-	do_in_editor RecordPathChoice $fileType $chosenFile $recordEntry
+	do_in_editor RecordPathChoice $fileType $chosenFile $context
     }
     return $chosenFile
 }

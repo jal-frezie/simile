@@ -923,7 +923,8 @@ namespace eval RunEnv {
         variable currentNode
         
         set nameOfHelperStateFile($currentNode) \
-                [ChooseFile Displays.shf "Save display configuration" 1]
+                [ChooseFile Displays.shf "Save display configuration" 1 \
+		    $currentNode]
         if {[llength $nameOfHelperStateFile($currentNode)]} {
 	    do_in_editor AttackGlobalVariable nameOfHelperStateFile \
 		($currentNode) $nameOfHelperStateFile($currentNode)
@@ -1027,7 +1028,7 @@ namespace eval RunEnv {
     proc LoadView {} {
 	variable currentNode
         set HelperStateFileName [ChooseFile Displays.shf \
-                "Open view specification file" 0]
+                "Open view specification file" 0 $currentNode]
         if {[llength $HelperStateFileName]} {
             LoadSHF $currentNode $HelperStateFileName
         }

@@ -783,7 +783,7 @@ namespace eval fileparams {
 	    return
 	}
 
-        set metaFile [ChooseFile $defFile "Save parameters as:" 1]
+        set metaFile [ChooseFile $defFile "Save parameters as:" 1 $topNode]
         set SimileProject(fileparam,$smPath) $metaFile
 #puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
         if {[llength $metaFile]} {
@@ -835,7 +835,8 @@ namespace eval fileparams {
     proc Open {topNode smPath args} {
 	set notInput [expr -[llength $args]]
         set smName [file tail $smPath]
-        set metaFile [ChooseFile params.spf "Load $smName parameters from:" 0]
+        set metaFile [ChooseFile params.spf "Load $smName parameters from:" \
+			  0 $topNode]
         if {[llength $metaFile]} {
             MergeParams $topNode $smPath $metaFile $notInput 1
             
