@@ -520,10 +520,9 @@ proc FineX { c } {
 #####################################################################
 # TABLE LOADING
 #####################################################################
-proc equationDoTable {parent tgt startLine} {
-    global table_entry iconImages tcl_platform window_info
+proc equationDoTable {parent mdl tgt startLine} {
+    global table_entry iconImages tcl_platform
 
-    set mdl $window_info($parent,top_node)
     PutItThere .table $parent
     wm title .table "Table data for [BlankCrs $tgt]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
@@ -540,7 +539,7 @@ proc equationDoTable {parent tgt startLine} {
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile columns 1 $mdl}
+	-command "LoadDataFile columns 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fc.fdata -fill x

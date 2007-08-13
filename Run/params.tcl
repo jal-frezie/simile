@@ -157,7 +157,8 @@ proc AddEntry {winId topNode node mustShow notInput args} {
     BindPopup $slot.l2 "$comment"
             
     ::ttk::button $slot.b -style Toolbutton -image $iconImages(edit) \
-       -command [namespace code [list GetFromTable $winId $compName $notInput]]
+       -command [namespace code [list GetFromTable $winId $topNode \
+				     $compName $notInput]]
     BindPopup $slot.b "Get values from file"
     if {[llength $nodeDims]>1} {
 	pack $slot.b -side right
@@ -317,7 +318,7 @@ proc AcceptData {topNode compName notInput complain} {
     upvar \#0 $widgetLocn outNames
     set node [IdFromTail $topNode $compName $notInput]
 
-    set dataChanged 0
+    set dataChanged [expr $runState($topNode,modelRunning)<=2]
     # for each constant value, check whether it has been changed, and if so,
     # flag a level 1 model rebuild. Do same if running_c lost due to crash
     # or model not yet started. refinement needed: changes to compartments 
@@ -333,8 +334,7 @@ proc AcceptData {topNode compName notInput complain} {
 	    set msgs(param_source_$compName) Unsaved
 	    set suppliedData($compName) $newData
 	}
-	if {$runState($topNode,modelRunning)<=2} {
-	    set dataChanged 1
+	if {$dataChanged} {
 	} elseif {[catch {GetCompProperty $topNode Value $node} oldVal]} {
 	    set dataChanged 1
 	} elseif {![string equal [lindex $oldVal 0] $suppliedData($compName)]} {
@@ -1106,7 +1106,7 @@ proc VarType {testVar types} {
     }
 }
 
-proc GetFromTable {parent compName startLine} {
+proc GetFromTable {parent topNode compName startLine} {
     global paramState paramDims table_entry msgs whichParamsAffected
     if {$startLine==-1} {
 	set dataLocn targetData
@@ -1130,7 +1130,7 @@ proc GetFromTable {parent compName startLine} {
     } else {
         set table_entry(values) $suppliedData($compName)
     }
-    set newSource [equationDoTable [winfo toplevel $parent] \
+    set newSource [equationDoTable [winfo toplevel $parent] $topNode \
 		       $compName $notSeries]
 # If loading data for PEST there is no parent dialogue so do not keep grab
     if {$startLine==-1} {

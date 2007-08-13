@@ -6,7 +6,7 @@
 # This file contains procedures for the equation dialogue.
 #
 proc create_equation {parent boxtitle indices} {
-    global equation equationbar tcl_platform iconImages   
+    global equation equationbar tcl_platform iconImages window_info
     ### Formula bar section
     if {[string compare $equationbar(current_action) click]==0} then {
         return
@@ -16,6 +16,7 @@ proc create_equation {parent boxtitle indices} {
     }
     ResetEqnBar [winfo parent $parent]
     ### End formula bar section
+    set topNode $window_info($parent,top_node) 
     set t [PutItThere .equation $parent]
     wm title $t [BlankCrs $boxtitle]
     set equation(top) $t
@@ -198,8 +199,8 @@ proc create_equation {parent boxtitle indices} {
                 -command "equationDoGraph $t $en"]
         pack $graph -padx 8 -pady 4
         set table [button $mainf.equation.textbox.buttons.table \
-                -text " Table... " \
-                -command [list GetTable $t $comp $en]]
+		       -text " Table... " \
+		       -command [list GetTable $t $topNode $comp $en]]
         pack $table -padx 8 -pady 4
     } else  {
         set graph [button $mainf.equation.textbox.buttons.graph \
@@ -208,7 +209,7 @@ proc create_equation {parent boxtitle indices} {
         pack $graph -padx 8 -pady 4
         set table [button $mainf.equation.textbox.buttons.table \
                 -compound left -image $iconImages(table) -text " Table... "\
-                -command [list GetTable $t $comp $en]]
+                -command [list GetTable $t $topNode $comp $en]]
         pack $table -padx 8 -pady 4
     }
     pack $mainf.equation.textbox.buttons -anchor e -side left
@@ -431,12 +432,12 @@ proc RollAll {s l1 l2 l3 top bot} {
     $l3 yview moveto $top
 }
 
-proc GetTable {parent comp box} {
+proc GetTable {parent topNode comp box} {
     global equation table_entry
     
     set table_entry(data) $equation(table_data)
     set table_entry(values) $equation(table_values)
-    if {[equationDoTable $parent $comp 1]} {
+    if {[equationDoTable $parent $topNode $comp 1]} {
 #        if {[llength $table_entry(dataField)]} {
 #            set equation(table_data) [concat [list $table_entry(fileName) \
 #                    $table_entry(dataField)] \

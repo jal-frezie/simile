@@ -292,7 +292,8 @@ namespace eval RunEnv {
     
     proc AddNotebookToCurrentContainer {} {
         variable CurrentContainer
-        AddNotebook $CurrentContainer
+
+        SetCurrentContainer [AddNotebook $CurrentContainer]
     }
     
     proc AddNotebookPage {containerId} {

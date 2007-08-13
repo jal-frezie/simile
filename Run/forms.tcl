@@ -154,15 +154,20 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     bind $btnId.e <ButtonRelease-1> "EnableTypeOps $enumtypef"
     pack [button $btnId.addtype -text "Add type" -command "AddEnumType $canId"] \
             -padx 2 -pady 4 -fill x
-    pack [button $btnId.remtype -text "Remove type" -state disabled -command "RemoveEnumType $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.addmems -text "Add member" -state disabled -command "AddEnumMem $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.remmem -text "Remove member" -state disabled -command "RemoveEnumMem $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack [button $btnId.getmem -text "Get from file" -state disabled -command "GetEnumMems $enumtypef"] \
-            -padx 2 -pady 4 -fill x
-    pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 -fill both -expand true
+    pack [button $btnId.remtype -text "Remove type" -state disabled \
+	      -command "RemoveEnumType $enumtypef"] \
+	-padx 2 -pady 4 -fill x
+    pack [button $btnId.addmems -text "Add member" -state disabled \
+	      -command "AddEnumMem $enumtypef"] \
+	-padx 2 -pady 4 -fill x
+    pack [button $btnId.remmem -text "Remove member" -state disabled \
+	      -command "RemoveEnumMem $enumtypef"] \
+	-padx 2 -pady 4 -fill x
+    pack [button $btnId.getmem -text "Get from file" -state disabled \
+	      -command "GetEnumMems $enumtypef $mdl"] \
+	-padx 2 -pady 4 -fill x
+    pack $t.complex.enumtypes -anchor nw -side bottom -padx 4 -pady 4 \
+	-fill both -expand true
     
     TitleFrame $t.complex.appearance -text Appearance
     set appearancef [$t.complex.appearance getframe]
@@ -552,7 +557,7 @@ proc RemoveEnumMem {fr} {
     }
 }
 
-proc GetEnumMems {fr} {
+proc GetEnumMems {fr mdl} {
     global table_entry
     set togo [$fr.listpair.typef.scrf get [$fr.listpair.typef.scrf curselection]]
     upvar \#0 disaggregate(enumtype,$togo) memList
@@ -562,7 +567,7 @@ proc GetEnumMems {fr} {
         lappend table_entry(values) [expr $pos+1] \
                 [list [lindex $memList $pos]]
     }
-    if {[equationDoTable .disaggregation "enumerated type" 1]} {
+    if {[equationDoTable .disaggregation $mdl "enumerated type" 1]} {
         set fileState [list $table_entry(fileName) $table_entry(dataField)]
         set fileData $table_entry(values)
         foreach {pos mem} $fileData {
