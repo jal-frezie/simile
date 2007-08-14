@@ -126,7 +126,7 @@ namespace eval RunEnv {
 			       -menu         $descmenu \
 			       -textvariable RunEnv::status \
 			       -progressvar  RunEnv::prgindic]
-            
+            $mainframe showstatusbar none
             if [string match "Darwin" $tcl_platform(os)] {
 		set dummy [$mreId cget -menu]
 		set fm [menu $dummy.apple -tearoff 0]
@@ -169,7 +169,6 @@ namespace eval RunEnv {
             set dp0s($node) $dp0
             
             $mainpw sash place 0 270 0; # must be wide enough (270ish) for the sliders
-	    SetCurrentContainer $dp0
             
             # Add a panedwindow to split the hier/contol pane into hierrachical pane and control pane
             set hiercontrolpw [panedwindow $controlPane.panedwindow -orient vertical]
@@ -429,15 +428,15 @@ namespace eval RunEnv {
         if {![winfo exists $containerId]} {
             return
         }
-        set parentPath [FindParentpanedwindowOrNotebook $containerId]
-        set parentType [winfo class $parentPath]
-        set children [winfo children $containerId]
         #ShowMessage debug info "DeleteHelperContainer: $containerId\n \
         #        children $children\n \
         #        parentType $parentType" ok; ##################
+	set children [winfo children $containerId]
         if {[lsearch $children *.container]>-1} {
             kill_helper_window $containerId.container
         } else {
+	    set parentPath [FindParentpanedwindowOrNotebook $containerId]
+	    set parentType [winfo class $parentPath]
             switch $parentType {
                 Notebook {DeleteNotebookPage $parentPath $page}
                 Panedwindow {DeletePane $parentPath $containerId}
@@ -527,7 +526,7 @@ namespace eval RunEnv {
         set parentPath [winfo parent $containerId]
 	set pwidth  [winfo width $containerId]
 	set pheight [winfo height $containerId]
-	puts "old pane ${pwidth}x$pheight"
+#puts "old pane ${pwidth}x$pheight"
         if {![string match $orientation [$parentPath cget -orient]] || \
 		[string equal $dp0 $containerId]} {
 #ShowMessage debug info "SplitPage diff orientn container $containerId $orientation\n\
@@ -702,10 +701,13 @@ namespace eval RunEnv {
         #ShowMessage debug info "RunEnv::SetCurrentContainer pw $pw" ok
 	set tb1 [$mainframe getframe].tbar
         if {[winfo exists $win.container]} {
-            if {[string match vertical [$pw cget -orient]]} {
-                #ShowMessage debug info "vert $tb1.bbox2" ok
+            if {[string equal $dp0 $win]} {
+                $tb1.b20 configure -state disabled
                 $tb1.b21 configure -state disabled
+	    } elseif {[string match vertical [$pw cget -orient]]} {
+                #ShowMessage debug info "vert $tb1.bbox2" ok
                 $tb1.b20 configure -state normal
+                $tb1.b21 configure -state disabled
             } else  {
                 #ShowMessage debug info "horiz $tb1.bbox2" ok
                 $tb1.b20 configure -state disabled
@@ -735,7 +737,7 @@ namespace eval RunEnv {
 
 	set win2 [winfo parent $pw]
 	set pw2 [winfo parent $win2]
-	if {[string equal $dp0 $win]} {
+	if {[string equal $dp0 $win] && ![winfo exists $win.container]} {
 	    set killability disabled ;# it's the last pane
 	} elseif {[string equal Panedwindow [winfo class $pw2]] && \
 		[llength [$pw panes]]==1 && ![winfo exists $win.container]} {
@@ -796,13 +798,19 @@ namespace eval RunEnv {
         }
     }
     
-    proc InitializeDisplays {} {
+    proc EmptyDisplays {} {
         variable dp0
         
 	foreach child [winfo children $dp0] {
 	    destroy $child
 	}
-#        SetCurrentContainer [Addpanedwindow $dp0 vertical].pane0
+    }
+    
+    proc InitializeDisplays {} {
+        variable dp0
+        
+	EmptyDisplays
+        SetCurrentContainer $dp0
     }
     
     proc ChildrenFocusParent {parent} {
@@ -981,7 +989,7 @@ namespace eval RunEnv {
             LoadViewFile $currentNode $stream $origVersion
         } elseif {[string equal many_windows $origin]}  {
             # assume that it is an shf made by the multiple window run env
-            InitializeDisplays; #what if there is an error in the file delete MRE, rebuild
+            EmptyDisplays; #what if there is an error in the file delete MRE, rebuild
             AddNotebook $dp0
             while {[gets $stream helperId] >= 0} {
                 set emptyPage [MainNotebookEmptyPage]
@@ -1021,7 +1029,7 @@ namespace eval RunEnv {
         global helperTable
         variable dp0
         
-        InitializeDisplays
+        EmptyDisplays
         set win $helperTable($currentNode,whichRunEnv)
 	set mainframe $win.mainframe
         # read and set .mre position and size
