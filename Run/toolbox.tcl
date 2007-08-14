@@ -5,8 +5,8 @@
 #
 # This file loads all procedures, and sets up the model building environment.
 #
-package require BWidget
-catch {namespace import BWidget::*}
+#package require BWidget
+#catch {namespace import BWidget::*}
 package require tile 0.7.8
 
 source ../Run/window.tcl
