@@ -11,7 +11,6 @@
 # ::xdist, ::?Rotate making helper instance specific
 
 lappend ::auto_path "C:/Program Files/Tcl/lib"; # todo remove sort installation
-package require tcl3d 0.3
 
 set keyValue surfacegridTcl3d070701
 namespace eval $keyValue {
@@ -199,6 +198,7 @@ namespace eval $keyValue {
     
     proc initialize {winId} {
         variable useNodes
+	package require tcl3d 0.3 ;# hides error messages so only do if needed
         namespace import -force ::maptools2::*
         set useNodes($winId,editMode) 0
         set useNodes($winId,cbot) black

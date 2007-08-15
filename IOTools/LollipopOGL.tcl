@@ -1,5 +1,4 @@
 lappend ::auto_path "C:/Program Files/Tcl/lib"; # todo remove sort installation
-package require tcl3d 0.3
 
 # doesn't work if no trees at time zero OK NOW??
 # only handles one set of obj
@@ -218,6 +217,7 @@ namespace eval ::$keyValue {
         variable useNodes
         variable trunks
         variable base
+	package require tcl3d 0.3 ;# hides error messages so only do if needed
         namespace import -force ::maptools2::*
         set toolbarItems [list \
                 [list new.gif "Clear" \
