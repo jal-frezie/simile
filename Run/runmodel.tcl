@@ -144,7 +144,7 @@ proc AddHelperSublist {fm title ct} {
                 if {[string match {Run control} $action]} {
                     set helperTable(RunControl) $keyValue
                 }
-                if {[string match {Explorer} $action]} {
+                if {[string match {Explorer (BWidget version)} $action]} {
                     set helperTable(VariableList) $keyValue ;# for MRE
                 }
                 if {[string match {PEST interface} $action]} {
