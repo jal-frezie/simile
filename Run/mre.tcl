@@ -127,6 +127,7 @@ namespace eval RunEnv {
 			       -textvariable RunEnv::status \
 			       -progressvar  RunEnv::prgindic]
             $mainframe showstatusbar none
+            
             if [string match "Darwin" $tcl_platform(os)] {
 		set dummy [$mreId cget -menu]
 		set fm [menu $dummy.apple -tearoff 0]

@@ -20,7 +20,7 @@ namespace eval ::ModelInspector63654 {
     variable tableframe
     
     proc identify {} {
-        return "Explorer"
+        return "Explorer (BWidget version)"
     }
     
     proc display {args} {

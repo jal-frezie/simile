@@ -160,7 +160,7 @@ namespace eval $keyValue {
         pack $df.c -side top -fill both -expand true
         
         pack [button $resId.b -text "Save a PEST file" -state disabled \
-                -command [namespace code SaveResults]]
+		  -command [namespace code [list SaveResults $myNode]]]
         
         set frameNo 0
         set clevers(list) {{rlambda1 5.0 rlamfac 2.0 phiratsuf 0.4 \
@@ -256,7 +256,7 @@ namespace eval $keyValue {
         }
     }
 
-    proc SaveResults {} {
+    proc SaveResults {context} {
         global simtmpdir
         
         set typeList [list {{Run record} .rec} \
@@ -276,7 +276,7 @@ namespace eval $keyValue {
             }
         }
         lappend typeList [list {Other files} $exes]
-        set initDir [do_in_editor GetPathChoice .rec]
+        set initDir [do_in_editor GetPathChoice .rec $context]
         set tgt [tk_getSaveFile -title "Save PEST file" -initialdir $initDir \
                 -defaultextension .rec -filetypes $typeList]
         if {[llength $tgt]} {
@@ -815,7 +815,7 @@ namespace eval $keyValue {
         variable runData
         
         PokeStopFile $winId 2
-        $runData($myNode,progressBar) set 0
+        $runData($myNode,progressBar) configure -value 0
     }
     
     proc Pause {winId} {
