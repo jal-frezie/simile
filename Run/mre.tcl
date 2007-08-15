@@ -168,7 +168,6 @@ namespace eval RunEnv {
             set dp0 [AddPane $mainpw.mainDisplayPane]
             set dp0s($node) $dp0
             
-            $mainpw sash place 0 270 0; # must be wide enough (270ish) for the sliders
             
             # Add a panedwindow to split the hier/contol pane into hierrachical pane and control pane
             set hiercontrolpw [panedwindow $controlPane.panedwindow -orient vertical]
@@ -185,6 +184,8 @@ namespace eval RunEnv {
             
             pack $mainframe -fill both -expand yes
             pack $mainpw -fill both -expand yes
+            update idletasks ;# needed for sash place to work
+	    $mainpw sash place 0 270 0; # must be wide enough (270ish) for the sliders
             
             pack $hiercontrolpw -fill both -expand yes
             
@@ -561,6 +562,7 @@ namespace eval RunEnv {
             ###############################################################################
             
 #puts "$parentPath sash place $sash $sashx $sashy"
+	update idletasks ;# needed for sash place to work
 	$parentPath sash place $sash $sashx $sashy
 	SetCurrentContainer $paneId
     }
