@@ -474,7 +474,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     global comboTypes
     
     if {[string equal ,gdal [lindex $list 1]]} {
-	DoNotPassTcl $tgt $dims $list
+	DoNotPassTcl $topNode $tgt $dims $list
 	return -1 ;# typical fixed parameter
     }
     while {[set specialId [lsearch {START_VM MEMBERS} [lindex $dims 0]]]!=-1} {
@@ -1174,8 +1174,14 @@ proc GetFromTable {parent topNode compName startLine} {
     }
 }
 
-proc DoNotPassTcl {node dims tableSpec} {
+proc DoNotPassTcl {topNode node dims tableSpec} {
 #puts "dims $dims spec $tableSpec"
+    if {[string equal REAL [GetCompProperty $topNode Type $node]]} {
+	set gdalType GDT_Float64
+    } else {
+	set gdalType GDT_Int32
+    }
+
     package require gdal
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
     set hdl [gdal_get_raster_band $hg 1]
@@ -1184,7 +1190,7 @@ proc DoNotPassTcl {node dims tableSpec} {
 		     [expr [lindex $tableSpec 2]-1] \
 		     [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]] \
 		     [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]] \
-			   [lindex $dims 1] [lindex $dims 0]]
+			   $gdalType [lindex $dims 1] [lindex $dims 0]]
     gdal_close $hg
     
     c_setparamall $node $bytesFromGdal
