@@ -670,6 +670,28 @@ FINDABLE int setparamelementCmd(ClientData clientData, Tcl_Interp *interp,
     }
 }
 
+/* For this one, we have all the data in a Tcl ByteArray object */
+
+FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int count, error;
+  void *sourcePtr, *destPtr;
+
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id data");
+    return TCL_ERROR;
+  }
+  
+  sourcePtr = Tcl_GetByteArrayFromObj(argv[2], &count);
+  destPtr=use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL), NULL);
+  if (!destPtr) {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("use_array_for_params: no array can be created for this node", -1));
+    return TCL_ERROR;
+  }
+  memcpy(destPtr, sourcePtr, count);
+  return TCL_OK;
+}
+
 FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int i, count, error, indxs[32];
@@ -1808,6 +1830,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_setparamelement", setparamelementCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_setparamall", setparamallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_setwraparoundtime", setwrapCmd,

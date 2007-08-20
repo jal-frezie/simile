@@ -615,7 +615,7 @@ proc equationDoTable {parent mdl tgt startLine} {
     bind $dfile <Return> "LoadDataFile grid 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile grid 1 $mdl}
+	-command "LoadDataFile grid 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fg.fdata -fill x
@@ -654,7 +654,7 @@ proc equationDoTable {parent mdl tgt startLine} {
     bind $dfile <Return> "LoadDataFile image 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile image 1 $mdl}
+	-command "LoadDataFile image 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $fi.fdata -fill x
@@ -720,7 +720,7 @@ proc equationDoTable {parent mdl tgt startLine} {
     bind $dfile <Return> "LoadDataFile gdal 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
-	-command {LoadDataFile gdal 1 $mdl}
+	-command "LoadDataFile gdal 1 $mdl"
     pack $fdata.new -side bottom -padx 4 -pady 4
     pack $fdata -fill x
     pack $ft.fdata -fill x
@@ -925,7 +925,6 @@ proc AcquireTableData {redo startLine} {
 
 proc EditListAsTable {parent valueArray} {
     global table_viewer
-
     PutItThere .table_edit $parent
     set t .table_edit.helperzone
     set b .table_edit.buttonzone
@@ -945,6 +944,10 @@ proc EditListAsTable {parent valueArray} {
     ${viewerId}::initialize $t
 
     upvar 1 $valueArray values
+    if {[string equal ,gdal [lindex $values 1]]} {
+	set oldValues $values
+	set values [NumberElements [ReadGdalRefToList $values]]
+    }
     set ${viewerId}::dataStore($t,0,0.0) $values
     set ${viewerId}::displayList($t) eqn_table
     set ${viewerId}::orientList($t) {none cols rows cols}
@@ -960,6 +963,8 @@ proc EditListAsTable {parent valueArray} {
 # extract step at end so window still gone if it fails
     if {$table_viewer(done)} {
 	set values [${viewerId}::ExtractEdits $t]
+    } elseif {[info exists oldValues]} {
+	set values $oldValues
     }
     return $table_viewer(done)
 }
@@ -1123,31 +1128,8 @@ proc LoadTableData {tableSpec lineCount} {
 	    }
 	set indexList [list $rowList $colList]
     } elseif {[string equal ,gdal [lindex $tableSpec 1]]} {
-	set rowList {}
-	set colList {}
-	package require gdal
-	set hg [gdal_open_read_only [lindex $tableSpec 0]]
-	set hdl [gdal_get_raster_band $hg 1]
-	set nValues [gdal_get_raster_data $hdl \
-			 [expr [lindex $tableSpec 4]-1] \
-			 [expr [lindex $tableSpec 2]-1] \
-			 [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]] \
-			 [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]]
-	gdal_close $hg
-	set yInd 1
-	foreach nLine $nValues {
-	    lappend rowList $yInd
-	    set xInd 1
-	    foreach nPt $nLine {
-		if {$yInd==1} {
-		    lappend colList $xInd
-		}
-		set paramArray(top,$yInd,$xInd) $nPt
-		incr xInd
-	    }
-	    incr yInd
-	}
-	set indexList [list $rowList $colList]
+#	set indexList [ReadGdalRefToArray paramArray $tableSpec]
+	return $tableSpec
     } else {
 #ShowMessage debug info "Loading table with data $tableSpec" ok
 	gets $tStr headerLine
@@ -1241,6 +1223,27 @@ proc LoadTableData {tableSpec lineCount} {
 	lappend result $wrapPt restart
     }
     return $result
+}
+
+proc ReadGdalRefToArray {arrayName tableSpec} {
+    upvar 1 $arrayName paramArray
+    set rowList {}
+    set colList {}
+    set nValues [ReadGdalRefToList $tableSpec]
+    set yInd 1
+    foreach nLine $nValues {
+	lappend rowList $yInd
+	set xInd 1
+	foreach nPt $nLine {
+	    if {$yInd==1} {
+		lappend colList $xInd
+	    }
+	    set paramArray(top,$yInd,$xInd) $nPt
+	    incr xInd
+	}
+	incr yInd
+    }
+    return [list $rowList $colList]
 }
 
 proc TrimFields {dataLine} {

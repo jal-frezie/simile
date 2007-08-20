@@ -443,17 +443,61 @@ proc EndsOnly {outerText count leave} {
     }
 }
 
+proc ReadGdalRefToList {tableSpec} {
+    package require gdal
+    set hg [gdal_open_read_only [lindex $tableSpec 0]]
+    set hdl [gdal_get_raster_band $hg 1]
+    set nValues [gdal_get_raster_values $hdl \
+		     [expr [lindex $tableSpec 4]-1] \
+		     [expr [lindex $tableSpec 2]-1] \
+		     [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]] \
+		     [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]]
+    gdal_close $hg
+    return $nValues
+}
+
 proc ShrinkValueList {outerList limit} {
     set manage [expr $limit/4]
     upvar 1 $outerList list
-    set allVals [CountValues $list]
-    if {$allVals>$manage} {
-	set range [expr $manage/2]
-	set startRange [GetNVals $list first $range]
-	set endRange [GetNVals $list last $range]
-	set list [concat $startRange $endRange]
+
+    if {[string equal ,gdal [lindex $list 1]]} {
+	set topRow [lindex $list 4]
+	set bottomRow [lindex $list 5]
+	set rowLength [expr 1+$bottomRow-$topRow]
+	set colLength [expr 1+[lindex $list 3]-[lindex $list 2]]
+	set allVals [expr $rowLength*$colLength]
+	set rowEnds [expr int(0.5*$manage/$rowLength)]
+	lset list 5 [expr $topRow+$rowEnds]
+	set startRange [ReadGdalRefToList $list]
+	lset list 4 [expr $bottomRow-$rowEnds]
+	lset list 5 $bottomRow
+	set endRange [ReadGdalRefToList $list]
+	set list [NumberElements [concat $startRange $endRange]]
+    } else {    
+	set allVals [CountValues $list]
+	if {$allVals>$manage} {
+	    set range [expr $manage/2]
+	    set startRange [GetNVals $list first $range]
+	    set endRange [GetNVals $list last $range]
+	    set list [concat $startRange $endRange]
+	}
     }
     return $allVals
+}
+
+proc NumberElements {list} {
+    if {[string equal $list [lindex $list 0]]} {
+	return $list
+    } else {
+	set result {}
+	set num 0
+	foreach elt $list {
+	    if {[llength $elt]} {
+		lappend result [incr num] [NumberElements $elt]
+	    }
+	}
+	return $result
+    }
 }
 
 proc GetNVals {list side need} {

@@ -473,6 +473,10 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     # ... string match stops cleanly at end of list
     global comboTypes
     
+    if {[string equal ,gdal [lindex $list 1]]} {
+	DoNotPassTcl $tgt $dims $list
+	return -1 ;# typical fixed parameter
+    }
     while {[set specialId [lsearch {START_VM MEMBERS} [lindex $dims 0]]]!=-1} {
         if {$specialId} {
             set dims [lrange $dims 1 end]
@@ -1124,7 +1128,7 @@ proc VarType {testVar types} {
 }
 
 proc GetFromTable {parent topNode compName startLine} {
-    global paramState paramDims table_entry msgs
+    global paramState paramDims table_entry msgs whichParamsAffected
 
     if {$startLine==-1} {
 	set dataLocn targetData
@@ -1156,6 +1160,7 @@ proc GetFromTable {parent topNode compName startLine} {
     }
     if {$newSource} {
         set suppliedData($compName) $table_entry(values)
+	set whichParamsAffected($compName) 1
         FillIfSmall $outNames($compName).e $suppliedData($compName)
         switch $newSource {
             2 {
@@ -1167,4 +1172,20 @@ proc GetFromTable {parent topNode compName startLine} {
             }
         }
     }
+}
+
+proc DoNotPassTcl {node dims tableSpec} {
+#puts "dims $dims spec $tableSpec"
+    package require gdal
+    set hg [gdal_open_read_only [lindex $tableSpec 0]]
+    set hdl [gdal_get_raster_band $hg 1]
+    set bytesFromGdal [gdal_get_raster_data $hdl \
+		     [expr [lindex $tableSpec 4]-1] \
+		     [expr [lindex $tableSpec 2]-1] \
+		     [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]] \
+		     [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]] \
+			   [lindex $dims 1] [lindex $dims 0]]
+    gdal_close $hg
+    
+    c_setparamall $node $bytesFromGdal
 }
