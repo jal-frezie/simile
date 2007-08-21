@@ -520,11 +520,11 @@ proc FineX { c } {
 #####################################################################
 # TABLE LOADING
 #####################################################################
-proc equationDoTable {parent mdl tgt startLine} {
+proc equationDoTable {parent mdl tgt dims startLine} {
     global table_entry iconImages tcl_platform
 
     PutItThere .table $parent
-    wm title .table "Table data for [BlankCrs $tgt]"
+    wm title .table "Table data for [BlankCrs "$tgt $dims"]"
     wm protocol .table WM_DELETE_WINDOW {set table_entry(done) 0}
     set table_entry(source) 0
     
@@ -750,13 +750,51 @@ proc equationDoTable {parent mdl tgt startLine} {
 	-expand true -fill x
     pack $ft.limits -fill both -expand true
 
+    set arrayDims {}
+    switch $dims {
+	"(defined by values)" {
+	    set needsETs 1
+	} "(data determines dimensions)" {
+	    set dimsFromData 1
+	} default {
+	    foreach {dimVal sep} [string range $dims 1 end-1] { ;# dequote
+#puts "arrayType -$dimVal- sep -$sep-"
+		if {[string length $sep]} { 
+		    lappend arrayDims $dimVal
+		    if {![Numeric $dimVal]} {
+			if {[lsearch {TIME RECORDS} $dimVal]==-1} {
+			    set needsETs 1
+			} else {
+			    set dimsFromData 1
+			}
+		    }
+		} else {
+		    set arrayType $dimVal
+		    if {[lsearch {REAL INTEGER BOOLEAN} $dimVal]==-1} {
+			set needsETs 1
+		    }
+		}
+	    }
+	}
+    }
+    if {[info exists needsETs]} {
+	$t tab $t.image -state disabled
+	$t tab $t.gdal -state disabled
+    } elseif {![info exists dimsFromData]} {
+	if {[llength $arrayDims]!=2} {
+	    $t tab $t.grid -state disabled
+	    $t tab $t.image -state disabled
+	    $t tab $t.gdal -state disabled
+	}
+    }
+
     #
     # OK, Cancel and Help buttons
     frame .table.fbuttons
     button .table.fbuttons.load -text Reload -width 10 \
 	-command [list AcquireTableData 1 $startLine]
     button .table.fbuttons.edit -text View/Edit -width 10 \
-	-command [list EditTableData $startLine]
+	-command [list EditTableData $startLine $arrayDims]
     button .table.fbuttons.ok -text OK -width 10 \
 	-command [list DoneTableData $startLine]
     button .table.fbuttons.cancel -text Cancel -width 10 \
@@ -852,12 +890,23 @@ proc NameToTag {name} {
     string map {{ } _} [string tolower $name]
 }
 
-proc EditTableData {startLine} {
+# array dims are now passed to this -- for now we only use them to scale the
+# data in a gdal file but we could use them to get the table helper to display
+# a table with the right dims in other cases!
+proc EditTableData {startLine dims} {
     global table_entry
     AcquireTableData 0 $startLine
-    if {[llength $table_entry(values)]} {
-	if {[EditListAsTable .table table_entry(values)]} {
+    upvar 0 table_entry(values) values
+    if {[llength $values]} {
+	if {[string equal ,gdal [lindex $values 1]]} {
+	    set oldValues $values
+	    set values [NumberElements [ReadGdalRefToList $values \
+					    [lindex $dims 0] [lindex $dims 1]]]
+	}
+	if {[EditListAsTable .table values]} {
 	    set table_entry(source) 1
+	} elseif {[info exists oldValues]} {
+	    set values $oldValues
 	}
     }
 }
@@ -944,10 +993,6 @@ proc EditListAsTable {parent valueArray} {
     ${viewerId}::initialize $t
 
     upvar 1 $valueArray values
-    if {[string equal ,gdal [lindex $values 1]]} {
-	set oldValues $values
-	set values [NumberElements [ReadGdalRefToList $values]]
-    }
     set ${viewerId}::dataStore($t,0,0.0) $values
     set ${viewerId}::displayList($t) eqn_table
     set ${viewerId}::orientList($t) {none cols rows cols}
@@ -963,8 +1008,6 @@ proc EditListAsTable {parent valueArray} {
 # extract step at end so window still gone if it fails
     if {$table_viewer(done)} {
 	set values [${viewerId}::ExtractEdits $t]
-    } elseif {[info exists oldValues]} {
-	set values $oldValues
     }
     return $table_viewer(done)
 }

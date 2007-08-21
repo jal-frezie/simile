@@ -212,7 +212,18 @@ proc ColourCaptions {slot colour} {
     $slot.l2 configure -fg $colour
 }
 
-proc MakeDimsLegible {nodeDims dataType} {
+proc EnquoteIfNotElement {item} {
+    if {![string equal $item [lindex $item 0]]} {
+	return \"$item\"
+    } else {
+	return $item
+    }
+}
+
+proc MakeDimsLegible {dimList dataType} {
+    foreach dim $dimList {
+	lappend nodeDims [EnquoteIfNotElement $dim]
+    }
     set dimList [join [lrange $nodeDims 0 end-1] { x }]
     set last [lindex $nodeDims end]
     if {[string compare $last 0]} {
@@ -474,8 +485,13 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     global comboTypes
     
     if {[string equal ,gdal [lindex $list 1]]} {
-	DoNotPassTcl $topNode $tgt $dims $list
-	return -1 ;# typical fixed parameter
+	if {$useCppArray} {
+	    DoNotPassTcl $topNode $tgt $dims $list
+	    return -1 ;# typical fixed parameter
+	} else {
+	    set list [NumberElements [ReadGdalRefToList $list \
+					  [lindex $dims 0] [lindex $dims 1]]]
+	}
     }
     while {[set specialId [lsearch {START_VM MEMBERS} [lindex $dims 0]]]!=-1} {
         if {$specialId} {
@@ -1128,7 +1144,7 @@ proc VarType {testVar types} {
 }
 
 proc GetFromTable {parent topNode compName startLine} {
-    global paramState paramDims table_entry msgs whichParamsAffected
+    global paramState paramDims table_entry msgs widgetNames whichParamsAffected
 
     if {$startLine==-1} {
 	set dataLocn targetData
@@ -1152,8 +1168,8 @@ proc GetFromTable {parent topNode compName startLine} {
     } else {
         set table_entry(values) $suppliedData($compName)
     }
-    set newSource [equationDoTable [winfo toplevel $parent] $topNode \
-		       $compName $notSeries]
+    set newSource [equationDoTable [winfo toplevel $parent] $topNode $compName \
+		       [$widgetNames($compName).l2 cget -text] $notSeries]
 # If loading data for PEST there is no parent dialogue so do not keep grab
     if {$startLine==-1} {
 	grab release [winfo toplevel $parent]

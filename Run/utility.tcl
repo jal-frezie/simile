@@ -443,15 +443,22 @@ proc EndsOnly {outerText count leave} {
     }
 }
 
-proc ReadGdalRefToList {tableSpec} {
+proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
     package require gdal
+puts "RGRTL $tableSpec $x $y"
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
     set hdl [gdal_get_raster_band $hg 1]
-    set nValues [gdal_get_raster_values $hdl \
-		     [expr [lindex $tableSpec 4]-1] \
-		     [expr [lindex $tableSpec 2]-1] \
-		     [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]] \
-		     [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]]
+    set l [expr [lindex $tableSpec 4]-1]
+    set t [expr [lindex $tableSpec 2]-1]
+    set w [expr [lindex $tableSpec 5]-$l]
+    set h [expr [lindex $tableSpec 3]-$t]
+    if {![Numeric $x]} {
+	set x $w
+    }
+    if {![Numeric $y]} {
+	set y $h
+    }
+    set nValues [gdal_get_raster_values $hdl $l $t $w $h $x $y]
     gdal_close $hg
     return $nValues
 }
