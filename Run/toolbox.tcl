@@ -1760,7 +1760,13 @@ proc InsertModel {winId} {
     }
 }
 
-
+set instCount 0
+proc MakeDesktopNode {} {
+    global instCount
+    set newInstance modelWin[incr instCount]
+    similescript::ModelWindow $newInstance
+    return [$newInstance GetNodeAndCanvas]
+}
 
 proc Reopen {canvas oldFile op} {
     global custom userinfo welcomeDone

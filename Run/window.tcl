@@ -2078,6 +2078,17 @@ proc KillTransients {winId} {
 }
 
 proc byebye {winId} {
+    global window_info class_for_node
+    set node $window_info($winId,top_node)
+    if {$window_info($winId,is_top_level)} {
+	itcl::delete object $class_for_node($node)
+	unset class_for_node($node)
+    } else { ;# non-toplevels do not need class deletion, so DIY
+	ByeByeNode $winId
+    }
+}
+#...if above calls destructor, that calls this...
+proc ByeByeNode {winId} {
     KillTransients $winId
     set runOnEmpty [string equal aqua [tk windowingsystem]]
     prolog [list tk_off_window( '$winId' , $runOnEmpty)]

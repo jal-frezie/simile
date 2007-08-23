@@ -646,7 +646,7 @@ proc ChooseImage {posRBs mdl} {
                     set disaggregate(imgpos) Tiled
                 }
             } else {
-                ShowMessage {Problem loading file} error $errorInfo ok
+                ShowMessage {Problem loading file} error $::errorInfo ok
                 # prevent crasho if reading fails
                 #       $newImage config -width 100 -height 100
             }

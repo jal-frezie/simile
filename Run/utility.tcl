@@ -445,7 +445,7 @@ proc EndsOnly {outerText count leave} {
 
 proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
     package require gdal
-puts "RGRTL $tableSpec $x $y"
+#puts "RGRTL $tableSpec $x $y"
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
     set hdl [gdal_get_raster_band $hg 1]
     set l [expr [lindex $tableSpec 4]-1]

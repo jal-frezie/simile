@@ -1672,6 +1672,9 @@ get_action_point(Top, End, Point) :-
 /* Procedure to draw first model window */
 
 make_desktop(Desktop, Canvas_name) :-
+	output:tk_make_desktop(Desktop, Canvas_name).
+/* ...which calls the class constructor, which calls... */
+make_desktop_node(Desktop, Canvas_name) :-
         m_class:Root is_root,
 	make_node(Root, 'Desktop', Desktop),
 	change_class(Desktop, _, submodel),

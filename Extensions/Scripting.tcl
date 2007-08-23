@@ -5,16 +5,19 @@ if {[string equal windows $::tcl_platform(platform)]} {
 }
 
 itcl::class similescript::ModelWindow {
-    
-    variable modelNode node00000
-    variable desktop /Desktop1
+    variable modelNode
+    variable modelCanvas
     variable model
     
     private method GetModelWindow {} {
         global window_info
-        return $window_info([lindex [lsort [array name window_info *,parent]] 0])
+	return $window_info($modelCanvas,parent)
     }
-    
+
+    public method GetNodeAndCanvas {} {
+	return [list $modelNode $modelCanvas]
+    }
+
     public method CreateHelperWindow {helperId helperTitle} {
         set winId [do_for_node $modelNode NewHelperWindow $modelNode $helperId $helperTitle]
         do_for_node $modelNode ${helperId}::initialize $winId
@@ -30,9 +33,16 @@ itcl::class similescript::ModelWindow {
     }
     
     constructor {} {
+	global class_for_node fromProlog
+
+	prolog tk_make_desktop_node
         #tk_messageBox -message "ModelWin constructor"
-        Hide
-        UseMRE false
+	set modelNode [lindex $fromProlog 0]
+	set modelCanvas [lindex $fromProlog 1]
+	set class_for_node($modelNode) $this
+#        Hide ;# default is to show
+#        UseMRE false
+# can't have creation of model windows overwriting users' preferences!!
     }
     
     destructor {
@@ -41,7 +51,9 @@ itcl::class similescript::ModelWindow {
         }
         #tk_messageBox -message "model win destructor"
         #Exit
-        MenuClose [GetModelWindow].canvas
+#        MenuClose [GetModelWindow].canvas
+# following replaces above...
+	ByeByeNode $modelCanvas
     }
     
     public method Hide {} {
@@ -99,11 +111,13 @@ itcl::class similescript::ModelWindow {
     
     # Model Menu
     public method Run {} {
+	global botches
         # builds the model with CPP and returns a run control command/object
         #RemoveRunControl
         MenuSelect [GetModelWindow].canvas file run_c
         #set rc [similescript::RunControl ::runControl $this]
         #return $rc
+	set botches(modelJustRun) $this
     }
     
     public method Debug {} {
@@ -129,7 +143,7 @@ itcl::class similescript::HelperController {
     # The constructor DOES NOT create a helper use class Helper
     variable winId;    #Tk path to RunControl window
     variable keyvalue; # RunControl namespace
-    variable modelNode node00000
+    variable modelNode
     
     destructor {
         destroy $winId
@@ -185,6 +199,7 @@ itcl::class similescript::Helper {
     inherit HelperController
     
     constructor {modelWindow winTitle} {
+	set modelNode [lindex [$modelWindow GetNodeAndCanvas] 0]
         #puts "Helper constr $modelWindow [KeyValue] $winTitle"
         #do_for_node $modelNode
         set winId [$modelWindow CreateHelperWindow [KeyValue] $winTitle]
@@ -207,7 +222,9 @@ itcl::class similescript::RunControl {
     inherit HelperController
     
     constructor {} {
-        set modelWindow [itcl::find object * -isa ::similescript::ModelWindow]
+	global botches
+        set modelWindow $botches(modelJustRun)
+	set modelNode [lindex [$modelWindow GetNodeAndCanvas] 0]
         set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
 	set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
         Hide
