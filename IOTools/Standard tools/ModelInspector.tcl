@@ -158,7 +158,7 @@ namespace eval ::ModelInspector63654 {
     proc DoInspPopup {winId X Y plName} {
 	#	    ShowMessage debug info $args ok
 	global helperTable runState
-	set node $helperTable($winId,whichModel)
+	set node [$helperTable($winId,whichInstance) GetNode]
 	if {$runState($node,modelRunning)>2} {
 	    PostPopup $X $Y
 #	    set trans [GetTransTable $plName]

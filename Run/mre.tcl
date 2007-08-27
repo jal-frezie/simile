@@ -1152,7 +1152,6 @@ namespace eval RunEnv {
             set oldStatus [LoseDTRef $oldStatus]
         }
 #        set helperTable($winId,status) [RestoreCrs $oldStatus]
-puts $oldStatus
 	CreateHelperWindow $helperId {} [RestoreCrs $oldStatus]
     }
     
