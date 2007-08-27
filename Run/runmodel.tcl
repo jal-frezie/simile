@@ -118,6 +118,10 @@ proc GetNodeFromFocus {} {
     return $myNode
 }
 
+proc ClassFromKey {kv} {
+    return [regsub -all \\. $kv _dot_]
+}
+
 # OK I have been having problems with people duplicating IO tool programs
 # and not changing the key values, thus allowing one to overwrite the other.
 # So one day, IO tools will not include a namespace spec, but this code
@@ -154,11 +158,21 @@ proc AddHelperSublist {fm title ct} {
 #                    set helperTable(SliderControl) $keyValue
 #                }
                 if {[string match {Data table} $action]} {
-
-                    set table_viewer(id) $keyValue
+		    set table_viewer(id) $keyValue
                 }
                 $m add command -label $action \
                         -command [list CreateHelperWindow $keyValue $action]
+# This is an old-style helper, so create object wrapper for it
+		set className [ClassFromKey $keyValue]
+		set ::gKeyValue $keyValue ;# make global so decl picks it up
+		itcl::class similescript::$className {
+		    inherit OldStyleHelper
+		    public method KeyValue {} [list return $gKeyValue]
+		    constructor {modelWin winTitle {state {}}} {
+# perverse extra body because base class constructor has args
+			OldStyleHelper::constructor $modelWin $winTitle $state
+		    } {}
+		}
                 unset keyValue
             }
         }
@@ -178,14 +192,14 @@ proc AddHelperSublist {fm title ct} {
     }
 }
 
-proc SystemHelperCall {winId node act args} {
+proc SystemHelperCall {inst node act args} {
     global myNode helperTable
     if {[info exists myNode]} {
 	set nodeForFocus $myNode
     }
     set myNode $node
-    set helperTable(beingCalled) $winId
-    namespace eval $helperTable($winId,whichHelper) $act $args
+    set helperTable(beingCalled) $inst
+    eval $inst $act $args
     set helperTable(beingCalled) {}
     unset myNode
     if {[info exists nodeForFocus]} {
@@ -193,117 +207,47 @@ proc SystemHelperCall {winId node act args} {
     }
 }
 
-proc CreateHelperWindow {helperId helperTitle} {
-    set node [GetNodeFromFocus]
-    set winId [NewHelperWindow $node $helperId $helperTitle]
-    SystemHelperCall $winId $node initialize $winId
+proc CreateHelperWindow {helperId helperTitle {state {}}} {
+    global class_for_node
+
+    set modelObj  $class_for_node([GetNodeFromFocus])
+    set hlp [UniqueId helper]
+    similescript::[ClassFromKey $helperId] $hlp $modelObj $helperTitle $state
     if {[PrefValue custom(helperManager) helperManager]} {
-        ::RunEnv::ChildrenFocusParent $winId
+	set winId [$hlp GetWindow]
+	::RunEnv::SetCurrentContainer [winfo parent $winId]
+	::RunEnv::ChildrenFocusParent $winId
     }
-    return $winId
+    return $hlp
+#rest should be done by constructor
 }
 
-proc NewHelperWindow {node helperId helperTitle} {
-    global helperTable tcl_platform SimileAutoObjLoaded
-
-    # ShowMessage debug info "Making $helperId $helperTitle" ok
-    if {[PrefValue custom(helperManager) helperManager]} {
-        set winId [NewMreHelperWindow $node $helperId $helperTitle]
-    } else {
-        set winId .helper[newInt]
-        toplevel $winId
-	if {[info exists SimileAutoObjLoaded]} {
-	    wm state $winId withdrawn
-	}
-        wm title $winId [BlankCrs $helperTitle]
-        if {![string match windows $tcl_platform(platform)]} {
-            wm iconbitmap $winId @../Images/weegraph.xbm
-        }
-        wm protocol $winId WM_DELETE_WINDOW "kill_helper_window $winId"
-    }
-    set helperTable($winId,whichHelper) $helperId
-    set helperTable($winId,whichModel) $node
-    return $winId
-}
-
-# If running a model which includes input parameters, we must
-# make sure that these are somehow provided with inputs before
-# trying to evaluate expressions in which they occur. This is
-# done by creating a slider panel for them here.
-
-# switch and switchd are binary inputs so should be set by
-# toggles rather than sliders. Later...
-
-#proc UnMakeSlidersForInputs { } {
-#    global helperTable checkStates sliderVals
-    # puts $inlist
-#    if {[info exists helperTable(autosliders)]} {
-#        kill_helper_window $helperTable(autosliders)
-#        unset helperTable(autosliders)
-#    }
-
-#    if {[info exists checkStates]} {
-#        unset checkStates
-#    }
-#    if {[info exists sliderVals]} {
-#        unset sliderVals
-#    }
-#}
-
-#proc MakeSlidersForInputs { } {
-#    global helperTable
-#    set helperTable(autosliders) [NewHelperWindow $helperTable(SliderControl) \
-#            "Sliders for inputs"]
-#   $helperTable(SliderControl)::initialize $helperTable(autosliders)
-#}
-
-# grab_clicks and release_clicks enable helper apps to ask
-# the model to send mouse clicks to them while they are setting
-# themselves up, or to the editor once they are done.
-
+# This is only called by old-style helpers now, and converts window ID into
+# object ID
 proc GrabClicks {winId} {
     global helperTable
 
-    set topNode $helperTable($winId,whichModel)
-    set helperTable($topNode,current) $winId
+    ObjGrabClicks $helperTable($winId,whichInstance)
 }
 
+proc ObjGrabClicks {inst} {
+    global helperTable
+
+    set helperTable([$inst GetNode],current) $inst
+}
+
+# This is only called by old-style helpers now, and converts window ID into
+# object ID
 proc ReleaseClicks {winId} {
     global helperTable
 
-    set topNode $helperTable($winId,whichModel)
-    unset helperTable($topNode,current)
+    ObjReleaseClicks $helperTable($winId,whichInstance)
 }
 
-proc kill_helper_window { winId } {
-    # ShowMessage debug info "Killing $winId" ok
-    global helperTable runState
-    if {[info exists helperTable($winId,whichHelper)]} {
-	set topNode $helperTable($winId,whichModel)
-	if {[info exists helperTable($topNode,current)]} {
-	    if {[string compare $helperTable($topNode,current) $winId]==0} {
-		unset helperTable($topNode,current)
-	    }
-        }
-	if {[info exists runState($topNode,helperId)]} {
-	    if {[string equal $winId $runState($topNode,helperId)]} {
-#		if {[string equal start $helperTable(RunControl)::sendvars($topNode,currentMode)]} {
-#		    set kill_on_finish 1
-#		}
-#		set mode kill
-		unset runState($topNode,cnvs)
-		unset runState($topNode,helperId)
-	    }
-	}
-        unset helperTable($winId,whichHelper)
-#        if {![info exists kill_on_finish]} {
-	    destroy $winId
-#	}
-        #	if {[PrefValue custom(helperManager) helperManager]} {
-        #	    RunEnv::OnDestroyHelper $winId
-        #	}
-        # ShowMessage debug info "Killed $winId" ok
-    }
+proc ObjReleaseClicks {inst} {
+    global helperTable
+
+    unset helperTable([$inst GetNode],current)
 }
 
 proc GetState {winId} {
@@ -324,11 +268,10 @@ proc ProdObj {topNode nodeId caption} {
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
 		set target $helperTable($topNode,current)
-		set helperId $helperTable($target,whichHelper)
 		if {![llength $nodeId]} { ;# get from caption
 		    set nodeId [GetIdFromCaptionPath $caption]
 		}
-		SystemHelperCall $target $topNode click $target $nodeId \
+		SystemHelperCall $target $topNode Click $nodeId \
 		    [lindex [split $caption /] end]
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
@@ -377,10 +320,9 @@ proc ExDestroyHelpers {node} {
 
 proc KillHelpers {node} {
     global helperTable
-    foreach graphBox [array name helperTable *,whichHelper] {
-        scan $graphBox {%[^,]} window
-	if {[string equal $node $helperTable($window,whichModel)]} {
-	    kill_helper_window $window
+    foreach helperInst [array names helperTable *,whichInstance] {
+	if {[string equal $node [$helperTable($helperInst) GetNode]]} {
+	    itcl::delete object $helperTable($helperInst)
 	}
     }
 }
@@ -399,7 +341,7 @@ proc ClearView {} {
 # other files they need relative to it, e.g., file param helper
 
 proc SaveView {} {
-    global helperTable nameOfHelperStateFile simtmpdir
+    global helperTable nameOfHelperStateFile simtmpdir runState
 
     set topNode [GetNodeFromFocus]
     set nameOfHelperStateFile($topNode) \
@@ -407,16 +349,16 @@ proc SaveView {} {
     if {[llength $nameOfHelperStateFile($topNode)]} {
 	set tempFile [file join $simtmpdir temp_out.shf]
         set stream [NetOpen $tempFile w]
-        foreach displayBox [array name helperTable *,whichHelper] {
-            scan $displayBox {%[^,]} winId
+        foreach displayBox [array name helperTable *,whichInstance] {
             set helperId $helperTable($displayBox)
-            if {[string equal $topNode $helperTable($winId,whichModel)] && \
-		    ![string match $helperId $helperTable(RunControl)]} {
-                puts $stream $helperId
+	    set winId [$helperId GetWindow]
+            if {[string equal $topNode [$helperId GetNode]] && \
+		    ![string match $winId $runState($topNode,helperId)]} {
+                puts $stream [namespace tail [$helperId info class]]
                 puts $stream [wm title $winId]
                 puts $stream [wm geometry $winId]
                 set clickedPaths {}
-		catch {${helperId}::PrepareSaveString $winId}
+		$helperId PrepareSaveString
                 if {[info exists helperTable($winId,status)]} {
                     puts $stream [StripCrs $helperTable($winId,status)]
                 } else {
@@ -507,18 +449,16 @@ proc CreateView {node oldPath} {
     
     while {[gets $stream helperId] >= 0} {
 	gets $stream helperTitle
-	set winId [NewHelperWindow $node $helperId [RestoreCrs $helperTitle]]
 	gets $stream geometry
-	wm geometry $winId $geometry
 	gets $stream oldStatus
 	if {$origVersion<4.0} {
 	    set oldStatus [LoseDTRef $oldStatus]
 	}
-	set helperTable($winId,status) [RestoreCrs $oldStatus]
-	if {[catch {SystemHelperCall $winId $node Restore $winId}]} {
-	    kill_helper_window $winId
+	if {[catch {set inst [CreateHelperWindow $helperId \
+		[RestoreCrs $helperTitle] [RestoreCrs $oldStatus]]}]} {
 	    ShowMessage "Problem restoring helper" warning $errorInfo ok
 	}
+	wm geometry [$inst GetWindow] $geometry
     }
     close $stream
 }
@@ -534,7 +474,7 @@ proc LoadMREFormatView {node stream origVersion} {
 		set oldStatus [LoseDTRef $oldStatus]
 	    }
             set helperTable($winId,status) [RestoreCrs [LoseDTRef $oldStatus]]
-            SystemHelperCall $winId $node Restore $winId
+            SystemHelperCall $winId $node Restore
         }
     }
 }
@@ -563,19 +503,31 @@ proc TellAllHelpers {node fun args} {
     if {$doScrog} {
 	$helperTable(pestInterface)::ScrogOutputs [lindex $args 0]
     }
-    foreach displayBox [array name helperTable *,whichHelper] {
-        scan $displayBox {%[^,]} winId
-	if {[string equal $node $helperTable($winId,whichModel)]} {
-	    set helperTable(beingCalled) $winId
-	    set helperId $helperTable($displayBox)
-	    if {[catch {eval {${helperId}::$fun $winId} $args} HelpErr]} {
+    foreach helperInst [array names helperTable *,whichInstance] {
+	set inst $helperTable($helperInst)
+	if {[string equal $node [$inst GetNode]]} {
+	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		start_in_editor BuildProblem "Error running I/O tool" warning \
-                    "I/O tool \"[${helperId}::identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
+                    "I/O tool \"[$inst Identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
 		    helpers none none
 		set success 0
 	    }
 	}
     }
+# pre-object version
+#    foreach displayBox [array name helperTable *,whichHelper] {
+#        scan $displayBox {%[^,]} winId
+#	if {[string equal $node $helperTable($winId,whichModel)]} {
+#	    set helperTable(beingCalled) $winId
+#	    set helperId $helperTable($displayBox)
+#	    if {[catch {eval {${helperId}::$fun $winId} $args} HelpErr]} {
+#		start_in_editor BuildProblem "Error running I/O tool" warning \
+                    "I/O tool \"[${helperId}::identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
+		    helpers none none
+#		set success 0
+#	    }
+#	}
+#    }
     set helperTable(beingCalled) {}
     if {$doScrog} {
 	$helperTable(pestInterface)::RestoreOutputs
@@ -1092,10 +1044,16 @@ proc StartRun {node} {
 #                [array get helperTable] spare helperId]} {
 #       kill_helper_window $helperId
 #   }
-	set helperId [NewHelperWindow $node $defHelper \
-			  "Run control for [GetExecTitle $node]"]
-	${defHelper}::initialize $helperId
-	set runState($node,helperId) $helperId
+#	set helperId [NewHelperWindow $node $defHelper \
+#			  "Run control for [GetExecTitle $node]"]
+#	${defHelper}::initialize $helperId
+	if {[PrefValue custom(helperManager) helperManager]} {
+	    set ::RunEnv::CurrentContainer $RunEnv::runControlFrame($node)
+	}
+	set hlp [UniqueId helper]
+	similescript::$defHelper $hlp $::class_for_node($node) \
+			  "Run control for [GetExecTitle $node]"
+	set runState($node,helperId) [$hlp GetWindow]
     }
 # Do not put up mre, sliders, etc if model has failed to start
 #    if {![info exists running_c]} {
@@ -1115,16 +1073,20 @@ proc StartRun {node} {
 #    MakeSlidersForInputs
     
     if {[PrefValue custom(helperManager) helperManager]} {
+	set ::RunEnv::CurrentContainer $RunEnv::variableListFrame($node)
+	if {![catch {set oldInsp $helperTable($::RunEnv::CurrentContainer.container,whichInstance)}]} {
+	    itcl::delete object $oldInsp ;# model components may have changed
+	}
+ 	set hlp [UniqueId helper]
 	set helperId $helperTable(VariableList)
-	set winId [NewHelperWindow $node $helperId "Variables"]
-	SystemHelperCall $winId $node initialize $winId
-        ::RunEnv::ChildrenFocusParent $winId
+	similescript::$helperId $hlp $::class_for_node($node) Variables
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
 #	    $sliderBook delete InputSliders
 #	    $sliderBook raise Explorer
 #	    unset ::RunEnv::sliderControlFrame
 #	}
+	set ::RunEnv::CurrentContainer $RunEnv::dp0 ;# back to default
 	set ctrlPane [winfo parent [winfo parent $::RunEnv::runControlFrame($node)]]
 	update ;# so reqheight works next
 #	tkwait visibility $runState($node,helperId)

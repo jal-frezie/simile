@@ -443,7 +443,8 @@ proc GetTransTable { node } {
 
 proc ProdFromHelper {winId node caption} {
     global helperTable
-    ProdObj $helperTable($winId,whichModel) $node $caption
+    set inst $helperTable($winId,whichInstance)
+    ProdObj [$inst GetNode] $node $caption
 }
 
 proc GetCompProperty {topNode prop args} {

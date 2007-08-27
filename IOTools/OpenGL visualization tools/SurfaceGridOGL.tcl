@@ -195,11 +195,22 @@ namespace eval $keyValue {
         gluLookAt -50.0 50.0 100.0 10.0 10.0 0.0 0.0 1.0 0.0
     }
     
-    
-    proc initialize {winId} {
-        variable useNodes
+    proc setup3d {} {
 	package require tcl3d 0.3 ;# hides error messages so only do if needed
         namespace import -force ::maptools2::*
+        # todo make instance specific
+        set ::xdist 0
+        set ::ydist 0
+        set ::zdist 5
+        set ::xRotate 0.0
+        set ::yRotate 0.0
+        set ::zRotate 0.0
+    }
+
+    proc initialize {winId} {
+        variable useNodes
+	setup3d
+
         set useNodes($winId,editMode) 0
         set useNodes($winId,cbot) black
         set useNodes($winId,cmid) red
@@ -211,16 +222,7 @@ namespace eval $keyValue {
         set useNodes($winId,max) 100
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
-        
-        # todo make instance specific
-        set ::xdist 0
-        set ::ydist 0
-        set ::zdist 5
-        set ::xRotate 0.0
-        set ::yRotate 0.0
-        set ::zRotate 0.0
-        
-        
+                
         set useNodes($winId,PolygonModeFront) GL_FILL; # GL_POINT|GL_LINE|GL_FILL
         set useNodes($winId,PolygonModeBack) GL_LINE; # GL_POINT|GL_LINE|GL_FILL
         
@@ -275,7 +277,8 @@ namespace eval $keyValue {
     
     proc Restore {winId} {
         variable useNodes
-        namespace import -force ::maptools2::*
+
+        setup3d
         set useNodes($winId,editMode) 0
         message	$winId.msg -aspect 1000
         set state [GetState $winId]

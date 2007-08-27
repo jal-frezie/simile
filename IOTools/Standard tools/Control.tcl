@@ -54,8 +54,8 @@ namespace eval runcontrol33857 {
         global pauseImg
         global playImg
         #	global runState
-        
-	upvar 1 node node
+
+	upvar 1 modelNode node
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
 	}
@@ -438,12 +438,12 @@ namespace eval runcontrol33857 {
 		}
                 if {$redoPhase($node) < 1} {
 		    if {$display} {
-			TellAllHelpers $node reset
+			TellAllHelpers $node Reset
 		    }
 		    set sendvars($node,currentMode) stop
                 }
                 if {$display} {
-		    TellAllHelpers $node display $current $display $update
+		    TellAllHelpers $node Display $current $display $update
 		}
 	    } else {
 		set sendvars($node,currentMode) exit
@@ -503,7 +503,7 @@ namespace eval runcontrol33857 {
             if {$current==$nextDisp && \
 		    [string match start $sendvars($node,currentMode)]} {
 		UpdateBar $node $current blue ;# so GetModelTime does right
-		if {![TellAllHelpers $node display $current $display 1]} {
+		if {![TellAllHelpers $node Display $current $display 1]} {
 		    set sendvars($node,currentMode) stop
 		}
 	    }

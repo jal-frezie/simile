@@ -19,6 +19,7 @@ itcl::class similescript::ModelWindow {
     }
 
     public method CreateHelperWindow {helperId helperTitle} {
+redo with object
         set winId [do_for_node $modelNode NewHelperWindow $modelNode $helperId $helperTitle]
         do_for_node $modelNode ${helperId}::initialize $winId
         if {[PrefValue custom(helperManager) helperManager]} {
@@ -142,7 +143,6 @@ itcl::class similescript::HelperController {
     # Class providing basic control of existing helpers
     # The constructor DOES NOT create a helper use class Helper
     variable winId;    #Tk path to RunControl window
-    variable keyvalue; # RunControl namespace
     variable modelNode
     
     destructor {
@@ -150,16 +150,20 @@ itcl::class similescript::HelperController {
     }
     
     public method Show {} {
-        do_for_node $modelNode wm deiconify $winId
+	if {[string equal $winId [winfo toplevel $winId]]} {
+	    do_for_node $modelNode wm deiconify $winId
+	}
     }
     
     public method Hide {} {
         #puts "HelperController Hide $winId; $modelNode"
-        do_for_node $modelNode wm withdraw $winId
+	if {[string equal $winId [winfo toplevel $winId]]} {
+	    do_for_node $modelNode wm withdraw $winId
+	}
     }
-    
-    public method Destroy {} {
-        itcl::delete object $this
+
+    public method GetNode {} {
+	return $modelNode
     }
 }
 
@@ -198,22 +202,101 @@ itcl::class similescript::Helper {
     
     inherit HelperController
     
-    constructor {modelWindow winTitle} {
+    constructor {modelWindow helperTitle} {
+	global tcl_platform SimileAutoObjLoaded helperTable
+
 	set modelNode [lindex [$modelWindow GetNodeAndCanvas] 0]
         #puts "Helper constr $modelWindow [KeyValue] $winTitle"
-        #do_for_node $modelNode
-        set winId [$modelWindow CreateHelperWindow [KeyValue] $winTitle]
+
+    # ShowMessage debug info "Making $helperId $helperTitle" ok
+	if {[PrefValue custom(helperManager) helperManager]} {
+	    set winId ${::RunEnv::CurrentContainer}.container
+	    pack [frame $winId] -fill both -expand true
+#	    bind $winId <Destroy>  "itcl::delete object $this"
+# no need, widget is only removed by the destructor (not gui)
+	} else {
+	    set winId .helper[newInt]
+	    toplevel $winId
+	    if {[info exists SimileAutoObjLoaded]} {
+		wm state $winId withdrawn
+	    }
+	    wm title $winId [BlankCrs $helperTitle]
+	    if {![string match windows $tcl_platform(platform)]} {
+		wm iconbitmap $winId @../Images/weegraph.xbm
+	    }
+	    wm protocol $winId WM_DELETE_WINDOW "itcl::delete object $this"
+	}
+	set helperTable($winId,whichInstance) $this
         #puts "Helper constr winId $winId"
-        Hide
     }
     
+    destructor {
+	# ShowMessage debug info "Killing $winId" ok
+	global helperTable runState
+	if {[info exists helperTable($modelNode,current)]} {
+	    if {[string equal $winId  $helperTable($modelNode,current)]} {
+		unset helperTable($modelNode,current)
+	    }
+	}
+	if {[info exists runState($modelNode,helperId)]} {
+	    if {[string equal $winId $runState($modelNode,helperId)]} {
+		unset runState($modelNode,cnvs)
+		unset runState($modelNode,helperId)
+	    }
+	}
+	unset helperTable($winId,whichInstance)
+	# (done by base destructor)	    destroy $winId
+    }
+
     # All derived classes must reimplement with correct keyvalue
     public method KeyValue {} {
         return abstractHelper
     }
 
+    public method GetWindow {} {
+	return $winId
+    }
+
+}
+
+itcl::class similescript::OldStyleHelper {
+    inherit Helper
+    
+    constructor {modelWindow winTitle {state {}}} {
+	Helper::constructor $modelWindow $winTitle
+    } {
+	if {[llength $state]} {
+	    SetState $winId $state
+	    [KeyValue]::Restore $winId
+	} else {
+	    [KeyValue]::initialize $winId
+	}
+    }
+
+    public method Identify {} {
+	return [[KeyValue]::identify]
+    }
+
     public method Clear {} {
         [KeyValue]::clear $winId
+    }
+
+    public method Reset {} {
+	return [[KeyValue]::reset $winId]
+    }
+
+    public method Display {current display update} {
+	return [[KeyValue]::display $winId $current $display $update]
+    }
+
+    public method Click {node caption} {
+	return [[KeyValue]::click $winId $node $caption]
+    }
+
+    public method PrepareSaveString {} {
+	if {[llength [info procs [KeyValue]::PrepareSaveString]]} {
+	    [KeyValue]::PrepareSaveString $winId
+	}
     }
 }
 

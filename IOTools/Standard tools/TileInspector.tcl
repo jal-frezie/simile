@@ -173,7 +173,7 @@ namespace eval ::$keyValue {
 	if {![llength $plName]} {
 	    return
 	}
-	set node $helperTable($winId,whichModel)
+	set node [$helperTable($winId,whichInstance) GetNode]
 	if {$runState($node,modelRunning)>2} {
 	    PostPopup $X $Y
 #	    set trans [GetTransTable $plName]

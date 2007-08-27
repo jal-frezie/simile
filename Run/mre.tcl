@@ -292,9 +292,9 @@ namespace eval RunEnv {
 	set pageIndex [expr {[llength [$ParentContainer tabs]]+1}]
 	set newContainer [frame $pageId]
 	$ParentContainer add $newContainer -text "Page $pageIndex"
-	Addpanedwindow $newContainer vertical
+	set parentPath [Addpanedwindow $newContainer vertical]
 	$ParentContainer select $newContainer
-	return $newContainer.panedwindow.pane0
+	return [lindex [$parentPath panes] 0]
     }
     
     proc AddNotebookPageToCurrentContainer {} {
@@ -416,7 +416,6 @@ namespace eval RunEnv {
             set helperTable($winId,status) [RestoreCrs $oldStatus]
             ${CurrentHelperId}::Restore $winId
             bind $winId <Destroy>  "kill_helper_window $winId"
-            ChildrenFocusParent $winId
             close $stream
         }
     }
@@ -435,7 +434,8 @@ namespace eval RunEnv {
         #        parentType $parentType" ok; ##################
 	set children [winfo children $containerId]
         if {[lsearch $children *.container]>-1} {
-            kill_helper_window $containerId.container
+	    set oldObj $helperTable($containerId.container,whichInstance)
+	    itcl::delete object $oldObj ;# this deletes widget
         } else {
 	    set parentPath [FindParentpanedwindowOrNotebook $containerId]
 	    set parentType [winfo class $parentPath]
@@ -662,7 +662,7 @@ namespace eval RunEnv {
 	set pwId $containerId.panedwindow
 	panedwindow $pwId  -orient $orientation
         pack $pwId -expand yes -fill both
-	AddPane $pwId.pane0
+	AddPane [UniqueId $pwId.pane [$pwId panes]]
 
 #ShowMessage debug info "RunEnv::Addpanedwindow width $width; height $height" ok
         return $pwId
@@ -828,30 +828,6 @@ namespace eval RunEnv {
         }
     }
     
-    proc NewHelperInWindow {containerId helperId helperTitle} {
-        global helperTable
-        variable currentNode
-        #ShowMessage debug info "NewHelperInWindow: \
-        #        containerId $containerId helperId $helperId helperTitle $helperTitle\n \
-        #        containers children: [winfo children $containerId]" ok
-        
-        set winId $containerId.container
-        if {[catch {frame $winId}]} {
-            error "Cannot create a display in the selected pane \
-                    because it already contains one.\nPlease select an empty pane and try again."; #return
-        }
-        pack $winId -fill both -expand yes
-        set helperTable($helperTitle) $winId
-        set helperTable($winId,whichHelper) $helperId
-        set helperTable($winId,whichModel) $currentNode
-        bind $winId <Destroy>  "kill_helper_window $winId"
-        SetCurrentContainer [winfo parent $winId]
-        return $winId
-    }
-    
-    #  nameOfHelperStateFile is global because helpers might want to save names of
-    # other files they need relative to it, e.g., file param helper
-    
     proc SaveView {} {
         global helperTable nameOfHelperStateFile simtmpdir
         variable dp0
@@ -925,9 +901,11 @@ namespace eval RunEnv {
     
     proc SaveContainer {winId loss stream} {
         global helperTable
-        set helperId $helperTable($winId,whichHelper)
+
+	set inst $helperTable($winId,whichInstance)
+        set helperId [$inst info class]
         puts $stream "container [string range [winfo parent $winId] $loss end]"
-        puts $stream $helperId
+        puts $stream [namespace tail $helperId]
         # substitute <cr>s so entry goes on one line
         # not a toplevel #puts $stream [StripCrs [wm title $winId]]
         # not a toplevel #puts $stream [wm geometry $winId]
@@ -935,11 +913,12 @@ namespace eval RunEnv {
 # If helper includes a PrepareSaveString command, call it. 1st arg is 
 # expanded before executing helper namespace so window Id is copied from local 
 # variable.
-	namespace eval ::$helperId set winId $winId {;
-	    if {[llength [info procs PrepareSaveString]]} {
-		PrepareSaveString $winId
-	    }
-	}
+#	namespace eval ::$helperId set winId $winId {;
+#	    if {[llength [info procs PrepareSaveString]]} {
+#		PrepareSaveString $winId
+#	    }
+#	}
+	$inst PrepareSaveString
         if {[info exists helperTable($winId,status)]} {
             puts $stream [StripCrs $helperTable($winId,status)]
         } else {
@@ -1154,23 +1133,27 @@ namespace eval RunEnv {
     proc LoadContainer {node stream line origVersion} {
         global helperTable
         variable dp0
-        
+	variable CurrentContainer
+
         #ShowMessage debug info "LoadContainer: stream $stream, line $line" ok
         scan $line "%s %s" item containerId
         if {$origVersion<4.0} {
-            set containerId [LoseTLRef $containerId]
-        }
+	    set CurrentContainer $containerId
+	} elseif {[info exists containerId]} {
+	    set CurrentContainer $dp0.$containerId
+        } else {
+	    set CurrentContainer $dp0
+	}
         
         gets $stream helperId
         #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
-        set winId [NewHelperInWindow $dp0.$containerId $helperId ""]
         gets $stream oldStatus
         if {$origVersion<4.0} {
             set oldStatus [LoseDTRef $oldStatus]
         }
-        set helperTable($winId,status) [RestoreCrs $oldStatus]
-        SystemHelperCall $winId $node Restore $winId
-        ChildrenFocusParent $winId
+#        set helperTable($winId,status) [RestoreCrs $oldStatus]
+puts $oldStatus
+	CreateHelperWindow $helperId {} [RestoreCrs $oldStatus]
     }
     
     proc MainNotebookEmptyPage {} {
@@ -1184,71 +1167,16 @@ namespace eval RunEnv {
         return none
     }
     
-    proc UniqueId {basename pagenames} {
+#    proc UniqueId {basename pagenames} {
         # basename is the root of the Id, numbers after / are appended to it
         # pagenames is the list of existing names
-        set i 1
-        while {[lsearch -regexp $pagenames $basename$i] > -1} {
-            incr i
-        }
-        return $basename$i
-    }
+#        set i 1
+#        while {[lsearch -regexp $pagenames $basename$i] > -1} {
+#            incr i
+#        }
+#       return $basename$i
+#    }
 } ;# end of namespace RunEnv
-
-proc NewMreHelperWindow {node helperId helperTitle} {
-    global helperTable
-    variable ::RunEnv::dp0;    # display pane
-    
-    #ShowMessage debug info "NewMreHelperWindow: helperId $helperId; helperTitle $helperTitle" ok
-    
-    # if it is a $helperTable(VariableList) usu ModelInspector and one already
-    # exists, destroy the existing (())don't make a new one, as only one is allowed
-    if {[string match $helperTable(VariableList) $helperId]} {
-        foreach winIdHelper [array name helperTable *,whichHelper] {
-            if {[string match $helperTable($winIdHelper) $helperId]} {
-                scan $winIdHelper {%[^,]} winId
-                if {[string equal $node $helperTable($winId,whichModel)]} {
-                    kill_helper_window $winId
-                }
-            }
-        }
-    }
-    
-    # put the RunControl in its own pane
-    set def 0
-    
-    ## Mods my Jasper: Because of quirky behaviour under linux, the standard tools
-    ## must each get a new frame (bag) whenever they are rebuilt
-    switch $helperId \
-            $helperTable(RunControl) {
-                set bag $RunEnv::runControlFrame($node).bag
-                if {[winfo exists $bag]} {
-                    destroy $bag
-                }
-                pack [frame $bag] -fill both -expand on
-                set winId $bag
-                set ::RunEnv::runControlWindId($node) $bag
-            } \
-            $helperTable(VariableList) {
-                set bag $RunEnv::variableListFrame($node).bag
-                if {[winfo exists $bag]} {
-                    destroy $bag
-                }
-                pack [frame $bag] -fill both -expand true
-                set winId $bag
-            } \
-            default {
-                set def 1
-                set winId [::RunEnv::NewHelperInWindow $::RunEnv::CurrentContainer $helperId $helperTitle]
-            }
-    if {$def==0} {
-        bind $winId <Destroy>  "kill_helper_window $winId"
-        bind $winId <Button-1> "+::RunEnv::SetCurrentContainer $winId"
-        set helperTable($helperTitle) $winId
-    }
-    
-    return $winId
-}
 
 proc RaiseMREFor {node} {
     global helperTable

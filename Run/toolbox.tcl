@@ -1021,6 +1021,7 @@ proc ControlDraw {prologVersion} {
 	}
     }
     CheckCompilerLocation
+    LoadModelWindowExtensions
     if {[string equal home $runHow(where)]} {
 	MakeHelperMenu
     }
@@ -1029,7 +1030,6 @@ proc ControlDraw {prologVersion} {
     if {[string equal aqua [tk windowingsystem]]} {
 	tickle
     }
-    LoadModelWindowExtensions
     
     # Bogosity alert -- setting an env var to {} causes it to stay
     # (or be) unset (in windows) otherwise lappend env(OPEN_MODEL)
@@ -1760,10 +1760,24 @@ proc InsertModel {winId} {
     }
 }
 
-set instCount 0
-proc MakeDesktopNode {} {
+proc UniqueId {base {used {}}} {
     global instCount
-    set newInstance modelWin[incr instCount]
+
+    set new 0
+    while {!$new} {
+	if {[info exists instCount($base)]} {
+	    incr instCount($base)
+	} else {
+	    set instCount($base) 0
+	}
+	set try $base$instCount($base)
+	set new [expr [lsearch $used $try]==-1]
+    }
+    return $try
+}
+
+proc MakeDesktopNode {} {
+    set newInstance [UniqueId modelWin]
     similescript::ModelWindow $newInstance
     return [$newInstance GetNodeAndCanvas]
 }
