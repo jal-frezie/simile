@@ -135,47 +135,55 @@ proc AddHelperSublist {fm title ct} {
     set nct 0
     set helperList [glob -nocomplain *.tcl]
     foreach helperApp [lsort $helperList] {
-        if [catch {source $helperApp} wibble] {
+        if {[catch {source $helperApp} wibble]} {
             # done at startup -- make sure dialog is not concealed
             wm withdraw .
 # do it after idle so this process is not hung till user responds
             start_in_editor BuildProblem "Error loading I/O tool" warning \
                     "I/O tool [pwd]/$helperApp had a $::errorInfo" \
 		    helpers none none
-        } else {
-            if {[info exists keyValue]} {
-                set action [${keyValue}::identify]
-                if {[string match {Run control} $action]} {
-                    set helperTable(RunControl) $keyValue
-                }
-                if {[string match {Explorer (Tile version)} $action]} {
-                    set helperTable(VariableList) $keyValue ;# for MRE
-                }
-                if {[string match {PEST interface} $action]} {
-                    set helperTable(pestInterface) $keyValue ;# for MRE
-                }
-#                if {[string match {Slider control} $action]} {
-#                    set helperTable(SliderControl) $keyValue
-#                }
-                if {[string match {Data table} $action]} {
-		    set table_viewer(id) $keyValue
-                }
-                $m add command -label $action \
-                        -command [list CreateHelperWindow $keyValue $action]
-# This is an old-style helper, so create object wrapper for it
-		set className [ClassFromKey $keyValue]
-		set ::gKeyValue $keyValue ;# make global so decl picks it up
-		itcl::class similescript::$className {
-		    inherit OldStyleHelper
-		    public method KeyValue {} [list return $gKeyValue]
-		    constructor {modelWin winTitle {state {}}} {
-# perverse extra body because base class constructor has args
-			OldStyleHelper::constructor $modelWin $winTitle $state
-		    } {}
-		}
-                unset keyValue
-            }
+	    continue
         }
+	if {![info exists keyValue]} continue
+	set action [${keyValue}::identify]
+	if {[string match {Run control} $action]} {
+	    set helperTable(RunControl) $keyValue
+	}
+	if {[string match {Explorer (Tile version)} $action]} {
+	    set helperTable(VariableList) $keyValue ;# for MRE
+	}
+	if {[string match {PEST interface} $action]} {
+	    set helperTable(pestInterface) $keyValue ;# for MRE
+	}
+	#                if {[string match {Slider control} $action]} {
+	#                    set helperTable(SliderControl) $keyValue
+	#                }
+	if {[string match {Data table} $action]} {
+	    set table_viewer(id) $keyValue
+	}
+	$m add command -label $action \
+	    -command [list CreateHelperWindow $keyValue $action]
+# This is an old-style helper, so create object wrapper for it
+	set className [ClassFromKey $keyValue]
+	set ::gKeyValue $keyValue ;# make global so decl picks it up
+	itcl::class similescript::$className {
+	    inherit OldStyleHelper
+	    constructor {modelWin winTitle {state {}}} {
+# perverse extra body because base class constructor has args
+		OldStyleHelper::constructor $modelWin $winTitle $state
+	    } {}
+	    public method KeyValue {} [list return $gKeyValue]
+	    if {[llength [namespace which ${gKeyValue}::Print]]} {
+		public method Print {} {
+		    [KeyValue]::Print [GetWindow]
+		}
+	    } elseif {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
+		public method Print {} {
+		    PrintRandomCanvas [[KeyValue]::GetCanvas [GetWindow]]
+		}
+	    } ;# else use inherited warning message
+	}
+	unset keyValue
     }
     foreach subDir [glob -nocomplain *] {
         if [file isdirectory $subDir] {
@@ -506,12 +514,14 @@ proc TellAllHelpers {node fun args} {
     foreach helperInst [array names helperTable *,whichInstance] {
 	set inst $helperTable($helperInst)
 	if {[string equal $node [$inst GetNode]]} {
+	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		start_in_editor BuildProblem "Error running I/O tool" warning \
                     "I/O tool \"[$inst Identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
 		    helpers none none
 		set success 0
 	    }
+	    set helperTable(beingCalled) {}
 	}
     }
 # pre-object version
@@ -528,7 +538,7 @@ proc TellAllHelpers {node fun args} {
 #	    }
 #	}
 #    }
-    set helperTable(beingCalled) {}
+#    set helperTable(beingCalled) {}
     if {$doScrog} {
 	$helperTable(pestInterface)::RestoreOutputs
 	eval WriteLogs $node $args

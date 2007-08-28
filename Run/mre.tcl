@@ -323,19 +323,9 @@ namespace eval RunEnv {
         global helperTable env tcl_platform
         variable CurrentContainer
         variable canvasId
-        
         if {[winfo exists $CurrentContainer.container]} {
-            set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
-            if {![string match "" [info commands ::${CurrentHelperId}::Print]]} {
-                ::${CurrentHelperId}::Print $CurrentContainer.container
-            } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
-                set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
-                PrintRandomCanvas $canvasId
-            } else {
-                ShowMessage Warning warning \
-                        "[${CurrentHelperId}::identify] does not support printing." ok
-            }
-            
+            set inst $helperTable($CurrentContainer.container,whichInstance)
+	    $inst Print
         }
     }
     

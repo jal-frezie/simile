@@ -212,8 +212,8 @@ itcl::class similescript::Helper {
 	if {[PrefValue custom(helperManager) helperManager]} {
 	    set winId ${::RunEnv::CurrentContainer}.container
 	    pack [frame $winId] -fill both -expand true
-#	    bind $winId <Destroy>  "itcl::delete object $this"
-# no need, widget is only removed by the destructor (not gui)
+	    bind $winId <Destroy>  "itcl::delete object $this"
+# needed because gui can remove parent widget
 	} else {
 	    set winId .helper[newInt]
 	    toplevel $winId
@@ -245,6 +245,7 @@ itcl::class similescript::Helper {
 	    }
 	}
 	unset helperTable($winId,whichInstance)
+	bind $winId <Destroy> {} ;# prevent destructor calling itself when...
 	# (done by base destructor)	    destroy $winId
     }
 
@@ -265,12 +266,16 @@ itcl::class similescript::OldStyleHelper {
     constructor {modelWindow winTitle {state {}}} {
 	Helper::constructor $modelWindow $winTitle
     } {
+	global helperTable
+
+	set helperTable(beingCalled) $this
 	if {[llength $state]} {
 	    SetState $winId $state
 	    [KeyValue]::Restore $winId
 	} else {
 	    [KeyValue]::initialize $winId
 	}
+	set helperTable(beingCalled) {}
     }
 
     public method Identify {} {

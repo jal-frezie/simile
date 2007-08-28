@@ -389,14 +389,14 @@ proc GetCaptionPathFromId { node } {
 proc GetIdFromCaptionPath { caption } {
     global helperTable myNode
 
-    set winId $helperTable(beingCalled)
+    set inst $helperTable(beingCalled)
     set node [GetCompProperty $myNode IdFromCapt $caption]
-    if {![string equal nomatch $node] || ![string length $winId]} {
+    if {![string equal nomatch $node] || ![string length $inst]} {
 	return $node
     }
 # failed to get caption, have we already tried this submodel
-    if {[info exists helperTable($winId,lost)]} {
-	foreach lostModel $helperTable($winId,lost) {
+    if {[info exists helperTable($inst,lost)]} {
+	foreach lostModel $helperTable($inst,lost) {
 	    if {[string match $lostModel* $caption]} {
 		return nomatch ;# yes, user has been warned
 	    }
@@ -419,9 +419,9 @@ proc GetIdFromCaptionPath { caption } {
     } else {
 	set lostType submodel
     }
-    set helperType [$helperTable($winId,whichHelper)::identify]
+    set helperType [$inst Identify]
     BuildProblem "Missing values for helper" warning "An instance of the I/O tool \"$helperType\" has requested information about the $lostType $lostBit, but there is no $lostType of this name in the current model. If the model has changed since the I/O tools were set up, you should adjust the settings of the I/O tools to reflect these changes, otherwise more warnings may appear and the model may stop running." helpers
-    lappend helperTable($winId,lost) $lostBit
+    lappend helperTable($inst,lost) $lostBit
     return nomatch
 }
 
