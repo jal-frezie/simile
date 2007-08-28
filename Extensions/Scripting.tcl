@@ -199,8 +199,8 @@ itcl::class similescript::Snap {
 }
     
 itcl::class similescript::Helper {
-    
     inherit HelperController
+    public variable State {}
     
     constructor {modelWindow helperTitle} {
 	global tcl_platform SimileAutoObjLoaded helperTable
@@ -220,7 +220,11 @@ itcl::class similescript::Helper {
 	    if {[info exists SimileAutoObjLoaded]} {
 		wm state $winId withdrawn
 	    }
-	    wm title $winId [BlankCrs $helperTitle]
+	    if {[string length $helperTitle]} {
+		wm title $winId [BlankCrs $helperTitle]
+	    } else {
+		wm title $winId [Identify]
+	    }
 	    if {![string match windows $tcl_platform(platform)]} {
 		wm iconbitmap $winId @../Images/weegraph.xbm
 	    }
@@ -254,6 +258,18 @@ itcl::class similescript::Helper {
         return abstractHelper
     }
 
+# This is optional, some helpers do not store earlier values
+    public method Clear {} {
+    }
+
+# This is optional, some helpers do not distinguish data from different runs
+    public method Reset {} {
+    }
+
+# This is optional, some helpers may keep their state permanently up to date
+    public method PrepareSaveString {} {
+    }
+
     public method GetWindow {} {
 	return $winId
     }
@@ -270,7 +286,7 @@ itcl::class similescript::OldStyleHelper {
 
 	set helperTable(beingCalled) $this
 	if {[llength $state]} {
-	    SetState $winId $state
+	    set State $state
 	    [KeyValue]::Restore $winId
 	} else {
 	    [KeyValue]::initialize $winId
@@ -278,22 +294,22 @@ itcl::class similescript::OldStyleHelper {
 	set helperTable(beingCalled) {}
     }
 
+# compulsory
     public method Identify {} {
 	return [[KeyValue]::identify]
     }
 
-    public method Clear {} {
-        [KeyValue]::clear $winId
-    }
-
+# optional (but all old-style helpers have it)
     public method Reset {} {
 	return [[KeyValue]::reset $winId]
     }
 
+# optional (but all old-style helpers have it)
     public method Display {current display update} {
 	return [[KeyValue]::display $winId $current $display $update]
     }
 
+# optional if you never call GrabClicks (but all old-style helpers have it)
     public method Click {node caption} {
 	return [[KeyValue]::click $winId $node $caption]
     }

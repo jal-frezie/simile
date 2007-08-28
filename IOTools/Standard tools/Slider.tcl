@@ -388,7 +388,7 @@ namespace eval slide139 {
         global helperTable whichParamsAffected
         set metaFile [ChooseFile params.spf "Load parameters from:" 0]
         if {[llength $metaFile]} {
-            set topNode $helperTable($winId,whichModel)
+            set topNode [$helperTable($winId,whichInstance) GetNode]
             ZapParams $topNode $smPath $metaFile
         }
     }
@@ -401,7 +401,7 @@ namespace eval slide139 {
             set part [file join $simtmpdir temp_out.spf]
             set iStr [open $part w]
             
-            set topNode $helperTable($winId,whichModel)
+            set topNode [$helperTable($winId,whichInstance) GetNode]
             set snip [string length $smPath]
             foreach node [GetObjectList] {
                 set title [GetCaptionPathFromId $node]
@@ -510,7 +510,8 @@ namespace eval slide139 {
         foreach currentCaption [GetState $winId] {
             set title [RestoreCrs $currentCaption]
             set node [GetIdFromCaptionPath $title]
-            set valGroup [InputVarFor $helperTable($winId,whichModel) $node]
+            set valGroup [InputVarFor [$helperTable($winId,whichInstance) \
+					   GetNode] $node]
             upvar \#0 $valGroup valArray
             if {[string equal comboChoices $valGroup]} {
                 # will need widget address to update it!

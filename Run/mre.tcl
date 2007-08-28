@@ -309,16 +309,6 @@ namespace eval RunEnv {
         tk_popup .helpers.sub2 [winfo pointerx $mre] [winfo pointery $mre]
     }
     
-    # Not used - possibly never will be but is skeleton to use the selection for transfer
-    # of copied helper
-    proc SelectionHandler {offset maxChars} {
-        global helperTable
-        variable CurrentContainer
-        set SelStr [StripCrs $helperTable($CurrentContainer.container,status)]
-        set last [expr {$offset + $maxChars}]
-        return [string range $SelStr $offset $last]
-    }
-    
     proc PrintCurrentContainer {} {
         global helperTable
         variable CurrentContainer
@@ -336,44 +326,21 @@ namespace eval RunEnv {
     }
     
     proc CopyHelper {} {
-        global helperTable simtmpdir tcl_platform
+        global helperTable simtmpdir
         variable CurrentContainer
-        variable CurrentHelperId
-        variable canvasId
-        
-        #ShowMessage debug info \
-        "CopyHelper container: $containerId; \n\
-                CurrentContainer $CurrentContainer\n \
-                selection owner: [selection own]\n\
-                focus owner [focus]\n\
-                container children [winfo children $CurrentContainer]\n\
-                CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)" ok
-        if {[winfo exists $CurrentContainer.container]} {
-            set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
-            
-            if {[string match windows $tcl_platform(platform)]} {
-                if {![string match "" [info commands ::${CurrentHelperId}::CopyToClipboard]]} {
-                    ${CurrentHelperId}::CopyToClipboard $CurrentContainer.container
-                } elseif {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
-                    set canvasId [::${CurrentHelperId}::GetCanvas $CurrentContainer.container]
-                    CopyCanvasToWindowsClipboard $canvasId 0
-                } else {
-                    ShowMessage Warning warning \
-                            "[${CurrentHelperId}::identify] does not support copying" ok
-                }
-                set copyfile $simtmpdir/mrecopy.txts
+
+	set inst $helperTable($CurrentContainer.container,whichInstance)
+	if {[lsearch [$inst info functions] CopyToClipboard]>-1} {
+	    $inst CopyToClipboard
+	}
+
+	set copyfile $simtmpdir/mrecopy.txts
 # If helper includes a PrepareSaveString command, call it
-		namespace eval ::$CurrentHelperId \
-		    set winId $CurrentContainer.container {;
-		    if {[llength [info procs PrepareSaveString]]} {
-			PrepareSaveString $winId
-		    }
-		}
-                set stream [NetOpen $copyfile w]
-                catch {puts $stream [StripCrs $helperTable($CurrentContainer.container,status)]}
-                close $stream
-            }
-        }
+	$inst PrepareSaveString
+	set stream [NetOpen $copyfile w]
+	puts $stream [namespace tail [$inst info class]]
+	puts $stream [StripCrs [$inst cget -State]]
+	close $stream
     }
     
     proc CutHelper {} {
@@ -382,18 +349,14 @@ namespace eval RunEnv {
     }
     
     proc PasteHelper {} {
-        global helperTable simtmpdir
-        variable CurrentContainer
-        variable CurrentHelperId
+        global simtmpdir
         
         set copyfile $simtmpdir/mrecopy.txts
         if {[file exists $copyfile]} {
             set stream [NetOpen $copyfile r]
-            set winId [NewHelperInWindow $CurrentContainer $CurrentHelperId ""]
+	    gets $stream oldClass
             gets $stream oldStatus
-            set helperTable($winId,status) [RestoreCrs $oldStatus]
-            ${CurrentHelperId}::Restore $winId
-            bind $winId <Destroy>  "kill_helper_window $winId"
+	    CreateHelperWindow $oldClass {} $oldStatus
             close $stream
         }
     }
@@ -915,11 +878,7 @@ namespace eval RunEnv {
 #	    }
 #	}
 	$inst PrepareSaveString
-        if {[info exists helperTable($winId,status)]} {
-            puts $stream [StripCrs $helperTable($winId,status)]
-        } else {
-            puts $stream {}
-        }
+	puts $stream [StripCrs [$inst cget -State]]
     }
     
     proc LoadView {} {

@@ -173,18 +173,35 @@ proc AddHelperSublist {fm title ct} {
 		OldStyleHelper::constructor $modelWin $winTitle $state
 	    } {}
 	    public method KeyValue {} [list return $gKeyValue]
+	    if {[llength [namespace which ${gKeyValue}::clear]]} {
+		# override do-nothing clear in base class defn
+		public method Clear {} {
+		    ::[KeyValue]::clear [GetWindow]
+		}
+	    }
 	    if {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
 		public method GetCanvas {} {
-		    [KeyValue]::GetCanvas [GetWindow]
+		    ::[KeyValue]::GetCanvas [GetWindow]
 		}
 		public method Print {} {
 		    PrintRandomCanvas [GetCanvas]
+		}
+		public method CopyToClipboard {} {
+		    if {[string match windows $tcl_platform(platform)]} {
+			CopyCanvasToWindowsClipboard [GetCanvas]
+		    }
 		}
 	    } ;# else use inherited warning message
 	    if {[llength [namespace which ${gKeyValue}::Print]]} {
 		# override canvas-based print above
 		public method Print {} {
-		    [KeyValue]::Print [GetWindow]
+		    ::[KeyValue]::Print [GetWindow]
+		}
+	    }
+	    if {[llength [namespace which ${gKeyValue}::CopyToClipboard]]} {
+		# override canvas-based copy above
+		public method CopyToClipboard {} {
+		    ::[KeyValue]::CopyToClipboard [GetWindow]
 		}
 	    }
 	}
@@ -243,6 +260,7 @@ proc GrabClicks {winId} {
     ObjGrabClicks $helperTable($winId,whichInstance)
 }
 
+# should go in model window obj
 proc ObjGrabClicks {inst} {
     global helperTable
 
@@ -257,20 +275,22 @@ proc ReleaseClicks {winId} {
     ObjReleaseClicks $helperTable($winId,whichInstance)
 }
 
+# should go in model window obj
 proc ObjReleaseClicks {inst} {
     global helperTable
 
     unset helperTable([$inst GetNode],current)
 }
 
+# Two more old-style wrapper funx
 proc GetState {winId} {
     global helperTable
-    return $helperTable($winId,status)
+    $helperTable($winId,whichInstance) cget -State
 }
 
 proc SetState {winId newState} {
     global helperTable
-    set helperTable($winId,status) $newState
+    $helperTable($winId,whichInstance) configure -State $newState
 }
 
 proc ProdObj {topNode nodeId caption} {
@@ -343,10 +363,8 @@ proc KillHelpers {node} {
 proc ClearView {} {
     global helperTable
 
-    foreach displayBox [array name helperTable *,whichHelper] {
-        scan $displayBox {%[^,]} winId
-        set helperId $helperTable($displayBox)
-        catch {${helperId}::clear $winId}; # in case helper has no clear proc
+    foreach {name inst} [array get helperTable *,whichInstance] {
+	$inst Clear
     }
 }
 
@@ -372,11 +390,7 @@ proc SaveView {} {
                 puts $stream [wm geometry $winId]
                 set clickedPaths {}
 		$helperId PrepareSaveString
-                if {[info exists helperTable($winId,status)]} {
-                    puts $stream [StripCrs $helperTable($winId,status)]
-                } else {
-                    puts $stream {}
-                }
+		puts $stream [StripCrs [$helperId cget -State]]
             }
         }
         close $stream
@@ -479,16 +493,14 @@ proc CreateView {node oldPath} {
 proc LoadMREFormatView {node stream origVersion} {
     global helperTable
     while {[gets $stream helperId] >= 0} {
-        if {[namespace exists $helperId]} {
-            set helperTitle [${helperId}::identify]
-            set winId [NewHelperWindow $node $helperId $helperTitle]
-            gets $stream oldStatus
-	    if {$origVersion<4.0} {
-		set oldStatus [LoseDTRef $oldStatus]
-	    }
-            set helperTable($winId,status) [RestoreCrs [LoseDTRef $oldStatus]]
-            SystemHelperCall $winId $node Restore
-        }
+        gets $stream oldStatus
+	if {$origVersion<4.0} {
+	    set oldStatus [LoseDTRef $oldStatus]
+	}
+	if {[catch {set inst [CreateHelperWindow $helperId {} \
+				  [RestoreCrs $oldStatus]]}]} {
+	    ShowMessage "Problem restoring helper" warning $errorInfo ok
+	}
     }
 }
 
