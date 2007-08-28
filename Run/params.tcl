@@ -332,6 +332,7 @@ proc AcceptData {topNode compName notInput complain} {
     upvar \#0 $widgetLocn outNames
 
     set node [IdFromTail $topNode $compName $notInput]
+    set dataChanged 0
     if {$complain > -1} {
         if {![string equal disabled [$outNames($compName).e cget -state]]} {
             set newData [UglifyValList [$outNames($compName).e get]]
@@ -343,7 +344,6 @@ proc AcceptData {topNode compName notInput complain} {
         }
     }
     
-    set dataChanged 0
     # for each constant value, check whether it has been changed, and if so,
     # flag a complete model rebuild. Do same if running_c lost due to crash
     # or model not yet started

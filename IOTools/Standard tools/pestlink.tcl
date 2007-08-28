@@ -903,6 +903,7 @@ namespace eval $keyValue {
             }
         }
 	if {[llength $targetData(needed)]} {
+	    ShowMessage "PEST setup incomplete" warning "Some measured data not specified: [join $targetData(needed) ", "]" ok
 	    return
 	}
 	set numOutputs [llength $useNodes($winId,drivers)]
