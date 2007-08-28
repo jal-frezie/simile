@@ -320,31 +320,19 @@ namespace eval RunEnv {
     }
     
     proc PrintCurrentContainer {} {
-        global helperTable env tcl_platform
+        global helperTable
         variable CurrentContainer
-        variable canvasId
-        if {[winfo exists $CurrentContainer.container]} {
-            set inst $helperTable($CurrentContainer.container,whichInstance)
-	    $inst Print
-        }
+
+	set inst $helperTable($CurrentContainer.container,whichInstance)
+	$inst Print
     }
     
     proc ExportCurrentContainer {} {
-        global helperTable env tcl_platform
+        global helperTable
         variable CurrentContainer
-        variable canvasId
         
-        if {[winfo exists $CurrentContainer.container]} {
-            set CurrentHelperId $helperTable($CurrentContainer.container,whichHelper)
-            if {![string match "" [info commands ::${CurrentHelperId}::GetCanvas]]} {
-                set canvasId [$helperTable($CurrentContainer.container,whichHelper)::GetCanvas $CurrentContainer.container]
-                PostScrog $canvasId
-            } else {
-                ShowMessage Warning warning \
-                        "[${CurrentHelperId}::identify] does not support PostScript export." ok
-            }
-            
-        }
+	set inst $helperTable($CurrentContainer.container,whichInstance)
+	PostScrog [$inst GetCanvas]
     }
     
     proc CopyHelper {} {
@@ -708,13 +696,30 @@ namespace eval RunEnv {
             }
  	    set useSpaceAbility disabled
 	    set copyAbility normal
+
+	    set inst $helperTable($win.container,whichInstance)
+	    if {[catch {$inst info function GetCanvas}]} {
+		set exportAbility disabled
+	    } else {
+		set exportAbility normal
+	    }
+	    if {[catch {$inst info function Print}]} {
+		set printAbility disabled
+	    } else {
+		set printAbility normal
+	    }
 	} else {
 	    $tb1.b20 configure -state normal
 	    $tb1.b21 configure -state normal
 	    set useSpaceAbility normal
 	    set copyAbility disabled
+	    set exportAbility disabled
+	    set printAbility disabled
 	}
 	$mreMenu entryconfigure Add -state $useSpaceAbility
+	[$mainframe getmenu file] entryconfigure Print... -state $printAbility
+	[$mainframe getmenu file] entryconfigure {Export PostScript...} \
+	    -state $exportAbility
 	[$mainframe getmenu edit] entryconfigure Copy -state $copyAbility
 	[$mainframe getmenu edit] entryconfigure Cut -state $copyAbility
 	[$mainframe getmenu edit] entryconfigure Paste -state $useSpaceAbility
@@ -722,6 +727,7 @@ namespace eval RunEnv {
 	$tb1.b10 configure -state $copyAbility ;# copy button
 	$tb1.b11 configure -state $copyAbility ;# cut button
 	$tb1.b12 configure -state $useSpaceAbility; # paste button
+	$tb1.b14 configure -state $printAbility; # print button
 	$tb1.b31 configure -state $useSpaceAbility; # Add Notebook button
 	$tb1.b40 configure -state $useSpaceAbility; # add helper buttons
 	$tb1.b41 configure -state $useSpaceAbility

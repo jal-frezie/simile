@@ -173,15 +173,20 @@ proc AddHelperSublist {fm title ct} {
 		OldStyleHelper::constructor $modelWin $winTitle $state
 	    } {}
 	    public method KeyValue {} [list return $gKeyValue]
+	    if {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
+		public method GetCanvas {} {
+		    [KeyValue]::GetCanvas [GetWindow]
+		}
+		public method Print {} {
+		    PrintRandomCanvas [GetCanvas]
+		}
+	    } ;# else use inherited warning message
 	    if {[llength [namespace which ${gKeyValue}::Print]]} {
+		# override canvas-based print above
 		public method Print {} {
 		    [KeyValue]::Print [GetWindow]
 		}
-	    } elseif {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
-		public method Print {} {
-		    PrintRandomCanvas [[KeyValue]::GetCanvas [GetWindow]]
-		}
-	    } ;# else use inherited warning message
+	    }
 	}
 	unset keyValue
     }
