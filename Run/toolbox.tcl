@@ -681,7 +681,8 @@ proc compile_c {workingDir extLibs} {
       cd $workingDir
       set serial -1
     } else {
-	file delete model.cpp
+	# file delete model.cpp
+	# (no, we might be copying)
 	file delete objtmp.o
     }
     # do not allow an old dcf to be saved with a new model
