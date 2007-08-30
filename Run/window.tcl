@@ -745,7 +745,7 @@ proc AcceleratorState {winName menu item state} {
 	    }
             bind $winName $accelerator($menu,$item) $action
         } else  {
-            bind $winName $accelerator($menu,$item) {puts "cvn egnaro %K"}
+            bind $winName $accelerator($menu,$item) {}
         }
     }
 }
@@ -2078,11 +2078,11 @@ proc KillTransients {winId} {
 }
 
 proc byebye {winId} {
-    global window_info class_for_node
+    global window_info classTable
     set node $window_info($winId,top_node)
     if {$window_info($winId,is_top_level)} {
-	itcl::delete object $class_for_node($node)
-	unset class_for_node($node)
+	itcl::delete object $classTable(model,$node)
+	unset classTable(model,$node)
     } else { ;# non-toplevels do not need class deletion, so DIY
 	ByeByeNode $winId
     }

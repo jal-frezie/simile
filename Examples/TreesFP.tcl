@@ -28,7 +28,7 @@ similescript::RunControl runControl
 
 # Get the value of model variable r which was set by the parameter file
 # "../Examples/forestV4FP.sml"
-runControl GetValue "/r"
+puts [runControl GetValue "/r"]
 
 # overwrite the current file parameters
 # NB the parameter will not be read until the model is reset
@@ -39,5 +39,5 @@ runControl Reset
 
 # Get the value of model variable r which was set by the parameter file 
 # "../Examples/forestV4FPb.sml"
-runControl GetValue "/r"
+puts [runControl GetValue "/r"]
 

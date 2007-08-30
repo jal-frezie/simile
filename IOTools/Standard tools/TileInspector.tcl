@@ -74,7 +74,7 @@ namespace eval ::$keyValue {
                 }
                 set submodel($path) $component
                 $tableframe.table insert $parent end -id $component \
-		    -text [BlankCrs [lindex $path end]]  -open 1 \
+		    -text [BlankCrs [lindex $path end]] -open 1 \
 		    -image $im(submodel)
             }
         }
@@ -158,10 +158,21 @@ namespace eval ::$keyValue {
         return ""
     }
 
+# Hah, would like to make the full reference by combining the captions like
+# this, but we have stripped them of CRs so they no longer match the model.
+#    proc GetFullPath {tree node} {
+#	set local [$tree item $node -text]
+#	if {[string length [set parent [$tree parent $node]]]} {
+#	    set base [GetFullPath $tree $parent]
+#	} else {
+#	    set base {}
+#	}
+#	return $base/$local
+#    }
+#
     proc OnElementClick { winId x y } {
 	set node [$winId.tableframe.table identify row $x $y]
-	set caption [$winId.tableframe.table item $node -text]
-	ProdFromHelper $winId $node $caption
+	ProdFromHelper $winId $node [GetCaptionPathFromId $node]
     }
     
     proc DoInspPopup {winId X Y x y} {

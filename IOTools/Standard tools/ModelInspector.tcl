@@ -151,6 +151,7 @@ namespace eval ::ModelInspector63654 {
     }
 
     proc OnElementClick { winId node } {
+	error "Needs fix to get full caption path"
 	set caption [$winId.tableframe.table itemcget $node -text]
 	ProdFromHelper $winId $node $caption
     }

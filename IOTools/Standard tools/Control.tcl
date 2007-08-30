@@ -55,7 +55,10 @@ namespace eval runcontrol33857 {
         global playImg
         #	global runState
 
-	upvar 1 modelNode node
+	upvar 1 this inst
+	set node [lindex [$inst GetNode] 0]
+# if cannot do above because trying to live without RunControl instance
+#	upvar 4 node node
 	if {![info exists runState($node,intMethod)]} {
 	    set runState($node,intMethod) Euler
 	}

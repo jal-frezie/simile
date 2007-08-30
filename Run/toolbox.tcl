@@ -226,7 +226,7 @@ if {[string equal home $runHow(where)]} {
     source ../IOTools/DisplayFormats.tcl 
     source ../IOTools/graphtools.tcl
     source ../IOTools/two_table.tcl
-    set table_viewer(id) $keyValue
+    set helperTable(tableViewer) $keyValue
 }
 
 # launch
@@ -1776,10 +1776,30 @@ proc UniqueId {base {used {}}} {
     return $try
 }
 
+# called from constructor
+proc MakeNodeInProlog {} {
+    global classTable fromProlog
+
+    prolog tk_make_desktop_node
+# secret run instance for use by system helpers
+    upvar 1 this newInstance
+    set newRunInstance [UniqueId modelRun]
+    similescript::RunControl $newRunInstance $newInstance
+    set node [lindex $fromProlog 0]
+    set classTable(run,$node) $newRunInstance
+#this didn't work so stomp it
+    $newRunInstance configure -modelNode $node
+    return $fromProlog
+}
+
+# GUI tells Simile to make a new desktop
 proc MakeDesktopNode {} {
+    global classTable
     set newInstance [UniqueId modelWin]
     similescript::ModelWindow $newInstance
-    return [$newInstance GetNodeAndCanvas]
+    set node [$newInstance cget -modelNode]
+    set classTable(model,$node) $newInstance
+    return [list $node [$newInstance cget -modelCanvas]]
 }
 
 proc Reopen {canvas oldFile op} {

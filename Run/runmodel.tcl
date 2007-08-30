@@ -70,6 +70,7 @@ proc MakeHelperMenu {} {
 	AddHelperSublist $fm.sub2 "Local" l
     }
     cd $oldDir
+    MakeScriptHelpers
 }
 
 proc ListMenuContents {menu} {
@@ -129,7 +130,7 @@ proc ClassFromKey {kv} {
 # make callbacks.
 
 proc AddHelperSublist {fm title ct} {
-    global helperTable table_viewer
+    global helperTable
 #puts "Adding helpers in [pwd]"
     set m [menu $fm.sub$ct -tearoff 0]
     set nct 0
@@ -144,68 +145,65 @@ proc AddHelperSublist {fm title ct} {
 		    helpers none none
 	    continue
         }
-	if {![info exists keyValue]} continue
-	set action [${keyValue}::identify]
-	if {[string match {Run control} $action]} {
-	    set helperTable(RunControl) $keyValue
-	}
-	if {[string match {Explorer (Tile version)} $action]} {
-	    set helperTable(VariableList) $keyValue ;# for MRE
-	}
-	if {[string match {PEST interface} $action]} {
-	    set helperTable(pestInterface) $keyValue ;# for MRE
-	}
-	#                if {[string match {Slider control} $action]} {
-	#                    set helperTable(SliderControl) $keyValue
-	#                }
-	if {[string match {Data table} $action]} {
-	    set table_viewer(id) $keyValue
-	}
-	$m add command -label $action \
-	    -command [list CreateHelperWindow $keyValue $action]
+	if {[info exists keyValue]} {
 # This is an old-style helper, so create object wrapper for it
-	set className [ClassFromKey $keyValue]
-	set ::gKeyValue $keyValue ;# make global so decl picks it up
-	itcl::class similescript::$className {
-	    inherit OldStyleHelper
-	    constructor {modelWin winTitle {state {}}} {
+	    set newHelperClass [ClassFromKey $keyValue]
+	    set ::gKeyValue $keyValue ;# make global so decl picks it up
+	    itcl::class similescript::$newHelperClass {
+		inherit OldStyleHelper
+		proc KeyValue {} [list return $gKeyValue]
+		public proc Identify {} {return [[KeyValue]::identify]}
+		constructor {modelWin winTitle {state {}}} {
 # perverse extra body because base class constructor has args
-		OldStyleHelper::constructor $modelWin $winTitle $state
-	    } {}
-	    public method KeyValue {} [list return $gKeyValue]
-	    if {[llength [namespace which ${gKeyValue}::clear]]} {
-		# override do-nothing clear in base class defn
-		public method Clear {} {
-		    ::[KeyValue]::clear [GetWindow]
-		}
-	    }
-	    if {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
-		public method GetCanvas {} {
-		    ::[KeyValue]::GetCanvas [GetWindow]
-		}
-		public method Print {} {
-		    PrintRandomCanvas [GetCanvas]
-		}
-		public method CopyToClipboard {} {
-		    if {[string match windows $tcl_platform(platform)]} {
-			CopyCanvasToWindowsClipboard [GetCanvas]
+		    OldStyleHelper::constructor $modelWin $winTitle $state
+		} {}
+		if {[llength [namespace which ${gKeyValue}::clear]]} {
+		    # override do-nothing clear in base class defn
+		    public method Clear {} {
+			::[KeyValue]::clear $winId
 		    }
 		}
-	    } ;# else use inherited warning message
-	    if {[llength [namespace which ${gKeyValue}::Print]]} {
-		# override canvas-based print above
-		public method Print {} {
-		    ::[KeyValue]::Print [GetWindow]
+		if {[llength [namespace which ${gKeyValue}::GetCanvas]]} {
+		    public method GetCanvas {} {
+			::[KeyValue]::GetCanvas $winId
+		    }
+		    public method Print {} {
+			PrintRandomCanvas [GetCanvas]
+		    }
+		    public method CopyToClipboard {} {
+			if {[string match windows $tcl_platform(platform)]} {
+			    CopyCanvasToWindowsClipboard [GetCanvas]
+			}
+		    }
+		} ;# else use inherited warning message
+		if {[llength [namespace which ${gKeyValue}::Print]]} {
+		    # override canvas-based print above
+		    public method Print {} {
+			::[KeyValue]::Print $winId
+		    }
+		}
+		if {[llength [namespace which ${gKeyValue}::CopyToClipboard]]} {
+		    # override canvas-based copy above
+		    public method CopyToClipboard {} {
+			::[KeyValue]::CopyToClipboard $winId
+		    }
 		}
 	    }
-	    if {[llength [namespace which ${gKeyValue}::CopyToClipboard]]} {
-		# override canvas-based copy above
-		public method CopyToClipboard {} {
-		    ::[KeyValue]::CopyToClipboard [GetWindow]
-		}
-	    }
+	    unset keyValue
 	}
-	unset keyValue
+	if {[info exists newHelperClass]} {
+	    set action [similescript::${newHelperClass}::Identify]
+	    set actions [list {Run control} {Explorer (Tile version)} \
+		    {PEST interface} {Plotter} {Slider control} {Data table}]
+	    if {[set posn [lsearch $actions $action]]>-1} {
+		set classIdx [lindex {RunControl VariableList pestInterface \
+			       Plotter SliderControl TableViewer} $posn]
+		set helperTable($classIdx) $newHelperClass
+	    }
+	    $m add command -label $action \
+		-command [list CreateHelperWindow $newHelperClass $action]
+	    unset newHelperClass
+	}
     }
     foreach subDir [glob -nocomplain *] {
         if [file isdirectory $subDir] {
@@ -238,13 +236,13 @@ proc SystemHelperCall {inst node act args} {
 }
 
 proc CreateHelperWindow {helperId helperTitle {state {}}} {
-    global class_for_node
+    global classTable
 
-    set modelObj  $class_for_node([GetNodeFromFocus])
+    set modelObj $classTable(run,[GetNodeFromFocus])
     set hlp [UniqueId helper]
-    similescript::[ClassFromKey $helperId] $hlp $modelObj $helperTitle $state
+    similescript::$helperId $hlp $modelObj $helperTitle $state
     if {[PrefValue custom(helperManager) helperManager]} {
-	set winId [$hlp GetWindow]
+	set winId [$hlp cget -winId]
 	::RunEnv::SetCurrentContainer [winfo parent $winId]
 	::RunEnv::ChildrenFocusParent $winId
     }
@@ -252,33 +250,19 @@ proc CreateHelperWindow {helperId helperTitle {state {}}} {
 #rest should be done by constructor
 }
 
-# This is only called by old-style helpers now, and converts window ID into
-# object ID
+# This is only called by old-style helpers now
 proc GrabClicks {winId} {
     global helperTable
 
-    ObjGrabClicks $helperTable($winId,whichInstance)
-}
-
-# should go in model window obj
-proc ObjGrabClicks {inst} {
-    global helperTable
-
+    set inst $helperTable($winId,whichInstance)
     set helperTable([$inst GetNode],current) $inst
 }
 
-# This is only called by old-style helpers now, and converts window ID into
-# object ID
+# This is only called by old-style helpers now
 proc ReleaseClicks {winId} {
     global helperTable
 
-    ObjReleaseClicks $helperTable($winId,whichInstance)
-}
-
-# should go in model window obj
-proc ObjReleaseClicks {inst} {
-    global helperTable
-
+    set inst $helperTable($winId,whichInstance)
     unset helperTable([$inst GetNode],current)
 }
 
@@ -301,11 +285,7 @@ proc ProdObj {topNode nodeId caption} {
 #	switch -regexp [GetCompProperty $topNode Type $nodeId] {
 #	    REAL|INTEGER|FLAG|ENUMERATED {
 		set target $helperTable($topNode,current)
-		if {![llength $nodeId]} { ;# get from caption
-		    set nodeId [GetIdFromCaptionPath $caption]
-		}
-		SystemHelperCall $target $topNode Click $nodeId \
-		    [lindex [split $caption /] end]
+		SystemHelperCall $target $topNode Click $caption
 #	    } default {
 #		ShowMessage "Clicked on $caption" error \
 #                    "This component cannot be selected for an I/O tool because it has no associated value." ok
@@ -382,7 +362,7 @@ proc SaveView {} {
         set stream [NetOpen $tempFile w]
         foreach displayBox [array name helperTable *,whichInstance] {
             set helperId $helperTable($displayBox)
-	    set winId [$helperId GetWindow]
+	    set winId [$helperId cget -winId]
             if {[string equal $topNode [$helperId GetNode]] && \
 		    ![string match $winId $runState($topNode,helperId)]} {
                 puts $stream [namespace tail [$helperId info class]]
@@ -478,29 +458,32 @@ proc CreateView {node oldPath} {
 	gets $stream helperTitle
 	gets $stream geometry
 	gets $stream oldStatus
-	if {$origVersion<4.0} {
-	    set oldStatus [LoseDTRef $oldStatus]
-	}
-	if {[catch {set inst [CreateHelperWindow $helperId \
-		[RestoreCrs $helperTitle] [RestoreCrs $oldStatus]]}]} {
-	    ShowMessage "Problem restoring helper" warning $errorInfo ok
-	}
-	wm geometry [$inst GetWindow] $geometry
+
+	set inst [ReinstateHelper $origVersion $oldStatus \
+		      $helperId $helperTitle]
+	wm geometry [$inst cget -winId] $geometry
     }
     close $stream
+}
+
+proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
+    if {$origVersion<4.0} {
+	set oldStatus [LoseDTRef $oldStatus]
+    } 
+    if {$origVersion<5.0} {
+	set helperId [ClassFromKey $helperId]
+    }
+    if {[catch {set inst [CreateHelperWindow $helperId \
+		     [RestoreCrs $helperTitle] [RestoreCrs $oldStatus]]}]} {
+	ShowMessage "Problem restoring helper" warning $errorInfo ok
+    }
 }
 
 proc LoadMREFormatView {node stream origVersion} {
     global helperTable
     while {[gets $stream helperId] >= 0} {
         gets $stream oldStatus
-	if {$origVersion<4.0} {
-	    set oldStatus [LoseDTRef $oldStatus]
-	}
-	if {[catch {set inst [CreateHelperWindow $helperId {} \
-				  [RestoreCrs $oldStatus]]}]} {
-	    ShowMessage "Problem restoring helper" warning $errorInfo ok
-	}
+	ReinstateHelper $origVersion $oldStatus $helperId {}
     }
 }
 
@@ -534,7 +517,7 @@ proc TellAllHelpers {node fun args} {
 	    set helperTable(beingCalled) $inst
 	    if {[catch {eval $inst $fun $args} HelpErr]} {
 		start_in_editor BuildProblem "Error running I/O tool" warning \
-                    "I/O tool \"[$inst Identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
+                    "I/O tool \"[[$inst info class]::Identify]\" raised a problem during model execution. This occurred while doing the $fun operation. The model has been paused. To continue running it you may have to kill this helper's display.\nHere is the error log for debugging:\n$::errorInfo" \
 		    helpers none none
 		set success 0
 	    }
@@ -990,7 +973,7 @@ proc SetRunParams {node runParams} {
 # 3 = up to date, 4 = out of date
 
 proc StartRun {node} {
-    global runState window_info helperTable projectParams sendvars
+    global runState window_info helperTable classTable projectParams sendvars
     # ShowMessage debug info enter(start_run) ok
 #    set runState($node,currentWin) $winId ;# enables rebuild from run control
     if {[info exists helperTable($node,whichRunEnv)]} {
@@ -1064,6 +1047,7 @@ proc StartRun {node} {
     # sliders. Here we must clear any old input tool values so they are not used.
 #    UnMakeSlidersForInputs
 
+    set runClass $classTable(run,$node)
     if {![info exists runState($node,helperId)]} {
 	set defHelper $helperTable(RunControl)
     
@@ -1078,9 +1062,9 @@ proc StartRun {node} {
 	    set ::RunEnv::CurrentContainer $RunEnv::runControlFrame($node)
 	}
 	set hlp [UniqueId helper]
-	similescript::$defHelper $hlp $::class_for_node($node) \
+	similescript::$defHelper $hlp $runClass \
 			  "Run control for [GetExecTitle $node]"
-	set runState($node,helperId) [$hlp GetWindow]
+	set runState($node,helperId) [$hlp cget -winId]
     }
 # Do not put up mre, sliders, etc if model has failed to start
 #    if {![info exists running_c]} {
@@ -1106,7 +1090,7 @@ proc StartRun {node} {
 	}
  	set hlp [UniqueId helper]
 	set helperId $helperTable(VariableList)
-	similescript::$helperId $hlp $::class_for_node($node) Variables
+	similescript::$helperId $hlp $runClass Variables
 #	if {![winfo exists $helperTable(autosliders)]} {
 # No sliders in model, so delete notebook page
 #	    $sliderBook delete InputSliders

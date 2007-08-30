@@ -419,7 +419,7 @@ proc GetIdFromCaptionPath { caption } {
     } else {
 	set lostType submodel
     }
-    set helperType [$inst Identify]
+    set helperType [[$inst info class]::Identify]
     BuildProblem "Missing values for helper" warning "An instance of the I/O tool \"$helperType\" has requested information about the $lostType $lostBit, but there is no $lostType of this name in the current model. If the model has changed since the I/O tools were set up, you should adjust the settings of the I/O tools to reflect these changes, otherwise more warnings may appear and the model may stop running." helpers
     lappend helperTable($inst,lost) $lostBit
     return nomatch

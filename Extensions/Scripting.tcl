@@ -5,8 +5,8 @@ if {[string equal windows $::tcl_platform(platform)]} {
 }
 
 itcl::class similescript::ModelWindow {
-    variable modelNode
-    variable modelCanvas
+    public variable modelNode
+    public variable modelCanvas
     variable model
     
     private method GetModelWindow {} {
@@ -14,33 +14,11 @@ itcl::class similescript::ModelWindow {
 	return $window_info($modelCanvas,parent)
     }
 
-    public method GetNodeAndCanvas {} {
-	return [list $modelNode $modelCanvas]
-    }
-
-    public method CreateHelperWindow {helperId helperTitle} {
-redo with object
-        set winId [do_for_node $modelNode NewHelperWindow $modelNode $helperId $helperTitle]
-        do_for_node $modelNode ${helperId}::initialize $winId
-        if {[PrefValue custom(helperManager) helperManager]} {
-            ::RunEnv::ChildrenFocusParent $winId
-        }
-        return $winId
-    }
-    
-    public method CreateSnapWindow {path} {
-        set winId [do_for_node $modelNode snap $modelNode [do_for_node $modelNode GetIdFromCaptionPath $path]]
-        return $winId
-    }
-    
     constructor {} {
-	global class_for_node fromProlog
-
-	prolog tk_make_desktop_node
+	set fromProlog [MakeNodeInProlog]
         #tk_messageBox -message "ModelWin constructor"
 	set modelNode [lindex $fromProlog 0]
 	set modelCanvas [lindex $fromProlog 1]
-	set class_for_node($modelNode) $this
 #        Hide ;# default is to show
 #        UseMRE false
 # can't have creation of model windows overwriting users' preferences!!
@@ -136,14 +114,13 @@ redo with object
     public method LoadParams {filepath {smPath {}}} {
         do_for_node $modelNode set ::projectParams($smPath) $filepath
     }
-    
 }
 
 itcl::class similescript::HelperController {
     # Class providing basic control of existing helpers
     # The constructor DOES NOT create a helper use class Helper
-    variable winId;    #Tk path to RunControl window
-    variable modelNode
+    public variable winId;    #Tk path to RunControl window
+    variable modelInst
     
     destructor {
         destroy $winId
@@ -151,19 +128,19 @@ itcl::class similescript::HelperController {
     
     public method Show {} {
 	if {[string equal $winId [winfo toplevel $winId]]} {
-	    do_for_node $modelNode wm deiconify $winId
+	    do_for_node [GetNode] wm deiconify $winId
 	}
     }
     
     public method Hide {} {
         #puts "HelperController Hide $winId; $modelNode"
 	if {[string equal $winId [winfo toplevel $winId]]} {
-	    do_for_node $modelNode wm withdraw $winId
+	    do_for_node [GetNode] wm withdraw $winId
 	}
     }
 
     public method GetNode {} {
-	return $modelNode
+	return [$modelInst cget -modelNode]
     }
 }
 
@@ -179,7 +156,7 @@ itcl::class similescript::Snap {
     }
 
     public method SaveCurrent {filename} {
-	do_for_node $modelNode SaveSnapToFile $winId $myNode $filename
+	do_for_node [GetNode] SaveSnapToFile $winId $myNode $filename
     }
 
     public method Update {} {
@@ -188,13 +165,13 @@ itcl::class similescript::Snap {
     }
 
     public method StartLogging {filename} {
-	set myId [do_for_node $modelNode GetIdFromCaptionPath $myNode]
-	do_for_node $modelNode StartLogging $winId $modelNode $myId $filename
+	set myId [do_for_node [GetNode] GetIdFromCaptionPath $myNode]
+	do_for_node [GetNode] StartLogging $winId [GetNode] $myId $filename
     }
 
     public method StopLogging {} {
-	set myId [do_for_node $modelNode GetIdFromCaptionPath $myNode]
-	do_for_node $modelNode StopLogging $winId $modelNode $myId
+	set myId [do_for_node [GetNode] GetIdFromCaptionPath $myNode]
+	do_for_node [GetNode] StopLogging $winId [GetNode] $myId
     }
 }
     
@@ -205,7 +182,7 @@ itcl::class similescript::Helper {
     constructor {modelWindow helperTitle} {
 	global tcl_platform SimileAutoObjLoaded helperTable
 
-	set modelNode [lindex [$modelWindow GetNodeAndCanvas] 0]
+	set modelInst $modelWindow
         #puts "Helper constr $modelWindow [KeyValue] $winTitle"
 
     # ShowMessage debug info "Making $helperId $helperTitle" ok
@@ -237,6 +214,7 @@ itcl::class similescript::Helper {
     destructor {
 	# ShowMessage debug info "Killing $winId" ok
 	global helperTable runState
+	set modelNode [GetNode]
 	if {[info exists helperTable($modelNode,current)]} {
 	    if {[string equal $winId  $helperTable($modelNode,current)]} {
 		unset helperTable($modelNode,current)
@@ -257,6 +235,7 @@ itcl::class similescript::Helper {
     public method KeyValue {} {
         return abstractHelper
     }
+# only old-style helpers have keyvalues, but this is needed for some reason
 
 # This is optional, some helpers do not store earlier values
     public method Clear {} {
@@ -269,16 +248,16 @@ itcl::class similescript::Helper {
 # This is optional, some helpers may keep their state permanently up to date
     public method PrepareSaveString {} {
     }
-
-    public method GetWindow {} {
-	return $winId
-    }
-
 }
 
 itcl::class similescript::OldStyleHelper {
     inherit Helper
     
+# compulsory
+    public proc Identify {} {
+	return [[KeyValue]::identify]
+    }
+
     constructor {modelWindow winTitle {state {}}} {
 	Helper::constructor $modelWindow $winTitle
     } {
@@ -294,11 +273,6 @@ itcl::class similescript::OldStyleHelper {
 	set helperTable(beingCalled) {}
     }
 
-# compulsory
-    public method Identify {} {
-	return [[KeyValue]::identify]
-    }
-
 # optional (but all old-style helpers have it)
     public method Reset {} {
 	return [[KeyValue]::reset $winId]
@@ -310,7 +284,9 @@ itcl::class similescript::OldStyleHelper {
     }
 
 # optional if you never call GrabClicks (but all old-style helpers have it)
-    public method Click {node caption} {
+    public method Click {path} {
+	set node [do_for_node [GetNode] GetIdFromCaptionPath $path]
+	set caption [lindex [split $path /] end]
 	return [[KeyValue]::click $winId $node $caption]
     }
 
@@ -321,28 +297,61 @@ itcl::class similescript::OldStyleHelper {
     }
 }
 
+### RUN OBJECT -- no longer a kind of helper
+
 itcl::class similescript::RunControl {
+    public variable modelNode
     
-    inherit HelperController
-    
-    constructor {} {
+    constructor {{modelInst {}}} {
 	global botches
-        set modelWindow $botches(modelJustRun)
-	set modelNode [lindex [$modelWindow GetNodeAndCanvas] 0]
-        set keyvalue [do_for_node $modelNode set ::helperTable(RunControl)]
-	set winId  [do_for_node $modelNode set ::runState($modelNode,helperId)]
-        Hide
+
+	if {[string equal {} $modelInst]} {
+	    set modelInst $botches(modelJustRun)
+	}
+	set modelNode [$modelInst cget -modelNode]
     }
     
+    public method CreateHelperWindow {helperId helperTitle} {
+redo with helper object
+        set winId [do_for_node $modelNode NewHelperWindow $modelNode \
+		       $helperId $helperTitle]
+        do_for_node $modelNode ${helperId}::initialize $winId
+        if {[PrefValue custom(helperManager) helperManager]} {
+            ::RunEnv::ChildrenFocusParent $winId
+        }
+        return $winId
+    }
+    
+    public method CreateSnapWindow {path} {
+redo with snap object
+        set winId [do_for_node $modelNode snap $modelNode [do_for_node $modelNode GetIdFromCaptionPath $path]]
+        return $winId
+    }
+    public method Hide {} {
+	global runState
+	wm withdraw $runState($modelNode,helperId)
+    }
+	
+    public method Show {} {
+	global runState
+	wm deiconify $runState($modelNode,helperId)
+    }
+	
     public method Start {} {
         # returns the time to complete (to run the simulation)
-        set timestr [time [list do_for_node $modelNode ${keyvalue}::SetMode $modelNode start]]
+	global runState
+
+	set rcf $runState($modelNode,helperId).nb.rcf
+        set timestr [time [list $rcf.upper.topbuttons.start invoke]]
         set musec [lindex $timestr 0]
         return "[expr {$musec/1e6}] sec"
     }
     
     public method Reset {} {
-        do_for_node $modelNode ${keyvalue}::SetMode $modelNode reset
+	global runState
+
+	set rcf $runState($modelNode,helperId).nb.rcf
+	$rcf.upper.topbuttons.reset invoke
     }
     
     public method MergeParams {filepath {smPath {}}} {
@@ -419,6 +428,19 @@ itcl::class similescript::RunControl {
         }
     }
     
+# Methods for helper apps to call
+    public method GrabClicks {helperInst} {
+	global helperTable
+
+	set helperTable($modelNode,current) $helperInst
+    }
+
+    public method ReleaseClicks {} {
+	global helperTable
+
+	unset helperTable($modelNode,current)
+    }
+
     public method GetValue {path} {
         return [do_for_node $modelNode GetModelValue [do_for_node $modelNode GetIdFromCaptionPath $path]]
     }
@@ -522,37 +544,38 @@ itcl::class similescript::RunControl {
 #chain
 #SetUpdateAtDisplayInterval false
 
-itcl::class similescript::TableHelper {
-    
-    inherit Helper
+proc MakeScriptHelpers {} {
+# cannot do until GUI helpers are loaded
+itcl::class similescript::TableHelper {    
+    inherit $::helperTable(TableViewer)
     
     constructor {modelWindow winTitle} {
-        similescript::Helper::constructor $modelWindow $winTitle
+        $::helperTable(TableViewer)::constructor $modelWindow $winTitle
     } {
         #puts "TableHelperImpl constr: $modelWindow [KeyValue] $winTitle"
     }
     
-    public method KeyValue {} {
-        return tabular11510
-    }
-    
+#    public method KeyValue {} {
+#        return tabular11510
+#    }
+#    
     public method AddVariable {path} {
-        do_for_node $modelNode set ::helperTable($modelNode,current) $winId
-        do_for_node $modelNode [KeyValue]::click $winId [do_for_node $modelNode GetIdFromCaptionPath $path] $path
+        do_for_node [GetNode] set ::helperTable([GetNode],current) $winId
+        do_for_node [GetNode] [KeyValue]::click $winId [do_for_node [GetNode] GetIdFromCaptionPath $path] $path
     }
     
     public method RemoveVariable {path} {
         set var $path; # prop needs nodeId TODO
-        do_for_node $modelNode [KeyValue]::Remove $winId $var
+        do_for_node [GetNode] [KeyValue]::Remove $winId $var
     }
     
     public method SetUpdateAtDisplayInterval {value} {
         # value 0 or 1
-        do_for_node $modelNode set [KeyValue]::displayUpdate($winId) $value
+        do_for_node [GetNode] set [KeyValue]::displayUpdate($winId) $value
     }
     
     public method GetUpdateAtDisplayInterval {} {
-        return  [do_for_node $modelNode set [KeyValue]::displayUpdate($winId)]
+        return  [do_for_node [GetNode] set [KeyValue]::displayUpdate($winId)]
     }
     
     public method SetShowingRowsForTimes {value} {
@@ -562,54 +585,28 @@ itcl::class similescript::TableHelper {
 	} else {
 	    set timeHdr none
 	}
-        do_for_node $modelNode lset [KeyValue]::orientList($winId) 0 $timeHdr
-	do_for_node $modelNode [KeyValue]::Reconbobulate $winId	
+        do_for_node [GetNode] lset [KeyValue]::orientList($winId) 0 $timeHdr
+	do_for_node [GetNode] [KeyValue]::Reconbobulate $winId	
     }
     
     public method GetShowingRowsForTimes {} {
         return [string equal rows [lindex \
-	    [do_for_node $modelNode set [KeyValue]::orientList($winId)] 0]]
+	    [do_for_node [GetNode] set [KeyValue]::orientList($winId)] 0]]
     }
     
     public method Update {} {
-        do_for_node $modelNode [KeyValue]::Update $winId
+        do_for_node [GetNode] [KeyValue]::Update $winId
     }
     
     public method SaveToFile {filename} {
         Update
-        do_for_node $modelNode [KeyValue]::SaveToNamedFile $winId $filename
+        do_for_node [GetNode] [KeyValue]::SaveToNamedFile $winId $filename
     }
     
     public method AppendToFile {filename sectionId} {
         Update
-        do_for_node $modelNode [KeyValue]::SaveToNamedFile \
+        do_for_node [GetNode] [KeyValue]::SaveToNamedFile \
 	    $winId $filename $sectionId
     }
-    
 }
-
-itcl::class similescript::Plotter {
-    inherit Helper
-    constructor {modelWindow winTitle} {
-        Helper::constructor $modelWindow $winTitle
-    } {
-        puts "Plotter constr: $modelWindow [KeyValue]"
-    }
-    
-    public method KeyValue {} {
-        return plotter1.25
-    }
-}
-
-itcl::class similescript::FileWriter {
-    inherit Helper
-    constructor {modelWindow winTitle} {
-        Helper::constructor $modelWindow $winTitle
-    } {
-        puts "FileWriter constr: $modelWindow [KeyValue]"
-    }
-    
-    public method KeyValue {} {
-        return filewriter220604
-    }
 }

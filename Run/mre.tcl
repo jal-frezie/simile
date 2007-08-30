@@ -6,9 +6,8 @@
 # helpers must bind $canvas <Configure> resize $canvas
 
 namespace eval RunEnv {
-    
-    package require BWidget
-    
+    global helperTable
+
     variable status
     variable prgtext
     variable prgindic
@@ -30,6 +29,8 @@ namespace eval RunEnv {
     # pop-up message
     # command.
     # A separator is placed between the
+    package require BWidget
+    
     set toolbars [list \
             [list \
             [list new.gif "New display configuration" RunEnv::InitializeDisplays] \
@@ -48,9 +49,9 @@ namespace eval RunEnv {
             [list notebookpage.gif "Add notebook page" "RunEnv::AddNotebookPageToCurrentContainer"] \
             [list notebook.gif "Add notebook" "RunEnv::AddNotebookToCurrentContainer"]] \
             [list \
-            [list graph.gif "Create plotter" "CreateHelperWindow plotter1.25 {Plotter}"] \
-            [list table.gif "Create table" "CreateHelperWindow tabular11510 {Table}"] \
-            [list slider.gif "Create input sliders" "CreateHelperWindow slide139 {Sliders}"] \
+		 [list graph.gif "Create plotter" "CreateHelperWindow plotter1_dot_25 {}"] \
+            [list table.gif "Create table" "CreateHelperWindow tabular11510 {}"] \
+            [list slider.gif "Create input sliders" "CreateHelperWindow slide139 {}"] \
             [list display.gif "Choose display to create" "::RunEnv::AllDisplaysPopupCurrentContainer"]] \
             [list \
             [list clear.gif "Clear all displays" "ClearView"]]\
@@ -70,7 +71,6 @@ namespace eval RunEnv {
         variable width
         variable height
         variable currentNode
-	variable CurrentContainers
         
         if {[info exists helperTable($node,whichRunEnv)]} {
             return $helperTable($node,whichRunEnv)
@@ -741,9 +741,9 @@ namespace eval RunEnv {
         if  {![winfo exists .pageContextMenu]} {
             set m [menu .pageContextMenu -tearoff 0]
             .helpers.sub2 clone .pageContextMenu.sub2
-            $m add command -label "Create plotter" -command "CreateHelperWindow plotter1.25 {Plotter}"
-            $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {Table}"
-            $m add command -label "Create input sliders" -command "CreateHelperWindow slide139 {Sliders}"
+            $m add command -label "Create plotter" -command "CreateHelperWindow plotter1_dot_25 {}"
+            $m add command -label "Create table" -command "CreateHelperWindow tabular11510 {}"
+            $m add command -label "Create input sliders" -command "CreateHelperWindow slide139 {}"
             $m add cascade -label "Choose display to create ..." -menu .pageContextMenu.sub2
             $m add separator
             $m add command -label "Copy display" -command ::RunEnv::CopyHelper
@@ -1103,11 +1103,7 @@ namespace eval RunEnv {
         gets $stream helperId
         #ShowMessage debug info "LoadContainer: $item $containerId; helperId $helperId" ok
         gets $stream oldStatus
-        if {$origVersion<4.0} {
-            set oldStatus [LoseDTRef $oldStatus]
-        }
-#        set helperTable($winId,status) [RestoreCrs $oldStatus]
-	CreateHelperWindow $helperId {} [RestoreCrs $oldStatus]
+	ReinstateHelper $origVersion $oldStatus $helperId {}
     }
     
     proc MainNotebookEmptyPage {} {

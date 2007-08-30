@@ -988,7 +988,7 @@ proc EditListAsTable {parent valueArray} {
     pack [button $b.cancel -text Cancel \
 	      -command "set table_viewer(done) 0" -width 10] -padx 2 -pady 2 -side left
     
-    set viewerId $table_viewer(id)
+    set viewerId $::helperTable(TableViewer)
     set ::${viewerId}::editMode($t) 1
     ${viewerId}::initialize $t
 
