@@ -188,6 +188,12 @@ proc AddHelperSublist {fm title ct} {
 			::[KeyValue]::CopyToClipboard $winId
 		    }
 		}
+		if {[llength [namespace which \
+				  ${gKeyValue}::PrepareSaveString]]} {
+		    public method PrepareSaveString {} {
+			::[KeyValue]::PrepareSaveString $winId
+		    }
+		}
 	    }
 	    unset keyValue
 	}

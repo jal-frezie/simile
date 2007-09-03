@@ -289,12 +289,6 @@ itcl::class similescript::OldStyleHelper {
 	set caption [lindex [split $path /] end]
 	return [[KeyValue]::click $winId $node $caption]
     }
-
-    public method PrepareSaveString {} {
-	if {[llength [info procs [KeyValue]::PrepareSaveString]]} {
-	    [KeyValue]::PrepareSaveString $winId
-	}
-    }
 }
 
 ### RUN OBJECT -- no longer a kind of helper
