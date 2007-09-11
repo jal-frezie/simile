@@ -485,13 +485,6 @@ proc ShrinkValueList {outerList limit} {
     } elseif {[string equal ,bytes [lindex $list 1]]} {
 # in this case the list format is:
 # scenario ,bytes type idx1 ... idxn raw_data
-	set splitLevel [expr [llength $list]-1]
-	set availAtLevel 1
-	while {$availAtLevel<$range} {
-	    set splitBound [lindex $list [incr splitLevel -1]]
-	    set availAtLevel [expr $availAtLevel*$splitBound]
-	}
-	set fatLines [expr int(1+$splitBound*$range/$availAtLevel)]
 	if {[string equal REAL [lindex $list 2]]} {
 	    set fieldChar d
 	    set fieldSize 8
@@ -499,11 +492,24 @@ proc ShrinkValueList {outerList limit} {
 	    set fieldChar i
 	    set fieldSize 4
 	}
-	set bounds [concat $fatLines [lrange list [expr $splitLevel+1] end-1]]
+	set allVals [expr [string length [lindex $list end]]/$fieldSize]
 	set offset 0
+	if {$allVals<$manage} {
+	    set fullRange [DoByteArrayToList $fieldChar $fieldSize \
+			       [lrange $list 3 end-1] [lindex $list end]]
+	    set list [NumberElements $fullRange 1]
+	    return $allVals
+	}
+	set splitLevel [expr [llength $list]-1]
+	set availAtLevel 1
+	while {$availAtLevel<$range} {
+	    set splitBound [lindex $list [incr splitLevel -1]]
+	    set availAtLevel [expr $availAtLevel*$splitBound]
+	}
+	set fatLines [expr int(1+$splitBound*$range/$availAtLevel)]
+	set bounds [concat $fatLines [lrange list [expr $splitLevel+1] end-1]]
 	set startRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
 			    [lindex $list end]]
-	set allVals [expr [string length [lindex $list end]]/$fieldSize]
 	set offset [expr $fieldSize*($allVals - \
 					 $fatLines*$availAtLevel/$splitBound)]
 	set endRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
@@ -532,7 +538,7 @@ proc DoByteArrayToList {fieldChar fieldSize bounds rawData} {
 	set spit {}
 	for {set outer 0} {$outer<[lindex $bounds 0]} {incr outer} {
 	    lappend spit [DoByteArrayToList $fieldChar $fieldSize \
-			      $subBounds $rawdata]
+			      $subBounds $rawData]
 	}
     }
     return $spit
