@@ -685,11 +685,34 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
   sourcePtr = Tcl_GetByteArrayFromObj(argv[2], &count);
   destPtr=use_array_for_params(Tcl_GetStringFromObj(argv[1], NULL), NULL);
   if (!destPtr) {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("use_array_for_params: no array can be created for this node", -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("c_setparamall: no array can be created for this node", -1));
     return TCL_ERROR;
   }
   memcpy(destPtr, sourcePtr, count);
   return TCL_OK;
+}
+
+FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int count, error;
+  void *sourcePtr, *destPtr;
+  char *nodeId;
+  unsigned char *holder;
+
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
+    return TCL_ERROR;
+  }
+  
+  nodeId = Tcl_GetStringFromObj(argv[1], NULL);
+  if (count=param_array_size(nodeId)) { // assignment
+    holder = Tcl_SetByteArrayLength(Tcl_GetObjResult(interp), count);
+    memcpy(holder, use_array_for_params(nodeId, NULL), count);
+    return TCL_OK;
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("c_getparamall: no array can be located for this node", -1));
+    return TCL_ERROR;
+  }
 }
 
 FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1833,6 +1856,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_setparamall", setparamallCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_getparamall", getparamallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_setwraparoundtime", setwrapCmd,

@@ -501,6 +501,10 @@ public:
     return dataPtr;
   }  
 
+  int space_used() {
+    return array_count(fullDims)*size_for_type();
+  }
+  
   char* create_time_point(double time, void* newDataPtr) {
     listTimePoint *lastTimePt, *thisTimePt, *nextTimePt;
     if (timePoints && timePoints->when<=time) {
@@ -1328,6 +1332,13 @@ void* use_array_for_params(char* nodeId, void* dataSpace) {
   }
 
   return arrSlot->create_space(dataSpace);
+}
+
+int param_array_size(char* nodeId) {
+  listParamArray* arrSlot;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) return 0;
+  return arrSlot->space_used();
 }
 
 int clear_time_point_elts(char* nodeId) {

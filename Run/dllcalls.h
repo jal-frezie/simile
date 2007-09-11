@@ -200,6 +200,7 @@ typedef void showMess_type(char*);
 /* Defined in the shank, used by the shim */
 EXTDEC char* load_model(char*, char*, long int*);
 EXTDEC void* use_array_for_params(char*, void*);
+EXTDEC int param_array_size(char*);
 EXTDEC int clear_time_point_elts(char*);
 EXTDEC int set_wrap(char*, double);
 EXTDEC int set_fill(char*, int);

@@ -465,6 +465,7 @@ proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
 
 proc ShrinkValueList {outerList limit} {
     set manage [expr $limit/4]
+    set range [expr $manage/2]
     upvar 1 $outerList list
 
     if {[string equal ,gdal [lindex $list 1]]} {
@@ -473,17 +474,45 @@ proc ShrinkValueList {outerList limit} {
 	set rowLength [expr 1+$bottomRow-$topRow]
 	set colLength [expr 1+[lindex $list 3]-[lindex $list 2]]
 	set allVals [expr $rowLength*$colLength]
-	set rowEnds [expr int(0.5*$manage/$rowLength)]
+	set rowEnds [expr int($range/$rowLength)]
 	lset list 5 [expr $topRow+$rowEnds]
 	set startRange [ReadGdalRefToList $list]
 	lset list 4 [expr $bottomRow-$rowEnds]
 	lset list 5 $bottomRow
 	set endRange [ReadGdalRefToList $list]
-	set list [NumberElements [concat $startRange $endRange]]
+	set list [concat [NumberElements $startRange 1] \
+		      [NumberElements $endRange [lindex $list 4]]]
+    } elseif {[string equal ,bytes [lindex $list 1]]} {
+# in this case the list format is:
+# scenario ,bytes type idx1 ... idxn raw_data
+	set splitLevel [expr [llength $list]-1]
+	set availAtLevel 1
+	while {$availAtLevel<$range} {
+	    set splitBound [lindex $list [incr splitLevel -1]]
+	    set availAtLevel [expr $availAtLevel*$splitBound]
+	}
+	set fatLines [expr int(1+$splitBound*$range/$availAtLevel)]
+	if {[string equal REAL [lindex $list 2]]} {
+	    set fieldChar d
+	    set fieldSize 8
+	} else {
+	    set fieldChar i
+	    set fieldSize 4
+	}
+	set bounds [concat $fatLines [lrange list [expr $splitLevel+1] end-1]]
+	set offset 0
+	set startRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
+			    [lindex $list end]]
+	set allVals [expr [string length [lindex $list end]]/$fieldSize]
+	set offset [expr $fieldSize*($allVals - \
+					 $fatLines*$availAtLevel/$splitBound)]
+	set endRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
+			    [lindex $list end]]
+	set list [concat [NumberElements $startRange 1] \
+		      [NumberElements $endRange [expr 1+$splitBound-$fatLines]]]
     } else {    
 	set allVals [CountValues $list]
 	if {$allVals>$manage} {
-	    set range [expr $manage/2]
 	    set startRange [GetNVals $list first $range]
 	    set endRange [GetNVals $list last $range]
 	    set list [concat $startRange $endRange]
@@ -492,15 +521,32 @@ proc ShrinkValueList {outerList limit} {
     return $allVals
 }
 
-proc NumberElements {list} {
+proc DoByteArrayToList {fieldChar fieldSize bounds rawData} {
+    upvar 1 offset offset
+    if {[llength $bounds]==1} {
+#puts "field spec @${offset}${fieldChar}${bounds}"
+	binary scan $rawData @${offset}${fieldChar}${bounds} spit
+	incr offset [expr $fieldSize*$bounds]
+    } else {
+	set subBounds [lrange $bounds 1 end]
+	set spit {}
+	for {set outer 0} {$outer<[lindex $bounds 0]} {incr outer} {
+	    lappend spit [DoByteArrayToList $fieldChar $fieldSize \
+			      $subBounds $rawdata]
+	}
+    }
+    return $spit
+}
+
+proc NumberElements {list startNum} {
     if {[string equal $list [lindex $list 0]]} {
 	return $list
     } else {
 	set result {}
-	set num 0
+	set num [incr startNum -1]
 	foreach elt $list {
 	    if {[llength $elt]} {
-		lappend result [incr num] [NumberElements $elt]
+		lappend result [incr num] [NumberElements $elt 1]
 	    }
 	}
 	return $result

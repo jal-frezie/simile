@@ -560,20 +560,6 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     pack $lheads  -expand true -fill both
     pack $fc.fheads -side left -expand true -fill both -anchor w -padx 2 -pady 2
     pack $lidx -expand true -fill both -anchor w
-    if {!$startLine} {
-	pack [set wrapf [frame $fidx.wrapf]] -expand true -fill x
-	pack [label $wrapf.m -text "Wraparound at:"] -side left
-	pack [entry $wrapf.e -width 1 -textvariable table_entry(wrapPt)] \
-	    -side right -expand true -fill x
-	if {[string equal restart [string tolower \
-				       [lindex $table_entry(values) end]]]} {
-	    set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
-	    set table_entry(wrapPt) $table_entry(oldWrapPt)
-	    set table_entry(values) [lrange $table_entry(values) 0 end-2]
-	} else {
-	    set table_entry(oldWrapPt) {}
-	}
-    }
     pack $fc.select.idxs -expand true -fill both -anchor w \
 	-padx 2 -pady 2
 
@@ -584,24 +570,6 @@ proc equationDoTable {parent mdl tgt dims startLine} {
             -dropenabled true -droptypes LISTBOX_ITEM \
             -dropcmd ChooseDataHeader]
     pack $dhead -side top -expand true -fill x
-    if {!$startLine} {
-	pack [set betweenf [frame $didx.betweenf]] -expand true -fill x
-	pack [label $betweenf.m -text "Between points:"] -side left
-	pack [::ttk::combobox $betweenf.c -textvariable table_entry(others) \
-		  -width 10 -values {"Use last" "Use closest" Interpolate} \
-		  -state readonly]
-
-	if {[string equal others [string tolower \
-				      [lindex $table_entry(values) end-1]]]} {
-	    set table_entry(oldOthers) [TagToName \
-					    [lindex $table_entry(values) end]]
-	    set table_entry(others) $table_entry(oldOthers)
-	    set table_entry(values) [lrange $table_entry(values) 0 end-2]
-	} else {
-	    set table_entry(oldOthers) {}
-	}
-
-    }
     pack $fc.select.data -expand true -fill x -anchor w \
 	-padx 2 -pady 2
     pack $fc.select -side left -expand true -fill both
@@ -791,6 +759,41 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     #
     # OK, Cancel and Help buttons
     frame .table.fbuttons
+    if {!$startLine} {
+	pack [TitleFrame .table.fbuttons.wrapf -text "Other times: "] \
+	    -padx 4 -pady 4 -expand true -fill x
+	set wrapf [.table.fbuttons.wrapf getframe]
+	pack [label $wrapf.bm -text "Between points:"]
+	pack [::ttk::combobox $wrapf.bc -textvariable table_entry(others) \
+		  -width 10 -values {"Use last" "Use closest" Interpolate} \
+		  -state readonly]
+	pack [label $wrapf.wm -text "Wraparound at:"]
+	pack [entry $wrapf.we -width 1 -textvariable table_entry(wrapPt)] \
+	    -expand true -fill x
+	if {[string equal restart [string tolower \
+				       [lindex $table_entry(values) end]]]} {
+	    set table_entry(oldWrapPt) [lindex $table_entry(values) end-1]
+	    set table_entry(wrapPt) $table_entry(oldWrapPt)
+	    set table_entry(values) [lrange $table_entry(values) 0 end-2]
+	} else {
+	    set table_entry(oldWrapPt) {}
+	}
+	if {[string equal others [string tolower \
+				      [lindex $table_entry(values) end-1]]]} {
+	    set table_entry(oldOthers) [TagToName \
+					    [lindex $table_entry(values) end]]
+	    set table_entry(others) $table_entry(oldOthers)
+	    set table_entry(values) [lrange $table_entry(values) 0 end-2]
+	} else {
+	    set table_entry(oldOthers) {}
+	}
+    }
+    if {[string equal .fpdialogue $parent]} {
+	pack [checkbutton .table.fbuttons.keepvals -var table_entry(bytes) \
+		  -text "Include values\nin scenario files" \
+		  -command "set table_entry(source) 1"] -padx 4 -pady 4
+    }
+
     button .table.fbuttons.load -text Reload -width 10 \
 	-command [list AcquireTableData 1 $startLine]
     button .table.fbuttons.edit -text View/Edit -width 10 \
@@ -873,10 +876,12 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     grab release $t
     PackItUp $t
     grab $parent
-    if {[info exists table_entry(others)] && [llength $table_entry(others)]} {
+    if {[info exists table_entry(others)] && [llength $table_entry(others)] && \
+	    ![string equal others [lindex $table_entry(values) end-1]]} {
 	lappend table_entry(values) others [NameToTag $table_entry(others)]
     }
-    if {[info exists table_entry(wrapPt)] && [Numeric $table_entry(wrapPt)]} {
+    if {[info exists table_entry(wrapPt)] && [Numeric $table_entry(wrapPt)] && \
+	    ![string equal restart [lindex $table_entry(values) end]]} {
 	lappend table_entry(values) $table_entry(wrapPt) restart
     }
     return $table_entry(done)
@@ -966,7 +971,7 @@ proc AcquireTableData {redo startLine} {
     }
     if {$redo || ![string equal $tableSpec $table_entry(data)]} {
 #do_in_editor puts "Loading with $tableSpec not $table_entry(data)"
-	set table_entry(values) [LoadTableData $tableSpec $startLine]
+	set table_entry(values) [LoadTableData $tableSpec $startLine 0]
 	set table_entry(source) 2
 	set table_entry(data) $tableSpec
     }
@@ -1108,7 +1113,7 @@ proc ChooseDataHeader {eb pth where op dtype data} {
     $eb configure -text [$path itemcget $data -text]
 }
 
-proc LoadTableData {tableSpec lineCount} {
+proc LoadTableData {tableSpec lineCount addSpecials} {
     set tStr [NetOpen [lindex $tableSpec 0] r]
     if {[string equal ,grid [lindex $tableSpec 1]]} {
 	set rowList {}
@@ -1259,11 +1264,13 @@ proc LoadTableData {tableSpec lineCount} {
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
     set result [ArrayToList paramArray top $indexList]
-    if {[info exists fillMtd]} {
-	lappend result others $fillMtd
-    }
-    if {[info exists wrapPt]} {
-	lappend result $wrapPt restart
+    if {$addSpecials} {
+	if {[info exists fillMtd]} {
+	    lappend result others $fillMtd
+	}
+	if {[info exists wrapPt]} {
+	    lappend result $wrapPt restart
+	}
     }
     return $result
 }

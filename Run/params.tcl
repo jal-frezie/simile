@@ -484,7 +484,14 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     # ... string match stops cleanly at end of list
     global comboTypes
     
-    if {[string equal ,gdal [lindex $list 1]]} {
+    if {[string equal ,bytes [lindex $list 1]]} {
+	if {$useCppArray} {
+	    c_setparamall $tgt [lindex $list end]
+	    return -1 ;# do nothing, the data has already been loaded to c
+	} else {
+	    # DO THE fallback thing
+	}
+    } elseif {[string equal ,gdal [lindex $list 1]]} {
 	if {$useCppArray} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
@@ -800,21 +807,21 @@ namespace eval fileparams {
 	set notInput [expr -[llength $args]]
 	if {$notInput} {
 	    set dataLocn targetData
-	    set widgetLocn targetNames
+#	    set widgetLocn targetNames
 	    set smPath [string range $smPath 1 end]
 	    set defFile measures.spf
 	} else {
 	    set dataLocn paramData
-	    set widgetLocn widgetNames
+#	    set widgetLocn widgetNames
 	    set defFile params.spf
 	}
 	upvar \#0 $dataLocn suppliedData
-	upvar \#0 $widgetLocn outNames
+#	upvar \#0 $widgetLocn outNames
 
 #ShowMessage debug info "Save $smPath" ok
-        
+#puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
-	AcceptAll $topNode [array names outNames $smPath*] $notInput 1
+	AcceptAll $topNode [array names suppliedData $smPath*] $notInput 1
 	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return
 	}
@@ -823,45 +830,149 @@ namespace eval fileparams {
         set SimileProject(fileparam,$smPath) $metaFile
 #puts "setting SimileProject(fileparam,$smPath) to $SimileProject(fileparam,$smPath)"
         if {[llength $metaFile]} {
-            set part [file join $simtmpdir temp_out.spf]
-            set pStr [NetOpen $part w]
+#            set part [file join $simtmpdir temp_out.spf]
+#            set pStr [NetOpen $part w]
+            set pStr [NetOpen $metaFile w]
             
-            foreach compName [array names outNames $smPath*] {
-		set compTail [string range $compName [string length $smPath] end]
-                set SubbedComp [StripCrs $compTail]
-                set newPopup  "Specified by $metaFile"
-                if {[ReferenceWorks $compName]} {
-                    set relName [Relativize $metaFile \
-                            [lindex $paramState($compName) 0]]
-                    puts $pStr "$SubbedComp=reference=[lreplace \
-                            $paramState($compName) 0 0 $relName]"
-                    set msgs(param_source_$compName) [concat $newPopup \
-                            (reference to $relName)]
-                } else {
-                    puts $pStr "$SubbedComp=literal=$suppliedData($compName)"
-                    set msgs(param_source_$compName) "$newPopup (literal)"
-                }
-            }
+	    puts $pStr {<?xml version="1.0"?>}
+	    puts $pStr "<spf xsi:noNamespaceSchemaLocation=\"simile_spf.xsd\" simile_version=\"$env(SIMILE_VERSION)\">"
+	    puts $pStr {<submodel label="top">}
+	    WriteSubmodelParams suppliedData $topNode $metaFile $pStr $smPath
+	    puts $pStr {</submodel>}
+	    puts $pStr {</spf>}
+#            foreach compName [array names outNames $smPath*] {
+#		set compTail [string range $compName [string length $smPath] end]
+#                set SubbedComp [StripCrs $compTail]
+#                set newPopup  "Specified by $metaFile"
+#                if {[ReferenceWorks $compName]} {
+#                    set relName [Relativize $metaFile \
+#                            [lindex $paramState($compName) 0]]
+#                    puts $pStr "$SubbedComp=reference=[lreplace \
+#                            $paramState($compName) 0 0 $relName]"
+#                    set msgs(param_source_$compName) [concat $newPopup \
+#                            (reference to $relName)]
+#                } else {
+#                    puts $pStr "$SubbedComp=literal=$suppliedData($compName)"
+#                    set msgs(param_source_$compName) "$newPopup (literal)"
+#                }
+#            }
+#            close $part
             close $pStr
-            set PartType "application/x-simile"
-            set Description "Simile parameter file"
-            set style attachment
-            set newMime [mime::initialize -canonical $PartType \
-                    -header [list "Content-Disposition" $style] \
-                    -header [list "Content-Description" $Description] \
-                    -header [list "Simile-Version" $env(SIMILE_VERSION)] \
-                    -header [list "Simile-Origin" file-param-dialogue] \
-                    -file $part]
-            set stream [NetOpen $metaFile w]
-            fconfigure $stream -translation binary
-            mime::copymessage $newMime $stream
+#            set PartType "application/x-simile"
+#            set Description "Simile parameter file"
+#            set style attachment
+#            set newMime [mime::initialize -canonical $PartType \
+#                    -header [list "Content-Disposition" $style] \
+#                    -header [list "Content-Description" $Description] \
+#                    -header [list "Simile-Version" $env(SIMILE_VERSION)] \
+#                    -header [list "Simile-Origin" file-param-dialogue] \
+#                    -file $part]
+#            set stream [NetOpen $metaFile w]
+#            fconfigure $stream -translation binary
+#            mime::copymessage $newMime $stream
             # clean everything up
-            close $stream
-            mime::finalize $newMime
-            file delete $part
+#            close $stream
+#            mime::finalize $newMime
+#            file delete $part
         }
     }
     
+    proc WriteSubmodelParams {outerData topNode metaFile pStr smPath} {
+	global paramState paramDims
+
+	puts $pStr <variables>
+	upvar 1 $outerData outData
+	foreach compName [array names outData $smPath*] {
+	    set compTail [string range $compName [string length $smPath] end]
+	    if {[set slashPosn [string first / $compTail 1]]>-1} {
+		set inners([string range $compTail 1 [incr slashPosn -1]]) 1
+	    } else {
+		set subbedComp [StripCrs [string range $compTail 1 end]]
+		set newPopup  "Specified by $metaFile"
+		if {[DataInScenario $compName]} {
+		    set nodeId [IdFromTail $topNode $compName 0]
+		    set type [GetCompProperty $topNode Type $nodeId]
+		    puts $pStr \
+			"<byte_array label=\"$subbedComp\" type=\"$type\">"
+		    set dimCount 0
+		    foreach dim $paramDims($compName) {
+			if {!$dim} break
+			puts $pStr "<value index=[incr dimCount] val=\"$dim\"/>"
+		    }
+		    puts $pStr {<![CDATA[}
+		    puts $pStr [base64 -mode encode -- [c_getparamall $nodeId]]
+		    puts $pStr {]]>}
+		    puts $pStr "</byte_array>"
+		} elseif {[ReferenceWorks $compName]} {
+                    set relName [Relativize $metaFile \
+                            [lindex $paramState($compName) 0]]
+		    switch -exact [lindex $paramState($compName) 1] {
+			,image {
+			    puts -nonewline $pStr "<image label=\"$subbedComp\" filename=\"$relName\""
+			    foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use} val [lrange $paramState($compName) 2 9] {
+				puts -nonewline $pStr " $att=\"$val\""
+			    }
+			    puts $pStr />
+			} ,gdal {
+			    puts -nonewline $pStr "<geotiff label=\"$subbedComp\" filename=\"$relName\""
+			    foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
+				puts -nonewline $pStr " $att=\"$val\""
+			    }
+			    puts $pStr />
+			} ,grid {
+			    puts -nonewline $pStr "<csv_grid label=\"$subbedComp\" filename=\"$relName\""
+			    foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
+				puts -nonewline $pStr " $att=\"$val\""
+			    }
+			    puts $pStr />
+			} default {
+			    puts $pStr "<csv_columns label=\"$subbedComp\" filename=\"$relName\" data_column=\"[lindex $paramState($compName) 1]\">"
+			    set dimCount 0
+			    foreach dim [lrange $paramState($compName) 2 end] {
+				puts $pStr "<value index=[incr dimCount] val=\"$dim\"/>"
+			    }
+			    puts $pStr </csv_columns>
+			}
+		    }
+		    set msgs(param_source_$compName) \
+			[concat $newPopup (reference to $relName)]
+		} elseif {[llength $outData($compName)]==1} {
+		    puts $pStr "<single_value label=\"$subbedComp\" val=$outData($compName)/>"
+		} else {
+		    puts $pStr "<multi_value label=\"$subbedComp\">"
+		    WriteLiteralParam $pStr $outData($compName)
+#		    puts $pStr "<literal label=\"$SubbedComp\" \
+#				    spec=\"$outData($compName)\"/>"
+		    puts $pStr "</multi_value>"
+		    set msgs(param_source_$compName) "$newPopup (literal)"
+		}
+	    }
+	}
+	puts $pStr </variables>
+ 	puts $pStr <submodels>
+	foreach sm [array names inners] {
+	    puts $pStr "<submodel label=\"[StripCrs $sm]\">"
+	    WriteSubmodelParams outData $topNode $metaFile $pStr $smPath/$sm
+	    puts $pStr </submodel>
+	}
+ 	puts $pStr </submodels>
+    }
+
+    proc WriteLiteralParam {pStr data} {
+	foreach {idx val} $data {
+	    if {[llength $val]==1} {
+		if {[Numeric $val]} {
+		    set val \"$val\"
+		}
+		puts $pStr "<value index=\"$idx\" value=$val/>"
+	    } else {
+		puts $pStr "<values index=\"$idx\">"
+		WriteLiteralParam $pStr $val
+		puts $pStr "</values>"
+	    }
+	}
+    }
+
     # merge a parameter metafile. These are saved with the pathnames of the .csv files
     # relative to the location of the metafile, so in order to reload the .csvs we need to
     # reconnect them with this pathname...trouble is, if I save in a new directory I'll need
@@ -877,6 +988,124 @@ namespace eval fileparams {
             MergeParams $topNode $smPath $metaFile $notInput 1
             
         }
+    }
+}
+
+package require xml
+set parseStatus(spfParser) [::xml::parser -ignorewhitespace true \
+				-elementstartcommand StartElement \
+				-elementendcommand FinishElement \
+				-characterdatacommand LoadBase64CharData]
+
+proc RevertXMLParams {oldPath newPath topNode smPath} {
+    global parseStatus
+
+    array set parseStatus [list oldPath $oldPath topNode $topNode \
+			       smPath $smPath submodel {} valNesting 0]
+    set parseStatus(outStr) [open $newPath w]
+    $parseStatus(spfParser) reset
+    set pStr [open $oldPath r]
+    $parseStatus(spfParser) parse [read $pStr]
+    close $pStr
+    close $parseStatus(outStr)
+    return $parseStatus(simV)
+}
+
+proc StartElement {name attList args} {
+    global parseStatus
+#    puts "Started a $name, atts -$attList-, args -$args-"
+    array set attVals $attList
+    switch $name {
+	submodel {
+	    if {[string equal top $attVals(label)]} return;
+	    append parseStatus(submodel) /$attVals(label)
+	} single_value {
+	    puts $parseStatus(outStr) \
+		$parseStatus(submodel)/$attVals(label)=literal=$attVals(val)
+	} multi_value {
+	    set parseStatus(literal,0) $attVals(label)
+	    set parseStatus(literal,1) {}
+	    set parseStatus(valNesting) 1
+	} values {
+	    lappend parseStatus(literal,$parseStatus(valNesting)) \
+		$attVals(index)
+	    set parseStatus(literal,[incr parseStatus(valNesting)]) {}
+	} value {
+	    if {[info exists parseStatus(translateExtras)]} {
+		lappend parseStatus(translateExtras) $attVals(val)
+	    } else {
+		lappend parseStatus(literal,$parseStatus(valNesting)) \
+		    $attVals(index) [EnquoteIfNotElement $attVals(value)]
+	    }
+	} csv_columns {
+	    puts -nonewline $parseStatus(outStr) \
+		"$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) "
+	    set parseStatus(translateExtras) $attVals(data_column)
+	} csv_grid {
+	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)"
+	} image {
+	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,image $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax) $attVals(blackval) $attVals(whiteval) $attVals(transpval) $attVals(use)"
+	} geotiff {
+	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,gdal $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)"
+	} byte_array {
+	    set parseStatus(loadByteArray) $attVals(label) 
+	    set parseStatus(translateExtras) $attVals(type)
+	} variables {
+	} submodels {
+	} spf {
+	    set parseStatus(simV) $attVals(simile_version)
+	} default {
+	    error "Unknown element $name contents $attList"
+	}
+    }
+}
+
+proc FinishElement {name args} {
+    global parseStatus
+#    puts "Finished a $name, args -$args-"
+    switch -regexp $name {
+	submodel {
+	    set lastSlash [expr [string last / $parseStatus(submodel)]-1]
+	    set parseStatus(submodel) [string range $parseStatus(submodel) \
+					    0 $lastSlash]
+	} multi_value {
+#puts "writing $parseStatus(submodel)/[lindex $vp 0]=literal=[lindex $vp 1]"
+	    puts $parseStatus(outStr) \
+		$parseStatus(submodel)/$parseStatus(literal,0)=literal=$parseStatus(literal,1)
+	} values {
+	    set oldList $parseStatus(literal,$parseStatus(valNesting))
+	    unset parseStatus(literal,$parseStatus(valNesting))
+	    incr parseStatus(valNesting) -1
+	    lappend parseStatus(literal,$parseStatus(valNesting)) $oldList
+	} csv_columns {
+	    puts $parseStatus(outStr) $parseStatus(translateExtras)
+	    unset parseStatus(translateExtras)
+	} single_value|csv_grid|image|geotiff|value|variables|submodels|spf {
+	} byte_array {
+	    unset parseStatus(loadByteArray)
+	    unset parseStatus(translateExtras)
+	} default {
+	    error "Unknown element $name"
+	}
+    }						
+}
+
+proc LoadBase64CharData {encoded} {
+    global parseStatus paramData widgetNames msgs
+
+    if {![info exists parseStatus(loadByteArray)]} return
+    set relPath [RestoreCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
+    set compName $parseStatus(smPath)$relPath
+    set nodeId [IdFromTail $parseStatus(topNode) $compName 0]
+#puts "got node $nodeId from $compName"
+    set decoded [base64 -mode decode -- $encoded]
+    set paramData($compName) [concat {scenario ,bytes} \
+				  $parseStatus(translateExtras) [list $decoded]]
+    set msgs(param_source_$compName) \
+	"Specified by $parseStatus(oldPath) (literal) -- keep data in scenario file"
+    if {[winfo exists $widgetNames($compName)]} {
+	FillIfSmall $widgetNames($compName).e $paramData($compName)
+	$widgetNames($compName).e configure -state disabled
     }
 }
 
@@ -897,16 +1126,20 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
     
     #do_in_editor puts "MergeParams $topNode $smPath $oldPath $interactive"
     set oldDir [pwd]
-    if {[catch {
-            set multiT [mime::initialize -file $oldPath]
-            set origVersion [mime::getheader $multiT Simile-Version]
-            set metaFile [file join $simtmpdir temp_in.spf]
-            set mimeSquirter [NetOpen $metaFile w]
-            fconfigure $mimeSquirter -translation binary
-            mime::getbody $multiT -command SquirtMime -blocksize 256}]
-    } {
-        set metaFile $oldPath
-        set origVersion 0.0
+    set metaFile [file join $simtmpdir temp_in.spf]
+    if {[catch {set origVersion [RevertXMLParams \
+				     $oldPath $metaFile $topNode $smPath]}]} {
+	puts $::errorInfo
+	if {[catch {
+	    set multiT [mime::initialize -file $oldPath]
+	    set origVersion [mime::getheader $multiT Simile-Version]
+	    set mimeSquirter [NetOpen $metaFile w]
+	    fconfigure $mimeSquirter -translation binary
+	    mime::getbody $multiT -command SquirtMime -blocksize 256}]
+	} {
+	    set metaFile $oldPath
+	    set origVersion 0.0
+	}
     }
     set ::bermudaTriangle {}
     set pStr [NetOpen $metaFile r]
@@ -986,7 +1219,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
 			-file [lindex $paramState($restoredComp) 0]
 		}
                 set suppliedData($restoredComp) \
-                        [LoadTableData $paramState($restoredComp) $startLine]
+                        [LoadTableData $paramState($restoredComp) $startLine 1]
                 set whichParamsAffected($restoredComp) 1
                 set msgs(param_source_$restoredComp) [concat $newPopup \
                         (reference to $VFile)]
@@ -1080,6 +1313,13 @@ proc TrimDTFromPath {fullCapt} {
     return [string range $fullCapt [string first / $fullCapt/ 1] end]
 }
 
+proc DataInScenario {compName} {
+    global msgs
+    
+    return [string equal " -- keep data in scenario file" \
+		[string range $msgs(param_source_$compName) end-29 end]]
+}
+
 # This checks whether a parameter really has the value specified by its
 # .csv file reference
 
@@ -1138,9 +1378,8 @@ proc VarType {testVar types} {
         return 2
     } elseif {[Numeric $testVar]} {
         return 3
-    } else {
-        return 0
     }
+    return 0
 }
 
 proc GetFromTable {parent topNode compName startLine} {
@@ -1168,6 +1407,7 @@ proc GetFromTable {parent topNode compName startLine} {
     } else {
         set table_entry(values) $suppliedData($compName)
     }
+    set table_entry(bytes) [DataInScenario $compName]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $compName \
 		       [$widgetNames($compName).l2 cget -text] $notSeries]
 # If loading data for PEST there is no parent dialogue so do not keep grab
@@ -1187,6 +1427,9 @@ proc GetFromTable {parent topNode compName startLine} {
                 set msgs(param_source_$compName) Unsaved
             }
         }
+	if {$table_entry(bytes)} {
+	    append msgs(param_source_$compName) " -- keep data in scenario file"
+	}
     }
 }
 
