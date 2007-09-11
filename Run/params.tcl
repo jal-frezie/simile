@@ -837,7 +837,7 @@ namespace eval fileparams {
 	    puts $pStr {<?xml version="1.0"?>}
 	    puts $pStr "<spf xsi:noNamespaceSchemaLocation=\"simile_spf.xsd\" simile_version=\"$env(SIMILE_VERSION)\">"
 	    puts $pStr {<submodel label="top">}
-	    WriteSubmodelParams suppliedData $topNode $metaFile $pStr $smPath
+	    WriteSubmodelParams suppliedData $topNode $metaFile $pStr $smPath {}
 	    puts $pStr {</submodel>}
 	    puts $pStr {</spf>}
 #            foreach compName [array names outNames $smPath*] {
@@ -877,10 +877,10 @@ namespace eval fileparams {
         }
     }
     
-    proc WriteSubmodelParams {outerData topNode metaFile pStr smPath} {
+    proc WriteSubmodelParams {outerData topNode metaFile pStr smPath indent} {
 	global paramState paramDims
 
-	puts $pStr <variables>
+	puts $pStr $indent<variables>
 	upvar 1 $outerData outData
 	foreach compName [array names outData $smPath*] {
 	    set compTail [string range $compName [string length $smPath] end]
@@ -892,83 +892,83 @@ namespace eval fileparams {
 		if {[DataInScenario $compName]} {
 		    set nodeId [IdFromTail $topNode $compName 0]
 		    set type [GetCompProperty $topNode Type $nodeId]
-		    puts $pStr \
-			"<byte_array label=\"$subbedComp\" type=\"$type\">"
+		    puts $pStr "$indent<byte_array label=\"$subbedComp\" type=\"$type\">"
 		    set dimCount 0
 		    foreach dim $paramDims($compName) {
 			if {!$dim} break
-			puts $pStr "<value index=[incr dimCount] val=\"$dim\"/>"
+			puts $pStr "  $indent<value index=[incr dimCount] val=\"$dim\"/>"
 		    }
-		    puts $pStr {<![CDATA[}
+		    puts $pStr "  $indent<!\[CDATA\["
 		    puts $pStr [base64 -mode encode -- [c_getparamall $nodeId]]
-		    puts $pStr {]]>}
-		    puts $pStr "</byte_array>"
+		    puts $pStr "  $indent\]\]>"
+		    puts $pStr "$indent</byte_array>"
 		} elseif {[ReferenceWorks $compName]} {
                     set relName [Relativize $metaFile \
                             [lindex $paramState($compName) 0]]
 		    switch -exact [lindex $paramState($compName) 1] {
 			,image {
-			    puts -nonewline $pStr "<image label=\"$subbedComp\" filename=\"$relName\""
+			    puts -nonewline $pStr "$indent<image label=\"$subbedComp\" filename=\"$relName\""
 			    foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use} val [lrange $paramState($compName) 2 9] {
 				puts -nonewline $pStr " $att=\"$val\""
 			    }
 			    puts $pStr />
 			} ,gdal {
-			    puts -nonewline $pStr "<geotiff label=\"$subbedComp\" filename=\"$relName\""
+			    puts -nonewline $pStr "$indent<geotiff label=\"$subbedComp\" filename=\"$relName\""
 			    foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
 				puts -nonewline $pStr " $att=\"$val\""
 			    }
 			    puts $pStr />
 			} ,grid {
-			    puts -nonewline $pStr "<csv_grid label=\"$subbedComp\" filename=\"$relName\""
+			    puts -nonewline $pStr "$indent<csv_grid label=\"$subbedComp\" filename=\"$relName\""
 			    foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
 				puts -nonewline $pStr " $att=\"$val\""
 			    }
 			    puts $pStr />
 			} default {
-			    puts $pStr "<csv_columns label=\"$subbedComp\" filename=\"$relName\" data_column=\"[lindex $paramState($compName) 1]\">"
+			    puts $pStr "$indent<csv_columns label=\"$subbedComp\" filename=\"$relName\" data_column=\"[lindex $paramState($compName) 1]\">"
 			    set dimCount 0
 			    foreach dim [lrange $paramState($compName) 2 end] {
-				puts $pStr "<value index=[incr dimCount] val=\"$dim\"/>"
+				puts $pStr "$indent<value index=[incr dimCount] val=\"$dim\"/>"
 			    }
-			    puts $pStr </csv_columns>
+			    puts $pStr $indent</csv_columns>
 			}
 		    }
 		    set msgs(param_source_$compName) \
 			[concat $newPopup (reference to $relName)]
 		} elseif {[llength $outData($compName)]==1} {
-		    puts $pStr "<single_value label=\"$subbedComp\" val=$outData($compName)/>"
+		    puts $pStr "$indent<single_value label=\"$subbedComp\" val=$outData($compName)/>"
 		} else {
-		    puts $pStr "<multi_value label=\"$subbedComp\">"
-		    WriteLiteralParam $pStr $outData($compName)
+		    puts $pStr "$indent<multi_value label=\"$subbedComp\">"
+		    WriteLiteralParam $pStr $outData($compName) "  $indent"
 #		    puts $pStr "<literal label=\"$SubbedComp\" \
 #				    spec=\"$outData($compName)\"/>"
-		    puts $pStr "</multi_value>"
+		    puts $pStr "$indent</multi_value>"
 		    set msgs(param_source_$compName) "$newPopup (literal)"
 		}
 	    }
 	}
-	puts $pStr </variables>
- 	puts $pStr <submodels>
+	puts $pStr $indent</variables>
+ 	puts $pStr $indent<submodels>
 	foreach sm [array names inners] {
-	    puts $pStr "<submodel label=\"[StripCrs $sm]\">"
-	    WriteSubmodelParams outData $topNode $metaFile $pStr $smPath/$sm
-	    puts $pStr </submodel>
+	    puts $pStr "$indent<submodel label=\"[StripCrs $sm]\">"
+	    WriteSubmodelParams outData $topNode $metaFile $pStr $smPath/$sm \
+		"  $indent"
+	    puts $pStr $indent</submodel>
 	}
- 	puts $pStr </submodels>
+ 	puts $pStr $indent</submodels>
     }
 
-    proc WriteLiteralParam {pStr data} {
+    proc WriteLiteralParam {pStr data indent} {
 	foreach {idx val} $data {
 	    if {[llength $val]==1} {
 		if {[Numeric $val]} {
 		    set val \"$val\"
 		}
-		puts $pStr "<value index=\"$idx\" value=$val/>"
+		puts $pStr "$indent<value index=\"$idx\" value=$val/>"
 	    } else {
-		puts $pStr "<values index=\"$idx\">"
-		WriteLiteralParam $pStr $val
-		puts $pStr "</values>"
+		puts $pStr "$indent<values index=\"$idx\">"
+		WriteLiteralParam $pStr $val "  $indent"
+		puts $pStr "$indent</values>"
 	    }
 	}
     }
@@ -1063,7 +1063,7 @@ proc StartElement {name attList args} {
 proc FinishElement {name args} {
     global parseStatus
 #    puts "Finished a $name, args -$args-"
-    switch -regexp $name {
+    switch $name {
 	submodel {
 	    set lastSlash [expr [string last / $parseStatus(submodel)]-1]
 	    set parseStatus(submodel) [string range $parseStatus(submodel) \
@@ -1080,7 +1080,8 @@ proc FinishElement {name args} {
 	} csv_columns {
 	    puts $parseStatus(outStr) $parseStatus(translateExtras)
 	    unset parseStatus(translateExtras)
-	} single_value|csv_grid|image|geotiff|value|variables|submodels|spf {
+	} single_value - csv_grid - image - geotiff - value - variables - \
+	    submodels - spf {
 	} byte_array {
 	    unset parseStatus(loadByteArray)
 	    unset parseStatus(translateExtras)
