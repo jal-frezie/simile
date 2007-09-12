@@ -435,19 +435,21 @@ proc AcceptData {topNode compName notInput complain} {
                         $suppliedData($compName) $useCppArray} result]} {
             # new bit for using it as an input tool: notify that we have values
             lappend suppliedData(needed) $compName
-            if {$complain>-1} {
-                ColourCaptions $outNames($compName) red
-                if {$complain>0} {
-                    if {[catch {llength $result} rlen]} {
-			error $result ;# unplanned error
-		    } elseif {$rlen} {
-                        set where " at indices [lrange $result 0 end-1]"
-                    } else {
-                        set where {}
-                    }
-                    ShowMessage "Problem setting $whatMaking value" warning "While attempting to load the $whatMaking value \"$compName\"$where the following problem occurred: [lindex $result end]" ok
+	    if {[string match BadFP* $result]} {
+		if {$complain>-1} {
+		    ColourCaptions $outNames($compName) red
+		    if {$complain>0} {
+			if {[llength [lindex $result 2]]} {
+			    set where " at indices [lindex $result 2]"
+			} else {
+			    set where {}
+			}
+			ShowMessage "Problem setting $whatMaking value" warning "While attempting to load the $whatMaking value \"$compName\"$where the following problem occurred: [lindex $result 1]" ok
+		    }
                 }
-            }
+            } else { ;# a bug rather than a bad user entry
+		error $result $::errorInfo
+	    }
         } else {
             if {$complain>-1} {
                 ColourCaptions $outNames($compName) black
@@ -516,7 +518,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     if {![llength $dims]} {
         switch [llength $list] {
             0 {
-                error [list "Missing value"]
+                FPError "Missing value" {}
             } 1 {
                 if {![string last ,now [string tolower $subs] 3]} {
                     set idAndSubs $tgt[string range $subs 4 end]
@@ -533,17 +535,17 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
                     return -1 ;# should be 0 if a comp
                 }
             } default {
-                error [list "Array $list supplied instead of scalar"]
+                FPError "Array $list supplied instead of scalar" {}
             }
         }
     }
     if {[llength $list]==1} {
         #puts "setting paramData($tgt) to $headNum"
         set userDims [join $dims { x }]
-        error [list "scalar $list supplied instead of array of $userDims"]
+        FPError "scalar $list supplied instead of array of $userDims" {}
     }
     if {[llength $list]%2} {
-        error [list [lindex $list end] "Missing value"]
+        FPError "Missing value" [list [lindex $list end]]
     }
     
     foreach {indx sublist} $list {
@@ -554,20 +556,20 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             set role "Time point"
             if {!([Numeric $indx] || \
 		      [lsearch {now others} [string tolower $indx]]>-1)} {
-                error [list "$role $indx must be NOW, OTHERS or a number."]
+                FPError "$role $indx must be NOW, OTHERS or a number." {}
             }
         } elseif {[string compare {} $thisTrans]} {
             set poss [lsearch $thisTrans $indx]
             if {$poss == -1} {
-                error [list "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]."]
+                FPError "$role $indx is not a member of type [lindex $thisTrans 0], pick one of [lrange $thisTrans 1 end]." {}
             }
         } elseif {![string is integer $indx]} {
-            error [list "$role $indx is not an integer."]
+            FPError "$role $indx is not an integer." {}
         } elseif {$indx<=0} {
-            error [list "$role is zero or negative."]
+            FPError "$role is zero or negative." {}
         }
         if {[info exists sub($indx)]} {
-            error [list "$role $indx appears more than once."]
+            FPError "$role $indx appears more than once." {}
         }
         set sub($indx) $sublist
     }
@@ -587,10 +589,11 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         foreach arrayPt [array names sub] {
             if {[set pt [lsearch {now others} [string tolower $arrayPt]]]>-1} {
 		if {[llength $subs]} {
-		    error [list "NOW or OTHERS must be outermost index."]
+		    FPError "NOW or OTHERS must be outermost index." {}
 		}
             } elseif {![Numeric $arrayPt]} {
-                error [list $arrayPt "Time point must be NOW, OTHERS or a number."]
+                FPError "Time point must be NOW, OTHERS or a number." \
+		    [list $arrayPt] 
             } elseif {[string equal restart [string tolower $sub($arrayPt)]]} {
 		SetWrapTime $tgt $arrayPt $useCppArray
 		continue
@@ -604,14 +607,15 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 		    SetFillMethod $tgt $mtd $arrayPt $useCppArray
 		    continue
 		}
-		error [list $arrayPt "Fill method must be preceded by OTHERS."]
+		FPError "Fill method must be preceded by OTHERS." \
+		    [list $arrayPt] 
 	    } elseif {$pt==1} {
-		error [list "Action $sub($arrayPt) is not USE_LAST, USE_CLOSEST or INTERPOLATE"]
+		FPError "Action $sub($arrayPt) is not USE_LAST, USE_CLOSEST or INTERPOLATE" {}
 	    }
 
 	    if {[catch {ListToArray $topNode $tgt $subs,$arrayPt $trans \
                             [lrange $dims 1 end] $sub($arrayPt) $useCppArray} step]} {
-                error [concat $arrayPt $step]
+                PassFPError $step [list $arrayPt]
             } elseif {$step<1} {
                 set redoStep 0
             }
@@ -628,7 +632,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         # number of elements, one the same or smaller will be missing!
         set last [array size sub]
         if {!$last} {
-            error [list "Per-record submodel must have values for at least one member."]
+            FPError "Per-record submodel must have values for at least one member." {}
         }
         
         #do_in_editor puts "Setting [lindex $nextDim 1]$subs to $last"
@@ -636,7 +640,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
             set outers [lrange [split $subs ,] 1 end]
             if {[catch {c_setrecordlist $tgt $outers $last} \
                         err]} {
-                error [list $err] wogglatron
+                FPError $err {}
             }
             foreach nested [lrange $dims 1 end] {
                 if {[llength $nested]==2 && \
@@ -658,12 +662,12 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
         set indx [NumberToEnumType $arrayPt $thisTrans]
         if {![info exists sub($indx)]} {
             #puts "No $indx in [array names sub]"
-            error [list $indx "Missing value"]
+            FPError "Missing value" [list $indx]
         }
         if {[catch {ListToArray $topNode $tgt $subs,$arrayPt \
                         [lrange $trans 1 end] [lrange $dims 1 end] \
                         $sub($indx) $useCppArray} mis]} {
-            error [concat $indx $mis]
+            PassFPError $mis [list $indx]
         } elseif {$mis<1} {
             set redoStep $requireStep
         }
@@ -687,15 +691,15 @@ proc EnumTypeToNumber {varData tgt head trans useCppArray} {
         set poss [lsearch $trans [lindex $head 0]]
         if {$poss == -1} {
             if {[string equal false [lindex $trans 0]]} {
-                error [list "Data value $head is not a member of type boolean, pick one of $trans."]
+                FPError "Data value $head is not a member of type boolean, pick one of $trans." {}
             } else {
-                error [list "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]."]
+                FPError "Data value $head is not a member of type [lindex $trans 0], pick one of [lrange $trans 1 end]." {}
             }
         } else {
             PlaceInArray $tgt $poss $varData $useCppArray
         }
     } elseif {![Numeric $head]} {
-        error [list "Data value $head is not a number."]
+        FPError "Data value $head is not a number." {}
     } else {
         PlaceInArray $tgt $head $varData $useCppArray
         #   set ${varData}($tgt) $head
@@ -710,13 +714,13 @@ proc PlaceInArray {where what varData inC} {
             set map [split $where ,]
             if {[catch {c_setparamelement [lindex $map 0] \
                             [lrange $map 1 end] $what} urr]} {
-                error [list $urr]
+                FPError $urr {}
             }
         } 2 {
             set map [split $where ,]
             if {[catch {c_settimepointelement [lindex $map 0] \
                             [lrange $map 2 end] [lindex $map 1] $what} urr]} {
-                error [list $urr]
+                FPError $urr {}
             }
         } 0 {
             global $varData
@@ -740,6 +744,18 @@ proc SetFillMethod {where which what inC} {
 	c_setfillmethod $where $which
     } else {
 	set paramData(fillMethod,$where) [string tolower $what]
+    }
+}
+
+proc FPError {occurrence inds} {
+    error [list BadFP $occurrence $inds]
+}
+
+proc PassFPError {oldError newInds} {
+    if {[string match BadFP* $oldError]} { ;# one of ours
+	FPError [lindex $oldError 1] [concat $newInds [lindex $oldError 2]]
+    } else {
+	error $oldError $::errorInfo
     }
 }
 
@@ -961,9 +977,8 @@ namespace eval fileparams {
     proc WriteLiteralParam {pStr data indent} {
 	foreach {idx val} $data {
 	    if {[llength $val]==1} {
-		if {[Numeric $val]} {
-		    set val \"$val\"
-		}
+# get rid of any stuff added to make val a single element, then enquote for XML
+		set val \"[lindex $val 0]\"
 		puts $pStr "$indent<value index=\"$idx\" value=$val/>"
 	    } else {
 		puts $pStr "$indent<values index=\"$idx\">"
@@ -1445,12 +1460,22 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
     package require gdal
     set hg [gdal_open_read_only [lindex $tableSpec 0]]
     set hdl [gdal_get_raster_band $hg 1]
+    set dataRows [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]]
+    set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
+    set fillRows [lindex $dims 0]
+    set fillCols [lindex $dims 1]
+    if {[llength $fillRows]==2} {
+	if {[string equal RECORDS [lindex $fillRows 0]]} {
+	    c_setrecordlist $node {} $dataRows
+	    set fillRows $dataRows
+	} else {
+	    FPError "Dodgy index $fillRows" {}
+	}
+    }
     set bytesFromGdal [gdal_get_raster_data $hdl \
 		     [expr [lindex $tableSpec 4]-1] \
 		     [expr [lindex $tableSpec 2]-1] \
-		     [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]] \
-		     [expr 1+[lindex $tableSpec 3]-[lindex $tableSpec 2]] \
-			   $gdalType [lindex $dims 1] [lindex $dims 0]]
+		     $dataCols $dataRows $gdalType $fillCols $fillRows]
     gdal_close $hg
     
     c_setparamall $node $bytesFromGdal
