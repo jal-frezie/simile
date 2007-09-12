@@ -494,7 +494,7 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    # DO THE fallback thing
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
-	if {$useCppArray} {
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
 	} else {

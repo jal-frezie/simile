@@ -469,18 +469,19 @@ proc ShrinkValueList {outerList limit} {
     upvar 1 $outerList list
 
     if {[string equal ,gdal [lindex $list 1]]} {
-	set topRow [lindex $list 4]
-	set bottomRow [lindex $list 5]
-	set rowLength [expr 1+$bottomRow-$topRow]
-	set colLength [expr 1+[lindex $list 3]-[lindex $list 2]]
-	set allVals [expr $rowLength*$colLength]
-	set rowEnds [expr int($range/$rowLength)]
-	lset list 5 [expr $topRow+$rowEnds]
+	set topRow [lindex $list 2]
+	set bottomRow [lindex $list 3]
+	set rowCount [expr 1+$bottomRow-$topRow]
+	set colCount [expr 1+[lindex $list 5]-[lindex $list 4]]
+	set allVals [expr $rowCount*$colCount]
+	set rowEnds [expr int($range/$rowCount)]
+	lset list 3 [expr $topRow+$rowEnds]
 	set startRange [ReadGdalRefToList $list]
-	lset list 4 [expr $bottomRow-$rowEnds]
-	lset list 5 $bottomRow
+puts $startRange
+	lset list 2 [expr $bottomRow-$rowEnds]
+	lset list 3 $bottomRow
 	set endRange [ReadGdalRefToList $list]
-	set list [concat [NumberElements $startRange 1] \
+	set list [concat [NumberElements $startRange] \
 		      [NumberElements $endRange [lindex $list 4]]]
     } elseif {[string equal ,bytes [lindex $list 1]]} {
 # in this case the list format is:
@@ -497,7 +498,7 @@ proc ShrinkValueList {outerList limit} {
 	if {$allVals<$manage} {
 	    set fullRange [DoByteArrayToList $fieldChar $fieldSize \
 			       [lrange $list 3 end-1] [lindex $list end]]
-	    set list [NumberElements $fullRange 1]
+	    set list [NumberElements $fullRange]
 	    return $allVals
 	}
 	set splitLevel [expr [llength $list]-1]
@@ -514,7 +515,7 @@ proc ShrinkValueList {outerList limit} {
 					 $fatLines*$availAtLevel/$splitBound)]
 	set endRange [DoByteArrayToList $fieldChar $fieldSize $bounds \
 			    [lindex $list end]]
-	set list [concat [NumberElements $startRange 1] \
+	set list [concat [NumberElements $startRange] \
 		      [NumberElements $endRange [expr 1+$splitBound-$fatLines]]]
     } else {    
 	set allVals [CountValues $list]
@@ -544,7 +545,7 @@ proc DoByteArrayToList {fieldChar fieldSize bounds rawData} {
     return $spit
 }
 
-proc NumberElements {list startNum} {
+proc NumberElements {list {startNum 1}} {
     if {[string equal $list [lindex $list 0]]} {
 	return $list
     } else {
