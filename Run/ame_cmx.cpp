@@ -507,7 +507,7 @@ FINDABLE int cleartimeseriesCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error;
-  double time;
+  double *time;
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "node_id time");
@@ -515,12 +515,11 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetDoubleFromObj(interp, argv[2], &time);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  if (set_wrap(Tcl_GetStringFromObj(argv[1], NULL), time)) {
+  if (time=get_wrap_ptr(Tcl_GetStringFromObj(argv[1], NULL))) {
+    error = Tcl_GetDoubleFromObj(interp, argv[2], time);
+    if (error != TCL_OK) {
+      return error;
+    }
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to set wraparound time for this node", -1));
@@ -530,7 +529,7 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
 
 FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
-  int error, mtd;
+  int error, *mtd;
 
   if (argc != 3) {
     Tcl_WrongNumArgs(interp, 1, argv, "node_id method");
@@ -538,12 +537,11 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
     return TCL_ERROR;
   }
   
-  error = Tcl_GetIntFromObj(interp, argv[2], &mtd);
-  if (error != TCL_OK) {
-    return error;
-  }
-
-  if (set_fill(Tcl_GetStringFromObj(argv[1], NULL), mtd)) {
+  if (mtd=get_fill_ptr(Tcl_GetStringFromObj(argv[1], NULL))) {
+    error = Tcl_GetIntFromObj(interp, argv[2], mtd);
+    if (error != TCL_OK) {
+      return error;
+    }
     return TCL_OK;
   } else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to set fill method for this node", -1));
@@ -695,7 +693,6 @@ FINDABLE int setparamallCmd(ClientData clientData, Tcl_Interp *interp,
 FINDABLE int getparamallCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int count, error;
-  void *sourcePtr, *destPtr;
   char *nodeId;
   unsigned char *holder;
 
@@ -763,6 +760,82 @@ FINDABLE int settimepointelementCmd(ClientData clientData, Tcl_Interp *interp,
   case 0:
   /* might want to return something here if array hasn't been defined */
     return TCL_OK;
+  }
+}
+
+FINDABLE int settimepointallCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int count, error, squirtPtr = 0, num_bytes;
+  char *nodeId;
+  unsigned char *holder;
+  void *ptBytes;
+  double seekTime;
+  Tcl_Obj* resultPtr;
+
+  if (argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id data");
+    return TCL_ERROR;
+  }
+  
+  nodeId = Tcl_GetStringFromObj(argv[1], NULL);
+  if (count=param_array_size(nodeId)) {
+    holder = Tcl_GetByteArrayFromObj(argv[2], &num_bytes);
+    //sprintf(globMess, "Array has %d bytes, time points %d", num_bytes, count);
+    //showMess(globMess);
+    while (squirtPtr<num_bytes) {
+      if (!(ptBytes = create_time_point(nodeId, 
+					*(double*)(holder+squirtPtr), NULL))) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to make array for this node", -1));
+	return TCL_ERROR;
+      }
+      squirtPtr += sizeof(double);
+      memcpy(ptBytes, holder+squirtPtr, count);
+      squirtPtr += count;
+    }
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("No array can be located for this node", -1));
+    return TCL_ERROR;
+  }
+  return TCL_OK;
+}
+
+FINDABLE int gettimepointallCmd(ClientData clientData, Tcl_Interp *interp,
+	int argc, Tcl_Obj *CONST argv[]) {
+  int count, error, squirtPtr = 0, currentSize;
+  char *nodeId;
+  unsigned char *holder;
+  void *ptBytes;
+  double seekTime;
+  Tcl_Obj* resultPtr;
+
+  if (argc != 2) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id");
+    return TCL_ERROR;
+  }
+  
+  nodeId = Tcl_GetStringFromObj(argv[1], NULL);
+  if (count=param_array_size(nodeId)) { // assignment
+    currentSize = (count + sizeof(double))/2;
+    resultPtr = Tcl_NewObj();
+    holder = Tcl_SetByteArrayLength(resultPtr, currentSize);
+    seekTime = -1e100;
+    // copy data for each timept to ByteArray, doubling its size if too small
+    while (ptBytes = find_next_timept_space(nodeId, &seekTime)) { // assignment
+      if (squirtPtr + count + sizeof(double) > currentSize) {
+	holder = Tcl_SetByteArrayLength(resultPtr, currentSize=2*currentSize);
+      }
+      *(double*)(holder+squirtPtr) = seekTime;
+      squirtPtr += sizeof(double);
+      memcpy(holder+squirtPtr, ptBytes, count);
+      squirtPtr += count;
+    }
+    // now trim to correct size
+    Tcl_SetByteArrayLength(resultPtr, squirtPtr);
+    Tcl_SetObjResult(interp, resultPtr);
+    return TCL_OK;
+  } else {
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("c_gettimepointall: no array can be located for this node", -1));
+    return TCL_ERROR;
   }
 }
 
@@ -1868,6 +1941,12 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_settimepointelement", settimepointelementCmd,
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_settimepointall", settimepointallCmd, 
+		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
+  
+  Tcl_CreateObjCommand(interp, "c_gettimepointall", gettimepointallCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
   Tcl_CreateObjCommand(interp, "c_resetmodel", resetmodelCmd, 

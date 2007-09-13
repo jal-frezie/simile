@@ -477,7 +477,6 @@ proc ShrinkValueList {outerList limit} {
 	set rowEnds [expr int($range/$rowCount)]
 	lset list 3 [expr $topRow+$rowEnds]
 	set startRange [ReadGdalRefToList $list]
-puts $startRange
 	lset list 2 [expr $bottomRow-$rowEnds]
 	lset list 3 $bottomRow
 	set endRange [ReadGdalRefToList $list]
@@ -494,6 +493,11 @@ puts $startRange
 	    set fieldSize 4
 	}
 	set allVals [expr [string length [lindex $list end]]/$fieldSize]
+# fix this up later
+	if {[string equal TIME [lindex $list 3]]} {
+	    set list "Time series"
+	    return $allVals
+	}
 	set offset 0
 	if {$allVals<$manage} {
 	    set fullRange [DoByteArrayToList $fieldChar $fieldSize \

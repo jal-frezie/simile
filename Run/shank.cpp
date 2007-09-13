@@ -1353,24 +1353,22 @@ int clear_time_point_elts(char* nodeId) {
   arrSlot->curTimePoint = NULL;
 }
 
-int set_wrap(char* nodeId, double time) {
+double* get_wrap_ptr(char* nodeId) {
   listParamArray* arrSlot;
 
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return 0; // no data structure for this elt
+    return NULL; // no data structure for this elt
   }
-  arrSlot->wrapAroundPoint = time;
-  return 1;
+  return &arrSlot->wrapAroundPoint;
 }
 
-int set_fill(char* nodeId, int method) {
+int* get_fill_ptr(char* nodeId) {
   listParamArray* arrSlot;
 
   if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
-    return 0; // no data structure for this elt
+    return NULL; // no data structure for this elt
   }
-  arrSlot->fillMethod = method;
-  return 1;
+  return &arrSlot->fillMethod;
 }
 
 void* create_time_point(char* nodeId, double time, void* dataSpace) {
@@ -1380,6 +1378,27 @@ void* create_time_point(char* nodeId, double time, void* dataSpace) {
     return NULL; // no data structure for this elt
   }
   return arrSlot->create_time_point(time, dataSpace);
+}
+
+void* find_next_timept_space(char* nodeId, double* last_time) {
+  listParamArray* arrSlot;
+  listTimePoint* seek;
+
+  if (!(arrSlot=param_array_item(param_array_base, nodeId))) {
+    return NULL; // no data structure for this elt
+  }
+  seek = arrSlot->timePoints;
+  while (seek) {
+    if (seek->when>*last_time) {
+      *last_time = seek->when;
+      break;
+    }
+    seek = seek->next;
+  }
+  if (seek)
+    return seek->dataPtr;
+  else
+    return NULL;
 }
 
 int set_record_list(char* nodeId, int* indxs, int length) {

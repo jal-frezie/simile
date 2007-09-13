@@ -488,13 +488,18 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     
     if {[string equal ,bytes [lindex $list 1]]} {
 	if {$useCppArray} {
-	    c_setparamall $tgt [lindex $list end]
+	    if {[string equal TIME [lindex $list 3]]} {
+		c_settimepointall $tgt [lindex $list end]
+	    } else {
+		c_setparamall $tgt [lindex $list end]
+	    }
 	    return -1 ;# do nothing, the data has already been loaded to c
 	} else {
 	    # DO THE fallback thing
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
-	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1} {
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && \
+		![string equal TIME [lindex $dims 0]]} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
 	} else {
@@ -902,65 +907,70 @@ namespace eval fileparams {
 	    set compTail [string range $compName [string length $smPath] end]
 	    if {[set slashPosn [string first / $compTail 1]]>-1} {
 		set inners([string range $compTail 1 [incr slashPosn -1]]) 1
-	    } else {
-		set subbedComp [StripCrs [string range $compTail 1 end]]
-		set newPopup  "Specified by $metaFile"
-		if {[DataInScenario $compName]} {
-		    set nodeId [IdFromTail $topNode $compName 0]
-		    set type [GetCompProperty $topNode Type $nodeId]
-		    puts $pStr "$indent<byte_array label=\"$subbedComp\" type=\"$type\">"
-		    set dimCount 0
-		    foreach dim $paramDims($compName) {
-			if {!$dim} break
-			puts $pStr "  $indent<value index=[incr dimCount] val=\"$dim\"/>"
-		    }
-		    puts $pStr "  $indent<!\[CDATA\["
-		    puts $pStr [base64 -mode encode -- [c_getparamall $nodeId]]
-		    puts $pStr "  $indent\]\]>"
-		    puts $pStr "$indent</byte_array>"
-		} elseif {[ReferenceWorks $compName]} {
-                    set relName [Relativize $metaFile \
-                            [lindex $paramState($compName) 0]]
-		    switch -exact [lindex $paramState($compName) 1] {
-			,image {
-			    puts -nonewline $pStr "$indent<image label=\"$subbedComp\" filename=\"$relName\""
-			    foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use} val [lrange $paramState($compName) 2 9] {
-				puts -nonewline $pStr " $att=\"$val\""
-			    }
-			    puts $pStr />
-			} ,gdal {
-			    puts -nonewline $pStr "$indent<geotiff label=\"$subbedComp\" filename=\"$relName\""
-			    foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
-				puts -nonewline $pStr " $att=\"$val\""
-			    }
-			    puts $pStr />
-			} ,grid {
-			    puts -nonewline $pStr "$indent<csv_grid label=\"$subbedComp\" filename=\"$relName\""
-			    foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
-				puts -nonewline $pStr " $att=\"$val\""
-			    }
-			    puts $pStr />
-			} default {
-			    puts $pStr "$indent<csv_columns label=\"$subbedComp\" filename=\"$relName\" data_column=\"[lindex $paramState($compName) 1]\">"
-			    set dimCount 0
-			    foreach dim [lrange $paramState($compName) 2 end] {
-				puts $pStr "$indent<value index=[incr dimCount] val=\"$dim\"/>"
-			    }
-			    puts $pStr $indent</csv_columns>
-			}
-		    }
-		    set msgs(param_source_$compName) \
-			[concat $newPopup (reference to $relName)]
-		} elseif {[llength $outData($compName)]==1} {
-		    puts $pStr "$indent<single_value label=\"$subbedComp\" val=$outData($compName)/>"
-		} else {
-		    puts $pStr "$indent<multi_value label=\"$subbedComp\">"
-		    WriteLiteralParam $pStr $outData($compName) "  $indent"
-#		    puts $pStr "<literal label=\"$SubbedComp\" \
-#				    spec=\"$outData($compName)\"/>"
-		    puts $pStr "$indent</multi_value>"
-		    set msgs(param_source_$compName) "$newPopup (literal)"
+		break
+	    }
+	    set subbedComp [StripCrs [string range $compTail 1 end]]
+	    set newPopup  "Specified by $metaFile"
+	    if {[DataInScenario $compName]} {
+		set nodeId [IdFromTail $topNode $compName 0]
+		set type [GetCompProperty $topNode Type $nodeId]
+		puts $pStr "$indent<byte_array label=\"$subbedComp\" type=\"$type\">"
+		set dimCount 0
+		foreach dim $paramDims($compName) {
+		    if {[string equal 0 $dim]} break
+		    puts $pStr "  $indent<value index=[incr dimCount] val=\"$dim\"/>"
 		}
+		puts $pStr "  $indent<!\[CDATA\["
+		if {[string equal TIME [lindex $paramDims($compName) 0]]} {
+		    set raw [c_gettimepointall $nodeId]
+		} else {
+		    set raw [c_getparamall $nodeId]
+		}
+		puts $pStr [base64 -mode encode -- $raw]
+		puts $pStr "  $indent\]\]>"
+		puts $pStr "$indent</byte_array>"
+	    } elseif {[ReferenceWorks $compName]} {
+		set relName [Relativize $metaFile \
+				 [lindex $paramState($compName) 0]]
+		switch -exact [lindex $paramState($compName) 1] {
+		    ,image {
+			puts -nonewline $pStr "$indent<image label=\"$subbedComp\" filename=\"$relName\""
+			foreach att {rowmin rowmax colmin colmax blackval whiteval transpval use} val [lrange $paramState($compName) 2 9] {
+			    puts -nonewline $pStr " $att=\"$val\""
+			}
+			puts $pStr />
+		    } ,gdal {
+			puts -nonewline $pStr "$indent<geotiff label=\"$subbedComp\" filename=\"$relName\""
+			foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
+			    puts -nonewline $pStr " $att=\"$val\""
+			}
+			puts $pStr />
+		    } ,grid {
+			puts -nonewline $pStr "$indent<csv_grid label=\"$subbedComp\" filename=\"$relName\""
+			foreach att {rowmin rowmax colmin colmax} val [lrange $paramState($compName) 2 5] {
+			    puts -nonewline $pStr " $att=\"$val\""
+			}
+			puts $pStr />
+		    } default {
+			puts $pStr "$indent<csv_columns label=\"$subbedComp\" filename=\"$relName\" data_column=\"[lindex $paramState($compName) 1]\">"
+			set dimCount 0
+			foreach dim [lrange $paramState($compName) 2 end] {
+			    puts $pStr "$indent<value index=[incr dimCount] val=\"$dim\"/>"
+			}
+			puts $pStr $indent</csv_columns>
+		    }
+		}
+		set msgs(param_source_$compName) \
+		    [concat $newPopup (reference to $relName)]
+	    } elseif {[llength $outData($compName)]==1} {
+		puts $pStr "$indent<single_value label=\"$subbedComp\" val=$outData($compName)/>"
+	    } else {
+		puts $pStr "$indent<multi_value label=\"$subbedComp\">"
+		WriteLiteralParam $pStr $outData($compName) "  $indent"
+		#		    puts $pStr "<literal label=\"$SubbedComp\" \
+		    #				    spec=\"$outData($compName)\"/>"
+		puts $pStr "$indent</multi_value>"
+		set msgs(param_source_$compName) "$newPopup (literal)"
 	    }
 	}
 	puts $pStr $indent</variables>
@@ -1107,7 +1117,7 @@ proc FinishElement {name args} {
 }
 
 proc LoadBase64CharData {encoded} {
-    global parseStatus paramData widgetNames msgs
+    global parseStatus paramData widgetNames whichParamsAffected msgs
 
     if {![info exists parseStatus(loadByteArray)]} return
     set relPath [RestoreCrs $parseStatus(submodel)/$parseStatus(loadByteArray)]
@@ -1123,6 +1133,7 @@ proc LoadBase64CharData {encoded} {
 	FillIfSmall $widgetNames($compName).e $paramData($compName)
 	$widgetNames($compName).e configure -state disabled
     }
+    set whichParamsAffected($compName) 1
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
@@ -1464,14 +1475,6 @@ proc DoNotPassTcl {topNode node dims tableSpec} {
     set dataCols [expr 1+[lindex $tableSpec 5]-[lindex $tableSpec 4]]
     set fillRows [lindex $dims 0]
     set fillCols [lindex $dims 1]
-    if {[llength $fillRows]==2} {
-	if {[string equal RECORDS [lindex $fillRows 0]]} {
-	    c_setrecordlist $node {} $dataRows
-	    set fillRows $dataRows
-	} else {
-	    FPError "Dodgy index $fillRows" {}
-	}
-    }
     set bytesFromGdal [gdal_get_raster_data $hdl \
 		     [expr [lindex $tableSpec 4]-1] \
 		     [expr [lindex $tableSpec 2]-1] \
