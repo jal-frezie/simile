@@ -142,12 +142,13 @@ namespace eval ::maptools2 {
             set polyId [$cnv create rectangle $x0 $midSc $x1 $bottomSc \
 			    -outline {} -fill $colour \
 			    -tag "colour_scale swatch COL$icolour"]
-	    set newVal [expr {int($useNodes($winId,min) + 0.5 + \
-				      $icolour * $useNodes($winId,range) \
-				      / $useNodes($winId,nswatches))}]
+	    set newVal [expr {$useNodes($winId,min) + \
+				  $icolour * $useNodes($winId,range) \
+				  / $useNodes($winId,nswatches)}]
 	    CanvasBindPopup $cnv $polyId \
                     [list Colour for value: \
-			 [TransValue $useNodes($winId,dataETs) $newVal]]
+			 [TransValue $useNodes($winId,dataETs) $newVal] \
+			(doubleclick to change)]
 	    $cnv bind $polyId <Double-Button-1> \
 		[namespace code "SetSwatchColour $parentSpc $winId $icolour"]
         }

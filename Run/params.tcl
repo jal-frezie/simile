@@ -493,13 +493,15 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
 	    # DO THE fallback thing
 	}
     } elseif {[string equal ,gdal [lindex $list 1]]} {
-	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && \
-		![string equal TIME [lindex $dims 0]]} {
+	set startIdx [expr {![string equal TIME [lindex $dims 0]]}]
+	if {$useCppArray && [lsearch $dims {RECORDS *}]==-1 && $startIdx} {
 	    DoNotPassTcl $topNode $tgt $dims $list
 	    return -1 ;# typical fixed parameter
 	} else {
-	    set list [NumberElements [ReadGdalRefToList $list \
-					  [lindex $dims 0] [lindex $dims 1]]]
+	    set list [concat [NumberElements [ReadGdalRefToList $list \
+						  [lindex $dims 0] \
+						  [lindex $dims 1]] \
+				  $startIdx] [lrange $list 6 end]]
 	}
     }
     while {[set specialId [lsearch {START_VM MEMBERS} [lindex $dims 0]]]!=-1} {
@@ -909,7 +911,15 @@ namespace eval fileparams {
 	    if {[DataInScenario $compName]} {
 		set nodeId [IdFromTail $topNode $compName 0]
 		set type [GetCompProperty $topNode Type $nodeId]
-		puts $pStr "$indent<byte_array label=\"$subbedComp\" type=\"$type\">"
+		puts -nonewline $pStr \
+		    "$indent<byte_array label=\"$subbedComp\" type=\"$type\""
+		if {[set wrapTime [c_setwraparoundtime $nodeId]]} {
+		    puts -nonewline $pStr " wrap_time=\"$wrapTime\""
+		}
+		if {[set fillMtd [c_setfillmethod $nodeId]]} {
+		    puts -nonewline $pStr " fill_method=\"[lindex {USE_LAST USE_CLOSEST INTERPOLATE} $fillMtd]\""
+		}
+		puts $pStr ">"
 		set dimCount 0
 		foreach dim $paramDims($compName) {
 		    if {[string equal 0 $dim]} break
@@ -1070,8 +1080,15 @@ proc StartElement {name attList args} {
 	} byte_array {
 	    set parseStatus(loadByteArray) $attVals(label) 
 	    set parseStatus(translateExtras) $attVals(type)
-	} variables {
-	} submodels {
+	    array set parseStatus {wrapTime 0 fillMtd 0}
+	    if {[info exists attVals(wrap_time)]} {
+		set parseStatus(wrapTime) $attVals(wrap_time)
+	    } 
+	    if {[info exists attVals(fill_method)]} {
+		set parseStatus(fillMtd) \
+		    [lsearch {X USE_CLOSEST INTERPOLATE} $attVals(fill_method)]
+	    }
+	} submodels - variables {
 	} spf {
 	    set parseStatus(simV) $attVals(simile_version)
 	} default {
@@ -1124,6 +1141,8 @@ proc LoadBase64CharData {encoded} {
 				  $parseStatus(translateExtras)]
     if {[string equal TIME [lindex $parseStatus(translateExtras) 1]]} {
 	c_settimepointall $nodeId $decoded
+	c_setwraparoundtime $nodeId $parseStatus(wrapTime)
+	c_setfillmethod $nodeId $parseStatus(fillMtd)
     } else {
 	c_setparamall $nodeId $decoded
     }

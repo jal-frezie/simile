@@ -509,19 +509,20 @@ FINDABLE int setwrapCmd(ClientData clientData, Tcl_Interp *interp,
   int error;
   double *time;
 
-  if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id time");
+  if (argc != 2 && argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id ?time?");
 
     return TCL_ERROR;
   }
   
-  if (time=get_wrap_ptr(Tcl_GetStringFromObj(argv[1], NULL))) {
-    error = Tcl_GetDoubleFromObj(interp, argv[2], time);
-    if (error != TCL_OK) {
-      return error;
+  if (time=get_wrap_ptr(Tcl_GetStringFromObj(argv[1], NULL)))
+    if (argc == 3)
+      return Tcl_GetDoubleFromObj(interp, argv[2], time);
+    else {
+      Tcl_SetObjResult(interp, Tcl_NewDoubleObj(*time));
+      return TCL_OK;
     }
-    return TCL_OK;
-  } else {
+  else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to set wraparound time for this node", -1));
     return TCL_ERROR;
   }
@@ -531,19 +532,20 @@ FINDABLE int setfillCmd(ClientData clientData, Tcl_Interp *interp,
 	int argc, Tcl_Obj *CONST argv[]) {
   int error, *mtd;
 
-  if (argc != 3) {
-    Tcl_WrongNumArgs(interp, 1, argv, "node_id method");
+  if (argc != 2 && argc != 3) {
+    Tcl_WrongNumArgs(interp, 1, argv, "node_id ?method?");
 
     return TCL_ERROR;
   }
   
-  if (mtd=get_fill_ptr(Tcl_GetStringFromObj(argv[1], NULL))) {
-    error = Tcl_GetIntFromObj(interp, argv[2], mtd);
-    if (error != TCL_OK) {
-      return error;
+  if (mtd=get_fill_ptr(Tcl_GetStringFromObj(argv[1], NULL)))
+    if (argc == 3)
+      return Tcl_GetIntFromObj(interp, argv[2], mtd);
+    else {
+      Tcl_SetObjResult(interp, Tcl_NewIntObj(*mtd));
+      return TCL_OK;
     }
-    return TCL_OK;
-  } else {
+  else {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("Failed to set fill method for this node", -1));
     return TCL_ERROR;
   }

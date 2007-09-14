@@ -458,7 +458,7 @@ proc ReadGdalRefToList {tableSpec {y {}} {x {}}} {
     if {![Numeric $y]} {
 	set y $h
     }
-    set nValues [gdal_get_raster_values $hdl $l $t $w $h $x $y]
+    set nValues [gdal_get_raster_values $hdl $l $t $w $h $x $y]    
     gdal_close $hg
     return $nValues
 }
@@ -481,7 +481,8 @@ proc ShrinkValueList {outerList limit} {
 	lset list 3 $bottomRow
 	set endRange [ReadGdalRefToList $list]
 	set list [concat [NumberElements $startRange] \
-		      [NumberElements $endRange [lindex $list 4]]]
+		      [NumberElements $endRange [lindex $list 4]]\
+		      [lrange $list 6 end]]
     } elseif {[string equal ,bytes [lindex $list 1]]} {
 # in this case the list format is:
 # scenario ,bytes type idx1 ... idxn raw_data
