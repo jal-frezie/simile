@@ -354,9 +354,16 @@ namespace eval ::maptools2 {
     }
 
     proc PokeValue {node index newVal} {
-	if {[RunningInC $::myNode] && 
-	    [string equal INPUT [GetModelEval $node]]} {
-	    c_setparamelement $node $index $newVal
+	if {[RunningInC $::myNode]} {
+	    if {[string equal INPUT [GetModelEval $node]]} {
+		foreach level $index {
+		    lappend hippyIndex [incr level]
+		}
+puts "poking $node at $hippyIndex with $newVal"
+		c_setparamelement $node $hippyIndex $newVal
+	    } else {
+		# attack using regularData
+	    }
         } elseif {[llength $index]>0} {
             set vals [lindex [GetModelValue $node] 0]
 	    set oddList {}

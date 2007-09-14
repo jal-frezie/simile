@@ -158,10 +158,10 @@ namespace eval grid005 {
 				-state normal
 			}
 		    }
-		    if {![info exists useNodes($winId,values)]} {
-#disable the edit mode as we do not know the model indices
-			$winId.bbframe.buttonBox itemconfigure 5 -state disable
-		    }
+#		    if {![info exists useNodes($winId,values)]} {
+#disable the edit mode as we do not know the model indices...we do now
+#			$winId.bbframe.buttonBox itemconfigure 5 -state disable
+#		    }
                     raise $winId
                 }
             }
@@ -229,6 +229,7 @@ namespace eval grid005 {
     proc InitialiseGrid {winId display1} {
         variable useNodes
         
+	set useNodes($winId,tgtDims) [GetModelDims $display1]
         set useNodes($winId,hiddenMap) [image create photo]
         DrawGrid6 $winId $display1
 # This must now be done before we create the canvas because otherwise the
@@ -486,9 +487,9 @@ namespace eval grid005 {
         variable useNodes
 
 
-# do not use image mode for inputs cos we will want to edit them
-	if {[string equal INPUT [GetModelEval $node]] ||
-	    [catch {GetBinaryModelValue $node $useNodes($winId,min) \
+# do not use image mode for inputs cos we will want to edit them...
+# hah, just fixed it so we can anyway
+	if {[catch {GetBinaryModelValue $node $useNodes($winId,min) \
 			$useNodes($winId,max)} useNodes($winId,rawBinary)]} {
 	    DrawGrid5 $winId $node
 	    return
@@ -610,7 +611,7 @@ namespace eval grid005 {
 		set numValue [expr $useNodes($winId,min)+0x$hexo*(1+$useNodes($winId,range))/256]
 		set value [TransValue $useNodes($winId,dataETs) $numValue]
 #puts "dot $hexo min $useNodes($winId,min) range $useNodes($winId,range)"
-		.popup.message config -text "Col,row=($col,$row)\nValue=$value"
+		.popup.message config -text "Col,row=($col,$row)\nValue=$value approx"
             }
             set xpoint [expr $X+15]
             set ypoint [expr $Y+43]
@@ -628,8 +629,12 @@ namespace eval grid005 {
         set row [expr int(1+$nrow-([$winId.c canvasy $y])/$useNodes($winId,mult))]
         if {$row>0&&$row<=$nrow&&$col>0&&$col<=$ncol} {
             set cell [expr ($row-1)*$ncol+$col-1]
-	    set vLine [lindex $useNodes($winId,values) $cell]
-	    PokeValue $useNodes($winId,color) [lindex $vLine 0] $newVal
+	    if {[info exists useNodes($winId,values)]} {
+		set idx [lindex [lindex $useNodes($winId,values) $cell] 0]
+	    } else {
+		set idx [lindex [FindIndices $useNodes($winId,tgtDims) $cell] 1]
+	    }
+	    PokeValue $useNodes($winId,color) $idx $newVal
 #	DrawGrid6 $winId $useNodes($winId,color)
 	    $useNodes($winId,hiddenMap) put $useNodes($winId,paintColour) \
 		-to [expr $col-1] [expr $nrow-$row]
@@ -637,6 +642,19 @@ namespace eval grid005 {
 	}
     }
     
+    proc FindIndices {bounds count} {
+	set thisBound [lindex $bounds 0]
+	if {$thisBound} {
+	    set subs [FindIndices [lrange $bounds 1 end] $count]
+	    set thisCount [lindex $subs 0]
+	    set innerInds [lindex $subs 1]
+	    return [list [expr $thisCount/$thisBound] \
+			[concat [expr $thisCount%$thisBound] $innerInds]]
+	} else {
+	    return [list $count {}]
+	}
+    }
+
     # need to recode for this legend
     proc ColourScale {winData winId} {
         #    ShowMessage debug info "proc ColourScale" ok

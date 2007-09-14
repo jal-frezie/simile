@@ -481,7 +481,7 @@ proc ReinstateHelper {origVersion oldStatus helperId helperTitle} {
     }
     if {[catch {set inst [CreateHelperWindow $helperId \
 		     [RestoreCrs $helperTitle] [RestoreCrs $oldStatus]]}]} {
-	ShowMessage "Problem restoring helper" warning $errorInfo ok
+	ShowMessage "Problem restoring helper" warning $::errorInfo ok
     }
 }
 
