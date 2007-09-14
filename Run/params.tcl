@@ -488,11 +488,6 @@ proc ListToArray {topNode tgt subs trans dims list useCppArray} {
     
     if {[string equal ,bytes [lindex $list 1]]} {
 	if {$useCppArray} {
-	    if {[string equal TIME [lindex $list 3]]} {
-		c_settimepointall $tgt [lindex $list end]
-	    } else {
-		c_setparamall $tgt [lindex $list end]
-	    }
 	    return -1 ;# do nothing, the data has already been loaded to c
 	} else {
 	    # DO THE fallback thing
@@ -1126,14 +1121,20 @@ proc LoadBase64CharData {encoded} {
 #puts "got node $nodeId from $compName"
     set decoded [base64 -mode decode -- $encoded]
     set paramData($compName) [concat {scenario ,bytes} \
-				  $parseStatus(translateExtras) [list $decoded]]
+				  $parseStatus(translateExtras)]
+    if {[string equal TIME [lindex $parseStatus(translateExtras) 1]]} {
+	c_settimepointall $nodeId $decoded
+    } else {
+	c_setparamall $nodeId $decoded
+    }
     set msgs(param_source_$compName) \
 	"Specified by $parseStatus(oldPath) (literal) -- keep data in scenario file"
     if {[winfo exists $widgetNames($compName)]} {
-	FillIfSmall $widgetNames($compName).e $paramData($compName)
+	FillIfSmall $widgetNames($compName).e \
+	    [concat $paramData($compName) [list $decoded]]
 	$widgetNames($compName).e configure -state disabled
     }
-    set whichParamsAffected($compName) 1
+#    set whichParamsAffected($compName) 1
 }
 
 proc MergeParams {topNode smPath oldPath notInput interactive} {
