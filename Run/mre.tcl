@@ -320,9 +320,10 @@ namespace eval RunEnv {
     proc ExportCurrentContainer {} {
         global helperTable
         variable CurrentContainer
+	variable currentNode
         
 	set inst $helperTable($CurrentContainer.container,whichInstance)
-	PostScrog [$inst GetCanvas]
+	PostScrog [$inst GetCanvas] $currentNode
     }
     
     proc CopyHelper {} {

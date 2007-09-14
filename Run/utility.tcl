@@ -252,8 +252,8 @@ proc PrintRandomCanvas {canvas} {
 # the viewport is included, and the output is in landscape mode, sized so 100
 # pixels = 1 inch (so my beautiful 1152x864 screen will be about a sheet of A4)
 
-proc PostScrog { winId } {
-    set psfile [ChooseFile image.ps "Name of postscript file" 1]
+proc PostScrog { winId node } {
+    set psfile [ChooseFile image.ps "Name of postscript file" 1 $node]
     # check for cancel
     if {![string match */ $psfile]} {
         

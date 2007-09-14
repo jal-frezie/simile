@@ -620,11 +620,15 @@ $useNodes($winId,scaley)"
     
     proc Interweave {target xs ys} {
         upvar 1 $target outlist
-        if {[llength $xs]} {
-            lappend outlist [lindex $xs 1] [lindex $ys 1]
+#        if {[llength $xs]} {
+#            lappend outlist [lindex $xs 1] [lindex $ys 1]
             #ShowMessage debug info "$xs; $ys; $outlist" ok
-            Interweave outlist [lrange $xs 2 end] [lrange $ys 2 end]
-        }
+#            Interweave outlist [lrange $xs 2 end] [lrange $ys 2 end]
+#        }
+# naaah...
+	foreach {xind xval} $xs {yind yval} $ys {
+	    lappend outlist $xval $yval
+	}
     }
     
     
