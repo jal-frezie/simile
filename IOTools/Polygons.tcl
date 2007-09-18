@@ -24,7 +24,8 @@ namespace eval ::polygon375 {
     proc initialize {winId} {
         variable useNodes
         set useNodes($winId,editMode) 0
-        namespace import -force ::maptools2::*
+	set useNodes($winId,orient) h
+	namespace import -force ::maptools2::*
         
         set useNodes($winId,min) 0
         set useNodes($winId,max) 100
@@ -84,6 +85,7 @@ namespace eval ::polygon375 {
     proc Restore {winId} {
         variable useNodes
         set useNodes($winId,editMode) 0
+        set useNodes($winId,orient) h
         namespace import -force ::maptools2::*
         
         AddToolBar $winId
@@ -472,6 +474,11 @@ $useNodes($winId,scaley)"
         pack $rangeF -padx 10 -pady 10
         pack [checkbutton [$dlg getframe].update -variable ${winId}l5 \
 		  -text "Update at display intervals"]
+        
+        set oriF [labelframe [$dlg getframe].orient -text "Orientation"]
+	pack [radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
+	pack [radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
+        pack $oriF -padx 10 -pady 10 -fill x
         
         $dlg add -name ok \
                 -command [namespace code "OnClickSettingOkBtn $winId $coloursF $rangeF $dlg"]; # buttons 0

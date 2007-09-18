@@ -30,7 +30,7 @@ proc _gettuple {fd} {
    set gvar(groupvalue) [string trim [gets $fd]]
 #  puts stdout "$gvar(groupcode) $gvar(groupvalue) - " nonewline
 # JAT -- occasionally groupvalue missing so set to 0
-   if {![llength $gvar(groupvalue)]} {
+   if {![string length $gvar(groupvalue)]} {
        puts "!!! groupcode $gvar(groupcode) groupvalue missing"
        set gvar(groupvalue) 0
    }

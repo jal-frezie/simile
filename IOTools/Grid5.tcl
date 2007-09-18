@@ -33,6 +33,7 @@ namespace eval grid005 {
         set useNodes($winId,max) 100
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
+        set useNodes($winId,orient) h
         SetState $winId {}
 	message	$winId.msg -aspect 1000
         AddToolbar $winId
@@ -86,6 +87,7 @@ namespace eval grid005 {
         variable useNodes
         namespace import -force ::maptools2::*
         set useNodes($winId,editMode) 0
+        set useNodes($winId,orient) h
 	message	$winId.msg -aspect 1000
 	set state [GetState $winId]
 # looks like "displaying %s %s colourmap %s %s %s aspect %d %g %g magnification %d"
@@ -112,6 +114,10 @@ namespace eval grid005 {
 	set multBase [lsearch $state magnification]
 	if {$multBase != -1} {
 	    set useNodes($winId,mult) [lindex $state [incr multBase]]
+	}
+	set orientBase [lsearch $state orient]
+	if {$orientBase != -1} {
+	    set useNodes($winId,orient) [lindex $state [incr orientBase]]
 	}
         set useNodes($winId,caption) [lindex $state 1]
         
@@ -209,7 +215,8 @@ namespace eval grid005 {
 	}
 	lappend state aspect $useNodes($winId,nswatches) \
                 $useNodes($winId,min) $useNodes($winId,max) \
-		magnification $useNodes($winId,mult)
+		magnification $useNodes($winId,mult) \
+		orient $useNodes($winId,orient) 
 	SetState $winId $state
     }
     
@@ -362,6 +369,11 @@ namespace eval grid005 {
         pack [LabelFrame $rangeF.maxF -text "Max"] -fill x -padx 10 -pady 5
         pack [entry $rangeF.maxF.entry -textvar [namespace current]::max($winId) -width 20] -side right -padx 10
         pack $rangeF -padx 10 -pady 10
+        
+        set oriF [labelframe [$dlg getframe].orient -text "Orientation"]
+	pack [radiobutton $oriF.h -text Horizontal -var [namespace current]::useNodes($winId,orient) -value h] -side left
+	pack [radiobutton $oriF.v -text Vertical -var [namespace current]::useNodes($winId,orient) -value v] -side right
+        pack $oriF -padx 10 -pady 10 -fill x
         
         $dlg add -name ok \
                 -command [namespace code "OnClickSettingOkBtn $winId $coloursF $rangeF $dlg"]; # buttons 0

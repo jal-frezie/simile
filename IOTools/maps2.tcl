@@ -115,22 +115,40 @@ namespace eval ::maptools2 {
 #        } else {
 #            set n $useNodes($winId,ncol)
 #        }
-        set leftSc [$cnv canvasx 0]
-        set rightSc [$cnv canvasx [winfo width $cnv]]
-        set bottomSc [$cnv canvasy [winfo height $cnv]]
+	if {[string equal v $useNodes($winId,orient)]} {
+	    set leftSc [$cnv canvasy 0]
+	    set rightSc [$cnv canvasy [winfo height $cnv]]
+	    set bottomSc [$cnv canvasx [winfo width $cnv]]
+	} else {
+	    set leftSc [$cnv canvasx 0]
+	    set rightSc [$cnv canvasx [winfo width $cnv]]
+	    set bottomSc [$cnv canvasy [winfo height $cnv]]
+	}
         set topSc [expr $bottomSc-40]
         set midSc [expr $bottomSc-20]
         
         # blank over bottom of display
-        $cnv create rect $leftSc $topSc $rightSc $bottomSc \
-	    -outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
-        $cnv create text [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30] \
+	if {[string equal v $useNodes($winId,orient)]} {
+	    $cnv create rect $topSc $leftSc $bottomSc $rightSc \
+		-outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
+	    $cnv create text [expr $bottomSc-30] [expr ($leftSc+$rightSc)/2] \
                 -anchor c -tag {colour_scale caption}
 #        UpdateCaption useNodes $winId
-        $cnv create text [expr $leftSc+47] [expr $bottomSc-10] \
+	    $cnv create text [expr $bottomSc-10] [expr $leftSc+47] \
+                -text $useNodes($winId,min) -anchor s -tag colour_scale
+	    $cnv create text [expr $bottomSc-10] [expr $rightSc-48] \
+                -text $useNodes($winId,max) -anchor n -tag colour_scale
+	} else {
+	    $cnv create rect $leftSc $topSc $rightSc $bottomSc \
+		-outline {} -fill [$cnv cget -bg] -tag {colour_scale scale_base}
+	    $cnv create text [expr ($leftSc+$rightSc)/2] [expr $bottomSc-30] \
+                -anchor c -tag {colour_scale caption}
+#        UpdateCaption useNodes $winId
+	    $cnv create text [expr $leftSc+47] [expr $bottomSc-10] \
                 -text $useNodes($winId,min) -anchor e -tag colour_scale
-        $cnv create text [expr $rightSc-48] [expr $bottomSc-10] \
+	    $cnv create text [expr $rightSc-48] [expr $bottomSc-10] \
                 -text $useNodes($winId,max) -anchor w -tag colour_scale
+	}
         set useNodes($winId,range) [expr $useNodes($winId,max)-$useNodes($winId,min)]
         set xmin [expr $leftSc+50]
         set xmax [expr $rightSc-50]
@@ -139,12 +157,18 @@ namespace eval ::maptools2 {
             set x0 [expr {$xmin+$icolour*$xincr}]
             set x1 [expr {$x0+$xincr}]
             set colour $useNodes($winId,c$icolour)
-            set polyId [$cnv create rectangle $x0 $midSc $x1 $bottomSc \
-			    -outline {} -fill $colour \
-			    -tag "colour_scale swatch COL$icolour"]
+	    if {[string equal v $useNodes($winId,orient)]} {
+		set polyId [$cnv create rectangle $midSc $x0 $bottomSc $x1 \
+				-outline {} -fill $colour \
+				-tag "colour_scale swatch COL$icolour"]
+	    } else {
+		set polyId [$cnv create rectangle $x0 $midSc $x1 $bottomSc \
+				-outline {} -fill $colour \
+				-tag "colour_scale swatch COL$icolour"]
+	    }
 	    set newVal [expr {$useNodes($winId,min) + \
-				  $icolour * $useNodes($winId,range) \
-				  / $useNodes($winId,nswatches)}]
+				      $icolour * $useNodes($winId,range) \
+				      / $useNodes($winId,nswatches)}]
 	    CanvasBindPopup $cnv $polyId \
                     [list Colour for value: \
 			 [TransValue $useNodes($winId,dataETs) $newVal] \
@@ -171,13 +195,13 @@ namespace eval ::maptools2 {
     
     proc reposn_scale {parentSpc winId} {
 	set cnv [${parentSpc}::GetCanvas $winId]
-        set leftSc [$cnv canvasx 0]
+        set rightSc [$cnv canvasx [winfo width $cnv]]
         set bottomSc [$cnv canvasy [winfo height $cnv]]
-
+	
 	set oldPt [$cnv coords scale_base]
-	set xoff [expr $leftSc-[lindex $oldPt 0]]
+	set xoff [expr $rightSc-[lindex $oldPt 2]]
 	set yoff [expr $bottomSc-[lindex $oldPt 3]]
-
+	
 	$cnv move colour_scale $xoff $yoff
     }
 
