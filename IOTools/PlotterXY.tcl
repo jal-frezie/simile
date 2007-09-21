@@ -25,6 +25,11 @@ namespace eval ::$keyValue {
         return "XY Plotter"
     }
     
+    proc LoadTools {} {
+	namespace import -force ::graphtools::*
+	namespace import -force ::canvasnotes20070919::*
+    }
+
     proc initialize {w} {
         global ::graphtools::plot
         #    global ::graphtools::Xvalues
@@ -35,8 +40,7 @@ namespace eval ::$keyValue {
         variable ynodes
         variable xnodes
         
-        namespace import -force ::graphtools::*
-        
+        LoadTools
         InitPlotVars $w
         InitPlatformDependentPlotVars $w
         
@@ -111,7 +115,6 @@ namespace eval ::$keyValue {
     
     proc Restore {winId} {
         #    ShowMessage debug info "plotter.tcl Restore $winId" ok
-        namespace import -force ::graphtools::*; # todo make graphtools common
         global ::graphtools::plot
         #    global ::graphtools::Xvalues
         global ::graphtools::YYold
@@ -121,6 +124,7 @@ namespace eval ::$keyValue {
         variable ynodes
         variable xnodes
         
+        LoadTools
         InitPlotVars $winId
         set YYold($winId) {}
         set YYnew($winId) {}
@@ -150,6 +154,8 @@ namespace eval ::$keyValue {
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
         display $winId [GetModelTime] 0 0
+	if {![info exists plot($winId,stringInfo)]} return
+	RestoreNotesFromList [GetCanvas $winId] $plot($winId,stringInfo)
     }
     
     proc InitPlatformDependentPlotVars {w} {
@@ -322,6 +328,7 @@ namespace eval ::$keyValue {
                 -height [expr $plot($w,yborder_bottom)+$plot($w,ylength)+ \
                 $plot($w,yborder_top)] \
                 -bg $plot($w,canvas_colour) -relief solid
+	MakeCanvasAnnotatable $w.canvas
         pack $w.canvas -fill both -expand true -side bottom
     }
     
@@ -389,11 +396,17 @@ namespace eval ::$keyValue {
         destroy $dlg
     }
     
-    
+    proc PrepareSaveString {w} {
+	set ::graphtools::plot($w,stringInfo) [ListNotes [GetCanvas $w]]
+	UpdateState $w
+    }
+
     ### Draw everything except the actual data points.
     proc drawGraphpad {w} {
         global ::graphtools::plot
         
+	# save text
+	set notes [ListNotes $w.canvas]
         ### rub out previous graph
         $w.canvas delete all
         
@@ -516,6 +529,7 @@ namespace eval ::$keyValue {
         #         $w.canvas bind all <Leave> \
         #                 [namespace code "$w.canvas configure -cursor arrow"]
         ################################################################################
+	RestoreNotesFromList $w.canvas $notes
     }
     
     proc Reset_Xaxis {w} {

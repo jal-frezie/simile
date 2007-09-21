@@ -56,9 +56,9 @@ namespace eval ::maptools2 {
 #	ShowMessage debug info "min $useNodes($winId,min); \
 #                    max $useNodes($winId,max); dataETs $useNodes($winId,dataETs); $useNodes($winId,range); \
 #                    $useNodes($winId,nswatches)" ok
-	if {[info exists useNodes($winId,cbot)]} {
-	    SetColours useNodes $winId
-	}
+#	if {[info exists useNodes($winId,cbot)]} {
+#	    SetColours useNodes $winId
+#	}
     }
     
     proc SetColours {winData winId} {
@@ -172,11 +172,11 @@ namespace eval ::maptools2 {
 	    CanvasBindPopup $cnv $polyId \
                     [list Colour for value: \
 			 [TransValue $useNodes($winId,dataETs) $newVal] \
-			(doubleclick to change)]
+			 (doubleclick to change)]
 	    $cnv bind $polyId <Double-Button-1> \
 		[namespace code "SetSwatchColour $parentSpc $winId $icolour"]
         }
-        
+        $cnv raise annotation
     }
     
     proc SetSwatchColour { parentSpc winId icolour } {

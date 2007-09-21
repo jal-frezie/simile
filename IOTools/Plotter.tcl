@@ -13,6 +13,11 @@ namespace eval ::$keyValue {
         return "Plotter"
     }
     
+    proc LoadTools {} {
+	namespace import -force ::graphtools::*
+	namespace import -force ::canvasnotes20070919::*
+    }
+
     proc initialize {w} {
         global ::graphtools::plot
         global ::graphtools::YYold
@@ -21,9 +26,8 @@ namespace eval ::$keyValue {
         global ::graphtools::Tnew
         variable runCount
         
-        namespace import -force ::graphtools::*; # todo make graphtools common
-        
-        InitPlotVars $w
+        LoadTools
+	InitPlotVars $w
         InitPlatformDependentPlotVars $w
         set YYold($w) {}
         set YYnew($w) {}
@@ -149,7 +153,7 @@ namespace eval ::$keyValue {
     
     proc Restore {winId} {
         #    ShowMessage debug info "plotter.tcl Restore $winId" ok
-        namespace import -force ::graphtools::*
+	
         global ::graphtools::plot
         global ::graphtools::YYold
         global ::graphtools::YYnew
@@ -158,6 +162,7 @@ namespace eval ::$keyValue {
         variable runCount
         variable ynodes
         
+        LoadTools
         InitPlotVars $winId
         set plot($winId,Xmin_data) [GetModelTime]
         set plot($winId,Xmax_data) [GetModelEndTime]
@@ -179,7 +184,9 @@ namespace eval ::$keyValue {
         set runCount($winId) 1
         ShowHelper $winId
         display $winId [GetModelTime] 0 0
-    }
+	if {![info exists plot($winId,stringInfo)]} return
+	RestoreNotesFromList [GetCanvas $winId] $plot($winId,stringInfo)
+     }
     
     proc GetCanvas {winId} {
         return $winId.canvas
@@ -279,6 +286,7 @@ namespace eval ::$keyValue {
         
         # create canvas for graph
         canvas $w.canvas -bg $plot($w,canvas_colour) -relief solid
+	MakeCanvasAnnotatable $w.canvas
         if {![string match [winfo toplevel $w] $w]} {
             pack $w -fill both -expand true -side bottom
         }
@@ -395,12 +403,19 @@ namespace eval ::$keyValue {
         destroy $dlg
     }
     
+    proc PrepareSaveString {w} {
+	set ::graphtools::plot($w,stringInfo) [ListNotes [GetCanvas $w]]
+	UpdateState $w
+    }
+
     ### Draw on the graph canvas everything except the actual data points.
     proc drawGraphpad {w} {
         global ::graphtools::plot
         
-        ### rub out previous graph
-        $w.canvas delete all
+        ### rub out previous graph but leave messages
+	$w.canvas addtag togo all
+	$w.canvas dtag annotation togo
+        $w.canvas delete togo
         
         ### Convenience variables
         set x0 $plot($w,xborder_left)
@@ -445,6 +460,7 @@ namespace eval ::$keyValue {
         # drawGraticule $w $Xintercept $Yintercept
         
         $w.canvas raise toplevel
+        $w.canvas raise annotation
         
         ### Bindings
         #$w.canvas bind grapharea <Button-1> [namespace code "TraceUnhighlight $w"]

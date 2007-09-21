@@ -7,7 +7,6 @@
 
 set keyValue grid005
 namespace eval grid005 {
-    
     variable useNodes
     variable cell_ids
     variable old_icolour
@@ -19,13 +18,17 @@ namespace eval grid005 {
         return "Spatial grid display"
     }
     
+    proc LoadTools {} {
+	namespace import -force ::maptools2::*
+	namespace import -force ::canvasnotes20070919::*
+    }
+
     proc initialize {winId} {
         variable useNodes
-        namespace import -force ::maptools2::*
-        set useNodes($winId,editMode) 0
-        set useNodes($winId,cbot) black
-        set useNodes($winId,cmid) red
-        set useNodes($winId,ctop) white
+
+        LoadTools
+	DefaultColours $winId
+	set useNodes($winId,editMode) 0
         set useNodes($winId,nswatches) 32
         set useNodes($winId,integer) 0
         set useNodes($winId,freeze) false
@@ -48,6 +51,13 @@ namespace eval grid005 {
     }
 
     proc reset {winId} {
+    }
+
+    proc DefaultColours {winId} {
+        variable useNodes
+        set useNodes($winId,cbot) black
+        set useNodes($winId,cmid) red
+        set useNodes($winId,ctop) white
     }
 
     proc AddToolbar {winId} {
@@ -79,13 +89,14 @@ namespace eval grid005 {
         set colour [tk_chooseColor -initialcolor $useNodes($winId,c$whichCol)]
         if {[string length $colour]} {
 	    $exampleWidget configure -bg $colour
+	    set useNodes($winId,colourMapTweaked) 0
 	}
         return $colour
     }
     
     proc Restore {winId} {
+        LoadTools
         variable useNodes
-        namespace import -force ::maptools2::*
         set useNodes($winId,editMode) 0
         set useNodes($winId,orient) h
 	message	$winId.msg -aspect 1000
@@ -110,6 +121,8 @@ namespace eval grid005 {
 		set useNodes($winId,c$col) [lindex $state [incr swatchBase]]
 	    }
 	    set useNodes($winId,colourMapTweaked) 1
+	} else {
+	    SetColours useNodes $winId
 	}
 	set multBase [lsearch $state magnification]
 	if {$multBase != -1} {
@@ -119,6 +132,10 @@ namespace eval grid005 {
 	if {$orientBase != -1} {
 	    set useNodes($winId,orient) [lindex $state [incr orientBase]]
 	}
+	set annotationBase [lsearch $state annotation]
+	if {$annotationBase != -1} {
+	    set annot [lindex $state [incr annotationBase]]
+	}
         set useNodes($winId,caption) [lindex $state 1]
         
         AddToolbar $winId
@@ -127,7 +144,10 @@ namespace eval grid005 {
         set useNodes($winId,dataMin) 1e100
         set useNodes($winId,dataMax) -1e100
         InitialiseGrid $winId $useNodes($winId,color)
-        set useNodes($winId,freeze) false
+        if {[info exists annot]} {
+	    RestoreNotesFromList $winId.c $annot
+	}
+	set useNodes($winId,freeze) false
     }
     
     proc GetCanvas {winId} {
@@ -152,9 +172,10 @@ namespace eval grid005 {
                     ReleaseClicks $winId
                     set useNodes($winId,color) $node
 		    SetColourMap useNodes $winId $node
+		    SetColours useNodes $winId
                     catch {wm title $winId $caption}
                     InitialiseGrid $winId $node
-                    UpdateState $winId
+                    PrepareSaveString $winId
 #                    destroy $winId.intro
                     set NToolButtons [$winId.bbframe.buttonBox index last]
                     for {set i 1} {$i<=$NToolButtons} {incr i} {
@@ -198,7 +219,7 @@ namespace eval grid005 {
 	}
     }
 
-    proc UpdateState {winId} {
+    proc PrepareSaveString {winId} {
         variable useNodes
 	
 	set state [list displaying \
@@ -216,7 +237,7 @@ namespace eval grid005 {
 	lappend state aspect $useNodes($winId,nswatches) \
                 $useNodes($winId,min) $useNodes($winId,max) \
 		magnification $useNodes($winId,mult) \
-		orient $useNodes($winId,orient) 
+	    orient $useNodes($winId,orient) annotation [ListNotes $winId.c]
 	SetState $winId $state
     }
     
@@ -229,7 +250,7 @@ namespace eval grid005 {
 	    }
             DrawGrid6 $winId $useNodes($winId,color)
             FillCanvas $winId
-            UpdateCaption useNodes $winId
+#            UpdateCaption useNodes $winId
         }
     }
     
@@ -249,6 +270,8 @@ namespace eval grid005 {
                 -borderwidth 2 \
                 -xscrollcommand [namespace code "ScrollPhoto $winId h"] \
                 -yscrollcommand [namespace code "ScrollPhoto $winId v"]
+	MakeCanvasAnnotatable $winId.c \
+	    [namespace code "Settings $winId"]
         pack $winId.f -expand yes -fill both -padx 1 -pady 1
         grid rowconfig    $winId.f 0 -weight 1 -minsize 0
         grid columnconfig $winId.f 0 -weight 1 -minsize 0
@@ -282,7 +305,8 @@ namespace eval grid005 {
         set useNodes($winId,yheight) $yheight
         $winId.c configure -width $xwidth -height $yheight
 
-        $winId.c bind all <Button-3> [namespace code "Settings $winId"]
+#        $winId.c bind all <Button-3> [namespace code "Settings $winId"]
+# this is passed to the annotator which handles context menu and text additon
         $winId.c bind all <B1-Motion> [namespace code "value_popup $winId %X %Y %x %y"]
         $winId.c bind all <ButtonPress-1> [namespace code "value_popup $winId %X %Y %x %y"]
         $winId.c bind all <B1-ButtonRelease> RemovePopup
@@ -311,9 +335,9 @@ namespace eval grid005 {
         variable useNodes
         set useNodes($winId,min) [expr {$useNodes($winId,min)*10}]
         set useNodes($winId,max) [expr {$useNodes($winId,max)*10}]
-        SetColours useNodes $winId
+#        SetColours useNodes $winId
         recolour_scale [namespace current] $winId
-        UpdateState $winId
+        PrepareSaveString $winId
         display $winId 0 0 0
     }
     
@@ -321,9 +345,9 @@ namespace eval grid005 {
         variable useNodes
         set useNodes($winId,min) [expr {0.1*$useNodes($winId,min)}]
         set useNodes($winId,max) [expr {0.1*$useNodes($winId,max)}]
-        SetColours useNodes $winId
+#        SetColours useNodes $winId
         recolour_scale [namespace current] $winId
-        UpdateState $winId
+        PrepareSaveString $winId
         display $winId 0 0 0
     }
 
@@ -342,6 +366,9 @@ namespace eval grid005 {
         #create widgets
         set coloursF [labelframe [$dlg getframe].colours -text "Colour scale"]
         pack [LabelFrame $coloursF.lowcolourF -text "Low colour"] -fill x  -padx 10
+	if {$useNodes($winId,colourMapTweaked)} {
+	    DefaultColours $winId
+	}
         frame $coloursF.lowcolourF.colF -width 20 -height 15 -bg $useNodes($winId,cbot)
         pack [button $coloursF.lowcolourF.cbutton -text "..." \
                 -command [namespace code "Recolour $winId bot $coloursF.lowcolourF.colF"]] -side right
@@ -409,9 +436,11 @@ namespace eval grid005 {
             return
         }
         $dlg enddialog 0
-        SetColours useNodes $winId
+	if {!$useNodes($winId,colourMapTweaked)} {
+	    SetColours useNodes $winId
+	}
         recolour_scale [namespace current] $winId
-        UpdateState $winId
+        PrepareSaveString $winId
         display $winId 0 0 0
     }
     
@@ -563,7 +592,7 @@ namespace eval grid005 {
         set view [$winId.c yview]
         $winId.c yview moveto [expr $ymiddle-([lindex $view 1]-[lindex $view 0])/2]
         recolour_scale [namespace current] $winId
-        UpdateState $winId
+        PrepareSaveString $winId
     }
     
     proc ScrollPhoto {winId axis args} {

@@ -21,11 +21,16 @@ namespace eval ::polygon375 {
         return "Polygon diagram"
     }
     
+    proc LoadTools {} {
+	namespace import -force ::maptools2::*
+	namespace import -force ::canvasnotes20070919::*
+    }
+
     proc initialize {winId} {
         variable useNodes
         set useNodes($winId,editMode) 0
 	set useNodes($winId,orient) h
-	namespace import -force ::maptools2::*
+	LoadTools
         
         set useNodes($winId,min) 0
         set useNodes($winId,max) 100
@@ -86,7 +91,7 @@ namespace eval ::polygon375 {
         variable useNodes
         set useNodes($winId,editMode) 0
         set useNodes($winId,orient) h
-        namespace import -force ::maptools2::*
+	LoadTools
         
         AddToolBar $winId
 	regsub -all /WIN/ [GetState $winId] $winId restoreString
@@ -111,6 +116,8 @@ $useNodes($winId,scaley)"
 	    }
 	    Repaint $winId $useNodes($winId,color)
 	}
+	if {![info exists useNodes($winId,stringInfo)]} return
+	RestoreNotesFromList [GetCanvas $winId] $useNodes($winId,stringInfo)
     }
     
     proc GetCanvas {winId} {
@@ -149,11 +156,12 @@ $useNodes($winId,scaley)"
                         set useNodes($winId,color) $node
                         catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
                         SetColourMap useNodes $winId $node
+                        SetColours useNodes $winId
                         DrawPolys $winId $useNodes($winId,xcoord) \
                                 $useNodes($winId,ycoord) \
                                 $node
                         set useNodes($winId,state) displaying
-			UpdateState $winId
+			PrepareSaveString $winId
                     }
                 }
             } else {
@@ -165,9 +173,10 @@ $useNodes($winId,scaley)"
                         set useNodes($winId,color) $node
                         catch {wm title $winId "$caption (polygon diagram)"}; # if not a toplevel, ie MRE
                         SetColourMap useNodes $winId $node
+                        SetColours useNodes $winId
                         DrawPolys $winId {} {} $node
                         set useNodes($winId,state) displaying
-			UpdateState $winId
+			PrepareSaveString $winId
                     }
                 }
             }
@@ -179,10 +188,11 @@ $useNodes($winId,scaley)"
         }
     }
     
-    proc UpdateState {winId} {
+    proc PrepareSaveString {winId} {
         variable useNodes
         NodeIdsToCaptions $winId
         regsub -all $winId [array get useNodes $winId,*] /WIN/ saveString
+	lappend saveString /WIN/,stringInfo [ListNotes [GetCanvas $winId]]
 	CaptionsToNodeIds $winId
         SetState $winId $saveString
     }
@@ -229,7 +239,7 @@ $useNodes($winId,scaley)"
 	    [tk_chooseColor -initialcolor $useNodes($winId,c$whichCol)]
 	$exampleWidget configure -bg $useNodes($winId,c$whichCol)
         SetColours useNodes $winId
-        UpdateState $winId
+        PrepareSaveString $winId
 	recolour_scale [namespace current] $winId
 #        ColourScale useNodes $winId
         Repaint $winId $useNodes($winId,color)
@@ -282,6 +292,7 @@ $useNodes($winId,scaley)"
 	    -xscrollcommand [namespace code [list ScrollMe $winId x]] \
 	    -yscrollcommand [namespace code [list ScrollMe $winId y]] \
 	    -bg beige -scrollregion {0 0 10 10}
+	MakeCanvasAnnotatable $vp.c
         pack $vp.c -fill both -expand true
 	recolour_scale [namespace current] $winId
 	bind $vp.c <Configure> \
@@ -515,8 +526,9 @@ $useNodes($winId,scaley)"
             return
         }
         set useNodes($winId,range) [expr {$max($winId)-$min($winId)}]
+        recolour_scale [namespace current] $winId
         $dlg enddialog 0
-        UpdateState $winId
+        PrepareSaveString $winId
 	
         display $winId 0 0 0
     }
