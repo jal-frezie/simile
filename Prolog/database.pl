@@ -64,10 +64,11 @@ clear_model([Funt/Args | Rest]) :-
 	clear_model(Rest).
 
 /* Stuff needed for c database */
-sicstus_load_foreign_resource(struct_db).
+% sicstus_load_foreign_resource(struct_db).
 :- foreign(empty_tree(-integer)).
 :- dynamic(node_id_for_root_is/1).
 empty_tree :-
+        load_foreign_resource(struct_db),
 	empty_tree(Ushrtmx),
 	asserta(node_id_for_root_is(Ushrtmx)).
 

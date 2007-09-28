@@ -110,6 +110,7 @@ proc GetTransTable {node} {
 # Procedure for when Tcl recognizes what object is clicked but being a
 # maleficent pile of junk refuses to pass on this information so we have
 # to interrogate it to find what is closest to the click point
+# (actually "$canvas find withtag current" does this, but no point changing now)
 
 proc ClickObj { x y winId X Y action} {
     global clicktime equationbar pushedbutton window_info looks

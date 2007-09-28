@@ -53,7 +53,7 @@ namespace eval canvasnotes20070919 {
 	variable whatNotes
 
 	set whatNotes(canvas) $c
-	set whatNotes(text) [$c find closest [$c canvasx $x] [$c canvasy $y]]
+	set whatNotes(text) [$c find withtag current]
 	set whatNotes(clkx) $x
 	set whatNotes(clky) $y
     }
@@ -84,7 +84,7 @@ namespace eval canvasnotes20070919 {
 	variable whatNotes
 
 	set whatNotes(canvas) $c
-	set whatNotes(text) [$c find closest [$c canvasx $x] [$c canvasy $y]]
+	set whatNotes(text) [$c find withtag current]
 	set whatNotes(textProps) 1 ;# do not do context menu
 	tk_popup .annotationMenu $X $Y
     }

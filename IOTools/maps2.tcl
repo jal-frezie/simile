@@ -188,7 +188,7 @@ namespace eval ::maptools2 {
 	    set useNodes($winId,c$icolour) $newCol
 	    recolour_scale $parentSpc $winId
 	    set useNodes($winId,colourMapTweaked) 1
-	    ${parentSpc}::UpdateState $winId
+#	    ${parentSpc}::UpdateState $winId
 	    ${parentSpc}::display $winId 0 0 0
 	}
     }

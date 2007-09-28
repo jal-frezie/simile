@@ -52,12 +52,12 @@ BEGIN
             VALUE "FileDescription", "Simile: simulation modelling software\0"
             VALUE "FileVersion", "1, 0, 0, 0\0"
             VALUE "InternalName", "\0"
-            VALUE "LegalCopyright", "Copyright © 2002 by Simulistics Ltd, et al\0"
+            VALUE "LegalCopyright", "Copyright © 2002-7 by Simulistics Ltd, et al\0"
             VALUE "LegalTrademarks", "\0"
             VALUE "OriginalFilename", "simile.exe\0"
             VALUE "PrivateBuild", "\0"
             VALUE "ProductName", "Simile\0"
-            VALUE "ProductVersion", "3.0\0"
+            VALUE "ProductVersion", "5.0\0"
             VALUE "SpecialBuild", "\0"
         END
     END

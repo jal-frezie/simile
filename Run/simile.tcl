@@ -348,7 +348,7 @@ wm withdraw . ;# already withdrawn if not Linux
 
 # This is the folder that AME should start looking for model
 # files in -- must be a subfolder of the installation folder
-cd $SIMILE_PATH/Run
+cd $SIMILE_PATH/Prolog
 
 # tk_messageBox -title debug -icon info \
 #   -message "TCL library is [info library]\n \
