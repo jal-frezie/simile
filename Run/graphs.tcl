@@ -1198,13 +1198,11 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	}
 	foreach headerIndex [lrange $tableSpec $indexStart end] {
 	    lappend indexColumns [lsearch -exact $headerList $headerIndex]
-#	    set maxIndices($headerCount) {}
 	    incr headerCount
 	}
 	if {!$headerCount} {
 	    # use line number as index
 	    set headerCount 1
-#	    set maxIndices(0) {}
 	}
 	set headerColumn [lsearch -exact $headerList [lindex $tableSpec 1]]
 #ShowMessage debug info "Columns: header $headerColumn indxs $indexColumns" ok
@@ -1226,11 +1224,6 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		    # enquote the above if indices of llength 1 are needed
 		    if {[llength $newIndex]} {
 			lappend arrayIndex $newIndex
-#			if {[lsearch $maxIndices($indexCount) $newIndex] == -1} {
-#			    lappend maxIndices($indexCount) $newIndex
-#			}
-			set dummyArray maxIndices$indexCount
-			set ${dummyArray}($newIndex) 1
 			incr indexCount
 		    } else {
 			# if there is an empty index field ignore the line
@@ -1239,8 +1232,6 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		    }
 		}
 	    } else {
-#		lappend maxIndices(0) $lineCount
-		set maxIndices0($lineCount) 1
 		set arrayIndex $lineCount
 		incr lineCount
 	    }
@@ -1256,15 +1247,11 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 		}
 	    }
 	}
-	
-	for {set idxIdx 0} {$idxIdx < $headerCount} {incr idxIdx} {
-	    lappend indexList [lsort -real [array names maxIndices$idxIdx]]
-	}
     }
     
 #ShowMessage debug info "Converting [array get paramArray] with $indexList" ok
     close $tStr
-    set result [ArrayToList paramArray top $indexList]
+    set result [ArrayToList paramArray]
     if {$addSpecials} {
 	if {[info exists fillMtd]} {
 	    lappend result others $fillMtd
@@ -1313,7 +1300,9 @@ proc EnquoteIfNonNumeric {item} {
     }
 }
 
-proc ArrayToList {topArray indexSoFar otherMaxes} {
+proc ArrayToList {topArray} {
+        # Now copy array values into lists with one less index
+        # Any with fewer indices than rest will get ignoredddd
     upvar 1 $topArray values
     while {[llength [set vlist [ArrayGetSorted values]]]} {
 	unset values
@@ -1337,23 +1326,3 @@ proc ArrayGetSorted {arrayPtr} {
     return $result
 }
 
-proc OldArrayToList {topArray indexSoFar otherMaxes} {
-#ShowMessage debug info "$indexSoFar $otherMaxes" ok
-    upvar 1 $topArray array
-    set result {}
-    if {[llength $otherMaxes]} {
-        foreach pt [lindex $otherMaxes 0] {
-	    set subList [ArrayToList array $indexSoFar,$pt \
-			     [lrange $otherMaxes 1 end]]
-	    if {[llength $subList]} {
-		lappend result $pt $subList
-	    }
-        }
-    } else {
-# See if we can get away without setting missing values to 0
-        if {[info exists array($indexSoFar)]} {
-	    set result $array($indexSoFar)
-	}
-    }
-    return $result
-}

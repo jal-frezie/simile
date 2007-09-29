@@ -719,31 +719,9 @@ namespace eval $keyValue {
             }
         }
 # puts "values: [array get values]"
-        
-        # Now copy array values into lists with one less index
-        # Any with fewer indices than rest will get ignoredddd
-        while {[llength [set vlist [ArrayGetSorted values]]]} {
-            unset values
-            foreach {indcol val} $vlist {
-                set shortcol [lrange $indcol 0 end-1]
-                lappend values($shortcol) \
-                        [lindex $indcol end] $val
-            }
-        }
-        return [lindex $values() 1]
+        return [ArrayToList values]
     }
     
-    proc ArrayGetSorted {arrayPtr} {
-	set result {}
-	upvar 1 $arrayPtr arrayName
-	set nameList [array names arrayName ?*]
-# puts "About to sort $nameList"
-	foreach name [lsort -real -index end $nameList] {
-	    lappend result $name $arrayName($name)
-	}
-	return $result
-    }
-
     proc ReComp {l1 l2} {
         if {[string match $l1 $l2]} {
             return 0
