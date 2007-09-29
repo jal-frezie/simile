@@ -537,6 +537,7 @@ proc equationDoTable {parent mdl tgt dims startLine} {
     set fdata [$fc.fdata getframe]
     set dfile [Entry $fdata.dfile -textvariable table_entry(fileName)]
     bind $dfile <Return> "LoadDataFile columns 0 $mdl"
+    bind $dfile <Double-1> "LoadDataFile columns 0 $mdl"
     pack $dfile -side left -expand true -fill x
     button $fdata.new -compound left -image $iconImages(open) -text Browse \
 	-command "LoadDataFile columns 1 $mdl"
@@ -1130,7 +1131,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 			if {$yInd==1} {
 			    lappend colList $xInd
 			}
-			set paramArray(top,$yInd,$xInd) \
+			set paramArray([list top $yInd $xInd]) \
 			    [EnquoteIfNonNumeric [lindex $usePts $colInd]]
 		    }
 	    }
@@ -1150,7 +1151,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 			    lappend colList $xInd
 			}
 			if {[tableImage transparency get $colInd $rowInd]} {
-			    set paramArray(top,$yInd,$xInd) \
+			    set paramArray([list top $yInd $xInd]) \
 				[lindex $tableSpec 8]
 			    continue
 			}
@@ -1170,7 +1171,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 				set fract [expr 35*[lindex $ptColours 0]*7/256+5*[lindex $ptColours 1]*7/256+[lindex $ptColours 2]*5/256]
 			    }
 			}
-			set paramArray(top,$yInd,$xInd) \
+			set paramArray([list top $yInd $xInd]) \
 			    [expr [lindex $tableSpec 6]+$fract*([lindex $tableSpec 7]-[lindex $tableSpec 6])/255.0]
 		    }
 	    }
@@ -1250,7 +1251,7 @@ proc LoadTableData {tableSpec lineCount addSpecials} {
 	    } else {
 		set potEntry [lindex $entryList $headerColumn]
 		if {[llength $potEntry]} {
-		    set paramArray(top,[join $arrayIndex ,]) \
+		    set paramArray([concat [list top] $arrayIndex]) \
 			[EnquoteIfNonNumeric $potEntry]
 		}
 	    }
@@ -1313,20 +1314,46 @@ proc EnquoteIfNonNumeric {item} {
 }
 
 proc ArrayToList {topArray indexSoFar otherMaxes} {
+    upvar 1 $topArray values
+    while {[llength [set vlist [ArrayGetSorted values]]]} {
+	unset values
+	foreach {indcol val} $vlist {
+	    set shortcol [lrange $indcol 0 end-1]
+	    lappend values($shortcol) \
+		[lindex $indcol end] $val
+	}
+    }
+    return [lindex $values() 1]
+}
+    
+proc ArrayGetSorted {arrayPtr} {
+    set result {}
+    upvar 1 $arrayPtr arrayName
+    set nameList [array names arrayName ?*]
+    # puts "About to sort $nameList"
+    foreach name [lsort -real -index end $nameList] {
+	lappend result $name $arrayName($name)
+    }
+    return $result
+}
+
+proc OldArrayToList {topArray indexSoFar otherMaxes} {
 #ShowMessage debug info "$indexSoFar $otherMaxes" ok
     upvar 1 $topArray array
+    set result {}
     if {[llength $otherMaxes]} {
         foreach pt [lindex $otherMaxes 0] {
-            lappend result $pt [ArrayToList array $indexSoFar,$pt \
-				    [lrange $otherMaxes 1 end]]
+	    set subList [ArrayToList array $indexSoFar,$pt \
+			     [lrange $otherMaxes 1 end]]
+	    if {[llength $subList]} {
+		lappend result $pt $subList
+	    }
         }
     } else {
 # See if we can get away without setting missing values to 0
         if {[info exists array($indexSoFar)]} {
 	    set result $array($indexSoFar)
-        } else {
-            set result (empty)
-        }
+	}
     }
     return $result
 }

@@ -821,6 +821,7 @@ namespace eval fileparams {
     }
     
     proc Save {topNode smPath args} {
+# Needs some clever stuff to avoid trying to save record count info
         global paramState SimileProject simtmpdir env msgs
 	set notInput [expr -[llength $args]]
 	if {$notInput} {
@@ -839,7 +840,11 @@ namespace eval fileparams {
 #ShowMessage debug info "Save $smPath" ok
 #puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
-	AcceptAll $topNode [array names suppliedData $smPath*] $notInput 1
+	foreach smItem [array names suppliedData $smPath*] {
+	    if {[info exists paramState($smItem)]} { ;# not a record count
+		AcceptData $topNode $smItem $notInput 1
+	    }
+	}
 	if {[lsearch $suppliedData(needed) $smPath*]!=-1} {
 	    return
 	}
@@ -901,6 +906,7 @@ namespace eval fileparams {
 	puts $pStr $indent<variables>
 	upvar 1 $outerData outData
 	foreach compName [array names outData $smPath*] {
+	    if {![info exists paramState($compName)]} continue ;# record count
 	    set compTail [string range $compName [string length $smPath] end]
 	    if {[set slashPosn [string first / $compTail 1]]>-1} {
 		set inners([string range $compTail 1 [incr slashPosn -1]]) 1
@@ -1070,7 +1076,7 @@ proc StartElement {name attList args} {
 	} csv_columns {
 	    puts -nonewline $parseStatus(outStr) \
 		"$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) "
-	    set parseStatus(translateExtras) $attVals(data_column)
+	    set parseStatus(translateExtras) [list $attVals(data_column)]
 	} csv_grid {
 	    puts $parseStatus(outStr) "$parseStatus(submodel)/$attVals(label)=reference=$attVals(filename) ,grid $attVals(rowmin) $attVals(rowmax) $attVals(colmin) $attVals(colmax)"
 	} image {
