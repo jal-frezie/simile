@@ -871,8 +871,7 @@ proc ControlDraw {prologVersion} {
     if {[string match Linux $tcl_platform(os)]} {
 	set shank ../System/lib/lib5d.so
 	if {$sendvars(simV)>$userinfo(oldVersion) || ![file exists $shank]} {  
-	    exec g++ -m32 -c -O -fPIC -I. ./shank.cpp
-	    exec g++ -m32 -shared -o $shank shank.o
+	    exec g++ -m32 -O -fPIC -I../Run -shared -o $shank ../Run/shank.cpp
 	}
     }
     load_c_stub_1
