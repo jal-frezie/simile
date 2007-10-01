@@ -36,7 +36,8 @@ tk_redo(Cur, Wids) :-
 	redo_edit(Wid, Wids).
 
 tk_get_info(Wid, Comp, What) :-
-	get_info(Wid, Comp, What).
+	get_info(Wid, Comp, What, Answer),
+	draw:callback(br(write(Answer))).
 
 tk_get_params(Wid, Comp) :-
 	get_params(Wid, Comp).
@@ -124,6 +125,9 @@ tk_abandon :-
 
 tk_abandon_eqn :-
 	abandon_eqn.
+
+tk_context_find(Wid, Query, Target) :-
+	context_find(Wid, Query, Target).
 
 check_use(TestFile) :-
 	utility:open_native(TestFile, write, St),

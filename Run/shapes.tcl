@@ -1433,26 +1433,25 @@ proc FindCaption {canvas} {
     set find(List,$canvas) {}
     if {$find(done)==10} {
 	#follow infs back
-	foreach name [GetFromProlog tk_get_info('$canvas',selection,in)] {
-	    lappend find(List,$canvas) [GetCaptionItem $canvas $name]
-	}	
+	set find(List,$canvas) \
+	    [GetFromProlog tk_get_info('$canvas',selection,in)]
     } elseif {$find(done)==11} {
 	#follow infs on
-	#follow infs back
-	foreach name [GetFromProlog tk_get_info('$canvas',selection,out)] {
-	    lappend find(List,$canvas) [GetCaptionItem $canvas $name]
-	}	
+	set find(List,$canvas) \
+	    [GetFromProlog tk_get_info('$canvas',selection,out)]
     } elseif {[string compare $findable {}]} {
-        foreach caption [$canvas find withtag is_caption] {
-	    set toLookIn [BlankCrs [ForSearchType $canvas $caption]]
-            if {[string match -nocase *$findable* $toLookIn]} {
-#		puts "Found $findable in $toLookIn"
-                lappend find(List,$canvas) $caption
-            }
-        }
-	if {[info exists find(now,$canvas)]} {
-	    unset find(now,$canvas)
-	}
+	set find(List,$canvas) \
+	    [GetFromProlog tk_context_find('$canvas','$findable',$find(where))]
+#        foreach caption [$canvas find withtag is_caption] {
+#	    set toLookIn [BlankCrs [ForSearchType $canvas $caption]]
+#            if {[string match -nocase *$findable* $toLookIn]} {
+##		puts "Found $findable in $toLookIn"
+#                lappend find(List,$canvas) $caption
+#            }
+#        }
+    }
+    if {[info exists find(now,$canvas)]} {
+	unset find(now,$canvas)
     }
     NextCaption $canvas
 }
@@ -1508,7 +1507,7 @@ proc NextCaption {canvas} {
         $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
         $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
 
-        set find(now,$canvas) [ExtractPrologName $canvas $this]
+        set find(now,$canvas) $this
 	prolog tk_do_colours($find(now,$canvas),on)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
         #	HandleObjClick $canvas $this clicktext $tgtX $tgtY

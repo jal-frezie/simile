@@ -14,7 +14,7 @@ on while I change the spec to reflect that.
 */
 
 sicstus_module(draw,
-	       [cursor_is/1, callback/1,
+	       [cursor_is/1, callback/1, append_callback/1,
 		enable_text_editing_in/1, disable_text_editing_in/1,
 		select_text/2, get_component_from_gui/4,
 		get_group_from_gui/3, get_text/3,
@@ -40,6 +40,9 @@ sicstus_use_module([library(lists), state, image, ame_gen, output]).
 
 cursor_is(Cursor) :-
 	tk_cursor_is(Cursor).
+
+append_callback(Content) :-
+	tk_append_callback(Content).
 
 callback(Content) :-
 	tk_callback(Content).

@@ -11,6 +11,7 @@ normally possible so the Tk change features are not used; objects are
 changed only by deleting and redrawing them.  */
 
 sicstus_module(output, [safe_tcl_eval/2, tk_cursor_is/1, tk_callback/1,
+			tk_append_callback/1,
 	tk_make_desktop/2, get_file_name/5, list_matching_files/2,
 	enable_text_editing_in/1, disable_text_editing_in/1, select_text/2,
 	compartment/7, channel/7, function/7, variable/7, event/7, cloud/7, 
@@ -59,6 +60,9 @@ tk_cursor_is(Cursor) :-
 
 tk_callback(Data) :-
 	safe_tcl_eval(['AttackGlobalVariable fromProlog {}', Data], _).
+
+tk_append_callback(Data) :-
+	safe_tcl_eval([lappend, '::fromProlog', Data], _).
 
 new_chop_list(Left, Done, Depth, Args) :-
 	Left = [Here | More], !,

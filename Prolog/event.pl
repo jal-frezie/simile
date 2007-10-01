@@ -7,7 +7,7 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-sicstus_module(event, [get_info/3, get_params/2, bar_edit_menu/1,
+sicstus_module(event, [get_info/4, get_params/2, bar_edit_menu/1,
 		       click_obj/4, click_text/4, click/3, do_colours/2,
 		       insert_variable/5,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
@@ -19,12 +19,12 @@ sicstus_use_module([sp_only, dialogue, m_update, image, draw,
 		    state, backup, submodel, ame_gen, utility,
 		    library(lists), library(ordsets)]).
 
-eqn_for(Comp, EqnStr) :-
+eqn_for(Comp, Eqn) :-
 	find_node_with_data(Comp, _, Func),
-	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), \+ Eqn = [], !,
-	    name(Eqn, EqnStr);
-	 get_av_pair(Func, 0, value, Eqn),
-	    sicstus_write_to_chars(Eqn, EqnStr)).
+	(get_av_pair(Func, 0, spec, Eqn), atom(Eqn), \+ Eqn = [], !;
+	 get_av_pair(Func, 0, value, EqnExpr),
+	    sicstus_write_to_chars(EqnExpr, EqnStr),
+	    name(Eqn, EqnStr)).
 
 units_for(Comp, UnitStr) :-
 	find_node_with_data(Comp, _, Func),
@@ -59,18 +59,16 @@ multi_prop(Dir, From, To, Count) :-
 	   (To = Link;
 	   multi_prop(Dir, Mid, To, On)).
 
-get_info(_Wid, selection, Dir) :-
-	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = []),
-	callback(br(Ends)).
+get_info(_Wid, selection, Dir, Ends) :-
+	(setof(End, follow_seln_infs(Dir, End), Ends); Ends = []).
 	
-get_info(_Wid, Comp, eqn) :-
+get_info(_Wid, Comp, eqn, Eqn) :-
 	(Comp is_of_sort has_function,
 	    (eqn_for(Comp, Eqn), !;
-		Eqn = "");
-	 Eqn = "<none>"),
-	callback(br(chars(Eqn))).
+		Eqn = '');
+	 Eqn = '<none>').
 
-get_info(Wid, Comp, desc) :-
+get_info(Wid, Comp, desc, DescAtm) :-
 	find_type(Comp, LType),
 	(LType is_class_of_sort captionless, !,
 	    Part1 = "";
@@ -80,7 +78,8 @@ get_info(Wid, Comp, desc) :-
 
 	(LType = submodel,
 	    image:quick_file(Comp, Middle);
-	eqn_for(Comp, Middle);
+	eqn_for(Comp, MiddleAtm),
+	    name(MiddleAtm, Middle);
 	ghost_link(Comp, _,_),
 	    Middle = "ghost link";
 	name(LType, Middle)), !,
@@ -110,9 +109,9 @@ get_info(Wid, Comp, desc) :-
 	Suffix = ""),
 
 	append([Part1, Middle, Suffix], Desc),
-	callback(br(chars(Desc))).
+	name(DescAtm, Desc).
 
-get_info(_, Comp, comment) :-
+get_info(_, Comp, comment, Pop) :-
 	(find_type(Comp, relation), !,
 	    find_name_host(Comp, Func);
 	 find_type(Comp, flow), !,
@@ -123,14 +122,36 @@ get_info(_, Comp, comment) :-
 	(get_av_pair(Func, _, description, Desc),
 	    sicstus_format_to_chars("~w\n~w", [Desc, Cmt], PopStr),
 	    name(Pop, PopStr), !;
-	Pop = Cmt),
-	callback(br(write(Pop))).
+	Pop = Cmt).
 
-get_info(_, Name, is_unit) :-
+get_info(_, Name, is_unit, Def) :-
 	(units:defined_as_unit(Name, Def), !;
-	Def = none),
-	callback(write(Def)).
+	Def = none).
 
+context_find(Wid, Query, Target) :-
+	tk_callback('{}'),
+	menu_submodel_is(Model, _),
+	contains(Model, Comp),
+	(Target = comment,
+	    get_info(Wid, Comp, comment, Field),
+	    \+ Field = 'no comment';
+	 Target = equation,
+	    get_info(Wid, Comp, eqn, Field),
+	    \+ Field = '<none>';
+	 Target = caption,
+	    caption_for(Comp, Field)),
+	name(Query, QueryStr),
+	name(Field, FieldStr),
+	lower(QueryStr, LQueryStr),
+	lower(FieldStr, LFieldStr),
+	is_infix(LQueryStr, LFieldStr),
+	append_callback(Comp),
+	fail; true.
+
+is_infix(In, Out) :-
+	prefix(Start, Out),
+	suffix(In, Start), !.
+	
 insert_mem_list(Bound, Model, Trans) :-
 	(Bound = boolean,
 	    Trans = [false, true];
