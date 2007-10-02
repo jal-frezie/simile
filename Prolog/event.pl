@@ -7,7 +7,7 @@ interface of the application. It responds by:
 * Calling the model maintenance module to add information to the model
 * Making calls to the screen drawing module (new image, or redraw)
 */
-sicstus_module(event, [get_info/4, get_params/2, bar_edit_menu/1,
+sicstus_module(event, [get_info/4,context_find/3,get_params/2,bar_edit_menu/1,
 		       click_obj/4, click_text/4, click/3, do_colours/2,
 		       insert_variable/5,
 	finish_old_edit/1, doubleclick_obj/3, doubleclick/2,
@@ -129,9 +129,11 @@ get_info(_, Name, is_unit, Def) :-
 	Def = none).
 
 context_find(Wid, Query, Target) :-
-	tk_callback('{}'),
+	callback('{}'),
 	menu_submodel_is(Model, _),
-	contains(Model, Comp),
+	contains(Model, Sub),
+	find_all_comps(Sub, Comp),
+	appears(Comp), %     check draws_at as well
 	(Target = comment,
 	    get_info(Wid, Comp, comment, Field),
 	    \+ Field = 'no comment';

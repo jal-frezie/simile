@@ -1430,6 +1430,7 @@ set adds none
 proc FindCaption {canvas} {
     global find
     set findable [GetFindText $canvas]
+    if {!$find(done)} return
     set find(List,$canvas) {}
     if {$find(done)==10} {
 	#follow infs back
@@ -1456,20 +1457,20 @@ proc FindCaption {canvas} {
     NextCaption $canvas
 }
 
-proc ForSearchType {winId item} {
-    global find
-    set plName [ExtractPrologName $winId $item]
-    switch $find(where) {
-        caption {
-            return [$winId itemcget $item -text]
-        } equation {
-            return [GetFromProlog tk_get_info('$winId',$plName,eqn)]
-        } description {
-            return [GetFromProlog tk_get_info('$winId',$plName,comment)]
-        }
-    }
-}
-
+#proc ForSearchType {winId item} {
+#    global find
+#    set plName [ExtractPrologName $winId $item]
+#    switch $find(where) {
+#        caption {
+#            return [$winId itemcget $item -text]
+#        } equation {
+#            return [GetFromProlog tk_get_info('$winId',$plName,eqn)]
+#        } description {
+#            return [GetFromProlog tk_get_info('$winId',$plName,comment)]
+#        }
+#    }
+#}
+#
 proc NextCaption {canvas} {
     global find window_info
     if {![info exists find(List,$canvas)]} {
@@ -1504,9 +1505,12 @@ proc NextCaption {canvas} {
         set middleX [$canvas canvasx [expr $window_info($canvas,width)/2]]
         set middleY [$canvas canvasy [expr $window_info($canvas,height)/2]]
         scan [$canvas coords $this] {%f %f} tgtX tgtY
-        $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
-        $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
-
+	if {[info exists tgtX]} {
+	    $canvas scan mark [expr int(-0.1*$middleX)] [expr int(-0.1*$middleY)]
+	    $canvas scan dragto [expr int(-0.1*$tgtX)] [expr int(-0.1*$tgtY)]
+	} else {
+	    puts "Scored with $this coords [$canvas coords $this]"
+	}
         set find(now,$canvas) $this
 	prolog tk_do_colours($find(now,$canvas),on)
 #        FlashSymbol $canvas $find(now,$canvas) orange orange
