@@ -334,6 +334,7 @@ proc TclExecuteModel {node howInt start end errLim} {
             }
 	    SetDTs $bigPhase $xtime
 
+	    do_model advancemodel $xtime $bigPhase
 	    if {[string equal Euler $howInt]} {
                 if {$firstPass} {
  		    set dts(0) 0
@@ -385,7 +386,6 @@ proc TclExecuteModel {node howInt start end errLim} {
                 } ;# timestep too short or not
             } ;# error limit exists
         } ;# made progress
-        do_model advancemodel $xtime $bigPhase
 	do_model int_evalmodel $xtime $bigPhase
     }
     if {[CheckGUI $node $end ext]} {

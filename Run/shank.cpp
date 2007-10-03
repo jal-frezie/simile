@@ -981,6 +981,7 @@ showMess(globMess); */
 	}
 	set_dts(big_phase, xtime);
 
+	(*advancemodel)(id, xtime, big_phase);
 	switch (how_int) {
 	case EULER:
 	  if (first_pass) {
@@ -1039,7 +1040,6 @@ showMess(globMess); */
 	  } // timestep too short or not
 	} // error limit exists
       } // made progress
-      (*advancemodel)(id, xtime, big_phase);
       if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
 	*end=xtime;
 	return err;
