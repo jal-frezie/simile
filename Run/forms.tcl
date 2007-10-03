@@ -185,9 +185,9 @@ proc Disaggregate {parent title colour image imgpos type fatness icount step \
     
     TitleFrame $t.complex.math -text Calculation
     set mathf [$t.complex.math getframe]
-    checkbutton $mathf.separate -text "Build submodel in separate dll" \
-            -variable disaggregate(separate)
-    pack $mathf.separate -anchor w
+#    checkbutton $mathf.separate -text "Build submodel in separate dll" \
+#            -variable disaggregate(separate)
+#    pack $mathf.separate -anchor w
     pack [frame $mathf.extcode] -anchor w -pady 6
     set disaggregate(useOwnCode) [expr {![string eq none $disaggregate(xinc)]}]
     pack [checkbutton $mathf.extcode.whether -text "Use own code" \
