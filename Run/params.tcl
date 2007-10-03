@@ -320,6 +320,7 @@ proc AcceptAll {topNode compNames notInput complain} {
 }
 
 proc AcceptData {topNode compName notInput complain} {
+#puts "AcceptData $topNode $compName $notInput $complain"
     global paramDims runState msgs paramLocns whichParamsAffected
     if {$notInput==-1} {
 	set dataLocn targetData
@@ -822,7 +823,7 @@ namespace eval fileparams {
     
     proc Save {topNode smPath args} {
 # Needs some clever stuff to avoid trying to save record count info
-        global paramState SimileProject simtmpdir env msgs
+        global SimileProject env
 	set notInput [expr -[llength $args]]
 	if {$notInput} {
 	    set dataLocn targetData
@@ -840,8 +841,8 @@ namespace eval fileparams {
 #ShowMessage debug info "Save $smPath" ok
 #puts "Need outNames cos have suppliedData for [array names suppliedData]"
 # first, make sure all values to be saved are up-to-date and well-formed
-	foreach smItem [array names suppliedData $smPath*] {
-	    if {[info exists paramState($smItem)]} { ;# not a record count
+	foreach smItem [array names suppliedData $smPath/*] {
+	    if {![IsRecordCount $smItem]} {
 		AcceptData $topNode $smItem $notInput 1
 	    }
 	}
@@ -901,12 +902,12 @@ namespace eval fileparams {
     }
     
     proc WriteSubmodelParams {outerData topNode metaFile pStr smPath indent} {
-	global paramState paramDims
+	global paramState paramDims msgs
 
 	puts $pStr $indent<variables>
 	upvar 1 $outerData outData
 	foreach compName [array names outData $smPath*] {
-	    if {![info exists paramState($compName)]} continue ;# record count
+	    if {[IsRecordCount $compName]} continue
 	    set compTail [string range $compName [string length $smPath] end]
 	    if {[set slashPosn [string first / $compTail 1]]>-1} {
 		set inners([string range $compTail 1 [incr slashPosn -1]]) 1
@@ -1025,6 +1026,12 @@ namespace eval fileparams {
             
         }
     }
+}
+
+proc IsRecordCount {compName} {
+    global msgs
+
+    return [expr {![info exists msgs(param_source_$compName)]}]
 }
 
 package require xml
@@ -1462,7 +1469,7 @@ proc GetFromTable {parent topNode compName startLine} {
     }
     set table_entry(bytes) [DataInScenario $compName]
     set newSource [equationDoTable [winfo toplevel $parent] $topNode $compName \
-		       [$widgetNames($compName).l2 cget -text] $notSeries]
+		       [$outNames($compName).l2 cget -text] $notSeries]
 # If loading data for PEST there is no parent dialogue so do not keep grab
     if {$startLine==-1} {
 	grab release [winfo toplevel $parent]
