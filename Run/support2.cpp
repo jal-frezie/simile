@@ -10,12 +10,12 @@ FINDABLE EXPORT void* do_createmodel(void) {
   return (void*)new AME_model;
 }
 
-FINDABLE EXPORT void do_updatemodel(void* handle, double time, int phase) {
-  ((AME_model *)handle)->updatemodel(time, phase);
+FINDABLE EXPORT void do_updatemodel(void* handle, int phase) {
+  ((AME_model *)handle)->updatemodel(phase);
 }
 
-FINDABLE EXPORT void do_advancemodel(void* handle, double time, int phase) {
-  ((AME_model *)handle)->advancemodel(time, phase);
+FINDABLE EXPORT void do_advancemodel(void* handle, int phase) {
+  ((AME_model *)handle)->advancemodel(phase);
 }
 
 jmp_buf env;
@@ -24,7 +24,7 @@ static void exit_sighandler(int x){
   longjmp(env, x);
 }
 
-FINDABLE EXPORT int do_evalmodel(void* handle, double time, int phase, BOOLEAN exo) {
+FINDABLE EXPORT int do_evalmodel(void* handle, int phase, BOOLEAN exo) {
   int error;
 
   /* Dont want a crash while running model to terminate Simile, so add 
@@ -41,9 +41,9 @@ FINDABLE EXPORT int do_evalmodel(void* handle, double time, int phase, BOOLEAN e
   } else {
     try {
       if (exo) {
-	((AME_model *)handle)->ext_evalmodel(time, phase);
+	((AME_model *)handle)->ext_evalmodel(phase);
       } else {
-	((AME_model *)handle)->int_evalmodel(time, phase);
+	((AME_model *)handle)->int_evalmodel(phase);
       }
     }
     catch (int error) {

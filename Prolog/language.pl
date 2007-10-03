@@ -420,7 +420,7 @@ do_assignment(L, [SpecialOp | Clauses],
 	    render:make_constant_string(L, NodeId, Node),
 	    make_scalar(L, InstHandle, [], InstPtr),
 	    refer_value(L, InstPtr, InstHandleRef),
-	    CallSpec =.. [SubCall, Node, InstHandleRef, start_time, PassTest];
+	    CallSpec =.. [SubCall, Node, InstHandleRef, PassTest];
 	SpecialOp = search_from(ArcInd, _, TopRef),
  	    NewCollects = Collects,
 	    CallSpec = search_from(myClassPtr, ArcInd, TopRef);

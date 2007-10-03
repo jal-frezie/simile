@@ -275,7 +275,7 @@ extraction procedures, including 'tree' which is fairly
 important...(or was, back when the A stood for Agroforestry)... */
 
 	LocalNames = [tree, type, set, newvalue, finished, current, context,
-		      dtarget, btarget, instance, start_time, time_step,
+		      dtarget, btarget, instance, time_step,
 		      time, times, ts, dts,
 		      init_time, parentId, channelId, version,
 		      on_reset, on_reload, externs_done, /* dummy conditions */
@@ -707,7 +707,7 @@ build_eval_proc(Language, ProcName, OrderedForm, Used, AllGraphs, Collects,
 			Used, Temp1, FuncStatements),
 	reverse(RCollects, Collects),
 	render(Language, procedure_start,
-	       call(void, ProcName, [real, start_time], [int, phase]), 0,
+	       call(void, ProcName, [int, phase]), 0,
 	       EvalProcDeclText),
 	render(Language, end(procedure), ProcName, 0, Proc_ending),
 /* following section used to be c only */

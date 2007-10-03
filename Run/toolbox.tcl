@@ -676,6 +676,7 @@ proc compile_c {workingDir extLibs} {
         }
     }} chuckup]} {
       set badCompile "The compiler raised a problem with the code generated for this model. This might be due to a bad compiler setup, or it could be due to mathematical problems in the model. The error was: $chuckup. It may help to try the 'Debug' option."
+puts $badCompile
       cd $oldDir; #Change back to Run directory in order to access Help file for subsequent dialogue
       BuildProblem "Problem during compilation" warning $badCompile execution
       cd $workingDir

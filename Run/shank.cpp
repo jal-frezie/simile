@@ -774,9 +774,9 @@ typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
 typedef int setstep_type(double, int);
-typedef void updatemodel_type(void*, double, int);
-typedef void advancemodel_type(void*, double, int);
-typedef int evalmodel_type(void*, double, int, BOOLEAN);
+typedef void updatemodel_type(void*, int);
+typedef void advancemodel_type(void*, int);
+typedef int evalmodel_type(void*, int, BOOLEAN);
 typedef void* getpointer_type(void*, int**, int**);
 typedef void exitmodel_type(void*);
 
@@ -951,7 +951,7 @@ showMess(globMess); */
       reset_time_series(this);
       adapt_doublings = 0;
     }
-    return evalmodel(modelHandle, 0, top_phase, FALSE);
+    return evalmodel(modelHandle, top_phase, FALSE);
   }
 
   int executemodel(void* id, int how_int, 
@@ -981,7 +981,7 @@ showMess(globMess); */
 	}
 	set_dts(big_phase, xtime);
 
-	(*advancemodel)(id, xtime, big_phase);
+	(*advancemodel)(id, big_phase);
 	switch (how_int) {
 	case EULER:
 	  if (first_pass) {
@@ -990,7 +990,7 @@ showMess(globMess); */
 	    setdt(-1,0);
 	  }
 	  advance_time(this, big_phase, 1);
-	  (*updatemodel)(id, xtime, big_phase);
+	  (*updatemodel)(id, big_phase);
 	  break;
 	case RUNGE_KUTTA:
 	  if (first_pass) {
@@ -998,8 +998,8 @@ showMess(globMess); */
 	  } else {
 	    setdt(-2,0);
 	  }
-	  (*updatemodel)(id, xtime, big_phase);
-	  if (err=rk_update(id, xtime, big_phase)) {
+	  (*updatemodel)(id, big_phase);
+	  if (err=rk_update(id, big_phase)) {
 	    *end=xtime;
 	    return err;
 	  }
@@ -1010,13 +1010,13 @@ showMess(globMess); */
 	  made_step = 1;
 	} else {
 	  // get the model to generate its error estimate
-	  if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
+	  if (err=(*evalmodel)(id, big_phase, FALSE)) {
 	    *end=xtime;
 	    return err;
 	  }
 	  *adapt_maxerr = 0;
 	  setdt(10, 0);
-	  (*updatemodel)(id, xtime, big_phase);
+	  (*updatemodel)(id, big_phase);
 	  if (*adapt_maxerr>errlim) {
 	    // error too great; put comps back and try shorter
 	    if (adapt_doublings<31) {
@@ -1040,7 +1040,7 @@ showMess(globMess); */
 	  } // timestep too short or not
 	} // error limit exists
       } // made progress
-      if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) {
+      if (err=(*evalmodel)(id, big_phase, FALSE)) {
 	*end=xtime;
 	return err;
       }
@@ -1071,20 +1071,20 @@ showMess(globMess); */
     }
   }
 
-  int rk_update(void* id, double xtime, int big_phase) {
+  int rk_update(void* id, int big_phase) {
     int err;
 
     advance_time(this, big_phase, 0.5);
     setdt(2, 0);
-    if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
-    (*updatemodel)(id, xtime, big_phase);
+    if (err=(*evalmodel)(id, big_phase, FALSE)) return err;
+    (*updatemodel)(id, big_phase);
     setdt(3, 0);
-    if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
-    (*updatemodel)(id, xtime, big_phase);
+    if (err=(*evalmodel)(id, big_phase, FALSE)) return err;
+    (*updatemodel)(id, big_phase);
     advance_time(this, big_phase, 0.5);
     setdt(4, 0);
-    if (err=(*evalmodel)(id, xtime, big_phase, FALSE)) return err;
-    (*updatemodel)(id, xtime, big_phase);
+    if (err=(*evalmodel)(id, big_phase, FALSE)) return err;
+    (*updatemodel)(id, big_phase);
     setdt(1, 0);
     return 0;
   }
@@ -1826,22 +1826,18 @@ void* rdLocateElement(long int old, int* indices) {
   return ((regularData*)old)->locate_element(indices);
 }
 
-void update(long int modelType, long int modelHandle, 
-	     double starttime, int phase) {
-  ((Model*)modelType)->updatemodel((void*)modelHandle, starttime, phase);
+void update(long int modelType, long int modelHandle, int phase) {
+  ((Model*)modelType)->updatemodel((void*)modelHandle, phase);
 }
 
 /* model execution */
 
-void advance(long int modelType, long int modelHandle, 
-	     double starttime, int phase) {
-  ((Model*)modelType)->advancemodel((void*)modelHandle, starttime, phase);
+void advance(long int modelType, long int modelHandle, int phase) {
+  ((Model*)modelType)->advancemodel((void*)modelHandle, phase);
 }
 
-int eval(long int modelType, long int modelHandle, 
-	 double starttime, int phase, BOOLEAN exo) {
-  return ((Model*)modelType)->evalmodel((void*)modelHandle, 
-					starttime, phase, exo);
+int eval(long int modelType, long int modelHandle, int phase, BOOLEAN exo) {
+  return ((Model*)modelType)->evalmodel((void*)modelHandle, phase, exo);
 }
 
 /* Above ones should now only be called by the do_submodel routines,
@@ -1913,26 +1909,21 @@ void search_from(void* typeRef, int nodeIndx, void* instPtr) {
   ((Model*)topType)->channelData[recordNo].SearchBase = instPtr;
 }
 
-void update_submodel(char* nodeId, void* instanceId,
-		       double start_time, int phase) {
+void update_submodel(char* nodeId, void* instanceId, int phase) {
   update((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId, 
-	 start_time, phase);
+	 phase);
 }
 
-void advance_submodel(char* nodeId, void* instanceId,
-		       double start_time, int phase) {
+void advance_submodel(char* nodeId, void* instanceId, int phase) {
   advance((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId, 
-	  start_time, phase);
+	  phase);
 }
 
-int eval_submodel(char* nodeId, void* instanceId,
-		       double start_time, int phase, BOOLEAN exo) {
+int eval_submodel(char* nodeId, void* instanceId, int phase, BOOLEAN exo) {
   //  sprintf(globMess, "Entering submodel ph.%d ex.%d", phase, exo);
   //  showMess(globMess);
   return eval((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId,
-
-	      start_time, phase, exo);
-
+	      phase, exo);
 }
 
 /* procedure that is called by shim when it is loaded to supply pointers

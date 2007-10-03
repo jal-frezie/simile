@@ -107,25 +107,25 @@ void* fetch_instance(char* inst) {
   return (*fetch_instance_ref)(inst);
 }
 
-void update_submodel(char* id, void* inst, double time, int step) {
-  (*update_submodel_ref)(id, inst, time, step);
+void update_submodel(char* id, void* inst, int step) {
+  (*update_submodel_ref)(id, inst, step);
 }
 
-void advance_submodel(char* id, void* inst, double time, int step) {
-  (*advance_submodel_ref)(id, inst, time, step);
+void advance_submodel(char* id, void* inst, int step) {
+  (*advance_submodel_ref)(id, inst, step);
 }
 
-void int_eval_submodel(char* id, void* inst, double time, int step) {
+void int_eval_submodel(char* id, void* inst, int step) {
   int error;
-  error = (*eval_submodel_ref)(id, inst, time, step, 0);
+  error = (*eval_submodel_ref)(id, inst, step, 0);
   if (error) {
     throw error;
   }
 }
 
-void ext_eval_submodel(char* id, void* inst, double time, int step) {
+void ext_eval_submodel(char* id, void* inst, int step) {
   int error;
-  error = (*eval_submodel_ref)(id, inst, time, step, 1);
+  error = (*eval_submodel_ref)(id, inst, step, 1);
   if (error) {
     throw error;
   }

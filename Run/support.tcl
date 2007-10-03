@@ -221,15 +221,15 @@ proc stage_incr {ns_extras step v} {
     return $result
 }
 
-proc do_model {what mtime mstep} {
+proc do_model {what mstep} {
 #puts "do_model $what $mtime $mstep"
-    if {[catch {eval ::AME_model<>::${what} $mtime $mstep}]} {
-	RaiseTclExecError $what $mtime $mstep
+    if {[catch {eval ::AME_model<>::${what} $mstep}]} {
+	RaiseTclExecError $what $mstep
     }
 }
 
-proc RaiseTclExecError {mproc mtime mstep} {
-    global myNode errorInfo model_prog
+proc RaiseTclExecError {mproc mstep} {
+    global myNode errorInfo model_prog ts
 
     set errorList [split $errorInfo \n]
     set whoopsie [lindex $errorList 0]
@@ -251,7 +251,8 @@ proc RaiseTclExecError {mproc mtime mstep} {
     } else {
 	set dest none
     }
-    error [list tcl_model_err $mproc $dest $mtime $mstep $whoopsie] $errorInfo
+    error [list tcl_model_err $mproc $dest $ts($mstep) $mstep $whoopsie] \
+	$errorInfo
 }
 
 proc CheckGUI {node modelTime thisOp} {
@@ -305,7 +306,7 @@ proc TclResetModel {topPhase} {
             set dts($tweakPhase) [expr $steps($tweakPhase)]
         }
     }
-    do_model int_evalmodel 0 $topPhase
+    do_model int_evalmodel $topPhase
     return 1
 }
 
@@ -334,7 +335,7 @@ proc TclExecuteModel {node howInt start end errLim} {
             }
 	    SetDTs $bigPhase $xtime
 
-	    do_model advancemodel $xtime $bigPhase
+	    do_model advancemodel $bigPhase
 	    if {[string equal Euler $howInt]} {
                 if {$firstPass} {
  		    set dts(0) 0
@@ -342,25 +343,25 @@ proc TclExecuteModel {node howInt start end errLim} {
                     set dts(0) -1
                 }
                 AdvanceTime $node $bigPhase 1
-		do_model updatemodel $xtime $bigPhase
+		do_model updatemodel $bigPhase
 	    } else {
                 if {$firstPass} {
                     set dts(0) 1
                 } else {
                     set dts(0) -2
                 }
-                do_model updatemodel $xtime $bigPhase
-		RKUpdate $node $xtime $bigPhase
+                do_model updatemodel $bigPhase
+		RKUpdate $node $bigPhase
 	    }
             set firstPass 0
             if {!$errLim} {
                 set madeStep 1
             } else {
                 # get the model to generate its error estimate
-                do_model int_evalmodel $xtime $bigPhase
+                do_model int_evalmodel $bigPhase
                 set adapt(maxErr) 0
                 set dts(0) 10
-                do_model updatemodel $xtime $bigPhase
+                do_model updatemodel $bigPhase
 #puts "time $xtime max error $adapt(maxErr) doublings $adapt(doublings)"
                 if {$adapt(maxErr)>$errLim} {
                 # error too great; put comps back and try shorter
@@ -386,7 +387,7 @@ proc TclExecuteModel {node howInt start end errLim} {
                 } ;# timestep too short or not
             } ;# error limit exists
         } ;# made progress
-	do_model int_evalmodel $xtime $bigPhase
+	do_model int_evalmodel $bigPhase
     }
     if {[CheckGUI $node $end ext]} {
 	return 0
@@ -415,19 +416,19 @@ proc PhaseFor {current step soFar} {
     }
 }
 
-proc RKUpdate {node current phase} {
+proc RKUpdate {node phase} {
     global dts
     AdvanceTime $node $phase 0.5
     set dts(0) 2
-    do_model int_evalmodel $current $phase
-    do_model updatemodel $current $phase
+    do_model int_evalmodel $phase
+    do_model updatemodel $phase
     set dts(0) 3
-    do_model int_evalmodel $current $phase
-    do_model updatemodel $current $phase
+    do_model int_evalmodel $phase
+    do_model updatemodel $phase
     AdvanceTime $node $phase 0.5
     set dts(0) 4
-    do_model int_evalmodel $current $phase
-    do_model updatemodel $current $phase
+    do_model int_evalmodel $phase
+    do_model updatemodel $phase
     set dts(0) 1
 }
     
