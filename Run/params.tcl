@@ -1330,10 +1330,19 @@ proc ExistCheck {topNode restoredComp tgtCap notInput source} {
     }
     
     if {$notInput>-1} {
+	set dest ::widgetNames($tgtCap$restoredComp)
 	set tgtCap [TrimDTFromPath $tgtCap]
+	set lostType {file parameter}
+    } else {
+	set dest ::targetNames($tgtCap$restoredComp)
+	set lostType {output measurement}
     }
 #puts "checking $tgtCap$restoredComp"
-    set node [GetCompProperty $topNode IdFromCapt $tgtCap$restoredComp]
+    if {[info exists $dest]} {
+	set node [GetCompProperty $topNode IdFromCapt $tgtCap$restoredComp]
+    } else {
+	set node nomatch
+    }
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
         while {[string equal nomatch $node]} {
@@ -1345,9 +1354,7 @@ proc ExistCheck {topNode restoredComp tgtCap notInput source} {
                 set node $topNode
             }
         }
-        if {[string equal $lostBit $restoredComp]} {
-            set lostType component
-        } else {
+        if {![string equal $lostBit $restoredComp]} {
             set lostType submodel
         }
         set act [ShowMessage "Unused parameters" warning "The $source contains parameter values for the $lostType $lostBit, which does not exist in the target model $tgtCap. Do you want to ignore these values and continue loading the $source?" okcancel]
