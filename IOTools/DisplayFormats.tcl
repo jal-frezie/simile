@@ -62,7 +62,7 @@ namespace eval DisplayFormat {
     
     proc RadinDMS {val dp} {
         set val [expr {$val*180.0/3.14159}]
-        DMS $val
+        DMS $val $dp
     }
     
     set datevar(ERA) CE

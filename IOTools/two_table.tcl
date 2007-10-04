@@ -862,11 +862,9 @@ namespace eval $keyValue {
         pack $varF -side top -fill x
         
         set varL [label $varF.label -text Variable]
-        set varCB [ttk::combobox $varF.comboBox -values $displayList($winId) \
-		       -state readonly]
-	if {[llength $displayList($winId)]} {
-	    $varCB current 0
-	}
+        set varCB [ttk::combobox $varF.comboBox -state readonly \
+		       -values [concat All... $displayList($winId)]]
+	$varCB current 0
         pack $varL $varCB -side left
         
         set formatF [frame $formatP.formatF]
@@ -899,8 +897,6 @@ namespace eval $keyValue {
         
         pack $catF $formF $optionsF -side left -padx 10 -fill y
         
-#        $varCB configure -modifycmd [namespace code \
-                "SetFormatWidgets $winId $varCB $catF.listbox $formF.listbox $optionsF"]
 	bind $varCB <ButtonRelease-1> [namespace code \
                 "SetFormatWidgets $winId $varCB $catF.listbox $formF.listbox $optionsF"]
         bind $catF.listbox <ButtonRelease-1> +[namespace code \
@@ -983,39 +979,51 @@ namespace eval $keyValue {
     }
     
     proc OnFormatListBoxClick {winId varCB formatListbox} {
-        variable displayList
-        variable displayFormat
-        set varIndex [lsearch $displayList($winId) [$varCB get]]
-        lset displayFormat($winId,$varIndex) 0 \
-                [lindex [$formatListbox get 0 end] [$formatListbox curselection ]]
+	AdjustCurrentFormatList $winId $varCB 0 \
+	    [lindex [$formatListbox get 0 end] [$formatListbox curselection]]
     }
     
     proc SetFormatWidgets {winId varCB catlistbox formlistbox optionsF} {
         variable displayList
         variable displayFormat
-        if {[llength [$varCB get]]} {
-            set varIndex [lsearch $displayList($winId) [$varCB get]]
-            set formatSpec [lindex $displayFormat($winId,$varIndex) 0]
-            SetCatListboxSelection $catlistbox $formatSpec
-            FillFormatListBox $catlistbox $formlistbox
-            SetFormatListboxSelection $formlistbox $formatSpec
-            $optionsF.decimalPlacesF.decimalPlacesSB set [lindex $displayFormat($winId,$varIndex) 1]
-            if {[lindex $displayFormat($winId,$varIndex) 2]} {
-                $optionsF.negInRedCB select
-            } else  {
-                $optionsF.negInRedCB deselect
-            }
-            $optionsF.decimalPlacesF.decimalPlacesSB configure \
-                    -command "lset [namespace current]::displayFormat($winId,$varIndex) 1 %s"
-            $optionsF.negInRedCB configure \
-                    -command [namespace code "OnNegInRedCBClick $optionsF.negInRedCB $winId $varIndex"]
-        }
+	set varIndex [lsearch $displayList($winId) [$varCB get]]
+        if {$varIndex==-1} {
+	    set varIndex 0
+	}
+	set formatSpec [lindex $displayFormat($winId,$varIndex) 0]
+	SetCatListboxSelection $catlistbox $formatSpec
+	FillFormatListBox $catlistbox $formlistbox
+	SetFormatListboxSelection $formlistbox $formatSpec
+	$optionsF.decimalPlacesF.decimalPlacesSB set [lindex $displayFormat($winId,$varIndex) 1]
+	if {[lindex $displayFormat($winId,$varIndex) 2]} {
+	    $optionsF.negInRedCB select
+	} else  {
+	    $optionsF.negInRedCB deselect
+	}
+	$optionsF.decimalPlacesF.decimalPlacesSB configure -command \
+	    [namespace code "AdjustCurrentFormatList $winId $varCB 1 %s"]
+	$optionsF.negInRedCB configure -command \
+	    [namespace code "OnNegInRedCBClick $optionsF.negInRedCB $winId $varCB"]
     }
     
-    proc OnNegInRedCBClick {CB winId varIndex} {
+    proc OnNegInRedCBClick {CB winId varCB} {
         global negInRedCB
-        variable displayFormat
-        lset displayFormat($winId,$varIndex) 2 $negInRedCB
+
+	AdjustCurrentFormatList $winId $varCB 2 $negInRedCB
     }
     
+    proc AdjustCurrentFormatList {winId varCB posn val} {
+        variable displayList
+        variable displayFormat
+
+	set selected [$varCB get]
+	set varIndex 0
+	foreach varId $displayList($winId) {
+	    if {[string equal $varId $selected] || \
+		    [string equal "All..." $selected]} {
+		lset displayFormat($winId,$varIndex) $posn $val
+	    }
+	    incr varIndex
+	}
+    }
 } ;# end of namespace
