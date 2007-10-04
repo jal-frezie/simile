@@ -21,8 +21,7 @@ proc FileParamDialogue {topWin mustShow} {
     MakeFrames $t
     array unset widgetNames
     foreach node $allNodes {
-        set notInput [lsearch {INPUT TABLE} \
-                [GetCompProperty $topNode Eval $node]]
+        set notInput [FirstIndexCheck $topNode $node]
         if {$notInput != -1} {
             AddEntry $t $topNode $node $mustShow $notInput $topCapt
         }
@@ -1223,8 +1222,7 @@ proc MergeParams {topNode smPath oldPath notInput interactive} {
             break {break}
             continue {continue}
         }
-        set nType [GetCompProperty $topNode Eval $node]
-        set startLine [lsearch {INPUT TABLE} $nType]
+        set startLine [FirstIndexCheck $topNode $node]
         if {($startLine!=-1)==($notInput!=-1)} {
 	    # change back now in case .spf filename is relative (possible
 	    # if merging params from script)
@@ -1330,18 +1328,19 @@ proc ExistCheck {topNode restoredComp tgtCap notInput source} {
     }
     
     if {$notInput>-1} {
-	set dest ::widgetNames($tgtCap$restoredComp)
+	set relevanceCheck {expr {[FirstIndexCheck $topNode $node]>-1}}
 	set tgtCap [TrimDTFromPath $tgtCap]
 	set lostType {file parameter}
     } else {
-	set dest ::targetNames($tgtCap$restoredComp)
+	set relevanceCheck {info exists ::targetNames($tgtCap$restoredComp)}
 	set lostType {output measurement}
     }
 #puts "checking $tgtCap$restoredComp"
-    if {[info exists $dest]} {
-	set node [GetCompProperty $topNode IdFromCapt $tgtCap$restoredComp]
-    } else {
-	set node nomatch
+    set node [GetCompProperty $topNode IdFromCapt $tgtCap$restoredComp]
+    if {![string equal nomatch $node]} {
+	if {![eval $relevanceCheck]} {
+	    set node nomatch
+	}
     }
     if {[string equal nomatch $node]} {
         set nextLook $restoredComp
@@ -1378,6 +1377,10 @@ proc IdFromTail {topNode fullCapt notInput} {
 
 proc TrimDTFromPath {fullCapt} {
     return [string range $fullCapt [string first / $fullCapt/ 1] end]
+}
+
+proc FirstIndexCheck {topNode node} {
+    return [lsearch {INPUT TABLE} [GetCompProperty $topNode Eval $node]]
 }
 
 proc DataInScenario {compName} {
