@@ -159,9 +159,9 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
 		       void* update_submodel_ptr,
 		       void* advance_submodel_ptr,
 		       void* eval_submodel_ptr,
-		       void* search_from_ptr,
+//		       void* search_from_ptr,
 		       void* advance_ptr_ptr,
-		       void* get_remote_value_ptr, 
+//		       void* get_remote_value_ptr, 
 		       void* stat_check_ptr,
 		       void* showMess_ptr,
 		       void* graph_ptr, 
@@ -181,9 +181,9 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
   update_submodel_ref = (update_submodel_type*)update_submodel_ptr;
   advance_submodel_ref = (advance_submodel_type*)advance_submodel_ptr;
   eval_submodel_ref = (eval_submodel_type*)eval_submodel_ptr;
-  search_from_ref = (search_from_type*)search_from_ptr;
+//  search_from_ref = (search_from_type*)search_from_ptr;
   advance_ptr_ref = (advance_ptr_type*)advance_ptr_ptr;
-  get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
+//  get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
   stat_check = (stat_check_type*)stat_check_ptr;
   showMess = (showMess_type*)showMess_ptr;
   

@@ -97,14 +97,12 @@ fetch_instance_type fetch_instance;
 update_submodel_type update_submodel;
 advance_submodel_type advance_submodel;
 eval_submodel_type eval_submodel;
-search_from_type search_from;
+//search_from_type search_from;
 advance_ptr_type advance_ptr;
 get_remote_value_type get_remote_value;
 stat_check_type stat_check;
 
 char* xsimileVersion;
-int connCount;
-connectRecord* connectData;
 showMess_type* showMessLocal;
 char globMess[256];
 
@@ -769,7 +767,7 @@ void setdt(double, int);
 
 typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
 			  void*, void*, void*, void*, void*, void*, void*,
-			  void*, void*, int*, node_data_line**, int*, char***,
+			  int*, node_data_line**, int*, char***,
 			  double**);
 typedef double getversion_type(void);
 typedef void* createmodel_type(void);
@@ -812,7 +810,7 @@ public:
   int nodecount;
   node_data_line* nodedata;
   int *connLines;
-  channelRecord* channelData; // only used in top model
+  // channelRecord* channelData; only used in top model
   double* adapt_maxerr;
   char erreur[256];
 
@@ -854,9 +852,9 @@ showMess(globMess); */
 			    (void*)update_submodel,
 			    (void*)advance_submodel,
 			    (void*)eval_submodel,
-			    (void*)search_from,
+//			    (void*)search_from,
 			    (void*)advance_ptr,
-			    (void*)get_remote_value,
+//			    (void*)get_remote_value,
 			    (void*)stat_check,
 			    (void*)showMess,
 			    (void*)&c_graphdata,
@@ -867,10 +865,10 @@ showMess(globMess); */
   	throw DllLossage("initialize", fileName, strdup(erreur)); */
 
 
+    /*
     channelData = NULL;
-
     connLines = new int[inArcCount];
-    /* Create a local reference for each component to the global table */
+    // Create a local reference for each component to the global table
     for (count=0; inArcCount>count; count++) {
       connLines[count] = -1;
       for (count2=0; connCount>count2; count2++) {
@@ -890,13 +888,14 @@ showMess(globMess); */
 	throw DllLossage("initialize", fileName, strdup(erreur));
       }
     }
+    */
   }
 
   ~Model() {
     if (!UNLOAD_DLL(handle)) {
       throw DllLossage("unload", "", WHAT_WENT_WRONG());
     }
-    if (channelData) delete channelData;
+    // if (channelData) delete channelData;
   }
 
   /* Next bit is really boring...and possibly needles...but I feel I have to
@@ -1679,7 +1678,7 @@ long int fetch_top_instance(long int modelType, char* spare) {
 
       model types must be loaded first */
 
-   ((Model*)modelType)->channelData = new channelRecord[connCount];
+   /*   ((Model*)modelType)->channelData = new channelRecord[connCount];
    for (count=0; connCount>count; count++) {
      currConnect = connectData + count;
      currChannel = ((Model*)modelType)->channelData + count;
@@ -1717,14 +1716,10 @@ long int fetch_top_instance(long int modelType, char* spare) {
 		 currConnect->TopNode);
        return 0;
      }
-     /*     sprintf(globMess, "Top node path %d %d %d %d %d %d, Source node path %d %d %d %d %d %d, count2 %d",
-	     *path, *(path+1), *(path+2), *(path+3), *(path+4), *(path+5),
-	     *tree, *(tree+1), *(tree+2), *(tree+3), *(tree+4), *(tree+5),
-	     count2);
-	     showMess(globMess); */
      // now hopefully we won't be using the reference strings anymore, so...
    }     
    delete connectData;
+   */
    return (long int)((Model*)modelType)->create();
 }
 
@@ -1870,7 +1865,7 @@ void* search_ptr(Model* type, void* level, int** id_meta, int** dims) {
     return level;
   }
 }
-
+/*
 void* get_remote_value(void* typeRef, void* topInstRef, int level,
 			    int arcIndx, int* subList) {
   channelRecord* currentData;
@@ -1896,19 +1891,19 @@ void* get_remote_value(void* typeRef, void* topInstRef, int level,
   //  showMess(globMess);
   return(search_ptr((Model*)typeRef, useInstRef, &tree, &subList));
 }
-
+*/
 void* advance_ptr(void* typeRef, void* topInstRef) {
   int next_handle[] = {1,0}, *tree = next_handle;
   return *(void**)get_ptr((long int)typeRef, (long int)topInstRef, &tree, 
 			  NULL);
 }
-
+/*
 void search_from(void* typeRef, int nodeIndx, void* instPtr) {
   int recordNo;
   recordNo = ((Model*)typeRef)->connLines[nodeIndx];
   ((Model*)topType)->channelData[recordNo].SearchBase = instPtr;
 }
-
+*/
 void update_submodel(char* nodeId, void* instanceId, int phase) {
   update((long int)nodeModelList->nodeModel(nodeId), (long int)instanceId, 
 	 phase);
@@ -1931,16 +1926,11 @@ int eval_submodel(char* nodeId, void* instanceId, int phase, BOOLEAN exo) {
 
 void proc_pointers_for_shank(interact_gui_type* interact_gui_ptr,
 			     showMess_type* showMess_ptr,
-			     char* simileVersionPtr,
-			     connectRecord*** connectDataPtr, 
-			     int** connCountPtr) {
+			     char* simileVersionPtr) {
   //  get_client_value_pointer = get_value_pointer_ptr;
   interact_gui = interact_gui_ptr;
   showMessLocal = showMess_ptr;
   xsimileVersion = simileVersionPtr;
-  // put pointers to our connection database globals into the given locations 
-  *connectDataPtr = &connectData;
-  *connCountPtr = &connCount;
 }
 
 int setstep(long int modelId, double starttime, int phase) {

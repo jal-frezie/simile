@@ -21,9 +21,9 @@ fetch_instance_type* fetch_instance_ref;
 update_submodel_type* update_submodel_ref;
 advance_submodel_type* advance_submodel_ref;
 eval_submodel_type* eval_submodel_ref;
-search_from_type* search_from_ref;
+// search_from_type* search_from_ref;
 advance_ptr_type* advance_ptr_ref;
-get_remote_value_type* get_remote_value;
+//get_remote_value_type* get_remote_value;
 stat_check_type* stat_check;
 showMess_type* showMess;
 
@@ -130,11 +130,11 @@ void ext_eval_submodel(char* id, void* inst, int step) {
     throw error;
   }
 }
-
+/*
 void search_from(void* top, int section, void* found) {
   (*search_from_ref)(top, section, found);
 }
-
+*/
 /* try doing this one locally */
 void* advance_ptr(void* mType, void* mInst) {
   return (*advance_ptr_ref)(mType, mInst);
@@ -288,7 +288,7 @@ int* arrange_indices(int id_count, ...) {
   curIndices[length] = 0;
   return curIndices;
 }
-
+/*
 BOOLEAN import_boolean(int level, void* topInstPtr, int arcId, int* indices) {
   BOOLEAN* gotValue;
   gotValue = (BOOLEAN*)(*get_remote_value)(myClassPtr, topInstPtr, level,
@@ -337,6 +337,7 @@ void* import_ptr(int level, void* topInstPtr,
     return NULL;
   }
 }
+*/
 /*  
 void insert_graph_data(
    graph_data_type *graph_data_pointer,

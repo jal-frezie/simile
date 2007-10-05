@@ -1278,11 +1278,6 @@ proc ex_load_dll {topNode lang progDir id node incs} {
     }
 }
 
-proc set_connection_database {connects} {
-#    ShowMessage debug info "Setting $connects" ok
-    c_set_connection_database $connects
-}
-
 # FindPhase tells us when a node in a separate submodel will be
 # available. The submodel indicates this by its eval phase. If DERIVED, INPUT
 # or TABLE it can be used any time; if EXOGENOUS we must wait till that

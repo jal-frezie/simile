@@ -414,8 +414,8 @@ also causes an instance of it to be created. */
 long int modelType;
 long int modelHandle;
 
-connectRecord** connectDataPtr;
-int* connCountPtr;
+//connectRecord** connectDataPtr;
+//int* connCountPtr;
 
 FINDABLE extern "C" int loadmodelCmd(ClientData clientData, Tcl_Interp *interp, 
 			    int argc, Tcl_Obj *CONST argv[]) {
@@ -1586,7 +1586,7 @@ BOOLEAN interact_gui(void* id, BOOLEAN stop_chk, double now) {
   Tcl_GetIntFromObj(globInterp, Tcl_GetObjResult(globInterp), &response);
   return response;
 }
-
+/*
 FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp, 
 		int argc, Tcl_Obj *CONST argv[]) {
   int count, count2, spare, error;
@@ -1634,7 +1634,7 @@ FINDABLE int SetConnDBCmd(ClientData clientData, Tcl_Interp *interp,
    }
    return TCL_OK;
 }
-
+*/
 /* String to use as secret */
 char secret[] = "R^6tf*Y}@?>H(U(ddJ(::{><Lu8H*G";
 #ifdef SIM_EVALUATION
@@ -1993,9 +1993,9 @@ FINDABLE int loadcmdsCmd(ClientData clientData, Tcl_Interp *interp,
   Tcl_CreateObjCommand(interp, "random01", random01Cmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
-  Tcl_CreateObjCommand(interp, "c_set_connection_database", SetConnDBCmd, 
+  /*  Tcl_CreateObjCommand(interp, "c_set_connection_database", SetConnDBCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
-  
+  */
   Tcl_CreateObjCommand(interp, "get_auth_code", GetAuthCodeCmd, 
 		       (ClientData)NULL, (Tcl_CmdDeleteProc *)NULL);
   
@@ -2059,8 +2059,7 @@ FINDABLE EXPORT int Ame_dll_Init(Tcl_Interp *interp) {
   char pkgName[16];
 
   globInterp = interp;
-  proc_pointers_for_shank(interact_gui, showMess,
-			  simileVersion, &connectDataPtr, &connCountPtr);
+  proc_pointers_for_shank(interact_gui, showMess, simileVersion);
   /* Use the Tcl Stubs mechanism */
   Tcl_InitStubs(interp, "8.4", 0);
   Tcl_SetVar2(interp, "userinfo", "edn", edition, 0);

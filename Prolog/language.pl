@@ -152,7 +152,7 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 	Indent1 is Indent + 4,
 	/* some of this belongs in the next disjunction */
 
-	(LoopSpec = rm_loop(ArcIndex, Level, IExprs), !,
+	( /* LoopSpec = rm_loop(ArcIndex, Level, IExprs), !,
 	    check_local_var(L, Pointer, externpointer, 'void*', Used, Temps1),
 	    refer_value(L, Pointer, PointerRef),
 
@@ -164,11 +164,11 @@ do_assignment(L, [start_submodel(Name, Top, Pointer, LoopSpec)
 					  ArcIndex, ArrInds], LXStr),
 	    name(StartPtrRef, LXStr),
 
-	    /* finish same: move pointer to next instance in chain */
+	    % finish same: move pointer to next instance in chain
 	    make_procedure_call_chars(L, [advance_ptr, myClassPtr, PointerRef],
 				      AdvanceStr),
 	    name(OnPointerRef, AdvanceStr),
-	    LoadBaseRefs = [];
+	    LoadBaseRefs = []; */
 
 	LoopSpec = vm_loop(_,_, BaseLoops, _), !,
 	    append_atoms(Name, 'type*', Type),
@@ -421,10 +421,10 @@ do_assignment(L, [SpecialOp | Clauses],
 	    make_scalar(L, InstHandle, [], InstPtr),
 	    refer_value(L, InstPtr, InstHandleRef),
 	    CallSpec =.. [SubCall, Node, InstHandleRef, PassTest];
-	SpecialOp = search_from(ArcInd, _, TopRef),
+/*	SpecialOp = search_from(ArcInd, _, TopRef),
  	    NewCollects = Collects,
 	    CallSpec = search_from(myClassPtr, ArcInd, TopRef);
-	SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
+*/	SpecialOp = cond_assign(Dest, Tested, Payload, Op, SoFar),
  	    NewCollects = Collects,
 	    make_scalar(L, Dest, Graphs, ScalarDest),
 	    make_pointer(L, ScalarDest, DestPtr),
@@ -985,7 +985,7 @@ make_scalar(L, Param, Graphs, FullLocalExpr) :-
 	all(language, aim_at_array, [unify(L), build(ITerms), build(ATerms)]),
 	all(render, make_expr, [unify(L), build(ATerms),
 				build(IExprs)]),
-	(Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),
+	( /* Var = import(Type, _, Level, _, TopPtr, _,_, ArcIndex),
 	    (Type = a(_ET),
 		ImportCmd = import_int;
 	    append_atoms('import_', Type, ImportCmd)), !,
@@ -995,7 +995,7 @@ make_scalar(L, Param, Graphs, FullLocalExpr) :-
 	    name(ArrInds, AIStr),
 	    make_procedure_call_chars(L, [ImportCmd, Level, TopPtr,
 					  ArcIndex, ArrInds], LXStr),
-	    name(FullLocalExpr, LXStr);
+	    name(FullLocalExpr, LXStr); */
 	make_indexed_reference(L, LocalExpr, IExprs, FullLocalExpr)).
 
 aim_at_array(c, Index, Index-1) :- !.

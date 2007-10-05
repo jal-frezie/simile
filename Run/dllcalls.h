@@ -229,8 +229,7 @@ EXTDEC char* myexit(long int, long int);
 EXTDEC void* get_ptr(long int, long int, int**, int**);
 EXTDEC char* getNodeId(long int, char*);
 
-EXTDEC void proc_pointers_for_shank(interact_gui_type*, showMess_type*, 
-				    char*, connectRecord***, int**);
+EXTDEC void proc_pointers_for_shank(interact_gui_type*, showMess_type*, char*);
 // use of regularData class
 EXTDEC long int createRegularData (void);
 EXTDEC void deleteRegularData (long int);

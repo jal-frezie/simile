@@ -24,15 +24,15 @@ sicstus_use_module( [library(ordsets),library(lists),
 
 compile( Language, Parent, DestDir) :-
 	tk_scrub_run(Parent, 0),
-	(Language = tcl, !,
+/*	(Language = tcl, !,
 	    unseparate(SeparateNodes);
 	list_interconnects(Parent)),
-	reassure_user("Checking that the model is complete and consistent"),
+*/	reassure_user("Checking that the model is complete and consistent"),
 	/* This is a stopgap, we should really update a property of the
 	submodel containing the destination whenever a link is added or
 	deleted so only to do these checks when needed */
-	build_instances(Language, DestDir, Parent, Parent, 1, _,_,_),
-	(Language = tcl, !,
+	build_instances(Language, DestDir, Parent, Parent, 1, _,_,_).
+/*	(Language = tcl, !,
 	    all(m_class, has_new_class_refinement,
 		[build(SeparateNodes), unify(separate of 1)]);  
 	true).
@@ -71,7 +71,7 @@ is_entry(Entry) :-
 	\+ appears(End), \+ find_type(End, function),
 	    DLLSpec has_part End),
 	DLLSpec has_class_refinement separate of 1.
-	
+*/	
 build_instances(Language, DestDir, Parent, TopNode,
 		Step, ChangeNext, LocalFnsUsed, KeepParents) :-
 	caption_for(Parent, Name),
@@ -103,7 +103,7 @@ build_instances(Language, DestDir, Parent, TopNode,
 	    LocalFnsUsed = [];
 	LocalFnsUsed = FnsUsed),
 
-	((Parent has_class_refinement separate of 1;
+	(( %Parent has_class_refinement separate of 1;
 	  backup:is_toplevel(Parent)), !,
 	    /* we need an executable for this level */
 	    (Language = c,
@@ -1207,9 +1207,10 @@ name_from_elt(FullRef, Cond) :-
 	Cond = [exts(Src) | Waits]);
 	Cond = [Name | Waits]).
 
+/*
 insert_ptr(Path, search_from(_, Name, Ptr)) :-
 	member(sm(Name, _, Ptr, _), Path).
-
+*/
 /* get_assignments takes the list of instance functions for all the
 things that need to be evaluated in the model and turns them into a
 list of 'make' functions which include information about how to order
@@ -1217,7 +1218,7 @@ the actions corresponding to them.*/
 
 get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	       DestPath, SmStep, Swaps, Used, Inters, Assignments) :-
-	Type = external, !,
+/*	Type = external, !,
 	    (Inters = [],
 	    Source = for_extern(CondElts, Tops),
 	    all(compile, insert_ptr, [unify(DestPath), build(Tops)]),
@@ -1237,7 +1238,8 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 			   make(none, [time], DestPath, _,
 				[advance_submodel(Node, arr(Ptr, Dest, []),
 						   BuiltWith)])]);
-	    /* Only make assignments for functions, for now, and
+*/
+/* Only make assignments for functions, for now, and
 	    Do not make an assignment if we are expecting one on init/reset
 	    from outside */
 	is_parameter(Node, Is_P),
