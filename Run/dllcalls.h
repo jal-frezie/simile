@@ -161,7 +161,7 @@ typedef struct node_data_line_t {
   int compclass;
   char *strings[4];
 } node_data_line; /* end(class,node_data_line) */
-
+/*
 typedef struct connectRecord_t {
   char* TopArc;
   char* TopNode;
@@ -169,6 +169,19 @@ typedef struct connectRecord_t {
   int DestCount;
   char** Dests;
 } connectRecord;
+*/
+// Declaration for procedure types found in the model dll by the shank
+typedef int getcount_type(void*, void*, void*, void* ,void*,
+			  void*, void*, void*, void*,
+			  int*, node_data_line**, double**);
+typedef double getversion_type(void);
+typedef void* createmodel_type(void);
+typedef int setstep_type(double, int);
+typedef void updatemodel_type(void*, int);
+typedef void advancemodel_type(void*, int);
+typedef int evalmodel_type(void*, int, BOOLEAN);
+typedef void* getpointer_type(void*, int**, int**);
+typedef void exitmodel_type(void*);
 
 /* this is defined in the stub, which is loaded as a library...well it
    used to be, but now once the stub has loaded the dll it just sends
@@ -181,6 +194,7 @@ typedef double graphpoint_type(double, graph_data_type*, int);
 typedef void release_graph_data_type(graph_data_type*);
 typedef int compare_instance_status_type (const int*, const int*, int);
 typedef void get_value_pointer_type(void*, void*, int, int, int*);
+/*
 typedef void* fetch_instance_type(char*);
 typedef void update_submodel_type(char*, void*, int);
 typedef void advance_submodel_type(char*, void*, int);
@@ -188,6 +202,7 @@ typedef int eval_submodel_type(char*, void*, int, BOOLEAN);
 typedef void search_from_type(void*, int, void*);
 typedef void* advance_ptr_type(void*, void*);
 typedef void* get_remote_value_type(void*, void*, int, int, int*);
+*/
 typedef int stat_check_type(void*);
 
 typedef void showMess_type(char*);

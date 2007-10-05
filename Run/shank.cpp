@@ -93,13 +93,14 @@ int max(int a, int b) {
 
 interact_gui_type* interact_gui;
 get_value_pointer_type* get_client_value_pointer;
-fetch_instance_type fetch_instance;
+/*fetch_instance_type fetch_instance;
 update_submodel_type update_submodel;
 advance_submodel_type advance_submodel;
 eval_submodel_type eval_submodel;
-//search_from_type search_from;
+search_from_type search_from;
 advance_ptr_type advance_ptr;
 get_remote_value_type get_remote_value;
+*/
 stat_check_type stat_check;
 
 char* xsimileVersion;
@@ -762,30 +763,14 @@ typedef struct channelRecord_t {
 
 void setdt(double, int);
 
-/* prototypical declarations for functions to be supplied by the model dll
- */
-
-typedef int getcount_type(void*, void*, void*, void*, void*, void*, void*,
-			  void*, void*, void*, void*, void*, void*, void*,
-			  int*, node_data_line**, int*, char***,
-			  double**);
-typedef double getversion_type(void);
-typedef void* createmodel_type(void);
-typedef int setstep_type(double, int);
-typedef void updatemodel_type(void*, int);
-typedef void advancemodel_type(void*, int);
-typedef int evalmodel_type(void*, int, BOOLEAN);
-typedef void* getpointer_type(void*, int**, int**);
-typedef void exitmodel_type(void*);
-
 /* Matching set of declarations for the pointers by which we will access
    these functions locally */
 
 class Model {
   HINSTANCE handle;
   int count, count2, count3;
-  int inArcCount;
-  char** inArcList;
+/*  int inArcCount;
+  char** inArcList; */
   //  enum_data_type *enumtypedata;
 
   getcount_type *getcount;
@@ -848,18 +833,17 @@ showMess(globMess); */
 			    (void*)release_graph_data, 
 			    (void*)compare_instance_status, 
 			    (void*)get_value_pointer, 
-			    (void*)fetch_instance,
+/*			    (void*)fetch_instance,
 			    (void*)update_submodel,
 			    (void*)advance_submodel,
 			    (void*)eval_submodel,
-//			    (void*)search_from,
+			    (void*)search_from,
 			    (void*)advance_ptr,
-//			    (void*)get_remote_value,
-			    (void*)stat_check,
+			    (void*)get_remote_value,
+*/			    (void*)stat_check,
 			    (void*)showMess,
 			    (void*)&c_graphdata,
-			    &phases, &nodedata, 
-			    &inArcCount, &inArcList, &adapt_maxerr);
+			    &phases, &nodedata, &adapt_maxerr);
     /*	sprintf(erreur, "finding %d (%s) of %d connections, first has top %s and %d dests.", 
 	inArcCount, inArcList[0], connCount, connectData[0].TopArc, connectData[0].DestCount);
   	throw DllLossage("initialize", fileName, strdup(erreur)); */
@@ -1666,14 +1650,14 @@ void* fetch_instance(char* nodeId) {
 }
 
 long int fetch_top_instance(long int modelType, char* spare) {
-   int count, count2;
+/*   int count, count2;
    int dims[32], path[32];
    int* tree;
    connectRecord* currConnect;
    channelRecord* currChannel;
    long int mSpare;
    enum_type_data* spareTypes[32];
-
+*/
    /* this section sets up the connection database -- done here because all
 
       model types must be loaded first */

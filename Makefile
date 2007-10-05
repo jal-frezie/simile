@@ -2,7 +2,7 @@
 # edition: evaluation, teaching, standard or enterprise
 EDN = STANDARD
 # date of final expiry: "hh:mm D M Y" or "" for permanent
-ABS_EXP = "00:00 1 Jan 2008"
+ABS_EXP = ""
 # days after install: 0 for no installation expiry
 REL_EXP = 0
 # License code required to verify name/corp/edition: 0 for no
@@ -111,11 +111,11 @@ PROLOG_FILES = ame_gen.pl backup.pl build.pl compile.pl database.pl \
 		submodel.pl tcltk.pl text.pl units.pl utility.pl
 
 # Windows release, Prolog is Sicstus
-System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl Prolog/struct_db.dll
+System/bin/main.sav: $(PROLOG_FILES) smain.pl sp_only.pl System/bin/struct_db.dll
 	cd Prolog; sicstus -l buildmainsav.pl; cd ..
 
-Prolog/struct_db.dll: struct_db.pl Prolog/struct_db.c
-	cd Prolog; splfr struct_db.pl struct_db.c; cd ..
+System/bin/struct_db.dll: struct_db.pl Prolog/struct_db.c
+	cd Prolog; splfr struct_db.pl struct_db.c; mv struct_db.dll ../System/bin; cd ..
 
 Run/xgsimile$(EXECEXTN): Prolog/gmain$(EXECEXTN).o Prolog/struct_db.c
 	cd Prolog; gplc --no-top-level -o ../$(PROLOGSTATE) -C -D_GNU_PROLOG gmain$(EXECEXTN).o struct_db.c; cd ..

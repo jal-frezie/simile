@@ -1,19 +1,23 @@
 /* version needs its own special procedure because any other might change
    and cause a crash before version mismatch is detected */
+FINDABLE EXPORT getversion_type get_version;
 FINDABLE EXPORT double get_version() {
   double simile_version;
   sscanf(strstr(simile_identifier,"version="), "version=%lf", &simile_version);
   return(simile_version);
 }
 
-FINDABLE EXPORT void* do_createmodel(void) {
+FINDABLE EXPORT createmodel_type do_createmodel;
+FINDABLE EXPORT void* do_createmodel() {
   return (void*)new AME_model;
 }
 
+FINDABLE EXPORT updatemodel_type do_updatemodel;
 FINDABLE EXPORT void do_updatemodel(void* handle, int phase) {
   ((AME_model *)handle)->updatemodel(phase);
 }
 
+FINDABLE EXPORT advancemodel_type do_advancemodel;
 FINDABLE EXPORT void do_advancemodel(void* handle, int phase) {
   ((AME_model *)handle)->advancemodel(phase);
 }
@@ -24,6 +28,7 @@ static void exit_sighandler(int x){
   longjmp(env, x);
 }
 
+FINDABLE EXPORT evalmodel_type do_evalmodel;
 FINDABLE EXPORT int do_evalmodel(void* handle, int phase, BOOLEAN exo) {
   int error;
 
@@ -53,6 +58,7 @@ FINDABLE EXPORT int do_evalmodel(void* handle, int phase, BOOLEAN exo) {
   }
 }
 
+FINDABLE EXPORT exitmodel_type do_exitmodel;
 FINDABLE EXPORT void do_exitmodel(void* handle) {
   ((AME_model *)handle)->do_exitmodel();
   delete (AME_model *)handle;
@@ -65,6 +71,7 @@ the integration step being done: 0 for Euler, 1-4 for the four stages of RK
 
 Also uses to get phase count */
 
+FINDABLE EXPORT setstep_type do_setstep;
 FINDABLE EXPORT int do_setstep(double time, int phase) {
   if (phase>0) { /* lazy */
     dts[phase] = time;
@@ -141,6 +148,7 @@ t3 = estimate of next initial increment
   };
 };
 
+FINDABLE EXPORT getpointer_type burrow_to;
 FINDABLE EXPORT void* burrow_to(void* level, int** id_meta, int** dim_list) {
   while (**id_meta>0) { /* 0 means end of tree, -1 means vm level,
 -2 means nested separate-dll submodel */
@@ -150,23 +158,24 @@ FINDABLE EXPORT void* burrow_to(void* level, int** id_meta, int** dim_list) {
 };
 
 /* This is called only when we create the type, to return model constants */
+FINDABLE EXPORT getcount_type get_count;
 FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr, 
 		       void* graphpoint_ptr, 
 		       void* release_graph_data_ptr, 
 		       void* compare_instance_status_ptr, 
 		       void* get_value_pointer_ptr, 
-		       void* fetch_instance_ptr,
+/*		       void* fetch_instance_ptr,
 		       void* update_submodel_ptr,
 		       void* advance_submodel_ptr,
 		       void* eval_submodel_ptr,
-//		       void* search_from_ptr,
+		       void* search_from_ptr,
 		       void* advance_ptr_ptr,
-//		       void* get_remote_value_ptr, 
-		       void* stat_check_ptr,
+		       void* get_remote_value_ptr, 
+*/		       void* stat_check_ptr,
 		       void* showMess_ptr,
 		       void* graph_ptr, 
-		       int* phases, node_data_line** data_ptr, int* arc_count, 
-		       char*** arc_id_list, double** adapt_maxerr) {
+		       int* phases, node_data_line** data_ptr, 
+		       double** adapt_maxerr) {
 
   /* Stub is telling us... */
   myClassPtr = useClassPtr;
@@ -177,13 +186,14 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
   release_graph_data_ref = (release_graph_data_type*)release_graph_data_ptr;
   compare_instance_status = (compare_instance_status_type*)compare_instance_status_ptr;
   get_value_pointer_ref = (get_value_pointer_type*)get_value_pointer_ptr;
-  fetch_instance_ref = (fetch_instance_type*)fetch_instance_ptr;
+  /*  fetch_instance_ref = (fetch_instance_type*)fetch_instance_ptr;
   update_submodel_ref = (update_submodel_type*)update_submodel_ptr;
   advance_submodel_ref = (advance_submodel_type*)advance_submodel_ptr;
   eval_submodel_ref = (eval_submodel_type*)eval_submodel_ptr;
-//  search_from_ref = (search_from_type*)search_from_ptr;
+  search_from_ref = (search_from_type*)search_from_ptr;
   advance_ptr_ref = (advance_ptr_type*)advance_ptr_ptr;
-//  get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
+  get_remote_value = (get_remote_value_type*)get_remote_value_ptr;
+  */
   stat_check = (stat_check_type*)stat_check_ptr;
   showMess = (showMess_type*)showMess_ptr;
   
@@ -192,9 +202,9 @@ FINDABLE EXPORT int get_count(void* useClassPtr, void* ame_rand_ptr,
   /* ...and we are telling stub... */
   *phases = phasecount;
   *data_ptr = nodedata;
-  *arc_count = (sizeof inputArcs)/sizeof(char*)-1; /* don't include filler */
+/*  *arc_count = (sizeof inputArcs)/sizeof(char*)-1; // don't include filler
   *arc_id_list = inputArcs;
-  *adapt_maxerr = &maxerr;
+*/  *adapt_maxerr = &maxerr;
   return((sizeof nodedata)/sizeof(node_data_line));
 }
 

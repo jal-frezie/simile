@@ -68,12 +68,9 @@ clear_model([Funt/Args | Rest]) :-
 :- foreign(empty_tree(-integer)).
 :- dynamic(node_id_for_root_is/1).
 empty_tree :-
-        load_foreign_resource(struct_db),
+        load_foreign_resource('../System/bin/struct_db'),
 	empty_tree(Ushrtmx),
 	asserta(node_id_for_root_is(Ushrtmx)).
-
-/* Stuff needed for prolog database
-empty_tree. */
 
 assert_model(P) :-
 	my_assert(P),

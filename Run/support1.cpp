@@ -17,13 +17,14 @@ graphpoint_type* graphpoint_ref;
 release_graph_data_type* release_graph_data_ref;
 compare_instance_status_type* compare_instance_status;
 get_value_pointer_type* get_value_pointer_ref;
-fetch_instance_type* fetch_instance_ref;
+/* fetch_instance_type* fetch_instance_ref;
 update_submodel_type* update_submodel_ref;
 advance_submodel_type* advance_submodel_ref;
 eval_submodel_type* eval_submodel_ref;
-// search_from_type* search_from_ref;
+search_from_type* search_from_ref;
 advance_ptr_type* advance_ptr_ref;
-//get_remote_value_type* get_remote_value;
+get_remote_value_type* get_remote_value;
+*/
 stat_check_type* stat_check;
 showMess_type* showMess;
 
@@ -103,6 +104,7 @@ void release_graph_data(graph_data_type* graph) {
   (*release_graph_data_ref)(graph);
 }
 */
+/*
 void* fetch_instance(char* inst) {
   return (*fetch_instance_ref)(inst);
 }
@@ -130,16 +132,16 @@ void ext_eval_submodel(char* id, void* inst, int step) {
     throw error;
   }
 }
-/*
+
 void search_from(void* top, int section, void* found) {
   (*search_from_ref)(top, section, found);
 }
-*/
-/* try doing this one locally */
+
+// try doing this one locally
 void* advance_ptr(void* mType, void* mInst) {
   return (*advance_ptr_ref)(mType, mInst);
 }
-
+*/
 /* class definition and handling procedure for extra variables used in
    complicated integration methods */
 
