@@ -544,8 +544,7 @@ generate_case_entry(L, Match, Inst, String) :-
 	excrete(L, procedure_call, return(ItemRef), 8, String),
 	excrete(L, case_end, Match, 8, String).
 
-generate_data_decls(L, Dims, Path, Inst, Used, GraphOwners,
-		    Collects, NodeData, Stream) :-
+generate_data_decls(L, Dims, Path, Inst, Used, GraphOwners, NodeData, Stream) :-
 	Inst = instance(InstType, BaseName, _, NameIn, Unit-_),
 	(NameIn = elt(_, Name, _), !;
 	    Name = NameIn),
@@ -614,8 +613,7 @@ generate_data_decls(L, Dims, Path, Inst, Used, GraphOwners,
 				   immigration-'IMMIGRATION',
 				   loss-'LOSS']),
 	    (nth(GraphPointer, GraphOwners, [BaseName | _]), !;
-	    PType > 0,
-		nth(GraphPointer, Used, Name), !;
+	    nth(GraphPointer, Used, Name), !;
 	    GraphPointer = 0),
 
 	    (BaseName has_class_refinement min_val of Min, 

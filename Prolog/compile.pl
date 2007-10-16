@@ -302,23 +302,10 @@ bits and pieces */
 	(
 % File writing starts here
 	send_to_dest(Stream, ['#include <support1.cpp>']),
-	reassure_user("Generating metadata declarations"),
-	extract_instances(FullModel, RealDecls),
-	generate_metadata(Language, RealDecls, [], 1,
-			    Used, AllGraphs, [], NodeData, Stream),
-	make_constant_list(Language, NodeData, StructText),
-	length(NodeData, NodeCount), /* only used in tcl */
-	excrete(Language, variable_declaration,
-		   [int, nodecount, [], NodeCount], 0, Stream),
-	excrete(Language, variable_declaration,
-		   [node_data_line, nodedata, void, StructText], 0, Stream),
-
-	fail;
-
 	dialogue:reassure_user("Creating submodel value expressions"),
 	extract_assignments(instance(submodel, root, xrefs(FullModel, _,_,_),
 				     _,_), [], TopStep, Phases, [], Used,
-			    ExtIncs, ExtLibs, Collects, Inters, ReevaluateForm),
+			    ExtIncs, ExtLibs, Inters, ReevaluateForm),
 	merge_inters(Inters, FullModel, AugmentedModel, Constants),
 	
 /*	extract_submodel_updates(Instances, [], 1, Phases, Deltas),
@@ -368,9 +355,6 @@ wot need them */
 	       [char, simile_identifier, void, IdentAtom], 0, Stream),
 	excrete(Language, variable_declaration,
 	       [int, phasecount, [], Phases], 0, Stream),
- 	length(Collects, ParamCount),
- 	excrete(Language, variable_declaration,
- 	       [int, paramcount, [], ParamCount], 0, Stream),
         BoostPhases is Phases+1,
 	excrete(Language, variable_declaration,
 	       [real, ts, [BoostPhases]], 0, Stream),
@@ -404,9 +388,22 @@ wot need them */
 
 	build_submodel_functions(Language, Phases, Constants,
 				 StateForm, UpdateForm, EvaluateForm, Used,
-				 AllGraphs, Collects, Stream),
+				 AllGraphs, Stream),
 	make_exit_proc(Language, [RootInstance], Stream),
 	send_to_dest(Stream, EndTopType),
+	fail;
+
+	reassure_user("Generating metadata declarations"),
+	extract_instances(FullModel, RealDecls),
+	generate_metadata(Language, RealDecls, [], 1,
+			    Used, AllGraphs, NodeData, Stream),
+	make_constant_list(Language, NodeData, StructText),
+	length(NodeData, NodeCount), /* only used in tcl */
+	excrete(Language, variable_declaration,
+		   [int, nodecount, [], NodeCount], 0, Stream),
+	excrete(Language, variable_declaration,
+		   [node_data_line, nodedata, void, StructText], 0, Stream),
+
 	send_to_dest(Stream, ['#include <support2.cpp>'])
 
 	/* OK at this point we need to free all the memory we possibly can;
@@ -585,9 +582,9 @@ generate_main_decls(L, Instance, Finish, Stream) :-
 	    Finish = EndClass;
 	 send_to_dest(Stream, EndClass)).
 
-generate_metadata(_, [], _,_,_,_,_, [], _).
+generate_metadata(_, [], _,_,_,_, [], _).
 generate_metadata(L, [Instance | Instances], Tree, Level,
-		     Used, Graphs, Collects, NodeData, Stream) :-
+		     Used, Graphs, NodeData, Stream) :-
 	Instance = instance(Type, Node, Loc, _, _-CSizes),
 	(Type = submodel, !,
 	    list_local_index_meanings(Node, SmIndSpecs),
@@ -615,15 +612,14 @@ generate_metadata(L, [Instance | Instances], Tree, Level,
 	(Loc = xrefs(Model, _,_,_),
 	extract_instances(Model, RealDecls), !,
 	generate_metadata(L, RealDecls, DeepTree, StartCases,
-			     Used, Graphs, Collects, DeepNodeData, Stream);
+			     Used, Graphs, DeepNodeData, Stream);
 	 /* Not a submodel */
 	    DeepNodeData = []),
 	generate_data_decls(L, NewDims, DeepTree, Instance,
-			    Used, Graphs, Collects,
-			     LocalNodeData, Stream),
+			    Used, Graphs, LocalNodeData, Stream),
 	NewLevel is Level + 1,
 	generate_metadata(L, Instances, Tree, NewLevel,
-			     Used, Graphs, Collects, MoreNodeData, Stream),
+			     Used, Graphs, MoreNodeData, Stream),
 	append([LocalNodeData, DeepNodeData, MoreNodeData], NodeData).
 	    
 extract_instances(model(Funx, Subz), Instances) :-
@@ -677,7 +673,7 @@ update_submodel_compartments(Language, Phases, Used, DeltaForm, Decls) :-
 */
 
 build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
-		AllGraphs, Collects, Stream) :-
+		AllGraphs, Stream) :-
 	all(compile, extract_action,
 	    [build(OrderedForm), append(ActionForm, [])]),
 	excrete(Language, comment, 'EVALUATION PROCEDURE DECLARATION', 0,
@@ -709,8 +705,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 	excrete(Language, comment, 'UPDATE FUNCTION VALUES', 4, Stream),
 	nl(Stream),
 	retractall(indent_is(_)), asserta(indent_is(0)),
-	do_assign_list( Language, ActionForm, AllGraphs, Collects,
-			Used, Stream),
+	do_assign_list( Language, ActionForm, AllGraphs, Used, Stream),
 	nl(Stream),
 	excrete(Language, end(procedure), ProcName, 0, Stream),
 	nl(Stream).
@@ -722,7 +717,7 @@ build_eval_proc(Language, Consts, ProcName, OrderedForm, Used,
 % loop to the standard preferred unit
 
 build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
-			  SortedForm, Used, AllGraphs, Ccts, Stream) :-
+			  SortedForm, Used, AllGraphs, Stream) :-
 	reassure_user("Ordering model execution assignments"),
 
 	/* rough and ready -- phase NotDone means it never gets scheduled */
@@ -746,8 +741,7 @@ build_submodel_functions( Language, Phases, Constants, StateForm, UpdateForm,
 	    [unify(Language), unify(Constants),
 	     build([updatemodel, advancemodel, evalmodel]),
 	     build([OrdUpdates, OrdStates, Ordered]),
-	     unify(Used), unify(AllGraphs),  build([[], [], Ccts]),
-	     unify(Stream)]).
+	     unify(Used), unify(AllGraphs), unify(Stream)]).
 
 find_circle([Head | Chain], Loop) :-
 	order(NewHead, Head),
@@ -858,7 +852,7 @@ and functions within a submodel. It also creates the instructions that determine
 many individuals in each population submodel within it are created each round. */
 
 extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
-		    ExtIncs, ExtLibs, Ccts, Inters, AssignList) :-
+		    ExtIncs, ExtLibs, Inters, AssignList) :-
 	Instance = instance(submodel, Id, xrefs(model(Functions, Submodels),
                                               _,_,_), _,_),
 	(member(instance(alarm,_,_,elt(_, Al,_),_),
@@ -875,16 +869,13 @@ extract_assignments(Instance, Path, Step, MaxStep, Swaps, Used,
 	all(compile, get_assignment,
 	    [build(Functions),
 	     unify(Path), unify(Step), unify(Swaps),
-	     unify(Used), append(Ccts0, []), append(Inters0, []),
-	     append(AssignList0, [])]),
+	     unify(Used), append(Inters0, []), append(AssignList0, [])]),
 	all(compile, extract_submodel_assignment,
 	    [build(Submodels),
 	     unify(Functions), unify(Path),
 	     unify(Swaps), unify(Step), biggest(MaxStep, Step), unify(Used),
 	     merge_lists(ExtIncs, []), merge_lists(ExtLibs, []),
-	     append(Ccts, Ccts0),
-	     append(Inters, Inters0),
-	     append(AssignList, AssignList0)]).
+	     append(Inters, Inters0), append(AssignList, AssignList0)]).
 
 biggest(B1, B2, Big) :-
 	Big is max(B1, B2).
@@ -903,7 +894,7 @@ of the full model augmented with the extra nodes. */
 
 extract_submodel_assignment(Instance, ParentFns,
 			    Path, Swaps, TopStep, MaxStep, Used,
-			    ExtIncludes, ExtLibs, Ccts, Inters, AssignList) :-
+			    ExtIncludes, ExtLibs, Inters, AssignList) :-
 
 	Instance = instance(submodel, SmName, xrefs(Model, _, Bases, Assocs), 
 			    Name, _-Dims),
@@ -944,8 +935,7 @@ instruction because they will not require individual initialization routines. */
 	     instance(internal, inter(Path, _,_),_, Count, int-[])],
 		get_dims_from_loops(Path, _, UseInds),
 		length(UseInds, IdxN),
-		CFn =.. [collect, arr(Ptr, NMade, []), SmName, IdxN | UseInds],
-		Connects = [SmName],
+		CFn =.. [collect, arr(Ptr, NMade, []), Name, IdxN | UseInds],
 		CreateRules = [make(culled(Name), [on_reset], Path, 0, [CFn]),
 			       make(created(Name), [culled(Name)], Path, Step,
 				    [init_mems(Ptr, Name, create([NMade]))])],
@@ -955,7 +945,6 @@ instruction because they will not require individual initialization routines. */
 			instance(internal, inter(LocalPath, _,_), _, channelId,
 				 int-[]),
 			instance(internal, inter(Path, _,_),_, Count, int-[])],
-		Connects = [],
 	    /* generate instructions for each immigration, reproduction  etc.
 	    node...*/
 	    /* little botch-ette: all the population adjustments have to be
@@ -1034,7 +1023,6 @@ nodes.
 
 	variable_size(SmName), !,
 	    SmInters = [],
-	    Connects = [],
 	    all(compile, get_base_side,
 		[unify(LocalPath), build(InSwaps), build(BaseSides)]),
 	    /* reverse(RevBaseSides, BaseSides),
@@ -1070,11 +1058,10 @@ nodes.
 			     Path, Step, [reset_list(Ptr, Name)])];
 	Level = [sm(_,_,_, fm_loop(Globs, _)) | _Loops],
 %	    all(compile, name_loop_vars, [build(Globs), unify(Used)]),
-	    [BaseSides, SmInters, Specials, Connects] = [[], [], [], []]),
+	    [BaseSides, SmInters, Specials] = [[], [], []]),
 	extract_assignments(Instance, LocalPath, Step, MaxStep, NewSwaps, Used,
-			    SubIncludes, SubLibs, Mcts, FnInters, AssignList0),
+			    SubIncludes, SubLibs, FnInters, AssignList0),
 /* Now add an extra instruction if this needs an external proc */
-	append(Connects, Mcts, Ccts),
 	(SmName has_class_refinement external_code of ExtCode,
 	member(include=Inc, ExtCode),
 	\+ Inc = none, !,
@@ -1204,7 +1191,7 @@ list of 'make' functions which include information about how to order
 the actions corresponding to them.*/
 
 get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
-	       DestPath, SmStep, Swaps, Used, Ccts, Inters, Assignments) :-
+	       DestPath, SmStep, Swaps, Used, Inters, Assignments) :-
 /*	Type = external, !,
 	    (Inters = [],
 	    Source = for_extern(CondElts, Tops),
@@ -1250,10 +1237,8 @@ get_assignment(instance(Type, Node, Source, DestRef, _-DimTypes),
 	    length(VarInds, Count),
 	    CollectFn =.. [collect, arr(DestPtr, Dest, LocalInds), Dest, Count
 			  | VarInds],
-	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])],
-	    Ccts = [Node];
-	Collects = [],
-	    Ccts = []),
+	    Collects = [make(Tgt, Wait, Path, Step, [CollectFn])];
+	Collects = []),
 	((Is_P < 1,
 	    (Type = init_function, !,
 		UseList = [on_reset | RefList],
